@@ -297,7 +297,9 @@ class GenericCarrierGroundObjectGenerator(ControlPointGroundObjectGenerator):
             if go.category in ["CARRIER", "LHA"]
         ][0]
         groups = [
-            g for g in carrier_go.groups if "Carrier" in g.name or "LHA" in g.name
+            g
+            for g in carrier_go.groups
+            if "carrier" in g.name.lower() or "lha" in g.name.lower()
         ]
         return groups[0].units[0]
 

@@ -40,6 +40,7 @@ from dcs.ships import (
     Stennis,
     Type_071,
     hms_invincible,
+    Essex,
 )
 from dcs.terrain.terrain import Airport, ParkingSlot
 from dcs.unitgroup import ShipGroup, StaticGroup
@@ -1428,6 +1429,7 @@ class NavalControlPoint(
                     CVN_72,
                     CVN_73,
                     CVN_75,
+                    Essex,
                 ]:
                     return True
         return False

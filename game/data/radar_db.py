@@ -30,7 +30,6 @@ from pydcs_extensions import russianmilitaryassetspack as rmap
 from pydcs_extensions import swedishmilitaryassetspack as smap
 from pydcs_extensions import usamilitaryassetspack as usamap
 
-
 TELARS = {
     AirDefence.x_2S6_Tunguska,
     AirDefence.SA_11_Buk_LN_9A310M1,

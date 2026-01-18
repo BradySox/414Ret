@@ -27,7 +27,7 @@ class PlanOcaStrike(PackagePlanningTask[ControlPoint]):
     def propose_flights(self) -> None:
         size = self.get_flight_size()
         if self.target.cptype == self.target.cptype.AIRBASE:
-            self.propose_flight(FlightType.OCA_RUNWAY, size)  # type:ignore[unreachable]
+            self.propose_flight(FlightType.OCA_RUNWAY, size)  # type: ignore[unreachable]
         if self.aircraft_cold_start:
             self.propose_flight(FlightType.OCA_AIRCRAFT, 2)
         self.propose_common_escorts()

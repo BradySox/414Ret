@@ -25,6 +25,7 @@
 
 ## Fixes
 * **[Mission Generation]** Anti-Ship flights now attack the carrier group the flight plan routes to instead of the control point's first ground object, so strikes against carrier groups no longer leave the AI without a target (it would fly to the ingress point and turn back without engaging).
+* **[Mission Planning]** Carrier/LHA targets now offer SEAD in the flight-task list and no longer list SEAD Escort twice (their escorts are SAM platforms, so they can be suppressed directly like any other naval group).
 * **[Performance]** Improved robustness w.r.t. state.json handling to avoid corruption and thus save loss.
 * **[Flight Plans]** Stabilized waypoint solver debug GeoJSON coordinate precision to avoid platform-specific floating point drift in debug output.
 * **[Mission Generation]** Assign plane-specific laser codes to LGB weapons when building the mission

@@ -49,6 +49,7 @@ class FlightType(Enum):
     ESCORT = "Escort"
     BAI = "BAI"
     SWEEP = "Fighter sweep"
+    SCRAMBLE = "Scramble"  # Dedicated GCI interceptor — reactive CAP, WeaponHold until Lua fires
     OCA_RUNWAY = "OCA/Runway"
     OCA_AIRCRAFT = "OCA/Aircraft"
     AEWC = "AEW&C"
@@ -80,6 +81,7 @@ class FlightType(Enum):
             FlightType.INTERCEPTION,
             FlightType.ESCORT,
             FlightType.SWEEP,
+            FlightType.SCRAMBLE,
         }
 
     @property
@@ -125,6 +127,7 @@ class FlightType(Enum):
             FlightType.SEAD_SWEEP: AirEntity.SUPPRESSION_OF_ENEMY_AIR_DEFENCE,
             FlightType.STRIKE: AirEntity.ATTACK_STRIKE,
             FlightType.SWEEP: AirEntity.FIGHTER,
+            FlightType.SCRAMBLE: AirEntity.FIGHTER,
             FlightType.TARCAP: AirEntity.FIGHTER,
             FlightType.TRANSPORT: AirEntity.UTILITY,
             FlightType.PRETENSE_CARGO: AirEntity.UTILITY,

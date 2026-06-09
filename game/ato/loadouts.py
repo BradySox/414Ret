@@ -284,6 +284,8 @@ class Loadout:
         loadout_names[FlightType.SWEEP].extend(loadout_names[FlightType.TARCAP])
         # Intercept can fall back to BARCAP.
         loadout_names[FlightType.INTERCEPTION].extend(loadout_names[FlightType.BARCAP])
+        # Scramble uses the same air-to-air weapons as BARCAP.
+        loadout_names[FlightType.SCRAMBLE].extend(loadout_names[FlightType.BARCAP])
         # OCA/Aircraft falls back to BAI, which falls back to CAS.
         loadout_names[FlightType.BAI].extend(loadout_names[FlightType.CAS])
         loadout_names[FlightType.ARMED_RECON].extend(loadout_names[FlightType.CAS])

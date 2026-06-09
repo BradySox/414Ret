@@ -191,6 +191,7 @@ class Package(RadioFrequencyContainer):
             FlightType.RECOVERY,
             FlightType.REFUELING,
             FlightType.SWEEP,
+            FlightType.SCRAMBLE,
             FlightType.SEAD_ESCORT,
             FlightType.ESCORT,
         ]

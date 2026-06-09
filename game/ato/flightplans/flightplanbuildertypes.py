@@ -59,6 +59,9 @@ class FlightPlanBuilderTypes:
             FlightType.SEAD_SWEEP: SeadSweepFlightPlan.builder_type(),
             FlightType.STRIKE: StrikeFlightPlan.builder_type(),
             FlightType.SWEEP: SweepFlightPlan.builder_type(),
+            # SCRAMBLE = GCI interceptor — orbits near friendly base (same pattern as
+            # BARCAP) with WeaponHold; reactive_scramble.lua activates it at runtime.
+            FlightType.SCRAMBLE: BarCapFlightPlan.builder_type(),
             FlightType.TARCAP: TarCapFlightPlan.builder_type(),
             FlightType.AEWC: AewcFlightPlan.builder_type(),
             FlightType.TRANSPORT: AirliftFlightPlan.builder_type(),

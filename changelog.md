@@ -1,7 +1,7 @@
-# Retribution v1.6.0
+﻿# Retribution v1.6.0
 
 ## Features/Improvements
-* **[Mission]** Add SCRAMBLE flight type for reactive GCI interceptors. Alert fighters sit on Weapon Hold in a CAP orbit until a threat is detected by the radar network, then scramble to engage. The AI planner automatically spawns SCRAMBLE flights for vulnerable friendly control points. SCRAMBLE_<Airbase> trigger zones are auto-generated in the mission — no manual Mission Editor work required.
+* **[Mission]** Add SCRAMBLE flight type for reactive GCI interceptors. Alert fighters sit on Weapon Hold in a CAP orbit until a threat is detected by the radar network, then scramble to engage. The AI planner automatically spawns SCRAMBLE flights for vulnerable friendly control points. SCRAMBLE_<Airbase> trigger zones are auto-generated in the mission â€” no manual Mission Editor work required.
 * **[Mission]** Add JAMMING flight type for standoff electronic warfare aircraft (C-130J Compass Call). The aircraft holds an independent racetrack orbit at standoff range (same pattern as AEWC) rather than following a primary flight. Mixed packages pace their departure and TOT around the EW aircraft's slower transit. `c130j_mission_systems.lua` is automatically injected into any mission that includes a JAMMING flight.
 * **[UX]** Hovering a friendly flight's route line on the map highlights it in yellow, and clicking it selects that flight's package (and the flight) in the ATO sidebar.
 * **[UX]** Press Delete with a package selected in the Packages list to cancel it, making it quick to clear several packages in a row.
@@ -16,7 +16,7 @@
 * **[UX]** Show an "End of Mission Detected, processing Mission Data" busy dialog while turn results are processed, so the wait is not mistaken for a missed detection
 
 ## Fixes
-* **[Flight Plans]** Fixed IndexError crash when a flight exits combat at its last waypoint
+* **[Flight Plans]** Fixed IndexError crash when a flight exits combat at its last waypoint`n* **[AI]** Fixed enemy AWACS orbit placement â€” AI AWACS (A-50, etc.) was orbiting toward the threat boundary and loitering near the front line. It now orbits in the opposite direction, deep inside friendly airspace. Player-coalition AWACS keeps the existing forward-leaning behavior.
 * **[Mission]** Reliably auto-detect end of mission, even when DCS wrote the final state.json before the wait dialog started watching
 * **[Performance]** Faster post-mission turn processing
 * **[AirWing]** Track per-squadron campaign aircraft stats (initial/destroyed/purchased, save-compatible) and expose pilot experience level and living/dead pilot views for the UI
@@ -183,7 +183,7 @@
 * **[Modding]** Updated support for F-4B/C Phantom mod to 2.8.7.204
 * **[Modding]** Updated Community A-4E-C mod version support to 2.2.0 release.
 * **[Modding]** Added F/A-18E/F Super Hornet AI Tanker mod support (Chiller Juice Studios SuperBug Tanker AI version 1.4)
-* **[Modding]** Added VSN Super Étendard mod support (v2.5.5)
+* **[Modding]** Added VSN Super Ã‰tendard mod support (v2.5.5)
 * **[Modding]** Added F9F Panther mod support (version v2.8.7.101)
 * **[Modding]** Updated Irondome support to IDF Assets Pack V1.1, adding support for the David's Sling
 * **[Radios]** Added HF-FM band for AN/ARC-222
@@ -533,7 +533,7 @@ Saves from 6.x are not compatible with 7.0.
 * **[Flight Planning]** AEW&C missions are now plannable over FOBs and LHAs.
 * **[Flight Planning]** BAI is no longer plannable against buildings.
 * **[Modding]** Fixed an issue where Falklands campaigns created or edited with new versions of DCS could not be loaded.
-* **[Modding]** Fixed decoding of campaign yaml files to use UTF-8 rather than the system locale's default. It's now possible to use "Bf 109 K-4 Kurfürst" as a preferred aircraft type.
+* **[Modding]** Fixed decoding of campaign yaml files to use UTF-8 rather than the system locale's default. It's now possible to use "Bf 109 K-4 KurfÃ¼rst" as a preferred aircraft type.
 * **[Mission Generation]** Planes will no longer spawn in helipads that are not also designated for fixed wing parking.
 * **[Mission Generation]** Potentially an issue where ground war planning game state could become corrupted, preventing mission generation.
 * **[Mission Generation]** Refueling tasks will now only be created for flights that have a tanker in their package.
@@ -761,7 +761,7 @@ Saves from 4.0.0 are compatible with 4.1.0.
 * **[Data]** Removed SA-10 from Syria 2011 faction.
 * **[Economy]** EWRs can now be bought and sold for the correct price and can no longer be used to generate money
 * **[Flight Planning]** Helicopters are now correctly identified, and will fly ingress/CAS/BAI/egress and similar at low altitude.
-* **[Flight Planning]** Fixed potential issue with angles > 360° or < 0° being generated when summing two angles.
+* **[Flight Planning]** Fixed potential issue with angles > 360Â° or < 0Â° being generated when summing two angles.
 * **[Mission Generation]** The lua data for other plugins is now generated correctly
 * **[Mission Generation]** Fixed problem with opfor planning missions against sold ground objects like SAMs
 * **[Mission Generation]** The legacy always-available tanker option no longer prevents mission creation.
@@ -1477,3 +1477,4 @@ Sorry :(
 * **[Campaign Generator]** Base defenses would not be generated on Normandy map and in some rare cases on others maps as well
 * **[Mission Planning]** CAS waypoints created from the "Predefined waypoint selector" would not be at the exact location of the frontline
 * **[Naming]** CAP mission flown from airbase are not named BARCAP anymore (CAP from carrier is still named BARCAP)
+

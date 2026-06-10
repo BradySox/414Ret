@@ -171,10 +171,14 @@ class TheaterState(WorldState["TheaterState"]):
         )
 
         # Plan enough rounds of CAP that the target has coverage over the expected
-        # mission duration.
+        # mission duration. Waves overlap by barcap_overlap_time, so each wave only
+        # contributes (duration - overlap) of *fresh* coverage; plan enough rounds
+        # to span the mission even with overlapping handoffs.
         mission_duration = game.settings.desired_player_mission_duration.total_seconds()
         barcap_duration = game.settings.desired_barcap_mission_duration.total_seconds()
-        barcap_rounds = math.ceil(mission_duration / barcap_duration)
+        barcap_overlap = game.settings.barcap_overlap_time.total_seconds()
+        effective_coverage = max(barcap_duration - barcap_overlap, 60.0)
+        barcap_rounds = math.ceil(mission_duration / effective_coverage)
 
         battle_postitions: Dict[ControlPoint, BattlePositions] = {
             cp: BattlePositions.for_control_point(cp)

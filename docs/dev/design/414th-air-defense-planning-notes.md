@@ -44,3 +44,84 @@ Implementation areas to revisit:
 - `game/missiongenerator/aircraft/aircraftgenerator.py`
 - `game/missiongenerator/luagenerator.py`
 - `resources/plugins/scramble/reactive_scramble.lua`
+
+## Planning rework — implemented (air-defense-planning-rework branch)
+
+Done in the isolated worktree branch `air-defense-planning-rework`:
+
+- **CAP timing & overlap.** `MissionScheduler` now schedules land-CP BARCAP as
+  overlapping waves (offset `patrol_duration - barcap_overlap_time`) with a
+  jittered first wave, instead of front-loaded back-to-back waves all arriving at
+  t=0. `TheaterState.from_game` plans enough rounds for the overlap. New
+  `barcap_overlap_time` Campaign Doctrine setting (default 15 min; 0 = legacy).
+  Carrier/AEWC scheduling unchanged.
+- **Forward CAP line.** `ObjectiveFinder.vulnerable_control_points()` now also
+  defends any friendly CP that anchors an active front line (`has_active_frontline`),
+  so coverage reaches raids inbound to rear income points — not only bases near an
+  enemy airfield. OPFOR offensive-roll gate still respected.
+- **Reactive scramble single toggle + border trigger.** `enable_reactive_scramble`
+  Campaign Doctrine setting (default on) guarantees a RED QRA pool even when
+  untasked OPFOR aircraft are otherwise disabled (only the dormant interceptors
+  spawn). `LuaGenerator` emits `dcsRetribution.scramble_border` (buffered convex
+  hull of RED CPs, mitre join, 30 NM forward). `reactive_scramble.lua` (v2.1)
+  wakes QRA on border penetration (point-in-polygon), with radar range as the
+  fallback when no border is supplied.
+- **Doctrine setting fixes (Workstream E).**
+  - Fixed the OPFOR/aggressiveness direction inconsistency. The setting is the
+    *ratio of threat OPFOR ignores* (0 = defend everything, 100 = fully
+    offensive), per the label and `PackagePlanningTask._get_weighted_threat_range`.
+    `ObjectiveFinder.vulnerable_control_points` had it inverted (`randint >
+    aggressiveness`); now `randint <= aggressiveness`, so both call sites agree.
+    **Behavioural note:** at the default value 20, RED now plans offensively for
+    only ~20% of its CPs (defends ~80%) instead of the old ~80% offensive. This
+    is intended — it makes RED actually defend its airspace/income points — but
+    if RED feels too passive offensively, raise `opfor_autoplanner_aggressiveness`
+    (the knob is now coherent, so higher = more offensive everywhere).
+  - Bumped two engagement-range defaults so AI A2G is less passive:
+    `cas_engagement_range_distance` 10 -> 15 NM, `armed_recon_engagement_range_distance`
+    5 -> 10 NM.
+  - Verified-but-unchanged: `max_mission_range_planes` is a *floor*
+    (`max(aircraft.max_mission_range, setting)`), not a cap, so raising it risks
+    tasking short-legged jets beyond fuel; left at 150. `airbase_threat_range`
+    left at 100 (forward CAP no longer depends solely on it). `player_startup_time`
+    left at 10 (player QoL, not an OPFOR lever).
+
+## Mission-preference (`tasks:`) value rubric
+
+The auto-planner ranks aircraft for a task by these YAML weights (higher = chosen
+more often: `AircraftType.priority_list_for_task`). Rubric for editing them:
+
+- A value expresses **how good this platform is for this task relative to its
+  contemporaries in its era**, not raw desire to fly it.
+- For a platform whose *role* is air superiority/interception (e.g. M-2000C,
+  F-15C, MiG-31, Gripen-C), its best A2A value should exceed its A2G values — even
+  if the airframe can technically drop bombs — or the planner benches it.
+- Dedicated maritime-strike bombers (Tu-22M3, Tu-16, H-6J, Tu-95K) should carry a
+  high Anti-ship value; it is their signature role. (Anti-ship is scenario- and
+  era-dependent — a modern Burke screen may make it suicidal — but the *platform*
+  rating should reflect capability.)
+- Avoid copy-paste: several blocks are byte-identical across unrelated aircraft.
+
+Tooling:
+
+- `tmp/audit_mission_preferences.py` (read-only) reports per-task distributions,
+  A2A platforms benched behind their own A2G, anti-ship outliers, and copy-paste
+  clusters. Run it before/after edits.
+- `tmp/rebalance_mission_preferences.py` generates a proposal CSV only; it does
+  **not** write YAML. The current proposal uses a 60% model / 40% old-value blend,
+  preserves low old values as off-role signals unless the archetype makes that
+  task central, and applies a small manual archetype override table for bad role
+  metadata (`EA-18G`, `CH_JAS39C`, `M-2000C`, `MiG-25RBT`, `VSN_F105G`, and key
+  Soviet maritime missile carriers).
+
+Current generated proposal (`tmp/mission_pref_proposal.csv`) improves the
+archetype-aware audit from 13 -> 4 A2A-primary platforms benched behind their own
+A2G and 12 -> 8 maritime/bomber anti-ship outliers, without applying a blind
+256-aircraft YAML rewrite. Keep using the CSV as a review aid, then apply
+high-confidence aircraft blocks deliberately.
+
+Applied so far (the two examples the doctrine discussion named explicitly):
+`Tu-22M3` Anti-ship 170 → 800; `M-2000C` A2A tasks 230 → 460. The audit still
+lists ~80 A2A-benched and many anti-ship outliers — these are intentionally left
+for case-by-case, in-game-tested tuning rather than a blind mass rewrite, since
+the values ship to all Retribution campaigns.

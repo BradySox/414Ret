@@ -203,6 +203,32 @@ class Settings:
         detail="Implicitly determines the number of BARCAPs planned by taking the mission duration"
         " and dividing it by the desired on-station time.",
     )
+    barcap_overlap_time: timedelta = minutes_option(
+        "BARCAP wave overlap",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=timedelta(minutes=15),
+        min=0,
+        max=60,
+        detail="How long consecutive BARCAP waves overlap on-station. Higher values"
+        " plan more, more-frequent waves so coverage has no handoff gap and the"
+        " first wave's timing is less predictable. 0 restores back-to-back,"
+        " non-overlapping waves (the legacy behaviour).",
+    )
+    enable_reactive_scramble: bool = boolean_option(
+        "Reactive OPFOR scramble (QRA)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        invert=False,
+        detail=(
+            "When checked, RED parks air-to-air-capable leftover aircraft cold on"
+            " the ramp as a quick-reaction (QRA) pool. reactive_scramble.lua wakes"
+            " the nearest one to intercept when a BLUE aircraft penetrates RED"
+            " airspace. The pool is generated even if untasked OPFOR aircraft are"
+            " otherwise disabled (only the dormant interceptors are spawned)."
+        ),
+    )
     desired_awacs_mission_duration: timedelta = minutes_option(
         "Desired AWACS on-station time",
         page=CAMPAIGN_DOCTRINE_PAGE,
@@ -408,7 +434,7 @@ class Settings:
         "CAS engagement range (NM)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=DOCTRINE_DISTANCES_SECTION,
-        default=10,
+        default=15,
         min=0,
         max=100,
     )
@@ -416,7 +442,7 @@ class Settings:
         "Armed Recon engagement range (NM)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=DOCTRINE_DISTANCES_SECTION,
-        default=5,
+        default=10,
         min=0,
         max=25,
     )

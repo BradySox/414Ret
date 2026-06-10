@@ -11,14 +11,20 @@ from dcs.action import DoScript, DoScriptFile
 from dcs.translation import String
 from dcs.triggers import TriggerStart
 
+from shapely.geometry import MultiPoint
+
 from game.ato import FlightType
 from game.data.units import UnitClass
 from game.dcs.aircrafttype import AircraftType
 from game.plugins import LuaPluginManager
-from game.theater import TheaterGroundObject
+from game.theater import OffMapSpawn, Player, TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
-from game.utils import escape_string_for_lua
+from game.utils import escape_string_for_lua, nautical_miles
 from .missiondata import MissionData
+
+# How far forward of RED territory the reactive-scramble border is pushed so BLUE
+# raids are detected as they approach the front, not only once overhead.
+SCRAMBLE_BORDER_BUFFER = nautical_miles(30).meters
 
 if TYPE_CHECKING:
     from game import Game
@@ -358,7 +364,8 @@ class LuaGenerator:
         # Emit the RED reactive-GCI scramble pool: names of uncontrolled untasked
         # A/A groups (collected in AircraftGenerator._spawn_unused_for).
         # reactive_scramble.lua reads this list, holds those groups dormant, and
-        # wakes the nearest one when a Blue threat enters RED radar range.
+        # wakes the nearest one when a Blue aircraft penetrates RED airspace
+        # (the scramble_border polygon below; radar range is the fallback).
         if self.mission_data.scramble_pool:
             lines = ["dcsRetribution.scramble_pool = {}"]
             for name in self.mission_data.scramble_pool:
@@ -369,6 +376,51 @@ class LuaGenerator:
             pool_trigger = TriggerStart(comment="Set DCS Retribution scramble pool")
             pool_trigger.add_action(DoScript(String("\n".join(lines))))
             self.mission.triggerrules.triggers.append(pool_trigger)
+
+            # Emit the RED airspace border so reactive_scramble.lua can wake QRA
+            # on territory penetration rather than raw radar range. Radar range
+            # remains the fallback when no border is available.
+            border = self._scramble_border_points()
+            if border:
+                border_lines = ["dcsRetribution.scramble_border = {}"]
+                for x, z in border:
+                    border_lines.append(
+                        "dcsRetribution.scramble_border"
+                        "[#dcsRetribution.scramble_border + 1]"
+                        f" = {{ x = {x:.1f}, z = {z:.1f} }}"
+                    )
+                border_trigger = TriggerStart(
+                    comment="Set DCS Retribution scramble border"
+                )
+                border_trigger.add_action(
+                    DoScript(String("\n".join(border_lines)))
+                )
+                self.mission.triggerrules.triggers.append(border_trigger)
+
+    def _scramble_border_points(self) -> list[tuple[float, float]] | None:
+        """RED-territory border polygon for reactive scramble, as (x, z) world coords.
+
+        The convex hull of RED control points, buffered forward by
+        SCRAMBLE_BORDER_BUFFER. pydcs ``Point.x``/``Point.y`` map to DCS world
+        ``x``/``z``; the Lua compares against ``Unit:getPoint()`` which is also
+        ``x``/``z``, so we emit the buffered hull ring with those axes.
+        """
+        positions = [
+            (cp.position.x, cp.position.y)
+            for cp in self.game.theater.control_points_for(Player.RED)
+            if not isinstance(cp, OffMapSpawn)
+        ]
+        if not positions:
+            return None
+        # join_style=2 (mitre) keeps a convex hull's vertex count tight so the
+        # emitted polygon stays compact instead of a 60+ vertex rounded ring.
+        hull = MultiPoint(positions).convex_hull.buffer(
+            SCRAMBLE_BORDER_BUFFER, join_style=2
+        )
+        exterior = getattr(hull, "exterior", None)
+        if exterior is None:
+            return None
+        return [(float(x), float(z)) for x, z in exterior.coords]
 
     def inject_lua_trigger(self, contents: str, comment: str) -> None:
         trigger = TriggerStart(comment=comment)

@@ -1,5 +1,5 @@
 -- ============================================================================
--- REACTIVE SCRAMBLE v2.0  (Retribution GCI Scramble Plugin)
+-- REACTIVE SCRAMBLE v2.2  (Retribution GCI Scramble Plugin)
 -- Bundled automatically into every Retribution-generated .miz that has a
 -- non-empty RED untasked-aircraft scramble pool.
 -- ============================================================================
@@ -8,9 +8,11 @@
 -- the ramp as UNCONTROLLED groups — parked, engines off, no route. The mission
 -- generator records the air-to-air-capable ones in dcsRetribution.scramble_pool.
 --
--- This script holds those groups dormant until a Blue aircraft is detected by
--- the RED radar network within CFG_engageRadius, then wakes the nearest
+-- This script holds those groups dormant until a Blue aircraft penetrates RED
+-- airspace (the dcsRetribution.scramble_border polygon), then wakes the nearest
 -- available one (StartUncontrolled) and tasks it to intercept (EngageTargets).
+-- When no border polygon is supplied it falls back to the legacy behaviour:
+-- a Blue aircraft detected by the RED radar network within CFG_engageRadius.
 --
 -- Cold-ramp behaviour is intentional: an idle group does a full cold start,
 -- taxis, takes off, and hunts. Nothing flies until a threat appears.
@@ -22,10 +24,12 @@
 --  EngageTargets             — correct DCS task id for air intercept
 -- ============================================================================
 
-local CFG_scanInterval  = 15      -- seconds between threat scans
-local CFG_engageRadius  = 95000   -- metres (~51 nm)
-local CFG_reengageDelay = 180     -- seconds before a busy group re-qualifies
-local CFG_spawnDelay    = 1.0     -- seconds between Start command and setTask
+local CFG_scanInterval   = 15     -- seconds between threat scans
+local CFG_engageRadius   = 95000  -- metres (~51 nm); radar-range detection fallback
+local CFG_interceptRange = 185000 -- metres (~100 nm); how far a scrambled QRA pursues
+local CFG_reengageDelay  = 180    -- seconds before a busy group re-qualifies
+local CFG_spawnDelay     = 5.0    -- seconds after Start before tasking the intercept
+local CFG_debug          = true   -- periodic status line in dcs.log (radars/border)
 
 -- ── Retribution plugin config override ────────────────────────────────────
 -- If a dcsRetribution.plugins.scramble block exists, apply it on the next tick
@@ -35,11 +39,13 @@ local CFG_spawnDelay    = 1.0     -- seconds between Start command and setTask
 timer.scheduleFunction(function()
     if not (dcsRetribution and dcsRetribution.plugins and dcsRetribution.plugins.scramble) then return end
     local c = dcsRetribution.plugins.scramble
-    if c.engageRadius  ~= nil then CFG_engageRadius  = c.engageRadius * 1852 end  -- NM → metres
-    if c.reengageDelay ~= nil then CFG_reengageDelay = c.reengageDelay end
+    if c.engageRadius   ~= nil then CFG_engageRadius   = c.engageRadius * 1852 end  -- NM → metres
+    if c.interceptRange ~= nil then CFG_interceptRange = c.interceptRange * 1852 end -- NM → metres
+    if c.reengageDelay  ~= nil then CFG_reengageDelay  = c.reengageDelay end
 end, nil, timer.getTime() + 0)
 
 local _groups = {}   -- name -> record
+local _border = nil  -- list of { x=, z= } points (RED airspace polygon) or nil
 
 -- ── UTILITIES ────────────────────────────────────────────────────────────────
 
@@ -48,6 +54,35 @@ local function log(msg) BASE:E("=== SCRAMBLE: " .. tostring(msg)) end
 local function dist3D(p1, p2)
     local dx, dy, dz = p1.x-p2.x, (p1.y or 0)-(p2.y or 0), p1.z-p2.z
     return math.sqrt(dx*dx + dy*dy + dz*dz)
+end
+
+-- Ray-casting point-in-polygon on the map plane (DCS x / z). poly is a list of
+-- { x=, z= } vertices (the buffered convex hull of RED control points).
+local function pointInPolygon(p, poly)
+    local inside, n = false, #poly
+    local j = n
+    for i = 1, n do
+        local xi, zi = poly[i].x, poly[i].z
+        local xj, zj = poly[j].x, poly[j].z
+        if ((zi > p.z) ~= (zj > p.z))
+           and (p.x < (xj - xi) * (p.z - zi) / (zj - zi) + xi) then
+            inside = not inside
+        end
+        j = i
+    end
+    return inside
+end
+
+-- A Blue contact is a threat once it crosses into RED airspace. Border crossing
+-- is the primary trigger; raw radar range is the fallback when no border exists.
+local function threatActive(pos, radarPts)
+    if _border then
+        return pointInPolygon(pos, _border)
+    end
+    for _, rp in ipairs(radarPts) do
+        if dist3D(pos, rp) <= CFG_engageRadius then return true end
+    end
+    return false
 end
 
 -- ── TASK APPLICATION ─────────────────────────────────────────────────────────
@@ -65,15 +100,20 @@ local function taskIntercept(rec)
             id     = "EngageTargets",
             params = {
                 targetTypes = { "Air" },
-                maxDist     = CFG_engageRadius,
+                maxDist     = CFG_interceptRange,
                 priority    = 0,
             },
         })
     end
 end
 
--- Wake a dormant uncontrolled group, then task it to intercept after a short
--- delay so DCS finishes processing the Start command before setTask fires.
+-- Wake a dormant uncontrolled group and send it to intercept.
+--
+-- The pool groups are generated with a single TakeOffParking point and no onward
+-- route, so StartUncontrolled() alone only spins up engines — it will NOT take
+-- off. The EngageTargets task is what makes the cold-started AI taxi, take off
+-- and hunt. So: Start first, then (after a short delay so the Start command is
+-- processed) push the intercept task, which drives the takeoff.
 local function spawnAndIntercept(rec)
     local mg = GROUP:FindByName(rec.name)
     if not mg then
@@ -83,9 +123,10 @@ local function spawnAndIntercept(rec)
     rec.group   = mg
     rec.spawned = true
     mg:StartUncontrolled()
-    log("Waking dormant group: " .. rec.name)
+    log("Waking dormant group (cold start): " .. rec.name)
     timer.scheduleFunction(function()
         taskIntercept(rec)
+        log("Tasked intercept (takeoff + hunt): " .. rec.name)
     end, nil, timer.getTime() + CFG_spawnDelay)
 end
 
@@ -94,6 +135,14 @@ end
 -- start; we read it on the next tick so it is guaranteed populated.
 
 timer.scheduleFunction(function()
+    local border = dcsRetribution and dcsRetribution.scramble_border
+    if border and #border >= 3 then
+        _border = border
+        log(string.format("RED airspace border loaded (%d vertices)", #border))
+    else
+        log("No scramble border supplied — falling back to radar-range detection")
+    end
+
     local pool = dcsRetribution and dcsRetribution.scramble_pool
     if not pool then
         log("WARNING: dcsRetribution.scramble_pool not available — no interceptors registered")
@@ -144,12 +193,9 @@ local function detectBlueThreats(radarPts)
             local u = units and units[1]
             if u and u:isExist() then
                 local pos = u:getPoint()
-                for _, rp in ipairs(radarPts) do
-                    if dist3D(pos, rp) <= CFG_engageRadius then
-                        threats[#threats + 1] = { group = g, pos = pos }
-                        seen[g:getName()] = true
-                        break
-                    end
+                if threatActive(pos, radarPts) then
+                    threats[#threats + 1] = { group = g, pos = pos }
+                    seen[g:getName()] = true
                 end
             end
         end
@@ -181,7 +227,9 @@ end
 
 SCHEDULER:New(nil, function()
     local radars = getRedRadarPositions()
-    if #radars == 0 then return end
+    -- With a border polygon we trigger on penetration and don't need radars;
+    -- without one we rely on radar detection, so nothing to do with no radars.
+    if #radars == 0 and not _border then return end
 
     local threats = detectBlueThreats(radars)
 
@@ -224,3 +272,20 @@ timer.scheduleFunction(function()
     MESSAGE:New(string.format(
         "REACTIVE SCRAMBLE ONLINE: %d dormant interceptor group(s)", n), 12):ToAll()
 end, nil, timer.getTime() + 2)
+
+-- ── DEBUG STATUS ─────────────────────────────────────────────────────────────
+-- Periodic one-liner so a test run can confirm from dcs.log that detection is
+-- wired up (radar count, whether a border loaded, live threats). Set
+-- CFG_debug = false to silence.
+if CFG_debug then
+    timer.scheduleFunction(function()
+        local radars = getRedRadarPositions()
+        local n = 0
+        for _ in pairs(_groups) do n = n + 1 end
+        local threats = detectBlueThreats(radars)
+        log(string.format(
+            "status: groups=%d radars=%d border=%s threats=%d",
+            n, #radars, _border and "yes" or "no", #threats))
+        return timer.getTime() + 60
+    end, nil, timer.getTime() + 25)
+end

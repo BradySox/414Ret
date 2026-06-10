@@ -240,6 +240,11 @@ class AircraftGenerator:
         assert isinstance(squadron.location, Airfield) or isinstance(
             squadron.location, Fob
         )
+        reactive_scramble = self.game.settings.enable_reactive_scramble
+        # When untasked OPFOR aircraft are disabled but reactive scramble is on,
+        # we still spawn the dormant QRA interceptors (and nothing else) so the
+        # toggle alone guarantees a scramble pool.
+        scramble_only = False
         if (
             squadron.coalition.player.is_blue
             and self.game.settings.perf_disable_untasked_blufor_aircraft
@@ -249,10 +254,13 @@ class AircraftGenerator:
             squadron.coalition.player.is_red
             and self.game.settings.perf_disable_untasked_opfor_aircraft
         ):
-            return
+            if not reactive_scramble:
+                return
+            scramble_only = True
 
         is_scramble_eligible_squadron = (
-            squadron.coalition.player.is_red
+            reactive_scramble
+            and squadron.coalition.player.is_red
             and (
                 squadron.aircraft.capable_of(FlightType.BARCAP)
                 or squadron.aircraft.capable_of(FlightType.SWEEP)
@@ -275,6 +283,10 @@ class AircraftGenerator:
                 is_scramble_eligible_squadron
                 and scramble_group_count < MAX_SCRAMBLE_GROUPS_PER_AIRFIELD
             )
+            if scramble_only and not can_be_scramble:
+                # Only dormant interceptors are spawned when untasked OPFOR
+                # aircraft are otherwise disabled.
+                continue
             # Creating a flight even those this isn't a fragged mission lets us
             # reuse the existing debriefing code. Use BARCAP for A/A loadout
             # selection, but name idle RED fighters as Scramble/QRA assets.
@@ -320,7 +332,7 @@ class AircraftGenerator:
                 # Reactive GCI scramble pool: a RED group left uncontrolled (cold
                 # on the ramp) that can fly air-to-air becomes a dormant
                 # interceptor. reactive_scramble.lua wakes the nearest one when a
-                # Blue threat is detected by the RED radar network.
+                # Blue aircraft penetrates RED airspace (radar range is fallback).
                 if group.uncontrolled and can_be_scramble:
                     self.mission_data.scramble_pool.append(group.name)
                     self.scramble_groups_by_control_point[squadron.location] = (

@@ -94,7 +94,10 @@ local function taskIntercept(rec)
     mg:OptionROEWeaponFree()
     mg:OptionROTEvadeFire()
 
-    local ctrl = mg:GetController()
+    -- Use the raw DCS controller: MOOSE GROUP has no GetController() method
+    -- (calling it errored every scan and the QRA was never tasked to take off).
+    local dcsGroup = Group.getByName(rec.name)
+    local ctrl = dcsGroup and dcsGroup:getController()
     if ctrl then
         ctrl:setTask({
             id     = "EngageTargets",
@@ -104,6 +107,8 @@ local function taskIntercept(rec)
                 priority    = 0,
             },
         })
+    else
+        log("ERROR: no controller for " .. rec.name)
     end
 end
 

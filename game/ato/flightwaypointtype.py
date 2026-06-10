@@ -56,3 +56,4 @@ class FlightWaypointType(IntEnum):
     INGRESS_RECON = (
         36  # Ingress photo-recon overflight (TARPS) - carries no attack tasks
     )
+    SEAD_LOITER = 37  # AI plain-SEAD standoff loiter anchor (carries a bounded orbit)

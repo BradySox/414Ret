@@ -39,6 +39,7 @@ from .racetrack import RaceTrackBuilder
 from .racetrackend import RaceTrackEndBuilder
 from .refuel import RefuelPointBuilder
 from .seadingress import SeadIngressBuilder
+from .seadloiter import SeadLoiterBuilder
 from .seadsweepingress import SeadSweepIngressBuilder
 from .splitpoint import SplitPointBuilder
 from .strikeingress import StrikeIngressBuilder
@@ -161,6 +162,7 @@ class WaypointGenerator:
             FlightWaypointType.INGRESS_SEAD: SeadIngressBuilder,
             FlightWaypointType.INGRESS_SEAD_SWEEP: SeadSweepIngressBuilder,
             FlightWaypointType.INGRESS_RECON: ReconIngressBuilder,
+            FlightWaypointType.SEAD_LOITER: SeadLoiterBuilder,
             FlightWaypointType.INGRESS_STRIKE: StrikeIngressBuilder,
             FlightWaypointType.INGRESS_SWEEP: SweepIngressBuilder,
             FlightWaypointType.JOIN: JoinPointBuilder,

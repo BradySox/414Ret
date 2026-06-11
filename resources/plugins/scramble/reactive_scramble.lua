@@ -1,5 +1,5 @@
 -- ============================================================================
--- REACTIVE SCRAMBLE v2.3  (Retribution GCI Scramble Plugin)
+-- REACTIVE SCRAMBLE v2.4  (Retribution GCI Scramble Plugin)
 -- Bundled automatically into every Retribution-generated .miz that has a
 -- non-empty RED untasked-aircraft scramble pool.
 -- ============================================================================
@@ -34,7 +34,7 @@ local CFG_interceptSpeed = 900    -- km/h transit speed for MOOSE route building
 local CFG_reengageDelay  = 180    -- seconds before a busy group re-qualifies
 local CFG_spawnDelay     = 5.0    -- seconds after Start before tasking the intercept
 local CFG_vectorRefresh  = 45     -- seconds between re-vectors for an active intercept
-local CFG_debug          = true   -- periodic status line in dcs.log (radars/border)
+local CFG_debug          = false  -- periodic status line in dcs.log (radars/border)
 
 -- ── Retribution plugin config override ────────────────────────────────────
 -- If a dcsRetribution.plugins.scramble block exists, apply it on the next tick
@@ -383,7 +383,8 @@ SCHEDULER:New(nil, function()
                         spawnAndIntercept(rec)
                     end
                     log("Scramble: " .. rec.name .. " -> " .. threat.group:getName())
-                    MESSAGE:New("SCRAMBLE: interceptors launching!", 12):ToAll()
+                    -- RED-only: do not advertise QRA launches to the BLUE side.
+                    MESSAGE:New("SCRAMBLE: interceptors launching!", 12):ToCoalition(coalition.side.RED)
                 end
             end
         end
@@ -396,8 +397,9 @@ timer.scheduleFunction(function()
     local n = 0
     for _ in pairs(_groups) do n = n + 1 end
     log(string.format("ONLINE — %d dormant interceptor group(s)", n))
+    -- RED-only: the QRA group count is not something the BLUE side should see.
     MESSAGE:New(string.format(
-        "REACTIVE SCRAMBLE ONLINE: %d dormant interceptor group(s)", n), 12):ToAll()
+        "REACTIVE SCRAMBLE ONLINE: %d dormant interceptor group(s)", n), 12):ToCoalition(coalition.side.RED)
 end, nil, timer.getTime() + 2)
 
 -- ── DEBUG STATUS ─────────────────────────────────────────────────────────────

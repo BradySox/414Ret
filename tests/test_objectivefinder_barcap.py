@@ -3,6 +3,7 @@
 `vulnerable_control_points()` now defends a friendly CP if it anchors an active
 front line, in addition to the legacy "enemy airfield within threat range" rule.
 """
+
 from __future__ import annotations
 
 import pytest

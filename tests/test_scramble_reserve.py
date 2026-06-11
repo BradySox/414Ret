@@ -3,7 +3,10 @@
 Without this the planner commits every air-to-air airframe, leaving no untasked
 aircraft for the reactive-scramble interceptor pool.
 """
+
 from __future__ import annotations
+
+from typing import Any
 
 from game.ato import FlightType
 from game.settings import Settings
@@ -35,13 +38,19 @@ class _Aircraft:
 
 
 class _Squadron:
-    def __init__(self, is_red, caps, enabled=True, reserve=2) -> None:
+    def __init__(
+        self,
+        is_red: bool,
+        caps: set[FlightType],
+        enabled: bool = True,
+        reserve: int = 2,
+    ) -> None:
         self.coalition = _Coalition(is_red)
         self.aircraft = _Aircraft(caps)
         self.settings = _Settings(enabled, reserve)
 
 
-def reserve_of(**kwargs) -> int:
+def reserve_of(**kwargs: Any) -> int:
     # Evaluate the real property against a minimal stand-in.
     return Squadron.scramble_reserve.fget(_Squadron(**kwargs))  # type: ignore[attr-defined]
 

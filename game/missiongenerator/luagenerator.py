@@ -392,9 +392,7 @@ class LuaGenerator:
                 border_trigger = TriggerStart(
                     comment="Set DCS Retribution scramble border"
                 )
-                border_trigger.add_action(
-                    DoScript(String("\n".join(border_lines)))
-                )
+                border_trigger.add_action(DoScript(String("\n".join(border_lines))))
                 self.mission.triggerrules.triggers.append(border_trigger)
 
     def _scramble_border_points(self) -> list[tuple[float, float]] | None:

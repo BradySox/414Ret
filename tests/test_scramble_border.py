@@ -1,4 +1,5 @@
 """Tests for the reactive-scramble RED airspace border emitted to Lua."""
+
 from __future__ import annotations
 
 from game.missiongenerator.luagenerator import LuaGenerator

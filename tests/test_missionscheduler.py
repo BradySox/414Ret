@@ -4,6 +4,7 @@ These exercise the overlapping-wave logic for land control points without
 standing up a full Game/Coalition by faking the minimal surface the scheduler
 touches and stubbing TotEstimator.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -90,7 +91,7 @@ def _schedule(overlap: timedelta, rounds: int) -> list[datetime]:
     target = _LandTarget()
     packages = [_FakePackage(target) for _ in range(rounds)]
     coalition = _FakeCoalition(packages, _FakeSettings(overlap))
-    scheduler = ms.MissionScheduler(coalition, timedelta(minutes=120))
+    scheduler = ms.MissionScheduler(coalition, timedelta(minutes=120))  # type: ignore[arg-type]
     scheduler.schedule_missions(NOW)
     tots = [p.time_over_target for p in packages]
     assert all(t is not None for t in tots)

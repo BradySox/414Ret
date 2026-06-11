@@ -100,13 +100,9 @@ class MissionScheduler:
                     previous_start = previous_cap_start_time.get(package.target)
                     if previous_start is None:
                         jitter_ceiling = int(
-                            min(
-                                barcap_overlap, timedelta(minutes=5)
-                            ).total_seconds()
+                            min(barcap_overlap, timedelta(minutes=5)).total_seconds()
                         )
-                        jitter = timedelta(
-                            seconds=random.randint(0, jitter_ceiling)
-                        )
+                        jitter = timedelta(seconds=random.randint(0, jitter_ceiling))
                         package.time_over_target = tot + jitter
                     else:
                         interval = cap_patrol_duration(package) - barcap_overlap

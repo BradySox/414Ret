@@ -48,8 +48,7 @@ THIS_DIR = Path(__file__).parent
 def _uses_unsupported_lua_table_indices(lua_text: str) -> bool:
     local_names = set(re.findall(r"^\s*local\s+([A-Za-z_]\w*)\s*=", lua_text, re.M))
     return any(
-        re.search(rf"\[\s*{re.escape(name)}\s*\]\s*=", lua_text)
-        for name in local_names
+        re.search(rf"\[\s*{re.escape(name)}\s*\]\s*=", lua_text) for name in local_names
     )
 
 
@@ -72,6 +71,7 @@ def _patch_pydcs_payload_loader() -> None:
 
         if FlyingType._UnitPayloadGlobals is None:
             from dcs import task
+
             FlyingType._UnitPayloadGlobals = {
                 v.internal_name: v.id for k, v in task.MainTask.map.items()
             }
@@ -89,6 +89,7 @@ def _patch_pydcs_payload_loader() -> None:
                     FlyingType._payload_cache[payload_path]
                 except KeyError:
                     import logging as _logging
+
                     _logging.getLogger("pydcs").exception(
                         "Failed to parse Lua code in %s", payload_path
                     )
@@ -120,6 +121,7 @@ def _patch_pydcs_payload_loader() -> None:
                         raise
                     except ValueError:
                         import logging as _logging
+
                         _logging.getLogger("pydcs").warning(
                             "Skipping payload file with unsupported Lua syntax "
                             "(local variable indices): %s",

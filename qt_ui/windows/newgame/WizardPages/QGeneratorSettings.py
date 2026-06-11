@@ -347,9 +347,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.chinesemilitaryassetspack.setChecked(
             s.get("chinesemilitaryassetspack", False)
         )
-        self.iranmilitaryassetspack.setChecked(
-            s.get("iranmilitaryassetspack", False)
-        )
+        self.iranmilitaryassetspack.setChecked(s.get("iranmilitaryassetspack", False))
         self.russianmilitaryassetspack.setChecked(
             s.get("russianmilitaryassetspack", False)
         )

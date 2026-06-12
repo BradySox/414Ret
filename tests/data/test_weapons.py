@@ -23,6 +23,13 @@ def _bare_weapon(clsid: str) -> Weapon:
     return Weapon(clsid=clsid, weapon_group=group)
 
 
+def _f16c_50() -> AircraftType:
+    return cast(
+        AircraftType,
+        SimpleNamespace(dcs_unit_type=F_16C_50, has_built_in_target_pod=False),
+    )
+
+
 @pytest.mark.parametrize(
     "clsid",
     [
@@ -60,12 +67,46 @@ def test_aaq_33_has_era_data_and_degrades_on_pre_intro_f16() -> None:
     assert weapon.available_on(date(2005, 1, 1), faction) is True
 
     loadout = Loadout("Test", {11: weapon}, date=None)
-    aircraft = cast(AircraftType, SimpleNamespace(dcs_unit_type=F_16C_50))
+    aircraft = _f16c_50()
     degraded = loadout.degrade_for_date(aircraft, date(2004, 1, 1), faction)
 
     degraded_weapon = degraded.pylons.get(11)
-    assert degraded_weapon is not None
-    assert degraded_weapon.weapon_group.name == "AN/AAQ-28 LITENING"
+    assert degraded_weapon is None
+
+
+def test_f16_litening_is_not_available_before_viper_integration_year() -> None:
+    litening = Weapon.with_clsid("{A111396E-D3E8-4b9c-8AC9-2432489304D5}")
+
+    assert litening is not None
+    assert litening.weapon_group.name == "AN/AAQ-28 LITENING"
+    assert litening.weapon_group.introduction_year == 1999
+
+    faction = cast(Faction, SimpleNamespace(weapons_introduction_year_overrides={}))
+    aircraft = _f16c_50()
+    loadout = Loadout("Test", {11: litening}, date=None, is_custom=True)
+
+    degraded = loadout.degrade_for_date(aircraft, date(2002, 1, 1), faction)
+    assert degraded.pylons.get(11) is None
+
+    available = loadout.degrade_for_date(aircraft, date(2005, 1, 1), faction)
+    assert available.pylons.get(11) == litening
+
+
+def test_f16_2002_sead_sweep_keeps_hts_but_removes_targeting_pod() -> None:
+    hts = Weapon.with_clsid("{AN_ASQ_213}")
+    atp = Weapon.with_clsid("{AN_AAQ_33}")
+
+    assert hts is not None
+    assert atp is not None
+
+    faction = cast(Faction, SimpleNamespace(weapons_introduction_year_overrides={}))
+    aircraft = _f16c_50()
+    loadout = Loadout("Retribution SEAD Sweep", {10: hts, 11: atp}, date=None)
+
+    degraded = loadout.degrade_for_date(aircraft, date(2002, 1, 1), faction)
+
+    assert degraded.pylons.get(10) == hts
+    assert degraded.pylons.get(11) is None
 
 
 @pytest.mark.parametrize(

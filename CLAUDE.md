@@ -143,6 +143,18 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   launch (border trigger → cold start → takeoff → intercept) should be re-checked after
   any change to the pool or border logic.
 
+## PINNED — do not modify
+
+- **`resources/plugins/splashdamage3/Splash_Damage_3.4.2_Standard_Retribution.lua`** is the
+  414th's **buddy-tuned** Splash Damage build (softened weapon table, `overall_scaling=0.6`,
+  `rocket_multiplier=0.8`, `cluster_enabled=true`, `static_damage_boost=1`,
+  `game_messages=false`, shaped-charge rocket flags). **Do NOT overwrite it from upstream
+  stevey/source** — the 414th prefers this version. If you must update it, diff against the
+  tuned build and preserve these values; don't blind-copy.
+  - Gotcha: `sd3-config.lua` + `plugin.json` defaults OVERRIDE the script's scalar options at
+    mission start, so the script's weapon `explTable` applies as-is but those scalars come
+    from `plugin.json` — keep `plugin.json` in sync with the tuned values.
+
 ## Conventions
 
 - Lua plugins: Lua 5.1 only, vanilla DCS units only (no HighDigitSAMs etc.), define

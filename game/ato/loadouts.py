@@ -22,6 +22,11 @@ if TYPE_CHECKING:
 class Loadout:
     F16_LITENING_INTRODUCTION_YEAR = 2005
     F16_LITENING_CLSIDS = {"{A111396E-D3E8-4b9c-8AC9-2432489304D5}"}
+    HORNET_LITENING_INTRODUCTION_YEAR = 2003
+    HORNET_LITENING_CLSIDS = {
+        "{AAQ-28_LEFT}",
+        "{A111396E-D3E8-4b9c-8AC9-2432489304D5}",
+    }
 
     def __init__(
         self,
@@ -100,12 +105,20 @@ class Loadout:
     def _weapon_available_for_aircraft(
         cls, weapon: Weapon, unit_type: AircraftType, date: datetime.date
     ) -> bool:
-        if weapon.clsid not in cls.F16_LITENING_CLSIDS:
-            return True
         aircraft_id = unit_type.dcs_unit_type.id
-        if not aircraft_id.startswith("F-16"):
-            return True
-        return date >= datetime.date(cls.F16_LITENING_INTRODUCTION_YEAR, 1, 1)
+        if (
+            weapon.clsid in cls.F16_LITENING_CLSIDS
+            and aircraft_id.startswith("F-16")
+            and date < datetime.date(cls.F16_LITENING_INTRODUCTION_YEAR, 1, 1)
+        ):
+            return False
+        if (
+            weapon.clsid in cls.HORNET_LITENING_CLSIDS
+            and aircraft_id == "FA-18C_hornet"
+            and date < datetime.date(cls.HORNET_LITENING_INTRODUCTION_YEAR, 1, 1)
+        ):
+            return False
+        return True
 
     def degrade_for_date(
         self,

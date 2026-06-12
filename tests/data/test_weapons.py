@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from typing import cast
 
 import pytest
-from dcs.planes import F_16C_50
+from dcs.planes import F_16C_50, FA_18C_hornet
 
 from game.data.weapons import Weapon, WeaponGroup, WeaponType
 from game.ato.loadouts import Loadout
@@ -27,6 +27,13 @@ def _f16c_50() -> AircraftType:
     return cast(
         AircraftType,
         SimpleNamespace(dcs_unit_type=F_16C_50, has_built_in_target_pod=False),
+    )
+
+
+def _fa_18c_hornet() -> AircraftType:
+    return cast(
+        AircraftType,
+        SimpleNamespace(dcs_unit_type=FA_18C_hornet, has_built_in_target_pod=False),
     )
 
 
@@ -107,6 +114,44 @@ def test_f16_2002_sead_sweep_keeps_hts_but_removes_targeting_pod() -> None:
 
     assert degraded.pylons.get(10) == hts
     assert degraded.pylons.get(11) is None
+
+
+def test_hornet_litening_is_not_available_before_atflir_year() -> None:
+    litening = Weapon.with_clsid("{AAQ-28_LEFT}")
+
+    assert litening is not None
+    assert litening.weapon_group.name == "AN/AAQ-28 LITENING"
+    assert litening.weapon_group.introduction_year == 1999
+
+    faction = cast(Faction, SimpleNamespace(weapons_introduction_year_overrides={}))
+    aircraft = _fa_18c_hornet()
+    loadout = Loadout("Test", {4: litening}, date=None, is_custom=True)
+
+    degraded = loadout.degrade_for_date(aircraft, date(2002, 1, 1), faction)
+    degraded_weapon = degraded.pylons.get(4)
+    assert degraded_weapon is not None
+    assert degraded_weapon.weapon_group.type is not WeaponType.TGP
+
+    available = loadout.degrade_for_date(aircraft, date(2003, 1, 1), faction)
+    assert available.pylons.get(4) == litening
+
+
+def test_hornet_2002_atflir_does_not_fall_back_to_litening() -> None:
+    atflir = Weapon.with_clsid("{AN_ASQ_228}")
+
+    assert atflir is not None
+    assert atflir.weapon_group.name == "AN/ASQ-228 ATFLIR"
+    assert atflir.weapon_group.introduction_year == 2003
+
+    faction = cast(Faction, SimpleNamespace(weapons_introduction_year_overrides={}))
+    aircraft = _fa_18c_hornet()
+    loadout = Loadout("Test", {4: atflir}, date=None)
+
+    degraded = loadout.degrade_for_date(aircraft, date(2002, 1, 1), faction)
+
+    degraded_weapon = degraded.pylons.get(4)
+    assert degraded_weapon is not None
+    assert degraded_weapon.weapon_group.type is not WeaponType.TGP
 
 
 @pytest.mark.parametrize(

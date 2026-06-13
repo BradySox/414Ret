@@ -328,39 +328,33 @@ class MissionGenerator:
         from dcs.mission import StartType as DcsStartType
         from dcs.planes import An_26B
 
-        for group_name, country, is_blue in [
-            ("RAT_CIVILIAN_BLUE", self.p_country, True),
-            ("RAT_CIVILIAN_RED", self.e_country, False),
-        ]:
-            airport = None
-            for cp in self.game.theater.controlpoints:
-                if cp.dcs_airport is None:
-                    continue
-                if cp.captured.is_blue != is_blue:
-                    continue
-                if cp.dcs_airport.free_parking_slots(An_26B):
-                    airport = cp.dcs_airport
-                    break
+        # One neutral template group is enough — RAT clones it at runtime and
+        # routes clones between neutral-coalition airbases only. Park it at any
+        # Retribution-controlled airport that has An-26B parking; coalition doesn't
+        # matter for the template itself.
+        airport = None
+        for cp in self.game.theater.controlpoints:
+            if cp.dcs_airport is not None and cp.dcs_airport.free_parking_slots(An_26B):
+                airport = cp.dcs_airport
+                break
 
-            if airport is None:
-                logging.warning(
-                    "No airport with An-26B parking found for %s coalition — "
-                    "%s template not placed; civilian RAT traffic disabled for this side",
-                    "blue" if is_blue else "red",
-                    group_name,
-                )
-                continue
-
-            group = self.mission.flight_group_from_airport(
-                country=country,
-                name=group_name,
-                aircraft_type=An_26B,
-                airport=airport,
-                maintask=None,
-                start_type=DcsStartType.Cold,
-                group_size=1,
+        if airport is None:
+            logging.warning(
+                "No airport with An-26B parking found — "
+                "RAT_CIVILIAN template not placed; civilian traffic disabled"
             )
-            group.uncontrolled = True
+            return
+
+        group = self.mission.flight_group_from_airport(
+            country=self.e_country,
+            name="RAT_CIVILIAN",
+            aircraft_type=An_26B,
+            airport=airport,
+            maintask=None,
+            start_type=DcsStartType.Cold,
+            group_size=1,
+        )
+        group.uncontrolled = True
 
     def generate_destroyed_units(self) -> None:
         """Add destroyed units to the Mission"""

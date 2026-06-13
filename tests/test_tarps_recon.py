@@ -28,6 +28,13 @@ from game.theater.theatergroundobject import (
 )
 from game.utils import Heading
 
+TOMCAT_VARIANT_IDS = (
+    "F-14A Tomcat (AI)",
+    "F-14A Tomcat (Block 135-GR Late)",
+    "F-14A Tomcat (Block 135-GR Early)",
+    "F-14B Tomcat",
+)
+
 
 def test_tarps_flight_type_is_recon_support() -> None:
     # TARPS is a non-combat recon role: neither air-to-air nor air-to-ground.
@@ -51,18 +58,23 @@ def test_tarps_only_package_identifies_tarps_as_primary_task() -> None:
 
 @pytest.mark.parametrize(
     "variant_id",
-    [
-        "F-14A Tomcat (AI)",
-        "F-14A Tomcat (Block 135-GR Late)",
-        "F-14A Tomcat (Block 135-GR Early)",
-        "F-14B Tomcat",
-    ],
+    TOMCAT_VARIANT_IDS,
 )
 def test_all_tomcat_variants_can_plan_tarps(
     variant_id: str, tmp_path
 ) -> None:
     persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
     assert AircraftType.named(variant_id).capable_of(FlightType.TARPS)
+
+
+@pytest.mark.parametrize("variant_id", TOMCAT_VARIANT_IDS)
+def test_tomcats_do_not_plan_sead_or_sead_sweep(
+    variant_id: str, tmp_path
+) -> None:
+    persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
+    tomcat = AircraftType.named(variant_id)
+    assert not tomcat.capable_of(FlightType.SEAD)
+    assert not tomcat.capable_of(FlightType.SEAD_SWEEP)
 
 
 @pytest.fixture

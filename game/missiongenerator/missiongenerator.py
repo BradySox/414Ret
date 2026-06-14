@@ -332,31 +332,48 @@ class MissionGenerator:
 
     def _spawn_civilian_rat_templates(self) -> None:
         from dcs.mission import StartType as DcsStartType
-        from dcs.planes import An_26B
+        from dcs.planes import An_26B, An_30M, C_130
 
-        # Find any airport with An-26B parking to park the template groups.
-        # Coalition of the template doesn't matter — RAT clones it at runtime.
-        airport = None
-        for cp in self.game.theater.controlpoints:
-            if cp.dcs_airport is not None and cp.dcs_airport.free_parking_slots(An_26B):
-                airport = cp.dcs_airport
-                break
+        # Civilian traffic is a mix of C-130 and Antonov transports so the
+        # background flights aren't all the same airframe. RAT clones these
+        # late-activated templates at runtime; the templates themselves never
+        # activate.
+        templates = (
+            ("RAT_CIV_C130", C_130),
+            ("RAT_CIV_AN26", An_26B),
+            ("RAT_CIV_AN30", An_30M),
+        )
 
-        if airport is None:
-            logging.warning(
-                "No airport with An-26B parking found — "
-                "RAT_CIVILIAN template not placed; civilian traffic disabled"
-            )
-            return
+        # Park the templates as neutral-coalition civilians so the spawned
+        # clones read as neutral rather than belligerent. Fall back to the red
+        # country only if the mission somehow has no neutral countries.
+        neutral_countries = list(self.mission.coalition["neutrals"].countries.values())
+        country = neutral_countries[0] if neutral_countries else self.e_country
 
-        for name, country in (
-            ("RAT_CIVILIAN", self.e_country),
-            ("RAT_BLUE", self.p_country),
-        ):
+        for name, aircraft_type in templates:
+            # Find any airport with parking for this template type. The host
+            # airport's coalition is irrelevant — the group is never activated.
+            airport = None
+            for cp in self.game.theater.controlpoints:
+                if cp.dcs_airport is not None and cp.dcs_airport.free_parking_slots(
+                    aircraft_type
+                ):
+                    airport = cp.dcs_airport
+                    break
+
+            if airport is None:
+                logging.warning(
+                    "No airport with %s parking found — %s civilian template "
+                    "not placed",
+                    aircraft_type.id,
+                    name,
+                )
+                continue
+
             group = self.mission.flight_group_from_airport(
                 country=country,
                 name=name,
-                aircraft_type=An_26B,
+                aircraft_type=aircraft_type,
                 airport=airport,
                 maintask=None,
                 start_type=DcsStartType.Cold,

@@ -108,7 +108,7 @@ class LuaGenerator:
         Bakes the list of every Retribution-controlled airbase into a DO SCRIPT
         preamble so the Lua can compute the civilian pool at runtime by subtracting
         those from world.getAirbases(). Works on any terrain without modification.
-        MOOSE and the RAT_CIVILIAN_RED/BLUE template groups must already be present.
+        MOOSE and the RAT_CIV_* template groups must already be present.
         """
         script_path = Path("./resources/plugins/civilian_traffic/civilian_traffic.lua")
         if not script_path.exists():

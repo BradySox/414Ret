@@ -88,7 +88,25 @@ A per-feature breakdown with file paths lives in [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
-## Running it
+## Download / Latest build
+
+Pre-built `.exe` releases are published automatically every time `main` is updated.
+No GitHub account needed — just grab the zip and run.
+
+**[Download latest build](https://github.com/bradyccox/414Ret/releases/tag/latest)**
+
+1. Download `414th-retribution-latest.zip` from the link above.
+2. Extract anywhere.
+3. Run `retribution_main.exe`.
+4. Point it at your DCS World install on first launch.
+
+> The `latest` release is a rolling pre-release that always reflects the current `main`
+> branch. For pinned campaign builds, use versioned releases (tagged `v1.x.x`) if
+> available.
+
+---
+
+## Running it (from source)
 
 Same as upstream Retribution. Quick start (Windows, PowerShell):
 

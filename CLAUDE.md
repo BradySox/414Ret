@@ -308,6 +308,54 @@ units. Enable per-game via the plugins UI ("Troops In Contact").
 - The 414th's primary "all features" working branch in the dev checkout is
   `414th-all-features`; `main` here = that + the Iran pack + a Black/mypy lint pass.
 
+## CI & Release pipeline
+
+### How it works
+
+Every push to `main` runs **three workflows in sequence**:
+
+1. **`lint.yml`** — Black (`--check .` whole tree) + mypy (`game tests` only).
+2. **`test.yml`** — pytest.
+3. **`414th-latest.yml`** (needs lint + test) — PyInstaller build on `windows-latest`,
+   then **upserts a rolling pre-release** tagged `latest` on
+   `https://github.com/bradyccox/414Ret/releases/tag/latest`.
+
+The release asset (`414th-retribution-latest.zip`) is what squadron members download
+and run (`retribution_main.exe`). It always reflects the current `main`.
+
+A fourth workflow (`release.yml`, inherited from upstream) triggers on **semver tags**
+(e.g. `v1.0.0`) to produce a versioned, non-pre-release build. Use that when you need
+to pin a specific build for a campaign. It does NOT affect the rolling `latest`.
+
+### PINNED — do NOT touch these
+
+- **Do NOT delete or manually push the `latest` git tag.** It is owned by
+  `softprops/action-gh-release@v2` inside `414th-latest.yml`. Deleting it or
+  force-pushing a conflicting tag will break the release URL the squadron bookmarks.
+- **Do NOT modify `.github/workflows/414th-latest.yml`** without understanding that it
+  is the sole rolling-release mechanism. Breaking it means no new `.exe` for the
+  squadron. If you must change it, test in a branch first and verify the `latest`
+  release on GitHub after merging.
+- **Do NOT add Discord webhook secrets or other org-level secrets** to this workflow —
+  those are upstream-only. The workflow uses only `GITHUB_TOKEN` (auto-provided).
+
+### Download URL (permanent, share with squadron)
+
+```
+https://github.com/bradyccox/414Ret/releases/tag/latest
+```
+
+Direct asset link pattern (may change if the filename changes):
+```
+https://github.com/bradyccox/414Ret/releases/latest/download/414th-retribution-latest.zip
+```
+
+### Build number / SHA stamping
+
+The workflow writes `resources/buildnumber` and `resources/gitsha` before PyInstaller
+runs, so `About` dialogs (if wired up) show the CI run number and commit SHA. These
+files are generated at build time and are **not** in the repo.
+
 ## Still in flight / deferred
 
 - Full 256-aircraft YAML mission-preference rebalance is **held** until in-game

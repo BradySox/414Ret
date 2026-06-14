@@ -23,10 +23,13 @@ stacked on top (newest first):
 - **`FlightType.JAMMING`** - standoff electronic-warfare support flown by the C-130J,
   acting as an EC-130H Compass Call / RC-130H Rivet Joint platform. Driven by the
   bundled `c130j_mission_systems.lua` plugin.
-- **`FlightType.TARPS`** - player-flown F-14 photo-reconnaissance. Flies a single
-  overflight of the target ~5 minutes behind the strikers (post-strike BDA pass)
-  carrying the `{F14-TARPS}` camera pod. Auto-planned into strike packages against
-  targets worth imaging.
+- **`FlightType.TARPS`** - player-flown F-14 photo-reconnaissance (all F-14 variants).
+  Flies a single overflight ~5 minutes behind the strikers carrying the `{F14-TARPS}`
+  pod (station 6, editor-verified). Auto-planned into Strike / DEAD packages.
+- **BDA fog-of-war** - struck enemy targets hold a separate player-visible confirmed
+  state that diverges from sim truth until a TARPS pass resolves it. The map, unit
+  labels, SAM range rings, and ground-object dialogs all show the confirmed picture;
+  AI planning and threat math always use true state. Unstruck targets render normally.
 
 ### Air-defense planning rework
 - **Per-squadron QRA intercept reserve** from upstream PR `#782`. BARCAP-capable
@@ -42,6 +45,22 @@ stacked on top (newest first):
 - **Dog Ear (Sborka) search radar** now fielded at major Soviet IADS nodes (SA-2/3/5,
   S-300) and standalone Soviet SHORAD, not just bare SHORAD sites.
 - OPFOR-aggressiveness direction fix and CAS / Armed-Recon engagement-range bumps.
+
+### UI transparency
+- **Target Intel panel** in every ground-object dialog — type, allegiance, valid
+  mission types, known live/destroyed unit counts, detection/threat range, IADS
+  membership, MFD visibility, and capturable/purchasable status.
+- **Mission Impact summary** in the debrief — bases captured/lost, runway damage, and
+  loss overview for both sides, above the detailed casualty tables.
+- **Package context bar** — the ATO package window now shows primary task, flight
+  count, player slots, actual TOT (`15:32:00 (ASAP)`), and departure bases in one line.
+- **Flight-creation context** — a live summary explains the selected task/aircraft/
+  squadron choice; squadron tooltips show role, spare aircraft, base, and target distance.
+- **Player target location precision** setting (`Exact` / `Approximate target area`) —
+  Approximate mode offsets player steerpoints 2–6 NM from the real target and suppresses
+  exact F10 marks and kneeboard coordinates, so players have to visually acquire targets.
+- **Building card cleanup** — scenery-object building cards no longer show the upstream
+  "Missing Recon Picture" placeholder; cards with no icon show a compact name + value layout.
 
 ### Quality-of-life & robustness
 - **Auto-hide mobile SAMs (SHORAD/AAA/MANPAD) on the MFD** at campaign generation

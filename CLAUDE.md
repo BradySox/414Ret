@@ -12,8 +12,8 @@ deep version for the next coding session.
 ## TL;DR
 
 - Base: upstream `dcs-retribution/dcs-retribution` `dev` @ `dce851ea`.
-- On top: SCRAMBLE + JAMMING flight types, an air-defense planning rework, MFD/robustness
-  fixes, and the CurrentHill Iran assets pack. ~25 commits.
+- On top: JAMMING + TARPS flight types, BDA fog-of-war, air-defense planning rework,
+  UI transparency improvements, MFD/robustness fixes, and the CurrentHill assets packs.
 - **Lua 5.1** sandbox for the mission plugins (no `os`/`io`, no `goto`, definition order
   matters). Python side is normal Python 3.11.
 - CI gates: **Black** (`black --check .`) and **mypy** (`mypy game` + `mypy tests` only -
@@ -113,7 +113,84 @@ only); the burn-through model intentionally RAISES jam probability with distance
 jamming has flat altitude-independent range; the missile-spoof curve is intentionally steep
 at close range. Don't "fix" these.
 
-### 3. Air-defense planning rework
+### 3. TARPS photo-reconnaissance + BDA fog-of-war
+`FlightType.TARPS` adds player-flown F-14 recon. All F-14 variants carry the
+`{F14-TARPS}` pod on station 6 (editor-verified). The auto-planner appends a single
+TARPS sortie to Strike / DEAD packages when `auto_add_tarps_recon` is enabled and a
+TARPS-capable squadron is available.
+
+- Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
+  `configure_tarps()` — single overflight waypoint ~5 min behind the strikers.
+- Auto-planner: `game/commander/packagefulfiller.py` `_try_add_tarps_recon()` with
+  explicit debug logging for every skip reason.
+- Aircraft: `TARPS: 700` task priority in `resources/units/aircraft/F-14*.yaml`;
+  payloads in `resources/customized_payloads/F-14*.lua`.
+- Tests: `tests/test_tarps_recon.py`.
+
+**BDA fog-of-war** — struck *enemy* targets hold a separate player-visible confirmed
+state that diverges from sim truth until a TARPS pass resolves it:
+
+- `TheaterUnit` / `TheaterGroup` carry `_confirmed_alive` (defaults to true so old
+  saves load cleanly). `sync_confirmed_status()` snaps it to truth.
+  `alive_for_player(viewer)` returns confirmed state for enemies, true state for
+  friendlies. Files: `game/theater/theatergroup.py`, `game/theater/theatergroundobject.py`.
+- `game/sim/missionresultsprocessor.py` applies true kills first, then calls
+  `sync_confirmed_status()` only on friendly TGOs and enemy TGOs covered by a surviving
+  TARPS sortie this turn.
+- Map serialization (`game/server/tgos/models.py`) reads `alive_for_player` so the
+  Leaflet map, unit labels, SAM range rings, and dead/damaged icons all show the
+  confirmed picture, not ground truth.
+- UI reads confirmed state: `qt_ui/windows/groundobject/QBuildingInfo.py`,
+  `qt_ui/windows/groundobject/QGroundObjectMenu.py`,
+  `qt_ui/windows/basemenu/QBaseMenu2.py`.
+- Tests: `tests/test_bda_tarps_reveal.py`.
+
+### 4. UI transparency improvements
+Several player-facing dialogs were reworked to surface planner reasoning instead of
+just raw data.
+
+**Target Intel panel** (`qt_ui/windows/groundobject/QGroundObjectMenu.py`):
+Every ground-object dialog now opens with a read-only `Target Intel` group showing
+target type, allegiance, mission types valid against it, known live/destroyed unit
+counts, detection/threat range, IADS membership, hide-on-MFD flag, and
+capturable/purchasable status.
+
+**Mission Impact summary** (`qt_ui/windows/QDebriefingWindow.py`):
+Debrief prepends a `Mission Impact` group above the casualty tables: mission
+end-state, bases captured/lost, runway damage, and loss counts for both sides.
+
+**Package context bar** (`qt_ui/windows/mission/QPackageDialog.py`):
+The package summary line now renders primary task, flight count, player slots,
+actual TOT (e.g. `TOT: 15:32:00 (ASAP)`), and departure bases in one line.
+
+**Flight-creation context** (`qt_ui/windows/mission/flight/QFlightCreator.py`,
+`qt_ui/windows/mission/flight/SquadronSelector.py`):
+A live summary explains what the selected task/aircraft/squadron choice means.
+Squadron hover text shows primary role, auto-assignability, spare aircraft, base,
+and distance to target.
+
+**Building card cleanup** (`qt_ui/windows/groundobject/QBuildingInfo.py`):
+`SceneryUnit.icon` always returns `"missing"`, so every scenery building previously
+loaded `missing.png` (which contains the literal text "Missing Recon Picture").
+Cards now skip the image widget when no real icon exists and show a compact
+name + value layout instead.
+
+### 5. Player target location precision
+`TargetIntelPrecision` enum (`EXACT` / `APPROXIMATE`) in `game/settings/settings.py`
+controls three behaviors together when set to Approximate:
+
+- Player-only target steerpoints are offset to a randomised area within 2–6 NM of
+  the real target rather than placed exactly on it. The waypoint is renamed
+  `TARGET AREA`. AI attack logic is unaffected.
+  (`game/ato/flightplans/waypointbuilder.py` `_player_visible_target_area_position()`)
+- Objective F10 map marks are suppressed even if `generate_marks` is on.
+  (`game/missiongenerator/triggergenerator.py`,
+  `game/pretense/pretensetriggergenerator.py`)
+- Strike / SEAD / DEAD kneeboard target pages omit exact coordinates and instead
+  cue the player to search the target area.
+  (`game/missiongenerator/kneeboard.py`)
+
+### 6. Air-defense planning rework
 Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this for intent).
 - Overlapping CAP waves + jitter: `game/commander/missionscheduler.py` (uses
   `barcap_overlap_time`); rounds math in `game/commander/theaterstate.py`.
@@ -127,7 +204,7 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
   10->15 nm, `armed_recon_engagement_range_distance` 5->10 nm).
 
-### 4. Auto-hide mobile SAMs on MFD
+### 7. Auto-hide mobile SAMs on MFD
 - Task-level (`game/armedforces/forcegroup.py`): `hide_on_mfd` field,
   `_MOBILE_TASKS = {SHORAD, AAA}`, propagated through `for_layout()` /
   `from_preset_group()` / `create_ground_object_for_layout()`. `hide_on_mfd` is a
@@ -141,7 +218,7 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   TELAR and radar/launcher classes are excluded on purpose, so standalone mobile
   MERAD/LORAD sites (SA-6/11, SA-2/3/5/10) stay visible/targetable for SEAD.
 
-### 5. Robustness / crash fixes
+### 8. Robustness / crash fixes
 - Flight-combat-exit `IndexError`: `game/ato/flightstate/inflight.py` guards in
   `__init__` and `next_waypoint_state()`.
 - AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
@@ -150,7 +227,7 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   pydcs Lua parser rejects with `ValueError`): patched loader in `qt_ui/main.py`
   (`_patch_pydcs_payload_loader()`), plus the offending files are skipped with a warning.
 
-### 6. TIC - Troops In Contact frontline battle sim (plugin, default ON)
+### 9. TIC - Troops In Contact frontline battle sim (plugin, default ON)
 Grendel's TIC v1.1 (MIT, lua globals named `GLSCO*`) replaces vanilla ground AI
 with formation-keeping, prolonged scripted firefights for frontline maneuver
 units. Enable per-game via the plugins UI ("Troops In Contact").
@@ -209,7 +286,7 @@ units. Enable per-game via the plugins UI ("Troops In Contact").
 - Do NOT call `ScanAndRegisterFormations` twice and do not ME-activate TIC
   groups - TIC owns their lifecycle.
 
-### 7. CurrentHill Iran assets pack
+### 10. CurrentHill Iran assets pack
 - Unit defs: `pydcs_extensions/iranmilitaryassetspack/` (Shahed-136 `CH_Shahed136`,
   `IranFAC_MG`, `IranFAC_MG_AShM`), re-exported from `pydcs_extensions/__init__.py`.
 - Radar DB: `game/data/radar_db.py`. Mod removal logic: `game/factions/faction.py`.

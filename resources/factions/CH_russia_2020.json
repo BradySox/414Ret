@@ -20,6 +20,7 @@
     "MIG-29-FULCRUM",
     "MiG-29S Fulcrum-C",
     "MiG-31 Foxhound",
+    "MiG-31BM Foxhound",
     "Su-24M Fencer-D",
     "Su-25 Frogfoot",
     "Su-25T Frogfoot",
@@ -61,7 +62,9 @@
   ],
   "logistics_units": [
     "LUV UAZ-469 Jeep",
-    "Truck Ural-375"
+    "Truck Ural-375",
+    "Truck GAZ-3307",
+    "Truck GAZ-3308"
   ],
   "infantry_units": [
     "Infantry AK-74 Rus",
@@ -88,6 +91,8 @@
     "S-350"
   ],
   "naval_units": [
+    "Battlecruiser 1144.2 Pyotr Velikiy",
+    "CV 1143.5 Admiral Kuznetsov (2017)",
     "Project 22160 Patrol Ship [CH]",
     "Project 22160 Patrol Ship with Tor M2KM [CH]",
     "[CH] Project 22350 Admiral Gorshkov Frigate",

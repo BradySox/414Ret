@@ -32,10 +32,12 @@
     "BMD-1",
     "BMP-1",
     "BRDM-2",
+    "APC BTR-60",
     "BTR-80",
     "PT-76",
     "SAM SA-8 Osa \"Gecko\" TEL",
-    "T-55A"
+    "T-55A",
+    "T-62"
   ],
   "artillery_units": [
     "2S1 Gvozdika",
@@ -49,7 +51,8 @@
   "infantry_units": [
     "Infantry AK-74 Rus",
     "Infantry RPG",
-    "Mortar 2B11 120mm"
+    "Mortar 2B11 120mm",
+    "SAM SA-14 Strela-3 manpad"
   ],
   "preset_groups": [
     "SA-5/S-200",

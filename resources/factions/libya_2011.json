@@ -21,10 +21,13 @@
   ],
   "frontline_units": [
     "BMP-1",
+    "BMP-2",
     "BRDM-2",
     "PT-76",
     "SAM SA-8 Osa \"Gecko\" TEL",
     "T-55A",
+    "T-62",
+    "MBT T-62M",
     "T-72B with Kontakt-1 ERA",
     "ZSU-23-4 Shilka"
   ],
@@ -38,6 +41,7 @@
   "infantry_units": [
     "Insurgent AK-74",
     "MANPADS SA-18 Igla \"Grouse\"",
+    "SAM SA-14 Strela-3 manpad",
     "Paratrooper RPG-16"
   ],
   "preset_groups": [

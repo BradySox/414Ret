@@ -38,6 +38,7 @@
     "BMP-2",
     "BTR-80",
     "SA-13 Gopher (9K35 Strela-10M3)",
+    "MBT T-80B",
     "T-72B with Kontakt-1 ERA",
     "T-80UD"
   ],
@@ -47,7 +48,9 @@
   ],
   "logistics_units": [
     "LUV UAZ-469 Jeep",
-    "Truck Ural-375"
+    "Truck Ural-375",
+    "Truck GAZ-3307",
+    "Truck GAZ-3308"
   ],
   "infantry_units": [
     "Infantry AK-74 Rus",

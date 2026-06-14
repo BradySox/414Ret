@@ -18,6 +18,7 @@
     "MIG-29-FULCRUM",
     "MiG-29S Fulcrum-C",
     "MiG-31 Foxhound",
+    "MiG-31BM Foxhound",
     "Su-24M Fencer-D",
     "Su-25 Frogfoot",
     "Su-25T Frogfoot",
@@ -61,11 +62,14 @@
   ],
   "logistics_units": [
     "LUV UAZ-469 Jeep",
-    "Truck Ural-375"
+    "Truck Ural-375",
+    "Truck GAZ-3307",
+    "Truck GAZ-3308"
   ],
   "infantry_units": [
     "Infantry AK-74 Rus",
     "MANPADS SA-18 Igla-S \"Grouse\"",
+    "SAM SA-24 Igla-S manpad",
     "Paratrooper AKS",
     "Paratrooper RPG-16"
   ],
@@ -84,9 +88,12 @@
     "Russian Navy"
   ],
   "naval_units": [
+    "Battlecruiser 1144.2 Pyotr Velikiy",
     "Frigate 1135M Rezky",
+    "Frigate 11540 Neustrashimy",
     "Corvette 1241.1 Molniya",
     "CV 1143.5 Admiral Kuznetsov",
+    "CV 1143.5 Admiral Kuznetsov (2017)",
     "LS Ropucha",
     "SSK 636 Improved Kilo"
   ],

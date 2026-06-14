@@ -15,6 +15,7 @@
     "UH-1H Iroquois"
   ],
   "awacs": [
+    "E-7A Wedgetail",
     "E-3A"
   ],
   "tankers": [
@@ -53,7 +54,8 @@
     "HEMTT C-RAM Phalanx"
   ],
   "requirements": {
-    "C-130J-30 Super Hercules Mod by Anubis": "https://forums.eagle.ru/topic/252075-dcs-super-hercules-mod-by-anubis/"
+    "C-130J-30 Super Hercules Mod by Anubis": "https://forums.eagle.ru/topic/252075-dcs-super-hercules-mod-by-anubis/",
+    "E-7A Wedgetail (CLP)": "https://forums.eagle.ru/topic/256878-e-7a-wedgetail-awac-aircraft"
   },
   "carrier_names": [],
   "helicopter_carrier_names": [

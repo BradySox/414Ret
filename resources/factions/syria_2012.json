@@ -30,11 +30,14 @@
     "BMP-1",
     "BMP-2",
     "BRDM-2",
+    "APC BTR-70",
     "BTR-80",
     "Cobra",
     "MT-LB",
     "PT-76",
     "T-55A",
+    "T-62",
+    "MBT T-62M",
     "T-72B with Kontakt-1 ERA",
     "T-90A",
     "ZSU-57-2 'Sparka'"
@@ -52,6 +55,7 @@
   "infantry_units": [
     "Infantry AK-74 Rus",
     "MANPADS SA-18 Igla-S \"Grouse\"",
+    "SAM SA-14 Strela-3 manpad",
     "Paratrooper AKS",
     "Paratrooper RPG-16"
   ],

@@ -19,6 +19,8 @@
     "KC-135 Stratotanker"
   ],
   "frontline_units": [
+    "Strv 103 MBT",
+    "CV9040 IFV",
     "FV510 Warrior",
     "Leopard 2A4",
     "M1097 Heavy HMMWV Avenger",
@@ -37,11 +39,13 @@
     "Hawk"
   ],
   "naval_units": [
-    "FFG Oliver Hazard Perry"
+    "FFG Oliver Hazard Perry",
+    "Strb 90 FAC"
   ],
   "missiles": [],
   "air_defense_units": [
     "SAM Hawk SR (AN/MPQ-50)",
+    "Lvkv 9040 SPAAG",
     "M1097 Heavy HMMWV Avenger"
   ],
   "has_jtac": true,

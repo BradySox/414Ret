@@ -179,7 +179,9 @@ class TheaterUnit:
     def detection_range_for_player(self, player: Player) -> Distance:
         unit_range = getattr(self.type, "detection_range", None)
         return meters(
-            unit_range if unit_range is not None and self.alive_for_player(player) else 0
+            unit_range
+            if unit_range is not None and self.alive_for_player(player)
+            else 0
         )
 
     @property
@@ -190,7 +192,9 @@ class TheaterUnit:
     def threat_range_for_player(self, player: Player) -> Distance:
         unit_range = getattr(self.type, "threat_range", None)
         return meters(
-            unit_range if unit_range is not None and self.alive_for_player(player) else 0
+            unit_range
+            if unit_range is not None and self.alive_for_player(player)
+            else 0
         )
 
     def rotate_heading_clockwise(self, rotation: Heading) -> None:
@@ -338,7 +342,9 @@ class TheaterGroup:
             if unit.type in TRACK_RADARS:
                 live_trs.add(unit.type)
             elif unit.type in TELARS:
-                max_telar_range = max(max_telar_range, unit.threat_range_for_player(player))
+                max_telar_range = max(
+                    max_telar_range, unit.threat_range_for_player(player)
+                )
             elif (
                 issubclass(unit.type, VehicleType)
                 and unit.type in LAUNCHER_TRACKER_PAIRS

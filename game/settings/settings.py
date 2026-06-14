@@ -69,6 +69,12 @@ class CombatResolutionMethod(Enum):
     SKIP = "Skip combat"
 
 
+@unique
+class TargetIntelPrecision(Enum):
+    EXACT = "Exact target coordinates"
+    APPROXIMATE = "Approximate target area"
+
+
 DIFFICULTY_PAGE = "Difficulty"
 
 AI_DIFFICULTY_SECTION = "AI Difficulty"
@@ -973,6 +979,21 @@ class Settings:
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         default=True,
+    )
+    target_intel_precision: TargetIntelPrecision = choices_option(
+        "Player target location precision",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        choices={
+            "Exact target coordinates": TargetIntelPrecision.EXACT,
+            "Approximate target area": TargetIntelPrecision.APPROXIMATE,
+        },
+        default=TargetIntelPrecision.EXACT,
+        detail=(
+            "Approximate mode offsets player-facing target steerpoints into a nearby "
+            "search area, suppresses objective F10 map marks, and removes exact "
+            "target coordinates from strike/SEAD kneeboards."
+        ),
     )
     eplrs_enabled: bool = boolean_option(
         "Enable EPLRS",

@@ -7,6 +7,7 @@ target gate that decides which targets get a TARPS pass.
 """
 
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -28,7 +29,7 @@ from game.theater.theatergroundobject import (
 )
 from game.utils import Heading
 
-TOMCAT_VARIANT_IDS = (
+TOMCAT_VARIANT_IDS: tuple[str, ...] = (
     "F-14A Tomcat (AI)",
     "F-14A Tomcat (Block 135-GR Late)",
     "F-14A Tomcat (Block 135-GR Early)",
@@ -60,16 +61,14 @@ def test_tarps_only_package_identifies_tarps_as_primary_task() -> None:
     "variant_id",
     TOMCAT_VARIANT_IDS,
 )
-def test_all_tomcat_variants_can_plan_tarps(
-    variant_id: str, tmp_path
-) -> None:
+def test_all_tomcat_variants_can_plan_tarps(variant_id: str, tmp_path: Path) -> None:
     persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
     assert AircraftType.named(variant_id).capable_of(FlightType.TARPS)
 
 
 @pytest.mark.parametrize("variant_id", TOMCAT_VARIANT_IDS)
 def test_tomcats_do_not_plan_sead_or_sead_sweep(
-    variant_id: str, tmp_path
+    variant_id: str, tmp_path: Path
 ) -> None:
     persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
     tomcat = AircraftType.named(variant_id)

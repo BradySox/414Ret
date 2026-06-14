@@ -1190,9 +1190,11 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
 
     def ammo_depot_count_for(self, player: Player, alive_only: bool = False) -> int:
         return sum(
-            ammo_depot.alive_unit_count_for(player)
-            if alive_only
-            else ammo_depot.unit_count
+            (
+                ammo_depot.alive_unit_count_for(player)
+                if alive_only
+                else ammo_depot.unit_count
+            )
             for ammo_depot in self.all_ammo_depots
         )
 

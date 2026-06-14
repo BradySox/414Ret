@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 from dcs.mapping import Point
@@ -14,6 +14,7 @@ from game.theater import Player
 from game.theater.controlpoint import OffMapSpawn
 from game.theater.presetlocation import PresetLocation
 from game.theater.theatergroundobject import SamGroundObject
+from game.unitmap import TheaterUnitMapping
 from game.utils import Heading, meters
 
 
@@ -59,12 +60,12 @@ class FakeUnit:
         suffix = " [DEAD]" if not self.alive_for_player(player) else ""
         return f"<b>Fake SAM</b>{suffix}"
 
-    def threat_range_for_player(self, player: Player):
+    def threat_range_for_player(self, player: Player) -> Any:
         if not self.alive_for_player(player):
             return meters(0)
         return meters(self.threat_meters)
 
-    def detection_range_for_player(self, player: Player):
+    def detection_range_for_player(self, player: Player) -> Any:
         if not self.alive_for_player(player):
             return meters(0)
         return meters(self.detection_meters)
@@ -86,23 +87,29 @@ class FakeGroup:
     def alive_units_for_player(self, player: Player) -> int:
         return sum(unit.alive_for_player(player) for unit in self.units)
 
-    def max_threat_range_for_player(self, player: Player):
+    def max_threat_range_for_player(self, player: Player) -> Any:
         return max(
-            (unit.threat_range_for_player(player) for unit in self.units), default=meters(0)
+            (unit.threat_range_for_player(player) for unit in self.units),
+            default=meters(0),
         )
 
-    def max_detection_range_for_player(self, player: Player):
+    def max_detection_range_for_player(self, player: Player) -> Any:
         return max(
             (unit.detection_range_for_player(player) for unit in self.units),
             default=meters(0),
         )
 
 
+class EnemySamGroundObject(SamGroundObject):
+    def is_friendly(self, to_player: Player) -> bool:
+        return False
+
+
 def _enemy_sam() -> tuple[SamGroundObject, FakeUnit]:
     location = PresetLocation(
         name="target",
         position=Point(0, 0, None),  # type: ignore[arg-type]
-        heading=Heading(0),  # type: ignore[arg-type]
+        heading=Heading(0),
     )
     control_point = OffMapSpawn(
         name="enemy-cp",
@@ -110,15 +117,14 @@ def _enemy_sam() -> tuple[SamGroundObject, FakeUnit]:
         theater=None,  # type: ignore[arg-type]
         starts_blue=Player.RED,
     )
-    tgo = SamGroundObject(
+    tgo = EnemySamGroundObject(
         name="Enemy SAM",
         location=location,
         control_point=control_point,
         task=None,
     )
-    tgo.is_friendly = lambda player: False  # type: ignore[method-assign]
     unit = FakeUnit(tgo)
-    tgo.groups = [FakeGroup(tgo, unit)]  # type: ignore[list-item]
+    tgo.groups = cast(Any, [FakeGroup(tgo, unit)])
     return tgo, unit
 
 
@@ -130,11 +136,15 @@ def _processor_with_packages(*packages: Any) -> MissionResultsProcessor:
     return MissionResultsProcessor(game)  # type: ignore[arg-type]
 
 
-def _debrief_with_ground_loss(unit: FakeUnit, air_losses: AirLosses | None = None) -> Debriefing:
+def _debrief_with_ground_loss(
+    unit: FakeUnit, air_losses: AirLosses | None = None
+) -> Debriefing:
     debriefing = Debriefing.__new__(Debriefing)
     debriefing.ground_losses = GroundLosses(
         enemy_ground_objects=[
-            SimpleNamespace(theater_unit=unit, dcs_unit=MagicMock()),
+            TheaterUnitMapping(
+                theater_unit=cast(Any, unit), dcs_unit=cast(Any, MagicMock())
+            ),
         ]
     )
     debriefing.air_losses = air_losses or AirLosses(player=[], enemy=[])

@@ -34,7 +34,8 @@ class TgoJs(BaseModel):
     @staticmethod
     def for_tgo(tgo: TheaterGroundObject) -> TgoJs:
         threat_ranges = [
-            group.max_threat_range_for_player(Player.BLUE).meters for group in tgo.groups
+            group.max_threat_range_for_player(Player.BLUE).meters
+            for group in tgo.groups
         ]
         detection_ranges = [
             group.max_detection_range_for_player(Player.BLUE).meters

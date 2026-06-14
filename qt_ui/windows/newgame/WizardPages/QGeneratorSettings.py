@@ -116,6 +116,10 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.registerField("ov10a_bronco", self.ov10a_bronco)
         self.vietnamwarvessels = QtWidgets.QCheckBox()
         self.registerField("vietnamwarvessels", self.vietnamwarvessels)
+        self.fa_18efg = QtWidgets.QCheckBox()
+        self.registerField("fa_18efg", self.fa_18efg)
+        self.fa18ef_tanker = QtWidgets.QCheckBox()
+        self.registerField("fa18ef_tanker", self.fa18ef_tanker)
 
         modHelpText = QtWidgets.QLabel(
             "<p>Select the mods you have installed. If your chosen factions support them, you'll be able to use these mods in your campaign.</p>"
@@ -161,6 +165,8 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             ("OH-6 Vietnam Asset Pack (v1.0)", self.oh_6_vietnamassetpack),
             ("OV-10A Bronco", self.ov10a_bronco),
             ("Vietnam War Vessels (v3.0.0 by TeTeT)", self.vietnamwarvessels),
+            ("CJS FA-18E/F/G Super Hornet (v2.4)", self.fa_18efg),
+            ("CJS FA-18E/F Super Hornet Tanker (v2.4)", self.fa18ef_tanker),
         ]
 
         for i in range(len(mod_pairs)):
@@ -219,3 +225,5 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.oh_6_vietnamassetpack.setChecked(s.get("oh_6_vietnamassetpack", False))
         self.ov10a_bronco.setChecked(s.get("ov10a_bronco", False))
         self.vietnamwarvessels.setChecked(s.get("vietnamwarvessels", False))
+        self.fa_18efg.setChecked(s.get("fa_18efg", False))
+        self.fa18ef_tanker.setChecked(s.get("fa18ef_tanker", False))

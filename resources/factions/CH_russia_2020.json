@@ -36,7 +36,7 @@
         "Su-34 Fullback",
         "Tu-142 Bear-F",
         "Tu-22M3 Backfire-C",
-        "[CH] Tu-160M2",
+        "[CH] Tu-160M2"
     ],
     "awacs": ["A-50"],
     "tankers": ["IL-78M"],
@@ -48,28 +48,28 @@
         "[CH] T-80BVM MBT",
         "[CH] BMD-4 IFV",
         "IFV BMPT Terminator [CH]",
-        "MBT T-64BV Type 2017 [CH]",
+        "MBT T-64BV Type 2017 [CH]"
     ],
     "artillery_units": ["[CH] 2S35 SPG", "MLRS TOS-1A Solntsepyok [CH]"],
     "logistics_units": [
         "LUV UAZ-469 Jeep",
         "Truck Ural-375",
         "Truck GAZ-3307",
-        "Truck GAZ-3308",
+        "Truck GAZ-3308"
     ],
     "infantry_units": [
         "Infantry AK-74 Rus",
-        'MANPADS SA-18 Igla-S "Grouse"',
+        "MANPADS SA-18 Igla-S \"Grouse\"",
         "Paratrooper AKS",
         "Paratrooper RPG-16",
         "[CH] DShK HMG",
         "[CH] 9M133 ATGM Soldier",
-        "[CH] Kord HMG Soldier",
+        "[CH] Kord HMG Soldier"
     ],
     "missiles": [
         "[CH] Iskander-M SRBM",
         "SRBM 9K720 Iskander HE [CH]",
-        "SRBM 9K720 Iskander CM [CH]",
+        "SRBM 9K720 Iskander CM [CH]"
     ],
     "preset_groups": [
         "BAL LBASM",
@@ -79,7 +79,7 @@
         "SA-10/S-300PS",
         "SA-10B/S-300PS",
         "SA-11",
-        "S-350",
+        "S-350"
     ],
     "naval_units": [
         "Battlecruiser 1144.2 Pyotr Velikiy",
@@ -94,21 +94,21 @@
         "[CH] Project 22800 Karakurt Corvette LACM",
         "[CH] Project 20381 Steregushchiy Corvette",
         "[CH] Project 20385 Gremyashchiy Corvette (AShM)",
-        "[CH] Project 20385 Gremyashchiy Corvette (LACM)",
+        "[CH] Project 20385 Gremyashchiy Corvette (LACM)"
     ],
     "air_defense_units": [
         "EWR 1L13",
         "EWR 55G6",
         "[CH] 2S38 SPAAG (LG-HE)",
         "[CH] 2S38 SPAAG",
-        'SAM SA-22 Pantsir-S1 "Greyhound" [CH]',
+        "SAM SA-22 Pantsir-S1 \"Greyhound\" [CH]",
         "[CH] Pantsir-S2 SPAAGM",
         "[CH] Tor M2K SHORAD",
-        'SAM SA-15 Tor M2 "Gauntlet" [CH]',
+        "SAM SA-15 Tor M2 \"Gauntlet\" [CH]",
         "[CH] Tor M2M SHORAD",
         "AAA ZU-23 Closed Emplacement",
         "ZU-23 on Ural-375",
-        "ZSU-23-4 Shilka",
+        "ZSU-23-4 Shilka"
     ],
     "helicopter_carrier_names": [],
     "requirements": {
@@ -116,5 +116,5 @@
     },
     "carrier_names": ["Admiral Kuznetsov"],
     "has_jtac": true,
-    "jtac_unit": "MQ-9 Reaper",
+    "jtac_unit": "MQ-9 Reaper"
 }

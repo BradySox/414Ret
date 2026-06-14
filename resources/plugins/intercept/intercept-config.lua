@@ -227,8 +227,11 @@ local function build_dispatcher(coalition_name, records)
                 local airbase = AIRBASE:FindByName(base_name)
                 if airbase then
                     local vec2 = airbase:GetVec2()
+                    -- Offset 300 m NE of the airbase centre so the invisible backstop
+                    -- unit does not land on the runway and block ground traffic.
+                    local ewr_vec2 = { x = vec2.x + 300, y = vec2.y + 300 }
                     local ewr_name = "QRA_Backstop_" .. coalition_name .. "_" .. base_name
-                    if spawn_backstop_ewr(ewr_name, vec2, rec.backstopEwrType, tonumber(rec.countryId)) then
+                    if spawn_backstop_ewr(ewr_name, ewr_vec2, rec.backstopEwrType, tonumber(rec.countryId)) then
                         backstop_names[#backstop_names + 1] = ewr_name
                     end
                 end

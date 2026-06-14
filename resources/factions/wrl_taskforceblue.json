@@ -166,6 +166,7 @@
   ],
   "missiles": [],
   "air_defense_units": [
+    "EWR AN/FPS-117 Radar",
     "SAM Patriot STR",
     "M163 Vulcan Air Defense System",
     "HEMTT C-RAM Phalanx",

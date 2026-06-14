@@ -362,7 +362,7 @@ class MissionGenerator:
                 start_type=DcsStartType.Cold,
                 group_size=1,
             )
-            group.uncontrolled = True
+            group.late_activation = True
 
     def generate_destroyed_units(self) -> None:
         """Add destroyed units to the Mission"""

@@ -63,7 +63,7 @@ if #_blue_pool >= 2 then
     local rb = RAT:New("RAT_BLUE")
     rb:SetDeparture(_blue_pool)
     rb:SetDestination(_blue_pool)
-    rb:SetMinDistance(50)
+    rb:SetMinDistance(20)
     rb:SetMaxDistance(350)
     rb:SetTakeoff("hot")
     rb:SetROE("hold")

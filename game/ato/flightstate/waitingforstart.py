@@ -48,6 +48,9 @@ class WaitingForStart(AtDeparture):
             new_state = Navigating(self.flight, self.settings, waypoint_index=0)
         self.flight.set_state(new_state)
 
+    def should_halt_sim(self) -> bool:
+        return False
+
     @property
     def is_waiting_for_start(self) -> bool:
         return True

@@ -83,6 +83,8 @@
     "[CH] IRGCN FAC MANPADS"
   ],
   "air_defense_units": [
+    "EWR 1L13",
+    "EWR 55G6",
     "SAM P19 \"Flat Face\" SR (SA-2/3)",
     "SAM Hawk SR (AN/MPQ-50)",
     "SA-15 Tor",

@@ -37,10 +37,12 @@ class FormationAttackFlightPlan(FormationFlightPlan, ABC):
         # FlightWaypoint is only comparable by identity, so adding
         # target_area_waypoint to package_speed_waypoints is useless.
         if b.waypoint_type == FlightWaypointType.TARGET_GROUP_LOC:
-            # Should be impossible, as any package with at least one
-            # FormationFlightPlan flight needs a formation speed.
             speed = self.package.formation_speed(self.flight.is_helo)
-            assert speed is not None
+            if speed is None:
+                # No other formation flight in the package (e.g. solo escort
+                # being edited before the strike is added). Use this flight's
+                # own cruise speed as a reasonable fallback.
+                speed = self.best_flight_formation_speed
             return speed
         return super().speed_between_waypoints(a, b)
 

@@ -219,5 +219,5 @@ squadrons:
     - primary: BARCAP
       secondary: any
       aircraft:
-        - SU-33 Flanker-D
+        - Su-33 Flanker-D
       size: 12

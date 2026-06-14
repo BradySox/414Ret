@@ -145,7 +145,7 @@ squadrons:
     - primary: TARCAP
       secondary: any
       aircraft:
-        - F-14A Tomcat
+        - F-14A Tomcat (Block 135-GR Late)
       size: 24
     - primary: AEW&C
       aircraft:

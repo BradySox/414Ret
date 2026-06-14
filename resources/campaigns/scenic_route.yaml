@@ -112,7 +112,7 @@ squadrons:
     - primary: Strike
       secondary: air-to-ground
       aircraft:
-        - Su-24MK
+        - Su-24MK Fencer-D
     - primary: BARCAP
       secondary: air-to-ground
       aircraft:

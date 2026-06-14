@@ -197,7 +197,7 @@ squadrons:
     - primary: Strike
       secondary: air-to-ground
       aircraft:
-        - Su-24MK
+        - Su-24MK Fencer-D
       size: 6
   # OPFOR First FOB
   FOB Seerik:

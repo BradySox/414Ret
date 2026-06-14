@@ -19,7 +19,7 @@ def _target(has_live_radar_sam: bool, tankers: bool = False) -> SimpleNamespace:
 
 
 def test_dead_with_live_radar_sam_uses_dedicated_sead_not_sweep() -> None:
-    task = PlanDead(_target(has_live_radar_sam=True))
+    task = PlanDead(_target(has_live_radar_sam=True))  # type: ignore[arg-type]
     task.propose_flights()
 
     assert [flight.task for flight in task.flights] == [
@@ -30,7 +30,7 @@ def test_dead_with_live_radar_sam_uses_dedicated_sead_not_sweep() -> None:
 
 
 def test_dead_without_live_radar_sam_uses_sead_escort_not_sweep() -> None:
-    task = PlanDead(_target(has_live_radar_sam=False))
+    task = PlanDead(_target(has_live_radar_sam=False))  # type: ignore[arg-type]
     task.propose_flights()
 
     assert [flight.task for flight in task.flights] == [

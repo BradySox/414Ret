@@ -72,6 +72,8 @@ recommended_enemy_faction:
     - Frigate 1135M Rezky
     - LS Ropucha
   air_defense_units:
+    - EWR 1L13
+    - EWR 55G6
     - SAM P19 "Flat Face" SR (SA-2/3)
     - SAM SA-8 Osa "Gecko" TEL
     - SA-9 Strela

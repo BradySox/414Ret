@@ -1,0 +1,13 @@
+# Black configuration only. This file intentionally has no [build-system] or
+# [project] table, so packaging tools (pip/build) ignore it.
+#
+# tmp/ is a gitignored, workspace-local scratch area created during the
+# 2026-06-14 venv repair: it holds the embedded CPython (tmp/uv-python that
+# .venv now points at), several virtualenvs, the uv cache, and a nested pydcs
+# checkout -- ~13k .py files total. CI never sees it (gitignored), but a bare
+# `black --check .` run locally would crawl it and time out. Prune it from
+# traversal so local validation matches CI in seconds, not minutes.
+[tool.black]
+extend-exclude = '''
+^/tmp/
+'''

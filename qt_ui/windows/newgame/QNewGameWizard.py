@@ -5,7 +5,6 @@ import logging
 from PySide6 import QtGui, QtWidgets
 
 from game.campaignloader.campaign import Campaign
-from game.dcs.aircrafttype import AircraftType
 from game.theater.start_generator import GameGenerator, GeneratorSettings, ModSettings
 from qt_ui.windows.AirWingConfigurationDialog import AirWingConfigurationDialog
 from qt_ui.windows.newgame.WizardPages.QFactionSelection import FactionSelection
@@ -88,57 +87,20 @@ class NewGameWizard(QtWidgets.QWizard):
             squadrons_start_full=self.field("squadrons_start_full"),
         )
         mod_settings = ModSettings(
-            f9f_panther=self.field("f9f_panther"),
             a4_skyhawk=self.field("a4_skyhawk"),
-            a6a_intruder=self.field("a6a_intruder"),
-            a7e_corsair2=self.field("a7e_corsair2"),
-            ea6b_prowler=self.field("ea6b_prowler"),
-            e7a_wedgetail=self.field("e7a_wedgetail"),
-            f4bc_phantom=self.field("f4bc_phantom"),
-            f15d_baz=self.field("f15d_baz"),
-            f_15_idf=self.field("f_15_idf"),
-            f_16_idf=self.field("f_16_idf"),
-            fa_18efg=self.field("fa_18efg"),
-            fa18ef_tanker=self.field("fa18ef_tanker"),
-            f4e_expanded_weapons=self.field("f4e_expanded_weapons"),
             f22_raptor=self.field("f22_raptor"),
-            f84g_thunderjet=self.field("f84g_thunderjet"),
-            f100_supersabre=self.field("f100_supersabre"),
-            f104_starfighter=self.field("f104_starfighter"),
-            f105_thunderchief=self.field("f105_thunderchief"),
-            f106_deltadart=self.field("f106_deltadart"),
-            hercules=self.field("hercules"),
-            irondome=self.field("irondome"),
-            oh_6=self.field("oh_6"),
-            oh_6_vietnamassetpack=self.field("oh_6_vietnamassetpack"),
-            uh_60l=self.field("uh_60l"),
-            jas39_gripen=self.field("jas39_gripen"),
-            mirage_3=self.field("mirage_3"),
-            super_etendard=self.field("super_etendard"),
-            sk_60=self.field("sk_60"),
-            su15_flagon=self.field("su15_flagon"),
-            su30_flanker_h=self.field("su30_flanker_h"),
-            su35s_flanker_m=self.field("su35s_flanker_m"),
-            su57_felon=self.field("su57_felon"),
-            ov10a_bronco=self.field("ov10a_bronco"),
-            frenchpack=self.field("frenchpack"),
+            f111c=self.field("f111c"),
             high_digit_sams=self.field("high_digit_sams"),
-            spanishnavypack=self.field("spanishnavypack"),
-            swedishmilitaryassetspack=self.field("swedishmilitaryassetspack"),
-            coldwarassets=self.field("coldwarassets"),
-            SWPack=self.field("SWPack"),
+            oh_6_vietnamassetpack=self.field("oh_6_vietnamassetpack"),
+            ov10a_bronco=self.field("ov10a_bronco"),
             vietnamwarvessels=self.field("vietnamwarvessels"),
             chinesemilitaryassetspack=self.field("chinesemilitaryassetspack"),
             iranmilitaryassetspack=self.field("iranmilitaryassetspack"),
             russianmilitaryassetspack=self.field("russianmilitaryassetspack"),
+            swedishmilitaryassetspack=self.field("swedishmilitaryassetspack"),
             usamilitaryassetspack=self.field("usamilitaryassetspack"),
             ukmilitaryassetspack=self.field("ukmilitaryassetspack"),
             ukrainemilitaryassetspack=self.field("ukrainemilitaryassetspack"),
-            mig31bm_foxhound=self.field("mig31bm_foxhound"),
-            mam=self.field("mam"),
-            tornado_adv=self.field("tornado_adv"),
-            VSN_F35=self.field("vsnf35"),
-            f111c=self.field("f111c"),
         )
 
         blue_faction = self.faction_selection_page.selected_blue_faction
@@ -168,11 +130,6 @@ class NewGameWizard(QtWidgets.QWizard):
         AirWingConfigurationDialog(
             self.generatedGame, generator.generator_settings.squadrons_start_full, self
         ).exec_()
-
-        g = self.generatedGame
-        herc = AircraftType.named("C-130J-30 Super Hercules")
-        if herc in g.blue.air_wing.squadrons or herc in g.red.air_wing.squadrons:
-            g.settings.set_plugin_option("herculescargo", True)
 
         self.generatedGame.begin_turn_0(
             squadrons_start_full=generator_settings.squadrons_start_full

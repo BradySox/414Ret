@@ -178,6 +178,18 @@ Deferred (each needs more work or another decoded sample):
 - **Per-flight own routes** (`NAV_PTS`/`DEST`): impossible under type-scoping (decided).
 - Re-decode helper: `dtc_schema_dump.py` (repo root) against a fresh sample `.miz`.
 
+## Gotchas learned in-game
+
+- **F-18 `WYPT` must be structurally complete.** The current DCS SA-partition build
+  expects `WYPT` to carry `NAV_PTS`, `NAV_ROUTE`, `NAV_SETTINGS`, `terrain`, and
+  `mirror_NAV_PTS`. A template captured from an older build had only
+  `NAV_PTS`/`mirror_NAV_PTS`; DCS then rejected the whole cartridge and it never
+  auto-loaded. Templates are rebuilt from a current ME-authored cartridge (SA arrays
+  emptied) to stay structurally complete.
+- **`terrain` appears in multiple places** (`data.terrain`, F-18 `WYPT.terrain`, F-16
+  `MPD.terrain`). All must match the mission theatre or the cartridge fails to load.
+  `build_cartridge()` sets each one present.
+
 ## Validation
 - `black --check .`, `mypy game tests`, `pytest tests -q`
   (`tests/missiongenerator/test_dtc.py`).

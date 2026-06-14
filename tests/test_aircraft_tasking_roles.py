@@ -13,6 +13,7 @@ planner against role drift in a few high-signal aircraft families:
 from __future__ import annotations
 
 from collections.abc import Iterable
+from pathlib import Path
 
 import pytest
 
@@ -21,7 +22,7 @@ from game.ato.flighttype import FlightType
 from game.dcs.aircrafttype import AircraftType
 
 
-def _aircraft(tmp_path, variant_id: str) -> AircraftType:
+def _aircraft(tmp_path: Path, variant_id: str) -> AircraftType:
     persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
     return AircraftType.named(variant_id)
 
@@ -32,7 +33,12 @@ def _aircraft(tmp_path, variant_id: str) -> AircraftType:
         (
             "F-15C Eagle",
             [FlightType.BARCAP, FlightType.TARCAP, FlightType.SWEEP],
-            [FlightType.SEAD, FlightType.SEAD_SWEEP, FlightType.STRIKE, FlightType.TARPS],
+            [
+                FlightType.SEAD,
+                FlightType.SEAD_SWEEP,
+                FlightType.STRIKE,
+                FlightType.TARPS,
+            ],
         ),
         (
             "F-14B Tomcat",
@@ -77,14 +83,16 @@ def test_representative_aircraft_tasking_lanes(
     variant_id: str,
     expected_tasks: Iterable[FlightType],
     forbidden_tasks: Iterable[FlightType],
-    tmp_path,
+    tmp_path: Path,
 ) -> None:
     aircraft = _aircraft(tmp_path, variant_id)
 
     for task in expected_tasks:
-        assert aircraft.capable_of(task), f"{variant_id} should be capable of {task.name}"
+        assert aircraft.capable_of(
+            task
+        ), f"{variant_id} should be capable of {task.name}"
 
     for task in forbidden_tasks:
-        assert not aircraft.capable_of(task), (
-            f"{variant_id} should not be capable of {task.name}"
-        )
+        assert not aircraft.capable_of(
+            task
+        ), f"{variant_id} should not be capable of {task.name}"

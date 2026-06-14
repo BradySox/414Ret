@@ -28,6 +28,7 @@ from shapely import MultiPolygon, Point as ShapelyPoint
 
 from game.naming import ALPHA_MILITARY
 from game.pretense.pretenseflightgroupspawner import PretenseNameGenerator
+from game.settings.settings import TargetIntelPrecision
 from game.theater import Airfield, Player
 from game.theater.controlpoint import Fob, TRIGGER_RADIUS_CAPTURE, OffMapSpawn
 from game.theater.theatergroundobject import CoastalSiteGroundObject, NavalGroundObject
@@ -135,7 +136,10 @@ class PretenseTriggerGenerator:
         """
         Generate markers on F10 map for each existing objective
         """
-        if self.game.settings.generate_marks:
+        if (
+            self.game.settings.generate_marks
+            and self.game.settings.target_intel_precision is TargetIntelPrecision.EXACT
+        ):
             mark_trigger = TriggerOnce(Event.NoEvent, "Marks generator")
             mark_trigger.add_condition(TimeAfter(1))
             v = 10

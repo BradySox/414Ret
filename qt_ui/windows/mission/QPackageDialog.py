@@ -303,13 +303,16 @@ class QPackageDialog(QDialog):
         missing_pilots = sum(f.missing_pilots for f in flights)
         departures = sorted({f.departure.name for f in flights})
         primary_task = package.primary_task.value if package.primary_task else "Unknown"
-        timing_mode = "ASAP timing" if package.auto_asap else "Manual TOT"
+        tot_text = package.time_over_target.strftime("%H:%M:%S")
+        timing_text = (
+            f"TOT: {tot_text} (ASAP)" if package.auto_asap else f"TOT: {tot_text}"
+        )
 
         summary = [
             f"Primary task: {primary_task}",
             f"Flights: {len(flights)}",
             f"Player slots: {player_slots}",
-            f"Timing: {timing_mode}",
+            timing_text,
             f"Departures: {', '.join(departures)}",
         ]
         if missing_pilots:

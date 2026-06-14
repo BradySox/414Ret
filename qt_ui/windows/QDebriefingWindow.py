@@ -98,9 +98,11 @@ class MissionImpactGrid(QGridLayout):
         rows = [
             (
                 "Mission status",
-                "Mission ended normally"
-                if debriefing.state_data.mission_ended
-                else "Mission ended early or state data was incomplete",
+                (
+                    "Mission ended normally"
+                    if debriefing.state_data.mission_ended
+                    else "Mission ended early or state data was incomplete"
+                ),
             ),
             (
                 "Bases captured",

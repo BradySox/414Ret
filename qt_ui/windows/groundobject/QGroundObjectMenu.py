@@ -139,7 +139,9 @@ class QGroundObjectMenu(QDialog):
         for g in self.ground_object.groups:
             for unit in g.units:
                 self.intelLayout.addWidget(
-                    QLabel(f"<b>Unit {str(unit.display_name_for(self.viewer))}</b>"), i, 0
+                    QLabel(f"<b>Unit {str(unit.display_name_for(self.viewer))}</b>"),
+                    i,
+                    0,
                 )
 
                 if not unit.alive and unit.repairable and self.cp.captured.is_blue:
@@ -291,9 +293,7 @@ class QGroundObjectMenu(QDialog):
         allegiance = (
             "Friendly"
             if self.ground_object.is_friendly(self.viewer)
-            else "Neutral"
-            if self.cp.captured.is_neutral
-            else "Hostile"
+            else "Neutral" if self.cp.captured.is_neutral else "Hostile"
         )
         behavior = []
         if self.ground_object.is_iads:
@@ -308,21 +308,29 @@ class QGroundObjectMenu(QDialog):
             ("Allegiance", allegiance),
             (
                 "Mission types",
-                ", ".join(mission_types) if mission_types else "No mission types for current side",
+                (
+                    ", ".join(mission_types)
+                    if mission_types
+                    else "No mission types for current side"
+                ),
             ),
             ("Known live units", f"{known_alive}/{total_units}"),
             ("Known destroyed units", str(destroyed_known)),
             (
                 "Detection range",
-                f"{Distance.from_meters(detection.meters).nautical_miles:.0f} NM"
-                if detection.meters > 0
-                else "None observed",
+                (
+                    f"{Distance.from_meters(detection.meters).nautical_miles:.0f} NM"
+                    if detection.meters > 0
+                    else "None observed"
+                ),
             ),
             (
                 "Threat range",
-                f"{Distance.from_meters(threat.meters).nautical_miles:.0f} NM"
-                if threat.meters > 0
-                else "No known threat",
+                (
+                    f"{Distance.from_meters(threat.meters).nautical_miles:.0f} NM"
+                    if threat.meters > 0
+                    else "No known threat"
+                ),
             ),
             (
                 "Special status",

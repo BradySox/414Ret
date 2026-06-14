@@ -19,6 +19,7 @@ from dcs.mapping import Point, Vector2
 from game.ato.flightwaypoint import AltitudeReference, FlightWaypoint
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.data.weapons import WeaponType
+from game.settings.settings import TargetIntelPrecision
 from game.theater import (
     ControlPoint,
     MissionTarget,
@@ -27,7 +28,7 @@ from game.theater import (
     TheaterUnit,
 )
 from game.theater.theatergroup import TheaterGroup
-from game.utils import Distance, meters, nautical_miles, feet
+from game.utils import Distance, Heading, meters, nautical_miles, feet
 
 AGL_TRANSITION_ALT = 5000
 
@@ -56,6 +57,7 @@ class WaypointBuilder:
         self.targets = targets
         self._bullseye = coalition.bullseye
         self.settings = self.flight.coalition.game.settings
+        self._approximate_target_positions: dict[str, Point] = {}
 
     @property
     def is_helo(self) -> bool:
@@ -326,16 +328,11 @@ class WaypointBuilder:
     def strike_point(self, target: StrikeTarget) -> FlightWaypoint:
         return self._target_point(target, f"STRIKE {target.name}")
 
-    @staticmethod
-    def _target_point(target: StrikeTarget, description: str) -> FlightWaypoint:
+    def _target_point(self, target: StrikeTarget, description: str) -> FlightWaypoint:
         return FlightWaypoint(
             target.name,
             FlightWaypointType.TARGET_POINT,
-            (
-                target.target.ground_object.position
-                if isinstance(target.target, TheaterGroup)
-                else target.target.position
-            ),
+            self._player_visible_strike_target_position(target),
             meters(0),
             "RADIO",
             description=description,
@@ -347,7 +344,9 @@ class WaypointBuilder:
         )
 
     def strike_area(self, target: MissionTarget) -> FlightWaypoint:
-        return self._target_area(f"STRIKE {target.name}", target)
+        return self._target_area(
+            f"STRIKE {target.name}", target, approximate_for_player=True
+        )
 
     def sead_area(self, target: MissionTarget) -> FlightWaypoint:
         alt_type: AltitudeReference = "BARO"
@@ -359,10 +358,13 @@ class WaypointBuilder:
             target,
             altitude=self.get_combat_altitude,
             alt_type=alt_type,
+            approximate_for_player=True,
         )
 
     def dead_area(self, target: MissionTarget) -> FlightWaypoint:
-        return self._target_area(f"DEAD on {target.name}", target)
+        return self._target_area(
+            f"DEAD on {target.name}", target, approximate_for_player=True
+        )
 
     def armed_recon_area(self, target: MissionTarget) -> FlightWaypoint:
         # Force AI aircraft to fly towards target area
@@ -390,7 +392,9 @@ class WaypointBuilder:
         """
         # TODO: Add a property that can hide this waypoint from the player's flight
         # plan.
-        return self._target_area(f"ASSAULT {target.name}", target)
+        return self._target_area(
+            f"ASSAULT {target.name}", target, approximate_for_player=False
+        )
 
     def _target_area(
         self,
@@ -399,11 +403,16 @@ class WaypointBuilder:
         flyover: bool = False,
         altitude: Distance = meters(0),
         alt_type: AltitudeReference = "RADIO",
+        approximate_for_player: bool = False,
     ) -> FlightWaypoint:
         waypoint = FlightWaypoint(
             name,
             FlightWaypointType.TARGET_GROUP_LOC,
-            location.position,
+            (
+                self._player_visible_target_area_position(location)
+                if approximate_for_player
+                else location.position
+            ),
             altitude,
             alt_type,
             description=name,
@@ -670,12 +679,51 @@ class WaypointBuilder:
         return ingress_wp, FlightWaypoint(
             "TARGET",
             FlightWaypointType.TARGET_GROUP_LOC,
-            target.position,
+            self._player_visible_target_area_position(target),
             self.get_combat_altitude,
             alt_type,
             description="Escort the package",
             pretty_name="Target area",
         )
+
+    def _player_visible_strike_target_position(self, target: StrikeTarget) -> Point:
+        if self.settings.target_intel_precision is TargetIntelPrecision.EXACT:
+            if isinstance(target.target, TheaterGroup):
+                return target.target.ground_object.position
+            return target.target.position
+        anchor_key, anchor = self._approximation_anchor_for(target.target)
+        return self._approximate_target_position(anchor_key, anchor)
+
+    def _player_visible_target_area_position(self, target: MissionTarget) -> Point:
+        if self.settings.target_intel_precision is TargetIntelPrecision.EXACT:
+            return target.position
+        anchor_key, anchor = self._approximation_anchor_for(target)
+        return self._approximate_target_position(anchor_key, anchor)
+
+    def _approximation_anchor_for(
+        self,
+        target: MissionTarget | TheaterGroup | TheaterUnit,
+    ) -> tuple[str, Point]:
+        if isinstance(target, TheaterGroundObject):
+            return f"tgo:{target.id}", target.position
+        if isinstance(target, TheaterGroup):
+            return f"group:{target.ground_object.id}", target.ground_object.position
+        if isinstance(target, TheaterUnit):
+            return f"unit:{target.ground_object.id}", target.ground_object.position
+        target_id = getattr(target, "id", None)
+        if target_id is not None:
+            return f"target:{target_id}", target.position
+        return f"target-name:{target.name}", target.position
+
+    def _approximate_target_position(self, key: str, anchor: Point) -> Point:
+        cached = self._approximate_target_positions.get(key)
+        if cached is not None:
+            return cached
+        heading = Heading.from_degrees(random.randint(0, 359))
+        distance = nautical_miles(random.uniform(2, 4)).meters
+        position = anchor.point_from_heading(heading.degrees, distance)
+        self._approximate_target_positions[key] = position
+        return position
 
     @staticmethod
     def pickup_zone(pick_up: MissionTarget) -> FlightWaypoint:

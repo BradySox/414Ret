@@ -54,7 +54,7 @@ squadrons:
         - IL-78M
     - primary: Transport
       aircraft:
-        - C-130
+        - C-130J-30
         - An-26B
   #Saipan
   2:
@@ -100,7 +100,7 @@ squadrons:
         - IL-78M
     - primary: Transport
       aircraft:
-        - C-130
+        - C-130J-30
         - An-26B
   Blue CVBG:
     - primary: BARCAP

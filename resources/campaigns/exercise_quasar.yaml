@@ -145,7 +145,7 @@ squadrons:
   18:
     - primary: Transport
       aircraft:
-        - C-130
+        - C-130J-30
       size: 8
     - primary: Escort
       secondary: air-to-air

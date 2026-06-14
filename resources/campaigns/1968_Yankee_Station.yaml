@@ -260,7 +260,7 @@ squadrons:
        - primary: Transport
          secondary: any
          aircraft:
-           - C-130
+           - C-130J-30
          size: 4
     #Da Nang 
     21: #Gudauta
@@ -291,7 +291,7 @@ squadrons:
        - primary: Transport
          secondary: any
          aircraft:
-           - C-130
+           - C-130J-30
          size: 4
          
        - primary: Air Assault
@@ -356,7 +356,7 @@ squadrons:
        - primary: Transport
          secondary: any
          aircraft:
-           - C-130
+           - C-130J-30
          size: 4
          
        - primary: Transport
@@ -375,7 +375,7 @@ squadrons:
        - primary: Transport
          secondary: any
          aircraft:
-           - C-130
+           - C-130J-30
          size: 4
          
        - primary: Transport
@@ -430,7 +430,7 @@ squadrons:
       - primary: Transport
         secondary: any
         aircraft:
-          - C-130
+          - C-130J-30
         size: 4
          
       - primary: BARCAP

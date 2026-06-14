@@ -135,7 +135,7 @@ squadrons:
         - E-2D Advanced Hawkeye
     - primary: Refueling
       aircraft:
-        - C-130
+        - C-130J-30
   # Mineralnye Vody
   26:
     - primary: BARCAP

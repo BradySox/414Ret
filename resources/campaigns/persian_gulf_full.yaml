@@ -60,7 +60,7 @@ squadrons:
         - IL-78M
     - primary: Transport
       aircraft:
-        - C-130
+        - C-130J-30
         - An-26B
   #Shiraz Intl
   19:
@@ -106,7 +106,7 @@ squadrons:
         - IL-78M
     - primary: Transport
       aircraft:
-        - C-130
+        - C-130J-30
         - An-26B
   Blue CVBG:
     - primary: BARCAP

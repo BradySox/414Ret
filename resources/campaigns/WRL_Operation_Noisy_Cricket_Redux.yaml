@@ -138,7 +138,7 @@ squadrons:
     - primary: Air Assault
       secondary: air-to-ground
       aircraft:
-        - C-130
+        - C-130J-30
       size: 8
     - primary: OCA/Runway
       secondary: any

@@ -642,7 +642,7 @@ squadrons:
           size: 10
         - primary: Transport
           aircraft:
-            - C-130
+            - C-130J-30
           size: 3
    
    #Beyrut
@@ -698,5 +698,5 @@ squadrons:
           size: 6
         - primary: Transport
           aircraft:
-            - C-130
+            - C-130J-30
           size: 3

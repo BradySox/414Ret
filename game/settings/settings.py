@@ -69,6 +69,12 @@ class CombatResolutionMethod(Enum):
     SKIP = "Skip combat"
 
 
+@unique
+class TargetIntelPrecision(Enum):
+    EXACT = "Exact target coordinates"
+    APPROXIMATE = "Approximate target area"
+
+
 DIFFICULTY_PAGE = "Difficulty"
 
 AI_DIFFICULTY_SECTION = "AI Difficulty"
@@ -345,6 +351,22 @@ class Settings:
         detail=(
             "If checked, the auto-planner will include tankers in DEAD packages, "
             "provided the faction has access to them."
+        ),
+    )
+    auto_add_tarps_recon: bool = boolean_option(
+        "Auto-planner adds TARPS recon flights to Strike/DEAD packages",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        invert=False,
+        detail=(
+            "If checked, the auto-planner appends a single photo-recon flight "
+            "(e.g. F-14 TARPS) to Strike and DEAD packages against high-value "
+            "targets (air defenses, factories, command posts, bridges). The recon "
+            "bird overflies the target ~5 minutes behind the strikers for a "
+            "post-strike BDA pass. Requires a TARPS-capable squadron in range; if "
+            "none is available the flight is simply skipped (the strike is never "
+            "scrubbed)."
         ),
     )
     aircraft_per_recovery_tanker: int = bounded_int_option(
@@ -957,6 +979,21 @@ class Settings:
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         default=True,
+    )
+    target_intel_precision: TargetIntelPrecision = choices_option(
+        "Player target location precision",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        choices={
+            "Exact target coordinates": TargetIntelPrecision.EXACT,
+            "Approximate target area": TargetIntelPrecision.APPROXIMATE,
+        },
+        default=TargetIntelPrecision.EXACT,
+        detail=(
+            "Approximate mode offsets player-facing target steerpoints into a nearby "
+            "search area, suppresses objective F10 map marks, and removes exact "
+            "target coordinates from strike/SEAD kneeboards."
+        ),
     )
     eplrs_enabled: bool = boolean_option(
         "Enable EPLRS",

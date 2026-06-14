@@ -23,6 +23,7 @@ from game.theater import ControlPoint, TheaterGroundObject, Player
 from game.theater.theatergroundobject import (
     BuildingGroundObject,
 )
+from game.utils import Distance
 from game.utils import Heading
 from qt_ui.models import GameModel
 from qt_ui.uiconstants import EVENT_ICONS, ICONS
@@ -65,6 +66,7 @@ class QGroundObjectMenu(QDialog):
         self.cp = cp
         self.game_model = gm
         self.game = gm.game
+        self.viewer = Player.BLUE if gm.is_ownfor else Player.RED
         self.setWindowTitle(
             f"Location - {self.ground_object.obj_name} ({self.cp.name})"
         )
@@ -72,8 +74,10 @@ class QGroundObjectMenu(QDialog):
         self.intelBox = QGroupBox("Units :")
         self.buildingBox = QGroupBox("Buildings :")
         self.orientationBox = QGroupBox("Orientation :")
+        self.targetIntelBox = QGroupBox("Target Intel :")
         self.intelLayout = QGridLayout()
         self.buildingsLayout = QGridLayout()
+        self.targetIntelLayout = QGridLayout()
         self.sell_all_button = None
         self.total_value = 0
         self.init_ui()
@@ -85,6 +89,7 @@ class QGroundObjectMenu(QDialog):
 
         self.doLayout()
 
+        self.mainLayout.addWidget(self.targetIntelBox)
         if isinstance(self.ground_object, BuildingGroundObject):
             self.mainLayout.addWidget(self.buildingBox)
             if self.cp.captured.is_blue:
@@ -126,13 +131,17 @@ class QGroundObjectMenu(QDialog):
 
     def doLayout(self):
         self.update_total_value()
+        self.targetIntelBox = QGroupBox("Target Intel :")
+        self.targetIntelLayout = QGridLayout()
         self.intelBox = QGroupBox("Units :")
         self.intelLayout = QGridLayout()
         i = 0
         for g in self.ground_object.groups:
             for unit in g.units:
                 self.intelLayout.addWidget(
-                    QLabel(f"<b>Unit {str(unit.display_name)}</b>"), i, 0
+                    QLabel(f"<b>Unit {str(unit.display_name_for(self.viewer))}</b>"),
+                    i,
+                    0,
                 )
 
                 if not unit.alive and unit.repairable and self.cp.captured.is_blue:
@@ -158,7 +167,9 @@ class QGroundObjectMenu(QDialog):
         for static in self.ground_object.statics:
             if static not in FORTIFICATION_BUILDINGS:
                 self.buildingsLayout.addWidget(
-                    QBuildingInfo(static, self.ground_object), j / 3, j % 3
+                    QBuildingInfo(static, self.ground_object, self.viewer),
+                    j / 3,
+                    j % 3,
                 )
                 j = j + 1
 
@@ -221,7 +232,14 @@ class QGroundObjectMenu(QDialog):
         self.hiddenCheckBox.stateChanged.connect(self.update_hidden_on_mfd)
         self.hiddenBoxLayout.addWidget(self.hiddenCheckBox)
 
+        for row, (label, value) in enumerate(self.target_intel_rows()):
+            self.targetIntelLayout.addWidget(QLabel(f"<b>{label}</b>"), row, 0)
+            value_label = QLabel(value)
+            value_label.setWordWrap(True)
+            self.targetIntelLayout.addWidget(value_label, row, 1)
+
         # Set the layouts
+        self.targetIntelBox.setLayout(self.targetIntelLayout)
         self.financesBox.setLayout(self.financesBoxLayout)
         self.buildingBox.setLayout(self.buildingsLayout)
         self.intelBox.setLayout(self.intelLayout)
@@ -242,6 +260,7 @@ class QGroundObjectMenu(QDialog):
             self.actionLayout.setParent(None)
 
             self.doLayout()
+            self.mainLayout.addWidget(self.targetIntelBox)
             if isinstance(self.ground_object, BuildingGroundObject):
                 self.mainLayout.addWidget(self.buildingBox)
             else:
@@ -258,6 +277,69 @@ class QGroundObjectMenu(QDialog):
         except Exception as e:
             logging.exception(e)
         self.update_total_value()
+
+    def target_intel_rows(self) -> list[tuple[str, str]]:
+        mission_types = []
+        for mission_type in self.ground_object.mission_types(for_player=self.viewer):
+            value = str(mission_type)
+            if value not in mission_types:
+                mission_types.append(value)
+
+        detection = self.ground_object.max_detection_range_for(self.viewer)
+        threat = self.ground_object.max_threat_range_for(self.viewer)
+        known_alive = self.ground_object.alive_unit_count_for(self.viewer)
+        total_units = self.ground_object.unit_count
+        destroyed_known = len(self.ground_object.dead_units_for(self.viewer))
+        allegiance = (
+            "Friendly"
+            if self.ground_object.is_friendly(self.viewer)
+            else "Neutral" if self.cp.captured.is_neutral else "Hostile"
+        )
+        behavior = []
+        if self.ground_object.is_iads:
+            behavior.append("IADS network member")
+        if self.ground_object.hide_on_mfd:
+            behavior.append("Hidden on MFD")
+        if self.ground_object.should_head_to_conflict:
+            behavior.append("Reorients toward conflict")
+
+        rows = [
+            ("Type", str(self.ground_object)),
+            ("Allegiance", allegiance),
+            (
+                "Mission types",
+                (
+                    ", ".join(mission_types)
+                    if mission_types
+                    else "No mission types for current side"
+                ),
+            ),
+            ("Known live units", f"{known_alive}/{total_units}"),
+            ("Known destroyed units", str(destroyed_known)),
+            (
+                "Detection range",
+                (
+                    f"{Distance.from_meters(detection.meters).nautical_miles:.0f} NM"
+                    if detection.meters > 0
+                    else "None observed"
+                ),
+            ),
+            (
+                "Threat range",
+                (
+                    f"{Distance.from_meters(threat.meters).nautical_miles:.0f} NM"
+                    if threat.meters > 0
+                    else "No known threat"
+                ),
+            ),
+            (
+                "Special status",
+                ", ".join(behavior) if behavior else "No special handling",
+            ),
+            ("Capturable", "Yes" if self.ground_object.capturable else "No"),
+            ("Purchasable", "Yes" if self.ground_object.purchasable else "No"),
+        ]
+        return rows
 
     def update_total_value(self):
         if not self.ground_object.purchasable:

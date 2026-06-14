@@ -27,6 +27,7 @@ from dcs.translation import String
 from dcs.triggers import Event, TriggerCondition, TriggerOnce
 from dcs.unit import Skill
 
+from game.settings.settings import TargetIntelPrecision
 from game.theater import Airfield
 from game.theater.controlpoint import Fob, TRIGGER_RADIUS_CAPTURE
 
@@ -126,7 +127,10 @@ class TriggerGenerator:
         """
         Generate markers on F10 map for each existing objective
         """
-        if self.game.settings.generate_marks:
+        if (
+            self.game.settings.generate_marks
+            and self.game.settings.target_intel_precision is TargetIntelPrecision.EXACT
+        ):
             mark_trigger = TriggerOnce(Event.NoEvent, "Marks generator")
             mark_trigger.add_condition(TimeAfter(1))
             v = 10

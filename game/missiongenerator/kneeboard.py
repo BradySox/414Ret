@@ -44,6 +44,7 @@ from game.data.alic import AlicCodes
 from game.dcs.aircrafttype import AircraftType
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
+from game.settings.settings import TargetIntelPrecision
 from game.theater import TheaterGroundObject, TheaterUnit
 from game.theater.bullseye import Bullseye
 from game.utils import Distance, UnitSystem, meters, mps, pounds
@@ -729,22 +730,35 @@ class SeadTaskPage(KneeboardPage):
         task = "DEAD" if self.flight.flight_type == FlightType.DEAD else "SEAD"
         writer.title(f"{self.flight.callsign} {task} Target Info{custom_name_title}")
 
+        headers = ["Description", "ALIC", "Location"]
+        if self._approximate_target_intel:
+            headers[2] = "Cue"
         writer.table(
             [self.target_info_row(t) for t in self.target_units],
-            headers=["Description", "ALIC", "Location"],
+            headers=headers,
         )
 
         writer.write(path)
 
     def target_info_row(self, unit: TheaterUnit) -> List[str]:
-        ll = unit.position.latlng()
         unit_type = unit.type
         name = unit.name if unit_type is None else unit_type.name
         return [
             name,
             self.alic_for(unit),
-            ll.format_dms(include_decimal_seconds=True),
+            (
+                "Search around target area waypoint"
+                if self._approximate_target_intel
+                else unit.position.latlng().format_dms(include_decimal_seconds=True)
+            ),
         ]
+
+    @property
+    def _approximate_target_intel(self) -> bool:
+        return (
+            self.flight.squadron.coalition.game.settings.target_intel_precision
+            is TargetIntelPrecision.APPROXIMATE
+        )
 
 
 class StrikeTaskPage(KneeboardPage):
@@ -779,24 +793,39 @@ class StrikeTaskPage(KneeboardPage):
                     )
                     i = i + 1
 
+        headers = ["STPT", "Description", "Location"]
+        if self._approximate_target_intel:
+            headers[2] = "Cue"
         writer.table(
             [self.target_info_row(t, writer) for t in self.targets],
-            headers=["STPT", "Description", "Location"],
+            headers=headers,
         )
 
         writer.write(path)
 
-    @staticmethod
     def target_info_row(
-        target: NumberedWaypoint, writer: KneeboardPageWriter
+        self, target: NumberedWaypoint, writer: KneeboardPageWriter
     ) -> list[str]:
         return [
             str(target.number),
             writer.wrap_line(
                 target.waypoint.pretty_name, StrikeTaskPage.WAYPOINT_DESC_MAX_LEN
             ),
-            target.waypoint.position.latlng().format_dms(include_decimal_seconds=True),
+            (
+                "Search around target area waypoint"
+                if self._approximate_target_intel
+                else target.waypoint.position.latlng().format_dms(
+                    include_decimal_seconds=True
+                )
+            ),
         ]
+
+    @property
+    def _approximate_target_intel(self) -> bool:
+        return (
+            self.flight.squadron.coalition.game.settings.target_intel_precision
+            is TargetIntelPrecision.APPROXIMATE
+        )
 
 
 class NotesPage(KneeboardPage):

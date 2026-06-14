@@ -29,20 +29,14 @@ class PlanDead(PackagePlanningTask[IadsGroundObject]):
         tgt_count = self.target.alive_unit_count
         self.propose_flight(FlightType.DEAD, min(4, (tgt_count // 2) + 1))
 
-        # Only include SEAD against SAMs that still have emitters. No need to
-        # suppress an EWR, and SEAD isn't useful against a SAM that no longer has a
-        # working track radar.
-        #
-        # For SAMs without track radars and EWRs, we still want a SEAD escort if
-        # needed.
-        #
-        # Note that there is a quirk here: we should potentially be included a SEAD
-        # escort *and* SEAD when the target is a radar SAM but the flight path is
-        # also threatened by SAMs. We don't want to include a SEAD escort if the
-        # package is *only* threatened by the target though. Could be improved, but
-        # needs a decent refactor to the escort planning to do so.
-        self.propose_common_escorts()
+        # DEAD packages felt overstuffed when they requested all three SEAD flavors
+        # at once. Keep the air-to-air escort, then choose one SEAD support style:
+        # a dedicated SEAD flight for live radar SAMs, otherwise a SEAD escort that
+        # can accompany the strikers if the route is threatened.
+        self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)
         if self.target.has_live_radar_sam:
             self.propose_flight(FlightType.SEAD, 2, EscortType.Sead)
+        else:
+            self.propose_flight(FlightType.SEAD_ESCORT, 2, EscortType.Sead)
         if self.target.control_point.coalition.game.settings.autoplan_tankers_for_dead:
             self.propose_flight(FlightType.REFUELING, 1, EscortType.Refuel)

@@ -17,7 +17,7 @@ class SeadFlightPlan(FormationAttackFlightPlan):
         return Builder
 
     def default_tot_offset(self) -> timedelta:
-        return -timedelta(minutes=1)
+        return -timedelta(minutes=3)
 
 
 class Builder(FormationAttackBuilder[SeadFlightPlan, FormationAttackLayout]):

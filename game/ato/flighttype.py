@@ -119,6 +119,21 @@ class FlightType(Enum):
         return self in {FlightType.ESCORT, FlightType.SEAD_ESCORT}
 
     @property
+    def is_primary_package_task(self) -> bool:
+        return self in {
+            FlightType.STRIKE,
+            FlightType.OCA_AIRCRAFT,
+            FlightType.OCA_RUNWAY,
+            FlightType.DEAD,
+            FlightType.ANTISHIP,
+            FlightType.BAI,
+            FlightType.CAS,
+            FlightType.ARMED_RECON,
+            FlightType.AIR_ASSAULT,
+            FlightType.TARPS,
+        }
+
+    @property
     def entity_type(self) -> AirEntity:
         return {
             FlightType.AEWC: AirEntity.AIRBORNE_EARLY_WARNING,

@@ -4,14 +4,12 @@ import math
 from dcs.point import MovingPoint
 from dcs.task import (
     AttackGroup,
-    EngageGroup,
     Expend,
     OptECMUsing,
     WeaponType as DcsWeaponType,
     OptRestrictAfterburner,
 )
 
-from game.data.weapons import WeaponType
 from game.theater import TheaterGroundObject
 from .pydcswaypointbuilder import PydcsWaypointBuilder
 
@@ -49,8 +47,8 @@ class SeadIngressBuilder(PydcsWaypointBuilder):
             attack_task = AttackGroup(
                 miz_group.id,
                 weapon_type=DcsWeaponType.Decoy,
-                group_attack=True,
-                expend=Expend.All,
+                attack_limit=1,
+                expend=Expend.One,
                 altitude=round(waypoint.alt * 1.5),  # 50% increase to force a climb
             )
             waypoint.tasks.append(attack_task)
@@ -58,27 +56,27 @@ class SeadIngressBuilder(PydcsWaypointBuilder):
             attack_task = AttackGroup(
                 miz_group.id,
                 weapon_type=DcsWeaponType.ARM,
-                expend=Expend.All,
+                attack_limit=1,
+                expend=Expend.One,
                 altitude=waypoint.alt,
-                group_attack=True,
             )
             waypoint.tasks.append(attack_task)
 
             attack_task = AttackGroup(
                 miz_group.id,
                 weapon_type=DcsWeaponType.ASM,
-                expend=Expend.All,
+                attack_limit=1,
+                expend=Expend.One,
                 altitude=waypoint.alt,
-                group_attack=True,
             )
             waypoint.tasks.append(attack_task)
 
             attack_task = AttackGroup(
                 miz_group.id,
                 weapon_type=DcsWeaponType.GuidedBombs,
-                expend=Expend.All,
+                attack_limit=1,
+                expend=Expend.One,
                 altitude=waypoint.alt,
-                group_attack=True,
             )
             waypoint.tasks.append(attack_task)
 

@@ -41,6 +41,7 @@ def test_tarps_flight_type_is_recon_support() -> None:
     # TARPS is a non-combat recon role: neither air-to-air nor air-to-ground.
     assert not FlightType.TARPS.is_air_to_air
     assert not FlightType.TARPS.is_air_to_ground
+    assert FlightType.TARPS.is_primary_package_task
     assert FlightType.TARPS.entity_type.name == "RECONNAISSANCE"
 
 

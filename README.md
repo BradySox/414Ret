@@ -111,16 +111,31 @@ No GitHub account needed — just grab the zip and run.
 Same as upstream Retribution. Quick start (Windows, PowerShell):
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python qt_ui\main.py
+.\scripts\bootstrap-env.ps1
+.\scripts\check-env.ps1
+.\venv\Scripts\python.exe -m qt_ui.main
 ```
 
 You need a working DCS World install and the MOOSE-dependent features assume the
 bundled mission plugins under `resources/plugins/` are present. See
 [`README.upstream.md`](README.upstream.md) for the full upstream setup, dependencies,
 and wiki links.
+
+### Windows environment sanity
+
+This repo is sensitive to Python drift on Windows. If `.venv` was created from a Python
+install that later moved, was removed, or lost execute permissions, all repo-local
+commands will start failing in the same confusing way for humans and assistants.
+
+Use these two scripts from the repo root:
+
+```powershell
+.\scripts\bootstrap-env.ps1  # find Python 3.11, recreate .venv, install requirements
+.\scripts\check-env.ps1      # verify Python, venv, and Git LFS auth health
+```
+
+`check-env.ps1` also warns when Git LFS is unauthenticated, which is a common cause of
+GitHub push/upload failures for repos with LFS-tracked content.
 
 ### Dev checks (must pass before pushing)
 

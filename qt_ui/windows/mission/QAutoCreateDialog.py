@@ -183,21 +183,10 @@ class QAutoCreateDialog(QDialog):
         self.setLayout(self.layout)
 
         self.primary_combobox.currentIndexChanged.connect(self.on_primary_task_changed)
-        primary_tasks = {
-            FlightType.STRIKE,
-            FlightType.OCA_AIRCRAFT,
-            FlightType.OCA_RUNWAY,
-            FlightType.DEAD,
-            FlightType.ANTISHIP,
-            FlightType.BAI,
-            FlightType.CAS,
-            FlightType.ARMED_RECON,
-            FlightType.AIR_ASSAULT,
-        }
         for mt in self.package.target.mission_types(
             Player.BLUE if self.is_ownfor else Player.RED
         ):
-            if mt in primary_tasks:
+            if mt.is_primary_package_task:
                 self.primary_combobox.addItem(mt.value, mt)
         self.primary_combobox.setCurrentIndex(0)
         self._load_aircraft_types()

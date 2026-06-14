@@ -1,0 +1,63 @@
+name: 414th Latest Build
+
+# Publishes a rolling "latest" pre-release on every push to main so squadron
+# members always have a direct download link without needing a GitHub login or
+# digging through the Actions tab.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  test:
+    uses: ./.github/workflows/test.yml
+
+  build:
+    needs: [lint, test]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Python environment
+        uses: ./.github/actions/setup-liberation-python
+
+      - name: Set up JS environment
+        uses: ./.github/actions/setup-liberation-js
+
+      - name: Stamp build number and SHA
+        run: |
+          [IO.File]::WriteAllLines($pwd.path + "\resources\buildnumber", $env:GITHUB_RUN_NUMBER)
+          [IO.File]::WriteAllLines($pwd.path + "\resources\gitsha", $env:GITHUB_SHA)
+
+      - name: Build app
+        uses: ./.github/actions/build-app
+
+      - name: Create zip
+        run: |
+          Compress-Archive -Path .\dist\dcs-retribution\ -DestinationPath dist\414th-retribution-latest.zip -Compression Optimal
+
+      - name: Update latest pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "414th Latest Build"
+          prerelease: true
+          body: |
+            **Automated build** from commit ${{ github.sha }} on `main`.
+
+            This is the current 414th Joint Fighter Group fork of DCS Retribution.
+            It includes all 414th-specific features: JAMMING/TARPS flight types,
+            BDA fog-of-war, QRA intercept, TIC frontline battle sim, and more.
+
+            **Download** `414th-retribution-latest.zip`, extract, and run `retribution_main.exe`.
+
+            > Built: ${{ github.run_number }} — ${{ github.sha }}
+          files: dist/414th-retribution-latest.zip

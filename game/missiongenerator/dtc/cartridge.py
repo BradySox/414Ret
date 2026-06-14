@@ -127,11 +127,15 @@ def _build_f16(template: dict[str, Any], sa: SaData) -> None:
     template["data"]["MPD"]["THREAT_PTS"] = _f16_threat_pts(sa.threats)
 
 
-def _build_f18(template: dict[str, Any], sa: SaData) -> None:
+def _build_f18(template: dict[str, Any], sa: SaData, terrain_name: str) -> None:
     sa_part = template["data"]["SA"]
     sa_part["MEZ_THRTS"] = _f18_mez_thrts(sa.threats)
     sa_part["CAP_PTS"] = _f18_cap_pts(sa.orbits)
     sa_part["FAOR_FLOT"]["FLOT"] = _f18_flot_lines(sa.front_lines)
+    # The WYPT partition carries its own terrain field (current DCS SA-partition
+    # build); a mismatch with data.terrain makes the cartridge fail to load.
+    if "WYPT" in template["data"]:
+        template["data"]["WYPT"]["terrain"] = terrain_name
 
 
 def build_cartridge(dcs_type: str, sa: SaData, terrain_name: str) -> dict[str, Any]:
@@ -150,5 +154,5 @@ def build_cartridge(dcs_type: str, sa: SaData, terrain_name: str) -> dict[str, A
     if dcs_type == F16_TYPE:
         _build_f16(cartridge, sa)
     elif dcs_type == F18_TYPE:
-        _build_f18(cartridge, sa)
+        _build_f18(cartridge, sa, terrain_name)
     return cartridge

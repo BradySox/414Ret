@@ -222,6 +222,21 @@ Archive members are now written under the **canonical type-id filename only**
 the ED-default-name aliases (the collision source) are gone. The `AutoLoad`/`Cartridges`
 unit block is kept as-is (verified correct above).
 
+## KNOWN LIMITATION — auto pre-load does not fire (manual load works)
+
+Verified 2026-06-14 with a fully correct setup: embedded cartridge named
+`Retribution <terrain> DTC_1` with the CAP tracks, the matching `<name>.dtc` in
+`Saved Games\DCS\DTC`, and every player Hornet carrying
+`["DTC"]={["AutoLoad"]=true,["Cartridges"]={[1]={["default"]=true,["name"]=...}}}` (which
+the ME reads back as "Pre-load default DTC upon mission start" checked).
+
+Result in-sim: the cartridge does **not** auto-apply at spawn. The SA page stays empty
+until the player opens the DTC manager and manually loads `Retribution <terrain> DTC_1`,
+at which point the CAP/tanker tracks populate correctly. So the data path is sound; only
+DCS's mission-start pre-load is not wiring up in this build. Nothing more to fix on the
+Retribution side -- shipping behavior is **manual load once per sortie**. Re-test ED's
+pre-load on future DCS builds before assuming it still needs the manual step.
+
 ## Gotchas learned in-game
 
 - **DCS reads cartridges from `Saved Games\DCS\DTC`, not the embedded `.miz`** — and the

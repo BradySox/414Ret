@@ -8,6 +8,7 @@ from game.debriefing import (
     Debriefing,
     GroundLosses,
     SideLossCounts,
+    StateData,
 )
 from game.theater import ControlPoint, Player
 
@@ -105,3 +106,11 @@ def test_loss_counts_partition_matches_combined_totals() -> None:
     )
     assert blue.scenery + red.scenery == len(list(debriefing.scenery_object_losses))
     assert blue.bases_lost + red.bases_lost == len(debriefing.base_captures)
+
+
+def test_state_data_accepts_empty_intercept_survivor_list() -> None:
+    state = StateData.from_json(
+        {"intercept_survivors": []},
+        cast(Any, SimpleNamespace(flight=lambda _: None)),
+    )
+    assert state.intercept_survivors == {}

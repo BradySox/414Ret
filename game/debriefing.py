@@ -142,6 +142,14 @@ class StateData:
                 units.add(str(unit))
             return list(units)
 
+        def parse_intercept_survivors(raw: Any) -> dict[str, int]:
+            # Lua JSON encoders serialize an empty table as [], so missions with no
+            # active QRA survivors can still produce a list here. Treat any non-dict
+            # form as "no survivor data" instead of crashing debrief parsing.
+            if not isinstance(raw, dict):
+                return {}
+            return {str(k): int(v) for k, v in raw.items()}
+
         killed_aircraft = []
         killed_ground_units = []
 
@@ -161,9 +169,9 @@ class StateData:
             else:
                 killed_ground_units.append(unit)
 
-        intercept_survivors = {
-            str(k): int(v) for k, v in data.get("intercept_survivors", {}).items()
-        }
+        intercept_survivors = parse_intercept_survivors(
+            data.get("intercept_survivors", {})
+        )
 
         return cls(
             mission_ended=data.get("mission_ended", False),

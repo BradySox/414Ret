@@ -731,7 +731,7 @@ class SeadTaskPage(KneeboardPage):
         writer.title(f"{self.flight.callsign} {task} Target Info{custom_name_title}")
 
         headers = ["Description", "ALIC", "Location"]
-        if self._approximate_target_intel:
+        if self._use_target_area_cues:
             headers[2] = "Cue"
         writer.table(
             [self.target_info_row(t) for t in self.target_units],
@@ -748,7 +748,7 @@ class SeadTaskPage(KneeboardPage):
             self.alic_for(unit),
             (
                 "Search around target area waypoint"
-                if self._approximate_target_intel
+                if self._use_target_area_cues
                 else unit.position.latlng().format_dms(include_decimal_seconds=True)
             ),
         ]
@@ -758,6 +758,12 @@ class SeadTaskPage(KneeboardPage):
         return (
             self.flight.squadron.coalition.game.settings.target_intel_precision
             is TargetIntelPrecision.APPROXIMATE
+        )
+
+    @property
+    def _use_target_area_cues(self) -> bool:
+        return (
+            self._approximate_target_intel or self.flight.flight_type == FlightType.DEAD
         )
 
 

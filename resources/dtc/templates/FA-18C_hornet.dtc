@@ -18240,13 +18240,46 @@
       }
     },
     "TCN": [],
-    "terrain": "Caucasus",
-    "type": "FA-18C_hornet",
+    "terrain": "",
+    "type": "",
     "WYPT": {
       "mirror_NAV_PTS": false,
-      "NAV_PTS": []
+      "NAV_PTS": [],
+      "NAV_ROUTE": [
+        [],
+        [],
+        []
+      ],
+      "NAV_SETTINGS": {
+        "AA_Waypoint": {
+          "AA_WP_Enabled": false,
+          "AA_WP_Number": 59
+        },
+        "ACLS": {
+          "Frequency": 225,
+          "OnOff": false
+        },
+        "Altitude_Warning": {
+          "Warn_Alt_Baro": 2000,
+          "Warn_Alt_Rdr": 500
+        },
+        "Home_Waypoint": {
+          "FPAS_HOME_WP": 1
+        },
+        "ICLS": {
+          "Channel": 1,
+          "OnOff": false
+        },
+        "TACAN": {
+          "Channel": 1,
+          "ChannelMode": 1,
+          "Mode": 2,
+          "OnOff": false
+        }
+      },
+      "terrain": ""
     }
   },
   "name": "",
-  "type": "FA-18C_hornet"
+  "type": ""
 }

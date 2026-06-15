@@ -73,6 +73,21 @@ env.info("DCSRetribution|Intercept: configuring QRA dispatchers")
 
 intercept_survivors = intercept_survivors or {}
 
+do
+    local _orig_message_to_players = DETECTION_MANAGER.MessageToPlayers
+    function DETECTION_MANAGER:MessageToPlayers(Squadron, Message, DefenderGroup)
+        if type(Message) == "string" then
+            local lower_message = string.lower(Message)
+            if string.find(lower_message, "landing at base", 1, true)
+                or string.find(Message, "посадка на базу", 1, true)
+            then
+                return
+            end
+        end
+        return _orig_message_to_players(self, Squadron, Message, DefenderGroup)
+    end
+end
+
 -- Registry: maps squadronId -> { dispatcher, squadronName }. Populated by the
 -- deferred dispatcher build (BUILD_DELAY seconds in), then read by the refresh
 -- loop.

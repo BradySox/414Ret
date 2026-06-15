@@ -21,6 +21,24 @@ for _, b in ipairs(_CIVILIAN_TRAFFIC_EXCL) do
     _excl[b] = true
 end
 
+local function _contains(text, needle)
+    return string.find(text, needle, 1, true) ~= nil
+end
+
+local function _usable_fixed_wing_field(name, desc)
+    return desc
+        and desc.category == Airbase.Category.AIRDROME
+        and not _contains(name, "Heliport")
+        and not _contains(name, "FARP")
+end
+
+local function _usable_rotary_field(name, desc)
+    return desc
+        and (desc.category == Airbase.Category.AIRDROME
+             or desc.category == Airbase.Category.HELIPAD)
+        and not _contains(name, "Invisible FARP")
+end
+
 -- ── Airdrome pool (fixed-wing) ────────────────────────────────────────────────
 -- Neutral airfields that are NOT being used by Retribution this turn.
 -- Heliports/FARPs excluded -- fixed-wing can't taxi there.
@@ -30,7 +48,7 @@ for _, ab in pairs(world.getAirbases()) do
     local desc = ab:getDesc()
     if not _excl[name]
         and ab:getCoalition() == coalition.side.NEUTRAL
-        and desc and desc.category == Airbase.Category.AIRDROME
+        and _usable_fixed_wing_field(name, desc)
     then
         _airdromes[#_airdromes + 1] = name
     end
@@ -45,9 +63,7 @@ for _, ab in pairs(world.getAirbases()) do
     local desc = ab:getDesc()
     if not _excl[name]
         and ab:getCoalition() == coalition.side.NEUTRAL
-        and desc
-        and (desc.category == Airbase.Category.AIRDROME
-             or desc.category == Airbase.Category.HELIPAD)
+        and _usable_rotary_field(name, desc)
     then
         _helipads[#_helipads + 1] = name
     end
@@ -56,7 +72,9 @@ end
 -- ── Density helper ────────────────────────────────────────────────────────────
 -- Returns flights-per-template scaled to pool size, clamped to [lo, hi].
 local function _density(pool_size, lo, hi)
-    local n = math.ceil(pool_size * 0.6)
+    -- Keep the civilian layer materially lighter: about half the old density,
+    -- while still leaving a little life on sparse maps.
+    local n = math.ceil(pool_size * 0.3)
     if n < lo then n = lo end
     if n > hi then n = hi end
     return n
@@ -88,13 +106,12 @@ local _fw_count  = 0
 local _fw_spawns = 0
 
 if #_airdromes >= 2 then
-    local n = _density(#_airdromes, 2, 10)   -- 2–10 per template type
+    local n = _density(#_airdromes, 1, 5)    -- half the old 2-10 density band
     local fw_templates = {
         "RAT_CIV_C130",
         "RAT_CIV_AN26",
         "RAT_CIV_AN30",
         "RAT_CIV_YAK52",
-        "RAT_CIV_EAGLE",
     }
     for _, tmpl in ipairs(fw_templates) do
         if _spawn_rat(tmpl, _airdromes, n, nil) then   -- no distance cap
@@ -109,14 +126,18 @@ local _helo_count  = 0
 local _helo_spawns = 0
 
 if #_helipads >= 2 then
-    local n = _density(#_helipads, 2, 8)     -- helos smaller max count
+    local n = _density(#_helipads, 1, 4)     -- half the old 2-8 density band
     local helo_templates = {
         "RAT_CIV_MI8",
         "RAT_CIV_UH1",
         "RAT_CIV_SA342",
     }
     for _, tmpl in ipairs(helo_templates) do
-        if _spawn_rat(tmpl, _helipads, n, 100) then   -- cap helos at 100 nm
+        -- No distance cap: on large/sparse maps a 100 nm cap left isolated departure
+        -- fields with no reachable destination, so RAT spammed "No valid destination
+        -- airport could be found" every respawn. Uncapped matches the error-free
+        -- fixed-wing layer; SetMinDistance(5) still prevents same-field hops.
+        if _spawn_rat(tmpl, _helipads, n, nil) then
             _helo_count  = _helo_count  + 1
             _helo_spawns = _helo_spawns + n
         end

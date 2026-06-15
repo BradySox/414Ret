@@ -333,7 +333,7 @@ class MissionGenerator:
     def _spawn_civilian_rat_templates(self) -> None:
         from dcs.helicopters import Mi_8MT, SA342M, UH_1H
         from dcs.mission import StartType as DcsStartType
-        from dcs.planes import An_26B, An_30M, C_130, Christen_Eagle_II, Yak_52
+        from dcs.planes import An_26B, An_30M, C_130, Yak_52
 
         # Templates for civilian background traffic. RAT clones these
         # late-activated groups at runtime; the templates themselves never
@@ -345,7 +345,6 @@ class MissionGenerator:
             ("RAT_CIV_AN26", An_26B),
             ("RAT_CIV_AN30", An_30M),
             ("RAT_CIV_YAK52", Yak_52),
-            ("RAT_CIV_EAGLE", Christen_Eagle_II),
         )
         rotary_templates = (
             ("RAT_CIV_MI8", Mi_8MT),

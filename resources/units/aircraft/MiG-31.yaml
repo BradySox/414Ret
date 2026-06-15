@@ -21,6 +21,6 @@ variants:
   MiG-31 Foxhound: {}
 tasks:
   BARCAP: 605
-  Escort: 540
+  Escort: 375
   Fighter sweep: 540
   TARCAP: 585

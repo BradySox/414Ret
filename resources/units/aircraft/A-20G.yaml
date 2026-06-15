@@ -18,7 +18,7 @@ variants:
   Boston Mk.III: {}
 tasks:
   Anti-ship: 160
-  BAI: 260
+  BAI: 172
   CAS: 240
   DEAD: 150
   OCA/Aircraft: 255

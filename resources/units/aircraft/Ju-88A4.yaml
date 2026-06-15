@@ -20,7 +20,7 @@ role: Tactical/Torpedo Bomber
 variants:
   Ju 88 A-4: {}
 tasks:
-  Anti-ship: 290
+  Anti-ship: 209
   BAI: 150
   CAS: 150
   DEAD: 140

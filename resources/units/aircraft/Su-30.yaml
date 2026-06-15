@@ -23,11 +23,11 @@ tasks:
   BARCAP: 575
   CAS: 630
   DEAD: 415
-  Escort: 555
-  Fighter sweep: 555
+  Escort: 485
+  Fighter sweep: 492
   OCA/Aircraft: 665
   OCA/Runway: 565
   SEAD: 20
   SEAD Escort: 20
   Strike: 575
-  TARCAP: 575
+  TARCAP: 505

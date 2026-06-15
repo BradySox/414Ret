@@ -35,9 +35,9 @@ tasks:
   BAI: 645
   BARCAP: 590
   CAS: 645
-  Escort: 565
-  Fighter sweep: 565
+  Escort: 496
+  Fighter sweep: 503
   OCA/Aircraft: 680
   OCA/Runway: 575
   Strike: 580
-  TARCAP: 590
+  TARCAP: 517

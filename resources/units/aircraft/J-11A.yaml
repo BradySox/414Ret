@@ -14,6 +14,6 @@ variants:
 kneeboard_units: "metric"
 tasks:
   BARCAP: 685
-  Escort: 645
+  Escort: 582
   Fighter sweep: 655
   TARCAP: 670

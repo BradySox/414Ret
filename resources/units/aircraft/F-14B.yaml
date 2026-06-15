@@ -50,10 +50,10 @@ tasks:
   BARCAP: 585
   CAS: 655
   DEAD: 390
-  Escort: 565
+  Escort: 504
   Fighter sweep: 565
   OCA/Aircraft: 690
   OCA/Runway: 605
   Strike: 610
-  TARCAP: 585
+  TARCAP: 524
   TARPS: 700

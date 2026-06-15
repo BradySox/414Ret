@@ -17,7 +17,7 @@ variants:
 # default_overrides:
 #   Belly_Bay_Door: false
 tasks:
-  Anti-ship: 515
+  Anti-ship: 410
   BAI: 425
   CAS: 415
   DEAD: 200

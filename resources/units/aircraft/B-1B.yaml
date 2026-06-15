@@ -17,7 +17,7 @@ max_range: 2000
 variants:
   B-1B Lancer: {}
 tasks:
-  BAI: 610
+  BAI: 478
   CAS: 575
   DEAD: 225
   OCA/Aircraft: 600

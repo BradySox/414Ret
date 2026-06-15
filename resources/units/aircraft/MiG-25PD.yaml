@@ -30,6 +30,6 @@ variants:
   MiG-25PD Foxbat-E: {}
 tasks:
   BARCAP: 575
-  Escort: 515
+  Escort: 356
   Fighter sweep: 515
   TARCAP: 550

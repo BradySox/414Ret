@@ -18,11 +18,11 @@ variants:
   Mirage-F1M-CE: {}
 tasks:
   BAI: 520
-  BARCAP: 495
+  BARCAP: 433
   CAS: 520
-  Escort: 470
+  Escort: 405
   Fighter sweep: 470
   OCA/Aircraft: 555
   OCA/Runway: 490
   Strike: 495
-  TARCAP: 495
+  TARCAP: 422

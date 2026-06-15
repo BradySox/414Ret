@@ -389,12 +389,18 @@ files are generated at build time and are **not** in the repo.
 
 ## Still in flight / deferred
 
-- Full 256-aircraft YAML mission-preference rebalance is **held** until in-game
-  scramble/CAP validation is done. Two targeted YAML fixes already landed (Tu-22M3
-  anti-ship 800, M-2000C A2A 460).
-- Reactive scramble has been validated in code/unit tests but the end-to-end in-game
-  launch (border trigger -> cold start -> takeoff -> intercept) should be re-checked after
-  any change to the pool or border logic.
+- Aircraft task-priority rebalance: a **conservative, intent-preserving outliers pass**
+  landed 2026-06-15 (20 files, 31 changes) driven by a documented role-band rubric —
+  `docs/dev/design/414th-aircraft-task-rebalance-rubric.md` + `tools/rebalance_aircraft_tasks.py`.
+  It excludes discarded-mod airframes, only tightens over-high secondary roles (never adds
+  roles or inflates deliberate suppressions). The **full "tighten everywhere" rebalance
+  remains held** until in-game scramble/CAP validation. Earlier targeted fixes also landed
+  (Tu-22M3 anti-ship 815, M-2000C A2A).
+- Reactive scramble is **retired** — the old 414th ramp-scramble system (border trigger
+  -> cold start -> takeoff -> intercept) was replaced by the upstream PR #782 QRA
+  dispatcher (see "QRA intercept reserve" above), and `reactive_scramble.lua` +
+  `FlightType.SCRAMBLE` were removed. The live A2A path to validate in-game is now the
+  Moose `AI_A2A_DISPATCHER` QRA flow, not ramp-scramble.
 
 ## PINNED - do not modify
 

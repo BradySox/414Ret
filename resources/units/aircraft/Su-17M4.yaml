@@ -23,8 +23,8 @@ tasks:
   BAI: 635
   CAS: 635
   DEAD: 360
-  OCA/Aircraft: 640
-  OCA/Runway: 585
+  OCA/Aircraft: 563
+  OCA/Runway: 480
   SEAD: 40
   SEAD Escort: 40
-  Strike: 595
+  Strike: 512

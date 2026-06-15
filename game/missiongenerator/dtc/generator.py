@@ -58,12 +58,17 @@ class DtcGenerator:
         """Mirror each cartridge into ``Saved Games\\DCS\\DTC``.
 
         Embedding the cartridge in the ``.miz`` is not enough: DCS's DTC manager and the
-        mission-start auto-load read cartridges from the player's Saved Games DTC library,
-        keyed by the aircraft type (``<type>_DTC.dtc``). Writing them here is what makes
-        the data actually available in the jet.
+        mission-start auto-load read cartridges from the player's Saved Games DTC library.
+
+        Crucially the file must be named after the cartridge's **name**
+        (``<name>.dtc``), not the aircraft type. The per-unit AutoLoad block references the
+        cartridge by name (``Retribution <terrain> DTC_1``), and DCS resolves a *named*
+        cartridge to a ``<name>.dtc`` file. Writing the data under the type-default
+        filename (``<type>_DTC.dtc``) left the data importable but invisible to the
+        name-keyed dropdown/auto-load, so the pre-load found nothing.
         """
         dtc_dir = base_path() / "DTC"
         dtc_dir.mkdir(parents=True, exist_ok=True)
-        for dcs_type, cartridge in cartridges.items():
-            path = dtc_dir / f"{dcs_type}_DTC.dtc"
+        for cartridge in cartridges.values():
+            path = dtc_dir / f"{cartridge['name']}.dtc"
             path.write_text(json.dumps(cartridge, indent=2), encoding="utf-8")

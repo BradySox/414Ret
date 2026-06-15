@@ -224,14 +224,17 @@ unit block is kept as-is (verified correct above).
 
 ## Gotchas learned in-game
 
-- **DCS reads cartridges from `Saved Games\DCS\DTC`, not the embedded `.miz`.** The DTC
-  manager and mission-start auto-load key off the player's Saved Games DTC library, named
-  by aircraft type (`<type>_DTC.dtc`, e.g. `F-16C_50_DTC.dtc`, `FA-18C_hornet_DTC.dtc`).
-  Embedding the cartridge in the archive alone does nothing for apply; `DtcGenerator`
-  mirrors each cartridge into that folder via `_write_saved_games_library()` (path from
-  `persistency.base_path()`). The `.miz` injection is kept for the per-unit AutoLoad
-  binding + portability. NOTE: this is a per-machine library write, so it does not
-  distribute to other clients in multiplayer -- that path is still open.
+- **DCS reads cartridges from `Saved Games\DCS\DTC`, not the embedded `.miz`** — and the
+  library file must be named after the cartridge **name** (`<name>.dtc`), not the aircraft
+  type. The per-unit AutoLoad block references the cartridge by name
+  (`Retribution <terrain> DTC_1`), and DCS resolves a *named* cartridge to a `<name>.dtc`
+  file; the type-default filename (`<type>_DTC.dtc`) is the *unnamed* slot. Writing the
+  data under `<type>_DTC.dtc` left it importable (Import reads the raw file) but invisible
+  to the name-keyed dropdown/auto-load, so the pre-load found nothing and the dropdown fell
+  back to the default. `DtcGenerator._write_saved_games_library()` writes
+  `<cartridge name>.dtc` (path from `persistency.base_path()`). The `.miz` injection is
+  kept for the per-unit AutoLoad binding + portability. NOTE: this is a per-machine library
+  write, so it does not distribute to other clients in multiplayer -- still open.
 - **Scope (per the 414th): the deliverable is the Hornet SA page tanker + CAP tracks.**
   Threat rings draw themselves from DCS intel; COMM and waypoints load from the mission
   independently of DTC. So `CAP_PTS` (player/AI CAP racetracks + tanker tracks) is the

@@ -121,6 +121,25 @@ def test_archive_name_is_canonical_type_id() -> None:
     assert cartridge_archive_names(F18_TYPE) == ("FA-18C_hornet",)
 
 
+def test_saved_games_library_file_named_after_cartridge(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # DCS resolves the per-unit AutoLoad reference (the cartridge *name*) to a
+    # <name>.dtc file. Writing under the aircraft-type filename left it invisible to the
+    # name-keyed auto-load, so the file must be named after the cartridge.
+    from game.missiongenerator.dtc import generator as gen_mod
+
+    monkeypatch.setattr(gen_mod, "base_path", lambda: tmp_path)
+    cartridge = build_cartridge(F18_TYPE, _sample_sa(), "Iraq")
+    gen_mod.DtcGenerator._write_saved_games_library({F18_TYPE: cartridge})
+
+    written = tmp_path / "DTC" / "Retribution Iraq DTC_1.dtc"
+    assert written.exists()
+    loaded = json.loads(written.read_text(encoding="utf-8"))
+    assert loaded["name"] == "Retribution Iraq DTC_1"
+    assert len(loaded["data"]["SA"]["CAP_PTS"]) == 2
+
+
 def test_inject_cartridges_patches_only_hornet_units_for_autoload(
     tmp_path: Path,
 ) -> None:

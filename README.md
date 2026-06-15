@@ -19,6 +19,17 @@ project README is preserved as [`README.upstream.md`](README.upstream.md).
 This fork is upstream `dev` at commit `dce851ea` with the following 414th additions
 stacked on top (newest first):
 
+### Data Transfer Cartridge (DTC) export
+- **Native DCS DTC cartridge export** — Retribution can write a native Data Transfer
+  Cartridge into the generated `.miz` so **F/A-18C** players spawn with the SA picture
+  already built: player/AI **CAP racetracks and tanker tracks** drawn on the Hornet SA
+  page. Off by default (`generate_dtc` setting). The cartridge is mirrored into
+  `Saved Games\DCS\DTC` under a neutral, terrain-tagged name so it never collides with a
+  player's own cartridge library.
+  - *Current limitation:* ED's mission-start auto pre-load does not fire on the current
+    DCS build, so the player loads the `Retribution <terrain> DTC_1` cartridge once from
+    the DTC manager per sortie. Re-tested each DCS build.
+
 ### New flight types
 - **`FlightType.JAMMING`** - standoff electronic-warfare support flown by the C-130J,
   acting as an EC-130H Compass Call / RC-130H Rivet Joint platform. Driven by the

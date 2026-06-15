@@ -294,6 +294,37 @@ units. Enable per-game via the plugins UI ("Troops In Contact").
   `qt_ui/windows/newgame/...` wizard pages.
 - Faction: `resources/factions/CH_iran_2020.json` (`[CH] Iran 2020`).
 
+### 11. Native DCS DTC cartridge export (plugin-less, gated OFF by default)
+Auto-writes a **native DCS Data Transfer Cartridge** into the generated `.miz` so
+players spawn with the SA picture pre-built. **F/A-18C only**, and the shipped payload
+is the **`SA.CAP_PTS` partition only**: player/AI CAP racetracks + tanker tracks drawn
+on the Hornet SA page. Gated by the `generate_dtc` setting (default OFF until ED's
+mission-start pre-load is confirmed working on a future build).
+- Design ground truth + reverse-engineered schema: `docs/dev/design/414th-dtc-export-notes.md`
+  (read this before touching the format).
+- Package: `game/missiongenerator/dtc/` — `cartridge.py` (envelope + the neutral,
+  terrain-tagged name `Retribution <terrain> DTC_1` that avoids colliding with a
+  player's personal cartridge library), `sadata.py` (`_collect_orbits()` /
+  `_collect_threats()` Retribution→partition mapping; reuses the `hide_on_mfd` filter so
+  hidden mobile SAMs never generate rings), `generator.py`, `injector.py`,
+  `diagnostics.py`.
+- Build path: overlay tracks onto the captured ME template
+  (`resources/dtc/templates/FA-18C_hornet.dtc`, `F-16C_50.dtc`) so COMM/ALR67/CMDS keep
+  their ME defaults and the cartridge stays structurally complete, then inject
+  `DTC/<type>.dtc` zip members **after** `self.mission.save(output)` in
+  `game/missiongenerator/missiongenerator.py`, and **also** mirror the file into
+  `Saved Games\DCS\DTC\<cartridge name>.dtc` (DCS resolves named cartridges from there,
+  not the `.miz`).
+- Per-unit binding: every player Hornet carries
+  `["DTC"]={["AutoLoad"]=true,["Cartridges"]={[1]={["default"]=true,["name"]=...}}}`.
+- Tests: `tests/missiongenerator/test_dtc.py`, `tests/missiongenerator/test_dtc_diagnostics.py`.
+- **KNOWN LIMITATION (verified 2026-06-14):** ED's mission-start *pre-load* does not fire
+  on the current DCS build even with a fully correct setup — the player must open the DTC
+  manager and **manually load** `Retribution <terrain> DTC_1` once per sortie, after which
+  the tracks populate correctly. Re-test pre-load on future DCS builds before assuming the
+  manual step is still needed. Mirrored library write is per-machine, so it does not
+  distribute over multiplayer — still open.
+
 ---
 
 ## Branch & repo layout

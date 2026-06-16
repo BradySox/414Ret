@@ -127,23 +127,41 @@ TARPS-capable squadron is available.
   payloads in `resources/customized_payloads/F-14*.lua`.
 - Tests: `tests/test_tarps_recon.py`.
 
-**BDA fog-of-war** — struck *enemy* targets hold a separate player-visible confirmed
-state that diverges from sim truth until a TARPS pass resolves it:
+**Visibility / recon fog** — one viewer-aware layer drives two player-facing fog rules.
+AI planning and threat math always use ground truth (`viewer=None`); only the human
+(BLUE) map/UI are fogged.
 
-- `TheaterUnit` / `TheaterGroup` carry `_confirmed_alive` (defaults to true so old
-  saves load cleanly). `sync_confirmed_status()` snaps it to truth.
-  `alive_for_player(viewer)` returns confirmed state for enemies, true state for
-  friendlies. Files: `game/theater/theatergroup.py`, `game/theater/theatergroundobject.py`.
-- `game/sim/missionresultsprocessor.py` applies true kills first, then calls
-  `sync_confirmed_status()` only on friendly TGOs and enemy TGOs covered by a surviving
-  TARPS sortie this turn.
-- Map serialization (`game/server/tgos/models.py`) reads `alive_for_player` so the
-  Leaflet map, unit labels, SAM range rings, and dead/damaged icons all show the
-  confirmed picture, not ground truth.
-- UI reads confirmed state: `qt_ui/windows/groundobject/QBuildingInfo.py`,
-  `qt_ui/windows/groundobject/QGroundObjectMenu.py`,
-  `qt_ui/windows/basemenu/QBaseMenu2.py`.
-- Tests: `tests/test_bda_tarps_reveal.py`.
+The unified layer (replaced the old sprawling `_for_player`/`_for` method twins — collapse
+finished, do not reintroduce twins):
+- `TheaterUnit.alive_for(viewer=None)` — `None`/friendly → truth; enemy → `alive_at_last_recon`
+  (post-strike BDA damage lag). `sync_confirmed_status()` snaps it to truth.
+- `TheaterGroundObject.known_for(viewer=None)` — `None`/friendly → True; enemy → the sticky
+  `discovered_by_player` flag (gated by the `recon_intel_fog` setting).
+- Every accessor takes `viewer: Optional[Player] = None` (truth by default): unit
+  `threat_range`/`detection_range`, group `alive_units`/`max_threat_range`/`max_detection_range`,
+  TGO `is_dead`/`dead_units`/`alive_unit_count`/`max_threat_range`/`max_detection_range`/
+  `sidc_status_for`/`sidc_for`. `display_name`/`short_name` keep a truth `@property` that
+  delegates to the `*_for(viewer)` worker (they had too many truth callers to convert).
+  Files: `game/theater/theatergroup.py`, `game/theater/theatergroundobject.py`.
+
+*Two fog rules on that layer:*
+1. **BDA damage lag** (`alive_for`): struck *enemy* units keep showing alive until recon
+   confirms the kill. `game/sim/missionresultsprocessor.py` applies true kills, then
+   `sync_confirmed_status()` only on friendly TGOs and enemy TGOs reconned this turn
+   (TARPS package targets + actual TARS captures).
+2. **Recon intel-fog** (`known_for`): a new *enemy* site shows on the map as a targetable
+   marker (position/category/allegiance) but its composition + threat/detection rings stay
+   hidden until **attacked, scouted, or destroyed**. `discovered_by_player` is flipped
+   (sticky, enemy-only) by `reveal_discovered_sites()` in `missionresultsprocessor.py` from
+   the struck / reconned / TARS / attacked sets. `__setstate__` migrates old saves to
+   `discovered_by_player=True` (existing campaigns stay revealed; the fog is felt on new
+   campaigns). Master switch: `recon_intel_fog` setting (default ON, Campaign Doctrine).
+
+- Consumers gate at the edge: `game/server/tgos/models.py` emits a fogged payload (empty
+  rings, hidden units) when `not known_for(BLUE)`; `qt_ui/windows/groundobject/QGroundObjectMenu.py`
+  + `QBuildingInfo.py` pass `self.viewer` and show "Not yet scouted — composition unknown".
+- Tests: `tests/test_bda_tarps_reveal.py` (damage lag), `tests/test_recon_intel_fog.py`
+  (discovery gate, migration, setting).
 
 ### 4. UI transparency improvements
 Several player-facing dialogs were reworked to surface planner reasoning instead of
@@ -349,6 +367,59 @@ mission-start pre-load is confirmed working on a future build).
   the tracks populate correctly. Re-test pre-load on future DCS builds before assuming the
   manual step is still needed. Mirrored library write is per-machine, so it does not
   distribute over multiplayer — still open.
+
+### 12. TARS recon engine (plugin, default ON)
+Design notes: `docs/dev/design/414th-tars-recon-notes.md` (read before touching).
+MOOSE **Ops.TARS** v2.3.2 becomes the runtime engine for `FlightType.TARPS`: F10 "film"
+menu, overfly detection, coalition F10 markers, scoring, and a landing debrief that
+feeds the BDA fog-of-war the exact enemy units a surviving recon pass photographed.
+
+- Plugin: `resources/plugins/tars/` (`TARS.lua` vendored verbatim from MOOSE develop —
+  NOT in the bundled Moose.lua, but API-compatible with it; `tars_414_init.lua`;
+  `plugin.json`, default ON; options: scoring, scoreValue, filmLimit, restrictToNamed,
+  enforceLoadout, srs, srsPort).
+- Injection: NOT a work order. `_inject_tars_script()` in
+  `game/missiongenerator/luagenerator.py` mirrors the TIC pattern — appended after
+  `inject_plugins()` so `dcsRetribution.plugins.tars` exists, then DoScriptFile
+  `TARS.lua` + `tars_414_init.lua`. TARS.lua only defines the class; `tars_414_init.lua`
+  owns `TARS:New()`.
+- TWO theater-correct overrides are load-bearing (`tars_414_init.lua`):
+  `targetNameFilter.enabled=false` (stock USA/USSR keywords hide all Retribution
+  targets) and the `allowedAmmo` loadout whitelist (stock list excludes AIM-7/AIM-54, so
+  the shipped F-14 TARPS payload — carrying `{SHOULDER AIM-7MH}` — would fail ground
+  validation and the F10 menu would never unlock). With `enforceLoadout` OFF (default) we
+  make the whitelist accept anything via an `__index` metatable returning true — no
+  guessing at DCS `weapon.desc.displayName` strings, no payload nerf.
+- BDA bridge: `OnAfterDataProcessing` override appends `{unit,life,type}` to the global
+  `tars_recon_captures` and sets `dirty_state=true`; `dcs_retribution.lua` `write_state()`
+  serializes it; `game/debriefing.py` `StateData.parse_tars_captures()` parses it;
+  `game/sim/missionresultsprocessor.py` `tars_reconned_tgos()` resolves names via
+  `unit_map.theater_units(...).theater_unit.ground_object` and `update_confirmed_bda()`
+  syncs those TGOs. Additive — empty/no-op when the plugin is OFF. Snapshot schema
+  (`snap.name/life/type/coa`) is documented in TARS.lua and logged once in-game.
+- Tests: `tests/test_tars_bda_bridge.py`. Default ON; Lua still needs an in-game pass
+  (not runnable in CI).
+
+### 13. Flight Control ATC (plugin, default ON, players-only)
+Design notes: `docs/dev/design/414th-flightcontrol-notes.md`.
+MOOSE **FLIGHTCONTROL** v0.7.7 (already in the vendored Moose.lua) gives players-only
+tower comms (taxi/takeoff/landing sequencing + SRS voice, text-subtitle fallback) at
+friendly land airbases.
+
+- Plugin: `resources/plugins/flightcontrol/` (`flightcontrol_414_init.lua`; `plugin.json`,
+  default ON; options: subtitles, srsPort, maxLanding, maxTaxi).
+- Injection: `_inject_flightcontrol_script()` in `luagenerator.py` (after
+  `inject_plugins()`, gated on enabled) emits the blue-airdrome list via
+  `_flightcontrol_airbase_entries()` into `dcsRetribution.FlightControl.airbases` (name +
+  ATC freq/modulation from `mission_data.runways` where present), then DoScriptFile the
+  init. AIRDROME-only (FARPs/ships rejected by `FLIGHTCONTROL:New()` itself); SRS path is
+  nil so MOOSE auto-detects the server install.
+- Players-only is PRAGMATIC, not a hard switch: MOOSE observes AI at the airbase, so we
+  set generous `SetLimitLanding`/`SetLimitTaxi` (default 99) + `SetRadioOnlyIfPlayers` so
+  AI flow stays pass-through. PRIMARY in-game check: AI QRA/CAP launches from these bases
+  are unaffected.
+- Tests: `tests/test_flightcontrol_emit.py`. Default ON; Lua still needs an in-game pass
+  (not runnable in CI).
 
 ---
 

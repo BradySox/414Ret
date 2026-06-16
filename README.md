@@ -37,10 +37,23 @@ stacked on top (newest first):
 - **`FlightType.TARPS`** - player-flown F-14 photo-reconnaissance (all F-14 variants).
   Flies a single overflight ~5 minutes behind the strikers carrying the `{F14-TARPS}`
   pod (station 6, editor-verified). Auto-planned into Strike / DEAD packages.
-- **BDA fog-of-war** - struck enemy targets hold a separate player-visible confirmed
-  state that diverges from sim truth until a TARPS pass resolves it. The map, unit
-  labels, SAM range rings, and ground-object dialogs all show the confirmed picture;
-  AI planning and threat math always use true state. Unstruck targets render normally.
+- **Recon intel-fog** - enemy ground sites appear on the map as targets you can plan
+  packages against, but *what is actually there* - unit types, counts, damage state, and
+  threat/detection rings - stays hidden until the site is **attacked, scouted by
+  recon/TARPS, or has a unit destroyed**. That's what finally makes recon worth flying.
+  AI planning and threat math always use true state, so auto-planning is unaffected.
+  Existing campaigns stay revealed; the fog applies to new campaigns. Master switch:
+  the `recon_intel_fog` campaign setting (default on).
+- **BDA damage lag** - on top of that, a struck enemy site you *have* discovered keeps
+  showing its units as alive until a TARPS pass confirms the kill, so you can't tell from
+  the map alone whether a strike worked. Both fog rules run through one viewer-aware
+  visibility layer (`alive_for` / `known_for`).
+- **Tactical Air Recon (TARS)** plugin (MOOSE Ops.TARS, default ON) - an optional
+  runtime engine for TARPS sorties: an F10 "film" menu, overfly-detection within a
+  per-airframe sensor envelope, coalition-only F10 map markers, and scoring. Its landing
+  debrief feeds the BDA fog-of-war the exact enemy units a surviving recon pass
+  photographed, so confirmed BDA tracks what was actually seen rather than whole-target
+  overflight. Enable in the plugins UI.
 
 ### Air-defense planning rework
 - **Per-squadron QRA intercept reserve** from upstream PR `#782`. BARCAP-capable
@@ -90,6 +103,10 @@ stacked on top (newest first):
 - **Civilian background air traffic** via MOOSE RAT - routes invisible civilian
   flights between neutral airdromes (and a separate blue-field pool) for ambiance,
   steering clear of airbases Retribution is using for combat ops this turn.
+- **Flight Control (ATC)** plugin (MOOSE FLIGHTCONTROL, default ON) - players-only
+  tower comms (taxi/takeoff/landing sequencing with SRS voice, text-subtitle fallback)
+  at friendly land airbases. AI limits are kept generous so it does not queue or strand
+  AI scrambles. Enable in the plugins UI.
 
 ### Assets
 - **CurrentHill Iran assets pack** support: Shahed-136, IRGCN FAC variants, and a
@@ -168,6 +185,8 @@ Features that started as standalone ME scripts and are now fully integrated into
 repo (do not use the standalone versions):
 - **C-130J EW/ISR** → `resources/plugins/c130j/` (`FlightType.JAMMING`)
 - **QRA / AI_A2A_DISPATCHER** → `resources/plugins/intercept/` (per-squadron `intercept_reserve`)
+- **TARS recon** → `resources/plugins/tars/` (runtime engine for `FlightType.TARPS`)
+- **Flight Control ATC** → `resources/plugins/flightcontrol/` (players-only tower comms)
 
 This repo is the **engine-level** side: capabilities planned and spawned automatically
 by the campaign generator rather than hand-placed in the Mission Editor.

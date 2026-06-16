@@ -369,6 +369,22 @@ class Settings:
             "scrubbed)."
         ),
     )
+    recon_intel_fog: bool = boolean_option(
+        "Recon intel fog (hide enemy site composition until scouted)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        invert=False,
+        detail=(
+            "When enabled, enemy ground sites appear on the map as targets you can "
+            "plan against, but what is actually there — unit types, counts, damage "
+            "state, and threat/detection rings — stays hidden until the site is "
+            "attacked, scouted by recon/TARPS, or has a unit destroyed. The AI "
+            "planner and threat math always use full truth, so auto-planning is "
+            "unaffected. Existing campaigns keep everything revealed; the fog "
+            "applies to new campaigns."
+        ),
+    )
     aircraft_per_recovery_tanker: int = bounded_int_option(
         "Number of aircraft per recovery tanker",
         page=CAMPAIGN_DOCTRINE_PAGE,

@@ -45,6 +45,8 @@ class LuaGenerator:
         self.generate_plugin_data()
         self.inject_plugins()
         self._inject_tic_script()
+        self._inject_tars_script()
+        self._inject_flightcontrol_script()
         self._inject_civilian_traffic_script()
         for t in ewrj_triggers:
             self.mission.triggerrules.triggers.remove(t)
@@ -131,6 +133,108 @@ class LuaGenerator:
         fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
         trigger.add_action(DoScriptFile(fileref))
         self.mission.triggerrules.triggers.append(trigger)
+
+    @staticmethod
+    def _plugin_enabled(identifier: str) -> bool:
+        for plugin in LuaPluginManager.plugins():
+            if plugin.definition.identifier == identifier:
+                return plugin.enabled
+        return False
+
+    def _inject_tars_script(self) -> None:
+        """Inject Ops.TARS (vendored) + the 414th config/bridge layer.
+
+        Fires only when the TARS plugin is enabled. TARS.lua defines the class
+        but does NOT self-instantiate; tars_414_init.lua calls TARS:New(),
+        applies the 414th config (theater-correct target/loadout filters), and
+        bridges captures into the tars_recon_captures global the base plugin
+        serializes into state.json. Appended after inject_plugins() so
+        dcsRetribution.plugins.tars already exists; MOOSE is loaded earlier by
+        the base plugin.
+        """
+        if not self._plugin_enabled("tars"):
+            return
+        script_path = Path("./resources/plugins/tars/TARS.lua")
+        init_path = Path("./resources/plugins/tars/tars_414_init.lua")
+        for path in (script_path, init_path):
+            if not path.exists():
+                logging.error(
+                    "TARS plugin file not found at %s — recon disabled",
+                    path.resolve(),
+                )
+                return
+        trigger = TriggerStart(comment="Load Ops.TARS (player recon / TARPS film)")
+        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
+        trigger.add_action(DoScriptFile(fileref))
+        init_fileref = self.mission.map_resource.add_resource_file(init_path.resolve())
+        trigger.add_action(DoScriptFile(init_fileref))
+        self.mission.triggerrules.triggers.append(trigger)
+
+    def _inject_flightcontrol_script(self) -> None:
+        """Inject players-only MOOSE FLIGHTCONTROL ATC at friendly land airbases.
+
+        Fires only when the FlightControl plugin is enabled. Emits the friendly
+        airdrome list (name + ATC frequency where known) into
+        dcsRetribution.FlightControl, then loads flightcontrol_414_init.lua which
+        spins up one FLIGHTCONTROL per base. MOOSE FLIGHTCONTROL itself rejects
+        FARPs and ships, so we only need to pre-filter to blue airdromes.
+        """
+        if not self._plugin_enabled("flightcontrol"):
+            return
+        script_path = Path(
+            "./resources/plugins/flightcontrol/flightcontrol_414_init.lua"
+        )
+        if not script_path.exists():
+            logging.error(
+                "flightcontrol_414_init.lua not found at %s — ATC disabled",
+                script_path.resolve(),
+            )
+            return
+
+        entries = self._flightcontrol_airbase_entries()
+        if not entries:
+            return
+
+        preamble = (
+            "dcsRetribution = dcsRetribution or {}\n"
+            "dcsRetribution.FlightControl = { airbases = {\n"
+            + ",\n".join(entries)
+            + "\n} }\n"
+        )
+        trigger = TriggerStart(comment="Flight Control (players-only ATC tower)")
+        trigger.add_action(DoScript(String(preamble)))
+        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
+        trigger.add_action(DoScriptFile(fileref))
+        self.mission.triggerrules.triggers.append(trigger)
+
+    def _flightcontrol_airbase_entries(self) -> list[str]:
+        """Build the Lua table-literal entries for each friendly land airbase.
+
+        One entry per blue-held airdrome: its name plus the ATC frequency and
+        modulation when we have runway data for it (the Lua side falls back to a
+        default frequency otherwise). Carriers/FARPs are excluded here, and
+        FLIGHTCONTROL also rejects them at runtime.
+        """
+        atc_by_field = {
+            runway.airfield_name: runway.atc
+            for runway in self.mission_data.runways
+            if runway.atc is not None
+        }
+
+        entries: list[str] = []
+        for cp in self.game.theater.controlpoints:
+            if cp.dcs_airport is None or not cp.captured.is_blue:
+                continue
+            name = escape_string_for_lua(cp.name)
+            atc = atc_by_field.get(cp.name)
+            if atc is not None:
+                entries.append(
+                    f'{{ name = "{name}", freq = {atc.mhz}, '
+                    f"modulation = {atc.modulation.value} }}"
+                )
+            else:
+                entries.append(f'{{ name = "{name}" }}')
+        return entries
 
     def generate_plugin_data(self) -> None:
         lua_data = LuaData("dcsRetribution")

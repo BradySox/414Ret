@@ -9,5 +9,7 @@
     "tic",
     "airboss",
     "intercept",
-    "civilian_traffic"
+    "civilian_traffic",
+    "tars",
+    "flightcontrol"
 ]

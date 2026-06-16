@@ -607,13 +607,13 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
     @property
     def has_factory(self) -> bool:
         for tgo in self.connected_objectives:
-            if tgo.is_factory and not tgo.is_dead:
+            if tgo.is_factory and not tgo.is_dead():
                 return True
         return False
 
     def has_factory_for(self, player: Player) -> bool:
         for tgo in self.connected_objectives:
-            if tgo.is_factory and not tgo.is_dead_for(player):
+            if tgo.is_factory and not tgo.is_dead(player):
                 return True
         return False
 
@@ -1184,14 +1184,14 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
 
     def ammo_depot_count(self, alive_only: bool = False) -> int:
         return sum(
-            ammo_depot.alive_unit_count if alive_only else ammo_depot.unit_count
+            ammo_depot.alive_unit_count() if alive_only else ammo_depot.unit_count
             for ammo_depot in self.all_ammo_depots
         )
 
     def ammo_depot_count_for(self, player: Player, alive_only: bool = False) -> int:
         return sum(
             (
-                ammo_depot.alive_unit_count_for(player)
+                ammo_depot.alive_unit_count(player)
                 if alive_only
                 else ammo_depot.unit_count
             )
@@ -1218,7 +1218,7 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
             [
                 obj
                 for obj in self.connected_objectives
-                if obj.category == "fuel" and not obj.is_dead
+                if obj.category == "fuel" and not obj.is_dead()
             ]
         )
 
@@ -1507,7 +1507,7 @@ class NavalControlPoint(
     def status(self) -> ControlPointStatus:
         if not self.runway_is_operational():
             return ControlPointStatus.Destroyed
-        if self.find_main_tgo().dead_units:
+        if self.find_main_tgo().dead_units():
             return ControlPointStatus.Damaged
         return ControlPointStatus.Functional
 

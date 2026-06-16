@@ -26,7 +26,7 @@ class PlanDead(PackagePlanningTask[IadsGroundObject]):
         super().apply_effects(state)
 
     def propose_flights(self) -> None:
-        tgt_count = self.target.alive_unit_count
+        tgt_count = self.target.alive_unit_count()
         self.propose_flight(FlightType.DEAD, min(4, (tgt_count // 2) + 1))
 
         # DEAD packages felt overstuffed when they requested all three SEAD flavors

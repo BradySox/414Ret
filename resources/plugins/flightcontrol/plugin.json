@@ -1,0 +1,34 @@
+{
+    "nameInUI": "Flight Control (ATC tower comms, players)",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Show ATC text subtitles",
+            "mnemonic": "subtitles",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "SRS server port",
+            "mnemonic": "srsPort",
+            "defaultValue": 5002,
+            "minimumValue": 1024,
+            "maximumValue": 65535
+        },
+        {
+            "nameInUI": "Max simultaneous AI landings (high = don't queue AI)",
+            "mnemonic": "maxLanding",
+            "defaultValue": 99,
+            "minimumValue": 1,
+            "maximumValue": 99
+        },
+        {
+            "nameInUI": "Max simultaneous AI taxiing (high = don't queue AI)",
+            "mnemonic": "maxTaxi",
+            "defaultValue": 99,
+            "minimumValue": 1,
+            "maximumValue": 99
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": []
+}

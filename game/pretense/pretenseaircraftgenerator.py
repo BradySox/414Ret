@@ -976,7 +976,7 @@ class PretenseAircraftGenerator:
                 if flight.package.target != flight.departure:
                     break
                 for mission_target in cp.ground_objects:
-                    if mission_target.alive_unit_count > 0:
+                    if mission_target.alive_unit_count() > 0:
                         flight.package.target = mission_target
                     break
         elif (

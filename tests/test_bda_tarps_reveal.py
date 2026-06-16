@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, Optional, cast
 from unittest.mock import MagicMock
 
 from dcs.mapping import Point
@@ -47,26 +47,26 @@ class FakeUnit:
     def sync_confirmed_status(self) -> None:
         self.alive_at_last_recon = self.alive
 
-    def alive_for_player(self, player: Player) -> bool:
-        if self.ground_object.is_friendly(player):
+    def alive_for(self, viewer: Optional[Player] = None) -> bool:
+        if viewer is None or self.ground_object.is_friendly(viewer):
             return self.alive
         return self.alive_at_last_recon
 
-    def display_name_for(self, player: Player) -> str:
-        suffix = " [DEAD]" if not self.alive_for_player(player) else ""
+    def display_name_for(self, viewer: Optional[Player] = None) -> str:
+        suffix = " [DEAD]" if not self.alive_for(viewer) else ""
         return f"0001 | Fake SAM{suffix}"
 
-    def short_name_for(self, player: Player) -> str:
-        suffix = " [DEAD]" if not self.alive_for_player(player) else ""
+    def short_name_for(self, viewer: Optional[Player] = None) -> str:
+        suffix = " [DEAD]" if not self.alive_for(viewer) else ""
         return f"<b>Fake SAM</b>{suffix}"
 
-    def threat_range_for_player(self, player: Player) -> Any:
-        if not self.alive_for_player(player):
+    def threat_range(self, viewer: Optional[Player] = None) -> Any:
+        if not self.alive_for(viewer):
             return meters(0)
         return meters(self.threat_meters)
 
-    def detection_range_for_player(self, player: Player) -> Any:
-        if not self.alive_for_player(player):
+    def detection_range(self, viewer: Optional[Player] = None) -> Any:
+        if not self.alive_for(viewer):
             return meters(0)
         return meters(self.detection_meters)
 
@@ -80,22 +80,20 @@ class FakeGroup:
     def unit_count(self) -> int:
         return len(self.units)
 
-    @property
-    def alive_units(self) -> int:
-        return sum(unit.alive for unit in self.units)
+    def alive_units(self, viewer: Optional[Player] = None) -> int:
+        return sum(unit.alive_for(viewer) for unit in self.units)
 
-    def alive_units_for_player(self, player: Player) -> int:
-        return sum(unit.alive_for_player(player) for unit in self.units)
-
-    def max_threat_range_for_player(self, player: Player) -> Any:
+    def max_threat_range(
+        self, viewer: Optional[Player] = None, radar_only: bool = False
+    ) -> Any:
         return max(
-            (unit.threat_range_for_player(player) for unit in self.units),
+            (unit.threat_range(viewer) for unit in self.units),
             default=meters(0),
         )
 
-    def max_detection_range_for_player(self, player: Player) -> Any:
+    def max_detection_range(self, viewer: Optional[Player] = None) -> Any:
         return max(
-            (unit.detection_range_for_player(player) for unit in self.units),
+            (unit.detection_range(viewer) for unit in self.units),
             default=meters(0),
         )
 
@@ -160,9 +158,11 @@ def test_enemy_damage_stays_hidden_without_tarps_recon() -> None:
 
     assert not unit.alive
     assert unit.alive_at_last_recon
-    assert tgo.is_dead
-    assert not tgo.is_dead_for(Player.BLUE)
-    assert tgo.max_threat_range_for(Player.BLUE) > meters(0)
+    assert tgo.is_dead()
+    assert not tgo.is_dead(Player.BLUE)
+    assert tgo.max_threat_range(Player.BLUE) > meters(0)
+    # Recon intel-fog: attacking the site (units destroyed) reveals it permanently.
+    assert tgo.discovered_by_player
 
 
 def test_surviving_tarps_reveals_true_enemy_damage() -> None:
@@ -176,5 +176,5 @@ def test_surviving_tarps_reveals_true_enemy_damage() -> None:
 
     assert not unit.alive
     assert not unit.alive_at_last_recon
-    assert tgo.is_dead_for(Player.BLUE)
-    assert tgo.max_threat_range_for(Player.BLUE) == meters(0)
+    assert tgo.is_dead(Player.BLUE)
+    assert tgo.max_threat_range(Player.BLUE) == meters(0)

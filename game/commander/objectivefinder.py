@@ -45,7 +45,7 @@ class ObjectiveFinder:
         """Iterates over all enemy SAM sites."""
         for cp in self.enemy_control_points():
             for ground_object in cp.ground_objects:
-                if ground_object.is_dead:
+                if ground_object.is_dead():
                     continue
 
                 if isinstance(ground_object, IadsGroundObject):
@@ -57,7 +57,7 @@ class ObjectiveFinder:
                 if not isinstance(ground_object, NavalGroundObject):
                     continue
 
-                if ground_object.is_dead:
+                if ground_object.is_dead():
                     continue
 
                 yield ground_object
@@ -123,7 +123,7 @@ class ObjectiveFinder:
                     # are disabled as they do not serve any purpose
                     continue
 
-                if ground_object.is_dead:
+                if ground_object.is_dead():
                     continue
                 if ground_object.name in found_targets:
                     continue

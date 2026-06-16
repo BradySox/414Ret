@@ -136,23 +136,33 @@ class QGroundObjectMenu(QDialog):
         self.intelBox = QGroupBox("Units :")
         self.intelLayout = QGridLayout()
         i = 0
-        for g in self.ground_object.groups:
-            for unit in g.units:
-                self.intelLayout.addWidget(
-                    QLabel(f"<b>Unit {str(unit.display_name_for(self.viewer))}</b>"),
-                    i,
-                    0,
-                )
-
-                if not unit.alive and unit.repairable and self.cp.captured.is_blue:
-                    price = unit.unit_type.price if unit.unit_type else 0
-                    repair = QPushButton(f"Repair [{price}M]")
-                    repair.setProperty("style", "btn-success")
-                    repair.clicked.connect(
-                        lambda u=unit, p=price: self.repair_unit(u, p)
+        if not self.ground_object.known_for(self.viewer):
+            # Recon intel-fog: composition stays hidden until the site is attacked,
+            # scouted, or has a unit destroyed.
+            self.intelLayout.addWidget(
+                QLabel("<i>Not yet scouted — composition unknown.</i>"), 0, 0
+            )
+            i = 1
+        else:
+            for g in self.ground_object.groups:
+                for unit in g.units:
+                    self.intelLayout.addWidget(
+                        QLabel(
+                            f"<b>Unit {str(unit.display_name_for(self.viewer))}</b>"
+                        ),
+                        i,
+                        0,
                     )
-                    self.intelLayout.addWidget(repair, i, 1)
-                i += 1
+
+                    if not unit.alive and unit.repairable and self.cp.captured.is_blue:
+                        price = unit.unit_type.price if unit.unit_type else 0
+                        repair = QPushButton(f"Repair [{price}M]")
+                        repair.setProperty("style", "btn-success")
+                        repair.clicked.connect(
+                            lambda u=unit, p=price: self.repair_unit(u, p)
+                        )
+                        self.intelLayout.addWidget(repair, i, 1)
+                    i += 1
 
         stretch = QVBoxLayout()
         stretch.addStretch()
@@ -285,11 +295,12 @@ class QGroundObjectMenu(QDialog):
             if value not in mission_types:
                 mission_types.append(value)
 
-        detection = self.ground_object.max_detection_range_for(self.viewer)
-        threat = self.ground_object.max_threat_range_for(self.viewer)
-        known_alive = self.ground_object.alive_unit_count_for(self.viewer)
+        scouted = self.ground_object.known_for(self.viewer)
+        detection = self.ground_object.max_detection_range(self.viewer)
+        threat = self.ground_object.max_threat_range(self.viewer)
+        known_alive = self.ground_object.alive_unit_count(self.viewer)
         total_units = self.ground_object.unit_count
-        destroyed_known = len(self.ground_object.dead_units_for(self.viewer))
+        destroyed_known = len(self.ground_object.dead_units(self.viewer))
         allegiance = (
             "Friendly"
             if self.ground_object.is_friendly(self.viewer)
@@ -314,22 +325,36 @@ class QGroundObjectMenu(QDialog):
                     else "No mission types for current side"
                 ),
             ),
-            ("Known live units", f"{known_alive}/{total_units}"),
-            ("Known destroyed units", str(destroyed_known)),
+            (
+                "Known live units",
+                f"{known_alive}/{total_units}" if scouted else "Unknown (not scouted)",
+            ),
+            (
+                "Known destroyed units",
+                str(destroyed_known) if scouted else "Unknown (not scouted)",
+            ),
             (
                 "Detection range",
                 (
-                    f"{Distance.from_meters(detection.meters).nautical_miles:.0f} NM"
-                    if detection.meters > 0
-                    else "None observed"
+                    "Unknown (not scouted)"
+                    if not scouted
+                    else (
+                        f"{Distance.from_meters(detection.meters).nautical_miles:.0f} NM"
+                        if detection.meters > 0
+                        else "None observed"
+                    )
                 ),
             ),
             (
                 "Threat range",
                 (
-                    f"{Distance.from_meters(threat.meters).nautical_miles:.0f} NM"
-                    if threat.meters > 0
-                    else "No known threat"
+                    "Unknown (not scouted)"
+                    if not scouted
+                    else (
+                        f"{Distance.from_meters(threat.meters).nautical_miles:.0f} NM"
+                        if threat.meters > 0
+                        else "No known threat"
+                    )
                 ),
             ),
             (

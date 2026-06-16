@@ -174,8 +174,15 @@ class QGroundObjectMenu(QDialog):
         j = 0
         total_income = 0
         received_income = 0
+        scouted = self.ground_object.known_for(self.viewer)
+        if not scouted:
+            # Recon intel-fog: hide the building composition until the site is
+            # attacked, scouted, or has a unit destroyed.
+            self.buildingsLayout.addWidget(
+                QLabel("<i>Not yet scouted — composition unknown.</i>"), 0, 0
+            )
         for static in self.ground_object.statics:
-            if static not in FORTIFICATION_BUILDINGS:
+            if scouted and static not in FORTIFICATION_BUILDINGS:
                 self.buildingsLayout.addWidget(
                     QBuildingInfo(static, self.ground_object, self.viewer),
                     j / 3,

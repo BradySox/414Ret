@@ -173,6 +173,27 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         return NAME_BY_CATEGORY[self.category]
 
     @property
+    def air_defense_band(self) -> Optional[str]:
+        """Human-readable range band for an air-defense site, e.g. "Long-range SAM".
+
+        Derived from the site's designated role (``task``), not its live units, so it
+        is intel-level information available even before the site is scouted (you know
+        the threat tier; recon still reveals the exact system and its ring). Returns
+        None for non air-defense sites.
+        """
+        bands = {
+            GroupTask.LORAD: "Long-range SAM",
+            GroupTask.MERAD: "Medium-range SAM",
+            GroupTask.SHORAD: "Short-range SAM",
+            GroupTask.POINT_DEFENSE: "Point-defense SAM",
+            GroupTask.AAA: "AAA",
+            GroupTask.EARLY_WARNING_RADAR: "Early-warning radar",
+        }
+        if self.task is None:
+            return None
+        return bands.get(self.task)
+
+    @property
     def obj_name(self) -> str:
         return self.name
 

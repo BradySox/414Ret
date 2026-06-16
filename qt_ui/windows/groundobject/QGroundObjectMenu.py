@@ -174,8 +174,15 @@ class QGroundObjectMenu(QDialog):
         j = 0
         total_income = 0
         received_income = 0
+        scouted = self.ground_object.known_for(self.viewer)
+        if not scouted:
+            # Recon intel-fog: hide the building composition until the site is
+            # attacked, scouted, or has a unit destroyed.
+            self.buildingsLayout.addWidget(
+                QLabel("<i>Not yet scouted — composition unknown.</i>"), 0, 0
+            )
         for static in self.ground_object.statics:
-            if static not in FORTIFICATION_BUILDINGS:
+            if scouted and static not in FORTIFICATION_BUILDINGS:
                 self.buildingsLayout.addWidget(
                     QBuildingInfo(static, self.ground_object, self.viewer),
                     j / 3,
@@ -314,8 +321,15 @@ class QGroundObjectMenu(QDialog):
         if self.ground_object.should_head_to_conflict:
             behavior.append("Reorients toward conflict")
 
+        type_label = str(self.ground_object)
+        band = self.ground_object.air_defense_band
+        if band:
+            # Range band comes from the site's designated role, not its live units,
+            # so we surface the threat tier even before the site is scouted.
+            type_label = f"{type_label} ({band})"
+
         rows = [
-            ("Type", str(self.ground_object)),
+            ("Type", type_label),
             ("Allegiance", allegiance),
             (
                 "Mission types",

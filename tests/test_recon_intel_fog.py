@@ -80,6 +80,20 @@ def test_setting_defaults_on() -> None:
     assert Settings().recon_intel_fog is True
 
 
+def test_air_defense_band_from_role() -> None:
+    from game.data.groups import GroupTask
+
+    tgo = _enemy_sam()
+    # Range band comes from the designated role, so it is available even unscouted.
+    assert tgo.air_defense_band is None  # task=None in the fixture
+    tgo.task = GroupTask.LORAD
+    assert tgo.air_defense_band == "Long-range SAM"
+    tgo.task = GroupTask.MERAD
+    assert tgo.air_defense_band == "Medium-range SAM"
+    tgo.task = GroupTask.FACTORY  # non air-defense role
+    assert tgo.air_defense_band is None
+
+
 def test_old_saves_migrate_to_discovered() -> None:
     tgo = _enemy_sam()
     state = dict(tgo.__dict__)

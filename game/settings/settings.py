@@ -1586,6 +1586,11 @@ class Settings:
     # LUA Plugins system
     plugins: Dict[str, bool] = field(default_factory=dict)
 
+    # Marker for the one-time TARS/Flight Control default-on migration (see
+    # __setstate__). True on a fresh Settings so new campaigns are never re-migrated;
+    # only legacy saves that lack the marker get the one-time flip.
+    applied_recon_plugins_default: bool = True
+
     only_player_takeoff: bool = True  # Legacy parameter do not use
 
     @staticmethod
@@ -1613,6 +1618,18 @@ class Settings:
         new_state = Settings().__dict__
         new_state.update(self.deserialize_state_dict(state))
         self.__dict__.update(new_state)
+
+        # One-time migration: the TARS and Flight Control plugins ship enabled by
+        # default, but a save created before they existed (or before they were
+        # flipped to default-on) can have them recorded as off. Force them on once
+        # for such saves. Keyed on the marker being absent from the *raw* unpickled
+        # state, so an already-migrated save or a new campaign that has deliberately
+        # turned them off is never re-stomped.
+        if "applied_recon_plugins_default" not in state:
+            for plugin_id in ("tars", "flightcontrol"):
+                self.set_plugin_option(plugin_id, True)
+        self.applied_recon_plugins_default = True
+
         from game.plugins import LuaPluginManager
 
         LuaPluginManager().load_settings(self)

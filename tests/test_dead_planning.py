@@ -6,7 +6,7 @@ from game.commander.tasks.primitive.dead import PlanDead
 
 def _target(has_live_radar_sam: bool, tankers: bool = False) -> SimpleNamespace:
     return SimpleNamespace(
-        alive_unit_count=5,
+        alive_unit_count=lambda: 5,
         has_live_radar_sam=has_live_radar_sam,
         control_point=SimpleNamespace(
             coalition=SimpleNamespace(

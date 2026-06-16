@@ -227,7 +227,7 @@ class IadsNetwork:
         node: Optional[IadsNetworkNode] = None
         for group in tgo.groups:
             # TODO Cleanup
-            if isinstance(group, IadsGroundGroup) and group.alive_units > 0:
+            if isinstance(group, IadsGroundGroup) and group.alive_units() > 0:
                 # The first IadsGroundGroup is always the primary Group
                 if not node and group.iads_role.participate:
                     # Primary Node
@@ -322,7 +322,7 @@ class IadsNetwork:
     def _update_network(
         self, tgo: TheaterGroundObject, events: GameUpdateEvents
     ) -> None:
-        if tgo.is_dead:
+        if tgo.is_dead():
             return
         iads_role = IadsRole.for_category(tgo.category)
         if not iads_role.is_comms_or_power:

@@ -17,7 +17,7 @@ class QBuildingInfo(QGroupBox):
         self.init_ui()
 
     def init_ui(self):
-        visible_alive = self.building.alive_for_player(self.viewer)
+        visible_alive = self.building.alive_for(self.viewer)
         icon_path = os.path.join(
             "./resources/ui/units/buildings/" + self.building.icon + ".png"
         )

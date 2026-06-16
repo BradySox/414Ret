@@ -208,6 +208,85 @@ class MissionResultsProcessor:
             tgo.sync_confirmed_status()
             events.update_tgo(tgo)
 
+        # TARS recon (when the plugin is enabled) reports the exact enemy units a
+        # surviving recon sortie photographed, so we can confirm precisely what was
+        # seen rather than revealing a whole package target on overflight. Additive:
+        # the list is empty when TARS is off, so this is a no-op for the legacy path.
+        for tgo in self.tars_reconned_tgos(debriefing):
+            tgo.sync_confirmed_status()
+            events.update_tgo(tgo)
+
+        self.reveal_discovered_sites(struck_tgos, debriefing, events)
+
+    def reveal_discovered_sites(
+        self,
+        struck_tgos: set[TheaterGroundObject],
+        debriefing: Debriefing,
+        events: GameUpdateEvents,
+    ) -> None:
+        """Recon intel-fog: flip enemy sites to "known" once the player has engaged
+        them this turn.
+
+        A site is discovered (composition + threat rings revealed, permanently) once
+        it is attacked (units destroyed), scouted (recon/TARPS), or otherwise reached
+        by an offensive sortie. Discovery is independent of post-strike BDA damage
+        confirmation — you learn *what* is there, but whether your strike killed it
+        still lags until recon confirms. Only enemy sites are gated; friendly/neutral
+        and the omniscient planner are never fogged.
+        """
+        discovered: set[TheaterGroundObject] = set()
+        discovered |= struck_tgos
+        discovered |= self.reconned_tgos_this_turn(debriefing)
+        discovered |= self.tars_reconned_tgos(debriefing)
+        discovered |= self.attacked_tgos_this_turn(debriefing)
+        for tgo in discovered:
+            if tgo.is_friendly(Player.BLUE):
+                continue
+            if not tgo.discovered_by_player:
+                tgo.discovered_by_player = True
+                events.update_tgo(tgo)
+
+    def attacked_tgos_this_turn(
+        self, debriefing: Debriefing
+    ) -> set[TheaterGroundObject]:
+        # A surviving offensive sortie that reached its target reveals the site even
+        # with no kills — the pilots saw what was there. Mirrors the TARPS recon
+        # helper but for strike-type flights, blue ATO only (the player's knowledge).
+        attacked: set[TheaterGroundObject] = set()
+        offensive = {
+            FlightType.STRIKE,
+            FlightType.DEAD,
+            FlightType.SEAD,
+            FlightType.ANTISHIP,
+        }
+        for package in self.game.blue.ato.packages:
+            target = package.target
+            if not isinstance(target, TheaterGroundObject):
+                continue
+            for flight in package.flights:
+                if (
+                    flight.flight_type in offensive
+                    and debriefing.air_losses.surviving_flight_members(flight) > 0
+                ):
+                    attacked.add(target)
+                    break
+        return attacked
+
+    @staticmethod
+    def tars_reconned_tgos(debriefing: Debriefing) -> set[TheaterGroundObject]:
+        reconned: set[TheaterGroundObject] = set()
+        # Lightweight Debriefings built for tests/UI may omit state_data/unit_map.
+        state_data = getattr(debriefing, "state_data", None)
+        unit_map = getattr(debriefing, "unit_map", None)
+        if state_data is None or unit_map is None:
+            return reconned
+        for unit_name in state_data.tars_recon_captures:
+            mapping = unit_map.theater_units(unit_name)
+            if mapping is None:
+                continue
+            reconned.add(mapping.theater_unit.ground_object)
+        return reconned
+
     def reconned_tgos_this_turn(
         self, debriefing: Debriefing
     ) -> set[TheaterGroundObject]:

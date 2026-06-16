@@ -38,7 +38,7 @@ class BattlePositions:
         battle_positions = [
             tgo
             for tgo in control_point.ground_objects
-            if isinstance(tgo, VehicleGroupGroundObject) and not tgo.is_dead
+            if isinstance(tgo, VehicleGroupGroundObject) and not tgo.is_dead()
         ]
         for battle_position in battle_positions:
             if (

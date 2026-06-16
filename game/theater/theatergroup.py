@@ -114,8 +114,14 @@ class TheaterUnit:
     def sync_confirmed_status(self) -> None:
         self.alive_at_last_recon = self.alive
 
-    def alive_for_player(self, player: Player) -> bool:
-        if self.ground_object.is_friendly(player):
+    def alive_for(self, viewer: Optional[Player] = None) -> bool:
+        """Aliveness from a viewer's perspective.
+
+        ``viewer=None`` is the omniscient/ground-truth view used by the AI
+        commander, planner, and threat math. A friendly viewer also sees truth;
+        an enemy viewer sees only what recon has confirmed (post-strike BDA lag).
+        """
+        if viewer is None or self.ground_object.is_friendly(viewer):
             return self.alive
         return self.alive_at_last_recon
 
@@ -123,25 +129,22 @@ class TheaterUnit:
     def unit_name(self) -> str:
         return f"{str(self.id).zfill(4)} | {self.name}"
 
-    @property
-    def display_name(self) -> str:
-        dead_label = " [DEAD]" if not self.alive else ""
+    def display_name_for(self, viewer: Optional[Player] = None) -> str:
+        dead_label = " [DEAD]" if not self.alive_for(viewer) else ""
         unit_label = self.unit_type or self.type.name or self.name
         return f"{str(self.id).zfill(4)} | {unit_label}{dead_label}"
 
-    def display_name_for(self, player: Player) -> str:
-        dead_label = " [DEAD]" if not self.alive_for_player(player) else ""
-        unit_label = self.unit_type or self.type.name or self.name
-        return f"{str(self.id).zfill(4)} | {unit_label}{dead_label}"
+    @property
+    def display_name(self) -> str:
+        return self.display_name_for(None)
+
+    def short_name_for(self, viewer: Optional[Player] = None) -> str:
+        dead_label = " [DEAD]" if not self.alive_for(viewer) else ""
+        return f"<b>{self.type.id[0:18]}</b> {dead_label}"
 
     @property
     def short_name(self) -> str:
-        dead_label = " [DEAD]" if not self.alive else ""
-        return f"<b>{self.type.id[0:18]}</b> {dead_label}"
-
-    def short_name_for(self, player: Player) -> str:
-        dead_label = " [DEAD]" if not self.alive_for_player(player) else ""
-        return f"<b>{self.type.id[0:18]}</b> {dead_label}"
+        return self.short_name_for(None)
 
     @property
     def is_static(self) -> bool:
@@ -171,31 +174,17 @@ class TheaterUnit:
         # Only let units with UnitType be repairable as we just have prices for them
         return self.unit_type is not None
 
-    @property
-    def detection_range(self) -> Distance:
+    def detection_range(self, viewer: Optional[Player] = None) -> Distance:
         unit_range = getattr(self.type, "detection_range", None)
-        return meters(unit_range if unit_range is not None and self.alive else 0)
+        if unit_range is None or not self.alive_for(viewer):
+            return meters(0)
+        return meters(unit_range)
 
-    def detection_range_for_player(self, player: Player) -> Distance:
-        unit_range = getattr(self.type, "detection_range", None)
-        return meters(
-            unit_range
-            if unit_range is not None and self.alive_for_player(player)
-            else 0
-        )
-
-    @property
-    def threat_range(self) -> Distance:
+    def threat_range(self, viewer: Optional[Player] = None) -> Distance:
         unit_range = getattr(self.type, "threat_range", None)
-        return meters(unit_range if unit_range is not None and self.alive else 0)
-
-    def threat_range_for_player(self, player: Player) -> Distance:
-        unit_range = getattr(self.type, "threat_range", None)
-        return meters(
-            unit_range
-            if unit_range is not None and self.alive_for_player(player)
-            else 0
-        )
+        if unit_range is None or not self.alive_for(viewer):
+            return meters(0)
+        return meters(unit_range)
 
     def rotate_heading_clockwise(self, rotation: Heading) -> None:
         if self.fixed_hdg:
@@ -214,22 +203,14 @@ class SceneryUnit(TheaterUnit):
     # Scenery Objects are identified by a special trigger zone
     zone: TriggerZone
 
-    @property
-    def display_name(self) -> str:
-        dead_label = " [DEAD]" if not self.alive else ""
+    # Only the viewer-aware bodies are overridden; the truth `display_name` /
+    # `short_name` properties inherited from TheaterUnit delegate to these.
+    def display_name_for(self, viewer: Optional[Player] = None) -> str:
+        dead_label = " [DEAD]" if not self.alive_for(viewer) else ""
         return f"{str(self.id).zfill(4)} | {self.name}{dead_label}"
 
-    def display_name_for(self, player: Player) -> str:
-        dead_label = " [DEAD]" if not self.alive_for_player(player) else ""
-        return f"{str(self.id).zfill(4)} | {self.name}{dead_label}"
-
-    @property
-    def short_name(self) -> str:
-        dead_label = " [DEAD]" if not self.alive else ""
-        return f"<b>{self.name[0:18]}</b> {dead_label}"
-
-    def short_name_for(self, player: Player) -> str:
-        dead_label = " [DEAD]" if not self.alive_for_player(player) else ""
+    def short_name_for(self, viewer: Optional[Player] = None) -> str:
+        dead_label = " [DEAD]" if not self.alive_for(viewer) else ""
         return f"<b>{self.name[0:18]}</b> {dead_label}"
 
     @property
@@ -279,27 +260,23 @@ class TheaterGroup:
     def unit_count(self) -> int:
         return len(self.units)
 
-    @property
-    def alive_units(self) -> int:
-        return sum(unit.alive for unit in self.units)
+    def alive_units(self, viewer: Optional[Player] = None) -> int:
+        return sum(unit.alive_for(viewer) for unit in self.units)
 
-    def alive_units_for_player(self, player: Player) -> int:
-        return sum(unit.alive_for_player(player) for unit in self.units)
+    def max_detection_range(self, viewer: Optional[Player] = None) -> Distance:
+        """Maximum detection range of the group, from a viewer's perspective.
 
-    def max_detection_range(self) -> Distance:
-        """Calculate the maximum detection range of the TheaterGroup"""
-        ranges = (u.detection_range for u in self.units if u.is_anti_air)
+        ``viewer=None`` is ground truth; an enemy viewer sees confirmed state.
+        """
+        ranges = (u.detection_range(viewer) for u in self.units if u.is_anti_air)
         return max(ranges, default=meters(0))
 
-    def max_detection_range_for_player(self, player: Player) -> Distance:
-        ranges = (
-            u.detection_range_for_player(player) for u in self.units if u.is_anti_air
-        )
-        return max(ranges, default=meters(0))
-
-    def max_threat_range(self, radar_only: bool = False) -> Distance:
+    def max_threat_range(
+        self, viewer: Optional[Player] = None, radar_only: bool = False
+    ) -> Distance:
         """Calculate the maximum threat range of the TheaterGroup.
         This also checks for Launcher and Tracker Pairs and if they are functioning or not. Allows to also use only radar emitting units for the calculation with the parameter.
+        ``viewer=None`` is ground truth; an enemy viewer sees confirmed state.
         """
         max_non_radar = meters(0)
         max_telar_range = meters(0)
@@ -307,51 +284,19 @@ class TheaterGroup:
         live_trs = set()
         launchers: dict[Type[VehicleType], Distance] = {}
         for unit in self.units:
-            if not unit.alive or not unit.is_anti_air:
+            if not unit.alive_for(viewer) or not unit.is_anti_air:
                 continue
             if unit.type in TRACK_RADARS:
                 live_trs.add(unit.type)
             elif unit.type in TELARS:
-                max_telar_range = max(max_telar_range, unit.threat_range)
+                max_telar_range = max(max_telar_range, unit.threat_range(viewer))
             elif (
                 issubclass(unit.type, VehicleType)
                 and unit.type in LAUNCHER_TRACKER_PAIRS
             ):
-                launchers[unit.type] = unit.threat_range
+                launchers[unit.type] = unit.threat_range(viewer)
             else:
-                max_non_radar = max(max_non_radar, unit.threat_range)
-        for launcher, threat_range in launchers.items():
-            for tr in LAUNCHER_TRACKER_PAIRS[launcher]:
-                if tr in live_trs:
-                    max_tel_range = max(max_tel_range, threat_range)
-        if radar_only:
-            return max(max_tel_range, max_telar_range)
-        return max(max_tel_range, max_telar_range, max_non_radar)
-
-    def max_threat_range_for_player(
-        self, player: Player, radar_only: bool = False
-    ) -> Distance:
-        max_non_radar = meters(0)
-        max_telar_range = meters(0)
-        max_tel_range = meters(0)
-        live_trs = set()
-        launchers: dict[Type[VehicleType], Distance] = {}
-        for unit in self.units:
-            if not unit.alive_for_player(player) or not unit.is_anti_air:
-                continue
-            if unit.type in TRACK_RADARS:
-                live_trs.add(unit.type)
-            elif unit.type in TELARS:
-                max_telar_range = max(
-                    max_telar_range, unit.threat_range_for_player(player)
-                )
-            elif (
-                issubclass(unit.type, VehicleType)
-                and unit.type in LAUNCHER_TRACKER_PAIRS
-            ):
-                launchers[unit.type] = unit.threat_range_for_player(player)
-            else:
-                max_non_radar = max(max_non_radar, unit.threat_range_for_player(player))
+                max_non_radar = max(max_non_radar, unit.threat_range(viewer))
         for launcher, threat_range in launchers.items():
             for tr in LAUNCHER_TRACKER_PAIRS[launcher]:
                 if tr in live_trs:

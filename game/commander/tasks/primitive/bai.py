@@ -22,6 +22,6 @@ class PlanBai(PackagePlanningTask[VehicleGroupGroundObject]):
         super().apply_effects(state)
 
     def propose_flights(self) -> None:
-        tgt_count = self.target.alive_unit_count
+        tgt_count = self.target.alive_unit_count()
         self.propose_flight(FlightType.BAI, min(4, (tgt_count // 4) + 1))
         self.propose_common_escorts()

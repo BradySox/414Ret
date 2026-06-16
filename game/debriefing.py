@@ -129,6 +129,11 @@ class StateData:
     #: Per-squadron QRA survivor counts reported by the intercept plugin.
     intercept_survivors: dict[str, int]
 
+    #: DCS unit names photographed by TARS recon sorties this turn. Drives the
+    #: BDA fog-of-war reveal (confirm exactly what was seen). Empty when the TARS
+    #: plugin is disabled.
+    tars_recon_captures: List[str]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -149,6 +154,23 @@ class StateData:
             if not isinstance(raw, dict):
                 return {}
             return {str(k): int(v) for k, v in raw.items()}
+
+        def parse_tars_captures(raw: Any) -> List[str]:
+            # The TARS bridge appends {unit=, life=, type=} tables; the Lua JSON
+            # encoder serializes them as a list of dicts (or [] when none). Pull
+            # the photographed DCS unit names defensively, tolerating either dict
+            # entries or bare strings.
+            if not isinstance(raw, list):
+                return []
+            names: List[str] = []
+            for entry in raw:
+                if isinstance(entry, dict):
+                    unit = entry.get("unit")
+                    if isinstance(unit, str) and unit:
+                        names.append(unit)
+                elif isinstance(entry, str) and entry:
+                    names.append(entry)
+            return names
 
         killed_aircraft = []
         killed_ground_units = []
@@ -173,6 +195,8 @@ class StateData:
             data.get("intercept_survivors", {})
         )
 
+        tars_recon_captures = parse_tars_captures(data.get("tars_recon_captures", []))
+
         return cls(
             mission_ended=data.get("mission_ended", False),
             killed_aircraft=killed_aircraft,
@@ -180,6 +204,7 @@ class StateData:
             destroyed_statics=data.get("destroyed_objects_positions", []),
             base_capture_events=data.get("base_capture_events", []),
             intercept_survivors=intercept_survivors,
+            tars_recon_captures=tars_recon_captures,
         )
 
 

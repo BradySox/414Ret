@@ -79,6 +79,12 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         self._threat_poly: ThreatPoly | None = None
         self.task = task
         self.hide_on_mfd = hide_on_mfd
+        # Recon intel-fog: has the human (BLUE) player discovered what is actually
+        # at this site? New enemy sites start unknown (composition + threat rings
+        # hidden) until attacked, scouted, or destroyed. Friendly/neutral sites and
+        # omniscient (viewer=None) callers are handled by known_for(), so this flag
+        # only matters for enemy sites from the player's perspective.
+        self.discovered_by_player = False
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -87,18 +93,34 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         state["_threat_poly"] = None
+        # Save compatibility: a campaign saved before recon intel-fog has every
+        # site already on the player's map, so treat it as fully discovered rather
+        # than suddenly blanking an in-progress campaign. The fog is felt on new
+        # campaigns (where the flag defaults False).
+        if "discovered_by_player" not in state:
+            state["discovered_by_player"] = True
         self.__dict__.update(state)
+
+    def known_for(self, viewer: Optional[Player] = None) -> bool:
+        """Whether the viewer knows what is actually at this site.
+
+        ``viewer=None`` (omniscient — AI, planner, threat math) and friendly
+        viewers always know. An enemy viewer only knows once the site has been
+        discovered (attacked / scouted / destroyed). The whole feature can be
+        switched off via the ``recon_intel_fog`` campaign setting.
+        """
+        if viewer is None or self.is_friendly(viewer):
+            return True
+        if not self.control_point.coalition.game.settings.recon_intel_fog:
+            return True
+        return self.discovered_by_player
 
     @property
     def sidc_status(self) -> Status:
-        if self.control_point.captured.is_neutral:
-            return Status.PRESENT
-        if self.is_dead:
-            return Status.PRESENT_DESTROYED
-        elif self.dead_units:
-            return Status.PRESENT_DAMAGED
-        else:
-            return Status.PRESENT
+        # SidcDescribable requires this as a property (the base `sidc` builder
+        # reads it). It is the ground-truth status; the viewer-aware map symbol
+        # uses sidc_status_for(viewer).
+        return self.sidc_status_for(None)
 
     @property
     def standard_identity(self) -> StandardIdentity:
@@ -109,12 +131,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         else:
             return StandardIdentity.HOSTILE_FAKER
 
-    @property
-    def is_dead(self) -> bool:
-        return self.alive_unit_count == 0
-
-    def is_dead_for(self, player: Player) -> bool:
-        return self.alive_unit_count_for(player) == 0
+    def is_dead(self, viewer: Optional[Player] = None) -> bool:
+        return self.alive_unit_count(viewer) == 0
 
     @property
     def units(self) -> Iterator[TheaterUnit]:
@@ -130,15 +148,12 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
                 if unit.is_static:
                     yield unit
 
-    @property
-    def dead_units(self) -> list[TheaterUnit]:
-        """
-        :return: all the dead units at this location
-        """
-        return [unit for unit in self.units if not unit.alive]
+    def dead_units(self, viewer: Optional[Player] = None) -> list[TheaterUnit]:
+        """All units at this location that are dead from the viewer's perspective.
 
-    def dead_units_for(self, player: Player) -> list[TheaterUnit]:
-        return [unit for unit in self.units if not unit.alive_for_player(player)]
+        ``viewer=None`` is ground truth; an enemy viewer sees confirmed kills.
+        """
+        return [unit for unit in self.units if not unit.alive_for(viewer)]
 
     @property
     def group_name(self) -> str:
@@ -202,12 +217,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
     def unit_count(self) -> int:
         return sum(g.unit_count for g in self.groups)
 
-    @property
-    def alive_unit_count(self) -> int:
-        return sum(g.alive_units for g in self.groups)
-
-    def alive_unit_count_for(self, player: Player) -> int:
-        return sum(g.alive_units_for_player(player) for g in self.groups)
+    def alive_unit_count(self, viewer: Optional[Player] = None) -> int:
+        return sum(g.alive_units(viewer) for g in self.groups)
 
     @property
     def has_aa(self) -> bool:
@@ -219,42 +230,32 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         """Returns True if the ground object contains a unit with working radar SAM."""
         return any(g.max_threat_range(radar_only=True) for g in self.groups)
 
-    def max_detection_range(self) -> Distance:
-        """Calculate the maximum detection range of the ground object"""
-        return max((g.max_detection_range() for g in self.groups), default=meters(0))
-
-    def max_detection_range_for(self, player: Player) -> Distance:
+    def max_detection_range(self, viewer: Optional[Player] = None) -> Distance:
+        """Maximum detection range of the ground object (viewer=None is truth)."""
         return max(
-            (g.max_detection_range_for_player(player) for g in self.groups),
-            default=meters(0),
+            (g.max_detection_range(viewer) for g in self.groups), default=meters(0)
         )
 
-    def max_threat_range(self) -> Distance:
-        """Calculate the maximum threat range of the ground object"""
-        return max((g.max_threat_range() for g in self.groups), default=meters(0))
+    def max_threat_range(self, viewer: Optional[Player] = None) -> Distance:
+        """Maximum threat range of the ground object (viewer=None is truth)."""
+        return max((g.max_threat_range(viewer) for g in self.groups), default=meters(0))
 
-    def max_threat_range_for(self, player: Player) -> Distance:
-        return max(
-            (g.max_threat_range_for_player(player) for g in self.groups),
-            default=meters(0),
-        )
-
-    def sidc_status_for(self, player: Player) -> Status:
+    def sidc_status_for(self, viewer: Optional[Player] = None) -> Status:
         if self.control_point.captured.is_neutral:
             return Status.PRESENT
-        if self.is_dead_for(player):
+        if self.is_dead(viewer):
             return Status.PRESENT_DESTROYED
-        elif self.dead_units_for(player):
+        elif self.dead_units(viewer):
             return Status.PRESENT_DAMAGED
         else:
             return Status.PRESENT
 
-    def sidc_for(self, player: Player) -> SymbolIdentificationCode:
+    def sidc_for(self, viewer: Optional[Player] = None) -> SymbolIdentificationCode:
         symbol_set, entity = self.symbol_set_and_entity
         return SymbolIdentificationCode(
             standard_identity=self.standard_identity,
             symbol_set=symbol_set,
-            status=self.sidc_status_for(player),
+            status=self.sidc_status_for(viewer),
             entity=entity,
         )
 
@@ -652,25 +653,15 @@ class SamGroundObject(IadsGroundObject):
 
     @property
     def sidc_status(self) -> Status:
-        if self.control_point.captured.is_neutral:
-            return Status.PRESENT
-        if self.is_dead:
-            return Status.PRESENT_DESTROYED
-        elif self.dead_units:
-            if self.max_threat_range() > meters(0):
-                return Status.PRESENT
-            else:
-                return Status.PRESENT_DAMAGED
-        else:
-            return Status.PRESENT_FULLY_CAPABLE
+        return self.sidc_status_for(None)
 
-    def sidc_status_for(self, player: Player) -> Status:
+    def sidc_status_for(self, viewer: Optional[Player] = None) -> Status:
         if self.control_point.captured.is_neutral:
             return Status.PRESENT
-        if self.is_dead_for(player):
+        if self.is_dead(viewer):
             return Status.PRESENT_DESTROYED
-        elif self.dead_units_for(player):
-            if self.max_threat_range_for(player) > meters(0):
+        elif self.dead_units(viewer):
+            if self.max_threat_range(viewer) > meters(0):
                 return Status.PRESENT
             else:
                 return Status.PRESENT_DAMAGED

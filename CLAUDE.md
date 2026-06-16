@@ -232,6 +232,10 @@ Grendel's TIC v1.1 (MIT, lua globals named `GLSCO*`) replaces vanilla ground AI
 with formation-keeping, prolonged scripted firefights for frontline maneuver
 units. Enable per-game via the plugins UI ("Troops In Contact").
 
+Dynamic-front movement design (why the stance/cadence logic looks the way it does):
+`docs/dev/design/414th-tic-dynamic-fronts-notes.md`. Read it before touching
+`_plan_tic_action()` or the TIC stance mapping.
+
 - Plugin: `resources/plugins/tic/` (`TIC_v1.1.lua` + `tic_414_init.lua` +
   `plugin.json`; options: `stormtrooper`, `createMenus`, `boundPause`,
   `ambientFire`). Script injection is NOT a work order - it's
@@ -257,21 +261,42 @@ units. Enable per-game via the plugins UI ("Troops In Contact").
 - ROE/waypoint design (settled after in-game testing, intentional - keep):
   TIC's "simulate" ROE fires theatrical near-miss salvos ONLY while
   stationary; moving units don't shoot at all, and `roe=kill` was judged too
-  lethal/accurate by the 414th. Advancing formations get a 3-leg timed route
-  (`_plan_tic_action()`, using TIC's native `t+N` waypoint schedules):
-  (1) advance to TIC_CONTACT_STANDOFF (600-900 m) short of the front-line
-  trace (`_tic_distance_to_front()` projects the group onto the forward
-  axis) - opposing lines halt ~1.2-1.8 km apart, inside TIC's ~2 NM
-  targeting bubble, and fight; (2) slide TIC_LATERAL_SLIDE (1.5-3 km)
-  sideways along the front to break LOS deadlocks behind towns/ridges (the
-  Dzhukhur lesson: TIC targeting is LOS-checked and TIC does not path around
-  terrain); (3) press TIC_PUSH_DEPTH (400-800 m) PAST the trace into close
-  contact so combat is guaranteed. Minutes between legs = the
-  `tic.boundPause` plugin option (default 25, jittered +/-25% per leg via
-  `_tic_jitter()`), sizing the battle arc to ~1.5-2 h; players read/change it
-  in the plugin settings UI. Losses from scripted fire are sparse near-miss
-  kills by design; players flying CAS are the real attrition source. The
-  campaign front moves on player kills, not TIC kills.
+  lethal/accurate by the 414th. `_plan_tic_action()` shapes movement PER
+  CombatStance (`TIC_STANCE_PROFILES` / `_tic_stance_profile()`) so opposing
+  sides don't run the same script and collide as a symmetric wall - the
+  campaign already feeds independent per-side stances. Full design rationale:
+  `docs/dev/design/414th-tic-dynamic-fronts-notes.md`.
+  - Every formation takes an opening bound to a fighting line short of the
+    trace (`_tic_distance_to_front()` projects the group onto the forward axis;
+    `find_offensive_point()` places the bound), inside TIC's ~2 NM targeting
+    bubble. ATTACKERS then run slide/press assault cycles past the trace;
+    DEFENSIVE/AMBUSH dig in at the bound instead of idling at the rear spawn
+    (which could sit OUTSIDE the bubble, leaving an attacker pressing an empty
+    line).
+  - Stance profiles: AGGRESSIVE = standoff (600-900 m) + 1 slide + light press;
+    BREAKTHROUGH = straight thrust, no lateral slide, deeper press
+    (`TIC_BREAKTHROUGH_DEPTH_SCALE` 1.8) + faster cadence (0.7); ELIMINATION =
+    2 slide/press cycles to hunt LOS; DEFENSIVE = dig in at
+    `TIC_DEFENSIVE_STANDOFF` (900-1400 m) + a low-chance occasional
+    counterattack (`TIC_COUNTERATTACK_CHANCE` 0.25); AMBUSH = most rearward
+    hold at `TIC_AMBUSH_STANDOFF` (1400-2200 m), never counterattacks;
+    RETREAT = single fallback leg.
+  - Slide legs use TIC_LATERAL_SLIDE (1.5-3 km) to break LOS deadlocks behind
+    towns/ridges (the Dzhukhur lesson: TIC targeting is LOS-checked and TIC
+    does not path around terrain). Press legs use TIC_PUSH_DEPTH (400-800 m)
+    times the stance depth scale.
+  - Cadence is staggered per group so the line ripples instead of lurching:
+    `_tic_step_off()` spreads the opening bound across a `boundPause`-scaled
+    window, `_tic_jitter()` is boundPause +/-45% (loosened from +/-25%), and
+    `_tic_leg_gap()` further scales each gap by a per-group tempo
+    (`TIC_GROUP_TEMPO` 0.7-1.4) and the stance cadence. `tic.boundPause`
+    (default 25, players set it in the plugin UI) sizes the battle arc to
+    ~1.5-2 h.
+  - Losses from scripted fire are sparse near-miss kills by design; players
+    flying CAS are the real attrition source. The campaign front moves on
+    player kills, not TIC kills. (Terrain-anchored positioning was considered
+    and rejected - Retribution exposes no terrain queries on this path; see the
+    design note.) Tests: `tests/test_tic_dynamic_fronts.py`.
 - Loss tracking: TIC destroys originals (no dead event - scripted destroy is
   silent) and respawns single-unit clones renamed by MOOSE SPAWN to
   `<group>-<i>#NNN-UU`. `game/unitmap.py` registers `front_line_groups` and

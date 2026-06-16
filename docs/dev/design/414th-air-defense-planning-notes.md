@@ -47,49 +47,6 @@ Implementation areas to revisit:
 - `game/missiongenerator/interceptluadata.py`
 - `resources/plugins/intercept/intercept-config.lua`
 
-## BARCAP auto-planner rework (2026-06-16)
-
-Three fixes to the BARCAP auto-planner, all unit-tested but **not yet validated
-in-game** (the planner can't be exercised offline). Watch items below.
-
-1. **Orbit-behind-base bug (`capbuilder.py`).** `cap_racetrack_for_objective`
-   placed the racetrack `end` at `distance_to_no_fly` along the heading toward
-   the enemy. For a CP within ~55 NM of the enemy threat zone (exactly the
-   forward/front-line CPs that matter), `distance_to_no_fly` went negative, so
-   the orbit landed on the *friendly* side of the CP, pointing away from the
-   threat. Now floored at `cap_min_distance_from_cp` (`forward_limit`) so the
-   orbit always sits enemy-facing. Test: `tests/flightplan/test_capbuilder_orbit.py`.
-   *Watch in-game:* forward BARCAP orbits sit between the base and the enemy.
-
-2. **Threat-weighted volume (`objectivefinder.py` + `theaterstate.py`).** BARCAP
-   wave count per CP was a flat `barcap_rounds` everywhere, ignoring how
-   contested each CP was. Added `ObjectiveFinder.air_threat_score(cp)` (enemy
-   operational airfields within `airbase_threat_range`, weighted by proximity ×
-   fixed-wing aircraft present) and `threat_weighted_barcap_rounds()` in
-   `theaterstate.py`: the hottest sector gets up to `BARCAP_THREAT_CEILING`
-   (2x) the baseline, quiet flanks drop toward the coverage floor, front-line
-   CPs are floored at `BARCAP_FRONTLINE_MIN_FACTOR` (0.5) of the peak. With no
-   air threat anywhere it falls back to the legacy flat count. The threat score
-   counts *all* fixed-wing present, not just fighters — coarse on purpose;
-   refine to fighter-only if too blunt in-game. Tests:
-   `tests/test_barcap_threat_weighting.py`.
-   *Watch in-game:* BARCAP concentrates on contested sectors; quiet flanks don't
-   drain the airwing.
-
-3. **Coverage floor (`theaterstate.py`).** `barcap_coverage_rounds()` is the
-   minimum overlapping waves to span the mission window from T=0, used as the
-   per-CP `min_rounds` floor so the threat weighting can trim a cold flank to a
-   single wave on a short mission without leaving a *long* mission's tail
-   uncovered. NOTE: an earlier draft tried to add waves for a CP's transit delay
-   — that was mathematically backwards (a later first wave covers *later*, so it
-   needs *fewer* waves to reach a fixed mission end), and was dropped. The real
-   remaining timing gaps are: (a) the deliberate front-of-mission jitter
-   (anti-"wait-it-out", kept) and (b) fuel-aware on-station time (nominal
-   `desired_barcap_mission_duration` is trusted even if a short-legged jet from a
-   distant base RTBs early) — **deferred**. The scheduler's cadence re-anchors
-   correctly after a reachability bump (`previous_cap_start_time` is updated to
-   the actual bumped start each wave), so that was left unchanged.
-
 ## Planning rework - historical branch notes
 
 This section is historical context only. The branch described below predated the later

@@ -37,74 +37,6 @@ if TYPE_CHECKING:
     from game.transfers import Convoy, CargoShip
 
 
-# Threat-weighted BARCAP volume. barcap_rounds (duration-derived) is the
-# baseline wave count; a defended CP at the theater's peak air threat gets up to
-# BARCAP_THREAT_CEILING * baseline waves, while the quietest defended CP drops to
-# BARCAP_MIN_ROUNDS so the airwing isn't spread thin over cold flanks.
-BARCAP_MIN_ROUNDS = 1
-BARCAP_THREAT_CEILING = 2
-# A CP that anchors the front always rates at least this fraction of the peak,
-# since raids ingress across the line even when the nearest enemy airfield sits
-# just beyond airbase_threat_range.
-BARCAP_FRONTLINE_MIN_FACTOR = 0.5
-
-
-def barcap_coverage_rounds(
-    mission_duration: float,
-    barcap_duration: float,
-    barcap_overlap: float,
-) -> int:
-    """Minimum overlapping BARCAP waves to span the mission window.
-
-    Waves are spaced ``barcap_duration - barcap_overlap`` apart starting at the
-    mission open, so ``N`` waves cover up to ``(N - 1) * (barcap_duration -
-    barcap_overlap) + barcap_duration``. This returns the smallest ``N`` making
-    that reach ``mission_duration``.
-
-    This is the floor used to keep a quiet sector from being trimmed below the
-    point where it can no longer cover a *long* mission, while still allowing a
-    single wave when the on-station time already spans the whole mission. The
-    unavoidable front-of-mission gap while the first wave transits/jitters is
-    deliberate (anti-"wait-it-out") and is a separate concern from wave count.
-    """
-    effective_coverage = max(barcap_duration - barcap_overlap, 60.0)
-    needed = mission_duration - barcap_duration
-    if needed <= 0:
-        return BARCAP_MIN_ROUNDS
-    return math.ceil(needed / effective_coverage) + 1
-
-
-def threat_weighted_barcap_rounds(
-    baseline_rounds: int,
-    threat_score: float,
-    max_threat_score: float,
-    is_fleet: bool,
-    has_active_frontline: bool,
-    min_rounds: int = BARCAP_MIN_ROUNDS,
-) -> int:
-    """Scales the baseline BARCAP wave count by relative enemy air threat.
-
-    A defended CP at the theater's peak threat gets ``BARCAP_THREAT_CEILING *
-    baseline_rounds`` waves; the quietest drops to ``min_rounds`` (the per-CP
-    tail-coverage floor from :func:`barcap_coverage_rounds`). Front-line CPs are
-    floored at ``BARCAP_FRONTLINE_MIN_FACTOR`` of the peak. Fleet CPs keep their
-    legacy 2x multiplier on top of the scaled count.
-
-    With no measurable threat anywhere (``max_threat_score <= 0``) every defended
-    CP falls back to ``baseline_rounds``, reproducing the legacy flat allocation.
-    """
-    if max_threat_score <= 0:
-        rounds = baseline_rounds
-    else:
-        factor = threat_score / max_threat_score
-        if has_active_frontline:
-            factor = max(factor, BARCAP_FRONTLINE_MIN_FACTOR)
-        ceil_rounds = baseline_rounds * BARCAP_THREAT_CEILING
-        rounds = round(min_rounds + factor * (ceil_rounds - min_rounds))
-    rounds = max(min_rounds, rounds)
-    return 2 * rounds if is_fleet else rounds
-
-
 @dataclass(frozen=True)
 class PersistentContext:
     game_db: GameDb
@@ -263,30 +195,11 @@ class TheaterState(WorldState["TheaterState"]):
         aewc_targets.append(finder.farthest_friendly_control_point())
 
         vulnerable_cps = list(finder.vulnerable_control_points())
-        barcap_threat_scores = {
-            cp: finder.air_threat_score(cp) for cp in vulnerable_cps
-        }
-        max_barcap_threat = max(barcap_threat_scores.values(), default=0.0)
-
-        # Even a quiet sector needs enough waves to span the mission: a single
-        # wave covers a 60-min mission but not a 150-min one. This floor lets the
-        # threat weighting trim cold flanks to one wave on short missions without
-        # leaving a long mission's tail uncovered.
-        coverage_floor = barcap_coverage_rounds(
-            mission_duration, barcap_duration, barcap_overlap
-        )
 
         return TheaterState(
             context=context,
             barcaps_needed={
-                cp: threat_weighted_barcap_rounds(
-                    barcap_rounds,
-                    barcap_threat_scores[cp],
-                    max_barcap_threat,
-                    cp.is_fleet,
-                    cp.has_active_frontline,
-                    min_rounds=coverage_floor,
-                )
+                cp: 2 * barcap_rounds if cp.is_fleet else barcap_rounds
                 for cp in vulnerable_cps
             },
             active_front_lines=list(finder.front_lines()),

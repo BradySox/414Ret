@@ -314,8 +314,15 @@ class QGroundObjectMenu(QDialog):
         if self.ground_object.should_head_to_conflict:
             behavior.append("Reorients toward conflict")
 
+        type_label = str(self.ground_object)
+        band = self.ground_object.air_defense_band
+        if band:
+            # Range band comes from the site's designated role, not its live units,
+            # so we surface the threat tier even before the site is scouted.
+            type_label = f"{type_label} ({band})"
+
         rows = [
-            ("Type", str(self.ground_object)),
+            ("Type", type_label),
             ("Allegiance", allegiance),
             (
                 "Mission types",

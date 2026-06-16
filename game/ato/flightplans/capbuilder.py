@@ -80,16 +80,25 @@ class CapBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
                 self.doctrine.cap_max_track_length - self.doctrine.cap_min_track_length
             )
 
-        min_cap_distance = min(
-            self.doctrine.cap_min_distance_from_cp, distance_to_no_fly
-        )
-        max_cap_distance = min(
-            self.doctrine.cap_max_distance_from_cp, distance_to_no_fly
-        )
+        # Keep the orbit forward of the CP toward the enemy. When the CP sits
+        # close to (or inside) the enemy threat zone, distance_to_no_fly can go
+        # negative; without a floor that would place the racetrack at a negative
+        # offset along the heading-to-enemy, i.e. *behind* the defended CP,
+        # pointing away from the threat. Floor it at cap_min_distance_from_cp so
+        # the orbit always sits on the enemy-facing side.
+        forward_limit = max(distance_to_no_fly, self.doctrine.cap_min_distance_from_cp)
+        min_cap_distance = min(self.doctrine.cap_min_distance_from_cp, forward_limit)
+        max_cap_distance = min(self.doctrine.cap_max_distance_from_cp, forward_limit)
 
+        # min_cap_distance <= max_cap_distance always holds because both are
+        # clamped against the same forward_limit, but guard randint defensively.
+        low = int(min_cap_distance.meters)
+        high = int(max_cap_distance.meters)
+        if low > high:
+            low = high
         end = location.position.point_from_heading(
             heading.degrees,
-            random.randint(int(min_cap_distance.meters), int(max_cap_distance.meters)),
+            random.randint(low, high),
         )
 
         track_length = random.randint(

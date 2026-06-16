@@ -188,6 +188,36 @@ class ObjectiveFinder:
                     yield cp
                     break
 
+    def air_threat_score(self, cp: ControlPoint) -> float:
+        """A rough measure of the enemy air threat to a friendly control point.
+
+        Sums over enemy operational airfields within ``airbase_threat_range``,
+        each contribution weighted by proximity (closer = higher) times the
+        number of fixed-wing aircraft present (more jets = higher). Returns 0.0
+        for a CP with no enemy airfield in range. Used to scale how many BARCAP
+        waves a defended CP receives so contested sectors get more coverage than
+        quiet flanks.
+
+        This is intentionally a coarse proxy: it counts *all* present fixed-wing
+        aircraft, not just A2A-tasked squadrons. That keeps it cheap and
+        save-stable; refine to fighter-only if it proves too blunt in-game.
+        """
+        threat_range = nautical_miles(self.game.settings.airbase_threat_range)
+        if threat_range.meters <= 0:
+            return 0.0
+        parking_type = ParkingType(fixed_wing=True, fixed_wing_stol=True)
+        score = 0.0
+        for airfield in self.closest_airfields_to(cp).operational_airfields_within(
+            threat_range
+        ):
+            if airfield.is_friendly(self.is_player):
+                continue
+            distance = meters(airfield.distance_to(cp))
+            proximity = max(0.0, 1.0 - distance.meters / threat_range.meters)
+            present = airfield.allocated_aircraft(parking_type).total_present
+            score += proximity * present
+        return score
+
     def oca_targets(self, min_aircraft: int) -> Iterator[ControlPoint]:
         parking_type = ParkingType()
         parking_type.include_rotary_wing = True

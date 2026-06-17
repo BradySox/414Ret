@@ -2,10 +2,12 @@
 --
 -- Reads dcsRetribution.Scar.taskings (emitted by the Retribution generator from
 -- the ScarTasking model) and runs one of two paths per tasking:
---   * variant "spawn"   — AI convoys are rare, so the generator spawns a moving
---                         HVT (placeholder: one vanilla truck) and routes it to
---                         a no-strike destination. success = HVT destroyed;
---                         fail  = HVT reaches the destination zone.
+--   * variant "spawn"   — AI convoys are rare, so the generator spawns the whole
+--                         ground picture (an HVT signature convoy + decoy convoys
+--                         + plain-truck clutter) and routes it. Only the HVT is
+--                         tracked: success = HVT destroyed; fail = HVT reaches its
+--                         no-strike destination. Decoys/clutter are the
+--                         discrimination puzzle (mis-ID scoring is a later step).
 --   * variant "missile" — the target IS a real surface-to-surface (SCUD) site;
 --                         watch it, no spawn. success = site destroyed;
 --                         fail  = it launches (any weapon release by a site unit).
@@ -68,20 +70,33 @@ local function all_groups_dead(area)
     return true
 end
 
--- Spawn one HVT vehicle and route it to the no-strike destination. Returns the
--- spawned group name or nil.
-local function spawn_hvt(tasking)
-    local group_name = "SCAR-HVT-" .. tostring(tasking.taskingId)
-    local spawn_x = scar_num(tasking.hvtSpawnX)
-    local spawn_y = scar_num(tasking.hvtSpawnY)
-    local dest_x = scar_num(tasking.hvtDestX)
-    local dest_y = scar_num(tasking.hvtDestY)
-    local country_id = scar_num(tasking.hvtCountryId)
-    local hvt_type = tasking.hvtType or "Ural-375"
-    if not (spawn_x and spawn_y and dest_x and dest_y and country_id) then
-        scar_log("skipping spawn tasking " .. tostring(tasking.taskingId) ..
-            ": incomplete coordinates")
+-- Spawn one convoy group (HVT / decoy / clutter) and route it spawn -> dest.
+-- Returns the spawned group name or nil.
+local SCAR_UNIT_SPACING = 25 -- metres between units in a convoy line
+
+local function spawn_convoy(tasking_id, convoy, country_id)
+    local group_name = "SCAR-" .. tostring(tasking_id) .. "-" .. tostring(convoy.role)
+    local spawn_x = scar_num(convoy.spawnX)
+    local spawn_y = scar_num(convoy.spawnY)
+    local dest_x = scar_num(convoy.destX)
+    local dest_y = scar_num(convoy.destY)
+    local types = convoy.units or {}
+    if not (spawn_x and spawn_y and dest_x and dest_y) or #types == 0 then
+        scar_log("skipping convoy " .. group_name .. ": incomplete data")
         return nil
+    end
+
+    local units = {}
+    for i, unit_type in ipairs(types) do
+        units[i] = {
+            ["type"] = unit_type,
+            ["name"] = group_name .. "-" .. i,
+            ["x"] = spawn_x + (i - 1) * SCAR_UNIT_SPACING,
+            ["y"] = spawn_y,
+            ["heading"] = 0,
+            ["skill"] = "Average",
+            ["playerCanDrive"] = false,
+        }
     end
 
     local group_data = {
@@ -91,17 +106,7 @@ local function spawn_hvt(tasking)
         ["task"] = {},
         ["category"] = Group.Category.GROUND,
         ["country"] = country_id,
-        ["units"] = {
-            [1] = {
-                ["type"] = hvt_type,
-                ["name"] = group_name .. "-1",
-                ["x"] = spawn_x,
-                ["y"] = spawn_y,
-                ["heading"] = 0,
-                ["skill"] = "Average",
-                ["playerCanDrive"] = false,
-            },
-        },
+        ["units"] = units,
         ["route"] = {
             ["points"] = {
                 [1] = {
@@ -218,18 +223,31 @@ local function scar_init()
                     ": no target groups")
             end
         else
-            local group_name = spawn_hvt(tasking)
-            if group_name then
-                register_area({
-                    id = tostring(tasking.taskingId),
-                    variant = "spawn",
-                    groups = { group_name },
-                    done = false,
-                    destX = scar_num(tasking.hvtDestX, 0),
-                    destY = scar_num(tasking.hvtDestY, 0),
-                    radius = scar_num(tasking.failZoneRadius, 500),
-                })
+            -- Spawn the whole ground picture; only the HVT convoy is tracked for
+            -- success/fail. Decoys/clutter exist for the discrimination puzzle
+            -- (mis-ID scoring is a later increment).
+            local country_id = scar_num(tasking.hvtCountryId)
+            local hvt_area = nil
+            for _, convoy in pairs(tasking.convoys or {}) do
+                local group_name = spawn_convoy(tasking.taskingId, convoy, country_id)
+                if group_name and tostring(convoy.role) == "hvt" then
+                    hvt_area = {
+                        id = tostring(tasking.taskingId),
+                        variant = "spawn",
+                        groups = { group_name },
+                        done = false,
+                        destX = scar_num(convoy.destX, 0),
+                        destY = scar_num(convoy.destY, 0),
+                        radius = scar_num(tasking.failZoneRadius, 500),
+                    }
+                end
+            end
+            if hvt_area then
+                register_area(hvt_area)
                 count = count + 1
+            else
+                scar_log("spawn tasking " .. tostring(tasking.taskingId) ..
+                    ": no HVT convoy spawned")
             end
         end
     end

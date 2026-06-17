@@ -60,11 +60,16 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   via `_inject_scar_script()` (gated on the `scar` plugin + a planned SCAR flight). **Two
   variants** (decision 2026-06-17 — AI convoys proved too rare to be the foundation, so spawn
   by default and only bind to real content when it's a missile site):
-  - **`spawn`** (default, always available): the generator spawns a moving HVT (placeholder:
-    one vanilla truck) and routes it to a no-strike destination. success = HVT destroyed;
-    fail = HVT reaches the destination zone. **Verified in-game 2026-06-17** (dcs.log:
-    `Register Dynamic Group: SCAR-HVT-scar-1` → `[SCAR] initialized 1 SCAR area(s)` →
-    `[SCAR] area scar-1 -> failed`). This is the proven path.
+  - **`spawn`** (default, always available): the generator spawns the whole ground picture —
+    an **HVT signature convoy** (SA-9 `Strela-1 9P31` + command `Ural-375 PBU` + 2 trucks),
+    **two decoy convoys** each a partial signature (one drops the SA-9, one drops the command),
+    and **clutter** (plain-truck convoys, count `SCAR_CLUTTER_COUNT`) on a ring around the area
+    (the R2-R4 discrimination puzzle, all vanilla units verified in pydcs) — and routes them.
+    Only the HVT is tracked: success = HVT destroyed; fail = HVT reaches its no-strike
+    destination. The single-truck placeholder was **verified in-game 2026-06-17** (dcs.log:
+    `Register Dynamic Group: SCAR-HVT-scar-1` → `[SCAR] initialized` → `[SCAR] area scar-1 ->
+    failed`); the multi-convoy picture reuses the same proven `mist.dynAdd` path but needs a
+    fresh in-game pass.
   - **`missile`** (bind, watch-only): when the SCAR target IS a real `MissileSiteGroundObject`
     (category "missile" = SCUD), watch it instead of spawning. success = site destroyed;
     fail = it launches (S_EVENT_SHOT by a site unit). NOT yet validated in-game.
@@ -77,10 +82,10 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   usually unavailable. Spawning guarantees the moving-HVT experience (spec §5). Missile sites
   are the one real-target case kept, because they map cleanly to the SCUD fail-on-launch
   variant when present.
-- **Deliberately NOT yet built** (next increments): the real signature convoy (SA-9 + command
-  + trucks) + ≤2 decoys + clutter + threat laydown replacing the single placeholder truck
-  (the R2/R4 discrimination puzzle); scoring + the mis-ID penalty (§10 Q1) and the
-  capture/intel carryover; briefing/marker cueing; Phase-3 auto-planning.
+- **Deliberately NOT yet built** (next increments): a threat laydown (ZSU-23/SA-9 escort, R9);
+  the mis-ID penalty for prosecuting a decoy/clutter convoy (R7 — needs the §10 Q1 SME call)
+  and the capture/intel carryover; briefing/marker cueing (the signature + ingress lanes);
+  Phase-3 auto-planning. The HVT/decoy/clutter signature convoy IS now built (see above).
 
 ---
 

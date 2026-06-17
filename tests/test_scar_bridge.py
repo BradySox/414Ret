@@ -18,8 +18,9 @@ from game.ato.flighttype import FlightType
 from game.debriefing import StateData
 from game.missiongenerator.luagenerator import LuaData
 from game.missiongenerator.scarluadata import (
-    SCAR_HVT_DEST_OFFSET_M,
-    SCAR_HVT_SPAWN_OFFSET_M,
+    SCAR_CLUTTER_COUNT,
+    SCAR_DECOY_SIGNATURES,
+    SCAR_HVT_SIGNATURE,
     build_scar_taskings,
     populate_scar_lua,
 )
@@ -49,7 +50,7 @@ def _game_with(*coalitions: Any) -> Any:
 
 
 def test_default_target_yields_spawn_tasking() -> None:
-    # Any non-missile target -> spawn a moving HVT derived from the target area.
+    # Any non-missile target -> spawn the ground picture around the target area.
     target = MagicMock()
     target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(target, extra_types=(FlightType.CAS,)))
@@ -60,9 +61,18 @@ def test_default_target_yields_spawn_tasking() -> None:
     tasking = taskings[0]
     assert tasking.variant == "spawn"
     assert tasking.hvt_country_id == 7  # the enemy (opponent) country
-    assert tasking.hvt_spawn_x == 1000 + SCAR_HVT_SPAWN_OFFSET_M
-    assert tasking.hvt_dest_x == 1000 - SCAR_HVT_DEST_OFFSET_M
-    assert tasking.hvt_spawn_y == 2000
+
+    # One HVT (full signature) + the decoys + the clutter.
+    assert len(tasking.convoys) == 1 + len(SCAR_DECOY_SIGNATURES) + SCAR_CLUTTER_COUNT
+    hvts = [c for c in tasking.convoys if c.role == "hvt"]
+    assert len(hvts) == 1
+    assert hvts[0].unit_types == SCAR_HVT_SIGNATURE
+    # Every decoy is a strict partial signature — never the full element set.
+    for decoy in (c for c in tasking.convoys if c.role == "decoy"):
+        assert set(decoy.unit_types) < set(SCAR_HVT_SIGNATURE) or len(
+            decoy.unit_types
+        ) < len(SCAR_HVT_SIGNATURE)
+        assert decoy.unit_types != SCAR_HVT_SIGNATURE
 
 
 def test_missile_site_target_yields_missile_tasking() -> None:
@@ -99,8 +109,12 @@ def test_populate_scar_lua_emits_spawn_fields() -> None:
     assert "taskingId" in serialized
     assert "scar-1" in serialized
     assert "spawn" in serialized
-    assert "hvtSpawnX" in serialized
     assert "hvtCountryId" in serialized
+    assert "convoys" in serialized
+    assert "role" in serialized
+    assert "hvt" in serialized
+    assert "spawnX" in serialized
+    assert SCAR_HVT_SIGNATURE[0] in serialized  # the SA-9 type appears
 
 
 def test_populate_scar_lua_emits_missile_groups() -> None:
@@ -115,7 +129,7 @@ def test_populate_scar_lua_emits_missile_groups() -> None:
     assert "missile" in serialized
     assert "targetGroups" in serialized
     assert "SCUD-1" in serialized
-    assert "hvtSpawnX" not in serialized  # spawn fields omitted for missile
+    assert "convoys" not in serialized  # spawn fields omitted for missile
 
 
 def test_state_data_parses_scar_results() -> None:

@@ -114,9 +114,23 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   in plain language, a decoy warning, the ingress axis (start → no-strike line), and the
   no-strike zone; the missile variant marks the SCUD site. Framed as intel (the C-130 §9b.1
   cue), no kneeboard pages (Lua can't add them mid-mission). Needs an in-game look.
-- **Deliberately NOT yet built** (next increments): the mis-ID penalty for prosecuting a
-  decoy/clutter convoy (R7 — needs the §10 Q1 SME call) and the capture/intel carryover;
-  Phase-3 auto-planning.
+- **Commander capture → campaign engine (SME-decided 2026-06-17, in scope, NOT yet built):**
+  the HVT "command vehicle" is the enemy leader. Outcomes: killed = clean success (no intel);
+  escaped to city = fail; **captured = reveals enemy command posts** (the `commandcenter`
+  TGOs) as a **next-turn carryover**. NEW twist: on **new games, command posts start hidden**
+  (their own capture-gated reveal, distinct from the normal recon-fog scout/strike reveal) and
+  are lit up only by capturing commanders — making SCAR the way you map the enemy command
+  network over a campaign. Reuses feature #3's recon fog (`discovered_by_player`/`known_for`/
+  `recon_intel_fog`). **Capture mechanic = SOF airdrop (spec §9b.2, chosen over air-only):**
+  C-130 drops a SOF team ahead of the HVT → proximity capture; with the finite-SOF asset
+  (§9c.3) + CSAR extract on botched capture (§9c.1). This is a large multi-system,
+  multi-session build (CTLD airdrop, proximity-capture Lua, campaign-economy SOF asset, a CSAR
+  mission type, the carryover, and the command-post fog). Suggested phasing: (1) carryover +
+  command-post fog foundation, gated behind a new setting default OFF (CI-testable with a
+  mocked "captured" result); (2) SOF airdrop + proximity capture producing "captured"
+  (in-game); (3) finite SOF asset + CSAR extract.
+- **Deliberately NOT yet built** (other): the mis-ID penalty (R7) stays **NONE** for now
+  (SME: bragging rights); Phase-3 auto-planning.
 
 ---
 

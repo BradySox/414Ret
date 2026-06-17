@@ -66,6 +66,9 @@ stacked on top (newest first):
   (`barcap_overlap_time` setting).
 - **Forward CAP line** that pushes CAP toward friendly control points anchoring active
   front lines instead of orbiting deep.
+- **Threat-weighted BARCAP volume** - contested sectors get more BARCAP waves (up to 2x)
+  based on nearby enemy airfields and the jets parked on them, while quiet flanks keep
+  the baseline coverage. Additive only, so no sector is ever left thinner than before.
 - **AI routes around the ground battle** - the active front line is a navmesh routing
   hazard, so transiting flights cross it quickly at the least-bad point instead of
   loitering over the combat (CAS/BAI that target the front are unaffected).

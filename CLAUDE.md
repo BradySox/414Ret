@@ -239,6 +239,19 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   `barcap_overlap_time == 0` this reproduces the old back-to-back schedule exactly.
 - Forward CAP line: `game/commander/objectivefinder.py` `vulnerable_control_points()`
   (checks `cp.has_active_frontline`; also fixes an inverted aggressiveness comparison).
+- Threat-weighted BARCAP volume (the `barcap-threat-weighting` branch's headline):
+  contested sectors get more BARCAP waves, **additive only** so coverage never regresses
+  (an earlier up-and-down rework collapsed quiet bases to one wave and was reverted —
+  `c8b1b8c32`). `ObjectiveFinder.air_threat_score(cp)` scores enemy air threat = sum over
+  operational enemy airfields within `airbase_threat_range` of `proximity * present
+  fixed-wing aircraft` (coarse on purpose: all fixed-wing, not just A2A; cheap +
+  save-stable). `theaterstate.py` `threat_weighted_barcap_rounds()` = `baseline +
+  round((score/max_score) * baseline * (BARCAP_THREAT_CEILING-1))`, ceiling 2x; a
+  zero-threat CP gets exactly the legacy duration-derived `barcap_rounds`, fleet keeps its
+  2x. `TheaterState.from_game` wires it into `barcaps_needed`. **Volume only** — threat-
+  weighted *orbit placement* is a deferred separate increment, not yet done. Design notes:
+  `docs/dev/design/414th-air-defense-planning-notes.md`. Tests:
+  `tests/test_barcap_threat_weighting.py`.
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
   10->15 nm, `armed_recon_engagement_range_distance` 5->10 nm).
 - Route around the front line: `game/threatzones.py` adds the **active front** as a
@@ -454,6 +467,15 @@ friendly land airbases.
   set generous `SetLimitLanding`/`SetLimitTaxi` (default 99) + `SetRadioOnlyIfPlayers` so
   AI flow stays pass-through. PRIMARY in-game check: AI QRA/CAP launches from these bases
   are unaffected.
+- Orphan-parking reconciliation (`reconcile_orphan_parking()` in the init, after
+  `fc:Start()`): MOOSE `_InitParkingSpots()` IDs a busy spot's occupant with
+  `FindClosestUnit`, which only sees UNITs. Retribution parks STATIC objects on some ramp
+  spots (Kutaisi), so those spots are left `Status==nil` ("NOT FREE but no unit could be
+  found there") and the status loop then spams "Number of parking spots does not match!"
+  every cycle all mission (138x in one playtest). The fix marks each orphan spot OCCUPIED
+  (`"RetributionStatic"`) so the counts balance and the static-held spots stay out of the
+  taxi pool. Cosmetic-only: AI flow was already unaffected. `_InitParkingSpots` runs
+  synchronously inside `:Start()`, so `fc.parking` is populated when the pass runs.
 - Tests: `tests/test_flightcontrol_emit.py`. Default ON; Lua still needs an in-game pass
   (not runnable in CI).
 

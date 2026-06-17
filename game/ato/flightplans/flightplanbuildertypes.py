@@ -21,6 +21,7 @@ from .ocarunway import OcaRunwayFlightPlan
 from .packagerefueling import PackageRefuelingFlightPlan
 from .planningerror import PlanningError
 from .pretensecargo import PretenseCargoFlightPlan
+from .scar import ScarFlightPlan
 from .sead import SeadFlightPlan
 from .seadsweep import SeadSweepFlightPlan
 from .shiprecoverytanker import RecoveryTankerFlightPlan
@@ -70,6 +71,9 @@ class FlightPlanBuilderTypes:
             FlightType.AIR_ASSAULT: AirAssaultFlightPlan.builder_type(),
             FlightType.PRETENSE_CARGO: PretenseCargoFlightPlan.builder_type(),
             FlightType.ARMED_RECON: ArmedReconFlightPlan.builder_type(),
+            # SCAR = area find-and-prosecute of one moving HVT; v1 reuses the
+            # Armed Recon area/ingress machinery (see ScarFlightPlan).
+            FlightType.SCAR: ScarFlightPlan.builder_type(),
             FlightType.RECOVERY: RecoveryTankerFlightPlan.builder_type(),
             # TARPS = strike-style target overflight, but +5 min behind the package
             # TOT for a post-strike BDA / recon pass (see TarpsFlightPlan).

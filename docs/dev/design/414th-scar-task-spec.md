@@ -82,6 +82,16 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   usually unavailable. Spawning guarantees the moving-HVT experience (spec §5). Missile sites
   are the one real-target case kept, because they map cleanly to the SCUD fail-on-launch
   variant when present.
+- **Scenario timing — TOT-anchored window (fixes the "no window to find it" bug,
+  2026-06-17):** the original clock ran from mission start, so the convoy crossed and the
+  SCUD fired while the player was still ~15+ min out. Now each scenario is anchored to the
+  package's TOT (`go_live_s = time_over_target − mission.start_time`) and gives a generous
+  `window_s` (default 20 min, `SCAR_WINDOW_S`) after that. Spawn: the convoy picture appears
+  at go_live and moves slowly (~5 m/s) so it can't reach the no-strike zone before the
+  deadline (`go_live+window`). Missile: the SCUD is held on `WEAPON_HOLD` from the start and
+  only released to fire at `go_live+window` (launch = fail). Taskings are now deduped per
+  target (one scenario even with multiple SCAR flights on it). NOT range-gated — purely
+  time-based. Needs an in-game pass.
 - **Threat laydown (R9) — built:** the spawn picture also scatters ZSU-23-4 + ZU-23 + an
   occasional SA-9 (stationary, untracked `role="threat"` groups). Spawned at runtime, so they
   never trip the planner's auto SEAD-escort (resolves §10 Q3 for the spawn path).

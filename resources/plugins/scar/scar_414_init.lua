@@ -12,6 +12,11 @@
 --                         watch it, no spawn. success = site destroyed;
 --                         fail  = it launches (any weapon release by a site unit).
 --
+-- TIMING: each scenario is anchored to the SCAR flight's TOT (goLive, seconds
+-- from mission start) so it doesn't resolve before the player can be on station.
+-- The spawn picture appears at goLive; the SCUD is held on WEAPON_HOLD until
+-- goLive+window. The player then has `window` seconds to find + kill the HVT.
+--
 -- Outcomes go into the global scar_results table the base plugin serializes into
 -- state.json, which Retribution reads back in the debrief. Skeleton: no scoring
 -- yet (see docs/dev/design/414th-scar-task-spec.md). MOOSE/mist are loaded by
@@ -196,6 +201,8 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
         ["category"] = Group.Category.GROUND,
         ["country"] = country_id,
         ["units"] = units,
+        -- Slow (~5 m/s): the convoy must NOT reach the no-strike zone before the
+        -- player's window expires, so the deadline (not arrival) governs the fail.
         ["route"] = {
             ["points"] = {
                 [1] = {
@@ -203,14 +210,14 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
                     ["y"] = spawn_y,
                     ["type"] = "Turning Point",
                     ["action"] = "Off Road",
-                    ["speed"] = 20,
+                    ["speed"] = 5,
                 },
                 [2] = {
                     ["x"] = dest_x,
                     ["y"] = dest_y,
                     ["type"] = "Turning Point",
                     ["action"] = "Off Road",
-                    ["speed"] = 20,
+                    ["speed"] = 5,
                 },
             },
         },
@@ -248,8 +255,13 @@ local function scar_check()
         if not area.done then
             if all_groups_dead(area) then
                 mark_result(area, "success")
-            elseif area.variant ~= "missile" and hvt_in_fail_zone(area) then
-                mark_result(area, "failed")
+            elseif area.variant ~= "missile" then
+                -- Spawn fail: the HVT reaches its no-strike zone, or the window
+                -- runs out (deadline = go_live + window), whichever first.
+                if hvt_in_fail_zone(area)
+                    or (area.deadline and timer.getTime() >= area.deadline) then
+                    mark_result(area, "failed")
+                end
             end
         end
     end
@@ -277,10 +289,90 @@ function scar_event_handler:onEvent(event)
     end
 end
 
-local function register_area(area)
+local function set_group_roe(group_name, roe_val)
+    local group = Group.getByName(group_name)
+    if group == nil then
+        return
+    end
+    local ok, ctrl = pcall(function()
+        return group:getController()
+    end)
+    if ok and ctrl then
+        pcall(function()
+            ctrl:setOption(AI.Option.Ground.id.ROE, roe_val)
+        end)
+    end
+end
+
+-- Spawn variant: runs at the flight's TOT (go_live). Spawns the whole ground
+-- picture and starts the HVT's window. Only the HVT is tracked; decoys/clutter
+-- are the discrimination puzzle (mis-ID scoring is a later increment).
+local function activate_spawn_area(tasking, window)
+    local country_id = scar_num(tasking.hvtCountryId)
+    local hvt_area, hvt_convoy = nil, nil
+    local spawn_index = 0
+    for _, convoy in pairs(tasking.convoys or {}) do
+        spawn_index = spawn_index + 1
+        local group_name =
+            spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
+        if group_name and tostring(convoy.role) == "hvt" then
+            hvt_convoy = convoy
+            hvt_area = {
+                id = tostring(tasking.taskingId),
+                variant = "spawn",
+                coalition = tostring(tasking.coalition or "blue"),
+                groups = { group_name },
+                done = false,
+                destX = scar_num(convoy.destX, 0),
+                destY = scar_num(convoy.destY, 0),
+                radius = scar_num(tasking.failZoneRadius, 500),
+                deadline = timer.getTime() + window,
+            }
+        end
+    end
+    if hvt_area then
+        table.insert(scar_areas, hvt_area)
+        brief_spawn(hvt_area, hvt_convoy)
+        scar_log("area " .. hvt_area.id .. " live; window " ..
+            math.floor(window) .. "s")
+    else
+        scar_log("spawn tasking " .. tostring(tasking.taskingId) ..
+            ": no HVT convoy spawned")
+    end
+end
+
+-- Missile variant: the site is a real unit, so it's held on WEAPON_HOLD from the
+-- start (stops it firing before the player can get there) and only released to
+-- fire after go_live + window, at which point an un-killed site launches (fail).
+local function activate_missile_area(tasking, go_live, window)
+    local groups = tasking.targetGroups or {}
+    if type(groups) ~= "table" or #groups == 0 then
+        scar_log("skipping missile tasking " .. tostring(tasking.taskingId) ..
+            ": no target groups")
+        return false
+    end
+    local area = {
+        id = tostring(tasking.taskingId),
+        variant = "missile",
+        coalition = tostring(tasking.coalition or "blue"),
+        groups = groups,
+        done = false,
+    }
+    for _, name in ipairs(groups) do
+        missile_group_index[name] = area
+        set_group_roe(name, AI.Option.Ground.val.ROE.WEAPON_HOLD)
+    end
     table.insert(scar_areas, area)
-    scar_results[area.id] = { status = "active" }
-    dirty_state = true
+    brief_missile(area)
+    mist.scheduleFunction(function()
+        if not area.done then
+            for _, name in ipairs(area.groups) do
+                set_group_roe(name, AI.Option.Ground.val.ROE.OPEN_FIRE)
+            end
+            mark_result(area, "launched")
+        end
+    end, {}, timer.getTime() + go_live + window)
+    return true
 end
 
 local function scar_init()
@@ -293,60 +385,23 @@ local function scar_init()
     local count = 0
     for _, tasking in pairs(dcsRetribution.Scar.taskings) do
         local variant = tostring(tasking.variant or "spawn")
+        local go_live = scar_num(tasking.goLive, 0)
+        local window = scar_num(tasking.window, 1200)
+        -- Seed the result now so a never-resolved area still reports as active.
+        scar_results[tostring(tasking.taskingId)] = { status = "active" }
+        dirty_state = true
         if variant == "missile" then
-            local groups = tasking.targetGroups or {}
-            if type(groups) == "table" and #groups > 0 then
-                local area = {
-                    id = tostring(tasking.taskingId),
-                    variant = "missile",
-                    coalition = tostring(tasking.coalition or "blue"),
-                    groups = groups,
-                    done = false,
-                }
-                for _, name in ipairs(groups) do
-                    missile_group_index[name] = area
-                end
-                register_area(area)
-                brief_missile(area)
+            if activate_missile_area(tasking, go_live, window) then
                 count = count + 1
-            else
-                scar_log("skipping missile tasking " .. tostring(tasking.taskingId) ..
-                    ": no target groups")
             end
         else
-            -- Spawn the whole ground picture; only the HVT convoy is tracked for
-            -- success/fail. Decoys/clutter exist for the discrimination puzzle
-            -- (mis-ID scoring is a later increment).
-            local country_id = scar_num(tasking.hvtCountryId)
-            local hvt_area = nil
-            local hvt_convoy = nil
-            local spawn_index = 0
-            for _, convoy in pairs(tasking.convoys or {}) do
-                spawn_index = spawn_index + 1
-                local group_name =
-                    spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
-                if group_name and tostring(convoy.role) == "hvt" then
-                    hvt_convoy = convoy
-                    hvt_area = {
-                        id = tostring(tasking.taskingId),
-                        variant = "spawn",
-                        coalition = tostring(tasking.coalition or "blue"),
-                        groups = { group_name },
-                        done = false,
-                        destX = scar_num(convoy.destX, 0),
-                        destY = scar_num(convoy.destY, 0),
-                        radius = scar_num(tasking.failZoneRadius, 500),
-                    }
-                end
-            end
-            if hvt_area then
-                register_area(hvt_area)
-                brief_spawn(hvt_area, hvt_convoy)
-                count = count + 1
-            else
-                scar_log("spawn tasking " .. tostring(tasking.taskingId) ..
-                    ": no HVT convoy spawned")
-            end
+            -- Spawn at the flight's TOT so the convoy isn't long gone before the
+            -- player arrives. The closure captures this tasking.
+            local t = tasking
+            mist.scheduleFunction(function()
+                pcall(activate_spawn_area, t, window)
+            end, {}, timer.getTime() + go_live)
+            count = count + 1
         end
     end
 
@@ -356,7 +411,7 @@ local function scar_init()
     end
 
     world.addEventHandler(scar_event_handler)
-    scar_log("watching " .. count .. " SCAR area(s) every " ..
+    scar_log("registered " .. count .. " SCAR area(s); check every " ..
         SCAR_CHECK_INTERVAL .. "s")
     mist.scheduleFunction(scar_check, {}, timer.getTime() + SCAR_CHECK_INTERVAL,
         SCAR_CHECK_INTERVAL)

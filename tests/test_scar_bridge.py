@@ -9,6 +9,7 @@ watch-only). The Lua half needs an in-game pass; here we lock in the Python half
 CI can verify: tasking collection, Lua emission, and result parsing.
 """
 
+from datetime import datetime, timedelta
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -22,19 +23,24 @@ from game.missiongenerator.scarluadata import (
     SCAR_DECOY_SIGNATURES,
     SCAR_HVT_SIGNATURE,
     SCAR_THREAT_LAYDOWN,
+    SCAR_WINDOW_S,
     build_scar_taskings,
     populate_scar_lua,
 )
 from game.theater.theatergroundobject import MissileSiteGroundObject
+
+MISSION_START = datetime(2026, 1, 1, 12, 0, 0)
+TOT_OFFSET_S = 900.0  # the package TOT is 15 min after mission start
 
 
 def _coalition_with_target(
     target: Any, *, extra_types: tuple[FlightType, ...] = ()
 ) -> Any:
     """A coalition whose single package has a SCAR flight (plus any extra flight
-    types) against ``target``, with a known enemy country id."""
+    types) against ``target``, a known enemy country id, and a TOT 15 min in."""
     package = MagicMock()
     package.target = target
+    package.time_over_target = MISSION_START + timedelta(seconds=TOT_OFFSET_S)
     package.flights = [MagicMock(flight_type=FlightType.SCAR)] + [
         MagicMock(flight_type=ft) for ft in extra_types
     ]
@@ -50,19 +56,26 @@ def _game_with(*coalitions: Any) -> Any:
     return game
 
 
+def _build(game: Any) -> Any:
+    return build_scar_taskings(game, MISSION_START)
+
+
 def test_default_target_yields_spawn_tasking() -> None:
     # Any non-missile target -> spawn the ground picture around the target area.
     target = MagicMock()
     target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(target, extra_types=(FlightType.CAS,)))
 
-    taskings = build_scar_taskings(game)
+    taskings = _build(game)
 
     assert len(taskings) == 1  # the CAS flight is ignored
     tasking = taskings[0]
     assert tasking.variant == "spawn"
     assert tasking.coalition == "blue"  # briefing addressee = the SCAR flight's side
     assert tasking.hvt_country_id == 7  # the enemy (opponent) country
+    # Scenario is anchored to the flight's TOT, with the generous window after.
+    assert tasking.go_live_s == TOT_OFFSET_S
+    assert tasking.window_s == SCAR_WINDOW_S
 
     # One HVT (full signature) + decoys + clutter + threat units.
     roles = [c.role for c in tasking.convoys]
@@ -88,7 +101,7 @@ def test_missile_site_target_yields_missile_tasking() -> None:
     site.groups = [MagicMock(group_name="SCUD-1"), MagicMock(group_name="SCUD-2")]
     game = _game_with(_coalition_with_target(site))
 
-    taskings = build_scar_taskings(game)
+    taskings = _build(game)
 
     assert len(taskings) == 1
     assert taskings[0].variant == "missile"
@@ -101,13 +114,13 @@ def test_empty_without_scar_flights() -> None:
     coalition = _coalition_with_target(target)
     # Replace the SCAR flight with a non-SCAR one.
     coalition.ato.packages[0].flights = [MagicMock(flight_type=FlightType.CAS)]
-    assert build_scar_taskings(_game_with(coalition)) == []
+    assert _build(_game_with(coalition)) == []
 
 
 def test_populate_scar_lua_emits_spawn_fields() -> None:
     target = MagicMock()
     target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
-    taskings = build_scar_taskings(_game_with(_coalition_with_target(target)))
+    taskings = _build(_game_with(_coalition_with_target(target)))
 
     root = LuaData("dcsRetribution")
     populate_scar_lua(root, taskings)
@@ -119,6 +132,8 @@ def test_populate_scar_lua_emits_spawn_fields() -> None:
     assert "spawn" in serialized
     assert "hvtCountryId" in serialized
     assert "coalition" in serialized  # briefing addressee emitted
+    assert "goLive" in serialized  # scenario timing emitted
+    assert "window" in serialized
     assert "convoys" in serialized
     assert "role" in serialized
     assert "hvt" in serialized
@@ -129,7 +144,7 @@ def test_populate_scar_lua_emits_spawn_fields() -> None:
 def test_populate_scar_lua_emits_missile_groups() -> None:
     site = MagicMock(spec=MissileSiteGroundObject)
     site.groups = [MagicMock(group_name="SCUD-1")]
-    taskings = build_scar_taskings(_game_with(_coalition_with_target(site)))
+    taskings = _build(_game_with(_coalition_with_target(site)))
 
     root = LuaData("dcsRetribution")
     populate_scar_lua(root, taskings)

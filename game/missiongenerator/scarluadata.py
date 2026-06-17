@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Iterable
 from game.ato import FlightType
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from dcs.mapping import Point
 
     from game import Game
@@ -64,6 +66,13 @@ SCAR_SPREAD_RADIUS_M = 5000.0  # decoys/clutter ring around the area center
 SCAR_THREAT_RING_M = 3000.0  # threat ring (inside the convoy traffic)
 SCAR_UNIT_SPACING_M = 25.0  # spacing between units within a spawned convoy
 
+# The scenario is anchored to the SCAR flight's TOT (when the player is planned
+# to be on station), NOT mission start — otherwise the convoy crosses and the
+# SCUD fires while the player is still ~15+ min out (in-game finding 2026-06-17).
+# After it goes live the player gets this generous window to find + kill the HVT
+# before it "gets away" (spawn) or launches (missile). Tunable.
+SCAR_WINDOW_S = 1200.0  # 20 min on-station window after the flight's TOT
+
 
 @dataclass(frozen=True)
 class ScarConvoy:
@@ -98,9 +107,11 @@ class ScarTasking:
 
     tasking_id: str
     variant: str  # "spawn" | "missile"
-    coalition: str = (
-        ""  # the SCAR flight's coalition color ("blue"/"red"); briefing addressee
-    )
+    coalition: str = ""  # SCAR flight's coalition color ("blue"/"red"); brief addressee
+    # Scenario timing (seconds, mission-relative). The fail clock opens at
+    # go_live_s (the flight's TOT) and runs for window_s after that.
+    go_live_s: float = 0.0
+    window_s: float = 0.0
     # variant "missile":
     target_groups: tuple[str, ...] = ()
     # variant "spawn":
@@ -174,51 +185,69 @@ def _compose_convoys(center: "Point") -> tuple[ScarConvoy, ...]:
     return tuple(convoys)
 
 
-def build_scar_taskings(game: "Game") -> list[ScarTasking]:
-    """Build one ScarTasking per planned SCAR flight.
+def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTasking]:
+    """Build one ScarTasking per SCAR-tasked target (deduped by target).
 
-    A SCAR flight against a real missile site binds to it ("missile"); every
-    other SCAR flight gets a spawned ground picture ("spawn") composed around its
-    target area. Returns an empty list when no SCAR flight is planned (the
-    injection gate).
+    A SCAR package against a real missile site binds to it ("missile"); any other
+    SCAR target gets a spawned ground picture ("spawn"). Each tasking is anchored
+    to the package's TOT relative to ``mission_start`` (``go_live_s``) so the fail
+    clock only opens when the player is planned to be on station. Returns an empty
+    list when no SCAR flight is planned (the injection gate).
     """
     from game.theater.theatergroundobject import MissileSiteGroundObject
 
     taskings: list[ScarTasking] = []
     index = 0
+    seen_targets: set[int] = set()
     for coalition in game.coalitions:
         color = "blue" if coalition.player else "red"
         enemy_country_id = coalition.opponent.faction.country.id
         for package in coalition.ato.packages:
-            for flight in package.flights:
-                if flight.flight_type is not FlightType.SCAR:
+            if not any(f.flight_type is FlightType.SCAR for f in package.flights):
+                continue
+            target = package.target
+            # One scenario per target, even with multiple SCAR flights on it.
+            if id(target) in seen_targets:
+                continue
+            seen_targets.add(id(target))
+
+            try:
+                go_live_s = max(
+                    0.0, (package.time_over_target - mission_start).total_seconds()
+                )
+            except (TypeError, AttributeError):
+                go_live_s = 0.0
+
+            index += 1
+            if isinstance(target, MissileSiteGroundObject):
+                groups = tuple(g.group_name for g in target.groups)
+                if not groups:
+                    index -= 1
+                    seen_targets.discard(id(target))
                     continue
-                target = package.target
-                index += 1
-                if isinstance(target, MissileSiteGroundObject):
-                    groups = tuple(g.group_name for g in target.groups)
-                    if not groups:
-                        index -= 1
-                        continue
-                    taskings.append(
-                        ScarTasking(
-                            tasking_id=f"scar-{index}",
-                            variant="missile",
-                            coalition=color,
-                            target_groups=groups,
-                        )
+                taskings.append(
+                    ScarTasking(
+                        tasking_id=f"scar-{index}",
+                        variant="missile",
+                        coalition=color,
+                        go_live_s=go_live_s,
+                        window_s=SCAR_WINDOW_S,
+                        target_groups=groups,
                     )
-                else:
-                    taskings.append(
-                        ScarTasking(
-                            tasking_id=f"scar-{index}",
-                            variant="spawn",
-                            coalition=color,
-                            hvt_country_id=enemy_country_id,
-                            convoys=_compose_convoys(target.position),
-                            fail_zone_radius_m=SCAR_FAIL_ZONE_RADIUS_M,
-                        )
+                )
+            else:
+                taskings.append(
+                    ScarTasking(
+                        tasking_id=f"scar-{index}",
+                        variant="spawn",
+                        coalition=color,
+                        go_live_s=go_live_s,
+                        window_s=SCAR_WINDOW_S,
+                        hvt_country_id=enemy_country_id,
+                        convoys=_compose_convoys(target.position),
+                        fail_zone_radius_m=SCAR_FAIL_ZONE_RADIUS_M,
                     )
+                )
     return taskings
 
 
@@ -238,6 +267,8 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
         record.add_item("taskingId").set_value(tasking.tasking_id)
         record.add_item("variant").set_value(tasking.variant)
         record.add_item("coalition").set_value(tasking.coalition)
+        record.add_item("goLive").set_value(str(tasking.go_live_s))
+        record.add_item("window").set_value(str(tasking.window_s))
         if tasking.variant == "missile":
             record.add_item("targetGroups").set_data_array(list(tasking.target_groups))
             continue

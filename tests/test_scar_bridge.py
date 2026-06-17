@@ -21,6 +21,7 @@ from game.missiongenerator.scarluadata import (
     SCAR_CLUTTER_COUNT,
     SCAR_DECOY_SIGNATURES,
     SCAR_HVT_SIGNATURE,
+    SCAR_THREAT_LAYDOWN,
     build_scar_taskings,
     populate_scar_lua,
 )
@@ -62,17 +63,23 @@ def test_default_target_yields_spawn_tasking() -> None:
     assert tasking.variant == "spawn"
     assert tasking.hvt_country_id == 7  # the enemy (opponent) country
 
-    # One HVT (full signature) + the decoys + the clutter.
-    assert len(tasking.convoys) == 1 + len(SCAR_DECOY_SIGNATURES) + SCAR_CLUTTER_COUNT
+    # One HVT (full signature) + decoys + clutter + threat units.
+    roles = [c.role for c in tasking.convoys]
+    assert roles.count("hvt") == 1
+    assert roles.count("decoy") == len(SCAR_DECOY_SIGNATURES)
+    assert roles.count("clutter") == SCAR_CLUTTER_COUNT
+    assert roles.count("threat") == len(SCAR_THREAT_LAYDOWN)
+
     hvts = [c for c in tasking.convoys if c.role == "hvt"]
-    assert len(hvts) == 1
     assert hvts[0].unit_types == SCAR_HVT_SIGNATURE
     # Every decoy is a strict partial signature — never the full element set.
     for decoy in (c for c in tasking.convoys if c.role == "decoy"):
-        assert set(decoy.unit_types) < set(SCAR_HVT_SIGNATURE) or len(
-            decoy.unit_types
-        ) < len(SCAR_HVT_SIGNATURE)
         assert decoy.unit_types != SCAR_HVT_SIGNATURE
+        assert len(decoy.unit_types) < len(SCAR_HVT_SIGNATURE)
+
+    # Threats are stationary (dest == spawn) and untracked.
+    for threat in (c for c in tasking.convoys if c.role == "threat"):
+        assert (threat.dest_x, threat.dest_y) == (threat.spawn_x, threat.spawn_y)
 
 
 def test_missile_site_target_yields_missile_tasking() -> None:

@@ -42,10 +42,26 @@ SCAR_DECOY_SIGNATURES: tuple[tuple[str, ...], ...] = (
 SCAR_CLUTTER_SIGNATURE: tuple[str, ...] = (SCAR_TRUCK, SCAR_TRUCK)
 SCAR_CLUTTER_COUNT = 3
 
+# Threat laydown (R9): scattered short-range AAA + an occasional SA-9 — contested,
+# but deliberately NOT a SEAD package (no medium/long-range SAMs). These are
+# spawned at runtime, so they never trip the planner's auto SEAD-escort request
+# (the planner only sees campaign TGOs, resolving spec §10 Q3 for the spawn path).
+SCAR_THREAT_ZSU = "ZSU-23-4 Shilka"  # radar AAA
+SCAR_THREAT_ZU23 = "ZU-23 Emplacement"  # optical AAA
+SCAR_THREAT_SAM = "Strela-1 9P31"  # occasional SA-9
+SCAR_THREAT_LAYDOWN: tuple[str, ...] = (
+    SCAR_THREAT_ZSU,
+    SCAR_THREAT_ZSU,
+    SCAR_THREAT_ZU23,
+    SCAR_THREAT_ZU23,
+    SCAR_THREAT_SAM,
+)
+
 SCAR_HVT_SPAWN_OFFSET_M = 4000.0  # HVT spawns this far north of the area center
 SCAR_HVT_DEST_OFFSET_M = 4000.0  # HVT no-strike destination this far south
 SCAR_FAIL_ZONE_RADIUS_M = 500.0  # HVT entering its destination zone = failed
 SCAR_SPREAD_RADIUS_M = 5000.0  # decoys/clutter ring around the area center
+SCAR_THREAT_RING_M = 3000.0  # threat ring (inside the convoy traffic)
 SCAR_UNIT_SPACING_M = 25.0  # spacing between units within a spawned convoy
 
 
@@ -90,12 +106,14 @@ class ScarTasking:
     fail_zone_radius_m: float = 0.0
 
 
-def _ring_point(center: "Point", index: int, total: int) -> tuple[float, float]:
+def _ring_point(
+    center: "Point", index: int, total: int, radius: float = SCAR_SPREAD_RADIUS_M
+) -> tuple[float, float]:
     """Evenly spaced point on a ring around ``center`` (deterministic spread)."""
     angle = 2.0 * math.pi * index / max(total, 1)
     return (
-        center.x + SCAR_SPREAD_RADIUS_M * math.cos(angle),
-        center.y + SCAR_SPREAD_RADIUS_M * math.sin(angle),
+        center.x + radius * math.cos(angle),
+        center.y + radius * math.sin(angle),
     )
 
 
@@ -131,6 +149,23 @@ def _compose_convoys(center: "Point") -> tuple[ScarConvoy, ...]:
                 spawn_y=spawn_y,
                 dest_x=center.x,
                 dest_y=center.y,
+            )
+        )
+
+    # Threat laydown (R9): stationary AAA/SA-9 on an inner ring (dest == spawn).
+    # Untracked; they just make the box contested.
+    for index, unit_type in enumerate(SCAR_THREAT_LAYDOWN):
+        tx, ty = _ring_point(
+            center, index, len(SCAR_THREAT_LAYDOWN), radius=SCAR_THREAT_RING_M
+        )
+        convoys.append(
+            ScarConvoy(
+                role="threat",
+                unit_types=(unit_type,),
+                spawn_x=tx,
+                spawn_y=ty,
+                dest_x=tx,
+                dest_y=ty,
             )
         )
     return tuple(convoys)

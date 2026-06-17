@@ -74,8 +74,10 @@ end
 -- Returns the spawned group name or nil.
 local SCAR_UNIT_SPACING = 25 -- metres between units in a convoy line
 
-local function spawn_convoy(tasking_id, convoy, country_id)
-    local group_name = "SCAR-" .. tostring(tasking_id) .. "-" .. tostring(convoy.role)
+local function spawn_convoy(tasking_id, convoy, country_id, index)
+    -- index keeps the group name unique (several convoys share a role).
+    local group_name = "SCAR-" .. tostring(tasking_id) .. "-" ..
+        tostring(convoy.role) .. "-" .. tostring(index)
     local spawn_x = scar_num(convoy.spawnX)
     local spawn_y = scar_num(convoy.spawnY)
     local dest_x = scar_num(convoy.destX)
@@ -228,8 +230,11 @@ local function scar_init()
             -- (mis-ID scoring is a later increment).
             local country_id = scar_num(tasking.hvtCountryId)
             local hvt_area = nil
+            local spawn_index = 0
             for _, convoy in pairs(tasking.convoys or {}) do
-                local group_name = spawn_convoy(tasking.taskingId, convoy, country_id)
+                spawn_index = spawn_index + 1
+                local group_name =
+                    spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
                 if group_name and tostring(convoy.role) == "hvt" then
                     hvt_area = {
                         id = tostring(tasking.taskingId),

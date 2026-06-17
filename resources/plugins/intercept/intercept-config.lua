@@ -225,8 +225,8 @@ local function build_dispatcher(coalition_name, records)
 
     -- Global QRA tuning, identical across this coalition's records (see header).
     local comms_enabled = records[1].commsEnabled ~= "false"
-    local scramble_radius_nm = tonumber(records[1].gciMaxRadiusNm) or 100
-    local engagement_range_nm = tonumber(records[1].engagementRangeNm) or 60
+    local scramble_radius_nm = tonumber(records[1].gciMaxRadiusNm) or 60
+    local engagement_range_nm = tonumber(records[1].engagementRangeNm) or 38
 
     -- Always spawn a hidden backstop EWR at each defended base so there is a
     -- guaranteed detection source even when the IADS network is destroyed.

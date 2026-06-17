@@ -94,6 +94,9 @@ stacked on top (newest first):
   exact F10 marks and kneeboard coordinates, so players have to visually acquire targets.
 - **Building card cleanup** — scenery-object building cards no longer show the upstream
   "Missing Recon Picture" placeholder; cards with no icon show a compact name + value layout.
+- **Self-documenting plugin options** — the *LUA Plugins Options* page now shows a short
+  description under each plugin explaining what it does, and the option labels across all
+  plugins were cleaned up (typo fixes, consistent units, clearer wording).
 
 ### Quality-of-life & robustness
 - **Auto-hide mobile SAMs (SHORAD/AAA/MANPAD) on the MFD** at campaign generation
@@ -110,9 +113,13 @@ stacked on top (newest first):
   scripted firefights plus a 414th ambient-fire extension. Toggle per game in the
   plugins UI.
 - **Civilian background air traffic** via MOOSE RAT - routes invisible civilian
-  flights between neutral airdromes (and a separate blue-field pool) for ambiance,
-  steering clear of airbases Retribution is using for combat ops this turn. Density is
-  kept light by design.
+  flights as short regional hops between nearby neutral airfields for ambiance. They
+  skip airbases Retribution is using for combat this turn, mostly avoid neutral fields
+  in a keep-out bubble around the active front, and the regional distance cap keeps
+  legs short so routes stay in the rear instead of cutting across the battle. The
+  keep-out is deliberately soft - a small fraction of front-side fields stay in the
+  pool, so once in a while a civilian strays into the fight if you're not watching.
+  Density is kept light by design.
 - **Frontline units spread along the line** instead of stacking on one tile - the
   generator steps perpendicular from the front to find valid ground rather than snapping
   every off-map group laterally onto the same patch.

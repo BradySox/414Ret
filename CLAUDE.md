@@ -436,7 +436,11 @@ feeds the BDA fog-of-war the exact enemy units a surviving recon pass photograph
 - Plugin: `resources/plugins/tars/` (`TARS.lua` vendored verbatim from MOOSE develop —
   NOT in the bundled Moose.lua, but API-compatible with it; `tars_414_init.lua`;
   `plugin.json`, default ON; options: scoring, scoreValue, filmLimit, restrictToNamed,
-  enforceLoadout, srs, srsPort).
+  enforceLoadout, srs, srsPort). Option defaults (playtest-aligned 2026-06-17):
+  `scoring` OFF, `restrictToNamed` ON, `srs` ON, `filmLimit` 25, `scoreValue` 100;
+  `enforceLoadout` stays OFF on purpose (ON falls back to the stock `allowedAmmo`
+  whitelist + a best-effort AAM list and can leave the F10 film menu locked — see the
+  loadout-whitelist note below).
 - Injection: NOT a work order. `_inject_tars_script()` in
   `game/missiongenerator/luagenerator.py` mirrors the TIC pattern — appended after
   `inject_plugins()` so `dcsRetribution.plugins.tars` exists, then DoScriptFile
@@ -488,6 +492,27 @@ friendly land airbases.
   synchronously inside `:Start()`, so `fc.parking` is populated when the pass runs.
 - Tests: `tests/test_flightcontrol_emit.py`. Default ON; Lua still needs an in-game pass
   (not runnable in CI).
+
+### 14. Plugin Options UI — section descriptions + label/default pass
+A polish pass over the **LUA Plugins Options** page so every plugin explains itself.
+- New `descriptionInUI` field on `plugin.json` (optional, top-level). Parsed in
+  `game/plugins/luaplugin.py` (`LuaPluginDefinition.description` +
+  `LuaPlugin.description`) and rendered as an italic, word-wrapped line spanning the
+  group-box header in `qt_ui/windows/settings/plugins.py` (`PluginOptionsBox` now drives
+  its own `row` counter so the description sits above the option grid). Backward
+  compatible: a plugin without the field renders no description. Documented in
+  `resources/plugins/_doc/plugins_readme.md`.
+- Section descriptions + clearer option labels added to all 15 options-bearing
+  `plugin.json` files (414th + upstream): typo fixes (`Scipt`→`Script`,
+  `Multipler`→`Multiplier`, BigEye's unclosed paren), unit/casing consistency
+  (`NM`, `minutes`, `seconds`, `MHz`), and sentence-case wording. **Mnemonics and
+  defaults were untouched except** the TARPS defaults below — so saved settings are
+  unaffected (labels/descriptions are display-only; mnemonics are the settings keys).
+- TARPS defaults re-seeded to match playtest usage (new campaigns only):
+  `scoring` true→false, `restrictToNamed` false→true, `srs` false→true. See the TARS
+  section above.
+- Note: `AGENTS.md` is a stale partial handoff (predates TARS/Flight Control and this
+  section) and was not updated — `CLAUDE.md` is the authoritative engineering doc.
 
 ---
 

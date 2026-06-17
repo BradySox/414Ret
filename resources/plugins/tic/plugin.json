@@ -1,5 +1,6 @@
 {
     "nameInUI": "Troops In Contact (frontline battle sim)",
+    "descriptionInUI": "Replaces vanilla ground AI on the front line with formation-keeping units that fight prolonged, scripted firefights, so the FLOT feels alive. Player CAS is the real source of attrition.",
     "defaultValue": true,
     "specificOptions": [
         {

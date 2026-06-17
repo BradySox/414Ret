@@ -1,5 +1,6 @@
 {
     "nameInUI": "Flight Control (ATC tower comms, players)",
+    "descriptionInUI": "Adds tower comms (taxi, takeoff, and landing sequencing with SRS voice or text subtitles) for human players at friendly land airbases. AI traffic flows through unaffected.",
     "defaultValue": true,
     "specificOptions": [
         {

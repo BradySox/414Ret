@@ -21,6 +21,9 @@ class InterceptEntry:
     template_prefix: str
     coalition: str  # "BLUE" or "RED"
     resource_count: int
+    #: Aircraft launched per QRA scramble (1 or 2). Rolled per squadron toward a
+    #: distributed-QRA posture; the Lua falls back to 2 if absent.
+    grouping: int
     engagement_range_nm: int
     gci_max_radius_nm: int
     comms_enabled: bool
@@ -49,6 +52,7 @@ def populate_intercept_lua(root: "LuaData", entries: Iterable[InterceptEntry]) -
         record.add_key_value("airbaseName", entry.airbase_name)
         record.add_key_value("templatePrefix", entry.template_prefix)
         record.add_key_value("resourceCount", str(entry.resource_count))
+        record.add_key_value("grouping", str(entry.grouping))
         record.add_key_value("engagementRangeNm", str(entry.engagement_range_nm))
         record.add_key_value("gciMaxRadiusNm", str(entry.gci_max_radius_nm))
         record.add_key_value("commsEnabled", "true" if entry.comms_enabled else "false")

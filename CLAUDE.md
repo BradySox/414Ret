@@ -51,7 +51,17 @@ The old 414th ramp-scramble system is legacy only and should not be extended.
   `untasked_aircraft` is now `owned_aircraft - intercept_reserve`, so the auto-planner
   leaves those aircraft available for QRA instead of fragging them.
 - Reserve helpers: `game/squadrons/intercept_reserve.py` owns clamping, default seeding,
-  and live-campaign repropagation when coalition doctrine defaults change.
+  live-campaign repropagation when coalition doctrine defaults change, and
+  `qra_scramble_grouping()`.
+- Distributed-QRA scramble size: `qra_scramble_grouping()` rolls **1 ship 75% / 2 ships
+  25%** (`QRA_SINGLE_SHIP_PROBABILITY`) per fielded QRA squadron, carried on each
+  `InterceptEntry.grouping` and applied as `SetSquadronGrouping` in `intercept-config.lua`
+  (was a hardcoded 2-ship). Intent: many alert bases each putting up a *small* response so
+  a raid draws interceptors from several directions, rather than one base scrambling a big
+  formation. MOOSE grouping is per-squadron (fixed for the mission, re-rolled each turn),
+  so the per-launch single/pair mix emerges across the theater's alert bases; true
+  per-scramble variation would need a dispatcher GCI hook (deferred). Lua falls back to 2
+  if an old save omits the field. Tests: `tests/squadrons/test_intercept_reserve.py`.
 - Campaign doctrine: `game/settings/settings.py` exposes
   `ownfor_default_qra_reserve`, `opfor_default_qra_reserve`,
   `qra_gci_max_radius_nm`, `qra_engagement_range_nm`, and `qra_comms_enabled`.

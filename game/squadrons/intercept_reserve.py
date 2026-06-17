@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+import random
 from typing import Optional
+
+#: Probability that a single QRA scramble launches one interceptor rather than a
+#: pair. A distributed-QRA posture (the 414th's choice) prefers many bases each
+#: putting up a small alert response over one base scrambling a large formation,
+#: so most scrambles are a single ship and a minority are 2-ships.
+QRA_SINGLE_SHIP_PROBABILITY = 0.75
 
 
 def clamp_intercept_reserve(value: int, max_size: int) -> int:
@@ -29,6 +36,21 @@ def qra_resource_count(
     if available_pilots is not None:
         count = min(count, max(0, available_pilots))
     return count
+
+
+def qra_scramble_grouping(rng: Optional[random.Random] = None) -> int:
+    """How many interceptors a base launches per QRA scramble: 1 or 2.
+
+    Returns 1 with probability ``QRA_SINGLE_SHIP_PROBABILITY`` (default 0.75),
+    otherwise 2. MOOSE's ``AI_A2A_DISPATCHER`` grouping is set per squadron, so
+    this is rolled once per fielded QRA squadron (per turn) rather than per
+    individual scramble; across the theater's alert bases the per-launch mix
+    approaches the configured single/pair split.
+
+    ``rng`` is injectable for deterministic tests; defaults to the module random.
+    """
+    roll = (rng or random).random()
+    return 1 if roll < QRA_SINGLE_SHIP_PROBABILITY else 2
 
 
 def seeded_intercept_reserve(

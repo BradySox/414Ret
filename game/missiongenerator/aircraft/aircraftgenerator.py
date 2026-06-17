@@ -30,7 +30,10 @@ from game.missiongenerator.interceptluadata import (
     InterceptEntry,
 )
 from game.missiongenerator.missiondata import MissionData
-from game.squadrons.intercept_reserve import qra_resource_count
+from game.squadrons.intercept_reserve import (
+    qra_resource_count,
+    qra_scramble_grouping,
+)
 from game.radio.radios import RadioRegistry
 from game.radio.tacan import TacanRegistry
 from game.runways import RunwayData
@@ -310,6 +313,7 @@ class AircraftGenerator:
                             template_prefix=template_prefix,
                             coalition="BLUE" if base_is_blue else "RED",
                             resource_count=resource_count,
+                            grouping=qra_scramble_grouping(),
                             engagement_range_nm=engagement_range_nm,
                             gci_max_radius_nm=gci_max_radius_nm,
                             comms_enabled=comms_enabled,

@@ -330,6 +330,8 @@ class Loadout:
         # OCA/Aircraft falls back to BAI, which falls back to CAS.
         loadout_names[FlightType.BAI].extend(loadout_names[FlightType.CAS])
         loadout_names[FlightType.ARMED_RECON].extend(loadout_names[FlightType.CAS])
+        # SCAR hunts ground targets in an area; use the CAS loadout family.
+        loadout_names[FlightType.SCAR].extend(loadout_names[FlightType.CAS])
         loadout_names[FlightType.OCA_AIRCRAFT].extend(loadout_names[FlightType.BAI])
         # DEAD also falls back to BAI.
         loadout_names[FlightType.DEAD].extend(loadout_names[FlightType.BAI])

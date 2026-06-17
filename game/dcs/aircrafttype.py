@@ -276,6 +276,16 @@ class AircraftType(UnitType[Type[FlyingType]]):
             ):
                 enrich[FlightType.ARMED_RECON] = value
 
+        # SCAR (area find-and-prosecute of one moving HVT) is a fixed-wing
+        # ground-attack task; any fixed-wing CAS/BAI airframe is *capable* so
+        # squadrons can experiment. This is capability only — the auto-planner
+        # never frags SCAR (no commander task class), so breadth here is harmless.
+        if FlightType.SCAR not in self.task_priorities and not self.helicopter:
+            if (value := self.task_priorities.get(FlightType.CAS)) or (
+                value := self.task_priorities.get(FlightType.BAI)
+            ):
+                enrich[FlightType.SCAR] = value
+
         if FlightType.RECOVERY not in self.task_priorities:
             if (
                 value := self.task_priorities.get(FlightType.REFUELING)

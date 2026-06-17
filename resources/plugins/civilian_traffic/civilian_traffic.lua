@@ -72,9 +72,10 @@ end
 -- ── Density helper ────────────────────────────────────────────────────────────
 -- Returns flights-per-template scaled to pool size, clamped to [lo, hi].
 local function _density(pool_size, lo, hi)
-    -- Keep the civilian layer materially lighter: about half the old density,
+    -- Keep the civilian layer light: roughly a quarter of the original density
+    -- (halved again after playtest feedback that traffic was still too busy),
     -- while still leaving a little life on sparse maps.
-    local n = math.ceil(pool_size * 0.3)
+    local n = math.ceil(pool_size * 0.15)
     if n < lo then n = lo end
     if n > hi then n = hi end
     return n
@@ -106,7 +107,7 @@ local _fw_count  = 0
 local _fw_spawns = 0
 
 if #_airdromes >= 2 then
-    local n = _density(#_airdromes, 1, 5)    -- half the old 2-10 density band
+    local n = _density(#_airdromes, 1, 3)    -- lighter fixed-wing band
     local fw_templates = {
         "RAT_CIV_C130",
         "RAT_CIV_AN26",
@@ -126,7 +127,7 @@ local _helo_count  = 0
 local _helo_spawns = 0
 
 if #_helipads >= 2 then
-    local n = _density(#_helipads, 1, 4)     -- half the old 2-8 density band
+    local n = _density(#_helipads, 1, 2)     -- lighter rotary band
     local helo_templates = {
         "RAT_CIV_MI8",
         "RAT_CIV_UH1",

@@ -64,15 +64,19 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
     an **HVT signature convoy** (SA-9 `Strela-1 9P31` + command `Ural-375 PBU` + 2 trucks),
     **two decoy convoys** each a partial signature (one drops the SA-9, one drops the command),
     and **clutter** (plain-truck convoys, count `SCAR_CLUTTER_COUNT`) on a ring around the area
-    (the R2-R4 discrimination puzzle, all vanilla units verified in pydcs) — and routes them.
-    Only the HVT is tracked: success = HVT destroyed; fail = HVT reaches its no-strike
-    destination. The single-truck placeholder was **verified in-game 2026-06-17** (dcs.log:
-    `Register Dynamic Group: SCAR-HVT-scar-1` → `[SCAR] initialized` → `[SCAR] area scar-1 ->
-    failed`); the multi-convoy picture reuses the same proven `mist.dynAdd` path but needs a
-    fresh in-game pass.
+    (the R2-R4 discrimination puzzle, all vanilla units verified in pydcs). The HVT flees
+    toward a **city** (the nearest enemy-held control point — `_nearest_city()`; real city
+    coords aren't exposed, but CPs map to towns on every theater). Only the HVT is tracked:
+    success = HVT destroyed; fail = it reaches the city (its **command vehicle despawns** —
+    "slips into the urban area") or the window expires. The multi-convoy picture was
+    **verified in-game 2026-06-17** (all 11 groups spawned with unique names; `area scar-N
+    (spawn) -> failed`). City routing + command despawn need a fresh pass.
   - **`missile`** (bind, watch-only): when the SCAR target IS a real `MissileSiteGroundObject`
     (category "missile" = SCUD), watch it instead of spawning. success = site destroyed;
-    fail = it launches (S_EVENT_SHOT by a site unit). NOT yet validated in-game.
+    fail = it launches. **Verified in-game 2026-06-17** (`area scar-1 (missile) -> launched`).
+    The stock random fire task (`MissileSiteGenerator`, `generate_fire_tasks_for_missile_sites`)
+    is now **suppressed for SCAR-targeted sites** (`_is_scar_target()`) — it fired as early as
+    60 s, before the player could arrive; SCAR now owns the timing.
   The `scar` plugin (`resources/plugins/scar/`, default ON). Outcomes ride the proven TARS
   channel: `dcs_retribution.lua write_state` → `StateData.scar_results` →
   `MissionResultsProcessor.commit_scar_results` (log-only for now). Tests:
@@ -87,11 +91,10 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   SCUD fired while the player was still ~15+ min out. Now each scenario is anchored to the
   package's TOT (`go_live_s = time_over_target − mission.start_time`) and gives a generous
   `window_s` (default 20 min, `SCAR_WINDOW_S`) after that. Spawn: the convoy picture appears
-  at go_live and moves slowly (~5 m/s) so it can't reach the no-strike zone before the
-  deadline (`go_live+window`). Missile: the SCUD is held on `WEAPON_HOLD` from the start and
-  only released to fire at `go_live+window` (launch = fail). Taskings are now deduped per
-  target (one scenario even with multiple SCAR flights on it). NOT range-gated — purely
-  time-based. Needs an in-game pass.
+  at go_live; the HVT is paced (speed = route_len/window, clamped) to reach the city ~as the
+  window expires, with a deadline (`go_live+window`) backstop. Missile: the SCUD's stock fire
+  task is suppressed and it's held on `WEAPON_HOLD`; the launch (fail) is recorded at
+  `go_live+window`. Taskings are deduped per target. NOT range-gated — purely time-based.
 - **Threat laydown (R9) — built:** the spawn picture also scatters ZSU-23-4 + ZU-23 + an
   occasional SA-9 (stationary, untracked `role="threat"` groups). Spawned at runtime, so they
   never trip the planner's auto SEAD-escort (resolves §10 Q3 for the spawn path).

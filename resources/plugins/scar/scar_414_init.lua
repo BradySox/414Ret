@@ -4,10 +4,11 @@
 -- the ScarTasking model) and runs one of two paths per tasking:
 --   * variant "spawn"   — AI convoys are rare, so the generator spawns the whole
 --                         ground picture (an HVT signature convoy + decoy convoys
---                         + plain-truck clutter) and routes it. Only the HVT is
---                         tracked: success = HVT destroyed; fail = HVT reaches its
---                         no-strike destination. Decoys/clutter are the
---                         discrimination puzzle (mis-ID scoring is a later step).
+--                         + plain-truck clutter) and routes the HVT toward a city
+--                         (the nearest enemy control point). Only the HVT is
+--                         tracked: success = HVT destroyed; fail = it reaches the
+--                         city (its command vehicle despawns there) or the window
+--                         expires. Decoys/clutter are the discrimination puzzle.
 --   * variant "missile" — the target IS a real surface-to-surface (SCUD) site;
 --                         watch it, no spawn. success = site destroyed;
 --                         fail  = it launches (any weapon release by a site unit).
@@ -174,6 +175,7 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
     local spawn_y = scar_num(convoy.spawnY)
     local dest_x = scar_num(convoy.destX)
     local dest_y = scar_num(convoy.destY)
+    local speed = scar_num(convoy.speed, 5)
     local types = convoy.units or {}
     if not (spawn_x and spawn_y and dest_x and dest_y) or #types == 0 then
         scar_log("skipping convoy " .. group_name .. ": incomplete data")
@@ -201,8 +203,8 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
         ["category"] = Group.Category.GROUND,
         ["country"] = country_id,
         ["units"] = units,
-        -- Slow (~5 m/s): the convoy must NOT reach the no-strike zone before the
-        -- player's window expires, so the deadline (not arrival) governs the fail.
+        -- Speed is set by the generator: the HVT is paced to reach the city ~as
+        -- the window expires; decoys/clutter just crawl as traffic.
         ["route"] = {
             ["points"] = {
                 [1] = {
@@ -210,14 +212,14 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
                     ["y"] = spawn_y,
                     ["type"] = "Turning Point",
                     ["action"] = "Off Road",
-                    ["speed"] = 5,
+                    ["speed"] = speed,
                 },
                 [2] = {
                     ["x"] = dest_x,
                     ["y"] = dest_y,
                     ["type"] = "Turning Point",
                     ["action"] = "Off Road",
-                    ["speed"] = 5,
+                    ["speed"] = speed,
                 },
             },
         },
@@ -250,16 +252,46 @@ local function hvt_in_fail_zone(area)
     return (dx * dx + dz * dz) <= (area.radius * area.radius)
 end
 
+-- The HVT command vehicle slips into the city (despawns) on arrival.
+local function despawn_command(area)
+    if not area.commandType or area.commandType == "" then
+        return
+    end
+    local group = Group.getByName(area.groups[1])
+    if group == nil then
+        return
+    end
+    local ok, units = pcall(function()
+        return group:getUnits()
+    end)
+    if not ok or units == nil then
+        return
+    end
+    for _, unit in ipairs(units) do
+        local okt, type_name = pcall(function()
+            return unit:getTypeName()
+        end)
+        if okt and type_name == area.commandType then
+            pcall(function()
+                unit:destroy()
+            end)
+            return
+        end
+    end
+end
+
 local function scar_check()
     for _, area in ipairs(scar_areas) do
         if not area.done then
             if all_groups_dead(area) then
                 mark_result(area, "success")
             elseif area.variant ~= "missile" then
-                -- Spawn fail: the HVT reaches its no-strike zone, or the window
-                -- runs out (deadline = go_live + window), whichever first.
-                if hvt_in_fail_zone(area)
-                    or (area.deadline and timer.getTime() >= area.deadline) then
+                if hvt_in_fail_zone(area) then
+                    -- Reached the city: the command vehicle escapes into it.
+                    despawn_command(area)
+                    mark_result(area, "failed")
+                elseif area.deadline and timer.getTime() >= area.deadline then
+                    -- Ran out of time; the convoy is still en route.
                     mark_result(area, "failed")
                 end
             end
@@ -326,6 +358,7 @@ local function activate_spawn_area(tasking, window)
                 destX = scar_num(convoy.destX, 0),
                 destY = scar_num(convoy.destY, 0),
                 radius = scar_num(tasking.failZoneRadius, 500),
+                commandType = tostring(tasking.commandType or ""),
                 deadline = timer.getTime() + window,
             }
         end

@@ -53,6 +53,8 @@ def _coalition_with_target(
 def _game_with(*coalitions: Any) -> Any:
     game = MagicMock()
     game.coalitions = list(coalitions)
+    # No control points -> _nearest_city falls back to the fixed no-strike point.
+    game.theater.controlpoints = []
     return game
 
 
@@ -94,6 +96,25 @@ def test_default_target_yields_spawn_tasking() -> None:
     # Threats are stationary (dest == spawn) and untracked.
     for threat in (c for c in tasking.convoys if c.role == "threat"):
         assert (threat.dest_x, threat.dest_y) == (threat.spawn_x, threat.spawn_y)
+
+
+def test_hvt_routes_to_nearest_enemy_city() -> None:
+    # With an enemy-held control point present, the HVT flees toward it (the
+    # "city") and carries a command vehicle that despawns there on arrival.
+    target = MagicMock()
+    target.position = Point(0, 0, None)  # type: ignore[arg-type]
+    target.control_point.captured = True  # the enemy side
+    city = MagicMock()
+    city.captured = True  # same side as the target -> enemy-held = a city
+    city.position = Point(10000, 0, None)  # type: ignore[arg-type]
+    game = _game_with(_coalition_with_target(target))
+    game.theater.controlpoints = [city]
+
+    tasking = _build(game)[0]
+
+    assert tasking.command_type  # the command vehicle to despawn in the city
+    hvt = next(c for c in tasking.convoys if c.role == "hvt")
+    assert (hvt.dest_x, hvt.dest_y) == (10000, 0)  # routed to the city
 
 
 def test_missile_site_target_yields_missile_tasking() -> None:
@@ -138,6 +159,8 @@ def test_populate_scar_lua_emits_spawn_fields() -> None:
     assert "role" in serialized
     assert "hvt" in serialized
     assert "spawnX" in serialized
+    assert "speed" in serialized  # per-convoy pacing
+    assert "commandType" in serialized  # command vehicle that despawns in the city
     assert SCAR_HVT_SIGNATURE[0] in serialized  # the SA-9 type appears
 
 

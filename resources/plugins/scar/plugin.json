@@ -1,6 +1,6 @@
 {
     "nameInUI": "SCAR (convoy-hunt scenario)",
-    "descriptionInUI": "Runs the in-mission scenario for SCAR flights: spawns a moving HVT signature convoy plus decoy and clutter convoys and a light threat laydown, briefs the player (signature, ingress axis, no-strike zone, decoy warning) via F10 map marks, and watches the HVT for being killed or reaching its no-strike destination; if the SCAR target is a real surface-to-surface missile site, watches that instead (killed, or launched). Reports the outcome back to the campaign. No mis-ID scoring yet. Inert unless a SCAR flight is planned.",
+    "descriptionInUI": "Runs the in-mission scenario for SCAR flights: spawns a moving HVT signature convoy (fleeing toward the nearest city) plus decoy and clutter convoys and a light threat laydown, briefs the player (signature, ingress axis, no-strike zone, decoy warning) via F10 map marks, and watches the HVT — killed = success; reaching the city (its command vehicle slips away) or the window expiring = fail. If the SCAR target is a real surface-to-surface missile site, watches that instead (killed, or launched). The scenario is timed to the flight's TOT. Reports the outcome back to the campaign. No mis-ID scoring yet. Inert unless a SCAR flight is planned.",
     "defaultValue": true,
     "specificOptions": [],
     "scriptsWorkOrders": [],

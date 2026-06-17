@@ -73,14 +73,24 @@ SCAR_UNIT_SPACING_M = 25.0  # spacing between units within a spawned convoy
 # before it "gets away" (spawn) or launches (missile). Tunable.
 SCAR_WINDOW_S = 1200.0  # 20 min on-station window after the flight's TOT
 
+# The HVT flees toward the nearest enemy-held control point (the "city" proxy —
+# real city coords aren't queryable, but every map has CPs). On reaching it the
+# command vehicle slips into the urban area (despawns) = fail. Its speed is set
+# so it arrives ~window if the city is within reach; otherwise the window
+# expires first. Decoys/clutter just crawl as traffic.
+SCAR_CONVOY_SPEED_MS = 5.0  # cosmetic decoy/clutter crawl
+SCAR_HVT_SPEED_MIN_MS = 4.0
+SCAR_HVT_SPEED_MAX_MS = 15.0
+SCAR_CITY_RADIUS_M = 2000.0  # HVT within this of the city = command escapes
+
 
 @dataclass(frozen=True)
 class ScarConvoy:
     """One spawned convoy in a SCAR area.
 
-    ``role`` is "hvt" (the real target — killing it = success, it reaching its
-    destination = fail), "decoy" (partial signature), or "clutter" (plain
-    trucks). Only the HVT's destination is the no-strike fail zone.
+    ``role`` is "hvt" (the real target — killing it = success, it reaching the
+    city = fail), "decoy" (partial signature), "clutter" (plain trucks), or
+    "threat" (stationary AAA). Only the HVT's arrival is the fail.
     """
 
     role: str
@@ -89,6 +99,7 @@ class ScarConvoy:
     spawn_y: float
     dest_x: float
     dest_y: float
+    speed_ms: float = SCAR_CONVOY_SPEED_MS
 
 
 @dataclass(frozen=True)
@@ -118,6 +129,7 @@ class ScarTasking:
     hvt_country_id: int = 0
     convoys: tuple[ScarConvoy, ...] = ()
     fail_zone_radius_m: float = 0.0
+    command_type: str = ""  # the HVT's command-vehicle type; despawns in the city
 
 
 def _ring_point(
@@ -131,22 +143,70 @@ def _ring_point(
     )
 
 
-def _compose_convoys(center: "Point") -> tuple[ScarConvoy, ...]:
-    """Compose the HVT + decoys + clutter for a SCAR area around ``center``.
+def _nearest_city(game: "Game", target: object) -> "Point | None":
+    """The nearest enemy-held control point to ``target`` (the "city" proxy).
 
-    The HVT runs from north of the area to a no-strike destination south of it
-    (its arrival = fail). Decoys/clutter spawn on a ring and head toward the area
-    center (they mill through the box but never near the HVT's fail zone), so the
-    player must pick the full-signature convoy out of the traffic.
+    Real city coordinates aren't exposed, but control points map to towns/bases
+    on every theater. Returns None if the target has no control point or no
+    enemy-held CP is found, in which case the convoy falls back to a fixed
+    no-strike point near the area.
     """
+    try:
+        target_captured = target.control_point.captured  # type: ignore[attr-defined]
+        origin = target.position  # type: ignore[attr-defined]
+    except AttributeError:
+        return None
+    best: "Point | None" = None
+    best_distance = 0.0
+    for cp in game.theater.controlpoints:
+        if cp.captured != target_captured:
+            continue
+        distance = cp.position.distance_to_point(origin)
+        if best is None or distance < best_distance:
+            best, best_distance = cp.position, distance
+    return best
+
+
+def _compose_convoys(
+    center: "Point", city: "Point | None", window_s: float
+) -> tuple[ScarConvoy, ...]:
+    """Compose the HVT + decoys + clutter + threats for a SCAR area.
+
+    The HVT runs from the far side of the area toward ``city`` (the nearest
+    enemy-held CP), so the player intercepts it crossing the box; reaching the
+    city = its command vehicle escapes (fail). If no city is found it falls back
+    to a fixed no-strike point south of the area. Decoys/clutter crawl as
+    traffic; threats hold station.
+    """
+    if city is not None:
+        dx, dy = center.x - city.x, center.y - city.y
+        norm = math.hypot(dx, dy) or 1.0
+        ux, uy = dx / norm, dy / norm  # unit vector area -> away from city
+        hvt_spawn_x = center.x + ux * SCAR_HVT_SPAWN_OFFSET_M
+        hvt_spawn_y = center.y + uy * SCAR_HVT_SPAWN_OFFSET_M
+        dest_x, dest_y = city.x, city.y
+    else:
+        hvt_spawn_x = center.x + SCAR_HVT_SPAWN_OFFSET_M
+        hvt_spawn_y = center.y
+        dest_x = center.x - SCAR_HVT_DEST_OFFSET_M
+        dest_y = center.y
+
+    # Pace the HVT to reach the destination ~window (clamped to a sane crawl).
+    route_len = math.hypot(hvt_spawn_x - dest_x, hvt_spawn_y - dest_y)
+    hvt_speed = min(
+        SCAR_HVT_SPEED_MAX_MS,
+        max(SCAR_HVT_SPEED_MIN_MS, route_len / max(window_s, 1.0)),
+    )
+
     convoys: list[ScarConvoy] = [
         ScarConvoy(
             role="hvt",
             unit_types=SCAR_HVT_SIGNATURE,
-            spawn_x=center.x + SCAR_HVT_SPAWN_OFFSET_M,
-            spawn_y=center.y,
-            dest_x=center.x - SCAR_HVT_DEST_OFFSET_M,
-            dest_y=center.y,
+            spawn_x=hvt_spawn_x,
+            spawn_y=hvt_spawn_y,
+            dest_x=dest_x,
+            dest_y=dest_y,
+            speed_ms=hvt_speed,
         )
     ]
 
@@ -161,8 +221,8 @@ def _compose_convoys(center: "Point") -> tuple[ScarConvoy, ...]:
                 unit_types=sig,
                 spawn_x=spawn_x,
                 spawn_y=spawn_y,
-                dest_x=center.x,
-                dest_y=center.y,
+                dest_x=dest_x,
+                dest_y=dest_y,
             )
         )
 
@@ -180,6 +240,7 @@ def _compose_convoys(center: "Point") -> tuple[ScarConvoy, ...]:
                 spawn_y=ty,
                 dest_x=tx,
                 dest_y=ty,
+                speed_ms=0.0,
             )
         )
     return tuple(convoys)
@@ -236,6 +297,10 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     )
                 )
             else:
+                city = _nearest_city(game, target)
+                fail_radius = (
+                    SCAR_CITY_RADIUS_M if city is not None else SCAR_FAIL_ZONE_RADIUS_M
+                )
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -244,8 +309,9 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         go_live_s=go_live_s,
                         window_s=SCAR_WINDOW_S,
                         hvt_country_id=enemy_country_id,
-                        convoys=_compose_convoys(target.position),
-                        fail_zone_radius_m=SCAR_FAIL_ZONE_RADIUS_M,
+                        convoys=_compose_convoys(target.position, city, SCAR_WINDOW_S),
+                        fail_zone_radius_m=fail_radius,
+                        command_type=SCAR_COMMAND,
                     )
                 )
     return taskings
@@ -274,6 +340,7 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
             continue
         record.add_item("hvtCountryId").set_value(str(tasking.hvt_country_id))
         record.add_item("failZoneRadius").set_value(str(tasking.fail_zone_radius_m))
+        record.add_item("commandType").set_value(tasking.command_type)
         convoys_item = record.add_item("convoys")
         for convoy in tasking.convoys:
             convoy_rec = convoys_item.add_item()
@@ -283,3 +350,4 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
             convoy_rec.add_key_value("spawnY", str(convoy.spawn_y))
             convoy_rec.add_key_value("destX", str(convoy.dest_x))
             convoy_rec.add_key_value("destY", str(convoy.dest_y))
+            convoy_rec.add_key_value("speed", str(convoy.speed_ms))

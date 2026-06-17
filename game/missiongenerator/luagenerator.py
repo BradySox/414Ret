@@ -21,6 +21,7 @@ from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
 from .interceptluadata import populate_intercept_lua
 from .missiondata import MissionData
+from .scarluadata import build_scar_taskings, populate_scar_lua
 
 if TYPE_CHECKING:
     from game import Game
@@ -64,6 +65,7 @@ class LuaGenerator:
         self.inject_plugins()
         self._inject_tic_script()
         self._inject_tars_script()
+        self._inject_scar_script()
         self._inject_flightcontrol_script()
         self._inject_civilian_traffic_script()
         for t in ewrj_triggers:
@@ -210,6 +212,33 @@ class LuaGenerator:
         trigger.add_action(DoScriptFile(fileref))
         init_fileref = self.mission.map_resource.add_resource_file(init_path.resolve())
         trigger.add_action(DoScriptFile(init_fileref))
+        self.mission.triggerrules.triggers.append(trigger)
+
+    def _inject_scar_script(self) -> None:
+        """Inject the SCAR scenario/results bridge.
+
+        Fires only when the SCAR plugin is enabled and at least one SCAR flight
+        was planned (mission_data.scar_taskings non-empty). The
+        dcsRetribution.Scar config table is already emitted by
+        generate_plugin_data(); scar_414_init.lua reads it, spawns the
+        placeholder HVT per tasking, runs the pass/fail watcher, and appends to
+        the scar_results global the base plugin serializes into state.json.
+        MOOSE/mist are loaded earlier by the base plugin.
+        """
+        if not self._plugin_enabled("scar"):
+            return
+        if not self.mission_data.scar_taskings:
+            return
+        script_path = Path("./resources/plugins/scar/scar_414_init.lua")
+        if not script_path.exists():
+            logging.error(
+                "scar_414_init.lua not found at %s — SCAR scenario disabled",
+                script_path.resolve(),
+            )
+            return
+        trigger = TriggerStart(comment="Load SCAR scenario bridge")
+        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
+        trigger.add_action(DoScriptFile(fileref))
         self.mission.triggerrules.triggers.append(trigger)
 
     def _inject_flightcontrol_script(self) -> None:
@@ -462,6 +491,11 @@ class LuaGenerator:
                 iads_element.add_data_array(role, connections)
 
         populate_intercept_lua(lua_data, self.mission_data.intercept_entries)
+
+        # SCAR scenario bridge: collect one tasking per planned SCAR flight and
+        # emit dcsRetribution.Scar. scar_taskings also gates _inject_scar_script.
+        self.mission_data.scar_taskings = build_scar_taskings(self.game)
+        populate_scar_lua(lua_data, self.mission_data.scar_taskings)
 
         # Add artillery and support units info
         artillery_object = lua_data.add_item("artilleryGroups")

@@ -40,6 +40,7 @@ class MissionTarget:
                 FlightType.SEAD_ESCORT,
                 FlightType.SEAD_SWEEP,
                 FlightType.ARMED_RECON,
+                FlightType.SCAR,
                 FlightType.SWEEP,
                 FlightType.JAMMING,
                 # TODO: FlightType.ELINT,

@@ -1,0 +1,8 @@
+{
+    "nameInUI": "SCAR (convoy-hunt scenario)",
+    "descriptionInUI": "Runs the in-mission scenario for SCAR flights: spawns the target, watches for a kill or for it reaching its no-strike destination, and reports the outcome back to the campaign. Bridge skeleton — single placeholder target, no scoring yet. Inert unless a SCAR flight is planned.",
+    "defaultValue": true,
+    "specificOptions": [],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": []
+}

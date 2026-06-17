@@ -65,6 +65,7 @@ class FlightType(Enum):
     ARMED_RECON = "Armed Recon"
     RECOVERY = "Recovery"
     TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +5 min behind strikers
+    SCAR = "SCAR"  # Strike Coordination and Recon — find+prosecute one moving HVT in an area
 
     @classmethod
     def _missing_(cls, value: object) -> FlightType | None:
@@ -112,6 +113,7 @@ class FlightType(Enum):
             FlightType.AIR_ASSAULT,
             FlightType.SEAD_SWEEP,
             FlightType.ARMED_RECON,
+            FlightType.SCAR,
         }
 
     @property
@@ -131,6 +133,7 @@ class FlightType(Enum):
             FlightType.ARMED_RECON,
             FlightType.AIR_ASSAULT,
             FlightType.TARPS,
+            FlightType.SCAR,
         }
 
     @property
@@ -157,6 +160,7 @@ class FlightType(Enum):
             FlightType.SWEEP: AirEntity.FIGHTER,
             FlightType.JAMMING: AirEntity.ELECTRONIC_COMBAT_JAMMER,
             FlightType.TARPS: AirEntity.RECONNAISSANCE,
+            FlightType.SCAR: AirEntity.ATTACK_STRIKE,
             FlightType.TARCAP: AirEntity.FIGHTER,
             FlightType.TRANSPORT: AirEntity.UTILITY,
             FlightType.PRETENSE_CARGO: AirEntity.UTILITY,

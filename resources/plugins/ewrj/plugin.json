@@ -1,56 +1,57 @@
 {
     "skipUI": true,
-    "nameInUI": "EW Jammer Scipt 2.0",
+    "nameInUI": "EW Jammer Script 2.1",
+    "descriptionInUI": "Proximity-bubble electronic-warfare jamming (offensive and defensive) with optional missile-specific spoofing. The strength multipliers scale jamming effectiveness.",
     "defaultValue": false,
     "specificOptions": [
         {
-            "nameInUI": "Require ECM pod",
+            "nameInUI": "Require an ECM pod to jam",
             "mnemonic": "ecm_required",
             "defaultValue": true
-        },    
+        },
         {
-            "nameInUI": "Enable AI Jammers",
+            "nameInUI": "Enable AI jammers",
             "mnemonic": "ai_jammer_enabled",
             "defaultValue": false
         },
         {
-            "nameInUI": "Offensive Jammer Strength Multipler",
+            "nameInUI": "Offensive jammer strength multiplier",
             "mnemonic": "OFFENSIVE_POWER",
             "minimumValue": 0.0,
             "maximumValue": 5.0,
             "defaultValue": 1.0
         },
         {
-            "nameInUI": "Defensive Jammer Strength Multipler",
+            "nameInUI": "Defensive jammer strength multiplier",
             "mnemonic": "DEFENSIVE_POWER",
             "minimumValue": 0.0,
             "maximumValue": 5.0,
             "defaultValue": 1.0
         },
         {
-            "nameInUI": "Missile Specific Jamming Multipler",
+            "nameInUI": "Missile-specific jamming multiplier",
             "mnemonic": "MISSILE_JAM_SCALE",
             "minimumValue": 0.0,
             "maximumValue": 5.0,
             "defaultValue": 0.6
         },
         {
-            "nameInUI": "DEBUG",
+            "nameInUI": "Debug logging",
             "mnemonic": "DEBUG",
             "defaultValue": false
         },
         {
-            "nameInUI": "DEBUG - Offensive",
+            "nameInUI": "Debug logging - offensive",
             "mnemonic": "DEBUG_OFFENSIVE",
             "defaultValue": false
         },
         {
-            "nameInUI": "DEBUG - Defensive",
+            "nameInUI": "Debug logging - defensive",
             "mnemonic": "DEBUG_DEFENSIVE",
             "defaultValue": false
         },
         {
-            "nameInUI": "DEBUG - Advanced (Radar Lists)",
+            "nameInUI": "Debug logging - advanced (radar lists)",
             "mnemonic": "DEBUG_ADVANCED",
             "defaultValue": false
         }

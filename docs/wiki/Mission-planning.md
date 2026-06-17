@@ -51,13 +51,13 @@ coverage is established before the strikers arrive. The full set of rules, in on
 | Anti-ship | Weapons released at IP | 0 (package TOT) | — |
 | OCA/Aircraft | Attack run at field | 0 (package TOT) | — |
 | OCA/Runway | Bomb run on runway | 0 (package TOT) | — |
-| SEAD | Weapons/decoys at IP | **−1 min** | Manually widen to **−3 min** if using TALDs. |
+| SEAD | Weapons/decoys at IP | **−3 min** | Fixed; arrives 3 min ahead so suppression is up before the package. |
 | SEAD Escort | Matches escorted flight | follows package | Same plan as the flight it protects. |
-| SEAD Sweep | Matches package route | follows package | Engages route threats between Join and Split. |
+| SEAD Sweep | Matches package route | **−2 min** | Engages route threats between Join and Split. |
 | Escort | Matches package | 0 (join TOT shared) | Joins at the package join point. |
 | Fighter sweep | Area cleared of fighters | **−5 min** | Sweeps ahead of the package toward the target. |
 | TARCAP | On station | **−2 min (vs join)** | Poor choice near enemy SAMs — early arrival exposes it. |
-| BARCAP | Patrol start | 0 (patrol begins at TOT) | ~30 min default on-station, racetrack toward nearest enemy base. |
+| BARCAP | Patrol start | 0 (patrol begins at TOT) | 60 min default on-station (configurable 30–150), racetrack toward nearest enemy base. |
 | CAS | Loiter / search start | 0 (patrol begins at TOT) | — |
 | Armed Recon | Search start | 0 (patrol begins at TOT) | — |
 | BAI | Weapons on target | 0 (package TOT) | Against a stationary armour group. |
@@ -115,7 +115,7 @@ Battlefield support, and Support & logistics.
 - **Valid targets:** Any friendly objective area.
 - **Package role:** Lead / standalone (does not request escorts).
 - **TOT meaning:** Start of the patrol. Flies a racetrack oriented toward the nearest enemy
-  airbase, ~30 min default on-station.
+  airbase; 60 min default on-station (configurable 30–150 on the Campaign Doctrine page).
 - **Player technique:** Hold the racetrack between the two patrol points; commit on threats
   inside the engagement zone and recover the CAP.
 - **AI limitations:** Waypoints can look offset from the objective, but coverage is by
@@ -126,8 +126,8 @@ Battlefield support, and Support & logistics.
 - **Purpose:** Localised fighter cover over an enemy objective for the package's benefit.
 - **Valid targets:** Any enemy objective area.
 - **Package role:** Support (covers escort-requesting members).
-- **TOT meaning:** On station **2 min ahead of the package join**. Stays as long as the
-  escorted members are on target; otherwise ~30 min.
+- **TOT meaning:** On station **2 min ahead of the package join**; on-station time is the
+  doctrine CAP duration (~30 min in the stock doctrines).
 - **Player technique:** Arrive early, sanitise the target area, stay between the package and
   the threat axis.
 - **AI limitations:** Early arrival means it is a **poor choice near enemy SAMs** — the CAP
@@ -180,8 +180,8 @@ guard a flight. SEAD Sweep = guard the corridor.**
 - **Package role:** Support (paired with a DEAD lead).
 - **Typical airframes:** HARM-capable types — the Viper's HTS and the Hornet are the usual SEAD
   platforms.
-- **TOT meaning:** Weapons/decoys at the IP, **TOT −1 min** ahead of the package. Widen to
-  **−3 min** manually if flying TALDs.
+- **TOT meaning:** Weapons/decoys at the IP, **TOT −3 min** ahead of the package, so
+  suppression is established before the strikers arrive.
 - **Player technique:** Fire HARMs in **PB mode** so weapon TOT roughly aligns with package TOT
   even if the emitter is off. Stagger launches ~1 min apart; keep one HARM in flight near the
   site to hold suppression. With decoys the principle is identical — estimate the decoy's TOT.
@@ -223,7 +223,8 @@ guard a flight. SEAD Sweep = guard the corridor.**
 - **Purpose:** Clear the package's corridor of any air defences between join and split.
 - **Valid targets:** Any SAM or AAA near the flight path — not just the package target.
 - **Package role:** Support (corridor protection for the whole package).
-- **TOT meaning:** Follows the package route/timing.
+- **TOT meaning:** Follows the package route, arriving **2 min ahead** (TOT −2 min) to sweep
+  the corridor before the package transits it.
 - **Player technique:** Fly the route hunting threats — TOO in the Hornet, HTS in the Viper —
   and engage any emitter that begins to threaten the package. Broad-area counterpart to SEAD.
 - **AI limitations:** Engages defences near the path between join and split; won't range

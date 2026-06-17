@@ -98,6 +98,9 @@ class ScarTasking:
 
     tasking_id: str
     variant: str  # "spawn" | "missile"
+    coalition: str = (
+        ""  # the SCAR flight's coalition color ("blue"/"red"); briefing addressee
+    )
     # variant "missile":
     target_groups: tuple[str, ...] = ()
     # variant "spawn":
@@ -184,6 +187,7 @@ def build_scar_taskings(game: "Game") -> list[ScarTasking]:
     taskings: list[ScarTasking] = []
     index = 0
     for coalition in game.coalitions:
+        color = "blue" if coalition.player else "red"
         enemy_country_id = coalition.opponent.faction.country.id
         for package in coalition.ato.packages:
             for flight in package.flights:
@@ -200,6 +204,7 @@ def build_scar_taskings(game: "Game") -> list[ScarTasking]:
                         ScarTasking(
                             tasking_id=f"scar-{index}",
                             variant="missile",
+                            coalition=color,
                             target_groups=groups,
                         )
                     )
@@ -208,6 +213,7 @@ def build_scar_taskings(game: "Game") -> list[ScarTasking]:
                         ScarTasking(
                             tasking_id=f"scar-{index}",
                             variant="spawn",
+                            coalition=color,
                             hvt_country_id=enemy_country_id,
                             convoys=_compose_convoys(target.position),
                             fail_zone_radius_m=SCAR_FAIL_ZONE_RADIUS_M,
@@ -231,6 +237,7 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
         record = taskings_item.add_item()
         record.add_item("taskingId").set_value(tasking.tasking_id)
         record.add_item("variant").set_value(tasking.variant)
+        record.add_item("coalition").set_value(tasking.coalition)
         if tasking.variant == "missile":
             record.add_item("targetGroups").set_data_array(list(tasking.target_groups))
             continue

@@ -61,6 +61,7 @@ def test_default_target_yields_spawn_tasking() -> None:
     assert len(taskings) == 1  # the CAS flight is ignored
     tasking = taskings[0]
     assert tasking.variant == "spawn"
+    assert tasking.coalition == "blue"  # briefing addressee = the SCAR flight's side
     assert tasking.hvt_country_id == 7  # the enemy (opponent) country
 
     # One HVT (full signature) + decoys + clutter + threat units.
@@ -117,6 +118,7 @@ def test_populate_scar_lua_emits_spawn_fields() -> None:
     assert "scar-1" in serialized
     assert "spawn" in serialized
     assert "hvtCountryId" in serialized
+    assert "coalition" in serialized  # briefing addressee emitted
     assert "convoys" in serialized
     assert "role" in serialized
     assert "hvt" in serialized

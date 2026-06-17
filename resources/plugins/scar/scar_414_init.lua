@@ -37,6 +37,93 @@ local scar_areas = {}
 -- group name -> area, for missile launch detection via the shot event.
 local missile_group_index = {}
 
+-- ---- Briefing / F10 map cues (spec §7, R11) --------------------------------------
+local scar_mark_id = 88000 -- high base to avoid colliding with other plugins' marks
+local function next_mark_id()
+    scar_mark_id = scar_mark_id + 1
+    return scar_mark_id
+end
+
+-- Plain-language names for the signature brief (fall back to the raw type id).
+local SCAR_UNIT_NAMES = {
+    ["Strela-1 9P31"] = "SA-9",
+    ["Ural-375 PBU"] = "command vehicle",
+    ["Ural-375"] = "truck",
+    ["ZSU-23-4 Shilka"] = "ZSU-23-4",
+    ["ZU-23 Emplacement"] = "ZU-23",
+}
+
+local function friendly_name(unit_type)
+    return SCAR_UNIT_NAMES[unit_type] or tostring(unit_type)
+end
+
+local function scar_side(area)
+    if area.coalition == "red" then
+        return coalition.side.RED
+    end
+    return coalition.side.BLUE
+end
+
+-- "1x SA-9 + 1x command vehicle + 2x truck" from a convoy's unit list.
+local function signature_text(convoy)
+    local counts, order = {}, {}
+    for _, unit_type in ipairs(convoy.units or {}) do
+        if counts[unit_type] == nil then
+            table.insert(order, unit_type)
+        end
+        counts[unit_type] = (counts[unit_type] or 0) + 1
+    end
+    local parts = {}
+    for _, unit_type in ipairs(order) do
+        table.insert(parts, counts[unit_type] .. "x " .. friendly_name(unit_type))
+    end
+    return table.concat(parts, " + ")
+end
+
+local function brief_spawn(area, hvt_convoy)
+    local side = scar_side(area)
+    local sig = signature_text(hvt_convoy)
+    local text = "SCAR INTEL (" .. area.id .. "):\n" ..
+        "Target convoy signature: " .. sig .. "\n" ..
+        "Decoys may share SOME but not ALL of these elements — do not prosecute a " ..
+        "partial match.\nFind and destroy the full-signature convoy before it reaches " ..
+        "its destination."
+    pcall(trigger.action.outTextForCoalition, side, text, 30)
+
+    local start_pt = {
+        x = scar_num(hvt_convoy.spawnX, 0),
+        y = 0,
+        z = scar_num(hvt_convoy.spawnY, 0),
+    }
+    local dest_pt = { x = area.destX, y = 0, z = area.destY }
+    pcall(trigger.action.markToCoalition, next_mark_id(),
+        "SCAR target area — convoy: " .. sig, start_pt, side, true)
+    pcall(trigger.action.markToCoalition, next_mark_id(),
+        "SCAR no-strike zone — stop the convoy before here", dest_pt, side, true)
+    -- Ingress axis (best-effort; non-fatal if the API rejects it).
+    pcall(trigger.action.lineToAll, -1, next_mark_id(), start_pt, dest_pt,
+        { 1, 0, 0, 0.6 }, 2, true)
+end
+
+local function brief_missile(area)
+    local side = scar_side(area)
+    local text = "SCAR INTEL (" .. area.id .. "):\n" ..
+        "Surface-to-surface (SCUD) missile site. Destroy it BEFORE it launches."
+    pcall(trigger.action.outTextForCoalition, side, text, 30)
+
+    local group = Group.getByName(area.groups[1])
+    if group == nil then
+        return
+    end
+    local ok, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if ok and unit ~= nil then
+        pcall(trigger.action.markToCoalition, next_mark_id(),
+            "SCUD site — destroy before launch", unit:getPoint(), side, true)
+    end
+end
+
 local function mark_result(area, status)
     if area.done then
         return
@@ -212,6 +299,7 @@ local function scar_init()
                 local area = {
                     id = tostring(tasking.taskingId),
                     variant = "missile",
+                    coalition = tostring(tasking.coalition or "blue"),
                     groups = groups,
                     done = false,
                 }
@@ -219,6 +307,7 @@ local function scar_init()
                     missile_group_index[name] = area
                 end
                 register_area(area)
+                brief_missile(area)
                 count = count + 1
             else
                 scar_log("skipping missile tasking " .. tostring(tasking.taskingId) ..
@@ -230,15 +319,18 @@ local function scar_init()
             -- (mis-ID scoring is a later increment).
             local country_id = scar_num(tasking.hvtCountryId)
             local hvt_area = nil
+            local hvt_convoy = nil
             local spawn_index = 0
             for _, convoy in pairs(tasking.convoys or {}) do
                 spawn_index = spawn_index + 1
                 local group_name =
                     spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
                 if group_name and tostring(convoy.role) == "hvt" then
+                    hvt_convoy = convoy
                     hvt_area = {
                         id = tostring(tasking.taskingId),
                         variant = "spawn",
+                        coalition = tostring(tasking.coalition or "blue"),
                         groups = { group_name },
                         done = false,
                         destX = scar_num(convoy.destX, 0),
@@ -249,6 +341,7 @@ local function scar_init()
             end
             if hvt_area then
                 register_area(hvt_area)
+                brief_spawn(hvt_area, hvt_convoy)
                 count = count + 1
             else
                 scar_log("spawn tasking " .. tostring(tasking.taskingId) ..

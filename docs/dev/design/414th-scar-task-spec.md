@@ -82,10 +82,17 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   usually unavailable. Spawning guarantees the moving-HVT experience (spec §5). Missile sites
   are the one real-target case kept, because they map cleanly to the SCUD fail-on-launch
   variant when present.
-- **Deliberately NOT yet built** (next increments): a threat laydown (ZSU-23/SA-9 escort, R9);
-  the mis-ID penalty for prosecuting a decoy/clutter convoy (R7 — needs the §10 Q1 SME call)
-  and the capture/intel carryover; briefing/marker cueing (the signature + ingress lanes);
-  Phase-3 auto-planning. The HVT/decoy/clutter signature convoy IS now built (see above).
+- **Threat laydown (R9) — built:** the spawn picture also scatters ZSU-23-4 + ZU-23 + an
+  occasional SA-9 (stationary, untracked `role="threat"` groups). Spawned at runtime, so they
+  never trip the planner's auto SEAD-escort (resolves §10 Q3 for the spawn path).
+- **Briefing / map cues (R11, spec §7) — built (Lua):** on init the plugin posts an intel
+  brief to the SCAR flight's coalition and drops F10 map marks — the target convoy *signature*
+  in plain language, a decoy warning, the ingress axis (start → no-strike line), and the
+  no-strike zone; the missile variant marks the SCUD site. Framed as intel (the C-130 §9b.1
+  cue), no kneeboard pages (Lua can't add them mid-mission). Needs an in-game look.
+- **Deliberately NOT yet built** (next increments): the mis-ID penalty for prosecuting a
+  decoy/clutter convoy (R7 — needs the §10 Q1 SME call) and the capture/intel carryover;
+  Phase-3 auto-planning.
 
 ---
 

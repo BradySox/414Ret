@@ -21,6 +21,35 @@ for _, b in ipairs(_CIVILIAN_TRAFFIC_EXCL) do
     _excl[b] = true
 end
 
+-- ── Silence RAT's benign routing-failure spam ────────────────────────────────
+-- On large/sparse neutral maps a randomly chosen departure field sometimes has
+-- no destination within the AIRCRAFT'S OWN range. That -- not our distance cap --
+-- is the binding limit for short-range types (helos, light prop), which is why
+-- uncapping SetMaxDistance alone never fully silenced it. MOOSE RAT broadcasts
+-- "No valid destination..." / "Destination and departure are identical..." to
+-- ALL players and re-fires it on every respawn. The condition is harmless -- RAT
+-- just skips that spawn and retries -- so we drop only those two on-screen
+-- messages. RAT still logs them via self:E, so nothing is lost for debugging.
+-- Installed once, mission-wide; exact substring match so no other message is hit.
+-- (MESSAGE is always defined here: civilian_traffic loads after Moose.lua.)
+if MESSAGE and not _G._CIV_RAT_MSG_SILENCED then
+    _G._CIV_RAT_MSG_SILENCED = true
+    local _orig_ToAll = MESSAGE.ToAll
+    local _rat_spam = {
+        "No valid destination airport could be found",
+        "Destination and departure are identical",
+    }
+    function MESSAGE:ToAll(Settings, Delay)
+        local txt = self.MessageText or ""
+        for _, sig in ipairs(_rat_spam) do
+            if string.find(txt, sig, 1, true) then
+                return self  -- swallow the broadcast; RAT's log line still fires
+            end
+        end
+        return _orig_ToAll(self, Settings, Delay)
+    end
+end
+
 local function _contains(text, needle)
     return string.find(text, needle, 1, true) ~= nil
 end
@@ -133,10 +162,12 @@ if #_helipads >= 2 then
         "RAT_CIV_SA342",
     }
     for _, tmpl in ipairs(helo_templates) do
-        -- No distance cap: on large/sparse maps a 100 nm cap left isolated departure
-        -- fields with no reachable destination, so RAT spammed "No valid destination
-        -- airport could be found" every respawn. Uncapped matches the error-free
-        -- fixed-wing layer; SetMinDistance(5) still prevents same-field hops.
+        -- No distance cap: a 100 nm cap left isolated departure fields with no
+        -- reachable destination. Uncapping removes the ARTIFICIAL limit, but a
+        -- short-range helo's own range can still leave a sparse-map field with no
+        -- in-range destination -- that residual "No valid destination" spam is
+        -- silenced by the MESSAGE filter at the top of this file.
+        -- SetMinDistance(5) still prevents same-field hops.
         if _spawn_rat(tmpl, _helipads, n, nil) then
             _helo_count  = _helo_count  + 1
             _helo_spawns = _helo_spawns + n

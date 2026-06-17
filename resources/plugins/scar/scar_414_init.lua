@@ -9,6 +9,10 @@
 --                         tracked: success = HVT destroyed; fail = it reaches the
 --                         city (its command vehicle despawns there) or the window
 --                         expires. Decoys/clutter are the discrimination puzzle.
+--   * variant "armor"   — the target IS a real armor group. It's static until
+--                         go_live, then bugs out toward the city. success = the
+--                         group destroyed; fail = it reaches the city or the
+--                         window expires. (BAI stays the AI/auto-planner task.)
 --   * variant "missile" — the target IS a real surface-to-surface (SCUD) site;
 --                         watch it, no spawn. success = site destroyed;
 --                         fail  = it launches (any weapon release by a site unit).
@@ -408,6 +412,112 @@ local function activate_missile_area(tasking, go_live, window)
     return true
 end
 
+-- Order a real ground group to drive from its current position to (dest_x,
+-- dest_y) at the given speed (used to make a bound armor group flee to the city).
+local function set_group_route(group_name, dest_x, dest_y, speed)
+    local group = Group.getByName(group_name)
+    if group == nil then
+        return
+    end
+    local oku, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if not oku or unit == nil then
+        return
+    end
+    local pos = unit:getPoint() -- {x = north, y = alt, z = east}
+    local okc, ctrl = pcall(function()
+        return group:getController()
+    end)
+    if not okc or ctrl == nil then
+        return
+    end
+    local empty_task = { id = "ComboTask", params = { tasks = {} } }
+    local mission = {
+        id = "Mission",
+        params = {
+            route = {
+                points = {
+                    [1] = {
+                        x = pos.x,
+                        y = pos.z,
+                        type = "Turning Point",
+                        action = "Off Road",
+                        speed = speed,
+                        task = empty_task,
+                    },
+                    [2] = {
+                        x = dest_x,
+                        y = dest_y,
+                        type = "Turning Point",
+                        action = "Off Road",
+                        speed = speed,
+                        task = empty_task,
+                    },
+                },
+            },
+        },
+    }
+    pcall(function()
+        ctrl:setTask(mission)
+    end)
+end
+
+local function brief_armor(area)
+    local side = scar_side(area)
+    local text = "SCAR INTEL (" .. area.id .. "):\n" ..
+        "Enemy armor is bugging out toward the city. Destroy it before it " ..
+        "reaches safety."
+    pcall(trigger.action.outTextForCoalition, side, text, 30)
+    local group = Group.getByName(area.groups[1])
+    if group ~= nil then
+        local ok, unit = pcall(function()
+            return group:getUnit(1)
+        end)
+        if ok and unit ~= nil then
+            pcall(trigger.action.markToCoalition, next_mark_id(),
+                "SCAR target — enemy armor (kill before it reaches the city)",
+                unit:getPoint(), side, true)
+        end
+    end
+    pcall(trigger.action.markToCoalition, next_mark_id(),
+        "SCAR no-strike zone — armor safe haven", { x = area.destX, y = 0, z = area.destY },
+        side, true)
+end
+
+-- Armor variant: bind the REAL armor group. It's static until go_live, then it
+-- flees to the city; success = killed, fail = reaches the city (its safe haven)
+-- or the window expires. Registered at init so an early kill still counts.
+local function activate_armor_area(tasking, go_live, window)
+    local groups = tasking.targetGroups or {}
+    if type(groups) ~= "table" or #groups == 0 then
+        scar_log("skipping armor tasking " .. tostring(tasking.taskingId) ..
+            ": no target groups")
+        return false
+    end
+    local area = {
+        id = tostring(tasking.taskingId),
+        variant = "armor",
+        coalition = tostring(tasking.coalition or "blue"),
+        groups = groups,
+        done = false,
+        destX = scar_num(tasking.destX, 0),
+        destY = scar_num(tasking.destY, 0),
+        radius = scar_num(tasking.failZoneRadius, 2000),
+        commandType = "",
+        deadline = timer.getTime() + go_live + window,
+    }
+    table.insert(scar_areas, area)
+    brief_armor(area)
+    local speed = scar_num(tasking.fleeSpeed, 5)
+    mist.scheduleFunction(function()
+        for _, name in ipairs(area.groups) do
+            set_group_route(name, area.destX, area.destY, speed)
+        end
+    end, {}, timer.getTime() + go_live)
+    return true
+end
+
 local function scar_init()
     if not (dcsRetribution and dcsRetribution.Scar and dcsRetribution.Scar.taskings) then
         scar_log("no dcsRetribution.Scar.taskings table; nothing to do")
@@ -425,6 +535,10 @@ local function scar_init()
         dirty_state = true
         if variant == "missile" then
             if activate_missile_area(tasking, go_live, window) then
+                count = count + 1
+            end
+        elseif variant == "armor" then
+            if activate_armor_area(tasking, go_live, window) then
                 count = count + 1
             end
         else

@@ -27,7 +27,10 @@ from game.missiongenerator.scarluadata import (
     build_scar_taskings,
     populate_scar_lua,
 )
-from game.theater.theatergroundobject import MissileSiteGroundObject
+from game.theater.theatergroundobject import (
+    MissileSiteGroundObject,
+    VehicleGroupGroundObject,
+)
 
 MISSION_START = datetime(2026, 1, 1, 12, 0, 0)
 TOT_OFFSET_S = 900.0  # the package TOT is 15 min after mission start
@@ -115,6 +118,28 @@ def test_hvt_routes_to_nearest_enemy_city() -> None:
     assert tasking.command_type  # the command vehicle to despawn in the city
     hvt = next(c for c in tasking.convoys if c.role == "hvt")
     assert (hvt.dest_x, hvt.dest_y) == (10000, 0)  # routed to the city
+
+
+def test_armor_target_binds_real_group_and_flees_to_city() -> None:
+    # A SCAR flight against a real armor group binds it (no spawned fakes): the
+    # real group flees to the nearest city, success = killed / fail = it arrives.
+    armor = MagicMock(spec=VehicleGroupGroundObject)
+    armor.groups = [MagicMock(group_name="ARMOR-1")]
+    armor.position = Point(0, 0, None)  # type: ignore[arg-type]
+    armor.control_point = MagicMock(captured=True)  # the enemy side
+    city = MagicMock()
+    city.captured = True  # same side as the target -> enemy-held = a city
+    city.position = Point(8000, 0, None)  # type: ignore[arg-type]
+    game = _game_with(_coalition_with_target(armor))
+    game.theater.controlpoints = [city]
+
+    tasking = _build(game)[0]
+
+    assert tasking.variant == "armor"
+    assert tasking.target_groups == ("ARMOR-1",)
+    assert not tasking.convoys  # binds the real group, spawns nothing
+    assert (tasking.dest_x, tasking.dest_y) == (8000, 0)  # flees to the city
+    assert tasking.flee_speed_ms > 0
 
 
 def test_missile_site_target_yields_missile_tasking() -> None:

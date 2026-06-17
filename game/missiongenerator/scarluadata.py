@@ -117,14 +117,18 @@ class ScarTasking:
     """
 
     tasking_id: str
-    variant: str  # "spawn" | "missile"
+    variant: str  # "spawn" | "missile" | "armor"
     coalition: str = ""  # SCAR flight's coalition color ("blue"/"red"); brief addressee
     # Scenario timing (seconds, mission-relative). The fail clock opens at
     # go_live_s (the flight's TOT) and runs for window_s after that.
     go_live_s: float = 0.0
     window_s: float = 0.0
-    # variant "missile":
+    # variants "missile" + "armor": the real campaign group(s) to bind.
     target_groups: tuple[str, ...] = ()
+    # variant "armor": the real armor flees to this city point at flee_speed_ms.
+    dest_x: float = 0.0
+    dest_y: float = 0.0
+    flee_speed_ms: float = 0.0
     # variant "spawn":
     hvt_country_id: int = 0
     convoys: tuple[ScarConvoy, ...] = ()
@@ -255,7 +259,10 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
     clock only opens when the player is planned to be on station. Returns an empty
     list when no SCAR flight is planned (the injection gate).
     """
-    from game.theater.theatergroundobject import MissileSiteGroundObject
+    from game.theater.theatergroundobject import (
+        MissileSiteGroundObject,
+        VehicleGroupGroundObject,
+    )
 
     taskings: list[ScarTasking] = []
     index = 0
@@ -294,6 +301,47 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         go_live_s=go_live_s,
                         window_s=SCAR_WINDOW_S,
                         target_groups=groups,
+                    )
+                )
+            elif isinstance(target, VehicleGroupGroundObject):
+                # Bind the REAL armor group: it bugs out toward the city when the
+                # window opens; success = killed, fail = it reaches the city or
+                # the window expires. (BAI stays the AI/auto-planner task.)
+                groups = tuple(g.group_name for g in target.groups)
+                if not groups:
+                    index -= 1
+                    seen_targets.discard(id(target))
+                    continue
+                city = _nearest_city(game, target)
+                if city is not None:
+                    dest_x, dest_y, fail_radius = (
+                        city.x,
+                        city.y,
+                        SCAR_CITY_RADIUS_M,
+                    )
+                else:
+                    dest_x = target.position.x - SCAR_HVT_DEST_OFFSET_M
+                    dest_y = target.position.y
+                    fail_radius = SCAR_FAIL_ZONE_RADIUS_M
+                route_len = math.hypot(
+                    target.position.x - dest_x, target.position.y - dest_y
+                )
+                flee_speed = min(
+                    SCAR_HVT_SPEED_MAX_MS,
+                    max(SCAR_HVT_SPEED_MIN_MS, route_len / max(SCAR_WINDOW_S, 1.0)),
+                )
+                taskings.append(
+                    ScarTasking(
+                        tasking_id=f"scar-{index}",
+                        variant="armor",
+                        coalition=color,
+                        go_live_s=go_live_s,
+                        window_s=SCAR_WINDOW_S,
+                        target_groups=groups,
+                        dest_x=dest_x,
+                        dest_y=dest_y,
+                        flee_speed_ms=flee_speed,
+                        fail_zone_radius_m=fail_radius,
                     )
                 )
             else:
@@ -337,6 +385,13 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
         record.add_item("window").set_value(str(tasking.window_s))
         if tasking.variant == "missile":
             record.add_item("targetGroups").set_data_array(list(tasking.target_groups))
+            continue
+        if tasking.variant == "armor":
+            record.add_item("targetGroups").set_data_array(list(tasking.target_groups))
+            record.add_item("destX").set_value(str(tasking.dest_x))
+            record.add_item("destY").set_value(str(tasking.dest_y))
+            record.add_item("fleeSpeed").set_value(str(tasking.flee_speed_ms))
+            record.add_item("failZoneRadius").set_value(str(tasking.fail_zone_radius_m))
             continue
         record.add_item("hvtCountryId").set_value(str(tasking.hvt_country_id))
         record.add_item("failZoneRadius").set_value(str(tasking.fail_zone_radius_m))

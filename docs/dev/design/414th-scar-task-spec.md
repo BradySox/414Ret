@@ -71,6 +71,13 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
     "slips into the urban area") or the window expires. The multi-convoy picture was
     **verified in-game 2026-06-17** (all 11 groups spawned with unique names; `area scar-N
     (spawn) -> failed`). City routing + command despawn need a fresh pass.
+  - **`armor`** (bind): when the SCAR target IS a real `VehicleGroupGroundObject` (armor),
+    bind the real group — it's static until go_live, then bugs out toward the city
+    (`set_group_route` assigns a flee route at runtime). success = group destroyed; fail = it
+    reaches the city or the window expires. No spawned fakes. This is the user's "BAI on armor
+    should act like SCAR" (decision 2026-06-17, *Extend SCAR to armor; keep BAI for AI*) —
+    **BAI is untouched** (still the auto-planner's anti-armor/convoy task; `FlightType.BAI`
+    save-compat preserved). NOT yet validated in-game.
   - **`missile`** (bind, watch-only): when the SCAR target IS a real `MissileSiteGroundObject`
     (category "missile" = SCUD), watch it instead of spawning. success = site destroyed;
     fail = it launches. **Verified in-game 2026-06-17** (`area scar-1 (missile) -> launched`).

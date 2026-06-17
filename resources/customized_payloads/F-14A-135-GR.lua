@@ -384,16 +384,19 @@ local unitPayloads = {
 		},
 		[9] = {
 			-- TARPS recon profile: editor-verified pod CLSID "{F14-TARPS}" on station 6
-			-- with station 5 left clean, plus a light self-defense fit for the photo run.
+			-- with station 5 left clean, plus a light self-defense fit (2x AIM-9L,
+			-- 2x AIM-7M, drop tanks). Loadout from the F-14A-135-GR "Aerial-3" group in
+			-- Tues test 1.miz; the old AIM-7MH/AIM-9M CLSIDs were stale and made DCS drop
+			-- the whole loadout (pod included) on load.
 			["displayName"] = "Retribution TARPS",
 			["name"] = "Retribution TARPS",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-138 wtip - AIM-9L}",
 					["num"] = 10,
 				},
 				[2] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
+					["CLSID"] = "{SHOULDER AIM-7M}",
 					["num"] = 9,
 				},
 				[3] = {
@@ -409,11 +412,11 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[6] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
+					["CLSID"] = "{SHOULDER AIM-7M}",
 					["num"] = 2,
 				},
 				[7] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-138 wtip - AIM-9L}",
 					["num"] = 1,
 				},
 			},

@@ -1,38 +1,43 @@
 """Tests for the SCAR scenario/results bridge (Python side).
 
-The bridge is the spec-§8a integration seam: Retribution binds a ScarTasking to
-units it already generates (an enemy convoy, or a surface-to-surface missile
-site), the generator emits it as a dcsRetribution.Scar Lua table, the SCAR plugin
-watches those groups in-mission, and the outcome flows back through state.json
-into the debrief. The Lua half needs an in-game pass; here we lock in the Python
-half that CI can verify: tasking collection, Lua emission, and result parsing.
+The bridge is the spec-§8a integration seam: the generator builds a ScarTasking
+per SCAR flight, emits it as a dcsRetribution.Scar Lua table, the SCAR plugin
+runs the scenario in-mission, and the outcome flows back through state.json into
+the debrief. AI convoys are rare, so the default is to SPAWN a moving HVT; a SCAR
+flight against a real surface-to-surface missile site binds to it instead (SCUD,
+watch-only). The Lua half needs an in-game pass; here we lock in the Python half
+CI can verify: tasking collection, Lua emission, and result parsing.
 """
 
 from typing import Any
 from unittest.mock import MagicMock
 
+from dcs.mapping import Point
+
 from game.ato.flighttype import FlightType
 from game.debriefing import StateData
 from game.missiongenerator.luagenerator import LuaData
 from game.missiongenerator.scarluadata import (
+    SCAR_HVT_DEST_OFFSET_M,
+    SCAR_HVT_SPAWN_OFFSET_M,
     build_scar_taskings,
     populate_scar_lua,
 )
-from game.theater.theatergroundobject import MissileSiteGroundObject, SamGroundObject
-from game.transfers import Convoy
+from game.theater.theatergroundobject import MissileSiteGroundObject
 
 
 def _coalition_with_target(
     target: Any, *, extra_types: tuple[FlightType, ...] = ()
 ) -> Any:
     """A coalition whose single package has a SCAR flight (plus any extra flight
-    types) against ``target``."""
+    types) against ``target``, with a known enemy country id."""
     package = MagicMock()
     package.target = target
     package.flights = [MagicMock(flight_type=FlightType.SCAR)] + [
         MagicMock(flight_type=ft) for ft in extra_types
     ]
     coalition = MagicMock()
+    coalition.opponent.faction.country.id = 7
     coalition.ato.packages = [package]
     return coalition
 
@@ -43,16 +48,21 @@ def _game_with(*coalitions: Any) -> Any:
     return game
 
 
-def test_convoy_target_yields_convoy_tasking() -> None:
-    convoy = MagicMock(spec=Convoy)
-    convoy.name = "Convoy 001"
-    game = _game_with(_coalition_with_target(convoy, extra_types=(FlightType.CAS,)))
+def test_default_target_yields_spawn_tasking() -> None:
+    # Any non-missile target -> spawn a moving HVT derived from the target area.
+    target = MagicMock()
+    target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
+    game = _game_with(_coalition_with_target(target, extra_types=(FlightType.CAS,)))
 
     taskings = build_scar_taskings(game)
 
     assert len(taskings) == 1  # the CAS flight is ignored
-    assert taskings[0].variant == "convoy"
-    assert taskings[0].target_groups == ("Convoy 001",)
+    tasking = taskings[0]
+    assert tasking.variant == "spawn"
+    assert tasking.hvt_country_id == 7  # the enemy (opponent) country
+    assert tasking.hvt_spawn_x == 1000 + SCAR_HVT_SPAWN_OFFSET_M
+    assert tasking.hvt_dest_x == 1000 - SCAR_HVT_DEST_OFFSET_M
+    assert tasking.hvt_spawn_y == 2000
 
 
 def test_missile_site_target_yields_missile_tasking() -> None:
@@ -67,30 +77,45 @@ def test_missile_site_target_yields_missile_tasking() -> None:
     assert taskings[0].target_groups == ("SCUD-1", "SCUD-2")
 
 
-def test_other_target_yields_no_tasking() -> None:
-    # A SCAR flight against e.g. a SAM site emits no scenario tasking (the flight
-    # still flies, just without the convoy/missile scenario).
-    sam = MagicMock(spec=SamGroundObject)
-    game = _game_with(_coalition_with_target(sam))
-    assert build_scar_taskings(game) == []
+def test_empty_without_scar_flights() -> None:
+    target = MagicMock()
+    target.position = Point(0, 0, None)  # type: ignore[arg-type]
+    coalition = _coalition_with_target(target)
+    # Replace the SCAR flight with a non-SCAR one.
+    coalition.ato.packages[0].flights = [MagicMock(flight_type=FlightType.CAS)]
+    assert build_scar_taskings(_game_with(coalition)) == []
 
 
-def test_populate_scar_lua_emits_tasking_table() -> None:
-    convoy = MagicMock(spec=Convoy)
-    convoy.name = "Convoy 001"
-    taskings = build_scar_taskings(_game_with(_coalition_with_target(convoy)))
+def test_populate_scar_lua_emits_spawn_fields() -> None:
+    target = MagicMock()
+    target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
+    taskings = build_scar_taskings(_game_with(_coalition_with_target(target)))
 
     root = LuaData("dcsRetribution")
     populate_scar_lua(root, taskings)
     serialized = root.serialize()
 
     assert "Scar" in serialized
-    assert "taskings" in serialized
     assert "taskingId" in serialized
     assert "scar-1" in serialized
-    assert "convoy" in serialized
+    assert "spawn" in serialized
+    assert "hvtSpawnX" in serialized
+    assert "hvtCountryId" in serialized
+
+
+def test_populate_scar_lua_emits_missile_groups() -> None:
+    site = MagicMock(spec=MissileSiteGroundObject)
+    site.groups = [MagicMock(group_name="SCUD-1")]
+    taskings = build_scar_taskings(_game_with(_coalition_with_target(site)))
+
+    root = LuaData("dcsRetribution")
+    populate_scar_lua(root, taskings)
+    serialized = root.serialize()
+
+    assert "missile" in serialized
     assert "targetGroups" in serialized
-    assert "Convoy 001" in serialized
+    assert "SCUD-1" in serialized
+    assert "hvtSpawnX" not in serialized  # spawn fields omitted for missile
 
 
 def test_state_data_parses_scar_results() -> None:

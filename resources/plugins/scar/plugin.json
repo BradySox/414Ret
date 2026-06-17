@@ -1,6 +1,6 @@
 {
     "nameInUI": "SCAR (convoy-hunt scenario)",
-    "descriptionInUI": "Runs the in-mission scenario for SCAR flights: watches the targeted enemy convoy (or surface-to-surface missile site) and reports the outcome — destroyed, or (for missile sites) launched — back to the campaign. Bridge skeleton, no scoring yet. Inert unless a SCAR flight is planned against a convoy or missile site.",
+    "descriptionInUI": "Runs the in-mission scenario for SCAR flights: spawns a moving target and watches for it being killed or reaching its no-strike destination; if the SCAR target is a real surface-to-surface missile site, watches that instead (killed, or launched). Reports the outcome back to the campaign. Bridge skeleton, no scoring yet. Inert unless a SCAR flight is planned.",
     "defaultValue": true,
     "specificOptions": [],
     "scriptsWorkOrders": [],

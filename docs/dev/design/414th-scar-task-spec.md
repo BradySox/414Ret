@@ -57,24 +57,30 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
 - **Integration bridge skeleton** (the §8a recommendation — Python CI-validated, Lua needs
   an in-game pass): `ScarTasking` model + `build_scar_taskings()`/`populate_scar_lua()`
   (`game/missiongenerator/scarluadata.py`), emitted as `dcsRetribution.Scar` and injected
-  via `_inject_scar_script()` (gated on the `scar` plugin + a planned SCAR flight). **Targets
-  units Retribution already generates** (decision 2026-06-17, replacing the earlier
-  placeholder-HVT spawn): a SCAR flight against an enemy **`Convoy`** (`game/transfers.py` —
-  moving transfer; killing it already denies the reinforcement via the convoy-loss economy)
-  or a **`MissileSiteGroundObject`** (category "missile" → the SCUD variant) emits a tasking
-  carrying the target's DCS group name(s). The `scar` plugin (`resources/plugins/scar/`,
-  default ON) is **watch-only — no spawning**: success = target group(s) destroyed; for the
-  missile variant, fail = it launches (S_EVENT_SHOT by a site unit); a surviving convoy is
-  left "active" (the transfer economy already applies the consequence). Outcomes ride the
-  proven TARS channel: `dcs_retribution.lua write_state` → `StateData.scar_results` →
-  `MissionResultsProcessor.commit_scar_results` (log-only for now). Both target types are
-  already SCAR-selectable via the base `mission_types`. Tests: `tests/test_scar_bridge.py`.
-- **Deliberately NOT yet built** (next increments): curated decoys/clutter + a glance-readable
-  HVT signature for the discrimination puzzle (R2/R4 — convoys give the moving target + real
-  consequence, but incidental clutter only); scoring + the mis-ID penalty (§10 Q1) and the
-  capture/intel carryover; briefing/marker cueing; Phase-3 auto-planning. **Availability
-  caveat:** convoys/missile sites only exist on some turns, so SCAR-from-existing-units can't
-  always be offered (fine for player-built v1; gates auto-planning).
+  via `_inject_scar_script()` (gated on the `scar` plugin + a planned SCAR flight). **Two
+  variants** (decision 2026-06-17 — AI convoys proved too rare to be the foundation, so spawn
+  by default and only bind to real content when it's a missile site):
+  - **`spawn`** (default, always available): the generator spawns a moving HVT (placeholder:
+    one vanilla truck) and routes it to a no-strike destination. success = HVT destroyed;
+    fail = HVT reaches the destination zone. **Verified in-game 2026-06-17** (dcs.log:
+    `Register Dynamic Group: SCAR-HVT-scar-1` → `[SCAR] initialized 1 SCAR area(s)` →
+    `[SCAR] area scar-1 -> failed`). This is the proven path.
+  - **`missile`** (bind, watch-only): when the SCAR target IS a real `MissileSiteGroundObject`
+    (category "missile" = SCUD), watch it instead of spawning. success = site destroyed;
+    fail = it launches (S_EVENT_SHOT by a site unit). NOT yet validated in-game.
+  The `scar` plugin (`resources/plugins/scar/`, default ON). Outcomes ride the proven TARS
+  channel: `dcs_retribution.lua write_state` → `StateData.scar_results` →
+  `MissionResultsProcessor.commit_scar_results` (log-only for now). Tests:
+  `tests/test_scar_bridge.py`.
+- **Why spawn, not reuse:** AI rarely produces moving ground content (enemy convoys are rare;
+  static armor doesn't move → plays like BAI), so relying on campaign content would leave SCAR
+  usually unavailable. Spawning guarantees the moving-HVT experience (spec §5). Missile sites
+  are the one real-target case kept, because they map cleanly to the SCUD fail-on-launch
+  variant when present.
+- **Deliberately NOT yet built** (next increments): the real signature convoy (SA-9 + command
+  + trucks) + ≤2 decoys + clutter + threat laydown replacing the single placeholder truck
+  (the R2/R4 discrimination puzzle); scoring + the mis-ID penalty (§10 Q1) and the
+  capture/intel carryover; briefing/marker cueing; Phase-3 auto-planning.
 
 ---
 

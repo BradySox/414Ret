@@ -1,14 +1,14 @@
 -- SCAR scenario bridge (414th) — integration skeleton.
 --
 -- Reads dcsRetribution.Scar.taskings (emitted by the Retribution generator from
--- the ScarTasking model) and watches units the campaign ALREADY generates — no
--- spawning. Each tasking names the DCS group(s) of its target:
---   * variant "convoy"  — an enemy ground transfer. success = group destroyed.
---                         Surviving = the transfer completes (handled by the
---                         existing convoy-loss economy), so we just leave it
---                         unresolved ("active").
---   * variant "missile" — a surface-to-surface (SCUD) site. success = destroyed;
---                         fail = it launches (any weapon release by the site).
+-- the ScarTasking model) and runs one of two paths per tasking:
+--   * variant "spawn"   — AI convoys are rare, so the generator spawns a moving
+--                         HVT (placeholder: one vanilla truck) and routes it to
+--                         a no-strike destination. success = HVT destroyed;
+--                         fail  = HVT reaches the destination zone.
+--   * variant "missile" — the target IS a real surface-to-surface (SCUD) site;
+--                         watch it, no spawn. success = site destroyed;
+--                         fail  = it launches (any weapon release by a site unit).
 --
 -- Outcomes go into the global scar_results table the base plugin serializes into
 -- state.json, which Retribution reads back in the debrief. Skeleton: no scoring
@@ -16,7 +16,7 @@
 -- the base plugin first. Everything is defensive so a malformed tasking degrades
 -- to a logged warning instead of breaking the mission.
 
-local SCAR_CHECK_INTERVAL = 10 -- seconds between kill checks
+local SCAR_CHECK_INTERVAL = 10 -- seconds between kill/arrival checks
 
 local function scar_log(msg)
     if logger then
@@ -26,7 +26,11 @@ local function scar_log(msg)
     end
 end
 
--- Active areas we are watching: each is {id, variant, groups={names}, done}.
+local function scar_num(value, fallback)
+    return tonumber(value) or fallback
+end
+
+-- Active areas: {id, variant, groups={names}, done, destX, destY, radius}.
 local scar_areas = {}
 -- group name -> area, for missile launch detection via the shot event.
 local missile_group_index = {}
@@ -64,10 +68,95 @@ local function all_groups_dead(area)
     return true
 end
 
+-- Spawn one HVT vehicle and route it to the no-strike destination. Returns the
+-- spawned group name or nil.
+local function spawn_hvt(tasking)
+    local group_name = "SCAR-HVT-" .. tostring(tasking.taskingId)
+    local spawn_x = scar_num(tasking.hvtSpawnX)
+    local spawn_y = scar_num(tasking.hvtSpawnY)
+    local dest_x = scar_num(tasking.hvtDestX)
+    local dest_y = scar_num(tasking.hvtDestY)
+    local country_id = scar_num(tasking.hvtCountryId)
+    local hvt_type = tasking.hvtType or "Ural-375"
+    if not (spawn_x and spawn_y and dest_x and dest_y and country_id) then
+        scar_log("skipping spawn tasking " .. tostring(tasking.taskingId) ..
+            ": incomplete coordinates")
+        return nil
+    end
+
+    local group_data = {
+        ["visible"] = false,
+        ["hidden"] = false,
+        ["name"] = group_name,
+        ["task"] = {},
+        ["category"] = Group.Category.GROUND,
+        ["country"] = country_id,
+        ["units"] = {
+            [1] = {
+                ["type"] = hvt_type,
+                ["name"] = group_name .. "-1",
+                ["x"] = spawn_x,
+                ["y"] = spawn_y,
+                ["heading"] = 0,
+                ["skill"] = "Average",
+                ["playerCanDrive"] = false,
+            },
+        },
+        ["route"] = {
+            ["points"] = {
+                [1] = {
+                    ["x"] = spawn_x,
+                    ["y"] = spawn_y,
+                    ["type"] = "Turning Point",
+                    ["action"] = "Off Road",
+                    ["speed"] = 20,
+                },
+                [2] = {
+                    ["x"] = dest_x,
+                    ["y"] = dest_y,
+                    ["type"] = "Turning Point",
+                    ["action"] = "Off Road",
+                    ["speed"] = 20,
+                },
+            },
+        },
+    }
+
+    local ok, spawned = pcall(mist.dynAdd, group_data)
+    if not ok or not spawned then
+        scar_log("mist.dynAdd failed for " .. group_name .. ": " .. tostring(spawned))
+        return nil
+    end
+    return spawned.name or group_name
+end
+
+-- Spawn variant only: has the spawned HVT reached its no-strike destination?
+local function hvt_in_fail_zone(area)
+    local group = Group.getByName(area.groups[1])
+    if group == nil then
+        return false
+    end
+    local ok, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if not ok or unit == nil then
+        return false
+    end
+    local pos = unit:getPoint() -- {x = north, y = alt, z = east}
+    -- destX is Point.x (north), destY is Point.y (east) -> compare to z.
+    local dx = pos.x - area.destX
+    local dz = pos.z - area.destY
+    return (dx * dx + dz * dz) <= (area.radius * area.radius)
+end
+
 local function scar_check()
     for _, area in ipairs(scar_areas) do
-        if not area.done and all_groups_dead(area) then
-            mark_result(area, "success")
+        if not area.done then
+            if all_groups_dead(area) then
+                mark_result(area, "success")
+            elseif area.variant ~= "missile" and hvt_in_fail_zone(area) then
+                mark_result(area, "failed")
+            end
         end
     end
 end
@@ -94,6 +183,12 @@ function scar_event_handler:onEvent(event)
     end
 end
 
+local function register_area(area)
+    table.insert(scar_areas, area)
+    scar_results[area.id] = { status = "active" }
+    dirty_state = true
+end
+
 local function scar_init()
     if not (dcsRetribution and dcsRetribution.Scar and dcsRetribution.Scar.taskings) then
         scar_log("no dcsRetribution.Scar.taskings table; nothing to do")
@@ -103,26 +198,39 @@ local function scar_init()
     scar_results = scar_results or {}
     local count = 0
     for _, tasking in pairs(dcsRetribution.Scar.taskings) do
-        local groups = tasking.targetGroups or {}
-        if type(groups) == "table" and #groups > 0 then
-            local area = {
-                id = tostring(tasking.taskingId),
-                variant = tostring(tasking.variant or "convoy"),
-                groups = groups,
-                done = false,
-            }
-            table.insert(scar_areas, area)
-            scar_results[area.id] = { status = "active" }
-            dirty_state = true
-            if area.variant == "missile" then
+        local variant = tostring(tasking.variant or "spawn")
+        if variant == "missile" then
+            local groups = tasking.targetGroups or {}
+            if type(groups) == "table" and #groups > 0 then
+                local area = {
+                    id = tostring(tasking.taskingId),
+                    variant = "missile",
+                    groups = groups,
+                    done = false,
+                }
                 for _, name in ipairs(groups) do
                     missile_group_index[name] = area
                 end
+                register_area(area)
+                count = count + 1
+            else
+                scar_log("skipping missile tasking " .. tostring(tasking.taskingId) ..
+                    ": no target groups")
             end
-            count = count + 1
         else
-            scar_log("skipping tasking " .. tostring(tasking.taskingId) ..
-                ": no target groups")
+            local group_name = spawn_hvt(tasking)
+            if group_name then
+                register_area({
+                    id = tostring(tasking.taskingId),
+                    variant = "spawn",
+                    groups = { group_name },
+                    done = false,
+                    destX = scar_num(tasking.hvtDestX, 0),
+                    destY = scar_num(tasking.hvtDestY, 0),
+                    radius = scar_num(tasking.failZoneRadius, 500),
+                })
+                count = count + 1
+            end
         end
     end
 

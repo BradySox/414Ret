@@ -56,6 +56,41 @@ raise the limits further or scope FlightControl to player-only bases.
   default frequency otherwise). Reuses the friendly-airbase pattern from
   `_inject_civilian_traffic_script()`.
 
+## Static-on-ramp parking reconciliation
+
+In-game playtest (2026-06-17, Caucasus, Kutaisi as the player home base) surfaced a
+constant log spam: FLIGHTCONTROL re-emitting
+
+```
+ERROR: Parking spot is NOT FREE but no unit could be found there!   (once, at init)
+WARNING: Number of parking spots does not match! Nfree=23, Noccu=30, Nreserved=0 != 58 total
+```
+
+every status cycle (~13 s) for the whole mission — 138 lines in one ~38 min turn.
+
+Root cause is a MOOSE-vs-statics interaction, not our code. `_InitParkingSpots()`
+([Moose.lua:93648]) walks every parking spot; for each spot DCS reports as *not free* it
+calls `spot.Coordinate:FindClosestUnit(20)` to identify the occupant. `FindClosestUnit`
+finds **UNITs only, not STATICs**. Retribution parks static objects (parked-aircraft
+ambiance / warehouse statics) on ~5 of Kutaisi's ramp spots, so those spots find no unit,
+log the init error, and are left with `Status == nil` — counted in none of
+FREE/OCCUPIED/RESERVED. The status loop ([Moose.lua:93161]) then sees `23+30+0 != 58` and
+warns forever. (DCS de-duplicates identical consecutive log lines, so the ~5 init errors
+collapse to one "NOT FREE" line — don't read that as a single orphan.)
+
+**Functionally harmless** — players-only intent, generous limits, and the playtest log
+confirmed AI QRA/CAP launched from Kutaisi normally. It is pure cosmetic spam.
+
+Fix (`reconcile_orphan_parking()` in the init): right after `fc:Start()` — which runs
+`_InitParkingSpots()` **synchronously**, so `fc.parking` is already populated — walk the
+parking table and `SetParkingOccupied(spot, "RetributionStatic")` for any spot still at
+`Status == nil`. Those spots genuinely *are* occupied (by statics), so marking them
+OCCUPIED both balances the count (killing the recurring warning) and keeps them out of
+FLIGHTCONTROL's taxi/assignment pool. `SetParkingOccupied` only sets status + `OccupiedBy`
++ marker; it does **not** spawn a parking guard (that is a separate call in init), so no
+phantom unit appears. Logs a one-line `reconciled N static-occupied parking spot(s)` per
+base when it fixes anything.
+
 ## Known limitations / refinements
 - Default ON; still warrants an in-game pass (chiefly the AI-launch check above).
 - SRS voice requires a server-side SRS install (auto-detected); otherwise text-only.

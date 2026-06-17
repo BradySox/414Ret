@@ -303,7 +303,10 @@ local function build_dispatcher(coalition_name, records)
             local sq = rec.squadronName .. " #" .. string.sub(tostring(rec.squadronId), 1, 8)
             dispatcher:SetSquadron(sq, rec.airbaseName, { rec.templatePrefix }, tonumber(rec.resourceCount))
             dispatcher:SetSquadronGci(sq, 900, 1200)
-            dispatcher:SetSquadronGrouping(sq, 2)
+            -- Aircraft launched per scramble. The generator rolls this per
+            -- squadron toward a distributed-QRA posture (mostly singles, some
+            -- pairs); fall back to a 2-ship if an older save omits the field.
+            dispatcher:SetSquadronGrouping(sq, tonumber(rec.grouping) or 2)
             -- NOTE: deliberately NOT SetSquadronVisible — see header. Visible mode
             -- forces a cold pre-park (F-16 never taxis), clamps reserve to parking
             -- spots, and forces Grouping=1. Non-visible = in-air fresh-spawn on scramble.

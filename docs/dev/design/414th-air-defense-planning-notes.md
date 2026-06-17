@@ -88,6 +88,42 @@ Moose dispatcher path.
     left at 100 (forward CAP no longer depends solely on it). `player_startup_time`
     left at 10 (player QoL, not an OPFOR lever).
 
+## Threat-weighted BARCAP volume (live)
+
+How many BARCAP waves a defended CP receives now scales with the *air* threat to that
+CP, so contested sectors get more coverage than quiet flanks. This is the feature the
+`barcap-threat-weighting` branch is named for. It is **additive only** — a deliberate
+constraint after an earlier "rework" attempt that scaled volume both up *and* down and
+collapsed non-peak bases to a single wave (it was reverted; see commit `c8b1b8c32`).
+
+- **Threat measure.** `ObjectiveFinder.air_threat_score(cp)`
+  (`game/commander/objectivefinder.py`) sums over enemy *operational* airfields within
+  `airbase_threat_range`, each contribution `proximity * fixed-wing aircraft present`
+  (closer base + more jets = higher). Returns `0.0` when no enemy airfield is in range.
+  Intentionally coarse: it counts *all* present fixed-wing aircraft, not just A2A-tasked
+  squadrons, to stay cheap and save-stable. Refine to fighter-only only if it proves too
+  blunt in-game.
+- **Wave scaling.** `threat_weighted_barcap_rounds(baseline, score, max_score, is_fleet)`
+  (`game/commander/theaterstate.py`) returns
+  `baseline + round(factor * baseline * (BARCAP_THREAT_CEILING - 1))`, where
+  `factor = score / max_score` is the CP's threat relative to the theater's hottest
+  sector. `BARCAP_THREAT_CEILING = 2`, so the peak sector gets up to **2x** the legacy
+  wave count and a CP at zero threat gets **exactly** the legacy `barcap_rounds`. Fleet
+  CPs keep their legacy `2x` multiplier on top.
+- **Baseline = legacy.** `barcap_rounds` is still the duration-derived count
+  (`desired_barcap_mission_duration`), which already spans the mission window — so no
+  separate coverage-floor machinery was needed. With no measurable air threat anywhere
+  (`max_threat_score <= 0`) every defended CP falls back to `baseline_rounds`,
+  reproducing the old flat allocation byte-for-byte.
+- **Wiring.** `TheaterState.from_game` builds `barcap_threat_scores` over
+  `vulnerable_control_points()`, takes the max, and feeds each CP through
+  `threat_weighted_barcap_rounds` into `barcaps_needed`.
+- **Scope.** This increment is *volume only*. Threat-weighted **orbit placement** (where
+  the contested-sector tracks sit, not just how many) is an explicitly-deferred separate
+  increment and is not yet implemented.
+- Tests: `tests/test_barcap_threat_weighting.py` (additive-only invariants, zero-threat
+  legacy fallback, fleet multiplier, ceiling).
+
 ## Mission-preference (`tasks:`) value rubric
 
 The auto-planner ranks aircraft for a task by these YAML weights (higher = chosen

@@ -44,6 +44,29 @@ local subtitles = opt("subtitles", true) ~= false
 local maxLanding = tonumber(opt("maxLanding", 99)) or 99
 local maxTaxi = tonumber(opt("maxTaxi", 99)) or 99
 
+-- MOOSE FLIGHTCONTROL identifies a busy parking spot's occupant with
+-- FindClosestUnit, which only sees UNITs. Retribution parks STATIC objects on
+-- some ramp spots (Kutaisi is the usual offender), so those spots are left
+-- untracked ("NOT FREE but no unit could be found there") and the status loop
+-- then warns "Number of parking spots does not match!" every cycle for the whole
+-- mission. Mark each orphan (Status == nil after init) OCCUPIED so the counts
+-- reconcile -- killing the recurring log spam -- and FLIGHTCONTROL keeps the
+-- static-held spots out of its taxi/assignment pool. _InitParkingSpots() runs
+-- synchronously inside fc:Start(), so fc.parking is populated by the time we run.
+local function reconcile_orphan_parking(fc)
+    if type(fc.parking) ~= "table" then
+        return 0
+    end
+    local fixed = 0
+    for _, spot in pairs(fc.parking) do
+        if spot.Status == nil then
+            fc:SetParkingOccupied(spot, "RetributionStatic")
+            fixed = fixed + 1
+        end
+    end
+    return fixed
+end
+
 local started = 0
 for _, ab in ipairs(cfg.airbases) do
     local ok, err = pcall(function()
@@ -69,6 +92,14 @@ for _, ab in ipairs(cfg.airbases) do
             fc:SwitchSubtitlesOff()
         end
         fc:Start()
+        local fixed = reconcile_orphan_parking(fc)
+        if fixed > 0 then
+            env.info(string.format(
+                "DCSRetribution|FlightControl: %s reconciled %d static-occupied parking spot(s)",
+                ab.name,
+                fixed
+            ))
+        end
         started = started + 1
     end)
     if not ok then

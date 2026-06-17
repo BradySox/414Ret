@@ -13,6 +13,7 @@ def _entry(**kw: object) -> InterceptEntry:
         template_prefix="Intercept|Batumi|sq-1",
         coalition="BLUE",
         resource_count=4,
+        grouping=2,
         engagement_range_nm=60,
         gci_max_radius_nm=100,
         comms_enabled=True,
@@ -61,6 +62,13 @@ def test_resource_count_and_ranges_are_serialized() -> None:
     assert "engagementRangeNm" in serialized
     assert "gciMaxRadiusNm" in serialized
     assert "commsEnabled" in serialized
+
+
+def test_grouping_is_serialized() -> None:
+    root = LuaData("dcsRetribution")
+    populate_intercept_lua(root, [_entry(grouping=1)])
+    serialized = root.serialize()
+    assert "grouping" in serialized
 
 
 def test_country_id_is_serialized() -> None:

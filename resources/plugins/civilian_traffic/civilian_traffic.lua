@@ -97,6 +97,11 @@ local function _spawn_rat(tmpl, pool, count, max_dist_nm)
     r:SetROE("hold")
     r:SetROT("evade")
     r:Invisible()
+    -- Silence RAT's ATC broadcasts. With RespawnAfterLanding the civilian pool
+    -- lands and respawns constantly, and RAT.ATC.messages (default ON) spams every
+    -- player "cleared for landing"/"welcome to <field>" on each cycle. This only
+    -- gates the MESSAGE:ToAll text; ATC landing sequencing (ClearToLand) still runs.
+    r:ATC_Messages(false)
     r:RespawnAfterLanding(90)
     r:Spawn(count)
     return true

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from dcs.mapping import Point
 
     from game import Game
-    from game.missiongenerator.luagenerator import LuaData
+    from game.missiongenerator.luagenerator import LuaData, LuaItem
 
 # --- Spawned ground picture (the "spawn" variant, spec §5) -------------------------
 # AI convoys are rare, so SCAR can't rely on the campaign producing a moving
@@ -106,14 +106,17 @@ class ScarConvoy:
 class ScarTasking:
     """One SCAR area for the Lua scenario layer to run.
 
-    Two variants (spawn by default since AI convoys are rare; bind to a real
-    missile site when the player targets one):
+    Three variants, by what the SCAR flight targets:
 
-    * ``spawn``  — the generator spawns the ground picture (``convoys``: one HVT
-      + decoys + clutter) and routes it. success = HVT destroyed; fail = the HVT
-      reaches its destination zone. Always available.
-    * ``missile`` — the SCAR target IS a real surface-to-surface missile site
-      (the SCUD variant). Watch-only; success = destroyed, fail = it launches.
+    * ``spawn``  — generic target (e.g. a rare convoy): the generator spawns the
+      whole ground picture (``convoys``: HVT + decoys + clutter + threats) fleeing
+      to a city. success = HVT killed; fail = it reaches the city or the window.
+    * ``armor``  — a real ``VehicleGroupGroundObject``: bind that real group as the
+      HVT (it flees to the city) and mix in spawned decoys/clutter (``convoys``)
+      derived from its real composition. success = real group killed; fail = it
+      reaches the city or the window. (BAI stays the AI/auto-planner task.)
+    * ``missile`` — a real surface-to-surface missile site (SCUD). Watch-only;
+      success = destroyed, fail = it launches.
     """
 
     tasking_id: str
@@ -145,6 +148,69 @@ def _ring_point(
         center.x + radius * math.cos(angle),
         center.y + radius * math.sin(angle),
     )
+
+
+def _real_signature(target: object) -> tuple[str, ...]:
+    """The DCS unit-type ids making up a real TGO's group(s), defensively."""
+    sig: list[str] = []
+    try:
+        for group in target.groups:  # type: ignore[attr-defined]
+            for unit in group.units:
+                type_id = getattr(getattr(unit, "type", None), "id", None)
+                if isinstance(type_id, str) and type_id:
+                    sig.append(type_id)
+    except (AttributeError, TypeError):
+        return ()
+    return tuple(sig)
+
+
+def _partial_signatures(sig: tuple[str, ...]) -> tuple[tuple[str, ...], ...]:
+    """Up to two PARTIAL versions of a signature (decoys — never the full set).
+
+    Drops a distinct vehicle type (the discrimination tell) where possible; for a
+    homogeneous group, drops one unit (a count tell). Returns () if no meaningful
+    partial exists (a single-unit group).
+    """
+    if len(sig) <= 1:
+        return ()
+    distinct = list(dict.fromkeys(sig))
+    partials: list[tuple[str, ...]] = []
+    if len(distinct) >= 2:
+        for drop in (distinct[-1], distinct[0]):
+            partial = tuple(unit for unit in sig if unit != drop)
+            if partial and partial != sig and partial not in partials:
+                partials.append(partial)
+    else:
+        partials.append(sig[:-1])
+    return tuple(partials[:2])
+
+
+def _supporting_convoys(
+    center: "Point",
+    dest_x: float,
+    dest_y: float,
+    decoy_sigs: tuple[tuple[str, ...], ...],
+    speed: float = SCAR_CONVOY_SPEED_MS,
+) -> list[ScarConvoy]:
+    """Decoy + plain-truck clutter convoys on a ring, all heading to ``dest``."""
+    others: list[tuple[str, tuple[str, ...]]] = [
+        ("decoy", sig) for sig in decoy_sigs
+    ] + [("clutter", SCAR_CLUTTER_SIGNATURE) for _ in range(SCAR_CLUTTER_COUNT)]
+    convoys: list[ScarConvoy] = []
+    for index, (role, sig) in enumerate(others):
+        spawn_x, spawn_y = _ring_point(center, index, len(others))
+        convoys.append(
+            ScarConvoy(
+                role=role,
+                unit_types=sig,
+                spawn_x=spawn_x,
+                spawn_y=spawn_y,
+                dest_x=dest_x,
+                dest_y=dest_y,
+                speed_ms=speed,
+            )
+        )
+    return convoys
 
 
 def _nearest_city(game: "Game", target: object) -> "Point | None":
@@ -214,21 +280,7 @@ def _compose_convoys(
         )
     ]
 
-    others: list[tuple[str, tuple[str, ...]]] = [
-        ("decoy", sig) for sig in SCAR_DECOY_SIGNATURES
-    ] + [("clutter", SCAR_CLUTTER_SIGNATURE) for _ in range(SCAR_CLUTTER_COUNT)]
-    for index, (role, sig) in enumerate(others):
-        spawn_x, spawn_y = _ring_point(center, index, len(others))
-        convoys.append(
-            ScarConvoy(
-                role=role,
-                unit_types=sig,
-                spawn_x=spawn_x,
-                spawn_y=spawn_y,
-                dest_x=dest_x,
-                dest_y=dest_y,
-            )
-        )
+    convoys.extend(_supporting_convoys(center, dest_x, dest_y, SCAR_DECOY_SIGNATURES))
 
     # Threat laydown (R9): stationary AAA/SA-9 on an inner ring (dest == spawn).
     # Untracked; they just make the box contested.
@@ -330,6 +382,17 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     SCAR_HVT_SPEED_MAX_MS,
                     max(SCAR_HVT_SPEED_MIN_MS, route_len / max(SCAR_WINDOW_S, 1.0)),
                 )
+                # Mix in decoys (partial versions of the real armor's signature)
+                # + clutter, all fleeing alongside at the same pace, so the player
+                # must pick the real group out of the column (like the convoy).
+                decoy_sigs = _partial_signatures(_real_signature(target)) or (
+                    SCAR_CLUTTER_SIGNATURE,
+                )
+                support = tuple(
+                    _supporting_convoys(
+                        target.position, dest_x, dest_y, decoy_sigs, flee_speed
+                    )
+                )
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -342,6 +405,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         dest_y=dest_y,
                         flee_speed_ms=flee_speed,
                         fail_zone_radius_m=fail_radius,
+                        hvt_country_id=enemy_country_id,
+                        convoys=support,
                     )
                 )
             else:
@@ -363,6 +428,19 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     )
                 )
     return taskings
+
+
+def _emit_convoys(record: "LuaItem", convoys: tuple[ScarConvoy, ...]) -> None:
+    convoys_item = record.add_item("convoys")
+    for convoy in convoys:
+        convoy_rec = convoys_item.add_item()
+        convoy_rec.add_key_value("role", convoy.role)
+        convoy_rec.add_data_array("units", list(convoy.unit_types))
+        convoy_rec.add_key_value("spawnX", str(convoy.spawn_x))
+        convoy_rec.add_key_value("spawnY", str(convoy.spawn_y))
+        convoy_rec.add_key_value("destX", str(convoy.dest_x))
+        convoy_rec.add_key_value("destY", str(convoy.dest_y))
+        convoy_rec.add_key_value("speed", str(convoy.speed_ms))
 
 
 def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
@@ -392,17 +470,10 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
             record.add_item("destY").set_value(str(tasking.dest_y))
             record.add_item("fleeSpeed").set_value(str(tasking.flee_speed_ms))
             record.add_item("failZoneRadius").set_value(str(tasking.fail_zone_radius_m))
+            record.add_item("hvtCountryId").set_value(str(tasking.hvt_country_id))
+            _emit_convoys(record, tasking.convoys)
             continue
         record.add_item("hvtCountryId").set_value(str(tasking.hvt_country_id))
         record.add_item("failZoneRadius").set_value(str(tasking.fail_zone_radius_m))
         record.add_item("commandType").set_value(tasking.command_type)
-        convoys_item = record.add_item("convoys")
-        for convoy in tasking.convoys:
-            convoy_rec = convoys_item.add_item()
-            convoy_rec.add_key_value("role", convoy.role)
-            convoy_rec.add_data_array("units", list(convoy.unit_types))
-            convoy_rec.add_key_value("spawnX", str(convoy.spawn_x))
-            convoy_rec.add_key_value("spawnY", str(convoy.spawn_y))
-            convoy_rec.add_key_value("destX", str(convoy.dest_x))
-            convoy_rec.add_key_value("destY", str(convoy.dest_y))
-            convoy_rec.add_key_value("speed", str(convoy.speed_ms))
+        _emit_convoys(record, tasking.convoys)

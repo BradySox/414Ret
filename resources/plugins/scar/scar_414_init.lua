@@ -463,11 +463,47 @@ local function set_group_route(group_name, dest_x, dest_y, speed)
     end)
 end
 
+-- The real armor group's live composition, e.g. "3x T-55 + 1x command vehicle".
+local function live_signature(group_name)
+    local group = Group.getByName(group_name)
+    if group == nil then
+        return "armor"
+    end
+    local ok, units = pcall(function()
+        return group:getUnits()
+    end)
+    if not ok or units == nil then
+        return "armor"
+    end
+    local counts, order = {}, {}
+    for _, unit in ipairs(units) do
+        local okt, type_name = pcall(function()
+            return unit:getTypeName()
+        end)
+        if okt and type_name then
+            if counts[type_name] == nil then
+                table.insert(order, type_name)
+            end
+            counts[type_name] = (counts[type_name] or 0) + 1
+        end
+    end
+    local parts = {}
+    for _, type_name in ipairs(order) do
+        table.insert(parts, counts[type_name] .. "x " .. friendly_name(type_name))
+    end
+    if #parts == 0 then
+        return "armor"
+    end
+    return table.concat(parts, " + ")
+end
+
 local function brief_armor(area)
     local side = scar_side(area)
+    local sig = live_signature(area.groups[1])
     local text = "SCAR INTEL (" .. area.id .. "):\n" ..
-        "Enemy armor is bugging out toward the city. Destroy it before it " ..
-        "reaches safety."
+        "Target armor signature: " .. sig .. "\n" ..
+        "Other columns are fleeing too — find the matching group and destroy it " ..
+        "before it reaches the city."
     pcall(trigger.action.outTextForCoalition, side, text, 30)
     local group = Group.getByName(area.groups[1])
     if group ~= nil then
@@ -476,8 +512,7 @@ local function brief_armor(area)
         end)
         if ok and unit ~= nil then
             pcall(trigger.action.markToCoalition, next_mark_id(),
-                "SCAR target — enemy armor (kill before it reaches the city)",
-                unit:getPoint(), side, true)
+                "SCAR target — " .. sig, unit:getPoint(), side, true)
         end
     end
     pcall(trigger.action.markToCoalition, next_mark_id(),
@@ -510,9 +545,18 @@ local function activate_armor_area(tasking, go_live, window)
     table.insert(scar_areas, area)
     brief_armor(area)
     local speed = scar_num(tasking.fleeSpeed, 5)
+    local country_id = scar_num(tasking.hvtCountryId)
+    local convoys = tasking.convoys or {}
     mist.scheduleFunction(function()
+        -- The real armor bugs out...
         for _, name in ipairs(area.groups) do
             set_group_route(name, area.destX, area.destY, speed)
+        end
+        -- ...and the decoy/clutter columns spawn and flee alongside it (untracked).
+        local spawn_index = 0
+        for _, convoy in pairs(convoys) do
+            spawn_index = spawn_index + 1
+            spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
         end
     end, {}, timer.getTime() + go_live)
     return true

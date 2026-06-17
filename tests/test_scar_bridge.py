@@ -124,7 +124,17 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
     # A SCAR flight against a real armor group binds it (no spawned fakes): the
     # real group flees to the nearest city, success = killed / fail = it arrives.
     armor = MagicMock(spec=VehicleGroupGroundObject)
-    armor.groups = [MagicMock(group_name="ARMOR-1")]
+    # A mixed group so a partial-signature decoy can be derived.
+    armor.groups = [
+        MagicMock(
+            units=[
+                MagicMock(type=MagicMock(id="T-55")),
+                MagicMock(type=MagicMock(id="T-55")),
+                MagicMock(type=MagicMock(id="Ural-375")),
+            ],
+            group_name="ARMOR-1",
+        )
+    ]
     armor.position = Point(0, 0, None)  # type: ignore[arg-type]
     armor.control_point = MagicMock(captured=True)  # the enemy side
     city = MagicMock()
@@ -136,10 +146,18 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
     tasking = _build(game)[0]
 
     assert tasking.variant == "armor"
-    assert tasking.target_groups == ("ARMOR-1",)
-    assert not tasking.convoys  # binds the real group, spawns nothing
+    assert tasking.target_groups == ("ARMOR-1",)  # binds the REAL group
     assert (tasking.dest_x, tasking.dest_y) == (8000, 0)  # flees to the city
     assert tasking.flee_speed_ms > 0
+    # Decoys/clutter are mixed in (spawned fakes), like the convoy variant.
+    roles = [c.role for c in tasking.convoys]
+    assert "decoy" in roles
+    assert roles.count("clutter") == SCAR_CLUTTER_COUNT
+    # A decoy is a strict partial of the real armor signature.
+    real_sig = ("T-55", "T-55", "Ural-375")
+    for decoy in (c for c in tasking.convoys if c.role == "decoy"):
+        assert decoy.unit_types != real_sig
+        assert all(u in real_sig for u in decoy.unit_types)
 
 
 def test_missile_site_target_yields_missile_tasking() -> None:

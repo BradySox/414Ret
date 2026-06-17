@@ -35,8 +35,9 @@ stacked on top (newest first):
   acting as an EC-130H Compass Call / RC-130H Rivet Joint platform. Driven by the
   bundled `c130j_mission_systems.lua` plugin.
 - **`FlightType.TARPS`** - player-flown F-14 photo-reconnaissance (all F-14 variants).
-  Flies a single overflight ~5 minutes behind the strikers carrying the `{F14-TARPS}`
-  pod (station 6, editor-verified). Auto-planned into Strike / DEAD packages.
+  Flies a single pass **directly over the target** ~5 minutes behind the strikers,
+  carrying the `{F14-TARPS}` pod (station 6) plus a per-variant self-defense fit.
+  Auto-planned into Strike / DEAD packages.
 - **Recon intel-fog** - enemy ground sites appear on the map as targets you can plan
   packages against, but *what is actually there* - unit types, counts, damage state, and
   threat/detection rings - stays hidden until the site is **attacked, scouted by
@@ -58,11 +59,16 @@ stacked on top (newest first):
 ### Air-defense planning rework
 - **Per-squadron QRA intercept reserve** from upstream PR `#782`. BARCAP-capable
   squadrons can hold aircraft back on alert via `intercept_reserve`, with coalition
-  defaults and Moose `AI_A2A_DISPATCHER` runtime interception.
+  defaults and Moose `AI_A2A_DISPATCHER` runtime interception. Defaults are a
+  **base-defense** posture (scramble within 60 NM, chase to 38 NM) so QRA defends its
+  fields instead of screening forward over the front line; tunable on the Doctrine page.
 - **Overlapping BARCAP waves** with jittered timing so CAP doesn't all arrive at once
   (`barcap_overlap_time` setting).
 - **Forward CAP line** that pushes CAP toward friendly control points anchoring active
   front lines instead of orbiting deep.
+- **AI routes around the ground battle** - the active front line is a navmesh routing
+  hazard, so transiting flights cross it quickly at the least-bad point instead of
+  loitering over the combat (CAS/BAI that target the front are unaffected).
 - **Reworked legacy SAM site templates** - dedicated SA-2 / SA-3 / SA-5 / SA-6 battery
   layouts (circle & semicircle variants) plus an SA-2/SA-3 mixed site, replacing the
   old generic launcher rings.
@@ -102,7 +108,11 @@ stacked on top (newest first):
   plugins UI.
 - **Civilian background air traffic** via MOOSE RAT - routes invisible civilian
   flights between neutral airdromes (and a separate blue-field pool) for ambiance,
-  steering clear of airbases Retribution is using for combat ops this turn.
+  steering clear of airbases Retribution is using for combat ops this turn. Density is
+  kept light by design.
+- **Frontline units spread along the line** instead of stacking on one tile - the
+  generator steps perpendicular from the front to find valid ground rather than snapping
+  every off-map group laterally onto the same patch.
 - **Flight Control (ATC)** plugin (MOOSE FLIGHTCONTROL, default ON) - players-only
   tower comms (taxi/takeoff/landing sequencing with SRS voice, text-subtitle fallback)
   at friendly land airbases. AI limits are kept generous so it does not queue or strand

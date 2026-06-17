@@ -55,6 +55,11 @@ The old 414th ramp-scramble system is legacy only and should not be extended.
 - Campaign doctrine: `game/settings/settings.py` exposes
   `ownfor_default_qra_reserve`, `opfor_default_qra_reserve`,
   `qra_gci_max_radius_nm`, `qra_engagement_range_nm`, and `qra_comms_enabled`.
+  Defaults are a **base-defense** posture (lowered after playtest feedback that QRA
+  screened forward over the FLOT): `qra_gci_max_radius_nm` 100→**60** (scramble only when
+  a raid closes within 60 NM) and `qra_engagement_range_nm` 60→**38** (interceptors chase
+  less far). The Lua fallbacks in `intercept-config.lua` match. These are live doctrine
+  settings, so existing campaigns can re-tune them on the Campaign Doctrine page.
 - Mission generation: `game/missiongenerator/aircraft/aircraftgenerator.py`
   `spawn_intercept_templates()` emits late-activated parked template groups and
   appends `mission_data.intercept_entries`.
@@ -121,10 +126,25 @@ TARPS-capable squadron is available.
 
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
   `configure_tarps()` — single overflight waypoint ~5 min behind the strikers.
+- Flight plan: `game/ato/flightplans/tarps.py` uses `FlightWaypointType.INGRESS_RECON`
+  (NOT `INGRESS_STRIKE`) so the weaponless recon bird gets **no Bombing tasks** on its
+  ingress — `INGRESS_STRIKE` dumped one Bombing task per target-group unit onto the
+  ingress, making the AI fly an aborting attack pattern and never cleanly overfly.
+  `INGRESS_RECON` → `ReconIngressBuilder` (no attack tasks,
+  `game/missiongenerator/aircraft/waypoints/reconingress.py`); the target waypoint is a
+  **flyover** (`WaypointBuilder.recon_area`, `flyover=True`) so the AI actually crosses
+  the target instead of turning back at the IP. (Player-only target waypoints are
+  filtered for AI, so without the flyover the AI never reaches the target.)
 - Auto-planner: `game/commander/packagefulfiller.py` `_try_add_tarps_recon()` with
   explicit debug logging for every skip reason.
 - Aircraft: `TARPS: 700` task priority in `resources/units/aircraft/F-14*.yaml`;
-  payloads in `resources/customized_payloads/F-14*.lua`.
+  payloads in `resources/customized_payloads/F-14*.lua`. The `Retribution TARPS` payload
+  carries `{F14-TARPS}` on station 6 (station 5 clean) plus a per-variant self-defense
+  fit, verified from the `Aerial-1/2/3` groups in `Tues test 1.miz`: F-14B = AIM-54A
+  (Mk60 L / Mk47 R), F-14A-135-GR-Early = AIM-54A (Mk47 L/R), F-14A-135-GR = AIM-7M, all
+  with AIM-9L wingtips. **CLSIDs must be current** — stale ones (`{SHOULDER AIM-7MH}`,
+  `{LAU-138 wtip - AIM-9M}`) made DCS reject the whole loadout on load and silently drop
+  the TARPS pod with it. The vanilla `F-14A.lua` still uses the old GUID-form loadout.
 - Tests: `tests/test_tarps_recon.py`.
 
 **Visibility / recon fog** — one viewer-aware layer drives two player-facing fog rules.
@@ -221,6 +241,22 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   (checks `cp.has_active_frontline`; also fixes an inverted aggressiveness comparison).
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
   10->15 nm, `armed_recon_engagement_range_distance` 5->10 nm).
+- Route around the front line: `game/threatzones.py` adds the **active front** as a
+  navmesh routing hazard. `ThreatZones._front_line_threat_zone()` buffers a capsule along
+  each active FrontLine (perpendicular to the blue->red axis, `FRONT_LINE_THREAT_BUFFER`
+  = 10 NM) and folds it into `self.all` **only** — the geometry the navmesh + generic
+  `threatened()`/path checks use. The SAM (`air_defenses`) and CAP (`airbases`) views stay
+  clean, so air-defense/barcap planning is untouched. The navmesh penalizes 3x rather than
+  forbids, so transiting flights cross the FLOT perpendicularly at the least-bad point
+  instead of loitering; CAS/BAI target the front and reach it on the un-routed ingress leg,
+  so they're unaffected. Added to every faction's projected threat (each coalition's
+  navmesh is built from its opponent's zone), so both sides avoid it. Tests:
+  `tests/test_front_line_threat_zone.py`.
+- Front-line units no longer stack: `game/missiongenerator/flotgenerator.py`
+  `get_valid_position_for_group()` steps perpendicular from the (valid) front toward the
+  requested depth instead of snapping laterally via `find_ground_position()` — the old
+  lateral snap collapsed every off-map group onto the same patch, piling units on one tile
+  (worst for deep roles: artillery/logistics at 16-20 km).
 
 ### 7. Auto-hide mobile SAMs on MFD
 - Task-level (`game/armedforces/forcegroup.py`): `hide_on_mfd` field,

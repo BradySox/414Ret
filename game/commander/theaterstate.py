@@ -37,6 +37,37 @@ if TYPE_CHECKING:
     from game.transfers import Convoy, CargoShip
 
 
+# Threat-weighted BARCAP volume. The duration-derived ``barcap_rounds`` is the
+# baseline (and legacy) wave count; this scaling is purely *additive* on top of
+# it, so a defended CP never gets fewer waves than the legacy flat allocation.
+# The hottest sector in the theater gets up to BARCAP_THREAT_CEILING x baseline.
+BARCAP_THREAT_CEILING = 2
+
+
+def threat_weighted_barcap_rounds(
+    baseline_rounds: int,
+    threat_score: float,
+    max_threat_score: float,
+    is_fleet: bool,
+) -> int:
+    """Adds BARCAP waves to contested sectors without ever dropping below baseline.
+
+    A defended CP at the theater's peak air threat gets ``BARCAP_THREAT_CEILING *
+    baseline_rounds`` waves; a CP with no threat gets exactly ``baseline_rounds``
+    (the legacy count). Fleet CPs keep their legacy 2x multiplier on top.
+
+    With no measurable threat anywhere (``max_threat_score <= 0``) every defended
+    CP gets ``baseline_rounds``, reproducing the legacy flat allocation exactly.
+    """
+    if max_threat_score <= 0:
+        rounds = baseline_rounds
+    else:
+        factor = threat_score / max_threat_score
+        bonus = baseline_rounds * (BARCAP_THREAT_CEILING - 1)
+        rounds = baseline_rounds + round(factor * bonus)
+    return 2 * rounds if is_fleet else rounds
+
+
 @dataclass(frozen=True)
 class PersistentContext:
     game_db: GameDb
@@ -195,11 +226,20 @@ class TheaterState(WorldState["TheaterState"]):
         aewc_targets.append(finder.farthest_friendly_control_point())
 
         vulnerable_cps = list(finder.vulnerable_control_points())
+        barcap_threat_scores = {
+            cp: finder.air_threat_score(cp) for cp in vulnerable_cps
+        }
+        max_barcap_threat = max(barcap_threat_scores.values(), default=0.0)
 
         return TheaterState(
             context=context,
             barcaps_needed={
-                cp: 2 * barcap_rounds if cp.is_fleet else barcap_rounds
+                cp: threat_weighted_barcap_rounds(
+                    barcap_rounds,
+                    barcap_threat_scores[cp],
+                    max_barcap_threat,
+                    cp.is_fleet,
+                )
                 for cp in vulnerable_cps
             },
             active_front_lines=list(finder.front_lines()),

@@ -33,6 +33,7 @@ from .landingpoint import LandingPointBuilder
 from .landingzone import LandingZoneBuilder
 from .ocaaircraftingress import OcaAircraftIngressBuilder
 from .ocarunwayingress import OcaRunwayIngressBuilder
+from .reconingress import ReconIngressBuilder
 from .pydcswaypointbuilder import PydcsWaypointBuilder, TARGET_WAYPOINTS
 from .racetrack import RaceTrackBuilder
 from .racetrackend import RaceTrackEndBuilder
@@ -159,6 +160,7 @@ class WaypointGenerator:
             FlightWaypointType.INGRESS_OCA_RUNWAY: OcaRunwayIngressBuilder,
             FlightWaypointType.INGRESS_SEAD: SeadIngressBuilder,
             FlightWaypointType.INGRESS_SEAD_SWEEP: SeadSweepIngressBuilder,
+            FlightWaypointType.INGRESS_RECON: ReconIngressBuilder,
             FlightWaypointType.INGRESS_STRIKE: StrikeIngressBuilder,
             FlightWaypointType.INGRESS_SWEEP: SweepIngressBuilder,
             FlightWaypointType.JOIN: JoinPointBuilder,

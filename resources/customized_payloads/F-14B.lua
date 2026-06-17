@@ -352,18 +352,20 @@ local unitPayloads = {
 		},
 		[8] = {
 			-- TARPS recon profile: KS-87D camera pod on the belly recon station plus a
-			-- light self-defense fit (2x AIM-9, 2x AIM-7, drop tanks) for the photo run.
-			-- Editor-verified from wesafution_nextturn.miz: the TARPS pod uses
-			-- "{F14-TARPS}" on station 6, with station 5 left clean.
+			-- light self-defense fit (2x AIM-9L, 2x AIM-54A, drop tanks) for the photo run.
+			-- Editor-verified (F-14B "Aerial-1" in Tues test 1.miz): "{F14-TARPS}" on
+			-- station 6, station 5 left clean. The earlier "{SHOULDER AIM-7MH}" /
+			-- "{LAU-138 wtip - AIM-9M}" CLSIDs were stale and made DCS drop the whole
+			-- loadout (pod included) on load; these CLSIDs validate and keep the pod.
 			["displayName"] = "Retribution TARPS",
 			["name"] = "Retribution TARPS",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-138 wtip - AIM-9L}",
 					["num"] = 10,
 				},
 				[2] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
+					["CLSID"] = "{SHOULDER AIM_54A_Mk47 R}",
 					["num"] = 9,
 				},
 				[3] = {
@@ -379,11 +381,11 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[6] = {
-					["CLSID"] = "{SHOULDER AIM-7MH}",
+					["CLSID"] = "{SHOULDER AIM_54A_Mk60 L}",
 					["num"] = 2,
 				},
 				[7] = {
-					["CLSID"] = "{LAU-138 wtip - AIM-9M}",
+					["CLSID"] = "{LAU-138 wtip - AIM-9L}",
 					["num"] = 1,
 				},
 			},

@@ -292,6 +292,8 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             return builder.oca_strike_area(location)
         elif flight.flight_type == FlightType.ARMED_RECON:
             return builder.armed_recon_area(location)
+        elif flight.flight_type == FlightType.TARPS:
+            return builder.recon_area(location)
         else:
             return builder.strike_area(location)
 

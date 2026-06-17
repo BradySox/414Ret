@@ -53,3 +53,6 @@ class FlightWaypointType(IntEnum):
     INGRESS_SEAD_SWEEP = 33
     INGRESS_ARMED_RECON = 34
     RECOVERY_TANKER = 35  # Tanker recovery point
+    INGRESS_RECON = (
+        36  # Ingress photo-recon overflight (TARPS) - carries no attack tasks
+    )

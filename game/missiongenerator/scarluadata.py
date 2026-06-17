@@ -82,6 +82,7 @@ SCAR_CONVOY_SPEED_MS = 5.0  # cosmetic decoy/clutter crawl
 SCAR_HVT_SPEED_MIN_MS = 4.0
 SCAR_HVT_SPEED_MAX_MS = 15.0
 SCAR_CITY_RADIUS_M = 2000.0  # HVT within this of the city = command escapes
+SCAR_SCUD_RACE_M = 8000.0  # how far a SCUD relocates toward its target to fire
 
 
 @dataclass(frozen=True)
@@ -115,8 +116,10 @@ class ScarTasking:
       HVT (it flees to the city) and mix in spawned decoys/clutter (``convoys``)
       derived from its real composition. success = real group killed; fail = it
       reaches the city or the window. (BAI stays the AI/auto-planner task.)
-    * ``missile`` — a real surface-to-surface missile site (SCUD). Watch-only;
-      success = destroyed, fail = it launches.
+    * ``missile`` — a real surface-to-surface missile site (SCUD): it races from
+      its location to a firing position and launches on arrival. success =
+      killed first; fail = it reaches the firing position (or the window ends)
+      and fires at its target city.
     """
 
     tasking_id: str
@@ -128,10 +131,14 @@ class ScarTasking:
     window_s: float = 0.0
     # variants "missile" + "armor": the real campaign group(s) to bind.
     target_groups: tuple[str, ...] = ()
-    # variant "armor": the real armor flees to this city point at flee_speed_ms.
+    # variants "armor" + "missile": the bound group races to (dest_x, dest_y) at
+    # flee_speed_ms — a city safe-haven (armor) or a firing position (missile).
     dest_x: float = 0.0
     dest_y: float = 0.0
     flee_speed_ms: float = 0.0
+    # variant "missile": where the SCUD fires when it reaches its firing position.
+    fire_target_x: float = 0.0
+    fire_target_y: float = 0.0
     # variant "spawn":
     hvt_country_id: int = 0
     convoys: tuple[ScarConvoy, ...] = ()
@@ -213,13 +220,13 @@ def _supporting_convoys(
     return convoys
 
 
-def _nearest_city(game: "Game", target: object) -> "Point | None":
-    """The nearest enemy-held control point to ``target`` (the "city" proxy).
+def _nearest_cp(game: "Game", target: object, same_side: bool) -> "Point | None":
+    """Nearest control point to ``target``, on its own side or the enemy side.
 
     Real city coordinates aren't exposed, but control points map to towns/bases
-    on every theater. Returns None if the target has no control point or no
-    enemy-held CP is found, in which case the convoy falls back to a fixed
-    no-strike point near the area.
+    on every theater. ``same_side=True`` finds the target's own side (a "city" it
+    flees to); ``same_side=False`` finds the enemy side (a SCUD's fire target).
+    Returns None if the target has no control point or none is found.
     """
     try:
         target_captured = target.control_point.captured  # type: ignore[attr-defined]
@@ -229,7 +236,7 @@ def _nearest_city(game: "Game", target: object) -> "Point | None":
     best: "Point | None" = None
     best_distance = 0.0
     for cp in game.theater.controlpoints:
-        if cp.captured != target_captured:
+        if (cp.captured == target_captured) != same_side:
             continue
         distance = cp.position.distance_to_point(origin)
         if best is None or distance < best_distance:
@@ -345,6 +352,26 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     index -= 1
                     seen_targets.discard(id(target))
                     continue
+                # The SCUD races from its site toward a firing position (forward,
+                # toward its target city) and launches on arrival. The player must
+                # kill it before it reaches the firing position.
+                origin = target.position
+                fire_target = _nearest_cp(game, target, same_side=False)
+                if fire_target is not None:
+                    fx, fy = fire_target.x, fire_target.y
+                    dx, dy = fx - origin.x, fy - origin.y
+                    norm = math.hypot(dx, dy) or 1.0
+                    race = min(SCAR_SCUD_RACE_M, norm)
+                    dest_x = origin.x + dx / norm * race
+                    dest_y = origin.y + dy / norm * race
+                else:
+                    dest_x, dest_y = origin.x + SCAR_SCUD_RACE_M, origin.y
+                    fx, fy = dest_x, dest_y
+                route_len = math.hypot(origin.x - dest_x, origin.y - dest_y)
+                flee_speed = min(
+                    SCAR_HVT_SPEED_MAX_MS,
+                    max(SCAR_HVT_SPEED_MIN_MS, route_len / max(SCAR_WINDOW_S, 1.0)),
+                )
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -353,6 +380,12 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         go_live_s=go_live_s,
                         window_s=SCAR_WINDOW_S,
                         target_groups=groups,
+                        dest_x=dest_x,
+                        dest_y=dest_y,
+                        flee_speed_ms=flee_speed,
+                        fire_target_x=fx,
+                        fire_target_y=fy,
+                        fail_zone_radius_m=SCAR_CITY_RADIUS_M,
                     )
                 )
             elif isinstance(target, VehicleGroupGroundObject):
@@ -364,7 +397,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     index -= 1
                     seen_targets.discard(id(target))
                     continue
-                city = _nearest_city(game, target)
+                city = _nearest_cp(game, target, same_side=True)
                 if city is not None:
                     dest_x, dest_y, fail_radius = (
                         city.x,
@@ -410,7 +443,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     )
                 )
             else:
-                city = _nearest_city(game, target)
+                city = _nearest_cp(game, target, same_side=True)
                 fail_radius = (
                     SCAR_CITY_RADIUS_M if city is not None else SCAR_FAIL_ZONE_RADIUS_M
                 )
@@ -463,6 +496,12 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
         record.add_item("window").set_value(str(tasking.window_s))
         if tasking.variant == "missile":
             record.add_item("targetGroups").set_data_array(list(tasking.target_groups))
+            record.add_item("destX").set_value(str(tasking.dest_x))
+            record.add_item("destY").set_value(str(tasking.dest_y))
+            record.add_item("fleeSpeed").set_value(str(tasking.flee_speed_ms))
+            record.add_item("fireTargetX").set_value(str(tasking.fire_target_x))
+            record.add_item("fireTargetY").set_value(str(tasking.fire_target_y))
+            record.add_item("failZoneRadius").set_value(str(tasking.fail_zone_radius_m))
             continue
         if tasking.variant == "armor":
             record.add_item("targetGroups").set_data_array(list(tasking.target_groups))

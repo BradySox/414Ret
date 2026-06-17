@@ -78,12 +78,16 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
     should act like SCAR" (decision 2026-06-17, *Extend SCAR to armor; keep BAI for AI*) —
     **BAI is untouched** (still the auto-planner's anti-armor/convoy task; `FlightType.BAI`
     save-compat preserved). NOT yet validated in-game.
-  - **`missile`** (bind, watch-only): when the SCAR target IS a real `MissileSiteGroundObject`
-    (category "missile" = SCUD), watch it instead of spawning. success = site destroyed;
-    fail = it launches. **Verified in-game 2026-06-17** (`area scar-1 (missile) -> launched`).
-    The stock random fire task (`MissileSiteGenerator`, `generate_fire_tasks_for_missile_sites`)
-    is now **suppressed for SCAR-targeted sites** (`_is_scar_target()`) — it fired as early as
-    60 s, before the player could arrive; SCAR now owns the timing.
+  - **`missile`** (bind): when the SCAR target IS a real `MissileSiteGroundObject` (category
+    "missile" = SCUD), bind it as a **racing launcher** (SME 2026-06-17): held on
+    `WEAPON_HOLD`, it drives from its site toward a **firing position** (a capped distance
+    toward the nearest player-held CP, `_nearest_cp(same_side=False)`) and, on arrival or
+    window-expiry, **actually launches** at that city (`FireAtPoint`) — the launch *is* the
+    failure cost (a missile now flies at civilians/allies; no separate campaign penalty).
+    success = killed before it reaches the firing position. The stock random fire task
+    (`MissileSiteGenerator`, `generate_fire_tasks_for_missile_sites`) is **suppressed for
+    SCAR-targeted sites** (`_is_scar_target()`) so SCAR owns the timing. Static-watch launch
+    was verified in-game 2026-06-17; the racing version needs a fresh pass.
   The `scar` plugin (`resources/plugins/scar/`, default ON). Outcomes ride the proven TARS
   channel: `dcs_retribution.lua write_state` → `StateData.scar_results` →
   `MissionResultsProcessor.commit_scar_results` (log-only for now). Tests:

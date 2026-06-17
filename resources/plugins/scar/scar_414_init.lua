@@ -13,9 +13,10 @@
 --                         go_live, then bugs out toward the city. success = the
 --                         group destroyed; fail = it reaches the city or the
 --                         window expires. (BAI stays the AI/auto-planner task.)
---   * variant "missile" — the target IS a real surface-to-surface (SCUD) site;
---                         watch it, no spawn. success = site destroyed;
---                         fail  = it launches (any weapon release by a site unit).
+--   * variant "missile" — the target IS a real SCUD site that RACES from its
+--                         location to a firing position and launches on arrival.
+--                         success = killed first; fail = it reaches the firing
+--                         position (or the window ends) and fires at its city.
 --
 -- TIMING: each scenario is anchored to the SCAR flight's TOT (goLive, seconds
 -- from mission start) so it doesn't resolve before the player can be on station.
@@ -118,8 +119,12 @@ end
 local function brief_missile(area)
     local side = scar_side(area)
     local text = "SCAR INTEL (" .. area.id .. "):\n" ..
-        "Surface-to-surface (SCUD) missile site. Destroy it BEFORE it launches."
+        "Mobile SCUD racing to its firing position. Destroy it BEFORE it gets " ..
+        "there and launches."
     pcall(trigger.action.outTextForCoalition, side, text, 30)
+    pcall(trigger.action.markToCoalition, next_mark_id(),
+        "SCUD firing position — kill it before it arrives",
+        { x = area.destX, y = 0, z = area.destY }, side, true)
 
     local group = Group.getByName(area.groups[1])
     if group == nil then
@@ -130,7 +135,7 @@ local function brief_missile(area)
     end)
     if ok and unit ~= nil then
         pcall(trigger.action.markToCoalition, next_mark_id(),
-            "SCUD site — destroy before launch", unit:getPoint(), side, true)
+            "SCUD launcher — on the move", unit:getPoint(), side, true)
     end
 end
 
@@ -284,17 +289,54 @@ local function despawn_command(area)
     end
 end
 
+-- A SCUD reaching its firing position launches at its target city = the failure
+-- (a missile now flies at civilians/allies). Make it actually fire.
+local function launch_missile(area)
+    for _, name in ipairs(area.groups) do
+        local group = Group.getByName(name)
+        if group ~= nil then
+            local ok, ctrl = pcall(function()
+                return group:getController()
+            end)
+            if ok and ctrl then
+                pcall(function()
+                    ctrl:setOption(AI.Option.Ground.id.ROE,
+                        AI.Option.Ground.val.ROE.OPEN_FIRE)
+                end)
+                pcall(function()
+                    ctrl:pushTask({
+                        id = "FireAtPoint",
+                        params = {
+                            point = { x = area.fireTargetX, y = area.fireTargetY },
+                            radius = 100,
+                            expendQty = 1,
+                            expendQtyEnabled = true,
+                        },
+                    })
+                end)
+            end
+        end
+    end
+end
+
 local function scar_check()
     for _, area in ipairs(scar_areas) do
         if not area.done then
+            local timed_out = area.deadline and timer.getTime() >= area.deadline
             if all_groups_dead(area) then
                 mark_result(area, "success")
-            elseif area.variant ~= "missile" then
+            elseif area.variant == "missile" then
+                -- Reached its firing position (or out of time): it launches.
+                if hvt_in_fail_zone(area) or timed_out then
+                    launch_missile(area)
+                    mark_result(area, "launched")
+                end
+            else
                 if hvt_in_fail_zone(area) then
                     -- Reached the city: the command vehicle escapes into it.
                     despawn_command(area)
                     mark_result(area, "failed")
-                elseif area.deadline and timer.getTime() >= area.deadline then
+                elseif timed_out then
                     -- Ran out of time; the convoy is still en route.
                     mark_result(area, "failed")
                 end
@@ -340,80 +382,9 @@ local function set_group_roe(group_name, roe_val)
     end
 end
 
--- Spawn variant: runs at the flight's TOT (go_live). Spawns the whole ground
--- picture and starts the HVT's window. Only the HVT is tracked; decoys/clutter
--- are the discrimination puzzle (mis-ID scoring is a later increment).
-local function activate_spawn_area(tasking, window)
-    local country_id = scar_num(tasking.hvtCountryId)
-    local hvt_area, hvt_convoy = nil, nil
-    local spawn_index = 0
-    for _, convoy in pairs(tasking.convoys or {}) do
-        spawn_index = spawn_index + 1
-        local group_name =
-            spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
-        if group_name and tostring(convoy.role) == "hvt" then
-            hvt_convoy = convoy
-            hvt_area = {
-                id = tostring(tasking.taskingId),
-                variant = "spawn",
-                coalition = tostring(tasking.coalition or "blue"),
-                groups = { group_name },
-                done = false,
-                destX = scar_num(convoy.destX, 0),
-                destY = scar_num(convoy.destY, 0),
-                radius = scar_num(tasking.failZoneRadius, 500),
-                commandType = tostring(tasking.commandType or ""),
-                deadline = timer.getTime() + window,
-            }
-        end
-    end
-    if hvt_area then
-        table.insert(scar_areas, hvt_area)
-        brief_spawn(hvt_area, hvt_convoy)
-        scar_log("area " .. hvt_area.id .. " live; window " ..
-            math.floor(window) .. "s")
-    else
-        scar_log("spawn tasking " .. tostring(tasking.taskingId) ..
-            ": no HVT convoy spawned")
-    end
-end
-
--- Missile variant: the site is a real unit, so it's held on WEAPON_HOLD from the
--- start (stops it firing before the player can get there) and only released to
--- fire after go_live + window, at which point an un-killed site launches (fail).
-local function activate_missile_area(tasking, go_live, window)
-    local groups = tasking.targetGroups or {}
-    if type(groups) ~= "table" or #groups == 0 then
-        scar_log("skipping missile tasking " .. tostring(tasking.taskingId) ..
-            ": no target groups")
-        return false
-    end
-    local area = {
-        id = tostring(tasking.taskingId),
-        variant = "missile",
-        coalition = tostring(tasking.coalition or "blue"),
-        groups = groups,
-        done = false,
-    }
-    for _, name in ipairs(groups) do
-        missile_group_index[name] = area
-        set_group_roe(name, AI.Option.Ground.val.ROE.WEAPON_HOLD)
-    end
-    table.insert(scar_areas, area)
-    brief_missile(area)
-    mist.scheduleFunction(function()
-        if not area.done then
-            for _, name in ipairs(area.groups) do
-                set_group_roe(name, AI.Option.Ground.val.ROE.OPEN_FIRE)
-            end
-            mark_result(area, "launched")
-        end
-    end, {}, timer.getTime() + go_live + window)
-    return true
-end
-
 -- Order a real ground group to drive from its current position to (dest_x,
--- dest_y) at the given speed (used to make a bound armor group flee to the city).
+-- dest_y) at the given speed (armor flees to the city; a SCUD races to its
+-- firing position).
 local function set_group_route(group_name, dest_x, dest_y, speed)
     local group = Group.getByName(group_name)
     if group == nil then
@@ -461,6 +432,84 @@ local function set_group_route(group_name, dest_x, dest_y, speed)
     pcall(function()
         ctrl:setTask(mission)
     end)
+end
+
+-- Spawn variant: runs at the flight's TOT (go_live). Spawns the whole ground
+-- picture and starts the HVT's window. Only the HVT is tracked; decoys/clutter
+-- are the discrimination puzzle (mis-ID scoring is a later increment).
+local function activate_spawn_area(tasking, window)
+    local country_id = scar_num(tasking.hvtCountryId)
+    local hvt_area, hvt_convoy = nil, nil
+    local spawn_index = 0
+    for _, convoy in pairs(tasking.convoys or {}) do
+        spawn_index = spawn_index + 1
+        local group_name =
+            spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
+        if group_name and tostring(convoy.role) == "hvt" then
+            hvt_convoy = convoy
+            hvt_area = {
+                id = tostring(tasking.taskingId),
+                variant = "spawn",
+                coalition = tostring(tasking.coalition or "blue"),
+                groups = { group_name },
+                done = false,
+                destX = scar_num(convoy.destX, 0),
+                destY = scar_num(convoy.destY, 0),
+                radius = scar_num(tasking.failZoneRadius, 500),
+                commandType = tostring(tasking.commandType or ""),
+                deadline = timer.getTime() + window,
+            }
+        end
+    end
+    if hvt_area then
+        table.insert(scar_areas, hvt_area)
+        brief_spawn(hvt_area, hvt_convoy)
+        scar_log("area " .. hvt_area.id .. " live; window " ..
+            math.floor(window) .. "s")
+    else
+        scar_log("spawn tasking " .. tostring(tasking.taskingId) ..
+            ": no HVT convoy spawned")
+    end
+end
+
+-- Missile variant: a real SCUD site that RACES from its location to a firing
+-- position and launches on arrival. Held on WEAPON_HOLD so it can't fire en
+-- route; the player must kill it before it reaches the firing position (or the
+-- window expires), at which point it launches (fail). Registered at init so an
+-- early kill counts; it starts moving at go_live.
+local function activate_missile_area(tasking, go_live, window)
+    local groups = tasking.targetGroups or {}
+    if type(groups) ~= "table" or #groups == 0 then
+        scar_log("skipping missile tasking " .. tostring(tasking.taskingId) ..
+            ": no target groups")
+        return false
+    end
+    local area = {
+        id = tostring(tasking.taskingId),
+        variant = "missile",
+        coalition = tostring(tasking.coalition or "blue"),
+        groups = groups,
+        done = false,
+        destX = scar_num(tasking.destX, 0),
+        destY = scar_num(tasking.destY, 0),
+        radius = scar_num(tasking.failZoneRadius, 2000),
+        fireTargetX = scar_num(tasking.fireTargetX, 0),
+        fireTargetY = scar_num(tasking.fireTargetY, 0),
+        deadline = timer.getTime() + go_live + window,
+    }
+    for _, name in ipairs(groups) do
+        missile_group_index[name] = area
+        set_group_roe(name, AI.Option.Ground.val.ROE.WEAPON_HOLD)
+    end
+    table.insert(scar_areas, area)
+    brief_missile(area)
+    local speed = scar_num(tasking.fleeSpeed, 5)
+    mist.scheduleFunction(function()
+        for _, name in ipairs(area.groups) do
+            set_group_route(name, area.destX, area.destY, speed)
+        end
+    end, {}, timer.getTime() + go_live)
+    return true
 end
 
 -- The real armor group's live composition, e.g. "3x T-55 + 1x command vehicle".

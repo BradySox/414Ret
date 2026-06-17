@@ -160,16 +160,25 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
         assert all(u in real_sig for u in decoy.unit_types)
 
 
-def test_missile_site_target_yields_missile_tasking() -> None:
+def test_missile_site_target_races_to_a_firing_position() -> None:
     site = MagicMock(spec=MissileSiteGroundObject)
     site.groups = [MagicMock(group_name="SCUD-1"), MagicMock(group_name="SCUD-2")]
+    site.position = Point(0, 0, None)  # type: ignore[arg-type]
+    site.control_point = MagicMock(captured=True)  # the enemy side
+    target_cp = MagicMock()
+    target_cp.captured = False  # opposite side -> the SCUD's target city
+    target_cp.position = Point(20000, 0, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(site))
+    game.theater.controlpoints = [target_cp]
 
-    taskings = _build(game)
+    tasking = _build(game)[0]
 
-    assert len(taskings) == 1
-    assert taskings[0].variant == "missile"
-    assert taskings[0].target_groups == ("SCUD-1", "SCUD-2")
+    assert tasking.variant == "missile"
+    assert tasking.target_groups == ("SCUD-1", "SCUD-2")
+    # Races a capped distance toward the target city, and fires at that city.
+    assert tasking.dest_x > 0  # moved toward the target (+x / north)
+    assert tasking.flee_speed_ms > 0
+    assert (tasking.fire_target_x, tasking.fire_target_y) == (20000, 0)
 
 
 def test_empty_without_scar_flights() -> None:
@@ -210,6 +219,8 @@ def test_populate_scar_lua_emits_spawn_fields() -> None:
 def test_populate_scar_lua_emits_missile_groups() -> None:
     site = MagicMock(spec=MissileSiteGroundObject)
     site.groups = [MagicMock(group_name="SCUD-1")]
+    site.position = Point(0, 0, None)  # type: ignore[arg-type]
+    site.control_point = MagicMock(captured=True)
     taskings = _build(_game_with(_coalition_with_target(site)))
 
     root = LuaData("dcsRetribution")

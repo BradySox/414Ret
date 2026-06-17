@@ -134,6 +134,12 @@ class StateData:
     #: plugin is disabled.
     tars_recon_captures: List[str]
 
+    #: Per-SCAR-area outcome reported by the SCAR scenario bridge, keyed by
+    #: tasking id -> status ("success"/"failed"/...). Empty when the SCAR plugin
+    #: is disabled or no SCAR flight was planned. Skeleton: logged only, no
+    #: campaign effect yet (scoring/consequence is a later increment).
+    scar_results: dict[str, str]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -197,6 +203,25 @@ class StateData:
 
         tars_recon_captures = parse_tars_captures(data.get("tars_recon_captures", []))
 
+        def parse_scar_results(raw: Any) -> dict[str, str]:
+            # The SCAR bridge writes scar_results[taskingId] = {status=...}. The
+            # Lua JSON encoder serializes it as a dict (or [] when empty). Pull
+            # taskingId -> status defensively, tolerating either a {status=...}
+            # table or a bare status string per entry.
+            if not isinstance(raw, dict):
+                return {}
+            results: dict[str, str] = {}
+            for key, value in raw.items():
+                if isinstance(value, dict):
+                    status = value.get("status")
+                    if isinstance(status, str) and status:
+                        results[str(key)] = status
+                elif isinstance(value, str) and value:
+                    results[str(key)] = value
+            return results
+
+        scar_results = parse_scar_results(data.get("scar_results", {}))
+
         return cls(
             mission_ended=data.get("mission_ended", False),
             killed_aircraft=killed_aircraft,
@@ -205,6 +230,7 @@ class StateData:
             base_capture_events=data.get("base_capture_events", []),
             intercept_survivors=intercept_survivors,
             tars_recon_captures=tars_recon_captures,
+            scar_results=scar_results,
         )
 
 

@@ -47,6 +47,27 @@ The `(verify)` items are checked against this fork. Findings:
 Still genuinely open (need a maintainer/SME call, not a code lookup): §10 Q1 where the
 mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-escort request.
 
+### 0.1 Implemented so far (2026-06-17)
+
+- **Phase-1 planner foundation + selectability** (CI-validated): `FlightType.SCAR`,
+  `ScarFlightPlan` (cloned from Armed Recon), builder dispatch, `configure_scar`,
+  fixed-wing-only capability enrichment, `mission_types` exposure, CAS loadout fallback,
+  package primary-task order. SCAR is player-selectable; the auto-planner never frags it
+  (no commander task class) — auto-fragging stays Phase 3.
+- **Integration bridge skeleton** (the §8a recommendation — Python CI-validated, Lua needs
+  an in-game pass): `ScarTasking` model + `build_scar_taskings()`/`populate_scar_lua()`
+  (`game/missiongenerator/scarluadata.py`), emitted as `dcsRetribution.Scar` and injected
+  via `_inject_scar_script()` (gated on the `scar` plugin + a planned SCAR flight). The
+  `scar` plugin (`resources/plugins/scar/`, default ON) spawns ONE placeholder HVT (a
+  vanilla truck) per area, routes it to a no-strike destination, and reports pass (HVT
+  killed) / fail (HVT reaches destination) via the global `scar_results`. That rides the
+  proven TARS channel: `dcs_retribution.lua write_state` → `StateData.scar_results` →
+  `MissionResultsProcessor.commit_scar_results` (log-only for now). Tests:
+  `tests/test_scar_bridge.py`.
+- **Deliberately NOT yet built** (next increments): the real HVT signature convoy + decoys
+  + clutter + threat laydown (replaces the single placeholder truck); scoring + the mis-ID
+  penalty (§10 Q1) and campaign consequence; briefing/marker cueing; Phase-3 auto-planning.
+
 ---
 
 ## 1. Scope

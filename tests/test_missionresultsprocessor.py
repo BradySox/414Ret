@@ -35,6 +35,7 @@ COMMIT_STEPS = [
     "commit_damaged_runways",
     "commit_captures",
     "commit_front_line_battle_impact",
+    "commit_scar_results",
     "record_carcasses",
 ]
 

@@ -59,6 +59,8 @@ class MissionResultsProcessor:
                 self.commit_front_line_battle_impact(debriefing, events)
             with logged_duration("commit_captures"):
                 self.commit_captures(debriefing, events)
+            with logged_duration("commit_scar_results"):
+                self.commit_scar_results(debriefing)
             with logged_duration("record_carcasses"):
                 self.record_carcasses(debriefing)
 
@@ -178,6 +180,19 @@ class MissionResultsProcessor:
                         f"Found killed {unit_type} in {airlift_name} but that airlift "
                         "has none available."
                     )
+
+    @staticmethod
+    def commit_scar_results(debriefing: Debriefing) -> None:
+        """Ingest SCAR per-area outcomes (skeleton: log only).
+
+        Proves the scenario bridge closes the loop end-to-end: config out ->
+        Lua pass/fail -> result back into campaign processing. Scoring and
+        campaign consequence (kill credit, mis-ID penalty, intel carryover)
+        are deliberately deferred to a later increment, so this is additive and
+        a no-op when the SCAR plugin is off.
+        """
+        for tasking_id, status in debriefing.state_data.scar_results.items():
+            logging.info(f"SCAR area {tasking_id}: {status}")
 
     def commit_ground_losses(
         self, debriefing: Debriefing, events: GameUpdateEvents

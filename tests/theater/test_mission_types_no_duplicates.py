@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
@@ -43,6 +43,18 @@ def test_mission_types_have_no_duplicates(
     target.is_friendly = MagicMock(return_value=friendly)
     target.total_aircraft_parking = MagicMock(return_value=1)
 
-    types = list(target.mission_types(MagicMock()))
+    # 414th recon feature: TheaterGroundObject.mission_types() also consults the
+    # warrants_recon property, whose building/IADS overrides read category/units
+    # that the bare object (no __init__) lacks. Force it inert for the duplicate
+    # check — it only gates TARPS, which is yielded at most once anyway. create=True
+    # keeps this harmless for ControlPoint targets that never read the property.
+    with patch.object(
+        cls,
+        "warrants_recon",
+        new_callable=PropertyMock,
+        return_value=False,
+        create=True,
+    ):
+        types = list(target.mission_types(MagicMock()))
 
     assert len(types) == len(set(types)), f"{cls.__name__}: duplicates in {types}"

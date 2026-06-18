@@ -110,6 +110,8 @@ def _processor(*, setting_on: bool) -> tuple[MissionResultsProcessor, Any]:
     game = MagicMock()
     game.settings.scar_command_post_intel = setting_on
     game.blue.captured_commander = False
+    # _consume_sof_teams iterates controlpoints; default to none (no SOF to spend).
+    game.theater.controlpoints = []
     return MissionResultsProcessor(game), game
 
 
@@ -120,6 +122,27 @@ def test_capture_reveals_command_posts() -> None:
     )
     processor.commit_scar_results(cast(Any, debriefing))
     assert game.blue.captured_commander is True
+
+
+def test_capture_consumes_bought_sof_teams() -> None:
+    # Phase 2c: each capture spends one bought SOF team from a blue base.
+    from game.dcs.groundunittype import GroundUnitType
+    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+
+    processor, game = _processor(setting_on=True)
+    unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
+    cp = MagicMock()
+    cp.captured.is_blue = True
+    cp.base.armor = {unit: 2}
+    game.theater.controlpoints = [cp]
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(
+            scar_results={"scar-1": "captured", "scar-2": "captured"}
+        )
+    )
+    processor.commit_scar_results(cast(Any, debriefing))
+    # Two captures -> two teams debited from the base in one call.
+    cp.base.commit_losses.assert_called_once_with({unit: 2})
 
 
 def test_non_capture_outcomes_do_not_reveal() -> None:

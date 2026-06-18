@@ -237,3 +237,10 @@ So no faction mutation and no procurement guard are needed. Implementation (all 
 
 Units defined + verified (commit 81bc1fb69): `SOF Team (BLUFOR)` (Soldier M4 GRG) / `(OPFOR)`
 (Infantry AK), price 8, spawn_weight 0.
+
+**2c-1 BUILT (gated OFF; Lua needs an in-game pass).** All four steps above are wired:
+`_sof_asset` (pool count), the `build_scar_taskings` gate + per-turn cap, `sofUnitType`
+emission + Lua `spawn_sof` using it, and `_consume_sof_teams` on capture. Tests in
+`test_scar_bridge.py` (pool gate / cap / unit-type) + `test_scar_command_post_fog.py`
+(capture consumes a team). **Remaining:** 2c-2 air-assault delivery (`FlightType.SOF`)
+replacing the scripted drop; 2c-3 CSAR recovery.

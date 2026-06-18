@@ -191,14 +191,38 @@ class MissionResultsProcessor:
         capture sets the human (blue) side's flag, revealing ALL enemy command
         posts permanently. Additive — a no-op when the plugin/setting is off.
         """
-        captured = False
+        captures = 0
         for tasking_id, status in debriefing.state_data.scar_results.items():
             logging.info(f"SCAR area {tasking_id}: {status}")
             if status == "captured":
-                captured = True
-        if captured and self.game.settings.scar_command_post_intel:
+                captures += 1
+        if captures and self.game.settings.scar_command_post_intel:
             self.game.blue.captured_commander = True
+            self._consume_sof_teams(captures)
             logging.info("SCAR: commander captured — enemy command posts revealed.")
+
+    def _consume_sof_teams(self, count: int) -> None:
+        """Spend `count` bought SOF teams (Phase 2c) from blue bases — one per
+        capture. No-op if the SOF unit type or inventory isn't present."""
+        from game.dcs.groundunittype import GroundUnitType
+        from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+
+        try:
+            unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
+        except KeyError:
+            return
+        remaining = count
+        for cp in self.game.theater.controlpoints:
+            if remaining <= 0:
+                break
+            if not cp.captured.is_blue:
+                continue
+            have = cp.base.armor.get(unit, 0)
+            if have <= 0:
+                continue
+            take = min(have, remaining)
+            cp.base.commit_losses({unit: take})
+            remaining -= take
 
     def commit_ground_losses(
         self, debriefing: Debriefing, events: GameUpdateEvents

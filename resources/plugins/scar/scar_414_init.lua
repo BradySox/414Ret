@@ -268,10 +268,15 @@ local function spawn_sof(area)
         return
     end
     local group_name = "SCAR-" .. tostring(area.id) .. "-sof"
+    -- The bought SOF unit's DCS type (Phase 2c); fall back to the default model.
+    local unit_type = area.sofUnitType
+    if unit_type == nil or unit_type == "" then
+        unit_type = SCAR_SOF_UNIT
+    end
     local units = {}
     for i = 1, SCAR_SOF_COUNT do
         units[i] = {
-            ["type"] = SCAR_SOF_UNIT,
+            ["type"] = unit_type,
             ["name"] = group_name .. "-" .. i,
             ["x"] = area.sofX + (i - 1) * 5,
             ["y"] = area.sofY,
@@ -540,6 +545,7 @@ local function activate_spawn_area(tasking, window)
                 sofY = scar_num(tasking.sofY),
                 sofRadius = scar_num(tasking.sofRadius),
                 sofCountryId = scar_num(tasking.sofCountryId),
+                sofUnitType = tostring(tasking.sofUnitType or ""),
             }
         end
     end
@@ -686,6 +692,7 @@ local function activate_armor_area(tasking, go_live, window)
         sofY = scar_num(tasking.sofY),
         sofRadius = scar_num(tasking.sofRadius),
         sofCountryId = scar_num(tasking.sofCountryId),
+        sofUnitType = tostring(tasking.sofUnitType or ""),
     }
     table.insert(scar_areas, area)
     brief_armor(area)

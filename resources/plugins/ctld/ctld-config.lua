@@ -42,7 +42,8 @@ if dcsRetribution then
             -- Sling loadings settings
             ctld.enableCrates = true
             ctld.slingLoad = dcsRetribution.plugins.ctld.slingload
-            ctld.staticBugFix = not dcsRetribution.plugins.ctld.slingload
+            -- ctld.staticBugFix was removed in CTLD 1.6.1 (the static-spawn bug it
+            -- worked around is fixed upstream), so it is no longer set here.
 
             --- Special unitLoad Settings as proposed in #2174
             ctld.maximumDistanceLogistic = 300

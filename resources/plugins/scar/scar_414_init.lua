@@ -328,16 +328,22 @@ local function scar_check()
     for _, area in ipairs(scar_areas) do
         if not area.done then
             local timed_out = area.deadline and timer.getTime() >= area.deadline
+            -- Bound real groups (armor/missile) exist from mission start but are
+            -- static until they start moving (go_live - lead). Don't run the
+            -- arrival/fail check before then, or a target that spawns near its
+            -- dest fails before the player's window even opens. (The spawn variant
+            -- has no liveAt -- its HVT only exists once spawned at go_live.)
+            local live = (area.liveAt == nil) or (timer.getTime() >= area.liveAt)
             if all_groups_dead(area) then
                 mark_result(area, "success")
             elseif area.variant == "missile" then
                 -- Reached its firing position (or out of time): it launches.
-                if hvt_in_fail_zone(area) or timed_out then
+                if (live and hvt_in_fail_zone(area)) or timed_out then
                     launch_missile(area)
                     mark_result(area, "launched")
                 end
             else
-                if hvt_in_fail_zone(area) then
+                if live and hvt_in_fail_zone(area) then
                     -- Reached the city: the command vehicle escapes into it.
                     despawn_command(area)
                     mark_result(area, "failed")
@@ -477,6 +483,8 @@ local function activate_missile_area(tasking, go_live, window)
         fireTargetX = scar_num(tasking.fireTargetX, 0),
         fireTargetY = scar_num(tasking.fireTargetY, 0),
         deadline = timer.getTime() + go_live + window,
+        -- Static until it starts racing; only then can it "arrive" and fire.
+        liveAt = timer.getTime() + math.max(0, go_live - SCAR_START_LEAD),
     }
     for _, name in ipairs(groups) do
         missile_group_index[name] = area
@@ -571,6 +579,8 @@ local function activate_armor_area(tasking, go_live, window)
         radius = scar_num(tasking.failZoneRadius, 2000),
         commandType = "",
         deadline = timer.getTime() + go_live + window,
+        -- Static until it bugs out; only then can it "reach" the city = fail.
+        liveAt = timer.getTime() + math.max(0, go_live - SCAR_START_LEAD),
     }
     table.insert(scar_areas, area)
     brief_armor(area)

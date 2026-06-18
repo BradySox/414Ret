@@ -384,6 +384,24 @@ class WaypointBuilder:
     def oca_strike_area(self, target: MissionTarget) -> FlightWaypoint:
         return self._target_area(f"ATTACK {target.name}", target, flyover=True)
 
+    def recon_area(self, target: MissionTarget) -> FlightWaypoint:
+        # Photo-recon overflight (TARPS): force the AI to actually cross the
+        # target so its sensors get a look. flyover=True keeps the waypoint
+        # AI-visible (not player-only), so the bird flies over the target instead
+        # of turning back at the ingress point.
+        alt = self.get_combat_altitude
+        alt = self._adjust_altitude_for_clouds(alt)
+        alt_type: AltitudeReference = "BARO"
+        if self.is_helo or alt.feet <= AGL_TRANSITION_ALT:
+            alt_type = "RADIO"
+        return self._target_area(
+            f"RECON {target.name}",
+            target,
+            altitude=alt,
+            alt_type=alt_type,
+            flyover=True,
+        )
+
     def assault_area(self, target: MissionTarget) -> FlightWaypoint:
         """A destination waypoint used by air-assault ground troops.
 

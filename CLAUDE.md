@@ -51,10 +51,25 @@ The old 414th ramp-scramble system is legacy only and should not be extended.
   `untasked_aircraft` is now `owned_aircraft - intercept_reserve`, so the auto-planner
   leaves those aircraft available for QRA instead of fragging them.
 - Reserve helpers: `game/squadrons/intercept_reserve.py` owns clamping, default seeding,
-  and live-campaign repropagation when coalition doctrine defaults change.
+  live-campaign repropagation when coalition doctrine defaults change, and
+  `qra_scramble_grouping()`.
+- Distributed-QRA scramble size: `qra_scramble_grouping()` rolls **1 ship 75% / 2 ships
+  25%** (`QRA_SINGLE_SHIP_PROBABILITY`) per fielded QRA squadron, carried on each
+  `InterceptEntry.grouping` and applied as `SetSquadronGrouping` in `intercept-config.lua`
+  (was a hardcoded 2-ship). Intent: many alert bases each putting up a *small* response so
+  a raid draws interceptors from several directions, rather than one base scrambling a big
+  formation. MOOSE grouping is per-squadron (fixed for the mission, re-rolled each turn),
+  so the per-launch single/pair mix emerges across the theater's alert bases; true
+  per-scramble variation would need a dispatcher GCI hook (deferred). Lua falls back to 2
+  if an old save omits the field. Tests: `tests/squadrons/test_intercept_reserve.py`.
 - Campaign doctrine: `game/settings/settings.py` exposes
   `ownfor_default_qra_reserve`, `opfor_default_qra_reserve`,
   `qra_gci_max_radius_nm`, `qra_engagement_range_nm`, and `qra_comms_enabled`.
+  Defaults are a **base-defense** posture (lowered after playtest feedback that QRA
+  screened forward over the FLOT): `qra_gci_max_radius_nm` 100→**60** (scramble only when
+  a raid closes within 60 NM) and `qra_engagement_range_nm` 60→**38** (interceptors chase
+  less far). The Lua fallbacks in `intercept-config.lua` match. These are live doctrine
+  settings, so existing campaigns can re-tune them on the Campaign Doctrine page.
 - Mission generation: `game/missiongenerator/aircraft/aircraftgenerator.py`
   `spawn_intercept_templates()` emits late-activated parked template groups and
   appends `mission_data.intercept_entries`.
@@ -121,10 +136,25 @@ TARPS-capable squadron is available.
 
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
   `configure_tarps()` — single overflight waypoint ~5 min behind the strikers.
+- Flight plan: `game/ato/flightplans/tarps.py` uses `FlightWaypointType.INGRESS_RECON`
+  (NOT `INGRESS_STRIKE`) so the weaponless recon bird gets **no Bombing tasks** on its
+  ingress — `INGRESS_STRIKE` dumped one Bombing task per target-group unit onto the
+  ingress, making the AI fly an aborting attack pattern and never cleanly overfly.
+  `INGRESS_RECON` → `ReconIngressBuilder` (no attack tasks,
+  `game/missiongenerator/aircraft/waypoints/reconingress.py`); the target waypoint is a
+  **flyover** (`WaypointBuilder.recon_area`, `flyover=True`) so the AI actually crosses
+  the target instead of turning back at the IP. (Player-only target waypoints are
+  filtered for AI, so without the flyover the AI never reaches the target.)
 - Auto-planner: `game/commander/packagefulfiller.py` `_try_add_tarps_recon()` with
   explicit debug logging for every skip reason.
 - Aircraft: `TARPS: 700` task priority in `resources/units/aircraft/F-14*.yaml`;
-  payloads in `resources/customized_payloads/F-14*.lua`.
+  payloads in `resources/customized_payloads/F-14*.lua`. The `Retribution TARPS` payload
+  carries `{F14-TARPS}` on station 6 (station 5 clean) plus a per-variant self-defense
+  fit, verified from the `Aerial-1/2/3` groups in `Tues test 1.miz`: F-14B = AIM-54A
+  (Mk60 L / Mk47 R), F-14A-135-GR-Early = AIM-54A (Mk47 L/R), F-14A-135-GR = AIM-7M, all
+  with AIM-9L wingtips. **CLSIDs must be current** — stale ones (`{SHOULDER AIM-7MH}`,
+  `{LAU-138 wtip - AIM-9M}`) made DCS reject the whole loadout on load and silently drop
+  the TARPS pod with it. The vanilla `F-14A.lua` still uses the old GUID-form loadout.
 - Tests: `tests/test_tarps_recon.py`.
 
 **Visibility / recon fog** — one viewer-aware layer drives two player-facing fog rules.
@@ -219,8 +249,37 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   `barcap_overlap_time == 0` this reproduces the old back-to-back schedule exactly.
 - Forward CAP line: `game/commander/objectivefinder.py` `vulnerable_control_points()`
   (checks `cp.has_active_frontline`; also fixes an inverted aggressiveness comparison).
+- Threat-weighted BARCAP volume (the `barcap-threat-weighting` branch's headline):
+  contested sectors get more BARCAP waves, **additive only** so coverage never regresses
+  (an earlier up-and-down rework collapsed quiet bases to one wave and was reverted —
+  `c8b1b8c32`). `ObjectiveFinder.air_threat_score(cp)` scores enemy air threat = sum over
+  operational enemy airfields within `airbase_threat_range` of `proximity * present
+  fixed-wing aircraft` (coarse on purpose: all fixed-wing, not just A2A; cheap +
+  save-stable). `theaterstate.py` `threat_weighted_barcap_rounds()` = `baseline +
+  round((score/max_score) * baseline * (BARCAP_THREAT_CEILING-1))`, ceiling 2x; a
+  zero-threat CP gets exactly the legacy duration-derived `barcap_rounds`, fleet keeps its
+  2x. `TheaterState.from_game` wires it into `barcaps_needed`. **Volume only** — threat-
+  weighted *orbit placement* is a deferred separate increment, not yet done. Design notes:
+  `docs/dev/design/414th-air-defense-planning-notes.md`. Tests:
+  `tests/test_barcap_threat_weighting.py`.
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
   10->15 nm, `armed_recon_engagement_range_distance` 5->10 nm).
+- Route around the front line: `game/threatzones.py` adds the **active front** as a
+  navmesh routing hazard. `ThreatZones._front_line_threat_zone()` buffers a capsule along
+  each active FrontLine (perpendicular to the blue->red axis, `FRONT_LINE_THREAT_BUFFER`
+  = 10 NM) and folds it into `self.all` **only** — the geometry the navmesh + generic
+  `threatened()`/path checks use. The SAM (`air_defenses`) and CAP (`airbases`) views stay
+  clean, so air-defense/barcap planning is untouched. The navmesh penalizes 3x rather than
+  forbids, so transiting flights cross the FLOT perpendicularly at the least-bad point
+  instead of loitering; CAS/BAI target the front and reach it on the un-routed ingress leg,
+  so they're unaffected. Added to every faction's projected threat (each coalition's
+  navmesh is built from its opponent's zone), so both sides avoid it. Tests:
+  `tests/test_front_line_threat_zone.py`.
+- Front-line units no longer stack: `game/missiongenerator/flotgenerator.py`
+  `get_valid_position_for_group()` steps perpendicular from the (valid) front toward the
+  requested depth instead of snapping laterally via `find_ground_position()` — the old
+  lateral snap collapsed every off-map group onto the same patch, piling units on one tile
+  (worst for deep roles: artillery/logistics at 16-20 km).
 
 ### 7. Auto-hide mobile SAMs on MFD
 - Task-level (`game/armedforces/forcegroup.py`): `hide_on_mfd` field,
@@ -377,7 +436,11 @@ feeds the BDA fog-of-war the exact enemy units a surviving recon pass photograph
 - Plugin: `resources/plugins/tars/` (`TARS.lua` vendored verbatim from MOOSE develop —
   NOT in the bundled Moose.lua, but API-compatible with it; `tars_414_init.lua`;
   `plugin.json`, default ON; options: scoring, scoreValue, filmLimit, restrictToNamed,
-  enforceLoadout, srs, srsPort).
+  enforceLoadout, srs, srsPort). Option defaults (playtest-aligned 2026-06-17):
+  `scoring` OFF, `restrictToNamed` ON, `srs` ON, `filmLimit` 25, `scoreValue` 100;
+  `enforceLoadout` stays OFF on purpose (ON falls back to the stock `allowedAmmo`
+  whitelist + a best-effort AAM list and can leave the F10 film menu locked — see the
+  loadout-whitelist note below).
 - Injection: NOT a work order. `_inject_tars_script()` in
   `game/missiongenerator/luagenerator.py` mirrors the TIC pattern — appended after
   `inject_plugins()` so `dcsRetribution.plugins.tars` exists, then DoScriptFile
@@ -418,8 +481,38 @@ friendly land airbases.
   set generous `SetLimitLanding`/`SetLimitTaxi` (default 99) + `SetRadioOnlyIfPlayers` so
   AI flow stays pass-through. PRIMARY in-game check: AI QRA/CAP launches from these bases
   are unaffected.
+- Orphan-parking reconciliation (`reconcile_orphan_parking()` in the init, after
+  `fc:Start()`): MOOSE `_InitParkingSpots()` IDs a busy spot's occupant with
+  `FindClosestUnit`, which only sees UNITs. Retribution parks STATIC objects on some ramp
+  spots (Kutaisi), so those spots are left `Status==nil` ("NOT FREE but no unit could be
+  found there") and the status loop then spams "Number of parking spots does not match!"
+  every cycle all mission (138x in one playtest). The fix marks each orphan spot OCCUPIED
+  (`"RetributionStatic"`) so the counts balance and the static-held spots stay out of the
+  taxi pool. Cosmetic-only: AI flow was already unaffected. `_InitParkingSpots` runs
+  synchronously inside `:Start()`, so `fc.parking` is populated when the pass runs.
 - Tests: `tests/test_flightcontrol_emit.py`. Default ON; Lua still needs an in-game pass
   (not runnable in CI).
+
+### 14. Plugin Options UI — section descriptions + label/default pass
+A polish pass over the **LUA Plugins Options** page so every plugin explains itself.
+- New `descriptionInUI` field on `plugin.json` (optional, top-level). Parsed in
+  `game/plugins/luaplugin.py` (`LuaPluginDefinition.description` +
+  `LuaPlugin.description`) and rendered as an italic, word-wrapped line spanning the
+  group-box header in `qt_ui/windows/settings/plugins.py` (`PluginOptionsBox` now drives
+  its own `row` counter so the description sits above the option grid). Backward
+  compatible: a plugin without the field renders no description. Documented in
+  `resources/plugins/_doc/plugins_readme.md`.
+- Section descriptions + clearer option labels added to all 15 options-bearing
+  `plugin.json` files (414th + upstream): typo fixes (`Scipt`→`Script`,
+  `Multipler`→`Multiplier`, BigEye's unclosed paren), unit/casing consistency
+  (`NM`, `minutes`, `seconds`, `MHz`), and sentence-case wording. **Mnemonics and
+  defaults were untouched except** the TARPS defaults below — so saved settings are
+  unaffected (labels/descriptions are display-only; mnemonics are the settings keys).
+- TARPS defaults re-seeded to match playtest usage (new campaigns only):
+  `scoring` true→false, `restrictToNamed` false→true, `srs` false→true. See the TARS
+  section above.
+- Note: `AGENTS.md` is a stale partial handoff (predates TARS/Flight Control and this
+  section) and was not updated — `CLAUDE.md` is the authoritative engineering doc.
 
 ---
 

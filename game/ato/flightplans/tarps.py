@@ -42,8 +42,11 @@ class Builder(FormationAttackBuilder[TarpsFlightPlan, FormationAttackLayout]):
         # A photo-recon pass is a single overflight of the target area, not an
         # attack run weaving over every individual unit. Passing no per-unit
         # targets makes the builder emit one TARGET-area waypoint at the target
-        # center instead of one waypoint per strike target.
-        return self._build(FlightWaypointType.INGRESS_STRIKE, None)
+        # center instead of one waypoint per strike target. INGRESS_RECON (rather
+        # than INGRESS_STRIKE) keeps the ingress point free of Bombing tasks the
+        # weaponless recon bird could never fulfil, and the target-area waypoint is
+        # a flyover (recon_area) so the AI actually crosses the target.
+        return self._build(FlightWaypointType.INGRESS_RECON, None)
 
     def build(self, dump_debug_info: bool = False) -> TarpsFlightPlan:
         return TarpsFlightPlan(self.flight, self.layout())

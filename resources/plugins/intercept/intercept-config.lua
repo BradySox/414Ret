@@ -225,8 +225,8 @@ local function build_dispatcher(coalition_name, records)
 
     -- Global QRA tuning, identical across this coalition's records (see header).
     local comms_enabled = records[1].commsEnabled ~= "false"
-    local scramble_radius_nm = tonumber(records[1].gciMaxRadiusNm) or 100
-    local engagement_range_nm = tonumber(records[1].engagementRangeNm) or 60
+    local scramble_radius_nm = tonumber(records[1].gciMaxRadiusNm) or 60
+    local engagement_range_nm = tonumber(records[1].engagementRangeNm) or 38
 
     -- Always spawn a hidden backstop EWR at each defended base so there is a
     -- guaranteed detection source even when the IADS network is destroyed.
@@ -303,7 +303,10 @@ local function build_dispatcher(coalition_name, records)
             local sq = rec.squadronName .. " #" .. string.sub(tostring(rec.squadronId), 1, 8)
             dispatcher:SetSquadron(sq, rec.airbaseName, { rec.templatePrefix }, tonumber(rec.resourceCount))
             dispatcher:SetSquadronGci(sq, 900, 1200)
-            dispatcher:SetSquadronGrouping(sq, 2)
+            -- Aircraft launched per scramble. The generator rolls this per
+            -- squadron toward a distributed-QRA posture (mostly singles, some
+            -- pairs); fall back to a 2-ship if an older save omits the field.
+            dispatcher:SetSquadronGrouping(sq, tonumber(rec.grouping) or 2)
             -- NOTE: deliberately NOT SetSquadronVisible — see header. Visible mode
             -- forces a cold pre-park (F-16 never taxis), clamps reserve to parking
             -- spots, and forces Grouping=1. Non-visible = in-air fresh-spawn on scramble.

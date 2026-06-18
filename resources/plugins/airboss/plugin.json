@@ -1,14 +1,15 @@
 {
     "nameInUI": "Moose Airboss",
+    "descriptionInUI": "Carrier air-traffic control: LSO and Marshal voice comms, the recovery window schedule, and an optional rescue helo / recovery tanker for carrier operations.",
     "defaultValue": true,
-    "specificOptions": [        
+    "specificOptions": [
         {
             "nameInUI": "Enable Airboss for LHA",
             "mnemonic": "enableForLHA",
             "defaultValue": true
         },
         {
-            "nameInUI": "Enable Airboss Recovery Tanker",
+            "nameInUI": "Enable recovery tanker",
             "mnemonic": "enableTanker",
             "defaultValue": false
         },
@@ -18,52 +19,52 @@
             "defaultValue": false
         },
         {
-            "nameInUI": "Enable Airboss Rescue Helo (Required for MSRS)",
+            "nameInUI": "Enable rescue helo (required for MSRS)",
             "mnemonic": "enableRescueHelo",
             "defaultValue": true
         },
         {
-            "nameInUI": "Rescue Helo Max Distance (nm)",
+            "nameInUI": "Rescue helo max distance (NM)",
             "mnemonic": "rescueHeloDistance",
             "minimumValue": 5,
             "maximumValue": 120,
             "defaultValue": 50
         },
         {
-            "nameInUI": "Use UH-60L Mod for Rescue Helo",
+            "nameInUI": "Use UH-60L mod for rescue helo",
             "mnemonic": "useUH60mod",
             "defaultValue": false
         },
         {
-            "nameInUI": "Rescue Duration (mins)",
+            "nameInUI": "Rescue duration (minutes)",
             "mnemonic": "rescueDuration",
             "minimumValue": 1,
             "maximumValue": 30,
             "defaultValue": 3
         },
         {
-            "nameInUI": "Rescue Zone Radius (nm)",
+            "nameInUI": "Rescue zone radius (NM)",
             "mnemonic": "rescueZoneRadius",
             "minimumValue": 5,
             "maximumValue": 120,
             "defaultValue": 15
         },
         {
-            "nameInUI": "Recovery Window Start Time (mins)",
+            "nameInUI": "Recovery window start time (minutes)",
             "mnemonic": "windowStartOption",
             "minimumValue": 10,
             "maximumValue": 120,
             "defaultValue": 30
         },
         {
-            "nameInUI": "Recovery Window Length (mins)",
+            "nameInUI": "Recovery window length (minutes)",
             "mnemonic": "windowLengthOption",
             "minimumValue": 15,
             "maximumValue": 240,
             "defaultValue": 60
         },
         {
-            "nameInUI": "Force Despawn AI Units after n minutes",
+            "nameInUI": "Force-despawn AI units this many minutes after landing",
             "mnemonic": "despawnMinutesAfterLanding",
             "minimumValue": 0,
             "maximumValue": 30,

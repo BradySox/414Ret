@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import random
+
 from game.squadrons.intercept_reserve import (
+    QRA_SINGLE_SHIP_PROBABILITY,
     clamp_intercept_reserve,
     qra_resource_count,
+    qra_scramble_grouping,
     repropagated_intercept_reserve,
     seeded_intercept_reserve,
 )
@@ -101,3 +105,31 @@ def test_repropagate_new_value_is_clamped_to_max_size() -> None:
 
 def test_repropagate_no_op_when_old_equals_new() -> None:
     assert repropagated_intercept_reserve(True, 2, 2, 2, 12) == 2
+
+
+def test_qra_grouping_only_ever_one_or_two() -> None:
+    rng = random.Random(1234)
+    assert all(qra_scramble_grouping(rng) in (1, 2) for _ in range(500))
+
+
+def test_qra_grouping_low_roll_is_single_ship() -> None:
+    class _Roll:
+        def __init__(self, value: float) -> None:
+            self._value = value
+
+        def random(self) -> float:
+            return self._value
+
+    # Just below the threshold -> single ship; at/above -> pair.
+    assert qra_scramble_grouping(_Roll(0.0)) == 1  # type: ignore[arg-type]
+    assert qra_scramble_grouping(_Roll(QRA_SINGLE_SHIP_PROBABILITY - 0.01)) == 1  # type: ignore[arg-type]
+    assert qra_scramble_grouping(_Roll(QRA_SINGLE_SHIP_PROBABILITY)) == 2  # type: ignore[arg-type]
+    assert qra_scramble_grouping(_Roll(0.99)) == 2  # type: ignore[arg-type]
+
+
+def test_qra_grouping_distribution_is_roughly_three_to_one() -> None:
+    rng = random.Random(2026)
+    singles = sum(1 for _ in range(4000) if qra_scramble_grouping(rng) == 1)
+    fraction = singles / 4000
+    # ~0.75 single-ship; generous tolerance so the seed never flakes CI.
+    assert abs(fraction - QRA_SINGLE_SHIP_PROBABILITY) < 0.04

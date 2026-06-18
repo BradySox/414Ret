@@ -270,7 +270,7 @@ class Settings:
         "QRA GCI max scramble radius (NM)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=100,
+        default=60,
         min=1,
         max=400,
         detail=(
@@ -282,7 +282,7 @@ class Settings:
         "QRA interceptor engagement range (NM)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=60,
+        default=38,
         min=1,
         max=200,
         detail=(

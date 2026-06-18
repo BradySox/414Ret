@@ -27,6 +27,24 @@ if TYPE_CHECKING:
     from game import Game
 
 
+# Civilian background-traffic routing knobs (consumed by civilian_traffic.lua).
+# Kept here as named constants so they are easy to retune after an in-game pass.
+# KEEPOUT is the radius of the no-fly bubble dropped around each active front so
+# civilians never spawn in the fight; the MAXDIST caps turn RAT into short
+# regional hops (a field with no neighbour within the cap simply gets no traffic)
+# so straight-line routes stay clear of the contested band between the two sides.
+# Units: KEEPOUT in metres (matches DCS world coords / Point.x|y); the MAXDIST
+# caps in km (RAT:SetMaxDistance multiplies by 1000 internally).
+CIVILIAN_TRAFFIC_KEEPOUT_M = 75_000  # ~40 NM
+CIVILIAN_TRAFFIC_MAXDIST_FW_KM = 280  # fixed-wing regional hop cap (~150 NM)
+CIVILIAN_TRAFFIC_MAXDIST_HELO_KM = 130  # rotary city-hop cap (~70 NM)
+# The keep-out is intentionally SOFT: each neutral field inside the bubble is
+# usually dropped, but kept with this small probability, so once in a while a
+# civilian routes near/through the fight and the player has to watch for it. Low
+# by design -- the front stays mostly clear. 0 = hard keep-out, 1 = no keep-out.
+CIVILIAN_TRAFFIC_STRAY_CHANCE = 0.08
+
+
 class LuaGenerator:
     def __init__(
         self,
@@ -122,19 +140,43 @@ class LuaGenerator:
             )
             return
 
+        preamble = self._civilian_traffic_preamble()
+        trigger = TriggerStart(comment="Civilian background air traffic (RAT)")
+        trigger.add_action(DoScript(String(preamble)))
+        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
+        trigger.add_action(DoScriptFile(fileref))
+        self.mission.triggerrules.triggers.append(trigger)
+
+    def _civilian_traffic_preamble(self) -> str:
+        """Build the DO SCRIPT preamble the civilian_traffic.lua reads at runtime.
+
+        Emits four globals: the combat-airbase exclusion list (endpoints to skip),
+        the active-front contested points (a keep-out bubble so civilians never
+        spawn in the fight), and the per-layer regional route caps. Positions use
+        the pydcs convention (Point.x -> DCS x, Point.y -> DCS z); the Lua compares
+        them against ab:getPoint() (.x/.z).
+        """
         excl = sorted(
             cp.name
             for cp in self.game.theater.controlpoints
             if cp.dcs_airport is not None
         )
         excl_lua = "{" + ", ".join(f'"{b}"' for b in excl) + "}"
-        preamble = f"_CIVILIAN_TRAFFIC_EXCL = {excl_lua}\n"
 
-        trigger = TriggerStart(comment="Civilian background air traffic (RAT)")
-        trigger.add_action(DoScript(String(preamble)))
-        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
-        trigger.add_action(DoScriptFile(fileref))
-        self.mission.triggerrules.triggers.append(trigger)
+        fronts = [
+            f"{{x={front.position.x}, y={front.position.y}}}"
+            for front in self.game.theater.conflicts()
+        ]
+        fronts_lua = "{" + ", ".join(fronts) + "}"
+
+        return (
+            f"_CIVILIAN_TRAFFIC_EXCL = {excl_lua}\n"
+            f"_CIVILIAN_TRAFFIC_FRONTS = {fronts_lua}\n"
+            f"_CIVILIAN_TRAFFIC_KEEPOUT = {CIVILIAN_TRAFFIC_KEEPOUT_M}\n"
+            f"_CIVILIAN_TRAFFIC_MAXDIST_FW = {CIVILIAN_TRAFFIC_MAXDIST_FW_KM}\n"
+            f"_CIVILIAN_TRAFFIC_MAXDIST_HELO = {CIVILIAN_TRAFFIC_MAXDIST_HELO_KM}\n"
+            f"_CIVILIAN_TRAFFIC_STRAY_CHANCE = {CIVILIAN_TRAFFIC_STRAY_CHANCE}\n"
+        )
 
     @staticmethod
     def _plugin_enabled(identifier: str) -> bool:

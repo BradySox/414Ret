@@ -1,21 +1,22 @@
 {
     "nameInUI": "Tactical Air Recon (TARPS film + BDA)",
+    "descriptionInUI": "Players flying TARPS sorties photograph enemy targets via an F10 'film' menu; surviving recon passes feed confirmed battle-damage assessment back into the campaign fog-of-war.",
     "defaultValue": true,
     "specificOptions": [
         {
             "nameInUI": "Award MOOSE score per photographed target",
             "mnemonic": "scoring",
-            "defaultValue": true
+            "defaultValue": false
         },
         {
-            "nameInUI": "Score points per captured target",
+            "nameInUI": "Score awarded per captured target",
             "mnemonic": "scoreValue",
             "defaultValue": 100,
             "minimumValue": 0,
             "maximumValue": 1000
         },
         {
-            "nameInUI": "Max captures per sortie (film limit)",
+            "nameInUI": "Film limit (max captures per sortie)",
             "mnemonic": "filmLimit",
             "defaultValue": 25,
             "minimumValue": 1,
@@ -24,7 +25,7 @@
         {
             "nameInUI": "Restrict film menu to flights named 'TARPS'",
             "mnemonic": "restrictToNamed",
-            "defaultValue": false
+            "defaultValue": true
         },
         {
             "nameInUI": "Enforce recon loadout whitelist (block armed jets)",
@@ -32,9 +33,9 @@
             "defaultValue": false
         },
         {
-            "nameInUI": "Speak debrief over SRS (needs server-side SRS)",
+            "nameInUI": "Speak debrief over SRS (requires server-side SRS)",
             "mnemonic": "srs",
-            "defaultValue": false
+            "defaultValue": true
         },
         {
             "nameInUI": "SRS server port",

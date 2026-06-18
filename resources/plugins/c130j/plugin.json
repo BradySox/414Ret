@@ -1,52 +1,53 @@
 {
     "skipUI": false,
     "nameInUI": "C-130J Mission Systems",
+    "descriptionInUI": "Turns the player-flown C-130J into an EC-130H Compass Call (electronic-warfare jamming) and RC-130H Rivet Joint (ISR / ELINT) platform. The settings below tune the EW energy budget, jamming ranges, and ELINT tracking.",
     "defaultValue": true,
     "specificOptions": [
         {
-            "nameInUI": "EW capacity regen / sec",
+            "nameInUI": "EW capacity regenerated per second",
             "mnemonic": "regenPerSec",
             "defaultValue": 5,
             "minimumValue": 1,
             "maximumValue": 30
         },
         {
-            "nameInUI": "Area jam drain / sec",
+            "nameInUI": "Area-jam energy drain per second",
             "mnemonic": "drainAreaPerSec",
             "defaultValue": 3,
             "minimumValue": 1,
             "maximumValue": 20
         },
         {
-            "nameInUI": "Spot jam drain / sec",
+            "nameInUI": "Spot-jam energy drain per second",
             "mnemonic": "spotDrainPerSec",
             "defaultValue": 5,
             "minimumValue": 1,
             "maximumValue": 30
         },
         {
-            "nameInUI": "Max jam range (NM)",
+            "nameInUI": "Max area-jam range (NM)",
             "mnemonic": "jamMaxRange",
             "defaultValue": 200,
             "minimumValue": 25,
             "maximumValue": 270
         },
         {
-            "nameInUI": "Spot jam range (NM)",
+            "nameInUI": "Spot-jam range (NM)",
             "mnemonic": "spotMaxRange",
             "defaultValue": 100,
             "minimumValue": 25,
             "maximumValue": 220
         },
         {
-            "nameInUI": "Max ELINT tracks",
+            "nameInUI": "Max simultaneous ELINT tracks",
             "mnemonic": "maxTracks",
             "defaultValue": 3,
             "minimumValue": 1,
             "maximumValue": 10
         },
         {
-            "nameInUI": "Message display duration (sec)",
+            "nameInUI": "On-screen message duration (seconds)",
             "mnemonic": "msgDur",
             "defaultValue": 15,
             "minimumValue": 5,

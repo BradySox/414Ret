@@ -96,6 +96,15 @@ local function signature_text(convoy)
     return table.concat(parts, " + ")
 end
 
+-- Phase 2a: F10 cue for the SOF ambush point (only when a team is set).
+local function mark_sof(area, side)
+    if area.sofX and area.sofRadius and area.sofRadius > 0 then
+        pcall(trigger.action.markToCoalition, next_mark_id(),
+            "SOF team in position — the commander is CAPTURED if he reaches here",
+            { x = area.sofX, y = 0, z = area.sofY }, side, true)
+    end
+end
+
 local function brief_spawn(area, hvt_convoy)
     local side = scar_side(area)
     local sig = signature_text(hvt_convoy)
@@ -119,6 +128,7 @@ local function brief_spawn(area, hvt_convoy)
     -- Ingress axis (best-effort; non-fatal if the API rejects it).
     pcall(trigger.action.lineToAll, -1, next_mark_id(), start_pt, dest_pt,
         { 1, 0, 0, 0.6 }, 2, true)
+    mark_sof(area, side)
 end
 
 local function brief_missile(area)
@@ -180,6 +190,10 @@ end
 -- Spawn one convoy group (HVT / decoy / clutter) and route it spawn -> dest.
 -- Returns the spawned group name or nil.
 local SCAR_UNIT_SPACING = 25 -- metres between units in a convoy line
+-- Phase 2a SOF ambush: a stationary friendly team dropped on the HVT's flee route.
+-- If the un-killed command vehicle reaches them, the commander is CAPTURED.
+local SCAR_SOF_UNIT = "Soldier M4" -- dynAdd uses the model for any country
+local SCAR_SOF_COUNT = 4
 
 local function spawn_convoy(tasking_id, convoy, country_id, index)
     -- index keeps the group name unique (several convoys share a role).
@@ -247,6 +261,53 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
     return spawned.name or group_name
 end
 
+-- Phase 2a: drop a stationary friendly SOF team at the ambush point (area.sofX/Y).
+-- Spawned at go_live alongside the picture; capture is detected in scar_check.
+local function spawn_sof(area)
+    if not (area.sofX and area.sofRadius and area.sofRadius > 0) then
+        return
+    end
+    local group_name = "SCAR-" .. tostring(area.id) .. "-sof"
+    local units = {}
+    for i = 1, SCAR_SOF_COUNT do
+        units[i] = {
+            ["type"] = SCAR_SOF_UNIT,
+            ["name"] = group_name .. "-" .. i,
+            ["x"] = area.sofX + (i - 1) * 5,
+            ["y"] = area.sofY,
+            ["heading"] = 0,
+            ["skill"] = "Average",
+            ["playerCanDrive"] = false,
+        }
+    end
+    local group_data = {
+        ["visible"] = false,
+        ["hidden"] = false,
+        ["name"] = group_name,
+        ["task"] = {},
+        ["category"] = Group.Category.GROUND,
+        ["country"] = area.sofCountryId,
+        ["units"] = units,
+        ["route"] = {
+            ["points"] = {
+                [1] = {
+                    ["x"] = area.sofX,
+                    ["y"] = area.sofY,
+                    ["type"] = "Turning Point",
+                    ["action"] = "Off Road",
+                    ["speed"] = 0,
+                },
+            },
+        },
+    }
+    local ok, spawned = pcall(mist.dynAdd, group_data)
+    if not ok or not spawned then
+        scar_log("SOF mist.dynAdd failed for " .. group_name .. ": " .. tostring(spawned))
+        return
+    end
+    area.sofGroup = spawned.name or group_name
+end
+
 -- Spawn variant only: has the spawned HVT reached its no-strike destination?
 local function hvt_in_fail_zone(area)
     local group = Group.getByName(area.groups[1])
@@ -264,6 +325,28 @@ local function hvt_in_fail_zone(area)
     local dx = pos.x - area.destX
     local dz = pos.z - area.destY
     return (dx * dx + dz * dz) <= (area.radius * area.radius)
+end
+
+-- Phase 2a: has the HVT command vehicle (riding with the lead group) reached the
+-- waiting SOF team? Uses the same lead-unit position as the fail-zone check.
+local function hvt_in_sof_zone(area)
+    if not (area.sofX and area.sofRadius and area.sofRadius > 0) then
+        return false
+    end
+    local group = Group.getByName(area.groups[1])
+    if group == nil then
+        return false
+    end
+    local ok, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if not ok or unit == nil then
+        return false
+    end
+    local pos = unit:getPoint()
+    local dx = pos.x - area.sofX
+    local dz = pos.z - area.sofY
+    return (dx * dx + dz * dz) <= (area.sofRadius * area.sofRadius)
 end
 
 -- The HVT command vehicle slips into the city (despawns) on arrival. Scans every
@@ -345,7 +428,12 @@ local function scar_check()
                     mark_result(area, "launched")
                 end
             else
-                if live and hvt_in_fail_zone(area) then
+                if live and hvt_in_sof_zone(area) then
+                    -- SOF ambush (Phase 2a): the commander is taken alive before he
+                    -- reaches the city. Despawn the command vehicle as captured.
+                    despawn_command(area)
+                    mark_result(area, "captured")
+                elseif live and hvt_in_fail_zone(area) then
                     -- Reached the city: the command vehicle escapes into it.
                     despawn_command(area)
                     mark_result(area, "failed")
@@ -447,11 +535,17 @@ local function activate_spawn_area(tasking, window)
                 -- Started SCAR_START_LEAD early, so add it back: deadline still
                 -- lands at go_live + window (the player's window from TOT).
                 deadline = timer.getTime() + window + SCAR_START_LEAD,
+                -- Phase 2a SOF ambush (set only when scar_command_post_intel is on).
+                sofX = scar_num(tasking.sofX),
+                sofY = scar_num(tasking.sofY),
+                sofRadius = scar_num(tasking.sofRadius),
+                sofCountryId = scar_num(tasking.sofCountryId),
             }
         end
     end
     if hvt_area then
         table.insert(scar_areas, hvt_area)
+        spawn_sof(hvt_area)
         brief_spawn(hvt_area, hvt_convoy)
         scar_log("area " .. hvt_area.id .. " live; window " ..
             math.floor(window) .. "s")
@@ -559,6 +653,7 @@ local function brief_armor(area)
     pcall(trigger.action.markToCoalition, next_mark_id(),
         "SCAR no-strike zone — armor safe haven", { x = area.destX, y = 0, z = area.destY },
         side, true)
+    mark_sof(area, side)
 end
 
 -- Armor variant: bind the REAL armor group. It's static until go_live, then it
@@ -586,6 +681,11 @@ local function activate_armor_area(tasking, go_live, window)
         deadline = timer.getTime() + go_live + window,
         -- Static until it bugs out; only then can it "reach" the city = fail.
         liveAt = timer.getTime() + math.max(0, go_live - SCAR_START_LEAD),
+        -- Phase 2a SOF ambush (set only when scar_command_post_intel is on).
+        sofX = scar_num(tasking.sofX),
+        sofY = scar_num(tasking.sofY),
+        sofRadius = scar_num(tasking.sofRadius),
+        sofCountryId = scar_num(tasking.sofCountryId),
     }
     table.insert(scar_areas, area)
     brief_armor(area)
@@ -597,6 +697,8 @@ local function activate_armor_area(tasking, go_live, window)
         for _, name in ipairs(area.groups) do
             set_group_route(name, area.destX, area.destY, speed)
         end
+        -- ...the SOF team lands ahead on its route (Phase 2a ambush)...
+        spawn_sof(area)
         -- ...and the decoy/clutter columns spawn and flee alongside it (untracked),
         -- plus the command vehicle, which IS tracked: append it to area.groups so
         -- success requires killing it and it's found by despawn_command on arrival.

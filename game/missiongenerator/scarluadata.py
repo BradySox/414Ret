@@ -90,6 +90,15 @@ SCAR_HVT_SPEED_MAX_MS = 15.0
 SCAR_CITY_RADIUS_M = 2000.0  # HVT within this of the city = command escapes
 SCAR_SCUD_RACE_M = SCAR_TRAVEL_M  # how far a SCUD relocates toward its target to fire
 
+# Phase 2a — scripted SOF "ambush" capture, gated behind scar_command_post_intel.
+# When the feature is on, a friendly SOF team is dropped on the HVT's flee route
+# ahead of it (armor/spawn only). If the un-killed command vehicle reaches them it
+# is CAPTURED ("captured" result -> reveals enemy command posts next turn) instead
+# of escaping. First pass: always dropped + guaranteed on proximity; finite /
+# player-delivered SOF is Phase 2b/2c.
+SCAR_SOF_CAPTURE_RADIUS_M = 600.0  # command vehicle within this of the SOF = captured
+SCAR_SOF_LEAD_FRAC = 0.7  # SOF sits this fraction along the HVT's spawn->dest route
+
 
 @dataclass(frozen=True)
 class ScarConvoy:
@@ -152,6 +161,14 @@ class ScarTasking:
     convoys: tuple[ScarConvoy, ...] = ()
     fail_zone_radius_m: float = 0.0
     command_type: str = ""  # the HVT's command-vehicle type; despawns in the city
+    # Phase 2a SOF ambush (armor/spawn only, and only when scar_command_post_intel
+    # is on). A friendly SOF team waits at (sof_x, sof_y); the HVT command vehicle
+    # reaching it = captured. sof_country_id is the SCAR flight's own (friendly)
+    # side. sof_radius_m == 0 means "no SOF" (the Lua gate).
+    sof_x: float = 0.0
+    sof_y: float = 0.0
+    sof_radius_m: float = 0.0
+    sof_country_id: int = 0
 
 
 def _ring_point(
@@ -323,6 +340,21 @@ def _compose_convoys(
     return tuple(convoys)
 
 
+def _sof_ambush(
+    spawn_x: float,
+    spawn_y: float,
+    dest_x: float,
+    dest_y: float,
+    country_id: int,
+) -> tuple[float, float, float, int]:
+    """SOF ambush point a fixed fraction along the HVT's spawn->dest route, plus the
+    capture radius and the friendly country to spawn the team under. The HVT drives
+    into the waiting team (it can't be chased on foot)."""
+    sof_x = spawn_x + (dest_x - spawn_x) * SCAR_SOF_LEAD_FRAC
+    sof_y = spawn_y + (dest_y - spawn_y) * SCAR_SOF_LEAD_FRAC
+    return sof_x, sof_y, SCAR_SOF_CAPTURE_RADIUS_M, country_id
+
+
 def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTasking]:
     """Build one ScarTasking per SCAR-tasked target (deduped by target).
 
@@ -340,9 +372,11 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
     taskings: list[ScarTasking] = []
     index = 0
     seen_targets: set[int] = set()
+    sof_enabled = game.settings.scar_command_post_intel
     for coalition in game.coalitions:
         color = "blue" if coalition.player else "red"
         enemy_country_id = coalition.opponent.faction.country.id
+        friendly_country_id = coalition.faction.country.id
         for package in coalition.ato.packages:
             if not any(f.flight_type is FlightType.SCAR for f in package.flights):
                 continue
@@ -467,6 +501,11 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         target.position, dest_x, dest_y, decoy_sigs, flee_speed
                     )
                 )
+                sof_x, sof_y, sof_radius, sof_country = (
+                    _sof_ambush(origin.x, origin.y, dest_x, dest_y, friendly_country_id)
+                    if sof_enabled
+                    else (0.0, 0.0, 0.0, 0)
+                )
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -482,6 +521,10 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         hvt_country_id=enemy_country_id,
                         convoys=tuple(convoys),
                         command_type=SCAR_COMMAND,
+                        sof_x=sof_x,
+                        sof_y=sof_y,
+                        sof_radius_m=sof_radius,
+                        sof_country_id=sof_country,
                     )
                 )
             else:
@@ -489,6 +532,18 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 fail_radius = (
                     SCAR_CITY_RADIUS_M if city is not None else SCAR_FAIL_ZONE_RADIUS_M
                 )
+                spawn_convoys = _compose_convoys(target.position, city, SCAR_WINDOW_S)
+                sof_x, sof_y, sof_radius, sof_country = (0.0, 0.0, 0.0, 0)
+                if sof_enabled:
+                    hvt = next((c for c in spawn_convoys if c.role == "hvt"), None)
+                    if hvt is not None:
+                        sof_x, sof_y, sof_radius, sof_country = _sof_ambush(
+                            hvt.spawn_x,
+                            hvt.spawn_y,
+                            hvt.dest_x,
+                            hvt.dest_y,
+                            friendly_country_id,
+                        )
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -497,9 +552,13 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         go_live_s=go_live_s,
                         window_s=SCAR_WINDOW_S,
                         hvt_country_id=enemy_country_id,
-                        convoys=_compose_convoys(target.position, city, SCAR_WINDOW_S),
+                        convoys=spawn_convoys,
                         fail_zone_radius_m=fail_radius,
                         command_type=SCAR_COMMAND,
+                        sof_x=sof_x,
+                        sof_y=sof_y,
+                        sof_radius_m=sof_radius,
+                        sof_country_id=sof_country,
                     )
                 )
     return taskings
@@ -516,6 +575,16 @@ def _emit_convoys(record: "LuaItem", convoys: tuple[ScarConvoy, ...]) -> None:
         convoy_rec.add_key_value("destX", str(convoy.dest_x))
         convoy_rec.add_key_value("destY", str(convoy.dest_y))
         convoy_rec.add_key_value("speed", str(convoy.speed_ms))
+
+
+def _emit_sof(record: "LuaItem", tasking: ScarTasking) -> None:
+    """Emit the Phase 2a SOF ambush fields (only when a SOF team is set)."""
+    if tasking.sof_radius_m <= 0:
+        return
+    record.add_item("sofX").set_value(str(tasking.sof_x))
+    record.add_item("sofY").set_value(str(tasking.sof_y))
+    record.add_item("sofRadius").set_value(str(tasking.sof_radius_m))
+    record.add_item("sofCountryId").set_value(str(tasking.sof_country_id))
 
 
 def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
@@ -552,9 +621,11 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
             record.add_item("fleeSpeed").set_value(str(tasking.flee_speed_ms))
             record.add_item("failZoneRadius").set_value(str(tasking.fail_zone_radius_m))
             record.add_item("hvtCountryId").set_value(str(tasking.hvt_country_id))
+            _emit_sof(record, tasking)
             _emit_convoys(record, tasking.convoys)
             continue
         record.add_item("hvtCountryId").set_value(str(tasking.hvt_country_id))
         record.add_item("failZoneRadius").set_value(str(tasking.fail_zone_radius_m))
         record.add_item("commandType").set_value(tasking.command_type)
+        _emit_sof(record, tasking)
         _emit_convoys(record, tasking.convoys)

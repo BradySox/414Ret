@@ -54,6 +54,7 @@ def _coalition_with_target(
     coalition = MagicMock()
     coalition.opponent.faction.country.id = 7  # enemy (HVT) country
     coalition.faction.country.id = 2  # friendly (SOF) country
+    coalition.sof_teams = 2  # finite SOF pool (Phase 2b)
     coalition.ato.packages = [package]
     return coalition
 
@@ -237,6 +238,34 @@ def test_armor_sof_ambush_when_feature_on() -> None:
     # SOF sits SCAR_SOF_LEAD_FRAC of the way from the HVT (origin 0,0) to dest.
     assert tasking.sof_x == tasking.dest_x * SCAR_SOF_LEAD_FRAC
     assert tasking.sof_y == 0.0
+
+
+def test_no_sof_ambush_when_pool_empty() -> None:
+    # Feature on, but the side is out of SOF teams -> no drop (finite pool gate).
+    game = _armor_to_far_city()
+    game.settings.scar_command_post_intel = True
+    game.coalitions[0].sof_teams = 0
+
+    tasking = _build(game)[0]
+    assert tasking.sof_radius_m == 0.0
+
+
+def test_sof_pool_caps_drops_per_turn() -> None:
+    # Two SCAR packages but only one SOF team -> exactly one drop this turn.
+    coalition = _coalition_with_target(MagicMock(position=Point(0, 0, None)))  # type: ignore[arg-type]
+    coalition.sof_teams = 1
+    second = MagicMock()
+    second.target = MagicMock(position=Point(50000, 50000, None))  # type: ignore[arg-type]
+    second.time_over_target = MISSION_START + timedelta(seconds=TOT_OFFSET_S)
+    second.flights = [MagicMock(flight_type=FlightType.SCAR)]
+    coalition.ato.packages = [coalition.ato.packages[0], second]
+    game = _game_with(coalition)
+    game.settings.scar_command_post_intel = True
+
+    taskings = _build(game)
+    with_sof = [t for t in taskings if t.sof_radius_m > 0]
+    assert len(taskings) == 2
+    assert len(with_sof) == 1  # capped at the one available team
 
 
 def test_spawn_sof_ambush_on_the_hvt_route_when_feature_on() -> None:

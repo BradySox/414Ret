@@ -191,14 +191,20 @@ class MissionResultsProcessor:
         capture sets the human (blue) side's flag, revealing ALL enemy command
         posts permanently. Additive — a no-op when the plugin/setting is off.
         """
-        captured = False
+        captures = 0
         for tasking_id, status in debriefing.state_data.scar_results.items():
             logging.info(f"SCAR area {tasking_id}: {status}")
             if status == "captured":
-                captured = True
-        if captured and self.game.settings.scar_command_post_intel:
+                captures += 1
+        if captures and self.game.settings.scar_command_post_intel:
             self.game.blue.captured_commander = True
-            logging.info("SCAR: commander captured — enemy command posts revealed.")
+            # Each successful capture consumes one finite SOF team (Phase 2b); once
+            # the pool is empty the generator stops dropping SOF.
+            self.game.blue.sof_teams = max(0, self.game.blue.sof_teams - captures)
+            logging.info(
+                f"SCAR: {captures} commander(s) captured — enemy command posts "
+                f"revealed; {self.game.blue.sof_teams} SOF team(s) remaining."
+            )
 
     def commit_ground_losses(
         self, debriefing: Debriefing, events: GameUpdateEvents

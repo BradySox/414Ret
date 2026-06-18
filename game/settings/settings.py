@@ -399,6 +399,20 @@ class Settings:
             "SME before this ships on."
         ),
     )
+    scar_sof_teams: int = bounded_int_option(
+        "SCAR SOF teams per side (commander-capture asset)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=2,
+        min=0,
+        max=6,
+        detail=(
+            "How many finite SOF teams each side starts a campaign with (only used "
+            "when SCAR command-post intel is on). A team is dropped ahead of a SCAR "
+            "commander and consumed when it captures one; once they run out, SCAR "
+            "reverts to kill-or-escape. Work in progress (Phase 2b)."
+        ),
+    )
     aircraft_per_recovery_tanker: int = bounded_int_option(
         "Number of aircraft per recovery tanker",
         page=CAMPAIGN_DOCTRINE_PAGE,

@@ -377,6 +377,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
         color = "blue" if coalition.player else "red"
         enemy_country_id = coalition.opponent.faction.country.id
         friendly_country_id = coalition.faction.country.id
+        # Finite SOF pool (Phase 2b): cap SOF drops this turn to the teams on hand.
+        sof_budget = coalition.sof_teams if sof_enabled else 0
         for package in coalition.ato.packages:
             if not any(f.flight_type is FlightType.SCAR for f in package.flights):
                 continue
@@ -501,11 +503,12 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         target.position, dest_x, dest_y, decoy_sigs, flee_speed
                     )
                 )
-                sof_x, sof_y, sof_radius, sof_country = (
-                    _sof_ambush(origin.x, origin.y, dest_x, dest_y, friendly_country_id)
-                    if sof_enabled
-                    else (0.0, 0.0, 0.0, 0)
-                )
+                sof_x, sof_y, sof_radius, sof_country = 0.0, 0.0, 0.0, 0
+                if sof_budget > 0:
+                    sof_x, sof_y, sof_radius, sof_country = _sof_ambush(
+                        origin.x, origin.y, dest_x, dest_y, friendly_country_id
+                    )
+                    sof_budget -= 1
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -534,7 +537,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 )
                 spawn_convoys = _compose_convoys(target.position, city, SCAR_WINDOW_S)
                 sof_x, sof_y, sof_radius, sof_country = (0.0, 0.0, 0.0, 0)
-                if sof_enabled:
+                if sof_budget > 0:
                     hvt = next((c for c in spawn_convoys if c.role == "hvt"), None)
                     if hvt is not None:
                         sof_x, sof_y, sof_radius, sof_country = _sof_ambush(
@@ -544,6 +547,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                             hvt.dest_y,
                             friendly_country_id,
                         )
+                        sof_budget -= 1
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",

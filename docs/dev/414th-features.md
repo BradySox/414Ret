@@ -621,12 +621,19 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   (`spawn_sof`, `hvt_in_sof_zone`, the `captured` branch, `mark_sof`). First-pass simplification:
   always-drops + auto-on-proximity (becomes a real choice with finite/player SOF in 2b/2c).
   Plan: `docs/dev/design/414th-scar-phase2-sof-plan.md`. Tests: `tests/test_scar_bridge.py`.
-- NOT yet built: **Phase 2b/2c** — finite `Coalition.sof_teams` pool + UI + carryover (2b);
-  CSAR recovery on botch + optional player-flown CTLD insert (2c). SME: finite SOF ~2-3/campaign;
-  botched = commander escapes but SOF recoverable via CSAR. mis-ID penalty stays NONE;
-  Phase-3 auto-planning. **Coordinate with Tyler's C-130 `DEPLOYMENT` work** — his
-  `PendingDeployments`/air-assault-CTLD pattern is the template for 2b/2c (shared `Coalition` +
-  `MissionResultsProcessor` + `FlightType` surface).
+- Commander-capture **Phase 2b BUILT (gated OFF, needs an in-game pass)** — finite SOF pool.
+  `Coalition.sof_teams` (persisted + save-migrated, seeded from the new `scar_sof_teams`
+  Campaign-Doctrine setting, default 2); `build_scar_taskings` caps SOF drops per turn to the
+  teams on hand; `commit_scar_results` spends one team per `captured`. Empty pool → no SOF →
+  kill-or-escape. First pass: only a *successful* capture consumes a team (deploy-but-no-capture
+  is free; CSAR-recoverable accounting is 2c). Tests in `test_scar_bridge.py` +
+  `test_scar_command_post_fog.py`.
+- NOT yet built: **Phase 2c** — CSAR recovery of stranded SOF on a botched grab + optional
+  player-flown CTLD insert; deploy-but-failed team accounting. SME: botched = commander escapes
+  but SOF recoverable via CSAR. mis-ID penalty stays NONE; Phase-3 auto-planning.
+  **Coordinate with Tyler's C-130 `DEPLOYMENT` work** — his `PendingDeployments`/air-assault-CTLD
+  pattern is the template for 2c (shared `Coalition` + `MissionResultsProcessor` + `FlightType`
+  surface).
 
 ---
 

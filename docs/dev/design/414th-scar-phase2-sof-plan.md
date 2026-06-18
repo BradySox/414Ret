@@ -1,8 +1,9 @@
 # SCAR Phase 2 — SOF airdrop + commander capture (implementation plan)
 
-Status: **2a BUILT** (scripted capture loop), gated OFF behind `scar_command_post_intel`;
-**2b/2c not started**. Phase 1 (the reveal/intel side) is built and merged. This doc plans
-Phase 2: the mechanic that **produces a `captured` SCAR result**, which Phase 1 consumes.
+Status: **2a + 2b BUILT** (scripted capture loop + finite SOF pool), gated OFF behind
+`scar_command_post_intel`; **2c not started**. Phase 1 (the reveal/intel side) is built and
+merged. This doc plans Phase 2: the mechanic that **produces a `captured` SCAR result**,
+which Phase 1 consumes.
 
 Read first: `414th-scar-task-spec.md` (§9 capture design) and
 `414th-scar-commander-sme-questions.md` (SME answers 2026-06-18).
@@ -105,8 +106,16 @@ What Phase 1 already gives us (don't rebuild):
   pass). Scripted SOF ambush dropped ahead of the HVT + proximity capture producing
   `captured`. No pool yet. Reuses the SCAR Lua + command vehicle. See the status note at the
   top of this doc for the files and the known first-pass simplification.
-- **2b — finite SOF asset.** `Coalition.sof_teams` + decrement-on-use + UI + the carryover
-  in `commit_scar_results`.
+- **2b — finite SOF asset. ✅ BUILT** (gated OFF; needs an in-game pass). `Coalition.sof_teams`
+  (persisted + save-migrated, seeded from the new `scar_sof_teams` Campaign-Doctrine setting,
+  default 2); the generator caps SOF drops per turn to the teams on hand (`sof_budget` in
+  `build_scar_taskings`); `commit_scar_results` spends one team per `captured` result. Once the
+  pool is empty, no SOF drops → SCAR reverts to kill-or-escape. Tests:
+  `tests/test_scar_bridge.py` (empty pool → no drop, per-turn cap) + `tests/test_scar_command_post_fog.py`
+  (capture consumes a team; non-capture doesn't). **First-pass model:** only a *successful*
+  capture spends a team — a team that deploys but doesn't capture (you killed the HVT, or it
+  timed out) is NOT consumed; the "deployed-but-stranded → CSAR-recoverable-or-lost" accounting
+  is 2c. Per-squadron/where-shown UI beyond the doctrine setting is also deferred.
 - **2c — CSAR recovery + (optional) player-flown delivery.** MOOSE `Ops.CSAR`/CTLD pickup
   on botch returning teams to the pool; optionally a real player-flown SOF insert via CTLD
   instead of the scripted drop.

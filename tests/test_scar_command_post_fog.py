@@ -110,6 +110,7 @@ def _processor(*, setting_on: bool) -> tuple[MissionResultsProcessor, Any]:
     game = MagicMock()
     game.settings.scar_command_post_intel = setting_on
     game.blue.captured_commander = False
+    game.blue.sof_teams = 2  # finite SOF pool (Phase 2b)
     return MissionResultsProcessor(game), game
 
 
@@ -120,6 +121,25 @@ def test_capture_reveals_command_posts() -> None:
     )
     processor.commit_scar_results(cast(Any, debriefing))
     assert game.blue.captured_commander is True
+
+
+def test_capture_consumes_a_sof_team() -> None:
+    # Phase 2b: each successful capture spends one finite SOF team.
+    processor, game = _processor(setting_on=True)
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(scar_results={"scar-1": "captured"})
+    )
+    processor.commit_scar_results(cast(Any, debriefing))
+    assert game.blue.sof_teams == 1  # 2 -> 1
+
+
+def test_non_capture_does_not_consume_sof_team() -> None:
+    processor, game = _processor(setting_on=True)
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(scar_results={"scar-1": "failed"})
+    )
+    processor.commit_scar_results(cast(Any, debriefing))
+    assert game.blue.sof_teams == 2  # unchanged
 
 
 def test_non_capture_outcomes_do_not_reveal() -> None:

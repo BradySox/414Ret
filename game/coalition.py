@@ -51,6 +51,10 @@ class Coalition:
         # commander, which reveals the enemy's command posts (gated by the
         # scar_command_post_intel setting). Persisted campaign state.
         self.captured_commander = False
+        # Finite SOF teams for commander capture (Phase 2b). A team is dropped
+        # ahead of a SCAR commander and consumed when it captures one. Seeded from
+        # the scar_sof_teams setting; persisted campaign state.
+        self.sof_teams: int = game.settings.scar_sof_teams
 
         # Late initialized because the two coalitions in the game are mutually
         # dependent, so must be both constructed before this property can be set.
@@ -121,6 +125,10 @@ class Coalition:
 
         # Migration: older saves predate the SCAR commander-capture flag.
         state.setdefault("captured_commander", False)
+        # Migration: older saves predate the finite SOF-team pool. self.game isn't
+        # restored yet here, so seed a literal matching the scar_sof_teams default
+        # (the feature is gated OFF, so this only matters if it's later enabled).
+        state.setdefault("sof_teams", 2)
 
         self.__dict__.update(state)
         # Regenerate any state that was not persisted.

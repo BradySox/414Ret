@@ -38,6 +38,14 @@ stacked on top (newest first):
   Flies a single pass **directly over the target** ~5 minutes behind the strikers,
   carrying the `{F14-TARPS}` pod (station 6) plus a per-variant self-defense fit.
   Auto-planned into Strike / DEAD packages.
+- **`FlightType.SCAR`** - player-flown Strike Coordination and Reconnaissance: work an
+  area to find and kill a **moving** high-value target hidden among look-alike decoys and
+  light AAA, before it reaches safety. Against a real enemy armor group or SCUD site it
+  binds that group (the armor bugs out toward a town; the SCUD races to a firing position
+  and launches); otherwise it spawns the whole picture. The scenario is timed to your
+  on-station window, with F10 map cues for the target's signature and ingress. Driven by
+  the bundled `scar` plugin (default ON). Player-selected for now — BAI stays the
+  auto-planner's anti-armor task.
 - **Recon intel-fog** - enemy ground sites appear on the map as targets you can plan
   packages against, but *what is actually there* - unit types, counts, damage state, and
   threat/detection rings - stays hidden until the site is **attacked, scouted by

@@ -514,6 +514,52 @@ A polish pass over the **LUA Plugins Options** page so every plugin explains its
 - Note: `AGENTS.md` is a stale partial handoff (predates TARS/Flight Control and this
   section) and was not updated — `CLAUDE.md` is the authoritative engineering doc.
 
+### 15. SCAR — Strike Coordination and Reconnaissance (flight type + scenario plugin)
+A player-flown `FlightType.SCAR`: work a defined area to find and prosecute a moving
+high-value target hidden among look-alike decoys + clutter and light AAA, before it
+reaches safety. Design ground truth: `docs/dev/design/414th-scar-task-spec.md` (read
+before touching). SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.md`.
+
+- **Planner side (Python, CI-tested):** `FlightType.SCAR` (`game/ato/flighttype.py`,
+  air-to-ground primary, `ATTACK_STRIKE`); `ScarFlightPlan` cloned from Armed Recon
+  (`game/ato/flightplans/scar.py`) + builder dispatch; `configure_scar`
+  (`aircraftbehavior.py`, CAS-family task); fixed-wing-only capability enrichment
+  (`game/dcs/aircrafttype.py`); `mission_types` exposure (`missiontarget.py`); CAS loadout
+  fallback (`loadouts.py`); primary-task order (`package.py`). SCAR is player-selectable;
+  the auto-planner never frags it (no commander task) — auto-planning is a later phase.
+  **BAI is deliberately untouched** (still the AI/auto-planner anti-armor/convoy task).
+- **Scenario bridge:** `game/missiongenerator/scarluadata.py` builds a `ScarTasking` per
+  SCAR-targeted area (`build_scar_taskings(game, mission_start)`), emitted as
+  `dcsRetribution.Scar` via `populate_scar_lua`; injected by `_inject_scar_script()` in
+  `luagenerator.py` (gated on the `scar` plugin + a planned SCAR flight, mirrors the TARS
+  inject pattern). Three variants by target type:
+  - `spawn` (generic/rare convoy): spawns the whole ground picture — HVT signature convoy
+    (SA-9 + command + 2 trucks) + 2 partial-signature decoys + plain-truck clutter +
+    a light threat laydown — fleeing to the nearest enemy-held CP (the "city"). success =
+    HVT killed; fail = it reaches the city (command vehicle despawns) or the window expires.
+  - `armor` (real `VehicleGroupGroundObject`): binds the REAL group as the HVT (flees to the
+    city) and mixes in spawned decoys derived from its live composition.
+  - `missile` (real `MissileSiteGroundObject`, SCUD): the launcher races to a firing position
+    and actually launches at its target city on arrival (`FireAtPoint`) — the launch is the
+    fail. Stock random fire task suppressed for SCAR targets (`MissileSiteGenerator._is_scar_target`).
+- **Timing (important):** the scenario is anchored to the flight's **TOT**
+  (`go_live_s = time_over_target − mission.start_time`), not mission start, with a generous
+  window (`SCAR_WINDOW_S`, 20 min) and an early-start lead (`SCAR_START_LEAD_S`, 10 min) so
+  the target is already on the move when the player arrives. Bound real groups move via
+  `mist.goRoute` (a hand-rolled `setTask` did NOT reliably move them — don't revert).
+  Distances/timing in `scarluadata.py` are first-pass tunables (`SCAR_TRAVEL_M` ~15 NM).
+- **Results bridge:** the `scar` plugin (`resources/plugins/scar/`, default ON) writes the
+  global `scar_results` (status per tasking); rides the proven TARS channel
+  (`dcs_retribution.lua` `write_state` → `StateData.scar_results` in `debriefing.py` →
+  `MissionResultsProcessor.commit_scar_results`, currently log-only). Verified round-trip
+  in-game 2026-06-17/18 (`SCAR area scar-N: launched/failed`).
+- **F10/briefing cues** (R11) drawn from the plugin: target signature, ingress axis,
+  no-strike/firing-position marks, decoy warning, addressed to the SCAR flight's coalition.
+- Tests: `tests/test_scar.py` (FlightType + dispatch), `tests/test_scar_bridge.py`
+  (collection/emission/parse). **Lua needs in-game validation (not CI-runnable).**
+- NOT yet built: the commander-capture campaign engine (capture → reveal hidden command
+  posts, SOF airdrop) — pending SME ruling; mis-ID penalty stays NONE; Phase-3 auto-planning.
+
 ---
 
 ## Branch & repo layout

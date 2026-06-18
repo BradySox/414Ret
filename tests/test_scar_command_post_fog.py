@@ -1,9 +1,12 @@
 """SCAR campaign engine — command-post intel fog (Phase 1).
 
-Capturing an enemy commander on a SCAR sortie reveals the enemy's command posts.
-Until then (with the ``scar_command_post_intel`` setting on) command posts stay
-hidden via ``known_for``. This is gated OFF by default and provisional pending
-the SME ruling on reveal scope/permanence/depth; these tests pin the wiring.
+With the ``scar_command_post_intel`` setting on, an enemy command post is hidden
+from the player ENTIRELY — off the map, not strikable — until it is revealed, then
+it shows fully with exact coordinates (SME 2026-06-18). Two reveal keys: the
+side captured an enemy commander on a SCAR sortie (reveals ALL command posts,
+permanently), OR the site was discovered the normal way (attacked / scouted /
+TARPS). Gated OFF by default. These tests pin the wiring (the SOF capture mechanic
+that produces a "captured" result is Phase 2).
 """
 
 from __future__ import annotations
@@ -27,7 +30,9 @@ class _EnemyCommandPost(BuildingGroundObject):
         return False
 
 
-def _command_post(*, setting_on: bool, captured: bool) -> BuildingGroundObject:
+def _command_post(
+    *, setting_on: bool, captured: bool, discovered: bool = False
+) -> BuildingGroundObject:
     location = PresetLocation(
         name="cp-target",
         position=Point(0, 0, None),  # type: ignore[arg-type]
@@ -46,7 +51,9 @@ def _command_post(*, setting_on: bool, captured: bool) -> BuildingGroundObject:
         control_point=control_point,
         task=None,
     )
-    # known_for() reaches control_point.coalition.game.settings + .opponent.
+    tgo.discovered_by_player = discovered
+    # known_for()/hidden_on_player_map() reach control_point.coalition.game.settings
+    # + .opponent.captured_commander.
     tgo.control_point = cast(
         Any,
         SimpleNamespace(
@@ -64,21 +71,37 @@ def _command_post(*, setting_on: bool, captured: bool) -> BuildingGroundObject:
     return tgo
 
 
-def test_command_post_hidden_until_commander_captured() -> None:
-    tgo = _command_post(setting_on=True, captured=False)
-    assert tgo.known_for(Player.BLUE) is False  # hidden until capture
-    assert tgo.known_for(None) is True  # omniscient (AI/planner) always knows
+def test_command_post_hidden_until_revealed() -> None:
+    tgo = _command_post(setting_on=True, captured=False, discovered=False)
+    # Composition unknown AND off the map entirely for the human (BLUE)...
+    assert tgo.known_for(Player.BLUE) is False
+    assert tgo.hidden_on_player_map(Player.BLUE) is True
+    # ...but the AI/planner (omniscient, viewer=None) always sees it.
+    assert tgo.known_for(None) is True
+    assert tgo.hidden_on_player_map(None) is False
 
 
 def test_command_post_revealed_after_capture() -> None:
+    # SME #1/#2: capturing a commander reveals ALL command posts, permanently.
     tgo = _command_post(setting_on=True, captured=True)
     assert tgo.known_for(Player.BLUE) is True
+    assert tgo.hidden_on_player_map(Player.BLUE) is False
+
+
+def test_command_post_revealed_after_discovery() -> None:
+    # SME #4: discovering the site the normal way (strike/scout/TARPS) reveals it
+    # too — capture is not the only key.
+    tgo = _command_post(setting_on=True, captured=False, discovered=True)
+    assert tgo.known_for(Player.BLUE) is True
+    assert tgo.hidden_on_player_map(Player.BLUE) is False
 
 
 def test_command_post_not_gated_when_setting_off() -> None:
-    # With the feature off, command posts follow the normal recon fog, not the
-    # capture gate (so an uncaptured commander does NOT hide them here).
-    tgo = _command_post(setting_on=False, captured=False)
+    # With the feature off, command posts follow the normal recon fog: never hidden
+    # from the map (only composition is fogged), and an uncaptured/undiscovered
+    # commander does not hide them.
+    tgo = _command_post(setting_on=False, captured=False, discovered=False)
+    assert tgo.hidden_on_player_map(Player.BLUE) is False
     tgo.discovered_by_player = True
     assert tgo.known_for(Player.BLUE) is True
 

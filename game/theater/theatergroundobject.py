@@ -101,6 +101,19 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
             state["discovered_by_player"] = True
         self.__dict__.update(state)
 
+    def _command_post_revealed(self) -> bool:
+        """SCAR: True once an enemy command post is revealed to the human side.
+
+        Two keys (SME 2026-06-18): the side captured an enemy commander (reveals
+        ALL command posts, permanently), OR the site was discovered the normal way
+        (attacked / scouted / TARPS). Only meaningful for an enemy viewer — the
+        callers gate ``None``/friendly first.
+        """
+        return (
+            self.control_point.coalition.opponent.captured_commander
+            or self.discovered_by_player
+        )
+
     def known_for(self, viewer: Optional[Player] = None) -> bool:
         """Whether the viewer knows what is actually at this site.
 
@@ -112,15 +125,33 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         if viewer is None or self.is_friendly(viewer):
             return True
         settings = self.control_point.coalition.game.settings
-        # SCAR campaign engine: enemy command posts stay hidden until the viewer's
-        # side captures an enemy commander (capture is the only key — provisional,
-        # pending the SME on scope/permanence/depth). Its own gate, independent of
-        # the general recon fog.
+        # SCAR campaign engine: an enemy command post is known only once revealed
+        # (commander captured or site discovered). Its own gate, independent of the
+        # general recon fog.
         if self.category == "commandcenter" and settings.scar_command_post_intel:
-            return self.control_point.coalition.opponent.captured_commander
+            return self._command_post_revealed()
         if not settings.recon_intel_fog:
             return True
         return self.discovered_by_player
+
+    def hidden_on_player_map(self, viewer: Optional[Player] = None) -> bool:
+        """SCAR: True if this site must not appear on ``viewer``'s map at all.
+
+        Normally every enemy site shows as a targetable marker and only its
+        composition is fogged (see ``known_for``). SCAR command posts are the
+        exception: an enemy command post is hidden ENTIRELY — no marker, not
+        plannable or strikable — until it is revealed (commander captured, or the
+        site discovered by strike/scout/TARPS). After that it shows fully, with
+        exact coordinates (SME 2026-06-18). ``viewer=None`` (omniscient: AI /
+        planner / threat math) and friendly viewers see everything, so AI planning
+        is never fogged.
+        """
+        if viewer is None or self.is_friendly(viewer):
+            return False
+        settings = self.control_point.coalition.game.settings
+        if self.category == "commandcenter" and settings.scar_command_post_intel:
+            return not self._command_post_revealed()
+        return False
 
     @property
     def sidc_status(self) -> Status:

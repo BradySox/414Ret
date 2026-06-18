@@ -75,6 +75,13 @@ class TgoJs(BaseModel):
         tgos = []
         for control_point in game.theater.controlpoints:
             for tgo in control_point.connected_objectives:
-                if not tgo.is_control_point:
-                    tgos.append(TgoJs.for_tgo(tgo))
+                if tgo.is_control_point:
+                    continue
+                # SCAR campaign engine: an unrevealed enemy command post is hidden
+                # from the player's map entirely (not just composition-fogged), so
+                # it can't be seen or struck until a commander is captured or the
+                # site is discovered. AI/planner use ground truth (viewer=None).
+                if tgo.hidden_on_player_map(Player.BLUE):
+                    continue
+                tgos.append(TgoJs.for_tgo(tgo))
         return tgos

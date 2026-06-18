@@ -557,8 +557,18 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   no-strike/firing-position marks, decoy warning, addressed to the SCAR flight's coalition.
 - Tests: `tests/test_scar.py` (FlightType + dispatch), `tests/test_scar_bridge.py`
   (collection/emission/parse). **Lua needs in-game validation (not CI-runnable).**
-- NOT yet built: the commander-capture campaign engine (capture → reveal hidden command
-  posts, SOF airdrop) — pending SME ruling; mis-ID penalty stays NONE; Phase-3 auto-planning.
+- Commander-capture campaign engine — **Phase 1 BUILT (gated OFF, `scar_command_post_intel`
+  setting, default OFF)**: enemy command posts (`commandcenter` TGOs) are hidden ENTIRELY from
+  the player's map (`TheaterGroundObject.hidden_on_player_map(viewer)` gates `server/tgos/models.py`
+  `all_in_game` + `triggergenerator.py` `_gen_markers`) until revealed by capturing a commander
+  (`Coalition.captured_commander`, persisted + save-migrated; flipped by a `captured` SCAR result
+  in `commit_scar_results`) OR the normal discovery (`_command_post_revealed()` = capture or
+  `discovered_by_player`). `known_for` still gates composition. AI/planner use ground truth
+  (`viewer=None`). SME-answered 2026-06-18: reveal ALL, permanent, full reveal w/ exact coords,
+  ~2-3 posts/campaign. Tests: `tests/test_scar_command_post_fog.py`.
+- NOT yet built: **Phase 2** — the SOF-airdrop capture mechanic that PRODUCES the `captured`
+  result (SME: finite SOF ~2-3/campaign; botched = commander escapes but SOF recoverable via
+  CSAR). mis-ID penalty stays NONE; Phase-3 auto-planning.
 
 ---
 

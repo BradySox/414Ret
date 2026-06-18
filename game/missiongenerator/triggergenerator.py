@@ -28,7 +28,7 @@ from dcs.triggers import Event, TriggerCondition, TriggerOnce
 from dcs.unit import Skill
 
 from game.settings.settings import TargetIntelPrecision
-from game.theater import Airfield
+from game.theater import Airfield, Player
 from game.theater.controlpoint import Fob, TRIGGER_RADIUS_CAPTURE
 
 if TYPE_CHECKING:
@@ -141,6 +141,10 @@ class TriggerGenerator:
                         continue
 
                     seen.add(ground_object.obj_name)
+                    # SCAR: don't F10-mark an unrevealed enemy command post — it
+                    # stays off the map until a commander is captured or it's found.
+                    if ground_object.hidden_on_player_map(Player.BLUE):
+                        continue
                     for location in ground_object.mark_locations:
                         zone = self.mission.triggers.add_triggerzone(
                             location, radius=10, hidden=True, name="MARK"

@@ -355,6 +355,39 @@ def _sof_ambush(
     return sof_x, sof_y, SCAR_SOF_CAPTURE_RADIUS_M, country_id
 
 
+def _on_land(game: "Game", x: float, y: float) -> tuple[float, float]:
+    """Snap a computed point onto land if it fell in the sea.
+
+    Ground units can't path offshore: for a coastal target the HVT spawn (offset
+    away from an inland city) or a flee destination (a city across a bay, or a
+    projected exit) can land in the water, and the column then drives toward the
+    ocean and never reaches the SOF / city (in-game finding 2026-06-18). Pulls such
+    a point to the nearest land. No-op when the theater has no landmap.
+    """
+    from dcs.mapping import Point
+
+    theater = game.theater
+    point = Point(x, y, theater.terrain)
+    if theater.is_in_sea(point):
+        land = theater.nearest_land_pos(point)
+        return land.x, land.y
+    return x, y
+
+
+def _convoys_on_land(
+    game: "Game", convoys: tuple[ScarConvoy, ...]
+) -> tuple[ScarConvoy, ...]:
+    """Snap every convoy's spawn + dest onto land (see ``_on_land``)."""
+    from dataclasses import replace
+
+    snapped: list[ScarConvoy] = []
+    for convoy in convoys:
+        sx, sy = _on_land(game, convoy.spawn_x, convoy.spawn_y)
+        dx, dy = _on_land(game, convoy.dest_x, convoy.dest_y)
+        snapped.append(replace(convoy, spawn_x=sx, spawn_y=sy, dest_x=dx, dest_y=dy))
+    return tuple(snapped)
+
+
 def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTasking]:
     """Build one ScarTasking per SCAR-tasked target (deduped by target).
 
@@ -415,6 +448,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 else:
                     dest_x, dest_y = origin.x + SCAR_SCUD_RACE_M, origin.y
                     fx, fy = dest_x, dest_y
+                # Keep the SCUD's firing position on land (it can't drive offshore).
+                dest_x, dest_y = _on_land(game, dest_x, dest_y)
                 route_len = math.hypot(origin.x - dest_x, origin.y - dest_y)
                 flee_speed = _paced_speed(route_len, SCAR_WINDOW_S + SCAR_START_LEAD_S)
                 taskings.append(
@@ -469,6 +504,10 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         dest_x = origin.x - SCAR_HVT_DEST_OFFSET_M
                         dest_y = origin.y
                     fail_radius = SCAR_FAIL_ZONE_RADIUS_M
+                # Keep the flee destination on land: a city across a bay or a
+                # projected exit can land in the sea, sending the column toward the
+                # ocean where it can't path (in-game finding 2026-06-18).
+                dest_x, dest_y = _on_land(game, dest_x, dest_y)
                 route_len = math.hypot(
                     target.position.x - dest_x, target.position.y - dest_y
                 )
@@ -506,6 +545,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     if sof_enabled
                     else (0.0, 0.0, 0.0, 0)
                 )
+                if sof_radius:
+                    sof_x, sof_y = _on_land(game, sof_x, sof_y)
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -519,7 +560,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         flee_speed_ms=flee_speed,
                         fail_zone_radius_m=fail_radius,
                         hvt_country_id=enemy_country_id,
-                        convoys=tuple(convoys),
+                        convoys=_convoys_on_land(game, tuple(convoys)),
                         command_type=SCAR_COMMAND,
                         sof_x=sof_x,
                         sof_y=sof_y,
@@ -532,7 +573,12 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 fail_radius = (
                     SCAR_CITY_RADIUS_M if city is not None else SCAR_FAIL_ZONE_RADIUS_M
                 )
-                spawn_convoys = _compose_convoys(target.position, city, SCAR_WINDOW_S)
+                # Snap the whole picture onto land first: the HVT spawns offset away
+                # from the (inland) city, which for a coastal target lands in the
+                # sea — the convoy then can't path (in-game finding 2026-06-18).
+                spawn_convoys = _convoys_on_land(
+                    game, _compose_convoys(target.position, city, SCAR_WINDOW_S)
+                )
                 sof_x, sof_y, sof_radius, sof_country = (0.0, 0.0, 0.0, 0)
                 if sof_enabled:
                     hvt = next((c for c in spawn_convoys if c.role == "hvt"), None)
@@ -544,6 +590,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                             hvt.dest_y,
                             friendly_country_id,
                         )
+                        sof_x, sof_y = _on_land(game, sof_x, sof_y)
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",

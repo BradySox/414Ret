@@ -96,8 +96,10 @@ class ScarConvoy:
     """One spawned convoy in a SCAR area.
 
     ``role`` is "hvt" (the real target — killing it = success, it reaching the
-    city = fail), "decoy" (partial signature), "clutter" (plain trucks), or
-    "threat" (stationary AAA). Only the HVT's arrival is the fail.
+    city = fail), "command" (the armor variant's command vehicle, riding with the
+    real group; tracked + despawns on arrival), "decoy" (partial signature),
+    "clutter" (plain trucks), or "threat" (stationary AAA). Only the HVT's (or
+    the bound real group's) arrival is the fail.
     """
 
     role: str
@@ -437,13 +439,30 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     target.position.x - dest_x, target.position.y - dest_y
                 )
                 flee_speed = _paced_speed(route_len, SCAR_WINDOW_S + SCAR_START_LEAD_S)
-                # Mix in decoys (partial versions of the real armor's signature)
-                # + clutter, all fleeing alongside at the same pace, so the player
-                # must pick the real group out of the column (like the convoy).
-                decoy_sigs = _partial_signatures(_real_signature(target)) or (
+                # Give the hunted column a command vehicle so the player can pick
+                # the real HVT out of the decoys (like the spawn variant). The full
+                # signature is the real armor PLUS a command vehicle; decoys are
+                # PARTIAL versions of that, so some decoys also carry a command
+                # vehicle and the player must match the whole signature, not just
+                # spot the antenna. The command vehicle is spawned co-located with
+                # the real group and rides with it; it's tracked in the Lua so it
+                # must die too, and it's the unit that "escapes into the city".
+                hvt_signature = _real_signature(target) + (SCAR_COMMAND,)
+                decoy_sigs = _partial_signatures(hvt_signature) or (
                     SCAR_CLUTTER_SIGNATURE,
                 )
-                support = tuple(
+                convoys = [
+                    ScarConvoy(
+                        role="command",
+                        unit_types=(SCAR_COMMAND,),
+                        spawn_x=target.position.x + SCAR_UNIT_SPACING_M,
+                        spawn_y=target.position.y,
+                        dest_x=dest_x,
+                        dest_y=dest_y,
+                        speed_ms=flee_speed,
+                    )
+                ]
+                convoys.extend(
                     _supporting_convoys(
                         target.position, dest_x, dest_y, decoy_sigs, flee_speed
                     )
@@ -461,7 +480,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         flee_speed_ms=flee_speed,
                         fail_zone_radius_m=fail_radius,
                         hvt_country_id=enemy_country_id,
-                        convoys=support,
+                        convoys=tuple(convoys),
+                        command_type=SCAR_COMMAND,
                     )
                 )
             else:

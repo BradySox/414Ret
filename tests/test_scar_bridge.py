@@ -22,6 +22,7 @@ from game.missiongenerator.scarluadata import (
     SCAR_CLUTTER_COUNT,
     SCAR_DECOY_SIGNATURES,
     SCAR_HVT_SIGNATURE,
+    SCAR_MIN_FLEE_M,
     SCAR_THREAT_LAYDOWN,
     SCAR_WINDOW_S,
     build_scar_taskings,
@@ -139,7 +140,8 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
     armor.control_point = MagicMock(captured=True)  # the enemy side
     city = MagicMock()
     city.captured = True  # same side as the target -> enemy-held = a city
-    city.position = Point(8000, 0, None)  # type: ignore[arg-type]
+    # Far enough away (>= SCAR_MIN_FLEE_M) to be a real chase, so it stays the dest.
+    city.position = Point(30000, 0, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(armor))
     game.theater.controlpoints = [city]
 
@@ -147,7 +149,7 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
 
     assert tasking.variant == "armor"
     assert tasking.target_groups == ("ARMOR-1",)  # binds the REAL group
-    assert (tasking.dest_x, tasking.dest_y) == (8000, 0)  # flees to the city
+    assert (tasking.dest_x, tasking.dest_y) == (30000, 0)  # flees to the city
     assert tasking.flee_speed_ms > 0
     # Decoys/clutter are mixed in (spawned fakes), like the convoy variant.
     roles = [c.role for c in tasking.convoys]
@@ -158,6 +160,31 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
     for decoy in (c for c in tasking.convoys if c.role == "decoy"):
         assert decoy.unit_types != real_sig
         assert all(u in real_sig for u in decoy.unit_types)
+
+
+def test_armor_too_close_city_is_extended_to_min_flee() -> None:
+    # When the nearest enemy city is closer than SCAR_MIN_FLEE_M, the bound group
+    # would have almost no run (in-game feedback: target + hide point on top of
+    # each other). The dest is projected out along the city axis to the minimum so
+    # the player always gets a real chase (the spawn variant already runs 15 NM).
+    armor = MagicMock(spec=VehicleGroupGroundObject)
+    armor.groups = [
+        MagicMock(units=[MagicMock(type=MagicMock(id="T-55"))], group_name="A1")
+    ]
+    armor.position = Point(0, 0, None)  # type: ignore[arg-type]
+    armor.control_point = MagicMock(captured=True)
+    city = MagicMock()
+    city.captured = True
+    city.position = Point(5000, 0, None)  # type: ignore[arg-type]  # 5 km << 15 NM
+    game = _game_with(_coalition_with_target(armor))
+    game.theater.controlpoints = [city]
+
+    tasking = _build(game)[0]
+
+    assert tasking.variant == "armor"
+    # Same direction as the city (+x), but extended out to the minimum run.
+    assert tasking.dest_y == 0
+    assert tasking.dest_x == SCAR_MIN_FLEE_M
 
 
 def test_missile_site_target_races_to_a_firing_position() -> None:

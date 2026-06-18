@@ -63,6 +63,7 @@ SCAR_THREAT_LAYDOWN: tuple[str, ...] = (
 # (in-game feedback 2026-06-18: "needs a min distance of ~15 NM ... doing more
 # for longer"). All first-pass tunables.
 SCAR_TRAVEL_M = 27780.0  # ~15 NM: how far a moving target runs / relocates
+SCAR_MIN_FLEE_M = SCAR_TRAVEL_M  # bound (armor) target always runs at least this far
 SCAR_START_LEAD_S = 600.0  # start moving this long BEFORE the flight's TOT
 SCAR_HVT_SPAWN_OFFSET_M = SCAR_TRAVEL_M  # HVT spawns this far from the area center
 SCAR_HVT_DEST_OFFSET_M = SCAR_TRAVEL_M  # fallback no-strike dest (no city found)
@@ -406,15 +407,31 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     seen_targets.discard(id(target))
                     continue
                 city = _nearest_cp(game, target, same_side=True)
-                if city is not None:
+                origin = target.position
+                city_dist = (
+                    math.hypot(origin.x - city.x, origin.y - city.y)
+                    if city is not None
+                    else 0.0
+                )
+                if city is not None and city_dist >= SCAR_MIN_FLEE_M:
+                    # The nearest enemy city is a real run away: flee straight to it.
                     dest_x, dest_y, fail_radius = (
                         city.x,
                         city.y,
                         SCAR_CITY_RADIUS_M,
                     )
                 else:
-                    dest_x = target.position.x - SCAR_HVT_DEST_OFFSET_M
-                    dest_y = target.position.y
+                    # No city, or the nearest is too close to make a chase of it
+                    # (in-game feedback 2026-06-18: target + hide point sat almost
+                    # on top of each other). Flee to a generic exit a minimum run
+                    # away — along the city axis if we have one, else due -x.
+                    if city is not None and city_dist > 0.0:
+                        dx, dy = city.x - origin.x, city.y - origin.y
+                        dest_x = origin.x + dx / city_dist * SCAR_MIN_FLEE_M
+                        dest_y = origin.y + dy / city_dist * SCAR_MIN_FLEE_M
+                    else:
+                        dest_x = origin.x - SCAR_HVT_DEST_OFFSET_M
+                        dest_y = origin.y
                     fail_radius = SCAR_FAIL_ZONE_RADIUS_M
                 route_len = math.hypot(
                     target.position.x - dest_x, target.position.y - dest_y

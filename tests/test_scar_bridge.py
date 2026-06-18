@@ -65,6 +65,8 @@ def _game_with(*coalitions: Any) -> Any:
     game.theater.controlpoints = []
     # Phase 2a SOF ambush is gated behind this; default OFF for the base tests.
     game.settings.scar_command_post_intel = False
+    # Land-snap is a no-op unless a point is in the sea; keep test coords exact.
+    game.theater.is_in_sea.return_value = False
     return game
 
 
@@ -277,6 +279,21 @@ def test_sof_fields_emitted_to_lua_only_when_enabled() -> None:
     serialized = on.serialize()
     assert "sofX" in serialized
     assert "sofCountryId" in serialized
+
+
+def test_offshore_flee_dest_is_snapped_to_land() -> None:
+    # Coastal targets can put the flee dest (or HVT spawn) in the sea, where ground
+    # units can't path (in-game finding 2026-06-18). Such points are pulled to land.
+    game = _armor_to_far_city()  # dest would be the city at (30000, 0)
+    game.theater.is_in_sea.return_value = True
+    game.theater.nearest_land_pos.return_value = Point(12345, 678, None)  # type: ignore[arg-type]
+
+    tasking = _build(game)[0]
+
+    assert (tasking.dest_x, tasking.dest_y) == (12345, 678)  # snapped onto land
+    # The spawned support columns are snapped too.
+    for convoy in tasking.convoys:
+        assert (convoy.spawn_x, convoy.spawn_y) == (12345, 678)
 
 
 def test_missile_site_target_races_to_a_firing_position() -> None:

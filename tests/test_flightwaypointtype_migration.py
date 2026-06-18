@@ -15,11 +15,14 @@ import pytest
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.persistency import MigrationUnpickler
 
+# A value guaranteed not to be in the enum (computed so adding new waypoint types
+# can never make it collide with a real member, as happened with a hard-coded 36).
+UNKNOWN_VALUE = max(member.value for member in FlightWaypointType) + 100
+
 
 def test_unknown_value_is_not_in_the_enum() -> None:
-    # 36 is the value seen in the wild (one past RECOVERY_TANKER = 35).
     with pytest.raises(ValueError):
-        FlightWaypointType(36)
+        FlightWaypointType(UNKNOWN_VALUE)
 
 
 def test_unpickler_substitutes_nav_for_unknown_value() -> None:
@@ -29,7 +32,7 @@ def test_unpickler_substitutes_nav_for_unknown_value() -> None:
     )
     assert migrate is not None
     # Unknown value -> NAV (passthrough nav point), not a crash.
-    assert migrate(36) is FlightWaypointType.NAV
+    assert migrate(UNKNOWN_VALUE) is FlightWaypointType.NAV
     # Live values are unaffected.
     assert migrate(5) is FlightWaypointType.INGRESS_STRIKE
     assert migrate(35) is FlightWaypointType.RECOVERY_TANKER

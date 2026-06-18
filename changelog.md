@@ -14,6 +14,7 @@
 * **[Plugins]** Update EW Script to version 2.1
 * **[Options]** New option to spawn TACAN beacons at captured airfields
 * **[UX]** Show an "End of Mission Detected, processing Mission Data" busy dialog while turn results are processed, so the wait is not mistaken for a missed detection
+* **[Mission Generation]** Reworked AI plain-SEAD behaviour: instead of firing a scripted point-in-time attack at ingress, SEAD flights now loiter at a standoff orbit (a new SEAD_LOITER anchor held at a configurable multiple of the strongest threat range) and engage radars reactively as they come up, with a computed break-off window. New doctrine settings: standoff factor and maximum loiter window.
 
 ## Fixes
 * **[Flight Plans]** Fixed IndexError crash when a flight exits combat at its last waypoint`n* **[AI]** Fixed enemy AWACS orbit placement â€” AI AWACS (A-50, etc.) was orbiting toward the threat boundary and loitering near the front line. It now orbits in the opposite direction, deep inside friendly airspace. Player-coalition AWACS keeps the existing forward-leaning behavior.

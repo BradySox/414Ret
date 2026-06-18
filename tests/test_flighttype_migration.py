@@ -34,6 +34,17 @@ def test_unpickler_flight_type_migration() -> None:
     assert migrate("TARCAP") is FlightType.TARCAP
 
 
+def test_unpickler_substitutes_barcap_for_unknown_value() -> None:
+    # A save with a flight type this build lacks (e.g. SCAR loaded by a build
+    # without it) must degrade, not crash the whole load.
+    unknown = "NotARealFlightType-xxxxxxxx"
+    assert unknown not in {member.value for member in FlightType}
+    unpickler = MigrationUnpickler(io.BytesIO(b""))
+    migrate = unpickler._handle_flight_type("game.ato.flighttype", "FlightType")
+    assert migrate is not None
+    assert migrate(unknown) is FlightType.BARCAP
+
+
 def test_unpickler_ignores_non_flight_type() -> None:
     unpickler = MigrationUnpickler(io.BytesIO(b""))
     assert unpickler._handle_flight_type("game.ato.flighttype", "Squadron") is None

@@ -162,6 +162,15 @@ def _ring_point(
     )
 
 
+def _paced_speed(route_len_m: float, travel_time_s: float) -> float:
+    """Speed (m/s) to cover ``route_len_m`` in ``travel_time_s``, clamped so a
+    moving HVT crawls within a sane band rather than racing or stalling."""
+    return min(
+        SCAR_HVT_SPEED_MAX_MS,
+        max(SCAR_HVT_SPEED_MIN_MS, route_len_m / max(travel_time_s, 1.0)),
+    )
+
+
 def _real_signature(target: object) -> tuple[str, ...]:
     """The DCS unit-type ids making up a real TGO's group(s), defensively."""
     sig: list[str] = []
@@ -275,10 +284,7 @@ def _compose_convoys(
 
     # Pace the HVT to reach the destination ~window (clamped to a sane crawl).
     route_len = math.hypot(hvt_spawn_x - dest_x, hvt_spawn_y - dest_y)
-    hvt_speed = min(
-        SCAR_HVT_SPEED_MAX_MS,
-        max(SCAR_HVT_SPEED_MIN_MS, route_len / max(window_s + SCAR_START_LEAD_S, 1.0)),
-    )
+    hvt_speed = _paced_speed(route_len, window_s + SCAR_START_LEAD_S)
 
     convoys: list[ScarConvoy] = [
         ScarConvoy(
@@ -373,13 +379,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     dest_x, dest_y = origin.x + SCAR_SCUD_RACE_M, origin.y
                     fx, fy = dest_x, dest_y
                 route_len = math.hypot(origin.x - dest_x, origin.y - dest_y)
-                flee_speed = min(
-                    SCAR_HVT_SPEED_MAX_MS,
-                    max(
-                        SCAR_HVT_SPEED_MIN_MS,
-                        route_len / max(SCAR_WINDOW_S + SCAR_START_LEAD_S, 1.0),
-                    ),
-                )
+                flee_speed = _paced_speed(route_len, SCAR_WINDOW_S + SCAR_START_LEAD_S)
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -419,13 +419,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 route_len = math.hypot(
                     target.position.x - dest_x, target.position.y - dest_y
                 )
-                flee_speed = min(
-                    SCAR_HVT_SPEED_MAX_MS,
-                    max(
-                        SCAR_HVT_SPEED_MIN_MS,
-                        route_len / max(SCAR_WINDOW_S + SCAR_START_LEAD_S, 1.0),
-                    ),
-                )
+                flee_speed = _paced_speed(route_len, SCAR_WINDOW_S + SCAR_START_LEAD_S)
                 # Mix in decoys (partial versions of the real armor's signature)
                 # + clutter, all fleeing alongside at the same pace, so the player
                 # must pick the real group out of the column (like the convoy).

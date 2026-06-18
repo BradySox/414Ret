@@ -256,7 +256,17 @@ class MigrationUnpickler(pickle.Unpickler):
             legacy = legacy_values.get(value)
             if legacy is not None:
                 return legacy
-            return FlightType(value)
+            try:
+                return FlightType(value)
+            except ValueError:
+                # A flight type this build lacks (e.g. a save written by a build
+                # WITH SCAR loaded by one without it) must not abort the whole
+                # load -- degrade to BARCAP; the next turn re-plans. Mirrors the
+                # FlightWaypointType -> NAV tolerance.
+                logging.warning(
+                    "Unknown FlightType %s in save; substituting BARCAP", value
+                )
+                return FlightType.BARCAP
 
         return migrate
 

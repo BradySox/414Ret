@@ -611,9 +611,22 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   `discovered_by_player`). `known_for` still gates composition. AI/planner use ground truth
   (`viewer=None`). SME-answered 2026-06-18: reveal ALL, permanent, full reveal w/ exact coords,
   ~2-3 posts/campaign. Tests: `tests/test_scar_command_post_fog.py`.
-- NOT yet built: **Phase 2** — the SOF-airdrop capture mechanic that PRODUCES the `captured`
-  result (SME: finite SOF ~2-3/campaign; botched = commander escapes but SOF recoverable via
-  CSAR). mis-ID penalty stays NONE; Phase-3 auto-planning.
+- Commander-capture **Phase 2a BUILT (gated OFF, needs an in-game pass)** — the scripted SOF
+  capture loop that PRODUCES the `captured` result. When `scar_command_post_intel` is on, the
+  generator drops a friendly SOF team (`mist.dynAdd` infantry, no CTLD dependency) at
+  `SCAR_SOF_LEAD_FRAC` (0.7) of the HVT's spawn→dest route; the SCAR plugin's `scar_check`
+  resolves `captured` when the un-killed command vehicle drives within `SCAR_SOF_CAPTURE_RADIUS_M`
+  (600 m). Priority killed > captured > escaped/timeout; spawn + armor variants only. Files:
+  `scarluadata.py` (`_sof_ambush`, `sof_*` fields, `_emit_sof`), `scar_414_init.lua`
+  (`spawn_sof`, `hvt_in_sof_zone`, the `captured` branch, `mark_sof`). First-pass simplification:
+  always-drops + auto-on-proximity (becomes a real choice with finite/player SOF in 2b/2c).
+  Plan: `docs/dev/design/414th-scar-phase2-sof-plan.md`. Tests: `tests/test_scar_bridge.py`.
+- NOT yet built: **Phase 2b/2c** — finite `Coalition.sof_teams` pool + UI + carryover (2b);
+  CSAR recovery on botch + optional player-flown CTLD insert (2c). SME: finite SOF ~2-3/campaign;
+  botched = commander escapes but SOF recoverable via CSAR. mis-ID penalty stays NONE;
+  Phase-3 auto-planning. **Coordinate with Tyler's C-130 `DEPLOYMENT` work** — his
+  `PendingDeployments`/air-assault-CTLD pattern is the template for 2b/2c (shared `Coalition` +
+  `MissionResultsProcessor` + `FlightType` surface).
 
 ---
 

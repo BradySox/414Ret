@@ -1,11 +1,26 @@
 # SCAR Phase 2 — SOF airdrop + commander capture (implementation plan)
 
-Status: **planning** (no code yet). Phase 1 (the reveal/intel side) is built and merged,
-gated OFF behind `scar_command_post_intel`. This doc plans Phase 2: the mechanic that
-actually **produces a `captured` SCAR result**, which Phase 1 already consumes.
+Status: **2a BUILT** (scripted capture loop), gated OFF behind `scar_command_post_intel`;
+**2b/2c not started**. Phase 1 (the reveal/intel side) is built and merged. This doc plans
+Phase 2: the mechanic that **produces a `captured` SCAR result**, which Phase 1 consumes.
 
 Read first: `414th-scar-task-spec.md` (§9 capture design) and
 `414th-scar-commander-sme-questions.md` (SME answers 2026-06-18).
+
+> **2a as built (first pass, decisions confirmed 2026-06-18):** scripted auto-drop +
+> ambush-on-route + guaranteed-on-proximity. When `scar_command_post_intel` is on, the
+> generator drops a friendly SOF team (`ctld`-independent `mist.dynAdd` infantry) at
+> `SCAR_SOF_LEAD_FRAC` (0.7) of the HVT's spawn→dest route; the SCAR plugin's `scar_check`
+> resolves `captured` when the (un-killed) command vehicle drives within
+> `SCAR_SOF_CAPTURE_RADIUS_M` (600 m). Outcome priority: killed (success) > captured > escaped
+> /timeout (fail). Spawn + armor variants only (a SCUD is not a commander). **Known 2a
+> simplification:** the team always drops and capture is automatic on proximity, so with the
+> setting on, an un-killed HVT is effectively always captured — that becomes a deliberate
+> choice once SOF is finite/player-delivered (2b/2c). Files:
+> `game/missiongenerator/scarluadata.py` (`_sof_ambush`, `sof_*` fields, `_emit_sof`),
+> `resources/plugins/scar/scar_414_init.lua` (`spawn_sof`, `hvt_in_sof_zone`, the `captured`
+> branch, `mark_sof`). Tests: `tests/test_scar_bridge.py` (SOF emission on/off + point on
+> route). Lua still needs an in-game pass.
 
 ---
 
@@ -86,10 +101,10 @@ What Phase 1 already gives us (don't rebuild):
 
 ## 6. Build order (sub-phases — ship + validate each)
 
-- **2a — core capture loop (scripted, infinite SOF).** Scripted SOF ambush dropped ahead
-  of the HVT + proximity capture producing `captured`. No pool yet. Validates the loop and
-  the Phase-1 carryover end-to-end in-game. Smallest change; reuses the SCAR Lua + command
-  vehicle. **Do this first.**
+- **2a — core capture loop (scripted, infinite SOF). ✅ BUILT** (gated OFF; needs an in-game
+  pass). Scripted SOF ambush dropped ahead of the HVT + proximity capture producing
+  `captured`. No pool yet. Reuses the SCAR Lua + command vehicle. See the status note at the
+  top of this doc for the files and the known first-pass simplification.
 - **2b — finite SOF asset.** `Coalition.sof_teams` + decrement-on-use + UI + the carryover
   in `commit_scar_results`.
 - **2c — CSAR recovery + (optional) player-flown delivery.** MOOSE `Ops.CSAR`/CTLD pickup

@@ -24,6 +24,8 @@ from game.missiongenerator.scarluadata import (
     SCAR_DECOY_SIGNATURES,
     SCAR_HVT_SIGNATURE,
     SCAR_MIN_FLEE_M,
+    SCAR_SOF_CAPTURE_RADIUS_M,
+    SCAR_SOF_LEAD_FRAC,
     SCAR_THREAT_LAYDOWN,
     SCAR_WINDOW_S,
     build_scar_taskings,
@@ -50,7 +52,8 @@ def _coalition_with_target(
         MagicMock(flight_type=ft) for ft in extra_types
     ]
     coalition = MagicMock()
-    coalition.opponent.faction.country.id = 7
+    coalition.opponent.faction.country.id = 7  # enemy (HVT) country
+    coalition.faction.country.id = 2  # friendly (SOF) country
     coalition.ato.packages = [package]
     return coalition
 
@@ -60,6 +63,8 @@ def _game_with(*coalitions: Any) -> Any:
     game.coalitions = list(coalitions)
     # No control points -> _nearest_city falls back to the fixed no-strike point.
     game.theater.controlpoints = []
+    # Phase 2a SOF ambush is gated behind this; default OFF for the base tests.
+    game.settings.scar_command_post_intel = False
     return game
 
 
@@ -199,6 +204,79 @@ def test_armor_too_close_city_is_extended_to_min_flee() -> None:
     # Same direction as the city (+x), but extended out to the minimum run.
     assert tasking.dest_y == 0
     assert tasking.dest_x == SCAR_MIN_FLEE_M
+
+
+def _armor_to_far_city() -> Any:
+    armor = MagicMock(spec=VehicleGroupGroundObject)
+    armor.groups = [
+        MagicMock(units=[MagicMock(type=MagicMock(id="T-55"))], group_name="A1")
+    ]
+    armor.position = Point(0, 0, None)  # type: ignore[arg-type]
+    armor.control_point = MagicMock(captured=True)
+    city = MagicMock(captured=True)
+    city.position = Point(30000, 0, None)  # type: ignore[arg-type]  # >= min flee
+    game = _game_with(_coalition_with_target(armor))
+    game.theater.controlpoints = [city]
+    return game
+
+
+def test_no_sof_ambush_when_feature_off() -> None:
+    # scar_command_post_intel defaults OFF -> no SOF team is planned at all.
+    tasking = _build(_armor_to_far_city())[0]
+    assert tasking.sof_radius_m == 0.0
+
+
+def test_armor_sof_ambush_when_feature_on() -> None:
+    game = _armor_to_far_city()
+    game.settings.scar_command_post_intel = True
+
+    tasking = _build(game)[0]
+
+    assert tasking.sof_radius_m == SCAR_SOF_CAPTURE_RADIUS_M
+    assert tasking.sof_country_id == 2  # the FRIENDLY side (not the enemy, 7)
+    # SOF sits SCAR_SOF_LEAD_FRAC of the way from the HVT (origin 0,0) to dest.
+    assert tasking.sof_x == tasking.dest_x * SCAR_SOF_LEAD_FRAC
+    assert tasking.sof_y == 0.0
+
+
+def test_spawn_sof_ambush_on_the_hvt_route_when_feature_on() -> None:
+    target = MagicMock()
+    target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
+    game = _game_with(_coalition_with_target(target))
+    game.settings.scar_command_post_intel = True
+
+    tasking = _build(game)[0]
+
+    assert tasking.variant == "spawn"
+    assert tasking.sof_radius_m == SCAR_SOF_CAPTURE_RADIUS_M
+    assert tasking.sof_country_id == 2
+    # SOF lies on the HVT convoy's spawn->dest line at the lead fraction.
+    hvt = next(c for c in tasking.convoys if c.role == "hvt")
+    assert (
+        tasking.sof_x == hvt.spawn_x + (hvt.dest_x - hvt.spawn_x) * SCAR_SOF_LEAD_FRAC
+    )
+    assert (
+        tasking.sof_y == hvt.spawn_y + (hvt.dest_y - hvt.spawn_y) * SCAR_SOF_LEAD_FRAC
+    )
+
+
+def test_sof_fields_emitted_to_lua_only_when_enabled() -> None:
+    target = MagicMock()
+    target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
+
+    # Disabled (default): no SOF fields in the serialized table.
+    off = LuaData("dcsRetribution")
+    populate_scar_lua(off, _build(_game_with(_coalition_with_target(target))))
+    assert "sofX" not in off.serialize()
+
+    # Enabled: SOF point + friendly country emitted.
+    game = _game_with(_coalition_with_target(target))
+    game.settings.scar_command_post_intel = True
+    on = LuaData("dcsRetribution")
+    populate_scar_lua(on, _build(game))
+    serialized = on.serialize()
+    assert "sofX" in serialized
+    assert "sofCountryId" in serialized
 
 
 def test_missile_site_target_races_to_a_firing_position() -> None:

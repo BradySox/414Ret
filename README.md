@@ -86,6 +86,10 @@ stacked on top (newest first):
 - **Dog Ear (Sborka) search radar** now fielded at major Soviet IADS nodes (SA-2/3/5,
   S-300) and standalone Soviet SHORAD, not just bare SHORAD sites.
 - OPFOR-aggressiveness direction fix and CAS / Armed-Recon engagement-range bumps.
+- **Tunable cruise/patrol altitude** on the Doctrine page — a **minimum patrol altitude**
+  floor (e.g. keep all CAP at 28,000 ft and up) plus an **altitude-scatter band** you can
+  widen, bias high/low, or switch off entirely. Both default to the previous behavior, so
+  existing campaigns are unchanged until you opt in.
 
 ### UI transparency
 - **Target Intel panel** in every ground-object dialog — type, allegiance, valid
@@ -102,6 +106,9 @@ stacked on top (newest first):
   exact F10 marks and kneeboard coordinates, so players have to visually acquire targets.
 - **Building card cleanup** — scenery-object building cards no longer show the upstream
   "Missing Recon Picture" placeholder; cards with no icon show a compact name + value layout.
+- **Bulk flight altitude** — the flight Waypoints tab has an *Apply to all* control that
+  sets every en-route waypoint to one altitude at once, and the per-waypoint altitude
+  arrows now step 1,000 ft instead of 1 ft.
 - **Self-documenting plugin options** — the *LUA Plugins Options* page now shows a short
   description under each plugin explaining what it does, and the option labels across all
   plugins were cleaned up (typo fixes, consistent units, clearer wording).

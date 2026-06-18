@@ -205,6 +205,20 @@ loaded `missing.png` (which contains the literal text "Missing Recon Picture").
 Cards now skip the image widget when no real icon exists and show a compact
 name + value layout instead.
 
+**Flight altitude editing** (`qt_ui/windows/mission/flight/waypoints/QFlightWaypointTab.py`,
+`QFlightWaypointList.py`):
+Changing a flight's cruise altitude used to mean editing every waypoint's `Alt (ft)`
+cell one at a time, and that cell's spin box stepped by the `QDoubleSpinBox` default of
+**1 ft** — useless arrows. Two fixes: (1) an `Altitude` block at the top of the
+Waypoints tab's action column — a 1000-ft-step spin box + **Apply to all** that writes one
+MSL altitude onto every *en-route* waypoint at once (`on_apply_bulk_altitude()`;
+`BULK_ALTITUDE_SKIP_TYPES` + the `RADIO` check exempt takeoff/landing/descent/AGL/Bullseye,
+so only cruise/patrol/ingress legs move; the spinner seeds from the highest planned
+en-route altitude). (2) the per-waypoint `Alt (ft)` cell editor now steps by 1000 ft and
+drops decimals. Per-waypoint editing is untouched, so a low-level ingress leg can still be
+hand-tuned after a bulk set. UI-only; no save-format or planner change. Upstreamed as
+[dcs-retribution#805](https://github.com/dcs-retribution/dcs-retribution/pull/805).
+
 ---
 
 ## 5. Player target location precision
@@ -252,6 +266,22 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   `tests/test_barcap_threat_weighting.py`.
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
   10->15 nm, `armed_recon_engagement_range_distance` 5->10 nm).
+- Cruise/patrol altitude doctrine (Campaign Doctrine page, all default to **no behavior
+  change**, settable per campaign so the squadron tunes altitude to taste rather than the
+  hardcoded ~24k Hornet CAP):
+  - **Altitude scatter band** — replaced the single symmetric `max_plane_altitude_offset`
+    (rolled `randint(0,max) * +/-1`) with a `[min_plane_altitude_offset,
+    max_plane_altitude_offset]` band (x1000 ft, defaults -2/+2 = the old +/-2k spread).
+    Equal bounds disable scatter (0/0 = none); an asymmetric band biases it (0/+4 =
+    climb-only). The roll is the pure, tested `roll_plane_altitude_offset(low, high)` in
+    `game/ato/flight.py` (used by `Flight.__init__`).
+  - **Minimum patrol altitude** (`min_patrol_altitude`, x1000 ft, default 0 = off) — floors
+    CAP/patrol legs to at least this altitude *after* the scatter, capped by the doctrine's
+    `max_combat_altitude`; flights already higher are untouched, helos exempt. Pure helper
+    `apply_patrol_altitude_floor()` called from `WaypointBuilder.get_patrol_altitude`
+    (`game/ato/flightplans/waypointbuilder.py`).
+  - New fields auto-default on old saves via `Settings.__setstate__` and render on the
+    Campaign Doctrine page (no UI wiring). Tests: `tests/test_flight_altitude_settings.py`.
 - Route around the front line: `game/threatzones.py` adds the **active front** as a
   navmesh routing hazard. `ThreatZones._front_line_threat_zone()` buffers a capsule along
   each active FrontLine (perpendicular to the blue->red axis, `FRONT_LINE_THREAT_BUFFER`

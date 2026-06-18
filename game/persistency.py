@@ -92,8 +92,12 @@ class MigrationUnpickler(pickle.Unpickler):
             if name == "Amman":
                 from dcs.terrain.syria.airports import Marka
                 return Marka
-            elif name in ["Helipad_88", "Helipad_183", "Helipad_217", "Helipad_218"]:
-                return dcs.terrain.Airport  # use base-class if airport was removed
+            elif name.startswith("Helipad_"):
+                # The Syria map update (pydcs b0fc06a) renamed/removed every
+                # Helipad_NN class (now HC01/HMed00/... themed names). Old saves
+                # that pinned a control point to one of these can no longer
+                # resolve the class, so fall back to the base Airport class.
+                return dcs.terrain.Airport
         
         # Afghanistan terrain airports
         if module == "dcs.terrain.afghanistan.airports":

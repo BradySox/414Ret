@@ -181,18 +181,24 @@ class MissionResultsProcessor:
                         "has none available."
                     )
 
-    @staticmethod
-    def commit_scar_results(debriefing: Debriefing) -> None:
-        """Ingest SCAR per-area outcomes (skeleton: log only).
+    def commit_scar_results(self, debriefing: Debriefing) -> None:
+        """Ingest SCAR per-area outcomes back into the campaign.
 
-        Proves the scenario bridge closes the loop end-to-end: config out ->
-        Lua pass/fail -> result back into campaign processing. Scoring and
-        campaign consequence (kill credit, mis-ID penalty, intel carryover)
-        are deliberately deferred to a later increment, so this is additive and
-        a no-op when the SCAR plugin is off.
+        Most outcomes are log-only for now (scoring/mis-ID penalty deferred). The
+        one carryover wired: a ``captured`` commander reveals the enemy's command
+        posts next turn (Phase 1, gated by the ``scar_command_post_intel``
+        setting). Provisional, pending the SME ruling on reveal scope/permanence:
+        capture sets the human (blue) side's flag, revealing ALL enemy command
+        posts permanently. Additive — a no-op when the plugin/setting is off.
         """
+        captured = False
         for tasking_id, status in debriefing.state_data.scar_results.items():
             logging.info(f"SCAR area {tasking_id}: {status}")
+            if status == "captured":
+                captured = True
+        if captured and self.game.settings.scar_command_post_intel:
+            self.game.blue.captured_commander = True
+            logging.info("SCAR: commander captured — enemy command posts revealed.")
 
     def commit_ground_losses(
         self, debriefing: Debriefing, events: GameUpdateEvents

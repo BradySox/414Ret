@@ -111,7 +111,14 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         """
         if viewer is None or self.is_friendly(viewer):
             return True
-        if not self.control_point.coalition.game.settings.recon_intel_fog:
+        settings = self.control_point.coalition.game.settings
+        # SCAR campaign engine: enemy command posts stay hidden until the viewer's
+        # side captures an enemy commander (capture is the only key — provisional,
+        # pending the SME on scope/permanence/depth). Its own gate, independent of
+        # the general recon fog.
+        if self.category == "commandcenter" and settings.scar_command_post_intel:
+            return self.control_point.coalition.opponent.captured_commander
+        if not settings.recon_intel_fog:
             return True
         return self.discovered_by_player
 

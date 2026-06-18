@@ -114,7 +114,15 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   in plain language, a decoy warning, the ingress axis (start → no-strike line), and the
   no-strike zone; the missile variant marks the SCUD site. Framed as intel (the C-130 §9b.1
   cue), no kneeboard pages (Lua can't add them mid-mission). Needs an in-game look.
-- **Commander capture → campaign engine (SME-decided 2026-06-17, in scope, NOT yet built):**
+- **Commander capture → campaign engine — Phase 1 FOUNDATION BUILT (gated OFF, provisional
+  pending SME #1-4):** the `scar_command_post_intel` setting (default OFF, Campaign Doctrine)
+  hides enemy command posts (`commandcenter` TGOs) via `known_for` until the viewer's side
+  has `captured_commander` (new persisted `Coalition` flag + save migration). A `captured`
+  SCAR result flips it in `MissionResultsProcessor.commit_scar_results` (provisional: human
+  side, reveal ALL, permanent). Tests: `tests/test_scar_command_post_fog.py`. Still to do:
+  the SOF-airdrop capture mechanic that PRODUCES the `captured` result (Phase 2), and refining
+  scope/permanence/depth + marker-vs-composition hiding per the SME answers.
+- **Commander capture → campaign engine (SME-decided 2026-06-17, design):**
   the HVT "command vehicle" is the enemy leader. Outcomes: killed = clean success (no intel);
   escaped to city = fail; **captured = reveals enemy command posts** (the `commandcenter`
   TGOs) as a **next-turn carryover**. NEW twist: on **new games, command posts start hidden**

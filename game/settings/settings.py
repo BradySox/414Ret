@@ -385,6 +385,20 @@ class Settings:
             "applies to new campaigns."
         ),
     )
+    scar_command_post_intel: bool = boolean_option(
+        "SCAR command-post intel (hide enemy command posts until a commander is captured)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        invert=False,
+        detail=(
+            "When enabled, enemy command posts stay hidden on the map until you "
+            "capture an enemy commander on a SCAR sortie — capturing commanders "
+            "is how you map the enemy command network over a campaign. Off by "
+            "default (work in progress); the reveal rules will be tuned with the "
+            "SME before this ships on."
+        ),
+    )
     aircraft_per_recovery_tanker: int = bounded_int_option(
         "Number of aircraft per recovery tanker",
         page=CAMPAIGN_DOCTRINE_PAGE,

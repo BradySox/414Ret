@@ -266,30 +266,32 @@ local function hvt_in_fail_zone(area)
     return (dx * dx + dz * dz) <= (area.radius * area.radius)
 end
 
--- The HVT command vehicle slips into the city (despawns) on arrival.
+-- The HVT command vehicle slips into the city (despawns) on arrival. Scans every
+-- tracked group: the spawn variant carries it inside the HVT convoy, the armor
+-- variant as a co-located command group appended to area.groups.
 local function despawn_command(area)
     if not area.commandType or area.commandType == "" then
         return
     end
-    local group = Group.getByName(area.groups[1])
-    if group == nil then
-        return
-    end
-    local ok, units = pcall(function()
-        return group:getUnits()
-    end)
-    if not ok or units == nil then
-        return
-    end
-    for _, unit in ipairs(units) do
-        local okt, type_name = pcall(function()
-            return unit:getTypeName()
-        end)
-        if okt and type_name == area.commandType then
-            pcall(function()
-                unit:destroy()
+    for _, gname in ipairs(area.groups) do
+        local group = Group.getByName(gname)
+        if group ~= nil then
+            local ok, units = pcall(function()
+                return group:getUnits()
             end)
-            return
+            if ok and units ~= nil then
+                for _, unit in ipairs(units) do
+                    local okt, type_name = pcall(function()
+                        return unit:getTypeName()
+                    end)
+                    if okt and type_name == area.commandType then
+                        pcall(function()
+                            unit:destroy()
+                        end)
+                        return
+                    end
+                end
+            end
         end
     end
 end
@@ -539,9 +541,10 @@ local function brief_armor(area)
     local side = scar_side(area)
     local sig = live_signature(area.groups[1])
     local text = "SCAR INTEL (" .. area.id .. "):\n" ..
-        "Target armor signature: " .. sig .. "\n" ..
-        "Other columns are fleeing too — find the matching group and destroy it " ..
-        "before it reaches the city."
+        "Target signature: " .. sig .. " + 1x command vehicle (the HVT)\n" ..
+        "The real column has a command vehicle riding with it. Decoys share SOME " ..
+        "elements — some even a command vehicle — so match the FULL signature and " ..
+        "destroy it (command vehicle included) before it reaches the city."
     pcall(trigger.action.outTextForCoalition, side, text, 30)
     local group = Group.getByName(area.groups[1])
     if group ~= nil then
@@ -577,7 +580,9 @@ local function activate_armor_area(tasking, go_live, window)
         destX = scar_num(tasking.destX, 0),
         destY = scar_num(tasking.destY, 0),
         radius = scar_num(tasking.failZoneRadius, 2000),
-        commandType = "",
+        -- The command vehicle riding with the real column: tracked (must die for
+        -- success) and the unit that despawns ("escapes") on reaching the city.
+        commandType = tostring(tasking.commandType or ""),
         deadline = timer.getTime() + go_live + window,
         -- Static until it bugs out; only then can it "reach" the city = fail.
         liveAt = timer.getTime() + math.max(0, go_live - SCAR_START_LEAD),
@@ -592,11 +597,16 @@ local function activate_armor_area(tasking, go_live, window)
         for _, name in ipairs(area.groups) do
             set_group_route(name, area.destX, area.destY, speed)
         end
-        -- ...and the decoy/clutter columns spawn and flee alongside it (untracked).
+        -- ...and the decoy/clutter columns spawn and flee alongside it (untracked),
+        -- plus the command vehicle, which IS tracked: append it to area.groups so
+        -- success requires killing it and it's found by despawn_command on arrival.
         local spawn_index = 0
         for _, convoy in pairs(convoys) do
             spawn_index = spawn_index + 1
-            spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
+            local spawned = spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
+            if convoy.role == "command" and spawned ~= nil then
+                table.insert(area.groups, spawned)
+            end
         end
     end, {}, timer.getTime() + math.max(0, go_live - SCAR_START_LEAD))
     return true

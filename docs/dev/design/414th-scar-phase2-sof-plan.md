@@ -185,3 +185,30 @@ Shared surface his `DEPLOYMENT` also touches — keep diffs small + update the `
 test if both add commit steps: `game/ato/flighttype.py` (enum + migration), `Coalition`,
 `MissionResultsProcessor`, and the air-assault/CTLD wiring. If his branch ever lands, our
 `FlightType.SOF` + inventory-debit-on-frag should converge onto his `PendingDeployments` shape.
+
+### 9b. Chosen asset model (2026-06-18): **dedicated SOF unit, bought**
+
+The SOF team is a **distinct, buyable** ground unit (not reused front-line infantry). Implications
++ concrete steps (each a small, CI-green commit; gated behind `scar_command_post_intel`):
+
+- **Define the unit.** Add SOF `GroundUnitType` YAML(s) under `resources/units/ground_units/`
+  backed by a vanilla DCS infantry model, faction-appropriate per side (blue ≈ `Soldier M4 GRG`,
+  red ≈ `Infantry AK Ins`/`Paratrooper RPG-16`), with a `price` and `unit_class: INFANTRY`.
+  Distinct `variant_id` (e.g. "SOF Team (BLUFOR)") so it reads as a separate asset and the
+  capture Lua can spawn that exact type.
+- **Make it buyable without editing every faction JSON.** Most factions are WWII/irrelevant, and
+  the feature is gated. Inject the side-appropriate SOF unit into the buyable set **in code**,
+  only when `scar_command_post_intel` is on — extend the procurement/`accessible_units` path
+  rather than touching dozens of `resources/factions/*.json`.
+- **Pool = inventory count.** Sum the SOF unit across the coalition's `control_point.base.armor`.
+  Replaces any counter. Generation gate (`build_scar_taskings`): emit a SOF drop only while the
+  pool has teams (cap per turn = available count).
+- **Consume.** `commit_scar_results`: a `captured` result debits one SOF unit from a base
+  (`base.commit_losses`). (2c-3 CSAR can re-`commission_units` a recovered team.)
+- **Spawn the bought type.** The capture team the Lua drops uses the SOF unit's DCS type
+  (emit it from Python), snapped onto land via `_on_land`.
+
+**Revised slice order:** 2c-1 inventory asset (unit + buyability + pool + gate + consume +
+land-snap; scripted drop for now) → 2c-2 air-assault SOF insert (`FlightType.SOF`, the real
+"fly it in", debit on frag) → 2c-3 CSAR recovery. Note `SCAR_SOF_LEAD_FRAC` is temporarily 0.3
+(restore to 0.7) — a separate test knob, not part of this work.

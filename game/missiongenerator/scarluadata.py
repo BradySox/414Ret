@@ -59,8 +59,13 @@ SCAR_THREAT_LAYDOWN: tuple[str, ...] = (
     SCAR_THREAT_SAM,
 )
 
-SCAR_HVT_SPAWN_OFFSET_M = 4000.0  # HVT spawns this far north of the area center
-SCAR_HVT_DEST_OFFSET_M = 4000.0  # HVT no-strike destination this far south
+# Moving targets travel a long path so they're a sustained, dynamic intercept
+# (in-game feedback 2026-06-18: "needs a min distance of ~15 NM ... doing more
+# for longer"). All first-pass tunables.
+SCAR_TRAVEL_M = 27780.0  # ~15 NM: how far a moving target runs / relocates
+SCAR_START_LEAD_S = 600.0  # start moving this long BEFORE the flight's TOT
+SCAR_HVT_SPAWN_OFFSET_M = SCAR_TRAVEL_M  # HVT spawns this far from the area center
+SCAR_HVT_DEST_OFFSET_M = SCAR_TRAVEL_M  # fallback no-strike dest (no city found)
 SCAR_FAIL_ZONE_RADIUS_M = 500.0  # HVT entering its destination zone = failed
 SCAR_SPREAD_RADIUS_M = 5000.0  # decoys/clutter ring around the area center
 SCAR_THREAT_RING_M = 3000.0  # threat ring (inside the convoy traffic)
@@ -82,7 +87,7 @@ SCAR_CONVOY_SPEED_MS = 5.0  # cosmetic decoy/clutter crawl
 SCAR_HVT_SPEED_MIN_MS = 4.0
 SCAR_HVT_SPEED_MAX_MS = 15.0
 SCAR_CITY_RADIUS_M = 2000.0  # HVT within this of the city = command escapes
-SCAR_SCUD_RACE_M = 8000.0  # how far a SCUD relocates toward its target to fire
+SCAR_SCUD_RACE_M = SCAR_TRAVEL_M  # how far a SCUD relocates toward its target to fire
 
 
 @dataclass(frozen=True)
@@ -272,7 +277,7 @@ def _compose_convoys(
     route_len = math.hypot(hvt_spawn_x - dest_x, hvt_spawn_y - dest_y)
     hvt_speed = min(
         SCAR_HVT_SPEED_MAX_MS,
-        max(SCAR_HVT_SPEED_MIN_MS, route_len / max(window_s, 1.0)),
+        max(SCAR_HVT_SPEED_MIN_MS, route_len / max(window_s + SCAR_START_LEAD_S, 1.0)),
     )
 
     convoys: list[ScarConvoy] = [
@@ -370,7 +375,10 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 route_len = math.hypot(origin.x - dest_x, origin.y - dest_y)
                 flee_speed = min(
                     SCAR_HVT_SPEED_MAX_MS,
-                    max(SCAR_HVT_SPEED_MIN_MS, route_len / max(SCAR_WINDOW_S, 1.0)),
+                    max(
+                        SCAR_HVT_SPEED_MIN_MS,
+                        route_len / max(SCAR_WINDOW_S + SCAR_START_LEAD_S, 1.0),
+                    ),
                 )
                 taskings.append(
                     ScarTasking(
@@ -413,7 +421,10 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 )
                 flee_speed = min(
                     SCAR_HVT_SPEED_MAX_MS,
-                    max(SCAR_HVT_SPEED_MIN_MS, route_len / max(SCAR_WINDOW_S, 1.0)),
+                    max(
+                        SCAR_HVT_SPEED_MIN_MS,
+                        route_len / max(SCAR_WINDOW_S + SCAR_START_LEAD_S, 1.0),
+                    ),
                 )
                 # Mix in decoys (partial versions of the real armor's signature)
                 # + clutter, all fleeing alongside at the same pace, so the player

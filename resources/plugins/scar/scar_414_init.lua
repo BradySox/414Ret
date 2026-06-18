@@ -30,6 +30,11 @@
 -- to a logged warning instead of breaking the mission.
 
 local SCAR_CHECK_INTERVAL = 10 -- seconds between kill/arrival checks
+-- Start moving this long BEFORE the flight's TOT so the target is already on the
+-- move when the player arrives (in-game feedback: "doing more for longer"). The
+-- fail deadline still anchors to go_live + window. Keep in sync with the Python
+-- SCAR_START_LEAD_S (used for speed pacing).
+local SCAR_START_LEAD = 600
 
 local function scar_log(msg)
     if logger then
@@ -384,7 +389,8 @@ end
 
 -- Order a real ground group to drive from its current position to (dest_x,
 -- dest_y) at the given speed (armor flees to the city; a SCUD races to its
--- firing position).
+-- firing position). Uses mist.goRoute, which builds a valid ground route — a
+-- hand-rolled setTask was not reliably moving real bound groups in-game.
 local function set_group_route(group_name, dest_x, dest_y, speed)
     local group = Group.getByName(group_name)
     if group == nil then
@@ -397,41 +403,14 @@ local function set_group_route(group_name, dest_x, dest_y, speed)
         return
     end
     local pos = unit:getPoint() -- {x = north, y = alt, z = east}
-    local okc, ctrl = pcall(function()
-        return group:getController()
+    local ok, err = pcall(function()
+        local wp1 = mist.ground.buildWP({ x = pos.x, y = pos.z }, "off road", speed)
+        local wp2 = mist.ground.buildWP({ x = dest_x, y = dest_y }, "off road", speed)
+        mist.goRoute(group_name, { wp1, wp2 })
     end)
-    if not okc or ctrl == nil then
-        return
+    if not ok then
+        scar_log("set_group_route failed for " .. group_name .. ": " .. tostring(err))
     end
-    local empty_task = { id = "ComboTask", params = { tasks = {} } }
-    local mission = {
-        id = "Mission",
-        params = {
-            route = {
-                points = {
-                    [1] = {
-                        x = pos.x,
-                        y = pos.z,
-                        type = "Turning Point",
-                        action = "Off Road",
-                        speed = speed,
-                        task = empty_task,
-                    },
-                    [2] = {
-                        x = dest_x,
-                        y = dest_y,
-                        type = "Turning Point",
-                        action = "Off Road",
-                        speed = speed,
-                        task = empty_task,
-                    },
-                },
-            },
-        },
-    }
-    pcall(function()
-        ctrl:setTask(mission)
-    end)
 end
 
 -- Spawn variant: runs at the flight's TOT (go_live). Spawns the whole ground
@@ -457,7 +436,9 @@ local function activate_spawn_area(tasking, window)
                 destY = scar_num(convoy.destY, 0),
                 radius = scar_num(tasking.failZoneRadius, 500),
                 commandType = tostring(tasking.commandType or ""),
-                deadline = timer.getTime() + window,
+                -- Started SCAR_START_LEAD early, so add it back: deadline still
+                -- lands at go_live + window (the player's window from TOT).
+                deadline = timer.getTime() + window + SCAR_START_LEAD,
             }
         end
     end
@@ -508,7 +489,7 @@ local function activate_missile_area(tasking, go_live, window)
         for _, name in ipairs(area.groups) do
             set_group_route(name, area.destX, area.destY, speed)
         end
-    end, {}, timer.getTime() + go_live)
+    end, {}, timer.getTime() + math.max(0, go_live - SCAR_START_LEAD))
     return true
 end
 
@@ -607,7 +588,7 @@ local function activate_armor_area(tasking, go_live, window)
             spawn_index = spawn_index + 1
             spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
         end
-    end, {}, timer.getTime() + go_live)
+    end, {}, timer.getTime() + math.max(0, go_live - SCAR_START_LEAD))
     return true
 end
 
@@ -640,7 +621,7 @@ local function scar_init()
             local t = tasking
             mist.scheduleFunction(function()
                 pcall(activate_spawn_area, t, window)
-            end, {}, timer.getTime() + go_live)
+            end, {}, timer.getTime() + math.max(0, go_live - SCAR_START_LEAD))
             count = count + 1
         end
     end

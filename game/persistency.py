@@ -480,6 +480,10 @@ def save_game(game: Game) -> bool:
 
 def _restore_static_data(game: Game, data: dict[str, Any]) -> None:
     game.theater.landmap = data["landmap"]
+    # Pickle bypasses Landmap.__post_init__, so rebuild the prepared spatial index
+    # (otherwise is_on_land/is_in_sea fall back to a full polygon scan).
+    if game.theater.landmap is not None:
+        game.theater.landmap.prepare()
 
 
 def _unload_static_data(game: Game) -> dict[str, Any]:

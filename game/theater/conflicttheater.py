@@ -114,13 +114,17 @@ class ConflictTheater:
         if self.is_on_land(point):
             return False
 
-        for exclusion_zone in self.landmap.exclusion_zones.geoms:
-            if poly_contains(point.x, point.y, exclusion_zone):
-                return False
+        # Test the prepared MultiPolygons as a whole rather than looping their
+        # .geoms: shp.prepare() (Landmap.__post_init__) builds a spatial index on
+        # the MultiPolygon, so a single .contains() is O(log n) instead of a Python
+        # loop over every polygon (which also rebuilt a shapely Point per geom).
+        # Profiled: ~6.4k exclusion zones -> 5.9M contains/Point calls was ~430s of
+        # the ground-conflict phase; this collapses it to one indexed call per zone set.
+        if poly_contains(point.x, point.y, self.landmap.exclusion_zones):
+            return False
 
-        for sea in self.landmap.sea_zones.geoms:
-            if poly_contains(point.x, point.y, sea):
-                return True
+        if poly_contains(point.x, point.y, self.landmap.sea_zones):
+            return True
 
         return False
 
@@ -136,9 +140,10 @@ class ConflictTheater:
             return False
 
         if not ignore_exclusion:
-            for exclusion_zone in self.landmap.exclusion_zones.geoms:
-                if poly_contains(point.x, point.y, exclusion_zone):
-                    return False
+            # Single indexed contains on the prepared MultiPolygon (see is_in_sea)
+            # rather than a per-polygon loop — this is the hot path in flotgenerator.
+            if poly_contains(point.x, point.y, self.landmap.exclusion_zones):
+                return False
 
         return True
 

@@ -1426,7 +1426,7 @@ class NavalControlPoint(
         else:
             yield from [
                 FlightType.ANTISHIP,
-                FlightType.SEAD_ESCORT,
+                FlightType.SEAD,
             ]
         yield from super().mission_types(for_player)
         if self.is_friendly(for_player):

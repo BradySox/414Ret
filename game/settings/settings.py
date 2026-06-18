@@ -499,14 +499,43 @@ class Settings:
         default=False,
         detail="AI will use vertical takeoff and landing instead of combat takeoff and landing.",
     )
+    min_plane_altitude_offset: int = bounded_int_option(
+        "Minimum randomized altitude offset (x1000 ft) for airplanes.",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        min=-5,
+        max=5,
+        default=-2,
+        detail=(
+            "Lower bound of the per-flight random altitude offset. Each flight rolls "
+            "an offset between the minimum and maximum. Set the minimum and maximum to "
+            "the same value to disable randomization (e.g. both 0 for none)."
+        ),
+    )
     max_plane_altitude_offset: int = bounded_int_option(
         "Maximum randomized altitude offset (x1000 ft) for airplanes.",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        min=0,
+        min=-5,
         max=5,
         default=2,
-        detail="Creates a randomized altitude offset for airplanes.",
+        detail=(
+            "Upper bound of the per-flight random altitude offset. Each flight rolls "
+            "an offset between the minimum and maximum."
+        ),
+    )
+    min_patrol_altitude: int = bounded_int_option(
+        "Minimum patrol altitude (x1000 ft) for airplanes.",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        min=0,
+        max=40,
+        default=0,
+        detail=(
+            "Raises CAP/patrol legs to at least this altitude (after the random "
+            "offset). 0 disables the floor and keeps each aircraft's preferred patrol "
+            "altitude. Capped by the doctrine's maximum combat altitude."
+        ),
     )
 
     player_startup_time: int = bounded_int_option(

@@ -114,7 +114,27 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   in plain language, a decoy warning, the ingress axis (start → no-strike line), and the
   no-strike zone; the missile variant marks the SCUD site. Framed as intel (the C-130 §9b.1
   cue), no kneeboard pages (Lua can't add them mid-mission). Needs an in-game look.
-- **Commander capture → campaign engine (SME-decided 2026-06-17, in scope, NOT yet built):**
+- **Commander capture → campaign engine — Phase 1 BUILT (gated OFF; SME-answered 2026-06-18):**
+  the `scar_command_post_intel` setting (default OFF, Campaign Doctrine) hides enemy command
+  posts (`commandcenter` TGOs) until revealed. **SME rulings applied:**
+  - **#1 scope:** reveal **ALL** command posts (campaigns aren't long/large enough for partial).
+  - **#2 permanence:** once revealed, **permanent** (the `captured_commander` flag never clears).
+  - **#3 depth:** before reveal the post is hidden **entirely** — off the map, not strikable
+    (`TheaterGroundObject.hidden_on_player_map(viewer)` gates `game/server/tgos/models.py`
+    `all_in_game` (the map) + `triggergenerator.py` `_gen_markers` (F10 marks)); after reveal it
+    shows fully with exact coordinates. `known_for` still gates composition.
+  - **#4 keys:** revealed by capturing a commander **OR** the normal discovery
+    (attacked / scouted / TARPS) — `_command_post_revealed()` = `captured_commander or
+    discovered_by_player`. Not capture-only.
+  - **#7 scale:** ~2-3 command posts per campaign (no code; informs expectations).
+
+  Implementation: persisted `Coalition.captured_commander` flag (+ save migration); a `captured`
+  SCAR result flips it in `MissionResultsProcessor.commit_scar_results` (human/blue side). AI /
+  planner / threat math use ground truth (`viewer=None`). Tests:
+  `tests/test_scar_command_post_fog.py`. **Phase 2 (still to do):** the SOF-airdrop mechanic
+  that PRODUCES the `captured` result — **SME #5 finite SOF: yes** (2-3 teams/campaign per #7),
+  **#6 botched capture: the commander escapes but the SOF team is recoverable (CSAR), not lost.**
+- **Commander capture → campaign engine (SME-decided 2026-06-17, design):**
   the HVT "command vehicle" is the enemy leader. Outcomes: killed = clean success (no intel);
   escaped to city = fail; **captured = reveals enemy command posts** (the `commandcenter`
   TGOs) as a **next-turn carryover**. NEW twist: on **new games, command posts start hidden**

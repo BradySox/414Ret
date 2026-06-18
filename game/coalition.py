@@ -47,6 +47,10 @@ class Coalition:
         self.air_wing = AirWing(player, game, self.faction)
         self.armed_forces = ArmedForces(self.faction)
         self.transfers = PendingTransfers(game, player)
+        # SCAR campaign engine: set once this coalition captures an enemy
+        # commander, which reveals the enemy's command posts (gated by the
+        # scar_command_post_intel setting). Persisted campaign state.
+        self.captured_commander = False
 
         # Late initialized because the two coalitions in the game are mutually
         # dependent, so must be both constructed before this property can be set.
@@ -114,6 +118,9 @@ class Coalition:
                 state["player"] = Player.BLUE
             else:
                 state["player"] = Player.RED
+
+        # Migration: older saves predate the SCAR commander-capture flag.
+        state.setdefault("captured_commander", False)
 
         self.__dict__.update(state)
         # Regenerate any state that was not persisted.

@@ -58,3 +58,22 @@ network over a campaign.
 #1–#3 and #7 define what capture *unlocks* and get written into the campaign save, so I
 need them locked before the persistence work. #4–#6 are the SOF airdrop/extract loop and
 can be built after.
+
+---
+
+## SME answers (2026-06-18)
+
+1. **Reveal scope:** reveal **ALL** command posts (campaigns won't be big/long enough for
+   partial/zonal reveals).
+2. **Permanence:** once revealed, **always** revealed (permanent).
+3. **Depth:** before reveal, hidden **entirely** (off the map, not strikable); once revealed,
+   **exact coordinates + strikable**.
+4. **Keys:** **all work** — capture, destroying one you stumble on, or a TARPS pass all reveal
+   a command post (capture is not the only key).
+5. **Finite SOF:** **yes** (consumable teams) — "but no idea how to do that" (impl is ours).
+6. **Botched capture:** the **commander escapes**, but we can **still grab our SOF** (CSAR /
+   recover the team — it is not lost).
+7. **Scale:** **2–3** command posts per campaign.
+
+**Status:** #1–#4 + #7 implemented in Phase 1 (gated OFF). #5/#6 define Phase 2 (the SOF
+airdrop/extract loop), not yet built.

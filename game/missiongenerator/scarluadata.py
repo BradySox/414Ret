@@ -97,10 +97,7 @@ SCAR_SCUD_RACE_M = SCAR_TRAVEL_M  # how far a SCUD relocates toward its target t
 # of escaping. First pass: always dropped + guaranteed on proximity; finite /
 # player-delivered SOF is Phase 2b/2c.
 SCAR_SOF_CAPTURE_RADIUS_M = 600.0  # command vehicle within this of the SOF = captured
-SCAR_SOF_LEAD_FRAC = (
-    0.3  # TESTING: lowered from 0.7 so capture fires early; restore to 0.7
-)
-# SOF sits this fraction along the HVT's spawn->dest route (smaller = captured sooner).
+SCAR_SOF_LEAD_FRAC = 0.7  # SOF sits this fraction along the HVT's spawn->dest route
 
 
 @dataclass(frozen=True)

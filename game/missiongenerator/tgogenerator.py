@@ -523,10 +523,32 @@ class MissileSiteGenerator(GroundObjectGenerator):
         # culled despite being a threat.
         return False
 
+    def _is_scar_target(self) -> bool:
+        """True if a SCAR flight is tasked against this missile site.
+
+        SCAR owns the launch timing for its target (the scar plugin holds the
+        SCUD until the player's window expires), so the stock random fire task —
+        which fires as early as 60 s in — must NOT be applied, or the SCUD
+        launches before the player can reach it.
+        """
+        from game.ato import FlightType
+
+        for coalition in self.game.coalitions:
+            for package in coalition.ato.packages:
+                if package.target is self.ground_object and any(
+                    f.flight_type is FlightType.SCAR for f in package.flights
+                ):
+                    return True
+        return False
+
     def generate(self) -> None:
         super(MissileSiteGenerator, self).generate()
 
         if not self.game.settings.generate_fire_tasks_for_missile_sites:
+            return
+
+        if self._is_scar_target():
+            logging.info("Skipping missile fire task: site is a SCAR target.")
             return
 
         # Note : Only the SCUD missiles group can fire (V1 site cannot fire in game right now)

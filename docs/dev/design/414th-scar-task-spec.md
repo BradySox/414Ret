@@ -57,16 +57,80 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
 - **Integration bridge skeleton** (the §8a recommendation — Python CI-validated, Lua needs
   an in-game pass): `ScarTasking` model + `build_scar_taskings()`/`populate_scar_lua()`
   (`game/missiongenerator/scarluadata.py`), emitted as `dcsRetribution.Scar` and injected
-  via `_inject_scar_script()` (gated on the `scar` plugin + a planned SCAR flight). The
-  `scar` plugin (`resources/plugins/scar/`, default ON) spawns ONE placeholder HVT (a
-  vanilla truck) per area, routes it to a no-strike destination, and reports pass (HVT
-  killed) / fail (HVT reaches destination) via the global `scar_results`. That rides the
-  proven TARS channel: `dcs_retribution.lua write_state` → `StateData.scar_results` →
+  via `_inject_scar_script()` (gated on the `scar` plugin + a planned SCAR flight). **Two
+  variants** (decision 2026-06-17 — AI convoys proved too rare to be the foundation, so spawn
+  by default and only bind to real content when it's a missile site):
+  - **`spawn`** (default, always available): the generator spawns the whole ground picture —
+    an **HVT signature convoy** (SA-9 `Strela-1 9P31` + command `Ural-375 PBU` + 2 trucks),
+    **two decoy convoys** each a partial signature (one drops the SA-9, one drops the command),
+    and **clutter** (plain-truck convoys, count `SCAR_CLUTTER_COUNT`) on a ring around the area
+    (the R2-R4 discrimination puzzle, all vanilla units verified in pydcs). The HVT flees
+    toward a **city** (the nearest enemy-held control point — `_nearest_city()`; real city
+    coords aren't exposed, but CPs map to towns on every theater). Only the HVT is tracked:
+    success = HVT destroyed; fail = it reaches the city (its **command vehicle despawns** —
+    "slips into the urban area") or the window expires. The multi-convoy picture was
+    **verified in-game 2026-06-17** (all 11 groups spawned with unique names; `area scar-N
+    (spawn) -> failed`). City routing + command despawn need a fresh pass.
+  - **`armor`** (bind): when the SCAR target IS a real `VehicleGroupGroundObject` (armor),
+    bind the real group — it's static until go_live, then bugs out toward the city
+    (`set_group_route` assigns a flee route at runtime). success = group destroyed; fail = it
+    reaches the city or the window expires. No spawned fakes. This is the user's "BAI on armor
+    should act like SCAR" (decision 2026-06-17, *Extend SCAR to armor; keep BAI for AI*) —
+    **BAI is untouched** (still the auto-planner's anti-armor/convoy task; `FlightType.BAI`
+    save-compat preserved). NOT yet validated in-game.
+  - **`missile`** (bind): when the SCAR target IS a real `MissileSiteGroundObject` (category
+    "missile" = SCUD), bind it as a **racing launcher** (SME 2026-06-17): held on
+    `WEAPON_HOLD`, it drives from its site toward a **firing position** (a capped distance
+    toward the nearest player-held CP, `_nearest_cp(same_side=False)`) and, on arrival or
+    window-expiry, **actually launches** at that city (`FireAtPoint`) — the launch *is* the
+    failure cost (a missile now flies at civilians/allies; no separate campaign penalty).
+    success = killed before it reaches the firing position. The stock random fire task
+    (`MissileSiteGenerator`, `generate_fire_tasks_for_missile_sites`) is **suppressed for
+    SCAR-targeted sites** (`_is_scar_target()`) so SCAR owns the timing. Static-watch launch
+    was verified in-game 2026-06-17; the racing version needs a fresh pass.
+  The `scar` plugin (`resources/plugins/scar/`, default ON). Outcomes ride the proven TARS
+  channel: `dcs_retribution.lua write_state` → `StateData.scar_results` →
   `MissionResultsProcessor.commit_scar_results` (log-only for now). Tests:
   `tests/test_scar_bridge.py`.
-- **Deliberately NOT yet built** (next increments): the real HVT signature convoy + decoys
-  + clutter + threat laydown (replaces the single placeholder truck); scoring + the mis-ID
-  penalty (§10 Q1) and campaign consequence; briefing/marker cueing; Phase-3 auto-planning.
+- **Why spawn, not reuse:** AI rarely produces moving ground content (enemy convoys are rare;
+  static armor doesn't move → plays like BAI), so relying on campaign content would leave SCAR
+  usually unavailable. Spawning guarantees the moving-HVT experience (spec §5). Missile sites
+  are the one real-target case kept, because they map cleanly to the SCUD fail-on-launch
+  variant when present.
+- **Scenario timing — TOT-anchored window (fixes the "no window to find it" bug,
+  2026-06-17):** the original clock ran from mission start, so the convoy crossed and the
+  SCUD fired while the player was still ~15+ min out. Now each scenario is anchored to the
+  package's TOT (`go_live_s = time_over_target − mission.start_time`) and gives a generous
+  `window_s` (default 20 min, `SCAR_WINDOW_S`) after that. Spawn: the convoy picture appears
+  at go_live; the HVT is paced (speed = route_len/window, clamped) to reach the city ~as the
+  window expires, with a deadline (`go_live+window`) backstop. Missile: the SCUD's stock fire
+  task is suppressed and it's held on `WEAPON_HOLD`; the launch (fail) is recorded at
+  `go_live+window`. Taskings are deduped per target. NOT range-gated — purely time-based.
+- **Threat laydown (R9) — built:** the spawn picture also scatters ZSU-23-4 + ZU-23 + an
+  occasional SA-9 (stationary, untracked `role="threat"` groups). Spawned at runtime, so they
+  never trip the planner's auto SEAD-escort (resolves §10 Q3 for the spawn path).
+- **Briefing / map cues (R11, spec §7) — built (Lua):** on init the plugin posts an intel
+  brief to the SCAR flight's coalition and drops F10 map marks — the target convoy *signature*
+  in plain language, a decoy warning, the ingress axis (start → no-strike line), and the
+  no-strike zone; the missile variant marks the SCUD site. Framed as intel (the C-130 §9b.1
+  cue), no kneeboard pages (Lua can't add them mid-mission). Needs an in-game look.
+- **Commander capture → campaign engine (SME-decided 2026-06-17, in scope, NOT yet built):**
+  the HVT "command vehicle" is the enemy leader. Outcomes: killed = clean success (no intel);
+  escaped to city = fail; **captured = reveals enemy command posts** (the `commandcenter`
+  TGOs) as a **next-turn carryover**. NEW twist: on **new games, command posts start hidden**
+  (their own capture-gated reveal, distinct from the normal recon-fog scout/strike reveal) and
+  are lit up only by capturing commanders — making SCAR the way you map the enemy command
+  network over a campaign. Reuses feature #3's recon fog (`discovered_by_player`/`known_for`/
+  `recon_intel_fog`). **Capture mechanic = SOF airdrop (spec §9b.2, chosen over air-only):**
+  C-130 drops a SOF team ahead of the HVT → proximity capture; with the finite-SOF asset
+  (§9c.3) + CSAR extract on botched capture (§9c.1). This is a large multi-system,
+  multi-session build (CTLD airdrop, proximity-capture Lua, campaign-economy SOF asset, a CSAR
+  mission type, the carryover, and the command-post fog). Suggested phasing: (1) carryover +
+  command-post fog foundation, gated behind a new setting default OFF (CI-testable with a
+  mocked "captured" result); (2) SOF airdrop + proximity capture producing "captured"
+  (in-game); (3) finite SOF asset + CSAR extract.
+- **Deliberately NOT yet built** (other): the mis-ID penalty (R7) stays **NONE** for now
+  (SME: bragging rights); Phase-3 auto-planning.
 
 ---
 

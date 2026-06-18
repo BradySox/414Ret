@@ -43,6 +43,7 @@ class MigrationUnpickler(pickle.Unpickler):
             self._handle_ch_russian_assets,
             self._handle_su30,
             self._handle_flight_type,
+            self._handle_flight_waypoint_type,
             self._handle_misc,
         ]
 
@@ -256,6 +257,33 @@ class MigrationUnpickler(pickle.Unpickler):
             if legacy is not None:
                 return legacy
             return FlightType(value)
+
+        return migrate
+
+    def _handle_flight_waypoint_type(self, module: str, name: str) -> Any:
+        """Tolerate unknown FlightWaypointType values from other builds.
+
+        A save written by a build whose FlightWaypointType enum carried a value
+        this fork lacks (e.g. an upstream/experimental waypoint type, or a SCAR
+        ingress type that was renumbered) would otherwise abort the entire load
+        with ``ValueError: N is not a valid FlightWaypointType``. Map any
+        unknown value to NAV -- a passthrough nav point with no special AI
+        behaviour -- so the campaign still loads; the next turn regenerates
+        flight plans fresh.
+        """
+        if name != "FlightWaypointType" or not module.endswith("flightwaypointtype"):
+            return None
+
+        from game.ato.flightwaypointtype import FlightWaypointType
+
+        def migrate(value: int) -> FlightWaypointType:
+            try:
+                return FlightWaypointType(value)
+            except ValueError:
+                logging.warning(
+                    "Unknown FlightWaypointType %s in save; substituting NAV", value
+                )
+                return FlightWaypointType.NAV
 
         return migrate
 

@@ -36,6 +36,35 @@ for _, b in ipairs(_CIVILIAN_TRAFFIC_EXCL or {}) do
     _excl[b] = true
 end
 
+-- ── Silence RAT's benign routing-failure spam ────────────────────────────────
+-- On large/sparse neutral maps a randomly chosen departure field sometimes has
+-- no destination within the AIRCRAFT'S OWN range. That -- not our distance cap --
+-- is the binding limit for short-range types (helos, light prop), which is why
+-- uncapping SetMaxDistance alone never fully silenced it. MOOSE RAT broadcasts
+-- "No valid destination..." / "Destination and departure are identical..." to
+-- ALL players and re-fires it on every respawn. The condition is harmless -- RAT
+-- just skips that spawn and retries -- so we drop only those two on-screen
+-- messages. RAT still logs them via self:E, so nothing is lost for debugging.
+-- Installed once, mission-wide; exact substring match so no other message is hit.
+-- (MESSAGE is always defined here: civilian_traffic loads after Moose.lua.)
+if MESSAGE and not _G._CIV_RAT_MSG_SILENCED then
+    _G._CIV_RAT_MSG_SILENCED = true
+    local _orig_ToAll = MESSAGE.ToAll
+    local _rat_spam = {
+        "No valid destination airport could be found",
+        "Destination and departure are identical",
+    }
+    function MESSAGE:ToAll(Settings, Delay)
+        local txt = self.MessageText or ""
+        for _, sig in ipairs(_rat_spam) do
+            if string.find(txt, sig, 1, true) then
+                return self  -- swallow the broadcast; RAT's log line still fires
+            end
+        end
+        return _orig_ToAll(self, Settings, Delay)
+    end
+end
+
 -- Front-line contested points, normalised to {x, z} (horizontal plane) so they
 -- compare directly against airbase points from getPoint().
 local _fronts = {}
@@ -256,6 +285,11 @@ if #_helipads >= 2 then
         "RAT_CIV_SA342",
     }
     for _, tmpl in ipairs(helo_templates) do
+        -- Use the pruned pool + helo distance cap (mirrors the fixed-wing branch).
+        -- Pruning to fields with an in-range neighbour avoids isolated departure
+        -- fields with no reachable destination; any residual "No valid destination"
+        -- spam from a short-range helo's own range is silenced by the MESSAGE
+        -- filter at the top of this file. SetMinDistance(5) prevents same-field hops.
         if _spawn_rat(tmpl, pool, n, _maxdist_helo_km) then
             _helo_count  = _helo_count  + 1
             _helo_spawns = _helo_spawns + n

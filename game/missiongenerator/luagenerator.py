@@ -492,9 +492,12 @@ class LuaGenerator:
 
         populate_intercept_lua(lua_data, self.mission_data.intercept_entries)
 
-        # SCAR scenario bridge: collect one tasking per planned SCAR flight and
-        # emit dcsRetribution.Scar. scar_taskings also gates _inject_scar_script.
-        self.mission_data.scar_taskings = build_scar_taskings(self.game)
+        # SCAR scenario bridge: collect one tasking per SCAR target and emit
+        # dcsRetribution.Scar. scar_taskings also gates _inject_scar_script. The
+        # mission start time anchors each scenario's fail clock to the flight TOT.
+        self.mission_data.scar_taskings = build_scar_taskings(
+            self.game, self.mission.start_time
+        )
         populate_scar_lua(lua_data, self.mission_data.scar_taskings)
 
         # Add artillery and support units info

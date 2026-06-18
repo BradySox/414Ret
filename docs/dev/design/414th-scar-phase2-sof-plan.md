@@ -212,3 +212,28 @@ The SOF team is a **distinct, buyable** ground unit (not reused front-line infan
 land-snap; scripted drop for now) → 2c-2 air-assault SOF insert (`FlightType.SOF`, the real
 "fly it in", debit on frag) → 2c-3 CSAR recovery. Note `SCAR_SOF_LEAD_FRAC` is temporarily 0.3
 (restore to 0.7) — a separate test knob, not part of this work.
+
+### 9c. 2c-1 buyability/pool — de-risked design (verified 2026-06-18)
+
+Key finding: `base.armor` is the front-line combat pool, BUT `ai_ground_planner` only deploys
+TANK/APC/ARTILLERY/IFV/LOGI/ATGM/SHORAD/AAA/RECON classes — **INFANTRY falls through to the
+`else` and is skipped**. And AI ground procurement (`procurement.affordable_ground_unit_of_class`)
+draws only from `faction.frontline_units`/`artillery_units`. So a SOF unit of class INFANTRY:
+- is **never auto-deployed to the front** (skipped by the planner), and
+- is **never bought/used by the AI** as long as we keep it OUT of `frontline_units`.
+
+So no faction mutation and no procurement guard are needed. Implementation (all gated on
+`scar_command_post_intel`):
+1. **Buyable (player only):** in `qt_ui/.../QArmorRecruitmentMenu.py`, add the side's SOF unit
+   (`SOF Team (BLUFOR)`/`(OPFOR)`) to the buy list when the setting is on. The AI's
+   `frontline_units`-based procurement is untouched, so only the human can buy SOF.
+2. **Pool = inventory count:** sum the side's SOF `GroundUnitType` across the coalition's
+   `control_point.base.armor`. `build_scar_taskings` gates SOF drops on it (cap per turn =
+   count), replacing the always-drop.
+3. **Spawn the bought type:** emit the SOF unit's DCS id in the tasking; the Lua spawns that
+   instead of the hard-coded `Soldier M4`. Snap via `_on_land`.
+4. **Consume:** `commit_scar_results` debits one SOF unit from a base (`base.commit_losses`)
+   per `captured`.
+
+Units defined + verified (commit 81bc1fb69): `SOF Team (BLUFOR)` (Soldier M4 GRG) / `(OPFOR)`
+(Infantry AK), price 8, spawn_weight 0.

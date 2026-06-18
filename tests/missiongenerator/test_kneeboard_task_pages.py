@@ -13,6 +13,8 @@ from game.settings.settings import TargetIntelPrecision
 class _DummyPosition:
     def __init__(self, location: str) -> None:
         self.location = location
+        self.x = 0.0
+        self.y = 0.0
 
     def latlng(self) -> SimpleNamespace:
         return SimpleNamespace(
@@ -42,14 +44,14 @@ def _target(location: str) -> Any:
 def test_dead_task_page_uses_cue_even_with_exact_intel() -> None:
     page = SeadTaskPage(_flight(FlightType.DEAD, TargetIntelPrecision.EXACT), False)
 
-    row = page.target_info_row(_target("N 35 00 00 E 36 00 00"))
+    row = page.target_info_row(_target("N 35 00 00 E 36 00 00"), {})
 
-    assert row[2] == "Search around target area waypoint"
+    assert row[3] == "Search around target area waypoint"
 
 
 def test_sead_task_page_keeps_exact_coords_with_exact_intel() -> None:
     page = SeadTaskPage(_flight(FlightType.SEAD, TargetIntelPrecision.EXACT), False)
 
-    row = page.target_info_row(_target("N 35 00 00 E 36 00 00"))
+    row = page.target_info_row(_target("N 35 00 00 E 36 00 00"), {})
 
-    assert row[2] == "N 35 00 00 E 36 00 00"
+    assert row[3] == "N 35 00 00 E 36 00 00"

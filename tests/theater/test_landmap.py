@@ -1,14 +1,18 @@
 import os
-from types import SimpleNamespace
+from pathlib import Path
 
-import pytest
-
+from dcs.mapping import Point
 from shapely.geometry import MultiPolygon, Polygon
 
 from dcs.terrain.caucasus.caucasus import Caucasus
 from game.theater import landmap
 from game.theater.conflicttheater import ConflictTheater
 from game.theater.landmap import poly_contains
+
+
+def _pt(*, x: float, y: float) -> Point:
+    # is_on_land/is_in_sea only read .x/.y, so terrain can be None.
+    return Point(x, y, None)  # type: ignore[arg-type]
 
 
 def test_miz() -> None:
@@ -81,24 +85,20 @@ def test_is_on_land_and_in_sea_with_multiple_zones() -> None:
     # Spot checks across land, both exclusion holes, and both sea squares.
     cases = [(5, 5), (2, 2), (7, 7), (21, 21), (31, 31), (-5, -5), (5, 0.5)]
     for x, y in cases:
-        pt = SimpleNamespace(x=float(x), y=float(y))
+        pt = _pt(x=float(x), y=float(y))
         assert theater.is_on_land(pt) == ref_on_land(x, y), (x, y, "on_land")
         assert theater.is_in_sea(pt) == ref_in_sea(x, y), (x, y, "in_sea")
 
     # The headline cases, explicitly.
-    assert theater.is_on_land(SimpleNamespace(x=5.0, y=5.0)) is True
-    assert (
-        theater.is_on_land(SimpleNamespace(x=2.0, y=2.0)) is False
-    )  # exclusion hole 1
-    assert (
-        theater.is_on_land(SimpleNamespace(x=7.0, y=7.0)) is False
-    )  # exclusion hole 2
-    assert theater.is_in_sea(SimpleNamespace(x=21.0, y=21.0)) is True  # sea square 1
-    assert theater.is_in_sea(SimpleNamespace(x=31.0, y=31.0)) is True  # sea square 2
-    assert theater.is_in_sea(SimpleNamespace(x=5.0, y=5.0)) is False  # on land
+    assert theater.is_on_land(_pt(x=5.0, y=5.0)) is True
+    assert theater.is_on_land(_pt(x=2.0, y=2.0)) is False  # exclusion hole 1
+    assert theater.is_on_land(_pt(x=7.0, y=7.0)) is False  # exclusion hole 2
+    assert theater.is_in_sea(_pt(x=21.0, y=21.0)) is True  # sea square 1
+    assert theater.is_in_sea(_pt(x=31.0, y=31.0)) is True  # sea square 2
+    assert theater.is_in_sea(_pt(x=5.0, y=5.0)) is False  # on land
 
 
-def test_load_landmap_rebuilds_prepared_index(tmp_path: pytest.TempPathFactory) -> None:
+def test_load_landmap_rebuilds_prepared_index(tmp_path: Path) -> None:
     """Pickle bypasses __post_init__; load_landmap must re-prepare so queries are
     indexed (and correct) after a load."""
     import pickle
@@ -108,15 +108,13 @@ def test_load_landmap_rebuilds_prepared_index(tmp_path: pytest.TempPathFactory) 
         exclusion_zones=MultiPolygon([Polygon([(1, 1), (1, 2), (2, 2), (2, 1)])]),
         sea_zones=MultiPolygon([Polygon([(8, 8), (8, 9), (9, 9), (9, 8)])]),
     )
-    path = os.path.join(str(tmp_path), "lm.pkl")
+    path = tmp_path / "lm.pkl"
     with open(path, "wb") as f:
         pickle.dump(lm, f)
 
-    from pathlib import Path
-
-    loaded = landmap.load_landmap(Path(path))
+    loaded = landmap.load_landmap(path)
     assert loaded is not None
     theater = _theater_with(loaded)
-    assert theater.is_on_land(SimpleNamespace(x=3.0, y=3.0)) is True
-    assert theater.is_on_land(SimpleNamespace(x=1.5, y=1.5)) is False
-    assert theater.is_in_sea(SimpleNamespace(x=8.5, y=8.5)) is True
+    assert theater.is_on_land(_pt(x=3.0, y=3.0)) is True
+    assert theater.is_on_land(_pt(x=1.5, y=1.5)) is False
+    assert theater.is_in_sea(_pt(x=8.5, y=8.5)) is True

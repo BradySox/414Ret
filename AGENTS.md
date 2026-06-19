@@ -113,6 +113,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 15. **SCAR** — player-flown Strike Coordination and Reconnaissance against a moving HVT
     (flight type + scenario `scar` plugin, default ON), plus a gated-OFF commander-capture
     path using finite purchased SOF inventory.
+16. **Settings QOL audit** — dead/duplicate setting cleanup (four fields removed), AI-radio
+    booleans consolidated into the `AiRadioBehavior` enum with deterministic save migration,
+    plugin wording, and a UI-layer grouping/dependency handoff
+    ([docs/dev/settings-qol-audit.md](docs/dev/settings-qol-audit.md)).
 
 ---
 

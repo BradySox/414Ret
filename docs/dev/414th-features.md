@@ -635,6 +635,29 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
 
 ---
 
+## 16. Settings semantic cleanup and audit
+
+The core settings model and every active plugin definition received a consumer-level
+audit (2026-06-18). UI work is intentionally separate; the full grouping/dependency
+handoff lives in [`docs/dev/settings-qol-audit.md`](settings-qol-audit.md).
+
+- **Removed four dead/duplicate fields** (`game/settings/settings.py`): unused
+  `prefer_squadrons_with_matching_primary_task`, duplicate `pretense_num_of_cargo_planes`,
+  permanently-disabled `nevatim_parking_fix` (plus its Nevatim/Ramon restricted-slot code
+  in `flightgroupspawner.py` and the `Migrator` force-off line), and the hidden legacy
+  `only_player_takeoff`.
+- **Consolidated the AI-radio booleans** (`limit_ai_radios` + `silence_ai_radios`) into the
+  `AiRadioBehavior` enum (`FULL`, `LIMITED`, `SILENT`). `Settings.__setstate__` runs
+  `_migrate_legacy_settings` to map every old boolean combination deterministically and
+  strip the retired keys, so existing campaign/settings files load without carrying dead
+  state forward. The new enum is registered in `SERIALIZABLE_ENUM_TYPES` so the hardened
+  enum-deserialization path accepts it. Covered by `tests/settings/test_settings_qol_migration.py`.
+- **Plugin wording**: `descriptionInUI` added to the QRA `intercept` and `splashdamage3`
+  plugins (the latter notes its tuning is locked by design). Splash Damage values and the
+  tuned script are unchanged.
+
+---
+
 ## Still in flight / deferred
 
 - Aircraft task-priority rebalance: a **conservative, intent-preserving outliers pass**

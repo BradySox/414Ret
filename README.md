@@ -96,6 +96,10 @@ and selected later upstream fixes.
   build still requires players to select the cartridge manually once per sortie.
 - The **CurrentHill Iran** integration adds Shahed-136 and IRGCN FAC assets plus a dedicated
   `[CH] Iran 2020` faction behind a new-game mod toggle.
+- The **settings screen** was audited end-to-end: dead and duplicate options were removed,
+  the two AI-radio toggles were merged into a single **AI wingman radio behavior** choice
+  (Normal / Suppress contact reports / Radio silence), and many labels were clarified.
+  Existing campaigns migrate automatically on load.
 - Numerous mission-generation and debriefing fixes are included, along with selected
   upstream backports newer than the fork's original base.
 

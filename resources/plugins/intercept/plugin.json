@@ -1,6 +1,7 @@
 {
     "skipUI": true,
     "nameInUI": "Intercept (QRA)",
+    "descriptionInUI": "Required runtime support for per-squadron QRA intercept reserves. Campaign Doctrine controls reserve size, scramble radius, engagement range, and callouts.",
     "defaultValue": true,
     "specificOptions": [],
     "scriptsWorkOrders": [],

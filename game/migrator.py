@@ -47,9 +47,6 @@ class Migrator:
         self._update_theater()
         self._update_campaign_name()
 
-        # TODO: remove in due time as this is supposedly fixed
-        self.game.settings.nevatim_parking_fix = False
-
     def _update_doctrine(self) -> None:
         doctrines = [
             MODERN_DOCTRINE,

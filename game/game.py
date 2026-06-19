@@ -479,6 +479,13 @@ class Game:
         if for_red:
             self.red.initialize_turn(self.turn == 0 and squadrons_start_full)
 
+        # Surface stranded-SOF teams as "downed SOF team" recovery objectives
+        # (SCAR 2c-3). Rebuilt from each coalition's pending_csars; idempotent, so
+        # safe under the multiple-init-per-turn cases documented above.
+        from game.scar_objectives import sync_downed_sof_objectives
+
+        sync_downed_sof_objectives(self)
+
         # Plan GroundWar
         self.ground_planners = {}
         for cp in self.theater.controlpoints:

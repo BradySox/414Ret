@@ -812,6 +812,62 @@ class VehicleGroupGroundObject(TheaterGroundObject):
         yield from super().mission_types(for_player)
 
 
+class DownedSofGroundObject(TheaterGroundObject):
+    """A SOF team stranded by a botched SCAR capture, surfaced as a first-class
+    recovery objective (SCAR Phase 2c-3).
+
+    Created dynamically each turn from the owning coalition's
+    ``pending_csars`` (not authored in the campaign .miz) and attached to a
+    friendly control point's ``connected_objectives`` at the strand point. It is
+    *our* team, so it is friendly to its owner and offers only a CSAR (helo
+    extraction) mission to that side -- the enemy gets no tasking against it. The
+    infantry group it carries is the physical team the recovery helo extracts.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        location: PresetLocation,
+        control_point: ControlPoint,
+    ) -> None:
+        super().__init__(
+            name=name,
+            category="downed_team",
+            location=location,
+            control_point=control_point,
+            sea_object=False,
+            task=None,
+        )
+
+    @property
+    def symbol_set_and_entity(self) -> tuple[SymbolSet, Entity]:
+        return SymbolSet.LAND_UNIT, LandUnitEntity.UNSPECIFIED
+
+    @property
+    def capturable(self) -> bool:
+        return False
+
+    @property
+    def purchasable(self) -> bool:
+        return False
+
+    def mission_types(self, for_player: Player) -> Iterator[FlightType]:
+        from game.ato import FlightType
+
+        # Only the owning side, and only with the SCAR commander-capture feature
+        # on, can task a recovery. No enemy tasking and no other friendly missions
+        # (this is a downed team, not a target). The settings lookup is defensive
+        # because some lightweight contexts hold a control point without a
+        # coalition.
+        if self.is_friendly(for_player):
+            try:
+                settings = self.control_point.coalition.game.settings
+            except (RuntimeError, AttributeError):
+                settings = None
+            if settings is not None and settings.scar_command_post_intel:
+                yield FlightType.CSAR
+
+
 class EwrGroundObject(IadsGroundObject):
     def __init__(
         self,

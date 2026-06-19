@@ -313,9 +313,23 @@ This slice needs dynamic-TGO creation + ATO wiring + a recovery flight + in-miss
   `Coalition.end_turn`): each pending rescue ages one turn per `end_turn` (the once-per-turn hook;
   `initialize_turn` can run several times per turn, so aging there would over-decrement) and is
   written off at zero. Gated behind `scar_command_post_intel`. Tests: `tests/test_scar_rescue.py`.
-  **Overrun deferred to C2:** SOF strand in contested/enemy territory by design, so a raw
-  nearest-control-point test would false-positive on the turn they strand; overrun becomes "the
-  friendly control point the rescue is anchored to was captured," which needs C2's anchor.
+- **C2 — surfacing + overrun BUILT** (`game/scar_objectives.py`, `DownedSofGroundObject`,
+  `FlightType.CSAR`, `Game.initialize_turn`, `PendingSofRescue.anchor_cp_id`):
+  - `DownedSofGroundObject` — a friendly TGO carrying the stranded infantry team; offers **only**
+    `FlightType.CSAR`, and only to the owning side with the feature on (no enemy tasking).
+  - `sync_downed_sof_objectives(game)` rebuilds the objectives each `initialize_turn` from every
+    coalition's `pending_csars` (idempotent teardown+rebuild, so the multiple-init-per-turn cases
+    are safe), anchored to the nearest **friendly** control point and registered in `db.tgos` so
+    the player can frag a recovery against it. Flows through the default `GroundObjectGenerator` +
+    map rendering + pickle with no special-casing (it carries a real group).
+  - **Overrun** (the second loss condition) resolved via the anchor: `surviving_rescues` (called
+    from `Coalition.end_turn`) drops a rescue whose anchor base the enemy has captured (or which no
+    longer exists). A not-yet-anchored rescue (stranded this turn) is never overrun.
+  - `FlightType.CSAR` added (additive enum — no save migration; air-to-ground + primary task;
+    `COMBAT_SEARCH_AND_RESCUE` entity). The **flight plan** for it lands in C3 — until then the
+    objective is offered but not yet plannable (whole feature gated OFF; ships in one PR with C3).
+  - Tests: `tests/test_scar_objectives.py` (surfacing/anchor/idempotent/teardown/gate/offering) +
+    overrun cases in `tests/test_scar_rescue.py`.
 
 **Still owed an in-game Lua pass** (from 2c-2/earlier): a CTLD-unloaded team near the mark is
 detected and capture resolves off it; a botch tags the stranded position. Optional follow-ups:

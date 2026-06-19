@@ -8,11 +8,17 @@ that countdown in isolation (the per-turn hook + the pure aging helper).
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+from typing import Any, cast
+from uuid import uuid4
+
 from game.scar_rescue import (
     DEFAULT_SOF_RESCUE_TURNS,
     PendingSofRescue,
     age_pending_rescues,
+    surviving_rescues,
 )
+from game.theater import Player
 
 
 def test_aging_decrements_turns_remaining() -> None:
@@ -49,3 +55,54 @@ def test_full_lifespan_from_default_is_finite() -> None:
 
 def test_empty_list_is_a_noop() -> None:
     assert age_pending_rescues([]) == []
+
+
+def _game_holding(anchor_id: Any, captured_by: Player) -> Any:
+    """A fake game whose theater has one control point (``anchor_id``) currently
+    held by ``captured_by``."""
+    anchor = SimpleNamespace(id=anchor_id, captured=captured_by)
+
+    def find(cp_id: Any) -> Any:
+        if cp_id == anchor_id:
+            return anchor
+        raise KeyError(cp_id)
+
+    return SimpleNamespace(theater=SimpleNamespace(find_control_point_by_id=find))
+
+
+def test_overrun_drops_rescue_when_anchor_is_captured() -> None:
+    # The anchor base flipped to the enemy -> the front overran the team.
+    anchor_id = uuid4()
+    game = _game_holding(anchor_id, Player.RED)
+    rescue = PendingSofRescue(1.0, 2.0, turns_remaining=3, anchor_cp_id=anchor_id)
+
+    assert surviving_rescues(cast(Any, game), Player.BLUE, [rescue]) == []
+
+
+def test_anchored_rescue_survives_while_anchor_is_held() -> None:
+    anchor_id = uuid4()
+    game = _game_holding(anchor_id, Player.BLUE)
+    rescue = PendingSofRescue(1.0, 2.0, turns_remaining=3, anchor_cp_id=anchor_id)
+
+    # Still ours -> only the turn cap ticks down.
+    assert surviving_rescues(cast(Any, game), Player.BLUE, [rescue]) == [
+        PendingSofRescue(1.0, 2.0, turns_remaining=2, anchor_cp_id=anchor_id)
+    ]
+
+
+def test_overrun_drops_rescue_when_anchor_no_longer_exists() -> None:
+    game = _game_holding(uuid4(), Player.BLUE)
+    rescue = PendingSofRescue(1.0, 2.0, turns_remaining=3, anchor_cp_id=uuid4())
+
+    assert surviving_rescues(cast(Any, game), Player.BLUE, [rescue]) == []
+
+
+def test_unanchored_rescue_is_never_overrun() -> None:
+    # Stranded this turn (anchor assigned next turn at surfacing); it ages but is
+    # not subject to the overrun check yet.
+    game = _game_holding(uuid4(), Player.RED)
+    rescue = PendingSofRescue(1.0, 2.0, turns_remaining=3, anchor_cp_id=None)
+
+    assert surviving_rescues(cast(Any, game), Player.BLUE, [rescue]) == [
+        PendingSofRescue(1.0, 2.0, turns_remaining=2, anchor_cp_id=None)
+    ]

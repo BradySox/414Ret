@@ -267,9 +267,15 @@ was the helo-only guard in the builder.
   `test_theatergroundobject.py` (offering gate) + `test_scar_bridge.py` (no drop without a
   planned insert; cap exercised with two inserts).
 
-**Remaining for 2c-2:** (a) **debit-on-frag** — move SOF consumption from the on-capture
-`_consume_sof_teams` to debiting one bought SOF unit from the origin base when the insert is
-flown (refund on CSAR recovery); (b) **real delivery + 2c-2c** — point the air-assault drop
-zone at the SCAR ambush point and bind the Lua capture to the actually-dropped CTLD team,
-keeping the scripted `spawn_sof` only as the hybrid fallback when no team is delivered by
-go-live (user chose the hybrid model). Then **2c-3 CSAR recovery**.
+- **2c-2 debit-on-frag BUILT** (commit `bac497256`): consumption moved off the on-capture
+  `_consume_sof_teams` to a new `commit_sof_deployments` step — one bought team debited per
+  flown `FlightType.SOF` flight from its origin base (then any same-side base), regardless of
+  capture outcome. Runs before `commit_captures` so a captured source base can't erase the
+  spend; `COMMIT_STEPS` + the ordering assertion track it. Capture now only reveals.
+
+**Remaining for 2c-2:** **real delivery + 2c-2c** — point the air-assault drop zone at the
+SCAR ambush point and bind the Lua capture to the actually-dropped CTLD team, keeping the
+scripted `spawn_sof` only as the hybrid fallback when no team is delivered by go-live (user
+chose the hybrid model). Then **2c-3 CSAR recovery** (re-commission a recovered team; the
+debit-on-frag accounting above already leaves un-recovered teams spent). Both need an in-game
+Lua pass.

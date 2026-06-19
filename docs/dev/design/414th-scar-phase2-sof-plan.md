@@ -296,18 +296,26 @@ The in-mission recovery first built for 2c-3 was **replaced** per the user's CON
   team survived; `StateData.sof_strandings` parses it and `commit_sof_strandings` records a
   pending rescue (default 3-turn cap) on the owning coalition. Tests cover parse / record / gate.
 
-**Remaining — the CSAR objective itself (the big slice C):**
+**Slice C — the CSAR objective itself (build order: C1 lifecycle → C2 surface → C3 flight → C4 resolution):**
 1. **Surface** each `PendingSofRescue` as a first-class map objective next turn — a "downed SOF
    team" TGO attached to the nearest control point's `connected_objectives` at `(x, y)`, shown on
-   the map and offering a recovery flight type.
+   the map and offering a recovery flight type. *(C2)*
 2. **Recovery flight** — a helo extraction (the recovery leg is a helicopter); decide reuse vs a
    new `FlightType.CSAR`. Resolves when the helo reaches/extracts the team → refund one bought
-   team + clear the pending rescue.
+   team + clear the pending rescue. *(C3 offering/plan, C4 resolution)*
 3. **Lifecycle** — age `turns_remaining` down each turn; drop at 0 (lost) **or** when the enemy
-   front overruns the position (lost). Recovery clears it early.
+   front overruns the position (lost). Recovery clears it early. *(C1 turn-cap; overrun in C2)*
 
 This slice needs dynamic-TGO creation + ATO wiring + a recovery flight + in-mission resolution
 (Lua, in-game pass). Everything through the foundation is code-complete + CI-green, gated OFF.
+
+- **C1 — turn-cap lifecycle BUILT** (`game/scar_rescue.py` `age_pending_rescues` +
+  `Coalition.end_turn`): each pending rescue ages one turn per `end_turn` (the once-per-turn hook;
+  `initialize_turn` can run several times per turn, so aging there would over-decrement) and is
+  written off at zero. Gated behind `scar_command_post_intel`. Tests: `tests/test_scar_rescue.py`.
+  **Overrun deferred to C2:** SOF strand in contested/enemy territory by design, so a raw
+  nearest-control-point test would false-positive on the turn they strand; overrun becomes "the
+  friendly control point the rescue is anchored to was captured," which needs C2's anchor.
 
 **Still owed an in-game Lua pass** (from 2c-2/earlier): a CTLD-unloaded team near the mark is
 detected and capture resolves off it; a botch tags the stranded position. Optional follow-ups:

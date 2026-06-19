@@ -15,7 +15,7 @@ from game.navmesh import NavMesh
 from game.orderedset import OrderedSet
 from game.procurement import AircraftProcurementRequest, ProcurementAi
 from game.profiling import MultiEventTracer, logged_duration
-from game.scar_rescue import PendingSofRescue
+from game.scar_rescue import PendingSofRescue, age_pending_rescues
 from game.squadrons import AirWing
 from game.theater.bullseye import Bullseye
 from game.theater.player import Player
@@ -185,6 +185,12 @@ class Coalition:
         # coalition-specific turn-end happens before the theater-wide turn-end, so this
         # is handled correctly.
         self.transfers.perform_transfers()
+
+        # Age stranded-SOF CSAR pickups by one turn (the turn-cap loss condition).
+        # end_turn runs exactly once per turn, unlike initialize_turn, so it's the
+        # correct place to decrement. Gated with the rest of the SCAR SOF feature.
+        if self.game.settings.scar_command_post_intel:
+            self.pending_csars = age_pending_rescues(self.pending_csars)
 
     def preinit_turn_0(self, squadrons_start_full: bool) -> None:
         """Runs final Coalition initialization.

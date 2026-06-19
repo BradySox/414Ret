@@ -23,3 +23,26 @@ class PendingSofRescue:
     x: float
     y: float
     turns_remaining: int = DEFAULT_SOF_RESCUE_TURNS
+
+
+def age_pending_rescues(
+    rescues: list[PendingSofRescue],
+) -> list[PendingSofRescue]:
+    """Advance the turn-cap loss condition by one turn.
+
+    Decrements every pending rescue's ``turns_remaining`` and drops those that
+    reach zero (the stranded team waited too long and is written off). Returns
+    the survivors; the caller reassigns its ``pending_csars`` to the result.
+
+    This is the *turn-cap* loss condition only. The other loss condition -- the
+    enemy front overrunning the stranded position -- is handled where each rescue
+    is anchored to a friendly control point (a captured anchor == overrun), since
+    SOF strand in contested/enemy territory by design and a raw nearest-control-
+    point test would false-positive on the turn they strand.
+    """
+    survivors = []
+    for rescue in rescues:
+        rescue.turns_remaining -= 1
+        if rescue.turns_remaining > 0:
+            survivors.append(rescue)
+    return survivors

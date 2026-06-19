@@ -104,6 +104,7 @@ class AircraftBehavior:
             FlightType.TRANSPORT,
             FlightType.AIR_ASSAULT,
             FlightType.SOF,
+            FlightType.CSAR,
         ]:
             self.configure_transport(group, flight)
         elif self.task == FlightType.FERRY:

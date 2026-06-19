@@ -330,6 +330,17 @@ This slice needs dynamic-TGO creation + ATO wiring + a recovery flight + in-miss
     objective is offered but not yet plannable (whole feature gated OFF; ships in one PR with C3).
   - Tests: `tests/test_scar_objectives.py` (surfacing/anchor/idempotent/teardown/gate/offering) +
     overrun cases in `tests/test_scar_rescue.py`.
+- **C3 — recovery flight plan + offering BUILT** (`FlightType.CSAR` reuses `AirAssaultFlightPlan`):
+  CSAR is the helicopter recovery leg, so it mirrors the SOF insert's air-assault reuse but stays
+  **helo-only** — the air-assault builder's existing non-helo guard (exempted only for SOF) rejects
+  fixed-wing CSAR automatically, no new exception. Wired the same air-assault-shaped sites SOF
+  touches: builder map (`flightplanbuildertypes.py`), package primary-task priority (`package.py`),
+  transport AI behavior (`aircraftbehavior.py`), CTLD logistics generation (`flightgroupconfigurator.py`),
+  `primary_flight_is_air_assault` (`formationattack.py`), and escort join geometry (`escort.py`).
+  Per-aircraft enrichment (`aircrafttype.py`) gives the CSAR lane to **helicopters that can already
+  air-assault** (inherited from `AIR_ASSAULT`), so no per-YAML task weights. Not offered from control
+  points / front lines (only from the downed-team TGO) and player-only (no AI propose task). Tests:
+  CSAR lane on/off in `tests/test_aircraft_tasking_roles.py`.
 
 **Still owed an in-game Lua pass** (from 2c-2/earlier): a CTLD-unloaded team near the mark is
 detected and capture resolves off it; a botch tags the stranded position. Optional follow-ups:

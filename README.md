@@ -92,7 +92,8 @@ and selected later upstream fixes.
 
 - Native **F/A-18C DTC export** generates a terrain-tagged cartridge with CAP and tanker
   racetracks for the Hornet SA page, embeds it in the mission, and mirrors it into the
-  player's Saved Games DTC library. It is enabled by default.
+  player's Saved Games DTC library. It is disabled by default because the current DCS
+  build still requires players to select the cartridge manually once per sortie.
 - The **CurrentHill Iran** integration adds Shahed-136 and IRGCN FAC assets plus a dedicated
   `[CH] Iran 2020` faction behind a new-game mod toggle.
 - Numerous mission-generation and debriefing fixes are included, along with selected

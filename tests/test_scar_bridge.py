@@ -11,6 +11,7 @@ CI can verify: tasking collection, Lua emission, and result parsing.
 
 import math
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -32,6 +33,7 @@ from game.missiongenerator.scarluadata import (
     build_scar_taskings,
     populate_scar_lua,
 )
+from game.theater import Player
 from game.theater.theatergroundobject import (
     MissileSiteGroundObject,
     VehicleGroupGroundObject,
@@ -53,6 +55,7 @@ def _coalition_with_target(
         MagicMock(flight_type=ft) for ft in extra_types
     ]
     coalition = MagicMock()
+    coalition.player = Player.BLUE
     coalition.opponent.faction.country.id = 7  # enemy (HVT) country
     coalition.faction.country.id = 2  # friendly (SOF) country
     coalition.ato.packages = [package]
@@ -103,6 +106,7 @@ def test_default_target_yields_spawn_tasking() -> None:
     tasking = taskings[0]
     assert tasking.variant == "spawn"
     assert tasking.coalition == "blue"  # briefing addressee = the SCAR flight's side
+    assert tasking.tasking_id == "blue-scar-1"
     assert tasking.hvt_country_id == 7  # the enemy (opponent) country
     # Scenario is anchored to the flight's TOT, with the generous window after.
     assert tasking.go_live_s == TOT_OFFSET_S
@@ -138,6 +142,20 @@ def test_decoys_are_scattered_not_on_one_ring() -> None:
     assert len(support) >= 3
     radii = {round(math.hypot(c.spawn_x - 1000.0, c.spawn_y - 2000.0)) for c in support}
     assert len(radii) > 1  # not all equidistant from the area center
+
+
+def test_red_tasking_keeps_red_coalition_and_id() -> None:
+    target = MagicMock()
+    target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
+    coalition = _coalition_with_target(target)
+    coalition.player = Player.RED
+    coalition.opponent.faction.country.id = 2
+    coalition.faction.country.id = 1
+
+    tasking = _build(_game_with(coalition))[0]
+
+    assert tasking.coalition == "red"
+    assert tasking.tasking_id == "red-scar-1"
 
 
 def test_hvt_routes_to_nearest_enemy_city() -> None:
@@ -401,7 +419,7 @@ def test_populate_scar_lua_emits_spawn_fields() -> None:
 
     assert "Scar" in serialized
     assert "taskingId" in serialized
-    assert "scar-1" in serialized
+    assert "blue-scar-1" in serialized
     assert "spawn" in serialized
     assert "hvtCountryId" in serialized
     assert "coalition" in serialized  # briefing addressee emitted
@@ -457,3 +475,15 @@ def test_state_data_scar_results_default_empty() -> None:
     assert state.scar_results == {}
     state = StateData.from_json({}, unit_map)
     assert state.scar_results == {}
+
+
+def test_lua_capture_requires_a_live_sof_group() -> None:
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    capture_check = script.split("local function hvt_in_sof_zone(area)", maxsplit=1)[
+        1
+    ].split("local function despawn_command(area)", maxsplit=1)[0]
+    assert "area.sofGroup == nil" in capture_check
+    assert "Group.getByName(area.sofGroup)" in capture_check
+    assert "sof_group:getSize()" in capture_check

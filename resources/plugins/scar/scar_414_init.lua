@@ -338,6 +338,21 @@ local function hvt_in_sof_zone(area)
     if not (area.sofX and area.sofRadius and area.sofRadius > 0) then
         return false
     end
+    -- Coordinates alone are not a capture team. If dynAdd failed, or the team
+    -- was killed before the HVT arrived, the commander must continue escaping.
+    if area.sofGroup == nil then
+        return false
+    end
+    local sof_group = Group.getByName(area.sofGroup)
+    if sof_group == nil then
+        return false
+    end
+    local oks, sof_size = pcall(function()
+        return sof_group:getSize()
+    end)
+    if not oks or (sof_size or 0) <= 0 then
+        return false
+    end
     local group = Group.getByName(area.groups[1])
     if group == nil then
         return false

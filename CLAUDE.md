@@ -111,7 +111,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 13. **Flight Control ATC** — MOOSE FLIGHTCONTROL players-only tower comms (default ON).
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.
 15. **SCAR** — player-flown Strike Coordination and Reconnaissance against a moving HVT
-    (flight type + scenario `scar` plugin, default ON).
+    (flight type + scenario `scar` plugin, default ON), plus a gated-OFF commander-capture
+    path using finite purchased SOF inventory.
 
 ---
 
@@ -180,6 +181,14 @@ time (not in the repo).
 ---
 
 ## PINNED — do not modify
+
+**Local Python runtime:** before deleting anything under `tmp/`, inspect
+`.venv/pyvenv.cfg`. The current Windows virtual environment may have
+`home = ...\tmp\uv-python\cpython-3.11.15-windows-x86_64-none`; when it does,
+that `tmp/uv-python` directory is the base interpreter for `.venv`, **not a disposable
+cache**. Deleting it breaks `run_retribution.bat` with “No Python at ...”. Either preserve
+the directory or rebuild `.venv` against a permanent Python 3.11 installation first.
+Cleanup scripts and agents must never recursively delete `tmp/` without this check.
 
 **`resources/plugins/splashdamage3/Splash_Damage_3.4.2_414th.lua`** is the 414th's
 **buddy-tuned** Splash Damage build (softened weapon table, `overall_scaling=0.6`,

@@ -23,18 +23,27 @@ class IadsConnectionJs(BaseModel):
 
     @staticmethod
     def connections_for_tgo(
-        tgo_id: UUID, network: IadsNetwork
+        tgo_id: UUID, network: IadsNetwork, viewer: Player = Player.BLUE
     ) -> list[IadsConnectionJs]:
         for node in network.nodes:
             if node.group.ground_object.id == tgo_id:
-                return IadsConnectionJs.connections_for_node(node)
+                return IadsConnectionJs.connections_for_node(node, viewer)
         return []
 
     @staticmethod
-    def connections_for_node(network_node: IadsNetworkNode) -> list[IadsConnectionJs]:
-        iads_connections = []
+    def connections_for_node(
+        network_node: IadsNetworkNode, viewer: Player = Player.BLUE
+    ) -> list[IadsConnectionJs]:
+        iads_connections: list[IadsConnectionJs] = []
         tgo = network_node.group.ground_object
+        if tgo.hidden_on_player_map(viewer) or not tgo.known_for(viewer):
+            return iads_connections
         for id, connection in network_node.connections.items():
+            connected_tgo = connection.ground_object
+            if connected_tgo.hidden_on_player_map(
+                viewer
+            ) or not connected_tgo.known_for(viewer):
+                continue
             if connection.ground_object.is_friendly(Player.BLUE) != tgo.is_friendly(
                 Player.BLUE
             ):
@@ -55,8 +64,8 @@ class IadsConnectionJs(BaseModel):
                     node=tgo.id,
                     connected=connection.ground_object.id,
                     active=(
-                        network_node.group.alive_units() > 0
-                        and connection.alive_units() > 0
+                        network_node.group.alive_units(viewer) > 0
+                        and connection.alive_units(viewer) > 0
                     ),
                     blue=blue,
                     is_power="power"
@@ -74,12 +83,16 @@ class IadsNetworkJs(BaseModel):
         title = "IadsNetwork"
 
     @staticmethod
-    def from_network(network: IadsNetwork) -> IadsNetworkJs:
+    def from_network(
+        network: IadsNetwork, viewer: Player = Player.BLUE
+    ) -> IadsNetworkJs:
         iads_connections = []
         for connection in network.nodes:
             if not connection.group.iads_role.participate:
                 continue  # Skip
-            iads_connections.extend(IadsConnectionJs.connections_for_node(connection))
+            iads_connections.extend(
+                IadsConnectionJs.connections_for_node(connection, viewer)
+            )
         return IadsNetworkJs(
             advanced=network.advanced_iads, connections=iads_connections
         )

@@ -28,6 +28,7 @@ from game.utils import Heading
 # Fixed-wing CAS airframe -> SCAR-capable; CAS-capable helo -> NOT SCAR-capable.
 A10_VARIANT_ID = "A-10C Thunderbolt II (Suite 3)"
 APACHE_VARIANT_ID = "AH-64D Apache Longbow (AI)"
+BAI_ONLY_BOMBER_VARIANT_ID = "Tu-160 Blackjack"
 
 
 def test_scar_is_primary_air_to_ground_task() -> None:
@@ -63,6 +64,14 @@ def test_helicopter_cas_airframe_is_not_scar_capable(tmp_path: Path) -> None:
     apache = AircraftType.named(APACHE_VARIANT_ID)
     assert apache.capable_of(FlightType.CAS)
     assert not apache.capable_of(FlightType.SCAR)
+
+
+def test_bai_only_bomber_is_not_scar_capable(tmp_path: Path) -> None:
+    persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
+    bomber = AircraftType.named(BAI_ONLY_BOMBER_VARIANT_ID)
+    assert bomber.capable_of(FlightType.BAI)
+    assert not bomber.capable_of(FlightType.CAS)
+    assert not bomber.capable_of(FlightType.SCAR)
 
 
 def test_scar_is_offered_against_enemy_targets(monkeypatch: pytest.MonkeyPatch) -> None:

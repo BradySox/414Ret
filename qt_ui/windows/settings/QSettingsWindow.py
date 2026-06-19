@@ -567,7 +567,14 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
         if fd.exec_():
             zipfilename = fd.selectedFiles()[0]
             with zipfile.ZipFile(zipfilename, "r") as zf:
-                filename = zipfilename.split("/")[-1].replace(".zip", ".json")
+                json_files = [
+                    name for name in zf.namelist() if name.lower().endswith(".json")
+                ]
+                if not json_files:
+                    raise ValueError("Settings archive contains no JSON settings file")
+                filename = (
+                    "settings.json" if "settings.json" in json_files else json_files[0]
+                )
                 settings = json.loads(
                     zf.read(filename).decode("utf-8"),
                     object_hook=self.settings.obj_hook,
@@ -582,9 +589,8 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
         if fd.exec_():
             zipfilename = fd.selectedFiles()[0]
             with zipfile.ZipFile(zipfilename, "w", zipfile.ZIP_DEFLATED) as zf:
-                filename = zipfilename.split("/")[-1].replace(".zip", ".json")
                 zf.writestr(
-                    filename,
+                    "settings.json",
                     json.dumps(
                         self.settings.__dict__,
                         indent=2,

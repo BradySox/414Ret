@@ -28,7 +28,7 @@ describe("CombatLayer", () => {
               footprint: null,
             },
             bar: {
-              id: "foo",
+              id: "bar",
               flight_position: new LatLng(0, 0),
               target_positions: [new LatLng(0, 1)],
               footprint: null,

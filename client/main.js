@@ -18,10 +18,21 @@ function createWindow() {
     height: mainWindowState.height,
     show: false,
     webPreferences: {
-      nodeIntegration: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
     },
   });
   mainWindowState.manage(win);
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (event, url) => {
+    const allowedUrl = isDev
+      ? url.startsWith("http://localhost:3000/")
+      : url.startsWith("file://");
+    if (!allowedUrl) {
+      event.preventDefault();
+    }
+  });
 
   // and load the index.html of the app.
   // win.loadFile("index.html");

@@ -1,13 +1,14 @@
 # 414th — Native DCS DTC export (design + reverse-engineered schema)
 
 Goal: have Retribution auto-write **native DCS Data Transfer Cartridges** into the
-generated `.miz` so F-16C / F/A-18C players spawn with coalition comms, the SA picture
+generated `.miz` so F/A-18C players can load the coalition SA picture
 (CAP tracks, corridors, FAOR/FLOT, MEZ threats), threat rings, TACAN, and (optionally)
 the route already loaded.
 
 This doc is the ground truth for the storage format. It was reverse-engineered from a
 real ME-authored sample (`dtc_sample.miz`, F-16C + F/A-18C, all partitions filled),
-decoded with `dtc_schema_dump.py` at the repo root. DCS DTC is **F-16C + F/A-18C only**.
+decoded with `dtc_schema_dump.py` at the repo root. The reverse-engineering archive covers
+both formats; the currently shipped generator is **F/A-18C only**.
 
 ---
 

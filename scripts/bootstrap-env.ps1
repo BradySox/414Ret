@@ -62,6 +62,9 @@ $venvDir = Join-Path $repoRoot ".venv"
 $venvPython = Join-Path $venvDir "Scripts\python.exe"
 $requirements = Join-Path $repoRoot "requirements.txt"
 
+# IMPORTANT: A uv-created virtual environment can point at a base interpreter under
+# tmp\uv-python. That directory is not a cache while .venv\pyvenv.cfg names it as
+# `home`; deleting it leaves .venv\Scripts\python.exe present but unusable.
 Write-Step "Locating Python 3.11..."
 $python311 = Resolve-Python311
 Write-Step "Using $python311"

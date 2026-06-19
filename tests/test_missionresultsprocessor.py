@@ -16,6 +16,7 @@ from typing import Any, Callable, cast
 from unittest.mock import MagicMock
 
 from game.debriefing import Debriefing, GroundLosses
+from game.data.units import UnitClass
 from game.sim.missionresultsprocessor import MissionResultsProcessor
 from game.theater import ControlPoint
 
@@ -101,3 +102,25 @@ def test_battle_impact_scored_before_captures_flip_ownership() -> None:
     assert calls.index("commit_front_line_battle_impact") < calls.index(
         "commit_captures"
     ), "front-line scoring must run before bases are captured"
+    assert calls.index("commit_scar_results") < calls.index(
+        "commit_captures"
+    ), "SOF inventory must be spent before a source base can change ownership"
+
+
+def test_redeployment_leaves_non_frontline_inventory_in_place() -> None:
+    game = MagicMock()
+    processor = MissionResultsProcessor(cast(Any, game))
+    source = MagicMock()
+    destination = MagicMock()
+    tank = MagicMock(unit_class=UnitClass.TANK)
+    sof = MagicMock(unit_class=UnitClass.INFANTRY)
+    source.captured.is_blue = True
+    source.coalition.game.settings.reserves_procurement_target = 1
+    source.base.total_frontline_units = 10
+    source.base.armor = {tank: 10, sof: 2}
+    source.connected_points = []
+
+    processor.redeploy_between(destination, source)
+
+    destination.base.commission_units.assert_called_once_with({tank: 10})
+    source.base.commit_losses.assert_called_once_with({tank: 10})

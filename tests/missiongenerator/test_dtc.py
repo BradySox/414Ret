@@ -22,8 +22,13 @@ from game.missiongenerator.dtc.cartridge import (
 )
 from game.missiongenerator.dtc.injector import inject_cartridges
 from game.missiongenerator.dtc.sadata import OrbitTrack, SaData
+from game.settings import Settings
 
 F16_TYPE = "F-16C_50"  # not a DTC airframe anymore; used to assert it is skipped.
+
+
+def test_dtc_generation_defaults_off() -> None:
+    assert Settings().generate_dtc is False
 
 
 def _sample_sa() -> SaData:

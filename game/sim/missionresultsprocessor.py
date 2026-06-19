@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from game.debriefing import Debriefing
+from game.data.units import FRONTLINE_UNIT_CLASSES
 from game.ground_forces.combat_stance import CombatStance
 from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
@@ -57,10 +58,13 @@ class MissionResultsProcessor:
             # ownership, turning a win into a defeat.
             with logged_duration("commit_front_line_battle_impact"):
                 self.commit_front_line_battle_impact(debriefing, events)
-            with logged_duration("commit_captures"):
-                self.commit_captures(debriefing, events)
             with logged_duration("commit_scar_results"):
                 self.commit_scar_results(debriefing)
+            # Spend SOF while bases still have their pre-mission ownership. If a
+            # source base was captured this mission, flipping ownership first
+            # would make its deployed team disappear from BLUE accounting.
+            with logged_duration("commit_captures"):
+                self.commit_captures(debriefing, events)
             with logged_duration("record_carcasses"):
                 self.record_carcasses(debriefing)
 
@@ -191,14 +195,20 @@ class MissionResultsProcessor:
         capture sets the human (blue) side's flag, revealing ALL enemy command
         posts permanently. Additive — a no-op when the plugin/setting is off.
         """
-        captures = 0
+        blue_captures = 0
         for tasking_id, status in debriefing.state_data.scar_results.items():
             logging.info(f"SCAR area {tasking_id}: {status}")
-            if status == "captured":
-                captures += 1
-        if captures and self.game.settings.scar_command_post_intel:
+            # Tasking IDs now carry their coalition. Legacy unprefixed IDs came
+            # from the player-side-only implementation and remain BLUE for save /
+            # debrief compatibility.
+            is_blue = tasking_id.startswith("blue-") or not tasking_id.startswith(
+                "red-"
+            )
+            if status == "captured" and is_blue:
+                blue_captures += 1
+        if blue_captures and self.game.settings.scar_command_post_intel:
             self.game.blue.captured_commander = True
-            self._consume_sof_teams(captures)
+            self._consume_sof_teams(blue_captures)
             logging.info("SCAR: commander captured — enemy command posts revealed.")
 
     def _consume_sof_teams(self, count: int) -> None:
@@ -413,8 +423,8 @@ class MissionResultsProcessor:
                 status_msg: str = ""
                 ally_casualties = debriefing.casualty_count(cp)
                 enemy_casualties = debriefing.casualty_count(enemy_cp)
-                ally_units_alive = cp.base.total_armor
-                enemy_units_alive = enemy_cp.base.total_armor
+                ally_units_alive = cp.base.total_frontline_units
+                enemy_units_alive = enemy_cp.base.total_frontline_units
 
                 print(f"Remaining allied units: {ally_units_alive}")
                 print(f"Remaining enemy units: {enemy_units_alive}")
@@ -536,7 +546,7 @@ class MissionResultsProcessor:
         ally_connected_cps = [
             ocp
             for ocp in cp.transitive_connected_friendly_destinations()
-            if cp.captured == ocp.captured and ocp.base.total_armor
+            if cp.captured == ocp.captured and ocp.base.total_frontline_units
         ]
 
         settings = cp.coalition.game.settings
@@ -554,7 +564,7 @@ class MissionResultsProcessor:
             ),
         ):
             self.redeploy_between(cp, ally_cp)
-            if cp.base.total_armor > factor * cp.deployable_front_line_units:
+            if cp.base.total_frontline_units > factor * cp.deployable_front_line_units:
                 break
 
     def redeploy_between(self, destination: ControlPoint, source: ControlPoint) -> None:
@@ -570,7 +580,9 @@ class MissionResultsProcessor:
                 else settings.reserves_procurement_target_red
             ),
         )
-        total_units = source.base.total_armor
+        total_units = source.base.total_frontline_units
+        if total_units <= 0:
+            return
         reserves_factor = (reserves - 1) / total_units  # slight underestimation
 
         source_frontline_count = len(
@@ -580,6 +592,8 @@ class MissionResultsProcessor:
         move_factor = max(0.0, 1 / (source_frontline_count + 1) - reserves_factor)
 
         for frontline_unit, count in source.base.armor.items():
+            if frontline_unit.unit_class not in FRONTLINE_UNIT_CLASSES:
+                continue
             moved_count = int(count * move_factor)
             moved_units[frontline_unit] = moved_count
             total_units_redeployed += moved_count

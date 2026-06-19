@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
+import os
 import pickle
-import shutil
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING, Any
 
@@ -464,18 +464,45 @@ def load_game(path: str) -> Optional[Game]:
             return None
 
 
-def save_game(game: Game) -> bool:
+def save_game(game: Game, path: str | Path | None = None) -> bool:
     with logged_duration("Saving game"):
-        try:
-            with open(_temporary_save_file(), "wb") as f:
-                data = _unload_static_data(game)
-                pickle.dump(game, f)
-                _restore_static_data(game, data)
-            shutil.copy(_temporary_save_file(), game.savepath)
-            return True
-        except Exception:
-            logging.exception("Could not save game")
+        destination_value = path if path is not None else game.savepath
+        if not destination_value:
+            logging.error("Could not save game: no destination path")
             return False
+        destination = Path(destination_value)
+
+        previous_savepath = game.savepath
+        game.savepath = str(destination)
+        if _write_game_atomically(game, destination):
+            return True
+
+        game.savepath = previous_savepath
+        return False
+
+
+def _write_game_atomically(game: Game, destination: Path) -> bool:
+    temporary = destination.with_name(f".{destination.name}.tmp")
+    static_data: dict[str, Any] | None = None
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with open(temporary, "wb") as save_file:
+            static_data = _unload_static_data(game)
+            pickle.dump(game, save_file)
+            save_file.flush()
+            os.fsync(save_file.fileno())
+        temporary.replace(destination)
+        return True
+    except Exception:
+        logging.exception("Could not save game to %s", destination)
+        return False
+    finally:
+        if static_data is not None:
+            _restore_static_data(game, static_data)
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            logging.exception("Could not remove temporary save file %s", temporary)
 
 
 def _restore_static_data(game: Game, data: dict[str, Any]) -> None:
@@ -500,12 +527,4 @@ def autosave(game: Game) -> bool:
     :param game: Game to save
     :return: True if saved successfully
     """
-    try:
-        with open(_autosave_path(), "wb") as f:
-            data = _unload_static_data(game)
-            pickle.dump(game, f)
-            _restore_static_data(game, data)
-        return True
-    except Exception:
-        logging.exception("Could not save game")
-        return False
+    return _write_game_atomically(game, Path(_autosave_path()))

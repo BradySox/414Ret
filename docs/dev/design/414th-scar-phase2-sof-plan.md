@@ -1,7 +1,8 @@
 # SCAR Phase 2 — SOF airdrop + commander capture (implementation plan)
 
-Status: **2a BUILT** (scripted capture loop), gated OFF behind `scar_command_post_intel`;
-**2b/2c not started**. Phase 1 (the reveal/intel side) is built and merged. This doc plans
+Status: **2a + 2c-1 BUILT** (scripted capture loop + finite bought inventory asset), gated
+OFF behind `scar_command_post_intel`; **2c-2/2c-3 not started**. Phase 1 (the reveal/intel
+side) is built and merged. This doc plans
 Phase 2: the mechanic that **produces a `captured` SCAR result**, which Phase 1 consumes.
 
 Read first: `414th-scar-task-spec.md` (§9 capture design) and
@@ -12,11 +13,11 @@ Read first: `414th-scar-task-spec.md` (§9 capture design) and
 > generator drops a friendly SOF team (`ctld`-independent `mist.dynAdd` infantry) at
 > `SCAR_SOF_LEAD_FRAC` (0.7) of the HVT's spawn→dest route; the SCAR plugin's `scar_check`
 > resolves `captured` when the (un-killed) command vehicle drives within
-> `SCAR_SOF_CAPTURE_RADIUS_M` (600 m). Outcome priority: killed (success) > captured > escaped
-> /timeout (fail). Spawn + armor variants only (a SCUD is not a commander). **Known 2a
-> simplification:** the team always drops and capture is automatic on proximity, so with the
-> setting on, an un-killed HVT is effectively always captured — that becomes a deliberate
-> choice once SOF is finite/player-delivered (2b/2c). Files:
+> `SCAR_SOF_CAPTURE_RADIUS_M` (600 m) and the spawned SOF group still has survivors.
+> Outcome priority: killed (success) > captured > escaped
+> /timeout (fail). Spawn + armor variants only (a SCUD is not a commander). **Current
+> simplification:** delivery is still scripted and capture is automatic on proximity when a
+> bought team is available and survives; player-flown delivery arrives in 2c-2. Files:
 > `game/missiongenerator/scarluadata.py` (`_sof_ambush`, `sof_*` fields, `_emit_sof`),
 > `resources/plugins/scar/scar_414_init.lua` (`spawn_sof`, `hvt_in_sof_zone`, the `captured`
 > branch, `mark_sof`). Tests: `tests/test_scar_bridge.py` (SOF emission on/off + point on
@@ -242,5 +243,8 @@ Units defined + verified (commit 81bc1fb69): `SOF Team (BLUFOR)` (Soldier M4 GRG
 `_sof_asset` (pool count), the `build_scar_taskings` gate + per-turn cap, `sofUnitType`
 emission + Lua `spawn_sof` using it, and `_consume_sof_teams` on capture. Tests in
 `test_scar_bridge.py` (pool gate / cap / unit-type) + `test_scar_command_post_fog.py`
-(capture consumes a team). **Remaining:** 2c-2 air-assault delivery (`FlightType.SOF`)
+(capture consumes a team). Follow-up audit fixes keep SOF out of front-line deployment /
+strength / redeployment math, require a living spawned team for capture, prefix tasking IDs
+with coalition so RED results cannot spend/reveal BLUE assets, and spend BLUE inventory before
+base-capture ownership flips. **Remaining:** 2c-2 air-assault delivery (`FlightType.SOF`)
 replacing the scripted drop; 2c-3 CSAR recovery.

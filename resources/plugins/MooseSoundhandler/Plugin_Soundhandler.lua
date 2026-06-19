@@ -85,9 +85,9 @@ Sounds.Guns_Incoming           = { "Guns_Break_Right", "Guns_Break_Left" }
 Sounds.Decoy_Table             = { "A2G_Duck1" }
 Sounds.CruiseMissile_Table     = { "A2G_Greyhound1" }
 Sounds.Vampires_Table          = { "A2G_Vampires1" } -- anti-ship call
-Sounds.Tomahawk_Table          = { "S2G_Tomahawk1" }
+Sounds.Tomahawk_Table          = { "Tomahawk Out" }
 Sounds.Friendly_Fire_Table     = { "FriendlyFire1", "FriendlyFire2" }
-Sounds.Friendly_SAM_Table      = { "BirdsAway" }
+Sounds.Friendly_SAM_Table      = { "PigsAway" }
 
 if SoundDebug then
     for _, tbl in pairs(Sounds) do

@@ -17,6 +17,8 @@ from ..ato.starttype import StartType
 
 Views = ForcedOptions.Views
 
+SERIALIZABLE_ENUM_TYPES: tuple[type[Enum], ...]
+
 
 @unique
 class AutoAtoBehavior(Enum):
@@ -73,6 +75,20 @@ class CombatResolutionMethod(Enum):
 class TargetIntelPrecision(Enum):
     EXACT = "Exact target coordinates"
     APPROXIMATE = "Approximate target area"
+
+
+SERIALIZABLE_ENUM_TYPES = (
+    AutoAtoBehavior,
+    NightMissions,
+    FastForwardStopCondition,
+    CombatResolutionMethod,
+    TargetIntelPrecision,
+    StartType,
+    Views,
+)
+SERIALIZABLE_ENUM_TYPES_BY_NAME = {
+    enum_type.__name__: enum_type for enum_type in SERIALIZABLE_ENUM_TYPES
+}
 
 
 DIFFICULTY_PAGE = "Difficulty"
@@ -1104,15 +1120,14 @@ class Settings:
         ),
     )
     generate_dtc: bool = boolean_option(
-        "Generate DTC cartridges (F-16C / F/A-18C)",
+        "Generate DTC cartridge (F/A-18C)",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
-        default=True,
+        default=False,
         detail=(
-            "Writes native DCS Data Transfer Cartridges into the mission so player "
-            "F-16C and F/A-18C flights spawn with the coalition SA picture (threat "
-            "rings, front line, and CAP/tanker tracks) preloaded. Requires a DCS build "
-            "with DTC SA-partition support."
+            "Writes a native DCS Data Transfer Cartridge for player F/A-18C flights "
+            "with coalition CAP and tanker tracks. The cartridge is copied to Saved "
+            "Games and currently must be selected manually in DCS once per sortie."
         ),
     )
     never_delay_player_flights: bool = boolean_option(
@@ -1714,14 +1729,19 @@ class Settings:
     def deserialize_state_dict(state: dict[str, Any]) -> dict[str, Any]:
         # restore Enum & timedelta types
         s = Settings()
+        deserialized = dict(state)
         for key, value in state.items():
             if isinstance(s.__dict__.get(key), timedelta) and isinstance(value, int):
-                state[key] = timedelta(minutes=value)
-            elif isinstance(s.__dict__.get(key), Enum) and isinstance(value, str):
-                state[key] = eval(value)
+                deserialized[key] = timedelta(minutes=value)
+            elif isinstance(default := s.__dict__.get(key), Enum) and isinstance(
+                value, str
+            ):
+                deserialized[key] = Settings._deserialize_enum(
+                    value, expected_type=type(default)
+                )
             elif isinstance(value, dict):
-                state[key] = s.obj_hook(value)
-        return state
+                deserialized[key] = s.obj_hook(value)
+        return deserialized
 
     @classmethod
     def _field_description(cls, settings_field: Field[Any]) -> OptionDescription:
@@ -1771,8 +1791,31 @@ class Settings:
     @staticmethod
     def obj_hook(obj: Any) -> Any:
         if (value := obj.get("Enum")) is not None:
-            return eval(value)
+            return Settings._deserialize_enum(value)
         elif (value := obj.get("timedelta")) is not None:
             return timedelta(minutes=value)
         else:
             return obj
+
+    @staticmethod
+    def _deserialize_enum(value: Any, expected_type: type[Enum] | None = None) -> Enum:
+        if not isinstance(value, str):
+            raise ValueError("Serialized enum value must be a string")
+
+        try:
+            type_name, member_name = value.split(".", maxsplit=1)
+        except ValueError as ex:
+            raise ValueError(f"Invalid serialized enum value: {value!r}") from ex
+
+        enum_type = SERIALIZABLE_ENUM_TYPES_BY_NAME.get(type_name)
+        if enum_type is None or (
+            expected_type is not None and enum_type is not expected_type
+        ):
+            raise ValueError(f"Unsupported serialized enum type: {type_name!r}")
+
+        try:
+            return enum_type[member_name]
+        except KeyError as ex:
+            raise ValueError(
+                f"Unknown {enum_type.__name__} member: {member_name!r}"
+            ) from ex

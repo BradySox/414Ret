@@ -60,97 +60,99 @@ class PretenseMissionGenerator(MissionGenerator):
             self.mission.options.load_from_dict(options)
 
     def generate_miz(self, output: Path) -> UnitMap:
+        if self.generation_started:
+            raise RuntimeError(
+                "Mission has already begun generating. To reset, create a new "
+                "MissionSimulation."
+            )
+
+        original_game = self.game
         game_backup_pickle = pickle.dumps(self.game)
         path = pre_pretense_backups_dir()
         path /= f".pre-pretense-backup.retribution"
         try:
             with open(path, "wb") as f:
                 pickle.dump(self.game, f)
-        except:
-            logging.error(f"Unable to save Pretense pre-generation backup to {path}")
-
-        if self.generation_started:
-            raise RuntimeError(
-                "Mission has already begun generating. To reset, create a new "
-                "MissionSimulation."
+        except Exception:
+            logging.exception(
+                "Unable to save Pretense pre-generation backup to %s", path
             )
+
         self.generation_started = True
 
-        self.game.pretense_ground_supply = {1: {}, 2: {}}
-        self.game.pretense_ground_assault = {1: {}, 2: {}}
-        self.game.pretense_air = {1: {}, 2: {}}
+        try:
+            self.game.pretense_ground_supply = {1: {}, 2: {}}
+            self.game.pretense_ground_assault = {1: {}, 2: {}}
+            self.game.pretense_air = {1: {}, 2: {}}
 
-        self.setup_mission_coalitions()
-        self.add_airfields_to_unit_map()
-        self.initialize_registries()
+            self.setup_mission_coalitions()
+            self.add_airfields_to_unit_map()
+            self.initialize_registries()
 
-        auto_fog = self.game.settings.use_auto_fog
-        EnvironmentGenerator(
-            self.mission, self.game.conditions, self.time, auto_fog
-        ).generate()
+            auto_fog = self.game.settings.use_auto_fog
+            EnvironmentGenerator(
+                self.mission, self.game.conditions, self.time, auto_fog
+            ).generate()
 
-        tgo_generator = PretenseTgoGenerator(
-            self.mission,
-            self.game,
-            self.radio_registry,
-            self.tacan_registry,
-            self.unit_map,
-            self.mission_data,
-        )
-        tgo_generator.generate()
+            tgo_generator = PretenseTgoGenerator(
+                self.mission,
+                self.game,
+                self.radio_registry,
+                self.tacan_registry,
+                self.unit_map,
+                self.mission_data,
+            )
+            tgo_generator.generate()
 
-        ConvoyGenerator(self.mission, self.game, self.unit_map).generate()
+            ConvoyGenerator(self.mission, self.game, self.unit_map).generate()
 
-        # Generate ground conflicts first so the JTACs get the first laser code (1688)
-        # rather than the first player flight with a TGP.
-        self.generate_ground_conflicts()
-        self.generate_air_units(tgo_generator)
+            # Generate ground conflicts first so the JTACs get the first laser code
+            # (1688) rather than the first player flight with a TGP.
+            self.generate_ground_conflicts()
+            self.generate_air_units(tgo_generator)
 
-        for cp in self.game.theater.controlpoints:
-            if (
-                self.game.settings.ground_start_airbase_statics_farps_remove
-                and isinstance(cp, Airfield)
-            ):
-                while len(tgo_generator.ground_spawns[cp]) > 0:
-                    ground_spawn = tgo_generator.ground_spawns[cp].pop()
-                    # Remove invisible FARPs from airfields because they are unnecessary
-                    neutral_country = self.mission.country(
-                        cp.coalition.game.neutral_country.name
-                    )
-                    neutral_country.remove_static_group(ground_spawn[0])
-                while len(tgo_generator.ground_spawns_roadbase[cp]) > 0:
-                    ground_spawn = tgo_generator.ground_spawns_roadbase[cp].pop()
-                    # Remove invisible FARPs from airfields because they are unnecessary
-                    neutral_country = self.mission.country(
-                        cp.coalition.game.neutral_country.name
-                    )
-                    neutral_country.remove_static_group(ground_spawn[0])
+            for cp in self.game.theater.controlpoints:
+                if (
+                    self.game.settings.ground_start_airbase_statics_farps_remove
+                    and isinstance(cp, Airfield)
+                ):
+                    while len(tgo_generator.ground_spawns[cp]) > 0:
+                        ground_spawn = tgo_generator.ground_spawns[cp].pop()
+                        # Remove invisible FARPs from airfields because they are
+                        # unnecessary.
+                        neutral_country = self.mission.country(
+                            cp.coalition.game.neutral_country.name
+                        )
+                        neutral_country.remove_static_group(ground_spawn[0])
+                    while len(tgo_generator.ground_spawns_roadbase[cp]) > 0:
+                        ground_spawn = tgo_generator.ground_spawns_roadbase[cp].pop()
+                        neutral_country = self.mission.country(
+                            cp.coalition.game.neutral_country.name
+                        )
+                        neutral_country.remove_static_group(ground_spawn[0])
 
-        self.mission.triggerrules.triggers.clear()
-        PretenseTriggerGenerator(self.mission, self.game).generate()
-        ForcedOptionsGenerator(self.mission, self.game).generate()
-        VisualsGenerator(self.mission, self.game).generate()
-        PretenseLuaGenerator(self.game, self.mission, self.mission_data).generate()
+            self.mission.triggerrules.triggers.clear()
+            PretenseTriggerGenerator(self.mission, self.game).generate()
+            ForcedOptionsGenerator(self.mission, self.game).generate()
+            VisualsGenerator(self.mission, self.game).generate()
+            PretenseLuaGenerator(self.game, self.mission, self.mission_data).generate()
 
-        self.setup_combined_arms()
+            self.setup_combined_arms()
 
-        self.notify_info_generators()
+            self.notify_info_generators()
 
-        # TODO: Shouldn't this be first?
-        namegen.reset_numbers()
-        self.generate_warehouses()
-        self.mission.save(output)
+            # TODO: Shouldn't this be first?
+            namegen.reset_numbers()
+            self.generate_warehouses()
+            self.mission.save(output)
 
-        print(
-            f"Loading pre-pretense save, number of BLUFOR squadrons: {len(self.game.blue.air_wing.squadrons)}"
-        )
-        self.game = pickle.loads(game_backup_pickle)
-        print(
-            f"Loaded pre-pretense save, number of BLUFOR squadrons: {len(self.game.blue.air_wing.squadrons)}"
-        )
-        GameUpdateSignal.get_instance().game_loaded.emit(self.game)
-
-        return self.unit_map
+            return self.unit_map
+        finally:
+            restored_game = pickle.loads(game_backup_pickle)
+            original_game.__dict__.clear()
+            original_game.__dict__.update(restored_game.__dict__)
+            self.game = original_game
+            GameUpdateSignal.get_instance().game_loaded.emit(original_game)
 
     def setup_mission_coalitions(self) -> None:
         self.mission.coalition["blue"] = Coalition(

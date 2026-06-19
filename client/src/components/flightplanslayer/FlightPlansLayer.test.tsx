@@ -9,9 +9,10 @@ jest.mock("react-leaflet", () => ({
     mockLayerGroup(props);
     return <>{props.children}</>;
   },
-  Polyline: (props: any) => {
+  Polyline: require("react").forwardRef((props: any, _ref: any) => {
     mockPolyline(props);
-  },
+    return null;
+  }),
 }));
 
 // The waypoints in test data below should all use `should_make: false`. Markers
@@ -98,10 +99,9 @@ describe("FlightPlansLayer", () => {
 
       // Each drawn blue flight renders two polylines now: the visible route and
       // a wide invisible hover overlay. Passing a ref to the visible one also
-      // causes a redraw, so these counts are higher than the flight count. (It
-      // probably needs to be rewritten without mocks.)
-      expect(mockPolyline).toHaveBeenCalledTimes(5);
-      expect(mockLayerGroup).toBeCalledTimes(2);
+      // Each flight path includes multiple polyline segments.
+      expect(mockPolyline).toHaveBeenCalledTimes(4);
+      expect(mockLayerGroup).toBeCalledTimes(1);
     });
     it("are not drawn if wrong coalition", () => {
       renderWithProviders(<FlightPlansLayer blue={true} />, {

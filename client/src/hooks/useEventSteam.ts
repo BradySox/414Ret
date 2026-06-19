@@ -15,11 +15,14 @@ export const useEventStream = () => {
   );
 
   useEffect(() => {
+    if (ws === null) {
+      return;
+    }
     ws.addEventListener("message", onMessage);
     return () => {
       ws.removeEventListener("message", onMessage);
     };
-  });
+  }, [onMessage, ws]);
 };
 
 export default useEventStream;

@@ -392,9 +392,11 @@ class QLiberationWindow(QMainWindow):
         logging.info("Saving game")
 
         if self.game.savepath:
-            persistency.save_game(self.game)
-            liberation_install.setup_last_save_file(self.game.savepath)
-            liberation_install.save_config()
+            if persistency.save_game(self.game):
+                liberation_install.setup_last_save_file(self.game.savepath)
+                liberation_install.save_config()
+            else:
+                self._show_save_error(self.game.savepath)
         else:
             self.saveGameAs()
 
@@ -409,13 +411,23 @@ class QLiberationWindow(QMainWindow):
             dir=save_dir,
             filter="*.retribution;;*.liberation",
         )
-        if file is not None:
-            self.game.savepath = file[0]
-            persistency.save_game(self.game)
-            liberation_install.setup_last_save_file(self.game.savepath)
-            liberation_install.save_config()
+        if file[0]:
+            save_path = file[0]
+            if not persistency.save_game(self.game, save_path):
+                self._show_save_error(save_path)
+                return
 
-            self.updateWindowTitle(file[0])
+            liberation_install.setup_last_save_file(save_path)
+            liberation_install.save_config()
+            self.updateWindowTitle(save_path)
+
+    def _show_save_error(self, save_path: str) -> None:
+        QMessageBox.critical(
+            self,
+            "Save failed",
+            f"The campaign could not be saved to:\n\n{save_path}\n\n"
+            "The currently loaded campaign has not been replaced.",
+        )
 
     def updateWindowTitle(self, save_path: Optional[str] = None) -> None:
         """
@@ -429,7 +441,7 @@ class QLiberationWindow(QMainWindow):
             window_title += f" - {self.game.campaign_name}"
 
         if save_path:
-            file_name = save_path.split("/")[-1].rsplit(".", 1)[0]
+            file_name = Path(save_path).stem
             window_title += f" - {file_name}"
 
         self.setWindowTitle(window_title)

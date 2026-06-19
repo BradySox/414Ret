@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 
 import qt_ui.uiconstants as CONST
 from game import Game, persistency
+from game.ato.flighttype import FlightType
 from game.ato.flightstate import Uninitialized
 from game.ato.package import Package
 from game.ato.traveltime import TotEstimator
@@ -171,17 +172,34 @@ class QTopPanel(QFrame):
             GameUpdateSignal.get_instance().gameStateChanged(state)
             self.proceedButton.setEnabled(True)
 
+    # Defensive air patrols are meant to be on-station at mission start, so a
+    # cold-start spin-up that begins before mission start is expected, not a
+    # misplan: the flight spawns cold at mission start and its on-station time
+    # simply slips a little (there is no package rendezvous to miss). Worse, the
+    # auto-scheduler reserves only the 2-minute AI startup when timing CAP, while a
+    # player-flown flight gets the much larger "player startup allowance" -- so a
+    # player-occupied cold-start BARCAP would otherwise trip this warning every
+    # single turn. For CAP we therefore check the takeoff time (which ignores the
+    # ground spin-up) instead of the startup time, so a genuine "can't even take
+    # off in time" misplan still warns while the normal cold-start CAP does not.
+    _DCA_TYPES = {FlightType.BARCAP, FlightType.TARCAP}
+
     def negative_start_packages(self, now: datetime) -> List[Package]:
         packages = []
         for package in self.game_model.ato_model.ato.packages:
             if not package.flights:
                 continue
+            is_dca = package.primary_task in self._DCA_TYPES
             for flight in package.flights:
                 if isinstance(flight.state, Uninitialized):
                     flight.state.reinitialize(now)
                 if flight.state.is_waiting_for_start:
-                    startup = flight.flight_plan.startup_time()
-                    if startup < now:
+                    start = (
+                        flight.flight_plan.takeoff_time()
+                        if is_dca
+                        else flight.flight_plan.startup_time()
+                    )
+                    if start < now:
                         packages.append(package)
                         break
         return packages

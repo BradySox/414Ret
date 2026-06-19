@@ -267,7 +267,11 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             # Can't call self.package.primary_flight.flight_plan here
             # because the flight-plan wasn't created yet.
             # Calling the fligh_plan property would result in infinite recursion
-            return self.flight.flight_type == FlightType.AIR_ASSAULT
+            # (SOF inserts reuse the air-assault layout, so they count too).
+            return self.flight.flight_type in (
+                FlightType.AIR_ASSAULT,
+                FlightType.SOF,
+            )
         else:
             assert self.package.primary_flight is not None
             fp = self.package.primary_flight.flight_plan

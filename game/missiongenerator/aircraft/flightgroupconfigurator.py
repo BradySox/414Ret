@@ -104,6 +104,7 @@ class FlightGroupConfigurator:
         if self.flight.flight_type in [
             FlightType.TRANSPORT,
             FlightType.AIR_ASSAULT,
+            FlightType.SOF,
         ] and self.game.settings.plugin_option("ctld"):
             transfer = None
             if self.flight.flight_type == FlightType.TRANSPORT:

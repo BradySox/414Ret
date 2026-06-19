@@ -3,3 +3,11 @@ price: 0
 spawn_weight: 4
 variants:
   Infantry M4 Georgia: null
+  # Dedicated, buyable SOF team for the SCAR commander-capture feature (414th
+  # Phase 2c). Same DCS model as the GRG infantry, but a distinct GroundUnitType
+  # with its own price; spawn_weight 0 so it is never random front-line filler —
+  # it only exists when deliberately purchased.
+  SOF Team (BLUFOR):
+    price: 8
+    spawn_weight: 0
+    role: Special forces (SCAR commander capture)

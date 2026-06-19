@@ -30,9 +30,21 @@ class QArmorRecruitmentMenu(UnitTransactionFrame[GroundUnitType]):
         scroll_content.setLayout(task_box_layout)
         row = 0
 
-        unit_types = list(
-            set(self.game_model.game.faction_for(player=Player.BLUE).ground_units)
+        unit_types = set(
+            self.game_model.game.faction_for(player=Player.BLUE).ground_units
         )
+        # Phase 2c: the dedicated SOF team is buyable when the SCAR commander-capture
+        # feature is on. It isn't in any faction's frontline_units, so the AI never
+        # buys it and the ground planner never deploys it (INFANTRY class) — this menu
+        # is the player-only acquisition path. can_buy is affordability-only.
+        if self.game_model.game.settings.scar_command_post_intel:
+            from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+
+            try:
+                unit_types.add(GroundUnitType.named(SCAR_SOF_UNIT_BLUE))
+            except KeyError:
+                pass
+        unit_types = list(unit_types)
         unit_types.sort(key=lambda u: u.display_name)
         for row, unit_type in enumerate(unit_types):
             self.add_purchase_row(unit_type, task_box_layout, row)

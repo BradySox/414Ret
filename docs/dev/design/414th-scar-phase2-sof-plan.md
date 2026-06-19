@@ -134,3 +134,113 @@ What Phase 1 already gives us (don't rebuild):
       name appended to `area.groups`, and where to add a `scar_check` proximity branch.
 - [ ] Confirm Retribution's MIST version vs CTLD 1.6.1's requirement (dynamic spawns).
 - [ ] Decide §7 Q1/Q2 with the user, then implement 2a.
+
+---
+
+## 9. Phase 2c full design — inventory-backed SOF + air-assault insert (CHOSEN 2026-06-18)
+
+Decision: the SOF is a **real, procurable, naturally-finite campaign asset** delivered by an
+**air-assault insert**, not an abstract counter with a scripted drop. (Generic CP→CP transfers
+were considered and rejected: `TransferOrder` only routes between friendly control points over
+the transit network — it can't deliver to the HVT's ambush point in enemy territory.) Tyler is
+hands-off, so this builds on the **existing upstream air-assault** (`AirAssaultFlightPlan` +
+CTLD), using his `DEPLOYMENT` notes only as a reference pattern — not a dependency.
+
+### Grounding (verified in-tree)
+- Inventory: `ControlPoint.base.armor: dict[GroundUnitType, int]`; `Base.commission_units` /
+  `commit_losses`; ground procurement via `game/groundunitorders.py`. `UnitClass.INFANTRY`
+  exists; factions expose `infantry_units` + `infantry_with_class(UnitClass)`.
+- Delivery: `FlightType.AIR_ASSAULT` + `AirAssaultFlightPlan` (CTLD target zone, pickup,
+  `ctld_target_zone_radius`) already air-deliver troops to an arbitrary zone, incl. enemy.
+
+### Model
+- **SOF asset** = a faction-valid infantry `GroundUnitType` (selected via `infantry_with_class`,
+  or a designated per-faction SOF unit), held in `base.armor`. The **pool** is the coalition's
+  inventory count of that unit — this REPLACES `Coalition.sof_teams` (supersedes PR #36's
+  counter). Seed a couple at rear bases at campaign start and/or let players buy them.
+- **Delivery** = a SOF insert flight (a new `FlightType.SOF`, air-assault-shaped, reusing
+  `AirAssaultFlightPlan`) targeting the SCAR area's ambush point. Fragging the flight debits one
+  SOF unit from the origin base (like air-assault consumes its troops). The delivered team is
+  the capture team.
+- **Capture** = the existing 2a Lua proximity check, pointed at the delivered team's drop point
+  (the air-assault target zone == the SCAR `sof` point) instead of the scripted `spawn_sof`.
+  Keep `spawn_sof` only as a dev/fallback when no SOF flight is planned (or drop it).
+- **Outcome accounting** (`commit_scar_results` + end-turn): captured = team did its job;
+  botched = stranded → CSAR. Recovery re-commissions the unit into a base; un-recovered = lost
+  (inventory not refunded).
+
+### Slice order (each ships gated OFF + CI-green; Lua needs an in-game pass)
+- **2c-1 — `FlightType.SOF` + air-assault delivery spine.** New flight type (categorize like
+  AIR_ASSAULT; dispatch to `AirAssaultFlightPlan`; save migration), offered against SCAR-eligible
+  targets; delivers a team (CTLD troops for now) to the SCAR ambush zone. Wire the 2a capture to
+  the delivered team. Cargo still abstract (no inventory yet).
+- **2c-2 — inventory backing.** SOF = an infantry `GroundUnitType`; pool = inventory count
+  (replace `Coalition.sof_teams`); debit on frag; gate the insert on availability; seed/procure.
+  Retire the counter (and PR #36's approach).
+- **2c-3 — CSAR recovery.** Stranded SOF → MOOSE `Ops.CSAR`/CTLD pickup → re-commission on
+  extract; else lost. Refines the "deploy-but-no-capture" accounting left open by 2b.
+
+### Tyler-coordination seams (he's a reference, not a blocker)
+Shared surface his `DEPLOYMENT` also touches — keep diffs small + update the `COMMIT_STEPS`
+test if both add commit steps: `game/ato/flighttype.py` (enum + migration), `Coalition`,
+`MissionResultsProcessor`, and the air-assault/CTLD wiring. If his branch ever lands, our
+`FlightType.SOF` + inventory-debit-on-frag should converge onto his `PendingDeployments` shape.
+
+### 9b. Chosen asset model (2026-06-18): **dedicated SOF unit, bought**
+
+The SOF team is a **distinct, buyable** ground unit (not reused front-line infantry). Implications
++ concrete steps (each a small, CI-green commit; gated behind `scar_command_post_intel`):
+
+- **Define the unit.** Add SOF `GroundUnitType` YAML(s) under `resources/units/ground_units/`
+  backed by a vanilla DCS infantry model, faction-appropriate per side (blue ≈ `Soldier M4 GRG`,
+  red ≈ `Infantry AK Ins`/`Paratrooper RPG-16`), with a `price` and `unit_class: INFANTRY`.
+  Distinct `variant_id` (e.g. "SOF Team (BLUFOR)") so it reads as a separate asset and the
+  capture Lua can spawn that exact type.
+- **Make it buyable without editing every faction JSON.** Most factions are WWII/irrelevant, and
+  the feature is gated. Inject the side-appropriate SOF unit into the buyable set **in code**,
+  only when `scar_command_post_intel` is on — extend the procurement/`accessible_units` path
+  rather than touching dozens of `resources/factions/*.json`.
+- **Pool = inventory count.** Sum the SOF unit across the coalition's `control_point.base.armor`.
+  Replaces any counter. Generation gate (`build_scar_taskings`): emit a SOF drop only while the
+  pool has teams (cap per turn = available count).
+- **Consume.** `commit_scar_results`: a `captured` result debits one SOF unit from a base
+  (`base.commit_losses`). (2c-3 CSAR can re-`commission_units` a recovered team.)
+- **Spawn the bought type.** The capture team the Lua drops uses the SOF unit's DCS type
+  (emit it from Python), snapped onto land via `_on_land`.
+
+**Revised slice order:** 2c-1 inventory asset (unit + buyability + pool + gate + consume +
+land-snap; scripted drop for now) → 2c-2 air-assault SOF insert (`FlightType.SOF`, the real
+"fly it in", debit on frag) → 2c-3 CSAR recovery. Note `SCAR_SOF_LEAD_FRAC` is temporarily 0.3
+(restore to 0.7) — a separate test knob, not part of this work.
+
+### 9c. 2c-1 buyability/pool — de-risked design (verified 2026-06-18)
+
+Key finding: `base.armor` is the front-line combat pool, BUT `ai_ground_planner` only deploys
+TANK/APC/ARTILLERY/IFV/LOGI/ATGM/SHORAD/AAA/RECON classes — **INFANTRY falls through to the
+`else` and is skipped**. And AI ground procurement (`procurement.affordable_ground_unit_of_class`)
+draws only from `faction.frontline_units`/`artillery_units`. So a SOF unit of class INFANTRY:
+- is **never auto-deployed to the front** (skipped by the planner), and
+- is **never bought/used by the AI** as long as we keep it OUT of `frontline_units`.
+
+So no faction mutation and no procurement guard are needed. Implementation (all gated on
+`scar_command_post_intel`):
+1. **Buyable (player only):** in `qt_ui/.../QArmorRecruitmentMenu.py`, add the side's SOF unit
+   (`SOF Team (BLUFOR)`/`(OPFOR)`) to the buy list when the setting is on. The AI's
+   `frontline_units`-based procurement is untouched, so only the human can buy SOF.
+2. **Pool = inventory count:** sum the side's SOF `GroundUnitType` across the coalition's
+   `control_point.base.armor`. `build_scar_taskings` gates SOF drops on it (cap per turn =
+   count), replacing the always-drop.
+3. **Spawn the bought type:** emit the SOF unit's DCS id in the tasking; the Lua spawns that
+   instead of the hard-coded `Soldier M4`. Snap via `_on_land`.
+4. **Consume:** `commit_scar_results` debits one SOF unit from a base (`base.commit_losses`)
+   per `captured`.
+
+Units defined + verified (commit 81bc1fb69): `SOF Team (BLUFOR)` (Soldier M4 GRG) / `(OPFOR)`
+(Infantry AK), price 8, spawn_weight 0.
+
+**2c-1 BUILT (gated OFF; Lua needs an in-game pass).** All four steps above are wired:
+`_sof_asset` (pool count), the `build_scar_taskings` gate + per-turn cap, `sofUnitType`
+emission + Lua `spawn_sof` using it, and `_consume_sof_teams` on capture. Tests in
+`test_scar_bridge.py` (pool gate / cap / unit-type) + `test_scar_command_post_fog.py`
+(capture consumes a team). **Remaining:** 2c-2 air-assault delivery (`FlightType.SOF`)
+replacing the scripted drop; 2c-3 CSAR recovery.

@@ -3,3 +3,10 @@ price: 0
 spawn_weight: 4
 variants:
   Infantry AK-74 Rus: null
+  # Dedicated, buyable SOF team for the SCAR commander-capture feature (414th
+  # Phase 2c) — OPFOR counterpart of "SOF Team (BLUFOR)". Distinct GroundUnitType
+  # with its own price; spawn_weight 0 so it is never random front-line filler.
+  SOF Team (OPFOR):
+    price: 8
+    spawn_weight: 0
+    role: Special forces (SCAR commander capture)

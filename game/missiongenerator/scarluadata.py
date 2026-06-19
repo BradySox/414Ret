@@ -99,6 +99,12 @@ SCAR_SCUD_RACE_M = SCAR_TRAVEL_M  # how far a SCUD relocates toward its target t
 SCAR_SOF_CAPTURE_RADIUS_M = 600.0  # command vehicle within this of the SOF = captured
 SCAR_SOF_LEAD_FRAC = 0.7  # SOF sits this fraction along the HVT's spawn->dest route
 
+# Phase 2c — the SOF team is a finite, BOUGHT inventory unit (dedicated GroundUnitType
+# per side). The drop only happens while the side has teams in its bases; each capture
+# consumes one. These names must match the variant_ids in resources/units/ground_units/.
+SCAR_SOF_UNIT_BLUE = "SOF Team (BLUFOR)"
+SCAR_SOF_UNIT_RED = "SOF Team (OPFOR)"
+
 
 @dataclass(frozen=True)
 class ScarConvoy:
@@ -169,6 +175,7 @@ class ScarTasking:
     sof_y: float = 0.0
     sof_radius_m: float = 0.0
     sof_country_id: int = 0
+    sof_unit_type: str = ""  # DCS unit id the Lua spawns for the SOF team
 
 
 def _ring_point(
@@ -380,6 +387,27 @@ def _sof_ambush(
     return sof_x, sof_y, SCAR_SOF_CAPTURE_RADIUS_M, country_id
 
 
+def _sof_asset(game: "Game", coalition: object) -> tuple[int, str]:
+    """The side's bought SOF pool: (count across its bases, DCS unit id to spawn).
+
+    Returns (0, "") if the dedicated SOF unit type isn't available. INFANTRY units
+    sit in base.armor but are never front-line-deployed or AI-procured (see the
+    Phase 2c design note), so this count is exactly the player's reserve of teams.
+    """
+    from game.dcs.groundunittype import GroundUnitType
+
+    name = SCAR_SOF_UNIT_BLUE if coalition.player.is_blue else SCAR_SOF_UNIT_RED  # type: ignore[attr-defined]
+    try:
+        unit = GroundUnitType.named(name)
+    except KeyError:
+        return 0, ""
+    count = 0
+    for cp in game.theater.controlpoints:
+        if cp.captured == coalition.player:  # type: ignore[attr-defined]
+            count += cp.base.armor.get(unit, 0)
+    return count, unit.dcs_unit_type.id
+
+
 def _on_land(game: "Game", x: float, y: float) -> tuple[float, float]:
     """Snap a computed point onto land if it fell in the sea.
 
@@ -435,6 +463,12 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
         color = "blue" if coalition.player else "red"
         enemy_country_id = coalition.opponent.faction.country.id
         friendly_country_id = coalition.faction.country.id
+        # Finite SOF pool (Phase 2c): only drop a team while the side has bought
+        # some, capped per turn at the count on hand. sof_unit_type is the DCS id
+        # the Lua spawns.
+        sof_budget, sof_unit_type = (
+            _sof_asset(game, coalition) if sof_enabled else (0, "")
+        )
         for package in coalition.ato.packages:
             if not any(f.flight_type is FlightType.SCAR for f in package.flights):
                 continue
@@ -565,13 +599,15 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         target.position, dest_x, dest_y, decoy_sigs, flee_speed
                     )
                 )
-                sof_x, sof_y, sof_radius, sof_country = (
-                    _sof_ambush(origin.x, origin.y, dest_x, dest_y, friendly_country_id)
-                    if sof_enabled
-                    else (0.0, 0.0, 0.0, 0)
-                )
-                if sof_radius:
+                sof_x, sof_y, sof_radius, sof_country = 0.0, 0.0, 0.0, 0
+                sof_type = ""
+                if sof_budget > 0:
+                    sof_x, sof_y, sof_radius, sof_country = _sof_ambush(
+                        origin.x, origin.y, dest_x, dest_y, friendly_country_id
+                    )
                     sof_x, sof_y = _on_land(game, sof_x, sof_y)
+                    sof_type = sof_unit_type
+                    sof_budget -= 1
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -591,6 +627,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         sof_y=sof_y,
                         sof_radius_m=sof_radius,
                         sof_country_id=sof_country,
+                        sof_unit_type=sof_type,
                     )
                 )
             else:
@@ -605,7 +642,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     game, _compose_convoys(target.position, city, SCAR_WINDOW_S)
                 )
                 sof_x, sof_y, sof_radius, sof_country = (0.0, 0.0, 0.0, 0)
-                if sof_enabled:
+                sof_type = ""
+                if sof_budget > 0:
                     hvt = next((c for c in spawn_convoys if c.role == "hvt"), None)
                     if hvt is not None:
                         sof_x, sof_y, sof_radius, sof_country = _sof_ambush(
@@ -616,6 +654,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                             friendly_country_id,
                         )
                         sof_x, sof_y = _on_land(game, sof_x, sof_y)
+                        sof_type = sof_unit_type
+                        sof_budget -= 1
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"scar-{index}",
@@ -631,6 +671,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         sof_y=sof_y,
                         sof_radius_m=sof_radius,
                         sof_country_id=sof_country,
+                        sof_unit_type=sof_type,
                     )
                 )
     return taskings
@@ -657,6 +698,8 @@ def _emit_sof(record: "LuaItem", tasking: ScarTasking) -> None:
     record.add_item("sofY").set_value(str(tasking.sof_y))
     record.add_item("sofRadius").set_value(str(tasking.sof_radius_m))
     record.add_item("sofCountryId").set_value(str(tasking.sof_country_id))
+    if tasking.sof_unit_type:
+        record.add_item("sofUnitType").set_value(tasking.sof_unit_type)
 
 
 def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:

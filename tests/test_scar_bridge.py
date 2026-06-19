@@ -71,6 +71,22 @@ def _game_with(*coalitions: Any) -> Any:
     return game
 
 
+def _give_sof_pool(game: Any, count: int = 2) -> Any:
+    """Phase 2c: turn the feature on and stock `count` bought SOF teams in a
+    friendly base so the pool gate opens. Returns the SOF GroundUnitType."""
+    from game.dcs.groundunittype import GroundUnitType
+    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+
+    game.settings.scar_command_post_intel = True
+    unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
+    coalition = game.coalitions[0]
+    cp = MagicMock()
+    cp.captured = coalition.player  # friendly-held -> counted by _sof_asset
+    cp.base.armor = {unit: count}
+    game.theater.controlpoints = list(game.theater.controlpoints) + [cp]
+    return unit
+
+
 def _build(game: Any) -> Any:
     return build_scar_taskings(game, MISSION_START)
 
@@ -242,9 +258,40 @@ def test_no_sof_ambush_when_feature_off() -> None:
     assert tasking.sof_radius_m == 0.0
 
 
+def test_no_sof_ambush_when_pool_empty() -> None:
+    # Feature ON but the side owns no SOF teams -> no drop (finite-pool gate).
+    game = _armor_to_far_city()
+    game.settings.scar_command_post_intel = True  # but no SOF stocked
+    tasking = _build(game)[0]
+    assert tasking.sof_radius_m == 0.0
+
+
+def test_sof_pool_caps_drops_per_turn() -> None:
+    # One SOF team, two SCAR targets -> only the first gets a drop.
+    armor = MagicMock(spec=VehicleGroupGroundObject)
+    armor.groups = [
+        MagicMock(units=[MagicMock(type=MagicMock(id="T-55"))], group_name="A1")
+    ]
+    armor.position = Point(0, 0, None)  # type: ignore[arg-type]
+    armor.control_point = MagicMock(captured=True)
+    coalition = _coalition_with_target(armor)
+    second = MagicMock()
+    second.target = MagicMock(position=Point(60000, 60000, None))  # type: ignore[arg-type]
+    second.time_over_target = MISSION_START + timedelta(seconds=TOT_OFFSET_S)
+    second.flights = [MagicMock(flight_type=FlightType.SCAR)]
+    coalition.ato.packages = [coalition.ato.packages[0], second]
+    game = _game_with(coalition)
+    _give_sof_pool(game, count=1)
+
+    taskings = _build(game)
+    with_sof = [t for t in taskings if t.sof_radius_m > 0]
+    assert len(taskings) == 2
+    assert len(with_sof) == 1  # capped at the single available team
+
+
 def test_armor_sof_ambush_when_feature_on() -> None:
     game = _armor_to_far_city()
-    game.settings.scar_command_post_intel = True
+    sof_unit = _give_sof_pool(game)
 
     tasking = _build(game)[0]
 
@@ -253,13 +300,15 @@ def test_armor_sof_ambush_when_feature_on() -> None:
     # SOF sits SCAR_SOF_LEAD_FRAC of the way from the HVT (origin 0,0) to dest.
     assert tasking.sof_x == tasking.dest_x * SCAR_SOF_LEAD_FRAC
     assert tasking.sof_y == 0.0
+    # The bought unit's DCS type is emitted for the Lua to spawn.
+    assert tasking.sof_unit_type == sof_unit.dcs_unit_type.id
 
 
 def test_spawn_sof_ambush_on_the_hvt_route_when_feature_on() -> None:
     target = MagicMock()
     target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(target))
-    game.settings.scar_command_post_intel = True
+    _give_sof_pool(game)
 
     tasking = _build(game)[0]
 
@@ -285,14 +334,15 @@ def test_sof_fields_emitted_to_lua_only_when_enabled() -> None:
     populate_scar_lua(off, _build(_game_with(_coalition_with_target(target))))
     assert "sofX" not in off.serialize()
 
-    # Enabled: SOF point + friendly country emitted.
+    # Enabled + a SOF team in stock: SOF point + friendly country + unit type emitted.
     game = _game_with(_coalition_with_target(target))
-    game.settings.scar_command_post_intel = True
+    _give_sof_pool(game)
     on = LuaData("dcsRetribution")
     populate_scar_lua(on, _build(game))
     serialized = on.serialize()
     assert "sofX" in serialized
     assert "sofCountryId" in serialized
+    assert "sofUnitType" in serialized
 
 
 def test_offshore_flee_dest_is_snapped_to_land() -> None:

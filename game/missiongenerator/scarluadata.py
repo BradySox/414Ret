@@ -182,6 +182,31 @@ def _ring_point(
     )
 
 
+# Golden angle (~137.5°): a sunflower/phyllotaxis spiral that fills a disk evenly
+# but without the regular spokes of a fixed-radius ring.
+_GOLDEN_ANGLE = math.pi * (3.0 - math.sqrt(5.0))
+
+
+def _scatter_point(
+    center: "Point", index: int, total: int, radius: float = SCAR_SPREAD_RADIUS_M
+) -> tuple[float, float]:
+    """A point scattered through the disk around ``center`` (deterministic).
+
+    Decoys/clutter on a single fixed-radius ring read as an obviously artificial
+    circle (in-game feedback 2026-06-18: "decoy generation looks very uniform").
+    A golden-angle spiral with a sqrt-spaced radius spreads them across the whole
+    area at varied ranges/bearings, so the column looks like scattered traffic.
+    A floor on the radius keeps them off the HVT itself.
+    """
+    angle = index * _GOLDEN_ANGLE
+    frac = (index + 0.5) / max(total, 1)
+    r = radius * (0.35 + 0.65 * math.sqrt(frac))
+    return (
+        center.x + r * math.cos(angle),
+        center.y + r * math.sin(angle),
+    )
+
+
 def _paced_speed(route_len_m: float, travel_time_s: float) -> float:
     """Speed (m/s) to cover ``route_len_m`` in ``travel_time_s``, clamped so a
     moving HVT crawls within a sane band rather than racing or stalling."""
@@ -239,7 +264,7 @@ def _supporting_convoys(
     ] + [("clutter", SCAR_CLUTTER_SIGNATURE) for _ in range(SCAR_CLUTTER_COUNT)]
     convoys: list[ScarConvoy] = []
     for index, (role, sig) in enumerate(others):
-        spawn_x, spawn_y = _ring_point(center, index, len(others))
+        spawn_x, spawn_y = _scatter_point(center, index, len(others))
         convoys.append(
             ScarConvoy(
                 role=role,

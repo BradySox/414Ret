@@ -21,6 +21,16 @@ class _DummyPosition:
             format_dms=lambda include_decimal_seconds=True: self.location
         )
 
+    def heading_between_point(self, other: Any) -> float:
+        return 0.0
+
+    def distance_to_point(self, other: Any) -> float:
+        return 0.0
+
+
+def _bullseye() -> Any:
+    return SimpleNamespace(position=_DummyPosition("bullseye"))
+
 
 def _flight(flight_type: FlightType, precision: TargetIntelPrecision) -> Any:
     settings = SimpleNamespace(target_intel_precision=precision)
@@ -42,16 +52,22 @@ def _target(location: str) -> Any:
 
 
 def test_dead_task_page_uses_cue_even_with_exact_intel() -> None:
-    page = SeadTaskPage(_flight(FlightType.DEAD, TargetIntelPrecision.EXACT), False)
+    page = SeadTaskPage(
+        _flight(FlightType.DEAD, TargetIntelPrecision.EXACT), _bullseye(), False
+    )
 
-    row = page.target_info_row(_target("N 35 00 00 E 36 00 00"), {})
+    row = page.target_info_row(_target("N 35 00 00 E 36 00 00"), 3)
 
-    assert row[3] == "Search around target area waypoint"
+    assert row[0] == "3"
+    assert row[3] == "Bullseye 000 for 0"
 
 
 def test_sead_task_page_keeps_exact_coords_with_exact_intel() -> None:
-    page = SeadTaskPage(_flight(FlightType.SEAD, TargetIntelPrecision.EXACT), False)
+    page = SeadTaskPage(
+        _flight(FlightType.SEAD, TargetIntelPrecision.EXACT), _bullseye(), False
+    )
 
-    row = page.target_info_row(_target("N 35 00 00 E 36 00 00"), {})
+    row = page.target_info_row(_target("N 35 00 00 E 36 00 00"), 3)
 
+    assert row[0] == "3"
     assert row[3] == "N 35 00 00 E 36 00 00"

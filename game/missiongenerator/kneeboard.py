@@ -705,8 +705,11 @@ class SupportPage(KneeboardPage):
 class SeadTaskPage(KneeboardPage):
     """A kneeboard page containing SEAD/DEAD target information."""
 
-    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
+    def __init__(
+        self, flight: FlightData, bullseye: Bullseye, dark_kneeboard: bool
+    ) -> None:
         self.flight = flight
+        self.bullseye = bullseye
         self.dark_kneeboard = dark_kneeboard
 
     @property
@@ -714,21 +717,23 @@ class SeadTaskPage(KneeboardPage):
         if isinstance(self.flight.package.target, TheaterGroundObject):
             yield from self.flight.package.target.strike_targets
 
-    def _waypoint_number_by_position(self) -> Dict[Tuple[float, float], int]:
-        """STPT number of each per-target waypoint, keyed by its position.
+    def _target_point_numbers(self) -> List[int]:
+        """STPT numbers of the per-target waypoints, in target order.
 
-        DEAD/SEAD flights get one TARGET_POINT waypoint per target, built at the
-        target's position, so each listed target can show its assigned waypoint
-        number — the same "STPT" the strike task page shows. The number is the
-        index into the flight's waypoint list, matching the flight-plan page.
-        Targets without a matching waypoint (e.g. an old flight plan generated
-        before per-target waypoints existed) simply show a blank STPT.
+        DEAD/SEAD flights get one TARGET_POINT waypoint per target, built from
+        the same ``strike_targets`` list (in the same order) that this page
+        lists, so the i-th TARGET_POINT waypoint is the i-th listed target. The
+        number is the index into the flight's waypoint list, matching the
+        flight-plan page. Pairing by order (rather than by position) is robust
+        to APPROXIMATE target intel offsetting the waypoint away from the unit's
+        true position, which previously left every STPT blank. Old flight plans
+        generated before per-target waypoints existed simply have no entries.
         """
-        numbers: Dict[Tuple[float, float], int] = {}
-        for idx, waypoint in enumerate(self.flight.waypoints):
-            if waypoint.waypoint_type == FlightWaypointType.TARGET_POINT:
-                numbers.setdefault((waypoint.position.x, waypoint.position.y), idx)
-        return numbers
+        return [
+            idx
+            for idx, waypoint in enumerate(self.flight.waypoints)
+            if waypoint.waypoint_type == FlightWaypointType.TARGET_POINT
+        ]
 
     @staticmethod
     def alic_for(unit: TheaterUnit) -> str:
@@ -736,6 +741,16 @@ class SeadTaskPage(KneeboardPage):
             return str(AlicCodes.code_for(unit))
         except KeyError:
             return ""
+
+    def _bullseye_cue(self, unit: TheaterUnit) -> str:
+        """A rough bullseye bearing/range to the target, accurate to ~1nm.
+
+        Bearing is rounded to the nearest degree and range to the nearest
+        nautical mile, giving the player a search anchor without exact coords.
+        """
+        bearing = self.bullseye.position.heading_between_point(unit.position)
+        distance = meters(self.bullseye.position.distance_to_point(unit.position))
+        return f"Bullseye {bearing:03.0f} for {distance.nautical_miles:.0f}"
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -746,29 +761,31 @@ class SeadTaskPage(KneeboardPage):
         task = "DEAD" if self.flight.flight_type == FlightType.DEAD else "SEAD"
         writer.title(f"{self.flight.callsign} {task} Target Info{custom_name_title}")
 
-        waypoint_numbers = self._waypoint_number_by_position()
+        target_numbers = self._target_point_numbers()
         headers = ["STPT", "Description", "ALIC", "Location"]
         if self._use_target_area_cues:
             headers[3] = "Cue"
         writer.table(
-            [self.target_info_row(t, waypoint_numbers) for t in self.target_units],
+            [
+                self.target_info_row(
+                    t, target_numbers[i] if i < len(target_numbers) else None
+                )
+                for i, t in enumerate(self.target_units)
+            ],
             headers=headers,
         )
 
         writer.write(path)
 
-    def target_info_row(
-        self, unit: TheaterUnit, waypoint_numbers: Dict[Tuple[float, float], int]
-    ) -> List[str]:
+    def target_info_row(self, unit: TheaterUnit, number: Optional[int]) -> List[str]:
         unit_type = unit.type
         name = unit.name if unit_type is None else unit_type.name
-        number = waypoint_numbers.get((unit.position.x, unit.position.y))
         return [
             "" if number is None else str(number),
             name,
             self.alic_for(unit),
             (
-                "Search around target area waypoint"
+                self._bullseye_cue(unit)
                 if self._use_target_area_cues
                 else unit.position.latlng().format_dms(include_decimal_seconds=True)
             ),
@@ -927,7 +944,11 @@ class KneeboardGenerator(MissionInfoGenerator):
 
     def generate_task_page(self, flight: FlightData) -> Optional[KneeboardPage]:
         if flight.flight_type in (FlightType.DEAD, FlightType.SEAD):
-            return SeadTaskPage(flight, self.dark_kneeboard)
+            return SeadTaskPage(
+                flight,
+                self.game.coalition_for(flight.friendly).bullseye,
+                self.dark_kneeboard,
+            )
         elif flight.flight_type is FlightType.STRIKE:
             return StrikeTaskPage(flight, self.dark_kneeboard)
         return None

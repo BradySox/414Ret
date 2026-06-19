@@ -333,6 +333,13 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
 - Malformed mod payload Lua (CJS Super Hornet v2.4 uses local-var table indices that the
   pydcs Lua parser rejects with `ValueError`): patched loader in `qt_ui/main.py`
   (`_patch_pydcs_payload_loader()`), plus the offending files are skipped with a warning.
+- Spurious "past start times" warning for player CAP: a BARCAP/TARCAP is meant to be
+  on-station at mission start, so a cold-start spin-up legitimately begins before mission
+  start — and the scheduler reserves only the 2-min AI startup while a player-flown flight
+  gets the larger `player_startup_time` allowance, so a player-occupied cold-start CAP tripped
+  the warning every turn. `QTopPanel.negative_start_packages` now checks **takeoff** time (not
+  startup) for DCA patrols, so a genuine "can't even take off in time" misplan still warns but
+  the normal cold-start CAP does not. Tests: `tests/test_negative_start_packages.py`.
 
 ---
 

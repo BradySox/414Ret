@@ -341,8 +341,25 @@ This slice needs dynamic-TGO creation + ATO wiring + a recovery flight + in-miss
   air-assault** (inherited from `AIR_ASSAULT`), so no per-YAML task weights. Not offered from control
   points / front lines (only from the downed-team TGO) and player-only (no AI propose task). Tests:
   CSAR lane on/off in `tests/test_aircraft_tasking_roles.py`.
+- **C4 — recovery resolution + refund BUILT** (`MissionResultsProcessor.commit_sof_recoveries`):
+  a team is recovered when its side flew a `FlightType.CSAR` flight at the downed-team objective on
+  the team's position **and the helo survived the sortie** (`air_losses.surviving_flight_members`).
+  Recovery refunds one bought SOF team to a friendly base (`_refund_sof_teams_to`) and clears the
+  matching `PendingSofRescue` (position match). Runs before `commit_captures` so the refund can't
+  land on a base about to flip. `COMMIT_STEPS` + an ordering assertion track it. Tests:
+  recover/lost-helo/wrong-target/gated in `tests/test_scar_command_post_fog.py`.
+  - **Resolution-design note (deviation from the §9e plan, by design):** the plan assumed an
+    in-mission **Lua proximity** check; this slice resolves recovery in **pure Python from the
+    debriefing** instead. The recovery helo flies a deep penetration to where the team stranded
+    (enemy territory) and the sim flies it (player *or* AI), so "helo survived" is a real
+    accomplishment — no frag-and-forget loophole. The win: **no new un-CI-runnable Lua** for the
+    recovery leg. Tighter in-mission verification (CTLD pickup / proximity) remains an *optional*
+    realism refinement, not a correctness gap.
 
-**Still owed an in-game Lua pass** (from 2c-2/earlier): a CTLD-unloaded team near the mark is
-detected and capture resolves off it; a botch tags the stranded position. Optional follow-ups:
-route the SOF drop zone to the ambush point; exclude non-capturable targets (SCUD sites) from the
-SOF offering.
+**Slice C COMPLETE** (C1–C4), gated OFF, CI-green. The whole stranded-SOF → CSAR loop now runs
+end-to-end on the campaign side with no new Lua.
+
+**Still owed an in-game Lua pass** (carried over from 2c-2/earlier — *not* slice C): a CTLD-unloaded
+team near the mark is detected and capture resolves off it; a botch tags the stranded position.
+Optional follow-ups: route the SOF drop zone to the ambush point; exclude non-capturable targets
+(SCUD sites) from the SOF offering; optional CTLD-extract realism for the CSAR recovery leg.

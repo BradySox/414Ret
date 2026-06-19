@@ -233,8 +233,13 @@ controls three behaviors together when set to Approximate:
 - Objective F10 map marks are suppressed even if `generate_marks` is on.
   (`game/missiongenerator/triggergenerator.py`,
   `game/pretense/pretensetriggergenerator.py`)
-- Strike / SEAD / DEAD kneeboard target pages omit exact coordinates and instead
-  cue the player to search the target area.
+- Strike / SEAD / DEAD kneeboard target pages omit exact coordinates. The Strike
+  page cues the player to search the target area; the SEAD/DEAD page (`SeadTaskPage`)
+  gives a **rough bullseye** (`Bullseye <brg> for <nm>`, bearing rounded to the
+  nearest degree and range to the nearest NM, accurate to ~1 NM) as the Cue.
+  DEAD always uses the bullseye cue even with Exact intel. The STPT column pairs each
+  listed target to its per-target `TARGET_POINT` waypoint **by order** (not position),
+  so it stays populated even when Approximate intel offsets the waypoint.
   (`game/missiongenerator/kneeboard.py`)
 
 ---

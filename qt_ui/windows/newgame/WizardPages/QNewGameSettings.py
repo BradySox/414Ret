@@ -34,11 +34,18 @@ class NewGameSettings(QtWidgets.QWizardPage):
     @staticmethod
     def _load_campaign_settings(campaign: Campaign, settings: Settings) -> None:
         campaign_settings = Settings.deserialize_state_dict(campaign.settings)
-        if campaign_settings.get("plugins", {}):
-            campaign_settings["plugins"] = {
-                **settings.__dict__["plugins"],
-                **campaign_settings["plugins"],
-            }
+        # `settings` already has every plugin option seeded with its default (via
+        # load_default_settings -> Settings.__setstate__ -> LuaPluginManager). The
+        # campaign may carry its own plugin choices, but those must only *override*
+        # the seeded defaults, never replace the whole dict -- otherwise a campaign
+        # with an empty (or older, partial) "plugins" blob would drop options the
+        # campaign doesn't mention (e.g. a plugin option added after the campaign was
+        # authored), and the settings UI would KeyError reading the missing option.
+        # Always layer the campaign's plugins over the defaults, unconditionally.
+        campaign_settings["plugins"] = {
+            **settings.__dict__.get("plugins", {}),
+            **campaign_settings.get("plugins", {}),
+        }
         settings.__dict__.update(campaign_settings)
 
     def set_campaign_values(self, c: Campaign):

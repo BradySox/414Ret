@@ -206,7 +206,9 @@ class ThreatZones:
         return min(cap_threat_range, max_distance)
 
     @classmethod
-    def for_faction(cls, game: Game, player: Player) -> ThreatZones:
+    def for_faction(
+        cls, game: Game, player: Player, viewer: Player | None = None
+    ) -> ThreatZones:
         """Generates the threat zones projected by the given coalition.
 
         Args:
@@ -220,10 +222,14 @@ class ThreatZones:
             the enemy and vice versa.
         """
         air_threats = []
-        air_defenses = []
+        air_defenses: list[TheaterGroundObject] = []
         for cp in game.theater.control_points_for(player):
             air_threats.append(cp)
-            air_defenses.extend([go for go in cp.ground_objects if go.has_aa])
+            air_defenses.extend(
+                go
+                for go in cp.ground_objects
+                if go.has_aa and (viewer is None or go.known_for(viewer))
+            )
 
         # The active front line is a hazard to either side's transiting flights,
         # so it is added to every faction's projected threat (each coalition's
@@ -239,6 +245,7 @@ class ThreatZones:
             air_threats,
             air_defenses,
             front_line_zones=front_line_zones,
+            viewer=viewer,
         )
 
     @staticmethod
@@ -266,6 +273,7 @@ class ThreatZones:
         barcap_locations: Iterable[ControlPoint],
         air_defenses: Iterable[TheaterGroundObject],
         front_line_zones: Iterable[ThreatPoly] = (),
+        viewer: Player | None = None,
     ) -> ThreatZones:
         """Generates the threat zones projected by the given locations.
 
@@ -293,7 +301,8 @@ class ThreatZones:
             for group in tgo.groups:
                 # cap threat-range, otherwise it can cause issues wrt NavMesh calculations
                 threat_range = min(
-                    group.max_threat_range(), nautical_miles(settings.max_threat_range)
+                    group.max_threat_range(viewer),
+                    nautical_miles(settings.max_threat_range),
                 )
                 # Any system with a shorter range than this is not worth
                 # even avoiding.
@@ -301,7 +310,7 @@ class ThreatZones:
                     point = ShapelyPoint(tgo.position.x, tgo.position.y)
                     threat_zone = point.buffer(threat_range.meters)
                     air_defense_threats.append(threat_zone)
-                radar_threat_range = group.max_threat_range(radar_only=True)
+                radar_threat_range = group.max_threat_range(viewer, radar_only=True)
                 if radar_threat_range > nautical_miles(3):
                     point = ShapelyPoint(tgo.position.x, tgo.position.y)
                     threat_zone = point.buffer(radar_threat_range.meters)

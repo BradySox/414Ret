@@ -75,6 +75,28 @@ class TargetIntelPrecision(Enum):
     APPROXIMATE = "Approximate target area"
 
 
+@unique
+class AiRadioBehavior(Enum):
+    FULL = "Normal callouts"
+    LIMITED = "Suppress contact reports"
+    SILENT = "Radio silence"
+
+
+SERIALIZABLE_ENUM_TYPES = (
+    AutoAtoBehavior,
+    NightMissions,
+    FastForwardStopCondition,
+    CombatResolutionMethod,
+    TargetIntelPrecision,
+    AiRadioBehavior,
+    StartType,
+    Views,
+)
+SERIALIZABLE_ENUM_TYPES_BY_NAME = {
+    enum_type.__name__: enum_type for enum_type in SERIALIZABLE_ENUM_TYPES
+}
+
+
 DIFFICULTY_PAGE = "Difficulty"
 
 AI_DIFFICULTY_SECTION = "AI Difficulty"
@@ -157,13 +179,13 @@ class Settings:
     )
     # Mission Difficulty
     manpads: bool = boolean_option(
-        "Manpads on frontlines",
+        "MANPADS on front lines",
         page=DIFFICULTY_PAGE,
         section=MISSION_DIFFICULTY_SECTION,
         default=True,
     )
     night_day_missions: NightMissions = choices_option(
-        "Night/day mission options",
+        "Mission time of day",
         page=DIFFICULTY_PAGE,
         section=MISSION_DIFFICULTY_SECTION,
         choices={
@@ -175,7 +197,7 @@ class Settings:
     )
     # Mission Restrictions
     labels: str = choices_option(
-        "In game labels",
+        "In-game labels",
         page=DIFFICULTY_PAGE,
         section=MISSION_RESTRICTIONS_SECTION,
         choices=["Full", "Abbreviated", "Dot Only", "Neutral Dot", "Off"],
@@ -202,7 +224,7 @@ class Settings:
     )
 
     easy_communication: Optional[bool] = choices_option(
-        "Easy Communication",
+        "Easy communications",
         page=DIFFICULTY_PAGE,
         section=MISSION_RESTRICTIONS_SECTION,
         choices={"Player preference": None, "Enforced on": True, "Enforced off": False},
@@ -225,8 +247,10 @@ class Settings:
         default=timedelta(minutes=60),
         min=30,
         max=150,
-        detail="Implicitly determines the number of BARCAPs planned by taking the mission duration"
-        " and dividing it by the desired on-station time.",
+        detail=(
+            "Also determines how many BARCAP waves are planned: mission duration "
+            "divided by desired on-station time."
+        ),
     )
     barcap_overlap_time: timedelta = minutes_option(
         "BARCAP wave overlap",
@@ -307,8 +331,10 @@ class Settings:
         default=timedelta(minutes=120),
         min=60,
         max=300,
-        detail="Implicitly determines the number of AWACS flights planned by taking the mission duration"
-        " and dividing it by the desired on-station time.",
+        detail=(
+            "Also determines how many AWACS flights are planned: mission duration "
+            "divided by desired on-station time."
+        ),
     )
     desired_tanker_on_station_time: timedelta = minutes_option(
         "Desired tanker on-station time",
@@ -317,8 +343,10 @@ class Settings:
         default=timedelta(minutes=60),
         min=30,
         max=150,
-        detail="Implicitly determines the number of Tanker flights planned by taking the mission duration"
-        " and dividing it by the desired on-station time.",
+        detail=(
+            "Also determines how many tanker flights are planned: mission duration "
+            "divided by desired on-station time."
+        ),
     )
     autoplan_tankers_for_strike: bool = boolean_option(
         "Auto-planner plans refueling flights for Strike packages",
@@ -542,15 +570,15 @@ class Settings:
     )
 
     player_startup_time: int = bounded_int_option(
-        "Player startup time",
+        "Player startup allowance (minutes)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=10,
         min=0,
         max=100,
         detail=(
-            "The startup time allocated to player flights (default : 10 minutes, AI is 2 minutes). "
-            "Packages have to be planned again for this to take effect. "
+            "Time reserved for player startup before taxi (AI uses 2 minutes). "
+            "Re-plan packages after changing this value."
         ),
     )
 
@@ -568,7 +596,7 @@ class Settings:
         ),
     )
     max_threat_range: int = bounded_int_option(
-        "Maxiumum threat range (NM)",
+        "Maximum threat range (NM)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=DOCTRINE_DISTANCES_SECTION,
         default=200,
@@ -707,7 +735,7 @@ class Settings:
     # Campaign management
     # General
     squadron_random_chance: int = bounded_int_option(
-        "Percentage of randomly selected aircraft types (only for generated squadrons)",
+        "Generated-squadron aircraft randomization (%)",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=50,
@@ -721,7 +749,7 @@ class Settings:
         ),
     )
     restrict_weapons_by_date: bool = boolean_option(
-        "Restrict weapons by date (WIP)",
+        "Restrict weapons by campaign date (incomplete data)",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=False,
@@ -739,18 +767,6 @@ class Settings:
             "When enabled, applies target-specific weapon settings from weapon "
             "configurations to player-controlled aircraft. AI aircraft always receive "
             "target-based settings. This includes settings for degraded loadouts."
-        ),
-    )
-    prefer_squadrons_with_matching_primary_task: bool = boolean_option(
-        "Prefer squadrons with matching primary task when planning missions",
-        page=CAMPAIGN_MANAGEMENT_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "If checked, squadrons with a primary task matching the mission will be "
-            "preferred even if there is a closer squadron capable of the mission as a "
-            "secondary task. Expect longer flights, but squadrons will be more often "
-            "assigned to their primary task."
         ),
     )
     use_bandit_clouds: bool = boolean_option(
@@ -866,7 +882,7 @@ class Settings:
         default=True,
     )
     auto_ato_behavior_tankers: bool = boolean_option(
-        "Automatic Theater tanker package planning",
+        "Automatic theater-tanker package planning",
         CAMPAIGN_MANAGEMENT_PAGE,
         HQ_AUTOMATION_SECTION,
         default=False,
@@ -979,7 +995,7 @@ class Settings:
         default=35,
         min=0,
         max=100,
-        detail="See 2-ship weight factor (WF3)",
+        detail="Relative weight used with WF2 and WF4; see the 2-ship setting.",
     )
     fpa_4ship_weight: int = bounded_int_option(
         "4-ship weight factor (WF4)",
@@ -988,7 +1004,7 @@ class Settings:
         default=15,
         min=0,
         max=100,
-        detail="See 2-ship weight factor (WF4)",
+        detail="Relative weight used with WF2 and WF3; see the 2-ship setting.",
     )
     primary_task_distance_factor: int = bounded_int_option(
         "Primary task distance weight (NM)",
@@ -1027,7 +1043,7 @@ class Settings:
         ),
     )
     combat_resolution_method: CombatResolutionMethod = choices_option(
-        "Resolve combat when fast forwarding by",
+        "Combat encountered during fast-forward",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
         default=CombatResolutionMethod.PAUSE,
@@ -1037,10 +1053,9 @@ class Settings:
             "Skipping combat": CombatResolutionMethod.SKIP,
         },
         detail=(
-            "Determines what happens when combat occurs when fast forwarding. "
-            "Pause: pause fast forward and generate mission. Fast forwarding may stop before the condition specified in the above setting. "
-            "Resolving combat (WIP): auto resolve combat. This method is very rudimentary and will result in large losses. "
-            "Skipping combat: skip combat as if it did not occur."
+            "Pause stops fast-forward so the combat can be flown. Resolve uses the "
+            "rudimentary campaign simulation and can cause heavy losses. Skip ignores "
+            "the combat. This may stop fast-forward before the selected stop condition."
         ),
     )
     supercarrier: bool = boolean_option(
@@ -1104,19 +1119,18 @@ class Settings:
         ),
     )
     generate_dtc: bool = boolean_option(
-        "Generate DTC cartridges (F-16C / F/A-18C)",
+        "Generate DTC cartridge (F/A-18C)",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
-        default=True,
+        default=False,
         detail=(
-            "Writes native DCS Data Transfer Cartridges into the mission so player "
-            "F-16C and F/A-18C flights spawn with the coalition SA picture (threat "
-            "rings, front line, and CAP/tanker tracks) preloaded. Requires a DCS build "
-            "with DTC SA-partition support."
+            "Writes a native DCS Data Transfer Cartridge for player F/A-18C flights "
+            "with coalition CAP and tanker tracks. The cartridge is copied to Saved "
+            "Games and currently must be selected manually in DCS once per sortie."
         ),
     )
     never_delay_player_flights: bool = boolean_option(
-        "Player flights ignore TOT and spawn immediately",
+        "Spawn player flights immediately (keep planned TOT)",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         default=True,
@@ -1154,46 +1168,34 @@ class Settings:
         ),
     )
     default_start_type_client: StartType = choices_option(
-        "Default start type for Player flights",
+        "Default start type for player flights",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
         choices={v.value: v for v in StartType},
         default=StartType.COLD,
         detail="Default start type for flights containing Player/Client slots.",
     )
-    nevatim_parking_fix: bool = boolean_option(
-        "Force air-starts for aircraft at Nevatim and Ramon Airbase inoperable parking slots",
-        page=MISSION_GENERATOR_PAGE,
-        section=GAMEPLAY_SECTION,
-        default=False,  # TODO: set to False or remove this when DCS is fixed
-        detail=(
-            "Air-starts forced for all aircraft at Nevatim and Ramon Airbase except parking slots "
-            "which are known to work as of DCS World 2.9.4.53990."
-        ),
-    )
     switch_baro_fix: bool = boolean_option(
-        "Switch altitude type of waypoints to AMSL above seas for helicopters",
+        "Use AMSL helicopter waypoints over water (DCS workaround)",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
         default=True,  # TODO: set to False or remove this when DCS is fixed?
         detail=(
-            "AGL seems to reference the bottom of the sea which causes issues for helicopters"
-            " trying to fly at altitudes lower than the sea-bottom."
+            "Works around DCS treating over-water AGL altitude as relative to the sea "
+            "floor, which can send low-flying helicopters below the surface."
         ),
     )
-    limit_ai_radios: bool = boolean_option(
-        "Limit AI radio callouts",
+    ai_radio_behavior: AiRadioBehavior = choices_option(
+        "AI wingman radio behavior in player flights",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
-        default=True,
-        detail="Avoids the target-detection callouts over the radio by AI. (except for AWACS flights)",
-    )
-    silence_ai_radios: bool = boolean_option(
-        "Suppress AI radio callouts",
-        page=MISSION_GENERATOR_PAGE,
-        section=GAMEPLAY_SECTION,
-        default=False,
-        detail="Keeps the AI silent at all times for flights with human pilots. (except for AWACS flights)",
+        choices={behavior.value: behavior for behavior in AiRadioBehavior},
+        default=AiRadioBehavior.LIMITED,
+        detail=(
+            "Controls AI wingmen in flights containing human slots. Normal keeps "
+            "standard DCS calls; Suppress contact reports removes target-detection "
+            "spam; Radio silence suppresses all AI calls. AWACS flights are unaffected."
+        ),
     )
     use_ai_combat_landing: bool = boolean_option(
         "Use AI combat landing waypoint task",
@@ -1220,7 +1222,7 @@ class Settings:
         max=100,
     )
     game_masters_count: int = bounded_int_option(
-        "Number of game masters",
+        "Game Master slots per coalition",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
         default=1,
@@ -1232,7 +1234,7 @@ class Settings:
         ),
     )
     tactical_commander_count: int = bounded_int_option(
-        "Number of tactical commands",
+        "Tactical Commander slots per coalition",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
         default=3,
@@ -1244,7 +1246,7 @@ class Settings:
         ),
     )
     jtac_count: int = bounded_int_option(
-        "Number of JTAC controllers",
+        "JTAC slots per coalition",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
         default=3,
@@ -1256,14 +1258,14 @@ class Settings:
         ),
     )
     observer_count: int = bounded_int_option(
-        "Number of observers",
+        "Observer slots per coalition",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
         default=0,
         min=0,
         max=10,
         detail=(
-            "The number of observers slots to generate for each side. "
+            "The number of observer slots to generate for each side. "
             'Use this to allow spectators when disabling "Allow external views".'
         ),
     )
@@ -1341,7 +1343,7 @@ class Settings:
         ),
     )
     dynamic_slots: bool = boolean_option(
-        "Dynamic slots",
+        "Enable dynamic player slots",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         default=False,
@@ -1350,14 +1352,14 @@ class Settings:
         ),
     )
     dynamic_slots_hot: bool = boolean_option(
-        "Allow dynamic slot hot start",
+        "Allow hot starts in dynamic slots",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         default=True,
         detail=("Enables hot start for dynamic slots."),
     )
     dynamic_cargo: bool = boolean_option(
-        "Dynamic cargo",
+        "Enable DCS dynamic cargo",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         default=True,
@@ -1378,7 +1380,7 @@ class Settings:
 
     # Performance
     perf_smoke_gen: bool = boolean_option(
-        "Smoke visual effect on the front line",
+        "Front-line smoke effects",
         page=MISSION_GENERATOR_PAGE,
         section=PERFORMANCE_SECTION,
         default=True,
@@ -1426,13 +1428,13 @@ class Settings:
         default=True,
     )
     perf_disable_convoys: bool = boolean_option(
-        "Disable convoys",
+        "Disable land convoys",
         page=MISSION_GENERATOR_PAGE,
         section=PERFORMANCE_SECTION,
         default=False,
     )
     perf_disable_cargo_ships: bool = boolean_option(
-        "Disable shipping-convoys",
+        "Disable cargo-ship convoys",
         page=MISSION_GENERATOR_PAGE,
         section=PERFORMANCE_SECTION,
         default=False,
@@ -1506,17 +1508,17 @@ class Settings:
         causes_expensive_game_update=True,
     )
     perf_ai_despawn_airstarted: bool = boolean_option(
-        "De-spawn AI in the air upon RTB",
+        "Despawn airstarted AI over base on RTB",
         page=MISSION_GENERATOR_PAGE,
         section=PERFORMANCE_SECTION,
         default=False,
         detail=(
             "If enabled, AI flights will de-spawn over their base "
-            "if the start-up type was manually changed to 'In-Flight'."
+            "if the start type was manually changed to In Flight."
         ),
     )
     pretense_maxdistfromfront_distance: int = bounded_int_option(
-        "Max distance from front (km)",
+        "Full-activity distance from front (km)",
         page=PRETENSE_PAGE,
         section=GENERAL_SECTION,
         default=130,
@@ -1529,7 +1531,7 @@ class Settings:
         ),
     )
     pretense_controllable_carrier: bool = boolean_option(
-        "Controllable carrier",
+        "Enable player-commanded Pretense carrier",
         page=PRETENSE_PAGE,
         section=GENERAL_SECTION,
         default=True,
@@ -1543,7 +1545,7 @@ class Settings:
         ),
     )
     pretense_carrier_steams_into_wind: bool = boolean_option(
-        "Carriers steam into wind",
+        "Pretense carriers steam into wind",
         page=PRETENSE_PAGE,
         section=GENERAL_SECTION,
         default=True,
@@ -1576,14 +1578,6 @@ class Settings:
             "Add connections from each zone to this many closest friendly zones,"
             "which don't have an existing supply route defined in the campaign."
         ),
-    )
-    pretense_num_of_cargo_planes: int = bounded_int_option(
-        "Number of cargo planes per side",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=2,
-        min=1,
-        max=100,
     )
     pretense_sead_flights_per_cp: int = bounded_int_option(
         "Number of AI SEAD flights per control point / zone",
@@ -1667,8 +1661,6 @@ class Settings:
     # only legacy saves that lack the marker get the one-time flip.
     applied_recon_plugins_default: bool = True
 
-    only_player_takeoff: bool = True  # Legacy parameter do not use
-
     @staticmethod
     def plugin_settings_key(identifier: str) -> str:
         return f"{identifier}"
@@ -1691,8 +1683,11 @@ class Settings:
         # normally would not be present in the unpickled object) by creating a
         # new settings object, updating it with the unpickled state, and
         # updating our dict with that.
+        migrated_state = self._migrate_legacy_settings(
+            self.deserialize_state_dict(state)
+        )
         new_state = Settings().__dict__
-        new_state.update(self.deserialize_state_dict(state))
+        new_state.update(migrated_state)
         self.__dict__.update(new_state)
 
         # One-time migration: the TARS and Flight Control plugins ship enabled by
@@ -1706,22 +1701,64 @@ class Settings:
                 self.set_plugin_option(plugin_id, True)
         self.applied_recon_plugins_default = True
 
+        # Drop retired plugin option keys so dead configuration does not persist
+        # across a load/save cycle. The obsolete Anubis "herculescargo" plugin and
+        # its option keys were removed in favor of the official C-130J-30.
+        for plugin_key in [
+            key
+            for key in self.plugins
+            if key == "herculescargo" or key.startswith("herculescargo.")
+        ]:
+            del self.plugins[plugin_key]
+
         from game.plugins import LuaPluginManager
 
         LuaPluginManager().load_settings(self)
 
     @staticmethod
+    def _migrate_legacy_settings(state: dict[str, Any]) -> dict[str, Any]:
+        migrated = dict(state)
+
+        if "ai_radio_behavior" not in migrated:
+            silence_ai_radios = migrated.get("silence_ai_radios", False)
+            limit_ai_radios = migrated.get("limit_ai_radios", True)
+            if silence_ai_radios:
+                behavior = AiRadioBehavior.SILENT
+            elif limit_ai_radios:
+                behavior = AiRadioBehavior.LIMITED
+            else:
+                behavior = AiRadioBehavior.FULL
+            migrated["ai_radio_behavior"] = behavior
+
+        for obsolete_key in (
+            "limit_ai_radios",
+            "silence_ai_radios",
+            "prefer_squadrons_with_matching_primary_task",
+            "pretense_num_of_cargo_planes",
+            "nevatim_parking_fix",
+            "only_player_takeoff",
+        ):
+            migrated.pop(obsolete_key, None)
+
+        return migrated
+
+    @staticmethod
     def deserialize_state_dict(state: dict[str, Any]) -> dict[str, Any]:
         # restore Enum & timedelta types
         s = Settings()
+        deserialized = dict(state)
         for key, value in state.items():
             if isinstance(s.__dict__.get(key), timedelta) and isinstance(value, int):
-                state[key] = timedelta(minutes=value)
-            elif isinstance(s.__dict__.get(key), Enum) and isinstance(value, str):
-                state[key] = eval(value)
+                deserialized[key] = timedelta(minutes=value)
+            elif isinstance(default := s.__dict__.get(key), Enum) and isinstance(
+                value, str
+            ):
+                deserialized[key] = Settings._deserialize_enum(
+                    value, expected_type=type(default)
+                )
             elif isinstance(value, dict):
-                state[key] = s.obj_hook(value)
-        return state
+                deserialized[key] = s.obj_hook(value)
+        return deserialized
 
     @classmethod
     def _field_description(cls, settings_field: Field[Any]) -> OptionDescription:
@@ -1771,8 +1808,31 @@ class Settings:
     @staticmethod
     def obj_hook(obj: Any) -> Any:
         if (value := obj.get("Enum")) is not None:
-            return eval(value)
+            return Settings._deserialize_enum(value)
         elif (value := obj.get("timedelta")) is not None:
             return timedelta(minutes=value)
         else:
             return obj
+
+    @staticmethod
+    def _deserialize_enum(value: Any, expected_type: type[Enum] | None = None) -> Enum:
+        if not isinstance(value, str):
+            raise ValueError("Serialized enum value must be a string")
+
+        try:
+            type_name, member_name = value.split(".", maxsplit=1)
+        except ValueError as ex:
+            raise ValueError(f"Invalid serialized enum value: {value!r}") from ex
+
+        enum_type = SERIALIZABLE_ENUM_TYPES_BY_NAME.get(type_name)
+        if enum_type is None or (
+            expected_type is not None and enum_type is not expected_type
+        ):
+            raise ValueError(f"Unsupported serialized enum type: {type_name!r}")
+
+        try:
+            return enum_type[member_name]
+        except KeyError as ex:
+            raise ValueError(
+                f"Unknown {enum_type.__name__} member: {member_name!r}"
+            ) from ex

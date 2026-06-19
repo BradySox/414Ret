@@ -7,7 +7,7 @@ from typing import Iterator, TYPE_CHECKING, Type
 
 from game.theater.controlpoint import ControlPointType
 from game.theater.missiontarget import MissionTarget
-from game.utils import Distance, feet, meters
+from game.utils import Distance, meters
 from ._common_ctld import generate_random_ctld_point
 from .formationattack import (
     FormationAttackLayout,
@@ -95,10 +95,8 @@ class AirAssaultFlightPlan(FormationAttackFlightPlan, UiZoneDisplay):
 
 class Builder(FormationAttackBuilder[AirAssaultFlightPlan, AirAssaultLayout]):
     def layout(self) -> AirAssaultLayout:
-        if not self.flight.is_helo and not self.flight.is_hercules:
-            raise PlanningError(
-                "Air assault is only usable by helicopters and Anubis' C-130 mod"
-            )
+        if not self.flight.is_helo:
+            raise PlanningError("Air assault is only usable by helicopters")
         assert self.package.waypoints is not None
 
         builder = WaypointBuilder(self.flight)
@@ -106,7 +104,7 @@ class Builder(FormationAttackBuilder[AirAssaultFlightPlan, AirAssaultLayout]):
         altitude = builder.get_cruise_altitude
         altitude_is_agl = self.flight.is_helo
 
-        if self.flight.is_hercules or self.flight.departure.cptype in [
+        if self.flight.departure.cptype in [
             ControlPointType.AIRCRAFT_CARRIER_GROUP,
             ControlPointType.LHA_GROUP,
             ControlPointType.OFF_MAP,
@@ -125,24 +123,13 @@ class Builder(FormationAttackBuilder[AirAssaultFlightPlan, AirAssaultLayout]):
             pickup.alt = altitude
             pickup_position = pickup.position
 
-        ingress = (
-            builder.ingress(
-                FlightWaypointType.INGRESS_AIR_ASSAULT,
-                self.package.waypoints.ingress,
-                self.package.target,
-            )
-            if not self.flight.is_hercules
-            else builder.ingress(
-                FlightWaypointType.INGRESS_AIR_ASSAULT,
-                self.package.waypoints.initial,
-                self.package.target,
-            )
+        ingress = builder.ingress(
+            FlightWaypointType.INGRESS_AIR_ASSAULT,
+            self.package.waypoints.ingress,
+            self.package.target,
         )
 
         assault_area = builder.assault_area(self.package.target)
-        if self.flight.is_hercules:
-            assault_area.only_for_player = False
-            assault_area.alt = feet(1000)
 
         tgt = self.package.target
         if isinstance(tgt, CTLD) and tgt.ctld_zones:

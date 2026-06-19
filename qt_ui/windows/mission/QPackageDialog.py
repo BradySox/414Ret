@@ -1,6 +1,7 @@
 """Dialogs for creating and editing ATO packages."""
 
 import logging
+from datetime import datetime, time as datetime_time, timedelta
 from typing import Optional
 
 from PySide6.QtCore import QItemSelection, QTime, Qt, Signal
@@ -31,6 +32,21 @@ from qt_ui.widgets.ato import QFlightList
 from qt_ui.windows.QRadioFrequencyDialog import QRadioFrequencyDialog
 from qt_ui.windows.mission.QAutoCreateDialog import QAutoCreateDialog
 from qt_ui.windows.mission.flight.QFlightCreator import QFlightCreator
+
+
+def datetime_for_time_of_day(current: datetime, selected: datetime_time) -> datetime:
+    candidate = current.replace(
+        hour=selected.hour,
+        minute=selected.minute,
+        second=selected.second,
+        microsecond=0,
+    )
+    difference = candidate - current
+    if difference > timedelta(hours=12):
+        candidate -= timedelta(days=1)
+    elif difference < -timedelta(hours=12):
+        candidate += timedelta(days=1)
+    return candidate
 
 
 class QPackageDialog(QDialog):
@@ -192,11 +208,11 @@ class QPackageDialog(QDialog):
         self.save_tot()
 
     def save_tot(self) -> None:
-        # TODO: This is going to break horribly around midnight.
         time = self.tot_spinner.time()
         self.package_model.set_tot(
-            self.package_model.package.time_over_target.replace(
-                hour=time.hour(), minute=time.minute(), second=time.second()
+            datetime_for_time_of_day(
+                self.package_model.package.time_over_target,
+                datetime_time(time.hour(), time.minute(), time.second()),
             )
         )
 

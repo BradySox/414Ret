@@ -30,7 +30,6 @@ settings:
   chinesemilitaryassetspack: true
   fa_18efg: true
   f22_raptor: true
-  hercules: true
   squadron_start_full: true
 squadrons:
   #Ownfor Carrier
@@ -71,7 +70,6 @@ squadrons:
     - primary: Transport
       secondary: any
       aircraft:
-        - C-130J-30 Super Hercules
         - C-130J-30
       size: 4
     - primary: Refueling

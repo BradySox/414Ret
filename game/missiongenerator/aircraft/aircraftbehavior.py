@@ -46,6 +46,7 @@ from game.ato.flightplans.packagerefueling import PackageRefuelingFlightPlan
 from game.ato.flightplans.shiprecoverytanker import RecoveryTankerFlightPlan
 from game.ato.flightplans.theaterrefueling import TheaterRefuelingFlightPlan
 from game.missiongenerator.missiondata import MissionData
+from game.settings import AiRadioBehavior
 from game.utils import nautical_miles, knots, feet
 
 
@@ -186,9 +187,10 @@ class AircraftBehavior:
 
         if flight.client_count and flight.flight_type != FlightType.AEWC:
             # configure AI radio usage for player flights to avoid AI spamming the channel
-            if flight.coalition.game.settings.silence_ai_radios:
+            radio_behavior = flight.coalition.game.settings.ai_radio_behavior
+            if radio_behavior is AiRadioBehavior.SILENT:
                 group.points[0].tasks.append(OptRadioSilence(True))
-            elif flight.coalition.game.settings.limit_ai_radios:
+            elif radio_behavior is AiRadioBehavior.LIMITED:
                 # the pydcs api models this in a quite strange way for some reason,
                 # and has no proper support to choose "nothing"
                 radio_usage = OptRadioUsageContact()
@@ -538,15 +540,11 @@ class AircraftBehavior:
 
     def configure_transport(self, group: FlyingGroup[Any], flight: Flight) -> None:
         self.configure_task(flight, group, Transport)
-        roe = OptROE.Values.WeaponHold
-        if flight.is_hercules:
-            group.task = GroundAttack.name
-            roe = OptROE.Values.OpenFire
         self.configure_behavior(
             flight,
             group,
             react_on_threat=OptReactOnThreat.Values.EvadeFire,
-            roe=roe,
+            roe=OptROE.Values.WeaponHold,
             restrict_jettison=True,
         )
 

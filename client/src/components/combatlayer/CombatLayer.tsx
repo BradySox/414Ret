@@ -10,7 +10,6 @@ export default function CombatLayer() {
       {Object.values(combats.combat).map((combat) => {
         return <Combat key={combat.id} combat={combat} />;
       })}
-      (
     </LayerGroup>
   );
 }

@@ -95,7 +95,7 @@ SCAR_SCUD_RACE_M = SCAR_TRAVEL_M  # how far a SCUD relocates toward its target t
 # ahead of it (armor/spawn only). If the un-killed command vehicle reaches them it
 # is CAPTURED ("captured" result -> reveals enemy command posts next turn) instead
 # of escaping. First pass: always dropped + guaranteed on proximity; finite /
-# player-delivered SOF is Phase 2b/2c.
+# player-delivered SOF is Phase 2c-2.
 SCAR_SOF_CAPTURE_RADIUS_M = 600.0  # command vehicle within this of the SOF = captured
 SCAR_SOF_LEAD_FRAC = 0.7  # SOF sits this fraction along the HVT's spawn->dest route
 
@@ -460,7 +460,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
     seen_targets: set[int] = set()
     sof_enabled = game.settings.scar_command_post_intel
     for coalition in game.coalitions:
-        color = "blue" if coalition.player else "red"
+        color = "blue" if coalition.player.is_blue else "red"
         enemy_country_id = coalition.opponent.faction.country.id
         friendly_country_id = coalition.faction.country.id
         # Finite SOF pool (Phase 2c): only drop a team while the side has bought
@@ -513,7 +513,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 flee_speed = _paced_speed(route_len, SCAR_WINDOW_S + SCAR_START_LEAD_S)
                 taskings.append(
                     ScarTasking(
-                        tasking_id=f"scar-{index}",
+                        tasking_id=f"{color}-scar-{index}",
                         variant="missile",
                         coalition=color,
                         go_live_s=go_live_s,
@@ -610,7 +610,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                     sof_budget -= 1
                 taskings.append(
                     ScarTasking(
-                        tasking_id=f"scar-{index}",
+                        tasking_id=f"{color}-scar-{index}",
                         variant="armor",
                         coalition=color,
                         go_live_s=go_live_s,
@@ -658,7 +658,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         sof_budget -= 1
                 taskings.append(
                     ScarTasking(
-                        tasking_id=f"scar-{index}",
+                        tasking_id=f"{color}-scar-{index}",
                         variant="spawn",
                         coalition=color,
                         go_live_s=go_live_s,

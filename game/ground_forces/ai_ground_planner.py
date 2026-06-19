@@ -95,9 +95,9 @@ class GroundPlanner:
         # Now applies the ratio between ground unit limit and the total number of ground units to each unit type
         # when planning the ground war. This will help with monocultures of certain unit types when the control
         # point has more units than can be spawned in one mission. In short, this will make more unit types to spawn.
-        if self.cp.base.total_armor > 0:
+        if self.cp.base.total_frontline_units > 0:
             ratio_of_frontline_units_to_reserves = min(
-                ground_unit_limit / self.cp.base.total_armor, 1
+                ground_unit_limit / self.cp.base.total_frontline_units, 1
             )
         else:
             ratio_of_frontline_units_to_reserves = 1

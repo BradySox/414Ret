@@ -16,6 +16,7 @@ from game.server.navmesh.models import NavMeshJs
 from game.server.supplyroutes.models import SupplyRouteJs
 from game.server.tgos.models import TgoJs
 from game.theater import Player
+from game.threatzones import ThreatZones
 
 if TYPE_CHECKING:
     from game import Game
@@ -73,12 +74,23 @@ class GameUpdateEventsJs(BaseModel):
                 for player, mesh in events.navmesh_updates.items()
             }
             updated_threat_zones = {
-                player: ThreatZonesJs.from_zones(zones, game.theater)
+                player: ThreatZonesJs.from_zones(
+                    (
+                        ThreatZones.for_faction(
+                            game, player=Player.RED, viewer=Player.BLUE
+                        )
+                        if player is Player.RED
+                        else zones
+                    ),
+                    game.theater,
+                )
                 for player, zones in events.threat_zones_updated.items()
             }
             updated_unculled_zones = UnculledZoneJs.from_game(game)
             for node in events.updated_iads:
-                updated_iads.extend(IadsConnectionJs.connections_for_node(node))
+                updated_iads.extend(
+                    IadsConnectionJs.connections_for_node(node, Player.BLUE)
+                )
             if events.updated_supply_routes:
                 updated_supply_routes = SupplyRouteJs.all_in_game(game)
             for route in updated_supply_routes:

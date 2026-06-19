@@ -12,7 +12,9 @@ jest.mock("react-leaflet", () => ({
   },
   Marker: (props: any) => {
     mockMarker(props);
+    return <>{props.children}</>;
   },
+  Tooltip: (props: PropsWithChildren<any>) => <>{props.children}</>,
 }));
 
 describe("ControlPointsLayer", () => {

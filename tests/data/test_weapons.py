@@ -170,7 +170,6 @@ def test_hornet_2002_atflir_does_not_fall_back_to_litening() -> None:
         ("{DAMOCLES}", "DAMOCLES", 2009),
         ("{F111C_FLIR}", "AN/AVQ-26 Pave Tack", 1982),
         ("DIS_WMD7", "AVIC WMD-7", 2007),
-        ("Herc_BattleStation_TGP", "Hercules Battle Station with TGP", 2020),
     ],
 )
 def test_targeting_pod_variants_have_era_data(

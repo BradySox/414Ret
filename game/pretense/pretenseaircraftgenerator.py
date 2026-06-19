@@ -1012,9 +1012,6 @@ class PretenseAircraftGenerator:
             for cp in control_points_to_scan:
                 if cp.coalition == flight.coalition or cp == flight.departure:
                     continue
-                if flight.is_hercules:
-                    if cp.coalition == flight.coalition or not isinstance(cp, Airfield):
-                        continue
                 flight.package.target = cp
                 break
 

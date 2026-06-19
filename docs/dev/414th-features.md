@@ -611,22 +611,50 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   `discovered_by_player`). `known_for` still gates composition. AI/planner use ground truth
   (`viewer=None`). SME-answered 2026-06-18: reveal ALL, permanent, full reveal w/ exact coords,
   ~2-3 posts/campaign. Tests: `tests/test_scar_command_post_fog.py`.
-- Commander-capture **Phase 2a BUILT (gated OFF, needs an in-game pass)** — the scripted SOF
+- Commander-capture **Phase 2a + 2c-1 BUILT (gated OFF, needs an in-game pass)** — the scripted SOF
   capture loop that PRODUCES the `captured` result. When `scar_command_post_intel` is on, the
-  generator drops a friendly SOF team (`mist.dynAdd` infantry, no CTLD dependency) at
+  generator allocates a bought, dedicated SOF infantry asset from friendly base inventory and
+  drops that team (`mist.dynAdd`, no CTLD dependency yet) at
   `SCAR_SOF_LEAD_FRAC` (0.7) of the HVT's spawn→dest route; the SCAR plugin's `scar_check`
   resolves `captured` when the un-killed command vehicle drives within `SCAR_SOF_CAPTURE_RADIUS_M`
-  (600 m). Priority killed > captured > escaped/timeout; spawn + armor variants only. Files:
+  (600 m) **and the spawned SOF group is still alive**. Priority killed > captured >
+  escaped/timeout; spawn + armor variants only. The finite pool uses the distinct
+  `SOF Team (BLUFOR|OPFOR)` GroundUnitTypes (price 8); SOF inventory is excluded from
+  front-line deployment ratios, combat-strength scoring, and automatic redeployment. A BLUE
+  capture spends one BLUE team before base-capture ownership changes are committed. Files:
   `scarluadata.py` (`_sof_ambush`, `sof_*` fields, `_emit_sof`), `scar_414_init.lua`
   (`spawn_sof`, `hvt_in_sof_zone`, the `captured` branch, `mark_sof`). First-pass simplification:
-  always-drops + auto-on-proximity (becomes a real choice with finite/player SOF in 2b/2c).
+  scripted delivery + auto-on-proximity; the actual player-flown insert is still deferred.
   Plan: `docs/dev/design/414th-scar-phase2-sof-plan.md`. Tests: `tests/test_scar_bridge.py`.
-- NOT yet built: **Phase 2b/2c** — finite `Coalition.sof_teams` pool + UI + carryover (2b);
-  CSAR recovery on botch + optional player-flown CTLD insert (2c). SME: finite SOF ~2-3/campaign;
+- NOT yet built: **Phase 2c-2/2c-3** — player-flown air-assault/CTLD delivery replacing the
+  scripted drop, then CSAR recovery on botch. SME: finite SOF ~2-3/campaign;
   botched = commander escapes but SOF recoverable via CSAR. mis-ID penalty stays NONE;
   Phase-3 auto-planning. **Coordinate with Tyler's C-130 `DEPLOYMENT` work** — his
   `PendingDeployments`/air-assault-CTLD pattern is the template for 2b/2c (shared `Coalition` +
   `MissionResultsProcessor` + `FlightType` surface).
+
+---
+
+## 16. Settings semantic cleanup and audit
+
+The core settings model and every active plugin definition received a consumer-level
+audit (2026-06-18). UI work is intentionally separate; the full grouping/dependency
+handoff lives in [`docs/dev/settings-qol-audit.md`](settings-qol-audit.md).
+
+- **Removed four dead/duplicate fields** (`game/settings/settings.py`): unused
+  `prefer_squadrons_with_matching_primary_task`, duplicate `pretense_num_of_cargo_planes`,
+  permanently-disabled `nevatim_parking_fix` (plus its Nevatim/Ramon restricted-slot code
+  in `flightgroupspawner.py` and the `Migrator` force-off line), and the hidden legacy
+  `only_player_takeoff`.
+- **Consolidated the AI-radio booleans** (`limit_ai_radios` + `silence_ai_radios`) into the
+  `AiRadioBehavior` enum (`FULL`, `LIMITED`, `SILENT`). `Settings.__setstate__` runs
+  `_migrate_legacy_settings` to map every old boolean combination deterministically and
+  strip the retired keys, so existing campaign/settings files load without carrying dead
+  state forward. The new enum is registered in `SERIALIZABLE_ENUM_TYPES` so the hardened
+  enum-deserialization path accepts it. Covered by `tests/settings/test_settings_qol_migration.py`.
+- **Plugin wording**: `descriptionInUI` added to the QRA `intercept` and `splashdamage3`
+  plugins (the latter notes its tuning is locked by design). Splash Damage values and the
+  tuned script are unchanged.
 
 ---
 

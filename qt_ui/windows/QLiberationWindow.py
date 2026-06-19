@@ -392,9 +392,11 @@ class QLiberationWindow(QMainWindow):
         logging.info("Saving game")
 
         if self.game.savepath:
-            persistency.save_game(self.game)
-            liberation_install.setup_last_save_file(self.game.savepath)
-            liberation_install.save_config()
+            if persistency.save_game(self.game):
+                liberation_install.setup_last_save_file(self.game.savepath)
+                liberation_install.save_config()
+            else:
+                self._show_save_error(self.game.savepath)
         else:
             self.saveGameAs()
 
@@ -409,13 +411,23 @@ class QLiberationWindow(QMainWindow):
             dir=save_dir,
             filter="*.retribution;;*.liberation",
         )
-        if file is not None:
-            self.game.savepath = file[0]
-            persistency.save_game(self.game)
-            liberation_install.setup_last_save_file(self.game.savepath)
-            liberation_install.save_config()
+        if file[0]:
+            save_path = file[0]
+            if not persistency.save_game(self.game, save_path):
+                self._show_save_error(save_path)
+                return
 
-            self.updateWindowTitle(file[0])
+            liberation_install.setup_last_save_file(save_path)
+            liberation_install.save_config()
+            self.updateWindowTitle(save_path)
+
+    def _show_save_error(self, save_path: str) -> None:
+        QMessageBox.critical(
+            self,
+            "Save failed",
+            f"The campaign could not be saved to:\n\n{save_path}\n\n"
+            "The currently loaded campaign has not been replaced.",
+        )
 
     def updateWindowTitle(self, save_path: Optional[str] = None) -> None:
         """
@@ -429,7 +441,7 @@ class QLiberationWindow(QMainWindow):
             window_title += f" - {self.game.campaign_name}"
 
         if save_path:
-            file_name = save_path.split("/")[-1].rsplit(".", 1)[0]
+            file_name = Path(save_path).stem
             window_title += f" - {file_name}"
 
         self.setWindowTitle(window_title)
@@ -571,7 +583,6 @@ class QLiberationWindow(QMainWindow):
             "<b>Grimes (mrSkortch)</b> & <b>Speed</b> <i>for the MIST framework</i><br/>"
             "<b>Ciribob </b> <i>for the JTACAutoLase.lua script</i><br/>"
             "<b>Walder </b> <i>for the Skynet-IADS script</i><br/>"
-            "<b>Anubis Yinepu </b> <i>for the Hercules Cargo script</i><br/>"
             '<a href="https://www.flaticon.com/free-icons/bug" title="bug icons" style="color: #ffffff">Bug icons created by Freepik - Flaticon</a><br />'
             'Contains information from <a href="https://osmdata.openstreetmap.de/" style="color: #ffffff">OpenStreetMap © OpenStreetMap contributors</a>, which is made available here under the <a href="https://opendatacommons.org/licenses/odbl/1-0/" style="color: #ffffff">Open Database License (ODbL)</a>.<br />'
             '<a href="https://download.geofabrik.de/index.html/" style="color: #ffffff">OpenStreetMap Data Extracts from Geofabrik</a><br />'

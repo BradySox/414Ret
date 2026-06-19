@@ -1,5 +1,6 @@
 {
     "nameInUI": "Splash Damage 3.4.2 (414th tuned)",
+    "descriptionInUI": "Applies the squadron's locked, softened splash-damage model. The tuning is baked in by design and has no user-adjustable options.",
     "defaultValue": true,
     "specificOptions": [],
     "scriptsWorkOrders": [

@@ -145,6 +145,26 @@ def test_capture_consumes_bought_sof_teams() -> None:
     cp.base.commit_losses.assert_called_once_with({unit: 2})
 
 
+def test_red_capture_does_not_reveal_or_spend_blue_sof() -> None:
+    from game.dcs.groundunittype import GroundUnitType
+    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+
+    processor, game = _processor(setting_on=True)
+    unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
+    cp = MagicMock()
+    cp.captured.is_blue = True
+    cp.base.armor = {unit: 1}
+    game.theater.controlpoints = [cp]
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(scar_results={"red-scar-1": "captured"})
+    )
+
+    processor.commit_scar_results(cast(Any, debriefing))
+
+    assert game.blue.captured_commander is False
+    cp.base.commit_losses.assert_not_called()
+
+
 def test_non_capture_outcomes_do_not_reveal() -> None:
     processor, game = _processor(setting_on=True)
     debriefing = SimpleNamespace(

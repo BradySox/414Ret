@@ -88,6 +88,7 @@ class ThreatZoneContainerJs(BaseModel):
                 game.threat_zone_for(player=Player.BLUE), game.theater
             ),
             red=ThreatZonesJs.from_zones(
-                game.threat_zone_for(player=Player.RED), game.theater
+                ThreatZones.for_faction(game, player=Player.RED, viewer=Player.BLUE),
+                game.theater,
             ),
         )

@@ -1,4 +1,5 @@
 from game.dcs.groundunittype import GroundUnitType
+from game.data.units import FRONTLINE_UNIT_CLASSES
 
 BASE_MAX_STRENGTH = 1.0
 BASE_MIN_STRENGTH = 0.0
@@ -12,6 +13,15 @@ class Base:
     @property
     def total_armor(self) -> int:
         return sum(self.armor.values())
+
+    @property
+    def total_frontline_units(self) -> int:
+        """Inventory count that can participate in the strategic ground war."""
+        return sum(
+            count
+            for unit_type, count in self.armor.items()
+            if unit_type.unit_class in FRONTLINE_UNIT_CLASSES
+        )
 
     @property
     def total_armor_value(self) -> int:

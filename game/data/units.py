@@ -80,3 +80,21 @@ MOBILE_AIR_DEFENSE_UNIT_CLASSES = frozenset(
         UnitClass.MANPAD,
     }
 )
+
+# Unit classes the strategic ground-war planner can actually deploy at a front.
+# Other inventory-backed assets (notably the SCAR SOF teams, which are INFANTRY)
+# may live in Base.armor, but must not dilute deployment ratios or count as
+# surviving front-line combat strength.
+FRONTLINE_UNIT_CLASSES = frozenset(
+    {
+        UnitClass.TANK,
+        UnitClass.APC,
+        UnitClass.ARTILLERY,
+        UnitClass.IFV,
+        UnitClass.LOGISTICS,
+        UnitClass.ATGM,
+        UnitClass.SHORAD,
+        UnitClass.AAA,
+        UnitClass.RECON,
+    }
+)

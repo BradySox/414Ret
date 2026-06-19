@@ -1160,7 +1160,8 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
 
     def deployable_front_line_units_with(self, ammo_depot_count: int) -> int:
         return min(
-            self.front_line_capacity_with(ammo_depot_count), self.base.total_armor
+            self.front_line_capacity_with(ammo_depot_count),
+            self.base.total_frontline_units,
         )
 
     def front_line_capacity_with(self, ammo_depot_count: int) -> int:

@@ -37,10 +37,11 @@ class FrontLineInfo:
         self.front_line: FrontLine = front_line
         self.player_base: ControlPoint = front_line.blue_cp
         self.enemy_base: ControlPoint = front_line.red_cp
-        self.player_zero: bool = self.player_base.base.total_armor == 0
-        self.enemy_zero: bool = self.enemy_base.base.total_armor == 0
+        self.player_zero: bool = self.player_base.base.total_frontline_units == 0
+        self.enemy_zero: bool = self.enemy_base.base.total_frontline_units == 0
         self.advantage: bool = (
-            self.player_base.base.total_armor > self.enemy_base.base.total_armor
+            self.player_base.base.total_frontline_units
+            > self.enemy_base.base.total_frontline_units
         )
         self.stance: CombatStance = self.player_base.stances[self.enemy_base.id]
         self.combat_stances = CombatStance

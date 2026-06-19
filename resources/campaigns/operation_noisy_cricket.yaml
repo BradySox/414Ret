@@ -33,7 +33,6 @@ recommended_enemy_income_multiplier: 0.2
 settings:
   fa_18efg: true
   f22_raptor: true
-  hercules: true
   squadron_start_full: true
 version: "10.8"
 squadrons:
@@ -67,7 +66,6 @@ squadrons:
     - primary: Transport
       secondary: any
       aircraft:
-        - C-130J-30 Super Hercules
         - C-130J-30
       size: 2
     - primary: Air Assault

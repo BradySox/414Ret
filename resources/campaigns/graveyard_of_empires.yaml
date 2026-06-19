@@ -34,7 +34,6 @@ version: "10.8"
 settings:
   usamilitaryassetspack: true
   russianmilitaryassetspack: true
-  hercules: true
   squadron_start_full: true
 squadrons:
   #Kandahar
@@ -48,7 +47,6 @@ squadrons:
     - primary: Transport
       secondary: any
       aircraft:
-        - C-130J-30 Super Hercules
         - C-130J-30
       size: 2
     - primary: Refueling

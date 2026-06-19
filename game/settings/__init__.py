@@ -4,4 +4,4 @@ from .boundedintoption import BoundedIntOption
 from .choicesoption import ChoicesOption
 from .minutesoption import MinutesOption
 from .optiondescription import OptionDescription
-from .settings import AutoAtoBehavior, NightMissions, Settings
+from .settings import AiRadioBehavior, AutoAtoBehavior, NightMissions, Settings

@@ -273,9 +273,22 @@ was the helo-only guard in the builder.
   capture outcome. Runs before `commit_captures` so a captured source base can't erase the
   spend; `COMMIT_STEPS` + the ordering assertion track it. Capture now only reveals.
 
-**Remaining for 2c-2:** **real delivery + 2c-2c** — point the air-assault drop zone at the
-SCAR ambush point and bind the Lua capture to the actually-dropped CTLD team, keeping the
-scripted `spawn_sof` only as the hybrid fallback when no team is delivered by go-live (user
-chose the hybrid model). Then **2c-3 CSAR recovery** (re-commission a recovered team; the
-debit-on-frag accounting above already leaves un-recovered teams spent). Both need an in-game
-Lua pass.
+- **2c-2c BUILT** (commits `96b3b63f2`, `37c747287`): the hybrid capture binding. At go_live
+  `spawn_sof` first calls `find_delivered_sof` — scans friendly GROUND groups within 2500 m of
+  the ambush point, excluding our own `SCAR-` spawns — and binds capture to a player-delivered
+  team if found; otherwise it scripted-spawns the fallback so the loop never silently dies. The
+  F10 mark now reads "airdrop your SOF team here." Also fixed an over-debit: `commit_sof_deployments`
+  now debits once **per target** (not per flight) so two inserts on one HVT can't double-charge.
+- **2c-3 BUILT** (commit `ae92e7ea3`): CSAR recovery. A botched capture with a surviving team is
+  flagged `recoverable`; `check_sof_recovery` extracts it when a friendly **helicopter** gets
+  within 600 m (cheap proximity, not full MOOSE CSAR), setting `sofRecovered` on the area.
+  Python: `StateData.sof_recoveries` (parsed from the marker) + `commit_sof_recoveries`
+  re-commissions one bought team to a friendly base per recovery (after `commit_captures`);
+  un-recovered teams stay spent from debit-on-frag.
+
+**2c-2 + 2c-3 are code-complete and CI-green (gated OFF).** Remaining is an **in-game Lua pass**
+(not CI-runnable): confirm a CTLD-unloaded team near the mark is detected and capture resolves
+off it; confirm a recovery helo reaching a stranded team flags the refund and the team-died case
+stays lost. Optional follow-ups: route the SOF air-assault drop zone to the ambush point so the
+planned CTLD zone matches the mark, and exclude non-capturable targets (e.g. SCUD sites) from the
+SOF offering so a wasted insert can't spend a team.

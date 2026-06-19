@@ -417,14 +417,16 @@ class Settings:
         "SCAR command-post intel (hide enemy command posts until a commander is captured)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
-        default=False,
+        default=True,
         invert=False,
         detail=(
             "When enabled, enemy command posts stay hidden on the map until you "
             "capture an enemy commander on a SCAR sortie — capturing commanders "
-            "is how you map the enemy command network over a campaign. Off by "
-            "default (work in progress); the reveal rules will be tuned with the "
-            "SME before this ships on."
+            "is how you map the enemy command network over a campaign, and it "
+            "drives the SOF insert / commander-capture / CSAR-recovery loop. On by "
+            "default for new campaigns while the feature is being playtested; "
+            "existing campaigns keep whatever they were saved with. Turn it off to "
+            "restore plain enemy command-post visibility."
         ),
     )
     aircraft_per_recovery_tanker: int = bounded_int_option(

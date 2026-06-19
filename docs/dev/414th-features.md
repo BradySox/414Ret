@@ -169,7 +169,8 @@ finished, do not reintroduce twins):
   (discovery gate, migration, setting).
 
 A third gate rides the same viewer-aware layer: `TheaterGroundObject.hidden_on_player_map(viewer)`
-fully hides enemy command posts for the gated-OFF SCAR commander-capture feature — see
+fully hides enemy command posts for the SCAR commander-capture feature (gated by
+`scar_command_post_intel`, default ON for new campaigns) — see
 [§15](#15-scar--strike-coordination-and-reconnaissance-flight-type--scenario-plugin).
 
 ---
@@ -607,8 +608,11 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   no-strike/firing-position marks, decoy warning, addressed to the SCAR flight's coalition.
 - Tests: `tests/test_scar.py` (FlightType + dispatch), `tests/test_scar_bridge.py`
   (collection/emission/parse). **Lua needs in-game validation (not CI-runnable).**
-- Commander-capture campaign engine — **Phase 1 BUILT (gated OFF, `scar_command_post_intel`
-  setting, default OFF)**: enemy command posts (`commandcenter` TGOs) are hidden ENTIRELY from
+- Commander-capture campaign engine — **Phase 1 BUILT (gated by `scar_command_post_intel`,
+  now default ON for new campaigns while the feature is playtested; existing saves keep their
+  stored value)**: the whole commander-capture / SOF / CSAR stack below hangs off this one
+  setting (the "(gated …)" markers mean "behind this gate"). Enemy command posts
+  (`commandcenter` TGOs) are hidden ENTIRELY from
   the player's map (`TheaterGroundObject.hidden_on_player_map(viewer)` gates `server/tgos/models.py`
   `all_in_game` + `triggergenerator.py` `_gen_markers`) until revealed by capturing a commander
   (`Coalition.captured_commander`, persisted + save-migrated; flipped by a `captured` SCAR result
@@ -616,7 +620,7 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   `discovered_by_player`). `known_for` still gates composition. AI/planner use ground truth
   (`viewer=None`). SME-answered 2026-06-18: reveal ALL, permanent, full reveal w/ exact coords,
   ~2-3 posts/campaign. Tests: `tests/test_scar_command_post_fog.py`.
-- Commander-capture **Phase 2a + 2c-1 BUILT (gated OFF, needs an in-game pass)** — the scripted SOF
+- Commander-capture **Phase 2a + 2c-1 BUILT (gated, needs an in-game pass)** — the scripted SOF
   capture loop that PRODUCES the `captured` result. When `scar_command_post_intel` is on, the
   generator allocates a bought, dedicated SOF infantry asset from friendly base inventory and
   drops that team (`mist.dynAdd`, no CTLD dependency yet) at
@@ -631,14 +635,14 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   (`spawn_sof`, `hvt_in_sof_zone`, the `captured` branch, `mark_sof`). First-pass simplification:
   scripted delivery + auto-on-proximity; the actual player-flown insert is still deferred.
   Plan: `docs/dev/design/414th-scar-phase2-sof-plan.md`. Tests: `tests/test_scar_bridge.py`.
-- Commander-capture **Phase 2c-2 BUILT (gated OFF, #56)** — the player-flown insert. A
+- Commander-capture **Phase 2c-2 BUILT (gated, #56)** — the player-flown insert. A
   `FlightType.SOF` air-assault-shaped delivery flyable by **fixed-wing transports** (the C-130
   "drop"; helos are reserved for recovery) inserts the capture team at the SCAR ambush point; the
   hybrid capture binds to a player-delivered team if one is near, else scripted-spawns a fallback.
   Economy is **debit-on-frag** (`commit_sof_deployments`): one bought team per fragged insert,
   regardless of capture outcome. A clean capture **refunds** the team (it escapes with the
   hostage); a botch **strands** it. See plan §9d.
-- Commander-capture **Phase 2c-3 / slice C BUILT (gated OFF; recovery resolves in pure Python, no
+- Commander-capture **Phase 2c-3 / slice C BUILT (gated; recovery resolves in pure Python, no
   new Lua)** — a botched/late capture strands the team, surfaced next turn as a first-class CSAR
   objective:
   - **Lifecycle** (`game/scar_rescue.py`): `PendingSofRescue` on each `Coalition.pending_csars`

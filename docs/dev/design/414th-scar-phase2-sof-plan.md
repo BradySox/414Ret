@@ -246,5 +246,30 @@ emission + Lua `spawn_sof` using it, and `_consume_sof_teams` on capture. Tests 
 (capture consumes a team). Follow-up audit fixes keep SOF out of front-line deployment /
 strength / redeployment math, require a living spawned team for capture, prefix tasking IDs
 with coalition so RED results cannot spend/reveal BLUE assets, and spend BLUE inventory before
-base-capture ownership flips. **Remaining:** 2c-2 air-assault delivery (`FlightType.SOF`)
-replacing the scripted drop; 2c-3 CSAR recovery.
+base-capture ownership flips.
+
+### 9d. 2c-2 progress — delivery platform + offering (2026-06-19)
+
+**Platform correction (user, 2026-06-19): the SOF insert is a C-130 *airdrop* (the "drop"
+leg); the *helicopter* flies the CSAR *recovery* leg (2c-3) — NOT a helo air-assault.** The
+air-assault flight plan + CTLD logistics already support a fixed-wing transport delivering
+troops to a target zone (preload + no pickup/drop-off zone for fixed wing); the only blocker
+was the helo-only guard in the builder.
+
+- **2c-2a BUILT** (commits `54ae98092`, `dc6bc80fc`): `FlightType.SOF`, an air-assault-shaped
+  delivery dispatched to `AirAssaultFlightPlan`. SOF inherits the lane from `TRANSPORT` for
+  **fixed-wing only** (C-130/An-26 get it; troop helos + fighters don't); the air-assault
+  builder permits fixed-wing for `FlightType.SOF`; `entity_type` UTILITY. Inert (no offering).
+- **2c-2b BUILT** (commit `6da705b1e`): offer `FlightType.SOF` against enemy ground targets
+  when `scar_command_post_intel` + the CTLD plugin are on (player-only; no AI proposing task).
+  `build_scar_taskings` now emits the SOF ambush **only for targets with a SOF flight fragged**
+  (still pool-capped) — a stocked pool alone no longer auto-drops. Tests:
+  `test_theatergroundobject.py` (offering gate) + `test_scar_bridge.py` (no drop without a
+  planned insert; cap exercised with two inserts).
+
+**Remaining for 2c-2:** (a) **debit-on-frag** — move SOF consumption from the on-capture
+`_consume_sof_teams` to debiting one bought SOF unit from the origin base when the insert is
+flown (refund on CSAR recovery); (b) **real delivery + 2c-2c** — point the air-assault drop
+zone at the SCAR ambush point and bind the Lua capture to the actually-dropped CTLD team,
+keeping the scripted `spawn_sof` only as the hybrid fallback when no team is delivered by
+go-live (user chose the hybrid model). Then **2c-3 CSAR recovery**.

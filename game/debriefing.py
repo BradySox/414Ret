@@ -140,6 +140,11 @@ class StateData:
     #: campaign effect yet (scoring/consequence is a later increment).
     scar_results: dict[str, str]
 
+    #: Tasking ids whose stranded SOF team was recovered by a CSAR helo this
+    #: mission (Phase 2c-3). Each refunds one bought SOF team to inventory. The
+    #: SCAR bridge flags it via a sofRecovered marker on the scar_results entry.
+    sof_recoveries: set[str]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -203,24 +208,28 @@ class StateData:
 
         tars_recon_captures = parse_tars_captures(data.get("tars_recon_captures", []))
 
-        def parse_scar_results(raw: Any) -> dict[str, str]:
-            # The SCAR bridge writes scar_results[taskingId] = {status=...}. The
-            # Lua JSON encoder serializes it as a dict (or [] when empty). Pull
-            # taskingId -> status defensively, tolerating either a {status=...}
-            # table or a bare status string per entry.
+        def parse_scar_results(raw: Any) -> tuple[dict[str, str], set[str]]:
+            # The SCAR bridge writes scar_results[taskingId] = {status=...}, and
+            # for a CSAR-recovered SOF team also sets sofRecovered=true on that
+            # entry. The Lua JSON encoder serializes it as a dict (or [] when
+            # empty). Pull taskingId -> status and the recovered-id set defensively,
+            # tolerating either a {status=...} table or a bare status string.
             if not isinstance(raw, dict):
-                return {}
+                return {}, set()
             results: dict[str, str] = {}
+            recoveries: set[str] = set()
             for key, value in raw.items():
                 if isinstance(value, dict):
                     status = value.get("status")
                     if isinstance(status, str) and status:
                         results[str(key)] = status
+                    if value.get("sofRecovered"):
+                        recoveries.add(str(key))
                 elif isinstance(value, str) and value:
                     results[str(key)] = value
-            return results
+            return results, recoveries
 
-        scar_results = parse_scar_results(data.get("scar_results", {}))
+        scar_results, sof_recoveries = parse_scar_results(data.get("scar_results", {}))
 
         return cls(
             mission_ended=data.get("mission_ended", False),
@@ -231,6 +240,7 @@ class StateData:
             intercept_survivors=intercept_survivors,
             tars_recon_captures=tars_recon_captures,
             scar_results=scar_results,
+            sof_recoveries=sof_recoveries,
         )
 
 

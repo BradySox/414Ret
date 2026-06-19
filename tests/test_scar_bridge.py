@@ -498,8 +498,30 @@ def test_state_data_scar_results_default_empty() -> None:
     # Lua serializes an empty table as [], which must parse to {} not crash.
     state = StateData.from_json({"scar_results": []}, unit_map)
     assert state.scar_results == {}
+    assert state.sof_recoveries == set()
     state = StateData.from_json({}, unit_map)
     assert state.scar_results == {}
+    assert state.sof_recoveries == set()
+
+
+def test_state_data_parses_sof_recovery_flag() -> None:
+    # A sofRecovered marker on a scar_results entry surfaces as a recovered id
+    # (Phase 2c-3) without disturbing the status parse.
+    unit_map = MagicMock()
+    state = StateData.from_json(
+        {
+            "scar_results": {
+                "blue-scar-1": {"status": "failed", "sofRecovered": True},
+                "blue-scar-2": {"status": "captured"},
+            }
+        },
+        unit_map,
+    )
+    assert state.scar_results == {
+        "blue-scar-1": "failed",
+        "blue-scar-2": "captured",
+    }
+    assert state.sof_recoveries == {"blue-scar-1"}
 
 
 def test_lua_capture_requires_a_live_sof_group() -> None:
@@ -533,3 +555,25 @@ def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
     ].split("local function spawn_sof(area)", maxsplit=1)[0]
     assert "coalition.getGroups" in detector
     assert 'string.sub(gname, 1, 5) ~= "SCAR-"' in detector
+
+
+def test_lua_botched_capture_allows_csar_recovery() -> None:
+    # Phase 2c-3: a botched capture with a surviving team is flagged recoverable,
+    # and a friendly helicopter reaching it sets sofRecovered for the refund.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    # A failed area with a living team becomes recoverable.
+    mark_failed = script.split("local function mark_failed(area)", maxsplit=1)[1].split(
+        "local function scar_check()", maxsplit=1
+    )[0]
+    assert "sof_team_alive(area)" in mark_failed
+    assert "area.recoverable = true" in mark_failed
+    # The recovery pass watches for a friendly helo and flags sofRecovered.
+    recovery = script.split("local function check_sof_recovery(area)", maxsplit=1)[
+        1
+    ].split("local function mark_failed(area)", maxsplit=1)[0]
+    assert "Group.Category.HELICOPTER" in recovery
+    assert "scar_results[area.id].sofRecovered = true" in recovery
+    # scar_check keeps watching recoverable-but-not-yet-recovered areas.
+    assert "area.recoverable and not area.recovered" in script

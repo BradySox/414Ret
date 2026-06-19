@@ -68,6 +68,10 @@ class MissionResultsProcessor:
                 self.commit_sof_deployments(debriefing)
             with logged_duration("commit_captures"):
                 self.commit_captures(debriefing, events)
+            # Re-commission recovered SOF teams after ownership has settled, so a
+            # refunded team lands in a base that's actually friendly post-mission.
+            with logged_duration("commit_sof_recoveries"):
+                self.commit_sof_recoveries(debriefing)
             with logged_duration("record_carcasses"):
                 self.record_carcasses(debriefing)
 
@@ -262,6 +266,41 @@ class MissionResultsProcessor:
             if cp.captured == origin.captured and cp.base.armor.get(unit, 0) > 0:
                 cp.base.commit_losses({unit: 1})
                 return
+
+    def commit_sof_recoveries(self, debriefing: Debriefing) -> None:
+        """Re-commission one bought SOF team per CSAR-recovered insert (Phase 2c-3).
+
+        A botched capture strands the team; if a recovery helo extracts it the
+        SCAR bridge flags ``sofRecovered`` on that area, refunding one team to a
+        friendly base (an un-recovered team stays spent from debit-on-frag). The
+        tasking id's coalition prefix decides the side. No-op when the feature is
+        off, nothing was recovered, or the SOF unit type isn't present.
+        """
+        if not self.game.settings.scar_command_post_intel:
+            return
+        recoveries = debriefing.state_data.sof_recoveries
+        if not recoveries:
+            return
+        from game.dcs.groundunittype import GroundUnitType
+        from game.missiongenerator.scarluadata import (
+            SCAR_SOF_UNIT_BLUE,
+            SCAR_SOF_UNIT_RED,
+        )
+
+        for tasking_id in recoveries:
+            is_blue = tasking_id.startswith("blue-") or not tasking_id.startswith(
+                "red-"
+            )
+            coalition = self.game.blue if is_blue else self.game.red
+            unit_name = SCAR_SOF_UNIT_BLUE if is_blue else SCAR_SOF_UNIT_RED
+            try:
+                unit = GroundUnitType.named(unit_name)
+            except KeyError:
+                continue
+            for cp in self.game.theater.controlpoints:
+                if cp.captured == coalition.player:
+                    cp.base.commission_units({unit: 1})
+                    break
 
     def commit_ground_losses(
         self, debriefing: Debriefing, events: GameUpdateEvents

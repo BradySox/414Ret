@@ -195,6 +195,50 @@ def test_sof_deployment_is_a_noop_when_setting_off() -> None:
     origin.base.commit_losses.assert_not_called()
 
 
+def test_recovered_sof_team_is_recommissioned_to_a_friendly_base() -> None:
+    # Phase 2c-3: a CSAR-recovered team refunds one bought SOF unit to a base on
+    # the recovering side (decided by the tasking-id coalition prefix).
+    from game.dcs.groundunittype import GroundUnitType
+    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+
+    processor, game = _processor(setting_on=True)
+    unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
+    friendly = MagicMock()
+    friendly.captured = game.blue.player
+    game.theater.controlpoints = [friendly]
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(sof_recoveries={"blue-scar-1"})
+    )
+
+    processor.commit_sof_recoveries(cast(Any, debriefing))
+
+    friendly.base.commission_units.assert_called_once_with({unit: 1})
+
+
+def test_sof_recovery_is_a_noop_when_nothing_recovered() -> None:
+    processor, game = _processor(setting_on=True)
+    cp = MagicMock()
+    game.theater.controlpoints = [cp]
+    debriefing = SimpleNamespace(state_data=SimpleNamespace(sof_recoveries=set()))
+
+    processor.commit_sof_recoveries(cast(Any, debriefing))
+
+    cp.base.commission_units.assert_not_called()
+
+
+def test_sof_recovery_is_a_noop_when_setting_off() -> None:
+    processor, game = _processor(setting_on=False)
+    cp = MagicMock()
+    game.theater.controlpoints = [cp]
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(sof_recoveries={"blue-scar-1"})
+    )
+
+    processor.commit_sof_recoveries(cast(Any, debriefing))
+
+    cp.base.commission_units.assert_not_called()
+
+
 def test_red_capture_does_not_reveal_blue_command_posts() -> None:
     processor, game = _processor(setting_on=True)
     debriefing = SimpleNamespace(

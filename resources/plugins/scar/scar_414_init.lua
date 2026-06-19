@@ -482,6 +482,84 @@ local function launch_missile(area)
     end
 end
 
+-- Phase 2c-3 CSAR: is the SOF team (delivered or scripted) still on the ground?
+local function sof_team_alive(area)
+    if area.sofGroup == nil then
+        return false
+    end
+    local group = Group.getByName(area.sofGroup)
+    if group == nil then
+        return false
+    end
+    local ok, size = pcall(function()
+        return group:getSize()
+    end)
+    return ok and (size or 0) > 0
+end
+
+-- Phase 2c-3: after a botched capture the team is stranded but recoverable. If a
+-- friendly recovery helicopter gets within pickup range of the surviving team,
+-- flag the area sofRecovered (the generator refunds one bought team next turn).
+-- Cheap proximity model rather than full MOOSE CSAR; watch in-game that the helo
+-- has to actually reach the team. The team dying first = lost (no refund).
+local SCAR_SOF_RECOVERY_RADIUS = 600 -- a friendly helo this near the team extracts it
+
+local function check_sof_recovery(area)
+    if not sof_team_alive(area) then
+        area.recovered = true -- stranded team died before pickup -> lost; stop watching
+        return
+    end
+    local sof = Group.getByName(area.sofGroup)
+    local okp, sof_pos = pcall(function()
+        return sof:getUnit(1):getPoint()
+    end)
+    if not okp or sof_pos == nil then
+        return
+    end
+    local okg, helos = pcall(coalition.getGroups, scar_side(area),
+        Group.Category.HELICOPTER)
+    if not okg or helos == nil then
+        return
+    end
+    local r2 = SCAR_SOF_RECOVERY_RADIUS * SCAR_SOF_RECOVERY_RADIUS
+    for _, group in ipairs(helos) do
+        local oku, units = pcall(function()
+            return group:getUnits()
+        end)
+        if oku and units ~= nil then
+            for _, unit in ipairs(units) do
+                local okpos, pos = pcall(function()
+                    return unit:getPoint()
+                end)
+                if okpos and pos ~= nil then
+                    local dx = pos.x - sof_pos.x
+                    local dz = pos.z - sof_pos.z
+                    if (dx * dx + dz * dz) <= r2 then
+                        if scar_results[area.id] == nil then
+                            scar_results[area.id] = { status = "failed" }
+                        end
+                        scar_results[area.id].sofRecovered = true
+                        dirty_state = true
+                        area.recovered = true
+                        scar_log("area " .. tostring(area.id) ..
+                            ": SOF team recovered by CSAR helo")
+                        return
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Botched capture: if the team is still alive, keep it on the books as a CSAR
+-- pickup (a recovery helo can extract it for a refund).
+local function mark_failed(area)
+    mark_result(area, "failed")
+    if sof_team_alive(area) then
+        area.recoverable = true
+    end
+end
+
 local function scar_check()
     for _, area in ipairs(scar_areas) do
         if not area.done then
@@ -509,12 +587,16 @@ local function scar_check()
                 elseif live and hvt_in_fail_zone(area) then
                     -- Reached the city: the command vehicle escapes into it.
                     despawn_command(area)
-                    mark_result(area, "failed")
+                    mark_failed(area)
                 elseif timed_out then
                     -- Ran out of time; the convoy is still en route.
-                    mark_result(area, "failed")
+                    mark_failed(area)
                 end
             end
+        elseif area.recoverable and not area.recovered then
+            -- Resolved as a botch, but the SOF team is stranded alive: keep
+            -- watching for a recovery helo (Phase 2c-3 CSAR).
+            check_sof_recovery(area)
         end
     end
 end

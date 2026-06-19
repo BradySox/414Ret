@@ -69,6 +69,9 @@ class FlightPlanBuilderTypes:
             FlightType.TRANSPORT: AirliftFlightPlan.builder_type(),
             FlightType.FERRY: FerryFlightPlan.builder_type(),
             FlightType.AIR_ASSAULT: AirAssaultFlightPlan.builder_type(),
+            # SOF insert = a player-flown air-assault that drops a SCAR capture team
+            # at the HVT ambush point; it reuses the air-assault CTLD machinery.
+            FlightType.SOF: AirAssaultFlightPlan.builder_type(),
             FlightType.PRETENSE_CARGO: PretenseCargoFlightPlan.builder_type(),
             FlightType.ARMED_RECON: ArmedReconFlightPlan.builder_type(),
             # SCAR = area find-and-prosecute of one moving HVT; v1 reuses the

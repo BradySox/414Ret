@@ -259,6 +259,22 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
             ]
             if self.warrants_recon:
                 yield FlightType.TARPS
+            # SOF insert (a C-130 airdrop of a SCAR capture team) is a player-only
+            # companion to a SCAR tasking on this target. Gated behind the
+            # commander-capture feature and the CTLD plugin it delivers through;
+            # the AI never plans it (no proposing task), so this only adds a
+            # manually selectable option. The settings lookup is defensive because
+            # some lightweight contexts hold a control point without a coalition.
+            try:
+                settings = self.control_point.coalition.game.settings
+            except (RuntimeError, AttributeError):
+                settings = None
+            if (
+                settings is not None
+                and settings.scar_command_post_intel
+                and settings.plugin_option("ctld")
+            ):
+                yield FlightType.SOF
         yield from super().mission_types(for_player)
 
     @property

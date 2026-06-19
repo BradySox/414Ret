@@ -96,3 +96,23 @@ def test_representative_aircraft_tasking_lanes(
         assert not aircraft.capable_of(
             task
         ), f"{variant_id} should not be capable of {task.name}"
+
+
+def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
+    # The SOF insert is the C-130 "drop" leg: a fixed-wing transport airdrop that
+    # reuses the air-assault CTLD delivery, so transports inherit the SOF lane
+    # (see AircraftType.__post_init__).
+    aircraft = _aircraft(tmp_path, "C-130")
+    assert aircraft.capable_of(FlightType.TRANSPORT)
+    assert aircraft.capable_of(FlightType.SOF)
+
+
+@pytest.mark.parametrize("variant_id", ["UH-1H Iroquois", "F-15C Eagle"])
+def test_sof_insert_excludes_helos_and_non_transports(
+    variant_id: str, tmp_path: Path
+) -> None:
+    # Helicopters fly the CSAR recovery leg, not the insert, so the SOF lane must
+    # not leak onto them; and aircraft without a transport lane (fighters) never
+    # get it either.
+    aircraft = _aircraft(tmp_path, variant_id)
+    assert not aircraft.capable_of(FlightType.SOF)

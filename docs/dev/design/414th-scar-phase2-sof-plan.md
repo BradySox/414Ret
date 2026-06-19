@@ -246,5 +246,70 @@ emission + Lua `spawn_sof` using it, and `_consume_sof_teams` on capture. Tests 
 (capture consumes a team). Follow-up audit fixes keep SOF out of front-line deployment /
 strength / redeployment math, require a living spawned team for capture, prefix tasking IDs
 with coalition so RED results cannot spend/reveal BLUE assets, and spend BLUE inventory before
-base-capture ownership flips. **Remaining:** 2c-2 air-assault delivery (`FlightType.SOF`)
-replacing the scripted drop; 2c-3 CSAR recovery.
+base-capture ownership flips.
+
+### 9d. 2c-2 progress — delivery platform + offering (2026-06-19)
+
+**Platform correction (user, 2026-06-19): the SOF insert is a C-130 *airdrop* (the "drop"
+leg); the *helicopter* flies the CSAR *recovery* leg (2c-3) — NOT a helo air-assault.** The
+air-assault flight plan + CTLD logistics already support a fixed-wing transport delivering
+troops to a target zone (preload + no pickup/drop-off zone for fixed wing); the only blocker
+was the helo-only guard in the builder.
+
+- **2c-2a BUILT** (commits `54ae98092`, `dc6bc80fc`): `FlightType.SOF`, an air-assault-shaped
+  delivery dispatched to `AirAssaultFlightPlan`. SOF inherits the lane from `TRANSPORT` for
+  **fixed-wing only** (C-130/An-26 get it; troop helos + fighters don't); the air-assault
+  builder permits fixed-wing for `FlightType.SOF`; `entity_type` UTILITY. Inert (no offering).
+- **2c-2b BUILT** (commit `6da705b1e`): offer `FlightType.SOF` against enemy ground targets
+  when `scar_command_post_intel` + the CTLD plugin are on (player-only; no AI proposing task).
+  `build_scar_taskings` now emits the SOF ambush **only for targets with a SOF flight fragged**
+  (still pool-capped) — a stocked pool alone no longer auto-drops. Tests:
+  `test_theatergroundobject.py` (offering gate) + `test_scar_bridge.py` (no drop without a
+  planned insert; cap exercised with two inserts).
+
+- **2c-2 debit-on-frag BUILT** (commit `bac497256`): consumption moved off the on-capture
+  `_consume_sof_teams` to a new `commit_sof_deployments` step — one bought team debited per
+  flown `FlightType.SOF` flight from its origin base (then any same-side base), regardless of
+  capture outcome. Runs before `commit_captures` so a captured source base can't erase the
+  spend; `COMMIT_STEPS` + the ordering assertion track it. Capture now only reveals.
+
+- **2c-2c BUILT** (commits `96b3b63f2`, `37c747287`): the hybrid capture binding. At go_live
+  `spawn_sof` first calls `find_delivered_sof` — scans friendly GROUND groups within 2500 m of
+  the ambush point, excluding our own `SCAR-` spawns — and binds capture to a player-delivered
+  team if found; otherwise it scripted-spawns the fallback so the loop never silently dies. The
+  F10 mark now reads "airdrop your SOF team here." Also fixed an over-debit: `commit_sof_deployments`
+  now debits once **per target** (not per flight) so two inserts on one HVT can't double-charge.
+### 9e. CSAR recovery redesign (user, 2026-06-19): capture escapes, botch = next-turn objective
+
+The in-mission recovery first built for 2c-3 was **replaced** per the user's CONOPS:
+- **Clean capture → the team escapes with the hostage** ("no one dares attack while the commander
+  is hostage"), so capture **refunds** the team (nets out debit-on-frag). No in-mission CSAR.
+- **Botch / late → the team is stranded** and becomes a **first-class CSAR map objective next
+  turn** (a real TGO the player frags a recovery flight against), **persisting across turns until
+  recovered or overrun**, with a **3-turn cap** as the other loss condition.
+
+- **Rework BUILT** (commit `406fa2c55`): `commit_scar_results` refunds one bought team per blue
+  capture; the in-mission `commit_sof_recoveries` / `StateData.sof_recoveries` / Lua
+  `check_sof_recovery` proximity pickup were removed. Botched areas resolve "failed" as before.
+- **2c-3 foundation BUILT** (commit `cf1c5b8e2`): `PendingSofRescue` (`game/scar_rescue.py`) +
+  `Coalition.pending_csars` (save-migrated). The Lua tags `sofStrandedX/Y` on a failed area whose
+  team survived; `StateData.sof_strandings` parses it and `commit_sof_strandings` records a
+  pending rescue (default 3-turn cap) on the owning coalition. Tests cover parse / record / gate.
+
+**Remaining — the CSAR objective itself (the big slice C):**
+1. **Surface** each `PendingSofRescue` as a first-class map objective next turn — a "downed SOF
+   team" TGO attached to the nearest control point's `connected_objectives` at `(x, y)`, shown on
+   the map and offering a recovery flight type.
+2. **Recovery flight** — a helo extraction (the recovery leg is a helicopter); decide reuse vs a
+   new `FlightType.CSAR`. Resolves when the helo reaches/extracts the team → refund one bought
+   team + clear the pending rescue.
+3. **Lifecycle** — age `turns_remaining` down each turn; drop at 0 (lost) **or** when the enemy
+   front overruns the position (lost). Recovery clears it early.
+
+This slice needs dynamic-TGO creation + ATO wiring + a recovery flight + in-mission resolution
+(Lua, in-game pass). Everything through the foundation is code-complete + CI-green, gated OFF.
+
+**Still owed an in-game Lua pass** (from 2c-2/earlier): a CTLD-unloaded team near the mark is
+detected and capture resolves off it; a botch tags the stranded position. Optional follow-ups:
+route the SOF drop zone to the ambush point; exclude non-capturable targets (SCUD sites) from the
+SOF offering.

@@ -469,6 +469,18 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
         sof_budget, sof_unit_type = (
             _sof_asset(game, coalition) if sof_enabled else (0, "")
         )
+        # Phase 2c-2: the SOF team is delivered by a player-flown insert, so a drop
+        # is emitted only against targets that actually have a SOF flight fragged
+        # (still capped by the finite pool). Targets without an insert get no team.
+        sof_targets: set[int] = (
+            {
+                id(package.target)
+                for package in coalition.ato.packages
+                if any(f.flight_type is FlightType.SOF for f in package.flights)
+            }
+            if sof_enabled
+            else set()
+        )
         for package in coalition.ato.packages:
             if not any(f.flight_type is FlightType.SCAR for f in package.flights):
                 continue
@@ -601,7 +613,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 )
                 sof_x, sof_y, sof_radius, sof_country = 0.0, 0.0, 0.0, 0
                 sof_type = ""
-                if sof_budget > 0:
+                if sof_budget > 0 and id(target) in sof_targets:
                     sof_x, sof_y, sof_radius, sof_country = _sof_ambush(
                         origin.x, origin.y, dest_x, dest_y, friendly_country_id
                     )
@@ -643,7 +655,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 )
                 sof_x, sof_y, sof_radius, sof_country = (0.0, 0.0, 0.0, 0)
                 sof_type = ""
-                if sof_budget > 0:
+                if sof_budget > 0 and id(target) in sof_targets:
                     hvt = next((c for c in spawn_convoys if c.role == "hvt"), None)
                     if hvt is not None:
                         sof_x, sof_y, sof_radius, sof_country = _sof_ambush(

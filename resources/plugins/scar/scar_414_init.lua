@@ -100,7 +100,8 @@ end
 local function mark_sof(area, side)
     if area.sofX and area.sofRadius and area.sofRadius > 0 then
         pcall(trigger.action.markToCoalition, next_mark_id(),
-            "SOF team in position — the commander is CAPTURED if he reaches here",
+            "SOF ambush point — airdrop your SOF team here; the commander is " ..
+            "CAPTURED if he reaches it (a scripted team stands in if none is dropped)",
             { x = area.sofX, y = 0, z = area.sofY }, side, true)
     end
 end
@@ -261,10 +262,60 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
     return spawned.name or group_name
 end
 
--- Phase 2a: drop a stationary friendly SOF team at the ambush point (area.sofX/Y).
--- Spawned at go_live alongside the picture; capture is detected in scar_check.
+-- Phase 2c-2: detect a player-DELIVERED SOF team near the ambush point. The
+-- insert is a C-130 airdrop, so the human flies the team in and CTLD-unloads it
+-- at the marked point; if a friendly ground group (that isn't one of our own
+-- SCAR spawns) is sitting near sofX/sofY by go_live, capture binds to THAT group.
+-- Returns the group name, or nil if nothing was delivered.
+local SCAR_SOF_DELIVERY_RADIUS = 2500 -- how near the ambush point a real drop counts
+
+local function find_delivered_sof(area)
+    if not (area.sofX and area.sofY) then
+        return nil
+    end
+    local ok, groups = pcall(coalition.getGroups, scar_side(area),
+        Group.Category.GROUND)
+    if not ok or groups == nil then
+        return nil
+    end
+    local best_name = nil
+    local best_d2 = SCAR_SOF_DELIVERY_RADIUS * SCAR_SOF_DELIVERY_RADIUS
+    for _, group in ipairs(groups) do
+        local okn, gname = pcall(function()
+            return group:getName()
+        end)
+        -- Skip our own scripted spawns (convoys / threats / scripted SOF); only a
+        -- player/CTLD-delivered group counts as a real drop.
+        if okn and gname ~= nil and string.sub(gname, 1, 5) ~= "SCAR-" then
+            local okp, pos = pcall(function()
+                return group:getUnit(1):getPoint() -- {x = north, y = alt, z = east}
+            end)
+            if okp and pos ~= nil then
+                local dx = pos.x - area.sofX
+                local dz = pos.z - area.sofY
+                local d2 = dx * dx + dz * dz
+                if d2 <= best_d2 then
+                    best_name, best_d2 = gname, d2
+                end
+            end
+        end
+    end
+    return best_name
+end
+
+-- Put a friendly SOF team at the ambush point (area.sofX/Y) for go_live. Hybrid
+-- (Phase 2c-2): prefer the player-delivered team; only scripted-spawn a fallback
+-- if none was delivered, so the capture loop never silently dies. Capture itself
+-- is detected in scar_check against area.sofGroup.
 local function spawn_sof(area)
     if not (area.sofX and area.sofRadius and area.sofRadius > 0) then
+        return
+    end
+    local delivered = find_delivered_sof(area)
+    if delivered ~= nil then
+        area.sofGroup = delivered
+        scar_log("area " .. tostring(area.id) ..
+            ": capture bound to delivered SOF team " .. tostring(delivered))
         return
     end
     local group_name = "SCAR-" .. tostring(area.id) .. "-sof"
@@ -311,6 +362,8 @@ local function spawn_sof(area)
         return
     end
     area.sofGroup = spawned.name or group_name
+    scar_log("area " .. tostring(area.id) ..
+        ": no delivered team — scripted SOF fallback spawned")
 end
 
 -- Spawn variant only: has the spawned HVT reached its no-strike destination?
@@ -429,6 +482,41 @@ local function launch_missile(area)
     end
 end
 
+-- Phase 2c-3 CSAR: a botched capture leaves the delivered/scripted SOF team
+-- stranded (alive) at the ambush point. Tag its position on the result so the
+-- generator can stand up a next-turn CSAR objective to recover it. No tag (team
+-- dead, or never delivered) = the team is written off.
+local function report_stranded_sof(area)
+    if area.sofGroup == nil then
+        return
+    end
+    local group = Group.getByName(area.sofGroup)
+    if group == nil then
+        return
+    end
+    local ok, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if not ok or unit == nil then
+        return
+    end
+    local okp, pos = pcall(function()
+        return unit:getPoint() -- {x = north, y = alt, z = east}
+    end)
+    if not okp or pos == nil then
+        return
+    end
+    local entry = scar_results[area.id]
+    if type(entry) ~= "table" then
+        entry = { status = "failed" }
+        scar_results[area.id] = entry
+    end
+    entry.sofStrandedX = pos.x
+    entry.sofStrandedY = pos.z
+    dirty_state = true
+    scar_log("area " .. tostring(area.id) .. ": SOF team stranded for CSAR pickup")
+end
+
 local function scar_check()
     for _, area in ipairs(scar_areas) do
         if not area.done then
@@ -457,9 +545,11 @@ local function scar_check()
                     -- Reached the city: the command vehicle escapes into it.
                     despawn_command(area)
                     mark_result(area, "failed")
+                    report_stranded_sof(area)
                 elseif timed_out then
                     -- Ran out of time; the convoy is still en route.
                     mark_result(area, "failed")
+                    report_stranded_sof(area)
                 end
             end
         end

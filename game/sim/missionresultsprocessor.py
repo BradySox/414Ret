@@ -20,6 +20,7 @@ from ..ato.airtaaskingorder import AirTaskingOrder
 
 if TYPE_CHECKING:
     from ..game import Game
+    from game.dcs.groundunittype import GroundUnitType
 
 
 MINOR_DEFEAT_INFLUENCE = 0.1
@@ -62,7 +63,11 @@ class MissionResultsProcessor:
                 self.commit_scar_results(debriefing)
             # Spend SOF while bases still have their pre-mission ownership. If a
             # source base was captured this mission, flipping ownership first
-            # would make its deployed team disappear from BLUE accounting.
+            # would make its deployed team disappear from the side's accounting.
+            with logged_duration("commit_sof_deployments"):
+                self.commit_sof_deployments(debriefing)
+            with logged_duration("commit_sof_strandings"):
+                self.commit_sof_strandings(debriefing)
             with logged_duration("commit_captures"):
                 self.commit_captures(debriefing, events)
             with logged_duration("record_carcasses"):
@@ -208,12 +213,16 @@ class MissionResultsProcessor:
                 blue_captures += 1
         if blue_captures and self.game.settings.scar_command_post_intel:
             self.game.blue.captured_commander = True
-            self._consume_sof_teams(blue_captures)
+            # The team escapes with the hostage ("no one dares attack while the
+            # commander is hostage"), so it returns to the pool — netting out the
+            # debit-on-frag for a clean capture.
+            self._refund_sof_teams(blue_captures)
             logging.info("SCAR: commander captured — enemy command posts revealed.")
 
-    def _consume_sof_teams(self, count: int) -> None:
-        """Spend `count` bought SOF teams (Phase 2c) from blue bases — one per
-        capture. No-op if the SOF unit type or inventory isn't present."""
+    def _refund_sof_teams(self, count: int) -> None:
+        """Return ``count`` bought SOF teams to a blue-held base (a captured
+        commander's escort self-extracts). No-op if the SOF unit type isn't
+        present or blue holds no base."""
         from game.dcs.groundunittype import GroundUnitType
         from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
 
@@ -221,18 +230,76 @@ class MissionResultsProcessor:
             unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
         except KeyError:
             return
-        remaining = count
         for cp in self.game.theater.controlpoints:
-            if remaining <= 0:
-                break
-            if not cp.captured.is_blue:
+            if cp.captured.is_blue:
+                cp.base.commission_units({unit: count})
+                return
+
+    def commit_sof_deployments(self, debriefing: Debriefing) -> None:
+        """Spend one bought SOF team per SCAR target that had a SOF insert flown
+        against it (Phase 2c-2).
+
+        Fragging the insert debits the team from inventory regardless of the
+        capture outcome (the team deployed). A clean capture refunds it (the team
+        escapes with the hostage); a botch strands it for a next-turn CSAR pickup
+        (2c-3); an un-rescued team stays lost. Deduped by target so multiple
+        inserts on one HVT (which still delivers a single team) can't
+        double-charge. No-op when the feature is off or the SOF unit isn't present.
+        """
+        if not self.game.settings.scar_command_post_intel:
+            return
+        from game.dcs.groundunittype import GroundUnitType
+        from game.missiongenerator.scarluadata import (
+            SCAR_SOF_UNIT_BLUE,
+            SCAR_SOF_UNIT_RED,
+        )
+
+        for coalition, unit_name in (
+            (self.game.blue, SCAR_SOF_UNIT_BLUE),
+            (self.game.red, SCAR_SOF_UNIT_RED),
+        ):
+            try:
+                unit = GroundUnitType.named(unit_name)
+            except KeyError:
                 continue
-            have = cp.base.armor.get(unit, 0)
-            if have <= 0:
-                continue
-            take = min(have, remaining)
-            cp.base.commit_losses({unit: take})
-            remaining -= take
+            spent_targets: set[int] = set()
+            for package in coalition.ato.packages:
+                insert = next(
+                    (f for f in package.flights if f.flight_type is FlightType.SOF),
+                    None,
+                )
+                if insert is None or id(package.target) in spent_targets:
+                    continue
+                spent_targets.add(id(package.target))
+                self._spend_sof_team(unit, insert.departure)
+
+    def _spend_sof_team(self, unit: "GroundUnitType", origin: ControlPoint) -> None:
+        """Debit one bought SOF team for a flown insert: prefer the flight's
+        origin base, else any same-side base that still holds one. No-op if none
+        is in stock (the offering doesn't hard-block planning without a team)."""
+        if origin.base.armor.get(unit, 0) > 0:
+            origin.base.commit_losses({unit: 1})
+            return
+        for cp in self.game.theater.controlpoints:
+            if cp.captured == origin.captured and cp.base.armor.get(unit, 0) > 0:
+                cp.base.commit_losses({unit: 1})
+                return
+
+    def commit_sof_strandings(self, debriefing: Debriefing) -> None:
+        """Record SOF teams stranded by a botched capture as pending CSAR pickups
+        (Phase 2c-3). Each becomes a persisted next-turn rescue objective on the
+        owning coalition; the tasking id's prefix picks the side. No-op when the
+        feature is off or nothing was stranded."""
+        if not self.game.settings.scar_command_post_intel:
+            return
+        from game.scar_rescue import PendingSofRescue
+
+        for tasking_id, x, y in debriefing.state_data.sof_strandings:
+            is_blue = tasking_id.startswith("blue-") or not tasking_id.startswith(
+                "red-"
+            )
+            coalition = self.game.blue if is_blue else self.game.red
+            coalition.pending_csars.append(PendingSofRescue(x=x, y=y))
 
     def commit_ground_losses(
         self, debriefing: Debriefing, events: GameUpdateEvents

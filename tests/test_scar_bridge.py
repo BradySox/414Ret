@@ -90,6 +90,13 @@ def _give_sof_pool(game: Any, count: int = 2) -> Any:
     return unit
 
 
+def _plan_sof_insert(game: Any, package_index: int = 0) -> None:
+    """Phase 2c-2: frag a SOF insert flight onto an existing SCAR package so the
+    team is delivered. Without this, a stocked pool alone yields no drop."""
+    package = game.coalitions[0].ato.packages[package_index]
+    package.flights = list(package.flights) + [MagicMock(flight_type=FlightType.SOF)]
+
+
 def _build(game: Any) -> Any:
     return build_scar_taskings(game, MISSION_START)
 
@@ -280,6 +287,16 @@ def test_no_sof_ambush_when_pool_empty() -> None:
     # Feature ON but the side owns no SOF teams -> no drop (finite-pool gate).
     game = _armor_to_far_city()
     game.settings.scar_command_post_intel = True  # but no SOF stocked
+    _plan_sof_insert(game)
+    tasking = _build(game)[0]
+    assert tasking.sof_radius_m == 0.0
+
+
+def test_no_sof_drop_without_a_planned_insert() -> None:
+    # Feature ON and a team in stock, but no SOF insert fragged -> no drop. The
+    # team is delivered by the player-flown insert, not automatically (Phase 2c-2).
+    game = _armor_to_far_city()
+    _give_sof_pool(game)
     tasking = _build(game)[0]
     assert tasking.sof_radius_m == 0.0
 
@@ -300,6 +317,10 @@ def test_sof_pool_caps_drops_per_turn() -> None:
     coalition.ato.packages = [coalition.ato.packages[0], second]
     game = _game_with(coalition)
     _give_sof_pool(game, count=1)
+    # Both targets are fragged a SOF insert, so the cap (not the frag gate) is what
+    # limits the drops to one.
+    _plan_sof_insert(game, package_index=0)
+    _plan_sof_insert(game, package_index=1)
 
     taskings = _build(game)
     with_sof = [t for t in taskings if t.sof_radius_m > 0]
@@ -310,6 +331,7 @@ def test_sof_pool_caps_drops_per_turn() -> None:
 def test_armor_sof_ambush_when_feature_on() -> None:
     game = _armor_to_far_city()
     sof_unit = _give_sof_pool(game)
+    _plan_sof_insert(game)
 
     tasking = _build(game)[0]
 
@@ -327,6 +349,7 @@ def test_spawn_sof_ambush_on_the_hvt_route_when_feature_on() -> None:
     target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(target))
     _give_sof_pool(game)
+    _plan_sof_insert(game)
 
     tasking = _build(game)[0]
 
@@ -352,9 +375,11 @@ def test_sof_fields_emitted_to_lua_only_when_enabled() -> None:
     populate_scar_lua(off, _build(_game_with(_coalition_with_target(target))))
     assert "sofX" not in off.serialize()
 
-    # Enabled + a SOF team in stock: SOF point + friendly country + unit type emitted.
+    # Enabled + a SOF team in stock + an insert fragged: SOF point + friendly
+    # country + unit type emitted.
     game = _game_with(_coalition_with_target(target))
     _give_sof_pool(game)
+    _plan_sof_insert(game)
     on = LuaData("dcsRetribution")
     populate_scar_lua(on, _build(game))
     serialized = on.serialize()
@@ -473,8 +498,31 @@ def test_state_data_scar_results_default_empty() -> None:
     # Lua serializes an empty table as [], which must parse to {} not crash.
     state = StateData.from_json({"scar_results": []}, unit_map)
     assert state.scar_results == {}
+    assert state.sof_strandings == []
     state = StateData.from_json({}, unit_map)
     assert state.scar_results == {}
+    assert state.sof_strandings == []
+
+
+def test_state_data_parses_sof_strandings() -> None:
+    # A failed area whose SOF team survived carries sofStrandedX/Y; that surfaces
+    # as a (taskingId, x, y) stranding for the next-turn CSAR objective.
+    unit_map = MagicMock()
+    state = StateData.from_json(
+        {
+            "scar_results": {
+                "blue-scar-1": {
+                    "status": "failed",
+                    "sofStrandedX": 1500.0,
+                    "sofStrandedY": -250.0,
+                },
+                "blue-scar-2": {"status": "captured"},
+                "blue-scar-3": {"status": "failed"},
+            }
+        },
+        unit_map,
+    )
+    assert state.sof_strandings == [("blue-scar-1", 1500.0, -250.0)]
 
 
 def test_lua_capture_requires_a_live_sof_group() -> None:
@@ -487,3 +535,39 @@ def test_lua_capture_requires_a_live_sof_group() -> None:
     assert "area.sofGroup == nil" in capture_check
     assert "Group.getByName(area.sofGroup)" in capture_check
     assert "sof_group:getSize()" in capture_check
+
+
+def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
+    # Phase 2c-2 hybrid: spawn_sof binds capture to a player-delivered team near
+    # the ambush point when one exists, and only scripted-spawns a fallback
+    # otherwise. The detection skips our own SCAR- spawns.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    spawn_sof = script.split("local function spawn_sof(area)", maxsplit=1)[1].split(
+        "local function hvt_in_fail_zone(area)", maxsplit=1
+    )[0]
+    # Prefers the delivered team and returns before the scripted spawn.
+    assert "find_delivered_sof(area)" in spawn_sof
+    assert "area.sofGroup = delivered" in spawn_sof
+    # The detector scans friendly ground groups and excludes our own spawns.
+    detector = script.split("local function find_delivered_sof(area)", maxsplit=1)[
+        1
+    ].split("local function spawn_sof(area)", maxsplit=1)[0]
+    assert "coalition.getGroups" in detector
+    assert 'string.sub(gname, 1, 5) ~= "SCAR-"' in detector
+
+
+def test_lua_botched_capture_reports_a_stranded_team() -> None:
+    # Phase 2c-3: a failed area whose SOF team is still alive tags its position so
+    # the generator can stand up a next-turn CSAR objective.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    report = script.split("local function report_stranded_sof(area)", maxsplit=1)[
+        1
+    ].split("local function scar_check()", maxsplit=1)[0]
+    assert "entry.sofStrandedX = pos.x" in report
+    assert "entry.sofStrandedY = pos.z" in report
+    # The failed branches call it (only a surviving team tags a position).
+    assert script.count("report_stranded_sof(area)") >= 3

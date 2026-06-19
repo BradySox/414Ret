@@ -37,6 +37,8 @@ COMMIT_STEPS = [
     "commit_captures",
     "commit_front_line_battle_impact",
     "commit_scar_results",
+    "commit_sof_deployments",
+    "commit_sof_strandings",
     "record_carcasses",
 ]
 
@@ -102,7 +104,7 @@ def test_battle_impact_scored_before_captures_flip_ownership() -> None:
     assert calls.index("commit_front_line_battle_impact") < calls.index(
         "commit_captures"
     ), "front-line scoring must run before bases are captured"
-    assert calls.index("commit_scar_results") < calls.index(
+    assert calls.index("commit_sof_deployments") < calls.index(
         "commit_captures"
     ), "SOF inventory must be spent before a source base can change ownership"
 

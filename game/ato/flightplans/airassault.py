@@ -7,6 +7,7 @@ from typing import Iterator, TYPE_CHECKING, Type
 
 from game.theater.controlpoint import ControlPointType
 from game.theater.missiontarget import MissionTarget
+from .. import FlightType
 from game.utils import Distance, meters
 from ._common_ctld import generate_random_ctld_point
 from .formationattack import (
@@ -95,7 +96,11 @@ class AirAssaultFlightPlan(FormationAttackFlightPlan, UiZoneDisplay):
 
 class Builder(FormationAttackBuilder[AirAssaultFlightPlan, AirAssaultLayout]):
     def layout(self) -> AirAssaultLayout:
-        if not self.flight.is_helo:
+        # SOF inserts are a fixed-wing transport airdrop (the C-130 "drop" leg) that
+        # reuse this CTLD target-zone delivery; the layout already branches on
+        # is_helo (preload + no drop-off zone for fixed wing), so only the
+        # helo-exclusive Air Assault task is barred from fixed wing here.
+        if not self.flight.is_helo and self.flight.flight_type is not FlightType.SOF:
             raise PlanningError("Air assault is only usable by helicopters")
         assert self.package.waypoints is not None
 

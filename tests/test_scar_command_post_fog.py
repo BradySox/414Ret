@@ -233,6 +233,107 @@ def test_strandings_ignored_when_setting_off() -> None:
     assert game.blue.pending_csars == []
 
 
+def _downed_objective(x: float, y: float) -> Any:
+    from game.theater.theatergroundobject import DownedSofGroundObject
+
+    tgo = DownedSofGroundObject.__new__(DownedSofGroundObject)
+    tgo.position = cast(Any, SimpleNamespace(x=x, y=y))
+    return tgo
+
+
+def _csar_package(x: float, y: float) -> Any:
+    from game.ato.flighttype import FlightType
+
+    flight = MagicMock(flight_type=FlightType.CSAR)
+    return SimpleNamespace(target=_downed_objective(x, y), flights=[flight])
+
+
+def _recovery_game(*, setting_on: bool) -> Any:
+    processor, game = _processor(setting_on=setting_on)
+    game.blue.player = Player.BLUE
+    game.red.player = Player.RED
+    game.red.pending_csars = []
+    game.red.ato.packages = []
+    return processor, game
+
+
+def test_csar_recovery_refunds_and_clears_the_rescue() -> None:
+    from game.scar_rescue import PendingSofRescue
+
+    processor, game = _recovery_game(setting_on=True)
+    game.blue.pending_csars = [PendingSofRescue(100.0, 200.0)]
+    game.blue.ato.packages = [_csar_package(100.0, 200.0)]
+    cp = MagicMock()
+    cp.captured = Player.BLUE
+    game.theater.controlpoints = [cp]
+    debriefing = SimpleNamespace(
+        air_losses=SimpleNamespace(surviving_flight_members=lambda f: 1)
+    )
+
+    processor.commit_sof_recoveries(cast(Any, debriefing))
+
+    assert game.blue.pending_csars == []  # cleared
+    cp.base.commission_units.assert_called_once()  # team refunded
+
+
+def test_lost_csar_helo_does_not_recover_the_team() -> None:
+    from game.scar_rescue import PendingSofRescue
+
+    processor, game = _recovery_game(setting_on=True)
+    rescue = PendingSofRescue(100.0, 200.0)
+    game.blue.pending_csars = [rescue]
+    game.blue.ato.packages = [_csar_package(100.0, 200.0)]
+    cp = MagicMock()
+    cp.captured = Player.BLUE
+    game.theater.controlpoints = [cp]
+    # The whole recovery flight was shot down on the deep ingress.
+    debriefing = SimpleNamespace(
+        air_losses=SimpleNamespace(surviving_flight_members=lambda f: 0)
+    )
+
+    processor.commit_sof_recoveries(cast(Any, debriefing))
+
+    assert game.blue.pending_csars == [rescue]  # still stranded
+    cp.base.commission_units.assert_not_called()
+
+
+def test_csar_against_a_different_team_leaves_the_rescue() -> None:
+    from game.scar_rescue import PendingSofRescue
+
+    processor, game = _recovery_game(setting_on=True)
+    rescue = PendingSofRescue(100.0, 200.0)
+    game.blue.pending_csars = [rescue]
+    # Recovery flown to some other objective, not this team's position.
+    game.blue.ato.packages = [_csar_package(9000.0, 9000.0)]
+    cp = MagicMock()
+    cp.captured = Player.BLUE
+    game.theater.controlpoints = [cp]
+    debriefing = SimpleNamespace(
+        air_losses=SimpleNamespace(surviving_flight_members=lambda f: 1)
+    )
+
+    processor.commit_sof_recoveries(cast(Any, debriefing))
+
+    assert game.blue.pending_csars == [rescue]
+    cp.base.commission_units.assert_not_called()
+
+
+def test_recoveries_ignored_when_setting_off() -> None:
+    from game.scar_rescue import PendingSofRescue
+
+    processor, game = _recovery_game(setting_on=False)
+    rescue = PendingSofRescue(100.0, 200.0)
+    game.blue.pending_csars = [rescue]
+    game.blue.ato.packages = [_csar_package(100.0, 200.0)]
+    debriefing = SimpleNamespace(
+        air_losses=SimpleNamespace(surviving_flight_members=lambda f: 1)
+    )
+
+    processor.commit_sof_recoveries(cast(Any, debriefing))
+
+    assert game.blue.pending_csars == [rescue]
+
+
 def test_red_capture_does_not_reveal_blue_command_posts() -> None:
     processor, game = _processor(setting_on=True)
     debriefing = SimpleNamespace(

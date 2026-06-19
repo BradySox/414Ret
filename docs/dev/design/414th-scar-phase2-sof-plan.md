@@ -296,20 +296,70 @@ The in-mission recovery first built for 2c-3 was **replaced** per the user's CON
   team survived; `StateData.sof_strandings` parses it and `commit_sof_strandings` records a
   pending rescue (default 3-turn cap) on the owning coalition. Tests cover parse / record / gate.
 
-**Remaining — the CSAR objective itself (the big slice C):**
+**Slice C — the CSAR objective itself (build order: C1 lifecycle → C2 surface → C3 flight → C4 resolution):**
 1. **Surface** each `PendingSofRescue` as a first-class map objective next turn — a "downed SOF
    team" TGO attached to the nearest control point's `connected_objectives` at `(x, y)`, shown on
-   the map and offering a recovery flight type.
+   the map and offering a recovery flight type. *(C2)*
 2. **Recovery flight** — a helo extraction (the recovery leg is a helicopter); decide reuse vs a
    new `FlightType.CSAR`. Resolves when the helo reaches/extracts the team → refund one bought
-   team + clear the pending rescue.
+   team + clear the pending rescue. *(C3 offering/plan, C4 resolution)*
 3. **Lifecycle** — age `turns_remaining` down each turn; drop at 0 (lost) **or** when the enemy
-   front overruns the position (lost). Recovery clears it early.
+   front overruns the position (lost). Recovery clears it early. *(C1 turn-cap; overrun in C2)*
 
 This slice needs dynamic-TGO creation + ATO wiring + a recovery flight + in-mission resolution
 (Lua, in-game pass). Everything through the foundation is code-complete + CI-green, gated OFF.
 
-**Still owed an in-game Lua pass** (from 2c-2/earlier): a CTLD-unloaded team near the mark is
-detected and capture resolves off it; a botch tags the stranded position. Optional follow-ups:
-route the SOF drop zone to the ambush point; exclude non-capturable targets (SCUD sites) from the
-SOF offering.
+- **C1 — turn-cap lifecycle BUILT** (`game/scar_rescue.py` `age_pending_rescues` +
+  `Coalition.end_turn`): each pending rescue ages one turn per `end_turn` (the once-per-turn hook;
+  `initialize_turn` can run several times per turn, so aging there would over-decrement) and is
+  written off at zero. Gated behind `scar_command_post_intel`. Tests: `tests/test_scar_rescue.py`.
+- **C2 — surfacing + overrun BUILT** (`game/scar_objectives.py`, `DownedSofGroundObject`,
+  `FlightType.CSAR`, `Game.initialize_turn`, `PendingSofRescue.anchor_cp_id`):
+  - `DownedSofGroundObject` — a friendly TGO carrying the stranded infantry team; offers **only**
+    `FlightType.CSAR`, and only to the owning side with the feature on (no enemy tasking).
+  - `sync_downed_sof_objectives(game)` rebuilds the objectives each `initialize_turn` from every
+    coalition's `pending_csars` (idempotent teardown+rebuild, so the multiple-init-per-turn cases
+    are safe), anchored to the nearest **friendly** control point and registered in `db.tgos` so
+    the player can frag a recovery against it. Flows through the default `GroundObjectGenerator` +
+    map rendering + pickle with no special-casing (it carries a real group).
+  - **Overrun** (the second loss condition) resolved via the anchor: `surviving_rescues` (called
+    from `Coalition.end_turn`) drops a rescue whose anchor base the enemy has captured (or which no
+    longer exists). A not-yet-anchored rescue (stranded this turn) is never overrun.
+  - `FlightType.CSAR` added (additive enum — no save migration; air-to-ground + primary task;
+    `COMBAT_SEARCH_AND_RESCUE` entity). The **flight plan** for it lands in C3 — until then the
+    objective is offered but not yet plannable (whole feature gated OFF; ships in one PR with C3).
+  - Tests: `tests/test_scar_objectives.py` (surfacing/anchor/idempotent/teardown/gate/offering) +
+    overrun cases in `tests/test_scar_rescue.py`.
+- **C3 — recovery flight plan + offering BUILT** (`FlightType.CSAR` reuses `AirAssaultFlightPlan`):
+  CSAR is the helicopter recovery leg, so it mirrors the SOF insert's air-assault reuse but stays
+  **helo-only** — the air-assault builder's existing non-helo guard (exempted only for SOF) rejects
+  fixed-wing CSAR automatically, no new exception. Wired the same air-assault-shaped sites SOF
+  touches: builder map (`flightplanbuildertypes.py`), package primary-task priority (`package.py`),
+  transport AI behavior (`aircraftbehavior.py`), CTLD logistics generation (`flightgroupconfigurator.py`),
+  `primary_flight_is_air_assault` (`formationattack.py`), and escort join geometry (`escort.py`).
+  Per-aircraft enrichment (`aircrafttype.py`) gives the CSAR lane to **helicopters that can already
+  air-assault** (inherited from `AIR_ASSAULT`), so no per-YAML task weights. Not offered from control
+  points / front lines (only from the downed-team TGO) and player-only (no AI propose task). Tests:
+  CSAR lane on/off in `tests/test_aircraft_tasking_roles.py`.
+- **C4 — recovery resolution + refund BUILT** (`MissionResultsProcessor.commit_sof_recoveries`):
+  a team is recovered when its side flew a `FlightType.CSAR` flight at the downed-team objective on
+  the team's position **and the helo survived the sortie** (`air_losses.surviving_flight_members`).
+  Recovery refunds one bought SOF team to a friendly base (`_refund_sof_teams_to`) and clears the
+  matching `PendingSofRescue` (position match). Runs before `commit_captures` so the refund can't
+  land on a base about to flip. `COMMIT_STEPS` + an ordering assertion track it. Tests:
+  recover/lost-helo/wrong-target/gated in `tests/test_scar_command_post_fog.py`.
+  - **Resolution-design note (deviation from the §9e plan, by design):** the plan assumed an
+    in-mission **Lua proximity** check; this slice resolves recovery in **pure Python from the
+    debriefing** instead. The recovery helo flies a deep penetration to where the team stranded
+    (enemy territory) and the sim flies it (player *or* AI), so "helo survived" is a real
+    accomplishment — no frag-and-forget loophole. The win: **no new un-CI-runnable Lua** for the
+    recovery leg. Tighter in-mission verification (CTLD pickup / proximity) remains an *optional*
+    realism refinement, not a correctness gap.
+
+**Slice C COMPLETE** (C1–C4), gated OFF, CI-green. The whole stranded-SOF → CSAR loop now runs
+end-to-end on the campaign side with no new Lua.
+
+**Still owed an in-game Lua pass** (carried over from 2c-2/earlier — *not* slice C): a CTLD-unloaded
+team near the mark is detected and capture resolves off it; a botch tags the stranded position.
+Optional follow-ups: route the SOF drop zone to the ambush point; exclude non-capturable targets
+(SCUD sites) from the SOF offering; optional CTLD-extract realism for the CSAR recovery leg.

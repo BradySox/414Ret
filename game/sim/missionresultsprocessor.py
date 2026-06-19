@@ -68,6 +68,11 @@ class MissionResultsProcessor:
                 self.commit_sof_deployments(debriefing)
             with logged_duration("commit_sof_strandings"):
                 self.commit_sof_strandings(debriefing)
+            # Recover stranded teams (refunds inventory) before captures flip base
+            # ownership, so a recovered team's refund can't land on a base that is
+            # about to change hands.
+            with logged_duration("commit_sof_recoveries"):
+                self.commit_sof_recoveries(debriefing)
             with logged_duration("commit_captures"):
                 self.commit_captures(debriefing, events)
             with logged_duration("record_carcasses"):
@@ -234,6 +239,80 @@ class MissionResultsProcessor:
             if cp.captured.is_blue:
                 cp.base.commission_units({unit: count})
                 return
+
+    def _refund_sof_teams_to(self, player: Player, unit_name: str, count: int) -> None:
+        """Return ``count`` SOF teams to any base held by ``player``. No-op if the
+        SOF unit type isn't present or the side holds no base."""
+        from game.dcs.groundunittype import GroundUnitType
+
+        try:
+            unit = GroundUnitType.named(unit_name)
+        except KeyError:
+            return
+        for cp in self.game.theater.controlpoints:
+            if cp.captured is player:
+                cp.base.commission_units({unit: count})
+                return
+
+    @staticmethod
+    def _same_strand_point(
+        ax: float, ay: float, bx: float, by: float, tolerance: float = 1.0
+    ) -> bool:
+        # The objective is built at exactly the rescue's (x, y), so equality holds;
+        # a small tolerance guards against float round-trips through generation.
+        return abs(ax - bx) <= tolerance and abs(ay - by) <= tolerance
+
+    def commit_sof_recoveries(self, debriefing: Debriefing) -> None:
+        """Recover SOF teams stranded by a botched capture (Phase 2c-3, slice C4).
+
+        A team is recovered when its side flew a CSAR helo at the "downed SOF team"
+        objective standing on the team's position and the helo survived the sortie.
+        The recovery leg is a deep penetration to where the team stranded (enemy
+        territory), so a surviving helo is a real accomplishment, not a formality --
+        and the sim flies the flight (player or AI) regardless of who is in the
+        cockpit. Recovery refunds one bought SOF team to a friendly base and clears
+        the pending rescue. No-op when the feature is off.
+        """
+        if not self.game.settings.scar_command_post_intel:
+            return
+        from game.theater.theatergroundobject import DownedSofGroundObject
+        from game.missiongenerator.scarluadata import (
+            SCAR_SOF_UNIT_BLUE,
+            SCAR_SOF_UNIT_RED,
+        )
+
+        for coalition, unit_name in (
+            (self.game.blue, SCAR_SOF_UNIT_BLUE),
+            (self.game.red, SCAR_SOF_UNIT_RED),
+        ):
+            recovered_points: list[tuple[float, float]] = []
+            for package in coalition.ato.packages:
+                target = package.target
+                if not isinstance(target, DownedSofGroundObject):
+                    continue
+                csar_flights = [
+                    f for f in package.flights if f.flight_type is FlightType.CSAR
+                ]
+                if csar_flights and any(
+                    debriefing.air_losses.surviving_flight_members(f) > 0
+                    for f in csar_flights
+                ):
+                    recovered_points.append((target.position.x, target.position.y))
+            if not recovered_points:
+                continue
+            remaining = []
+            recovered = 0
+            for rescue in coalition.pending_csars:
+                if any(
+                    self._same_strand_point(rescue.x, rescue.y, px, py)
+                    for px, py in recovered_points
+                ):
+                    recovered += 1
+                else:
+                    remaining.append(rescue)
+            coalition.pending_csars = remaining
+            if recovered:
+                self._refund_sof_teams_to(coalition.player, unit_name, recovered)
 
     def commit_sof_deployments(self, debriefing: Debriefing) -> None:
         """Spend one bought SOF team per SCAR target that had a SOF insert flown

@@ -295,6 +295,16 @@ class AircraftType(UnitType[Type[FlyingType]]):
         ):
             enrich[FlightType.SOF] = value
 
+        # CSAR is the helicopter recovery leg of the SOF loop: a helo extraction of
+        # a team stranded by a botched SCAR capture, reusing the air-assault CTLD
+        # delivery in reverse. Inherited by helicopters that can already air-assault.
+        if (
+            FlightType.CSAR not in self.task_priorities
+            and self.helicopter
+            and (value := self.task_priorities.get(FlightType.AIR_ASSAULT))
+        ):
+            enrich[FlightType.CSAR] = value
+
         if FlightType.RECOVERY not in self.task_priorities:
             if (
                 value := self.task_priorities.get(FlightType.REFUELING)

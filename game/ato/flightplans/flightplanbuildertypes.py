@@ -72,6 +72,10 @@ class FlightPlanBuilderTypes:
             # SOF insert = a player-flown air-assault that drops a SCAR capture team
             # at the HVT ambush point; it reuses the air-assault CTLD machinery.
             FlightType.SOF: AirAssaultFlightPlan.builder_type(),
+            # CSAR = the helo recovery leg of the SOF loop. Reuses the air-assault
+            # CTLD delivery to fly to the stranded team and extract it; the
+            # air-assault builder's helo-only guard keeps this rotary-wing.
+            FlightType.CSAR: AirAssaultFlightPlan.builder_type(),
             FlightType.PRETENSE_CARGO: PretenseCargoFlightPlan.builder_type(),
             FlightType.ARMED_RECON: ArmedReconFlightPlan.builder_type(),
             # SCAR = area find-and-prosecute of one moving HVT; v1 reuses the

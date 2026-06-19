@@ -140,6 +140,12 @@ class StateData:
     #: campaign effect yet (scoring/consequence is a later increment).
     scar_results: dict[str, str]
 
+    #: SOF teams stranded by a botched SCAR capture this mission (Phase 2c-3):
+    #: ``(tasking_id, x, y)`` per team, from the ``sofStranded{X,Y}`` markers the
+    #: SCAR bridge tags onto a failed area whose team survived. Each becomes a
+    #: persisted next-turn CSAR objective. Empty otherwise.
+    sof_strandings: list[tuple[str, float, float]]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -220,7 +226,25 @@ class StateData:
                     results[str(key)] = value
             return results
 
-        scar_results = parse_scar_results(data.get("scar_results", {}))
+        def parse_sof_strandings(raw: Any) -> list[tuple[str, float, float]]:
+            # A failed area whose SOF team survived carries sofStrandedX/Y on its
+            # scar_results entry. Pull (taskingId, x, y) for the next-turn CSAR
+            # objective, defensively (skip malformed/coordless entries).
+            if not isinstance(raw, dict):
+                return []
+            strandings: list[tuple[str, float, float]] = []
+            for key, value in raw.items():
+                if not isinstance(value, dict):
+                    continue
+                x = value.get("sofStrandedX")
+                y = value.get("sofStrandedY")
+                if isinstance(x, (int, float)) and isinstance(y, (int, float)):
+                    strandings.append((str(key), float(x), float(y)))
+            return strandings
+
+        raw_scar = data.get("scar_results", {})
+        scar_results = parse_scar_results(raw_scar)
+        sof_strandings = parse_sof_strandings(raw_scar)
 
         return cls(
             mission_ended=data.get("mission_ended", False),
@@ -231,6 +255,7 @@ class StateData:
             intercept_survivors=intercept_survivors,
             tars_recon_captures=tars_recon_captures,
             scar_results=scar_results,
+            sof_strandings=sof_strandings,
         )
 
 

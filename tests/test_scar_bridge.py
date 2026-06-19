@@ -498,8 +498,31 @@ def test_state_data_scar_results_default_empty() -> None:
     # Lua serializes an empty table as [], which must parse to {} not crash.
     state = StateData.from_json({"scar_results": []}, unit_map)
     assert state.scar_results == {}
+    assert state.sof_strandings == []
     state = StateData.from_json({}, unit_map)
     assert state.scar_results == {}
+    assert state.sof_strandings == []
+
+
+def test_state_data_parses_sof_strandings() -> None:
+    # A failed area whose SOF team survived carries sofStrandedX/Y; that surfaces
+    # as a (taskingId, x, y) stranding for the next-turn CSAR objective.
+    unit_map = MagicMock()
+    state = StateData.from_json(
+        {
+            "scar_results": {
+                "blue-scar-1": {
+                    "status": "failed",
+                    "sofStrandedX": 1500.0,
+                    "sofStrandedY": -250.0,
+                },
+                "blue-scar-2": {"status": "captured"},
+                "blue-scar-3": {"status": "failed"},
+            }
+        },
+        unit_map,
+    )
+    assert state.sof_strandings == [("blue-scar-1", 1500.0, -250.0)]
 
 
 def test_lua_capture_requires_a_live_sof_group() -> None:
@@ -533,3 +556,18 @@ def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
     ].split("local function spawn_sof(area)", maxsplit=1)[0]
     assert "coalition.getGroups" in detector
     assert 'string.sub(gname, 1, 5) ~= "SCAR-"' in detector
+
+
+def test_lua_botched_capture_reports_a_stranded_team() -> None:
+    # Phase 2c-3: a failed area whose SOF team is still alive tags its position so
+    # the generator can stand up a next-turn CSAR objective.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    report = script.split("local function report_stranded_sof(area)", maxsplit=1)[
+        1
+    ].split("local function scar_check()", maxsplit=1)[0]
+    assert "entry.sofStrandedX = pos.x" in report
+    assert "entry.sofStrandedY = pos.z" in report
+    # The failed branches call it (only a surviving team tags a position).
+    assert script.count("report_stranded_sof(area)") >= 3

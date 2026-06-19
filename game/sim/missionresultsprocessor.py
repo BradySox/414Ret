@@ -66,6 +66,8 @@ class MissionResultsProcessor:
             # would make its deployed team disappear from the side's accounting.
             with logged_duration("commit_sof_deployments"):
                 self.commit_sof_deployments(debriefing)
+            with logged_duration("commit_sof_strandings"):
+                self.commit_sof_strandings(debriefing)
             with logged_duration("commit_captures"):
                 self.commit_captures(debriefing, events)
             with logged_duration("record_carcasses"):
@@ -282,6 +284,22 @@ class MissionResultsProcessor:
             if cp.captured == origin.captured and cp.base.armor.get(unit, 0) > 0:
                 cp.base.commit_losses({unit: 1})
                 return
+
+    def commit_sof_strandings(self, debriefing: Debriefing) -> None:
+        """Record SOF teams stranded by a botched capture as pending CSAR pickups
+        (Phase 2c-3). Each becomes a persisted next-turn rescue objective on the
+        owning coalition; the tasking id's prefix picks the side. No-op when the
+        feature is off or nothing was stranded."""
+        if not self.game.settings.scar_command_post_intel:
+            return
+        from game.scar_rescue import PendingSofRescue
+
+        for tasking_id, x, y in debriefing.state_data.sof_strandings:
+            is_blue = tasking_id.startswith("blue-") or not tasking_id.startswith(
+                "red-"
+            )
+            coalition = self.game.blue if is_blue else self.game.red
+            coalition.pending_csars.append(PendingSofRescue(x=x, y=y))
 
     def commit_ground_losses(
         self, debriefing: Debriefing, events: GameUpdateEvents

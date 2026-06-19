@@ -482,6 +482,41 @@ local function launch_missile(area)
     end
 end
 
+-- Phase 2c-3 CSAR: a botched capture leaves the delivered/scripted SOF team
+-- stranded (alive) at the ambush point. Tag its position on the result so the
+-- generator can stand up a next-turn CSAR objective to recover it. No tag (team
+-- dead, or never delivered) = the team is written off.
+local function report_stranded_sof(area)
+    if area.sofGroup == nil then
+        return
+    end
+    local group = Group.getByName(area.sofGroup)
+    if group == nil then
+        return
+    end
+    local ok, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if not ok or unit == nil then
+        return
+    end
+    local okp, pos = pcall(function()
+        return unit:getPoint() -- {x = north, y = alt, z = east}
+    end)
+    if not okp or pos == nil then
+        return
+    end
+    local entry = scar_results[area.id]
+    if type(entry) ~= "table" then
+        entry = { status = "failed" }
+        scar_results[area.id] = entry
+    end
+    entry.sofStrandedX = pos.x
+    entry.sofStrandedY = pos.z
+    dirty_state = true
+    scar_log("area " .. tostring(area.id) .. ": SOF team stranded for CSAR pickup")
+end
+
 local function scar_check()
     for _, area in ipairs(scar_areas) do
         if not area.done then
@@ -510,9 +545,11 @@ local function scar_check()
                     -- Reached the city: the command vehicle escapes into it.
                     despawn_command(area)
                     mark_result(area, "failed")
+                    report_stranded_sof(area)
                 elseif timed_out then
                     -- Ran out of time; the convoy is still en route.
                     mark_result(area, "failed")
+                    report_stranded_sof(area)
                 end
             end
         end

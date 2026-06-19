@@ -38,6 +38,7 @@ COMMIT_STEPS = [
     "commit_front_line_battle_impact",
     "commit_scar_results",
     "commit_sof_deployments",
+    "commit_sof_strandings",
     "record_carcasses",
 ]
 

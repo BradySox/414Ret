@@ -15,6 +15,7 @@ from game.navmesh import NavMesh
 from game.orderedset import OrderedSet
 from game.procurement import AircraftProcurementRequest, ProcurementAi
 from game.profiling import MultiEventTracer, logged_duration
+from game.scar_rescue import PendingSofRescue
 from game.squadrons import AirWing
 from game.theater.bullseye import Bullseye
 from game.theater.player import Player
@@ -51,6 +52,9 @@ class Coalition:
         # commander, which reveals the enemy's command posts (gated by the
         # scar_command_post_intel setting). Persisted campaign state.
         self.captured_commander = False
+        # SOF teams stranded by a botched SCAR capture, awaiting a CSAR pickup
+        # next turn(s). Persisted; surfaced as map objectives and aged each turn.
+        self.pending_csars: list[PendingSofRescue] = []
 
         # Late initialized because the two coalitions in the game are mutually
         # dependent, so must be both constructed before this property can be set.
@@ -121,6 +125,8 @@ class Coalition:
 
         # Migration: older saves predate the SCAR commander-capture flag.
         state.setdefault("captured_commander", False)
+        # Migration: older saves predate the SOF CSAR pending-rescue list.
+        state.setdefault("pending_csars", [])
 
         self.__dict__.update(state)
         # Regenerate any state that was not persisted.

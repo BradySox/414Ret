@@ -204,6 +204,35 @@ def test_sof_deployment_is_a_noop_when_setting_off() -> None:
     origin.base.commit_losses.assert_not_called()
 
 
+def test_botched_capture_records_a_pending_csar() -> None:
+    # Phase 2c-3: a stranded team becomes a persisted pending CSAR on its side.
+    from game.scar_rescue import DEFAULT_SOF_RESCUE_TURNS, PendingSofRescue
+
+    processor, game = _processor(setting_on=True)
+    game.blue.pending_csars = []
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(sof_strandings=[("blue-scar-1", 100.0, 200.0)])
+    )
+
+    processor.commit_sof_strandings(cast(Any, debriefing))
+
+    assert game.blue.pending_csars == [
+        PendingSofRescue(100.0, 200.0, DEFAULT_SOF_RESCUE_TURNS)
+    ]
+
+
+def test_strandings_ignored_when_setting_off() -> None:
+    processor, game = _processor(setting_on=False)
+    game.blue.pending_csars = []
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(sof_strandings=[("blue-scar-1", 1.0, 2.0)])
+    )
+
+    processor.commit_sof_strandings(cast(Any, debriefing))
+
+    assert game.blue.pending_csars == []
+
+
 def test_red_capture_does_not_reveal_blue_command_posts() -> None:
     processor, game = _processor(setting_on=True)
     debriefing = SimpleNamespace(

@@ -90,6 +90,13 @@ def _give_sof_pool(game: Any, count: int = 2) -> Any:
     return unit
 
 
+def _plan_sof_insert(game: Any, package_index: int = 0) -> None:
+    """Phase 2c-2: frag a SOF insert flight onto an existing SCAR package so the
+    team is delivered. Without this, a stocked pool alone yields no drop."""
+    package = game.coalitions[0].ato.packages[package_index]
+    package.flights = list(package.flights) + [MagicMock(flight_type=FlightType.SOF)]
+
+
 def _build(game: Any) -> Any:
     return build_scar_taskings(game, MISSION_START)
 
@@ -280,6 +287,16 @@ def test_no_sof_ambush_when_pool_empty() -> None:
     # Feature ON but the side owns no SOF teams -> no drop (finite-pool gate).
     game = _armor_to_far_city()
     game.settings.scar_command_post_intel = True  # but no SOF stocked
+    _plan_sof_insert(game)
+    tasking = _build(game)[0]
+    assert tasking.sof_radius_m == 0.0
+
+
+def test_no_sof_drop_without_a_planned_insert() -> None:
+    # Feature ON and a team in stock, but no SOF insert fragged -> no drop. The
+    # team is delivered by the player-flown insert, not automatically (Phase 2c-2).
+    game = _armor_to_far_city()
+    _give_sof_pool(game)
     tasking = _build(game)[0]
     assert tasking.sof_radius_m == 0.0
 
@@ -300,6 +317,10 @@ def test_sof_pool_caps_drops_per_turn() -> None:
     coalition.ato.packages = [coalition.ato.packages[0], second]
     game = _game_with(coalition)
     _give_sof_pool(game, count=1)
+    # Both targets are fragged a SOF insert, so the cap (not the frag gate) is what
+    # limits the drops to one.
+    _plan_sof_insert(game, package_index=0)
+    _plan_sof_insert(game, package_index=1)
 
     taskings = _build(game)
     with_sof = [t for t in taskings if t.sof_radius_m > 0]
@@ -310,6 +331,7 @@ def test_sof_pool_caps_drops_per_turn() -> None:
 def test_armor_sof_ambush_when_feature_on() -> None:
     game = _armor_to_far_city()
     sof_unit = _give_sof_pool(game)
+    _plan_sof_insert(game)
 
     tasking = _build(game)[0]
 
@@ -327,6 +349,7 @@ def test_spawn_sof_ambush_on_the_hvt_route_when_feature_on() -> None:
     target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(target))
     _give_sof_pool(game)
+    _plan_sof_insert(game)
 
     tasking = _build(game)[0]
 
@@ -352,9 +375,11 @@ def test_sof_fields_emitted_to_lua_only_when_enabled() -> None:
     populate_scar_lua(off, _build(_game_with(_coalition_with_target(target))))
     assert "sofX" not in off.serialize()
 
-    # Enabled + a SOF team in stock: SOF point + friendly country + unit type emitted.
+    # Enabled + a SOF team in stock + an insert fragged: SOF point + friendly
+    # country + unit type emitted.
     game = _game_with(_coalition_with_target(target))
     _give_sof_pool(game)
+    _plan_sof_insert(game)
     on = LuaData("dcsRetribution")
     populate_scar_lua(on, _build(game))
     serialized = on.serialize()

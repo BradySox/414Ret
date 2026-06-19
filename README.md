@@ -43,7 +43,10 @@ and selected later upstream fixes.
   clutter, then stop it before it reaches safety or, for a SCUD, reaches its launch point.
   Real armor and missile sites can become the moving objective instead of a disposable
   scripted stand-in. A default-OFF experimental option uses finite purchased SOF teams to
-  capture a commander alive; the team must survive, and success reveals enemy command posts.
+  capture a commander alive: a C-130 inserts the team ahead of the fleeing HVT, a clean grab
+  reveals enemy command posts (the team escapes with the hostage), and a botched grab strands
+  the team as a "downed SOF team" objective you can fly a **helo CSAR recovery** against on a
+  later turn before it is overrun.
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform with
   standoff jamming and ELINT gameplay.
 - Strike and DEAD packages can receive auto-planned **TARPS** follow-up, while BAI remains

@@ -631,12 +631,33 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   (`spawn_sof`, `hvt_in_sof_zone`, the `captured` branch, `mark_sof`). First-pass simplification:
   scripted delivery + auto-on-proximity; the actual player-flown insert is still deferred.
   Plan: `docs/dev/design/414th-scar-phase2-sof-plan.md`. Tests: `tests/test_scar_bridge.py`.
-- NOT yet built: **Phase 2c-2/2c-3** — player-flown air-assault/CTLD delivery replacing the
-  scripted drop, then CSAR recovery on botch. SME: finite SOF ~2-3/campaign;
-  botched = commander escapes but SOF recoverable via CSAR. mis-ID penalty stays NONE;
-  Phase-3 auto-planning. **Coordinate with Tyler's C-130 `DEPLOYMENT` work** — his
-  `PendingDeployments`/air-assault-CTLD pattern is the template for 2b/2c (shared `Coalition` +
-  `MissionResultsProcessor` + `FlightType` surface).
+- Commander-capture **Phase 2c-2 BUILT (gated OFF, #56)** — the player-flown insert. A
+  `FlightType.SOF` air-assault-shaped delivery flyable by **fixed-wing transports** (the C-130
+  "drop"; helos are reserved for recovery) inserts the capture team at the SCAR ambush point; the
+  hybrid capture binds to a player-delivered team if one is near, else scripted-spawns a fallback.
+  Economy is **debit-on-frag** (`commit_sof_deployments`): one bought team per fragged insert,
+  regardless of capture outcome. A clean capture **refunds** the team (it escapes with the
+  hostage); a botch **strands** it. See plan §9d.
+- Commander-capture **Phase 2c-3 / slice C BUILT (gated OFF; recovery resolves in pure Python, no
+  new Lua)** — a botched/late capture strands the team, surfaced next turn as a first-class CSAR
+  objective:
+  - **Lifecycle** (`game/scar_rescue.py`): `PendingSofRescue` on each `Coalition.pending_csars`
+    (save-migrated) ages one turn per `Coalition.end_turn` and is written off at the turn cap
+    (default 3) **or** when its anchor base is overrun (`surviving_rescues`).
+  - **Surfacing** (`game/scar_objectives.py`, `DownedSofGroundObject`): rebuilt each
+    `initialize_turn` into a friendly "downed SOF team" TGO at the strand point, anchored to the
+    nearest friendly control point and registered in `db.tgos`; carries the physical team and
+    offers only `FlightType.CSAR` to the owning side.
+  - **Recovery** (`FlightType.CSAR` → `AirAssaultFlightPlan`, helo-only): a helo extraction;
+    `commit_sof_recoveries` recovers the team when a CSAR flight was flown at the objective and the
+    helo survived the deep sortie → refunds the bought team + clears the rescue (before captures
+    flip ownership).
+  - Tests: `tests/test_scar_rescue.py`, `tests/test_scar_objectives.py`,
+    `tests/test_aircraft_tasking_roles.py`, `tests/test_scar_command_post_fog.py`. Full design +
+    the Python-vs-Lua resolution decision: plan §9e.
+- NOT yet built: mis-ID penalty stays NONE; Phase-3 auto-planning. If Tyler's C-130 `DEPLOYMENT`
+  work ever lands, our `FlightType.SOF` + inventory-debit-on-frag should converge onto his
+  `PendingDeployments` shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
 
 ---
 

@@ -110,9 +110,15 @@ def _processor(*, setting_on: bool) -> tuple[MissionResultsProcessor, Any]:
     game = MagicMock()
     game.settings.scar_command_post_intel = setting_on
     game.blue.captured_commander = False
-    # _consume_sof_teams iterates controlpoints; default to none (no SOF to spend).
+    # The SOF-spend fallback iterates controlpoints; default to none.
     game.theater.controlpoints = []
     return MissionResultsProcessor(game), game
+
+
+def _sof_insert_flight(origin: Any) -> Any:
+    from game.ato.flighttype import FlightType
+
+    return MagicMock(flight_type=FlightType.SOF, departure=origin)
 
 
 def test_capture_reveals_command_posts() -> None:
@@ -124,37 +130,51 @@ def test_capture_reveals_command_posts() -> None:
     assert game.blue.captured_commander is True
 
 
-def test_capture_consumes_bought_sof_teams() -> None:
-    # Phase 2c: each capture spends one bought SOF team from a blue base.
-    from game.dcs.groundunittype import GroundUnitType
-    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
-
+def test_capture_does_not_consume_sof_teams() -> None:
+    # Phase 2c-2: consumption is debit-on-frag, not on capture. A captured result
+    # reveals the command posts but no longer spends inventory here.
     processor, game = _processor(setting_on=True)
-    unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
     cp = MagicMock()
-    cp.captured.is_blue = True
-    cp.base.armor = {unit: 2}
     game.theater.controlpoints = [cp]
     debriefing = SimpleNamespace(
-        state_data=SimpleNamespace(
-            scar_results={"scar-1": "captured", "scar-2": "captured"}
-        )
+        state_data=SimpleNamespace(scar_results={"scar-1": "captured"})
     )
     processor.commit_scar_results(cast(Any, debriefing))
-    # Two captures -> two teams debited from the base in one call.
-    cp.base.commit_losses.assert_called_once_with({unit: 2})
+    assert game.blue.captured_commander is True
+    cp.base.commit_losses.assert_not_called()
 
 
-def test_red_capture_does_not_reveal_or_spend_blue_sof() -> None:
+def test_flown_sof_insert_debits_a_team_from_its_origin_base() -> None:
+    # Phase 2c-2: each fragged SOF insert spends one bought team from its origin
+    # base, regardless of the capture outcome.
     from game.dcs.groundunittype import GroundUnitType
     from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
 
     processor, game = _processor(setting_on=True)
     unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
-    cp = MagicMock()
-    cp.captured.is_blue = True
-    cp.base.armor = {unit: 1}
-    game.theater.controlpoints = [cp]
+    origin = MagicMock()
+    origin.base.armor = {unit: 2}
+    game.blue.ato.packages = [MagicMock(flights=[_sof_insert_flight(origin)])]
+    game.red.ato.packages = []
+
+    processor.commit_sof_deployments(cast(Any, SimpleNamespace()))
+
+    origin.base.commit_losses.assert_called_once_with({unit: 1})
+
+
+def test_sof_deployment_is_a_noop_when_setting_off() -> None:
+    processor, game = _processor(setting_on=False)
+    origin = MagicMock()
+    game.blue.ato.packages = [MagicMock(flights=[_sof_insert_flight(origin)])]
+    game.red.ato.packages = []
+
+    processor.commit_sof_deployments(cast(Any, SimpleNamespace()))
+
+    origin.base.commit_losses.assert_not_called()
+
+
+def test_red_capture_does_not_reveal_blue_command_posts() -> None:
+    processor, game = _processor(setting_on=True)
     debriefing = SimpleNamespace(
         state_data=SimpleNamespace(scar_results={"red-scar-1": "captured"})
     )
@@ -162,7 +182,6 @@ def test_red_capture_does_not_reveal_or_spend_blue_sof() -> None:
     processor.commit_scar_results(cast(Any, debriefing))
 
     assert game.blue.captured_commander is False
-    cp.base.commit_losses.assert_not_called()
 
 
 def test_non_capture_outcomes_do_not_reveal() -> None:

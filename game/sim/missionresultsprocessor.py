@@ -20,6 +20,7 @@ from ..ato.airtaaskingorder import AirTaskingOrder
 
 if TYPE_CHECKING:
     from ..game import Game
+    from game.dcs.groundunittype import GroundUnitType
 
 
 MINOR_DEFEAT_INFLUENCE = 0.1
@@ -62,7 +63,9 @@ class MissionResultsProcessor:
                 self.commit_scar_results(debriefing)
             # Spend SOF while bases still have their pre-mission ownership. If a
             # source base was captured this mission, flipping ownership first
-            # would make its deployed team disappear from BLUE accounting.
+            # would make its deployed team disappear from the side's accounting.
+            with logged_duration("commit_sof_deployments"):
+                self.commit_sof_deployments(debriefing)
             with logged_duration("commit_captures"):
                 self.commit_captures(debriefing, events)
             with logged_duration("record_carcasses"):
@@ -208,31 +211,48 @@ class MissionResultsProcessor:
                 blue_captures += 1
         if blue_captures and self.game.settings.scar_command_post_intel:
             self.game.blue.captured_commander = True
-            self._consume_sof_teams(blue_captures)
             logging.info("SCAR: commander captured — enemy command posts revealed.")
 
-    def _consume_sof_teams(self, count: int) -> None:
-        """Spend `count` bought SOF teams (Phase 2c) from blue bases — one per
-        capture. No-op if the SOF unit type or inventory isn't present."""
-        from game.dcs.groundunittype import GroundUnitType
-        from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+    def commit_sof_deployments(self, debriefing: Debriefing) -> None:
+        """Spend one bought SOF team per flown SOF insert (Phase 2c-2).
 
-        try:
-            unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
-        except KeyError:
+        Fragging the insert debits the team from inventory regardless of the
+        capture outcome (the team deployed); a botched-but-recovered team is
+        re-commissioned by the CSAR step (2c-3), an un-recovered one stays lost.
+        No-op when the feature is off or the SOF unit type isn't present.
+        """
+        if not self.game.settings.scar_command_post_intel:
             return
-        remaining = count
+        from game.dcs.groundunittype import GroundUnitType
+        from game.missiongenerator.scarluadata import (
+            SCAR_SOF_UNIT_BLUE,
+            SCAR_SOF_UNIT_RED,
+        )
+
+        for coalition, unit_name in (
+            (self.game.blue, SCAR_SOF_UNIT_BLUE),
+            (self.game.red, SCAR_SOF_UNIT_RED),
+        ):
+            try:
+                unit = GroundUnitType.named(unit_name)
+            except KeyError:
+                continue
+            for package in coalition.ato.packages:
+                for flight in package.flights:
+                    if flight.flight_type is FlightType.SOF:
+                        self._spend_sof_team(unit, flight.departure)
+
+    def _spend_sof_team(self, unit: "GroundUnitType", origin: ControlPoint) -> None:
+        """Debit one bought SOF team for a flown insert: prefer the flight's
+        origin base, else any same-side base that still holds one. No-op if none
+        is in stock (the offering doesn't hard-block planning without a team)."""
+        if origin.base.armor.get(unit, 0) > 0:
+            origin.base.commit_losses({unit: 1})
+            return
         for cp in self.game.theater.controlpoints:
-            if remaining <= 0:
-                break
-            if not cp.captured.is_blue:
-                continue
-            have = cp.base.armor.get(unit, 0)
-            if have <= 0:
-                continue
-            take = min(have, remaining)
-            cp.base.commit_losses({unit: take})
-            remaining -= take
+            if cp.captured == origin.captured and cp.base.armor.get(unit, 0) > 0:
+                cp.base.commit_losses({unit: 1})
+                return
 
     def commit_ground_losses(
         self, debriefing: Debriefing, events: GameUpdateEvents

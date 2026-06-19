@@ -69,7 +69,8 @@ or errors, that feature silently never starts.
 AI planning and threat math always use ground truth (`viewer=None`); only the human (BLUE)
 map/UI are fogged. `TheaterUnit.alive_for(viewer)` handles BDA damage lag;
 `TheaterGroundObject.known_for(viewer)` handles recon intel-fog; `hidden_on_player_map(viewer)`
-fully hides enemy command posts for the gated-OFF SCAR commander-capture feature (§15). Every
+fully hides enemy command posts for the SCAR commander-capture feature (gated by
+`scar_command_post_intel`, now default ON for new campaigns; §15). Every
 accessor takes `viewer: Optional[Player] = None` defaulting to truth; consumers gate at the edge.
 Do **not** reintroduce the old `_for_player`/`_for` method twins — that collapse is finished.
 (`game/theater/theatergroup.py`, `theatergroundobject.py`; see features doc §3.)
@@ -112,8 +113,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 13. **Flight Control ATC** — MOOSE FLIGHTCONTROL players-only tower comms (default ON).
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.
 15. **SCAR** — player-flown Strike Coordination and Reconnaissance against a moving HVT
-    (flight type + scenario `scar` plugin, default ON), plus a gated-OFF commander-capture
-    path using finite purchased SOF inventory.
+    (flight type + scenario `scar` plugin, default ON), plus a commander-capture path using
+    finite purchased SOF inventory + a downed-team CSAR recovery loop (gated by
+    `scar_command_post_intel`, now default ON for new campaigns while it is playtested).
 16. **Settings QOL audit** — dead/duplicate setting cleanup (four fields removed), AI-radio
     booleans consolidated into the `AiRadioBehavior` enum with deterministic save migration,
     plugin wording, and a UI-layer grouping/dependency handoff

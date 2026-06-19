@@ -26,6 +26,7 @@ file. This guide is the map; those are the territory.
   - `414th-flightcontrol-notes.md` — Flight Control ATC
   - `414th-dtc-export-notes.md` — DTC cartridge format + reverse-engineered schema
   - `414th-scar-task-spec.md` + `414th-scar-commander-sme-questions.md` — SCAR ground truth
+  - `414th-scar-phase2-sof-plan.md` + `414th-scar-HANDOFF.md` — SCAR commander-capture plan + next-session pickup
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).

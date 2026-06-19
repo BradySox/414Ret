@@ -603,15 +603,36 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
         sd = settings_dir()
         default_zip_path = sd / "Default.zip"
         if default_zip_path.exists():
+            settings_data = None
             with zipfile.ZipFile(default_zip_path, "r") as zf:
-                filename = [n for n in zf.namelist() if n.lower() == "default.json"]
-                if filename:
-                    filename = filename[0]
+                # Tolerate the JSON member name. "Save Settings" writes the member
+                # as settings.json while the auto-generated default (the else branch
+                # below) writes Default.json, so a Default.zip the user saved over
+                # was unreadable here -- the lookup found nothing, __setstate__ never
+                # ran, and the plugin-option defaults were never seeded, which then
+                # KeyError'd in the settings UI. Prefer settings.json/Default.json,
+                # else fall back to the first JSON member (matches load_settings()).
+                json_files = [n for n in zf.namelist() if n.lower().endswith(".json")]
+                if json_files:
+                    filename = next(
+                        (
+                            n
+                            for n in json_files
+                            if n.lower() in ("settings.json", "default.json")
+                        ),
+                        json_files[0],
+                    )
                     settings_data = json.loads(
                         zf.read(filename).decode("utf-8"),
                         object_hook=self.settings.obj_hook,
                     )
-                    self.settings.__setstate__(settings_data)
+            # Always run __setstate__ so plugin options get seeded with their
+            # defaults even when the archive had no usable JSON member (a fresh
+            # Settings state in that case), so the settings UI never reads an
+            # uninitialized plugin option.
+            self.settings.__setstate__(
+                settings_data if settings_data is not None else Settings().__dict__
+            )
         else:
             if self.settings is None:
                 default_settings = Settings()

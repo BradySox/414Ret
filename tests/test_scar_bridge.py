@@ -9,6 +9,7 @@ watch-only). The Lua half needs an in-game pass; here we lock in the Python half
 CI can verify: tasking collection, Lua emission, and result parsing.
 """
 
+import math
 from datetime import datetime, timedelta
 from typing import Any
 from unittest.mock import MagicMock
@@ -108,6 +109,19 @@ def test_default_target_yields_spawn_tasking() -> None:
     # Threats are stationary (dest == spawn) and untracked.
     for threat in (c for c in tasking.convoys if c.role == "threat"):
         assert (threat.dest_x, threat.dest_y) == (threat.spawn_x, threat.spawn_y)
+
+
+def test_decoys_are_scattered_not_on_one_ring() -> None:
+    # Decoys/clutter must spread across the area at varied ranges, not sit on a
+    # single fixed-radius ring (which read as an obviously artificial circle).
+    target = MagicMock()
+    target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
+    tasking = _build(_game_with(_coalition_with_target(target)))[0]
+
+    support = [c for c in tasking.convoys if c.role in ("decoy", "clutter")]
+    assert len(support) >= 3
+    radii = {round(math.hypot(c.spawn_x - 1000.0, c.spawn_y - 2000.0)) for c in support}
+    assert len(radii) > 1  # not all equidistant from the area center
 
 
 def test_hvt_routes_to_nearest_enemy_city() -> None:

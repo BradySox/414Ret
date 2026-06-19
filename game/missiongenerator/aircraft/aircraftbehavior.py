@@ -538,15 +538,11 @@ class AircraftBehavior:
 
     def configure_transport(self, group: FlyingGroup[Any], flight: Flight) -> None:
         self.configure_task(flight, group, Transport)
-        roe = OptROE.Values.WeaponHold
-        if flight.is_hercules:
-            group.task = GroundAttack.name
-            roe = OptROE.Values.OpenFire
         self.configure_behavior(
             flight,
             group,
             react_on_threat=OptReactOnThreat.Values.EvadeFire,
-            roe=roe,
+            roe=OptROE.Values.WeaponHold,
             restrict_jettison=True,
         )
 

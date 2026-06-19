@@ -1721,6 +1721,16 @@ class Settings:
                 self.set_plugin_option(plugin_id, True)
         self.applied_recon_plugins_default = True
 
+        # Drop retired plugin option keys so dead configuration does not persist
+        # across a load/save cycle. The obsolete Anubis "herculescargo" plugin and
+        # its option keys were removed in favor of the official C-130J-30.
+        for plugin_key in [
+            key
+            for key in self.plugins
+            if key == "herculescargo" or key.startswith("herculescargo.")
+        ]:
+            del self.plugins[plugin_key]
+
         from game.plugins import LuaPluginManager
 
         LuaPluginManager().load_settings(self)

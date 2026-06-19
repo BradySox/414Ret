@@ -31,7 +31,6 @@ performance: 1
 recommended_start_date: 1983-11-09
 version: "10.8"
 settings:
-  hercules: true
   f111c: true
   squadron_start_full: true
 squadrons:
@@ -49,7 +48,6 @@ squadrons:
     - primary: Transport
       secondary: any
       aircraft:
-        - C-130J-30 Super Hercules
         - C-130J-30
       size: 2
   #Andoya
@@ -72,7 +70,6 @@ squadrons:
     - primary: Transport
       secondary: any
       aircraft:
-        - C-130J-30 Super Hercules
         - C-130J-30
       size: 1
   #Rovaniemi
@@ -126,7 +123,6 @@ squadrons:
     - primary: Transport
       secondary: any
       aircraft:
-        - C-130J-30 Super Hercules
         - C-130J-30
       size: 1
     - primary: OCA/Runway

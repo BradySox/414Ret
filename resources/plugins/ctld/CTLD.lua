@@ -582,7 +582,6 @@ ctld.wpZones = {
 ctld.aircraftTypeTable = {
     --%%%%% MODS %%%%%
     --"Bronco-OV-10A",
-    --"Hercules",
     --"SK-60",
     --"UH-60L",
     --"T-45",
@@ -811,7 +810,6 @@ ctld.logisticUnits = {
 -- in the contained mission file
 ctld.vehicleTransportEnabled = {
     "76MD",     -- the il-76 mod doesnt use a normal - sign so il-76md wont match... !!!! GRR
-    "Hercules",
     "C-130J-30",
     --"CH-47Fbl1",
 }
@@ -844,7 +842,6 @@ ctld.unitLoadLimits = {
 
     --%%%%% MODS %%%%%
     --["Bronco-OV-10A"] = 4,
-    ["Hercules"] = 30,
     --["SK-60"] = 1,
     ["UH-60L"] = 12,
     --["T-45"] = 1,
@@ -923,7 +920,6 @@ ctld.unitActions = {
 
     --%%%%% MODS %%%%%
     --["Bronco-OV-10A"] = {crates=true, troops=true},
-    ["Hercules"] = { crates = true, troops = true },
     ["SK-60"] = { crates = true, troops = true },
     ["UH-60L"] = { crates = true, troops = true },
     ["C-130J-30"] = { crates = true, troops = true },

@@ -66,7 +66,7 @@ class FlightType(Enum):
     RECOVERY = "Recovery"
     TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +5 min behind strikers
     SCAR = "SCAR"  # Strike Coordination and Recon — find+prosecute one moving HVT in an area
-    SOF = "SOF Insert"  # Player-flown helo air-assault that inserts a SOF capture team at a SCAR ambush point
+    SOF = "SOF Insert"  # C-130 airdrop that inserts a SOF capture team at a SCAR ambush point (helo does the CSAR recovery)
 
     @classmethod
     def _missing_(cls, value: object) -> FlightType | None:
@@ -168,5 +168,6 @@ class FlightType(Enum):
             FlightType.TRANSPORT: AirEntity.UTILITY,
             FlightType.PRETENSE_CARGO: AirEntity.UTILITY,
             FlightType.AIR_ASSAULT: AirEntity.ROTARY_WING,
-            FlightType.SOF: AirEntity.ROTARY_WING,
+            # SOF insert is a fixed-wing transport airdrop (C-130), like TRANSPORT.
+            FlightType.SOF: AirEntity.UTILITY,
         }.get(self, AirEntity.UNSPECIFIED)

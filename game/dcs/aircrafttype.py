@@ -284,13 +284,14 @@ class AircraftType(UnitType[Type[FlyingType]]):
             if value := self.task_priorities.get(FlightType.CAS):
                 enrich[FlightType.SCAR] = value
 
-        # SOF insert is an air-assault-shaped helo task (drops a SCAR capture team
-        # at an ambush point via CTLD). Any helicopter that can fly Air Assault can
-        # fly a SOF insert, so it inherits the Air Assault priority.
+        # SOF insert is a fixed-wing transport airdrop (the C-130 "drop" leg): it
+        # delivers a SCAR capture team to an ambush point via the air-assault CTLD
+        # target zone. Helicopters fly the CSAR recovery leg, not the insert, so the
+        # SOF lane is inherited by fixed-wing transports only.
         if (
             FlightType.SOF not in self.task_priorities
-            and self.helicopter
-            and (value := self.task_priorities.get(FlightType.AIR_ASSAULT))
+            and not self.helicopter
+            and (value := self.task_priorities.get(FlightType.TRANSPORT))
         ):
             enrich[FlightType.SOF] = value
 

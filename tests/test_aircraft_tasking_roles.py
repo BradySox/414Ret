@@ -98,17 +98,21 @@ def test_representative_aircraft_tasking_lanes(
         ), f"{variant_id} should not be capable of {task.name}"
 
 
-@pytest.mark.parametrize("variant_id", ["UH-1H Iroquois", "UH-60L"])
-def test_air_assault_helos_can_fly_sof_insert(variant_id: str, tmp_path: Path) -> None:
-    # SOF inserts reuse the air-assault CTLD machinery, so any helicopter that can
-    # fly Air Assault inherits the SOF lane (see AircraftType.__post_init__).
-    aircraft = _aircraft(tmp_path, variant_id)
-    assert aircraft.capable_of(FlightType.AIR_ASSAULT)
+def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
+    # The SOF insert is the C-130 "drop" leg: a fixed-wing transport airdrop that
+    # reuses the air-assault CTLD delivery, so transports inherit the SOF lane
+    # (see AircraftType.__post_init__).
+    aircraft = _aircraft(tmp_path, "C-130")
+    assert aircraft.capable_of(FlightType.TRANSPORT)
     assert aircraft.capable_of(FlightType.SOF)
 
 
-def test_fixed_wing_fighter_cannot_fly_sof_insert(tmp_path: Path) -> None:
-    # The SOF enrichment is gated on helicopters, so it must not leak onto
-    # fixed-wing aircraft that lack the Air Assault lane.
-    aircraft = _aircraft(tmp_path, "F-15C Eagle")
+@pytest.mark.parametrize("variant_id", ["UH-1H Iroquois", "F-15C Eagle"])
+def test_sof_insert_excludes_helos_and_non_transports(
+    variant_id: str, tmp_path: Path
+) -> None:
+    # Helicopters fly the CSAR recovery leg, not the insert, so the SOF lane must
+    # not leak onto them; and aircraft without a transport lane (fighters) never
+    # get it either.
+    aircraft = _aircraft(tmp_path, variant_id)
     assert not aircraft.capable_of(FlightType.SOF)

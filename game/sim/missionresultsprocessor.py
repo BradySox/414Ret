@@ -214,12 +214,15 @@ class MissionResultsProcessor:
             logging.info("SCAR: commander captured — enemy command posts revealed.")
 
     def commit_sof_deployments(self, debriefing: Debriefing) -> None:
-        """Spend one bought SOF team per flown SOF insert (Phase 2c-2).
+        """Spend one bought SOF team per SCAR target that had a SOF insert flown
+        against it (Phase 2c-2).
 
         Fragging the insert debits the team from inventory regardless of the
         capture outcome (the team deployed); a botched-but-recovered team is
         re-commissioned by the CSAR step (2c-3), an un-recovered one stays lost.
-        No-op when the feature is off or the SOF unit type isn't present.
+        Deduped by target so multiple inserts on one HVT (which still delivers a
+        single team) can't double-charge. No-op when the feature is off or the
+        SOF unit type isn't present.
         """
         if not self.game.settings.scar_command_post_intel:
             return
@@ -237,10 +240,16 @@ class MissionResultsProcessor:
                 unit = GroundUnitType.named(unit_name)
             except KeyError:
                 continue
+            spent_targets: set[int] = set()
             for package in coalition.ato.packages:
-                for flight in package.flights:
-                    if flight.flight_type is FlightType.SOF:
-                        self._spend_sof_team(unit, flight.departure)
+                insert = next(
+                    (f for f in package.flights if f.flight_type is FlightType.SOF),
+                    None,
+                )
+                if insert is None or id(package.target) in spent_targets:
+                    continue
+                spent_targets.add(id(package.target))
+                self._spend_sof_team(unit, insert.departure)
 
     def _spend_sof_team(self, unit: "GroundUnitType", origin: ControlPoint) -> None:
         """Debit one bought SOF team for a flown insert: prefer the flight's

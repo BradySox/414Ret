@@ -162,6 +162,28 @@ def test_flown_sof_insert_debits_a_team_from_its_origin_base() -> None:
     origin.base.commit_losses.assert_called_once_with({unit: 1})
 
 
+def test_two_inserts_on_one_target_debit_only_one_team() -> None:
+    # A single HVT delivers one team however many inserts are fragged at it, so
+    # consumption is deduped by target — no double-charge.
+    from game.dcs.groundunittype import GroundUnitType
+    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+
+    processor, game = _processor(setting_on=True)
+    unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
+    origin = MagicMock()
+    origin.base.armor = {unit: 2}
+    target = object()
+    game.blue.ato.packages = [
+        MagicMock(target=target, flights=[_sof_insert_flight(origin)]),
+        MagicMock(target=target, flights=[_sof_insert_flight(origin)]),
+    ]
+    game.red.ato.packages = []
+
+    processor.commit_sof_deployments(cast(Any, SimpleNamespace()))
+
+    origin.base.commit_losses.assert_called_once_with({unit: 1})
+
+
 def test_sof_deployment_is_a_noop_when_setting_off() -> None:
     processor, game = _processor(setting_on=False)
     origin = MagicMock()

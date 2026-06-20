@@ -40,8 +40,13 @@ class _LandTarget:
 
 
 class _FakePackage:
-    def __init__(self, target: object, duration: timedelta = DURATION) -> None:
-        self.primary_task = FlightType.BARCAP
+    def __init__(
+        self,
+        target: object,
+        duration: timedelta = DURATION,
+        task: FlightType = FlightType.BARCAP,
+    ) -> None:
+        self.primary_task = task
         self.auto_asap = False
         self.target = target
         self._duration = duration
@@ -128,3 +133,24 @@ def test_zero_overlap_reproduces_legacy_back_to_back_schedule() -> None:
     assert tots[0] == NOW
     assert tots[1] - tots[0] == DURATION
     assert tots[2] - tots[1] == DURATION
+
+
+def _schedule_one(task: FlightType) -> datetime:
+    pkg = _FakePackage(_LandTarget(), task=task)
+    coalition = _FakeCoalition([pkg], _FakeSettings(timedelta(minutes=15)))
+    ms.MissionScheduler(coalition, timedelta(minutes=120)).schedule_missions(NOW)  # type: ignore[arg-type]
+    assert pkg.time_over_target is not None
+    return pkg.time_over_target
+
+
+@pytest.mark.parametrize("task", [FlightType.SCAR, FlightType.SOF])
+def test_scar_and_sof_are_scheduled_asap(task: FlightType) -> None:
+    # SCAR (and its SOF insert) must be tasked as early as the flight can reach
+    # the area (stub earliest_tot == NOW), so the moving HVT/SCUD isn't parked for
+    # most of the mission. Not spread across the turn like other strike packages.
+    assert _schedule_one(task) == NOW
+
+
+def test_strike_is_still_spread_into_the_turn() -> None:
+    # Contrast: a normal strike keeps the spread-out start (TOT strictly after NOW).
+    assert _schedule_one(FlightType.STRIKE) > NOW

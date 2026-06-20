@@ -118,6 +118,14 @@ class MissionScheduler:
                 if departure_time is None:
                     continue
                 previous_aewc_end_time[package.target] = departure_time
+            elif package.primary_task in {FlightType.SCAR, FlightType.SOF}:
+                # SCAR (and its paired SOF insert) drives a moving HVT/SCUD that
+                # only goes live ~10 min before the SCAR flight's TOT. Spreading
+                # these across the whole turn (the else branch) can push the TOT
+                # 30-45 min out, leaving the target parked for most of the mission
+                # and the SOF arriving after the HVT has already passed the ambush.
+                # Task them as early as the flight can physically reach the area.
+                package.time_over_target = tot
             else:
                 # But other packages should be spread out a bit. Note that take
                 # times are delayed, but all aircraft will become active at

@@ -376,6 +376,32 @@ def base_path() -> Path:
     return _create_dir_if_needed(Path(_dcs_saved_game_folder))
 
 
+def tile_cache_dir() -> Path:
+    """Directory for cached basemap tiles used by recon kneeboards.
+
+    Prefers ``<save_dir>/Retribution/TileCache`` under the Saved Games tree
+    that retribution already writes to. When ``persistency.setup`` has not
+    been called (standalone dev scripts, golden-image generators, ad-hoc
+    test harnesses), falls back to the OS-conventional user cache location
+    so the tile pipeline still works.
+
+    Users may delete this directory at any time to reclaim space or force
+    a fresh fetch.
+    """
+    global _dcs_saved_game_folder
+    if _dcs_saved_game_folder:
+        return _create_dir_if_needed(base_path() / "Retribution" / "TileCache")
+    import os
+    import platform
+
+    if platform.system() == "Windows":
+        root = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    else:
+        root = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    path = root / "retribution" / "tilecache"
+    return _create_dir_if_needed(path)
+
+
 def debug_dir() -> Path:
     return _create_dir_if_needed(base_path() / "Retribution" / "Debug")
 

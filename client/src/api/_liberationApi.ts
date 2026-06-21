@@ -411,6 +411,9 @@ export type ControlPoint = {
   sidc: string;
   tacan?: string | null;
   atc_frequency?: string | null;
+  units: string[];
+  threat_ranges: number[];
+  detection_ranges: number[];
 };
 export type ValidationError = {
   loc: (string | number)[];

@@ -18,7 +18,7 @@ from game.runways import RunwayData
 from game.theater import ControlPoint, FrontLine
 from .aircraft.flightdata import FlightData
 from .flotgenerator import JtacInfo
-from .missiondata import AwacsInfo, TankerInfo
+from .missiondata import AtisInfo, AwacsInfo, TankerInfo
 
 if TYPE_CHECKING:
     from game import Game
@@ -30,6 +30,16 @@ class CommInfo:
 
     name: str
     freq: RadioFrequency
+
+
+@dataclass
+class OwnedAirbaseInfo:
+    """A friendly airbase with its (optional) TACAN and ATC, for the briefing."""
+
+    name: str
+    tacan: str
+    tacan_callsign: str
+    atc: str
 
 
 class FrontLineInfo:
@@ -64,6 +74,7 @@ class MissionInfoGenerator:
         self.tankers: List[TankerInfo] = []
         self.frontlines: List[FrontLineInfo] = []
         self.dynamic_runways: List[RunwayData] = []
+        self.atis_by_name: dict[str, RadioFrequency] = {}
 
     def add_awacs(self, awacs: AwacsInfo) -> None:
         """Adds an AWACS/GCI to the mission.
@@ -124,6 +135,10 @@ class MissionInfoGenerator:
         """
         self.dynamic_runways.append(runway)
 
+    def add_atis(self, atis: AtisInfo) -> None:
+        """Record a blue airfield's ATIS frequency, keyed by airfield name."""
+        self.atis_by_name[atis.airfield_name] = atis.frequency
+
     def generate(self) -> None:
         """Generates the mission information."""
         raise NotImplementedError
@@ -169,10 +184,48 @@ class BriefingGenerator(MissionInfoGenerator):
         """Generate the mission briefing"""
         self._generate_frontline_info()
         self.generate_allied_flights_by_departure()
+        self.owned_airbases = self._collect_owned_airbases()
         self.mission.set_description_text(self.template.render(vars(self)))
         self.mission.add_picture_blue(
             os.path.abspath("./resources/ui/splash_screen.png")
         )
+
+    def _collect_owned_airbases(self) -> List[OwnedAirbaseInfo]:
+        """List friendly airfields with their TACAN and ATC (when present).
+
+        The existing 'Carriers and FARPs' section only covers runways the
+        mission generator registers (carriers and per-flight alternates), so
+        regular blue airfields don't appear there.
+        """
+        from game.atcdata import AtcData
+        from game.radio.TacanContainer import TacanContainer
+        from game.theater.controlpoint import Airfield
+
+        owned: List[OwnedAirbaseInfo] = []
+        for cp in self.game.theater.controlpoints:
+            if not isinstance(cp, Airfield):
+                continue
+            if not cp.is_friendly(cp.coalition.player):
+                continue
+            tacan = "-"
+            callsign = ""
+            if isinstance(cp, TacanContainer) and cp.tacan is not None:
+                tacan = str(cp.tacan)
+                callsign = cp.tcn_name or ""
+            atc = "-"
+            atc_radio = AtcData.from_pydcs(cp.airport)
+            if atc_radio is not None and atc_radio.uhf is not None:
+                atc = str(atc_radio.uhf)
+            owned.append(
+                OwnedAirbaseInfo(
+                    name=cp.name,
+                    tacan=tacan,
+                    tacan_callsign=callsign,
+                    atc=atc,
+                )
+            )
+        owned.sort(key=lambda a: a.name)
+        return owned
 
     def _generate_frontline_info(self) -> None:
         """Build FrontLineInfo objects from FrontLine type and append to briefing."""

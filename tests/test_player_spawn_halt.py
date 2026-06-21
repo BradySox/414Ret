@@ -38,6 +38,12 @@ def _inflight_halts(start_type: StartType, condition: FastForwardStopCondition) 
         flight=SimpleNamespace(client_count=1, start_type=start_type),
         settings=SimpleNamespace(fast_forward_stop_condition=condition),
     )
+    # InFlight.should_halt_sim also delegates to the upstream #752 IP-halt helper;
+    # bind the real method so these air-start tests exercise it (it short-circuits
+    # to False for any non-PLAYER_AT_IP stop condition, which these tests use).
+    fake._halt_sim_for_player_at_ip = lambda: InFlight._halt_sim_for_player_at_ip(
+        cast(InFlight, fake)
+    )
     return InFlight.should_halt_sim(cast(InFlight, fake))
 
 

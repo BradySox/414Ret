@@ -11,5 +11,9 @@
     "civilian_traffic",
     "tars",
     "flightcontrol",
-    "scar"
+    "scar",
+    "MooseSoundhandler",
+    "MooseAutolase",
+    "MooseMarkerOps",
+    "MooseAtis"
 ]

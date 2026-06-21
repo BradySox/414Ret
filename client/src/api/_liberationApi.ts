@@ -70,12 +70,12 @@ const injectedRtkApi = api.injectEndpoints({
         params: { with_waypoints: queryArg.withWaypoints },
       }),
     }),
-    getCommitBoundaryForFlight: build.query<
-      GetCommitBoundaryForFlightApiResponse,
-      GetCommitBoundaryForFlightApiArg
+    getTacticalOverlayForFlight: build.query<
+      GetTacticalOverlayForFlightApiResponse,
+      GetTacticalOverlayForFlightApiArg
     >({
       query: (queryArg) => ({
-        url: `/flights/${queryArg.flightId}/commit-boundary`,
+        url: `/flights/${queryArg.flightId}/tactical-overlay`,
       }),
     }),
     listFrontLines: build.query<
@@ -183,6 +183,34 @@ const injectedRtkApi = api.injectEndpoints({
     getTgoById: build.query<GetTgoByIdApiResponse, GetTgoByIdApiArg>({
       query: (queryArg) => ({ url: `/tgos/${queryArg.tgoId}` }),
     }),
+    tgoDestinationInRange: build.query<
+      TgoDestinationInRangeApiResponse,
+      TgoDestinationInRangeApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/tgos/${queryArg.tgoId}/destination-in-range`,
+        params: { lat: queryArg.lat, lng: queryArg.lng },
+      }),
+    }),
+    setTgoDestination: build.mutation<
+      SetTgoDestinationApiResponse,
+      SetTgoDestinationApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/tgos/${queryArg.tgoId}/destination`,
+        method: "PUT",
+        body: queryArg.body,
+      }),
+    }),
+    clearTgoDestination: build.mutation<
+      ClearTgoDestinationApiResponse,
+      ClearTgoDestinationApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/tgos/${queryArg.tgoId}/cancel-travel`,
+        method: "PUT",
+      }),
+    }),
     listAllWaypointsForFlight: build.query<
       ListAllWaypointsForFlightApiResponse,
       ListAllWaypointsForFlightApiArg
@@ -262,9 +290,9 @@ export type GetFlightByIdApiArg = {
   flightId: string;
   withWaypoints?: boolean;
 };
-export type GetCommitBoundaryForFlightApiResponse =
-  /** status 200 Successful Response */ LatLng[][];
-export type GetCommitBoundaryForFlightApiArg = {
+export type GetTacticalOverlayForFlightApiResponse =
+  /** status 200 Successful Response */ TacticalOverlay;
+export type GetTacticalOverlayForFlightApiArg = {
   flightId: string;
 };
 export type ListFrontLinesApiResponse =
@@ -331,6 +359,24 @@ export type GetTgoByIdApiResponse = /** status 200 Successful Response */ Tgo;
 export type GetTgoByIdApiArg = {
   tgoId: string;
 };
+export type TgoDestinationInRangeApiResponse =
+  /** status 200 Successful Response */ boolean;
+export type TgoDestinationInRangeApiArg = {
+  tgoId: string;
+  lat: number;
+  lng: number;
+};
+export type SetTgoDestinationApiResponse =
+  /** status 204 Successful Response */ undefined;
+export type SetTgoDestinationApiArg = {
+  tgoId: string;
+  body: LatLng;
+};
+export type ClearTgoDestinationApiResponse =
+  /** status 204 Successful Response */ undefined;
+export type ClearTgoDestinationApiArg = {
+  tgoId: string;
+};
 export type ListAllWaypointsForFlightApiResponse =
   /** status 200 Successful Response */ Waypoint[];
 export type ListAllWaypointsForFlightApiArg = {
@@ -363,6 +409,11 @@ export type ControlPoint = {
   mobile: boolean;
   destination?: LatLng;
   sidc: string;
+  tacan?: string | null;
+  atc_frequency?: string | null;
+  units: string[];
+  threat_ranges: number[];
+  detection_ranges: number[];
 };
 export type ValidationError = {
   loc: (string | number)[];
@@ -415,6 +466,18 @@ export type FrontLine = {
   id: string;
   extents: LatLng[];
 };
+export type TacticalReach = {
+  polygon: LatLng[][];
+  filled: boolean;
+};
+export type TacticalTarget = {
+  position: LatLng;
+};
+export type TacticalOverlay = {
+  reach: TacticalReach[];
+  actual_path?: LatLng[];
+  targets: TacticalTarget[];
+};
 export type Tgo = {
   id: string;
   name: string;
@@ -428,6 +491,8 @@ export type Tgo = {
   dead: boolean;
   sidc: string;
   task?: string[];
+  mobile: boolean;
+  destination?: LatLng;
 };
 export type SupplyRoute = {
   id: string;
@@ -503,7 +568,7 @@ export const {
   useGetDebugJoinZonesQuery,
   useListFlightsQuery,
   useGetFlightByIdQuery,
-  useGetCommitBoundaryForFlightQuery,
+  useGetTacticalOverlayForFlightQuery,
   useListFrontLinesQuery,
   useGetFrontLineByIdQuery,
   useGetGameStateQuery,
@@ -520,6 +585,9 @@ export const {
   useListSupplyRoutesQuery,
   useListTgosQuery,
   useGetTgoByIdQuery,
+  useTgoDestinationInRangeQuery,
+  useSetTgoDestinationMutation,
+  useClearTgoDestinationMutation,
   useListAllWaypointsForFlightQuery,
   useSetWaypointPositionMutation,
   useGetIadsNetworkQuery,

@@ -17,8 +17,28 @@
 * **[Mission Generation]** DEAD and SEAD flights against a ground target now get one waypoint per individual target — the same targets (with coordinates) already listed on the SEAD/DEAD kneeboard page — so they can be designated quickly with TOO, just like Strike flights. The waypoints are player-only (AI tasking is unchanged), and targets the kneeboard does not list with coordinates (e.g. SEAD against a naval group) are unaffected. The SEAD/DEAD kneeboard target list also gains an "STPT" column showing each target's assigned waypoint number, matching the strike task page.
 * **[Mission Generation]** Reworked AI plain-SEAD behaviour: instead of firing a scripted point-in-time attack at ingress, SEAD flights now loiter at a standoff orbit (a new SEAD_LOITER anchor held at a configurable multiple of the strongest threat range) and engage radars reactively as they come up, with a computed break-off window. New doctrine settings: standoff factor and maximum loiter window.
 * **[Map]** Hovering a SAM threat or detection ring highlights its emitter — and hovering an emitter highlights its ring — making it easy to tell which site a ring belongs to. Can be disabled from the map's layer control.
+* **[Mission Generation]** AI DEAD flights now receive the best available standoff/PGM loadout for their airframe instead of a generic anti-radiation fit.
+* **[AirWing]** Squadron names in the Air Wing dialog are clickable and the list shows idle-aircraft counts.
+* **[Radios]** COMM1 radio presets are mirrored onto COMM2 on aircraft that carry a second radio.
+* **[UX]** Auto-assigned TACAN codes are surfaced more clearly in control-point tooltips and the briefing.
+* **[Cheats]** Give or take money to/from both OWNFOR and OPFOR.
+* **[Map]** Blue non-carrier ships are movable on the campaign map — drag one to queue a destination; red ships and their queued moves stay hidden.
+* **[Finances]** The Finances dialog shows income, automated HQ spending per category, and the net change per turn.
+* **[Mission]** New "Player at IP" fast-forward stop condition, plus more robust fast-forward halting and combat-skip handling.
+* **[UI]** The base menu intel summary is regrouped into Air / Ground / Status sections with a parking-slot breakdown; QRA-alert count and recon-fogged ammo/factory state are preserved.
+* **[Map]** Carrier/LHA ship groups now appear on the map like other naval groups, including their air-defense rings; control-point tooltips list the surviving escort units.
+* **[Mission Generation]** Non-DEAD-role aircraft can be hand-assigned DEAD as a secondary task (19 airframes gain a DEAD secondary task; auto-planner priorities unchanged).
+* **[Map]** Selecting a flight draws a tactical overlay reflecting the AI's planned actions — strike attack geometry and the SEAD loiter/HARM-reach bubble (the latter keeps the fork's fixed-range bubble).
+* **[UI]** Waypoint editing: reorder waypoints, edit ToTs and on-station timing, with a warning when manual timing may drift from the package's escorts.
+* **[Mission Generation]** Player waypoint renames propagate to the aircraft CDU/HUD; the Strike Task page reflects renames without leaking the F-15E DTC slot tag into other pages.
+* **[Plugins]** ATIS for player flights via a MOOSE voice-ATIS plugin (per-airfield ATIS frequencies and spoken reports).
+* **[Kneeboard]** New recon kneeboard pages — target reconnaissance (aimpoints, threat rings, area context), a friendly-packages coordination list, and a package-targets theater map. Basemap tiles are fetched and cached at mission generation (offline coastline fallback); adds the `mgrs` dependency and new Kneeboard settings.
 
 ## Fixes
+* **[Plugins]** CTLD now treats a landed helicopter as on-ground using terrain AGL, so unload/extract works on sloped terrain.
+* **[Kneeboard]** Fixed waypoint numbering for in-air-start flights.
+* **[Mission]** Fixed DCS rejecting missions that had a locked-speed waypoint between two TOT-locked waypoints.
+* **[Settings]** Legacy pre-#684 fast-forward settings are migrated on load instead of crashing; a stale or garbled enum setting now falls back to its default rather than failing the load.
 * **[Flight Plans]** Fixed IndexError crash when a flight exits combat at its last waypoint`n* **[AI]** Fixed enemy AWACS orbit placement â€” AI AWACS (A-50, etc.) was orbiting toward the threat boundary and loitering near the front line. It now orbits in the opposite direction, deep inside friendly airspace. Player-coalition AWACS keeps the existing forward-leaning behavior.
 * **[Mission]** Reliably auto-detect end of mission, even when DCS wrote the final state.json before the wait dialog started watching
 * **[Performance]** Faster post-mission turn processing

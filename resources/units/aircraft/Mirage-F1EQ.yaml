@@ -21,3 +21,5 @@ tasks:
   OCA/Runway: 475
   Strike: 485
   TARCAP: 414
+secondary_tasks:
+  - DEAD

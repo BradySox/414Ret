@@ -40,8 +40,12 @@ def test_object_hook_rejects_untrusted_enum_payloads(
         Settings.obj_hook(payload)
 
 
-def test_campaign_enum_must_match_the_setting_type() -> None:
-    with pytest.raises(ValueError):
-        Settings.deserialize_state_dict(
-            {"target_intel_precision": "NightMissions.OnlyNight"}
-        )
+def test_campaign_enum_wrong_type_falls_back_to_default() -> None:
+    # A serialized value whose enum type does not match the setting's field type
+    # is a stale/garbled save. It must not be assigned (and must never crash the
+    # load); the field falls back to its default instead.
+    restored = Settings.deserialize_state_dict(
+        {"target_intel_precision": "NightMissions.OnlyNight"}
+    )
+
+    assert restored["target_intel_precision"] is TargetIntelPrecision.EXACT

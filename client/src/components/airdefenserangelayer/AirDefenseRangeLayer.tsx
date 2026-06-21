@@ -1,4 +1,4 @@
-import { Tgo } from "../../api/liberationApi";
+import { selectControlPoints } from "../../api/controlPointsSlice";
 import { selectTgos } from "../../api/tgosSlice";
 import {
   selectHighlightEmitters,
@@ -7,11 +7,17 @@ import {
   setHoveredEmitter,
 } from "../../api/mapSlice";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { LatLng } from "../../api/liberationApi";
 import { Fragment } from "react";
 import { Circle, CircleMarker, LayerGroup, Tooltip } from "react-leaflet";
 
-interface TgoRangeCirclesProps {
-  tgo: Tgo;
+interface RangeCirclesProps {
+  id: string;
+  name: string;
+  units: string[];
+  position: LatLng;
+  threat_ranges: number[];
+  detection_ranges: number[];
   blue: boolean;
   detection?: boolean;
 }
@@ -34,10 +40,12 @@ function summarizeUnits(units: string[]): string[] {
   return Array.from(counts, ([name, n]) => (n > 1 ? `${n}x ${name}` : name));
 }
 
-const TgoRangeCircles = (props: TgoRangeCirclesProps) => {
-  const radii = props.detection
-    ? props.tgo.detection_ranges
-    : props.tgo.threat_ranges;
+// Draws one emitter's range rings. Used for both TGOs and carrier/LHA control
+// points (whose ship group is not emitted as a standalone TGO). The id is the
+// emitter identity in the hover-highlight system, so a carrier's rings light up
+// and blob the same way a SAM site's do.
+const RangeCircles = (props: RangeCirclesProps) => {
+  const radii = props.detection ? props.detection_ranges : props.threat_ranges;
   const color = colorFor(props.blue, props.detection === true);
   const baseWeight = props.detection ? 1 : 2;
   const dispatch = useAppDispatch();
@@ -47,8 +55,7 @@ const TgoRangeCircles = (props: TgoRangeCirclesProps) => {
   // icon lights up the other (and the icon is raised, see Tgo).
   const highlighted = useAppSelector(
     (state) =>
-      selectHighlightEmitters(state) &&
-      selectHoveredEmitter(state) === props.tgo.id,
+      selectHighlightEmitters(state) && selectHoveredEmitter(state) === props.id
   );
   // Mark the emitter with a blob only when the hover came from a ring, to help
   // locate it (associating ring <-> emitter). When the emitter icon itself is
@@ -60,7 +67,7 @@ const TgoRangeCircles = (props: TgoRangeCirclesProps) => {
 
   const hover = {
     mouseover: () =>
-      dispatch(setHoveredEmitter({ id: props.tgo.id, source: "ring" })),
+      dispatch(setHoveredEmitter({ id: props.id, source: "ring" })),
     mouseout: () => dispatch(setHoveredEmitter(null)),
   };
 
@@ -69,7 +76,7 @@ const TgoRangeCircles = (props: TgoRangeCirclesProps) => {
       {radii.map((radius, idx) => (
         <Fragment key={idx}>
           <Circle
-            center={props.tgo.position}
+            center={props.position}
             radius={radius}
             // Style goes through pathOptions (not bare color/weight props):
             // react-leaflet only re-applies setStyle when pathOptions changes,
@@ -88,7 +95,7 @@ const TgoRangeCircles = (props: TgoRangeCirclesProps) => {
               so it works despite being invisible) gives a comfortable target
               along the perimeter without filling the disc. */}
           <Circle
-            center={props.tgo.position}
+            center={props.position}
             radius={radius}
             color={color}
             fill={false}
@@ -98,8 +105,8 @@ const TgoRangeCircles = (props: TgoRangeCirclesProps) => {
             eventHandlers={hover}
           >
             <Tooltip sticky className="tooltip-delayed">
-              <b>{props.tgo.name}</b>
-              {summarizeUnits(props.tgo.units).map((unit, i) => (
+              <b>{props.name}</b>
+              {summarizeUnits(props.units).map((unit, i) => (
                 <div key={i}>{unit}</div>
               ))}
             </Tooltip>
@@ -108,7 +115,7 @@ const TgoRangeCircles = (props: TgoRangeCirclesProps) => {
       ))}
       {markEmitter && (
         <CircleMarker
-          center={props.tgo.position}
+          center={props.position}
           radius={20}
           color={HIGHLIGHT_COLOR}
           fillColor={HIGHLIGHT_COLOR}
@@ -130,16 +137,43 @@ interface AirDefenseRangeLayerProps {
 }
 
 export const AirDefenseRangeLayer = (props: AirDefenseRangeLayerProps) => {
-  const tgos = Object.values(useAppSelector(selectTgos).tgos);
-  var tgosForSide = tgos.filter((tgo) => tgo.blue === props.blue);
+  const tgos = Object.values(useAppSelector(selectTgos).tgos).filter(
+    (tgo) => tgo.blue === props.blue
+  );
+  // Carrier/LHA control points carry their air-defense ranges (from the
+  // surviving escort ships) directly, since their ship group is not emitted as
+  // a standalone TGO. Draw their rings here too so a battered carrier group
+  // does not look defenceless on the map.
+  const controlPoints = Object.values(
+    useAppSelector(selectControlPoints).controlPoints
+  ).filter((cp) => cp.blue === props.blue);
 
   return (
     <LayerGroup>
-      {tgosForSide.map((tgo) => {
-        return (
-          <TgoRangeCircles key={tgo.id} tgo={tgo} {...props}></TgoRangeCircles>
-        );
-      })}
+      {tgos.map((tgo) => (
+        <RangeCircles
+          key={tgo.id}
+          id={tgo.id}
+          name={tgo.name}
+          units={tgo.units}
+          position={tgo.position}
+          threat_ranges={tgo.threat_ranges}
+          detection_ranges={tgo.detection_ranges}
+          {...props}
+        />
+      ))}
+      {controlPoints.map((cp) => (
+        <RangeCircles
+          key={cp.id}
+          id={cp.id}
+          name={cp.name}
+          units={cp.units}
+          position={cp.position}
+          threat_ranges={cp.threat_ranges}
+          detection_ranges={cp.detection_ranges}
+          {...props}
+        />
+      ))}
     </LayerGroup>
   );
 };

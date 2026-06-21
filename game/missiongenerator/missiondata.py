@@ -116,6 +116,19 @@ class FrontlineUnitGroupsInfo:
 
 
 @dataclass
+class AtisInfo:
+    """One blue airfield's ATIS station — single source of truth for its freq.
+
+    ``airfield_name`` is the DCS airbase map name (``ControlPoint.full_name`` /
+    ``dcs_airport.name``) — the same string MOOSE keys the station and any
+    airport-name soundfile on, and the key the kneeboard surfaces look up by.
+    """
+
+    airfield_name: str
+    frequency: RadioFrequency
+
+
+@dataclass
 class MissionData:
     awacs: list[AwacsInfo] = field(default_factory=list)
     runways: list[RunwayData] = field(default_factory=list)
@@ -136,3 +149,4 @@ class MissionData:
     # One entry per planned SCAR flight. Non-empty means scar_414_init.lua must
     # be injected (the SCAR scenario/results bridge).
     scar_taskings: list[ScarTasking] = field(default_factory=list)
+    atis_frequencies: list[AtisInfo] = field(default_factory=list)

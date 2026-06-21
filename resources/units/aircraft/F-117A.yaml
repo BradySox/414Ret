@@ -20,3 +20,5 @@ variants:
 has_built_in_target_pod: true
 tasks:
   Strike: 620
+secondary_tasks:
+  - DEAD

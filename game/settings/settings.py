@@ -40,6 +40,7 @@ class FastForwardStopCondition(Enum):
     PLAYER_TAKEOFF = "Player takeoff time"
     PLAYER_TAXI = "Player taxi time"
     PLAYER_STARTUP = "Player startup time"
+    PLAYER_AT_IP = "Player at IP"
     MANUAL = "Manual fast forward control"
 
     @property
@@ -118,6 +119,8 @@ PRETENSE_PAGE = "Pretense"
 MISSION_GENERATOR_PAGE = "Mission Generator"
 
 GAMEPLAY_SECTION = "Gameplay"
+
+KNEEBOARD_SECTION = "Kneeboard"
 
 # TODO: Make sections a type and add headers.
 # This section had the header: "Disabling settings below may improve performance, but
@@ -1063,6 +1066,7 @@ class Settings:
             "Player startup time": FastForwardStopCondition.PLAYER_STARTUP,
             "Player taxi time": FastForwardStopCondition.PLAYER_TAXI,
             "Player takeoff time": FastForwardStopCondition.PLAYER_TAKEOFF,
+            "Player at IP": FastForwardStopCondition.PLAYER_AT_IP,
             "First contact": FastForwardStopCondition.FIRST_CONTACT,
             "Manual": FastForwardStopCondition.MANUAL,
         },
@@ -1150,6 +1154,39 @@ class Settings:
         detail=(
             "Dark kneeboard for night missions. This will likely make the kneeboard on "
             "the pilot leg unreadable."
+        ),
+    )
+    generate_target_recon_kneeboard: bool = boolean_option(
+        "Generate target recon kneeboard pages",
+        MISSION_GENERATOR_PAGE,
+        KNEEBOARD_SECTION,
+        default=True,
+        detail=(
+            "Generate a target reconnaissance page for player flights with air-to-ground "
+            "tasks, showing aimpoints, threat rings, and target area context."
+        ),
+    )
+    generate_all_packages_kneeboard: bool = boolean_option(
+        "Generate friendly packages kneeboard page",
+        MISSION_GENERATOR_PAGE,
+        KNEEBOARD_SECTION,
+        default=True,
+        detail=(
+            "Append page(s) listing every friendly package with its TOT (strike "
+            "tasks) or patrol window (CAP, tanker, AWACS), for cross-package "
+            "coordination."
+        ),
+    )
+    target_recon_extra_threat_search_nmi: int = bounded_int_option(
+        "Extra threat search radius (nmi)",
+        MISSION_GENERATOR_PAGE,
+        KNEEBOARD_SECTION,
+        default=0,
+        min=0,
+        max=50,
+        detail=(
+            "Additional nautical miles beyond the default search radius to include "
+            "threats on the target recon kneeboard. 0 uses the default radius only."
         ),
     )
     generate_dtc: bool = boolean_option(
@@ -1780,19 +1817,116 @@ class Settings:
     def deserialize_state_dict(state: dict[str, Any]) -> dict[str, Any]:
         # restore Enum & timedelta types
         s = Settings()
-        deserialized = dict(state)
-        for key, value in state.items():
-            if isinstance(s.__dict__.get(key), timedelta) and isinstance(value, int):
-                deserialized[key] = timedelta(minutes=value)
-            elif isinstance(default := s.__dict__.get(key), Enum) and isinstance(
-                value, str
-            ):
-                deserialized[key] = Settings._deserialize_enum(
-                    value, expected_type=type(default)
-                )
+        Settings._migrate_legacy_fast_forward(state)
+        for key, value in list(state.items()):
+            default = s.__dict__.get(key)
+            if isinstance(default, Enum):
+                # Restore the stored member, falling back to the field default
+                # for any value that no longer resolves to a member of this
+                # field's enum -- a stale/renamed choice, or a legacy non-enum
+                # value such as None or a bool. Otherwise the bad value crashes
+                # the load and later the settings UI via text_for_value.
+                restored = Settings._restore_enum(value, type(default))
+                state[key] = restored if restored is not None else default
+            elif isinstance(default, timedelta) and isinstance(value, int):
+                state[key] = timedelta(minutes=value)
             elif isinstance(value, dict):
-                deserialized[key] = s.obj_hook(value)
-        return deserialized
+                state[key] = s.obj_hook(value)
+        return state
+
+    @staticmethod
+    def _restore_enum(value: Any, enum_cls: type[Enum]) -> Optional[Enum]:
+        """Resolve a serialized value to a member of enum_cls, or None if it no
+        longer maps to one (stale, renamed, or a legacy non-enum value).
+
+        Parsing goes through the safe ``_deserialize_enum`` registry (no
+        ``eval``), so a crafted save cannot execute code here -- see
+        ``test_object_hook_rejects_untrusted_enum_payloads``. Returning None on
+        any unresolved value lets the caller fall back to the field default
+        instead of crashing the load (upstream #755 robustness)."""
+        if isinstance(value, enum_cls):
+            return value
+        # Accept the JSON form {"Enum": "EnumName.MEMBER"} and the bare
+        # "EnumName.MEMBER" string; ignore anything that does not resolve to a
+        # member of this field's enum.
+        expr: Optional[str] = None
+        if isinstance(value, dict):
+            inner = value.get("Enum")
+            if isinstance(inner, str):
+                expr = inner
+        elif isinstance(value, str):
+            expr = value
+        if expr is not None:
+            try:
+                restored = Settings._deserialize_enum(expr, expected_type=enum_cls)
+            except ValueError:
+                return None
+            if isinstance(restored, enum_cls):
+                return restored
+        return None
+
+    @staticmethod
+    def _migrate_legacy_fast_forward(state: dict[str, Any]) -> None:
+        """Map pre-#684 fast-forward settings onto the current enums.
+
+        Before #684 fast-forward was three separate fields::
+
+            fast_forward_to_first_contact: bool          # was it enabled
+            player_mission_interrupts_sim_at: Optional[StartType]
+                # None=Never, COLD=startup, WARM=taxi, RUNWAY=takeoff
+            auto_resolve_combat: bool
+
+        #684 replaced them with ``fast_forward_stop_condition`` /
+        ``combat_resolution_method``. Translate old saves so the user keeps an
+        equivalent setting instead of crashing on load, and normalize the legacy
+        "Never"/None sentinel (which has no enum member) to "no fast forward".
+        """
+        legacy_ff = state.pop("fast_forward_to_first_contact", None)
+        legacy_interrupt = state.pop("player_mission_interrupts_sim_at", None)
+        legacy_auto = state.pop("auto_resolve_combat", None)
+
+        if "fast_forward_stop_condition" not in state and legacy_ff is not None:
+            if not legacy_ff:
+                state["fast_forward_stop_condition"] = FastForwardStopCondition.DISABLED
+            else:
+                interrupt = Settings._resolve_start_type(legacy_interrupt)
+                if interrupt is None:
+                    state["fast_forward_stop_condition"] = (
+                        FastForwardStopCondition.FIRST_CONTACT
+                    )
+                else:
+                    state["fast_forward_stop_condition"] = {
+                        StartType.COLD: FastForwardStopCondition.PLAYER_STARTUP,
+                        StartType.WARM: FastForwardStopCondition.PLAYER_TAXI,
+                        StartType.RUNWAY: FastForwardStopCondition.PLAYER_TAKEOFF,
+                    }.get(interrupt, FastForwardStopCondition.FIRST_CONTACT)
+
+        if "combat_resolution_method" not in state and legacy_auto is not None:
+            state["combat_resolution_method"] = (
+                CombatResolutionMethod.RESOLVE
+                if legacy_auto
+                else CombatResolutionMethod.PAUSE
+            )
+
+        # A "none"/"Never"/None value stored directly under the new key has no
+        # matching enum member; treat that family as "no fast forward".
+        ff = state.get("fast_forward_stop_condition")
+        if ff is None and "fast_forward_stop_condition" in state:
+            state["fast_forward_stop_condition"] = FastForwardStopCondition.DISABLED
+        elif isinstance(ff, str) and ff.strip().lower() in {"none", "never", ""}:
+            state["fast_forward_stop_condition"] = FastForwardStopCondition.DISABLED
+
+    @staticmethod
+    def _resolve_start_type(value: Any) -> Optional[StartType]:
+        """Coerce a serialized legacy value to a StartType member, or None."""
+        if isinstance(value, StartType):
+            return value
+        if isinstance(value, str):
+            name = value.rsplit(".", 1)[-1]
+            for member in StartType:
+                if name == member.name or value == member.value:
+                    return member
+        return None
 
     @classmethod
     def _field_description(cls, settings_field: Field[Any]) -> OptionDescription:

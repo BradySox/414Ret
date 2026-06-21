@@ -20,3 +20,5 @@ tasks:
   BAI: 490
   DEAD: 220
   Strike: 715
+secondary_tasks:
+  - DEAD

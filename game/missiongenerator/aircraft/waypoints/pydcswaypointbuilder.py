@@ -24,6 +24,15 @@ TARGET_WAYPOINTS = (
     FlightWaypointType.TARGET_SHIP,
 )
 
+# Waypoints whose generated .miz name is matched as a structural identifier downstream --
+# CTLD air-assault split (landingzone.py: name == "DROPOFFZONE"), EW jamming placement and
+# formation join/split (aircraftgenerator.py / missiongenerator.py: name in {"JOIN", "SPLIT",
+# "RACETRACK START", "RACETRACK END"}). A player rename must NOT reach the .miz for these or
+# that logic silently breaks, so they keep their canonical name regardless of custom_name.
+STRUCTURAL_WAYPOINT_NAMES = frozenset(
+    {"JOIN", "SPLIT", "RACETRACK START", "RACETRACK END", "DROPOFFZONE"}
+)
+
 
 class PydcsWaypointBuilder:
     def __init__(
@@ -44,7 +53,14 @@ class PydcsWaypointBuilder:
         self.mission_data = mission_data
 
     def dcs_name_for_waypoint(self) -> str:
-        return self.waypoint.name
+        # Structural waypoints are matched by name downstream; never let a rename reach the
+        # .miz for them (see STRUCTURAL_WAYPOINT_NAMES). The UI still allows the edit, but it
+        # is a harmless no-op in the cockpit for these.
+        if self.waypoint.name in STRUCTURAL_WAYPOINT_NAMES:
+            return self.waypoint.name
+        # Prefer the player's rename; otherwise the terse auto .miz name. NB the CDU
+        # fallback is `name`, not `pretty_name` (the list/kneeboard fallback) — by design.
+        return self.waypoint.custom_name or self.waypoint.name
 
     def build(self) -> MovingPoint:
         waypoint = self.group.add_waypoint(
@@ -80,11 +96,33 @@ class PydcsWaypointBuilder:
                 waypoint.alt = 0
                 waypoint.alt_type = "RADIO"
 
-        tot = self.flight.flight_plan.tot_for_waypoint(self.waypoint)
-        if tot is not None:
-            self.set_waypoint_tot(waypoint, tot)
+        self._assign_waypoint_tot(waypoint)
         self.add_tasks(waypoint)
         return waypoint
+
+    def _assign_waypoint_tot(self, waypoint: MovingPoint) -> None:
+        # Lock the DCS ETA for anchored times (structural target or manually-timed) so
+        # the AI keeps timing flexibility between auto waypoints.
+        locked_tot = self.flight.flight_plan.effective_tot_for_waypoint(self.waypoint)
+        if locked_tot is not None:
+            self.set_waypoint_tot(waypoint, locked_tot)
+            return
+        # ...otherwise fall back to the chained ToT so every waypoint carries a time.
+        display_tot = self.flight.flight_plan.chained_tot_for_waypoint(self.waypoint)
+        if display_tot is None:
+            return
+
+        if self.flight.client_count:
+            # Player flights: lock the chained ToT into the DCS ETA too. These ETAs are
+            # loaded into the jet's nav computer, so leaving them unlocked makes the
+            # cockpit time-on-waypoint read wrong (it omits startup/taxi and on-station
+            # time). There is no AI route-follower to over-constrain here -- the human
+            # flies the route and any AI wingmen formate on the lead.
+            self.set_waypoint_tot(waypoint, display_tot)
+        else:
+            # AI flights: publish on the model for kneeboards, but leave the DCS ETA
+            # unlocked so the AI keeps timing flexibility between auto waypoints.
+            self.waypoint.tot = display_tot
 
     def switch_to_baro_if_in_sea(self, waypoint: MovingPoint) -> None:
         if waypoint.alt_type == "RADIO" and (

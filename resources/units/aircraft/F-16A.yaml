@@ -14,3 +14,5 @@ tasks:
   TARCAP: 535
   SEAD: 150
   SEAD Escort: 150
+secondary_tasks:
+  - DEAD

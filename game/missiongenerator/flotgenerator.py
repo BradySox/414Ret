@@ -1072,13 +1072,33 @@ class FlotGenerator:
         # top of each other. Stepping perpendicular preserves the lateral spread.
         step = 250
         valid_point = shifted
+        reached_depth = 0
         distance = step
         while distance <= distance_from_frontline:
             candidate = shifted.point_from_heading(spawn_heading.degrees, distance)
             if not theater.is_on_land(candidate):
                 break
             valid_point = candidate
+            reached_depth = distance
             distance += step
+        # If the perpendicular path off the front ran into water/off-map almost
+        # immediately, `valid_point` is still on (or right on top of) the FLOT --
+        # which would drop rear-area groups (artillery, logistics) into direct
+        # contact. Rather than spawn them on the front, search laterally around the
+        # intended-depth point so the group keeps its depth (and spreads along the
+        # front instead of stacking).
+        if reached_depth < distance_from_frontline / 2:
+            desired_point = shifted.point_from_heading(
+                spawn_heading.degrees, distance_from_frontline
+            )
+            fallback = FrontLineConflictDescription.find_ground_position(
+                desired_point,
+                self.conflict.size,
+                self.conflict.heading,
+                theater,
+            )
+            if theater.is_on_land(fallback):
+                return fallback
         return valid_point
 
     def _generate_groups(

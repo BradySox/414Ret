@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from game.commander.objectivefinder import ObjectiveFinder
+from game.commander.objectivefinder import FRONT_LINE_AIR_THREAT, ObjectiveFinder
 from game.commander.theaterstate import (
     BARCAP_THREAT_CEILING,
     threat_weighted_barcap_rounds,
@@ -64,17 +64,39 @@ class _Player:
         self.is_red = is_red
 
 
+class _AircraftType:
+    """A fake aircraft type; ``fighter`` controls A2A capability."""
+
+    def __init__(self, fighter: bool = True) -> None:
+        self._fighter = fighter
+
+    def capable_of(self, _task: object) -> bool:
+        return self._fighter
+
+
+_FIGHTER = _AircraftType(fighter=True)
+_BOMBER = _AircraftType(fighter=False)
+
+
 class _Allocations:
-    def __init__(self, total_present: int) -> None:
-        self.total_present = total_present
+    def __init__(self, present: dict[_AircraftType, int]) -> None:
+        self.present = present
 
 
 class _Airfield:
-    def __init__(self, name: str, distance_m: float, present: int, friendly: bool):
+    def __init__(
+        self,
+        name: str,
+        distance_m: float,
+        present: int,
+        friendly: bool,
+        fighter: bool = True,
+    ):
         self.name = name
         self._distance_m = distance_m
         self._present = present
         self._friendly = friendly
+        self._type = _FIGHTER if fighter else _BOMBER
 
     def distance_to(self, _other: object) -> float:
         return self._distance_m
@@ -83,7 +105,7 @@ class _Airfield:
         return self._friendly
 
     def allocated_aircraft(self, _parking_type: object) -> _Allocations:
-        return _Allocations(self._present)
+        return _Allocations({self._type: self._present})
 
 
 class _Closest:
@@ -121,6 +143,12 @@ def _finder(
 
 class _CP:
     name = "cp"
+    has_active_frontline = False
+
+
+class _FrontLineCP:
+    name = "front"
+    has_active_frontline = True
 
 
 def test_air_threat_score_zero_with_no_enemy_in_range(
@@ -147,3 +175,34 @@ def test_air_threat_score_higher_for_closer_and_stronger(
     strong = _finder([close_strong], monkeypatch).air_threat_score(_CP())  # type: ignore[arg-type]
     weak = _finder([far_weak], monkeypatch).air_threat_score(_CP())  # type: ignore[arg-type]
     assert strong > weak > 0.0
+
+
+def test_air_threat_score_ignores_non_fighters(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A base packed with bombers/tankers/transports is not an air threat.
+    bombers = _Airfield(
+        "b", nautical_miles(20).meters, 24, friendly=False, fighter=False
+    )
+    finder = _finder([bombers], monkeypatch)
+    assert finder.air_threat_score(_CP()) == 0.0  # type: ignore[arg-type]
+
+
+def test_air_threat_score_front_line_floor_without_airbase(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A contested front with no nearby enemy airbase still scores the floor so it
+    # earns extra BARCAP waves instead of collapsing to baseline.
+    finder = _finder([], monkeypatch)
+    assert finder.air_threat_score(_FrontLineCP()) == FRONT_LINE_AIR_THREAT  # type: ignore[arg-type]
+
+
+def test_air_threat_score_front_line_floor_is_additive(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A front-line CP that *also* has a nearby enemy airbase is the hottest kind
+    # of sector: the floor adds on top of the airbase contribution.
+    close_strong = _Airfield("a", nautical_miles(20).meters, 24, friendly=False)
+    rear = _finder([close_strong], monkeypatch).air_threat_score(_CP())  # type: ignore[arg-type]
+    front = _finder([close_strong], monkeypatch).air_threat_score(_FrontLineCP())  # type: ignore[arg-type]
+    assert front == rear + FRONT_LINE_AIR_THREAT

@@ -17,7 +17,8 @@
 --   FIXED-WING  (C-130, An-26, An-30, Yak-52)
 --       -> fly between neutral AIRDROMES only (need a proper runway)
 --   ROTARY      (Mi-8, UH-1, SA342)
---       -> fly between neutral AIRDROMES + HELIPORTS/FARPs (city hops)
+--       -> fly between neutral AIRDROMES only (heliports/FARPs dropped 2026-06-21:
+--          unresolvable heliport ids spawned malformed helos that crashed the sim)
 --
 -- Routing intent: RAT flies a STRAIGHT LINE from departure to destination with no
 -- along-route avoidance, so to keep civilians clear of the battle we shape the
@@ -90,10 +91,16 @@ local function _usable_fixed_wing_field(name, desc)
 end
 
 local function _usable_rotary_field(name, desc)
+    -- Restricted to real airdromes (2026-06-21 crash fix): on some maps (Syria) RAT
+    -- picks a heliport/FARP id DCS can't resolve at spawn ("No heliport NNNN found,
+    -- aircraft spawn on land"), producing a malformed helo whose descriptor is nil.
+    -- FLIGHTGROUP:New then fails and the orphaned hot-start unit crashes the sim
+    -- (woCharacterHuman::GetPosition). Real runways spawn helos cleanly. Trades the
+    -- city-hop helipads for crash safety; helos still fly between neutral airfields.
     return desc
-        and (desc.category == Airbase.Category.AIRDROME
-             or desc.category == Airbase.Category.HELIPAD)
-        and not _contains(name, "Invisible FARP")
+        and desc.category == Airbase.Category.AIRDROME
+        and not _contains(name, "Heliport")
+        and not _contains(name, "FARP")
 end
 
 -- ── Geometry helpers ──────────────────────────────────────────────────────────
@@ -188,8 +195,10 @@ for _, ab in pairs(world.getAirbases()) do
     end
 end
 
--- ── Helipad pool (rotary) ─────────────────────────────────────────────────────
--- Neutral heliports/FARPs + airdromes (helos can land anywhere), same keep-out.
+-- ── Rotary pool (airdromes only) ──────────────────────────────────────────────
+-- Neutral airdromes only, same keep-out. Heliports/FARPs were dropped (2026-06-21):
+-- on some maps RAT couldn't resolve a heliport id and spawned a malformed helo that
+-- crashed the sim. Helos spawn cleanly at real runways.
 local _helipads = {}
 for _, ab in pairs(world.getAirbases()) do
     local name = ab:getName()

@@ -88,14 +88,6 @@ not change.
 - Legacy workaround: helicopter AMSL-over-water waypoint conversion. Keep this advanced
   until the DCS behavior is revalidated in-game.
 
-### Pretense
-
-- Zone network and activity distance.
-- Carrier behavior and navmesh.
-- AI mission counts by task.
-- Aircraft per AI flight and player flights per aircraft type.
-- AI cargo squadrons per side.
-
 ## Dependency rules for the UI layer
 
 These controls remain persisted independently, but their editors should be disabled or

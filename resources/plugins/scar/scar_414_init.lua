@@ -18,15 +18,16 @@
 --                         success = killed first; fail = it reaches the firing
 --                         position (or the window ends) and fires at its city.
 --
--- TIMING (2026-06-21): each scenario goes live AT SPAWN (mission start). The whole
--- picture (HVT + command + decoys + clutter) is present and the HVT is already
--- moving when the player arrives, no matter when they push. This replaces the old
--- TOT anchor (goLive), which assumed the flight flew to its planned time-on-target;
--- in MP it does not, so the target only started moving "right as we fired Mavs"
--- (2026-06-20 feedback). It stays catchable because the generator paces the HVT to
--- crawl its whole route over `window` (slow) rather than racing off early. goLive is
--- still read for reference but no longer gates activation; the fail clock runs from
--- spawn (deadline = now + window).
+-- TIMING (2026-06-21): the whole picture (HVT + command + decoys + clutter) spawns
+-- PARKED at mission start, so the discrimination puzzle is present whenever the
+-- player arrives. The columns only bug out once the strike package crosses the
+-- PROXIMITY ring (SCAR_PROXIMITY_M); the fail clock starts from that approach
+-- (deadline = activation + window). This means the target is moving as the player
+-- shows up but can never be "long gone" if the jets are slow (A-10 feedback
+-- 2026-06-20). It replaces both the old TOT anchor (goLive — MP doesn't fly a TOT,
+-- so the target only moved "right as we fired Mavs") and the interim move-from-spawn
+-- (which leaned on slow pacing as the only escape guard). goLive is still read for
+-- reference but no longer gates anything. A kill before activation still counts.
 --
 -- Outcomes go into the global scar_results table the base plugin serializes into
 -- state.json, which Retribution reads back in the debrief. Skeleton: no scoring
@@ -111,9 +112,9 @@ local function brief_spawn(area, hvt_convoy)
     local sig = signature_text(hvt_convoy)
     local text = "SCAR INTEL (" .. area.id .. "):\n" ..
         "Target convoy signature: " .. sig .. "\n" ..
-        "It is ON THE MOVE in the search area. Decoys share SOME but not ALL of " ..
-        "these elements — do not prosecute a partial match.\nFind and destroy the " ..
-        "full-signature convoy before it reaches its destination."
+        "It starts moving as you arrive in the search area. Decoys share SOME but " ..
+        "not ALL of these elements — do not prosecute a partial match.\nFind and " ..
+        "destroy the full-signature convoy before it reaches its destination."
     pcall(trigger.action.outTextForCoalition, side, text, 30)
 
     -- Mark the search AREA (the box of traffic), not the HVT itself: the convoy is
@@ -230,8 +231,10 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
         ["category"] = Group.Category.GROUND,
         ["country"] = country_id,
         ["units"] = units,
-        -- Speed is set by the generator: the HVT is paced to reach the city ~as
-        -- the window expires; decoys/clutter just crawl as traffic.
+        -- Spawn PARKED (single waypoint): the picture is present from mission start
+        -- so the discrimination puzzle exists, but nothing moves until the player
+        -- package reaches the activation ring, when set_group_route sends it to its
+        -- destination (proximity trigger — the convoy can't be "long gone").
         ["route"] = {
             ["points"] = {
                 [1] = {
@@ -239,14 +242,7 @@ local function spawn_convoy(tasking_id, convoy, country_id, index)
                     ["y"] = spawn_y,
                     ["type"] = "Turning Point",
                     ["action"] = "Off Road",
-                    ["speed"] = speed,
-                },
-                [2] = {
-                    ["x"] = dest_x,
-                    ["y"] = dest_y,
-                    ["type"] = "Turning Point",
-                    ["action"] = "Off Road",
-                    ["speed"] = speed,
+                    ["speed"] = 0,
                 },
             },
         },
@@ -543,20 +539,71 @@ local function maybe_bind_sof(area)
     end
 end
 
+-- Forward declaration: activate_movement (below) routes via set_group_route, which
+-- is defined later in the file. Declaring the local here lets the closure capture
+-- it as an upvalue; it's assigned by the time activation actually runs.
+local set_group_route
+
+-- Proximity activation (2026-06-21, A-10 feedback): the picture spawns PARKED at
+-- mission start (the discrimination puzzle is present), and the HVT only bugs out
+-- once the strike package crosses the activation ring. So the target is moving when
+-- the player arrives but can never be "long gone" if the jets are slow — and the
+-- fail clock starts from the approach, not mission start.
+local SCAR_PROXIMITY_M = 50 * 1852 -- 50 NM activation ring (tunable)
+
+-- True once any friendly (SCAR-coalition) aircraft is within the ring of the area.
+local function package_near(area)
+    local side = scar_side(area)
+    for _, cat in ipairs({ Group.Category.AIRPLANE, Group.Category.HELICOPTER }) do
+        local ok, groups = pcall(coalition.getGroups, side, cat)
+        if ok and groups ~= nil then
+            for _, g in ipairs(groups) do
+                local okp, pos = pcall(function()
+                    return g:getUnit(1):getPoint() -- {x = north, y = alt, z = east}
+                end)
+                if okp and pos ~= nil then
+                    local dx = pos.x - area.centerX
+                    local dz = pos.z - area.centerY
+                    if (dx * dx + dz * dz) <= (SCAR_PROXIMITY_M * SCAR_PROXIMITY_M) then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- Start the chase: route every parked mover (real bound group(s) + the spawned
+-- HVT/decoys/clutter) to its destination, and open the fail clock from now.
+local function activate_movement(area)
+    for _, m in ipairs(area.movers or {}) do
+        set_group_route(m.name, m.destX, m.destY, m.speed)
+    end
+    area.activated = true
+    area.deadline = timer.getTime() + (area.window or 1200)
+    scar_log("area " .. tostring(area.id) .. " ACTIVATED (package within " ..
+        math.floor(SCAR_PROXIMITY_M / 1852) .. " NM); window " ..
+        math.floor(area.window or 1200) .. "s")
+end
+
 local function scar_check()
     for _, area in ipairs(scar_areas) do
         if not area.done then
-            local timed_out = area.deadline and timer.getTime() >= area.deadline
-            -- The scenario is live from spawn (everything moves at mission start),
-            -- so areas are always live; the legacy liveAt gate is kept defensively
-            -- (nil -> always true). Bind the SOF team once the HVT closes in.
-            local live = (area.liveAt == nil) or (timer.getTime() >= area.liveAt)
+            -- Parked until the package reaches the ring; then it bugs out and the
+            -- fail clock starts. A kill before activation still counts as success.
+            if not area.activated and package_near(area) then
+                activate_movement(area)
+            end
+            local live = area.activated == true
+            local timed_out = live and area.deadline
+                and timer.getTime() >= area.deadline
             maybe_bind_sof(area)
             if all_groups_dead(area) then
                 mark_result(area, "success")
             elseif area.variant == "missile" then
                 -- Reached its firing position (or out of time): it launches.
-                if (live and hvt_in_fail_zone(area)) or timed_out then
+                if live and (hvt_in_fail_zone(area) or timed_out) then
                     launch_missile(area)
                     mark_result(area, "launched")
                 end
@@ -622,7 +669,9 @@ end
 -- dest_y) at the given speed (armor flees to the city; a SCUD races to its
 -- firing position). Uses mist.goRoute, which builds a valid ground route — a
 -- hand-rolled setTask was not reliably moving real bound groups in-game.
-local function set_group_route(group_name, dest_x, dest_y, speed)
+-- (Assigns the forward-declared `set_group_route` upvalue so activate_movement,
+-- defined earlier, can call it.)
+function set_group_route(group_name, dest_x, dest_y, speed)
     local group = Group.getByName(group_name)
     if group == nil then
         -- DIAGNOSTIC (scar bound-group movement): a silent miss here means the
@@ -694,49 +743,67 @@ local function set_group_route(group_name, dest_x, dest_y, speed)
     end
 end
 
--- Spawn variant: runs AT SPAWN (mission start). Spawns the whole ground picture
--- already moving (each convoy carries its spawn->dest route) so the discrimination
--- puzzle is present and dynamic when the player arrives. Only the HVT is tracked;
--- decoys/clutter are the puzzle (mis-ID scoring is a later increment). The SOF
--- capture team is bound lazily (see maybe_bind_sof) so a player-delivered team is
--- still detected later, not pre-empted by the t=0 fallback.
+-- Record a parked group that should drive to (dx, dy) at `speed` when the area
+-- activates (proximity). Threats (speed 0, holding station) are not movers.
+local function add_mover(area, name, dx, dy, speed)
+    if name == nil then
+        return
+    end
+    area.movers = area.movers or {}
+    area.movers[#area.movers + 1] = { name = name, destX = dx, destY = dy, speed = speed }
+end
+
+-- Spawn variant: spawns the whole ground picture PARKED at mission start (the
+-- discrimination puzzle is present from the off); the columns only start fleeing
+-- when the package reaches the activation ring (scar_check -> activate_movement).
+-- Only the HVT is tracked; decoys/clutter are the puzzle. The SOF capture team is
+-- bound lazily (maybe_bind_sof).
 local function activate_spawn_area(tasking, window)
     local country_id = scar_num(tasking.hvtCountryId)
-    local hvt_area, hvt_convoy = nil, nil
+    local area = {
+        id = tostring(tasking.taskingId),
+        variant = "spawn",
+        coalition = tostring(tasking.coalition or "blue"),
+        groups = {},
+        done = false,
+        activated = false,
+        window = window,
+        movers = {},
+        centerX = scar_num(tasking.centerX, 0),
+        centerY = scar_num(tasking.centerY, 0),
+        destX = 0,
+        destY = 0,
+        radius = scar_num(tasking.failZoneRadius, 500),
+        commandType = tostring(tasking.commandType or ""),
+        -- Phase 2a SOF ambush (set only when scar_command_post_intel is on).
+        sofX = scar_num(tasking.sofX),
+        sofY = scar_num(tasking.sofY),
+        sofRadius = scar_num(tasking.sofRadius),
+        sofCountryId = scar_num(tasking.sofCountryId),
+        sofUnitType = tostring(tasking.sofUnitType or ""),
+    }
+    local hvt_convoy = nil
     local spawn_index = 0
     for _, convoy in pairs(tasking.convoys or {}) do
         spawn_index = spawn_index + 1
-        local group_name =
-            spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
-        if group_name and tostring(convoy.role) == "hvt" then
-            hvt_convoy = convoy
-            hvt_area = {
-                id = tostring(tasking.taskingId),
-                variant = "spawn",
-                coalition = tostring(tasking.coalition or "blue"),
-                groups = { group_name },
-                done = false,
-                centerX = scar_num(tasking.centerX, 0),
-                centerY = scar_num(tasking.centerY, 0),
-                destX = scar_num(convoy.destX, 0),
-                destY = scar_num(convoy.destY, 0),
-                radius = scar_num(tasking.failZoneRadius, 500),
-                commandType = tostring(tasking.commandType or ""),
-                -- Moving from spawn: the fail clock runs from now.
-                deadline = timer.getTime() + window,
-                -- Phase 2a SOF ambush (set only when scar_command_post_intel is on).
-                sofX = scar_num(tasking.sofX),
-                sofY = scar_num(tasking.sofY),
-                sofRadius = scar_num(tasking.sofRadius),
-                sofCountryId = scar_num(tasking.sofCountryId),
-                sofUnitType = tostring(tasking.sofUnitType or ""),
-            }
+        local name = spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
+        if name ~= nil then
+            if tostring(convoy.role) ~= "threat" then
+                add_mover(area, name, scar_num(convoy.destX, 0),
+                    scar_num(convoy.destY, 0), scar_num(convoy.speed, 5))
+            end
+            if tostring(convoy.role) == "hvt" then
+                hvt_convoy = convoy
+                area.groups = { name }
+                area.destX = scar_num(convoy.destX, 0)
+                area.destY = scar_num(convoy.destY, 0)
+            end
         end
     end
-    if hvt_area then
-        table.insert(scar_areas, hvt_area)
-        brief_spawn(hvt_area, hvt_convoy)
-        scar_log("area " .. hvt_area.id .. " live at spawn; window " ..
+    if #area.groups > 0 then
+        table.insert(scar_areas, area)
+        brief_spawn(area, hvt_convoy)
+        scar_log("area " .. area.id .. " spawned (parked); window " ..
             math.floor(window) .. "s")
     else
         scar_log("spawn tasking " .. tostring(tasking.taskingId) ..
@@ -762,6 +829,9 @@ local function activate_missile_area(tasking, window)
         coalition = tostring(tasking.coalition or "blue"),
         groups = groups,
         done = false,
+        activated = false,
+        window = window,
+        movers = {},
         centerX = scar_num(tasking.centerX, 0),
         centerY = scar_num(tasking.centerY, 0),
         destX = scar_num(tasking.destX, 0),
@@ -769,19 +839,17 @@ local function activate_missile_area(tasking, window)
         radius = scar_num(tasking.failZoneRadius, 2000),
         fireTargetX = scar_num(tasking.fireTargetX, 0),
         fireTargetY = scar_num(tasking.fireTargetY, 0),
-        -- Racing from spawn: the fail clock runs from now (live immediately).
-        deadline = timer.getTime() + window,
     }
+    local speed = scar_num(tasking.fleeSpeed, 5)
     for _, name in ipairs(groups) do
         missile_group_index[name] = area
         set_group_roe(name, AI.Option.Ground.val.ROE.WEAPON_HOLD)
+        -- Held parked + WEAPON_HOLD until the package arrives; then it races to the
+        -- firing position (activate_movement) and fires on arrival = the fail.
+        add_mover(area, name, area.destX, area.destY, speed)
     end
     table.insert(scar_areas, area)
     brief_missile(area)
-    local speed = scar_num(tasking.fleeSpeed, 5)
-    for _, name in ipairs(area.groups) do
-        set_group_route(name, area.destX, area.destY, speed)
-    end
     return true
 end
 
@@ -824,8 +892,8 @@ local function brief_armor(area)
     local sig = live_signature(area.groups[1])
     local text = "SCAR INTEL (" .. area.id .. "):\n" ..
         "Target signature: " .. sig .. " + 1x command vehicle (the HVT)\n" ..
-        "The real column is ON THE MOVE with a command vehicle riding with it. " ..
-        "Decoys share SOME elements — some even a command vehicle — so match the " ..
+        "The real column starts moving as you arrive, with a command vehicle riding " ..
+        "with it. Decoys share SOME elements — some even a command vehicle — so match the " ..
         "FULL signature and destroy it (command vehicle included) before it reaches " ..
         "the city."
     pcall(trigger.action.outTextForCoalition, side, text, 30)
@@ -861,6 +929,9 @@ local function activate_armor_area(tasking, window)
         coalition = tostring(tasking.coalition or "blue"),
         groups = groups,
         done = false,
+        activated = false,
+        window = window,
+        movers = {},
         centerX = scar_num(tasking.centerX, 0),
         centerY = scar_num(tasking.centerY, 0),
         destX = scar_num(tasking.destX, 0),
@@ -869,8 +940,6 @@ local function activate_armor_area(tasking, window)
         -- The command vehicle riding with the real column: tracked (must die for
         -- success) and the unit that despawns ("escapes") on reaching the city.
         commandType = tostring(tasking.commandType or ""),
-        -- Moving from spawn: the fail clock runs from now.
-        deadline = timer.getTime() + window,
         -- Phase 2a SOF ambush (set only when scar_command_post_intel is on).
         sofX = scar_num(tasking.sofX),
         sofY = scar_num(tasking.sofY),
@@ -882,19 +951,25 @@ local function activate_armor_area(tasking, window)
     brief_armor(area)
     local speed = scar_num(tasking.fleeSpeed, 5)
     local country_id = scar_num(tasking.hvtCountryId)
-    -- The real armor bugs out now...
+    -- The real armor is a mover (parked until the package arrives, then bugs out)...
     for _, name in ipairs(area.groups) do
-        set_group_route(name, area.destX, area.destY, speed)
+        add_mover(area, name, area.destX, area.destY, speed)
     end
-    -- ...and the decoy/clutter columns spawn and flee alongside it (untracked),
-    -- plus the command vehicle, which IS tracked: append it to area.groups so
-    -- success requires killing it and it's found by despawn_command on arrival.
+    -- ...the decoy/clutter columns + command vehicle spawn PARKED alongside it (so
+    -- the puzzle is present from the start) and flee on activation too; the command
+    -- vehicle IS tracked, so append it to area.groups.
     local spawn_index = 0
     for _, convoy in pairs(tasking.convoys or {}) do
         spawn_index = spawn_index + 1
         local spawned = spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
-        if convoy.role == "command" and spawned ~= nil then
-            table.insert(area.groups, spawned)
+        if spawned ~= nil then
+            if tostring(convoy.role) ~= "threat" then
+                add_mover(area, spawned, scar_num(convoy.destX, 0),
+                    scar_num(convoy.destY, 0), scar_num(convoy.speed, 5))
+            end
+            if convoy.role == "command" then
+                table.insert(area.groups, spawned)
+            end
         end
     end
     return true

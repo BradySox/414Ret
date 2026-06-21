@@ -600,3 +600,28 @@ def test_lua_botched_capture_reports_a_stranded_team() -> None:
     assert "entry.sofStrandedY = pos.z" in report
     # The failed branches call it (only a surviving team tags a position).
     assert script.count("report_stranded_sof(area)") >= 3
+
+
+def test_lua_movement_is_proximity_gated() -> None:
+    # A-10 feedback 2026-06-20: the target should start moving when the package
+    # reaches the area (proximity), not at mission start — so a slow push doesn't
+    # hunt a target that's already gone. The picture still SPAWNS at mission start
+    # (the puzzle is present); only the movement + fail clock are gated.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    assert "SCAR_PROXIMITY_M" in script
+    assert "local function package_near(area)" in script
+    assert "coalition.getGroups" in script
+    # Activation routes the parked movers and opens the fail clock from then.
+    activate = script.split("local function activate_movement(area)", maxsplit=1)[
+        1
+    ].split("local function scar_check(", maxsplit=1)[0]
+    assert "area.movers" in activate
+    assert "area.activated = true" in activate
+    assert "area.deadline = timer.getTime()" in activate
+    # Convoys spawn PARKED (single waypoint at speed 0), to be routed on activation.
+    spawn = script.split("local function spawn_convoy", maxsplit=1)[1].split(
+        "local function find_delivered_sof", maxsplit=1
+    )[0]
+    assert '["speed"] = 0,' in spawn

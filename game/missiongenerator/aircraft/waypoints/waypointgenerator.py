@@ -133,7 +133,14 @@ class WaypointGenerator:
         # plan construction, but for now it's only used by the kneeboard so is generated
         # late.
         self._estimate_min_fuel_for(waypoints)
-        return mission_start_time, waypoints
+
+        # In-air starts spawn at the current waypoint, so DCS omits the
+        # already-passed waypoints; slice from the spawn waypoint so the kneeboard
+        # numbering matches the cockpit.
+        kneeboard_waypoints = waypoints
+        if isinstance(self.flight.state, InFlight):
+            kneeboard_waypoints = waypoints[self.flight.state.waypoint_index :]
+        return mission_start_time, kneeboard_waypoints
 
     def ensure_in_flight_route_has_locked_time(self) -> None:
         if not self.flight.state.in_flight:

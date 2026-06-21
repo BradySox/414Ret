@@ -85,6 +85,7 @@ from game.theater.theatergroundobject import (
     GenericCarrierGroundObject,
     LhaGroundObject,
     MissileSiteGroundObject,
+    ShipGroundObject,
 )
 from game.theater.theatergroup import SceneryUnit, IadsGroundGroup
 from game.unitmap import UnitMap
@@ -314,7 +315,14 @@ class GroundObjectGenerator:
             if vehicle_units:
                 self.create_vehicle_group(group.group_name, vehicle_units)
             if ship_units:
-                self.create_ship_group(group.group_name, ship_units)
+                ship_group = self.create_ship_group(group.group_name, ship_units)
+                if (
+                    isinstance(self.ground_object, ShipGroundObject)
+                    and self.ground_object.target_position is not None
+                ):
+                    self.sail_to_destination(
+                        self.ground_object.target_position, ship_group
+                    )
 
     @staticmethod
     def _contains_mobile_air_defense(units: list[TheaterUnit]) -> bool:
@@ -413,6 +421,19 @@ class GroundObjectGenerator:
             self.ground_object.hide_on_mfd or self._contains_mobile_air_defense(units)
         )
         return ship_group
+
+    def sail_to_destination(self, destination: Point, group: ShipGroup) -> Heading:
+        """Add an in-mission waypoint sailing the ship toward its campaign
+        destination at a nominal cruise speed. Cosmetic only — the authoritative
+        position update is the end-of-turn snap. The destination is validated as
+        open water with no land crossing at queue time, so the path is clear."""
+        start = group.points[0].position
+        heading = Heading.from_degrees(start.heading_between_point(destination))
+        speed = knots(25)  # nominal cruise, mirrors the carrier baseline
+        group.points[0].speed = speed.meters_per_second
+        group.add_waypoint(destination, speed.kph)
+        self.ground_object.rotate(heading)
+        return heading
 
     def create_static_group(self, unit: TheaterUnit) -> None:
         static_group = self.m.static_group(

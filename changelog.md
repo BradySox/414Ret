@@ -22,10 +22,23 @@
 * **[Radios]** COMM1 radio presets are mirrored onto COMM2 on aircraft that carry a second radio.
 * **[UX]** Auto-assigned TACAN codes are surfaced more clearly in control-point tooltips and the briefing.
 * **[Cheats]** Give or take money to/from both OWNFOR and OPFOR.
+* **[Map]** Blue non-carrier ships are movable on the campaign map — drag one to queue a destination; red ships and their queued moves stay hidden.
+* **[Finances]** The Finances dialog shows income, automated HQ spending per category, and the net change per turn.
+* **[Mission]** New "Player at IP" fast-forward stop condition, plus more robust fast-forward halting and combat-skip handling.
+* **[UI]** The base menu intel summary is regrouped into Air / Ground / Status sections with a parking-slot breakdown; QRA-alert count and recon-fogged ammo/factory state are preserved.
+* **[Map]** Carrier/LHA ship groups now appear on the map like other naval groups, including their air-defense rings; control-point tooltips list the surviving escort units.
+* **[Mission Generation]** Non-DEAD-role aircraft can be hand-assigned DEAD as a secondary task (19 airframes gain a DEAD secondary task; auto-planner priorities unchanged).
+* **[Map]** Selecting a flight draws a tactical overlay reflecting the AI's planned actions — strike attack geometry and the SEAD loiter/HARM-reach bubble (the latter keeps the fork's fixed-range bubble).
+* **[UI]** Waypoint editing: reorder waypoints, edit ToTs and on-station timing, with a warning when manual timing may drift from the package's escorts.
+* **[Mission Generation]** Player waypoint renames propagate to the aircraft CDU/HUD; the Strike Task page reflects renames without leaking the F-15E DTC slot tag into other pages.
+* **[Plugins]** ATIS for player flights via a MOOSE voice-ATIS plugin (per-airfield ATIS frequencies and spoken reports).
+* **[Kneeboard]** New recon kneeboard pages — target reconnaissance (aimpoints, threat rings, area context), a friendly-packages coordination list, and a package-targets theater map. Basemap tiles are fetched and cached at mission generation (offline coastline fallback); adds the `mgrs` dependency and new Kneeboard settings.
 
 ## Fixes
 * **[Plugins]** CTLD now treats a landed helicopter as on-ground using terrain AGL, so unload/extract works on sloped terrain.
 * **[Kneeboard]** Fixed waypoint numbering for in-air-start flights.
+* **[Mission]** Fixed DCS rejecting missions that had a locked-speed waypoint between two TOT-locked waypoints.
+* **[Settings]** Legacy pre-#684 fast-forward settings are migrated on load instead of crashing; a stale or garbled enum setting now falls back to its default rather than failing the load.
 * **[Flight Plans]** Fixed IndexError crash when a flight exits combat at its last waypoint`n* **[AI]** Fixed enemy AWACS orbit placement â€” AI AWACS (A-50, etc.) was orbiting toward the threat boundary and loitering near the front line. It now orbits in the opposite direction, deep inside friendly airspace. Player-coalition AWACS keeps the existing forward-leaning behavior.
 * **[Mission]** Reliably auto-detect end of mission, even when DCS wrote the final state.json before the wait dialog started watching
 * **[Performance]** Faster post-mission turn processing

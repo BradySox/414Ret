@@ -775,7 +775,7 @@ class WaypointBuilder:
         if cached is not None:
             return cached
         heading = Heading.from_degrees(random.randint(0, 359))
-        distance = nautical_miles(random.uniform(2, 4)).meters
+        distance = nautical_miles(random.uniform(1, 3)).meters
         position = anchor.point_from_heading(heading.degrees, distance)
         self._approximate_target_positions[key] = position
         return position

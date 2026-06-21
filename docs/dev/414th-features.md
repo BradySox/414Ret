@@ -235,7 +235,7 @@ hand-tuned after a bulk set. UI-only; no save-format or planner change. Upstream
 `TargetIntelPrecision` enum (`EXACT` / `APPROXIMATE`) in `game/settings/settings.py`
 controls three behaviors together when set to Approximate:
 
-- Player-only target steerpoints are offset to a randomised area within 2–6 NM of
+- Player-only target steerpoints are offset to a randomised area within 1–3 NM of
   the real target rather than placed exactly on it. The waypoint is renamed
   `TARGET AREA`. AI attack logic is unaffected.
   (`game/ato/flightplans/waypointbuilder.py` `_player_visible_target_area_position()`)

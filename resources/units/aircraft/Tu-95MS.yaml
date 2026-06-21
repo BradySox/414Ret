@@ -19,3 +19,5 @@ variants:
   Tu-95MS Bear-H: {}
 tasks:
   Strike: 705
+secondary_tasks:
+  - DEAD

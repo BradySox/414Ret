@@ -23,3 +23,5 @@ tasks:
   BAI: 700
   CAS: 700
   OCA/Aircraft: 625
+secondary_tasks:
+  - DEAD

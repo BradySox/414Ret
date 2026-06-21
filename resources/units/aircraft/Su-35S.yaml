@@ -29,3 +29,5 @@ tasks:
   Fighter sweep: 700
   SEAD Escort: 540
   TARCAP: 685
+secondary_tasks:
+  - DEAD

@@ -43,8 +43,16 @@ is legacy only and should not be extended.
   appends `mission_data.intercept_entries`.
 - Template spawn details: `game/missiongenerator/aircraft/flightgroupspawner.py`
   `create_intercept_template()` places the parked template and seeds
-  `QRA_AIRSTART_SPEED_MS` onto its waypoints so Moose in-air spawns do not drop early
-  jets nearly stationary and stall them.
+  `QRA_AIRSTART_SPEED_MS` onto its waypoints (en-route pace only).
+- Air-spawn profile (2026-06-21): waypoint speed does NOT set the spawn-*instant*
+  velocity — Moose air-spawns the cloned parking template at ~0 kt, so jets spawned
+  stalled at altitude and dove ~4,600 ft clawing back airspeed (an Su-27 nearly hit
+  the ground at Vaziani, Tacview 2026-06-20). `intercept-config.lua` now forces a real
+  scramble speed via `SPAWN:InitSpeedKnots` (`SCRAMBLE_SPEED_KT`, applied to the
+  spawned units in Moose `SpawnWithIndex`) and a terrain-relative LOW spawn altitude
+  per base via `SetSquadronTakeoffInAirAltitude` (field elevation + `SCRAMBLE_AGL_M`),
+  replacing the global absolute-MSL `SetDefaultTakeoffInAirAltitude` that was unsafe at
+  high-elevation fields. Both are tunable and need an in-game pass.
 - Lua/config path: `game/missiongenerator/interceptluadata.py` populates
   `dcsRetribution.Intercept`, and `resources/plugins/intercept/intercept-config.lua`
   instantiates Moose `AI_A2A_DISPATCHER` behavior from that table.
@@ -595,24 +603,38 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
     (SA-9 + command + 2 trucks) + 2 partial-signature decoys + plain-truck clutter +
     a light threat laydown — fleeing to the nearest enemy-held CP (the "city"). success =
     HVT killed; fail = it reaches the city (command vehicle despawns) or the window expires.
-  - `armor` (real `VehicleGroupGroundObject`): binds the REAL group as the HVT (flees to the
-    city) and mixes in spawned decoys derived from its live composition.
+  - `armor` (real, **fully-mobile** `VehicleGroupGroundObject`): binds the REAL group as the
+    HVT (flees to the city) and mixes in spawned decoys derived from its live composition. A
+    group containing towed/static units (`SCAR_IMMOBILE_GROUND_TYPES` — e.g. a KS-19 flak gun;
+    `_group_is_mobile`) is NOT bound (it would strand the immobile unit, 2026-06-20 feedback) —
+    it falls through to the fully-mobile `spawn` picture instead.
   - `missile` (real `MissileSiteGroundObject`, SCUD): the launcher races to a firing position
     and actually launches at its target city on arrival (`FireAtPoint`) — the launch is the
     fail. Stock random fire task suppressed for SCAR targets (`MissileSiteGenerator._is_scar_target`).
-- **Timing (important):** the scenario is anchored to the flight's **TOT**
-  (`go_live_s = time_over_target − mission.start_time`), not mission start, with a generous
-  window (`SCAR_WINDOW_S`, 20 min) and an early-start lead (`SCAR_START_LEAD_S`, 10 min) so
-  the target is already on the move when the player arrives. Bound real groups move via
-  `mist.goRoute` (a hand-rolled `setTask` did NOT reliably move them — don't revert).
-  Distances/timing in `scarluadata.py` are first-pass tunables (`SCAR_TRAVEL_M` ~15 NM).
+- **Timing (important, reworked 2026-06-21):** the scenario now goes live **at spawn
+  (mission start)** — the whole picture is present and the HVT is already moving when the
+  player arrives, regardless of when they push. This **reverses** the earlier TOT anchor
+  (`go_live_s`), which assumed the flight flew to its planned TOT; MP play doesn't, so the
+  target only started moving "right as we fired Mavs" (2026-06-20 feedback). The guard against
+  the target escaping before contact (the original 2026-06-17 reason for the TOT anchor) is now
+  the **slow pace**: the HVT is paced to crawl its whole route over `SCAR_WINDOW_S` (now 60 min),
+  so it stays catchable for the bulk of the mission. `go_live_s` is still emitted (reference) but
+  no longer gates activation; the Lua `scar_init` activates everything immediately and the fail
+  clock runs from spawn (`deadline = now + window`). The SOF capture team is bound **lazily** as
+  the HVT nears the ambush point (`maybe_bind_sof`) so a player-flown drop isn't pre-empted by the
+  t=0 fallback. Bound real groups move via `mist.goRoute` (a hand-rolled `setTask` did NOT
+  reliably move them — don't revert). Distances/timing in `scarluadata.py` are tunables
+  (`SCAR_TRAVEL_M` ~15 NM, `SCAR_WINDOW_S`). **Needs an in-game pass.**
 - **Results bridge:** the `scar` plugin (`resources/plugins/scar/`, default ON) writes the
   global `scar_results` (status per tasking); rides the proven TARS channel
   (`dcs_retribution.lua` `write_state` → `StateData.scar_results` in `debriefing.py` →
   `MissionResultsProcessor.commit_scar_results`, currently log-only). Verified round-trip
   in-game 2026-06-17/18 (`SCAR area scar-N: launched/failed`).
-- **F10/briefing cues** (R11) drawn from the plugin: target signature, ingress axis,
-  no-strike/firing-position marks, decoy warning, addressed to the SCAR flight's coalition.
+- **F10/briefing cues** (R11) drawn from the plugin: target signature, no-strike/firing-position
+  marks, decoy warning, addressed to the SCAR flight's coalition. The target mark now points at
+  the **search area center** (`centerX/centerY` on the tasking), NOT the exact HVT unit
+  (2026-06-20: a pin on the one correct group made it trivial) — combined with spawn-time decoys
+  and the HVT moving off its start point, the player must reconnoiter to ID it.
 - Tests: `tests/test_scar.py` (FlightType + dispatch), `tests/test_scar_bridge.py`
   (collection/emission/parse). **Lua needs in-game validation (not CI-runnable).**
 - Commander-capture campaign engine — **Phase 1 BUILT (gated by `scar_command_post_intel`,

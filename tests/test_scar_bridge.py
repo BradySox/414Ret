@@ -238,6 +238,34 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
     assert any(SCAR_COMMAND in d.unit_types for d in decoys)
 
 
+def test_armor_with_immobile_unit_falls_back_to_spawn() -> None:
+    # A "real armor group" that includes a towed/immobile unit (a flak gun) can't
+    # all flee — binding it strands the immobile unit (2026-06-20 feedback: "flak
+    # gun in the target group was not mobile"). Such a target is routed to the
+    # fully-mobile spawned picture instead of bound.
+    armor = MagicMock(spec=VehicleGroupGroundObject)
+    armor.groups = [
+        MagicMock(
+            units=[
+                MagicMock(type=MagicMock(id="BTR-80")),
+                MagicMock(type=MagicMock(id="KS-19")),  # towed AAA: cannot drive
+            ],
+            group_name="ARMOR-IMMOBILE",
+        )
+    ]
+    armor.position = Point(0, 0, None)  # type: ignore[arg-type]
+    armor.control_point = MagicMock(captured=True)
+    game = _game_with(_coalition_with_target(armor))
+
+    tasking = _build(game)[0]
+
+    assert tasking.variant == "spawn"  # not bound as armor
+    assert tasking.target_groups == ()  # the immobile real group is NOT bound
+    # The spawned HVT is the fully-mobile canned picture (no KS-19 to strand).
+    hvt = next(c for c in tasking.convoys if c.role == "hvt")
+    assert "KS-19" not in hvt.unit_types
+
+
 def test_armor_too_close_city_is_extended_to_min_flee() -> None:
     # When the nearest enemy city is closer than SCAR_MIN_FLEE_M, the bound group
     # would have almost no run (in-game feedback: target + hide point on top of
@@ -448,6 +476,7 @@ def test_populate_scar_lua_emits_spawn_fields() -> None:
     assert "spawn" in serialized
     assert "hvtCountryId" in serialized
     assert "coalition" in serialized  # briefing addressee emitted
+    assert "centerX" in serialized  # search-area center for the F10 mark
     assert "goLive" in serialized  # scenario timing emitted
     assert "window" in serialized
     assert "convoys" in serialized

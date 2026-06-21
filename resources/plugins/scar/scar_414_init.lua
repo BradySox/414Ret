@@ -551,21 +551,36 @@ local set_group_route
 -- fail clock starts from the approach, not mission start.
 local SCAR_PROXIMITY_M = 50 * 1852 -- 50 NM activation ring (tunable)
 
--- True once any friendly (SCAR-coalition) aircraft is within the ring of the area.
+-- True once a HUMAN-flown (client) SCAR-coalition aircraft is within the ring of
+-- the area. Gating on player-controlled units -- not any friendly group -- keeps
+-- AI tankers / AWACS / CAP that transit within the 50 NM ring from starting the
+-- chase before the strike package actually arrives (which would re-open the very
+-- "target's long gone" failure this proximity gate exists to prevent). Iterates
+-- every unit so a human in a non-lead slot still counts.
 local function package_near(area)
     local side = scar_side(area)
+    local r2 = SCAR_PROXIMITY_M * SCAR_PROXIMITY_M
     for _, cat in ipairs({ Group.Category.AIRPLANE, Group.Category.HELICOPTER }) do
         local ok, groups = pcall(coalition.getGroups, side, cat)
         if ok and groups ~= nil then
             for _, g in ipairs(groups) do
-                local okp, pos = pcall(function()
-                    return g:getUnit(1):getPoint() -- {x = north, y = alt, z = east}
-                end)
-                if okp and pos ~= nil then
-                    local dx = pos.x - area.centerX
-                    local dz = pos.z - area.centerY
-                    if (dx * dx + dz * dz) <= (SCAR_PROXIMITY_M * SCAR_PROXIMITY_M) then
-                        return true
+                local oku, units = pcall(g.getUnits, g)
+                if oku and units ~= nil then
+                    for _, u in ipairs(units) do
+                        local okp, pos = pcall(function()
+                            -- getPlayerName() is nil for AI; only humans trigger.
+                            if u:getPlayerName() == nil then
+                                return nil
+                            end
+                            return u:getPoint() -- {x = north, y = alt, z = east}
+                        end)
+                        if okp and pos ~= nil then
+                            local dx = pos.x - area.centerX
+                            local dz = pos.z - area.centerY
+                            if (dx * dx + dz * dz) <= r2 then
+                                return true
+                            end
+                        end
                     end
                 end
             end

@@ -613,6 +613,13 @@ def test_lua_movement_is_proximity_gated() -> None:
     assert "SCAR_PROXIMITY_M" in script
     assert "local function package_near(area)" in script
     assert "coalition.getGroups" in script
+    # The ring counts only HUMAN-flown aircraft (getPlayerName ~= nil) so an AI
+    # tanker/AWACS/CAP transiting within 50 NM can't start the chase before the
+    # player arrives — which would re-open the "target's long gone" failure mode.
+    near = script.split("local function package_near(area)", maxsplit=1)[1].split(
+        "local function activate_movement(area)", maxsplit=1
+    )[0]
+    assert "getPlayerName()" in near
     # Activation routes the parked movers and opens the fail clock from then.
     activate = script.split("local function activate_movement(area)", maxsplit=1)[
         1

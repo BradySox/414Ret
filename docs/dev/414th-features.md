@@ -668,7 +668,9 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
 - **Timing (important — proximity-gated as of 2026-06-21):** the whole picture (HVT + command
   + decoys + clutter) **spawns PARKED at mission start** so the discrimination puzzle is present
   whenever the player arrives, but the columns only **bug out once the strike package crosses the
-  activation ring** (`SCAR_PROXIMITY_M`, 50 NM; `package_near` in `scar_414_init.lua`). The fail
+  activation ring** (`SCAR_PROXIMITY_M`, 50 NM; `package_near` in `scar_414_init.lua`, which counts
+  only **human-flown (client) aircraft** so an AI tanker/AWACS/CAP transiting the ring can't start
+  the chase before the player gets there). The fail
   clock opens **on activation** (`activate_movement`: `deadline = now + window`), not at mission
   start. This is the A-10 crews' fix (2026-06-20): the target is moving as you arrive but can
   never be "long gone" if the jets are slow. It supersedes two earlier models — the original

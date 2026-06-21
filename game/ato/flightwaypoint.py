@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal, TYPE_CHECKING, Any, Dict, Optional
 
 from dcs import Point
@@ -47,6 +47,12 @@ class FlightWaypoint:
     tot: datetime | None = None
     departure_time: datetime | None = None
 
+    # Manual per-waypoint ToT shift for player flights. Effective times are a forward
+    # chain from the flight's frozen takeoff plus a cumulative sum of these offsets, so a
+    # non-zero value here shifts this waypoint and every later waypoint. Zero for
+    # auto-timed flights. See FlightPlan.set_waypoint_tot.
+    manual_tot_offset: timedelta = field(default_factory=timedelta)
+
     @property
     def x(self) -> float:
         return self.position.x
@@ -57,6 +63,11 @@ class FlightWaypoint:
 
     def __hash__(self) -> int:
         return hash(id(self))
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        if "manual_tot_offset" not in state:
+            state["manual_tot_offset"] = timedelta()
+        self.__dict__.update(state)
 
     def __deepcopy__(self, memo: Optional[Dict[int, Any]] = None) -> FlightWaypoint:
         obj = FlightWaypoint(self.name, self.waypoint_type, self.position)

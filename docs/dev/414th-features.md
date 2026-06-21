@@ -717,6 +717,41 @@ handoff lives in [`docs/dev/settings-qol-audit.md`](settings-qol-audit.md).
 
 ---
 
+## 17. Auto-planner target unpredictability
+
+The theater commander's HTN (`game/commander/theatercommander.py`) is a deterministic,
+strict-priority planner: given the same campaign state it picks the same targets in the
+same order every turn, which reads as "scripted" in game (the enemy hits the same things
+on the same cadence). This feature adds an opt-in, tunable amount of randomness to which
+*opportunistic* offensive targets get serviced first, without ever deferring a real
+defensive threat response.
+
+- **The lever** is `game/commander/tasks/targetorder.py` `shuffled_by_priority(items, state)`.
+  It takes an already-priority-sorted candidate list and reorders it with
+  Efraimidis–Spirakis weighted sampling (weight `decay**rank`, `decay = strength/100`). At
+  strength 0 it returns the list unchanged (strict priority); as strength rises, lower-rank
+  targets become progressively more likely to be picked first, while the top target stays
+  the single most likely pick at any non-extreme setting.
+- **Two settings** (`game/settings/settings.py`, Campaign Doctrine / General):
+  `ownfor_planner_unpredictability` and `opfor_planner_unpredictability` (0–100, **default 0**).
+  The helper reads the knob for the planning coalition's side. Default 0 preserves the exact
+  deterministic planner, so existing campaigns and tests are unchanged.
+- **Wired into the opportunistic compound tasks only**: `AttackBuildings` (strike),
+  `AttackShips` (anti-ship), `AttackAirInfrastructure` (OCA), `AttackBattlePositions` (BAI),
+  and the **non-threatening** tiers of `DegradeIads` (opportunistic DEAD / detector
+  suppression). The reactive `DegradeIads` tier (`state.threatening_air_defenses` — SAMs
+  actually threatening a planned target) is left strictly deterministic on purpose, as are
+  BARCAP wave scheduling, escort sizing, and the QRA dispatcher. Variety never delays a
+  threat response.
+- **Tests**: `tests/test_planner_unpredictability.py` (identity at 0, correct-side knob,
+  permutation invariant, top-priority favored).
+
+This is the low-risk, in-Python alternative to a runtime MOOSE `Ops.Chief` rewrite of red
+planning: it makes red's offensive target selection feel less repetitive while keeping the
+campaign economy, attrition, and BDA coupling intact and unit-testable.
+
+---
+
 ## Still in flight / deferred
 
 - Aircraft task-priority rebalance: a **conservative, intent-preserving outliers pass**

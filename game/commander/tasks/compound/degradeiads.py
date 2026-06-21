@@ -3,6 +3,7 @@ from typing import Union
 
 from game.commander.tasks.primitive.antiship import PlanAntiShip
 from game.commander.tasks.primitive.dead import PlanDead
+from game.commander.tasks.targetorder import shuffled_by_priority
 from game.commander.theaterstate import TheaterState
 from game.data.groups import GroupTask
 from game.htn import CompoundTask, Method
@@ -11,6 +12,9 @@ from game.theater.theatergroundobject import IadsGroundObject, NavalGroundObject
 
 class DegradeIads(CompoundTask[TheaterState]):
     def each_valid_method(self, state: TheaterState) -> Iterator[Method[TheaterState]]:
+        # Reactive tier: SAMs actually threatening a planned target are serviced
+        # in strict priority order -- never randomized, so a real threat response
+        # is never deferred for the sake of variety.
         for air_defense in state.threatening_air_defenses:
             yield [self.plan_against(air_defense)]
 
@@ -24,9 +28,11 @@ class DegradeIads(CompoundTask[TheaterState]):
             - x.max_threat_range().meters,
         )
 
-        for air_defense in prioritized_air_defenses:
+        # Opportunistic tiers: which non-threatening SAM / detector to chip away
+        # at is varied so red's offensive DEAD isn't identical every turn.
+        for air_defense in shuffled_by_priority(prioritized_air_defenses, state):
             yield [self.plan_against(air_defense)]
-        for detector in state.detecting_air_defenses:
+        for detector in shuffled_by_priority(state.detecting_air_defenses, state):
             yield [self.plan_against(detector)]
 
     @staticmethod

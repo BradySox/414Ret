@@ -61,7 +61,6 @@ class FlightType(Enum):
     FERRY = "Ferry"
     AIR_ASSAULT = "Air Assault"
     SEAD_SWEEP = "SEAD Sweep"  # Reintroduce legacy "engage-whatever-you-can-find" SEAD
-    PRETENSE_CARGO = "Cargo Transport"  # For Pretense campaign AI cargo planes
     ARMED_RECON = "Armed Recon"
     RECOVERY = "Recovery"
     TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +5 min behind strikers
@@ -78,6 +77,10 @@ class FlightType(Enum):
         # BARCAP (BarCap flight plan, configure_cap, BARCAP loadout). Map old saves.
         if value == "Scramble":
             return cls.BARCAP
+        # The Pretense campaign export (and its AI cargo flight type) was removed.
+        # Only exported Pretense .miz used it, but migrate any stray persisted value.
+        if value == "Cargo Transport":
+            return cls.TRANSPORT
         return None
 
     def __str__(self) -> str:
@@ -182,7 +185,6 @@ class FlightType(Enum):
             FlightType.SCAR: AirEntity.ATTACK_STRIKE,
             FlightType.TARCAP: AirEntity.FIGHTER,
             FlightType.TRANSPORT: AirEntity.UTILITY,
-            FlightType.PRETENSE_CARGO: AirEntity.UTILITY,
             FlightType.AIR_ASSAULT: AirEntity.ROTARY_WING,
             # SOF insert is a fixed-wing transport airdrop (C-130), like TRANSPORT.
             FlightType.SOF: AirEntity.UTILITY,

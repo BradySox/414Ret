@@ -1,6 +1,7 @@
 ﻿# Retribution v1.6.0
 
 ## Features/Improvements
+* **[414th]** Removed the Pretense campaign generator entirely (the "Generate a Pretense Campaign" menu action, the `game/pretense` generators, the `resources/plugins/pretense` Lua, the Pretense settings page, the `PRETENSE_CARGO` flight type, and the four `*_full.yaml` Pretense-tuned campaigns). The 414th fork no longer ships Pretense; old saves migrate cleanly (removed settings are dropped, any stray `Cargo Transport` flight type maps to `TRANSPORT`).
 * **[Mission]** Add reactive GCI scramble support. RED untasked, uncontrolled, air-to-air-capable aircraft can sit cold on the ramp as dormant interceptors; when a Blue aircraft is detected by the RED radar network, `reactive_scramble.lua` wakes the nearest available group and tasks it to intercept.
 * **[Mission]** Add JAMMING flight type for standoff electronic warfare aircraft (C-130J Compass Call). The aircraft holds an independent racetrack orbit at standoff range (same pattern as AEWC) rather than following a primary flight. Mixed packages pace their departure and TOT around the EW aircraft's slower transit. `c130j_mission_systems.lua` is automatically injected into any mission that includes a JAMMING flight.
 * **[UX]** Hovering a friendly flight's route line on the map highlights it in yellow, and clicking it selects that flight's package (and the flight) in the ATO sidebar.

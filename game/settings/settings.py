@@ -114,8 +114,6 @@ FLIGHT_PLANNER_AUTOMATION = "Flight Planner Automation"
 CAMPAIGN_DOCTRINE_PAGE = "Campaign Doctrine"
 DOCTRINE_DISTANCES_SECTION = "Doctrine distances"
 
-PRETENSE_PAGE = "Pretense"
-
 MISSION_GENERATOR_PAGE = "Mission Generator"
 
 GAMEPLAY_SECTION = "Gameplay"
@@ -1588,132 +1586,6 @@ class Settings:
             "if the start type was manually changed to In Flight."
         ),
     )
-    pretense_maxdistfromfront_distance: int = bounded_int_option(
-        "Full-activity distance from front (km)",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=130,
-        min=10,
-        max=10000,
-        detail=(
-            "Zones farther away than this from the front line are switched "
-            "into low activity state, but will still be there as functional "
-            "parts of the economy. Use this to adjust performance."
-        ),
-    )
-    pretense_controllable_carrier: bool = boolean_option(
-        "Enable player-commanded Pretense carrier",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        detail=(
-            "This can be used to enable or disable the native carrier support in Pretense. The Pretense carrier "
-            "can be controlled through the communication menu (if the Pretense character has enough rank/CMD points) "
-            "and the player can call in AI aerial and cruise missile missions using it."
-            "The controllable carriers in Pretense do not build and deploy AI missions autonomously, so if you prefer "
-            "to have both sides deploy carrier aviation autonomously, you might want to disable this option. "
-            "When this option is disabled, moving the carrier can only be done with the Retribution interface."
-        ),
-    )
-    pretense_carrier_steams_into_wind: bool = boolean_option(
-        "Pretense carriers steam into wind",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        detail=(
-            "This setting controls whether carriers and their escorts will steam into wind. Disable to "
-            "to ensure that the carriers stay within the carrier zone in Pretense, but note that "
-            "doing so might limit carrier operations, takeoff weights and landings."
-        ),
-    )
-    pretense_carrier_zones_navmesh: str = choices_option(
-        "Navmesh to use for Pretense carrier zones",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        choices=["Blue navmesh", "Red navmesh"],
-        default="Blue navmesh",
-        detail=(
-            "Use the Retribution map interface options to compare the blue navmesh and the red navmesh."
-            "You can select which navmesh to use when generating the zones in which the controllable carrier(s) "
-            "move and operate."
-        ),
-    )
-    pretense_extra_zone_connections: int = bounded_int_option(
-        "Extra friendly zone connections",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=2,
-        min=0,
-        max=10,
-        detail=(
-            "Add connections from each zone to this many closest friendly zones,"
-            "which don't have an existing supply route defined in the campaign."
-        ),
-    )
-    pretense_sead_flights_per_cp: int = bounded_int_option(
-        "Number of AI SEAD flights per control point / zone",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=1,
-        min=1,
-        max=10,
-    )
-    pretense_cas_flights_per_cp: int = bounded_int_option(
-        "Number of AI CAS flights per control point / zone",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=1,
-        min=1,
-        max=10,
-    )
-    pretense_bai_flights_per_cp: int = bounded_int_option(
-        "Number of AI BAI flights per control point / zone",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=1,
-        min=1,
-        max=10,
-    )
-    pretense_strike_flights_per_cp: int = bounded_int_option(
-        "Number of AI Strike flights per control point / zone",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=1,
-        min=1,
-        max=10,
-    )
-    pretense_barcap_flights_per_cp: int = bounded_int_option(
-        "Number of AI BARCAP flights per control point / zone",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=1,
-        min=1,
-        max=10,
-    )
-    pretense_ai_aircraft_per_flight: int = bounded_int_option(
-        "Number of AI aircraft per flight",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=2,
-        min=1,
-        max=4,
-    )
-    pretense_player_flights_per_type: int = bounded_int_option(
-        "Number of player flights per aircraft type at each base",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=1,
-        min=1,
-        max=10,
-    )
-    pretense_ai_cargo_planes_per_side: int = bounded_int_option(
-        "Number of AI cargo planes per side",
-        page=PRETENSE_PAGE,
-        section=GENERAL_SECTION,
-        default=2,
-        min=1,
-        max=20,
-    )
 
     # Cheating. Not using auto settings because the same page also has buttons which do
     # not alter settings.
@@ -1806,6 +1678,19 @@ class Settings:
             "silence_ai_radios",
             "prefer_squadrons_with_matching_primary_task",
             "pretense_num_of_cargo_planes",
+            "pretense_maxdistfromfront_distance",
+            "pretense_controllable_carrier",
+            "pretense_carrier_steams_into_wind",
+            "pretense_carrier_zones_navmesh",
+            "pretense_extra_zone_connections",
+            "pretense_sead_flights_per_cp",
+            "pretense_cas_flights_per_cp",
+            "pretense_bai_flights_per_cp",
+            "pretense_strike_flights_per_cp",
+            "pretense_barcap_flights_per_cp",
+            "pretense_ai_aircraft_per_flight",
+            "pretense_player_flights_per_type",
+            "pretense_ai_cargo_planes_per_side",
             "nevatim_parking_fix",
             "only_player_takeoff",
         ):

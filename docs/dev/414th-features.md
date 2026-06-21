@@ -100,7 +100,7 @@ selected friendly group.
   2026-06-11 refactor.
 - Plugin script: `resources/plugins/c130j/c130j_mission_systems.lua` (+ `plugin.json`).
 - Loadout/package wiring: `game/ato/loadouts.py`, `game/ato/package.py`,
-  `game/theater/missiontarget.py`, `game/pretense/pretenseaircraftgenerator.py`.
+  `game/theater/missiontarget.py`.
 
 **C-130 EW hard constraints (carried over from the standalone ME script):** do NOT toggle
 SAM radar emissions (`enableEmission(false)` crashed DCS - suppression is ROE WEAPON_HOLD
@@ -240,8 +240,7 @@ controls three behaviors together when set to Approximate:
   `TARGET AREA`. AI attack logic is unaffected.
   (`game/ato/flightplans/waypointbuilder.py` `_player_visible_target_area_position()`)
 - Objective F10 map marks are suppressed even if `generate_marks` is on.
-  (`game/missiongenerator/triggergenerator.py`,
-  `game/pretense/pretensetriggergenerator.py`)
+  (`game/missiongenerator/triggergenerator.py`)
 - Strike / SEAD / DEAD kneeboard target pages omit exact coordinates. The Strike
   page cues the player to search the target area; the SEAD/DEAD page (`SeadTaskPage`)
   gives a **rough bullseye** (`Bullseye <brg> for <nm>`, bearing rounded to the

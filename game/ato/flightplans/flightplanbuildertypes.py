@@ -20,7 +20,6 @@ from .ocaaircraft import OcaAircraftFlightPlan
 from .ocarunway import OcaRunwayFlightPlan
 from .packagerefueling import PackageRefuelingFlightPlan
 from .planningerror import PlanningError
-from .pretensecargo import PretenseCargoFlightPlan
 from .scar import ScarFlightPlan
 from .sead import SeadFlightPlan
 from .seadsweep import SeadSweepFlightPlan
@@ -76,7 +75,6 @@ class FlightPlanBuilderTypes:
             # CTLD delivery to fly to the stranded team and extract it; the
             # air-assault builder's helo-only guard keeps this rotary-wing.
             FlightType.CSAR: AirAssaultFlightPlan.builder_type(),
-            FlightType.PRETENSE_CARGO: PretenseCargoFlightPlan.builder_type(),
             FlightType.ARMED_RECON: ArmedReconFlightPlan.builder_type(),
             # SCAR = area find-and-prosecute of one moving HVT; v1 reuses the
             # Armed Recon area/ingress machinery (see ScarFlightPlan).

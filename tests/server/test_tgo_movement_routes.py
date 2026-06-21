@@ -30,7 +30,17 @@ def _ship(blue: bool = True) -> ShipGroundObject:
         theater=None,  # type: ignore[arg-type]
         starts_blue=player,
     )
-    cp._coalition = SimpleNamespace(player=player)  # type: ignore[assignment]
+    # for_tgo runs the fork's viewer-aware known_for(), which reads the recon-fog
+    # settings off the coalition for an enemy viewer. Supply a minimal game/settings
+    # graph so the red-ship path doesn't trip over the fake coalition.
+    cp._coalition = SimpleNamespace(  # type: ignore[assignment]
+        player=player,
+        game=SimpleNamespace(
+            settings=SimpleNamespace(
+                recon_intel_fog=False, scar_command_post_intel=False
+            )
+        ),
+    )
     return ShipGroundObject(name="ship", location=location, control_point=cp)
 
 

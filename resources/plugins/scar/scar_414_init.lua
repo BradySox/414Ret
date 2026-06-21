@@ -549,7 +549,7 @@ local set_group_route
 -- once the strike package crosses the activation ring. So the target is moving when
 -- the player arrives but can never be "long gone" if the jets are slow — and the
 -- fail clock starts from the approach, not mission start.
-local SCAR_PROXIMITY_M = 20 * 1852 -- 20 NM activation ring (tunable)
+local SCAR_PROXIMITY_M = 50 * 1852 -- 50 NM activation ring (tunable)
 
 -- True once any friendly (SCAR-coalition) aircraft is within the ring of the area.
 local function package_near(area)

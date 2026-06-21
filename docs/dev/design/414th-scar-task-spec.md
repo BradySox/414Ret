@@ -112,7 +112,7 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   > that re-opened the escape-before-contact risk (guarded only by slow pacing). Final model
   > (A-10 crews' suggestion): the picture **spawns PARKED at mission start** (puzzle present) and
   > each column only bugs out when the strike package crosses the **activation ring**
-  > (`SCAR_PROXIMITY_M`, 20 NM); the fail clock opens on activation (`deadline = activation +
+  > (`SCAR_PROXIMITY_M`, 50 NM); the fail clock opens on activation (`deadline = activation +
   > window`). Target is moving as you arrive but never "long gone" if the jets are slow.
   > `go_live_s` is emitted but gates nothing; a kill before activation still counts. See features
   > doc §15 timing bullet.

@@ -270,8 +270,11 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   (an earlier up-and-down rework collapsed quiet bases to one wave and was reverted —
   `c8b1b8c32`). `ObjectiveFinder.air_threat_score(cp)` scores enemy air threat = sum over
   operational enemy airfields within `airbase_threat_range` of `proximity * present
-  fixed-wing aircraft` (coarse on purpose: all fixed-wing, not just A2A; cheap +
-  save-stable). `theaterstate.py` `threat_weighted_barcap_rounds()` = `baseline +
+  **A2A-capable** aircraft` (BARCAP/TARCAP-capable types only, so a base of
+  bombers/tankers/transports doesn't read as an air threat), **plus a
+  `FRONT_LINE_AIR_THREAT` floor** for any CP anchoring an active front line so
+  front-line-only sectors earn extra waves instead of scoring 0 (see Fixes below).
+  `theaterstate.py` `threat_weighted_barcap_rounds()` = `baseline +
   round((score/max_score) * baseline * (BARCAP_THREAT_CEILING-1))`, ceiling 2x; a
   zero-threat CP gets exactly the legacy duration-derived `barcap_rounds`, fleet keeps its
   2x. `TheaterState.from_game` wires it into `barcaps_needed`. **Volume only** — threat-
@@ -297,9 +300,10 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   - New fields auto-default on old saves via `Settings.__setstate__` and render on the
     Campaign Doctrine page (no UI wiring). Tests: `tests/test_flight_altitude_settings.py`.
 - Route around the front line: `game/threatzones.py` adds the **active front** as a
-  navmesh routing hazard. `ThreatZones._front_line_threat_zone()` buffers a capsule along
-  each active FrontLine (perpendicular to the blue->red axis, `FRONT_LINE_THREAT_BUFFER`
-  = 10 NM) and folds it into `self.all` **only** — the geometry the navmesh + generic
+  navmesh routing hazard. `ThreatZones._front_line_threat_zone(left, right)` buffers a
+  capsule along each active FrontLine — built from the **land-clipped FLOT endpoints**
+  (`FrontLineConflictDescription.frontline_bounds`, the same geometry the FLOT generator
+  uses), `FRONT_LINE_THREAT_BUFFER` = 10 NM — and folds it into `self.all` **only** — the geometry the navmesh + generic
   `threatened()`/path checks use. The SAM (`air_defenses`) and CAP (`airbases`) views stay
   clean, so air-defense/barcap planning is untouched. The navmesh penalizes 3x rather than
   forbids, so transiting flights cross the FLOT perpendicularly at the least-bad point
@@ -312,6 +316,43 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   requested depth instead of snapping laterally via `find_ground_position()` — the old
   lateral snap collapsed every off-map group onto the same patch, piling units on one tile
   (worst for deep roles: artillery/logistics at 16-20 km).
+
+### Jank fixes (2026-06-21)
+
+A consumer-level audit of the above (everything except QRA/scrambling, §1) found four real
+problems; all four are fixed:
+
+- **HIGH — FLOT units spawned *on* the front line.** `flotgenerator.py`
+  `get_valid_position_for_group()` returned the depth-0 point the instant the first 250 m
+  perpendicular step hit water/off-map, so on coastal/river/narrow-land fronts deep roles
+  (artillery, logistics) spawned in direct contact — the same stacking class the rework was
+  meant to fix, relocated to depth 0. Now, if the perpendicular walk can't reach at least
+  half the requested depth, it falls back to a lateral `find_ground_position` search around
+  the **intended-depth** point so the group keeps its depth (and spreads instead of
+  stacking). **Lua-free but needs an in-game pass on a coastline map to confirm placement.**
+- **MEDIUM — red's defensive posture flickered.** The per-CP "plan offensively instead of
+  defending" decision in `vulnerable_control_points()` was an **unseeded** `randint` re-rolled
+  every planning pass, so red defended a base one pass and abandoned it the next for identical
+  board state. Now `ObjectiveFinder._offensive_roll(cp)` seeds a `random.Random` per
+  `(turn, cp.name)`: stable across all passes within a turn (coherent posture), still varies
+  turn to turn.
+- **MEDIUM — threat score counted the wrong aircraft.** `air_threat_score` summed **all**
+  present fixed-wing (bombers/tankers/transports included), so a non-fighter base stole BARCAP
+  waves from a sector facing actual fighters. Now counts only BARCAP/TARCAP-capable types.
+- **MEDIUM — front-line-only sectors got no volume boost** (the two flagship pieces were
+  decoupled). A CP vulnerable *only* via `has_active_frontline` scored 0 and never earned
+  extra waves. Now such CPs get a `FRONT_LINE_AIR_THREAT` floor (additive with any nearby-
+  airbase score), so a contested front earns roughly half the threat bonus even with no enemy
+  airbase in range. (Intent confirmed by the maintainer: hot fronts *should* get more waves.)
+- **Capsule clipping (from the same audit):** the navmesh front-line hazard now uses the
+  land-clipped FLOT bounds instead of the full nominal 80 km width centered on the raw
+  strength-derived point, so the ~117 km × 37 km band no longer spills across water/empty
+  flanks or sits laterally offset from the actual battle (see the route-around bullet above).
+
+Tests: `tests/test_objectivefinder_barcap.py`, `tests/test_barcap_threat_weighting.py`,
+`tests/test_front_line_threat_zone.py`. Remaining LOW audit items (e.g. no clamp on
+`barcap_rounds` when `barcap_overlap_time` ≥ mission duration, one-sided lateral spread,
+250 m magic step) are deferred.
 
 ---
 
@@ -714,6 +755,41 @@ handoff lives in [`docs/dev/settings-qol-audit.md`](settings-qol-audit.md).
 - **Plugin wording**: `descriptionInUI` added to the QRA `intercept` and `splashdamage3`
   plugins (the latter notes its tuning is locked by design). Splash Damage values and the
   tuned script are unchanged.
+
+---
+
+## 17. Auto-planner target unpredictability
+
+The theater commander's HTN (`game/commander/theatercommander.py`) is a deterministic,
+strict-priority planner: given the same campaign state it picks the same targets in the
+same order every turn, which reads as "scripted" in game (the enemy hits the same things
+on the same cadence). This feature adds an opt-in, tunable amount of randomness to which
+*opportunistic* offensive targets get serviced first, without ever deferring a real
+defensive threat response.
+
+- **The lever** is `game/commander/tasks/targetorder.py` `shuffled_by_priority(items, state)`.
+  It takes an already-priority-sorted candidate list and reorders it with
+  Efraimidis–Spirakis weighted sampling (weight `decay**rank`, `decay = strength/100`). At
+  strength 0 it returns the list unchanged (strict priority); as strength rises, lower-rank
+  targets become progressively more likely to be picked first, while the top target stays
+  the single most likely pick at any non-extreme setting.
+- **Two settings** (`game/settings/settings.py`, Campaign Doctrine / General):
+  `ownfor_planner_unpredictability` and `opfor_planner_unpredictability` (0–100, **default 0**).
+  The helper reads the knob for the planning coalition's side. Default 0 preserves the exact
+  deterministic planner, so existing campaigns and tests are unchanged.
+- **Wired into the opportunistic compound tasks only**: `AttackBuildings` (strike),
+  `AttackShips` (anti-ship), `AttackAirInfrastructure` (OCA), `AttackBattlePositions` (BAI),
+  and the **non-threatening** tiers of `DegradeIads` (opportunistic DEAD / detector
+  suppression). The reactive `DegradeIads` tier (`state.threatening_air_defenses` — SAMs
+  actually threatening a planned target) is left strictly deterministic on purpose, as are
+  BARCAP wave scheduling, escort sizing, and the QRA dispatcher. Variety never delays a
+  threat response.
+- **Tests**: `tests/test_planner_unpredictability.py` (identity at 0, correct-side knob,
+  permutation invariant, top-priority favored).
+
+This is the low-risk, in-Python alternative to a runtime MOOSE `Ops.Chief` rewrite of red
+planning: it makes red's offensive target selection feel less repetitive while keeping the
+campaign economy, attrition, and BDA coupling intact and unit-testable.
 
 ---
 

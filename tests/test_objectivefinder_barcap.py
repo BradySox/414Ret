@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import pytest
 
-import game.commander.objectivefinder as obf
 from game.commander.objectivefinder import ObjectiveFinder
 
 
@@ -43,6 +42,7 @@ class _FakeGame:
     def __init__(self, control_points: list[_FakeCP]) -> None:
         self.theater = _FakeTheater(control_points)
         self.settings = _FakeSettings()
+        self.turn = 0
 
 
 class _NoAirfields:
@@ -80,10 +80,19 @@ def test_rear_cp_without_nearby_enemy_airfield_is_not_defended() -> None:
 
 
 def test_opfor_offensive_roll_skips_front_line(monkeypatch: pytest.MonkeyPatch) -> None:
-    # aggressiveness is the ratio of threat ignored: plan_offensively when
-    # randint <= aggressiveness. Force a low roll so OPFOR plans offensively;
-    # the forward CAP line should be skipped on that roll.
-    monkeypatch.setattr(obf, "randint", lambda _a, _b: 1)
+    # aggressiveness is the ratio of threat ignored: plan_offensively when the
+    # roll <= aggressiveness. Force a low roll so OPFOR plans offensively; the
+    # forward CAP line should be skipped on that roll.
+    monkeypatch.setattr(ObjectiveFinder, "_offensive_roll", lambda _self, _cp: 1)
     cp = _FakeCP("front", has_active_frontline=True)
     finder = _finder([cp], is_red=True)
     assert cp not in list(finder.vulnerable_control_points())
+
+
+def test_offensive_roll_is_stable_within_a_turn() -> None:
+    # Same (turn, CP) must produce the same roll across repeated planning passes
+    # so red's posture doesn't flicker; different CPs may differ.
+    finder = _finder([], is_red=True)
+    cp = _FakeCP("front", has_active_frontline=True)
+    rolls = {finder._offensive_roll(cp) for _ in range(5)}  # type: ignore[arg-type]
+    assert len(rolls) == 1

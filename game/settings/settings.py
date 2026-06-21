@@ -478,6 +478,38 @@ class Settings:
             "while 100% would have the autoplanner completely ignore OWNFOR air defences."
         ),
     )
+    ownfor_planner_unpredictability: int = bounded_int_option(
+        "OWNFOR auto-planner unpredictability (%)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=0,
+        min=0,
+        max=100,
+        detail=(
+            "How much the OWNFOR auto-planner varies which opportunistic targets "
+            "(strikes, OCA, BAI, anti-ship, non-threatening SAMs) it services first. "
+            "0% keeps the deterministic, strict-priority planner; higher values let "
+            "it sometimes service a lower-priority target first so its offensive "
+            "target selection is less repetitive turn to turn. Reactive defensive "
+            "tasking is unaffected."
+        ),
+    )
+    opfor_planner_unpredictability: int = bounded_int_option(
+        "OPFOR auto-planner unpredictability (%)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=0,
+        min=0,
+        max=100,
+        detail=(
+            "How much the OPFOR auto-planner varies which opportunistic targets "
+            "(strikes, OCA, BAI, anti-ship, non-threatening SAMs) it services first. "
+            "0% keeps the deterministic, strict-priority planner; higher values let "
+            "it sometimes service a lower-priority target first so red's offensive "
+            "target selection is less repetitive turn to turn. Reactive defensive "
+            "tasking is unaffected."
+        ),
+    )
     heli_combat_alt_agl: int = bounded_int_option(
         "Helicopter combat altitude (feet AGL)",
         page=CAMPAIGN_DOCTRINE_PAGE,

@@ -64,6 +64,9 @@ and selected later upstream fixes.
   more.
 - Transit routes treat the active ground battle as a hazard, reducing the tendency for
   unrelated AI flights to loiter over the FLOT.
+- An optional **auto-planner unpredictability** doctrine knob (per side, off by default)
+  varies which offensive targets the enemy services first, so red stops striking the same
+  targets in the same order every turn. Its reactive air defenses stay just as sharp.
 - Doctrine controls expose patrol-altitude floors and scatter, and the aircraft task
   priorities have received a conservative role-based rebalance.
 - Soviet/Russian air defenses use improved legacy SAM layouts and radar composition.

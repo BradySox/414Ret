@@ -120,6 +120,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     booleans consolidated into the `AiRadioBehavior` enum with deterministic save migration,
     plugin wording, and a UI-layer grouping/dependency handoff
     ([docs/dev/settings-qol-audit.md](docs/dev/settings-qol-audit.md)).
+17. **Auto-planner target unpredictability** — opt-in, per-side
+    (`ownfor_/opfor_planner_unpredictability`, default 0) weighted-random reordering of the
+    HTN's *opportunistic* offensive targets (strike/OCA/BAI/anti-ship/non-threatening DEAD)
+    so red stops hitting the same things every turn; reactive threat response stays strictly
+    deterministic. The low-risk in-Python alternative to a runtime MOOSE `Ops.Chief` red
+    rewrite (`game/commander/tasks/targetorder.py`; features doc §17).
 
 ---
 

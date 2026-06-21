@@ -9,13 +9,11 @@ across the ground battle instead of loitering over it. The SAM-specific
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from dcs.mapping import Point
 from shapely.geometry import Point as ShapelyPoint, Polygon, box
 
 from game.threatzones import FRONT_LINE_THREAT_BUFFER, ThreatZones
-from game.utils import Heading, nautical_miles
+from game.utils import nautical_miles
 
 
 def _pt(x: float, y: float) -> Point:
@@ -23,20 +21,15 @@ def _pt(x: float, y: float) -> Point:
     return Point(x, y, None)  # type: ignore[arg-type]
 
 
-@dataclass
-class _FakeFrontLine:
-    position: Point
-    blue_forward_heading: Heading
-
-
-def _front_line_north() -> _FakeFrontLine:
-    # Combat centre at the origin, blue advancing north (toward red). The lateral
-    # front therefore runs east-west (DCS convention: +x north, +y east).
-    return _FakeFrontLine(_pt(0.0, 0.0), Heading.from_degrees(0))
-
-
 def _capsule() -> Polygon:
-    return ThreatZones._front_line_threat_zone(_front_line_north(), 80)  # type: ignore[arg-type]
+    # The capsule now spans the (already land-clipped) front-line endpoints rather
+    # than re-deriving width/center itself. Combat centre at the origin, blue
+    # advancing north (+x), so the lateral front runs east-west (+y) over an 80 km
+    # span: endpoints at +/-40 km on the y axis.
+    half_width_m = 80 * 1000 / 2
+    left = _pt(0.0, -half_width_m)
+    right = _pt(0.0, half_width_m)
+    return ThreatZones._front_line_threat_zone(left, right)
 
 
 def test_capsule_covers_the_front_and_lateral_extent() -> None:

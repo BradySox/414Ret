@@ -234,10 +234,18 @@ class ThreatZones:
         # The active front line is a hazard to either side's transiting flights,
         # so it is added to every faction's projected threat (each coalition's
         # navmesh is built from its opponent's threat zone).
-        front_line_zones = [
-            cls._front_line_threat_zone(front_line, game.settings.max_frontline_width)
-            for front_line in game.theater.conflicts()
-        ]
+        from game.missiongenerator.frontlineconflictdescription import (
+            FrontLineConflictDescription,
+        )
+
+        front_line_zones = []
+        for front_line in game.theater.conflicts():
+            bounds = FrontLineConflictDescription.frontline_bounds(
+                front_line, game.theater
+            )
+            front_line_zones.append(
+                cls._front_line_threat_zone(bounds.left_position, bounds.right_position)
+            )
 
         return cls.for_threats(
             game.theater,
@@ -249,19 +257,18 @@ class ThreatZones:
         )
 
     @staticmethod
-    def _front_line_threat_zone(
-        front_line: "FrontLine", max_frontline_width_km: int
-    ) -> ThreatPoly:
-        """A capsule along the active front, perpendicular to the blue->red axis.
+    def _front_line_threat_zone(left: DcsPoint, right: DcsPoint) -> ThreatPoly:
+        """A capsule spanning the land-clipped front-line bounds.
 
-        Buffered by FRONT_LINE_THREAT_BUFFER so the navmesh routes transiting
-        flights around / quickly across the ground battle rather than over it.
+        ``left``/``right`` are the FLOT endpoints from
+        ``FrontLineConflictDescription.frontline_bounds`` -- the same land/
+        exclusion-clipped geometry the FLOT generator spawns units along -- so
+        the hazard band tracks where the ground battle actually is instead of
+        spilling the full nominal width across water or empty flanks off the raw
+        strength-derived center. Buffered by FRONT_LINE_THREAT_BUFFER so the
+        navmesh routes transiting flights around / quickly across the battle
+        rather than over it.
         """
-        center = front_line.position
-        heading = front_line.blue_forward_heading
-        half_width = max_frontline_width_km * 1000 / 2
-        left = center.point_from_heading(heading.left.degrees, half_width)
-        right = center.point_from_heading(heading.right.degrees, half_width)
         line = LineString([(left.x, left.y), (right.x, right.y)])
         return line.buffer(FRONT_LINE_THREAT_BUFFER.meters)
 

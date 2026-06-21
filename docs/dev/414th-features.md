@@ -611,20 +611,21 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   - `missile` (real `MissileSiteGroundObject`, SCUD): the launcher races to a firing position
     and actually launches at its target city on arrival (`FireAtPoint`) — the launch is the
     fail. Stock random fire task suppressed for SCAR targets (`MissileSiteGenerator._is_scar_target`).
-- **Timing (important, reworked 2026-06-21):** the scenario now goes live **at spawn
-  (mission start)** — the whole picture is present and the HVT is already moving when the
-  player arrives, regardless of when they push. This **reverses** the earlier TOT anchor
-  (`go_live_s`), which assumed the flight flew to its planned TOT; MP play doesn't, so the
-  target only started moving "right as we fired Mavs" (2026-06-20 feedback). The guard against
-  the target escaping before contact (the original 2026-06-17 reason for the TOT anchor) is now
-  the **slow pace**: the HVT is paced to crawl its whole route over `SCAR_WINDOW_S` (now 60 min),
-  so it stays catchable for the bulk of the mission. `go_live_s` is still emitted (reference) but
-  no longer gates activation; the Lua `scar_init` activates everything immediately and the fail
-  clock runs from spawn (`deadline = now + window`). The SOF capture team is bound **lazily** as
-  the HVT nears the ambush point (`maybe_bind_sof`) so a player-flown drop isn't pre-empted by the
-  t=0 fallback. Bound real groups move via `mist.goRoute` (a hand-rolled `setTask` did NOT
-  reliably move them — don't revert). Distances/timing in `scarluadata.py` are tunables
-  (`SCAR_TRAVEL_M` ~15 NM, `SCAR_WINDOW_S`). **Needs an in-game pass.**
+- **Timing (important — proximity-gated as of 2026-06-21):** the whole picture (HVT + command
+  + decoys + clutter) **spawns PARKED at mission start** so the discrimination puzzle is present
+  whenever the player arrives, but the columns only **bug out once the strike package crosses the
+  activation ring** (`SCAR_PROXIMITY_M`, 20 NM; `package_near` in `scar_414_init.lua`). The fail
+  clock opens **on activation** (`activate_movement`: `deadline = now + window`), not at mission
+  start. This is the A-10 crews' fix (2026-06-20): the target is moving as you arrive but can
+  never be "long gone" if the jets are slow. It supersedes two earlier models — the original
+  TOT anchor (`go_live_s`; MP doesn't fly a TOT, so it only moved "right as we fired Mavs") and
+  the interim move-from-spawn (which leaned on slow pacing as the only escape guard). `go_live_s`
+  is still emitted but gates nothing; a kill before activation still counts as success. Each
+  parked group is recorded as a `mover` (`add_mover`) and routed on activation via `set_group_route`
+  (which forces alarm-GREEN so towed/SCUD groups actually drive; `mist.goRoute` — a hand-rolled
+  `setTask` did NOT reliably move them, don't revert). SOF capture binds **lazily** as the HVT
+  nears the ambush point (`maybe_bind_sof`). Tunables in `scar_414_init.lua` (`SCAR_PROXIMITY_M`)
+  / `scarluadata.py` (`SCAR_TRAVEL_M` ~15 NM, `SCAR_WINDOW_S`). **Needs an in-game pass.**
 - **Results bridge:** the `scar` plugin (`resources/plugins/scar/`, default ON) writes the
   global `scar_results` (status per tasking); rides the proven TARS channel
   (`dcs_retribution.lua` `write_state` → `StateData.scar_results` in `debriefing.py` →

@@ -389,6 +389,19 @@ Tests: `tests/test_objectivefinder_barcap.py`, `tests/test_barcap_threat_weighti
   the warning every turn. `QTopPanel.negative_start_packages` now checks **takeoff** time (not
   startup) for DCA patrols, so a genuine "can't even take off in time" misplan still warns but
   the normal cold-start CAP does not. Tests: `tests/test_negative_start_packages.py`.
+- Player-despawn counted as a combat loss (2026-06-20): a player dropping to spectator — or
+  the mission ending with players still airborne — makes DCS fire `S_EVENT_CRASH`/`DEAD` for
+  that jet, which `dcs_retribution.lua` recorded into `crash_events`/`dead_events`, so
+  `debriefing.py` attrited the airframe + pilot even though they survived (GERBIL F-14s logged
+  lost while alive at mission end; confirmed in Tacview, none in `destroyed_objects_positions`).
+  The plugin now marks a unit on `S_EVENT_PLAYER_LEAVE_UNIT` and suppresses the crash/dead/lost
+  that follows within `PLAYER_LEAVE_GRACE_S` (`is_player_despawn`). A real shootdown fires the
+  loss event **before** the player leaves the seat, and **ejections are excluded** (an ejection
+  is a real loss), so both still count. This is upstream loss-accounting (good upstream-PR
+  candidate). Tests: `tests/test_debriefing.py::test_lua_suppresses_player_despawn_loss_events`.
+  **Residual to watch in-game:** if the engine tears the mission down without per-player
+  `PLAYER_LEAVE_UNIT` events, those despawn-crashes aren't caught — land/despawn before ending
+  remains the belt-and-suspenders.
 
 ---
 

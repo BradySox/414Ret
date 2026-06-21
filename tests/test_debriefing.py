@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock
@@ -114,3 +115,26 @@ def test_state_data_accepts_empty_intercept_survivor_list() -> None:
         cast(Any, SimpleNamespace(flight=lambda _: None)),
     )
     assert state.intercept_survivors == {}
+
+
+def test_lua_suppresses_player_despawn_loss_events() -> None:
+    # A player leaving the seat (spectator / mission end) makes DCS fire a
+    # crash/dead for the aircraft that must NOT count as a combat loss, while a
+    # real shootdown (and any ejection) still does. The Lua needs an in-game pass,
+    # but lock the guard's structure here so it can't silently regress.
+    script = Path("resources/plugins/base/dcs_retribution.lua").read_text(
+        encoding="utf-8"
+    )
+    # Tracks seat-leaves and ejections.
+    assert "S_EVENT_PLAYER_LEAVE_UNIT" in script
+    assert "player_left_units" in script
+    assert "ejected_units" in script
+    # The crash/dead/lost handlers gate on the despawn check.
+    assert "is_player_despawn" in script
+    despawn = script.split("local function is_player_despawn(name)", maxsplit=1)[
+        1
+    ].split("local function onEvent(event)", maxsplit=1)[0]
+    # An ejection is a real loss -> never suppressed.
+    assert "ejected_units[name]" in despawn
+    # Crash recording is now guarded, not unconditional.
+    assert "if not is_player_despawn(name) then" in script

@@ -625,12 +625,33 @@ end
 local function set_group_route(group_name, dest_x, dest_y, speed)
     local group = Group.getByName(group_name)
     if group == nil then
+        -- DIAGNOSTIC (scar bound-group movement): a silent miss here means the
+        -- name we were handed (the TGO group name from the generator) does not
+        -- match the live DCS group, so the bound HVT/SCUD never gets routed.
+        scar_log("set_group_route: group not found by name '" ..
+            tostring(group_name) .. "' — bound HVT/SCUD will not move")
         return
     end
+    -- Artillery/missile units (e.g. a BM-30 Smerch SCUD) sit in alarm-state RED
+    -- (deployed, stationary, ready to fire) and IGNORE a move route, so the bound
+    -- missile HVT never road-marched even though goRoute succeeded — while regular
+    -- armor moves fine. Force the group to alarm-state GREEN so it actually drives.
+    -- ROE stays WEAPON_HOLD (set by the caller), so it still won't shoot en route.
+    pcall(function()
+        local ctrl = group:getController()
+        if ctrl then
+            ctrl:setOption(
+                AI.Option.Ground.id.ALARM_STATE,
+                AI.Option.Ground.val.ALARM_STATE.GREEN
+            )
+        end
+    end)
     local oku, unit = pcall(function()
         return group:getUnit(1)
     end)
     if not oku or unit == nil then
+        scar_log("set_group_route: '" .. tostring(group_name) ..
+            "' has no unit 1 — cannot route")
         return
     end
     local pos = unit:getPoint() -- {x = north, y = alt, z = east}
@@ -641,6 +662,35 @@ local function set_group_route(group_name, dest_x, dest_y, speed)
     end)
     if not ok then
         scar_log("set_group_route failed for " .. group_name .. ": " .. tostring(err))
+    else
+        -- DIAGNOSTIC: confirm the route was applied and to where, so a "still not
+        -- moving" report can be told apart from a bad/zero destination.
+        scar_log("set_group_route: '" .. tostring(group_name) .. "' -> (" ..
+            tostring(dest_x) .. ", " .. tostring(dest_y) .. ") @ " ..
+            tostring(speed) .. " m/s")
+        -- DIAGNOSTIC: 90s later, log how far the group actually travelled, so a
+        -- "route applied but group not following goRoute" failure is distinct from
+        -- normal movement. ~0 m = the group is ignoring the route.
+        local start_x, start_z = pos.x, pos.z
+        mist.scheduleFunction(function()
+            local g = Group.getByName(group_name)
+            if g == nil then
+                return
+            end
+            local oku2, u2 = pcall(function()
+                return g:getUnit(1)
+            end)
+            if not oku2 or u2 == nil then
+                return
+            end
+            local p2 = u2:getPoint()
+            local moved = math.sqrt(
+                (p2.x - start_x) ^ 2 + (p2.z - start_z) ^ 2
+            )
+            scar_log("set_group_route: '" .. tostring(group_name) ..
+                "' moved " .. string.format("%.0f", moved) ..
+                " m in 90s after routing")
+        end, {}, timer.getTime() + 90)
     end
 end
 

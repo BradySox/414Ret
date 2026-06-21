@@ -64,7 +64,6 @@ SCAR_THREAT_LAYDOWN: tuple[str, ...] = (
 # for longer"). All first-pass tunables.
 SCAR_TRAVEL_M = 27780.0  # ~15 NM: how far a moving target runs / relocates
 SCAR_MIN_FLEE_M = SCAR_TRAVEL_M  # bound (armor) target always runs at least this far
-SCAR_START_LEAD_S = 600.0  # start moving this long BEFORE the flight's TOT
 SCAR_HVT_SPAWN_OFFSET_M = SCAR_TRAVEL_M  # HVT spawns this far from the area center
 SCAR_HVT_DEST_OFFSET_M = SCAR_TRAVEL_M  # fallback no-strike dest (no city found)
 SCAR_FAIL_ZONE_RADIUS_M = 500.0  # HVT entering its destination zone = failed
@@ -72,12 +71,39 @@ SCAR_SPREAD_RADIUS_M = 5000.0  # decoys/clutter ring around the area center
 SCAR_THREAT_RING_M = 3000.0  # threat ring (inside the convoy traffic)
 SCAR_UNIT_SPACING_M = 25.0  # spacing between units within a spawned convoy
 
-# The scenario is anchored to the SCAR flight's TOT (when the player is planned
-# to be on station), NOT mission start — otherwise the convoy crosses and the
-# SCUD fires while the player is still ~15+ min out (in-game finding 2026-06-17).
-# After it goes live the player gets this generous window to find + kill the HVT
-# before it "gets away" (spawn) or launches (missile). Tunable.
-SCAR_WINDOW_S = 1200.0  # 20 min on-station window after the flight's TOT
+# TIMING (2026-06-21): the scenario now goes live AT SPAWN (mission start) — the
+# whole picture is present and the HVT is already moving when the player arrives,
+# regardless of when they push (in-game feedback 2026-06-20: targets only started
+# moving "right as we fired Mavs" because the old TOT anchor assumed the flight
+# flew to its planned TOT, which MP play does not). This reverses the earlier
+# TOT-anchor (2026-06-17, which guarded against the convoy crossing / the SCUD
+# firing before the player arrived); the new guard is the slow pace below — the HVT
+# is paced to take the WHOLE window to crawl its route, so it stays catchable for
+# the bulk of the mission instead of racing off early. go_live is still emitted
+# (for reference) but no longer gates activation. Tunable; needs an in-game pass.
+SCAR_WINDOW_S = 3600.0  # 60 min hunt window, measured from spawn (the HVT reaches
+#                         its destination / the fail clock ends ~this long in)
+
+# Some vehicle groups include towed/emplaced units (towed AAA, static guns) that
+# cannot drive. Binding such a group as a fleeing "armor" HVT strands those units
+# (in-game feedback 2026-06-20: "flak gun in the target group was not mobile"), so
+# a group containing any of these is routed to the fully-mobile SPAWN picture
+# instead of being bound. pydcs exposes no ground-mobility flag, so this is a
+# curated set of vanilla immobile ground types; a miss degrades to one stranded
+# unit, never a crash. Extend as needed.
+SCAR_IMMOBILE_GROUND_TYPES: frozenset[str] = frozenset(
+    {
+        "KS-19",  # 100mm towed AAA (the 2026-06-20 flak gun)
+        "S-60_Type59_Artillery",  # 57mm towed AAA
+        "SON_9",  # Fire Can AAA radar (static)
+        "2B11 mortar",
+        "L118_Unit",  # 105mm towed howitzer
+        "ZU-23 Emplacement",
+        "ZU-23 Emplacement Closed",
+        "ZU-23 Insurgent",
+        "ZU-23 Closed Insurgent",
+    }
+)
 
 # The HVT flees toward the nearest enemy-held control point (the "city" proxy —
 # real city coords aren't queryable, but every map has CPs). On reaching it the
@@ -148,6 +174,11 @@ class ScarTasking:
     tasking_id: str
     variant: str  # "spawn" | "missile" | "armor"
     coalition: str = ""  # SCAR flight's coalition color ("blue"/"red"); brief addressee
+    # Area center (the target's position): the F10 "search area" cue the Lua marks,
+    # instead of a pin on the exact HVT (in-game feedback 2026-06-20: a steerpoint/
+    # mark on the one correct group made it trivial to find).
+    center_x: float = 0.0
+    center_y: float = 0.0
     # Scenario timing (seconds, mission-relative). The fail clock opens at
     # go_live_s (the flight's TOT) and runs for window_s after that.
     go_live_s: float = 0.0
@@ -235,6 +266,20 @@ def _real_signature(target: object) -> tuple[str, ...]:
     except (AttributeError, TypeError):
         return ()
     return tuple(sig)
+
+
+def _group_is_mobile(target: object) -> bool:
+    """True if every unit in the target's group(s) can drive (no towed/static units).
+
+    Real armor groups can include towed AAA or static guns that strand when the
+    column flees (the 2026-06-20 flak gun). Such a target is routed to the spawned
+    mobile picture instead of bound. Unknown composition is treated as mobile (bind
+    as before) so we never regress a group we can't read.
+    """
+    sig = _real_signature(target)
+    if not sig:
+        return True
+    return all(unit not in SCAR_IMMOBILE_GROUND_TYPES for unit in sig)
 
 
 def _partial_signatures(sig: tuple[str, ...]) -> tuple[tuple[str, ...], ...]:
@@ -334,9 +379,11 @@ def _compose_convoys(
         dest_x = center.x - SCAR_HVT_DEST_OFFSET_M
         dest_y = center.y
 
-    # Pace the HVT to reach the destination ~window (clamped to a sane crawl).
+    # Pace the HVT to reach the destination ~window (clamped to a sane crawl). It
+    # starts moving at spawn, so the window IS the full crawl time — a slow pace
+    # keeps it catchable for the whole hunt instead of escaping before contact.
     route_len = math.hypot(hvt_spawn_x - dest_x, hvt_spawn_y - dest_y)
-    hvt_speed = _paced_speed(route_len, window_s + SCAR_START_LEAD_S)
+    hvt_speed = _paced_speed(route_len, window_s)
 
     convoys: list[ScarConvoy] = [
         ScarConvoy(
@@ -522,12 +569,14 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 # Keep the SCUD's firing position on land (it can't drive offshore).
                 dest_x, dest_y = _on_land(game, dest_x, dest_y)
                 route_len = math.hypot(origin.x - dest_x, origin.y - dest_y)
-                flee_speed = _paced_speed(route_len, SCAR_WINDOW_S + SCAR_START_LEAD_S)
+                flee_speed = _paced_speed(route_len, SCAR_WINDOW_S)
                 taskings.append(
                     ScarTasking(
                         tasking_id=f"{color}-scar-{index}",
                         variant="missile",
                         coalition=color,
+                        center_x=origin.x,
+                        center_y=origin.y,
                         go_live_s=go_live_s,
                         window_s=SCAR_WINDOW_S,
                         target_groups=groups,
@@ -539,10 +588,14 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         fail_zone_radius_m=SCAR_CITY_RADIUS_M,
                     )
                 )
-            elif isinstance(target, VehicleGroupGroundObject):
-                # Bind the REAL armor group: it bugs out toward the city when the
-                # window opens; success = killed, fail = it reaches the city or
-                # the window expires. (BAI stays the AI/auto-planner task.)
+            elif isinstance(target, VehicleGroupGroundObject) and _group_is_mobile(
+                target
+            ):
+                # Bind the REAL armor group: it bugs out toward the city at spawn;
+                # success = killed, fail = it reaches the city or the window expires.
+                # (BAI stays the AI/auto-planner task.) Only fully-mobile groups are
+                # bound — groups with towed/static units fall through to the spawned
+                # mobile picture below so nothing strands (2026-06-20 flak gun).
                 groups = tuple(g.group_name for g in target.groups)
                 if not groups:
                     index -= 1
@@ -582,7 +635,7 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                 route_len = math.hypot(
                     target.position.x - dest_x, target.position.y - dest_y
                 )
-                flee_speed = _paced_speed(route_len, SCAR_WINDOW_S + SCAR_START_LEAD_S)
+                flee_speed = _paced_speed(route_len, SCAR_WINDOW_S)
                 # Give the hunted column a command vehicle so the player can pick
                 # the real HVT out of the decoys (like the spawn variant). The full
                 # signature is the real armor PLUS a command vehicle; decoys are
@@ -625,6 +678,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         tasking_id=f"{color}-scar-{index}",
                         variant="armor",
                         coalition=color,
+                        center_x=target.position.x,
+                        center_y=target.position.y,
                         go_live_s=go_live_s,
                         window_s=SCAR_WINDOW_S,
                         target_groups=groups,
@@ -673,6 +728,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         tasking_id=f"{color}-scar-{index}",
                         variant="spawn",
                         coalition=color,
+                        center_x=target.position.x,
+                        center_y=target.position.y,
                         go_live_s=go_live_s,
                         window_s=SCAR_WINDOW_S,
                         hvt_country_id=enemy_country_id,
@@ -730,6 +787,8 @@ def populate_scar_lua(root: "LuaData", taskings: Iterable[ScarTasking]) -> None:
         record.add_item("taskingId").set_value(tasking.tasking_id)
         record.add_item("variant").set_value(tasking.variant)
         record.add_item("coalition").set_value(tasking.coalition)
+        record.add_item("centerX").set_value(str(tasking.center_x))
+        record.add_item("centerY").set_value(str(tasking.center_y))
         record.add_item("goLive").set_value(str(tasking.go_live_s))
         record.add_item("window").set_value(str(tasking.window_s))
         if tasking.variant == "missile":

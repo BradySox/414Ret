@@ -106,6 +106,14 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   window expires, with a deadline (`go_live+window`) backstop. Missile: the SCUD's stock fire
   task is suppressed and it's held on `WEAPON_HOLD`; the launch (fail) is recorded at
   `go_live+window`. Taskings are deduped per target. NOT range-gated — purely time-based.
+  > **SUPERSEDED 2026-06-21 — now triggers at spawn, not TOT.** The TOT anchor assumed the
+  > flight flies to its planned TOT; MP play doesn't, so the picture only spawned/moved "right
+  > as we fired Mavs" (2026-06-20 feedback). The scenario now goes live **at mission start**:
+  > the whole picture is present and the HVT already moving whenever the player arrives. The
+  > escape-before-contact guard (the original 2026-06-17 reason for the anchor) is now the slow
+  > pace — the HVT is paced to crawl its whole route over `SCAR_WINDOW_S` (raised to 60 min), so
+  > it stays catchable. `go_live_s` is still emitted but no longer gates activation; the fail
+  > clock runs from spawn (`deadline = now + window`). See features doc §15 timing bullet.
 - **Threat laydown (R9) — built:** the spawn picture also scatters ZSU-23-4 + ZU-23 + an
   occasional SA-9 (stationary, untracked `role="threat"` groups). Spawned at runtime, so they
   never trip the planner's auto SEAD-escort (resolves §10 Q3 for the spawn path).

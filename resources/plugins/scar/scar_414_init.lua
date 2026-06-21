@@ -9,19 +9,24 @@
 --                         tracked: success = HVT destroyed; fail = it reaches the
 --                         city (its command vehicle despawns there) or the window
 --                         expires. Decoys/clutter are the discrimination puzzle.
---   * variant "armor"   — the target IS a real armor group. It's static until
---                         go_live, then bugs out toward the city. success = the
---                         group destroyed; fail = it reaches the city or the
---                         window expires. (BAI stays the AI/auto-planner task.)
+--   * variant "armor"   — the target IS a real armor group. It bugs out toward the
+--                         city at spawn (decoys + command vehicle spawn alongside
+--                         it). success = the group destroyed; fail = it reaches the
+--                         city or the window expires. (BAI stays the AI task.)
 --   * variant "missile" — the target IS a real SCUD site that RACES from its
 --                         location to a firing position and launches on arrival.
 --                         success = killed first; fail = it reaches the firing
 --                         position (or the window ends) and fires at its city.
 --
--- TIMING: each scenario is anchored to the SCAR flight's TOT (goLive, seconds
--- from mission start) so it doesn't resolve before the player can be on station.
--- The spawn picture appears at goLive; the SCUD is held on WEAPON_HOLD until
--- goLive+window. The player then has `window` seconds to find + kill the HVT.
+-- TIMING (2026-06-21): each scenario goes live AT SPAWN (mission start). The whole
+-- picture (HVT + command + decoys + clutter) is present and the HVT is already
+-- moving when the player arrives, no matter when they push. This replaces the old
+-- TOT anchor (goLive), which assumed the flight flew to its planned time-on-target;
+-- in MP it does not, so the target only started moving "right as we fired Mavs"
+-- (2026-06-20 feedback). It stays catchable because the generator paces the HVT to
+-- crawl its whole route over `window` (slow) rather than racing off early. goLive is
+-- still read for reference but no longer gates activation; the fail clock runs from
+-- spawn (deadline = now + window).
 --
 -- Outcomes go into the global scar_results table the base plugin serializes into
 -- state.json, which Retribution reads back in the debrief. Skeleton: no scoring
@@ -30,11 +35,6 @@
 -- to a logged warning instead of breaking the mission.
 
 local SCAR_CHECK_INTERVAL = 10 -- seconds between kill/arrival checks
--- Start moving this long BEFORE the flight's TOT so the target is already on the
--- move when the player arrives (in-game feedback: "doing more for longer"). The
--- fail deadline still anchors to go_live + window. Keep in sync with the Python
--- SCAR_START_LEAD_S (used for speed pacing).
-local SCAR_START_LEAD = 600
 
 local function scar_log(msg)
     if logger then
@@ -111,23 +111,21 @@ local function brief_spawn(area, hvt_convoy)
     local sig = signature_text(hvt_convoy)
     local text = "SCAR INTEL (" .. area.id .. "):\n" ..
         "Target convoy signature: " .. sig .. "\n" ..
-        "Decoys may share SOME but not ALL of these elements — do not prosecute a " ..
-        "partial match.\nFind and destroy the full-signature convoy before it reaches " ..
-        "its destination."
+        "It is ON THE MOVE in the search area. Decoys share SOME but not ALL of " ..
+        "these elements — do not prosecute a partial match.\nFind and destroy the " ..
+        "full-signature convoy before it reaches its destination."
     pcall(trigger.action.outTextForCoalition, side, text, 30)
 
-    local start_pt = {
-        x = scar_num(hvt_convoy.spawnX, 0),
-        y = 0,
-        z = scar_num(hvt_convoy.spawnY, 0),
-    }
+    -- Mark the search AREA (the box of traffic), not the HVT itself: the convoy is
+    -- one of several in here and already moving, so the player has to ID it.
+    local center_pt = { x = area.centerX, y = 0, z = area.centerY }
     local dest_pt = { x = area.destX, y = 0, z = area.destY }
     pcall(trigger.action.markToCoalition, next_mark_id(),
-        "SCAR target area — convoy: " .. sig, start_pt, side, true)
+        "SCAR search area — convoy: " .. sig .. " (on the move)", center_pt, side, true)
     pcall(trigger.action.markToCoalition, next_mark_id(),
         "SCAR no-strike zone — stop the convoy before here", dest_pt, side, true)
-    -- Ingress axis (best-effort; non-fatal if the API rejects it).
-    pcall(trigger.action.lineToAll, -1, next_mark_id(), start_pt, dest_pt,
+    -- Flee axis (best-effort; non-fatal if the API rejects it).
+    pcall(trigger.action.lineToAll, -1, next_mark_id(), center_pt, dest_pt,
         { 1, 0, 0, 0.6 }, 2, true)
     mark_sof(area, side)
 end
@@ -265,8 +263,8 @@ end
 -- Phase 2c-2: detect a player-DELIVERED SOF team near the ambush point. The
 -- insert is a C-130 airdrop, so the human flies the team in and CTLD-unloads it
 -- at the marked point; if a friendly ground group (that isn't one of our own
--- SCAR spawns) is sitting near sofX/sofY by go_live, capture binds to THAT group.
--- Returns the group name, or nil if nothing was delivered.
+-- SCAR spawns) is sitting near sofX/sofY when the HVT closes in, capture binds to
+-- THAT group. Returns the group name, or nil if nothing was delivered.
 local SCAR_SOF_DELIVERY_RADIUS = 2500 -- how near the ambush point a real drop counts
 
 local function find_delivered_sof(area)
@@ -303,10 +301,10 @@ local function find_delivered_sof(area)
     return best_name
 end
 
--- Put a friendly SOF team at the ambush point (area.sofX/Y) for go_live. Hybrid
--- (Phase 2c-2): prefer the player-delivered team; only scripted-spawn a fallback
--- if none was delivered, so the capture loop never silently dies. Capture itself
--- is detected in scar_check against area.sofGroup.
+-- Put a friendly SOF team at the ambush point (area.sofX/Y). Called lazily as the
+-- HVT closes in (maybe_bind_sof). Hybrid (Phase 2c-2): prefer the player-delivered
+-- team; only scripted-spawn a fallback if none was delivered, so the capture loop
+-- never silently dies. Capture itself is detected in scar_check against area.sofGroup.
 local function spawn_sof(area)
     if not (area.sofX and area.sofRadius and area.sofRadius > 0) then
         return
@@ -517,16 +515,43 @@ local function report_stranded_sof(area)
     scar_log("area " .. tostring(area.id) .. ": SOF team stranded for CSAR pickup")
 end
 
+-- Bind the SOF capture team lazily, only as the HVT nears the ambush point. With
+-- the scenario now live at spawn, binding at t=0 would always miss a player-flown
+-- drop (none delivered yet) and fall straight to the scripted team; deferring until
+-- the HVT closes gives the player time to airdrop one (Phase 2c-2). Binds once.
+local SOF_PREBIND_M = 4000
+local function maybe_bind_sof(area)
+    if area.sofBound or not (area.sofRadius and area.sofRadius > 0) then
+        return
+    end
+    local group = Group.getByName(area.groups[1])
+    if group == nil then
+        return
+    end
+    local ok, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if not ok or unit == nil then
+        return
+    end
+    local pos = unit:getPoint() -- {x = north, y = alt, z = east}
+    local dx = pos.x - area.sofX
+    local dz = pos.z - area.sofY
+    if (dx * dx + dz * dz) <= (SOF_PREBIND_M * SOF_PREBIND_M) then
+        spawn_sof(area)
+        area.sofBound = true
+    end
+end
+
 local function scar_check()
     for _, area in ipairs(scar_areas) do
         if not area.done then
             local timed_out = area.deadline and timer.getTime() >= area.deadline
-            -- Bound real groups (armor/missile) exist from mission start but are
-            -- static until they start moving (go_live - lead). Don't run the
-            -- arrival/fail check before then, or a target that spawns near its
-            -- dest fails before the player's window even opens. (The spawn variant
-            -- has no liveAt -- its HVT only exists once spawned at go_live.)
+            -- The scenario is live from spawn (everything moves at mission start),
+            -- so areas are always live; the legacy liveAt gate is kept defensively
+            -- (nil -> always true). Bind the SOF team once the HVT closes in.
             local live = (area.liveAt == nil) or (timer.getTime() >= area.liveAt)
+            maybe_bind_sof(area)
             if all_groups_dead(area) then
                 mark_result(area, "success")
             elseif area.variant == "missile" then
@@ -619,9 +644,12 @@ local function set_group_route(group_name, dest_x, dest_y, speed)
     end
 end
 
--- Spawn variant: runs at the flight's TOT (go_live). Spawns the whole ground
--- picture and starts the HVT's window. Only the HVT is tracked; decoys/clutter
--- are the discrimination puzzle (mis-ID scoring is a later increment).
+-- Spawn variant: runs AT SPAWN (mission start). Spawns the whole ground picture
+-- already moving (each convoy carries its spawn->dest route) so the discrimination
+-- puzzle is present and dynamic when the player arrives. Only the HVT is tracked;
+-- decoys/clutter are the puzzle (mis-ID scoring is a later increment). The SOF
+-- capture team is bound lazily (see maybe_bind_sof) so a player-delivered team is
+-- still detected later, not pre-empted by the t=0 fallback.
 local function activate_spawn_area(tasking, window)
     local country_id = scar_num(tasking.hvtCountryId)
     local hvt_area, hvt_convoy = nil, nil
@@ -638,13 +666,14 @@ local function activate_spawn_area(tasking, window)
                 coalition = tostring(tasking.coalition or "blue"),
                 groups = { group_name },
                 done = false,
+                centerX = scar_num(tasking.centerX, 0),
+                centerY = scar_num(tasking.centerY, 0),
                 destX = scar_num(convoy.destX, 0),
                 destY = scar_num(convoy.destY, 0),
                 radius = scar_num(tasking.failZoneRadius, 500),
                 commandType = tostring(tasking.commandType or ""),
-                -- Started SCAR_START_LEAD early, so add it back: deadline still
-                -- lands at go_live + window (the player's window from TOT).
-                deadline = timer.getTime() + window + SCAR_START_LEAD,
+                -- Moving from spawn: the fail clock runs from now.
+                deadline = timer.getTime() + window,
                 -- Phase 2a SOF ambush (set only when scar_command_post_intel is on).
                 sofX = scar_num(tasking.sofX),
                 sofY = scar_num(tasking.sofY),
@@ -656,9 +685,8 @@ local function activate_spawn_area(tasking, window)
     end
     if hvt_area then
         table.insert(scar_areas, hvt_area)
-        spawn_sof(hvt_area)
         brief_spawn(hvt_area, hvt_convoy)
-        scar_log("area " .. hvt_area.id .. " live; window " ..
+        scar_log("area " .. hvt_area.id .. " live at spawn; window " ..
             math.floor(window) .. "s")
     else
         scar_log("spawn tasking " .. tostring(tasking.taskingId) ..
@@ -669,9 +697,9 @@ end
 -- Missile variant: a real SCUD site that RACES from its location to a firing
 -- position and launches on arrival. Held on WEAPON_HOLD so it can't fire en
 -- route; the player must kill it before it reaches the firing position (or the
--- window expires), at which point it launches (fail). Registered at init so an
--- early kill counts; it starts moving at go_live.
-local function activate_missile_area(tasking, go_live, window)
+-- window expires), at which point it launches (fail). It starts racing AT SPAWN,
+-- paced slow enough (over `window`) to stay catchable rather than firing early.
+local function activate_missile_area(tasking, window)
     local groups = tasking.targetGroups or {}
     if type(groups) ~= "table" or #groups == 0 then
         scar_log("skipping missile tasking " .. tostring(tasking.taskingId) ..
@@ -684,14 +712,15 @@ local function activate_missile_area(tasking, go_live, window)
         coalition = tostring(tasking.coalition or "blue"),
         groups = groups,
         done = false,
+        centerX = scar_num(tasking.centerX, 0),
+        centerY = scar_num(tasking.centerY, 0),
         destX = scar_num(tasking.destX, 0),
         destY = scar_num(tasking.destY, 0),
         radius = scar_num(tasking.failZoneRadius, 2000),
         fireTargetX = scar_num(tasking.fireTargetX, 0),
         fireTargetY = scar_num(tasking.fireTargetY, 0),
-        deadline = timer.getTime() + go_live + window,
-        -- Static until it starts racing; only then can it "arrive" and fire.
-        liveAt = timer.getTime() + math.max(0, go_live - SCAR_START_LEAD),
+        -- Racing from spawn: the fail clock runs from now (live immediately).
+        deadline = timer.getTime() + window,
     }
     for _, name in ipairs(groups) do
         missile_group_index[name] = area
@@ -700,11 +729,9 @@ local function activate_missile_area(tasking, go_live, window)
     table.insert(scar_areas, area)
     brief_missile(area)
     local speed = scar_num(tasking.fleeSpeed, 5)
-    mist.scheduleFunction(function()
-        for _, name in ipairs(area.groups) do
-            set_group_route(name, area.destX, area.destY, speed)
-        end
-    end, {}, timer.getTime() + math.max(0, go_live - SCAR_START_LEAD))
+    for _, name in ipairs(area.groups) do
+        set_group_route(name, area.destX, area.destY, speed)
+    end
     return true
 end
 
@@ -747,30 +774,31 @@ local function brief_armor(area)
     local sig = live_signature(area.groups[1])
     local text = "SCAR INTEL (" .. area.id .. "):\n" ..
         "Target signature: " .. sig .. " + 1x command vehicle (the HVT)\n" ..
-        "The real column has a command vehicle riding with it. Decoys share SOME " ..
-        "elements — some even a command vehicle — so match the FULL signature and " ..
-        "destroy it (command vehicle included) before it reaches the city."
+        "The real column is ON THE MOVE with a command vehicle riding with it. " ..
+        "Decoys share SOME elements — some even a command vehicle — so match the " ..
+        "FULL signature and destroy it (command vehicle included) before it reaches " ..
+        "the city."
     pcall(trigger.action.outTextForCoalition, side, text, 30)
-    local group = Group.getByName(area.groups[1])
-    if group ~= nil then
-        local ok, unit = pcall(function()
-            return group:getUnit(1)
-        end)
-        if ok and unit ~= nil then
-            pcall(trigger.action.markToCoalition, next_mark_id(),
-                "SCAR target — " .. sig, unit:getPoint(), side, true)
-        end
-    end
+    -- Mark the search AREA, not the exact column: it's moving and mixed in with
+    -- decoys, so the player has to find and ID it (2026-06-20: a pin on the one
+    -- correct group made it trivial).
+    pcall(trigger.action.markToCoalition, next_mark_id(),
+        "SCAR search area — find the HVT (" .. sig .. " + command vehicle) among the " ..
+        "traffic; it's on the move", { x = area.centerX, y = 0, z = area.centerY },
+        side, true)
     pcall(trigger.action.markToCoalition, next_mark_id(),
         "SCAR no-strike zone — armor safe haven", { x = area.destX, y = 0, z = area.destY },
         side, true)
     mark_sof(area, side)
 end
 
--- Armor variant: bind the REAL armor group. It's static until go_live, then it
--- flees to the city; success = killed, fail = reaches the city (its safe haven)
--- or the window expires. Registered at init so an early kill still counts.
-local function activate_armor_area(tasking, go_live, window)
+-- Armor variant: bind the REAL armor group. It bugs out toward the city AT SPAWN,
+-- with the decoy/clutter columns + command vehicle spawned alongside it from the
+-- start (so the puzzle is present when the player arrives); success = killed, fail
+-- = it reaches the city (its safe haven) or the window expires. The SOF capture
+-- team is bound lazily (maybe_bind_sof) so a player-delivered team is still picked
+-- up later instead of pre-empted by the t=0 fallback.
+local function activate_armor_area(tasking, window)
     local groups = tasking.targetGroups or {}
     if type(groups) ~= "table" or #groups == 0 then
         scar_log("skipping armor tasking " .. tostring(tasking.taskingId) ..
@@ -783,15 +811,16 @@ local function activate_armor_area(tasking, go_live, window)
         coalition = tostring(tasking.coalition or "blue"),
         groups = groups,
         done = false,
+        centerX = scar_num(tasking.centerX, 0),
+        centerY = scar_num(tasking.centerY, 0),
         destX = scar_num(tasking.destX, 0),
         destY = scar_num(tasking.destY, 0),
         radius = scar_num(tasking.failZoneRadius, 2000),
         -- The command vehicle riding with the real column: tracked (must die for
         -- success) and the unit that despawns ("escapes") on reaching the city.
         commandType = tostring(tasking.commandType or ""),
-        deadline = timer.getTime() + go_live + window,
-        -- Static until it bugs out; only then can it "reach" the city = fail.
-        liveAt = timer.getTime() + math.max(0, go_live - SCAR_START_LEAD),
+        -- Moving from spawn: the fail clock runs from now.
+        deadline = timer.getTime() + window,
         -- Phase 2a SOF ambush (set only when scar_command_post_intel is on).
         sofX = scar_num(tasking.sofX),
         sofY = scar_num(tasking.sofY),
@@ -803,26 +832,21 @@ local function activate_armor_area(tasking, go_live, window)
     brief_armor(area)
     local speed = scar_num(tasking.fleeSpeed, 5)
     local country_id = scar_num(tasking.hvtCountryId)
-    local convoys = tasking.convoys or {}
-    mist.scheduleFunction(function()
-        -- The real armor bugs out...
-        for _, name in ipairs(area.groups) do
-            set_group_route(name, area.destX, area.destY, speed)
+    -- The real armor bugs out now...
+    for _, name in ipairs(area.groups) do
+        set_group_route(name, area.destX, area.destY, speed)
+    end
+    -- ...and the decoy/clutter columns spawn and flee alongside it (untracked),
+    -- plus the command vehicle, which IS tracked: append it to area.groups so
+    -- success requires killing it and it's found by despawn_command on arrival.
+    local spawn_index = 0
+    for _, convoy in pairs(tasking.convoys or {}) do
+        spawn_index = spawn_index + 1
+        local spawned = spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
+        if convoy.role == "command" and spawned ~= nil then
+            table.insert(area.groups, spawned)
         end
-        -- ...the SOF team lands ahead on its route (Phase 2a ambush)...
-        spawn_sof(area)
-        -- ...and the decoy/clutter columns spawn and flee alongside it (untracked),
-        -- plus the command vehicle, which IS tracked: append it to area.groups so
-        -- success requires killing it and it's found by despawn_command on arrival.
-        local spawn_index = 0
-        for _, convoy in pairs(convoys) do
-            spawn_index = spawn_index + 1
-            local spawned = spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
-            if convoy.role == "command" and spawned ~= nil then
-                table.insert(area.groups, spawned)
-            end
-        end
-    end, {}, timer.getTime() + math.max(0, go_live - SCAR_START_LEAD))
+    end
     return true
 end
 
@@ -836,27 +860,24 @@ local function scar_init()
     local count = 0
     for _, tasking in pairs(dcsRetribution.Scar.taskings) do
         local variant = tostring(tasking.variant or "spawn")
-        local go_live = scar_num(tasking.goLive, 0)
         local window = scar_num(tasking.window, 1200)
         -- Seed the result now so a never-resolved area still reports as active.
         scar_results[tostring(tasking.taskingId)] = { status = "active" }
         dirty_state = true
+        -- Trigger AT SPAWN (mission start): spawn the picture and start it moving
+        -- now, so it's present and dynamic whenever the player arrives.
         if variant == "missile" then
-            if activate_missile_area(tasking, go_live, window) then
+            if activate_missile_area(tasking, window) then
                 count = count + 1
             end
         elseif variant == "armor" then
-            if activate_armor_area(tasking, go_live, window) then
+            if activate_armor_area(tasking, window) then
                 count = count + 1
             end
         else
-            -- Spawn at the flight's TOT so the convoy isn't long gone before the
-            -- player arrives. The closure captures this tasking.
-            local t = tasking
-            mist.scheduleFunction(function()
-                pcall(activate_spawn_area, t, window)
-            end, {}, timer.getTime() + math.max(0, go_live - SCAR_START_LEAD))
-            count = count + 1
+            if pcall(activate_spawn_area, tasking, window) then
+                count = count + 1
+            end
         end
     end
 

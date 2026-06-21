@@ -66,6 +66,12 @@
 -- The non-visible path keeps full reserve and real 2-ship grouping (the visible
 -- path lost both).
 --
+-- SPAWN PROFILE (2026-06-21): the in-air spawn previously inherited the parking
+-- template's ~0 kt speed and a global 2,000 m MSL altitude, so jets spawned stalled
+-- and high and dove ~4,600 ft recovering (near-crash at Vaziani, Tacview 2026-06-20).
+-- Each squadron now air-spawns at a forced scramble speed (InitSpeedKnots) and a
+-- terrain-relative low altitude (field elevation + AGL). See SCRAMBLE_* below.
+--
 -- SetSquadronGci speed args are in km/h (WaypointAir divides by 3.6 to get m/s).
 -- 900/1200 km/h ≈ 485/648 kt — reasonable for jet interceptors.
 
@@ -102,6 +108,20 @@ local intercept_registry = {}
 local NM = 1852  -- metres per nautical mile
 local DETECTION_GROUPING_M = 30000  -- contact-clustering radius for DETECTION_AREAS
 local BUILD_DELAY = 5  -- seconds; let mist.dynAdd backstops register before SET_GROUP
+
+-- QRA scramble spawn profile (414th tuning, 2026-06-21).
+--   Speed: Moose's air-spawn (SpawnAtAirbase, Takeoff.Air) sets position + altitude
+--   but NOT speed, so the cloned parking template spawns at ~0 kt. The jets spawn
+--   stalled at altitude and dive ~4,600 ft clawing back airspeed — one Su-27 nearly
+--   hit the ground at Vaziani (Tacview 2026-06-20). InitSpeed propagates to the
+--   spawned units (Moose SpawnWithIndex), giving them a real scramble speed.
+--   Altitude: SetDefaultTakeoffInAirAltitude is a single ABSOLUTE-MSL value for
+--   every base, so a low global value spawns into terrain at high-elevation fields.
+--   We instead anchor per-squadron to each base's field elevation + AGL, so they
+--   come off the deck LOW like a scramble instead of materializing high with energy.
+-- Both tunable; need an in-game pass.
+local SCRAMBLE_SPEED_KT = 300   -- air-spawn airspeed (was effectively ~0 -> near-stall)
+local SCRAMBLE_AGL_M = 760      -- ~2,500 ft above the LAUNCHING field's elevation
 
 -- ---------------------------------------------------------------------------
 -- MOOSE BUG WORKAROUND — air-spawn takeoff event
@@ -286,7 +306,10 @@ local function build_dispatcher(coalition_name, records)
         -- viable here because the BASE.CreateEventTakeoff monkeypatch above fixes
         -- the Moose air-spawn crash that previously killed it. Altitude is metres.
         dispatcher:SetDefaultTakeoffInAir()
-        dispatcher:SetDefaultTakeoffInAirAltitude(2000)  -- ~6,500 ft
+        -- Fallback only: each squadron overrides this with a terrain-relative low
+        -- altitude below (SetSquadronTakeoffInAirAltitude). Kept as a safe MSL
+        -- backstop if a base can't be resolved.
+        dispatcher:SetDefaultTakeoffInAirAltitude(2000)  -- ~6,500 ft MSL (fallback)
         dispatcher:SetDefaultLandingAtEngineShutdown()
         dispatcher:SetIntercept(0)
         dispatcher:SetEngageRadius(engagement_range_nm * NM)
@@ -303,6 +326,28 @@ local function build_dispatcher(coalition_name, records)
             local sq = rec.squadronName .. " #" .. string.sub(tostring(rec.squadronId), 1, 8)
             dispatcher:SetSquadron(sq, rec.airbaseName, { rec.templatePrefix }, tonumber(rec.resourceCount))
             dispatcher:SetSquadronGci(sq, 900, 1200)
+            -- Scramble LOW: anchor the air-spawn to THIS base's field elevation
+            -- + AGL so they come off the deck rather than spawning high with energy.
+            -- (Global SetDefaultTakeoffInAirAltitude is absolute MSL and unsafe at
+            -- high-elevation fields.) Falls back to the global default on lookup miss.
+            local base = AIRBASE:FindByName(rec.airbaseName)
+            if base then
+                local ok_e, elev = pcall(function()
+                    return base:GetCoordinate():GetLandHeight()
+                end)
+                if ok_e and elev then
+                    dispatcher:SetSquadronTakeoffInAirAltitude(sq, elev + SCRAMBLE_AGL_M)
+                end
+            end
+            -- Force a scramble airspeed. Moose air-spawn leaves the cloned parking
+            -- template at ~0 kt (near-stall spawn); InitSpeed is applied to the
+            -- air-spawned units, so they spawn fast enough to fly away cleanly.
+            local sq_obj = dispatcher.DefenderSquadrons[sq]
+            if sq_obj and sq_obj.Spawn then
+                for _, sp in ipairs(sq_obj.Spawn) do
+                    pcall(function() sp:InitSpeedKnots(SCRAMBLE_SPEED_KT) end)
+                end
+            end
             -- Aircraft launched per scramble. The generator rolls this per
             -- squadron toward a distributed-QRA posture (mostly singles, some
             -- pairs); fall back to a 2-ship if an older save omits the field.

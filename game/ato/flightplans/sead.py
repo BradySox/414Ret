@@ -19,6 +19,7 @@ from .uizonedisplay import UiZone, UiZoneDisplay
 from ..flighttype import FlightType
 from ..flightwaypoint import FlightWaypoint
 from ..flightwaypointtype import FlightWaypointType
+from ...settings.settings import TargetIntelPrecision
 from ...utils import nautical_miles
 
 # Plain SEAD reactively fires HARMs from its loiter anchor. The planner overlay shows a
@@ -102,9 +103,14 @@ class Builder(FormationAttackBuilder[SeadFlightPlan, FormationAttackLayout]):
         # same list the SEAD kneeboard page renders). Against those, give each
         # listed target its own waypoint; against e.g. naval groups the kneeboard
         # lists no per-unit coordinates, so fall back to the single target area.
+        # Mobile SAMs relocate, so under Approximate intel we also fall back to a
+        # single fuzzed target-area waypoint instead of exact per-emitter points.
         targets = (
             self.strike_targets_for(location)
-            if isinstance(location, TheaterGroundObject)
+            if (
+                isinstance(location, TheaterGroundObject)
+                and self.settings.target_intel_precision is TargetIntelPrecision.EXACT
+            )
             else None
         )
         return self._build(FlightWaypointType.INGRESS_SEAD, targets)

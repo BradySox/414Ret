@@ -32,8 +32,11 @@ and selected later upstream fixes.
   intelligence.
 - An optional **Approximate target area** mode removes perfect player coordinates and
   offsets steerpoints, making visual acquisition, talk-ons, and reconnaissance matter.
-  DEAD kneeboards always trade exact coordinates for a rough bullseye cue (bearing and
-  range to ~1 NM) while still listing each target's steerpoint number.
+  Against mobile SAMs, DEAD and SEAD flights get a single fuzzed target-area waypoint
+  instead of a precise steerpoint per launcher/radar; Strike keeps exact per-target
+  points since buildings don't move. DEAD kneeboards always trade exact coordinates
+  for a rough bullseye cue (bearing and range to ~1 NM) while still listing each
+  target's steerpoint number.
 - Mobile short-range defenses are kept off player datalinks while larger SAM sites remain
   available for deliberate SEAD/DEAD planning.
 

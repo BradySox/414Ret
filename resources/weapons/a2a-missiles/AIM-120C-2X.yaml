@@ -1,5 +1,5 @@
 name: 2xAIM-120C
-year: 1996
+year: 2018
 fallback: 2xAIM-120B
 clsids:
   - "LAU-115_2*LAU-127_AIM-120C"

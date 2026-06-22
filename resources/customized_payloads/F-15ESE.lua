@@ -131,11 +131,11 @@ local unitPayloads = {
 					["num"] = 7,
 				},
 				[4] = {
-					["CLSID"] = "{CFT_L_GBU_31V3B_x_2}",
+					["CLSID"] = "{CFT_L_CBU_87_x_3}",
 					["num"] = 4,
 				},
 				[5] = {
-					["CLSID"] = "{CFT_R_GBU_31V3B_x_2}",
+					["CLSID"] = "{CFT_R_CBU_87_x_3}",
 					["num"] = 12,
 				},
 				[6] = {
@@ -155,11 +155,11 @@ local unitPayloads = {
 					["num"] = 1,
 				},
 				[10] = {
-					["CLSID"] = "{GBU-31V3B}",
+					["CLSID"] = "<CLEAN>",
 					["num"] = 14,
 				},
 				[11] = {
-					["CLSID"] = "{GBU-31V3B}",
+					["CLSID"] = "<CLEAN>",
 					["num"] = 2,
 				},
 			},
@@ -261,19 +261,19 @@ local unitPayloads = {
 					["num"] = 7,
 				},
 				[8] = {
-					["CLSID"] = "{CFT_L_GBU_31V3B_x_2}",
+					["CLSID"] = "{CFT_L_GBU_31_x_2}",
 					["num"] = 4,
 				},
 				[9] = {
-					["CLSID"] = "{GBU-31V3B}",
+					["CLSID"] = "{GBU-31}",
 					["num"] = 2,
 				},
 				[10] = {
-					["CLSID"] = "{GBU-31V3B}",
+					["CLSID"] = "{GBU-31}",
 					["num"] = 14,
 				},
 				[11] = {
-					["CLSID"] = "{CFT_R_GBU_31V3B_x_2}",
+					["CLSID"] = "{CFT_R_GBU_31_x_2}",
 					["num"] = 12,
 				},
 			},
@@ -374,19 +374,19 @@ local unitPayloads = {
 					["num"] = 7,
 				},
 				[8] = {
-					["CLSID"] = "{CFT_L_GBU_38_x_3}",
+					["CLSID"] = "{CFT_L_CBU_87_x_3}",
 					["num"] = 4,
 				},
 				[9] = {
-					["CLSID"] = "{GBU-38}",
+					["CLSID"] = "<CLEAN>",
 					["num"] = 14,
 				},
 				[10] = {
-					["CLSID"] = "{CFT_R_GBU_38_x_3}",
+					["CLSID"] = "{CFT_R_CBU_87_x_3}",
 					["num"] = 12,
 				},
 				[11] = {
-					["CLSID"] = "{GBU-38}",
+					["CLSID"] = "<CLEAN>",
 					["num"] = 2,
 				},
 			},

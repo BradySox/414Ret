@@ -127,7 +127,7 @@ local unitPayloads = {
 			["name"] = "Retribution Strike",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{HSAB_6x_GBU31V3_R}",
+					["CLSID"] = "{HSAB_6x_GBU31V1_R}",
 					["num"] = 3,
 					["settings"] = {
 						["01_prfx_arm_delay_ctrl_FMU143"] = 5.5,
@@ -136,7 +136,7 @@ local unitPayloads = {
 					},
 				},
 				[2] = {
-					["CLSID"] = "{CSRL_GBU31V3}",
+					["CLSID"] = "{CSRL_GBU31V1}",
 					["num"] = 2,
 					["settings"] = {
 						["01_prfx_arm_delay_ctrl_FMU143"] = 5.5,
@@ -147,7 +147,7 @@ local unitPayloads = {
 					},
 				},
 				[3] = {
-					["CLSID"] = "{HSAB_6x_GBU31V3_L}",
+					["CLSID"] = "{HSAB_6x_GBU31V1_L}",
 					["num"] = 1,
 					["settings"] = {
 						["01_prfx_arm_delay_ctrl_FMU143"] = 5.5,

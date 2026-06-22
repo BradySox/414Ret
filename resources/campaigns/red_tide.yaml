@@ -170,28 +170,38 @@ supply_routes:
       - [-118000, -591000]    # Parchim area
       - [-135396, -529213]    # Wittstock
   # --- Connections added so the orphaned bases join the network and the front can advance
-  #     across the whole theater. Straight-line paths for now -- refine with road-following
-  #     waypoints (pydcs from_latlng / mission editor) for nicer front geometry when they activate.
-  # Hahn (155) -> Frankfurt (163)  [blue rear]
+  #     across the whole theater. Bowed along their real road corridors so the derived
+  #     front geometry follows the autobahns rather than ruler-straight lines (endpoints
+  #     stay anchored on the control points). Nudge in the mission editor if any leg clips.
+  # Hahn (155) -> Frankfurt (163)  [blue rear; follows the A61/A60 dip via Bingen]
   - waypoints:
       - [-437665, -948351]   # Hahn
+      - [-445839, -917165]   # A61 toward Rheinboellen
+      - [-447964, -885571]   # Bingen / A60 (southward dip)
       - [-444041, -853571]   # Frankfurt
-  # Haina (161) -> Sperenberg (101)  [opens the Berlin axis]
+  # Haina (161) -> Sperenberg (101)  [Berlin axis; bends along the A4 east -> A9 north]
   - waypoints:
       - [-359857, -702040]   # Haina
-      - [-308628, -596403]   # midpoint (central Germany)
+      - [-345695, -643668]   # A4 east across Thuringia
+      - [-324825, -588549]   # A4/A9 junction area
+      - [-294467, -538031]   # A9 north toward Berlin
       - [-257400, -490767]   # Sperenberg
-  # Sperenberg (101) -> Schonefeld (26)  [Berlin cluster]
+  # Sperenberg (101) -> Schonefeld (26)  [Berlin cluster; A13]
   - waypoints:
       - [-257400, -490767]   # Sperenberg
+      - [-246239, -479105]   # A13 north
       - [-231590, -472324]   # Schonefeld
-  # Schonefeld (26) -> Templin (15)  [Berlin cluster]
+  # Schonefeld (26) -> Templin (15)  [Berlin cluster; A10 ring -> A11 north]
   - waypoints:
       - [-231590, -472324]   # Schonefeld
+      - [-208513, -461897]   # A10 Berlin ring (east)
+      - [-184569, -459215]   # A11 north
       - [-159757, -464279]   # Templin
-  # Templin (15) -> Wittstock (1)  [rejoins the northern spine]
+  # Templin (15) -> Wittstock (1)  [rejoins the northern spine; B198 lake country]
   - waypoints:
       - [-159757, -464279]   # Templin
+      - [-145293, -483996]   # B198 west through the lakes
+      - [-136453, -505975]   # E of Wittstock
       - [-133238, -530216]   # Wittstock
 shipping_lanes:
   # Kastrup (41) → Peenemünde (25): Baltic sea lane

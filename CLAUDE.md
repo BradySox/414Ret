@@ -28,6 +28,7 @@ file. This guide is the map; those are the territory.
   - `414th-scar-task-spec.md` + `414th-scar-commander-sme-questions.md` — SCAR ground truth
   - `414th-scar-phase2-sof-plan.md` + `414th-scar-HANDOFF.md` — SCAR commander-capture plan + next-session pickup
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
+  - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` is a **byte-identical mirror of this file** (CLAUDE.md is the authoritative

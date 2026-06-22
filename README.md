@@ -112,6 +112,12 @@ and selected later upstream fixes.
   the two AI-radio toggles were merged into a single **AI wingman radio behavior** choice
   (Normal / Suppress contact reports / Radio silence), and many labels were clarified.
   Existing campaigns migrate automatically on load.
+- A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 Warsaw Pact
+  invasion of West Germany, built for the 414th. Hamburg and Copenhagen have fallen to the
+  Soviets, the carrier never made station so its air wing fights from land, a Soviet Baltic
+  fleet opens a northern over-water front, and the enemy IADS is thickened with S-300 and
+  SA-11. The *Crossing the Rubicon* campaign it forks from is left untouched. See
+  [`docs/dev/design/414th-red-tide-campaign-notes.md`](docs/dev/design/414th-red-tide-campaign-notes.md).
 - Numerous mission-generation and debriefing fixes are included, along with selected
   upstream backports newer than the fork's original base.
 

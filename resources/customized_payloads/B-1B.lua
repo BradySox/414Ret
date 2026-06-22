@@ -28,15 +28,15 @@ local unitPayloads = {
 			["name"] = "Retribution Strike",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "GBU-31V3B*8",
+					["CLSID"] = "B-1B_Mk-84*8",
 					["num"] = 1,
 				},
 				[2] = {
-					["CLSID"] = "GBU-31V3B*8",
+					["CLSID"] = "B-1B_Mk-84*8",
 					["num"] = 2,
 				},
 				[3] = {
-					["CLSID"] = "GBU-31V3B*8",
+					["CLSID"] = "B-1B_Mk-84*8",
 					["num"] = 3,
 				},
 			},

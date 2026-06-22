@@ -350,6 +350,7 @@ class BriefingPage(KneeboardPage):
         dark_kneeboard: bool,
         atis_by_name: Optional[dict[str, RadioFrequency]] = None,
         theater: Optional["ConflictTheater"] = None,
+        package_rows: Optional[List[List[str]]] = None,
     ) -> None:
         self.flight = flight
         self.bullseye = bullseye
@@ -358,6 +359,7 @@ class BriefingPage(KneeboardPage):
         self.dark_kneeboard = dark_kneeboard
         self.theater = theater
         self.atis_by_name = atis_by_name or {}
+        self.package_rows = package_rows or []
         self.flight_plan_font = ImageFont.truetype(
             "courbd.ttf",
             16,
@@ -511,6 +513,20 @@ class BriefingPage(KneeboardPage):
                 codes.append([str(idx), "" if code is None else str(code)])
             writer.table(codes, ["#", "Laser Code"])
 
+        # Friendly packages coordination list, at the bottom of the page. Use a
+        # smaller font so more packages fit below the flight plan. On busy turns
+        # with a long flight plan this list can run past the bottom page edge.
+        if self.package_rows:
+            writer.heading("Friendly Packages")
+            packages_font = ImageFont.truetype(
+                "courbd.ttf", 18, layout_engine=ImageFont.Layout.BASIC
+            )
+            writer.table(
+                self.package_rows,
+                headers=["Task", "Target", "TOT / Window"],
+                font=packages_font,
+            )
+
         writer.write(path)
 
     def _format_departure_qfe(self) -> Optional[str]:
@@ -639,6 +655,7 @@ class SupportPage(KneeboardPage):
         jtacs: List[JtacInfo],
         start_time: datetime.datetime,
         dark_kneeboard: bool,
+        airfield_rows: Optional[List[List[str]]] = None,
     ) -> None:
         self.flight = flight
         self.package_flights = package_flights
@@ -648,6 +665,7 @@ class SupportPage(KneeboardPage):
         self.jtacs = jtacs
         self.start_time = start_time
         self.dark_kneeboard = dark_kneeboard
+        self.airfield_rows = airfield_rows or []
         flight_name = self.flight.custom_name if self.flight.custom_name else "Flight"
         self.comms.append(CommInfo(flight_name, self.flight.intra_flight_channel))
 
@@ -762,6 +780,14 @@ class SupportPage(KneeboardPage):
         # "Laser" instead of "Laser Code": the code is 4 digits, so the longer
         # header padded the column and pushed the FREQ column off the page.
         writer.table(jtacs, headers=["Callsign", "Region", "Laser", "FREQ"])
+
+        # Airfield Directory (friendly fields: ATC / ATIS / TACAN / I(C)LS / RWY).
+        if self.airfield_rows:
+            writer.heading("Airfield Directory")
+            writer.table(
+                self.airfield_rows,
+                headers=["Field", "ATC", "ATIS", "TCN", "I(C)LS", "RWY"],
+            )
 
         writer.write(path)
 
@@ -1017,23 +1043,6 @@ def build_airfield_directory_rows(
     return rows
 
 
-class AirfieldDirectoryPage(KneeboardPage):
-    """Lists all friendly airfields with ATC / ATIS / TACAN / ILS / RWY."""
-
-    def __init__(self, rows: List[List[str]], dark_kneeboard: bool) -> None:
-        self.rows = rows
-        self.dark_kneeboard = dark_kneeboard
-
-    def write(self, path: Path) -> None:
-        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        writer.title("Airfield Directory")
-        writer.table(
-            self.rows,
-            headers=["Field", "ATC", "ATIS", "TCN", "I(C)LS", "RWY"],
-        )
-        writer.write(path)
-
-
 class NotesPage(KneeboardPage):
     """A kneeboard page containing the campaign owner's notes."""
 
@@ -1060,40 +1069,6 @@ def _abbreviated_target_name(name: str) -> str:
     unambiguous in context.
     """
     return name.replace("Front line ", "Front ")
-
-
-class AllPackagesPage(KneeboardPage):
-    """Lists every friendly package with its timing, for cross-package coordination.
-
-    Strike-type packages show their target and TOT; CAP / tanker / AWACS packages
-    show their patrol window instead. Rendered in a smaller font and split across
-    several pages when there are more packages than fit on one.
-    """
-
-    HEADERS = ["Task", "Target", "TOT / Window"]
-
-    def __init__(
-        self,
-        rows: List[List[str]],
-        page_no: int,
-        total_pages: int,
-        dark_kneeboard: bool,
-    ) -> None:
-        self.rows = rows
-        self.page_no = page_no
-        self.total_pages = total_pages
-        self.dark_kneeboard = dark_kneeboard
-
-    def write(self, path: Path) -> None:
-        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        suffix = f" ({self.page_no}/{self.total_pages})" if self.total_pages > 1 else ""
-        writer.title(f"Friendly Packages{suffix}")
-        # A little smaller than the default table font so more packages fit.
-        font = ImageFont.truetype(
-            "courbd.ttf", 18, layout_engine=ImageFont.Layout.BASIC
-        )
-        writer.table(self.rows, headers=self.HEADERS, font=font)
-        writer.write(path)
 
 
 class PackagesMapPage(KneeboardPage):
@@ -1286,10 +1261,6 @@ class KneeboardGenerator(MissionInfoGenerator):
             FlightType.AEWC,
         }
     )
-    #: Rows-per-page for the packages list. Tuned to fill the 1080px-tall
-    #: kneeboard at the 18px table font: ~50 rows reach the bottom margin, so 46
-    #: leaves a small safety gap while wasting far less space than the old 30.
-    PACKAGES_PER_PAGE = 46
 
     def __init__(self, mission: Mission, game: "Game") -> None:
         super().__init__(mission, game)
@@ -1363,6 +1334,21 @@ class KneeboardGenerator(MissionInfoGenerator):
         else:
             zoned_time = self.game.conditions.start_time
 
+        airfield_rows = (
+            build_airfield_directory_rows(self.game, flight, self.atis_by_name)
+            if self.atis_by_name
+            else []
+        )
+
+        # Friendly-packages list folds into the bottom of the Mission Info page,
+        # gated by the same setting that controls the (now map-only) standalone
+        # packages kneeboard.
+        package_rows = (
+            self.build_all_packages_rows(flight)
+            if self.game.settings.generate_all_packages_kneeboard
+            else []
+        )
+
         pages: List[KneeboardPage] = [
             BriefingPage(
                 flight,
@@ -1372,6 +1358,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                 self.dark_kneeboard,
                 atis_by_name=self.atis_by_name,
                 theater=self.game.theater,
+                package_rows=package_rows,
             ),
             SupportPage(
                 flight,
@@ -1382,6 +1369,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                 self.jtacs,
                 zoned_time,
                 self.dark_kneeboard,
+                airfield_rows=airfield_rows,
             ),
         ]
 
@@ -1391,19 +1379,6 @@ class KneeboardGenerator(MissionInfoGenerator):
 
         if (target_page := self.generate_task_page(flight)) is not None:
             pages.append(target_page)
-
-        if self.atis_by_name:
-            ROWS_PER_PAGE = 14
-            dir_rows = build_airfield_directory_rows(
-                self.game, flight, self.atis_by_name
-            )
-            for start in range(0, len(dir_rows), ROWS_PER_PAGE):
-                pages.append(
-                    AirfieldDirectoryPage(
-                        dir_rows[start : start + ROWS_PER_PAGE],
-                        self.dark_kneeboard,
-                    )
-                )
 
         # Recon overview + detail + airfield-departure pages (gated by settings).
         if self.game.settings.generate_target_recon_kneeboard:
@@ -1420,10 +1395,9 @@ class KneeboardGenerator(MissionInfoGenerator):
                 )
             )
 
-        # Friendly-packages coordination list, then the target map, go last (in
-        # that order), gated by settings.
+        # The friendly-packages coordination list now lives on the Mission Info
+        # page (above); only the target map goes last here, gated by settings.
         if self.game.settings.generate_all_packages_kneeboard:
-            pages.extend(self.generate_all_packages_pages(flight))
             pages.extend(self.generate_packages_map_page(flight))
 
         return pages
@@ -1440,8 +1414,8 @@ class KneeboardGenerator(MissionInfoGenerator):
             )
         return time
 
-    def generate_all_packages_pages(self, flight: FlightData) -> List[KneeboardPage]:
-        """One row per friendly package (target + TOT, or patrol window), paginated."""
+    def build_all_packages_rows(self, flight: FlightData) -> List[List[str]]:
+        """One row per friendly package (target + TOT, or patrol window), sorted by time."""
         utc = flight.aircraft_type.utc_kneeboard
         ato = self.game.coalition_for(flight.friendly).ato
         entries: List[Tuple[datetime.datetime, List[str]]] = []
@@ -1474,18 +1448,7 @@ class KneeboardGenerator(MissionInfoGenerator):
             entries.append((sort_key, [package.package_description, target, timing]))
 
         entries.sort(key=lambda entry: entry[0])
-        rows = [row for _, row in entries]
-        if not rows:
-            return []
-
-        chunks = [
-            rows[i : i + self.PACKAGES_PER_PAGE]
-            for i in range(0, len(rows), self.PACKAGES_PER_PAGE)
-        ]
-        return [
-            AllPackagesPage(chunk, index + 1, len(chunks), self.dark_kneeboard)
-            for index, chunk in enumerate(chunks)
-        ]
+        return [row for _, row in entries]
 
     def generate_packages_map_page(self, flight: FlightData) -> List[KneeboardPage]:
         """A schematic theater map labelling where each friendly package is headed."""

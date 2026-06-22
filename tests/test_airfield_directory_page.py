@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 from PIL import Image, ImageFont
 
 from game.missiongenerator.kneeboard import (
-    AirfieldDirectoryPage,
+    SupportPage,
     build_airfield_directory_rows,
 )
 from game.radio.radios import MHz
@@ -45,10 +45,35 @@ def test_rows_only_blue_airfields_with_atis() -> None:
     assert "131" in atis
 
 
-def test_directory_page_writes_expected_image_size(tmp_path: Path) -> None:
+def _support_flight() -> MagicMock:
+    flight = MagicMock()
+    flight.custom_name = None
+    flight.callsign = "Enfield 1-1"
+    flight.intra_flight_channel = MHz(251)
+    flight.channels_for.return_value = []
+    package = MagicMock()
+    package.custom_name = None
+    package.package_description = "Strike"
+    package.frequency = MHz(251)
+    package.time_over_target = None
+    flight.package = package
+    return flight
+
+
+def test_support_page_renders_airfield_directory_section(tmp_path: Path) -> None:
     rows = [["Batumi", "", "VHF 131.000", "", "", "13"]]
-    page = AirfieldDirectoryPage(rows=rows, dark_kneeboard=False)
-    out = tmp_path / "dir.png"
+    page = SupportPage(
+        _support_flight(),
+        package_flights=[],
+        comms=[],
+        awacs=[],
+        tankers=[],
+        jtacs=[],
+        start_time=MagicMock(),
+        dark_kneeboard=False,
+        airfield_rows=rows,
+    )
+    out = tmp_path / "support.png"
     stub_font = ImageFont.load_default()
     with patch(
         "game.missiongenerator.kneeboard.ImageFont.truetype", return_value=stub_font

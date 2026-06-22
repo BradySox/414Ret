@@ -22,23 +22,24 @@ Army back. Setting stays 1988-07-13; player faction `Blufor Late Cold War (80s)`
 `Russia 1980`. The red-heavy laydown (red still holds the north, centre, and east) is *why*
 the offensive framing works — that captured ground is the objective set the 414th attacks.
 
-> **Posture note.** The reframe is **narrative-only** — no gameplay rebalance has been
-> applied; blue is still mechanically outnumbered (4 bases vs 8–9). The following "blue edge"
-> tuning is **sanctioned for after playtest** (apply on request, lightest first). **Map/base
-> ownership and front-line shifts are explicitly OUT of scope** (ruled out by the maintainer):
+> **Posture note.** The reframe is narrative; the **blue-offensive tuning below has now been
+> APPLIED** (no playtest). **Map/base ownership and front-line shifts remain OUT of scope.**
 >
-> 1. **Economy skew** (one-line, biggest lever) — `recommended_player_income_multiplier: ~1.3`,
->    `recommended_enemy_income_multiplier: ~0.7`, plus a starting-money skew
->    (`recommended_player_money` > `recommended_enemy_money`). All are valid campaign-yaml fields.
-> 2. **Squadron balance** — bump blue offensive squadron `size` (F-15E BAI, B-1B / A-6E OCA,
->    F-16CM DEAD, F/A-18C SEAD) and trim red fighter mass (drop a red BARCAP/Flanker squadron or
->    two from 8). Add weight to blue **SEAD/DEAD** specifically — the IADS is the campaign's
->    center of gravity, so SEAD weight *is* offensive tempo.
-> 3. **Red posture / AI** — `opfor_planner_unpredictability: 0` (red stays reactive) with
->    `ownfor_planner_unpredictability` higher; lower red QRA/intercept reserve.
+> 1. **Economy skew — APPLIED.** `recommended_player_money: 800` / `recommended_enemy_money: 400`,
+>    `recommended_player_income_multiplier: 1.3` / `recommended_enemy_income_multiplier: 0.7`. Blue
+>    out-produces and out-buys the culminated Soviet salient.
+> 2. **Squadron balance — APPLIED.** Blue offensive `size` bumps: A-6E (OCA) 8→12, F-16CM (DEAD)
+>    8→12, F/A-18C (SEAD) 8→12, F-15E (BAI) 8→12, Tornado (SEAD Escort) 8→10, B-1B (OCA) 4→6 —
+>    weighting **SEAD/DEAD** since the IADS is the center of gravity. Red fighter trims:
+>    Peenemünde MIG-29 8→4, Hamburg MiG-29A 8→6, Sperenberg Su-27 8→6.
+> 3. **Red posture / AI — no knob needed.** Red's QRA reserve (`opfor_default_qra_reserve`) and
+>    planner unpredictability are already at the defaults that favor a blue offensive (reserve 0,
+>    deterministic). *Raising* red's QRA would make red defend better (backfire); it can't go
+>    lower than 0. The intended "red stays reactive" effect instead falls out of (1)+(2) — cutting
+>    red's economy and fighter mass naturally shrinks red's offensive air. Left at defaults.
 >
-> **Out of scope (ruled out):** flipping bases (e.g. Haina) to blue, adding a blue northern
-> base, or nudging the FLOT east. Keep the map as-is; lean on 1–3 only.
+> **Out of scope (ruled out):** flipping bases (e.g. Haina) to blue, adding a blue northern base,
+> or nudging the FLOT east. Map kept as-is. Tune the (1)/(2) numbers if the balance needs it.
 
 ## Force laydown
 

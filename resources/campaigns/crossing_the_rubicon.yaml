@@ -225,7 +225,7 @@ squadrons:
     - primary: Transport
       secondary: any
       aircraft:
-        - AN-26B
+        - An-26B
       size: 4
   #Templin
   15:

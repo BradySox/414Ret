@@ -148,7 +148,7 @@ class Campaign:
             ) from ex
 
         with logged_duration("Importing miz data"):
-            MizCampaignLoader(self.path.parent / miz, t).populate_theater()
+            MizCampaignLoader(self.path.parent / miz, t, self.data).populate_theater()
 
         # TODO: Move into MizCampaignLoader so this doesn't have unknown initialization
         # in ConflictTheater.

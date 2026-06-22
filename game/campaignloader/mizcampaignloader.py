@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import itertools
+import logging
 from functools import cached_property
 from pathlib import Path
-from typing import Iterator, List, TYPE_CHECKING, Tuple, Optional
+from typing import Any, Iterator, List, TYPE_CHECKING, Tuple, Optional
 from uuid import UUID
+
+import dcs.mapping
 
 from dcs import Mission
 from dcs.countries import CombinedJointTaskForcesBlue, CombinedJointTaskForcesRed
@@ -109,8 +112,14 @@ class MizCampaignLoader:
 
     GROUND_SPAWN_WAYPOINT_DISTANCE = 1000
 
-    def __init__(self, miz: Path, theater: ConflictTheater) -> None:
+    def __init__(
+        self,
+        miz: Path,
+        theater: ConflictTheater,
+        campaign_data: Optional[dict[str, Any]] = None,
+    ) -> None:
         self.theater = theater
+        self.campaign_data: dict[str, Any] = campaign_data or {}
         self.mission = Mission()
         with logged_duration("Loading miz"):
             self.mission.load_file(str(miz))
@@ -708,12 +717,50 @@ class MizCampaignLoader:
             closest, distance = self.objective_info(scenery_group)
             closest.preset_locations.scenery.append(scenery_group)
 
+    def add_yaml_supply_routes(self) -> None:
+        for route in self.campaign_data.get("supply_routes", []):
+            raw = route.get("waypoints", [])
+            if len(raw) < 2:
+                logging.warning(
+                    "supply_routes entry has fewer than 2 waypoints — skipped"
+                )
+                continue
+            waypoints = [dcs.mapping.Point(x, y, self.mission.terrain) for x, y in raw]
+            origin = self.theater.closest_control_point(waypoints[0])
+            destination = self.theater.closest_control_point(waypoints[-1])
+            o_spawns = self._construct_cp_spawnpoints(waypoints[0])
+            d_spawns = self._construct_cp_spawnpoints(waypoints[-1])
+            self.control_points[origin.id].create_convoy_route(
+                destination, waypoints, o_spawns
+            )
+            self.control_points[destination.id].create_convoy_route(
+                origin, list(reversed(waypoints)), d_spawns
+            )
+
+    def add_yaml_shipping_lanes(self) -> None:
+        for lane in self.campaign_data.get("shipping_lanes", []):
+            raw = lane.get("waypoints", [])
+            if len(raw) < 2:
+                logging.warning(
+                    "shipping_lanes entry has fewer than 2 waypoints — skipped"
+                )
+                continue
+            waypoints = [dcs.mapping.Point(x, y, self.mission.terrain) for x, y in raw]
+            origin = self.theater.closest_control_point(waypoints[0])
+            destination = self.theater.closest_control_point(waypoints[-1])
+            self.control_points[origin.id].create_shipping_lane(destination, waypoints)
+            self.control_points[destination.id].create_shipping_lane(
+                origin, list(reversed(waypoints))
+            )
+
     def populate_theater(self) -> None:
         for control_point in self.control_points.values():
             self.theater.add_controlpoint(control_point)
         self.add_preset_locations()
         self.add_supply_routes()
         self.add_shipping_lanes()
+        self.add_yaml_supply_routes()
+        self.add_yaml_shipping_lanes()
         self.add_rebel_zones()
 
     def get_ctld_zones(self, prefix: str) -> List[Tuple[Point, float]]:

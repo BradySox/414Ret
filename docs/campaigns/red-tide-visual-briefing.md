@@ -17,8 +17,13 @@ NATO counteroffensive (blue axes) to roll the front east and take it all back.
 
 **Read it at a glance:** NATO holds the SW corner (Ramstein · Spangdahlem · Hahn · Frankfurt). Red
 owns the centre, east, and the whole north — **Hamburg** captured, **Copenhagen** a Soviet
-maritime-strike enclave, and the **Red Banner Baltic Fleet** SAGs across the approaches. The
-front (FLOT) runs north–south through the Fulda Gap; the offensive pushes through it.
+maritime-strike enclave (off the top of the map), and the **Red Banner Baltic Fleet** SAGs across
+the approaches. The shaded **inner-German border** on the map is the old line; the Soviet thrust
+drove *west* of it (Hamburg, Haina) before it culminated, and the counteroffensive (blue axes)
+pushes back east to restore and pass it.
+
+<sub>Base map: divided-Germany (FRG/DDR) outline supplied by the squadron; markers and axes are
+plotted from the campaign's real GermanyCW airfield coordinates.</sub>
 
 ---
 

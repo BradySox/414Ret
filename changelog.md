@@ -43,7 +43,6 @@
 * **[Map]** Hovering a SAM threat or detection ring highlights its emitter — and hovering an emitter highlights its ring — making it easy to tell which site a ring belongs to. Can be disabled from the map's layer control.
 * **[Mission Generation]** AI DEAD flights now receive the best available standoff/PGM loadout for their airframe instead of a generic anti-radiation fit.
 * **[AirWing]** Squadron names in the Air Wing dialog are clickable and the list shows idle-aircraft counts.
-* **[Radios]** COMM1 radio presets are mirrored onto COMM2 on aircraft that carry a second radio.
 * **[UX]** Auto-assigned TACAN codes are surfaced more clearly in control-point tooltips and the briefing.
 * **[Cheats]** Give or take money to/from both OWNFOR and OPFOR.
 * **[Map]** Blue non-carrier ships are movable on the campaign map — drag one to queue a destination; red ships and their queued moves stay hidden.

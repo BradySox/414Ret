@@ -69,18 +69,6 @@ class CommonRadioChannelAllocator(RadioChannelAllocator):
         first_channel = 2 if self.intra_flight_radio_index == radio_id else 1
         self._assign_sequential(flight, radio_id, first_channel, frequencies)
 
-        # Mirror the same presets onto the second radio (COMM2) when the
-        # aircraft has a distinct one, so a pilot can monitor two nets at once
-        # (e.g. the package on COMM1 and AWACS on COMM2). Channel 1 there holds
-        # the intra-flight frequency (which DCS also clobbers), so start at 2.
-        comm2_id = self.intra_flight_radio_index
-        if (
-            comm2_id is not None
-            and comm2_id != radio_id
-            and flight.num_radio_channels(comm2_id) > 1
-        ):
-            self._assign_sequential(flight, comm2_id, 2, frequencies)
-
     @staticmethod
     def _inter_flight_frequencies(
         flight: FlightData, mission_data: MissionData

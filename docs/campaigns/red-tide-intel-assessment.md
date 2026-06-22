@@ -172,6 +172,23 @@ This is now the heart of the assessment.
   it is now the most exposed piece on the board.
 - The captured fields are run by **forward detachments still digging in.** *That window is now.*
 
+## Annex — Red Order of Battle by Field *(named regiments — these match the in-game ATO)*
+
+| Field | Regiment(s) | Aircraft / role |
+|---|---|---|
+| **Hamburg** (captured airhead) | 85th Gds Fighter Avn Rgt; 357th Assault Avn Rgt *"Grachi"*; 11th Gds Bomber Avn Rgt; 336th Combat Helo Rgt *"Krokodil"*; 486th Helo Rgt | MiG-29A · Su-25 · Su-24M · Mi-24P · Mi-8 |
+| **Copenhagen / Kastrup** (naval enclave) | Baltic Fleet Fighter Avn *"Naval Fulcrums"*; **924th Gds Naval Missile-Carrier Avn Rgt *"Baltic Backfires"***; 4th Gds Naval Assault Avn Rgt; 339th Transport Avn Rgt | MiG-29A · **Tu-22M3 (anti-ship)** · Su-24M · An-26 |
+| **Haina** (western spearhead) | 337th Combat Helo Rgt *"Krokodil"*; 239th Helo Rgt; 368th Assault Avn Rgt *"Grachi"*; 33rd Fighter Avn Rgt; 19th Gds Fighter-Bomber Rgt | Mi-24P · Mi-8 · Su-25 · MiG-23MLD · MiG-27K |
+| **Sperenberg** (deep rear) | 1023rd Heavy Bomber Avn Rgt *"Medved"*; 326th Heavy Bomber Avn Rgt; 831st Gds Fighter Avn Rgt | Tu-95MS · Tu-22M3 · Su-27 |
+| **Schönefeld** (C2/support) | 144th Independent Air Recon Rgt *"Mainstay"*; 203rd Gds Air Refuelling Rgt *"Midas"*; 226th Composite Avn Rgt | A-50 · Il-78M · An-26 |
+| **Templin** (Gross Dölln) | 31st Bomber Avn Rgt; **185th GvIAP** *(wears its real VVS colours in-game)* | Su-24M · MiG-21bis |
+| **Wittstock** | 20th Gds Fighter-Bomber Avn Rgt | Su-17M4 (DEAD) |
+| **Peenemünde** (coastal PVO) | 1st Gds Air Defence Fighter Rgt *"Coastal Fulcrums"* | MiG-29 |
+
+*Regiment designations are fiction in the* Red Storm Rising *tradition — historically flavoured,
+freely editable. The **924th GMRAP** "Baltic Backfires" at Copenhagen is the maritime-strike
+priority of Section IX.*
+
 ---
 ---
 

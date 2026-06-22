@@ -1158,10 +1158,12 @@ class Settings:
         "Generate target recon kneeboard pages",
         MISSION_GENERATOR_PAGE,
         KNEEBOARD_SECTION,
-        default=True,
+        default=False,
         detail=(
-            "Generate a target reconnaissance page for player flights with air-to-ground "
-            "tasks, showing aimpoints, threat rings, and target area context."
+            "Generate target/airfield reconnaissance pages for player flights with "
+            "air-to-ground tasks, showing aimpoints, threat rings, and target area "
+            "context over satellite imagery. Off by default: the marker overlays do "
+            "not reliably line up with the underlying satellite tiles."
         ),
     )
     generate_all_packages_kneeboard: bool = boolean_option(

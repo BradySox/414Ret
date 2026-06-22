@@ -23,10 +23,22 @@ Army back. Setting stays 1988-07-13; player faction `Blufor Late Cold War (80s)`
 the offensive framing works — that captured ground is the objective set the 414th attacks.
 
 > **Posture note.** The reframe is **narrative-only** — no gameplay rebalance has been
-> applied. Blue is still mechanically outnumbered (4 bases vs 8–9). Candidate "blue edge"
-> tuning to make blue a genuine aggressor (income multipliers, heavier offensive squadrons,
-> a starting front shift) is deferred pending playtest; see the briefing pack PR discussion /
-> ask before applying.
+> applied; blue is still mechanically outnumbered (4 bases vs 8–9). The following "blue edge"
+> tuning is **sanctioned for after playtest** (apply on request, lightest first). **Map/base
+> ownership and front-line shifts are explicitly OUT of scope** (ruled out by the maintainer):
+>
+> 1. **Economy skew** (one-line, biggest lever) — `recommended_player_income_multiplier: ~1.3`,
+>    `recommended_enemy_income_multiplier: ~0.7`, plus a starting-money skew
+>    (`recommended_player_money` > `recommended_enemy_money`). All are valid campaign-yaml fields.
+> 2. **Squadron balance** — bump blue offensive squadron `size` (F-15E BAI, B-1B / A-6E OCA,
+>    F-16CM DEAD, F/A-18C SEAD) and trim red fighter mass (drop a red BARCAP/Flanker squadron or
+>    two from 8). Add weight to blue **SEAD/DEAD** specifically — the IADS is the campaign's
+>    center of gravity, so SEAD weight *is* offensive tempo.
+> 3. **Red posture / AI** — `opfor_planner_unpredictability: 0` (red stays reactive) with
+>    `ownfor_planner_unpredictability` higher; lower red QRA/intercept reserve.
+>
+> **Out of scope (ruled out):** flipping bases (e.g. Haina) to blue, adding a blue northern
+> base, or nudging the FLOT east. Keep the map as-is; lean on 1–3 only.
 
 ## Force laydown
 

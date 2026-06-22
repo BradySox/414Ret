@@ -1,5 +1,5 @@
 ---
-name: Germany - Fulda Storm
+name: Germany - Red Tide
 theater: GermanyCW
 authors: Starfire, 414th JFG
 recommended_player_faction: Blufor Late Cold War (80s)
@@ -22,9 +22,11 @@ description:
   half-readiness, the 414th must blunt the assault, claw back the initiative, and hold the line until
   reinforcement arrives. Control of these skies is fleeting, the enemy is many, and the cost of failure is
   all too high.</p>
+  <p><em>A red storm is rising over Central Europe -- the war the Cold War never had. Inspired by the
+  pages of Tom Clancy's Red Storm Rising.</em></p>
   <p><strong>Note:</strong> This campaign is intended to be played with the Heatblur F-4E Phantom II
   module active.</p>
-miz: fulda_storm.miz
+miz: red_tide.miz
 performance: 2
 recommended_start_date: 1988-07-13
 version: "10.8"

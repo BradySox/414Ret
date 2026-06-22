@@ -6,6 +6,9 @@ the Soviet thrust has culminated and the **414th Joint Fighter Group** now leads
 it back. In the* Red Storm Rising *tradition; all names, regiments, and the Soviet operation name
 ("ZAPAD") are fiction, historically flavoured, and freely editable.*
 
+*For a picture brief — theater map, SAM threat profile, and target-priority / ORBAT diagrams —
+see **[red-tide-visual-briefing.md](red-tide-visual-briefing.md)**.*
+
 *This pack is written to match the campaign exactly — the red regiments below are the squadron
 names you will see in the in-game ATO. Three pieces:*
 
@@ -63,8 +66,8 @@ intent has shifted from *advance* to **hold what he has taken**:
 1. **Dig in along the line of furthest advance** and convert a stalled offensive into a defended
    salient before NATO can counterattack in strength.
 2. **Re-establish the air-defense umbrella forward** — get the mobile Buk and SA-6 batteries
-   re-sited, establish the long-range S-300 belts, rebuild the GCI picture, and harden the captured
-   airfields.
+   re-sited forward under the already-established S-300/S-200 belts, rebuild the GCI picture, and
+   harden the captured airfields.
 3. **Hold Copenhagen and the Straits** to keep the Baltic closed and the Northern flank isolated.
 4. **Buy a political off-ramp** — a defended line lets the regime claim victory and sue from
    strength. **A counteroffensive that visibly rolls them back denies them that, and the political
@@ -121,12 +124,13 @@ East German fields. *(Field → regiment names match the in-game ATO; full table
 
 The IADS is the campaign's center of gravity for our strike effort — and **the mobile layer is
 still on the move,** because the offensive outran its own air defenses. Catch the shoot-and-scoot
-batteries in transit; hit the big fixed sites before they're fully established.
+batteries in transit; the big fixed sites are established and on — route around them or commit
+dedicated SEAD.
 
-- **S-300PS (SA-10 "Grumble")** — the **long-range anchor** of the umbrella: strategic-altitude
-  reach and multiple engagements at once. It deploys deliberately and **stays put** — *not* a
-  shoot-and-scoot system — so once a site is located it is there to be struck. He is racing to
-  establish the forward S-300 belts; hit them before they're set and switched on.
+- **S-300PS (SA-10 "Grumble")** — the **long-range anchor** of the umbrella: long reach, engages
+  several targets at once, **at any altitude inside its ring**. It is **established, sited, and
+  switched on** — *not* a shoot-and-scoot system. You won't catch it moving and you can't climb
+  over it. **Route around the ring, terrain-mask, or kill it with dedicated SEAD.**
 - **SA-11 "Gadfly" (Buk)** — mobile, tracked, **shoot-and-scoot**; travels with the maneuver force
   as the spearhead's organic medium-range cover. Here today, a ridgeline over tomorrow.
 - **SA-6 "Gainful"** — the other genuinely mobile belt SAM; relocates and **shoots-and-scoots** like
@@ -186,9 +190,9 @@ most dangerous one.** Press hard, but read the escalation signs.
 
 ## Section IX — The Target Deck *(what the 414th attacks to win)*
 
-1. **The forward air-defense umbrella, before it sets.** Catch the mobile **Buk and SA-6** in
-   transit, and strike the long-range **S-300** sites before they're established and switched on —
-   while the seams are open, pry the lid off the salient for everyone behind us.
+1. **The forward air-defense umbrella.** Catch the mobile **Buk and SA-6** in transit; for the
+   established long-range **S-300 / S-200**, route around the rings or commit dedicated SEAD to
+   punch a corridor — pry the lid off the salient for everyone behind us.
 2. **The Baltic Backfires (924th GMRAP) at Copenhagen** — protect the convoys feeding the
    offensive; the single highest-value set on the board.
 3. **The enablers** — the **144th's** A-50 Mainstay and the **203rd's** Il-78 Midas; few, fragile,
@@ -255,13 +259,13 @@ AIR — RESPECT THESE
   A-50 / Il-78 ......... 144th "Mainstay" + 203rd "Midas" @ Schönefeld.
                          Kill = he goes blind & short-legged.
 
-SAM — NO SAFE ALTITUDE. CATCH THE MOBILE ONES (BUK/SA-6/SHORAD) MOVING.
-  SA-10 S-300 .......... long-range ANCHOR. Fixed: sets up & stays - find it, strike it.
-  SA-11 Buk ............ MOBILE shoot-&-scoot, rides with the spearhead. Med alt.
-  SA-6 Gainful ......... MOBILE shoot-&-scoot belt SAM. Don't trust yesterday's picture.
-  SA-5  S-200 .......... fixed; reaches our AWACS & tankers. Keep them back.
+SAM — RANGE FIGHT, NOT ALTITUDE. ROUTE THE FIXED RINGS; CATCH THE MOVERS.
+  SA-10 S-300 .......... FIXED, established, long-range (~45nm). Can't out-climb it - route/SEAD.
+  SA-5  S-200 .......... FIXED, very long range; reaches AWACS/tankers. Route / keep them back.
+  SA-11 Buk ............ MOBILE shoot-&-scoot (~22nm), rides with the spearhead. Catch in transit.
+  SA-6 Gainful ......... MOBILE shoot-&-scoot belt SAM (~13nm). Don't trust yesterday's picture.
   SA-2 / SA-3 + KS-19 .. fixed belt in depth.
-  SA-8/9/13 + ZSU guns . the low block. Don't loiter low either.
+  SA-8/9/13 + ZSU guns . MOBILE low block (~9nm). Don't loiter low either.
 
 NAVAL
   Tarantul / Grisha SAGs — W. Baltic, off Copenhagen. NO organic air.
@@ -314,10 +318,10 @@ Here's how we pry him open.
 
 First — the SAMs, while the net is still half-built. The Buk and the SA-6 are the movers — they
 shoot and scoot, riding forward with his tanks to rebuild that umbrella. Catch those on the roads,
-in transit, and fly today's recon, not yesterday's, because they do not sit still. The big S-300, on
-the other hand, sets up deliberately and stays — so the trick there is to find the site and hit it
-before it's established and switched on. Pull either thread and you open the door for every striker
-behind you.
+in transit, and fly today's recon, not yesterday's, because they do not sit still. The big S-300 and
+S-200, on the other hand, are already set up and switched on — you won't catch those moving and you
+can't climb over them, so route around their rings or send dedicated SEAD to punch a corridor. Pull
+either thread and you open the door for every striker behind you.
 
 Second — Copenhagen. The Soviets parked a naval Backfire regiment up there — the 924th, the "Baltic
 Backfires" — and those bombers can reach the convoys bringing our reinforcements across the water.

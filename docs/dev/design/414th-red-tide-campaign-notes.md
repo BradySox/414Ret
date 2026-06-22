@@ -11,13 +11,22 @@ Tide is a separate, selectable campaign that carries the heavier 414th laydown.
 
 ## Premise
 
-13 July 1988, a conventional Warsaw Pact invasion through the Fulda Gap — explicitly in the
-spirit of Tom Clancy's *Red Storm Rising* (nodded to in the in-app description). Framing
-puts the player inside the **414th Joint Fighter Group**, a multinational NATO wing that
-simply *happened* to be forward-based when it kicked off. Setting stays 1988-07-13; player
-faction `Blufor Late Cold War (80s)`, enemy `Russia 1980`. The premise is written so the
-in-game laydown matches the fiction: Hamburg has fallen, the carrier never made station,
-and a dense SAM belt (S-300/SA-11) reaches deep.
+13 July 1988, in the spirit of Tom Clancy's *Red Storm Rising* (nodded to in the in-app
+description). A conventional Warsaw Pact invasion through the Fulda Gap **opened** the war —
+Hamburg fell and Copenhagen was seized — but the campaign is framed from the moment the
+Soviet offensive has **culminated**: overextended, exposed, and not yet dug in. The player
+inside the **414th Joint Fighter Group** (a multinational NATO wing that happened to be
+forward-based when it kicked off) now leads the **NATO counteroffensive** — clawing back the
+skies and rolling the front east to retake Hamburg, liberate Copenhagen, and drive the Red
+Army back. Setting stays 1988-07-13; player faction `Blufor Late Cold War (80s)`, enemy
+`Russia 1980`. The red-heavy laydown (red still holds the north, centre, and east) is *why*
+the offensive framing works — that captured ground is the objective set the 414th attacks.
+
+> **Posture note.** The reframe is **narrative-only** — no gameplay rebalance has been
+> applied. Blue is still mechanically outnumbered (4 bases vs 8–9). Candidate "blue edge"
+> tuning to make blue a genuine aggressor (income multipliers, heavier offensive squadrons,
+> a starting front shift) is deferred pending playtest; see the briefing pack PR discussion /
+> ask before applying.
 
 ## Force laydown
 

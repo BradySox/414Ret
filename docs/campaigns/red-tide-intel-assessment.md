@@ -1,10 +1,12 @@
 # Operation Red Tide — Intelligence Assessment & Briefing Pack
 
 *In-fiction campaign lore for **Germany - Red Tide**. This is a creative companion to the
-campaign, not an engineering document. Names, formations, and the Soviet operation name
-("ZAPAD") are deliberately easy to swap. Contains three pieces:*
+campaign, not an engineering document. Red Tide is framed as a **NATO counteroffensive**: the
+Warsaw Pact opened the war and overran Hamburg and Copenhagen, but the Soviet thrust has
+culminated and the 414th now leads the push to take it all back. Names, formations, and the
+Soviet operation name ("ZAPAD") are deliberately easy to swap. Contains three pieces:*
 
-1. **Full Intelligence Assessment** — the deep backstory & order of battle to draw on.
+1. **Full Intelligence Assessment** — the backstory & order of battle to draw on.
 2. **Pilot's Threat Card** — a one-page kneeboard quick-reference.
 3. **Five-Minute Spoken Brief** — a read-aloud script for the mass brief.
 
@@ -16,175 +18,159 @@ Grounded in the campaign's actual red order of battle (bases, airframes, SAMs, B
 # PART 1 — NATO INTELLIGENCE ASSESSMENT: OPERATION RED TIDE
 
 **Allied Command Europe — Combined Intelligence Cell, attached 414th Joint Fighter Group**
-**Period of report:** 13 JUL 1988, H+18
+**Period of report:** the counteroffensive, opening phase
 **Classification (in-fiction):** COSMIC TOP SECRET — ATOMAL — *414 EYES*
 **Subject:** Soviet/Warsaw Pact forces, intentions, and capabilities — Central & Northern Region
 
 ## Bottom Line Up Front
 
-The Soviet Union is not raiding. It is executing a long-rehearsed theater offensive —
-internally designated **Operation ZAPAD ("West")** — intended to overrun the Federal
-Republic and reach the Rhine inside two weeks, before the United States can reinforce across
-the Atlantic. The opening 18 hours have gone better for them than our pre-war estimates
-assumed: the inner-German border is broken at the **Fulda Gap**, **Hamburg has fallen**, and
-a combined **airborne–amphibious coup de main has seized Copenhagen**, putting Soviet
-airpower and the Baltic Fleet astride the Danish Straits.
+**The Soviet offensive has culminated, and the initiative has changed hands.** The Warsaw Pact
+opened the war — internally designated **Operation ZAPAD ("West")** — by breaking the inner-German
+border at the **Fulda Gap**, taking **Hamburg**, and seizing **Copenhagen** in a combined
+airborne–amphibious coup. For a few days it looked unstoppable. It is not unstoppable anymore.
 
-**This is a "use it or lose it" war.** The regime in Moscow has bet its survival on a quick
-decision. Their greatest enemy is not us — it is the calendar. Every day NATO airpower denies
-them tempo, the political foundation of their offensive cracks a little more. **The 414th's
-job is to spend their time.**
+The spearheads have outrun their fuel and their air cover and been ground down from above. The
+enemy is **overextended, out of position, and not yet dug in** on the ground he took. The line
+held. **Now NATO goes over to the attack, and the 414th leads it.** Our task is no longer to
+survive — it is to **keep him reeling and roll the front east**, retaking Hamburg, liberating
+Copenhagen, and shattering his forces before he can consolidate them into a defense.
 
-## Section I — The Road to War
+**Tempo is now our weapon, not his.** Every hour we deny him to dig in, rearm, and re-establish
+his air defenses is an hour he does not get back. Hit him while he is off balance.
 
-The reformist line in Moscow did not survive the winter. A succession of shocks — a
-catastrophic harvest, hard-currency collapse, and an industrial-sabotage incident at a major
-Volga refinery complex that gutted fuel reserves — was seized upon by a hardline bloc in the
-Defense Council and KGB. By spring the reformers were gone, replaced by a "Committee for the
-Defense of the Motherland" that framed NATO's modernization — Pershing II, AirLand Battle,
-the coming generation of stealth — as a closing window through which the West would soon be
-able to win a war the USSR could not.
+## Section I — The Road to War (and how it stalled)
 
-Their logic was cold and entirely rational on its own terms: **the correlation of forces
-would never again favor Moscow as much as it did in 1988.** Wait, and lose by attrition and
-technology. Strike now, and there was a real chance to present a fractured Western alliance
-with a *fait accompli* before American mass could cross the ocean. The *Zapad* exercise
-series — which the West had watched for years as saber-rattling — was the rehearsal. This
-summer, the rehearsal did not stand down. It rolled west.
+The reformist line in Moscow did not survive the winter. A succession of shocks — a catastrophic
+harvest, hard-currency collapse, and an industrial-sabotage incident at a major Volga refinery
+complex that gutted fuel reserves — was seized upon by a hardline bloc that framed NATO's
+modernization as a closing window through which the West would soon be able to win a war the
+USSR could not. Their logic: **the correlation of forces would never again favor Moscow as much
+as in 1988.** Strike now, present a *fait accompli* before American mass crossed the Atlantic.
+The *Zapad* exercise series was the rehearsal; this summer it did not stand down.
 
-## Section II — Soviet Strategic Intent & War Aims
+And in the opening days it nearly worked. But a continental blitz needs three things to keep
+rolling — fuel, follow-on echelons, and air cover — and NATO airpower has been taking all three
+apart. The spearheads reached too far, too fast, on a logistics tail that could not keep up. The
+offensive **culminated.** That is the opening the counterstroke is built to exploit.
 
-1. **Reach the Rhine in 13–15 days.** Collapse the FRG before REFORGER (US reinforcement)
-   can land and marry up with prepositioned stocks.
-2. **Seal the maritime approaches.** The seizure of Copenhagen and the commitment of the
-   Baltic Fleet are designed to **turn the Baltic into a Soviet lake** and bottle the Danish
-   Straits, denying NATO reinforcement of the Northern flank and threatening the North Sea
-   sea lanes.
-3. **Win politically, not just militarily.** The Committee needs a *visible, fast* victory to
-   legitimize itself at home and to peel wavering members off the Alliance. A stalled
-   offensive is, for them, a strategic defeat regardless of the front line.
-4. **Hold the nuclear threshold — for now.** They believe they can win conventionally. That
-   belief is the only thing keeping this war non-nuclear. **Anything that convinces them they
-   are losing conventionally raises the nuclear risk.**
+## Section II — Soviet Intent Now: Consolidate
+
+Moscow's original aim — the Rhine in two weeks and a fractured Alliance — is slipping. The
+enemy's intent has shifted from *advance* to **hold what he has taken**:
+
+1. **Dig in along the line of furthest advance** and convert a stalled offensive into a defended
+   salient before NATO can counterattack in strength.
+2. **Re-establish the air-defense umbrella** forward — get the mobile S-300 and Buk batteries
+   sited, reconstitute the GCI picture, and harden the captured airfields.
+3. **Hold Copenhagen and the Straits** to keep the Baltic closed and the Northern flank isolated.
+4. **Buy time and a political off-ramp** — a defended line lets the regime claim a "victory" and
+   sue from strength. **A counteroffensive that visibly rolls them back denies them that, and the
+   political foundation of the war cracks with it.**
+
+**The race is consolidation vs. counterattack.** Everything below is about losing that race for
+them.
 
 ## Section III — Order of Battle: Air (16th Air Army + attached Frontal Aviation)
 
 **Air superiority (the merge):**
-- **MiG-29 "Fulcrum"** — forward at **Peenemünde, Hamburg, Copenhagen**. Agile, helmet-sighted,
-  with the **R-73/AA-11 Archer** that out-sticks anything we have at the merge. Treat every
-  Fulcrum engagement as a knife fight you may not win.
-- **Su-27 "Flanker"** (**Sperenberg**) — long legs, big radar, premier interceptor; escort and
-  barrier CAP.
-- Legacy **MiG-23MLD** (**Haina**) and **MiG-21bis** (**Templin**) — dangerous in GCI-vectored
-  volume.
+- **MiG-29 "Fulcrum"** — forward at **Peenemünde, Hamburg, Copenhagen**. **R-73/AA-11 Archer**
+  + helmet sight out-sticks us at the merge. Don't turn-fight; kill before the merge or extend.
+- **Su-27 "Flanker"** (**Sperenberg**) — long-range escort and barrier CAP over the rear.
+- Legacy **MiG-23MLD** (**Haina**) and **MiG-21bis** (**Templin**) — dangerous in GCI-vectored mass.
 
 **Strike & interdiction:**
-- **Su-24M "Fencer"** (**Hamburg, Copenhagen, Templin**) — all-weather strike *and* their
-  primary tactical **SEAD** shooter. The Fencer is hunting us and our SAMs.
-- **MiG-27 / Su-17M4 "Fitter"** (**Haina, Wittstock**) — CAS/interdiction on the penetration's
-  shoulders.
-- **Su-25 "Frogfoot"** (**Hamburg, Haina**) — armored CAS escorting the armor, paired with
-  **Mi-24 "Hind"** gunships.
+- **Su-24M "Fencer"** (**Hamburg, Copenhagen, Templin**) — all-weather strike *and* their primary
+  **SEAD** shooter; it hunts the same SAM-killers we send forward.
+- **MiG-27 / Su-17M4 "Fitter"** (**Haina, Wittstock**) — CAS/interdiction on the salient's shoulders.
+- **Su-25 "Frogfoot"** (**Hamburg, Haina**) + **Mi-24 "Hind"** — armored CAS holding the line.
 
-**Maritime-strike threat (priority intelligence):**
-- **Tu-22M3 "Backfire"** (**Sperenberg**, now forward at **Copenhagen/Kastrup**) with **AS-4
-  "Kitchen"** standoff missiles. From Copenhagen it reaches deep into the North Sea and the
-  Channel approaches — **the regiment that can sink the reinforcement convoys.** Killing
-  Backfires on the ground at Copenhagen is worth more than almost any sortie we can fly.
+**Maritime-strike threat (priority):**
+- **Tu-22M3 "Backfire"** (**Sperenberg**, forward at **Copenhagen/Kastrup**) with **AS-4 "Kitchen"**
+  — reaches the North Sea and the reinforcement convoys we now depend on for the offensive. Kill
+  them on the ground at Copenhagen.
 
 **Enablers (high-value, fragile):**
-- **A-50 "Mainstay"** AEW (**Schönefeld**) — their eye in the sky.
-- **Il-78 "Midas"** tankers (**Schönefeld**) — without them, Backfire and Flanker lose reach.
-- **Tu-95 "Bear"** (**Sperenberg**) — strategic/maritime recon-strike.
-- **An-26** lift sustaining the forward lodgements.
+- **A-50 "Mainstay"** AEW and **Il-78 "Midas"** tankers (**Schönefeld**) — kill these and his GCI
+  goes blind and his Flankers and Backfires go short-legged.
+- **Tu-95 "Bear"** (**Sperenberg**); **An-26** lift sustaining the forward lodgements.
 
 ## Section IV — Order of Battle: Integrated Air Defense (IADS)
 
-The Soviets defend *volumes*, in overlapping, redundant layers. The IADS is the campaign's
-center of gravity for our strike effort.
+The IADS is the campaign's center of gravity. Critically, **much of it is still on the move** —
+the offensive outran its air defenses, and the enemy is racing to re-site them forward. Catch
+them in transit.
 
-- **S-300PS (SA-10 "Grumble")** — *new and decisive.* Long reach, multi-target, **road-mobile,
-  shoot-and-scoot.** Will not be where yesterday's imagery put it. Denies medium altitude near
-  the front.
-- **SA-11 "Gadfly" (Buk)** — mobile, **travels with the maneuver force**, organic cover for the
-  spearhead.
-- **S-200 (SA-5 "Gammon")** — strategic-altitude area denial against our AEW, tankers, high-flyers.
-- **Belt** — **SA-2 / SA-3 / SA-6** in depth.
-- **Point/maneuver** — **SA-8, SA-9, SA-13**, and guns (**ZSU-23-4 "Shilka", ZSU-57-2**).
+- **S-300PS (SA-10 "Grumble")** — long reach, multi-target, **road-mobile, shoot-and-scoot.** The
+  battery that wasn't there this morning will be there this afternoon.
+- **SA-11 "Gadfly" (Buk)** — mobile, travels with the maneuver force; the spearhead's organic cover.
+- **S-200 (SA-5 "Gammon")** — strategic-altitude denial against our AEW, tankers, high-flyers.
+- **Belt** — **SA-2 / SA-3 / SA-6** in depth around fixed assets.
+- **Point/maneuver** — **SA-8, SA-9, SA-13**, guns (**ZSU-23-4 "Shilka", ZSU-57-2**).
 - **Deep fires** — **SS-1 "Scud-B"** SSM brigades ranging our rear airfields and ports.
 
-There is no "safe" altitude band near the FLOT: low puts you in the guns and SA-13s; medium in
-the Buk and SA-6; high in the S-300 and S-200. The IADS is layered to deny the seams — but it
-is **brittle at the nodes** (Section IX).
+No "safe" altitude near the FLOT — but the network is **unconsolidated and seam-ridden right now.**
+That is a window that closes a little more every hour.
 
 ## Section V — Order of Battle: Naval (Red Banner Baltic Fleet)
 
-- **Surface action groups** built around **Project 1241 "Tarantul" (Molniya)** missile corvettes
-  and **Project 1124 "Grisha"** ASW corvettes operate in the **western Baltic and off
-  Copenhagen** — sea denial, support of the lodgement, and contesting the Danish Straits.
-- **Critical gap:** these groups have **no organic air cover** beyond the fighters now flying
-  from captured Copenhagen. Cut Copenhagen's air, and the SAGs are exposed.
+- **Surface action groups** of **Project 1241 "Tarantul" (Molniya)** missile corvettes and
+  **Project 1124 "Grisha"** ASW corvettes in the **western Baltic and off Copenhagen** — sea
+  denial, holding the lodgement, contesting the Danish Straits.
+- **Critical gap:** **no organic air cover** beyond the fighters at captured Copenhagen. Cut
+  Copenhagen's air and the corvettes are open to anti-ship strike — and the Straits reopen.
 
-The carrier that was to anchor NATO's Northern flank never made her station; her air wing is
-fighting from German concrete. That absence is *why* the Baltic Fleet can be this bold.
+## Section VI — Ground Forces & the Stalled Salient
 
-## Section VI — Ground Forces & the Fulda Penetration
-
-A classic echeloned breakthrough through the Fulda Gap toward Frankfurt and the Rhine,
-spearheaded by Guards Tank and Combined Arms armies of GSFG:
-
-- **First-echelon** divisions (T-80/T-72, BMP) fixing and breaching, with **Operational Maneuver
-  Groups (OMGs)** punching through to run amok in our rear.
-- **Airborne (VDV, BMD-1)** — the force that took **Copenhagen** by *desant*; a standing threat
-  to drop on bridges, airfields, and C2 nodes.
-- **Naval infantry** on the Baltic coast.
-- Heavy **artillery, REB (electronic combat), and a credible chemical capability** in reserve.
-
-The captured airfields — **Hamburg** and **Copenhagen** — are forward, hungry, and dependent on
-a thin logistics tail. Strengths today; liabilities the moment we contest their air bridge.
+The main effort was an echeloned breakthrough through Fulda toward Frankfurt, spearheaded by
+Guards Tank and Combined Arms armies of GSFG. **It is now a stalled salient,** overextended and
+short of fuel, with **VDV airborne** holding Copenhagen and **naval infantry** on the Baltic coast.
+Expect him to try to convert it into a defended line — counter that with relentless interdiction
+of the follow-on echelons and the logistics tail before he can.
 
 ## Section VII — Doctrine, Tactics & TTPs
 
-- **Mass and tempo over finesse.** They trade aircraft and crews for *time*.
-- **Rigid GCI.** Break the picture (kill the Mainstay, jam the net) and individual pilots become
-  far less dangerous.
-- **Shoot-and-scoot SAMs & EMCON discipline.** Yesterday's SEAD plan is today's ambush.
-- **Echelons.** Defeating the first wave means little; interdicting the follow-on echelons is
-  decisive.
-- **They target our enablers** — AWACS, tankers — just as we target theirs.
+- **Mass and tempo** — historically his strength; right now his tempo is broken and ours is not.
+- **Rigid GCI** — break the picture (kill the Mainstay, jam the net) and his pilots go dumb.
+- **Shoot-and-scoot SAMs** — yesterday's SEAD plan is today's ambush; fly today's recon.
+- **Echelons** — interdicting the follow-on waves and resupply is how you keep him from re-setting.
+- **He targets our enablers** — protect the AWACS and tankers that make the offensive possible.
 
 ## Section VIII — Courses of Action
 
-**Most Likely:** consolidate the Fulda penetration and grind toward the Rhine while the Baltic
-Fleet and Copenhagen airpower seal the Straits and Backfires range the North Sea lanes to
-delay/savage REFORGER. Accept heavy losses to keep tempo.
+**MOST LIKELY (ENCOA): Consolidate and defend.** Dig in along the line of furthest advance,
+re-site the mobile SAM umbrella forward, harden the captured airfields, and hold Copenhagen and
+the Straits — converting a stalled offensive into a defended salient and a political bargaining
+chip. *Our job is to deny him the time to do it.*
 
-**Most Dangerous:** a northern thrust up through Schleswig-Holstein to **link the Copenhagen
-lodgement with the main front and overrun Jutland**, plus deep Scud/air strikes on NATO C2 and
-reception airfields. In extremis, if the offensive culminates short of its goals and the regime's
-survival is in doubt, **the nuclear/chemical threshold becomes the dominant risk. A *losing*
-Soviet offensive is more dangerous than a winning one.**
+**MOST DANGEROUS (MDCOA): Lash out.** Rather than be rolled back, he commits his reserves to a
+renewed thrust to restore momentum, throws his Backfires and Scuds at our reception airfields and
+C2 to break the counteroffensive before it gains weight, and — if the salient collapses and the
+regime's survival is in doubt — drifts toward the chemical/nuclear threshold. **A *losing* Soviet
+army is the most dangerous one.** Press hard, but read the escalation signs.
 
-## Section IX — Vulnerabilities & Exploitation *(what the 414th can break)*
+## Section IX — The Target Deck *(what the 414th attacks to win)*
 
-1. **The air bridge to the forward fields** (An-26 lift + forward fuel into Hamburg/Copenhagen).
-2. **The Backfires at Copenhagen** — highest-value target set on the board.
-3. **The enabler aircraft** — A-50 Mainstay & Il-78 Midas, few and irreplaceable.
-4. **IADS at the nodes** — EWR, command posts, the seams between S-300/Buk/SA-6 envelopes. Make
-   the *system* blind, don't chase every launcher.
-5. **The naval SAGs without air cover** — sever Copenhagen's fighters and the corvettes are open.
-6. **Time itself** — every stalled column spends the one resource they cannot replace.
+This is now the heart of the assessment.
+
+1. **The forward air-defense umbrella, in transit.** Kill the S-300/Buk batteries while they
+   relocate and the seams are open — pry the lid off the salient for everything behind us.
+2. **The Backfires at Copenhagen** — protect the convoys feeding the offensive; highest-value set.
+3. **The enablers** — A-50 Mainstay & Il-78 Midas; few, fragile, and worth a squadron of fighters.
+4. **The logistics tail & follow-on echelons** — deny him fuel, bridges, and reinforcement so the
+   salient cannot be turned into a defense.
+5. **Captured airfields (Hamburg, Copenhagen)** — forward, hungry, **not yet hardened.** Strangle
+   the air bridge and take them back.
+6. **Copenhagen's fighters → the Baltic SAGs** — open the Straits and reconnect the Northern flank.
 
 ## Section X — Key Personalities *(color for the briefing)*
 
-- **Marshal Viktor M. Surin** — Commander, Western Strategic Direction; architect of ZAPAD,
-  deep-battle disciple who believes speed forgives all losses.
-- **Colonel-General A. Ye. Drozdov** — Commander, 16th Air Army; husbands his Flankers and
-  Backfires, pushes Fulcrums forward aggressively.
-- **Vice-Admiral L. S. Marchenko** — Red Banner Baltic Fleet; bold to recklessness — the
-  Copenhagen gambit is his.
-- The captured fields (**Hamburg, Copenhagen**) are run by **forward detachments still digging
-  in.** They are not yet hardened. *That window is now.*
+- **Marshal Viktor M. Surin** — Commander, Western Strategic Direction; architect of ZAPAD, now
+  fighting to hold a victory that is slipping through his fingers.
+- **Colonel-General A. Ye. Drozdov** — Commander, 16th Air Army; husbanding his Flankers and
+  Backfires as the air situation turns against him.
+- **Vice-Admiral L. S. Marchenko** — Red Banner Baltic Fleet; the Copenhagen gambit is his, and
+  it is now the most exposed piece on the board.
+- The captured fields are run by **forward detachments still digging in.** *That window is now.*
 
 ---
 ---
@@ -193,15 +179,17 @@ Soviet offensive is more dangerous than a winning one.**
 
 ```
 ================  RED TIDE — THREAT CARD  ================
+WE ARE ON THE OFFENSIVE. HE IS OVEREXTENDED. HIT HIM BEFORE HE DIGS IN.
+
 AIR — RESPECT THESE
   MiG-29 Fulcrum ....... R-73 + helmet sight. NO turn-fight. BVR/extend.
   Su-27 Flanker ........ long-range escort/barrier CAP. Watch the R-27ER.
   Su-24M Fencer ........ strike + ENEMY SEAD. Guards your SAM-hunters.
   Tu-22M3 Backfire ..... AS-4 convoy-killer @ COPENHAGEN. *** PRIORITY KILL ***
-  A-50 / Il-78 ......... AEW + tanker @ Schönefeld. Kill = they go blind & short-legged.
+  A-50 / Il-78 ......... AEW + tanker @ Schönefeld. Kill = he goes blind & short-legged.
 
-SAM — NO SAFE ALTITUDE NEAR THE FLOT
-  SA-10 S-300 .......... deep, mobile, SHOOT & SCOOT. High alt = death.
+SAM — NO SAFE ALTITUDE, BUT THE NET IS UNCONSOLIDATED. CATCH IT MOVING.
+  SA-10 S-300 .......... deep, mobile, SHOOT & SCOOT. Hit it relocating.
   SA-11 Buk ............ mobile, rides with the spearhead. Med alt.
   SA-5  S-200 .......... reaches our AWACS & tankers. Keep them back.
   SA-6 / 2 / 3 ......... fixed belt in depth.
@@ -211,15 +199,16 @@ NAVAL
   Tarantul / Grisha SAGs off Copenhagen — NO organic air.
   Kill Copenhagen's fighters first, then the corvettes are yours.
 
-KILL LIST (in order)
-  1) Backfires @ Copenhagen     3) Air bridge / fuel (Hamburg, CPH)
-  2) A-50 Mainstay, Il-78 Midas 4) IADS NODES (EWR/CP) — not every launcher
+TARGET DECK (push east — take it back)
+  1) SAMs IN TRANSIT — pry the lid off    4) Logistics/echelons — starve the salient
+  2) Backfires @ Copenhagen               5) Hamburg & Copenhagen — strangle & retake
+  3) A-50 Mainstay, Il-78 Midas           6) CPH fighters -> Baltic SAGs -> open the Straits
 
 RULES TO LIVE BY
-  • Vary altitude & route — never predictable near the front.
-  • Their SAMs scoot — trust TODAY's recon, not yesterday's.
-  • Break their GCI (kill Mainstay) and the Fulcrums get dumb.
-  • You don't have to win the war today — SPEND THEIR TIME.
+  • Tempo is OURS now — keep him reeling, don't let him set his feet.
+  • His SAMs are moving — fly TODAY's recon, hit them in transit.
+  • Break his GCI (kill Mainstay) and the Fulcrums go dumb.
+  • Take ground. Every km east he can't dig into is the war getting shorter.
 =========================================================
 ```
 
@@ -230,69 +219,58 @@ RULES TO LIVE BY
 
 > *Briefer's note: ~700 words, ~5 minutes at a measured pace. Pause at the breaks.*
 
-Gentlemen. Take a seat. Here's where we stand.
+Gentlemen. Take a seat. Today, we stop running.
 
-Eighteen hours ago, the Cold War ended — not with a treaty, but with tank engines. At
-zero-three-hundred, Soviet and Warsaw Pact armies crossed the inner-German border in force.
-This is not a probe. This is not a border incident. This is the war we spent forty years
-training for, and it is here.
+You know how it started. Before dawn, the whole Red Army came west — Fulda, the border, all of
+it. In the first days they took Hamburg. They dropped on Copenhagen and took that too. For about
+a week it looked like nothing on God's earth was going to stop them.
 
-The main blow came where we always said it would — the Fulda Gap. The border is broken. Soviet
-armor is west of it and moving. But that's not the part that should worry you most.
+Well. Look at the map now. Look at how far those red arrows got — and look at where they stopped.
 
-In the north, Hamburg has fallen. Overrun before its squadrons could even disperse. And across
-the water — Copenhagen is gone. The Soviets dropped airborne troops and ran naval infantry
-ashore in a single morning, and now the red flag flies over Kastrup. That gives them a forward
-airfield, and it puts their Baltic Fleet across the Danish Straits. The carrier that was
-supposed to anchor our northern flank never made her station. Her air wing is here, with us,
-flying off concrete instead of steel.
+They stopped because a blitzkrieg needs three things to keep rolling: fuel, fresh troops, and air
+cover. And for a week, you have been taking all three away from them. Their spearheads outran
+their supply. Their fighters outran their fuel. Their air defenses are still strung out on the
+roads behind the front, trying to catch up. The offensive didn't get beaten. It ran *dry.* It
+culminated. And an army that has culminated, that is stretched out and out of position and hasn't
+had time to dig in — that army is the most vulnerable thing on a battlefield.
 
-So let me tell you what we're up against.
+So here is the order for today, and for the days after. We are done holding. **We attack.**
 
-In the air — Fulcrums and Flankers. The MiG-29 carries a missile and a helmet sight that will
-kill you in a turn-fight before you finish the turn. Do not merge with these people if you can
-help it. Kill them before the merge, or extend and live. Behind them, Fencers — and the Fencer
-is not just a bomber, it's their SAM-killer, so it's hunting the same things you are.
+Our job is to take it back — Hamburg, Copenhagen, every kilometer of it — and to do it *fast*,
+before they can turn that stalled punch into a dug-in wall. Right now their air-defense net is
+half-built and full of holes. Right now their captured airfields are forward and soft. Right now
+the man across the line is off balance. Every one of those things is true *today* and a little
+less true tomorrow. Tempo used to be his weapon. Now it's ours. Don't give it back.
 
-And out of Copenhagen — Backfires. Tu-22M3s with long-range anti-ship missiles. Those bombers
-can reach our reinforcement convoys in the North Sea. Every one of them we kill on the ground is
-a ship full of soldiers that makes it to the fight. Remember that.
+Here's how we pry him open.
 
-Now the part nobody likes. The SAMs. There is no safe altitude near the front line. None. Down
-low, it's guns and short-range missiles. In the middle, it's the Buk — mobile, riding right
-along with their tanks. Up high, it's the S-300 and the S-200, and the S-300 is the one that
-keeps me up at night. It's mobile, it shoots, and it moves. The site that wasn't there this
-morning will be there this afternoon. Trust the recon you flew today, not the picture from
-yesterday.
+First — the SAMs, while they're still moving. The S-300 and the Buk are relocating forward to
+rebuild that umbrella. Catch them on the roads, in transit, before they're set, and you open the
+door for every striker behind you. Fly today's recon, not yesterday's — these things don't sit
+still.
 
-It sounds grim. It is grim. But listen — because here's the other half, and it's the half that
-matters.
+Second — the Backfires at Copenhagen. Those bombers can reach the convoys bringing our reinforcements
+across the water — the same reinforcements that turn this counterattack into a flood. Burn the
+Backfires on the ground and you protect the whole offensive.
 
-They are fast, they are strong, and they are *ahead of schedule*. And that is exactly their
-problem. This whole offensive is a gamble against a clock. The people who started this war need
-to reach the Rhine in two weeks, before America crosses the Atlantic in force — because they
-know that after that, they can't win. Their generals know it. Their politicians *especially*
-know it. A Soviet attack that bogs down isn't a stalemate for them. It's a defeat.
+Third — his eyes and his reach. The Mainstay radar plane and the tankers out of Schönefeld. Kill
+those and his fighters go deaf, blind, and short on gas.
 
-Which means our job is simple to say and hard to do: spend their time.
+And then we strangle the captured fields and we take them back. Hamburg. Copenhagen. They are not
+dug in yet. That window is open right now, and we are going to climb through it.
 
-Every column we stall. Every bridge we deny. Every Backfire we burn at Copenhagen. Every
-Mainstay we knock out of the sky so their fighters go deaf and blind. Every hour we keep their
-forward fields under threat. That is the mission. Not glory — *time*. We are the friction in
-their plan.
+A word of caution, because I won't lie to you. A cornered army is a dangerous army. As we roll him
+back, watch for him to lash out — a counter-thrust with his reserves, Scuds and Backfires against
+our airfields, anything to break our momentum before it builds. Expect it. Don't let it stop you.
 
-Priorities, in order. The Backfires at Copenhagen. Their radar planes and tankers. Their fuel
-and their transports keeping those forward fields alive. And the air-defense network — but go
-for the eyes and the brains, the radars and the command posts, not every single launcher. Make
-the system blind, not just smaller.
+You will still be outnumbered over the target. Fly smart — vary your altitude, vary your route,
+never be where he expects you, look out for each other. But understand the change in the air today.
+For a week we have been the ones with our backs to the wall. That week is over.
 
-Those captured fields — Hamburg, Copenhagen — they're not dug in yet. They're forward, they're
-hungry, and they are *vulnerable*. That window is open right now. It will not stay open.
+The line held. He shot his bolt and missed. And now we take the initiative, and we do not give it
+back until the Red Army is back where it started and then some.
 
-You're going to be outnumbered every time you walk out to the jet. Fly smart. Vary your
-altitude, vary your route, never be where they expect you. Look out for each other.
-
-Hold the line. Make them pay for every kilometer. Spend their time.
+Take ground. Keep him reeling. Make every kilometer east cost him everything.
 
 Step out in ten. Good hunting.
 

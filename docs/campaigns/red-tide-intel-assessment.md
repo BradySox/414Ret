@@ -62,8 +62,9 @@ intent has shifted from *advance* to **hold what he has taken**:
 
 1. **Dig in along the line of furthest advance** and convert a stalled offensive into a defended
    salient before NATO can counterattack in strength.
-2. **Re-establish the air-defense umbrella forward** — get the mobile S-300 and Buk batteries
-   re-sited, rebuild the GCI picture, and harden the captured airfields.
+2. **Re-establish the air-defense umbrella forward** — get the mobile Buk and SA-6 batteries
+   re-sited, establish the long-range S-300 belts, rebuild the GCI picture, and harden the captured
+   airfields.
 3. **Hold Copenhagen and the Straits** to keep the Baltic closed and the Northern flank isolated.
 4. **Buy a political off-ramp** — a defended line lets the regime claim victory and sue from
    strength. **A counteroffensive that visibly rolls them back denies them that, and the political
@@ -118,17 +119,23 @@ East German fields. *(Field → regiment names match the in-game ATO; full table
 
 ## Section IV — Order of Battle: Integrated Air Defense (IADS)
 
-The IADS is the campaign's center of gravity for our strike effort — and **much of it is still on
-the move,** because the offensive outran its own air defenses. Catch them in transit.
+The IADS is the campaign's center of gravity for our strike effort — and **the mobile layer is
+still on the move,** because the offensive outran its own air defenses. Catch the shoot-and-scoot
+batteries in transit; hit the big fixed sites before they're fully established.
 
-- **S-300PS (SA-10 "Grumble")** — long reach, multi-target, **road-mobile, shoot-and-scoot.** The
-  battery that wasn't there this morning will be there this afternoon.
-- **SA-11 "Gadfly" (Buk)** — mobile, tracked, travels with the maneuver force; the spearhead's
-  organic medium cover.
-- **S-200 (SA-5 "Gammon")** — strategic-altitude denial against our AEW, tankers, and high-flyers.
-- **The belt** — **SA-2 / SA-3 / SA-6**, with **KS-19** guns, in depth around fixed assets.
-- **Point & maneuver** — **SA-8, SA-9, SA-13**, and a wall of guns (**ZSU-23-4 "Shilka,"
-  ZSU-57-2**).
+- **S-300PS (SA-10 "Grumble")** — the **long-range anchor** of the umbrella: strategic-altitude
+  reach and multiple engagements at once. It deploys deliberately and **stays put** — *not* a
+  shoot-and-scoot system — so once a site is located it is there to be struck. He is racing to
+  establish the forward S-300 belts; hit them before they're set and switched on.
+- **SA-11 "Gadfly" (Buk)** — mobile, tracked, **shoot-and-scoot**; travels with the maneuver force
+  as the spearhead's organic medium-range cover. Here today, a ridgeline over tomorrow.
+- **SA-6 "Gainful"** — the other genuinely mobile belt SAM; relocates and **shoots-and-scoots** like
+  the Buk. Don't trust yesterday's SA-6 picture.
+- **S-200 (SA-5 "Gammon")** — fixed, strategic-altitude denial against our AEW, tankers, and
+  high-flyers.
+- **Fixed belt** — **SA-2 / SA-3**, with **KS-19** guns, in depth around fixed assets.
+- **SHORAD (shoot-and-scoot, low)** — **SA-8, SA-9, SA-13**, and a wall of guns (**ZSU-23-4
+  "Shilka," ZSU-57-2**). Mobile, fleeting, and everywhere over the maneuver force.
 - **Deep fires** — **SS-1 "Scud-B"** SSM brigades ranging our rear airfields and ports.
 
 No "safe" altitude near the FLOT — but the net is **unconsolidated and seam-ridden right now.** That
@@ -179,8 +186,9 @@ most dangerous one.** Press hard, but read the escalation signs.
 
 ## Section IX — The Target Deck *(what the 414th attacks to win)*
 
-1. **The forward air-defense umbrella, in transit.** Kill the S-300/Buk batteries while they
-   relocate and the seams are open — pry the lid off the salient for everyone behind us.
+1. **The forward air-defense umbrella, before it sets.** Catch the mobile **Buk and SA-6** in
+   transit, and strike the long-range **S-300** sites before they're established and switched on —
+   while the seams are open, pry the lid off the salient for everyone behind us.
 2. **The Baltic Backfires (924th GMRAP) at Copenhagen** — protect the convoys feeding the
    offensive; the single highest-value set on the board.
 3. **The enablers** — the **144th's** A-50 Mainstay and the **203rd's** Il-78 Midas; few, fragile,
@@ -224,8 +232,8 @@ most dangerous one.** Press hard, but read the escalation signs.
 | Tu-22M3 | Backfire | **Copenhagen (924 GMRAP)**, Sperenberg | AS-4 anti-ship — convoy killer |
 | A-50 | Mainstay | Schönefeld (144th) | His GCI eye — kill it |
 | Il-78 | Midas | Schönefeld (203rd) | Tanker — kill it, shorten his reach |
-| S-300PS | SA-10 Grumble | mobile, relocating | Shoot-and-scoot; catch it moving |
-| SA-11 | Gadfly / Buk | with the spearhead | Mobile cover over the salient |
+| S-300PS | SA-10 Grumble | fixed, long-range | Strategic anchor; sets up & stays — find it, strike it |
+| SA-11 / SA-6 | Gadfly·Buk / Gainful | with the spearhead | Mobile shoot-and-scoot; catch them moving |
 | S-200 | SA-5 Gammon | strategic | Reaches our AWACS / tankers |
 | Tarantul / Grisha | — | W. Baltic, off Copenhagen | Sea-denial SAGs, no organic air |
 
@@ -247,11 +255,12 @@ AIR — RESPECT THESE
   A-50 / Il-78 ......... 144th "Mainstay" + 203rd "Midas" @ Schönefeld.
                          Kill = he goes blind & short-legged.
 
-SAM — NO SAFE ALTITUDE, BUT THE NET IS UNCONSOLIDATED. CATCH IT MOVING.
-  SA-10 S-300 .......... deep, mobile, SHOOT & SCOOT. Hit it relocating.
-  SA-11 Buk ............ mobile, rides with the spearhead. Med alt.
-  SA-5  S-200 .......... reaches our AWACS & tankers. Keep them back.
-  SA-6 / 2 / 3 + KS-19 . fixed belt in depth.
+SAM — NO SAFE ALTITUDE. CATCH THE MOBILE ONES (BUK/SA-6/SHORAD) MOVING.
+  SA-10 S-300 .......... long-range ANCHOR. Fixed: sets up & stays - find it, strike it.
+  SA-11 Buk ............ MOBILE shoot-&-scoot, rides with the spearhead. Med alt.
+  SA-6 Gainful ......... MOBILE shoot-&-scoot belt SAM. Don't trust yesterday's picture.
+  SA-5  S-200 .......... fixed; reaches our AWACS & tankers. Keep them back.
+  SA-2 / SA-3 + KS-19 .. fixed belt in depth.
   SA-8/9/13 + ZSU guns . the low block. Don't loiter low either.
 
 NAVAL
@@ -265,7 +274,7 @@ TARGET DECK (push east — take it back)
 
 RULES TO LIVE BY
   • Tempo is OURS now — keep him reeling, don't let him set his feet.
-  • His SAMs are moving — fly TODAY's recon, hit them in transit.
+  • His Buk/SA-6/SHORAD scoot — fly TODAY's recon, hit them in transit. S-300 sites stay put.
   • Break his GCI (kill Mainstay) and the Fulcrums go dumb.
   • Take ground. Every km east he can't dig into is the war getting shorter.
 =========================================================
@@ -303,10 +312,12 @@ Don't give it back.
 
 Here's how we pry him open.
 
-First — the SAMs, while they're still moving. The S-300 and the Buk are relocating forward to
-rebuild that umbrella. Catch them on the roads, in transit, before they're set, and you open the
-door for every striker behind you. Fly today's recon, not yesterday's — these things do not sit
-still.
+First — the SAMs, while the net is still half-built. The Buk and the SA-6 are the movers — they
+shoot and scoot, riding forward with his tanks to rebuild that umbrella. Catch those on the roads,
+in transit, and fly today's recon, not yesterday's, because they do not sit still. The big S-300, on
+the other hand, sets up deliberately and stays — so the trick there is to find the site and hit it
+before it's established and switched on. Pull either thread and you open the door for every striker
+behind you.
 
 Second — Copenhagen. The Soviets parked a naval Backfire regiment up there — the 924th, the "Baltic
 Backfires" — and those bombers can reach the convoys bringing our reinforcements across the water.

@@ -6,6 +6,9 @@ the Soviet thrust has culminated and the **414th Joint Fighter Group** now leads
 it back. In the* Red Storm Rising *tradition; all names, regiments, and the Soviet operation name
 ("ZAPAD") are fiction, historically flavoured, and freely editable.*
 
+*For a picture brief — theater map, SAM threat profile, and target-priority / ORBAT diagrams —
+see **[red-tide-visual-briefing.md](red-tide-visual-briefing.md)**.*
+
 *This pack is written to match the campaign exactly — the red regiments below are the squadron
 names you will see in the in-game ATO. Three pieces:*
 

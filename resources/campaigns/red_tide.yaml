@@ -181,6 +181,28 @@ squadrons:
       aircraft:
         - Mi-8MTV2 Hip
       size: 4
+  #Kastrup / Copenhagen (seized in a Soviet airborne + naval assault)
+  41:
+    - primary: BARCAP
+      secondary: any
+      aircraft:
+        - MiG-29A Fulcrum-A
+      size: 8
+    - primary: Anti-ship
+      secondary: any
+      aircraft:
+        - Tu-22M3 Backfire-C
+      size: 8
+    - primary: SEAD
+      secondary: any
+      aircraft:
+        - Su-24M Fencer-D
+      size: 8
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - An-26B
+      size: 4
   #H FRG 20
   #143:
   #H FRG 09

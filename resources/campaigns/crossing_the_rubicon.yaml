@@ -69,7 +69,7 @@ squadrons:
     - primary: Escort
       secondary: air-to-air
       aircraft:
-        - F-14A Tomcat (Block 135-GR Late)
+        - F-14B Tomcat
       size: 8
     - primary: TARCAP
       secondary: any
@@ -119,6 +119,11 @@ squadrons:
       aircraft:
         - F/A-18C Hornet (Lot 20)
       size: 8
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - F-15E Strike Eagle (Suite 4+)
+      size: 8
   #Frankfurt
   163:
     - primary: Refueling
@@ -144,6 +149,11 @@ squadrons:
       aircraft:
         - E-3A
       size: 2
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - OH-58D(R) Kiowa Warrior
+      size: 4
   #Hamburg (captured - now a forward RED airbase)
   17:
     - primary: BARCAP

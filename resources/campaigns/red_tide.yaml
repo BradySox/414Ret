@@ -30,6 +30,33 @@ recommended_enemy_money: 400
 recommended_player_income_multiplier: 1.3
 recommended_enemy_income_multiplier: 0.7
 version: "10.8"
+# Supply routes defined here are loaded in addition to any M-113 / HandyWind groups in the
+# .miz. Waypoints are DCS map coordinates [x, y]; origin/destination CPs are inferred from
+# the closest control point to the first and last waypoint respectively.
+supply_routes:
+  # Hamburg (17) → Wittstock (1): northern salient supply via A24/B195 corridor
+  - waypoints:
+      - [-63016, -691931]    # Hamburg
+      - [-98000, -636000]    # Hagenow / A24 junction
+      - [-118000, -591000]   # Parchim area
+      - [-135396, -529213]   # Wittstock
+shipping_lanes:
+  # Kastrup (41) → Peenemünde (25): Baltic sea lane
+  # Route: Kastrup airport → Drogden channel (port) → south through the Øresund → Køge Bay
+  #        → open Baltic (south of Falsterbo/Sweden) → north of Kap Arkona/Rügen
+  #        → east of Rügen/north of Usedom → Peenemünde harbor → Peenemünde airport
+  # First and last waypoints are the airport CP coordinates so the line anchors at the airbase.
+  # All coordinates verified with pydcs from_latlng against GermanyColdWar terrain.
+  - waypoints:
+      - [133705, -489651]    # Kastrup airport (55.62N 12.65E) — CP anchor
+      - [127676, -481587]    # Drogden channel / Kastrup port (55.57N 12.79E) — Oresund E of airport
+      - [107576, -486537]    # South Oresund (55.39N 12.75E) — west of Falsterbo tip
+      - [86888,  -492218]    # Koge Bay (55.20N 12.70E) — open water S of Copenhagen
+      - [73561,  -474471]    # Exiting to Baltic (55.10N 13.00E) — S of Falsterbo/Sweden
+      - [64121,  -440082]    # Open Baltic / Arkona Basin (55.05N 13.55E) — N of Kap Arkona
+      - [38305,  -407238]    # Baltic E of Rugen (54.85N 14.10E) — clear of Rugen/Usedom
+      - [-28616, -410553]    # Baltic NE of Peenemunde (54.25N 14.15E) — Pomeranian Bay
+      - [-37265, -436134]    # Peenemunde airport (54.15N 13.77E) — CP anchor
 settings:
   squadron_start_full: true
 squadrons:

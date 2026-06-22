@@ -5,16 +5,25 @@ authors: Starfire
 recommended_player_faction: Blufor Late Cold War (80s)
 recommended_enemy_faction: Russia 1980
 description:
-  <p>In the summer of 1988, tensions simmering for decades finally ignite. Under the cover of pre-dawn darkness, 
-  Soviet and Warsaw Pact forces surge across the inner German border, launching a full-scale invasion through 
-  the Fulda Gap. For months, signs of a shift had been visible; escalating rhetoric, unusual troop movements, a 
-  hardening of positions. However, few believed the Kremlin would truly abandon the uneasy balance that had held 
-  since World War II. It was only when the tanks started rolling west that it became clear. The Soviet Union had 
-  finally crossed its Rubicon. The battle for Europe had begun.</p><p>
-  NATO forces, stretched thin and caught in partial readiness, are thrown into a desperate defence. From bases 
-  across West Germany, multi-national air assets scramble to blunt the assault. In the skies over Central Europe, 
-  control is fleeting, and the cost of failure is all too high.</p>
-  <p><strong>Note:</strong> This campaign is intended to be played with the F-111C mod active.</p>
+  <p>In the pre-dawn dark of 13 July 1988, the Cold War turns hot. Soviet and Warsaw Pact armies pour
+  across the inner German border, and the long-feared drive through the Fulda Gap becomes real. The warning
+  signs had been there for months -- the rhetoric, the troop concentrations, the hardening posture -- but few
+  believed Moscow would abandon the balance that had held since 1945. When the tanks rolled west, the doubt
+  died with them. The Soviet Union had crossed its Rubicon, and the battle for Europe had begun.</p>
+  <p>The opening hours have not been kind to NATO. The northern airfield at Hamburg has already fallen,
+  overrun before its squadrons could disperse, and now flies the red star as a forward Soviet airhead. The
+  carrier that was to anchor the northern flank never made her station -- her air wing is ashore, scattered
+  across the surviving West German bases and flying from concrete instead of steel. And the skies are no
+  longer merely contested. Dense, mobile SAM belts -- S-300 and SA-11 among them -- now reach deep over
+  friendly territory, turning every sortie into a fight just to arrive.</p>
+  <p>Into this breach steps the 414th Joint Fighter Group. A patchwork of NATO squadrons fighting as one --
+  American Eagles, Tomcats and Phantoms wing-to-wing with the Luftwaffe's own JG 74 'Moelders' -- the Group
+  is what remains of coherent air power in Central Europe. From bases stretched thin and caught in
+  half-readiness, the 414th must blunt the assault, claw back the initiative, and hold the line until
+  reinforcement arrives. Control of these skies is fleeting, the enemy is many, and the cost of failure is
+  all too high.</p>
+  <p><strong>Note:</strong> This campaign is intended to be played with the F-111C and Heatblur F-4E
+  Phantom II modules active.</p>
 miz: crossing_the_rubicon.miz
 performance: 2
 recommended_start_date: 1988-07-13

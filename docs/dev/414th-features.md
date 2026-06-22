@@ -233,12 +233,21 @@ hand-tuned after a bulk set. UI-only; no save-format or planner change. Upstream
 ## 5. Player target location precision
 
 `TargetIntelPrecision` enum (`EXACT` / `APPROXIMATE`) in `game/settings/settings.py`
-controls three behaviors together when set to Approximate:
+controls four behaviors together when set to Approximate:
 
 - Player-only target steerpoints are offset to a randomised area within 1–3 NM of
   the real target rather than placed exactly on it. The waypoint is renamed
   `TARGET AREA`. AI attack logic is unaffected.
   (`game/ato/flightplans/waypointbuilder.py` `_player_visible_target_area_position()`)
+- DEAD and SEAD flights drop the per-emitter `TARGET_POINT` waypoints entirely and
+  fly a single fuzzed target-area waypoint instead — mobile SAMs relocate between
+  intel updates, so handing the player an exact fix per launcher/radar defeats the
+  "go find it" intent. The `Builder.layout()` of both flight types passes the
+  per-unit list only under Exact intel, falling back to the area waypoint otherwise
+  (`game/ato/flightplans/dead.py`, `sead.py`). **Strike is deliberately exempt**:
+  its targets are fixed installations (buildings, bunkers, bridges) whose
+  coordinates are reliable, so `strike_point()` always emits exact per-unit points
+  regardless of the setting (`waypointbuilder.py` `_target_point(..., approximate=False)`).
 - Objective F10 map marks are suppressed even if `generate_marks` is on.
   (`game/missiongenerator/triggergenerator.py`)
 - Strike / SEAD / DEAD kneeboard target pages omit exact coordinates. The Strike

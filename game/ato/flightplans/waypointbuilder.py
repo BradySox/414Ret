@@ -352,13 +352,24 @@ class WaypointBuilder:
         return self._target_point(target, f"STRIKE {target.name}")
 
     def strike_point(self, target: StrikeTarget) -> FlightWaypoint:
-        return self._target_point(target, f"STRIKE {target.name}")
+        # Strike hits fixed installations (buildings, bunkers, bridges) whose
+        # coordinates are reliable regardless of intel precision, so the player
+        # always gets exact per-unit target points -- the Approximate-intel fuzz is
+        # only meant to model mobile threats (SAMs) that relocate.
+        return self._target_point(target, f"STRIKE {target.name}", approximate=False)
 
-    def _target_point(self, target: StrikeTarget, description: str) -> FlightWaypoint:
+    def _target_point(
+        self, target: StrikeTarget, description: str, approximate: bool = True
+    ) -> FlightWaypoint:
+        position = (
+            self._player_visible_strike_target_position(target)
+            if approximate
+            else self._exact_strike_target_position(target)
+        )
         return FlightWaypoint(
             target.name,
             FlightWaypointType.TARGET_POINT,
-            self._player_visible_strike_target_position(target),
+            position,
             meters(0),
             "RADIO",
             description=description,
@@ -741,11 +752,14 @@ class WaypointBuilder:
             pretty_name="Target area",
         )
 
+    def _exact_strike_target_position(self, target: StrikeTarget) -> Point:
+        if isinstance(target.target, TheaterGroup):
+            return target.target.ground_object.position
+        return target.target.position
+
     def _player_visible_strike_target_position(self, target: StrikeTarget) -> Point:
         if self.settings.target_intel_precision is TargetIntelPrecision.EXACT:
-            if isinstance(target.target, TheaterGroup):
-                return target.target.ground_object.position
-            return target.target.position
+            return self._exact_strike_target_position(target)
         anchor_key, anchor = self._approximation_anchor_for(target.target)
         return self._approximate_target_position(anchor_key, anchor)
 

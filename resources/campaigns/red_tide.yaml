@@ -30,16 +30,169 @@ recommended_enemy_money: 400
 recommended_player_income_multiplier: 1.3
 recommended_enemy_income_multiplier: 0.7
 version: "10.8"
-# Supply routes defined here are loaded in addition to any M-113 / HandyWind groups in the
-# .miz. Waypoints are DCS map coordinates [x, y]; origin/destination CPs are inferred from
-# the closest control point to the first and last waypoint respectively.
+# Supply routes & shipping lanes — defined entirely in YAML (no .miz-baked M-113/
+# HandyWind groups remain). Waypoints are DCS map coordinates [x, y]; origin/
+# destination CPs are the closest control point to the first/last waypoint.
+# The 5 land routes below were migrated verbatim from the campaign's original
+# road-snapped M-113 front-line groups; trim waypoints freely if desired.
 supply_routes:
-  # Hamburg (17) → Wittstock (1): northern salient supply via A24/B195 corridor
+  # Ramstein (165) -> Frankfurt (163)  [blue rear]
+  - waypoints:
+      - [-498954, -927698]
+      - [-495158, -924768]
+      - [-493664, -920995]
+      - [-492381, -916401]
+      - [-488769, -910989]
+      - [-486188, -904837]
+      - [-480887, -899426]
+      - [-474138, -895278]
+      - [-467556, -890799]
+      - [-459107, -886656]
+      - [-452869, -881733]
+      - [-448149, -878095]
+      - [-445788, -872522]
+      - [-446679, -869349]
+      - [-448013, -865579]
+  # Spangdahlem (162) -> Frankfurt (163)  [blue rear]
+  - waypoints:
+      - [-423737, -985968]
+      - [-425507, -982829]
+      - [-428141, -980036]
+      - [-430812, -977711]
+      - [-436218, -971805]
+      - [-438090, -967122]
+      - [-441105, -963504]
+      - [-443296, -960486]
+      - [-445210, -954197]
+      - [-444697, -947448]
+      - [-444680, -940916]
+      - [-446347, -934930]
+      - [-444331, -928411]
+      - [-442036, -922673]
+      - [-443579, -916477]
+      - [-444597, -910246]
+      - [-444431, -903631]
+      - [-444933, -897581]
+      - [-445320, -882630]
+      - [-444443, -872326]
+      - [-445983, -865798]
+  # Frankfurt (163) -> Haina (161)  [FRONT LINE — path drives the front geometry]
+  - waypoints:
+      - [-443140, -848555]
+      - [-439175, -845388]
+      - [-435781, -843015]
+      - [-433049, -839639]
+      - [-430414, -834879]
+      - [-426652, -830639]
+      - [-423496, -825135]
+      - [-421169, -820166]
+      - [-416926, -815091]
+      - [-413375, -807460]
+      - [-408927, -801987]
+      - [-407075, -794260]
+      - [-405989, -781201]
+      - [-405490, -771697]
+      - [-403526, -767533]
+      - [-399905, -764132]
+      - [-395589, -762212]
+      - [-391123, -759608]
+      - [-386906, -755266]
+      - [-383503, -747228]
+      - [-378566, -741009]
+      - [-373208, -735489]
+      - [-368927, -729914]
+      - [-363262, -720343]
+      - [-359860, -710938]
+  # Haina (161) -> Wittstock (1)  [red rear]
+  - waypoints:
+      - [-356856, -697852]
+      - [-353202, -693589]
+      - [-348696, -688097]
+      - [-341196, -683154]
+      - [-328635, -676959]
+      - [-318913, -667668]
+      - [-309449, -660054]
+      - [-301319, -653730]
+      - [-294436, -645858]
+      - [-285016, -643449]
+      - [-275595, -639104]
+      - [-266389, -630157]
+      - [-260453, -618757]
+      - [-252022, -612563]
+      - [-245053, -603271]
+      - [-237095, -593334]
+      - [-230255, -587140]
+      - [-219415, -577074]
+      - [-208145, -572600]
+      - [-195971, -571009]
+      - [-184700, -567352]
+      - [-174075, -566879]
+      - [-165300, -557716]
+      - [-154632, -550361]
+      - [-145980, -544569]
+      - [-140210, -539173]
+      - [-132936, -534804]
+  # Wittstock (1) -> Peenemunde (25)  [red rear]
+  - waypoints:
+      - [-131519, -527694]
+      - [-131010, -525226]
+      - [-128980, -523112]
+      - [-127166, -520779]
+      - [-124576, -517808]
+      - [-121222, -515576]
+      - [-117880, -512764]
+      - [-115435, -508829]
+      - [-114328, -504209]
+      - [-111479, -500150]
+      - [-107713, -497431]
+      - [-105316, -491363]
+      - [-101863, -489297]
+      - [-98019, -487146]
+      - [-95191, -483451]
+      - [-91850, -480386]
+      - [-88315, -476288]
+      - [-86379, -472107]
+      - [-84190, -469736]
+      - [-81591, -463135]
+      - [-78067, -458018]
+      - [-73180, -451840]
+      - [-69098, -445299]
+      - [-65748, -444283]
+      - [-60231, -442010]
+      - [-55113, -439888]
+      - [-47960, -436824]
+      - [-45013, -434546]
+      - [-41231, -432791]
+  # Hamburg (17) -> Wittstock (1): northern salient supply via A24/B195 corridor
   - waypoints:
       - [-63016, -691931]    # Hamburg
       - [-98000, -636000]    # Hagenow / A24 junction
-      - [-118000, -591000]   # Parchim area
-      - [-135396, -529213]   # Wittstock
+      - [-118000, -591000]    # Parchim area
+      - [-135396, -529213]    # Wittstock
+  # --- Connections added so the orphaned bases join the network and the front can advance
+  #     across the whole theater. Straight-line paths for now -- refine with road-following
+  #     waypoints (pydcs from_latlng / mission editor) for nicer front geometry when they activate.
+  # Hahn (155) -> Frankfurt (163)  [blue rear]
+  - waypoints:
+      - [-437665, -948351]   # Hahn
+      - [-444041, -853571]   # Frankfurt
+  # Haina (161) -> Sperenberg (101)  [opens the Berlin axis]
+  - waypoints:
+      - [-359857, -702040]   # Haina
+      - [-308628, -596403]   # midpoint (central Germany)
+      - [-257400, -490767]   # Sperenberg
+  # Sperenberg (101) -> Schonefeld (26)  [Berlin cluster]
+  - waypoints:
+      - [-257400, -490767]   # Sperenberg
+      - [-231590, -472324]   # Schonefeld
+  # Schonefeld (26) -> Templin (15)  [Berlin cluster]
+  - waypoints:
+      - [-231590, -472324]   # Schonefeld
+      - [-159757, -464279]   # Templin
+  # Templin (15) -> Wittstock (1)  [rejoins the northern spine]
+  - waypoints:
+      - [-159757, -464279]   # Templin
+      - [-133238, -530216]   # Wittstock
 shipping_lanes:
   # Kastrup (41) → Peenemünde (25): Baltic sea lane
   # Route: Kastrup airport → Drogden channel (port) → south through the Øresund → Køge Bay

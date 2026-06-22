@@ -196,3 +196,34 @@ Generate a Red Tide campaign in Retribution and verify:
 - Shipping lane Kastrup → Peenemünde visible on the Retribution map (ship line)
 - Kastrup CP shows SHORAD, AAA, LORAD, MRAD, factory, and ammo depot preset slots
   when opening base management
+
+---
+
+## Full migration to YAML routing (follow-up)
+
+Red Tide is now routed **entirely from YAML** — the `.miz` no longer contains any M-113
+front-line path groups or HandyWind shipping groups. What changed:
+
+1. **Migrated the 5 original `.miz` M-113 routes to `supply_routes:` verbatim** (every road-snapped
+   waypoint preserved, since `frontline.py` builds the front geometry from
+   `convoy_route_to()` — each route becomes a front line as blue captures and pushes, so the
+   paths must stay faithful):
+   - Ramstein → Frankfurt, Spangdahlem → Frankfurt (blue rear)
+   - **Frankfurt → Haina** (the opening front)
+   - Haina → Wittstock, Wittstock → Peenemünde (red rear/advance)
+2. **Deleted those 5 M-113 groups from `red_tide.miz`** (brace-balanced; all other groups —
+   carrier-removed state, red Hamburg/Kastrup, the 3 Baltic Fleet markers, and the Kastrup
+   defense preset — left intact).
+3. **Wired in the 4 previously-orphaned bases** so the front can advance across the whole
+   theater (they had no supply link in the original `.miz`):
+   - Hahn → Frankfurt (blue rear)
+   - Haina → Sperenberg → Schönefeld → Templin → Wittstock (the red Berlin cluster)
+
+   These 5 new links are **straight-line paths** (2–3 waypoints) — functional connectivity, but
+   they should be refined with road-following waypoints (pydcs `from_latlng` / mission editor)
+   for nicer front geometry when they activate, the same way the Hamburg → Wittstock and the
+   Baltic lane were built.
+
+**Net:** 11 `supply_routes` + 1 `shipping_lanes`, all endpoints verified to snap to the intended
+control points. The whole network is connected, so blue can capture every red base by ground.
+Still needs an in-game load to confirm the lines render and the front advances correctly.

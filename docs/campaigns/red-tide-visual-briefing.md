@@ -22,12 +22,13 @@ front (FLOT) runs north–south through the Fulda Gap; the offensive pushes thro
 
 ---
 
-## The air-defense fight — no safe altitude
+## The air-defense fight — a range fight, not an altitude one
 
-The IADS is the center of gravity. Catch the **mobile** batteries (Buk / SA-6 / SHORAD) in transit;
-find and strike the **fixed** S-300 sites before they're established and switched on.
+The IADS is the center of gravity. You fly the deck–35k band, so you can't climb over these — the
+**S-300 / S-200 are established and on**, and reach down to you inside their rings. **Route around
+the fixed rings or commit dedicated SEAD; catch the mobile Buk / SA-6 / SHORAD in transit.**
 
-![Red Tide layered SAM threat](img/red_tide_sam_threat.png)
+![Red Tide SAM engagement ranges](img/red_tide_sam_threat.png)
 
 ---
 
@@ -36,7 +37,7 @@ find and strike the **fixed** S-300 sites before they're established and switche
 ```mermaid
 flowchart TD
     A([Counteroffensive opens<br/>tempo is OURS now]):::hd
-    A --> B[1 · Pry open the SAM net<br/>Buk/SA-6 in transit · S-300 before it sets]:::t
+    A --> B[1 · Pry open the SAM net<br/>Buk/SA-6 in transit · route/SEAD the fixed S-300]:::t
     B --> C[2 · Burn the Backfires<br/>924 GMRAP 'Baltic Backfires' @ Copenhagen]:::t
     B --> D[3 · Kill the enablers<br/>144th Mainstay · 203rd Midas @ Schönefeld]:::t
     C --> E[4 · Starve the salient<br/>An-26 air bridge · follow-on echelons]:::t

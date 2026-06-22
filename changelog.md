@@ -1,4 +1,27 @@
-﻿# Retribution v1.6.0
+﻿# Retribution v1.6.2 (414th)
+
+## Features/Improvements
+* **[SCAR]** Strike Coordination and Reconnaissance is now a fully playable flight type against a moving high-value target: a signature convoy that flees with decoys and clutter (a discrimination puzzle), a command vehicle, and proximity-gated movement that starts the chase only once the package arrives. A commander-capture path uses a finite pool of purchased SOF inserted by C-130 airdrop, with a stranded-SOF CSAR recovery loop and enemy command-post intel fog. Default ON for new campaigns.
+* **[Mission Generation]** DEAD and SEAD flights against a ground target now get one waypoint per individual target (with coordinates, matching the kneeboard), and the SEAD/DEAD kneeboard target list gains an "STPT" column. AI plain-SEAD reworked to loiter at a standoff orbit and engage reactively, and AI DEAD flights receive the best available standoff/PGM loadout.
+* **[Kneeboard]** New recon kneeboard pages — target reconnaissance, a friendly-packages coordination list, and a package-targets theater map. Basemap tiles are fetched once at mission generation and cached under Saved Games; on offline or locked-down networks the pages fall back automatically to an offline coastline basemap (the cache is safe to delete).
+* **[Plugins]** ATIS for player flights via a MOOSE voice-ATIS plugin (per-airfield frequencies and spoken reports). Self-documenting Lua plugin options with a label/doc pass across plugins.
+* **[Map]** Carrier/LHA ship groups and blue non-carrier ships appear on the campaign map with their air-defense rings; hovering a SAM/detection ring highlights its emitter (and vice versa); enemy IADS links are coloured by kind and state.
+* **[UX]** Bulk-set altitude across a flight's en-route waypoints and step the per-waypoint altitude editor by 1000 ft; configurable altitude scatter band and patrol floor. Improved fast-forward with combat-skip and a "Player at IP" stop condition.
+* **[Planner]** Opt-in, per-side auto-planner target unpredictability — weighted-random reordering of opportunistic offensive targets so the enemy stops hitting the same things every turn (reactive threat response stays deterministic).
+* **[Target Intel]** The Approximate target-location cue offset is tightened to 1-3 NM, so players still have to visually acquire but aren't sent hunting across the map.
+* **[Plugins]** CTLD updated to ciribob 1.6.1.
+* **[Cleanup]** Removed the upstream Pretense campaign generator (unused by the 414th fork).
+
+## Fixes
+* **[Mission]** Fixed a `woCharacterHuman` sim crash caused by orphaned civilian-helo spawns (civilian traffic is now airfields-only with deferred orphan despawn, and kept clear of the active battle).
+* **[Debrief]** Player despawns are no longer counted as combat losses, and untracked ground-unit deaths are summarised in one log line.
+* **[New Game]** Fixed a crash creating a new game from a malformed settings JSON member, and stopped seeded plugin-option defaults being dropped when merging campaign settings.
+* **[Mission Generation]** Fixed crashes planning a strike against a fully-destroyed objective (divide-by-zero), the "Fix TOTs automatically" action, and player ground-start flights spawning in the air.
+* **[Performance]** `is_on_land`/`is_in_sea` now test a prepared MultiPolygon, cutting ground generation from ~7 minutes to seconds.
+* **[UI]** Player cold-start CAP is no longer flagged in the past-start-times warning.
+* **[Server]** Bounded uvicorn's graceful shutdown so the app can no longer hang on exit.
+
+# Retribution v1.6.0
 
 ## Features/Improvements
 * **[414th]** Removed the Pretense campaign generator entirely (the "Generate a Pretense Campaign" menu action, the `game/pretense` generators, the `resources/plugins/pretense` Lua, the Pretense settings page, the `PRETENSE_CARGO` flight type, and the four `*_full.yaml` Pretense-tuned campaigns). The 414th fork no longer ships Pretense; old saves migrate cleanly (removed settings are dropped, any stray `Cargo Transport` flight type maps to `TRANSPORT`).

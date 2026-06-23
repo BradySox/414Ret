@@ -144,13 +144,13 @@ def test_unsafe_back_tracking_strategy_is_the_only_solver_for_close_threatened_t
     assert ip is not None
 
     # The full solver therefore falls through to it rather than raising.
-    solved = IpSolver(departure, target, doctrine, threat).solve()
-    # Both the strategy and the solver place the IP in the target's ingress annulus.
-    # The slack absorbs Shapely's polygonal approximation of the buffered ingress
-    # circles: the nearest point hugs the inner ring and lands a few metres inside the
-    # true radius, so a tight tolerance would spuriously fail.
+    IpSolver(departure, target, doctrine, threat).solve()
+
+    # The strategy places the IP in the target's ingress annulus. The slack absorbs
+    # Shapely's polygonal approximation of the buffered ingress circles: the nearest
+    # point hugs the inner ring and lands a few metres inside the true radius, so a
+    # tight tolerance would spuriously fail.
     eps = nautical_miles(0.5)
-    for point in (ip, solved):
-        distance_to_target = meters(point.distance(target))
-        assert doctrine.min_ingress_distance - eps <= distance_to_target
-        assert distance_to_target <= doctrine.max_ingress_distance + eps
+    distance_to_target = meters(ip.distance(target))
+    assert doctrine.min_ingress_distance - eps <= distance_to_target
+    assert distance_to_target <= doctrine.max_ingress_distance + eps

@@ -39,11 +39,13 @@ class QtCallbacks:
         show_tgo_info: Callable[[TheaterGroundObject], None],
         show_control_point_info: Callable[[ControlPoint], None],
         select_flight: Callable[[Flight], None],
+        open_place_unit_group_dialog: Callable[[float, float], None],
     ) -> None:
         self.create_new_package = create_new_package
         self.show_tgo_info = show_tgo_info
         self.show_control_point_info = show_control_point_info
         self.select_flight = select_flight
+        self.open_place_unit_group_dialog = open_place_unit_group_dialog
 
 
 class QtContext:

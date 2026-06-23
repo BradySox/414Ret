@@ -31,3 +31,6 @@ tasks:
   OCA/Runway: 675
   SEAD: 520
   Strike: 680
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

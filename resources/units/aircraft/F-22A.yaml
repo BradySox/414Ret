@@ -22,3 +22,6 @@ tasks:
   Escort: 680
   Fighter sweep: 695
   TARCAP: 710
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: boom

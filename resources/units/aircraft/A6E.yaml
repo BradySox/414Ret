@@ -12,6 +12,9 @@ manufacturer: Grumman
 origin: USA
 price: 10
 role: Carrier-based Attack
+# The A-6 is a probe-and-drogue airframe both as a receiver and (Tanker variant) as a
+# buddy tanker.
+air_refuel_type: probe
 variants:
   # The strike Intruder: attack tasks only, never auto-tasked as a tanker.
   A-6E Intruder:
@@ -38,6 +41,8 @@ variants:
       # ~265 knots IAS, matching the S-3B carrier tanker.
       speed: 320
       altitude: 12000
+    tanker_refuel_types:
+      - probe
     tasks:
       Refueling: 0
       Recovery: 0

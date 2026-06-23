@@ -17,3 +17,6 @@ variants:
   Tu-142 Bear-F: {}
 tasks:
   Anti-ship: 525
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

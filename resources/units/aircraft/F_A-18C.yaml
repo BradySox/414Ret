@@ -48,3 +48,6 @@ tasks:
   SEAD Escort: 460
   Strike: 625
   TARCAP: 550
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

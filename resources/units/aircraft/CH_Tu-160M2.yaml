@@ -23,3 +23,6 @@ tasks:
   Strike: 755
 secondary_tasks:
   - DEAD
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

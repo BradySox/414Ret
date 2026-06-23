@@ -24,3 +24,6 @@ tasks:
   Strike: 645
   TARCAP: 470
 has_built_in_target_pod: true
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: boom

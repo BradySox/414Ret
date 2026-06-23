@@ -38,3 +38,6 @@ variants:
 tasks:
   BARCAP: 645
   Escort: 580
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

@@ -26,3 +26,6 @@ tasks:
   OCA/Runway: 265
   Strike: 360
   TARCAP: 560
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: boom

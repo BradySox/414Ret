@@ -37,3 +37,6 @@ weapon_injections:
     - "{AIM-9J-ON-ADAPTER}"
   5:
     - "{AIM-9J-ON-ADAPTER}"
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

@@ -16,3 +16,6 @@ tasks:
   SEAD Escort: 150
 secondary_tasks:
   - DEAD
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: boom

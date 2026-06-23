@@ -27,3 +27,6 @@ tasks:
   SEAD: 50
   SEAD Escort: 50
   Strike: 535
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

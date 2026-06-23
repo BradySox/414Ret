@@ -200,22 +200,25 @@ viewers through ~15 call sites:
   (`TgoJs`, the red `ThreatZonesJs`, `IadsConnectionJs`) **and** the intel dialogs at once —
   with **zero server-model changes**, since those still pass `Player.BLUE` and the leaves
   short-circuit internally. AI/planner/threat math pass `viewer=None` and are unaffected.
-- UI + refresh: `qt_ui/windows/QLiberationWindow.py` adds a checkable **Reveal fog of war**
-  action — surfaced both as a labelled **Reveal Fog** toolbar button (its own `view_bar`,
-  text-beside-icon so the on/off state reads at a glance) and in the **View** menu
-  (Ctrl+Shift+R, gated by `enable_game_actions`). Its handler flips
-  the flag and pushes `GameUpdateEvents().reload_map()` — a new no-recenter event
-  (`reload_map_data`, mirrored in `GameUpdateEventsJs` and the client `eventstream.tsx`
-  handler) that calls `reloadGameState(dispatch, true)`. The client re-pulls `/game`, whose
-  `tgos`/`iads_network`/`threat_zones` are rebuilt through the (now short-circuiting) fog
-  paths, so composition, rings, and hidden command posts appear — and re-hide when toggled
-  off, because `TgoJs.all_in_game` re-applies the `hidden_on_player_map` filter. `setGame`
-  resets the flag + checkbox off on every load/unload (matches "starts fogged each session").
-- Note: the live-map refresh needs the rebuilt React client (`client/src/api/eventstream.tsx`);
-  CI's `npm run build` ships it in the `latest` release. Running from a stale `client/build`,
-  the flag + dialogs still work but the map won't auto-refresh until the next full reload.
-  Lua-free, Python+TS only; the chokepoints are covered by the existing fog tests
-  (`tests/test_recon_intel_fog.py`, `tests/test_bda_tarps_reveal.py`).
+- UI: a **"Reveal fog of war (overview)"** checkbox in the map's Leaflet layer control
+  (`client/src/components/liberationmap/LiberationMap.tsx`), sitting with the other enemy-intel
+  toggles (Enemy SAM threat range / IADS Network) — the natural, discoverable home, not the Qt
+  chrome. It is a non-visual overlay (`client/src/components/fogofwar/FogOfWarToggle.tsx`)
+  built on the **same pattern as `EmitterHighlightToggle`**: an empty `LayerGroup` whose
+  `add`/`remove` events fire on check/uncheck. On toggle it `PUT`s `/fog-of-war/reveal?revealed=…`
+  (`game/server/fogofwar/routes.py`, registered in `game/server/app.py`) to flip the flag, then
+  calls `reloadGameState(dispatch, true)` — a **no-recenter** full re-pull of `/game`, whose
+  `tgos`/`iads_network`/`threat_zones` are rebuilt through the (now short-circuiting) fog paths,
+  so composition, rings, and hidden command posts appear — and re-hide when unchecked, because
+  `TgoJs.all_in_game` re-applies the `hidden_on_player_map` filter. No Qt control and no event
+  plumbing: the checkbox owns the flow client-side. Defaults off (overlay unchecked on mount);
+  never persisted.
+- Note: it lives entirely in the React client, so it needs the rebuilt bundle — CI's
+  `npm run build` ships it in the `latest` release. The Python chokepoints + the
+  `/fog-of-war/reveal` endpoint are covered by the existing fog tests
+  (`tests/test_recon_intel_fog.py`, `tests/test_bda_tarps_reveal.py`) and a route test
+  (`tests/server/test_fogofwar_route.py`); the toggle component has no separate JS test, matching
+  `EmitterHighlightToggle`.
 
 ---
 

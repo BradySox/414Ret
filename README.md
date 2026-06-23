@@ -31,11 +31,10 @@ and selected later upstream fixes.
   system. What the aircraft photographs is carried back into the campaign as confirmed
   intelligence.
 - When you need the ground truth anyway — debugging a campaign, planning the opposing side,
-  or just checking the real laydown — the **Reveal Fog** toolbar button (also **View → Reveal
-  fog of war**, or Ctrl+Shift+R) turns the fog off and shows the true picture: full enemy composition, threat rings, and
-  otherwise-hidden command posts, on the map and in the intel dialogs. It is a view toggle
-  only — it never changes the campaign and is never saved, so every time you load a game it
-  starts back off.
+  or just checking the real laydown — tick **Reveal fog of war (overview)** in the map's layer
+  panel (top-right, with the other enemy-intel toggles). It turns the fog off and shows the
+  true picture: full enemy composition, threat rings, and otherwise-hidden command posts. It is
+  a view toggle only — it never changes the campaign and is never saved.
 - An optional **Approximate target area** mode removes perfect player coordinates and
   offsets steerpoints, making visual acquisition, talk-ons, and reconnaissance matter.
   Against mobile SAMs, DEAD and SEAD flights get a single fuzzed target-area waypoint

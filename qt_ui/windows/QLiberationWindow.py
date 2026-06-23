@@ -24,9 +24,7 @@ from game.game import TurnState
 from game.layout import LAYOUTS
 from game.server import EventStream, GameContext
 from game.server.dependencies import QtCallbacks, QtContext
-from game.sim import GameUpdateEvents
 from game.theater import ControlPoint, MissionTarget, TheaterGroundObject
-from game.theater.fogofwar import set_fog_revealed
 from qt_ui import liberation_install
 from qt_ui.dialogs import Dialog
 from qt_ui.models import GameModel
@@ -217,32 +215,12 @@ class QLiberationWindow(QMainWindow):
         self.importTemplatesAction = QAction("Import Layouts", self)
         self.importTemplatesAction.triggered.connect(self.import_templates)
 
-        # Fog-of-war overview: reveal the true picture (enemy composition, threat
-        # rings, hidden command posts) on the map and in intel dialogs. Runtime
-        # view state only — never saved, and reset off whenever a game loads.
-        self.toggleFogRevealAction = QAction("Reveal &fog of war (overview)", self)
-        self.toggleFogRevealAction.setCheckable(True)
-        self.toggleFogRevealAction.setChecked(False)
-        self.toggleFogRevealAction.setShortcut("Ctrl+Shift+R")
-        self.toggleFogRevealAction.setIcon(QIcon(CONST.ICONS["SAM Detection Range"]))
-        # Shorter label for the toolbar button; the menu keeps the full text.
-        self.toggleFogRevealAction.setIconText("Reveal Fog")
-        self.toggleFogRevealAction.setToolTip(
-            "Reveal fog of war — show the real picture (Ctrl+Shift+R)"
-        )
-        self.toggleFogRevealAction.setStatusTip(
-            "Show the real picture: reveal fogged enemy composition, threat rings, "
-            "and hidden command posts. Does not change the campaign."
-        )
-        self.toggleFogRevealAction.toggled.connect(self.toggle_fog_reveal)
-
         self.enable_game_actions(False)
 
     def enable_game_actions(self, enabled: bool):
         self.openSettingsAction.setVisible(enabled)
         self.openStatsAction.setVisible(enabled)
         self.openNotesAction.setVisible(enabled)
-        self.toggleFogRevealAction.setEnabled(enabled)
 
         # Also Disable SaveAction to prevent Keyboard Shortcut
         self.saveGameAction.setEnabled(enabled)
@@ -266,13 +244,6 @@ class QLiberationWindow(QMainWindow):
         self.actions_bar.addAction(self.openStatsAction)
         self.actions_bar.addAction(self.openNotesAction)
 
-        # Always-visible, labelled toggle for the fog-of-war overview so it can be
-        # flipped with one click (also in the View menu / Ctrl+Shift+R). The
-        # checkable button stays "pressed" while the overview is on.
-        self.view_bar = self.addToolBar("View")
-        self.view_bar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.view_bar.addAction(self.toggleFogRevealAction)
-
     def initMenuBar(self):
         self.menu = self.menuBar()
 
@@ -286,9 +257,6 @@ class QLiberationWindow(QMainWindow):
         file_menu.addAction(self.showLiberationPrefDialogAction)
         file_menu.addSeparator()
         file_menu.addAction("E&xit", self.close)
-
-        view_menu = self.menu.addMenu("&View")
-        view_menu.addAction(self.toggleFogRevealAction)
 
         tools_menu = self.menu.addMenu("&Developer tools")
         tools_menu.addAction(self.importTemplatesAction)
@@ -472,13 +440,6 @@ class QLiberationWindow(QMainWindow):
     def setGame(self, game: Optional[Game]):
         try:
             self.game = game
-            # The fog-of-war overview is per-session view state, never persisted:
-            # every load/unload starts with the fog intact. Sync the checkbox
-            # without re-firing the handler (the load already reloads the map).
-            set_fog_revealed(False)
-            self.toggleFogRevealAction.blockSignals(True)
-            self.toggleFogRevealAction.setChecked(False)
-            self.toggleFogRevealAction.blockSignals(False)
             if self.info_panel is not None:
                 self.info_panel.setGame(game)
             self.sim_controller.set_game(game)
@@ -612,27 +573,6 @@ class QLiberationWindow(QMainWindow):
     def showNotesDialog(self):
         self.dialog = QNotesWindow(self.game)
         self.dialog.show()
-
-    def toggle_fog_reveal(self, revealed: bool) -> None:
-        """Flip the fog-of-war overview and refresh the map to match.
-
-        Runtime view state only: the flag is never persisted, so this only
-        changes what the current session renders. Pushing ``reload_map`` makes
-        the map client re-pull full game state, so fogged composition, threat
-        rings, and hidden command posts appear (or disappear) immediately.
-        Intel dialogs read the flag the next time they open.
-        """
-        set_fog_revealed(revealed)
-        if self.game is not None:
-            EventStream.put_nowait(GameUpdateEvents().reload_map())
-        self.statusBar().showMessage(
-            (
-                "Overview ON — showing the real picture (fog of war revealed)"
-                if revealed
-                else "Overview OFF — fog of war restored"
-            ),
-            5000,
-        )
 
     def import_templates(self):
         LAYOUTS.import_templates()

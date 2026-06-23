@@ -61,3 +61,8 @@ tasks:
   Recovery: 0
 
 has_built_in_ecm: true
+
+# Air-to-air refueling provided as a tanker.
+tanker_refuel_types:
+  - probe
+air_refuel_type: probe

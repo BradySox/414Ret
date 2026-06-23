@@ -31,3 +31,6 @@ tasks:
   TARCAP: 685
 secondary_tasks:
   - DEAD
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

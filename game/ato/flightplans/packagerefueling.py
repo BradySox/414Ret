@@ -10,6 +10,7 @@ from .ibuilder import IBuilder
 from .patrolling import PatrollingLayout
 from .refuelingflightplan import RefuelingFlightPlan
 from .waypointbuilder import WaypointBuilder
+from ..flighttype import FlightType
 from ..flightwaypoint import FlightWaypoint
 from ..flightwaypointtype import FlightWaypointType
 
@@ -21,11 +22,18 @@ class PackageRefuelingFlightPlan(RefuelingFlightPlan):
 
     @property
     def patrol_duration(self) -> timedelta:
-        # TODO: Only consider aircraft that can refuel with this tanker type.
         refuel_time_minutes = 5
-        for self.flight in self.package.flights:
-            flight_size = self.flight.roster.max_size
-            refuel_time_minutes = refuel_time_minutes + 4 * flight_size + 1
+        tanker = self.flight.unit_type
+        for flight in self.package.flights:
+            if flight.flight_type is FlightType.REFUELING:
+                # Don't count tankers (including this one) as receivers.
+                continue
+            if not flight.unit_type.can_refuel_from(tanker):
+                # Skip aircraft whose refueling method this tanker can't service
+                # (e.g. a boom tanker and a probe-only receiver).
+                continue
+            flight_size = flight.roster.max_size
+            refuel_time_minutes += 4 * flight_size + 1
 
         return timedelta(minutes=refuel_time_minutes)
 

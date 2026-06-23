@@ -15,3 +15,6 @@ variants:
 tasks:
   SEAD: 620
   SEAD Escort: 585
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

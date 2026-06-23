@@ -25,3 +25,6 @@ tasks:
   DEAD: 280
   OCA/Aircraft: 510
   Strike: 480
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

@@ -53,6 +53,7 @@ class TankerInfo(GroupInfo):
     tacan: Optional[TacanChannel]
     start_time: datetime
     end_time: datetime
+    aircraft_type: AircraftType
 
 
 @dataclass

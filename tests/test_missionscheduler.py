@@ -60,10 +60,17 @@ class _FakePackage:
 
 
 class _FakeSettings:
-    def __init__(self, overlap: timedelta) -> None:
+    def __init__(
+        self,
+        overlap: timedelta,
+        max_carrier_simultaneous_barcaps: int = 2,
+        max_simultaneous_recovery_tankers: int = 2,
+    ) -> None:
         self.barcap_overlap_time = overlap
         self.desired_barcap_mission_duration = DURATION
         self.desired_tanker_on_station_time = timedelta(minutes=60)
+        self.max_carrier_simultaneous_barcaps = max_carrier_simultaneous_barcaps
+        self.max_simultaneous_recovery_tankers = max_simultaneous_recovery_tankers
 
 
 class _FakeGame:
@@ -154,3 +161,40 @@ def test_scar_and_sof_are_scheduled_asap(task: FlightType) -> None:
 def test_strike_is_still_spread_into_the_turn() -> None:
     # Contrast: a normal strike keeps the spread-out start (TOT strictly after NOW).
     assert _schedule_one(FlightType.STRIKE) > NOW
+
+
+class _NavalTarget:
+    """A naval mission target (BARCAP over a carrier)."""
+
+
+def _schedule_carrier_barcaps(
+    max_simultaneous: int, rounds: int, monkeypatch: pytest.MonkeyPatch
+) -> list[datetime]:
+    # The carrier branch is gated on isinstance(target, NavalControlPoint); swap in
+    # our lightweight stand-in so we don't have to build a real carrier control point.
+    monkeypatch.setattr(ms, "NavalControlPoint", _NavalTarget)
+    target = _NavalTarget()
+    packages = [_FakePackage(target) for _ in range(rounds)]
+    settings = _FakeSettings(
+        timedelta(minutes=15), max_carrier_simultaneous_barcaps=max_simultaneous
+    )
+    coalition = _FakeCoalition(packages, settings)
+    ms.MissionScheduler(coalition, timedelta(minutes=120)).schedule_missions(NOW)  # type: ignore[arg-type]
+    tots = [p.time_over_target for p in packages]
+    assert all(t is not None for t in tots)
+    return tots  # type: ignore[return-value]
+
+
+@pytest.mark.parametrize("max_simultaneous", [1, 2, 3])
+def test_carrier_barcaps_stack_up_to_the_configured_limit(
+    max_simultaneous: int, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Carriers stack up to `max_carrier_simultaneous_barcaps` waves on-station at the
+    # same TOT, then queue the next batch to launch after the prior one recovers (one
+    # mission duration later). With the stubbed earliest_tot == NOW, the first batch
+    # all share NOW and the wave after the limit is pushed out by DURATION.
+    tots = _schedule_carrier_barcaps(
+        max_simultaneous, max_simultaneous + 1, monkeypatch
+    )
+    assert tots[:max_simultaneous] == [NOW] * max_simultaneous
+    assert tots[max_simultaneous] == NOW + DURATION

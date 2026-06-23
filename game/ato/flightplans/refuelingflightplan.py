@@ -1,7 +1,7 @@
 from abc import ABC
 from datetime import timedelta
 
-from game.utils import Speed, knots, Distance, meters
+from game.utils import Speed, Distance, meters
 from .patrolling import PatrollingFlightPlan, PatrollingLayout
 
 
@@ -12,11 +12,15 @@ class RefuelingFlightPlan(PatrollingFlightPlan[PatrollingLayout], ABC):
 
     @property
     def patrol_speed(self) -> Speed:
-        # TODO: Could use self.flight.unit_type.preferred_patrol_speed(altitude).
-        if self.flight.unit_type.patrol_speed is not None:
-            return self.flight.unit_type.patrol_speed
-        # ~280 knots IAS at 21000.
-        return knots(400)
+        unit_type = self.flight.unit_type
+        if unit_type.patrol_speed is not None:
+            return unit_type.patrol_speed
+        # No explicit racetrack speed for this airframe: estimate from its performance
+        # at the altitude the racetrack is actually planned at. WaypointBuilder.
+        # get_patrol_altitude bases the orbit on preferred_patrol_altitude, so taking
+        # the speed estimate there keeps the two consistent. This replaces a flat
+        # 400 kt fallback that ignored both the airframe and its planned orbit altitude.
+        return unit_type.preferred_patrol_speed(unit_type.preferred_patrol_altitude)
 
     @property
     def engagement_distance(self) -> Distance:

@@ -259,6 +259,11 @@ class WaypointGenerator:
             if for_leg is None:
                 continue
             min_fuel += for_leg
+            if a.waypoint_type is FlightWaypointType.REFUEL:
+                # The flight tops off at the tanker, so waypoints earlier than it (we
+                # are walking backward) only need enough fuel to reach the tanker plus
+                # the landing reserve -- not to fly the whole route home unrefueled.
+                min_fuel = consumption.min_safe
             a.min_fuel = min_fuel
 
     def set_takeoff_time(self, waypoint: FlightWaypoint) -> timedelta:

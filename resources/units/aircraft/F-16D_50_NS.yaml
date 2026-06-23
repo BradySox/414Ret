@@ -76,3 +76,6 @@ weapon_injections:  # AGM-154B only works for AI
   7:
     - "{AGM-154B}"
     - "{BRU57_2*AGM-154B}"
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: boom

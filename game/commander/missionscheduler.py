@@ -53,9 +53,10 @@ class MissionScheduler:
 
         previous_aewc_end_time: dict[MissionTarget, datetime] = defaultdict(now.replace)
 
-        max_simultaneous_recovery_tankers = 2  # TODO: make configurable
+        settings = self.coalition.game.settings
+        max_simultaneous_recovery_tankers = settings.max_simultaneous_recovery_tankers
         carrier_etas: dict[MissionTarget, list[datetime]] = defaultdict(list)
-        max_carrier_simultaneous_barcaps = 2  # TODO: make configurable
+        max_carrier_simultaneous_barcaps = settings.max_carrier_simultaneous_barcaps
         carrier_barcaps: dict[MissionTarget, int] = defaultdict(int)
 
         start_time = start_time_generator(

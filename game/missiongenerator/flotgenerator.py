@@ -966,20 +966,15 @@ class FlotGenerator:
         @param enemy_groups Potential enemy groups
         @param n number of nearby groups to take
         """
-        targets = []  # type: List[VehicleGroup]
         sorted_list = sorted(
             enemy_groups,
             key=lambda group: player_group.points[0].position.distance_to_point(
                 group[0].points[0].position
             ),
         )
-        for i in range(n):
-            # TODO: Is this supposed to return no groups if enemy_groups is less than n?
-            if len(sorted_list) <= i:
-                break
-            else:
-                targets.append(sorted_list[i][0])
-        return targets
+        # Slicing returns the n nearest groups, or all of them when fewer than n are
+        # available (it never returns an empty list just because n exceeds the count).
+        return [group[0] for group in sorted_list[:n]]
 
     @staticmethod
     def find_nearest_enemy_group(

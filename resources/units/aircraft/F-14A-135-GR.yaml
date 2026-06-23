@@ -57,3 +57,6 @@ tasks:
   Strike: 600
   TARCAP: 575
   TARPS: 700
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

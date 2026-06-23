@@ -25,3 +25,6 @@ tasks:
   OCA/Aircraft: 625
 secondary_tasks:
   - DEAD
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: boom

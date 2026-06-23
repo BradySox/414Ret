@@ -41,3 +41,6 @@ tasks:
   SEAD: 730
   SEAD Escort: 675
   SEAD Sweep: 680
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

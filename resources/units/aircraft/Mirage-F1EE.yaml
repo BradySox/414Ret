@@ -30,3 +30,6 @@ tasks:
   OCA/Runway: 460
   Strike: 465
   TARCAP: 395
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

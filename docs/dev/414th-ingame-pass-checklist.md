@@ -77,6 +77,72 @@ so the two docs don't drift.
 - **Pass:** Orbits hold **deep** behind the FLOT, clear of forward SAM/CAP reach.
 - **Fail signature:** Support orbit placed within enemy engagement depth.
 
+### C3 — Tanker racetrack speed estimate · ☐ UNTESTED
+- **Setup:** Plan a package that takes fuel from a **buddy tanker** — the airframes
+  that ship *without* a `patrol:` speed/altitude block (the F/A-18E/F tankers; the
+  A-6E buddy tank before it got its own `patrol:` block). The dedicated tankers
+  (KC-135/KC-130/MPRS/S-3B Tanker, and now the A-6E Tanker) define their own patrol
+  speed and are unaffected. For the buddy tankers the new
+  `preferred_patrol_speed(preferred_patrol_altitude)` estimate now drives the orbit.
+- **Pass:** Tanker flies its racetrack at a sane, steady speed and receivers
+  rendezvous and take fuel without falling behind or overrunning.
+- **Fail signature:** Tanker orbit speed too slow/fast for receivers to join (e.g.
+  fighters S-turning to stay behind, or unable to close). If seen, revisit
+  `RefuelingFlightPlan.patrol_speed` in `game/ato/flightplans/refuelingflightplan.py`.
+
+### C4 — A-6E attack/tanker split · ☐ UNTESTED
+- **Setup:** A-6E now loads as two squadron-selectable types from `A6E.yaml`:
+  "A-6E Intruder" (attack tasks only) and "A-6E Tanker" (Refueling/Recovery only,
+  `max_group_size: 1`, carrier tanker patrol). Buy/auto-plan each and confirm both
+  appear and behave. **Could not be load-tested in CI** — the A-6 unit isn't in the
+  CI/dev pydcs build, so confirm the data actually loads in the packaged app first.
+- **Pass:** The Intruder is never auto-tasked for refueling/recovery; the Tanker is
+  never auto-tasked for strike/CAS/etc. and orbits/refuels as a carrier tanker.
+- **Fail signature:** Either type missing from the airframe list (the A6E unit id may
+  differ in the shipped pydcs, or variant-level `tasks` override didn't take); or the
+  Tanker still picks up strike tasks / the Intruder still gets tanker tasking. Check
+  that both variants resolve in `AircraftType` and that the A6E unit supports AI
+  air-refueling in the build's pydcs.
+
+### C5 — Boom/probe refuel-method compatibility · ☐ UNTESTED
+- **Setup:** Aircraft now carry an `air_refuel_type` (boom/probe) and tankers a
+  `tanker_refuel_types`; the planner only assigns a tanker that provides the package
+  receivers' method, and `PackageRefuelingFlightPlan.patrol_duration` only counts
+  compatible receivers. Plan a **boom** package (e.g. F-16/F-15) and a **probe**
+  package (e.g. F/A-18/Su-27) in a faction that has both boom (KC-135) and drogue
+  (KC-135 MPRS / KC-130 / S-3B Tanker) tankers. The classification data is an initial
+  high-confidence pass and is **opt-in / permissive** — untagged airframes refuel from
+  anything, so this can only *over-restrict* a mis-tagged aircraft, never crash.
+- **Pass:** Boom packages get a boom tanker; probe packages get a drogue tanker;
+  helicopters only get a slow (KC-130) tanker; mixed/untagged packages still get a
+  tanker. Receivers actually plug in and take fuel in-mission.
+- **Fail signature:** A package that should have a compatible tanker gets none (a
+  mis-tagged receiver, or a faction lacking the right tanker type), or a receiver is
+  matched to a tanker it can't physically use. Fixes are data-only: the airframe's
+  `air_refuel_type` or the tanker's `tanker_refuel_types` in
+  `resources/units/aircraft/*.yaml`. KC-10 boom-vs-drogue and any exotic/mod airframe
+  are the likeliest mis-tags to review first.
+
+### C6 — Fuel-driven pre/post-vul tanking · ☐ UNTESTED
+- **Setup:** Formation/attack and escort flights no longer get a tanker waypoint
+  unconditionally. `FormationAttackBuilder._refuel_tasking` estimates the sortie burn
+  (ingress at cruise + the ingress→target→split vul at combat + egress home, plus the
+  climb-out) vs usable internal fuel and inserts a refuel waypoint **only** when short:
+  pre-vul (routed on the ingress nav, before the join) if it can't fight through the
+  vul, otherwise post-vul (after the split). The fuel estimators credit the refuel
+  point (C-level #1), so the kneeboard/sim fuel reads correctly past the tanker. Fly a
+  **short** sortie (expect no tanker), a **long-egress** sortie (expect post-vul), and a
+  **very deep** target (expect pre-vul), in a faction with a compatible tanker.
+- **Pass:** Short sorties launch with no tanker tasking; deep sorties get exactly one
+  refuel waypoint on the correct side; the flight reaches the tanker with fuel to spare
+  and completes the sortie; kneeboard bingo/joker look sane after tanking.
+- **Fail signature:** Flights that clearly need gas get none (or vice versa); pre-vul
+  detour backtracks awkwardly; a flight flames out before the tanker. The burn estimate
+  is an approximate planning heuristic (straight-line legs, fixed climb allowance) and
+  the **fuel unit handling (kg `max_fuel` vs lb consumption) couldn't be validated in
+  CI** — tune `_refuel_tasking` in `game/ato/flightplans/formationattack.py` if the
+  pre/post/none split looks off.
+
 ---
 
 ## D. Loss accounting (upstream-core)

@@ -20,3 +20,7 @@ variants:
   KC-10 Extender (Drogue): {}
 tasks:
   Refueling: 50
+
+# Air-to-air refueling provided as a tanker.
+tanker_refuel_types:
+  - probe

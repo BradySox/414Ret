@@ -128,6 +128,8 @@ class Game:
         self.current_group_id = 0
         self.name_generator = naming.namegen
         self.laser_code_registry = LaserCodeRegistry()
+        # Drop-spawn: TGOs queued for next-turn materialisation.
+        self.pending_unit_placements: list[Any] = []
 
         self.db = GameDb()
 
@@ -159,6 +161,7 @@ class Game:
         self.on_load(game_still_initializing=True)
 
     def __setstate__(self, state: dict[str, Any]) -> None:
+        state.setdefault("pending_unit_placements", [])
         self.__dict__.update(state)
         if not hasattr(self, "laser_code_registry"):
             self.laser_code_registry = LaserCodeRegistry()
@@ -483,6 +486,16 @@ class Game:
         from game.scar_objectives import sync_downed_sof_objectives
 
         sync_downed_sof_objectives(self)
+
+        # Materialise any TGOs queued for this turn via drop-spawn.
+        from game.theater.unitplacement import (
+            process_pending_placements,
+            process_respawns,
+        )
+
+        for coalition in self.coalitions:
+            process_pending_placements(self, coalition)
+            process_respawns(self, coalition)
 
         # Plan GroundWar
         self.ground_planners = {}

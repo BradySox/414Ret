@@ -332,9 +332,9 @@ class QPlaceUnitGroupDialog(QDialog):
         deploy_next = self._spawn_next.isChecked()
         respawn = self._respawn_check.isChecked()
 
-        # Deduct budget now if spawning immediately (matching buy-menu behaviour)
-        if not free and self.game.turn > 0 and not deploy_next:
-            cost = self._layout_model.price
+        # Deduct budget now (for both spawn-now and deploy-next-turn).
+        cost = self._layout_model.price
+        if not free and self.game.turn > 0:
             if cost > coalition.budget:
                 QMessageBox.warning(
                     self,
@@ -358,9 +358,9 @@ class QPlaceUnitGroupDialog(QDialog):
                 respawn=respawn,
             )
         except ValueError as exc:
-            # Refund the budget deduction we just did before the call
-            if not free and self.game.turn > 0 and not deploy_next:
-                coalition.budget += self._layout_model.price
+            # Refund the budget deduction we just made
+            if not free and self.game.turn > 0:
+                coalition.budget += cost
             QMessageBox.warning(self, "Placement error", str(exc))
             return
 

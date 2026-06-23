@@ -8,6 +8,7 @@ These cover the discrimination + in-place removal used by
 """
 
 from types import SimpleNamespace
+from typing import Any
 
 from game.data.units import UnitClass
 from game.theater.theatergroundobject import (
@@ -16,7 +17,10 @@ from game.theater.theatergroundobject import (
 )
 
 
-def _unit(unit_class: UnitClass, variant_id: str = "x") -> SimpleNamespace:
+# Returns Any so the duck-typed stubs satisfy the TheaterUnit/TheaterGroup
+# parameter types of the functions under test (matching how other tests fake
+# Retribution objects).
+def _unit(unit_class: UnitClass, variant_id: str = "x") -> Any:
     return SimpleNamespace(
         unit_type=SimpleNamespace(unit_class=unit_class, variant_id=variant_id)
     )
@@ -40,7 +44,8 @@ def test_guns_are_kept() -> None:
 
 
 def test_static_without_unit_type_is_kept() -> None:
-    assert not _is_erroneous_aaa_search_radar(SimpleNamespace(unit_type=None))
+    static: Any = SimpleNamespace(unit_type=None)
+    assert not _is_erroneous_aaa_search_radar(static)
 
 
 def test_strip_removes_only_the_sam_radar() -> None:
@@ -48,7 +53,7 @@ def test_strip_removes_only_the_sam_radar() -> None:
     fire_can = _unit(UnitClass.SEARCH_RADAR, "AAA Fire Can SON-9")
     guns = [_unit(UnitClass.AAA, "ZU-23 on Ural-375") for _ in range(5)]
     jeep = _unit(UnitClass.UNKNOWN, "LUV UAZ-469 Jeep")
-    group = SimpleNamespace(units=[sa11, *guns, fire_can, jeep])
+    group: Any = SimpleNamespace(units=[sa11, *guns, fire_can, jeep])
 
     removed = _strip_erroneous_aaa_radars_from_groups([group])
 

@@ -12,18 +12,28 @@ import AircraftLayer from "../aircraftlayer";
 import AirDefenseRangeLayer from "../airdefenserangelayer";
 import CombatLayer from "../combatlayer";
 import ControlPointsLayer from "../controlpointslayer";
+import {
+  CullingExclusionLayer,
+} from "../cullingexclusionzones/CullingExclusionZones";
 import FlightPlansLayer from "../flightplanslayer";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
+import NavMeshLayer from "../navmesh/NavMeshLayer";
 import SupplyRoutesLayer from "../supplyrouteslayer";
+import {
+  ExclusionZonesLayer,
+  InclusionZonesLayer,
+  SeaZonesLayer,
+} from "../terrainzones/TerrainZonesLayers";
+import { ThreatZoneFilter, ThreatZonesLayer } from "../threatzones";
 import TgosLayer from "../tgoslayer/TgosLayer";
 import "./MapLayersControl.css";
 
-// A custom, dark-themed replacement for the stock Leaflet layers control. It owns
-// the visibility of every map overlay, groups them into labelled sections, offers
-// one-click preset views, and remembers the player's choices across sessions. The
-// "Reveal fog of war" overview is the one exception that is deliberately NOT
-// persisted (it is transient server-side view state — see FogOfWarToggle).
+// A custom, dark-themed replacement for the two stock Leaflet layer controls.
+// Everything lives in one collapsible, grouped panel: common layers up top,
+// advanced/debug overlays (threat zones, navmesh, terrain) tucked into groups
+// that start collapsed so the list stays short. Choices persist across sessions,
+// EXCEPT the fog overview, which is transient server-side view state.
 
 type LayerId =
   | "controlPoints"
@@ -49,7 +59,21 @@ type LayerId =
   | "emitterHighlight"
   | "flightSelected"
   | "flightBlue"
-  | "flightRed";
+  | "flightRed"
+  | "blueThreatFull"
+  | "blueThreatAircraft"
+  | "blueThreatAirDef"
+  | "blueThreatRadar"
+  | "redThreatFull"
+  | "redThreatAircraft"
+  | "redThreatAirDef"
+  | "redThreatRadar"
+  | "blueNavmesh"
+  | "redNavmesh"
+  | "inclusionZones"
+  | "exclusionZones"
+  | "seaZones"
+  | "cullingZones";
 
 type BaseMap = "clarity" | "firefly" | "topo";
 
@@ -71,7 +95,7 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   shorad: { label: "SHORAD", node: <TgosLayer categories={["aa"]} task={"SHORAD"} /> },
   aaa: { label: "AAA", node: <TgosLayer categories={["aa"]} task={"AAA"} /> },
   // revealFog and emitterHighlight are side-effect toggles, not visual layers:
-  // they are driven by useEffect below (see comment there), so they render no node.
+  // they are driven by useEffect below, so they render no node.
   revealFog: { label: "Reveal fog of war", node: null },
   enemySamThreat: {
     label: "Enemy SAM threat range",
@@ -91,19 +115,150 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
     node: <AirDefenseRangeLayer blue={true} detection />,
   },
   alliedIads: { label: "Allied IADS network", node: <Iadsnetworklayer blue={true} /> },
-  emitterHighlight: {
-    label: "Highlight radar emitter on hover",
-    node: null,
-  },
+  emitterHighlight: { label: "Highlight radar emitter on hover", node: null },
   flightSelected: {
     label: "Selected flight plan",
     node: <FlightPlansLayer selectedOnly />,
   },
   flightBlue: { label: "All blue flight plans", node: <FlightPlansLayer blue={true} /> },
   flightRed: { label: "All red flight plans", node: <FlightPlansLayer blue={false} /> },
+  blueThreatFull: {
+    label: "Blue: full",
+    node: <ThreatZonesLayer blue={true} filter={ThreatZoneFilter.FULL} />,
+  },
+  blueThreatAircraft: {
+    label: "Blue: aircraft",
+    node: <ThreatZonesLayer blue={true} filter={ThreatZoneFilter.AIRCRAFT} />,
+  },
+  blueThreatAirDef: {
+    label: "Blue: air defences",
+    node: <ThreatZonesLayer blue={true} filter={ThreatZoneFilter.AIR_DEFENSES} />,
+  },
+  blueThreatRadar: {
+    label: "Blue: radar SAMs",
+    node: <ThreatZonesLayer blue={true} filter={ThreatZoneFilter.RADAR_SAMS} />,
+  },
+  redThreatFull: {
+    label: "Red: full",
+    node: <ThreatZonesLayer blue={false} filter={ThreatZoneFilter.FULL} />,
+  },
+  redThreatAircraft: {
+    label: "Red: aircraft",
+    node: <ThreatZonesLayer blue={false} filter={ThreatZoneFilter.AIRCRAFT} />,
+  },
+  redThreatAirDef: {
+    label: "Red: air defences",
+    node: <ThreatZonesLayer blue={false} filter={ThreatZoneFilter.AIR_DEFENSES} />,
+  },
+  redThreatRadar: {
+    label: "Red: radar SAMs",
+    node: <ThreatZonesLayer blue={false} filter={ThreatZoneFilter.RADAR_SAMS} />,
+  },
+  blueNavmesh: { label: "Blue navmesh", node: <NavMeshLayer blue={true} /> },
+  redNavmesh: { label: "Red navmesh", node: <NavMeshLayer blue={false} /> },
+  inclusionZones: { label: "Inclusion zones", node: <InclusionZonesLayer /> },
+  exclusionZones: { label: "Exclusion zones", node: <ExclusionZonesLayer /> },
+  seaZones: { label: "Sea zones", node: <SeaZonesLayer /> },
+  cullingZones: { label: "Culling exclusion zones", node: <CullingExclusionLayer /> },
 };
 
 const ALL_IDS = Object.keys(OVERLAYS) as LayerId[];
+
+interface RowDef {
+  id: LayerId;
+  accent?: boolean;
+  sub?: boolean;
+}
+
+interface GroupDef {
+  key: string;
+  title: string;
+  defaultOpen: boolean;
+  rows: RowDef[];
+}
+
+const GROUPS: GroupDef[] = [
+  {
+    key: "friendly",
+    title: "Friendly & shared",
+    defaultOpen: true,
+    rows: [
+      { id: "controlPoints" },
+      { id: "aircraft" },
+      { id: "combat" },
+      { id: "supplyRoutes" },
+      { id: "frontLines" },
+      { id: "factories" },
+      { id: "ships" },
+      { id: "otherGround" },
+    ],
+  },
+  {
+    key: "airdef",
+    title: "Air defences",
+    defaultOpen: true,
+    rows: [
+      { id: "airDefenses" },
+      { id: "lorad", sub: true },
+      { id: "merad", sub: true },
+      { id: "shorad", sub: true },
+      { id: "aaa", sub: true },
+    ],
+  },
+  {
+    key: "enemy",
+    title: "Enemy intel",
+    defaultOpen: true,
+    rows: [
+      { id: "revealFog", accent: true },
+      { id: "enemySamThreat" },
+      { id: "enemySamDetection" },
+      { id: "enemyIads" },
+    ],
+  },
+  {
+    key: "allied",
+    title: "Allied & flight plans",
+    defaultOpen: false,
+    rows: [
+      { id: "alliedSamThreat" },
+      { id: "alliedSamDetection" },
+      { id: "alliedIads" },
+      { id: "emitterHighlight" },
+      { id: "flightSelected" },
+      { id: "flightBlue" },
+      { id: "flightRed" },
+    ],
+  },
+  {
+    key: "threat",
+    title: "Threat zones",
+    defaultOpen: false,
+    rows: [
+      { id: "blueThreatFull" },
+      { id: "blueThreatAircraft" },
+      { id: "blueThreatAirDef" },
+      { id: "blueThreatRadar" },
+      { id: "redThreatFull" },
+      { id: "redThreatAircraft" },
+      { id: "redThreatAirDef" },
+      { id: "redThreatRadar" },
+    ],
+  },
+  {
+    key: "debug",
+    title: "Navmesh & terrain",
+    defaultOpen: false,
+    rows: [
+      { id: "blueNavmesh" },
+      { id: "redNavmesh" },
+      { id: "inclusionZones" },
+      { id: "exclusionZones" },
+      { id: "seaZones" },
+      { id: "cullingZones" },
+    ],
+  },
+];
 
 const DEFAULT_ON: LayerId[] = [
   "controlPoints",
@@ -145,7 +300,7 @@ const PRESETS: Record<string, LayerId[]> = {
   Clean: ["controlPoints", "frontLines"],
 };
 
-const STORAGE_KEY = "fjg.mapLayers.v1";
+const STORAGE_KEY = "fjg.mapLayers.v2";
 
 function fromList(ids: LayerId[]): Record<LayerId, boolean> {
   const out = {} as Record<LayerId, boolean>;
@@ -154,10 +309,16 @@ function fromList(ids: LayerId[]): Record<LayerId, boolean> {
   return out;
 }
 
+function defaultGroups(): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (const g of GROUPS) out[g.key] = g.defaultOpen;
+  return out;
+}
+
 function loadPersisted(): {
   visible?: Partial<Record<LayerId, boolean>>;
   baseMap?: BaseMap;
-  bandsOpen?: boolean;
+  openGroups?: Record<string, boolean>;
 } {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
@@ -178,7 +339,10 @@ export default function MapLayersControl() {
     revealFog: false, // transient: never restored from storage
   }));
   const [baseMap, setBaseMap] = useState<BaseMap>(persisted.baseMap ?? "clarity");
-  const [bandsOpen, setBandsOpen] = useState<boolean>(persisted.bandsOpen ?? false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => ({
+    ...defaultGroups(),
+    ...(persisted.openGroups ?? {}),
+  }));
 
   useEffect(() => {
     const control = new L.Control({ position: "topright" });
@@ -199,9 +363,9 @@ export default function MapLayersControl() {
     delete persistable.revealFog;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ visible: persistable, baseMap, bandsOpen })
+      JSON.stringify({ visible: persistable, baseMap, openGroups })
     );
-  }, [visible, baseMap, bandsOpen]);
+  }, [visible, baseMap, openGroups]);
 
   // Radar-emitter highlight is a pure client flag; keep the slice in sync with
   // the checkbox (the initial dispatch matches the default, so it is harmless).
@@ -225,10 +389,11 @@ export default function MapLayersControl() {
       .catch((error) => console.log(`Error toggling fog of war: ${error}`));
   }, [dispatch, visible.revealFog]);
 
-  const toggle = (id: LayerId) =>
-    setVisible((v) => ({ ...v, [id]: !v[id] }));
+  const toggle = (id: LayerId) => setVisible((v) => ({ ...v, [id]: !v[id] }));
   const applyPreset = (name: string) =>
     setVisible((v) => ({ ...fromList(PRESETS[name]), revealFog: v.revealFog }));
+  const toggleGroup = (key: string) =>
+    setOpenGroups((g) => ({ ...g, [key]: !g[key] }));
 
   const baseName =
     baseMap === "firefly"
@@ -237,15 +402,7 @@ export default function MapLayersControl() {
       ? "Topographic"
       : "ImageryClarity";
 
-  const Row = ({
-    id,
-    accent,
-    sub,
-  }: {
-    id: LayerId;
-    accent?: boolean;
-    sub?: boolean;
-  }) => (
+  const Row = ({ id, accent, sub }: RowDef) => (
     <label
       className={
         "ml-row" + (accent ? " ml-row-accent" : "") + (sub ? " ml-row-sub" : "")
@@ -287,50 +444,18 @@ export default function MapLayersControl() {
         ))}
       </div>
 
-      <div className="ml-group-title">Friendly &amp; shared</div>
-      <Row id="controlPoints" />
-      <Row id="aircraft" />
-      <Row id="combat" />
-      <Row id="supplyRoutes" />
-      <Row id="frontLines" />
-      <Row id="factories" />
-      <Row id="ships" />
-      <Row id="otherGround" />
-
-      <div className="ml-group-title">
-        Air defences
-        <button
-          className="ml-collapse"
-          aria-label={bandsOpen ? "Hide bands" : "Show bands"}
-          onClick={() => setBandsOpen((b) => !b)}
-        >
-          {bandsOpen ? "–" : "+"}
-        </button>
-      </div>
-      <Row id="airDefenses" />
-      {bandsOpen && (
-        <>
-          <Row id="lorad" sub />
-          <Row id="merad" sub />
-          <Row id="shorad" sub />
-          <Row id="aaa" sub />
-        </>
-      )}
-
-      <div className="ml-group-title">Enemy intel</div>
-      <Row id="revealFog" accent />
-      <Row id="enemySamThreat" />
-      <Row id="enemySamDetection" />
-      <Row id="enemyIads" />
-
-      <div className="ml-group-title">Allied &amp; flight plans</div>
-      <Row id="alliedSamThreat" />
-      <Row id="alliedSamDetection" />
-      <Row id="alliedIads" />
-      <Row id="emitterHighlight" />
-      <Row id="flightSelected" />
-      <Row id="flightBlue" />
-      <Row id="flightRed" />
+      {GROUPS.map((g) => (
+        <Fragment key={g.key}>
+          <button className="ml-group-title" onClick={() => toggleGroup(g.key)}>
+            <span>{g.title}</span>
+            <span className="ml-group-chevron">{openGroups[g.key] ? "−" : "+"}</span>
+          </button>
+          {openGroups[g.key] &&
+            g.rows.map((r) => (
+              <Row key={r.id} id={r.id} accent={r.accent} sub={r.sub} />
+            ))}
+        </Fragment>
+      ))}
 
       <div className="ml-foot">
         <button onClick={() => applyPreset("Clean")}>Hide all overlays</button>

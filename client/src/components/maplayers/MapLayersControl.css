@@ -69,14 +69,31 @@
 }
 
 .ml-group-title {
+  width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6f7d8f;
-  padding: 9px 12px 3px;
+  color: #8593a5;
+  background: #131b27;
+  border: none;
+  border-top: 1px solid #2b3647;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.ml-group-title:hover {
+  color: #aeb9c8;
+  background: #182231;
+}
+
+.ml-group-chevron {
+  font-size: 14px;
+  line-height: 1;
+  color: #7d8b9d;
 }
 
 .ml-row {

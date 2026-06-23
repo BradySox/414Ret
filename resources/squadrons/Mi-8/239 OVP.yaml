@@ -1,0 +1,11 @@
+---
+name: 239th Independent Helicopter Regiment
+nickname: 239 OVP
+country: Russia
+role: Transport Helicopter
+aircraft: Mi-8MTV2 Hip
+livery: "Russia_VVS_Standard"
+female_pilot_percentage: 0
+mission_types:
+  - Air Assault
+  - Transport

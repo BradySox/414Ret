@@ -1,0 +1,10 @@
+---
+name: 144th Independent Air Reconnaissance Regiment
+nickname: Mainstay
+country: Russia
+role: AEW&C
+aircraft: A-50
+livery: "RF Air Force"
+female_pilot_percentage: 0
+mission_types:
+  - AEW&C

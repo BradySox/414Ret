@@ -124,8 +124,13 @@ and selected later upstream fixes.
   Fulda Gap, taking Hamburg, and seizing Copenhagen — but the Soviet thrust has culminated,
   and the 414th now spearheads the push to retake the lost ground. A Soviet Baltic fleet and
   the captured Copenhagen field open a northern over-water front, and the enemy IADS is
-  thickened with S-300 and SA-11. The *Crossing the Rubicon* campaign it forks from is left
-  untouched. See
+  thickened with S-300 and SA-11. Every squadron is now a named historical unit wearing a
+  matching livery — real GSFG/VVS regiments on the red side, 414th Joint Fighter Group
+  identities (VMF-29, Voodoo, the 414th TFS, JFG Hornets) on the blue — so the air war no
+  longer spawns mismatched paint schemes. **Fulda** is now a blue forward helicopter FARP in
+  the Gap (Apaches, Kiowas, Hueys) with the front line routed through it, and Frankfurt adds a
+  KC-135MPRS drogue tanker. The *Crossing the Rubicon* campaign it forks from
+  is left untouched. See
   [`docs/dev/design/414th-red-tide-campaign-notes.md`](docs/dev/design/414th-red-tide-campaign-notes.md).
 - Numerous mission-generation and debriefing fixes are included, along with selected
   upstream backports newer than the fork's original base.

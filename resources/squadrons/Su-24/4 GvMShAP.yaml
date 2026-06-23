@@ -1,0 +1,12 @@
+---
+name: 4th Guards Naval Assault Aviation Regiment
+nickname: 4 GvMShAP
+country: Russia
+role: Bomber
+aircraft: Su-24M Fencer-D
+livery: "af standard"
+female_pilot_percentage: 0
+mission_types:
+  - SEAD
+  - Strike
+  - BAI

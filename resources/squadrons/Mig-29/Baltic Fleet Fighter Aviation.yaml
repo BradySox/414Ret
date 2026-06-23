@@ -1,0 +1,13 @@
+---
+name: Baltic Fleet Fighter Aviation
+nickname: Naval Fulcrums
+country: Russia
+role: Fighter
+aircraft: MiG-29A Fulcrum-A
+livery: "Air Force Standard"
+female_pilot_percentage: 0
+mission_types:
+  - BARCAP
+  - TARCAP
+  - Escort
+  - Fighter sweep

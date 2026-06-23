@@ -1,0 +1,12 @@
+---
+name: 493rd Fighter Squadron
+nickname: Grim Reapers
+country: USA
+role: Fighter
+aircraft: F-15C Eagle
+livery: "493rd Fighter SQN (LN)"
+mission_types:
+  - TARCAP
+  - BARCAP
+  - Escort
+  - Fighter sweep

@@ -1,0 +1,11 @@
+---
+name: HMLA-167
+nickname: Warriors
+country: USA
+role: Attack Helicopter
+aircraft: AH-1W SuperCobra
+livery: "USA Marines"
+mission_types:
+  - CAS
+  - Escort
+  - Armed Reconnaissance

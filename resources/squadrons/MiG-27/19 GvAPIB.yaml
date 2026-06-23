@@ -1,0 +1,12 @@
+---
+name: 19th Guards Fighter-Bomber Aviation Regiment
+nickname: 19 GvAPIB
+country: Russia
+role: Fighter Bomber
+aircraft: MiG-27K Flogger-J2
+livery: "af standard"
+female_pilot_percentage: 0
+mission_types:
+  - SEAD
+  - BAI
+  - CAS

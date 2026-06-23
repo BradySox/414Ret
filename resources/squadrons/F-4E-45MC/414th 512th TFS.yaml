@@ -1,0 +1,12 @@
+---
+name: 512th Tactical Fighter Squadron
+nickname: Dragons
+country: USA
+role: Fighter Bomber
+aircraft: F-4E-45MC Phantom II
+livery: "RS68-480_SEA_512TFS"
+mission_types:
+  - OCA/Runway
+  - BAI
+  - CAS
+  - Strike

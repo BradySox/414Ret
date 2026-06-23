@@ -1,0 +1,12 @@
+---
+name: 31st Bomber Aviation Regiment
+nickname: 31 BAP
+country: Russia
+role: Bomber
+aircraft: Su-24M Fencer-D
+livery: "af standard"
+female_pilot_percentage: 0
+mission_types:
+  - SEAD
+  - Strike
+  - BAI

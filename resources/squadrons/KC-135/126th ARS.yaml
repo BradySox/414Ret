@@ -1,0 +1,9 @@
+---
+name: 126th Air Refueling Squadron
+nickname: Tanker
+country: USA
+role: Tanker
+aircraft: KC-135 Stratotanker
+livery: "Standard USAF"
+mission_types:
+  - Refueling

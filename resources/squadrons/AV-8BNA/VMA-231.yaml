@@ -1,0 +1,12 @@
+---
+name: VMA-231
+nickname: Ace of Spades
+country: USA
+role: Attack
+aircraft: AV-8B Harrier II Night Attack
+livery: "VMA-231-1"
+mission_types:
+  - SEAD
+  - CAS
+  - BAI
+  - Strike

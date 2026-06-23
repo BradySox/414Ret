@@ -1,0 +1,10 @@
+---
+name: 159th Aviation Detachment (Forward)
+nickname: Dustoff
+country: USA
+role: Utility Helicopter
+aircraft: UH-1H Iroquois
+livery: "414th Huey Skin"
+mission_types:
+  - Air Assault
+  - Transport

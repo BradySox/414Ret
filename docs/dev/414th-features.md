@@ -200,25 +200,24 @@ viewers through ~15 call sites:
   (`TgoJs`, the red `ThreatZonesJs`, `IadsConnectionJs`) **and** the intel dialogs at once —
   with **zero server-model changes**, since those still pass `Player.BLUE` and the leaves
   short-circuit internally. AI/planner/threat math pass `viewer=None` and are unaffected.
-- UI: a **"Reveal fog of war (overview)"** checkbox in the map's Leaflet layer control
-  (`client/src/components/liberationmap/LiberationMap.tsx`), sitting with the other enemy-intel
-  toggles (Enemy SAM threat range / IADS Network) — the natural, discoverable home, not the Qt
-  chrome. It is a non-visual overlay (`client/src/components/fogofwar/FogOfWarToggle.tsx`)
-  built on the **same pattern as `EmitterHighlightToggle`**: an empty `LayerGroup` whose
-  `add`/`remove` events fire on check/uncheck. On toggle it `PUT`s `/fog-of-war/reveal?revealed=…`
-  (`game/server/fogofwar/routes.py`, registered in `game/server/app.py`) to flip the flag, then
-  calls `reloadGameState(dispatch, true)` — a **no-recenter** full re-pull of `/game`, whose
-  `tgos`/`iads_network`/`threat_zones` are rebuilt through the (now short-circuiting) fog paths,
-  so composition, rings, and hidden command posts appear — and re-hide when unchecked, because
-  `TgoJs.all_in_game` re-applies the `hidden_on_player_map` filter. No Qt control and no event
-  plumbing: the checkbox owns the flow client-side. Defaults off (overlay unchecked on mount);
-  never persisted.
+- UI: a **"Reveal fog of war"** checkbox in the custom map layers panel
+  (`client/src/components/maplayers/MapLayersControl.tsx`, "Enemy intel" group; see §18), not
+  the Qt chrome. It is driven by a state `useEffect`, **not** a Leaflet `add`/`remove` layer —
+  that approach proved unreliable: on unmount react-leaflet tears the layer down without firing
+  `remove`, so unchecking left the overview stuck on. The effect `PUT`s
+  `/fog-of-war/reveal?revealed=…` (`game/server/fogofwar/routes.py`, registered in
+  `game/server/app.py`) then calls `reloadGameState(dispatch, true)` — a **no-recenter** full
+  re-pull of `/game`, whose `tgos`/`iads_network`/`threat_zones` are rebuilt through the (now
+  short-circuiting) fog paths, so composition, rings, and hidden command posts appear — and
+  re-hide when unchecked, because `TgoJs.all_in_game` re-applies the `hidden_on_player_map`
+  filter. Defaults off; the panel persists other layer choices to localStorage but deliberately
+  excludes the fog overview, so it is never restored on load.
 - Note: it lives entirely in the React client, so it needs the rebuilt bundle — CI's
   `npm run build` ships it in the `latest` release. The Python chokepoints + the
   `/fog-of-war/reveal` endpoint are covered by the existing fog tests
   (`tests/test_recon_intel_fog.py`, `tests/test_bda_tarps_reveal.py`) and a route test
-  (`tests/server/test_fogofwar_route.py`); the toggle component has no separate JS test, matching
-  `EmitterHighlightToggle`.
+  (`tests/server/test_fogofwar_route.py`). The client panel has no JS test (the project ships
+  none for the map layers).
 
 ---
 
@@ -973,3 +972,34 @@ campaign economy, attrition, and BDA coupling intact and unit-testable.
   dispatcher (see [§1 QRA intercept reserve](#1-qra-intercept-reserve) above), and
   `reactive_scramble.lua` + `FlightType.SCRAMBLE` were removed. The live A2A path to
   validate in-game is now the Moose `AI_A2A_DISPATCHER` QRA flow, not ramp-scramble.
+
+---
+
+## 18. Unified map layers panel
+
+The two stock react-leaflet layer controls (a flat 23-item white box top-right, plus a
+second top-left box for threat zones / navmesh / terrain) are replaced by one custom,
+dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `.css`).
+
+- It is a Leaflet `L.Control` that `createPortal`s a React panel onto the map and owns the
+  visibility of every overlay. Each layer is conditionally rendered from state instead of
+  via `LayersControl.Overlay`, so the panel can group, theme, collapse, and preset freely.
+- **Collapsible groups** (Friendly & shared / Air defences / Enemy intel / Allied & flight
+  plans / Threat zones / Navmesh & terrain). The advanced groups start collapsed so the list
+  stays short; group + layer + base-map choices persist to `localStorage`
+  (`fjg.mapLayers.v1` → bumped to `…v2`), except the fog overview (see §3).
+- **Preset views** — Default / SEAD / Recon / Clean, plus a "Hide all overlays" button.
+- **Folded in the old top-left control**: threat zones render via the existing
+  `ThreatZonesLayer` (+ `ThreatZoneFilter`) and navmesh via `NavMeshLayer` (both already raw);
+  terrain and culling gained raw-layer exports (`Inclusion/Exclusion/SeaZonesLayer`,
+  `CullingExclusionLayer`) so they render without a `LayersControl`. The hard-disabled
+  waypoint join/hold debug zones were dropped.
+- **Side-effect toggles** (fog reveal, radar-emitter highlight) are driven by `useEffect` on
+  their checkbox state, NOT by Leaflet `add`/`remove` — unmount does not reliably fire
+  `remove`, which previously left the fog overview stuck on. The old `FogOfWarToggle` /
+  `EmitterHighlightToggle` components were removed.
+- Client-only (TS/CSS); needs the rebuilt bundle (CI `npm run build`). `LiberationMap.tsx`
+  now mounts just `MapLayersControl` (plus scale + ruler).
+- Deferred cleanup: `CoalitionThreatZones` and `WaypointDebugZonesControls` (+ its
+  `HoldZones`/`JoinZones`) are now orphaned, as are the default exports of
+  `TerrainZonesLayers`/`CullingExclusionZones`; safe to delete in a follow-up.

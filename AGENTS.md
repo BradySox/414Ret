@@ -85,8 +85,9 @@ Do **not** reintroduce the old `_for_player`/`_for` method twins — that collap
 A runtime **overview toggle** (`game/theater/fogofwar.py`, transient/never-pickled) short-circuits
 those three fog leaves (`alive_for`, `known_for`, `hidden_on_player_map`) to ground truth for any
 viewer, so the *whole* render path + intel dialogs un-fog with **no** server-model changes. It is
-a checkbox in the map's Leaflet layer panel (`FogOfWarToggle`, same pattern as
-`EmitterHighlightToggle`) that `PUT`s `/fog-of-war/reveal` then re-pulls `/game`.
+a checkbox in the custom map layers panel (`MapLayersControl`, §18), driven by a state
+`useEffect` (not a Leaflet add/remove layer — unmount doesn't reliably fire `remove`) that
+`PUT`s `/fog-of-war/reveal` then re-pulls `/game`.
 (`game/theater/theatergroup.py`, `theatergroundobject.py`; see features doc §3.)
 
 **Save migration.** Removed/renamed enums migrate old pickles in `FlightType._missing_`
@@ -140,13 +141,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     so red stops hitting the same things every turn; reactive threat response stays strictly
     deterministic. The low-risk in-Python alternative to a runtime MOOSE `Ops.Chief` red
     rewrite (`game/commander/tasks/targetorder.py`; features doc §17).
-18. **Fog-of-war overview toggle** — a transient **"Reveal fog of war"** checkbox in the map's
-    Leaflet layer panel (with the enemy-intel toggles) that short-circuits the three recon-fog
+18. **Fog-of-war overview toggle** — a transient **"Reveal fog of war"** checkbox in the unified
+    map layers panel (#19, "Enemy intel" group) that short-circuits the three recon-fog
     leaves to ground truth, un-fogging the whole map + intel dialogs (enemy composition, threat
     rings, hidden command posts) with no server-model changes. `PUT /fog-of-war/reveal` flips the
     flag, then the client re-pulls `/game`. Never persisted; defaults off
-    (`game/theater/fogofwar.py`, `game/server/fogofwar/`, `client/src/components/fogofwar/`;
-    features doc §3).
+    (`game/theater/fogofwar.py`, `game/server/fogofwar/`; features doc §3).
+19. **Unified map layers panel** — one custom, dark-themed Leaflet control
+    (`client/src/components/maplayers/MapLayersControl.tsx`) replacing both stock layer controls:
+    collapsible grouped sections (advanced groups start collapsed), preset views (Default / SEAD /
+    Recon / Clean), and `localStorage`-persisted choices (except the transient fog overview). The
+    old top-left threat-zone/navmesh/terrain control is folded in; side-effect toggles run via
+    `useEffect`, not Leaflet add/remove. Client-only; needs the CI client rebuild (features doc §18).
 
 ---
 

@@ -31,18 +31,33 @@ the offensive framing works — that captured ground is the objective set the 41
 > 1. **Economy skew — APPLIED.** `recommended_player_money: 800` / `recommended_enemy_money: 400`,
 >    `recommended_player_income_multiplier: 1.3` / `recommended_enemy_income_multiplier: 0.7`. Blue
 >    out-produces and out-buys the culminated Soviet salient.
-> 2. **Squadron balance — APPLIED.** Blue offensive `size` bumps: A-6E (OCA) 8→12, F-16CM (DEAD)
->    8→12, F/A-18C (SEAD) 8→12, F-15E (BAI) 8→12, Tornado (SEAD Escort) 8→10, B-1B (OCA) 4→6 —
->    weighting **SEAD/DEAD** since the IADS is the center of gravity. Red fighter trims:
->    Peenemünde MIG-29 8→4, Hamburg MiG-29A 8→6, Sperenberg Su-27 8→6.
+> 2. **Squadron balance — APPLIED, then re-skewed toward the human (2026-06-23).** The original
+>    blue offensive `size` bumps (A-6E 8→12, F-16CM 8→12, F/A-18C 8→12, F-15E 8→12, Tornado 8→10,
+>    B-1B 4→6) were later **partially walked back** to put the *human* 414th sorties at the centre
+>    of the offensive rather than drowning them in AI flights (see *Human-led offensive retune*
+>    under Changes). The **player-flyable 414th airframes stay large** (F-16CM 12, F/A-18C 12,
+>    F-15E 12, F-14B 8, A-10C 8, all F-4E 8); the **AI-only support/bomber** squadrons were
+>    trimmed (A-6E 12→6, B-1B 6→4, Mirage-F1 8→6, AV-8B 8→6, F-15C 8→6, Tornado 10→8). Red
+>    fighter trims unchanged: Peenemünde MIG-29 8→4, Hamburg MiG-29A 8→6, Sperenberg Su-27 8→6.
 > 3. **Red posture / AI — no knob needed.** Red's QRA reserve (`opfor_default_qra_reserve`) and
 >    planner unpredictability are already at the defaults that favor a blue offensive (reserve 0,
 >    deterministic). *Raising* red's QRA would make red defend better (backfire); it can't go
 >    lower than 0. The intended "red stays reactive" effect instead falls out of (1)+(2) — cutting
 >    red's economy and fighter mass naturally shrinks red's offensive air. Left at defaults.
 >
+> 4. **Auto-planner restraint (human-led ATO) — APPLIED (2026-06-23).** A campaign `settings:`
+>    block recommends two new-game defaults that make the **blue** auto-planner fill fewer
+>    offensive ATO slots, so the human's flights are the spearhead:
+>    `ownfor_autoplanner_aggressiveness: 10` (default 20 — blue AI ignores less of red's
+>    threat radius, so it won't auto-throw strike/SEAD packages deep into the IADS belt) and
+>    `oca_target_autoplanner_min_aircraft_count: 40` (default 20 — airfield attack becomes a
+>    human-chosen objective, since red squadrons are 4–8 jets and now fall below the bar).
+>    OPFOR aggressiveness is untouched. These are *recommended* defaults the wizard can override.
+>
 > **Out of scope (ruled out):** flipping bases (e.g. Haina) to blue, adding a blue northern base,
-> or nudging the FLOT east. Map kept as-is. Tune the (1)/(2) numbers if the balance needs it.
+> or nudging the FLOT east. Map kept as-is. Tune the (1)/(2)/(4) numbers if the balance needs it
+> — the easiest next dial is `recommended_player_income_multiplier` (1.3) if blue still
+> out-flies the human.
 
 ## Force laydown
 
@@ -174,6 +189,42 @@ considered and declined.
    CP), members byte-identical. **Trade-off / in-game watch:** buildings + SAM sites now sit on the
    apron (clear, but visually on-field); if a static lands on a slot Retribution wants for a based
    aircraft there can be a spawn overlap — watch the red bases that host squadrons.
+10. **Duplicate-key cleanup — clobbered groups recovered** (2026-06-23). The Kastrup/Copenhagen
+    hand-edits (items 4–8) appended new red groups while **reusing the integer table keys `[1]`/`[2]`**
+    that stock groups (and each other) already held. In Lua a later `[k] = …` silently overwrites the
+    earlier one, so on load the red country was **dropping 6 groups**: two `["vehicle"]` markers
+    (`Ground-2-1`, `Ground-3-1` — stock `S_75M_Volhov` SAM sites) plus the Kastrup **SHORAD** and
+    **AAA** vehicles (only the last `[1]`/`[2]` — Kastrup LORAD/MRAD — survived), and two
+    `["static"]` groups (**both Invisible FARPs**, clobbered by the Kastrup Command Center + Ammo
+    Depot). Earlier notes flagged this as out-of-scope ("Hamburg's stock marker silently dropped",
+    "10 of 12 FARPs survive"); the Hamburg **MERAD** marker (`[52]`, gid 406) was actually fine — the
+    real loss was these 6 `[1]`/`[2]` collisions. **Fix** (`tools/fix_red_tide_dup_keys.py`): renumber
+    only the six hand-added Kastrup blocks to free keys — vehicle `[55]`–`[58]`, static `[38]`/`[39]`
+    — leaving stock `[1]`/`[2]` intact. groupIds/unitIds were already unique and are untouched; only
+    table keys change. Text-edit + re-zip (pydcs `Mission.save` is broken for this miz). **Verified
+    (structural):** red vehicle table 54→58 unique groups, static 37→39, **no remaining duplicate
+    keys**, valid brace nesting, and every other `.miz` member byte-identical. (pydcs/DCS aren't
+    runnable here, so an in-game pass should still confirm the recovered SAM/FARP/Kastrup-SHORAD/AAA
+    groups spawn.)
+11. **Human-led offensive retune — fewer blue AI flights** (2026-06-23). Goal: make the human's
+    414th sorties the spearhead instead of letting the blue auto-planner fill the whole ATO. Two
+    coordinated, **campaign-yaml-only** levers (both in `red_tide.yaml`, no `.miz` change):
+    - **AI-only squadron trims** (player-flyable 414th airframes left large): A-6E 12→6, B-1B 6→4,
+      Mirage-F1EE 8→6, AV-8B 8→6, F-15C 8→6, Tornado IDS 10→8. **Untouched** (human-flown): F-16CM 12,
+      F/A-18C 12, F-15E 12, F-14B 8, A-10C 8, every F-4E 8, B-52H 4. Fewer AI airframes ⇒ fewer
+      simultaneous AI flights per turn (the planner gates each flight on untasked inventory).
+    - **`settings:` block** (merged into the existing `squadron_start_full` block — there can only be
+      **one** top-level `settings:` key; YAML keeps the last, so a second block silently wins):
+      `ownfor_autoplanner_aggressiveness: 10` (default 20 — blue AI ignores less of red's threat
+      radius, so it won't auto-throw strike/SEAD packages into the IADS belt; the human flies those)
+      and `oca_target_autoplanner_min_aircraft_count: 40` (default 20 — airfield OCA becomes a
+      human-chosen objective). OPFOR aggressiveness untouched. These seed **recommended new-game
+      defaults** (`QNewGameSettings._load_campaign_settings` → `settings.__dict__.update`), so the
+      wizard can still override them. **Verified:** yaml parses; the merged `settings` block is
+      `{squadron_start_full, ownfor_autoplanner_aggressiveness: 10, oca_target_autoplanner_min_aircraft_count: 40}`
+      (plain ints — no enum/timedelta conversion). **In-game watch:** confirm the AI doesn't stall
+      the offensive — if blue under-flies, raise aggressiveness back toward 15–20 or bump
+      `recommended_player_income_multiplier`; if blue *still* out-flies the human, trim those further.
 
 ### Fulda forward heli base + supply re-route
 

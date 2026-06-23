@@ -60,7 +60,9 @@ and selected later upstream fixes.
   capture a commander alive: a C-130 inserts the team ahead of the fleeing HVT, a clean grab
   reveals enemy command posts (the team escapes with the hostage), and a botched grab strands
   the team as a "downed SOF team" objective you can fly a **helo CSAR recovery** against on a
-  later turn before it is overrun.
+  later turn before it is overrun. An opt-in `SCAR auto-planning` setting can frag a SCAR hunt
+  into your ATO automatically each turn (off by default while the in-mission scripting is being
+  playtested).
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform with
   standoff jamming and ELINT gameplay.
 - Strike and DEAD packages can receive auto-planned **TARPS** follow-up, while BAI remains

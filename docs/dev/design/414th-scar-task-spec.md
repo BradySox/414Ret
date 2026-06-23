@@ -163,7 +163,10 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
 - **Mis-ID penalty (R7) BUILT** — a budget debit (`scar_misid_penalty`, default 8, 0 = off)
   charged per decoy/clutter convoy the prosecuting side destroys; Lua `S_EVENT_KILL` →
   `misId` count → Python `_commit_scar_misid`. See `414th-features.md` §15.
-- **Deliberately NOT yet built** (other): Phase-3 auto-planning (AI-side SCAR tasking).
+- **Phase-3 auto-planning BUILT (opt-in)** — `scar_autoplan` (default OFF) frags one blue,
+  player-flyable SCAR package/turn against the top enemy battle position (`PlanScarHunts` →
+  `PlanScar`). Blue-only; AI keeps BAI. "Phase 3 done = SCAR shows up in the ATO without the
+  player building it." See `414th-features.md` §15.
 
 ---
 
@@ -414,7 +417,7 @@ consequence is applied.
 - [ ] **C-130 intel-node framing** (§9b.1): brief the start point / candidate roads / departure time as coming *from* the C-130; optional Herc orbit slot. (Zero code — briefing framing.)
 
 ### Phase 3 — Generator integration (optional / later)
-- [ ] Auto-planner can frag SCAR against suitable objectives.
+- [x] Auto-planner can frag SCAR against suitable objectives — `scar_autoplan` (opt-in, blue-only).
 - [ ] Procedural HVT/decoy/clutter/threat composition.
 - [ ] Tie HVT kill to a real campaign-economy effect.
 - [ ] **SOF capture branch** (§9b.2, stretch): C-130 airdrops SOF → capture-vs-destroy. **Capture writes a next-turn intel reward into campaign state** (revealed SAM coords / IADS-critical building); destroy = no carryover. Fragile/time-gated; confirm reward type with SME.

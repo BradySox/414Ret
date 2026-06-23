@@ -225,6 +225,16 @@ so the two docs don't drift.
   legit HVT/command/threat kill is wrongly charged; or budget unchanged with a
   positive penalty.
 
+### F6 — SCAR auto-planning appears in the ATO · §15 · ☐ UNTESTED
+- **Setup:** New campaign with an enemy armor concentration near the front and
+  `scar_autoplan` ON.
+- **Pass:** Turn 1's blue ATO already contains a SCAR package (claimable +
+  flyable) against that armor, with no hand-building; the AI/red ATO has no SCAR
+  package. With the setting OFF, no SCAR package is auto-fragged.
+- **Fail signature:** No SCAR package when armor + setting are present (no
+  SCAR-capable squadron / fulfiller bailed); a red SCAR package appears; or a
+  SCAR package appears with the setting off.
+
 ---
 
 ## G. Plugin runtime (Lua, not CI-runnable)

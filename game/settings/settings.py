@@ -456,6 +456,22 @@ class Settings:
             "restore plain enemy command-post visibility."
         ),
     )
+    scar_autoplan: bool = boolean_option(
+        "SCAR auto-planning (frag a SCAR hunt into the blue ATO automatically)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        invert=False,
+        detail=(
+            "When enabled, the auto-planner adds one player-flyable SCAR package "
+            "to the blue ATO each turn against a suitable enemy armor "
+            "concentration near the front, so a moving-target hunt is already on "
+            "the board without hand-building it. Off by default while the SCAR "
+            "in-mission scripting is still being playtested in the cockpit; turn "
+            "it on once you are happy flying hand-built SCAR sorties. The AI side "
+            "is unaffected (it still uses BAI for anti-armor)."
+        ),
+    )
     scar_misid_penalty: int = bounded_int_option(
         "SCAR mis-ID penalty (budget cost per wrong convoy prosecuted on a SCAR sortie)",
         page=CAMPAIGN_DOCTRINE_PAGE,

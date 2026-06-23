@@ -891,9 +891,19 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   and additive. Tests: `tests/test_scar_command_post_fog.py` (debit by side, legacy-id, zero
   penalty, no-misid), `tests/test_scar_bridge.py` (parse + Lua-handler wiring). **Lua needs an
   in-game pass.**
-- NOT yet built: Phase-3 auto-planning (AI-side SCAR tasking). If Tyler's C-130 `DEPLOYMENT`
-  work ever lands, our `FlightType.SOF` + inventory-debit-on-frag should converge onto his
-  `PendingDeployments` shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
+- **Phase-3 auto-planning BUILT (opt-in, gated by `scar_autoplan`, default OFF)** — "SCAR
+  shows up in the turn's ATO without the player building it." `PlanScarHunts`
+  (`game/commander/tasks/compound/scarhunts.py`) frags **one** player-flyable SCAR package per
+  turn against the highest-priority enemy battle position, via the thin `PlanScar`
+  (`primitive/scar.py`, BAI-shaped: `FlightType.SCAR` + common escorts). Wired late/low-priority
+  in `PlanNextAction` (after `DegradeIads`). **Blue-only by design** — SCAR is a human
+  discrimination puzzle, so the AI keeps using BAI for anti-armor and never frags SCAR for
+  itself. Default OFF so it's a strict no-op until the SCAR in-mission Lua (F1/F3/F5) has had a
+  cockpit pass; flip the setting (or its default) once that's done. Tests:
+  `tests/test_scar_autoplan.py` (off/red/no-target no-op, blue picks top battle position,
+  `PlanScar` proposes SCAR + escorts). If Tyler's C-130 `DEPLOYMENT` work ever lands, our
+  `FlightType.SOF` + inventory-debit-on-frag should converge onto his `PendingDeployments`
+  shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
 
 ### SOF insert generation fixes (2026-06-22)
 

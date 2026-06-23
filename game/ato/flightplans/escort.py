@@ -115,12 +115,19 @@ class Builder(FormationAttackBuilder[EscortFlightPlan, FormationAttackLayout]):
                     layout.drop_off.position,
                 )
 
-        refuel = self._build_refuel(builder)
+        tasking = self._refuel_tasking()
+        refuel_pre = None
+        refuel = None
+        if self.package.waypoints is not None:
+            if tasking.refuels_pre_vul:
+                refuel_pre = builder.refuel(self.package.waypoints.refuel)
+            elif tasking.refuels_post_vul:
+                refuel = builder.refuel(self.package.waypoints.refuel)
 
         departure = builder.takeoff(self.flight.departure)
         nav_to = builder.nav_path(
             hold.position if hold else departure.position,
-            join.position,
+            refuel_pre.position if refuel_pre else join.position,
             builder.get_cruise_altitude,
         )
 
@@ -140,6 +147,7 @@ class Builder(FormationAttackBuilder[EscortFlightPlan, FormationAttackLayout]):
             targets=[target],
             split=split,
             refuel=refuel,
+            refuel_pre=refuel_pre,
             nav_from=nav_from,
             arrival=builder.land(self.flight.arrival),
             divert=builder.divert(self.flight.divert),

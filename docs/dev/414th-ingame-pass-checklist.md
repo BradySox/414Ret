@@ -123,6 +123,26 @@ so the two docs don't drift.
   `resources/units/aircraft/*.yaml`. KC-10 boom-vs-drogue and any exotic/mod airframe
   are the likeliest mis-tags to review first.
 
+### C6 — Fuel-driven pre/post-vul tanking · ☐ UNTESTED
+- **Setup:** Formation/attack and escort flights no longer get a tanker waypoint
+  unconditionally. `FormationAttackBuilder._refuel_tasking` estimates the sortie burn
+  (ingress at cruise + the ingress→target→split vul at combat + egress home, plus the
+  climb-out) vs usable internal fuel and inserts a refuel waypoint **only** when short:
+  pre-vul (routed on the ingress nav, before the join) if it can't fight through the
+  vul, otherwise post-vul (after the split). The fuel estimators credit the refuel
+  point (C-level #1), so the kneeboard/sim fuel reads correctly past the tanker. Fly a
+  **short** sortie (expect no tanker), a **long-egress** sortie (expect post-vul), and a
+  **very deep** target (expect pre-vul), in a faction with a compatible tanker.
+- **Pass:** Short sorties launch with no tanker tasking; deep sorties get exactly one
+  refuel waypoint on the correct side; the flight reaches the tanker with fuel to spare
+  and completes the sortie; kneeboard bingo/joker look sane after tanking.
+- **Fail signature:** Flights that clearly need gas get none (or vice versa); pre-vul
+  detour backtracks awkwardly; a flight flames out before the tanker. The burn estimate
+  is an approximate planning heuristic (straight-line legs, fixed climb allowance) and
+  the **fuel unit handling (kg `max_fuel` vs lb consumption) couldn't be validated in
+  CI** — tune `_refuel_tasking` in `game/ato/flightplans/formationattack.py` if the
+  pre/post/none split looks off.
+
 ---
 
 ## D. Loss accounting (upstream-core)

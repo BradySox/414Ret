@@ -171,6 +171,16 @@ const injectedRtkApi = api.injectEndpoints({
         method: "POST",
       }),
     }),
+    openPlaceUnitGroupDialog: build.mutation<
+      OpenPlaceUnitGroupDialogApiResponse,
+      OpenPlaceUnitGroupDialogApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/qt/place-unit-group`,
+        method: "POST",
+        body: queryArg.body,
+      }),
+    }),
     listSupplyRoutes: build.query<
       ListSupplyRoutesApiResponse,
       ListSupplyRoutesApiArg
@@ -349,6 +359,11 @@ export type SelectFlightApiResponse =
   /** status 200 Successful Response */ any;
 export type SelectFlightApiArg = {
   flightId: string;
+};
+export type OpenPlaceUnitGroupDialogApiResponse =
+  /** status 200 Successful Response */ any;
+export type OpenPlaceUnitGroupDialogApiArg = {
+  body: { lat: number; lng: number };
 };
 export type ListSupplyRoutesApiResponse =
   /** status 200 Successful Response */ SupplyRoute[];

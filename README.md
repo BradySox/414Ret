@@ -30,6 +30,12 @@ and selected later upstream fixes.
 - **TARPS** is a real player task for F-14s, supported by the **TARS** film-and-debrief
   system. What the aircraft photographs is carried back into the campaign as confirmed
   intelligence.
+- When you need the ground truth anyway — debugging a campaign, planning the opposing side,
+  or just checking the real laydown — the **Reveal Fog** toolbar button (also **View → Reveal
+  fog of war**, or Ctrl+Shift+R) turns the fog off and shows the true picture: full enemy composition, threat rings, and
+  otherwise-hidden command posts, on the map and in the intel dialogs. It is a view toggle
+  only — it never changes the campaign and is never saved, so every time you load a game it
+  starts back off.
 - An optional **Approximate target area** mode removes perfect player coordinates and
   offsets steerpoints, making visual acquisition, talk-ons, and reconnaissance matter.
   Against mobile SAMs, DEAD and SEAD flights get a single fuzzed target-area waypoint

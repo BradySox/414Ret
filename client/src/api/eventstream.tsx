@@ -58,6 +58,7 @@ interface GameUpdateEvents {
   reset_on_map_center: LatLng | null;
   game_unloaded: boolean;
   new_turn: boolean;
+  reload_map_data: boolean;
 }
 
 export const handleStreamedEvents = (
@@ -151,6 +152,12 @@ export const handleStreamedEvents = (
   }
 
   if (events.new_turn) {
+    reloadGameState(dispatch, true);
+  }
+
+  // A view-only toggle (e.g. the fog-of-war overview) changed what the map
+  // should render. Re-pull full game state without recentering the view.
+  if (events.reload_map_data) {
     reloadGameState(dispatch, true);
   }
 };

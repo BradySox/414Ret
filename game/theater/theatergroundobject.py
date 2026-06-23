@@ -21,6 +21,7 @@ from game.sidc import (
     SymbolIdentificationCode,
 )
 from game.theater.presetlocation import PresetLocation
+from .fogofwar import fog_revealed
 from .missiontarget import MissionTarget
 from .player import Player
 from ..data.groups import GroupTask
@@ -120,9 +121,10 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         ``viewer=None`` (omniscient — AI, planner, threat math) and friendly
         viewers always know. An enemy viewer only knows once the site has been
         discovered (attacked / scouted / destroyed). The whole feature can be
-        switched off via the ``recon_intel_fog`` campaign setting.
+        switched off via the ``recon_intel_fog`` campaign setting, and the
+        ``fog_revealed()`` overview forces full knowledge for any viewer.
         """
-        if viewer is None or self.is_friendly(viewer):
+        if viewer is None or fog_revealed() or self.is_friendly(viewer):
             return True
         settings = self.control_point.coalition.game.settings
         # SCAR campaign engine: an enemy command post is known only once revealed
@@ -144,9 +146,10 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         site discovered by strike/scout/TARPS). After that it shows fully, with
         exact coordinates (SME 2026-06-18). ``viewer=None`` (omniscient: AI /
         planner / threat math) and friendly viewers see everything, so AI planning
-        is never fogged.
+        is never fogged. The ``fog_revealed()`` overview likewise un-hides every
+        site for any viewer.
         """
-        if viewer is None or self.is_friendly(viewer):
+        if viewer is None or fog_revealed() or self.is_friendly(viewer):
             return False
         settings = self.control_point.coalition.game.settings
         if self.category == "commandcenter" and settings.scar_command_post_intel:

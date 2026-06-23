@@ -1,0 +1,83 @@
+name: Lua Lint
+
+# Validates the DCS plugin Lua that drives all runtime 414th behavior (EW, ISR,
+# TIC, SCAR, TARS, Flight Control, IADS). DCS runs Lua 5.1 (LuaJIT) and a plugin
+# whose script fails to parse/load dies SILENTLY in-mission — the feature just
+# never starts. CI never exercised Lua before, so those failures only surfaced
+# in-game. This workflow closes that gap.
+#
+# Intentionally DECOUPLED from 414th-latest.yml: this never gates the rolling
+# release. The syntax-gate job is blocking (a real parse error is a real bug);
+# luacheck is advisory (continue-on-error) so warning noise can't wedge anyone.
+
+on:
+  push:
+    paths:
+      - "resources/plugins/**/*.lua"
+      - ".luacheckrc"
+      - ".github/workflows/lua-lint.yml"
+  pull_request:
+    paths:
+      - "resources/plugins/**/*.lua"
+      - ".luacheckrc"
+      - ".github/workflows/lua-lint.yml"
+
+jobs:
+  syntax-gate:
+    name: Lua 5.1 syntax gate (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1
+
+      - name: Parse every plugin Lua file (luac5.1 -p)
+        run: |
+          set -uo pipefail
+          status=0
+          count=0
+          while IFS= read -r -d '' f; do
+            count=$((count + 1))
+            if ! out=$(luac5.1 -p "$f" 2>&1); then
+              echo "::error file=$f::$out"
+              status=1
+            fi
+          done < <(find resources/plugins -name '*.lua' -print0)
+          echo "Parsed $count plugin Lua file(s) under Lua 5.1."
+          if [ "$status" -ne 0 ]; then
+            echo "::error::One or more plugin Lua files failed to parse under Lua 5.1."
+            echo "DCS runs Lua 5.1 (LuaJIT); a parse failure here means the script"
+            echo "would also fail to load in-mission — a silent plugin-init death."
+          fi
+          exit $status
+
+  luacheck:
+    name: luacheck (414th-authored, advisory)
+    runs-on: ubuntu-latest
+    # Advisory only: warnings inform but never block. The .luacheckrc ignore
+    # list keeps this low-noise; tighten it over time and promote to blocking
+    # once the 414th scripts run clean.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 luarocks
+          sudo luarocks install luacheck
+
+      - name: Run luacheck on 414th-authored plugins
+        run: |
+          luacheck \
+            resources/plugins/c130j \
+            "resources/plugins/ewrj/EW script 2.1.lua" \
+            resources/plugins/ewrj/ewrj_config.lua \
+            resources/plugins/civilian_traffic \
+            resources/plugins/tic/tic_414_init.lua \
+            resources/plugins/tars/tars_414_init.lua \
+            resources/plugins/scar/scar_414_init.lua \
+            resources/plugins/flightcontrol/flightcontrol_414_init.lua

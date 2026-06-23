@@ -331,6 +331,7 @@ class FlightGroupConfigurator:
                     start_time=self.flight.flight_plan.patrol_start_time,
                     end_time=self.flight.flight_plan.patrol_end_time,
                     blue=self.flight.departure.captured,
+                    aircraft_type=self.flight.unit_type,
                 )
             )
 

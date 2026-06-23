@@ -118,6 +118,9 @@ class InFlight(FlightState, ABC):
             consumption = self.flight.flight_plan.fuel_consumption_between_points(a, b)
             assert consumption is not None
             initial_fuel -= consumption * LBS_TO_KG
+            if b.waypoint_type is FlightWaypointType.REFUEL:
+                # Reaching a tanker tops the flight back up to full internal fuel.
+                initial_fuel = self.flight.unit_type.max_fuel
         return initial_fuel
 
     def next_waypoint_state(self) -> FlightState:

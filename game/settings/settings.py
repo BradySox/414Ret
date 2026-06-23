@@ -349,6 +349,32 @@ class Settings:
             "divided by desired on-station time."
         ),
     )
+    max_simultaneous_recovery_tankers: int = bounded_int_option(
+        "Max simultaneous carrier recovery tankers",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=2,
+        min=1,
+        max=8,
+        detail=(
+            "Caps how many recovery (RECOVERY task) tankers may be on-station over a "
+            "carrier at the same time. Extra recovery tankers are queued to start once "
+            "an earlier one departs."
+        ),
+    )
+    max_carrier_simultaneous_barcaps: int = bounded_int_option(
+        "Max simultaneous carrier BARCAP waves",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=2,
+        min=1,
+        max=8,
+        detail=(
+            "How many BARCAP waves a carrier stacks on-station simultaneously before "
+            "queueing the next wave to launch after the current ones recover. Land "
+            "bases use overlapping waves instead (see BARCAP wave overlap)."
+        ),
+    )
     autoplan_tankers_for_strike: bool = boolean_option(
         "Auto-planner plans refueling flights for Strike packages",
         page=CAMPAIGN_DOCTRINE_PAGE,

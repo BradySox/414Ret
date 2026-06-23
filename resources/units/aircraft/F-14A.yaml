@@ -31,3 +31,6 @@ tasks:
   Fighter sweep: 615
   TARCAP: 630
   TARPS: 700
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

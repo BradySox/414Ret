@@ -19,3 +19,6 @@ tasks:
   Anti-ship: 815
   OCA/Runway: 575
   Strike: 605
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

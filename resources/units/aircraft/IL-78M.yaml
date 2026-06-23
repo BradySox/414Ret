@@ -9,3 +9,7 @@ variants:
   IL-78M: null
 tasks:
   Refueling: 30
+
+# Air-to-air refueling provided as a tanker.
+tanker_refuel_types:
+  - probe

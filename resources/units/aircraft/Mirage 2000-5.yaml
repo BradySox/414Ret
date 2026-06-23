@@ -20,3 +20,6 @@ tasks:
   Escort: 495
   Fighter sweep: 495
   TARCAP: 515
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

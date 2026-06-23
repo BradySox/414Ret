@@ -159,7 +159,8 @@ class IpSolver(WaypointSolver):
         self.add_strategy(
             SafeBackTrackingIpStrategy(departure, target, doctrine, threat_zones)
         )
-        # TODO: The cases that require this are not covered by any tests.
+        # Covered by test_unsafe_back_tracking_strategy_is_the_only_solver_for_close
+        # _threatened_target in tests/flightplan/test_ipsolver.py.
         self.add_strategy(
             UnsafeBackTrackingIpStrategy(departure, target, doctrine, threat_zones)
         )

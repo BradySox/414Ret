@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Iterator, Optional, Sequence, TYPE_CHECKING, Any
 
 from game.ato.closestairfields import ObjectiveDistanceCache
-from game.dcs.aircrafttype import AircraftType
+from game.dcs.aircrafttype import AircraftType, AirRefuelType
 from .squadrondefloader import SquadronDefLoader
 from ..campaignloader.squadrondefgenerator import SquadronDefGenerator
 from ..factions.faction import Faction
@@ -67,6 +67,7 @@ class AirWing:
         this_turn: bool,
         preferred_type: Optional[AircraftType] = None,
         ignore_range: bool = False,
+        refuel_methods: Optional[frozenset[AirRefuelType]] = None,
     ) -> list[Squadron]:
         airfield_cache = ObjectiveDistanceCache.get_closest_airfields(location)
         best_aircraft = AircraftType.priority_list_for_task(task)
@@ -78,8 +79,11 @@ class AirWing:
             squadrons = [
                 s
                 for s in control_point.squadrons
-                if not preferred_type
-                or s.aircraft.variant_id == preferred_type.variant_id
+                if (
+                    not preferred_type
+                    or s.aircraft.variant_id == preferred_type.variant_id
+                )
+                and self._tanker_serves_methods(s.aircraft, refuel_methods)
             ]
             for squadron in squadrons:
                 if squadron.can_auto_assign_mission(
@@ -110,6 +114,22 @@ class AirWing:
             ),
         )
 
+    @staticmethod
+    def _tanker_serves_methods(
+        aircraft: AircraftType, refuel_methods: Optional[frozenset[AirRefuelType]]
+    ) -> bool:
+        """Whether a candidate squadron's aircraft may be planned given the refueling
+        methods the package's receivers need.
+
+        Permissive when no methods are required (any non-refueling planning, or a
+        package whose receivers are untagged) or when the tanker advertises no methods
+        of its own. Otherwise the tanker must provide every method the receivers need,
+        so a boom-only tanker is not planned for a probe-only package and vice versa.
+        """
+        if not refuel_methods or not aircraft.tanker_refuel_types:
+            return True
+        return refuel_methods <= aircraft.tanker_refuel_types
+
     def best_squadron_for(
         self,
         location: MissionTarget,
@@ -119,9 +139,17 @@ class AirWing:
         this_turn: bool,
         preferred_type: Optional[AircraftType] = None,
         ignore_range: bool = False,
+        refuel_methods: Optional[frozenset[AirRefuelType]] = None,
     ) -> Optional[Squadron]:
         for squadron in self.best_squadrons_for(
-            location, task, size, heli, this_turn, preferred_type, ignore_range
+            location,
+            task,
+            size,
+            heli,
+            this_turn,
+            preferred_type,
+            ignore_range,
+            refuel_methods,
         ):
             return squadron
         return None

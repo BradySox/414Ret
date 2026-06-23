@@ -22,3 +22,6 @@ tasks:
   OCA/Aircraft: 620
   OCA/Runway: 510
   Strike: 535
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

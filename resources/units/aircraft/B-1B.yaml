@@ -23,3 +23,6 @@ tasks:
   OCA/Aircraft: 600
   OCA/Runway: 705
   Strike: 725
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: boom

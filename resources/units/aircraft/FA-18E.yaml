@@ -77,3 +77,6 @@ weapon_injections:  # AGM-154B only works for AI
     - "{BRU57_2*AGM-154B}"
 
 has_built_in_ecm: true
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

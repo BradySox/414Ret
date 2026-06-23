@@ -69,3 +69,6 @@ tasks:
   TARCAP: 555
 
 has_built_in_ecm: true
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

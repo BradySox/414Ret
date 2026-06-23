@@ -83,8 +83,14 @@ class CommonRadioChannelAllocator(RadioChannelAllocator):
             frequencies.append(freq)
         if flight.arrival != flight.departure and flight.arrival.atc is not None:
             frequencies.append(flight.arrival.atc)
-        # TODO: Skip incompatible tankers.
-        frequencies.extend(tanker.freq for tanker in mission_data.tankers)
+        # Only preset tankers this flight can actually take fuel from (boom vs probe).
+        # can_refuel_from is permissive for untagged airframes, so a flight whose
+        # refueling method is unspecified still gets every tanker (legacy behavior).
+        frequencies.extend(
+            tanker.freq
+            for tanker in mission_data.tankers
+            if flight.aircraft_type.can_refuel_from(tanker.aircraft_type)
+        )
         if flight.divert is not None and flight.divert.atc is not None:
             frequencies.append(flight.divert.atc)
         return frequencies

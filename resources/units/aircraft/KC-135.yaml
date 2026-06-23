@@ -17,3 +17,7 @@ variants:
   KC-135 Stratotanker: {}
 tasks:
   Refueling: 50
+
+# Air-to-air refueling provided as a tanker.
+tanker_refuel_types:
+  - boom

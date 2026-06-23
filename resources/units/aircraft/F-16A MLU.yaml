@@ -16,3 +16,6 @@ tasks:
   Strike: 605
   TARCAP: 535
   SEAD: 150
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: boom

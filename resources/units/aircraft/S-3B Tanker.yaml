@@ -27,3 +27,7 @@ variants:
 tasks:
   Refueling: 0
   Recovery: 0
+
+# Air-to-air refueling provided as a tanker.
+tanker_refuel_types:
+  - probe

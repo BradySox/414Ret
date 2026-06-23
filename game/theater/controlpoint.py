@@ -1420,7 +1420,9 @@ class NavalControlPoint(
                 FlightType.RECOVERY,
                 FlightType.REFUELING,
                 FlightType.ESCORT,
-                # TODO: Buddy tanking for the A-4?
+                # Carrier buddy tanking is handled by dedicated tanker types (the A-6E
+                # Tanker and S-3B Tanker variants) via REFUELING above; the A-4 is a
+                # probe receiver, not a tanker, so it needs no special case here.
                 # TODO: Rescue chopper?
                 # TODO: Inter-ship logistics?
             ]

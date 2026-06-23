@@ -4,3 +4,6 @@ variants:
   Su-24MR: null
 tasks:
   BARCAP: 0
+
+# Air-to-air refueling method (receiver).
+air_refuel_type: probe

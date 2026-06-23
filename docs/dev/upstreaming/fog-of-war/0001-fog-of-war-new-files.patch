@@ -1,0 +1,233 @@
+diff --git a/game/server/fogofwar/__init__.py b/game/server/fogofwar/__init__.py
+new file mode 100644
+index 0000000..3a27ef1
+--- /dev/null
++++ b/game/server/fogofwar/__init__.py
+@@ -0,0 +1 @@
++from .routes import router
+diff --git a/game/server/fogofwar/routes.py b/game/server/fogofwar/routes.py
+new file mode 100644
+index 0000000..0ebeb90
+--- /dev/null
++++ b/game/server/fogofwar/routes.py
+@@ -0,0 +1,31 @@
++from fastapi import APIRouter, status
++from starlette.responses import Response
++
++from game.theater.fogofwar import fog_revealed, set_fog_revealed
++
++router: APIRouter = APIRouter(prefix="/fog-of-war")
++
++
++@router.get("/reveal", operation_id="get_fog_of_war_reveal", response_model=bool)
++def get_reveal() -> bool:
++    """Whether the fog-of-war overview is currently on."""
++    return fog_revealed()
++
++
++@router.put(
++    "/reveal",
++    operation_id="set_fog_of_war_reveal",
++    status_code=status.HTTP_204_NO_CONTENT,
++    response_class=Response,
++)
++def set_reveal(revealed: bool) -> None:
++    """Toggle the fog-of-war overview ("show the real picture").
++
++    Runtime-only view state; never persisted. After flipping this the client
++    re-pulls full game state, so the map redraws with (or without) the fogged
++    enemy composition, threat/detection rings, and hidden command posts. The
++    flag short-circuits the three fog leaves (``alive_for`` / ``known_for`` /
++    ``hidden_on_player_map``) to ground truth for any viewer; AI/planner/threat
++    math pass ``viewer=None`` and are unaffected.
++    """
++    set_fog_revealed(revealed)
+diff --git a/game/theater/fogofwar.py b/game/theater/fogofwar.py
+new file mode 100644
+index 0000000..ec24d85
+--- /dev/null
++++ b/game/theater/fogofwar.py
+@@ -0,0 +1,34 @@
++"""Transient "overview" reveal toggle for the recon fog-of-war.
++
++The 414th recon fog hides enemy composition, threat/detection rings, and SCAR
++command posts from the human side until they are scouted (see the viewer-aware
++visibility layer in ``theatergroup``/``theatergroundobject``). This module adds a
++single runtime switch that, while enabled, forces every player-facing fog
++accessor to resolve to ground truth — the "show the real picture" overview.
++
++It is deliberately a process-global runtime flag, **never persisted**: loading a
++save always starts with the fog intact, so a god-view can't be baked into a
++campaign or shared by accident. The flag is flipped from the main window's
++"Reveal fog of war" view action; the three fog chokepoints (``alive_for``,
++``known_for``, ``hidden_on_player_map``) consult ``fog_revealed()`` and short to
++truth when it is on. AI/planner/threat math already pass ``viewer=None`` and are
++therefore unaffected either way.
++
++This module intentionally has no imports so it can be pulled in from anywhere in
++the theater layer without risk of an import cycle.
++"""
++
++from __future__ import annotations
++
++_revealed: bool = False
++
++
++def fog_revealed() -> bool:
++    """Whether the overview is on (player-facing fog forced to ground truth)."""
++    return _revealed
++
++
++def set_fog_revealed(value: bool) -> None:
++    """Enable/disable the overview. Runtime-only; never written to a save."""
++    global _revealed
++    _revealed = bool(value)
+diff --git a/tests/server/test_fogofwar_route.py b/tests/server/test_fogofwar_route.py
+new file mode 100644
+index 0000000..7f1686c
+--- /dev/null
++++ b/tests/server/test_fogofwar_route.py
+@@ -0,0 +1,33 @@
++"""The /fog-of-war/reveal endpoint flips the shared, transient overview flag.
++
++The flag is process-global, so each test restores it to off afterwards to keep
++the fog assertions in the rest of the suite deterministic.
++"""
++
++from typing import Iterator
++
++import pytest
++
++from game.server.fogofwar.routes import get_reveal, set_reveal
++from game.theater.fogofwar import fog_revealed, set_fog_revealed
++
++
++@pytest.fixture(autouse=True)
++def _restore_flag() -> Iterator[None]:
++    yield
++    set_fog_revealed(False)
++
++
++def test_default_is_off() -> None:
++    assert fog_revealed() is False
++    assert get_reveal() is False
++
++
++def test_set_reveal_flips_the_shared_flag() -> None:
++    set_reveal(True)
++    assert fog_revealed() is True
++    assert get_reveal() is True
++
++    set_reveal(False)
++    assert fog_revealed() is False
++    assert get_reveal() is False
+diff --git a/tests/test_recon_intel_fog.py b/tests/test_recon_intel_fog.py
+new file mode 100644
+index 0000000..3c3a4e5
+--- /dev/null
++++ b/tests/test_recon_intel_fog.py
+@@ -0,0 +1,104 @@
++"""Recon intel-fog: enemy site composition/rings hidden until discovered.
++
++Covers the discovery gate (``known_for``), the omniscient/setting escape hatches,
++and the save-migration default. The end-to-end reveal trigger (a strike flips a
++site to discovered) is asserted in ``test_bda_tarps_reveal.py`` where the
++mission-results fixtures already live.
++"""
++
++from __future__ import annotations
++
++from types import SimpleNamespace
++from typing import Any, cast
++
++from dcs.mapping import Point
++
++from game.theater import Player
++from game.theater.controlpoint import OffMapSpawn
++from game.theater.presetlocation import PresetLocation
++from game.theater.theatergroundobject import SamGroundObject
++from game.utils import Heading
++
++
++class _EnemySam(SamGroundObject):
++    def is_friendly(self, to_player: Player) -> bool:
++        return False
++
++
++def _enemy_sam(*, fog: bool = True) -> SamGroundObject:
++    location = PresetLocation(
++        name="target",
++        position=Point(0, 0, None),  # type: ignore[arg-type]
++        heading=Heading(0),
++    )
++    control_point = OffMapSpawn(
++        name="enemy-cp",
++        position=Point(0, 0, None),  # type: ignore[arg-type]
++        theater=None,  # type: ignore[arg-type]
++        starts_blue=Player.RED,
++    )
++    tgo = _EnemySam(
++        name="Enemy SAM",
++        location=location,
++        control_point=control_point,
++        task=None,
++    )
++    # known_for() reaches control_point.coalition.game.settings.recon_intel_fog.
++    tgo.control_point = cast(
++        Any,
++        SimpleNamespace(
++            coalition=SimpleNamespace(
++                game=SimpleNamespace(settings=SimpleNamespace(recon_intel_fog=fog))
++            )
++        ),
++    )
++    return tgo
++
++
++def test_enemy_site_unknown_until_discovered() -> None:
++    tgo = _enemy_sam()
++    # New enemy sites start unknown to the player...
++    assert tgo.discovered_by_player is False
++    assert tgo.known_for(Player.BLUE) is False
++    # ...but the omniscient view (AI planner / threat math) always sees truth.
++    assert tgo.known_for(None) is True
++    # Once discovered (attacked/scouted/destroyed), it is known and stays known.
++    tgo.discovered_by_player = True
++    assert tgo.known_for(Player.BLUE) is True
++
++
++def test_setting_off_reveals_everything() -> None:
++    tgo = _enemy_sam(fog=False)
++    assert tgo.discovered_by_player is False
++    # With the master toggle off, nothing is fogged even when undiscovered.
++    assert tgo.known_for(Player.BLUE) is True
++
++
++def test_setting_defaults_on() -> None:
++    from game.settings import Settings
++
++    assert Settings().recon_intel_fog is True
++
++
++def test_air_defense_band_from_role() -> None:
++    from game.data.groups import GroupTask
++
++    tgo = _enemy_sam()
++    # Range band comes from the designated role, so it is available even unscouted.
++    assert tgo.air_defense_band is None  # task=None in the fixture
++    tgo.task = GroupTask.LORAD
++    assert tgo.air_defense_band == "Long-range SAM"
++    tgo.task = GroupTask.MERAD
++    assert tgo.air_defense_band == "Medium-range SAM"
++    tgo.task = GroupTask.FACTORY  # non air-defense role
++    assert tgo.air_defense_band is None
++
++
++def test_old_saves_migrate_to_discovered() -> None:
++    tgo = _enemy_sam()
++    state = dict(tgo.__dict__)
++    state.pop("discovered_by_player", None)  # simulate a pre-feature save
++    state.pop("_threat_poly", None)
++    tgo.__setstate__(state)
++    # An in-progress campaign keeps everything visible rather than blanking.
++    assert tgo.discovered_by_player is True

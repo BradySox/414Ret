@@ -37,7 +37,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 5 | SOF C-130 runway-start fallback | 🟡 NEAR | Medium (general spawner fix) | E |
 | 6 | Negative-start-packages takeoff-time check | 🟢 READY | Low/Medium (UI false-warn) | n/a |
 | 7 | AAQ-33 targeting-pod era restriction | 🔵 DONE | — | — |
-| 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🟠 CARE | Medium (player-facing; needs UI carve) | — |
+| 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🟢 READY | Medium (player-facing) — carved + verified on dev | — |
 
 ---
 
@@ -119,7 +119,11 @@ unvalidated "fix" is not something to ask upstream to take.
 - Already open as upstream **#786** (`codex/fix-aaq33-era-restriction`). No
   action here; listed so it isn't re-carved.
 
-### 8. Recon fog-of-war — 🟠 CARE (re-scoped 2026-06-23)
+### 8. Recon fog-of-war — 🟢 READY (carved + verified 2026-06-23)
+- **Carved & verified:** `fog-of-war-complete.patch` (17 files, +473/-14) applies
+  cleanly on upstream `dev` `a31357b` and passes `black`, `mypy game tests` (439
+  files), and 9 fog `pytest`s in a clean upstream checkout. Ready to `git am` + push
+  from a checkout with creds.
 - **What:** the recon intel-fog (enemy site composition + threat/detection rings
   hidden until the site is attacked/scouted/destroyed) plus the transient
   "Reveal fog of war" overview toggle. Carved as a **2-PR stack**: PR #1 = the fog

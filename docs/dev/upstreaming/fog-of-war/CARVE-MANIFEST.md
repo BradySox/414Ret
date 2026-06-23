@@ -1,5 +1,22 @@
 # Fog-of-war carve manifest (PR #1: recon intel-fog + overview toggle)
 
+> **Superseded by `fog-of-war-complete.patch`** — the carve was completed and verified
+> against upstream `dev` (`a31357b`); apply that patch with `git am` instead of hand-
+> applying these hunks. This manifest is kept as the *reasoning record* (generic vs
+> SCAR-glue vs PR#2). As-built deltas from the notes below:
+> - The **aggregate enemy threat-zone overlay** is also fogged, at serialization
+>   (`game/server/mapzones/models.py` `ThreatZoneContainerJs.for_game` now recomputes
+>   the RED zone with `ThreatZones.for_faction(..., viewer=Player.BLUE)`); the cached
+>   ground-truth zone still feeds the navmesh/AI. This is cleaner than threading a
+>   viewer through every consumer.
+> - The **client toggle** ships as `client/src/components/airdefenserangelayer/
+>   RevealFogToggle.tsx`, a `LayersControl.Overlay` mirroring upstream's own
+>   `EmitterHighlightToggle` (add/remove → `PUT /fog-of-war/reveal` → reload), rather
+>   than the fork's custom panel.
+> - `QBuildingInfo` was left untouched (B10) and the non-fog `air_defense_band` test was
+>   dropped; `tests/test_recon_reveal.py` was added to cover reveal-on-engage.
+
+
 Exact per-file changes to reproduce **PR #1** on a clean
 `dcs-retribution/dcs-retribution` `dev` checkout (the fork's working clone lives at
 `..\retribution-pr`). The fork's `main` already contains all of this *plus* the

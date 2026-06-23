@@ -6,7 +6,6 @@ import logging
 from collections import defaultdict
 from typing import Optional
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
@@ -22,9 +21,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from game.armedforces.armedforces import ArmedForces
 from game.armedforces.forcegroup import ForceGroup
 from game.data.groups import GroupRole, GroupTask
+from game.layout import LAYOUTS
 from game.layout.layout import LayoutException, TgoLayout
 from game.server import EventStream
 from game.sim import GameUpdateEvents
@@ -38,36 +37,52 @@ from qt_ui.windows.groundobject.QGroundObjectBuyMenu import (
 
 logger = logging.getLogger(__name__)
 
-# Category entries shown in the dropdown:  (label, role_or_tasks)
-# role_or_tasks is a GroupRole (for broad categories) or a list[GroupTask] (narrow).
-_CATEGORIES: list[tuple[str, GroupRole | list[GroupTask]]] = [
-    ("Ground Force (Armor / Infantry)", GroupRole.GROUND_FORCE),
+# Category entries: (display label, set of matching GroupTasks).
+# The dialog enumerates LAYOUTS directly for each category so every named
+# layout usable by the faction is available — not just what the faction
+# happens to auto-spawn via ArmedForces.
+_CATEGORIES: list[tuple[str, set[GroupTask]]] = [
     (
         "Air Defense — SAM / AAA",
-        [
+        {
             GroupTask.LORAD,
             GroupTask.MERAD,
             GroupTask.SHORAD,
             GroupTask.AAA,
             GroupTask.POINT_DEFENSE,
-        ],
+        },
     ),
-    ("Air Defense — EWR", [GroupTask.EARLY_WARNING_RADAR]),
-    ("Navy", GroupRole.NAVAL),
-    ("Missile / Coastal", GroupRole.DEFENSES),
+    ("Air Defense — EWR", {GroupTask.EARLY_WARNING_RADAR}),
+    ("Coastal / Missile Defense", {GroupTask.COASTAL, GroupTask.MISSILE}),
+    ("Ground Force (Armor / Infantry)", set(GroupRole.GROUND_FORCE.tasks)),
+    ("Navy", set(GroupRole.NAVAL.tasks)),
 ]
 
 
-def _groups_for_category(
-    armed_forces: ArmedForces,
-    category_data: GroupRole | list[GroupTask],
-) -> list[ForceGroup]:
-    if isinstance(category_data, GroupRole):
-        tasks = category_data.tasks
-    else:
-        tasks = category_data
-    groups = armed_forces.groups_for_tasks(tasks)
-    return groups
+def _layouts_for_category(
+    faction,
+    tasks: set[GroupTask],
+) -> list[tuple[str, ForceGroup, TgoLayout]]:
+    """Return (display_name, ForceGroup, TgoLayout) for every layout that:
+    - has at least one matching task
+    - is usable by the faction (has accessible units for all non-optional groups)
+    Sorted alphabetically by display name.
+    """
+    results: list[tuple[str, ForceGroup, TgoLayout]] = []
+    for layout in LAYOUTS.layouts:
+        if not any(t in tasks for t in layout.tasks):
+            continue
+        if not layout.usable_by_faction(faction):
+            continue
+        try:
+            fg = ForceGroup.for_layout(layout, faction)
+        except Exception:
+            continue
+        if not fg.units and not fg.statics:
+            continue
+        results.append((layout.name, fg, layout))
+    results.sort(key=lambda x: x[0])
+    return results
 
 
 class QPlaceUnitGroupDialog(QDialog):
@@ -88,10 +103,9 @@ class QPlaceUnitGroupDialog(QDialog):
         assert self.game is not None
 
         self.setWindowTitle("Place Unit Group")
-        self.setMinimumWidth(420)
+        self.setMinimumWidth(440)
 
         self._layout_model: Optional[QTgoLayout] = None
-        self._armed_forces: Optional[ArmedForces] = None
 
         root = QVBoxLayout()
         self.setLayout(root)
@@ -125,16 +139,11 @@ class QPlaceUnitGroupDialog(QDialog):
             self._category_combo.addItem(label)
         root.addWidget(self._category_combo)
 
-        # --- Force Group ---
-        root.addWidget(QLabel("Group type:"))
-        self._fg_combo = QComboBox()
-        self._fg_combo.setMinimumWidth(300)
-        root.addWidget(self._fg_combo)
-
-        # --- Layout ---
-        root.addWidget(QLabel("Layout:"))
-        self._layout_combo = QComboBox()
-        root.addWidget(self._layout_combo)
+        # --- Unit type (layout) — single picker replacing the old Force Group + Layout cascade ---
+        root.addWidget(QLabel("Unit type:"))
+        self._unit_type_combo = QComboBox()
+        self._unit_type_combo.setMinimumWidth(320)
+        root.addWidget(self._unit_type_combo)
 
         # --- Unit rows (scrollable) ---
         self._units_box = QGroupBox("Units")
@@ -143,7 +152,7 @@ class QPlaceUnitGroupDialog(QDialog):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(self._units_box)
-        scroll.setMinimumHeight(150)
+        scroll.setMinimumHeight(160)
         root.addWidget(scroll)
 
         # --- Deploy timing ---
@@ -182,8 +191,7 @@ class QPlaceUnitGroupDialog(QDialog):
         # Wire change signals
         self._blue_radio.toggled.connect(self._on_coalition_changed)
         self._category_combo.currentIndexChanged.connect(self._on_category_changed)
-        self._fg_combo.currentIndexChanged.connect(self._on_fg_changed)
-        self._layout_combo.currentIndexChanged.connect(self._on_layout_changed)
+        self._unit_type_combo.currentIndexChanged.connect(self._on_unit_type_changed)
 
         # Populate initial state
         self._on_coalition_changed()
@@ -196,17 +204,16 @@ class QPlaceUnitGroupDialog(QDialog):
     def _coalition(self):
         return self.game.blue if self._blue_radio.isChecked() else self.game.red
 
-    def _current_category_data(self) -> GroupRole | list[GroupTask] | None:
+    def _current_tasks(self) -> set[GroupTask]:
         idx = self._category_combo.currentIndex()
         if idx < 0:
-            return None
+            return set()
         return _CATEGORIES[idx][1]
 
-    def _current_force_group(self) -> Optional[ForceGroup]:
-        return self._fg_combo.currentData()
-
-    def _current_layout(self) -> Optional[TgoLayout]:
-        return self._layout_combo.currentData()
+    def _current_fg_and_layout(
+        self,
+    ) -> Optional[tuple[ForceGroup, TgoLayout]]:
+        return self._unit_type_combo.currentData()
 
     def _is_free(self) -> bool:
         return self.game.settings.enable_free_unit_placement
@@ -216,44 +223,36 @@ class QPlaceUnitGroupDialog(QDialog):
     # ------------------------------------------------------------------
 
     def _on_coalition_changed(self) -> None:
-        self._armed_forces = ArmedForces(self._coalition.faction)
         self._on_category_changed()
 
     def _on_category_changed(self) -> None:
-        cat = self._current_category_data()
-        self._fg_combo.blockSignals(True)
-        self._fg_combo.clear()
-        if cat is not None and self._armed_forces is not None:
-            for fg in _groups_for_category(self._armed_forces, cat):
-                self._fg_combo.addItem(fg.name, userData=fg)
-        self._fg_combo.blockSignals(False)
-        self._on_fg_changed()
+        tasks = self._current_tasks()
+        faction = self._coalition.faction
+        entries = _layouts_for_category(faction, tasks)
 
-    def _on_fg_changed(self) -> None:
-        fg = self._current_force_group()
-        self._layout_combo.blockSignals(True)
-        self._layout_combo.clear()
-        if fg is not None:
-            faction = self._coalition.faction
-            for layout in fg.layouts:
-                if layout.usable_by_faction(faction):
-                    self._layout_combo.addItem(layout.name, userData=layout)
-        self._layout_combo.blockSignals(False)
-        self._on_layout_changed()
+        self._unit_type_combo.blockSignals(True)
+        self._unit_type_combo.clear()
+        if entries:
+            for name, fg, layout in entries:
+                self._unit_type_combo.addItem(name, userData=(fg, layout))
+        else:
+            self._unit_type_combo.addItem("(no compatible units for this faction)")
+        self._unit_type_combo.blockSignals(False)
+        self._on_unit_type_changed()
 
-    def _on_layout_changed(self) -> None:
+    def _on_unit_type_changed(self) -> None:
         # Clear existing unit rows
         while self._units_layout.count():
             item = self._units_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        fg = self._current_force_group()
-        layout = self._current_layout()
-        if fg is None or layout is None:
+        pair = self._current_fg_and_layout()
+        if pair is None:
             self._update_cost()
             return
 
+        fg, layout = pair
         self._layout_model = QTgoLayout(layout=layout, force_group=fg)
         self._layout_model.groups = defaultdict(list)
 
@@ -274,11 +273,7 @@ class QPlaceUnitGroupDialog(QDialog):
         self._update_cost()
 
     def _update_cost(self) -> None:
-        if self._layout_model is None:
-            cost = 0
-        else:
-            cost = self._layout_model.price
-
+        cost = self._layout_model.price if self._layout_model is not None else 0
         budget = self._coalition.budget
         free = self._is_free()
 
@@ -288,26 +283,23 @@ class QPlaceUnitGroupDialog(QDialog):
             self._cost_label.setText(f"Cost: ${cost}M | Budget: ${budget:.0f}M")
 
         ok_btn = self._buttons.button(QDialogButtonBox.StandardButton.Ok)
-        ok_btn.setEnabled(free or cost <= budget or self.game.turn == 0)
+        ok_btn.setEnabled(
+            self._current_fg_and_layout() is not None
+            and (free or cost <= budget or self.game.turn == 0)
+        )
 
     # ------------------------------------------------------------------
     # Confirm
     # ------------------------------------------------------------------
 
     def _on_confirm(self) -> None:
-        fg = self._current_force_group()
-        layout = self._current_layout()
-        if fg is None or layout is None:
-            QMessageBox.warning(
-                self, "No selection", "Please select a group type and layout."
-            )
+        pair = self._current_fg_and_layout()
+        if pair is None or self._layout_model is None:
+            QMessageBox.warning(self, "No selection", "Please select a unit type.")
             return
 
-        if self._layout_model is None:
-            QMessageBox.warning(self, "No units", "No units configured.")
-            return
+        fg, layout = pair
 
-        # Build PlacementSelection list from active rows
         selections: list[PlacementSelection] = []
         for group_name, row_list in self._layout_model.groups.items():
             for row in row_list:
@@ -358,7 +350,6 @@ class QPlaceUnitGroupDialog(QDialog):
                 respawn=respawn,
             )
         except ValueError as exc:
-            # Refund the budget deduction we just made
             if not free and self.game.turn > 0:
                 coalition.budget += cost
             QMessageBox.warning(self, "Placement error", str(exc))

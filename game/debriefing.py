@@ -146,6 +146,12 @@ class StateData:
     #: persisted next-turn CSAR objective. Empty otherwise.
     sof_strandings: list[tuple[str, float, float]]
 
+    #: Mis-identifications per SCAR area this mission: ``tasking_id -> count`` of
+    #: decoy/clutter convoys the prosecuting side destroyed (the ``misId`` field
+    #: the SCAR bridge tags onto each area's entry). Drives the R7 mis-ID budget
+    #: penalty. Empty when no wrong convoy was hit (or SCAR is off).
+    scar_misid: dict[str, int]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -242,9 +248,25 @@ class StateData:
                     strandings.append((str(key), float(x), float(y)))
             return strandings
 
+        def parse_scar_misid(raw: Any) -> dict[str, int]:
+            # A wrong-convoy kill tags ``misId`` (a running count) onto the area's
+            # scar_results entry. Pull taskingId -> count defensively, skipping
+            # non-positive or malformed values.
+            if not isinstance(raw, dict):
+                return {}
+            misid: dict[str, int] = {}
+            for key, value in raw.items():
+                if not isinstance(value, dict):
+                    continue
+                count = value.get("misId")
+                if isinstance(count, (int, float)) and count > 0:
+                    misid[str(key)] = int(count)
+            return misid
+
         raw_scar = data.get("scar_results", {})
         scar_results = parse_scar_results(raw_scar)
         sof_strandings = parse_sof_strandings(raw_scar)
+        scar_misid = parse_scar_misid(raw_scar)
 
         return cls(
             mission_ended=data.get("mission_ended", False),
@@ -256,6 +278,7 @@ class StateData:
             tars_recon_captures=tars_recon_captures,
             scar_results=scar_results,
             sof_strandings=sof_strandings,
+            scar_misid=scar_misid,
         )
 
 

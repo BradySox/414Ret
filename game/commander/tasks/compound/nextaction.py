@@ -15,6 +15,7 @@ from game.commander.tasks.compound.interdictreinforcements import (
 )
 from game.commander.tasks.compound.protectairspace import ProtectAirSpace
 from game.commander.tasks.compound.recoverysupport import RecoverySupport
+from game.commander.tasks.compound.scarhunts import PlanScarHunts
 from game.commander.tasks.compound.theatersupport import TheaterSupport
 from game.commander.theaterstate import TheaterState
 from game.htn import CompoundTask, Method
@@ -35,4 +36,7 @@ class PlanNextAction(CompoundTask[TheaterState]):
         yield [AttackBuildings()]
         yield [AttackShips()]
         yield [DegradeIads()]
+        # Low priority / opt-in: a player-flyable SCAR hunt (no-op unless the
+        # scar_autoplan setting is on; blue only).
+        yield [PlanScarHunts()]
         yield [RecoverySupport()]  # for recovery tankers

@@ -63,7 +63,16 @@ so the two docs don't drift.
 - **Fail signature:** Blue sends the follow-on strike into a live belt because
   it trusted an optimistic DEAD clear.
 
-### B3 — TARCAP planned on CAS / A2A escort on forward packages · §6 · ☐ UNTESTED
+### B3 — Threat-weighted BARCAP orbit placement · §6 · ☐ UNTESTED
+- **Setup:** A campaign with a clearly contested sector (CP near a fighter-heavy
+  enemy airfield and/or anchoring a front) **and** a quiet flank CP.
+- **Pass:** The contested sector's BARCAP racetrack sits noticeably **further
+  forward** (toward the enemy) than the quiet flank's, while still staying clear of
+  enemy SAM rings (orbit never inside a threat zone).
+- **Fail signature:** Forward orbit pushed *into* a SAM ring (no-fly clamp not
+  respected), or quiet-flank orbit placement drifted from the legacy spread.
+
+### B4 — TARCAP planned on CAS / A2A escort on forward packages · §6 · ☐ UNTESTED
 - **Setup:** A campaign with an active land front and an enemy airbase within
   fighter range (≈90 NM) of the FLOT; let the AI auto-plan a turn.
 - **Pass:** CAS packages over the front spawn **with a TARCAP** flight, and forward
@@ -213,6 +222,27 @@ so the two docs don't drift.
 ### F4 — Results bridge round-trip · §15 · ☑ VERIFIED (2026-06-17/18)
 - Verified in-game: `SCAR area scar-N: launched/failed` round-tripped through
   the TARS channel into the debrief. No action; listed for completeness.
+
+### F5 — Mis-ID budget penalty (R7) · §15 · ☐ UNTESTED
+- **Setup:** A SCAR sortie with `scar_misid_penalty` > 0; deliberately destroy a
+  decoy/clutter convoy (not the HVT) with the player's aircraft.
+- **Pass:** The debrief log shows `area …: N mis-ID(s)` and `… charged <cost>
+  budget`; the prosecuting side's budget drops by `scar_misid_penalty` × kills.
+  Killing the real HVT / command vehicle / a threat SAM is NOT charged.
+- **Fail signature:** No mis-ID logged when a decoy dies to the player (the
+  `S_EVENT_KILL` attribution didn't fire — likely weapon/MP event quirk); or a
+  legit HVT/command/threat kill is wrongly charged; or budget unchanged with a
+  positive penalty.
+
+### F6 — SCAR auto-planning appears in the ATO · §15 · ☐ UNTESTED
+- **Setup:** New campaign with an enemy armor concentration near the front and
+  `scar_autoplan` ON.
+- **Pass:** Turn 1's blue ATO already contains a SCAR package (claimable +
+  flyable) against that armor, with no hand-building; the AI/red ATO has no SCAR
+  package. With the setting OFF, no SCAR package is auto-fragged.
+- **Fail signature:** No SCAR package when armor + setting are present (no
+  SCAR-capable squadron / fulfiller bailed); a red SCAR package appears; or a
+  SCAR package appears with the setting off.
 
 ---
 

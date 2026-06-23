@@ -757,6 +757,27 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   work ever lands, our `FlightType.SOF` + inventory-debit-on-frag should converge onto his
   `PendingDeployments` shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
 
+### SOF insert generation fixes (2026-06-22)
+
+Two fixes so the SOF C-130 airdrop actually generates as a flyable ground sortie:
+
+- **Forced air spawn → runway fallback** (`game/missiongenerator/aircraft/flightgroupspawner.py`,
+  `generate_flight_at_departure`). On `NoParkingSlotError` Retribution force-converted a planned
+  ground start to `IN_FLIGHT`; the SOF C-130 (a large aircraft that often finds no large parking
+  slot) air-spawned despite a ground start being selected. The "try a runway start before the air
+  start" retry was previously gated to `FlightType.JAMMING` only — now it applies to **any
+  non-helo flight** with a cold/warm start at an airfield (runway starts need no parking slot).
+  Helos (helipads/ground spawns) are unaffected.
+- **EW plugin de-conflict** (`game/missiongenerator/luagenerator.py`, `inject_plugins` +
+  `_sof_c130_present`). The C-130J Mission Systems (EW/ISR) plugin attaches to **every**
+  `C-130J-30` by airframe alone (`eligibleTypeNames = {["C-130J-30"]=true}` in
+  `c130j_mission_systems.lua`), so it would bolt the EW menu/behavior onto a SOF insert flown by
+  the same airframe. When any planned `FlightType.SOF` flight is a C-130J-30, the `c130j` plugin
+  is skipped for that mission (logged). Tradeoff: you can't fly the EW jet and run a SOF insert in
+  the same mission; letting them coexist would need a Lua-side per-group exclusion instead.
+  **Lua-free Python; wants an in-game pass.** Both are upstream-PR candidates (the runway fallback
+  is a general spawner fix; the EW gate is fork-specific to the `c130j` plugin).
+
 ---
 
 ## 16. Settings semantic cleanup and audit

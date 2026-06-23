@@ -639,8 +639,32 @@ class LuaGenerator:
         filename = resource_path.resolve()
         self.mission.map_resource.add_resource_file(filename)
 
+    def _sof_c130_present(self) -> bool:
+        """True if a SOF insert is flying the C-130J-30.
+
+        The EW plugin (C-130J Mission Systems) attaches to every C-130J-30 by
+        airframe alone (its eligibility check is purely ``getTypeName() ==
+        "C-130J-30"``), so it would hijack a SOF insert's C-130 -- bolting the
+        EW/ISR menu and behavior onto the airdrop aircraft. When a SOF C-130 is
+        in the mission we suppress the EW plugin so the insert flies clean.
+        """
+        for coalition in (self.game.blue, self.game.red):
+            for package in coalition.ato.packages:
+                for flight in package.flights:
+                    if flight.flight_type is FlightType.SOF and flight.is_c130j:
+                        return True
+        return False
+
     def inject_plugins(self) -> None:
+        skip_ew = self._sof_c130_present()
         for plugin in LuaPluginManager.plugins():
+            if skip_ew and plugin.definition.identifier == "c130j":
+                logging.warning(
+                    "SOF insert is flying the C-130J-30 the EW plugin claims by "
+                    "airframe; skipping the C-130J Mission Systems (EW) plugin for "
+                    "this mission so it doesn't hijack the SOF aircraft."
+                )
+                continue
             if plugin.enabled:
                 plugin.inject_scripts(self)
                 plugin.inject_configuration(self)

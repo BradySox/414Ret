@@ -77,6 +77,16 @@ so the two docs don't drift.
 - **Pass:** Orbits hold **deep** behind the FLOT, clear of forward SAM/CAP reach.
 - **Fail signature:** Support orbit placed within enemy engagement depth.
 
+### C3 — Tanker racetrack speed estimate · ☐ UNTESTED
+- **Setup:** Any campaign with a refueling tanker (KC-135/KC-130/S-3B etc.); plan a
+  package that takes fuel. Tankers carry no explicit `patrol_speed`, so the new
+  `preferred_patrol_speed(preferred_patrol_altitude)` estimate always drives the orbit.
+- **Pass:** Tanker flies its racetrack at a sane, steady speed and receivers
+  rendezvous and take fuel without falling behind or overrunning.
+- **Fail signature:** Tanker orbit speed too slow/fast for receivers to join (e.g.
+  fighters S-turning to stay behind, or unable to close). If seen, revisit
+  `RefuelingFlightPlan.patrol_speed` in `game/ato/flightplans/refuelingflightplan.py`.
+
 ---
 
 ## D. Loss accounting (upstream-core)

@@ -1,0 +1,13 @@
+---
+name: 414th JFG Hornets
+nickname: JFG
+country: USA
+role: Strike Fighter
+aircraft: F/A-18C Hornet (Lot 20)
+livery: "[414th] JFG 2026 Line - Base"
+mission_types:
+  - SEAD
+  - DEAD
+  - Strike
+  - BAI
+  - Escort

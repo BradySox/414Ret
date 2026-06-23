@@ -1,0 +1,13 @@
+---
+name: Jagdbombergeschwader 31 Boelcke
+nickname: Boelcke
+country: Germany
+role: Fighter Bomber
+aircraft: Tornado IDS
+livery: "jagdbombergeschwader 31 `boelcke` norvenich ab luftwaffe"
+mission_types:
+  - SEAD Escort
+  - SEAD
+  - DEAD
+  - Strike
+  - BAI

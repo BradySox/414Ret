@@ -1,0 +1,12 @@
+---
+name: 414th Voodoo Squadron
+nickname: Voodoo
+country: USA
+role: Fighter Bomber
+aircraft: F-16CM Fighting Falcon (Block 50)
+livery: "[414th] Voodoo 2026 - Line Glass"
+mission_types:
+  - DEAD
+  - SEAD
+  - BAI
+  - Escort

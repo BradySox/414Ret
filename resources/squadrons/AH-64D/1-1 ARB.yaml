@@ -1,0 +1,12 @@
+---
+name: 1-1 Attack Reconnaissance Battalion
+nickname: Devils
+country: USA
+role: Attack Helicopter
+aircraft: AH-64D Apache Longbow
+livery: "Devils 1-1 ARB"
+mission_types:
+  - CAS
+  - BAI
+  - Armed Reconnaissance
+  - Escort

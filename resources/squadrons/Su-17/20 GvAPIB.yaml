@@ -1,0 +1,12 @@
+---
+name: 20th Guards Fighter-Bomber Aviation Regiment
+nickname: 20 GvAPIB
+country: Russia
+role: Fighter Bomber
+aircraft: Su-17M4 Fitter-K
+livery: "af standard"
+female_pilot_percentage: 0
+mission_types:
+  - DEAD
+  - SEAD
+  - BAI

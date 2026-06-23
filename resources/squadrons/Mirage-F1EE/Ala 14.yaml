@@ -1,0 +1,12 @@
+---
+name: Ala 14
+nickname: Mirage
+country: Spain
+role: Fighter
+aircraft: Mirage-F1EE
+livery: "ALA 14 NATO Skin 1 (EE)"
+mission_types:
+  - Escort
+  - TARCAP
+  - BARCAP
+  - Fighter sweep

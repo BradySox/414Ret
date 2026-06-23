@@ -1,0 +1,13 @@
+---
+name: 1st Guards Air Defence Fighter Regiment
+nickname: Coastal Fulcrums
+country: Russia
+role: Fighter
+aircraft: MIG-29-FULCRUM
+livery: "Soviet AF 968th FAR"
+female_pilot_percentage: 0
+mission_types:
+  - BARCAP
+  - TARCAP
+  - Escort
+  - Fighter sweep

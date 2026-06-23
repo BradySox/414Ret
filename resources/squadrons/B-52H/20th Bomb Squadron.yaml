@@ -1,0 +1,10 @@
+---
+name: 20th Bomb Squadron
+nickname: Buccaneers
+country: USA
+role: Strategic Bomber
+aircraft: B-52H Stratofortress
+livery: "usaf standard"
+mission_types:
+  - Strike
+  - Anti-ship

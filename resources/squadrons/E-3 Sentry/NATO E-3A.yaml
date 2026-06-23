@@ -1,0 +1,9 @@
+---
+name: NATO E-3A Component
+nickname: Magic
+country: USA
+role: AEW&C
+aircraft: E-3A
+livery: "nato"
+mission_types:
+  - AEW&C

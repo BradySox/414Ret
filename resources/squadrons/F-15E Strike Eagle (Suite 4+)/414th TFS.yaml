@@ -1,0 +1,12 @@
+---
+name: 414th Tactical Fighter Squadron
+nickname: Strikers
+country: USA
+role: Strike Fighter
+aircraft: F-15E Strike Eagle (Suite 4+)
+livery: "414th TFS Line - Phantom_Grey"
+mission_types:
+  - BAI
+  - Strike
+  - CAS
+  - OCA/Runway

@@ -1,0 +1,10 @@
+---
+name: 203rd Guards Air Refuelling Regiment
+nickname: Midas
+country: Russia
+role: Tanker
+aircraft: IL-78M
+livery: "RF Air Force"
+female_pilot_percentage: 0
+mission_types:
+  - Refueling

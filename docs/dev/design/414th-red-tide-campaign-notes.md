@@ -23,7 +23,10 @@ Army back. Setting stays 1988-07-13; player faction `Blufor Late Cold War (80s)`
 the offensive framing works — that captured ground is the objective set the 414th attacks.
 
 > **Posture note.** The reframe is narrative; the **blue-offensive tuning below has now been
-> APPLIED** (no playtest). **Map/base ownership and front-line shifts remain OUT of scope.**
+> APPLIED** (no playtest). One **base-ownership / front-line change has since been made**:
+> the neutral **Fulda** airfield (id 166) was flipped BLUE as a forward FARP and the front
+> re-routed through it (see *Fulda forward heli base* under Changes). Other map/base-ownership
+> shifts remain out of scope.
 >
 > 1. **Economy skew — APPLIED.** `recommended_player_money: 800` / `recommended_enemy_money: 400`,
 >    `recommended_player_income_multiplier: 1.3` / `recommended_enemy_income_multiplier: 0.7`. Blue
@@ -50,10 +53,11 @@ south-west (the real Rhineland NATO cluster), every red base to the north/centre
 ### Blue (NATO) — south-west cluster
 | Base | id | Squadrons |
 |---|---|---|
-| Ramstein | 165 | B-1B (OCA/Runway), A-10A (CAS), Mirage-F1EE (Escort), AV-8B (SEAD Sweep), **A-6E (OCA/Aircraft)** |
+| Ramstein | 165 | B-1B (OCA/Runway), **A-10C Suite 3 (CAS)**, Mirage-F1EE (Escort), AV-8B (SEAD Sweep), **A-6E (OCA/Aircraft)** |
 | Spangdahlem | 162 | F-15C (TARCAP), **F-14B (Escort)**, **GAF JG 74 (TARCAP)**, F-4E-45MC (BAI), UH-1H, AH-1W |
 | Hahn | 155 | B-52H (Strike), F-16CM (DEAD), Tornado IDS (SEAD Escort), F-4E-45MC (OCA/Runway), **F/A-18C (SEAD)**, **F-15E (BAI)** |
-| Frankfurt | 163 | KC-135, C-130J, CH-47F, AH-64D, **E-3A (AEW&C)**, **OH-58D Kiowa (Escort)** |
+| Frankfurt | 163 | KC-135, **KC-135MPRS (drogue tanker)**, C-130J, CH-47F, AH-64D, **E-3A (AEW&C)**, **OH-58D Kiowa (Escort)** |
+| **Fulda** | **166** | **Forward FARP (flipped neutral→BLUE).** Forward heli base in the Fulda Gap: AH-64D (CAS, 1-1 ARB), OH-58D (Armed Recon, 1-6 Cav), UH-1H (Air Assault, 159th Avn Det Fwd) |
 
 ### Red (Soviet/WP) — north, centre, east
 | Base | id | Notes |
@@ -94,11 +98,38 @@ considered and declined.
      supplied the known-valid Baltic water coordinate.
    - `Red Navy Copenhagen` — open SW Baltic off Copenhagen (x≈80000, y≈-430000).
    New groups use unique `groupId`/`unitId` (274/624, 275/625) past the mission max.
+5. **Fulda flipped BLUE (forward FARP).** `warehouses` airport `[166]` (Fulda) was neutral
+   with `["dynamicSpawn"] = true`. The loader (`control_point_from_airport`) forces any
+   `dynamic_spawn` airport to NEUTRAL **before** checking coalition, so **two** fields were
+   changed inside the `[166]` block: `dynamicSpawn true → false` **and**
+   `coalition "NEUTRAL" → "BLUE"`. Verified via pydcs: airport 166 now loads `is_blue()`.
+   (The `.miz` was repackaged with `zipfile`, preserving every other member byte-for-byte —
+   `zip` isn't available in the shell here.)
 
-### Faction edit (shared)
-`resources/factions/russia_1980.json` — added `SA-11` (Buk) and `SA-10/S-300PS` preset
-groups. Both are vanilla DCS and match the names already used by `russia_1990`. This is a
-**shared-faction** change, so the original Crossing the Rubicon also gets the tougher IADS.
+### Fulda forward heli base + supply re-route
+
+- **Why.** A blue forward FARP in the Fulda Gap, on the Frankfurt→Haina axis (Fulda sits ~2.5
+  km off the old front route). Fulda hosts three forward US Army heli squadrons (AH-64D 1-1
+  ARB, OH-58D 1-6 Cav, UH-1H 159th Avn Det Fwd) with their own defs/liveries.
+- **Supply re-route.** The single `Frankfurt (163) → Haina (161)` front route was split into
+  `Frankfurt → Fulda` (blue rear) + `Fulda → Haina` (the new front line), both anchored on
+  Fulda's exact coordinate `(-401102, -768302)`.
+- **Red-end anchor fix.** `add_yaml_supply_routes` resolves each route end with
+  `theater.closest_control_point`, which considers **all** CPs (including neutral FARPs). The
+  old Haina-end waypoint `(-359860, -710938)` was 2.9 km from the neutral FARP **`H Med GDR
+  12` (180)** but 8.9 km from Haina, so the original "front" actually anchored on 180, ~9 km
+  short of Haina (a plausible cause of FLOT units appearing south-west of Haina). Route B now
+  ends on **Haina's exact CP position `(-359857, -702040)`** so the front is cleanly
+  Fulda↔Haina. Verified: that endpoint resolves to `[161] Haina` at 0.0 km.
+
+### Faction edits (shared)
+- `resources/factions/russia_1980.json` — added `SA-11` (Buk) and `SA-10/S-300PS` preset
+  groups. Both are vanilla DCS and match the names already used by `russia_1990`. This is a
+  **shared-faction** change, so the original Crossing the Rubicon also gets the tougher IADS.
+- `resources/factions/blufor_late_coldwar.json` — added `KC-135 Stratotanker MPRS` to
+  `tankers` so the Frankfurt MPRS (drogue) squadron's def actually loads (the loader drops any
+  def whose airframe isn't in the faction). Also shared, but additive — it only makes the
+  airframe available.
 
 ### Aircraft / squadron specifics
 - **German Phantom:** the `GAF JG 74` "Moelders" entry is a *squadron name* in the
@@ -113,6 +144,56 @@ groups. Both are vanilla DCS and match the names already used by `russia_1990`. 
 - **F-111C removed** entirely (squadron + the `f111c` mod setting + the mod note); the
   UH-60A is intentionally left out. The campaign now only notes the Heatblur F-4E module.
 
+### Squadron naming & liveries (every squadron is now a named, liveried unit)
+
+**Problem.** A campaign squadron entry that lists a bare **aircraft type** gets its def from
+`DefaultSquadronAssigner.find_squadron_for_airframe`, which collects *every* predefined
+squadron def for that airframe and does `random.choice` with **no country filter**. So a
+NATO `F-4E-45MC Phantom II` could spawn in Egyptian/Greek/Korean colors and a GSFG `Mi-24P`
+in South-African camo. That randomness was the "many mismatches" seen in-game.
+
+**Fix / mechanism.** A livery can only be pinned by a **predefined squadron def**
+(`resources/squadrons/<type>/<unit>.yaml`, fields `name`/`nickname`/`country`/`role`/
+`aircraft`/`livery`) **referenced by name** in the campaign's `aircraft:` list — exactly how
+`GAF JG 74` and `185th GvIAP Fighter Regiment` already worked. The campaign squadron config
+(`SquadronConfig`) has **no livery field**, so inline liveries are impossible. Every Red Tide
+squadron now references such a def, with `aircraft_type:` kept as a fallback airframe:
+
+```yaml
+    - primary: BARCAP
+      secondary: any
+      aircraft:
+        - 85th Guards Fighter Aviation Regiment   # predefined def -> name + livery
+      aircraft_type: MiG-29A Fulcrum-A             # fallback airframe if the def is missing
+      size: 6
+```
+
+**Two constraints that shaped the defs (both verified in code):**
+- **Country gate.** `SquadronDefLoader.load` loads a def only if the faction is
+  `any_country` *or* `def.country == faction.country`. Red's faction country is `Russia`, so
+  **all red defs use `country: Russia`**; Blufor is `Combined Joint Task Forces Blue`
+  (`any_country`), so blue defs can carry their real nation (`USA`/`Germany`/`Spain`).
+- **Capability gate.** `SquadronDef.capable_of` is **airframe-based**, not from the def's
+  `mission_types:` list (that field is decorative — `from_yaml` recomputes from the airframe).
+  `find_squadron_by_name` rejects a def whose airframe can't do the squadron's `primary`, so
+  the Sperenberg Backfire regiment's primary was changed `OCA/Aircraft → OCA/Runway` (the
+  Tu-22M3 can do Strike / Anti-ship / OCA/Runway, not OCA/Aircraft).
+
+**Naming scheme (the user's "real red, 414th blue" call):**
+- **Red** keeps the real GSFG/VVS regiments already named inline (85 GvIAP, 831 GvIAP, …),
+  now each with `country: Russia` + a period Soviet livery (e.g. Mi-24P `AF USSR` /
+  `262nd_SHQ_USSR`, MiG-29-Fulcrum `Soviet AF 968th FAR`, Su-27 `Air Force Standard Early`).
+- **Blue** wears 414th Joint Fighter Group identities where the squadron has its own livery
+  pack — **VMF-29** (F-14B), **Voodoo** (F-16CM), **414th TFS** (F-15E), **JFG Hornets**
+  (F/A-18C), **414th Aviation Det / Huey** (UH-1H), **910th AW** (C-130J) — and real USAFE/
+  USN/USMC/Luftwaffe units wearing period liveries elsewhere (81st TFS A-10 in the Spangdahlem
+  scheme, 493rd FS Eagles, JBG 31 *Boelcke* Tornados, NATO E-3A, 12th CAB Apaches, …).
+
+**Livery IDs are folder/zip basenames** under the DCS install (`Bazar/Liveries`, `CoreMods`,
+`Mods`) — each was checked against a real folder, *not guessed*. The 414th custom liveries
+live in `Saved Games\DCS\Liveries` (per-user, squadron-distributed); a non-414th player who
+lacks the pack falls back to the airframe default for those names (cosmetic only).
+
 ## Known caveats — verify on first in-game load
 
 The Lua plugins/terrain can't be exercised here; pydcs/DCS aren't runnable in CI. Confirm:
@@ -122,8 +203,24 @@ The Lua plugins/terrain can't be exercised here; pydcs/DCS aren't runnable in CI
    that is red (Kastrup/Peenemünde), but it is computed at load, not asserted here.
 3. **`Red Navy Copenhagen` position** (x≈80000, y≈-430000) is an *estimated* open-water
    point off Copenhagen — eyeball that it isn't clipping land/an island. One-line nudge if so.
+4. **Liveries render correctly.** All 47 squadron defs load and resolve in a campaign-config
+   check (`name`/`country`/airframe/`capable_of(primary)` all pass), but the **livery string
+   itself is only exercised in-game** — generate a mission and confirm each unit wears the
+   intended paint, especially the 414th custom skins (need the Saved Games livery pack
+   installed).
+5. **A-10 is A-10C Suite 3** (`A-10C Thunderbolt II (Suite 3)`, dcs `A-10C`) — converted from
+   the AI-only A-10A so the CAS squadron is player-flyable. **Not** the modern Suite 7 /
+   A-10C II (`A-10C_2`). The 81st TFS (Panthers) keeps the stock USAFE *Spangdahlem* livery
+   (`81st FS Spangdahlem AB, Germany (SP) 1`), which exists in the `A-10C` livery set too. The
+   414th "Bulldog" skin is Suite-7-only and intentionally **not** used here.
 
 ## Files
 - `resources/campaigns/red_tide.yaml` / `red_tide.miz` — the campaign.
 - `resources/campaigns/crossing_the_rubicon.*` — original, preserved (An-26B fix only).
 - `resources/factions/russia_1980.json` — SA-10/SA-11 preset groups.
+- `resources/squadrons/<type>/*.yaml` — the 48 named squadron defs (23 red GSFG/VVS regiments,
+  22 blue 414th/USAFE/USN units, + 3 Fulda forward-FARP heli units: 1-1 ARB, 1-6 Cav, 159th
+  Avn Det Fwd) that pin each squadron's name + livery; referenced by name from `red_tide.yaml`.
+  The two pre-existing refs (`GAF JG 74`, `185th GvIAP Fighter Regiment`) and the existing
+  `340th EARS` MPRS def are reused, not duplicated.
+- `resources/factions/blufor_late_coldwar.json` — `KC-135 Stratotanker MPRS` added to tankers.

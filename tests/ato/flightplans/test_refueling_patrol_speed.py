@@ -53,10 +53,15 @@ def _plan(unit_type: object) -> _Refueling:
 def test_explicit_patrol_speed_is_used_without_estimating() -> None:
     explicit = knots(390)
     seen: list[object] = []
+
+    def estimate(altitude: object) -> object:
+        seen.append(altitude)
+        return knots(1)
+
     unit_type = SimpleNamespace(
         patrol_speed=explicit,
         preferred_patrol_altitude=feet(20000),
-        preferred_patrol_speed=lambda altitude: seen.append(altitude) or knots(1),
+        preferred_patrol_speed=estimate,
     )
     assert _plan(unit_type).patrol_speed is explicit
     # An explicit speed short-circuits the estimate entirely.
@@ -67,10 +72,15 @@ def test_falls_back_to_estimate_at_the_planned_orbit_altitude() -> None:
     altitude = feet(13000)
     estimated = knots(318)
     seen: list[object] = []
+
+    def estimate(alt: object) -> object:
+        seen.append(alt)
+        return estimated
+
     unit_type = SimpleNamespace(
         patrol_speed=None,
         preferred_patrol_altitude=altitude,
-        preferred_patrol_speed=lambda alt: seen.append(alt) or estimated,
+        preferred_patrol_speed=estimate,
     )
     assert _plan(unit_type).patrol_speed is estimated
     # The estimate is taken at the same altitude the racetrack is planned at.

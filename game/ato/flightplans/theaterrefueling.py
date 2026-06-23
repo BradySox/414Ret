@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import Type
 
 from game.ato.flighttype import FlightType
-from game.utils import Heading, meters, nautical_miles
+from game.utils import nautical_miles
 from .ibuilder import IBuilder
 from .patrolling import PatrollingLayout
 from .refuelingflightplan import RefuelingFlightPlan
+from .supportorbit import support_orbit_anchor
 from .waypointbuilder import WaypointBuilder
 
 
@@ -20,38 +21,20 @@ class Builder(IBuilder[TheaterRefuelingFlightPlan, PatrollingLayout]):
     def layout(self) -> PatrollingLayout:
         racetrack_half_distance = nautical_miles(20)
 
-        location = self.package.target
-
-        closest_boundary = self.threat_zones.closest_boundary(location.position)
-        heading_to_threat_boundary = Heading.from_degrees(
-            location.position.heading_between_point(closest_boundary)
-        )
-        distance_to_threat = meters(
-            location.position.distance_to_point(closest_boundary)
-        )
-
         threat_buffer = nautical_miles(
             self.coalition.game.settings.tanker_threat_buffer_min_distance
         )
 
-        if self.threat_zones.threatened(location.position):
-            # Target inside the threat zone — escape to safety.
-            orbit_heading = heading_to_threat_boundary
-            orbit_distance = distance_to_threat + threat_buffer
-        elif self.coalition.player.is_blue:
-            # Player-coalition tankers: orbit as far forward as the threat buffer
-            # allows so strike packages don't have to fly far for fuel.  Clamp to
-            # zero so we never end up behind the reference point.
-            orbit_heading = heading_to_threat_boundary
-            orbit_distance = max(meters(0), distance_to_threat - threat_buffer)
-        else:
-            # Enemy/AI tankers: orbit well inside friendly airspace, away from
-            # the threat boundary.
-            orbit_heading = heading_to_threat_boundary.opposite
-            orbit_distance = threat_buffer
-
-        base_center = location.position.point_from_heading(
-            orbit_heading.degrees, orbit_distance.meters
+        # Anchor on the front line and stand off into friendly airspace, centered
+        # on the fighting and parallel to the FLOT. See supportorbit for why this
+        # replaced the old per-CP anchoring (which could pin a tanker onto its
+        # own departure runway).
+        base_center, orbit_heading = support_orbit_anchor(
+            self.theater,
+            self.coalition.player,
+            self.threat_zones,
+            self.package.target,
+            threat_buffer,
         )
 
         # Deconflict multiple tankers: spread orbits laterally along the front

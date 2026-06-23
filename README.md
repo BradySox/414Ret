@@ -67,6 +67,9 @@ and selected later upstream fixes.
   more.
 - Transit routes treat the active ground battle as a hazard, reducing the tendency for
   unrelated AI flights to loiter over the FLOT.
+- AWACS and tanker racetracks are anchored on the front line and stand off into friendly
+  airspace, so support orbits sit centered behind the fighting at a sane distance instead of
+  being flung far off-axis or pinned onto a home airfield.
 - An optional **auto-planner unpredictability** doctrine knob (per side, off by default)
   varies which offensive targets the enemy services first, so red stops striking the same
   targets in the same order every turn. Its reactive air defenses stay just as sharp.

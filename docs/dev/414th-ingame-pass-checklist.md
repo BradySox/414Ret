@@ -181,3 +181,17 @@ so the two docs don't drift.
 - A cluster of **☑ VERIFIED** Lua-free Python rows (B, C, D, E) are the
   upstream-PR candidates — verify in-game, then carve them out (see the
   upstreaming inventory).
+
+---
+
+### §20 Drop-spawn (in-game-pass required)
+
+| # | Observable criterion | Fail signature |
+|---|---|---|
+| 20-A | Right-click blank map → Qt dialog opens with coalition/category/layout pickers | No dialog; console error in devtools |
+| 20-B | Select "Ground Force", confirm → armor group appears on map immediately | No marker; no SSE event in network tab |
+| 20-C | Right-click a user-placed TGO → marker disappears from map | TGO remains; server returns 403 |
+| 20-D | "Deploy Next Turn" → no immediate marker; after turn advance group materialises | Group never appears; pending list never cleared |
+| 20-E | Place a naval group in sea → succeeds; place on land → error dialog | Terrain check not firing |
+| 20-F | Place beyond 200 km from nearest CP (no free cheat) → error dialog | No range error; TGO placed out of range |
+| 20-G | Enable "Free placement" cheat → no budget deducted | Budget still decremented |

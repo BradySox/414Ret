@@ -1003,3 +1003,54 @@ dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `
 - Deferred cleanup: `CoalitionThreatZones` and `WaypointDebugZonesControls` (+ its
   `HoldZones`/`JoinZones`) are now orphaned, as are the default exports of
   `TerrainZonesLayers`/`CullingExclusionZones`; safe to delete in a follow-up.
+
+---
+
+## §20 — Drop-spawn: Map Right-Click Unit Placement
+
+**Status:** In progress — core functional; pending Lua (`in-game-pass` tag).
+
+Right-click on blank map space → Qt dialog → spawn a new unit group (armor,
+SAM, EWR, ship, missile/coastal) at any map position, attached to the nearest
+friendly CP.
+
+### Files
+
+| Layer | File |
+|---|---|
+| Data model | `game/theater/theatergroundobject.py` (`user_placed`, `respawn_enabled`, `pending_deploy`) |
+| Core logic | `game/theater/unitplacement.py` — `place_unit_group()`, `PendingUnitPlacement`, `process_pending_placements()`, `process_respawns()` |
+| Settings | `game/settings/settings.py` — `enable_unit_placement`, `enable_free_unit_placement` |
+| Game state | `game/game.py` — `pending_unit_placements: list[Any]`, turn hook, `__setstate__` migration |
+| Server | `game/server/qt/routes.py` — `POST /qt/place-unit-group` |
+| Server | `game/server/tgos/routes.py` — `DELETE /tgos/{id}` |
+| Server | `game/server/tgos/models.py` — `TgoJs.user_placed` |
+| Server events | `game/sim/gameupdateevents.py` — `deleted_tgos`, `delete_tgo()` |
+| Server events | `game/server/eventstream/models.py` — `GameUpdateEventsJs.deleted_tgos` |
+| Qt callback | `game/server/dependencies.py` — `QtCallbacks.open_place_unit_group_dialog` |
+| Qt dialog | `qt_ui/windows/groundobject/QPlaceUnitGroupDialog.py` |
+| Qt window | `qt_ui/windows/QLiberationWindow.py` — `place_unit_group_signal` |
+| Qt settings | `qt_ui/windows/settings/QSettingsWindow.py` — two cheat checkboxes |
+| React API | `client/src/api/_liberationApi.ts` — `openPlaceUnitGroupDialog`, `deleteUserPlacedTgo`, `Tgo.user_placed` |
+| React state | `client/src/api/tgosSlice.ts` — `removeTgo` |
+| React events | `client/src/api/eventstream.tsx` — `deleted_tgos` dispatch |
+| React map | `client/src/components/liberationmap/MapContextMenu.tsx` |
+| React map | `client/src/components/liberationmap/LiberationMap.tsx` — mounts `MapContextMenu` |
+| React TGO | `client/src/components/tgos/Tgo.tsx` — right-click Remove for `user_placed` |
+
+### Behaviour
+
+- Right-click blank map → `MapContextMenu` fires `POST /qt/place-unit-group(lat, lng)`.
+- Qt signal opens `QPlaceUnitGroupDialog`: coalition (Red locked behind `enable_enemy_buy_sell`), category, force group, layout, unit rows, deploy timing (now / next turn), respawn checkbox, cost/budget.
+- On confirm: `place_unit_group()` validates terrain + range (200 km from nearest friendly CP, bypassed by `enable_free_unit_placement`), creates TGO, attaches to CP, registers in `game.db.tgos`, fires SSE `update_tgo`.
+- Deploy Next Turn: queues `PendingUnitPlacement` on `game.pending_unit_placements`; materialised by `process_pending_placements()` at turn start.
+- Auto-respawn: `process_respawns()` revives a destroyed user-placed TGO each turn.
+- Right-click on a user-placed TGO → Remove → `DELETE /tgos/{id}` → SSE `delete_tgo` → marker removed from React map.
+
+### Deferred
+
+- Phase 6 — `PlacementModeOverlay.tsx` terrain ring (visual land/sea feedback while hovering before click).
+- Phase 7 — Pending markers layer (semi-transparent markers for "deploy next turn" TGOs).
+- Phase 8 — FOB establishment via the same dialog.
+- Phase 9 — Relocate (delete + re-place with pre-filled dialog).
+- Budget refund on Remove (TheaterUnit lacks stored price; needs separate tracking).

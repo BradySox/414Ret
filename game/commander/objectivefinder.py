@@ -250,6 +250,31 @@ class ObjectiveFinder:
             score += proximity * fighters
         return score
 
+    def normalized_air_threat(self, cp: ControlPoint) -> float:
+        """``air_threat_score(cp)`` relative to the theater's hottest friendly
+        sector, clamped to ``[0, 1]``.
+
+        Where the volume path normalizes against the *random*
+        ``vulnerable_control_points()`` set (it only ever needs the max of that
+        set), this normalizes against every friendly control point so it is
+        deterministic and safe to call from flight-plan building:
+        ``air_threat_score`` itself rolls no dice and the friendly-CP set is
+        fixed within a turn, so the same orbit factor comes out no matter how
+        many times the builder re-runs. Returns ``0.0`` when no friendly sector
+        faces any measurable air threat, which keeps quiet-theater BARCAP
+        placement byte-for-byte identical to the legacy uniform spread.
+        """
+        score = self.air_threat_score(cp)
+        if score <= 0.0:
+            return 0.0
+        max_score = max(
+            (self.air_threat_score(c) for c in self.friendly_control_points()),
+            default=0.0,
+        )
+        if max_score <= 0.0:
+            return 0.0
+        return min(1.0, score / max_score)
+
     def oca_targets(self, min_aircraft: int) -> Iterator[ControlPoint]:
         parking_type = ParkingType()
         parking_type.include_rotary_wing = True

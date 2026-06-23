@@ -118,11 +118,32 @@ collapsed non-peak bases to a single wave (it was reverted; see commit `c8b1b8c3
 - **Wiring.** `TheaterState.from_game` builds `barcap_threat_scores` over
   `vulnerable_control_points()`, takes the max, and feeds each CP through
   `threat_weighted_barcap_rounds` into `barcaps_needed`.
-- **Scope.** This increment is *volume only*. Threat-weighted **orbit placement** (where
-  the contested-sector tracks sit, not just how many) is an explicitly-deferred separate
-  increment and is not yet implemented.
 - Tests: `tests/test_barcap_threat_weighting.py` (additive-only invariants, zero-threat
   legacy fallback, fleet multiplier, ceiling).
+
+## Threat-weighted BARCAP orbit placement (live)
+
+The placement half of the same feature: *where* the orbit sits, not just how many waves.
+A contested sector pushes its BARCAP track further forward (toward `cap_max_distance_from_cp`)
+so it can commit on inbound raids sooner; a quiet flank keeps the legacy uniform spread.
+
+- **Threat measure.** `ObjectiveFinder.normalized_air_threat(cp)`
+  (`game/commander/objectivefinder.py`) returns `air_threat_score(cp)` clamped to `[0, 1]`
+  relative to the *hottest friendly sector*. It deliberately normalizes against
+  `friendly_control_points()` (not the random `vulnerable_control_points()` used by the
+  volume path) so it is deterministic and safe to call from flight-plan building:
+  `air_threat_score` rolls no dice and the friendly-CP set is fixed within a turn.
+- **Placement bias.** `CapBuilder.cap_racetrack_for_objective(..., barcap=True)`
+  (`game/ato/flightplans/capbuilder.py`) raises the *lower* bound of the random forward
+  distance toward `cap_max_distance_from_cp` by `factor * BARCAP_THREAT_FORWARD_BIAS`
+  (`= 0.75`) of the `min->max` band. At factor 0 (quiet flank, non-CP target, or quiet
+  theater) the `randint` range is byte-for-byte the legacy uniform spread; TARCAPs are never
+  touched. The `cap_max_distance` is already clamped by the threat-zone no-fly boundary, so
+  pushing toward it never sends the orbit into a SAM ring.
+- **Scope.** Placement bias only nudges the orbit *distance* from the defended CP along the
+  existing CP→nearest-enemy-airfield heading. It does not change track length, altitude, or
+  the heading itself. Tests: `tests/test_barcap_threat_weighting.py`
+  (`normalized_air_threat` 0/1/mid, enemy-CP exclusion, quiet-theater fallback).
 
 ## Mission-preference (`tasks:`) value rubric
 

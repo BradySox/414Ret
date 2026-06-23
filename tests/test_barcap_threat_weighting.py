@@ -206,3 +206,99 @@ def test_air_threat_score_front_line_floor_is_additive(
     rear = _finder([close_strong], monkeypatch).air_threat_score(_CP())  # type: ignore[arg-type]
     front = _finder([close_strong], monkeypatch).air_threat_score(_FrontLineCP())  # type: ignore[arg-type]
     assert front == rear + FRONT_LINE_AIR_THREAT
+
+
+# --------------------------------------------------------------------------- #
+# ObjectiveFinder.normalized_air_threat (drives forward orbit placement)
+# --------------------------------------------------------------------------- #
+
+
+class _NormCP:
+    """A friendly control point that carries its own nearby enemy airfields so
+    each sector can score differently under normalization."""
+
+    def __init__(
+        self,
+        name: str,
+        airfields: list[_Airfield],
+        friendly: bool = True,
+        front: bool = False,
+    ) -> None:
+        self.name = name
+        self._airfields = airfields
+        self._friendly = friendly
+        self.has_active_frontline = front
+
+    def is_friendly(self, _player: object) -> bool:
+        return self._friendly
+
+
+def _norm_finder(
+    cps: list[_NormCP], monkeypatch: pytest.MonkeyPatch
+) -> ObjectiveFinder:
+    game = _Game()
+    game.theater = _Theater()
+    game.theater.controlpoints = list(cps)
+    finder = ObjectiveFinder(game, _Player(is_red=False))  # type: ignore[arg-type]
+    monkeypatch.setattr(
+        ObjectiveFinder,
+        "closest_airfields_to",
+        staticmethod(lambda location: _Closest(location._airfields)),
+    )
+    return finder
+
+
+def _HOT() -> _Airfield:
+    return _Airfield("hot", nautical_miles(20).meters, 24, friendly=False)
+
+
+def _WEAK() -> _Airfield:
+    return _Airfield("weak", nautical_miles(90).meters, 4, friendly=False)
+
+
+def test_normalized_air_threat_zero_for_quiet_sector(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hot = _NormCP("hot", [_HOT()])
+    quiet = _NormCP("quiet", [])
+    finder = _norm_finder([hot, quiet], monkeypatch)
+    assert finder.normalized_air_threat(quiet) == 0.0  # type: ignore[arg-type]
+
+
+def test_normalized_air_threat_one_for_hottest_sector(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hot = _NormCP("hot", [_HOT()])
+    weak = _NormCP("weak", [_WEAK()])
+    finder = _norm_finder([hot, weak], monkeypatch)
+    assert finder.normalized_air_threat(hot) == 1.0  # type: ignore[arg-type]
+
+
+def test_normalized_air_threat_mid_sector_between_zero_and_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hot = _NormCP("hot", [_HOT()])
+    weak = _NormCP("weak", [_WEAK()])
+    finder = _norm_finder([hot, weak], monkeypatch)
+    factor = finder.normalized_air_threat(weak)  # type: ignore[arg-type]
+    assert 0.0 < factor < 1.0
+
+
+def test_normalized_air_threat_ignores_enemy_control_points(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A hotter *enemy* sector must not deflate a friendly CP's factor: the peak
+    # is taken over friendly control points only.
+    hot = _NormCP("hot", [_HOT()])
+    hotter_enemy = _NormCP("enemy", [_HOT(), _HOT()], friendly=False)
+    finder = _norm_finder([hot, hotter_enemy], monkeypatch)
+    assert finder.normalized_air_threat(hot) == 1.0  # type: ignore[arg-type]
+
+
+def test_normalized_air_threat_zero_when_theater_is_quiet(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    a = _NormCP("a", [])
+    b = _NormCP("b", [])
+    finder = _norm_finder([a, b], monkeypatch)
+    assert finder.normalized_air_threat(a) == 0.0  # type: ignore[arg-type]

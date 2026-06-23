@@ -323,8 +323,13 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   `theaterstate.py` `threat_weighted_barcap_rounds()` = `baseline +
   round((score/max_score) * baseline * (BARCAP_THREAT_CEILING-1))`, ceiling 2x; a
   zero-threat CP gets exactly the legacy duration-derived `barcap_rounds`, fleet keeps its
-  2x. `TheaterState.from_game` wires it into `barcaps_needed`. **Volume only** — threat-
-  weighted *orbit placement* is a deferred separate increment, not yet done. Design notes:
+  2x. `TheaterState.from_game` wires it into `barcaps_needed`. Threat-weighted *orbit
+  placement* (the companion increment) is now also live: `ObjectiveFinder`
+  `normalized_air_threat(cp)` gives a deterministic 0..1 factor (normalized against
+  `friendly_control_points()`, not the random vulnerable set) and `CapBuilder`
+  `cap_racetrack_for_objective` raises the forward-distance floor by
+  `factor * BARCAP_THREAT_FORWARD_BIAS` (0.75) so contested sectors orbit further forward;
+  factor 0 reproduces the legacy uniform spread and TARCAPs are untouched. Design notes:
   `docs/dev/design/414th-air-defense-planning-notes.md`. Tests:
   `tests/test_barcap_threat_weighting.py`.
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
@@ -1000,9 +1005,10 @@ dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `
   `EmitterHighlightToggle` components were removed.
 - Client-only (TS/CSS); needs the rebuilt bundle (CI `npm run build`). `LiberationMap.tsx`
   now mounts just `MapLayersControl` (plus scale + ruler).
-- Deferred cleanup: `CoalitionThreatZones` and `WaypointDebugZonesControls` (+ its
-  `HoldZones`/`JoinZones`) are now orphaned, as are the default exports of
-  `TerrainZonesLayers`/`CullingExclusionZones`; safe to delete in a follow-up.
+- Cleanup done: the orphaned `CoalitionThreatZones` / `WaypointDebugZonesControls`
+  components were removed, and `TerrainZonesLayers`/`CullingExclusionZones` now export only
+  the raw-layer variants the panel uses (no dead default exports). The remaining
+  `getDebugHoldZones`/`getDebugJoinZones` names are generated API bindings, not UI.
 
 ---
 

@@ -63,6 +63,15 @@ so the two docs don't drift.
 - **Fail signature:** Blue sends the follow-on strike into a live belt because
   it trusted an optimistic DEAD clear.
 
+### B3 — Threat-weighted BARCAP orbit placement · §6 · ☐ UNTESTED
+- **Setup:** A campaign with a clearly contested sector (CP near a fighter-heavy
+  enemy airfield and/or anchoring a front) **and** a quiet flank CP.
+- **Pass:** The contested sector's BARCAP racetrack sits noticeably **further
+  forward** (toward the enemy) than the quiet flank's, while still staying clear of
+  enemy SAM rings (orbit never inside a threat zone).
+- **Fail signature:** Forward orbit pushed *into* a SAM ring (no-fly clamp not
+  respected), or quiet-flank orbit placement drifted from the legacy spread.
+
 ---
 
 ## C. Support flights

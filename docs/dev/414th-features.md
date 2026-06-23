@@ -327,6 +327,24 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   weighted *orbit placement* is a deferred separate increment, not yet done. Design notes:
   `docs/dev/design/414th-air-defense-planning-notes.md`. Tests:
   `tests/test_barcap_threat_weighting.py`.
+- A2A escort-need uses fighter **engagement reach**, not BARCAP **orbit** reach
+  (`game/threatzones.py` `air_engagement` zone + `aircraft_engagement_range`;
+  `PackageFulfiller.check_needed_escorts` now calls
+  `waypoints_threatened_by_aircraft_engagement`). `barcap_threat_range` clamps the
+  `airbases` orbit zone to ~45% of the way to friendly territory (keeps enemy CAP
+  non-offensive for the navmesh + BARCAP placement). The CAS patrol sits on the FLOT
+  (~50%), so its escorted waypoints fell in the gap, the A2A escort was pruned every
+  time, and — since CAS is the **only** proposer of `FlightType.TARCAP` (`cas.py:35`,
+  no standalone `PlanTarcap` task) — TARCAP was never planned at all. Forward DEAD/BAI
+  near the front lost their `ESCORT` the same way. The new `air_engagement` zone
+  (uncapped `cap_max_distance_from_cp + cap_engagement_range`) is a strict superset of
+  `airbases`, so escorts are only *added*, never lost; the clamped zone still drives
+  the navmesh, IP/hold/join geometry, BARCAP placement (incl. §6 orbit forward-bias),
+  and the map overlay. `ThreatZones` is recomputed each load (excluded from pickling),
+  so no save migration. `can_plan_escort(AirToAir)` was also corrected to gate on
+  `ESCORT` **or** `TARCAP` (CAS's A2A escort is TARCAP, not ESCORT) instead of `ESCORT`
+  alone. Tests: `tests/test_aircraft_engagement_escort_zone.py`.
+  **Needs an in-game pass** (B3) — confirm CAS packages spawn with a TARCAP.
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
   10->15 nm, `armed_recon_engagement_range_distance` 5->10 nm).
 - Cruise/patrol altitude doctrine (Campaign Doctrine page, all default to **no behavior

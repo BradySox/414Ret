@@ -52,12 +52,24 @@ class ThreatZones:
         air_defenses: ThreatPoly,
         radar_sam_threats: ThreatPoly,
         front_lines: ThreatPoly = _EMPTY_THREAT_POLY,
+        air_engagement: ThreatPoly = _EMPTY_THREAT_POLY,
     ) -> None:
         self.theater = theater
         self.airbases = airbases
         self.air_defenses = air_defenses
         self.radar_sam_threats = radar_sam_threats
         self.front_lines = front_lines
+        # Where enemy fighters can *engage*, as opposed to where their BARCAPs
+        # *orbit* (`airbases`). `airbases` is deliberately pulled in to ~45% of
+        # the way to friendly territory (see `barcap_threat_range`) so enemy CAP
+        # is not modeled as offensive and the navmesh/BARCAP placement stay
+        # defensive. That clamp is wrong for deciding whether a package needs an
+        # air-to-air escort -- a fighter launched from that CP still reaches the
+        # full uncapped range -- so escort-need checks use this (broader) zone
+        # instead. Defaults empty so callers/tests that don't supply it (and any
+        # pre-existing pickles, though threat zones are recomputed on load) keep
+        # the old behavior.
+        self.air_engagement = air_engagement
         # Only `all` carries the front line: it drives the navmesh and generic
         # threatened()/path checks. The SAM-specific (air_defenses) and CAP-
         # specific (airbases) views stay clean so air-defense and barcap planning
@@ -117,6 +129,22 @@ class ThreatZones:
         self, waypoints: Iterable[FlightWaypoint]
     ) -> bool:
         return self.threatened_by_aircraft(
+            LineString((self.dcs_to_shapely_point(p.position) for p in waypoints))
+        )
+
+    def waypoints_threatened_by_aircraft_engagement(
+        self, waypoints: Iterable[FlightWaypoint]
+    ) -> bool:
+        """Whether enemy fighters can engage along these waypoints.
+
+        Unlike :meth:`waypoints_threatened_by_aircraft` (which tests the
+        defensively-clamped BARCAP *orbit* zone), this tests the uncapped fighter
+        *engagement* reach. Used to decide whether a package warrants an
+        air-to-air escort -- in particular it covers packages working the front
+        line (CAS/TARCAP, forward DEAD/BAI), whose escorted waypoints sit just
+        beyond the clamped orbit zone but are still well within fighter range.
+        """
+        return self.air_engagement.intersects(
             LineString((self.dcs_to_shapely_point(p.position) for p in waypoints))
         )
 
@@ -204,6 +232,18 @@ class ThreatZones:
         # US base, but for now equal weighting is fine.
         max_distance = airfield_distance * 0.45
         return min(cap_threat_range, max_distance)
+
+    @classmethod
+    def aircraft_engagement_range(cls, doctrine: Doctrine) -> Distance:
+        """Uncapped reach of a fighter launched from a control point.
+
+        This is :meth:`barcap_threat_range` *without* the 0.45-of-the-way-to-the-
+        enemy-airfield clamp. The clamp keeps enemy BARCAPs from being modeled as
+        offensive (for the navmesh and BARCAP placement); it has no place in
+        deciding whether a package can be intercepted, since an enemy fighter is
+        free to commit past its nominal patrol distance.
+        """
+        return doctrine.cap_max_distance_from_cp + doctrine.cap_engagement_range
 
     @classmethod
     def for_faction(
@@ -296,12 +336,15 @@ class ThreatZones:
             vice versa.
         """
         air_threats = []
+        air_engagement_threats = []
         air_defense_threats = []
         radar_sam_threats = []
+        engagement_range = cls.aircraft_engagement_range(doctrine)
         for barcap in barcap_locations:
             point = ShapelyPoint(barcap.position.x, barcap.position.y)
             cap_threat_range = cls.barcap_threat_range(doctrine, barcap)
             air_threats.append(point.buffer(cap_threat_range.meters))
+            air_engagement_threats.append(point.buffer(engagement_range.meters))
 
         settings = theater.controlpoints[0].coalition.game.settings
         for tgo in air_defenses:
@@ -332,6 +375,7 @@ class ThreatZones:
             front_lines=(
                 unary_union(front_line_list) if front_line_list else _EMPTY_THREAT_POLY
             ),
+            air_engagement=unary_union(air_engagement_threats),
         )
 
     @staticmethod

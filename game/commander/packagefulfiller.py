@@ -189,8 +189,8 @@ class PackageFulfiller:
     def check_needed_escorts(self, builder: PackageBuilder) -> Dict[EscortType, bool]:
         threats = defaultdict(bool)
         for flight in builder.package.flights:
-            if self.threat_zones.waypoints_threatened_by_aircraft(
-                flight.flight_plan.escorted_waypoints()
+            if self.threat_zones.waypoints_threatened_by_aircraft_engagement(
+                list(flight.flight_plan.escorted_waypoints())
             ):
                 threats[EscortType.AirToAir] = True
             if self.threat_zones.waypoints_threatened_by_radar_sam(
@@ -201,7 +201,11 @@ class PackageFulfiller:
 
     def can_plan_escort(self, type: EscortType) -> bool:
         if type == EscortType.AirToAir:
-            return self.air_wing_can_plan(FlightType.ESCORT)
+            # An AirToAir escort is proposed as ESCORT for most packages but as
+            # TARCAP for CAS (cas.py), so gate on either rather than ESCORT alone.
+            for task in [FlightType.ESCORT, FlightType.TARCAP]:
+                if self.air_wing_can_plan(task):
+                    return True
         elif type == EscortType.Sead:
             for task in [
                 FlightType.SEAD,

@@ -129,13 +129,16 @@ so the two docs don't drift.
   (ingress at cruise + the ingress→target→split vul at combat + egress home, plus the
   climb-out) vs usable internal fuel and inserts a refuel waypoint **only** when short:
   pre-vul (routed on the ingress nav, before the join) if it can't fight through the
-  vul, otherwise post-vul (after the split). The fuel estimators credit the refuel
-  point (C-level #1), so the kneeboard/sim fuel reads correctly past the tanker. Fly a
-  **short** sortie (expect no tanker), a **long-egress** sortie (expect post-vul), and a
-  **very deep** target (expect pre-vul), in a faction with a compatible tanker.
-- **Pass:** Short sorties launch with no tanker tasking; deep sorties get exactly one
-  refuel waypoint on the correct side; the flight reaches the tanker with fuel to spare
-  and completes the sortie; kneeboard bingo/joker look sane after tanking.
+  vul, otherwise post-vul (after the split). A sortie too long for even a full top-off
+  to cover gets **both** a pre- and post-vul tanker. The fuel estimators credit the
+  refuel point, so the kneeboard/sim fuel reads correctly past the tanker. Fly a
+  **short** sortie (expect no tanker), a **long-egress** sortie (expect post-vul), a
+  **very deep** target (expect pre-vul), and a **very long-range** sortie (expect
+  both), in a faction with a compatible tanker.
+- **Pass:** Short sorties launch with no tanker tasking; deep sorties get a refuel
+  waypoint on the correct side (or both for the longest ranges); the flight reaches the
+  tanker with fuel to spare and completes the sortie; kneeboard bingo/joker look sane
+  after tanking.
 - **Fail signature:** Flights that clearly need gas get none (or vice versa); pre-vul
   detour backtracks awkwardly; a flight flames out before the tanker. The burn now
   walks the real route at the actual per-leg climb/combat/cruise rates

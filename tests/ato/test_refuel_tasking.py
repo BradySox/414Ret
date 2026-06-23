@@ -65,8 +65,12 @@ def test_sortie_fuel_split_handles_empty_and_single_point_routes() -> None:
     assert sortie_fuel_split(single, fuel, set(), only) == (0.0, 0.0)  # type: ignore[arg-type]
 
 
-def _decide(usable: float, to_vul: float, vul_home: float) -> RefuelTasking:
-    return decide_refuel_tasking(usable, to_vul, vul_home, RESERVE)
+def _decide(
+    usable: float, to_vul: float, vul_home: float, full: float = 1_000_000.0
+) -> RefuelTasking:
+    # `full` defaults to "plenty" so the single-tank cases aren't pushed to BOTH; the
+    # BOTH tests pass a realistic (small) full capacity explicitly.
+    return decide_refuel_tasking(usable, to_vul, vul_home, RESERVE, full)
 
 
 def test_no_tanker_when_internal_fuel_covers_the_sortie() -> None:
@@ -98,6 +102,26 @@ def test_pre_vul_boundary_just_below_vul_plus_reserve() -> None:
     assert _decide(4000, 3000, 1000) is not RefuelTasking.PRE_VUL
 
 
+def test_both_when_one_full_tank_cannot_cover_the_sortie() -> None:
+    # to_vul 5000 + vul_home 5000 + reserve 1000 = 11000 needed; usable 4000 can't
+    # reach the end of the vul, and a full tank (8000) still can't fly the whole
+    # remaining sortie -> tank both before and after the vul.
+    assert _decide(4000, 5000, 5000, full=8000) is RefuelTasking.BOTH
+
+
+def test_both_when_a_single_top_off_cannot_make_it_home() -> None:
+    # Reaches the end of the vul on internal fuel (5000 >= 2000 + 1000), but the trip
+    # home alone (10000 + 1000) exceeds a full tank (8000), so one post-vul top-off
+    # isn't enough -> both.
+    assert _decide(5000, 2000, 10000, full=8000) is RefuelTasking.BOTH
+
+
+def test_single_tank_still_chosen_when_a_full_load_covers_the_sortie() -> None:
+    # Same shortfall as a BOTH case but a bigger tank (12000 >= 11000 total) means one
+    # top-off suffices; it can't reach the vul end so it's pre-vul, not both.
+    assert _decide(4000, 5000, 5000, full=12000) is RefuelTasking.PRE_VUL
+
+
 def test_helper_properties() -> None:
     assert not RefuelTasking.NONE.needs_tanker
     assert RefuelTasking.PRE_VUL.needs_tanker
@@ -105,3 +129,7 @@ def test_helper_properties() -> None:
     assert not RefuelTasking.PRE_VUL.refuels_post_vul
     assert RefuelTasking.POST_VUL.refuels_post_vul
     assert not RefuelTasking.POST_VUL.refuels_pre_vul
+    # BOTH tanks on both sides of the vul.
+    assert RefuelTasking.BOTH.needs_tanker
+    assert RefuelTasking.BOTH.refuels_pre_vul
+    assert RefuelTasking.BOTH.refuels_post_vul

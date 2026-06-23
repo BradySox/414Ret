@@ -184,10 +184,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     old top-left threat-zone/navmesh/terrain control is folded in; side-effect toggles run via
     `useEffect`, not Leaflet add/remove. Client-only; needs the CI client rebuild (features doc §18).
 20. **Drop-spawn: map right-click unit placement** — right-click blank map space → Qt dialog
-    (coalition / category / force-group / layout / unit rows / deploy-timing / respawn) →
-    `place_unit_group()` validates terrain + 200 km range, creates TGO, fires SSE so the marker
-    appears immediately. Right-click a user-placed TGO to remove it (`DELETE /tgos/{id}`). Deploy
-    Next Turn queues a `PendingUnitPlacement` materialised at turn start. Two cheat settings:
+    (coalition / category / unit-type picker from all 66 named `LAYOUTS` / unit rows / deploy-timing
+    / respawn) → `place_unit_group()` validates terrain + 200 km range, creates TGO, fires SSE so
+    the marker appears immediately. Right-click a user-placed TGO to remove it (`DELETE /tgos/{id}`).
+    Deploy Next Turn queues a `PendingUnitPlacement` materialised at turn start. Two cheat settings:
     `enable_unit_placement` (unlock) + `enable_free_unit_placement` (no cost).
     (`game/theater/unitplacement.py`, `qt_ui/windows/groundobject/QPlaceUnitGroupDialog.py`,
     `client/src/components/liberationmap/MapContextMenu.tsx`; features doc §20.)

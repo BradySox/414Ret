@@ -1041,16 +1041,33 @@ friendly CP.
 ### Behaviour
 
 - Right-click blank map → `MapContextMenu` fires `POST /qt/place-unit-group(lat, lng)`.
-- Qt signal opens `QPlaceUnitGroupDialog`: coalition (Red locked behind `enable_enemy_buy_sell`), category, force group, layout, unit rows, deploy timing (now / next turn), respawn checkbox, cost/budget.
-- On confirm: `place_unit_group()` validates terrain + range (200 km from nearest friendly CP, bypassed by `enable_free_unit_placement`), creates TGO, attaches to CP, registers in `game.db.tgos`, fires SSE `update_tgo`.
-- Deploy Next Turn: queues `PendingUnitPlacement` on `game.pending_unit_placements`; materialised by `process_pending_placements()` at turn start.
+- Qt signal opens `QPlaceUnitGroupDialog`:
+  - **Coalition** selector (Red locked behind `enable_enemy_buy_sell` cheat).
+  - **Category** dropdown — Air Defense SAM/AAA, EWR, Coastal/Missile, Ground Force, Navy.
+  - **Unit type** dropdown — populated from `LAYOUTS.layouts` directly (not `ArmedForces`), so every named layout usable by the faction appears (S-300, SA-2, Patriot, NASAMS, Early-Warning Radar, etc.), not just what the faction normally auto-spawns. `ForceGroup.for_layout(layout, faction)` is created on-the-fly per selection.
+  - **Unit rows** — `QTgoLayoutGroupRow` widgets (reuse buy-menu pattern): unit type selector + count spinner per layout group.
+  - **Deploy timing** — Spawn Now / Deploy Next Turn.
+  - **Respawn** checkbox — auto-revive on destruction each turn.
+  - **Cost / budget** label; Place button disabled when over budget (unless free cheat).
+- On confirm: `place_unit_group()` validates terrain + range (200 km from nearest friendly CP, bypassed by `enable_free_unit_placement`), creates TGO, attaches to CP, registers in `game.db.tgos`, fires SSE `update_tgo` so the marker appears immediately.
+- Deploy Next Turn: queues `PendingUnitPlacement` on `game.pending_unit_placements`; materialised by `process_pending_placements()` at turn start. Budget deducted at queue time.
 - Auto-respawn: `process_respawns()` revives a destroyed user-placed TGO each turn.
-- Right-click on a user-placed TGO → Remove → `DELETE /tgos/{id}` → SSE `delete_tgo` → marker removed from React map.
+- Right-click on a user-placed TGO → **Remove** → `DELETE /tgos/{id}` → SSE `delete_tgo` → marker removed from React map.
+
+### Dialog unit-type enumeration
+
+The dialog uses `LAYOUTS.layouts` + `ForceGroup.for_layout(layout, faction)` instead of the
+faction's `ArmedForces` groups. This is intentional: `ArmedForces` only contains groups the
+faction is configured to auto-spawn (preset groups + generic layouts that passed faction unit
+checks at game-start). The LAYOUTS approach gives the full menu of 66 named layouts — every
+SAM system, EWR variant, and ship class the campaign engine knows about — filtered down to
+what the selected faction can actually field. If a category shows "(no compatible units for
+this faction)" the faction has no units in the matching `unit_classes` for that layout type.
 
 ### Deferred
 
-- Phase 6 — `PlacementModeOverlay.tsx` terrain ring (visual land/sea feedback while hovering before click).
-- Phase 7 — Pending markers layer (semi-transparent markers for "deploy next turn" TGOs).
-- Phase 8 — FOB establishment via the same dialog.
-- Phase 9 — Relocate (delete + re-place with pre-filled dialog).
-- Budget refund on Remove (TheaterUnit lacks stored price; needs separate tracking).
+- Terrain ring overlay (`PlacementModeOverlay.tsx`) — visual land/sea feedback while hovering before click.
+- Pending markers layer — semi-transparent map markers for "deploy next turn" TGOs.
+- FOB establishment — via the same dialog, creates a `Fob` control point dynamically.
+- Relocate — delete + re-place with pre-filled dialog.
+- Budget refund on Remove — `TheaterUnit` lacks a stored price field; needs separate cost tracking on `TheaterGroundObject`.

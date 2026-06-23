@@ -13,6 +13,7 @@
 * **[Cleanup]** Removed the upstream Pretense campaign generator (unused by the 414th fork).
 
 ## Fixes
+* **[Air Defense]** Generic AAA sites are no longer auto-issued a search radar, so they generate as optically-guided guns instead of radar-directed flak. The shared `AAA Site` / `Cold War Flak Site` layouts kept a fill-by-default radar slot that pulled in *any* of the faction's search radars (sometimes even a SAM site's big search radar); the slot is now `fill: false`, so only groups that explicitly bring a radar (e.g. the KS-19's SON-9 Fire Can) are radar-directed.
 * **[Mission]** Fixed a `woCharacterHuman` sim crash caused by orphaned civilian-helo spawns (civilian traffic is now airfields-only with deferred orphan despawn, and kept clear of the active battle).
 * **[Debrief]** Player despawns are no longer counted as combat losses, and untracked ground-unit deaths are summarised in one log line.
 * **[New Game]** Fixed a crash creating a new game from a malformed settings JSON member, and stopped seeded plugin-option defaults being dropped when merging campaign settings.

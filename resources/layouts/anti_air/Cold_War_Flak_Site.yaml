@@ -3,8 +3,9 @@ tasks:
   - AAA
 groups:
   - AAA:
-    - name: Cold War Flak Site Radar 
-      optional: true # Only available to Late Cold War
+    - name: Cold War Flak Site Radar
+      optional: true # Only spawned for groups that explicitly bring a radar (e.g. SON-9 Fire Can)
+      fill: false # Do not auto-fill a SearchRadar into generic flak sites: keep them optically-guided guns
       unit_count:
         - 1
       unit_classes:

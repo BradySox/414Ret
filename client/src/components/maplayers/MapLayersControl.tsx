@@ -1,16 +1,18 @@
-import { Fragment, ReactNode, useEffect, useMemo, useState } from "react";
+import { Fragment, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMap } from "react-leaflet";
 import { BasemapLayer } from "react-esri-leaflet";
 import L from "leaflet";
 
+import backend from "../../api/backend";
+import reloadGameState from "../../api/gamestate";
+import { setHighlightEmitters } from "../../api/mapSlice";
+import { useAppDispatch } from "../../app/hooks";
 import AircraftLayer from "../aircraftlayer";
 import AirDefenseRangeLayer from "../airdefenserangelayer";
-import EmitterHighlightToggle from "../airdefenserangelayer/EmitterHighlightToggle";
 import CombatLayer from "../combatlayer";
 import ControlPointsLayer from "../controlpointslayer";
 import FlightPlansLayer from "../flightplanslayer";
-import FogOfWarToggle from "../fogofwar/FogOfWarToggle";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
 import SupplyRoutesLayer from "../supplyrouteslayer";
@@ -68,7 +70,9 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   merad: { label: "MERAD", node: <TgosLayer categories={["aa"]} task={"MERAD"} /> },
   shorad: { label: "SHORAD", node: <TgosLayer categories={["aa"]} task={"SHORAD"} /> },
   aaa: { label: "AAA", node: <TgosLayer categories={["aa"]} task={"AAA"} /> },
-  revealFog: { label: "Reveal fog of war", node: <FogOfWarToggle /> },
+  // revealFog and emitterHighlight are side-effect toggles, not visual layers:
+  // they are driven by useEffect below (see comment there), so they render no node.
+  revealFog: { label: "Reveal fog of war", node: null },
   enemySamThreat: {
     label: "Enemy SAM threat range",
     node: <AirDefenseRangeLayer blue={false} />,
@@ -89,7 +93,7 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   alliedIads: { label: "Allied IADS network", node: <Iadsnetworklayer blue={true} /> },
   emitterHighlight: {
     label: "Highlight radar emitter on hover",
-    node: <EmitterHighlightToggle />,
+    node: null,
   },
   flightSelected: {
     label: "Selected flight plan",
@@ -164,6 +168,7 @@ function loadPersisted(): {
 
 export default function MapLayersControl() {
   const map = useMap();
+  const dispatch = useAppDispatch();
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
 
   const persisted = useMemo(loadPersisted, []);
@@ -197,6 +202,28 @@ export default function MapLayersControl() {
       JSON.stringify({ visible: persistable, baseMap, bandsOpen })
     );
   }, [visible, baseMap, bandsOpen]);
+
+  // Radar-emitter highlight is a pure client flag; keep the slice in sync with
+  // the checkbox (the initial dispatch matches the default, so it is harmless).
+  useEffect(() => {
+    dispatch(setHighlightEmitters(visible.emitterHighlight));
+  }, [dispatch, visible.emitterHighlight]);
+
+  // Fog-of-war overview: flip the server flag and re-pull /game so the map
+  // re-fogs/un-fogs. Driven by state (not layer add/remove) so unchecking
+  // reliably turns it back OFF. Skip the initial mount: the flag already starts
+  // off and the game has just loaded, so a reload there would be redundant.
+  const fogReady = useRef(false);
+  useEffect(() => {
+    if (!fogReady.current) {
+      fogReady.current = true;
+      return;
+    }
+    backend
+      .put("/fog-of-war/reveal", null, { params: { revealed: visible.revealFog } })
+      .then(() => reloadGameState(dispatch, true))
+      .catch((error) => console.log(`Error toggling fog of war: ${error}`));
+  }, [dispatch, visible.revealFog]);
 
   const toggle = (id: LayerId) =>
     setVisible((v) => ({ ...v, [id]: !v[id] }));

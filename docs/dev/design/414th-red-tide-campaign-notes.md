@@ -137,6 +137,23 @@ considered and declined.
      intact. **In-game pass still needed:** confirm red builds ground at Sperenberg/Schönefeld and
      convoys/airlifts roll toward the front, blue builds at Ramstein, and the IADS shows networked
      (Skynet) behavior with destroyable C2/power per base.
+7. **Medium-range SAM belt added** (2026-06-23). Red's air defense was long-range (S-300) +
+   AAA + scattered short-range, with the main red bases carrying *no* medium SAM. Air-defense
+   range is slot-driven: each control point's `medium_range_sams` preset locations come from
+   **`.miz` vehicle markers** whose launcher type sets the bucket
+   (`MizCampaignLoader.MEDIUM_RANGE_SAM_UNIT_TYPES`, scanned in **`self.red.vehicle_group`** only);
+   `generate_aa_at` then fills each medium slot with a MERAD ForceGroup. The faction already had 7
+   MERAD templates (SA-2 ×3, SA-3 ×2, SA-6, SA-11), so the gap was **slots, not templates**.
+   Added one `S_75M_Volhov` medium marker (→ MERAD: random SA-2/3/6/11) to the **CJTF Red** vehicle
+   group at each of the 8 red bases that lacked one: Haina, Sperenberg, Schönefeld, Templin,
+   Wittstock, Peenemünde, **Hamburg** (Hamburg's stock marker is silently dropped by a pre-existing
+   duplicate-key in the red vehicle table — same hand-edit quirk as the Kastrup statics; left as-is,
+   out of scope). Placed at base center `(-2000, -1000)` — a distinct quadrant from each base's IADS
+   cell but well inside the 15 nm comms range, so the new MERAD sites are **networked by the
+   advanced IADS** added in item 6. Additive: existing markers untouched (verified — 5 stock red
+   S-75 survive, +7 added = 12 loaded). Text-edit + re-zip; anchored on the existing red marker
+   `groupId 116` (the early summary `["red"]` block is NOT the country-data coalition — anchoring
+   there put markers in **blue** on the first attempt). IDs from `groupId 400`/`unitId 800`.
 
 ### Fulda forward heli base + supply re-route
 

@@ -24,9 +24,19 @@ class _Pos:
         return abs(self.x - other.x)
 
 
-def _wp(at_nm: float, *, takeoff: bool = False) -> SimpleNamespace:
-    kind = FlightWaypointType.TAKEOFF if takeoff else FlightWaypointType.NAV
-    return SimpleNamespace(position=_Pos(at_nm), waypoint_type=kind)
+class _WP:
+    """A minimal, hashable waypoint stand-in (real FlightWaypoint hashes by id, so the
+    combat-speed set needs identity hashing -- SimpleNamespace is unhashable)."""
+
+    def __init__(self, at_nm: float, *, takeoff: bool = False) -> None:
+        self.position = _Pos(at_nm)
+        self.waypoint_type = (
+            FlightWaypointType.TAKEOFF if takeoff else FlightWaypointType.NAV
+        )
+
+
+def _wp(at_nm: float, *, takeoff: bool = False) -> _WP:
+    return _WP(at_nm, takeoff=takeoff)
 
 
 def test_sortie_fuel_split_applies_climb_combat_cruise_rates() -> None:
@@ -51,7 +61,8 @@ def test_sortie_fuel_split_handles_empty_and_single_point_routes() -> None:
     fuel = SimpleNamespace(climb=30.0, combat=20.0, cruise=10.0)
     only = _wp(0, takeoff=True)
     assert sortie_fuel_split([], fuel, set(), only) == (0.0, 0.0)  # type: ignore[arg-type]
-    assert sortie_fuel_split([only], fuel, set(), only) == (0.0, 0.0)  # type: ignore[arg-type]
+    single = [only]
+    assert sortie_fuel_split(single, fuel, set(), only) == (0.0, 0.0)  # type: ignore[arg-type]
 
 
 def _decide(usable: float, to_vul: float, vul_home: float) -> RefuelTasking:

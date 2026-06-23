@@ -878,9 +878,32 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   - Tests: `tests/test_scar_rescue.py`, `tests/test_scar_objectives.py`,
     `tests/test_aircraft_tasking_roles.py`, `tests/test_scar_command_post_fog.py`. Full design +
     the Python-vs-Lua resolution decision: plan §9e.
-- NOT yet built: mis-ID penalty stays NONE; Phase-3 auto-planning. If Tyler's C-130 `DEPLOYMENT`
-  work ever lands, our `FlightType.SOF` + inventory-debit-on-frag should converge onto his
-  `PendingDeployments` shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
+- **Mis-ID penalty BUILT (R7, gated by `scar_misid_penalty`)** — destroying one of an area's
+  decoy/clutter convoys on a SCAR sortie now costs budget, so picking out the real HVT matters.
+  Lua (`scar_414_init.lua`): decoy/clutter spawns register in `misid_group_index`; a new
+  `S_EVENT_KILL` branch in `scar_event_handler:onEvent` charges a mis-ID (`record_misid`) only
+  when the killer's coalition is the prosecuting (SCAR) side, mirroring a running `misId` count
+  onto the area's `scar_results` entry (preserved across `mark_result`). Python:
+  `debriefing.py` parses `misId` into `StateData.scar_misid`; `MissionResultsProcessor`
+  `_commit_scar_misid` debits `scar_misid_penalty` × count from the offending side's budget
+  (`Coalition.adjust_budget`), per blue/red prefix (legacy unprefixed = blue). The setting
+  (Campaign Doctrine, default **8** ≈ one SOF team; 0 disables and only logs) makes it tunable
+  and additive. Tests: `tests/test_scar_command_post_fog.py` (debit by side, legacy-id, zero
+  penalty, no-misid), `tests/test_scar_bridge.py` (parse + Lua-handler wiring). **Lua needs an
+  in-game pass.**
+- **Phase-3 auto-planning BUILT (opt-in, gated by `scar_autoplan`, default OFF)** — "SCAR
+  shows up in the turn's ATO without the player building it." `PlanScarHunts`
+  (`game/commander/tasks/compound/scarhunts.py`) frags **one** player-flyable SCAR package per
+  turn against the highest-priority enemy battle position, via the thin `PlanScar`
+  (`primitive/scar.py`, BAI-shaped: `FlightType.SCAR` + common escorts). Wired late/low-priority
+  in `PlanNextAction` (after `DegradeIads`). **Blue-only by design** — SCAR is a human
+  discrimination puzzle, so the AI keeps using BAI for anti-armor and never frags SCAR for
+  itself. Default OFF so it's a strict no-op until the SCAR in-mission Lua (F1/F3/F5) has had a
+  cockpit pass; flip the setting (or its default) once that's done. Tests:
+  `tests/test_scar_autoplan.py` (off/red/no-target no-op, blue picks top battle position,
+  `PlanScar` proposes SCAR + escorts). If Tyler's C-130 `DEPLOYMENT` work ever lands, our
+  `FlightType.SOF` + inventory-debit-on-frag should converge onto his `PendingDeployments`
+  shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
 
 ### SOF insert generation fixes (2026-06-22)
 

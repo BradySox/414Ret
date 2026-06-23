@@ -52,13 +52,17 @@ and selected later upstream fixes.
 
 - **SCAR** adds a player-led moving-target hunt: identify the real HVT among decoys and
   clutter, then stop it before it reaches safety or, for a SCUD, reaches its launch point.
-  Real armor and missile sites can become the moving objective instead of a disposable
-  scripted stand-in. An experimental option (on by default for new campaigns while it is
+  Prosecuting the wrong convoy is a mis-identification that costs budget (tunable via the
+  `SCAR mis-ID penalty` Campaign Doctrine setting; set 0 to disable), so reading the target
+  signature matters. Real armor and missile sites can become the moving objective instead of a
+  disposable scripted stand-in. An experimental option (on by default for new campaigns while it is
   being playtested) uses finite purchased SOF teams to
   capture a commander alive: a C-130 inserts the team ahead of the fleeing HVT, a clean grab
   reveals enemy command posts (the team escapes with the hostage), and a botched grab strands
   the team as a "downed SOF team" objective you can fly a **helo CSAR recovery** against on a
-  later turn before it is overrun.
+  later turn before it is overrun. An opt-in `SCAR auto-planning` setting can frag a SCAR hunt
+  into your ATO automatically each turn (off by default while the in-mission scripting is being
+  playtested).
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform with
   standoff jamming and ELINT gameplay.
 - Strike and DEAD packages can receive auto-planned **TARPS** follow-up, while BAI remains

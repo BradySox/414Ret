@@ -160,8 +160,13 @@ mis-ID penalty lands, and §10 Q3 the threat value that trips the auto SEAD-esco
   command-post fog foundation, gated behind a new setting default OFF (CI-testable with a
   mocked "captured" result); (2) SOF airdrop + proximity capture producing "captured"
   (in-game); (3) finite SOF asset + CSAR extract.
-- **Deliberately NOT yet built** (other): the mis-ID penalty (R7) stays **NONE** for now
-  (SME: bragging rights); Phase-3 auto-planning.
+- **Mis-ID penalty (R7) BUILT** — a budget debit (`scar_misid_penalty`, default 8, 0 = off)
+  charged per decoy/clutter convoy the prosecuting side destroys; Lua `S_EVENT_KILL` →
+  `misId` count → Python `_commit_scar_misid`. See `414th-features.md` §15.
+- **Phase-3 auto-planning BUILT (opt-in)** — `scar_autoplan` (default OFF) frags one blue,
+  player-flyable SCAR package/turn against the top enemy battle position (`PlanScarHunts` →
+  `PlanScar`). Blue-only; AI keeps BAI. "Phase 3 done = SCAR shows up in the ATO without the
+  player building it." See `414th-features.md` §15.
 
 ---
 
@@ -405,14 +410,14 @@ consequence is applied.
 - [ ] Daylight, A-10 first. Playtest the find/ID/kill loop.
 
 ### Phase 2 — Penalty, SCUD variant, polish
-- [ ] Wrong-target penalty event + consequence hook (R7).
+- [x] Wrong-target penalty event + consequence hook (R7) — budget debit via `scar_misid_penalty`.
 - [ ] SCUD variant (track → launch → end).
 - [ ] Light-AAA + SA-9/13 laydown tuned to "contested not SEAD" (R9); confirm no auto SEAD-escort pull.
 - [ ] Night iteration; tune clutter density vs satisfaction (R3/R12).
 - [ ] **C-130 intel-node framing** (§9b.1): brief the start point / candidate roads / departure time as coming *from* the C-130; optional Herc orbit slot. (Zero code — briefing framing.)
 
 ### Phase 3 — Generator integration (optional / later)
-- [ ] Auto-planner can frag SCAR against suitable objectives.
+- [x] Auto-planner can frag SCAR against suitable objectives — `scar_autoplan` (opt-in, blue-only).
 - [ ] Procedural HVT/decoy/clutter/threat composition.
 - [ ] Tie HVT kill to a real campaign-economy effect.
 - [ ] **SOF capture branch** (§9b.2, stretch): C-130 airdrops SOF → capture-vs-destroy. **Capture writes a next-turn intel reward into campaign state** (revealed SAM coords / IADS-critical building); destroy = no carryover. Fragile/time-gated; confirm reward type with SME.

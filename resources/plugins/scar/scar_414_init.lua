@@ -53,6 +53,10 @@ end
 local scar_areas = {}
 -- group name -> area, for missile launch detection via the shot event.
 local missile_group_index = {}
+-- Decoy/clutter group name -> area, so a kill on a wrong convoy can be charged
+-- as a mis-ID (R7). Only decoy/clutter roles are registered; the HVT, command
+-- vehicle, and threat (SAM) groups are legitimate kills and stay out of this map.
+local misid_group_index = {}
 
 -- ---- Briefing / F10 map cues (spec §7, R11) --------------------------------------
 local scar_mark_id = 88000 -- high base to avoid colliding with other plugins' marks
@@ -159,9 +163,28 @@ local function mark_result(area, status)
         return
     end
     area.done = true
-    scar_results[area.id] = { status = status }
+    -- Carry any mis-ID count recorded before the area resolved (mark_result
+    -- replaces the whole entry table, so it would otherwise be lost).
+    scar_results[area.id] = { status = status, misId = area.misId }
     dirty_state = true
     scar_log("area " .. tostring(area.id) .. " (" .. area.variant .. ") -> " .. status)
+end
+
+-- Charge a mis-ID: the prosecuting side destroyed one of this area's decoy/
+-- clutter convoys (R7). Tracked on the area and mirrored onto its scar_results
+-- entry (preserving status), so a count survives both an already-resolved area
+-- and one that never resolves (seeded "active").
+local function record_misid(area)
+    area.misId = (area.misId or 0) + 1
+    local entry = scar_results[area.id]
+    if entry == nil then
+        entry = { status = "active" }
+        scar_results[area.id] = entry
+    end
+    entry.misId = area.misId
+    dirty_state = true
+    scar_log("area " .. tostring(area.id) .. ": mis-ID #" .. area.misId ..
+        " (wrong convoy prosecuted)")
 end
 
 local function group_dead(group_name)
@@ -643,25 +666,44 @@ local function scar_check()
     end
 end
 
--- Missile launch = fail. Any weapon release by a unit in a watched missile site
--- group (these are surface-to-surface sites) counts.
+-- SHOT: missile launch = fail (any weapon release by a watched surface-to-surface
+-- site). KILL: a decoy/clutter group destroyed by the prosecuting side = a mis-ID.
 local scar_event_handler = {}
 function scar_event_handler:onEvent(event)
-    if event == nil or event.id ~= world.event.S_EVENT_SHOT then
+    if event == nil or event.initiator == nil then
         return
     end
-    if event.initiator == nil then
+    if event.id == world.event.S_EVENT_SHOT then
+        local ok, group_name = pcall(function()
+            return event.initiator:getGroup():getName()
+        end)
+        if ok and group_name ~= nil then
+            local area = missile_group_index[group_name]
+            if area ~= nil and not area.done then
+                mark_result(area, "launched")
+            end
+        end
         return
     end
-    local ok, group_name = pcall(function()
-        return event.initiator:getGroup():getName()
-    end)
-    if not ok or group_name == nil then
-        return
-    end
-    local area = missile_group_index[group_name]
-    if area ~= nil and not area.done then
-        mark_result(area, "launched")
+    if event.id == world.event.S_EVENT_KILL and event.target ~= nil then
+        local okt, target_group = pcall(function()
+            return event.target:getGroup():getName()
+        end)
+        if not okt or target_group == nil then
+            return
+        end
+        local area = misid_group_index[target_group]
+        if area == nil then
+            return
+        end
+        -- Only the prosecuting (SCAR) side striking the wrong convoy is a mis-ID;
+        -- an ambiguous/unknown killer (nil coalition) is not charged.
+        local okc, killer_side = pcall(function()
+            return event.initiator:getCoalition()
+        end)
+        if okc and killer_side == scar_side(area) then
+            record_misid(area)
+        end
     end
 end
 
@@ -803,15 +845,18 @@ local function activate_spawn_area(tasking, window)
         spawn_index = spawn_index + 1
         local name = spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
         if name ~= nil then
-            if tostring(convoy.role) ~= "threat" then
+            local role = tostring(convoy.role)
+            if role ~= "threat" then
                 add_mover(area, name, scar_num(convoy.destX, 0),
                     scar_num(convoy.destY, 0), scar_num(convoy.speed, 5))
             end
-            if tostring(convoy.role) == "hvt" then
+            if role == "hvt" then
                 hvt_convoy = convoy
                 area.groups = { name }
                 area.destX = scar_num(convoy.destX, 0)
                 area.destY = scar_num(convoy.destY, 0)
+            elseif role == "decoy" or role == "clutter" then
+                misid_group_index[name] = area
             end
         end
     end
@@ -978,12 +1023,15 @@ local function activate_armor_area(tasking, window)
         spawn_index = spawn_index + 1
         local spawned = spawn_convoy(tasking.taskingId, convoy, country_id, spawn_index)
         if spawned ~= nil then
-            if tostring(convoy.role) ~= "threat" then
+            local role = tostring(convoy.role)
+            if role ~= "threat" then
                 add_mover(area, spawned, scar_num(convoy.destX, 0),
                     scar_num(convoy.destY, 0), scar_num(convoy.speed, 5))
             end
-            if convoy.role == "command" then
+            if role == "command" then
                 table.insert(area.groups, spawned)
+            elseif role == "decoy" or role == "clutter" then
+                misid_group_index[spawned] = area
             end
         end
     end

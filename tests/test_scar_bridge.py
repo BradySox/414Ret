@@ -528,9 +528,11 @@ def test_state_data_scar_results_default_empty() -> None:
     state = StateData.from_json({"scar_results": []}, unit_map)
     assert state.scar_results == {}
     assert state.sof_strandings == []
+    assert state.scar_misid == {}
     state = StateData.from_json({}, unit_map)
     assert state.scar_results == {}
     assert state.sof_strandings == []
+    assert state.scar_misid == {}
 
 
 def test_state_data_parses_sof_strandings() -> None:
@@ -552,6 +554,37 @@ def test_state_data_parses_sof_strandings() -> None:
         unit_map,
     )
     assert state.sof_strandings == [("blue-scar-1", 1500.0, -250.0)]
+
+
+def test_state_data_parses_scar_misid() -> None:
+    # A wrong-convoy kill tags a running ``misId`` count onto the area entry.
+    unit_map = MagicMock()
+    state = StateData.from_json(
+        {
+            "scar_results": {
+                "blue-scar-1": {"status": "active", "misId": 2},
+                "blue-scar-2": {"status": "success"},  # no mis-ID
+                "red-scar-1": {"status": "failed", "misId": 1},
+            }
+        },
+        unit_map,
+    )
+    assert state.scar_misid == {"blue-scar-1": 2, "red-scar-1": 1}
+
+
+def test_lua_misid_handler_charges_decoy_clutter_kills() -> None:
+    # Lock the wiring: decoy/clutter spawns register in misid_group_index and the
+    # KILL handler charges a mis-ID only when the prosecuting (SCAR) side did it.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    assert 'role == "decoy" or role == "clutter"' in script
+    assert "misid_group_index[name] = area" in script
+    assert "misid_group_index[spawned] = area" in script
+    handler = script.split("function scar_event_handler:onEvent(event)", maxsplit=1)[1]
+    assert "world.event.S_EVENT_KILL" in handler
+    assert "killer_side == scar_side(area)" in handler
+    assert "record_misid(area)" in handler
 
 
 def test_lua_capture_requires_a_live_sof_group() -> None:

@@ -28,7 +28,7 @@ from dcs.unitgroup import (
     PlaneGroup,
 )
 
-from game.ato import Flight, FlightType
+from game.ato import Flight
 from game.ato.flightstate import InFlight
 from game.ato.starttype import StartType
 from game.ato.traveltime import GroundSpeed
@@ -267,15 +267,23 @@ class FlightGroupSpawner:
                     f"Aircraft spawn behavior not implemented for {cp} ({cp.__class__})"
                 )
         except NoParkingSlotError:
+            # A cold/warm start needs a parking slot; large fixed-wing aircraft
+            # (e.g. the C-130 SOF insert / transports) often find none on a full
+            # field and would otherwise be forced into an air start despite the
+            # planned ground start. Fall back to a runway start -- which needs no
+            # parking slot -- before the air start, so fixed-wing flights still
+            # launch from the field. Helos use helipads/ground spawns and are not
+            # affected. (Previously this retry was limited to JAMMING flights.)
             if (
-                self.flight.flight_type is FlightType.JAMMING
-                and isinstance(cp, Airfield)
+                isinstance(cp, Airfield)
+                and not self.flight.is_helo
                 and self.start_type in {StartType.COLD, StartType.WARM}
             ):
                 try:
                     logging.warning(
-                        "No parking slots available for jamming flight. "
-                        "Trying runway start before falling back to air start."
+                        "No parking slots available for %s. Trying runway start "
+                        "before falling back to air start.",
+                        self.flight.flight_type.value,
                     )
                     self.flight.start_type = StartType.RUNWAY
                     return self._generate_at_airfield(name, cp)

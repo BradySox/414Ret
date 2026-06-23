@@ -30,6 +30,7 @@ class TgoJs(BaseModel):
     task: Optional[GroupTask]
     mobile: bool
     destination: Optional[LeafletPoint]
+    user_placed: bool
 
     class Config:
         title = "Tgo"
@@ -81,6 +82,7 @@ class TgoJs(BaseModel):
             task=tgo.groups[0].ground_object.task if tgo.groups else None,
             mobile=mobile,
             destination=destination,
+            user_placed=tgo.user_placed,
         )
 
     @staticmethod

@@ -118,6 +118,24 @@ class CheatSettingsBox(QGroupBox):
         )
         self.main_layout.addLayout(self.redfor_buysell_cheat)
 
+        # Drop-spawn: right-click unit placement
+        self.unit_placement_checkbox = QCheckBox()
+        self.unit_placement_checkbox.setChecked(sc.settings.enable_unit_placement)
+        self.unit_placement_checkbox.toggled.connect(apply_settings)
+        self.unit_placement_cheat = QLabeledWidget(
+            "Enable right-click unit placement (blue side):",
+            self.unit_placement_checkbox,
+        )
+        self.main_layout.addLayout(self.unit_placement_cheat)
+
+        self.free_placement_checkbox = QCheckBox()
+        self.free_placement_checkbox.setChecked(sc.settings.enable_free_unit_placement)
+        self.free_placement_checkbox.toggled.connect(apply_settings)
+        self.free_placement_cheat = QLabeledWidget(
+            "Free placement (no budget cost):", self.free_placement_checkbox
+        )
+        self.main_layout.addLayout(self.free_placement_cheat)
+
     @property
     def show_frontline_cheat(self) -> bool:
         return self.frontline_cheat_checkbox.isChecked()
@@ -141,6 +159,14 @@ class CheatSettingsBox(QGroupBox):
     @property
     def enable_redfor_buysell(self) -> bool:
         return self.opfor_buysell_checkbox.isChecked()
+
+    @property
+    def enable_unit_placement(self) -> bool:
+        return self.unit_placement_checkbox.isChecked()
+
+    @property
+    def enable_free_placement(self) -> bool:
+        return self.free_placement_checkbox.isChecked()
 
 
 class AutoSettingsLayout(QGridLayout):
@@ -534,6 +560,10 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
             self.cheat_options.enable_air_wing_cheats
         )
         self.settings.enable_enemy_buy_sell = self.cheat_options.enable_redfor_buysell
+        self.settings.enable_unit_placement = self.cheat_options.enable_unit_placement
+        self.settings.enable_free_unit_placement = (
+            self.cheat_options.enable_free_placement
+        )
 
         if self.game:
             events = GameUpdateEvents()
@@ -567,6 +597,12 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
         )
         self.cheat_options.opfor_buysell_checkbox.setChecked(
             self.settings.enable_enemy_buy_sell
+        )
+        self.cheat_options.unit_placement_checkbox.setChecked(
+            self.settings.enable_unit_placement
+        )
+        self.cheat_options.free_placement_checkbox.setChecked(
+            self.settings.enable_free_unit_placement
         )
 
         self.pluginsPage.update_from_settings()

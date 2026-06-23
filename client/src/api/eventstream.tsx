@@ -28,7 +28,7 @@ import {
   UnculledZone,
 } from "./liberationApi";
 import { navMeshUpdated } from "./navMeshSlice";
-import { updateTgo } from "./tgosSlice";
+import { removeTgo, updateTgo } from "./tgosSlice";
 import { threatZonesUpdated } from "./threatZonesSlice";
 import { unculledZonesUpdated } from "./unculledZonesSlice";
 import { LatLng } from "leaflet";
@@ -51,6 +51,7 @@ interface GameUpdateEvents {
   updated_front_lines: FrontLine[];
   deleted_front_lines: string[];
   updated_tgos: Tgo[];
+  deleted_tgos: string[];
   updated_control_points: ControlPoint[];
   updated_iads: IadsConnection[];
   deleted_iads: string[];
@@ -124,6 +125,10 @@ export const handleStreamedEvents = (
 
   if (events.updated_tgos.length > 0) {
     dispatch(updateTgo(events.updated_tgos));
+  }
+
+  if (events.deleted_tgos.length > 0) {
+    dispatch(removeTgo(events.deleted_tgos));
   }
 
   if (events.updated_control_points.length > 0) {

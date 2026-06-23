@@ -1,5 +1,6 @@
 import { selectMapCenter } from "../../api/mapSlice";
 import { useAppSelector } from "../../app/hooks";
+import MapContextMenu from "./MapContextMenu";
 import MapLayersControl from "../maplayers/MapLayersControl";
 import LeafletRuler from "../ruler/Ruler";
 import "./LiberationMap.css";
@@ -18,6 +19,7 @@ export default function LiberationMap() {
       <ScaleControl />
       <LeafletRuler />
       <MapLayersControl />
+      <MapContextMenu />
     </MapContainer>
   );
 }

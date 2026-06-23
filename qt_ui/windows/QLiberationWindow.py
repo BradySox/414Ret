@@ -39,6 +39,7 @@ from qt_ui.windows.GameUpdateSignal import GameUpdateSignal
 from qt_ui.windows.QDebriefingWindow import QDebriefingWindow
 from qt_ui.windows.basemenu.QBaseMenu2 import QBaseMenu2
 from qt_ui.windows.groundobject.QGroundObjectMenu import QGroundObjectMenu
+from qt_ui.windows.groundobject.QPlaceUnitGroupDialog import QPlaceUnitGroupDialog
 from qt_ui.windows.infos.QInfoPanel import QInfoPanel
 from qt_ui.windows.logs.QLogsWindow import QLogsWindow
 from qt_ui.windows.newgame.QNewGameWizard import NewGameWizard
@@ -55,6 +56,7 @@ class QLiberationWindow(QMainWindow):
     tgo_info_signal = Signal(TheaterGroundObject)
     control_point_info_signal = Signal(ControlPoint)
     select_flight_signal = Signal(Flight)
+    place_unit_group_signal = Signal(float, float)
 
     def __init__(self, game: Game | None, ui_flags: UiFlags) -> None:
         super().__init__()
@@ -72,12 +74,14 @@ class QLiberationWindow(QMainWindow):
         self.tgo_info_signal.connect(self.open_tgo_info_dialog)
         self.control_point_info_signal.connect(self.open_control_point_info_dialog)
         self.select_flight_signal.connect(self.on_select_flight)
+        self.place_unit_group_signal.connect(self.open_place_unit_group_dialog)
         QtContext.set_callbacks(
             QtCallbacks(
                 lambda target: self.new_package_signal.emit(target),
                 lambda tgo: self.tgo_info_signal.emit(tgo),
                 lambda cp: self.control_point_info_signal.emit(cp),
                 lambda flight: self.select_flight_signal.emit(flight),
+                lambda lat, lng: self.place_unit_group_signal.emit(lat, lng),
             )
         )
         Dialog.set_game(self.game_model)
@@ -586,6 +590,11 @@ class QLiberationWindow(QMainWindow):
         self.debriefing = QDebriefingWindow(debrief)
         self.debriefing.show()
         self.game_model.init_comms_registry()
+
+    def open_place_unit_group_dialog(self, lat: float, lng: float) -> None:
+        if self.game is None:
+            return
+        QPlaceUnitGroupDialog(self, lat, lng, self.game_model).exec()
 
     def open_tgo_info_dialog(self, tgo: TheaterGroundObject) -> None:
         QGroundObjectMenu(self, tgo, tgo.control_point, self.game_model).show()

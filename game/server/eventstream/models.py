@@ -39,6 +39,7 @@ class GameUpdateEventsJs(BaseModel):
     updated_front_lines: list[FrontLineJs]
     deleted_front_lines: set[UUID]
     updated_tgos: list[TgoJs]
+    deleted_tgos: list[UUID]
     updated_control_points: list[ControlPointJs]
     updated_iads: list[IadsConnectionJs]
     deleted_iads: set[UUID]
@@ -123,6 +124,7 @@ class GameUpdateEventsJs(BaseModel):
             updated_front_lines=updated_front_lines,
             deleted_front_lines=events.deleted_front_lines,
             updated_tgos=[TgoJs.for_tgo(tgo) for tgo in events.updated_tgos],
+            deleted_tgos=list(events.deleted_tgos),
             updated_control_points=[
                 ControlPointJs.for_control_point(cp)
                 for cp in events.updated_control_points

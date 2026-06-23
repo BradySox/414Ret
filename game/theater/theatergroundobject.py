@@ -86,6 +86,12 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         # omniscient (viewer=None) callers are handled by known_for(), so this flag
         # only matters for enemy sites from the player's perspective.
         self.discovered_by_player = False
+        # Drop-spawn: was this TGO placed by the user via map right-click?
+        self.user_placed: bool = False
+        # If True, auto-recreate this TGO at budget cost each turn after it is destroyed.
+        self.respawn_enabled: bool = False
+        # If True, the TGO hasn't materialized in-mission yet — queued for next turn.
+        self.pending_deploy: bool = False
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -100,6 +106,10 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         # campaigns (where the flag defaults False).
         if "discovered_by_player" not in state:
             state["discovered_by_player"] = True
+        # Drop-spawn fields — old saves have no user-placed TGOs so False is correct.
+        state.setdefault("user_placed", False)
+        state.setdefault("respawn_enabled", False)
+        state.setdefault("pending_deploy", False)
         self.__dict__.update(state)
 
     def _command_post_revealed(self) -> bool:

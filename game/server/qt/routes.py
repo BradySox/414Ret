@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 
 from game import Game
 from ..dependencies import GameContext, QtCallbacks, QtContext
@@ -83,6 +84,23 @@ def select_flight(
             detail=f"Game has no flight with ID {flight_id}",
         )
     qt.select_flight(flight)
+
+
+class PlaceUnitGroupRequest(BaseModel):
+    lat: float
+    lng: float
+
+
+@router.post(
+    "/place-unit-group",
+    operation_id="open_place_unit_group_dialog",
+    status_code=status.HTTP_200_OK,
+)
+def open_place_unit_group_dialog(
+    request: PlaceUnitGroupRequest,
+    qt: QtCallbacks = Depends(QtContext.get),
+) -> None:
+    qt.open_place_unit_group_dialog(request.lat, request.lng)
 
 
 @router.post(

@@ -37,6 +37,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 5 | SOF C-130 runway-start fallback | 🟡 NEAR | Medium (general spawner fix) | E |
 | 6 | Negative-start-packages takeoff-time check | 🟢 READY | Low/Medium (UI false-warn) | n/a |
 | 7 | AAQ-33 targeting-pod era restriction | 🔵 DONE | — | — |
+| 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🟠 CARE | Medium (player-facing; needs UI carve) | — |
 
 ---
 
@@ -118,6 +119,26 @@ unvalidated "fix" is not something to ask upstream to take.
 - Already open as upstream **#786** (`codex/fix-aaq33-era-restriction`). No
   action here; listed so it isn't re-carved.
 
+### 8. Recon fog-of-war — 🟠 CARE (re-scoped 2026-06-23)
+- **What:** the recon intel-fog (enemy site composition + threat/detection rings
+  hidden until the site is attacked/scouted/destroyed) plus the transient
+  "Reveal fog of war" overview toggle. Carved as a **2-PR stack**: PR #1 = the fog
+  mechanic alone (aircraft-agnostic, reveal-on-engage), PR #2 = the TARPS recon
+  platform + the `alive_for`/`alive_at_last_recon` BDA damage-lag it activates.
+- **Why re-scoped:** this was previously parked under ⛔ as "fork feature." It is
+  upstreamable once split from the SCAR command-post gate and the F-14 TARPS specifics;
+  PR #1 is genuinely generic. Tyler/Brady call.
+- **Kit:** `docs/dev/upstreaming/fog-of-war/` — `PR.md` (title + body),
+  `CARVE-MANIFEST.md` (exact per-file hunks, generic vs ⛔ SCAR vs ⏭ PR #2),
+  `0001-fog-of-war-new-files.patch` (the portable new files; apply on the upstream clone).
+- **⚠️ Carve carefully:** drop `hidden_on_player_map` / `_command_post_revealed` /
+  `scar_command_post_intel` (SCAR), and the TARPS/TARS reveal triggers + the whole
+  `alive_for` damage-lag layer (→ PR #2). The client checkbox must land in upstream's
+  own map-layer control, not the fork's custom panel.
+- **In-game pass:** the Python is test-covered; the player-facing fog still wants an
+  in-game pass on a fresh campaign (composition hidden → reveals on strike; overview
+  toggle un-fogs and re-fogs).
+
 ---
 
 ## ⛔ Fork-specific — do NOT upstream
@@ -127,8 +148,10 @@ unvalidated "fix" is not something to ask upstream to take.
   EW/ISR plugin when a `FlightType.SOF` flight is a C-130J-30. Depends entirely
   on the fork's `c130j` plugin and `FlightType.SOF` — meaningless upstream.
 - **The entire SCAR / commander-capture / SOF / CSAR stack, TIC, TARS, Flight
-  Control 414th glue, QRA reserve doctrine, recon fog** — these are the 414th
-  *features*, not generic fixes. Keep on `main`.
+  Control 414th glue, QRA reserve doctrine** — these are the 414th *features*, not
+  generic fixes. Keep on `main`. (Recon fog moved to the queue as item 8 — its
+  *generic* half is upstreamable once split from SCAR/TARPS; the SCAR command-post
+  gate stays here.)
 - **Splash Damage 3.4.2 414th buddy-tuned build** — pinned, intentionally
   divergent from upstream/source. Never push upstream or overwrite from it.
 

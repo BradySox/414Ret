@@ -154,6 +154,12 @@ considered and declined.
    S-75 survive, +7 added = 12 loaded). Text-edit + re-zip; anchored on the existing red marker
    `groupId 116` (the early summary `["red"]` block is NOT the country-data coalition — anchoring
    there put markers in **blue** on the first attempt). IDs from `groupId 400`/`unitId 800`.
+8. **LORAD depth at the rear hubs** (2026-06-23). Added one `S-300PS 5P85C ln` long-range marker
+   (→ LORAD: SA-10/S-300PS or SA-5/S-200) to the **CJTF Red** vehicle group at **Sperenberg** and
+   **Schönefeld**, giving the Berlin-cluster rear a long-range belt behind the front (red had only
+   2 LORAD markers before, now 4). Both hubs are now layered LORAD + MERAD + (existing short/AAA),
+   inside their IADS comms range so they network. Same text-edit/anchor method as item 7; IDs
+   auto-allocated above the current max.
 
 ### Fulda forward heli base + supply re-route
 

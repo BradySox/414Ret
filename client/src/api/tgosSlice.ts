@@ -20,6 +20,11 @@ export const tgosSlice = createSlice({
         state.tgos[tgo.id] = tgo;
       }
     },
+    removeTgo: (state, action: PayloadAction<string[]>) => {
+      for (const id of action.payload) {
+        delete state.tgos[id];
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(gameLoaded, (state, action) => {
@@ -37,7 +42,7 @@ export const tgosSlice = createSlice({
   },
 });
 
-export const { updateTgo } = tgosSlice.actions;
+export const { updateTgo, removeTgo } = tgosSlice.actions;
 
 export const selectTgos = (state: RootState) => state.tgos;
 

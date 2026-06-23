@@ -92,6 +92,31 @@ def set_tgo_destination(
         events.update_tgo(tgo)
 
 
+@router.delete(
+    "/{tgo_id}",
+    operation_id="delete_tgo",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+)
+def delete_tgo(
+    tgo_id: UUID,
+    game: Game = Depends(GameContext.require),
+) -> None:
+    tgo = game.db.tgos.get(tgo_id)
+    if not tgo.user_placed:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail=f"{tgo.name} was not user-placed and cannot be removed.",
+        )
+    tgo.control_point.connected_objectives.remove(tgo)
+    game.db.tgos.remove(tgo_id)
+
+    from .. import EventStream
+
+    with EventStream.event_context() as events:
+        events.delete_tgo(tgo_id)
+
+
 @router.put(
     "/{tgo_id}/cancel-travel",
     operation_id="clear_tgo_destination",

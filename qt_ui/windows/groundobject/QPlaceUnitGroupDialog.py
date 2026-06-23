@@ -26,6 +26,9 @@ from game.armedforces.armedforces import ArmedForces
 from game.armedforces.forcegroup import ForceGroup
 from game.data.groups import GroupRole, GroupTask
 from game.layout.layout import LayoutException, TgoLayout
+from game.server import EventStream
+from game.sim import GameUpdateEvents
+from game.theater.theatergroundobject import TheaterGroundObject
 from game.theater.unitplacement import PlacementSelection, place_unit_group
 from qt_ui.models import GameModel
 from qt_ui.windows.groundobject.QGroundObjectBuyMenu import (
@@ -342,7 +345,7 @@ class QPlaceUnitGroupDialog(QDialog):
             coalition.budget -= cost
 
         try:
-            place_unit_group(
+            result = place_unit_group(
                 self.game,
                 coalition,
                 self.lat,
@@ -360,5 +363,11 @@ class QPlaceUnitGroupDialog(QDialog):
                 coalition.budget += self._layout_model.price
             QMessageBox.warning(self, "Placement error", str(exc))
             return
+
+        # Push the new TGO to the React map immediately (spawn-now path only).
+        if isinstance(result, TheaterGroundObject):
+            events = GameUpdateEvents()
+            events.update_tgo(result)
+            EventStream.put_nowait(events)
 
         self.accept()

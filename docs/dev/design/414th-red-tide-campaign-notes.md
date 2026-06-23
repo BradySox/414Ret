@@ -160,6 +160,20 @@ considered and declined.
    2 LORAD markers before, now 4). Both hubs are now layered LORAD + MERAD + (existing short/AAA),
    inside their IADS comms range so they network. Same text-edit/anchor method as item 7; IDs
    auto-allocated above the current max.
+9. **Placement moved onto airfield aprons** (2026-06-23). Items 6–8 used blind base-center
+   offsets, which dropped several structures into forest/built-up terrain (in-game screenshot).
+   pydcs exposes no surface-type query and the GCW reference missions
+   (`CG_Cold War Germany Framework`, `Foothold_GCW`) place objects only at *their* sites — too
+   sparse near our bases (Hamburg's nearest reference is 42 km). The one guaranteed-clear, paved
+   location at every base is the **parking apron**, so all **38 additions** (3 factories, 2 ammo,
+   8 CC, 8 comms, 8 power, 7 MERAD, 2 LORAD) were relocated onto `airport.parking_slots` via
+   farthest-point sampling (spread across the apron) biased toward heli/cargo slots to limit
+   fixed-wing parking conflicts. Block-scoped x/y rewrite (`relocate_to_aprons.py`); Kastrup's CC
+   uses a value-based fallback (its repurposed block has the original hand-edited shallow indent).
+   Verified via pydcs: all 38 on their base apron (≤3.9 km from the airfield ref, correct nearest
+   CP), members byte-identical. **Trade-off / in-game watch:** buildings + SAM sites now sit on the
+   apron (clear, but visually on-field); if a static lands on a slot Retribution wants for a based
+   aircraft there can be a spawn overlap — watch the red bases that host squadrons.
 
 ### Fulda forward heli base + supply re-route
 

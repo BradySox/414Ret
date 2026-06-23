@@ -54,8 +54,7 @@
   ],
   "missiles": [],
   "preset_groups": [
-    "Hawk",
-    "Cold-War-Flak"
+    "Hawk"
   ],
   "naval_units": [],
   "air_defense_units": [

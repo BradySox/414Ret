@@ -84,8 +84,9 @@ accessor takes `viewer: Optional[Player] = None` defaulting to truth; consumers 
 Do **not** reintroduce the old `_for_player`/`_for` method twins — that collapse is finished.
 A runtime **overview toggle** (`game/theater/fogofwar.py`, transient/never-pickled) short-circuits
 those three fog leaves (`alive_for`, `known_for`, `hidden_on_player_map`) to ground truth for any
-viewer, so the *whole* render path + intel dialogs un-fog with **no** server-model changes; the
-View-menu action pushes a no-recenter `reload_map` event to refresh the map.
+viewer, so the *whole* render path + intel dialogs un-fog with **no** server-model changes. It is
+a checkbox in the map's Leaflet layer panel (`FogOfWarToggle`, same pattern as
+`EmitterHighlightToggle`) that `PUT`s `/fog-of-war/reveal` then re-pulls `/game`.
 (`game/theater/theatergroup.py`, `theatergroundobject.py`; see features doc §3.)
 
 **Save migration.** Removed/renamed enums migrate old pickles in `FlightType._missing_`
@@ -139,11 +140,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     so red stops hitting the same things every turn; reactive threat response stays strictly
     deterministic. The low-risk in-Python alternative to a runtime MOOSE `Ops.Chief` red
     rewrite (`game/commander/tasks/targetorder.py`; features doc §17).
-18. **Fog-of-war overview toggle** — a transient **Reveal Fog** toolbar button / **View** menu
-    action (Ctrl+Shift+R) that short-circuits the three recon-fog leaves to ground truth, un-fogging
-    the whole map + intel dialogs (enemy composition, threat rings, hidden command posts) with
-    no server-model changes. Never persisted; resets off on every load
-    (`game/theater/fogofwar.py`, `qt_ui/windows/QLiberationWindow.py`; features doc §3).
+18. **Fog-of-war overview toggle** — a transient **"Reveal fog of war"** checkbox in the map's
+    Leaflet layer panel (with the enemy-intel toggles) that short-circuits the three recon-fog
+    leaves to ground truth, un-fogging the whole map + intel dialogs (enemy composition, threat
+    rings, hidden command posts) with no server-model changes. `PUT /fog-of-war/reveal` flips the
+    flag, then the client re-pulls `/game`. Never persisted; defaults off
+    (`game/theater/fogofwar.py`, `game/server/fogofwar/`, `client/src/components/fogofwar/`;
+    features doc §3).
 
 ---
 

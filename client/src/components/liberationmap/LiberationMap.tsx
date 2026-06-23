@@ -7,6 +7,7 @@ import CombatLayer from "../combatlayer";
 import ControlPointsLayer from "../controlpointslayer";
 import CullingExclusionZones from "../cullingexclusionzones/CullingExclusionZones";
 import FlightPlansLayer from "../flightplanslayer";
+import FogOfWarToggle from "../fogofwar/FogOfWarToggle";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
@@ -89,6 +90,9 @@ export default function LiberationMap() {
         </LayersControl.Overlay>
         <LayersControl.Overlay name="Enemy IADS Network">
           <Iadsnetworklayer blue={false} />
+        </LayersControl.Overlay>
+        <LayersControl.Overlay name="Reveal fog of war (overview)">
+          <FogOfWarToggle />
         </LayersControl.Overlay>
         <LayersControl.Overlay name="Allied SAM threat range">
           <AirDefenseRangeLayer blue={true} />

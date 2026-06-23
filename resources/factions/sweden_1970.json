@@ -35,8 +35,7 @@
   ],
   "missiles": [],
   "preset_groups": [
-    "Hawk",
-    "Cold-War-Flak"
+    "Hawk"
   ],
   "naval_units": [
     "FFG Oliver Hazard Perry"

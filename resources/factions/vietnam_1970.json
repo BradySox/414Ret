@@ -44,8 +44,7 @@
   ],
   "preset_groups": [
     "SA-2/S-75",
-    "HQ-2",
-    "Cold-War-Flak"
+    "HQ-2"
   ],
   "air_defense_units": [
     "AAA KS-19 100mm",

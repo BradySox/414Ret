@@ -37,3 +37,23 @@ def test_fire_can_preset_still_keeps_its_radar() -> None:
     # no longer auto-fills a radar.
     group = ForceGroup.from_preset_group("KS-19/SON-9")
     assert any(unit.unit_class is UnitClass.SEARCH_RADAR for unit in group.units)
+
+
+def test_cold_war_flak_is_faction_generic_not_hardcoded_german_88() -> None:
+    # The Cold War Flak Site used to hardcode the WWII German 8.8 cm Flak 18 as its
+    # main guns for every faction. It is now a generic layout whose gun slots fill
+    # from each faction's own AAA pool, so it must be generic and must not pin any
+    # specific gun type.
+    layout = LAYOUTS.by_name("Cold War Flak Site")
+    assert layout.generic, "Cold War Flak Site should be a generic layout"
+    gun_groups = [
+        ug
+        for ug in layout.all_unit_groups
+        if UnitClass.AAA in ug.unit_classes and not ug.optional
+    ]
+    assert gun_groups, "Cold War Flak Site should have faction-filled AAA gun slots"
+    for ug in layout.all_unit_groups:
+        assert not ug.unit_types, (
+            f"{ug.name} pins specific unit types {ug.unit_types}; "
+            "the flak site should fill from the faction's AAA pool"
+        )

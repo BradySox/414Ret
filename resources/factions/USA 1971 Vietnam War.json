@@ -74,8 +74,7 @@
   "missiles": [],
   "requirements": {},
   "preset_groups": [
-    "Hawk",
-    "Cold-War-Flak"
+    "Hawk"
   ],
   "naval_units": [
     "CV-59 Forrestal"

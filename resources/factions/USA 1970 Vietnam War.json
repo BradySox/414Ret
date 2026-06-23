@@ -76,8 +76,7 @@
   ],
   "missiles": [],
   "preset_groups": [
-    "Hawk",
-    "Cold-War-Flak"
+    "Hawk"
   ],
   "naval_units": [
     "DDG Arleigh Burke IIa",

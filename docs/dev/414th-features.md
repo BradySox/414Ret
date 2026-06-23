@@ -814,7 +814,8 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   (which forces alarm-GREEN so towed/SCUD groups actually drive; `mist.goRoute` — a hand-rolled
   `setTask` did NOT reliably move them, don't revert). SOF capture binds **lazily** as the HVT
   nears the ambush point (`maybe_bind_sof`). Tunables in `scar_414_init.lua` (`SCAR_PROXIMITY_M`)
-  / `scarluadata.py` (`SCAR_TRAVEL_M` ~15 NM, `SCAR_WINDOW_S`). **Needs an in-game pass.**
+  / `scarluadata.py` (`SCAR_TRAVEL_M` ~15 NM, `SCAR_WINDOW_S`). **Verified in-game 2026-06-23**
+  (HVT drives/flees on activation; no alarm-RED pinning — checklist F1).
 - **Results bridge:** the `scar` plugin (`resources/plugins/scar/`, default ON) writes the
   global `scar_results` (status per tasking); rides the proven TARS channel
   (`dcs_retribution.lua` `write_state` → `StateData.scar_results` in `debriefing.py` →
@@ -838,9 +839,11 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   in `commit_scar_results`) OR the normal discovery (`_command_post_revealed()` = capture or
   `discovered_by_player`). `known_for` still gates composition. AI/planner use ground truth
   (`viewer=None`). SME-answered 2026-06-18: reveal ALL, permanent, full reveal w/ exact coords,
-  ~2-3 posts/campaign. Tests: `tests/test_scar_command_post_fog.py`.
-- Commander-capture **Phase 2a + 2c-1 BUILT (gated, needs an in-game pass)** — the scripted SOF
-  capture loop that PRODUCES the `captured` result. When `scar_command_post_intel` is on, the
+  ~2-3 posts/campaign. Tests: `tests/test_scar_command_post_fog.py`. **UI/fog side confirmed
+  in-game 2026-06-23** (posts hidden; the "Reveal fog of war" overview toggle shows both sides) —
+  the full capture→permanent-reveal carryover across turns still owes a pass (checklist F2).
+- Commander-capture **Phase 2a + 2c-1 BUILT (gated; capture loop verified in-game 2026-06-23,
+  checklist F1)** — the scripted SOF capture loop that PRODUCES the `captured` result. When `scar_command_post_intel` is on, the
   generator allocates a bought, dedicated SOF infantry asset from friendly base inventory and
   drops that team (`mist.dynAdd`, no CTLD dependency yet) at
   `SCAR_SOF_LEAD_FRAC` (0.7) of the HVT's spawn→dest route; the SCAR plugin's `scar_check`
@@ -860,7 +863,8 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   hybrid capture binds to a player-delivered team if one is near, else scripted-spawns a fallback.
   Economy is **debit-on-frag** (`commit_sof_deployments`): one bought team per fragged insert,
   regardless of capture outcome. A clean capture **refunds** the team (it escapes with the
-  hostage); a botch **strands** it. See plan §9d.
+  hostage); a botch **strands** it. See plan §9d. **EW exclusion verified in-game 2026-06-23**
+  ("the EW is gone" — the `c130j` plugin is correctly skipped on the SOF C-130; checklist F3).
 - Commander-capture **Phase 2c-3 / slice C BUILT (gated; recovery resolves in pure Python, no
   new Lua)** — a botched/late capture strands the team, surfaced next turn as a first-class CSAR
   objective:
@@ -923,8 +927,9 @@ Two fixes so the SOF C-130 airdrop actually generates as a flyable ground sortie
   the same airframe. When any planned `FlightType.SOF` flight is a C-130J-30, the `c130j` plugin
   is skipped for that mission (logged). Tradeoff: you can't fly the EW jet and run a SOF insert in
   the same mission; letting them coexist would need a Lua-side per-group exclusion instead.
-  **Lua-free Python; wants an in-game pass.** Both are upstream-PR candidates (the runway fallback
-  is a general spawner fix; the EW gate is fork-specific to the `c130j` plugin).
+  **EW de-conflict verified in-game 2026-06-23** ("the EW is gone" on the SOF C-130; checklist
+  F3); the runway-fallback half still wants a pass. Both are upstream-PR candidates (the runway
+  fallback is a general spawner fix; the EW gate is fork-specific to the `c130j` plugin).
 
 ---
 

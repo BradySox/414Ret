@@ -611,6 +611,8 @@ export const {
   useOpenNewControlPointPackageDialogMutation,
   useOpenControlPointInfoDialogMutation,
   useSelectFlightMutation,
+  useOpenPlaceUnitGroupDialogMutation,
+  useDeleteUserPlacedTgoMutation,
   useListSupplyRoutesQuery,
   useListTgosQuery,
   useGetTgoByIdQuery,

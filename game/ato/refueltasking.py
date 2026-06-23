@@ -9,6 +9,8 @@ the sortie it runs short:
   tops off on the ingress leg before the vul.
 * **Post-vul** -- it can fight through the vul on internal fuel but cannot make it home
   with reserve afterward, so it tanks on the egress leg.
+* **Both** -- the sortie is so long that even a full top-off cannot cover it on a single
+  refuel, so it tanks before *and* after the vul.
 
 This module holds only the (pure, unit-agnostic) decision; the flight plan supplies the
 fuel numbers and inserts the matching refuel waypoint. All fuel quantities passed in
@@ -42,6 +44,9 @@ class RefuelTasking(Enum):
     PRE_VUL = "pre_vul"
     #: Tank on the egress leg, after the vulnerability window.
     POST_VUL = "post_vul"
+    #: Tank both before and after the vul -- the sortie is too long for a single
+    #: top-off to full internal fuel to cover.
+    BOTH = "both"
 
     @property
     def needs_tanker(self) -> bool:
@@ -49,11 +54,11 @@ class RefuelTasking(Enum):
 
     @property
     def refuels_pre_vul(self) -> bool:
-        return self is RefuelTasking.PRE_VUL
+        return self in (RefuelTasking.PRE_VUL, RefuelTasking.BOTH)
 
     @property
     def refuels_post_vul(self) -> bool:
-        return self is RefuelTasking.POST_VUL
+        return self in (RefuelTasking.POST_VUL, RefuelTasking.BOTH)
 
 
 def sortie_fuel_split(
@@ -109,6 +114,7 @@ def decide_refuel_tasking(
     fuel_to_end_of_vul: float,
     fuel_vul_to_home: float,
     reserve: float,
+    full_fuel: float,
 ) -> RefuelTasking:
     """Decide whether and where a flight should tank.
 
@@ -119,17 +125,30 @@ def decide_refuel_tasking(
             vulnerability window (split), in pounds.
         fuel_vul_to_home: Fuel burned from the split back to landing, in pounds.
         reserve: Landing fuel reserve to preserve, in pounds.
+        full_fuel: Internal fuel after topping off at a tanker (no taxi burn), in
+            pounds -- i.e. how far a single refuel gets the flight.
 
     Returns:
-        ``NONE`` if internal fuel covers the whole sortie plus reserve, ``PRE_VUL`` if
-        the flight cannot reach the end of the vul with reserve to spare, otherwise
-        ``POST_VUL``.
+        ``NONE`` if internal fuel covers the whole sortie plus reserve; ``POST_VUL`` if
+        the flight can reach the end of the vul and a single top-off then covers the
+        trip home; ``PRE_VUL`` if it must top off on the way in and one tank still gets
+        it home; ``BOTH`` when even a full top-off can't cover the remaining sortie, so
+        it needs to tank before *and* after the vul.
     """
     total_required = fuel_to_end_of_vul + fuel_vul_to_home + reserve
     if usable_fuel >= total_required:
         return RefuelTasking.NONE
-    # The flight is short. If it can't even fight through the vul while holding its
-    # reserve it has to top off on the way in; otherwise it can wait until egress.
-    if usable_fuel < fuel_to_end_of_vul + reserve:
+
+    # The flight is short. Prefer tanking on egress when it can both reach the end of
+    # the vul on internal fuel and make it home on a single post-vul top-off.
+    reaches_end_of_vul = usable_fuel >= fuel_to_end_of_vul + reserve
+    one_tank_covers_egress = full_fuel >= fuel_vul_to_home + reserve
+    if reaches_end_of_vul and one_tank_covers_egress:
+        return RefuelTasking.POST_VUL
+
+    # Otherwise it must top off on the way in. A pre-vul top-off refills to full early,
+    # so it only helps if a full load then covers the whole remaining sortie; if not,
+    # the flight is too long for one tank and needs both a pre- and post-vul tanker.
+    if full_fuel >= total_required:
         return RefuelTasking.PRE_VUL
-    return RefuelTasking.POST_VUL
+    return RefuelTasking.BOTH

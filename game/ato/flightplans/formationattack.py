@@ -261,6 +261,7 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         tasking = self._refuel_tasking(route, combat_speed, split)
         refuel_pre = None
         refuel = None
+        # Separate ifs (not elif): BOTH tanks pre- and post-vul.
         if tasking.refuels_pre_vul:
             refuel_pre = builder.refuel(self.package.waypoints.refuel)
             # Reroute the ingress nav through the tanker (which sits on the home-to-join
@@ -271,7 +272,7 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
                 ingress_egress_altitude,
                 use_agl_ingress_egress,
             )
-        elif tasking.refuels_post_vul:
+        if tasking.refuels_post_vul:
             refuel = builder.refuel(self.package.waypoints.refuel)
             nav_from = builder.nav_path(
                 refuel.position,
@@ -338,9 +339,14 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         fuel_to_end_of_vul, fuel_vul_to_home = sortie_fuel_split(
             route, fuel, combat_speed_waypoints, split
         )
-        usable_fuel = self.flight.unit_type.max_fuel * KG_TO_LBS - fuel.taxi
+        full_fuel = self.flight.unit_type.max_fuel * KG_TO_LBS
+        usable_fuel = full_fuel - fuel.taxi
         return decide_refuel_tasking(
-            usable_fuel, fuel_to_end_of_vul, fuel_vul_to_home, fuel.min_safe
+            usable_fuel,
+            fuel_to_end_of_vul,
+            fuel_vul_to_home,
+            fuel.min_safe,
+            full_fuel,
         )
 
     @property

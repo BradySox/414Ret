@@ -25,6 +25,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          # Enough history for the rolling changelog in the release notes (the
+          # default shallow checkout only has the tip commit).
+          fetch-depth: 50
 
       - name: Set up Python environment
         uses: ./.github/actions/setup-liberation-python
@@ -44,20 +47,33 @@ jobs:
         run: |
           Compress-Archive -Path .\dist\dcs-retribution\ -DestinationPath dist\414th-retribution-latest.zip -Compression Optimal
 
+      # Build the release notes fresh each push so the "Recent changes" list rolls
+      # forward with main. Written to a file and passed via body_path (avoids
+      # PowerShell here-string backtick/escape headaches with markdown).
+      - name: Generate release notes
+        shell: bash
+        run: |
+          {
+            echo "**Automated build** from commit ${GITHUB_SHA} on \`main\`."
+            echo ""
+            echo "This is the current 414th Joint Fighter Group fork of DCS Retribution."
+            echo "It includes all 414th-specific features: JAMMING/TARPS flight types,"
+            echo "BDA fog-of-war, QRA intercept, TIC frontline battle sim, and more."
+            echo ""
+            echo "**Download** \`414th-retribution-latest.zip\`, extract, and run \`retribution_main.exe\`."
+            echo ""
+            echo "### Recent changes"
+            git log -n 15 --no-merges --pretty=format:'- %s (%h)'
+            echo ""
+            echo ""
+            echo "> Built: ${GITHUB_RUN_NUMBER} — ${GITHUB_SHA}"
+          } > release_body.md
+
       - name: Update latest pre-release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: "414th Latest Build"
           prerelease: true
-          body: |
-            **Automated build** from commit ${{ github.sha }} on `main`.
-
-            This is the current 414th Joint Fighter Group fork of DCS Retribution.
-            It includes all 414th-specific features: JAMMING/TARPS flight types,
-            BDA fog-of-war, QRA intercept, TIC frontline battle sim, and more.
-
-            **Download** `414th-retribution-latest.zip`, extract, and run `retribution_main.exe`.
-
-            > Built: ${{ github.run_number }} — ${{ github.sha }}
+          body_path: release_body.md
           files: dist/414th-retribution-latest.zip

@@ -65,6 +65,17 @@ if TYPE_CHECKING:
     from game.radio.radios import Radio, RadioFrequency, RadioRegistry
 
 
+# Fallback altitude bands (in thousands of feet) used by `preferred_altitude` to
+# estimate a flight altitude when an aircraft's data file does not override it. Each
+# tuple is (low, high): the altitude a 600 kph aircraft prefers and the altitude a
+# 2800 kph aircraft prefers, with faster types interpolated toward the high end. A
+# low == high pair pins every aircraft to that single altitude regardless of speed.
+# Tune here rather than at the call sites; per-aircraft overrides still win.
+PATROL_ALTITUDE_BAND_KFT = (10, 33)
+CRUISE_ALTITUDE_BAND_KFT = (20, 20)
+COMBAT_ALTITUDE_BAND_KFT = (20, 20)
+
+
 @dataclass(frozen=True)
 class RadioConfig:
     inter_flight: Optional[Radio]
@@ -347,8 +358,7 @@ class AircraftType(UnitType[Type[FlyingType]]):
         if self.patrol_altitude:
             return self.patrol_altitude
         else:
-            # TODO: somehow make the upper and lower limit configurable
-            return self.preferred_altitude(10, 33, "patrol")
+            return self.preferred_altitude(*PATROL_ALTITUDE_BAND_KFT, "patrol")
 
     def preferred_patrol_speed(self, altitude: Distance) -> Speed:
         """Preferred true airspeed when patrolling"""
@@ -398,16 +408,14 @@ class AircraftType(UnitType[Type[FlyingType]]):
         if self.cruise_altitude:
             return self.cruise_altitude
         else:
-            # TODO: somehow make the upper and lower limit configurable
-            return self.preferred_altitude(20, 20, "cruise")
+            return self.preferred_altitude(*CRUISE_ALTITUDE_BAND_KFT, "cruise")
 
     @cached_property
     def preferred_combat_altitude(self) -> Distance:
         if self.combat_altitude:
             return self.combat_altitude
         else:
-            # TODO: somehow make the upper and lower limit configurable
-            return self.preferred_altitude(20, 20, "combat")
+            return self.preferred_altitude(*COMBAT_ALTITUDE_BAND_KFT, "combat")
 
     def preferred_altitude(self, low: int, high: int, type: str) -> Distance:
         # Estimate based on max speed.

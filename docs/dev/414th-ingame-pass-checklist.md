@@ -104,6 +104,25 @@ so the two docs don't drift.
   that both variants resolve in `AircraftType` and that the A6E unit supports AI
   air-refueling in the build's pydcs.
 
+### C5 — Boom/probe refuel-method compatibility · ☐ UNTESTED
+- **Setup:** Aircraft now carry an `air_refuel_type` (boom/probe) and tankers a
+  `tanker_refuel_types`; the planner only assigns a tanker that provides the package
+  receivers' method, and `PackageRefuelingFlightPlan.patrol_duration` only counts
+  compatible receivers. Plan a **boom** package (e.g. F-16/F-15) and a **probe**
+  package (e.g. F/A-18/Su-27) in a faction that has both boom (KC-135) and drogue
+  (KC-135 MPRS / KC-130 / S-3B Tanker) tankers. The classification data is an initial
+  high-confidence pass and is **opt-in / permissive** — untagged airframes refuel from
+  anything, so this can only *over-restrict* a mis-tagged aircraft, never crash.
+- **Pass:** Boom packages get a boom tanker; probe packages get a drogue tanker;
+  helicopters only get a slow (KC-130) tanker; mixed/untagged packages still get a
+  tanker. Receivers actually plug in and take fuel in-mission.
+- **Fail signature:** A package that should have a compatible tanker gets none (a
+  mis-tagged receiver, or a faction lacking the right tanker type), or a receiver is
+  matched to a tanker it can't physically use. Fixes are data-only: the airframe's
+  `air_refuel_type` or the tanker's `tanker_refuel_types` in
+  `resources/units/aircraft/*.yaml`. KC-10 boom-vs-drogue and any exotic/mod airframe
+  are the likeliest mis-tags to review first.
+
 ---
 
 ## D. Loss accounting (upstream-core)

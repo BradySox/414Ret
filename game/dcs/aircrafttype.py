@@ -4,6 +4,7 @@ import inspect
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import Enum
 from functools import cache, cached_property
 from pathlib import Path
 from typing import Any, ClassVar, Dict, Iterator, Optional, TYPE_CHECKING, Type
@@ -74,6 +75,24 @@ if TYPE_CHECKING:
 PATROL_ALTITUDE_BAND_KFT = (10, 33)
 CRUISE_ALTITUDE_BAND_KFT = (20, 20)
 COMBAT_ALTITUDE_BAND_KFT = (20, 20)
+
+
+class AirRefuelType(Enum):
+    """Air-to-air refueling method an aircraft uses (as a receiver) or provides (as a
+    tanker).
+
+    BOOM is the USAF flying-boom receptacle (KC-135, KC-10); PROBE is probe-and-drogue
+    (US Navy/Marine, NATO, most non-US types, and buddy/carrier tankers). The two are
+    physically incompatible, so a boom-only receiver cannot take fuel from a drogue-only
+    tanker and vice versa.
+    """
+
+    BOOM = "boom"
+    PROBE = "probe"
+
+    @classmethod
+    def from_data(cls, value: Optional[str]) -> Optional["AirRefuelType"]:
+        return cls(value) if value is not None else None
 
 
 @dataclass(frozen=True)
@@ -263,6 +282,19 @@ class AircraftType(UnitType[Type[FlyingType]]):
     #: (the squadron's mission-type checkbox starts unchecked). Still selectable
     #: manually. Each must also appear in ``tasks`` to supply its priority.
     secondary_tasks: frozenset[FlightType] = frozenset()
+
+    #: Air-to-air refueling method this aircraft uses as a *receiver*. ``None`` leaves
+    #: it unspecified, which is treated permissively (compatible with any tanker) so
+    #: untagged aircraft behave exactly as before.
+    air_refuel_type: Optional[AirRefuelType] = None
+
+    #: Refueling methods this aircraft provides as a *tanker*. Empty leaves it
+    #: unspecified/permissive (can service any receiver), preserving legacy behavior.
+    tanker_refuel_types: frozenset[AirRefuelType] = frozenset()
+
+    #: Whether this tanker can refuel helicopters / slow receivers (e.g. the KC-130's
+    #: low-and-slow drogue). Only consulted when both sides are tagged.
+    tanker_refuels_helicopters: bool = False
 
     _by_name: ClassVar[dict[str, AircraftType]] = {}
     _by_unit_type: ClassVar[dict[type[FlyingType], list[AircraftType]]] = defaultdict(
@@ -490,6 +522,25 @@ class AircraftType(UnitType[Type[FlyingType]]):
     def capable_of(self, task: FlightType) -> bool:
         return task in self.task_priorities
 
+    def can_refuel_from(self, tanker: AircraftType) -> bool:
+        """Whether this aircraft (as a receiver) can take fuel from ``tanker``.
+
+        Permissive when either side is untagged so the restriction is opt-in and never
+        regresses existing campaigns: a receiver with no ``air_refuel_type``, or a
+        tanker that advertises no ``tanker_refuel_types``, is always compatible. Once
+        both are tagged, the boom/probe methods must match, and a helicopter receiver
+        additionally requires a tanker flagged ``tanker_refuels_helicopters``.
+        """
+        if self.air_refuel_type is None:
+            return True
+        if not tanker.tanker_refuel_types:
+            return True
+        if self.air_refuel_type not in tanker.tanker_refuel_types:
+            return False
+        if self.helicopter and not tanker.tanker_refuels_helicopters:
+            return False
+        return True
+
     def task_priority(self, task: FlightType) -> int:
         return self.task_priorities[task]
 
@@ -661,6 +712,11 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 LaserCodeConfig.from_yaml(d) for d in data.get("laser_codes", [])
             ],
             use_f15e_waypoint_names=data.get("use_f15e_waypoint_names", False),
+            air_refuel_type=AirRefuelType.from_data(data.get("air_refuel_type")),
+            tanker_refuel_types=frozenset(
+                AirRefuelType(v) for v in data.get("tanker_refuel_types", [])
+            ),
+            tanker_refuels_helicopters=data.get("tanker_refuels_helicopters", False),
         )
 
     @classmethod

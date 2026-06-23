@@ -12,7 +12,7 @@ from ..db.database import Database
 
 if TYPE_CHECKING:
     from game.ato.closestairfields import ClosestAirfields
-    from game.dcs.aircrafttype import AircraftType
+    from game.dcs.aircrafttype import AircraftType, AirRefuelType
     from game.lasercodes import LaserCodeRegistry
     from game.squadrons.airwing import AirWing
     from .missionproposals import ProposedFlight
@@ -66,6 +66,7 @@ class PackageBuilder:
             this_turn=True,
             preferred_type=plan.preferred_type,
             ignore_range=ignore_range,
+            refuel_methods=self._required_refuel_methods(plan.task),
         )
         if squadron is None:
             return False
@@ -98,6 +99,27 @@ class PackageBuilder:
             )
         self.package.add_flight(flight)
         return True
+
+    def _required_refuel_methods(
+        self, task: FlightType
+    ) -> Optional[frozenset[AirRefuelType]]:
+        """Refueling methods the package's already-planned receivers need.
+
+        Only relevant when planning a tanker (REFUELING). Returns None for every other
+        task and for packages whose receivers are untagged, leaving tanker selection
+        unconstrained. Otherwise the planner will only pick a tanker that provides the
+        receivers' boom/probe method(s).
+        """
+        if task is not FlightType.REFUELING:
+            return None
+        methods: set[AirRefuelType] = set()
+        for flight in self.package.flights:
+            if flight.flight_type is FlightType.REFUELING:
+                continue
+            method = flight.unit_type.air_refuel_type
+            if method is not None:
+                methods.add(method)
+        return frozenset(methods) if methods else None
 
     def find_divert_field(
         self, aircraft: AircraftType, arrival: ControlPoint

@@ -183,18 +183,23 @@ so the two docs don't drift.
 
 ## F. SCAR
 
-### F1 — HVT movement + SOF capture loop · §15 · ☐ UNTESTED
-- **Setup:** SCAR tasking (spawn/armor variant) with `scar_command_post_intel`
-  ON and a purchased SOF team allocated.
+### F1 — HVT movement + SOF capture loop · §15 · ☑ VERIFIED (2026-06-23)
+- **Verified (2026-06-23):** seen in-game — the HVT drives/flees on activation
+  and the capture loop behaves as designed (no alarm-RED pinning).
 - **Pass:** HVT (incl. towed/SCUD groups) actually **drives** toward the city on
   activation (alarm-GREEN route); the SOF capture resolves `captured` when the
   un-killed command vehicle enters `SCAR_SOF_CAPTURE_RADIUS_M` (600 m) with the
   SOF group still alive. Priority killed > captured > escaped/timeout.
-- **Fail signature:** HVT sits still (the alarm-RED pinning bug — do NOT revert
-  the `mist.goRoute` alarm-GREEN route; a hand-rolled `setTask` did not move
-  them); or `captured` never fires / fires after the vehicle is dead.
+- **Fail signature (watched, did not occur):** HVT sits still (the alarm-RED
+  pinning bug — do NOT revert the `mist.goRoute` alarm-GREEN route; a hand-rolled
+  `setTask` did not move them); or `captured` never fires / fires after the
+  vehicle is dead.
 
-### F2 — Command-post intel fog · §15 · ☐ UNTESTED
+### F2 — Command-post intel fog · §15 · ◐ PARTIAL (2026-06-23)
+- **Partial (2026-06-23):** the UI half is confirmed — command posts are hidden
+  on the player map and the **"Reveal fog of war" overview toggle** shows both
+  sides (ground truth), so the fog/hide + reveal plumbing works. Not yet flown:
+  the full **capture → permanent reveal** carryover across turns.
 - **Setup:** New campaign (default `scar_command_post_intel` ON).
 - **Pass:** Enemy command posts are **entirely hidden** from the player map
   (no marker, not in target list) until a commander is captured or normally
@@ -203,12 +208,13 @@ so the two docs don't drift.
 - **Fail signature:** Command posts visible on the player map before reveal, or
   a reveal that doesn't persist across turns.
 
-### F3 — Player-flown SOF insert + C-130 EW exclusion · #56 / §15 · ☐ UNTESTED
-- **Setup:** Plan a `FlightType.SOF` insert flown by a C-130J-30.
+### F3 — Player-flown SOF insert + C-130 EW exclusion · #56 / §15 · ☑ VERIFIED (2026-06-23)
+- **Verified (2026-06-23):** flown — "the EW is gone": the `c130j` EW menu/behavior
+  is correctly absent on the SOF insert C-130J-30 (the de-conflict gate fires).
 - **Pass:** The player can fly the air-assault-shaped delivery; the `c130j` EW
   plugin is skipped for that mission (logged).
-- **Fail signature:** EW menu appears on the SOF insert; or the insert can't be
-  planned/flown by the fixed-wing transport.
+- **Fail signature (watched, did not occur):** EW menu appears on the SOF insert;
+  or the insert can't be planned/flown by the fixed-wing transport.
 
 ### F4 — Results bridge round-trip · §15 · ☑ VERIFIED (2026-06-17/18)
 - Verified in-game: `SCAR area scar-N: launched/failed` round-tripped through

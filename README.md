@@ -35,6 +35,9 @@ and selected later upstream fixes.
   panel (top-right, with the other enemy-intel toggles). It turns the fog off and shows the
   true picture: full enemy composition, threat rings, and otherwise-hidden command posts. It is
   a view toggle only — it never changes the campaign and is never saved.
+- The **map layer panel** is a single grouped, collapsible control (dark-themed to match the
+  app) with one-click **preset views** — Default, SEAD, Recon, Clean — and it remembers your
+  layer choices between sessions.
 - An optional **Approximate target area** mode removes perfect player coordinates and
   offsets steerpoints, making visual acquisition, talk-ons, and reconnaissance matter.
   Against mobile SAMs, DEAD and SEAD flights get a single fuzzed target-area waypoint

@@ -362,6 +362,35 @@ Tests: `tests/test_objectivefinder_barcap.py`, `tests/test_barcap_threat_weighti
 `barcap_rounds` when `barcap_overlap_time` ≥ mission duration, one-sided lateral spread,
 250 m magic step) are deferred.
 
+### Front-anchored support-orbit placement (AEW&C + tanker) (2026-06-22)
+
+**Symptom (fresh Red Tide save, AI-generated turn):** the AI's AWACS and tanker racetracks
+were placed nonsensically. Red AWACS targeting a far-north CP (Kastrup) was generated
+**~326 NM behind the front and ~175 NM off-axis** (out over the Baltic); the red tanker sat
+only ~28 NM behind the FLOT (exposed); a blue tanker whose nearest-friendly target was its own
+departure field could clamp **onto the home runway**. Brady hand-moved them to sane,
+front-centered positions — that edit is the spec this reproduces.
+
+**Root cause.** `aewc.py` and `theaterrefueling.py` independently anchored the orbit on
+`package.target` (a CP — *nearest* friendly for tankers, **farthest** friendly for AWACS) and
+offset it along the bearing from that CP to the nearest enemy threat-zone boundary. For a
+rear/flank CP that bearing is unstable (it swings as the front shifts), so the orbit flung
+off-axis; the blue tanker also had a `max(0, …)` clamp that pinned it to the anchor when the
+field was within the buffer of the front.
+
+**Fix** (`game/ato/flightplans/supportorbit.py`, new shared helper used by both builders):
+`support_orbit_anchor()` anchors on the **FLOT center** of the active front nearest the
+supported area, then pushes the orbit into friendly airspace along the **stable enemy→friendly
+axis** (`friendly_cp → enemy_cp` heading) until it is at least the configured buffer from the
+enemy threat zone (`threat_zones.distance_to_threat` / `threatened`). Result: centered on the
+front, on the coalition's own side, at the configured standoff — symmetric for both sides, no
+forward/clamp special-casing. Falls back to the old target-anchored standoff when there is no
+active front (opening turn). Buffers unchanged: `aewc_threat_buffer_min_distance` (80 NM) /
+`tanker_threat_buffer_min_distance` (70 NM). Verified by recomputing the broken save: red AWACS
+`+326/−175 NM → +50/0`, red tanker `+28.6 → +50`, blue unchanged-but-centered. Tests:
+`tests/test_support_orbit.py`. Upstream-core flight-plan code, so an upstream-PR candidate.
+**Lua-free; wants an in-game pass to confirm orbits sit where expected across turns.**
+
 ### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
 
 **Symptom (Red Tide AI test):** blue B-1/B-52/F-15E strikes were tasked ~30 km behind the

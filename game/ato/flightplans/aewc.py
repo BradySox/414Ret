@@ -5,9 +5,10 @@ from typing import Type
 
 from game.ato.flightplans.ibuilder import IBuilder
 from game.ato.flightplans.patrolling import PatrollingFlightPlan, PatrollingLayout
+from game.ato.flightplans.supportorbit import support_orbit_anchor
 from game.ato.flightplans.waypointbuilder import WaypointBuilder
 from game.ato.flighttype import FlightType
-from game.utils import Distance, Heading, Speed, knots, meters, nautical_miles
+from game.utils import Distance, Speed, knots, meters, nautical_miles
 
 
 class AewcFlightPlan(PatrollingFlightPlan[PatrollingLayout]):
@@ -37,38 +38,19 @@ class Builder(IBuilder[AewcFlightPlan, PatrollingLayout]):
     def layout(self) -> PatrollingLayout:
         racetrack_half_distance = nautical_miles(30)
 
-        location = self.package.target
-
-        closest_boundary = self.threat_zones.closest_boundary(location.position)
-        heading_to_threat_boundary = Heading.from_degrees(
-            location.position.heading_between_point(closest_boundary)
-        )
-        distance_to_threat = meters(
-            location.position.distance_to_point(closest_boundary)
-        )
-
         threat_buffer = nautical_miles(
             self.coalition.game.settings.aewc_threat_buffer_min_distance
         )
 
-        if self.threat_zones.threatened(location.position):
-            # Target inside the threat zone — escape to safety.
-            orbit_heading = heading_to_threat_boundary
-            orbit_distance = distance_to_threat + threat_buffer
-        elif self.coalition.player.is_blue:
-            # Player-coalition AWACS: orbit as far forward as the threat buffer
-            # allows for maximum radar coverage of the front.
-            orbit_heading = heading_to_threat_boundary
-            orbit_distance = distance_to_threat - threat_buffer
-        else:
-            # Enemy/AI AWACS: orbit deep inside friendly airspace, away from
-            # the threat boundary.  Long radar range means it can cover the
-            # front without pushing toward it.
-            orbit_heading = heading_to_threat_boundary.opposite
-            orbit_distance = threat_buffer
-
-        base_center = location.position.point_from_heading(
-            orbit_heading.degrees, orbit_distance.meters
+        # Anchor on the front line and stand off into friendly airspace, centered
+        # on the fighting and parallel to the FLOT. See supportorbit for why this
+        # replaced the old per-CP anchoring (which flung AI AWACS off-axis).
+        base_center, orbit_heading = support_orbit_anchor(
+            self.theater,
+            self.coalition.player,
+            self.threat_zones,
+            self.package.target,
+            threat_buffer,
         )
 
         # When multiple AWACS are planned, spread their orbits laterally along

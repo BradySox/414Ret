@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import uuid
 from abc import ABC
 from typing import Any, Iterator, List, Optional, TYPE_CHECKING
@@ -25,6 +26,7 @@ from .fogofwar import fog_revealed
 from .missiontarget import MissionTarget
 from .player import Player
 from ..data.groups import GroupTask
+from ..data.units import UnitClass
 from ..utils import Distance, Heading, meters, nautical_miles
 
 if TYPE_CHECKING:
@@ -56,6 +58,43 @@ NAME_BY_CATEGORY = {
     "ware": "Warehouse",
     "ww2bunker": "Bunker",
 }
+
+
+# The only search radar that legitimately belongs to a gun-AAA site: the SON-9
+# "Fire Can" that directs a KS-19 battery (the KS-19 preset lists it explicitly).
+# Any other search radar on an AAA site is the pre-2026-06 generation bug where
+# the generic `AAA Site` layout's radar slot defaulted to `fill: true` and pulled
+# in a random faction search radar (sometimes a SAM site's), so it is stripped
+# from existing saves on load. Matched by variant name so a DCS-id rename can't
+# silently re-let the SAM radars through.
+_AAA_FIRE_CONTROL_RADAR_VARIANTS = frozenset(
+    {"AAA Fire Can SON-9", "AAA SON-9 Fire Can"}
+)
+
+
+def _is_erroneous_aaa_search_radar(unit: "TheaterUnit") -> bool:
+    """True if `unit` is a search radar that should not be on an AAA site."""
+    unit_type = unit.unit_type
+    return (
+        unit_type is not None
+        and unit_type.unit_class is UnitClass.SEARCH_RADAR
+        and unit_type.variant_id not in _AAA_FIRE_CONTROL_RADAR_VARIANTS
+    )
+
+
+def _strip_erroneous_aaa_radars_from_groups(groups: "list[TheaterGroup]") -> int:
+    """Drop erroneous AAA search radars from `groups` in place; return count removed.
+
+    Units are filtered in place (the group object is shared with the IADS network
+    node, which re-derives its detection range from `group.units`), and the groups
+    themselves are kept so the site stays an AAA group like a freshly generated one.
+    """
+    removed = 0
+    for group in groups:
+        kept = [u for u in group.units if not _is_erroneous_aaa_search_radar(u)]
+        removed += len(group.units) - len(kept)
+        group.units = kept
+    return removed
 
 
 class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
@@ -111,6 +150,18 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         state.setdefault("respawn_enabled", False)
         state.setdefault("pending_deploy", False)
         self.__dict__.update(state)
+        # Save migration: heal AAA sites that were generated with a stray search
+        # radar (the old `fill: true` radar slot). Newly generated campaigns no
+        # longer do this, but in-progress saves keep the baked-in radar -- e.g. a
+        # ZU-23 site wearing an SA-11 Buk search radar -- so strip it on load.
+        if self.task is GroupTask.AAA:
+            removed = _strip_erroneous_aaa_radars_from_groups(self.groups)
+            if removed:
+                logging.debug(
+                    "Removed %d stray search radar(s) from AAA site %s on load",
+                    removed,
+                    state.get("name", "<unknown>"),
+                )
 
     def _command_post_revealed(self) -> bool:
         """SCAR: True once an enemy command post is revealed to the human side.

@@ -57,10 +57,11 @@ jobs:
   luacheck:
     name: luacheck (414th-authored, advisory)
     runs-on: ubuntu-latest
-    # Advisory only: warnings inform but never block. The .luacheckrc ignore
-    # list keeps this low-noise; tighten it over time and promote to blocking
-    # once the 414th scripts run clean.
-    continue-on-error: true
+    # Advisory only: warnings inform but never block. The step always exits 0 so
+    # this check reports GREEN — a permanently-red advisory check just trains
+    # everyone to ignore it. The warning/error counts are surfaced in the run's
+    # Step Summary instead. Tighten the .luacheckrc ignore list over time and,
+    # once the 414th scripts run clean, promote this to a blocking gate.
     steps:
       - uses: actions/checkout@v4
 
@@ -70,9 +71,10 @@ jobs:
           sudo apt-get install -y lua5.1 luarocks
           sudo luarocks install luacheck
 
-      - name: Run luacheck on 414th-authored plugins
+      - name: Run luacheck on 414th-authored plugins (advisory)
         run: |
-          luacheck \
+          set +e
+          out=$(luacheck \
             resources/plugins/c130j \
             "resources/plugins/ewrj/EW script 2.1.lua" \
             resources/plugins/ewrj/ewrj_config.lua \
@@ -80,4 +82,17 @@ jobs:
             resources/plugins/tic/tic_414_init.lua \
             resources/plugins/tars/tars_414_init.lua \
             resources/plugins/scar/scar_414_init.lua \
-            resources/plugins/flightcontrol/flightcontrol_414_init.lua
+            resources/plugins/flightcontrol/flightcontrol_414_init.lua 2>&1)
+          code=$?
+          echo "$out"
+          {
+            echo "### luacheck (advisory) — exit $code"
+            echo ""
+            echo '```'
+            echo "$out" | grep -iE "^Total:|warnings? / |errors? in" | tail -n 1
+            echo '```'
+            echo ""
+            echo "_Advisory only — never blocks. Exit 1 = warnings, >1 = luacheck error._"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Never fail the check; this is informational.
+          exit 0

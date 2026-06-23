@@ -22,6 +22,10 @@ file. This guide is the map; those are the territory.
   **in-game pass tracker**: every "needs an in-game pass" item turned into a row with an
   observable pass criterion + the fail signature to watch for. Update a row's status when
   you fly it; clear the matching tag in `414th-features.md` when it reaches VERIFIED.
+- [docs/dev/414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) — the
+  **upstreaming queue**: which generic fixes to carve out toward `bradyccox/dcs-retribution`
+  (priority-ordered, with readiness marks) and — critically — which fork-specific bits must
+  NEVER go upstream. Reduces per-pull merge-conflict drift.
 - [docs/dev/design/](docs/dev/design/) — per-feature design notes (read before touching the
   matching code):
   - `414th-air-defense-planning-notes.md` — CAP/BARCAP/QRA planning intent

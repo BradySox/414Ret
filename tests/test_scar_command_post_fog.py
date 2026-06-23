@@ -363,3 +363,55 @@ def test_capture_does_nothing_when_setting_off() -> None:
     )
     processor.commit_scar_results(cast(Any, debriefing))
     assert game.blue.captured_commander is False
+
+
+# --------------------------------------------------------------------------- #
+# R7 mis-ID budget penalty
+# --------------------------------------------------------------------------- #
+
+
+def _misid_debriefing(misid: dict[str, int]) -> Any:
+    # scar_results is iterated first (capture path); keep it empty so only the
+    # mis-ID path is exercised.
+    return SimpleNamespace(
+        state_data=SimpleNamespace(scar_results={}, scar_misid=misid)
+    )
+
+
+def test_misid_debits_offending_blue_budget() -> None:
+    processor, game = _processor(setting_on=True)
+    game.settings.scar_misid_penalty = 8
+    processor.commit_scar_results(cast(Any, _misid_debriefing({"blue-scar-1": 2})))
+    game.blue.adjust_budget.assert_called_once_with(-16)
+    game.red.adjust_budget.assert_not_called()
+
+
+def test_misid_debits_offending_red_budget() -> None:
+    processor, game = _processor(setting_on=True)
+    game.settings.scar_misid_penalty = 8
+    processor.commit_scar_results(cast(Any, _misid_debriefing({"red-scar-1": 3})))
+    game.red.adjust_budget.assert_called_once_with(-24)
+    game.blue.adjust_budget.assert_not_called()
+
+
+def test_misid_legacy_unprefixed_id_is_blue() -> None:
+    processor, game = _processor(setting_on=True)
+    game.settings.scar_misid_penalty = 8
+    processor.commit_scar_results(cast(Any, _misid_debriefing({"scar-1": 1})))
+    game.blue.adjust_budget.assert_called_once_with(-8)
+
+
+def test_misid_zero_penalty_does_not_debit() -> None:
+    processor, game = _processor(setting_on=True)
+    game.settings.scar_misid_penalty = 0
+    processor.commit_scar_results(cast(Any, _misid_debriefing({"blue-scar-1": 5})))
+    game.blue.adjust_budget.assert_not_called()
+    game.red.adjust_budget.assert_not_called()
+
+
+def test_no_misid_does_not_touch_budget() -> None:
+    processor, game = _processor(setting_on=True)
+    game.settings.scar_misid_penalty = 8
+    processor.commit_scar_results(cast(Any, _misid_debriefing({})))
+    game.blue.adjust_budget.assert_not_called()
+    game.red.adjust_budget.assert_not_called()

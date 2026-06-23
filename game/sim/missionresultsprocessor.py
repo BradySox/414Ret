@@ -195,26 +195,27 @@ class MissionResultsProcessor:
                         "has none available."
                     )
 
+    @staticmethod
+    def _scar_tasking_is_blue(tasking_id: str) -> bool:
+        # Tasking IDs now carry their coalition. Legacy unprefixed IDs came from
+        # the player-side-only implementation and remain BLUE for save / debrief
+        # compatibility.
+        return tasking_id.startswith("blue-") or not tasking_id.startswith("red-")
+
     def commit_scar_results(self, debriefing: Debriefing) -> None:
         """Ingest SCAR per-area outcomes back into the campaign.
 
-        Most outcomes are log-only for now (scoring/mis-ID penalty deferred). The
-        one carryover wired: a ``captured`` commander reveals the enemy's command
-        posts next turn (Phase 1, gated by the ``scar_command_post_intel``
-        setting). Provisional, pending the SME ruling on reveal scope/permanence:
-        capture sets the human (blue) side's flag, revealing ALL enemy command
-        posts permanently. Additive — a no-op when the plugin/setting is off.
+        Two carryovers are wired: a ``captured`` commander reveals the enemy's
+        command posts next turn (Phase 1, gated by ``scar_command_post_intel``),
+        and a mis-ID — prosecuting one of an area's decoy/clutter convoys —
+        debits the offending side's budget (R7, gated by ``scar_misid_penalty``).
+        Remaining outcomes are log-only. Additive — a no-op when the plugin /
+        settings are off.
         """
         blue_captures = 0
         for tasking_id, status in debriefing.state_data.scar_results.items():
             logging.info(f"SCAR area {tasking_id}: {status}")
-            # Tasking IDs now carry their coalition. Legacy unprefixed IDs came
-            # from the player-side-only implementation and remain BLUE for save /
-            # debrief compatibility.
-            is_blue = tasking_id.startswith("blue-") or not tasking_id.startswith(
-                "red-"
-            )
-            if status == "captured" and is_blue:
+            if status == "captured" and self._scar_tasking_is_blue(tasking_id):
                 blue_captures += 1
         if blue_captures and self.game.settings.scar_command_post_intel:
             self.game.blue.captured_commander = True
@@ -223,6 +224,43 @@ class MissionResultsProcessor:
             # debit-on-frag for a clean capture.
             self._refund_sof_teams(blue_captures)
             logging.info("SCAR: commander captured — enemy command posts revealed.")
+
+        self._commit_scar_misid(debriefing)
+
+    def _commit_scar_misid(self, debriefing: Debriefing) -> None:
+        """Charge the R7 mis-ID penalty: each decoy/clutter convoy a side
+        destroyed on a SCAR sortie debits ``scar_misid_penalty`` budget points
+        from that side. Always logs the mis-ID; only debits when the penalty is
+        positive."""
+        scar_misid = getattr(debriefing.state_data, "scar_misid", {}) or {}
+        if not scar_misid:
+            return
+        blue_misid = 0
+        red_misid = 0
+        for tasking_id, count in scar_misid.items():
+            if count <= 0:
+                continue
+            logging.info(f"SCAR area {tasking_id}: {count} mis-ID(s) (wrong convoy)")
+            if self._scar_tasking_is_blue(tasking_id):
+                blue_misid += count
+            else:
+                red_misid += count
+        penalty = self.game.settings.scar_misid_penalty
+        if penalty <= 0:
+            return
+        for coalition, count in (
+            (self.game.blue, blue_misid),
+            (self.game.red, red_misid),
+        ):
+            if count <= 0:
+                continue
+            cost = count * penalty
+            coalition.adjust_budget(-cost)
+            side = "BLUE" if coalition.player.is_blue else "RED"
+            logging.info(
+                f"SCAR: {side} charged {cost} budget for {count} mis-ID(s) "
+                f"({penalty} each)."
+            )
 
     def _refund_sof_teams(self, count: int) -> None:
         """Return ``count`` bought SOF teams to a blue-held base (a captured

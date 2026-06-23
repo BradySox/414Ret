@@ -214,6 +214,17 @@ so the two docs don't drift.
 - Verified in-game: `SCAR area scar-N: launched/failed` round-tripped through
   the TARS channel into the debrief. No action; listed for completeness.
 
+### F5 — Mis-ID budget penalty (R7) · §15 · ☐ UNTESTED
+- **Setup:** A SCAR sortie with `scar_misid_penalty` > 0; deliberately destroy a
+  decoy/clutter convoy (not the HVT) with the player's aircraft.
+- **Pass:** The debrief log shows `area …: N mis-ID(s)` and `… charged <cost>
+  budget`; the prosecuting side's budget drops by `scar_misid_penalty` × kills.
+  Killing the real HVT / command vehicle / a threat SAM is NOT charged.
+- **Fail signature:** No mis-ID logged when a decoy dies to the player (the
+  `S_EVENT_KILL` attribution didn't fire — likely weapon/MP event quirk); or a
+  legit HVT/command/threat kill is wrongly charged; or budget unchanged with a
+  positive penalty.
+
 ---
 
 ## G. Plugin runtime (Lua, not CI-runnable)

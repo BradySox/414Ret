@@ -878,7 +878,20 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   - Tests: `tests/test_scar_rescue.py`, `tests/test_scar_objectives.py`,
     `tests/test_aircraft_tasking_roles.py`, `tests/test_scar_command_post_fog.py`. Full design +
     the Python-vs-Lua resolution decision: plan §9e.
-- NOT yet built: mis-ID penalty stays NONE; Phase-3 auto-planning. If Tyler's C-130 `DEPLOYMENT`
+- **Mis-ID penalty BUILT (R7, gated by `scar_misid_penalty`)** — destroying one of an area's
+  decoy/clutter convoys on a SCAR sortie now costs budget, so picking out the real HVT matters.
+  Lua (`scar_414_init.lua`): decoy/clutter spawns register in `misid_group_index`; a new
+  `S_EVENT_KILL` branch in `scar_event_handler:onEvent` charges a mis-ID (`record_misid`) only
+  when the killer's coalition is the prosecuting (SCAR) side, mirroring a running `misId` count
+  onto the area's `scar_results` entry (preserved across `mark_result`). Python:
+  `debriefing.py` parses `misId` into `StateData.scar_misid`; `MissionResultsProcessor`
+  `_commit_scar_misid` debits `scar_misid_penalty` × count from the offending side's budget
+  (`Coalition.adjust_budget`), per blue/red prefix (legacy unprefixed = blue). The setting
+  (Campaign Doctrine, default **8** ≈ one SOF team; 0 disables and only logs) makes it tunable
+  and additive. Tests: `tests/test_scar_command_post_fog.py` (debit by side, legacy-id, zero
+  penalty, no-misid), `tests/test_scar_bridge.py` (parse + Lua-handler wiring). **Lua needs an
+  in-game pass.**
+- NOT yet built: Phase-3 auto-planning (AI-side SCAR tasking). If Tyler's C-130 `DEPLOYMENT`
   work ever lands, our `FlightType.SOF` + inventory-debit-on-frag should converge onto his
   `PendingDeployments` shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
 

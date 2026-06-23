@@ -58,6 +58,10 @@ and selected later upstream fixes.
 - The fork also carries newer suppression behavior: AI SEAD can loiter near the target,
   react to emitters, and break off on a computed timeline instead of making a single
   inflexible pass.
+- The auto-planner no longer sends strikers through a SAM belt it only *intends* to clear:
+  if a planned DEAD can't actually reach a SAM shielded behind another live radar threat, the
+  strike that depends on it is held back until the belt is genuinely down, instead of bombers
+  being tasked into defenses that are still alive.
 
 ### The air war behaves like a campaign, not a queue of isolated sorties
 

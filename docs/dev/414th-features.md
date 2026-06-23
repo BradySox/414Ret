@@ -383,13 +383,21 @@ field was within the buffer of the front.
 supported area, then pushes the orbit into friendly airspace along the **stable enemy→friendly
 axis** (`friendly_cp → enemy_cp` heading) until it is at least the configured buffer from the
 enemy threat zone (`threat_zones.distance_to_threat` / `threatened`). Result: centered on the
-front, on the coalition's own side, at the configured standoff — symmetric for both sides, no
-forward/clamp special-casing. Falls back to the old target-anchored standoff when there is no
-active front (opening turn). Buffers unchanged: `aewc_threat_buffer_min_distance` (80 NM) /
-`tanker_threat_buffer_min_distance` (70 NM). Verified by recomputing the broken save: red AWACS
-`+326/−175 NM → +50/0`, red tanker `+28.6 → +50`, blue unchanged-but-centered. Tests:
-`tests/test_support_orbit.py`. Upstream-core flight-plan code, so an upstream-PR candidate.
-**Lua-free; wants an in-game pass to confirm orbits sit where expected across turns.**
+front, on the coalition's own side, at a sane standoff, no forward/clamp special-casing. Falls
+back to the old target-anchored standoff when there is no active front (opening turn). Buffers
+unchanged: `aewc_threat_buffer_min_distance` (80 NM) / `tanker_threat_buffer_min_distance`
+(70 NM).
+
+**Depth asymmetry (`AI_SUPPORT_DEPTH_FACTOR`, default 2.5):** the *player* coalition holds
+forward at 1x the buffer behind the FLOT (coverage); the *AI* coalition holds deep at
+`factor x buffer` so red tankers/AWACS don't loiter near the front. Both are then pushed
+further if needed to clear the enemy threat zone. Tying depth to the threat zone alone left red
+right on the FLOT when the player had no forward SAMs reaching the front; the factor decouples
+"how deep the AI sits" from "how strong the player's threat is." With a campaign buffer of 40
+NM this puts red ~100 NM back and blue ~50 NM; at the default 80/70 buffers red is ~200/175 NM
+deep. Verified by recomputing the broken save: red AWACS `+326/−175 NM → centered, ~100 NM
+behind`, blue forward-but-centered. Tests: `tests/test_support_orbit.py`. Upstream-core
+flight-plan code, so an upstream-PR candidate. **Lua-free; wants an in-game pass.**
 
 ### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
 

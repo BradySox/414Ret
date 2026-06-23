@@ -78,14 +78,31 @@ so the two docs don't drift.
 - **Fail signature:** Support orbit placed within enemy engagement depth.
 
 ### C3 — Tanker racetrack speed estimate · ☐ UNTESTED
-- **Setup:** Any campaign with a refueling tanker (KC-135/KC-130/S-3B etc.); plan a
-  package that takes fuel. Tankers carry no explicit `patrol_speed`, so the new
-  `preferred_patrol_speed(preferred_patrol_altitude)` estimate always drives the orbit.
+- **Setup:** Plan a package that takes fuel from a **buddy tanker** — the airframes
+  that ship *without* a `patrol:` speed/altitude block (the F/A-18E/F tankers; the
+  A-6E buddy tank before it got its own `patrol:` block). The dedicated tankers
+  (KC-135/KC-130/MPRS/S-3B Tanker, and now the A-6E Tanker) define their own patrol
+  speed and are unaffected. For the buddy tankers the new
+  `preferred_patrol_speed(preferred_patrol_altitude)` estimate now drives the orbit.
 - **Pass:** Tanker flies its racetrack at a sane, steady speed and receivers
   rendezvous and take fuel without falling behind or overrunning.
 - **Fail signature:** Tanker orbit speed too slow/fast for receivers to join (e.g.
   fighters S-turning to stay behind, or unable to close). If seen, revisit
   `RefuelingFlightPlan.patrol_speed` in `game/ato/flightplans/refuelingflightplan.py`.
+
+### C4 — A-6E attack/tanker split · ☐ UNTESTED
+- **Setup:** A-6E now loads as two squadron-selectable types from `A6E.yaml`:
+  "A-6E Intruder" (attack tasks only) and "A-6E Tanker" (Refueling/Recovery only,
+  `max_group_size: 1`, carrier tanker patrol). Buy/auto-plan each and confirm both
+  appear and behave. **Could not be load-tested in CI** — the A-6 unit isn't in the
+  CI/dev pydcs build, so confirm the data actually loads in the packaged app first.
+- **Pass:** The Intruder is never auto-tasked for refueling/recovery; the Tanker is
+  never auto-tasked for strike/CAS/etc. and orbits/refuels as a carrier tanker.
+- **Fail signature:** Either type missing from the airframe list (the A6E unit id may
+  differ in the shipped pydcs, or variant-level `tasks` override didn't take); or the
+  Tanker still picks up strike tasks / the Intruder still gets tanker tasking. Check
+  that both variants resolve in `AircraftType` and that the A6E unit supports AI
+  air-refueling in the build's pydcs.
 
 ---
 

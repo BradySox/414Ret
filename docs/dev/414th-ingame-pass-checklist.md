@@ -137,11 +137,12 @@ so the two docs don't drift.
   refuel waypoint on the correct side; the flight reaches the tanker with fuel to spare
   and completes the sortie; kneeboard bingo/joker look sane after tanking.
 - **Fail signature:** Flights that clearly need gas get none (or vice versa); pre-vul
-  detour backtracks awkwardly; a flight flames out before the tanker. The burn estimate
-  is an approximate planning heuristic (straight-line legs, fixed climb allowance) and
-  the **fuel unit handling (kg `max_fuel` vs lb consumption) couldn't be validated in
-  CI** — tune `_refuel_tasking` in `game/ato/flightplans/formationattack.py` if the
-  pre/post/none split looks off.
+  detour backtracks awkwardly; a flight flames out before the tanker. The burn now
+  walks the real route at the actual per-leg climb/combat/cruise rates
+  (`sortie_fuel_split`), so the remaining unknown is the **fuel unit handling (kg
+  `max_fuel` vs lb consumption), which couldn't be validated in CI** — tune
+  `_refuel_tasking` in `game/ato/flightplans/formationattack.py` if the pre/post/none
+  split looks off.
 
 ---
 

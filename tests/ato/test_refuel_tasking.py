@@ -1,8 +1,57 @@
 """Tests for the fuel-driven pre/post-vul tanker tasking decision."""
 
-from game.ato.refueltasking import RefuelTasking, decide_refuel_tasking
+from types import SimpleNamespace
+
+from game.ato.flightwaypointtype import FlightWaypointType
+from game.ato.refueltasking import (
+    RefuelTasking,
+    decide_refuel_tasking,
+    sortie_fuel_split,
+)
 
 RESERVE = 1000.0
+
+_NM = 1852.0  # meters per nautical mile
+
+
+class _Pos:
+    """A point on a line; distance_to_point measures meters along it."""
+
+    def __init__(self, nautical_miles: float) -> None:
+        self.x = nautical_miles * _NM
+
+    def distance_to_point(self, other: "_Pos") -> float:
+        return abs(self.x - other.x)
+
+
+def _wp(at_nm: float, *, takeoff: bool = False) -> SimpleNamespace:
+    kind = FlightWaypointType.TAKEOFF if takeoff else FlightWaypointType.NAV
+    return SimpleNamespace(position=_Pos(at_nm), waypoint_type=kind)
+
+
+def test_sortie_fuel_split_applies_climb_combat_cruise_rates() -> None:
+    fuel = SimpleNamespace(climb=30.0, combat=20.0, cruise=10.0)
+    takeoff = _wp(0, takeoff=True)
+    join = _wp(10)
+    target = _wp(20)
+    split = _wp(25)
+    landing = _wp(40)
+    route = [takeoff, join, target, split, landing]
+    combat_speed = {join, target, split}
+
+    to_split, after_split = sortie_fuel_split(route, fuel, combat_speed, split)  # type: ignore[arg-type]
+
+    # takeoff->join is the climb leg (10 nm * 30); join->target and target->split are
+    # combat (10 nm * 20 + 5 nm * 20); split->landing is cruise (15 nm * 10).
+    assert to_split == 10 * 30 + 10 * 20 + 5 * 20
+    assert after_split == 15 * 10
+
+
+def test_sortie_fuel_split_handles_empty_and_single_point_routes() -> None:
+    fuel = SimpleNamespace(climb=30.0, combat=20.0, cruise=10.0)
+    only = _wp(0, takeoff=True)
+    assert sortie_fuel_split([], fuel, set(), only) == (0.0, 0.0)  # type: ignore[arg-type]
+    assert sortie_fuel_split([only], fuel, set(), only) == (0.0, 0.0)  # type: ignore[arg-type]
 
 
 def _decide(usable: float, to_vul: float, vul_home: float) -> RefuelTasking:

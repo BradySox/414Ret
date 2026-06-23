@@ -18,6 +18,18 @@ must share the same unit (pounds, matching ``FuelConsumption``).
 from __future__ import annotations
 
 from enum import Enum, unique
+from typing import TYPE_CHECKING, Sequence
+
+from game.ato.flightwaypointtype import FlightWaypointType
+
+if TYPE_CHECKING:
+    from collections.abc import Container
+
+    from game.ato.flightwaypoint import FlightWaypoint
+    from game.dcs.aircrafttype import FuelConsumption
+
+#: One nautical mile in meters, for converting leg lengths to the per-nm fuel rates.
+_METERS_PER_NAUTICAL_MILE = 1852.0
 
 
 @unique
@@ -42,6 +54,54 @@ class RefuelTasking(Enum):
     @property
     def refuels_post_vul(self) -> bool:
         return self is RefuelTasking.POST_VUL
+
+
+def sortie_fuel_split(
+    route: Sequence[FlightWaypoint],
+    fuel: FuelConsumption,
+    combat_speed_waypoints: Container[FlightWaypoint],
+    split: FlightWaypoint,
+) -> tuple[float, float]:
+    """Fuel burned over a sortie route, split at the vul.
+
+    Walks consecutive legs of ``route`` applying the same per-leg fuel rate as the
+    flight plan itself: the climb rate off the takeoff waypoint, the combat rate into
+    any combat-speed (formation) waypoint, and the cruise rate everywhere else.
+
+    Args:
+        route: The ordered sortie waypoints, takeoff first and landing last.
+        fuel: The airframe's per-nautical-mile fuel rates (pounds).
+        combat_speed_waypoints: Waypoints flown at combat power (join/targets/split).
+        split: The waypoint that ends the vulnerability window.
+
+    Returns:
+        ``(fuel takeoff -> split inclusive, fuel split -> landing)``, both in pounds.
+    """
+    to_split = 0.0
+    after_split = 0.0
+    passed_split = False
+    previous: FlightWaypoint | None = None
+    for waypoint in route:
+        if previous is not None:
+            distance_nm = (
+                previous.position.distance_to_point(waypoint.position)
+                / _METERS_PER_NAUTICAL_MILE
+            )
+            if previous.waypoint_type is FlightWaypointType.TAKEOFF:
+                rate = fuel.climb
+            elif waypoint in combat_speed_waypoints:
+                rate = fuel.combat
+            else:
+                rate = fuel.cruise
+            leg = distance_nm * rate
+            if passed_split:
+                after_split += leg
+            else:
+                to_split += leg
+        if waypoint is split:
+            passed_split = True
+        previous = waypoint
+    return to_split, after_split
 
 
 def decide_refuel_tasking(

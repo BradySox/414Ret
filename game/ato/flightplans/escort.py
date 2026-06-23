@@ -115,27 +115,54 @@ class Builder(FormationAttackBuilder[EscortFlightPlan, FormationAttackLayout]):
                     layout.drop_off.position,
                 )
 
-        tasking = self._refuel_tasking()
-        refuel_pre = None
-        refuel = None
-        if self.package.waypoints is not None:
-            if tasking.refuels_pre_vul:
-                refuel_pre = builder.refuel(self.package.waypoints.refuel)
-            elif tasking.refuels_post_vul:
-                refuel = builder.refuel(self.package.waypoints.refuel)
-
         departure = builder.takeoff(self.flight.departure)
+        # Base navs with no tanker detour: used to estimate the sortie fuel burn and as
+        # the default routing when no tanker is needed.
         nav_to = builder.nav_path(
             hold.position if hold else departure.position,
-            refuel_pre.position if refuel_pre else join.position,
+            join.position,
             builder.get_cruise_altitude,
         )
-
         nav_from = builder.nav_path(
-            refuel.position if refuel else split.position,
+            split.position,
             self.flight.arrival.position,
             builder.get_cruise_altitude,
         )
+        arrival = builder.land(self.flight.arrival)
+
+        # Walk the real route at the actual per-leg fuel rates to decide whether the
+        # escort needs a tanker and, if so, pre- or post-vul.
+        combat_speed = {join, split, target}
+        route = [departure]
+        if hold is not None:
+            route.append(hold)
+        route.extend(nav_to)
+        route.append(join)
+        route.append(ingress)
+        if initial is not None:
+            route.append(initial)
+        route.append(target)
+        route.append(split)
+        route.extend(nav_from)
+        route.append(arrival)
+
+        tasking = self._refuel_tasking(route, combat_speed, split)
+        refuel_pre = None
+        refuel = None
+        if tasking.refuels_pre_vul:
+            refuel_pre = builder.refuel(self.package.waypoints.refuel)
+            nav_to = builder.nav_path(
+                hold.position if hold else departure.position,
+                refuel_pre.position,
+                builder.get_cruise_altitude,
+            )
+        elif tasking.refuels_post_vul:
+            refuel = builder.refuel(self.package.waypoints.refuel)
+            nav_from = builder.nav_path(
+                refuel.position,
+                self.flight.arrival.position,
+                builder.get_cruise_altitude,
+            )
 
         return FormationAttackLayout(
             departure=departure,
@@ -149,7 +176,7 @@ class Builder(FormationAttackBuilder[EscortFlightPlan, FormationAttackLayout]):
             refuel=refuel,
             refuel_pre=refuel_pre,
             nav_from=nav_from,
-            arrival=builder.land(self.flight.arrival),
+            arrival=arrival,
             divert=builder.divert(self.flight.divert),
             bullseye=builder.bullseye(),
             custom_waypoints=list(),

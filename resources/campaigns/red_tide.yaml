@@ -23,6 +23,12 @@ description:
   module active.</p>
 miz: red_tide.miz
 performance: 2
+# Advanced (networked) IADS: red SAM bases carry co-located Command Center + Comms tower M
+# + GeneratorF statics (in the .miz). With no iads_config, Skynet wires each base's SAMs to
+# its nearby comms (<15nm) / power (<35nm) / command center by range -> destroyable per-base
+# C2 cells. (Procedurally-spawned red SAMs have random names, so Falcon-style by-name
+# iads_config can't be used here; range mode is the correct fit.)
+advanced_iads: true
 recommended_start_date: 1988-07-13
 # Blue-offensive tuning: NATO out-produces and out-buys the culminated Soviet salient.
 recommended_player_money: 800

@@ -106,6 +106,38 @@ considered and declined.
    (The `.miz` was repackaged with `zipfile`, preserving every other member byte-for-byte —
    `zip` isn't available in the shell here.)
 
+6. **Economy buildings + advanced-IADS laydown added** (2026-06-23). Red Tide originally had
+   **no working factory** (the lone `Workshop A` "Kastrup Factory" was placed in the **CJTF Red**
+   country block, but the loader's factory scan is **blue-only** — `MizCampaignLoader.factories`
+   iterates `self.blue.static_group` — so it was never detected; after turn 0 *nobody* could
+   recruit ground units). Reference campaigns confirmed the pattern: **Northern Guardian** = 2
+   `Workshop A`, **both in CJTF Blue** (ownership resolves by nearest CP); **The Falcon Went Over
+   The Mountain** = the gold-standard advanced IADS via `advanced_iads: true` + a by-name
+   `iads_config`. Changes (text-edited the `mission` member + re-zip with `zipfile`, since
+   **pydcs `Mission.save` is broken for this miz — it emits a duplicate `theatre` member**):
+   - **3 factories, all in the CJTF Blue block** (required for detection; ownership = nearest CP):
+     **Ramstein (165)** → blue, **Sperenberg (101)** + **Schönefeld (26)** → red rear (feed red
+     convoys/airlifts down Schönefeld→Sperenberg→Haina→Fulda front). Blue had *zero* statics
+     before, so a `["static"]` block was created inside CJTF Blue country `[1]` (after `["id"]=80`).
+   - **3 ammo depots** (`.Ammunition depot`, red): Sperenberg, Schönefeld (+ existing Kastrup);
+     +12 deployable ground units each over the 15 baseline.
+   - **Advanced IADS (range mode):** `advanced_iads: true` in the yaml (**no** `iads_config` — red
+     SAMs are procedurally spawned with random names, so Falcon-style by-name wiring is impossible;
+     range mode auto-wires SAMs to comms <15nm / power <35nm / command center). Each red SAM base
+     (Sperenberg, Schönefeld, Hamburg, Haina, Templin, Wittstock, Peenemünde, Kastrup) got a
+     co-located **Command Center + Comms tower M + GeneratorF** cell. The dead "Kastrup Factory"
+     was **repurposed in place** into "Kastrup Command Center" (same spot, no renumber needed).
+   - **IDs:** new groups start at `groupId 300` / `unitId 700` (max existing was 281/631). Appended
+     to the red `["static"]["group"]` table with fresh keys `[13]+` to dodge a **pre-existing**
+     key-collision (the hand-added Kastrup `[1]/[2]` clobbered Invisible-FARP `[1]/[2]` — 10 of 12
+     FARPs survive; left as-is, out of scope).
+   - **Verified (pydcs load-only):** miz parses; 3 blue `Workshop A`; red = 3 ammo + 8 CC + 8 comms
+     + 8 power; every structure's nearest CP is its intended base (1.7–5.4 km) at the right
+     coalition; warehouses member byte-identical (Kastrup red / Fulda blue intact); 3 naval groups
+     intact. **In-game pass still needed:** confirm red builds ground at Sperenberg/Schönefeld and
+     convoys/airlifts roll toward the front, blue builds at Ramstein, and the IADS shows networked
+     (Skynet) behavior with destroyable C2/power per base.
+
 ### Fulda forward heli base + supply re-route
 
 - **Why.** A blue forward FARP in the Fulda Gap, on the Frankfurt→Haina axis (Fulda sits ~2.5

@@ -12,7 +12,7 @@ from dcs import Point
 from game.flightplan import HoldZoneGeometry
 from game.theater import MissionTarget, TheaterGroundObject
 from game.theater.theatergroup import SceneryUnit
-from game.utils import nautical_miles, Speed, feet, meters, KG_TO_LBS
+from game.utils import nautical_miles, Speed, feet, KG_TO_LBS
 from .flightplan import FlightPlan
 from .formation import FormationFlightPlan, FormationLayout
 from .ibuilder import IBuilder
@@ -21,7 +21,7 @@ from .waypointbuilder import StrikeTarget, WaypointBuilder
 from .. import FlightType
 from ..flightwaypoint import FlightWaypoint
 from ..flightwaypointtype import FlightWaypointType
-from ..refueltasking import RefuelTasking, decide_refuel_tasking
+from ..refueltasking import RefuelTasking, decide_refuel_tasking, sortie_fuel_split
 
 if TYPE_CHECKING:
     from ..flight import Flight
@@ -201,16 +201,6 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             join_pos = WaypointBuilder.perturb(join_pos, feet(500))
         join = builder.join(join_pos)
         split = builder.split(self._get_split())
-        # Only flights that fuel calculations say can't make the sortie unrefueled get
-        # a tanker, sorted to pre-vul (top off on ingress) or post-vul (tank on egress).
-        tasking = self._refuel_tasking()
-        refuel_pre = None
-        refuel = None
-        if self.package.waypoints is not None:
-            if tasking.refuels_pre_vul:
-                refuel_pre = builder.refuel(self.package.waypoints.refuel)
-            elif tasking.refuels_post_vul:
-                refuel = builder.refuel(self.package.waypoints.refuel)
 
         ingress = builder.ingress(
             ingress_type, self.package.waypoints.ingress, self.package.target
@@ -232,19 +222,68 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         ingress_egress_altitude = builder.get_combat_altitude
         use_agl_ingress_egress = is_helo
 
-        # When tanking pre-vul, the ingress nav routes to the tanker first, then on to
-        # the join; the refuel point sits on the home-to-join leg so this is a natural
-        # detour rather than a backtrack.
-        nav_to_end = refuel_pre.position if refuel_pre else join.position
-        return FormationAttackLayout(
-            departure=builder.takeoff(self.flight.departure),
-            hold=hold,
-            nav_to=builder.nav_path(
+        departure = builder.takeoff(self.flight.departure)
+        # Base navs with no tanker detour: used both to estimate the sortie fuel burn
+        # and as the default routing when no tanker is needed.
+        nav_to = builder.nav_path(
+            hold.position if hold else self.flight.departure.position,
+            join.position,
+            ingress_egress_altitude,
+            use_agl_ingress_egress,
+        )
+        nav_from = builder.nav_path(
+            split.position,
+            self.flight.arrival.position,
+            ingress_egress_altitude,
+            use_agl_ingress_egress,
+        )
+        arrival = builder.land(self.flight.arrival)
+
+        # Only flights that fuel calculations say can't make the sortie unrefueled get
+        # a tanker, sorted to pre-vul (top off on ingress) or post-vul (tank on egress).
+        # The decision walks the real route below at the actual per-leg fuel rates.
+        combat_speed = {join, split} | set(target_waypoints)
+        route: list[FlightWaypoint] = [departure]
+        if hold is not None:
+            route.append(hold)
+        route.extend(nav_to)
+        route.append(join)
+        if lineup is not None:
+            route.append(lineup)
+        route.append(ingress)
+        if initial is not None:
+            route.append(initial)
+        route.extend(target_waypoints)
+        route.append(split)
+        route.extend(nav_from)
+        route.append(arrival)
+
+        tasking = self._refuel_tasking(route, combat_speed, split)
+        refuel_pre = None
+        refuel = None
+        if tasking.refuels_pre_vul:
+            refuel_pre = builder.refuel(self.package.waypoints.refuel)
+            # Reroute the ingress nav through the tanker (which sits on the home-to-join
+            # leg, so this is a detour rather than a backtrack), then on to the join.
+            nav_to = builder.nav_path(
                 hold.position if hold else self.flight.departure.position,
-                nav_to_end if join else ingress.position,
+                refuel_pre.position,
                 ingress_egress_altitude,
                 use_agl_ingress_egress,
-            ),
+            )
+        elif tasking.refuels_post_vul:
+            refuel = builder.refuel(self.package.waypoints.refuel)
+            nav_from = builder.nav_path(
+                refuel.position,
+                self.flight.arrival.position,
+                ingress_egress_altitude,
+                use_agl_ingress_egress,
+            )
+
+        return FormationAttackLayout(
+            departure=departure,
+            hold=hold,
+            nav_to=nav_to,
             join=join,
             lineup=lineup,
             ingress=ingress,
@@ -253,13 +292,8 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             split=split,
             refuel=refuel,
             refuel_pre=refuel_pre,
-            nav_from=builder.nav_path(
-                refuel.position if refuel else split.position,
-                self.flight.arrival.position,
-                ingress_egress_altitude,
-                use_agl_ingress_egress,
-            ),
-            arrival=builder.land(self.flight.arrival),
+            nav_from=nav_from,
+            arrival=arrival,
             divert=builder.divert(self.flight.divert),
             bullseye=builder.bullseye(),
             custom_waypoints=list(),
@@ -281,44 +315,29 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             self.target_area_waypoint(self.flight, self.flight.package.target, builder)
         ]
 
-    def _refuel_tasking(self) -> RefuelTasking:
+    def _refuel_tasking(
+        self,
+        route: list[FlightWaypoint],
+        combat_speed_waypoints: set[FlightWaypoint],
+        split: FlightWaypoint,
+    ) -> RefuelTasking:
         """Decide whether this flight needs a tanker and, if so, pre- or post-vul.
 
-        Estimates the sortie fuel burn from the package geometry (ingress transit at
-        cruise, the ingress->target->split vul at combat power, egress home at cruise,
-        plus the takeoff climb) and compares it against usable internal fuel. Returns
-        NONE when no tanker can be planned, the flight is a helo, fuel data is missing,
-        or internal fuel covers the sortie. The geometry is approximate -- the burn
-        estimate is a planning heuristic that wants an in-game fuel pass to tune.
+        Walks the actual sortie route with the real per-leg fuel rates (climb off the
+        takeoff, combat into the formation waypoints, cruise elsewhere) to estimate the
+        burn to the end of the vul and home, then compares it against usable internal
+        fuel. Returns NONE when no tanker can be planned, the flight is a helo, fuel
+        data is missing, or internal fuel covers the sortie.
         """
         fuel = self.flight.unit_type.fuel_consumption
-        waypoints = self.package.waypoints
-        if fuel is None or self.flight.is_helo or waypoints is None:
+        if fuel is None or self.flight.is_helo:
             return RefuelTasking.NONE
         if not self.flight.coalition.air_wing.can_auto_plan(FlightType.REFUELING):
             return RefuelTasking.NONE
 
-        def nm(a: Point, b: Point) -> float:
-            return meters(a.distance_to_point(b)).nautical_miles
-
-        departure = self.flight.departure.position
-        target = self.package.target.position
-        arrival = self.flight.arrival.position
-
-        ingress_nm = nm(departure, waypoints.ingress)
-        vul_nm = nm(waypoints.ingress, target) + nm(target, waypoints.split)
-        egress_nm = nm(waypoints.split, arrival)
-
-        # First ~10 nm of the climb-out burns at the climb rate, the rest of the
-        # ingress at cruise, and the vul at combat power.
-        climb_nm = min(ingress_nm, 10.0)
-        fuel_to_end_of_vul = (
-            climb_nm * fuel.climb
-            + (ingress_nm - climb_nm) * fuel.cruise
-            + vul_nm * fuel.combat
+        fuel_to_end_of_vul, fuel_vul_to_home = sortie_fuel_split(
+            route, fuel, combat_speed_waypoints, split
         )
-        fuel_vul_to_home = egress_nm * fuel.cruise
-
         usable_fuel = self.flight.unit_type.max_fuel * KG_TO_LBS - fuel.taxi
         return decide_refuel_tasking(
             usable_fuel, fuel_to_end_of_vul, fuel_vul_to_home, fuel.min_safe

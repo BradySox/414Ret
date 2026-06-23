@@ -391,6 +391,51 @@ active front (opening turn). Buffers unchanged: `aewc_threat_buffer_min_distance
 `tests/test_support_orbit.py`. Upstream-core flight-plan code, so an upstream-PR candidate.
 **Lua-free; wants an in-game pass to confirm orbits sit where expected across turns.**
 
+### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
+
+**Symptom (Red Tide AI test):** blue B-1/B-52/F-15E strikes were tasked ~30 km behind the
+FLOT, *inside* an un-suppressed S-200/SA-3/SA-8 belt, then turned around by threat-reaction
+ROE before employing (zero A-G dropped). Root cause was **not** loadouts (that was a
+separate fix) — it was the planner's optimism.
+
+**Mechanism.** The HTN re-plans within a turn against a mutating `TheaterState`
+(`theatercommander.py`). A strike on a SAM-covered target is correctly deferred by
+`PackagePlanningTask.target_area_preconditions_met` (gates on the **target point** only),
+which records the SAM in `threatening_air_defenses`. `DegradeIads` then plans a DEAD against
+it, and `PlanDead.apply_effects` called `state.eliminate_air_defense(target)` — removing the
+SAM from `enemy_air_defenses` **as if already destroyed**. The loop re-plans, the threat gate
+now passes, and the bomber is tasked through a corridor that is clear only on paper. In-sim
+that DEAD launched from ~200 km away, can't penetrate the belt to reach the deep SAM, the SAM
+lives, and the strikers fly into it. (Settings modulate, not cause: default
+`autoplanner_aggressiveness` is 20; the trigger is simply *blue having DEAD squadrons* that
+form a package the fulfiller can't range past the belt.)
+
+**Fix — reachability gate on the optimistic clear** (`game/commander/tasks/primitive/dead.py`,
+`game/commander/theaterstate.py`, `game/threatzones.py`):
+- `PlanDead.apply_effects` now only calls `eliminate_air_defense` when
+  `TheaterState.dead_can_reach(target, dead_flights)` is true — i.e. the DEAD's **actual
+  routed flight plan** reaches the SAM without its waypoints crossing **another** live
+  radar-SAM ring (`route.distance(center) < radius`, the target's own ring excluded).
+- Reachability is judged against `initial_radar_sam_rings` — an **immutable turn-start
+  (ground-truth) snapshot** built once in `from_game` via the new
+  `ThreatZones.radar_sam_rings()` (same `radar_only` range / >3 NM floor / `max_threat_range`
+  cap as `for_threats`, but kept per-site so a target can be excluded). Using the live list
+  would re-introduce the bug one layer deeper, since earlier optimistic clears would make a
+  shielded SAM look reachable.
+- Unreachable SAMs are recorded in a new persistent `unreachable_air_defenses` set (shared by
+  reference through `clone`, like the threat lists). `PlanDead.preconditions_met` early-returns
+  on members so we don't re-build/re-task an un-rangeable DEAD every loop; the SAM stays in
+  `enemy_air_defenses`, so the dependent strike stays **deferred until real BDA confirms the
+  kill on a later turn** (correct layer-by-layer IADS rollback).
+- **No regression for reachable SAMs:** a close SAM whose DEAD route is clear is still cleared
+  same-turn, preserving today's legit same-turn SEAD-escort-then-strike behavior.
+
+The DEAD itself is still tasked (blue still tries to peel the belt, with its SEAD escort) — we
+only changed whether the *follow-on strike* trusts the kill. This is upstream-core HTN
+behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
+(`dead_can_reach` geometry + `apply_effects` routing). **Lua-free; still wants an in-game pass
+to confirm blue now defers deep strikes until the belt is actually down.**
+
 ---
 
 ## 7. Auto-hide mobile SAMs on MFD

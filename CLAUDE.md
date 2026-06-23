@@ -10,6 +10,34 @@ recon, frontline, and assets-pack features on top of upstream.
 
 ---
 
+## Session Startup & Documentation Hygiene
+
+**At the start of every new thread**, sync with GitHub before touching any code or docs:
+
+```
+git fetch origin
+git log origin/main -5 --oneline   # scan for new commits since last session
+```
+
+If the current branch is behind `main`, merge or rebase before editing anything — a branch
+cut from a stale base produces exactly the duplicate-work + conflict mess that sinks a PR.
+Never derive the state of the codebase from memory; always read the current files.
+
+**Keeping docs in sync** — when a feature lands or changes, update in this order:
+
+1. Relevant `docs/dev/design/` file — design rationale and technical details.
+2. Matching section in [docs/dev/414th-features.md](docs/dev/414th-features.md) — engineering
+   deep-dive, file paths, gotchas.
+3. [`README.md`](README.md) — if the change is player-visible.
+4. This file (`CLAUDE.md`) — if the tech stack, architecture patterns, or feature list changed.
+5. `AGENTS.md` — resync to mirror `CLAUDE.md` (see [Conventions](#conventions)).
+6. [docs/dev/414th-ingame-pass-checklist.md](docs/dev/414th-ingame-pass-checklist.md) — add a
+   row for any feature with runtime behavior CI can't exercise.
+
+A push that moves code past its docs is a broken push.
+
+---
+
 ## Project Docs
 
 The per-feature engineering internals and design rationale live in `docs/`, not in this
@@ -96,7 +124,9 @@ a checkbox in the custom map layers panel (`MapLayersControl`, §18), driven by 
 places so existing campaigns don't brick.
 
 **Lua plugin discipline.** Lua 5.1 only, vanilla DCS units only (no HighDigitSAMs etc.),
-define functions before first use.
+define functions before first use. The `lua-lint.yml` CI workflow runs `luac5.1 -p` over
+every `resources/plugins/**/*.lua` as a blocking syntax gate — it catches parse-time errors,
+but runtime behavior still needs an in-game pass (see the in-game-pass checklist).
 
 ---
 
@@ -187,20 +217,29 @@ Notes learned the hard way:
 - For test files that fake Retribution objects (duck-typed `Coalition`, `Faction`,
   `AircraftType`), prefer a narrow `# type: ignore[arg-type]` over restructuring, matching
   how the existing fakes are annotated.
-- The Lua plugins can't be run/compiled here — validation is careful reading. When changing
-  plugin behavior, tell the user what to watch for in-game; several features explicitly note
-  "Lua still needs an in-game pass (not CI-runnable)."
+- The Lua plugins can't be run/compiled here — validation is careful reading (the
+  `lua-lint.yml` CI gate catches parse-time syntax errors, but not runtime behavior). When
+  changing plugin behavior, tell the user what to watch for in-game; several features
+  explicitly note "Lua still needs an in-game pass (not CI-runnable)."
 
 ---
 
 ## CI & Release Pipeline
 
-Every push to `main` runs three workflows in sequence:
+Pushes and PRs run three blocking gates, then the rolling release on `main`:
 
 1. **`lint.yml`** — Black (`--check .` whole tree) + mypy (`game tests` only).
-2. **`test.yml`** — pytest.
-3. **`414th-latest.yml`** (needs lint + test) — PyInstaller build on `windows-latest`, then
+2. **`test.yml`** — pytest (Python) + the TypeScript client tests.
+3. **`lua-lint.yml`** — Lua 5.1 **syntax gate** (blocking): `luac5.1 -p` over every
+   `resources/plugins/**/*.lua` (a plugin that won't parse dies silently in-mission, so this
+   catches it pre-merge). A second **advisory** `luacheck` job (scoped to 414th-authored
+   scripts via `.luacheckrc`) runs `continue-on-error` and only reports counts to the Step
+   Summary, so warning noise can't wedge a merge.
+4. **`414th-latest.yml`** (needs lint + test) — PyInstaller build on `windows-latest`, then
    upserts a rolling pre-release tagged `latest`.
+
+(`build.yml` is upstream's Discord-notifying build; its webhook secrets are upstream-only, so
+it no-ops for the fork. `release.yml` is the upstream semver-tag release — see below.)
 
 The release asset `414th-retribution-latest.zip` (`retribution_main.exe`) is what the
 squadron downloads; it always reflects current `main`. The permanent download URL is

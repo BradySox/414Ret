@@ -181,6 +181,42 @@ fully hides enemy command posts for the SCAR commander-capture feature (gated by
 `scar_command_post_intel`, default ON for new campaigns) — see
 [§15](#15-scar--strike-coordination-and-reconnaissance-flight-type--scenario-plugin).
 
+**Overview reveal toggle ("show the real picture").** A single runtime switch that forces
+every player-facing fog rule above to resolve to ground truth, for whoever is looking. It
+exploits the fact that all three player-facing fog rules funnel through exactly three leaf
+methods, so it is implemented as a one-line short-circuit in each rather than re-threading
+viewers through ~15 call sites:
+
+- Flag: `game/theater/fogofwar.py` — `fog_revealed()` / `set_fog_revealed()` over a
+  process-global `bool`. **Transient by design**: never pickled, so a save can never carry a
+  god-view, and a shared campaign can't leak one. The module imports nothing (cycle-free) so
+  the theater layer can pull it in freely.
+- Chokepoints: `TheaterUnit.alive_for`, `TheaterGroundObject.known_for`, and
+  `hidden_on_player_map` each gained `or fog_revealed()` in their `viewer is None …` guard.
+  Because `display_name_for`/`short_name_for`, unit `threat_range`/`detection_range`, group
+  `alive_units`/`max_threat_range`/`max_detection_range`, TGO `is_dead`/`dead_units`/
+  `sidc_status_for`, and `ThreatZones.for_faction` (`known_for` gate + `max_threat_range`) all
+  delegate to those three leaves, the toggle un-fogs the **entire** map render path
+  (`TgoJs`, the red `ThreatZonesJs`, `IadsConnectionJs`) **and** the intel dialogs at once —
+  with **zero server-model changes**, since those still pass `Player.BLUE` and the leaves
+  short-circuit internally. AI/planner/threat math pass `viewer=None` and are unaffected.
+- UI + refresh: `qt_ui/windows/QLiberationWindow.py` adds a checkable **Reveal fog of war**
+  action — surfaced both as a labelled **Reveal Fog** toolbar button (its own `view_bar`,
+  text-beside-icon so the on/off state reads at a glance) and in the **View** menu
+  (Ctrl+Shift+R, gated by `enable_game_actions`). Its handler flips
+  the flag and pushes `GameUpdateEvents().reload_map()` — a new no-recenter event
+  (`reload_map_data`, mirrored in `GameUpdateEventsJs` and the client `eventstream.tsx`
+  handler) that calls `reloadGameState(dispatch, true)`. The client re-pulls `/game`, whose
+  `tgos`/`iads_network`/`threat_zones` are rebuilt through the (now short-circuiting) fog
+  paths, so composition, rings, and hidden command posts appear — and re-hide when toggled
+  off, because `TgoJs.all_in_game` re-applies the `hidden_on_player_map` filter. `setGame`
+  resets the flag + checkbox off on every load/unload (matches "starts fogged each session").
+- Note: the live-map refresh needs the rebuilt React client (`client/src/api/eventstream.tsx`);
+  CI's `npm run build` ships it in the `latest` release. Running from a stale `client/build`,
+  the flag + dialogs still work but the map won't auto-refresh until the next full reload.
+  Lua-free, Python+TS only; the chokepoints are covered by the existing fog tests
+  (`tests/test_recon_intel_fog.py`, `tests/test_bda_tarps_reveal.py`).
+
 ---
 
 ## 4. UI transparency improvements

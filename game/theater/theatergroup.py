@@ -13,6 +13,7 @@ from game.dcs.groundunittype import GroundUnitType
 from game.dcs.shipunittype import ShipUnitType
 from game.dcs.unittype import UnitType
 from game.point_with_heading import PointWithHeading
+from game.theater.fogofwar import fog_revealed
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import Heading, Distance, meters
 
@@ -120,8 +121,9 @@ class TheaterUnit:
         ``viewer=None`` is the omniscient/ground-truth view used by the AI
         commander, planner, and threat math. A friendly viewer also sees truth;
         an enemy viewer sees only what recon has confirmed (post-strike BDA lag).
+        The ``fog_revealed()`` overview forces ground truth for any viewer.
         """
-        if viewer is None or self.ground_object.is_friendly(viewer):
+        if viewer is None or fog_revealed() or self.ground_object.is_friendly(viewer):
             return self.alive
         return self.alive_at_last_recon
 

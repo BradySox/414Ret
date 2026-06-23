@@ -46,6 +46,7 @@ class GameUpdateEventsJs(BaseModel):
     reset_on_map_center: LeafletPoint | None
     game_unloaded: bool
     new_turn: bool
+    reload_map_data: bool
 
     @classmethod
     def from_events(
@@ -133,4 +134,5 @@ class GameUpdateEventsJs(BaseModel):
             reset_on_map_center=events.reset_on_map_center,
             game_unloaded=events.game_unloaded,
             new_turn=events.new_turn,
+            reload_map_data=events.reload_map_data,
         )

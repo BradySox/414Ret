@@ -42,6 +42,7 @@ class GameUpdateEvents:
     reset_on_map_center: LatLng | None = None
     game_unloaded: bool = False
     new_turn: bool = False
+    reload_map_data: bool = False
     shutting_down: bool = False
 
     @property
@@ -155,6 +156,17 @@ class GameUpdateEvents:
 
     def begin_new_turn(self) -> GameUpdateEvents:
         self.new_turn = True
+        return self
+
+    def reload_map(self) -> GameUpdateEvents:
+        """Ask the map client to re-fetch full game state (no recenter).
+
+        Used when a view-only setting such as the fog-of-war overview toggle
+        changes what the player-facing map should show. The client re-pulls
+        ``/game``, so fogged composition, threat rings, and hidden command posts
+        are re-evaluated against the current reveal state in both directions.
+        """
+        self.reload_map_data = True
         return self
 
     def shut_down(self) -> GameUpdateEvents:

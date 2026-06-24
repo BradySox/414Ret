@@ -440,6 +440,18 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
         assert self._front_line_db is None
         self._front_line_db = game.db.front_lines
 
+    def assign_setup_coalition(self, game: Game, player: Player) -> None:
+        """Repaint this control point's coalition during blank-canvas setup.
+
+        Only used by the campaign maker's paint step on the throwaway all-neutral
+        setup game (before any front lines / units exist). Re-binds both the
+        persisted ``starting_coalition`` and the live ``_coalition`` so the map
+        reflects the new side; ``finalize`` rebuilds the real game from the
+        painted ``starting_coalition`` values.
+        """
+        self.starting_coalition = player
+        self._coalition = game.coalition_for(player)
+
     def initialize_turn_0(self, laser_code_registry: LaserCodeRegistry) -> None:
         # We don't need to send events for turn 0. The UI isn't up yet, and it'll fetch
         # the entire game state when it comes up.

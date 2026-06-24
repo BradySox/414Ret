@@ -62,13 +62,25 @@ path and keeps them off the map entirely.
   legacy auto-split fallback. Plus `ownership_from_theater()` to read painted
   ownership off the setup theater. Front derivation reuses the policy core's
   `nearest_neighbor_links` over the *kept* bases.
-- **Increment B — server + map paint UI (NEXT, can't verify in CI):** wizard
-  "Build your own" generates the all-neutral game and enters a **setup mode**; a
-  FastAPI endpoint flips a CP's coalition on click (SSE refresh, like drop-spawn
-  §20); a "Finalize" endpoint reads ownership → rebuilds via `generate_blank_theater`
-  → `GameGenerator` → `begin_turn_0` → returns the real game; React renders neutral
-  CPs gray and cycles them on click. **Until this lands, the wizard keeps the legacy
-  auto-split** so there is no unusable all-gray intermediate.
+- **Increment B — server + map paint UI (in progress):**
+  - **Paint = server-side ✅ (built, headless-verified):** `PUT /control-points/{id}/coalition`
+    (`blue`/`red`/`neutral`) calls `ControlPoint.assign_setup_coalition(game, player)`
+    (re-binds `starting_coalition` + live `_coalition`) and pushes an SSE
+    `update_control_point` — the exact drop-spawn §20 mutation pattern.
+    `ControlPointJs` gained a `neutral: bool` so the map can render gray. Verified:
+    a CP cycles gray→blue→red→gray and the JS model reflects it each step.
+  - **Finalize = Qt-side (NEXT, not server):** game *lifecycle* (new/load) is driven
+    by Qt (`onGameGenerated` → `GameUpdateSignal.game_loaded`), and the FastAPI server
+    has **no** precedent for swapping the whole game — forcing a cross-layer game swap
+    from a route would be fragile. So a Qt "Finalize campaign" action (toolbar button,
+    visible in setup mode) reads `ownership_from_theater` → `generate_blank_theater(ownership=…)`
+    → `GameGenerator` → `begin_turn_0` → `onGameGenerated`, reusing the proven load path.
+    The wizard stashes the generation params (factions/settings/dates) so finalize can
+    regenerate.
+  - **React (NEXT, can't verify in CI):** setup mode renders `neutral` CPs gray and
+    cycles them on click via the paint endpoint; the OpenAPI client regenerates at CI build.
+  - **Until finalize + React land, the wizard keeps the legacy auto-split** so there is
+    no unusable all-gray intermediate.
 - **Increment C — support buildings:** finalize should procedurally place economy
   structures (factories/depots/etc.) for owned bases. Retribution normally gets
   these from the `.miz`; blank canvas must synthesize them. Biggest remaining

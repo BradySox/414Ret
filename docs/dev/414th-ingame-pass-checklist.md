@@ -331,6 +331,17 @@ so the two docs don't drift.
   group goes active as EWR (an empty set collapsed into a match-all — the `NO_MATCH`
   guard failed), or both bridges run / neither runs (engine-marker plumbing), or a
   group name that is a strict prefix of another double-registers.
+- **Phase-4 tuning to watch:** SAM engagement range / max-active-SAMs / detection
+  interval take effect (compare engagement ranges vs the options); with EWR
+  auto-relocate on, mobile EWRs reposition over time.
+- **Phase-5 C2 (advanced_iads campaign only) — the highest-risk part:** kill a comms
+  tower → its dependent SAM should go autonomous (alarm RED) within the poll interval;
+  kill a power source → dependent SAM goes offline (AI off, radar dead); kill all
+  command centers → the whole coalition's SAMs degrade. Watch `dcs.log` for
+  `MANTIS C2 - ...` lines. **Key fail signature:** a SAM the watcher disabled comes
+  back to life on MANTIS' next detection cycle (MANTIS re-enabling it) — degradation
+  doesn't "stick." If seen, the watcher must remove the SAM from MANTIS' set, not just
+  toggle the group.
 
 ---
 

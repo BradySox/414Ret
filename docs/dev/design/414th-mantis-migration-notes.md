@@ -1,8 +1,10 @@
 # MANTIS Migration — Design Notes
 
-**Status:** in progress — spikes + Python seams + **phase-3 core-networking & phase-4 tuning Lua
-bridge landed (gated, inert)** (2026-06-24); awaiting in-game pass (checklist G6). Deferred:
-proactive SHORAD scoot-zones, advanced mode, and the C2 layer (phase 5).
+**Status:** in progress — spikes + Python seams + **phases 3–5 Lua bridge landed (gated, inert):
+core networking, tuning, and the comms/power/command-center C2 layer** (2026-06-24). The full engine
+is now built and feature-complete-on-paper; **everything is blocked on the in-game pass (checklist
+G6)** before `iads_engine` could flip from SKYNET. Deferred enhancements: proactive SHORAD
+scoot-zones (needs Python zone-gen) and `SetAdvancedMode` (needs HQ wiring).
 **Date:** 2026-06-24
 **Broader context:** this migration is **phase 1** of retiring MIST and standardizing the mission
 scripting on MOOSE — Skynet is the biggest MIST consumer with a first-class MOOSE replacement. See
@@ -291,10 +293,18 @@ Most Skynet options map directly. Changes:
    proactive SHORAD scoot-zones (`AddScootZones`) — needs Python zone generation per mobile SAM; and
    `SetAdvancedMode` — moved to phase 5 because it requires an HQ and otherwise spams every player.
    Validated under the same checklist **G6** pass.
-5. **C2 layer (§5) — comms/power/command-center degradation:** the capability that brings the engine
-   to **full parity**. In-game pass #3 on an advanced-IADS campaign: kill a comms tower, confirm the
-   dependent SAM goes autonomous; kill power, confirm offline; kill all command centers, confirm
-   network degrades.
+5. **C2 layer (§5) — comms/power/command-center degradation — ✅ CODE LANDED (2026-06-24), ☐ in-game
+   pass pending:** implemented in `mantis-config.lua` as an event-driven watcher over the existing
+   per-SAM `ConnectionNode`/`PowerSource` arrays + the coalition `CommandCenter` list (a native
+   `timer.scheduleFunction` poll of static existence, since statics don't fire `Dead` reliably).
+   Power lost → SAM `SetAIOff` (offline); comms lost → autonomous (`OptionAlarmStateRed`) or dark per
+   the `commsLossGoesDark` option; all command centers lost → whole coalition decapitated. Basic-mode
+   campaigns populate no graph, so it no-ops. **Advanced mode (`SetAdvancedMode`) still deferred** —
+   it needs an HQ group wired (we currently pass none) and nags every player otherwise; the custom
+   watcher covers the degradation it would have provided.
+   **#1 untested risk (G6):** MANTIS owns SAM emissions and may re-enable a SAM the watcher disabled
+   on its next cycle — if degradation doesn't "stick" in the in-game pass, drop the SAM from MANTIS'
+   managed set rather than only toggling the group.
 6. **Flip default** `iads_engine: mantis` for new campaigns **only once steps 3–5 are all at parity
    and passed**. Keep Skynet selectable for one release as a fallback. No campaign class is left
    behind — basic and advanced both run on MANTIS at cutover.

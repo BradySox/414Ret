@@ -1,7 +1,21 @@
 # 414th — Campaign Maker (blank-start foundation) — design notes
 
-**Status:** in progress. Increment 1 (pure policy core) landed; glue + wizard are
-specced below and need an in-game pass. Scoped 2026-06-23.
+**Status:** in progress. Increment 1 (pure policy core) landed (PR #120).
+Increments 2–3 (terrain glue + wizard "Blank canvas" entry) built and
+**headless-verified**; the live in-game pass (fly a blank campaign) is still
+pending. Scoped 2026-06-23.
+
+> **Runnability gate: PASSED headless (2026-06-23).** A blank Caucasus theater
+> (21 airfields, 11 blue / 10 red, nearest-neighbor fronts) was run through the
+> real `GameGenerator.generate()` → `begin_turn_0()` pipeline outside the UI and
+> reached turn 0 cleanly. The feared "no ground fronts → crash" was **not** the
+> blocker (the default front graph runs fine). The only real fix was the air-wing
+> config: an empty campaign passes a plain `{}` to `CampaignAirWingConfig`, but
+> `DefaultSquadronAssigner` does `by_location[cp]`, which `KeyError`s unless the
+> dict is a `defaultdict`. Fixed via `CampaignAirWingConfig.empty()`. A blank
+> canvas therefore starts with **0 squadrons** — the player staffs bases via the
+> `AirWingConfigurationDialog` the wizard already shows next; that dialog's
+> add-from-scratch UX is the remaining thing to confirm in-game.
 
 **Vision:** start from an empty theater and build a campaign by hand — assign
 airfield ownership, drop in SAMs / armor / strike targets, author airwings, save &

@@ -5,6 +5,8 @@ import logging
 from PySide6 import QtGui, QtWidgets
 
 from game.campaignloader.campaign import Campaign
+from game.campaignloader.campaignairwingconfig import CampaignAirWingConfig
+from game.campaignloader.blanktheatergen import generate_blank_theater
 from game.theater.start_generator import GameGenerator, GeneratorSettings, ModSettings
 from qt_ui.windows.AirWingConfigurationDialog import AirWingConfigurationDialog
 from qt_ui.windows.newgame.WizardPages.QFactionSelection import FactionSelection
@@ -111,7 +113,21 @@ class NewGameWizard(QtWidgets.QWizard):
         logging.info("New campaign blue faction: %s", blue_faction.name)
         logging.info("New campaign red faction: %s", red_faction.name)
 
-        theater = campaign.load_theater(generator_settings.advanced_iads)
+        blank_canvas = bool(self.field("blankCanvas"))
+        if blank_canvas:
+            # Campaign maker: ignore the .miz; generate an empty theater of the
+            # selected terrain. The player staffs bases via the air-wing dialog and
+            # places units via drop-spawn after the campaign starts.
+            theater = generate_blank_theater(
+                campaign.data["theater"],
+                advanced_iads=generator_settings.advanced_iads,
+            )
+            air_wing_config = CampaignAirWingConfig.empty()
+            campaign_name = f"Blank canvas — {theater.terrain.name}"
+        else:
+            theater = campaign.load_theater(generator_settings.advanced_iads)
+            air_wing_config = campaign.load_air_wing_config(theater)
+            campaign_name = campaign.name
 
         logging.info("New campaign theater: %s", theater.terrain.name)
 
@@ -121,11 +137,11 @@ class NewGameWizard(QtWidgets.QWizard):
             blue_faction,
             red_faction,
             theater,
-            campaign.load_air_wing_config(theater),
+            air_wing_config,
             settings,
             generator_settings,
             mod_settings,
-            campaign_name=campaign.name,
+            campaign_name=campaign_name,
         )
         self.generatedGame = generator.generate()
 

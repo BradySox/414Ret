@@ -76,15 +76,17 @@ own in-game pass (Lua can't be CI-exercised).
 
 1. **Skynet → MANTIS** *(in progress)* — biggest MIST consumer with a first-class MOOSE replacement.
    See the MANTIS migration notes. Removes ~50 MIST refs.
-2. **EWRS → retire or fold into MANTIS** — evaluate whether MANTIS EWR makes the standalone `ewrs`
-   plugin redundant. If so, delete it (≈13 refs gone for near-zero cost); else port to MOOSE detection.
+2. **EWRS → DELETE** — ✅ decided: redundant with the fork's MOOSE `bigeye`. Delete, don't port.
+   See [`414th-ewrs-retirement-decision.md`](414th-ewrs-retirement-decision.md). ~13 occurrences gone
+   for near-zero cost.
 3. **SCAR + intercept glue** — port their handful of MIST helper calls to MOOSE (both already load
    MOOSE). 414th-owned, so no upstream coordination needed. ~20 refs.
-4. **CTLD → `Ops.CTLD`** — the large one. Swap the vendored MIST-based `CTLD.lua` for MOOSE
-   `Ops.CTLD` + a config bridge (mirrors the Skynet→MANTIS pattern). Behavior-sensitive; needs a
-   careful in-game pass on transport/CSAR flows. ~84 refs.
-5. **dismounts** — decide: rewrite on MOOSE, keep MIST *only* for this one plugin (no full drop), or
-   retire the feature. This is the gating decision for whether MIST leaves the build entirely.
+4. **CTLD → `Ops.CTLD`** — the large one (~8.7k lines, default-ON, ~26 distinct MIST calls). Config-
+   bridge swap mirroring Skynet→MANTIS; ~15–20 days incl. QA, MEDIUM–HIGH risk. Scoped in
+   [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md).
+5. **dismounts** — the **MIST-drop blocker** (no MOOSE successor exists). Decision: rewrite on MOOSE
+   (~15–20 h) if used, or retire if not; "keep MIST just for it" defeats the goal. Needs one squadron
+   input (does anyone fly it on?). See [`414th-dismounts-decision.md`](414th-dismounts-decision.md).
 6. **Core glue** (`dcs_retribution.lua`) — port the 5 MIST calls above to native/MOOSE.
 7. **Drop MIST** — remove `mist_4_5_126.lua` from `base/plugin.json`. **Definition of done.**
 

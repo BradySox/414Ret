@@ -1,44 +1,34 @@
 # Community announcement (paste-ready)
 
-> Links are live (release download + 414th JFG Discord). Written to read like a person,
-> not a brochure — keep it casual if you edit it.
+> Primary goal: get people to come fly with the 414th (Discord). The download is
+> secondary. Links are live. Written to read like a person, not a brochure — keep it
+> casual if you edit it.
 
 ---
 
-Posting this for anyone who flies DCS and has bounced off the usual single-player stuff.
+If you fly DCS and you've been after a real campaign to fly with other people instead of
+grinding solo missions, come fly with us.
 
-We've been building our own version of Retribution — the open-source dynamic campaign
-generator — and it's finally at the point where it's worth handing around. It's a free
-download, built right on top of upstream Retribution, so anything that already worked
-still works and we pull their updates.
+We're the 414th JFG. A few nights a week we run a dynamic campaign as a group — shooters,
+SEAD, jammers, tankers, recon and CAS all working the same fight instead of everyone
+doing their own thing. It's the closest thing I've found to flying an actual air
+tasking order with a squad that has your back.
 
-If you've flown stock Retribution you know the deal. It's a great tool, but the red side
-can feel half-asleep. That's mostly what we went after. Enemy interceptors actually
-scramble to defend their fields now. CAP holds the line instead of drifting off toward
-the next county. The front line isn't two parked rows of armor either — there's a real
-fight going on down there, so a CAS pass actually changes who's winning. And not every
-SAM in the country lights up your RWR the second you cross the FLOT.
+The part that makes it click is the campaign itself actually pushes back. The red side
+defends — interceptors scramble off their fields, CAP holds the line, SAMs stay quiet
+until you're committed. The front is a live fight, not two parked rows of armor, so when
+you roll in on CAS it actually moves the needle. Recon means something too: take the
+Tomcat up on a photo run and your film fills in the intel picture for the next push.
+There's a moving-target hunt where you've got to pick the real target out of a pack of
+decoys, a player-flown C-130 jammer, tower ATC at the fields — plenty to do whatever
+airframe you bring.
 
-There's also a fair bit that stock just doesn't have:
+You don't need to be an ace and you don't need to know the campaign tool. Show up, grab a
+wingman, fly a role. New pilots are welcome.
 
-- Photo recon that does something. Take the Tomcat up on a TARPS run and your film fills
-  in the intel picture and confirms BDA after a strike.
-- A moving-target hunt. You've got to pick the real high-value target out of a pack of
-  decoy convoys and kill it before it reaches cover. Hit the wrong one and it costs you.
-- A player-flown C-130 jammer / ISR bird.
-- Working tower ATC at your airfields.
-- A blank-map campaign builder. Start from an empty theater, paint who owns which
-  airfields, drop SAMs and armor wherever you want, and go fly it.
+**Come hang out and fly with us: https://discord.gg/414th-jfg**
 
-We also ship a custom campaign (Red Tide, a Cold-War-gone-hot fight in Germany) if you
-just want something to jump into.
-
-None of it's paywalled, it's all open source. If a campaign that actually pushes back
-sounds like your thing, grab it here:
-
-**https://github.com/bradyccox/414Ret/releases/tag/latest**
-
-And if you'd rather fly it with people than solo, we're the 414th JFG — come hang out:
-https://discord.gg/414th-jfg
-
-Happy to answer questions if anyone's curious.
+(If you want the background: the campaign runs on our own build of Retribution, the
+open-source dynamic campaign generator. It's free and you're welcome to grab it and poke
+around solo — https://github.com/bradyccox/414Ret/releases/tag/latest — but honestly it's
+a lot more fun with a flight. Either way, drop into the Discord and say hi.)

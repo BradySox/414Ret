@@ -305,6 +305,17 @@ so the two docs don't drift.
 - **Fail signature:** Menu missing/erroring (would now be caught earlier by the
   Lua syntax gate), or any of the documented EW/ISR actions not firing.
 
+### G5 - Retired generic EW/Jammer Script stays gone - §2 - ☐ UNTESTED
+- **Setup:** Generate a mission with a player F-16C carrying its ALQ-184 pod and
+  an AI SEAD/DEAD package that would previously have been eligible for `ewrj`.
+- **Pass:** No generic "Jammer menu" / `EWJamming` F10 commands appear on the
+  fighter, no `startEWjamm` / `startIAdefjamming` waypoint actions are present
+  in the generated mission, and the C-130J JAMMING slot still uses only the
+  `c130j` Mission Systems menu.
+- **Fail signature:** The old generic jammer menu appears on fighters, or the
+  generated mission references `ewrj`, `EWJamming`, `startEWjamm`, or
+  `startIAdefjamming`.
+
 ---
 
 ## H. Kneeboards

@@ -62,12 +62,6 @@ class JoinPointBuilder(PydcsWaypointBuilder):
             FlightType.SEAD_ESCORT,
             FlightType.DEAD,
         ]:
-            settings = self.flight.coalition.game.settings
-            ai_jammer = settings.plugin_option("ewrj.ai_jammer_enabled")
-            if settings.plugins.get("ewrj") and ai_jammer:
-                self.offensive_jamming(waypoint, "start")
-                self.defensive_jamming(waypoint, "start")
-
             if self.flight.flight_type == FlightType.SEAD_ESCORT:
                 self.handle_sead_escort(doctrine, waypoint)
                 # Let the AI use ECM to preemptively defend themselves.

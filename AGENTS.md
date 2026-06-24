@@ -59,6 +59,7 @@ file. This guide is the map; those are the territory.
   - `414th-air-defense-planning-notes.md` — CAP/BARCAP/QRA planning intent
   - `414th-tic-dynamic-fronts-notes.md` — TIC stance/cadence movement design
   - `414th-tars-recon-notes.md` — TARS recon engine
+  - `414th-c130-ew-isr-notes.md` — C-130J EW/ISR source of truth + retired `ewrj` warning
   - `414th-flightcontrol-notes.md` — Flight Control ATC
   - `414th-dtc-export-notes.md` — DTC cartridge format + reverse-engineered schema
   - `414th-scar-task-spec.md` + `414th-scar-commander-sme-questions.md` — SCAR ground truth
@@ -140,7 +141,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 
 1. **QRA intercept reserve** — per-squadron alert reserve feeding the upstream PR #782 Moose
    `AI_A2A_DISPATCHER`. Base-defense posture by default. (Old ramp-scramble is retired.)
-2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin).
+2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
+   the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +
    recon intel-fog) makes recon worth flying.
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context

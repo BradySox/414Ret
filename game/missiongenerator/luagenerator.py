@@ -59,9 +59,6 @@ class LuaGenerator:
         self.plugin_scripts: list[str] = []
 
     def generate(self) -> None:
-        ewrj_triggers = [
-            x for x in self.mission.triggerrules.triggers if isinstance(x, TriggerStart)
-        ]
         self.generate_plugin_data()
         self.inject_plugins()
         self._inject_tic_script()
@@ -69,9 +66,6 @@ class LuaGenerator:
         self._inject_scar_script()
         self._inject_flightcontrol_script()
         self._inject_civilian_traffic_script()
-        for t in ewrj_triggers:
-            self.mission.triggerrules.triggers.remove(t)
-            self.mission.triggerrules.triggers.append(t)
 
     def _inject_tic_script(self) -> None:
         """Inject TIC_v1.1.lua (Troops In Contact, by Grendel) as a core script.

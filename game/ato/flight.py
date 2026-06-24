@@ -102,6 +102,12 @@ class Flight(
         self.initialize_fuel()
         self.use_same_loadout_for_all_members = True
         self.use_same_livery_for_all_members = True
+        # 414th: a demand-based service point set by the post-planning theater-tanker
+        # reposition pass (game/commander/tankerdemand.py); only meaningful for a
+        # shared REFUELING flight, where TheaterRefuelingFlightPlan centers the orbit
+        # here instead of on the front. None for everything else. Old saves predating
+        # this attribute fall back via getattr in the tanker builder.
+        self.refueling_service_point: Optional[Point] = None
 
         # Only used by transport missions.
         self.cargo = cargo

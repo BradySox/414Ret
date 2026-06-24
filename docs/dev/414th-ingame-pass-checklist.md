@@ -197,6 +197,25 @@ so the two docs don't drift.
   `_refuel_tasking` in `game/ato/flightplans/formationattack.py` if the pre/post/none
   split looks off.
 
+### C7 — Theater tanker placed on receiver demand · ☐ UNTESTED
+- **Setup:** A campaign with a **shared theater tanker** (a dedicated REFUELING
+  package, not a same-package buddy tanker) and several offensive packages whose
+  flights actually take gas (have `REFUEL` waypoints) clustered in one area. Boom +
+  drogue mix is the stress case. Auto-plan a turn.
+- **Pass:** The theater tanker orbits **near the strongest cluster of compatible
+  receivers** (boom tanker → boom receivers, etc.), not back at the closest friendly
+  CP, and receivers reach it and take fuel. A boom-only tanker is **not** dragged
+  toward a probe-heavy cluster. With no compatible demand the tanker keeps the legacy
+  front-anchored orbit. The orbit stays clear of enemy threat zones.
+- **Fail signature:** Tanker still parked at the rear CP far from any receiver; OR a
+  boom tanker pulled to probe-only demand (method gate wrong); OR the orbit lands
+  inside an enemy threat ring (clearance nudge wrong); OR a same-package buddy tanker
+  moved (should be untouched). Check `reposition_theater_tankers` /
+  `best_tanker_service_point` in `game/commander/tankerdemand.py` and the override in
+  `game/ato/flightplans/theaterrefueling.py`.
+- **Note:** receiver `REFUEL`-waypoint *retargeting* onto the moved tanker is a
+  deferred follow-up; this row covers orbit placement only.
+
 ---
 
 ## D. Loss accounting (upstream-core)

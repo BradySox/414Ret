@@ -511,6 +511,38 @@ deep. Verified by recomputing the broken save: red AWACS `+326/−175 NM → cen
 behind`, blue forward-but-centered. Tests: `tests/test_support_orbit.py`. Upstream-core
 flight-plan code, so an upstream-PR candidate. **Lua-free; in-game pass ☑ VERIFIED 2026-06-24 (C1/C2).**
 
+### Theater tanker placement from receiver demand (2026-06-25)
+
+**Symptom.** A shared theater tanker is planned at `closest_friendly_control_point()` then
+front-anchored (above), but receiver `REFUEL` waypoints are generated independently
+(`RefuelZoneGeometry`), so the tanker could orbit 50–80+ NM from the flights that actually
+need it.
+
+**Fix — a post-planning reposition pass** (`game/commander/tankerdemand.py`). The tanker task
+runs first in the HTN (before offensive packages) and `PackagePlanningTask.execute()` only adds
+packages to `coalition.ato` *after* the search, so the demand isn't visible during planning.
+Rather than reorder the HTN (which would change budget order for every campaign), a pass runs
+**after** `TheaterCommander.plan_missions` has built the full ATO:
+- `theater_refuel_demand(coalition)` collects one weighted `RefuelDemand` per non-tanker flight
+  that has a `REFUEL` waypoint (method = the flight's `air_refuel_type`, weight = aircraft
+  count). Flights whose own package carries a buddy tanker are excluded (served in-package).
+- `best_tanker_service_point()` returns the count-weighted centroid of the strongest cluster of
+  **compatible** demand (boom/probe honored, untagged permissive — mirrors `can_refuel_from`),
+  or `None`. Greedy single-link clustering, 60 NM default radius.
+- For each shared theater tanker (a `REFUELING` flight whose package `primary_task` is
+  `REFUELING`), the pass sets `Flight.refueling_service_point` and calls
+  `recreate_flight_plan()`. `TheaterRefuelingFlightPlan` centers the orbit on that point
+  (nudged clear of enemy threat zones) instead of the front anchor; the override is read via
+  `getattr` so old saves / un-repositioned tankers keep the legacy anchor with **no migration**.
+- No compatible demand → tanker untouched (legacy front anchor). Same-package buddy tankers are
+  never moved.
+
+Tests: `tests/test_tanker_demand.py` (scoring + ATO extraction). **Needs an in-game pass** (C7).
+**Deferred follow-up:** retargeting compatible receiver `REFUEL` waypoints onto the moved tanker
+(the plan's conditional "when the detour is reasonable" half) — the tanker already sits at the
+centroid of those points, so this is a refinement, not essential. First half of the Codex tanker
+PLAN; the red forward-BARCAP companion shipped separately (§6).
+
 ### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
 
 **Symptom (Red Tide AI test):** blue B-1/B-52/F-15E strikes were tasked ~30 km behind the

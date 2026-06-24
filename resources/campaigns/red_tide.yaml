@@ -272,8 +272,8 @@ squadrons:
     - primary: SEAD Sweep
       secondary: air-to-ground
       aircraft:
-        - VMA-231
-      aircraft_type: AV-8B Harrier II Night Attack
+        - 480th Tactical Fighter Squadron
+      aircraft_type: F-4E-45MC Phantom II
       size: 6
     - primary: OCA/Aircraft
       secondary: air-to-ground

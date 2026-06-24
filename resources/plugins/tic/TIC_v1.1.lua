@@ -951,7 +951,10 @@ function GLSCO_COMBATANT:New(group)
 		 if GLSCO.IsSameCoordinate(prevCoord, curCoord) then
 		    -- Some how we are stuck, we are not going to make progress, so
 			-- let's retry the move task.
-			env.warning("OnBeforeArrived: unit is stuck!")
+			-- Recovered condition, not an error: re-issue the move with roads
+			-- prohibited (below) to get unstuck. Logged at info so it doesn't
+			-- pollute the warning stream (can fire often on buggy ground pathing).
+			env.info("OnBeforeArrived: unit is stuck; retrying move without roads")
 
 			-- Using roads is very buggy, so let's disable their usage to help
 			-- get unstuck.

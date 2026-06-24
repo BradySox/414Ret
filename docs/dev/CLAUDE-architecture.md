@@ -47,7 +47,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 
 1. **QRA intercept reserve** — per-squadron alert reserve feeding the upstream PR #782 Moose
    `AI_A2A_DISPATCHER`. Base-defense posture by default. (Old ramp-scramble is retired.)
-2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin).
+2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
+   the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +
    recon intel-fog) makes recon worth flying.
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context

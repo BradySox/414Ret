@@ -265,12 +265,12 @@ class AircraftType(UnitType[Type[FlyingType]]):
     # when no TGP is mounted on any station.
     has_built_in_target_pod: bool
 
-    # indicates if the aircraft has a built-in jammer allowing Defensive EWJamming to be used
-    # without the need for a jamming pod
+    # Legacy EW capability metadata retained for third-party YAML compatibility.
+    # The retired ewrj plugin used this to grant generic defensive aircraft jamming.
     has_built_in_ecm: bool
 
-    # Indicates if the aircraft has a built in jammer allowing Offensive EWJamming to be used
-    # without the need for a jamming pod
+    # Legacy EW capability metadata retained for third-party YAML compatibility.
+    # The 414th EW model is now the C-130J JAMMING flight + c130j plugin.
     has_built_in_jamming: bool
 
     task_priorities: dict[FlightType, int]

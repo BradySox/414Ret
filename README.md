@@ -64,7 +64,8 @@ and selected later upstream fixes.
   into your ATO automatically each turn (off by default while the in-mission scripting is being
   playtested).
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform with
-  standoff jamming and ELINT gameplay.
+  standoff jamming and ELINT gameplay. This is the only 414th scripted EW model;
+  the old generic fighter-pod "EW Jammer Script" is retired.
 - Strike and DEAD packages can receive auto-planned **TARPS** follow-up, while BAI remains
   the normal planner task for conventional anti-armor work.
 - The fork also carries newer suppression behavior: AI SEAD can loiter near the target,
@@ -231,6 +232,8 @@ the standalone MANTIS IADS). That workspace is private.
 Features that started as standalone ME scripts and are now fully integrated into this
 repo (do not use the standalone versions):
 - **C-130J EW/ISR** → `resources/plugins/c130j/` (`FlightType.JAMMING`)
+  - Supersedes the retired generic `ewrj` / "EW Jammer Script"; do not use that
+    standalone script for F-16/A-10 pod jamming.
 - **QRA / AI_A2A_DISPATCHER** → `resources/plugins/intercept/` (per-squadron `intercept_reserve`)
 - **TARS recon** → `resources/plugins/tars/` (runtime engine for `FlightType.TARPS`)
 - **Flight Control ATC** → `resources/plugins/flightcontrol/` (players-only tower comms)

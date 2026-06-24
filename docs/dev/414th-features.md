@@ -103,6 +103,15 @@ selected friendly group.
 - Plugin script: `resources/plugins/c130j/c130j_mission_systems.lua` (+ `plugin.json`).
 - Loadout/package wiring: `game/ato/loadouts.py`, `game/ato/package.py`,
   `game/theater/missiontarget.py`.
+- Design note: `docs/dev/design/414th-c130-ew-isr-notes.md`.
+
+**Retired generic EW plugin:** the old `ewrj` / "EW Jammer Script 2.1" plugin
+was removed. The C-130J JAMMING flight supersedes it for 414th scripted EW.
+Do not re-add `ewrj` to `resources/plugins/plugins.json` or restore the old
+`EWJamming` / `startEWjamm` / `startIAdefjamming` Python hooks. F-16/A-10 ECM
+pods should not create the old generic F10 "Jammer menu"; only the C-130J
+Mission Systems plugin owns 414th scripted jamming now. Legacy saved `ewrj`
+settings are purged on load in `game/settings/settings.py`.
 
 **C-130 EW hard constraints (carried over from the standalone ME script):** do NOT toggle
 SAM radar emissions (`enableEmission(false)` crashed DCS - suppression is ROE WEAPON_HOLD

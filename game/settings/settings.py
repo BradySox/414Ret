@@ -1710,11 +1710,16 @@ class Settings:
 
         # Drop retired plugin option keys so dead configuration does not persist
         # across a load/save cycle. The obsolete Anubis "herculescargo" plugin and
-        # its option keys were removed in favor of the official C-130J-30.
+        # its option keys were removed in favor of the official C-130J-30. The old
+        # generic EW/Jammer Script ("ewrj") was retired in favor of the C-130J
+        # JAMMING flight + c130j mission-systems plugin.
         for plugin_key in [
             key
             for key in self.plugins
-            if key == "herculescargo" or key.startswith("herculescargo.")
+            if key == "herculescargo"
+            or key.startswith("herculescargo.")
+            or key == "ewrj"
+            or key.startswith("ewrj.")
         ]:
             del self.plugins[plugin_key]
 

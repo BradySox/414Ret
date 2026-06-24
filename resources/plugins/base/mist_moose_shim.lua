@@ -2,14 +2,17 @@
 -- MIST -> MOOSE compatibility shim for DCS Retribution
 --
 -- Goal: retire the ~5,000-line mist_4_5_126.lua by providing the *exact* subset of
--- the `mist` API that Retribution's plugins actually call (42 distinct symbols),
--- backed by MOOSE (already loaded as the standard framework) + vanilla DCS, so the
+-- the `mist` API that Retribution's plugins actually call (42 distinct symbols), so the
 -- consumers (CTLD, SCAR, intercept glue, core dcs_retribution.lua, Skynet) stay
 -- byte-for-byte unchanged. See docs/dev/design/414th-mist-moose-shim-notes.md.
 --
--- LOAD ORDER (once wired into base/plugin.json): AFTER Moose.lua, BEFORE consumers.
--- This file is NOT yet in base/plugin.json: mist_4_5_126.lua still loads and main is
--- unaffected until the validation swap (see the design doc rollout plan).
+-- IMPLEMENTATION: entirely vanilla DCS (coalition, Group, Unit, land, trigger, world, timer, env,
+-- coord, math, string) with MIST behavior replicated verbatim. Despite the "_moose" name it has NO
+-- MOOSE dependency, so it can occupy mist's existing slot in base/plugin.json with NO reordering.
+--
+-- LOAD ORDER: drops into mist's current (first) work-order slot. No dependency on json/Moose/
+-- dcs_retribution, so loading first is fine; the DB tier reads coalition.getGroups/env.mission,
+-- which are available at mission start.
 --
 -- Lua 5.1 only. Define before first use. Behavior is replicated from the MIST
 -- source verbatim (semantics matter -- a subtly-wrong vector/distance silently
@@ -364,9 +367,53 @@ function mist.tostringMGRS(MGRS, acc)
     end
 end
 
--- LL formatting: MOOSE UTILS.tostringLL has the identical (lat, lon, acc, DMS) signature.
--- Delegated (cosmetic; verify format parity during the in-game pass).
-mist.tostringLL = UTILS.tostringLL
+-- LL formatting, replicated verbatim from MIST. (Originally delegated to MOOSE UTILS.tostringLL,
+-- but inlining it keeps the shim free of ANY MOOSE dependency -> it can load in mist's existing
+-- slot with no plugin.json reordering.)
+function mist.tostringLL(lat, lon, acc, DMS)
+    local latHemi, lonHemi
+    if lat > 0 then latHemi = "N" else latHemi = "S" end
+    if lon > 0 then lonHemi = "E" else lonHemi = "W" end
+    lat = math.abs(lat)
+    lon = math.abs(lon)
+    local latDeg = math.floor(lat)
+    local latMin = (lat - latDeg) * 60
+    local lonDeg = math.floor(lon)
+    local lonMin = (lon - lonDeg) * 60
+    if DMS then
+        local oldLatMin = latMin
+        latMin = math.floor(latMin)
+        local latSec = mist.utils.round((oldLatMin - latMin) * 60, acc)
+        local oldLonMin = lonMin
+        lonMin = math.floor(lonMin)
+        local lonSec = mist.utils.round((oldLonMin - lonMin) * 60, acc)
+        if latSec == 60 then latSec = 0 latMin = latMin + 1 end
+        if lonSec == 60 then lonSec = 0 lonMin = lonMin + 1 end
+        local secFrmtStr
+        if acc <= 0 then
+            secFrmtStr = "%02d"
+        else
+            secFrmtStr = "%0" .. (3 + acc) .. "." .. acc .. "f"
+        end
+        return string.format("%02d", latDeg) .. " " .. string.format("%02d", latMin) .. "' "
+            .. string.format(secFrmtStr, latSec) .. "\"" .. latHemi .. "\t "
+            .. string.format("%02d", lonDeg) .. " " .. string.format("%02d", lonMin) .. "' "
+            .. string.format(secFrmtStr, lonSec) .. "\"" .. lonHemi
+    else
+        latMin = mist.utils.round(latMin, acc)
+        lonMin = mist.utils.round(lonMin, acc)
+        if latMin == 60 then latMin = 0 latDeg = latDeg + 1 end
+        if lonMin == 60 then lonMin = 0 lonDeg = lonDeg + 1 end
+        local minFrmtStr
+        if acc <= 0 then
+            minFrmtStr = "%02d"
+        else
+            minFrmtStr = "%0" .. (3 + acc) .. "." .. acc .. "f"
+        end
+        return string.format("%02d", latDeg) .. " " .. string.format(minFrmtStr, latMin) .. "'" .. latHemi .. "\t "
+            .. string.format("%02d", lonDeg) .. " " .. string.format(minFrmtStr, lonMin) .. "'" .. lonHemi
+    end
+end
 
 ---------------------------------------------------------------------------------------------------
 -- Tier 1b -- line-of-sight (only reached by CTLD JTAC autolase, which is DISABLED in Retribution;

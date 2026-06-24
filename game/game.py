@@ -375,6 +375,20 @@ class Game:
 
         self.blue.preinit_turn_0(squadrons_start_full)
         self.red.preinit_turn_0(squadrons_start_full)
+
+        if self.blank_canvas_setup:
+            # In a blank-canvas setup game every base is still neutral until the
+            # player paints ownership and hits Finalize, so neither coalition owns
+            # any points. initialize_turn would read that as an instant loss
+            # (check_win_loss) and return early -- before computing the threat
+            # zones / navmesh the map render path asserts on, and before
+            # game_stats.update -- and would also post a bogus "Game Over"
+            # message. Compute just the threat zones (empty, but non-None) so the
+            # setup theater renders for painting. The real turn is initialized
+            # later from the finalized game (see finalize_blank_canvas).
+            self.compute_threat_zones(GameUpdateEvents())
+            return
+
         # TODO: Check for overfull bases.
         # We don't need to actually stream events for turn zero because we haven't given
         # *any* state to the UI yet, so it will need to do a full draw once we do.
@@ -408,6 +422,15 @@ class Game:
         persistency.autosave(self)
 
     def check_win_loss(self) -> TurnState:
+        # A blank-canvas setup game is mid-construction: the player is painting
+        # base ownership and at any moment may have only blue bases (or only red,
+        # or none) before the opponent's side is painted in. That is not a win or
+        # a loss -- evaluating it pops a bogus "Victory!"/"Defeat!" dialog while
+        # the player is still laying out the map. Win/loss only applies once the
+        # campaign is finalized into a normal game.
+        if self.blank_canvas_setup:
+            return TurnState.CONTINUE
+
         if not self.theater.player_points(state_check=True):
             return TurnState.LOSS
 
@@ -463,6 +486,13 @@ class Game:
             for_blue: True if the player coalition should be re-initialized.
             squadrons_start_full: True if generator setting was checked.
         """
+        # A blank-canvas setup game has no playable turn to initialize: bases are
+        # neutral and being painted, so bullseye/planning have no opposing points
+        # to work from (closest_opposing_control_points would assert). The setup
+        # game is started via finalize_blank_canvas, not by advancing turns.
+        if self.blank_canvas_setup:
+            return
+
         # Check for win or loss condition FIRST!
         turn_state = self.check_win_loss()
         if turn_state in (TurnState.LOSS, TurnState.WIN):

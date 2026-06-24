@@ -389,16 +389,20 @@ rows (B, C, D, E) then becomes the upstream-PR carve-out batch.
 
 ### Campaign maker — blank canvas (in-game-pass required)
 
-Design: `docs/dev/design/414th-campaign-maker-notes.md`. The **neutral-paint flow**
-is headless-verified end to end (all-neutral generate → paint → finalize prunes
-unpainted → begin_turn_0); client `tsc` + CP-layer jest pass. These are the things
-only a live run can confirm.
+Design: `docs/dev/design/414th-campaign-maker-notes.md`.
 
-| # | Observable criterion | Fail signature |
-|---|---|---|
-| BC-A | New Game → Introduction → **"Build your own (blank canvas)"** → terrain/campaign + factions → Finish → map opens with **every** airfield shown **gray/yellow** (neutral), no fronts, no units | Crash on generate; bases pre-coloured blue/red; preset units present |
-| BC-B | **Left-click** a base cycles it gray→blue→red→gray (recolors live via SSE); **right-click** cycles backward | Click opens the info dialog instead; no recolor; 403 in network tab |
-| BC-C | After painting some blue + some red, the **"Finalize Campaign"** toolbar button builds the campaign: unpainted gray bases **vanish**, a front draws between blue/red | Unpainted bases remain (AI can target them); no front; crash in finalize |
-| BC-D | Finalize opens the air-wing dialog → add squadrons to a base from scratch → plan + fly a package | Dialog empty/errors with 0 preconfigured; no flyable aircraft |
-| BC-E | Drop-spawn (§20) places SAMs/armor onto the finalized map as normal | Placement broken on a hand-built theater |
-| BC-F | Paint endpoint is inert in a **normal** (non-setup) campaign — clicking a base opens its info dialog as before | Bases repaint in a real game (guard not firing) |
+**Status 2026-06-24 (Retribution-app pass, Afghanistan): core loop VERIFIED.**
+Headless-inspected the finalized save — 0 neutral leftovers (gray pruned), 5 fronts
+derived, 1 squadron each side staffed. Bugs found + fixed this pass: PR #130, #133
+(merged), #138 (open, finalize button). **Remaining gap = Increment C support buildings**
+(finalized save has 0 ground objects → no economy / +0.0M income). BC-D fly-half + BC-E
+need DCS; BC-F still pending.
+
+| # | Layer | Observable criterion | Fail signature | Status |
+|---|---|---|---|---|
+| BC-A | Retribution | "Build your own (blank canvas)" → map opens with **every** airfield **gray/yellow** (neutral), no fronts, no units | Crash on generate; bases pre-coloured; preset units present | **VERIFIED** (after #133) |
+| BC-B | Retribution | **Left-click** cycles gray→blue→red→gray (live SSE); **right-click** reverses | Opens info dialog; no recolor; 403 | **VERIFIED** (needed client rebuild) |
+| BC-C | Retribution | **Finalize Campaign** prunes unpainted gray bases, draws a front between blue/red | Gray bases remain; no front; crash in finalize | **VERIFIED** (0 neutral, 5 fronts) |
+| BC-D | build=Retribution / fly=.miz | Finalize → air-wing dialog → add squadrons from scratch → plan + fly a package | Dialog empty/errors with 0 preconfigured; no flyable aircraft | build VERIFIED (1 sq/side); **fly pending** |
+| BC-E | .miz | Drop-spawn (§20) places SAMs/armor onto the finalized map | Placement broken on a hand-built theater | pending |
+| BC-F | Retribution | Paint inert in a **normal** (non-setup) campaign — click opens info dialog | Bases repaint in a real game (guard not firing) | pending |

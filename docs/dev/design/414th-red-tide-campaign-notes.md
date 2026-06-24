@@ -142,6 +142,12 @@ considered and declined.
      (Sperenberg, Schönefeld, Hamburg, Haina, Templin, Wittstock, Peenemünde, Kastrup) got a
      co-located **Command Center + Comms tower M + GeneratorF** cell. The dead "Kastrup Factory"
      was **repurposed in place** into "Kastrup Command Center" (same spot, no renumber needed).
+     - **FOLLOW-UP (2026-06-24):** these placed C2 statics land on some airfield aprons and
+       block aircraft spawns (seen at Haina). Plan to replace them with **real map buildings**
+       (destroyable IADS scenery targets) and remove the statics is fully scoped in
+       [`414th-red-tide-c2-real-buildings-HANDOFF.md`](414th-red-tide-c2-real-buildings-HANDOFF.md)
+       — incl. per-field coords, the scanner-dump feasibility (only Haina + Templin are scanned;
+       the other 3 fields need a re-scan), and the emitter/pipeline details.
    - **IDs:** new groups start at `groupId 300` / `unitId 700` (max existing was 281/631). Appended
      to the red `["static"]["group"]` table with fresh keys `[13]+` to dodge a **pre-existing**
      key-collision (the hand-added Kastrup `[1]/[2]` clobbered Invisible-FARP `[1]/[2]` — 10 of 12

@@ -1,6 +1,9 @@
 # MIST retirement via a MOOSE-backed `mist` compatibility shim
 
-**Status:** strategy chosen (2026-06-24); foundation in progress.
+**Status:** ✅ **all 42 symbols implemented + `plugin.json` swap staged on branch (2026-06-24).**
+Shim is **100% vanilla DCS (no MOOSE dependency)** so it drops into mist's existing slot with no
+reorder. **Awaiting the in-game pass** before merge (go-live); old `mist_4_5_126.lua` kept for
+one-line rollback. After the pass: delete MIST.
 **Supersedes:** the per-consumer MOOSE-native port plan (esp. the `Ops.CTLD` port in
 [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md), now shelved).
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md).
@@ -69,17 +72,20 @@ once at load + scheduled.
 
 ## Rollout plan (each step keeps `main` safe)
 
-1. **Foundation:** new `resources/plugins/base/mist_moose_shim.lua`. **✅ Tier-1 done** (1a vector/math
-   + 1b geo/coord, replicated verbatim from MIST; `tostringLL` delegates to `UTILS.tostringLL`
-   (cosmetic, verify format in-game), `getUnitsLOS` is a best-effort impl since its only caller — CTLD
-   JTAC autolase — is disabled in Retribution). Tiers 2–4 remain. **NOT yet in `base/plugin.json`** →
-   `mist_4_5_126.lua` still loads, `main` unchanged.
-2. **Fill tiers 2–4**, verifying entry shapes against each consumer's reads.
-3. **Validation swap (gated/branch):** in `base/plugin.json`, replace `mist_4_5_126.lua` with the shim
-   (must load **after** `Moose.lua`, **before** consumers). In-game pass: CTLD troop/crate/FOB cycle,
-   SCAR capture + CSAR, intercept/QRA, Skynet IADS (if selected), core glue. Add checklist rows.
-4. **Cleanup:** delete `mist_4_5_126.lua`; drop its `base/plugin.json` entry; update Tech-Stack docs
-   (MIST row → retired). Definition of done for the whole MIST→MOOSE consolidation.
+1. **Foundation:** `resources/plugins/base/mist_moose_shim.lua`. **✅ DONE — all 42 symbols**, all
+   replicated verbatim from MIST or thin vanilla-DCS wrappers. **It ended up 100% vanilla DCS — no
+   MOOSE dependency at all** (`tostringLL` is now inlined rather than delegating to `UTILS`). Dead-path
+   best-effort impls: `getUnitsLOS`/`getGroupRoute`/bracket-form `makeUnitTable` (CTLD JTAC autolase,
+   disabled in Retribution).
+2. **Swap (✅ staged on this branch, awaiting in-game pass):** `base/plugin.json`'s `"mist"` work-order
+   now points at `mist_moose_shim.lua` instead of `mist_4_5_126.lua`. Because the shim has no MOOSE
+   dependency, it stays in mist's **existing first slot — no reordering.** The old `mist_4_5_126.lua`
+   file is **kept in the repo** so rollback is a one-line `plugin.json` revert.
+   ⚠️ **This is the go-live change** — merging it to `main` ships to the whole squadron via the rolling
+   release. Fly it from this branch FIRST. In-game pass: CTLD troop/crate/FOB sling-load cycle, SCAR
+   capture + CSAR, intercept/QRA, Skynet IADS (if selected), core glue (state-write/messages).
+3. **Cleanup (after the pass):** delete `mist_4_5_126.lua`; update Tech-Stack docs (MIST row → retired).
+   Definition of done for the whole MIST→MOOSE consolidation.
 
 ## Risks / watch-items
 

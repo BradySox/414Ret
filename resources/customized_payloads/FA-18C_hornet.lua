@@ -170,14 +170,15 @@ local unitPayloads = {
 		[10] = {
 			["displayName"] = "Retribution Strike",
 			["name"] = "Retribution Strike",
-			-- 2x GBU-31V2B 2000lb + 2x GBU-38 500lb JDAM + AIM-120C + 2x AIM-9X + tank
+			-- Uniform 4x GBU-31V2B 2000lb JDAM (degrades to 4x Mk-84) + AIM-120C
+			-- + 2x AIM-9X + ATFLIR + centerline tank. No mixed bomb sizes.
 			["pylons"] = {
 				[1] = { ["CLSID"] = "{5CE2FF2A-645A-4197-B48D-8720AC69394F}", ["num"] = 9 },
 				[2] = { ["CLSID"] = "{5CE2FF2A-645A-4197-B48D-8720AC69394F}", ["num"] = 1 },
 				[3] = { ["CLSID"] = "{GBU_31_V_2B}", ["num"] = 2 },
 				[4] = { ["CLSID"] = "{GBU_31_V_2B}", ["num"] = 8 },
-				[5] = { ["CLSID"] = "{GBU-38}", ["num"] = 7 },
-				[6] = { ["CLSID"] = "{GBU-38}", ["num"] = 3 },
+				[5] = { ["CLSID"] = "{GBU_31_V_2B}", ["num"] = 7 },
+				[6] = { ["CLSID"] = "{GBU_31_V_2B}", ["num"] = 3 },
 				[7] = { ["CLSID"] = "{AN_ASQ_228}", ["num"] = 4 },
 				[8] = { ["CLSID"] = "{40EF17B7-F508-45de-8566-6FFECC0C1AB8}", ["num"] = 6 },
 				[9] = { ["CLSID"] = "{FPU_8A_FUEL_TANK}", ["num"] = 5 },

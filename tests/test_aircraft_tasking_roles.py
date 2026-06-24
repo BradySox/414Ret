@@ -73,9 +73,18 @@ def _aircraft(tmp_path: Path, variant_id: str) -> AircraftType:
             [FlightType.BARCAP, FlightType.TARCAP, FlightType.STRIKE, FlightType.TARPS],
         ),
         (
+            # The Warthog is a CAS/BAI attacker, not a heavy striker: it carries
+            # no 2000 lb / penetrator class weapon, so it is intentionally kept
+            # off the STRIKE lane (see resources/units/aircraft/A-10C*.yaml).
             "A-10C Thunderbolt II (Suite 7)",
-            [FlightType.CAS, FlightType.BAI, FlightType.STRIKE],
-            [FlightType.BARCAP, FlightType.TARCAP, FlightType.SEAD, FlightType.TARPS],
+            [FlightType.CAS, FlightType.BAI],
+            [
+                FlightType.STRIKE,
+                FlightType.BARCAP,
+                FlightType.TARCAP,
+                FlightType.SEAD,
+                FlightType.TARPS,
+            ],
         ),
     ],
 )

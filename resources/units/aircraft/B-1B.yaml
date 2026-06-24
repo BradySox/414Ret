@@ -19,7 +19,6 @@ variants:
 tasks:
   BAI: 478
   CAS: 575
-  DEAD: 225
   OCA/Aircraft: 600
   OCA/Runway: 705
   Strike: 725

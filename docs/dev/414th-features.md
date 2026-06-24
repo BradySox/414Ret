@@ -1080,7 +1080,8 @@ dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `
 
 ## §20 — Drop-spawn: Map Right-Click Unit Placement
 
-**Status:** In progress — core functional; pending Lua (`in-game-pass` tag).
+**Status:** Functional; needs an in-game pass (§20 checklist rows 20-A…20-G).
+No Lua component — Python/Qt planner + React client only.
 
 Right-click on blank map space → Qt dialog → spawn a new unit group (armor,
 SAM, EWR, ship, missile/coastal) at any map position, attached to the nearest

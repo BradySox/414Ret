@@ -31,10 +31,10 @@ unvalidated "fix" is not something to ask upstream to take.
 | # | Fix | Readiness | Value | Checklist |
 |---|---|---|---|---|
 | 1 | Landmap terrain-query perf | 🟢 READY | High (broad: ~7 min off ground-gen) | n/a (perf, gen-covered) |
-| 2 | DEAD reachability gate on follow-on strikes | 🟡 NEAR | High (planner correctness) | B2 |
-| 3 | Support-orbit depth + front-anchor | 🟡 NEAR | High (red AWACS/tanker placement) | C1, C2 |
-| 4 | Player-despawn loss accounting | 🟠 CARE | High (false combat losses) | D1 |
-| 5 | SOF C-130 runway-start fallback | 🟡 NEAR | Medium (general spawner fix) | E |
+| 2 | DEAD reachability gate on follow-on strikes | 🟢 READY | High (planner correctness) | B2 ☑ |
+| 3 | Support-orbit depth + front-anchor | 🟢 READY | High (red AWACS/tanker placement) | C1, C2 ☑ |
+| 4 | Player-despawn loss accounting | 🟠 CARE | High (false combat losses) | D1 ☑ |
+| 5 | SOF C-130 runway-start fallback | 🟢 READY | Medium (general spawner fix) | E ☑ |
 | 6 | Negative-start-packages takeoff-time check | 🟢 READY | Low/Medium (UI false-warn) | n/a |
 | 7 | AAQ-33 targeting-pod era restriction | 🔵 DONE | — | — |
 | 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🟢 READY | Medium (player-facing) — carved + verified on dev | — |
@@ -56,7 +56,7 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Note:** confirm whether the prepared-geometry dependency is satisfied in a
   clean upstream checkout (Shapely version) before submitting.
 
-### 2. DEAD reachability gate on follow-on strikes — 🟡 NEAR
+### 2. DEAD reachability gate on follow-on strikes — 🟢 READY
 - **What:** a follow-on strike behind a SAM belt is deferred until the belt is
   actually down, instead of trusting an optimistic DEAD clear. The DEAD itself is
   still tasked (with SEAD escort).
@@ -65,10 +65,10 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Files:** `dead_can_reach` geometry + `apply_effects` routing in
   `game/commander/.../theatercommander.py`.
 - **Tests:** `tests/test_dead_planning.py`.
-- **Blocker:** in-game pass B2 (confirm blue defers deep strikes until the belt
-  is down).
+- **In-game pass:** B2 ☑ VERIFIED 2026-06-24 — blue defers deep strikes until the
+  belt is down. Cleared to carve.
 
-### 3. Support-orbit depth + front-anchor — 🟡 NEAR
+### 3. Support-orbit depth + front-anchor — 🟢 READY
 - **What:** AWACS/tanker racetracks anchored on the FLOT (#84) and held at a
   depth decoupled from the player's threat strength via
   `AI_SUPPORT_DEPTH_FACTOR` (#86), so red support doesn't loiter on the front.
@@ -76,7 +76,7 @@ unvalidated "fix" is not something to ask upstream to take.
   fling is a stock bug.
 - **Files:** `game/ato/flightplans/supportorbit.py`.
 - **Tests:** `tests/test_support_orbit.py`.
-- **Blocker:** in-game pass C1 + C2.
+- **In-game pass:** C1 + C2 ☑ VERIFIED 2026-06-24. Cleared to carve.
 
 ### 4. Player-despawn loss accounting — 🟠 CARE
 - **What:** a player dropping to spectator (or a mission ending with players
@@ -90,9 +90,11 @@ unvalidated "fix" is not something to ask upstream to take.
   logic is clean; the Lua hook lives in the bundled runtime script, so confirm
   the upstream `dcs_retribution.lua` has the same event surface before porting.
 - **Tests:** `tests/test_debriefing.py::test_lua_suppresses_player_despawn_loss_events`.
-- **Blocker:** checklist D1 (PARTIAL) — verify the engine-teardown edge case.
+- **In-game pass:** D1 ☑ VERIFIED 2026-06-24. 🟠 CARE is about the **carve**, not
+  the test: the Lua hook lives in the bundled runtime, so split the PR (Python
+  debrief logic vs the `dcs_retribution.lua` event surface) before porting.
 
-### 5. SOF C-130 runway-start fallback — 🟡 NEAR
+### 5. SOF C-130 runway-start fallback — 🟢 READY
 - **What:** on `NoParkingSlotError`, retry a **runway start** before forcing an
   air spawn — previously gated to `FlightType.JAMMING`, now any non-helo
   cold/warm start at an airfield. Stops large aircraft air-spawning when a ground
@@ -100,8 +102,8 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Why upstream cares:** general spawner robustness, not SOF-specific.
 - **Files:** `game/missiongenerator/aircraft/flightgroupspawner.py`
   (`generate_flight_at_departure`).
-- **Blocker:** in-game pass E (the SOF half) — but the runway-fallback logic is
-  exercisable by any large-aircraft ground start.
+- **In-game pass:** E ☑ VERIFIED 2026-06-24 (SOF C-130 ground-starts, EW skipped).
+  The runway-fallback logic is also exercisable by any large-aircraft ground start.
 - **⚠️ Carve carefully:** ship ONLY the runway fallback. The **EW plugin
   de-conflict** that ships alongside it (§ below) is fork-specific.
 

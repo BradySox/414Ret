@@ -144,6 +144,12 @@ and selected later upstream fixes.
   KC-135MPRS drogue tanker. The *Crossing the Rubicon* campaign it forks from
   is left untouched. See
   [`docs/dev/design/414th-red-tide-campaign-notes.md`](docs/dev/design/414th-red-tide-campaign-notes.md).
+- A **drop-spawn** sandbox tool lets you right-click blank map space to place a unit group
+  (ground force, SAM, EWR, ship, or coastal/missile site) attached to the nearest friendly
+  command post, with optional deploy-next-turn timing and respawn; right-click a unit you
+  placed to remove it. It is gated behind two cheat settings (unlock placement, and an
+  optional free-placement mode that skips the budget cost), and respects terrain and a
+  range limit from the nearest CP.
 - Numerous mission-generation and debriefing fixes are included, along with selected
   upstream backports newer than the fork's original base.
 

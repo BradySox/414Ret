@@ -66,6 +66,11 @@ file. This guide is the map; those are the territory.
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
   - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits
   - `414th-red-tide-supply-routes-notes.md` — YAML supply routes + Kastrup preset patch
+  - `414th-campaign-maker-notes.md` — blank-start campaign maker (policy core landed; glue/wizard in progress)
+  - `414th-weapon-dates-proposal.md` — weapon-coverage completion plan + the modern-weapon date-gating rule
+  - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
+    (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
+    `turnless.md` (turnless-campaign exploration)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.

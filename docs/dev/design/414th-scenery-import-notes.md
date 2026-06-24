@@ -257,3 +257,36 @@ live desanitized state.
 4. Economy cap policy for imported `factory` objectives.
 5. Whether to also import `village`/`oil`/`fuel` families later, or keep Phase 1
    to factory/power/ware/comms.
+
+---
+
+## 2026-06-23 — Strategy A shipped to Red Tide (resolves several open questions)
+
+Strategy A (build-time emitter → blue/white trigger zones baked into the `.miz`) is
+**live in `red_tide.miz` (campaign version 10.9)** on GermanyCW. What landed:
+
+- **Curated 7-category mapping** (resolves Q5 — `commandcenter`/`fuel`/`oil` added). Built
+  from a 282-type discovery scan; the curated substrings live in
+  `scenerycatalog.py:CATEGORY_PATTERNS`. Drops agricultural silos, airfield warehouses,
+  runway control towers, decorative models; pulls in real power plants, refineries,
+  radio/radar (RSBN/NDB/lattice), barracks/kasernes, tank hangars, command posts.
+- **Tight non-overlap clustering** (resolves Q2). The original union-find chained whole
+  districts into one giant pool (the "28 mixed buildings in one factory" bug). Replaced with
+  fixed-radius seed-and-grow (`RADIUS_CAP=120m`, `BUILD_CAP=8`, `RADIUS_MARGIN=20`) in
+  `scenerycatalog.cluster()`; the emitter's `select_all` enforces `GLOBAL_SEP=600m` between
+  ANY two objective centres (across all categories) so blue circles never overlap → Retribution
+  cannot pool whites across objectives. `REGION_CAP=2`/category for geographic spread.
+- **Emitter** (`_scenerytools/cwg_scenery_emitter.py`, gitignored) reads a clean base
+  (`_scenerytools/red_tide_base.miz`) and writes `resources/campaigns/red_tide.miz`: appends
+  blue/white zones (human-readable names; raw id kept in the `OBJECT ID` property) **and**
+  replaces generic IADS/economy statics where a real cluster of the matching category sits in
+  wiring range ("replace where real buildings exist; keep generic at rural sites"). 13 of 30
+  statics replaced; IADS verified intact in-game (Skynet re-homes SAMs to the scenery clusters,
+  which auto-register as IADS members under `advanced_iads`).
+- **In-game verified:** pure-category objectives, correct coalition (red rear = strike targets),
+  power/comms feeding the IADS, clean building panels, no broken networking.
+
+Still open: economy cap policy for imported `factory`/`commandcenter` objectives (Q4) — monitor
+red/blue income with the added targets; the runtime importer (Strategy B) is still unbuilt — the
+shared `scenerycatalog.py` core is ready for it (curated patterns + fixed clustering), but the
+emitter has not yet been swapped to import it (it keeps an equivalent local copy).

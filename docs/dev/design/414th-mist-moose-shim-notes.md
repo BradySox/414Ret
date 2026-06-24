@@ -62,9 +62,11 @@ event-driven tracking; the shim only reshapes.
 
 ## Rollout plan (each step keeps `main` safe)
 
-1. **Foundation:** new `resources/plugins/base/mist_moose_shim.lua` — Tier-1 implemented; Tiers 2–4
-   stubbed with documented mappings. **NOT yet in `base/plugin.json`** → `mist_4_5_126.lua` still loads,
-   `main` unchanged.
+1. **Foundation:** new `resources/plugins/base/mist_moose_shim.lua`. **✅ Tier-1 done** (1a vector/math
+   + 1b geo/coord, replicated verbatim from MIST; `tostringLL` delegates to `UTILS.tostringLL`
+   (cosmetic, verify format in-game), `getUnitsLOS` is a best-effort impl since its only caller — CTLD
+   JTAC autolase — is disabled in Retribution). Tiers 2–4 remain. **NOT yet in `base/plugin.json`** →
+   `mist_4_5_126.lua` still loads, `main` unchanged.
 2. **Fill tiers 2–4**, verifying entry shapes against each consumer's reads.
 3. **Validation swap (gated/branch):** in `base/plugin.json`, replace `mist_4_5_126.lua` with the shim
    (must load **after** `Moose.lua`, **before** consumers). In-game pass: CTLD troop/crate/FOB cycle,

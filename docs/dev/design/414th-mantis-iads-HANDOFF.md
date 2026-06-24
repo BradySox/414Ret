@@ -83,6 +83,8 @@ group wiring). Both noted in the migration doc; neither blocks G6.
 
 ## State of play in one line
 
-Skynet is still the default IADS engine; MANTIS is **fully built and now flight-validated (G6 passed
-2026-06-24)** — a real selectable option, pending only a minor human-flown emissions-control eyeball
-before the default could flip; 2 of 5 MIST consumers retired; CTLD is the gate for finishing the MIST drop.
+**MANTIS is now the default IADS engine** for new campaigns (G6 passed 2026-06-24; existing campaigns
+pinned to their engine); Skynet still selectable, pending only a minor emissions-control eyeball. MIST
+retirement is now a **MOOSE-backed `mist` shim** (not per-consumer ports): `mist_moose_shim.lua` Tier-1
+(utils + geo/coord) is in, inert; Tiers 2–4 (object DB, spawn/route/sched, msg/log) remain, then the
+`plugin.json` swap + in-game pass drops `mist_4_5_126.lua`.

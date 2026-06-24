@@ -1,6 +1,7 @@
 # MANTIS Migration — Design Notes
 
-**Status:** design / not started (no code changes landed)
+**Status:** in progress — de-risking spikes done + Python abstraction seams landed (2026-06-24);
+Lua bridge / C2 layer not started
 **Date:** 2026-06-24
 **Prereq reading:** [`414th-mantis-vs-skynet-iads-parity.md`](414th-mantis-vs-skynet-iads-parity.md)
 (the feature-parity matrix and verdict this plan builds on).
@@ -71,38 +72,67 @@ required deliverable of the MANTIS engine.
 
 ---
 
+## Spike results (2026-06-24) — both de-risking spikes resolved
+
+- **§2 spike — does the bundled MOOSE ship MANTIS at the level we need? ✅ YES.**
+  `resources/plugins/base/Moose.lua` contains the full `MANTIS` class (113 refs) including every
+  method the plan relies on: `New`, `SetAdvancedMode`, `AddScootZones`, `AddShorad`,
+  `SetUsingEmOnOff`, `SetCommandCenter`, `SetAutoRelocate`, `SetSAMRange`, `SetMaxActiveSAMs`,
+  `SetAwacs`, `AddZones`, plus the SEAD/relocation state handlers (`onafterSeadSuppression*`,
+  `onafterRelocating`, `onafterGreenState`/`onafterRedState`). **Option A is viable — no vendoring
+  required**, which removes the biggest feasibility risk and trims the worst-case estimate by ~1 wk.
+  *(One name from the MOOSE docs, `SeadAllowSuppression`, is not a top-level `MANTIS:` method in the
+  bundled build — SEAD suppression is driven by the integrated SEAD class + the `onafterSead*`
+  handlers instead. Cosmetic; does not affect feasibility.)*
+
+- **§4 spike — can we hand MANTIS explicit groups, or must we use a prefix? → PREFIX path.**
+  `MANTIS:New(name, samprefix, ewrprefix, …)` builds its SAM/EWR sets *internally* via
+  `SET_GROUP:New():FilterPrefixes(...)` (Moose.lua ~L55381–55388). The constructor takes **no
+  pre-built `SET_GROUP`**, so explicit per-group injection is not supported. The supported path is
+  the plan's documented fallback: **stamp a per-coalition prefix on the generated IADS group names**
+  (e.g. `"RED SAM <name>"`) in the Python group naming / `luagenerator`, and pass that prefix to
+  `MANTIS:New`. Low-risk (a naming convention on generated groups). **Consequence to carry into
+  §3/§5:** MANTIS *infers* SAM type/role from unit type, so explicit role nuances we set today —
+  `SAM_AS_EWR` (LORAD-as-EWR) and explicit point-defense pairing — are not directly controllable via
+  the prefix and must be handled in the role-mapping / C2 work, not assumed automatic.
+
+**Net:** both spikes favorable. Engine feasibility is confirmed; the open design work is the
+prefix-naming seam (§4) and the role/C2 mapping (§3, §5), not whether MANTIS can run.
+
+---
+
 ## 2. MOOSE dependency
 
 MANTIS has a hard dependency on the full MOOSE framework (GROUP/UNIT/SET_GROUP/DETECTION_AREAS/
 INTEL/SEAD/SHORAD). 414Ret **already bundles `Moose.lua`** (used by TIC, TARS, Flight Control,
-SCAR — see CLAUDE.md "scramble pattern"). Two options:
+SCAR — see CLAUDE.md "scramble pattern"). Decision from the §2 spike above:
 
-- **Option A (preferred):** rely on the bundled MOOSE already injected by `inject_plugins()`, and
-  ship MANTIS as a thin plugin that just constructs the network. Confirm the bundled `Moose.lua`
-  version includes `Functional.Mantis` at the feature level we need (SEAD class, `AddScootZones`,
-  `SetAdvancedMode`). If the bundled build is older, bump it.
-- **Option B:** vendor `Mantis.lua` + its dependencies verbatim (mirrors how SCAR/TIC vendor
-  classes). More control, more maintenance.
-
-**Action item:** grep the bundled `Moose.lua` for `MANTIS` and verify the method set in §4–§5
-exists before committing to Option A.
+- **Option A (chosen):** rely on the bundled MOOSE already injected by `inject_plugins()`, and ship
+  MANTIS as a thin plugin that just constructs the network. Confirmed present at the needed feature
+  level — no version bump required at this time.
+- **Option B (not needed):** vendor `Mantis.lua` + its dependencies verbatim (mirrors how SCAR/TIC
+  vendor classes). Kept as a fallback only if a future `Moose.lua` refresh regresses MANTIS.
 
 ---
 
 ## 3. Python data-model generalization
 
-### 3.1 `IadsRole` (game/theater/iadsnetwork/iadsrole.py)
-The enum *values* are currently literal Skynet strings (`"Sam"`, `"Ewr"`, `"CommandCenter"`…) that
-get emitted into Lua. Decouple:
-- Keep the enum *members* (`SAM`, `EWR`, `COMMAND_CENTER`, `CONNECTION_NODE`, `POWER_SOURCE`,
-  `POINT_DEFENSE`, `SAM_AS_EWR`, `NO_BEHAVIOR`) — they're plugin-neutral concepts.
-- Replace the string values with neutral tokens (or add a `.skynet_value` / `.mantis_value`
-  mapping) so the same role can serialize for either backend during the phased rollout.
+### 3.1 `IadsRole` (game/theater/iadsnetwork/iadsrole.py) — ✅ seam landed
+The enum *values* are literal Skynet strings (`"Sam"`, `"Ewr"`, `"CommandCenter"`…) emitted into Lua.
+- Enum *members* (`SAM`, `EWR`, `COMMAND_CENTER`, `CONNECTION_NODE`, `POWER_SOURCE`,
+  `POINT_DEFENSE`, `SAM_AS_EWR`, `NO_BEHAVIOR`) are plugin-neutral concepts and stay.
+- **Done:** added a `skynet_value` property (returns the Skynet token) as the single named
+  serialization seam; the emitters (`IadsNetwork.iads_nodes`, `luagenerator`) now call
+  `role.skynet_value` instead of `role.value`. A future `mantis_value` slots in beside it without
+  touching the Skynet path. The enum `value` is intentionally left as the Skynet string for now
+  (changing it would alter the emitted Lua keys); the seam decouples *consumers*, not the raw value.
 - `connection_range` (15 nm comms / 35 nm power) stays — it's *our* wiring policy, not Skynet's.
 
-### 3.2 `SkynetProperties` → `IadsProperties` (game/dcs/groundunittype.py)
-Rename the dataclass to `IadsProperties` (keep `skynet_properties` as a deprecated alias property to
-avoid touching 100+ unit YAMLs immediately). Map each field to its MANTIS expression:
+### 3.2 `SkynetProperties` → `IadsProperties` (game/dcs/groundunittype.py) — ✅ landed
+**Done:** renamed the dataclass to `IadsProperties`; `SkynetProperties` remains as a module-level
+alias. The persisted **field** stays `skynet_properties` (pickle + YAML-key compatibility —
+`GroundUnitType` has a `__setstate__`), with a new engine-neutral `GroundUnitType.iads_properties`
+accessor for new code. No unit YAMLs touched. MANTIS field mapping:
 
 | `IadsProperties` field | Skynet | MANTIS expression |
 |---|---|---|
@@ -116,29 +146,26 @@ avoid touching 100+ unit YAMLs immediately). Map each field to its MANTIS expres
 > acceptable for our campaigns (we tune by SAM type already in plugin options) but must be called
 > out in the changelog.
 
-### 3.3 Node export (game/theater/iadsnetwork/iadsnetwork.py)
-`IadsNetwork.skynet_nodes()` already produces the full graph. Add `iads_nodes()` returning the same
-data in a plugin-neutral shape; `luagenerator` picks the emitter based on the active plugin. The
-**edge data (ConnectionNode/PowerSource/PD/CommandCenter per SAM) is retained verbatim** — it's the
-input to the C2 layer in §5.
+### 3.3 Node export (game/theater/iadsnetwork/iadsnetwork.py) — ✅ landed
+**Done:** the exporter is now `IadsNetwork.iads_nodes()` (engine-neutral name) with `skynet_nodes()`
+kept as a thin backwards-compatible alias; the `SkynetNode` dataclass is renamed `IadsNode`
+(`SkynetNode` alias retained). `luagenerator` calls `iads_nodes()`. Output is byte-identical to
+before (covered by `tests/theater/test_iads_engine_abstraction.py`). The **edge data
+(ConnectionNode/PowerSource/PD/CommandCenter per SAM) is retained verbatim** — it's the input to the
+C2 layer in §5. A future MANTIS emitter consumes the same `IadsNode` list.
 
 ---
 
 ## 4. Lua bridge — network construction
 
 `mantis-config.lua` reads `dcsRetribution.IADS.<COALITION>` (same table we already emit) and builds
-MANTIS per coalition. Because MANTIS discovers by prefix, we bridge the explicit→prefix gap by
-**injecting a shared prefix into generated group names** OR by constructing MANTIS from explicit
-`SET_GROUP`s we populate by name. Preferred: build `SET_GROUP` objects from our exact group-name
-lists and hand them to MANTIS, avoiding any rename of generated groups:
+MANTIS per coalition. **§4 spike resolved: MANTIS discovers by prefix only** — `MANTIS:New` builds
+its SAM/EWR sets internally via `SET_GROUP:New():FilterPrefixes(...)` and exposes no hook for a
+pre-built `SET_GROUP`. So the path is the **prefix approach**: stamp a per-coalition prefix on the
+generated IADS group names (in the Python group naming / `luagenerator`) and pass it to `MANTIS:New`:
 
 ```lua
--- pseudo-code
-local samSet = SET_GROUP:New():FilterActive(true)
-for _, u in pairs(coalition_iads.Sam) do samSet:AddGroupsByName({u.dcsGroupName}) end
-samSet:FilterStart()
--- MANTIS still wants prefixes; if SET injection is unsupported in the bundled build,
--- fall back to stamping a "<COALITION> SAM " prefix on generated names in luagenerator.
+-- Python stamps generated IADS group names as "RED SAM <name>" / "RED EWR <name>" etc.
 local mantis = MANTIS:New("RED-IADS", "RED SAM", "RED EWR", hqGroup, coalition.side.RED,
                           true  --[[dynamic]], "RED AWACS", true --[[EmOnOff]], nil, zones)
 mantis:SetAdvancedMode(true)
@@ -146,9 +173,11 @@ mantis:SetUsingEmOnOff(true)
 mantis:Start()
 ```
 
-**Action item:** confirm whether the bundled MANTIS accepts a pre-built `SET_GROUP` (some versions
-do via the constructor's group args). If not, we take the prefix-rename path in `luagenerator`
-(low-risk: it's just a naming convention on generated groups).
+**Consequence (carry into §3/§5):** MANTIS *infers* SAM type/role from unit type, so the explicit
+role distinctions we set today — `SAM_AS_EWR` (LORAD-as-EWR) and explicit point-defense pairing —
+are **not** controllable through the prefix. They must be handled in the role-mapping / C2 work
+(e.g. a distinct EWR prefix for LORAD-as-EWR groups, and PD pairing emulated in the C2 layer), not
+assumed automatic. The prefix stamping itself is low-risk — a naming convention on generated groups.
 
 EWR, SAM-as-EWR, AWACS, emissions control, SEAD/HARM, and shoot-and-scoot map onto MANTIS methods
 per the parity matrix §3. Shoot-and-scoot specifically: Skynet's radius-based `setActMobile`
@@ -223,10 +252,13 @@ Most Skynet options map directly. Changes:
 
 ## 8. Phased rollout
 
-1. **Spike (1–2 days):** confirm bundled MOOSE has the needed MANTIS API (§2 action item) and
-   whether `SET_GROUP` injection works (§4 action item). These two answers de-risk everything else.
-2. **Python generalization:** `IadsRole`/`IadsProperties` rename + `iads_nodes()` exporter, behind
-   the existing data (Skynet still default). Fully unit-testable (pytest).
+1. **Spike — ✅ DONE (2026-06-24):** bundled MOOSE has the full MANTIS API (Option A, no vendoring),
+   and discovery is **prefix-only** (no `SET_GROUP` injection) → prefix-stamp path. See "Spike
+   results" above.
+2. **Python generalization — ✅ DONE (2026-06-24):** `IadsProperties` (alias `SkynetProperties`),
+   `IadsRole.skynet_value` seam, `IadsNode`/`iads_nodes()` exporter (alias `SkynetNode`/
+   `skynet_nodes()`), `luagenerator` switched to the neutral names. Skynet output byte-identical;
+   covered by `tests/theater/test_iads_engine_abstraction.py`. Skynet remains the only engine.
 3. **Lua bridge — core networking:** `mantisiads/` plugin + `mantis-config.lua` network
    construction. In-game pass #1: do SAMs detect/engage/go-dark correctly across coalitions?
 4. **Shoot-and-scoot + per-type tuning.** In-game pass #2.
@@ -238,10 +270,11 @@ Most Skynet options map directly. Changes:
    and passed**. Keep Skynet selectable for one release as a fallback. No campaign class is left
    behind — basic and advanced both run on MANTIS at cutover.
 
-The order above is *build sequencing* (core networking is a prerequisite for the C2 layer), not a
-scope boundary: the default is not flipped until the engine is feature-complete.
 7. **Docs:** update `414th-features.md` §IADS, `README.md` if player-visible, this file → landed,
    and add the in-game-pass rows.
+
+The order above is *build sequencing* (core networking is a prerequisite for the C2 layer), not a
+scope boundary: the default is not flipped until the engine is feature-complete.
 
 ---
 
@@ -249,8 +282,8 @@ scope boundary: the default is not flipped until the engine is feature-complete.
 
 | Risk | Mitigation |
 |---|---|
-| Bundled MOOSE lacks needed MANTIS methods | §2 spike first; bump `Moose.lua` or vendor `Mantis.lua` |
-| `SET_GROUP` explicit injection unsupported → forced prefix rename | Low-risk fallback; just a naming convention in `luagenerator` |
+| ~~Bundled MOOSE lacks needed MANTIS methods~~ | ✅ Resolved: full MANTIS API present (Option A, no vendoring) |
+| ~~`SET_GROUP` explicit injection unsupported → forced prefix rename~~ | ✅ Resolved: prefix-stamp is the path; low-risk naming convention. Side effect: role inference (SAM_AS_EWR / PD) handled in §3/§5, not via prefix |
 | Statics don't fire `Dead` reliably for C2 layer | Use a `SCHEDULER` poll of `:isExist()` instead of events |
 | Per-instance go-live tuning lost | Accept per-type; document in changelog |
 | Red Tide C2 feel changes | In-game pass #2 is the gate; tune `c2DegradationPolicy` |

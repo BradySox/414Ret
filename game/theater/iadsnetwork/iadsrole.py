@@ -29,6 +29,20 @@ class IadsRole(Enum):
     #: should use this role.
     NO_BEHAVIOR = "NoBehavior"
 
+    @property
+    def skynet_value(self) -> str:
+        """The Skynet-specific serialization token for this role.
+
+        The enum *values* are currently Skynet's role strings (``"Sam"``,
+        ``"Ewr"``, ``"CommandCenter"``, …) and are emitted verbatim into the
+        Skynet Lua config. This property is the single named seam for that
+        coupling: Skynet emitters reference ``role.skynet_value`` rather than
+        ``role.value`` directly, so a future MANTIS emitter can add its own
+        token mapping without disturbing the Skynet path. See
+        docs/dev/design/414th-mantis-migration-notes.md §3.1.
+        """
+        return self.value
+
     @classmethod
     def for_task(cls, task: GroupTask) -> IadsRole:
         if task == GroupTask.COMMS:

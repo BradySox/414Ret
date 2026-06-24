@@ -176,8 +176,44 @@ class IntroPage(QtWidgets.QWizardPage):
         )
         label.setWordWrap(True)
 
+        # Campaign type: a prepared campaign vs a blank canvas to build by hand.
+        # The blank-canvas radio drives accept()'s branch via the "blankCanvas" field.
+        type_group = QtWidgets.QGroupBox("Campaign type")
+        self.included_radio = QtWidgets.QRadioButton("Play an included campaign")
+        self.included_radio.setChecked(True)
+        included_desc = QtWidgets.QLabel(
+            "Start from a hand-built campaign with preset front lines, air "
+            "defenses, and objectives."
+        )
+        included_desc.setWordWrap(True)
+        included_desc.setIndent(22)
+
+        self.blank_canvas_radio = QtWidgets.QRadioButton(
+            "Build your own (blank canvas — experimental)"
+        )
+        self.registerField("blankCanvas", self.blank_canvas_radio)
+        blank_desc = QtWidgets.QLabel(
+            "Start from an empty map: every airfield on the terrain, split "
+            "between sides, with no preset units. You assign ownership and place "
+            "SAMs, armor, and strike targets by hand. Pick the terrain on the next "
+            "page — the campaign you select there only sets the map."
+        )
+        blank_desc.setWordWrap(True)
+        blank_desc.setIndent(22)
+
+        type_layout = QtWidgets.QVBoxLayout()
+        type_layout.addWidget(self.included_radio)
+        type_layout.addWidget(included_desc)
+        type_layout.addSpacing(10)
+        type_layout.addWidget(self.blank_canvas_radio)
+        type_layout.addWidget(blank_desc)
+        type_group.setLayout(type_layout)
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(label)
+        layout.addSpacing(14)
+        layout.addWidget(type_group)
+        layout.addStretch(1)
         self.setLayout(layout)
 
 

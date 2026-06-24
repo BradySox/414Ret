@@ -43,6 +43,9 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     local maxActiveLong = 1
     local maxActivePoint = 6
     local autoRelocateEwr = false
+    local enableC2Degradation = true
+    local commsLossGoesDark = false
+    local c2PollInterval = 20
     local debugRED = false
     local debugBLUE = false
 
@@ -59,6 +62,9 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         if opts.maxActiveLong ~= nil then maxActiveLong = opts.maxActiveLong end
         if opts.maxActivePoint ~= nil then maxActivePoint = opts.maxActivePoint end
         if opts.autoRelocateEwr ~= nil then autoRelocateEwr = opts.autoRelocateEwr end
+        if opts.enableC2Degradation ~= nil then enableC2Degradation = opts.enableC2Degradation end
+        if opts.commsLossGoesDark ~= nil then commsLossGoesDark = opts.commsLossGoesDark end
+        if opts.c2PollInterval ~= nil then c2PollInterval = opts.c2PollInterval end
         if opts.debugRED ~= nil then debugRED = opts.debugRED end
         if opts.debugBLUE ~= nil then debugBLUE = opts.debugBLUE end
     end
@@ -106,6 +112,117 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
                 end
             end
         end
+    end
+
+    -- Phase-5 C2 layer: re-implement Skynet's comms / power / command-center
+    -- degradation on top of MANTIS (which has no connection graph of its own).
+    -- The per-SAM ConnectionNode/PowerSource arrays and the coalition's
+    -- CommandCenter list are already in the IADS data table; we watch those
+    -- static objects and degrade the dependent SAMs when they die:
+    --   * power lost  -> SAM offline (SetAIOff)
+    --   * comms lost  -> SAM autonomous (alarm state RED) or dark, per policy
+    --   * all command centers lost -> whole coalition network decapitated
+    -- Only advanced_iads campaigns populate these; basic-mode is a no-op.
+    --
+    -- KNOWN UNTESTED RISK (in-game pass G6): MANTIS owns the SAMs' emissions, so
+    -- it may re-enable a SAM we disabled on its next detection cycle. If the G6
+    -- pass shows degradation not "sticking", the fix is to also drop the SAM from
+    -- MANTIS' managed set (no clean public API yet) rather than only toggling the
+    -- group. Gated behind iads_engine=MANTIS, so this never affects Skynet missions.
+    local function setup_c2(coalition_prefix, coalition_iads, sam_groups, policy_dark)
+        local comms_deps = {} -- comms unit name -> { dependent SAM group names }
+        local power_deps = {} -- power unit name -> { dependent SAM group names }
+        local cc_names = {}   -- command-center static names
+
+        local function add_deps(map, conn_list, sam_group)
+            if conn_list then
+                for _, n in pairs(conn_list) do
+                    map[n] = map[n] or {}
+                    table.insert(map[n], sam_group)
+                end
+            end
+        end
+
+        local function scan(list)
+            if not list then return end
+            for _, sam in pairs(list) do
+                add_deps(comms_deps, sam.ConnectionNode, sam.dcsGroupName)
+                add_deps(power_deps, sam.PowerSource, sam.dcsGroupName)
+            end
+        end
+        scan(coalition_iads.Sam)
+        scan(coalition_iads.SamAsEwr)
+
+        if coalition_iads.CommandCenter then
+            for _, cc in pairs(coalition_iads.CommandCenter) do
+                table.insert(cc_names, cc.dcsGroupName)
+            end
+        end
+
+        -- Basic-mode campaigns have no C2 graph: nothing to watch.
+        if next(comms_deps) == nil and next(power_deps) == nil and #cc_names == 0 then
+            return
+        end
+
+        local function set_offline(sam_group)
+            local grp = GROUP:FindByName(sam_group)
+            if grp and grp:IsAlive() then grp:SetAIOff() end
+        end
+        local function set_autonomous(sam_group)
+            local grp = GROUP:FindByName(sam_group)
+            if grp and grp:IsAlive() then
+                if policy_dark then grp:SetAIOff() else grp:OptionAlarmStateRed() end
+            end
+        end
+
+        -- pydcs registers comms/power/command-center statics with a " object" suffix.
+        local function static_dead(unit_name)
+            local so = StaticObject.getByName(unit_name .. " object")
+            return (so == nil) or (not so:isExist())
+        end
+
+        local handled = {} -- fire each degradation event only once
+
+        local function poll()
+            for comms_name, sams in pairs(comms_deps) do
+                local key = "comms:" .. comms_name
+                if not handled[key] and static_dead(comms_name) then
+                    handled[key] = true
+                    for _, s in pairs(sams) do set_autonomous(s) end
+                    env.info(string.format(
+                        "DCSRetribution|MANTIS C2 - comms '%s' lost; degrading %d SAM(s)",
+                        comms_name, #sams))
+                end
+            end
+            for power_name, sams in pairs(power_deps) do
+                local key = "power:" .. power_name
+                if not handled[key] and static_dead(power_name) then
+                    handled[key] = true
+                    for _, s in pairs(sams) do set_offline(s) end
+                    env.info(string.format(
+                        "DCSRetribution|MANTIS C2 - power '%s' lost; %d SAM(s) offline",
+                        power_name, #sams))
+                end
+            end
+            if #cc_names > 0 and not handled["cc:all"] then
+                local all_dead = true
+                for _, cc in pairs(cc_names) do
+                    if not static_dead(cc) then all_dead = false break end
+                end
+                if all_dead then
+                    handled["cc:all"] = true
+                    for _, s in pairs(sam_groups) do set_autonomous(s) end
+                    env.info("DCSRetribution|MANTIS C2 - all command centers lost for "
+                        .. coalition_prefix .. "; network decapitated")
+                end
+            end
+            return timer.getTime() + c2PollInterval
+        end
+
+        timer.scheduleFunction(poll, nil, timer.getTime() + c2PollInterval)
+        env.info(string.format(
+            "DCSRetribution|MANTIS C2 - watcher armed for %s (poll %ds)",
+            coalition_prefix, c2PollInterval))
     end
 
     local function build(coalition_prefix, coalition_side, coalition_str, debug)
@@ -161,6 +278,11 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             mantis:Debug(true)
         end
         mantis:Start()
+
+        -- Phase-5: arm the comms/power/command-center C2 degradation watcher.
+        if enableC2Degradation then
+            setup_c2(coalition_prefix, coalition_iads, sam_names, commsLossGoesDark)
+        end
     end
 
     if createRedIADS then

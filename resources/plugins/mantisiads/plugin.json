@@ -1,6 +1,6 @@
 {
     "nameInUI": "MANTIS IADS (experimental)",
-    "descriptionInUI": "Experimental MOOSE MANTIS IADS engine (alternative to Skynet). Only takes effect when the campaign's IADS engine is set to MANTIS; otherwise it is inert and Skynet runs instead. Phase 1 (core networking + emissions control) only — shoot-and-scoot and command-center/comms-power degradation are not yet implemented. Needs an in-game pass before it becomes the default.",
+    "descriptionInUI": "Experimental MOOSE MANTIS IADS engine (alternative to Skynet). Only takes effect when the campaign's IADS engine is set to MANTIS; otherwise it is inert and Skynet runs instead. Provides SAM/EWR networking, emissions control, engagement tuning, EWR shoot-and-scoot, and comms/power/command-center degradation (advanced IADS). Needs an in-game pass before it becomes the default.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -57,6 +57,21 @@
             "nameInUI": "EWR shoot-and-scoot: periodically relocate mobile EWRs",
             "mnemonic": "autoRelocateEwr",
             "defaultValue": false
+        },
+        {
+            "nameInUI": "Advanced C2: degrade SAMs when their comms/power/command centers die",
+            "mnemonic": "enableC2Degradation",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "On comms loss, take the SAM fully dark (off) instead of autonomous",
+            "mnemonic": "commsLossGoesDark",
+            "defaultValue": false
+        },
+        {
+            "nameInUI": "C2 degradation poll interval (s)",
+            "mnemonic": "c2PollInterval",
+            "defaultValue": 20
         },
         {
             "nameInUI": "Generate debug information for RED IADS",

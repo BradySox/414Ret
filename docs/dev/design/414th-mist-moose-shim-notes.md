@@ -1,6 +1,7 @@
 # MIST retirement via a MOOSE-backed `mist` compatibility shim
 
-**Status:** strategy chosen (2026-06-24); foundation in progress.
+**Status:** ✅ **all 42 symbols implemented (2026-06-24); shim still inert.** Next: `base/plugin.json`
+load-order swap (`mist_4_5_126.lua` → `mist_moose_shim.lua`) + in-game pass, then delete MIST.
 **Supersedes:** the per-consumer MOOSE-native port plan (esp. the `Ops.CTLD` port in
 [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md), now shelved).
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md).
@@ -69,11 +70,13 @@ once at load + scheduled.
 
 ## Rollout plan (each step keeps `main` safe)
 
-1. **Foundation:** new `resources/plugins/base/mist_moose_shim.lua`. **✅ Tier-1 done** (1a vector/math
-   + 1b geo/coord, replicated verbatim from MIST; `tostringLL` delegates to `UTILS.tostringLL`
-   (cosmetic, verify format in-game), `getUnitsLOS` is a best-effort impl since its only caller — CTLD
-   JTAC autolase — is disabled in Retribution). Tiers 2–4 remain. **NOT yet in `base/plugin.json`** →
-   `mist_4_5_126.lua` still loads, `main` unchanged.
+1. **Foundation:** new `resources/plugins/base/mist_moose_shim.lua`. **✅ DONE — all 42 symbols.**
+   Tier 1 (utils/geo) + Tier 2 (object DB) + Tier 3 (sched/events/wp + spawn/route) + Tier 4 (msg/log),
+   replicated from MIST or thin vanilla-DCS/`UTILS` wrappers. Notes: `tostringLL` delegates to
+   `UTILS.tostringLL` (cosmetic, verify format in-game); `getUnitsLOS`/`getGroupRoute`/bracket-form
+   `makeUnitTable` serve the CTLD JTAC-autolase path, which is **disabled** in Retribution (best-effort
+   impls). **NOT yet in `base/plugin.json`** → `mist_4_5_126.lua` still loads, `main` unchanged until
+   the swap.
 2. **Fill tiers 2–4**, verifying entry shapes against each consumer's reads.
 3. **Validation swap (gated/branch):** in `base/plugin.json`, replace `mist_4_5_126.lua` with the shim
    (must load **after** `Moose.lua`, **before** consumers). In-game pass: CTLD troop/crate/FOB cycle,

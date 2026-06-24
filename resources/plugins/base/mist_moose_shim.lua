@@ -21,10 +21,11 @@
 --                terrainHeightDiff, tostringLL, tostringMGRS, getUnitsLOS, random,
 --                utils.getDir, utils.getHeadingPoints, utils.zoneToVec3, utils.tableShow)
 --   [x] Tier 2   object DB (DBs.unitsByName/unitsById/groupsByName/zonesByName/humansByName)
---   [~] Tier 3   sched/events/wp DONE (scheduleFunction, removeFunction, addEventHandler,
---                ground.buildWP); spawn/route REMAINING (dynAdd, dynAddStatic, goRoute,
---                getGroupRoute, groupToRandomZone, makeUnitTable) -- dedicated pass
+--   [x] Tier 3   sched/events/wp + spawn/route (scheduleFunction, removeFunction, addEventHandler,
+--                ground.buildWP, dynAdd, dynAddStatic, goRoute, getGroupRoute, groupToRandomZone,
+--                makeUnitTable)
 --   [x] Tier 4   msg/log (message.add, Logger)
+--   ==> ALL 42 consumer symbols implemented. Next: base/plugin.json swap + in-game pass.
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 mist = mist or {}
@@ -670,8 +671,187 @@ function mist.ground.buildWP(point, overRideForm, overRideSpeed)
     return wp
 end
 
--- REMAINING (dedicated pass): mist.dynAdd, mist.dynAddStatic, mist.goRoute, mist.getGroupRoute,
--- mist.groupToRandomZone, mist.makeUnitTable -- the live CTLD spawn + SCAR/skynet route family.
--- Until ALL are provided, the load-order swap in base/plugin.json (mist_4_5_126.lua -> this file)
--- must NOT be made.
+---------------------------------------------------------------------------------------------------
+-- Tier 3 (spawn/route) -- the live CTLD spawn + SCAR/skynet route family.
+---------------------------------------------------------------------------------------------------
+
+-- Expand a list of references to an array of unit names. Retribution's live path passes plain unit
+-- names (getAvgPos); the bracket-notation group/coalition forms feed CTLD JTAC autolase (disabled),
+-- so they are skipped here.
+function mist.makeUnitTable(tbl, exclude)
+    local out, seen = {}, {}
+    for i = 1, #tbl do
+        local entry = tbl[i]
+        if type(entry) == "string" and entry:sub(1, 1) ~= "[" and not seen[entry] then
+            seen[entry] = true
+            out[#out + 1] = entry
+        end
+    end
+    return out
+end
+
+-- Spawn a group. CTLD passes a numeric country + Group.Category and reads back .name. We synthesize
+-- the route coalition.addGroup requires and default unit name/skill, mirroring MIST's dynAdd for the
+-- ground-vehicle (crate) case Retribution actually exercises.
+function mist.dynAdd(ng)
+    local newGroup = mist.utils.deepCopy(ng)
+    local cntry = newGroup.country or newGroup.countryId
+    local category = newGroup.category
+    if newGroup.groupName then
+        newGroup.name = newGroup.groupName
+    end
+    if not newGroup.name then
+        newGroup.name = "dyn group " .. tostring(timer.getTime()) .. "_" .. math.random(1, 1000000)
+    end
+    for i, u in pairs(newGroup.units) do
+        if u.unitName then
+            u.name = u.unitName
+        end
+        if not u.name then
+            u.name = newGroup.name .. " unit" .. i
+        end
+        if not u.skill then
+            u.skill = "Random"
+        end
+        if category == Group.Category.GROUND and u.playerCanDrive == nil then
+            u.playerCanDrive = true
+        end
+        u.unitName = nil
+    end
+    if newGroup.route and not newGroup.route.points then
+        if newGroup.route[1] then
+            newGroup.route = { points = newGroup.route }
+        else
+            newGroup.route = { points = { [1] = {} } }
+        end
+    elseif not newGroup.route then
+        newGroup.route = { points = { [1] = {} } }
+    end
+    newGroup.groupName = nil
+    newGroup.clone = nil
+    newGroup.category = nil
+    newGroup.country = nil
+    newGroup.countryId = nil
+    newGroup.tasks = {}
+    coalition.addGroup(cntry, category, newGroup)
+    return newGroup
+end
+
+-- Spawn a static object. CTLD provides type/shape_name/x/y/heading/category itself; we only default
+-- name/heading/dead and honor the mass->Cargos / shapeName aliases, then coalition.addStaticObject.
+function mist.dynAddStatic(n)
+    local newObj = mist.utils.deepCopy(n)
+    if newObj.units and newObj.units[1] then -- mist format: flatten unit[1] onto the object
+        for entry, val in pairs(newObj.units[1]) do
+            if newObj[entry] == nil then
+                newObj[entry] = val
+            end
+        end
+    end
+    local cntry = newObj.country or newObj.countryId
+    newObj.name = newObj.name or newObj.unitName
+    if not newObj.name then
+        newObj.name = "dyn static " .. tostring(timer.getTime()) .. "_" .. math.random(1, 1000000)
+    end
+    if newObj.dead == nil then
+        newObj.dead = false
+    end
+    if not newObj.heading then
+        newObj.heading = math.rad(math.random(360))
+    end
+    if newObj.categoryStatic then
+        newObj.category = newObj.categoryStatic
+    end
+    if newObj.mass then
+        newObj.category = "Cargos"
+    end
+    if newObj.shapeName then
+        newObj.shape_name = newObj.shapeName
+    end
+    newObj.country = nil
+    newObj.countryId = nil
+    newObj.clone = nil
+    newObj.unitName = nil
+    if newObj.x and newObj.y and newObj.type
+        and type(newObj.x) == "number" and type(newObj.y) == "number" and type(newObj.type) == "string" then
+        coalition.addStaticObject(cntry, newObj)
+        return newObj
+    end
+    return false
+end
+
+-- Push a route onto a group as a Mission task (verbatim from MIST).
+function mist.goRoute(group, path)
+    local misTask = {
+        id = "Mission",
+        params = { route = { points = mist.utils.deepCopy(path) } },
+    }
+    if type(group) == "string" then
+        group = Group.getByName(group)
+    end
+    if group then
+        local groupCon = group:getController()
+        if groupCon then
+            groupCon:setTask(misTask)
+            return true
+        end
+    end
+    return false
+end
+
+-- Read a group's mission-editor route from env.mission. Only called by CTLD JTAC autolase
+-- (disabled in Retribution); kept faithful without needing mist.DBs.MEgroupsByName.
+function mist.getGroupRoute(groupIdent, task)
+    if not (env and env.mission and env.mission.coalition) then
+        return {}
+    end
+    for _, coa_data in pairs(env.mission.coalition) do
+        if type(coa_data) == "table" and coa_data.country then
+            for _, cntry_data in pairs(coa_data.country) do
+                for obj_cat, obj_cat_data in pairs(cntry_data) do
+                    if (obj_cat == "helicopter" or obj_cat == "ship" or obj_cat == "plane" or obj_cat == "vehicle")
+                        and type(obj_cat_data) == "table" and obj_cat_data.group then
+                        for _, grp in pairs(obj_cat_data.group) do
+                            if type(grp) == "table" and grp.name == groupIdent then
+                                return (grp.route and grp.route.points) or {}
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return {}
+end
+
+-- Move a group to a random point within a zone (skynet shoot-and-scoot). Builds a two-waypoint
+-- ground route via goRoute; zones come from the Tier-2 zonesByName.
+function mist.groupToRandomZone(gpData, zone, form, heading, speed, disableRoads)
+    if type(gpData) == "string" then
+        gpData = Group.getByName(gpData)
+    end
+    if type(zone) == "string" then
+        zone = mist.DBs.zonesByName[zone]
+    elseif type(zone) == "table" and not zone.radius then
+        zone = mist.DBs.zonesByName[zone[math.random(1, #zone)]]
+    end
+    if not (gpData and zone) then
+        return false
+    end
+    local lead = mist.getLeadPos(gpData)
+    if not lead then
+        return false
+    end
+    local action = disableRoads and "off road" or "on road"
+    local mps = speed and mist.utils.kmphToMps(speed) or nil
+    local dest = mist.getRandPointInCircle(zone.point, zone.radius or 0)
+    local startWP = mist.ground.buildWP({ x = lead.x, y = lead.z }, action, mps)
+    local endWP = mist.ground.buildWP({ x = dest.x, y = dest.y }, action, mps)
+    return mist.goRoute(gpData, { startWP, endWP })
+end
+
+-- ==> All 42 consumer symbols are now implemented. The load-order swap in base/plugin.json
+-- (mist_4_5_126.lua -> mist_moose_shim.lua, loading AFTER Moose.lua and BEFORE consumers) plus an
+-- in-game pass (CTLD sling-load, SCAR capture/CSAR, intercept/QRA, Skynet, core glue) are the
+-- remaining steps before mist_4_5_126.lua can be deleted.
 

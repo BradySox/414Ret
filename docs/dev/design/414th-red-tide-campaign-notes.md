@@ -68,7 +68,7 @@ south-west (the real Rhineland NATO cluster), every red base to the north/centre
 ### Blue (NATO) — south-west cluster
 | Base | id | Squadrons |
 |---|---|---|
-| Ramstein | 165 | B-1B (OCA/Runway), **A-10C Suite 3 (CAS)**, Mirage-F1EE (Escort), **A-6E (OCA/Aircraft)** _(VMA-231 AV-8B SEAD Sweep removed 2026-06-24)_ |
+| Ramstein | 165 | B-1B (OCA/Runway), **A-10C Suite 3 (CAS)**, Mirage-F1EE (Escort), F-4E-45MC (SEAD Sweep, 480th TFS Weasels — replaced the dropped VMA-231 AV-8B), **A-6E (OCA/Aircraft)** |
 | Spangdahlem | 162 | F-15C (TARCAP), **F-14B (Escort)**, **GAF JG 74 (TARCAP)**, F-4E-45MC (BAI), UH-1H, AH-1W |
 | Hahn | 155 | B-52H (Strike), F-16CM (DEAD), Tornado IDS (SEAD Escort), F-4E-45MC (OCA/Runway), **F/A-18C (SEAD)**, **F-15E (BAI)** |
 | Frankfurt | 163 | KC-135, **KC-135MPRS (drogue tanker)**, C-130J, CH-47F, AH-64D, **E-3A (AEW&C)**, **OH-58D Kiowa (Escort)** |
@@ -158,6 +158,23 @@ considered and declined.
      intact. **In-game pass still needed:** confirm red builds ground at Sperenberg/Schönefeld and
      convoys/airlifts roll toward the front, blue builds at Ramstein, and the IADS shows networked
      (Skynet) behavior with destroyable C2/power per base.
+   - **C2 nodes → real map buildings, Haina + Templin (2026-06-24).** The hand-placed C2
+     statics landed on airfield aprons (blocking spawns, ugly — seen at Haina). Replaced via the
+     scenery-import pipeline (`SceneryGroup` trigger zones, not statics): for each node a blue
+     `type=0` def zone (`PROPERTY_1=commandcenter|comms|power`, r=100) over a real building + a
+     white `type=2` kill quad. **Haina:** `KDP_USSR` (cc, 261 m), `RSP-10MA` radar (comms, 658 m),
+     transformer (power, 728 m) — completes Haina's trio (it had no power node). **Templin:**
+     `BARRACK_SMALL` (cc, 2.6 km), `NDB_RADIO` (comms, 2.6 km), transformer (power, 1.3 km) — gives
+     Templin the full trio (it had only a comms static). **Removed** the `Haina Command Center`,
+     `Haina Comms`, `Templin Comms` statics (deleted `red.static_group` keys `[20]/[21]/[22]`;
+     pydcs iterates the table as a dict so the index gap is harmless). Edit was the hand-Lua +
+     `zipfile` path (pydcs save still broken). **Verified (pydcs):** miz loads; all 6 groups parse
+     to the right `GroupTask` with one white zone each; the 3 statics are gone, others intact; every
+     building's nearest airfield is its own base (Haina 0.4–0.9 km, Templin 1.5–2.8 km; next field
+     8–11 km), so TGOs anchor correctly. **In-game pass still needed:** apron clear at Haina/Templin,
+     kill quads sit on the real objects, and Skynet still wires the base SAMs to the new C2 (Templin's
+     2.6 km cc/comms are the marginal case). Kastrup/Hamburg/Peenemünde still use placed statics
+     (no scanner dump coverage — needs a re-scan; Phase 2).
 7. **Medium-range SAM belt added** (2026-06-23). Red's air defense was long-range (S-300) +
    AAA + scattered short-range, with the main red bases carrying *no* medium SAM. Air-defense
    range is slot-driven: each control point's `medium_range_sams` preset locations come from

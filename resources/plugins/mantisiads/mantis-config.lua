@@ -134,31 +134,11 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         local power_deps = {} -- power unit name -> { dependent SAM group names }
         local cc_names = {}   -- command-center static names
 
-        -- pydcs registers comms/power/command-center statics with a " object" suffix.
-        -- A node is only WATCHABLE if it resolves to a real, existing StaticObject. On some
-        -- maps an IADS connection node is a trigger ZONE / map feature (e.g. a VOR/DME or
-        -- radio beacon) rather than a placed static -- such a node can never be "destroyed",
-        -- so watching it would make its "not a static" lookup read as DEAD and falsely
-        -- decapitate the entire network the instant the watcher first polls. So we only watch
-        -- nodes that are actual statics at setup; zone/non-static nodes are skipped.
-        local function static_present(unit_name)
-            local so = StaticObject.getByName(unit_name .. " object")
-            return so ~= nil and so:isExist()
-        end
-        local function static_dead(unit_name)
-            return not static_present(unit_name)
-        end
-
-        local skipped = 0
         local function add_deps(map, conn_list, sam_group)
             if conn_list then
                 for _, n in pairs(conn_list) do
-                    if static_present(n) then
-                        map[n] = map[n] or {}
-                        table.insert(map[n], sam_group)
-                    else
-                        skipped = skipped + 1
-                    end
+                    map[n] = map[n] or {}
+                    table.insert(map[n], sam_group)
                 end
             end
         end
@@ -175,27 +155,43 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
 
         if coalition_iads.CommandCenter then
             for _, cc in pairs(coalition_iads.CommandCenter) do
-                if static_present(cc.dcsGroupName) then
-                    table.insert(cc_names, cc.dcsGroupName)
-                else
-                    skipped = skipped + 1
-                end
+                table.insert(cc_names, cc.dcsGroupName)
             end
         end
 
-        -- Basic-mode campaigns (and maps whose C2 nodes are all zones) have nothing to watch.
+        -- Basic-mode campaigns have no C2 graph: nothing to watch.
         if next(comms_deps) == nil and next(power_deps) == nil and #cc_names == 0 then
-            if skipped > 0 then
-                env.info(string.format(
-                    "DCSRetribution|MANTIS C2 - %s: no destructible C2 statics (%d zone/non-static node(s)); watcher idle",
-                    coalition_prefix, skipped))
-            end
             return
         end
-        if skipped > 0 then
-            env.info(string.format(
-                "DCSRetribution|MANTIS C2 - %s: skipped %d zone/non-static C2 node(s)",
-                coalition_prefix, skipped))
+
+        -- Death detection. C2 nodes are NOT all placed statics: many (comms masts, power
+        -- hubs, VOR/DME, beacons, ...) are destructible *scenery* / map objects, which
+        -- StaticObject.getByName never finds. The original "(so == nil) -> dead" test therefore
+        -- read every scenery node as destroyed on the first poll and falsely decapitated the
+        -- whole network at mission start. So a node counts as dead only when we have POSITIVE
+        -- evidence it died:
+        --   (a) a placed static of that name exists but no longer :isExist(), or
+        --   (b) its name was recorded in the global `dead_events` table (the same S_EVENT_DEAD /
+        --       scenery-trigger record the rest of Retribution uses for BDA). dead_events stores
+        --       the bare object name for scenery, so we match the node name with the "id | "
+        --       prefix stripped as well as verbatim.
+        local function bare_name(node_name)
+            return node_name:match("|%s*(.+)$") or node_name
+        end
+        local function node_dead(node_name)
+            local so = StaticObject.getByName(node_name .. " object")
+            if so ~= nil and not so:isExist() then
+                return true -- a real static that existed and is now destroyed
+            end
+            if type(dead_events) == "table" then
+                local bare = bare_name(node_name)
+                for _, dn in pairs(dead_events) do
+                    if dn == node_name or dn == bare then
+                        return true -- recorded dead (scenery or unit) via dead_events
+                    end
+                end
+            end
+            return false
         end
 
         local function set_offline(sam_group)
@@ -214,7 +210,7 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         local function poll()
             for comms_name, sams in pairs(comms_deps) do
                 local key = "comms:" .. comms_name
-                if not handled[key] and static_dead(comms_name) then
+                if not handled[key] and node_dead(comms_name) then
                     handled[key] = true
                     for _, s in pairs(sams) do set_autonomous(s) end
                     env.info(string.format(
@@ -224,7 +220,7 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             end
             for power_name, sams in pairs(power_deps) do
                 local key = "power:" .. power_name
-                if not handled[key] and static_dead(power_name) then
+                if not handled[key] and node_dead(power_name) then
                     handled[key] = true
                     for _, s in pairs(sams) do set_offline(s) end
                     env.info(string.format(
@@ -235,7 +231,7 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             if #cc_names > 0 and not handled["cc:all"] then
                 local all_dead = true
                 for _, cc in pairs(cc_names) do
-                    if not static_dead(cc) then all_dead = false break end
+                    if not node_dead(cc) then all_dead = false break end
                 end
                 if all_dead then
                     handled["cc:all"] = true

@@ -93,9 +93,10 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         )
 
         # List of campaigns
-        show_incompatible_campaigns_checkbox = QCheckBox(
+        self.show_incompatible_campaigns_checkbox = QCheckBox(
             text="Show incompatible campaigns"
         )
+        show_incompatible_campaigns_checkbox = self.show_incompatible_campaigns_checkbox
         show_incompatible_campaigns_checkbox.setChecked(False)
         self.campaignList = QCampaignList(
             campaigns, show_incompatible_campaigns_checkbox.isChecked()
@@ -247,6 +248,35 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         layout.addWidget(timeGroup, 3, 1, 3, 1)
         self.setLayout(layout)
 
+    def initializePage(self) -> None:
+        super().initializePage()
+        # The blank-canvas (campaign maker) path only uses the selected campaign
+        # for its terrain, so present a clean terrain picker instead of the full
+        # included-campaign list. initializePage fires each time the user arrives
+        # from the Introduction page, so toggling the radio re-applies the mode.
+        wizard = self.wizard()
+        terrain_only = bool(wizard.field("blankCanvas")) if wizard else False
+        self._set_terrain_only_mode(terrain_only)
+
+    def _set_terrain_only_mode(self, terrain_only: bool) -> None:
+        if terrain_only:
+            self.setTitle("Theater")
+            self.setSubTitle(
+                "\nPick a terrain. Every airfield starts neutral — you'll paint "
+                "ownership and place defenses on the map yourself."
+            )
+            self.campaignList.setup_terrain_content()
+        else:
+            self.setTitle("Theater configuration")
+            self.setSubTitle("\nChoose a terrain and time period for this game.")
+            self.campaignList.setup_content(
+                self.show_incompatible_campaigns_checkbox.isChecked()
+            )
+        # Campaign-specific panels are meaningless for a blank canvas.
+        self.campaignMapDescription.setVisible(not terrain_only)
+        self.performanceText.setVisible(not terrain_only)
+        self.show_incompatible_campaigns_checkbox.setVisible(not terrain_only)
+
     def on_invert_map(self) -> None:
         blue = self.faction_selection.blueFactionSelect.currentIndex()
         red = self.faction_selection.redFactionSelect.currentIndex()
@@ -303,6 +333,36 @@ class QCampaignList(QListView):
                 if show_incompatible or campaign.is_compatible:
                     item = QCampaignItem(campaign)
                     self.campaign_model.appendRow(item)
+        finally:
+            self.selectionModel().blockSignals(False)
+
+        self.selectionModel().setCurrentIndex(
+            self.campaign_model.index(0, 0, QModelIndex()),
+            QItemSelectionModel.SelectionFlag.Select,
+        )
+
+    def setup_terrain_content(self) -> None:
+        """Populate one row per unique terrain for the blank-canvas terrain picker.
+
+        Each row carries a representative compatible campaign for that terrain (the
+        blank-canvas flow only uses it for ``data["theater"]`` + default factions)
+        but is labelled by the terrain name, so the user picks a map rather than a
+        hand-built campaign.
+        """
+        self.selectionModel().blockSignals(True)
+        try:
+            self.campaign_model.clear()
+            seen: set[str] = set()
+            for campaign in self.campaigns:
+                if not campaign.is_compatible:
+                    continue
+                terrain = campaign.data.get("theater")
+                if not terrain or terrain in seen:
+                    continue
+                seen.add(terrain)
+                item = QCampaignItem(campaign)
+                item.setText(terrain)
+                self.campaign_model.appendRow(item)
         finally:
             self.selectionModel().blockSignals(False)
 

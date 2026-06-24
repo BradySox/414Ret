@@ -20,7 +20,7 @@
 --   [x] Tier 1b  geo/coord (getHeading, getAvgPos, getLeadPos, getRandPointInCircle,
 --                terrainHeightDiff, tostringLL, tostringMGRS, getUnitsLOS, random,
 --                utils.getDir, utils.getHeadingPoints, utils.zoneToVec3, utils.tableShow)
---   [ ] Tier 2   object DB (DBs.unitsByName/unitsById/groupsByName/zonesByName/humansByName)
+--   [x] Tier 2   object DB (DBs.unitsByName/unitsById/groupsByName/zonesByName/humansByName)
 --   [ ] Tier 3   spawn/route/sched (dynAdd, dynAddStatic, goRoute, getGroupRoute,
 --                groupToRandomZone, ground.buildWP, makeUnitTable, scheduleFunction,
 --                removeFunction, addEventHandler)
@@ -436,7 +436,107 @@ function mist.utils.tableShow(tbl, loc, indent, tableshow_tbls)
     return out
 end
 
--- Tiers 2 / 3 / 4 are appended as they are implemented; see the design doc's rollout plan.
+---------------------------------------------------------------------------------------------------
+-- Tier 2 -- object database (mist.DBs.*)
+--
+-- Verified against consumer source: the entries are barely read --
+--   * pairs(unitsByName) / pairs(groupsByName): only the KEY is used (value re-fetched via
+--     Unit.getByName / Group.getByName), so entry values can be minimal.
+--   * unitsById[id]: only .groupId.   * zonesByName[name]: only .point (Vec3).
+--   * humansByName[name]: existence + a mutable .losMarkIds (CTLD JTAC autolase, disabled).
+-- DCS Lua 5.1 has no __pairs, so these must be REAL tables. We rebuild them on a periodic scan of
+-- coalition.getGroups (cheap; mirrors MIST's own DB cadence). Zones are static -> built once.
+---------------------------------------------------------------------------------------------------
+
+mist.DBs.unitsByName = mist.DBs.unitsByName or {}
+mist.DBs.unitsById = mist.DBs.unitsById or {}
+mist.DBs.groupsByName = mist.DBs.groupsByName or {}
+mist.DBs.humansByName = mist.DBs.humansByName or {}
+mist.DBs.zonesByName = mist.DBs.zonesByName or {}
+
+local _MIST_DB_REFRESH = 5 -- seconds between unit/group DB refreshes
+
+local function _mistBuildZones()
+    local zones = {}
+    if env and env.mission and env.mission.triggers and env.mission.triggers.zones then
+        for _, z in pairs(env.mission.triggers.zones) do
+            local gl = 0
+            pcall(function() gl = land.getHeight({ x = z.x, y = z.y }) end)
+            zones[z.name] = {
+                name = z.name,
+                point = { x = z.x, y = gl, z = z.y },
+                radius = z.radius,
+                verticies = z.verticies,
+            }
+        end
+    end
+    mist.DBs.zonesByName = zones
+end
+
+local function _mistRefreshDBs()
+    local unitsByName, unitsById, groupsByName, humansByName = {}, {}, {}, {}
+    local sides = { coalition.side.NEUTRAL, coalition.side.RED, coalition.side.BLUE }
+    local cats = {
+        Group.Category.AIRPLANE,
+        Group.Category.HELICOPTER,
+        Group.Category.GROUND,
+        Group.Category.SHIP,
+    }
+    for _, side in pairs(sides) do
+        for _, cat in pairs(cats) do
+            local ok, groups = pcall(coalition.getGroups, side, cat)
+            if ok and groups then
+                for _, grp in pairs(groups) do
+                    if grp and grp:isExist() then
+                        local gname = grp:getName()
+                        local gid = grp:getID()
+                        groupsByName[gname] = { groupName = gname, groupId = gid }
+                        for _, u in pairs(grp:getUnits()) do
+                            if u and u:isExist() then
+                                local uname = u:getName()
+                                local entry = { unitName = uname, groupName = gname, groupId = gid }
+                                unitsByName[uname] = entry
+                                local okid, uid = pcall(function() return u:getID() end)
+                                if okid and uid then
+                                    unitsById[tonumber(uid)] = entry
+                                end
+                                local pname
+                                pcall(function() pname = u:getPlayerName() end)
+                                if pname then
+                                    local prev = mist.DBs.humansByName[uname]
+                                    humansByName[uname] = {
+                                        unitName = uname,
+                                        groupName = gname,
+                                        groupId = gid,
+                                        playerName = pname,
+                                        losMarkIds = prev and prev.losMarkIds or nil,
+                                    }
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    mist.DBs.unitsByName = unitsByName
+    mist.DBs.unitsById = unitsById
+    mist.DBs.groupsByName = groupsByName
+    mist.DBs.humansByName = humansByName
+end
+
+local function _mistDBLoop()
+    _mistRefreshDBs()
+    return timer.getTime() + _MIST_DB_REFRESH
+end
+
+-- Initial population + periodic refresh. Safe at load: coalition.getGroups, env.mission and
+-- timer.* are all available at mission start; the shim loads before any consumer reads mist.DBs.
+_mistBuildZones()
+_mistRefreshDBs()
+timer.scheduleFunction(_mistDBLoop, nil, timer.getTime() + _MIST_DB_REFRESH)
+
+-- Tiers 3 / 4 are appended as they are implemented; see the design doc's rollout plan.
 -- Until every called symbol is provided, the load-order swap in base/plugin.json
 -- (mist_4_5_126.lua -> this file) must NOT be made.
 

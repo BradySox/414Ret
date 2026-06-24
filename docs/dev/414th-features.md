@@ -478,7 +478,7 @@ right on the FLOT when the player had no forward SAMs reaching the front; the fa
 NM this puts red ~100 NM back and blue ~50 NM; at the default 80/70 buffers red is ~200/175 NM
 deep. Verified by recomputing the broken save: red AWACS `+326/−175 NM → centered, ~100 NM
 behind`, blue forward-but-centered. Tests: `tests/test_support_orbit.py`. Upstream-core
-flight-plan code, so an upstream-PR candidate. **Lua-free; wants an in-game pass.**
+flight-plan code, so an upstream-PR candidate. **Lua-free; in-game pass ☑ VERIFIED 2026-06-24 (C1/C2).**
 
 ### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
 
@@ -522,8 +522,8 @@ form a package the fulfiller can't range past the belt.)
 The DEAD itself is still tasked (blue still tries to peel the belt, with its SEAD escort) — we
 only changed whether the *follow-on strike* trusts the kill. This is upstream-core HTN
 behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
-(`dead_can_reach` geometry + `apply_effects` routing). **Lua-free; still wants an in-game pass
-to confirm blue now defers deep strikes until the belt is actually down.**
+(`dead_can_reach` geometry + `apply_effects` routing). **Lua-free; in-game pass ☑ VERIFIED
+2026-06-24 (B2) — blue defers deep strikes until the belt is actually down.**
 
 ---
 
@@ -742,8 +742,8 @@ feeds the BDA fog-of-war the exact enemy units a surviving recon pass photograph
   `unit_map.theater_units(...).theater_unit.ground_object` and `update_confirmed_bda()`
   syncs those TGOs. Additive — empty/no-op when the plugin is OFF. Snapshot schema
   (`snap.name/life/type/coa`) is documented in TARS.lua and logged once in-game.
-- Tests: `tests/test_tars_bda_bridge.py`. Default ON; Lua still needs an in-game pass
-  (not runnable in CI).
+- Tests: `tests/test_tars_bda_bridge.py`. Default ON; Lua in-game pass ☑ VERIFIED
+  2026-06-24 (G2 — TARPS captures feed Retribution BDA).
 
 ---
 
@@ -775,8 +775,8 @@ friendly land airbases.
   (`"RetributionStatic"`) so the counts balance and the static-held spots stay out of the
   taxi pool. Cosmetic-only: AI flow was already unaffected. `_InitParkingSpots` runs
   synchronously inside `:Start()`, so `fc.parking` is populated when the pass runs.
-- Tests: `tests/test_flightcontrol_emit.py`. Default ON; Lua still needs an in-game pass
-  (not runnable in CI).
+- Tests: `tests/test_flightcontrol_emit.py`. Default ON; Lua in-game pass ☑ VERIFIED
+  2026-06-24 (G1 — AI flow unaffected, no parking-spot spam).
 
 ---
 

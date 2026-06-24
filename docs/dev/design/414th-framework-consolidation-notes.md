@@ -84,9 +84,10 @@ own in-game pass (Lua can't be CI-exercised).
 4. **CTLD → `Ops.CTLD`** — the large one (~8.7k lines, default-ON, ~26 distinct MIST calls). Config-
    bridge swap mirroring Skynet→MANTIS; ~15–20 days incl. QA, MEDIUM–HIGH risk. Scoped in
    [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md).
-5. **dismounts** — the **MIST-drop blocker** (no MOOSE successor exists). Decision: rewrite on MOOSE
-   (~15–20 h) if used, or retire if not; "keep MIST just for it" defeats the goal. Needs one squadron
-   input (does anyone fly it on?). See [`414th-dismounts-decision.md`](414th-dismounts-decision.md).
+5. **dismounts** — ✅ **RETIRED (2026-06-24)**. Was the would-be MIST-drop blocker (no MOOSE
+   successor), but turned out to be already dormant (not in `plugins.json`), so it was deleted
+   outright. See [`414th-dismounts-decision.md`](414th-dismounts-decision.md). No longer blocks the
+   MIST drop.
 6. **Core glue** (`dcs_retribution.lua`) — port the 5 MIST calls above to native/MOOSE.
 7. **Drop MIST** — remove `mist_4_5_126.lua` from `base/plugin.json`. **Definition of done.**
 

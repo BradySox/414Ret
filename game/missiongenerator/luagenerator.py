@@ -17,6 +17,7 @@ from game.ato import FlightType
 from game.data.units import UnitClass
 from game.dcs.aircrafttype import AircraftType
 from game.plugins import LuaPluginManager
+from game.settings import IadsEngine
 from game.theater import TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
@@ -464,7 +465,17 @@ class LuaGenerator:
                     aa_item.add_key_value("positionX", str(ground_object.position.x))
                     aa_item.add_key_value("positionY", str(ground_object.position.y))
 
-        # Generate IADS Lua Item
+        # Generate IADS Lua Item. Skynet is currently the only implemented IADS
+        # emitter; `iads_engine` is the seam where a MANTIS emitter will branch in
+        # (see docs/dev/design/414th-mantis-migration-notes.md). Until that lands,
+        # any non-Skynet selection safely falls back to the Skynet output rather
+        # than emitting nothing.
+        iads_engine = self.game.settings.iads_engine
+        if iads_engine is not IadsEngine.SKYNET:
+            logging.warning(
+                "IADS engine %r has no emitter yet; generating Skynet IADS output.",
+                iads_engine.value,
+            )
         iads_object = lua_data.add_item("IADS")
         # These should always be created even if they are empty.
         iads_object.get_or_create_item("BLUE")

@@ -11,34 +11,46 @@ This is the implementation plan for replacing **Skynet-IADS** with **MOOSE MANTI
 emissions control, and AWACS, but (a) discovers SAMs by **name prefix** where we wire **explicit
 named groups**, and (b) has **no per-node comms/power connection graph**.
 
-### Scope reality check — the C2 gap affects a minority of campaigns
+### This is an engine-level change — scope it to the engine, not to campaigns
 
-Of the **64 bundled campaigns, only 16 set `advanced_iads: true`** and just **9 use explicit
-`iads_config`**. The other **48 (75%) run basic mode — SAM + EWR only**, with no comms/power/
-command-center graph at all. So the comms/power C2 gap (§5) — including the Red Tide
-"real buildings as IADS nodes" feature — is a **phase-2 concern touching ~25% of campaigns, not a
-blocker for the migration as a whole**. Basic mode is a near-clean MANTIS swap for the 48-campaign
-majority, and that is what ships first. The C2 layer is built afterward for the advanced subset; it
-is explicitly **not** allowed to gate the basic-mode rollout.
+This replaces the IADS **engine**. The bar is **full feature parity for any campaign — present or
+future — that the engine supports**, not "good enough for the campaigns that happen to ship today."
+`advanced_iads` (comms/power/command-center degradation) is a **general, first-class engine
+capability** any campaign can opt into; it is **not** a Red Tide feature, and the fact that a given
+count of bundled campaigns currently use it is **irrelevant to scope**. The new engine must support
+the *entire* IADS feature set — including the comms/power C2 layer (§5) — or it is not a valid
+replacement. Dropping a capability because few campaigns use it today would silently break any
+campaign (including community-made ones) that relies on it.
 
-This doc still specifies how to keep the C2 feature alive on top of MANTIS (§5), but treats it as a
-follow-on phase rather than the critical path.
+Campaign usage statistics are recorded here **only** as build-sequencing guidance (what to validate
+first), never as a reason to narrow what gets built. Every capability Skynet provides today is a
+required deliverable of the MANTIS engine.
 
 ---
 
 ## 0. Guiding principles
 
-1. **Keep the Python data model as the source of truth.** `IadsNetwork` already computes the full
+1. **Full engine parity is the bar.** The replacement must support every IADS capability the engine
+   exposes today — basic networking *and* the advanced comms/power/command-center C2 layer — for any
+   campaign that uses it. No capability is dropped or deferred-indefinitely on the grounds that few
+   campaigns currently exercise it.
+2. **Campaign-agnostic.** The engine knows nothing about specific campaigns. Behavior is driven by
+   the campaign's IADS configuration (`advanced_iads`, `iads_config`, unit properties), so any
+   campaign — bundled, community, or future — gets identical treatment.
+3. **Keep the Python data model as the source of truth.** `IadsNetwork` already computes the full
    node-and-edge graph (which SAM is fed by which comms/power/command-center). We do **not** throw
-   that away — MANTIS just becomes a different *consumer* of it. This is what makes the C2 gap
-   solvable.
-2. **The building-anchoring mechanism is plugin-agnostic and stays untouched.** Trigger zones →
+   that away — MANTIS just becomes a different *consumer* of it. This is what makes the C2 layer
+   implementable on top of MANTIS.
+4. **The building-anchoring mechanism is plugin-agnostic and stays untouched.** Trigger zones →
    `IadsBuildingGroundObject` → dead unit at scenery position is confirmed independent of Skynet.
    No changes there.
-3. **Phase it.** Land a behind-a-setting MANTIS path that runs *alongside* Skynet first; flip the
-   default only after an in-game pass. Never a big-bang replacement.
-4. **One in-game pass is mandatory.** The Lua can't be compiled/run in CI; every runtime claim
-   here needs a flight test (add rows to `414th-ingame-pass-checklist.md`).
+5. **Sequence the build, don't narrow the scope.** Land a behind-a-setting MANTIS path alongside
+   Skynet; bring capabilities online in a sensible order; flip the default only once the engine is at
+   **full parity** and has passed its in-game passes. Never a big-bang replacement, and never a
+   permanent feature subset.
+6. **In-game passes are mandatory.** The Lua can't be compiled/run in CI; every runtime claim here
+   needs a flight test (add rows to `414th-ingame-pass-checklist.md`), covering both basic and
+   advanced IADS behavior.
 
 ---
 
@@ -145,10 +157,13 @@ becomes MANTIS `AddScootZones` — we **generate small scoot zones** around each
 
 ---
 
-## 5. The C2 layer — re-implementing comms/power/command-center degradation (phase 2, advanced campaigns only)
+## 5. The C2 layer — re-implementing comms/power/command-center degradation (required for full parity)
 
-> **Applies to ~16 of 64 campaigns** (`advanced_iads: true`). The 48 basic-mode campaigns never
-> reach this code path and ship in phase 1 without it. Do not gate the migration on this section.
+> This is the capability MANTIS lacks natively and the engine must restore. It is **required for the
+> engine to reach parity**, not optional — `advanced_iads` is a general engine feature, and any
+> campaign that enables it (today or in future) depends on this behavior. It is triggered by campaign
+> configuration, so basic-mode campaigns simply never activate it; that is data-driven, not a
+> dropped feature.
 
 MANTIS models only HQ loss (→ slower detection via `SetAdvancedMode`). It has **no comms/power
 graph**. Since our Python model still computes the full per-SAM edge list, we re-implement the
@@ -212,16 +227,19 @@ Most Skynet options map directly. Changes:
    whether `SET_GROUP` injection works (§4 action item). These two answers de-risk everything else.
 2. **Python generalization:** `IadsRole`/`IadsProperties` rename + `iads_nodes()` exporter, behind
    the existing data (Skynet still default). Fully unit-testable (pytest).
-3. **Lua bridge (basic mode — covers 48/64 campaigns):** `mantisiads/` plugin + `mantis-config.lua`
-   network construction (no C2 yet). In-game pass #1: do SAMs detect/engage/go-dark correctly?
-   **This is the main deliverable** — at this point MANTIS is a viable engine for 75% of campaigns.
-4. **Shoot-and-scoot + per-type tuning.** In-game pass #2. Still basic-mode campaigns.
-5. **Flip default** `iads_engine: mantis` for basic-mode/new campaigns; keep Skynet selectable and
-   keep advanced campaigns on Skynet until §6 lands.
-6. **C2 layer (§5) — phase 2, advanced campaigns only:** comms/power/CC degradation handlers.
-   In-game pass #3 on an advanced campaign (e.g. Red Tide): kill a comms tower, confirm the
-   dependent SAM goes autonomous; kill power, confirm offline. Only after this do advanced campaigns
-   move to MANTIS.
+3. **Lua bridge — core networking:** `mantisiads/` plugin + `mantis-config.lua` network
+   construction. In-game pass #1: do SAMs detect/engage/go-dark correctly across coalitions?
+4. **Shoot-and-scoot + per-type tuning.** In-game pass #2.
+5. **C2 layer (§5) — comms/power/command-center degradation:** the capability that brings the engine
+   to **full parity**. In-game pass #3 on an advanced-IADS campaign: kill a comms tower, confirm the
+   dependent SAM goes autonomous; kill power, confirm offline; kill all command centers, confirm
+   network degrades.
+6. **Flip default** `iads_engine: mantis` for new campaigns **only once steps 3–5 are all at parity
+   and passed**. Keep Skynet selectable for one release as a fallback. No campaign class is left
+   behind — basic and advanced both run on MANTIS at cutover.
+
+The order above is *build sequencing* (core networking is a prerequisite for the C2 layer), not a
+scope boundary: the default is not flipped until the engine is feature-complete.
 7. **Docs:** update `414th-features.md` §IADS, `README.md` if player-visible, this file → landed,
    and add the in-game-pass rows.
 
@@ -242,14 +260,15 @@ Most Skynet options map directly. Changes:
 
 ## 10. Effort estimate
 
-Split by phase, since the C2 layer is no longer on the critical path:
+~4–6 weeks for a competent Lua/Python dev to reach **full engine parity** (the only acceptable
+end state). Broken down by build step, not by scope:
 
-- **Phase 1 (basic mode, 48/64 campaigns): ~2–3 weeks.** Python generalization + Lua network
-  construction + shoot-and-scoot + 2 in-game passes. This delivers a usable MANTIS engine for the
-  majority and is the realistic "is the swap worth it?" milestone.
-- **Phase 2 (C2 layer, 16 advanced campaigns): ~1.5–2 weeks.** Comms/power/CC degradation handlers
-  + in-game validation on an advanced campaign.
+- **Core networking** (Python generalization + Lua construction + shoot-and-scoot + 2 in-game
+  passes): ~2–3 weeks. This is a prerequisite, not a shippable subset — the default is not flipped
+  here.
+- **C2 layer** (comms/power/command-center degradation + in-game validation): ~1.5–2 weeks. Required
+  to reach parity before cutover.
 
-Total ~4–6 weeks if both phases are done, but phase 1 stands alone and can ship first. If the §2/§4
-spikes come back unfavorable (old bundled MOOSE, no SET injection), add ~1 week for vendoring + the
-prefix-rename path.
+The C2 layer is the long pole, but it is **in scope by definition** — an engine that omits it is not
+a Skynet replacement. If the §2/§4 spikes come back unfavorable (old bundled MOOSE, no SET
+injection), add ~1 week for vendoring + the prefix-rename path.

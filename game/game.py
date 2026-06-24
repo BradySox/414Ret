@@ -113,6 +113,9 @@ class Game:
         self.theater = theater
         self.campaign_name = campaign_name
         self.turn = 0
+        # Transient: True while this is an all-neutral blank-canvas setup game the
+        # player is painting ownership onto (campaign maker). Never persisted.
+        self.blank_canvas_setup = False
         # NB: This is the *start* date. It is never updated.
         self.date = date(start_date.year, start_date.month, start_date.day)
         self.game_stats = GameStats()
@@ -162,6 +165,7 @@ class Game:
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         state.setdefault("pending_unit_placements", [])
+        state.setdefault("blank_canvas_setup", False)
         self.__dict__.update(state)
         if not hasattr(self, "laser_code_registry"):
             self.laser_code_registry = LaserCodeRegistry()

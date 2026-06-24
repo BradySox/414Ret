@@ -433,6 +433,7 @@ export type ControlPoint = {
   id: string;
   name: string;
   blue: boolean;
+  neutral: boolean;
   position: LatLng;
   mobile: boolean;
   destination?: LatLng;
@@ -581,6 +582,7 @@ export type Game = {
   map_center?: LatLng;
   unculled_zones: UnculledZone[];
   map_zones: MapZones;
+  blank_canvas_setup: boolean;
 };
 export type MapZones = {
   inclusion: LatLng[][][];

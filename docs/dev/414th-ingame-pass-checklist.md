@@ -372,14 +372,16 @@ rows (B, C, D, E) then becomes the upstream-PR carve-out batch.
 
 ### Campaign maker — blank canvas (in-game-pass required)
 
-Design: `docs/dev/design/414th-campaign-maker-notes.md`. Headless gate already
-passed (generate + begin_turn_0 → turn 0 on a blank Caucasus); these are the
-things only a live run can confirm.
+Design: `docs/dev/design/414th-campaign-maker-notes.md`. The **neutral-paint flow**
+is headless-verified end to end (all-neutral generate → paint → finalize prunes
+unpainted → begin_turn_0); client `tsc` + CP-layer jest pass. These are the things
+only a live run can confirm.
 
 | # | Observable criterion | Fail signature |
 |---|---|---|
-| BC-A | New Game → Introduction → pick **"Build your own (blank canvas)"** → choose a terrain/campaign + factions → Finish → game generates without error | Crash/hang during generation on the blank theater |
-| BC-B | Map opens with every airfield on the terrain present, split blue/red, **no** SAMs/armor/objectives anywhere | Missing airfields; preset units appear; all-one-colour map |
-| BC-C | Air-wing dialog (shown right after Finish) lets you add squadrons to a base from scratch | Can't add squadrons; dialog empty/errors with 0 preconfigured |
-| BC-D | After staffing a base, you can plan + fly a normal package | No flyable aircraft; planner can't build a package |
-| BC-E | Drop-spawn (§20) places SAMs/armor onto the blank map as normal | Placement broken on a hand-built theater |
+| BC-A | New Game → Introduction → **"Build your own (blank canvas)"** → terrain/campaign + factions → Finish → map opens with **every** airfield shown **gray/yellow** (neutral), no fronts, no units | Crash on generate; bases pre-coloured blue/red; preset units present |
+| BC-B | **Left-click** a base cycles it gray→blue→red→gray (recolors live via SSE); **right-click** cycles backward | Click opens the info dialog instead; no recolor; 403 in network tab |
+| BC-C | After painting some blue + some red, the **"Finalize Campaign"** toolbar button builds the campaign: unpainted gray bases **vanish**, a front draws between blue/red | Unpainted bases remain (AI can target them); no front; crash in finalize |
+| BC-D | Finalize opens the air-wing dialog → add squadrons to a base from scratch → plan + fly a package | Dialog empty/errors with 0 preconfigured; no flyable aircraft |
+| BC-E | Drop-spawn (§20) places SAMs/armor onto the finalized map as normal | Placement broken on a hand-built theater |
+| BC-F | Paint endpoint is inert in a **normal** (non-setup) campaign — clicking a base opens its info dialog as before | Bases repaint in a real game (guard not firing) |

@@ -40,6 +40,7 @@ from game.theater.theaterloader import TheaterLoader
 from .blanktheater import AirfieldSite, assign_coalitions, nearest_neighbor_links
 
 if TYPE_CHECKING:
+    from game import Game
     from game.theater import ConflictTheater
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,74 @@ def ownership_from_theater(theater: ConflictTheater) -> dict[str, Player]:
             continue
         owners[cp.airport.name] = cp.starting_coalition
     return owners
+
+
+def finalize_blank_canvas(setup_game: Game) -> Game:
+    """Turn a painted all-neutral setup game into the real campaign.
+
+    Reads the ownership the player painted onto *setup_game* (via
+    :func:`ownership_from_theater`), rebuilds the theater keeping only the painted
+    bases with their sides + derived fronts, and regenerates a fresh game using the
+    setup game's own factions / settings / budgets / date — no separate param
+    stash needed. The returned game is **pre-``begin_turn_0``**: the caller staffs
+    airwings (the air-wing dialog) and then calls ``begin_turn_0`` + loads it, the
+    same tail the new-game wizard runs.
+
+    Raises ``RuntimeError`` if no base was painted.
+    """
+    from datetime import datetime, time
+
+    from game.campaignloader.campaigncarrierconfig import CampaignCarrierConfig
+    from game.campaignloader.campaigngroundconfig import TgoConfig
+    from game.theater.start_generator import (
+        GameGenerator,
+        GeneratorSettings,
+        ModSettings,
+    )
+
+    from .campaignairwingconfig import CampaignAirWingConfig
+
+    ownership = ownership_from_theater(setup_game.theater)
+    if not ownership:
+        raise RuntimeError(
+            "Cannot finalize a blank canvas with no painted bases — "
+            "paint at least one blue and one red base first."
+        )
+
+    terrain_name = setup_game.theater.terrain.name
+    advanced_iads = setup_game.theater.iads_network.advanced_iads
+    theater = generate_blank_theater(
+        terrain_name, ownership=ownership, advanced_iads=advanced_iads
+    )
+
+    generator_settings = GeneratorSettings(
+        start_date=datetime(
+            setup_game.date.year, setup_game.date.month, setup_game.date.day
+        ),
+        start_time=time(12, 0),
+        player_budget=int(setup_game.blue.budget),
+        enemy_budget=int(setup_game.red.budget),
+        inverted=False,
+        advanced_iads=advanced_iads,
+        no_carrier=False,
+        no_lha=False,
+        no_player_navy=False,
+        no_enemy_navy=False,
+        tgo_config=TgoConfig({}),
+        carrier_config=CampaignCarrierConfig({}),
+        squadrons_start_full=True,
+    )
+
+    return GameGenerator(
+        setup_game.blue.faction,
+        setup_game.red.faction,
+        theater,
+        CampaignAirWingConfig.empty(),
+        setup_game.settings,
+        generator_settings,
+        ModSettings(),
+        campaign_name=f"Blank canvas — {terrain_name}",
+    ).generate()
 
 
 def generate_blank_theater(

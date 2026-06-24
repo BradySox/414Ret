@@ -115,11 +115,14 @@ class NewGameWizard(QtWidgets.QWizard):
 
         blank_canvas = bool(self.field("blankCanvas"))
         if blank_canvas:
-            # Campaign maker: ignore the .miz; generate an empty theater of the
-            # selected terrain. The player staffs bases via the air-wing dialog and
-            # places units via drop-spawn after the campaign starts.
+            # Campaign maker: ignore the .miz and generate an ALL-NEUTRAL theater of
+            # the selected terrain. The player then paints base ownership on the live
+            # map and hits "Finalize campaign", which rebuilds from only the painted
+            # bases (see finalize_blank_canvas). No air-wing dialog yet — bases aren't
+            # owned until finalize.
             theater = generate_blank_theater(
                 campaign.data["theater"],
+                all_neutral=True,
                 advanced_iads=generator_settings.advanced_iads,
             )
             air_wing_config = CampaignAirWingConfig.empty()
@@ -145,9 +148,14 @@ class NewGameWizard(QtWidgets.QWizard):
         )
         self.generatedGame = generator.generate()
 
-        AirWingConfigurationDialog(
-            self.generatedGame, generator.generator_settings.squadrons_start_full, self
-        ).exec_()
+        if blank_canvas:
+            self.generatedGame.blank_canvas_setup = True
+        else:
+            AirWingConfigurationDialog(
+                self.generatedGame,
+                generator.generator_settings.squadrons_start_full,
+                self,
+            ).exec_()
 
         self.generatedGame.begin_turn_0(
             squadrons_start_full=generator_settings.squadrons_start_full

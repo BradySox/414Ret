@@ -34,6 +34,9 @@ class GameJs(BaseModel):
     map_center: LeafletPoint | None
     unculled_zones: list[UnculledZoneJs]
     map_zones: MapZonesJs
+    # True while this is a blank-canvas setup game (campaign maker): the player is
+    # painting base ownership and the map shows the paint affordances + Finalize.
+    blank_canvas_setup: bool
 
     class Config:
         title = "Game"
@@ -41,6 +44,7 @@ class GameJs(BaseModel):
     @staticmethod
     def from_game(game: Game) -> GameJs:
         return GameJs(
+            blank_canvas_setup=game.blank_canvas_setup,
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             supply_routes=SupplyRouteJs.all_in_game(game),

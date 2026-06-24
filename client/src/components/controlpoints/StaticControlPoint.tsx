@@ -1,4 +1,6 @@
 import { ControlPoint } from "../../api/_liberationApi";
+import { selectBlankCanvasSetup } from "../../api/mapSlice";
+import { useAppSelector } from "../../app/hooks";
 import { makeLocationMarkerEventHandlers } from "./EventHandlers";
 import { iconForControlPoint } from "./Icons";
 import LocationTooltipText from "./LocationTooltipText";
@@ -9,6 +11,7 @@ interface StaticControlPointProps {
 }
 
 export const StaticControlPoint = (props: StaticControlPointProps) => {
+  const blankCanvasSetup = useAppSelector(selectBlankCanvasSetup);
   return (
     <Marker
       position={props.controlPoint.position}
@@ -17,15 +20,29 @@ export const StaticControlPoint = (props: StaticControlPointProps) => {
       // other markers are helpful so we want to keep them, but make sure the CP
       // is always the clickable thing.
       zIndexOffset={1000}
-      eventHandlers={makeLocationMarkerEventHandlers(props.controlPoint)}
+      eventHandlers={makeLocationMarkerEventHandlers(
+        props.controlPoint,
+        blankCanvasSetup
+      )}
     >
       <Tooltip>
-        <LocationTooltipText
-          name={props.controlPoint.name}
-          tacan={props.controlPoint.tacan}
-          atcFrequency={props.controlPoint.atc_frequency}
-          units={props.controlPoint.units}
-        />
+        {blankCanvasSetup ? (
+          <span>
+            {props.controlPoint.name} — click to set{" "}
+            {props.controlPoint.neutral
+              ? "BLUE"
+              : props.controlPoint.blue
+                ? "RED"
+                : "unused"}
+          </span>
+        ) : (
+          <LocationTooltipText
+            name={props.controlPoint.name}
+            tacan={props.controlPoint.tacan}
+            atcFrequency={props.controlPoint.atc_frequency}
+            units={props.controlPoint.units}
+          />
+        )}
       </Tooltip>
     </Marker>
   );

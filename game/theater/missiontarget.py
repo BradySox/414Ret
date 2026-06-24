@@ -7,6 +7,7 @@ from dcs.mapping import Point
 if TYPE_CHECKING:
     from game.ato.flighttype import FlightType
     from game.theater import TheaterUnit, Coalition, Player
+    from game.utils import Heading
 
 
 class MissionTarget:
@@ -55,3 +56,32 @@ class MissionTarget:
     @property
     def coalition(self) -> Coalition:
         raise NotImplementedError
+
+
+class ForwardBarcapZone(MissionTarget):
+    """An *added* forward-middle BARCAP screen location on the friendly side of an
+    active front (414th red forward-BARCAP layer).
+
+    Used as a package target so ``CapBuilder.cap_racetrack_for_objective`` lays the
+    racetrack here -- parallel to the FLOT, in the forward-middle of the sector --
+    instead of at a rear control point. The rear/base BARCAP (CP-targeted) is
+    unchanged; this is a separate, additional layer planned only for large maps.
+    Placement geometry lives in ``game/ato/flightplans/supportorbit.py``
+    (``forward_cap_front_anchor``); the trigger lives in ``TheaterState.from_game``.
+    """
+
+    def __init__(
+        self, name: str, position: Point, coalition: Coalition, heading: Heading
+    ) -> None:
+        super().__init__(name, position)
+        self._coalition = coalition
+        # Enemy-facing heading across the FLOT; CapBuilder lays the racetrack
+        # perpendicular to it so the orbit runs parallel to the front.
+        self.heading = heading
+
+    def is_friendly(self, to_player: Player) -> bool:
+        return self._coalition.player == to_player
+
+    @property
+    def coalition(self) -> Coalition:
+        return self._coalition

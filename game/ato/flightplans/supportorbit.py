@@ -106,3 +106,59 @@ def support_orbit_anchor(
         center = center.point_from_heading(away_from_enemy.degrees, extra.meters)
 
     return center, toward_enemy
+
+
+def forward_cap_front_anchor(
+    theater: ConflictTheater,
+    player: Player,
+    threat_zones: ThreatZones,
+    location: MissionTarget,
+    standoff: Distance,
+) -> Optional[tuple[Point, Heading]]:
+    """Center + enemy-facing heading for an *added* forward-middle BARCAP screen on
+    the player's side of the active front.
+
+    Only returns a result when ``location`` is the player's *own* control point on
+    an active front -- i.e. a CP that actually anchors the FLOT. For rear/flank CPs,
+    or when there is no active front, it returns ``None`` so the caller skips the
+    forward layer (the rear/base BARCAP is unchanged and handled elsewhere).
+
+    The center is placed **forward-middle**: roughly halfway from the rear CP to the
+    front center, then pushed back toward friendly airspace only if that leaves it
+    within ``standoff`` of the *enemy* threat zone (``threat_zones`` is the
+    opponent's). ``toward_enemy`` points across the FLOT so the caller can lay the
+    racetrack parallel to the front. Front-relative throughout -- no map-specific
+    distances -- so it scales across map sizes.
+    """
+    front = _relevant_front(theater, location)
+    if front is None:
+        return None
+    friendly_cp = front.blue_cp if player.is_blue else front.red_cp
+    # Only a CP that actually anchors this front gets the forward screen.
+    if location is not friendly_cp:
+        return None
+    enemy_cp = front.red_cp if player.is_blue else front.blue_cp
+    toward_enemy = Heading.from_degrees(
+        friendly_cp.position.heading_between_point(enemy_cp.position)
+    )
+    away_from_enemy = toward_enemy.opposite
+
+    # Forward-middle: roughly halfway from the rear CP to the front center, along the
+    # stable friendly->enemy axis.
+    rear = friendly_cp.position
+    to_flot = rear.distance_to_point(front.position)
+    center = rear.point_from_heading(toward_enemy.degrees, to_flot * 0.5)
+
+    # Keep clear of the enemy threat zone by `standoff`, pulling back toward friendly
+    # airspace only if the forward-middle point is too exposed.
+    distance_to_threat = threat_zones.distance_to_threat(center)
+    if threat_zones.threatened(center):
+        extra = distance_to_threat + standoff
+    elif distance_to_threat < standoff:
+        extra = standoff - distance_to_threat
+    else:
+        extra = meters(0)
+    if extra > meters(0):
+        center = center.point_from_heading(away_from_enemy.degrees, extra.meters)
+
+    return center, toward_enemy

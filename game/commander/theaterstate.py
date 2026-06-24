@@ -20,6 +20,7 @@ from game.settings import Settings
 from game.theater import (
     ConflictTheater,
     ControlPoint,
+    ForwardBarcapZone,
     FrontLine,
     MissionTarget,
     Player,
@@ -87,6 +88,10 @@ class PersistentContext:
 class TheaterState(WorldState["TheaterState"]):
     context: PersistentContext
     barcaps_needed: dict[ControlPoint, int]
+    # Added forward-middle BARCAP screens (414th red forward-BARCAP layer). Keyed by
+    # a synthetic ForwardBarcapZone target; separate from barcaps_needed so the rear
+    # BARCAP is untouched. Empty except for red active fronts on large maps.
+    forward_barcaps_needed: dict[ForwardBarcapZone, int]
     active_front_lines: list[FrontLine]
     front_line_stances: dict[FrontLine, Optional[CombatStance]]
     vulnerable_front_lines: list[FrontLine]
@@ -192,6 +197,7 @@ class TheaterState(WorldState["TheaterState"]):
         return TheaterState(
             context=self.context,
             barcaps_needed=dict(self.barcaps_needed),
+            forward_barcaps_needed=dict(self.forward_barcaps_needed),
             active_front_lines=list(self.active_front_lines),
             front_line_stances=dict(self.front_line_stances),
             vulnerable_front_lines=list(self.vulnerable_front_lines),
@@ -288,6 +294,36 @@ class TheaterState(WorldState["TheaterState"]):
         }
         max_barcap_threat = max(barcap_threat_scores.values(), default=0.0)
 
+        # 414th red forward-BARCAP layer: on large maps, add ONE forward-middle
+        # BARCAP screen per red CP that anchors an active front, in addition to the
+        # rear BARCAP above. "Large" = the rear CP sits farther from the FLOT than the
+        # rear BARCAP's own reach (cap_max_distance_from_cp), so small maps -- where the
+        # rear orbit already covers the front -- are unaffected. Red (AI) side only.
+        forward_barcaps_needed: dict[ForwardBarcapZone, int] = {}
+        if not player.is_blue:
+            from game.ato.flightplans.supportorbit import forward_cap_front_anchor
+
+            doctrine = coalition.doctrine
+            standoff = doctrine.cap_engagement_range + nautical_miles(5)
+            enemy_threats = coalition.opponent.threat_zone
+            for front in finder.front_lines():
+                friendly_cp = front.red_cp
+                if (
+                    friendly_cp.position.distance_to_point(front.position)
+                    <= doctrine.cap_max_distance_from_cp.meters
+                ):
+                    continue
+                anchor = forward_cap_front_anchor(
+                    game.theater, player, enemy_threats, friendly_cp, standoff
+                )
+                if anchor is None:
+                    continue
+                center, heading = anchor
+                zone = ForwardBarcapZone(
+                    f"Forward BARCAP {friendly_cp.name}", center, coalition, heading
+                )
+                forward_barcaps_needed[zone] = 1
+
         return TheaterState(
             context=context,
             barcaps_needed={
@@ -299,6 +335,7 @@ class TheaterState(WorldState["TheaterState"]):
                 )
                 for cp in vulnerable_cps
             },
+            forward_barcaps_needed=forward_barcaps_needed,
             active_front_lines=list(finder.front_lines()),
             front_line_stances={f: None for f in finder.front_lines()},
             vulnerable_front_lines=list(finder.front_lines()),

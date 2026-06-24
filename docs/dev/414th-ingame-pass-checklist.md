@@ -98,6 +98,21 @@ so the two docs don't drift.
   fly unescorted, because the escort-need check is reading the clamped orbit zone
   instead of the new `air_engagement` reach.
 
+### B5 — Red forward-middle BARCAP layer (large maps) · §6 · ☐ UNTESTED
+- **Setup:** A **large** map (e.g. GermanyCW Red Tide) with a red CP anchoring an
+  active front whose distance to the FLOT exceeds the rear BARCAP reach
+  (`cap_max_distance_from_cp`). Let the AI auto-plan red's turn.
+- **Pass:** Red plans its normal rear BARCAP **and** one extra forward BARCAP sitting
+  ~halfway between the rear CP and the FLOT — a visible fighter screen between blue
+  packages and the IADS — and that forward orbit stays clear of blue threat zones (no
+  endpoint inside a blue SAM ring). On a **small** map no extra layer appears.
+- **Fail signature:** No forward layer on a large red front (trigger/threshold off, or
+  `forward_cap_front_anchor` returned `None`); OR the forward orbit sits inside a blue
+  threat zone (standoff math wrong); OR the **rear** BARCAP moved/disappeared, or QRA
+  changed (should be untouched); OR a forward layer appears on a small map.
+  Check `TheaterState.from_game` (`forward_barcaps_needed`) and
+  `game/ato/flightplans/supportorbit.py` `forward_cap_front_anchor` if seen.
+
 ---
 
 ## C. Support flights

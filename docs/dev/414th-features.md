@@ -363,6 +363,24 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   factor 0 reproduces the legacy uniform spread and TARCAPs are untouched. Design notes:
   `docs/dev/design/414th-air-defense-planning-notes.md`. Tests:
   `tests/test_barcap_threat_weighting.py`.
+- **Red forward-middle BARCAP layer** (large maps): the rear BARCAP heads its orbit
+  from the CP toward the *nearest enemy airfield*, so on a big map a red front CP whose
+  nearest blue field is off-axis gets a screen flung far from the FLOT (observed 144–187 NM
+  off the Fulda/Haina front). This adds **one extra** BARCAP per red CP anchoring an active
+  front — placed **forward-middle** (≈ halfway rear-CP→FLOT, clear of blue threats by
+  `cap_engagement_range + 5 NM`), parallel to the FLOT — **in addition to** the unchanged
+  rear/base BARCAP. Map-scaled: only fires when the rear CP sits farther from the FLOT than
+  the rear BARCAP's own reach (`cap_max_distance_from_cp`), so small maps are unaffected;
+  front-relative geometry, no hardcoded distances. Red (AI) side only; QRA/intercept reserve
+  untouched. Wired as an **added** layer via a new package target type (so no save
+  migration): `ForwardBarcapZone` (`game/theater/missiontarget.py`) carries the
+  forward-middle center + enemy-facing heading computed in `TheaterState.from_game`
+  (transient `forward_barcaps_needed`); `forward_cap_front_anchor`
+  (`game/ato/flightplans/supportorbit.py`) is the geometry; `PlanForwardBarcap` +
+  `ProtectAirSpace` plan it; `CapBuilder.cap_racetrack_for_objective` lays the zone
+  racetrack and leaves every other target on the legacy path. Tests:
+  `tests/test_forward_barcap.py`. **Needs an in-game pass** (see checklist B5). The
+  theater-tanker-demand companion from the same plan is **not** in this change.
 - A2A escort-need uses fighter **engagement reach**, not BARCAP **orbit** reach
   (`game/threatzones.py` `air_engagement` zone + `aircraft_engagement_range`;
   `PackageFulfiller.check_needed_escorts` now calls

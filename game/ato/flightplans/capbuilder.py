@@ -35,6 +35,25 @@ class CapBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
     def cap_racetrack_for_objective(
         self, location: MissionTarget, barcap: bool
     ) -> tuple[Point, Point]:
+        # 414th red forward-BARCAP layer: a ForwardBarcapZone already encodes the
+        # forward-middle center + the enemy-facing heading (computed front-relative in
+        # TheaterState.from_game), so just lay the racetrack there parallel to the FLOT.
+        # All other BARCAP/TARCAP targets fall through to the legacy placement below.
+        from game.theater import ForwardBarcapZone
+
+        if isinstance(location, ForwardBarcapZone):
+            track_length = random.randint(
+                int(self.doctrine.cap_min_track_length.meters),
+                int(self.doctrine.cap_max_track_length.meters),
+            )
+            half = track_length / 2
+            parallel = location.heading.right
+            end = location.position.point_from_heading(parallel.degrees, half)
+            start = location.position.point_from_heading(
+                parallel.opposite.degrees, half
+            )
+            return start, end
+
         closest_cache = ObjectiveDistanceCache.get_closest_airfields(location)
         for airfield in closest_cache.operational_airfields:
             # If the mission is a BARCAP of an enemy airfield, find the *next*

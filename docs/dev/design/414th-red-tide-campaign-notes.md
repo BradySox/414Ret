@@ -175,6 +175,27 @@ considered and declined.
      kill quads sit on the real objects, and Skynet still wires the base SAMs to the new C2 (Templin's
      2.6 km cc/comms are the marginal case). Kastrup/Hamburg/Peenemünde still use placed statics
      (no scanner dump coverage — needs a re-scan; Phase 2).
+   - **Apron-blocking cleanup — SAMs + remaining statics off parking slots (2026-06-24).** The
+     placement-fix (item below) snapped objects onto parking slots, which blocked aircraft spawns
+     (user screenshot). Audited every red base: 13 objects sat at 0 m from a parking slot — 6 SAM
+     markers (Templin/Haina/Wittstock/Hamburg MERAD, Sperenberg MERAD+LORAD), the Sperenberg ammo
+     depot, and the Hamburg + Kastrup C2 trios. **All are pure coordinate moves** (group + unit +
+     route-point x/y rewritten in-place, anchored on the unique `groupId`; no new groups). Two
+     strategies, since pydcs has **no terrain-clear query** (the forest/water trap):
+     - **SAMs + Sperenberg ammo → open ground, dump-validated.** Sampled rings 320–650 m off each
+       field; kept points >140 m from any parking slot, >80 m from any CWG-dump building, and with
+       ≥4 dump objects within 700 m (a dry-land/anti-water guard). Result: 150–250 m of slot
+       clearance, no building within 130 m. **Hamburg's SAM** has no dump coverage (urban) so it got
+       a plain 320 m perimeter offset — **highest residual risk, verify in-game.**
+     - **Hamburg + Kastrup C2 statics → far dispersal hardstands.** No dump coverage → can't use real
+       buildings yet, so moved to the 3 most-isolated, spaced parking slots (Hamburg ~0.9–1.0 km,
+       Kastrup ~1.8–1.9 km from the main apron) — guaranteed-clear pavement, off the active ramp.
+       Interim; swap to real buildings after a Phase-2 re-scan. **Hamburg is busy (41 slots / 5
+       squadrons)** so slot contention is still possible there — verify.
+     **Verified (pydcs):** miz loads, brace-balanced; all 13 at their target coords; SAMs+ammo
+     150–833 m clear of every slot; C2 scenery zones (6) + all statics intact; nearest CP unchanged.
+     **In-game pass:** Haina/Templin/Sperenberg/Wittstock aprons clear + SAMs on open ground (not
+     forest/water); Hamburg SAM + Hamburg/Kastrup hardstand statics don't collide with spawns.
 7. **Medium-range SAM belt added** (2026-06-23). Red's air defense was long-range (S-300) +
    AAA + scattered short-range, with the main red bases carrying *no* medium SAM. Air-defense
    range is slot-driven: each control point's `medium_range_sams` preset locations come from

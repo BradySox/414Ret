@@ -1687,12 +1687,29 @@ class Settings:
     # only legacy saves that lack the marker get the one-time flip.
     applied_recon_plugins_default: bool = True
 
-    # IADS engine selector (Skynet -> MANTIS migration scaffolding). Internal /
-    # not yet a UI choice: only SKYNET is implemented, so exposing MANTIS would be
-    # a no-op trap. Persisted now so the eventual cutover is a setting flip, not a
-    # save-schema change; old saves auto-backfill to SKYNET via __setstate__.
-    # See docs/dev/design/414th-mantis-migration-notes.md §7.
-    iads_engine: IadsEngine = IadsEngine.SKYNET
+    # IADS engine selector. SKYNET is the stable default; MANTIS is the
+    # experimental MOOSE engine (built but not yet flight-validated). Exposed as a
+    # UI choice now that MANTIS does something, so it can be selected for the
+    # in-game pass; default stays SKYNET and old saves auto-backfill to it via
+    # __setstate__. See docs/dev/design/414th-mantis-migration-notes.md.
+    iads_engine: IadsEngine = choices_option(
+        "IADS engine (MANTIS is experimental)",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        choices={
+            "Skynet (stable)": IadsEngine.SKYNET,
+            "MANTIS — experimental, MOOSE-based (not yet flight-validated)": (
+                IadsEngine.MANTIS
+            ),
+        },
+        default=IadsEngine.SKYNET,
+        detail=(
+            "Which engine drives the integrated air-defense network. Skynet is the "
+            "stable default. MANTIS is the new MOOSE-based engine — it is built but "
+            "has not yet passed an in-game pass, so select it only to test. Switching "
+            "affects newly generated missions."
+        ),
+    )
 
     @staticmethod
     def plugin_settings_key(identifier: str) -> str:

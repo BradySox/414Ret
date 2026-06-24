@@ -317,9 +317,9 @@ so the two docs don't drift.
   `startIAdefjamming`.
 
 ### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ☐ UNTESTED
-- **Setup:** Set `Settings.iads_engine = MANTIS` (not yet UI-exposed — set in the
-  campaign/settings object or a debug build), generate a mission with red SAMs +
-  EWRs, and fly into the IADS. Confirm via `dcs.log` that `mantis-config.lua` built
+- **Setup:** In settings, set **IADS engine → MANTIS (experimental)** (Mission
+  Generator → Gameplay), generate a mission with red SAMs + EWRs, and fly into the
+  IADS. Confirm via `dcs.log` that `mantis-config.lua` built
   the network ("building Retribution-RED-IADS (N SAM, M EWR group names)") and that
   `skynetiads-config.lua` logged "engine is 'mantis' ... skipping".
 - **Pass:** SAM radars stay dark (emissions control) until a target is in range,

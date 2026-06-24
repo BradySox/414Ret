@@ -1,8 +1,15 @@
 # Decision: `dismounts` — the MIST-drop Blocker (consolidation phase 5)
 
-**Status:** decision needed (no code change yet) — **this is the gating call for retiring MIST entirely**
+**Status:** ✅ RESOLVED — **Option B (retire)** chosen and executed 2026-06-24 (squadron confirmed
+unused). `resources/plugins/dismounts/` removed; settings drop orphaned `dismounts` keys on load;
+changelog updated.
 **Date:** 2026-06-24
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md) phase 5.
+
+> **Note discovered during execution:** `dismounts` was **not listed in
+> `resources/plugins/plugins.json`** (the authoritative load list in `game/plugins/manager.py`), so it
+> was already **dormant/unloaded** — not actually enable-able in current builds. Retirement was
+> therefore pure dead-code removal with zero runtime impact, which made Option B the obvious call.
 
 ## The question
 

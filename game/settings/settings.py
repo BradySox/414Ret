@@ -1738,7 +1738,10 @@ class Settings:
         # across a load/save cycle. The obsolete Anubis "herculescargo" plugin and
         # its option keys were removed in favor of the official C-130J-30. The old
         # generic EW/Jammer Script ("ewrj") was retired in favor of the C-130J
-        # JAMMING flight + c130j mission-systems plugin.
+        # JAMMING flight + c130j mission-systems plugin. The "dismounts" plugin was
+        # retired during the MIST -> MOOSE framework consolidation (a default-off,
+        # FPS-heavy MIST-only plugin with no MOOSE successor; see
+        # docs/dev/design/414th-dismounts-decision.md).
         for plugin_key in [
             key
             for key in self.plugins
@@ -1746,6 +1749,8 @@ class Settings:
             or key.startswith("herculescargo.")
             or key == "ewrj"
             or key.startswith("ewrj.")
+            or key == "dismounts"
+            or key.startswith("dismounts.")
         ]:
             del self.plugins[plugin_key]
 

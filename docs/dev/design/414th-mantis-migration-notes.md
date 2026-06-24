@@ -3,6 +3,9 @@
 **Status:** in progress — de-risking spikes done + Python abstraction seams landed (2026-06-24);
 Lua bridge / C2 layer not started
 **Date:** 2026-06-24
+**Broader context:** this migration is **phase 1** of retiring MIST and standardizing the mission
+scripting on MOOSE — Skynet is the biggest MIST consumer with a first-class MOOSE replacement. See
+[`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md).
 **Prereq reading:** [`414th-mantis-vs-skynet-iads-parity.md`](414th-mantis-vs-skynet-iads-parity.md)
 (the feature-parity matrix and verdict this plan builds on).
 

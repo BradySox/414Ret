@@ -281,6 +281,23 @@ so the two docs don't drift.
 
 ---
 
+## H. Kneeboards
+
+### H1 — Folded-list overflow pagination · §4 · ☐ UNTESTED
+- **Setup:** Generate a mission on a **busy theater** (many friendly packages
+  and/or many BLUE airfields with ATIS) for a client flight with a long flight
+  plan. Open the generated kneeboard in DCS.
+- **Pass:** The Mission Info "Friendly Packages" list and the Support Info
+  "Airfield Directory" never run off the bottom edge; rows that don't fit appear
+  on a following "Friendly Packages" / "Airfield Directory" continuation page
+  (later pages marked "(cont.)"). Small theaters show no extra pages.
+- **Fail signature:** Table text clipped at the page bottom with rows missing, an
+  empty continuation page, or a continuation page whose rows still overflow.
+  Check `table_paginated()` / `remaining_table_rows()` row-height math in
+  `kneeboard.py` if seen.
+
+---
+
 ## How this feeds the other threads
 
 - A row that reaches **✗ REGRESSED** is a concrete bug to fix.

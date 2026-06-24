@@ -266,6 +266,26 @@ drops decimals. Per-waypoint editing is untouched, so a low-level ingress leg ca
 hand-tuned after a bulk set. UI-only; no save-format or planner change. Upstreamed as
 [dcs-retribution#805](https://github.com/dcs-retribution/dcs-retribution/pull/805).
 
+**Kneeboard consolidation + overflow pagination** (`game/missiongenerator/kneeboard.py`,
+`kneeboard_page.py`): kneeboards are built once per `.miz` by `KneeboardGenerator.generate()`,
+which buckets pages per **airframe** (DCS can't do per-group kneeboards) and writes each
+`KneeboardPage` to a PNG. PR #73 folded the standalone Airfield Directory into the bottom of
+the Support Info page and the Friendly Packages list into the bottom of the Mission Info page
+to cut page count — but **neither host page paginated**, so on busy theaters those folded
+tables ran off the bottom edge and the rows were simply lost. The fix: a `paginate()` hook on
+`KneeboardPage` (default `[self]`, flattened in `generate()`) plus a `KneeboardPageWriter`
+that can measure remaining vertical space (`remaining_table_rows()`) and render only the rows
+that fit (`table_paginated()`, returning the overflow). `BriefingPage`/`SupportPage` render
+the rows that fit inline and spill the remainder onto an auto-paginating generic
+`TableKneeboardPage` continuation page (titled "… Friendly Packages" / "… Airfield Directory",
+later pages marked "(cont.)"). The folded inline list is unchanged when everything fits, so
+small theaters see no extra pages. The Friendly Packages list + package-targets map are gated
+by `generate_all_packages_kneeboard`, now **default OFF** (it adds pages and can paginate on
+busy theaters); the Airfield Directory still folds in whenever ATIS is present. Covered by
+`tests/test_airfield_directory_page.py::test_support_page_spills_long_airfield_directory_to_continuation`.
+The satellite-imagery recon pages remain gated OFF by `generate_target_recon_kneeboard`
+(marker overlays don't reliably line up with the tiles — a known, separate geometry bug).
+
 ---
 
 ## 5. Player target location precision

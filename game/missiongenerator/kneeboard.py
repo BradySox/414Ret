@@ -163,6 +163,56 @@ class KneeboardPageWriter:
         table = tabulate(cells, headers=headers, numalign="right")
         self.text(table, font, fill=self.foreground_fill)
 
+    def _line_height(self, font: ImageFont.FreeTypeFont) -> int:
+        """Vertical advance of one rendered text line for the given font.
+
+        Measured from the delta between a one-line and two-line bbox so it
+        matches PIL's actual multiline layout (including its inter-line
+        padding) rather than relying on font metrics.
+        """
+        one = self.draw.textbbox((0, 0), "Ag", font=font)
+        two = self.draw.textbbox((0, 0), "Ag\nAg", font=font)
+        return (two[3] - two[1]) - (one[3] - one[1])
+
+    def remaining_table_rows(
+        self, font: ImageFont.FreeTypeFont, has_headers: bool
+    ) -> int:
+        """Number of data rows that still fit below the cursor for a table.
+
+        Accounts for tabulate's two lines of header chrome (header + separator)
+        and leaves one row of slack so a table never kisses the bottom edge.
+        """
+        line_height = self._line_height(font)
+        if line_height <= 0:
+            return 0
+        available = (self.image_size[1] - self.page_margin) - self.y
+        capacity = available // line_height
+        if has_headers:
+            capacity -= 2
+        return max(0, capacity - 1)
+
+    def table_paginated(
+        self,
+        cells: List[List[str]],
+        headers: Optional[List[str]] = None,
+        font: Optional[ImageFont.FreeTypeFont] = None,
+    ) -> List[List[str]]:
+        """Render as many rows as fit below the cursor; return the overflow.
+
+        The returned rows did not fit on this page and should be carried onto a
+        continuation page (see ``TableKneeboardPage``). Deterministic for a
+        given starting cursor, so callers can replay it to discover the split
+        without saving an image.
+        """
+        if font is None:
+            font = self.table_font
+        max_rows = self.remaining_table_rows(font, bool(headers))
+        if max_rows <= 0:
+            return list(cells)
+        shown, overflow = cells[:max_rows], cells[max_rows:]
+        self.table(shown, headers=headers, font=font)
+        return overflow
+
     def write(self, path: Path) -> None:
         self.image.save(path)
         path.with_suffix(".txt").write_text(self.get_text_string(), "utf8")
@@ -338,6 +388,76 @@ class FlightPlanBuilder:
         return self.rows
 
 
+class TableKneeboardPage(KneeboardPage):
+    """A standalone title + table page that auto-paginates across images.
+
+    Used to hold the overflow of a folded list (friendly packages, airfield
+    directory) that did not fit on its host page. ``paginate`` pre-splits the
+    rows into per-page slices that fit, so each rendered image stays within the
+    bottom margin.
+    """
+
+    def __init__(
+        self,
+        title: str,
+        heading: str,
+        headers: List[str],
+        rows: List[List[str]],
+        font_size: int,
+        dark_kneeboard: bool,
+        continued: bool = False,
+    ) -> None:
+        self.title = title
+        self.heading = heading
+        self.headers = headers
+        self.rows = rows
+        self.font_size = font_size
+        self.dark_kneeboard = dark_kneeboard
+        self.continued = continued
+
+    def _font(self) -> ImageFont.FreeTypeFont:
+        return ImageFont.truetype(
+            "courbd.ttf", self.font_size, layout_engine=ImageFont.Layout.BASIC
+        )
+
+    def _draw_header(self, writer: "KneeboardPageWriter", continued: bool) -> None:
+        writer.title(self.title)
+        writer.heading(f"{self.heading} (cont.)" if continued else self.heading)
+
+    def paginate(self) -> List[KneeboardPage]:
+        """Split the rows into the smallest set of pages that all fit."""
+        pages: List[KneeboardPage] = []
+        remaining = self.rows
+        continued = self.continued
+        while remaining:
+            probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+            self._draw_header(probe, continued)
+            # Always place at least one row so a pathological case can't loop.
+            capacity = max(
+                1, probe.remaining_table_rows(self._font(), bool(self.headers))
+            )
+            slice_rows, remaining = remaining[:capacity], remaining[capacity:]
+            pages.append(
+                TableKneeboardPage(
+                    self.title,
+                    self.heading,
+                    self.headers,
+                    slice_rows,
+                    self.font_size,
+                    self.dark_kneeboard,
+                    continued=continued,
+                )
+            )
+            continued = True
+        return pages
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        self._draw_header(writer, self.continued)
+        writer.table(self.rows, headers=self.headers, font=self._font())
+        writer.write(path)
+
+
 class BriefingPage(KneeboardPage):
     """A kneeboard page containing briefing information."""
 
@@ -366,8 +486,44 @@ class BriefingPage(KneeboardPage):
             layout_engine=ImageFont.Layout.BASIC,
         )
 
+    #: Folded "Friendly Packages" table presentation, shared by the inline
+    #: render and any continuation page that catches its overflow.
+    PACKAGES_HEADING = "Friendly Packages"
+    PACKAGES_HEADERS = ["Task", "Target", "TOT / Window"]
+    PACKAGES_FONT_SIZE = 18
+
+    def _packages_title(self) -> str:
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        return f"{self.flight.callsign} Friendly Packages{custom}"
+
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        self._render(writer)
+        writer.write(path)
+
+    def paginate(self) -> List[KneeboardPage]:
+        # Replay the layout to discover how many folded package rows spilled
+        # past the bottom edge, then carry the remainder onto continuation
+        # page(s). The probe image is discarded; write() re-renders.
+        probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        overflow = self._render(probe)
+        pages: List[KneeboardPage] = [self]
+        if overflow:
+            pages.extend(
+                TableKneeboardPage(
+                    self._packages_title(),
+                    self.PACKAGES_HEADING,
+                    self.PACKAGES_HEADERS,
+                    overflow,
+                    self.PACKAGES_FONT_SIZE,
+                    self.dark_kneeboard,
+                    continued=True,
+                ).paginate()
+            )
+        return pages
+
+    def _render(self, writer: KneeboardPageWriter) -> List[List[str]]:
+        """Draw the Mission Info page; return folded package rows that overflowed."""
         if self.flight.custom_name:
             custom_name_title = ' ("{}")'.format(self.flight.custom_name)
         else:
@@ -514,20 +670,23 @@ class BriefingPage(KneeboardPage):
             writer.table(codes, ["#", "Laser Code"])
 
         # Friendly packages coordination list, at the bottom of the page. Use a
-        # smaller font so more packages fit below the flight plan. On busy turns
-        # with a long flight plan this list can run past the bottom page edge.
+        # smaller font so more packages fit below the flight plan. Rows that
+        # don't fit below the flight plan spill onto a continuation page rather
+        # than running off the bottom edge (see paginate()).
+        overflow: List[List[str]] = []
         if self.package_rows:
-            writer.heading("Friendly Packages")
+            writer.heading(self.PACKAGES_HEADING)
             packages_font = ImageFont.truetype(
-                "courbd.ttf", 18, layout_engine=ImageFont.Layout.BASIC
+                "courbd.ttf",
+                self.PACKAGES_FONT_SIZE,
+                layout_engine=ImageFont.Layout.BASIC,
             )
-            writer.table(
+            overflow = writer.table_paginated(
                 self.package_rows,
-                headers=["Task", "Target", "TOT / Window"],
+                headers=self.PACKAGES_HEADERS,
                 font=packages_font,
             )
-
-        writer.write(path)
+        return overflow
 
     def _format_departure_qfe(self) -> Optional[str]:
         """Return "QFE: ..." line for the departure field, or None.
@@ -669,8 +828,43 @@ class SupportPage(KneeboardPage):
         flight_name = self.flight.custom_name if self.flight.custom_name else "Flight"
         self.comms.append(CommInfo(flight_name, self.flight.intra_flight_channel))
 
+    #: Folded "Airfield Directory" table presentation, shared by the inline
+    #: render and any continuation page that catches its overflow.
+    AIRFIELD_HEADING = "Airfield Directory"
+    AIRFIELD_HEADERS = ["Field", "ATC", "ATIS", "TCN", "I(C)LS", "RWY"]
+    AIRFIELD_FONT_SIZE = 20
+
+    def _airfield_title(self) -> str:
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        return f"{self.flight.callsign} Airfield Directory{custom}"
+
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        self._render(writer)
+        writer.write(path)
+
+    def paginate(self) -> List[KneeboardPage]:
+        # Carry any airfield-directory rows that spilled past the bottom onto
+        # continuation page(s). The probe image is discarded; write() re-renders.
+        probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        overflow = self._render(probe)
+        pages: List[KneeboardPage] = [self]
+        if overflow:
+            pages.extend(
+                TableKneeboardPage(
+                    self._airfield_title(),
+                    self.AIRFIELD_HEADING,
+                    self.AIRFIELD_HEADERS,
+                    overflow,
+                    self.AIRFIELD_FONT_SIZE,
+                    self.dark_kneeboard,
+                    continued=True,
+                ).paginate()
+            )
+        return pages
+
+    def _render(self, writer: KneeboardPageWriter) -> List[List[str]]:
+        """Draw the Support Info page; return airfield rows that overflowed."""
         if self.flight.custom_name:
             custom_name_title = ' ("{}")'.format(self.flight.custom_name)
         else:
@@ -782,14 +976,16 @@ class SupportPage(KneeboardPage):
         writer.table(jtacs, headers=["Callsign", "Region", "Laser", "FREQ"])
 
         # Airfield Directory (friendly fields: ATC / ATIS / TACAN / I(C)LS / RWY).
+        # Rows that don't fit below the support tables spill onto a continuation
+        # page rather than running off the bottom edge (see paginate()).
+        overflow: List[List[str]] = []
         if self.airfield_rows:
-            writer.heading("Airfield Directory")
-            writer.table(
+            writer.heading(self.AIRFIELD_HEADING)
+            overflow = writer.table_paginated(
                 self.airfield_rows,
-                headers=["Field", "ATC", "ATIS", "TCN", "I(C)LS", "RWY"],
+                headers=self.AIRFIELD_HEADERS,
             )
-
-        writer.write(path)
+        return overflow
 
     def format_frequency(self, frequency: Optional[RadioFrequency]) -> str:
         if frequency is None:
@@ -1275,7 +1471,12 @@ class KneeboardGenerator(MissionInfoGenerator):
         for aircraft, pages in self.pages_by_airframe().items():
             aircraft_dir = temp_dir / aircraft.dcs_unit_type.id
             aircraft_dir.mkdir(exist_ok=True)
-            for idx, page in enumerate(pages):
+            # Pages may expand into continuation pages when a folded list
+            # overflows a single image, so flatten before numbering the files.
+            concrete_pages = [
+                concrete for page in pages for concrete in page.paginate()
+            ]
+            for idx, page in enumerate(concrete_pages):
                 page_path = aircraft_dir / f"page{idx:02}.png"
                 page.write(page_path)
                 self.mission.add_aircraft_kneeboard(aircraft.dcs_unit_type, page_path)

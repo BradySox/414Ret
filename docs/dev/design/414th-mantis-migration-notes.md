@@ -1,7 +1,8 @@
 # MANTIS Migration — Design Notes
 
-**Status:** in progress — de-risking spikes done + Python abstraction seams landed (2026-06-24);
-Lua bridge / C2 layer not started
+**Status:** in progress — spikes + Python seams + **phase-3 core-networking Lua bridge landed
+(gated, inert)** (2026-06-24); awaiting in-game pass (checklist G6); shoot-and-scoot + C2 layer not
+started
 **Date:** 2026-06-24
 **Broader context:** this migration is **phase 1** of retiring MIST and standardizing the mission
 scripting on MOOSE — Skynet is the biggest MIST consumer with a first-class MOOSE replacement. See
@@ -273,8 +274,16 @@ Most Skynet options map directly. Changes:
    `IadsRole.skynet_value` seam, `IadsNode`/`iads_nodes()` exporter (alias `SkynetNode`/
    `skynet_nodes()`), `luagenerator` switched to the neutral names. Skynet output byte-identical;
    covered by `tests/theater/test_iads_engine_abstraction.py`. Skynet remains the only engine.
-3. **Lua bridge — core networking:** `mantisiads/` plugin + `mantis-config.lua` network
-   construction. In-game pass #1: do SAMs detect/engage/go-dark correctly across coalitions?
+3. **Lua bridge — core networking — ✅ CODE LANDED (2026-06-24), ☐ in-game pass pending:**
+   `mantisiads/` plugin (`plugin.json` + `mantis-config.lua`), registered in `plugins.json`.
+   `luagenerator` emits an `engine` marker into `dcsRetribution.IADS`; `mantis-config.lua` builds a
+   MANTIS network per coalition from the existing IADS data (SAM/EWR group-name tables fed to
+   `MANTIS:New` as prefixes — no group renaming, per the §4 spike correction), with emissions
+   control; `skynetiads-config.lua` now stands down when the engine is MANTIS. **Gated behind
+   `iads_engine` (default SKYNET, not UI-exposed), so it lands inert** — Skynet output is unchanged.
+   *Not yet implemented in this phase:* shoot-and-scoot, point-defense pairing, SamAsEwr nuance,
+   per-unit tuning (phase 4) and the C2 layer (phase 5). In-game pass #1 tracked as checklist **G6**:
+   do SAMs detect/engage/go-dark correctly across coalitions?
 4. **Shoot-and-scoot + per-type tuning.** In-game pass #2.
 5. **C2 layer (§5) — comms/power/command-center degradation:** the capability that brings the engine
    to **full parity**. In-game pass #3 on an advanced-IADS campaign: kill a comms tower, confirm the

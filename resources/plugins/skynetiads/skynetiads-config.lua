@@ -11,6 +11,22 @@ env.info("DCSRetribution|Skynet-IADS plugin - configuration")
 
 if dcsRetribution and SkynetIADS then
 
+    -- IADS engine selector: when the campaign runs the MANTIS engine instead of
+    -- Skynet, this Skynet bridge must stand down (the MANTIS bridge builds the
+    -- network). Defaults to skynet when the marker is absent (older saves).
+    local iadsEngine = "skynet"
+    if dcsRetribution.IADS and dcsRetribution.IADS.engine then
+        iadsEngine = dcsRetribution.IADS.engine
+    end
+    if iadsEngine ~= "skynet" then
+        env.info(
+            "DCSRetribution|Skynet-IADS plugin - IADS engine is '"
+                .. tostring(iadsEngine)
+                .. "', not 'skynet'; skipping"
+        )
+        return
+    end
+
     -- specific options
     local createRedIADS = false
     local createBlueIADS = false

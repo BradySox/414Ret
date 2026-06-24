@@ -1,0 +1,39 @@
+{
+    "nameInUI": "MANTIS IADS (experimental)",
+    "descriptionInUI": "Experimental MOOSE MANTIS IADS engine (alternative to Skynet). Only takes effect when the campaign's IADS engine is set to MANTIS; otherwise it is inert and Skynet runs instead. Phase 1 (core networking + emissions control) only — shoot-and-scoot and command-center/comms-power degradation are not yet implemented. Needs an in-game pass before it becomes the default.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Create IADS for RED coalition",
+            "mnemonic": "createRedIADS",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "Create IADS for BLUE coalition",
+            "mnemonic": "createBlueIADS",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "Emissions control (SAM radars stay dark until a target is in range)",
+            "mnemonic": "useEmOnOff",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "Generate debug information for RED IADS",
+            "mnemonic": "debugRED",
+            "defaultValue": false
+        },
+        {
+            "nameInUI": "Generate debug information for BLUE IADS",
+            "mnemonic": "debugBLUE",
+            "defaultValue": false
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "mantis-config.lua",
+            "mnemonic": "mantisiads-config"
+        }
+    ]
+}

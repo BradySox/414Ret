@@ -38,7 +38,7 @@ so the two docs don't drift.
   2026-06-20). Check `SCRAMBLE_SPEED_KT` / `SCRAMBLE_AGL_M` in
   `intercept-config.lua` if seen.
 
-### A2 — QRA base-defense doctrine · §1 · ☐ UNTESTED
+### A2 — QRA base-defense doctrine · §1 · ☑ VERIFIED (2026-06-24)
 - **Setup:** Default doctrine (`qra_gci_max_radius_nm` 60, `qra_engagement_range_nm` 38).
 - **Pass:** QRA scrambles only when a raid closes within ~60 NM and interceptors
   don't chase far past the FLOT — they screen their own base, not the front line.
@@ -56,7 +56,7 @@ so the two docs don't drift.
 - **Fail signature:** Deep groups stacked in contact at depth 0 because the
   perpendicular walk hit water/off-map (the bug the lateral fallback fixes).
 
-### B2 — DEAD reachability gate on follow-on strikes · § DEAD · ☐ UNTESTED
+### B2 — DEAD reachability gate on follow-on strikes · § DEAD · ☑ VERIFIED (2026-06-24)
 - **Setup:** A target behind an intact SAM belt that blue wants to strike.
 - **Pass:** Blue still tasks the DEAD (with SEAD escort) but **defers the deep
   strike** until the belt is actually down.
@@ -85,12 +85,12 @@ so the two docs don't drift.
 
 ## C. Support flights
 
-### C1 — AWACS/tanker orbit front-anchor · #84 · ☐ UNTESTED
+### C1 — AWACS/tanker orbit front-anchor · #84 · ☑ VERIFIED (2026-06-24)
 - **Setup:** Any campaign with AWACS + tanker support.
 - **Pass:** Support racetracks anchor on the FLOT, behind the front.
 - **Fail signature:** Red AWACS flung far off-axis (the ~175 NM case #84 fixed).
 
-### C2 — Support orbit depth behind FLOT · #86 · ☐ UNTESTED
+### C2 — Support orbit depth behind FLOT · #86 · ☑ VERIFIED (2026-06-24)
 - **Setup:** As C1; watch where the orbit actually sits relative to threats.
 - **Pass:** Orbits hold **deep** behind the FLOT, clear of forward SAM/CAP reach.
 - **Fail signature:** Support orbit placed within enemy engagement depth.
@@ -169,7 +169,7 @@ so the two docs don't drift.
 
 ## D. Loss accounting (upstream-core)
 
-### D1 — Player-despawn loss suppression · §8 · ◐ PARTIAL
+### D1 — Player-despawn loss suppression · §8 · ☑ VERIFIED (2026-06-24)
 - **Setup:** Player despawns/jumps seat mid-mission (not an ejection, not a
   shootdown), then the mission ends.
 - **Pass:** Airframe + pilot are NOT logged lost; a real shootdown and a real
@@ -181,7 +181,7 @@ so the two docs don't drift.
 
 ---
 
-## E. SOF insert generation · #85 · ☐ UNTESTED
+## E. SOF insert generation · #85 · ☑ VERIFIED (2026-06-24)
 - **Setup:** A SCAR commander-capture campaign that plans a SOF C-130 insert.
 - **Pass:** The SOF C-130 **ground-starts** (incl. the runway fallback when no
   parking is free) and the **EW (`c130j`) plugin is skipped** on that airframe.
@@ -204,11 +204,11 @@ so the two docs don't drift.
   `setTask` did not move them); or `captured` never fires / fires after the
   vehicle is dead.
 
-### F2 — Command-post intel fog · §15 · ◐ PARTIAL (2026-06-23)
-- **Partial (2026-06-23):** the UI half is confirmed — command posts are hidden
-  on the player map and the **"Reveal fog of war" overview toggle** shows both
-  sides (ground truth), so the fog/hide + reveal plumbing works. Not yet flown:
-  the full **capture → permanent reveal** carryover across turns.
+### F2 — Command-post intel fog · §15 · ☑ VERIFIED (2026-06-24)
+- **Verified (2026-06-24):** the full path is confirmed — command posts hidden on
+  the player map, the **"Reveal fog of war" overview toggle** shows both sides
+  (ground truth), AND the **capture → permanent reveal** carryover now holds
+  across turns (the residual the 2026-06-23 partial was waiting on).
 - **Setup:** New campaign (default `scar_command_post_intel` ON).
 - **Pass:** Enemy command posts are **entirely hidden** from the player map
   (no marker, not in target list) until a commander is captured or normally
@@ -240,7 +240,7 @@ so the two docs don't drift.
   legit HVT/command/threat kill is wrongly charged; or budget unchanged with a
   positive penalty.
 
-### F6 — SCAR auto-planning appears in the ATO · §15 · ☐ UNTESTED
+### F6 — SCAR auto-planning appears in the ATO · §15 · ☑ VERIFIED (2026-06-24)
 - **Setup:** New campaign with an enemy armor concentration near the front and
   `scar_autoplan` ON.
 - **Pass:** Turn 1's blue ATO already contains a SCAR package (claimable +
@@ -254,7 +254,7 @@ so the two docs don't drift.
 
 ## G. Plugin runtime (Lua, not CI-runnable)
 
-### G1 — Flight Control: AI flow unaffected + no spot spam · §13 · ☐ UNTESTED
+### G1 — Flight Control: AI flow unaffected + no spot spam · §13 · ☑ VERIFIED (2026-06-24)
 - **Setup:** Default ON; a base where Retribution parks STATIC objects on ramp
   spots (e.g. Kutaisi/Kutaisi-like).
 - **Pass:** AI QRA/CAP **launch normally** from FLIGHTCONTROL bases (players-only
@@ -263,14 +263,14 @@ so the two docs don't drift.
 - **Fail signature:** AI scrambles queued/strangled, or the parking-mismatch
   warning every cycle (138× in one playtest before the orphan-reconcile fix).
 
-### G2 — TARS BDA bridge · §12 · ☐ UNTESTED
+### G2 — TARS BDA bridge · §12 · ☑ VERIFIED (2026-06-24)
 - **Setup:** Fly an F-14 TARPS recon pass over enemy targets.
 - **Pass:** Captured-target snapshots feed back into Retribution's BDA
   fog-of-war (confirmed composition/damage after the pass).
 - **Fail signature:** Film menu never unlocks, or captures don't reach the
   debrief / don't update BDA.
 
-### G3 — TIC ambient fire / dynamic fronts · §9 · ☐ UNTESTED
+### G3 — TIC ambient fire / dynamic fronts · §9 · ☑ VERIFIED (2026-06-24)
 - **Setup:** Fly over an active front, including where terrain (towns/ridges)
   blocks line-of-sight between combatants.
 - **Pass:** The front looks **alive from the air** — tracers/impacts around real
@@ -280,7 +280,7 @@ so the two docs don't drift.
   Note: with StormTrooper AI on (default), TIC cloaks managed groups — known
   limitation, not a bug.
 
-### G4 — C-130J EW/ISR mission systems · §2 · ☐ UNTESTED
+### G4 — C-130J EW/ISR mission systems · §2 · ☑ VERIFIED (2026-06-24)
 - **Setup:** Fly the C-130J-30 JAMMING slot (static slot, player-only).
 - **Pass:** EW (area/directional/spot jamming, missile spoof, pod loadout) and
   ISR (passive detection, ELINT map marks, SIGINT reports, crew handoff) work
@@ -304,6 +304,48 @@ so the two docs don't drift.
   empty continuation page, or a continuation page whose rows still overflow.
   Check `table_paginated()` / `remaining_table_rows()` row-height math in
   `kneeboard.py` if seen.
+
+---
+
+## Drain order — batch the queue into ~5 flight sessions
+
+**Policy: new feature work is frozen until this queue drains.** The rows are not
+24 separate chores — one campaign setup exercises a whole cluster, and the first
+session needs *no flying at all* (just auto-plan a turn and read the map). Work
+top-down; each session is ordered so the highest-blast-radius, lowest-effort
+checks come first.
+
+### Session 1 — Standard land-front, auto-plan turn 1, **observe only** (no sortie)
+Highest leverage: planner/placement bugs affect *every* campaign, and you verify
+them by inspecting the ATO + map, not by flying.
+- A2 (QRA base-defense doctrine), B2 (DEAD reachability gate), B3 (threat-weighted
+  BARCAP orbit), B4 (TARCAP/escort reach), C1 + C2 (AWACS/tanker front-anchor +
+  depth), F6 (SCAR auto-plan appears in ATO).
+- Setup needs: active land front, enemy airbase ≈90 NM from FLOT, an armor
+  concentration near the front, AWACS+tanker support, `scar_autoplan` ON.
+
+### Session 2 — Fly a strike package off that campaign
+- A1 (QRA scramble profile — trigger a raid, include a high-elev alert base),
+  C3 (tanker speed), C5 (boom/probe match), C6 (fuel-driven pre/post-vul tanking),
+  C4 (A-6E attack/tanker split — buy both), H1 (kneeboard overflow on a busy
+  theater), D1 (player-despawn loss — land/despawn then end).
+
+### Session 3 — SCAR commander-capture campaign
+- F2 (capture → permanent reveal carryover across turns), F5 (mis-ID penalty —
+  kill a decoy), E (SOF C-130 insert ground-starts + EW skipped), G2 (TARS BDA
+  bridge via an F-14 TARPS pass).
+
+### Session 4 — Plugin-runtime sweep, fly over an active front
+- G3 (TIC ambient fire / LOS-blocked positions), G1 (Flight Control: AI launches
+  normally, no parking-spot spam), G4 (C-130J EW/ISR — fly the JAMMING slot).
+
+### Session 5 — Coastal front + drop-spawn cheats
+- B1 (forward-CAP / FLOT depth on a coastline/river front), 20-A…20-G (drop-spawn
+  dialog, immediate spawn, removal, deploy-next-turn, terrain + range gates, free
+  cheat).
+
+Mark each row's **Status** as you go. A cluster of **☑ VERIFIED** Lua-free Python
+rows (B, C, D, E) then becomes the upstream-PR carve-out batch.
 
 ---
 

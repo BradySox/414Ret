@@ -53,24 +53,28 @@ With G6 passed, **MANTIS is now the default IADS engine for new campaigns** (fli
 existing campaigns stay on their original engine via the `__setstate__` Skynet pin). Skynet remains
 selectable. The only remaining MANTIS follow-up is a minor human-flown emissions-control eyeball
 ("SAM radars dark until a target is in range") — lower-risk, does not block anything. The remaining
-MIST→MOOSE work below is now unblocked, and **CTLD → `Ops.CTLD` is the gate.**
+MIST→MOOSE work below is now unblocked.
 
-## After G6 — the remaining MIST → MOOSE work (do NOT blind-port)
+## After G6 — the remaining MIST → MOOSE work (NEW strategy: a MOOSE-backed `mist` shim)
 
-**Key sequencing rule (see consolidation notes):** `mist_4_5_126.lua` cannot be unloaded until **all**
-consumers are off it, and **CTLD (84 refs) is the long pole.** So:
+**The plan changed (2026-06-24).** Rather than rewrite each consumer to be MOOSE-native (the old
+"CTLD → `Ops.CTLD` is the gate" approach), we retire MIST by **replacing `mist_4_5_126.lua` with a thin
+`mist` compatibility shim that delegates to MOOSE** (which already provides MIST's two roles: utility
+library + object DB). One artifact, consumers untouched, **SCAR can't break**, no `Ops.CTLD` template
+mismatch. **Active plan:** [`414th-mist-moose-shim-notes.md`](414th-mist-moose-shim-notes.md). The
+`Ops.CTLD` port is **shelved** (`414th-ctld-mantis-style-port-scope.md`).
 
-1. **CTLD → `Ops.CTLD`** is the gate. Port it as a gated, **SCAR-validated** bridge — SCAR's
-   capture + CSAR reuse the air-assault CTLD machinery, so a wrong port breaks the flagship. Scope:
-   `414th-ctld-mantis-style-port-scope.md`.
-2. **SCAR/intercept glue + core `dcs_retribution.lua`** — these are *live* spawning/routing/scheduling
-   (`mist.dynAdd`, `mist.goRoute`, `mist.scheduleFunction`), not helpers. Porting them *before* CTLD
-   buys nothing (MIST stays loaded for CTLD) while risking live regressions. **Batch them with the
-   final MIST drop**, in one in-game-validated pass.
-3. **Drop MIST** from `base/plugin.json` — definition of done.
+1. **Build the shim** — `resources/plugins/base/mist_moose_shim.lua` implementing the 42 called
+   symbols. Tier-1a (vector/math utils) is in; remaining tiers (geo/coord, object DB, spawn/route/
+   sched, msg/log) per the design doc.
+2. **Validation swap** — in `base/plugin.json`, replace `mist_4_5_126.lua` with the shim (load AFTER
+   `Moose.lua`, BEFORE consumers). In-game pass: CTLD cycle, SCAR capture + CSAR, intercept/QRA,
+   Skynet (if selected), core glue.
+3. **Drop MIST** — delete `mist_4_5_126.lua` + its `base/plugin.json` entry. **Definition of done.**
 
-**⚠️ Do not delete `mist`/`mist_4_5_126.lua` until CTLD + SCAR/intercept + core glue are all off it.**
-This is also called out in CLAUDE.md's Tech Stack row.
+**⚠️ Do not swap `base/plugin.json` to the shim until every one of the 42 symbols is implemented** —
+a missing symbol crashes a consumer at runtime. Until the swap, `mist_4_5_126.lua` stays loaded and
+`main` is unaffected. (CLAUDE.md's Tech Stack row still gates deletion on the consumers being off MIST.)
 
 ## Deferred MANTIS enhancements (gated, safe to build after G6 validates the base)
 

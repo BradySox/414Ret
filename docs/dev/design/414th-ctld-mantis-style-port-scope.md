@@ -1,7 +1,13 @@
 # Scope: Port `ctld` (MIST) → MOOSE `Ops.CTLD` (consolidation phase 4)
 
-**Status:** Phase-1 spike COMPLETE (2026-06-24) — `Ops.CTLD` coverage confirmed, gap table resolved,
-JTAC dropped from scope. No bridge code written yet; Phase-1 *foundation* is the next step.
+> ⛔ **SHELVED / SUPERSEDED (2026-06-24).** This `Ops.CTLD` port is **not the chosen path.** Auditing
+> what MIST actually does showed it is a utility library + object DB that MOOSE already provides, so
+> MIST is being retired via a **MOOSE-backed `mist` compatibility shim** (consumers untouched) instead
+> of rewriting CTLD. That sidesteps the template-model mismatch found below. **Active plan:**
+> [`414th-mist-moose-shim-notes.md`](414th-mist-moose-shim-notes.md). This doc is kept for the
+> `Ops.CTLD` API research (still accurate) in case a native rewrite is ever revisited.
+
+**Status:** SHELVED — superseded by the `mist` shim. `Ops.CTLD` coverage research below remains valid.
 **Date:** 2026-06-24
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md) phase 4.
 
@@ -96,6 +102,31 @@ CTLD's JTAC autolase is **disabled and unused in Retribution**, and front-line t
 
 **Net:** no `JTACAutoLase` port, no MooseAutolase wiring. This was the *only* confirmed gap, so with
 it dropped, **`Ops.CTLD` covers everything Retribution actually uses.**
+
+### ⚠️ Foundation-stage discovery (2026-06-24): template-model mismatch
+
+Surfaced while reading the API for the Phase-1 *foundation*: **`Ops.CTLD` is template-based, the
+legacy CTLD + Retribution are programmatic.**
+
+- `Ops.CTLD:AddTroopsCargo(Name, Templates, …)` and `AddCratesCargo(Name, Templates, …)` validate via
+  `_CheckTemplates` (`Moose.lua` L76153) that every named template exists in
+  `_DATABASE.Templates.Groups` — i.e. a **late-activation group template placed in the `.miz`.** Cargo
+  is spawned by cloning those templates (`InjectTroops`/`InjectVehicles`).
+- Legacy `ctld-config.lua` uses `ctld.loadableGroups` with `{inf, mg, at, aa, jtac}` **counts** and
+  CTLD spawns generic infantry by internal type name; spawnable crates map a weight → unit type. **No
+  mission templates are involved**, so Retribution's generator emits none.
+
+**Impact:** a faithful port needs a **Python prerequisite** — the mission generator must emit canonical
+late-activation template groups (one per troop squad config 2/4/6/10/12/24; one per spawnable crate
+vehicle type) and pass their names through `dcsRetribution.Logistics`. The Lua bridge then references
+them in `AddTroopsCargo`/`AddCratesCargo`. This is the heart of the cargo path and must be settled
+**before** the bridge's cargo section is written. Zones (`AddCTLDZone`), unit capabilities
+(`SetUnitCapabilities`), FOB/beacons/smoke remain unaffected and are safe to build now.
+
+Options under consideration: (A) Python generates canonical CTLD cargo templates as late-activation
+groups (most faithful; net-new `.miz` generation); (B) investigate a runtime template-registration
+path in Lua to avoid `.miz` changes (uncertain — MOOSE CTLD is template-first by design); (C) a thin
+infantry/vehicle template set shared across all squad configs, with squad size driven by `NoTroops`.
 
 ### Revised assessment
 

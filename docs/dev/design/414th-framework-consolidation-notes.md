@@ -102,21 +102,27 @@ own in-game pass (Lua can't be CI-exercised).
 6. **Core glue** (`dcs_retribution.lua`) — port the 5 MIST calls above to native/MOOSE.
 7. **Drop MIST** — remove `mist_4_5_126.lua` from `base/plugin.json`. **Definition of done.**
 
-### Sequencing insight (2026-06-24) — CTLD is the gate; don't port the others early
+### ⭐ STRATEGY CHANGE (2026-06-24) — retire MIST with a MOOSE-backed shim, not per-consumer ports
 
-`mist_4_5_126.lua` **stays loaded until every consumer is off it**, and **CTLD (84 refs) is the long
-pole**. Therefore porting SCAR/intercept (phase 3) or the core glue (phase 6) *before* CTLD buys
-**nothing** toward the goal — MIST is still loaded for CTLD — while incurring real regression risk in
-live, default-on code (flagship SCAR especially). So the rational order is **not** 3 → 4 → 6 → 7:
+Phases 3/4/6 above (rewrite SCAR/intercept, CTLD, and core glue to be MOOSE-native) are **no longer
+the plan.** An audit of what MIST actually does for its consumers showed it fills exactly two roles —
+a **utility library** and a **runtime object database** — and **MOOSE (already loaded) provides
+both** (`UTILS.*`, `_DATABASE`, `SCHEDULER`/`MESSAGE`/`MARKER`, + vanilla `coalition.addGroup`).
 
-- **Tackle CTLD first** (it's the gate and the hardest; do it as a gated, SCAR-validated bridge).
-- **Batch SCAR/intercept + core-glue + the MIST drop together at the very end**, in one in-game-
-  validated pass, since they only pay off once MIST can actually be removed.
-- The only completed phases so far (dismounts, ewrs) were **deletions of dead code** — zero risk and
-  always worth doing immediately. The remaining live ports are the opposite and should be batched.
+So instead of rewriting four consumers, we **replace `mist_4_5_126.lua` with a thin `mist` table that
+delegates to MOOSE** — implementing only the **42 distinct symbols** the consumers actually call. One
+artifact retires MIST everywhere; consumers stay byte-for-byte unchanged (no behavior drift, **SCAR
+capture/CSAR cannot break**); the `Ops.CTLD` template-model mismatch never arises. This makes the old
+"CTLD is the gate, batch everything at the end" sequencing moot.
 
-**Net: there is no safe, payoff-positive blind work left in this program.** The next real step is
-in-game validation (start with the MANTIS G6 pass), then the CTLD bridge with SCAR coordination.
+**Active plan:** [`414th-mist-moose-shim-notes.md`](414th-mist-moose-shim-notes.md) (surface, tier
+breakdown, the DB-from-`_DATABASE` keystone, rollout). The `Ops.CTLD` port is **shelved**
+([`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md)). Foundation
+(`resources/plugins/base/mist_moose_shim.lua`, Tier-1a) is in; it is **not yet in `base/plugin.json`**,
+so MIST still loads and `main` is unaffected until the validation swap.
+
+The completed phases (dismounts, ewrs) were **deletions of dead code** — still correct, independent of
+this change. The MANTIS G6 pass (done) was likewise independent.
 
 ## Parallel track: lean into the MOOSE `Ops.*` family
 

@@ -68,7 +68,7 @@ south-west (the real Rhineland NATO cluster), every red base to the north/centre
 ### Blue (NATO) — south-west cluster
 | Base | id | Squadrons |
 |---|---|---|
-| Ramstein | 165 | B-1B (OCA/Runway), **A-10C Suite 3 (CAS)**, Mirage-F1EE (Escort), AV-8B (SEAD Sweep), **A-6E (OCA/Aircraft)** |
+| Ramstein | 165 | B-1B (OCA/Runway), **A-10C Suite 3 (CAS)**, Mirage-F1EE (Escort), **A-6E (OCA/Aircraft)** _(VMA-231 AV-8B SEAD Sweep removed 2026-06-24)_ |
 | Spangdahlem | 162 | F-15C (TARCAP), **F-14B (Escort)**, **GAF JG 74 (TARCAP)**, F-4E-45MC (BAI), UH-1H, AH-1W |
 | Hahn | 155 | B-52H (Strike), F-16CM (DEAD), Tornado IDS (SEAD Escort), F-4E-45MC (OCA/Runway), **F/A-18C (SEAD)**, **F-15E (BAI)** |
 | Frankfurt | 163 | KC-135, **KC-135MPRS (drogue tanker)**, C-130J, CH-47F, AH-64D, **E-3A (AEW&C)**, **OH-58D Kiowa (Escort)** |

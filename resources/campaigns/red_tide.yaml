@@ -269,12 +269,6 @@ squadrons:
         - Ala 14
       aircraft_type: Mirage-F1EE
       size: 6
-    - primary: SEAD Sweep
-      secondary: air-to-ground
-      aircraft:
-        - VMA-231
-      aircraft_type: AV-8B Harrier II Night Attack
-      size: 6
     - primary: OCA/Aircraft
       secondary: air-to-ground
       aircraft:

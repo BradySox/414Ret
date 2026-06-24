@@ -145,6 +145,35 @@ so it can commit on inbound raids sooner; a quiet flank keeps the legacy uniform
   the heading itself. Tests: `tests/test_barcap_threat_weighting.py`
   (`normalized_air_threat` 0/1/mid, enemy-CP exclusion, quiet-theater fallback).
 
+## A2A escort-need: engagement reach vs orbit reach (live)
+
+- **Symptom.** TARCAP was never planned, and forward DEAD/BAI silently flew without their
+  air-to-air escort.
+- **Why.** Air-to-air escorts are *pruned* unless `PackageFulfiller.check_needed_escorts`
+  finds a package's escorted waypoints inside the enemy **aircraft** threat zone. That zone
+  (`ThreatZones.airbases`) is built from `barcap_threat_range`, which deliberately clamps
+  each enemy CP's reach to `min(cap_max_distance_from_cp + cap_engagement_range, 0.45 ×
+  distance-to-nearest-friendly-airfield)`. The 0.45 clamp keeps enemy BARCAPs from being
+  modeled as offensive (so the navmesh and our own BARCAP placement stay defensive) — but it
+  stops the zone ~45% of the way across, and the CAS patrol orbits on the FLOT at ~50%. So
+  the orbit fell in the gap, the escort was pruned, and because CAS is the **only** proposer
+  of `FlightType.TARCAP` (`cas.py:35`; there is no standalone `PlanTarcap` task), TARCAP
+  disappeared entirely.
+- **Fix.** Separate *engagement* reach from *orbit* reach. `ThreatZones.air_engagement`
+  (built with the **uncapped** `aircraft_engagement_range` = `cap_max_distance_from_cp +
+  cap_engagement_range`) answers "can an enemy fighter reach here," and the escort-need check
+  uses `waypoints_threatened_by_aircraft_engagement` against it. The clamped `airbases` zone
+  is unchanged and still drives the navmesh, IP/hold/join geometry, BARCAP placement, and the
+  map overlay. `air_engagement` is a strict superset of `airbases`, so escorts are only ever
+  *added*, never removed — no regression on packages that already got one.
+- **Scope / safety.** Pure Python, no Lua, no save-format change (`ThreatZones` is recomputed
+  each load, never pickled). Broader-than-CAS by design: every forward package that proposes
+  an `EscortType.AirToAir` (CAS→TARCAP, strike/DEAD/anti-ship/AEWC/refueling→ESCORT) now reads
+  the front-line band as A2A-threatened.
+- Tests: `tests/test_aircraft_engagement_escort_zone.py` (uncapped-sum range, FLOT-gap
+  waypoint needs escort via engagement but not orbit zone, superset invariant, out-of-reach
+  negative, empty-default fallback).
+
 ## Mission-preference (`tasks:`) value rubric
 
 The auto-planner ranks aircraft for a task by these YAML weights (higher = chosen

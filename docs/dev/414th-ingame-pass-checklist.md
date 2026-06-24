@@ -72,6 +72,15 @@ so the two docs don't drift.
 - **Fail signature:** Forward orbit pushed *into* a SAM ring (no-fly clamp not
   respected), or quiet-flank orbit placement drifted from the legacy spread.
 
+### B4 — TARCAP planned on CAS / A2A escort on forward packages · §6 · ☐ UNTESTED
+- **Setup:** A campaign with an active land front and an enemy airbase within
+  fighter range (≈90 NM) of the FLOT; let the AI auto-plan a turn.
+- **Pass:** CAS packages over the front spawn **with a TARCAP** flight, and forward
+  DEAD/BAI get their A2A `ESCORT`. (Deep packages keeping their escort = no regression.)
+- **Fail signature:** CAS packages still spawn with no TARCAP, or forward packages
+  fly unescorted, because the escort-need check is reading the clamped orbit zone
+  instead of the new `air_engagement` reach.
+
 ---
 
 ## C. Support flights

@@ -350,7 +350,20 @@ so the two docs don't drift.
   generated mission references `ewrj`, `EWJamming`, `startEWjamm`, or
   `startIAdefjamming`.
 
-### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ☑ VERIFIED 2026-06-24 (log + Tacview + AI observation)
+### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ◐ PARTIAL — C2 regression found + fixed 2026-06-24; needs a re-fly on a zone-node map
+- **⚠️ Regression found + fixed 2026-06-24 (GermanyCW):** many IADS comms/power/
+  command-center nodes are destructible **scenery** (comms masts, power hubs, VOR/DME,
+  beacons) — NOT placed statics — so `StaticObject.getByName(name .. " object")` never
+  finds them. The old `static_dead` read "not a static" as "destroyed" → mass-decapitated
+  the whole network on the first poll → all SAMs offline → **empty RWR.** Fix
+  (`mantis-config.lua`, `node_dead`): a node counts as dead only on **positive** evidence —
+  a placed static of that name existed and no longer `:isExist()`, **or** its name is in the
+  global **`dead_events`** table (the S_EVENT_DEAD / scenery-trigger record Retribution
+  already keeps; matched with the `"id | "` prefix stripped, since scenery is recorded by
+  bare name). This keeps the bomb-the-comms feature working for scenery targets while
+  killing the false decapitation. **Re-fly needed:** GermanyCW campaign — (1) red SAM
+  radars come up on RWR at start (no spurious decapitation); (2) bombing a comms mast /
+  power hub still degrades its dependent SAMs (`MANTIS C2 - comms/power '…' lost`).
 - **Result (2026-06-24):** PASSED on engine routing, network build, and C2
   degradation — the high-risk parts. Confirmed from `dcs.log` + the
   `retribution_nextturn.miz` marker + a Tacview (`Tacview-20260624-160553`):

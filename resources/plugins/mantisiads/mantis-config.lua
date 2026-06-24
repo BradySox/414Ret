@@ -164,6 +164,36 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             return
         end
 
+        -- Death detection. C2 nodes are NOT all placed statics: many (comms masts, power
+        -- hubs, VOR/DME, beacons, ...) are destructible *scenery* / map objects, which
+        -- StaticObject.getByName never finds. The original "(so == nil) -> dead" test therefore
+        -- read every scenery node as destroyed on the first poll and falsely decapitated the
+        -- whole network at mission start. So a node counts as dead only when we have POSITIVE
+        -- evidence it died:
+        --   (a) a placed static of that name exists but no longer :isExist(), or
+        --   (b) its name was recorded in the global `dead_events` table (the same S_EVENT_DEAD /
+        --       scenery-trigger record the rest of Retribution uses for BDA). dead_events stores
+        --       the bare object name for scenery, so we match the node name with the "id | "
+        --       prefix stripped as well as verbatim.
+        local function bare_name(node_name)
+            return node_name:match("|%s*(.+)$") or node_name
+        end
+        local function node_dead(node_name)
+            local so = StaticObject.getByName(node_name .. " object")
+            if so ~= nil and not so:isExist() then
+                return true -- a real static that existed and is now destroyed
+            end
+            if type(dead_events) == "table" then
+                local bare = bare_name(node_name)
+                for _, dn in pairs(dead_events) do
+                    if dn == node_name or dn == bare then
+                        return true -- recorded dead (scenery or unit) via dead_events
+                    end
+                end
+            end
+            return false
+        end
+
         local function set_offline(sam_group)
             local grp = GROUP:FindByName(sam_group)
             if grp and grp:IsAlive() then grp:SetAIOff() end
@@ -175,18 +205,12 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             end
         end
 
-        -- pydcs registers comms/power/command-center statics with a " object" suffix.
-        local function static_dead(unit_name)
-            local so = StaticObject.getByName(unit_name .. " object")
-            return (so == nil) or (not so:isExist())
-        end
-
         local handled = {} -- fire each degradation event only once
 
         local function poll()
             for comms_name, sams in pairs(comms_deps) do
                 local key = "comms:" .. comms_name
-                if not handled[key] and static_dead(comms_name) then
+                if not handled[key] and node_dead(comms_name) then
                     handled[key] = true
                     for _, s in pairs(sams) do set_autonomous(s) end
                     env.info(string.format(
@@ -196,7 +220,7 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             end
             for power_name, sams in pairs(power_deps) do
                 local key = "power:" .. power_name
-                if not handled[key] and static_dead(power_name) then
+                if not handled[key] and node_dead(power_name) then
                     handled[key] = true
                     for _, s in pairs(sams) do set_offline(s) end
                     env.info(string.format(
@@ -207,7 +231,7 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             if #cc_names > 0 and not handled["cc:all"] then
                 local all_dead = true
                 for _, cc in pairs(cc_names) do
-                    if not static_dead(cc) then all_dead = false break end
+                    if not node_dead(cc) then all_dead = false break end
                 end
                 if all_dead then
                     handled["cc:all"] = true

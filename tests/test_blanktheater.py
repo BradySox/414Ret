@@ -73,9 +73,8 @@ def test_links_are_undirected_and_deduped() -> None:
     links = nearest_neighbor_links(sites, k=1)
     # AF0<->AF1 are mutual nearest; that pair appears once, not twice
     assert frozenset(("AF0", "AF1")) in links
+    # every link is a 2-element pair: undirected, de-duped, and no self-links
     assert all(len(pair) == 2 for pair in links)
-    # no self-links
-    assert all("AF0" not in pair or "AF0" != next(iter(pair)) for pair in links)
 
 
 def test_links_respect_k() -> None:

@@ -109,8 +109,11 @@ the command-center concept (coarsely) but **no comms or power graph at all**. So
   autonomous; destroy power → SAM dies) **has no MANTIS equivalent**. Under MANTIS those buildings
   would be cosmetic unless we re-implement the comms/power degradation ourselves.
 
-**This is the single most important finding in the matrix:** the headline Red Tide capability is
-the one MANTIS is weakest at.
+**Scope, though:** this gap only affects campaigns running `advanced_iads` — **16 of the 64 bundled
+campaigns** (and only 9 use explicit `iads_config`). The other **48 (75%) run basic mode (SAM + EWR
+only)** and never touch the comms/power graph, so for them MANTIS is a near-clean swap. The C2 gap is
+therefore a **phase-2 concern for ~25% of campaigns, not a migration blocker** — see the migration
+plan's phasing ([`414th-mantis-migration-notes.md`](414th-mantis-migration-notes.md) §5, §8).
 
 ---
 

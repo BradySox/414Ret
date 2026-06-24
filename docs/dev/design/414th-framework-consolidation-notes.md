@@ -88,11 +88,13 @@ own in-game pass (Lua can't be CI-exercised).
    only clean 1:1; `dynAdd` → `coalition.addGroup` and `goRoute` → MOOSE ground routing both need
    careful behavior-matching + a SCAR/QRA flight test.
 4. **CTLD → `Ops.CTLD`** — the large one (~8.7k lines, default-ON, ~26 distinct MIST calls). Config-
-   bridge swap mirroring Skynet→MANTIS; ~15–20 days incl. QA, MEDIUM–HIGH risk. **⚠️ Not a clean
-   isolatable port:** it's woven into Python flight-planning and the **SCAR feature reuses the
-   air-assault CTLD machinery** (capture + CSAR), so even a gated bridge must be SCAR-validated and
-   must not be blind-ported in one pass. Scoped in
-   [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md).
+   bridge swap mirroring Skynet→MANTIS. **✅ Phase-1 spike done (2026-06-24):** `Ops.CTLD` covers
+   everything Retribution uses (menus/FOB/AA-repair/beacons/smoke/cabin-limits/save-load all native);
+   JTAC autolase dropped (disabled in Retribution; front-line FAC is the independent flotgenerator
+   MQ-9 AFAC). **Revised to ~8–12 days, MEDIUM risk.** **⚠️ Still not a clean isolatable port:** it's
+   woven into Python flight-planning and the **SCAR feature reuses the air-assault CTLD machinery**
+   (capture + CSAR), so even a gated bridge must be SCAR-validated and must not be blind-ported in one
+   pass. Full findings in [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md).
 5. **dismounts** — ✅ **RETIRED (2026-06-24)**. Was the would-be MIST-drop blocker (no MOOSE
    successor), but turned out to be already dormant (not in `plugins.json`), so it was deleted
    outright. See [`414th-dismounts-decision.md`](414th-dismounts-decision.md). No longer blocks the

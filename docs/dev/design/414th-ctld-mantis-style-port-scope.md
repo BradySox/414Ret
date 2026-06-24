@@ -1,6 +1,7 @@
 # Scope: Port `ctld` (MIST) → MOOSE `Ops.CTLD` (consolidation phase 4)
 
-**Status:** scoping / not started (no code change yet)
+**Status:** Phase-1 spike COMPLETE (2026-06-24) — `Ops.CTLD` coverage confirmed, gap table resolved,
+JTAC dropped from scope. No bridge code written yet; Phase-1 *foundation* is the next step.
 **Date:** 2026-06-24
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md) phase 4.
 
@@ -10,7 +11,9 @@
 lines, **default-ON** (`plugin.json: defaultValue: true`), upstream (Ciribob/VEAF), with ~26 distinct
 MIST calls. MOOSE bundles **`Ops.CTLD`** (in `Moose.lua`, v1.3.38), so the **config-bridge pattern**
 that works for Skynet→MANTIS applies here too — but `Ops.CTLD` is not a drop-in, and because CTLD is
-default-on, any behavior drift hits many campaigns. **Estimated ~15–20 working days incl. in-game QA.**
+default-on, any behavior drift hits many campaigns. **Estimated ~8–12 working days incl. in-game QA**
+(revised down after the Phase-1 spike confirmed `Ops.CTLD` covers everything Retribution uses and JTAC
+was dropped — see coverage section; the dominant cost is now the default-on validation + SCAR pass).
 
 This doc scopes the port; it does not commit to it. Recommended sequencing: **after** EWRS (delete)
 and the SCAR/intercept glue, **before** dismounts.
@@ -58,23 +61,51 @@ FOB build (3 crates → hub, 120 s), JTAC autolase (`dcsRetribution.JTACs[]`), A
 radio beacons (battery life), smoke marking, vehicle repacking, per-aircraft cabin limits, and the
 414th CH-47 AGL/`inAir()` workaround.
 
-## `Ops.CTLD` coverage — verify before committing (do NOT take the gap list on faith)
+## `Ops.CTLD` coverage — ✅ Phase-1 spike COMPLETE (2026-06-24)
 
-A read of `Ops.CTLD` shows a broad API (`AddTroopsCargo`, `AddCratesCargo`, `AddStaticsCargo`,
-`AddCratesRepair`, `SetUnitCapabilities`, `AddCTLDZone`, FSM events `TroopsPickedUp`/`CratesBuild`/…,
-`EnableLoadSave`). The investigation flagged several **possible gaps** — but some of these are
-**suspect and must be checked in the Phase-1 spike**, not assumed:
+A read of the bundled `Moose.lua` (v1.3.38, `CTLD` class @ ~L73306, **71 public methods**) **refutes
+most of the suspected gaps.** Verified directly against the source — do NOT revert to the old "gap"
+assumptions:
 
-| Area | Flagged as | Skeptical note (verify) |
+| Area | Was flagged | **Verified result (Moose.lua)** |
 |---|---|---|
-| F10 radio menus | "missing" | **Doubtful** — MOOSE `Ops.CTLD` is known to generate its own radio menus. Most likely present; verify the structure matches what players expect. |
-| JTAC autolasing | "missing" | Plausibly not in `Ops.CTLD` — **but the fork already ships `MooseAutolase` (`Plugin_Autolase_JTAC.lua`)**. Wire JTACs to that rather than porting CTLD's 270-line `JTACAutoLase`. Cross-check `dcsRetribution.JTACs[]` against MooseAutolase. |
-| FOB build / beacons / repacking / AA stacking | "partial / missing" | Genuinely the most likely real gaps. Confirm against `Ops.CTLD` methods; where absent, implement thin bridge logic (timers/state) rather than re-vendoring CTLD. |
-| Smoke / cabin limits / dynamic cargo | present | `SmokePositionNow`, `SetUnitCapabilities`, GC handlers exist — likely fine. |
+| F10 radio menus | "missing" | ✅ **PRESENT** — `_RefreshF10Menus()` (@L2030 within CTLD) auto-builds the full `MENU_GROUP` tree (CTLD → Manage Troops → Load troops → subcategory menus). |
+| FOB build / AA build+repair | "most likely real gaps" | ✅ **PRESENT** — `_BuildCrates`, `_BuildObjectFromCrates`, `_RepairCrates`, `_RepairObjectFromCrates`, `AddCratesRepair`. |
+| Beacons | "partial/missing" | ✅ **PRESENT** — `DropBeaconNow`, `CheckDroppedBeacons`. |
+| Smoke / cabin limits | present | ✅ Confirmed — `SmokePositionNow`, `SmokeZoneNearBy`, `SetUnitCapabilities`. |
+| Save/load persistence | open question | ✅ Event path present — `onbeforeSave`/`onafterSave`/`onbeforeLoad`/`onafterLoad` (confirm survives Retribution reload model during build). |
+| Load/unload model | open question | ✅ **Full FSM** — `TroopsPickedUp`/`CratesPickedUp`/`TroopsDeployed`/`CratesDropped`/`CratesBuild`/`TroopsRTB` events + `onbefore`/`onafter` hooks. |
+| Hover/load mechanics (CH-47) | n/a | ✅ `IsCorrectHover`, `CanHoverLoad`, `AutoHoverLoad`, `IsUnitInAir` — basis for the AGL workaround. |
+| **JTAC autolasing** | "missing → port or MooseAutolase" | ⛔ **OUT OF SCOPE — drop entirely.** See below. |
 
-**Action: a Phase-1 spike must confirm the real coverage of `Ops.CTLD` in the bundled `Moose.lua`
-before estimating the custom-bridge work.** The 15–20 day figure assumes JTAC reuses MooseAutolase
-and FOB/beacons/repacking need modest bridge code; it grows if `Ops.CTLD` is thinner than it looks.
+### JTAC autolase is dropped from the port (not ported, not bridged)
+
+CTLD's JTAC autolase is **disabled and unused in Retribution**, and front-line target lasing is a
+**separate, independent system**:
+
+- `ctld-config.lua` defaults `autolase = false`; the runtime log confirms `CTLD plugin - JTAC AutoLase
+  enabled = false` on every mission load. It is only enabled by the `ctld.autolase` plugin option,
+  which Retribution does not set.
+- Front-line forward air control is the **flotgenerator MQ-9 Reaper AFAC** (`game/missiongenerator/
+  flotgenerator.py` ~L260–300): a Python-spawned drone over the FLOT with DCS-native `FAC` tasking +
+  per-front laser code, invisible/immortal, orbiting at 5000ft. **It does not touch CTLD or
+  MooseAutolase at all.**
+- `dcsRetribution.JTACs[]` is still emitted (`luagenerator.py` ~L354) but as **metadata describing
+  those AFAC drones** (callsign/freq/laser code for kneeboard/radio reference), NOT input to CTLD
+  autolase. The CTLD port ignores it.
+
+**Net:** no `JTACAutoLase` port, no MooseAutolase wiring. This was the *only* confirmed gap, so with
+it dropped, **`Ops.CTLD` covers everything Retribution actually uses.**
+
+### Revised assessment
+
+The gap table is effectively empty: every CTLD feature Retribution exercises (troops, crates, FOB,
+AA build/repair, beacons, smoke, cabin limits, zones, F10 menus, save/load) has a native `Ops.CTLD`
+counterpart. The port therefore collapses to **(1) faithful config-bridge translation** of
+`dcsRetribution.Logistics` → `Ops.CTLD` calls, and **(2) SCAR capture + CSAR validation** (the real
+remaining risk — CTLD is the machinery SCAR's flagship reuses). No custom feature reimplementation is
+expected. **Effort revised down from 15–20 days / HIGH to ~8–12 days / MEDIUM**, dominated by the
+default-on validation surface and the SCAR integration pass rather than capability gaps.
 
 ## Behavior-risk areas (default-ON → regressions hit real campaigns)
 
@@ -85,9 +116,10 @@ battery/retrieval; continuous smoke marking; and the CH-47 AGL workaround.
 
 ## Phased plan (config-bridge-first, mirrors Skynet→MANTIS)
 
-1. **Spike / foundation (1–2 d):** new `moose_ctld_config.lua`; parse `dcsRetribution.Logistics`;
-   `CTLD:New` per coalition; `AddTroopsCargo`/`AddCratesCargo`/`SetUnitCapabilities`/`AddCTLDZone`;
-   `Start()`. **Confirm `Ops.CTLD` feature coverage here** — this answers the gap questions above.
+1. **Spike (✅ DONE 2026-06-24) / foundation (1–2 d):** coverage spike complete — `Ops.CTLD` confirmed
+   to cover everything Retribution uses (see coverage section). **Foundation still to build:** new
+   `moose_ctld_config.lua`; parse `dcsRetribution.Logistics`; `CTLD:New` per coalition;
+   `AddTroopsCargo`/`AddCratesCargo`/`SetUnitCapabilities`/`AddCTLDZone`; `Start()`.
 2. **Core load/unload + menus (3–4 d):** validate F10 menus + troop/crate pickup/drop cycle.
 3. **Advanced features (5–7 d):** JTAC (prefer wiring to **MooseAutolase**), FOB, beacons, repacking,
    AA build — implement only what `Ops.CTLD` genuinely lacks, as thin bridge code.
@@ -95,16 +127,24 @@ battery/retrieval; continuous smoke marking; and the CH-47 AGL workaround.
    ⇒ must be thorough). Add rows to `414th-ingame-pass-checklist.md`.
 5. **Cleanup (1 d):** drop `CTLD.lua` from `plugin.json`; docs. Removes ~26 MIST occurrences.
 
-## Open questions for the Phase-1 spike
+## Open questions — Phase-1 spike answers (2026-06-24)
 
-- Does the bundled `Ops.CTLD` expose load/unload via public methods/events, or only internals?
-- Are its radio menus present and adequate (the suspect "missing" claim)?
-- Can JTAC needs be met by the existing `MooseAutolase` plugin instead of a custom port?
-- Does `EnableLoadSave` persistence survive Retribution's mission reload model?
-- Must every Python-generated zone be registered via `AddZone`, or are trigger zones queryable by name?
+- ✅ **Load/unload via public methods/events?** Yes — full FSM event model
+  (`TroopsPickedUp`/`CratesBuild`/`TroopsDeployed`/…) plus `onbefore`/`onafter` hooks.
+- ✅ **Radio menus present and adequate?** Yes — `_RefreshF10Menus()` auto-builds the menu tree; the
+  "missing" claim was wrong. (Still verify the structure matches player expectations during build.)
+- ✅ **JTAC via MooseAutolase?** Moot — CTLD JTAC autolase is disabled/unused in Retribution and
+  front-line FAC is the independent flotgenerator MQ-9 AFAC, so **JTAC is dropped, not ported.**
+- 🟡 **`EnableLoadSave` survives Retribution's reload model?** Save/load event handlers exist; the
+  reload-survival question carries into the foundation build (confirm with a real save/reload).
+- 🟡 **Zone registration — `AddZone` vs name-queryable trigger zones?** `AddZone`/`AddCTLDZone`/
+  `GetCTLDZone`/`AddCTLDZoneFromAirbase` all exist; pin down the exact registration path against the
+  Python-generated `<group>PICKUP_ZONE`/`DROPOFF_ZONE`/`TARGET_ZONE` names in the foundation step.
 
 ## Effort
 
-**~15–20 working days** (≈1 senior-dev week of build + ~1 week QA), MEDIUM–HIGH risk — dominated by
-JTAC, FOB, and the default-on validation surface. The biggest single MIST port; do it after the cheap
-wins (EWRS) so the program shows progress before taking on this one.
+**~8–12 working days, MEDIUM risk** (revised down from 15–20 / HIGH after the Phase-1 spike). JTAC and
+the feared FOB/beacon/menu gaps are gone — `Ops.CTLD` covers them. Remaining cost is dominated by the
+**default-on validation surface** and the **SCAR capture + CSAR integration pass** (CTLD is SCAR's
+machinery), not capability reimplementation. Still the biggest single MIST port; EWRS/dismounts are
+already retired, so this is the next live target.

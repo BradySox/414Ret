@@ -316,7 +316,31 @@ so the two docs don't drift.
   generated mission references `ewrj`, `EWJamming`, `startEWjamm`, or
   `startIAdefjamming`.
 
-### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ☐ UNTESTED
+### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ☑ VERIFIED 2026-06-24 (log + Tacview + AI observation)
+- **Result (2026-06-24):** PASSED on engine routing, network build, and C2
+  degradation — the high-risk parts. Confirmed from `dcs.log` + the
+  `retribution_nextturn.miz` marker + a Tacview (`Tacview-20260624-160553`):
+  - **Routing/build:** `Skynet … engine is 'mantis' … skipping` + MANTIS built
+    both coalitions (`RED 14 SAM/19 EWR`, `BLUE 3 SAM/4 EWR`), MANTIS v0.9.34 +
+    INTEL/DLINK started clean, **C2 watchers armed for RED and BLUE**. No Lua errors.
+  - **C2 events fire:** comms kill → `MANTIS C2 - comms '…' lost; degrading 1 SAM(s)`;
+    power kill → `MANTIS C2 - power '0378 | Repair workshop' lost; 13 SAM(s) offline`.
+  - **Degradation sticks (the #1 risk):** the degraded *networked radar* SAMs
+    (SA-3/5/6) stayed offline against live AI blue targets — **MANTIS did NOT
+    re-enable them** on its detection cycle. The only late Tacview launches were
+    autonomous SHORAD (SA-8 Osa, 2S6 Tunguska), which are out of C2 scope by design
+    (`IadsRole.participate` excludes `POINT_DEFENSE`/`NO_BEHAVIOR`; standalone SHORAD
+    maps to `SAM` and is only networked if within power/comms range). So the revival
+    bug the handoff flagged **did not occur**.
+  - **Caveats / remaining:** (a) observation was AI-vs-AI; the **emissions-control
+    "dark until in range" path flown by a human is not yet eyeballed** (lower risk —
+    minor follow-up). (b) Tacview *corroborates* but can't fully *isolate* C2-silence
+    from blue SEAD also killing the SA-3/5/6 radars by 37:37 — the decisive evidence
+    is the direct observation that degraded SAMs stayed down. (c) **13-of-14 red SAMs
+    hung off one power node** — almost certainly a **per-campaign power-source placement**
+    artifact (SAMs auto-connect to any power source within 35nm, `IadsRole.connection_range`),
+    not an IADS-generator bug. Revisit as a campaign-`.miz` layout check only if the
+    over-concentration recurs across other campaigns.
 - **Setup:** In settings, set **IADS engine → MANTIS (experimental)** (Mission
   Generator → Gameplay), generate a mission with red SAMs + EWRs, and fly into the
   IADS. Confirm via `dcs.log` that `mantis-config.lua` built

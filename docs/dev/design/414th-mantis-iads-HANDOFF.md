@@ -27,19 +27,31 @@ Skynet?" and grew into a MIST → MOOSE consolidation program.
 CTLD↔SCAR intersection finding + corrected consolidation sequencing. Safe to merge anytime; it's the
 only thing not yet in `main`. (This handoff doc rides on it too.)
 
-## ⭐ THE next step — fly the MANTIS G6 in-game pass
+## ✅ G6 in-game pass — PASSED 2026-06-24 (engine routing + networking + C2)
 
-The entire MANTIS engine is **built but never run.** Nothing else should be built on it until it's
-flown. It is gated behind `iads_engine` (default **SKYNET**, so `main` is unaffected).
+The MANTIS engine has now **been run in-game** and passed the high-risk parts. Confirmed from
+`dcs.log` + the `.miz` engine marker + a Tacview + direct AI-vs-AI observation:
 
-**To test:** Settings → **Mission Generator → Gameplay → IADS engine → "MANTIS (experimental)"**,
-generate a mission with red SAMs + EWRs, fly in. Watch `dcs.log` for `mantis-config.lua` /
-`MANTIS C2 -` lines and `skynetiads-config.lua ... skipping`.
+- Engine routing correct (`Skynet … skipping`, MANTIS builds both coalitions, watchers armed),
+  MANTIS v0.9.34 + INTEL/DLINK start clean, no Lua errors.
+- C2 events fire on both comms and power kills (`MANTIS C2 - comms/power … lost`).
+- **The #1 risk did NOT materialize:** degraded *networked radar* SAMs (SA-3/5/6) stayed offline
+  against live targets — MANTIS did **not** re-enable them. The only late launches were autonomous
+  SHORAD (SA-8/2S6), which are out of C2 scope by design (`IadsRole.participate` excludes
+  `POINT_DEFENSE`/`NO_BEHAVIOR`). So the watcher does **not** need the "drop from MANTIS' managed
+  set" fix.
 
-**#1 risk to confirm:** MANTIS owns SAM emissions and may **re-enable a SAM the phase-5 C2 watcher
-disabled** on its next detection cycle (so comms/power-loss degradation may not "stick"). If so, the
-watcher must remove the SAM from MANTIS' managed set, not just toggle the group. Full pass criteria +
-fail signatures are in `414th-ingame-pass-checklist.md` **G6**.
+Full results + caveats in `414th-ingame-pass-checklist.md` **G6**.
+
+**Minor remaining:** the human-flown emissions-control "dark until in range" path is not yet
+eyeballed (lower risk). Separately noted: 13-of-14 red SAMs hung off one power node — a
+connection-graph concentration worth a later look (Python IADS-gen, not MANTIS).
+
+## ⭐ THE next step — MANTIS is validated; CTLD is now the gate
+
+With G6 passed, MANTIS is a **real, flight-validated option** (still gated behind `iads_engine`,
+default SKYNET). The decision to flip the default to MANTIS can be made after the minor
+emissions-control eyeball. The remaining MIST→MOOSE work below is now unblocked.
 
 ## After G6 — the remaining MIST → MOOSE work (do NOT blind-port)
 
@@ -65,5 +77,6 @@ group wiring). Both noted in the migration doc; neither blocks G6.
 
 ## State of play in one line
 
-Skynet is still the live IADS engine; MANTIS is fully built and one flight test away from being a real
-option; 2 of 5 MIST consumers retired; CTLD is the gate for finishing the MIST drop.
+Skynet is still the default IADS engine; MANTIS is **fully built and now flight-validated (G6 passed
+2026-06-24)** — a real selectable option, pending only a minor human-flown emissions-control eyeball
+before the default could flip; 2 of 5 MIST consumers retired; CTLD is the gate for finishing the MIST drop.

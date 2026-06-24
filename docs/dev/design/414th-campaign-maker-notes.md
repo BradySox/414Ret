@@ -91,10 +91,21 @@ path and keeps them off the map entirely.
   - **Status:** the whole loop — wizard → paint on the live map → Finalize → staff
     airwings → play — is built and verified short of an actual flight. Remaining: the
     live in-game pass (checklist BC-rows).
-- **Increment C — support buildings:** finalize should procedurally place economy
-  structures (factories/depots/etc.) for owned bases. Retribution normally gets
-  these from the `.miz`; blank canvas must synthesize them. Biggest remaining
-  unknown; deferred.
+- **Increment C — support buildings ✅ (minimal pass landed):**
+  `_synthesize_support_buildings(game)` runs at the tail of `finalize_blank_canvas`.
+  For every **owned** control point it places a small economy — a **factory**
+  (income) plus an **ammo** and **fuel** dump — built from the coalition's building
+  force groups via `ForceGroup.generate` (the same templates drop-spawn §20 and the
+  campaign generator use), positioned on land near the base by `_nearby_land_point`
+  (fans out by index across 4/6/8 km rings, skips sea). Neutral/soon-pruned bases
+  are skipped. Without this a blank canvas finalized to **+0 income** (pure
+  airfields; `Airfield.income_per_turn == 0`, income comes only from `REWARDS`
+  building categories). Verified headless (Afghanistan 4 blue/3 red): 21 buildings,
+  0 on neutral, blue 208/turn + red 156/turn. **PR #155.**
+  **Feature paused here by design** — this is the "pretty + somewhat functional"
+  cut. Deferred: configurable count/mix, richer laydown (depots/oil/derrick,
+  per-base variety), default SAM/armor seeding, and avoiding building-on-runway/
+  overlap beyond the land check.
 - **Increment D+ — save a hand-built theater as a reusable campaign.**
 
 ### Airfield count caveat

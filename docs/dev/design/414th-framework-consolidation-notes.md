@@ -91,6 +91,17 @@ own in-game pass (Lua can't be CI-exercised).
 6. **Core glue** (`dcs_retribution.lua`) — port the 5 MIST calls above to native/MOOSE.
 7. **Drop MIST** — remove `mist_4_5_126.lua` from `base/plugin.json`. **Definition of done.**
 
+## Parallel track: lean into the MOOSE `Ops.*` family
+
+Going MOOSE-first makes the whole bundled `Ops.*` stack the natural toolbox (it's already in
+`Moose.lua` — not gated by the MIST removal). The **service tier** (`Ops.CSAR`/`RescueHelo`,
+`PlayerTask`, `Intel`, `ATIS`, `CTLD`, `MANTIS`) is a low-risk, opt-in extension of exactly this
+consolidation and should be folded in opportunistically (e.g. `Ops.CSAR` alongside the SCAR MIST
+port). The **strategic tier** (`Ops.Chief`/`Commander`/`Legion`…) is a *different campaign engine*
+that conflicts with Retribution's Python brain and is explicitly **out of scope** (the fork already
+chose the Python path — CLAUDE.md §17, `turnless.md`). Full breakdown:
+[`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md).
+
 ## Upstream coordination
 
 Most MIST consumers are **upstream Retribution plugins** (`ctld`, `dismounts`, `ewrs`, the vendored

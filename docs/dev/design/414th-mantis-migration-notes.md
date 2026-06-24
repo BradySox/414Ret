@@ -244,9 +244,20 @@ Most Skynet options map directly. Changes:
   `FlightType._missing_`-style spots and `persistency.py` per CLAUDE.md "Save migration." `IadsRole`
   is computed at load from `GroupTask`, so it's likely **not** persisted directly — verify before
   assuming a migration is needed.
-- **Cutover is a setting**, not a deletion: add `iads_engine: skynet | mantis` (campaign/settings).
-  Keep both plugins shippable until the MANTIS path passes an in-game pass on Red Tide
-  specifically (it exercises the C2 layer).
+- **Cutover is a setting**, not a deletion. ✅ **Landed (2026-06-24):** `Settings.iads_engine`
+  (`IadsEngine` enum, `SKYNET`/`MANTIS`, default `SKYNET`) in `game/settings/settings.py`. Persisted
+  now so cutover is a flip, not a schema change; old saves auto-backfill to `SKYNET` via
+  `Settings.__setstate__` (the `Settings().__dict__` default-overlay), so **no explicit migration
+  entry was needed**. Deliberately **internal (no UI choices_option)** until the MANTIS emitter
+  exists — exposing a non-functional MANTIS choice would be a trap; flip it to a `choices_option`
+  when the bridge lands. Covered by `tests/settings/test_iads_engine_setting.py`.
+- Keep both plugins shippable until the MANTIS path passes its in-game passes (basic + advanced).
+
+> **Dropped from the original phase-1 plan — `IadsRole.mantis_value`.** The §4 spike showed MANTIS
+> discovers SAMs by **name prefix and infers role from unit type**; it does *not* consume Skynet-style
+> per-role string table keys. A `mantis_value` analogue of `skynet_value` would therefore be the
+> **wrong abstraction** — the role→MANTIS decision lives in the prefix/naming + C2 layers, not a
+> per-role token. Not added; revisit only if the emitter design actually needs a role token.
 
 ---
 

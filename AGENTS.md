@@ -167,7 +167,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact
    marks/coords so players must visually acquire.
 6. **Air-defense planning rework** — overlapping/jittered BARCAP waves, forward CAP line,
-   threat-weighted BARCAP volume, front-line navmesh routing hazard, unstacked FLOT units.
+   threat-weighted BARCAP volume, a map-scaled **red forward-middle BARCAP layer** (added,
+   not relocated; via a `ForwardBarcapZone` target), front-line navmesh routing hazard,
+   unstacked FLOT units.
 7. **Auto-hide mobile SAMs on MFD** — SHORAD/AAA/MANPAD hidden from datalink, including
    escorts inside armor/missile groups; standalone MERAD/LORAD stay visible for SEAD.
 8. **Robustness / crash fixes** — flight-exit IndexError, AWACS/tanker orbit, malformed mod

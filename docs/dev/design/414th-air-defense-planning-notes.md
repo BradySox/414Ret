@@ -213,3 +213,40 @@ Applied so far (the two examples the doctrine discussion named explicitly):
 lists ~80 A2A-benched and many anti-ship outliers - these are intentionally left
 for case-by-case, in-game-tested tuning rather than a blind mass rewrite, since
 the values ship to all Retribution campaigns.
+
+## Red forward-middle BARCAP layer (large maps)
+
+**Problem.** The rear BARCAP (`CapBuilder.cap_racetrack_for_objective`) heads the
+orbit from the defended CP toward the **nearest enemy airfield**. On a big map a red
+front CP whose nearest *blue* field is off-axis (the Rhineland cluster, far SW of the
+Fulda/Haina front) gets a screen flung far from the FLOT - observed 144-187 NM off the
+front in the GermanyCW Red Tide Turn 2 case. The fix the PLAN.md handoff asked for is a
+deliberate forward fighter line between blue packages and the IADS.
+
+**Design (the chosen shape).** Keep the rear "true BARCAP" exactly as-is and **add one
+extra** layer, only where it helps:
+
+- *Added, not relocated.* Rear/base BARCAP, naval BARCAP, blue BARCAP, TARCAP and the
+  QRA/intercept reserve are all unchanged. The forward layer is a separate package.
+- *Forward-middle placement.* The added orbit sits ~halfway from the rear CP to the FLOT
+  (not hard against the front), along the stable friendly->enemy axis, pulled back into
+  friendly airspace only if that leaves it within `cap_engagement_range + 5 NM` of the
+  blue threat zone. Front-relative throughout - **no map-specific distances** - so it
+  scales across map sizes (`forward_cap_front_anchor`, `supportorbit.py`).
+- *Map-scaled trigger.* Added only when the rear CP sits farther from the FLOT than the
+  rear BARCAP's own reach (`doctrine.cap_max_distance_from_cp`). On small maps the rear
+  orbit already covers the front, so nothing is added. Red (AI) side only.
+
+**Why a new target type.** BARCAP is `ControlPoint`-keyed end to end and flight-plan
+placement is computed once and **persisted**. Tagging the persisted `Package`/`Flight`
+with a `forward` flag would need a save migration. Instead the added layer targets a new
+`ForwardBarcapZone` (`game/theater/missiontarget.py`) carrying the precomputed
+forward-middle center + heading; `CapBuilder` detects the type and lays the racetrack
+parallel to the FLOT. A brand-new package type needs no migration - old saves simply have
+no such packages.
+
+**Flow.** `TheaterState.from_game` builds the transient `forward_barcaps_needed` (zone ->
+1) for qualifying red front CPs; `ProtectAirSpace` yields `PlanForwardBarcap`; the rest is
+the normal package-planning path. Tests: `tests/test_forward_barcap.py` (the geometry
+helper). In-game pass: checklist B5. The theater-tanker-demand companion from the same
+PLAN.md is a separate change and is **not** included here.

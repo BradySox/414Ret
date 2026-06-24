@@ -31,10 +31,18 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         return
     end
 
-    -- specific options (defaults)
+    -- specific options (defaults mirror MANTIS' own defaults)
     local createRedIADS = true
     local createBlueIADS = true
     local useEmOnOff = true
+    local samRange = 95
+    local detectInterval = 30
+    local ewrGrouping = 5000
+    local maxActiveShort = 2
+    local maxActiveMid = 2
+    local maxActiveLong = 1
+    local maxActivePoint = 6
+    local autoRelocateEwr = false
     local debugRED = false
     local debugBLUE = false
 
@@ -43,6 +51,14 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         if opts.createRedIADS ~= nil then createRedIADS = opts.createRedIADS end
         if opts.createBlueIADS ~= nil then createBlueIADS = opts.createBlueIADS end
         if opts.useEmOnOff ~= nil then useEmOnOff = opts.useEmOnOff end
+        if opts.samRange ~= nil then samRange = opts.samRange end
+        if opts.detectInterval ~= nil then detectInterval = opts.detectInterval end
+        if opts.ewrGrouping ~= nil then ewrGrouping = opts.ewrGrouping end
+        if opts.maxActiveShort ~= nil then maxActiveShort = opts.maxActiveShort end
+        if opts.maxActiveMid ~= nil then maxActiveMid = opts.maxActiveMid end
+        if opts.maxActiveLong ~= nil then maxActiveLong = opts.maxActiveLong end
+        if opts.maxActivePoint ~= nil then maxActivePoint = opts.maxActivePoint end
+        if opts.autoRelocateEwr ~= nil then autoRelocateEwr = opts.autoRelocateEwr end
         if opts.debugRED ~= nil then debugRED = opts.debugRED end
         if opts.debugBLUE ~= nil then debugBLUE = opts.debugBLUE end
     end
@@ -125,6 +141,22 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         local mantis = MANTIS:New(
             name, sam_names, ewr_names, nil, coalition_str, true, nil, useEmOnOff, nil, nil
         )
+
+        -- Phase-4 tuning (applied before Start so detection/engagement pick them up).
+        mantis:SetSAMRange(samRange)
+        mantis:SetDetectInterval(detectInterval)
+        mantis:SetEWRGrouping(ewrGrouping)
+        mantis:SetMaxActiveSAMs(maxActiveShort, maxActiveMid, maxActiveLong, nil, maxActivePoint)
+        if autoRelocateEwr then
+            -- EWR-only relocation; HQ relocation needs a command center (phase 5).
+            mantis:SetAutoRelocate(false, true)
+        end
+        -- NB: reactive SAM shoot-and-scoot is automatic via MANTIS' integrated SEAD
+        -- evasion (drivable SAMs go dark and relocate when an ARM is inbound).
+        -- Proactive SHORAD scoot between zones (AddScootZones) needs Python-generated
+        -- zones and is deferred. Advanced mode (SetAdvancedMode) is deferred to the
+        -- C2 phase: it requires an HQ/command center and otherwise nags every player.
+
         if debug then
             mantis:Debug(true)
         end

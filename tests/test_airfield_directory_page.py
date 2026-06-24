@@ -82,3 +82,31 @@ def test_support_page_renders_airfield_directory_section(tmp_path: Path) -> None
     assert out.exists()
     img = Image.open(out)
     assert img.size == (960, 1080)
+
+
+def test_support_page_spills_long_airfield_directory_to_continuation(
+    tmp_path: Path,
+) -> None:
+    # Far more airfields than fit below the support tables on one page: the
+    # directory must spill onto continuation page(s) rather than run off the
+    # bottom edge (the #73 fold regression).
+    rows = [[f"Field{i:02}", "", "VHF 131.000", "", "", "13"] for i in range(60)]
+    page = SupportPage(
+        _support_flight(),
+        package_flights=[],
+        comms=[],
+        awacs=[],
+        tankers=[],
+        jtacs=[],
+        start_time=MagicMock(),
+        dark_kneeboard=False,
+        airfield_rows=rows,
+    )
+    concrete = page.paginate()
+    # Host Support page plus at least one continuation page.
+    assert len(concrete) > 1
+    assert concrete[0] is page
+    for idx, concrete_page in enumerate(concrete):
+        out = tmp_path / f"page{idx:02}.png"
+        concrete_page.write(out)
+        assert Image.open(out).size == (960, 1080)

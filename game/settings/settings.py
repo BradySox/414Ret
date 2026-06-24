@@ -1228,11 +1228,13 @@ class Settings:
         "Generate friendly packages kneeboard page",
         MISSION_GENERATOR_PAGE,
         KNEEBOARD_SECTION,
-        default=True,
+        default=False,
         detail=(
             "Append page(s) listing every friendly package with its TOT (strike "
             "tasks) or patrol window (CAP, tanker, AWACS), for cross-package "
-            "coordination."
+            "coordination. Off by default: adds a Friendly Packages section to the "
+            "Mission Info page plus a package-targets map, which can spill onto "
+            "continuation pages on busy theaters."
         ),
     )
     target_recon_extra_threat_search_nmi: int = bounded_int_option(

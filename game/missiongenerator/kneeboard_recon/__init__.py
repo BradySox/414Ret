@@ -1,6 +1,7 @@
 """Target recon kneeboard pages for player flights.
 
-See docs/superpowers/specs/2026-05-20-target-recon-kneeboard-design.md.
+Gated by the ``generate_target_recon_kneeboard`` setting (default OFF: the
+marker overlays do not reliably line up with the underlying satellite tiles).
 """
 
 from .pages import (

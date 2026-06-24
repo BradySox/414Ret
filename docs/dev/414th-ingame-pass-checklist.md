@@ -350,7 +350,17 @@ so the two docs don't drift.
   generated mission references `ewrj`, `EWJamming`, `startEWjamm`, or
   `startIAdefjamming`.
 
-### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ☑ VERIFIED 2026-06-24 (log + Tacview + AI observation)
+### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ◐ PARTIAL — C2 regression found + fixed 2026-06-24; needs a re-fly on a zone-node map
+- **⚠️ Regression found 2026-06-24 (GermanyCW):** on maps where IADS comms/power/
+  command-center nodes are **trigger zones** (VOR/DME, RSBN, radio beacons, etc.)
+  rather than placed statics, the C2 watcher's `static_dead` read every zone node as
+  "destroyed" on its first poll → **mass-decapitated the whole network → all SAMs
+  offline → empty RWR.** Fixed in `mantis-config.lua`: `setup_c2` now only watches
+  nodes that resolve to a real `StaticObject` at setup; zone/non-static nodes are
+  skipped (logged as `MANTIS C2 - …: skipped N zone/non-static C2 node(s)`).
+  **Re-fly needed:** on a GermanyCW-type campaign, confirm red SAM radars come up on
+  RWR (no spurious decapitation), and that killing a real comms/power building still
+  degrades its SAMs.
 - **Result (2026-06-24):** PASSED on engine routing, network build, and C2
   degradation — the high-risk parts. Confirmed from `dcs.log` + the
   `retribution_nextturn.miz` marker + a Tacview (`Tacview-20260624-160553`):

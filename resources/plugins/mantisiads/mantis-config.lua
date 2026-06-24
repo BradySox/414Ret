@@ -134,11 +134,31 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         local power_deps = {} -- power unit name -> { dependent SAM group names }
         local cc_names = {}   -- command-center static names
 
+        -- pydcs registers comms/power/command-center statics with a " object" suffix.
+        -- A node is only WATCHABLE if it resolves to a real, existing StaticObject. On some
+        -- maps an IADS connection node is a trigger ZONE / map feature (e.g. a VOR/DME or
+        -- radio beacon) rather than a placed static -- such a node can never be "destroyed",
+        -- so watching it would make its "not a static" lookup read as DEAD and falsely
+        -- decapitate the entire network the instant the watcher first polls. So we only watch
+        -- nodes that are actual statics at setup; zone/non-static nodes are skipped.
+        local function static_present(unit_name)
+            local so = StaticObject.getByName(unit_name .. " object")
+            return so ~= nil and so:isExist()
+        end
+        local function static_dead(unit_name)
+            return not static_present(unit_name)
+        end
+
+        local skipped = 0
         local function add_deps(map, conn_list, sam_group)
             if conn_list then
                 for _, n in pairs(conn_list) do
-                    map[n] = map[n] or {}
-                    table.insert(map[n], sam_group)
+                    if static_present(n) then
+                        map[n] = map[n] or {}
+                        table.insert(map[n], sam_group)
+                    else
+                        skipped = skipped + 1
+                    end
                 end
             end
         end
@@ -155,13 +175,27 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
 
         if coalition_iads.CommandCenter then
             for _, cc in pairs(coalition_iads.CommandCenter) do
-                table.insert(cc_names, cc.dcsGroupName)
+                if static_present(cc.dcsGroupName) then
+                    table.insert(cc_names, cc.dcsGroupName)
+                else
+                    skipped = skipped + 1
+                end
             end
         end
 
-        -- Basic-mode campaigns have no C2 graph: nothing to watch.
+        -- Basic-mode campaigns (and maps whose C2 nodes are all zones) have nothing to watch.
         if next(comms_deps) == nil and next(power_deps) == nil and #cc_names == 0 then
+            if skipped > 0 then
+                env.info(string.format(
+                    "DCSRetribution|MANTIS C2 - %s: no destructible C2 statics (%d zone/non-static node(s)); watcher idle",
+                    coalition_prefix, skipped))
+            end
             return
+        end
+        if skipped > 0 then
+            env.info(string.format(
+                "DCSRetribution|MANTIS C2 - %s: skipped %d zone/non-static C2 node(s)",
+                coalition_prefix, skipped))
         end
 
         local function set_offline(sam_group)
@@ -173,12 +207,6 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             if grp and grp:IsAlive() then
                 if policy_dark then grp:SetAIOff() else grp:OptionAlarmStateRed() end
             end
-        end
-
-        -- pydcs registers comms/power/command-center statics with a " object" suffix.
-        local function static_dead(unit_name)
-            local so = StaticObject.getByName(unit_name .. " object")
-            return (so == nil) or (not so:isExist())
         end
 
         local handled = {} -- fire each degradation event only once

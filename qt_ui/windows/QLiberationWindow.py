@@ -219,6 +219,16 @@ class QLiberationWindow(QMainWindow):
         self.importTemplatesAction = QAction("Import Layouts", self)
         self.importTemplatesAction.triggered.connect(self.import_templates)
 
+        # Campaign maker: visible only while painting a blank-canvas setup game.
+        self.finalizeCampaignAction = QAction("Finalize Campaign", self)
+        self.finalizeCampaignAction.setIcon(QIcon(CONST.ICONS["New"]))
+        self.finalizeCampaignAction.setToolTip(
+            "Build the campaign from the bases you painted: unpainted (gray) bases "
+            "are dropped, fronts are drawn, then you staff your airwings."
+        )
+        self.finalizeCampaignAction.triggered.connect(self.finalizeCampaign)
+        self.finalizeCampaignAction.setVisible(False)
+
         self.enable_game_actions(False)
 
     def enable_game_actions(self, enabled: bool):
@@ -247,6 +257,7 @@ class QLiberationWindow(QMainWindow):
         self.actions_bar.addAction(self.openSettingsAction)
         self.actions_bar.addAction(self.openStatsAction)
         self.actions_bar.addAction(self.openNotesAction)
+        self.actions_bar.addAction(self.finalizeCampaignAction)
 
     def initMenuBar(self):
         self.menu = self.menuBar()
@@ -413,7 +424,35 @@ class QLiberationWindow(QMainWindow):
         logging.info("On Game generated")
         self.game = game
         self.updateWindowTitle()
+        self._update_blank_canvas_action()
         GameUpdateSignal.get_instance().game_loaded.emit(self.game)
+
+    def _update_blank_canvas_action(self) -> None:
+        """Show the Finalize action only while painting a blank-canvas setup game."""
+        self.finalizeCampaignAction.setVisible(
+            self.game is not None and self.game.blank_canvas_setup
+        )
+
+    def finalizeCampaign(self) -> None:
+        """Build the real campaign from the painted blank-canvas setup game."""
+        from game.campaignloader.blanktheatergen import finalize_blank_canvas
+        from qt_ui.windows.AirWingConfigurationDialog import (
+            AirWingConfigurationDialog,
+        )
+
+        if self.game is None or not self.game.blank_canvas_setup:
+            return
+        try:
+            new_game = finalize_blank_canvas(self.game)
+        except RuntimeError as exc:
+            QMessageBox.warning(self, "Cannot finalize campaign", str(exc))
+            return
+
+        # Staff airwings on the now-owned bases, then start the campaign — the same
+        # tail the new-game wizard runs for an included campaign.
+        AirWingConfigurationDialog(new_game, True, self).exec_()
+        new_game.begin_turn_0(squadrons_start_full=True)
+        self.onGameGenerated(new_game)
 
     def onEndGame(self, state: TurnState):
         if state == TurnState.CONTINUE:
@@ -449,6 +488,7 @@ class QLiberationWindow(QMainWindow):
             self.sim_controller.set_game(game)
             self.game_model.set(self.game)
             self.game_model.init_comms_registry()
+            self._update_blank_canvas_action()
         except AttributeError:
             logging.exception("Incompatible save game")
             QMessageBox.critical(

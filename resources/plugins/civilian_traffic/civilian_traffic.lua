@@ -83,24 +83,43 @@ local function _contains(text, needle)
     return string.find(text, needle, 1, true) ~= nil
 end
 
+-- A field that isn't a real runway airfield, even if DCS reports it as AIRDROME.
+-- The category check alone is NOT enough: on some maps (notably GermanyCW) FARPs /
+-- helipads are registered with Airbase.Category.AIRDROME AND named without the literal
+-- "Heliport"/"FARP" substrings (e.g. "H GDR 05", "H Med FRG 24", "H Radar GDR 01",
+-- "... Invisible FARP 0"), so they slip past both gates into the civilian pool. RAT then
+-- spawns at an unresolvable heliport id ("No heliport NNNN found ... aircraft spawn on
+-- land"), producing a malformed / "Corrupt damage model" helo whose descriptor is nil;
+-- FLIGHTGROUP:New fails and the orphaned hot-start unit crashes the sim in the
+-- scheduled-action path (wSimCalendar::DoActionsUntil). Crash reproduced on a GermanyCW
+-- Red Tide turn 1, 2026-06-24. Exclude the CWG helipad naming convention ("H " prefix:
+-- "H <NATION> NN", "H Med ...", "H Radar ...") plus any HELIPAD / Invisible-FARP field.
+-- Real CWG airdromes (Hahn, Haina, Hamburg, Kiel, Cologne, ...) have no "H " (H+space)
+-- prefix, so this never excludes a real runway.
+local function _is_nonrunway_field(name)
+    return _contains(name, "Heliport")
+        or _contains(name, "HELIPAD")
+        or _contains(name, "FARP")
+        or _contains(name, "Invisible")
+        or string.find(name, "^H ") ~= nil
+end
+
 local function _usable_fixed_wing_field(name, desc)
     return desc
         and desc.category == Airbase.Category.AIRDROME
-        and not _contains(name, "Heliport")
-        and not _contains(name, "FARP")
+        and not _is_nonrunway_field(name)
 end
 
 local function _usable_rotary_field(name, desc)
-    -- Restricted to real airdromes (2026-06-21 crash fix): on some maps (Syria) RAT
-    -- picks a heliport/FARP id DCS can't resolve at spawn ("No heliport NNNN found,
-    -- aircraft spawn on land"), producing a malformed helo whose descriptor is nil.
-    -- FLIGHTGROUP:New then fails and the orphaned hot-start unit crashes the sim
-    -- (woCharacterHuman::GetPosition). Real runways spawn helos cleanly. Trades the
-    -- city-hop helipads for crash safety; helos still fly between neutral airfields.
+    -- Restricted to real airdromes (2026-06-21 crash fix, hardened 2026-06-24): RAT picks
+    -- a heliport/FARP id DCS can't resolve at spawn, producing a malformed helo whose
+    -- descriptor is nil; FLIGHTGROUP:New fails and the orphaned hot-start unit crashes the
+    -- sim. The 2026-06-21 category+name gate missed GermanyCW's AIRDROME-categorised FARPs
+    -- (see _is_nonrunway_field). Real runways spawn helos cleanly. Trades the city-hop
+    -- helipads for crash safety; helos still fly between neutral airfields.
     return desc
         and desc.category == Airbase.Category.AIRDROME
-        and not _contains(name, "Heliport")
-        and not _contains(name, "FARP")
+        and not _is_nonrunway_field(name)
 end
 
 -- ── Geometry helpers ──────────────────────────────────────────────────────────

@@ -95,7 +95,10 @@ class QIntelBox(QGroupBox):
         return "strong advantage"
 
     def update_summary(self) -> None:
-        if self.game is None:
+        if self.game is None or not self.game.game_stats.data_per_turn:
+            # A blank-canvas setup game has not run begin_turn_0 yet, so there
+            # are no per-turn stats to summarise. Show a neutral placeholder
+            # instead of indexing an empty list.
             self.air_strength.setText("no data")
             self.ground_strength.setText("no data")
             self.economic_strength.setText("no data")

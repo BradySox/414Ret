@@ -24,6 +24,85 @@ the *blank canvas* — every airfield on a chosen map, assignable ownership, **n
 preset SAMs/armor/objectives/fronts — loaded into the normal UI so the existing
 placement tools (drop-spawn §20, scenery targets, squadron model) can fill it in.
 
+---
+
+## REDESIGN — the neutral-paint flow (current direction, 2026-06-23)
+
+Playtest feedback: the first cut auto-assigned sides and auto-drew connectivity —
+"I would hardly call that blank." The real flow the user wants:
+
+1. **Setup** — generate *every* airfield on the terrain as **neutral (gray)**, no
+   fronts, no units.
+2. **Paint** — the player clicks bases on the **live map** to cycle gray → blue →
+   red (chosen interaction model; the alternative wizard base-list was declined).
+3. **Finalize** — **drop every still-gray base**, derive the front from where blue
+   meets red, build support buildings, then the player staffs airwings, then start.
+
+**Why gray bases must be pruned, not just hidden (the "sneak-in" gotcha):** each
+side's planner only sees its own bases (`player_points`=blue, `enemy_points`=red),
+but `ObjectiveFinder` pulls `control_points_for(NEUTRAL)` as **capture/expansion
+targets** (`game/commander/objectivefinder.py:392`). So an unpainted gray base is
+something the AI tries to seize. Dropping unpainted bases at finalize removes that
+path and keeps them off the map entirely.
+
+### Feasibility — both gates PASSED headless (2026-06-23)
+
+- An **all-neutral** Afghanistan (25 gray CPs) runs through `GameGenerator.generate()`
+  → `begin_turn_0()` to turn 0. So the engine can hold an empty paintable game.
+- Full backbone: setup 25 gray → paint 7 blue / 5 red → `ownership_from_theater` →
+  `generate_blank_theater(ownership=…)` **pruned the 13 gray bases**, kept 12 with
+  correct sides + 23 derived front pairs → generate + turn 0, **0 neutral remaining**.
+
+### Architecture / increments
+
+- **Increment A — backend backbone ✅ (built + headless-verified):**
+  `game/campaignloader/blanktheatergen.py` now has three modes:
+  `all_neutral=True` (setup, all gray, no fronts), `ownership={name: Player}`
+  (finalize — only painted bases kept, sides assigned, fronts derived), and the
+  legacy auto-split fallback. Plus `ownership_from_theater()` to read painted
+  ownership off the setup theater. Front derivation reuses the policy core's
+  `nearest_neighbor_links` over the *kept* bases.
+- **Increment B — server + map paint UI (in progress):**
+  - **Paint = server-side ✅ (built, headless-verified):** `PUT /control-points/{id}/coalition`
+    (`blue`/`red`/`neutral`) calls `ControlPoint.assign_setup_coalition(game, player)`
+    (re-binds `starting_coalition` + live `_coalition`) and pushes an SSE
+    `update_control_point` — the exact drop-spawn §20 mutation pattern.
+    `ControlPointJs` gained a `neutral: bool` so the map can render gray. Verified:
+    a CP cycles gray→blue→red→gray and the JS model reflects it each step.
+  - **Finalize = Qt-side ✅ (built):** game *lifecycle* (new/load) is Qt-driven
+    (`onGameGenerated` → `GameUpdateSignal.game_loaded`); the FastAPI server has **no**
+    precedent for swapping the whole game, so finalize is a Qt "Finalize Campaign"
+    toolbar action (visible only when `game.blank_canvas_setup`). It calls
+    `finalize_blank_canvas(setup_game)`, which **reconstructs** the generation inputs
+    from the setup game itself (factions / settings / budgets / date — no param stash) →
+    `generate_blank_theater(ownership=…)` → `GameGenerator.generate()`, then runs the
+    air-wing dialog → `begin_turn_0` → `onGameGenerated`. The wizard "Build your own"
+    now generates **all-neutral** + sets the flag + skips the air-wing dialog (bases
+    aren't owned until finalize). Headless-verified end to end (paint 6 blue/4 red →
+    finalize prunes 15 gray → turn 0, budget carried).
+  - **React ✅ (built, type-checked):** neutral CPs already render **yellow** via the
+    `UNKNOWN` SIDC — no rendering change. In setup mode (`blank_canvas_setup` from
+    `GameJs`, stored in `mapSlice` as `blankCanvasSetup`) a left-click cycles a base
+    neutral→blue→red→neutral via `PUT /control-points/{id}/coalition` (raw `backend`
+    axios, SSE recolors it); right-click cycles backward. `ControlPoint.neutral` +
+    `Game.blank_canvas_setup` were added to the **committed** generated client
+    (`_liberationApi.ts`) because CI's `npm run build` type-checks but does not run the
+    API codegen. `tsc --noEmit` clean; the CP-layer jest test passes.
+  - **Status:** the whole loop — wizard → paint on the live map → Finalize → staff
+    airwings → play — is built and verified short of an actual flight. Remaining: the
+    live in-game pass (checklist BC-rows).
+- **Increment C — support buildings:** finalize should procedurally place economy
+  structures (factories/depots/etc.) for owned bases. Retribution normally gets
+  these from the `.miz`; blank canvas must synthesize them. Biggest remaining
+  unknown; deferred.
+- **Increment D+ — save a hand-built theater as a reusable campaign.**
+
+### Airfield count caveat
+
+`terrain.airport_list()` returns pydcs's named-airbase set (e.g. 25 for
+Afghanistan). DCS ME may show more (FARP pads / helipads pydcs doesn't expose as
+airbases) — that's a pydcs terrain-data limit, not something the generator can add.
+
 Sibling pieces already built: drop-spawn (§20, right-click unit placement),
 scenery strike-target data (`scenerycatalog`, PR #115/#117), fog reveal (§18).
 This note is the spine they hang off.

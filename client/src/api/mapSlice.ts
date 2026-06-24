@@ -19,6 +19,9 @@ interface MapState {
   // Whether the hover highlight (ring <-> emitter) is enabled. Toggled from
   // the map's layer control.
   highlightEmitters: boolean;
+  // True while the loaded game is a blank-canvas setup game (campaign maker):
+  // clicking a base paints its ownership instead of opening its info dialog.
+  blankCanvasSetup: boolean;
 }
 
 const initialState: MapState = {
@@ -26,6 +29,7 @@ const initialState: MapState = {
   hoveredEmitterId: null,
   hoveredEmitterSource: null,
   highlightEmitters: true,
+  blankCanvasSetup: false,
 };
 
 const mapSlice = createSlice({
@@ -50,11 +54,13 @@ const mapSlice = createSlice({
       if (action.payload.map_center != null) {
         state.center = action.payload.map_center;
       }
+      state.blankCanvasSetup = action.payload.blank_canvas_setup ?? false;
     });
     builder.addCase(gameUnloaded, (state) => {
       state.center = { lat: 0, lng: 0 };
       state.hoveredEmitterId = null;
       state.hoveredEmitterSource = null;
+      state.blankCanvasSetup = false;
     });
   },
 });
@@ -68,5 +74,7 @@ export const selectHoveredEmitterSource = (state: RootState) =>
   state.map.hoveredEmitterSource;
 export const selectHighlightEmitters = (state: RootState) =>
   state.map.highlightEmitters;
+export const selectBlankCanvasSetup = (state: RootState) =>
+  state.map.blankCanvasSetup;
 
 export default mapSlice.reducer;

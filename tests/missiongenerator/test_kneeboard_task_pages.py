@@ -51,15 +51,24 @@ def _target(location: str) -> Any:
     )
 
 
-def test_dead_task_page_uses_cue_even_with_exact_intel() -> None:
-    page = SeadTaskPage(
-        _flight(FlightType.DEAD, TargetIntelPrecision.EXACT), _bullseye(), False
+def test_dead_task_page_consolidates_to_single_site_cue() -> None:
+    # DEAD uses the cue view even with EXACT intel, but the cue is now ONE bullseye
+    # for the center of the site (not one per unit), so the per-unit table carries no
+    # cue/coords column.
+    flight = _flight(FlightType.DEAD, TargetIntelPrecision.EXACT)
+    flight.package.target = SimpleNamespace(position=_DummyPosition("site center"))
+    page = SeadTaskPage(flight, _bullseye(), False)
+
+    assert page._use_target_area_cues is True
+    assert (
+        page._bullseye_cue_for(flight.package.target.position) == "Bullseye 000 for 0"
     )
 
+    # target_info_row is the EXACT (SEAD) path now: steerpoint + coords, no cue.
     row = page.target_info_row(_target("N 35 00 00 E 36 00 00"), 3)
-
     assert row[0] == "3"
-    assert row[3] == "Bullseye 000 for 0"
+    assert row[1] == "SA-6 STR"
+    assert row[3] == "N 35 00 00 E 36 00 00"
 
 
 def test_sead_task_page_keeps_exact_coords_with_exact_intel() -> None:

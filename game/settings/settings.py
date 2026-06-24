@@ -83,6 +83,24 @@ class AiRadioBehavior(Enum):
     SILENT = "Radio silence"
 
 
+@unique
+class IadsEngine(Enum):
+    """Which engine drives the mission's Integrated Air Defense System.
+
+    ``SKYNET`` is the only implemented engine today. ``MANTIS`` is reserved for
+    the in-progress Skynet -> MANTIS migration
+    (docs/dev/design/414th-mantis-migration-notes.md) and is **not yet wired to
+    an emitter** -- it is intentionally not exposed as a user-facing choice until
+    the MANTIS bridge lands. The persisted ``Settings.iads_engine`` field exists
+    now so that cutover is a setting flip rather than a save-schema change, and so
+    existing saves are already pinned to ``SKYNET`` via the default backfill in
+    ``Settings.__setstate__``.
+    """
+
+    SKYNET = "skynet"
+    MANTIS = "mantis"
+
+
 SERIALIZABLE_ENUM_TYPES = (
     AutoAtoBehavior,
     NightMissions,
@@ -90,6 +108,7 @@ SERIALIZABLE_ENUM_TYPES = (
     CombatResolutionMethod,
     TargetIntelPrecision,
     AiRadioBehavior,
+    IadsEngine,
     StartType,
     Views,
 )
@@ -1667,6 +1686,13 @@ class Settings:
     # __setstate__). True on a fresh Settings so new campaigns are never re-migrated;
     # only legacy saves that lack the marker get the one-time flip.
     applied_recon_plugins_default: bool = True
+
+    # IADS engine selector (Skynet -> MANTIS migration scaffolding). Internal /
+    # not yet a UI choice: only SKYNET is implemented, so exposing MANTIS would be
+    # a no-op trap. Persisted now so the eventual cutover is a setting flip, not a
+    # save-schema change; old saves auto-backfill to SKYNET via __setstate__.
+    # See docs/dev/design/414th-mantis-migration-notes.md §7.
+    iads_engine: IadsEngine = IadsEngine.SKYNET
 
     @staticmethod
     def plugin_settings_key(identifier: str) -> str:

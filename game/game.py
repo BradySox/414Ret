@@ -375,6 +375,20 @@ class Game:
 
         self.blue.preinit_turn_0(squadrons_start_full)
         self.red.preinit_turn_0(squadrons_start_full)
+
+        if self.blank_canvas_setup:
+            # In a blank-canvas setup game every base is still neutral until the
+            # player paints ownership and hits Finalize, so neither coalition owns
+            # any points. initialize_turn would read that as an instant loss
+            # (check_win_loss) and return early -- before computing the threat
+            # zones / navmesh the map render path asserts on, and before
+            # game_stats.update -- and would also post a bogus "Game Over"
+            # message. Compute just the threat zones (empty, but non-None) so the
+            # setup theater renders for painting. The real turn is initialized
+            # later from the finalized game (see finalize_blank_canvas).
+            self.compute_threat_zones(GameUpdateEvents())
+            return
+
         # TODO: Check for overfull bases.
         # We don't need to actually stream events for turn zero because we haven't given
         # *any* state to the UI yet, so it will need to do a full draw once we do.

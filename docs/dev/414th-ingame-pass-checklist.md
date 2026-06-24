@@ -67,7 +67,15 @@ so the two docs don't drift.
 - **Fail signature:** Blue sends the follow-on strike into a live belt because
   it trusted an optimistic DEAD clear.
 
-### B3 — Threat-weighted BARCAP orbit placement · §6 · ☐ UNTESTED
+### B3 — Threat-weighted BARCAP orbit placement · §6 · ◐ PARTIAL (2026-06-24, save)
+- **Partial (2026-06-24, GermanyCW Red Tide turn 1, `test.retribution`):** the
+  SAM-clearance half is confirmed — both BARCAP racetracks' endpoints test
+  `threatened_by_red=False` (orbit never inside a red threat zone), and the two
+  waves are offset 10.1 km mid-to-mid with different racetrack lengths (43.7 vs
+  23.5 km) — the overlapping/jittered-waves design. **Not** confirmed: the
+  contested-vs-quiet-flank *forward-placement* comparison — this campaign has a
+  single front sector (both BARCAPs at Fulda), so there's no quiet-flank orbit to
+  compare against. Needs a multi-sector campaign.
 - **Setup:** A campaign with a clearly contested sector (CP near a fighter-heavy
   enemy airfield and/or anchoring a front) **and** a quiet flank CP.
 - **Pass:** The contested sector's BARCAP racetrack sits noticeably **further

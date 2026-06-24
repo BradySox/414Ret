@@ -69,18 +69,28 @@ path and keeps them off the map entirely.
     `update_control_point` — the exact drop-spawn §20 mutation pattern.
     `ControlPointJs` gained a `neutral: bool` so the map can render gray. Verified:
     a CP cycles gray→blue→red→gray and the JS model reflects it each step.
-  - **Finalize = Qt-side (NEXT, not server):** game *lifecycle* (new/load) is driven
-    by Qt (`onGameGenerated` → `GameUpdateSignal.game_loaded`), and the FastAPI server
-    has **no** precedent for swapping the whole game — forcing a cross-layer game swap
-    from a route would be fragile. So a Qt "Finalize campaign" action (toolbar button,
-    visible in setup mode) reads `ownership_from_theater` → `generate_blank_theater(ownership=…)`
-    → `GameGenerator` → `begin_turn_0` → `onGameGenerated`, reusing the proven load path.
-    The wizard stashes the generation params (factions/settings/dates) so finalize can
-    regenerate.
-  - **React (NEXT, can't verify in CI):** setup mode renders `neutral` CPs gray and
-    cycles them on click via the paint endpoint; the OpenAPI client regenerates at CI build.
-  - **Until finalize + React land, the wizard keeps the legacy auto-split** so there is
-    no unusable all-gray intermediate.
+  - **Finalize = Qt-side ✅ (built):** game *lifecycle* (new/load) is Qt-driven
+    (`onGameGenerated` → `GameUpdateSignal.game_loaded`); the FastAPI server has **no**
+    precedent for swapping the whole game, so finalize is a Qt "Finalize Campaign"
+    toolbar action (visible only when `game.blank_canvas_setup`). It calls
+    `finalize_blank_canvas(setup_game)`, which **reconstructs** the generation inputs
+    from the setup game itself (factions / settings / budgets / date — no param stash) →
+    `generate_blank_theater(ownership=…)` → `GameGenerator.generate()`, then runs the
+    air-wing dialog → `begin_turn_0` → `onGameGenerated`. The wizard "Build your own"
+    now generates **all-neutral** + sets the flag + skips the air-wing dialog (bases
+    aren't owned until finalize). Headless-verified end to end (paint 6 blue/4 red →
+    finalize prunes 15 gray → turn 0, budget carried).
+  - **React ✅ (built, type-checked):** neutral CPs already render **yellow** via the
+    `UNKNOWN` SIDC — no rendering change. In setup mode (`blank_canvas_setup` from
+    `GameJs`, stored in `mapSlice` as `blankCanvasSetup`) a left-click cycles a base
+    neutral→blue→red→neutral via `PUT /control-points/{id}/coalition` (raw `backend`
+    axios, SSE recolors it); right-click cycles backward. `ControlPoint.neutral` +
+    `Game.blank_canvas_setup` were added to the **committed** generated client
+    (`_liberationApi.ts`) because CI's `npm run build` type-checks but does not run the
+    API codegen. `tsc --noEmit` clean; the CP-layer jest test passes.
+  - **Status:** the whole loop — wizard → paint on the live map → Finalize → staff
+    airwings → play — is built and verified short of an actual flight. Remaining: the
+    live in-game pass (checklist BC-rows).
 - **Increment C — support buildings:** finalize should procedurally place economy
   structures (factories/depots/etc.) for owned bases. Retribution normally gets
   these from the `.miz`; blank canvas must synthesize them. Biggest remaining

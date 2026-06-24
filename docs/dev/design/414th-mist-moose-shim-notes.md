@@ -53,18 +53,27 @@ must hold **real entries**. Approach: a `_refreshDBs()` that walks MOOSE `_DATAB
 periodically (mirroring MIST's own ~5 s DB cadence) and once at start. MOOSE already does the
 event-driven tracking; the shim only reshapes.
 
-**Entry shape — must match what consumers read** (to verify against source before finalizing):
-- unit entry: `.unitName`, `.groupName`, `.unitId`, `.groupId`, `.point` (Vec3), `.type`,
-  `.coalition`, `.country`, `.category`. (`humansByName` entries also hold a mutable `.losMarkIds`
-  field — only touched by JTAC autolase, which is disabled in Retribution, but the table must accept it.)
-- group entry: `.groupName`, `.groupId`, `.category`, `.coalition`, `.units` (array of unit entries).
-- zone entry: `.name`, `.point` (Vec3), `.radius`.
+**Entry shape — ✅ verified against consumer source (2026-06-24); far less is read than expected:**
+- `pairs(unitsByName)` (CTLD L2013, skynet L1264) and `pairs(groupsByName)` (skynet L1329) use **only
+  the key** — the value is ignored and re-fetched via `Unit.getByName`/`Group.getByName`. So entry
+  values can be minimal; only the **key set** must be complete.
+- `unitsById[id]` (CTLD L6444) reads **only `.groupId`**.
+- `zonesByName[name]` (skynet L3741) reads **only `.point`** (Vec3).
+- `humansByName[name]` (CTLD) needs **existence** (truthy table keyed by player unit name) + accept a
+  mutable `.losMarkIds` (JTAC autolase, disabled — preserved across refresh defensively).
+
+**Implementation (✅ done):** `_mistRefreshDBs()` scans `coalition.getGroups(side, cat)` over all
+sides/categories every 5 s and rebuilds `unitsByName`/`unitsById`/`groupsByName`/`humansByName` as real
+tables; `_mistBuildZones()` builds `zonesByName` once from `env.mission.triggers.zones` (static). Run
+once at load + scheduled.
 
 ## Rollout plan (each step keeps `main` safe)
 
-1. **Foundation:** new `resources/plugins/base/mist_moose_shim.lua` — Tier-1 implemented; Tiers 2–4
-   stubbed with documented mappings. **NOT yet in `base/plugin.json`** → `mist_4_5_126.lua` still loads,
-   `main` unchanged.
+1. **Foundation:** new `resources/plugins/base/mist_moose_shim.lua`. **✅ Tier-1 done** (1a vector/math
+   + 1b geo/coord, replicated verbatim from MIST; `tostringLL` delegates to `UTILS.tostringLL`
+   (cosmetic, verify format in-game), `getUnitsLOS` is a best-effort impl since its only caller — CTLD
+   JTAC autolase — is disabled in Retribution). Tiers 2–4 remain. **NOT yet in `base/plugin.json`** →
+   `mist_4_5_126.lua` still loads, `main` unchanged.
 2. **Fill tiers 2–4**, verifying entry shapes against each consumer's reads.
 3. **Validation swap (gated/branch):** in `base/plugin.json`, replace `mist_4_5_126.lua` with the shim
    (must load **after** `Moose.lua`, **before** consumers). In-game pass: CTLD troop/crate/FOB cycle,

@@ -87,14 +87,18 @@ class AiRadioBehavior(Enum):
 class IadsEngine(Enum):
     """Which engine drives the mission's Integrated Air Defense System.
 
-    ``SKYNET`` is the only implemented engine today. ``MANTIS`` is reserved for
-    the in-progress Skynet -> MANTIS migration
-    (docs/dev/design/414th-mantis-migration-notes.md) and is **not yet wired to
-    an emitter** -- it is intentionally not exposed as a user-facing choice until
-    the MANTIS bridge lands. The persisted ``Settings.iads_engine`` field exists
-    now so that cutover is a setting flip rather than a save-schema change, and so
-    existing saves are already pinned to ``SKYNET`` via the default backfill in
-    ``Settings.__setstate__``.
+    ``MANTIS`` is the MOOSE-based engine and is now the **default for new
+    campaigns** (flight-validated in the G6 in-game pass 2026-06-24: engine
+    routing, SAM/EWR networking, and comms/power/command-center C2 degradation
+    all confirmed; see docs/dev/design/414th-mantis-migration-notes.md and the
+    G6 row in 414th-ingame-pass-checklist.md). ``SKYNET`` remains a fully
+    supported choice.
+
+    Save behavior: **existing campaigns stay on whatever engine they were
+    created with.** A save that predates this field is explicitly pinned to
+    ``SKYNET`` in ``Settings.__setstate__`` (not left to the field default), so
+    flipping the new-campaign default never silently switches a running
+    campaign's IADS engine mid-stream.
     """
 
     SKYNET = "skynet"
@@ -1687,27 +1691,26 @@ class Settings:
     # only legacy saves that lack the marker get the one-time flip.
     applied_recon_plugins_default: bool = True
 
-    # IADS engine selector. SKYNET is the stable default; MANTIS is the
-    # experimental MOOSE engine (built but not yet flight-validated). Exposed as a
-    # UI choice now that MANTIS does something, so it can be selected for the
-    # in-game pass; default stays SKYNET and old saves auto-backfill to it via
-    # __setstate__. See docs/dev/design/414th-mantis-migration-notes.md.
+    # IADS engine selector. MANTIS (MOOSE-based) is the default for new campaigns
+    # after passing the G6 in-game pass; SKYNET remains a supported choice. Existing
+    # saves are explicitly pinned to their prior engine in __setstate__ (pre-field
+    # saves -> SKYNET) so this default flip never swaps a running campaign's engine.
+    # See docs/dev/design/414th-mantis-migration-notes.md.
     iads_engine: IadsEngine = choices_option(
-        "IADS engine (MANTIS is experimental)",
+        "IADS engine",
         page=MISSION_GENERATOR_PAGE,
         section=GAMEPLAY_SECTION,
         choices={
-            "Skynet (stable)": IadsEngine.SKYNET,
-            "MANTIS — experimental, MOOSE-based (not yet flight-validated)": (
-                IadsEngine.MANTIS
-            ),
+            "MANTIS — MOOSE-based (default)": IadsEngine.MANTIS,
+            "Skynet": IadsEngine.SKYNET,
         },
-        default=IadsEngine.SKYNET,
+        default=IadsEngine.MANTIS,
         detail=(
-            "Which engine drives the integrated air-defense network. Skynet is the "
-            "stable default. MANTIS is the new MOOSE-based engine — it is built but "
-            "has not yet passed an in-game pass, so select it only to test. Switching "
-            "affects newly generated missions."
+            "Which engine drives the integrated air-defense network. MANTIS is the "
+            "new MOOSE-based default — SAM/EWR networking, emissions control, and "
+            "comms/power/command-center degradation (advanced IADS). Skynet is the "
+            "previous engine, still fully supported. Switching affects newly "
+            "generated missions; existing campaigns keep the engine they started with."
         ),
     )
 
@@ -1750,6 +1753,15 @@ class Settings:
             for plugin_id in ("tars", "flightcontrol"):
                 self.set_plugin_option(plugin_id, True)
         self.applied_recon_plugins_default = True
+
+        # Pin pre-existing campaigns to Skynet. MANTIS became the new-campaign
+        # default after the G6 in-game pass, but a save created before the
+        # iads_engine field existed must NOT be silently switched to MANTIS
+        # mid-campaign (the field-default backfill above would otherwise do that).
+        # Keyed on the field being absent from the *raw* unpickled state, so saves
+        # that already carry an explicit engine choice are untouched.
+        if "iads_engine" not in state:
+            self.iads_engine = IadsEngine.SKYNET
 
         # Drop retired plugin option keys so dead configuration does not persist
         # across a load/save cycle. The obsolete Anubis "herculescargo" plugin and

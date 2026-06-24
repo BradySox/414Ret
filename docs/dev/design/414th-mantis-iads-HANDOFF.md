@@ -47,11 +47,13 @@ Full results + caveats in `414th-ingame-pass-checklist.md` **G6**.
 eyeballed (lower risk). Separately noted: 13-of-14 red SAMs hung off one power node — a
 connection-graph concentration worth a later look (Python IADS-gen, not MANTIS).
 
-## ⭐ THE next step — MANTIS is validated; CTLD is now the gate
+## ⭐ THE next step — MANTIS is the default; CTLD is now the gate
 
-With G6 passed, MANTIS is a **real, flight-validated option** (still gated behind `iads_engine`,
-default SKYNET). The decision to flip the default to MANTIS can be made after the minor
-emissions-control eyeball. The remaining MIST→MOOSE work below is now unblocked.
+With G6 passed, **MANTIS is now the default IADS engine for new campaigns** (flipped 2026-06-24;
+existing campaigns stay on their original engine via the `__setstate__` Skynet pin). Skynet remains
+selectable. The only remaining MANTIS follow-up is a minor human-flown emissions-control eyeball
+("SAM radars dark until a target is in range") — lower-risk, does not block anything. The remaining
+MIST→MOOSE work below is now unblocked, and **CTLD → `Ops.CTLD` is the gate.**
 
 ## After G6 — the remaining MIST → MOOSE work (do NOT blind-port)
 

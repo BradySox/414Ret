@@ -250,13 +250,15 @@ Most Skynet options map directly. Changes:
   `FlightType._missing_`-style spots and `persistency.py` per CLAUDE.md "Save migration." `IadsRole`
   is computed at load from `GroupTask`, so it's likely **not** persisted directly — verify before
   assuming a migration is needed.
-- **Cutover is a setting**, not a deletion. ✅ **Landed (2026-06-24):** `Settings.iads_engine`
-  (`IadsEngine` enum, `SKYNET`/`MANTIS`, default `SKYNET`) in `game/settings/settings.py`. Persisted
-  now so cutover is a flip, not a schema change; old saves auto-backfill to `SKYNET` via
-  `Settings.__setstate__` (the `Settings().__dict__` default-overlay), so **no explicit migration
-  entry was needed**. Deliberately **internal (no UI choices_option)** until the MANTIS emitter
-  exists — exposing a non-functional MANTIS choice would be a trap; flip it to a `choices_option`
-  when the bridge lands. Covered by `tests/settings/test_iads_engine_setting.py`.
+- **Cutover is a setting**, not a deletion. ✅ **Default flipped to MANTIS (2026-06-24, after the
+  G6 in-game pass):** `Settings.iads_engine` (`IadsEngine` enum, `SKYNET`/`MANTIS`, **default now
+  `MANTIS`** for new campaigns) in `game/settings/settings.py`, exposed as a `choices_option` under
+  Mission Generator → Gameplay. **Save guard:** the field-default overlay in `__setstate__` would
+  otherwise switch a *running* pre-field campaign to MANTIS, so an **explicit pin** was added —
+  `if "iads_engine" not in state: self.iads_engine = SKYNET` — keeping existing campaigns on the
+  engine they started with. Saves that already carry an explicit engine choice are untouched.
+  Covered by `tests/settings/test_iads_engine_setting.py` (default-MANTIS, pre-field-pin, and
+  explicit-choice-preserved cases).
 - Keep both plugins shippable until the MANTIS path passes its in-game passes (basic + advanced).
 
 > **Dropped from the original phase-1 plan — `IadsRole.mantis_value`.** The §4 spike showed MANTIS

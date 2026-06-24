@@ -36,25 +36,64 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 # Category-ordering used by both front-ends when iterating laydowns.
-CATEGORIES: tuple[str, ...] = ("factory", "power", "ware", "comms")
+CATEGORIES: tuple[str, ...] = (
+    "factory",
+    "power",
+    "ware",
+    "comms",
+    "commandcenter",
+    "fuel",
+    "oil",
+)
 
 # type-name substring (upper-cased) -> Retribution scenery category. The category
 # strings must stay in lock-step with
 # ``SceneryGroup.group_task_for_scenery_group_category`` (game/scenery_group.py).
+# Curated 2026-06-23 from a 282-type CWG discovery scan: only genuine strategic targets,
+# dropping agricultural/airfield/decorative models. categorize() returns the FIRST match, so
+# the substrings must not cross-claim (e.g. INDUSTRIAL_CONTAINER -> ware, not factory).
 CATEGORY_PATTERNS: dict[str, tuple[str, ...]] = {
-    "factory": ("INDUSTRIAL",),
-    "power": ("TRANSFORMER",),
-    "ware": ("WAREHOUSE", "SILO"),
-    "comms": ("ANTENNA", "RW_TOWER", "WEATHER"),
+    "factory": ("INDUSTRIAL_EU", "INDUSTRIAL_BALTIC", "CAR_PLANT"),
+    "power": (
+        "POWERPLANT",
+        "COOLING_TOWER",
+        "POWER_HUB",
+        "POWER_TRANS_LINE",
+        "TRANSFORMER_BOOTH",
+    ),
+    "ware": ("TRAIN_DEPOT", "INDUSTRIAL_CONTAINER", "RAILWAY_PLATFORM"),
+    "comms": (
+        "NDB_RADIO",
+        "GDR_RADIO_TOWER",
+        "LATTICE_TOWER",
+        "RSBN",
+        "RSP-10",
+        "VOR_DME",
+        "TESLA_RP",
+        "AIRBASE_ANTENNA",
+        "WEATHER_STATION",
+    ),
+    "commandcenter": (
+        "KASERNE",
+        "MILITARY_BUILDING",
+        "TANK_HANGAR",
+        "KDP",
+        "HANGAR_MILLITARY",
+        "BARRACK",
+    ),
+    "fuel": ("FUEL_STORAGE", "GAZ_STATION"),
+    "oil": ("OILGAS_REFINERY",),
 }
 
-# --- clustering tuning (generic; AO-specific knobs live in the emitter) --------
-CLUSTER_CELL = (
-    150.0  # grid cell (m); buildings in touching cells merge into one complex
-)
-BUILD_CAP = 20  # max members per objective (keep the BUILD_CAP closest to centroid)
+# --- clustering tuning -----------------------------------------------------------------
+# Tight fixed-radius complexes: an objective is a seed building plus its nearest unused
+# neighbours within RADIUS_CAP, capped at BUILD_CAP. This bounds the blue-circle radius so a
+# selection pass can keep objectives from overlapping (the union-find approach chained whole
+# districts into one giant pool — see the 28-building bug it caused).
+RADIUS_CAP = 120.0  # max neighbour distance from a complex's seed (m)
+BUILD_CAP = 8  # max members per objective
 RADIUS_MARGIN = (
-    30.0  # blue-circle radius = max member distance from centroid + this (m)
+    20.0  # blue-circle radius = max member distance from centroid + this (m)
 )
 
 
@@ -87,15 +126,9 @@ class Cluster:
     region: str = "other"
 
     def finalize(self) -> None:
-        """Compute centroid, cap members to the BUILD_CAP closest, set radius."""
+        """Compute centroid and radius (members are already bounded by ``cluster``)."""
         self.cx = sum(b.x for b in self.members) / len(self.members)
         self.cz = sum(b.z for b in self.members) / len(self.members)
-        # cap to the BUILD_CAP closest to centroid, then recompute the centroid
-        self.members.sort(key=lambda b: (b.x - self.cx) ** 2 + (b.z - self.cz) ** 2)
-        if len(self.members) > BUILD_CAP:
-            self.members = self.members[:BUILD_CAP]
-            self.cx = sum(b.x for b in self.members) / len(self.members)
-            self.cz = sum(b.z for b in self.members) / len(self.members)
         self.radius = RADIUS_MARGIN + max(
             math.hypot(b.x - self.cx, b.z - self.cz) for b in self.members
         )
@@ -110,47 +143,59 @@ def cluster(
     category: str,
     region_fn: Optional[Callable[[float, float], str]] = None,
 ) -> list[Cluster]:
-    """Grid union-find: buildings whose cells touch (8-connectivity) form one complex.
+    """Form tight complexes: seed at the densest building, take its nearest unused
+    neighbours within ``RADIUS_CAP`` (capped at ``BUILD_CAP``), mark them used, repeat. This
+    bounds each complex's radius so a selection pass can keep objectives from overlapping.
 
-    If *region_fn* is given, each finalized cluster's ``region`` is set from its
-    centroid — the hook the emitter uses for its AO-specific spread rules. Generic
-    consumers omit it and ignore ``region``.
+    If *region_fn* is given, each finalized cluster's ``region`` is set from its centroid —
+    the hook the emitter uses for its AO-specific spread rules. Generic consumers omit it.
+
+    Indexed by position (not ``oid``) so duplicate/placeholder ids cluster correctly.
     """
-    cell_of = lambda b: (int(b.x // CLUSTER_CELL), int(b.z // CLUSTER_CELL))
-    parent: dict[int, int] = {}
+    cell = RADIUS_CAP
+    grid: dict[tuple[int, int], list[int]] = defaultdict(list)
+    for i, b in enumerate(buildings):
+        grid[(int(b.x // cell), int(b.z // cell))].append(i)
 
-    def find(i: int) -> int:
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    def union(a: int, b: int) -> None:
-        parent[find(a)] = find(b)
-
-    cells: dict[tuple[int, int], list[int]] = defaultdict(list)
-    for idx, b in enumerate(buildings):
-        parent[idx] = idx
-        cells[cell_of(b)].append(idx)
-    for (cx, cz), idxs in cells.items():
-        # union within cell + with the 8 neighbour cells
+    def neighbours(i: int, used: set[int]) -> list[int]:
+        b = buildings[i]
+        cx, cz = int(b.x // cell), int(b.z // cell)
+        out = []
         for di in (-1, 0, 1):
             for dz in (-1, 0, 1):
-                nb = cells.get((cx + di, cz + dz))
-                if nb:
-                    for j in nb:
-                        union(idxs[0], j)
-        for j in idxs[1:]:
-            union(idxs[0], j)
+                for j in grid.get((cx + di, cz + dz), ()):
+                    if (
+                        j not in used
+                        and math.hypot(buildings[j].x - b.x, buildings[j].z - b.z)
+                        <= RADIUS_CAP
+                    ):
+                        out.append(j)
+        return out
 
-    groups: dict[int, list[Building]] = defaultdict(list)
-    for idx, b in enumerate(buildings):
-        groups[find(idx)].append(b)
-    clusters = [Cluster(category, m) for m in groups.values()]
-    for c in clusters:
+    empty: set[int] = set()
+    order = sorted(
+        range(len(buildings)), key=lambda i: len(neighbours(i, empty)), reverse=True
+    )
+    used: set[int] = set()
+    clusters: list[Cluster] = []
+    for i in order:
+        if i in used:
+            continue
+        nb = neighbours(i, used)
+        nb.sort(
+            key=lambda j: math.hypot(
+                buildings[j].x - buildings[i].x, buildings[j].z - buildings[i].z
+            )
+        )
+        nb = nb[:BUILD_CAP]
+        if not nb:
+            continue
+        used.update(nb)
+        c = Cluster(category, [buildings[j] for j in nb])
         c.finalize()
         if region_fn is not None:
             c.region = region_fn(c.cx, c.cz)
+        clusters.append(c)
     return clusters
 
 

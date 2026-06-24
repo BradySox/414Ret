@@ -1,6 +1,8 @@
 # Decision: Retire the `ewrs` Plugin (MIST → MOOSE consolidation, phase 2)
 
-**Status:** decision / recommendation (no code change yet)
+**Status:** ✅ EXECUTED 2026-06-24 — `resources/plugins/ewrs/` removed; settings drop orphaned
+`ewrs` keys on load; changelog updated. (Also confirmed dormant: `ewrs` was not in
+`resources/plugins/plugins.json`, so it was already unloaded — deletion is pure dead-code removal.)
 **Date:** 2026-06-24
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md) phase 2.
 

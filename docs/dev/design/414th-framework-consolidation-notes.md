@@ -76,9 +76,9 @@ own in-game pass (Lua can't be CI-exercised).
 
 1. **Skynet → MANTIS** *(in progress)* — biggest MIST consumer with a first-class MOOSE replacement.
    See the MANTIS migration notes. Removes ~50 MIST refs.
-2. **EWRS → DELETE** — ✅ decided: redundant with the fork's MOOSE `bigeye`. Delete, don't port.
-   See [`414th-ewrs-retirement-decision.md`](414th-ewrs-retirement-decision.md). ~13 occurrences gone
-   for near-zero cost.
+2. **EWRS → DELETE** — ✅ **DONE (2026-06-24)**: redundant with the fork's MOOSE `bigeye`; removed
+   (was already dormant — not in `plugins.json`).
+   See [`414th-ewrs-retirement-decision.md`](414th-ewrs-retirement-decision.md).
 3. **SCAR + intercept glue** — port their handful of MIST helper calls to MOOSE (both already load
    MOOSE). 414th-owned, so no upstream coordination needed. ~20 refs.
 4. **CTLD → `Ops.CTLD`** — the large one (~8.7k lines, default-ON, ~26 distinct MIST calls). Config-

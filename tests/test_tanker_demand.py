@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import math
 
+from types import SimpleNamespace
+
+from game.ato.flighttype import FlightType
+from game.ato.flightwaypointtype import FlightWaypointType
 from game.commander.tankerdemand import (
     RefuelDemand,
     best_tanker_service_point,
+    theater_refuel_demand,
 )
 from game.dcs.aircrafttype import AirRefuelType
 from game.utils import nautical_miles
@@ -92,3 +97,54 @@ def test_cluster_radius_separates_demand() -> None:
     )
     assert point is not None
     assert point.x == 100_000
+
+
+# --- theater_refuel_demand (ATO extraction rules) ---------------------------------
+
+
+def _wp(is_refuel, x=0.0, y=0.0):  # type: ignore[no-untyped-def]
+    return SimpleNamespace(
+        waypoint_type=(
+            FlightWaypointType.REFUEL if is_refuel else FlightWaypointType.NAV
+        ),
+        position=FakePoint(x, y),
+    )
+
+
+def _flight(flight_type, method, count, waypoints):  # type: ignore[no-untyped-def]
+    return SimpleNamespace(
+        flight_type=flight_type,
+        count=count,
+        unit_type=SimpleNamespace(air_refuel_type=method),
+        flight_plan=SimpleNamespace(waypoints=waypoints),
+    )
+
+
+def _coalition(packages):  # type: ignore[no-untyped-def]
+    return SimpleNamespace(ato=SimpleNamespace(packages=packages))
+
+
+def test_extraction_collects_receiver_refuel_waypoints() -> None:
+    receiver = _flight(FlightType.DEAD, BOOM, 4, [_wp(False), _wp(True, 1000, 0)])
+    no_gas = _flight(FlightType.BARCAP, BOOM, 2, [_wp(False)])
+    pkg = SimpleNamespace(flights=[receiver, no_gas])
+    demands = theater_refuel_demand(_coalition([pkg]))  # type: ignore[arg-type]
+    assert len(demands) == 1
+    assert demands[0].count == 4 and demands[0].position.x == 1000
+
+
+def test_extraction_ignores_tanker_flights_and_buddy_tanker_packages() -> None:
+    # A dedicated tanker package: the tanker itself is not demand.
+    tanker_pkg = SimpleNamespace(
+        flights=[_flight(FlightType.REFUELING, None, 1, [_wp(False)])]
+    )
+    # An offensive package that carries its OWN buddy tanker -> its receivers refuel
+    # in-package and must be excluded from theater demand.
+    buddy_pkg = SimpleNamespace(
+        flights=[
+            _flight(FlightType.STRIKE, PROBE, 4, [_wp(True, 5000, 0)]),
+            _flight(FlightType.REFUELING, None, 1, [_wp(False)]),
+        ]
+    )
+    demands = theater_refuel_demand(_coalition([tanker_pkg, buddy_pkg]))  # type: ignore[arg-type]
+    assert demands == []

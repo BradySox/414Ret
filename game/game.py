@@ -422,6 +422,15 @@ class Game:
         persistency.autosave(self)
 
     def check_win_loss(self) -> TurnState:
+        # A blank-canvas setup game is mid-construction: the player is painting
+        # base ownership and at any moment may have only blue bases (or only red,
+        # or none) before the opponent's side is painted in. That is not a win or
+        # a loss -- evaluating it pops a bogus "Victory!"/"Defeat!" dialog while
+        # the player is still laying out the map. Win/loss only applies once the
+        # campaign is finalized into a normal game.
+        if self.blank_canvas_setup:
+            return TurnState.CONTINUE
+
         if not self.theater.player_points(state_check=True):
             return TurnState.LOSS
 
@@ -477,6 +486,13 @@ class Game:
             for_blue: True if the player coalition should be re-initialized.
             squadrons_start_full: True if generator setting was checked.
         """
+        # A blank-canvas setup game has no playable turn to initialize: bases are
+        # neutral and being painted, so bullseye/planning have no opposing points
+        # to work from (closest_opposing_control_points would assert). The setup
+        # game is started via finalize_blank_canvas, not by advancing turns.
+        if self.blank_canvas_setup:
+            return
+
         # Check for win or loss condition FIRST!
         turn_state = self.check_win_loss()
         if turn_state in (TurnState.LOSS, TurnState.WIN):

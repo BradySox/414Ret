@@ -153,6 +153,13 @@ class QTopPanel(QFrame):
             self.passTurnButton.setText("Begin Campaign")
             self.proceedButton.setEnabled(False)
             self.simSpeedControls.setEnabled(False)
+            # A blank-canvas setup game is started via the "Finalize Campaign"
+            # toolbar action, not by advancing the turn. Advancing it would run a
+            # win/loss check over a half-painted map (only blue or only red bases)
+            # and pop a bogus "Victory!"/"Defeat!" dialog.
+            if game.blank_canvas_setup:
+                self.passTurnButton.setText("Finalize to begin")
+                self.passTurnButton.setEnabled(False)
         else:
             raise RuntimeError(f"game.turn out of bounds!\n  value = {game.turn}")
 

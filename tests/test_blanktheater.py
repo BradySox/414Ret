@@ -73,9 +73,12 @@ def test_links_are_undirected_and_deduped() -> None:
     links = nearest_neighbor_links(sites, k=1)
     # AF0<->AF1 are mutual nearest; that pair appears once, not twice
     assert frozenset(("AF0", "AF1")) in links
+    # Every pair holds two distinct names, which also rules out self-links: a
+    # node paired with itself collapses to a single-element frozenset. (The old
+    # `next(iter(pair))` self-link check depended on frozenset iteration order,
+    # which Python randomizes per-process via PYTHONHASHSEED, so it failed
+    # intermittently in CI. This deterministic length check subsumes it.)
     assert all(len(pair) == 2 for pair in links)
-    # no self-links
-    assert all("AF0" not in pair or "AF0" != next(iter(pair)) for pair in links)
 
 
 def test_links_respect_k() -> None:

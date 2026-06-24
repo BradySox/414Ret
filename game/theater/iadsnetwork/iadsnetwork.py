@@ -28,8 +28,14 @@ class IadsNetworkException(Exception):
 
 
 @dataclass
-class SkynetNode:
-    """Dataclass for a SkynetNode used in the LUA Data table by the luagenerator"""
+class IadsNode:
+    """An IADS node exported for the mission Lua data table by the luagenerator.
+
+    Engine-agnostic by name: it carries the DCS group/unit name, owning player,
+    IADS role, per-unit properties, and the connection graph. The Skynet
+    emitter consumes it today; the MANTIS emitter will consume the same shape.
+    ``SkynetNode`` remains as a backwards-compatible alias.
+    """
 
     dcs_name: str
     player: Player
@@ -60,7 +66,7 @@ class SkynetNode:
             return group.group_name
 
     @classmethod
-    def from_group(cls, group: IadsGroundGroup) -> SkynetNode:
+    def from_group(cls, group: IadsGroundGroup) -> IadsNode:
         node = cls(
             cls.dcs_name_for_group(group),
             group.ground_object.coalition.player,
@@ -68,8 +74,12 @@ class SkynetNode:
         )
         unit_type = group.units[0].unit_type
         if unit_type is not None and isinstance(unit_type, GroundUnitType):
-            node.properties = unit_type.skynet_properties.to_dict()
+            node.properties = unit_type.iads_properties.to_dict()
         return node
+
+
+#: Backwards-compatible alias. Prefer ``IadsNode`` in new code.
+SkynetNode = IadsNode
 
 
 class IadsNetworkNode:
@@ -114,9 +124,15 @@ class IadsNetwork:
             else:
                 raise RuntimeError("Invalid iads_config in campaign")
 
-    def skynet_nodes(self, game: Game) -> list[SkynetNode]:
-        """Get all skynet nodes from the IADS Network"""
-        skynet_nodes: list[SkynetNode] = []
+    def iads_nodes(self, game: Game) -> list[IadsNode]:
+        """Export every live, in-range IADS node with its connection graph.
+
+        Engine-agnostic: the returned :class:`IadsNode` list is the single
+        source the mission Lua emitters (Skynet today, MANTIS later) build from.
+        Connection keys use ``IadsRole.skynet_value`` because the current Lua
+        consumer is Skynet; that is the one named seam to revisit per engine.
+        """
+        nodes: list[IadsNode] = []
         for node in self.nodes:
             if game.iads_considerate_culling(node.group.ground_object):
                 # Skip culled ground objects
@@ -126,21 +142,25 @@ class IadsNetwork:
             if all_dead:
                 continue
 
-            # SkynetNode.from_group(node.group) may raise an exception
-            #  (originating from SkynetNode.dcs_name_for_group)
+            # IadsNode.from_group(node.group) may raise an exception
+            #  (originating from IadsNode.dcs_name_for_group)
             # but if it does, we want to know because it's supposed to be impossible afaict
-            skynet_node = SkynetNode.from_group(node.group)
+            iads_node = IadsNode.from_group(node.group)
             for connection in node.connections.values():
                 if not any([x.alive for x in connection.units]):
                     continue
                 if connection.ground_object.is_friendly(
-                    skynet_node.player
+                    iads_node.player
                 ) and not game.iads_considerate_culling(connection.ground_object):
-                    skynet_node.connections[connection.iads_role.value].append(
-                        SkynetNode.dcs_name_for_group(connection)
+                    iads_node.connections[connection.iads_role.skynet_value].append(
+                        IadsNode.dcs_name_for_group(connection)
                     )
-            skynet_nodes.append(skynet_node)
-        return skynet_nodes
+            nodes.append(iads_node)
+        return nodes
+
+    def skynet_nodes(self, game: Game) -> list[IadsNode]:
+        """Backwards-compatible alias for :meth:`iads_nodes`."""
+        return self.iads_nodes(game)
 
     def _update_iads_comms_and_power(
         self, tgo: TheaterGroundObject, events: GameUpdateEvents

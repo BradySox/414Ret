@@ -14,7 +14,18 @@ from game.dcs.unittype import UnitType
 
 
 @dataclass
-class SkynetProperties:
+class IadsProperties:
+    """Per-unit-type IADS tuning, loaded from the unit definition's
+    ``skynet_properties`` block.
+
+    Named generically (not ``Skynet*``) because these properties describe
+    IADS behaviour that any engine can consume — the field names happen to
+    match Skynet's API today, but the concept (HARM defence, go-live range,
+    autonomous behaviour, …) is engine-agnostic. See
+    docs/dev/design/414th-mantis-migration-notes.md §3.2 for the mapping to
+    MANTIS. ``SkynetProperties`` remains as a backwards-compatible alias.
+    """
+
     can_engage_harm: Optional[str] = None
     can_engage_air_weapon: Optional[str] = None
     go_live_range_in_percent: Optional[str] = None
@@ -23,8 +34,8 @@ class SkynetProperties:
     harm_detection_chance: Optional[str] = None
 
     @classmethod
-    def from_data(cls, data: dict[str, Any]) -> SkynetProperties:
-        props = SkynetProperties()
+    def from_data(cls, data: dict[str, Any]) -> IadsProperties:
+        props = cls()
         if "can_engage_harm" in data:
             props.can_engage_harm = str(data["can_engage_harm"]).lower()
         if "can_engage_air_weapon" in data:
@@ -50,10 +61,20 @@ class SkynetProperties:
         return hash(id(self))
 
 
+#: Backwards-compatible alias. Prefer ``IadsProperties`` in new code; this name
+#: is retained so existing imports and references keep working during the
+#: Skynet -> MANTIS engine migration.
+SkynetProperties = IadsProperties
+
+
 @dataclass(frozen=True)
 class GroundUnitType(UnitType[Type[VehicleType]]):
     spawn_weight: int
-    skynet_properties: SkynetProperties
+    # Field name kept as ``skynet_properties`` to stay compatible with existing
+    # pickled saves and the unit-definition YAML key; the type is the generic
+    # ``IadsProperties``. Prefer the ``iads_properties`` accessor below in new
+    # code.
+    skynet_properties: IadsProperties
 
     # Defines if we should place the ground unit with an inverted heading.
     # Some units like few Launchers have to be placed backwards to be able to fire.
@@ -63,6 +84,16 @@ class GroundUnitType(UnitType[Type[VehicleType]]):
     _by_unit_type: ClassVar[dict[type[VehicleType], list[GroundUnitType]]] = (
         defaultdict(list)
     )
+
+    @property
+    def iads_properties(self) -> IadsProperties:
+        """Engine-agnostic accessor for this unit's IADS tuning.
+
+        Aliases the persisted ``skynet_properties`` field under a neutral name so
+        new IADS-engine code (e.g. the MANTIS bridge) does not reference Skynet
+        by name. See docs/dev/design/414th-mantis-migration-notes.md §3.2.
+        """
+        return self.skynet_properties
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         # Save compat: the `name` field has been renamed `variant_id`.
@@ -155,7 +186,7 @@ class GroundUnitType(UnitType[Type[VehicleType]]):
             manufacturer=data.get("manufacturer", "No data."),
             role=data.get("role", "No data."),
             price=data.get("price", 1),
-            skynet_properties=SkynetProperties.from_data(
+            skynet_properties=IadsProperties.from_data(
                 data.get("skynet_properties", {})
             ),
             reversed_heading=data.get("reversed_heading", False),

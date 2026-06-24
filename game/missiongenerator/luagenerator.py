@@ -471,11 +471,11 @@ class LuaGenerator:
         iads_object.get_or_create_item("RED")
         # Should probably do the same with all the roles... but the script is already
         # tolerant of those being empty.
-        for node in self.game.theater.iads_network.skynet_nodes(self.game):
+        for node in self.game.theater.iads_network.iads_nodes(self.game):
             coalition = iads_object.get_or_create_item(
                 "BLUE" if node.player.is_blue else "RED"
             )
-            iads_type = coalition.get_or_create_item(node.iads_role.value)
+            iads_type = coalition.get_or_create_item(node.iads_role.skynet_value)
             iads_element = iads_type.add_item()
             iads_element.add_key_value("dcsGroupName", node.dcs_name)
             if node.iads_role in [IadsRole.SAM, IadsRole.SAM_AS_EWR]:

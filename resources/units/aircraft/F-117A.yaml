@@ -20,8 +20,6 @@ variants:
 has_built_in_target_pod: true
 tasks:
   Strike: 620
-secondary_tasks:
-  - DEAD
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

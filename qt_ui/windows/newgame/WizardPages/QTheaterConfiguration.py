@@ -128,6 +128,19 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         self.iads_label = QtWidgets.QLabel("Advanced IADS (WIP)")
         mapSettingsLayout.addWidget(self.iads_label, 1, 0)
         mapSettingsLayout.addWidget(self.advanced_iads, 1, 1)
+        # Blank canvas: ignore the selected campaign's .miz and generate an empty
+        # theater (every airfield on that terrain, split ownership, no preset
+        # SAMs/armor/objectives) for the campaign maker. The campaign selection is
+        # used only to choose the terrain.
+        self.blank_canvas = QtWidgets.QCheckBox()
+        self.registerField("blankCanvas", self.blank_canvas)
+        blank_label = QtWidgets.QLabel("Blank canvas (experimental)")
+        blank_label.setToolTip(
+            "Start from an empty map: every airfield on the selected terrain, "
+            "split between sides, with no preset units. Build the campaign by hand."
+        )
+        mapSettingsLayout.addWidget(blank_label, 2, 0)
+        mapSettingsLayout.addWidget(self.blank_canvas, 2, 1)
         mapSettingsGroup.setLayout(mapSettingsLayout)
 
         # Time Period

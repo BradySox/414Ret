@@ -82,7 +82,10 @@ own in-game pass (Lua can't be CI-exercised).
 3. **SCAR + intercept glue** — port their handful of MIST helper calls to MOOSE (both already load
    MOOSE). 414th-owned, so no upstream coordination needed. ~20 refs.
 4. **CTLD → `Ops.CTLD`** — the large one (~8.7k lines, default-ON, ~26 distinct MIST calls). Config-
-   bridge swap mirroring Skynet→MANTIS; ~15–20 days incl. QA, MEDIUM–HIGH risk. Scoped in
+   bridge swap mirroring Skynet→MANTIS; ~15–20 days incl. QA, MEDIUM–HIGH risk. **⚠️ Not a clean
+   isolatable port:** it's woven into Python flight-planning and the **SCAR feature reuses the
+   air-assault CTLD machinery** (capture + CSAR), so even a gated bridge must be SCAR-validated and
+   must not be blind-ported in one pass. Scoped in
    [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md).
 5. **dismounts** — ✅ **RETIRED (2026-06-24)**. Was the would-be MIST-drop blocker (no MOOSE
    successor), but turned out to be already dormant (not in `plugins.json`), so it was deleted

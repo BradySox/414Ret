@@ -32,6 +32,25 @@ the vendored CTLD. The port keeps the **Python side unchanged** and rewrites onl
 This is exactly the Skynet→MANTIS shape: **keep the generated data table as source of truth; swap the
 Lua consumer.**
 
+## ⚠️ Cross-feature intersection — CTLD is NOT a clean, isolatable port (the key risk)
+
+Unlike Skynet/IADS (a self-contained Lua consumer), CTLD is **woven into Python flight-planning and a
+flagship feature**, so it cannot be swapped behind a simple gate as cleanly as MANTIS:
+
+- **Flight-planning layer:** `game/ato/flightplans/airlift.py` + `airassault.py` build CTLD
+  pickup/drop-off zones into the plan, and `game/theater/interfaces/CTLD.py` mixes `ctld_zones` onto
+  control points. The AirLift/AirAssault flight plans assume the legacy CTLD's zone/menu model.
+- **SCAR depends on it.** `game/dcs/aircrafttype.py` is explicit: the SCAR commander-capture path
+  delivers its team "via the air-assault CTLD machinery," and the downed-team **CSAR recovery loop
+  reuses that same machinery.** SCAR is a default-ON flagship (§15). **Porting CTLD can therefore
+  break SCAR's capture + CSAR flows** even if airlift/logistics look fine.
+
+**Consequence:** a gated `ctld_engine: legacy | moose` bridge keeps *new* logistics inert, but the
+moment it is exercised it must satisfy SCAR's air-assault/CSAR expectations too — so the in-game pass
+**must include a full SCAR capture + CSAR run**, not just airlift/logistics. Coordinate with the SCAR
+owner before flipping the default. This is the main reason CTLD is sequenced last among the live ports
+and should not be blind-ported in one pass.
+
 ## Feature areas to preserve
 
 Troop transport (custom 2/4/6/10/12/24 squad configs w/ JTAC/AT/AA mix), crate sling-load + unpack,

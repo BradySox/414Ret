@@ -16,6 +16,9 @@ class ControlPointJs(BaseModel):
     id: UUID
     name: str
     blue: bool
+    # True while unassigned during blank-canvas campaign-maker setup. The map
+    # renders these gray and lets the player click to paint blue/red.
+    neutral: bool
     position: LeafletPoint
     mobile: bool
     destination: LeafletPoint | None
@@ -69,6 +72,7 @@ class ControlPointJs(BaseModel):
             id=control_point.id,
             name=control_point.name,
             blue=blue,
+            neutral=control_point.captured.is_neutral,
             position=control_point.position.latlng(),
             mobile=control_point.moveable and control_point.captured.is_blue,
             destination=destination,

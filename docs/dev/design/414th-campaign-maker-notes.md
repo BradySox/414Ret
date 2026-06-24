@@ -24,6 +24,75 @@ the *blank canvas* — every airfield on a chosen map, assignable ownership, **n
 preset SAMs/armor/objectives/fronts — loaded into the normal UI so the existing
 placement tools (drop-spawn §20, scenery targets, squadron model) can fill it in.
 
+---
+
+## REDESIGN — the neutral-paint flow (current direction, 2026-06-23)
+
+Playtest feedback: the first cut auto-assigned sides and auto-drew connectivity —
+"I would hardly call that blank." The real flow the user wants:
+
+1. **Setup** — generate *every* airfield on the terrain as **neutral (gray)**, no
+   fronts, no units.
+2. **Paint** — the player clicks bases on the **live map** to cycle gray → blue →
+   red (chosen interaction model; the alternative wizard base-list was declined).
+3. **Finalize** — **drop every still-gray base**, derive the front from where blue
+   meets red, build support buildings, then the player staffs airwings, then start.
+
+**Why gray bases must be pruned, not just hidden (the "sneak-in" gotcha):** each
+side's planner only sees its own bases (`player_points`=blue, `enemy_points`=red),
+but `ObjectiveFinder` pulls `control_points_for(NEUTRAL)` as **capture/expansion
+targets** (`game/commander/objectivefinder.py:392`). So an unpainted gray base is
+something the AI tries to seize. Dropping unpainted bases at finalize removes that
+path and keeps them off the map entirely.
+
+### Feasibility — both gates PASSED headless (2026-06-23)
+
+- An **all-neutral** Afghanistan (25 gray CPs) runs through `GameGenerator.generate()`
+  → `begin_turn_0()` to turn 0. So the engine can hold an empty paintable game.
+- Full backbone: setup 25 gray → paint 7 blue / 5 red → `ownership_from_theater` →
+  `generate_blank_theater(ownership=…)` **pruned the 13 gray bases**, kept 12 with
+  correct sides + 23 derived front pairs → generate + turn 0, **0 neutral remaining**.
+
+### Architecture / increments
+
+- **Increment A — backend backbone ✅ (built + headless-verified):**
+  `game/campaignloader/blanktheatergen.py` now has three modes:
+  `all_neutral=True` (setup, all gray, no fronts), `ownership={name: Player}`
+  (finalize — only painted bases kept, sides assigned, fronts derived), and the
+  legacy auto-split fallback. Plus `ownership_from_theater()` to read painted
+  ownership off the setup theater. Front derivation reuses the policy core's
+  `nearest_neighbor_links` over the *kept* bases.
+- **Increment B — server + map paint UI (in progress):**
+  - **Paint = server-side ✅ (built, headless-verified):** `PUT /control-points/{id}/coalition`
+    (`blue`/`red`/`neutral`) calls `ControlPoint.assign_setup_coalition(game, player)`
+    (re-binds `starting_coalition` + live `_coalition`) and pushes an SSE
+    `update_control_point` — the exact drop-spawn §20 mutation pattern.
+    `ControlPointJs` gained a `neutral: bool` so the map can render gray. Verified:
+    a CP cycles gray→blue→red→gray and the JS model reflects it each step.
+  - **Finalize = Qt-side (NEXT, not server):** game *lifecycle* (new/load) is driven
+    by Qt (`onGameGenerated` → `GameUpdateSignal.game_loaded`), and the FastAPI server
+    has **no** precedent for swapping the whole game — forcing a cross-layer game swap
+    from a route would be fragile. So a Qt "Finalize campaign" action (toolbar button,
+    visible in setup mode) reads `ownership_from_theater` → `generate_blank_theater(ownership=…)`
+    → `GameGenerator` → `begin_turn_0` → `onGameGenerated`, reusing the proven load path.
+    The wizard stashes the generation params (factions/settings/dates) so finalize can
+    regenerate.
+  - **React (NEXT, can't verify in CI):** setup mode renders `neutral` CPs gray and
+    cycles them on click via the paint endpoint; the OpenAPI client regenerates at CI build.
+  - **Until finalize + React land, the wizard keeps the legacy auto-split** so there is
+    no unusable all-gray intermediate.
+- **Increment C — support buildings:** finalize should procedurally place economy
+  structures (factories/depots/etc.) for owned bases. Retribution normally gets
+  these from the `.miz`; blank canvas must synthesize them. Biggest remaining
+  unknown; deferred.
+- **Increment D+ — save a hand-built theater as a reusable campaign.**
+
+### Airfield count caveat
+
+`terrain.airport_list()` returns pydcs's named-airbase set (e.g. 25 for
+Afghanistan). DCS ME may show more (FARP pads / helipads pydcs doesn't expose as
+airbases) — that's a pydcs terrain-data limit, not something the generator can add.
+
 Sibling pieces already built: drop-spawn (§20, right-click unit placement),
 scenery strike-target data (`scenerycatalog`, PR #115/#117), fog reveal (§18).
 This note is the spine they hang off.

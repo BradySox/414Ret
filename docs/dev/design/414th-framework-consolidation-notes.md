@@ -79,8 +79,14 @@ own in-game pass (Lua can't be CI-exercised).
 2. **EWRS → DELETE** — ✅ **DONE (2026-06-24)**: redundant with the fork's MOOSE `bigeye`; removed
    (was already dormant — not in `plugins.json`).
    See [`414th-ewrs-retirement-decision.md`](414th-ewrs-retirement-decision.md).
-3. **SCAR + intercept glue** — port their handful of MIST helper calls to MOOSE (both already load
-   MOOSE). 414th-owned, so no upstream coordination needed. ~20 refs.
+3. **SCAR + intercept glue** — ⚠️ **reclassified (2026-06-24): NOT "helper calls."** These are
+   **core dynamic spawning + ground routing**: `mist.dynAdd` spawns SCAR's HVT convoy + SOF teams
+   and the intercept EWR backstops; `mist.goRoute`/`mist.ground.buildWP` drive SCAR convoy routing;
+   plus `mist.scheduleFunction`. Porting blind in **default-ON flagship SCAR** risks silently
+   breaking convoy/SOF spawning (only caught in-game). Same risk class as CTLD — needs in-game
+   validation, not a blind swap. `mist.scheduleFunction` → native `timer.scheduleFunction` is the
+   only clean 1:1; `dynAdd` → `coalition.addGroup` and `goRoute` → MOOSE ground routing both need
+   careful behavior-matching + a SCAR/QRA flight test.
 4. **CTLD → `Ops.CTLD`** — the large one (~8.7k lines, default-ON, ~26 distinct MIST calls). Config-
    bridge swap mirroring Skynet→MANTIS; ~15–20 days incl. QA, MEDIUM–HIGH risk. **⚠️ Not a clean
    isolatable port:** it's woven into Python flight-planning and the **SCAR feature reuses the
@@ -93,6 +99,22 @@ own in-game pass (Lua can't be CI-exercised).
    MIST drop.
 6. **Core glue** (`dcs_retribution.lua`) — port the 5 MIST calls above to native/MOOSE.
 7. **Drop MIST** — remove `mist_4_5_126.lua` from `base/plugin.json`. **Definition of done.**
+
+### Sequencing insight (2026-06-24) — CTLD is the gate; don't port the others early
+
+`mist_4_5_126.lua` **stays loaded until every consumer is off it**, and **CTLD (84 refs) is the long
+pole**. Therefore porting SCAR/intercept (phase 3) or the core glue (phase 6) *before* CTLD buys
+**nothing** toward the goal — MIST is still loaded for CTLD — while incurring real regression risk in
+live, default-on code (flagship SCAR especially). So the rational order is **not** 3 → 4 → 6 → 7:
+
+- **Tackle CTLD first** (it's the gate and the hardest; do it as a gated, SCAR-validated bridge).
+- **Batch SCAR/intercept + core-glue + the MIST drop together at the very end**, in one in-game-
+  validated pass, since they only pay off once MIST can actually be removed.
+- The only completed phases so far (dismounts, ewrs) were **deletions of dead code** — zero risk and
+  always worth doing immediately. The remaining live ports are the opposite and should be batched.
+
+**Net: there is no safe, payoff-positive blind work left in this program.** The next real step is
+in-game validation (start with the MANTIS G6 pass), then the CTLD bridge with SCAR coordination.
 
 ## Parallel track: lean into the MOOSE `Ops.*` family
 

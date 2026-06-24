@@ -52,7 +52,9 @@ is legacy only and should not be extended.
   spawned units in Moose `SpawnWithIndex`) and a terrain-relative LOW spawn altitude
   per base via `SetSquadronTakeoffInAirAltitude` (field elevation + `SCRAMBLE_AGL_M`),
   replacing the global absolute-MSL `SetDefaultTakeoffInAirAltitude` that was unsafe at
-  high-elevation fields. Both are tunable and need an in-game pass.
+  high-elevation fields. Both are tunable; in-game pass ☑ VERIFIED 2026-06-24 (A1,
+  Tacview) — scrambled MiG-29As air-spawned at ~750 m AGL / 240–510 kt and climbed
+  under control, no stall or ground-clawing dive.
 - Lua/config path: `game/missiongenerator/interceptluadata.py` populates
   `dcsRetribution.Intercept`, and `resources/plugins/intercept/intercept-config.lua`
   instantiates Moose `AI_A2A_DISPATCHER` behavior from that table.
@@ -369,7 +371,9 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   so no save migration. `can_plan_escort(AirToAir)` was also corrected to gate on
   `ESCORT` **or** `TARCAP` (CAS's A2A escort is TARCAP, not ESCORT) instead of `ESCORT`
   alone. Tests: `tests/test_aircraft_engagement_escort_zone.py`.
-  **Needs an in-game pass** (B4) — confirm CAS packages spawn with a TARCAP.
+  In-game pass ☑ VERIFIED 2026-06-24 (B4, Tacview) — CAS (`Front line Fulda/Haina
+  CAS`) spawned with a TARCAP + SEAD Sweep, and forward DEAD/BAI/SEAD packages all
+  carried A2A + SEAD escorts.
 - Engagement-range bumps: `game/settings/settings.py` (`cas_engagement_range_distance`
   10->15 nm, `armed_recon_engagement_range_distance` 5->10 nm).
 - Cruise/patrol altitude doctrine (Campaign Doctrine page, all default to **no behavior

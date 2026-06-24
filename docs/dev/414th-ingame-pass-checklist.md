@@ -327,3 +327,17 @@ so the two docs don't drift.
 | 20-E | Place a naval group in sea → succeeds; place on land → error dialog | Terrain check not firing |
 | 20-F | Place beyond 200 km from nearest CP (no free cheat) → error dialog | No range error; TGO placed out of range |
 | 20-G | Enable "Free placement" cheat → no budget deducted | Budget still decremented |
+
+### Campaign maker — blank canvas (in-game-pass required)
+
+Design: `docs/dev/design/414th-campaign-maker-notes.md`. Headless gate already
+passed (generate + begin_turn_0 → turn 0 on a blank Caucasus); these are the
+things only a live run can confirm.
+
+| # | Observable criterion | Fail signature |
+|---|---|---|
+| BC-A | New Game → Introduction → pick **"Build your own (blank canvas)"** → choose a terrain/campaign + factions → Finish → game generates without error | Crash/hang during generation on the blank theater |
+| BC-B | Map opens with every airfield on the terrain present, split blue/red, **no** SAMs/armor/objectives anywhere | Missing airfields; preset units appear; all-one-colour map |
+| BC-C | Air-wing dialog (shown right after Finish) lets you add squadrons to a base from scratch | Can't add squadrons; dialog empty/errors with 0 preconfigured |
+| BC-D | After staffing a base, you can plan + fly a normal package | No flyable aircraft; planner can't build a package |
+| BC-E | Drop-spawn (§20) places SAMs/armor onto the blank map as normal | Placement broken on a hand-built theater |

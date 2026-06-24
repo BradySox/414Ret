@@ -76,6 +76,18 @@ class CampaignAirWingConfig:
     by_location: dict[ControlPoint, list[SquadronConfig]]
 
     @classmethod
+    def empty(cls) -> CampaignAirWingConfig:
+        """An air-wing config with no preconfigured squadrons at any base.
+
+        Backed by a ``defaultdict`` so ``by_location[cp]`` yields ``[]`` for bases
+        with nothing configured (e.g. the blank-canvas campaign maker, where the
+        player staffs bases by hand) instead of raising ``KeyError`` in
+        ``DefaultSquadronAssigner``.
+        """
+        empty: dict[ControlPoint, list[SquadronConfig]] = defaultdict(list)
+        return CampaignAirWingConfig(empty)
+
+    @classmethod
     def from_campaign_data(
         cls, data: dict[Union[str, int], Any], theater: ConflictTheater
     ) -> CampaignAirWingConfig:

@@ -5,6 +5,8 @@ import logging
 from PySide6 import QtGui, QtWidgets
 
 from game.campaignloader.campaign import Campaign
+from game.campaignloader.campaignairwingconfig import CampaignAirWingConfig
+from game.campaignloader.blanktheatergen import generate_blank_theater
 from game.theater.start_generator import GameGenerator, GeneratorSettings, ModSettings
 from qt_ui.windows.AirWingConfigurationDialog import AirWingConfigurationDialog
 from qt_ui.windows.newgame.WizardPages.QFactionSelection import FactionSelection
@@ -111,7 +113,21 @@ class NewGameWizard(QtWidgets.QWizard):
         logging.info("New campaign blue faction: %s", blue_faction.name)
         logging.info("New campaign red faction: %s", red_faction.name)
 
-        theater = campaign.load_theater(generator_settings.advanced_iads)
+        blank_canvas = bool(self.field("blankCanvas"))
+        if blank_canvas:
+            # Campaign maker: ignore the .miz; generate an empty theater of the
+            # selected terrain. The player staffs bases via the air-wing dialog and
+            # places units via drop-spawn after the campaign starts.
+            theater = generate_blank_theater(
+                campaign.data["theater"],
+                advanced_iads=generator_settings.advanced_iads,
+            )
+            air_wing_config = CampaignAirWingConfig.empty()
+            campaign_name = f"Blank canvas — {theater.terrain.name}"
+        else:
+            theater = campaign.load_theater(generator_settings.advanced_iads)
+            air_wing_config = campaign.load_air_wing_config(theater)
+            campaign_name = campaign.name
 
         logging.info("New campaign theater: %s", theater.terrain.name)
 
@@ -121,11 +137,11 @@ class NewGameWizard(QtWidgets.QWizard):
             blue_faction,
             red_faction,
             theater,
-            campaign.load_air_wing_config(theater),
+            air_wing_config,
             settings,
             generator_settings,
             mod_settings,
-            campaign_name=campaign.name,
+            campaign_name=campaign_name,
         )
         self.generatedGame = generator.generate()
 
@@ -160,8 +176,44 @@ class IntroPage(QtWidgets.QWizardPage):
         )
         label.setWordWrap(True)
 
+        # Campaign type: a prepared campaign vs a blank canvas to build by hand.
+        # The blank-canvas radio drives accept()'s branch via the "blankCanvas" field.
+        type_group = QtWidgets.QGroupBox("Campaign type")
+        self.included_radio = QtWidgets.QRadioButton("Play an included campaign")
+        self.included_radio.setChecked(True)
+        included_desc = QtWidgets.QLabel(
+            "Start from a hand-built campaign with preset front lines, air "
+            "defenses, and objectives."
+        )
+        included_desc.setWordWrap(True)
+        included_desc.setIndent(22)
+
+        self.blank_canvas_radio = QtWidgets.QRadioButton(
+            "Build your own (blank canvas — experimental)"
+        )
+        self.registerField("blankCanvas", self.blank_canvas_radio)
+        blank_desc = QtWidgets.QLabel(
+            "Start from an empty map: every airfield on the terrain, split "
+            "between sides, with no preset units. You assign ownership and place "
+            "SAMs, armor, and strike targets by hand. Pick the terrain on the next "
+            "page — the campaign you select there only sets the map."
+        )
+        blank_desc.setWordWrap(True)
+        blank_desc.setIndent(22)
+
+        type_layout = QtWidgets.QVBoxLayout()
+        type_layout.addWidget(self.included_radio)
+        type_layout.addWidget(included_desc)
+        type_layout.addSpacing(10)
+        type_layout.addWidget(self.blank_canvas_radio)
+        type_layout.addWidget(blank_desc)
+        type_group.setLayout(type_layout)
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(label)
+        layout.addSpacing(14)
+        layout.addWidget(type_group)
+        layout.addStretch(1)
         self.setLayout(layout)
 
 

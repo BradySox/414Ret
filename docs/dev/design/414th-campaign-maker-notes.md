@@ -1,7 +1,21 @@
 # 414th — Campaign Maker (blank-start foundation) — design notes
 
-**Status:** in progress. Increment 1 (pure policy core) landed; glue + wizard are
-specced below and need an in-game pass. Scoped 2026-06-23.
+**Status:** in progress. Increment 1 (pure policy core) landed (PR #120).
+Increments 2–3 (terrain glue + wizard "Blank canvas" entry) built and
+**headless-verified**; the live in-game pass (fly a blank campaign) is still
+pending. Scoped 2026-06-23.
+
+> **Runnability gate: PASSED headless (2026-06-23).** A blank Caucasus theater
+> (21 airfields, 11 blue / 10 red, nearest-neighbor fronts) was run through the
+> real `GameGenerator.generate()` → `begin_turn_0()` pipeline outside the UI and
+> reached turn 0 cleanly. The feared "no ground fronts → crash" was **not** the
+> blocker (the default front graph runs fine). The only real fix was the air-wing
+> config: an empty campaign passes a plain `{}` to `CampaignAirWingConfig`, but
+> `DefaultSquadronAssigner` does `by_location[cp]`, which `KeyError`s unless the
+> dict is a `defaultdict`. Fixed via `CampaignAirWingConfig.empty()`. A blank
+> canvas therefore starts with **0 squadrons** — the player staffs bases via the
+> `AirWingConfigurationDialog` the wizard already shows next; that dialog's
+> add-from-scratch UX is the remaining thing to confirm in-game.
 
 **Vision:** start from an empty theater and build a campaign by hand — assign
 airfield ownership, drop in SAMs / armor / strike targets, author airwings, save &
@@ -108,12 +122,24 @@ or `begin_turn_0` on a theater with zero `connected_points`.
 
 ### Increment 3 — wizard entry (`Qt`, not CI-type-checked)
 
-A "Blank canvas" pseudo-entry on the theater page: pick terrain + factions + date,
-skip campaign selection, call `generate_blank_theater`, then run the **existing**
-`GameGenerator` / `AirWingConfigurationDialog` / `begin_turn_0` path unchanged.
-Squadrons: the air-wing config dialog already lets the player staff bases, so an
-empty `CampaignAirWingConfig({})` is the natural default — verify the dialog handles
-"no recommended squadrons" gracefully.
+A top-level **"Campaign type"** choice on the **Introduction page**: a radio pair
+"Play an included campaign" (default) vs "Build your own (blank canvas)", registered
+as the `blankCanvas` wizard field. (First cut buried this as a checkbox in the
+theater page's Map Settings group; user feedback moved it up front where the
+include-vs-build fork belongs.) When blank canvas is on, `accept()` calls
+`generate_blank_theater(campaign.data["theater"], …)` + `CampaignAirWingConfig.empty()`
+instead of `campaign.load_theater()`; the campaign still selected on the theater page
+only chooses the terrain. Everything downstream — `GameGenerator` /
+`AirWingConfigurationDialog` / `begin_turn_0` — runs unchanged. Headless-verified the
+page builds and the field toggles (offscreen `QApplication`); the live add-from-scratch
+air-wing UX is the remaining in-game check.
+
+> **Note — the #121 stacked-merge hazard (2026-06-23):** Increments 2–3 first
+> merged as PR #121 whose *base* was the (undeleted) `claude/campaign-maker-blank-start`
+> branch, so it merged into that side branch, not `main` — the glue silently never
+> reached `main`. Recovered by cherry-picking the glue commits onto a fresh branch
+> off `main`. Lesson: don't stack a PR on a branch that's about to merge-and-not-delete;
+> target `main` directly or confirm the base is deleted so GitHub retargets.
 
 ### Increment 4+ — the editor proper (the long arc)
 

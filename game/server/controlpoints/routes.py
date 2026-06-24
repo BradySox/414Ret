@@ -122,6 +122,12 @@ def paint_coalition(
     Used by the campaign maker's live-map paint step. ``coalition`` is one of
     ``"blue"``, ``"red"``, ``"neutral"``.
     """
+    if not game.blank_canvas_setup:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="Base ownership can only be painted during blank-canvas setup.",
+        )
+
     cp = game.theater.find_control_point_by_id(cp_id)
     if cp is None:
         raise HTTPException(

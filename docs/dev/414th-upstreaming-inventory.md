@@ -8,6 +8,14 @@ live on a clean branch that rebases cleanly. This file is the **inventory +
 queue**: what's genuinely generic, how ready it is, and — just as important —
 what is fork-specific and must **never** go upstream.
 
+> **Scope note.** This file is the *tactical carve queue* for the generic **bug-fixes**.
+> For the longer view — that almost every 414th *feature* (SCAR, TIC, TARS, Flight
+> Control, QRA, the campaign maker) is also community-upstreamable once split from the
+> 414th content/identity layer — see
+> [414th-community-contribution-roadmap.md](414th-community-contribution-roadmap.md).
+> The ⛔ list below is **genuinely fork-specific** (content, identity, doctrine
+> *defaults*); it is *not* the list of "things the community wouldn't want."
+
 Working clones live at `..\retribution-pr` (and `..\pydcs-pr` for pydcs); see
 the [upstreaming-prs memory] / `docs/` runbook for the carve-out mechanics.
 Verify each candidate in-game first (cross-ref
@@ -153,11 +161,18 @@ unvalidated "fix" is not something to ask upstream to take.
   (`game/missiongenerator/luagenerator.py` `_sof_c130_present`): skips the 414th
   EW/ISR plugin when a `FlightType.SOF` flight is a C-130J-30. Depends entirely
   on the fork's `c130j` plugin and `FlightType.SOF` — meaningless upstream.
-- **The entire SCAR / commander-capture / SOF / CSAR stack, TIC, TARS, Flight
-  Control 414th glue, QRA reserve doctrine** — these are the 414th *features*, not
-  generic fixes. Keep on `main`. (Recon fog moved to the queue as item 8 — its
-  *generic* half is upstreamable once split from SCAR/TARPS; the SCAR command-post
-  gate stays here.)
+- **The 414th content + identity + multi-turn-economy layer** — the Red Tide and
+  Operation Shattered Dagger campaigns, the [CH] Iran 2020 faction (CurrentHill mod
+  dependency), the doctrine *default values* (QRA radii/probability), the SCAR
+  commander-capture / SOF / CSAR economy loop, the C-130J EW *physics constants*, and
+  the TIC stance tuning. These stay on `main`.
+  > **Re-scoped:** the *feature mechanisms* underneath — the SCAR base task, TIC, TARS,
+  > Flight Control, the QRA reserve model, the `FlightType.JAMMING` framework — are
+  > **high community value, hard carve**, not "never want." They moved out of this ⛔
+  > list into the
+  > [community contribution roadmap](414th-community-contribution-roadmap.md) (Tier 3),
+  > the same way recon fog moved from ⛔ to queue item 8. Only the doctrine/economy
+  > slivers above stay here.
 - **Splash Damage 3.4.2 414th buddy-tuned build** — pinned, intentionally
   divergent from upstream/source. Never push upstream or overwrite from it.
 

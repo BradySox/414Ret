@@ -54,6 +54,11 @@ file. This guide is the map; those are the territory.
 - [docs/dev/414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) — the
   **upstreaming queue**: which generic fixes to carve toward `bradyccox/dcs-retribution`
   (priority-ordered, with readiness marks) and which fork-specific bits must NEVER go upstream.
+- [docs/dev/414th-community-contribution-roadmap.md](docs/dev/414th-community-contribution-roadmap.md) —
+  the **long view**: a two-axis (community-value × carve-difficulty) re-classification of
+  *every* feature, separating the thin genuinely-414th content/identity/economy layer from the
+  large generic-capability set, with a strip-list per feature and the ordered contribution waves
+  for giving the rest back upstream.
 - [docs/dev/design/](docs/dev/design/) — per-feature design notes (read before touching the
   matching code):
   - `414th-air-defense-planning-notes.md` — CAP/BARCAP/QRA planning intent

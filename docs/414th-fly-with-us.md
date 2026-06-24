@@ -52,7 +52,7 @@ front, and drop in the threats — custom campaigns and scenarios, not just the 
 
 If a dynamic war that pushes back sounds like your kind of evening, come find us.
 
-> **Get in touch:** _[ add your 414th Discord invite / recruiting contact here ]_
+> **Get in touch:** <https://discord.gg/414th-jfg>
 
 *414th Joint Fighter Group — built on the open-source
 [DCS Retribution](https://github.com/dcs-retribution/dcs-retribution) project.*

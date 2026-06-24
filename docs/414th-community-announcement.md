@@ -1,7 +1,7 @@
 # Community announcement (paste-ready)
 
-> Links: download URL is real. Fill in the Discord invite where marked before posting.
-> Written to read like a person, not a brochure — keep it casual if you edit it.
+> Links are live (release download + 414th JFG Discord). Written to read like a person,
+> not a brochure — keep it casual if you edit it.
 
 ---
 
@@ -38,7 +38,7 @@ sounds like your thing, grab it here:
 
 **https://github.com/bradyccox/414Ret/releases/tag/latest**
 
-And if you'd rather fly it with people than solo, we're the 414th — come say hi:
-_[ Discord invite here ]_
+And if you'd rather fly it with people than solo, we're the 414th JFG — come hang out:
+https://discord.gg/414th-jfg
 
 Happy to answer questions if anyone's curious.

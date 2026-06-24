@@ -182,20 +182,29 @@ considered and declined.
      depot, and the Hamburg + Kastrup C2 trios. **All are pure coordinate moves** (group + unit +
      route-point x/y rewritten in-place, anchored on the unique `groupId`; no new groups). Two
      strategies, since pydcs has **no terrain-clear query** (the forest/water trap):
-     - **SAMs + Sperenberg ammo → open ground, dump-validated.** Sampled rings 320–650 m off each
-       field; kept points >140 m from any parking slot, >80 m from any CWG-dump building, and with
-       ≥4 dump objects within 700 m (a dry-land/anti-water guard). Result: 150–250 m of slot
-       clearance, no building within 130 m. **Hamburg's SAM** has no dump coverage (urban) so it got
-       a plain 320 m perimeter offset — **highest residual risk, verify in-game.**
-     - **Hamburg + Kastrup C2 statics → far dispersal hardstands.** No dump coverage → can't use real
-       buildings yet, so moved to the 3 most-isolated, spaced parking slots (Hamburg ~0.9–1.0 km,
-       Kastrup ~1.8–1.9 km from the main apron) — guaranteed-clear pavement, off the active ramp.
-       Interim; swap to real buildings after a Phase-2 re-scan. **Hamburg is busy (41 slots / 5
-       squadrons)** so slot contention is still possible there — verify.
-     **Verified (pydcs):** miz loads, brace-balanced; all 13 at their target coords; SAMs+ammo
-     150–833 m clear of every slot; C2 scenery zones (6) + all statics intact; nearest CP unchanged.
-     **In-game pass:** Haina/Templin/Sperenberg/Wittstock aprons clear + SAMs on open ground (not
-     forest/water); Hamburg SAM + Hamburg/Kastrup hardstand statics don't collide with spawns.
+     **Distances are a real 0.5–2 mi standoff, not a perimeter nudge** — an early pass placed these
+     only 150–650 m off the field (still hugging the runway, user screenshot of Sperenberg); they were
+     re-pushed to ~0.7–0.9 mi.
+     - **Dump-covered SAMs + Sperenberg ammo → open ground @ ~0.9 mi.** Sampled 0.5–2 mi rings off
+       Templin/Haina/Wittstock/Sperenberg; kept points >250 m from any parking slot, with the nearest
+       CWG-dump building bracketed 90–600 m (dry land nearby but not on a structure — doubles as the
+       anti-water/void guard), and **re-checked nearest control point** so the larger offset still
+       anchors each object to its own base (next field 8–11 mi away). Result: ~0.9 mi out, 605–1106 m
+       slot clearance, nearest building 265–573 m.
+     - **Hamburg SAM + Hamburg C2 trio → inland open ground @ 0.7–0.9 mi (no dump, BLIND).** Hamburg
+       is outside the dump bbox (urban), so these can't be dump-validated. Offset into the inland arc
+       (~122°, toward the A24/Hagenow supply corridor, away from the Elbe), spaced. **Highest residual
+       risk — verify in-game; a CWG re-scan over Hamburg would let this be done safely / as real
+       buildings.**
+     - **Kastrup C2 trio → left on far dispersal hardstands (~1.1 mi).** No dump coverage; already
+       well off the active ramp on guaranteed-clear pavement, so unchanged.
+     **Verified (pydcs):** miz loads, brace-balanced; **nothing within 0.5 mi of any red base**; all
+     at target coords; C2 scenery zones (6) + all statics intact; nearest CP re-confirmed as each
+     object's own base. NB the Sperenberg `Comms Site` / `Fuel Depot` markers near the field are
+     **real-building scenery *strike* targets** (0.6–0.7 mi, actual map buildings) — intentional, not
+     relocatable, and not parking blockers.
+     **In-game pass:** open-ground SAM/ammo spots not in forest/water; **Hamburg** the case to watch
+     (blind inland placement, no dump validation).
 7. **Medium-range SAM belt added** (2026-06-23). Red's air defense was long-range (S-300) +
    AAA + scattered short-range, with the main red bases carrying *no* medium SAM. Air-defense
    range is slot-driven: each control point's `medium_range_sams` preset locations come from

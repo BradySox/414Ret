@@ -244,6 +244,18 @@ it from upstream. Settings are LOCKED by design: `plugin.json` has no `specificO
 
 ## Conventions
 
+- **Highlight questions to the user.** Whenever you need a decision or answer from the
+  user, make the question visually prominent — never bury it mid-paragraph or at the tail of
+  a wall of prose. Put it in its own block at the **end** of the message, set off with a bold
+  marker and a blockquote, e.g.:
+  > ❓ **Need your call:** <the question>
+
+  When you offer choices, **number them (1, 2, 3, …)** and lead with your recommended option,
+  so the user can reply with just a number. List multiple questions as a short numbered set so
+  each can be answered individually. Use **plain highlighted markdown only** (bold + blockquote)
+  — do NOT build a widget or visualization for this. (The `AskUserQuestion` tool already renders
+  prominently and satisfies the convention; otherwise it is for free-text questions in ordinary
+  replies.)
 - Match the surrounding code's style; run the three validation commands (in `CLAUDE-ci.md`) before pushing.
 - Keep the doc faces in sync: when a feature lands or changes, update **both**
   [`README.md`](README.md) (player-facing) and the relevant section of

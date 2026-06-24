@@ -33,7 +33,7 @@ class FakePoint:
 
 
 def _d(method, count, x, y):  # type: ignore[no-untyped-def]
-    return RefuelDemand(method=method, count=count, position=FakePoint(x, y))
+    return RefuelDemand(method=method, count=count, position=FakePoint(x, y))  # type: ignore[arg-type]
 
 
 def test_no_demand_returns_none() -> None:
@@ -128,7 +128,7 @@ def test_extraction_collects_receiver_refuel_waypoints() -> None:
     receiver = _flight(FlightType.DEAD, BOOM, 4, [_wp(False), _wp(True, 1000, 0)])
     no_gas = _flight(FlightType.BARCAP, BOOM, 2, [_wp(False)])
     pkg = SimpleNamespace(flights=[receiver, no_gas])
-    demands = theater_refuel_demand(_coalition([pkg]))  # type: ignore[arg-type]
+    demands = theater_refuel_demand(_coalition([pkg]))
     assert len(demands) == 1
     assert demands[0].count == 4 and demands[0].position.x == 1000
 
@@ -146,5 +146,5 @@ def test_extraction_ignores_tanker_flights_and_buddy_tanker_packages() -> None:
             _flight(FlightType.REFUELING, None, 1, [_wp(False)]),
         ]
     )
-    demands = theater_refuel_demand(_coalition([tanker_pkg, buddy_pkg]))  # type: ignore[arg-type]
+    demands = theater_refuel_demand(_coalition([tanker_pkg, buddy_pkg]))
     assert demands == []

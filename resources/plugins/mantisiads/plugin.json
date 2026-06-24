@@ -1,6 +1,6 @@
 {
-    "nameInUI": "MANTIS IADS (experimental)",
-    "descriptionInUI": "Experimental MOOSE MANTIS IADS engine (alternative to Skynet). Only takes effect when the campaign's IADS engine is set to MANTIS; otherwise it is inert and Skynet runs instead. Provides SAM/EWR networking, emissions control, engagement tuning, EWR shoot-and-scoot, and comms/power/command-center degradation (advanced IADS). Needs an in-game pass before it becomes the default.",
+    "nameInUI": "MANTIS IADS",
+    "descriptionInUI": "MOOSE MANTIS IADS engine — the default IADS engine for new campaigns (Skynet is the alternative). Only takes effect when the campaign's IADS engine is set to MANTIS; otherwise it is inert and Skynet runs instead. Provides SAM/EWR networking, emissions control, engagement tuning, EWR shoot-and-scoot, and comms/power/command-center degradation (advanced IADS).",
     "defaultValue": true,
     "specificOptions": [
         {

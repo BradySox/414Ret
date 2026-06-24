@@ -79,7 +79,8 @@ file. This guide is the map; those are the territory.
     (routing + networking + C2); CTLD is now the gate for the MIST drop),
     `414th-framework-consolidation-notes.md` (the MIST-retirement roadmap + per-phase plan),
     `414th-mantis-migration-notes.md` + `414th-mantis-vs-skynet-iads-parity.md` (the Skynet → MANTIS
-    IADS engine: phases 3–5 built + flight-validated, still gated behind `iads_engine` default SKYNET),
+    IADS engine: phases 3–5 built + flight-validated; **MANTIS is now the `iads_engine` default for new
+    campaigns** (existing saves stay on their engine via the `__setstate__` Skynet pin); Skynet still selectable),
     `414th-moose-ops-opportunity-map.md` (which MOOSE `Ops.*` modules to adopt vs. keep in Python —
     e.g. `Ops.Chief` stays out), and the per-plugin decisions `414th-ewrs-retirement-decision.md`,
     `414th-dismounts-decision.md` (both retired), `414th-ctld-mantis-style-port-scope.md` (the big port)

@@ -1,28 +1,11 @@
 -- A-10C II Warthog loadouts for 414th Retribution
--- Pylon layout (1-11):
---   1        = left outboard  (ECM pod or AIM-9)
---   2        = left mid-outboard
---   3        = left inboard   (Maverick inner station)
---   4-5      = left wing body (bombs/rockets)
---   6        = centerline (rarely used)
---   7-8      = right wing body (bombs/rockets)
---   9        = right inboard  (Maverick inner station)
---   10       = right mid-outboard (Litening TGP)
---   11       = right outboard (AIM-9M pair)
--- CLSID reference:
---   AIM-9M 2-pack:    {DB434044-F5D0-4F1F-9BA9-B73027E18DD3}
---   ALQ-184 ECM:      ALQ_184
---   Litening TGP:     {A111396E-D3E8-4b9c-8AC9-2432489304D5}
---   AGM-65K Mav:      {69DC8AE7-8F77-427B-B8AA-B19D3F478B66}
---   AGM-65G Mav:      LAU_117_AGM_65G
---   AGM-65D 2-pack:   {E6A6262A-CA08-4B3D-B030-E1A993B98452} / ...453
---   GBU-10 LGB:       {51F9AAE5-964F-4D21-83FB-502E3BFE5F8A}
---   GBU-31V1B JDAM:   {GBU-31}
---   GBU-31V3B pen:    {GBU-31V3B}
---   GBU-38 JDAM:      {GBU-38}
---   GBU-54 LJDAM:     {GBU_54_V_1B}
---   APKWS M282 pod:   {LAU-131 - 7 AGR-20 M282}
---   APKWS A pod:      {LAU-131 - 7 AGR-20A}
+-- Preset set matches resources/units/aircraft/A-10C_2.yaml tasks:
+--   CAS BAI Strike OCA/Aircraft OCA/Runway
+--   (NO DEAD / Anti-ship / SEAD: the A-10C has no HARM and Retribution does not
+--    task it for those roles.)
+-- Pylon layout (num 1-11): 1 outboard (ECM), 3/9 inner Maverick stations,
+--   4-5 / 7-8 wing body (bombs/rockets), 10 Litening TGP, 11 AIM-9M pair.
+-- All CLSIDs verified against pydcs A_10C_2 pylon tables.
 local unitPayloads = {
 	["name"] = "A-10C II",
 	["payloads"] = {
@@ -71,9 +54,26 @@ local unitPayloads = {
 				[6]  = { ["CLSID"] = "{A111396E-D3E8-4b9c-8AC9-2432489304D5}", ["num"] = 10 },
 				[7]  = { ["CLSID"] = "{DB434044-F5D0-4F1F-9BA9-B73027E18DD3}", ["num"] = 11 },
 			},
-			["tasks"] = { [1] = 32, [2] = 33 },
+			["tasks"] = { [1] = 33 },
 		},
 		[4] = {
+			["displayName"] = "Retribution OCA/Aircraft",
+			["name"] = "Retribution OCA/Aircraft",
+			-- 2x CBU-105 WCMD SFW (4/8) + 2x GBU-38 (5/7) + Maverick vs parked aircraft
+			["pylons"] = {
+				[1]  = { ["CLSID"] = "ALQ_184", ["num"] = 1 },
+				[2]  = { ["CLSID"] = "{69DC8AE7-8F77-427B-B8AA-B19D3F478B66}", ["num"] = 3 },
+				[3]  = { ["CLSID"] = "{CBU_105}", ["num"] = 4 },
+				[4]  = { ["CLSID"] = "{GBU-38}", ["num"] = 5 },
+				[5]  = { ["CLSID"] = "{GBU-38}", ["num"] = 7 },
+				[6]  = { ["CLSID"] = "{CBU_105}", ["num"] = 8 },
+				[7]  = { ["CLSID"] = "{69DC8AE7-8F77-427B-B8AA-B19D3F478B66}", ["num"] = 9 },
+				[8]  = { ["CLSID"] = "{A111396E-D3E8-4b9c-8AC9-2432489304D5}", ["num"] = 10 },
+				[9]  = { ["CLSID"] = "{DB434044-F5D0-4F1F-9BA9-B73027E18DD3}", ["num"] = 11 },
+			},
+			["tasks"] = { [1] = 32 },
+		},
+		[5] = {
 			["displayName"] = "Retribution OCA/Runway",
 			["name"] = "Retribution OCA/Runway",
 			["pylons"] = {
@@ -84,33 +84,6 @@ local unitPayloads = {
 				[5]  = { ["CLSID"] = "{DB434044-F5D0-4F1F-9BA9-B73027E18DD3}", ["num"] = 11 },
 			},
 			["tasks"] = { [1] = 34 },
-		},
-		[5] = {
-			["displayName"] = "Retribution DEAD",
-			["name"] = "Retribution DEAD",
-			["pylons"] = {
-				[1]  = { ["CLSID"] = "ALQ_184", ["num"] = 1 },
-				[2]  = { ["CLSID"] = "{GBU-31}", ["num"] = 4 },
-				[3]  = { ["CLSID"] = "{GBU-31}", ["num"] = 8 },
-				[4]  = { ["CLSID"] = "{A111396E-D3E8-4b9c-8AC9-2432489304D5}", ["num"] = 10 },
-				[5]  = { ["CLSID"] = "{DB434044-F5D0-4F1F-9BA9-B73027E18DD3}", ["num"] = 11 },
-			},
-			["tasks"] = { [1] = 32 },
-		},
-		[6] = {
-			-- A-10 anti-ship: Maverick against small vessels, GBU-10 for larger targets
-			["displayName"] = "Retribution Anti-ship",
-			["name"] = "Retribution Anti-ship",
-			["pylons"] = {
-				[1]  = { ["CLSID"] = "ALQ_184", ["num"] = 1 },
-				[2]  = { ["CLSID"] = "LAU_117_AGM_65G", ["num"] = 3 },
-				[3]  = { ["CLSID"] = "{51F9AAE5-964F-4D21-83FB-502E3BFE5F8A}", ["num"] = 4 },
-				[4]  = { ["CLSID"] = "{51F9AAE5-964F-4D21-83FB-502E3BFE5F8A}", ["num"] = 8 },
-				[5]  = { ["CLSID"] = "LAU_117_AGM_65G", ["num"] = 9 },
-				[6]  = { ["CLSID"] = "{A111396E-D3E8-4b9c-8AC9-2432489304D5}", ["num"] = 10 },
-				[7]  = { ["CLSID"] = "{DB434044-F5D0-4F1F-9BA9-B73027E18DD3}", ["num"] = 11 },
-			},
-			["tasks"] = { [1] = 30 },
 		},
 	},
 	["unitType"] = "A-10C_2",

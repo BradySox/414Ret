@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
+from dcs.mapping import Point
 from dcs.mission import Mission
 from dcs.planes import F_15ESE
 from suntime import Sun, SunTimeException  # type: ignore
@@ -1054,15 +1055,36 @@ class SeadTaskPage(KneeboardPage):
         except KeyError:
             return ""
 
-    def _bullseye_cue(self, unit: TheaterUnit) -> str:
-        """A rough bullseye bearing/range to the target, accurate to ~1nm.
+    def _bullseye_cue_for(self, position: Point) -> str:
+        """A rough bullseye bearing/range to ``position``, accurate to ~1nm.
 
         Bearing is rounded to the nearest degree and range to the nearest
         nautical mile, giving the player a search anchor without exact coords.
         """
-        bearing = self.bullseye.position.heading_between_point(unit.position)
-        distance = meters(self.bullseye.position.distance_to_point(unit.position))
+        bearing = self.bullseye.position.heading_between_point(position)
+        distance = meters(self.bullseye.position.distance_to_point(position))
         return f"Bullseye {bearing:03.0f} for {distance.nautical_miles:.0f}"
+
+    def _bullseye_cue(self, unit: TheaterUnit) -> str:
+        return self._bullseye_cue_for(unit.position)
+
+    def _target_area_stpt(self) -> Optional[int]:
+        """The single steerpoint that best anchors the whole site: the per-target
+        waypoint nearest the site center. ``None`` when the flight has no per-target
+        waypoints (e.g. legacy plans). Used for the consolidated DEAD area cue."""
+        numbers = self._target_point_numbers()
+        if not numbers:
+            return None
+        center = self.flight.package.target.position
+        return min(
+            numbers,
+            key=lambda i: self.flight.waypoints[i].position.distance_to_point(center),
+        )
+
+    @staticmethod
+    def _unit_description(unit: TheaterUnit) -> str:
+        unit_type = unit.type
+        return unit.name if unit_type is None else unit_type.name
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -1073,34 +1095,45 @@ class SeadTaskPage(KneeboardPage):
         task = "DEAD" if self.flight.flight_type == FlightType.DEAD else "SEAD"
         writer.title(f"{self.flight.callsign} {task} Target Info{custom_name_title}")
 
-        target_numbers = self._target_point_numbers()
-        headers = ["STPT", "Description", "ALIC", "Location"]
         if self._use_target_area_cues:
-            headers[3] = "Cue"
-        writer.table(
-            [
-                self.target_info_row(
-                    t, target_numbers[i] if i < len(target_numbers) else None
-                )
-                for i, t in enumerate(self.target_units)
-            ],
-            headers=headers,
-        )
+            # Consolidated view: one bullseye cue for the *center of the site* (not
+            # one per unit -- that was cluttered) plus the single target-area
+            # steerpoint if one maps. The table then just lists the site's emitters
+            # and their ALIC codes.
+            cue = self._bullseye_cue_for(self.flight.package.target.position)
+            stpt = self._target_area_stpt()
+            area = f"{task} target area"
+            if stpt is not None:
+                area += f" — STPT {stpt}"
+            writer.heading(f"{area} — {cue}")
+            writer.table(
+                [
+                    [self._unit_description(t), self.alic_for(t)]
+                    for t in self.target_units
+                ],
+                headers=["Description", "ALIC"],
+            )
+        else:
+            # Exact (SEAD) view: per-emitter steerpoint + precise coordinates.
+            target_numbers = self._target_point_numbers()
+            writer.table(
+                [
+                    self.target_info_row(
+                        t, target_numbers[i] if i < len(target_numbers) else None
+                    )
+                    for i, t in enumerate(self.target_units)
+                ],
+                headers=["STPT", "Description", "ALIC", "Location"],
+            )
 
         writer.write(path)
 
     def target_info_row(self, unit: TheaterUnit, number: Optional[int]) -> List[str]:
-        unit_type = unit.type
-        name = unit.name if unit_type is None else unit_type.name
         return [
             "" if number is None else str(number),
-            name,
+            self._unit_description(unit),
             self.alic_for(unit),
-            (
-                self._bullseye_cue(unit)
-                if self._use_target_area_cues
-                else unit.position.latlng().format_dms(include_decimal_seconds=True)
-            ),
+            unit.position.latlng().format_dms(include_decimal_seconds=True),
         ]
 
     @property

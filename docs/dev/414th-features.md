@@ -321,11 +321,15 @@ controls four behaviors together when set to Approximate:
   (`game/missiongenerator/triggergenerator.py`)
 - Strike / SEAD / DEAD kneeboard target pages omit exact coordinates. The Strike
   page cues the player to search the target area; the SEAD/DEAD page (`SeadTaskPage`)
-  gives a **rough bullseye** (`Bullseye <brg> for <nm>`, bearing rounded to the
-  nearest degree and range to the nearest NM, accurate to ~1 NM) as the Cue.
-  DEAD always uses the bullseye cue even with Exact intel. The STPT column pairs each
-  listed target to its per-target `TARGET_POINT` waypoint **by order** (not position),
-  so it stays populated even when Approximate intel offsets the waypoint.
+  in **cue mode** (DEAD always, or Approximate intel) shows **one consolidated cue**:
+  a heading line with a single **rough bullseye** for the **center of the site**
+  (`Bullseye <brg> for <nm>`, ~1 NM accurate) plus the single **target-area STPT** (the
+  per-target waypoint nearest the site center), then a `Description | ALIC` table of the
+  site's emitters. This replaced a per-unit bullseye on every row, which was cluttered.
+  In **exact** mode (SEAD with Exact intel) the page keeps the per-emitter
+  `STPT | Description | ALIC | Location` table with precise coords; that STPT pairs each
+  target to its `TARGET_POINT` waypoint **by order** (not position), so it stays
+  populated even when Approximate intel offsets the waypoint.
   (`game/missiongenerator/kneeboard.py`)
 
 ---

@@ -32,6 +32,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from game.data.groups import GroupTask
 from game.theater.controlpoint import Airfield
 from game.theater.iadsnetwork.iadsnetwork import IadsNetwork
 from game.theater.player import Player
@@ -40,10 +41,23 @@ from game.theater.theaterloader import TheaterLoader
 from .blanktheater import AirfieldSite, assign_coalitions, nearest_neighbor_links
 
 if TYPE_CHECKING:
+    from dcs.mapping import Point
+
     from game import Game
     from game.theater import ConflictTheater
 
 logger = logging.getLogger(__name__)
+
+# Support buildings synthesized at each owned base on finalize. A blank canvas is
+# pure airfields (income_per_turn == 0) with no .miz-provided structures, so a
+# finalized campaign would otherwise generate +0 budget. A factory gives income;
+# the ammo/fuel dumps add a little income plus a visible, strikeable ground layer
+# so the theater isn't barren. (Increment C — minimal pass; see the design notes.)
+_BLANK_CANVAS_BUILDINGS = (
+    GroupTask.FACTORY,
+    GroupTask.AMMO,
+    GroupTask.FUEL,
+)
 
 
 def ownership_from_theater(theater: ConflictTheater) -> dict[str, Player]:
@@ -119,7 +133,7 @@ def finalize_blank_canvas(setup_game: Game) -> Game:
         squadrons_start_full=True,
     )
 
-    return GameGenerator(
+    game = GameGenerator(
         setup_game.blue.faction,
         setup_game.red.faction,
         theater,
@@ -129,6 +143,66 @@ def finalize_blank_canvas(setup_game: Game) -> Game:
         ModSettings(),
         campaign_name=f"Blank canvas — {terrain_name}",
     ).generate()
+
+    _synthesize_support_buildings(game)
+    return game
+
+
+def _nearby_land_point(game: Game, origin: Point, index: int) -> Optional[Point]:
+    """A land point a few km from *origin*, fanned out by *index* so successive
+    buildings at the same base don't stack. Returns None if every candidate falls
+    in the sea (e.g. a base hemmed in by water)."""
+    for radius in (4000, 6000, 8000):
+        for step in range(6):
+            heading = (index * 60 + step * 40) % 360
+            candidate = origin.point_from_heading(heading, radius)
+            if game.theater.is_on_land(candidate):
+                return candidate
+    return None
+
+
+def _synthesize_support_buildings(game: Game) -> None:
+    """Give each owned base a small economy so a finalized blank canvas has income.
+
+    A blank canvas is pure airfields with no preset structures, so without this a
+    finalized campaign generates +0 budget and a barren ground layer. For every
+    owned control point we synthesize the ``_BLANK_CANVAS_BUILDINGS`` (a factory
+    plus an ammo and fuel dump) from the coalition's building force groups -- the
+    same templates the drop-spawn tool and campaign generator use -- placed on land
+    near the base. Neutral (unpainted, soon-pruned) bases are skipped.
+
+    Minimal Increment-C pass: enough to be functional (income) and pretty (visible,
+    strikeable structures); richer economy laydown is deferred.
+    """
+    import random
+
+    from game.naming import namegen
+    from game.theater.presetlocation import PresetLocation
+    from game.utils import Heading
+
+    placed = 0
+    for cp in game.theater.controlpoints:
+        if cp.captured.is_neutral:
+            continue
+        coalition = game.coalition_for(cp.captured)
+        for index, task in enumerate(_BLANK_CANVAS_BUILDINGS):
+            force_groups = list(coalition.armed_forces.groups_for_task(task))
+            if not force_groups:
+                continue
+            point = _nearby_land_point(game, cp.position, index)
+            if point is None:
+                continue
+            heading = game.theater.heading_to_conflict_from(
+                point
+            ) or Heading.from_degrees(0)
+            location = PresetLocation(namegen.random_objective_name(), point, heading)
+            tgo = random.choice(force_groups).generate(
+                location.original_name, location, cp, game, task
+            )
+            cp.connected_objectives.append(tgo)
+            placed += 1
+
+    logger.info("Blank canvas: synthesized %d support buildings.", placed)
 
 
 def generate_blank_theater(

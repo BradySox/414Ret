@@ -75,10 +75,11 @@ file. This guide is the map; those are the territory.
   - `414th-campaign-maker-notes.md` — blank-start campaign maker (policy core landed; glue/wizard in progress)
   - `414th-weapon-dates-proposal.md` — weapon-coverage completion plan + the modern-weapon date-gating rule
   - **MIST → MOOSE consolidation & IADS engine** (in progress — read before touching IADS/plugins):
-    `414th-mantis-iads-HANDOFF.md` (**start here** — next-session pickup: MANTIS built/unflown, fly
-    G6 first), `414th-framework-consolidation-notes.md` (the MIST-retirement roadmap + per-phase plan),
+    `414th-mantis-iads-HANDOFF.md` (**start here** — MANTIS G6 in-game pass PASSED 2026-06-24
+    (routing + networking + C2); CTLD is now the gate for the MIST drop),
+    `414th-framework-consolidation-notes.md` (the MIST-retirement roadmap + per-phase plan),
     `414th-mantis-migration-notes.md` + `414th-mantis-vs-skynet-iads-parity.md` (the Skynet → MANTIS
-    IADS engine: phases 3–5 built but gated/unflown),
+    IADS engine: phases 3–5 built + flight-validated, still gated behind `iads_engine` default SKYNET),
     `414th-moose-ops-opportunity-map.md` (which MOOSE `Ops.*` modules to adopt vs. keep in Python —
     e.g. `Ops.Chief` stays out), and the per-plugin decisions `414th-ewrs-retirement-decision.md`,
     `414th-dismounts-decision.md` (both retired), `414th-ctld-mantis-style-port-scope.md` (the big port)

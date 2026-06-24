@@ -1,10 +1,9 @@
 """Settings scaffolding for the Skynet -> MANTIS IADS engine migration.
 
-The ``iads_engine`` field is persisted now (defaulting to Skynet) so that the
-eventual cutover is a setting flip rather than a save-schema change. It is
-deliberately *internal* -- not a user-facing choice -- until the MANTIS bridge
-lands, because only Skynet is implemented today. See
-docs/dev/design/414th-mantis-migration-notes.md §7.
+The ``iads_engine`` field defaults to Skynet (so the eventual cutover is a
+setting flip, not a save-schema change) and is now exposed as an experimental UI
+choice so the MANTIS engine can be selected for its in-game pass. See
+docs/dev/design/414th-mantis-migration-notes.md.
 """
 
 from game.settings import IadsEngine, Settings
@@ -26,14 +25,13 @@ def test_saved_iads_engine_survives_migration() -> None:
     assert migrated["iads_engine"] is IadsEngine.MANTIS
 
 
-def test_iads_engine_is_not_user_visible() -> None:
-    # Intentionally internal until the MANTIS emitter exists; exposing a MANTIS
-    # choice that does nothing would be a trap. Guards against accidental UI
-    # exposure landing without a deliberate change here.
+def test_iads_engine_is_user_visible() -> None:
+    # Now that MANTIS is a real (if experimental) engine, the selector is a UI
+    # choice so it can be picked for the in-game pass.
     names = {
         name
         for page in Settings.pages()
         for section in Settings.sections(page)
         for name, _description in Settings.fields(page, section)
     }
-    assert "iads_engine" not in names
+    assert "iads_engine" in names

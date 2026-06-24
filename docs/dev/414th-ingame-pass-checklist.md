@@ -28,9 +28,13 @@ so the two docs don't drift.
 
 ## A. Air-to-air / QRA
 
-### A1 — QRA air-spawn profile · §1 · ☐ UNTESTED
-- **Setup:** Campaign with alert reserves; trigger an enemy raid so a QRA pair
-  scrambles. Include at least one **high-elevation** alert base (e.g. Vaziani).
+### A1 — QRA air-spawn profile · §1 · ☑ VERIFIED (2026-06-24, Tacview)
+- **Verified (2026-06-24, GermanyCW Red Tide turn 1, Tacview):** the red `Intercept`
+  reserve scrambled in two waves and each MiG-29A pair air-spawned at ~750 m AGL and
+  240–510 kt, climbing/cruising under control — no stall, no ground-clawing dive. The
+  fail signature did not occur. (Note: the current `AI_A2A_DISPATCHER` QRA **air-spawns**
+  at altitude rather than ground-scrambling, so the old `SCRAMBLE_SPEED_KT`/`SCRAMBLE_AGL_M`
+  ground path is effectively superseded.)
 - **Pass:** Scrambled jets spawn at a sane speed and a terrain-relative LOW
   altitude, then climb/turn to intercept under control.
 - **Fail signature:** Jets air-spawn stalled (~0 kt) and dive clawing for
@@ -72,7 +76,12 @@ so the two docs don't drift.
 - **Fail signature:** Forward orbit pushed *into* a SAM ring (no-fly clamp not
   respected), or quiet-flank orbit placement drifted from the legacy spread.
 
-### B4 — TARCAP planned on CAS / A2A escort on forward packages · §6 · ☐ UNTESTED
+### B4 — TARCAP planned on CAS / A2A escort on forward packages · §6 · ☑ VERIFIED (2026-06-24, Tacview)
+- **Verified (2026-06-24, GermanyCW Red Tide turn 1, Tacview):** the CAS package
+  `Front line Fulda/Haina CAS` (AH-64D) spawned **with a TARCAP** (`Front line
+  Fulda/Haina TARCAP`, F-15C) plus a SEAD Sweep, and every forward DEAD/BAI/SEAD
+  package (BABOON, COW, GERBIL, PERCH, TRIGGERFISH) carried its A2A Escort + SEAD
+  Escort. Fail signature did not occur.
 - **Setup:** A campaign with an active land front and an enemy airbase within
   fighter range (≈90 NM) of the FLOT; let the AI auto-plan a turn.
 - **Pass:** CAS packages over the front spawn **with a TARCAP** flight, and forward

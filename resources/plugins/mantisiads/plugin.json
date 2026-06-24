@@ -19,6 +19,46 @@
             "defaultValue": true
         },
         {
+            "nameInUI": "SAM engagement range (% of max interceptor range)",
+            "mnemonic": "samRange",
+            "defaultValue": 95
+        },
+        {
+            "nameInUI": "Detection update interval (s)",
+            "mnemonic": "detectInterval",
+            "defaultValue": 30
+        },
+        {
+            "nameInUI": "EWR detection grouping radius (m)",
+            "mnemonic": "ewrGrouping",
+            "defaultValue": 5000
+        },
+        {
+            "nameInUI": "Max simultaneously-active short-range SAMs per threat",
+            "mnemonic": "maxActiveShort",
+            "defaultValue": 2
+        },
+        {
+            "nameInUI": "Max simultaneously-active medium-range SAMs per threat",
+            "mnemonic": "maxActiveMid",
+            "defaultValue": 2
+        },
+        {
+            "nameInUI": "Max simultaneously-active long-range SAMs per threat",
+            "mnemonic": "maxActiveLong",
+            "defaultValue": 1
+        },
+        {
+            "nameInUI": "Max simultaneously-active point-defense SAMs per threat",
+            "mnemonic": "maxActivePoint",
+            "defaultValue": 6
+        },
+        {
+            "nameInUI": "EWR shoot-and-scoot: periodically relocate mobile EWRs",
+            "mnemonic": "autoRelocateEwr",
+            "defaultValue": false
+        },
+        {
             "nameInUI": "Generate debug information for RED IADS",
             "mnemonic": "debugRED",
             "defaultValue": false

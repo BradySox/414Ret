@@ -1,8 +1,8 @@
 # MANTIS Migration — Design Notes
 
-**Status:** in progress — spikes + Python seams + **phase-3 core-networking Lua bridge landed
-(gated, inert)** (2026-06-24); awaiting in-game pass (checklist G6); shoot-and-scoot + C2 layer not
-started
+**Status:** in progress — spikes + Python seams + **phase-3 core-networking & phase-4 tuning Lua
+bridge landed (gated, inert)** (2026-06-24); awaiting in-game pass (checklist G6). Deferred:
+proactive SHORAD scoot-zones, advanced mode, and the C2 layer (phase 5).
 **Date:** 2026-06-24
 **Broader context:** this migration is **phase 1** of retiring MIST and standardizing the mission
 scripting on MOOSE — Skynet is the biggest MIST consumer with a first-class MOOSE replacement. See
@@ -284,7 +284,13 @@ Most Skynet options map directly. Changes:
    *Not yet implemented in this phase:* shoot-and-scoot, point-defense pairing, SamAsEwr nuance,
    per-unit tuning (phase 4) and the C2 layer (phase 5). In-game pass #1 tracked as checklist **G6**:
    do SAMs detect/engage/go-dark correctly across coalitions?
-4. **Shoot-and-scoot + per-type tuning.** In-game pass #2.
+4. **Tuning + shoot-and-scoot — ✅ CODE LANDED (2026-06-24, partial), ☐ in-game pass pending:**
+   `mantisiads` exposes SAM engagement range, detection interval, EWR grouping, max-active-SAMs per
+   category, and **EWR auto-relocate** (survivability), all applied before `Start()`. Reactive SAM
+   shoot-and-scoot is **automatic** via MANTIS' integrated SEAD evasion (no config). **Deferred:**
+   proactive SHORAD scoot-zones (`AddScootZones`) — needs Python zone generation per mobile SAM; and
+   `SetAdvancedMode` — moved to phase 5 because it requires an HQ and otherwise spams every player.
+   Validated under the same checklist **G6** pass.
 5. **C2 layer (§5) — comms/power/command-center degradation:** the capability that brings the engine
    to **full parity**. In-game pass #3 on an advanced-IADS campaign: kill a comms tower, confirm the
    dependent SAM goes autonomous; kill power, confirm offline; kill all command centers, confirm

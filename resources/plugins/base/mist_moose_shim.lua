@@ -21,10 +21,10 @@
 --                terrainHeightDiff, tostringLL, tostringMGRS, getUnitsLOS, random,
 --                utils.getDir, utils.getHeadingPoints, utils.zoneToVec3, utils.tableShow)
 --   [x] Tier 2   object DB (DBs.unitsByName/unitsById/groupsByName/zonesByName/humansByName)
---   [ ] Tier 3   spawn/route/sched (dynAdd, dynAddStatic, goRoute, getGroupRoute,
---                groupToRandomZone, ground.buildWP, makeUnitTable, scheduleFunction,
---                removeFunction, addEventHandler)
---   [ ] Tier 4   msg/log (message.add, Logger)
+--   [~] Tier 3   sched/events/wp DONE (scheduleFunction, removeFunction, addEventHandler,
+--                ground.buildWP); spawn/route REMAINING (dynAdd, dynAddStatic, goRoute,
+--                getGroupRoute, groupToRandomZone, makeUnitTable) -- dedicated pass
+--   [x] Tier 4   msg/log (message.add, Logger)
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 mist = mist or {}
@@ -536,7 +536,142 @@ _mistBuildZones()
 _mistRefreshDBs()
 timer.scheduleFunction(_mistDBLoop, nil, timer.getTime() + _MIST_DB_REFRESH)
 
--- Tiers 3 / 4 are appended as they are implemented; see the design doc's rollout plan.
--- Until every called symbol is provided, the load-order swap in base/plugin.json
--- (mist_4_5_126.lua -> this file) must NOT be made.
+---------------------------------------------------------------------------------------------------
+-- Tier 3 (sched/events/wp) + Tier 4 (msg/log). The complex live spawn/route functions
+-- (dynAdd, dynAddStatic, goRoute, getGroupRoute, groupToRandomZone, makeUnitTable) are done in a
+-- dedicated pass -- they need per-function fidelity (CTLD crate spawning, SCAR/skynet movement).
+---------------------------------------------------------------------------------------------------
+
+-- internal helper used by ground.buildWP (not consumer-facing)
+function mist.utils.kmphToMps(kmph)
+    return kmph * 1000 / 3600
+end
+
+local _mistTasks = {} -- mist taskId -> DCS scheduler id
+local _mistNextTaskId = 0
+
+-- Run f(unpack(vars)) at time t; if rep, repeat every rep s; if st, stop after st.
+-- Returns an id usable with mist.removeFunction. Backed by vanilla timer.scheduleFunction.
+function mist.scheduleFunction(f, vars, t, rep, st)
+    vars = vars or {}
+    _mistNextTaskId = _mistNextTaskId + 1
+    local myId = _mistNextTaskId
+    local function run(_, now)
+        if st and now >= st then
+            _mistTasks[myId] = nil
+            return nil
+        end
+        pcall(f, unpack(vars))
+        if rep then
+            return now + rep
+        end
+        _mistTasks[myId] = nil
+        return nil
+    end
+    _mistTasks[myId] = timer.scheduleFunction(run, nil, t)
+    return myId
+end
+
+function mist.removeFunction(id)
+    local dcsId = _mistTasks[id]
+    if dcsId then
+        pcall(timer.removeFunction, dcsId)
+        _mistTasks[id] = nil
+        return true
+    end
+    return false
+end
+
+local _mistNextEventId = 0
+function mist.addEventHandler(f)
+    _mistNextEventId = _mistNextEventId + 1
+    local handler = { id = _mistNextEventId, f = f }
+    function handler:onEvent(event)
+        self.f(event)
+    end
+    world.addEventHandler(handler)
+    return handler.id
+end
+
+-- msg = { text, displayTime, msgFor = { coa = {...} } }. Retribution only broadcasts to all.
+function mist.message.add(msg)
+    if not msg or not msg.text then
+        return
+    end
+    trigger.action.outText(tostring(msg.text), msg.displayTime or 20)
+end
+
+-- mist.Logger:new(name, level) -> logger with :info/:warn/:error/:alert. Retribution passes
+-- pre-formatted strings (no $1 substitution), so these are thin env.* wrappers.
+mist.Logger = mist.Logger or {}
+mist.Logger.__index = mist.Logger
+function mist.Logger:new(name, level)
+    return setmetatable({ name = name or "", level = level }, mist.Logger)
+end
+function mist.Logger:info(msg)
+    env.info((self.name or "") .. "|" .. tostring(msg))
+end
+function mist.Logger:warn(msg)
+    env.warning((self.name or "") .. "|" .. tostring(msg))
+end
+function mist.Logger:error(msg)
+    env.error((self.name or "") .. "|" .. tostring(msg))
+end
+function mist.Logger:alert(msg)
+    env.error((self.name or "") .. "|" .. tostring(msg))
+end
+
+function mist.ground.buildWP(point, overRideForm, overRideSpeed)
+    local wp = {}
+    wp.x = point.x
+    if point.z then
+        wp.y = point.z
+    else
+        wp.y = point.y
+    end
+    local form
+    if point.speed and not overRideSpeed then
+        wp.speed = point.speed
+    elseif type(overRideSpeed) == "number" then
+        wp.speed = overRideSpeed
+    else
+        wp.speed = mist.utils.kmphToMps(20)
+    end
+    if point.form and not overRideForm then
+        form = point.form
+    else
+        form = overRideForm
+    end
+    if not form then
+        wp.action = "Cone"
+    else
+        form = string.lower(form)
+        if form == "off_road" or form == "off road" then
+            wp.action = "Off Road"
+        elseif form == "on_road" or form == "on road" then
+            wp.action = "On Road"
+        elseif form == "rank" or form == "line_abrest" or form == "line abrest" or form == "lineabrest" then
+            wp.action = "Rank"
+        elseif form == "cone" then
+            wp.action = "Cone"
+        elseif form == "diamond" then
+            wp.action = "Diamond"
+        elseif form == "vee" then
+            wp.action = "Vee"
+        elseif form == "echelon_left" or form == "echelon left" or form == "echelonl" then
+            wp.action = "EchelonL"
+        elseif form == "echelon_right" or form == "echelon right" or form == "echelonr" then
+            wp.action = "EchelonR"
+        else
+            wp.action = "Cone"
+        end
+    end
+    wp.type = "Turning Point"
+    return wp
+end
+
+-- REMAINING (dedicated pass): mist.dynAdd, mist.dynAddStatic, mist.goRoute, mist.getGroupRoute,
+-- mist.groupToRandomZone, mist.makeUnitTable -- the live CTLD spawn + SCAR/skynet route family.
+-- Until ALL are provided, the load-order swap in base/plugin.json (mist_4_5_126.lua -> this file)
+-- must NOT be made.
 

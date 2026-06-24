@@ -316,6 +316,22 @@ so the two docs don't drift.
   generated mission references `ewrj`, `EWJamming`, `startEWjamm`, or
   `startIAdefjamming`.
 
+### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ☐ UNTESTED
+- **Setup:** Set `Settings.iads_engine = MANTIS` (not yet UI-exposed — set in the
+  campaign/settings object or a debug build), generate a mission with red SAMs +
+  EWRs, and fly into the IADS. Confirm via `dcs.log` that `mantis-config.lua` built
+  the network ("building Retribution-RED-IADS (N SAM, M EWR group names)") and that
+  `skynetiads-config.lua` logged "engine is 'mantis' ... skipping".
+- **Pass:** SAM radars stay dark (emissions control) until a target is in range,
+  then go active and engage; EWRs cue the network; both coalitions build if present;
+  with the default Skynet engine the mission is byte-for-byte unchanged (MANTIS
+  bridge logs "engine is 'skynet' ... skipping").
+- **Fail signature:** No SAM activity at all (FilterPrefixes matched nothing — check
+  generated group names vs the names in `dcsRetribution.IADS`), or *every* coalition
+  group goes active as EWR (an empty set collapsed into a match-all — the `NO_MATCH`
+  guard failed), or both bridges run / neither runs (engine-marker plumbing), or a
+  group name that is a strict prefix of another double-registers.
+
 ---
 
 ## H. Kneeboards

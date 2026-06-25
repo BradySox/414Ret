@@ -175,6 +175,21 @@ considered and declined.
      kill quads sit on the real objects, and Skynet still wires the base SAMs to the new C2 (Templin's
      2.6 km cc/comms are the marginal case). Kastrup/Hamburg/Peenemünde still use placed statics
      (no scanner dump coverage — needs a re-scan; Phase 2).
+   - **C2 + ammo → real buildings, Phase 2: Hamburg/Kastrup/Peenemünde + Sperenberg/Schönefeld ammo
+     (2026-06-24).** After the user re-flew the CWG scanner over the three previously-uncovered bases
+     (dump 216k→410k rows, bbox now reaches Kastrup), the remaining **placed** C2/ammo statics were
+     replaced with real-building scenery nodes (same `SceneryGroup` blue-def + white-quad pattern).
+     **Deleted 12 statics** (Hamburg/Kastrup/Peenemünde Command Center+Comms+Power, Kastrup/Sperenberg/
+     Schönefeld Ammo Depot) and dropped kill-quads on matched real buildings 0.1–1.5 mi from each
+     field: e.g. Hamburg cc=`KDP`/comms=`VOR_DME`/power=`TRANSFORMER`; Kastrup comms=`TESLA_RP3F`
+     (0.12 mi); Peenemünde cc=`BARRACK_SMALL` (0.12 mi); ammo on `INDUSTRIAL_*` buildings. The picker
+     skips buildings already used by an existing zone (the scenery **strike** targets), re-checks
+     nearest CP, and uses `ammo`→`GroupTask.AMMO`. **Why this fixes the garbage:** a real building is
+     by definition cleared ground — unlike the earlier "open-ground" guesses, which were unreliable
+     because the dump catalogs *buildings*, not forest/field/water. **Verified (pydcs):** miz loads;
+     all 12 nodes parse to the right GroupTask with one white zone each; 12 statics gone; Haina/Templin
+     IADS intact. **NB the SAMs are a separate follow-up** — they have no building substitute and are
+     handled in their own pass; until then they remain at the (bad) standoff coords.
    - **Apron-blocking cleanup — SAMs + remaining statics off parking slots (2026-06-24).** The
      placement-fix (item below) snapped objects onto parking slots, which blocked aircraft spawns
      (user screenshot). Audited every red base: 13 objects sat at 0 m from a parking slot — 6 SAM

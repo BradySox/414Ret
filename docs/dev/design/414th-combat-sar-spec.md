@@ -165,27 +165,32 @@ shape as the MANTIS / CTLD plugins.
 - **Downed-pilot template:** MOOSE CSAR spawns a downed-pilot unit; confirm whether it needs a
   late-activation template in the `.miz` (like the CTLD/Ops template model) — if so, Python must emit
   one (a small generation add).
-- **Interaction with the SOF `CSAR` — resolved (verified by reading, 2026-06-25).** None: the two
-  loops are architecturally independent, so the SOF insert/recovery needs **no adaptation** to the
-  Combat SAR work.
-  - **No double event-handling on ejection.** The MOOSE `CSAR` engine (Combat SAR) is the *only*
-    ejection listener in the active plugin set. The SOF **insert** rides **CTLD** (transport/unload),
-    whose ejection handler is **commented out** (`resources/plugins/ctld/CTLD.lua:8254`); the SOF
-    **recovery** is **Python-inferred at debrief** (`commit_sof_recoveries`: a `FlightType.CSAR` helo
-    survived the sortie at the `DownedSofGroundObject`) and hooks no in-mission events at all.
-  - **No cross-binding.** Combat SAR's rescue set is bound to `FlightType.COMBAT_SAR` CH-47 groups by
-    name prefix, so the SOF recovery helo (`FlightType.CSAR`) is never in it; and the stranded SOF
-    *team* is a ground unit, never a MOOSE-CSAR downed *pilot*. The `combat_sar_rescues` scoring
-    channel and the SOF `_refund_sof_teams_to` accounting are independent state.
-  - **Emergent synergy (positive).** A human flying the deep SOF insert/recovery sortie who is shot
-    down and ejects can now be picked up by an up Combat SAR flight and spared by the new scoring —
-    consistent (the airframe and the SOF objective are still lost; only the aviator is saved).
-  - **Watch in-game:** MOOSE CSAR adds its F10 "CSAR" menu to *any* human helo/Bronco, so a SOF
-    recovery-helo pilot will see it; pickups are still gated to the Combat SAR rescue set
-    (`SetOwnSetPilotGroups`). Cosmetic only — confirm during the G8 pass when both loops are flown
-    in one mission.
-- **Scope creep:** keep v1 to **blue-side, human-pilot, CH-47 pickup, FLOT orbit.** Red CSAR, AI-pilot
-  rescue, multi-helo coordination = later.
+- **Combat SAR also handles the SOF recovery (2026-06-25).** The SOF *insert* is left alone (CTLD
+  C-130 airdrop); the *recovery* is now **also** doable by the same Combat SAR rescue helo, so the
+  player (or AI alert) doesn't need a separate dedicated sortie.
+  - **In-mission CASEVAC.** When the SCAR feature is on, the generator emits each on-map stranded team
+    (`self.game.blue.pending_csars`, anchored) to the plugin, which spawns it as a MOOSE CSAR
+    **CASEVAC** (`SpawnCASEVAC` → same `_AddCsar` board/deliver path) at its strand point. A Combat
+    SAR rescue helo flies out, boards it, and delivers it to a friendly field exactly like a downed
+    pilot. The dedicated `FlightType.CSAR` air-assault recovery still works — this is an *additional*
+    way to recover, not a replacement.
+  - **Channel + scoring.** The CASEVAC carries a `SOFRESCUE_<x>_<y>` name (`sof_rescue_pickup_name`);
+    `OnAfterRescued` routes those to a separate `combat_sar_sof_recoveries` global (not the
+    pilot-sparing `combat_sar_rescues`). `commit_sof_recoveries` recomputes the name from each
+    `PendingSofRescue` to clear it + refund the team — alongside the existing surviving-`CSAR`-flight
+    path, and a team recovered by both still refunds **once**.
+  - **AI alert eligible (user call).** With `auto_combat_sar` on, an AI Combat SAR helo can be
+    commandeered to extract a team too — it *will* penetrate deep enemy territory to reach the strand,
+    which is risky by design.
+  - **No double event-handling on ejection.** Still true: the MOOSE `CSAR` engine is the only
+    ejection listener (CTLD's handler is commented out, `CTLD.lua:8254`), and the SOF *team* is a
+    CASEVAC ground pickup, never an ejection. The pilot-sparing and SOF-recovery channels stay
+    distinct (routed by the `SOFRESCUE` name prefix).
+  - **Watch in-game:** MOOSE CSAR adds its F10 "CSAR" menu to *any* human helo/Bronco, so a dedicated
+    SOF recovery-helo pilot will also see it; pickups are gated to the Combat SAR rescue set
+    (`SetOwnSetPilotGroups`). Confirm during the in-game pass when both recovery paths are flown.
+- **Scope creep:** keep v1 to **blue-side, human-pilot, CH-47 pickup, FLOT orbit** (plus the SOF-team
+  CASEVAC extraction above). Red CSAR, AI-pilot rescue, multi-helo coordination = later.
 
 ## Definition of done (v1)
 

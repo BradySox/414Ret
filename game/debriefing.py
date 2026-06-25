@@ -160,6 +160,13 @@ class StateData:
     #: SAR is off or no one was rescued.
     combat_sar_rescues: List[str]
 
+    #: ``SOFRESCUE_<x>_<y>`` names of stranded SCAR SOF teams extracted home by a
+    #: Combat SAR rescue helo this mission (the ``combatsar`` plugin spawns each
+    #: stranded team as a CASEVAC and reports the delivery here). ``commit_sof_
+    #: recoveries`` recomputes the name from each pending rescue to clear it and
+    #: refund the team. Empty when the SCAR feature is off or none were extracted.
+    combat_sar_sof_recoveries: List[str]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -233,6 +240,9 @@ class StateData:
         combat_sar_rescues = parse_combat_sar_rescues(
             data.get("combat_sar_rescues", [])
         )
+        combat_sar_sof_recoveries = parse_combat_sar_rescues(
+            data.get("combat_sar_sof_recoveries", [])
+        )
 
         def parse_scar_results(raw: Any) -> dict[str, str]:
             # The SCAR bridge writes scar_results[taskingId] = {status=...}. The
@@ -299,6 +309,7 @@ class StateData:
             sof_strandings=sof_strandings,
             scar_misid=scar_misid,
             combat_sar_rescues=combat_sar_rescues,
+            combat_sar_sof_recoveries=combat_sar_sof_recoveries,
         )
 
 

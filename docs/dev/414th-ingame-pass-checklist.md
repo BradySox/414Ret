@@ -485,6 +485,23 @@ so the two docs don't drift.
   without delivery). Empty list ⇒ pre-scoring behaviour (everyone dies) — that is the safe fallback,
   not a separate bug.
 
+### G12 — Combat SAR extracts a stranded SOF team · Combat SAR + SCAR · ☐ UNTESTED
+- **Setup:** A campaign with **SCAR command-post intel** on and a **stranded SOF team** on the map (a
+  "Downed SOF Team" objective from a botched capture; or cheat one in). Plan a **Combat SAR** CH-47.
+  Fly out to the team's strand point, board it (F10 `CSAR`), and **deliver it to a friendly field**.
+- **Pass:** The stranded team spawns as a CASEVAC pickup at the strand point; the Combat SAR helo
+  boards + delivers it. At debrief the **pending rescue clears and one SOF team is refunded** to a
+  friendly base (same as a dedicated `CSAR` air-assault recovery). `dcs.log` shows
+  `Combat SAR - stranded SOF team SOFRESCUE_… extracted home`. A *downed pilot* delivered in the same
+  mission is still spared (the two channels don't cross). With `auto_combat_sar` on, an **AI** Combat
+  SAR helo can do the extraction too (it will fly deep — expect losses).
+- **Fail signature:** no CASEVAC spawns (generator emitted no `sofTeams`, or `scar_command_post_intel`
+  off, or no rescue helo so the data is skipped); the team delivers but the rescue isn't cleared/
+  refunded (`SOFRESCUE_<x>_<y>` name mismatch between `sof_rescue_pickup_name` at generation vs
+  debrief — check the strand-coord rounding); or a SOF extraction wrongly lands in `combat_sar_rescues`
+  and "spares a pilot" (the `SOFRESCUE` prefix routing in `OnAfterRescued`); double refund for one
+  team recovered by both paths.
+
 ---
 
 ## H. Kneeboards

@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 
 from game.debriefing import StateData
 from game.missiongenerator.aircraft.flightdata import CombatSarKingBeacon
+from game.scar_rescue import PendingSofRescue, sof_rescue_pickup_name
 from game.sim.missionresultsprocessor import MissionResultsProcessor
 
 
@@ -115,3 +116,95 @@ def test_king_beacon_is_tacan_only_no_adf_freq() -> None:
     assert fields == {"callsign", "tacan"}
     beacon = CombatSarKingBeacon(callsign="KING", tacan=None)
     assert beacon.callsign == "KING"
+
+
+# --- SOF-team recovery via Combat SAR -------------------------------------------------
+
+
+def test_sof_rescue_pickup_name_is_stable_and_prefixed() -> None:
+    # The generator and the debrief must compute the same name from the same
+    # rescue: SOFRESCUE prefix (the Lua routes on it) + rounded strand metres.
+    rescue = PendingSofRescue(x=12345.4, y=-6789.6)
+    assert sof_rescue_pickup_name(rescue) == "SOFRESCUE_12345_-6790"
+    # Stable across the float round-trip the point match tolerates.
+    assert sof_rescue_pickup_name(
+        PendingSofRescue(x=12345.0, y=-6790.0)
+    ) == sof_rescue_pickup_name(PendingSofRescue(x=12345.49, y=-6789.51))
+
+
+def test_parse_sof_recoveries_tolerates_malformed() -> None:
+    assert (
+        StateData.from_json({}, _no_flight_unit_map()).combat_sar_sof_recoveries == []
+    )
+    state = StateData.from_json(
+        {"combat_sar_sof_recoveries": ["SOFRESCUE_1_2", "", 5, None]},
+        _no_flight_unit_map(),
+    )
+    assert state.combat_sar_sof_recoveries == ["SOFRESCUE_1_2"]
+
+
+def _sof_game(blue_pending: list[Any], red_pending: list[Any]) -> Any:
+    blue = SimpleNamespace(
+        player=SimpleNamespace(is_blue=True),
+        ato=SimpleNamespace(packages=[]),
+        pending_csars=blue_pending,
+    )
+    red = SimpleNamespace(
+        player=SimpleNamespace(is_blue=False),
+        ato=SimpleNamespace(packages=[]),
+        pending_csars=red_pending,
+    )
+    return SimpleNamespace(
+        blue=blue,
+        red=red,
+        settings=SimpleNamespace(scar_command_post_intel=True),
+    )
+
+
+def test_commit_sof_recoveries_credits_combat_sar_delivery() -> None:
+    rescue = PendingSofRescue(x=12345.0, y=-6789.0)
+    other = PendingSofRescue(x=99999.0, y=11111.0)
+    game = _sof_game(blue_pending=[rescue, other], red_pending=[])
+    processor = MissionResultsProcessor(cast(Any, game))
+    refunds: list[tuple[Any, int]] = []
+    processor._refund_sof_teams_to = (  # type: ignore[method-assign]
+        lambda player, unit_name, count: refunds.append((player, count))
+    )
+    debriefing = cast(
+        Any,
+        SimpleNamespace(
+            state_data=SimpleNamespace(
+                combat_sar_sof_recoveries=[sof_rescue_pickup_name(rescue)]
+            )
+        ),
+    )
+
+    processor.commit_sof_recoveries(debriefing)
+
+    # The delivered team is cleared + refunded; the un-rescued one stays pending.
+    assert game.blue.pending_csars == [other]
+    assert refunds == [(game.blue.player, 1)]
+
+
+def test_commit_sof_recoveries_combat_sar_is_blue_only() -> None:
+    red_rescue = PendingSofRescue(x=7.0, y=8.0)
+    game = _sof_game(blue_pending=[], red_pending=[red_rescue])
+    processor = MissionResultsProcessor(cast(Any, game))
+    refunds: list[tuple[Any, int]] = []
+    processor._refund_sof_teams_to = (  # type: ignore[method-assign]
+        lambda player, unit_name, count: refunds.append((player, count))
+    )
+    # A blue-channel delivery name must never recover a RED stranded team.
+    debriefing = cast(
+        Any,
+        SimpleNamespace(
+            state_data=SimpleNamespace(
+                combat_sar_sof_recoveries=[sof_rescue_pickup_name(red_rescue)]
+            )
+        ),
+    )
+
+    processor.commit_sof_recoveries(debriefing)
+
+    assert game.red.pending_csars == [red_rescue]
+    assert refunds == []

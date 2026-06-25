@@ -983,7 +983,8 @@ before touching). SME-facing open questions: `docs/dev/design/414th-scar-command
   - **Recovery** (`FlightType.CSAR` → `AirAssaultFlightPlan`, helo-only): a helo extraction;
     `commit_sof_recoveries` recovers the team when a CSAR flight was flown at the objective and the
     helo survived the deep sortie → refunds the bought team + clears the rescue (before captures
-    flip ownership).
+    flip ownership). **A Combat SAR flight (§21) can also extract the team** in-mission (MOOSE
+    CASEVAC) — `commit_sof_recoveries` credits either path, refunding once.
   - Tests: `tests/test_scar_rescue.py`, `tests/test_scar_objectives.py`,
     `tests/test_aircraft_tasking_roles.py`, `tests/test_scar_command_post_fog.py`. Full design +
     the Python-vs-Lua resolution decision: plan §9e.
@@ -1283,18 +1284,26 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Kneeboard | `game/missiongenerator/kneeboard.py` — `CombatSarTaskPage` |
 | Scoring (Lua) | `resources/plugins/base/dcs_retribution.lua` (`combat_sar_rescues` global + `write_state`), `resources/plugins/combatsar/combatsar-config.lua` (CSAR bridge + `OnAfterBoarded`/`OnAfterRescued`) |
 | Scoring (Py) | `game/debriefing.py` (`StateData.combat_sar_rescues`), `game/sim/missionresultsprocessor.py` (`commit_air_losses` spares rescued pilots) |
+| SOF recovery | `game/scar_rescue.py` (`sof_rescue_pickup_name`), `luagenerator.py` (emits `sofTeams`), `combatsar-config.lua` (`SpawnCASEVAC` + `SOFRESCUE` routing → `combat_sar_sof_recoveries`), `dcs_retribution.lua` (global), `debriefing.py` (`StateData.combat_sar_sof_recoveries`), `missionresultsprocessor.py` (`commit_sof_recoveries` credits a delivered team) |
 | Tests | `tests/test_combat_sar_scoring.py` |
 
 ### Gotchas
 
-- **Separate from the SOF `CSAR`** (§15) by design, and **verified independent** (2026-06-25):
-  the MOOSE `CSAR` engine is the only ejection listener in the active plugin set. The SOF insert
-  rides **CTLD** (whose ejection handler is commented out, `CTLD.lua:8254`) and the SOF recovery
-  is Python-inferred at debrief (`commit_sof_recoveries`), so there is **no double event-handling
-  on ejection** and the SOF loop needed no adaptation. Different flight types (`CSAR` vs
-  `COMBAT_SAR`) keep the rescue set from ever including the SOF recovery helo. The in-game pass
-  should still fly both in one mission to confirm coexistence (the F10 "CSAR" menu shows on any
-  helo player, but pickups stay gated to the Combat SAR rescue set).
+- **Combat SAR also handles the SOF recovery** (§15): the same rescue helo can extract a stranded
+  SCAR SOF team in-mission. The generator emits each on-map team (`self.game.blue.pending_csars`,
+  anchored) and the plugin spawns it as a MOOSE CSAR **CASEVAC** (`SpawnCASEVAC`) at its strand
+  point; the helo boards + delivers it like a downed pilot. The CASEVAC name is
+  `SOFRESCUE_<x>_<y>` (`sof_rescue_pickup_name`), routed by `OnAfterRescued` to the
+  `combat_sar_sof_recoveries` global; `commit_sof_recoveries` recomputes the name per
+  `PendingSofRescue` to clear it + refund the team — *alongside* (not replacing) the dedicated
+  `FlightType.CSAR` air-assault recovery, and a team recovered by both refunds once. The SOF
+  *insert* (CTLD C-130) is untouched. AI participation follows `auto_combat_sar` (the AI alert will
+  divert deep to extract a team — risky by design).
+- **No double ejection-handling.** The MOOSE `CSAR` engine is the only ejection listener (CTLD's
+  handler is commented out, `CTLD.lua:8254`); the SOF *team* is a CASEVAC ground pickup, never an
+  ejection. The pilot-sparing (`combat_sar_rescues`) and SOF-recovery (`combat_sar_sof_recoveries`)
+  channels stay distinct, routed by the `SOFRESCUE` name prefix. The F10 "CSAR" menu shows on any
+  helo player, but pickups are gated to the Combat SAR rescue set (`SetOwnSetPilotGroups`).
 - **Blue-only.** The CSAR engine is built for `"blue"`; a red COMBAT_SAR would just fly an
   inert orbit, so red is never auto-tasked.
 - **King ≠ tanker.** The C-130 cannot be a DCS aerial-refueling tanker, and the CH-47 couldn't

@@ -333,13 +333,20 @@ class MissionResultsProcessor:
     def commit_sof_recoveries(self, debriefing: Debriefing) -> None:
         """Recover SOF teams stranded by a botched capture (Phase 2c-3, slice C4).
 
-        A team is recovered when its side flew a CSAR helo at the "downed SOF team"
-        objective standing on the team's position and the helo survived the sortie.
-        The recovery leg is a deep penetration to where the team stranded (enemy
-        territory), so a surviving helo is a real accomplishment, not a formality --
-        and the sim flies the flight (player or AI) regardless of who is in the
-        cockpit. Recovery refunds one bought SOF team to a friendly base and clears
-        the pending rescue. No-op when the feature is off.
+        A team is recovered either way the rescue can be flown:
+
+        - A dedicated ``FlightType.CSAR`` helo flew at the "downed SOF team"
+          objective standing on the team's position and survived the sortie (the
+          deep-penetration recovery leg -- a surviving helo is a real
+          accomplishment).
+        - **Combat SAR** extracted it in-mission: the ``combatsar`` plugin spawned
+          the stranded team as a CASEVAC and a Combat SAR rescue helo delivered it
+          to a friendly field, reported by its ``SOFRESCUE_<x>_<y>`` name (blue
+          only -- the MOOSE CSAR engine is blue-side).
+
+        Either path refunds one bought SOF team to a friendly base and clears the
+        pending rescue (a team recovered by both still refunds once). No-op when
+        the feature is off.
         """
         if not self.game.settings.scar_command_post_intel:
             return
@@ -348,7 +355,9 @@ class MissionResultsProcessor:
             SCAR_SOF_UNIT_BLUE,
             SCAR_SOF_UNIT_RED,
         )
+        from game.scar_rescue import sof_rescue_pickup_name
 
+        delivered_sof = set(debriefing.state_data.combat_sar_sof_recoveries)
         for coalition, unit_name in (
             (self.game.blue, SCAR_SOF_UNIT_BLUE),
             (self.game.red, SCAR_SOF_UNIT_RED),
@@ -366,15 +375,19 @@ class MissionResultsProcessor:
                     for f in csar_flights
                 ):
                     recovered_points.append((target.position.x, target.position.y))
-            if not recovered_points:
+            # Combat SAR in-mission extractions are blue-only (the engine is blue).
+            sof_names = delivered_sof if coalition.player.is_blue else set()
+            if not recovered_points and not sof_names:
                 continue
             remaining = []
             recovered = 0
             for rescue in coalition.pending_csars:
-                if any(
+                point_match = any(
                     self._same_strand_point(rescue.x, rescue.y, px, py)
                     for px, py in recovered_points
-                ):
+                )
+                name_match = sof_rescue_pickup_name(rescue) in sof_names
+                if point_match or name_match:
                     recovered += 1
                 else:
                     remaining.append(rescue)

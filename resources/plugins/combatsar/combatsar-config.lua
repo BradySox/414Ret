@@ -119,8 +119,17 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     -- in the kill/crash events, so Retribution maps it straight back to the lost
     -- flight and skips killing that pilot. Appends to the dcsRetribution-core global
     -- combat_sar_rescues (written into state.json by dcs_retribution.lua).
+    --
+    -- The SAME pickup path also extracts stranded SCAR SOF teams (spawned as CASEVAC
+    -- below): those carry a SOFRESCUE_<x>_<y> name, which we route to a separate
+    -- combat_sar_sof_recoveries channel (clears the rescue + refunds the team)
+    -- instead of the pilot-sparing one.
     -------------------------------------------------------------------------------
     local onboardByHeli = {}  -- heliName -> { woundedGroupName -> originalUnit }
+
+    local function isSofRescue(name)
+        return type(name) == "string" and string.sub(name, 1, 9) == "SOFRESCUE"
+    end
 
     function csar:OnAfterBoarded(_From, _Event, _To, heliName, woundedGroupName, _desc)
         local transit = self.inTransitGroups[heliName]
@@ -137,13 +146,42 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
             return
         end
         combat_sar_rescues = combat_sar_rescues or {}
+        combat_sar_sof_recoveries = combat_sar_sof_recoveries or {}
         for _, originalUnit in pairs(delivered) do
-            table.insert(combat_sar_rescues, originalUnit)
-            env.info("DCSRetribution|Combat SAR - pilot of " .. tostring(originalUnit)
-                .. " delivered home; campaign will spare them")
+            if isSofRescue(originalUnit) then
+                table.insert(combat_sar_sof_recoveries, originalUnit)
+                env.info("DCSRetribution|Combat SAR - stranded SOF team " .. tostring(originalUnit)
+                    .. " extracted home; campaign will recover + refund it")
+            else
+                table.insert(combat_sar_rescues, originalUnit)
+                env.info("DCSRetribution|Combat SAR - pilot of " .. tostring(originalUnit)
+                    .. " delivered home; campaign will spare them")
+            end
         end
         onboardByHeli[heliName] = nil
         dirty_state = true  -- force the next scheduled state write to include it
+    end
+
+    -------------------------------------------------------------------------------
+    -- Stranded SOF teams (SCAR commander-capture loop): a botched capture leaves a
+    -- SOF team in enemy territory. Spawn each on-map team (emitted by the generator)
+    -- as a MOOSE CSAR CASEVAC at its strand point, so the same Combat SAR rescue
+    -- helo can fly out, board it, and deliver it to a friendly field -- which clears
+    -- the rescue and refunds the team at debrief. CASEVAC reuses the pilotTemplate
+    -- group and the exact board/deliver path (so OnAfterRescued above sees it); the
+    -- SOFRESCUE_ name is what Python recomputes to match the delivery. The C-130 SOF
+    -- *insert* is unchanged (CTLD) -- only the recovery rides Combat SAR.
+    -------------------------------------------------------------------------------
+    local sofTeams = data.sofTeams or {}
+    for _, team in pairs(sofTeams) do
+        local x = tonumber(team.x)
+        local y = tonumber(team.y)
+        if team.name and x and y then
+            -- Generator emits pydcs (x = north, y = east); the DCS world vec3 is
+            -- { x = north, y = 0, z = east }, matching the SCAR plugin's convention.
+            local coord = COORDINATE:NewFromVec3({ x = x, y = 0, z = y })
+            csar:SpawnCASEVAC(coord, coalition.side.BLUE, "Stranded SOF team", false, team.name, "SOF Team", true)
+        end
     end
 
     -------------------------------------------------------------------------------

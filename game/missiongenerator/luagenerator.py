@@ -17,6 +17,7 @@ from game.ato import FlightType
 from game.data.units import UnitClass
 from game.dcs.aircrafttype import AircraftType
 from game.plugins import LuaPluginManager
+from game.scar_rescue import sof_rescue_pickup_name
 from game.theater import TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
@@ -641,6 +642,22 @@ class LuaGenerator:
                 if beacon.tacan is not None:
                     item.add_key_value("tacanChannel", str(beacon.tacan.number))
                     item.add_key_value("tacanBand", beacon.tacan.band.value)
+
+        # Stranded SOF teams (SCAR commander-capture loop): offer each on-map team
+        # as a CASEVAC pickup so the SAME Combat SAR rescue helo can extract it.
+        # Delivery clears the rescue + refunds the team at debrief. Only the SOF
+        # *recovery* is wired here; the C-130 SOF insert (CTLD) is unchanged. Gated
+        # on the SCAR intel feature; the anchor check keeps it to teams surfaced as
+        # an objective this turn (a freshly-stranded team surfaces next turn).
+        if self.game.settings.scar_command_post_intel:
+            teams_item = combat_sar.add_item("sofTeams")
+            for rescue in self.game.blue.pending_csars:
+                if rescue.anchor_cp_id is None:
+                    continue
+                item = teams_item.add_item()
+                item.add_key_value("name", sof_rescue_pickup_name(rescue))
+                item.add_key_value("x", str(rescue.x))
+                item.add_key_value("y", str(rescue.y))
 
     def _generate_combat_sar_pilot_template(self) -> Optional[str]:
         """Add a hidden, late-activation infantry group for MOOSE CSAR to clone as

@@ -16,7 +16,7 @@ from PIL import ImageDraw
 
 from dcs.weather import Weather as PydcsWeather, Wind
 
-from game.utils import mps
+from game.utils import inches_hg, mps
 
 from ._fonts import load_font
 
@@ -138,6 +138,30 @@ def compute_qfe_inhg(qnh_inhg: float, elevation_m: float) -> float:
     return qnh_inhg * ratio
 
 
+_KELVIN_OFFSET = 273.15
+
+
+def altimeter_setting_inhg(
+    qnh_inhg: float, elevation_m: float, oat_msl_c: float
+) -> float:
+    """True sea-level QNH → the temperature-corrected **altimeter setting**.
+
+    This is the value a standard (ISA-calibrated) altimeter must be set to so it
+    reads field elevation on the ground — i.e. real-world QNH, and what the MOOSE
+    ATIS broadcasts (``altimeterQNH=true``). Reduce QNH to the field using the
+    *actual* OAT, then back to sea level using *ISA standard* temperature; the two
+    reductions cancel at 0 m or when OAT == ISA (15 °C), so it's a no-op there.
+    Feeding this into ``compute_qfe_inhg`` then yields the actual field pressure
+    (the MOOSE QFE), so QNH and QFE both match ATIS.
+    """
+    if elevation_m == 0.0:
+        return qnh_inhg
+    t0 = oat_msl_c + _KELVIN_OFFSET
+    actual = (1.0 - _ISA_LAPSE_K_PER_M * elevation_m / t0) ** _ISA_EXP
+    isa = (1.0 - _ISA_LAPSE_K_PER_M * elevation_m / _ISA_TEMP_K) ** _ISA_EXP
+    return qnh_inhg * actual / isa
+
+
 def has_thunderstorm_cells(clouds: Optional["Clouds"]) -> bool:
     """True when DCS will spawn CB cells in this weather setup.
 
@@ -166,11 +190,20 @@ def build_atis_block(
     field_elevation_m: Optional[float] = None,
 ) -> AtisBlock:
     qnh = weather.atmospheric.qnh
-    qnh_inhg_rounded = round(qnh.inches_hg, 2)
-    qnh_hpa = int(round(qnh.hecto_pascals))
+    # Show the temperature-corrected altimeter setting at the departure field (what
+    # ATIS broadcasts), not the raw sea-level QNH, so the kneeboard matches ATIS.
+    # Without a field elevation we can't correct, so fall back to the raw QNH.
+    if field_elevation_m is not None:
+        qnh_inhg_eff = altimeter_setting_inhg(
+            qnh.inches_hg, field_elevation_m, weather.atmospheric.temperature_celsius
+        )
+    else:
+        qnh_inhg_eff = qnh.inches_hg
+    qnh_inhg_rounded = round(qnh_inhg_eff, 2)
+    qnh_hpa = int(round(inches_hg(qnh_inhg_eff).hecto_pascals))
     storm_cells = has_thunderstorm_cells(weather.clouds)
     qnh_storm_inhg = (
-        round(qnh.inches_hg - THUNDERSTORM_PRESSURE_DROP_INHG, 2)
+        round(qnh_inhg_eff - THUNDERSTORM_PRESSURE_DROP_INHG, 2)
         if storm_cells
         else None
     )
@@ -181,7 +214,9 @@ def build_atis_block(
     if qnh_storm_inhg is not None:
         qnh_display += f" (~{qnh_storm_inhg:.2f} CB)"
     if field_elevation_m is not None:
-        qfe_inhg = round(compute_qfe_inhg(qnh.inches_hg, field_elevation_m), 2)
+        # QFE from the temperature-corrected QNH = the actual field pressure, which
+        # is what ATIS reports (and what zeros the altimeter on the ramp).
+        qfe_inhg = round(compute_qfe_inhg(qnh_inhg_eff, field_elevation_m), 2)
         qfe_display = f"{qfe_inhg:.2f} inHg"
         if qnh_storm_inhg is not None:
             qfe_storm_inhg = round(

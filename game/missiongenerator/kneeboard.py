@@ -49,7 +49,7 @@ from game.settings.settings import TargetIntelPrecision
 from game.theater import TheaterGroundObject, TheaterUnit
 from game.theater.bullseye import Bullseye
 from game.theater.controlpoint import Airfield
-from game.utils import Distance, UnitSystem, meters, mps, pounds
+from game.utils import Distance, UnitSystem, inches_hg, meters, mps, pounds
 from game.weather.weather import Weather
 from .aircraft.flightdata import CombatSarKingBeacon, FlightData
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
@@ -58,6 +58,7 @@ from .kneeboard_recon import airport_imagery as _airport_imagery
 from .kneeboard_recon import generate_recon_pages
 from .kneeboard_recon.atis import (
     THUNDERSTORM_PRESSURE_DROP_INHG,
+    altimeter_setting_inhg,
     compute_qfe_inhg,
     has_thunderstorm_cells,
     wind_from_deg,
@@ -599,9 +600,12 @@ class BriefingPage(KneeboardPage):
 
         writer.text(f"Bullseye: {self.bullseye.position.latlng().format_dms()}")
 
-        qnh_in_hg = f"{self.weather.atmospheric.qnh.inches_hg:.2f}"
-        qnh_mm_hg = f"{self.weather.atmospheric.qnh.mm_hg:.1f}"
-        qnh_hpa = f"{self.weather.atmospheric.qnh.hecto_pascals:.1f}"
+        # QNH = the temperature-corrected altimeter setting at the departure field
+        # (what ATIS broadcasts), via game.utils for canonical unit conversions.
+        qnh = inches_hg(self._effective_qnh_inhg())
+        qnh_in_hg = f"{qnh.inches_hg:.2f}"
+        qnh_mm_hg = f"{qnh.mm_hg:.1f}"
+        qnh_hpa = f"{qnh.hecto_pascals:.1f}"
         writer.text(
             f"Temperature: {round(self.weather.atmospheric.temperature_celsius)} °C at sea level"
         )
@@ -691,15 +695,13 @@ class BriefingPage(KneeboardPage):
             )
         return overflow
 
-    def _format_departure_qfe(self) -> Optional[str]:
-        """Return "QFE: ..." line for the departure field, or None.
+    def _departure_elevation_m(self) -> Optional[float]:
+        """DCS-mesh field elevation (m) of the departure field, or None.
 
-        Looks up the departure airport via the theater's controlpoints
-        (matched by airfield name), reads the OSM/DEM-derived elevation
-        from ``resources/airport_imagery/<terrain>.json``, and reduces
-        QNH to QFE via the ISA barometric formula. Returns None when no
-        theater was provided, no matching control point exists, or no
-        elevation was shipped for the airport.
+        Looks up the departure airport via the theater's controlpoints (matched
+        by airfield name) and reads ``elevation_m`` from
+        ``resources/airport_imagery/<terrain>.json``. None when no theater, no
+        matching control point, or no elevation shipped.
         """
         if self.theater is None:
             return None
@@ -718,16 +720,41 @@ class BriefingPage(KneeboardPage):
         # the same lookup chain (load â†’ for_airport â†’ elevation_m). When
         # this lookup changes (alt source for elevation, new key for
         # matching airports), both surfaces update together.
-        elevation_m = _airport_imagery.field_elevation_for_airport(
+        return _airport_imagery.field_elevation_for_airport(
             self.theater.terrain, airport
         )
+
+    def _altimeter_setting_inhg(self, elevation_m: Optional[float]) -> float:
+        """Temperature-corrected altimeter-setting QNH (what ATIS reports) for a
+        known field elevation; raw sea-level QNH when the elevation is unknown.
+        """
+        qnh_inhg = self.weather.atmospheric.qnh.inches_hg
+        if elevation_m is None:
+            return qnh_inhg
+        return altimeter_setting_inhg(
+            qnh_inhg, elevation_m, self.weather.atmospheric.temperature_celsius
+        )
+
+    def _effective_qnh_inhg(self) -> float:
+        """QNH as ATIS reports it at the departure field (raw when no elevation)."""
+        return self._altimeter_setting_inhg(self._departure_elevation_m())
+
+    def _format_departure_qfe(self) -> Optional[str]:
+        """Return "QFE: ..." line for the departure field, or None.
+
+        QFE is derived from the temperature-corrected altimeter-setting QNH, so it
+        equals the actual field pressure (matching the in-sim ATIS QFE).
+        """
+        dep = self.flight.departure
+        elevation_m = self._departure_elevation_m()
         if elevation_m is None:
             return None
 
-        qnh_inhg = self.weather.atmospheric.qnh.inches_hg
+        # One elevation lookup feeds both the QNH correction and the QFE.
+        qnh_inhg = self._altimeter_setting_inhg(elevation_m)
         qfe_inhg = compute_qfe_inhg(qnh_inhg, elevation_m)
-        qfe_hpa = qfe_inhg * 33.86389
-        elev_ft = elevation_m * 3.28084
+        qfe_hpa = inches_hg(qfe_inhg).hecto_pascals
+        elev_ft = meters(elevation_m).feet
         line = (
             f"QFE ({dep.airfield_name}, field elev {elev_ft:.0f} ft): "
             f"{qfe_inhg:.2f} inHg / {qfe_hpa:.1f} hPa"

@@ -30,6 +30,10 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     local data = dcsRetribution.CombatSAR
     local rescueHelos = data.rescueHelos or {}
     local pilotTemplate = data.pilotTemplate
+    -- enableForAI is emitted as a string ("true"/"false"). On = AI standing alert
+    -- (Settings.auto_combat_sar): MOOSE CSAR may commandeer an orbiting AI CH-47 to
+    -- rescue, and AI ejections become rescuable too. Off = human-initiated only.
+    local enableForAI = (data.enableForAI == "true") or (data.enableForAI == true)
 
     if not pilotTemplate or #rescueHelos == 0 then
         env.info("DCSRetribution|Combat SAR plugin - no rescue helos / template; skipping")
@@ -78,8 +82,9 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     local csar = CSAR:New("blue", pilotTemplate, "CSAR")
     csar:SetOwnSetPilotGroups(rescueSet)
 
-    -- Human-only, ejection-only, blue-side v1 behaviour.
-    csar.enableForAI = false          -- only human-initiated ejections / human rescuers
+    -- Ejection-only, blue-side behaviour. enableForAI gates AI participation:
+    -- false (default) = human-initiated only; true = AI standing-alert rescue.
+    csar.enableForAI = enableForAI
     csar.csarOncrash = false          -- ejection rescues only, not every crash
     csar.allowDownedPilotCAcontrol = false
     csar.autosmoke = autosmoke
@@ -92,9 +97,10 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
 
     env.info(
         string.format(
-            "DCSRetribution|Combat SAR plugin - CSAR started with %d rescue helo group(s), template '%s'",
+            "DCSRetribution|Combat SAR plugin - CSAR started with %d rescue helo group(s), template '%s', enableForAI=%s",
             #rescueHelos,
-            tostring(pilotTemplate)
+            tostring(pilotTemplate),
+            tostring(enableForAI)
         )
     )
 

@@ -443,6 +443,19 @@ so the two docs don't drift.
   set mis-bound); or double event-handling with the SOF CSAR. If the helo can't deliver anywhere,
   check `allowFARPRescue` / that a friendly airfield is in range.
 
+### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☐ UNTESTED
+- **Setup:** Enable **Automatic Combat SAR** (HQ automation settings; default OFF). Campaign with a
+  blue **CH-47** squadron + budget. Auto-plan turn 1 (observe-only, don't fly the CSAR).
+- **Pass:** A blue **AI** `Combat SAR` package appears in the ATO, orbiting near an active front
+  (one per front, capped by available CH-47s). The generator logs `enableForAI=true`. When a pilot
+  ejects in range, the orbiting AI CH-47 diverts, recovers, and returns — with no player CSAR up.
+- **Fail signature:** no CSAR package planned with the setting on + a CH-47 squadron present (HTN/
+  fulfiller gap — check `combat_sar_targets` populates and a CH-47 is purchasable); a CSAR planned
+  for **red** (blue-gate leaked); the AI helo orbits but never diverts to a downed pilot
+  (`enableForAI` not reaching the engine, or MOOSE AI-rescue routing vs. Retribution's flight plan);
+  or the AI rescue routing fights the despawn/RTB logic. **Off-state regression check:** with the
+  setting OFF, confirm no CSAR is auto-planned and `enableForAI=false` is logged.
+
 ---
 
 ## H. Kneeboards

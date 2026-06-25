@@ -611,8 +611,14 @@ class LuaGenerator:
             )
             return
 
+        # With the standing-alert setting on, let MOOSE CSAR commandeer AI rescue
+        # helos (an orbiting AI CH-47 diverts to the crash site). This also makes AI
+        # ejections rescuable. With it off, CSAR stays human-initiated only (Phase 2).
+        enable_for_ai = self.game.settings.auto_combat_sar
+
         combat_sar = lua_data.add_item("CombatSAR")
         combat_sar.add_key_value("pilotTemplate", template_name)
+        combat_sar.add_key_value("enableForAI", "true" if enable_for_ai else "false")
         combat_sar.add_data_array("rescueHelos", rescue_helos)
         combat_sar.add_data_array("kings", kings)
 

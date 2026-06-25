@@ -63,7 +63,7 @@ shape as the MANTIS / CTLD plugins.
 |---|---|---|---|
 | **1 — Python task** | `COMBAT_SAR` FlightType + FLOT-orbit flight plan + CH-47/C-130 eligibility + entity map; player-selectable | Generate a mission, see a CH-47/C-130 fly a FLOT orbit; Python tests green | ✅ landed (#170) |
 | **2 — Lua CSAR bridge** | `combatsar` plugin: MOOSE `CSAR` for human ejections, CH-47 rescue set | Eject a player near the FLOT → the CH-47 flies in and recovers them; `dcs.log` clean | ⏳ built, **pending in-game pass** |
-| **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works | not started |
+| **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works | ⏳ built, **pending in-game pass** |
 | **4 — polish** | C-130 → tanker/command role (reuse refuel system), kneeboard card, scoring hook | nice-to-haves | not started |
 
 ### Phase 2 — as built
@@ -90,6 +90,25 @@ shape as the MANTIS / CTLD plugins.
   v1 does nothing with it (C-130s just fly the orbit).
 - **Plugin options:** `autosmoke` (off), `loadDistance` (75 m), `rescueHoverHeight` (20 m),
   `messageTime` (15 s) — surfaced in the Plugin Options UI.
+
+### Phase 3 — as built
+
+- **`auto_combat_sar` setting** (`Settings`, HQ automation section, **default OFF**). Off → no CSAR
+  is ever auto-planned and the runtime stays human-initiated only (Phase 2 behaviour).
+- **HTN auto-planning** mirrors AEWC/refueling support:
+  - `TheaterState.combat_sar_targets` = the active front lines, but **only** for the (blue) player
+    coalition and **only** when the setting is on (empty otherwise — red and off are pure no-ops).
+  - `PlanCombatSar` primitive (`game/commander/tasks/primitive/combatsar.py`) — gated on the setting,
+    proposes one `COMBAT_SAR` flight, `asap=True` so the alert is up before the first losses.
+  - `PlanCombatSarSupport` compound (`…/compound/combatsarsupport.py`), wired into `TheaterSupport`
+    alongside `PlanAewcSupport` / `PlanRefuelingSupport`. Airframe scarcity self-limits: no
+    CH-47 available → the fulfiller simply doesn't plan it.
+- **AI rescue flag:** the generator emits `enableForAI` in `dcsRetribution.CombatSAR` from the
+  setting. On → MOOSE CSAR may commandeer an orbiting **AI** CH-47 to fly the pickup (and AI
+  ejections become rescuable too); off → human-initiated only. The Lua bridge reads it instead of
+  the hard-coded `false`.
+- **Scope note:** still blue-only (the CSAR engine is built for `"blue"`); a red `COMBAT_SAR` would
+  just fly an inert orbit, so red is never auto-tasked.
 
 ## Open questions / risks
 

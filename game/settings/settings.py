@@ -1016,6 +1016,19 @@ class Settings:
         HQ_AUTOMATION_SECTION,
         default=True,
     )
+    auto_combat_sar: bool = boolean_option(
+        "Automatic Combat SAR (pilot-rescue) standing alert",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        HQ_AUTOMATION_SECTION,
+        default=False,
+        detail=(
+            "Auto-plan a Combat SAR orbit near each active front so a downed pilot "
+            "can be rescued even with no player CSAR flown. Requires a CH-47-capable "
+            "squadron. Also lets the in-mission MOOSE CSAR engine commandeer AI rescue "
+            "helos (so AI ejections become rescuable too). Experimental -- needs an "
+            "in-game pass; default OFF."
+        ),
+    )
     automate_front_line_stance: bool = boolean_option(
         "Automatically manage front line stances",
         CAMPAIGN_MANAGEMENT_PAGE,

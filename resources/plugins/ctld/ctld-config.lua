@@ -149,6 +149,36 @@ if dcsRetribution then
                 end
             end
 
+            -- Normalise the rebuilt zones to CTLD's INTERNAL (post-init) format.
+            -- ctld.initialize() runs its one-time string->number conversion (smoke
+            -- colour name -> trigger.smokeColor, "yes" -> 1, limit -1 -> 10000) on
+            -- the CTLD *defaults* at load time -- but tailorctld clears and rebuilds
+            -- these zones AFTERWARDS with the documented string format, and the
+            -- conversion can't be re-run safely (a 2nd pass would reset already-
+            -- numeric colours to -1). So mirror just that conversion here. Without
+            -- it, ctld.refreshSmoke() does e.g. "none" >= 0 and errors every cycle
+            -- (CTLD.lua:5685, "attempt to compare number with string").
+            local function _smoke_to_num(c)
+                if c == "green" then return trigger.smokeColor.Green
+                elseif c == "red" then return trigger.smokeColor.Red
+                elseif c == "white" then return trigger.smokeColor.White
+                elseif c == "orange" then return trigger.smokeColor.Orange
+                elseif c == "blue" then return trigger.smokeColor.Blue
+                else return -1 end  -- "none" / unknown -> no smoke
+            end
+            for _, _z in pairs(ctld.pickupZones) do
+                _z[2] = _smoke_to_num(_z[2])              -- smoke colour -> number
+                if _z[3] == -1 then _z[3] = 10000 end     -- unlimited group counter
+                _z[4] = (_z[4] == "yes") and 1 or 0       -- active flag -> 1/0
+            end
+            for _, _z in pairs(ctld.dropOffZones) do
+                _z[2] = _smoke_to_num(_z[2])
+            end
+            for _, _z in pairs(ctld.wpZones) do
+                _z[2] = _smoke_to_num(_z[2])
+                _z[3] = (_z[3] == "yes") and 1 or 0
+            end
+
             autolase = dcsRetribution.plugins.ctld.autolase
             env.info(string.format("DCSRetribution|CTLD plugin - JTAC AutoLase enabled = %s", tostring(autolase)))
 

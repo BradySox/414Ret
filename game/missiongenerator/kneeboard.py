@@ -1230,6 +1230,66 @@ class StrikeTaskPage(KneeboardPage):
         )
 
 
+class CombatSarTaskPage(KneeboardPage):
+    """Player briefing for a Combat SAR (pilot-rescue) flight.
+
+    Role-aware: the CH-47 does the pickup, the C-130 flies the HC-130 "King"
+    overhead-command orbit. Runtime is the MOOSE CSAR engine (combatsar plugin),
+    which drives the F10 "CSAR" menu and the on-screen ranges in-game, so this
+    page is guidance rather than exact tunable values.
+    """
+
+    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
+        self.flight = flight
+        self.dark_kneeboard = dark_kneeboard
+
+    @property
+    def _is_pickup_helo(self) -> bool:
+        return self.flight.aircraft_type.helicopter
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        writer.title(f"{self.flight.callsign} Combat SAR{custom}")
+
+        writer.heading("ROLE")
+        if self._is_pickup_helo:
+            writer.text("Rescue helo — you make the pickup at the survivor.")
+        else:
+            writer.text('HC-130 "King" — on-scene command, overhead presence.')
+
+        writer.heading("HOW IT WORKS")
+        writer.text(
+            "- Orbit near the front. When a friendly pilot ejects in the area, a "
+            "downed pilot spawns with a radio beacon.\n"
+            '- Use the F10 radio menu -> "CSAR" for the active rescue list, the '
+            "bearing/range to the survivor, and to request smoke / flare / beacon.",
+            wrap=True,
+        )
+
+        if self._is_pickup_helo:
+            writer.heading("PICKUP")
+            writer.text(
+                "- Fly to the survivor's beacon. Come to a low, slow hover directly "
+                "over them (or land alongside) and hold until they board.\n"
+                "- Keep cargo doors open if your module models them.\n"
+                "- Deliver the survivor to ANY friendly airfield or FARP to score "
+                "the save.",
+                wrap=True,
+            )
+        else:
+            writer.heading("ON-SCENE COMMAND")
+            writer.text(
+                "- Hold your overhead orbit as on-scene commander. Do NOT land at "
+                "the crash site.\n"
+                "- The rescue helo makes the pickup; you provide presence and "
+                "coordination.",
+                wrap=True,
+            )
+
+        writer.write(path)
+
+
 def build_airfield_directory_rows(
     game: "Game",
     flight: "FlightData",
@@ -1556,6 +1616,8 @@ class KneeboardGenerator(MissionInfoGenerator):
             )
         elif flight.flight_type is FlightType.STRIKE:
             return StrikeTaskPage(flight, self.dark_kneeboard)
+        elif flight.flight_type is FlightType.COMBAT_SAR:
+            return CombatSarTaskPage(flight, self.dark_kneeboard)
         return None
 
     def generate_flight_kneeboard(

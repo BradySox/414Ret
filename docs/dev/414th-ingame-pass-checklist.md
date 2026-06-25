@@ -473,6 +473,16 @@ so the two docs don't drift.
   Check `table_paginated()` / `remaining_table_rows()` row-height math in
   `kneeboard.py` if seen.
 
+### H2 — Combat SAR task kneeboard · Combat SAR Phase 4 · ☐ UNTESTED
+- **Setup:** Plan a player **CH-47** Combat SAR flight (and, separately, a player **C-130** Combat
+  SAR). Open each flight's kneeboard in DCS.
+- **Pass:** Each flight has a "Combat SAR" task page. The CH-47's shows the **pickup** procedure
+  (ROLE = rescue helo; hover/land at the beacon, deliver to a friendly field/FARP); the C-130's shows
+  the **on-scene-command** brief (ROLE = HC-130 "King"; hold overhead, don't land). Both reference the
+  F10 `CSAR` menu. Text wraps inside the page, no clipping.
+- **Fail signature:** wrong role brief for the airframe (helo gets the King text or vice-versa),
+  text running off the page edge, or no Combat SAR page at all (`generate_task_page` branch).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

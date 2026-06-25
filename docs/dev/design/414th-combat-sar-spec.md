@@ -64,7 +64,23 @@ shape as the MANTIS / CTLD plugins.
 | **1 — Python task** | `COMBAT_SAR` FlightType + FLOT-orbit flight plan + CH-47/C-130 eligibility + entity map; player-selectable | Generate a mission, see a CH-47/C-130 fly a FLOT orbit; Python tests green | ✅ landed (#170) |
 | **2 — Lua CSAR bridge** | `combatsar` plugin: MOOSE `CSAR` for human ejections, CH-47 rescue set | Eject a player near the FLOT → the CH-47 flies in and recovers them; `dcs.log` clean | ⏳ built, **pending in-game pass** |
 | **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works | ⏳ built, **pending in-game pass** |
-| **4 — polish** | C-130 "King" on-scene-command role (overhead presence / beacon), kneeboard card, helo orbit-altitude tuning, scoring hook | nice-to-haves | not started |
+| **4 — polish** | C-130 "King" on-scene-command role (overhead presence / beacon), kneeboard card, helo orbit-altitude tuning, scoring hook | nice-to-haves | ◐ kneeboard + altitude done; King beacon optional |
+
+### Phase 4 — as built (partial)
+
+- **Kneeboard card** (`CombatSarTaskPage` in `game/missiongenerator/kneeboard.py`, wired into
+  `generate_task_page`): a role-aware player briefing — CH-47 gets the **pickup** procedure (hover/
+  land at the beacon, doors open, deliver to any friendly field/FARP to score); C-130 gets the
+  **on-scene-command** brief (hold overhead, don't land). Both explain the F10 `CSAR` menu. Guidance,
+  not exact tunables (MOOSE shows live ranges in-game).
+- **Helo orbit altitude — already handled, no code.** COMBAT_SAR reuses the AEWC flight plan, whose
+  `builder.get_patrol_altitude` routes every helo through `get_altitude`, which clamps to
+  `Settings.heli_combat_alt_agl` (the same path air-assault/CSAR helos use). The CH-47 orbits at a
+  helo-appropriate AGL altitude; the C-130 gets a normal fixed-wing patrol altitude. Nothing to tune.
+- **Still open (optional):** a TACAN/radio **beacon on the C-130 "King"** as a rally point. Low value
+  (the survivor's own beacon — the operationally important one — is already placed by MOOSE CSAR), and
+  it adds a MOOSE runtime surface + another in-game pass, so it's parked until explicitly wanted. A
+  scoring/economy hook for successful rescues is likewise deferred.
 
 > **C-130 tanker role is OFF the table.** The C-130 **cannot act as an aerial-refueling tanker in
 > DCS currently** (user-confirmed, 2026-06-25), and the CH-47 rescue helo couldn't take fuel from it

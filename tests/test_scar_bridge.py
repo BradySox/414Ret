@@ -3,10 +3,16 @@
 The bridge is the spec-§8a integration seam: the generator builds a ScarTasking
 per SCAR flight, emits it as a dcsRetribution.Scar Lua table, the SCAR plugin
 runs the scenario in-mission, and the outcome flows back through state.json into
-the debrief. AI convoys are rare, so the default is to SPAWN a moving HVT; a SCAR
-flight against a real surface-to-surface missile site binds to it instead (SCUD,
-watch-only). The Lua half needs an in-game pass; here we lock in the Python half
-CI can verify: tasking collection, Lua emission, and result parsing.
+the debrief.
+
+Loiter-and-task rework (Phase 1): the kill box is STATIC. ``build_scar_taskings``
+still picks a variant by target (``spawn`` generic / ``armor`` real group / ``missile``
+real SCUD site), but ``_make_static`` then zeroes all movement -- the bound real
+group and the spawned decoys hold position (dest == spawn, speed 0), the tasking
+dest/fire-point collapse onto the area centre, and the SOF capture point moves onto
+the held target (the inverted assault). The old chase/flee/SCUD-race is retired.
+The Lua half needs an in-game pass; here we lock in the Python half CI can verify:
+tasking collection (now static), Lua emission, and result parsing.
 """
 
 import math
@@ -25,7 +31,6 @@ from game.missiongenerator.scarluadata import (
     SCAR_COMMAND,
     SCAR_DECOY_SIGNATURES,
     SCAR_HVT_SIGNATURE,
-    SCAR_MIN_FLEE_M,
     SCAR_SOF_CAPTURE_RADIUS_M,
     SCAR_SOF_LEAD_FRAC,
     SCAR_THREAT_LAYDOWN,
@@ -165,9 +170,10 @@ def test_red_tasking_keeps_red_coalition_and_id() -> None:
     assert tasking.tasking_id == "red-scar-1"
 
 
-def test_hvt_routes_to_nearest_enemy_city() -> None:
-    # With an enemy-held control point present, the HVT flees toward it (the
-    # "city") and carries a command vehicle that despawns there on arrival.
+def test_spawn_hvt_holds_static() -> None:
+    # Loiter rework: even with an enemy city present, the spawned HVT no longer
+    # flees toward it -- it holds over the static kill box (success = killed, fail
+    # = window timeout). The command vehicle still rides in the signature.
     target = MagicMock()
     target.position = Point(0, 0, None)  # type: ignore[arg-type]
     target.control_point.captured = True  # the enemy side
@@ -179,14 +185,20 @@ def test_hvt_routes_to_nearest_enemy_city() -> None:
 
     tasking = _build(game)[0]
 
-    assert tasking.command_type  # the command vehicle to despawn in the city
-    hvt = next(c for c in tasking.convoys if c.role == "hvt")
-    assert (hvt.dest_x, hvt.dest_y) == (10000, 0)  # routed to the city
+    assert tasking.variant == "spawn"
+    assert tasking.command_type == SCAR_COMMAND  # still IDs the HVT
+    assert tasking.flee_speed_ms == 0.0  # no flee
+    # The tasking dest collapses onto the area centre, not the city.
+    assert (tasking.dest_x, tasking.dest_y) == (tasking.center_x, tasking.center_y)
+    # Every spawned convoy holds: dest == spawn, speed 0.
+    for convoy in tasking.convoys:
+        assert (convoy.dest_x, convoy.dest_y) == (convoy.spawn_x, convoy.spawn_y)
+        assert convoy.speed_ms == 0.0
 
 
-def test_armor_target_binds_real_group_and_flees_to_city() -> None:
+def test_armor_target_binds_real_group_and_holds_static() -> None:
     # A SCAR flight against a real armor group binds it (no spawned fakes): the
-    # real group flees to the nearest city, success = killed / fail = it arrives.
+    # real group HOLDS over the static kill box (success = killed, fail = window).
     armor = MagicMock(spec=VehicleGroupGroundObject)
     # A mixed group so a partial-signature decoy can be derived.
     armor.groups = [
@@ -203,7 +215,6 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
     armor.control_point = MagicMock(captured=True)  # the enemy side
     city = MagicMock()
     city.captured = True  # same side as the target -> enemy-held = a city
-    # Far enough away (>= SCAR_MIN_FLEE_M) to be a real chase, so it stays the dest.
     city.position = Point(30000, 0, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(armor))
     game.theater.controlpoints = [city]
@@ -212,16 +223,20 @@ def test_armor_target_binds_real_group_and_flees_to_city() -> None:
 
     assert tasking.variant == "armor"
     assert tasking.target_groups == ("ARMOR-1",)  # binds the REAL group
-    assert (tasking.dest_x, tasking.dest_y) == (30000, 0)  # flees to the city
-    assert tasking.flee_speed_ms > 0
+    assert tasking.flee_speed_ms == 0.0  # holds -- no flee to the city
+    # Dest collapses onto the centre (the held box), not the city.
+    assert (tasking.dest_x, tasking.dest_y) == (tasking.center_x, tasking.center_y)
     # The hunted column gets a command vehicle so the player can ID the HVT; it
-    # rides with the real group and flees to the same dest at the flee pace.
+    # rides with the real group and now holds in place (dest == spawn, speed 0).
     assert tasking.command_type == SCAR_COMMAND
     command = [c for c in tasking.convoys if c.role == "command"]
     assert len(command) == 1
     assert command[0].unit_types == (SCAR_COMMAND,)
-    assert (command[0].dest_x, command[0].dest_y) == (30000, 0)
-    assert command[0].speed_ms == tasking.flee_speed_ms
+    assert (command[0].dest_x, command[0].dest_y) == (
+        command[0].spawn_x,
+        command[0].spawn_y,
+    )
+    assert command[0].speed_ms == 0.0
     # Decoys/clutter are mixed in (spawned fakes), like the convoy variant.
     roles = [c.role for c in tasking.convoys]
     assert "decoy" in roles
@@ -266,11 +281,10 @@ def test_armor_with_immobile_unit_falls_back_to_spawn() -> None:
     assert "KS-19" not in hvt.unit_types
 
 
-def test_armor_too_close_city_is_extended_to_min_flee() -> None:
-    # When the nearest enemy city is closer than SCAR_MIN_FLEE_M, the bound group
-    # would have almost no run (in-game feedback: target + hide point on top of
-    # each other). The dest is projected out along the city axis to the minimum so
-    # the player always gets a real chase (the spawn variant already runs 15 NM).
+def test_armor_holds_static_regardless_of_city_distance() -> None:
+    # The old min-flee extension (project the dest out to a minimum run when the
+    # nearest city was too close) is retired with the chase: a bound armor target
+    # now holds on its own position no matter how near a city is.
     armor = MagicMock(spec=VehicleGroupGroundObject)
     armor.groups = [
         MagicMock(units=[MagicMock(type=MagicMock(id="T-55"))], group_name="A1")
@@ -279,16 +293,17 @@ def test_armor_too_close_city_is_extended_to_min_flee() -> None:
     armor.control_point = MagicMock(captured=True)
     city = MagicMock()
     city.captured = True
-    city.position = Point(5000, 0, None)  # type: ignore[arg-type]  # 5 km << 15 NM
+    city.position = Point(5000, 0, None)  # type: ignore[arg-type]  # close by
     game = _game_with(_coalition_with_target(armor))
     game.theater.controlpoints = [city]
 
     tasking = _build(game)[0]
 
     assert tasking.variant == "armor"
-    # Same direction as the city (+x), but extended out to the minimum run.
-    assert tasking.dest_y == 0
-    assert tasking.dest_x == SCAR_MIN_FLEE_M
+    assert tasking.flee_speed_ms == 0.0
+    # Holds on its own position (the centre); no min-flee projection.
+    assert (tasking.dest_x, tasking.dest_y) == (tasking.center_x, tasking.center_y)
+    assert (tasking.dest_x, tasking.dest_y) == (0, 0)
 
 
 def _armor_to_far_city() -> Any:
@@ -372,7 +387,10 @@ def test_armor_sof_ambush_when_feature_on() -> None:
     assert tasking.sof_unit_type == sof_unit.dcs_unit_type.id
 
 
-def test_spawn_sof_ambush_on_the_hvt_route_when_feature_on() -> None:
+def test_spawn_sof_capture_point_is_the_held_target() -> None:
+    # Inverted capture (loiter rework): the SOF team assaults the HELD target, so
+    # the capture point is the area centre -- not a lead-fraction ambush planted
+    # down a flee route the HVT no longer drives.
     target = MagicMock()
     target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(target))
@@ -384,14 +402,7 @@ def test_spawn_sof_ambush_on_the_hvt_route_when_feature_on() -> None:
     assert tasking.variant == "spawn"
     assert tasking.sof_radius_m == SCAR_SOF_CAPTURE_RADIUS_M
     assert tasking.sof_country_id == 2
-    # SOF lies on the HVT convoy's spawn->dest line at the lead fraction.
-    hvt = next(c for c in tasking.convoys if c.role == "hvt")
-    assert (
-        tasking.sof_x == hvt.spawn_x + (hvt.dest_x - hvt.spawn_x) * SCAR_SOF_LEAD_FRAC
-    )
-    assert (
-        tasking.sof_y == hvt.spawn_y + (hvt.dest_y - hvt.spawn_y) * SCAR_SOF_LEAD_FRAC
-    )
+    assert (tasking.sof_x, tasking.sof_y) == (tasking.center_x, tasking.center_y)
 
 
 def test_sof_fields_emitted_to_lua_only_when_enabled() -> None:
@@ -416,28 +427,35 @@ def test_sof_fields_emitted_to_lua_only_when_enabled() -> None:
     assert "sofUnitType" in serialized
 
 
-def test_offshore_flee_dest_is_snapped_to_land() -> None:
-    # Coastal targets can put the flee dest (or HVT spawn) in the sea, where ground
-    # units can't path (in-game finding 2026-06-18). Such points are pulled to land.
-    game = _armor_to_far_city()  # dest would be the city at (30000, 0)
+def test_offshore_convoy_points_are_snapped_to_land() -> None:
+    # Coastal targets can put a spawned convoy point in the sea, where ground units
+    # can't path (in-game finding 2026-06-18). Such points are pulled to land. The
+    # bound real group holds on its own (centre) position.
+    game = _armor_to_far_city()
     game.theater.is_in_sea.return_value = True
     game.theater.nearest_land_pos.return_value = Point(12345, 678, None)  # type: ignore[arg-type]
 
     tasking = _build(game)[0]
 
-    assert (tasking.dest_x, tasking.dest_y) == (12345, 678)  # snapped onto land
-    # The spawned support columns are snapped too.
+    # The spawned support columns are snapped onto land and hold there (static).
     for convoy in tasking.convoys:
         assert (convoy.spawn_x, convoy.spawn_y) == (12345, 678)
+        assert (convoy.dest_x, convoy.dest_y) == (convoy.spawn_x, convoy.spawn_y)
+        assert convoy.speed_ms == 0.0
+    # The bound real armor holds on the area centre.
+    assert (tasking.dest_x, tasking.dest_y) == (tasking.center_x, tasking.center_y)
 
 
-def test_missile_site_target_races_to_a_firing_position() -> None:
+def test_missile_site_target_holds_static() -> None:
+    # SCUD-race retired (loiter rework): a bound missile site holds on its position
+    # for the SCAR flight to service (success = killed, fail = window) -- it no
+    # longer relocates to a firing position or launches downrange.
     site = MagicMock(spec=MissileSiteGroundObject)
     site.groups = [MagicMock(group_name="SCUD-1"), MagicMock(group_name="SCUD-2")]
     site.position = Point(0, 0, None)  # type: ignore[arg-type]
     site.control_point = MagicMock(captured=True)  # the enemy side
     target_cp = MagicMock()
-    target_cp.captured = False  # opposite side -> the SCUD's target city
+    target_cp.captured = False  # opposite side -> the (now unused) SCUD target city
     target_cp.position = Point(20000, 0, None)  # type: ignore[arg-type]
     game = _game_with(_coalition_with_target(site))
     game.theater.controlpoints = [target_cp]
@@ -445,11 +463,14 @@ def test_missile_site_target_races_to_a_firing_position() -> None:
     tasking = _build(game)[0]
 
     assert tasking.variant == "missile"
-    assert tasking.target_groups == ("SCUD-1", "SCUD-2")
-    # Races a capped distance toward the target city, and fires at that city.
-    assert tasking.dest_x > 0  # moved toward the target (+x / north)
-    assert tasking.flee_speed_ms > 0
-    assert (tasking.fire_target_x, tasking.fire_target_y) == (20000, 0)
+    assert tasking.target_groups == ("SCUD-1", "SCUD-2")  # still binds the real site
+    assert tasking.flee_speed_ms == 0.0  # no race
+    # Both the move dest and the fire point collapse onto the held centre.
+    assert (tasking.dest_x, tasking.dest_y) == (tasking.center_x, tasking.center_y)
+    assert (tasking.fire_target_x, tasking.fire_target_y) == (
+        tasking.center_x,
+        tasking.center_y,
+    )
 
 
 def test_empty_without_scar_flights() -> None:
@@ -597,6 +618,31 @@ def test_lua_capture_requires_a_live_sof_group() -> None:
     assert "area.sofGroup == nil" in capture_check
     assert "Group.getByName(area.sofGroup)" in capture_check
     assert "sof_group:getSize()" in capture_check
+
+
+def test_lua_static_capture_is_dwell_based_on_a_live_commander() -> None:
+    # Inverted capture (loiter rework): the static branch captures only after a live
+    # SOF team holds on a LIVE command vehicle for a dwell -- co-location can't
+    # instant-fire, and a dead commander forfeits the capture (just a kill).
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    # command_vehicle_pos returns nil when the commander is dead.
+    cmd = script.split("local function command_vehicle_pos(area)", maxsplit=1)[1].split(
+        "local function sof_assaulting(area)", maxsplit=1
+    )[0]
+    assert "type_name == area.commandType" in cmd
+    assert "return nil" in cmd
+    # sof_assaulting requires both a live SOF group and a live commander.
+    assault = script.split("local function sof_assaulting(area)", maxsplit=1)[1].split(
+        "local function launch_missile(area)", maxsplit=1
+    )[0]
+    assert "sof_group:getSize()" in assault
+    assert "command_vehicle_pos(area)" in assault
+    # The static branch dwells on a live commander before marking captured.
+    assert "SCAR_SOF_DWELL_S" in script
+    assert "area.sofDwellStart" in script
+    assert 'mark_result(area, "captured")' in script
 
 
 def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:

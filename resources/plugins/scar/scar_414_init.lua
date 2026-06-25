@@ -217,6 +217,10 @@ local SCAR_UNIT_SPACING = 25 -- metres between units in a convoy line
 -- If the un-killed command vehicle reaches them, the commander is CAPTURED.
 local SCAR_SOF_UNIT = "Soldier M4" -- dynAdd uses the model for any country
 local SCAR_SOF_COUNT = 4
+-- Inverted capture (loiter rework): the SOF team must HOLD on the (still-alive)
+-- command vehicle for this long before the commander is taken -- an assault dwell,
+-- so mere co-location can't instant-fire a capture. Tunable; needs an in-game pass.
+local SCAR_SOF_DWELL_S = 30
 
 local function spawn_convoy(tasking_id, convoy, country_id, index)
     -- index keeps the group name unique (several convoys share a role).
@@ -469,6 +473,78 @@ local function despawn_command(area)
     end
 end
 
+-- Live position of the HVT command vehicle (the unit of type area.commandType,
+-- wherever it rides -- inside the spawn HVT convoy or as the armor command group).
+-- Returns nil if it's dead/gone -- the "don't kill the commander" interplay: a dead
+-- commander can't be captured, so killing it forfeits the intel (it's just a kill).
+local function command_vehicle_pos(area)
+    if not area.commandType or area.commandType == "" then
+        return nil
+    end
+    for _, gname in ipairs(area.groups) do
+        local group = Group.getByName(gname)
+        if group ~= nil then
+            local ok, units = pcall(function()
+                return group:getUnits()
+            end)
+            if ok and units ~= nil then
+                for _, unit in ipairs(units) do
+                    local okt, type_name = pcall(function()
+                        return unit:getTypeName()
+                    end)
+                    if okt and type_name == area.commandType then
+                        local okp, pos = pcall(function()
+                            return unit:getPoint()
+                        end)
+                        if okp and pos ~= nil then
+                            return pos
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- Inverted capture (loiter rework): a live SOF team holding on the live command
+-- vehicle. The team is the player-delivered (or scripted-fallback) group bound by
+-- maybe_bind_sof; the commander holds in the static box. True only while BOTH are
+-- alive and within the capture radius -- the dwell that turns this into a "captured"
+-- result is timed in scar_check, so co-location alone can't instant-fire.
+local function sof_assaulting(area)
+    if not (area.sofRadius and area.sofRadius > 0) then
+        return false
+    end
+    if area.sofGroup == nil then
+        return false
+    end
+    local sof_group = Group.getByName(area.sofGroup)
+    if sof_group == nil then
+        return false
+    end
+    local oks, sof_size = pcall(function()
+        return sof_group:getSize()
+    end)
+    if not oks or (sof_size or 0) <= 0 then
+        return false
+    end
+    local cmd = command_vehicle_pos(area)
+    if cmd == nil then
+        return false -- commander dead/gone: no capture
+    end
+    local oku, sof_unit = pcall(function()
+        return sof_group:getUnit(1)
+    end)
+    if not oku or sof_unit == nil then
+        return false
+    end
+    local spos = sof_unit:getPoint()
+    local dx = spos.x - cmd.x
+    local dz = spos.z - cmd.z
+    return (dx * dx + dz * dz) <= (area.sofRadius * area.sofRadius)
+end
+
 -- A SCUD reaching its firing position launches at its target city = the failure
 -- (a missile now flies at civilians/allies). Make it actually fire.
 local function launch_missile(area)
@@ -612,16 +688,32 @@ local function package_near(area)
     return false
 end
 
--- Start the chase: route every parked mover (real bound group(s) + the spawned
--- HVT/decoys/clutter) to its destination, and open the fail clock from now.
+-- Loiter-and-task rework: an area is STATIC when nothing is meant to move -- every
+-- mover at speed 0, the case _make_static produces. A static area holds in place and
+-- can only fail on the window timeout: no chase, no arrival-fail.
+local function area_is_static(area)
+    for _, m in ipairs(area.movers or {}) do
+        if (m.speed or 0) > 0 then
+            return false
+        end
+    end
+    return true
+end
+
+-- Open the fail clock when the package arrives. A MOVING area also routes every
+-- parked mover to its destination; a STATIC area just holds (speed-0 movers are
+-- skipped, so nothing drives) and is serviced in place.
 local function activate_movement(area)
     for _, m in ipairs(area.movers or {}) do
-        set_group_route(m.name, m.destX, m.destY, m.speed)
+        if (m.speed or 0) > 0 then
+            set_group_route(m.name, m.destX, m.destY, m.speed)
+        end
     end
     area.activated = true
     area.deadline = timer.getTime() + (area.window or 1200)
     scar_log("area " .. tostring(area.id) .. " ACTIVATED (package within " ..
-        math.floor(SCAR_PROXIMITY_M / 1852) .. " NM); window " ..
+        math.floor(SCAR_PROXIMITY_M / 1852) .. " NM)" ..
+        (area_is_static(area) and " [static hold]" or "") .. "; window " ..
         math.floor(area.window or 1200) .. "s")
 end
 
@@ -636,14 +728,45 @@ local function scar_check()
             local live = area.activated == true
             local timed_out = live and area.deadline
                 and timer.getTime() >= area.deadline
+            local static = area_is_static(area)
             maybe_bind_sof(area)
             if all_groups_dead(area) then
                 mark_result(area, "success")
             elseif area.variant == "missile" then
-                -- Reached its firing position (or out of time): it launches.
-                if live and (hvt_in_fail_zone(area) or timed_out) then
+                if static then
+                    -- Loiter rework: the SCUD holds for the flight to service -- it
+                    -- neither relocates nor launches. Fail = the window timeout only.
+                    if timed_out then
+                        mark_result(area, "failed")
+                    end
+                elseif live and (hvt_in_fail_zone(area) or timed_out) then
+                    -- Moving SCUD reached its firing position (or out of time).
                     launch_missile(area)
                     mark_result(area, "launched")
+                end
+            elseif static then
+                -- Static armor/spawn: the target holds in the kill box. Two outcomes
+                -- besides a clean kill (all_groups_dead -> success above):
+                --   * CAPTURED -- the SOF team (player-delivered, bound by
+                --     maybe_bind_sof) assaults the held command vehicle and holds on
+                --     it for SCAR_SOF_DWELL_S. The commander must be ALIVE (killing it
+                --     forfeits the capture); the dwell stops mere co-location from
+                --     instant-firing. This is the inverted version of the old ambush.
+                --   * FAILED -- the window timeout (the instant arrival-fail is gone
+                --     with the chase). A surviving team is tagged for next-turn CSAR.
+                if sof_assaulting(area) then
+                    if area.sofDwellStart == nil then
+                        area.sofDwellStart = timer.getTime()
+                    elseif timer.getTime() - area.sofDwellStart >= SCAR_SOF_DWELL_S then
+                        despawn_command(area)
+                        mark_result(area, "captured")
+                    end
+                else
+                    area.sofDwellStart = nil -- left the commander / it died: reset
+                end
+                if not area.done and timed_out then
+                    mark_result(area, "failed")
+                    report_stranded_sof(area)
                 end
             else
                 if live and hvt_in_sof_zone(area) then
@@ -729,6 +852,12 @@ end
 -- (Assigns the forward-declared `set_group_route` upvalue so activate_movement,
 -- defined earlier, can call it.)
 function set_group_route(group_name, dest_x, dest_y, speed)
+    -- Static hold (loiter rework): a speed-0 "mover" must never be routed -- it stays
+    -- put for the SCAR flight to service. activate_movement already skips these; guard
+    -- here too so nothing can drive a static group.
+    if not speed or speed <= 0 then
+        return
+    end
     local group = Group.getByName(group_name)
     if group == nil then
         -- DIAGNOSTIC (scar bound-group movement): a silent miss here means the

@@ -1,7 +1,10 @@
 # SCAR rework — loiter-and-task under the C-130 "King" on-scene commander (design)
 
-**Status:** design — **four forks decided 2026-06-25** (no code yet); ready to turn into a phased
-implementation plan · **Date:** 2026-06-25
+**Status:** **Phase 1 IN PROGRESS** (2026-06-25) — the loiter flight plan, the static data layer
+(`_make_static`), the Lua static guards (hold / fail-on-window), and the inverted SOF capture
+(dwell-based assault on the held commander) have landed on `claude/scar-king-fac-rework` (PR #187,
+draft); **pending an in-game pass**. Phases 2–4 (King designation bridge, talk-on/R7, polish) not
+started. · **Date:** 2026-06-25
 **Related:** [`414th-scar-task-spec.md`](414th-scar-task-spec.md) (current SCAR),
 [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the King + orbit pattern this reuses),
 [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md) (why we stay off
@@ -60,6 +63,15 @@ F10 is trimmed to **at most one** entry — a "check in with MAGIC" / "say again
 ideally even that is replaced by **proximity auto-check-in** (the King designates once the striker
 enters the kill box, mirroring how Combat SAR spawns the CASEVAC on arrival). Goal: the radio menu is
 a backstop, not the interface.
+
+> ⚠️ **The King is a PLAYER who can TALK — SRS is the *voice platform*, not just a pop-up channel.**
+> A human King checks the strikers in and runs the talk-on **over live voice**, exactly like a real
+> AFAC. So every scripted aid above (smoke / mark / laser / IR / a text or SRS-TTS line) is a
+> **complement to player voice, not a replacement for it.** Build the designation layer so it is
+> **additive and skippable**: it exists so the cue still works with an **AI King** or silent comms,
+> and so a human King has something concrete to point at while talking — never as a
+> scripted-SRS-popup-*only* flow. The same applies to the **talk-on ID puzzle**: assume two humans
+> can be ID'ing the target on SRS, and keep the scripted talk-on as the fallback for the AI/solo case.
 
 ## The four forks — DECIDED (2026-06-25)
 

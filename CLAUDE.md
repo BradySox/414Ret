@@ -188,10 +188,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 12. **TARS recon engine** — MOOSE Ops.TARS runtime for TARPS, feeds confirmed BDA (default ON).
 13. **Flight Control ATC** — MOOSE FLIGHTCONTROL players-only tower comms (default ON).
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.
-15. **SCAR** — player-flown Strike Coordination and Reconnaissance against a moving HVT
-    (flight type + scenario `scar` plugin, default ON), plus a commander-capture path using
-    finite purchased SOF inventory + a downed-team CSAR recovery loop (gated by
-    `scar_command_post_intel`, now default ON for new campaigns while it is playtested).
+15. **SCAR** — player-flown Strike Coordination and Reconnaissance (flight type + scenario
+    `scar` plugin, default ON), plus a commander-capture path using finite purchased SOF
+    inventory + a downed-team CSAR recovery loop (gated by `scar_command_post_intel`, default
+    ON for new campaigns). **Loiter-and-task rework in progress** (PR #187, draft; design note
+    `414th-scar-king-fac-notes.md`): the moving-HVT chase is retired — the flight now **holds**
+    over a **static kill box** and services a **real static armor TGO** (kills attrit natively,
+    no bespoke scoring); the SOF capture **inverts** (the team assaults the held command vehicle
+    on a dwell). Phase 1 (loiter plan + static data layer + Lua static guards + inverted capture)
+    landed on the branch, pending an in-game pass; the C-130 "King" designation/talk-on (Phases
+    2–4) is **voice-first** — the King is a player who talks over SRS, scripted aids are additive.
 16. **Settings QOL audit** — dead/duplicate setting cleanup (four fields removed), AI-radio
     booleans consolidated into the `AiRadioBehavior` enum with deterministic save migration,
     plugin wording, and a UI-layer grouping/dependency handoff

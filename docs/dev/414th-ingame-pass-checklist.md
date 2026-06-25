@@ -336,6 +336,26 @@ so the two docs don't drift.
   SCAR-capable squadron / fulfiller bailed); a red SCAR package appears; or a
   SCAR package appears with the setting off.
 
+### F7 — SCAR loiter/static hold (no chase, fail = window) · §15 / PR #187 · ☐ UNTESTED
+- **Setup:** Plan a SCAR flight against a real enemy armor TGO. Fly to the kill box.
+- **Pass:** The bound armor (and any spawned decoys/clutter) **holds in place** — nothing drives off
+  toward a city; a bound missile site stays inert (no relocation, no launch). Killing the armor
+  attrits it natively at debrief (shows in losses) with no SCAR-specific scoring. If you never kill
+  it, the area resolves **failed on the window timeout only** — never an instant fail on arrival.
+- **Fail signature:** anything drives/flees; a SCUD relocates or launches; an instant "failed" the
+  moment the area goes live (the arrival-fail gate leaked); a `scar_414_init.lua` Lua error.
+
+### F8 — SCAR inverted SOF capture (dwell on the live commander) · §15 / PR #187 · ☐ UNTESTED
+- **Setup:** `scar_command_post_intel` ON, a SOF team in stock, a SOF insert fragged onto the SCAR
+  package. Deliver the team near the held target; leave the command vehicle ALIVE.
+- **Pass:** With the SOF team holding on the **live** command vehicle for ~`SCAR_SOF_DWELL_S` (30s),
+  the area resolves **captured** (commander reveal + SOF refund next turn). Killing the command
+  vehicle instead forfeits the capture (it's just a kill); leaving the commander resets the dwell.
+- **Fail signature:** instant capture on co-location (dwell not enforced); capture fires with the
+  commander already dead; or no capture path at all when a live team holds on a live commander.
+  Known v1 nuance to watch: the scripted-fallback team spawns at the held commander, so a capture
+  can auto-complete without a real player delivery (Phase-2c tuning).
+
 ---
 
 ## G. Plugin runtime (Lua, not CI-runnable)

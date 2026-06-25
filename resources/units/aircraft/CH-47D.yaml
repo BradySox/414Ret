@@ -10,4 +10,5 @@ variants:
   CH-47D: null
 tasks:
   Air Assault: 90
+  Combat SAR: 85
   Transport: 70

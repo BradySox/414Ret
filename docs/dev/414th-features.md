@@ -383,7 +383,7 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   (`game/ato/flightplans/supportorbit.py`) is the geometry; `PlanForwardBarcap` +
   `ProtectAirSpace` plan it; `CapBuilder.cap_racetrack_for_objective` lays the zone
   racetrack and leaves every other target on the legacy path. Tests:
-  `tests/test_forward_barcap.py`. **Needs an in-game pass** (see checklist B5). The
+  `tests/test_forward_barcap.py`. **In-game pass ☑ VERIFIED 2026-06-25** (checklist B5). The
   theater-tanker-demand companion from the same plan is **not** in this change.
 - A2A escort-need uses fighter **engagement reach**, not BARCAP **orbit** reach
   (`game/threatzones.py` `air_engagement` zone + `aircraft_engagement_range`;
@@ -453,7 +453,7 @@ problems; all four are fixed:
   meant to fix, relocated to depth 0. Now, if the perpendicular walk can't reach at least
   half the requested depth, it falls back to a lateral `find_ground_position` search around
   the **intended-depth** point so the group keeps its depth (and spreads instead of
-  stacking). **Lua-free but needs an in-game pass on a coastline map to confirm placement.**
+  stacking). **Lua-free; in-game pass ☑ VERIFIED 2026-06-25 (checklist B1, coastline map).**
 - **MEDIUM — red's defensive posture flickered.** The per-CP "plan offensively instead of
   defending" decision in `vulnerable_control_points()` was an **unseeded** `randint` re-rolled
   every planning pass, so red defended a base one pass and abandoned it the next for identical

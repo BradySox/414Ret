@@ -1,6 +1,6 @@
 # 414th Air-War Planner Consolidation — design notes
 
-**Status:** proposal / design-only (no code change yet) · **Date:** 2026-06-25
+**Status:** Track 1 LANDED (slices 1–2); consolidation intentionally stopped there · **Date:** 2026-06-25
 **Related:** [`414th-air-defense-planning-notes.md`](414th-air-defense-planning-notes.md),
 [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md),
 [`414th-moose-longview.md`](414th-moose-longview.md), CLAUDE.md §6 (air-defense rework),
@@ -151,11 +151,44 @@ re-architecture, never as an increment.
    encode real tuning. Keep each method's semantics identical to its source; unify the *wiring*,
    not the *numbers*.
 
+## As built — what landed, and where it stopped (2026-06-25)
+
+`AirspaceGeometry` (`game/ato/flightplans/airspacegeometry.py`) shipped in two behaviour-preserving
+slices, each with characterization tests asserting byte-for-byte equality to the code it replaced:
+
+- **Slice 1 (#183)** — the service owns the `(theater, player, threat_zones)` trio and exposes
+  `standoff_anchor` + `forward_middle_anchor`, delegating to the unchanged `supportorbit` helpers.
+  The three call sites (AEW&C, theatre tanker, forward-middle BARCAP) route through it.
+- **Slice 2 (#184)** — the threat-weighted BARCAP volume function moved onto
+  `AirspaceGeometry.barcap_rounds` (a staticmethod); the test followed it to its new home.
+
+### The remaining two "consumers" were examined and **intentionally left as-is**
+
+The original proposal listed the DEAD reachability gate and theatre-tanker demand as the next
+slices. On reading the actual code (2026-06-25) **neither is a real win**, for opposite reasons —
+do **not** re-open these without new justification:
+
+- **Theatre-tanker demand** (`game/commander/tankerdemand.py`) is *already* a cohesive, standalone,
+  unit-tested module whose docstring states "Pure geometry/scoring only (no pydcs / planner
+  imports)." It works off receiver `REFUEL` waypoints + the tanker's boom/probe types and **never
+  touches the threat-field/standoff trio** — it is receiver-demand clustering, not threat-relative
+  placement. Folding it into `AirspaceGeometry` would mix unrelated concerns and *reduce* cohesion.
+- **DEAD reachability gate** (`TheaterState.dead_can_reach` + `tasks/primitive/dead.py`) is a small
+  method welded to `TheaterState`'s `initial_radar_sam_rings` snapshot (with the target's own ring
+  excluded) iterating the package's routed flights. Only the inner route-vs-rings `LineString` loop
+  is movable; the snapshot, exclusion, and flight iteration stay in `TheaterState`. Extracting just
+  the loop fragments one tight, well-named method across two files for almost no gain.
+
+**Lesson:** the two slices that paid off were the ones where systems genuinely re-threaded the same
+`(theater, player, threat_zones)` trio or lived inline in a big file. "Consumer of threat geometry"
+is not by itself a reason to relocate code — cohesion and coupling decide it, per consumer.
+
 ## Bottom line
 
 The air war feels busy because it's a dozen Python planner heuristics that each re-derive threat
-and standoff geometry — not because the MOOSE layer is sprawling. The behavior-preserving
-simplification is a **Python consolidation** onto one `AirspaceGeometry` service the helpers are
-already 60% of the way toward. "More MOOSE" only simplifies this by handing planning to
-`Ops.Chief`, which trades away the exact effect we want — so keep the brain in Python, unify its
-geometry, and lean into MOOSE only on the runtime-service tier.
+and standoff geometry — not because the MOOSE layer is sprawling. The behaviour-preserving
+simplification was a **Python consolidation** onto one `AirspaceGeometry` service: the
+support-orbit/forward-BARCAP standoff geometry (slice 1) and the BARCAP volume (slice 2). The other
+two candidates were examined and left alone (above). "More MOOSE" only simplifies this by handing
+planning to `Ops.Chief`, which trades away the exact effect we want — so the brain stays in Python,
+its geometry is unified where that helped, and MOOSE adoption stays on the runtime-service tier.

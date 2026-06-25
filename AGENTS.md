@@ -89,7 +89,10 @@ file. This guide is the map; those are the territory.
     live in `base/plugin.json`, replacing the shelved `414th-ctld-mantis-style-port-scope.md` `Ops.CTLD` port)
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
-    `turnless.md` (turnless-campaign exploration)
+    `turnless.md` (turnless-campaign exploration),
+    `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
+    air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
+    keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.

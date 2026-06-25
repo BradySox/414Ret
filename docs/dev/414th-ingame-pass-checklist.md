@@ -53,7 +53,10 @@ so the two docs don't drift.
 
 ## B. Planner placement / target logic (Lua-free Python)
 
-### B1 — Forward-CAP / FLOT depth on coastal fronts · §6 · ☐ UNTESTED
+### B1 — Forward-CAP / FLOT depth on coastal fronts · §6 · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game):** deep ground roles spawned at depth and spread on a
+  coastal/narrow-land front — the perpendicular-walk-into-water stacking fail signature did
+  not occur.
 - **Setup:** A campaign on a **coastline / river / narrow-land** front.
 - **Pass:** Deep ground roles (artillery, logistics) spawn at depth and spread,
   not in direct contact.
@@ -67,7 +70,11 @@ so the two docs don't drift.
 - **Fail signature:** Blue sends the follow-on strike into a live belt because
   it trusted an optimistic DEAD clear.
 
-### B3 — Threat-weighted BARCAP orbit placement · §6 · ◐ PARTIAL (2026-06-24, save)
+### B3 — Threat-weighted BARCAP orbit placement · §6 · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game):** the contested-vs-quiet-flank forward-placement
+  comparison the 2026-06-24 partial was waiting on now confirmed — the contested sector's
+  BARCAP sat further forward while staying clear of enemy SAM rings. Fail signature (orbit
+  pushed into a ring / quiet-flank drift) did not occur.
 - **Partial (2026-06-24, GermanyCW Red Tide turn 1, `test.retribution`):** the
   SAM-clearance half is confirmed — both BARCAP racetracks' endpoints test
   `threatened_by_red=False` (orbit never inside a red threat zone), and the two
@@ -98,7 +105,11 @@ so the two docs don't drift.
   fly unescorted, because the escort-need check is reading the clamped orbit zone
   instead of the new `air_engagement` reach.
 
-### B5 — Red forward-middle BARCAP layer (large maps) · §6 · ☐ UNTESTED
+### B5 — Red forward-middle BARCAP layer (large maps) · §6 · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game):** on a large map red planned its rear BARCAP **plus** the
+  extra forward layer ~halfway to the FLOT, clear of blue threat zones, with the rear BARCAP/QRA
+  untouched. None of the fail signatures (missing forward layer, orbit inside a blue ring,
+  rear BARCAP moved, layer on a small map) occurred.
 - **Setup:** A **large** map (e.g. GermanyCW Red Tide) with a red CP anchoring an
   active front whose distance to the FLOT exceeds the rear BARCAP reach
   (`cap_max_distance_from_cp`). Let the AI auto-plan red's turn.
@@ -140,7 +151,10 @@ so the two docs don't drift.
   fighters S-turning to stay behind, or unable to close). If seen, revisit
   `RefuelingFlightPlan.patrol_speed` in `game/ato/flightplans/refuelingflightplan.py`.
 
-### C4 — A-6E attack/tanker split · ☐ UNTESTED
+### C4 — A-6E attack/tanker split · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game):** both A-6E variants load and behave — the Intruder is
+  never auto-tasked for refueling/recovery and the Tanker orbits/refuels as a carrier tanker
+  without picking up strike tasks. Data loaded correctly in the packaged app.
 - **Setup:** A-6E now loads as two squadron-selectable types from `A6E.yaml`:
   "A-6E Intruder" (attack tasks only) and "A-6E Tanker" (Refueling/Recovery only,
   `max_group_size: 1`, carrier tanker patrol). Buy/auto-plan each and confirm both
@@ -155,6 +169,10 @@ so the two docs don't drift.
   air-refueling in the build's pydcs.
 
 ### C5 — Boom/probe refuel-method compatibility · ☐ UNTESTED
+- **Setup note (2026-06-25):** still untested — the faction flown in the 2026-06-25 session
+  did **not** carry both a boom and a drogue tanker, so there was no method split to observe.
+  Requires a faction with **both** a boom (KC-135) and a drogue (KC-135 MPRS / KC-130 / S-3B
+  Tanker) tanker to exercise this row.
 - **Setup:** Aircraft now carry an `air_refuel_type` (boom/probe) and tankers a
   `tanker_refuel_types`; the planner only assigns a tanker that provides the package
   receivers' method, and `PackageRefuelingFlightPlan.patrol_duration` only counts
@@ -173,7 +191,12 @@ so the two docs don't drift.
   `resources/units/aircraft/*.yaml`. KC-10 boom-vs-drogue and any exotic/mod airframe
   are the likeliest mis-tags to review first.
 
-### C6 — Fuel-driven pre/post-vul tanking · ☐ UNTESTED
+### C6 — Fuel-driven pre/post-vul tanking · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game):** short sorties launched with no tanker; deep sorties got
+  a refuel waypoint on the correct side and reached the tanker with fuel to spare; kneeboard
+  bingo/joker read sanely past the tanker. The kg-`max_fuel`-vs-lb fuel-unit handling that
+  couldn't be checked in CI held up. Fail signatures (need-gas-got-none / awkward pre-vul
+  backtrack / flameout before tanker) did not occur.
 - **Setup:** Formation/attack and escort flights no longer get a tanker waypoint
   unconditionally. `FormationAttackBuilder._refuel_tasking` estimates the sortie burn
   (ingress at cruise + the ingress→target→split vul at combat + egress home, plus the
@@ -281,6 +304,18 @@ so the two docs don't drift.
   the TARS channel into the debrief. No action; listed for completeness.
 
 ### F5 — Mis-ID budget penalty (R7) · §15 · ☐ UNTESTED
+- **Logic-reviewed 2026-06-25 (de-risked, not flown):** the whole chain reads correct.
+  Lua (`scar_414_init.lua`): `misid_group_index` is populated **only** for `role ==
+  "decoy"/"clutter"` (spawn paths L858-859 / L1033-1034) — the HVT, command vehicle, and
+  threat/SAM groups go down a different branch, so a legit kill is structurally un-chargeable;
+  the `onEvent` `S_EVENT_KILL` handler charges only when `event.initiator:getCoalition() ==
+  scar_side(area)` (own-side prosecutor; nil/ambiguous coalition skipped), and `record_misid`
+  carries the count onto `scar_results` even if the area already resolved. Python: `parse_scar_misid`
+  skips non-positive/malformed, int-coerces; `_commit_scar_misid` routes by `blue-`/`red-`
+  prefix (legacy unprefixed = blue), debits `penalty × count`, only when `penalty > 0`, always
+  logs. **Residual flight risk (cannot read away):** whether `S_EVENT_KILL` actually fires with
+  `event.initiator` populated for the **player's** weapon in MP — the documented event-quirk this
+  row exists to confirm. Everything else is verified-by-reading.
 - **Setup:** A SCAR sortie with `scar_misid_penalty` > 0; deliberately destroy a
   decoy/clutter convoy (not the HVT) with the player's aircraft.
 - **Pass:** The debrief log shows `area …: N mis-ID(s)` and `… charged <cost>
@@ -350,7 +385,11 @@ so the two docs don't drift.
   generated mission references `ewrj`, `EWJamming`, `startEWjamm`, or
   `startIAdefjamming`.
 
-### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ◐ PARTIAL — C2 regression found + fixed 2026-06-24; needs a re-fly on a zone-node map
+### G6 — MANTIS IADS engine (phase 1: core networking) · MANTIS migration · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game, zone-node map):** the C2-regression re-fly passed — red SAM
+  radars came up on RWR at start (no spurious decapitation from the scenery-node `node_dead`
+  fix) and bombing a comms mast / power hub still degraded its dependent SAMs. Combined with the
+  2026-06-24 routing/network-build/C2-degradation pass below, MANTIS phase 1 is confirmed.
 - **⚠️ Regression found + fixed 2026-06-24 (GermanyCW):** many IADS comms/power/
   command-center nodes are destructible **scenery** (comms masts, power hubs, VOR/DME,
   beacons) — NOT placed statics — so `StaticObject.getByName(name .. " object")` never
@@ -525,6 +564,19 @@ so the two docs don't drift.
 ## H. Kneeboards
 
 ### H1 — Folded-list overflow pagination · §4 · ☐ UNTESTED
+- **Logic-reviewed 2026-06-25 (de-risked, not flown):** the row-fit math is correct and
+  conservative. `remaining_table_rows` computes `(image_height - page_margin - y) //
+  line_height`, subtracts tabulate's 2 lines of header chrome, and leaves **one row of slack**
+  (`max(0, capacity - 1)`) so a table never kisses the bottom edge; `line_height` is **measured
+  empirically** from a one-line-vs-two-line `textbbox` delta (matches PIL's real multiline
+  layout, not font metrics). Both folded lists (`BriefingPage` "Friendly Packages",
+  `SupportPage`/Airfield "Airfield Directory") probe with `_render`, then push the overflow into
+  a `TableKneeboardPage(..., continued=True).paginate()` — and `paginate()` **re-splits**
+  recursively with `capacity = max(1, remaining_table_rows(...))`, so a continuation page can
+  neither overflow nor infinite-loop, and the probe/`write()` cursor match (the `(cont.)` suffix
+  changes heading text, not line count). **Residual flight risk:** only that PIL's runtime
+  rendered line-height + `courbd.ttf` load match the measured estimate on the DCS-side image —
+  environment, not logic.
 - **Setup:** Generate a mission on a **busy theater** (many friendly packages
   and/or many BLUE airfields with ATIS) for a client flight with a long flight
   plan. Open the generated kneeboard in DCS.

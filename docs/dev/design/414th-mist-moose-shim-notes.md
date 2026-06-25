@@ -1,9 +1,17 @@
 # MIST retirement via a MOOSE-backed `mist` compatibility shim
 
-**Status:** ✅ **all 42 symbols implemented + `plugin.json` swap staged on branch (2026-06-24).**
-Shim is **100% vanilla DCS (no MOOSE dependency)** so it drops into mist's existing slot with no
-reorder. **Awaiting the in-game pass** before merge (go-live); old `mist_4_5_126.lua` kept for
-one-line rollback. After the pass: delete MIST.
+**Status:** ✅ all 42 symbols implemented; 100% vanilla DCS (no MOOSE dep) → drops into mist's slot
+with no reorder. **First go-live attempt was reverted** (a `dynAdd` shape bug). **Now hardened +
+re-staged on `claude/harden-mist-shim` — awaiting a PROPER in-game pass before merge.**
+
+**Lesson / fix (2026-06-24):** the first swap was merged to `main` without flying it and crashed
+immediately — `dynAdd` only handled CTLD's numeric `Group.Category`, but the intercept glue passes a
+string (`category = "vehicle"`). Fixed with `_resolve_group_category` (string→`Group.Category`). Then
+a **full audit of every consumer call site** against every shim function was done; `dynAdd`'s string
+category was the only mismatch (the others — `dynAddStatic`, `goRoute`, `scheduleFunction` incl.
+skynet's `rep`-recurring form, `buildWP`, `makeUnitTable`, `groupToRandomZone` — all matched). Old
+`mist_4_5_126.lua` kept for one-line rollback. **This time: fly the branch first, merge only on a
+clean pass.** After the pass: delete MIST.
 **Supersedes:** the per-consumer MOOSE-native port plan (esp. the `Ops.CTLD` port in
 [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md), now shelved).
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md).

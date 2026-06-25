@@ -33,10 +33,14 @@ shape as the MANTIS / CTLD plugins.
 ### Python side
 1. **`FlightType.COMBAT_SAR = "Combat SAR"`** (`game/ato/flighttype.py`) + an `AirEntity` mapping
    (rescue/transport-class) in the entity table.
-2. **Flight plan = FLOT-anchored orbit.** Reuse the **AEWC / support-orbit** builder
-   (`game/ato/flightplans/aewc.py` + `flightplanbuildertypes.py`): takeoff → racetrack **behind the
-   FLOT, near the battle but clear of threat rings** (same anchor logic AWACS/tanker already use) →
-   RTB. *Not* the air-assault layout the SOF `CSAR` uses.
+2. **Flight plan = forward hold near the FLOT.** A **dedicated** `CombatSarFlightPlan`
+   (`game/ato/flightplans/combatsar.py`, wired in `flightplanbuildertypes.py`): takeoff → a
+   **tight racetrack held near the front** (front-anchored like AEW&C, but a **15 NM** threat
+   buffer + **5 NM** racetrack half-length) → RTB. It subclasses `AewcFlightPlan` only to keep
+   the support-flight integration keyed off `isinstance(.., AewcFlightPlan)`; the geometry is its
+   own. **Do not** reuse the AEW&C builder outright — that parked the rescue helo at the 80 NM
+   AWACS standoff, where it could never reach an ejection (G9 in-game finding, fixed 2026-06-25).
+   *Not* the air-assault layout the SOF `CSAR` uses.
 3. **Aircraft eligibility:** add `COMBAT_SAR` to **CH-47** and **C-130** task capabilities
    (`game/dcs/aircrafttype.py` / the task-priority rubric). CH-47 = rescue; C-130 = command orbit.
 4. **Planning:**
@@ -73,8 +77,8 @@ shape as the MANTIS / CTLD plugins.
   land at the beacon, doors open, deliver to any friendly field/FARP to score); C-130 gets the
   **on-scene-command** brief (hold overhead, don't land). Both explain the F10 `CSAR` menu. Guidance,
   not exact tunables (MOOSE shows live ranges in-game).
-- **Helo orbit altitude — already handled, no code.** COMBAT_SAR reuses the AEWC flight plan, whose
-  `builder.get_patrol_altitude` routes every helo through `get_altitude`, which clamps to
+- **Helo orbit altitude — already handled, no code.** `CombatSarFlightPlan` uses the same
+  `builder.get_patrol_altitude` as AEW&C, which routes every helo through `get_altitude`, which clamps to
   `Settings.heli_combat_alt_agl` (the same path air-assault/CSAR helos use). The CH-47 orbits at a
   helo-appropriate AGL altitude; the C-130 gets a normal fixed-wing patrol altitude. Nothing to tune.
 - **C-130 "King" TACAN beacon** (`combatsar-config.lua`). Each King lights a TACAN the rescue helo

@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Type
 
+from game.ato.flightplans.airspacegeometry import AirspaceGeometry
 from game.ato.flightplans.ibuilder import IBuilder
 from game.ato.flightplans.patrolling import PatrollingFlightPlan, PatrollingLayout
-from game.ato.flightplans.supportorbit import support_orbit_anchor
 from game.ato.flightplans.waypointbuilder import WaypointBuilder
 from game.ato.flighttype import FlightType
 from game.utils import Distance, Speed, knots, meters, nautical_miles
@@ -45,13 +45,9 @@ class Builder(IBuilder[AewcFlightPlan, PatrollingLayout]):
         # Anchor on the front line and stand off into friendly airspace, centered
         # on the fighting and parallel to the FLOT. See supportorbit for why this
         # replaced the old per-CP anchoring (which flung AI AWACS off-axis).
-        base_center, orbit_heading = support_orbit_anchor(
-            self.theater,
-            self.coalition.player,
-            self.threat_zones,
-            self.package.target,
-            threat_buffer,
-        )
+        base_center, orbit_heading = AirspaceGeometry(
+            self.theater, self.coalition.player, self.threat_zones
+        ).standoff_anchor(self.package.target, threat_buffer)
 
         # When multiple AWACS are planned, spread their orbits laterally along
         # the front so each covers a different section rather than stacking.

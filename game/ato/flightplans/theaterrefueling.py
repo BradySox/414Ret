@@ -4,10 +4,10 @@ from typing import Type
 
 from game.ato.flighttype import FlightType
 from game.utils import nautical_miles
+from .airspacegeometry import AirspaceGeometry
 from .ibuilder import IBuilder
 from .patrolling import PatrollingLayout
 from .refuelingflightplan import RefuelingFlightPlan
-from .supportorbit import support_orbit_anchor
 from .waypointbuilder import WaypointBuilder
 
 
@@ -29,13 +29,9 @@ class Builder(IBuilder[TheaterRefuelingFlightPlan, PatrollingLayout]):
         # on the fighting and parallel to the FLOT. See supportorbit for why this
         # replaced the old per-CP anchoring (which could pin a tanker onto its
         # own departure runway).
-        base_center, orbit_heading = support_orbit_anchor(
-            self.theater,
-            self.coalition.player,
-            self.threat_zones,
-            self.package.target,
-            threat_buffer,
-        )
+        base_center, orbit_heading = AirspaceGeometry(
+            self.theater, self.coalition.player, self.threat_zones
+        ).standoff_anchor(self.package.target, threat_buffer)
 
         # 414th demand-based placement: the post-planning reposition pass
         # (game/commander/tankerdemand.py) may set a service point on the flight at

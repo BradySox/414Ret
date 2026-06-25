@@ -315,11 +315,13 @@ class TheaterState(WorldState["TheaterState"]):
         # rear orbit already covers the front -- are unaffected. Red (AI) side only.
         forward_barcaps_needed: dict[ForwardBarcapZone, int] = {}
         if not player.is_blue:
-            from game.ato.flightplans.supportorbit import forward_cap_front_anchor
+            from game.ato.flightplans.airspacegeometry import AirspaceGeometry
 
             doctrine = coalition.doctrine
             standoff = doctrine.cap_engagement_range + nautical_miles(5)
-            enemy_threats = coalition.opponent.threat_zone
+            geometry = AirspaceGeometry(
+                game.theater, player, coalition.opponent.threat_zone
+            )
             for front in finder.front_lines():
                 friendly_cp = front.red_cp
                 if (
@@ -327,9 +329,7 @@ class TheaterState(WorldState["TheaterState"]):
                     <= doctrine.cap_max_distance_from_cp.meters
                 ):
                     continue
-                anchor = forward_cap_front_anchor(
-                    game.theater, player, enemy_threats, friendly_cp, standoff
-                )
+                anchor = geometry.forward_middle_anchor(friendly_cp, standoff)
                 if anchor is None:
                     continue
                 center, heading = anchor

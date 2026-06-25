@@ -700,9 +700,176 @@ local function area_is_static(area)
     return true
 end
 
+-- Phase 3 talk-on gate: how long after the on-station talk-on before the controller
+-- escalates to a precise target designation on its own. The player works the decoy ID
+-- puzzle inside this window first (mis-ID still costs R7); the King then points. Tunable.
+local SCAR_TALKON_DELAY_S = 120
+
+-- Live position of the real target's lead unit (the thing to kill: the bound armor /
+-- SCUD / spawned HVT = area.groups[1]). nil if it is already dead/gone.
+local function target_lead_pos(area)
+    local group = Group.getByName(area.groups[1])
+    if group == nil then
+        return nil
+    end
+    local ok, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if not ok or unit == nil then
+        return nil
+    end
+    local okp, pos = pcall(function()
+        return unit:getPoint()
+    end)
+    if okp and pos then
+        return pos
+    end
+    return nil
+end
+
+-- Phase 2/3 stage 1 -- on-station TALK-ON. The on-scene controller ("MAGIC") cues the
+-- striker onto the kill box with GREEN smoke at the box centre + a descriptive call,
+-- but does NOT clear hot or smoke the exact vehicle yet: the player works the decoy ID
+-- puzzle first. Voice-first + additive (a human King talks over SRS). One-shot.
+local function designate(area)
+    if area.designated then
+        return
+    end
+    area.designated = true
+    area.talkonAt = timer.getTime()
+    local side = scar_side(area)
+    local okh, height = pcall(land.getHeight, { x = area.centerX, y = area.centerY })
+    local y = (okh and height) or 0
+    local center = { x = area.centerX, y = y, z = area.centerY }
+    pcall(trigger.action.smoke, center, trigger.smokeColor.Green)
+    pcall(trigger.action.markToCoalition, next_mark_id(),
+        "MAGIC: target in this box — my GREEN smoke. Find + ID the real one.",
+        center, side, true)
+    pcall(trigger.action.outTextForCoalition, side,
+        "MAGIC (on-scene cmd) [" .. tostring(area.id) ..
+        "]: target in the box, my GREEN smoke. Match the FULL signature — watch for " ..
+        "decoys. Call visual; stand by for my designation.", 25)
+    scar_log("area " .. tostring(area.id) .. " TALK-ON (MAGIC box smoke + call)")
+end
+
+-- Phase 3 stage 2 -- escalate to a precise DESIGNATION on the real target: RED smoke
+-- on its lead vehicle + "cleared hot". Fires when the talk-on window elapses (the King
+-- talks you on, then points). One-shot. (Laser/IR SPOT is a follow-on, Phase 3b -- it
+-- needs a spawned designator emitter, so it is intentionally not wired here yet.)
+local function escalate_designation(area)
+    if area.cleared then
+        return
+    end
+    local pos = target_lead_pos(area)
+    if pos == nil then
+        return -- target already dead/gone; nothing left to designate
+    end
+    area.cleared = true
+    local side = scar_side(area)
+    pcall(trigger.action.smoke, pos, trigger.smokeColor.Red)
+    pcall(trigger.action.outTextForCoalition, side,
+        "MAGIC [" .. tostring(area.id) ..
+        "]: that's your target — my RED smoke — cleared hot.", 25)
+    scar_log("area " .. tostring(area.id) .. " DESIGNATED (MAGIC red smoke on target)")
+end
+
+-- Phase 3b -- laser/IR from an ON-STATION King. The laser emits from the King
+-- aircraft itself, so we reuse the King groups the Combat SAR generator already emits
+-- (dcsRetribution.CombatSAR.kings). No King fragged => that table is absent => no
+-- laser (smoke/talk-on only). ~25 NM "on station" ring; v1 fixed laser code.
+local SCAR_KING_ONSTATION_M = 46300
+local SCAR_LASER_CODE = 1688
+
+-- The lead unit of a friendly King on station over this area's box, or nil.
+local function king_lead_unit(area)
+    if not (dcsRetribution and dcsRetribution.CombatSAR
+            and dcsRetribution.CombatSAR.kings) then
+        return nil
+    end
+    for _, king in pairs(dcsRetribution.CombatSAR.kings) do
+        if king.group then
+            local group = Group.getByName(king.group)
+            if group ~= nil then
+                local ok, unit = pcall(function()
+                    local u = group:getUnit(1)
+                    if u and u:isExist() and u:inAir() then
+                        local p = u:getPoint() -- {x = north, y = alt, z = east}
+                        local dx = p.x - area.centerX
+                        local dz = p.z - area.centerY
+                        if (dx * dx + dz * dz)
+                            <= (SCAR_KING_ONSTATION_M * SCAR_KING_ONSTATION_M) then
+                            return u
+                        end
+                    end
+                    return nil
+                end)
+                if ok and unit ~= nil then
+                    return unit
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function drop_laser(area)
+    if area.laserSpot then
+        pcall(function() area.laserSpot:destroy() end)
+        area.laserSpot = nil
+    end
+    if area.irSpot then
+        pcall(function() area.irSpot:destroy() end)
+        area.irSpot = nil
+    end
+end
+
+-- After the precise designation (area.cleared), if a King is on station, lase the
+-- real target from it + drop an IR pointer, and call the code. Created once; retried
+-- each tick until a King is overhead (so a King arriving late still gets a laser).
+local function maybe_lase(area)
+    if not area.cleared or area.laserSpot then
+        return
+    end
+    local pos = target_lead_pos(area)
+    if pos == nil then
+        return
+    end
+    local king = king_lead_unit(area)
+    if king == nil then
+        return -- no King on station: smoke designation only (the rule)
+    end
+    local ok = pcall(function()
+        area.laserSpot =
+            Spot.createLaser(king, { x = 0, y = 1, z = 0 }, pos, SCAR_LASER_CODE)
+        area.irSpot = Spot.createInfraRed(king, { x = 0, y = 1, z = 0 }, pos)
+    end)
+    if ok and area.laserSpot then
+        area.laserCode = SCAR_LASER_CODE
+        pcall(trigger.action.outTextForCoalition, scar_side(area),
+            "MAGIC [" .. tostring(area.id) .. "]: King laser ON — code " ..
+            tostring(SCAR_LASER_CODE) .. " (+ IR pointer).", 20)
+        scar_log("area " .. tostring(area.id) .. " LASED by King (code " ..
+            tostring(SCAR_LASER_CODE) .. ")")
+    else
+        drop_laser(area) -- partial create -> clean up so we retry next tick
+    end
+end
+
+-- Drop the King laser when the area resolves, the target dies, or the King leaves
+-- station (runs every tick, including for resolved areas, so spots never leak).
+local function maybe_drop_laser(area)
+    if not (area.laserSpot or area.irSpot) then
+        return
+    end
+    if area.done or target_lead_pos(area) == nil or king_lead_unit(area) == nil then
+        drop_laser(area)
+    end
+end
+
 -- Open the fail clock when the package arrives. A MOVING area also routes every
 -- parked mover to its destination; a STATIC area just holds (speed-0 movers are
--- skipped, so nothing drives) and is serviced in place.
+-- skipped, so nothing drives) and is serviced in place. On-station check-in also
+-- triggers the King designation (smoke + call).
 local function activate_movement(area)
     for _, m in ipairs(area.movers or {}) do
         if (m.speed or 0) > 0 then
@@ -711,6 +878,7 @@ local function activate_movement(area)
     end
     area.activated = true
     area.deadline = timer.getTime() + (area.window or 1200)
+    designate(area)
     scar_log("area " .. tostring(area.id) .. " ACTIVATED (package within " ..
         math.floor(SCAR_PROXIMITY_M / 1852) .. " NM)" ..
         (area_is_static(area) and " [static hold]" or "") .. "; window " ..
@@ -719,6 +887,9 @@ end
 
 local function scar_check()
     for _, area in ipairs(scar_areas) do
+        -- Drop the King laser if the area resolved / target died / King left station
+        -- (runs for done areas too, so spots never leak).
+        maybe_drop_laser(area)
         if not area.done then
             -- Parked until the package reaches the ring; then it bugs out and the
             -- fail clock starts. A kill before activation still counts as success.
@@ -730,6 +901,16 @@ local function scar_check()
                 and timer.getTime() >= area.deadline
             local static = area_is_static(area)
             maybe_bind_sof(area)
+            -- Phase 3 talk-on gate: after the on-station talk-on window, the King
+            -- escalates to a precise designation on the real target (RED smoke +
+            -- cleared hot) on its own. The player has the window to self-ID first.
+            if live and area.talkonAt and not area.cleared
+                and (timer.getTime() - area.talkonAt) >= SCAR_TALKON_DELAY_S then
+                escalate_designation(area)
+            end
+            -- Phase 3b: once designated, a King on station lases the real target (the
+            -- laser emits from the King aircraft; no King => smoke only).
+            maybe_lase(area)
             if all_groups_dead(area) then
                 mark_result(area, "success")
             elseif area.variant == "missile" then

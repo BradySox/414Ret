@@ -1,10 +1,22 @@
 # SCAR rework — loiter-and-task under the C-130 "King" on-scene commander (design)
 
-**Status:** **Phase 1 IN PROGRESS** (2026-06-25) — the loiter flight plan, the static data layer
-(`_make_static`), the Lua static guards (hold / fail-on-window), and the inverted SOF capture
-(dwell-based assault on the held commander) have landed on `claude/scar-king-fac-rework` (PR #187,
-draft); **pending an in-game pass**. Phases 2–4 (King designation bridge, talk-on/R7, polish) not
-started. · **Date:** 2026-06-25
+**Status:** **Phase 1 MERGED** (PR #187) — loiter + static + inverted SOF capture on `main` (pending
+in-game pass F7/F8). **Phases 2 + 3 + 3b BUILT** on PR #189 (pending in-game pass F9/F10): the
+script-as-MAGIC controller cues the box on-station (GREEN smoke + mark + call), escalates to a precise
+RED-smoke designation on the real target after the talk-on window (the decoy ID puzzle survives), and
+— **when a C-130 King is on station** — lases the target from the King aircraft (code 1688 + IR,
+dropped on resolve/target-death/King-departure); **no King fragged ⇒ no laser**. Voice-first/additive
+throughout. **Deferred:** a "say again" F10 + per-area laser-code allocation; **Phase 4** polish; and
+the **dead-chase-code retirement** (until after the F7/F8 flight). · **Date:** 2026-06-25
+
+> **Phase 3b laser rule (user-decided 2026-06-25): lase only when a King flight is ON STATION.** The
+> laser/IR `SPOT` emits **from the King aircraft itself** (a C-130 King on station over the box) — so
+> there is **no spawned-designator** hack, and **no King flight fragged ⇒ no laser at all** (the
+> smoke + talk-on already built covers the no-King case). 3b (BUILT): detect an on-station friendly
+> King (reusing `dcsRetribution.CombatSAR.kings`) → `SPOT` the designated target from its unit
+> (managed lifecycle: drop the spot when the target dies / the King leaves / the area resolves) →
+> publish the laser code (1688) in the designation call. Smoke-only stays the baseline; the laser is
+> the **King-present bonus**.
 **Related:** [`414th-scar-task-spec.md`](414th-scar-task-spec.md) (current SCAR),
 [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the King + orbit pattern this reuses),
 [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md) (why we stay off
@@ -124,6 +136,51 @@ spec the picture composition.
 | 2 | King-as-SCAR-controller bridge: on-station detect → **smoke + F10 map mark + message** on the target | Player flies the hold, gets a designated target, services it; F10 ≤ 1 entry |
 | 3 | Laser/IR `SPOT` designation + the talk-on discrimination (multi-group ID, mis-ID R7 penalty on a wrong kill) | The puzzle survives without F10 |
 | 4 | Polish: night illum, SRS call, AI-flown fallback, kneeboard | nice-to-haves |
+
+## Phase 2 — implementation design (the King-as-controller bridge) · design-first, not built
+
+Phase 1 is on `main` (loiter hold, static target, native attrition, inverted SOF capture). Phase 2
+adds the **on-scene-commander designation** so the player is *vectored and cued* onto the held target
+instead of cold-searching. Build-ready spec:
+
+**Who is the King (v1 decision): the SCAR script plays the controller ("MAGIC").** Designation is
+driven by the existing `scar` plugin on striker-on-station — it does **not** require a King C-130
+flight to exist. This keeps Phase 2 minimal and *always available* (a lone striker still gets cued),
+and it's the clean substrate for the **voice-first** rule: when a human King *is* flying, they run the
+check-in/talk-on **over SRS voice** and the script cues are the additive backstop. Binding designation
+to an actual King flight's *presence/position* (so only a real overhead King cues) is a later
+refinement (Phase 4 / the auto-planned-commander grand-scheme below), not v1.
+
+**Trigger — reuse what exists.** `package_near(area)` already fires when a human striker crosses the
+50 NM ring (`scar_414_init.lua`). Hang designation off the same on-station event — no new detection,
+no F10 to check in. (`activate_movement` is now the static "open the fail clock" step; add a
+`designate(area)` call beside it.)
+
+**Designation actions (additive, skippable, voice-first):**
+- **Smoke** the target's lead unit (`trigger.action.smoke` at the live position from
+  `command_vehicle_pos` / the bound group's unit) — the "my smoke" cue.
+- **One** persistent `MarkToCoalition` on the target/area (reuse `next_mark_id` + the `brief_*`
+  marking already in the file) — not a submenu.
+- **One** controller message ("MAGIC: armor in the box, my smoke, cleared to engage"), framed as the
+  on-scene controller. Text now; an SRS-TTS line is Phase 4 — but **never** as the *only* channel: a
+  human King talks over it.
+- **F10 ≤ 1**: a single "say again / re-smoke (MAGIC)" backstop, nothing nested.
+
+**Reuse:** `package_near`, `scar_side`, `command_vehicle_pos`, the `brief_*` mark/message helpers,
+`next_mark_id`. **New:** a `designate(area)` function + its one-shot guard (`area.designated`), and the
+single F10 command. No new Python emission required for v1 (the area already carries `groups`,
+`centerX/Y`, `commandType`).
+
+**Phase 2 ↔ Phase 3 boundary (puzzle tension).** Phase 2 is the *mechanism*: cueing the player onto
+the box/target works. Smoking the real lead vehicle outright would trivialise the discrimination
+puzzle, so the **talk-on gate** — describe first ("armor in the treeline, *not* the trucks"), smoke/
+lase the real one only after a visual call or a beat, mis-ID (decoy kill) still costs R7 — is
+**Phase 3**. v1 of Phase 2 may smoke the **target area** (centre) + a descriptive call so the player
+still IDs among the decoys; precise on-vehicle smoke/laser arrives with the Phase 3 talk-on.
+
+**In-game pass (new row when built):** striker crosses the ring → exactly one smoke + one map mark +
+one MAGIC call, no F10 digging; the cue points at the real target/area; `dcs.log` clean; a human King
+talking on SRS is unaffected (cues don't spam over voice).
 
 ## Future — auto-planned commander (grand-scheme)
 

@@ -645,6 +645,82 @@ def test_lua_static_capture_is_dwell_based_on_a_live_commander() -> None:
     assert 'mark_result(area, "captured")' in script
 
 
+def test_lua_king_designation_cues_the_box_on_station() -> None:
+    # Phase 2: on striker check-in (activate_movement) the on-scene controller cues
+    # the box ONCE -- smoke + map mark + a MAGIC call -- as an additive, voice-first
+    # backstop. One-shot per area; smokes the box CENTRE (so the decoy puzzle survives
+    # for the Phase 3 talk-on), not the exact vehicle.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    designate = script.split("local function designate(area)", maxsplit=1)[1].split(
+        "local function activate_movement(area)", maxsplit=1
+    )[0]
+    assert "area.designated" in designate  # one-shot guard
+    assert "trigger.action.smoke" in designate  # smoke cue
+    assert "markToCoalition" in designate  # one persistent map mark
+    assert "MAGIC" in designate  # controller call
+    assert "area.centerX" in designate  # cues the box centre, not the vehicle
+    # Wired into the on-station activation (proximity check-in, no F10 dig).
+    activate = script.split("local function activate_movement(area)", maxsplit=1)[
+        1
+    ].split("local function scar_check(", maxsplit=1)[0]
+    assert "designate(area)" in activate
+
+
+def test_lua_talkon_gate_escalates_to_precise_designation() -> None:
+    # Phase 3: the on-station designate() is a TALK-ON (box smoke + "stand by", not
+    # cleared-hot, records area.talkonAt); a separate escalate_designation() points
+    # precise RED smoke at the real target's lead unit after SCAR_TALKON_DELAY_S, so
+    # the player works the decoy ID puzzle first.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    designate = script.split("local function designate(area)", maxsplit=1)[1].split(
+        "local function escalate_designation(area)", maxsplit=1
+    )[0]
+    assert "area.talkonAt" in designate  # records the talk-on time
+    assert "stand by for my designation" in designate  # talk-on, not a clear-hot
+    escalate = script.split("local function escalate_designation(area)", maxsplit=1)[
+        1
+    ].split("local function activate_movement(area)", maxsplit=1)[0]
+    assert "target_lead_pos(area)" in escalate  # points at the REAL target
+    assert "smokeColor.Red" in escalate  # precise RED designation smoke
+    assert "area.cleared" in escalate  # one-shot
+    # Wired into scar_check on the talk-on delay.
+    assert "SCAR_TALKON_DELAY_S" in script
+    assert "escalate_designation(area)" in script
+
+
+def test_lua_king_laser_only_with_king_on_station() -> None:
+    # Phase 3b: the laser emits from an ON-STATION King, reusing the Combat SAR King
+    # groups the generator emits. No King fragged -> dcsRetribution.CombatSAR absent
+    # -> no laser (smoke/talk-on only). Gated on the precise designation; cleaned up
+    # on resolve / target death / King departure.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    king = script.split("local function king_lead_unit(area)", maxsplit=1)[1].split(
+        "local function drop_laser(area)", maxsplit=1
+    )[0]
+    assert "dcsRetribution.CombatSAR" in king  # reuses the emitted King groups
+    assert "SCAR_KING_ONSTATION_M" in king  # on-station ring gate
+    lase = script.split("local function maybe_lase(area)", maxsplit=1)[1].split(
+        "local function maybe_drop_laser(area)", maxsplit=1
+    )[0]
+    assert "area.cleared" in lase  # only after the precise designation
+    assert "king_lead_unit(area)" in lase  # needs a King on station
+    assert "Spot.createLaser" in lase  # laser emits from the King
+    drop = script.split("local function maybe_drop_laser(area)", maxsplit=1)[1].split(
+        "local function activate_movement(area)", maxsplit=1
+    )[0]
+    assert "area.done" in drop  # cleaned up on resolve
+    assert "drop_laser(area)" in drop
+    # Wired into scar_check.
+    assert "maybe_lase(area)" in script
+    assert "maybe_drop_laser(area)" in script
+
+
 def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
     # Phase 2c-2 hybrid: spawn_sof binds capture to a player-delivered team near
     # the ambush point when one exists, and only scripted-spawns a fallback

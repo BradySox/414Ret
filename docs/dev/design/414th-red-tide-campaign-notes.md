@@ -175,6 +175,29 @@ considered and declined.
      kill quads sit on the real objects, and Skynet still wires the base SAMs to the new C2 (Templin's
      2.6 km cc/comms are the marginal case). Kastrup/Hamburg/Peenemünde still use placed statics
      (no scanner dump coverage — needs a re-scan; Phase 2).
+   - **C2 + ammo → real buildings, Phase 2: Hamburg/Kastrup/Peenemünde + Sperenberg/Schönefeld ammo
+     (2026-06-24).** After the user re-flew the CWG scanner over the three previously-uncovered bases
+     (dump 216k→410k rows, bbox now reaches Kastrup), the remaining **placed** C2/ammo statics were
+     replaced with real-building scenery nodes (same `SceneryGroup` blue-def + white-quad pattern).
+     **Deleted 12 statics** (Hamburg/Kastrup/Peenemünde Command Center+Comms+Power, Kastrup/Sperenberg/
+     Schönefeld Ammo Depot) and dropped kill-quads on matched real buildings 0.1–1.5 mi from each
+     field: e.g. Hamburg cc=`KDP`/comms=`VOR_DME`/power=`TRANSFORMER`; Kastrup comms=`TESLA_RP3F`
+     (0.12 mi); Peenemünde cc=`BARRACK_SMALL` (0.12 mi); ammo on `INDUSTRIAL_*` buildings. The picker
+     skips buildings already used by an existing zone (the scenery **strike** targets), re-checks
+     nearest CP, and uses `ammo`→`GroupTask.AMMO`. **Why this fixes the garbage:** a real building is
+     by definition cleared ground — unlike the earlier "open-ground" guesses, which were unreliable
+     because the dump catalogs *buildings*, not forest/field/water. **Verified (pydcs):** miz loads;
+     all 12 nodes parse to the right GroupTask with one white zone each; 12 statics gone; Haina/Templin
+     IADS intact.
+   - **SAMs → building-anchored open ground (2026-06-24, same fix).** The 8 SAMs that were sitting
+     265–2500 m from any building (forest/water — that's what made them garbage) were relocated to
+     **open spots ~55 m beside a real building cluster** 0.4–1.5 mi from each base (Haina, Templin,
+     Wittstock, Sperenberg ×2, Schönefeld ×2, Kastrup LORAD). The building anchor guarantees cleared
+     ground (a SAM can't deploy in a lake or dense forest); the ~55 m offset keeps the footprint off
+     the structure itself. Hamburg/Peenemünde SAMs were already building-adjacent (41 m / 6 m) and
+     left alone. **Verified (pydcs):** all 10 SAMs now ≤55 m from a building; nearest CP re-confirmed
+     per SAM. The 36–55 m offset spots are the residual in-game-pass item (developed-area gap vs. a
+     tight yard) — but no longer the forest/water failure mode.
    - **Apron-blocking cleanup — SAMs + remaining statics off parking slots (2026-06-24).** The
      placement-fix (item below) snapped objects onto parking slots, which blocked aircraft spawns
      (user screenshot). Audited every red base: 13 objects sat at 0 m from a parking slot — 6 SAM

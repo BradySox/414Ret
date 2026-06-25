@@ -737,13 +737,33 @@ function mist.makeUnitTable(tbl, exclude)
     return out
 end
 
--- Spawn a group. CTLD passes a numeric country + Group.Category and reads back .name. We synthesize
--- the route coalition.addGroup requires and default unit name/skill, mirroring MIST's dynAdd for the
--- ground-vehicle (crate) case Retribution actually exercises.
+-- Resolve a group category that callers may pass as a number (CTLD: Group.Category.GROUND) OR a
+-- MIST-style string (intercept: "vehicle"). coalition.addGroup needs the numeric Group.Category.
+local function _resolve_group_category(cat)
+    if type(cat) == "string" then
+        local c = string.lower(cat)
+        if c == "vehicle" or c == "ground" or c == "ground_unit" then
+            return Group.Category.GROUND
+        elseif c == "plane" or c == "airplane" then
+            return Group.Category.AIRPLANE
+        elseif c == "helicopter" then
+            return Group.Category.HELICOPTER
+        elseif c == "ship" then
+            return Group.Category.SHIP
+        elseif c == "train" then
+            return Group.Category.TRAIN
+        end
+    end
+    return cat
+end
+
+-- Spawn a group. Callers pass a country (number) + category (numeric Group.Category from CTLD, or a
+-- string like "vehicle" from the intercept glue) and read back .name. We resolve the category,
+-- synthesize the route coalition.addGroup requires, and default unit name/skill.
 function mist.dynAdd(ng)
     local newGroup = mist.utils.deepCopy(ng)
     local cntry = newGroup.country or newGroup.countryId
-    local category = newGroup.category
+    local category = _resolve_group_category(newGroup.category)
     if newGroup.groupName then
         newGroup.name = newGroup.groupName
     end

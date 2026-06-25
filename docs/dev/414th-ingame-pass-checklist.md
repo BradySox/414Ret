@@ -384,6 +384,15 @@ so the two docs don't drift.
   `maybe_drop_laser`); wrong code published; or a `scar_414_init.lua` Lua error / bad `Spot.createLaser`
   signature. (Per-area laser-code allocation is a deferred refinement — a fixed 1688 is fine here.)
 
+### F11 — SCAR designation polish: night illum + "say again" F10 (Phase 4) · §15 / PR #189 · ☐ UNTESTED
+- **Setup:** Fly a SCAR at **night** to the box; also try the F10 entry by day.
+- **Pass:** At night each smoke cue (GREEN box / RED target) is accompanied by an **illumination
+  flare** over the cue point (smoke alone is invisible after dark). F10 shows **one** entry — "MAGIC:
+  say again SCAR target" — that re-pops the current cue (and re-calls the laser code) for your active
+  target; with no active target it says so. By day, no illum (smoke only).
+- **Fail signature:** no flare at night / flare in daylight (bad `is_night`); the F10 missing or
+  duplicated; "say again" cues the wrong stage or a resolved area; or a Lua error.
+
 ---
 
 ## G. Plugin runtime (Lua, not CI-runnable)
@@ -649,6 +658,14 @@ so the two docs don't drift.
 - **Fail signature:** wrong role brief for the airframe (helo gets the King text or vice-versa), a
   KING BEACON TACAN that doesn't match what the King actually radiates in-game, text running off the
   page edge, or no Combat SAR page at all (`generate_task_page` branch).
+
+### H3 — SCAR task kneeboard (Phase 4) · §15 / PR #189 · ☐ UNTESTED
+- **Setup:** Plan a player **SCAR** flight; open its kneeboard in DCS.
+- **Pass:** A "SCAR" task page with **TASK** (hold the box, service the designated armor, kills count
+  natively), **FIND + ID** (decoys + mis-ID cost; GREEN box smoke → RED target after ~2 min), and
+  **DESIGNATION** (smoke colours, King laser code 1688, the "say again" F10). Text wraps, no clipping.
+- **Fail signature:** no SCAR page (`generate_task_page` branch), text off the page edge, or guidance
+  that contradicts the in-mission behaviour (e.g. claims a laser with no King).
 
 ---
 

@@ -370,7 +370,19 @@ so the two docs don't drift.
   repeats every tick (one-shot guards failed); no escalation after the window on a live target, or it
   escalates after the target is already dead; RED smoke off the real vehicle (bad `target_lead_pos`);
   smoke at sea level (bad `land.getHeight`); or a `scar_414_init.lua` Lua error. (Laser/IR designation
-  + a "say again" F10 are deferred to Phase 3b — not a fail here.)
+  + a "say again" F10 are deferred — laser is F10 below; the "say again" F10 is still deferred.)
+
+### F10 — SCAR King laser/IR designation (Phase 3b) · §15 / PR #189 · ☐ UNTESTED
+- **Setup:** Frag **both** a C-130 **King** (a Combat SAR C-130) and a SCAR striker; get the King on
+  station over the SCAR box. Fly the SCAR to the box and let the talk-on escalate (or wait the window).
+- **Pass:** After the precise designation, with a King within ~25 NM the King **lases** the real
+  target (code **1688**) + an IR pointer, and MAGIC calls the code — an LGB/Maverick-capable striker
+  can guide on it. The laser **drops** when the target dies, the King leaves station, or the area
+  resolves. **No King fragged ⇒ no laser at all** (smoke + talk-on only, F9) and no error.
+- **Fail signature:** a laser with no King fragged (the no-King rule leaked); laser before the
+  precise designation (puzzle bypass); the spot **leaks** after the target/King is gone (no
+  `maybe_drop_laser`); wrong code published; or a `scar_414_init.lua` Lua error / bad `Spot.createLaser`
+  signature. (Per-area laser-code allocation is a deferred refinement — a fixed 1688 is fine here.)
 
 ---
 

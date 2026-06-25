@@ -74,18 +74,19 @@ file. This guide is the map; those are the territory.
   - `414th-red-tide-supply-routes-notes.md` — YAML supply routes + Kastrup preset patch
   - `414th-campaign-maker-notes.md` — blank-start campaign maker (policy core landed; glue/wizard in progress)
   - `414th-weapon-dates-proposal.md` — weapon-coverage completion plan + the modern-weapon date-gating rule
-  - **MIST → MOOSE consolidation & IADS engine** (in progress — read before touching IADS/plugins):
+  - **MIST → MOOSE consolidation & IADS engine** (✅ COMPLETE 2026-06-25 — MIST retired; read before
+    touching IADS/plugins):
     `414th-mantis-iads-HANDOFF.md` (**start here** — MANTIS G6 in-game pass PASSED 2026-06-24
-    (routing + networking + C2); CTLD is now the gate for the MIST drop),
-    `414th-framework-consolidation-notes.md` (the MIST-retirement roadmap + per-phase plan),
+    (routing + networking + C2); MANTIS is the default IADS engine),
+    `414th-framework-consolidation-notes.md` (the MIST-retirement roadmap + per-phase plan, now done),
     `414th-mantis-migration-notes.md` + `414th-mantis-vs-skynet-iads-parity.md` (the Skynet → MANTIS
     IADS engine: phases 3–5 built + flight-validated; **MANTIS is now the `iads_engine` default for new
     campaigns** (existing saves stay on their engine via the `__setstate__` Skynet pin); Skynet still selectable),
     `414th-moose-ops-opportunity-map.md` (which MOOSE `Ops.*` modules to adopt vs. keep in Python —
-    e.g. `Ops.Chief` stays out), and the per-plugin decisions `414th-ewrs-retirement-decision.md`,
-    `414th-dismounts-decision.md` (both retired), `414th-mist-moose-shim-notes.md` (**the active
-    MIST-retirement plan** — a MOOSE-backed `mist` compat shim, replacing the shelved
-    `414th-ctld-mantis-style-port-scope.md` `Ops.CTLD` port)
+    e.g. `Ops.Chief` stays out; **the next phase now that MIST is gone**), and the per-plugin decisions
+    `414th-ewrs-retirement-decision.md`, `414th-dismounts-decision.md` (both retired),
+    `414th-mist-moose-shim-notes.md` (**the shim that retired MIST** — a vanilla-DCS `mist` compat shim
+    live in `base/plugin.json`, replacing the shelved `414th-ctld-mantis-style-port-scope.md` `Ops.CTLD` port)
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration)
@@ -102,7 +103,7 @@ file. This guide is the map; those are the territory.
 | Campaign engine | Python 3.11 (`game/`) |
 | UI | PyQt (`qt_ui/`) + React/Leaflet client (`client/`) — client NOT type-checked in CI |
 | Mission scripting | **Lua 5.1** sandbox plugins (`resources/plugins/`) — no `os`/`io`, no `goto`, definition order matters |
-| In-mission framework | **MOOSE** (bundled `Moose.lua`; some plugins vendor classes verbatim) — the standard. **MIST is being retired** (MIST → MOOSE consolidation) via a **MOOSE-backed `mist` compatibility shim** (`resources/plugins/base/mist_moose_shim.lua`, in progress) that implements the 42 `mist.*` symbols the consumers (CTLD, SCAR, intercept glue, core `dcs_retribution.lua`, Skynet) actually call — so `mist_4_5_126.lua` can be dropped with consumers untouched. The shim is **NOT yet in `base/plugin.json`**; do not swap it in (or delete `mist_4_5_126.lua`) until all 42 symbols are implemented + an in-game pass (see `414th-mist-moose-shim-notes.md`). MOOSE API docs (bookmark): https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html |
+| In-mission framework | **MOOSE** (bundled `Moose.lua`; some plugins vendor classes verbatim) — the standard. **MIST is RETIRED** (MIST → MOOSE consolidation complete, 2026-06-25): `base/plugin.json`'s `"mist"` work-order now loads `resources/plugins/base/mist_moose_shim.lua` — a vanilla-DCS shim implementing the 42 `mist.*` symbols the consumers (CTLD, SCAR, intercept glue, core `dcs_retribution.lua`, Skynet) actually call, so `mist_4_5_126.lua` no longer loads. The old `mist_4_5_126.lua` file is **kept in the repo as a one-line rollback** (revert `plugin.json`) until the shim has been flown across more campaigns; delete it as the final cleanup. Do NOT re-point the work-order back without reason. See `414th-mist-moose-shim-notes.md`. MOOSE API docs (bookmark): https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html |
 | Units / mission format | pydcs; CurrentHill mod packs in `pydcs_extensions/` |
 | CI gates | Black + mypy + pytest + **Lua syntax gate** (`lua-lint.yml`, blocking) + advisory luacheck |
 | Release | PyInstaller → rolling `latest` pre-release on GitHub |

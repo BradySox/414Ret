@@ -1,8 +1,14 @@
 # MIST retirement via a MOOSE-backed `mist` compatibility shim
 
-**Status:** ✅ all 42 symbols implemented; 100% vanilla DCS (no MOOSE dep) → drops into mist's slot
-with no reorder. **First go-live attempt was reverted** (a `dynAdd` shape bug). **Now hardened +
-re-staged on `claude/harden-mist-shim` — awaiting a PROPER in-game pass before merge.**
+**Status:** ✅ **DONE — MIST retired (2026-06-25).** The shim is live in `base/plugin.json` (the
+`"mist"` work-order loads `mist_moose_shim.lua`); `mist_4_5_126.lua` no longer loads. All 42 symbols,
+100% vanilla DCS (no MOOSE dep), in mist's existing slot (no reorder). Flight-validated on GermanyCW
+(shim logged zero errors; the two crashes seen during testing were pre-existing bugs — civ-helo RAT
+crash and a CTLD smoke-zone format bug — fixed separately in #166). The **first** go-live attempt was
+reverted for a `dynAdd` shape bug (intercept passes a string `category = "vehicle"`; CTLD passes a
+numeric `Group.Category`) → fixed with `_resolve_group_category` + a full audit of every consumer call
+site (`dynAdd`'s string category was the only mismatch). **`mist_4_5_126.lua` is kept as a one-line
+rollback** until the shim is flown across more campaigns, then delete it (final cleanup).
 
 **Lesson / fix (2026-06-24):** the first swap was merged to `main` without flying it and crashed
 immediately — `dynAdd` only handled CTLD's numeric `Group.Category`, but the intercept glue passes a

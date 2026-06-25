@@ -414,6 +414,21 @@ so the two docs don't drift.
   doesn't "stick." If seen, the watcher must remove the SAM from MANTIS' set, not just
   toggle the group.
 
+### G7 — MIST → MOOSE shim (`mist_moose_shim.lua`) · MIST retirement · ☑ VERIFIED 2026-06-25 (GermanyCW)
+- **Result (2026-06-25):** PASSED. With `base/plugin.json` loading the shim instead of
+  `mist_4_5_126.lua`, a full GermanyCW session logged **zero `mist_moose_shim` errors** —
+  MANTIS built, CTLD spawned crates (shim `dynAddStatic`), intercept QRA configured (shim
+  `dynAdd`, after the `_resolve_group_category` fix), core glue ran. The two crashes seen
+  during testing were **pre-existing** bugs unrelated to the shim (civ-helo RAT sim crash;
+  CTLD smoke-zone string/number format), both fixed in #166.
+- **Pass:** No `mist_moose_shim.lua:<n>` errors in `dcs.log`; CTLD sling-load (load/drop
+  troops, sling+unpack a crate, build a FOB), SCAR capture + CSAR, intercept/QRA, and core
+  state-write/messages all behave as on MIST.
+- **Fail signature:** any `mist_moose_shim.lua` Lua error (a consumer hit an unimplemented/
+  wrong-shaped symbol). `mist_4_5_126.lua` is kept in the repo → rollback is a one-line
+  `base/plugin.json` revert. **Remaining:** fly across more campaigns/maps, then delete
+  `mist_4_5_126.lua` as the final cleanup.
+
 ---
 
 ## H. Kneeboards

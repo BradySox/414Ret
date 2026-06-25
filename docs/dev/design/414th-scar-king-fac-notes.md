@@ -1,11 +1,12 @@
 # SCAR rework — loiter-and-task under the C-130 "King" on-scene commander (design)
 
-**Status:** **Phase 1 MERGED** (PR #187, 2026-06-25) — loiter flight plan + static data layer
-(`_make_static`) + Lua static guards (hold / fail-on-window) + inverted SOF capture (dwell-based
-assault on the held commander) are on `main`; **pending an in-game pass** (checklist F7/F8). **Phase 2
-is design-ready** (the King-as-controller bridge below) but **not built**. Dead-chase-code retirement
-is deferred until after the F7/F8 flight (refactor on a verified baseline). Phases 3–4 (talk-on/R7,
-polish) not started. · **Date:** 2026-06-25
+**Status:** **Phase 1 MERGED** (PR #187) — loiter + static + inverted SOF capture on `main` (pending
+in-game pass F7/F8). **Phase 2 (King designation) + Phase 3 talk-on gate BUILT** on PR #189 (pending
+in-game pass F9): the script-as-MAGIC controller cues the box on-station (GREEN smoke + mark + call),
+then escalates to a precise RED-smoke designation on the real target after the talk-on window — the
+decoy ID puzzle survives, voice-first/additive. **Deferred:** the **laser/IR `SPOT`** (Phase 3b —
+needs a spawned designator emitter) and a "say again" F10; **Phase 4** polish; and the
+**dead-chase-code retirement** (until after the F7/F8 flight). · **Date:** 2026-06-25
 **Related:** [`414th-scar-task-spec.md`](414th-scar-task-spec.md) (current SCAR),
 [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the King + orbit pattern this reuses),
 [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md) (why we stay off

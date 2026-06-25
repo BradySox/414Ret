@@ -700,30 +700,77 @@ local function area_is_static(area)
     return true
 end
 
--- Phase 2 (King-as-controller designation): when the striker checks in on-station,
--- the on-scene controller ("MAGIC") cues it onto the kill box -- one pop of smoke at
--- the box centre + one fresh map mark + one call. Voice-first + additive: these are
--- the AI/baseline backstop a human King *talks over* on SRS, never the only channel;
--- and the smoke marks the BOX, not the exact vehicle, so the discrimination puzzle
--- (decoys) survives for the Phase 3 talk-on. One-shot per area.
+-- Phase 3 talk-on gate: how long after the on-station talk-on before the controller
+-- escalates to a precise target designation on its own. The player works the decoy ID
+-- puzzle inside this window first (mis-ID still costs R7); the King then points. Tunable.
+local SCAR_TALKON_DELAY_S = 120
+
+-- Live position of the real target's lead unit (the thing to kill: the bound armor /
+-- SCUD / spawned HVT = area.groups[1]). nil if it is already dead/gone.
+local function target_lead_pos(area)
+    local group = Group.getByName(area.groups[1])
+    if group == nil then
+        return nil
+    end
+    local ok, unit = pcall(function()
+        return group:getUnit(1)
+    end)
+    if not ok or unit == nil then
+        return nil
+    end
+    local okp, pos = pcall(function()
+        return unit:getPoint()
+    end)
+    if okp and pos then
+        return pos
+    end
+    return nil
+end
+
+-- Phase 2/3 stage 1 -- on-station TALK-ON. The on-scene controller ("MAGIC") cues the
+-- striker onto the kill box with GREEN smoke at the box centre + a descriptive call,
+-- but does NOT clear hot or smoke the exact vehicle yet: the player works the decoy ID
+-- puzzle first. Voice-first + additive (a human King talks over SRS). One-shot.
 local function designate(area)
     if area.designated then
         return
     end
     area.designated = true
+    area.talkonAt = timer.getTime()
     local side = scar_side(area)
     local okh, height = pcall(land.getHeight, { x = area.centerX, y = area.centerY })
     local y = (okh and height) or 0
     local center = { x = area.centerX, y = y, z = area.centerY }
     pcall(trigger.action.smoke, center, trigger.smokeColor.Green)
     pcall(trigger.action.markToCoalition, next_mark_id(),
-        "MAGIC: target armor in this box — my GREEN smoke — cleared to engage",
+        "MAGIC: target in this box — my GREEN smoke. Find + ID the real one.",
         center, side, true)
     pcall(trigger.action.outTextForCoalition, side,
         "MAGIC (on-scene cmd) [" .. tostring(area.id) ..
-        "]: armor in the box, my GREEN smoke. Match the full signature — watch for " ..
-        "decoys — and you're cleared to engage.", 25)
-    scar_log("area " .. tostring(area.id) .. " DESIGNATED (MAGIC smoke + call)")
+        "]: target in the box, my GREEN smoke. Match the FULL signature — watch for " ..
+        "decoys. Call visual; stand by for my designation.", 25)
+    scar_log("area " .. tostring(area.id) .. " TALK-ON (MAGIC box smoke + call)")
+end
+
+-- Phase 3 stage 2 -- escalate to a precise DESIGNATION on the real target: RED smoke
+-- on its lead vehicle + "cleared hot". Fires when the talk-on window elapses (the King
+-- talks you on, then points). One-shot. (Laser/IR SPOT is a follow-on, Phase 3b -- it
+-- needs a spawned designator emitter, so it is intentionally not wired here yet.)
+local function escalate_designation(area)
+    if area.cleared then
+        return
+    end
+    local pos = target_lead_pos(area)
+    if pos == nil then
+        return -- target already dead/gone; nothing left to designate
+    end
+    area.cleared = true
+    local side = scar_side(area)
+    pcall(trigger.action.smoke, pos, trigger.smokeColor.Red)
+    pcall(trigger.action.outTextForCoalition, side,
+        "MAGIC [" .. tostring(area.id) ..
+        "]: that's your target — my RED smoke — cleared hot.", 25)
+    scar_log("area " .. tostring(area.id) .. " DESIGNATED (MAGIC red smoke on target)")
 end
 
 -- Open the fail clock when the package arrives. A MOVING area also routes every
@@ -758,6 +805,13 @@ local function scar_check()
                 and timer.getTime() >= area.deadline
             local static = area_is_static(area)
             maybe_bind_sof(area)
+            -- Phase 3 talk-on gate: after the on-station talk-on window, the King
+            -- escalates to a precise designation on the real target (RED smoke +
+            -- cleared hot) on its own. The player has the window to self-ID first.
+            if live and area.talkonAt and not area.cleared
+                and (timer.getTime() - area.talkonAt) >= SCAR_TALKON_DELAY_S then
+                escalate_designation(area)
+            end
             if all_groups_dead(area) then
                 mark_result(area, "success")
             elseif area.variant == "missile" then

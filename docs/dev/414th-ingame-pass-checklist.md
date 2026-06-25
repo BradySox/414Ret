@@ -356,15 +356,21 @@ so the two docs don't drift.
   Known v1 nuance to watch: the scripted-fallback team spawns at the held commander, so a capture
   can auto-complete without a real player delivery (Phase-2c tuning).
 
-### F9 — SCAR King designation on-station (Phase 2) · §15 / PR #189 · ☐ UNTESTED
-- **Setup:** Fly a SCAR flight to its kill box (cross the ~50 NM check-in ring).
-- **Pass:** On check-in the on-scene controller ("MAGIC") cues **once** — GREEN smoke at the box
-  centre + one persistent map mark + one "cleared to engage" call — with **no F10 digging**; it fires
-  a single time (not every tick). The decoy ID puzzle still stands (smoke marks the box, not the
-  exact vehicle). A human King talking on SRS is unaffected (the script cue doesn't spam over voice).
-- **Fail signature:** no cue on arrival (`designate`/`package_near` not wired); the call/smoke repeats
-  every check; smoke lands at sea level or off-box (bad `land.getHeight`/centre); or a
-  `scar_414_init.lua` Lua error. (Re-smoke after burnout is a deferred polish, not a fail here.)
+### F9 — SCAR King talk-on gate (Phase 2 + 3) · §15 / PR #189 · ☐ UNTESTED
+- **Setup:** Fly a SCAR flight to its kill box (cross the ~50 NM check-in ring); leave it on station.
+- **Pass (stage 1, talk-on, on check-in):** the on-scene controller ("MAGIC") cues **once** — GREEN
+  smoke at the box centre + one persistent map mark + a descriptive "find + ID the real one, stand by
+  for my designation" call — **no F10 dig**, fires a single time. The decoy ID puzzle stands (the
+  smoke marks the **box**, not the exact vehicle).
+- **Pass (stage 2, escalation):** if the real target is still alive after the talk-on window
+  (`SCAR_TALKON_DELAY_S`, 120s), MAGIC escalates **once** — **RED** smoke on the real target's lead
+  vehicle + "cleared hot" — so a stuck player still gets pointed in. A human King talking on SRS is
+  unaffected by either stage.
+- **Fail signature:** no stage-1 cue on arrival (`designate`/`package_near` not wired); the call/smoke
+  repeats every tick (one-shot guards failed); no escalation after the window on a live target, or it
+  escalates after the target is already dead; RED smoke off the real vehicle (bad `target_lead_pos`);
+  smoke at sea level (bad `land.getHeight`); or a `scar_414_init.lua` Lua error. (Laser/IR designation
+  + a "say again" F10 are deferred to Phase 3b — not a fail here.)
 
 ---
 

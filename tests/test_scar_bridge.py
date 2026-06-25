@@ -668,6 +668,30 @@ def test_lua_king_designation_cues_the_box_on_station() -> None:
     assert "designate(area)" in activate
 
 
+def test_lua_talkon_gate_escalates_to_precise_designation() -> None:
+    # Phase 3: the on-station designate() is a TALK-ON (box smoke + "stand by", not
+    # cleared-hot, records area.talkonAt); a separate escalate_designation() points
+    # precise RED smoke at the real target's lead unit after SCAR_TALKON_DELAY_S, so
+    # the player works the decoy ID puzzle first.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    designate = script.split("local function designate(area)", maxsplit=1)[1].split(
+        "local function escalate_designation(area)", maxsplit=1
+    )[0]
+    assert "area.talkonAt" in designate  # records the talk-on time
+    assert "stand by for my designation" in designate  # talk-on, not a clear-hot
+    escalate = script.split("local function escalate_designation(area)", maxsplit=1)[
+        1
+    ].split("local function activate_movement(area)", maxsplit=1)[0]
+    assert "target_lead_pos(area)" in escalate  # points at the REAL target
+    assert "smokeColor.Red" in escalate  # precise RED designation smoke
+    assert "area.cleared" in escalate  # one-shot
+    # Wired into scar_check on the talk-on delay.
+    assert "SCAR_TALKON_DELAY_S" in script
+    assert "escalate_designation(area)" in script
+
+
 def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
     # Phase 2c-2 hybrid: spawn_sof binds capture to a player-delivered team near
     # the ambush point when one exists, and only scripted-spawns a fallback

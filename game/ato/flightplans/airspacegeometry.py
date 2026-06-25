@@ -9,8 +9,10 @@ and the threat the aircraft must stand off from?* They already share
 ``AirspaceGeometry`` owns that trio once and exposes the placement primitives as
 methods, so support orbits (AEW&C / tanker) and the forward-middle BARCAP screen
 derive their geometry from one object instead of re-wiring the helpers at every
-call site. It is a behaviour-preserving facade: each method delegates to the
-existing, tested ``supportorbit`` function unchanged.
+call site. The instance methods are a behaviour-preserving facade: each delegates
+to the existing, tested ``supportorbit`` function unchanged. The threat-field ->
+volume half lives here too as the ``barcap_rounds`` staticmethod (moved from
+``theaterstate``, unchanged).
 
 ``threat_zones`` is always **the opponent's threat zone relative to** ``player`` --
 i.e. the threats the planned aircraft must avoid. Every current caller already
@@ -18,8 +20,8 @@ passes exactly that (``IBuilder.threat_zones`` is ``coalition.opponent.threat_zo
 the forward-BARCAP caller passes ``coalition.opponent.threat_zone`` directly), so
 the meaning is now documented in one place rather than implied at each site.
 
-Design rationale and the planned follow-on consumers (threat-weighted BARCAP
-volume, the DEAD reachability gate, theatre-tanker demand) are in
+Design rationale and the remaining follow-on consumers (the DEAD reachability
+gate, theatre-tanker demand) are in
 ``docs/dev/design/414th-airwar-planner-consolidation-notes.md``.
 """
 
@@ -39,6 +41,13 @@ if TYPE_CHECKING:
     from game.theater import ConflictTheater, MissionTarget, Player
     from game.threatzones import ThreatZones
     from game.utils import Distance, Heading
+
+
+# Threat-weighted BARCAP volume ceiling: the hottest sector in the theater gets up
+# to BARCAP_THREAT_CEILING x the baseline (legacy) wave count. The scaling is purely
+# *additive* on top of the baseline, so a defended CP never gets fewer waves than the
+# legacy flat allocation.
+BARCAP_THREAT_CEILING = 2
 
 
 @dataclass(frozen=True)
@@ -86,3 +95,30 @@ class AirspaceGeometry:
         return forward_cap_front_anchor(
             self.theater, self.player, self.threat_zones, location, standoff
         )
+
+    @staticmethod
+    def barcap_rounds(
+        baseline_rounds: int,
+        threat_score: float,
+        max_threat_score: float,
+        is_fleet: bool,
+    ) -> int:
+        """Threat-weighted BARCAP wave count; never below ``baseline_rounds``.
+
+        A defended CP at the theater's peak air threat gets ``BARCAP_THREAT_CEILING
+        * baseline_rounds`` waves; a CP with no threat gets exactly ``baseline_rounds``
+        (the legacy count). Fleet CPs keep their legacy 2x multiplier on top.
+
+        With no measurable threat anywhere (``max_threat_score <= 0``) every defended
+        CP gets ``baseline_rounds``, reproducing the legacy flat allocation exactly.
+
+        Pure (scalar in, scalar out); a staticmethod so callers don't need a built
+        instance. This is the threat-field -> volume half of the air-war geometry.
+        """
+        if max_threat_score <= 0:
+            rounds = baseline_rounds
+        else:
+            factor = threat_score / max_threat_score
+            bonus = baseline_rounds * (BARCAP_THREAT_CEILING - 1)
+            rounds = baseline_rounds + round(factor * bonus)
+        return 2 * rounds if is_fleet else rounds

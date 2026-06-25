@@ -64,5 +64,5 @@ spawns aircraft in liveries that do not fit the unit flying them.
 - [Combat SAR](Combat-SAR)
 - [Unit Transfers](Unit-Transfers)
 - [Base Capture](Base-Capture)
-- [Mission Planning](Mission-Planning)
+- [Mission Planning](Mission-planning)
 - [Fast Forward and Performance](Fast-Forward-and-Performance)

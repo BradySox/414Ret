@@ -76,4 +76,4 @@ priority order:
 - [Base Capture](Base-Capture)
 - [Frontline Stances and Movement](Frontline-Stances-and-Movement)
 - [Unit Transfers](Unit-Transfers)
-- [Mission Planning](Mission-Planning)
+- [Mission Planning](Mission-planning)

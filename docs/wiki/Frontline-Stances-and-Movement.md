@@ -81,5 +81,5 @@ Two related fork changes round this out:
 - [Troops In Contact](Troops-In-Contact)
 - [Base Capture](Base-Capture)
 - [Unit Transfers](Unit-Transfers)
-- [Mission Planning](Mission-Planning)
+- [Mission Planning](Mission-planning)
 - [Fast Forward and Performance](Fast-Forward-and-Performance)

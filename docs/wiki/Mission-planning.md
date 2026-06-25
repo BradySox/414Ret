@@ -34,7 +34,7 @@ A few things worth knowing before you frag:
   delays a real defensive reaction. See
   [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
-# Mission timing
+## Mission timing
 
 Each package has an assigned time-over-target (TOT). The event the TOT corresponds to
 varies by task — for a strike it is weapons impact, for a CAP it is the start of the patrol.
@@ -56,7 +56,7 @@ you wait.
 
 For immediate mission generation, use the **ASAP** button next to the TOT field.
 
-## Time-over-target by task
+### Time-over-target by task
 
 The TOT a flight is assigned is **not** always the moment its task occurs. Each task
 interprets TOT differently, and several are deliberately offset from the package TOT so
@@ -89,7 +89,7 @@ coverage is established before the strikers arrive. The full set of rules, in on
 **Hold:** every rendezvousing flight is planned with ~5 min of hold after the ascent point to
 absorb takeoff delays, baked in before the join, independent of the offsets above.
 
-# Rendezvous planning
+## Rendezvous planning
 
 Some task types add multiple waypoints for coordination:
 
@@ -101,7 +101,7 @@ toward the target.
 
 A **split point** follows egress, allowing flights to separate for return-to-base procedures.
 
-# Unlimited fuel
+## Unlimited fuel
 
 Turning on unlimited fuel does not mean AI aircraft will never run out of fuel — that would
 make air-to-air refuelling flights pointless.
@@ -111,7 +111,7 @@ through the Join waypoint, then revert to limited fuel until the Split waypoint,
 unlimited fuel reactivates. This prevents a premature RTB before ingress while avoiding
 fuel-starvation during landing.
 
-# Task types
+## Task types
 
 Each task below uses the same field order so the page is scannable:
 
@@ -133,9 +133,9 @@ Tasks are grouped by family: Air-to-Air, Suppression (SEAD/DEAD), Air-to-Ground 
 Battlefield support, and Support & logistics. The fork's player task types — SCAR, TARPS,
 Combat SAR, and JAMMING — appear in their families with a link to their dedicated page.
 
-## Air-to-Air
+### Air-to-Air
 
-### BARCAP (Barrier CAP)
+#### BARCAP (Barrier CAP)
 
 - **Purpose:** Prevent enemy aircraft from entering a friendly area.
 - **Valid targets:** Any friendly objective area.
@@ -149,7 +149,7 @@ Combat SAR, and JAMMING — appear in their families with a link to their dedica
   BARCAP as overlapping, jittered, threat-weighted waves; see
   [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
-### TARCAP (Target-area CAP)
+#### TARCAP (Target-area CAP)
 
 - **Purpose:** Localised fighter cover over an enemy objective for the package's benefit.
 - **Valid targets:** Any enemy objective area.
@@ -161,7 +161,7 @@ Combat SAR, and JAMMING — appear in their families with a link to their dedica
 - **AI limitations:** Early arrival means it is a **poor choice near enemy SAMs** — the CAP
   gets exposed before the package even shows.
 
-### Fighter sweep
+#### Fighter sweep
 
 - **Purpose:** Clear the target area of enemy fighters ahead of the package.
 - **Valid targets:** Any enemy objective.
@@ -172,7 +172,7 @@ Combat SAR, and JAMMING — appear in their families with a link to their dedica
 - **AI limitations:** RTBs when bingo, winchester, or on reaching the target area with no
   fighters found.
 
-### Escort
+#### Escort
 
 - **Purpose:** Protect package members from aerial threats.
 - **Valid targets:** n/a (defends a flight, not a target).
@@ -183,12 +183,12 @@ Combat SAR, and JAMMING — appear in their families with a link to their dedica
 - **AI limitations:** Most non-CAP tasks request an escort automatically; escort engages air
   threats only.
 
-## Suppression (SEAD / DEAD cluster)
+### Suppression (SEAD / DEAD cluster)
 
 Four suppression-adjacent tasks — the difference between them is the single most common source
 of misfragged packages. Decision guide first.
 
-### Choosing a suppression task
+#### Choosing a suppression task
 
 | You want to… | Use | Why |
 |--------------|-----|-----|
@@ -205,7 +205,7 @@ while larger radar SAM sites (MERAD/LORAD) remain visible and targetable — so 
 planning is aimed at the sites that actually warrant a deliberate package. See
 [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
-### SEAD
+#### SEAD
 
 - **Purpose:** Suppress the package target's radar so the DEAD flight can kill it. Not a kill
   task.
@@ -225,7 +225,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   emitter kills than against a dumb SAM. Plan SEAD as genuine suppression; let DEAD close the
   kill.
 
-### DEAD
+#### DEAD
 
 - **Purpose:** Destroy enemy air defences outright.
 - **Valid targets:** Enemy air-defence sites; most effective against radar SAMs when paired with
@@ -242,7 +242,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **IADS notes:** With emitters kept dark, the bomb/ATGM kill DEAD provides is often the *only*
   reliable way to remove the site — SEAD alone frequently won't.
 
-### SEAD Escort
+#### SEAD Escort
 
 - **Purpose:** Protect a specific flight from air defences along its route.
 - **Valid targets:** Defences that threaten the escorted flight's flight plan.
@@ -255,7 +255,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **IADS notes:** Reactive suppression is degraded against radar shutdown — treat as
   deterrence, not a guaranteed clear.
 
-### SEAD Sweep
+#### SEAD Sweep
 
 - **Purpose:** Clear the package's corridor of any air defences between join and split.
 - **Valid targets:** Any SAM or AAA near the flight path — not just the package target.
@@ -268,9 +268,9 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   off-route to hunt.
 - **IADS notes:** Same reactive-suppression caveat as the other SEAD variants.
 
-## Air-to-Ground strike
+### Air-to-Ground strike
 
-### Strike
+#### Strike
 
 - **Purpose:** Destroy fixed enemy ground targets.
 - **Valid targets:** Static targets — buildings, infrastructure. Coordinates, not units.
@@ -283,7 +283,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   misses**. Usable against ground units only in poor weather where visual acquisition fails
   anyway, with non-optimal effect.
 
-### Anti-ship
+#### Anti-ship
 
 - **Purpose:** Sink or cripple enemy naval groups.
 - **Valid targets:** Enemy ships.
@@ -294,7 +294,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   defences.** AI may split weapons across multiple ships.
 - **AI limitations:** Fires at the IP, then RTBs; no reattack judgment.
 
-### OCA/Aircraft
+#### OCA/Aircraft
 
 - **Purpose:** Destroy enemy aircraft on the ground.
 - **Valid targets:** Enemy airfields (parked aircraft).
@@ -303,7 +303,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **Player technique:** Hit revetments/ramps; sequence with SEAD if the field is defended.
 - **AI limitations:** Searches for and attacks grounded aircraft at the target field.
 
-### OCA/Runway
+#### OCA/Runway
 
 - **Purpose:** Crater a runway to deny the airbase.
 - **Valid targets:** Enemy runways.
@@ -317,9 +317,9 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **AI limitations:** Lines up and bombs the runway. A dead runway shows in the debrief as a
   "dead" event with initiator "0". The field is unusable until repaired (4 turns / $100M).
 
-## Battlefield support
+### Battlefield support
 
-### CAS (Close Air Support)
+#### CAS (Close Air Support)
 
 - **Purpose:** Support friendly ground forces at a front line.
 - **Valid targets:** Targets within range of the front-line centre (right-click the front line
@@ -333,7 +333,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **AI limitations:** **AI will not actively hunt** — it engages only what enters visual range,
   and is degraded in poor weather, so it may miss targets on the line.
 
-### BAI (Battlefield Air Interdiction)
+#### BAI (Battlefield Air Interdiction)
 
 - **Purpose:** Eliminate a specific stationary enemy armour group behind the line.
 - **Valid targets:** Ground-vehicle groups at enemy objective areas. **Convoy interdiction** is
@@ -345,7 +345,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   BAI remains the normal planner task for conventional anti-armour work.
 - **AI limitations:** Best against a stationary group; same visual-acquisition caveats apply.
 
-### SCAR (Strike Coordination and Reconnaissance)
+#### SCAR (Strike Coordination and Reconnaissance)
 
 - **Purpose:** Find and kill a designated **moving** high-value target (HVT) in a defined area
   before it reaches safety (or, for a SCUD, its launch point).
@@ -362,7 +362,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   task. An opt-in `SCAR auto-planning` setting can frag it into your ATO automatically. See
   [SCAR](SCAR).
 
-### Armed Recon
+#### Armed Recon
 
 - **Purpose:** Mop up stragglers / engage targets of opportunity in a small radius.
 - **Valid targets:** Any objective or enemy target; engages ground targets within a small
@@ -373,9 +373,9 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **AI limitations:** Effectiveness is weather-affected (like CAS); engages what's in the radius
   rather than hunting widely.
 
-## Support & logistics
+### Support & logistics
 
-### TARPS (Tactical Airborne Reconnaissance)
+#### TARPS (Tactical Airborne Reconnaissance)
 
 - **Purpose:** Photograph enemy sites to bring back confirmed intelligence and battle-damage
   assessment.
@@ -388,7 +388,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **AI limitations:** Driven at runtime by the TARS film-and-debrief engine; the value is in
   flying the pass yourself. See [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance).
 
-### JAMMING (Electronic warfare & ISR)
+#### JAMMING (Electronic warfare & ISR)
 
 - **Purpose:** Standoff jamming and ELINT — the C-130J as an EC-130H/RC-130H-style EW + ISR
   platform.
@@ -405,7 +405,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   places the standoff orbit and sets weapons-hold ROE. See
   [Electronic-Warfare-and-ISR](Electronic-Warfare-and-ISR).
 
-### Combat SAR
+#### Combat SAR
 
 - **Purpose:** Recover a downed pilot and return them to a friendly field.
 - **Valid targets:** A downed (ejected) friendly pilot near the front line.
@@ -419,7 +419,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **AI limitations:** Player-flown, with an optional AI standing alert (`auto_combat_sar`,
   default off). Distinct from the SCAR SOF-recovery CSAR. See [Combat-SAR](Combat-SAR).
 
-### Air Assault
+#### Air Assault
 
 - **Purpose:** Insert troops to capture an enemy control point.
 - **Valid targets:** Enemy control points.
@@ -430,7 +430,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   or troops won't move to the target. From a carrier, troops load from the deck — no pickup leg.
 - **AI limitations:** **Requires the CTLD plugin** for troop load/extract.
 
-### Airlift (Transport)
+#### Airlift (Transport)
 
 - **Purpose:** Transfer a unit between points.
 - **Valid targets:** n/a (logistics).

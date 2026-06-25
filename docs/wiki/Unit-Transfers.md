@@ -56,12 +56,12 @@ not an afterthought.
 
 Airlift also connects to player tasking. **Airlift and Air Assault** mission tasks rely on
 the in-mission cargo/troop-transport scripting (CTLD) to load, carry, and deploy units, so
-those tasks need CTLD present in the generated mission. See [Mission Planning](Mission-Planning)
+those tasks need CTLD present in the generated mission. See [Mission Planning](Mission-planning)
 for how these tasks are fragged.
 
 ## See also
 
 - [Base Capture](Base-Capture)
 - [Frontline Stances and Movement](Frontline-Stances-and-Movement)
-- [Mission Planning](Mission-Planning)
+- [Mission Planning](Mission-planning)
 - [Squadrons and Pilots](Squadrons-and-Pilots)

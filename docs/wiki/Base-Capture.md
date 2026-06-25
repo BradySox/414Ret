@@ -62,4 +62,4 @@ and the fog-of-war notes in the project README.
 - [Frontline Stances and Movement](Frontline-Stances-and-Movement)
 - [Unit Transfers](Unit-Transfers)
 - [Troops In Contact](Troops-In-Contact)
-- [Mission Planning](Mission-Planning)
+- [Mission Planning](Mission-planning)

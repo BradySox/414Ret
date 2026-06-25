@@ -645,6 +645,29 @@ def test_lua_static_capture_is_dwell_based_on_a_live_commander() -> None:
     assert 'mark_result(area, "captured")' in script
 
 
+def test_lua_king_designation_cues_the_box_on_station() -> None:
+    # Phase 2: on striker check-in (activate_movement) the on-scene controller cues
+    # the box ONCE -- smoke + map mark + a MAGIC call -- as an additive, voice-first
+    # backstop. One-shot per area; smokes the box CENTRE (so the decoy puzzle survives
+    # for the Phase 3 talk-on), not the exact vehicle.
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    designate = script.split("local function designate(area)", maxsplit=1)[1].split(
+        "local function activate_movement(area)", maxsplit=1
+    )[0]
+    assert "area.designated" in designate  # one-shot guard
+    assert "trigger.action.smoke" in designate  # smoke cue
+    assert "markToCoalition" in designate  # one persistent map mark
+    assert "MAGIC" in designate  # controller call
+    assert "area.centerX" in designate  # cues the box centre, not the vehicle
+    # Wired into the on-station activation (proximity check-in, no F10 dig).
+    activate = script.split("local function activate_movement(area)", maxsplit=1)[
+        1
+    ].split("local function scar_check(", maxsplit=1)[0]
+    assert "designate(area)" in activate
+
+
 def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
     # Phase 2c-2 hybrid: spawn_sof binds capture to a player-delivered team near
     # the ambush point when one exists, and only scripted-spawns a fallback

@@ -700,9 +700,36 @@ local function area_is_static(area)
     return true
 end
 
+-- Phase 2 (King-as-controller designation): when the striker checks in on-station,
+-- the on-scene controller ("MAGIC") cues it onto the kill box -- one pop of smoke at
+-- the box centre + one fresh map mark + one call. Voice-first + additive: these are
+-- the AI/baseline backstop a human King *talks over* on SRS, never the only channel;
+-- and the smoke marks the BOX, not the exact vehicle, so the discrimination puzzle
+-- (decoys) survives for the Phase 3 talk-on. One-shot per area.
+local function designate(area)
+    if area.designated then
+        return
+    end
+    area.designated = true
+    local side = scar_side(area)
+    local okh, height = pcall(land.getHeight, { x = area.centerX, y = area.centerY })
+    local y = (okh and height) or 0
+    local center = { x = area.centerX, y = y, z = area.centerY }
+    pcall(trigger.action.smoke, center, trigger.smokeColor.Green)
+    pcall(trigger.action.markToCoalition, next_mark_id(),
+        "MAGIC: target armor in this box — my GREEN smoke — cleared to engage",
+        center, side, true)
+    pcall(trigger.action.outTextForCoalition, side,
+        "MAGIC (on-scene cmd) [" .. tostring(area.id) ..
+        "]: armor in the box, my GREEN smoke. Match the full signature — watch for " ..
+        "decoys — and you're cleared to engage.", 25)
+    scar_log("area " .. tostring(area.id) .. " DESIGNATED (MAGIC smoke + call)")
+end
+
 -- Open the fail clock when the package arrives. A MOVING area also routes every
 -- parked mover to its destination; a STATIC area just holds (speed-0 movers are
--- skipped, so nothing drives) and is serviced in place.
+-- skipped, so nothing drives) and is serviced in place. On-station check-in also
+-- triggers the King designation (smoke + call).
 local function activate_movement(area)
     for _, m in ipairs(area.movers or {}) do
         if (m.speed or 0) > 0 then
@@ -711,6 +738,7 @@ local function activate_movement(area)
     end
     area.activated = true
     area.deadline = timer.getTime() + (area.window or 1200)
+    designate(area)
     scar_log("area " .. tostring(area.id) .. " ACTIVATED (package within " ..
         math.floor(SCAR_PROXIMITY_M / 1852) .. " NM)" ..
         (area_is_static(area) and " [static hold]" or "") .. "; window " ..

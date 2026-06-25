@@ -356,6 +356,16 @@ so the two docs don't drift.
   Known v1 nuance to watch: the scripted-fallback team spawns at the held commander, so a capture
   can auto-complete without a real player delivery (Phase-2c tuning).
 
+### F9 — SCAR King designation on-station (Phase 2) · §15 / PR #189 · ☐ UNTESTED
+- **Setup:** Fly a SCAR flight to its kill box (cross the ~50 NM check-in ring).
+- **Pass:** On check-in the on-scene controller ("MAGIC") cues **once** — GREEN smoke at the box
+  centre + one persistent map mark + one "cleared to engage" call — with **no F10 digging**; it fires
+  a single time (not every tick). The decoy ID puzzle still stands (smoke marks the box, not the
+  exact vehicle). A human King talking on SRS is unaffected (the script cue doesn't spam over voice).
+- **Fail signature:** no cue on arrival (`designate`/`package_near` not wired); the call/smoke repeats
+  every check; smoke lands at sea level or off-box (bad `land.getHeight`/centre); or a
+  `scar_414_init.lua` Lua error. (Re-smoke after burnout is a deferred polish, not a fail here.)
+
 ---
 
 ## G. Plugin runtime (Lua, not CI-runnable)

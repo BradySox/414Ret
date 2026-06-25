@@ -583,6 +583,7 @@ export type Game = {
   unculled_zones: UnculledZone[];
   map_zones: MapZones;
   blank_canvas_setup: boolean;
+  enable_unit_placement: boolean;
 };
 export type MapZones = {
   inclusion: LatLng[][][];

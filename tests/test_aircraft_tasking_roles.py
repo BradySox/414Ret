@@ -116,6 +116,17 @@ def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
     assert aircraft.capable_of(FlightType.SOF)
 
 
+@pytest.mark.parametrize(
+    ("variant_id", "capable"),
+    [("CH-47D", True), ("C-130", True), ("F-15C Eagle", False)],
+)
+def test_combat_sar_eligibility(variant_id: str, capable: bool, tmp_path: Path) -> None:
+    # Combat SAR (the standing pilot-rescue orbit) is flown by the CH-47 (pickup)
+    # and the C-130 (HC-130 "King" orbit); fighters never get the lane.
+    aircraft = _aircraft(tmp_path, variant_id)
+    assert aircraft.capable_of(FlightType.COMBAT_SAR) is capable
+
+
 @pytest.mark.parametrize("variant_id", ["UH-1H Iroquois", "F-15C Eagle"])
 def test_sof_insert_excludes_helos_and_non_transports(
     variant_id: str, tmp_path: Path

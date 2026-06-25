@@ -112,6 +112,8 @@ class FrontLine(MissionTarget):
             FlightType.CAS,
             FlightType.AEWC,
             FlightType.REFUELING,
+            # Combat SAR = a pilot-rescue orbit anchored on the FLOT (CH-47 + C-130).
+            FlightType.COMBAT_SAR,
             # TODO: FlightType.TROOP_TRANSPORT
             # TODO: FlightType.EVAC
         ]

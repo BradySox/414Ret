@@ -67,6 +67,7 @@ class FlightType(Enum):
     SCAR = "SCAR"  # Strike Coordination and Recon — find+prosecute one moving HVT in an area
     SOF = "SOF Insert"  # C-130 airdrop that inserts a SOF capture team at a SCAR ambush point (helo does the CSAR recovery)
     CSAR = "CSAR"  # Helo extraction of a SOF team stranded by a botched SCAR capture (the recovery leg of the SOF loop)
+    COMBAT_SAR = "Combat SAR"  # Standing pilot-rescue orbit near the FLOT (CH-47 pickup + C-130 "King"); rescues downed HUMAN pilots via MOOSE CSAR. Distinct from the SOF-recovery CSAR. Support orbit, modeled on RECOVERY/AEWC.
 
     @classmethod
     def _missing_(cls, value: object) -> FlightType | None:
@@ -190,4 +191,6 @@ class FlightType(Enum):
             FlightType.SOF: AirEntity.UTILITY,
             # CSAR is a helo recovery of a stranded SOF team.
             FlightType.CSAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
+            # Combat SAR is a standing pilot-rescue orbit (same SIDC entity).
+            FlightType.COMBAT_SAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
         }.get(self, AirEntity.UNSPECIFIED)

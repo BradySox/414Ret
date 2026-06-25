@@ -38,9 +38,8 @@ class ScarFlightPlan(PatrollingFlightPlan[PatrollingLayout], UiZoneDisplay):
     @property
     def patrol_speed(self) -> Speed:
         altitude = self.layout.patrol_start.alt
-        preferred = self.flight.unit_type.preferred_patrol_speed(altitude)
-        if preferred is not None:
-            return preferred
+        if self.flight.unit_type.preferred_patrol_speed(altitude) is not None:
+            return self.flight.unit_type.preferred_patrol_speed(altitude)
         return knots(350)
 
     @property

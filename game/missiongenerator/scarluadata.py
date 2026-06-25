@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Iterable
 
 from game.ato import FlightType
@@ -488,6 +488,37 @@ def _convoys_on_land(
     return tuple(snapped)
 
 
+def _make_static(t: ScarTasking) -> ScarTasking:
+    """Loiter-and-task rework (Phase 1): hold every group in place.
+
+    The old SCAR was a *chase* — the bound real armor / SCUD and the spawned decoys
+    drove toward a city / firing position and "fail" was them arriving. That moving
+    mode is retired: the SCAR flight now loiters over a STATIC kill box and the King
+    designates the (real, static) armor, whose kills attrit the enemy through the
+    normal ground-loss path. So we zero all movement — the bound real group and the
+    decoys hold their spawn positions and never flee.
+
+    The SOF commander-capture inverts with it: instead of a planted ambush a fleeing
+    HVT drives into, the team assaults the *held* command vehicle, so the ambush
+    point moves onto the target centre (the Lua does the dwell-based capture).
+    """
+    static_convoys = tuple(
+        replace(c, dest_x=c.spawn_x, dest_y=c.spawn_y, speed_ms=0.0) for c in t.convoys
+    )
+    sof_at_target = t.sof_radius_m > 0.0
+    return replace(
+        t,
+        dest_x=t.center_x,
+        dest_y=t.center_y,
+        flee_speed_ms=0.0,
+        fire_target_x=t.center_x,
+        fire_target_y=t.center_y,
+        convoys=static_convoys,
+        sof_x=t.center_x if sof_at_target else t.sof_x,
+        sof_y=t.center_y if sof_at_target else t.sof_y,
+    )
+
+
 def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTasking]:
     """Build one ScarTasking per SCAR-tasked target (deduped by target).
 
@@ -743,7 +774,10 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         sof_unit_type=sof_type,
                     )
                 )
-    return taskings
+    # Loiter-and-task rework: the kill box is STATIC. Zero out the flee/chase the
+    # per-variant logic above computed, so the bound real armor / SCUD and the
+    # decoys hold position; the SOF ambush moves onto the (held) target.
+    return [_make_static(t) for t in taskings]
 
 
 def _emit_convoys(record: "LuaItem", convoys: tuple[ScarConvoy, ...]) -> None:

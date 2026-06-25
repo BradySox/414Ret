@@ -1259,10 +1259,14 @@ returns to the squadron).
   Chinook, `Combat SAR: 85` in its yaml) with a **`Retribution Combat SAR` payload that mounts
   the port + starboard door M60D guns** (`{CH47_PORT_M60D}`/`{CH47_STBD_M60D}`,
   `resources/customized_payloads/CH-47Fbl1.lua`) for self-protection on the way in; the AI
-  **CH-47D** stays a `Combat SAR` fallback (no weapon stations). The King is the player-flyable
-  **C-130J-30** (`Combat SAR: 60`), whose model carries the external underwing fuel tanks; the
-  AI **C-130** stays a fallback. (Loadout names resolve `Retribution Combat SAR` →
+  **CH-47D** stays a `Combat SAR` fallback (no weapon stations). The King is the
+  **C-130J-30** — the player-flyable Airplane Simulation Company module, now the **only** C-130
+  in the fork (the stock AI C-130 was retired; see "C-130 consolidation" below), whose model
+  carries the external underwing fuel tanks. (Loadout names resolve `Retribution Combat SAR` →
   `Liberation Combat SAR` → empty; an airframe with no Combat SAR payload just flies clean.)
+  Because the EW (`c130j`) plugin claims every C-130J-30 by airframe, the generator suppresses
+  it for any mission with a SOF-insert or Combat SAR King C-130J-30 (`_non_ew_c130j_present`) so
+  the King flies clean.
 
 ### Rescue scoring (the gameplay-loop payoff)
 
@@ -1284,7 +1288,7 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Layer | File |
 |---|---|
 | Flight type | `game/ato/flighttype.py` — `COMBAT_SAR` |
-| Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) and King **C-130J-30** (+ AI `C-130` fallback) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`) |
+| Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) and King **C-130J-30** (the only C-130) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`). EW de-conflict: `luagenerator._non_ew_c130j_present` |
 | Flight plan | reuses `game/ato/flightplans/aewc.py` (FLOT support orbit) |
 | Planning | `game/commander/tasks/primitive/combatsar.py`, `…/compound/combatsarsupport.py`, `theaterstate.py` (`combat_sar_targets`) |
 | Setting | `game/settings/settings.py` — `auto_combat_sar` |

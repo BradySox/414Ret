@@ -760,30 +760,35 @@ class LuaGenerator:
         filename = resource_path.resolve()
         self.mission.map_resource.add_resource_file(filename)
 
-    def _sof_c130_present(self) -> bool:
-        """True if a SOF insert is flying the C-130J-30.
+    def _non_ew_c130j_present(self) -> bool:
+        """True if a non-EW role is flying the C-130J-30 this mission.
 
         The EW plugin (C-130J Mission Systems) attaches to every C-130J-30 by
         airframe alone (its eligibility check is purely ``getTypeName() ==
-        "C-130J-30"``), so it would hijack a SOF insert's C-130 -- bolting the
-        EW/ISR menu and behavior onto the airdrop aircraft. When a SOF C-130 is
-        in the mission we suppress the EW plugin so the insert flies clean.
+        "C-130J-30"``), so it would hijack any other C-130J-30 role -- bolting the
+        EW/ISR menu and behavior onto it. That matters for the two roles that must
+        fly clean: the **SOF insert** airdrop and the **Combat SAR "King"** orbit
+        (both are C-130J-30 now that the stock C-130 was retired). When either is in
+        the mission we suppress the EW plugin so it doesn't commandeer them. (A plain
+        Transport C-130J-30 was already the airframe before consolidation, so this
+        does not change its behaviour.)
         """
+        non_ew = (FlightType.SOF, FlightType.COMBAT_SAR)
         for coalition in (self.game.blue, self.game.red):
             for package in coalition.ato.packages:
                 for flight in package.flights:
-                    if flight.flight_type is FlightType.SOF and flight.is_c130j:
+                    if flight.flight_type in non_ew and flight.is_c130j:
                         return True
         return False
 
     def inject_plugins(self) -> None:
-        skip_ew = self._sof_c130_present()
+        skip_ew = self._non_ew_c130j_present()
         for plugin in LuaPluginManager.plugins():
             if skip_ew and plugin.definition.identifier == "c130j":
                 logging.warning(
-                    "SOF insert is flying the C-130J-30 the EW plugin claims by "
-                    "airframe; skipping the C-130J Mission Systems (EW) plugin for "
-                    "this mission so it doesn't hijack the SOF aircraft."
+                    "A SOF insert or Combat SAR King is flying the C-130J-30 the EW "
+                    "plugin claims by airframe; skipping the C-130J Mission Systems "
+                    "(EW) plugin for this mission so it doesn't hijack that aircraft."
                 )
                 continue
             if plugin.enabled:

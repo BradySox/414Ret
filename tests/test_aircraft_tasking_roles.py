@@ -111,9 +111,16 @@ def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
     # The SOF insert is the C-130 "drop" leg: a fixed-wing transport airdrop that
     # reuses the air-assault CTLD delivery, so transports inherit the SOF lane
     # (see AircraftType.__post_init__).
-    aircraft = _aircraft(tmp_path, "C-130")
+    aircraft = _aircraft(tmp_path, "C-130J-30")
     assert aircraft.capable_of(FlightType.TRANSPORT)
     assert aircraft.capable_of(FlightType.SOF)
+
+
+def test_stock_c130_migrates_to_the_player_module(tmp_path: Path) -> None:
+    # The stock AI-only C-130 transport was retired in favor of the player-flyable
+    # C-130J-30; the name migrator resolves an in-progress campaign's "C-130"
+    # squadron to the J-30 so the save doesn't brick.
+    assert _aircraft(tmp_path, "C-130") is _aircraft(tmp_path, "C-130J-30")
 
 
 @pytest.mark.parametrize(
@@ -122,9 +129,8 @@ def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
         # The player-flyable rescuer (door-gunner Chinook) and King (C-130J-30),
         ("CH-47F Block I", True),
         ("C-130J-30", True),
-        # ...plus the AI fallbacks they keep alongside,
+        # ...plus the AI CH-47D fallback the Chinook keeps,
         ("CH-47D", True),
-        ("C-130", True),
         # ...but never a fighter.
         ("F-15C Eagle", False),
     ],
@@ -155,7 +161,7 @@ def test_air_assault_helo_can_fly_csar_recovery(tmp_path: Path) -> None:
     assert aircraft.capable_of(FlightType.CSAR)
 
 
-@pytest.mark.parametrize("variant_id", ["C-130", "F-15C Eagle"])
+@pytest.mark.parametrize("variant_id", ["C-130J-30", "F-15C Eagle"])
 def test_csar_excludes_fixed_wing(variant_id: str, tmp_path: Path) -> None:
     # The recovery leg is rotary-wing: fixed-wing transports (the SOF insert leg)
     # and fighters never get the CSAR lane.

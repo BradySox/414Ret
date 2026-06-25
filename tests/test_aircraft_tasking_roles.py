@@ -129,7 +129,8 @@ def test_stock_c130_migrates_to_the_player_module(tmp_path: Path) -> None:
         # The player-flyable rescuer (door-gunner Chinook) and King (C-130J-30),
         ("CH-47F Block I", True),
         ("C-130J-30", True),
-        # ...plus the AI CH-47D fallback the Chinook keeps,
+        # ...plus the AI CH-47D fallback the Chinook keeps (the stock C-130 King is
+        # retired -- its migration to the J-30 is covered separately above),
         ("CH-47D", True),
         # ...but never a fighter.
         ("F-15C Eagle", False),

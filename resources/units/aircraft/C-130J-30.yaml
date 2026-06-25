@@ -28,4 +28,8 @@ tasks:
   # Air Assault: 0 #TODO: Add once we have proper support for paradrops
   Transport: 140
   Jamming: 140
+  # Combat SAR "King" role (on-scene command + TACAN beacon + LARS). This is the
+  # only C-130 now (the stock AI model was retired), so it is the King. The EW/ISR
+  # (Jamming) plugin claims every C-130J-30 by airframe, so the generator
+  # suppresses it for a King via _non_ew_c130j_present (see luagenerator).
   Combat SAR: 60

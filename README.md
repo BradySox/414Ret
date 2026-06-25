@@ -63,6 +63,13 @@ and selected later upstream fixes.
   later turn before it is overrun. An opt-in `SCAR auto-planning` setting can frag a SCAR hunt
   into your ATO automatically each turn (off by default while the in-mission scripting is being
   playtested).
+- **Combat SAR** makes a downed pilot worth flying for. A CH-47 orbits near the front as the
+  rescuer while a C-130 holds overhead as the HC-130 "King" — on-scene command with an
+  air-tracking TACAN the helo homes on and an F10 survivor-locator readout. When a human pilot
+  ejects, they spawn with a beacon; recover them and deliver them to any friendly field and the
+  campaign **spares the aviator** (you still lose the jet, but the experienced pilot returns to
+  the squadron instead of being lost). Player-flown, with an optional AI standing alert. It is a
+  separate task from the SCAR SOF-recovery CSAR above.
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform with
   standoff jamming and ELINT gameplay. This is the only 414th scripted EW model;
   the old generic fighter-pod "EW Jammer Script" is retired.

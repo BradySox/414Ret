@@ -78,11 +78,41 @@ class MissionResultsProcessor:
             with logged_duration("record_carcasses"):
                 self.record_carcasses(debriefing)
 
+    @staticmethod
+    def _combat_sar_rescued_unit_ids(debriefing: Debriefing) -> set[int]:
+        """Identity set of the FlyingUnit losses whose pilot Combat SAR delivered
+        home this mission.
+
+        ``combat_sar_rescues`` carries the ejected aircraft's original DCS unit
+        name, which is the same name the loss was mapped from, so resolving it
+        through the unit map yields the very FlyingUnit in ``air_losses``. Matching
+        on object identity keeps this robust even if a name somehow recurs.
+        """
+        rescued: set[int] = set()
+        for unit_name in debriefing.state_data.combat_sar_rescues:
+            flying = debriefing.unit_map.flight(unit_name)
+            if flying is not None:
+                rescued.add(id(flying))
+        return rescued
+
     def commit_air_losses(self, debriefing: Debriefing) -> None:
+        # A Combat SAR pickup loses the airframe but saves the aviator: the loss is
+        # still attrited below, only the pilot is spared the kill.
+        rescued_unit_ids = self._combat_sar_rescued_unit_ids(debriefing)
         for loss in debriefing.air_losses.losses:
-            if loss.pilot is not None and (
-                not loss.pilot.player
-                or not self.game.settings.invulnerable_player_pilots
+            rescued = id(loss) in rescued_unit_ids
+            if rescued and loss.pilot is not None:
+                logging.info(
+                    f"Combat SAR recovered the pilot of {loss.flight.unit_type} "
+                    f"from {loss.flight.squadron}; airframe lost, aviator saved."
+                )
+            if (
+                loss.pilot is not None
+                and not rescued
+                and (
+                    not loss.pilot.player
+                    or not self.game.settings.invulnerable_player_pilots
+                )
             ):
                 loss.pilot.kill()
             squadron = loss.flight.squadron

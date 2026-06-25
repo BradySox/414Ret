@@ -152,6 +152,14 @@ class StateData:
     #: penalty. Empty when no wrong convoy was hit (or SCAR is off).
     scar_misid: dict[str, int]
 
+    #: Original aircraft unit names of pilots delivered home by Combat SAR this
+    #: mission (the ``combatsar`` plugin appends one per rescued pilot). Each name
+    #: is the ejected aircraft DCS reports in its kill/crash events, so the loss is
+    #: scored normally but ``commit_air_losses`` spares the pilot -- the aviator
+    #: returns to the squadron though the airframe is still lost. Empty when Combat
+    #: SAR is off or no one was rescued.
+    combat_sar_rescues: List[str]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -214,6 +222,17 @@ class StateData:
         )
 
         tars_recon_captures = parse_tars_captures(data.get("tars_recon_captures", []))
+
+        def parse_combat_sar_rescues(raw: Any) -> List[str]:
+            # The combatsar bridge appends bare aircraft unit-name strings (or the
+            # Lua JSON encoder yields [] when none). Keep only non-empty strings.
+            if not isinstance(raw, list):
+                return []
+            return [str(name) for name in raw if isinstance(name, str) and name]
+
+        combat_sar_rescues = parse_combat_sar_rescues(
+            data.get("combat_sar_rescues", [])
+        )
 
         def parse_scar_results(raw: Any) -> dict[str, str]:
             # The SCAR bridge writes scar_results[taskingId] = {status=...}. The
@@ -279,6 +298,7 @@ class StateData:
             scar_results=scar_results,
             sof_strandings=sof_strandings,
             scar_misid=scar_misid,
+            combat_sar_rescues=combat_sar_rescues,
         )
 
 

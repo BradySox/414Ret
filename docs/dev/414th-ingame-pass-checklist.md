@@ -461,13 +461,29 @@ so the two docs don't drift.
   King; have a human pilot eject in the area.
 - **Pass:** The King radiates its TACAN (rescue helo can tune + home, and it **tracks the moving
   orbit** — bearing/range stay sane as the King flies its racetrack). The King's F10 **Combat SAR →
-  LARS** lists each active survivor with position, bearing/range from the King, and ADF freq, sorted
-  nearest-first; "no active survivor radios" when none. Generator logs `... %d King(s) ...`.
+  LARS** lists each active survivor with position and bearing/range from the King, sorted nearest-first;
+  "no active survivor radios" when none. (ADF dropped — TACAN is the only homing aid.) Generator logs
+  `... %d King(s) ...`.
 - **Fail signature:** any `combatsar-config.lua` Lua error; TACAN absent (no channel allocated, or
   `ActivateTACAN` not firing) or **frozen at the spawn point** instead of tracking (means it fell back
   to a ground beacon — `IsAir()` path); LARS empty when survivors exist (`csar.downedPilots` not read)
   or duplicated F10 entries (birth/start-sweep dedup failed); King menu missing on a delayed/AI King
   (birth handler not attaching).
+
+### G11 — Combat SAR rescue scoring (pilot spared at debrief) · Combat SAR Phase 4 · ☐ UNTESTED
+- **Setup:** Fly a CH-47 Combat SAR (or AI standing alert). Have a **known** human pilot eject near
+  the FLOT, pick them up, and **deliver them to a friendly airfield/FARP**. End the mission and run
+  the debrief.
+- **Pass:** The delivered pilot's **airframe is still counted lost** (squadron `owned_aircraft` drops),
+  but **the pilot is NOT killed** — they remain on the squadron roster with their experience. `dcs.log`
+  shows `Combat SAR - pilot of <unit> delivered home`; the Retribution log shows
+  `Combat SAR recovered the pilot of …`. A pilot picked up but **not** delivered (helo shot down with
+  them aboard) is **not** spared.
+- **Fail signature:** rescued pilot still killed at debrief (`combat_sar_rescues` empty in `state.json`,
+  or the `originalUnit` name doesn't match what DCS reported in kill/crash events — check the unit-map
+  resolve in `commit_air_losses`); or a *non*-delivered pickup wrongly spared (`OnAfterRescued` firing
+  without delivery). Empty list ⇒ pre-scoring behaviour (everyone dies) — that is the safe fallback,
+  not a separate bug.
 
 ---
 

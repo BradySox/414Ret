@@ -628,7 +628,7 @@ class LuaGenerator:
         )
         combat_sar.add_item("rescueHelos").set_data_array(rescue_helos)
 
-        # Each King (C-130) carries the nav beacon the rescue helo homes on.
+        # Each King (C-130) lights the TACAN the rescue helo homes on.
         kings_item = combat_sar.add_item("kings")
         for king in kings:
             item = kings_item.add_item()
@@ -636,13 +636,8 @@ class LuaGenerator:
             beacon = king.combat_sar_king
             if beacon is not None:
                 item.add_key_value("callsign", beacon.callsign)
-                # callsign + TACAN drive the v1 King beacon. beaconFreqHz/Modulation
-                # are the reserved VHF freq for the deferred ADF beacon (not yet read
-                # by the Lua); emitted now so ADF becomes a pure runtime addition.
-                item.add_key_value("beaconFreqHz", str(beacon.beacon_freq.hertz))
-                item.add_key_value(
-                    "beaconModulation", beacon.beacon_freq.modulation.name
-                )
+                # callsign + TACAN are the King beacon: air-tracking, so it follows
+                # the orbit, and every rescue helo we use can home on it.
                 if beacon.tacan is not None:
                     item.add_key_value("tacanChannel", str(beacon.tacan.number))
                     item.add_key_value("tacanBand", beacon.tacan.band.value)

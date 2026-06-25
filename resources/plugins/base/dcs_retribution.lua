@@ -12,6 +12,7 @@ base_capture_events = {}
 destroyed_objects_positions = {} -- will be added via S_EVENT_DEAD event
 tars_recon_captures = {} -- TARS recon plugin appends {unit=, life=, type=} per photographed enemy unit
 scar_results = {} -- SCAR scenario bridge sets scar_results[taskingId] = {status=...} per area
+combat_sar_rescues = {} -- Combat SAR plugin appends the original aircraft unit name of each pilot delivered home (the rescued pilot survives the campaign turn)
 mission_ended = false
 dirty_state = false -- Track if state has changed and needs writing
 
@@ -65,6 +66,7 @@ function write_state()
         ["intercept_survivors"] = intercept_survivors or {},
         ["tars_recon_captures"] = tars_recon_captures or {},
         ["scar_results"] = scar_results or {},
+        ["combat_sar_rescues"] = combat_sar_rescues or {},
     }
     local ok, write_error = pcall(function()
         fp:write(json:encode(game_state))

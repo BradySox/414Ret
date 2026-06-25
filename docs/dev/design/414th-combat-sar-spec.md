@@ -1,6 +1,6 @@
 # Combat SAR — bespoke pilot-rescue flight task (spec)
 
-**Status:** spec / design (no code yet) · **Date:** 2026-06-25
+**Status:** built (phases 1–4 + rescue scoring); ADF dropped (TACAN-only); pending in-game pass · **Date:** 2026-06-25
 **Related:** [`414th-moose-longview.md`](414th-moose-longview.md) (Tier-A `Ops.CSAR` candidate),
 CLAUDE.md §15 (SCAR + the *existing* SOF-recovery `CSAR`), `414th-scar-HANDOFF.md`.
 **The first "add a MOOSE Ops capability" feature post-MIST.**
@@ -64,7 +64,7 @@ shape as the MANTIS / CTLD plugins.
 | **1 — Python task** | `COMBAT_SAR` FlightType + FLOT-orbit flight plan + CH-47/C-130 eligibility + entity map; player-selectable | Generate a mission, see a CH-47/C-130 fly a FLOT orbit; Python tests green | ✅ landed (#170) |
 | **2 — Lua CSAR bridge** | `combatsar` plugin: MOOSE `CSAR` for human ejections, CH-47 rescue set | Eject a player near the FLOT → the CH-47 flies in and recovers them; `dcs.log` clean | ⏳ built, **pending in-game pass** |
 | **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works | ⏳ built, **pending in-game pass** |
-| **4 — polish** | C-130 "King" on-scene-command role (TACAN beacon + LARS survivor-locator), kneeboard card, helo orbit-altitude tuning, scoring hook | nice-to-haves | ◐ kneeboard + altitude + King beacon/LARS done; ADF beacon + scoring deferred |
+| **4 — polish** | C-130 "King" on-scene-command role (TACAN beacon + LARS survivor-locator), kneeboard card, helo orbit-altitude tuning, scoring hook | nice-to-haves | ✅ kneeboard + altitude + King TACAN/LARS + **rescue scoring** done; **ADF beacon dropped** (TACAN-only by design) |
 
 ### Phase 4 — as built (partial)
 
@@ -78,22 +78,33 @@ shape as the MANTIS / CTLD plugins.
   `Settings.heli_combat_alt_agl` (the same path air-assault/CSAR helos use). The CH-47 orbits at a
   helo-appropriate AGL altitude; the C-130 gets a normal fixed-wing patrol altitude. Nothing to tune.
 - **C-130 "King" TACAN beacon** (`combatsar-config.lua`). Each King lights a TACAN the rescue helo
-  homes on. **TACAN, not ADF, by design:** `ActivateTACAN` auto-detects an aircraft and uses the
-  air-tracking (tanker) beacon system so it **follows the moving orbit** ([Moose.lua:6187]), and the
-  DCS CH-47F has a TACAN receiver. (MOOSE's `RadioBeacon`/ADF is fixed-point — it would need a refresh
-  loop to track a mover — so the **ADF beacon is deferred**; the 40.0 MHz FM freq is reserved for it.)
-  Python allocates the channel from the shared TACAN pool (`register_combat_sar_king`, best-effort) and
-  emits it per King; the Lua attaches the beacon on group **birth** so a delayed/AI-spawned King is
-  covered, with a dedup guard.
+  homes on. **TACAN is the single homing solution, by design (user, 2026-06-25):** the King has to
+  orbit close to track the survivor, and **every rescue helo we use can home on the King's TACAN.**
+  `ActivateTACAN` auto-detects an aircraft and uses the air-tracking (tanker) beacon system so it
+  **follows the moving orbit** ([Moose.lua:6187]). An **ADF radio beacon was dropped** — MOOSE's
+  `RadioBeacon`/ADF is fixed-point, so following a moving King would need a position-refresh loop for
+  no gain over the TACAN; the reserved VHF-FM freq and the `beaconFreqHz` plumbing are gone. Python
+  allocates the channel from the shared TACAN pool (`register_combat_sar_king`, best-effort) and emits
+  it per King; the Lua attaches the beacon on group **birth** so a delayed/AI-spawned King is covered,
+  with a dedup guard.
 - **LARS — survivor-locator (SME ask).** An F10 **"Combat SAR → LARS - Locate Survivors"** button on
   each King reads MOOSE CSAR's live `downedPilots` table and messages the King a nearest-first list of
-  every active survivor: **position** (reusing CSAR's settings-aware coord formatter), **bearing/range
-  from the King**, and **ADF freq**. It's the King-side equivalent of the helo's built-in active-SAR
-  display (which is gated to rescue helicopters). Player-King utility; an AI King just radiates the
-  beacon. "Become the beacon" = the King's continuous TACAN; LARS = the coordinate readout to relay.
-  The data carries each King's `callsign`/`tacanChannel`/`tacanBand` (+ reserved `beaconFreqHz`).
-- **Still open (optional):** the deferred **ADF radio beacon** (helo-universal homing; needs a
-  position-refresh loop for the moving King) and a **scoring/economy hook** for successful rescues.
+  every active survivor: **position** (reusing CSAR's settings-aware coord formatter) and **bearing/range
+  from the King**. It's the King-side equivalent of the helo's built-in active-SAR display (which is
+  gated to rescue helicopters). Player-King utility; an AI King just radiates the beacon. "Become the
+  beacon" = the King's continuous TACAN; LARS = the coordinate readout to relay. The data carries each
+  King's `callsign`/`tacanChannel`/`tacanBand` (ADF fields dropped).
+- **Rescue scoring — landed.** When a downed pilot is **delivered to a friendly field**, the campaign
+  spares the aviator (the airframe is still lost). The `combatsar` plugin's FSM hooks (`OnAfterBoarded`
+  to capture each onboard pilot's **original ejected aircraft unit name**, `OnAfterRescued` to credit
+  only a successful delivery) append those names to the shared `combat_sar_rescues` global that
+  `dcs_retribution.lua` writes into `state.json`. `StateData.combat_sar_rescues` parses it and
+  `MissionResultsProcessor.commit_air_losses` skips `loss.pilot.kill()` for the matching loss. The
+  original unit name is exactly what DCS reports in its kill/crash events, so it maps straight back to
+  the lost flight. **Fail-safe:** an empty/absent list is exactly the pre-scoring behaviour. A rescue
+  helo shot down with pilots aboard never reaches `Rescued`, so those pilots are never credited.
+- **Nothing open.** The ADF radio beacon is **dropped** (not deferred — TACAN-only is the design), and
+  the scoring hook is built. Remaining work is the in-game pass (checklist G8–G10, H2, G11).
 
 > **C-130 tanker role is OFF the table.** The C-130 **cannot act as an aerial-refueling tanker in
 > DCS currently** (user-confirmed, 2026-06-25), and the CH-47 rescue helo couldn't take fuel from it

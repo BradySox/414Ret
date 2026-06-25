@@ -1221,3 +1221,77 @@ this faction)" the faction has no units in the matching `unit_classes` for that 
 - FOB establishment — via the same dialog, creates a `Fob` control point dynamically.
 - Relocate — delete + re-place with pre-filled dialog.
 - Budget refund on Remove — `TheaterUnit` lacks a stored price field; needs separate cost tracking on `TheaterGroundObject`.
+
+---
+
+## §21 — Combat SAR — pilot rescue (flight type + `combatsar` plugin, scoring ON)
+
+**Status:** Built (phases 1–4) + rescue scoring; needs an in-game pass (checklist
+G8–G10, H2, and the G11 scoring row). Python plans + scores; MOOSE CSAR (Lua) executes.
+Design source of truth: [`docs/dev/design/414th-combat-sar-spec.md`](design/414th-combat-sar-spec.md).
+
+A bespoke pilot-rescue flight task, distinct from the SOF-recovery `FlightType.CSAR`
+in the SCAR loop (§15). A **CH-47** orbits near the FLOT as the rescuer; a **C-130**
+flies the overhead **HC-130 "King"** on-scene-command orbit. When a **human** pilot
+ejects in the area, MOOSE CSAR spawns the downed pilot with a beacon and the CH-47
+flies in, lands, and delivers them to any friendly field/FARP — and the campaign
+**spares that aviator** at debrief (the airframe is still lost; the experienced pilot
+returns to the squadron).
+
+### Architecture (Python plans + scores, Lua executes)
+
+- **`FlightType.COMBAT_SAR`** — player-selectable for CH-47 (rescue) and C-130 (King);
+  FLOT-anchored orbit reusing the AEWC support-orbit builder (behind the FLOT, clear of
+  threat rings). Helos clamp to a helo-appropriate AGL via the shared `get_altitude` path.
+- **AI standing alert** — `Settings.auto_combat_sar` (HQ automation, default OFF) auto-plans
+  one COMBAT_SAR orbit per turn for blue via `PlanCombatSar` / `PlanCombatSarSupport`
+  (mirrors AEWC/refuel support). With it on, the generator emits `enableForAI=true`, so
+  MOOSE CSAR may commandeer an orbiting AI CH-47 and AI ejections become rescuable.
+- **King beacon = TACAN only.** Each King lights an **air-tracking TACAN** (follows the
+  moving orbit; every rescue helo we use has a receiver) — the single homing solution.
+  An ADF radio beacon was **considered and dropped** (MOOSE's `RadioBeacon` is fixed-point
+  and the King is a mover, so it would need a position-refresh loop for no gain over the
+  TACAN). The King also carries an F10 **Combat SAR → LARS** button that reads MOOSE CSAR's
+  live downed-pilot table and reports each active survivor (position + bearing/range from
+  the King) for the crew to relay.
+
+### Rescue scoring (the gameplay-loop payoff)
+
+The whole point of a rescue is to save the pilot, so the loop closes in the campaign model:
+
+- **Lua** (`combatsar-config.lua`): FSM hooks `OnAfterBoarded` capture each onboard pilot's
+  **original ejected aircraft unit name** (MOOSE CSAR keeps it on the downed-pilot track and
+  carries it into `inTransitGroups`); `OnAfterRescued` — fired only on a successful **delivery
+  to a friendly field** — appends those names to the shared `combat_sar_rescues` global and
+  marks `dirty_state` so `dcs_retribution.lua` writes them into `state.json`. A helo shot down
+  with pilots aboard never reaches `Rescued`, so those pilots are (correctly) never credited.
+- **Python**: `StateData.combat_sar_rescues` parses the list (`debriefing.py`);
+  `MissionResultsProcessor.commit_air_losses` resolves each name through the unit map to its
+  loss and **skips `loss.pilot.kill()`** for it — the airframe is still attrited, the aviator
+  survives. **Fail-safe:** an empty/absent list is exactly today's behaviour (pilot dies).
+
+### Files
+
+| Layer | File |
+|---|---|
+| Flight type | `game/ato/flighttype.py` — `COMBAT_SAR` |
+| Flight plan | reuses `game/ato/flightplans/aewc.py` (FLOT support orbit) |
+| Planning | `game/commander/tasks/primitive/combatsar.py`, `…/compound/combatsarsupport.py`, `theaterstate.py` (`combat_sar_targets`) |
+| Setting | `game/settings/settings.py` — `auto_combat_sar` |
+| King beacon | `game/missiongenerator/aircraft/flightdata.py` (`CombatSarKingBeacon`, TACAN-only), `flightgroupconfigurator.py` (`register_combat_sar_king`) |
+| Emit data | `game/missiongenerator/luagenerator.py` — `_generate_combat_sar` (rescueHelos / kings / pilotTemplate / enableForAI) |
+| Kneeboard | `game/missiongenerator/kneeboard.py` — `CombatSarTaskPage` |
+| Scoring (Lua) | `resources/plugins/base/dcs_retribution.lua` (`combat_sar_rescues` global + `write_state`), `resources/plugins/combatsar/combatsar-config.lua` (CSAR bridge + `OnAfterBoarded`/`OnAfterRescued`) |
+| Scoring (Py) | `game/debriefing.py` (`StateData.combat_sar_rescues`), `game/sim/missionresultsprocessor.py` (`commit_air_losses` spares rescued pilots) |
+| Tests | `tests/test_combat_sar_scoring.py` |
+
+### Gotchas
+
+- **Separate from the SOF `CSAR`** (§15) by design: different flight type, different plugin.
+  Both ride MOOSE/CTLD machinery, so the in-game pass must confirm no double event-handling
+  on ejection.
+- **Blue-only.** The CSAR engine is built for `"blue"`; a red COMBAT_SAR would just fly an
+  inert orbit, so red is never auto-tasked.
+- **King ≠ tanker.** The C-130 cannot be a DCS aerial-refueling tanker, and the CH-47 couldn't
+  take its fuel anyway — the King is overhead presence / on-scene command, never wired to the
+  refueling system.

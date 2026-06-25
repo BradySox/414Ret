@@ -1312,7 +1312,7 @@ class CombatSarTaskPage(KneeboardPage):
                 writer.text(
                     f"Radiating TACAN {beacon.tacan} ({beacon.callsign}) for the "
                     "rescue helo to home on. F10 -> Combat SAR -> LARS lists active "
-                    "survivors (position, bearing/range, ADF freq).",
+                    "survivors (position, bearing/range) for you to relay.",
                     wrap=True,
                 )
 

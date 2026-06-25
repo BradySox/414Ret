@@ -6,8 +6,10 @@ script-as-MAGIC controller cues the box on-station (GREEN smoke + mark + call), 
 RED-smoke designation on the real target after the talk-on window (the decoy ID puzzle survives), and
 — **when a C-130 King is on station** — lases the target from the King aircraft (code 1688 + IR,
 dropped on resolve/target-death/King-departure); **no King fragged ⇒ no laser**. Voice-first/additive
-throughout. **Deferred:** a "say again" F10 + per-area laser-code allocation; **Phase 4** polish; and
-the **dead-chase-code retirement** (until after the F7/F8 flight). · **Date:** 2026-06-25
+throughout. **Phase 4 polish BUILT** too: night illumination flares on the cues, a single "say again"
+F10 backstop, and a SCAR task **kneeboard** page. **Deferred:** an **SRS-TTS** designation line (needs
+MSRS/SRS config) + an **AI SCAR striker** + per-area laser-code allocation; and the
+**dead-chase-code retirement** (until after the F7/F8 flight). · **Date:** 2026-06-25
 
 > **Phase 3b laser rule (user-decided 2026-06-25): lase only when a King flight is ON STATION.** The
 > laser/IR `SPOT` emits **from the King aircraft itself** (a C-130 King on station over the box) — so

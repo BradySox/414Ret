@@ -1319,6 +1319,55 @@ class CombatSarTaskPage(KneeboardPage):
         writer.write(path)
 
 
+class ScarTaskPage(KneeboardPage):
+    """Player briefing for a SCAR (loiter-and-task) flight.
+
+    Guidance for the loiter rework: hold over the kill box, find + ID the real
+    target among look-alikes (mis-ID costs budget), and let the on-scene controller
+    ("MAGIC") talk you on and designate. The MOOSE scar plugin drives the live cues,
+    so this page is guidance, not exact values.
+    """
+
+    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
+        self.flight = flight
+        self.dark_kneeboard = dark_kneeboard
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        writer.title(f"{self.flight.callsign} SCAR{custom}")
+
+        writer.heading("TASK")
+        writer.text(
+            "Hold over the kill box and service the real enemy armor the on-scene "
+            "controller (MAGIC) designates. Kills count automatically — it's a real "
+            "campaign target — so there's no scoring to chase.",
+            wrap=True,
+        )
+
+        writer.heading("FIND + ID")
+        writer.text(
+            "- The box holds the real target mixed with look-alike DECOYS + clutter. "
+            "Match the FULL signature; hitting a decoy costs your side budget (mis-ID).\n"
+            "- On station MAGIC pops GREEN smoke on the box and talks you on. Work the "
+            "ID first; if you're stuck, MAGIC escalates to RED smoke on the real target "
+            "after ~2 min and clears you hot.",
+            wrap=True,
+        )
+
+        writer.heading("DESIGNATION")
+        writer.text(
+            "- GREEN smoke = the box. RED smoke = the confirmed target, cleared hot.\n"
+            "- If a C-130 KING is on station it lases the target (laser code 1688 + IR "
+            "pointer) for LGBs / guided Mavericks. No King up = smoke + your own visual.\n"
+            '- F10 -> "MAGIC: say again SCAR target" re-pops the smoke if it burns out '
+            "(and re-calls the laser code).",
+            wrap=True,
+        )
+
+        writer.write(path)
+
+
 def build_airfield_directory_rows(
     game: "Game",
     flight: "FlightData",
@@ -1655,6 +1704,8 @@ class KneeboardGenerator(MissionInfoGenerator):
                 ):
                     king_beacons.append(f.combat_sar_king)
             return CombatSarTaskPage(flight, king_beacons, self.dark_kneeboard)
+        elif flight.flight_type is FlightType.SCAR:
+            return ScarTaskPage(flight, self.dark_kneeboard)
         return None
 
     def generate_flight_kneeboard(

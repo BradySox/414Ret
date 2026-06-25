@@ -28,3 +28,7 @@ tasks:
   # Air Assault: 0 #TODO: Add once we have proper support for paradrops
   Transport: 140
   Jamming: 140
+  # Combat SAR "King" role (on-scene command + TACAN beacon + LARS). Lower than
+  # the AI C-130 King weight is irrelevant; this is the player Hercules. Note it
+  # also keeps its EW/ISR (Jamming) menus when flown -- harmless overlap.
+  Combat SAR: 60

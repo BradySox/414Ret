@@ -118,7 +118,16 @@ def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(
     ("variant_id", "capable"),
-    [("CH-47D", True), ("C-130", True), ("F-15C Eagle", False)],
+    [
+        # Both CH-47 variants (rescuer) and both C-130 variants (King) must be
+        # eligible -- modern campaigns field the F/J variants, not the D/legacy
+        # ones, so tagging only the latter silently disabled the whole feature.
+        ("CH-47D", True),
+        ("CH-47F Block I", True),
+        ("C-130", True),
+        ("C-130J-30", True),
+        ("F-15C Eagle", False),
+    ],
 )
 def test_combat_sar_eligibility(variant_id: str, capable: bool, tmp_path: Path) -> None:
     # Combat SAR (the standing pilot-rescue orbit) is flown by the CH-47 (pickup)

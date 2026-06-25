@@ -1,7 +1,7 @@
 """Tests for additive threat-weighted BARCAP volume.
 
 `ObjectiveFinder.air_threat_score` scores how contested a defended CP is, and
-`threat_weighted_barcap_rounds` adds BARCAP waves to contested sectors *on top
+`AirspaceGeometry.barcap_rounds` adds BARCAP waves to contested sectors *on top
 of* the legacy baseline. The weighting is additive: a defended CP never gets
 fewer waves than the legacy flat allocation, so it cannot regress coverage.
 """
@@ -10,47 +10,46 @@ from __future__ import annotations
 
 import pytest
 
-from game.commander.objectivefinder import FRONT_LINE_AIR_THREAT, ObjectiveFinder
-from game.commander.theaterstate import (
+from game.ato.flightplans.airspacegeometry import (
+    AirspaceGeometry,
     BARCAP_THREAT_CEILING,
-    threat_weighted_barcap_rounds,
 )
+from game.commander.objectivefinder import FRONT_LINE_AIR_THREAT, ObjectiveFinder
 from game.utils import nautical_miles
 
 # --------------------------------------------------------------------------- #
-# threat_weighted_barcap_rounds (additive: never below baseline)
+# AirspaceGeometry.barcap_rounds (additive: never below baseline)
 # --------------------------------------------------------------------------- #
 
 
 def test_no_threat_anywhere_falls_back_to_baseline() -> None:
-    assert threat_weighted_barcap_rounds(2, 0.0, 0.0, False) == 2
+    assert AirspaceGeometry.barcap_rounds(2, 0.0, 0.0, False) == 2
 
 
 def test_fleet_keeps_2x_multiplier_on_fallback() -> None:
-    assert threat_weighted_barcap_rounds(2, 0.0, 0.0, True) == 4
+    assert AirspaceGeometry.barcap_rounds(2, 0.0, 0.0, True) == 4
 
 
 def test_quiet_cp_never_below_baseline() -> None:
     # A quiet flank (score 0) while another sector is hot still gets the full
     # legacy baseline -- the additive scheme cannot reduce coverage.
-    assert threat_weighted_barcap_rounds(2, 0.0, 10.0, False) == 2
+    assert AirspaceGeometry.barcap_rounds(2, 0.0, 10.0, False) == 2
 
 
 def test_hottest_sector_gets_ceiling() -> None:
-    assert (
-        threat_weighted_barcap_rounds(2, 10.0, 10.0, False) == 2 * BARCAP_THREAT_CEILING
-    )
+    rounds = AirspaceGeometry.barcap_rounds(2, 10.0, 10.0, False)
+    assert rounds == 2 * BARCAP_THREAT_CEILING
 
 
 def test_hot_sector_outweighs_quiet_flank() -> None:
-    hot = threat_weighted_barcap_rounds(2, 10.0, 10.0, False)
-    quiet = threat_weighted_barcap_rounds(2, 1.0, 10.0, False)
+    hot = AirspaceGeometry.barcap_rounds(2, 10.0, 10.0, False)
+    quiet = AirspaceGeometry.barcap_rounds(2, 1.0, 10.0, False)
     assert hot > quiet
 
 
 def test_fleet_scales_above_quiet_land() -> None:
-    hot_fleet = threat_weighted_barcap_rounds(2, 10.0, 10.0, True)
-    quiet_land = threat_weighted_barcap_rounds(2, 0.0, 10.0, False)
+    hot_fleet = AirspaceGeometry.barcap_rounds(2, 10.0, 10.0, True)
+    quiet_land = AirspaceGeometry.barcap_rounds(2, 0.0, 10.0, False)
     assert hot_fleet > quiet_land
 
 

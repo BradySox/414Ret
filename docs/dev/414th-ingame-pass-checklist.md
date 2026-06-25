@@ -517,7 +517,8 @@ rows (B, C, D, E) then becomes the upstream-PR carve-out batch.
 
 | # | Observable criterion | Fail signature |
 |---|---|---|
-| 20-A | Right-click blank map → Qt dialog opens with coalition/category/layout pickers | No dialog; console error in devtools |
+| 20-A | With **`enable_unit_placement` ON**: right-click blank map → Qt dialog opens with coalition/category/layout pickers | No dialog; console error in devtools |
+| 20-H | With **`enable_unit_placement` OFF** (default): right-click blank map opens **nothing**, and right-click a target marker still opens **package planning** (not the buy dialog) | Buy dialog pops on a plain right-click while the cheat is off (the 2026-06-25 regression) |
 | 20-B | Select "Ground Force", confirm → armor group appears on map immediately | No marker; no SSE event in network tab |
 | 20-C | Right-click a user-placed TGO → marker disappears from map | TGO remains; server returns 403 |
 | 20-D | "Deploy Next Turn" → no immediate marker; after turn advance group materialises | Group never appears; pending list never cleared |

@@ -1154,6 +1154,16 @@ Right-click on blank map space → Qt dialog → spawn a new unit group (armor,
 SAM, EWR, ship, missile/coastal) at any map position, attached to the nearest
 friendly CP.
 
+**Cheat-gated (important).** The map right-click only opens the placement dialog
+when `enable_unit_placement` is on (default OFF). With the cheat off, a plain
+right-click stays free for normal map use — e.g. right-clicking a target marker to
+plan a package — and never pops the buy dialog. The gate is enforced in
+`QLiberationWindow.open_place_unit_group_dialog` (the single Qt chokepoint every
+map right-click funnels through); the client still posts to `/qt/place-unit-group`
+on every right-click, which simply no-ops when the cheat is disabled. *(Regression
+fixed 2026-06-25: the gate was previously missing, so the dialog hijacked every
+right-click — including package-planning ones — regardless of the setting.)*
+
 ### Files
 
 | Layer | File |

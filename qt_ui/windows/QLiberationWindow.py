@@ -634,6 +634,12 @@ class QLiberationWindow(QMainWindow):
     def open_place_unit_group_dialog(self, lat: float, lng: float) -> None:
         if self.game is None:
             return
+        # Drop-spawn is a cheat (§20). Only intercept the map right-click when
+        # unit placement is enabled; otherwise a plain right-click must stay free
+        # for normal map interaction — e.g. right-clicking a target to plan a
+        # package — instead of popping the buy dialog.
+        if not self.game.settings.enable_unit_placement:
+            return
         QPlaceUnitGroupDialog(self, lat, lng, self.game_model).exec()
 
     def open_tgo_info_dialog(self, tgo: TheaterGroundObject) -> None:

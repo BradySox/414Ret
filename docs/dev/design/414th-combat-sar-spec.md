@@ -64,7 +64,12 @@ shape as the MANTIS / CTLD plugins.
 | **1 — Python task** | `COMBAT_SAR` FlightType + FLOT-orbit flight plan + CH-47/C-130 eligibility + entity map; player-selectable | Generate a mission, see a CH-47/C-130 fly a FLOT orbit; Python tests green | ✅ landed (#170) |
 | **2 — Lua CSAR bridge** | `combatsar` plugin: MOOSE `CSAR` for human ejections, CH-47 rescue set | Eject a player near the FLOT → the CH-47 flies in and recovers them; `dcs.log` clean | ⏳ built, **pending in-game pass** |
 | **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works | ⏳ built, **pending in-game pass** |
-| **4 — polish** | C-130 → tanker/command role (reuse refuel system), kneeboard card, scoring hook | nice-to-haves | not started |
+| **4 — polish** | C-130 "King" on-scene-command role (overhead presence / beacon), kneeboard card, helo orbit-altitude tuning, scoring hook | nice-to-haves | not started |
+
+> **C-130 tanker role is OFF the table.** The C-130 **cannot act as an aerial-refueling tanker in
+> DCS currently** (user-confirmed, 2026-06-25), and the CH-47 rescue helo couldn't take fuel from it
+> anyway. So the Phase-4 "C-130 King" stays an **overhead presence / on-scene-command** role
+> (orbit + callsign, maybe a beacon/relay) — do **not** wire it to the refueling system.
 
 ### Phase 2 — as built
 
@@ -112,8 +117,9 @@ shape as the MANTIS / CTLD plugins.
 
 ## Open questions / risks
 
-- **C-130 "King" role depth (v1):** simplest v1 = C-130 just flies the orbit (presence). Wiring it as
-  an actual **tanker** for the helos reuses the existing refueling system but is Phase 4, not v1.
+- **C-130 "King" role depth:** C-130 just flies the orbit (overhead presence / on-scene command).
+  Tanking the helos is **not possible** — the C-130 can't be a DCS tanker (see the Phase-4 note), so
+  the King role never touches the refueling system.
 - **MOOSE CSAR rescue-aircraft binding:** confirm CSAR's API binds the rescue set by **group-name
   prefix** vs. explicit names (drives what Python must emit) — pin in Phase 2 against `Moose.lua`.
 - **Downed-pilot template:** MOOSE CSAR spawns a downed-pilot unit; confirm whether it needs a

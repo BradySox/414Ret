@@ -29,34 +29,19 @@ saves are migrated to fully revealed, so the fog is felt mainly on new campaigns
 A third, related gate hides enemy **command posts** entirely from your map for the SCAR
 commander-capture feature — see [SCAR](SCAR) and the `scar_command_post_intel` setting.
 
-## TARPS — flying the photos
+## Lifting the fog: TARPS photo recon
 
-`TARPS` is a real, player-flyable flight type for the F-14. Every F-14 variant carries the
-TARPS reconnaissance pod, and the recon bird flies a clean overflight of the target (no
-bombing tasks — it is there to take pictures, not fight). The flight plan puts a single
-overflight waypoint roughly five minutes behind the strikers so you photograph the target
-just after the strike goes in.
+The clean way to resolve both rules above is to fly a **TARPS** photo-recon pass: a player F-14
+overflies the site, and what it photographs comes back at the landing debrief as **confirmed
+intelligence** — clearing the BDA lag and revealing a freshly-discovered site's composition. The
+auto-planner can also append a TARPS sortie to Strike/DEAD packages automatically
+(`auto_add_tarps_recon`, default ON), so BDA mostly takes care of itself on packages you already
+fly.
 
-The auto-planner can append one TARPS sortie to Strike and DEAD packages automatically when
-**`auto_add_tarps_recon`** is enabled and a TARPS-capable squadron is available. You can also
-plan TARPS by hand like any other task.
+TARPS and its **TARS** film-and-debrief engine have their own page:
 
-## TARS — turning photos into confirmed intel
-
-TARPS would just be a sightseeing flight without something to turn the overflight into actual
-campaign intelligence. That is the **TARS recon engine** (`tars` plugin, **default ON**), a
-MOOSE runtime that handles the in-mission side:
-
-- An F10 "film" menu and automatic overfly detection.
-- Coalition F10 map markers where you photographed.
-- A landing debrief that feeds the BDA system the exact enemy units your surviving recon pass
-  saw.
-
-When a TARPS bird overflies a struck site and lands safely, the units it photographed are
-**confirmed** — their true alive/dead state snaps into your picture, clearing the BDA lag for
-that site. No surviving recon pass, no confirmation. Several plugin options are exposed
-(scoring, film limit, SRS voice); the playtested defaults ship turned on. The TARPS→BDA
-bridge has passed an in-game validation pass.
+> **→ [TARPS Reconnaissance](TARPS-Reconnaissance)** for the aircraft and pod, how to fly the
+> pass, the auto-planned follow-up, and how TARS turns photos into confirmed BDA.
 
 ## Approximate target area — making you find it
 
@@ -117,7 +102,9 @@ layer choice the panel deliberately does **not** remember between sessions.
 
 ## See also
 
+- [TARPS Reconnaissance](TARPS-Reconnaissance)
 - [Map Layers and Interface](Map-Layers-and-Interface)
 - [Mission planning](Mission-planning)
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War)
 - [SCAR](SCAR)
+- [SOF and Commander Capture](SOF-and-Commander-Capture)

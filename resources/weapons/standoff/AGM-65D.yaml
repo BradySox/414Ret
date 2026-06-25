@@ -10,3 +10,4 @@ clsids:
   - "LAU_88_AGM_65D_ONE"   # LAU-88 with 1 x AGM-65D - Maverick D (IIR ASM)
   - "{LAU_88A_AGM_65Dx3}"   # LAU-88/A with 3 x AGM-65D - Maverick D (IIR ASM)
   - "{HB_F4E_AGM-65D_LAU117_SWA}"   # (Special Weapons Adapter) AGM-65D - Maverick D (IIR ASM) (LAU-117)(Special Weapons Adapter) 
+  - "Herc_Ammo_AGM_65D_missiles"   # Ammo AGM-65D*10 [4800lb]

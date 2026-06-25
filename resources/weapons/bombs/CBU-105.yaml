@@ -8,3 +8,4 @@ clsids:
   - "{HSAB_8x_CBU105_L}"   # HSAB - 8 x CBU-105 - 10 x SFW, CBU with WCMD
   - "{HSAB_8x_CBU105_R}"   # HSAB - 8 x CBU-105 - 10 x SFW, CBU with WCMD
   - "{SECBM_CBU105}"   # SECBM - 10 x CBU-105 - 10 x SFW, CBU with WCMD
+  - "Herc_Ammo_CBU_105_bombs"   # Ammo CBU-105*10 [11022lb]

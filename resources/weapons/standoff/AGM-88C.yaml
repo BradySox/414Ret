@@ -11,3 +11,4 @@ clsids:
   - "{SUPERHORNET_PYLON_09_IB_AR_1X_AGM-88}"   #  [ STA 08	  | SUU79 | LAU118 ] - 1x AGM-88C HARM - High Speed Anti-Radiation Missile
   - "{SUPERHORNET_PYLON_09_MB_AR_1X_AGM-88}"   #  [ STA 09	  | SUU79 | LAU118 ] - 1x AGM-88C HARM - High Speed Anti-Radiation Missile
   - "{SUPERHORNET_PYLON_10_OB_AR_1X_AGM-88}"   #  [ STA 10	  | SUU80 | LAU118 ] - 1x AGM-88C HARM - High Speed Anti-Radiation Missile
+  - "Herc_Ammo_AGM_88C_missiles"   # Ammo AGM-88C*10 [7920lb]

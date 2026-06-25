@@ -33,3 +33,10 @@ code {
     opacity: 0;
   }
 }
+
+/* Wide, invisible hover target for SAM threat/detection rings. pointer-events:
+   stroke lets the transparent stroke catch the mouse along the perimeter even
+   though it is not painted, so the ring is easy to hover when zoomed out. */
+.air-defense-ring-hit {
+  pointer-events: stroke !important;
+}

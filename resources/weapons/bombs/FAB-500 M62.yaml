@@ -21,3 +21,4 @@ clsids:
   - "{FA673F4C-D9E4-4993-AA7A-019A92F3C005}"   # MBD3-U6-68 - 6 x FAB-500M-62 - 500 kg GP Bomb LD
   - "{AB_2xFAB-500_MBD3-U2T}"   # MBD3-U2T-1 with 2 x FAB-500M-62 - 500 kg GP Bomb LD
   - "{0D945D78-542C-4E9B-9A17-9B5008CC8D39}"   # MBD3-U6-68 with 6 x FAB-500 M-62 - 500kg GP Bombs LD
+  - "Herc_Ammo_FAB500_bombs"   # Ammo FAB-500*10 [11000lb]

@@ -12,3 +12,4 @@ clsids:
   - "{FAB-250-M54-TU}"   # FAB-250 M54 TU - 235 kg, bomb, parachute
   - "{D109EE9C-A1B7-4F1C-8D87-631C293A1D26}"   # MBD3 with 3 x FAB-250 - 250kg GP Bombs LD
   - "{AB_2xFAB-250-M62_MBD3-U2T}"   # MBD3-U2T-1 with 2 x FAB-250M-62 - 250 kg GP Bomb LD
+  - "Herc_Ammo_FAB250_bombs"   # Ammo FAB-250*20 [11000lb]

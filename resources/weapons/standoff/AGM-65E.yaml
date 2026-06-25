@@ -13,3 +13,4 @@ clsids:
   - "{SUPERHORNET_PYLON_09_MB_MV_1X_AGM-65E}"   #  [ STA 09	  | SUU79 | LAU117 ] - 1x AGM-65E - Maverick E (Laser ASM - Lg Whd)
   - "{SUPERHORNET_PYLON_10_MB_MV_1X_AGM-65E}"   #  [ STA 09	  | SUU79 | LAU117 ] - 1x AGM-65E - Maverick E (Laser ASM - Lg Whd)
   - "{SUPERHORNET_PYLON_10_OB_MV_1X_AGM-65E}"   #  [ STA 10	  | SUU80 | LAU117 ] - 1x AGM-65E - Maverick E (Laser ASM - Lg Whd)
+  - "Herc_Ammo_AGM_65E_missiles"   # Ammo AGM-65E*10 [6292lb]

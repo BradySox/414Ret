@@ -20,8 +20,9 @@ passes exactly that (``IBuilder.threat_zones`` is ``coalition.opponent.threat_zo
 the forward-BARCAP caller passes ``coalition.opponent.threat_zone`` directly), so
 the meaning is now documented in one place rather than implied at each site.
 
-Design rationale and the remaining follow-on consumers (the DEAD reachability
-gate, theatre-tanker demand) are in
+Design rationale -- including why the DEAD reachability gate and theatre-tanker
+demand were examined and deliberately *not* folded in (already-standalone /
+too-coupled) -- is in
 ``docs/dev/design/414th-airwar-planner-consolidation-notes.md``.
 """
 

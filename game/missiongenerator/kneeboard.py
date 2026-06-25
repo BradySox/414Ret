@@ -51,7 +51,7 @@ from game.theater.bullseye import Bullseye
 from game.theater.controlpoint import Airfield
 from game.utils import Distance, UnitSystem, meters, mps, pounds
 from game.weather.weather import Weather
-from .aircraft.flightdata import FlightData
+from .aircraft.flightdata import CombatSarKingBeacon, FlightData
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
 from .kneeboard_page import KneeboardPage
 from .kneeboard_recon import airport_imagery as _airport_imagery
@@ -1230,6 +1230,95 @@ class StrikeTaskPage(KneeboardPage):
         )
 
 
+class CombatSarTaskPage(KneeboardPage):
+    """Player briefing for a Combat SAR (pilot-rescue) flight.
+
+    Role-aware: the CH-47 does the pickup, the C-130 flies the HC-130 "King"
+    overhead-command orbit. Runtime is the MOOSE CSAR engine (combatsar plugin),
+    which drives the F10 "CSAR" menu and the on-screen ranges in-game, so this
+    page is guidance rather than exact tunable values.
+    """
+
+    def __init__(
+        self,
+        flight: FlightData,
+        king_beacons: List[CombatSarKingBeacon],
+        dark_kneeboard: bool,
+    ) -> None:
+        self.flight = flight
+        # Every blue King's beacon in the mission, so the rescue helo knows what to
+        # tune to home on the on-scene-command orbit.
+        self.king_beacons = king_beacons
+        self.dark_kneeboard = dark_kneeboard
+
+    @property
+    def _is_pickup_helo(self) -> bool:
+        return self.flight.aircraft_type.helicopter
+
+    @staticmethod
+    def _tacan_str(beacon: CombatSarKingBeacon) -> str:
+        return str(beacon.tacan) if beacon.tacan is not None else "--"
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        writer.title(f"{self.flight.callsign} Combat SAR{custom}")
+
+        writer.heading("ROLE")
+        if self._is_pickup_helo:
+            writer.text("Rescue helo — you make the pickup at the survivor.")
+        else:
+            writer.text('HC-130 "King" — on-scene command, overhead presence.')
+
+        writer.heading("HOW IT WORKS")
+        writer.text(
+            "- Orbit near the front. When a friendly pilot ejects in the area, a "
+            "downed pilot spawns with a radio beacon.\n"
+            '- Use the F10 radio menu -> "CSAR" for the active rescue list, the '
+            "bearing/range to the survivor, and to request smoke / flare / beacon.",
+            wrap=True,
+        )
+
+        if self._is_pickup_helo:
+            writer.heading("PICKUP")
+            writer.text(
+                "- Fly to the survivor's beacon. Come to a low, slow hover directly "
+                "over them (or land alongside) and hold until they board.\n"
+                "- Keep cargo doors open if your module models them.\n"
+                "- Deliver the survivor to ANY friendly airfield or FARP to score "
+                "the save.",
+                wrap=True,
+            )
+            kings_with_tacan = [b for b in self.king_beacons if b.tacan is not None]
+            if kings_with_tacan:
+                writer.heading("KING BEACON")
+                writer.text("Home on the HC-130 King (TACAN) to find the rescue area:")
+                writer.table(
+                    [[b.callsign, self._tacan_str(b)] for b in kings_with_tacan],
+                    headers=["King", "TACAN"],
+                )
+        else:
+            writer.heading("ON-SCENE COMMAND")
+            writer.text(
+                "- Hold your overhead orbit as on-scene commander. Do NOT land at "
+                "the crash site.\n"
+                "- The rescue helo makes the pickup; you provide presence and "
+                "coordination.",
+                wrap=True,
+            )
+            beacon = self.flight.combat_sar_king
+            if beacon is not None and beacon.tacan is not None:
+                writer.heading("YOUR BEACON")
+                writer.text(
+                    f"Radiating TACAN {beacon.tacan} ({beacon.callsign}) for the "
+                    "rescue helo to home on. F10 -> Combat SAR -> LARS lists active "
+                    "survivors (position, bearing/range, ADF freq).",
+                    wrap=True,
+                )
+
+        writer.write(path)
+
+
 def build_airfield_directory_rows(
     game: "Game",
     flight: "FlightData",
@@ -1556,6 +1645,16 @@ class KneeboardGenerator(MissionInfoGenerator):
             )
         elif flight.flight_type is FlightType.STRIKE:
             return StrikeTaskPage(flight, self.dark_kneeboard)
+        elif flight.flight_type is FlightType.COMBAT_SAR:
+            king_beacons: List[CombatSarKingBeacon] = []
+            for f in self.flights:
+                if (
+                    f.flight_type is FlightType.COMBAT_SAR
+                    and f.friendly.is_blue
+                    and f.combat_sar_king is not None
+                ):
+                    king_beacons.append(f.combat_sar_king)
+            return CombatSarTaskPage(flight, king_beacons, self.dark_kneeboard)
         return None
 
     def generate_flight_kneeboard(

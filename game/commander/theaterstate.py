@@ -98,6 +98,10 @@ class TheaterState(WorldState["TheaterState"]):
     aewc_targets: list[MissionTarget]
     refueling_targets: list[MissionTarget]
     recovery_targets: dict[ControlPoint, int]
+    # 414th Combat SAR standing alert: front-line orbits the auto-planner may task a
+    # pilot-rescue flight on (gated by Settings.auto_combat_sar). Empty when the
+    # setting is off so no CSAR is ever auto-planned.
+    combat_sar_targets: list[MissionTarget]
     enemy_air_defenses: list[IadsGroundObject]
     threatening_air_defenses: list[Union[IadsGroundObject, NavalGroundObject]]
     detecting_air_defenses: list[Union[IadsGroundObject, NavalGroundObject]]
@@ -204,6 +208,7 @@ class TheaterState(WorldState["TheaterState"]):
             aewc_targets=list(self.aewc_targets),
             refueling_targets=list(self.refueling_targets),
             recovery_targets=dict(self.recovery_targets),
+            combat_sar_targets=list(self.combat_sar_targets),
             enemy_air_defenses=list(self.enemy_air_defenses),
             enemy_convoys=list(self.enemy_convoys),
             enemy_shipping=list(self.enemy_shipping),
@@ -277,6 +282,15 @@ class TheaterState(WorldState["TheaterState"]):
         aewc_targets = [cp for cp in finder.friendly_control_points() if cp.is_carrier]
         aewc_targets.append(finder.farthest_friendly_control_point())
 
+        # 414th Combat SAR standing alert: one pilot-rescue orbit per active front,
+        # but only for the (blue) player coalition that the MOOSE CSAR engine serves,
+        # and only when the setting is on. Off/red -> empty, so nothing is planned.
+        combat_sar_targets: list[MissionTarget] = (
+            list(finder.front_lines())
+            if game.settings.auto_combat_sar and player.is_blue
+            else []
+        )
+
         enemy_air_defenses = list(finder.enemy_air_defenses())
         enemy_ships = list(finder.enemy_ships())
         # Snapshot the real (turn-start) radar-SAM rings once. Reachability of a
@@ -342,6 +356,7 @@ class TheaterState(WorldState["TheaterState"]):
             aewc_targets=list(aewc_targets),
             refueling_targets=[finder.closest_friendly_control_point()],
             recovery_targets={cp: 0 for cp in finder.friendly_naval_control_points()},
+            combat_sar_targets=combat_sar_targets,
             enemy_air_defenses=enemy_air_defenses,
             threatening_air_defenses=[],
             detecting_air_defenses=[],

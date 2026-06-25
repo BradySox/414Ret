@@ -26,6 +26,7 @@ from .scarluadata import build_scar_taskings, populate_scar_lua
 
 if TYPE_CHECKING:
     from game import Game
+    from .aircraft.flightdata import FlightData
 
 
 # Civilian background-traffic routing knobs (consumed by civilian_traffic.lua).
@@ -582,12 +583,13 @@ class LuaGenerator:
         Combat SAR (FlightType.COMBAT_SAR) is a player-flown pilot-rescue orbit
         executed at runtime by the MOOSE CSAR engine (resources/plugins/combatsar).
         Python's job is only to (1) tell the Lua bridge which generated groups are
-        the CH-47 rescue helos (and which C-130s fly the "King" orbit), and (2) drop
-        one late-activation infantry group that MOOSE CSAR clones at each crash site
-        as the downed pilot. Blue-only for v1; AI standing alert is a later phase.
+        the CH-47 rescue helos (and which C-130s fly the "King" orbit, with their nav
+        beacons), and (2) drop one late-activation infantry group that MOOSE CSAR
+        clones at each crash site as the downed pilot. Blue-only. ``enableForAI``
+        carries the standing-alert setting (auto_combat_sar) to the runtime.
         """
         rescue_helos: list[str] = []
-        kings: list[str] = []
+        kings: list[FlightData] = []
         for flight in self.mission_data.flights:
             if flight.flight_type is not FlightType.COMBAT_SAR:
                 continue
@@ -596,7 +598,7 @@ class LuaGenerator:
             if flight.aircraft_type.helicopter:
                 rescue_helos.append(flight.group_name)
             else:
-                kings.append(flight.group_name)
+                kings.append(flight)
 
         # No rescue helo tasked -> the CSAR service is simply absent this mission.
         # Skip the template too so we never leave an orphan group in the .miz.
@@ -611,10 +613,39 @@ class LuaGenerator:
             )
             return
 
+        # With the standing-alert setting on, let MOOSE CSAR commandeer AI rescue
+        # helos (an orbiting AI CH-47 diverts to the crash site). This also makes AI
+        # ejections rescuable. With it off, CSAR stays human-initiated only (Phase 2).
+        enable_for_ai = self.game.settings.auto_combat_sar
+
+        # Emit as a fully nested object: LuaData drops scalar key/values on a node
+        # that also has add_item() children, so pilotTemplate/enableForAI/rescueHelos
+        # must be single-value child items alongside the nested kings list.
         combat_sar = lua_data.add_item("CombatSAR")
-        combat_sar.add_key_value("pilotTemplate", template_name)
-        combat_sar.add_data_array("rescueHelos", rescue_helos)
-        combat_sar.add_data_array("kings", kings)
+        combat_sar.add_item("pilotTemplate").set_value(template_name)
+        combat_sar.add_item("enableForAI").set_value(
+            "true" if enable_for_ai else "false"
+        )
+        combat_sar.add_item("rescueHelos").set_data_array(rescue_helos)
+
+        # Each King (C-130) carries the nav beacon the rescue helo homes on.
+        kings_item = combat_sar.add_item("kings")
+        for king in kings:
+            item = kings_item.add_item()
+            item.add_key_value("group", king.group_name)
+            beacon = king.combat_sar_king
+            if beacon is not None:
+                item.add_key_value("callsign", beacon.callsign)
+                # callsign + TACAN drive the v1 King beacon. beaconFreqHz/Modulation
+                # are the reserved VHF freq for the deferred ADF beacon (not yet read
+                # by the Lua); emitted now so ADF becomes a pure runtime addition.
+                item.add_key_value("beaconFreqHz", str(beacon.beacon_freq.hertz))
+                item.add_key_value(
+                    "beaconModulation", beacon.beacon_freq.modulation.name
+                )
+                if beacon.tacan is not None:
+                    item.add_key_value("tacanChannel", str(beacon.tacan.number))
+                    item.add_key_value("tacanBand", beacon.tacan.band.value)
 
     def _generate_combat_sar_pilot_template(self) -> Optional[str]:
         """Add a hidden, late-activation infantry group for MOOSE CSAR to clone as

@@ -7,6 +7,7 @@ from typing import Any, Optional, TYPE_CHECKING
 
 from dcs import Mission, Point
 from dcs.flyingunit import FlyingUnit
+from dcs.task import Modulation
 from dcs.unit import Skill
 from dcs.unitgroup import FlyingGroup
 
@@ -17,7 +18,7 @@ from game.data.weapons import Pylon
 from game.lasercodes.lasercode import LaserCode
 from game.missiongenerator.logisticsgenerator import LogisticsGenerator
 from game.missiongenerator.missiondata import MissionData, AwacsInfo, TankerInfo
-from game.radio.radios import RadioFrequency, RadioRegistry
+from game.radio.radios import MHz, RadioFrequency, RadioRegistry
 from game.radio.tacan import (
     TacanBand,
     TacanRegistry,
@@ -30,7 +31,7 @@ from game.squadrons import Pilot
 from .aircraftbehavior import AircraftBehavior
 from .aircraftpainter import AircraftPainter
 from .bingoestimator import BingoEstimator
-from .flightdata import FlightData
+from .flightdata import CombatSarKingBeacon, FlightData
 from .waypoints import WaypointGenerator
 from ...ato.flightmember import FlightMember
 from ...ato.flightplans.aewc import AewcFlightPlan
@@ -48,6 +49,14 @@ from ...theater import Fob
 
 if TYPE_CHECKING:
     from game import Game
+
+
+# Reserved VHF-FM homing frequency for the C-130 "King". 40.0 MHz FM sits in the
+# classic helo FM-homing band (e.g. the Huey's ARC-131, 30-76 MHz). NOTE: the King
+# beacon is TACAN in v1 (air-tracking; MOOSE's RadioBeacon is fixed-point and would
+# need a refresh loop to follow a moving orbit). This freq is carried forward for a
+# deferred ADF beacon; nothing radiates it yet. See the Combat SAR spec.
+COMBAT_SAR_KING_BEACON_FREQ = MHz(40, modulation=Modulation.FM)
 
 
 class FlightGroupConfigurator:
@@ -77,8 +86,35 @@ class FlightGroupConfigurator:
         self.dynamic_runways = dynamic_runways
         self.use_client = use_client
 
+    def register_combat_sar_king(self) -> Optional[CombatSarKingBeacon]:
+        """Allocate the nav beacons for a C-130 "King" Combat SAR flight.
+
+        Only the fixed-wing King carries beacons; the CH-47 is the rescuer and gets
+        none. TACAN is the v1 King beacon (air-tracking, follows the orbit, and the
+        CH-47F has a receiver) and is best-effort (None if the channel pool is dry).
+        The VHF freq is reserved for a deferred ADF beacon. Returns None for any
+        other flight.
+        """
+        if self.flight.flight_type is not FlightType.COMBAT_SAR:
+            return None
+        if self.flight.unit_type.helicopter:
+            return None
+
+        tacan = None
+        try:
+            tacan = self.tacan_registry.alloc_for_band(TacanBand.Y, TacanUsage.AirToAir)
+        except OutOfTacanChannelsError:
+            tacan = None
+
+        return CombatSarKingBeacon(
+            callsign=callsign_for_support_unit(self.group),
+            beacon_freq=COMBAT_SAR_KING_BEACON_FREQ,
+            tacan=tacan,
+        )
+
     def configure(self) -> FlightData:
         flight_channel = self.setup_radios()
+        combat_sar_king = self.register_combat_sar_king()
         AircraftBehavior(self.flight.flight_type, self.mission_data).apply_to(
             self.flight, self.group
         )
@@ -151,6 +187,7 @@ class FlightGroupConfigurator:
             squadron=self.flight.squadron,
             flight_type=self.flight.flight_type,
             group_name=self.group.name,
+            combat_sar_king=combat_sar_king,
             units=self.group.units,
             size=len(self.group.units),
             friendly=self.flight.departure.captured,

@@ -63,8 +63,42 @@ shape as the MANTIS / CTLD plugins.
 |---|---|---|---|
 | **1 — Python task** | `COMBAT_SAR` FlightType + FLOT-orbit flight plan + CH-47/C-130 eligibility + entity map; player-selectable | Generate a mission, see a CH-47/C-130 fly a FLOT orbit; Python tests green | ✅ landed (#170) |
 | **2 — Lua CSAR bridge** | `combatsar` plugin: MOOSE `CSAR` for human ejections, CH-47 rescue set | Eject a player near the FLOT → the CH-47 flies in and recovers them; `dcs.log` clean | ⏳ built, **pending in-game pass** |
-| **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works | not started |
-| **4 — polish** | C-130 → tanker/command role (reuse refuel system), kneeboard card, scoring hook | nice-to-haves | not started |
+| **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works | ⏳ built, **pending in-game pass** |
+| **4 — polish** | C-130 "King" on-scene-command role (TACAN beacon + LARS survivor-locator), kneeboard card, helo orbit-altitude tuning, scoring hook | nice-to-haves | ◐ kneeboard + altitude + King beacon/LARS done; ADF beacon + scoring deferred |
+
+### Phase 4 — as built (partial)
+
+- **Kneeboard card** (`CombatSarTaskPage` in `game/missiongenerator/kneeboard.py`, wired into
+  `generate_task_page`): a role-aware player briefing — CH-47 gets the **pickup** procedure (hover/
+  land at the beacon, doors open, deliver to any friendly field/FARP to score); C-130 gets the
+  **on-scene-command** brief (hold overhead, don't land). Both explain the F10 `CSAR` menu. Guidance,
+  not exact tunables (MOOSE shows live ranges in-game).
+- **Helo orbit altitude — already handled, no code.** COMBAT_SAR reuses the AEWC flight plan, whose
+  `builder.get_patrol_altitude` routes every helo through `get_altitude`, which clamps to
+  `Settings.heli_combat_alt_agl` (the same path air-assault/CSAR helos use). The CH-47 orbits at a
+  helo-appropriate AGL altitude; the C-130 gets a normal fixed-wing patrol altitude. Nothing to tune.
+- **C-130 "King" TACAN beacon** (`combatsar-config.lua`). Each King lights a TACAN the rescue helo
+  homes on. **TACAN, not ADF, by design:** `ActivateTACAN` auto-detects an aircraft and uses the
+  air-tracking (tanker) beacon system so it **follows the moving orbit** ([Moose.lua:6187]), and the
+  DCS CH-47F has a TACAN receiver. (MOOSE's `RadioBeacon`/ADF is fixed-point — it would need a refresh
+  loop to track a mover — so the **ADF beacon is deferred**; the 40.0 MHz FM freq is reserved for it.)
+  Python allocates the channel from the shared TACAN pool (`register_combat_sar_king`, best-effort) and
+  emits it per King; the Lua attaches the beacon on group **birth** so a delayed/AI-spawned King is
+  covered, with a dedup guard.
+- **LARS — survivor-locator (SME ask).** An F10 **"Combat SAR → LARS - Locate Survivors"** button on
+  each King reads MOOSE CSAR's live `downedPilots` table and messages the King a nearest-first list of
+  every active survivor: **position** (reusing CSAR's settings-aware coord formatter), **bearing/range
+  from the King**, and **ADF freq**. It's the King-side equivalent of the helo's built-in active-SAR
+  display (which is gated to rescue helicopters). Player-King utility; an AI King just radiates the
+  beacon. "Become the beacon" = the King's continuous TACAN; LARS = the coordinate readout to relay.
+  The data carries each King's `callsign`/`tacanChannel`/`tacanBand` (+ reserved `beaconFreqHz`).
+- **Still open (optional):** the deferred **ADF radio beacon** (helo-universal homing; needs a
+  position-refresh loop for the moving King) and a **scoring/economy hook** for successful rescues.
+
+> **C-130 tanker role is OFF the table.** The C-130 **cannot act as an aerial-refueling tanker in
+> DCS currently** (user-confirmed, 2026-06-25), and the CH-47 rescue helo couldn't take fuel from it
+> anyway. So the Phase-4 "C-130 King" stays an **overhead presence / on-scene-command** role
+> (orbit + callsign, maybe a beacon/relay) — do **not** wire it to the refueling system.
 
 ### Phase 2 — as built
 
@@ -91,10 +125,30 @@ shape as the MANTIS / CTLD plugins.
 - **Plugin options:** `autosmoke` (off), `loadDistance` (75 m), `rescueHoverHeight` (20 m),
   `messageTime` (15 s) — surfaced in the Plugin Options UI.
 
+### Phase 3 — as built
+
+- **`auto_combat_sar` setting** (`Settings`, HQ automation section, **default OFF**). Off → no CSAR
+  is ever auto-planned and the runtime stays human-initiated only (Phase 2 behaviour).
+- **HTN auto-planning** mirrors AEWC/refueling support:
+  - `TheaterState.combat_sar_targets` = the active front lines, but **only** for the (blue) player
+    coalition and **only** when the setting is on (empty otherwise — red and off are pure no-ops).
+  - `PlanCombatSar` primitive (`game/commander/tasks/primitive/combatsar.py`) — gated on the setting,
+    proposes one `COMBAT_SAR` flight, `asap=True` so the alert is up before the first losses.
+  - `PlanCombatSarSupport` compound (`…/compound/combatsarsupport.py`), wired into `TheaterSupport`
+    alongside `PlanAewcSupport` / `PlanRefuelingSupport`. Airframe scarcity self-limits: no
+    CH-47 available → the fulfiller simply doesn't plan it.
+- **AI rescue flag:** the generator emits `enableForAI` in `dcsRetribution.CombatSAR` from the
+  setting. On → MOOSE CSAR may commandeer an orbiting **AI** CH-47 to fly the pickup (and AI
+  ejections become rescuable too); off → human-initiated only. The Lua bridge reads it instead of
+  the hard-coded `false`.
+- **Scope note:** still blue-only (the CSAR engine is built for `"blue"`); a red `COMBAT_SAR` would
+  just fly an inert orbit, so red is never auto-tasked.
+
 ## Open questions / risks
 
-- **C-130 "King" role depth (v1):** simplest v1 = C-130 just flies the orbit (presence). Wiring it as
-  an actual **tanker** for the helos reuses the existing refueling system but is Phase 4, not v1.
+- **C-130 "King" role depth:** C-130 just flies the orbit (overhead presence / on-scene command).
+  Tanking the helos is **not possible** — the C-130 can't be a DCS tanker (see the Phase-4 note), so
+  the King role never touches the refueling system.
 - **MOOSE CSAR rescue-aircraft binding:** confirm CSAR's API binds the rescue set by **group-name
   prefix** vs. explicit names (drives what Python must emit) — pin in Phase 2 against `Moose.lua`.
 - **Downed-pilot template:** MOOSE CSAR spawns a downed-pilot unit; confirm whether it needs a

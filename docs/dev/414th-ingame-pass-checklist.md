@@ -443,6 +443,32 @@ so the two docs don't drift.
   set mis-bound); or double event-handling with the SOF CSAR. If the helo can't deliver anywhere,
   check `allowFARPRescue` / that a friendly airfield is in range.
 
+### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☐ UNTESTED
+- **Setup:** Enable **Automatic Combat SAR** (HQ automation settings; default OFF). Campaign with a
+  blue **CH-47** squadron + budget. Auto-plan turn 1 (observe-only, don't fly the CSAR).
+- **Pass:** A blue **AI** `Combat SAR` package appears in the ATO, orbiting near an active front
+  (one per front, capped by available CH-47s). The generator logs `enableForAI=true`. When a pilot
+  ejects in range, the orbiting AI CH-47 diverts, recovers, and returns — with no player CSAR up.
+- **Fail signature:** no CSAR package planned with the setting on + a CH-47 squadron present (HTN/
+  fulfiller gap — check `combat_sar_targets` populates and a CH-47 is purchasable); a CSAR planned
+  for **red** (blue-gate leaked); the AI helo orbits but never diverts to a downed pilot
+  (`enableForAI` not reaching the engine, or MOOSE AI-rescue routing vs. Retribution's flight plan);
+  or the AI rescue routing fights the despawn/RTB logic. **Off-state regression check:** with the
+  setting OFF, confirm no CSAR is auto-planned and `enableForAI=false` is logged.
+
+### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ☐ UNTESTED
+- **Setup:** Plan a player **C-130** Combat SAR ("King") alongside a **CH-47** Combat SAR. Fly the
+  King; have a human pilot eject in the area.
+- **Pass:** The King radiates its TACAN (rescue helo can tune + home, and it **tracks the moving
+  orbit** — bearing/range stay sane as the King flies its racetrack). The King's F10 **Combat SAR →
+  LARS** lists each active survivor with position, bearing/range from the King, and ADF freq, sorted
+  nearest-first; "no active survivor radios" when none. Generator logs `... %d King(s) ...`.
+- **Fail signature:** any `combatsar-config.lua` Lua error; TACAN absent (no channel allocated, or
+  `ActivateTACAN` not firing) or **frozen at the spawn point** instead of tracking (means it fell back
+  to a ground beacon — `IsAir()` path); LARS empty when survivors exist (`csar.downedPilots` not read)
+  or duplicated F10 entries (birth/start-sweep dedup failed); King menu missing on a delayed/AI King
+  (birth handler not attaching).
+
 ---
 
 ## H. Kneeboards
@@ -459,6 +485,19 @@ so the two docs don't drift.
   empty continuation page, or a continuation page whose rows still overflow.
   Check `table_paginated()` / `remaining_table_rows()` row-height math in
   `kneeboard.py` if seen.
+
+### H2 — Combat SAR task kneeboard · Combat SAR Phase 4 · ☐ UNTESTED
+- **Setup:** Plan a player **CH-47** Combat SAR flight (and, separately, a player **C-130** Combat
+  SAR). Open each flight's kneeboard in DCS.
+- **Pass:** Each flight has a "Combat SAR" task page. The CH-47's shows the **pickup** procedure
+  (ROLE = rescue helo; hover/land at the beacon, deliver to a friendly field/FARP) plus a **KING
+  BEACON** table with each King's callsign + TACAN to home on; the C-130's shows the
+  **on-scene-command** brief (ROLE = HC-130 "King"; hold overhead, don't land) plus **YOUR BEACON**
+  (its TACAN + the LARS hint). Both reference the F10 `CSAR` menu. Text wraps inside the page, no
+  clipping.
+- **Fail signature:** wrong role brief for the airframe (helo gets the King text or vice-versa), a
+  KING BEACON TACAN that doesn't match what the King actually radiates in-game, text running off the
+  page edge, or no Combat SAR page at all (`generate_task_page` branch).
 
 ---
 

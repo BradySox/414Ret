@@ -620,6 +620,31 @@ def test_lua_capture_requires_a_live_sof_group() -> None:
     assert "sof_group:getSize()" in capture_check
 
 
+def test_lua_static_capture_is_dwell_based_on_a_live_commander() -> None:
+    # Inverted capture (loiter rework): the static branch captures only after a live
+    # SOF team holds on a LIVE command vehicle for a dwell -- co-location can't
+    # instant-fire, and a dead commander forfeits the capture (just a kill).
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    # command_vehicle_pos returns nil when the commander is dead.
+    cmd = script.split("local function command_vehicle_pos(area)", maxsplit=1)[1].split(
+        "local function sof_assaulting(area)", maxsplit=1
+    )[0]
+    assert "type_name == area.commandType" in cmd
+    assert "return nil" in cmd
+    # sof_assaulting requires both a live SOF group and a live commander.
+    assault = script.split("local function sof_assaulting(area)", maxsplit=1)[1].split(
+        "local function launch_missile(area)", maxsplit=1
+    )[0]
+    assert "sof_group:getSize()" in assault
+    assert "command_vehicle_pos(area)" in assault
+    # The static branch dwells on a live commander before marking captured.
+    assert "SCAR_SOF_DWELL_S" in script
+    assert "area.sofDwellStart" in script
+    assert 'mark_result(area, "captured")' in script
+
+
 def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
     # Phase 2c-2 hybrid: spawn_sof binds capture to a player-delivered team near
     # the ambush point when one exists, and only scripted-spawns a fallback

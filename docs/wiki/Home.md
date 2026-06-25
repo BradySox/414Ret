@@ -32,7 +32,8 @@ adapted to how this fork actually plans and flies a campaign.
 ## Campaign mechanics
 
 - **[Mission Planning](Mission-planning)** — packages, TOT, task types, the auto-planner.
-- **[Air Defense and the Air War](Air-Defense-and-the-Air-War)** — BARCAP, QRA, SEAD, IADS.
+- **[Air Defense and the Air War](Air-Defense-and-the-Air-War)** — BARCAP, QRA, SEAD, support orbits.
+- **[IADS Engines: MANTIS and Skynet](IADS-Engines-MANTIS-and-Skynet)** — the runtime air-defense brain.
 - **[Frontline Stances and Movement](Frontline-Stances-and-Movement)** — the ground war.
 - **[Base Capture](Base-Capture)** — taking and losing control points.
 - **[Squadrons and Pilots](Squadrons-and-Pilots)** — pilots, experience, replacements.

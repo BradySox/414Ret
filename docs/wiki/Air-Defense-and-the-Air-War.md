@@ -143,24 +143,26 @@ stay just as sharp.
 
 ## IADS engine
 
-The runtime integrated air-defence system is what makes enemy SAMs network, hand off tracks,
-and shut their radars down reactively.
+The runtime integrated air-defence system is what makes enemy SAMs network, hand off tracks, and
+shut their radars down reactively — and it's why a HARM is less likely to score an emitter kill
+than against a dumb SAM, and why DEAD's bomb/ATGM kill is often the only reliable way to remove a
+networked site.
 
-- **MANTIS is the default IADS engine for new campaigns.** Skynet remains selectable, and
-  **existing saves keep whichever engine they were created with** (a save-state pin), so loading
-  an older campaign does not switch engines under you.
-- Both engines drive **reactive radar shutdown**, so the SEAD/DEAD notes on
-  [Mission-planning](Mission-planning) apply to either: HARMs are less likely to score emitter
-  kills than against a dumb SAM, and DEAD's bomb/ATGM kill is often the only reliable way to
-  remove a networked site.
+**MANTIS is the default engine for new campaigns**, with Skynet still selectable; existing saves
+keep whichever engine they were created with (a save-state pin). The engine, how the two differ,
+and the advanced comms/power/command-center degradation graph have their own page:
 
-You select the engine when creating a campaign; once chosen it is fixed for that save.
+> **→ [IADS Engines: MANTIS and Skynet](IADS-Engines-MANTIS-and-Skynet)** for what the engine
+> does, MANTIS vs Skynet, advanced IADS, and how to choose.
 
 ## See also
 
 - [Mission-planning](Mission-planning) — packages, TOT timing, and the full per-task detail
   (SEAD/DEAD decision guide, BARCAP, escorts).
 - [Air-Wing-Configuration](Air-Wing-Configuration) — squadron setup and the QRA reserve.
+- [IADS Engines: MANTIS and Skynet](IADS-Engines-MANTIS-and-Skynet) — the runtime engine behind
+  enemy air defenses.
+- [Electronic Warfare and ISR](Electronic-Warfare-and-ISR) — the C-130J jammer/ELINT platform.
 - [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance) — recon fog and the overview
   reveal toggle that shows true threat rings.
 - [Getting-Started](Getting-Started) — first-campaign walkthrough.

@@ -109,3 +109,4 @@ clsids:
   - "{SUPERHORNET_PYLON_10_OB_IB_MK_2X_ROCKEYE}"   #  [ STA 10/08 | 79 / 80 | BRU32   ] - 2x Mk-20 Rockeye - 490lbs CBU, 247 x HEAT Bomblets
   - "{SUPERHORNET_PYLON_03_IB_MB_MK_ROCKEYE}"   #  [ STA 04/03 | SUU79 | BRU32   ] - 1x/1x Mk-20 Rockeye - 490lbs CBU, 247 x HEAT Bomblets
   - "{SUPERHORNET_PYLON_09_IB_MB_MK_ROCKEYE}"   #  [ STA 09/08 | SUU79 | BRU32   ] - 1x/1x Mk-20 Rockeye - 490lbs CBU, 247 x HEAT Bomblets
+  - "Herc_Ammo_MK20_bombs"   # Ammo MK20*20 [9768lb]

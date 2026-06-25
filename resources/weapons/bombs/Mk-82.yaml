@@ -236,3 +236,6 @@ clsids:
   - "{SUPERHORNET_PYLON_10_OB_IB_MK_2X_MK-82Y}"   #  [ STA 10/08 | 79 / 80 | BRU32   ] - 2x Mk-82Y - 500lb GP Chute Retarded HD
   - "{SUPERHORNET_PYLON_03_IB_MB_MK_MK-82Y}"   #  [ STA 04/03 | SUU79 | BRU32   ] - 1x/1x Mk-82Y - 500lb GP Chute Retarded HD
   - "{SUPERHORNET_PYLON_09_IB_MB_MK_MK-82Y}"   #  [ STA 09/08 | SUU79 | BRU32   ] - 1x/1x Mk-82Y - 500lb GP Chute Retarded HD
+  - "Herc_Ammo_Mk_82_bombs"   # Ammo Mk-82*20 [10560lb]
+  - "Herc_Ammo_Mk_82AIR_bombs"   # Ammo Mk-82AIR*20 [11044lb]
+  - "Herc_Ammo_Mk_82Snake_bombs"   # Ammo Mk-82Snakeye*20 [11880lb]

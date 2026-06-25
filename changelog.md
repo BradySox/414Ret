@@ -33,6 +33,7 @@
 * **[414th]** Removed the Pretense campaign generator entirely (the "Generate a Pretense Campaign" menu action, the `game/pretense` generators, the `resources/plugins/pretense` Lua, the Pretense settings page, the `PRETENSE_CARGO` flight type, and the four `*_full.yaml` Pretense-tuned campaigns). The 414th fork no longer ships Pretense; old saves migrate cleanly (removed settings are dropped, any stray `Cargo Transport` flight type maps to `TRANSPORT`).
 * **[Mission]** Add reactive GCI scramble support. RED untasked, uncontrolled, air-to-air-capable aircraft can sit cold on the ramp as dormant interceptors; when a Blue aircraft is detected by the RED radar network, `reactive_scramble.lua` wakes the nearest available group and tasks it to intercept.
 * **[Mission]** Add JAMMING flight type for standoff electronic warfare aircraft (C-130J Compass Call). The aircraft holds an independent racetrack orbit at standoff range (same pattern as AEWC) rather than following a primary flight. Mixed packages pace their departure and TOT around the EW aircraft's slower transit. `c130j_mission_systems.lua` is automatically injected into any mission that includes a JAMMING flight.
+* **[Kneeboard]** Use a light-grey daytime kneeboard background instead of near-white, to avoid glare under HDR / Auto-HDR while staying readable in daylight.
 * **[UX]** Hovering a friendly flight's route line on the map highlights it in yellow, and clicking it selects that flight's package (and the flight) in the ATO sidebar.
 * **[UX]** Press Delete with a package selected in the Packages list to cancel it, making it quick to clear several packages in a row.
 * **[UX]** Avoid having escorts from wondering off too far while chasing a target.
@@ -62,6 +63,8 @@
 * **[Mission Generation]** Player waypoint renames propagate to the aircraft CDU/HUD; the Strike Task page reflects renames without leaking the F-15E DTC slot tag into other pages.
 * **[Plugins]** ATIS for player flights via a MOOSE voice-ATIS plugin (per-airfield ATIS frequencies and spoken reports).
 * **[Kneeboard]** New recon kneeboard pages — target reconnaissance (aimpoints, threat rings, area context), a friendly-packages coordination list, and a package-targets theater map. Basemap tiles are fetched and cached at mission generation (offline coastline fallback); adds the `mgrs` dependency and new Kneeboard settings.
+* **[Mission Generator]** New campaign setting "Default laser code for Player flights" controls whether newly-created player flights are assigned a unique allocated TGP/weapon laser code (the new default, matching existing behavior) or stay on 1688. When a code is allocated it is applied to both the TGP/kneeboard code and the weapon code by default, so LGBs home on the player's own code without extra clicks; both remain independently overridable in the payload tab.
+* **[Engine]** Support for DCS 2.9.27 including F-100D and F-14A (Export).
 
 ## Fixes
 * **[Plugins]** CTLD now treats a landed helicopter as on-ground using terrain AGL, so unload/extract works on sloped terrain.
@@ -69,13 +72,17 @@
 * **[Mission]** Fixed DCS rejecting missions that had a locked-speed waypoint between two TOT-locked waypoints.
 * **[Settings]** Legacy pre-#684 fast-forward settings are migrated on load instead of crashing; a stale or garbled enum setting now falls back to its default rather than failing the load.
 * **[Flight Plans]** Fixed IndexError crash when a flight exits combat at its last waypoint`n* **[AI]** Fixed enemy AWACS orbit placement â€” AI AWACS (A-50, etc.) was orbiting toward the threat boundary and loitering near the front line. It now orbits in the opposite direction, deep inside friendly airspace. Player-coalition AWACS keeps the existing forward-leaning behavior.
+* **[App]** Relaunching the executable while it is already running no longer spawns orphaned, windowless duplicate processes; a second instance detects the first via an OS file lock and exits immediately.
 * **[Mission]** Reliably auto-detect end of mission, even when DCS wrote the final state.json before the wait dialog started watching
 * **[Performance]** Faster post-mission turn processing
 * **[AirWing]** Track per-squadron campaign aircraft stats (initial/destroyed/purchased, save-compatible) and expose pilot experience level and living/dead pilot views for the UI
 * **[AirWing]** Squadron list shows living-pilot, aircraft and unassigned counts; squadron dialog shows each pilot's experience level, lists killed-in-action pilots separately and hides the redundant "Active" status
 * **[AirWing]** Squadron dialog shows the aircraft type, an aircraft inventory (initial/current/destroyed/purchased), and buy/sell aircraft controls with price, on-order count and available parking slots
+* **[AirWing]** Air Wing list shows a "transfer ordered to X" indicator, and Airfield Command lists the units transferring into the base next turn
+* **[AirWing]** Squadron transfer-destination parking now accounts for already-ordered incoming transfers, matching the Airfield Command hangar count
 
 ## Fixes
+* **[UI]** Avoid a crash dialog ("'QWidgetItem' object has no attribute 'width'") when a list using the two-column row delegate relayouts with a malformed style option under PySide6 6.4.x.
 * **[App]** Fix Retribution sometimes staying alive in the background after the window is closed.
 * **[Mission Generation]** Anti-Ship flights now attack the carrier group the flight plan routes to instead of the control point's first ground object, so strikes against carrier groups no longer leave the AI without a target (it would fly to the ingress point and turn back without engaging).
 * **[Flight Plans]** Player flights with a ground start (Cold/Warm/Runway) no longer spawn in the air when their computed startup time falls before mission start (e.g. due to a long player startup estimate); they now wait and start on the ground at mission start.

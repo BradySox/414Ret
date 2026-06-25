@@ -10,3 +10,4 @@ clsids:
   - "{SUPERHORNET_PYLON_02_MB_SM_1X_AGM-84E}"   #  [ STA 03	  | SUU79 | BRU32   ] - 1x AGM-84E Harpoon/SLAM (Stand-Off Land-Attack Missile)
   - "{SUPERHORNET_PYLON_03_IB_SM_1X_AGM-84E}"   #  [ STA 04	  | SUU79 | BRU32   ] - 1x AGM-84E Harpoon/SLAM (Stand-Off Land-Attack Missile)
   - "{SUPERHORNET_PYLON_09_IB_SM_1X_AGM-84E}"   #  [ STA 08	  | SUU79 | BRU32   ] - 1x AGM-84E Harpoon/SLAM (Stand-Off Land-Attack Missile)
+  - "Herc_Ammo_AGM_84E_missiles"   # Ammo AGM-84E*8 [11651lb]

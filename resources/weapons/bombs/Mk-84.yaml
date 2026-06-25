@@ -31,3 +31,4 @@ clsids:
   - "{MPRL_Mk84AIR}"   # MPRL - 8 x Mk-84 AIR (BSU-50) - 2000 lb GP Chute Retarded Bomb HD
   - "{SUPERHORNET_PYLON_03_IB_MB_MK_MK-84}"   #  [ STA 04/03 | SUU79 | BRU32   ] - 1x/1x Mk-84 - 2000lb GP Bomb LD
   - "{SUPERHORNET_PYLON_09_IB_MB_MK_MK-84}"   #  [ STA 09/08 | SUU79 | BRU32   ] - 1x/1x Mk-84 - 2000lb GP Bomb LD
+  - "Herc_Ammo_Mk_84_bombs"   # Ammo Mk-84*8 [15735b]

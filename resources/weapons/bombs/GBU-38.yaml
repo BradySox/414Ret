@@ -44,3 +44,4 @@ clsids:
   - "{SUPERHORNET_PYLON_10_OB_IB_MK_2X_GBU-38}"   #  [ STA 10/08 | 79 / 80 | BRU32   ] - 2x GBU-38 - JDAM, 500lb GPS Guided Bomb
   - "{SUPERHORNET_PYLON_03_IB_MB_MK_GBU-38}"   #  [ STA 04/03 | SUU79 | BRU32   ] - 1x/1x GBU-38 - JDAM, 500lb GPS Guided Bomb
   - "{SUPERHORNET_PYLON_09_IB_MB_MK_GBU-38}"   #  [ STA 09/08 | SUU79 | BRU32   ] - 1x/1x GBU-38 - JDAM, 500lb GPS Guided Bomb
+  - "Herc_Ammo_GBU_38_bombs"   # Ammo GBU-38*10 [6028lb]

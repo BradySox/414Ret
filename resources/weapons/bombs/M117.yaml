@@ -29,3 +29,4 @@ clsids:
   - "{HB_A6E_M117_MER_4x_LEFT}"   # 4x M117 - 750lb GP Bomb LD (MER) (OB)
   - "{82F90BEC-0E2E-4CE5-A66E-1E4ADA2B5D1E}"   # MER3 with 3 x M117 - 750lb GP Bombs LD
   - "{6CDB6B36-7165-47D0-889F-6625FB333561}"   # MER6 with 6 x M117 - 750lb GP Bombs LD
+  - "Herc_Ammo_M117_bombs"   # Ammo M117*16 [11968lb]

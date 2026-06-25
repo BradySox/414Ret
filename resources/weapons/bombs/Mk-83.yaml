@@ -90,3 +90,4 @@ clsids:
   - "{SUPERHORNET_PYLON_10_OB_IB_MK_2X_MK-83AIR}"   #  [ STA 10/08 | 79 / 80 | BRU32   ] - 2x Mk-83 AIR (BSU-85) - 1000 lb GP Chute Retarded Bomb HD
   - "{SUPERHORNET_PYLON_03_IB_MB_MK_MK-83AIR}"   #  [ STA 04/03 | SUU79 | BRU32   ] - 1x/1x Mk-83 AIR (BSU-85) - 1000 lb GP Chute Retarded Bomb HD
   - "{SUPERHORNET_PYLON_09_IB_MB_MK_MK-83AIR}"   #  [ STA 09/08 | SUU79 | BRU32   ] - 1x/1x Mk-83 AIR (BSU-85) - 1000 lb GP Chute Retarded Bomb HD
+  - "Herc_Ammo_Mk_83_bombs"   # Ammo Mk-83*10 [9834lb]

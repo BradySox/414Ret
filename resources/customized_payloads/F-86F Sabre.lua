@@ -234,7 +234,7 @@ local unitPayloads = {
 			},
 		},
 		[9] = {
-			["name"] = "INTERCEPT",
+			["name"] = "Retribution Intercept",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{PTB_120_F86F35}",

@@ -2,8 +2,8 @@ local unitPayloads = {
 	["name"] = "VSN_F4C",
 	["payloads"] = {
 		[1] = {
-			["displayName"] = "SEAD Sweep",
-			["name"] = "SEAD Sweep",
+			["displayName"] = "Retribution SEAD Sweep",
+			["name"] = "Retribution SEAD Sweep",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{3E6B632D-65EB-44D2-9501-1C2D04515405}",
@@ -314,8 +314,8 @@ local unitPayloads = {
 			},
 		},
 		[8] = {
-			["displayName"] = "SEAD Escort",
-			["name"] = "SEAD Escort",
+			["displayName"] = "Retribution SEAD Escort",
+			["name"] = "Retribution SEAD Escort",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{3E6B632D-65EB-44D2-9501-1C2D04515405}",

@@ -119,8 +119,8 @@ local unitPayloads = {
 			},
 		},
 		[3] = {
-			["displayName"] = "Retribution Antiship",
-			["name"] = "Retribution Antiship",
+			["displayName"] = "Retribution Anti-ship",
+			["name"] = "Retribution Anti-ship",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{0519A264-0AB6-11d6-9193-00A0249B6F00}", -- Fantasmagoria

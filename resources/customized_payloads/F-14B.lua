@@ -64,8 +64,8 @@ local unitPayloads = {
 			["tasks"] = { [1] = 18 },
 		},
 		[4] = {
-			["displayName"] = "Retribution Fighter Sweep",
-			["name"] = "Retribution Fighter Sweep",
+			["displayName"] = "Retribution Fighter sweep",
+			["name"] = "Retribution Fighter sweep",
 			["pylons"] = {
 				[1]  = { ["CLSID"] = "{LAU-138 wtip - AIM-9M}", ["num"] = 10 },
 				[2]  = { ["CLSID"] = "{SHOULDER AIM-7MH}", ["num"] = 9 },

@@ -165,8 +165,25 @@ shape as the MANTIS / CTLD plugins.
 - **Downed-pilot template:** MOOSE CSAR spawns a downed-pilot unit; confirm whether it needs a
   late-activation template in the `.miz` (like the CTLD/Ops template model) — if so, Python must emit
   one (a small generation add).
-- **Interaction with the SOF `CSAR`:** none by design (separate FlightType, separate plugin) — but
-  both may run MOOSE/CTLD machinery; verify no double event-handling on ejection.
+- **Interaction with the SOF `CSAR` — resolved (verified by reading, 2026-06-25).** None: the two
+  loops are architecturally independent, so the SOF insert/recovery needs **no adaptation** to the
+  Combat SAR work.
+  - **No double event-handling on ejection.** The MOOSE `CSAR` engine (Combat SAR) is the *only*
+    ejection listener in the active plugin set. The SOF **insert** rides **CTLD** (transport/unload),
+    whose ejection handler is **commented out** (`resources/plugins/ctld/CTLD.lua:8254`); the SOF
+    **recovery** is **Python-inferred at debrief** (`commit_sof_recoveries`: a `FlightType.CSAR` helo
+    survived the sortie at the `DownedSofGroundObject`) and hooks no in-mission events at all.
+  - **No cross-binding.** Combat SAR's rescue set is bound to `FlightType.COMBAT_SAR` CH-47 groups by
+    name prefix, so the SOF recovery helo (`FlightType.CSAR`) is never in it; and the stranded SOF
+    *team* is a ground unit, never a MOOSE-CSAR downed *pilot*. The `combat_sar_rescues` scoring
+    channel and the SOF `_refund_sof_teams_to` accounting are independent state.
+  - **Emergent synergy (positive).** A human flying the deep SOF insert/recovery sortie who is shot
+    down and ejects can now be picked up by an up Combat SAR flight and spared by the new scoring —
+    consistent (the airframe and the SOF objective are still lost; only the aviator is saved).
+  - **Watch in-game:** MOOSE CSAR adds its F10 "CSAR" menu to *any* human helo/Bronco, so a SOF
+    recovery-helo pilot will see it; pickups are still gated to the Combat SAR rescue set
+    (`SetOwnSetPilotGroups`). Cosmetic only — confirm during the G8 pass when both loops are flown
+    in one mission.
 - **Scope creep:** keep v1 to **blue-side, human-pilot, CH-47 pickup, FLOT orbit.** Red CSAR, AI-pilot
   rescue, multi-helo coordination = later.
 

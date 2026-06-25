@@ -1287,9 +1287,14 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 
 ### Gotchas
 
-- **Separate from the SOF `CSAR`** (§15) by design: different flight type, different plugin.
-  Both ride MOOSE/CTLD machinery, so the in-game pass must confirm no double event-handling
-  on ejection.
+- **Separate from the SOF `CSAR`** (§15) by design, and **verified independent** (2026-06-25):
+  the MOOSE `CSAR` engine is the only ejection listener in the active plugin set. The SOF insert
+  rides **CTLD** (whose ejection handler is commented out, `CTLD.lua:8254`) and the SOF recovery
+  is Python-inferred at debrief (`commit_sof_recoveries`), so there is **no double event-handling
+  on ejection** and the SOF loop needed no adaptation. Different flight types (`CSAR` vs
+  `COMBAT_SAR`) keep the rescue set from ever including the SOF recovery helo. The in-game pass
+  should still fly both in one mission to confirm coexistence (the F10 "CSAR" menu shows on any
+  helo player, but pickups stay gated to the Combat SAR rescue set).
 - **Blue-only.** The CSAR engine is built for `"blue"`; a red COMBAT_SAR would just fly an
   inert orbit, so red is never auto-tasked.
 - **King ≠ tanker.** The C-130 cannot be a DCS aerial-refueling tanker, and the CH-47 couldn't

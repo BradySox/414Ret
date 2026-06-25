@@ -612,16 +612,32 @@ local function package_near(area)
     return false
 end
 
--- Start the chase: route every parked mover (real bound group(s) + the spawned
--- HVT/decoys/clutter) to its destination, and open the fail clock from now.
+-- Loiter-and-task rework: an area is STATIC when nothing is meant to move -- every
+-- mover at speed 0, the case _make_static produces. A static area holds in place and
+-- can only fail on the window timeout: no chase, no arrival-fail.
+local function area_is_static(area)
+    for _, m in ipairs(area.movers or {}) do
+        if (m.speed or 0) > 0 then
+            return false
+        end
+    end
+    return true
+end
+
+-- Open the fail clock when the package arrives. A MOVING area also routes every
+-- parked mover to its destination; a STATIC area just holds (speed-0 movers are
+-- skipped, so nothing drives) and is serviced in place.
 local function activate_movement(area)
     for _, m in ipairs(area.movers or {}) do
-        set_group_route(m.name, m.destX, m.destY, m.speed)
+        if (m.speed or 0) > 0 then
+            set_group_route(m.name, m.destX, m.destY, m.speed)
+        end
     end
     area.activated = true
     area.deadline = timer.getTime() + (area.window or 1200)
     scar_log("area " .. tostring(area.id) .. " ACTIVATED (package within " ..
-        math.floor(SCAR_PROXIMITY_M / 1852) .. " NM); window " ..
+        math.floor(SCAR_PROXIMITY_M / 1852) .. " NM)" ..
+        (area_is_static(area) and " [static hold]" or "") .. "; window " ..
         math.floor(area.window or 1200) .. "s")
 end
 
@@ -636,14 +652,30 @@ local function scar_check()
             local live = area.activated == true
             local timed_out = live and area.deadline
                 and timer.getTime() >= area.deadline
+            local static = area_is_static(area)
             maybe_bind_sof(area)
             if all_groups_dead(area) then
                 mark_result(area, "success")
             elseif area.variant == "missile" then
-                -- Reached its firing position (or out of time): it launches.
-                if live and (hvt_in_fail_zone(area) or timed_out) then
+                if static then
+                    -- Loiter rework: the SCUD holds for the flight to service -- it
+                    -- neither relocates nor launches. Fail = the window timeout only.
+                    if timed_out then
+                        mark_result(area, "failed")
+                    end
+                elseif live and (hvt_in_fail_zone(area) or timed_out) then
+                    -- Moving SCUD reached its firing position (or out of time).
                     launch_missile(area)
                     mark_result(area, "launched")
+                end
+            elseif static then
+                -- Static armor/spawn: the target holds in the kill box, so the only
+                -- loss is the window timeout. The instant arrival-fail (dest == centre)
+                -- is gated off; the SOF commander-capture is the inverted-assault
+                -- redesign (Phase 1b) and is not wired here yet.
+                if timed_out then
+                    mark_result(area, "failed")
+                    report_stranded_sof(area)
                 end
             else
                 if live and hvt_in_sof_zone(area) then
@@ -729,6 +761,12 @@ end
 -- (Assigns the forward-declared `set_group_route` upvalue so activate_movement,
 -- defined earlier, can call it.)
 function set_group_route(group_name, dest_x, dest_y, speed)
+    -- Static hold (loiter rework): a speed-0 "mover" must never be routed -- it stays
+    -- put for the SCAR flight to service. activate_movement already skips these; guard
+    -- here too so nothing can drive a static group.
+    if not speed or speed <= 0 then
+        return
+    end
     local group = Group.getByName(group_name)
     if group == nil then
         -- DIAGNOSTIC (scar bound-group movement): a silent miss here means the

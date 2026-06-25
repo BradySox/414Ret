@@ -1,6 +1,7 @@
 # SCAR rework — loiter-and-task under the C-130 "King" on-scene commander (design)
 
-**Status:** design / draft (no code yet) · **Date:** 2026-06-25
+**Status:** design — **four forks decided 2026-06-25** (no code yet); ready to turn into a phased
+implementation plan · **Date:** 2026-06-25
 **Related:** [`414th-scar-task-spec.md`](414th-scar-task-spec.md) (current SCAR),
 [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the King + orbit pattern this reuses),
 [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md) (why we stay off
@@ -60,25 +61,26 @@ ideally even that is replaced by **proximity auto-check-in** (the King designate
 enters the kill box, mirroring how Combat SAR spawns the CASEVAC on arrival). Goal: the radio menu is
 a backstop, not the interface.
 
-## The four forks — recommended answers (red-line these)
+## The four forks — DECIDED (2026-06-25)
 
-1. **Discrimination puzzle — keep it, but the King runs the talk-on.** Still spawn/bind several
-   static groups (the real HVT armor + decoy/clutter groups) so ID still matters, but the King does
-   a **talk-on** ("armor in the treeline, *not* the trucks on the road") and only smokes/lases the
-   real one once the player calls visual or after a beat. Mis-ID (hitting a decoy) still costs budget
-   via the existing R7 penalty. This preserves SCAR's soul while leaning on the King instead of F10.
-   *(Alternative if we want it simpler: the King just designates the real target outright — drops the
-   puzzle. Recommend keeping the light talk-on.)*
-2. **Static, not fleeing.** Drop the flee-to-a-city mechanic for this mode; the target armor is a
-   real static TGO so losses track and the "hold + service" loop is the gameplay. The moving-HVT
-   "armor"/"missile" race variants can stay as a *separate* legacy SCAR mode, or be retired later.
-3. **Hand-off — proximity auto-check-in + King designation.** On-station → King calls and
-   smokes/marks/lases. One F10 "say again" backstop only.
+1. **Discrimination puzzle — KEEP IT COMPLEX (talk-on + decoys).** Spawn/bind several static groups
+   (the real HVT armor + decoy/clutter groups) so ID matters. The King runs a **talk-on** ("armor in
+   the treeline, *not* the trucks on the road") and only smokes/lases the real one once the player
+   calls visual or after a beat. Mis-ID (hitting a decoy) still costs budget via the existing R7
+   penalty. This keeps SCAR's soul while moving the cueing off F10 and onto the King.
+2. **Static, not fleeing — DROP THE OLD, BUILD THE NEW.** The fleeing-to-a-city moving-HVT mode
+   (current spec §5 "armor"/"missile"/"spawn" runners) is **retired**, not kept as a legacy option.
+   The target armor is a real, static TGO; the "hold + service" loop is the gameplay.
+3. **Hand-off — proximity auto-check-in + King designation; AGREED.** On-station → King calls and
+   smokes/marks/lases. One F10 "say again" backstop. **No-King fallback:** degrade to a single F10
+   self-check-in (the striker self-designates the area); no ground JTAC needed for v1.
 4. **MOOSE mechanism — a thin custom bridge, not a full FAC/`Ops.Chief`.** Reuse the CSAR/MANTIS
    config-bridge pattern: Python emits the kill box + the eligible armor TGO group names + the King
    group; a small `scar`-side Lua controller (or an extension of the existing King code) detects the
    striker on-station and drives the smoke/mark/laser/message. Explicitly **avoid `Ops.Chief`** (the
    ops map flags it as a ground-up strategic build) and avoid a heavy MOOSE `Ops.FAC` dependency for v1.
+   **Decoy/clutter:** only the **real HVT armor must be a campaign TGO** (for native loss tracking);
+   pure decoy/clutter groups may stay **spawned-and-untracked** (no extra attrition bookkeeping).
 
 ## What changes / what's reused
 
@@ -89,8 +91,11 @@ a backstop, not the interface.
 - **New:** Python plans `FlightType.SCAR` as a loiter package over a kill box containing real static
   armor TGOs (instead of emitting a spawned runner); the King-as-SCAR-controller Lua; the
   designation logic.
-- **Retire/repurpose:** the spawned canned convoy + the flee-to-city routing (spec §5) for this mode;
-  the `scar_results` scoring skeleton (no longer needed once losses are native). Mis-ID/R7 stays.
+- **Retire entirely (decided):** the moving-HVT mode — the spawned canned runner + the flee-to-city /
+  SCUD-race routing (current spec §5 "spawn"/"armor"/"missile") is **replaced, not kept** as a legacy
+  option; and the `scar_results` scoring skeleton (no longer needed once losses are native). Mis-ID/R7
+  stays. Pure decoy/clutter groups may still be spawned-and-untracked — only the **real HVT armor** is
+  a campaign TGO.
 
 ## Relationship to the SOF commander-capture loop (§15)
 
@@ -119,16 +124,17 @@ rewrite" target: one auto-planned commander platform feeding multiple dynamic, M
 Gate it behind a setting (default OFF until flown), airframe-scarcity self-limits (no C-130J-30 → not
 planned), and keep v1 player-planned so the auto path is a later, separable increment.
 
-## Open questions / risks
+## Open questions / risks (post-decisions)
 
-- **Picture composition:** how many decoy/clutter armor groups, and do they need to be real TGOs too
-  (more attrition bookkeeping) or can clutter stay spawned-and-untracked?
-- **King availability:** SCAR shouldn't *require* a King squadron. Fallback when no King is up —
-  degrade to a single F10 "check in" self-designation, or a JTAC ground unit?
+- **Picture composition tuning:** how *many* decoy/clutter groups, and how the talk-on stays solvable
+  but non-trivial (the four forks settled clutter = spawned-untracked, only the real HVT armor a TGO).
 - **AI strikers:** v1 is player-first; an AI SCAR striker servicing King-designated targets is later.
-- **Kill-box geometry:** how the loiter anchor + target TGO selection are chosen (nearest eligible
-  enemy armor to the front? a designated area?).
-- **Does the moving-HVT mode survive** as a separate legacy option, or fully replaced?
+- **Kill-box geometry:** how the loiter anchor + target-TGO selection are chosen (nearest eligible
+  enemy armor to the front? a designated area? player-picked target on the map?).
+- **Talk-on fidelity:** how rich the King's cueing message can be without SRS (text talk-on quality;
+  smoke colour conventions; when to escalate from talk-on → smoke → laser).
+- **SOF capture loop:** confirm the §15 command-vehicle capture path still rides the static picture
+  (it should, since it hangs off the command vehicle, not the armor).
 
 ## Definition of done (v1, player-first)
 

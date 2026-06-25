@@ -7,7 +7,6 @@ from typing import Any, Optional, TYPE_CHECKING
 
 from dcs import Mission, Point
 from dcs.flyingunit import FlyingUnit
-from dcs.task import Modulation
 from dcs.unit import Skill
 from dcs.unitgroup import FlyingGroup
 
@@ -18,7 +17,7 @@ from game.data.weapons import Pylon
 from game.lasercodes.lasercode import LaserCode
 from game.missiongenerator.logisticsgenerator import LogisticsGenerator
 from game.missiongenerator.missiondata import MissionData, AwacsInfo, TankerInfo
-from game.radio.radios import MHz, RadioFrequency, RadioRegistry
+from game.radio.radios import RadioFrequency, RadioRegistry
 from game.radio.tacan import (
     TacanBand,
     TacanRegistry,
@@ -51,14 +50,6 @@ if TYPE_CHECKING:
     from game import Game
 
 
-# Reserved VHF-FM homing frequency for the C-130 "King". 40.0 MHz FM sits in the
-# classic helo FM-homing band (e.g. the Huey's ARC-131, 30-76 MHz). NOTE: the King
-# beacon is TACAN in v1 (air-tracking; MOOSE's RadioBeacon is fixed-point and would
-# need a refresh loop to follow a moving orbit). This freq is carried forward for a
-# deferred ADF beacon; nothing radiates it yet. See the Combat SAR spec.
-COMBAT_SAR_KING_BEACON_FREQ = MHz(40, modulation=Modulation.FM)
-
-
 class FlightGroupConfigurator:
     def __init__(
         self,
@@ -87,13 +78,12 @@ class FlightGroupConfigurator:
         self.use_client = use_client
 
     def register_combat_sar_king(self) -> Optional[CombatSarKingBeacon]:
-        """Allocate the nav beacons for a C-130 "King" Combat SAR flight.
+        """Allocate the homing beacon for a C-130 "King" Combat SAR flight.
 
-        Only the fixed-wing King carries beacons; the CH-47 is the rescuer and gets
-        none. TACAN is the v1 King beacon (air-tracking, follows the orbit, and the
-        CH-47F has a receiver) and is best-effort (None if the channel pool is dry).
-        The VHF freq is reserved for a deferred ADF beacon. Returns None for any
-        other flight.
+        Only the fixed-wing King carries a beacon; the CH-47 is the rescuer and
+        homes on it. TACAN is the King beacon (air-tracking, follows the orbit, and
+        every rescue helo we use has a receiver) and is best-effort (None if the
+        channel pool is dry). Returns None for any other flight.
         """
         if self.flight.flight_type is not FlightType.COMBAT_SAR:
             return None
@@ -108,7 +98,6 @@ class FlightGroupConfigurator:
 
         return CombatSarKingBeacon(
             callsign=callsign_for_support_unit(self.group),
-            beacon_freq=COMBAT_SAR_KING_BEACON_FREQ,
             tacan=tacan,
         )
 

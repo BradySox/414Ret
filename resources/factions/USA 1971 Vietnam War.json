@@ -14,7 +14,7 @@
     "UH-1H Iroquois",
     "AH-1W SuperCobra",
     "OV-10A Bronco",
-    "C-130",
+    "C-130J-30",
     "A-4E Skyhawk",
     "A-6A Intruder",
     "A-7E Corsair II",
@@ -140,15 +140,6 @@
       "VMO-2",
       "VMO-5 UV",
       "VS-41 Shamrocks"
-    ],
-    "C-130": [
-      "USAF - 70s - USAF DZ63-779",
-      "USAF - 70s - USAF PR63-820",
-      "USAF - 70s - USAF SEA",
-      "USAF - 70s - USAF SG56-471",
-      "USAF - 70s - USAF YJ56-470",
-      "USAF South Vietnam - 70s - KQVN HCF",
-      "USAF South Vietnam - 70s - KQVN HCL"
     ],
     "A-4E Skyhawk": [
       "USMC VMA-121 Green Knights",

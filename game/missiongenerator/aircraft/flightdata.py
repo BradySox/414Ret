@@ -27,19 +27,18 @@ class ChannelAssignment:
 
 @dataclass(frozen=True)
 class CombatSarKingBeacon:
-    """Nav beacons for a C-130 "King" Combat SAR flight.
+    """The homing beacon for a C-130 "King" Combat SAR flight.
 
-    The King orbits as the on-scene-command anchor and lights a homing beacon the
-    rescue helo flies to. v1 radiates ``tacan`` (air-tracking, follows the orbit;
-    the combatsar plugin calls MOOSE ActivateTACAN). ``beacon_freq`` is the reserved
-    VHF freq for a deferred ADF radio beacon (MOOSE's RadioBeacon is fixed-point and
-    would need a refresh loop to track a mover) -- not radiated yet.
+    The King orbits as the on-scene-command anchor and lights a TACAN the rescue
+    helo homes on. TACAN is air-tracking, so it follows the moving orbit (the
+    combatsar plugin calls MOOSE ActivateTACAN), and every DCS rescue helo we use
+    has a TACAN receiver -- it is the single homing solution. (An ADF radio beacon
+    was considered and dropped: MOOSE's RadioBeacon is fixed-point and the King is a
+    mover, so TACAN does the job without a position-refresh loop.)
     """
 
     callsign: str
-    #: Reserved VHF freq for the deferred ADF beacon (not radiated in v1).
-    beacon_freq: RadioFrequency
-    #: The v1 King beacon (air-tracking TACAN); None if the channel pool was dry.
+    #: The King beacon (air-tracking TACAN); None if the channel pool was dry.
     tacan: Optional[TacanChannel]
 
 

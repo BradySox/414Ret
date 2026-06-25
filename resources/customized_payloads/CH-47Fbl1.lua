@@ -17,6 +17,22 @@ local unitPayloads = {
 				[1] = 35,
 			},
 		},
+		[2] = {
+			["name"] = "Retribution Combat SAR",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{CH47_STBD_M60D}",
+					["num"] = 2,
+				},
+				[2] = {
+					["CLSID"] = "{CH47_PORT_M60D}",
+					["num"] = 1,
+				},
+			},
+			["tasks"] = {
+				[1] = 35,
+			},
+		},
 	},
 	["tasks"] = {
 	},

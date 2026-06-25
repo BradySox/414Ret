@@ -17,6 +17,7 @@ from game.ato import FlightType
 from game.data.units import UnitClass
 from game.dcs.aircrafttype import AircraftType
 from game.plugins import LuaPluginManager
+from game.scar_rescue import sof_rescue_pickup_name
 from game.theater import TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
@@ -628,7 +629,7 @@ class LuaGenerator:
         )
         combat_sar.add_item("rescueHelos").set_data_array(rescue_helos)
 
-        # Each King (C-130) carries the nav beacon the rescue helo homes on.
+        # Each King (C-130) lights the TACAN the rescue helo homes on.
         kings_item = combat_sar.add_item("kings")
         for king in kings:
             item = kings_item.add_item()
@@ -636,16 +637,27 @@ class LuaGenerator:
             beacon = king.combat_sar_king
             if beacon is not None:
                 item.add_key_value("callsign", beacon.callsign)
-                # callsign + TACAN drive the v1 King beacon. beaconFreqHz/Modulation
-                # are the reserved VHF freq for the deferred ADF beacon (not yet read
-                # by the Lua); emitted now so ADF becomes a pure runtime addition.
-                item.add_key_value("beaconFreqHz", str(beacon.beacon_freq.hertz))
-                item.add_key_value(
-                    "beaconModulation", beacon.beacon_freq.modulation.name
-                )
+                # callsign + TACAN are the King beacon: air-tracking, so it follows
+                # the orbit, and every rescue helo we use can home on it.
                 if beacon.tacan is not None:
                     item.add_key_value("tacanChannel", str(beacon.tacan.number))
                     item.add_key_value("tacanBand", beacon.tacan.band.value)
+
+        # Stranded SOF teams (SCAR commander-capture loop): offer each on-map team
+        # as a CASEVAC pickup so the SAME Combat SAR rescue helo can extract it.
+        # Delivery clears the rescue + refunds the team at debrief. Only the SOF
+        # *recovery* is wired here; the C-130 SOF insert (CTLD) is unchanged. Gated
+        # on the SCAR intel feature; the anchor check keeps it to teams surfaced as
+        # an objective this turn (a freshly-stranded team surfaces next turn).
+        if self.game.settings.scar_command_post_intel:
+            teams_item = combat_sar.add_item("sofTeams")
+            for rescue in self.game.blue.pending_csars:
+                if rescue.anchor_cp_id is None:
+                    continue
+                item = teams_item.add_item()
+                item.add_key_value("name", sof_rescue_pickup_name(rescue))
+                item.add_key_value("x", str(rescue.x))
+                item.add_key_value("y", str(rescue.y))
 
     def _generate_combat_sar_pilot_template(self) -> Optional[str]:
         """Add a hidden, late-activation infantry group for MOOSE CSAR to clone as
@@ -748,30 +760,35 @@ class LuaGenerator:
         filename = resource_path.resolve()
         self.mission.map_resource.add_resource_file(filename)
 
-    def _sof_c130_present(self) -> bool:
-        """True if a SOF insert is flying the C-130J-30.
+    def _non_ew_c130j_present(self) -> bool:
+        """True if a non-EW role is flying the C-130J-30 this mission.
 
         The EW plugin (C-130J Mission Systems) attaches to every C-130J-30 by
         airframe alone (its eligibility check is purely ``getTypeName() ==
-        "C-130J-30"``), so it would hijack a SOF insert's C-130 -- bolting the
-        EW/ISR menu and behavior onto the airdrop aircraft. When a SOF C-130 is
-        in the mission we suppress the EW plugin so the insert flies clean.
+        "C-130J-30"``), so it would hijack any other C-130J-30 role -- bolting the
+        EW/ISR menu and behavior onto it. That matters for the two roles that must
+        fly clean: the **SOF insert** airdrop and the **Combat SAR "King"** orbit
+        (both are C-130J-30 now that the stock C-130 was retired). When either is in
+        the mission we suppress the EW plugin so it doesn't commandeer them. (A plain
+        Transport C-130J-30 was already the airframe before consolidation, so this
+        does not change its behaviour.)
         """
+        non_ew = (FlightType.SOF, FlightType.COMBAT_SAR)
         for coalition in (self.game.blue, self.game.red):
             for package in coalition.ato.packages:
                 for flight in package.flights:
-                    if flight.flight_type is FlightType.SOF and flight.is_c130j:
+                    if flight.flight_type in non_ew and flight.is_c130j:
                         return True
         return False
 
     def inject_plugins(self) -> None:
-        skip_ew = self._sof_c130_present()
+        skip_ew = self._non_ew_c130j_present()
         for plugin in LuaPluginManager.plugins():
             if skip_ew and plugin.definition.identifier == "c130j":
                 logging.warning(
-                    "SOF insert is flying the C-130J-30 the EW plugin claims by "
-                    "airframe; skipping the C-130J Mission Systems (EW) plugin for "
-                    "this mission so it doesn't hijack the SOF aircraft."
+                    "A SOF insert or Combat SAR King is flying the C-130J-30 the EW "
+                    "plugin claims by airframe; skipping the C-130J Mission Systems "
+                    "(EW) plugin for this mission so it doesn't hijack that aircraft."
                 )
                 continue
             if plugin.enabled:

@@ -40,6 +40,21 @@ class PendingSofRescue:
     anchor_cp_id: Optional[UUID] = None
 
 
+def sof_rescue_pickup_name(rescue: PendingSofRescue) -> str:
+    """Stable in-mission CASEVAC pickup name for a stranded SOF team.
+
+    The ``combatsar`` plugin spawns each stranded team as a MOOSE CSAR CASEVAC
+    using this exact string as the pickup's unit name, and the debrief
+    (``commit_sof_recoveries``) recomputes it from the same ``rescue`` to match a
+    delivered team back to its ``PendingSofRescue`` -- so both ends must agree.
+
+    The strand point is rounded to whole metres (strands are far apart and the
+    point match elsewhere uses a 1 m tolerance), behind a ``SOFRESCUE`` prefix the
+    Lua routes to the SOF-recovery channel rather than the pilot-sparing one.
+    """
+    return f"SOFRESCUE_{round(rescue.x)}_{round(rescue.y)}"
+
+
 def age_pending_rescues(
     rescues: list[PendingSofRescue],
 ) -> list[PendingSofRescue]:

@@ -11,7 +11,7 @@
     "F-5E Tiger II",
     "Mirage-F1CE",
     "Mirage-F1EE",
-    "C-130",
+    "C-130J-30",
     "UH-1H Iroquois",
     "CH-47D",
     "CH-47F Block I",
@@ -68,9 +68,6 @@
   "has_jtac": false,
   "doctrine": "modern",
   "liveries_overrides": {
-    "C-130": [
-      "Morocco"
-    ],
     "F-5E Tiger II": [
       "MRAF"
     ],

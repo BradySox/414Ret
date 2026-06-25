@@ -12,13 +12,14 @@
 -- in and recover them. C-130 Combat SAR flights (kings) only fly the overhead
 -- "King" orbit -- they are NOT in the rescue set and never land at a crash site.
 --
--- Each King lights a TACAN beacon (air-tracking, so it follows the orbit; the
--- CH-47F rescue helo has a TACAN receiver) the helo homes on, and carries a "LARS"
+-- Each King lights a TACAN beacon (air-tracking, so it follows the orbit; every
+-- rescue helo we use has a TACAN receiver) the helo homes on, and carries a "LARS"
 -- F10 button that reads MOOSE CSAR's live downed-pilot table and reports every
--- active survivor (position + bearing/range from the King + ADF freq). The ADF
--- radio beacon is deferred: MOOSE's RadioBeacon is fixed-point and would need a
--- refresh loop to track a moving King. King beacon/menu attach on group BIRTH so a
--- delayed or air-spawned (AI standing-alert) King is covered too.
+-- active survivor (position + bearing/range from the King) for the King crew to
+-- relay. TACAN is the single homing solution: an ADF radio beacon was dropped
+-- (MOOSE's RadioBeacon is fixed-point and the King is a mover, so it would need a
+-- position-refresh loop for no gain over the TACAN). King beacon/menu attach on
+-- group BIRTH so a delayed or air-spawned (AI standing-alert) King is covered too.
 --
 -- Blue-side. enableForAI is driven by the auto_combat_sar setting (carried in the
 -- data): OFF (default) makes MOOSE CSAR act ONLY on human-initiated events
@@ -105,13 +106,93 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     csar:Start()
 
     -------------------------------------------------------------------------------
+    -- Rescue scoring: report every pilot delivered home so the campaign can spare
+    -- the aviator (the airframe is still lost, but the experienced pilot returns to
+    -- the squadron instead of being killed at debrief).
+    --
+    -- MOOSE CSAR keeps the ejected aircraft's ORIGINAL unit name on each downed-pilot
+    -- track and carries it into inTransitGroups when the pilot boards. We capture it
+    -- on Boarded and only CREDIT it on Rescued -- the FSM event _RescuePilots fires
+    -- after delivering the onboard pilots to a friendly field/FARP. A rescue helo
+    -- shot down with pilots aboard never reaches Rescued, so those pilots are
+    -- (correctly) never credited. The original unit name is exactly what DCS reports
+    -- in the kill/crash events, so Retribution maps it straight back to the lost
+    -- flight and skips killing that pilot. Appends to the dcsRetribution-core global
+    -- combat_sar_rescues (written into state.json by dcs_retribution.lua).
+    --
+    -- The SAME pickup path also extracts stranded SCAR SOF teams (spawned as CASEVAC
+    -- below): those carry a SOFRESCUE_<x>_<y> name, which we route to a separate
+    -- combat_sar_sof_recoveries channel (clears the rescue + refunds the team)
+    -- instead of the pilot-sparing one.
+    -------------------------------------------------------------------------------
+    local onboardByHeli = {}  -- heliName -> { woundedGroupName -> originalUnit }
+
+    local function isSofRescue(name)
+        return type(name) == "string" and string.sub(name, 1, 9) == "SOFRESCUE"
+    end
+
+    function csar:OnAfterBoarded(_From, _Event, _To, heliName, woundedGroupName, _desc)
+        local transit = self.inTransitGroups[heliName]
+        local entry = transit and transit[woundedGroupName]
+        if entry and entry.originalUnit and entry.originalUnit ~= "" then
+            onboardByHeli[heliName] = onboardByHeli[heliName] or {}
+            onboardByHeli[heliName][woundedGroupName] = entry.originalUnit
+        end
+    end
+
+    function csar:OnAfterRescued(_From, _Event, _To, _heliUnit, heliName, _pilotsSaved)
+        local delivered = onboardByHeli[heliName]
+        if not delivered then
+            return
+        end
+        combat_sar_rescues = combat_sar_rescues or {}
+        combat_sar_sof_recoveries = combat_sar_sof_recoveries or {}
+        for _, originalUnit in pairs(delivered) do
+            if isSofRescue(originalUnit) then
+                table.insert(combat_sar_sof_recoveries, originalUnit)
+                env.info("DCSRetribution|Combat SAR - stranded SOF team " .. tostring(originalUnit)
+                    .. " extracted home; campaign will recover + refund it")
+            else
+                table.insert(combat_sar_rescues, originalUnit)
+                env.info("DCSRetribution|Combat SAR - pilot of " .. tostring(originalUnit)
+                    .. " delivered home; campaign will spare them")
+            end
+        end
+        onboardByHeli[heliName] = nil
+        dirty_state = true  -- force the next scheduled state write to include it
+    end
+
+    -------------------------------------------------------------------------------
+    -- Stranded SOF teams (SCAR commander-capture loop): a botched capture leaves a
+    -- SOF team in enemy territory. Spawn each on-map team (emitted by the generator)
+    -- as a MOOSE CSAR CASEVAC at its strand point, so the same Combat SAR rescue
+    -- helo can fly out, board it, and deliver it to a friendly field -- which clears
+    -- the rescue and refunds the team at debrief. CASEVAC reuses the pilotTemplate
+    -- group and the exact board/deliver path (so OnAfterRescued above sees it); the
+    -- SOFRESCUE_ name is what Python recomputes to match the delivery. The C-130 SOF
+    -- *insert* is unchanged (CTLD) -- only the recovery rides Combat SAR.
+    -------------------------------------------------------------------------------
+    local sofTeams = data.sofTeams or {}
+    for _, team in pairs(sofTeams) do
+        local x = tonumber(team.x)
+        local y = tonumber(team.y)
+        if team.name and x and y then
+            -- Generator emits pydcs (x = north, y = east); the DCS world vec3 is
+            -- { x = north, y = 0, z = east }, matching the SCAR plugin's convention.
+            local coord = COORDINATE:NewFromVec3({ x = x, y = 0, z = y })
+            csar:SpawnCASEVAC(coord, coalition.side.BLUE, "Stranded SOF team", false, team.name, "SOF Team", true)
+        end
+    end
+
+    -------------------------------------------------------------------------------
     -- C-130 "King": TACAN beacon + LARS survivor-locator menu
     -------------------------------------------------------------------------------
 
     -- LARS: read the live downed-pilot table and message the King group a list of
-    -- all active survivors (nearest first) with position, bearing/range from the
-    -- King, and ADF frequency. Coordinate text reuses MOOSE CSAR's own
-    -- settings-aware formatter so it matches the player's chosen coord system.
+    -- all active survivors (nearest first) with position and bearing/range from the
+    -- King, for the crew to relay (the helo homes on the King's TACAN). Coordinate
+    -- text reuses MOOSE CSAR's own settings-aware formatter so it matches the
+    -- player's chosen coord system.
     local function larsReport(csarEngine, kingGroup)
         local kingUnit = kingGroup:GetUnit(1)
         if not kingUnit or not kingUnit:IsAlive() then
@@ -129,19 +210,14 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
                     local dist = kingCoord:Get2DDistance(woundedCoord)
                     local bearing = math.floor(kingCoord:HeadingTo(woundedCoord) + 0.5) % 360
                     local nm = UTILS.MetersToNM(dist)
-                    local adf = ""
-                    if pilot.frequency and pilot.frequency > 0 then
-                        adf = string.format(", %.2f kHz ADF", pilot.frequency / 1000)
-                    end
                     table.insert(entries, {
                         dist = dist,
                         text = string.format(
-                            "%s: %s (brg %03d / %.0f nm%s)",
+                            "%s: %s (brg %03d / %.0f nm)",
                             tostring(pilot.desc or "Survivor"),
                             coordText,
                             bearing,
-                            nm,
-                            adf
+                            nm
                         ),
                     })
                 end

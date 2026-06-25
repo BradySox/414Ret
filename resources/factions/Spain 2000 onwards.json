@@ -16,7 +16,6 @@
     "Mirage-F1M-EE",
     "AV-8B Harrier II Night Attack",
     "C-101CC Aviojet",
-    "C-130",
     "C-130J-30",
     "An-26B",
     "UH-1H Iroquois",
@@ -121,14 +120,6 @@
       "Spain - 9a Escuadrilla Armada - 16",
       "Spain - 9a Escuadrilla Armada - 23",
       "Spain - 9a Escuadrilla Armada - 26"
-    ],
-    "C-130": [
-      "Spain - T10-03 31-03 Gris",
-      "Spain - T10-04 31-04  Gris",
-      "Spain - T10-08 31-05 Camo",
-      "Spain - T10-09 31-06  Gris",
-      "Spain - T10-10 31-07  Gris",
-      "Spain - TL10-01 31-01 Gris"
     ],
     "C-101CC Aviojet": [
       "AGA (Spanish Air School)",

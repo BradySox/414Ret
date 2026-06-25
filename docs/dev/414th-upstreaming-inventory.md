@@ -46,6 +46,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 6 | Negative-start-packages takeoff-time check | 🟢 READY | Low/Medium (UI false-warn) | n/a |
 | 7 | AAQ-33 targeting-pod era restriction | 🔵 DONE | — | — |
 | 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🟢 READY | Medium (player-facing) — carved + verified on dev | — |
+| 9 | Combat SAR — pilot rescue flight type + scoring | 🟠 CARE / 🟡 NEAR | High (whole new playable loop) | G8–G11, H2 ☐ |
 
 ---
 
@@ -152,6 +153,25 @@ unvalidated "fix" is not something to ask upstream to take.
 - **In-game pass:** the Python is test-covered; the player-facing fog still wants an
   in-game pass on a fresh campaign (composition hidden → reveals on strike; overview
   toggle un-fogs and re-fogs).
+
+### 9. Combat SAR — pilot rescue flight type + scoring — 🟠 CARE / 🟡 NEAR
+- **What:** a generic `FlightType.COMBAT_SAR` (CH-47 rescuer + C-130 "King" orbit) driven
+  by the bundled MOOSE `CSAR` engine, an `auto_combat_sar` AI standing alert, the King TACAN
+  beacon + LARS, the kneeboard card, and the **rescue-scoring loop** (a delivered pilot is
+  spared at debrief; the airframe is still lost). Test-covered in Python
+  (`tests/test_combat_sar_scoring.py`).
+- **Why it's a candidate:** a whole new playable rescue loop with broad community value, and
+  almost entirely generic (vanilla CH-47/C-130, bundled MOOSE — no HighDigitSAM/mod deps).
+- **🟠 CARE — the Lua + glue:** the engine config lives in `resources/plugins/combatsar/` and
+  the scoring rides the fork's `state.json` export globals (`combat_sar_rescues` in
+  `dcs_retribution.lua`) + the `commit_air_losses` hook. Carve the **Python task + flight plan
+  + scoring** as the upstreamable core; the MOOSE `CSAR` bridge ships as the plugin. Keep it
+  blue-only-by-default scoping that exists today.
+- **🟡 NEAR — unflown:** code-complete but G8–G11 + H2 are all ☐ UNTESTED. **Do not submit
+  before the in-game pass** — per the readiness legend, a runtime feature gets carved after it
+  is flown, not before. The scoring is fail-safe (empty export = pre-scoring behaviour), which
+  de-risks the carve but does not substitute for flying it.
+- **Source of truth:** `docs/dev/design/414th-combat-sar-spec.md`, features doc §21.
 
 ---
 

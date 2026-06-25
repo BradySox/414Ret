@@ -550,6 +550,11 @@ class AircraftType(UnitType[Type[FlyingType]]):
             "F-15E Strike Eagle (AI)": "F-15E Strike Eagle",
             "[CH] Tu-95MSM": "Tu-95MS Bear-H",
             "[CH] Mi-28N AH": "Mi-28N Havoc",
+            # The stock AI-only C-130 transport was retired in favor of the
+            # player-flyable Airplane Simulation Company C-130J-30 (the DCS AI flies
+            # it too), so in-progress campaigns with a C-130 squadron resolve to the
+            # J-30 instead of bricking on load. The KC-130/KC-130J tankers stay.
+            "C-130": "C-130J-30",
         }
 
     @classmethod

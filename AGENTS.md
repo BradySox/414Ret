@@ -216,6 +216,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `enable_unit_placement` (unlock) + `enable_free_unit_placement` (no cost).
     (`game/theater/unitplacement.py`, `qt_ui/windows/groundobject/QPlaceUnitGroupDialog.py`,
     `client/src/components/liberationmap/MapContextMenu.tsx`; features doc §20.)
+21. **Combat SAR** — bespoke player pilot-rescue flight type (`FlightType.COMBAT_SAR`): a CH-47
+    orbits the FLOT as the rescuer, a C-130 flies the HC-130 "King" overhead orbit (air-tracking
+    **TACAN-only** beacon — no ADF — + F10 LARS survivor-locator), driven at runtime by the bundled
+    MOOSE `CSAR` engine (`combatsar` plugin). Optional AI standing alert (`auto_combat_sar`, default
+    OFF). **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field spares the
+    aviator at debrief (airframe still lost) — the `combatsar` plugin's `OnAfterBoarded`/`OnAfterRescued`
+    hooks append the ejected unit name to the `combat_sar_rescues` state global, and
+    `commit_air_losses` skips that pilot's kill (fail-safe: empty list = pre-scoring behaviour).
+    Distinct from the SCAR SOF-recovery `FlightType.CSAR` (§15). (`game/ato/flighttype.py`,
+    `game/commander/tasks/primitive/combatsar.py`, `game/sim/missionresultsprocessor.py`,
+    `resources/plugins/combatsar/`; features doc §21, spec `414th-combat-sar-spec.md`.)
 
 ---
 

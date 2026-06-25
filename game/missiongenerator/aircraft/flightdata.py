@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from game.ato import FlightType, FlightWaypoint, Package
     from game.dcs.aircrafttype import AircraftType
     from game.radio.radios import RadioFrequency
+    from game.radio.tacan import TacanChannel
     from game.runways import RunwayData
     from game.theater.player import Player
 
@@ -22,6 +23,21 @@ if TYPE_CHECKING:
 class ChannelAssignment:
     radio_id: int
     channel: int
+
+
+@dataclass(frozen=True)
+class CombatSarKingBeacon:
+    """Nav beacons radiated by a C-130 "King" Combat SAR flight.
+
+    The King orbits as the on-scene-command anchor and lights a homing beacon the
+    rescue helo can fly to: a VHF radio beacon (helo-friendly ADF homing) plus an
+    optional TACAN (fixed-wing / modern receivers). Driven at runtime by the
+    combatsar plugin's MOOSE BEACON calls.
+    """
+
+    callsign: str
+    beacon_freq: RadioFrequency
+    tacan: Optional[TacanChannel]
 
 
 @dataclass
@@ -89,6 +105,9 @@ class FlightData:
     frequency_to_channel_map: dict[RadioFrequency, list[ChannelAssignment]] = field(
         init=False, default_factory=dict
     )
+
+    #: Nav beacons when this is a C-130 "King" Combat SAR flight; None otherwise.
+    combat_sar_king: Optional[CombatSarKingBeacon] = None
 
     def __post_init__(self) -> None:
         self.callsign = create_group_callsign_from_unit(self.units[0])

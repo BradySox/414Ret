@@ -51,7 +51,7 @@ from game.theater.bullseye import Bullseye
 from game.theater.controlpoint import Airfield
 from game.utils import Distance, UnitSystem, meters, mps, pounds
 from game.weather.weather import Weather
-from .aircraft.flightdata import FlightData
+from .aircraft.flightdata import CombatSarKingBeacon, FlightData
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
 from .kneeboard_page import KneeboardPage
 from .kneeboard_recon import airport_imagery as _airport_imagery
@@ -1239,13 +1239,25 @@ class CombatSarTaskPage(KneeboardPage):
     page is guidance rather than exact tunable values.
     """
 
-    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
+    def __init__(
+        self,
+        flight: FlightData,
+        king_beacons: List[CombatSarKingBeacon],
+        dark_kneeboard: bool,
+    ) -> None:
         self.flight = flight
+        # Every blue King's beacon in the mission, so the rescue helo knows what to
+        # tune to home on the on-scene-command orbit.
+        self.king_beacons = king_beacons
         self.dark_kneeboard = dark_kneeboard
 
     @property
     def _is_pickup_helo(self) -> bool:
         return self.flight.aircraft_type.helicopter
+
+    @staticmethod
+    def _tacan_str(beacon: CombatSarKingBeacon) -> str:
+        return str(beacon.tacan) if beacon.tacan is not None else "--"
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -1277,6 +1289,14 @@ class CombatSarTaskPage(KneeboardPage):
                 "the save.",
                 wrap=True,
             )
+            kings_with_tacan = [b for b in self.king_beacons if b.tacan is not None]
+            if kings_with_tacan:
+                writer.heading("KING BEACON")
+                writer.text("Home on the HC-130 King (TACAN) to find the rescue area:")
+                writer.table(
+                    [[b.callsign, self._tacan_str(b)] for b in kings_with_tacan],
+                    headers=["King", "TACAN"],
+                )
         else:
             writer.heading("ON-SCENE COMMAND")
             writer.text(
@@ -1286,6 +1306,15 @@ class CombatSarTaskPage(KneeboardPage):
                 "coordination.",
                 wrap=True,
             )
+            beacon = self.flight.combat_sar_king
+            if beacon is not None and beacon.tacan is not None:
+                writer.heading("YOUR BEACON")
+                writer.text(
+                    f"Radiating TACAN {beacon.tacan} ({beacon.callsign}) for the "
+                    "rescue helo to home on. F10 -> Combat SAR -> LARS lists active "
+                    "survivors (position, bearing/range, ADF freq).",
+                    wrap=True,
+                )
 
         writer.write(path)
 
@@ -1617,7 +1646,15 @@ class KneeboardGenerator(MissionInfoGenerator):
         elif flight.flight_type is FlightType.STRIKE:
             return StrikeTaskPage(flight, self.dark_kneeboard)
         elif flight.flight_type is FlightType.COMBAT_SAR:
-            return CombatSarTaskPage(flight, self.dark_kneeboard)
+            king_beacons: List[CombatSarKingBeacon] = []
+            for f in self.flights:
+                if (
+                    f.flight_type is FlightType.COMBAT_SAR
+                    and f.friendly.is_blue
+                    and f.combat_sar_king is not None
+                ):
+                    king_beacons.append(f.combat_sar_king)
+            return CombatSarTaskPage(flight, king_beacons, self.dark_kneeboard)
         return None
 
     def generate_flight_kneeboard(

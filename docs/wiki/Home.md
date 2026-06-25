@@ -42,8 +42,10 @@ adapted to how this fork actually plans and flies a campaign.
 ## 414th features
 
 - **[What's Different in the 414th Fork](414th-Fork-Overview)** — the overview.
-- **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)** — recon intel-fog, TARPS, TARS.
-- **[SCAR](SCAR)** — hunt a moving high-value target; the SOF commander-capture path.
+- **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)** — recon intel-fog, BDA lag, approximate targeting.
+- **[TARPS Reconnaissance](TARPS-Reconnaissance)** — fly the F-14 photo recon; the TARS film engine.
+- **[SCAR](SCAR)** — hunt a moving high-value target among decoys.
+- **[SOF and Commander Capture](SOF-and-Commander-Capture)** — the finite SOF-team capture/recovery loop.
 - **[Combat SAR](Combat-SAR)** — rescue a downed pilot and get them home.
 - **[Electronic Warfare and ISR](Electronic-Warfare-and-ISR)** — the C-130J JAMMING platform.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline battle simulation.

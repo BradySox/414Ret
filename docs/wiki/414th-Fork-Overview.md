@@ -21,8 +21,9 @@ Upstream shows you the enemy laydown. The fork fogs it, so reconnaissance become
 - Enemy sites can be **known without their composition, strength, damage state, or threat
   rings** being known. Attacking or scouting a site reveals it; confirmed battle damage can
   require a surviving recon pass (BDA damage lag).
-- **TARPS** is a real player task for F-14s, backed by the **TARS** film-and-debrief engine —
-  what the aircraft photographs is carried back into the campaign as confirmed intelligence.
+- **[TARPS](TARPS-Reconnaissance)** is a real player task for F-14s, backed by the **TARS**
+  film-and-debrief engine — what the aircraft photographs is carried back into the campaign as
+  confirmed intelligence.
 - An optional **Approximate target area** mode removes perfect coordinates and offsets
   steerpoints, so visual acquisition, talk-ons, and recon matter. Mobile short-range defenses
   are kept off player datalinks while larger SAM sites stay available for deliberate SEAD/DEAD.
@@ -38,7 +39,8 @@ Full detail: **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)**.
 
 - **[SCAR](SCAR)** — a player-led moving-target hunt: identify the real HVT among decoys and
   clutter, then stop it before it reaches safety. Prosecuting the wrong convoy is a
-  mis-identification that costs budget. An experimental path uses finite purchased SOF teams to
+  mis-identification that costs budget. An experimental
+  **[SOF commander-capture path](SOF-and-Commander-Capture)** uses finite purchased SOF teams to
   capture a commander alive, with a downed-team helo-CSAR recovery loop.
 - **[Combat SAR](Combat-SAR)** — makes a downed pilot worth flying for. A CH-47 rescuer orbits
   the front while a C-130 holds overhead as the HC-130 "King". Recover a human pilot and deliver

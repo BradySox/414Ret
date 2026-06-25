@@ -21,7 +21,9 @@
 **414th features**
 - [Fork Overview](414th-Fork-Overview)
 - [Fog of War & Recon](Fog-of-War-and-Reconnaissance)
+- [TARPS Reconnaissance](TARPS-Reconnaissance)
 - [SCAR](SCAR)
+- [SOF & Commander Capture](SOF-and-Commander-Capture)
 - [Combat SAR](Combat-SAR)
 - [Electronic Warfare & ISR](Electronic-Warfare-and-ISR)
 - [Troops In Contact](Troops-In-Contact)

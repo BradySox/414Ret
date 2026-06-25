@@ -357,7 +357,10 @@ class MissionResultsProcessor:
         )
         from game.scar_rescue import sof_rescue_pickup_name
 
-        delivered_sof = set(debriefing.state_data.combat_sar_sof_recoveries)
+        # state_data is only absent on lightweight Debriefings built for tests; a
+        # real debrief always carries it (see qra_losses_by_type for the same guard).
+        state_data = getattr(debriefing, "state_data", None)
+        delivered_sof = set(getattr(state_data, "combat_sar_sof_recoveries", []) or [])
         for coalition, unit_name in (
             (self.game.blue, SCAR_SOF_UNIT_BLUE),
             (self.game.red, SCAR_SOF_UNIT_RED),

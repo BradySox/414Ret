@@ -4,9 +4,16 @@
 in-game pass F7/F8). **Phase 2 (King designation) + Phase 3 talk-on gate BUILT** on PR #189 (pending
 in-game pass F9): the script-as-MAGIC controller cues the box on-station (GREEN smoke + mark + call),
 then escalates to a precise RED-smoke designation on the real target after the talk-on window — the
-decoy ID puzzle survives, voice-first/additive. **Deferred:** the **laser/IR `SPOT`** (Phase 3b —
-needs a spawned designator emitter) and a "say again" F10; **Phase 4** polish; and the
+decoy ID puzzle survives, voice-first/additive. **Deferred:** the **laser/IR `SPOT`** (Phase 3b) and a "say again" F10; **Phase 4** polish; and the
 **dead-chase-code retirement** (until after the F7/F8 flight). · **Date:** 2026-06-25
+
+> **Phase 3b laser rule (user-decided 2026-06-25): lase only when a King flight is ON STATION.** The
+> laser/IR `SPOT` emits **from the King aircraft itself** (a C-130 King on station over the box) — so
+> there is **no spawned-designator** hack, and **no King flight fragged ⇒ no laser at all** (the
+> smoke + talk-on already built covers the no-King case). 3b becomes: detect an on-station friendly
+> King → `SPOT` the designated target from its unit (managed lifecycle: drop the spot when the target
+> dies / the King leaves / the area resolves) → publish the laser code in the designation call.
+> Smoke-only designation stays the baseline; the laser is the **King-present bonus**.
 **Related:** [`414th-scar-task-spec.md`](414th-scar-task-spec.md) (current SCAR),
 [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the King + orbit pattern this reuses),
 [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md) (why we stay off

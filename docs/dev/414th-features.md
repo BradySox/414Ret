@@ -873,10 +873,37 @@ A polish pass over the **LUA Plugins Options** page so every plugin explains its
 
 ## 15. SCAR — Strike Coordination and Reconnaissance (flight type + scenario plugin)
 
-A player-flown `FlightType.SCAR`: work a defined area to find and prosecute a moving
-high-value target hidden among look-alike decoys + clutter and light AAA, before it
-reaches safety. Design ground truth: `docs/dev/design/414th-scar-task-spec.md` (read
-before touching). SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.md`.
+A player-flown `FlightType.SCAR`: work a defined area to find and prosecute a high-value
+target hidden among look-alike decoys + clutter and light AAA. Design ground truth:
+`docs/dev/design/414th-scar-task-spec.md` (the original moving model) and
+`docs/dev/design/414th-scar-king-fac-notes.md` (the loiter rework — read this first now).
+SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.md`.
+
+> 🔄 **Loiter-and-task rework — Phase 1 (PR #187, draft; pending in-game pass).** The original
+> design was a **chase**: the HVT (spawned runner / bound real armor / bound SCUD) fled to a
+> city and "fail" was it arriving. That is **retired**. SCAR now plans like the Combat SAR
+> package — the flight **loiters over a STATIC kill box** and the **C-130 "King" on-scene
+> commander** designates a **real, static armor TGO** to service. Because the target is a real
+> campaign TGO, kills attrit the enemy through the **normal ground-loss/debrief path** — there is
+> **no SCAR-specific success/failed scoring** (the plugin still emits those statuses, but they're
+> log-only; `commit_scar_results` only acts on `captured` + mis-ID + strandings). What's landed
+> on the branch:
+> - **`_make_static`** (`scarluadata.py`) zeroes all movement: the bound real group + spawned
+>   decoys hold (dest == spawn, speed 0), the tasking dest/fire-point collapse onto the area
+>   centre, and the SOF capture point moves onto the held target.
+> - **Lua static guards** (`scar_414_init.lua`): nothing drives, the SCUD stays inert
+>   (WEAPON_HOLD), the instant arrival-fail is gated off — **fail = window timeout only**.
+> - **Inverted SOF capture**: the SOF team (player-delivered, bound by `maybe_bind_sof`) assaults
+>   the **held command vehicle** and must hold on the **live** commander for `SCAR_SOF_DWELL_S`
+>   (the dwell stops co-location instant-firing); killing the commander forfeits the capture.
+> - The bridge tests are rewritten to the static contract.
+>
+> **Still to do** (later phases, separate PRs): the **King designation bridge** (smoke / map mark /
+> laser / IR / message) + the **talk-on ID puzzle** + R7, then polish. ⚠️ **Designation is
+> voice-first:** the King is a *player* who talks the strikers on over **SRS live voice** — the
+> scripted aids are **additive, skippable complements** (for an AI King / silent comms), never a
+> scripted-popup-only flow. The moving-model details below describe the retired path (code is
+> bypassed, not yet deleted).
 
 - **Planner side (Python, CI-tested):** `FlightType.SCAR` (`game/ato/flighttype.py`,
   air-to-ground primary, `ATTACK_STRIKE`); `ScarFlightPlan` cloned from Armed Recon

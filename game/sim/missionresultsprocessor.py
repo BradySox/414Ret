@@ -239,7 +239,12 @@ class MissionResultsProcessor:
         command posts next turn (Phase 1, gated by ``scar_command_post_intel``),
         and a mis-ID — prosecuting one of an area's decoy/clutter convoys —
         debits the offending side's budget (R7, gated by ``scar_misid_penalty``).
-        Remaining outcomes are log-only. Additive — a no-op when the plugin /
+
+        Under the loiter-and-task model the target is a REAL campaign TGO, so a
+        kill attrits the enemy through the normal ground-loss/debrief path — there
+        is deliberately no SCAR-specific success/failed scoring. The ``success`` /
+        ``failed`` / ``launched`` statuses the plugin still emits are therefore
+        log-only here (not a missing hook). Additive — a no-op when the plugin /
         settings are off.
         """
         blue_captures = 0

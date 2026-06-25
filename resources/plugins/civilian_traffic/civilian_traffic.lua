@@ -300,30 +300,19 @@ if #_airdromes >= 2 then
     end
 end
 
--- ── Rotary templates ──────────────────────────────────────────────────────────
+-- ── Rotary templates ── DISABLED (sim-crash safety) ───────────────────────────
+-- Civilian helicopters are intentionally NOT spawned. RAT helo spawns repeatedly
+-- produced a malformed unit with a nil descriptor ("Corrupt damage model"), which
+-- DCS then HARD-CRASHES on inside Transport.dll via woCharacterHuman::GetPosition.
+-- This was whack-a-moled for weeks with progressively tighter spawn-field gates
+-- (real-runways-only, category + name filters for FARP/heliport ids) -- but a
+-- leaked RAT_CIV_UH1 still crashed the sim (dcs.log 2026-06-25, GermanyCW). The
+-- fixed-wing civilian layer above carries the immersion and never crashes, so the
+-- rotary layer is dropped entirely for stability. (_helipads is still computed
+-- above so the summary line reports the pool size.) Re-enable ONLY if RAT's
+-- malformed-helo / descriptor-nil spawn bug is genuinely fixed upstream.
 local _helo_count  = 0
 local _helo_spawns = 0
-
-if #_helipads >= 2 then
-    local pool = _names(_helipads)
-    local n = _density(#_helipads, 1, 2)     -- lighter rotary band
-    local helo_templates = {
-        "RAT_CIV_MI8",
-        "RAT_CIV_UH1",
-        "RAT_CIV_SA342",
-    }
-    for _, tmpl in ipairs(helo_templates) do
-        -- Use the pruned pool + helo distance cap (mirrors the fixed-wing branch).
-        -- Pruning to fields with an in-range neighbour avoids isolated departure
-        -- fields with no reachable destination; any residual "No valid destination"
-        -- spam from a short-range helo's own range is silenced by the MESSAGE
-        -- filter at the top of this file. SetMinDistance(5) prevents same-field hops.
-        if _spawn_rat(tmpl, pool, n, _maxdist_helo_km) then
-            _helo_count  = _helo_count  + 1
-            _helo_spawns = _helo_spawns + n
-        end
-    end
-end
 
 env.info(string.format(
     "414Ret civilian_traffic: %d front keep-out(s) | " ..

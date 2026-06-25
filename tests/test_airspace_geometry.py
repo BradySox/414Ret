@@ -104,9 +104,8 @@ def test_standoff_anchor_matches_raw_helper() -> None:
     target = SimpleNamespace(position=FakePoint(-100_000, 0.0))
 
     direct = support_orbit_anchor(theater, BLUE, threat, target, buffer)  # type: ignore[arg-type]
-    viaservice = AirspaceGeometry(theater, BLUE, threat).standoff_anchor(  # type: ignore[arg-type]
-        target, buffer
-    )
+    geom = AirspaceGeometry(theater, BLUE, threat)  # type: ignore[arg-type]
+    viaservice = geom.standoff_anchor(target, buffer)  # type: ignore[arg-type]
     _assert_same_anchor(direct, viaservice)
 
 
@@ -120,9 +119,8 @@ def test_standoff_anchor_matches_for_ai_side_and_no_front() -> None:
 
     for thr in (theater, no_front):
         direct = support_orbit_anchor(thr, RED, threat, target, buffer)  # type: ignore[arg-type]
-        viaservice = AirspaceGeometry(thr, RED, threat).standoff_anchor(  # type: ignore[arg-type]
-            target, buffer
-        )
+        geom = AirspaceGeometry(thr, RED, threat)  # type: ignore[arg-type]
+        viaservice = geom.standoff_anchor(target, buffer)  # type: ignore[arg-type]
         _assert_same_anchor(direct, viaservice)
 
 

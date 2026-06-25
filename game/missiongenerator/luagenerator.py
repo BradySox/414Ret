@@ -583,9 +583,10 @@ class LuaGenerator:
         Combat SAR (FlightType.COMBAT_SAR) is a player-flown pilot-rescue orbit
         executed at runtime by the MOOSE CSAR engine (resources/plugins/combatsar).
         Python's job is only to (1) tell the Lua bridge which generated groups are
-        the CH-47 rescue helos (and which C-130s fly the "King" orbit), and (2) drop
-        one late-activation infantry group that MOOSE CSAR clones at each crash site
-        as the downed pilot. Blue-only for v1; AI standing alert is a later phase.
+        the CH-47 rescue helos (and which C-130s fly the "King" orbit, with their nav
+        beacons), and (2) drop one late-activation infantry group that MOOSE CSAR
+        clones at each crash site as the downed pilot. Blue-only. ``enableForAI``
+        carries the standing-alert setting (auto_combat_sar) to the runtime.
         """
         rescue_helos: list[str] = []
         kings: list[FlightData] = []
@@ -635,6 +636,9 @@ class LuaGenerator:
             beacon = king.combat_sar_king
             if beacon is not None:
                 item.add_key_value("callsign", beacon.callsign)
+                # callsign + TACAN drive the v1 King beacon. beaconFreqHz/Modulation
+                # are the reserved VHF freq for the deferred ADF beacon (not yet read
+                # by the Lua); emitted now so ADF becomes a pure runtime addition.
                 item.add_key_value("beaconFreqHz", str(beacon.beacon_freq.hertz))
                 item.add_key_value(
                     "beaconModulation", beacon.beacon_freq.modulation.name

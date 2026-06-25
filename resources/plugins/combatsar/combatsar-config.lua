@@ -20,10 +20,11 @@
 -- refresh loop to track a moving King. King beacon/menu attach on group BIRTH so a
 -- delayed or air-spawned (AI standing-alert) King is covered too.
 --
--- v1 scope (blue, human-pilot, player-flown): enableForAI is left false, which
--- makes MOOSE CSAR act ONLY on human-initiated events (Moose.lua CSAR:_EventHandler
--- early-returns when enableForAI==false and IniPlayerName==nil) -- exactly the
--- "downed HUMAN pilots" behaviour. AI standing-alert rescue is a later phase.
+-- Blue-side. enableForAI is driven by the auto_combat_sar setting (carried in the
+-- data): OFF (default) makes MOOSE CSAR act ONLY on human-initiated events
+-- (Moose.lua CSAR:_EventHandler early-returns when enableForAI==false and
+-- IniPlayerName==nil) -- the "downed HUMAN pilots, player-flown" behaviour; ON lets
+-- AI rescue helos be commandeered for a standing alert (AI ejections count too).
 --
 -- Inert unless dcsRetribution.CombatSAR exists (the generator emits it only when
 -- at least one blue Combat SAR flight is present). Independent of the SOF-recovery
@@ -126,7 +127,7 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
                         pilot.group, kingUnit
                     )
                     local dist = kingCoord:Get2DDistance(woundedCoord)
-                    local bearing = math.floor(kingCoord:HeadingTo(woundedCoord) + 0.5)
+                    local bearing = math.floor(kingCoord:HeadingTo(woundedCoord) + 0.5) % 360
                     local nm = UTILS.MetersToNM(dist)
                     local adf = ""
                     if pilot.frequency and pilot.frequency > 0 then

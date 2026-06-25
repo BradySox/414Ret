@@ -12,6 +12,7 @@ from .armedrecon import ArmedReconFlightPlan
 from .bai import BaiFlightPlan
 from .barcap import BarCapFlightPlan
 from .cas import CasFlightPlan
+from .combatsar import CombatSarFlightPlan
 from .dead import DeadFlightPlan
 from .escort import EscortFlightPlan
 from .ferry import FerryFlightPlan
@@ -75,10 +76,13 @@ class FlightPlanBuilderTypes:
             # CTLD delivery to fly to the stranded team and extract it; the
             # air-assault builder's helo-only guard keeps this rotary-wing.
             FlightType.CSAR: AirAssaultFlightPlan.builder_type(),
-            # Combat SAR = a standing pilot-rescue orbit near the FLOT. Like JAMMING,
-            # it reuses the AEWC racetrack builder (FLOT-anchored, clear of threat
-            # rings); the MOOSE CSAR runtime does the reactive pickup, not the plan.
-            FlightType.COMBAT_SAR: AewcFlightPlan.builder_type(),
+            # Combat SAR = a standing pilot-rescue hold for a rescue helo. It uses
+            # a dedicated forward-hold plan (FLOT-anchored, short threat buffer,
+            # helo-sized racetrack) rather than the AEW&C standoff, so the CH-47
+            # holds near the front where it can reach an ejection instead of
+            # loitering at AWACS depth. The MOOSE CSAR runtime does the reactive
+            # pickup, not the plan.
+            FlightType.COMBAT_SAR: CombatSarFlightPlan.builder_type(),
             FlightType.ARMED_RECON: ArmedReconFlightPlan.builder_type(),
             # SCAR = area find-and-prosecute of one moving HVT; v1 reuses the
             # Armed Recon area/ingress machinery (see ScarFlightPlan).

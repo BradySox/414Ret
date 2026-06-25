@@ -1268,9 +1268,18 @@ returns to the squadron).
 
 ### Architecture (Python plans + scores, Lua executes)
 
-- **`FlightType.COMBAT_SAR`** — player-selectable for CH-47 (rescue) and C-130 (King);
-  FLOT-anchored orbit reusing the AEWC support-orbit builder (behind the FLOT, clear of
-  threat rings). Helos clamp to a helo-appropriate AGL via the shared `get_altitude` path.
+- **`FlightType.COMBAT_SAR`** — player-selectable for CH-47 (rescue) and C-130 (King). It
+  flies a **dedicated forward-hold plan** (`game/ato/flightplans/combatsar.py`,
+  `CombatSarFlightPlan`): front-anchored like AEW&C, but with a **short threat buffer**
+  (`COMBAT_SAR_THREAT_BUFFER`, 15 NM — just clear of FLOT SHORAD/MANPAD reach) and a
+  **helo-sized racetrack** (`COMBAT_SAR_RACETRACK_HALF_DISTANCE`, 5 NM), so the rescue helo
+  holds *near the front* where it can actually reach an ejection — **not** at the 80 NM AWACS
+  standoff. `CombatSarFlightPlan` subclasses `AewcFlightPlan` (and its `Builder` subclasses the
+  AEW&C `Builder`) purely to keep the existing support-flight integration that keys off
+  `isinstance(.., AewcFlightPlan)` (AWACS-info registration, DTC orbit exclusion) — only the
+  geometry differs. Helos clamp to a helo-appropriate AGL via the shared `get_altitude` path.
+  (Earlier builds reused the AEW&C builder outright, which parked the CH-47 at AWACS depth — a
+  G9 in-game finding, fixed 2026-06-25.)
 - **AI standing alert** — `Settings.auto_combat_sar` (HQ automation, default OFF) auto-plans
   one COMBAT_SAR orbit per turn for blue via `PlanCombatSar` / `PlanCombatSarSupport`
   (mirrors AEWC/refuel support). With it on, the generator emits `enableForAI=true`, so
@@ -1288,9 +1297,13 @@ returns to the squadron).
   `resources/customized_payloads/CH-47Fbl1.lua`) for self-protection on the way in; the AI
   **CH-47D** stays a `Combat SAR` fallback (no weapon stations). The King is the
   **C-130J-30** — the player-flyable Airplane Simulation Company module, now the **only** C-130
-  in the fork (the stock AI C-130 was retired; see "C-130 consolidation" below), whose model
-  carries the external underwing fuel tanks. (Loadout names resolve `Retribution Combat SAR` →
-  `Liberation Combat SAR` → empty; an airframe with no Combat SAR payload just flies clean.)
+  in the fork (the stock AI C-130 was retired; see "C-130 consolidation" below). Its external
+  underwing tanks are a **removable module pylon, not model-default**, so the King gets its own
+  **`Retribution Combat SAR` payload** mounting both wing tanks (`{C130J_Ext_Tank_L}` Pylon 1 +
+  `{C130J_Ext_Tank_R}` Pylon 2, `resources/customized_payloads/C-130J-30.lua`) — without it the
+  King spawned clean / tankless (a G13 in-game finding, fixed 2026-06-25). (Loadout names resolve
+  `Retribution Combat SAR` → `Liberation Combat SAR` → empty; an airframe with no Combat SAR
+  payload just flies clean.)
   Because the EW (`c130j`) plugin claims every C-130J-30 by airframe, the generator suppresses
   it for any mission with a SOF-insert or Combat SAR King C-130J-30 (`_non_ew_c130j_present`) so
   the King flies clean.

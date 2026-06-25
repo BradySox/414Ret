@@ -568,11 +568,86 @@ class LuaGenerator:
                 "engagementRangeMeters", str(escort.engagement_range_meters)
             )
 
+        self._generate_combat_sar(lua_data)
+
         trigger = TriggerStart(comment="Set DCS Retribution data")
         trigger.add_action(DoScript(String(lua_data.create_operations_lua())))
         self.mission.triggerrules.triggers.append(trigger)
 
         self._inject_atis_lua()
+
+    def _generate_combat_sar(self, lua_data: LuaData) -> None:
+        """Emit dcsRetribution.CombatSAR + the downed-pilot template group.
+
+        Combat SAR (FlightType.COMBAT_SAR) is a player-flown pilot-rescue orbit
+        executed at runtime by the MOOSE CSAR engine (resources/plugins/combatsar).
+        Python's job is only to (1) tell the Lua bridge which generated groups are
+        the CH-47 rescue helos (and which C-130s fly the "King" orbit), and (2) drop
+        one late-activation infantry group that MOOSE CSAR clones at each crash site
+        as the downed pilot. Blue-only for v1; AI standing alert is a later phase.
+        """
+        rescue_helos: list[str] = []
+        kings: list[str] = []
+        for flight in self.mission_data.flights:
+            if flight.flight_type is not FlightType.COMBAT_SAR:
+                continue
+            if not flight.friendly.is_blue:
+                continue
+            if flight.aircraft_type.helicopter:
+                rescue_helos.append(flight.group_name)
+            else:
+                kings.append(flight.group_name)
+
+        # No rescue helo tasked -> the CSAR service is simply absent this mission.
+        # Skip the template too so we never leave an orphan group in the .miz.
+        if not rescue_helos:
+            return
+
+        template_name = self._generate_combat_sar_pilot_template()
+        if template_name is None:
+            logging.warning(
+                "Combat SAR: could not build the downed-pilot template; "
+                "skipping CSAR setup for this mission."
+            )
+            return
+
+        combat_sar = lua_data.add_item("CombatSAR")
+        combat_sar.add_key_value("pilotTemplate", template_name)
+        combat_sar.add_data_array("rescueHelos", rescue_helos)
+        combat_sar.add_data_array("kings", kings)
+
+    def _generate_combat_sar_pilot_template(self) -> Optional[str]:
+        """Add a hidden, late-activation infantry group for MOOSE CSAR to clone as
+        the downed pilot. Returns its group name, or None if it can't be built."""
+        faction = self.game.blue.faction
+        infantry = next(faction.infantry_with_class(UnitClass.INFANTRY), None)
+        if infantry is not None:
+            dcs_unit_type = infantry.dcs_unit_type
+        else:
+            # Vanilla fallback so the template exists even for an infantry-less faction.
+            from dcs.vehicles import Infantry
+
+            dcs_unit_type = Infantry.Soldier_M4
+
+        anchor = next(
+            (cp for cp in self.game.theater.controlpoints if cp.captured.is_blue),
+            None,
+        )
+        if anchor is None:
+            return None
+
+        country = self.mission.country(faction.country.name)
+        group_name = "Combat SAR Downed Pilot"
+        group = self.mission.vehicle_group(
+            country,
+            group_name,
+            dcs_unit_type,
+            position=anchor.position,
+            group_size=1,
+        )
+        group.late_activation = True
+        group.hidden_on_mfd = True
+        return group_name
 
     def _serialize_atis_lua(self) -> str:
         """Return a Lua assignment for dcsRetribution.Atis, or '' when empty.

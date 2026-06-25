@@ -35,6 +35,11 @@ class FlightData:
 
     aircraft_type: AircraftType
 
+    #: The DCS group name of the flight's group. Used by plugins that need to
+    #: bind runtime behavior to a specific generated group (e.g. the Combat SAR
+    #: rescue set).
+    group_name: str
+
     squadron: Squadron
 
     #: All units in the flight.

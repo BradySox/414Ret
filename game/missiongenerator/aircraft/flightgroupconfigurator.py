@@ -150,6 +150,7 @@ class FlightGroupConfigurator:
             aircraft_type=self.flight.unit_type,
             squadron=self.flight.squadron,
             flight_type=self.flight.flight_type,
+            group_name=self.group.name,
             units=self.group.units,
             size=len(self.group.units),
             friendly=self.flight.departure.captured,

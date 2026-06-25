@@ -429,6 +429,20 @@ so the two docs don't drift.
   `base/plugin.json` revert. **Remaining:** fly across more campaigns/maps, then delete
   `mist_4_5_126.lua` as the final cleanup.
 
+### G8 — Combat SAR pilot rescue (`combatsar` / MOOSE CSAR) · Combat SAR Phase 2 · ☐ UNTESTED
+- **Setup:** A campaign with a blue **CH-47** squadron; plan a **Combat SAR** flight (CH-47) near
+  the FLOT (optionally a C-130 Combat SAR "King" too). Fly it, then have a **human** pilot eject in
+  the area (a second slot, or eject yourself from a separate fighter).
+- **Pass:** On the human ejection a downed pilot spawns with a radio beacon; the CH-47's F10 CSAR
+  menu shows the active SAR; the helo hovers/lands within pickup range, boards the pilot, and
+  delivers to a friendly airfield/FARP (rescue count increments). `dcs.log` clean. The C-130 "King"
+  just flies its orbit (never lands). The existing SOF-recovery CSAR (SCAR loop) is undisturbed.
+- **Fail signature:** any `combatsar-config.lua` Lua error; the downed pilot never spawns
+  (missing `Combat SAR Downed Pilot` template, or `SPAWN:NewWithAlias` nil); an **AI** ejection
+  spawns a pilot (means `enableForAI` leaked true); a non-CH-47 helo gets the rescue menu (rescue
+  set mis-bound); or double event-handling with the SOF CSAR. If the helo can't deliver anywhere,
+  check `allowFARPRescue` / that a friendly airfield is in range.
+
 ---
 
 ## H. Kneeboards

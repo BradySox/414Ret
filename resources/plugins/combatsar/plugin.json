@@ -1,0 +1,34 @@
+{
+    "nameInUI": "Combat SAR (pilot rescue)",
+    "descriptionInUI": "MOOSE CSAR runtime for the Combat SAR flight task. When a HUMAN pilot ejects, a downed-pilot is spawned with a radio beacon and the CH-47 flights tasked Combat SAR can fly in, hover/land, and recover them; C-130 flights tasked Combat SAR fly the HC-130 'King' overhead orbit. Inert unless at least one blue Combat SAR flight is in the mission (the mission generator emits dcsRetribution.CombatSAR only then). v1 is blue-side, human-pilot, player-flown; AI standing alert comes later.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Auto-smoke the downed pilot when a rescue helo is near",
+            "mnemonic": "autosmoke",
+            "defaultValue": false
+        },
+        {
+            "nameInUI": "Pickup distance for boarding the downed pilot (m)",
+            "mnemonic": "loadDistance",
+            "defaultValue": 75
+        },
+        {
+            "nameInUI": "Rescue-hover height the helo must hold to pick up (m)",
+            "mnemonic": "rescueHoverHeight",
+            "defaultValue": 20
+        },
+        {
+            "nameInUI": "On-screen CSAR message duration (s)",
+            "mnemonic": "messageTime",
+            "defaultValue": 15
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "combatsar-config.lua",
+            "mnemonic": "combatsar-config"
+        }
+    ]
+}

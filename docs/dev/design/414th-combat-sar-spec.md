@@ -59,12 +59,37 @@ shape as the MANTIS / CTLD plugins.
 
 ## Phased build (each phase its own branch + in-game pass; never merge unflown)
 
-| Phase | Scope | Validates |
-|---|---|---|
-| **1 — Python task** | `COMBAT_SAR` FlightType + FLOT-orbit flight plan + CH-47/C-130 eligibility + entity map; player-selectable | Generate a mission, see a CH-47/C-130 fly a FLOT orbit; Python tests green |
-| **2 — Lua CSAR bridge** | `combatsar` plugin: MOOSE `CSAR` for human ejections, CH-47 rescue set | Eject a player near the FLOT → the CH-47 flies in and recovers them; `dcs.log` clean |
-| **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works |
-| **4 — polish** | C-130 → tanker/command role (reuse refuel system), kneeboard card, scoring hook | nice-to-haves |
+| Phase | Scope | Validates | Status |
+|---|---|---|---|
+| **1 — Python task** | `COMBAT_SAR` FlightType + FLOT-orbit flight plan + CH-47/C-130 eligibility + entity map; player-selectable | Generate a mission, see a CH-47/C-130 fly a FLOT orbit; Python tests green | ✅ landed (#170) |
+| **2 — Lua CSAR bridge** | `combatsar` plugin: MOOSE `CSAR` for human ejections, CH-47 rescue set | Eject a player near the FLOT → the CH-47 flies in and recovers them; `dcs.log` clean | ⏳ built, **pending in-game pass** |
+| **3 — AI standing alert** | auto-plan one CSAR orbit/side + `auto_combat_sar` setting | AI CSAR up with no player; auto-rescue works | not started |
+| **4 — polish** | C-130 → tanker/command role (reuse refuel system), kneeboard card, scoring hook | nice-to-haves | not started |
+
+### Phase 2 — as built
+
+- **`combatsar` config-bridge plugin** (`resources/plugins/combatsar/`, registered in `plugins.json`
+  after `scar`). Pattern mirrors the MANTIS bridge: a `configurationWorkOrders` plugin, no script of
+  its own, runs after `Moose.lua`. Inert unless `dcsRetribution.CombatSAR` exists.
+- **Rescue-set binding** uses the MANTIS exact-name-as-prefix trick:
+  `SET_GROUP:FilterPrefixes(<CH-47 group names>):FilterCategoryHelicopter():FilterStart()` →
+  `CSAR:SetOwnSetPilotGroups(set)`. No group renaming required; `FilterStart()` also picks up the
+  helo when it spawns late.
+- **Human-only / ejection-only for free:** `enableForAI=false` makes MOOSE CSAR's `_EventHandler`
+  early-return on any non-human-initiated event (`Moose.lua` CSAR:_EventHandler — `IniPlayerName==nil`
+  → return), and `csarOncrash=false` limits it to ejections. `allowFARPRescue=true` lets the helo
+  deliver to any friendly airfield/FARP, so no MASH group is required.
+- **Downed-pilot template:** MOOSE CSAR clones a `.miz` group at each crash site
+  (`SPAWN:NewWithAlias(self.template,…)`), so the generator drops **one** hidden, late-activation
+  infantry group named `Combat SAR Downed Pilot` (`LuaGenerator._generate_combat_sar_pilot_template`,
+  blue faction infantry with a vanilla `Soldier_M4` fallback, anchored at a blue CP). Emitted only
+  when a blue Combat SAR flight exists, so no orphan group otherwise.
+- **Plumbing:** `FlightData` gained a `group_name` field (set from the pydcs group) so
+  `LuaGenerator._generate_combat_sar` can emit `dcsRetribution.CombatSAR = { pilotTemplate,
+  rescueHelos = {…CH-47…}, kings = {…C-130…} }`. `kings` is recorded now for the Phase-4 King role;
+  v1 does nothing with it (C-130s just fly the orbit).
+- **Plugin options:** `autosmoke` (off), `loadDistance` (75 m), `rescueHoverHeight` (20 m),
+  `messageTime` (15 s) — surfaced in the Plugin Options UI.
 
 ## Open questions / risks
 

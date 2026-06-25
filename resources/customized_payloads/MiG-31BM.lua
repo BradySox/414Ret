@@ -2,8 +2,8 @@ local unitPayloads = {
 	["name"] = "MiG-31BM",
 	["payloads"] = {
 		[1] = {
-			["displayName"] = "R-77*2 R-37M*4 R27ER*2 ",
-			["name"] = "R-77*2 R-37M*4 R27ER*2 ",
+			["displayName"] = "Retribution Intercept",
+			["name"] = "Retribution Intercept",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{FBC29BFE-3D24-4C64-B81D-941239D12249}",
@@ -43,8 +43,8 @@ local unitPayloads = {
 			},
 		},
 		[2] = {
-			["displayName"] = "R-73*2 R-33*4 3000L tanks*2",
-			["name"] = "R-73*2 R-33*4 3000L tanks*2",
+			["displayName"] = "Retribution TARCAP",
+			["name"] = "Retribution TARCAP",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{FBC29BFE-3D24-4C64-B81D-941239D12249}",

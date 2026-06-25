@@ -52,8 +52,8 @@ local unitPayloads = {
 			},
 		},
 		[4] = {
-			["displayName"] = "Retribution Fighter Sweep",
-			["name"] = "Retribution Fighter Sweep",
+			["displayName"] = "Retribution Fighter sweep",
+			["name"] = "Retribution Fighter sweep",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "I16_DROP_FUEL_TANK",

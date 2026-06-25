@@ -2,7 +2,7 @@ local unitPayloads = {
 	["name"] = "naboo_starfighter",
 	["payloads"] = {
 		[1] = {
-			["name"] = "Liberation CAP",
+			["name"] = "Retribution BARCAP",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{PROTONM}",
@@ -30,7 +30,7 @@ local unitPayloads = {
 			},
 		},
 		[2] = {
-			["name"] = "Liberation ESCORT",
+			["name"] = "Retribution Escort",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{PROTONM}",

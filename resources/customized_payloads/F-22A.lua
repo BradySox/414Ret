@@ -84,7 +84,7 @@ local unitPayloads = {
 			},
 		},
 		[3] = {
-			["name"] = "Retribution Fighter Sweep",
+			["name"] = "Retribution Fighter sweep",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{AIM9X-BLKII}",
@@ -204,7 +204,7 @@ local unitPayloads = {
 			},
 		},
 		[6] = {
-			["name"] = "Retribution Reconnaissance",
+			["name"] = "Retribution Armed Recon",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{AIM9X-BLKII}",

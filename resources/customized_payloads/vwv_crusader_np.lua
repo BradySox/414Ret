@@ -36,8 +36,8 @@ local unitPayloads = {
 		},
 		[2]=
 		{
-			["displayName"]="Strike",
-			["name"]="Strike",
+			["displayName"]="Retribution Strike",
+			["name"]="Retribution Strike",
 			["pylons"]=
 			{
 				[1]=
@@ -78,8 +78,8 @@ local unitPayloads = {
 		},
 		[3]=
 		{
-			["displayName"]="Armed Recon",
-			["name"]="Armed Recon",
+			["displayName"]="Retribution Armed Recon",
+			["name"]="Retribution Armed Recon",
 			["pylons"]=
 			{
 				[1]=

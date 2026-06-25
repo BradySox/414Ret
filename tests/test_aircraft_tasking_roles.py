@@ -120,7 +120,7 @@ def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
     ("variant_id", "capable"),
     [
         # The player-flyable rescuer (door-gunner Chinook) and King (C-130J-30),
-        ("CH-47Fbl1", True),
+        ("CH-47F Block I", True),
         ("C-130J-30", True),
         # ...plus the AI fallbacks they keep alongside,
         ("CH-47D", True),

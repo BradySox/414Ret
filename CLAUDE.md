@@ -92,7 +92,10 @@ file. This guide is the map; those are the territory.
     `turnless.md` (turnless-campaign exploration),
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
-    keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope)
+    keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),
+    `414th-scar-king-fac-notes.md` (SCAR rework: a player-first loiter/"hold" package tasked by
+    the C-130 "King" on-scene commander onto real static armor TGOs so losses track natively;
+    minimal-F10 designation; thin MOOSE bridge, not `Ops.Chief`; future auto-planned commander)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.

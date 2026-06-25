@@ -1255,6 +1255,14 @@ returns to the squadron).
   TACAN). The King also carries an F10 **Combat SAR → LARS** button that reads MOOSE CSAR's
   live downed-pilot table and reports each active survivor (position + bearing/range from
   the King) for the crew to relay.
+- **Airframes (player-flyable + armed).** The rescuer is the **CH-47Fbl1** (the playable ED
+  Chinook, `Combat SAR: 85` in its yaml) with a **`Retribution Combat SAR` payload that mounts
+  the port + starboard door M60D guns** (`{CH47_PORT_M60D}`/`{CH47_STBD_M60D}`,
+  `resources/customized_payloads/CH-47Fbl1.lua`) for self-protection on the way in; the AI
+  **CH-47D** stays a `Combat SAR` fallback (no weapon stations). The King is the player-flyable
+  **C-130J-30** (`Combat SAR: 60`), whose model carries the external underwing fuel tanks; the
+  AI **C-130** stays a fallback. (Loadout names resolve `Retribution Combat SAR` →
+  `Liberation Combat SAR` → empty; an airframe with no Combat SAR payload just flies clean.)
 
 ### Rescue scoring (the gameplay-loop payoff)
 
@@ -1276,6 +1284,7 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Layer | File |
 |---|---|
 | Flight type | `game/ato/flighttype.py` — `COMBAT_SAR` |
+| Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) and King **C-130J-30** (+ AI `C-130` fallback) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`) |
 | Flight plan | reuses `game/ato/flightplans/aewc.py` (FLOT support orbit) |
 | Planning | `game/commander/tasks/primitive/combatsar.py`, `…/compound/combatsarsupport.py`, `theaterstate.py` (`combat_sar_targets`) |
 | Setting | `game/settings/settings.py` — `auto_combat_sar` |

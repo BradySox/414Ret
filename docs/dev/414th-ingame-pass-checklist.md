@@ -502,6 +502,19 @@ so the two docs don't drift.
   and "spares a pilot" (the `SOFRESCUE` prefix routing in `OnAfterRescued`); double refund for one
   team recovered by both paths.
 
+### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ☐ UNTESTED
+- **Setup:** A blue faction with **CH-47Fbl1** and **C-130J-30** squadrons. Plan a **Combat SAR**
+  flight in each.
+- **Pass:** The CH-47Fbl1 is taskable **Combat SAR** and spawns with its **port + starboard door
+  M60D guns** mounted (the `Retribution Combat SAR` payload). The C-130J-30 is taskable Combat SAR as
+  the **King** and shows its external underwing **fuel tanks** (model default). Both are
+  player-flyable.
+- **Fail signature:** Combat SAR not offered for CH-47Fbl1/C-130J-30 (yaml `tasks` entry missing); the
+  Chinook spawns **clean / no door guns** (payload name not matched — `Retribution Combat SAR` must
+  resolve, else it falls back to empty; check the door-gun CLSIDs `{CH47_PORT_M60D}`/`{CH47_STBD_M60D}`
+  are valid for the installed module); the King has no visible wing tanks (then they are a removable
+  pylon on this module, not model-default — needs the mod's tank CLSID added to a King payload).
+
 ---
 
 ## H. Kneeboards

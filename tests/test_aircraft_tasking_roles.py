@@ -118,7 +118,16 @@ def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(
     ("variant_id", "capable"),
-    [("CH-47D", True), ("C-130", True), ("F-15C Eagle", False)],
+    [
+        # The player-flyable rescuer (door-gunner Chinook) and King (C-130J-30),
+        ("CH-47Fbl1", True),
+        ("C-130J-30", True),
+        # ...plus the AI fallbacks they keep alongside,
+        ("CH-47D", True),
+        ("C-130", True),
+        # ...but never a fighter.
+        ("F-15C Eagle", False),
+    ],
 )
 def test_combat_sar_eligibility(variant_id: str, capable: bool, tmp_path: Path) -> None:
     # Combat SAR (the standing pilot-rescue orbit) is flown by the CH-47 (pickup)

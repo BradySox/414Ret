@@ -1,0 +1,73 @@
+name: Sync docs/wiki to GitHub Wiki
+
+# Publishes the Markdown pages under docs/wiki/ to this repo's GitHub Wiki
+# (https://github.com/<owner>/<repo>/wiki) on every push to main. The wiki stays
+# the source-controlled, PR-reviewed copy in docs/wiki/; this just mirrors it so
+# the /wiki quick link always reflects merged content.
+#
+# ONE-TIME SETUP: the GitHub Wiki is a separate git repo (<repo>.wiki.git) that
+# only exists once the feature is enabled. Before the first run, go to
+# Settings -> Features and tick "Wikis", then create + save any one page in the
+# Wiki tab so the wiki repo is initialised. After that this workflow keeps it in
+# sync automatically. Uses only the built-in GITHUB_TOKEN (no extra secrets).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/wiki/**"
+      - ".github/workflows/wiki-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Mirror docs/wiki to the wiki repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Publish docs/wiki to the GitHub Wiki
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$(ls -A docs/wiki 2>/dev/null || true)" ]; then
+            echo "docs/wiki is empty; nothing to sync."
+            exit 0
+          fi
+
+          WIKI_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git"
+          TMP="$(mktemp -d)"
+
+          if ! git clone --depth 1 "$WIKI_URL" "$TMP" 2>/dev/null; then
+            echo "::error::Could not clone ${GITHUB_REPOSITORY}.wiki.git. Enable Wikis (Settings -> Features -> Wikis) and create one initial page in the Wiki tab so the wiki repo exists, then re-run this workflow."
+            exit 1
+          fi
+
+          # Mirror docs/wiki into the wiki repo (preserve its .git), so removed
+          # pages are deleted too.
+          find "$TMP" -mindepth 1 -maxdepth 1 ! -name ".git" -exec rm -rf {} +
+          cp -R docs/wiki/. "$TMP"/
+
+          cd "$TMP"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Wiki already up to date."
+            exit 0
+          fi
+
+          git commit -m "Sync wiki from docs/wiki @ ${GITHUB_SHA::7}"
+          # Push to whatever branch the wiki repo uses by default (historically master).
+          git push origin HEAD

@@ -1,0 +1,89 @@
+# Custom Loadouts
+
+By default, Retribution picks a stock weapon loadout for each flight based on its mission
+type. You can override those defaults per aircraft so that, for example, every Strike F-16
+spawns with your preferred bombs. This page explains the two ways to set custom loadouts
+and the CLSID pitfall that silently breaks them.
+
+## Two ways to customize
+
+### 1. Name a loadout in the Mission Editor (per-install)
+
+The simplest path needs no code:
+
+1. Open the DCS Mission Editor, place the aircraft, and build a loadout.
+2. Name the loadout `Retribution <mission type>`, where the mission type matches what
+   appears in Retribution's UI — for example `Retribution OCA/Aircraft`,
+   `Retribution Strike`, or `Retribution TARPS`.
+3. Save. Retribution looks up a loadout with that exact name when it generates a flight of
+   that type.
+
+If you don't define a loadout for a given mission type, Retribution falls back to the
+included defaults — missing names are harmless, not errors. All stock DCS loadouts also
+remain selectable in the flight-editing interface, so you can always change a payload by
+hand.
+
+### 2. Customized payload files (shipped with the fork)
+
+The fork ships curated default payloads as Lua files under
+`resources/customized_payloads/`, one per aircraft type (e.g. `F-14B.lua`, `F-16C_50.lua`).
+Each file is a table of named profiles keyed by the same `Retribution <mission type>`
+convention, with pylons listing weapons by **CLSID**:
+
+```lua
+{
+  ["displayName"] = "Retribution Strike",
+  ["name"]        = "Retribution Strike",
+  ["pylons"]      = {
+      [3] = { ["CLSID"] = "{GBU-12}", ["num"] = 3 },
+      -- ...
+  },
+}
+```
+
+This is how the fork bakes in role-appropriate loadouts that ship with the build rather
+than depending on each player's Mission Editor.
+
+## The fork's TARPS payload (worked example)
+
+The 414th treats TARPS as a real player task (see [Fog of War and
+Reconnaissance](Fog-of-War-and-Reconnaissance)), so the F-14 payload files add a
+`Retribution TARPS` recon profile alongside the usual BARCAP/TARCAP/Escort/Strike entries.
+It mounts a reconnaissance camera pod on the Tomcat's belly recon station — for example, in
+`F-14B.lua`:
+
+```lua
+["displayName"] = "Retribution TARPS",
+["name"]        = "Retribution TARPS",
+["pylons"]      = {
+    [4] = { ["CLSID"] = "{F14-TARPS}", ["num"] = 6 },
+    -- ...
+},
+```
+
+The same `Retribution TARPS` profile is present across the F-14A/F-14B variant files so
+the photo-recon task is available whichever Tomcat a squadron flies.
+
+## CLSID currency — the gotcha that bites
+
+A pylon's `CLSID` is the exact weapon identifier DCS uses internally. These strings change
+when ED renames, splits, or removes a store across DCS updates. If **any** CLSID in a
+named loadout is stale, **DCS rejects the entire loadout** — the aircraft spawns with the
+fallback, not your payload, and there's no obvious error message.
+
+So when you add or edit a loadout:
+
+- Copy CLSIDs from a current DCS install or a freshly-saved Mission Editor loadout, not
+  from memory or an old guide.
+- After a DCS update, re-verify the payloads for any aircraft whose stores changed.
+- If a custom loadout "isn't taking," suspect a stale CLSID before anything else — verify
+  the offending profile in the Mission Editor for that aircraft.
+
+Keeping CLSIDs current is the single most important discipline for custom loadouts.
+
+## See also
+
+- [Custom Factions](Custom-Factions) — which aircraft a side can field
+- [Custom Campaigns](Custom-Campaigns) — where mission types come from
+- [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance) — why TARPS matters
+- [Mission planning](Mission-planning) — assigning flights and tasks

@@ -528,6 +528,11 @@ so the two docs don't drift.
   `dynAdd`, after the `_resolve_group_category` fix), core glue ran. The two crashes seen
   during testing were **pre-existing** bugs unrelated to the shim (civ-helo RAT sim crash;
   CTLD smoke-zone string/number format), both fixed in #166.
+- **Follow-up (2026-06-26):** A later GermanyCW pass still hit a native DCS
+  `wSimCalendar::DoActionsUntil` crash during fixed-wing `RAT_CIV_C130` landing/respawn
+  churn. Civilian traffic now runs as one-shot scenery: RAT ATC is disabled and flights do
+  not respawn after landing. Re-test by leaving civilian traffic enabled for a Combat SAR
+  pass and watching for any new `RAT_CIV_*` crash lead-up.
 - **Pass:** No `mist_moose_shim.lua:<n>` errors in `dcs.log`; CTLD sling-load (load/drop
   troops, sling+unpack a crate, build a FOB), SCAR capture + CSAR, intercept/QRA, and core
   state-write/messages all behave as on MIST.

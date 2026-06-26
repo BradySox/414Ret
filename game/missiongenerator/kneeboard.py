@@ -1999,6 +1999,81 @@ class BrevityCard(KneeboardPage):
         writer.write(path)
 
 
+class FuelLadderCard(KneeboardPage):
+    """Fuel ladder: planned fuel remaining vs. minimum required at each steerpoint.
+
+    The flight-plan page already carries the *minimum* fuel (bingo-at-waypoint); this
+    focused card adds the **planned remaining** (estimated forward from the starting
+    load over the per-leg burn model, `FlightWaypoint.fuel_planned`) and the **margin**
+    between them — the Red Flag-style fuel ladder. The burn model is approximate, so
+    treat the numbers as planning figures.
+    """
+
+    DESC_MAX_LEN = 24
+
+    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
+        self.flight = flight
+        self.dark_kneeboard = dark_kneeboard
+
+    @staticmethod
+    def _fmt(units: UnitSystem, lbs: Optional[float]) -> str:
+        return "-" if lbs is None else f"{units.mass(pounds(lbs)):.0f}"
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        writer.title(f"{self.flight.callsign} Fuel Ladder{custom}")
+
+        units = self.flight.aircraft_type.kneeboard_units
+        writer.text(
+            f"Planned fuel remaining vs. minimum to RTB at each steerpoint, in "
+            f"{units.mass_uom}. Margin = Plan - Min; a negative margin means you can't "
+            "make it home as planned -- tank or divert.",
+            wrap=True,
+        )
+
+        rows: List[List[str]] = []
+        for number, waypoint in enumerate(self.flight.waypoints):
+            if waypoint.fuel_planned is None and waypoint.min_fuel is None:
+                continue
+            margin: Optional[float] = None
+            if waypoint.fuel_planned is not None and waypoint.min_fuel is not None:
+                margin = waypoint.fuel_planned - waypoint.min_fuel
+            rows.append(
+                [
+                    str(number),
+                    KneeboardPageWriter.wrap_line(
+                        waypoint.display_name, self.DESC_MAX_LEN
+                    ),
+                    self._fmt(units, waypoint.fuel_planned),
+                    self._fmt(units, waypoint.min_fuel),
+                    self._fmt(units, margin),
+                ]
+            )
+
+        if rows:
+            writer.table(
+                rows,
+                headers=["#", "Action", "Plan", "Min", "Margin"],
+                font=writer.content_font,
+            )
+        else:
+            writer.text("No fuel estimate available for this aircraft.")
+
+        if self.flight.bingo_fuel and self.flight.joker_fuel:
+            writer.vspace(10)
+            writer.table(
+                [
+                    [
+                        self._fmt(units, self.flight.bingo_fuel),
+                        self._fmt(units, self.flight.joker_fuel),
+                    ]
+                ],
+                headers=["Bingo", "Joker"],
+            )
+        writer.write(path)
+
+
 class NotesPage(KneeboardPage):
     """A kneeboard page containing the campaign owner's notes."""
 
@@ -2418,6 +2493,10 @@ class KneeboardGenerator(MissionInfoGenerator):
         # tooltip + join-waypoint echo); this is the in-cockpit copy.
         if self.game.settings.enable_package_code_words:
             pages.append(BrevityCard(flight, self.dark_kneeboard))
+
+        # Fuel ladder: planned remaining vs. minimum required per steerpoint (gated).
+        if self.game.settings.generate_fuel_ladder_kneeboard:
+            pages.append(FuelLadderCard(flight, self.dark_kneeboard))
 
         # Recon overview + detail + airfield-departure pages (gated by settings).
         if self.game.settings.generate_target_recon_kneeboard:

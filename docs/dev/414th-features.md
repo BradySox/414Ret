@@ -385,6 +385,19 @@ toggle, `enable_package_code_words` (default OFF), gates the panel, tooltip, way
 kneeboard page together. Covered by `tests/ato/test_codewords.py` +
 `tests/data/test_brevity_reference.py`; in-game / planner-UI pass pending (H6).
 
+**Fuel ladder kneeboard card.** The flight-plan page already shows the *minimum* fuel required at
+each waypoint (`FlightWaypoint.min_fuel`, the bingo-at-waypoint value the waypoint generator
+computes by walking the plan backward over the per-leg burn model). The **Fuel Ladder** card
+(`FuelLadderCard`) adds the missing half — the **planned fuel remaining** at each steerpoint
+(`FlightWaypoint.fuel_planned`, a new forward pass `WaypointGenerator._estimate_planned_fuel_for`
+that subtracts each leg's burn from the starting load `flight.fuel × KG_TO_LBS − taxi`, topping
+back up at a tanker `REFUEL` waypoint) — and the **margin** (Plan − Min) so a pilot sees both what
+they should have and what they need, with a negative margin flagging a sortie they can't fly home
+as planned. The burn model is approximate (it's the same estimate that drives `min_fuel`), so the
+card is labelled as planning figures. Gated by `generate_fuel_ladder_kneeboard` (default OFF);
+covered by `tests/missiongenerator/test_fuel_ladder.py`. In-game pass pending (H7). The last of the
+three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc-ideas-harvest.md`).
+
 ---
 
 ## 5. Player target location precision

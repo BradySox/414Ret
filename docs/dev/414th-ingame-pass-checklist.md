@@ -969,6 +969,24 @@ so the two docs don't drift.
   terrain (a `radio_alt` route fell back to BARO, or `_PROFILE` altitude too low); runway congestion at
   one field (too many ground-starts per field — lower the `density()` bands); too dense/sparse overall
   (tune `density()`).
+### I3 — Date-gated helmet cueing (JHMCS) · §24 · ☐ UNTESTED (data + clamp test-covered, adjudicated 2026-06-26)
+- **Headless adjudication (2026-06-26):** The gate is pure, table-driven logic covered by
+  `tests/dcs/test_aircraftproperties.py` against real pydcs `FA_18C_hornet`/`F_16C_50` props —
+  JHMCS (id 1) gated before 2003, baseline (0) and NVG (2) always available, `period_correct_value`
+  clamps the JHMCS default to the baseline pre-2003, and the Soviet "SURA Visor" (same id 1, Su-30/
+  Su-35) is **not** gated because the table keys on the label. The generation clamp
+  (`flightgroupconfigurator.degrade_props_for_date`) resolves against the unit-type default, so the
+  defaulted-JHMCS case is handled, not just explicit selections. **Residual (in-sim only):** that the
+  generated `.miz` actually spawns the baseline helmet option in-cockpit pre-2003.
+- **Setup:** Start a campaign **before 2003** with `Restrict weapons by campaign date` **ON** and an
+  F/A-18 or F-16 squadron. Open a flight's payload → the helmet-device dropdown should not list
+  JHMCS. Generate and open the `.miz` (or fly) and check the aircraft's mission options.
+- **Pass:** Pre-2003, JHMCS is absent from the dropdown and the generated mission shows the baseline
+  helmet option (Not installed / Visor Only); NVG stays available in every era; with the setting OFF
+  (or in a 2003+ campaign) JHMCS is offered and applied normally. Soviet jets keep their SURA Visor.
+- **Fail signature:** JHMCS still selectable/applied in a pre-2003 campaign with the setting on; NVG
+  or the Soviet SURA Visor wrongly removed; the dropdown shows nothing selected; a non-helmet
+  property (laser code, datalink) changed by the gate.
 
 ---
 

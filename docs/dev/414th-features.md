@@ -1550,3 +1550,65 @@ exactly the intent.
 - **Needs an in-game pass.** CI can't verify DCS actually plays the per-nation voiceovers; add a
   row to the in-game-pass checklist and confirm a mixed-nation CJTF side in the mission editor /
   in flight before clearing.
+
+## §24 — Date-gated aircraft properties (helmet-mounted cueing)
+
+Extends campaign date-gating from *weapons* to the per-airframe **properties** shown in the
+payload editor (the "mission options" block: helmet device, datalink, etc.). Weapons already
+disappear from the loadout when they postdate the campaign (`restrict_weapons_by_date` +
+`Weapon.available_on`); the same toggle now also restricts era-defining property options. The
+first curated gate is **JHMCS** (Joint Helmet-Mounted Cueing System, fielded ~2003): a pre-2003
+campaign no longer offers — or silently ships — JHMCS.
+
+This is the "curated start" of a deliberately small layer. Properties carry **no** introduction
+date in pydcs (unlike weapons, which carry `WeaponGroup.introduction_year`), so the gate is a hand-
+authored table, not bulk data. Only genuinely period-bound cueing systems are gated; everything
+else (rate-of-fire, laser codes, fuel, NVG, the baseline visor) is left untouched.
+
+### The data layer
+
+`game/dcs/aircraftproperties.py` holds the table and four pure helpers
+(`property_value_available_on`, `available_value_ids`, `period_correct_value`, and the private
+`_introduction_year`). Two design choices matter:
+
+- **Keyed by the value *label*, not the numeric id.** Across airframes the same id means different
+  things — `HelmetMountedDevice` id `1` is `"JHMCS"` on the F/A-18 and F-16 but `"SURA Visor"` (a
+  1980s Soviet helmet sight) on the Su-30/Su-35. An id-based gate would wrongly restrict the Soviet
+  sight; a label key (`{"JHMCS": 2003}`) only catches the real JHMCS.
+- **Scoped to the helmet-device identifiers** (`HelmetMountedDevice`, `HelmetMountedDeviceWSO`) so
+  the gate can never touch an unrelated property that happens to share a gated label.
+
+The period-correct fallback is the first still-available value, which on every affected airframe is
+the baseline "no modern cueing" option (`Not installed` / `Visor Only`, id `0`).
+
+### Two enforcement points (mirrors weapons)
+
+- **UI (`qt_ui/.../payload/propertycombobox.py`).** When `restrict_weapons_by_date` is on, the
+  dropdown lists only `available_value_ids(...)`, and a gated stored/default selection displays its
+  `period_correct_value(...)` instead. Like the weapon editor, **storage is not mutated** — the
+  player's choice is preserved and only the display + generated mission are clamped. `game` is
+  threaded down via `PropertyEditor` (built with `game` in `QFlightPayloadTab`).
+- **Generation (authoritative — `flightgroupconfigurator.py::degrade_props_for_date`).** Called from
+  `setup_props` when the setting is on. Crucially it resolves each helmet prop against the unit
+  type's **default**, because an unset helmet device still defaults to JHMCS in the `.miz` — so only
+  inspecting `member.properties` would miss the (common) defaulted case. Force-sets the fallback
+  when the effective value is too modern.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Data + helpers | `game/dcs/aircraftproperties.py` |
+| Generation clamp | `game/missiongenerator/aircraft/flightgroupconfigurator.py` (`degrade_props_for_date`) |
+| UI filter | `qt_ui/windows/mission/flight/payload/propertycombobox.py`, `propertyeditor.py`, `QFlightPayloadTab.py` |
+| Tests | `tests/dcs/test_aircraftproperties.py` (JHMCS gated pre-2003, baseline/NVG always available, clamp-to-baseline, Soviet SURA Visor untouched, non-helmet property untouched) |
+
+### Gotchas / deferred
+
+- **Only JHMCS so far.** Add datalink/IFF-mode or other helmet systems (e.g. Scorpion) by
+  extending `HELMET_CUEING_INTRODUCTION_YEARS` / `HELMET_DEVICE_PROPERTY_IDS` — the plumbing is
+  generic. No new setting: it rides the existing `restrict_weapons_by_date` toggle.
+- **No faction override.** Unlike weapons (`weapons_introduction_year_overrides`), the property gate
+  uses a single global year. Add per-faction overrides only if a campaign needs them.
+- **Needs an in-game pass.** CI proves the helpers + clamp logic; confirm in-game that a pre-2003
+  generated mission actually shows the baseline helmet option (not JHMCS) on an F/A-18/F-16.

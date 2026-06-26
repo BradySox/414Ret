@@ -147,6 +147,10 @@ and selected later upstream fixes.
   page carries the table (your task marked) plus a brevity crib filtered to your task. Fresh words
   every turn, stable while you plan. Off by default.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
+- When *Restrict weapons by campaign date* is on, era-defining **cockpit options** are now gated
+  alongside the weapons: a pre-2003 campaign no longer offers (or quietly spawns) a **JHMCS**
+  helmet-mounted sight, falling back to the period-correct visor. NVG and other era-appropriate
+  options stay available.
 
 ### Additional 414th content and integrations
 

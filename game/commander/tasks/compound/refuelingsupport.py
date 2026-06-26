@@ -8,4 +8,4 @@ from game.htn import CompoundTask, Method
 class PlanRefuelingSupport(CompoundTask[TheaterState]):
     def each_valid_method(self, state: TheaterState) -> Iterator[Method[TheaterState]]:
         for target in state.refueling_targets:
-            yield [PlanRefueling(target)]
+            yield [PlanRefueling(target.location, target.method)]

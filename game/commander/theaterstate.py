@@ -33,6 +33,8 @@ from game.theater.theatergroundobject import (
     TheaterGroundObject,
     VehicleGroupGroundObject,
 )
+from game.ato.flighttype import FlightType
+from game.dcs.aircrafttype import AirRefuelType
 from game.threatzones import ThreatZones
 from game.utils import nautical_miles
 
@@ -54,6 +56,51 @@ class PersistentContext:
     tracer: MultiEventTracer
 
 
+@dataclass(frozen=True)
+class RefuelingTarget:
+    """A theater tanker to plan: where it launches from and which boom/probe method it
+    must provide. ``method`` is None for an unconstrained tanker (an untagged receiver
+    fleet, or a permissive tanker that can service anyone)."""
+
+    location: MissionTarget
+    method: Optional[AirRefuelType]
+
+
+def seed_refueling_targets(
+    coalition: Coalition, location: MissionTarget
+) -> list[RefuelingTarget]:
+    """One theater tanker per distinct boom/probe method our receivers need *and* we can
+    actually crew a tanker for, so a mixed boom+probe fleet gets a tanker for each method
+    instead of a single method-blind tanker that leaves the other half unsupported.
+
+    Falls back to a single unconstrained tanker (the legacy behavior) for an untagged
+    receiver fleet, a permissive tanker that services anyone, or a needed method with no
+    matching tanker -- so this never plans *fewer* tankers than before.
+    """
+    receiver_methods: set[AirRefuelType] = set()
+    tanker_methods: set[AirRefuelType] = set()
+    permissive_tanker = False
+    for squadron in coalition.air_wing.iter_squadrons():
+        aircraft = squadron.aircraft
+        provided = aircraft.tanker_refuel_types
+        if provided:
+            tanker_methods |= set(provided)
+            continue
+        if squadron.capable_of(FlightType.REFUELING):
+            # A refueling-capable tanker that advertises no method services anyone.
+            permissive_tanker = True
+        if aircraft.air_refuel_type is not None:
+            receiver_methods.add(aircraft.air_refuel_type)
+    if permissive_tanker or not receiver_methods:
+        return [RefuelingTarget(location, None)]
+    servable = sorted(
+        (m for m in receiver_methods if m in tanker_methods), key=lambda m: m.value
+    )
+    if not servable:
+        return [RefuelingTarget(location, None)]
+    return [RefuelingTarget(location, method) for method in servable]
+
+
 @dataclass
 class TheaterState(WorldState["TheaterState"]):
     context: PersistentContext
@@ -66,7 +113,7 @@ class TheaterState(WorldState["TheaterState"]):
     front_line_stances: dict[FrontLine, Optional[CombatStance]]
     vulnerable_front_lines: list[FrontLine]
     aewc_targets: list[MissionTarget]
-    refueling_targets: list[MissionTarget]
+    refueling_targets: list[RefuelingTarget]
     recovery_targets: dict[ControlPoint, int]
     # 414th Combat SAR standing alert: front-line orbits the auto-planner may task a
     # pilot-rescue flight on (gated by Settings.auto_combat_sar). Empty when the
@@ -322,7 +369,9 @@ class TheaterState(WorldState["TheaterState"]):
             front_line_stances={f: None for f in finder.front_lines()},
             vulnerable_front_lines=list(finder.front_lines()),
             aewc_targets=list(aewc_targets),
-            refueling_targets=[finder.closest_friendly_control_point()],
+            refueling_targets=seed_refueling_targets(
+                coalition, finder.closest_friendly_control_point()
+            ),
             recovery_targets={cp: 0 for cp in finder.friendly_naval_control_points()},
             combat_sar_targets=combat_sar_targets,
             enemy_air_defenses=enemy_air_defenses,

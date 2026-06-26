@@ -592,6 +592,39 @@ Tests: `tests/test_tanker_demand.py` (scoring + ATO extraction). **In-game pass 
 centroid of those points, so this is a refinement, not essential. First half of the Codex tanker
 PLAN; the red forward-BARCAP companion shipped separately (§6).
 
+### Per-method theater-tanker fragging (2026-06-26)
+
+**Symptom (headless adjudication of the flown GermanyCW save).** The HTN seeded exactly one
+theater-refueling target (`TheaterState.from_game` → `closest_friendly_control_point()`), so at
+most **one** theater tanker was ever auto-planned. For a *dedicated* tanker package,
+`PackageBuilder._required_refuel_methods` sees no in-package receivers (the real receivers live in
+other packages), so the single tanker was selected **unconstrained** → priority-first = the boom
+KC-135. A coalition fielding both boom and probe receivers (e.g. BLUE: F-15/F-16 boom **and**
+F-14/F-18/Mirage/Tornado probe, with both a KC-135 and a KC-135 MPRS in the wing) got gas for only
+one method; the other method's receivers flew unsupported even though the matching tanker sat idle
+in inventory. The C5 compatibility machinery was correct — what was missing was multi-method
+fragging.
+
+**Fix — seed one theater tanker per servable receiver method.**
+`game/commander/theaterstate.py::seed_refueling_targets(coalition, location)` scans the air wing
+once and returns one `RefuelingTarget(location, method)` per **distinct boom/probe method our
+receivers need *and* we can crew a tanker for**. The method rides through the plumbing:
+`RefuelingTarget` → `PlanRefueling.method` → `ProposedFlight.refuel_method` →
+`PackageBuilder._required_refuel_methods` (an explicit `refuel_method` now takes precedence over the
+in-package inference, which still serves same-package buddy tankers). Each target is planned in its
+own pass of the `plan_missions` `while` loop (its `apply_effects` removes it) — identical to how
+multiple AEW&C / Combat SAR front targets already plan — and `reposition_theater_tankers` then
+parks each tanker on the strongest cluster of demand for *its own* method.
+- **Never plans fewer tankers than before:** an untagged receiver fleet, a permissive
+  (method-less) tanker, or a needed method with no matching tanker all fall back to a single
+  unconstrained target (the legacy behavior).
+- `TheaterState` is transient (rebuilt each turn, never pickled), so the `list[MissionTarget]` →
+  `list[RefuelingTarget]` field change needs **no save migration**.
+
+Tests: `tests/test_refueling_targets.py` (mixed fleet → one tanker per method; boom-only/untagged/
+permissive/no-matching-tanker fallbacks). **Needs an in-game pass** — confirm a mixed boom+probe
+BLUE ATO frags two tankers and each method's receivers tank from the right one (checklist C5).
+
 ### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
 
 **Symptom (Red Tide AI test):** blue B-1/B-52/F-15E strikes were tasked ~30 km behind the

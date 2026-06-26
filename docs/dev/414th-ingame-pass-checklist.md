@@ -162,6 +162,11 @@ so the two docs don't drift.
   fighters S-turning to stay behind, or unable to close). If seen, revisit
   `RefuelingFlightPlan.patrol_speed` in `game/ato/flightplans/refuelingflightplan.py`
   (and check the airframe's `patrol:` block is at top level, not nested under `fuel:`).
+- **Live-save confirmation (2026-06-26):** Loaded the actual flown campaign save
+  (`autosave.retribution`, GermanyCW turn 1) headless and read each planned tanker's
+  `flight_plan.patrol_speed`: BLUE KC-135 = **445 kt TAS**, RED IL-78M = **400 kt TAS**
+  (both `TheaterRefuelingFlightPlan`). Sane, airframe-appropriate orbit speeds on a real
+  ATO — matches the data-table adjudication. Still in-sim only: receivers physically joining.
 
 ### C4 — A-6E attack/tanker split · ☑ VERIFIED (2026-06-25)
 - **Verified (2026-06-25, in-game):** both A-6E variants load and behave — the Intruder is
@@ -199,6 +204,33 @@ so the two docs don't drift.
   did **not** carry both a boom and a drogue tanker, so there was no method split to observe.
   Requires a faction with **both** a boom (KC-135) and a drogue (KC-135 MPRS / KC-130 / S-3B
   Tanker) tanker to exercise this row.
+- **Live-save finding (2026-06-26) — single-tanker planner gap:** Loaded the flown
+  campaign save (`autosave.retribution`, GermanyCW turn 1) headless. The BLUE air wing
+  **does** carry both tankers (KC-135 boom ×2 *and* KC-135 MPRS drogue ×2; RED has IL-78M
+  probe), and the compatibility logic is correct on the live ATO (RED IL-78M↔Su-27 both
+  probe = OK). **But the auto-planner frags only ONE theater tanker** —
+  `TheaterState` seeds exactly one refueling target
+  (`theaterstate.py:325 closest_friendly_control_point()`) → `PlanRefueling` proposes
+  1 REFUELING + 2 ESCORT. For that *dedicated* tanker package,
+  `PackageBuilder._required_refuel_methods` sees no in-package receivers (real receivers
+  live in other packages), so the single tanker is selected **unconstrained** → priority-first
+  = boom KC-135, and the 414th `reposition_theater_tankers` then parks it on the strongest
+  **boom** demand cluster. Result on this turn: the 5 BLUE **probe** types (F-14B, F/A-18C,
+  A-6E, Mirage-F1EE, Tornado IDS) got **no theater tanker** — the probe Mirage colocated in
+  the boom KC-135's package shows as incompatible (the refusal is working as designed). This
+  is **not** a bug in the C5 matching machinery (all correct); it is a missing capability —
+  **multi-method theater-tanker fragging** (one tanker per distinct receiver method present
+  in the ATO).
+- **Fix landed (2026-06-26) — per-method theater-tanker fragging:** `TheaterState` now seeds one
+  refueling target **per servable receiver method** (`seed_refueling_targets`), threaded
+  `RefuelingTarget.method` → `PlanRefueling.method` → `ProposedFlight.refuel_method` →
+  `PackageBuilder._required_refuel_methods`, so a mixed boom+probe fleet frags one tanker for each
+  method (each planned in its own `plan_missions` pass, then repositioned onto its own demand
+  cluster). Falls back to a single unconstrained tanker for untagged / permissive / no-matching-tanker
+  cases (never fewer than legacy). Tests: `tests/test_refueling_targets.py`. **In-game re-test
+  target:** a mixed boom+probe BLUE ATO should now show **two** tankers, and each method's receivers
+  should tank from the compatible one. See the features-doc section "Per-method theater-tanker
+  fragging".
 - **Setup:** Aircraft now carry an `air_refuel_type` (boom/probe) and tankers a
   `tanker_refuel_types`; the planner only assigns a tanker that provides the package
   receivers' method, and `PackageRefuelingFlightPlan.patrol_duration` only counts
@@ -616,6 +648,16 @@ so the two docs don't drift.
 - **Note (player King):** A human-flown King has no AI controller, so the scripted beacon is **skipped
   by design** — the crew dials the planned channel manually in the cockpit. Re-test target: confirm an
   **AI** King still lights its TACAN and no CTD recurs with a player King.
+- **Player-King F10 menu fix (PR #196, `c09ffc512`, 2026-06-25):** The King's F10 **Combat SAR → LARS**
+  menu was only attached on `EVENTS.Birth` + mission-start, which **races DCS's F10-menu creation for a
+  player client slot** — so a player-flown King got **no F10 menu**. Fix adds
+  `PlayerEnterAircraft`/`PlayerEnterUnit` handlers plus a **1 s deferred retry**, nil/dead/no-unit guards,
+  and an `env.info` line `Combat SAR King - activated '<name>' via <reason> (... LARS menu attached)` so
+  the attachment is now visible in `dcs.log`. **The 2026-06-25 flight (player King, no F10 menu) predated
+  this fix** — the flown build was generated `21:43`, two minutes after #196 merged at `21:41`, so its
+  binary could not have contained it (it also still carried the FlightControl plugin removed later in #200).
+  Re-test on a build containing #196: the player King's LARS menu appears (immediately or within ~1 s) and
+  the new `... LARS menu attached` line shows in the log.
 
 ### G11 — Combat SAR rescue scoring (pilot spared at debrief) · Combat SAR Phase 4 · ☐ UNTESTED
 - **Setup:** Fly a CH-47 Combat SAR (or AI standing alert). Have a **known** human pilot eject near

@@ -18,6 +18,7 @@ from dcs.vehicles import AirDefence
 from faker import Faker
 
 from game.ato.closestairfields import ObjectiveDistanceCache
+from game.customkneeboard import CustomKneeboard
 from game.ground_forces.ai_ground_planner import GroundPlanner
 from game.models.game_stats import GameStats
 from game.plugins import LuaPluginManager
@@ -120,6 +121,9 @@ class Game:
         self.date = date(start_date.year, start_date.month, start_date.day)
         self.game_stats = GameStats()
         self.notes = ""
+        # Player-imported kneeboard images injected into client flights at mission
+        # generation (managed in the UI; see game/customkneeboard.py).
+        self.custom_kneeboards: list[CustomKneeboard] = []
         self.ground_planners: dict[UUID, GroundPlanner] = {}
         self.informations: list[Information] = []
         self.message("Game Start", "-" * 40)
@@ -166,6 +170,7 @@ class Game:
     def __setstate__(self, state: dict[str, Any]) -> None:
         state.setdefault("pending_unit_placements", [])
         state.setdefault("blank_canvas_setup", False)
+        state.setdefault("custom_kneeboards", [])
         self.__dict__.update(state)
         if not hasattr(self, "laser_code_registry"):
             self.laser_code_registry = LaserCodeRegistry()

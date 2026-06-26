@@ -69,6 +69,7 @@ from ..persistency import kneeboards_dir
 if TYPE_CHECKING:
     from dcs.terrain.terrain import Terrain
     from game import Game
+    from game.customkneeboard import CustomKneeboard
     from game.theater.conflicttheater import ConflictTheater
 
 
@@ -167,6 +168,24 @@ class KneeboardPageWriter:
         table = tabulate(cells, headers=headers, numalign="right")
         self.text(table, font, fill=self.foreground_fill)
 
+    def rule(self, thickness: int = 2, gap_above: int = 2, gap_below: int = 8) -> None:
+        """Draw a thin horizontal separator across the content width.
+
+        A light alternative to a boxed panel: it underlines a heading (or
+        divides sections) without the heavy filled-bar / full-border look.
+        """
+        self.y += gap_above
+        self.draw.line(
+            (self.x, self.y, self.image_size[0] - self.page_margin, self.y),
+            fill=self.foreground_fill,
+            width=thickness,
+        )
+        self.y += thickness + gap_below
+
+    def vspace(self, pixels: int) -> None:
+        """Advance the cursor by ``pixels`` to add vertical breathing room."""
+        self.y += max(0, pixels)
+
     def _line_height(self, font: ImageFont.FreeTypeFont) -> int:
         """Vertical advance of one rendered text line for the given font.
 
@@ -215,6 +234,42 @@ class KneeboardPageWriter:
             return list(cells)
         shown, overflow = cells[:max_rows], cells[max_rows:]
         self.table(shown, headers=headers, font=font)
+        return overflow
+
+    def table_two_column_paginated(
+        self,
+        cells: List[List[str]],
+        headers: Optional[List[str]] = None,
+        font: Optional[ImageFont.FreeTypeFont] = None,
+        col_gap: int = 48,
+    ) -> List[List[str]]:
+        """Render a narrow table in two side-by-side columns; return overflow.
+
+        Used for the Friendly Packages list, which is narrow enough that a
+        single column wastes the right half of the page (and spills a handful
+        of rows onto a near-empty continuation page). Filling the left column
+        first, then the right, roughly doubles the rows per page. Rows beyond
+        both columns are returned to paginate onto a continuation page.
+        """
+        if font is None:
+            font = self.table_font
+        capacity = self.remaining_table_rows(font, bool(headers))
+        if capacity <= 0:
+            return list(cells)
+        left_rows = cells[:capacity]
+        right_rows = cells[capacity : 2 * capacity]
+        overflow = cells[2 * capacity :]
+
+        start_x, start_y = self.x, self.y
+        self.table(left_rows, headers=headers, font=font)
+        left_bottom = self.y
+        if right_rows:
+            half = (self.image_size[0] - 2 * self.page_margin - col_gap) // 2
+            self.x = start_x + half + col_gap
+            self.y = start_y
+            self.table(right_rows, headers=headers, font=font)
+            self.x = start_x
+            self.y = max(left_bottom, self.y)
         return overflow
 
     def write(self, path: Path) -> None:
@@ -427,6 +482,7 @@ class TableKneeboardPage(KneeboardPage):
     def _draw_header(self, writer: "KneeboardPageWriter", continued: bool) -> None:
         writer.title(self.title)
         writer.heading(f"{self.heading} (cont.)" if continued else self.heading)
+        writer.rule()
 
     def paginate(self) -> List[KneeboardPage]:
         """Split the rows into the smallest set of pages that all fit."""
@@ -536,6 +592,7 @@ class BriefingPage(KneeboardPage):
 
         # TODO: Handle carriers.
         writer.heading("Airfield Info")
+        writer.rule()
         # Only show the ATIS column when ATIS is in play (plugin enabled), so a
         # mission without ATIS sees no kneeboard change (design §5).
         if self.atis_by_name:
@@ -561,6 +618,7 @@ class BriefingPage(KneeboardPage):
             f"Flight Plan ({self.flight.squadron.aircraft.variant_id} - "
             f"{self.flight.flight_type.value})"
         )
+        writer.rule()
 
         units = self.flight.aircraft_type.kneeboard_units
 
@@ -676,23 +734,36 @@ class BriefingPage(KneeboardPage):
                 codes.append([str(idx), "" if code is None else str(code)])
             writer.table(codes, ["#", "Laser Code"])
 
-        # Friendly packages coordination list, at the bottom of the page. Use a
-        # smaller font so more packages fit below the flight plan. Rows that
-        # don't fit below the flight plan spill onto a continuation page rather
-        # than running off the bottom edge (see paginate()).
+        # Friendly packages coordination list, at the bottom of the page. The
+        # list is narrow (Task / Target / TOT), so once it would overflow a
+        # single column we lay it out in two side-by-side columns to use the
+        # otherwise-wasted right half of the page (and avoid spilling a few rows
+        # onto a near-empty continuation page). Anything past both columns still
+        # paginates (see paginate()).
         overflow: List[List[str]] = []
         if self.package_rows:
             writer.heading(self.PACKAGES_HEADING)
+            writer.rule()
             packages_font = ImageFont.truetype(
                 "courbd.ttf",
                 self.PACKAGES_FONT_SIZE,
                 layout_engine=ImageFont.Layout.BASIC,
             )
-            overflow = writer.table_paginated(
-                self.package_rows,
-                headers=self.PACKAGES_HEADERS,
-                font=packages_font,
+            single_capacity = writer.remaining_table_rows(
+                packages_font, bool(self.PACKAGES_HEADERS)
             )
+            if len(self.package_rows) <= single_capacity:
+                overflow = writer.table_paginated(
+                    self.package_rows,
+                    headers=self.PACKAGES_HEADERS,
+                    font=packages_font,
+                )
+            else:
+                overflow = writer.table_two_column_paginated(
+                    self.package_rows,
+                    headers=self.PACKAGES_HEADERS,
+                    font=packages_font,
+                )
         return overflow
 
     def _departure_elevation_m(self) -> Optional[float]:
@@ -901,14 +972,16 @@ class SupportPage(KneeboardPage):
             custom_name_title = ""
         writer.title(f"{self.flight.callsign} Support Info{custom_name_title}")
 
-        # Package Section
+        # Package FREQ / TOT line, above the boxed section tables.
         package = self.flight.package
         custom = f' "{package.custom_name}"' if package.custom_name else ""
-        writer.heading(f"{package.package_description} Package{custom}")
         freq = self.format_frequency(package.frequency).replace("\n", " - ")
-        writer.text(f"  FREQ: {freq}", font=writer.table_font)
         tot = self._format_time(package.time_over_target)
-        writer.text(f"  TOT: {tot}", font=writer.table_font)
+        writer.text(f"  FREQ: {freq}    TOT: {tot}", font=writer.table_font)
+
+        # Build each support section as (title, rows, headers); they render as
+        # bordered boxes with header bars (the professional-campaign look) and
+        # are spaced to fill the page rather than leaving the bottom half blank.
         comm_ladder = []
         for comm in self.comms:
             comm_ladder.append(
@@ -934,83 +1007,109 @@ class SupportPage(KneeboardPage):
                 ]
             )
 
-        writer.table(comm_ladder, headers=["Callsign", "Task", "Type", "#A/C", "FREQ"])
-
-        # AEW&C
-        writer.heading("AEW&C")
         aewc_ladder = []
-
         for single_aewc in self.awacs:
             if single_aewc.depature_location is None:
-                tot = "-"
-                tos = "-"
+                tot_a = "-"
+                tos_a = "-"
             else:
-                tot = self._format_time(single_aewc.start_time)
-                tos = self._format_duration(
+                tot_a = self._format_time(single_aewc.start_time)
+                tos_a = self._format_duration(
                     single_aewc.end_time - single_aewc.start_time
                 )
-
             aewc_ladder.append(
                 [
                     str(single_aewc.callsign),
                     self.format_frequency(single_aewc.freq),
                     str(single_aewc.depature_location),
-                    "TOT: " + tot + "\n" + "TOS: " + tos,
+                    "TOT: " + tot_a + "\n" + "TOS: " + tos_a,
                 ]
             )
 
-        writer.table(
-            aewc_ladder,
-            headers=["Callsign", "FREQ", "Departure", "TOT / TOS"],
-        )
-
-        comm_ladder = []
-        writer.heading("Tankers")
+        tanker_ladder = []
         for tanker in self.tankers:
-            tot = self._format_time(tanker.start_time)
-            tos = self._format_duration(tanker.end_time - tanker.start_time)
-            comm_ladder.append(
+            tot_t = self._format_time(tanker.start_time)
+            tos_t = self._format_duration(tanker.end_time - tanker.start_time)
+            tanker_ladder.append(
                 [
                     tanker.callsign,
                     KneeboardPageWriter.wrap_line(tanker.variant, 21),
                     str(tanker.tacan) if tanker.tacan else "N/A",
                     self.format_frequency(tanker.freq),
-                    "TOT: " + tot + "\n" + "TOS: " + tos,
+                    "TOT: " + tot_t + "\n" + "TOS: " + tos_t,
                 ]
             )
 
-        writer.table(
-            comm_ladder,
-            # Drop the "Task" column (always "Tanker" in this table) and shorten
-            # TACAN to TCN (3-char code), so the wider FREQ column (now COMM1 +
-            # COMM2) and TOT/TOS no longer run off the page edge.
-            headers=["Callsign", "Type", "TCN", "FREQ", "TOT / TOS"],
-        )
-
-        writer.heading("JTAC")
-        jtacs = []
+        jtac_rows = []
         for jtac in self.jtacs:
-            jtacs.append(
+            jtac_rows.append(
                 [
                     jtac.callsign,
                     KneeboardPageWriter.wrap_line(
-                        jtac.region,
-                        self.JTAC_REGION_MAX_LEN,
+                        jtac.region, self.JTAC_REGION_MAX_LEN
                     ),
                     jtac.code,
                     self.format_frequency(jtac.freq),
                 ]
             )
-        # "Laser" instead of "Laser Code": the code is 4 digits, so the longer
-        # header padded the column and pushed the FREQ column off the page.
-        writer.table(jtacs, headers=["Callsign", "Region", "Laser", "FREQ"])
+
+        # (title, cells, headers) for each non-empty section. Empty sections are
+        # skipped so a mission without (e.g.) a tanker shows no empty heading.
+        sections: List[Tuple[str, List[List[str]], List[str]]] = [
+            (
+                f"{package.package_description} Package{custom}",
+                comm_ladder,
+                ["Callsign", "Task", "Type", "#A/C", "FREQ"],
+            )
+        ]
+        if aewc_ladder:
+            sections.append(
+                ("AEW&C", aewc_ladder, ["Callsign", "FREQ", "Departure", "TOT / TOS"])
+            )
+        if tanker_ladder:
+            # Drop the "Task" column (always "Tanker") and shorten TACAN to TCN so
+            # the wider FREQ column (COMM1 + COMM2) and TOT/TOS fit.
+            sections.append(
+                (
+                    "Tankers",
+                    tanker_ladder,
+                    ["Callsign", "Type", "TCN", "FREQ", "TOT / TOS"],
+                )
+            )
+        if jtac_rows:
+            # "Laser" not "Laser Code": the 4-digit code padded the column and
+            # pushed FREQ off the page.
+            sections.append(
+                ("JTAC", jtac_rows, ["Callsign", "Region", "Laser", "FREQ"])
+            )
+
+        def render_sections(w: KneeboardPageWriter, section_gap: int) -> None:
+            for heading, cells, hdr in sections:
+                w.text(heading, font=w.heading_font)
+                w.rule()
+                w.table(cells, headers=hdr)
+                w.vspace(section_gap)
+
+        # When there's no airfield directory below, distribute the leftover
+        # vertical space as even gaps so the tables breathe down the page
+        # (light underline-rule headings, no boxes). With a directory present we
+        # use a small fixed gap and let the directory fill the rest (it paginates).
+        gap = 12
+        if not self.airfield_rows:
+            probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+            probe.y = writer.y
+            render_sections(probe, 0)
+            leftover = (writer.image_size[1] - writer.page_margin) - probe.y
+            gap = int(max(12, min(90, leftover // max(1, len(sections)))))
+
+        render_sections(writer, gap)
 
         # Airfield Directory (friendly fields: ATC / ATIS / TACAN / I(C)LS / RWY).
-        # Rows that don't fit below the support tables spill onto a continuation
-        # page rather than running off the bottom edge (see paginate()).
+        # Rows that don't fit spill onto a continuation page (see paginate()).
         overflow: List[List[str]] = []
         if self.airfield_rows:
-            writer.heading(self.AIRFIELD_HEADING)
+            writer.text(self.AIRFIELD_HEADING, font=writer.heading_font)
+            writer.rule()
             overflow = writer.table_paginated(
                 self.airfield_rows,
                 headers=self.AIRFIELD_HEADERS,
@@ -1291,58 +1390,111 @@ class CombatSarTaskPage(KneeboardPage):
         custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
         writer.title(f"{self.flight.callsign} Combat SAR{custom}")
 
-        writer.heading("ROLE")
-        if self._is_pickup_helo:
-            writer.text("Rescue helo — you make the pickup at the survivor.")
-        else:
-            writer.text('HC-130 "King" — on-scene command, overhead presence.')
+        # Larger body/heading type than the page defaults: this briefing is a few
+        # short paragraphs, so we scale up and space the sections out (an
+        # underline rule under each heading, blank space between) to fill the
+        # page without the heavy boxed-panel look.
+        heading_font = ImageFont.truetype(
+            "courbd.ttf", 24, layout_engine=ImageFont.Layout.BASIC
+        )
+        body_font = ImageFont.truetype(
+            "courbd.ttf", 20, layout_engine=ImageFont.Layout.BASIC
+        )
 
-        writer.heading("HOW IT WORKS")
-        writer.text(
-            "- Orbit near the front. When a friendly pilot ejects in the area, a "
-            "downed pilot spawns with a radio beacon.\n"
-            '- Use the F10 radio menu -> "CSAR" for the active rescue list, the '
-            "bearing/range to the survivor, and to request smoke / flare / beacon.",
-            wrap=True,
+        # Collect (heading, body-lines) sections, then space them down the page.
+        sections: List[Tuple[str, List[str]]] = []
+
+        if self._is_pickup_helo:
+            sections.append(
+                ("ROLE", ["Rescue helo — you make the pickup at the survivor."])
+            )
+        else:
+            sections.append(
+                ("ROLE", ['HC-130 "King" — on-scene command, overhead presence.'])
+            )
+
+        sections.append(
+            (
+                "HOW IT WORKS",
+                [
+                    "- Orbit near the front. When a friendly pilot ejects in the "
+                    "area, a downed pilot spawns with a radio beacon.",
+                    '- Use the F10 radio menu -> "CSAR" for the active rescue list, '
+                    "the bearing/range to the survivor, and to request smoke / "
+                    "flare / beacon.",
+                ],
+            )
         )
 
         if self._is_pickup_helo:
-            writer.heading("PICKUP")
-            writer.text(
-                "- Fly to the survivor's beacon. Come to a low, slow hover directly "
-                "over them (or land alongside) and hold until they board.\n"
-                "- Keep cargo doors open if your module models them.\n"
-                "- Deliver the survivor to ANY friendly airfield or FARP to score "
-                "the save.",
-                wrap=True,
+            sections.append(
+                (
+                    "PICKUP",
+                    [
+                        "- Fly to the survivor's beacon. Come to a low, slow hover "
+                        "directly over them (or land alongside) and hold until they "
+                        "board.",
+                        "- Keep cargo doors open if your module models them.",
+                        "- Deliver the survivor to ANY friendly airfield or FARP to "
+                        "score the save.",
+                    ],
+                )
             )
             kings_with_tacan = [b for b in self.king_beacons if b.tacan is not None]
             if kings_with_tacan:
-                writer.heading("KING BEACON")
-                writer.text("Home on the HC-130 King (TACAN) to find the rescue area:")
-                writer.table(
-                    [[b.callsign, self._tacan_str(b)] for b in kings_with_tacan],
-                    headers=["King", "TACAN"],
-                )
+                lines = ["Home on the HC-130 King (TACAN) to find the rescue area:"]
+                lines += [
+                    f"    {b.callsign}    TACAN {self._tacan_str(b)}"
+                    for b in kings_with_tacan
+                ]
+                sections.append(("KING BEACON", lines))
         else:
-            writer.heading("ON-SCENE COMMAND")
-            writer.text(
-                "- Hold your overhead orbit as on-scene commander. Do NOT land at "
-                "the crash site.\n"
-                "- The rescue helo makes the pickup; you provide presence and "
-                "coordination.",
-                wrap=True,
+            sections.append(
+                (
+                    "ON-SCENE COMMAND",
+                    [
+                        "- Hold your overhead orbit as on-scene commander. Do NOT "
+                        "land at the crash site.",
+                        "- The rescue helo makes the pickup; you provide presence "
+                        "and coordination.",
+                    ],
+                )
             )
             beacon = self.flight.combat_sar_king
             if beacon is not None and beacon.tacan is not None:
-                writer.heading("YOUR BEACON")
-                writer.text(
-                    f"Radiating TACAN {beacon.tacan} ({beacon.callsign}) for the "
-                    "rescue helo to home on. F10 -> Combat SAR -> LARS lists active "
-                    "survivors (position, bearing/range) for you to relay.",
-                    wrap=True,
+                sections.append(
+                    (
+                        "YOUR BEACON",
+                        [
+                            f"Radiating TACAN {beacon.tacan} ({beacon.callsign}) for "
+                            "the rescue helo to home on.",
+                            "F10 -> Combat SAR -> LARS lists active survivors "
+                            "(position, bearing/range) for you to relay.",
+                        ],
+                    )
                 )
 
+        def render(w: KneeboardPageWriter, section_gap: int) -> None:
+            w.vspace(8)
+            for i, (heading, body) in enumerate(sections):
+                w.text(heading, font=heading_font)
+                w.rule()
+                for line in body:
+                    w.text(line, font=body_font, wrap=True)
+                if i < len(sections) - 1:
+                    w.vspace(section_gap)
+
+        # Probe the natural height with no extra spacing, then distribute the
+        # leftover vertical space as even gaps between sections so the page
+        # breathes top-to-bottom — capped so a short brief doesn't leave yawning
+        # gaps between two-line sections.
+        probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        probe.title(f"{self.flight.callsign} Combat SAR{custom}")
+        render(probe, 0)
+        leftover = (writer.image_size[1] - writer.page_margin) - probe.y
+        section_gap = int(max(16, min(80, leftover // max(1, len(sections) - 1))))
+
+        render(writer, section_gap)
         writer.write(path)
 
 
@@ -1686,6 +1838,33 @@ class KneeboardGenerator(MissionInfoGenerator):
                     self.mission.custom_kneeboards[type.name].append(kneeboard)
             else:
                 self.mission.custom_kneeboards[""].append(type)
+
+        # Player-imported custom kneeboards stored in the campaign save (see
+        # game/customkneeboard.py). ``getattr`` default keeps pre-feature saves
+        # working even if the __setstate__ migration hasn't run yet.
+        self._inject_custom_kneeboards(
+            getattr(self.game, "custom_kneeboards", []), temp_dir
+        )
+
+    def _inject_custom_kneeboards(
+        self, custom_kneeboards: List["CustomKneeboard"], temp_dir: Path
+    ) -> None:
+        """Write each saved custom kneeboard to a temp PNG and register it.
+
+        Bytes are written and appended like the loose-folder kneeboards: the ""
+        key scopes to all client flights, an airframe id scopes to that type only
+        (the finest grain DCS allows). Extracted from ``generate`` so the
+        scope-routing is unit-testable without a full mission.
+        """
+        if not custom_kneeboards:
+            return
+        custom_dir = temp_dir / "_custom"
+        custom_dir.mkdir(exist_ok=True)
+        for idx, custom in enumerate(custom_kneeboards):
+            image_path = custom_dir / f"custom{idx:02}.png"
+            image_path.write_bytes(custom.image)
+            key = custom.airframe_id or ""
+            self.mission.custom_kneeboards[key].append(image_path)
 
     def pages_by_airframe(self) -> Dict[AircraftType, List[KneeboardPage]]:
         """Returns a list of kneeboard pages per airframe in the mission.

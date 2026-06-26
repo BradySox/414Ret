@@ -659,6 +659,16 @@ so the two docs don't drift.
   "Airfield Directory" never run off the bottom edge; rows that don't fit appear
   on a following "Friendly Packages" / "Airfield Directory" continuation page
   (later pages marked "(cont.)"). Small theaters show no extra pages.
+- **Space-utilisation pass (2026-06-25, see §4):** light restyle — bold heading + thin
+  underline rule + content, sections spread with whitespace (no boxes). When the Friendly
+  Packages list is long enough to overflow one column it renders in **two side-by-side columns**
+  filling the right half of the page, and the common case no longer spills a near-empty
+  continuation page. The **Support Info** page's Package / AEW&C / Tankers / JTAC sections use
+  the same heading+rule treatment, spaced to fill the page. **Pass:** two-column packages line
+  up (each column has its own header row, no overlap between columns, no text clipped at the
+  right edge); Support sections span the page without huge dead space. **Fail signature:**
+  columns overlapping or the right column clipped at the page edge (lower `col_gap` math in
+  `table_two_column_paginated()`), or an underline rule drawn over text.
 - **Fail signature:** Table text clipped at the page bottom with rows missing, an
   empty continuation page, or a continuation page whose rows still overflow.
   Check `table_paginated()` / `remaining_table_rows()` row-height math in
@@ -675,7 +685,11 @@ so the two docs don't drift.
   BEACON** table with each King's callsign + TACAN to home on; the C-130's shows the
   **on-scene-command** brief (ROLE = HC-130 "King"; hold overhead, don't land) plus **YOUR BEACON**
   (its TACAN + the LARS hint). Both reference the F10 `CSAR` menu. Text wraps inside the page, no
-  clipping.
+  clipping. **Layout (2026-06-25, §4):** light style — each section is a heading + thin underline
+  rule + larger body text, with the leftover height spread as capped even gaps so the page
+  breathes top-to-bottom (no boxes, no blank bottom two-thirds). **Fail signature here:** an
+  underline rule drawn over text, or sections bunched at the top with dead space below (the
+  `section_gap` distribution math in `CombatSarTaskPage.write`).
 - **Fail signature:** wrong role brief for the airframe (helo gets the King text or vice-versa), a
   KING BEACON TACAN that doesn't match what the King actually radiates in-game, text running off the
   page edge, or no Combat SAR page at all (`generate_task_page` branch).
@@ -687,6 +701,19 @@ so the two docs don't drift.
   **DESIGNATION** (smoke colours, King laser code 1688, the "say again" F10). Text wraps, no clipping.
 - **Fail signature:** no SCAR page (`generate_task_page` branch), text off the page edge, or guidance
   that contradicts the in-mission behaviour (e.g. claims a laser with no King).
+
+### H4 — Custom kneeboard import (UI) · §4 · ☐ UNTESTED
+- **Setup:** With a campaign loaded, open **Kneeboards** (toolbar/menu). Add an image scoped to
+  **All flights**, add a second scoped to a **specific airframe**, then save the campaign, reopen
+  it (verify the entries persisted), generate a mission, and open the kneeboards in DCS.
+- **Pass:** The "All flights" image appears in **every** client flight's kneeboard; the
+  airframe-scoped image appears **only** on that airframe's flights. Entries survive a
+  save/reload (stored in the `.retribution` file). Removing an entry drops it from the next
+  generated mission.
+- **Fail signature:** imported page missing in-game, appearing on the wrong airframe, not
+  persisting across save/reload (`game.custom_kneeboards` not pickled / `__setstate__` default),
+  or a corrupt image (PNG-normalisation in `QCustomKneeboardsWindow.add_kneeboard`). Note DCS
+  kneeboards are per-airframe — two flights of the same type necessarily share pages.
 
 ---
 

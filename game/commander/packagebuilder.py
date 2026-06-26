@@ -67,7 +67,7 @@ class PackageBuilder:
             this_turn=True,
             preferred_type=plan.preferred_type,
             ignore_range=ignore_range,
-            refuel_methods=self._required_refuel_methods(plan.task),
+            refuel_methods=self._required_refuel_methods(plan),
         )
         if squadron is None:
             return False
@@ -103,17 +103,20 @@ class PackageBuilder:
         return True
 
     def _required_refuel_methods(
-        self, task: FlightType
+        self, plan: ProposedFlight
     ) -> Optional[frozenset[AirRefuelType]]:
-        """Refueling methods the package's already-planned receivers need.
+        """Refueling methods a tanker must provide for this package.
 
         Only relevant when planning a tanker (REFUELING). Returns None for every other
-        task and for packages whose receivers are untagged, leaving tanker selection
-        unconstrained. Otherwise the planner will only pick a tanker that provides the
-        receivers' boom/probe method(s).
+        task. A theater tanker carries an explicit ``plan.refuel_method`` (the planner
+        frags one tanker per receiver method), which takes precedence. Otherwise -- a
+        same-package buddy tanker -- the methods are inferred from the package's
+        already-planned receivers; untagged receivers leave selection unconstrained.
         """
-        if task is not FlightType.REFUELING:
+        if plan.task is not FlightType.REFUELING:
             return None
+        if plan.refuel_method is not None:
+            return frozenset({plan.refuel_method})
         methods: set[AirRefuelType] = set()
         for flight in self.package.flights:
             if flight.flight_type is FlightType.REFUELING:

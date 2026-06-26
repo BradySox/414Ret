@@ -22,6 +22,7 @@ from game.utils import Distance, meters
 
 if TYPE_CHECKING:
     from game.coalition import Coalition
+    from game.dcs.aircrafttype import AirRefuelType
 
 MissionTargetT = TypeVar("MissionTargetT", bound=MissionTarget)
 
@@ -73,8 +74,11 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
         task: FlightType,
         num_aircraft: int,
         escort_type: Optional[EscortType] = None,
+        refuel_method: Optional[AirRefuelType] = None,
     ) -> None:
-        self.flights.append(ProposedFlight(task, num_aircraft, escort_type))
+        self.flights.append(
+            ProposedFlight(task, num_aircraft, escort_type, refuel_method=refuel_method)
+        )
 
     @property
     def asap(self) -> bool:

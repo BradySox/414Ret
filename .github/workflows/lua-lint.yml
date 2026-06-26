@@ -78,7 +78,6 @@ jobs:
             resources/plugins/c130j \
             "resources/plugins/ewrj/EW script 2.1.lua" \
             resources/plugins/ewrj/ewrj_config.lua \
-            resources/plugins/civilian_traffic \
             resources/plugins/tic/tic_414_init.lua \
             resources/plugins/tars/tars_414_init.lua \
             resources/plugins/scar/scar_414_init.lua 2>&1)

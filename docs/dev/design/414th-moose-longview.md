@@ -52,7 +52,7 @@ Retribution is **already deep into MOOSE**, not starting fresh:
 | `AUFTRAG` (171 refs) + `FLIGHTGROUP` | `tars`, others | TARS recon runtime, mission tasking |
 | `AIRBOSS` | `airboss` | carrier ops |
 | `AUTOLASE` | `MooseAutolase` | front-line JTAC lasing |
-| `RAT` | `civilian_traffic` | civilian air traffic |
+| ~~`RAT`~~ | *(retired)* | civilian air traffic — **no longer uses RAT**; reimplemented as Python-planned, pydcs-spawned air-started traffic (`game/missiongenerator/civiliantraffic.py`) after RAT caused recurring sim crashes |
 | `MARKEROPS` | `MooseMarkerOps` | F10 marker commands |
 | `MSRS`/`MSRSQUEUE` | several | SRS speech |
 

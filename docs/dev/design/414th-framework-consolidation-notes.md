@@ -45,9 +45,11 @@ Ref counts are `mist[._]` occurrences — a rough gauge of porting cost, not an 
 ### MOOSE consumers (already on the target framework)
 
 `tars`, `tic`, `scar`, `c130j` (414th features); plus `MooseAtis`,
-`MooseAutolase`, `MooseSoundhandler`, `MooseMarkerOps`, `intercept`, `civilian_traffic`, `bigeye`,
+`MooseAutolase`, `MooseSoundhandler`, `MooseMarkerOps`, `intercept`, `bigeye`,
 `airboss`, and `skynetiads` (transitional, uses both). MOOSE also bundles ready equivalents we don't
 yet exploit: `Ops.CTLD`, `ATIS`, `AUTOLASE`, `RANGE`, `DETECTION_AREAS`, `MANTIS`.
+(`civilian_traffic` was retired from MOOSE entirely — its RAT-based plugin caused recurring sim
+crashes and is now Python-planned, pydcs-spawned air traffic in `game/missiongenerator/civiliantraffic.py`.)
 
 ### Confirmed MIST-free
 

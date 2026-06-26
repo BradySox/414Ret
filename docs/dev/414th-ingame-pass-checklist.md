@@ -941,6 +941,31 @@ so the two docs don't drift.
   missing from the saved mission (canonical-instance discipline broken — a duplicate `Country`
   instance was passed at spawn vs. registered on the coalition).
 
+### I2 — Civilian background air traffic (Python/pydcs, RAT retired) · ☐ UNTESTED (planner unit-tested 2026-06-26)
+- **Why:** The MOOSE RAT civilian plugin was retired (recurring `woCharacterHuman`/FARP/respawn
+  sim crashes) and reimplemented as Python-planned, pydcs groups
+  (`game/missiongenerator/civiliantraffic.py`). Each civilian flies a **multi-leg milk run** between
+  neutral fields and lands; a **hybrid spawn** puts a few high heavies airborne at t=0 (instant
+  presence) and **ground/runway-starts** everything else (all helos + light props) staggered across
+  ~110 min, so the map stays alive through a 2 h mission with **no respawn loop**. Low flyers route on
+  **RADIO (AGL)** altitude so they don't clip terrain. The geometry (neutral pool, keep-out, reachable
+  chaining, density, air/ground split) is unit-tested (`tests/test_civilian_traffic.py`); only the
+  in-sim appearance/behaviour needs eyeballing.
+- **Setup:** Generate any campaign mission (civilian traffic is always on) and fly/observe the rear
+  area for the full sortie (≥ ~90 min to confirm it sustains).
+- **Pass:** A light, **ongoing** mix of civilian **fixed-wing AND helicopters** through the whole
+  mission (not just the first hour): heavies cruising high, helos/light props low and visible; ground
+  departures take off + climb (no pop-in), the few air-started heavies appear at altitude. Invisible to
+  AI (never engaged, never triggers threat reactions), clear of the **front** (keep-out), no all-at-once
+  burst. **No sim crash** (the whole point of dropping RAT). Helos/light props do not clip terrain.
+- **Fail signature:** No civilian traffic at all (empty neutral pool, or neutrals coalition has no
+  country); traffic dies out after ~1 h (stagger window / leg count too short for the mission length —
+  widen `STAGGER_WINDOW_S` / raise `FW_LEGS`/`HELO_LEGS`); a sim crash on/after spawn (should be
+  impossible — no heliport-id resolution); civilians in the fight (keep-out math); low flyers clipping
+  terrain (a `radio_alt` route fell back to BARO, or `_PROFILE` altitude too low); runway congestion at
+  one field (too many ground-starts per field — lower the `density()` bands); too dense/sparse overall
+  (tune `density()`).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

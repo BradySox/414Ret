@@ -121,6 +121,17 @@ only); the burn-through model intentionally RAISES jam probability with distance
 jamming has flat altitude-independent range; the missile-spoof curve is intentionally steep
 at close range. Don't "fix" these.
 
+**IADS-engine compatibility (MANTIS / Skynet):** every SAM-state write the jammer makes is
+funnelled through two helpers — `suppressSAMRoe()` / `restoreSAMRoe()` — which touch **only**
+the group ROE (`WEAPON_HOLD` to jam, `OPEN_FIRE` to un-jam) and never `ALARM_STATE`. The
+script makes **no `mist.*` calls**, so the MIST → MOOSE consolidation doesn't affect it.
+Under **MANTIS** (default engine) SAMs are driven purely via `ALARM_STATE` and MANTIS never
+writes ROE, so the jam composes cleanly (a MANTIS-live radar still won't fire while held) and
+the C-130J's `OPEN_FIRE` restore is the only thing that lifts the hold. Under **Skynet** the
+engine re-asserts ROE itself, so the writes stay self-healing. The one regression to avoid is
+adding any `ALARM_STATE`/emission write to the jammer — that would fight MANTIS' EMCON. See
+the design note's "IADS engine interaction" section.
+
 ---
 
 ## 3. TARPS photo-reconnaissance + BDA fog-of-war

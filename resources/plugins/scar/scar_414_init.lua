@@ -995,6 +995,11 @@ local function activate_movement(area)
 end
 
 local function scar_check()
+    -- Failsafe discipline: never let a tick throw out of the scheduled watchdog. DCS
+    -- drops a scheduled function that errors, which would kill the deadline failsafe --
+    -- the very thing that guarantees no SCAR tasking can soft-lock if an AI unit goes
+    -- AWOL. Contain the whole pass; the next tick (every SCAR_CHECK_INTERVAL) retries.
+    local tick_ok, tick_err = pcall(function()
     for _, area in ipairs(scar_areas) do
         -- Drop the King laser if the area resolved / target died / King left station
         -- (runs for done areas too, so spots never leak).
@@ -1076,6 +1081,10 @@ local function scar_check()
                 end
             end
         end
+    end
+    end)
+    if not tick_ok then
+        scar_log("scar_check tick error (continuing): " .. tostring(tick_err))
     end
 end
 

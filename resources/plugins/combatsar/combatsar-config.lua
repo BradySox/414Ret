@@ -194,6 +194,10 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     -- text reuses MOOSE CSAR's own settings-aware formatter so it matches the
     -- player's chosen coord system.
     local function larsReport(csarEngine, kingGroup)
+        -- Failsafe discipline: an F10 LARS query reads MOOSE CSAR's live downed-pilot
+        -- table (group handles can be stale, internal formatters can change); contain it
+        -- so a runtime error can't throw out of the menu command.
+        local ok, err = pcall(function()
         local kingUnit = kingGroup:GetUnit(1)
         if not kingUnit or not kingUnit:IsAlive() then
             return
@@ -234,6 +238,10 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
             end
         end
         MESSAGE:New(msg, messageTime * 2):ToGroup(kingGroup)
+        end)
+        if not ok then
+            env.warning("combatsar: LARS report error (continuing): " .. tostring(err))
+        end
     end
 
     local function addLarsMenu(csarEngine, kingGroup)

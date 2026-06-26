@@ -801,6 +801,11 @@ Dynamic-front movement design (why the stance/cadence logic looks the way it doe
   lethality) and then owns `GLSCO:Initialize()` + `battle:Activate()`.
   CRITICAL: TIC's auto-init is disabled, so if tic_414_init.lua is removed or
   fails, the battle never starts.
+- Failsafe hardening (`tic_414_init.lua`): the 414th ambient-fire `simulate()` override and the
+  battle init are `pcall`-contained, so a runtime error in the speculative-fire path can't throw
+  out of the engine cycle (one combatant) and an init error logs rather than aborting the rest of
+  the DO-SCRIPT-FILE chain. Same defensive pattern as SCAR's `scar_check` watchdog (§15) and the
+  Combat SAR LARS query (§21) — see `414th-campaign-doc-ideas-harvest.md`.
 - Generator contract: `game/missiongenerator/flotgenerator.py`. When the
   plugin is enabled, TANK/IFV/APC/ATGM frontline groups are named
   `TIC:<namegen name>` (one TIC formation per group), late-activated, and get

@@ -245,13 +245,21 @@ consistent and worth mirroring; developer styles differ:
 | Mission code words (per-task push table) + brevity | kneeboard + planner UI | **Med** | ✅ **BUILT** — Red Flag-style, `enable_package_code_words` (§4) |
 | Richer Mission Impact (ROE/airmanship/escort scoring) | Mission Impact debrief §4 | Med | Add weighted + penalty terms |
 | "Gauntlet"/quick-strike buy-support mode | purchase economy; drop-spawn §20 | Med/High | Random known TGO + support package |
-| Failsafe backup triggers on AI beats | SCAR §15 / Combat SAR §21 / TIC §9 Lua | **Low** | Defensive Lua pattern; do this regardless |
+| Failsafe driver-loop hardening (pcall) | SCAR §15 / Combat SAR §21 / TIC §9 Lua | **Low** | ✅ **BUILT** — a tick error can't kill a watchdog / break the battle loop |
 | Personalized CO framing + bios + disclaimer | campaign intro docs | **Low** | Copy-writing, not code |
 
 **Shipped so far:** the Threat Intel Brief dossier, the mission code words + Comms & Brevity card,
 and the **fuel-ladder card** — the three kneeboard ideas from this study are all in.
-**Still open (low effort, high payoff):** the richer Mission Impact scoring (ROE/airmanship/escort)
-and the **failsafe-trigger discipline** for the Lua features.
+The **failsafe-trigger discipline** is applied too — but adapted: the 414th's runtime features are
+emergent/continuous rather than the linear scripted beats of an SP campaign, so the genuine
+soft-lock risk isn't a missing per-beat timer (SCAR already has its window deadline; Combat SAR is
+MOOSE-driven) but a **driver loop dying on a runtime error** (DCS drops a scheduled function that
+throws). So the SCAR watchdog (`scar_check`), the TIC ambient-fire `simulate()` wrapper + battle
+init, and the Combat SAR LARS F10 query are each **`pcall`-contained** — a tick error logs and the
+loop survives instead of soft-locking (§9 / §15 / §21).
+
+**Still open (low effort, high payoff):** the richer Mission Impact scoring (ROE/airmanship/escort,
+not just BDA).
 
 > **Note (multiplayer):** the code words are a *human* SRS aid — nothing scripts off them, unlike
 > the single-player campaigns the idea came from. The F10-menu mechanics those campaigns use stay

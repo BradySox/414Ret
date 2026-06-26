@@ -624,6 +624,40 @@ end
 -- EW tactics
 -- ---------------------------------------------------------------------------
 
+-- ── SAM engagement suppression — IADS-engine-safe ──────────────────────────
+-- Jamming temporarily stops a RED SAM from FIRING by holding its group ROE
+-- (WEAPON_HOLD), and lifts the jam by returning ROE to OPEN_FIRE. These two
+-- helpers are the SINGLE source of truth for every SAM-state write the C-130J
+-- makes, and they deliberately touch ONLY the ROE axis. They must NEVER write
+-- ALARM_STATE / radar emission — that axis belongs to the active IADS engine:
+--
+--   * MANTIS (default engine) drives SAMs purely via ALARM_STATE (radar on/off,
+--     EmOnOff) and never writes ROE. Our WEAPON_HOLD therefore composes cleanly
+--     with MANTIS' emission control (a MANTIS-live radar still won't shoot while
+--     jammed), and our OPEN_FIRE restore is the ONLY thing that un-jams a site —
+--     MANTIS will not re-assert ROE for us. Writing ALARM_STATE here would fight
+--     MANTIS' EMCON and wake sites it is deliberately keeping dark, so don't.
+--   * Skynet (fallback engine) drives BOTH ALARM_STATE and ROE and re-asserts ROE
+--     on its own cycle, so these writes are still safe (and self-healing) there.
+--
+-- Keep all SAM-state writes funnelled through these two functions so jamming
+-- stays non-interfering with whichever IADS engine is running.
+local function suppressSAMRoe(group)
+    if not group then return end
+    local ctrl = group.getController and group:getController()
+    if ctrl and ctrl.setOption then
+        ctrl:setOption(AI.Option.Ground.id.ROE, AI.Option.Ground.val.ROE.WEAPON_HOLD)
+    end
+end
+
+local function restoreSAMRoe(group)
+    if not group then return end
+    local ctrl = group.getController and group:getController()
+    if ctrl and ctrl.setOption then
+        ctrl:setOption(AI.Option.Ground.id.ROE, AI.Option.Ground.val.ROE.OPEN_FIRE)
+    end
+end
+
 -- Drop tracked missiles that have impacted or been destroyed.
 -- Runs every ewTick regardless of loadout/mode so the table never grows unbounded.
 local function purgeDeadMissiles()
@@ -721,8 +755,7 @@ local function offensiveLoop(name)
                             prob = prob * (inDir and 1.0 or CFG_areaSpreadFactor)
 
                             if math.random() < prob then
-                                local ctrl = g:getController()
-                                if ctrl and ctrl.setOption then ctrl:setOption(AI.Option.Ground.id.ROE, AI.Option.Ground.val.ROE.WEAPON_HOLD) end
+                                suppressSAMRoe(g)   -- hold fire only; IADS engine owns ALARM_STATE
                                 local dur = jamDuration[nato] or 60
                                 suppressedSAMs[gname] = { sam = u, lastSuppressed = now, spot = false, duration = dur, nato = nato }
                                 _lastJamAttempt[gname] = nil
@@ -770,9 +803,9 @@ local function restoreSAMs()
         end
         if not keep then
             if sam and sam.isExist and sam:isExist() then
-                -- Jam window expired normally — restore ROE
-                local ctrl = sam:getGroup():getController()
-                if ctrl and ctrl.setOption then ctrl:setOption(AI.Option.Ground.id.ROE, AI.Option.Ground.val.ROE.OPEN_FIRE) end
+                -- Jam window expired normally — un-jam (return ROE to the engine-neutral
+                -- OPEN_FIRE). Under MANTIS this is the only thing that lifts the hold.
+                restoreSAMRoe(sam:getGroup())
             else
                 -- Radar unit no longer exists — site was destroyed while suppressed
                 local label = info.nato or gname
@@ -847,8 +880,7 @@ local function spotJammingTick(name)
         end
         prob = math.min(prob, 1.0)
         if math.random() < prob then
-            local ctrl = g:getController()
-            if ctrl and ctrl.setOption then ctrl:setOption(AI.Option.Ground.id.ROE, AI.Option.Ground.val.ROE.WEAPON_HOLD) end
+            suppressSAMRoe(g)   -- hold fire only; IADS engine owns ALARM_STATE
             local dur = jamDuration[nato] or 60
             suppressedSAMs[tgtGroup] = { sam = tu, lastSuppressed = timer.getTime(), spot = true, duration = dur, nato = nato }
         end

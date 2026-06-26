@@ -653,6 +653,23 @@ so the two docs don't drift.
   payload); the King wears the EW/ISR menu (the `_non_ew_c130j_present` suppression didn't fire); an
   old save with a "C-130" squadron fails to load (the `C-130 → C-130J-30` migrator alias is missing).
 
+### G14 — C-130J jamming vs MANTIS IADS (no EMCON interference) · §2 / MANTIS migration · ☐ UNTESTED
+- **Why:** The jammer suppresses RED SAMs on the **ROE** axis only (`suppressSAMRoe()` /
+  `restoreSAMRoe()`); MANTIS (now the default engine) drives SAMs on the **ALARM_STATE** axis and
+  never writes ROE. The two are intended to compose cleanly, but the human-flown interaction under
+  MANTIS has not been eyeballed (G4 predates the default flip; G6's emissions path was AI-vs-AI).
+- **Setup:** A new campaign (so **IADS engine = MANTIS**) with red SAMs/EWRs. Fly the C-130J-30
+  JAMMING slot toward the IADS; use Area/Spot jamming on a live red SAM that MANTIS has brought up.
+- **Pass:** A jammed SAM **holds fire** while suppressed even though its radar stays up under MANTIS
+  (RWR shows the radar but it doesn't shoot / "Suppressed: <type> — clear to engage" banner); when
+  the jam window expires the SAM **resumes firing** (ROE returned to OPEN_FIRE). SAMs MANTIS is
+  keeping **dark for EMCON do not wake up** as a side effect of the jam restore. `dcs.log` clean.
+- **Fail signature:** jamming has no effect (SAM keeps firing while held — ROE write not landing);
+  a jammed SAM stays permanently dead after the window (restore not firing — under MANTIS nothing
+  else lifts the hold); or a SAM MANTIS wanted dark starts emitting/firing after a jam cycle (an
+  `ALARM_STATE`/emission write crept into the jammer — must never happen; check `suppressSAMRoe`/
+  `restoreSAMRoe` are still ROE-only).
+
 ---
 
 ## H. Kneeboards

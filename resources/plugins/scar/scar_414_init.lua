@@ -688,6 +688,66 @@ local function package_near(area)
     return false
 end
 
+-- MAGIC calls are point-to-point, never coalition-wide: a real on-scene controller
+-- talks to the tasked flight (and the King relays it), it does NOT blast every pilot in
+-- theatre. Audience = the human-flown SCAR-side flights on task (within the activation
+-- ring of `area`, or any human flight on `side` when `area` is nil) PLUS any King group
+-- (the C-130 on-scene commander, who reads the call out over SRS). Rebuilt each call so
+-- newly-arrived / late-join flights are covered. outTextForGroup needs a group ID.
+local function scar_outtext(side, area, text, time)
+    local seen = {}
+    local function send_group(g)
+        local okid, gid = pcall(function() return g:getID() end)
+        if okid and gid ~= nil and not seen[gid] then
+            seen[gid] = true
+            pcall(trigger.action.outTextForGroup, gid, text, time or 20)
+        end
+    end
+    local r2 = area and (SCAR_PROXIMITY_M * SCAR_PROXIMITY_M) or nil
+    for _, cat in ipairs({ Group.Category.AIRPLANE, Group.Category.HELICOPTER }) do
+        local ok, groups = pcall(coalition.getGroups, side, cat)
+        if ok and groups ~= nil then
+            for _, g in ipairs(groups) do
+                local oku, units = pcall(g.getUnits, g)
+                if oku and units ~= nil then
+                    for _, u in ipairs(units) do
+                        local okp, hit = pcall(function()
+                            -- getPlayerName() is nil for AI; only humans get the call.
+                            if u:getPlayerName() == nil then
+                                return false
+                            end
+                            if r2 == nil then
+                                return true
+                            end
+                            local p = u:getPoint()
+                            local dx = p.x - area.centerX
+                            local dz = p.z - area.centerY
+                            return (dx * dx + dz * dz) <= r2
+                        end)
+                        if okp and hit then
+                            send_group(g)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+    -- Always include any King group (BLUE-only Combat SAR asset): the on-scene
+    -- commander relays the call by voice -- this is the "send it to the C-130" path.
+    if side == coalition.side.BLUE and dcsRetribution and dcsRetribution.CombatSAR
+        and dcsRetribution.CombatSAR.kings then
+        for _, king in pairs(dcsRetribution.CombatSAR.kings) do
+            if king.group then
+                local g = Group.getByName(king.group)
+                if g ~= nil then
+                    send_group(g)
+                end
+            end
+        end
+    end
+end
+
 -- Loiter-and-task rework: an area is STATIC when nothing is meant to move -- every
 -- mover at speed 0, the case _make_static produces. A static area holds in place and
 -- can only fail on the window timeout: no chase, no arrival-fail.
@@ -764,7 +824,7 @@ local function designate(area)
     pcall(trigger.action.markToCoalition, next_mark_id(),
         "MAGIC: target in this box — my GREEN smoke. Find + ID the real one.",
         center, side, true)
-    pcall(trigger.action.outTextForCoalition, side,
+    scar_outtext(side, area,
         "MAGIC (on-scene cmd) [" .. tostring(area.id) ..
         "]: target in the box, my GREEN smoke. Match the FULL signature — watch for " ..
         "decoys. Call visual; stand by for my designation.", 25)
@@ -787,7 +847,7 @@ local function escalate_designation(area)
     local side = scar_side(area)
     pcall(trigger.action.smoke, pos, trigger.smokeColor.Red)
     cue_illum(pos)
-    pcall(trigger.action.outTextForCoalition, side,
+    scar_outtext(side, area,
         "MAGIC [" .. tostring(area.id) ..
         "]: that's your target — my RED smoke — cleared hot.", 25)
     scar_log("area " .. tostring(area.id) .. " DESIGNATED (MAGIC red smoke on target)")
@@ -865,7 +925,7 @@ local function maybe_lase(area)
     end)
     if ok and area.laserSpot then
         area.laserCode = SCAR_LASER_CODE
-        pcall(trigger.action.outTextForCoalition, scar_side(area),
+        scar_outtext(scar_side(area), area,
             "MAGIC [" .. tostring(area.id) .. "]: King laser ON — code " ..
             tostring(SCAR_LASER_CODE) .. " (+ IR pointer).", 20)
         scar_log("area " .. tostring(area.id) .. " LASED by King (code " ..
@@ -901,7 +961,7 @@ local function recue(area)
             pcall(trigger.action.smoke, pos, trigger.smokeColor.Red)
             cue_illum(pos)
         end
-        pcall(trigger.action.outTextForCoalition, side,
+        scar_outtext(side, area,
             "MAGIC [" .. tostring(area.id) .. "]: say again — RED smoke on your target" ..
             (area.laserCode and (", laser " .. tostring(area.laserCode)) or "") .. ".", 20)
     else
@@ -909,7 +969,7 @@ local function recue(area)
         local center = { x = area.centerX, y = (okh and height) or 0, z = area.centerY }
         pcall(trigger.action.smoke, center, trigger.smokeColor.Green)
         cue_illum(center)
-        pcall(trigger.action.outTextForCoalition, side,
+        scar_outtext(side, area,
             "MAGIC [" .. tostring(area.id) ..
             "]: say again — GREEN smoke on the box; find + ID the real one.", 20)
     end
@@ -1407,7 +1467,7 @@ local function say_again(side)
         end
     end
     if not any then
-        pcall(trigger.action.outTextForCoalition, side,
+        scar_outtext(side, nil,
             "MAGIC: no active SCAR target right now.", 15)
     end
 end

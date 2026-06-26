@@ -54,7 +54,9 @@ and selected later upstream fixes.
   clutter, then stop it before it reaches safety or, for a SCUD, reaches its launch point.
   Prosecuting the wrong convoy is a mis-identification that costs budget (tunable via the
   `SCAR mis-ID penalty` Campaign Doctrine setting; set 0 to disable), so reading the target
-  signature matters. Real armor and missile sites can become the moving objective instead of a
+  signature matters — it's printed on your SCAR kneeboard, and the on-scene controller's
+  calls go to your flight (and the C-130 King), not the whole coalition. Real armor and missile
+  sites can become the moving objective instead of a
   disposable scripted stand-in. An experimental option (on by default for new campaigns while it is
   being playtested) uses finite purchased SOF teams to
   capture a commander alive: a C-130 inserts the team ahead of the fleeing HVT, a clean grab
@@ -65,7 +67,8 @@ and selected later upstream fixes.
   playtested).
 - **Combat SAR** makes a downed pilot worth flying for. A CH-47 orbits near the front as the
   rescuer while a C-130 holds overhead as the HC-130 "King" — on-scene command with an
-  air-tracking TACAN the helo homes on and an F10 survivor-locator readout. When a human pilot
+  air-tracking TACAN the helo homes on (an AI King lights it automatically; a player King
+  sets it from the planned channel in-cockpit) and an F10 survivor-locator readout. When a human pilot
   ejects, they spawn with a beacon; recover them and deliver them to any friendly field and the
   campaign **spares the aviator** (you still lose the jet, but the experienced pilot returns to
   the squadron instead of being lost). Player-flown, with an optional AI standing alert. It is a

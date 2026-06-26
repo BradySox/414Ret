@@ -66,7 +66,6 @@ class LuaGenerator:
         self._inject_tic_script()
         self._inject_tars_script()
         self._inject_scar_script()
-        self._inject_flightcontrol_script()
         self._inject_civilian_traffic_script()
 
     def _inject_tic_script(self) -> None:
@@ -237,72 +236,6 @@ class LuaGenerator:
         fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
         trigger.add_action(DoScriptFile(fileref))
         self.mission.triggerrules.triggers.append(trigger)
-
-    def _inject_flightcontrol_script(self) -> None:
-        """Inject players-only MOOSE FLIGHTCONTROL ATC at friendly land airbases.
-
-        Fires only when the FlightControl plugin is enabled. Emits the friendly
-        airdrome list (name + ATC frequency where known) into
-        dcsRetribution.FlightControl, then loads flightcontrol_414_init.lua which
-        spins up one FLIGHTCONTROL per base. MOOSE FLIGHTCONTROL itself rejects
-        FARPs and ships, so we only need to pre-filter to blue airdromes.
-        """
-        if not self._plugin_enabled("flightcontrol"):
-            return
-        script_path = Path(
-            "./resources/plugins/flightcontrol/flightcontrol_414_init.lua"
-        )
-        if not script_path.exists():
-            logging.error(
-                "flightcontrol_414_init.lua not found at %s — ATC disabled",
-                script_path.resolve(),
-            )
-            return
-
-        entries = self._flightcontrol_airbase_entries()
-        if not entries:
-            return
-
-        preamble = (
-            "dcsRetribution = dcsRetribution or {}\n"
-            "dcsRetribution.FlightControl = { airbases = {\n"
-            + ",\n".join(entries)
-            + "\n} }\n"
-        )
-        trigger = TriggerStart(comment="Flight Control (players-only ATC tower)")
-        trigger.add_action(DoScript(String(preamble)))
-        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
-        trigger.add_action(DoScriptFile(fileref))
-        self.mission.triggerrules.triggers.append(trigger)
-
-    def _flightcontrol_airbase_entries(self) -> list[str]:
-        """Build the Lua table-literal entries for each friendly land airbase.
-
-        One entry per blue-held airdrome: its name plus the ATC frequency and
-        modulation when we have runway data for it (the Lua side falls back to a
-        default frequency otherwise). Carriers/FARPs are excluded here, and
-        FLIGHTCONTROL also rejects them at runtime.
-        """
-        atc_by_field = {
-            runway.airfield_name: runway.atc
-            for runway in self.mission_data.runways
-            if runway.atc is not None
-        }
-
-        entries: list[str] = []
-        for cp in self.game.theater.controlpoints:
-            if cp.dcs_airport is None or not cp.captured.is_blue:
-                continue
-            name = escape_string_for_lua(cp.name)
-            atc = atc_by_field.get(cp.name)
-            if atc is not None:
-                entries.append(
-                    f'{{ name = "{name}", freq = {atc.mhz}, '
-                    f"modulation = {atc.modulation.value} }}"
-                )
-            else:
-                entries.append(f'{{ name = "{name}" }}')
-        return entries
 
     def generate_plugin_data(self) -> None:
         lua_data = LuaData("dcsRetribution")

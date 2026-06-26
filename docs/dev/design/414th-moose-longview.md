@@ -53,7 +53,6 @@ Retribution is **already deep into MOOSE**, not starting fresh:
 | `AIRBOSS` | `airboss` | carrier ops |
 | `AUTOLASE` | `MooseAutolase` | front-line JTAC lasing |
 | `RAT` | `civilian_traffic` | civilian air traffic |
-| `FLIGHTCONTROL` | `flightcontrol` | player ATC |
 | `MARKEROPS` | `MooseMarkerOps` | F10 marker commands |
 | `MSRS`/`MSRSQUEUE` | several | SRS speech |
 

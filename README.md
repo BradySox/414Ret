@@ -112,8 +112,6 @@ and selected later upstream fixes.
   battle.
 - Frontline formations are distributed along the line rather than piled onto one patch of
   terrain.
-- **Flight Control** adds player-facing tower sequencing at friendly land bases, with SRS
-  voice and optional text fallback.
 - Civilian regional traffic adds light rear-area activity, while the 414th-tuned
   **Splash Damage 3** build improves weapon effects without returning to the plugin's
   harsher stock values.
@@ -140,10 +138,6 @@ and selected later upstream fixes.
 
 ### Additional 414th content and integrations
 
-- Native **F/A-18C DTC export** generates a terrain-tagged cartridge with CAP and tanker
-  racetracks for the Hornet SA page, embeds it in the mission, and mirrors it into the
-  player's Saved Games DTC library. It is disabled by default because the current DCS
-  build still requires players to select the cartridge manually once per sortie.
 - The **CurrentHill Iran** integration adds Shahed-136 and IRGCN FAC assets plus a dedicated
   `[CH] Iran 2020` faction behind a new-game mod toggle.
 - The **settings screen** was audited end-to-end: dead and duplicate options were removed,
@@ -254,7 +248,6 @@ repo (do not use the standalone versions):
     standalone script for F-16/A-10 pod jamming.
 - **QRA / AI_A2A_DISPATCHER** → `resources/plugins/intercept/` (per-squadron `intercept_reserve`)
 - **TARS recon** → `resources/plugins/tars/` (runtime engine for `FlightType.TARPS`)
-- **Flight Control ATC** → `resources/plugins/flightcontrol/` (players-only tower comms)
 
 This repo is the **engine-level** side: capabilities planned and spawned automatically
 by the campaign generator rather than hand-placed in the Mission Editor.

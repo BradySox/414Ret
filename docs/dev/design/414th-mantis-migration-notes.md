@@ -110,7 +110,7 @@ prefix-naming seam (§4) and the role/C2 mapping (§3, §5), not whether MANTIS 
 ## 2. MOOSE dependency
 
 MANTIS has a hard dependency on the full MOOSE framework (GROUP/UNIT/SET_GROUP/DETECTION_AREAS/
-INTEL/SEAD/SHORAD). 414Ret **already bundles `Moose.lua`** (used by TIC, TARS, Flight Control,
+INTEL/SEAD/SHORAD). 414Ret **already bundles `Moose.lua`** (used by TIC, TARS,
 SCAR — see CLAUDE.md "scramble pattern"). Decision from the §2 spike above:
 
 - **Option A (chosen):** rely on the bundled MOOSE already injected by `inject_plugins()`, and ship

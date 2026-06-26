@@ -44,7 +44,7 @@ Ref counts are `mist[._]` occurrences — a rough gauge of porting cost, not an 
 
 ### MOOSE consumers (already on the target framework)
 
-`flightcontrol`, `tars`, `tic`, `scar`, `c130j` (414th features); plus `MooseAtis`,
+`tars`, `tic`, `scar`, `c130j` (414th features); plus `MooseAtis`,
 `MooseAutolase`, `MooseSoundhandler`, `MooseMarkerOps`, `intercept`, `civilian_traffic`, `bigeye`,
 `airboss`, and `skynetiads` (transitional, uses both). MOOSE also bundles ready equivalents we don't
 yet exploit: `Ops.CTLD`, `ATIS`, `AUTOLASE`, `RANGE`, `DETECTION_AREAS`, `MANTIS`.
@@ -143,7 +143,7 @@ broadly-valuable modernization that belongs upstream, not as a fork-only diverge
 
 - Coordinate each phase with [`414th-upstreaming-inventory.md`](414th-upstreaming-inventory.md) — these
   are strong upstream-PR candidates (MANTIS, `Ops.CTLD`, MIST retirement).
-- 414th-authored pieces (`scar`, `intercept`, `c130j`, TIC/TARS/Flight Control) are already MOOSE and
+- 414th-authored pieces (`scar`, `intercept`, `c130j`, TIC/TARS) are already MOOSE and
   need no upstream coordination.
 - The 414th PINNED Splash Damage build is unaffected (MIST-free).
 

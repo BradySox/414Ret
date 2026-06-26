@@ -2,7 +2,7 @@
 
 414Ret reworks the campaign map's layer controls into a single panel and surfaces more
 planner reasoning in the dialogs you use to plan and debrief. This page covers the **unified
-map layers panel**, the **UI transparency improvements**, and **Flight Control ATC**.
+map layers panel** and the **UI transparency improvements**.
 
 ## Unified map layers panel
 
@@ -53,14 +53,6 @@ not just raw numbers:
 - **Flight-creation context.** Creating a flight shows a live summary of what your selected
   task / aircraft / squadron choice means; squadron hover text lists primary role,
   auto-assignability, spare aircraft, base, and distance to target.
-
-## Flight Control ATC
-
-**Flight Control** adds players-only tower comms at friendly land airbases — taxi, takeoff,
-and landing sequencing with **SRS voice** and an optional **text-subtitle fallback**. It is a
-**plugin, default ON**. Tower comms are aimed at human pilots; AI flow (including QRA and CAP
-launches) is left as a pass-through so AI departures are not held up. Only land airdromes get
-a tower — FARPs and ships are not eligible.
 
 ## See also
 

@@ -76,8 +76,6 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 - **[Troops In Contact (TIC)](Troops-In-Contact)** produces prolonged, formation-aware
   frontline firefights with ambient suppressive fire, instead of vanilla ground AI instantly
   erasing the battle. Frontline formations are distributed along the line, not piled on one spot.
-- **Flight Control** adds player-facing tower sequencing at friendly land bases, with SRS voice
-  and an optional text fallback.
 - Civilian regional traffic adds light rear-area activity, and the 414th-tuned **Splash Damage 3**
   build improves weapon effects.
 
@@ -101,8 +99,6 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 
 - **[Drop-Spawn Unit Placement](Drop-Spawn-Unit-Placement)** — right-click blank map space to
   place a unit group (gated behind cheat settings).
-- **[DTC Cartridge Export](DTC-Cartridge-Export)** — native F/A-18C data-cartridge export
-  (default OFF).
 - **CurrentHill Iran** integration — Shahed-136 and IRGCN FAC assets plus a `[CH] Iran 2020`
   faction behind a new-game mod toggle (see **[Custom Factions](Custom-Factions)**).
 - **Germany - Red Tide** — a *Red Storm Rising*-flavoured 1988 NATO counteroffensive campaign

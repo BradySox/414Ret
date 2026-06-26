@@ -1,7 +1,7 @@
 name: Lua Lint
 
 # Validates the DCS plugin Lua that drives all runtime 414th behavior (EW, ISR,
-# TIC, SCAR, TARS, Flight Control, IADS). DCS runs Lua 5.1 (LuaJIT) and a plugin
+# TIC, SCAR, TARS, IADS). DCS runs Lua 5.1 (LuaJIT) and a plugin
 # whose script fails to parse/load dies SILENTLY in-mission — the feature just
 # never starts. CI never exercised Lua before, so those failures only surfaced
 # in-game. This workflow closes that gap.
@@ -81,8 +81,7 @@ jobs:
             resources/plugins/civilian_traffic \
             resources/plugins/tic/tic_414_init.lua \
             resources/plugins/tars/tars_414_init.lua \
-            resources/plugins/scar/scar_414_init.lua \
-            resources/plugins/flightcontrol/flightcontrol_414_init.lua 2>&1)
+            resources/plugins/scar/scar_414_init.lua 2>&1)
           code=$?
           echo "$out"
           {

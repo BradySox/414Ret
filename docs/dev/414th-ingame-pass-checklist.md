@@ -138,18 +138,30 @@ so the two docs don't drift.
 - **Pass:** Orbits hold **deep** behind the FLOT, clear of forward SAM/CAP reach.
 - **Fail signature:** Support orbit placed within enemy engagement depth.
 
-### C3 — Tanker racetrack speed estimate · ☐ UNTESTED
-- **Setup:** Plan a package that takes fuel from a **buddy tanker** — the airframes
-  that ship *without* a `patrol:` speed/altitude block (the F/A-18E/F tankers; the
-  A-6E buddy tank before it got its own `patrol:` block). The dedicated tankers
-  (KC-135/KC-130/MPRS/S-3B Tanker, and now the A-6E Tanker) define their own patrol
-  speed and are unaffected. For the buddy tankers the new
-  `preferred_patrol_speed(preferred_patrol_altitude)` estimate now drives the orbit.
+### C3 — Tanker racetrack speed estimate · ☐ UNTESTED (planner/data adjudicated headless 2026-06-26)
+- **Headless adjudication (2026-06-26):** Loaded every tanker via `AircraftType` and
+  computed `RefuelingFlightPlan.patrol_speed` directly (no flight). Found the F/A-18E/F
+  buddy tankers riding the **estimate fallback at 509 KTAS (~335 KIAS)** — their
+  hand-tuned `patrol:` block was mis-nested under `fuel:` in `FA-18ET.yaml` /
+  `FA-18FT.yaml`, so the loader (`AircraftType._variant_from_dict`, top-level
+  `data.get("patrol")` at aircrafttype.py:626) never saw it and the tuned 320 KTAS was
+  dead data. **Fixed:** de-indented `patrol` to top level in both files. Every tanker now
+  carries an explicit, sane orbit speed — buddy (A-6E / F/A-18E/F / S-3B) 320 KTAS
+  (~242–266 KIAS), KC-130 370, KC-135 / MPRS 445/440 (~303/305 KIAS), KC-10 405, IL-78M
+  400, and KC-130J an intentional 180 KTAS (~125 KIAS, the documented slow helo tanker).
+  No tanker rides the estimate path anymore, and the Mach-at-altitude fallback is itself
+  sane. **Residual (still in-sim only):** receivers physically joining and taking fuel
+  without S-turning.
+- **Setup:** Plan a package that takes fuel from a **buddy tanker** (the F/A-18E/F or
+  A-6E tanker). All buddy and dedicated tankers now define an explicit `patrol:` speed;
+  the `preferred_patrol_speed(preferred_patrol_altitude)` estimate is now only a fallback
+  for an untagged tanker.
 - **Pass:** Tanker flies its racetrack at a sane, steady speed and receivers
   rendezvous and take fuel without falling behind or overrunning.
 - **Fail signature:** Tanker orbit speed too slow/fast for receivers to join (e.g.
   fighters S-turning to stay behind, or unable to close). If seen, revisit
-  `RefuelingFlightPlan.patrol_speed` in `game/ato/flightplans/refuelingflightplan.py`.
+  `RefuelingFlightPlan.patrol_speed` in `game/ato/flightplans/refuelingflightplan.py`
+  (and check the airframe's `patrol:` block is at top level, not nested under `fuel:`).
 
 ### C4 — A-6E attack/tanker split · ☑ VERIFIED (2026-06-25)
 - **Verified (2026-06-25, in-game):** both A-6E variants load and behave — the Intruder is
@@ -168,8 +180,22 @@ so the two docs don't drift.
   that both variants resolve in `AircraftType` and that the A6E unit supports AI
   air-refueling in the build's pydcs.
 
-### C5 — Boom/probe refuel-method compatibility · ☐ UNTESTED
-- **Setup note (2026-06-25):** still untested — the faction flown in the 2026-06-25 session
+### C5 — Boom/probe refuel-method compatibility · ☐ UNTESTED (planner/data adjudicated headless 2026-06-26)
+- **Headless adjudication (2026-06-26):** Exercised the matching logic on real loaded
+  types (no flight). `can_refuel_from` is correct on representative pairs (boom receiver ×
+  boom tanker = yes; boom × drogue = blocked; probe × boom = blocked; probe × drogue =
+  yes), `tankerdemand.best_tanker_service_point` routes a boom tanker to the boom demand
+  cluster and a probe tanker to the probe cluster (and `_compatible` matches
+  `can_refuel_from` for the method dimension). Data audit: 11 tankers all tagged
+  (KC-135 = boom, KC-135 MPRS / KC-130 / KC-130J / S-3B / IL-78M / A-6E / F/A-18E/F buddy =
+  probe; the KC-10 is split into two selectable variants — `KC-10 Extender` boom and
+  `KC-10 Extender (Drogue)` probe — which resolves the flagged "KC-10 boom-vs-drogue
+  mis-tag" risk); receivers tagged boom=27 / probe=71 (USAF fixed-wing = boom, Navy / NATO /
+  Russian = probe — textbook), with untagged airframes permissive by design. **Residual
+  (still in-sim only):** receivers physically plugging in, plus the faction-composition
+  caveat below (a faction with only a boom tanker starves its probe receivers — by design;
+  permissive matching can only over-restrict, never crash).
+- **Setup note (2026-06-25):** the faction flown in the 2026-06-25 session
   did **not** carry both a boom and a drogue tanker, so there was no method split to observe.
   Requires a faction with **both** a boom (KC-135) and a drogue (KC-135 MPRS / KC-130 / S-3B
   Tanker) tanker to exercise this row.
@@ -404,15 +430,6 @@ so the two docs don't drift.
 ---
 
 ## G. Plugin runtime (Lua, not CI-runnable)
-
-### G1 — Flight Control: AI flow unaffected + no spot spam · §13 · ☑ VERIFIED (2026-06-24)
-- **Setup:** Default ON; a base where Retribution parks STATIC objects on ramp
-  spots (e.g. Kutaisi/Kutaisi-like).
-- **Pass:** AI QRA/CAP **launch normally** from FLIGHTCONTROL bases (players-only
-  is pragmatic, not a hard gate); no "Number of parking spots does not match!"
-  spam (orphan spots marked `RetributionStatic`).
-- **Fail signature:** AI scrambles queued/strangled, or the parking-mismatch
-  warning every cycle (138× in one playtest before the orphan-reconcile fix).
 
 ### G2 — TARS BDA bridge · §12 · ☑ VERIFIED (2026-06-24)
 - **Setup:** Fly an F-14 TARPS recon pass over enemy targets.
@@ -814,8 +831,8 @@ them by inspecting the ATO + map, not by flying.
   bridge via an F-14 TARPS pass).
 
 ### Session 4 — Plugin-runtime sweep, fly over an active front
-- G3 (TIC ambient fire / LOS-blocked positions), G1 (Flight Control: AI launches
-  normally, no parking-spot spam), G4 (C-130J EW/ISR — fly the JAMMING slot).
+- G3 (TIC ambient fire / LOS-blocked positions), G4 (C-130J EW/ISR — fly the
+  JAMMING slot).
 
 ### Session 5 — Coastal front + drop-spawn cheats
 - B1 (forward-CAP / FLOT depth on a coastline/river front), 20-A…20-G (drop-spawn

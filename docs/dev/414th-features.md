@@ -786,37 +786,20 @@ Dynamic-front movement design (why the stance/cadence logic looks the way it doe
 
 ---
 
-## 11. Native DCS DTC cartridge export (plugin-less, gated OFF by default)
+## 11. Native DCS DTC cartridge export — RETIRED (2026-06-26)
 
-Auto-writes a **native DCS Data Transfer Cartridge** into the generated `.miz` so
-players spawn with the SA picture pre-built. **F/A-18C only**, and the shipped payload
-is the **`SA.CAP_PTS` partition only**: player/AI CAP racetracks + tanker tracks drawn
-on the Hornet SA page. Gated by the `generate_dtc` setting (default OFF until ED's
-mission-start pre-load is confirmed working on a future build).
-- Design ground truth + reverse-engineered schema: `docs/dev/design/414th-dtc-export-notes.md`
-  (read this before touching the format).
-- Package: `game/missiongenerator/dtc/` — `cartridge.py` (envelope + the neutral,
-  terrain-tagged name `Retribution <terrain> DTC_1` that avoids colliding with a
-  player's personal cartridge library), `sadata.py` (`_collect_orbits()` /
-  `_collect_threats()` Retribution→partition mapping; reuses the `hide_on_mfd` filter so
-  hidden mobile SAMs never generate rings), `generator.py`, `injector.py`,
-  `diagnostics.py`.
-- Build path: overlay tracks onto the captured ME template
-  (`resources/dtc/templates/FA-18C_hornet.dtc`, `F-16C_50.dtc`) so COMM/ALR67/CMDS keep
-  their ME defaults and the cartridge stays structurally complete, then inject
-  `DTC/<type>.dtc` zip members **after** `self.mission.save(output)` in
-  `game/missiongenerator/missiongenerator.py`, and **also** mirror the file into
-  `Saved Games\DCS\DTC\<cartridge name>.dtc` (DCS resolves named cartridges from there,
-  not the `.miz`).
-- Per-unit binding: every player Hornet carries
-  `["DTC"]={["AutoLoad"]=true,["Cartridges"]={[1]={["default"]=true,["name"]=...}}}`.
-- Tests: `tests/missiongenerator/test_dtc.py`, `tests/missiongenerator/test_dtc_diagnostics.py`.
-- **KNOWN LIMITATION (verified 2026-06-14):** ED's mission-start *pre-load* does not fire
-  on the current DCS build even with a fully correct setup — the player must open the DTC
-  manager and **manually load** `Retribution <terrain> DTC_1` once per sortie, after which
-  the tracks populate correctly. Re-test pre-load on future DCS builds before assuming the
-  manual step is still needed. Mirrored library write is per-machine, so it does not
-  distribute over multiplayer — still open.
+**Removed as a half-baked feature.** The native DCS Data Transfer Cartridge export
+(`generate_dtc` setting + `game/missiongenerator/dtc/` package + the captured ME
+templates under `resources/dtc/`) never worked end-to-end: ED's mission-start pre-load
+did not fire on the shipping DCS build, so the player had to open the DTC manager and
+manually load the cartridge once per sortie, and the mirrored Saved Games library write
+did not distribute over multiplayer. With ED building a native DTC of their own, the
+fork's reverse-engineered export was dead weight and has been deleted. Do **not** restore
+it; revisit only if ED's native cartridge ships and a thin, reliable export is worth
+rebuilding from scratch.
+
+(The F-15E CDU data-cartridge slot labels on the strike-task kneeboard — the
+`DTC M1.1` references in `kneeboard.py` — are an unrelated upstream feature and remain.)
 
 ---
 
@@ -859,36 +842,19 @@ feeds the BDA fog-of-war the exact enemy units a surviving recon pass photograph
 
 ---
 
-## 13. Flight Control ATC (plugin, default ON, players-only)
+## 13. Flight Control ATC — RETIRED (2026-06-26)
 
-Design notes: `docs/dev/design/414th-flightcontrol-notes.md`.
-MOOSE **FLIGHTCONTROL** v0.7.7 (already in the vendored Moose.lua) gives players-only
-tower comms (taxi/takeoff/landing sequencing + SRS voice, text-subtitle fallback) at
-friendly land airbases.
+**Removed as a half-baked feature.** The players-only MOOSE **FLIGHTCONTROL** ATC plugin
+(`resources/plugins/flightcontrol/`, the `_inject_flightcontrol_script()` /
+`_flightcontrol_airbase_entries()` injection in `luagenerator.py`, and the
+`flightcontrol` registry entry) tower-sequenced human players at friendly land airbases.
+It added taxi/takeoff/landing comms but needed constant care to keep AI flow pass-through
+(generous taxi/landing limits + orphan-parking reconciliation to silence MOOSE
+parking-spot spam), and never earned its keep. It has been deleted.
 
-- Plugin: `resources/plugins/flightcontrol/` (`flightcontrol_414_init.lua`; `plugin.json`,
-  default ON; options: subtitles, srsPort, maxLanding, maxTaxi).
-- Injection: `_inject_flightcontrol_script()` in `luagenerator.py` (after
-  `inject_plugins()`, gated on enabled) emits the blue-airdrome list via
-  `_flightcontrol_airbase_entries()` into `dcsRetribution.FlightControl.airbases` (name +
-  ATC freq/modulation from `mission_data.runways` where present), then DoScriptFile the
-  init. AIRDROME-only (FARPs/ships rejected by `FLIGHTCONTROL:New()` itself); SRS path is
-  nil so MOOSE auto-detects the server install.
-- Players-only is PRAGMATIC, not a hard switch: MOOSE observes AI at the airbase, so we
-  set generous `SetLimitLanding`/`SetLimitTaxi` (default 99) + `SetRadioOnlyIfPlayers` so
-  AI flow stays pass-through. PRIMARY in-game check: AI QRA/CAP launches from these bases
-  are unaffected.
-- Orphan-parking reconciliation (`reconcile_orphan_parking()` in the init, after
-  `fc:Start()`): MOOSE `_InitParkingSpots()` IDs a busy spot's occupant with
-  `FindClosestUnit`, which only sees UNITs. Retribution parks STATIC objects on some ramp
-  spots (Kutaisi), so those spots are left `Status==nil` ("NOT FREE but no unit could be
-  found there") and the status loop then spams "Number of parking spots does not match!"
-  every cycle all mission (138x in one playtest). The fix marks each orphan spot OCCUPIED
-  (`"RetributionStatic"`) so the counts balance and the static-held spots stay out of the
-  taxi pool. Cosmetic-only: AI flow was already unaffected. `_InitParkingSpots` runs
-  synchronously inside `:Start()`, so `fc.parking` is populated when the pass runs.
-- Tests: `tests/test_flightcontrol_emit.py`. Default ON; Lua in-game pass ☑ VERIFIED
-  2026-06-24 (G1 — AI flow unaffected, no parking-spot spam).
+Save migration: `Settings.__setstate__` drops the `flightcontrol` plugin option keys on
+load (alongside the other retired plugins) and no longer force-enables it; the one-time
+recon-plugins-default migration now flips only TARS. Do **not** restore the plugin.
 
 ---
 
@@ -1341,7 +1307,7 @@ returns to the squadron).
   holds *near the front* where it can actually reach an ejection — **not** at the 80 NM AWACS
   standoff. `CombatSarFlightPlan` subclasses `AewcFlightPlan` (and its `Builder` subclasses the
   AEW&C `Builder`) purely to keep the existing support-flight integration that keys off
-  `isinstance(.., AewcFlightPlan)` (AWACS-info registration, DTC orbit exclusion) — only the
+  `isinstance(.., AewcFlightPlan)` (AWACS-info registration) — only the
   geometry differs. Helos clamp to a helo-appropriate AGL via the shared `get_altitude` path.
   (Earlier builds reused the AEW&C builder outright, which parked the CH-47 at AWACS depth — a
   G9 in-game finding, fixed 2026-06-25.)

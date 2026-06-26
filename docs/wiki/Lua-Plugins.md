@@ -28,8 +28,8 @@ mandatory core every mission loads.
 
 ### The "scramble pattern": hand-injected plugins
 
-Most plugins are ordinary work-order plugins. But four of the fork's features —
-**TIC**, **TARS**, **Flight Control**, and **SCAR** — are injected by hand in
+Most plugins are ordinary work-order plugins. But three of the fork's features —
+**TIC**, **TARS**, and **SCAR** — are injected by hand in
 `game/missiongenerator/luagenerator.py` (`_inject_*_script()`), appended **after**
 `inject_plugins()` so that `dcsRetribution.plugins.<name>` already exists. The injector
 then `DoScriptFile`s the vendored MOOSE class plus a small `*_414_init.lua` that owns
@@ -81,7 +81,6 @@ ELINT tracks as sliders.
 | `c130j` | Turns the C-130J into an EC-130H/RC-130H EW + ISR/ELINT platform (`FlightType.JAMMING`). Replaces the retired generic `ewrj` jammer. |
 | `tic` | Troops In Contact — prolonged, formation-aware frontline firefights with ambient suppressive fire. (Scramble pattern.) |
 | `tars` | TARS recon engine — films TARPS passes and feeds confirmed BDA back to the campaign. (Scramble pattern.) |
-| `flightcontrol` | Players-only tower sequencing/ATC at friendly land bases, with SRS voice. (Scramble pattern.) |
 | `scar` | The in-mission SCAR moving-HVT hunt scenario. (Scramble pattern.) |
 | `combatsar` | Bespoke player pilot-rescue: CH-47 rescuer + HC-130 "King" overhead, MOOSE `CSAR` engine, rescue scoring. |
 | `intercept` | Per-squadron QRA intercept reserve feeding the MOOSE `AI_A2A_DISPATCHER`. |

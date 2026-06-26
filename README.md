@@ -117,6 +117,9 @@ and selected later upstream fixes.
 - Civilian regional traffic adds light rear-area activity, while the 414th-tuned
   **Splash Damage 3** build improves weapon effects without returning to the plugin's
   harsher stock values.
+- **Nation-specific voiceovers per squadron** — each squadron's aircraft fly under their own
+  country, so a mixed-nation coalition hears each unit's real national radio voice instead of
+  one shared faction voice. Single-nation factions are unaffected.
 
 ### Planning and debriefing expose the information crews need
 

@@ -1428,3 +1428,72 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 - **King ≠ tanker.** The C-130 cannot be a DCS aerial-refueling tanker, and the CH-47 couldn't
   take its fuel anyway — the King is overhead presence / on-scene command, never wired to the
   refueling system.
+
+---
+
+## §23 — Per-squadron DCS country (nation-specific voiceovers)
+
+Implements the upstream request [dcs-retribution/dcs-retribution#627](https://github.com/dcs-retribution/dcs-retribution/issues/627):
+let each squadron's units spawn under their own DCS *country* so a coalition (CJTF) side flying
+liveries from several nations gets that nation's voiceovers/comms, instead of every unit on a
+side sharing one faction country's radio voice.
+
+### The change (the "last mile")
+
+The data already existed — squadrons carry a `country` (`game/squadrons/squadrondef.py`, set by
+preset YAML `country:` and inherited from the faction by auto-generated squadrons in
+`game/campaignloader/squadrondefgenerator.py`). The gap was purely in mission generation, which
+collapsed every group on a side onto the single faction country. This feature routes the squadron
+country through the spawn path.
+
+- **`game/missiongenerator/countryassigner.py` — `CountryAssigner`** is the resolver. At
+  construction it walks `game.blue.air_wing.iter_squadrons()` / `game.red...`, and builds, per
+  side, the set of canonical `dcs.country.Country` instances to register on the coalition plus a
+  `for_squadron(squadron)` lookup. `primary_blue`/`primary_red` are the faction countries (the
+  fallback). Exposes `blue_countries`, `red_countries`, `belligerent_ids`.
+- **Conflict rule (the one real constraint):** a DCS country may belong to only **one** coalition
+  in a `.miz`. **Blue claims its squadron countries first**; any red squadron whose country is
+  already claimed by blue falls back to `primary_red`. (The common case — both sides on distinct
+  CJTF primaries with non-overlapping real-nation squadrons — never hits this.)
+- **Canonical-instance discipline:** pydcs attaches spawned groups to the `Country` instance via
+  `country.add_aircraft_group` and only serializes countries reachable from the coalition, so the
+  **same instance** must be both registered on the coalition (`add_country`) and passed at spawn.
+  `CountryAssigner` interns one instance per id (`_instances`) and hands that same object to both
+  paths. Passing a duplicate-id instance would silently drop its groups on save.
+
+### Wiring
+
+- `game/missiongenerator/missiongenerator.py` builds `self.country_assigner` in `__init__`
+  (`p_country`/`e_country` are now `primary_blue`/`primary_red`), registers **all** per-side
+  countries in `setup_mission_coalitions()`, and uses `belligerent_ids` to exclude belligerents
+  from the neutrals pool.
+- `game/missiongenerator/aircraft/aircraftgenerator.py` takes the assigner in its constructor and
+  resolves the country **per flight/squadron** in `generate_flights`, `spawn_unused_aircraft`, and
+  `spawn_intercept_templates` (these methods no longer take coalition-level country params).
+  `FlightGroupSpawner` is unchanged — it already spawns under whatever country it's handed, and
+  callsign generation (`namegen.next_aircraft_name`) flows from the same value.
+
+### No-op for single-nation factions
+
+For a non-CJTF faction the squadron loader (`game/squadrons/squadrondefloader.py`) already
+restricts squadrons to the faction country, so every resolved country equals the faction country
+and the generated mission is unchanged. The behavior only diverges for mixed-nation/CJTF sides —
+exactly the intent.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Resolver | `game/missiongenerator/countryassigner.py` |
+| Coalition registration | `game/missiongenerator/missiongenerator.py` (`setup_mission_coalitions`, `generate_air_units`) |
+| Per-squadron spawn | `game/missiongenerator/aircraft/aircraftgenerator.py` |
+| Tests | `tests/missiongenerator/test_country_assigner.py` (no-op, mixed-nation, cross-side collision, belligerent ids, instance identity) |
+
+### Gotchas / deferred
+
+- **Ground units stay on the faction country.** TGOs, statics, convoys, and the player helo group
+  still spawn under `p_country`/`e_country` (`tgogenerator.py`, etc.) — harmless, since ground
+  units have no nation voice comms. Only air units carry the per-squadron nation today.
+- **Needs an in-game pass.** CI can't verify DCS actually plays the per-nation voiceovers; add a
+  row to the in-game-pass checklist and confirm a mixed-nation CJTF side in the mission editor /
+  in flight before clearing.

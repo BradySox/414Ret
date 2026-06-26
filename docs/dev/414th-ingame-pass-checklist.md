@@ -384,6 +384,15 @@ so the two docs don't drift.
   `maybe_drop_laser`); wrong code published; or a `scar_414_init.lua` Lua error / bad `Spot.createLaser`
   signature. (Per-area laser-code allocation is a deferred refinement — a fixed 1688 is fine here.)
 
+### F11 — SCAR designation polish: night illum + "say again" F10 (Phase 4) · §15 / PR #189 · ☐ UNTESTED
+- **Setup:** Fly a SCAR at **night** to the box; also try the F10 entry by day.
+- **Pass:** At night each smoke cue (GREEN box / RED target) is accompanied by an **illumination
+  flare** over the cue point (smoke alone is invisible after dark). F10 shows **one** entry — "MAGIC:
+  say again SCAR target" — that re-pops the current cue (and re-calls the laser code) for your active
+  target; with no active target it says so. By day, no illum (smoke only).
+- **Fail signature:** no flare at night / flare in daylight (bad `is_night`); the F10 missing or
+  duplicated; "say again" cues the wrong stage or a resolved area; or a Lua error.
+
 ---
 
 ## G. Plugin runtime (Lua, not CI-runnable)
@@ -531,11 +540,21 @@ so the two docs don't drift.
   check `allowFARPRescue` / that a friendly airfield is in range.
 
 ### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☐ UNTESTED
+- **Orbit-placement fix 2026-06-25 (found in-game, fixed — re-observe):** the standing-alert orbit
+  used to **mirror the AWACS** (it reused the AEW&C builder → 80 NM standoff + 60 NM racetrack), so a
+  CH-47 could never reach an ejection. Combat SAR now flies a **dedicated forward hold**
+  (`game/ato/flightplans/combatsar.py`): front-anchored, **15 NM** threat buffer, **5 NM** racetrack
+  half-length. Re-observe that the planned CSAR orbit now sits **near the FLOT**, not back at AWACS depth.
 - **Setup:** Enable **Automatic Combat SAR** (HQ automation settings; default OFF). Campaign with a
   blue **CH-47** squadron + budget. Auto-plan turn 1 (observe-only, don't fly the CSAR).
-- **Pass:** A blue **AI** `Combat SAR` package appears in the ATO, orbiting near an active front
-  (one per front, capped by available CH-47s). The generator logs `enableForAI=true`. When a pilot
-  ejects in range, the orbiting AI CH-47 diverts, recovers, and returns — with no player CSAR up.
+- **Pass:** A blue **AI** `Combat SAR` package appears in the ATO, **holding a tight racetrack near an
+  active front** (one per front, capped by available CH-47s) — clearly forward of the AWACS/tanker
+  orbits, clear of enemy threat rings. The generator logs `enableForAI=true`. When a pilot ejects in
+  range, the orbiting AI CH-47 diverts, recovers, and returns — with no player CSAR up.
+- **Placement fail signature:** the CSAR orbit again sits at AWACS depth / mirrors the AWACS racetrack
+  (the dedicated `CombatSarFlightPlan` didn't take — check `flightplanbuildertypes.py` maps
+  `COMBAT_SAR` to `CombatSarFlightPlan`, not `AewcFlightPlan`); or the orbit lands inside an enemy
+  threat ring (15 NM buffer too tight for that campaign's FLOT SAMs).
 - **Fail signature:** no CSAR package planned with the setting on + a CH-47 squadron present (HTN/
   fulfiller gap — check `combat_sar_targets` populates and a CH-47 is purchasable); a CSAR planned
   for **red** (blue-gate leaked); the AI helo orbits but never diverts to a downed pilot
@@ -589,7 +608,15 @@ so the two docs don't drift.
   and "spares a pilot" (the `SOFRESCUE` prefix routing in `OnAfterRescued`); double refund for one
   team recovered by both paths.
 
-### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ☐ UNTESTED
+### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ◐ PARTIAL
+- **In-game 2026-06-25:** tasking offered on **both** airframes ✅; CH-47Fbl1 spawns with its
+  **door M60D guns** ✅ ("loadout good"). **Found:** the C-130J-30 King spawned with **no loadout /
+  no wing tanks** — the documented removable-pylon case. **Fixed 2026-06-25:** added a
+  `Retribution Combat SAR` payload for the C-130J-30
+  (`resources/customized_payloads/C-130J-30.lua`) mounting the two external wing tanks
+  (`{C130J_Ext_Tank_L}` Pylon 1 + `{C130J_Ext_Tank_R}` Pylon 2; CLSIDs validated against the module).
+  **Re-observe:** the King now spawns with visible underwing tanks. **Still to verify:** the King
+  flies **clean of the EW/ISR menu** (the other half of this row — `_non_ew_c130j_present` suppression).
 - **Setup:** A blue faction with **CH-47Fbl1** and **C-130J-30** squadrons. Plan a **Combat SAR**
   flight in each. (The stock AI C-130 is retired — C-130J-30, the Airplane Simulation Company
   module, is the only C-130; a fresh game and an in-progress save with an old "C-130" squadron must
@@ -647,7 +674,10 @@ so the two docs don't drift.
   Check `table_paginated()` / `remaining_table_rows()` row-height math in
   `kneeboard.py` if seen.
 
-### H2 — Combat SAR task kneeboard · Combat SAR Phase 4 · ☐ UNTESTED
+### H2 — Combat SAR task kneeboard · Combat SAR Phase 4 · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game):** both kneeboard task pages render correctly — the role-aware
+  briefs (CH-47 pickup vs. C-130 King on-scene-command), beacon tables, and F10 `CSAR` reference
+  showed as designed with no clipping. Fail signature did not occur.
 - **Setup:** Plan a player **CH-47** Combat SAR flight (and, separately, a player **C-130** Combat
   SAR). Open each flight's kneeboard in DCS.
 - **Pass:** Each flight has a "Combat SAR" task page. The CH-47's shows the **pickup** procedure
@@ -664,7 +694,15 @@ so the two docs don't drift.
   KING BEACON TACAN that doesn't match what the King actually radiates in-game, text running off the
   page edge, or no Combat SAR page at all (`generate_task_page` branch).
 
-### H3 — Custom kneeboard import (UI) · §4 · ☐ UNTESTED
+### H3 — SCAR task kneeboard (Phase 4) · §15 / PR #189 · ☐ UNTESTED
+- **Setup:** Plan a player **SCAR** flight; open its kneeboard in DCS.
+- **Pass:** A "SCAR" task page with **TASK** (hold the box, service the designated armor, kills count
+  natively), **FIND + ID** (decoys + mis-ID cost; GREEN box smoke → RED target after ~2 min), and
+  **DESIGNATION** (smoke colours, King laser code 1688, the "say again" F10). Text wraps, no clipping.
+- **Fail signature:** no SCAR page (`generate_task_page` branch), text off the page edge, or guidance
+  that contradicts the in-mission behaviour (e.g. claims a laser with no King).
+
+### H4 — Custom kneeboard import (UI) · §4 · ☐ UNTESTED
 - **Setup:** With a campaign loaded, open **Kneeboards** (toolbar/menu). Add an image scoped to
   **All flights**, add a second scoped to a **specific airframe**, then save the campaign, reopen
   it (verify the entries persisted), generate a mission, and open the kneeboards in DCS.

@@ -11,6 +11,7 @@ from dcs.weather import Wind
 
 from game.missiongenerator.kneeboard_recon.atis import (
     AtisBlock,
+    altimeter_setting_inhg,
     build_atis_block,
     compute_qfe_inhg,
     draw_atis_block,
@@ -230,7 +231,9 @@ def test_atis_block_adds_storm_caveat_when_precipitation_is_thunderstorm() -> No
     """Thunderstorm precipitation: surface ~3 mb in-CB low alongside nominal QNH/QFE."""
     from dcs.weather import Weather as PydcsWeather
 
-    weather = _stub_weather(qnh_inhg=29.98)
+    # ISA temp so the altimeter-setting correction is a no-op here — this test
+    # exercises the storm-drop surfacing, not the temperature correction.
+    weather = _stub_weather(qnh_inhg=29.98, temp_c=15)
     # has_thunderstorm_cells reads .precipitation off the Clouds spec.
     weather.clouds.precipitation = PydcsWeather.Preceptions.Thunderstorm
     weather.clouds.preset = None
@@ -365,3 +368,57 @@ def test_atis_pressure_note_fits_within_panel_width() -> None:
     assert (
         note_width <= usable
     ), f"pressure_note width {note_width:.0f}px overflows {usable}px panel area"
+
+
+def test_altimeter_setting_noop_at_sea_level_and_isa_temp() -> None:
+    # No correction at 0 m, nor when OAT == ISA standard (15 C) at any elevation.
+    assert altimeter_setting_inhg(29.92, 0.0, 35.0) == 29.92
+    assert altimeter_setting_inhg(29.92, 500.0, 15.0) == pytest.approx(29.92, abs=1e-6)
+
+
+def test_altimeter_setting_hot_raises_cold_lowers() -> None:
+    raw = 29.92
+    assert altimeter_setting_inhg(raw, 500.0, 35.0) > raw  # warm day
+    assert altimeter_setting_inhg(raw, 500.0, -10.0) < raw  # cold day
+
+
+def test_atis_block_qnh_is_temperature_corrected_and_qfe_follows() -> None:
+    # Cold day + elevation -> ATIS QNH below the raw sea-level value, and QFE is
+    # the actual field pressure derived from the corrected QNH.
+    weather = _stub_weather(qnh_inhg=29.92, temp_c=-10)
+    block = build_atis_block(
+        weather=weather,
+        start_time_local=datetime.datetime(2026, 5, 21, 6, 42),
+        start_time_zulu=None,
+        sunrise=None,
+        sunset=None,
+        runway_name="13",
+        runway_heading_deg=132,
+        atc_freq_str="",
+        tacan_str="",
+        field_elevation_m=1000.0,
+    )
+    corrected = altimeter_setting_inhg(29.92, 1000.0, -10.0)
+    assert block.qnh_inhg == pytest.approx(round(corrected, 2), abs=0.001)
+    assert block.qnh_inhg < 29.92
+    assert block.qfe_inhg == pytest.approx(
+        round(compute_qfe_inhg(corrected, 1000.0), 2), abs=0.001
+    )
+
+
+def test_atis_block_qnh_uncorrected_without_elevation() -> None:
+    # No field elevation -> can't correct -> raw sea-level QNH is shown.
+    weather = _stub_weather(qnh_inhg=29.92, temp_c=-10)
+    block = build_atis_block(
+        weather=weather,
+        start_time_local=datetime.datetime(2026, 5, 21, 6, 42),
+        start_time_zulu=None,
+        sunrise=None,
+        sunset=None,
+        runway_name="13",
+        runway_heading_deg=132,
+        atc_freq_str="",
+        tacan_str="",
+        field_elevation_m=None,
+    )
+    assert block.qnh_inhg == pytest.approx(29.92, abs=0.001)

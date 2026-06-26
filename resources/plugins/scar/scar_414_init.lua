@@ -727,6 +727,24 @@ local function target_lead_pos(area)
     return nil
 end
 
+-- Phase 4 polish: smoke is invisible after dark, so at night also pop an illumination
+-- flare above the cue point. Rough time-of-day check (seconds into the day).
+local function is_night()
+    local ok, t = pcall(timer.getAbsTime)
+    if not ok or not t then
+        return false
+    end
+    local tod = t % 86400
+    return tod < (6 * 3600) or tod > (18 * 3600)
+end
+
+local function cue_illum(point)
+    if is_night() then
+        local flare = { x = point.x, y = (point.y or 0) + 500, z = point.z }
+        pcall(trigger.action.illuminationBomb, flare, 1000000)
+    end
+end
+
 -- Phase 2/3 stage 1 -- on-station TALK-ON. The on-scene controller ("MAGIC") cues the
 -- striker onto the kill box with GREEN smoke at the box centre + a descriptive call,
 -- but does NOT clear hot or smoke the exact vehicle yet: the player works the decoy ID
@@ -742,6 +760,7 @@ local function designate(area)
     local y = (okh and height) or 0
     local center = { x = area.centerX, y = y, z = area.centerY }
     pcall(trigger.action.smoke, center, trigger.smokeColor.Green)
+    cue_illum(center)
     pcall(trigger.action.markToCoalition, next_mark_id(),
         "MAGIC: target in this box — my GREEN smoke. Find + ID the real one.",
         center, side, true)
@@ -767,6 +786,7 @@ local function escalate_designation(area)
     area.cleared = true
     local side = scar_side(area)
     pcall(trigger.action.smoke, pos, trigger.smokeColor.Red)
+    cue_illum(pos)
     pcall(trigger.action.outTextForCoalition, side,
         "MAGIC [" .. tostring(area.id) ..
         "]: that's your target — my RED smoke — cleared hot.", 25)
@@ -863,6 +883,35 @@ local function maybe_drop_laser(area)
     end
     if area.done or target_lead_pos(area) == nil or king_lead_unit(area) == nil then
         drop_laser(area)
+    end
+end
+
+-- Phase 4 polish -- "say again": re-emit the current designation cue for an area (the
+-- smoke burns out). RED on the target if already designated, else GREEN on the box;
+-- night illum either way; re-call the laser code if one is up. The F10 backstop the
+-- minimal-F10 model allows (one entry), for when a human King isn't on voice.
+local function recue(area)
+    if not area.designated then
+        return
+    end
+    local side = scar_side(area)
+    if area.cleared then
+        local pos = target_lead_pos(area)
+        if pos ~= nil then
+            pcall(trigger.action.smoke, pos, trigger.smokeColor.Red)
+            cue_illum(pos)
+        end
+        pcall(trigger.action.outTextForCoalition, side,
+            "MAGIC [" .. tostring(area.id) .. "]: say again — RED smoke on your target" ..
+            (area.laserCode and (", laser " .. tostring(area.laserCode)) or "") .. ".", 20)
+    else
+        local okh, height = pcall(land.getHeight, { x = area.centerX, y = area.centerY })
+        local center = { x = area.centerX, y = (okh and height) or 0, z = area.centerY }
+        pcall(trigger.action.smoke, center, trigger.smokeColor.Green)
+        cue_illum(center)
+        pcall(trigger.action.outTextForCoalition, side,
+            "MAGIC [" .. tostring(area.id) ..
+            "]: say again — GREEN smoke on the box; find + ID the real one.", 20)
     end
 end
 
@@ -1348,6 +1397,21 @@ local function activate_armor_area(tasking, window)
     return true
 end
 
+-- F10 "say again" backstop: re-cue every live designated area on the caller's side.
+local function say_again(side)
+    local any = false
+    for _, area in ipairs(scar_areas) do
+        if not area.done and area.activated and scar_side(area) == side then
+            recue(area)
+            any = true
+        end
+    end
+    if not any then
+        pcall(trigger.action.outTextForCoalition, side,
+            "MAGIC: no active SCAR target right now.", 15)
+    end
+end
+
 local function scar_init()
     if not (dcsRetribution and dcsRetribution.Scar and dcsRetribution.Scar.taskings) then
         scar_log("no dcsRetribution.Scar.taskings table; nothing to do")
@@ -1385,6 +1449,12 @@ local function scar_init()
     end
 
     world.addEventHandler(scar_event_handler)
+    -- One F10 entry per side: "say again" re-cues the active SCAR target (the only
+    -- F10 the minimal-F10 model allows; designation is otherwise proximity-driven).
+    pcall(missionCommands.addCommandForCoalition, coalition.side.BLUE,
+        "MAGIC: say again SCAR target", nil, say_again, coalition.side.BLUE)
+    pcall(missionCommands.addCommandForCoalition, coalition.side.RED,
+        "MAGIC: say again SCAR target", nil, say_again, coalition.side.RED)
     scar_log("registered " .. count .. " SCAR area(s); check every " ..
         SCAR_CHECK_INTERVAL .. "s")
     mist.scheduleFunction(scar_check, {}, timer.getTime() + SCAR_CHECK_INTERVAL,

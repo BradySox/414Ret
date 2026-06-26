@@ -249,7 +249,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     flight (or one airframe) at generation by `KneeboardGenerator._inject_custom_kneeboards()`.
     Per-campaign (no cross-campaign leak like the global `Kneeboards/` folder); old saves migrate
     via `__setstate__`. (`game/customkneeboard.py`, `game/missiongenerator/kneeboard.py`,
-    `qt_ui/windows/kneeboards/QCustomKneeboardsWindow.py`; features doc §4, checklist H1/H2/H3.)
+    `qt_ui/windows/kneeboards/QCustomKneeboardsWindow.py`; features doc §4, checklist H1/H2/H4.)
 
 ---
 

@@ -721,6 +721,26 @@ def test_lua_king_laser_only_with_king_on_station() -> None:
     assert "maybe_drop_laser(area)" in script
 
 
+def test_lua_night_illum_and_say_again_backstop() -> None:
+    # Phase 4 polish: at night the designation also pops an illumination flare (smoke
+    # is invisible after dark); and a single "say again" F10 per side re-cues the
+    # active target (smoke burns out).
+    script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
+        encoding="utf-8"
+    )
+    assert "local function is_night()" in script
+    assert "trigger.action.illuminationBomb" in script
+    assert "cue_illum(center)" in script  # talk-on cue gets night illum
+    assert "cue_illum(pos)" in script  # precise designation gets night illum
+    # One "say again" F10 per side that re-cues live designated areas.
+    assert "say again SCAR target" in script
+    assert "addCommandForCoalition" in script
+    say = script.split("local function say_again(side)", maxsplit=1)[1].split(
+        "local function scar_init()", maxsplit=1
+    )[0]
+    assert "recue(area)" in say
+
+
 def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
     # Phase 2c-2 hybrid: spawn_sof binds capture to a player-delivered team near
     # the ambush point when one exists, and only scripted-spawns a fallback

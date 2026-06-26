@@ -38,6 +38,7 @@ from dcs.planes import F_15ESE
 from suntime import Sun, SunTimeException  # type: ignore
 from tabulate import tabulate
 
+from game.ato.codewords import PushCategory, present_categories, push_category_for
 from game.ato.flighttype import FlightType
 from game.ato.flightwaypoint import FlightWaypoint
 from game.ato.flightwaypointtype import FlightWaypointType
@@ -1936,13 +1937,13 @@ class ThreatIntelBriefPage(KneeboardPage):
 
 
 class BrevityCard(KneeboardPage):
-    """Comms & Brevity card: package code words + task-filtered brevity reminders.
+    """Comms & Brevity card: the side's mission code words + task-filtered brevity.
 
-    Two layers: the package's three SRS **code words** (push / success / abort,
-    owned by the ``Package`` so the planner briefs off the same value — see
-    ``game/ato/codewords.py``) and a short **brevity** crib filtered to the flight's
-    task (``game/data/brevity_reference.py``). Both are human comms aids; nothing
-    scripts off them.
+    Two layers: the **mission-wide code-word table** (a push word per task plus the
+    event words, shared by the whole side — `game/ato/codewords.py`), with the
+    flight's own task row marked, so a call ("Red Kite") tells everyone SEAD is
+    pushing; and a short **brevity** crib filtered to the flight's task
+    (`game/data/brevity_reference.py`). Human comms aids only; nothing scripts off them.
     """
 
     def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
@@ -1954,20 +1955,35 @@ class BrevityCard(KneeboardPage):
         custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
         writer.title(f"{self.flight.callsign} Comms & Brevity{custom}")
 
-        code_words = self.flight.package.code_words
-        writer.heading("Package Code Words")
-        writer.rule()
-        writer.table(
-            [
-                ["PUSH", code_words.push],
-                ["SUCCESS", code_words.success],
-                ["ABORT", code_words.abort],
-            ],
-            headers=["Event", "Word"],
+        coalition = self.flight.squadron.coalition
+        code_words = coalition.code_words
+        own = push_category_for(self.flight.flight_type)
+        present = present_categories(
+            p.primary_task for p in coalition.ato.packages if p.primary_task is not None
         )
+        if own is not None:
+            present = present | {own}
+
+        writer.heading(f"Code Words — {code_words.theme}")
+        writer.rule()
+        push_rows = []
+        for category in PushCategory:
+            if category not in present:
+                continue
+            word = code_words.push[category]
+            if category is own:
+                word = f"{word}  (you)"
+            push_rows.append([category.value, word])
+        writer.table(push_rows, headers=["Task push", "Word"])
+
+        event_rows = [["SUCCESS", code_words.success], ["ABORT", code_words.abort]]
+        if PushCategory.EW in present:
+            event_rows.append(["STOP JAM", code_words.stop_jam])
+        writer.table(event_rows, headers=["Event", "Word"])
         writer.text(
-            "Call over SRS — PUSH at the commit, SUCCESS on target down, ABORT to "
-            "knock it off. Shared across the package.",
+            "Call over SRS. Your task's push word is marked (you); a push call tells "
+            "the whole package who's committing. SUCCESS on target down, ABORT to "
+            "knock it off.",
             wrap=True,
         )
         writer.vspace(12)

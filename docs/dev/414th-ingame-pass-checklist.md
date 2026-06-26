@@ -874,6 +874,25 @@ so the two docs don't drift.
   or a corrupt image (PNG-normalisation in `QCustomKneeboardsWindow.add_kneeboard`). Note DCS
   kneeboards are per-airframe — two flights of the same type necessarily share pages.
 
+### H5 — Threat Intel Brief kneeboard · §4 · ☐ UNTESTED
+- **Setup:** Enable **Generate threat intel brief kneeboard page** (Mission Generator →
+  Kneeboard). On a campaign with several enemy SAM/EWR types — some already discovered
+  (struck/scouted/TARPS) and some not — generate a mission for a player flight and open the
+  kneeboards in DCS. Compare the dossier against the F10 map's enemy air-defense picture.
+- **Pass:** A "Threat Intel Brief" page shows **one card per enemy system** — system name, a
+  curated Guidance + Ceiling line, the live MEZ / Detection / HARM ALIC, live/dead site counts,
+  bullseye cues, and a **DEFEAT:** tactics note. **Undiscovered** sites collapse into per-band
+  "Unidentified MERAD" cards (no system/range/HARM/defeat) and the intro counts them. Live,
+  longest-range systems sort to the top; more cards than fit flow onto `(cont.)` pages. The page
+  is absent when the setting is off or the enemy has no air defenses. Spot-check that a card's
+  curated text (guidance/ceiling/defeat) matches the actual system.
+- **Fail signature:** a fogged site leaking its exact system/range/HARM/defeat (recon-fog
+  regression in `build_threat_intel_cards`); friendly AD listed; wrong system→reference mapping
+  (e.g. an SA-6 card showing SA-10 defeat text — check `game/data/threat_reference.py` keys);
+  garbled bullseye cue or MEZ; a card overrunning the page bottom instead of paginating; the page
+  appearing for the **enemy** side's same-airframe flight with BLUE air defenses (known
+  per-airframe DCS limitation — note, not a bug).
+
 ---
 
 ## I. Mission generation

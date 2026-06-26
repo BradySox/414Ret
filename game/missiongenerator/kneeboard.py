@@ -27,7 +27,7 @@ import datetime
 import math
 import textwrap
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
 
@@ -42,6 +42,7 @@ from game.ato.flighttype import FlightType
 from game.ato.flightwaypoint import FlightWaypoint
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.data.alic import AlicCodes
+from game.data.threat_reference import ThreatReference, reference_for
 from game.dcs.aircrafttype import AircraftType
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
@@ -49,6 +50,7 @@ from game.settings.settings import TargetIntelPrecision
 from game.theater import TheaterGroundObject, TheaterUnit
 from game.theater.bullseye import Bullseye
 from game.theater.controlpoint import Airfield
+from game.theater.theatergroundobject import EwrGroundObject, SamGroundObject
 from game.utils import Distance, UnitSystem, inches_hg, meters, mps, pounds
 from game.weather.weather import Weather
 from .aircraft.flightdata import CombatSarKingBeacon, FlightData
@@ -56,6 +58,7 @@ from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
 from .kneeboard_page import KneeboardPage
 from .kneeboard_recon import airport_imagery as _airport_imagery
 from .kneeboard_recon import generate_recon_pages
+from .kneeboard_recon.pages import _greatest_alive_threat
 from .kneeboard_recon.atis import (
     THUNDERSTORM_PRESSURE_DROP_INHG,
     altimeter_setting_inhg,
@@ -1612,6 +1615,325 @@ def build_airfield_directory_rows(
     return rows
 
 
+#: Short codes for the intel-tier bands on the Threat Intel Brief, so an
+#: undiscovered site can be labelled by tier ("Unidentified MERAD") without
+#: leaking its exact system.
+_AD_BAND_SHORT = {
+    "Long-range SAM": "LORAD",
+    "Medium-range SAM": "MERAD",
+    "Short-range SAM": "SHORAD",
+    "Point-defense SAM": "PD SAM",
+    "AAA": "AAA",
+    "Early-warning radar": "EWR",
+}
+
+
+def _threat_harm_code(tgo: TheaterGroundObject) -> Optional[int]:
+    """First HARM ALIC code among the site's live units, or None if none is coded."""
+    for unit in tgo.units:
+        if not unit.alive:
+            continue
+        try:
+            return AlicCodes.code_for(unit)
+        except KeyError:
+            continue
+    return None
+
+
+def _site_reference(tgo: TheaterGroundObject) -> Optional[ThreatReference]:
+    """Curated reference for a site, matched on any of its units' type ids."""
+    for unit in tgo.units:
+        ref = reference_for(unit.type.id)
+        if ref is not None:
+            return ref
+    return None
+
+
+def _bullseye_brg_range(bullseye: Bullseye, position: Point) -> str:
+    """Bullseye bearing/range cue ("045/30") to a position, ~1° / 1nm accuracy."""
+    bearing = bullseye.position.heading_between_point(position)
+    distance = meters(bullseye.position.distance_to_point(position))
+    return f"{bearing:03.0f}/{distance.nautical_miles:.0f}"
+
+
+@dataclass(frozen=True)
+class ThreatCard:
+    """One enemy air-defense *system* in the dossier (all its sites aggregated)."""
+
+    system: str
+    band: str
+    identified: bool
+    guidance: str
+    ceiling: str
+    mez_nm: str
+    detect_nm: str
+    harm: str
+    live: int
+    dead: int
+    cues: List[str]
+    defeat: str
+    sort_range_m: float
+
+
+@dataclass
+class _KnownAccum:
+    band: str
+    live: int = 0
+    dead: int = 0
+    mez_m: float = 0.0
+    det_m: float = 0.0
+    harm: Optional[str] = None
+    ref: Optional[ThreatReference] = None
+    cues: List[str] = field(default_factory=list)
+
+
+@dataclass
+class _UnknownAccum:
+    band: str
+    count: int = 0
+    cues: List[str] = field(default_factory=list)
+
+
+def build_threat_intel_cards(
+    game: "Game", flight: FlightData
+) -> Tuple[List[ThreatCard], int]:
+    """Per-system threat cards for the enemy air-defense laydown (recon-fog aware).
+
+    Sites are aggregated by system: each identified system becomes one card with a
+    curated stat block (guidance, ceiling, defeat note from
+    ``game.data.threat_reference``) over its live numbers (MEZ, detection, HARM
+    ALIC) plus the live/dead site counts and bullseye cues. Recon fog (design §3): a
+    site the player has not identified (``known_for`` False) contributes only to a
+    per-band "Unidentified MERAD" card — its system, ring and HARM code are withheld
+    until a TARPS overflight reveals it. Cards sort live-most-lethal → unidentified.
+    Returns the cards plus the count of unidentified sites (for the intro line).
+    """
+    player = flight.friendly
+    bullseye = game.coalition_for(player).bullseye
+
+    known: Dict[str, _KnownAccum] = {}
+    unknown: Dict[str, _UnknownAccum] = {}
+    unidentified = 0
+    for tgo in game.theater.ground_objects:
+        if not isinstance(tgo, (SamGroundObject, EwrGroundObject)):
+            continue
+        if tgo.is_friendly(player):
+            continue
+        band = tgo.air_defense_band
+        short = _AD_BAND_SHORT.get(band or "", band or "AD")
+        cue = _bullseye_brg_range(bullseye, tgo.position)
+        if not tgo.known_for(player):
+            unidentified += 1
+            unknown_acc = unknown.setdefault(short, _UnknownAccum(short))
+            unknown_acc.count += 1
+            unknown_acc.cues.append(cue)
+            continue
+        dominant = _greatest_alive_threat(tgo)
+        name = dominant[0] if dominant else (band or "AD site")
+        site = known.setdefault(name, _KnownAccum(short))
+        if tgo.is_dead(player):
+            site.dead += 1
+        else:
+            site.live += 1
+        site.cues.append(cue)
+        site.mez_m = max(site.mez_m, tgo.max_threat_range(player).meters)
+        site.det_m = max(site.det_m, tgo.max_detection_range(player).meters)
+        if site.harm is None:
+            code = _threat_harm_code(tgo)
+            site.harm = str(code) if code is not None else None
+        if site.ref is None:
+            site.ref = _site_reference(tgo)
+
+    cards: List[ThreatCard] = []
+    for name, site in known.items():
+        ref = site.ref
+        cards.append(
+            ThreatCard(
+                system=name,
+                band=site.band,
+                identified=True,
+                guidance=ref.guidance if ref else "—",
+                ceiling=f"{ref.ceiling_ft:,} ft" if ref and ref.ceiling_ft else "—",
+                mez_nm=(
+                    f"{meters(site.mez_m).nautical_miles:.0f}"
+                    if site.mez_m > 0
+                    else "—"
+                ),
+                detect_nm=(
+                    f"{meters(site.det_m).nautical_miles:.0f}"
+                    if site.det_m > 0
+                    else "—"
+                ),
+                harm=site.harm or "—",
+                live=site.live,
+                dead=site.dead,
+                cues=site.cues,
+                defeat=ref.defeat if ref else "",
+                sort_range_m=site.mez_m,
+            )
+        )
+    # Live, longest-range systems first.
+    cards.sort(key=lambda c: (0 if c.live else 1, -c.sort_range_m))
+
+    unknown_cards = [
+        ThreatCard(
+            system=f"Unidentified {acc.band}",
+            band=acc.band,
+            identified=False,
+            guidance="—",
+            ceiling="—",
+            mez_nm="—",
+            detect_nm="—",
+            harm="—",
+            live=acc.count,
+            dead=0,
+            cues=acc.cues,
+            defeat="",
+            sort_range_m=0.0,
+        )
+        for acc in sorted(unknown.values(), key=lambda a: a.band)
+    ]
+    return cards + unknown_cards, unidentified
+
+
+class ThreatIntelBriefPage(KneeboardPage):
+    """Enemy air-defense dossier for the player — one card per system.
+
+    Adapts the per-system "threat card" of professional campaign Intelligence
+    Briefings to the dynamic campaign: each identified SAM/EWR system gets a card
+    with a curated stat block (guidance, ceiling, **how to defeat**) over its live
+    numbers (MEZ, detection, HARM ALIC), site counts and bullseye cues. Recon-fog
+    aware (design §3): undiscovered sites collapse into per-band "Unidentified"
+    cards until a TARPS overflight reveals them. Cards pack down the page and
+    overflow onto continuation pages.
+    """
+
+    def __init__(
+        self,
+        flight: FlightData,
+        cards: List[ThreatCard],
+        unidentified: int,
+        dark_kneeboard: bool,
+        continued: bool = False,
+    ) -> None:
+        self.flight = flight
+        self.cards = cards
+        self.unidentified = unidentified
+        self.dark_kneeboard = dark_kneeboard
+        self.continued = continued
+
+    def _title(self) -> str:
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        cont = " (cont.)" if self.continued else ""
+        return f"{self.flight.callsign} Threat Intel Brief{custom}{cont}"
+
+    def _intro(self) -> str:
+        intro = "Enemy air-defense laydown. MEZ in nm; BE = bullseye bearing/range."
+        if self.unidentified:
+            intro += (
+                f" {self.unidentified} site(s) still unidentified — "
+                "fly TARPS recon to ID."
+            )
+        return intro
+
+    def _heading_font(self) -> ImageFont.FreeTypeFont:
+        return ImageFont.truetype(
+            "courbd.ttf", 22, layout_engine=ImageFont.Layout.BASIC
+        )
+
+    def _body_font(self) -> ImageFont.FreeTypeFont:
+        return ImageFont.truetype(
+            "courbd.ttf", 16, layout_engine=ImageFont.Layout.BASIC
+        )
+
+    def _draw_header(self, writer: KneeboardPageWriter) -> None:
+        writer.title(self._title())
+        if not self.continued:
+            writer.text(self._intro(), wrap=True)
+        writer.vspace(4)
+
+    @staticmethod
+    def _cues_text(cues: List[str], limit: int) -> str:
+        shown = ", ".join(cues[:limit])
+        if len(cues) > limit:
+            shown += f", +{len(cues) - limit}"
+        return shown
+
+    def _render_card(self, writer: KneeboardPageWriter, card: ThreatCard) -> None:
+        body = self._body_font()
+        writer.text(card.system, font=self._heading_font())
+        writer.rule(gap_below=4)
+        if card.identified:
+            writer.text(
+                f"Guidance: {card.guidance}    Ceiling: {card.ceiling}", font=body
+            )
+            writer.text(
+                f"MEZ: {card.mez_nm} nm   Detect: {card.detect_nm} nm   "
+                f"HARM: {card.harm}   Band: {card.band}",
+                font=body,
+            )
+            sites = f"Sites: {card.live} live"
+            if card.dead:
+                sites += f" / {card.dead} dead"
+            writer.text(f"{sites}   BE {self._cues_text(card.cues, 6)}", font=body)
+            if card.defeat:
+                writer.text(f"DEFEAT: {card.defeat}", font=body, wrap=True)
+        else:
+            writer.text(
+                f"{card.live} site(s) — fly TARPS to ID.   "
+                f"BE {self._cues_text(card.cues, 8)}",
+                font=body,
+                wrap=True,
+            )
+        writer.vspace(12)
+
+    def _card_height(self, card: ThreatCard) -> int:
+        probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        probe.y = 0
+        self._render_card(probe, card)
+        return probe.y
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        self._draw_header(writer)
+        for card in self.cards:
+            self._render_card(writer, card)
+        writer.write(path)
+
+    def paginate(self) -> List[KneeboardPage]:
+        # Greedily pack cards down each page; overflow starts a continuation page
+        # (header repeats, intro only on the first). Always place >=1 card per page
+        # so an over-tall card can't loop.
+        pages: List[KneeboardPage] = []
+        remaining = self.cards
+        continued = self.continued
+        while remaining:
+            page = ThreatIntelBriefPage(
+                self.flight, [], self.unidentified, self.dark_kneeboard, continued
+            )
+            writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+            page._draw_header(writer)
+            limit = writer.image_size[1] - writer.page_margin
+            fit = 0
+            for card in remaining:
+                if fit and writer.y + self._card_height(card) > limit:
+                    break
+                self._render_card(writer, card)
+                fit += 1
+            pages.append(
+                ThreatIntelBriefPage(
+                    self.flight,
+                    remaining[:fit],
+                    self.unidentified,
+                    self.dark_kneeboard,
+                    continued,
+                )
+            )
+            remaining = remaining[fit:]
+            continued = True
+        return pages or [self]
+
+
 class NotesPage(KneeboardPage):
     """A kneeboard page containing the campaign owner's notes."""
 
@@ -2014,6 +2336,17 @@ class KneeboardGenerator(MissionInfoGenerator):
 
         if (target_page := self.generate_task_page(flight)) is not None:
             pages.append(target_page)
+
+        # Enemy air-defense dossier (per-system cards, recon-fog aware), gated by
+        # setting. Only appended when there are enemy air defenses to brief.
+        if self.game.settings.generate_threat_intel_kneeboard:
+            threat_cards, unidentified = build_threat_intel_cards(self.game, flight)
+            if threat_cards:
+                pages.append(
+                    ThreatIntelBriefPage(
+                        flight, threat_cards, unidentified, self.dark_kneeboard
+                    )
+                )
 
         # Recon overview + detail + airfield-departure pages (gated by settings).
         if self.game.settings.generate_target_recon_kneeboard:

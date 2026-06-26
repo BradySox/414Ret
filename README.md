@@ -134,6 +134,11 @@ and selected later upstream fixes.
 - **Custom kneeboards** can be imported from the *Kneeboards* toolbar button — add an image
   once and it's injected into every flight's kneeboard (or scoped to one airframe), stored in
   the campaign save, instead of hand-editing each mission.
+- An optional **Threat Intel Brief** kneeboard page is the enemy air-defense dossier, one card
+  per system — guidance, engagement ceiling, MEZ, HARM code, bullseye cues, live/dead counts, and
+  a **how-to-defeat** note — like a campaign intelligence briefing. It respects recon fog: sites
+  you haven't identified show only their threat tier ("Unidentified MERAD") until you fly a TARPS
+  overflight. Off by default.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
 
 ### Additional 414th content and integrations

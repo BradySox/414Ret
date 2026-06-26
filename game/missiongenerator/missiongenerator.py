@@ -274,7 +274,9 @@ class MissionGenerator:
             tgo_generator.runways,
         )
         aircraft_generator.spawn_intercept_templates()
-        self._spawn_civilian_rat_templates()
+        from game.missiongenerator.civiliantraffic import CivilianTrafficGenerator
+
+        CivilianTrafficGenerator(self.mission, self.game).generate()
         aircraft_generator.spawn_unused_aircraft()
 
         self.mission_data.flights = aircraft_generator.flights
@@ -283,61 +285,6 @@ class MissionGenerator:
             if not flight.client_units:
                 continue
             flight.aircraft_type.assign_channels_for_flight(flight, self.mission_data)
-
-    def _spawn_civilian_rat_templates(self) -> None:
-        from dcs.helicopters import Mi_8MT, SA342M, UH_1H
-        from dcs.mission import StartType as DcsStartType
-        from dcs.planes import An_26B, An_30M, C_130, Yak_52
-
-        # Templates for civilian background traffic. RAT clones these
-        # late-activated groups at runtime; the templates themselves never
-        # activate. Two categories with separate pools in the Lua:
-        #   fixed-wing — fly between neutral airdromes only (need runways)
-        #   rotary     — fly between neutral airdromes AND heliports/FARPs
-        fixed_wing_templates = (
-            ("RAT_CIV_C130", C_130),
-            ("RAT_CIV_AN26", An_26B),
-            ("RAT_CIV_AN30", An_30M),
-            ("RAT_CIV_YAK52", Yak_52),
-        )
-        rotary_templates = (
-            ("RAT_CIV_MI8", Mi_8MT),
-            ("RAT_CIV_UH1", UH_1H),
-            ("RAT_CIV_SA342", SA342M),
-        )
-
-        # Park under neutral coalition so spawned clones read as civilian/neutral.
-        neutral_countries = list(self.mission.coalition["neutrals"].countries.values())
-        country = neutral_countries[0] if neutral_countries else self.e_country
-
-        for name, aircraft_type in (*fixed_wing_templates, *rotary_templates):
-            airport = None
-            for cp in self.game.theater.controlpoints:
-                if cp.dcs_airport is not None and cp.dcs_airport.free_parking_slots(
-                    aircraft_type
-                ):
-                    airport = cp.dcs_airport
-                    break
-
-            if airport is None:
-                logging.warning(
-                    "No airport with %s parking found — %s civilian template "
-                    "not placed",
-                    aircraft_type.id,
-                    name,
-                )
-                continue
-
-            group = self.mission.flight_group_from_airport(
-                country=country,
-                name=name,
-                aircraft_type=aircraft_type,
-                airport=airport,
-                maintask=None,
-                start_type=DcsStartType.Cold,
-                group_size=1,
-            )
-            group.late_activation = True
 
     def generate_destroyed_units(self) -> None:
         """Add destroyed units to the Mission"""

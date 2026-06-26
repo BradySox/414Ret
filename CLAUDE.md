@@ -260,6 +260,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     instance). No-op for single-nation factions (the squadron loader already restricts them to the
     faction country). Implements upstream issue #627. (`game/missiongenerator/missiongenerator.py`,
     `game/missiongenerator/aircraft/aircraftgenerator.py`; features doc §23, checklist I1.)
+24. **Date-gated aircraft properties** — extends the existing `restrict_weapons_by_date` toggle from
+    weapons to era-defining payload-editor *properties*. First curated gate: **JHMCS** helmet cueing
+    (fielded ~2003) is hidden from the dropdown and clamped to the baseline visor when generating a
+    pre-2003 mission. A small hand-authored table (pydcs carries no property dates) keyed by value
+    *label* — so the F/A-18/F-16 "JHMCS" is gated but the Su-30/Su-35 "SURA Visor" (same id) is not —
+    scoped to the helmet-device identifiers. UI filters the dropdown; the generator
+    (`degrade_props_for_date`) is authoritative and resolves against the unit-type default so the
+    defaulted-JHMCS case is caught. (`game/dcs/aircraftproperties.py`,
+    `game/missiongenerator/aircraft/flightgroupconfigurator.py`,
+    `qt_ui/windows/mission/flight/payload/propertycombobox.py`; features doc §24, checklist I3.)
 
 ---
 

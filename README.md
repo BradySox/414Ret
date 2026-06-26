@@ -145,6 +145,10 @@ and selected later upstream fixes.
   briefing, and a **Comms & Brevity** kneeboard page carries the words plus a short brevity crib
   filtered to each flight's task. Fresh words every turn, stable while you plan. Off by default.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
+- When *Restrict weapons by campaign date* is on, era-defining **cockpit options** are now gated
+  alongside the weapons: a pre-2003 campaign no longer offers (or quietly spawns) a **JHMCS**
+  helmet-mounted sight, falling back to the period-correct visor. NVG and other era-appropriate
+  options stay available.
 
 ### Additional 414th content and integrations
 

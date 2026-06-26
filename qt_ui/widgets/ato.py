@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
+from game.ato.codewords import PushCategory, present_categories
 from game.ato.flight import Flight
 from game.ato.package import Package
 from game.server import EventStream
@@ -426,6 +427,16 @@ class QPackagePanel(QGroupBox):
         self.package_list = QPackageList(game_model, self.ato_model)
         self.vbox.addWidget(self.package_list)
 
+        # Persistent mission code-word table (push word per task + events), so planners
+        # can build a briefing before the .miz exists. Gated by the feature toggle and
+        # refreshed whenever the ATO changes.
+        self.code_words_label = QLabel()
+        self.code_words_label.setTextFormat(Qt.TextFormat.RichText)
+        self.code_words_label.setWordWrap(True)
+        self.vbox.addWidget(self.code_words_label)
+        self.ato_model.layoutChanged.connect(self.refresh_code_words)
+        self.refresh_code_words()
+
         self.button_row = QHBoxLayout()
         self.vbox.addLayout(self.button_row)
 
@@ -445,6 +456,45 @@ class QPackagePanel(QGroupBox):
 
         self.current_changed.connect(self.on_current_changed)
         self.on_current_changed()
+
+    def refresh_code_words(self) -> None:
+        """Show the side's mission code-word table (push per task + events), or hide it.
+
+        Gated by ``enable_package_code_words``. Pulls the table from the coalition that
+        owns this panel's ATO so a planner sees the same words the kneeboard will carry,
+        before generating the mission.
+        """
+        game = self.ato_model.game
+        label = self.code_words_label
+        if game is None or not game.settings.enable_package_code_words:
+            label.hide()
+            return
+        coalition = game.blue if self.ato_model.ato is game.blue.ato else game.red
+        code_words = coalition.code_words
+        present = present_categories(
+            p.primary_task for p in coalition.ato.packages if p.primary_task is not None
+        )
+        cells = [
+            (category.value, code_words.push[category])
+            for category in PushCategory
+            if category in present
+        ]
+        cells.append(("SUCCESS", code_words.success))
+        cells.append(("ABORT", code_words.abort))
+        if PushCategory.EW in present:
+            cells.append(("STOP JAM", code_words.stop_jam))
+        rows = ""
+        for i in range(0, len(cells), 2):
+            tds = "".join(
+                f"<td>{name}</td><td><b>{word}</b></td>"
+                for name, word in cells[i : i + 2]
+            )
+            rows += f"<tr>{tds}</tr>"
+        label.setText(
+            f"<b>Code words — {code_words.theme}</b>"
+            f"<table cellspacing='2' cellpadding='1'>{rows}</table>"
+        )
+        label.show()
 
     @property
     def current_changed(self):

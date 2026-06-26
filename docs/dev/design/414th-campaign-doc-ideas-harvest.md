@@ -242,7 +242,7 @@ consistent and worth mirroring; developer styles differ:
 | Threat dossier kneeboard (MEZ/HAD/defeat) | recon fog §3; SEAD §6/§7 | **Low/Med** | ✅ **BUILT** — Threat Intel Brief (§4) |
 | Auto-annotated threat/target map card | TARPS imagery §3; map layers §19 | Med | Reuse recon imagery + known-TGO data |
 | Fuel-ladder flight-plan card | kneeboard gen | **Low** | Per-WP fuel already computable; **next up** |
-| Package code words + task-filtered brevity | kneeboard gen; planner UI | **Low/Med** | ✅ **BUILT** — `enable_package_code_words` (§4) |
+| Mission code words (per-task push table) + brevity | kneeboard + planner UI | **Med** | ✅ **BUILT** — Red Flag-style, `enable_package_code_words` (§4) |
 | Richer Mission Impact (ROE/airmanship/escort scoring) | Mission Impact debrief §4 | Med | Add weighted + penalty terms |
 | "Gauntlet"/quick-strike buy-support mode | purchase economy; drop-spawn §20 | Med/High | Random known TGO + support package |
 | Failsafe backup triggers on AI beats | SCAR §15 / Combat SAR §21 / TIC §9 Lua | **Low** | Defensive Lua pattern; do this regardless |

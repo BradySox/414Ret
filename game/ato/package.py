@@ -9,7 +9,6 @@ from typing import Dict, Optional, TYPE_CHECKING
 from game.db import Database
 from game.utils import Speed
 from .closestairfields import ObjectiveDistanceCache
-from .codewords import PackageCodeWords
 from .flight import Flight
 from .flightplans.formation import FormationFlightPlan
 from .flighttype import FlightType
@@ -50,26 +49,6 @@ class Package(RadioFrequencyContainer):
         # the old behavior?
         self.time_over_target: datetime = datetime.min
         self.waypoints: PackageWaypoints | None = None
-
-        # Brevity code words (push/success/abort) the package calls over SRS. Assigned
-        # lazily on first access (see ``code_words``) so they stay stable across mission
-        # regenerations within a turn and persist in the save; a fresh package next turn
-        # draws new ones.
-        self._code_words: PackageCodeWords | None = None
-
-    @property
-    def code_words(self) -> PackageCodeWords:
-        """Push/success/abort code words for this package (assigned once, then stored).
-
-        Generated on first access and cached so a planner can brief off them and
-        regenerate the mission without them changing; persists in the save. ``getattr``
-        migrates packages pickled before the field existed.
-        """
-        existing = getattr(self, "_code_words", None)
-        if existing is None:
-            existing = PackageCodeWords.random()
-            self._code_words = existing
-        return existing
 
     @property
     def has_players(self) -> bool:

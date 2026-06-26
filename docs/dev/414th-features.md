@@ -362,22 +362,27 @@ page; overflow flows onto `(cont.)` continuation pages via the page's own card-p
 photos were evaluated and deferred — DCS ships only `.dds` model textures, not portraits; reading
 + converting them at gen-time is fragile for marginal value on a 960px page.)*
 
-**Package code words + Comms & Brevity card.** A squadron-grown idea: each `Package` gets three
-SRS **code words** — push / success / abort (`game/ato/codewords.py`, `PackageCodeWords`) — that
-its flight calls over voice. They're owned by the `Package` (a lazy `code_words` property,
-assigned once and stored so it's stable across regenerations within a turn and pickled; `getattr`
-migrates old saves) so the **single source of truth** is shared by everything downstream, and a
-fresh package next turn draws new words. Because **planners must brief off them before the `.miz`
-exists**, they're surfaced pre-generation in two places: a **package tooltip** in the ATO list
-(`qt_ui/models.py` `AtoModel` `ToolTipRole`) and a **`PUSH <word>` tag echoed on the JOIN
-waypoint** (`WaypointBuilder._join_pretty_name` — JOIN is the package commit point and never a
-`TARGET_POINT`, so it can't leak into DTC slot tags). In-cockpit they get a **Comms & Brevity**
-kneeboard page (`BrevityCard`): the three code words plus a short **task-filtered brevity crib**
-(`game/data/brevity_reference.py`, keyed by `FlightType` → A2A / SEAD / STRIKE / CAS / EW /
-CONTROL / GENERAL). All of it is a *human* comms aid — nothing scripts off the words (these are
-multiplayer missions, not the single-player campaigns the idea was studied from). One feature
-toggle, `enable_package_code_words` (default OFF), gates the tooltip, the waypoint echo, and the
-kneeboard page together. Covered by `tests/ato/test_package_code_words.py` +
+**Mission code words + Comms & Brevity card.** A squadron-grown idea, modelled on the Red Flag
+81-2 kneeboards: the whole side shares **one mission-wide code-word table** — a **push word per
+task** (`STRIKE / SEAD / OCA / CAS / ANTISHIP / CAP / EW`) plus the event words `SUCCESS` /
+`ABORT` (+ `STOP JAM` only when an EW/jamming flight is in the ATO) — so a single call ("Red Kite")
+tells everyone SEAD is pushing (`game/ato/codewords.py`: `MissionCodeWords`, `PushCategory`,
+`push_category_for`). It's owned by the **`Coalition`** (a `code_words` property generated once per
+turn from a randomly chosen *themed* word pool, stored so it's stable while a planner briefs and
+regenerates the mission, and pickled; `getattr` migrates old saves), so one table feeds everything
+and a new turn draws a fresh themed set. Because **planners brief off it before the `.miz`
+exists**, it's surfaced pre-generation as a **persistent code-word panel** in the ATO package list
+(`qt_ui/widgets/ato.py` `QPackagePanel.refresh_code_words`, an HTML table refreshed on
+`layoutChanged`), a per-package **tooltip** (`AtoModel` `ToolTipRole`, that package's push word +
+events), and a **`PUSH <word>` tag echoed on the JOIN waypoint** for the flight's task
+(`WaypointBuilder._join_pretty_name` — JOIN is the package commit point and never a `TARGET_POINT`,
+so it can't leak into DTC slot tags). In-cockpit, the **Comms & Brevity** kneeboard page
+(`BrevityCard`) lists the full push table (the flight's own task row marked `(you)`) + the events +
+a **task-filtered brevity crib** (`game/data/brevity_reference.py`, keyed by `FlightType` → A2A /
+SEAD / STRIKE / CAS / EW / CONTROL / GENERAL). All of it is a *human* comms aid — nothing scripts
+off the words (multiplayer missions, not the single-player campaigns the idea came from). One
+toggle, `enable_package_code_words` (default OFF), gates the panel, tooltip, waypoint echo, and
+kneeboard page together. Covered by `tests/ato/test_codewords.py` +
 `tests/data/test_brevity_reference.py`; in-game / planner-UI pass pending (H6).
 
 ---

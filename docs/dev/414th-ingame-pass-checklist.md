@@ -893,22 +893,26 @@ so the two docs don't drift.
   appearing for the **enemy** side's same-airframe flight with BLUE air defenses (known
   per-airframe DCS limitation — note, not a bug).
 
-### H6 — Package code words + Comms & Brevity card · §4 · ☐ UNTESTED
-- **Setup:** Enable **Package code words & comms/brevity card** (Mission Generator → Kneeboard).
-  In the planner, **hover a package** in the ATO list (read the code-word tooltip) and **open a
-  flight's plan** (find the JOIN waypoint). Note the three words. Regenerate the mission a couple
-  of times **without re-planning the turn**, then generate and open the kneeboards in DCS.
-- **Pass:** The ATO tooltip shows `PUSH / SUCCESS / ABORT` words; the JOIN waypoint reads
-  `Join — PUSH <word>` matching the tooltip's push word; the in-cockpit **Comms & Brevity** page
-  shows the same three words plus a brevity crib **matching the flight's task** (a SEAD flight
-  sees MAGNUM/SPIKE/MUD…, a CAP flight sees FOX/COMMIT/TALLY…). **The words do NOT change** across
-  regenerations of the same turn, and a **new turn** yields new words. With the setting off, no
-  tooltip, no `PUSH` tag on JOIN, no Comms & Brevity page.
-- **Fail signature:** words differing between the tooltip, the JOIN waypoint, and the kneeboard
-  (the `Package.code_words` single-source contract broke); words rerolling on every regenerate
-  (cached `_code_words` not persisting); the `PUSH` tag leaking onto a target/DTC steerpoint
-  (should only ever be on JOIN); brevity crib not matching the task; the feature appearing with
-  the toggle off.
+### H6 — Mission code words + Comms & Brevity card · §4 · ☐ UNTESTED
+- **Setup:** Enable **Package code words & comms/brevity card** (Mission Generator → Kneeboard) on
+  an ATO with a mix of tasks (e.g. a SEAD, a STRIKE, and a CAP package). In the planner, read the
+  **persistent code-word panel** under the package list, **hover a package** (tooltip), and **open
+  a flight's plan** (find the JOIN waypoint). Note the table. Regenerate the mission a couple of
+  times **without re-planning the turn**, then generate and open the kneeboards in DCS.
+- **Pass:** The planner panel shows a **`Code words — <theme>`** table with a **push word per task
+  present** (SEAD / STRIKE / CAP …) + `SUCCESS` / `ABORT` (and `STOP JAM` only if an EW/jamming
+  flight is in the ATO). A package's tooltip shows that package's push word + the events; its
+  flight's JOIN waypoint reads `Join — PUSH <word>` matching the panel's row for that task. The
+  in-cockpit **Comms & Brevity** page shows the **same full table** with the flight's own task row
+  marked `(you)`, plus a brevity crib **matching the task** (SEAD → MAGNUM/SPIKE/MUD…; CAP →
+  FOX/COMMIT/TALLY…). **The words do NOT change** across regenerations of the same turn; a **new
+  turn** yields a fresh themed set. With the setting off: no panel, no tooltip, no `PUSH` tag on
+  JOIN, no Comms & Brevity page.
+- **Fail signature:** a task's push word differing between the panel, the tooltip, the JOIN
+  waypoint, and the kneeboard (the `Coalition.code_words` single-source contract broke); words
+  rerolling within a turn or NOT refreshing on a new turn (turn-stamp logic); the `PUSH` tag
+  leaking onto a target/DTC steerpoint (should only ever be on JOIN); STOP JAM showing without an
+  EW flight; brevity crib not matching the task; the feature appearing with the toggle off.
 
 ---
 

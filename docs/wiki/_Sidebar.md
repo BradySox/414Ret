@@ -30,7 +30,6 @@
 - [Troops In Contact](Troops-In-Contact)
 - [Map Layers & Interface](Map-Layers-and-Interface)
 - [Drop-Spawn Placement](Drop-Spawn-Unit-Placement)
-- [DTC Cartridge Export](DTC-Cartridge-Export)
 
 **Customization**
 - [Custom Campaigns](Custom-Campaigns)

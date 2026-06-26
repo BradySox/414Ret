@@ -65,8 +65,6 @@ file. This guide is the map; those are the territory.
   - `414th-tic-dynamic-fronts-notes.md` — TIC stance/cadence movement design
   - `414th-tars-recon-notes.md` — TARS recon engine
   - `414th-c130-ew-isr-notes.md` — C-130J EW/ISR source of truth + retired `ewrj` warning
-  - `414th-flightcontrol-notes.md` — Flight Control ATC
-  - `414th-dtc-export-notes.md` — DTC cartridge format + reverse-engineered schema
   - `414th-scar-task-spec.md` + `414th-scar-commander-sme-questions.md` — SCAR ground truth
   - `414th-scar-phase2-sof-plan.md` + `414th-scar-HANDOFF.md` — SCAR commander-capture plan + next-session pickup
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
@@ -119,12 +117,12 @@ file. This guide is the map; those are the territory.
 ## Key Architecture Patterns
 
 **Planner / Lua split.** Python plans and spawns the mission (flight plans, ROE, templates);
-runtime behavior (EW, ISR, recon scoring, frontline firefights, ATC) is driven by the Lua
+runtime behavior (EW, ISR, recon scoring, frontline firefights) is driven by the Lua
 plugins. When a feature has both, the Python side sets up and the Lua side executes — don't
 move runtime logic into the planner or vice versa.
 
 **Plugin script injection (the "scramble pattern").** Most 414th plugins are normal work-order
-plugins, but TIC, TARS, Flight Control, and SCAR are injected by hand in
+plugins, but TIC, TARS, and SCAR are injected by hand in
 `game/missiongenerator/luagenerator.py` (`_inject_*_script()`), appended **after**
 `inject_plugins()` so `dcsRetribution.plugins.<name>` already exists, then `DoScriptFile`
 the vendored class + a `*_414_init.lua` that owns construction. If the init file is removed
@@ -184,9 +182,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement +
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
-11. **Native DCS DTC cartridge export** — F/A-18C SA picture pre-built (default OFF).
+11. **Native DCS DTC cartridge export** — RETIRED (2026-06-26): half-baked; never
+    pre-loaded reliably and ED is shipping native DTC. Do not restore. (§11)
 12. **TARS recon engine** — MOOSE Ops.TARS runtime for TARPS, feeds confirmed BDA (default ON).
-13. **Flight Control ATC** — MOOSE FLIGHTCONTROL players-only tower comms (default ON).
+13. **Flight Control ATC** — RETIRED (2026-06-26): half-baked MOOSE FLIGHTCONTROL tower
+    comms plugin; removed. Do not restore. (§13)
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.
 15. **SCAR** — player-flown Strike Coordination and Reconnaissance (flight type + scenario
     `scar` plugin, default ON), plus a commander-capture path using finite purchased SOF

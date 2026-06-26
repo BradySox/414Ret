@@ -58,19 +58,12 @@ save migrated by a newer build is not readable by an older one.
 
 ## Multiplayer and co-op notes for squadrons
 
-- **SRS for Flight Control ATC voice.** The fork's **Flight Control** plugin gives
-  players-only tower sequencing at friendly land bases and speaks over SRS, with an
-  optional text fallback. Have your SRS server running and players connected so the tower
-  comms are audible (see [Lua Plugins](Lua-Plugins) and the in-game features overview).
 - **"Never delay player flights."** For squadron play, enable the *never delay player
   flights* option so human flights aren't held on the ramp waiting for an AI scheduling
   slot — players spawn ready to go.
 - **Player tasks are built for groups.** SCAR, Combat SAR, JAMMING, and TARPS are designed
   to be flown by humans; plan packages so the slots your pilots want are present in the
   generated mission.
-- **DTC export is per-machine.** The native F/A-18C DTC cartridge is mirrored into the
-  generating machine's Saved Games library, so it does not distribute to other players over
-  multiplayer — it is off by default anyway.
 
 ## See also
 

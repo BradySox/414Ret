@@ -1292,17 +1292,6 @@ class Settings:
             "threats on the target recon kneeboard. 0 uses the default radius only."
         ),
     )
-    generate_dtc: bool = boolean_option(
-        "Generate DTC cartridge (F/A-18C)",
-        MISSION_GENERATOR_PAGE,
-        GAMEPLAY_SECTION,
-        default=False,
-        detail=(
-            "Writes a native DCS Data Transfer Cartridge for player F/A-18C flights "
-            "with coalition CAP and tanker tracks. The cartridge is copied to Saved "
-            "Games and currently must be selected manually in DCS once per sortie."
-        ),
-    )
     never_delay_player_flights: bool = boolean_option(
         "Spawn player flights immediately (keep planned TOT)",
         MISSION_GENERATOR_PAGE,
@@ -1719,9 +1708,10 @@ class Settings:
     # LUA Plugins system
     plugins: Dict[str, bool] = field(default_factory=dict)
 
-    # Marker for the one-time TARS/Flight Control default-on migration (see
-    # __setstate__). True on a fresh Settings so new campaigns are never re-migrated;
-    # only legacy saves that lack the marker get the one-time flip.
+    # Marker for the one-time TARS default-on migration (see __setstate__; the
+    # retired Flight Control plugin was flipped by the same marker). True on a fresh
+    # Settings so new campaigns are never re-migrated; only legacy saves that lack
+    # the marker get the one-time flip.
     applied_recon_plugins_default: bool = True
 
     # IADS engine selector. MANTIS (MOOSE-based) is the default for new campaigns
@@ -1776,14 +1766,15 @@ class Settings:
         new_state.update(migrated_state)
         self.__dict__.update(new_state)
 
-        # One-time migration: the TARS and Flight Control plugins ship enabled by
-        # default, but a save created before they existed (or before they were
-        # flipped to default-on) can have them recorded as off. Force them on once
-        # for such saves. Keyed on the marker being absent from the *raw* unpickled
-        # state, so an already-migrated save or a new campaign that has deliberately
-        # turned them off is never re-stomped.
+        # One-time migration: the TARS plugin ships enabled by default, but a save
+        # created before it existed (or before it was flipped to default-on) can
+        # have it recorded as off. Force it on once for such saves. Keyed on the
+        # marker being absent from the *raw* unpickled state, so an already-migrated
+        # save or a new campaign that has deliberately turned it off is never
+        # re-stomped. (The retired Flight Control plugin was also flipped here; its
+        # dead option keys are pruned below.)
         if "applied_recon_plugins_default" not in state:
-            for plugin_id in ("tars", "flightcontrol"):
+            for plugin_id in ("tars",):
                 self.set_plugin_option(plugin_id, True)
         self.applied_recon_plugins_default = True
 
@@ -1805,7 +1796,8 @@ class Settings:
         # dismounts was a default-off, FPS-heavy MIST-only plugin with no MOOSE
         # successor, and ewrs is superseded by the MOOSE Ops.INTEL-based "bigeye"
         # EWR (see docs/dev/design/414th-dismounts-decision.md and
-        # 414th-ewrs-retirement-decision.md).
+        # 414th-ewrs-retirement-decision.md). The "flightcontrol" MOOSE
+        # FLIGHTCONTROL ATC plugin was retired as a half-baked feature.
         for plugin_key in [
             key
             for key in self.plugins
@@ -1817,6 +1809,8 @@ class Settings:
             or key.startswith("dismounts.")
             or key == "ewrs"
             or key.startswith("ewrs.")
+            or key == "flightcontrol"
+            or key.startswith("flightcontrol.")
         ]:
             del self.plugins[plugin_key]
 
@@ -1859,6 +1853,7 @@ class Settings:
             "pretense_ai_cargo_planes_per_side",
             "nevatim_parking_fix",
             "only_player_takeoff",
+            "generate_dtc",
         ):
             migrated.pop(obsolete_key, None)
 

@@ -51,13 +51,11 @@ the fog when you want the full picture.
 **New ways to fly.** A player-flown **C-130J** electronic-warfare / ISR platform
 (jamming, ELINT, SIGINT). **SCAR** — Strike Coordination and Reconnaissance — a
 moving-target hunt where you pick the real high-value target out of decoys, with an
-optional commander-capture and special-forces recovery loop on top. Players-only ATC
-tower comms at every airbase.
+optional commander-capture and special-forces recovery loop on top.
 
 **Build your own war.** A **blank-canvas campaign maker**: start from an empty map, paint
 which airfields are yours, and drop SAMs, armor, and ships straight onto the map with a
-right-click. Native DCS data-cartridge export pre-loads your jet's situational-awareness
-page. Plus a unified, dark-themed map-layers panel to keep all of it readable.
+right-click. Plus a unified, dark-themed map-layers panel to keep all of it readable.
 
 *(Full per-feature engineering detail lives in [`docs/dev/414th-features.md`](dev/414th-features.md).)*
 

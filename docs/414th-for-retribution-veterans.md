@@ -45,14 +45,8 @@ you hit the wrong convoy. (Optional commander-capture + SOF/CSAR loop on top.)
 **C-130J electronic warfare / ISR.** A player-flyable EC-130H/RC-130H — area/spot jamming,
 missile spoofing, ELINT/SIGINT, passive detection. A whole mission role stock doesn't have.
 
-**Players-only ATC.** Flight Control tower comms (taxi/takeoff/landing sequencing, SRS or
-text) at your airbases, without strangling AI flow.
-
 **Approximate target locations.** Optionally offset player steerpoints and hide exact
 coords so you have to *visually acquire* the target instead of flying to a perfect mark.
-
-**DCS data-cartridge export.** Pre-loads your jet's SA page (CAP tracks, tanker
-racetracks) so the picture's already there when you spin up.
 
 ---
 

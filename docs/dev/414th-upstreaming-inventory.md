@@ -187,7 +187,7 @@ unvalidated "fix" is not something to ask upstream to take.
   commander-capture / SOF / CSAR economy loop, the C-130J EW *physics constants*, and
   the TIC stance tuning. These stay on `main`.
   > **Re-scoped:** the *feature mechanisms* underneath — the SCAR base task, TIC, TARS,
-  > Flight Control, the QRA reserve model, the `FlightType.JAMMING` framework — are
+  > the QRA reserve model, the `FlightType.JAMMING` framework — are
   > **high community value, hard carve**, not "never want." They moved out of this ⛔
   > list into the
   > [community contribution roadmap](414th-community-contribution-roadmap.md) (Tier 3),

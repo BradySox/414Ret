@@ -6,7 +6,7 @@ plugins. When a feature has both, the Python side sets up and the Lua side execu
 move runtime logic into the planner or vice versa.
 
 **Plugin script injection (the "scramble pattern").** Most 414th plugins are normal work-order
-plugins, but TIC, TARS, Flight Control, and SCAR are injected by hand in
+plugins, but TIC, TARS, and SCAR are injected by hand in
 `game/missiongenerator/luagenerator.py` (`_inject_*_script()`), appended **after**
 `inject_plugins()` so `dcsRetribution.plugins.<name>` already exists, then `DoScriptFile`
 the vendored class + a `*_414_init.lua` that owns construction. If the init file is removed
@@ -64,9 +64,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement +
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
-11. **Native DCS DTC cartridge export** — F/A-18C SA picture pre-built (default OFF).
+11. **Native DCS DTC cartridge export** — RETIRED (2026-06-26): half-baked; removed.
 12. **TARS recon engine** — MOOSE Ops.TARS runtime for TARPS, feeds confirmed BDA (default ON).
-13. **Flight Control ATC** — MOOSE FLIGHTCONTROL players-only tower comms (default ON).
+13. **Flight Control ATC** — RETIRED (2026-06-26): half-baked; removed.
 14. **Plugin Options UI** — `descriptionInUI` field + label/default polish across all plugins.
 15. **SCAR** — player-flown Strike Coordination and Reconnaissance against a moving HVT
     (flight type + scenario `scar` plugin, default ON), plus a commander-capture path using

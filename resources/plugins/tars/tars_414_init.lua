@@ -99,7 +99,7 @@ end
 
 if opt("srs", false) == true then
     -- nil path -> MOOSE auto-detects the server-side SRS install (MSRS.path).
-    -- Port is shared with the Flight Control plugin's SRS port.
+    -- TARS reads its own srsPort option (defaults to the common SRS port 5002).
     local port = tonumber(opt("srsPort", 5002)) or 5002
     pcall(function()
         mytars:SetSRS(nil, 251, radio.modulation.AM, nil, nil, nil, nil, port)

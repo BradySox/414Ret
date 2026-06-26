@@ -76,7 +76,6 @@ rest is the community capability.
 | Kneeboard overflow pagination | Medium | none | `test_airfield_directory_page.py`, `test_kneeboard_task_pages.py` | 🟡 — H1 ☐ (busy-theater pass) |
 | Weapon date-gating | High (era consistency) | none (data is map-agnostic) | data-only (YAML) | 🟢 — see weapon-dates note for the 5 known stale CLSIDs |
 | Settings QOL audit (dead-field cleanup, AiRadioBehavior enum + migration) | Medium | none | — (settings-migration tests exist; confirm the AiRadioBehavior case before carve) | 🟢 |
-| Native DTC cartridge export | Med/High | none (Hornet SA-page is reversible per-airframe) | `tests/missiongenerator/test_dtc.py`, `test_dtc_diagnostics.py` | 🟢 — default OFF |
 | Drop-spawn unit placement (Python core: `place_unit_group`, TGO + SSE) | High | none | **no dedicated unit test — readiness gap; only server-route tests exist** | 🟡 — §20 in-game pass + add coverage first |
 | Campaign maker / blank canvas (Python core) | High (the "major release") | none | `test_blanktheater.py`, `test_campaignairwingconfig_empty.py` | 🟡 — Increment C (support buildings) deferred; in-game BC-rows pending |
 | Recon fog-of-war core (viewer-aware visibility) | Medium (player-facing) | `hidden_on_player_map` / SCAR command-post gate → drop; TARPS damage-lag → PR #2 | `test_recon_intel_fog.py`, `test_recon_intel_api_fog.py`, `test_merad_reveal.py` | 🟢 (inv #8) — already carved + verified on upstream `dev` |
@@ -99,7 +98,6 @@ upstream Lua maintainer willing to own it. That is *work*, not *exclusion*.
 |---|---|---|---|
 | **SCAR base task** | High — a discrimination hunt that fills the gap between AI BAI and human CAS; zero content deps (vanilla units, any theater) | Phase-1 carve: `FlightType.SCAR` + builder + the scenario Lua, **stripping** the commander-capture/SOF/CSAR loop and the command-post fog gate | `test_scar.py`, `test_scar_bridge.py`, `test_scar_autoplan.py` |
 | **TARS recon + BDA bridge** | High — TARPS film menu + confirmed-BDA feedback fixes a real upstream blind spot | Vendor `TARS.lua` (MOOSE Ops.TARS) + the small Python BDA bridge; the `allowedAmmo`/name-filter overrides are targeted fixes, not doctrine | `test_tarps_recon.py`, `test_tars_bda_bridge.py`, `test_bda_tarps_reveal.py` |
-| **Flight Control ATC** | Med/High — immersive tower comms, AI-flow-neutral | Vendor the FLIGHTCONTROL init + the Python airbase-list builder; orphan-parking reconcile is a localized cosmetic fix | `test_flightcontrol_emit.py` |
 | **TIC dynamic fronts** | High — a living FLOT instead of two static walls | Vendor `TIC_v1.1.lua`; the stance→waypoint compiler is our doctrine read (upstream takes it or writes their own) | `test_tic_dynamic_fronts.py`, `test_tic_clone_mapping.py` |
 | **QRA intercept reserve** | High — distributed base-defense beats ramp-scramble everywhere | Python reserve model is generic and largely upstream already (feeds PR #782 `AI_A2A_DISPATCHER`); **the tuned radii/probability are doctrine defaults, not the mechanism** | `test_qra_reserve_settings.py`, `test_game_qra_propagation.py`, `test_interceptattrition.py` |
 | **C-130J EW/ISR framework** | Medium — generic EC-130H/RC-130H role | Upstream the `FlightType.JAMMING` enum + behavior (AWACS-track + WEAPON_HOLD ROE); **leave the ~2,200-line EW physics script fork-vendored** — it's a whole subsystem upstream would have to own | — (Lua runtime; not CI-testable) |
@@ -124,9 +122,9 @@ upstream-PR batch.
    patch stack (PR #1 fog core, PR #2 TARPS damage-lag) from a checkout with creds.
 4. **Wave 3 — the bigger pure-Python features.** Air-defense planning, planner
    unpredictability, MFD SAM hiding, target precision, kneeboard pagination, weapon
-   dates, settings QOL, DTC export, drop-spawn (after adding a unit test), campaign
+   dates, settings QOL, drop-spawn (after adding a unit test), campaign
    maker (after Increment C + the BC in-game pass). Each its own default-preserving PR.
-5. **Wave 4 — the vendored-Lua features.** SCAR base task, TARS, Flight Control, TIC,
+5. **Wave 4 — the vendored-Lua features.** SCAR base task, TARS, TIC,
    QRA, C-130J framework. Each needs: split from the 414th doctrine/economy layer,
    default-OFF gate, an in-game pass, and ideally a sympathetic upstream Lua maintainer.
    Highest value, highest effort — pursue once Waves 1–3 establish a track record.

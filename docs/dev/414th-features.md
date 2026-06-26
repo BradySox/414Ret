@@ -342,6 +342,26 @@ global `Saved Games/.../Retribution/Kneeboards` folder loader but **per-campaign
 cross-campaign leakage). Old saves migrate via a `__setstate__` `setdefault`. Covered by
 `tests/missiongenerator/test_custom_kneeboards.py`; the Qt dialog itself needs an in-game pass.
 
+**Threat Intel Brief kneeboard (auto-generated enemy AD dossier).** A `ThreatIntelBriefPage`
+(`game/missiongenerator/kneeboard.py`) auto-generates the enemy air-defense dossier for a player
+flight as **one card per system** (sites aggregated), modelled on the per-system threat cards in
+professional campaign Intelligence Briefings (design note `414th-campaign-doc-ideas-harvest.md`).
+`build_threat_intel_cards()` groups enemy `SamGroundObject` / `EwrGroundObject` by system
+(named via the recon module's `_greatest_alive_threat`) and each card pairs the **live** campaign
+numbers — engagement range (MEZ), detection range, HARM **ALIC** code (`AlicCodes`), live/dead
+site counts, and bullseye cues — with a **curated reference** from the new
+`game/data/threat_reference.py` (`ThreatReference` = guidance type, engagement ceiling, and a
+**"how to defeat"** tactics note), keyed by the same DCS unit ids as `AlicCodes` and matched on
+any of a site's units. **Recon-fog aware** (§3): a site the player has not identified
+(`known_for(player)` False) contributes only to a per-band "Unidentified MERAD" card — system,
+ring, HARM code and defeat note withheld until a TARPS overflight reveals it — and the intro line
+counts the still-unidentified sites. Cards sort live-most-lethal → unidentified and pack down the
+page; overflow flows onto `(cont.)` continuation pages via the page's own card-packing
+`paginate()`. Gated by `generate_threat_intel_kneeboard` (default OFF); covered by
+`tests/missiongenerator/test_threat_intel_kneeboard.py`. In-game pass pending (H5). *(Per-system
+photos were evaluated and deferred — DCS ships only `.dds` model textures, not portraits; reading
++ converting them at gen-time is fragile for marginal value on a 960px page.)*
+
 ---
 
 ## 5. Player target location precision

@@ -1280,6 +1280,20 @@ class Settings:
             "continuation pages on busy theaters."
         ),
     )
+    generate_threat_intel_kneeboard: bool = boolean_option(
+        "Generate threat intel brief kneeboard page",
+        MISSION_GENERATOR_PAGE,
+        KNEEBOARD_SECTION,
+        default=False,
+        detail=(
+            "Append a Threat Intel Brief page: the enemy air-defense laydown "
+            "(SAM/EWR system, engagement range, HARM ALIC code, bullseye cue and "
+            "live/degraded/dead status), modelled on the per-system threat cards in "
+            "professional campaign intelligence briefings. Recon-fog aware — an "
+            "undiscovered site shows only its intel-tier band ('Unidentified MERAD') "
+            "until a TARPS overflight identifies it. Off by default."
+        ),
+    )
     target_recon_extra_threat_search_nmi: int = bounded_int_option(
         "Extra threat search radius (nmi)",
         MISSION_GENERATOR_PAGE,

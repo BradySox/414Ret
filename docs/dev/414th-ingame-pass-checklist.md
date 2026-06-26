@@ -617,7 +617,15 @@ so the two docs don't drift.
   by design** — the crew dials the planned channel manually in the cockpit. Re-test target: confirm an
   **AI** King still lights its TACAN and no CTD recurs with a player King.
 
-### G11 — Combat SAR rescue scoring (pilot spared at debrief) · Combat SAR Phase 4 · ☐ UNTESTED
+### G11 — Combat SAR rescue scoring (pilot spared at debrief) · Combat SAR Phase 4 · ☐ UNTESTED (scoring layer test-covered, adjudicated 2026-06-26)
+- **Headless adjudication (2026-06-26):** the Python scoring is verified by
+  `tests/test_combat_sar_scoring.py` (passing): `commit_air_losses` spares exactly the
+  rescued pilot (`pilot.kill` not called) while still attriting the airframe
+  (`owned_aircraft` drops), an un-rescued pilot is still killed, and an empty
+  `combat_sar_rescues` falls back to "everyone dies" (the safe default). State parsing
+  tolerates malformed/empty input. **Residual (in-sim only):** that the `originalUnit`
+  name the Lua writes actually matches the name DCS reports in kill/crash events (the
+  unit-map resolve) — the test uses identity matching, not real event names.
 - **Setup:** Fly a CH-47 Combat SAR (or AI standing alert). Have a **known** human pilot eject near
   the FLOT, pick them up, and **deliver them to a friendly airfield/FARP**. End the mission and run
   the debrief.
@@ -632,7 +640,14 @@ so the two docs don't drift.
   without delivery). Empty list ⇒ pre-scoring behaviour (everyone dies) — that is the safe fallback,
   not a separate bug.
 
-### G12 — Combat SAR extracts a stranded SOF team · Combat SAR + SCAR · ☐ UNTESTED
+### G12 — Combat SAR extracts a stranded SOF team · Combat SAR + SCAR · ☐ UNTESTED (scoring layer test-covered, adjudicated 2026-06-26)
+- **Headless adjudication (2026-06-26):** the SOF-extraction scoring is verified by
+  `tests/test_combat_sar_scoring.py` (passing): `sof_rescue_pickup_name` is stable and
+  `SOFRESCUE`-prefixed (rounded strand metres), `commit_sof_recoveries` clears + refunds
+  the delivered team while leaving an un-rescued one pending, the path is blue-only, and a
+  SOF recovery does **not** leak into `combat_sar_rescues` (the two channels stay separate).
+  Parsing tolerates malformed input. **Residual (in-sim only):** the CASEVAC actually
+  spawning at the strand point and the generation-vs-debrief name agreeing end-to-end.
 - **Setup:** A campaign with **SCAR command-post intel** on and a **stranded SOF team** on the map (a
   "Downed SOF Team" objective from a botched capture; or cheat one in). Plan a **Combat SAR** CH-47.
   Fly out to the team's strand point, board it (F10 `CSAR`), and **deliver it to a friendly field**.
@@ -650,6 +665,12 @@ so the two docs don't drift.
   team recovered by both paths.
 
 ### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ◐ PARTIAL
+- **Data re-confirmed headless 2026-06-26:** the `Retribution Combat SAR` payloads resolve —
+  CH-47Fbl1 mounts the door guns (`{CH47_PORT_M60D}`/`{CH47_STBD_M60D}`) and C-130J-30 mounts
+  the two wing tanks (`{C130J_Ext_Tank_L}`/`{C130J_Ext_Tank_R}`); both YAMLs carry a
+  `Combat SAR` task; the `C-130 → C-130J-30` migrator alias is present
+  (`aircrafttype.py`). **Residual (in-sim only):** the King visibly rendering the wing tanks
+  and flying **clean of the EW/ISR menu** (`_non_ew_c130j_present` suppression).
 - **In-game 2026-06-25:** tasking offered on **both** airframes ✅; CH-47Fbl1 spawns with its
   **door M60D guns** ✅ ("loadout good"). **Found:** the C-130J-30 King spawned with **no loadout /
   no wing tanks** — the documented removable-pylon case. **Fixed 2026-06-25:** added a
@@ -755,7 +776,14 @@ so the two docs don't drift.
   KING BEACON TACAN that doesn't match what the King actually radiates in-game, text running off the
   page edge, or no Combat SAR page at all (`generate_task_page` branch).
 
-### H3 — SCAR task kneeboard (Phase 4) · §15 / PR #189 · ☐ UNTESTED
+### H3 — SCAR task kneeboard (Phase 4) · §15 / PR #189 · ☐ UNTESTED (page-matching test-covered, adjudicated 2026-06-26)
+- **Headless adjudication (2026-06-26):** the flight↔tasking matching that drives the
+  TARGET SIGNATURE is verified by `tests/missiongenerator/test_kneeboard_task_pages.py`
+  (passing): `_scar_tasking_for` links a SCAR flight to its tasking by package-target
+  identity (the right signature on the right page), and a non-matching / no-target flight
+  gets `None`. **Residual (in-sim only):** the rendered page itself — section text wraps
+  without clipping and the on-page guidance matches in-mission behaviour (smoke→target
+  timing, laser-only-with-King).
 - **Setup:** Plan a player **SCAR** flight; open its kneeboard in DCS.
 - **Pass:** A "SCAR" task page with **TASK** (hold the box, service the designated armor, kills count
   natively), **TARGET SIGNATURE** (this flight's own HVT signature, e.g. "1x SA-9 + 1x command vehicle
@@ -769,7 +797,15 @@ so the two docs don't drift.
   empty); a signature that doesn't match what's in the box (wrong tasking matched); text off the page
   edge; or guidance that contradicts the in-mission behaviour (e.g. claims a laser with no King).
 
-### H4 — Custom kneeboard import (UI) · §4 · ☐ UNTESTED
+### H4 — Custom kneeboard import (UI) · §4 · ☐ UNTESTED (inject + persistence test-covered, adjudicated 2026-06-26)
+- **Headless adjudication (2026-06-26):** the scope-routing + persistence are verified by
+  `tests/missiongenerator/test_custom_kneeboards.py` (passing): `_inject_custom_kneeboards`
+  keys an unscoped page to `""` (all client flights) and an airframe-scoped page to that
+  unit-type id only (mirroring the DCS loose-folder convention), and `game.custom_kneeboards`
+  round-trips through pickle with `__setstate__` defaulting pre-feature saves to `[]`.
+  **Residual (in-sim/UI only):** the Qt import dialog (PNG-normalisation in
+  `QCustomKneeboardsWindow.add_kneeboard`) and the page actually appearing on the right
+  airframe in DCS.
 - **Setup:** With a campaign loaded, open **Kneeboards** (toolbar/menu). Add an image scoped to
   **All flights**, add a second scoped to a **specific airframe**, then save the campaign, reopen
   it (verify the entries persisted), generate a mission, and open the kneeboards in DCS.
@@ -786,7 +822,20 @@ so the two docs don't drift.
 
 ## I. Mission generation
 
-### I1 — Per-squadron DCS country / nation voiceovers · §23 · ☐ UNTESTED
+### I1 — Per-squadron DCS country / nation voiceovers · §23 · ☐ UNTESTED (planner layer adjudicated headless 2026-06-26)
+- **Headless adjudication (2026-06-26):** Exercised `CountryAssigner` directly (no
+  mission). The realistic CJTF case (blue USA+Greece vs red Russia+Iran with red also
+  flying a US squadron) resolves correctly — each squadron under its own country, the
+  red US squadron falls back to Russia, no cross-coalition overlap, and the
+  canonical-instance discipline holds (`for_squadron` returns the very instance
+  registered on the coalition); the single-nation faction is a true no-op. Covered by
+  `tests/missiongenerator/test_country_assigner.py` (now 6 passing). **Bug found + fixed:**
+  the cross-side guard protected red squadrons from blue but **not** a blue squadron whose
+  country equals *red's faction country* — that nation got registered on **both**
+  coalitions (the "illegal .miz" fail signature). Added the symmetric reservation (a blue
+  squadron sharing red's faction country falls back to blue's faction country) + a
+  regression test. **Residual (in-sim only):** the AI radio actually playing the per-nation
+  voice (follows from the now-verified country assignment).
 - **Setup:** Start a campaign for a **CJTF (coalition) faction** whose air wing draws squadrons
   from more than one nation (e.g. a Blue CJTF with both a US and a Greek viper squadron). Auto-plan
   a turn so flights from at least two nations are tasked, generate the mission, and either inspect

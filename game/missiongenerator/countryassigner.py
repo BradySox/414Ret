@@ -10,7 +10,10 @@ from several nations all shared one nation's radio voice.
 squadrons inherit from the faction (``SquadronDefGenerator``). Because a DCS
 country may belong to only one coalition in a ``.miz``, blue claims its squadron
 countries first; any red squadron whose country was already claimed by blue
-falls back to red's faction country.
+falls back to red's faction country. The one reservation is symmetric: each
+side's *faction* country is its spawn fallback and stays exclusive to that side,
+so a blue squadron that happens to share red's faction country falls back to
+blue's faction country rather than registering the nation on both coalitions.
 
 For non-CJTF factions this is a no-op: the squadron loader already restricts
 squadrons to the faction country (``SquadronDefLoader.load``), so every resolved
@@ -52,6 +55,21 @@ class CountryAssigner:
 
         for squadron in game.blue.air_wing.iter_squadrons():
             cid = squadron.country.id
+            if cid == self.primary_red.id:
+                # Red's faction country is red's spawn fallback and must stay
+                # exclusively red. A blue squadron that happens to share that
+                # nation falls back to blue's faction country instead of
+                # registering the country on *both* coalitions -- which DCS
+                # rejects as an illegal .miz. This is the mirror of the
+                # red-squadron-vs-blue guard below; blue's own faction country is
+                # already protected because red checks ``blue_claimed``.
+                logging.debug(
+                    "Country id %s is red's faction country; blue squadron units "
+                    "fall back to %s",
+                    cid,
+                    self.primary_blue.name,
+                )
+                continue
             if cid not in self._blue:
                 self._blue[cid] = self._instance(cid)
 

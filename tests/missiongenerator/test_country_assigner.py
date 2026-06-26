@@ -95,6 +95,26 @@ def test_cross_side_country_collision_falls_back_to_faction_country() -> None:
     assert assigner.for_squadron(red_us).id == CJTF_RED_ID
 
 
+def test_blue_squadron_cannot_claim_reds_faction_country() -> None:
+    # A blue squadron whose country equals red's faction country must NOT register
+    # that nation on the blue coalition: red's faction country is red's spawn
+    # fallback and a country may live in only one coalition. The blue squadron
+    # falls back to blue's faction country, and the nation appears under red only
+    # (no cross-coalition overlap -> no illegal .miz).
+    blue_shared = _squadron(CJTF_RED_ID, Player.BLUE)
+    blue_us = _squadron(USA_ID, Player.BLUE)
+    assigner = CountryAssigner(
+        _game(CJTF_BLUE_ID, CJTF_RED_ID, [blue_us, blue_shared], [])
+    )
+
+    blue_ids = {c.id for c in assigner.blue_countries}
+    red_ids = {c.id for c in assigner.red_countries}
+    assert CJTF_RED_ID not in blue_ids
+    assert CJTF_RED_ID in red_ids
+    assert not (blue_ids & red_ids)  # no country on both coalitions
+    assert assigner.for_squadron(blue_shared).id == CJTF_BLUE_ID  # blue fallback
+
+
 def test_belligerent_ids_cover_both_sides() -> None:
     blue_us = _squadron(USA_ID, Player.BLUE)
     red_us = _squadron(USA_ID, Player.RED)

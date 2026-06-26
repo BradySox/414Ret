@@ -33,10 +33,11 @@ fuel:
   # ~0.9 mach for 100NM. Occasional AB use.
   combat_ppm: 27.5
   min_safe: 2000
-  patrol:
-    # ~265 knots IAS
-    speed: 320
-    altitude: 18000
+
+patrol:
+  # ~265 knots IAS
+  speed: 320
+  altitude: 18000
 
 variants:
   F/A-18F Tanker: {}

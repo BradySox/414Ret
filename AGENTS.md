@@ -239,6 +239,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Distinct from the SCAR SOF-recovery `FlightType.CSAR` (§15). (`game/ato/flighttype.py`,
     `game/commander/tasks/primitive/combatsar.py`, `game/sim/missionresultsprocessor.py`,
     `resources/plugins/combatsar/`; features doc §21, spec `414th-combat-sar-spec.md`.)
+22. **Kneeboard space-utilisation + custom import** — sparse kneeboard pages (Combat SAR,
+    Support, Mission Info) restyled to fill the page with a *light* heading + underline-rule +
+    whitespace layout (no boxes), and the Friendly Packages list flows into two columns when
+    long (`KneeboardPageWriter.rule()`/`vspace()`/`table_two_column_paginated()`). Plus a
+    **custom-kneeboard import** UI (`QCustomKneeboardsWindow`, *Kneeboards* toolbar action):
+    import an image once → stored in the campaign save as `game.custom_kneeboards`
+    (`CustomKneeboard` = name + PNG bytes + optional `airframe_id`) → injected into every client
+    flight (or one airframe) at generation by `KneeboardGenerator._inject_custom_kneeboards()`.
+    Per-campaign (no cross-campaign leak like the global `Kneeboards/` folder); old saves migrate
+    via `__setstate__`. (`game/customkneeboard.py`, `game/missiongenerator/kneeboard.py`,
+    `qt_ui/windows/kneeboards/QCustomKneeboardsWindow.py`; features doc §4, checklist H1/H2/H3.)
 
 ---
 

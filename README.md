@@ -125,6 +125,11 @@ and selected later upstream fixes.
   editing supports practical bulk changes.
 - Debriefing begins with mission impact — territorial changes, runway damage, and losses —
   before the full event detail.
+- Kneeboards are restyled to use the page: clean headings with underline rules and spacing
+  (no wasted bottom-half), and the Friendly Packages list flows into two columns when long.
+- **Custom kneeboards** can be imported from the *Kneeboards* toolbar button — add an image
+  once and it's injected into every flight's kneeboard (or scoped to one airframe), stored in
+  the campaign save, instead of hand-editing each mission.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
 
 ### Additional 414th content and integrations

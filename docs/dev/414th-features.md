@@ -297,6 +297,37 @@ busy theaters); the Airfield Directory still folds in whenever ATIS is present. 
 The satellite-imagery recon pages remain gated OFF by `generate_target_recon_kneeboard`
 (marker overlays don't reliably line up with the tiles — a known, separate geometry bug).
 
+**Space-utilisation pass (light headings + two-column lists).** Sparse pages used to leave
+the bottom (and right) two-thirds of the image blank. The fix uses a deliberately *light*
+style (no heavy boxes): a bold heading, a thin underline `rule()`, then the content, with
+sections spread by whitespace (`vspace()`) so the page breathes top-to-bottom. Two small
+`KneeboardPageWriter` primitives were added — `rule()` (a hairline separator under a heading)
+and `vspace()` (vertical breathing room) — plus `table_two_column_paginated()`. Three pages
+were reworked: (1) **`CombatSarTaskPage`** — each guidance section (ROLE / HOW IT WORKS /
+PICKUP|ON-SCENE COMMAND / BEACON) is a heading + rule + larger body text, with the leftover
+height distributed as capped even gaps so a short brief doesn't yawn; (2) **`SupportPage`** —
+the Package / AEW&C / Tankers / JTAC tables get the same heading+rule treatment, spaced to
+span the page (gap grows when there's no Airfield Directory below; otherwise a fixed gap
+leaves room for the directory and its pagination); (3) **`BriefingPage`** — the Friendly
+Packages list renders in **two side-by-side columns** once it would overflow a single column,
+using the wasted right half of the page and eliminating the near-empty continuation page in
+the common case (only > ~2× a column's capacity still paginates). The recon pages are
+untouched (still golden-tested). This is a visual change CI can't exercise — see in-game-pass
+row **H1**/**H2**.
+
+**Custom kneeboard import (UI, stored in the save).** DCS kneeboards are per-**airframe**, not
+per-flight, so to add your own kneeboard page to a fleet of player flights you'd otherwise
+hand-edit each `.miz`. The **Kneeboards** toolbar/menu action (`QCustomKneeboardsWindow`) lets
+the campaign owner import an image once — normalised to PNG bytes and stored in the campaign
+save as `game.custom_kneeboards` (a list of `CustomKneeboard` = name + bytes + optional
+`airframe_id`) — and have it injected into every client flight's kneeboard at generation, or
+scoped to a single airframe (the finest grain DCS allows). Injection is
+`KneeboardGenerator._inject_custom_kneeboards()`: bytes → temp PNG → `mission.custom_kneeboards`
+(the `""` key = all client flights, an airframe id = that type only), mirroring the existing
+global `Saved Games/.../Retribution/Kneeboards` folder loader but **per-campaign** (no
+cross-campaign leakage). Old saves migrate via a `__setstate__` `setdefault`. Covered by
+`tests/missiongenerator/test_custom_kneeboards.py`; the Qt dialog itself needs an in-game pass.
+
 ---
 
 ## 5. Player target location precision

@@ -926,19 +926,28 @@ so the two docs don't drift.
 
 ### I2 — Civilian background air traffic (Python/pydcs, RAT retired) · ☐ UNTESTED (planner unit-tested 2026-06-26)
 - **Why:** The MOOSE RAT civilian plugin was retired (recurring `woCharacterHuman`/FARP/respawn
-  sim crashes) and reimplemented as Python-planned, pydcs **air-started** groups
-  (`game/missiongenerator/civiliantraffic.py`). The route geometry (neutral pool, front keep-out,
-  reachable-neighbour pairing, density) is unit-tested (`tests/test_civilian_traffic.py`); only the
+  sim crashes) and reimplemented as Python-planned, pydcs groups
+  (`game/missiongenerator/civiliantraffic.py`). Each civilian flies a **multi-leg milk run** between
+  neutral fields and lands; a **hybrid spawn** puts a few high heavies airborne at t=0 (instant
+  presence) and **ground/runway-starts** everything else (all helos + light props) staggered across
+  ~110 min, so the map stays alive through a 2 h mission with **no respawn loop**. Low flyers route on
+  **RADIO (AGL)** altitude so they don't clip terrain. The geometry (neutral pool, keep-out, reachable
+  chaining, density, air/ground split) is unit-tested (`tests/test_civilian_traffic.py`); only the
   in-sim appearance/behaviour needs eyeballing.
-- **Setup:** Generate any campaign mission (civilian traffic is always on) and fly/observe the rear area.
-- **Pass:** A light, ongoing mix of civilian **fixed-wing AND helicopters** is airborne in the rear,
-  invisible to AI (never engaged, never triggers threat reactions), flying toward neutral fields and
-  landing; traffic stays **clear of the front** (keep-out) and appears staggered over time (no all-at-once
-  burst, no respawn loop). **No sim crash** (the whole point of dropping RAT). Helos do not clip terrain.
+- **Setup:** Generate any campaign mission (civilian traffic is always on) and fly/observe the rear
+  area for the full sortie (≥ ~90 min to confirm it sustains).
+- **Pass:** A light, **ongoing** mix of civilian **fixed-wing AND helicopters** through the whole
+  mission (not just the first hour): heavies cruising high, helos/light props low and visible; ground
+  departures take off + climb (no pop-in), the few air-started heavies appear at altitude. Invisible to
+  AI (never engaged, never triggers threat reactions), clear of the **front** (keep-out), no all-at-once
+  burst. **No sim crash** (the whole point of dropping RAT). Helos/light props do not clip terrain.
 - **Fail signature:** No civilian traffic at all (empty neutral pool, or neutrals coalition has no
-  country); a sim crash on/after spawn (should be impossible now — no heliport-id resolution); civilians
-  spawning in the fight (keep-out math); helos spawned into terrain (raise `HELO_ALTITUDE_M` or set the
-  route waypoints to RADIO alt); traffic too dense/sparse (tune the `density()` bands).
+  country); traffic dies out after ~1 h (stagger window / leg count too short for the mission length —
+  widen `STAGGER_WINDOW_S` / raise `FW_LEGS`/`HELO_LEGS`); a sim crash on/after spawn (should be
+  impossible — no heliport-id resolution); civilians in the fight (keep-out math); low flyers clipping
+  terrain (a `radio_alt` route fell back to BARO, or `_PROFILE` altitude too low); runway congestion at
+  one field (too many ground-starts per field — lower the `density()` bands); too dense/sparse overall
+  (tune `density()`).
 
 ---
 

@@ -346,6 +346,12 @@ so the two docs don't drift.
   logs. **Residual flight risk (cannot read away):** whether `S_EVENT_KILL` actually fires with
   `event.initiator` populated for the **player's** weapon in MP — the documented event-quirk this
   row exists to confirm. Everything else is verified-by-reading.
+- **Test coverage confirmed 2026-06-26:** the Python parse and the Lua decoy/clutter
+  wiring are locked by `tests/test_scar_bridge.py` (passing) —
+  `test_state_data_parses_scar_misid` and `test_lua_misid_handler_charges_decoy_clutter_kills`
+  (the latter asserts the generated Lua registers decoy/clutter spawns in
+  `misid_group_index` and calls `record_misid`). So the residual is *only* the MP
+  `S_EVENT_KILL`/`event.initiator` firing above — nothing else is unverified.
 - **Setup:** A SCAR sortie with `scar_misid_penalty` > 0; deliberately destroy a
   decoy/clutter convoy (not the HVT) with the player's aircraft.
 - **Pass:** The debrief log shows `area …: N mis-ID(s)` and `… charged <cost>
@@ -696,7 +702,15 @@ so the two docs don't drift.
   payload); the King wears the EW/ISR menu (the `_non_ew_c130j_present` suppression didn't fire); an
   old save with a "C-130" squadron fails to load (the `C-130 → C-130J-30` migrator alias is missing).
 
-### G14 — C-130J jamming vs MANTIS IADS (no EMCON interference) · §2 / MANTIS migration · ☐ UNTESTED
+### G14 — C-130J jamming vs MANTIS IADS (no EMCON interference) · §2 / MANTIS migration · ☐ UNTESTED (ROE-only invariant verified 2026-06-26)
+- **Invariant verified by reading 2026-06-26:** the "must never happen" failure mode (an
+  `ALARM_STATE`/emission write creeping into the jammer) is structurally precluded.
+  `suppressSAMRoe`/`restoreSAMRoe` (`c130j/c130j_mission_systems.lua:645-659`) are nothing but
+  a nil-guarded `setOption(ROE, WEAPON_HOLD)` / `setOption(ROE, OPEN_FIRE)`, and a plugin-wide
+  search finds **zero** `enableEmission`/`ALARM_STATE` writes (only comments forbidding them).
+  So the jammer composes with MANTIS by construction. **Residual (in-sim only):** that a jammed
+  SAM actually holds fire while its radar stays up under MANTIS, resumes when the window expires,
+  and that MANTIS-dark SAMs don't wake on the OPEN_FIRE restore.
 - **Why:** The jammer suppresses RED SAMs on the **ROE** axis only (`suppressSAMRoe()` /
   `restoreSAMRoe()`); MANTIS (now the default engine) drives SAMs on the **ALARM_STATE** axis and
   never writes ROE. The two are intended to compose cleanly, but the human-flown interaction under

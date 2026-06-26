@@ -269,12 +269,13 @@ local function _spawn_rat(tmpl, pool, count, max_dist_km)
     r:SetROE("hold")
     r:SetROT("evade")
     r:Invisible()
-    -- Silence RAT's ATC broadcasts. With RespawnAfterLanding the civilian pool
-    -- lands and respawns constantly, and RAT.ATC.messages (default ON) spams every
-    -- player "cleared for landing"/"welcome to <field>" on each cycle. This only
-    -- gates the MESSAGE:ToAll text; ATC landing sequencing (ClearToLand) still runs.
+    -- Civilian traffic is scenery, not mission logic. Keep RAT's extra ATC/respawn
+    -- scheduler out of the sim loop: a 2026-06-26 GermanyCW crash followed a
+    -- landed RAT_CIV_C130 immediately respawning into a no-parking/air-start leg.
+    -- One-shot flights are enough ambience and avoid repeated parking churn.
+    r:EnableATC(false)
     r:ATC_Messages(false)
-    r:RespawnAfterLanding(90)
+    r:NoRespawn()
     r:Spawn(count)
     return true
 end

@@ -87,7 +87,7 @@ ELINT tracks as sliders.
 | `intercept` | Per-squadron QRA intercept reserve feeding the MOOSE `AI_A2A_DISPATCHER`. |
 | `skynetiads` / `mantisiads` | IADS engines. MANTIS is the default for new campaigns; Skynet stays selectable. |
 | `splashdamage3` | The 414th's buddy-tuned Splash Damage 3 weapon-effects build (settings locked by design — do not re-add the config layer). |
-| `civilian_traffic` | Light rear-area regional traffic so the map feels occupied. |
+| `civilian_traffic` | Light one-shot rear-area regional traffic so the map feels occupied without RAT ATC/respawn churn. |
 | `ctld`, `airboss`, `arty`, plus `Moose*` helpers | Stock MOOSE-based logistics, carrier, artillery, and utility plugins. |
 
 ## Writing or modifying a plugin

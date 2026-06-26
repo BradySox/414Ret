@@ -220,7 +220,11 @@ so the two docs don't drift.
   `_refuel_tasking` in `game/ato/flightplans/formationattack.py` if the pre/post/none
   split looks off.
 
-### C7 — Theater tanker placed on receiver demand · ☐ UNTESTED
+### C7 — Theater tanker placed on receiver demand · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game):** the shared theater tanker orbited near the receiver
+  cluster (not the rear CP) and receivers reached it and took fuel; orbit stayed clear of
+  enemy threat zones. None of the fail signatures (rear-CP parking, wrong method gate, orbit
+  in a threat ring, buddy tanker moved) occurred.
 - **Setup:** A campaign with a **shared theater tanker** (a dedicated REFUELING
   package, not a same-package buddy tanker) and several offensive packages whose
   flights actually take gas (have `REFUEL` waypoints) clustered in one area. Boom +
@@ -435,7 +439,10 @@ so the two docs don't drift.
 - **Fail signature:** Menu missing/erroring (would now be caught earlier by the
   Lua syntax gate), or any of the documented EW/ISR actions not firing.
 
-### G5 - Retired generic EW/Jammer Script stays gone - §2 - ☐ UNTESTED
+### G5 - Retired generic EW/Jammer Script stays gone - §2 - ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, in-game):** no generic Jammer/`EWJamming` F10 menu on the fighter
+  and the generated mission carried no `ewrj`/`startEWjamm`/`startIAdefjamming` actions; the
+  C-130J JAMMING slot kept its own `c130j` menu. Fail signature did not occur.
 - **Setup:** Generate a mission with a player F-16C carrying its ALQ-184 pod and
   an AI SEAD/DEAD package that would previously have been eligible for `ewrj`.
 - **Pass:** No generic "Jammer menu" / `EWJamming` F10 commands appear on the
@@ -649,7 +656,10 @@ so the two docs don't drift.
 
 ## H. Kneeboards
 
-### H1 — Folded-list overflow pagination · §4 · ☐ UNTESTED
+### H1 — Folded-list overflow pagination · §4 · ☑ VERIFIED (2026-06-25)
+- **Verified (2026-06-25, generated kneeboard):** a long Friendly Packages / Airfield
+  Directory flowed onto a `(cont.)` continuation page with nothing clipped at the bottom
+  edge. Fail signature did not occur.
 - **Logic-reviewed 2026-06-25 (de-risked, not flown):** the row-fit math is correct and
   conservative. `remaining_table_rows` computes `(image_height - page_margin - y) //
   line_height`, subtracts tabulate's 2 lines of header chrome, and leaves **one row of slack**

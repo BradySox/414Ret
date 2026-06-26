@@ -930,6 +930,22 @@ so the two docs don't drift.
   the flight-plan page's Min-fuel column; Margin sign wrong; the page appearing with the toggle off
   or absent for an aircraft that has fuel-consumption data.
 
+### H8 — Kneeboard de-duplication · §4 · ☐ UNTESTED
+- **Setup:** Two passes. **(a)** Generate with the recon, fuel-ladder, and all-packages kneeboards
+  **all ON** for a ground-start SEAD/Strike flight in EXACT intel. **(b)** Generate the same flight
+  with those three **OFF**.
+- **Pass:** With options ON — Mission Info has **no weather block** (it's on the Departure page) and
+  **no Min-fuel column** in the flight plan (it's on the Fuel Ladder page); the Friendly Packages
+  list is its **own page** (not folded into Mission Info's bottom); there is **no standalone SEAD/
+  Strike Target Info page** (the recon Detail page carries the emitters + ALIC). With options OFF —
+  the deck is **identical to before**: Mission Info shows weather + Min-fuel column, the packages
+  list folds into Mission Info, and the SEAD Target Info page is present. In **APPROXIMATE** intel,
+  the SEAD Target Info page is **kept** even with recon on (no exact-coord leak).
+- **Fail signature:** any datum still on two pages with options on (weather, Min fuel, the packages
+  list); the SEAD page dropped in Approximate intel (coord-fuzzing regression); the deck changing
+  when all three options are off (a default-path regression — the omit flags must default to keep);
+  Mission Info's flight-plan column count wrong (uom row mismatched with headers).
+
 ---
 
 ## I. Mission generation

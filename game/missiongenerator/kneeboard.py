@@ -60,7 +60,11 @@ from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
 from .kneeboard_page import KneeboardPage
 from .kneeboard_recon import airport_imagery as _airport_imagery
 from .kneeboard_recon import generate_recon_pages
-from .kneeboard_recon.pages import _greatest_alive_threat
+from .kneeboard_recon.pages import (
+    _FLIGHT_TYPES_WITH_RECON,
+    _greatest_alive_threat,
+    _should_emit_departure,
+)
 from .kneeboard_recon.atis import (
     THUNDERSTORM_PRESSURE_DROP_INHG,
     altimeter_setting_inhg,
@@ -327,12 +331,20 @@ class NumberedWaypoint:
 class FlightPlanBuilder:
     WAYPOINT_DESC_MAX_LEN = 25
 
-    def __init__(self, start_time: datetime.datetime, units: UnitSystem) -> None:
+    def __init__(
+        self,
+        start_time: datetime.datetime,
+        units: UnitSystem,
+        include_min_fuel: bool = True,
+    ) -> None:
         self.start_time = start_time
         self.rows: List[List[str]] = []
         self.target_points: List[NumberedWaypoint] = []
         self.last_waypoint: Optional[FlightWaypoint] = None
         self.units = units
+        # Drop the Min-fuel column when the dedicated Fuel Ladder page owns the fuel
+        # ladder (avoids printing the bingo-at-waypoint figure on two pages).
+        self.include_min_fuel = include_min_fuel
 
     def add_waypoint(self, waypoint_num: int, waypoint: FlightWaypoint) -> None:
         if waypoint.waypoint_type == FlightWaypointType.TARGET_POINT:
@@ -357,37 +369,37 @@ class FlightPlanBuilder:
         first_waypoint_num = self.target_points[0].number
         last_waypoint_num = self.target_points[-1].number
 
-        self.rows.append(
-            [
-                f"{first_waypoint_num}-{last_waypoint_num}",
-                "Target points",
-                "0",
-                self._waypoint_distance(self.target_points[0].waypoint),
-                self._ground_speed(self.target_points[0].waypoint),
-                self._format_time(self.target_points[0].waypoint.tot),
-                self._format_time(self.target_points[0].waypoint.departure_time),
-                self._format_min_fuel(self.target_points[0].waypoint.min_fuel),
-            ]
-        )
+        row = [
+            f"{first_waypoint_num}-{last_waypoint_num}",
+            "Target points",
+            "0",
+            self._waypoint_distance(self.target_points[0].waypoint),
+            self._ground_speed(self.target_points[0].waypoint),
+            self._format_time(self.target_points[0].waypoint.tot),
+            self._format_time(self.target_points[0].waypoint.departure_time),
+        ]
+        if self.include_min_fuel:
+            row.append(self._format_min_fuel(self.target_points[0].waypoint.min_fuel))
+        self.rows.append(row)
         self.last_waypoint = self.target_points[-1].waypoint
 
     def add_waypoint_row(self, waypoint: NumberedWaypoint) -> None:
-        self.rows.append(
-            [
-                str(waypoint.number),
-                KneeboardPageWriter.wrap_line(
-                    waypoint.waypoint.display_name,
-                    FlightPlanBuilder.WAYPOINT_DESC_MAX_LEN,
-                ),
-                self._format_alt(waypoint.waypoint.alt),
-                self._waypoint_distance(waypoint.waypoint),
-                self._waypoint_bearing(waypoint.waypoint),
-                self._ground_speed(waypoint.waypoint),
-                self._format_time(waypoint.waypoint.tot),
-                self._format_time(waypoint.waypoint.departure_time),
-                self._format_min_fuel(waypoint.waypoint.min_fuel),
-            ]
-        )
+        row = [
+            str(waypoint.number),
+            KneeboardPageWriter.wrap_line(
+                waypoint.waypoint.display_name,
+                FlightPlanBuilder.WAYPOINT_DESC_MAX_LEN,
+            ),
+            self._format_alt(waypoint.waypoint.alt),
+            self._waypoint_distance(waypoint.waypoint),
+            self._waypoint_bearing(waypoint.waypoint),
+            self._ground_speed(waypoint.waypoint),
+            self._format_time(waypoint.waypoint.tot),
+            self._format_time(waypoint.waypoint.departure_time),
+        ]
+        if self.include_min_fuel:
+            row.append(self._format_min_fuel(waypoint.waypoint.min_fuel))
+        self.rows.append(row)
 
     @staticmethod
     def _format_time(time: datetime.datetime | None) -> str:
@@ -536,7 +548,8 @@ class BriefingPage(KneeboardPage):
         dark_kneeboard: bool,
         atis_by_name: Optional[dict[str, RadioFrequency]] = None,
         theater: Optional["ConflictTheater"] = None,
-        package_rows: Optional[List[List[str]]] = None,
+        omit_weather: bool = False,
+        omit_min_fuel: bool = False,
     ) -> None:
         self.flight = flight
         self.bullseye = bullseye
@@ -545,51 +558,24 @@ class BriefingPage(KneeboardPage):
         self.dark_kneeboard = dark_kneeboard
         self.theater = theater
         self.atis_by_name = atis_by_name or {}
-        self.package_rows = package_rows or []
+        # De-duplication (design §4): drop the weather block when the recon Departure
+        # page already carries it, and the Min-fuel column when the Fuel Ladder page
+        # owns the fuel ladder. The Friendly Packages list moved to its own page.
+        self.omit_weather = omit_weather
+        self.omit_min_fuel = omit_min_fuel
         self.flight_plan_font = ImageFont.truetype(
             "courbd.ttf",
             16,
             layout_engine=ImageFont.Layout.BASIC,
         )
 
-    #: Folded "Friendly Packages" table presentation, shared by the inline
-    #: render and any continuation page that catches its overflow.
-    PACKAGES_HEADING = "Friendly Packages"
-    PACKAGES_HEADERS = ["Task", "Target", "TOT / Window"]
-    PACKAGES_FONT_SIZE = 18
-
-    def _packages_title(self) -> str:
-        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
-        return f"{self.flight.callsign} Friendly Packages{custom}"
-
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
         self._render(writer)
         writer.write(path)
 
-    def paginate(self) -> List[KneeboardPage]:
-        # Replay the layout to discover how many folded package rows spilled
-        # past the bottom edge, then carry the remainder onto continuation
-        # page(s). The probe image is discarded; write() re-renders.
-        probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        overflow = self._render(probe)
-        pages: List[KneeboardPage] = [self]
-        if overflow:
-            pages.extend(
-                TableKneeboardPage(
-                    self._packages_title(),
-                    self.PACKAGES_HEADING,
-                    self.PACKAGES_HEADERS,
-                    overflow,
-                    self.PACKAGES_FONT_SIZE,
-                    self.dark_kneeboard,
-                    continued=True,
-                ).paginate()
-            )
-        return pages
-
-    def _render(self, writer: KneeboardPageWriter) -> List[List[str]]:
-        """Draw the Mission Info page; return folded package rows that overflowed."""
+    def _render(self, writer: KneeboardPageWriter) -> None:
+        """Draw the Mission Info page."""
         if self.flight.custom_name:
             custom_name_title = ' ("{}")'.format(self.flight.custom_name)
         else:
@@ -628,100 +614,92 @@ class BriefingPage(KneeboardPage):
 
         units = self.flight.aircraft_type.kneeboard_units
 
-        flight_plan_builder = FlightPlanBuilder(self.start_time, units)
+        flight_plan_builder = FlightPlanBuilder(
+            self.start_time, units, include_min_fuel=not self.omit_min_fuel
+        )
         for num, waypoint in enumerate(self.flight.waypoints):
             flight_plan_builder.add_waypoint(num, waypoint)
 
+        headers = ["#", "Action", "Alt", "Dist", "Brg", "GSPD", "Time", "Departure"]
         uom_row = [
-            [
-                "",
-                "",
-                units.distance_short_uom,
-                units.distance_long_uom,
-                "T",
-                units.speed_uom,
-                "",
-                "",
-                units.mass_uom,
-            ]
+            "",
+            "",
+            units.distance_short_uom,
+            units.distance_long_uom,
+            "T",
+            units.speed_uom,
+            "",
+            "",
         ]
+        if not self.omit_min_fuel:
+            headers.append("Min fuel")
+            uom_row.append(units.mass_uom)
 
         writer.table(
-            flight_plan_builder.build() + uom_row,
-            headers=[
-                "#",
-                "Action",
-                "Alt",
-                "Dist",
-                "Brg",
-                "GSPD",
-                "Time",
-                "Departure",
-                "Min fuel",
-            ],
+            flight_plan_builder.build() + [uom_row],
+            headers=headers,
             font=self.flight_plan_font,
         )
 
         writer.text(f"Bullseye: {self.bullseye.position.latlng().format_dms()}")
 
-        # QNH = the temperature-corrected altimeter setting at the departure field
-        # (what ATIS broadcasts), via game.utils for canonical unit conversions.
-        qnh = inches_hg(self._effective_qnh_inhg())
-        qnh_in_hg = f"{qnh.inches_hg:.2f}"
-        qnh_mm_hg = f"{qnh.mm_hg:.1f}"
-        qnh_hpa = f"{qnh.hecto_pascals:.1f}"
-        writer.text(
-            f"Temperature: {round(self.weather.atmospheric.temperature_celsius)} °C at sea level"
-        )
-        writer.text(f"QNH: {qnh_in_hg} inHg / {qnh_mm_hg} mmHg / {qnh_hpa} hPa")
-        qfe_line = self._format_departure_qfe()
-        if qfe_line is not None:
-            writer.text(qfe_line)
-        writer.text(
-            f"Turbulence: {round(self.weather.atmospheric.turbulence_per_10cm)} per 10cm at ground level."
-        )
-        writer.text(
-            f"Wind: {wind_from_deg(self.weather.wind.at_0m.direction)}°"
-            f" / {round(mps(self.weather.wind.at_0m.speed).knots)}kts (0ft)"
-            f" ; {wind_from_deg(self.weather.wind.at_2000m.direction)}°"
-            f" / {round(mps(self.weather.wind.at_2000m.speed).knots)}kts (~6500ft)"
-            f" ; {wind_from_deg(self.weather.wind.at_8000m.direction)}°"
-            f" / {round(mps(self.weather.wind.at_8000m.speed).knots)}kts (~26000ft)"
-        )
-        c = self.weather.clouds
-        writer.text(
-            f'Cloud base: {f"{int(round(meters(c.base).feet, -2))}ft" if c else "CAVOK"}'
-            f'{f", {c.preset.ui_name[:-2]}" if c and c.preset else ""}'
-        )
-
         fl = self.flight
 
-        start_pos = fl.waypoints[0].position.latlng()
-        sun = Sun(start_pos.lat, start_pos.lng)
+        # Weather block. Dropped (design §4) when the recon Departure page already
+        # carries the field weather + winds + sunrise/sunset, so it isn't printed twice.
+        if not self.omit_weather:
+            # QNH = the temperature-corrected altimeter setting at the departure field
+            # (what ATIS broadcasts), via game.utils for canonical unit conversions.
+            qnh = inches_hg(self._effective_qnh_inhg())
+            qnh_in_hg = f"{qnh.inches_hg:.2f}"
+            qnh_mm_hg = f"{qnh.mm_hg:.1f}"
+            qnh_hpa = f"{qnh.hecto_pascals:.1f}"
+            writer.text(
+                f"Temperature: {round(self.weather.atmospheric.temperature_celsius)} °C at sea level"
+            )
+            writer.text(f"QNH: {qnh_in_hg} inHg / {qnh_mm_hg} mmHg / {qnh_hpa} hPa")
+            qfe_line = self._format_departure_qfe()
+            if qfe_line is not None:
+                writer.text(qfe_line)
+            writer.text(
+                f"Turbulence: {round(self.weather.atmospheric.turbulence_per_10cm)} per 10cm at ground level."
+            )
+            writer.text(
+                f"Wind: {wind_from_deg(self.weather.wind.at_0m.direction)}°"
+                f" / {round(mps(self.weather.wind.at_0m.speed).knots)}kts (0ft)"
+                f" ; {wind_from_deg(self.weather.wind.at_2000m.direction)}°"
+                f" / {round(mps(self.weather.wind.at_2000m.speed).knots)}kts (~6500ft)"
+                f" ; {wind_from_deg(self.weather.wind.at_8000m.direction)}°"
+                f" / {round(mps(self.weather.wind.at_8000m.speed).knots)}kts (~26000ft)"
+            )
+            c = self.weather.clouds
+            writer.text(
+                f'Cloud base: {f"{int(round(meters(c.base).feet, -2))}ft" if c else "CAVOK"}'
+                f'{f", {c.preset.ui_name[:-2]}" if c and c.preset else ""}'
+            )
 
-        date = fl.squadron.coalition.game.date
-        dt = datetime.datetime(date.year, date.month, date.day)
-        tz = fl.squadron.coalition.game.theater.timezone
-
-        # Get today's sunrise and sunset in UTC
-        try:
-            rise_utc = sun.get_sunrise_time(dt)
-            rise = rise_utc + tz.utcoffset(sun.get_sunrise_time(dt))
-        except SunTimeException:
-            rise_utc = None
-            rise = None
-
-        try:
-            set_utc = sun.get_sunset_time(dt)
-            sunset = set_utc + tz.utcoffset(sun.get_sunset_time(dt))
-        except SunTimeException:
-            set_utc = None
-            sunset = None
-
-        writer.text(
-            f"Sunrise - Sunset: {rise.strftime('%H:%M') if rise else 'N/A'} - {sunset.strftime('%H:%M') if sunset else 'N/A'}"
-            f" ({rise_utc.strftime('%H:%M') if rise_utc else 'N/A'} - {set_utc.strftime('%H:%M') if set_utc else 'N/A'} UTC)"
-        )
+            start_pos = fl.waypoints[0].position.latlng()
+            sun = Sun(start_pos.lat, start_pos.lng)
+            date = fl.squadron.coalition.game.date
+            dt = datetime.datetime(date.year, date.month, date.day)
+            tz = fl.squadron.coalition.game.theater.timezone
+            # Get today's sunrise and sunset in UTC
+            try:
+                rise_utc = sun.get_sunrise_time(dt)
+                rise = rise_utc + tz.utcoffset(sun.get_sunrise_time(dt))
+            except SunTimeException:
+                rise_utc = None
+                rise = None
+            try:
+                set_utc = sun.get_sunset_time(dt)
+                sunset = set_utc + tz.utcoffset(sun.get_sunset_time(dt))
+            except SunTimeException:
+                set_utc = None
+                sunset = None
+            writer.text(
+                f"Sunrise - Sunset: {rise.strftime('%H:%M') if rise else 'N/A'} - {sunset.strftime('%H:%M') if sunset else 'N/A'}"
+                f" ({rise_utc.strftime('%H:%M') if rise_utc else 'N/A'} - {set_utc.strftime('%H:%M') if set_utc else 'N/A'} UTC)"
+            )
 
         if fl.bingo_fuel and fl.joker_fuel:
             writer.table(
@@ -739,38 +717,6 @@ class BriefingPage(KneeboardPage):
             for idx, code in enumerate(self.flight.laser_codes, start=1):
                 codes.append([str(idx), "" if code is None else str(code)])
             writer.table(codes, ["#", "Laser Code"])
-
-        # Friendly packages coordination list, at the bottom of the page. The
-        # list is narrow (Task / Target / TOT), so once it would overflow a
-        # single column we lay it out in two side-by-side columns to use the
-        # otherwise-wasted right half of the page (and avoid spilling a few rows
-        # onto a near-empty continuation page). Anything past both columns still
-        # paginates (see paginate()).
-        overflow: List[List[str]] = []
-        if self.package_rows:
-            writer.heading(self.PACKAGES_HEADING)
-            writer.rule()
-            packages_font = ImageFont.truetype(
-                "courbd.ttf",
-                self.PACKAGES_FONT_SIZE,
-                layout_engine=ImageFont.Layout.BASIC,
-            )
-            single_capacity = writer.remaining_table_rows(
-                packages_font, bool(self.PACKAGES_HEADERS)
-            )
-            if len(self.package_rows) <= single_capacity:
-                overflow = writer.table_paginated(
-                    self.package_rows,
-                    headers=self.PACKAGES_HEADERS,
-                    font=packages_font,
-                )
-            else:
-                overflow = writer.table_two_column_paginated(
-                    self.package_rows,
-                    headers=self.PACKAGES_HEADERS,
-                    font=packages_font,
-                )
-        return overflow
 
     def _departure_elevation_m(self) -> Optional[float]:
         """DCS-mesh field elevation (m) of the departure field, or None.
@@ -904,6 +850,72 @@ class BriefingPage(KneeboardPage):
             for c in channels
         )
         return f"{names}\n{frequency}"
+
+
+class FriendlyPackagesPage(KneeboardPage):
+    """Standalone Friendly Packages coordination list (de-duped from Mission Info).
+
+    Every friendly package with its TOT (strike) or patrol window (CAP/tanker/AWACS),
+    laid out two-up (the list is narrow) and paginating onto continuation pages. Pulled
+    out of the Mission Info page (design §4) so the same list isn't split across the
+    bottom of Mission Info and a near-empty spill page.
+    """
+
+    HEADING = "Friendly Packages"
+    HEADERS = ["Task", "Target", "TOT / Window"]
+    FONT_SIZE = 18
+
+    def __init__(
+        self, flight: FlightData, rows: List[List[str]], dark_kneeboard: bool
+    ) -> None:
+        self.flight = flight
+        self.rows = rows
+        self.dark_kneeboard = dark_kneeboard
+
+    def _title(self) -> str:
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        return f"{self.flight.callsign} Friendly Packages{custom}"
+
+    def _font(self) -> ImageFont.FreeTypeFont:
+        return ImageFont.truetype(
+            "courbd.ttf", self.FONT_SIZE, layout_engine=ImageFont.Layout.BASIC
+        )
+
+    def _render(self, writer: KneeboardPageWriter) -> List[List[str]]:
+        """Draw title + two-column packages table; return rows that overflowed."""
+        writer.title(self._title())
+        writer.heading(self.HEADING)
+        writer.rule()
+        font = self._font()
+        single_capacity = writer.remaining_table_rows(font, bool(self.HEADERS))
+        if len(self.rows) <= single_capacity:
+            return writer.table_paginated(self.rows, headers=self.HEADERS, font=font)
+        return writer.table_two_column_paginated(
+            self.rows, headers=self.HEADERS, font=font
+        )
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        self._render(writer)
+        writer.write(path)
+
+    def paginate(self) -> List[KneeboardPage]:
+        probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        overflow = self._render(probe)
+        pages: List[KneeboardPage] = [self]
+        if overflow:
+            pages.extend(
+                TableKneeboardPage(
+                    self._title(),
+                    self.HEADING,
+                    self.HEADERS,
+                    overflow,
+                    self.FONT_SIZE,
+                    self.dark_kneeboard,
+                    continued=True,
+                ).paginate()
+            )
+        return pages
 
 
 class SupportPage(KneeboardPage):
@@ -2437,14 +2449,15 @@ class KneeboardGenerator(MissionInfoGenerator):
             else []
         )
 
-        # Friendly-packages list folds into the bottom of the Mission Info page,
-        # gated by the same setting that controls the (now map-only) standalone
-        # packages kneeboard.
-        package_rows = (
-            self.build_all_packages_rows(flight)
-            if self.game.settings.generate_all_packages_kneeboard
-            else []
-        )
+        # De-duplication (design §4): drop blocks from the always-on Mission Info page
+        # when an enabled optional page already carries the same data, so nothing is
+        # printed twice. Each is conditional on the *other* page existing, so a deck
+        # with options off is unchanged.
+        recon_on = self.game.settings.generate_target_recon_kneeboard
+        # The recon Departure page carries the field weather + winds + sunrise/sunset.
+        omit_weather = recon_on and _should_emit_departure(flight, self.game)
+        # The Fuel Ladder page carries the per-waypoint bingo (Min) fuel + planned + margin.
+        omit_min_fuel = self.game.settings.generate_fuel_ladder_kneeboard
 
         pages: List[KneeboardPage] = [
             BriefingPage(
@@ -2455,7 +2468,8 @@ class KneeboardGenerator(MissionInfoGenerator):
                 self.dark_kneeboard,
                 atis_by_name=self.atis_by_name,
                 theater=self.game.theater,
-                package_rows=package_rows,
+                omit_weather=omit_weather,
+                omit_min_fuel=omit_min_fuel,
             ),
             SupportPage(
                 flight,
@@ -2474,7 +2488,28 @@ class KneeboardGenerator(MissionInfoGenerator):
         if notes := self.game.notes:
             pages.append(NotesPage(notes, self.dark_kneeboard))
 
-        if (target_page := self.generate_task_page(flight)) is not None:
+        # The SEAD/Strike Target Info page is superseded by the recon Detail page, which
+        # already lists the same emitters + role + HARM ALIC over a satellite view. When
+        # that detail page will be generated for this target, drop the standalone task
+        # page -- but keep it in APPROXIMATE intel (the recon page shows exact coords,
+        # while the task page intentionally fuzzes them; §5), so we only fold in EXACT.
+        target = getattr(flight.package, "target", None)
+        recon_detail_covers_target = (
+            recon_on
+            and flight.flight_type in _FLIGHT_TYPES_WITH_RECON
+            and isinstance(target, TheaterGroundObject)
+        )
+        exact_intel = (
+            self.game.settings.target_intel_precision is TargetIntelPrecision.EXACT
+        )
+        target_page = self.generate_task_page(flight)
+        folds_into_recon = (
+            recon_detail_covers_target
+            and exact_intel
+            and flight.flight_type
+            in (FlightType.SEAD, FlightType.DEAD, FlightType.STRIKE)
+        )
+        if target_page is not None and not folds_into_recon:
             pages.append(target_page)
 
         # Enemy air-defense dossier (per-system cards, recon-fog aware), gated by
@@ -2513,9 +2548,14 @@ class KneeboardGenerator(MissionInfoGenerator):
                 )
             )
 
-        # The friendly-packages coordination list now lives on the Mission Info
-        # page (above); only the target map goes last here, gated by settings.
+        # Friendly packages: a dedicated list page (de-duped from the Mission Info
+        # page, where it used to fold + spill) plus the targets map, gated by settings.
         if self.game.settings.generate_all_packages_kneeboard:
+            package_rows = self.build_all_packages_rows(flight)
+            if package_rows:
+                pages.append(
+                    FriendlyPackagesPage(flight, package_rows, self.dark_kneeboard)
+                )
             pages.extend(self.generate_packages_map_page(flight))
 
         return pages

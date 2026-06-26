@@ -69,32 +69,42 @@ if ambientFireEnabled() then
     local baseSimulate = GLSCO_COMBATANT.simulate
 
     function GLSCO_COMBATANT:simulate()
-        local target = baseSimulate(self)
+        -- Failsafe discipline: never let the ambient-fire extension throw out of the
+        -- TIC battle loop. A runtime error in our speculative-fire path (or in stock
+        -- simulate) must not stop this combatant -- or the engine cycle -- from running,
+        -- so both the base call and the ambient path are contained. On any error we
+        -- fall back to stock behaviour (no ambient salvo this cycle).
+        local okBase, target = pcall(baseSimulate, self)
+        if not okBase then
+            return nil
+        end
         if target ~= nil then
             -- Stock TIC fired a real (LOS) salvo this cycle.
             return target
         end
-        if math.random() > AMBIENT_FIRE_CHANCE then
-            return nil
-        end
-        if not self:IsAlive() or self:IsWeaponFree() or self:IsRiding() then
-            return nil
-        end
-        local coord = nearestEnemyCoord(self)
-        if coord == nil then
-            return nil
-        end
-        local vec2 = coord:GetRandomVec2InRadius(
-            AMBIENT_AIM_RADIUS_OUTER,
-            AMBIENT_AIM_RADIUS_INNER
-        )
-        -- Same fire-mission shape as stock GLSCO_COMBATANT:simulate().
-        self.group:OptionROEOpenFire()
-        local altitude = math.random(1, 5)
-        local task = self.group:TaskFireAtPoint(
-            vec2, 1, self.profile.SalvoQty, nil, altitude
-        )
-        self.group:PushTask(task, 0)
+        pcall(function()
+            if math.random() > AMBIENT_FIRE_CHANCE then
+                return
+            end
+            if not self:IsAlive() or self:IsWeaponFree() or self:IsRiding() then
+                return
+            end
+            local coord = nearestEnemyCoord(self)
+            if coord == nil then
+                return
+            end
+            local vec2 = coord:GetRandomVec2InRadius(
+                AMBIENT_AIM_RADIUS_OUTER,
+                AMBIENT_AIM_RADIUS_INNER
+            )
+            -- Same fire-mission shape as stock GLSCO_COMBATANT:simulate().
+            self.group:OptionROEOpenFire()
+            local altitude = math.random(1, 5)
+            local task = self.group:TaskFireAtPoint(
+                vec2, 1, self.profile.SalvoQty, nil, altitude
+            )
+            self.group:PushTask(task, 0)
+        end)
         return nil
     end
 else
@@ -103,11 +113,19 @@ end
 
 -- Manual battle start (the generator preamble disabled TIC's auto path so
 -- the ambient-fire wrapper above is installed before combatants activate).
-env.info("tic_414_init: initializing TIC battle")
-GLSCO:Initialize()
-if GLSCO.battle ~= nil then
-    env.info("tic_414_init: activating TIC battle")
-    GLSCO.battle:Activate()
-else
-    env.warning("tic_414_init: GLSCO.battle is nil after Initialize!")
+-- Failsafe discipline: contain init so a TIC start-up error is logged rather than
+-- thrown out of this DO SCRIPT FILE, which would abort the rest of the mission's
+-- script chain (other plugins loaded after TIC).
+local init_ok, init_err = pcall(function()
+    env.info("tic_414_init: initializing TIC battle")
+    GLSCO:Initialize()
+    if GLSCO.battle ~= nil then
+        env.info("tic_414_init: activating TIC battle")
+        GLSCO.battle:Activate()
+    else
+        env.warning("tic_414_init: GLSCO.battle is nil after Initialize!")
+    end
+end)
+if not init_ok then
+    env.warning("tic_414_init: TIC battle init failed: " .. tostring(init_err))
 end

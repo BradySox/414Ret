@@ -111,7 +111,9 @@ Do not re-add `ewrj` to `resources/plugins/plugins.json` or restore the old
 `EWJamming` / `startEWjamm` / `startIAdefjamming` Python hooks. F-16/A-10 ECM
 pods should not create the old generic F10 "Jammer menu"; only the C-130J
 Mission Systems plugin owns 414th scripted jamming now. Legacy saved `ewrj`
-settings are purged on load in `game/settings/settings.py`.
+settings are purged on load in `game/settings/settings.py`. **In-game pass ☑ VERIFIED
+2026-06-25** (G5): no generic Jammer F10 menu on fighters, no `ewrj`/`EWJamming`/`startEWjamm`/
+`startIAdefjamming` in the generated mission.
 
 **C-130 EW hard constraints (carried over from the standalone ME script):** do NOT toggle
 SAM radar emissions (`enableEmission(false)` crashed DCS - suppression is ROE WEAPON_HOLD
@@ -313,7 +315,8 @@ Packages list renders in **two side-by-side columns** once it would overflow a s
 using the wasted right half of the page and eliminating the near-empty continuation page in
 the common case (only > ~2× a column's capacity still paginates). The recon pages are
 untouched (still golden-tested). This is a visual change CI can't exercise — see in-game-pass
-row **H1**/**H2**.
+row **H1**/**H2**. **H1 (overflow pagination) in-game pass ☑ VERIFIED 2026-06-25**; H2 still
+pending.
 
 **Custom kneeboard import (UI, stored in the save).** DCS kneeboards are per-**airframe**, not
 per-flight, so to add your own kneeboard page to a fleet of player flights you'd otherwise
@@ -572,7 +575,7 @@ Rather than reorder the HTN (which would change budget order for every campaign)
 - No compatible demand → tanker untouched (legacy front anchor). Same-package buddy tankers are
   never moved.
 
-Tests: `tests/test_tanker_demand.py` (scoring + ATO extraction). **Needs an in-game pass** (C7).
+Tests: `tests/test_tanker_demand.py` (scoring + ATO extraction). **In-game pass ☑ VERIFIED 2026-06-25** (C7).
 **Deferred follow-up:** retargeting compatible receiver `REFUEL` waypoints onto the moved tanker
 (the plan's conditional "when the detour is reasonable" half) — the tanker already sits at the
 centroid of those points, so this is a refinement, not essential. First half of the Codex tanker

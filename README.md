@@ -146,6 +146,9 @@ and selected later upstream fixes.
   `PUSH <word>` tag on the join waypoint — to build a briefing. A **Comms & Brevity** kneeboard
   page carries the table (your task marked) plus a brevity crib filtered to your task. Fresh words
   every turn, stable while you plan. Off by default.
+- Optional **Fuel Ladder** kneeboard page — the planned fuel remaining vs. the minimum to get home
+  at each steerpoint, plus the margin between them (negative = you can't make it home as planned,
+  tank or divert) and Bingo/Joker. Off by default.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
 - When *Restrict weapons by campaign date* is on, era-defining **cockpit options** are now gated
   alongside the weapons: a pre-2003 campaign no longer offers (or quietly spawns) a **JHMCS**

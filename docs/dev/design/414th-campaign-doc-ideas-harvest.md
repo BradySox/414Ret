@@ -241,16 +241,17 @@ consistent and worth mirroring; developer styles differ:
 |---|---|---|---|
 | Threat dossier kneeboard (MEZ/HAD/defeat) | recon fog §3; SEAD §6/§7 | **Low/Med** | ✅ **BUILT** — Threat Intel Brief (§4) |
 | Auto-annotated threat/target map card | TARPS imagery §3; map layers §19 | Med | Reuse recon imagery + known-TGO data |
-| Fuel-ladder flight-plan card | kneeboard gen | **Low** | Per-WP fuel already computable; **next up** |
+| Fuel-ladder flight-plan card | kneeboard gen | **Low** | ✅ **BUILT** — planned remaining + margin (§4) |
 | Mission code words (per-task push table) + brevity | kneeboard + planner UI | **Med** | ✅ **BUILT** — Red Flag-style, `enable_package_code_words` (§4) |
 | Richer Mission Impact (ROE/airmanship/escort scoring) | Mission Impact debrief §4 | Med | Add weighted + penalty terms |
 | "Gauntlet"/quick-strike buy-support mode | purchase economy; drop-spawn §20 | Med/High | Random known TGO + support package |
 | Failsafe backup triggers on AI beats | SCAR §15 / Combat SAR §21 / TIC §9 Lua | **Low** | Defensive Lua pattern; do this regardless |
 | Personalized CO framing + bios + disclaimer | campaign intro docs | **Low** | Copy-writing, not code |
 
-**Shipped so far:** the Threat Intel Brief dossier and the package code words + Comms & Brevity
-card. **Next up (low effort, high payoff):** the **fuel-ladder flight-plan card**, then the richer
-Mission Impact scoring and the **failsafe-trigger discipline** for the Lua features.
+**Shipped so far:** the Threat Intel Brief dossier, the mission code words + Comms & Brevity card,
+and the **fuel-ladder card** — the three kneeboard ideas from this study are all in.
+**Still open (low effort, high payoff):** the richer Mission Impact scoring (ROE/airmanship/escort)
+and the **failsafe-trigger discipline** for the Lua features.
 
 > **Note (multiplayer):** the code words are a *human* SRS aid — nothing scripts off them, unlike
 > the single-player campaigns the idea came from. The F10-menu mechanics those campaigns use stay

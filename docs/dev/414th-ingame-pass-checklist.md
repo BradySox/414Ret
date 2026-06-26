@@ -914,6 +914,22 @@ so the two docs don't drift.
   leaking onto a target/DTC steerpoint (should only ever be on JOIN); STOP JAM showing without an
   EW flight; brevity crib not matching the task; the feature appearing with the toggle off.
 
+### H7 — Fuel ladder kneeboard card · §4 · ☐ UNTESTED
+- **Setup:** Enable **Generate fuel ladder kneeboard page** (Mission Generator → Kneeboard).
+  Generate a mission for a player flight — ideally one with a tanker (REFUEL) leg — and open the
+  kneeboards in DCS. Cross-check the Fuel Ladder against the flight-plan page's Min-fuel column and
+  the jet's actual fuel at a couple of steerpoints.
+- **Pass:** A "Fuel Ladder" page lists each steerpoint with **Plan** (planned fuel remaining) and
+  **Min** (minimum to RTB, matching the flight-plan page) and **Margin** (Plan − Min). Plan
+  **descends** leg by leg and **jumps back up at the tanker** waypoint; Min matches the existing
+  flight-plan column; Margin goes **negative** only where the plan genuinely can't make it home.
+  Bingo/Joker show at the bottom. Numbers are in the airframe's kneeboard mass unit (lbs/kg). With
+  the setting off, no Fuel Ladder page.
+- **Fail signature:** Plan not decreasing (or not resetting at the tanker); Plan wildly off vs. the
+  jet's real fuel (burn-model/units error — check `flight.fuel × KG_TO_LBS`); Min disagreeing with
+  the flight-plan page's Min-fuel column; Margin sign wrong; the page appearing with the toggle off
+  or absent for an aircraft that has fuel-consumption data.
+
 ---
 
 ## I. Mission generation

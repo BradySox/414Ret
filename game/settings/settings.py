@@ -1307,6 +1307,18 @@ class Settings:
             "Human comms aids only — nothing scripts off them. Off by default."
         ),
     )
+    generate_fuel_ladder_kneeboard: bool = boolean_option(
+        "Generate fuel ladder kneeboard page",
+        MISSION_GENERATOR_PAGE,
+        KNEEBOARD_SECTION,
+        default=False,
+        detail=(
+            "Append a Fuel Ladder page: the planned fuel remaining vs. the minimum to "
+            "RTB at each steerpoint, plus the margin between them and Bingo/Joker. The "
+            "burn model is an estimate, so treat the numbers as planning figures. Off "
+            "by default."
+        ),
+    )
     target_recon_extra_threat_search_nmi: int = bounded_int_option(
         "Extra threat search radius (nmi)",
         MISSION_GENERATOR_PAGE,

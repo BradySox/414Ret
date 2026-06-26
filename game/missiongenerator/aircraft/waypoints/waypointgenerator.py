@@ -20,7 +20,7 @@ from game.ato.starttype import StartType
 from game.missiongenerator.aircraft.waypoints.cargostop import CargoStopBuilder
 from game.missiongenerator.missiondata import MissionData
 from game.settings import Settings
-from game.utils import pairwise
+from game.utils import KG_TO_LBS, pairwise
 from .airassaultingress import AirAssaultIngressBuilder
 from .antishipingress import AntiShipIngressBuilder
 from .armedreconingress import ArmedReconIngressBuilder
@@ -135,6 +135,7 @@ class WaypointGenerator:
         # plan construction, but for now it's only used by the kneeboard so is generated
         # late.
         self._estimate_min_fuel_for(waypoints)
+        self._estimate_planned_fuel_for(waypoints)
 
         # In-air starts spawn at the current waypoint, so DCS omits the
         # already-passed waypoints; slice from the spawn waypoint so the kneeboard
@@ -265,6 +266,35 @@ class WaypointGenerator:
                 # the landing reserve -- not to fly the whole route home unrefueled.
                 min_fuel = consumption.min_safe
             a.min_fuel = min_fuel
+
+    def _estimate_planned_fuel_for(self, waypoints: list[FlightWaypoint]) -> None:
+        """Forward-estimate the fuel remaining at each waypoint (the "fuel ladder").
+
+        Mirrors ``_estimate_min_fuel_for`` but walks forward from the starting load,
+        subtracting each leg's burn, so the kneeboard can show planned remaining
+        alongside the minimum required. Tops back up to a full load at a tanker
+        (REFUEL) waypoint. No-op when the aircraft has no fuel-consumption data or no
+        starting fuel.
+        """
+        consumption = self.flight.unit_type.fuel_consumption
+        start_fuel_kg = getattr(self.flight, "fuel", None)
+        if consumption is None or start_fuel_kg is None:
+            return
+
+        full_load_lbs = start_fuel_kg * KG_TO_LBS
+        remaining = full_load_lbs - consumption.taxi
+        previous: FlightWaypoint | None = None
+        for waypoint in waypoints:
+            if previous is not None:
+                for_leg = self.flight.flight_plan.fuel_consumption_between_points(
+                    previous, waypoint
+                )
+                if for_leg is not None:
+                    remaining -= for_leg
+            if waypoint.waypoint_type is FlightWaypointType.REFUEL:
+                remaining = full_load_lbs
+            waypoint.fuel_planned = max(0.0, remaining)
+            previous = waypoint
 
     def set_takeoff_time(self, waypoint: FlightWaypoint) -> timedelta:
         force_delay = False

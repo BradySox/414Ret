@@ -43,6 +43,11 @@ class FlightWaypoint:
     # The minimum amount of fuel remaining at this waypoint in pounds.
     min_fuel: float | None = None
 
+    # The planned fuel remaining at this waypoint in pounds, estimated forward from the
+    # starting load over the per-leg burn model (the "fuel ladder"). None when the
+    # aircraft has no fuel-consumption data.
+    fuel_planned: float | None = None
+
     # These are set very late by the air conflict generator (part of mission
     # generation). We do it late so that we don't need to propagate changes
     # to waypoint times whenever the player alters the package TOT or the

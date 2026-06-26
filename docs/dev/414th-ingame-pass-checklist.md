@@ -366,11 +366,15 @@ so the two docs don't drift.
   (`SCAR_TALKON_DELAY_S`, 120s), MAGIC escalates **once** — **RED** smoke on the real target's lead
   vehicle + "cleared hot" — so a stuck player still gets pointed in. A human King talking on SRS is
   unaffected by either stage.
+- **Pass (audience, 2026-06-25):** every MAGIC call (talk-on, RED designation, laser, "say again")
+  shows **only to the on-task SCAR flight(s) + any King group** — NOT to unrelated BLUE pilots. Sit a
+  second BLUE flight well outside the box / off the tasking and confirm it sees **no** MAGIC text.
 - **Fail signature:** no stage-1 cue on arrival (`designate`/`package_near` not wired); the call/smoke
   repeats every tick (one-shot guards failed); no escalation after the window on a live target, or it
   escalates after the target is already dead; RED smoke off the real vehicle (bad `target_lead_pos`);
-  smoke at sea level (bad `land.getHeight`); or a `scar_414_init.lua` Lua error. (Laser/IR designation
-  + a "say again" F10 are deferred — laser is F10 below; the "say again" F10 is still deferred.)
+  smoke at sea level (bad `land.getHeight`); a MAGIC call reaching the **whole coalition** again
+  (`scar_outtext` regressed to `outTextForCoalition`, or the on-task/King audience empty); or a
+  `scar_414_init.lua` Lua error.
 
 ### F10 — SCAR King laser/IR designation (Phase 3b) · §15 / PR #189 · ☐ UNTESTED
 - **Setup:** Frag **both** a C-130 **King** (a Combat SAR C-130) and a SCAR striker; get the King on
@@ -562,19 +566,26 @@ so the two docs don't drift.
   or the AI rescue routing fights the despawn/RTB logic. **Off-state regression check:** with the
   setting OFF, confirm no CSAR is auto-planned and `enableForAI=false` is logged.
 
-### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ☐ UNTESTED
+### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ◐ PARTIAL (player King = no scripted TACAN by design; AI King untested)
 - **Setup:** Plan a player **C-130** Combat SAR ("King") alongside a **CH-47** Combat SAR. Fly the
-  King; have a human pilot eject in the area.
-- **Pass:** The King radiates its TACAN (rescue helo can tune + home, and it **tracks the moving
+  King; have a human pilot eject in the area. **For the scripted TACAN path, the King must be AI**
+  (e.g. `auto_combat_sar` standing alert) — a player-flown King sets TACAN in-cockpit (see below).
+- **Pass:** An **AI** King radiates its TACAN (rescue helo can tune + home, and it **tracks the moving
   orbit** — bearing/range stay sane as the King flies its racetrack). The King's F10 **Combat SAR →
   LARS** lists each active survivor with position and bearing/range from the King, sorted nearest-first;
   "no active survivor radios" when none. (ADF dropped — TACAN is the only homing aid.) Generator logs
   `... %d King(s) ...`.
-- **Fail signature:** any `combatsar-config.lua` Lua error; TACAN absent (no channel allocated, or
-  `ActivateTACAN` not firing) or **frozen at the spawn point** instead of tracking (means it fell back
-  to a ground beacon — `IsAir()` path); LARS empty when survivors exist (`csar.downedPilots` not read)
-  or duplicated F10 entries (birth/start-sweep dedup failed); King menu missing on a delayed/AI King
-  (birth handler not attaching).
+- **Fail signature:** any `combatsar-config.lua` Lua error; **`ALERT ... AI::Controller exception: No
+  executor for command "ActivateBeacon"`** followed by a CTD (`ACCESS_VIOLATION` in
+  `wSimCalendar::DoActionsUntil` / `CommandsTraceDiscreteIsOn`) — this was the **2026-06-25 crash**
+  when the King was player-flown; **now guarded** (`activateKing()` skips `ActivateTACAN` unless
+  `unit:IsAlive() and unit:GetPlayerName() == nil`). AI-King fail: TACAN absent (no channel allocated,
+  or `ActivateTACAN` not firing) or **frozen at the spawn point** instead of tracking; LARS empty when
+  survivors exist (`csar.downedPilots` not read) or duplicated F10 entries (birth/start-sweep dedup
+  failed); King menu missing on a delayed/AI King (birth handler not attaching).
+- **Note (player King):** A human-flown King has no AI controller, so the scripted beacon is **skipped
+  by design** — the crew dials the planned channel manually in the cockpit. Re-test target: confirm an
+  **AI** King still lights its TACAN and no CTD recurs with a player King.
 
 ### G11 — Combat SAR rescue scoring (pilot spared at debrief) · Combat SAR Phase 4 · ☐ UNTESTED
 - **Setup:** Fly a CH-47 Combat SAR (or AI standing alert). Have a **known** human pilot eject near
@@ -697,10 +708,16 @@ so the two docs don't drift.
 ### H3 — SCAR task kneeboard (Phase 4) · §15 / PR #189 · ☐ UNTESTED
 - **Setup:** Plan a player **SCAR** flight; open its kneeboard in DCS.
 - **Pass:** A "SCAR" task page with **TASK** (hold the box, service the designated armor, kills count
-  natively), **FIND + ID** (decoys + mis-ID cost; GREEN box smoke → RED target after ~2 min), and
-  **DESIGNATION** (smoke colours, King laser code 1688, the "say again" F10). Text wraps, no clipping.
-- **Fail signature:** no SCAR page (`generate_task_page` branch), text off the page edge, or guidance
-  that contradicts the in-mission behaviour (e.g. claims a laser with no King).
+  natively), **TARGET SIGNATURE** (this flight's own HVT signature, e.g. "1x SA-9 + 1x command vehicle
+  + 2x truck", + decoy/mis-ID warning; a SCUD tasking reads "mobile SCUD launcher (TEL)"), **FIND + ID**
+  (decoys + mis-ID cost; GREEN box smoke → RED target after ~2 min), and **DESIGNATION** (smoke colours,
+  King laser code 1688, the "say again" F10). Text wraps, no clipping. The signature must **match the
+  real picture** in the box (it's the same data the MAGIC call uses) and carry **no exact target coords**
+  (finding it is the task).
+- **Fail signature:** no SCAR page (`generate_task_page` branch); **no TARGET SIGNATURE section** (the
+  flight didn't match its tasking — `_scar_tasking_for` / `target_id`, or `mission_data.scar_taskings`
+  empty); a signature that doesn't match what's in the box (wrong tasking matched); text off the page
+  edge; or guidance that contradicts the in-mission behaviour (e.g. claims a laser with no King).
 
 ### H4 — Custom kneeboard import (UI) · §4 · ☐ UNTESTED
 - **Setup:** With a campaign loaded, open **Kneeboards** (toolbar/menu). Add an image scoped to

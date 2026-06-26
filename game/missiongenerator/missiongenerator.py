@@ -401,7 +401,7 @@ class MissionGenerator:
         """Generates subscribed MissionInfoGenerator objects."""
         mission_data = self.mission_data
         gens: list[MissionInfoGenerator] = [
-            KneeboardGenerator(self.mission, self.game),
+            KneeboardGenerator(self.mission, self.game, mission_data.scar_taskings),
             BriefingGenerator(self.mission, self.game),
         ]
         for gen in gens:

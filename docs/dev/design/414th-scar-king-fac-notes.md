@@ -11,6 +11,18 @@ F10 backstop, and a SCAR task **kneeboard** page. **Deferred:** an **SRS-TTS** d
 MSRS/SRS config) + an **AI SCAR striker** + per-area laser-code allocation; and the
 **dead-chase-code retirement** (until after the F7/F8 flight). · **Date:** 2026-06-25
 
+> **Audience fix (2026-06-25, post first in-game test):** the MAGIC calls were going out via
+> `outTextForCoalition` — blasting **every** BLUE pilot in theatre. They now route through
+> `scar_outtext(side, area, …)` (`scar_414_init.lua`): `outTextForGroup` to the **human-flown
+> SCAR-side flights on task** (a client unit inside `SCAR_PROXIMITY_M` of the area) **plus any King
+> group** (`dcsRetribution.CombatSAR.kings`), so the C-130 King player gets the call to relay by voice
+> and nobody else is spammed. The one-time **"SCAR INTEL" briefings** stay coalition-wide (they fire at
+> t=0 with no on-task audience to target). To carry the per-tasking brief to the right pilot, the **SCAR
+> kneeboard** (`ScarTaskPage`) now renders a **TARGET SIGNATURE** section from the flight's own tasking
+> (`ScarTasking.signature_text` + a transient `target_id`; matched by `id(flight.package.target)` in
+> `KneeboardGenerator._scar_tasking_for`) — full HVT signature + decoy warning, **no exact coords** (the
+> ID puzzle stands). Tests: `test_scar_bridge.py` + `test_kneeboard_task_pages.py`.
+
 > **Phase 3b laser rule (user-decided 2026-06-25): lase only when a King flight is ON STATION.** The
 > laser/IR `SPOT` emits **from the King aircraft itself** (a C-130 King on station over the box) — so
 > there is **no spawned-designator** hack, and **no King flight fragged ⇒ no laser at all** (the

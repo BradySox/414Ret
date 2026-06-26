@@ -989,6 +989,26 @@ SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.m
   the **search area center** (`centerX/centerY` on the tasking), NOT the exact HVT unit
   (2026-06-20: a pin on the one correct group made it trivial) — combined with spawn-time decoys
   and the HVT moving off its start point, the player must reconnoiter to ID it.
+- **MAGIC voice calls are group-targeted, NOT coalition-wide (2026-06-25).** The on-scene
+  controller's running cues — talk-on, RED-smoke designation, "King laser ON — code 1688", and
+  the F10 "say again" — went out via `outTextForCoalition`, blasting every BLUE pilot in theatre.
+  They now route through `scar_outtext(side, area, …)` (`scar_414_init.lua`), which `outTextForGroup`s
+  only the **human-flown SCAR-side flights on task** (a client unit inside the `SCAR_PROXIMITY_M`
+  ring of the area) **plus any King group** (`dcsRetribution.CombatSAR.kings`, BLUE-only) — so the
+  C-130 King player gets the call to relay by voice, matching the voice-first design. The one-time
+  **"SCAR INTEL" task briefings** (`brief_spawn`/`brief_armor`/`brief_missile`) intentionally stay
+  coalition-wide: they fire at mission start when every pilot is still on the ramp, with no on-task
+  audience to target yet — the kneeboard below is their targeted home.
+- **SCAR task kneeboard carries the per-tasking signature (2026-06-25).** `ScarTaskPage`
+  (`kneeboard.py`) now renders a **TARGET SIGNATURE** section with the flight's own HVT signature
+  (e.g. "1x SA-9 + 1x command vehicle + 2x truck") + decoy warning, so the pilot can win the ID
+  puzzle off the kneeboard instead of the coalition blast — **no exact target coords by design**
+  (finding it in the box is the task). Each `ScarTasking` carries a player-readable `signature_text`
+  (`_readable_signature`, name map mirrors the Lua `SCAR_UNIT_NAMES`) + a transient `target_id`
+  (`id(package.target)`); `KneeboardGenerator._scar_tasking_for(flight)` matches the flight to its
+  tasking by `id(flight.package.target)` within the generation pass (`mission_data.scar_taskings`,
+  built before `notify_info_generators`). Tests: `tests/test_scar_bridge.py` (signature/target_id),
+  `tests/missiongenerator/test_kneeboard_task_pages.py` (the flight↔tasking match).
 - Tests: `tests/test_scar.py` (FlightType + dispatch), `tests/test_scar_bridge.py`
   (collection/emission/parse). **Lua needs in-game validation (not CI-runnable).**
 - Commander-capture campaign engine — **Phase 1 BUILT (gated by `scar_command_post_intel`,
@@ -1322,6 +1342,16 @@ returns to the squadron).
   TACAN). The King also carries an F10 **Combat SAR → LARS** button that reads MOOSE CSAR's
   live downed-pilot table and reports each active survivor (position + bearing/range from
   the King) for the crew to relay.
+  - **AI-only beacon activation (crash guard).** The scripted `ActivateTACAN` is pushed
+    **only** to a live, AI-controlled King (`unit:IsAlive() and unit:GetPlayerName() == nil`
+    in `combatsar-config.lua` `activateKing()`). A **player-occupied** King has no AI
+    controller, so the `ActivateBeacon` command has *"no executor"* (logged as an
+    `AI::Controller exception`) and — because an air-tracking beacon is re-evaluated every
+    sim tick against the host unit — was the suspected trigger for an in-game `ACCESS_VIOLATION`
+    CTD in DCS's discrete-command executor (`wSimCalendar::DoActionsUntil`). When a human flies
+    the King, the crew **sets TACAN in-cockpit**; the LARS F10 menu still attaches either way.
+    (2026-06-25 in-game pass: C-130 King flown by the player → "No executor for command
+    ActivateBeacon" + CTD; guard added.)
 - **Airframes (player-flyable + armed).** The rescuer is the **CH-47Fbl1** (the playable ED
   Chinook, `Combat SAR: 85` in its yaml) with a **`Retribution Combat SAR` payload that mounts
   the port + starboard door M60D guns** (`{CH47_PORT_M60D}`/`{CH47_STBD_M60D}`,

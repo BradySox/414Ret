@@ -266,7 +266,13 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
         activatedKings[name] = true
         if king.tacanChannel then
             local unit = grp:GetUnit(1)
-            if unit then
+            -- Only push the scripted ActivateBeacon command to an AI-controlled, live
+            -- unit. A player-occupied King has no AI controller, so the command has "no
+            -- executor" (logged as an AI::Controller exception) and -- because an
+            -- air-tracking beacon is re-evaluated every sim tick against the host unit --
+            -- is the suspected trigger for the discrete-command-queue CTD seen in-game.
+            -- Player crews set TACAN in-cockpit instead; the LARS menu still attaches.
+            if unit and unit:IsAlive() and unit:GetPlayerName() == nil then
                 unit:GetBeacon():ActivateTACAN(
                     tonumber(king.tacanChannel),
                     king.tacanBand or "Y",

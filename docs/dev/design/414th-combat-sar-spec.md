@@ -91,6 +91,15 @@ shape as the MANTIS / CTLD plugins.
   allocates the channel from the shared TACAN pool (`register_combat_sar_king`, best-effort) and emits
   it per King; the Lua attaches the beacon on group **birth** so a delayed/AI-spawned King is covered,
   with a dedup guard.
+  - **AI-only activation (2026-06-25 crash fix).** `activateKing()` now pushes `ActivateTACAN`
+    **only** when `unit:IsAlive() and unit:GetPlayerName() == nil`. A **player-flown** King has no
+    AI controller, so the `ActivateBeacon` command logged `AI::Controller exception: No executor for
+    command "ActivateBeacon"` and — as an air-tracking beacon re-evaluated every sim tick against the
+    host unit — was the suspected trigger for a hard `ACCESS_VIOLATION` CTD in DCS's discrete-command
+    executor (`wSimCalendar::DoActionsUntil` / `CommandsTraceDiscreteIsOn`; empty Lua traceback → ED
+    native fault). A human King therefore **sets TACAN in-cockpit** off the planned channel; the LARS
+    F10 menu still attaches. The scripted beacon path is exercised by an **AI** King (e.g.
+    `auto_combat_sar` standing alert).
 - **LARS — survivor-locator (SME ask).** An F10 **"Combat SAR → LARS - Locate Survivors"** button on
   each King reads MOOSE CSAR's live `downedPilots` table and messages the King a nearest-first list of
   every active survivor: **position** (reusing CSAR's settings-aware coord formatter) and **bearing/range

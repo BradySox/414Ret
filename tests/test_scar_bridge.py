@@ -143,6 +143,41 @@ def test_default_target_yields_spawn_tasking() -> None:
         assert (threat.dest_x, threat.dest_y) == (threat.spawn_x, threat.spawn_y)
 
 
+def test_spawn_tasking_carries_readable_signature_and_target_link() -> None:
+    # The kneeboard brief needs a player-readable HVT signature + a back-link to the
+    # flight's target (matched by id() within one generation pass).
+    target = MagicMock()
+    target.position = Point(1000, 2000, None)  # type: ignore[arg-type]
+    game = _game_with(_coalition_with_target(target))
+
+    tasking = _build(game)[0]
+
+    # SCAR_HVT_SIGNATURE = SA-9 + command + 2x truck, counted + named for the pilot.
+    assert tasking.signature_text == "1x SA-9 + 1x command vehicle + 2x truck"
+    # _make_static (applied last) must preserve the back-link to the package target.
+    assert tasking.target_id == id(target)
+
+
+def test_missile_tasking_signature_names_the_scud() -> None:
+    target = MagicMock(spec=MissileSiteGroundObject)
+    target.position = Point(0, 0, None)  # type: ignore[arg-type]
+    target.groups = [MagicMock(group_name="scud-1")]
+    tasking = _build(_game_with(_coalition_with_target(target)))[0]
+
+    assert tasking.variant == "missile"
+    assert tasking.signature_text == "mobile SCUD launcher (TEL)"
+    assert tasking.target_id == id(target)
+
+
+def test_readable_signature_counts_and_names_units() -> None:
+    from game.missiongenerator.scarluadata import _readable_signature
+
+    assert _readable_signature(SCAR_HVT_SIGNATURE) == (
+        "1x SA-9 + 1x command vehicle + 2x truck"
+    )
+    assert _readable_signature(()) == "armor"
+
+
 def test_decoys_are_scattered_not_on_one_ring() -> None:
     # Decoys/clutter must spread across the area at varied ranges, not sit on a
     # single fixed-radius ring (which read as an obviously artificial circle).

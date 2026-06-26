@@ -44,6 +44,17 @@ SCAR_DECOY_SIGNATURES: tuple[tuple[str, ...], ...] = (
 SCAR_CLUTTER_SIGNATURE: tuple[str, ...] = (SCAR_TRUCK, SCAR_TRUCK)
 SCAR_CLUTTER_COUNT = 3
 
+# Player-facing names for the brief signature -- mirror the Lua SCAR_UNIT_NAMES
+# (resources/plugins/scar/scar_414_init.lua) so the kneeboard reads the same as the
+# in-game MAGIC calls.
+SCAR_DISPLAY_NAMES: dict[str, str] = {
+    SCAR_HVT_SAM: "SA-9",
+    SCAR_COMMAND: "command vehicle",
+    SCAR_TRUCK: "truck",
+    "ZSU-23-4 Shilka": "ZSU-23-4",
+    "ZU-23 Emplacement": "ZU-23",
+}
+
 # Threat laydown (R9): scattered short-range AAA + an occasional SA-9 — contested,
 # but deliberately NOT a SEAD package (no medium/long-range SAMs). These are
 # spawned at runtime, so they never trip the planner's auto SEAD-escort request
@@ -207,6 +218,15 @@ class ScarTasking:
     sof_radius_m: float = 0.0
     sof_country_id: int = 0
     sof_unit_type: str = ""  # DCS unit id the Lua spawns for the SOF team
+    # The full HVT signature, player-readable (e.g. "1x SA-9 + 1x command vehicle +
+    # 2x truck"), for the SCAR kneeboard brief so the pilot knows what to ID without
+    # the coalition-wide screen call. Empty when there's no meaningful signature.
+    signature_text: str = ""
+    # id() of the package target this tasking was built for. The kneeboard matches a
+    # SCAR flight to its tasking by id(flight.package.target) within the same mission-
+    # generation pass. Transient: this dataclass is emitted to Lua + read by the
+    # kneeboard, never pickled, so a raw id() is safe here.
+    target_id: int = 0
 
 
 def _ring_point(
@@ -266,6 +286,35 @@ def _real_signature(target: object) -> tuple[str, ...]:
     except (AttributeError, TypeError):
         return ()
     return tuple(sig)
+
+
+def _display_name(type_id: str) -> str:
+    """Readable name for a DCS ground-unit type id: the SCAR name map first (in sync
+    with the Lua), then pydcs' display name, then the raw id as a last resort."""
+    name = SCAR_DISPLAY_NAMES.get(type_id)
+    if name:
+        return name
+    try:
+        from game.dcs.groundunittype import GroundUnitType
+
+        return GroundUnitType.named(type_id).display_name
+    except Exception:
+        return type_id
+
+
+def _readable_signature(sig: tuple[str, ...]) -> str:
+    """Counted, player-readable signature, e.g. "1x SA-9 + 1x command vehicle + 2x
+    truck" (insertion order preserved). Empty signature -> "armor"."""
+    counts: dict[str, int] = {}
+    order: list[str] = []
+    for type_id in sig:
+        if type_id not in counts:
+            counts[type_id] = 0
+            order.append(type_id)
+        counts[type_id] += 1
+    if not order:
+        return "armor"
+    return " + ".join(f"{counts[t]}x {_display_name(t)}" for t in order)
 
 
 def _group_is_mobile(target: object) -> bool:
@@ -617,6 +666,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         fire_target_x=fx,
                         fire_target_y=fy,
                         fail_zone_radius_m=SCAR_CITY_RADIUS_M,
+                        signature_text="mobile SCUD launcher (TEL)",
+                        target_id=id(target),
                     )
                 )
             elif isinstance(target, VehicleGroupGroundObject) and _group_is_mobile(
@@ -726,6 +777,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         sof_radius_m=sof_radius,
                         sof_country_id=sof_country,
                         sof_unit_type=sof_type,
+                        signature_text=_readable_signature(hvt_signature),
+                        target_id=id(target),
                     )
                 )
             else:
@@ -772,6 +825,8 @@ def build_scar_taskings(game: "Game", mission_start: "datetime") -> list[ScarTas
                         sof_radius_m=sof_radius,
                         sof_country_id=sof_country,
                         sof_unit_type=sof_type,
+                        signature_text=_readable_signature(SCAR_HVT_SIGNATURE),
+                        target_id=id(target),
                     )
                 )
     # Loiter-and-task rework: the kill box is STATIC. Zero out the flee/chase the

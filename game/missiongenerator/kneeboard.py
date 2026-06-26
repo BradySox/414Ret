@@ -64,6 +64,7 @@ from .kneeboard_recon.atis import (
     wind_from_deg,
 )
 from .missiondata import AwacsInfo, TankerInfo
+from .scarluadata import ScarTasking
 from ..persistency import kneeboards_dir
 
 if TYPE_CHECKING:
@@ -1507,9 +1508,15 @@ class ScarTaskPage(KneeboardPage):
     so this page is guidance, not exact values.
     """
 
-    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
+    def __init__(
+        self,
+        flight: FlightData,
+        dark_kneeboard: bool,
+        tasking: Optional[ScarTasking] = None,
+    ) -> None:
         self.flight = flight
         self.dark_kneeboard = dark_kneeboard
+        self.tasking = tasking
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -1523,6 +1530,20 @@ class ScarTaskPage(KneeboardPage):
             "campaign target — so there's no scoring to chase.",
             wrap=True,
         )
+
+        # The full HVT signature for this tasking, so the pilot can win the ID puzzle
+        # off the kneeboard rather than the (now group-targeted) MAGIC call. No exact
+        # target coords by design — finding it in the box is the task.
+        signature = self.tasking.signature_text if self.tasking else ""
+        if signature:
+            writer.heading("TARGET SIGNATURE")
+            writer.text(
+                f"Full signature: {signature}.\n"
+                "DECOYS in the box carry a PARTIAL match (one element dropped) — match "
+                "ALL of it before you shoot; hitting a decoy costs your side budget "
+                "(mis-ID).",
+                wrap=True,
+            )
 
         writer.heading("FIND + ID")
         writer.text(
@@ -1810,11 +1831,31 @@ class KneeboardGenerator(MissionInfoGenerator):
         }
     )
 
-    def __init__(self, mission: Mission, game: "Game") -> None:
+    def __init__(
+        self,
+        mission: Mission,
+        game: "Game",
+        scar_taskings: Optional[List[ScarTasking]] = None,
+    ) -> None:
         super().__init__(mission, game)
         self.dark_kneeboard = self.game.settings.generate_dark_kneeboard and (
             self.mission.start_time.hour > 19 or self.mission.start_time.hour < 7
         )
+        # SCAR taskings (one per SCAR target), so a SCAR flight's kneeboard can carry
+        # its own target signature instead of relying on the coalition-wide call.
+        self.scar_taskings: List[ScarTasking] = scar_taskings or []
+
+    def _scar_tasking_for(self, flight: FlightData) -> Optional[ScarTasking]:
+        """The SCAR tasking built for this flight's package target, if any. Matched by
+        object identity (same generation pass; see ScarTasking.target_id)."""
+        target = getattr(flight.package, "target", None)
+        if target is None:
+            return None
+        target_id = id(target)
+        for tasking in self.scar_taskings:
+            if tasking.target_id == target_id:
+                return tasking
+        return None
 
     def generate(self) -> None:
         """Generates a kneeboard per client flight."""
@@ -1911,7 +1952,9 @@ class KneeboardGenerator(MissionInfoGenerator):
                     king_beacons.append(f.combat_sar_king)
             return CombatSarTaskPage(flight, king_beacons, self.dark_kneeboard)
         elif flight.flight_type is FlightType.SCAR:
-            return ScarTaskPage(flight, self.dark_kneeboard)
+            return ScarTaskPage(
+                flight, self.dark_kneeboard, self._scar_tasking_for(flight)
+            )
         return None
 
     def generate_flight_kneeboard(

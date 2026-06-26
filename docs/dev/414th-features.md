@@ -321,13 +321,31 @@ PICKUP|ON-SCENE COMMAND / BEACON) is a heading + rule + larger body text, with t
 height distributed as capped even gaps so a short brief doesn't yawn; (2) **`SupportPage`** —
 the Package / AEW&C / Tankers / JTAC tables get the same heading+rule treatment, spaced to
 span the page (gap grows when there's no Airfield Directory below; otherwise a fixed gap
-leaves room for the directory and its pagination); (3) **`BriefingPage`** — the Friendly
-Packages list renders in **two side-by-side columns** once it would overflow a single column,
-using the wasted right half of the page and eliminating the near-empty continuation page in
-the common case (only > ~2× a column's capacity still paginates). The recon pages are
+leaves room for the directory and its pagination); (3) the Friendly Packages list renders in
+**two side-by-side columns** once it would overflow a single column, using the wasted right
+half of the page (only > ~2× a column's capacity still paginates). The recon pages are
 untouched (still golden-tested). This is a visual change CI can't exercise — see in-game-pass
 row **H1**/**H2**. **H1 (overflow pagination) in-game pass ☑ VERIFIED 2026-06-25**; H2 still
 pending.
+
+**Kneeboard de-duplication pass.** With every optional page enabled the deck printed the same
+data several times; a single-home-per-datum pass fixes it, each change conditional on the
+*other* page existing (so a deck with options off is byte-identical to before):
+- **Weather** (temp / QNH / QFE / winds / clouds / sunrise-sunset) is dropped from the always-on
+  **Mission Info** (`BriefingPage`, `omit_weather`) when the recon **Departure** page is generated
+  for the flight (`_should_emit_departure`), which already carries the field-weather grid.
+- The flight-plan **Min-fuel** column is dropped from Mission Info (`FlightPlanBuilder`,
+  `include_min_fuel`) when the **Fuel Ladder** page is enabled — the ladder carries Min + Plan +
+  Margin, so the bingo-at-waypoint figure isn't printed twice.
+- The **Friendly Packages** list moved out of the bottom of Mission Info to its own
+  `FriendlyPackagesPage` (still two-column + paginating), so the list isn't split across Mission
+  Info and a near-empty spill page; the package targets **map** stays as the spatial complement.
+- The standalone **SEAD/Strike Target Info** page is suppressed when the recon **Detail** page
+  covers the same target — that page already lists the emitters + role + HARM **ALIC** over a
+  satellite view — **but only in EXACT intel** (the recon page shows exact coords while the task
+  page intentionally fuzzes them in Approximate mode, §5, so the fold never leaks a fuzzed target).
+The wiring lives in `KneeboardGenerator.generate_flight_kneeboard`. Visual change → in-game pass
+**H8**.
 
 **Custom kneeboard import (UI, stored in the save).** DCS kneeboards are per-**airframe**, not
 per-flight, so to add your own kneeboard page to a fleet of player flights you'd otherwise

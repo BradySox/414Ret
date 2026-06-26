@@ -588,9 +588,8 @@ so the two docs don't drift.
   when the King was player-flown; **now guarded** (`activateKing()` skips `ActivateTACAN` unless
   `unit:IsAlive() and unit:GetPlayerName() == nil`). AI-King fail: TACAN absent (no channel allocated,
   or `ActivateTACAN` not firing) or **frozen at the spawn point** instead of tracking; LARS empty when
-  survivors exist (`csar.downedPilots` not read) or duplicated F10 entries
-  (birth/start-sweep/player-enter dedup failed); King menu missing on a player client-slot,
-  delayed, or AI King (activation handler not attaching).
+  survivors exist (`csar.downedPilots` not read) or duplicated F10 entries (birth/start-sweep dedup
+  failed); King menu missing on a delayed/AI King (birth handler not attaching).
 - **Note (player King):** A human-flown King has no AI controller, so the scripted beacon is **skipped
   by design** — the crew dials the planned channel manually in the cockpit. Re-test target: confirm an
   **AI** King still lights its TACAN and no CTD recurs with a player King.

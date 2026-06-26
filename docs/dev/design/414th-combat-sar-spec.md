@@ -89,8 +89,7 @@ shape as the MANTIS / CTLD plugins.
   `RadioBeacon`/ADF is fixed-point, so following a moving King would need a position-refresh loop for
   no gain over the TACAN; the reserved VHF-FM freq and the `beaconFreqHz` plumbing are gone. Python
   allocates the channel from the shared TACAN pool (`register_combat_sar_king`, best-effort) and emits
-  it per King; the Lua attaches King activation on mission-start live groups and group
-  **birth/player-enter** so delayed/AI-spawned Kings and client-slot player Kings are covered,
+  it per King; the Lua attaches the beacon on group **birth** so a delayed/AI-spawned King is covered,
   with a dedup guard.
   - **AI-only activation (2026-06-25 crash fix).** `activateKing()` now pushes `ActivateTACAN`
     **only** when `unit:IsAlive() and unit:GetPlayerName() == nil`. A **player-flown** King has no

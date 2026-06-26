@@ -254,7 +254,10 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     -- Activate a King's TACAN beacon + LARS menu once (dedup so the start sweep and
     -- the birth handler can't double up the F10 menu).
     local activatedKings = {}
-    local function activateKing(grp)
+    local function activateKing(grp, reason)
+        if not grp then
+            return
+        end
         local name = grp:GetName()
         if activatedKings[name] then
             return
@@ -263,9 +266,15 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
         if not king then
             return
         end
+        if not grp:IsAlive() then
+            return
+        end
+        local unit = grp:GetUnit(1)
+        if not unit then
+            return
+        end
         activatedKings[name] = true
         if king.tacanChannel then
-            local unit = grp:GetUnit(1)
             -- Only push the scripted ActivateBeacon command to an AI-controlled, live
             -- unit. A player-occupied King has no AI controller, so the command has "no
             -- executor" (logged as an AI::Controller exception) and -- because an
@@ -282,25 +291,64 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
             end
         end
         addLarsMenu(csar, grp)
+        env.info(
+            string.format(
+                "DCSRetribution|Combat SAR King - activated '%s' via %s (TACAN %s%s, LARS menu attached)",
+                name,
+                tostring(reason or "unknown"),
+                tostring(king.tacanChannel or "none"),
+                tostring(king.tacanBand or "")
+            )
+        )
     end
 
     -- Kings already present at mission start...
     for name, _ in pairs(kingByName) do
         local grp = GROUP:FindByName(name)
         if grp and grp:IsAlive() then
-            activateKing(grp)
+            activateKing(grp, "mission-start")
         end
     end
 
-    -- ...and any that spawn later (delayed / AI standing-alert Kings).
-    local function onKingBirth(self, EventData)
+    local function activateKingFromEvent(EventData, reason)
         local grp = EventData and EventData.IniGroup
+        if not grp and EventData and EventData.IniGroupName then
+            grp = GROUP:FindByName(EventData.IniGroupName)
+        end
         if grp and kingByName[grp:GetName()] then
-            activateKing(grp)
+            -- Client-slot player entry can race F10 menu creation. Try now, then
+            -- once more after DCS has fully attached the player to the group.
+            activateKing(grp, reason)
+            if not activatedKings[grp:GetName()] then
+                local groupName = grp:GetName()
+                timer.scheduleFunction(
+                    function()
+                        activateKing(
+                            GROUP:FindByName(groupName),
+                            tostring(reason) .. "-deferred"
+                        )
+                    end,
+                    nil,
+                    timer.getTime() + 1
+                )
+            end
         end
     end
+
+    -- ...and any that spawn later (delayed / AI standing-alert Kings), plus client
+    -- slot player-entry events where the group exists before it is truly usable.
+    local function onKingBirth(self, EventData)
+        activateKingFromEvent(EventData, "birth")
+    end
+
+    local function onKingPlayerEnter(self, EventData)
+        activateKingFromEvent(EventData, "player-enter")
+    end
+
     local kingBirthHandler = EVENTHANDLER:New()
     kingBirthHandler:HandleEvent(EVENTS.Birth, onKingBirth)
+    kingBirthHandler:HandleEvent(EVENTS.PlayerEnterAircraft, onKingPlayerEnter)
+    kingBirthHandler:HandleEvent(EVENTS.PlayerEnterUnit, onKingPlayerEnter)
 
     env.info(
         string.format(

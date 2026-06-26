@@ -1353,6 +1353,8 @@ returns to the squadron).
     sim tick against the host unit — was the suspected trigger for an in-game `ACCESS_VIOLATION`
     CTD in DCS's discrete-command executor (`wSimCalendar::DoActionsUntil`). When a human flies
     the King, the crew **sets TACAN in-cockpit**; the LARS F10 menu still attaches either way.
+    The Lua attaches King activation on mission-start live groups, group birth, and player-enter
+    so client-slot Kings get the F10 menu after the pilot joins.
     (2026-06-25 in-game pass: C-130 King flown by the player → "No executor for command
     ActivateBeacon" + CTD; guard added.)
 - **Airframes (player-flyable + armed).** The rescuer is the **CH-47Fbl1** (the playable ED

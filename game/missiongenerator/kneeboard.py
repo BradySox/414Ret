@@ -42,6 +42,7 @@ from game.ato.flighttype import FlightType
 from game.ato.flightwaypoint import FlightWaypoint
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.data.alic import AlicCodes
+from game.data.brevity_reference import brevity_for
 from game.data.threat_reference import ThreatReference, reference_for
 from game.dcs.aircrafttype import AircraftType
 from game.radio.radios import RadioFrequency
@@ -1934,6 +1935,54 @@ class ThreatIntelBriefPage(KneeboardPage):
         return pages or [self]
 
 
+class BrevityCard(KneeboardPage):
+    """Comms & Brevity card: package code words + task-filtered brevity reminders.
+
+    Two layers: the package's three SRS **code words** (push / success / abort,
+    owned by the ``Package`` so the planner briefs off the same value — see
+    ``game/ato/codewords.py``) and a short **brevity** crib filtered to the flight's
+    task (``game/data/brevity_reference.py``). Both are human comms aids; nothing
+    scripts off them.
+    """
+
+    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
+        self.flight = flight
+        self.dark_kneeboard = dark_kneeboard
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        writer.title(f"{self.flight.callsign} Comms & Brevity{custom}")
+
+        code_words = self.flight.package.code_words
+        writer.heading("Package Code Words")
+        writer.rule()
+        writer.table(
+            [
+                ["PUSH", code_words.push],
+                ["SUCCESS", code_words.success],
+                ["ABORT", code_words.abort],
+            ],
+            headers=["Event", "Word"],
+        )
+        writer.text(
+            "Call over SRS — PUSH at the commit, SUCCESS on target down, ABORT to "
+            "knock it off. Shared across the package.",
+            wrap=True,
+        )
+        writer.vspace(12)
+
+        label, lines = brevity_for(self.flight.flight_type)
+        writer.heading(f"Brevity — {label}")
+        writer.rule()
+        writer.table(
+            [[term, meaning] for term, meaning in lines],
+            headers=["Call", "Meaning"],
+            font=writer.content_font,
+        )
+        writer.write(path)
+
+
 class NotesPage(KneeboardPage):
     """A kneeboard page containing the campaign owner's notes."""
 
@@ -2347,6 +2396,12 @@ class KneeboardGenerator(MissionInfoGenerator):
                         flight, threat_cards, unidentified, self.dark_kneeboard
                     )
                 )
+
+        # Comms & Brevity card: package code words + task-filtered brevity, gated by
+        # the feature toggle. The code words are also surfaced to planners (ATO package
+        # tooltip + join-waypoint echo); this is the in-cockpit copy.
+        if self.game.settings.enable_package_code_words:
+            pages.append(BrevityCard(flight, self.dark_kneeboard))
 
         # Recon overview + detail + airfield-departure pages (gated by settings).
         if self.game.settings.generate_target_recon_kneeboard:

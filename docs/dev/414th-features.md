@@ -362,6 +362,24 @@ page; overflow flows onto `(cont.)` continuation pages via the page's own card-p
 photos were evaluated and deferred — DCS ships only `.dds` model textures, not portraits; reading
 + converting them at gen-time is fragile for marginal value on a 960px page.)*
 
+**Package code words + Comms & Brevity card.** A squadron-grown idea: each `Package` gets three
+SRS **code words** — push / success / abort (`game/ato/codewords.py`, `PackageCodeWords`) — that
+its flight calls over voice. They're owned by the `Package` (a lazy `code_words` property,
+assigned once and stored so it's stable across regenerations within a turn and pickled; `getattr`
+migrates old saves) so the **single source of truth** is shared by everything downstream, and a
+fresh package next turn draws new words. Because **planners must brief off them before the `.miz`
+exists**, they're surfaced pre-generation in two places: a **package tooltip** in the ATO list
+(`qt_ui/models.py` `AtoModel` `ToolTipRole`) and a **`PUSH <word>` tag echoed on the JOIN
+waypoint** (`WaypointBuilder._join_pretty_name` — JOIN is the package commit point and never a
+`TARGET_POINT`, so it can't leak into DTC slot tags). In-cockpit they get a **Comms & Brevity**
+kneeboard page (`BrevityCard`): the three code words plus a short **task-filtered brevity crib**
+(`game/data/brevity_reference.py`, keyed by `FlightType` → A2A / SEAD / STRIKE / CAS / EW /
+CONTROL / GENERAL). All of it is a *human* comms aid — nothing scripts off the words (these are
+multiplayer missions, not the single-player campaigns the idea was studied from). One feature
+toggle, `enable_package_code_words` (default OFF), gates the tooltip, the waypoint echo, and the
+kneeboard page together. Covered by `tests/ato/test_package_code_words.py` +
+`tests/data/test_brevity_reference.py`; in-game / planner-UI pass pending (H6).
+
 ---
 
 ## 5. Player target location precision

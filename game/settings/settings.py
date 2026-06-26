@@ -1294,6 +1294,19 @@ class Settings:
             "until a TARPS overflight identifies it. Off by default."
         ),
     )
+    enable_package_code_words: bool = boolean_option(
+        "Package code words & comms/brevity card",
+        MISSION_GENERATOR_PAGE,
+        KNEEBOARD_SECTION,
+        default=False,
+        detail=(
+            "Give each package three SRS code words (push / success / abort) and surface "
+            "them so a briefing can be built before generation: a package tooltip in the "
+            "ATO list and a 'PUSH <word>' tag on the join waypoint, plus a Comms & "
+            "Brevity kneeboard page (the code words + a task-filtered brevity crib). "
+            "Human comms aids only — nothing scripts off them. Off by default."
+        ),
+    )
     target_recon_extra_threat_search_nmi: int = bounded_int_option(
         "Extra threat search radius (nmi)",
         MISSION_GENERATOR_PAGE,

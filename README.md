@@ -139,6 +139,11 @@ and selected later upstream fixes.
   a **how-to-defeat** note — like a campaign intelligence briefing. It respects recon fog: sites
   you haven't identified show only their threat tier ("Unidentified MERAD") until you fly a TARPS
   overflight. Off by default.
+- Optional **package code words** — each package gets three randomised SRS words (push / success /
+  abort) so a flight can call its events over voice. Planners see them *before* generating the
+  mission (a tooltip in the ATO list and a `PUSH <word>` tag on the join waypoint) to build a
+  briefing, and a **Comms & Brevity** kneeboard page carries the words plus a short brevity crib
+  filtered to each flight's task. Fresh words every turn, stable while you plan. Off by default.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
 
 ### Additional 414th content and integrations

@@ -239,16 +239,19 @@ consistent and worth mirroring; developer styles differ:
 
 | Idea | Existing 414th hook | Effort | Note |
 |---|---|---|---|
-| Threats & Codes kneeboard card (MEZ/HAD) | kneeboard gen §22; SEAD §6/§7 | **Low** | Pure template; data already in model |
-| Auto threat **dossier** page/PDF | recon fog §3; intel UI §4 | Med | v1 = one "Intel Brief" page; v2 = full dossier |
+| Threat dossier kneeboard (MEZ/HAD/defeat) | recon fog §3; SEAD §6/§7 | **Low/Med** | ✅ **BUILT** — Threat Intel Brief (§4) |
 | Auto-annotated threat/target map card | TARPS imagery §3; map layers §19 | Med | Reuse recon imagery + known-TGO data |
-| Fuel-ladder flight-plan card | kneeboard gen | **Low** | Per-WP fuel already computable |
+| Fuel-ladder flight-plan card | kneeboard gen | **Low** | Per-WP fuel already computable; **next up** |
+| Package code words + task-filtered brevity | kneeboard gen; planner UI | **Low/Med** | ✅ **BUILT** — `enable_package_code_words` (§4) |
 | Richer Mission Impact (ROE/airmanship/escort scoring) | Mission Impact debrief §4 | Med | Add weighted + penalty terms |
 | "Gauntlet"/quick-strike buy-support mode | purchase economy; drop-spawn §20 | Med/High | Random known TGO + support package |
 | Failsafe backup triggers on AI beats | SCAR §15 / Combat SAR §21 / TIC §9 Lua | **Low** | Defensive Lua pattern; do this regardless |
-| Abort/declare-emergency F10 option | SCAR/CSAR player flights | Low | Graceful-exit UX |
-| Code-word / brevity kneeboard block | kneeboard gen | **Low** | Flavor + radio discipline |
 | Personalized CO framing + bios + disclaimer | campaign intro docs | **Low** | Copy-writing, not code |
 
-**Top picks (low effort, high payoff):** the Threats & Codes card, the fuel-ladder card, the
-v1 Intel Brief page, and the **failsafe-trigger discipline** for the Lua features.
+**Shipped so far:** the Threat Intel Brief dossier and the package code words + Comms & Brevity
+card. **Next up (low effort, high payoff):** the **fuel-ladder flight-plan card**, then the richer
+Mission Impact scoring and the **failsafe-trigger discipline** for the Lua features.
+
+> **Note (multiplayer):** the code words are a *human* SRS aid — nothing scripts off them, unlike
+> the single-player campaigns the idea came from. The F10-menu mechanics those campaigns use stay
+> out of scope (see §3 caveat).

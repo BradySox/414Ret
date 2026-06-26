@@ -264,6 +264,17 @@ class AtoModel(QAbstractListModel):
         package = self.ato.packages[index.row()]
         if role == Qt.ItemDataRole.DisplayRole:
             return f"{package.package_description} {package.target.name}"
+        elif role == Qt.ItemDataRole.ToolTipRole:
+            # Surface the package's SRS code words to planners before the mission is
+            # generated, so a briefing can be built off them. Gated by the feature.
+            game = self.game
+            if game is not None and game.settings.enable_package_code_words:
+                cw = package.code_words
+                return (
+                    f"Code words — PUSH: {cw.push} · "
+                    f"SUCCESS: {cw.success} · ABORT: {cw.abort}"
+                )
+            return None
         elif role == AtoModel.PackageRole:
             return package
         return None

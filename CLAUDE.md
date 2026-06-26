@@ -250,6 +250,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Per-campaign (no cross-campaign leak like the global `Kneeboards/` folder); old saves migrate
     via `__setstate__`. (`game/customkneeboard.py`, `game/missiongenerator/kneeboard.py`,
     `qt_ui/windows/kneeboards/QCustomKneeboardsWindow.py`; features doc §4, checklist H1/H2/H4.)
+23. **Per-squadron DCS country** — each squadron's air units spawn under their own DCS *country*
+    (`squadron.country`, already set by preset YAML / inherited from the faction) so a mixed-nation
+    CJTF side gets nation-specific voiceovers/comms instead of one shared faction voice. A
+    `CountryAssigner` (`game/missiongenerator/countryassigner.py`) resolves the country per
+    squadron, registers every per-side nation on the coalition, and enforces the DCS one-country-
+    per-coalition rule (blue claims first; colliding red squadrons fall back to the red faction
+    country) while interning one canonical `Country` instance per id (pydcs attaches groups to the
+    instance). No-op for single-nation factions (the squadron loader already restricts them to the
+    faction country). Implements upstream issue #627. (`game/missiongenerator/missiongenerator.py`,
+    `game/missiongenerator/aircraft/aircraftgenerator.py`; features doc §23, checklist I1.)
 
 ---
 

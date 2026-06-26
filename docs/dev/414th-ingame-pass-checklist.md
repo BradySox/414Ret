@@ -745,6 +745,24 @@ so the two docs don't drift.
 
 ---
 
+## I. Mission generation
+
+### I1 — Per-squadron DCS country / nation voiceovers · §23 · ☐ UNTESTED
+- **Setup:** Start a campaign for a **CJTF (coalition) faction** whose air wing draws squadrons
+  from more than one nation (e.g. a Blue CJTF with both a US and a Greek viper squadron). Auto-plan
+  a turn so flights from at least two nations are tasked, generate the mission, and either inspect
+  it in the DCS Mission Editor (group → Country) or fly/observe AI flights and listen to AI radio.
+- **Pass:** Each flight's group is set to **its squadron's own country** (US squadron → USA, Greek
+  squadron → Greece), each coalition lists all the nations its squadrons use, and AI comms play the
+  **per-nation voice** rather than one shared faction voice. A single-nation faction is byte-for-byte
+  unchanged (all groups on the faction country).
+- **Fail signature:** all groups collapse onto one country (no per-nation voice); a country appears
+  under **both** coalitions (illegal `.miz` — the cross-side conflict rule failed); groups silently
+  missing from the saved mission (canonical-instance discipline broken — a duplicate `Country`
+  instance was passed at spawn vs. registered on the coalition).
+
+---
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

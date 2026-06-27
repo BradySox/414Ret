@@ -1184,6 +1184,26 @@ so the two docs don't drift.
   controls; a preset not flipping the expected fields; a blank page icon; a console error opening
   the dialog.
 
+### K2 — Campaign SITREP kneeboard band · §29 · ☐ UNTESTED (logic unit-tested + render-smoke-verified 2026-06-27)
+- **Headless adjudication (2026-06-27):** `tests/test_sitrep.py` covers the model + formatting
+  (side split, captured/lost by side, Combat SAR count, "claimed" enemy phrasing, singular/plural,
+  and the band-gating: off when disabled / no prior turn / quiet turn). `record_sitrep` is wired into
+  `commit()` (and added to the asserted `COMMIT_STEPS`). A **render smoke** drew the band through the
+  real `KneeboardPageWriter` (heading + five lines, 20 KB PNG, correct text). Kneeboard golden tests
+  unchanged (band defaults inert when there's no `last_sitrep`). **Residual (in-cockpit only):** the
+  band's look on a live kneeboard and that the numbers match the turn just flown.
+- **Setup:** Fly turn 1 of any campaign with `generate_sitrep_kneeboard` ON (default). On **turn 2**,
+  open the briefing / Game Plan kneeboard page.
+- **Pass:** A "CAMPAIGN SITREP" band shows at the bottom of the cover page — `Turn N - <date>`, friendly
+  losses, enemy (claimed) losses, any bases captured/lost, any pilots recovered — matching the previous
+  turn. **Turn 1 shows no band** (no prior turn); a **quiet turn** (no losses/captures/rescues) shows
+  none; with the toggle **off**, none. A flight with a **long flight plan** drops the band (fit guard)
+  rather than clipping the plan.
+- **Fail signature:** band present on turn 1 or after a quiet turn (gating wrong); numbers that don't
+  match the debrief; enemy losses not labelled "claimed"; the band pushing the flight plan off the page
+  (the `_draw_section_if_fits` guard failed); the band missing when there were real results; a stale
+  SITREP from two turns ago (capture not running each `commit`).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

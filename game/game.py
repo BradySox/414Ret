@@ -22,6 +22,7 @@ from game.customkneeboard import CustomKneeboard
 from game.ground_forces.ai_ground_planner import GroundPlanner
 from game.models.game_stats import GameStats
 from game.plugins import LuaPluginManager
+from game.sitrep import Sitrep
 from game.utils import Distance
 from . import naming, persistency
 from .ato import Flight
@@ -114,6 +115,10 @@ class Game:
         self.theater = theater
         self.campaign_name = campaign_name
         self.turn = 0
+        # One-turn campaign summary (§29) captured at mission-results commit and
+        # shown on the next turn's kneeboard cover band. None until the first
+        # mission is flown; persisted.
+        self.last_sitrep: Optional[Sitrep] = None
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -171,6 +176,7 @@ class Game:
         state.setdefault("pending_unit_placements", [])
         state.setdefault("blank_canvas_setup", False)
         state.setdefault("custom_kneeboards", [])
+        state.setdefault("last_sitrep", None)
         self.__dict__.update(state)
         if not hasattr(self, "laser_code_registry"):
             self.laser_code_registry = LaserCodeRegistry()

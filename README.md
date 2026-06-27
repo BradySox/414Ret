@@ -147,6 +147,10 @@ and selected later upstream fixes.
   and an adaptive 4th page (recon target photo when target recon is on, otherwise the fuel ladder + full
   package list). The optional pages below fold into these instead of sprawling to a dozen pages; a simple
   CAP gets two. Turn off *Compact kneeboard* for the full multi-page deck with recon imagery.
+- A **campaign SITREP band** on the briefing/Game Plan page gives you a "what happened last turn"
+  brief in the cockpit: both sides' losses (the enemy's as *claimed*), bases captured or lost, and
+  downed pilots recovered. It appears from your second mission on, hides after a quiet turn, and only
+  shows when it fits under the flight plan. On by default (*Campaign SITREP band*, Kneeboards page).
 - Kneeboards are restyled to use the page: clean headings with underline rules and spacing
   (no wasted bottom-half), and the Friendly Packages list flows into two columns when long.
 - When several flights share an airframe (DCS shows them one stacked kneeboard), a one-page

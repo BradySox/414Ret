@@ -319,6 +319,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`game/settings/settings.py`, `game/settings/difficultypreset.py`,
     `qt_ui/windows/settings/QSettingsWindow.py`, `qt_ui/uiconstants.py`; features doc §28,
     checklist K1.)
+29. **Campaign SITREP kneeboard band** — a "what happened last turn" digest on the next mission's
+    kneeboard cover page (a cockpit intel brief). `MissionResultsProcessor.commit()` gets a final
+    `record_sitrep` step that reads the debriefing it already has — per-side losses (`loss_counts`),
+    base captures (the cached pre-commit snapshot), Combat SAR rescues — into a `Sitrep`
+    (`game/sitrep.py`) stored as `game.last_sitrep` (pickled, `__setstate__` default None). Enemy
+    losses are framed as **"claimed"** to respect the recon-fog model. It rides the `BriefingPage`
+    cover (full + compact decks, §25) via the same generator-computes-lines pattern as the BLUF band,
+    drawn at the bottom through `_draw_section_if_fits` so it never pushes the flight plan off; hidden
+    on turn 1 / a quiet turn / when the `generate_sitrep_kneeboard` toggle (Kneeboards page, default
+    ON) is off. v1 covers losses/captures/rescues; front movement + SCAR commander capture are
+    deferred. (`game/sitrep.py`, `game/sim/missionresultsprocessor.py`, `game/game.py`,
+    `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`; features doc §29,
+    checklist K2.)
 
 ---
 

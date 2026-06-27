@@ -114,6 +114,10 @@ class FrontLine(MissionTarget):
             FlightType.REFUELING,
             # Combat SAR = a pilot-rescue orbit anchored on the FLOT (CH-47 + C-130).
             FlightType.COMBAT_SAR,
+            # SCAR = the "Sandy" RESCAP escort in the rescue package (A-10/Apache):
+            # protects the downed pilot and walks Jolly Green in. Front-anchored like
+            # Combat SAR so the King + Jolly + Sandy all frag against the same FLOT.
+            FlightType.SCAR,
             # TODO: FlightType.TROOP_TRANSPORT
             # TODO: FlightType.EVAC
         ]

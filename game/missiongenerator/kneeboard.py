@@ -1661,12 +1661,12 @@ class CombatSarTaskPage(KneeboardPage):
 
 
 class ScarTaskPage(KneeboardPage):
-    """Player briefing for a SCAR (loiter-and-task) flight.
+    """Player briefing for a SCAR ("Sandy") rescue-escort flight.
 
-    Guidance for the loiter rework: hold over the kill box, find + ID the real
-    target among look-alikes (mis-ID costs budget), and let the on-scene controller
-    ("MAGIC") talk you on and designate. The MOOSE scar plugin drives the live cues,
-    so this page is guidance, not exact values.
+    Sandy is the RESCAP escort in the Combat SAR package: hold near the FLOT with
+    the King and Jolly Green, protect the downed pilot, suppress the threats around
+    them, and walk the rescue helo in. The King (C-130 on-scene commander) runs the
+    rescue and talks Sandy on; this page is role guidance, not exact values.
     """
 
     def __init__(
@@ -1693,45 +1693,33 @@ class ScarTaskPage(KneeboardPage):
             )
             writer.title(f"{self.flight.callsign} SCAR{custom}")
 
-        writer.heading("TASK")
+        writer.heading("ROLE — SANDY (RESCAP escort)")
         writer.text(
-            "Hold over the kill box and service the real enemy armor the on-scene "
-            "controller (MAGIC) designates. Kills count automatically — it's a real "
-            "campaign target — so there's no scoring to chase.",
+            "You are SANDY: the rescue escort in the Combat SAR package. Hold near "
+            "the FLOT with the KING (C-130 on-scene commander) and JOLLY GREEN (the "
+            "rescue helo). Bring the downed pilot home alive — protect the survivor, "
+            "suppress the threats around them, and walk Jolly Green in.",
             wrap=True,
         )
 
-        # The full HVT signature for this tasking, so the pilot can win the ID puzzle
-        # off the kneeboard rather than the (now group-targeted) MAGIC call. No exact
-        # target coords by design — finding it in the box is the task.
-        signature = self.tasking.signature_text if self.tasking else ""
-        if signature:
-            writer.heading("TARGET SIGNATURE")
-            writer.text(
-                f"Full signature: {signature}.\n"
-                "DECOYS in the box carry a PARTIAL match (one element dropped) — match "
-                "ALL of it before you shoot; hitting a decoy costs your side budget "
-                "(mis-ID).",
-                wrap=True,
-            )
-
-        writer.heading("FIND + ID")
+        writer.heading("WHEN A PILOT GOES DOWN")
         writer.text(
-            "- The box holds the real target mixed with look-alike DECOYS + clutter. "
-            "Match the FULL signature; hitting a decoy costs your side budget (mis-ID).\n"
-            "- On station MAGIC pops GREEN smoke on the box and talks you on. Work the "
-            "ID first; if you're stuck, MAGIC escalates to RED smoke on the real target "
-            "after ~2 min and clears you hot.",
+            "- Work for the KING — he runs the rescue and talks you onto the survivor "
+            "and the threats (voice/SRS; smoke and marks back him up).\n"
+            "- Kill the air defences and troops near the survivor so JOLLY GREEN can "
+            "get in and out. Keep the rescue helo alive — it is the mission.\n"
+            "- The enemy may push a party to capture the downed pilot. If they do, "
+            "destroy it before it reaches the survivor.",
             wrap=True,
         )
 
-        writer.heading("DESIGNATION")
+        writer.heading("COORDINATION")
         writer.text(
-            "- GREEN smoke = the box. RED smoke = the confirmed target, cleared hot.\n"
-            "- If a C-130 KING is on station it lases the target (laser code 1688 + IR "
-            "pointer) for LGBs / guided Mavericks. No King up = smoke + your own visual.\n"
-            '- F10 -> "MAGIC: say again SCAR target" re-pops the smoke if it burns out '
-            "(and re-calls the laser code).",
+            "- KING (C-130): on-scene commander — check in, take his talk-on, hold "
+            "where he tells you.\n"
+            "- JOLLY GREEN (helo): the pickup — escort it in, suppress on ingress, "
+            "cover the hover.\n"
+            "- Get the pilot to a friendly field and the aviator is spared at debrief.",
             wrap=True,
         )
 

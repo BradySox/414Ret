@@ -1,11 +1,11 @@
-"""Tests for the SCAR (Strike Coordination and Reconnaissance) flight type.
+"""Tests for the SCAR ("Sandy") rescue-escort flight type.
 
-Phase-1 planner work: SCAR is a selectable, opt-in air-to-ground task whose
-flight plan reuses the Armed Recon area/ingress machinery. The scenario itself
-(HVT/decoy/clutter spawn, movement, fail-on-arrival, scoring) lives in the SCAR
-Lua plugin and is validated in-game, not here. These tests lock in the
-cheap-to-verify Python contract: the FlightType classification, builder dispatch,
-fixed-wing capability gating, and target exposure.
+Rescue rework: SCAR is the RESCAP escort in the Combat SAR package (A-10/Apache)
+-- it holds near the FLOT, protects the downed pilot, and walks the rescue helo
+in. These tests lock in the cheap-to-verify Python contract: the FlightType
+classification, builder dispatch, capability gating (fixed-wing CAS + attack
+helos, bombers excluded), and front-line target exposure. The runtime rescue
+behaviour rides the combatsar plugin and is validated in-game, not here.
 """
 
 from pathlib import Path
@@ -21,11 +21,13 @@ from game.ato.flightplans.flightplanbuildertypes import FlightPlanBuilderTypes
 from game.ato.flightplans.scar import ScarFlightPlan
 from game.dcs.aircrafttype import AircraftType
 from game.theater.controlpoint import OffMapSpawn, Player
+from game.theater.frontline import FrontLine
 from game.theater.presetlocation import PresetLocation
 from game.theater.theatergroundobject import SamGroundObject, TheaterGroundObject
 from game.utils import Heading
 
-# Fixed-wing CAS airframe -> SCAR-capable; CAS-capable helo -> NOT SCAR-capable.
+# Fixed-wing CAS airframe AND CAS-capable attack helo -> SCAR-capable (Sandy);
+# a bomber (CAS for called coords only, no AFAC) is excluded.
 A10_VARIANT_ID = "A-10C Thunderbolt II (Suite 3)"
 APACHE_VARIANT_ID = "AH-64D Apache Longbow (AI)"
 BAI_ONLY_BOMBER_VARIANT_ID = "Tu-160 Blackjack"
@@ -57,13 +59,14 @@ def test_fixed_wing_cas_airframe_is_scar_capable(tmp_path: Path) -> None:
     assert a10.capable_of(FlightType.SCAR)
 
 
-def test_helicopter_cas_airframe_is_not_scar_capable(tmp_path: Path) -> None:
-    # SCAR is a fixed-wing convoy-hunt task; a CAS-capable helo must be excluded
-    # even though it has CAS, so the enrichment gate stays fixed-wing only.
+def test_attack_helicopter_cas_airframe_is_scar_capable(tmp_path: Path) -> None:
+    # SCAR is now the "Sandy" RESCAP escort: a CAS-capable attack helo (Apache)
+    # qualifies via its CAS capability (transport helos have no CAS, so the rescue
+    # helo itself is still excluded).
     persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
     apache = AircraftType.named(APACHE_VARIANT_ID)
     assert apache.capable_of(FlightType.CAS)
-    assert not apache.capable_of(FlightType.SCAR)
+    assert apache.capable_of(FlightType.SCAR)
 
 
 def test_bai_only_bomber_is_not_scar_capable(tmp_path: Path) -> None:
@@ -74,9 +77,12 @@ def test_bai_only_bomber_is_not_scar_capable(tmp_path: Path) -> None:
     assert not bomber.capable_of(FlightType.SCAR)
 
 
-def test_scar_is_offered_against_enemy_targets(monkeypatch: pytest.MonkeyPatch) -> None:
-    # SCAR rides the base offensive mission_types set, so any enemy ground object
-    # exposes it (here a SAM site, matching the TARPS-test fixture pattern).
+def test_scar_is_not_offered_against_generic_ground_targets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Rescue rework: SCAR is no longer a broad anti-armor task. It is scoped to the
+    # FLOT (the rescue context), so a generic enemy ground object no longer exposes
+    # it (here a SAM site, matching the TARPS-test fixture pattern).
     monkeypatch.setattr(TheaterGroundObject, "is_friendly", lambda self, player: False)
     location = PresetLocation(
         name="loc", position=Point(0, 0, None), heading=Heading(0)  # type: ignore
@@ -90,7 +96,18 @@ def test_scar_is_offered_against_enemy_targets(monkeypatch: pytest.MonkeyPatch) 
     sam = SamGroundObject(
         name="sam", location=location, control_point=control_point, task=None
     )
-    assert FlightType.SCAR in list(sam.mission_types(for_player=Player.RED))
+    assert FlightType.SCAR not in list(sam.mission_types(for_player=Player.RED))
+
+
+def test_scar_is_offered_against_the_front_line() -> None:
+    # The rescue package (King + Jolly + Sandy) frags against the FLOT, so the front
+    # still exposes SCAR even though generic ground targets no longer do. Build a
+    # FrontLine without its heavy __init__ -- mission_types/is_friendly need no
+    # instance state.
+    front = object.__new__(FrontLine)
+    types = list(front.mission_types(for_player=Player.RED))
+    assert FlightType.SCAR in types
+    assert FlightType.COMBAT_SAR in types
 
 
 def test_scar_not_offered_against_friendly_targets(

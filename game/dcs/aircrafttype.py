@@ -325,19 +325,21 @@ class AircraftType(UnitType[Type[FlyingType]]):
             ):
                 enrich[FlightType.ARMED_RECON] = value
 
-        # SCAR is the airborne-FAC role: loiter over a kill box, find and ID the
-        # real target among decoys, and control the attack. Only enrich aircraft
-        # that DCS lets fly the AFAC task -- this excludes strategic bombers
-        # (B-1/B-52/Tu-160), which carry a CAS priority for dropping on *called*
-        # coordinates but can't loiter and ID targets themselves. The SCAR
-        # priority/loadout is still inherited from the CAS family.
-        if (
-            FlightType.SCAR not in self.task_priorities
-            and not self.helicopter
-            and AFAC in self.dcs_unit_type.tasks
-        ):
+        # SCAR is the "Sandy" RESCAP escort in the Combat SAR rescue package: a
+        # CAS-capable attack platform that protects the downed pilot, suppresses the
+        # threats around them, and walks the rescue helo (Jolly Green) in. Priority
+        # and loadout are inherited from the CAS family. Fixed-wing must carry the
+        # DCS AFAC task -- this excludes strategic bombers (B-1/B-52/Tu-160), which
+        # hold a CAS priority only for dropping on *called* coordinates. Attack
+        # HELICOPTERS (AH-64, Ka-50, ...) qualify via their CAS capability; transport
+        # helos (CH-47 = the rescue craft itself) have no CAS and are excluded.
+        if FlightType.SCAR not in self.task_priorities:
             if value := self.task_priorities.get(FlightType.CAS):
-                enrich[FlightType.SCAR] = value
+                fixed_wing_afac = (
+                    not self.helicopter and AFAC in self.dcs_unit_type.tasks
+                )
+                if fixed_wing_afac or self.helicopter:
+                    enrich[FlightType.SCAR] = value
 
         # SOF insert is a fixed-wing transport airdrop (the C-130 "drop" leg): it
         # delivers a SCAR capture team to an ambush point via the air-assault CTLD

@@ -1141,8 +1141,11 @@ SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.m
   is still emitted but gates nothing; a kill before activation still counts as success. Each
   parked group is recorded as a `mover` (`add_mover`) and routed on activation via `set_group_route`
   (which forces alarm-GREEN so towed/SCUD groups actually drive; `mist.goRoute` — a hand-rolled
-  `setTask` did NOT reliably move them, don't revert). SOF capture binds **lazily** as the HVT
-  nears the ambush point (`maybe_bind_sof`). Tunables in `scar_414_init.lua` (`SCAR_PROXIMITY_M`)
+  `setTask` did NOT reliably move them, don't revert). SOF capture binds to a **player-delivered**
+  team near the (static) commander (`maybe_bind_sof` → `find_delivered_sof`); there is **no scripted
+  fallback** and no HVT-distance prebind — both made sense only for the retired chase, and a fallback
+  would spawn on the held commander and auto-capture with no player (the loiter-rework capture bug,
+  fixed). No delivery = no capture. Tunables in `scar_414_init.lua` (`SCAR_PROXIMITY_M`)
   / `scarluadata.py` (`SCAR_TRAVEL_M` ~15 NM, `SCAR_WINDOW_S`). **Verified in-game 2026-06-23**
   (HVT drives/flees on activation; no alarm-RED pinning — checklist F1).
 - **Results bridge:** the `scar` plugin (`resources/plugins/scar/`, default ON) writes the
@@ -1203,13 +1206,17 @@ SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.m
   front-line deployment ratios, combat-strength scoring, and automatic redeployment. A BLUE
   capture spends one BLUE team before base-capture ownership changes are committed. Files:
   `scarluadata.py` (`_sof_ambush`, `sof_*` fields, `_emit_sof`), `scar_414_init.lua`
-  (`spawn_sof`, `hvt_in_sof_zone`, the `captured` branch, `mark_sof`). First-pass simplification:
-  scripted delivery + auto-on-proximity; the actual player-flown insert is still deferred.
+  (`maybe_bind_sof` → `find_delivered_sof`, `sof_assaulting`, the `captured` branch, `mark_sof`).
+  (The original Phase 2c-1 `spawn_sof` scripted stand-in was removed by the loiter rework — it
+  auto-captured on a static target.)
   Plan: `docs/dev/design/414th-scar-phase2-sof-plan.md`. Tests: `tests/test_scar_bridge.py`.
 - Commander-capture **Phase 2c-2 BUILT (gated, #56)** — the player-flown insert. A
   `FlightType.SOF` air-assault-shaped delivery flyable by **fixed-wing transports** (the C-130
-  "drop"; helos are reserved for recovery) inserts the capture team at the SCAR ambush point; the
-  hybrid capture binds to a player-delivered team if one is near, else scripted-spawns a fallback.
+  "drop"; helos are reserved for recovery) inserts the capture team onto the (static) commander at
+  the kill box. The capture binds **only** to that player-delivered team (`find_delivered_sof`); the
+  loiter rework removed the scripted fallback, which on a static target would spawn on the commander
+  and auto-capture with no player (and removed the dead spawn-15-NM-out geometry so `sofX/Y`=centre
+  actually sits on the commander). No insert = no capture.
   Economy is **debit-on-frag** (`commit_sof_deployments`): one bought team per fragged insert,
   regardless of capture outcome. A clean capture **refunds** the team (it escapes with the
   hostage); a botch **strands** it. See plan §9d. **EW exclusion verified in-game 2026-06-23**

@@ -101,12 +101,13 @@ local function signature_text(convoy)
     return table.concat(parts, " + ")
 end
 
--- Phase 2a: F10 cue for the SOF ambush point (only when a team is set).
+-- F10 cue for the SOF capture point (only when a team is set). The point sits on the
+-- held commander; the player must airdrop a team onto it to take him alive.
 local function mark_sof(area, side)
     if area.sofX and area.sofRadius and area.sofRadius > 0 then
         pcall(trigger.action.markToCoalition, next_mark_id(),
-            "SOF ambush point — airdrop your SOF team here; the commander is " ..
-            "CAPTURED if he reaches it (a scripted team stands in if none is dropped)",
+            "SOF capture point — airdrop your SOF team onto the held commander here " ..
+            "to take him alive (no team delivered = no capture)",
             { x = area.sofX, y = 0, z = area.sofY }, side, true)
     end
 end
@@ -213,10 +214,6 @@ end
 -- Spawn one convoy group (HVT / decoy / clutter) and route it spawn -> dest.
 -- Returns the spawned group name or nil.
 local SCAR_UNIT_SPACING = 25 -- metres between units in a convoy line
--- Phase 2a SOF ambush: a stationary friendly team dropped on the HVT's flee route.
--- If the un-killed command vehicle reaches them, the commander is CAPTURED.
-local SCAR_SOF_UNIT = "Soldier M4" -- dynAdd uses the model for any country
-local SCAR_SOF_COUNT = 4
 -- Inverted capture (loiter rework): the SOF team must HOLD on the (still-alive)
 -- command vehicle for this long before the commander is taken -- an assault dwell,
 -- so mere co-location can't instant-fire a capture. Tunable; needs an in-game pass.
@@ -305,7 +302,7 @@ local function find_delivered_sof(area)
         local okn, gname = pcall(function()
             return group:getName()
         end)
-        -- Skip our own scripted spawns (convoys / threats / scripted SOF); only a
+        -- Skip our own scripted spawns (the "SCAR-" convoys / threats); only a
         -- player/CTLD-delivered group counts as a real drop.
         if okn and gname ~= nil and string.sub(gname, 1, 5) ~= "SCAR-" then
             local okp, pos = pcall(function()
@@ -322,69 +319,6 @@ local function find_delivered_sof(area)
         end
     end
     return best_name
-end
-
--- Put a friendly SOF team at the ambush point (area.sofX/Y). Called lazily as the
--- HVT closes in (maybe_bind_sof). Hybrid (Phase 2c-2): prefer the player-delivered
--- team; only scripted-spawn a fallback if none was delivered, so the capture loop
--- never silently dies. Capture itself is detected in scar_check against area.sofGroup.
-local function spawn_sof(area)
-    if not (area.sofX and area.sofRadius and area.sofRadius > 0) then
-        return
-    end
-    local delivered = find_delivered_sof(area)
-    if delivered ~= nil then
-        area.sofGroup = delivered
-        scar_log("area " .. tostring(area.id) ..
-            ": capture bound to delivered SOF team " .. tostring(delivered))
-        return
-    end
-    local group_name = "SCAR-" .. tostring(area.id) .. "-sof"
-    -- The bought SOF unit's DCS type (Phase 2c); fall back to the default model.
-    local unit_type = area.sofUnitType
-    if unit_type == nil or unit_type == "" then
-        unit_type = SCAR_SOF_UNIT
-    end
-    local units = {}
-    for i = 1, SCAR_SOF_COUNT do
-        units[i] = {
-            ["type"] = unit_type,
-            ["name"] = group_name .. "-" .. i,
-            ["x"] = area.sofX + (i - 1) * 5,
-            ["y"] = area.sofY,
-            ["heading"] = 0,
-            ["skill"] = "Average",
-            ["playerCanDrive"] = false,
-        }
-    end
-    local group_data = {
-        ["visible"] = false,
-        ["hidden"] = false,
-        ["name"] = group_name,
-        ["task"] = {},
-        ["category"] = Group.Category.GROUND,
-        ["country"] = area.sofCountryId,
-        ["units"] = units,
-        ["route"] = {
-            ["points"] = {
-                [1] = {
-                    ["x"] = area.sofX,
-                    ["y"] = area.sofY,
-                    ["type"] = "Turning Point",
-                    ["action"] = "Off Road",
-                    ["speed"] = 0,
-                },
-            },
-        },
-    }
-    local ok, spawned = pcall(mist.dynAdd, group_data)
-    if not ok or not spawned then
-        scar_log("SOF mist.dynAdd failed for " .. group_name .. ": " .. tostring(spawned))
-        return
-    end
-    area.sofGroup = spawned.name or group_name
-    scar_log("area " .. tostring(area.id) ..
-        ": no delivered team — scripted SOF fallback spawned")
 end
 
 -- Spawn variant only: has the spawned HVT reached its no-strike destination?
@@ -508,8 +442,8 @@ local function command_vehicle_pos(area)
 end
 
 -- Inverted capture (loiter rework): a live SOF team holding on the live command
--- vehicle. The team is the player-delivered (or scripted-fallback) group bound by
--- maybe_bind_sof; the commander holds in the static box. True only while BOTH are
+-- vehicle. The team is the player-delivered group bound by maybe_bind_sof; the
+-- commander holds in the static box. True only while BOTH are
 -- alive and within the capture radius -- the dwell that turns this into a "captured"
 -- result is timed in scar_check, so co-location alone can't instant-fire.
 local function sof_assaulting(area)
@@ -575,8 +509,8 @@ local function launch_missile(area)
     end
 end
 
--- Phase 2c-3 CSAR: a botched capture leaves the delivered/scripted SOF team
--- stranded (alive) at the ambush point. Tag its position on the result so the
+-- Phase 2c-3 CSAR: a botched capture leaves the delivered SOF team
+-- stranded (alive) at the capture point. Tag its position on the result so the
 -- generator can stand up a next-turn CSAR objective to recover it. No tag (team
 -- dead, or never delivered) = the team is written off.
 local function report_stranded_sof(area)
@@ -610,31 +544,24 @@ local function report_stranded_sof(area)
     scar_log("area " .. tostring(area.id) .. ": SOF team stranded for CSAR pickup")
 end
 
--- Bind the SOF capture team lazily, only as the HVT nears the ambush point. With
--- the scenario now live at spawn, binding at t=0 would always miss a player-flown
--- drop (none delivered yet) and fall straight to the scripted team; deferring until
--- the HVT closes gives the player time to airdrop one (Phase 2c-2). Binds once.
-local SOF_PREBIND_M = 4000
+-- Bind the SOF capture team to a PLAYER-DELIVERED group only. The loiter rework holds
+-- the target static at the kill-box centre, with the SOF point (sofX/Y) on the commander
+-- itself, so the old "fall back to a scripted team as the HVT nears the ambush" path is
+-- gone: a fallback would spawn on top of the static commander and auto-capture with no
+-- player action, and the HVT-distance prebind is meaningless for a target that never
+-- moves. Capture now requires the player to fly a SOF insert and deliver a team near the
+-- objective; no delivery => no capture (the target fails at the window instead). Binds
+-- once, to the nearest real drop within find_delivered_sof's radius.
 local function maybe_bind_sof(area)
     if area.sofBound or not (area.sofRadius and area.sofRadius > 0) then
         return
     end
-    local group = Group.getByName(area.groups[1])
-    if group == nil then
-        return
-    end
-    local ok, unit = pcall(function()
-        return group:getUnit(1)
-    end)
-    if not ok or unit == nil then
-        return
-    end
-    local pos = unit:getPoint() -- {x = north, y = alt, z = east}
-    local dx = pos.x - area.sofX
-    local dz = pos.z - area.sofY
-    if (dx * dx + dz * dz) <= (SOF_PREBIND_M * SOF_PREBIND_M) then
-        spawn_sof(area)
+    local delivered = find_delivered_sof(area)
+    if delivered ~= nil then
+        area.sofGroup = delivered
         area.sofBound = true
+        scar_log("area " .. tostring(area.id) ..
+            ": capture bound to delivered SOF team " .. tostring(delivered))
     end
 end
 
@@ -1398,12 +1325,12 @@ local function brief_armor(area)
     mark_sof(area, side)
 end
 
--- Armor variant: bind the REAL armor group. It bugs out toward the city AT SPAWN,
--- with the decoy/clutter columns + command vehicle spawned alongside it from the
--- start (so the puzzle is present when the player arrives); success = killed, fail
--- = it reaches the city (its safe haven) or the window expires. The SOF capture
--- team is bound lazily (maybe_bind_sof) so a player-delivered team is still picked
--- up later instead of pre-empted by the t=0 fallback.
+-- Armor variant: bind the REAL armor group, with the decoy/clutter columns + command
+-- vehicle spawned alongside it from the start (so the puzzle is present when the player
+-- arrives). Under the loiter rework _make_static holds them all in place; success =
+-- killed, fail = the window expires. The SOF capture team is bound to a player-delivered
+-- drop (maybe_bind_sof); there is no scripted fallback, so an un-serviced commander
+-- simply isn't captured.
 local function activate_armor_area(tasking, window)
     local groups = tasking.targetGroups or {}
     if type(groups) ~= "table" or #groups == 0 then

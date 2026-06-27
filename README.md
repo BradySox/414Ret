@@ -50,21 +50,20 @@ and selected later upstream fixes.
 
 ### Missions are built for squadron play
 
-- **SCAR** adds a player-led moving-target hunt: identify the real HVT among decoys and
-  clutter, then stop it before it reaches safety or, for a SCUD, reaches its launch point.
-  Prosecuting the wrong convoy is a mis-identification that costs budget (tunable via the
-  `SCAR mis-ID penalty` Campaign Doctrine setting; set 0 to disable), so reading the target
-  signature matters — it's printed on your SCAR kneeboard, and the on-scene controller's
-  calls go to your flight (and the C-130 King), not the whole coalition. Real armor and missile
-  sites can become the moving objective instead of a
-  disposable scripted stand-in. An experimental option (on by default for new campaigns while it is
-  being playtested) uses finite purchased SOF teams to
-  capture a commander alive: a C-130 inserts the team ahead of the fleeing HVT, a clean grab
-  reveals enemy command posts (the team escapes with the hostage), and a botched grab strands
-  the team as a "downed SOF team" objective you can fly a **helo CSAR recovery** against on a
-  later turn before it is overrun. An opt-in `SCAR auto-planning` setting can frag a SCAR hunt
-  into your ATO automatically each turn (off by default while the in-mission scripting is being
-  playtested).
+- **SCAR** adds a player-led target hunt over a static kill box: identify the real HVT among
+  decoys and clutter, then destroy it before the window expires (kills attrit the enemy through
+  the normal ground-loss path). Prosecuting the wrong convoy is a mis-identification that costs
+  budget (tunable via the `SCAR mis-ID penalty` Campaign Doctrine setting; set 0 to disable), so
+  reading the target signature matters — it's printed on your SCAR kneeboard, and the on-scene
+  controller's calls go to your flight (and the C-130 King), not the whole coalition. Real armor
+  and missile sites can be the objective instead of a disposable scripted stand-in. An
+  experimental option (on by default for new campaigns while it is being playtested) uses finite
+  purchased SOF teams to capture a commander alive: fly a **C-130 SOF insert** and deliver the team
+  onto the held command vehicle to take him alive (a clean grab reveals enemy command posts) — no
+  insert, no capture. A botched grab strands the team as a "downed SOF team" objective you can fly
+  a **helo CSAR recovery** against on a later turn before it is overrun. An opt-in `SCAR
+  auto-planning` setting can frag a SCAR hunt into your ATO automatically each turn (off by default
+  while the in-mission scripting is being playtested).
 - **Combat SAR** makes a downed pilot worth flying for. A CH-47 orbits near the front as the
   rescuer while a C-130 holds overhead as the HC-130 "King" — on-scene command with an
   air-tracking TACAN the helo homes on (an AI King lights it automatically; a player King

@@ -550,10 +550,29 @@ def _make_static(t: ScarTasking) -> ScarTasking:
     The SOF commander-capture inverts with it: instead of a planted ambush a fleeing
     HVT drives into, the team assaults the *held* command vehicle, so the ambush
     point moves onto the target centre (the Lua does the dwell-based capture).
+
+    The spawn-variant fake HVT is also re-homed onto the centre: ``_compose_convoys``
+    placed it ~15 NM out as the chase's *start* point (its decoys scatter around the
+    centre), so freezing it there would strand it away from both its decoys and the SOF
+    point (on the centre, riding the commander). Holding it at the centre makes the kill
+    box coherent — the player loiters over the box, discriminates the HVT from its
+    decoys, and a delivered SOF team reaches the commander. The armor variant already
+    spawns its command vehicle on the centre, so only the spawned ``hvt`` role moves.
     """
-    static_convoys = tuple(
-        replace(c, dest_x=c.spawn_x, dest_y=c.spawn_y, speed_ms=0.0) for c in t.convoys
-    )
+
+    def _hold(c: ScarConvoy) -> ScarConvoy:
+        if c.role == "hvt":
+            return replace(
+                c,
+                spawn_x=t.center_x,
+                spawn_y=t.center_y,
+                dest_x=t.center_x,
+                dest_y=t.center_y,
+                speed_ms=0.0,
+            )
+        return replace(c, dest_x=c.spawn_x, dest_y=c.spawn_y, speed_ms=0.0)
+
+    static_convoys = tuple(_hold(c) for c in t.convoys)
     sof_at_target = t.sof_radius_m > 0.0
     return replace(
         t,

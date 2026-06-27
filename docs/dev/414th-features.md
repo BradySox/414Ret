@@ -1268,15 +1268,23 @@ SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.m
   in-game pass.**
 - **Phase-3 auto-planning BUILT (opt-in, gated by `scar_autoplan`, default OFF)** — "SCAR
   shows up in the turn's ATO without the player building it." `PlanScarHunts`
-  (`game/commander/tasks/compound/scarhunts.py`) frags **one** player-flyable SCAR package per
-  turn against the highest-priority enemy battle position, via the thin `PlanScar`
-  (`primitive/scar.py`, BAI-shaped: `FlightType.SCAR` + common escorts). Wired late/low-priority
-  in `PlanNextAction` (after `DegradeIads`). **Blue-only by design** — SCAR is a human
-  discrimination puzzle, so the AI keeps using BAI for anti-armor and never frags SCAR for
+  (`game/commander/tasks/compound/scarhunts.py`) frags **up to `scar_autoplan_per_turn` (default
+  2)** player-flyable SCAR packages per turn against enemy battle positions, via the thin
+  `PlanScar` (`primitive/scar.py`, BAI-shaped: `FlightType.SCAR` + common escorts). Like
+  `PlanBai`, **each `PlanScar` consumes its battle position** (`eliminate_battle_position` + a
+  `has_battle_position` precondition), so the hunts land on **different** armor groups instead of
+  stacking package-after-package on the single top target (the bug this fixed — the missing
+  consume let the planner re-pick the same #1 group every loop). Selection runs through
+  `shuffled_by_priority`, so the `ownfor_planner_unpredictability` lever varies which groups get
+  hunted turn-to-turn (0 = deterministic priority order); a `scar_hunts_planned` counter on
+  `TheaterState` enforces the per-turn cap. Wired late/low-priority in `PlanNextAction` (after
+  `DegradeIads`), so it **augments** BAI rather than replacing it — BAI (planned earlier, also
+  consuming) covers the armor groups SCAR doesn't claim. **Blue-only by design** — SCAR is a
+  human discrimination puzzle, so the AI keeps using BAI for anti-armor and never frags SCAR for
   itself. Default OFF so it's a strict no-op until the SCAR in-mission Lua (F1/F3/F5) has had a
-  cockpit pass; flip the setting (or its default) once that's done. Tests:
-  `tests/test_scar_autoplan.py` (off/red/no-target no-op, blue picks top battle position,
-  `PlanScar` proposes SCAR + escorts). If Tyler's C-130 `DEPLOYMENT` work ever lands, our
+  cockpit pass. Tests: `tests/test_scar_autoplan.py` (off/red/no-target no-op, a hunt per
+  distinct battle position, per-turn cap respected, `PlanScar` consumes its target + proposes
+  SCAR + escorts). If Tyler's C-130 `DEPLOYMENT` work ever lands, our
   `FlightType.SOF` + inventory-debit-on-frag should converge onto his `PendingDeployments`
   shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
 

@@ -134,6 +134,10 @@ class TheaterState(WorldState["TheaterState"]):
     enemy_shipping: list[CargoShip]
     enemy_ships: list[NavalGroundObject]
     enemy_battle_positions: dict[ControlPoint, BattlePositions]
+    # How many SCAR hunts the planner has already auto-fragged this turn, so
+    # PlanScarHunts can cap them (scar_autoplan_per_turn) instead of stacking
+    # packages on one target. Incremented in PlanScar.apply_effects.
+    scar_hunts_planned: int
     oca_targets: list[ControlPoint]
     strike_targets: list[TheaterGroundObject]
     enemy_barcaps: list[ControlPoint]
@@ -234,6 +238,7 @@ class TheaterState(WorldState["TheaterState"]):
                 cp: dataclasses.replace(g)
                 for cp, g in self.enemy_battle_positions.items()
             },
+            scar_hunts_planned=self.scar_hunts_planned,
             oca_targets=list(self.oca_targets),
             strike_targets=list(self.strike_targets),
             enemy_barcaps=list(self.enemy_barcaps),
@@ -383,6 +388,7 @@ class TheaterState(WorldState["TheaterState"]):
             enemy_shipping=list(finder.cargo_ships()),
             enemy_ships=enemy_ships,
             enemy_battle_positions=battle_postitions,
+            scar_hunts_planned=0,
             oca_targets=list(
                 finder.oca_targets(
                     min_aircraft=game.settings.oca_target_autoplanner_min_aircraft_count

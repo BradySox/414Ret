@@ -1297,6 +1297,19 @@ class SeadTaskPage(KneeboardPage):
         unit_type = unit.type
         return unit.name if unit_type is None else unit_type.name
 
+    def _emitter_units(self) -> Iterator[Tuple[int, TheaterUnit]]:
+        """``(index, unit)`` for the site's HARM-targetable emitters only.
+
+        Only units with an ALIC code (radars and self-contained TELs) are HARM
+        aimpoints; the launchers, command trucks and AAA guns that pad
+        ``strike_targets`` aren't, and enumerating every one just hands the player the
+        full site composition and exact unit counts (recon fog §3). The index pairs an
+        emitter with its per-target steerpoint in the exact view.
+        """
+        for index, unit in enumerate(self.target_units):
+            if self.alic_for(unit):
+                yield index, unit
+
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
         self.render_into(writer)
@@ -1345,34 +1358,49 @@ class SeadTaskPage(KneeboardPage):
         if self._use_target_area_cues:
             # Consolidated view: one bullseye cue for the *center of the site* (not
             # one per unit -- that was cluttered) plus the single target-area
-            # steerpoint if one maps. The table then just lists the site's emitters
-            # and their ALIC codes.
+            # steerpoint if one maps. The table lists only the site's HARM-targetable
+            # **emitters**, deduped by type -- not every launcher, command truck and
+            # gun (and not their exact counts), which would reveal the whole site.
             cue = self._bullseye_cue_for(self.flight.package.target.position)
             stpt = self._target_area_stpt()
             area = f"{task} target area"
             if stpt is not None:
                 area += f" — STPT {stpt}"
             writer.heading(f"{area} — {cue}")
-            writer.table(
-                [
+            seen: set[Tuple[str, str]] = set()
+            rows: List[List[str]] = []
+            for _, unit in self._emitter_units():
+                key = (self._unit_description(unit), self.alic_for(unit))
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append([key[0], key[1]])
+            if not rows:
+                # No coded emitter (e.g. a pure AAA/launcher site): fall back to the
+                # full unit list so the page is never blank.
+                rows = [
                     [self._unit_description(t), self.alic_for(t)]
                     for t in self.target_units
-                ],
-                headers=["Description", "ALIC"],
-                font=area_font,
-            )
+                ]
+            writer.table(rows, headers=["Description", "ALIC"], font=area_font)
         else:
-            # Exact (SEAD) view: per-emitter steerpoint + precise coordinates.
+            # Exact (SEAD) view: per-emitter steerpoint + precise coordinates, emitters
+            # only -- the launchers/trucks/guns aren't HARM aimpoints.
             target_numbers = self._target_point_numbers()
-            writer.table(
-                [
+            rows = [
+                self.target_info_row(
+                    unit, target_numbers[i] if i < len(target_numbers) else None
+                )
+                for i, unit in self._emitter_units()
+            ]
+            if not rows:
+                rows = [
                     self.target_info_row(
                         t, target_numbers[i] if i < len(target_numbers) else None
                     )
                     for i, t in enumerate(self.target_units)
-                ],
-                headers=["STPT", "Description", "ALIC", "Location"],
-            )
+                ]
+            writer.table(rows, headers=["STPT", "Description", "ALIC", "Location"])
 
     def target_info_row(self, unit: TheaterUnit, number: Optional[int]) -> List[str]:
         return [

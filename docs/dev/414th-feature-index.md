@@ -1,25 +1,46 @@
-# 414th Feature Wiring Map
+# 414th Feature Index
 
 > **Generated** from `game/fourteenth/features.py` — do not edit by hand.
 > Regenerate with `python -m game.fourteenth.features`; CI fails if stale.
 
-Every 414th feature with concrete wiring (a Lua plugin and/or a `Settings`
-field) is registered in `FEATURES`. A test asserts each reference below
-resolves, so a renamed setting or removed plugin fails CI instead of
-silently rotting this map.
+Every numbered feature in the CLAUDE.md "Features at a Glance" list (§N in
+[`414th-features.md`](414th-features.md)) is registered here, plus the
+always-on engine plugins. The wiring columns show the Lua plugin and
+`Settings` fields that run/gate each feature. A test (`tests/fourteenth/`)
+fails CI if a reference is stale, a numbered feature is missing, an in-game-
+pass checklist `§N` is unregistered, or this table drifts.
 
-| Feature | Features doc | Plugin | Settings |
+| § | Feature | Plugin | Settings |
 | --- | --- | --- | --- |
-| QRA intercept reserve | §1 | `intercept` | — |
-| C-130J EW/ISR (JAMMING) | §2 | `c130j` | — |
-| Troops In Contact | §9 | `tic` | — |
-| TARS recon engine | §12 | `tars` | — |
-| SCAR — Sandy rescue escort | §15 | `scar` | `scar_command_post_intel` |
-| Auto-planner target unpredictability | §17 | — | `ownfor_planner_unpredictability`, `opfor_planner_unpredictability` |
-| Drop-spawn unit placement | §20 | — | `enable_unit_placement`, `enable_free_unit_placement` |
-| Combat SAR | §21 | `combatsar` | `auto_combat_sar` |
-| Date-gated aircraft properties | §24 | — | `restrict_weapons_by_date` |
-| Compact kneeboard deck | §25 | — | `compact_kneeboard` |
-| Campaign SITREP kneeboard | §29 | — | `generate_sitrep_kneeboard` |
-| MANTIS IADS engine | — | `mantisiads` | — |
-| Splash Damage (414th tuned) | — | `splashdamage3` | — |
+| §1 | QRA intercept reserve | `intercept` | — |
+| §2 | JAMMING flight type | `c130j` | — |
+| §3 | TARPS recon + BDA fog-of-war | — | — |
+| §4 | UI transparency | — | — |
+| §5 | Player target location precision | — | — |
+| §6 | Air-defense planning rework | — | — |
+| §7 | Auto-hide mobile SAMs on MFD | — | — |
+| §8 | Robustness / crash fixes | — | — |
+| §9 | TIC — Troops In Contact | `tic` | — |
+| §10 | CurrentHill Iran assets pack | — | — |
+| §11 | Native DCS DTC cartridge export _(retired)_ | — | — |
+| §12 | TARS recon engine | `tars` | — |
+| §13 | Flight Control ATC _(retired)_ | — | — |
+| §14 | Plugin Options UI | — | — |
+| §15 | SCAR — RESCAP "Sandy" rescue escort | `scar` | `scar_command_post_intel` |
+| §16 | Settings QOL audit | — | — |
+| §17 | Auto-planner target unpredictability | — | `ownfor_planner_unpredictability`, `opfor_planner_unpredictability` |
+| §18 | Fog-of-war overview toggle | — | — |
+| §19 | Unified map layers panel | — | — |
+| §20 | Drop-spawn: map right-click unit placement | — | `enable_unit_placement`, `enable_free_unit_placement` |
+| §21 | Combat SAR | `combatsar` | `auto_combat_sar` |
+| §22 | Kneeboard space-utilisation + custom import | — | — |
+| §23 | Per-squadron DCS country | — | — |
+| §24 | Date-gated aircraft properties | — | `restrict_weapons_by_date` |
+| §25 | Compact 3-4 page kneeboard deck | — | `compact_kneeboard` |
+| §26 | Off-mission combat fidelity + PLAYER_AT_IP fix | — | — |
+| §27 | Shared-airframe kneeboard index | — | — |
+| §28 | Settings IA reorg + difficulty presets | — | — |
+| §29 | Campaign SITREP kneeboard band | — | `generate_sitrep_kneeboard` |
+| §30 | Dedicated kneeboard cover page | — | — |
+| — | MANTIS IADS engine | `mantisiads` | — |
+| — | Splash Damage (414th tuned) | `splashdamage3` | — |

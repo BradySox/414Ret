@@ -1105,8 +1105,12 @@ SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.m
 - **Planner side (Python, CI-tested):** `FlightType.SCAR` (`game/ato/flighttype.py`,
   air-to-ground primary, `ATTACK_STRIKE`); `ScarFlightPlan` cloned from Armed Recon
   (`game/ato/flightplans/scar.py`) + builder dispatch; `configure_scar`
-  (`aircraftbehavior.py`, CAS-family task); fixed-wing-only capability enrichment
-  (`game/dcs/aircrafttype.py`); `mission_types` exposure (`missiontarget.py`); CAS loadout
+  (`aircraftbehavior.py`, CAS-family task); **AFAC-gated** capability enrichment
+  (`game/dcs/aircrafttype.py.__post_init__` — SCAR is the airborne-FAC role, so only
+  aircraft DCS lets fly the **AFAC** task inherit it; strategic bombers like the B-1B / B-52
+  carry a CAS priority for dropping on *called* coordinates but lack AFAC and are excluded,
+  so the auto-planner never frags a bomber for the find-and-control hunt; covered by
+  `tests/test_aircraft_tasking_roles.py`); `mission_types` exposure (`missiontarget.py`); CAS loadout
   fallback (`loadouts.py`); primary-task order (`package.py`). SCAR is player-selectable;
   the auto-planner never frags it (no commander task) — auto-planning is a later phase.
   **BAI is deliberately untouched** (still the AI/auto-planner anti-armor/convoy task).

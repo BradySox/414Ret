@@ -12,6 +12,7 @@ from typing import Any, ClassVar, Dict, Iterator, Optional, TYPE_CHECKING, Type
 import yaml
 from dcs.helicopters import helicopter_map
 from dcs.planes import plane_map
+from dcs.task import AFAC
 from dcs.unitpropertydescription import UnitPropertyDescription
 from dcs.unittype import FlyingType
 from dcs.weapons_data import weapon_ids
@@ -324,11 +325,17 @@ class AircraftType(UnitType[Type[FlyingType]]):
             ):
                 enrich[FlightType.ARMED_RECON] = value
 
-        # SCAR (area find-and-prosecute of one moving HVT) is a fixed-wing
-        # ground-attack task using the CAS task/loadout family. Restrict automatic
-        # enrichment to fixed-wing CAS aircraft; BAI-only strategic bombers do not
-        # have a suitable SCAR payload or employment profile.
-        if FlightType.SCAR not in self.task_priorities and not self.helicopter:
+        # SCAR is the airborne-FAC role: loiter over a kill box, find and ID the
+        # real target among decoys, and control the attack. Only enrich aircraft
+        # that DCS lets fly the AFAC task -- this excludes strategic bombers
+        # (B-1/B-52/Tu-160), which carry a CAS priority for dropping on *called*
+        # coordinates but can't loiter and ID targets themselves. The SCAR
+        # priority/loadout is still inherited from the CAS family.
+        if (
+            FlightType.SCAR not in self.task_priorities
+            and not self.helicopter
+            and AFAC in self.dcs_unit_type.tasks
+        ):
             if value := self.task_priorities.get(FlightType.CAS):
                 enrich[FlightType.SCAR] = value
 

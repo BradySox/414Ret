@@ -839,6 +839,15 @@ so the two docs don't drift.
   (`mantis-config.lua`) overrides `MANTIS._GetSAMRange` to band each SAM by **Retribution's own threat
   range** (`dcsRetribution.{Red,Blue}AA[].range`, the planner's MEZ), falling back to MANTIS' native
   logic for anything it can't resolve. Pure-Lua bridge change, no MOOSE-source edit.
+- **Refinement (found in-game 2026-06-27, 2nd pass):** the override loaded (`SAM range override active
+  (57 …)`) but several `(SAM)` sites still came up POINT and an **SA-5 (255 km!) site read POINT**. Cause:
+  a Retribution SAM **site has multiple groups under one codename** (the main SAM + a co-located
+  point-defense SA-9/SA-13/SA-8), each emitted to `RedAA`; the override indexed range **by codename and
+  kept the last-seen**, so the short escort overwrote the real SAM. Fixed by keeping the **MAX** range per
+  codename (`index_aa`), so a site bands by its longest reach (ASP/FIREFLY/LLAMA → LONG, DRAGONFLY/ZEBRA →
+  MED, etc.). **Known residual:** the point-defense group of a multi-group site inherits the site band
+  (slight over-activation; it still only *shoots* at its own range). Per-group precision would need range
+  emitted per IADS group, not per codename — deferred.
 - **Setup:** New campaign (MANTIS engine) with a layered SAM threat incl. at least one medium/long SAM
   (SA-6/SA-11/SA-10). `dcs.log` should show `... SAM range override active (N AD group range(s) ...)`.
   Fly a **striker into a SAM ring** (not a C-130 in friendly air) and bring a SEAD/HARM shooter.

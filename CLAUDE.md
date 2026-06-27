@@ -347,13 +347,34 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 
 - This repo (`bradyccox/414Ret`) `main` = the consolidated, most-up-to-date 414th build.
 - Upstream is `dcs-retribution/dcs-retribution`; the 414th's PR fork is
-  `bradyccox/dcs-retribution`. Open upstream PRs carved out of this work:
-  - **#784** `codex/currenthill-iran-pack` — the Iran pack (branch also carries the full
-    feature stack).
-  - **#786** `codex/fix-aaq33-era-restriction` — targeting-pod era-restriction fix (separate,
-    small; NOT part of the feature stack on `main`).
+  `bradyccox/dcs-retribution`.
 - The 414th's primary "all features" working branch in the dev checkout is
   `414th-all-features`; `main` here = that + the Iran pack + a Black/mypy lint pass.
+
+### Upstream PR ledger (snapshot 2026-06-27 — re-verify with `gh pr list`, don't trust this stale)
+
+Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `bradyccox`):
+
+- **Open (awaiting review):**
+  - [#828](https://github.com/dcs-retribution/dcs-retribution/pull/828) recon fog-of-war (§3) — the flagship carve, mergeable.
+  - [#806](https://github.com/dcs-retribution/dcs-retribution/pull/806) configurable cruise/patrol altitude.
+  - [#805](https://github.com/dcs-retribution/dcs-retribution/pull/805) bulk waypoint altitude UI — ⚠️ **CHANGES_REQUESTED, action owed**.
+  - [#794](https://github.com/dcs-retribution/dcs-retribution/pull/794) hide mobile SAM in combined groups (§7).
+  - [#793](https://github.com/dcs-retribution/dcs-retribution/pull/793) building-card placeholder (§4).
+  - [#792](https://github.com/dcs-retribution/dcs-retribution/pull/792) wind override UI.
+  - [#791](https://github.com/dcs-retribution/dcs-retribution/pull/791) SAM site layouts + EWR pool.
+  - [#788](https://github.com/dcs-retribution/dcs-retribution/pull/788) inflight final-waypoint crash (§8).
+  - Several created mid-June show `mergeable: UNKNOWN` — **likely need a rebase on current `dev`**.
+- **Merged:** [#826](https://github.com/dcs-retribution/dcs-retribution/pull/826) weapons coverage/repairs · [#789](https://github.com/dcs-retribution/dcs-retribution/pull/789) inverted OPFOR aggressiveness fix.
+- **Self-withdrawn (NOT rejected, NOT upstream):** [#784](https://github.com/dcs-retribution/dcs-retribution/pull/784) Iran pack · [#786](https://github.com/dcs-retribution/dcs-retribution/pull/786) AAQ-33 era restriction · [#790](https://github.com/dcs-retribution/dcs-retribution/pull/790) orbit deconfliction. The Iran pack and AAQ-33 fix are therefore **still fork-only** — re-carve if wanted.
+
+**Crowded upstream zones — do NOT carve into these without coordinating** (active non-414th PRs):
+- Planning revamps — prokop7 [#676](https://github.com/dcs-retribution/dcs-retribution/pull/676) BARCAP, [#674](https://github.com/dcs-retribution/dcs-retribution/pull/674) SEAD/DEAD, [#678](https://github.com/dcs-retribution/dcs-retribution/pull/678) BAI, [#677](https://github.com/dcs-retribution/dcs-retribution/pull/677) attack-infra.
+- QRA — geofffranks [#782](https://github.com/dcs-retribution/dcs-retribution/pull/782) (our reserve *feeds* this; don't resubmit).
+- Frontline — geofffranks [#823](https://github.com/dcs-retribution/dcs-retribution/pull/823) (already adopted into the fork), Druss99 [#681](https://github.com/dcs-retribution/dcs-retribution/pull/681).
+- SEAD — geofffranks [#772](https://github.com/dcs-retribution/dcs-retribution/pull/772).
+- Kneeboard — geofffranks [#754](https://github.com/dcs-retribution/dcs-retribution/pull/754) (wait for it to land before carving §25/§27/§29).
+- ATC — fully saturated ([#821](https://github.com/dcs-retribution/dcs-retribution/pull/821)/[#692](https://github.com/dcs-retribution/dcs-retribution/pull/692)/[#564](https://github.com/dcs-retribution/dcs-retribution/pull/564)/[#568](https://github.com/dcs-retribution/dcs-retribution/pull/568)); the 414th retired its ATC, so nothing to give here.
 
 ---
 

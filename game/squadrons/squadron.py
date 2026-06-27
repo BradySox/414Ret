@@ -19,6 +19,7 @@ from game.theater import ParkingType
 from game.theater.player import Player
 from .intercept_reserve import clamp_intercept_reserve
 from .pilot import Pilot, PilotStatus
+from .pilotnames import faker_for_country
 from ..db.database import Database
 from ..radio.radios import RadioFrequency
 from ..utils import meters, nautical_miles
@@ -302,7 +303,11 @@ class Squadron:
 
     @property
     def faker(self) -> Faker:
-        return self.coalition.faker
+        # Name the squadron's pilots in their own nation's convention (the
+        # squadron flies under its own DCS country, §23), falling back to the
+        # coalition's faction-locale faker for unmapped / multinational
+        # countries. See game/squadrons/pilotnames.py.
+        return faker_for_country(self.country, self.coalition.faker)
 
     def _pilots_with_status(self, status: PilotStatus) -> list[Pilot]:
         return [p for p in self.current_roster if p.status == status]

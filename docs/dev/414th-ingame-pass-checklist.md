@@ -1076,6 +1076,24 @@ so the two docs don't drift.
   test-locked); on a TIC-off build, clusters splitting apart in BREAKTHROUGH; the default-stance
   setting ignored at new-game/capture.
 
+### I5 — Nation-aware pilot names · §23 · ☐ UNTESTED (logic fully unit-tested 2026-06-26)
+- **Headless adjudication (2026-06-26):** the country→locale resolver is fully covered by
+  `tests/squadrons/test_pilotnames.py` (mapped country → its own-locale Faker; unmapped /
+  multinational / `None` → faction fallback; locale cache independent of fallback; **every**
+  mapped locale is gender-aware so a typo'd/non-gendered locale fails CI rather than shipping; a
+  squadron recruits non-empty named pilots from its country locale). Sample rosters per nation
+  read right (Greek, Persian, Russian surname-first + patronymic, Japanese, Hebrew). **Residual
+  (UI/in-sim only):** the names actually rendering in the squadron/roster UI and, if shown,
+  in-cockpit — non-Latin scripts in particular.
+- **Setup:** A mixed-nation CJTF campaign (e.g. a Blue side with a US and a Greek squadron). Open
+  the air-wing / squadron roster and read the pilot names; optionally generate a mission.
+- **Pass:** Each squadron's roster carries names in its **own** nation's convention (US squadron →
+  US names, Greek → Greek, etc.); a single-nation faction is unchanged; the CJTF / UN /
+  Insurgent "countries" fall back to the faction names (no crash, no blanks).
+- **Fail signature:** a squadron's pilots all share one nation's names regardless of country (the
+  `Squadron.faker` wiring didn't take); blank/garbled names; or a recruitment crash on a locale
+  with no gendered names (guarded + test-locked — should be impossible).
+
 ### H10 — Shared-airframe kneeboard index · §27 · ☐ UNTESTED (page math unit-tested 2026-06-26)
 - **Headless adjudication (2026-06-26):** `tests/missiongenerator/test_kneeboard_index.py` covers the
   start-page math (index is page 1, blocks start at 2 and advance by block size), callsign grouping +

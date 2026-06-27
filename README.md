@@ -127,7 +127,9 @@ and selected later upstream fixes.
   harsher stock values.
 - **Nation-specific voiceovers per squadron** — each squadron's aircraft fly under their own
   country, so a mixed-nation coalition hears each unit's real national radio voice instead of
-  one shared faction voice. Single-nation factions are unaffected.
+  one shared faction voice. Single-nation factions are unaffected. **Pilot rosters match the
+  nation, too** — a Greek squadron fills with Greek names, an Iranian one with Persian names,
+  and so on, instead of everyone sharing one set of names.
 
 ### Planning and debriefing expose the information crews need
 

@@ -1,9 +1,21 @@
 # SCAR rework — survivor rescue: the King / Jolly Green / Sandy package (design)
 
-**Status:** **Phase 1 BUILT on branch `claude/jovial-pike-47091a`** (2026-06-27, uncommitted, all CI
-green) — armor-hunt retired/disabled, BAI restored, `FlightType.SCAR` repurposed to the Sandy
-rescue-escort, A-10C + AH-64D eligible, SCAR scoped to the FLOT, kneeboard reworded. Phases 2–5
-designed below, not started. Supersedes the armor-hunting "loiter-and-task under the King" rework
+**Status:** **Phase 1 MERGED** (PR #241, 2026-06-27). **Phase 2 BUILT** on branch
+`claude/scar-rescue-phase2` (the enemy-capture race — Lua on the `combatsar` plugin; in-game pass
+owed). Phases 3–5 designed below, not started.
+
+Phase 2 as built: the `combatsar` plugin now rolls a per-survivor chance that an enemy CJTF_RED
+infantry **snatch party** (`mist.dynAdd`) spawns `captureSpawnDistance` from a downed pilot and walks
+at them (red smoke + a coalition MAYDAY cue). A 5 s poll advances a capture clock while a party holds
+within `captureRange`; at `captureDwell` seconds (pilot un-rescued) the pilot is **CAPTURED** — retired
+from CSAR (`_RemoveNameFromDownedPilots`), its group destroyed, and `{unit, x, y}` appended to a new
+`combat_sar_captures` state global (declared + serialised in `dcs_retribution.lua`). Killing the party
+first **saves** the pilot. Six plugin tunables (`captureEnabled`/`Chance`/`SpawnDistance`/`Range`/
+`Dwell`/`PartySize`). Phase 3 (Python) parses `combat_sar_captures` into a POW objective.
+
+> **Phase 2 in-game pass:** eject near a blue Combat SAR package → sometimes red smoke + a snatch
+> party appears and walks in → kill it = "party neutralized"; let it reach the survivor for the dwell
+> = "CAPTURED" + the survivor despawns; `dcs.log` clean; `state.json` carries `combat_sar_captures`. Supersedes the armor-hunting "loiter-and-task under the King" rework
 (`414th-scar-king-fac-notes.md` — **retired**; PR #189 to be abandoned, not merged). **Date:** 2026-06-27.
 
 > **Doc sync owed at commit/PR time:** `414th-features.md` §15, `README.md`, CLAUDE.md §15, and the

@@ -258,8 +258,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     per-coalition rule (blue claims first; colliding red squadrons fall back to the red faction
     country) while interning one canonical `Country` instance per id (pydcs attaches groups to the
     instance). No-op for single-nation factions (the squadron loader already restricts them to the
-    faction country). Implements upstream issue #627. (`game/missiongenerator/missiongenerator.py`,
-    `game/missiongenerator/aircraft/aircraftgenerator.py`; features doc §23, checklist I1.)
+    faction country). Implements upstream issue #627. **Nation-aware pilot names** complete the
+    arc: `Squadron.faker` now draws from the squadron's own DCS country (a curated country→Faker-
+    locale table in `game/squadrons/pilotnames.py`) instead of the shared faction locale, so the
+    Greek squadron rosters with Greek names, the Iranian with Persian, etc.; unmapped/multinational
+    countries fall back to the faction faker (never breaks generation), and the logic is fully
+    unit-tested (`tests/squadrons/test_pilotnames.py`). (`game/missiongenerator/missiongenerator.py`,
+    `game/missiongenerator/aircraft/aircraftgenerator.py`, `game/squadrons/pilotnames.py`;
+    features doc §23, checklist I1/I5.)
 24. **Date-gated aircraft properties** — extends the existing `restrict_weapons_by_date` toggle from
     weapons to era-defining payload-editor *properties*. First curated gate: **JHMCS** helmet cueing
     (fielded ~2003) is hidden from the dropdown and clamped to the baseline visor when generating a

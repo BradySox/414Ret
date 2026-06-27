@@ -1681,6 +1681,45 @@ exactly the intent.
 - **In-game pass ☑ VERIFIED 2026-06-26 (I1).** Confirmed in flight — a mixed-nation CJTF side plays
   the per-nation voiceovers; the headless `CountryAssigner` adjudication held up live.
 
+### Nation-aware pilot names (completes §23)
+
+The country half landed first; the **roster** half completes it. Pilots were named by a single
+per-coalition `Faker(self.faction.locales)` (`game/coalition.py`), so once §23 let a Greek
+squadron fly under the Greek flag with Greek voiceovers, its *pilots* were still "John Smith" —
+the faction locale, not the squadron's nation.
+
+`game/squadrons/pilotnames.py` adds a curated **DCS country → Faker locale** table
+(`COUNTRY_FAKER_LOCALES`, keyed by the exact pydcs `Country.name`) and `faker_for_country()`;
+`Squadron.faker` now returns the squadron's own-country Faker instead of the coalition's. So a
+Greek squadron rosters with Greek names, an Iranian one with Persian names, a Russian one with
+surname-first patronymics, etc. — the same nation the §23 country/voiceover already targets.
+
+Design notes:
+- **Opt-in / permissive, never breaks generation.** Any unmapped country — including the
+  multinational/irregular "countries" (the CJTFs, Insurgents, UN Peacekeepers) — falls back to
+  the coalition's faction-locale Faker, so a roster is always produced. This can only *improve* a
+  name. Single-nation factions are unchanged (their squadrons already equal the faction country).
+- **Gender-aware guard.** The pilot generator needs `name_male()`/`name_female()` (for
+  `female_pilot_percentage`), and a few shipped locales (e.g. `es_AR`) have no gendered name
+  provider. `_faker_for_locale` validates this once (cached) and returns `None` → fallback if a
+  locale can't do it, so a bad map entry degrades gracefully instead of crashing recruitment. The
+  parametrised test asserts **every** mapped locale is usable, so a typo'd/non-gendered locale
+  fails CI rather than shipping.
+- **Pickle-safe.** The per-locale Fakers live in a module-level `lru_cache`, not on the pickled
+  `Squadron`/`Coalition`, so saves are unaffected (the coalition already drops its Faker in
+  `__getstate__`). No save migration needed.
+- **Non-Latin names are intended** and consistent with the pre-existing Russian-locale behaviour
+  (Qt + DCS are UTF-8). Faker's `name_male()` can occasionally include a title ("Herr …", "Dr.
+  …") — that's a pre-existing quirk of the same call the old code used, not new.
+
+| Area | Path |
+|---|---|
+| Country → locale table + resolver | `game/squadrons/pilotnames.py` |
+| Wiring | `game/squadrons/squadron.py` (`Squadron.faker`) |
+| Tests | `tests/squadrons/test_pilotnames.py` (mapped→own locale, unmapped/None→fallback, locale-cache, every mapped locale is gender-aware, squadron recruits named pilots) |
+
+In-game pass row I5 (UI/roster eyeball only — the logic is fully unit-tested).
+
 ## §24 — Date-gated aircraft properties (helmet-mounted cueing)
 
 Extends campaign date-gating from *weapons* to the per-airframe **properties** shown in the

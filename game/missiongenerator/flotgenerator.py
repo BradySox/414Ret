@@ -18,7 +18,6 @@ from dcs.task import (
     FireAtPoint,
     GoToWaypoint,
     Hold,
-    OptAlarmState,
 )
 from dcs.triggers import Event, TriggerOnce
 from dcs.unit import Skill, Vehicle
@@ -1295,10 +1294,6 @@ class FlotGenerator:
             # single-unit copies at mission start.
             group.late_activation = True
             self.mission_data.tic_groups.append(str(group.name))
-        if self.game.settings.perf_red_alert_state:
-            group.points[0].tasks.append(OptAlarmState(2))
-        else:
-            group.points[0].tasks.append(OptAlarmState(1))
 
         self.unit_map.add_front_line_units(group, cp, unit_type)
 

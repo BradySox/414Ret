@@ -33,6 +33,7 @@ def test_obsolete_settings_are_discarded_during_migration() -> None:
             "pretense_num_of_cargo_planes": 12,
             "nevatim_parking_fix": True,
             "only_player_takeoff": False,
+            "perf_red_alert_state": True,
         }
     )
 
@@ -40,6 +41,8 @@ def test_obsolete_settings_are_discarded_during_migration() -> None:
     assert "pretense_num_of_cargo_planes" not in migrated
     assert "nevatim_parking_fix" not in migrated
     assert "only_player_takeoff" not in migrated
+    # Removed once the IADS engine (MANTIS/Skynet) became the SAM-emissions owner.
+    assert "perf_red_alert_state" not in migrated
 
 
 def test_obsolete_settings_are_not_user_visible() -> None:
@@ -56,3 +59,4 @@ def test_obsolete_settings_are_not_user_visible() -> None:
     assert "prefer_squadrons_with_matching_primary_task" not in names
     assert "pretense_num_of_cargo_planes" not in names
     assert "nevatim_parking_fix" not in names
+    assert "perf_red_alert_state" not in names

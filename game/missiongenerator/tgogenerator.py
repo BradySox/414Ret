@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import random
 from collections import defaultdict
-from typing import Any, Dict, Iterator, List, Optional, TYPE_CHECKING, Type, Tuple
+from typing import Dict, Iterator, List, Optional, TYPE_CHECKING, Type, Tuple
 
 import dcs.vehicles
 from dcs import Mission, Point, unitgroup
@@ -39,7 +39,6 @@ from dcs.task import (
     Hold,
     EPLRS,
     FireAtPoint,
-    OptAlarmState,
 )
 from dcs.terrain import Airport
 from dcs.translation import String
@@ -51,7 +50,7 @@ from dcs.triggers import (
     TriggerZoneQuadPoint,
 )
 from dcs.unit import Unit, InvisibleFARP, BaseFARP, SingleHeliPad, FARP
-from dcs.unitgroup import MovingGroup, ShipGroup, StaticGroup, VehicleGroup
+from dcs.unitgroup import ShipGroup, StaticGroup, VehicleGroup
 from dcs.unittype import ShipType, VehicleType
 from dcs.vehicles import vehicle_map, Unarmed, Fortification as VehicleFortification
 
@@ -366,7 +365,6 @@ class GroundObjectGenerator:
                 vehicle_group.units[0].player_can_drive = True
                 self.enable_eplrs(vehicle_group, unit.type)
                 vehicle_group.units[0].name = unit.unit_name
-                self.set_alarm_state(vehicle_group)
                 GroundForcePainter(faction, vehicle_group.units[0]).apply_livery()
             else:
                 vehicle_unit = self.m.vehicle(unit.unit_name, unit.type)
@@ -404,7 +402,6 @@ class GroundObjectGenerator:
                 if frequency:
                     ship_group.set_frequency(frequency.hertz)
                 ship_group.units[0].name = unit.unit_name
-                self.set_alarm_state(ship_group)
                 NavalForcePainter(faction, ship_group.units[0]).apply_livery()
             else:
                 ship_unit = self.m.ship(unit.unit_name, unit.type)
@@ -450,12 +447,6 @@ class GroundObjectGenerator:
         eplrs_enabled = self.game.settings.eplrs_enabled
         if eplrs_enabled and unit_type.eplrs:
             group.points[0].tasks.append(EPLRS(group.id))
-
-    def set_alarm_state(self, group: MovingGroup[Any]) -> None:
-        if self.game.settings.perf_red_alert_state:
-            group.points[0].tasks.append(OptAlarmState(2))
-        else:
-            group.points[0].tasks.append(OptAlarmState(1))
 
     def _register_theater_unit(
         self,

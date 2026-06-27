@@ -839,6 +839,15 @@ so the two docs don't drift.
   (`mantis-config.lua`) overrides `MANTIS._GetSAMRange` to band each SAM by **Retribution's own threat
   range** (`dcsRetribution.{Red,Blue}AA[].range`, the planner's MEZ), falling back to MANTIS' native
   logic for anything it can't resolve. Pure-Lua bridge change, no MOOSE-source edit.
+- **Active-SAM density (2026-06-27, 3rd pass — "flew over a SAM, no shot"):** with the bands now
+  correct, the IADS came alive (Tacview: SA-5 + SA-2 launched, up to 4 SAMs RED), but the
+  `Max active SAMs` caps (2 mid / 1 long) meant only a couple of the strategic SAMs were hot at once
+  — so an overflown SA-6 site that didn't get a "turn" stayed GREEN. Changed the defaults so
+  **medium + long are uncapped (`0 = unlimited`)** — the whole strategic belt engages — while
+  **short + point keep a rolling cap (2 / 6)** so the SHORAD layer doesn't all light up on a low
+  ingress. `0` is the new "unlimited" sentinel (`uncap()` in `mantis-config.lua`). Watch in-game that
+  flying into a medium/long ring now draws fire (mind the overhead dead-zone) and the low SHORAD
+  still rolls rather than swarming.
 - **Refinement (found in-game 2026-06-27, 2nd pass):** the override loaded (`SAM range override active
   (57 …)`) but several `(SAM)` sites still came up POINT and an **SA-5 (255 km!) site read POINT**. Cause:
   a Retribution SAM **site has multiple groups under one codename** (the main SAM + a co-located

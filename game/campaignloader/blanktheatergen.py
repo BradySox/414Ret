@@ -10,7 +10,11 @@ campaign maker uses:
 2. **Finalize** — ``generate_blank_theater(terrain, ownership=…)`` rebuilds from
    only the painted bases (gray ones are dropped, so they can't be captured or
    rendered), assigns each its chosen coalition, and derives ground fronts from
-   nearest-neighbor adjacency among the kept bases.
+   nearest-neighbor adjacency among the kept bases. ``finalize_blank_canvas`` then
+   seeds each owned base with a default air-defence / armor laydown
+   (:func:`_seed_air_defenses_and_armor`) and a small economy
+   (:func:`_synthesize_support_buildings`) so the campaign plays like a real one
+   out of the gate rather than a barren turkey shoot.
 
 A legacy auto-split mode (no ``all_neutral`` / ``ownership``) remains for tests
 and as a fallback: it assigns sides via the geographic split in
@@ -37,6 +41,7 @@ from game.theater.controlpoint import Airfield
 from game.theater.iadsnetwork.iadsnetwork import IadsNetwork
 from game.theater.player import Player
 from game.theater.theaterloader import TheaterLoader
+from game.utils import Heading
 
 from .blanktheater import AirfieldSite, assign_coalitions, nearest_neighbor_links
 
@@ -51,13 +56,34 @@ logger = logging.getLogger(__name__)
 # Support buildings synthesized at each owned base on finalize. A blank canvas is
 # pure airfields (income_per_turn == 0) with no .miz-provided structures, so a
 # finalized campaign would otherwise generate +0 budget. A factory gives income;
-# the ammo/fuel dumps add a little income plus a visible, strikeable ground layer
-# so the theater isn't barren. (Increment C — minimal pass; see the design notes.)
+# the ammo/fuel/oil dumps add a little income plus a visible, strikeable ground
+# layer (strike targets) so the theater isn't barren. A faction missing a template
+# for a task is silently skipped. (Increment C; see the design notes.)
 _BLANK_CANVAS_BUILDINGS = (
     GroupTask.FACTORY,
     GroupTask.AMMO,
     GroupTask.FUEL,
+    GroupTask.OIL,
 )
+
+# Per owned base, the default air-defence + armor laydown seeded into the base's
+# ``preset_locations`` *before* generation — so a finalized blank canvas places
+# SAMs / EWR / armor through the engine's normal ground-object path (exactly what a
+# real campaign's .miz presets feed). That path wires the SAMs/EWR into the IADS
+# (``begin_turn_0`` → ``initialize_network``) and makes the armor BASE_DEFENSE BAI
+# targets. Without it a blank canvas is a barren turkey shoot: nothing to SEAD, no
+# ground to BAI. Counts are the tunable mix; a faction lacking a template for a task
+# degrades gracefully (the generator logs and skips it).
+_BASE_SHORAD = 1  # short-range SAM ringing each owned base (point defence)
+_BASE_EWR = 1  # early-warning radar per base (IADS detection)
+_FORWARD_MERAD = 1  # medium-range SAM pushed toward the nearest enemy (SEAD work)
+_BASE_ARMOR_GROUPS = 1  # stationary BASE_DEFENSE armor group (BAI target)
+
+# Placement geometry (metres): base defences sit close in and ring the field; the
+# forward MERAD + armor are pushed toward the nearest enemy base so they screen the
+# approach rather than hugging the runway.
+_DEFENCE_RING_M = 3500.0
+_FORWARD_OFFSET_M = 9000.0
 
 
 def ownership_from_theater(theater: ConflictTheater) -> dict[str, Player]:
@@ -115,6 +141,10 @@ def finalize_blank_canvas(setup_game: Game) -> Game:
         terrain_name, ownership=ownership, advanced_iads=advanced_iads
     )
 
+    # Seed each owned base's preset_locations BEFORE generation so the normal
+    # generator places the SAMs/EWR/armor (and the IADS wires them up at turn 0).
+    _seed_air_defenses_and_armor(theater)
+
     generator_settings = GeneratorSettings(
         start_date=datetime(
             setup_game.date.year, setup_game.date.month, setup_game.date.day
@@ -161,24 +191,109 @@ def _nearby_land_point(game: Game, origin: Point, index: int) -> Optional[Point]
     return None
 
 
+def _nearest_enemy_heading(theater: ConflictTheater, cp: Airfield) -> Optional[Heading]:
+    """Heading from *cp* toward the nearest opposing-coalition airfield, or None if
+    the side has no enemy bases yet (so forward assets fall back to ringing the
+    field). Uses control-point ownership directly, so it works pre-generation
+    before any conflict zones are computed."""
+    enemies = [
+        c
+        for c in theater.controlpoints
+        if isinstance(c, Airfield)
+        and not c.starting_coalition.is_neutral
+        and c.starting_coalition != cp.starting_coalition
+    ]
+    if not enemies:
+        return None
+    nearest = min(enemies, key=lambda e: cp.position.distance_to_point(e.position))
+    return Heading.from_degrees(cp.position.heading_between_point(nearest.position))
+
+
+def _land_point_near(
+    theater: ConflictTheater,
+    origin: Point,
+    bias: Optional[Heading],
+    distance: float,
+    index: int,
+) -> Optional[Point]:
+    """A land point ~*distance* from *origin*, biased toward *bias* (or ringed
+    around the field when None) and nudged by *index* so co-located sites don't
+    stack. Returns None if every candidate falls in the sea."""
+    base = bias.degrees if bias is not None else 0.0
+    for radius in (distance, distance * 0.7, distance * 1.4):
+        for step in range(6):
+            heading = (base + index * 50 + step * 30) % 360
+            candidate = origin.point_from_heading(heading, radius)
+            if theater.is_on_land(candidate):
+                return candidate
+    return None
+
+
+def _seed_air_defenses_and_armor(theater: ConflictTheater) -> None:
+    """Seed each owned base's ``preset_locations`` with a default SAM / EWR / armor
+    laydown so the normal generator places them (see ``_BASE_SHORAD`` et al.).
+
+    Runs *before* ``GameGenerator.generate()`` on the finalized theater. Base
+    defences (SHORAD + EWR) ring the field; a forward MERAD + a BASE_DEFENSE armor
+    group are pushed toward the nearest enemy base. Neutral (soon-pruned) bases are
+    skipped. Positions are land-validated against the theater; a site that can't
+    find land is dropped."""
+    from game.naming import namegen
+    from game.theater.presetlocation import PresetLocation
+
+    seeded = 0
+    for cp in theater.controlpoints:
+        if not isinstance(cp, Airfield) or cp.starting_coalition.is_neutral:
+            continue
+        presets = cp.preset_locations
+        toward_enemy = _nearest_enemy_heading(theater, cp)
+        facing = toward_enemy or Heading.from_degrees(0)
+
+        # (target preset list, bias heading, distance from base, count)
+        plan: tuple[tuple[list[PresetLocation], Optional[Heading], float, int], ...] = (
+            (presets.short_range_sams, None, _DEFENCE_RING_M, _BASE_SHORAD),
+            (presets.ewrs, None, _DEFENCE_RING_M, _BASE_EWR),
+            (
+                presets.medium_range_sams,
+                toward_enemy,
+                _FORWARD_OFFSET_M,
+                _FORWARD_MERAD,
+            ),
+            (presets.armor_groups, toward_enemy, _FORWARD_OFFSET_M, _BASE_ARMOR_GROUPS),
+        )
+        index = 0
+        for target_list, bias, distance, count in plan:
+            for _ in range(count):
+                point = _land_point_near(theater, cp.position, bias, distance, index)
+                index += 1
+                if point is None:
+                    continue
+                target_list.append(
+                    PresetLocation(namegen.random_objective_name(), point, facing)
+                )
+                seeded += 1
+
+    logger.info("Blank canvas: seeded %d air-defence / armor sites.", seeded)
+
+
 def _synthesize_support_buildings(game: Game) -> None:
     """Give each owned base a small economy so a finalized blank canvas has income.
 
     A blank canvas is pure airfields with no preset structures, so without this a
     finalized campaign generates +0 budget and a barren ground layer. For every
     owned control point we synthesize the ``_BLANK_CANVAS_BUILDINGS`` (a factory
-    plus an ammo and fuel dump) from the coalition's building force groups -- the
-    same templates the drop-spawn tool and campaign generator use -- placed on land
-    near the base. Neutral (unpainted, soon-pruned) bases are skipped.
+    plus ammo, fuel and oil) from the coalition's building force groups -- the same
+    templates the drop-spawn tool and campaign generator use -- placed on land near
+    the base. Neutral (unpainted, soon-pruned) bases are skipped.
 
-    Minimal Increment-C pass: enough to be functional (income) and pretty (visible,
-    strikeable structures); richer economy laydown is deferred.
+    Runs post-generation (the air-defence/armor laydown is seeded pre-generation via
+    :func:`_seed_air_defenses_and_armor`). A faction missing a building template for
+    a task is skipped.
     """
     import random
 
     from game.naming import namegen
     from game.theater.presetlocation import PresetLocation
-    from game.utils import Heading
 
     placed = 0
     for cp in game.theater.controlpoints:

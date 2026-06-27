@@ -1482,9 +1482,14 @@ Design: `docs/dev/design/414th-campaign-maker-notes.md`.
 **Status 2026-06-24 (Retribution-app pass, Afghanistan): core loop VERIFIED.**
 Headless-inspected the finalized save — 0 neutral leftovers (gray pruned), 5 fronts
 derived, 1 squadron each side staffed. Bugs found + fixed this pass: PR #130, #133
-(merged), #138 (open, finalize button). **Remaining gap = Increment C support buildings**
-(finalized save has 0 ground objects → no economy / +0.0M income). BC-D fly-half + BC-E
-need DCS; BC-F still pending.
+(merged), #138 (open, finalize button). BC-D fly-half + BC-E need DCS; BC-F still pending.
+
+**Update 2026-06-27:** the Increment C "barren finalized save" gap is **closed** — a
+finalized blank canvas now seeds a per-base economy (factory/ammo/fuel/oil) **and** a
+default air-defence/armor laydown (SHORAD + EWR + forward MERAD + BASE_DEFENSE armor),
+routed through the engine's own ground-object generator so the IADS wires up. Headless-
+verified (Caucasus, `[CH] Russia 2020`): 32 ground objects on a 4-base canvas, 11 IADS
+nodes after `begin_turn_0`. New row BC-G covers the in-game flight check.
 
 | # | Layer | Observable criterion | Fail signature | Status |
 |---|---|---|---|---|
@@ -1494,3 +1499,4 @@ need DCS; BC-F still pending.
 | BC-D | build=Retribution / fly=.miz | Finalize → air-wing dialog → add squadrons from scratch → plan + fly a package | Dialog empty/errors with 0 preconfigured; no flyable aircraft | build VERIFIED (1 sq/side); **fly pending** |
 | BC-E | .miz | Drop-spawn (§20) places SAMs/armor onto the finalized map | Placement broken on a hand-built theater | pending |
 | BC-F | Retribution | Paint inert in a **normal** (non-setup) campaign — click opens info dialog | Bases repaint in a real game (guard not firing) | pending |
+| BC-G | build=Retribution / fly=.miz | A finalized blank canvas has, per owned base, an economy (factory/ammo/fuel/oil) **and** air defence + a BASE_DEFENSE armor group; SAMs/EWR appear on the IADS/threat map and SEAD/strike/BAI have real targets | Finalized save has 0 ground objects (barren); no threat rings; SEAD "no targets"; crash in finalize seeding | ☐ UNTESTED (headless-verified 2026-06-27: 32 TGOs + 11 IADS nodes; faction-template degradation expected) |

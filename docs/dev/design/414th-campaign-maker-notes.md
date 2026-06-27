@@ -102,10 +102,28 @@ path and keeps them off the map entirely.
   airfields; `Airfield.income_per_turn == 0`, income comes only from `REWARDS`
   building categories). Verified headless (Afghanistan 4 blue/3 red): 21 buildings,
   0 on neutral, blue 208/turn + red 156/turn. **PR #155.**
-  **Feature paused here by design** — this is the "pretty + somewhat functional"
-  cut. Deferred: configurable count/mix, richer laydown (depots/oil/derrick,
-  per-base variety), default SAM/armor seeding, and avoiding building-on-runway/
-  overlap beyond the land check.
+- **Increment C.2 — default air-defence / armor seeding + richer economy ✅
+  (built + headless-verified, 2026-06-27):** the "plays like a real campaign out of
+  the gate" pass. `_seed_air_defenses_and_armor(theater)` runs in
+  `finalize_blank_canvas` **before** `GameGenerator.generate()`, populating each
+  owned base's **`preset_locations`** (a SHORAD + EWR ringing the field, a forward
+  MERAD + a BASE_DEFENSE armor group pushed toward the nearest enemy base — counts
+  are tunable module constants; geometry land-validated against the theater). This
+  routes the SAMs/EWR/armor through the **engine's own ground-object generator**
+  (`generate_aa`/`generate_ewrs`/`generate_armor_groups`) — exactly the path a real
+  campaign's `.miz` presets feed — so the SAMs/EWR **wire into the IADS** at
+  `begin_turn_0` (`initialize_network`) and the armor becomes BAI targets, with no
+  bespoke placement code. A faction lacking a template for a task degrades
+  gracefully (the generator logs + falls back / skips). The economy mix also gained
+  **OIL** (`_BLANK_CANVAS_BUILDINGS`). Empty `tgo_config` is safe —
+  `get_unit_group_for_task` falls back to `armed_forces.random_group_for_task`.
+  **Headless-verified (Caucasus):** 4-base canvas with `[CH] Russia 2020` → 32
+  ground objects (BASE_DEFENSE/SHORAD/MERAD/EWR/FACTORY/AMMO/FUEL/OIL ×4) and **11
+  IADS nodes after `begin_turn_0`**; a sparse blue (PMC-USA) correctly degrades
+  MERAD→SHORAD and drops EWR. **Still deferred:** building-on-runway/overlap
+  avoidance beyond the land check, per-base variety/scaling, seeding the front-line
+  ground-unit *inventory* (`base.armor`) for a real FLOT push (only BASE_DEFENSE
+  armor TGOs are seeded today). Needs an in-game pass (fly a finalized blank canvas).
 - **Increment D+ — save a hand-built theater as a reusable campaign.**
 
 ### Airfield count caveat

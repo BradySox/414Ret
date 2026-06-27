@@ -114,6 +114,12 @@ def load_icons():
         "./resources/ui/misc/" + get_theme_icons() + "/reload.png"
     )
 
+    # Settings-page icons for the reorganized information architecture (§28).
+    ICONS["Difficulty & Realism"] = ICONS["Difficulty"]
+    ICONS["Air Doctrine"] = ICONS["Campaign Doctrine"]
+    ICONS["Kneeboards"] = ICONS["Notes"]
+    ICONS["Performance"] = ICONS["Generator"]
+
     ICONS["TaskCAS"] = QPixmap("./resources/ui/tasks/cas.png")
     ICONS["TaskCAP"] = QPixmap("./resources/ui/tasks/cap.png")
     ICONS["TaskSEAD"] = QPixmap("./resources/ui/tasks/sead.png")

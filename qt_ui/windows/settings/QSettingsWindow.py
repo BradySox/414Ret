@@ -36,9 +36,13 @@ from game.settings import (
     BoundedFloatOption,
     BoundedIntOption,
     ChoicesOption,
+    DIFFICULTY_REALISM_PAGE,
+    DifficultyPreset,
     MinutesOption,
     OptionDescription,
     Settings,
+    apply_preset,
+    detect_preset,
 )
 from game.settings.ISettingsContainer import SettingsContainer
 from game.sim import GameUpdateEvents
@@ -372,6 +376,51 @@ class AutoSettingsPage(QWidget):
         self.layout.update_from_settings()
 
 
+class DifficultyPresetBar(QGroupBox):
+    """One-click difficulty presets shown atop the Difficulty & Realism page.
+
+    Picking a preset sets the difficulty-defining fields (see
+    game/settings/difficultypreset.py) and refreshes the controls below; the
+    player can still hand-tune any of them afterward.
+    """
+
+    def __init__(
+        self,
+        settings: Settings,
+        on_apply: Callable[[DifficultyPreset], None],
+    ) -> None:
+        super().__init__("Difficulty preset")
+        self._on_apply = on_apply
+
+        outer = QVBoxLayout()
+        self.setLayout(outer)
+
+        intro = QLabel(
+            "One click sets AI skill, economy, player aids, and realism / "
+            "restrictions together as a starting point — you can still fine-tune "
+            "any setting below."
+        )
+        intro.setWordWrap(True)
+        outer.addWidget(intro)
+
+        row = QHBoxLayout()
+        for preset in DifficultyPreset:
+            button = QPushButton(preset.value)
+            button.clicked.connect(lambda _checked=False, p=preset: self._on_apply(p))
+            row.addWidget(button)
+        outer.addLayout(row)
+
+        self.current_label = QLabel()
+        outer.addWidget(self.current_label)
+        self.refresh(settings)
+
+    def refresh(self, settings: Settings) -> None:
+        preset = detect_preset(settings)
+        self.current_label.setText(
+            f"Current: {preset.value}" if preset is not None else "Current: Custom"
+        )
+
+
 class QSettingsWindow(QDialog):
     def __init__(self, game: Game):
         super().__init__()
@@ -422,6 +471,7 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
         self.pluginsOptionsPage = PluginOptionsPage(self)
 
         self.updating_ui = False
+        self.difficulty_preset_bar: Optional[DifficultyPresetBar] = None
 
         self.initUi()
 
@@ -447,7 +497,20 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
             page_item.setSelectable(True)
             self.categoryModel.appendRow(page_item)
             scroll = QScrollArea()
-            scroll.setWidget(page)
+            if name == DIFFICULTY_REALISM_PAGE:
+                # Prepend the one-click difficulty preset bar above this page's
+                # auto-generated sections.
+                container = QWidget()
+                container_layout = QVBoxLayout(container)
+                container_layout.setContentsMargins(0, 0, 0, 0)
+                self.difficulty_preset_bar = DifficultyPresetBar(
+                    self.settings, self.apply_difficulty_preset
+                )
+                container_layout.addWidget(self.difficulty_preset_bar)
+                container_layout.addWidget(page)
+                scroll.setWidget(container)
+            else:
+                scroll.setWidget(page)
             scroll.setWidgetResizable(True)
             self.right_layout.addWidget(scroll)
 
@@ -575,6 +638,13 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
         index = self.categoryList.selectionModel().currentIndex().row()
         self.right_layout.setCurrentIndex(index)
 
+    def apply_difficulty_preset(self, preset: DifficultyPreset) -> None:
+        apply_preset(self.settings, preset)
+        # Refresh every control from the mutated settings (also re-highlights the
+        # preset bar), then propagate as a normal settings change.
+        self.update_from_settings()
+        self.applySettings()
+
     def update_from_settings(self) -> None:
         self.updating_ui = True
         for p in self.pages.values():
@@ -607,6 +677,9 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
 
         self.pluginsPage.update_from_settings()
         self.pluginsOptionsPage.update_from_settings()
+
+        if self.difficulty_preset_bar is not None:
+            self.difficulty_preset_bar.refresh(self.settings)
 
         self.updating_ui = False
 

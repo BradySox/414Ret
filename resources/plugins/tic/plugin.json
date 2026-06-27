@@ -16,7 +16,7 @@
         {
             "nameInUI": "Minutes between advance bounds (each bound jittered ±25%)",
             "mnemonic": "boundPause",
-            "defaultValue": 25,
+            "defaultValue": 12,
             "minimumValue": 2,
             "maximumValue": 90
         },

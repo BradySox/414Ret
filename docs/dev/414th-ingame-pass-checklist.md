@@ -1161,6 +1161,31 @@ so the two docs don't drift.
 
 ---
 
+## K. Settings UI
+
+### K1 — Settings IA reorg + difficulty presets · §28 · ☐ UNTESTED (logic unit-tested + offscreen-build-verified 2026-06-27)
+- **Headless adjudication (2026-06-27):** `tests/settings/test_field_layout.py` locks the reorg
+  (FIELD_LAYOUT covers every user field exactly once, the UI walk emits each once, the six pages are
+  in the designed order, no section > 13 settings) and `tests/settings/test_difficultypreset.py`
+  locks the engine (Normal == Settings defaults, apply→detect round-trips for all four presets,
+  unrelated fields untouched, presets mutually distinct). An **offscreen Qt build** confirmed the full
+  `QSettingsWidget` constructs with all six pages, the preset bar tops Difficulty & Realism, and
+  applying Ace flips labels→Off / invuln→False / enemy_skill→Excellent with the "Current:" label
+  tracking. **Residual (UI eyeball only):** the visual feel / readability in the running app.
+- **Setup:** Open **Settings** in a campaign and the **New Game** wizard's options page.
+- **Pass:** Six content pages — **Difficulty & Realism / Air Doctrine / Campaign Management /
+  Mission Generation / Kneeboards / Performance** — each with focused sections (no 30-item wall);
+  every page has its icon. The **Difficulty preset** bar tops Difficulty & Realism; clicking
+  **Casual / Normal / Veteran / Ace** updates the controls below and the "Current: …" readout;
+  hand-editing a control afterward still works; **Normal** restores stock values. No setting is
+  missing from the dialog.
+- **Fail signature:** a setting absent from every page (FIELD_LAYOUT gap — should be impossible,
+  test-locked); a page/section empty or mis-ordered; the preset bar missing or not refreshing the
+  controls; a preset not flipping the expected fields; a blank page icon; a console error opening
+  the dialog.
+
+---
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

@@ -158,6 +158,353 @@ KNEEBOARD_SECTION = "Kneeboard"
 PERFORMANCE_SECTION = "Performance"
 
 
+# ---------------------------------------------------------------------------
+# Settings UI information architecture (§28).
+#
+# The Settings dialog and the New Game wizard are both built entirely by walking
+# Settings.pages() -> sections() -> fields(). Historically those followed raw
+# field-declaration order, which scattered ~150 settings and left two 30+-item
+# "General"/"Gameplay" grab-bag sections. `FIELD_LAYOUT` below is the single
+# source of truth for how settings are grouped *and ordered* in the UI:
+# field name -> (page, section). Page order = first appearance of a page here;
+# section order = first appearance of a section within a page; field order =
+# order here. Re-laying-out the UI is editing this table only — no field
+# declaration moves, no behaviour change (field names/values/defaults are
+# untouched). Any user field NOT listed here falls back to its own
+# page=/section= metadata, so nothing is ever dropped.
+#
+# The legacy per-field page=/section= kwargs on the declarations are retained as
+# that fallback; FIELD_LAYOUT overrides them for display.
+
+# Pages (Campaign Management keeps its constant/label; Mission Generation's
+# label now matches its existing icon key — see qt_ui/uiconstants.py).
+DIFFICULTY_REALISM_PAGE = "Difficulty & Realism"
+AIR_DOCTRINE_PAGE = "Air Doctrine"
+MISSION_GENERATION_PAGE = "Mission Generation"
+KNEEBOARDS_PAGE = "Kneeboards"
+PERFORMANCE_PAGE = "Performance"
+
+_LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
+    (
+        DIFFICULTY_REALISM_PAGE,
+        [
+            (
+                "AI skill & economy",
+                [
+                    "player_skill",
+                    "enemy_skill",
+                    "enemy_vehicle_skill",
+                    "player_income_multiplier",
+                    "enemy_income_multiplier",
+                ],
+            ),
+            (
+                "Player aids",
+                [
+                    "invulnerable_player_pilots",
+                    "external_views_allowed",
+                    "easy_communication",
+                    "battle_damage_assessment",
+                    "labels",
+                    "map_coalition_visibility",
+                ],
+            ),
+            (
+                "Realism & restrictions",
+                [
+                    "manpads",
+                    "night_day_missions",
+                    "restrict_weapons_by_date",
+                    "target_intel_precision",
+                    "recon_intel_fog",
+                    "scar_command_post_intel",
+                    "ai_unlimited_fuel",
+                ],
+            ),
+            (
+                "Attrition & replacements",
+                [
+                    "ai_pilot_levelling",
+                    "enable_squadron_pilot_limits",
+                    "squadron_pilot_limit",
+                    "squadron_replenishment_rate",
+                    "enable_squadron_aircraft_limits",
+                ],
+            ),
+        ],
+    ),
+    (
+        AIR_DOCTRINE_PAGE,
+        [
+            (
+                "Air defense & QRA",
+                [
+                    "ownfor_default_qra_reserve",
+                    "opfor_default_qra_reserve",
+                    "qra_gci_max_radius_nm",
+                    "qra_engagement_range_nm",
+                    "qra_comms_enabled",
+                ],
+            ),
+            (
+                "CAP & support timing",
+                [
+                    "desired_barcap_mission_duration",
+                    "barcap_overlap_time",
+                    "desired_awacs_mission_duration",
+                    "desired_tanker_on_station_time",
+                    "max_simultaneous_recovery_tankers",
+                    "max_carrier_simultaneous_barcaps",
+                    "aircraft_per_recovery_tanker",
+                ],
+            ),
+            (
+                "Tanker autoplanning",
+                [
+                    "autoplan_tankers_for_strike",
+                    "autoplan_tankers_for_oca",
+                    "autoplan_tankers_for_dead",
+                ],
+            ),
+            (
+                "Auto-planner behavior",
+                [
+                    "oca_target_autoplanner_min_aircraft_count",
+                    "ownfor_autoplanner_aggressiveness",
+                    "opfor_autoplanner_aggressiveness",
+                    "ownfor_planner_unpredictability",
+                    "opfor_planner_unpredictability",
+                ],
+            ),
+            (
+                "Recon & SCAR planning",
+                [
+                    "auto_add_tarps_recon",
+                    "scar_autoplan",
+                    "scar_misid_penalty",
+                ],
+            ),
+            (
+                "AI flight behavior",
+                [
+                    "atflir_autoswap",
+                    "ai_jettison_empty_tanks",
+                    "ai_vertical_takoff_landing",
+                ],
+            ),
+            (
+                "Altitudes",
+                [
+                    "heli_combat_alt_agl",
+                    "heli_cruise_alt_agl",
+                    "min_plane_altitude_offset",
+                    "max_plane_altitude_offset",
+                    "min_patrol_altitude",
+                ],
+            ),
+            (
+                "Threat & engagement distances",
+                [
+                    "airbase_threat_range",
+                    "max_threat_range",
+                    "cas_engagement_range_distance",
+                    "armed_recon_engagement_range_distance",
+                    "sead_sweep_engagement_range_distance",
+                    "sead_threat_buffer_min_distance",
+                    "sead_loiter_standoff_factor",
+                    "sead_loiter_max_window_seconds",
+                    "tarcap_threat_buffer_min_distance",
+                    "aewc_threat_buffer_min_distance",
+                    "tanker_threat_buffer_min_distance",
+                    "max_mission_range_planes",
+                    "max_mission_range_helicopters",
+                ],
+            ),
+        ],
+    ),
+    (
+        CAMPAIGN_MANAGEMENT_PAGE,
+        [
+            (
+                "HQ automation",
+                [
+                    "automate_runway_repair",
+                    "automate_front_line_reinforcements",
+                    "automate_aircraft_reinforcements",
+                    "auto_ato_behavior",
+                    "auto_ato_behavior_awacs",
+                    "auto_ato_behavior_tankers",
+                    "auto_ato_player_missions_asap",
+                    "auto_combat_sar",
+                    "automate_front_line_stance",
+                    "default_front_line_stance",
+                ],
+            ),
+            (
+                "Economy & reserves",
+                [
+                    "auto_procurement_balance",
+                    "frontline_reserves_factor",
+                    "reserves_procurement_target",
+                    "auto_procurement_balance_red",
+                    "frontline_reserves_factor_red",
+                    "reserves_procurement_target_red",
+                ],
+            ),
+            (
+                "Flight-planner automation",
+                [
+                    "fpa_2ship_weight",
+                    "fpa_3ship_weight",
+                    "fpa_4ship_weight",
+                    "primary_task_distance_factor",
+                ],
+            ),
+            (
+                "Squadrons & loadouts",
+                [
+                    "squadron_random_chance",
+                    "apply_target_overrides_to_loadouts",
+                    "use_bandit_clouds",
+                ],
+            ),
+        ],
+    ),
+    (
+        MISSION_GENERATION_PAGE,
+        [
+            (
+                "Simulation & fast-forward",
+                [
+                    "fast_forward_stop_condition",
+                    "combat_resolution_method",
+                    "never_delay_player_flights",
+                    "use_ai_combat_landing",
+                    "desired_player_mission_duration",
+                ],
+            ),
+            (
+                "Player slots & start",
+                [
+                    "default_start_type",
+                    "default_start_type_client",
+                    "dynamic_slots",
+                    "dynamic_slots_hot",
+                    "dynamic_cargo",
+                    "player_flights_sixpack",
+                    "untasked_opfor_client_slots",
+                    "game_masters_count",
+                    "tactical_commander_count",
+                    "jtac_count",
+                    "observer_count",
+                    "player_startup_time",
+                ],
+            ),
+            (
+                "Cockpit & nav aids",
+                [
+                    "generate_portable_tacans",
+                    "generate_marks",
+                    "eplrs_enabled",
+                    "default_player_laser_code",
+                    "switch_baro_fix",
+                    "ai_radio_behavior",
+                ],
+            ),
+            (
+                "Ground start",
+                [
+                    "ground_start_ai_planes",
+                    "ground_start_scenery_remove_triggers",
+                    "ground_start_trucks",
+                    "ground_start_trucks_roadbase",
+                    "ground_start_ground_power_trucks",
+                    "ground_start_ground_power_trucks_roadbase",
+                    "ground_start_airbase_statics_farps_remove",
+                ],
+            ),
+            (
+                "Carrier",
+                [
+                    "supercarrier",
+                    "supercarrier_deck_crew",
+                ],
+            ),
+            (
+                "World & systems",
+                [
+                    "max_frontline_width",
+                    "use_auto_fog",
+                    "iads_engine",
+                ],
+            ),
+        ],
+    ),
+    (
+        KNEEBOARDS_PAGE,
+        [
+            (
+                "Kneeboards",
+                [
+                    "compact_kneeboard",
+                    "generate_dark_kneeboard",
+                    "generate_target_recon_kneeboard",
+                    "generate_all_packages_kneeboard",
+                    "generate_threat_intel_kneeboard",
+                    "enable_package_code_words",
+                    "generate_fuel_ladder_kneeboard",
+                    "target_recon_extra_threat_search_nmi",
+                ],
+            ),
+        ],
+    ),
+    (
+        PERFORMANCE_PAGE,
+        [
+            (
+                "World detail",
+                [
+                    "perf_smoke_gen",
+                    "perf_smoke_spacing",
+                    "perf_red_alert_state",
+                    "perf_artillery",
+                    "generate_fire_tasks_for_missile_sites",
+                    "perf_moving_units",
+                    "convoys_travel_full_distance",
+                    "perf_disable_convoys",
+                    "perf_disable_cargo_ships",
+                    "perf_frontline_units_prefer_roads",
+                    "perf_frontline_units_max_supply",
+                    "perf_infantry",
+                    "perf_destroyed_units",
+                ],
+            ),
+            (
+                "Culling & untasked units",
+                [
+                    "perf_disable_untasked_blufor_aircraft",
+                    "perf_disable_untasked_opfor_aircraft",
+                    "perf_culling",
+                    "perf_culling_distance",
+                    "perf_do_not_cull_threatening_iads",
+                    "perf_do_not_cull_carrier",
+                    "perf_ai_despawn_airstarted",
+                ],
+            ),
+        ],
+    ),
+]
+
+# Flattened field -> (page, section). Insertion order (and thus UI order) is the
+# spec order above.
+FIELD_LAYOUT: dict[str, tuple[str, str]] = {
+    name: (page, section)
+    for page, sections in _LAYOUT_SPEC
+    for section, names in sections
+    for name in names
+}
+
+
 @dataclass
 class Settings:
     version: Optional[str] = None
@@ -2057,28 +2404,62 @@ class Settings:
         return settings_field.metadata[SETTING_DESCRIPTION_KEY]
 
     @classmethod
+    def _effective_layout(
+        cls, name: str, description: OptionDescription
+    ) -> tuple[str, str]:
+        # FIELD_LAYOUT is the curated UI grouping; fall back to the field's own
+        # page=/section= metadata for anything not listed there.
+        return FIELD_LAYOUT.get(name, (description.page, description.section))
+
+    @classmethod
+    def _ordered_user_fields(cls) -> list[Field[Any]]:
+        # Walk user fields in FIELD_LAYOUT order first (the curated layout), then
+        # append any field missing from the table in declaration order so a
+        # field is never dropped from the UI.
+        by_name = {f.name: f for f in cls._user_fields()}
+        ordered: list[Field[Any]] = []
+        seen: set[str] = set()
+        for name in FIELD_LAYOUT:
+            settings_field = by_name.get(name)
+            if settings_field is not None:
+                ordered.append(settings_field)
+                seen.add(name)
+        for settings_field in cls._user_fields():
+            if settings_field.name not in seen:
+                ordered.append(settings_field)
+                seen.add(settings_field.name)
+        return ordered
+
+    @classmethod
     def pages(cls) -> Iterator[str]:
         seen: set[str] = set()
-        for settings_field in cls._user_fields():
+        for settings_field in cls._ordered_user_fields():
             description = cls._field_description(settings_field)
-            if description.page not in seen:
-                yield description.page
-                seen.add(description.page)
+            page, _section = cls._effective_layout(settings_field.name, description)
+            if page not in seen:
+                yield page
+                seen.add(page)
 
     @classmethod
     def sections(cls, page: str) -> Iterator[str]:
         seen: set[str] = set()
-        for settings_field in cls._user_fields():
+        for settings_field in cls._ordered_user_fields():
             description = cls._field_description(settings_field)
-            if description.page == page and description.section not in seen:
-                yield description.section
-                seen.add(description.section)
+            field_page, section = cls._effective_layout(
+                settings_field.name, description
+            )
+            if field_page == page and section not in seen:
+                yield section
+                seen.add(section)
 
     @classmethod
     def fields(cls, page: str, section: str) -> Iterator[tuple[str, OptionDescription]]:
-        for settings_field in cls._user_fields():
+        for settings_field in cls._ordered_user_fields():
             description = cls._field_description(settings_field)
-            if description.page == page and description.section == section:
+            field_page, field_section = cls._effective_layout(
+                settings_field.name, description
+            )
+            if field_page == page and field_section == section:
                 yield settings_field.name, description
 
     @classmethod

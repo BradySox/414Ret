@@ -1864,3 +1864,74 @@ starts on page 2) and for `paginate()` expanding a flight's block. `pages_by_air
   pilot of the type sees the same stack); the index just makes the stack navigable.
 - **Needs an in-game pass:** confirm the index appears with correct start pages when 2+ client flights
   of one type are fragged, and is absent for a single flight.
+
+## §28 — Settings IA reorg + difficulty presets
+
+Two coupled UX wins on the settings surface (the in-game **Settings** dialog and the **New Game**
+wizard both render from the same `QSettingsWidget`).
+
+### The information-architecture reorg
+
+The settings dialog is **100% metadata-driven**: `QSettingsWindow` builds every page → section →
+control by walking `Settings.pages()` → `Settings.sections(page)` → `Settings.fields(page, section)`.
+Historically those three yielded in raw **field-declaration order**, which had scattered ~150 settings
+and left two grab-bag sections — `Campaign Doctrine / General` (34 settings) and
+`Mission Generator / Gameplay` (37) — that no one could navigate.
+
+The reorg introduces a single source of truth for the layout: **`FIELD_LAYOUT`** in
+`game/settings/settings.py` (built from the readable `_LAYOUT_SPEC`), an *ordered* map of
+`field name → (page, section)`. The three classmethods now resolve each field's group via
+`_effective_layout` (FIELD_LAYOUT, falling back to the field's own `page=`/`section=` metadata so
+nothing is ever dropped) and emit in FIELD_LAYOUT order via `_ordered_user_fields`. Net effect:
+
+- **No field declarations moved, no behaviour change** — field names, values, and defaults are
+  untouched, so there is **no save migration**. Only the UI grouping/order changes.
+- The grab-bags are gone; the six content pages are **Difficulty & Realism · Air Doctrine ·
+  Campaign Management · Mission Generation · Kneeboards · Performance**, each with focused sections
+  (largest is the 13-item engagement-distance table). Difficulty-relevant settings that were
+  scattered across pages (weapons-by-date, target-intel precision, recon fog, unlimited fuel,
+  pilot/airframe limits) are **centralised onto Difficulty & Realism** so the preset has one home.
+- Page icons for the renamed/new pages are aliased in `qt_ui/uiconstants.py` (and the page label is
+  now `"Mission Generation"`, which matches its existing icon key — fixing a latent miss).
+
+`tests/settings/test_field_layout.py` locks the invariants: FIELD_LAYOUT covers **every** user field
+exactly once (a typo or omission fails CI), the UI walk emits each field once, the page order is the
+designed order, and **no section exceeds 13 settings** (the anti-grab-bag guard).
+
+### Difficulty presets
+
+`game/settings/difficultypreset.py` adds a `DifficultyPreset` enum (**Casual / Normal / Veteran /
+Ace**) and `PRESET_VALUES` — each preset sets the same 12 difficulty-defining fields (enemy skill ×2,
+income ×2, pilot invulnerability, MANPADS, labels, map visibility, external views, easy comms, BDA,
+weapons-by-date). `apply_preset(settings, preset)` sets just those fields; everything else is the
+player's. **Normal mirrors the Settings defaults exactly** (a clean reset to stock), asserted in
+`tests/settings/test_difficultypreset.py`. `detect_preset(settings)` returns the matching preset (or
+`None` for a custom mix) to drive the "Current: …" readout.
+
+The UI is a `DifficultyPresetBar` (`qt_ui/windows/settings/QSettingsWindow.py`) injected above the
+auto-generated sections of the Difficulty & Realism page only: four buttons + a "Current:" label.
+A click calls `apply_difficulty_preset` → `apply_preset` → `update_from_settings` (refreshes every
+control from the mutated settings and re-highlights the bar) → `applySettings`. Player aids stay
+fully editable afterward; the preset is a *starting point*, not a lock. Player coalition skill (AI
+wingman quality, not a difficulty lever) is deliberately left alone by every preset.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Layout source of truth | `game/settings/settings.py` (`_LAYOUT_SPEC`, `FIELD_LAYOUT`, `_effective_layout`, `_ordered_user_fields`) |
+| Preset engine | `game/settings/difficultypreset.py` (`DifficultyPreset`, `PRESET_VALUES`, `apply_preset`, `detect_preset`) |
+| UI | `qt_ui/windows/settings/QSettingsWindow.py` (`DifficultyPresetBar`, page injection), `qt_ui/uiconstants.py` (icons) |
+| Tests | `tests/settings/test_field_layout.py`, `tests/settings/test_difficultypreset.py` |
+
+### Gotchas / deferred
+
+- **The legacy per-field `page=`/`section=` kwargs are kept** as the fallback for any field absent
+  from FIELD_LAYOUT; they no longer drive display. Leave them — they're the safety net.
+- **The "Current:" highlight is best-effort.** It updates on preset click and on settings load, not
+  live as the player hand-edits an individual control, so it can read "Custom" / stale until the next
+  refresh. Acceptable for v1; wiring every difficulty control to re-detect is the follow-up.
+- **Needs an in-game pass (UI eyeball):** open Settings and the New Game wizard, confirm the six
+  pages/sections read cleanly, the preset bar tops Difficulty & Realism, each preset flips the
+  expected controls, and "Current:" tracks. The build + apply flow is offscreen-smoke-verified and
+  the logic is unit-tested; only the visual feel is unexercised by CI.

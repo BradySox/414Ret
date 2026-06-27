@@ -184,6 +184,12 @@ and selected later upstream fixes.
   the two AI-radio toggles were merged into a single **AI wingman radio behavior** choice
   (Normal / Suppress contact reports / Radio silence), and many labels were clarified.
   Existing campaigns migrate automatically on load.
+- The **settings pages were reorganized** so options are easy to find: the two giant catch-all
+  lists are gone, replaced by six focused pages (**Difficulty & Realism, Air Doctrine, Campaign
+  Management, Mission Generation, Kneeboards, Performance**). New **one-click difficulty presets**
+  — **Casual / Normal / Veteran / Ace** — sit atop the Difficulty & Realism page and set AI skill,
+  economy, player aids, and realism/restrictions together as a starting point; you can still
+  fine-tune any individual setting afterward, and *Normal* restores the stock defaults.
 - A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 NATO
   counteroffensive, built for the 414th. The Warsaw Pact opened the war by overrunning the
   Fulda Gap, taking Hamburg, and seizing Copenhagen — but the Soviet thrust has culminated,

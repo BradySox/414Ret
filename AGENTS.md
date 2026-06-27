@@ -304,6 +304,21 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     when 2+ client flights share the airframe (a lone flight is unchanged). `pages_by_airframe` →
     `client_flights_by_airframe` + `_build_kneeboard_index` + `KneeboardIndexPage`.
     (`game/missiongenerator/kneeboard.py`; features doc §27, checklist H10.)
+28. **Settings IA reorg + difficulty presets** — the settings dialog + New Game wizard are
+    100% metadata-driven (they walk `Settings.pages()/sections()/fields()`), so a single ordered
+    `FIELD_LAYOUT` table (`game/settings/settings.py`, from `_LAYOUT_SPEC`) now drives the whole
+    layout — no field declarations moved, no behaviour change, no save migration. It kills the two
+    34/37-item "General"/"Gameplay" grab-bags, regroups everything into six focused pages
+    (**Difficulty & Realism · Air Doctrine · Campaign Management · Mission Generation · Kneeboards ·
+    Performance**), and centralises scattered difficulty knobs onto Difficulty & Realism. On top of
+    that, **difficulty presets** (`game/settings/difficultypreset.py`: `DifficultyPreset` Casual/
+    Normal/Veteran/Ace + `apply_preset`/`detect_preset`) — a one-click `DifficultyPresetBar` atop the
+    Difficulty & Realism page sets 12 difficulty-defining fields together (Normal == stock defaults);
+    every setting stays hand-editable after. The classmethods fall back to a field's own
+    `page=`/`section=` metadata for anything absent from FIELD_LAYOUT, so nothing is ever dropped.
+    (`game/settings/settings.py`, `game/settings/difficultypreset.py`,
+    `qt_ui/windows/settings/QSettingsWindow.py`, `qt_ui/uiconstants.py`; features doc §28,
+    checklist K1.)
 
 ---
 

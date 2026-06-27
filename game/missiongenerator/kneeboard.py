@@ -2641,6 +2641,41 @@ class PackagesMapPage(KneeboardPage):
         writer.write(path)
 
 
+class KneeboardIndexPage(KneeboardPage):
+    """Front index for an airframe whose kneeboard several flights share.
+
+    DCS scopes kneeboards per *airframe*, not per group, so every pilot of a type sees
+    all of that type's flight decks stacked together. When 2+ client flights share an
+    airframe this one page is prepended listing each flight's callsign, task, and start
+    page, so a pilot flips straight to their own deck instead of hunting through the
+    stack. Not emitted for a lone flight (no stack, no bloat).
+    """
+
+    HEADERS = ["Flight", "Task", "Page"]
+
+    def __init__(
+        self,
+        aircraft: AircraftType,
+        rows: List[List[str]],
+        dark_kneeboard: bool,
+    ) -> None:
+        self.aircraft = aircraft
+        self.rows = rows
+        self.dark_kneeboard = dark_kneeboard
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        writer.title(f"{self.aircraft.display_name} — Kneeboard Index")
+        writer.text(
+            "DCS shows every flight of this airframe the same kneeboard, so the decks "
+            "below are stacked together. Flip to your callsign's start page.",
+            wrap=True,
+        )
+        writer.vspace(8)
+        writer.table(self.rows, headers=self.HEADERS)
+        writer.write(path)
+
+
 class KneeboardGenerator(MissionInfoGenerator):
     """Creates kneeboard pages for each client flight in the mission."""
 
@@ -2681,18 +2716,42 @@ class KneeboardGenerator(MissionInfoGenerator):
         return None
 
     def generate(self) -> None:
-        """Generates a kneeboard per client flight."""
+        """Generates a kneeboard per client flight, grouped by airframe.
+
+        DCS scopes kneeboards per airframe, so all client flights of a type share one
+        stacked deck. Each flight's pages stay a contiguous block in deterministic
+        (callsign-sorted) order; when 2+ flights share a type a one-page index is
+        prepended so a pilot can flip straight to their own block (#P4).
+        """
         temp_dir = Path("kneeboards")
         temp_dir.mkdir(exist_ok=True)
-        for aircraft, pages in self.pages_by_airframe().items():
+        for aircraft, flights in self.client_flights_by_airframe().items():
             aircraft_dir = temp_dir / aircraft.dcs_unit_type.id
             aircraft_dir.mkdir(exist_ok=True)
-            # Pages may expand into continuation pages when a folded list
-            # overflows a single image, so flatten before numbering the files.
-            concrete_pages = [
-                concrete for page in pages for concrete in page.paginate()
-            ]
-            for idx, page in enumerate(concrete_pages):
+            # Per-flight concrete pages. paginate() may expand a flight's pages into
+            # continuation pages, so flatten each flight's block before numbering.
+            flight_blocks: List[Tuple[FlightData, List[KneeboardPage]]] = []
+            for flight in flights:
+                package_flights = [
+                    f
+                    for f in self.flights
+                    if f.package is flight.package and f is not flight
+                ]
+                pages = self.generate_flight_kneeboard(flight, package_flights)
+                concrete = [c for page in pages for c in page.paginate()]
+                flight_blocks.append((flight, concrete))
+
+            ordered_pages: List[KneeboardPage] = []
+            # Prepend the index only when the deck is shared, so a lone flight's deck
+            # is unchanged (no extra page).
+            if len(flight_blocks) > 1:
+                ordered_pages.append(
+                    self._build_kneeboard_index(aircraft, flight_blocks)
+                )
+            for _flight, concrete in flight_blocks:
+                ordered_pages.extend(concrete)
+
+            for idx, page in enumerate(ordered_pages):
                 page_path = aircraft_dir / f"page{idx:02}.png"
                 page.write(page_path)
                 self.mission.add_aircraft_kneeboard(aircraft.dcs_unit_type, page_path)
@@ -2730,30 +2789,39 @@ class KneeboardGenerator(MissionInfoGenerator):
             key = custom.airframe_id or ""
             self.mission.custom_kneeboards[key].append(image_path)
 
-    def pages_by_airframe(self) -> Dict[AircraftType, List[KneeboardPage]]:
-        """Returns a list of kneeboard pages per airframe in the mission.
+    def client_flights_by_airframe(self) -> Dict[AircraftType, List[FlightData]]:
+        """Client flights grouped by airframe, in deterministic per-airframe order.
 
-        Only client flights will be included, but because DCS does not support
-        group-specific kneeboard pages, flights (possibly from opposing sides)
-        will be able to see the kneeboards of all aircraft of the same type.
-
-        Returns:
-            A dict mapping aircraft types to the list of kneeboard pages for
-            that aircraft.
+        Only client flights are included. DCS does not support group-specific kneeboard
+        pages, so every flight of a type shares the same stacked deck; sorting by
+        callsign keeps the stack (and the index that fronts it) stable across
+        regenerations.
         """
-        all_flights: Dict[AircraftType, List[KneeboardPage]] = defaultdict(list)
+        by_airframe: Dict[AircraftType, List[FlightData]] = defaultdict(list)
         for flight in self.flights:
             if not flight.client_units:
                 continue
-            package_flights = [
-                f
-                for f in self.flights
-                if f.package is flight.package and f is not flight
-            ]
-            all_flights[flight.aircraft_type].extend(
-                self.generate_flight_kneeboard(flight, package_flights)
-            )
-        return all_flights
+            by_airframe[flight.aircraft_type].append(flight)
+        for grouped in by_airframe.values():
+            grouped.sort(key=lambda f: f.callsign)
+        return by_airframe
+
+    def _build_kneeboard_index(
+        self,
+        aircraft: AircraftType,
+        flight_blocks: List[Tuple[FlightData, List[KneeboardPage]]],
+    ) -> KneeboardPage:
+        """A one-page callsign -> start-page index fronting a shared-airframe deck."""
+        rows: List[List[str]] = []
+        # The index itself is page 1, so the first flight's block starts on page 2.
+        page_cursor = 2
+        for flight, concrete in flight_blocks:
+            name = flight.callsign
+            if flight.custom_name:
+                name += f' ("{flight.custom_name}")'
+            rows.append([name, flight.flight_type.value, str(page_cursor)])
+            page_cursor += len(concrete)
+        return KneeboardIndexPage(aircraft, rows, self.dark_kneeboard)
 
     def generate_task_page(self, flight: FlightData) -> Optional[KneeboardPage]:
         if flight.flight_type in (FlightType.DEAD, FlightType.SEAD):

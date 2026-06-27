@@ -36,9 +36,11 @@ class AircraftSimulation:
         combat_resolution_method: CombatResolutionMethod,
         force_continue: bool,
     ) -> None:
-        if (
-            not self._auto_resolve_combat(combat_resolution_method, force_continue)
-            and self.combats
+        if any(
+            self._combat_pauses_fast_forward(
+                c, combat_resolution_method, force_continue
+            )
+            for c in self.combats
         ):
             logging.error(
                 "Cannot resume simulation because aircraft are in combat and "
@@ -95,9 +97,11 @@ class AircraftSimulation:
                 if len(flight.package.flights) == 0:
                     flight.squadron.coalition.ato.remove_package(flight.package)
 
-        if (
-            not self._auto_resolve_combat(combat_resolution_method, force_continue)
-            and self.combats
+        if any(
+            self._combat_pauses_fast_forward(
+                c, combat_resolution_method, force_continue
+            )
+            for c in self.combats
         ):
             events.complete_simulation()
 
@@ -123,3 +127,33 @@ class AircraftSimulation:
         if force_continue:
             return True
         return combat_resolution_method != CombatResolutionMethod.PAUSE
+
+    @staticmethod
+    def _combat_involves_player(combat: FrozenCombat) -> bool:
+        return any(flight.client_count > 0 for flight in combat.iter_flights())
+
+    def _combat_pauses_fast_forward(
+        self,
+        combat: FrozenCombat,
+        combat_resolution_method: CombatResolutionMethod,
+        force_continue: bool,
+    ) -> bool:
+        """Whether an active combat should stop the fast-forward.
+
+        Normally any combat stops a PAUSE fast-forward so the player can fly it. But the
+        PLAYER_AT_IP stop condition means "spawn me at my IP" -- an AI-only skirmish
+        elsewhere must not strand the player short of it. So under PLAYER_AT_IP only a
+        combat that actually involves a player flight pauses; AI-only combats keep
+        ticking and auto-resolve (their freeze elapses and ``resolve`` runs normally).
+        When combat already auto-resolves (RESOLVE/SKIP, or ``force_continue``) nothing
+        pauses here regardless.
+        """
+        if self._auto_resolve_combat(combat_resolution_method, force_continue):
+            return False
+        if (
+            self.game.settings.fast_forward_stop_condition
+            is FastForwardStopCondition.PLAYER_AT_IP
+            and not self._combat_involves_player(combat)
+        ):
+            return False
+        return True

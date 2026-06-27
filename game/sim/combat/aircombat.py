@@ -10,6 +10,11 @@ from shapely.ops import unary_union
 from game.ato.flightstate import InCombat, InFlight
 from game.settings.settings import CombatResolutionMethod
 from game.utils import dcs_to_shapely_point
+from .capability import (
+    air_combat_survivor_loss_chance,
+    air_combat_win_probability,
+    air_to_air_strength,
+)
 from .joinablecombat import JoinableCombat
 from .. import GameUpdateEvents
 
@@ -84,18 +89,18 @@ class AirCombat(JoinableCombat):
                 blue.append(flight)
             else:
                 red.append(flight)
-        if len(blue) > len(red):
-            winner = blue
-            loser = red
-        elif len(blue) < len(red):
-            winner = red
-            loser = blue
-        elif random.random() >= 0.5:
-            winner = blue
-            loser = red
+
+        # Capability-weighted odds (not a numbers-only coin flip): each side's strength
+        # is capability x count, so a modern jet is no longer doomed by a coin toss but
+        # numbers still tell. See game/sim/combat/capability.py.
+        blue_strength = sum(air_to_air_strength(f) for f in blue)
+        red_strength = sum(air_to_air_strength(f) for f in red)
+        if random.random() < air_combat_win_probability(blue_strength, red_strength):
+            winner, loser = blue, red
+            winner_strength, loser_strength = blue_strength, red_strength
         else:
-            winner = red
-            loser = blue
+            winner, loser = red, blue
+            winner_strength, loser_strength = red_strength, blue_strength
 
         if winner == blue:
             logging.debug(f"{self} auto-resolved as blue victory")
@@ -105,9 +110,11 @@ class AirCombat(JoinableCombat):
         for flight in loser:
             flight.kill(results, events)
 
+        # A lopsided winner bleeds few survivors; an even fight still costs ~half.
+        survivor_loss = air_combat_survivor_loss_chance(winner_strength, loser_strength)
         for flight in winner:
             assert isinstance(flight.state, InCombat)
-            if random.random() >= 0.5:
+            if random.random() < survivor_loss:
                 flight.kill(results, events)
             else:
                 flight.state.exit_combat(events, time, elapsed_time)

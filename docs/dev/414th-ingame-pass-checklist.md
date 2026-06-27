@@ -1076,6 +1076,44 @@ so the two docs don't drift.
   test-locked); on a TIC-off build, clusters splitting apart in BREAKTHROUGH; the default-stance
   setting ignored at new-game/capture.
 
+### H10 — Shared-airframe kneeboard index · §27 · ☐ UNTESTED (page math unit-tested 2026-06-26)
+- **Headless adjudication (2026-06-26):** `tests/missiongenerator/test_kneeboard_index.py` covers the
+  start-page math (index is page 1, blocks start at 2 and advance by block size), callsign grouping +
+  sort, and the index page render. **Residual (in-sim only):** the index actually appears in-cockpit
+  and its page numbers line up with the stacked deck DCS builds.
+- **Setup:** Frag **2+ client flights of the same airframe** (e.g. two F/A-18 flights) in a mission;
+  generate and open the kneeboard. Also frag a single flight of another type as the control.
+- **Pass:** page 1 of the shared airframe is an index listing each flight's callsign / task / start
+  page; flipping to a listed page lands on that flight's deck; the single-flight type has **no** index.
+- **Fail signature:** no index when 2+ share a type; wrong start pages; an index wrongly added for a
+  lone flight; flights out of the listed order.
+
+### J1 — Capability-weighted off-mission combat · §26 · ☐ UNTESTED (scoring unit-tested 2026-06-26)
+- **Headless adjudication (2026-06-26):** `tests/test_combat_resolution_capability.py` covers the
+  scoring (A2A strength = best A2A `task_priority` × count; win = strength share; survivor loss scales
+  with margin, clamped ≤ legacy 0.5; SAM death halved for SEAD, stacked by site count, clamped). 39
+  combat/sim regression tests stay green. **Residual (in-sim only):** that auto-resolved attrition over
+  several turns *reads* believably.
+- **Setup:** Auto-plan a few turns with **combat resolution = Resolve** (or Skip) so AI-vs-AI
+  engagements auto-resolve; watch the losses on both sides over the turns.
+- **Pass:** modern fighters beat obsolete ones more often than not; numbers still tell (a pair can
+  beat a lone jet); a SEAD/SEAD-capable flight survives SAMs better than a striker; no side wins or
+  loses every single time.
+- **Fail signature:** outcomes feel random (elite jets routinely lost to obsolete ones), or one side
+  always wins; SEAD no better off than a bomber against SAMs.
+
+### J2 — "Player at IP" fast-forward spawns at the IP · §26 · ☐ UNTESTED (gate unit-tested 2026-06-26)
+- **Headless adjudication (2026-06-26):** `tests/test_player_at_ip_fast_forward.py` covers the gate
+  (AI-only combat does not pause a PLAYER_AT_IP fast-forward; a player-involving combat still does;
+  other stop conditions / `force_continue` unchanged). **Residual (in-sim only):** the actual spawn
+  position after a real fast-forward.
+- **Setup:** Fast-forward stop condition = **"Player at IP"**, combat resolution = **default (Pause)**,
+  a **ground-started** (Cold/Hot/Runway) player flight with an IP. Generate the mission.
+- **Pass:** the player spawns **airborne at/near their IP**, not on the ramp, even with AI fights
+  happening elsewhere; if the player's *own* flight is engaged en route the sim still pauses there.
+- **Fail signature:** player spawns at their configured ground start (the bug returns); or the sim
+  never stops / the player ends up far past the IP.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

@@ -1731,3 +1731,86 @@ the baseline "no modern cueing" option (`Not installed` / `Visor Only`, id `0`).
   uses a single global year. Add per-faction overrides only if a campaign needs them.
 - **Needs an in-game pass.** CI proves the helpers + clamp logic; confirm in-game that a pre-2003
   generated mission actually shows the baseline helmet option (not JHMCS) on an F/A-18/F-16.
+
+## §26 — Off-mission combat fidelity + PLAYER_AT_IP fast-forward
+
+The simulation auto-resolves the engagements the player does **not** fly — the AI-vs-AI fights that
+happen while you fast-forward to first contact / your IP. Two coupled improvements.
+
+### Capability-weighted abstract combat (was: coin flips)
+
+The old resolution was numbers-only: in A2A the side with more flights won outright (ties 50/50) and
+each survivor then died on a second 50/50; a SAM engagement was a flat 50% loss. So an obsolete jet
+beat a modern one and SEAD's whole purpose was ignored.
+
+`game/sim/combat/capability.py` weights the odds with data the planner already carries:
+- **A2A strength** = best A2A `AircraftType.task_priority` (BARCAP/TARCAP/sweep/escort/intercept) ×
+  number of airframes, with a floor so a non-fighter is weak but not auto-dead. Win probability is the
+  strength share (`air_combat_win_probability`); winner survivor-loss scales with the margin
+  (`air_combat_survivor_loss_chance`, clamped ≤ the legacy 0.5 so a winner is never *more* fragile than
+  before — dominance only ever reduces losses).
+- **SAM survival** (`sam_death_chance`) anchors at the legacy 0.5 for a generic flight vs one site,
+  **halves** for a SEAD-role or SEAD-capable flight, **stacks** with each extra engaging site, clamped
+  to [0.05, 0.95].
+
+`aircombat.py` / `defendingsam.py` call these instead of `random.random() >= 0.5`. Deliberately coarse
+— a campaign abstraction, not a DCS dogfight; `SKIP` is untouched and the player's flown missions are
+still resolved by DCS.
+
+### PLAYER_AT_IP actually reaches the IP
+
+`FastForwardStopCondition.PLAYER_AT_IP` should spawn the player airborne at their IP. It was silently
+defeated by `combat_resolution_method` defaulting to `PAUSE`: the fast-forward ended at the first
+combat *anywhere* in the theater (`AircraftSimulation.on_game_tick`), which beats a ground-started
+player flight to its IP, so generation spawned it at its configured start (`flightgroupspawner` reads
+the sim state, which was still AtDeparture).
+
+Fix: `AircraftSimulation._combat_pauses_fast_forward` — under `PLAYER_AT_IP`, an AI-only combat no
+longer stops the fast-forward (it keeps ticking and resolves via the capability path above); only a
+combat that **involves a player flight** still pauses (you fly that one). Applied to both stop-guards
+in `on_game_tick`. Other stop conditions and `force_continue` are unchanged.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Capability scoring | `game/sim/combat/capability.py` |
+| A2A / SAM resolve | `game/sim/combat/aircombat.py`, `game/sim/combat/defendingsam.py` |
+| Fast-forward gate | `game/sim/aircraftsimulation.py` (`_combat_pauses_fast_forward`) |
+| Tests | `tests/test_combat_resolution_capability.py`, `tests/test_player_at_ip_fast_forward.py` |
+
+### Gotchas / deferred
+
+- **Pilot experience not folded in yet** — capability is airframe + numbers + role only.
+- **`task_priority` is a planner *suitability* score**, not a pure A2A rating, so the spread is
+  compressed (≈480 MiG-21 → 665 F-15C). It orders matchups correctly; sharpen with an exponent or a
+  dedicated rating only if outcomes feel too flat.
+- **Needs an in-game pass:** confirm auto-resolved attrition reads believably, and that
+  `PLAYER_AT_IP` + the default PAUSE resolution now spawns the player at the IP.
+
+## §27 — Shared-airframe kneeboard index (co-op orientation)
+
+DCS scopes kneeboards per *airframe*, not per group, so every pilot of a type sees all of that type's
+flight decks stacked together (see the `client_flights_by_airframe` note). A 4-ship-of-Hornets
+squadron flips through four decks to find theirs.
+
+`KneeboardGenerator.generate` now keeps each flight's pages a **contiguous block** in deterministic
+(callsign-sorted) order, and prepends a one-page **index** (`KneeboardIndexPage`) — callsign (+ custom
+name), task, and start page per flight — **only when 2+ client flights share the airframe**. A lone
+flight's deck is unchanged (no extra page). Start pages account for the index page itself (block 1
+starts on page 2) and for `paginate()` expanding a flight's block. `pages_by_airframe()` became
+`client_flights_by_airframe()` (grouped + sorted flights); `_build_kneeboard_index` builds the page.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Index page + generate | `game/missiongenerator/kneeboard.py` (`KneeboardIndexPage`, `generate`, `client_flights_by_airframe`, `_build_kneeboard_index`) |
+| Tests | `tests/missiongenerator/test_kneeboard_index.py` |
+
+### Gotchas / deferred
+
+- **DCS limit, mitigated not removed.** Still no per-group kneeboard and no per-pilot ordering (every
+  pilot of the type sees the same stack); the index just makes the stack navigable.
+- **Needs an in-game pass:** confirm the index appears with correct start pages when 2+ client flights
+  of one type are fragged, and is absent for a single flight.

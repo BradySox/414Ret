@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from game.ato.flightstate import InCombat
 from game.settings.settings import CombatResolutionMethod
+from .capability import sam_death_chance
 from .frozencombat import FrozenCombat
 from .. import GameUpdateEvents
 
@@ -52,7 +53,11 @@ class DefendingSam(FrozenCombat):
             self.flight.state.exit_combat(events, time, elapsed_time)
             return
 
-        if random.random() >= 0.5:
+        # Weighted survival (not a flat coin flip): a SEAD-role/-capable flight is
+        # equipped to survive, and each additional engaging site stacks the threat.
+        # See game/sim/combat/capability.py.
+        death_chance = sam_death_chance(self.flight, len(self.air_defenses))
+        if random.random() < death_chance:
             logging.debug(f"Air defense combat auto-resolved with {self.flight} lost")
             self.flight.kill(results, events)
         else:

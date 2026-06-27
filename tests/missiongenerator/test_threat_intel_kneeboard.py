@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 from dcs.vehicles import AirDefence
 
+from game.data.units import UnitClass
 from game.missiongenerator.kneeboard import (
     ThreatIntelBriefPage,
     build_threat_intel_cards,
@@ -29,9 +30,9 @@ class _UnitType:
     """Hashable stand-in for a unit type (SimpleNamespace is unhashable, and
     ``_greatest_alive_threat`` keys a dict on the unit type)."""
 
-    def __init__(self, display_name: str) -> None:
+    def __init__(self, display_name: str, unit_class: Any = None) -> None:
         self.display_name = display_name
-        self.unit_class = None
+        self.unit_class = unit_class
 
 
 def _bullseye() -> Any:
@@ -66,6 +67,39 @@ def _sam(
     )
     tgo.groups = [SimpleNamespace(units=[unit])]
     tgo.units = [unit]
+    return tgo
+
+
+def _multi_unit_sam(
+    *,
+    band: str,
+    mez_nm: float,
+    units: List[tuple[str, Any, str | None]],
+) -> Any:
+    """A known SAM site whose group holds several unit types (radar + launcher).
+
+    ``units`` is a list of ``(display_name, unit_class, coded_unit_id)`` in the order
+    they appear in the group, so a test can place the search radar first and prove the
+    card still names from the weapon system.
+    """
+    tgo = MagicMock(spec=SamGroundObject)
+    tgo.is_friendly.return_value = False
+    tgo.known_for.return_value = True
+    tgo.air_defense_band = band
+    tgo.position = _DummyPosition()
+    tgo.max_threat_range.return_value = nautical_miles(mez_nm)
+    tgo.max_detection_range.return_value = nautical_miles(mez_nm)
+    tgo.is_dead.return_value = False
+    built = [
+        SimpleNamespace(
+            alive=True,
+            unit_type=_UnitType(display_name, unit_class),
+            type=SimpleNamespace(id=coded_id),
+        )
+        for display_name, unit_class, coded_id in units
+    ]
+    tgo.groups = [SimpleNamespace(units=built)]
+    tgo.units = built
     return tgo
 
 
@@ -106,6 +140,61 @@ def test_known_site_card_carries_live_data_and_curated_reference() -> None:
     assert "Straight Flush" in card.guidance
     assert card.ceiling == "40,000 ft"
     assert card.defeat  # a non-empty "how to defeat" note
+
+
+def test_card_names_weapon_system_not_co_located_search_radar() -> None:
+    # An SA-5 site holds an acquisition radar (ST-68U "Tin Shield SR", which maps to the
+    # weaponless EWR reference) AND the lethal Square Pair track radar. The card must be
+    # named for — and described as — the SA-5 weapon system, not the search radar that
+    # would otherwise hijack the heading and report "no weapons" despite the 138 nm MEZ.
+    sa5 = _multi_unit_sam(
+        band="Long-range SAM",
+        mez_nm=138,
+        units=[
+            # Search radar deliberately first to prove ordering wins over insertion.
+            (
+                'SAM SA-5 S-200 ST-68U "Tin Shield" SR',
+                UnitClass.SEARCH_RADAR,
+                AirDefence.RLS_19J6.id,
+            ),
+            (
+                'SAM SA-5 S-200 "Square Pair" TR',
+                UnitClass.TRACK_RADAR,
+                AirDefence.RPC_5N62V.id,
+            ),
+        ],
+    )
+    cards, _ = build_threat_intel_cards(_game([sa5]), _flight())
+
+    assert len(cards) == 1
+    card = cards[0]
+    assert card.system == 'SAM SA-5 S-200 "Square Pair" TR'
+    assert "SR" not in card.system.split()  # not the "... Tin Shield SR" search radar
+    # Curated reference resolves to the SA-5, not the EWR ("no weapons") entry.
+    assert "Square Pair" in card.guidance
+    assert "No weapons" not in card.defeat
+    assert card.mez_nm == "138"
+
+
+def test_bare_search_radar_still_names_itself() -> None:
+    # With nothing lethal co-located, a standalone search/EW radar honestly names its own
+    # card — the weapon-preference must not invent a SAM that isn't there.
+    radar = _multi_unit_sam(
+        band="Early-warning radar",
+        mez_nm=0,
+        units=[
+            (
+                'SAM SA-10 S-300 "Grumble" Big Bird SR',
+                UnitClass.SEARCH_RADAR,
+                AirDefence.S_300PS_64H6E_sr.id,
+            ),
+        ],
+    )
+    radar.max_detection_range.return_value = nautical_miles(86)
+    cards, _ = build_threat_intel_cards(_game([radar]), _flight())
+
+    assert len(cards) == 1
+    assert cards[0].system == 'SAM SA-10 S-300 "Grumble" Big Bird SR'
 
 
 def test_undiscovered_site_is_fogged_to_its_band() -> None:

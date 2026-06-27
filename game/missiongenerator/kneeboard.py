@@ -45,6 +45,7 @@ from game.ato.flightwaypointtype import FlightWaypointType
 from game.data.alic import AlicCodes
 from game.data.brevity_reference import brevity_for
 from game.data.threat_reference import ThreatReference, reference_for
+from game.data.units import UnitClass
 from game.dcs.aircrafttype import AircraftType
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
@@ -63,7 +64,6 @@ from .kneeboard_recon import airport_imagery as _airport_imagery
 from .kneeboard_recon import generate_recon_pages
 from .kneeboard_recon.pages import (
     _FLIGHT_TYPES_WITH_RECON,
-    _greatest_alive_threat,
     _should_emit_departure,
     AirbaseReconPage,
     DetailReconPage,
@@ -928,11 +928,22 @@ class FriendlyPackagesPage(KneeboardPage):
         """Draw heading + two-column table at the cursor (no title; for composite use).
 
         Rows that don't fit below the cursor are dropped rather than paginated, so the
-        compact deck stays within its page budget.
+        compact deck stays within its page budget. Draws **nothing** when not even one
+        data row would fit beneath the heading: the self-limiting table never overflows,
+        so the host's fit-check (``_draw_section_if_fits``) can't see an empty section on
+        its own and would otherwise strand a lonely "Friendly Packages" heading at the
+        bottom of a full page.
         """
+        font = self._font()
+        # Probe the surviving capacity once the heading + rule are placed.
+        probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        probe.x, probe.y = writer.x, writer.y
+        probe.heading(self.HEADING)
+        probe.rule()
+        if probe.remaining_table_rows(font, bool(self.HEADERS)) < 1:
+            return
         writer.heading(self.HEADING)
         writer.rule()
-        font = self._font()
         single_capacity = writer.remaining_table_rows(font, bool(self.HEADERS))
         if len(self.rows) <= single_capacity:
             writer.table_paginated(self.rows, headers=self.HEADERS, font=font)
@@ -1794,13 +1805,74 @@ def _threat_harm_code(tgo: TheaterGroundObject) -> Optional[int]:
     return None
 
 
-def _site_reference(tgo: TheaterGroundObject) -> Optional[ThreatReference]:
-    """Curated reference for a site, matched on any of its units' type ids."""
-    for unit in tgo.units:
+# Which of a SAM/EWR site's units names its threat card and supplies the curated
+# reference. UNLIKE the recon-map "greatest threat" ranking (``_greatest_alive_threat``,
+# which keys on the lethal *radar* to size the engagement ring), a SEAD/DEAD brief
+# should name the *weapon system* the player is tied to. So launchers and track radars
+# (the HARM-targetable shooters) outrank the search / acquisition / early-warning radars
+# whose DCS display names read as "... SR" and would otherwise hijack the card — e.g. an
+# SA-5 site labelled by its co-located ST-68U "Tin Shield SR" (and described as the
+# weaponless EWR) instead of its Square Pair TR. A bare search/EW radar still names its own
+# card (nothing lethal outranks it), which is honest. Lower wins.
+_CARD_IDENTITY_PRIORITY: Dict[UnitClass, int] = {
+    UnitClass.TRACK_RADAR: 1,  # Square Pair, Flap Lid, Low Blow, Hawk TR
+    UnitClass.SEARCH_TRACK_RADAR: 1,  # Straight Flush (SA-6) — lethal & signature
+    UnitClass.TELAR: 1,  # Fire Dome (SA-11), Tor, Tunguska, Osa, Roland
+    UnitClass.LAUNCHER: 2,  # bare launchers (S-200, S-300 TEL, SA-2/3)
+    UnitClass.MANPAD: 2,
+    UnitClass.SHORAD: 2,
+    UnitClass.AAA: 3,
+    UnitClass.SEARCH_RADAR: 6,  # Big Bird, Snow Drift, Tin Shield, Flat Face, Dog Ear
+    UnitClass.SPECIALIZED_RADAR: 6,  # Clam Shell
+    UnitClass.EARLY_WARNING_RADAR: 7,  # 1L13 / 55G6 — only names a card when alone
+}
+_CARD_IDENTITY_DEFAULT = 5
+
+
+def _system_identity(
+    tgo: TheaterGroundObject,
+) -> Tuple[Optional[str], Optional[ThreatReference]]:
+    """Display name + curated reference identifying a site as its weapon system.
+
+    Picks the highest-priority unit (weapon system over search/EW radar — see
+    ``_CARD_IDENTITY_PRIORITY``) for the card name, and the first curated reference
+    found scanning units in that same order for the stat block. Live units win ties
+    over dead ones, so a partially-attrited site still names from a survivor; the name
+    is otherwise stable across losses so live and dead sites of one system share a card.
+    Returns ``(None, None)`` only when the site has no units at all.
+    """
+    units = list(tgo.units)
+    if not units:
+        return None, None
+
+    def rank(unit: TheaterUnit) -> Tuple[int, int]:
+        unit_type = getattr(unit, "unit_type", None)
+        unit_class = getattr(unit_type, "unit_class", None)
+        priority = (
+            _CARD_IDENTITY_PRIORITY.get(unit_class, _CARD_IDENTITY_DEFAULT)
+            if isinstance(unit_class, UnitClass)
+            else _CARD_IDENTITY_DEFAULT
+        )
+        # Alive first within a tier (0 sorts before 1); sorted() is stable otherwise.
+        return priority, 0 if getattr(unit, "alive", False) else 1
+
+    ordered = sorted(units, key=rank)
+
+    name: Optional[str] = None
+    for unit in ordered:
+        candidate = getattr(getattr(unit, "unit_type", None), "display_name", None)
+        if candidate:
+            name = candidate
+            break
+    if name is None:
+        name = ordered[0].type.name
+
+    ref: Optional[ThreatReference] = None
+    for unit in ordered:
         ref = reference_for(unit.type.id)
         if ref is not None:
-            return ref
-    return None
+            break
+    return name, ref
 
 
 def _bullseye_brg_range(bullseye: Bullseye, position: Point) -> str:
@@ -1882,8 +1954,9 @@ def build_threat_intel_cards(
             unknown_acc.count += 1
             unknown_acc.cues.append(cue)
             continue
-        dominant = _greatest_alive_threat(tgo)
-        name = dominant[0] if dominant else (band or "AD site")
+        name, ref = _system_identity(tgo)
+        if name is None:
+            name = band or "AD site"
         site = known.setdefault(name, _KnownAccum(short))
         if tgo.is_dead(player):
             site.dead += 1
@@ -1896,7 +1969,7 @@ def build_threat_intel_cards(
             code = _threat_harm_code(tgo)
             site.harm = str(code) if code is not None else None
         if site.ref is None:
-            site.ref = _site_reference(tgo)
+            site.ref = ref
 
     cards: List[ThreatCard] = []
     for name, site in known.items():
@@ -2189,13 +2262,16 @@ class BrevityCard(KneeboardPage):
 
 
 class FuelLadderCard(KneeboardPage):
-    """Fuel ladder: planned fuel remaining vs. minimum required at each steerpoint.
+    """Fuel ladder: planned fuel remaining at each steerpoint (one glanceable column).
 
-    The flight-plan page already carries the *minimum* fuel (bingo-at-waypoint); this
-    focused card adds the **planned remaining** (estimated forward from the starting
-    load over the per-leg burn model, `FlightWaypoint.fuel_planned`) and the **margin**
-    between them — the Red Flag-style fuel ladder. The burn model is approximate, so
-    treat the numbers as planning figures.
+    Shows the **planned remaining** fuel (estimated forward from the starting load over
+    the per-leg burn model, `FlightWaypoint.fuel_planned`) at each RTB steerpoint — the
+    Red Flag-style fuel ladder. The earlier Plan/Min/Margin three-column form was noise:
+    the per-waypoint *margin* (Plan − Min) is **constant across the whole route by
+    construction** (start fuel − total burn − reserve), and *Min* is just Plan minus that
+    constant, so both repeated the same number every row. They collapse to a single
+    **RTB margin** call-out over a one-number-per-row ladder. The burn model is
+    approximate, so treat the figures as planning numbers.
     """
 
     DESC_MAX_LEN = 24
@@ -2231,20 +2307,14 @@ class FuelLadderCard(KneeboardPage):
         if draw_heading:
             writer.heading("Fuel Ladder")
             writer.rule()
-        writer.text(
-            f"Planned fuel remaining vs. minimum to RTB at each steerpoint, in "
-            f"{units.mass_uom}. Margin = Plan - Min; a negative margin means you can't "
-            "make it home as planned -- tank or divert.",
-            wrap=True,
-        )
-
         rows: List[List[str]] = []
+        margins: List[float] = []
         for number, waypoint in enumerate(self.flight.waypoints):
-            if waypoint.fuel_planned is None and waypoint.min_fuel is None:
+            # Only genuine RTB checkpoints (those with a min-to-RTB figure) belong on
+            # the ladder; post-landing reference points like the bullseye carry a
+            # forward-burn "fuel" that isn't a real arrival state.
+            if waypoint.min_fuel is None:
                 continue
-            margin: Optional[float] = None
-            if waypoint.fuel_planned is not None and waypoint.min_fuel is not None:
-                margin = waypoint.fuel_planned - waypoint.min_fuel
             rows.append(
                 [
                     str(number),
@@ -2252,19 +2322,37 @@ class FuelLadderCard(KneeboardPage):
                         waypoint.display_name, self.DESC_MAX_LEN
                     ),
                     self._fmt(units, waypoint.fuel_planned),
-                    self._fmt(units, waypoint.min_fuel),
-                    self._fmt(units, margin),
                 ]
             )
+            if waypoint.fuel_planned is not None:
+                margins.append(waypoint.fuel_planned - waypoint.min_fuel)
 
-        if rows:
-            writer.table(
-                rows,
-                headers=["#", "Action", "Plan", "Min", "Margin"],
-                font=ladder_font,
-            )
-        else:
+        if not rows:
             writer.text("No fuel estimate available for this aircraft.")
+            return
+
+        uom = units.mass_uom
+        lead = f"Planned fuel remaining at each steerpoint, in {uom}."
+        if margins:
+            # Constant across the route, so report the worst case as one number.
+            surplus = min(margins)
+            amount = self._fmt(units, abs(surplus))
+            if surplus >= 0:
+                writer.text(
+                    f"{lead} RTB margin +{amount} {uom} — spare over the minimum to "
+                    "get home with reserves.",
+                    wrap=True,
+                )
+            else:
+                writer.text(
+                    f"{lead} RTB margin -{amount} {uom} — short of getting home as "
+                    "planned; tank or divert.",
+                    wrap=True,
+                )
+        else:
+            writer.text(lead, wrap=True)
+
+        writer.table(rows, headers=["#", "Action", "Fuel"], font=ladder_font)
 
         if self.flight.bingo_fuel and self.flight.joker_fuel:
             writer.vspace(10)
@@ -2652,10 +2740,13 @@ class CoverPage(KneeboardPage):
       *claimed*), bases captured/lost, pilots recovered — when there's anything to
       report; and
     * a flight index when several client flights share the airframe (DCS stacks
-      them) so a pilot flips straight to their own block.
+      them) so a pilot flips straight to their own block; and
+    * the side's **friendly-package coordination list** in compact mode (it has
+      nowhere else to live once recon imagery owns the flex page, and the cover's
+      lower half is otherwise empty space).
 
-    The SITREP and index sections are each optional; the op/turn header is always
-    drawn. The cover is page 1, so flight decks start on page 2.
+    The SITREP, index, and packages sections are each optional; the op/turn header
+    is always drawn. The cover is page 1, so flight decks start on page 2.
     """
 
     HEADERS = ["Flight", "Task", "Page"]
@@ -2668,6 +2759,7 @@ class CoverPage(KneeboardPage):
         day: datetime.date,
         sitrep: Optional[Sitrep],
         index_rows: Optional[List[List[str]]],
+        packages: Optional["FriendlyPackagesPage"],
         aircraft: AircraftType,
         dark_kneeboard: bool,
     ) -> None:
@@ -2676,6 +2768,7 @@ class CoverPage(KneeboardPage):
         self.day = day
         self.sitrep = sitrep
         self.index_rows = index_rows
+        self.packages = packages
         self.aircraft = aircraft
         self.dark_kneeboard = dark_kneeboard
 
@@ -2703,6 +2796,12 @@ class CoverPage(KneeboardPage):
             )
             writer.vspace(6)
             writer.table(self.index_rows, headers=self.HEADERS)
+
+        if self.packages is not None:
+            # render_section self-guards: it draws nothing (no lonely heading) if the
+            # cover happens to be full from a long SITREP + multi-flight index.
+            writer.vspace(14)
+            self.packages.render_section(writer)
         writer.write(path)
 
 
@@ -2844,7 +2943,9 @@ class KneeboardGenerator(MissionInfoGenerator):
 
         Carries the op/turn/date header and the previous turn's SITREP; adds a
         callsign -> start-page index only when 2+ client flights share the
-        airframe. The cover is page 1, so the first block starts on page 2.
+        airframe, and (in compact mode) the side's friendly-package list, which
+        has nowhere else to live once recon imagery owns the flex page. The cover
+        is page 1, so the first block starts on page 2.
         """
         index_rows: Optional[List[List[str]]] = None
         if len(flight_blocks) > 1:
@@ -2856,12 +2957,30 @@ class KneeboardGenerator(MissionInfoGenerator):
                     name += f' ("{flight.custom_name}")'
                 index_rows.append([name, flight.flight_type.value, str(page_cursor)])
                 page_cursor += len(concrete)
+
+        # Friendly-package list on the cover (compact mode only — the full deck keeps
+        # its own FriendlyPackagesPage). The list is coalition-wide, so it's built once
+        # for the whole shared-airframe deck from a representative flight.
+        packages: Optional[FriendlyPackagesPage] = None
+        if (
+            self.game.settings.compact_kneeboard
+            and self.game.settings.generate_all_packages_kneeboard
+            and flight_blocks
+        ):
+            representative = flight_blocks[0][0]
+            rows = self.build_all_packages_rows(representative)
+            if rows:
+                packages = FriendlyPackagesPage(
+                    representative, rows, self.dark_kneeboard
+                )
+
         return CoverPage(
             campaign_name=self.game.campaign_name,
             turn=self.game.turn,
             day=self.game.current_day,
             sitrep=self._cover_sitrep(),
             index_rows=index_rows,
+            packages=packages,
             aircraft=aircraft,
             dark_kneeboard=self.dark_kneeboard,
         )
@@ -2956,15 +3075,10 @@ class KneeboardGenerator(MissionInfoGenerator):
         if threat_page is not None or target_page is not None:
             pages.append(CombatIntelPage(flight, threat_page, target_page, dark))
 
-        # Page 4 (decided first, so page 3 knows whether it keeps the package list).
-        # Recon imagery wins the flex slot when enabled; otherwise a text flex page
-        # carries the Fuel Ladder + the full friendly-package list.
-        packages_page: Optional[FriendlyPackagesPage] = None
-        if self.game.settings.generate_all_packages_kneeboard:
-            package_rows = self.build_all_packages_rows(flight)
-            if package_rows:
-                packages_page = FriendlyPackagesPage(flight, package_rows, dark)
-
+        # Page 4. Recon imagery wins the flex slot when enabled; otherwise a text flex
+        # page carries the Fuel Ladder. The friendly-package list lives on the always-
+        # present cover page in compact mode (see _build_cover_page), so it no longer
+        # competes for room on pages 3/4 (and the brevity crib stops being squeezed out).
         recon_detail = self._recon_detail_page(flight)
         fuel_card = (
             FuelLadderCard(flight, dark)
@@ -2972,17 +3086,12 @@ class KneeboardGenerator(MissionInfoGenerator):
             else None
         )
         page4: Optional[KneeboardPage] = None
-        packages_on_comms = packages_page
         if recon_detail is not None:
-            # Recon target photo takes the flex slot; the package list stays on page 3.
             page4 = recon_detail
-        elif fuel_card is not None or packages_page is not None:
-            # Text flex page: Fuel Ladder + the full package list (moved off page 3).
-            page4 = FlexReferencePage(flight, fuel_card, packages_page, dark)
-            packages_on_comms = None
+        elif fuel_card is not None:
+            page4 = FlexReferencePage(flight, fuel_card, None, dark)
 
-        # Page 3 — Comms & Coordination (keeps the package list only when page 4 didn't
-        # take it onto the text flex page).
+        # Page 3 — Comms & Coordination.
         support_page = SupportPage(
             flight,
             package_flights,
@@ -2999,9 +3108,7 @@ class KneeboardGenerator(MissionInfoGenerator):
             if self.game.settings.enable_package_code_words
             else None
         )
-        pages.append(
-            CommsCoordPage(flight, support_page, brevity_card, packages_on_comms, dark)
-        )
+        pages.append(CommsCoordPage(flight, support_page, brevity_card, None, dark))
 
         if page4 is not None:
             pages.append(page4)

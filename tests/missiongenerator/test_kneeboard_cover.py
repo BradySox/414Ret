@@ -47,6 +47,8 @@ def _generator(
     sitrep_enabled: bool = True,
     campaign_name: Optional[str] = "Red Tide",
     turn: int = 7,
+    compact: bool = False,
+    all_packages: bool = False,
 ) -> KneeboardGenerator:
     gen = KneeboardGenerator.__new__(KneeboardGenerator)
     gen.dark_kneeboard = False
@@ -54,7 +56,11 @@ def _generator(
         campaign_name=campaign_name,
         turn=turn,
         current_day=date(1988, 6, 6),
-        settings=SimpleNamespace(generate_sitrep_kneeboard=sitrep_enabled),
+        settings=SimpleNamespace(
+            generate_sitrep_kneeboard=sitrep_enabled,
+            compact_kneeboard=compact,
+            generate_all_packages_kneeboard=all_packages,
+        ),
         last_sitrep=sitrep,
     )
     return gen
@@ -139,9 +145,38 @@ def test_cover_page_renders_to_file(tmp_path: Path) -> None:
             1,
         ),
         index_rows=[["Uzi 1", "Strike", "2"], ["Colt 1", "SEAD", "5"]],
+        packages=None,
         aircraft=_Aircraft("F/A-18C"),  # type: ignore[arg-type]
         dark_kneeboard=False,
     )
     out = tmp_path / "cover.png"
     page.write(out)
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_cover_carries_friendly_packages_in_compact_mode() -> None:
+    # Compact mode: the package list has nowhere else to live (recon imagery owns the
+    # flex page), so it rides on the otherwise-empty cover. Built once for the whole
+    # shared-airframe deck from a representative flight.
+    gen = _generator(compact=True, all_packages=True)
+    gen.build_all_packages_rows = lambda flight: [["SEAD", "BONGO", "20:46"]]  # type: ignore[method-assign]
+    blocks: List[Any] = [
+        (_flight("Uzi 1", aircraft=_Aircraft("F/A-18C")), [None, None])
+    ]
+    page = gen._build_cover_page(_Aircraft("F/A-18C"), blocks)  # type: ignore[arg-type]
+    assert isinstance(page, CoverPage)
+    assert page.packages is not None
+    assert page.packages.rows == [["SEAD", "BONGO", "20:46"]]
+
+
+def test_cover_omits_friendly_packages_outside_compact_mode() -> None:
+    # The full multi-page deck keeps its own FriendlyPackagesPage, so the cover must not
+    # duplicate the list there.
+    gen = _generator(compact=False, all_packages=True)
+    gen.build_all_packages_rows = lambda flight: [["SEAD", "BONGO", "20:46"]]  # type: ignore[method-assign]
+    blocks: List[Any] = [
+        (_flight("Uzi 1", aircraft=_Aircraft("F/A-18C")), [None, None])
+    ]
+    page = gen._build_cover_page(_Aircraft("F/A-18C"), blocks)  # type: ignore[arg-type]
+    assert isinstance(page, CoverPage)
+    assert page.packages is None

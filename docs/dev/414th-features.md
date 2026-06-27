@@ -1509,7 +1509,13 @@ returns to the squadron).
 
 ### Architecture (Python plans + scores, Lua executes)
 
-- **`FlightType.COMBAT_SAR`** — player-selectable for CH-47 (rescue) and C-130 (King). It
+- **`FlightType.COMBAT_SAR`** — player-selectable for the **CH-47 / UH-60A/L / UH-1H / CH-53E /
+  Mi-8** rescue helos and the C-130 (King), so a faction without a Chinook still fields CSAR (the
+  engine is airframe-agnostic; the task is granted per `resources/units/aircraft/*.yaml`). The
+  **AI standing alert air-starts on station** (`packagebuilder` sets `StartType.IN_FLIGHT` for the
+  non-client Combat SAR alert) so it is overhead *before* the first losses instead of spooling up at
+  a rear field and transiting in — a slow helo from depth never reaches a deep ejection in time. A
+  player-flown Combat SAR keeps the normal client start. It
   flies a **dedicated forward-hold plan** (`game/ato/flightplans/combatsar.py`,
   `CombatSarFlightPlan`): front-anchored like AEW&C, but with a **short threat buffer**
   (`COMBAT_SAR_THREAT_BUFFER`, 15 NM — just clear of FLOT SHORAD/MANPAD reach) and a
@@ -1592,7 +1598,7 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Layer | File |
 |---|---|
 | Flight type | `game/ato/flighttype.py` — `COMBAT_SAR` |
-| Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) and King **C-130J-30** (the only C-130) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`). EW de-conflict: `luagenerator._ew_excluded_c130j_groups` (per-group deny-list) |
+| Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) plus utility-helo rescuers **UH-60A/L, UH-1H, CH-53E, Mi-8** (so non-Chinook factions still field CSAR), and King **C-130J-30** (the only C-130) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`). EW de-conflict: `luagenerator._ew_excluded_c130j_groups` (per-group deny-list) |
 | Flight plan | reuses `game/ato/flightplans/aewc.py` (FLOT support orbit) |
 | Planning | `game/commander/tasks/primitive/combatsar.py`, `…/compound/combatsarsupport.py`, `theaterstate.py` (`combat_sar_targets`) |
 | Setting | `game/settings/settings.py` — `auto_combat_sar` |

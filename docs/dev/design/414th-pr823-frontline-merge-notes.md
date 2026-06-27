@@ -201,9 +201,27 @@ Why this shape:
   files were **held** for Bucket B/C (they import not-yet-ported flotgenerator helpers). CI
   gates green: black (whole tree), mypy (`game tests`), pytest (919 passed / 2 skipped, incl.
   35 new).
-- **Buckets B + C — not started.** The `flotgenerator.py` hand-merges (B reconciles against the
-  fork's existing `get_valid_position_for_group` rewrite; C gates the maneuver behind
-  `not self.tic_enabled`), plus the two held flotgenerator test files and the new TIC-guard
-  tests.
+- **Buckets B + C — DONE (2026-06-26).** All in `game/missiongenerator/flotgenerator.py`:
+  - **B (placement):** imported `CLUSTER_DEPTH_OFFSET`/`WEDGE_ROLES`/`even_slot_centers`;
+    dropped the dead `SPREAD_DISTANCE_*` constants; added `frontline_offsets`, the
+    `INFANTRY_FORWARD_OFFSET`/`SCATTER_RADIUS` wedge-lead infantry, `CLUSTER_LATERAL_JITTER`;
+    rewrote `_generate_groups` to the two-pass even-spread + wedge depth/jitter; added the
+    `along_offset` param to `get_valid_position_for_group` **on top of** the fork's existing
+    perpendicular-step anti-stacking body (3-way reconciliation, both wins kept); threaded
+    `move_formation` through `_generate_group` while keeping the fork's TIC naming /
+    `late_activation` / `tic_groups` block and the APC/IFV → `tic_formation` infantry path.
+  - **C (maneuver, TIC-guarded):** added `follower_advance_distance`,
+    `move_formation_for_role`, and `_plan_follower_action`; restructured
+    `plan_action_for_groups` so the TIC short-circuit stays first, artillery runs on both
+    builds, and the #823 cohesive maneuver (APC-into-wedge + anchored-follower routing) runs
+    **only when `not self.tic_enabled`**. On a TIC build SHORAD/RECON stay static (pre-#823
+    behaviour) and TIC keeps sole ownership of armor/ATGM movement.
+  - **Tests:** the two held `tests/missiongenerator/test_flotgenerator_{movement,placement}.py`
+    (#823, verbatim) + a new `test_flotgenerator_tic_guard.py` (414th) that locks the guard:
+    TANK/ATGM route to `_plan_tic_action` on a TIC build, SHORAD gets no maneuver, and the
+    TIC-off path uses follower/apc-atgm/wedge correctly.
+  - CI gates green: black (whole tree), mypy (`game tests`, 649 files), pytest (934 passed /
+    2 skipped, incl. 21 new flotgenerator tests).
 
-Drafted 2026-06-26 from analysis of PR #823 @ open against `dev`.
+Drafted 2026-06-26 from analysis of PR #823 @ open against `dev`; Buckets A–C landed
+2026-06-26.

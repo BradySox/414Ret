@@ -195,6 +195,17 @@ unvalidated "fix" is not something to ask upstream to take.
   > slivers above stay here.
 - **Splash Damage 3.4.2 414th buddy-tuned build** — pinned, intentionally
   divergent from upstream/source. Never push upstream or overwrite from it.
+- **PR #823 frontline merge divergences** (adopted 2026-06-26, not a carve-out —
+  the inverse: we pulled upstream PR #823's composition/stance *into* the fork).
+  Two fork-specific divergences to **preserve when #823 (or its descendants) lands
+  on `dev`** — do not let a future dev-pull stomp them:
+  (1) the #823 DCS-task cohesive maneuver in `flotgenerator.plan_action_for_groups`
+  is gated behind `not self.tic_enabled` so TIC keeps ownership of armor movement
+  (upstream has no TIC, so it runs the maneuver unconditionally — keep our guard);
+  (2) `ai_ground_planner.plan_groundwar` uses the fork's `base.total_frontline_units`
+  denominator, not upstream's `total_armor`. The clustering/placement/stance code
+  itself matches upstream and needs no carve. Full record:
+  `docs/dev/design/414th-pr823-frontline-merge-notes.md`.
 
 ---
 

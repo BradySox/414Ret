@@ -874,6 +874,28 @@ Dynamic-front movement design (why the stance/cadence logic looks the way it doe
   the carrier's formation as `TIC:<formation>#<infantry name>`. Artillery and
   the manpads-only branch stay vanilla. TIC group names are recorded in
   `mission_data.tic_groups` (the injection gate).
+- Frontline composition + laydown (PR #823 adoption, 2026-06-26): the ground
+  planner (`game/ground_forces/ai_ground_planner.py` + new
+  `frontline_clustering.py`) now deploys a *proportional mixed selection* of the
+  base armor pool (largest-remainder allocation) as even-spread combat clusters —
+  an armor wedge (5-7, type alternates between adjacent clusters) with embedded
+  SHORAD, an ATGM standoff pair, and leading recon; artillery/logi to the rear —
+  replacing single-type random groups. `flotgenerator._generate_groups` places
+  them via `frontline_offsets` (even slots; members share their wedge's offset)
+  layered on top of the fork's existing perpendicular-step anti-stacking. This
+  sits *upstream* of TIC's waypoint orders, so it just gives TIC a better starting
+  laydown — TIC still drives movement. **#823's DCS-task cohesive-maneuver half is
+  TIC-guarded**: in `plan_action_for_groups` the new `_plan_follower_action` /
+  APC-into-wedge routing runs ONLY when `not self.tic_enabled`; with TIC on,
+  TANK/IFV/APC/ATGM short-circuit to `_plan_tic_action` and SHORAD/RECON stay
+  static (pre-#823 behaviour), so TIC keeps sole ownership of armor/ATGM movement.
+  The fork keeps `base.total_frontline_units` (not upstream `total_armor`) as the
+  deploy denominator. Also adds the **default front-line stance** setting
+  (`settings.default_front_line_stance`, HQ Automation; seeded at new-game time
+  and on player capture when auto-stance management is off). Tests:
+  `tests/ground_forces/`, `tests/missiongenerator/test_flotgenerator_*`,
+  `tests/theater/test_default_front_line_stance*`. Full merge record + the
+  Bucket A/B/C split: `docs/dev/design/414th-pr823-frontline-merge-notes.md`.
 - ROE/waypoint design (settled after in-game testing, intentional - keep):
   TIC's "simulate" ROE fires theatrical near-miss salvos ONLY while
   stationary; moving units don't shoot at all, and `roe=kill` was judged too

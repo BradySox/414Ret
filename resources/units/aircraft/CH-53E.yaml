@@ -9,4 +9,5 @@ variants:
   CH-53E: null
 tasks:
   Air Assault: 100
+  Combat SAR: 90
   Transport: 80

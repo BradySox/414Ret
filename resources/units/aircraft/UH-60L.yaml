@@ -23,4 +23,5 @@ radios:
     inter_flight_radio_index: 2
 tasks:
   Air Assault: 80
+  Combat SAR: 70
   Transport: 60

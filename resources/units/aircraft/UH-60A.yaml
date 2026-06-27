@@ -8,4 +8,5 @@ variants:
   UH-60A: null
 tasks:
   Air Assault: 60
+  Combat SAR: 50
   Transport: 40

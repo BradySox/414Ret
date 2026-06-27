@@ -10,18 +10,17 @@ from game.ato.flightplans.uizonedisplay import UiZone, UiZoneDisplay
 from game.ato.flightplans.waypointbuilder import WaypointBuilder
 from game.utils import Distance, Speed, knots, meters, nautical_miles
 
-# SCAR (Strike Coordination and Reconnaissance) — the loiter-and-task rework
-# (docs/dev/design/414th-scar-king-fac-notes.md). The flight is planned like the
-# Combat SAR package: it launches and **holds** a racetrack over a kill box, and
-# services real, static enemy armor in the box. The C-130 "King" on-scene
-# commander designates the target at runtime (Phase 2+); the targets are real
-# Retribution TGOs, so their kills attrit the enemy through the normal ground-loss
-# path -- no SCAR-specific scoring.
+# SCAR ("Sandy") — the RESCAP escort leg of the Combat SAR rescue package (rescue
+# rework: docs/dev/design/414th-scar-rescue-rework-notes.md). Planned like the
+# Combat SAR hold: an A-10/Apache launches and **holds** a racetrack near the FLOT
+# alongside the King (C-130 on-scene commander) and Jolly Green (rescue helo). When
+# a pilot ejects, Sandy protects the survivor, suppresses the threats around them,
+# and walks the rescue helo in -- the King talks it on at runtime (voice-first).
 #
-# This replaces the old strike-shaped, Armed-Recon-ingress plan against a *moving*
-# spawned HVT. The "hold" is a PatrollingFlightPlan racetrack centred on the kill
-# box (oriented parallel to the FLOT) with a non-zero engagement distance so the
-# AI/player works the box rather than standing off (AEWC zeroes it).
+# The "hold" is a PatrollingFlightPlan racetrack anchored on the front (oriented
+# parallel to the FLOT) with a NON-ZERO engagement distance, so the shooter works
+# the area near the survivor rather than standing off like AEWC (which zeroes it).
+# This replaces the retired armor-hunt plan (a strike against a moving spawned HVT).
 SCAR_AREA_RADIUS_NM = 5.0
 # Racetrack half-length of the loiter, ~ the box, so the orbit covers the kill box.
 SCAR_LOITER_HALF_NM = 6.0
@@ -64,8 +63,8 @@ class Builder(IBuilder[ScarFlightPlan, PatrollingLayout]):
         half = nautical_miles(SCAR_LOITER_HALF_NM)
 
         # Orient the racetrack parallel to the FLOT (the standoff-anchor heading the
-        # support orbits use) but CENTRE it on the kill box -- the SCAR striker
-        # holds over the target area, it does not stand off like AWACS.
+        # support orbits use) but CENTRE it on the front -- Sandy holds near the
+        # fighting where pilots go down, it does not stand off like AWACS.
         _, orbit_heading = AirspaceGeometry(
             self.theater, self.coalition.player, self.threat_zones
         ).standoff_anchor(self.package.target, meters(0))

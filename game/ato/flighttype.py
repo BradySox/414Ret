@@ -64,7 +64,7 @@ class FlightType(Enum):
     ARMED_RECON = "Armed Recon"
     RECOVERY = "Recovery"
     TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +5 min behind strikers
-    SCAR = "SCAR"  # Strike Coordination and Recon — find+prosecute one moving HVT in an area
+    SCAR = "SCAR"  # Rescue-escort "Sandy" in the Combat SAR package: A-10/Apache that protects the downed pilot, suppresses threats, and walks Jolly Green in. Repurposed from the retired strike-coord/armor-hunt task (see 414th-scar-rescue-rework-notes.md).
     SOF = "SOF Insert"  # C-130 airdrop that inserts a SOF capture team at a SCAR ambush point (helo does the CSAR recovery)
     CSAR = "CSAR"  # Helo extraction of a SOF team stranded by a botched SCAR capture (the recovery leg of the SOF loop)
     COMBAT_SAR = "Combat SAR"  # Standing pilot-rescue orbit near the FLOT (CH-47 pickup + C-130 "King"); rescues downed HUMAN pilots via MOOSE CSAR. Distinct from the SOF-recovery CSAR. Support orbit, modeled on RECOVERY/AEWC.

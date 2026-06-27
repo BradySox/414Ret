@@ -41,7 +41,10 @@ class MissionTarget:
                 FlightType.SEAD_ESCORT,
                 FlightType.SEAD_SWEEP,
                 FlightType.ARMED_RECON,
-                FlightType.SCAR,
+                # SCAR is no longer a broad anti-armor task: it is the "Sandy"
+                # rescue-escort, scoped to the FLOT (see FrontLine.mission_types)
+                # so the King + Jolly + Sandy rescue package frags against the
+                # front. Rescue rework: 414th-scar-rescue-rework-notes.md.
                 FlightType.SWEEP,
                 FlightType.JAMMING,
                 # TODO: FlightType.ELINT,

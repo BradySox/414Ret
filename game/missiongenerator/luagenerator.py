@@ -23,7 +23,6 @@ from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
 from .interceptluadata import populate_intercept_lua
 from .missiondata import MissionData
-from .scarluadata import build_scar_taskings, populate_scar_lua
 
 if TYPE_CHECKING:
     from game import Game
@@ -358,13 +357,16 @@ class LuaGenerator:
 
         populate_intercept_lua(lua_data, self.mission_data.intercept_entries)
 
-        # SCAR scenario bridge: collect one tasking per SCAR target and emit
-        # dcsRetribution.Scar. scar_taskings also gates _inject_scar_script. The
-        # mission start time anchors each scenario's fail clock to the flight TOT.
-        self.mission_data.scar_taskings = build_scar_taskings(
-            self.game, self.mission.start_time
-        )
-        populate_scar_lua(lua_data, self.mission_data.scar_taskings)
+        # SCAR armor-hunt scenario RETIRED (rescue rework — see
+        # docs/dev/design/414th-scar-rescue-rework-notes.md). SCAR is being
+        # repurposed into the Sandy rescue-escort role, so it no longer spawns a
+        # moving-HVT armor picture. Emit no taskings: dcsRetribution.Scar is never
+        # written, so the scenario bridge (_inject_scar_script) and the scar plugin
+        # stay dormant. The SOF capture/recovery machinery rides this same channel
+        # and is likewise dormant until the POW rework (Phase 3/4); the dormant
+        # scarluadata builders + the scar plugin are kept for now and deleted in a
+        # later cleanup once the rescue path has flown.
+        self.mission_data.scar_taskings = []
 
         # Add artillery and support units info
         artillery_object = lua_data.add_item("artilleryGroups")

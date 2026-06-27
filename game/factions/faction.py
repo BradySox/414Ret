@@ -5,7 +5,19 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Optional, Dict, Type, List, Any, Iterator, TYPE_CHECKING, Set
+from typing import (
+    Optional,
+    Dict,
+    Type,
+    List,
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    TYPE_CHECKING,
+    Set,
+    TypeVar,
+)
 
 import dcs
 from dcs.country import Country
@@ -38,6 +50,39 @@ from pydcs_extensions.f16i_idf.f16i_idf import inject_F16I, eject_F16I
 
 if TYPE_CHECKING:
     from game.theater.start_generator import ModSettings
+
+
+_NamedT = TypeVar("_NamedT")
+
+
+def _resolve_named_set(
+    names: Iterable[str],
+    resolver: Callable[[str], _NamedT],
+    *,
+    faction_name: str,
+    category: str,
+) -> Set[_NamedT]:
+    """Resolve a list of unit-type names into a set, tolerating unknown names.
+
+    A single bad/outdated name in a faction's roster used to raise ``KeyError``
+    out of the ``Type.named(...)`` lookup and drop the **entire** faction from the
+    New Game list (only a terse ``ERROR`` line in the log hinted why). Here we skip
+    an unresolved name with a visible ``WARNING`` and keep the rest of the roster,
+    so one typo can no longer brick a whole faction.
+    """
+    resolved: Set[_NamedT] = set()
+    for name in names:
+        try:
+            resolved.add(resolver(name))
+        except KeyError:
+            logging.warning(
+                "Faction '%s': skipping unknown %s '%s' (not a recognized unit "
+                "type); the rest of the faction still loads.",
+                faction_name,
+                category,
+                name,
+            )
+    return resolved
 
 
 @dataclass
@@ -216,30 +261,46 @@ class Faction:
         faction.authors = json.get("authors", "")
         faction.description = json.get("description", "")
 
-        faction.aircraft = {AircraftType.named(n) for n in json.get("aircrafts", [])}
-        faction.awacs = {AircraftType.named(n) for n in json.get("awacs", [])}
-        faction.tankers = {AircraftType.named(n) for n in json.get("tankers", [])}
+        # Resolve each unit-type roster tolerantly: an unknown/outdated name is
+        # skipped with a warning rather than dropping the whole faction (see
+        # _resolve_named_set).
+        fname = faction.name
 
-        faction.frontline_units = {
-            GroundUnitType.named(n) for n in json.get("frontline_units", [])
-        }
-        faction.artillery_units = {
-            GroundUnitType.named(n) for n in json.get("artillery_units", [])
-        }
-        faction.infantry_units = {
-            GroundUnitType.named(n) for n in json.get("infantry_units", [])
-        }
-        faction.logistics_units = {
-            GroundUnitType.named(n) for n in json.get("logistics_units", [])
-        }
-        faction.air_defense_units = {
-            GroundUnitType.named(n) for n in json.get("air_defense_units", [])
-        }
-        faction.missiles = {GroundUnitType.named(n) for n in json.get("missiles", [])}
+        def resolve_aircraft(key: str, category: str) -> Set[AircraftType]:
+            return _resolve_named_set(
+                json.get(key, []),
+                AircraftType.named,
+                faction_name=fname,
+                category=category,
+            )
 
-        faction.naval_units = {
-            ShipUnitType.named(n) for n in json.get("naval_units", [])
-        }
+        def resolve_ground(key: str, category: str) -> Set[GroundUnitType]:
+            return _resolve_named_set(
+                json.get(key, []),
+                GroundUnitType.named,
+                faction_name=fname,
+                category=category,
+            )
+
+        faction.aircraft = resolve_aircraft("aircrafts", "aircraft")
+        faction.awacs = resolve_aircraft("awacs", "AWACS aircraft")
+        faction.tankers = resolve_aircraft("tankers", "tanker")
+
+        faction.frontline_units = resolve_ground("frontline_units", "frontline unit")
+        faction.artillery_units = resolve_ground("artillery_units", "artillery unit")
+        faction.infantry_units = resolve_ground("infantry_units", "infantry unit")
+        faction.logistics_units = resolve_ground("logistics_units", "logistics unit")
+        faction.air_defense_units = resolve_ground(
+            "air_defense_units", "air-defense unit"
+        )
+        faction.missiles = resolve_ground("missiles", "missile unit")
+
+        faction.naval_units = _resolve_named_set(
+            json.get("naval_units", []),
+            ShipUnitType.named,
+            faction_name=fname,
+            category="naval unit",
+        )
 
         faction.preset_groups = [
             ForceGroup.from_preset_group(g) for g in json.get("preset_groups", [])

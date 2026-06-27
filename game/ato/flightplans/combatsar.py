@@ -18,6 +18,12 @@ from game.utils import nautical_miles
 #   - a helo-sized racetrack (a tight hold, not a 60 NM AWACS track).
 COMBAT_SAR_THREAT_BUFFER = nautical_miles(15)
 COMBAT_SAR_RACETRACK_HALF_DISTANCE = nautical_miles(5)
+# How far behind the front centre the rescue package holds. A rescue craft must
+# stay forward to reach an ejection -- the support-orbit standoff (threat buffer +
+# threat-zone clearance) parked it ~25 NM back, useless (in-game finding
+# 2026-06-27). A CSAR helo/King is meant to be forward and at risk
+# (configure_transport), so this is a SHORT fixed hold, not a threat-cleared standoff.
+COMBAT_SAR_HOLD_BEHIND_FLOT = nautical_miles(10)
 
 
 class CombatSarFlightPlan(AewcFlightPlan):
@@ -41,11 +47,17 @@ class Builder(AewcBuilder):
     def layout(self) -> PatrollingLayout:
         racetrack_half_distance = COMBAT_SAR_RACETRACK_HALF_DISTANCE
 
-        # Anchor on the front line, but stand off only a short distance so the
-        # rescue helo holds near the fighting (see COMBAT_SAR_THREAT_BUFFER).
-        base_center, orbit_heading = AirspaceGeometry(
+        # Take only the stable front-facing HEADING from the support anchor, then
+        # hold a SHORT fixed distance behind the front centre -- skipping the deep
+        # threat-clearance push that parked the rescuer ~25 NM back where it could
+        # never reach an ejection (in-game finding). A CSAR helo/King is meant to be
+        # forward and at risk, so it holds near the FLOT regardless of threats.
+        _, orbit_heading = AirspaceGeometry(
             self.theater, self.coalition.player, self.threat_zones
         ).standoff_anchor(self.package.target, COMBAT_SAR_THREAT_BUFFER)
+        base_center = self.package.target.position.point_from_heading(
+            orbit_heading.opposite.degrees, COMBAT_SAR_HOLD_BEHIND_FLOT.meters
+        )
 
         # When more than one Combat SAR is planned, spread their holds laterally
         # along the front so each covers a different section rather than stacking.

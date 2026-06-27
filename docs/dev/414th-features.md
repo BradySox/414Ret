@@ -1476,8 +1476,18 @@ returns to the squadron).
   G9 in-game finding, fixed 2026-06-25.)
 - **AI standing alert** — `Settings.auto_combat_sar` (HQ automation, default OFF) auto-plans
   one COMBAT_SAR orbit per turn for blue via `PlanCombatSar` / `PlanCombatSarSupport`
-  (mirrors AEWC/refuel support). With it on, the generator emits `enableForAI=true`, so
-  MOOSE CSAR may commandeer an orbiting AI CH-47 and AI ejections become rescuable.
+  (mirrors AEWC/refuel support). With it on, the generator emits `enableForAI=true` plus a
+  `heloTemplate` (the first rescue flight's group, cloned at runtime) and `farp` (that
+  flight's departure field). **The AI rescue is flown by MOOSE `AICSAR`, not CSAR** — the
+  2026-06-26 playtest confirmed MOOSE CSAR's `enableForAI` only *tracks* AI ejections and
+  never flies an AI helo ("Jolly Green flew a racetrack and did nothing"). `combatsar-config.lua`
+  now stands up `AICSAR`, which spawns its own rescue helos from the FARP `AIRBASE` and delivers
+  to a `ZONE_AIRBASE` there; its `autoonoff` (default) stands it down whenever a player crews a
+  rescue helo, so it never competes with the player-flown CSAR path (which stays
+  `enableForAI=false`). **v1 limitations (pending the G9 in-game pass):** AICSAR auto-rescues do
+  **not** yet credit the spare-pilot scoring (it spawns an anonymous pilot clone, losing the
+  original unit name); and a player ejecting from a fixed-wing with no human helo up is
+  double-handled by both engines (cosmetic double-spawn).
 - **King beacon = TACAN only.** Each King lights an **air-tracking TACAN** (follows the
   moving orbit; every rescue helo we use has a receiver) — the single homing solution.
   An ADF radio beacon was **considered and dropped** (MOOSE's `RadioBeacon` is fixed-point

@@ -611,6 +611,12 @@ so the two docs don't drift.
   check `allowFARPRescue` / that a friendly airfield is in range.
 
 ### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☐ UNTESTED
+- **AI rescue re-wired to MOOSE `AICSAR` 2026-06-26 (PR pending in-game pass):** the 2026-06-26
+  playtest showed the AI rescue helo just orbited and never recovered anyone — MOOSE CSAR's
+  `enableForAI` only *tracks* AI ejections, it never flies an AI helo. The AI path now uses
+  `AICSAR` (spawns its own rescue helo from the FARP base on a pilot-down event). Pass criteria
+  below updated to match: watch for a helo **spawning from the home base**, not the orbiting
+  flight diverting.
 - **Orbit-placement fix 2026-06-25 (found in-game, fixed — re-observe):** the standing-alert orbit
   used to **mirror the AWACS** (it reused the AEW&C builder → 80 NM standoff + 60 NM racetrack), so a
   CH-47 could never reach an ejection. Combat SAR now flies a **dedicated forward hold**
@@ -621,7 +627,11 @@ so the two docs don't drift.
 - **Pass:** A blue **AI** `Combat SAR` package appears in the ATO, **holding a tight racetrack near an
   active front** (one per front, capped by available CH-47s) — clearly forward of the AWACS/tanker
   orbits, clear of enemy threat rings. The generator logs `enableForAI=true`. When a pilot ejects in
-  range, the orbiting AI CH-47 diverts, recovers, and returns — with no player CSAR up.
+  range, a rescue helo **spawns from the FARP home base** (AICSAR), flies to the survivor,
+  lands/hovers to recover, and RTBs — with no human in any helo (AICSAR `autoonoff` stands down if a
+  player crews a rescue helo). `dcs.log` shows `AICSAR AI standing alert armed (helo template ..., FARP ...)`.
+  Known v1 gaps to note (not fail): no spare-pilot scoring credit for AICSAR rescues; a fixed-wing
+  player ejection with no human helo up double-spawns (CSAR + AICSAR).
 - **Placement fail signature:** the CSAR orbit again sits at AWACS depth / mirrors the AWACS racetrack
   (the dedicated `CombatSarFlightPlan` didn't take — check `flightplanbuildertypes.py` maps
   `COMBAT_SAR` to `CombatSarFlightPlan`, not `AewcFlightPlan`); or the orbit lands inside an enemy

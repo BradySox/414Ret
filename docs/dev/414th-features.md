@@ -874,8 +874,9 @@ Dynamic-front movement design (why the stance/cadence logic looks the way it doe
     window, `_tic_jitter()` is boundPause +/-45% (loosened from +/-25%), and
     `_tic_leg_gap()` further scales each gap by a per-group tempo
     (`TIC_GROUP_TEMPO` 0.7-1.4) and the stance cadence. `tic.boundPause`
-    (default 25, players set it in the plugin UI) sizes the battle arc to
-    ~1.5-2 h.
+    (default 12, players set it in the plugin UI) sizes the battle arc to fit
+    a single sortie (~45-75 min); lowered from 25 (~1.5-2 h) on 2026-06-26
+    after a playtest showed the line hadn't pressed into contact within a sortie.
   - Losses from scripted fire are sparse near-miss kills by design; players
     flying CAS are the real attrition source. The campaign front moves on
     player kills, not TIC kills. (Terrain-anchored positioning was considered
@@ -889,9 +890,17 @@ Dynamic-front movement design (why the stance/cadence logic looks the way it doe
   falls back to it when the exact unit-name lookup misses. Tests:
   `tests/test_tic_clone_mapping.py`.
 - KNOWN LIMITATION: with StormTrooper AI on (default), TIC cloaks managed
-  units from DCS AI sensors - AI CAS flights and the AFAC JTAC cannot detect
-  the enemy frontline. Human CAS is unaffected. Turn StormTrooper off for
-  visible real-AI ground combat.
+  units from DCS AI sensors - AI CAS flights cannot detect the enemy
+  frontline. Human CAS is unaffected. Turn StormTrooper off for visible
+  real-AI ground combat.
+- AUTO-JTAC REMOVED (2026-06-26, 414th playtest): the MQ-9 Reaper FAC drone
+  that used to orbit the FLOT (spawned by `flotgenerator`, gated by
+  `faction.has_jtac`) was removed for EVERY faction - it was unwanted drone +
+  F10-menu clutter. The `MooseAutolase` plugin (JTAC Alpha/Bravo autolase) was
+  deleted too. `faction.has_jtac`/`jtac_unit` remain as DORMANT no-op fields
+  (kept so faction JSONs + `test_factions` don't churn). The frontline-group
+  membership recording was accidentally nested inside that JTAC `if` block; it
+  now always runs (latent bug fixed in passing).
 - Do NOT call `ScanAndRegisterFormations` twice and do not ME-activate TIC
   groups - TIC owns their lifecycle.
 

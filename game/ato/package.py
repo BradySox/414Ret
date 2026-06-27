@@ -183,6 +183,7 @@ class Package(RadioFrequencyContainer):
             FlightType.AIR_ASSAULT,
             FlightType.SOF,
             FlightType.CSAR,
+            FlightType.COMBAT_SAR,
             FlightType.ARMED_RECON,
             FlightType.SCAR,
             FlightType.TARPS,

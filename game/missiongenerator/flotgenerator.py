@@ -13,25 +13,18 @@ from dcs.country import Country
 from dcs.mapping import Point, Vector2
 from dcs.point import PointAction
 from dcs.task import (
-    AFAC,
     AttackGroup,
     ControlledTask,
-    FAC,
     FireAtPoint,
     GoToWaypoint,
     Hold,
-    OrbitAction,
-    SetImmortalCommand,
-    SetInvisibleCommand,
     OptAlarmState,
 )
 from dcs.triggers import Event, TriggerOnce
 from dcs.unit import Skill, Vehicle
 from dcs.unitgroup import VehicleGroup
 
-from game.callsigns import callsign_for_support_unit
 from game.data.units import UnitClass
-from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.ground_forces.ai_ground_planner import (
     CombatGroup,
@@ -44,10 +37,9 @@ from game.radio.radios import RadioRegistry
 from game.theater.controlpoint import ControlPoint, Player
 from game.unitmap import UnitMap
 from game.utils import Heading
-from .aircraft.aircraftpainter import AircraftPainterJtac
 from .frontlineconflictdescription import FrontLineConflictDescription
 from .groundforcepainter import GroundForcePainter
-from .missiondata import JtacInfo, MissionData, FrontlineUnitGroupsInfo
+from .missiondata import MissionData, FrontlineUnitGroupsInfo
 from ..ato import FlightType
 
 if TYPE_CHECKING:
@@ -103,7 +95,9 @@ TIC_BREAKTHROUGH_DEPTH_SCALE = 1.8
 TIC_COUNTERATTACK_CHANCE = 0.25
 TIC_COUNTERATTACK_DEPTH_SCALE = 0.6
 # Fallback for the "tic.boundPause" plugin option (minutes between legs).
-TIC_DEFAULT_BOUND_PAUSE = 25
+# 12 paces the battle arc across roughly a single ~45-75 min sortie so a player
+# actually sees the line press into contact (25 stretched it to 1.5-2 hours).
+TIC_DEFAULT_BOUND_PAUSE = 12
 
 
 @dataclass(frozen=True)
@@ -205,16 +199,12 @@ class FlotGenerator:
         # instead of receiving vanilla DCS combat tasking.
         self.tic_enabled = bool(self.game.settings.plugins.get("tic"))
         # Minutes between TIC advance legs, from the plugin settings UI.
-        # Default 25 paces the battle arc across roughly 1.5-2 hours.
+        # Default 12 paces the battle arc to fit a single sortie (~45-75 min).
         self.tic_bound_pause = int(
             self.game.settings.plugins.get("tic.boundPause") or TIC_DEFAULT_BOUND_PAUSE
         )
 
     def generate(self) -> None:
-        position = FrontLineConflictDescription.frontline_position(
-            self.conflict.front_line, self.game.theater, self.game.settings
-        )
-
         # Create player groups at random position
         player_groups = self._generate_groups(
             self.player_planned_combat_groups, is_player=Player.BLUE
@@ -256,78 +246,23 @@ class FlotGenerator:
             self.conflict.blue_cp,
         )
 
-        # Add JTAC
-        if self.game.blue.faction.has_jtac:
-            freq = self.radio_registry.alloc_uhf()
-            # If the option fc3LaserCode is enabled, force all JTAC
-            # laser codes to 1113 to allow lasing for Su-25 Frogfoots and A-10A Warthogs.
-            # Otherwise use 1688 for the first JTAC, 1687 for the second etc.
-            if self.game.settings.plugins.get("ctld.fc3LaserCode"):
-                code = self.game.laser_code_registry.fc3_code
-            else:
-                code = self.conflict.front_line.laser_code
-
-            utype = self.game.blue.faction.jtac_unit
-            if utype is None:
-                utype = AircraftType.named("MQ-9 Reaper")
-
-            country = self.mission.country(self.game.blue.faction.country.name)
-            jtac = self.mission.flight_group(
-                country=country,
-                name=namegen.next_jtac_name(),
-                aircraft_type=utype.dcs_unit_type,
-                position=position[0],
-                airport=None,
-                altitude=5000,
-                maintask=AFAC,
-            )
-            AircraftPainterJtac(self.game.blue.faction, utype, jtac).apply_livery()
-            cs = jtac.units[0].callsign_dict
-            assert type(cs[1]) == int
-            assert type(cs[2]) == int
-            jtac.points[0].tasks.append(
-                FAC(
-                    callsign=cs[1],
-                    number=cs[2],
-                    frequency=int(freq.mhz),
-                    modulation=freq.modulation,
-                )
-            )
-            jtac.points[0].tasks.append(SetInvisibleCommand(True))
-            jtac.points[0].tasks.append(SetImmortalCommand(True))
-            jtac.points[0].tasks.append(
-                OrbitAction(5000, 300, OrbitAction.OrbitPattern.Circle)
-            )
-            frontline = (
-                f"Frontline {self.conflict.blue_cp.name}/{self.conflict.red_cp.name}"
-            )
-            # Note: Will need to change if we ever add ground based JTAC.
-            callsign = callsign_for_support_unit(jtac)
-            self.mission_data.jtacs.append(
-                JtacInfo(
-                    group_name=jtac.name,
-                    unit_name=jtac.units[0].name,
-                    callsign=callsign,
-                    region=frontline,
-                    code=str(code),
-                    blue=Player.BLUE,
-                    freq=freq,
+        # Record frontline group membership (group name -> unit type) for the TIC
+        # script + MFD-hiding. Always populated now -- the auto-JTAC FAC drone
+        # that used to gate this block was removed (414th: no auto-JTAC over the
+        # FLOT, for any faction).
+        for vehicle_group, combat_group in player_groups:
+            self.mission_data.player_frontline_groups.append(
+                FrontlineUnitGroupsInfo(
+                    group_name=vehicle_group.name, unit_type=combat_group.unit_type
                 )
             )
 
-            for vehicle_group, combat_group in player_groups:
-                self.mission_data.player_frontline_groups.append(
-                    FrontlineUnitGroupsInfo(
-                        group_name=vehicle_group.name, unit_type=combat_group.unit_type
-                    )
+        for vehicle_group, combat_group in enemy_groups:
+            self.mission_data.enemy_frontline_groups.append(
+                FrontlineUnitGroupsInfo(
+                    group_name=vehicle_group.name, unit_type=combat_group.unit_type
                 )
-
-            for vehicle_group, combat_group in enemy_groups:
-                self.mission_data.enemy_frontline_groups.append(
-                    FrontlineUnitGroupsInfo(
-                        group_name=vehicle_group.name, unit_type=combat_group.unit_type
-                    )
-                )
+            )
 
     @staticmethod
     def _tic_managed_role(role: CombatGroupRole) -> bool:

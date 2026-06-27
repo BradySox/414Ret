@@ -377,7 +377,16 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         if type(aa) ~= "table" then return end
         for _, item in pairs(aa) do
             if item.name and item.range then
-                retribution_sam_range[item.name] = tonumber(item.range)
+                -- A single SAM site (codename) often has SEVERAL groups -- the main
+                -- SAM plus a co-located point-defense (SA-9/SA-13/SA-8). Each emits a
+                -- range under the same codename, so keep the LONGEST: the site bands
+                -- by its real reach. Keeping the last-seen instead under-bands an
+                -- SA-5/SA-6/SA-2 site to POINT when its short escort is emitted last.
+                local r = tonumber(item.range)
+                local current = retribution_sam_range[item.name]
+                if r and (current == nil or r > current) then
+                    retribution_sam_range[item.name] = r
+                end
             end
         end
     end

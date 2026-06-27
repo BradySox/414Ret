@@ -16,6 +16,7 @@ from game.navmesh import NavMesh
 from game.orderedset import OrderedSet
 from game.procurement import AircraftProcurementRequest, ProcurementAi
 from game.profiling import MultiEventTracer, logged_duration
+from game.pow_recovery import PendingPowRecovery, age_pending_pows
 from game.scar_rescue import PendingSofRescue, surviving_rescues
 from game.squadrons import AirWing
 from game.theater.bullseye import Bullseye
@@ -56,6 +57,10 @@ class Coalition:
         # SOF teams stranded by a botched SCAR capture, awaiting a CSAR pickup
         # next turn(s). Persisted; surfaced as map objectives and aged each turn.
         self.pending_csars: list[PendingSofRescue] = []
+        # Pilots captured by the Combat SAR enemy snatch party (the rescue rework's
+        # capture race), held as POWs at an enemy field and recoverable for a few
+        # turns. Persisted; surfaced as map objectives and aged each turn.
+        self.pending_pow_recoveries: list[PendingPowRecovery] = []
         # Money the automated HQ spent per category last turn (front_line,
         # runways, buildings, ground_objects, aircraft). Surfaced in the
         # Finances dialog so the player sees where their income went.
@@ -155,6 +160,8 @@ class Coalition:
         state.setdefault("captured_commander", False)
         # Migration: older saves predate the SOF CSAR pending-rescue list.
         state.setdefault("pending_csars", [])
+        # Migration: older saves predate the captured-pilot POW recovery list.
+        state.setdefault("pending_pow_recoveries", [])
         # Migration: older saves predate the per-turn HQ expense breakdown.
         state.setdefault("last_turn_expenses", {})
 
@@ -224,6 +231,11 @@ class Coalition:
             self.pending_csars = surviving_rescues(
                 self.game, self.player, self.pending_csars
             )
+
+        # Age captured-pilot POWs and drop any held past the recovery window.
+        # Ungated: the list is only ever non-empty when the Combat SAR capture
+        # race produced a capture, so this is a no-op otherwise.
+        self.pending_pow_recoveries = age_pending_pows(self.pending_pow_recoveries)
 
     def preinit_turn_0(self, squadrons_start_full: bool) -> None:
         """Runs final Coalition initialization.

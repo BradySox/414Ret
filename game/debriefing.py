@@ -167,6 +167,14 @@ class StateData:
     #: refund the team. Empty when the SCAR feature is off or none were extracted.
     combat_sar_sof_recoveries: List[str]
 
+    #: ``(airframe_unit_name, x, y)`` per pilot CAPTURED by an enemy snatch party
+    #: before rescue this mission (the ``combatsar`` enemy-capture race appends
+    #: ``{unit, x, y}`` per capture). ``commit_air_losses`` spares the kill (the
+    #: pilot is a POW, not KIA) and ``record_pow_captures`` holds them as a
+    #: recoverable ``PendingPowRecovery``. Empty when the capture race is off or
+    #: no one was captured.
+    combat_sar_captures: list[tuple[str, float, float]]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -244,6 +252,33 @@ class StateData:
             data.get("combat_sar_sof_recoveries", [])
         )
 
+        def parse_combat_sar_captures(raw: Any) -> list[tuple[str, float, float]]:
+            # The combatsar capture race appends {unit=<airframe name>, x=, y=}
+            # per captured pilot (or the Lua JSON encoder yields [] when none).
+            # Pull (unit, x, y) defensively, skipping malformed / unnamed /
+            # coordless entries.
+            if not isinstance(raw, list):
+                return []
+            captures: list[tuple[str, float, float]] = []
+            for entry in raw:
+                if not isinstance(entry, dict):
+                    continue
+                unit = entry.get("unit")
+                x = entry.get("x")
+                y = entry.get("y")
+                if (
+                    isinstance(unit, str)
+                    and unit
+                    and isinstance(x, (int, float))
+                    and isinstance(y, (int, float))
+                ):
+                    captures.append((str(unit), float(x), float(y)))
+            return captures
+
+        combat_sar_captures = parse_combat_sar_captures(
+            data.get("combat_sar_captures", [])
+        )
+
         def parse_scar_results(raw: Any) -> dict[str, str]:
             # The SCAR bridge writes scar_results[taskingId] = {status=...}. The
             # Lua JSON encoder serializes it as a dict (or [] when empty). Pull
@@ -310,6 +345,7 @@ class StateData:
             scar_misid=scar_misid,
             combat_sar_rescues=combat_sar_rescues,
             combat_sar_sof_recoveries=combat_sar_sof_recoveries,
+            combat_sar_captures=combat_sar_captures,
         )
 
 

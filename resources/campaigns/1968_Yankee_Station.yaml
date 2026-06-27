@@ -32,26 +32,27 @@ settings:
   max_frontline_width: 30
  
  #Mods to be used
-  a4_skyhawk: true
-  a6a_intruder: true
-  a7e_corsair2: true
-  f4bc_phantom: true
+  a4_skyhawk: false
+  a6a_intruder: false
+  a7e_corsair2: false
+  f4bc_phantom: false
   f15d_baz: false
   f_16_idf: false
   fa_18efg: false
   f22_raptor: false
   f84g_thunderjet: false
-  f100_supersabre: true
-  f104_starfighter: true
-  f105_thunderchief: true
+  f100_supersabre: false
+  f104_starfighter: false
+  f105_thunderchief: false
   uh_60l: false
   jas39_gripen: false
   su30_flanker_h: false
   su57_felon: false
   frenchpack: false
   high_digit_sams: false
-  ov10a_bronco: true
+  ov10a_bronco: false
   swedishmilitaryassetspack: false
+  vietnamwarvessels: true
 
 # Difficulty settings
 # AI Difficulty
@@ -99,55 +100,55 @@ squadrons:
         - primary: BARCAP
           secondary: air-to-air
           aircraft: 
-            - VMFA-531 #Grey Ghosts - F-4B Phantom II
+            - F-8E Crusader
           size: 12
           
         - primary: BARCAP
           secondary: air-to-air
           aircraft: 
-            - VF-151 #Vigilantes - F-4B Phantom II
+            - F-8E Crusader
           size: 12
 
         - primary: Strike
           secondary: air-to-ground
           aircraft: 
-            - VF-14 #Tophatters - F-4B Phantom II
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-176 Thunderbolts #A-6A Intruder
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-165 Boomers #A-6A Intruder
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-147 #Argonauts - A-7E Corsair II
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-305 #Lobos - A-7E Corsair II
+            - A-6E Intruder
           size: 12
           
         - primary: SEAD
           secondary: air-to-ground
           aircraft:
-            - VA-46 Clansmen #Clansmen A-4E
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-55 Warhorses #Warhorses - A-4E
+            - A-6E Intruder
           size: 12
           
         - primary: Air Assault
@@ -170,55 +171,55 @@ squadrons:
         - primary: BARCAP
           secondary: air-to-air
           aircraft: 
-            - VF-84 #Jolly Rogers - F-4B Phantom II
+            - F-8E Crusader
           size: 12
           
         - primary: BARCAP
           secondary: air-to-air
           aircraft: 
-            - VF-111 #Sundowners - F-4B Phantom II
+            - F-8E Crusader
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft: 
-            - VF-41 #Black Aces - F-4B Phantom II
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-34 Blue Blasters #A-6A Intruder
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-196 Main Battery #A-6A Intruder
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-12 #Flying Ubangis - A-7E Corsair II
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-113 #Stingers - A-7E Corsair II
+            - A-6E Intruder
           size: 12
           
         - primary: SEAD
           secondary: air-to-ground
           aircraft:
-            - VMA-144 Roadrunners #Roadruners - A-4E
+            - A-6E Intruder
           size: 12
           
         - primary: Strike
           secondary: air-to-ground
           aircraft:
-            - VA-212 #Rampant Riders - A-4E
+            - A-6E Intruder
           size: 12
           
         - primary: Transport
@@ -253,7 +254,7 @@ squadrons:
        - primary: Escort
          secondary: air-to-air
          aircraft: 
-           - F-104G Starfighter 
+           - F-5E Tiger II
          size: 12
           
        - primary: Transport
@@ -266,13 +267,13 @@ squadrons:
        - primary: CAS
          secondary: air-to-ground
          aircraft:
-           - VMA-311 Tomcats #Tomcats - A-4E
+           - A-1H Skyraider
          size: 12
        
        - primary: CAS
          secondary: air-to-ground
          aircraft:
-           - VAL 4 Black Ponies #OV-10A Bronco
+           - A-1H Skyraider
          size: 8
 
        - primary: CAS
@@ -284,7 +285,7 @@ squadrons:
        - primary: CAS
          secondary: air-to-ground
          aircraft:
-           - 20th TASS FAC #OV-10A Bronco
+           - A-1H Skyraider
          size: 8
           
        - primary: Transport
@@ -349,7 +350,7 @@ squadrons:
        - primary: Strike
          secondary: air-to-ground
          aircraft:
-           - F-100 Super Sabre        
+           - F-100D Super Sabre
          size: 12
          
        - primary: Transport
@@ -386,19 +387,19 @@ squadrons:
        - primary: BARCAP
          secondary: air-to-air
          aircraft:
-           - 435th TFS #Deadly Black Eagles - F-104C Starfighter
+           - F-5E Tiger II
          size: 12
 
        - primary: BARCAP
          secondary: air-to-air
          aircraft:
-           - 479th TFS #Deadly Black Eagles - F-104C Starfighter
+           - F-5E Tiger II
          size: 12
 
        - primary: Strike
          secondary: air-to-ground
          aircraft:
-           - F-4C Phantom II
+           - F-4E Phantom II
          size: 12
 
        - primary: Strike
@@ -416,7 +417,7 @@ squadrons:
        - primary: Strike
          secondary: air-to-ground
          aircraft:
-           - VA-354 TFW Bulldogs #A-7E Corsair II  
+           - F-4E Phantom II
          size: 12
     
     #Saigon
@@ -435,19 +436,19 @@ squadrons:
       - primary: BARCAP
         secondary: air-to-air
         aircraft:
-          - F-4C Phantom II
+          - F-4E Phantom II
         size: 12
 
       - primary: SEAD
         secondary: air-to-ground
         aircraft:
-          - F-105G Thunderchief
+          - F-4E Phantom II
         size: 12
          
       - primary: Strike
         secondary: air-to-ground
         aircraft:
-          - F-105D Thunderchief        
+          - F-4E Phantom II
         size: 12
         
       - primary: Transport

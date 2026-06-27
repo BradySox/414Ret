@@ -31,7 +31,7 @@ performance: 1
 recommended_start_date: 1983-11-09
 version: "10.8"
 settings:
-  f111c: true
+  f111c: false
   squadron_start_full: true
 squadrons:
   #Bodo
@@ -128,7 +128,7 @@ squadrons:
     - primary: OCA/Runway
       secondary: any
       aircraft:
-        - F-111C Aardvark
+        - F-15E Strike Eagle (Suite 4+)
         - F-4E-45MC Phantom II
       size: 8
     - primary: BARCAP

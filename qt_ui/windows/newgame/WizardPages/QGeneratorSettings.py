@@ -130,7 +130,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         modLayout_row = 1
 
         mod_pairs = [
-            ("A-4E Skyhawk (v2.2.0)", self.a4_skyhawk),
+            ("A-4E Skyhawk (v2.3.0)", self.a4_skyhawk),
             (
                 "CurrentHill Chinese Military Assets pack (1.1.4)",
                 self.chinesemilitaryassetspack,

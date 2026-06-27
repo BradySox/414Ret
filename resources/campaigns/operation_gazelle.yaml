@@ -21,7 +21,7 @@ performance: 1
 recommended_start_date: 1973-10-15
 version: "10.8"
 settings:
-  a4_skyhawk: true
+  a4_skyhawk: false
   squadron_start_full: true
 squadrons:
   # Ben-Gurion
@@ -62,13 +62,13 @@ squadrons:
     - primary: BAI
       secondary: any
       aircraft:
-        - A-4E Skyhawk
+        - F-4E Phantom II
         - F-4E-45MC Phantom II
       size: 20
     - primary: Strike
       secondary: any
       aircraft:
-        - A-4E Skyhawk
+        - F-4E Phantom II
         - F-4E-45MC Phantom II
       size: 20
   # El Arish

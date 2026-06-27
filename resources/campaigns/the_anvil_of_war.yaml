@@ -22,7 +22,7 @@ settings:
   russianmilitaryassetspack: true
   chinesemilitaryassetspack: true
   usamilitaryassetspack: true
-  swedishmilitaryassetspack: true
+  swedishmilitaryassetspack: false
   f22_raptor: true
   fa_18efg: true
   squadron_start_full: true
@@ -69,7 +69,7 @@ squadrons:
     - primary: Strike
       secondary: air-to-ground
       aircraft:
-        - "[CH] B-21"
+        - "B-1B Lancer"
         - B-1B Lancer
       size: 4
   #Andoya
@@ -100,7 +100,7 @@ squadrons:
     - primary: BARCAP
       secondary: any
       aircraft:
-        - "[CH] JAS 39C Gripen"
+        - "F-16CM Fighting Falcon (Block 50)"
         - Mirage 2000C
       size: 12
   #Kalixfors

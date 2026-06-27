@@ -24,7 +24,7 @@ squadrons:
         - IL-78M
     - primary: Transport
       aircraft:
-        - IL-78MD
+        - IL-78M
     - primary: Strike
       secondary: air-to-ground
       aircraft:
@@ -99,7 +99,7 @@ squadrons:
         - IL-78M
     - primary: Transport
       aircraft:
-        - IL-78MD
+        - IL-78M
     - primary: Strike
       secondary: air-to-ground
     - primary: Anti-ship
@@ -237,7 +237,7 @@ squadrons:
         - IL-78M
     - primary: Transport
       aircraft:
-        - IL-78MD
+        - IL-78M
     - primary: Strike
       secondary: air-to-ground
       aircraft:
@@ -256,7 +256,7 @@ squadrons:
         - IL-78M
     - primary: Transport
       aircraft:
-        - IL-78MD
+        - IL-78M
     - primary: Strike
       secondary: air-to-ground
       aircraft:

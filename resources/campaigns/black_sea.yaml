@@ -27,7 +27,7 @@ squadrons:
       size: 2
     - primary: Transport
       aircraft:
-        - IL-78MD
+        - IL-78M
       size: 4
     - primary: Strike
       secondary: air-to-ground

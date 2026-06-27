@@ -41,7 +41,7 @@ squadrons:
     - primary: Strike
       secondary: air-to-ground
       aircraft:
-        - "[CH] B-21"
+        - "B-1B Lancer"
         - B-1B Lancer
       size: 8
     - primary: Transport
@@ -83,7 +83,7 @@ squadrons:
   10:
     - primary: Refueling
       aircraft:
-        - KC-130J
+        - KC-135 Stratotanker
         - C-130J-30
       size: 1
     - primary: SEAD

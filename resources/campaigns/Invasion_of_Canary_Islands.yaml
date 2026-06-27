@@ -59,7 +59,7 @@ settings:
   f100_supersabre: false
   f104_starfighter: false
   f105_thunderchief: false
-  uh_60l: true
+  uh_60l: false
   jas39_gripen: false
   su30_flanker_h: false
   su57_felon: false

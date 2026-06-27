@@ -160,5 +160,5 @@ squadrons:
   Melez Resupply FOB:
     - primary: Transport
       aircraft:
-        - Mi-8
+        - Mi-8MTV2 Hip
       size: 12

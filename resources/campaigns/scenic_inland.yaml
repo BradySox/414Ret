@@ -264,7 +264,7 @@ squadrons:
       size: 2
     - primary: Transport
       aircraft:
-        - IL-78MD
+        - IL-78M
       size: 2
     - primary: BARCAP
       secondary: air-to-air

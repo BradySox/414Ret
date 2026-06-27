@@ -16,7 +16,7 @@ performance: 1
 recommended_start_date: 2026-02-24
 version: "10.7"
 settings:
-  ukrainemilitaryassetspack: true
+  ukrainemilitaryassetspack: false
   russianmilitaryassetspack: true
   squadron_start_full: true
 squadrons:
@@ -25,19 +25,19 @@ squadrons:
     - primary: SEAD
       secondary: any
       aircraft:
-        - "[CH] MiG-29MU2"
+        - "MiG-29S Fulcrum-C"
         - MIG-29-FULCRUM
       size: 12
     - primary: Escort
       secondary: any
       aircraft:
-        - "[CH] Su-27P1M"
+        - "Su-27 Flanker-B"
         - Su-27 Flanker-B
       size: 12
     - primary: DEAD
       secondary: air-to-ground
       aircraft:
-        - "[CH] Su-24MU"
+        - "Su-24M Fencer-D"
         - Su-24M Fencer-D
       size: 12     
     - primary: Air Assault

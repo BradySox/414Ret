@@ -257,7 +257,7 @@ squadrons:
       size: 4
     - primary: Refueling
       aircraft:
-        - KC-130J
+        - KC-135 Stratotanker
       size: 1
     - primary: AEW&C
       aircraft:

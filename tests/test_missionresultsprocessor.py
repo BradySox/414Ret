@@ -41,6 +41,7 @@ COMMIT_STEPS = [
     "commit_sof_deployments",
     "commit_sof_strandings",
     "commit_sof_recoveries",
+    "commit_pow_recoveries",
     "record_carcasses",
     "record_sitrep",
 ]

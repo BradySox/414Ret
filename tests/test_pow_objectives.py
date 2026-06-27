@@ -81,6 +81,8 @@ def test_capture_is_surfaced_at_the_enemy_airfield() -> None:
     # The holding enemy field is recorded, and the TGO is registered for fragging.
     assert pow_entry.holding_cp_id == enemy.id
     assert game.db.tgos.get(tgo.id) is tgo
+    # Carries the airframe key so a recovery raid maps back to this POW.
+    assert tgo.airframe_unit_name == "Enfield11"
 
 
 def test_holding_field_is_the_nearest_enemy_control_point() -> None:

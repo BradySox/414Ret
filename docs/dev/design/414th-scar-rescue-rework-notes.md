@@ -1,9 +1,19 @@
 # SCAR rework — survivor rescue: the King / Jolly Green / Sandy package (design)
 
-**Status:** **Phase 1 MERGED** (PR #241). **Phase 2 MERGED** (PR #243 — the enemy-capture race).
-**Phase 3 BUILT** (PR #245 — captured pilots held as recoverable POWs at an enemy airfield). Phases 4–5
-designed below, not started. Supersedes the armor-hunting "loiter-and-task under the King" rework
-(`414th-scar-king-fac-notes.md` — **retired**; PR #189 to be abandoned, not merged). **Date:** 2026-06-27.
+**Status:** **Phases 1–3 MERGED** (PRs #241 / #243 / #245). **Phase 4 BUILT** (PR #247 — the POW
+recovery loop: a CSAR raid or recapturing the holding airfield **frees** the held aviator; an abandoned
+POW is **killed**). **Phase 5** (AI safety-net package + polish) designed below, not started. Supersedes
+the armor-hunting "loiter-and-task under the King" rework (`414th-scar-king-fac-notes.md` — **retired**;
+PR #189 to be abandoned, not merged). **Date:** 2026-06-27.
+
+Phase 4 as built (Python): the held aviator is now a real stake. `PendingPowRecovery` carries the
+captured `Pilot`. `commit_pow_recoveries` frees a POW when a **surviving CSAR flight** is fragged
+against its `CapturedPilotGroundObject` (matched back by airframe unit name) — the aviator stays in the
+squadron. `Coalition.end_turn` → `surviving_pows` applies the rest each turn: **recapturing the holding
+airfield frees** the POW (pilot lives); the recovery **clock decrements** otherwise; at zero the POW is
+abandoned and the **pilot is killed** (permanent loss). v1 limitation: a held pilot isn't pulled from
+the active roster (minor fidelity gap); the freed/killed outcomes are the mechanic. (Doc-conflict
+lesson: edit only this status block + append phase notes; don't fork the status across branches.)
 
 Phase 2 as built: the `combatsar` plugin rolls a per-survivor chance that an enemy CJTF_RED infantry
 **snatch party** (`mist.dynAdd`) spawns `captureSpawnDistance` from a downed pilot and walks at them

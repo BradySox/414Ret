@@ -16,7 +16,7 @@ from game.navmesh import NavMesh
 from game.orderedset import OrderedSet
 from game.procurement import AircraftProcurementRequest, ProcurementAi
 from game.profiling import MultiEventTracer, logged_duration
-from game.pow_recovery import PendingPowRecovery, age_pending_pows
+from game.pow_recovery import PendingPowRecovery, surviving_pows
 from game.scar_rescue import PendingSofRescue, surviving_rescues
 from game.squadrons import AirWing
 from game.theater.bullseye import Bullseye
@@ -232,10 +232,14 @@ class Coalition:
                 self.game, self.player, self.pending_csars
             )
 
-        # Age captured-pilot POWs and drop any held past the recovery window.
+        # Advance the captured-pilot POW clock: free those whose holding airfield
+        # we recaptured, kill those held past the recovery window, keep the rest.
+        # (An in-mission CSAR raid already cleared any recovered POW in commit.)
         # Ungated: the list is only ever non-empty when the Combat SAR capture
         # race produced a capture, so this is a no-op otherwise.
-        self.pending_pow_recoveries = age_pending_pows(self.pending_pow_recoveries)
+        self.pending_pow_recoveries = surviving_pows(
+            self.game, self.player, self.pending_pow_recoveries
+        )
 
     def preinit_turn_0(self, squadrons_start_full: bool) -> None:
         """Runs final Coalition initialization.

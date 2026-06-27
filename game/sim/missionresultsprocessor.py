@@ -76,6 +76,8 @@ class MissionResultsProcessor:
             # about to change hands.
             with logged_duration("commit_sof_recoveries"):
                 self.commit_sof_recoveries(debriefing)
+            with logged_duration("commit_pow_recoveries"):
+                self.commit_pow_recoveries(debriefing)
             with logged_duration("commit_captures"):
                 self.commit_captures(debriefing, events)
             with logged_duration("record_carcasses"):
@@ -150,9 +152,56 @@ class MissionResultsProcessor:
                 # Defensive: a pilot recorded as both rescued and captured is
                 # treated as rescued (the rescue already spared them).
                 continue
+            # Hold the captured aviator so the campaign can free them on a recovery
+            # raid (commit_pow_recoveries) or kill them if the POW is abandoned
+            # (Coalition.end_turn -> surviving_pows).
+            pilot = flying.pilot if flying is not None else None
             self.game.blue.pending_pow_recoveries.append(
-                PendingPowRecovery(airframe_unit_name=unit_name, x=x, y=y)
+                PendingPowRecovery(airframe_unit_name=unit_name, x=x, y=y, pilot=pilot)
             )
+
+    def commit_pow_recoveries(self, debriefing: Debriefing) -> None:
+        """Free POWs raided out this mission.
+
+        A surviving CSAR flight fragged against a captured-pilot objective frees
+        that POW: the held aviator stays in the squadron and the
+        ``PendingPowRecovery`` is cleared (matched back by the airframe unit name
+        the objective carries). Mirrors ``commit_sof_recoveries``' surviving-CSAR-
+        flight detection. No-op when nothing was recovered. (The other recovery
+        paths -- recapturing the holding airfield, or the abandon-timeout kill --
+        run at turn end in ``surviving_pows``.)
+        """
+        from game.theater.theatergroundobject import CapturedPilotGroundObject
+
+        recovered_names: set[str] = set()
+        for coalition in self.game.coalitions:
+            for package in coalition.ato.packages:
+                target = package.target
+                if not isinstance(target, CapturedPilotGroundObject):
+                    continue
+                csar_flights = [
+                    f for f in package.flights if f.flight_type is FlightType.CSAR
+                ]
+                if csar_flights and any(
+                    debriefing.air_losses.surviving_flight_members(f) > 0
+                    for f in csar_flights
+                ):
+                    name = getattr(target, "airframe_unit_name", "")
+                    if name:
+                        recovered_names.add(name)
+        if not recovered_names:
+            return
+        for coalition in self.game.coalitions:
+            kept = []
+            for pow_entry in coalition.pending_pow_recoveries:
+                if pow_entry.airframe_unit_name in recovered_names:
+                    logging.info(
+                        f"POW {pow_entry.airframe_unit_name} recovered by a CSAR "
+                        "raid; the aviator returns to the squadron."
+                    )
+                else:
+                    kept.append(pow_entry)
+            coalition.pending_pow_recoveries = kept
 
     def commit_air_losses(self, debriefing: Debriefing) -> None:
         # A Combat SAR pickup loses the airframe but saves the aviator; an enemy

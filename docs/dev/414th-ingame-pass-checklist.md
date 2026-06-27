@@ -829,7 +829,13 @@ so the two docs don't drift.
   `ALARM_STATE`/emission write crept into the jammer — must never happen; check `suppressSAMRoe`/
   `restoreSAMRoe` are still ROE-only).
 
-### G15 — MANTIS SAM range/band override (SEAD) · §2 / MANTIS migration · ☐ UNTESTED
+### G15 — MANTIS SAM range/band override (SEAD) · §2 / MANTIS migration · ☑ VERIFIED 2026-06-27 (GermanyCW — bands + detection + engagement; HARM-evasion sub-check & AWACS-less caveat below remain to watch)
+- **VERIFIED (2026-06-27, post AWACS-fold fix):** re-fly over the Haina SAMs **drew fire**. `dcs.log`
+  confirmed RED `CheckLoop` climbing **0 → 27 → 36–38** as the A-50 got airborne (was `0` × 492 before),
+  off a post-fix RED build showing **6 EWR group names** (was 5 — the A-50 now folds in). Bands were
+  already correct (override loaded, ASP/FIREFLY/LLAMA→LONG etc.); the blocker was detection, now closed.
+  **Still worth a glance on a future pass:** a HARM shot triggering SEAD evasion (radar drop / scoot),
+  and an **AWACS-less faction** (relies on dedicated EWR coverage — see the 5th-pass caveat).
 - **Bug (found in-game 2026-06-27, GermanyCW):** under MANTIS nearly every Retribution SAM was typed
   **POINT** — confirmed SA-6/SA-10/SA-11/SA-2/SA-3 all POINT (SA-8 wrongly MEDIUM) — so the IADS only
   engaged at ~point-blank range, nothing emitted at standoff, and **SEAD had no targets** ("SAMs never

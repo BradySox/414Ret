@@ -50,30 +50,22 @@ and selected later upstream fixes.
 
 ### Missions are built for squadron play
 
-- **SCAR** adds a player-led target hunt over a static kill box: identify the real HVT among
-  decoys and clutter, then destroy it before the window expires (kills attrit the enemy through
-  the normal ground-loss path). Prosecuting the wrong convoy is a mis-identification that costs
-  budget (tunable via the `SCAR mis-ID penalty` Campaign Doctrine setting; set 0 to disable), so
-  reading the target signature matters — it's printed on your SCAR kneeboard, and the on-scene
-  controller's calls go to your flight (and the C-130 King), not the whole coalition. Real armor
-  and missile sites can be the objective instead of a disposable scripted stand-in. An
-  experimental option (on by default for new campaigns while it is being playtested) uses finite
-  purchased SOF teams to capture a commander alive: fly a **C-130 SOF insert** and deliver the team
-  onto the held command vehicle to take him alive (a clean grab reveals enemy command posts) — no
-  insert, no capture. A botched grab strands the team as a "downed SOF team" objective you can fly
-  a **helo CSAR recovery** against on a later turn before it is overrun. An opt-in `SCAR
-  auto-planning` setting can frag **up to a couple** of SCAR hunts into your ATO automatically each
-  turn — spread across **different** armor groups (count capped by `SCAR hunts per turn`, default 2;
-  pair with `planner unpredictability` to vary which groups), augmenting the AI's BAI rather than
-  replacing it (off by default while the in-mission scripting is being playtested).
+- **SCAR** is now the **RESCAP "Sandy"** escort of the combat-SAR package — fly an **A-10 or Apache**
+  to bring a downed pilot home: hold near the FLOT with the **King** (C-130) and **Jolly Green** (the
+  rescue helo), protect the survivor, suppress the threats around them, and walk the helo in. The enemy
+  may send a **snatch party** to grab the downed pilot — kill it in time or the pilot is **captured**
+  and held as a **POW at an enemy airfield**. Fly a **CSAR raid** on that field (or recapture it) to
+  bring the aviator home; leave them held too long and they are lost for good. (The old armor-hunt SCAR
+  is retired — SCAR is a rescue role now.)
 - **Combat SAR** makes a downed pilot worth flying for. A CH-47 orbits near the front as the
   rescuer while a C-130 holds overhead as the HC-130 "King" — on-scene command with an
   air-tracking TACAN the helo homes on (an AI King lights it automatically; a player King
   sets it from the planned channel in-cockpit) and an F10 survivor-locator readout. When a human pilot
   ejects, they spawn with a beacon; recover them and deliver them to any friendly field and the
   campaign **spares the aviator** (you still lose the jet, but the experienced pilot returns to
-  the squadron instead of being lost). Player-flown, with an optional AI standing alert. It is a
-  separate task from the SCAR SOF-recovery CSAR above.
+  the squadron instead of being lost). Player-flown, with an optional AI standing alert that now
+  fields a **Sandy (SCAR) escort** too. If the enemy reaches the downed pilot first they are
+  **captured** — held as a POW you can raid back (see SCAR above).
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform with
   standoff jamming and ELINT gameplay. This is the only 414th scripted EW model;
   the old generic fighter-pod "EW Jammer Script" is retired.
@@ -219,10 +211,10 @@ and selected later upstream fixes.
 - Numerous mission-generation and debriefing fixes are included, along with selected
   upstream backports newer than the fork's original base.
 
-Most campaign-facing systems have their own setting or plugin toggle. The experimental SCAR
-commander-capture/SOF campaign mechanics are on by default for new campaigns while they are
-being playtested (toggle `SCAR command-post intel` on the Campaign Doctrine page to turn them
-off); existing campaigns keep whatever they were saved with.
+Most campaign-facing systems have their own setting or plugin toggle — e.g. the combat-SAR
+**enemy-capture race** (the enemy trying to seize a downed pilot) is a `combatsar` plugin option you
+can turn off, and the AI rescue package is gated by the `Automatic Combat SAR` setting; existing
+campaigns keep whatever they were saved with.
 
 For engineering details, implementation paths, defaults, and known limitations, see
 [`docs/dev/414th-features.md`](docs/dev/414th-features.md).

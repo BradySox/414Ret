@@ -1112,7 +1112,20 @@ A polish pass over the **LUA Plugins Options** page so every plugin explains its
 
 ---
 
-## 15. SCAR — Strike Coordination and Reconnaissance (flight type + scenario plugin)
+## 15. SCAR — RESCAP "Sandy" rescue escort (rescue rework)
+
+> ⚠️ **SUPERSEDED (2026-06-27) — read `docs/dev/design/414th-scar-rescue-rework-notes.md`.** SCAR was
+> repurposed from the armor-hunt task below into the **RESCAP "Sandy"** escort of the **Combat SAR
+> package** (King + Jolly Green + Sandy). The armor hunt + SOF commander-capture scenario described
+> in the rest of this section is **retired/dormant** (the SOF/CSAR recovery plumbing was repurposed
+> for the POW path). Current behaviour: `FlightType.SCAR` = an A-10C/AH-64D rescue escort scoped to the
+> FLOT; an **enemy-capture race** (`combatsar` plugin) lets a snatch party seize a downed pilot
+> (`combat_sar_captures`); a captured pilot becomes a **POW held at an enemy airfield**
+> (`PendingPowRecovery` + `CapturedPilotGroundObject`); a **surviving CSAR raid** or **recapturing the
+> field** frees the aviator while an abandoned POW (4-turn clock) is killed (`surviving_pows`); AI
+> safety-net package via `auto_combat_sar`. Key files: `game/pow_recovery.py`, `game/pow_objectives.py`,
+> `game/sim/missionresultsprocessor.py` (`record_pow_captures` / `commit_pow_recoveries`),
+> `resources/plugins/combatsar/`. The historical armor-hunt detail below is kept for reference only.
 
 A player-flown `FlightType.SCAR`: work a defined area to find and prosecute a high-value
 target hidden among look-alike decoys + clutter and light AAA. Design ground truth:

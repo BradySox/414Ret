@@ -15,8 +15,10 @@ class PlanCombatSar(PackagePlanningTask[MissionTarget]):
     414th feature. Only fires for the player coalition when Settings.auto_combat_sar
     is on (combat_sar_targets is empty otherwise), so the default-off behaviour is a
     pure no-op. The in-mission MOOSE CSAR engine (resources/plugins/combatsar) does
-    the actual rescue; this just keeps a CH-47 orbiting so coverage exists with no
-    player CSAR up.
+    the actual rescue; this keeps the rescue package on station so coverage exists
+    with no player CSAR up. Per the rescue rework it fields the standing alert
+    (COMBAT_SAR rescue/King) **plus a Sandy (SCAR) escort** so the AI can suppress
+    the threats around a downed pilot -- not just orbit.
     """
 
     def preconditions_met(self, state: TheaterState) -> bool:
@@ -32,6 +34,10 @@ class PlanCombatSar(PackagePlanningTask[MissionTarget]):
 
     def propose_flights(self) -> None:
         self.propose_flight(FlightType.COMBAT_SAR, 1)
+        # Rescue-rework safety net: a Sandy (SCAR) escort alongside the standing
+        # rescue alert so the AI protects the survivor, not just orbits. Degrades
+        # gracefully when no A-10/Apache is free (the fulfiller simply skips it).
+        self.propose_flight(FlightType.SCAR, 1)
 
     @property
     def asap(self) -> bool:

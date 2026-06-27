@@ -34,7 +34,15 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- specific options (defaults mirror MANTIS' own defaults)
     local createRedIADS = true
     local createBlueIADS = true
-    local useEmOnOff = true
+    -- Emissions control default OFF. With it ON, MANTIS forces every SAM radar dark
+    -- (EnableEmission(false)) until the network cues it, so the SAMs contribute
+    -- nothing to detection (MANTIS' IntelTwo) and the whole network depends on the
+    -- handful of dedicated EWRs -- which routinely miss a low/forward target, leaving
+    -- the detection set empty (CheckLoop 0) and NO SAM ever engaging. OFF lets every
+    -- SAM (and SAM-as-EWR) search on its own radar, feed detection, and engage what's
+    -- in range -- a reliable, RWR-visible IADS. Flip it back on for a stealthy
+    -- EWR-cued network once detection coverage is proven.
+    local useEmOnOff = false
     local samRange = 95
     -- 15s (was 30) so the IADS cues/hands off briskly -- a 30s poll let targets
     -- slip through a SAM's (now range-correct) ring before it reacted.

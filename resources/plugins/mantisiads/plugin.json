@@ -14,9 +14,9 @@
             "defaultValue": true
         },
         {
-            "nameInUI": "Emissions control (SAM radars stay dark until a target is in range)",
+            "nameInUI": "Emissions control (SAM radars dark until EWR-cued; OFF = SAMs self-search and engage reliably)",
             "mnemonic": "useEmOnOff",
-            "defaultValue": true
+            "defaultValue": false
         },
         {
             "nameInUI": "SAM engagement range (% of max interceptor range)",

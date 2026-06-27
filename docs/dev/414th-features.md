@@ -132,6 +132,16 @@ engine re-asserts ROE itself, so the writes stay self-healing. The one regressio
 adding any `ALARM_STATE`/emission write to the jammer — that would fight MANTIS' EMCON. See
 the design note's "IADS engine interaction" section.
 
+**`perf_red_alert_state` removed (2026-06-27):** because the IADS engine (MANTIS/Skynet) sets each
+networked SAM's `ALARM_STATE` at runtime, the legacy global "SAM starts in red alert mode" toggle
+only fought the engine — it wrote `OptAlarmState(RED/GREEN)` at spawn, which MANTIS immediately
+overrode (the log even shows `Setting SAM Start States`), so flipping it changed nothing for
+networked SAMs and confused players (it looked like the SAMs ignored "red alert"). The setting and
+both its writers (`tgogenerator.set_alarm_state`, `flotgenerator`) are removed; **non-IADS** ground
+groups (frontline armor, ships, autonomous SHORAD, any unmatched SAM) now fall to DCS `AUTO`. Old
+saves drop the field via `_migrate_legacy_settings`. See
+`docs/dev/design/414th-mantis-migration-notes.md` §11.
+
 ---
 
 ## 3. TARPS photo-reconnaissance + BDA fog-of-war

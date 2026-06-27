@@ -467,7 +467,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "perf_smoke_gen",
                     "perf_smoke_spacing",
-                    "perf_red_alert_state",
                     "perf_artillery",
                     "generate_fire_tasks_for_missile_sites",
                     "perf_moving_units",
@@ -2007,12 +2006,6 @@ class Settings:
         min=800,
         max=24000,
     )
-    perf_red_alert_state: bool = boolean_option(
-        "SAM starts in red alert mode",
-        page=MISSION_GENERATOR_PAGE,
-        section=PERFORMANCE_SECTION,
-        default=True,
-    )
     perf_artillery: bool = boolean_option(
         "Artillery strikes",
         page=MISSION_GENERATOR_PAGE,
@@ -2292,6 +2285,11 @@ class Settings:
             "nevatim_parking_fix",
             "only_player_takeoff",
             "generate_dtc",
+            # Removed once MANTIS/Skynet became the SAM-emissions owner: the IADS
+            # engine sets each networked SAM's alarm state at runtime, so a global
+            # "SAM starts in red alert" toggle just fought the engine. Non-IADS
+            # groups now fall to DCS AUTO. See 414th-mantis-migration-notes.md.
+            "perf_red_alert_state",
         ):
             migrated.pop(obsolete_key, None)
 

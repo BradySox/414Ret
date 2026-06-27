@@ -346,3 +346,33 @@ end state). Broken down by build step, not by scope:
 The C2 layer is the long pole, but it is **in scope by definition** — an engine that omits it is not
 a Skynet replacement. If the §2/§4 spikes come back unfavorable (old bundled MOOSE, no SET
 injection), add ~1 week for vendoring + the prefix-rename path.
+
+---
+
+## 11. Settings cleanup: `perf_red_alert_state` removed (2026-06-27)
+
+**Symptom (in-game pass, 2026-06-27):** with `iads_engine = MANTIS` and the legacy
+*"SAM starts in red alert mode"* (`perf_red_alert_state`, default ON) both set, the player's
+SAMs sat **GREEN/EMCON the whole flight and never engaged** — two systems fighting over
+`ALARM_STATE`, and MANTIS (correctly) won.
+
+**Root cause:** `perf_red_alert_state` wrote `OptAlarmState(RED)` (or GREEN) onto **every** TGO +
+frontline group at spawn (`tgogenerator.set_alarm_state`, `flotgenerator`). But MANTIS — and Skynet —
+**own** the alarm state of every *networked* SAM at runtime (the log shows `Setting SAM Start
+States`), so the spawn write was instantly overridden for SAMs and the toggle was a dead, confusing
+knob. EMCON keeping SAMs dark until a target is in range is **working as designed**; the player flew
+a C-130 in friendly airspace and never pressed a ring, so nothing ever cued the network.
+
+**Decision — Option A ("straight engine control"):** remove the setting entirely rather than try to
+reconcile it with MANTIS. Retribution stops pre-writing an alarm state for the engine to fight:
+
+- field + UI ordering entry deleted from `settings.py`; dropped from old saves via
+  `_migrate_legacy_settings` (locked by `tests/settings/test_settings_qol_migration.py`);
+- `tgogenerator.set_alarm_state` and the `flotgenerator` block deleted (and the now-unused
+  `OptAlarmState`/`MovingGroup`/`Any` imports);
+- **networked SAMs** → alarm state owned by the IADS engine (MANTIS EMCON / Skynet);
+- **non-IADS groups** (frontline armor, ships, autonomous SHORAD, any unmatched SAM) → DCS `AUTO`.
+
+**Not in scope here** (separate items raised in the same pass, still open): MANTIS detection
+cueing/coverage, the DE-vs-S radar-range pick for SAMs that carry both, and whether MANTIS is
+detecting A/G & G/G munitions as contacts.

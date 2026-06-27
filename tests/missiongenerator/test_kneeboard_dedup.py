@@ -41,10 +41,10 @@ def _row_len(include_min_fuel: bool) -> int:
 
 
 def test_flight_plan_keeps_min_fuel_column_by_default() -> None:
-    # 9 columns: #, Action, Alt, Dist, Brg, GSPD, Time, Departure, Min fuel.
-    assert _row_len(include_min_fuel=True) == 9
+    # 8 columns: #, Action, Alt, Dist, GSPD, Time, Departure, Min fuel.
+    assert _row_len(include_min_fuel=True) == 8
 
 
 def test_flight_plan_drops_min_fuel_column_when_fuel_ladder_owns_it() -> None:
     # The Fuel Ladder page owns the fuel ladder, so Mission Info drops the column.
-    assert _row_len(include_min_fuel=False) == 8
+    assert _row_len(include_min_fuel=False) == 7

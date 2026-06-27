@@ -388,8 +388,11 @@ TR", not "ST-68U Tin Shield SR" — and it fixes a real bug where an SA-5 site p
 reference ("No weapons") from its acquisition radar despite a 138 nm MEZ. A bare radar site (nothing
 lethal co-located) still honestly names itself. **Recon-fog aware** (§3): a site the player has not identified
 (`known_for(player)` False) contributes only to a per-band "Unidentified MERAD" card — system,
-ring, HARM code and defeat note withheld until a TARPS overflight reveals it — and the intro line
-counts the still-unidentified sites. Cards sort live-most-lethal → unidentified and pack down the
+ring, HARM code and defeat note withheld until a TARPS overflight reveals it. The unidentified cards
+also **withhold the count**: how many unidentified (often mobile) sites are in theatre is intel we
+wouldn't realistically have, so they drop the "N site(s)" headline and the intro's running total, and
+their detected-contact bearings overflow to an ellipsis (`_unknown_cues_text`) rather than a "+N" total
+that would leak the count. Cards sort live-most-lethal → unidentified and pack down the
 page; overflow flows onto `(cont.)` continuation pages via the page's own card-packing
 `paginate()`. Gated by `generate_threat_intel_kneeboard` (default OFF); covered by
 `tests/missiongenerator/test_threat_intel_kneeboard.py`. In-game pass ☑ VERIFIED 2026-06-26 (H5). *(Per-system
@@ -399,12 +402,14 @@ photos were evaluated and deferred — DCS ships only `.dds` model textures, not
 **Mission code words + Comms & Brevity card.** A squadron-grown idea, modelled on the Red Flag
 81-2 kneeboards: the whole side shares **one mission-wide code-word table** — a **push word per
 task** (`STRIKE / SEAD / OCA / CAS / ANTISHIP / CAP / EW`) plus the event words `SUCCESS` /
-`ABORT` (+ `STOP JAM` only when an EW/jamming flight is in the ATO) — so a single call ("Red Kite")
+`ABORT` (+ `STOP JAM` only when an EW/jamming flight is in the ATO) — so a single call ("Cobalt")
 tells everyone SEAD is pushing (`game/ato/codewords.py`: `MissionCodeWords`, `PushCategory`,
 `push_category_for`). It's owned by the **`Coalition`** (a `code_words` property generated once per
 turn from a randomly chosen *themed* word pool, stored so it's stable while a planner briefs and
 regenerates the mission, and pickled; `getattr` migrates old saves), so one table feeds everything
-and a new turn draws a fresh themed set. Because **planners brief off it before the `.miz`
+and a new turn draws a fresh themed set. The pools are deliberately **short single words** (metals,
+colors, stone, animals — `Steel / Spectrum / Bedrock / Pack`) chosen to be quick and unambiguous over
+the radio, with no two-word phrases and nothing that collides with a stock DCS callsign or brevity term. Because **planners brief off it before the `.miz`
 exists**, it's surfaced pre-generation as a **persistent code-word panel** in the ATO package list
 (`qt_ui/widgets/ato.py` `QPackagePanel.refresh_code_words`, an HTML table refreshed on
 `layoutChanged`), a per-package **tooltip** (`AtoModel` `ToolTipRole`, that package's push word +
@@ -447,7 +452,8 @@ three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc
 - **P1 Game Plan** (the `BriefingPage`, renamed via its new `page_title`) leads with a **BLUF** band —
   `TASK`/target/TOT, `PUSH` + `SUCCESS`/`ABORT` code words, `TOP THREAT` (the single most-lethal live
   identified system + its MEZ + how to defeat it) and bullseye — so the page they open to first carries
-  the essentials, then the airfields, route (with the Min-fuel column), weather, bingo/joker and laser
+  the essentials, then the airfields, route (steerpoint table — Alt/Dist/GSPD/Time, with the Min-fuel
+  column; the leg **bearing** column was dropped as low-value clutter), weather, bingo/joker and laser
   codes. The BLUF strings are computed by `KneeboardGenerator._bluf_lines` and passed in (the page stays
   decoupled from the threat/code-word models); the top-threat line is **always-on** (the threat cards are
   computed unconditionally, independent of the brief-page toggle). The **Laser Code** table is printed
@@ -2067,7 +2073,9 @@ a separate page that only appeared for 2+ flights).
 prepended** in `generate()` (replacing the conditional `KneeboardIndexPage`). It draws:
 
 - **Header (always):** `"<Operation> — Turn N"` + the in-game date (`game.campaign_name`, `game.turn`,
-  `game.current_day`). So every deck opens telling you what op and turn you're flying.
+  `game.current_day`). So every deck opens telling you what op and turn you're flying. Because the cover
+  is a standalone sheet it carries its own **oversized** type (48 pt op/turn, 26 pt date) — bigger than
+  the rest of the deck — so it reads at a glance.
 - **SITREP (when there's anything to report):** `"SITREP — Turn N-1"` + `Sitrep.kneeboard_lines()`,
   gated by `_cover_sitrep` → `sitrep_for_kneeboard` (§29). The model/capture are unchanged; only the
   render moved off the `BriefingPage` band onto the cover, so it's prominent and stops crowding the

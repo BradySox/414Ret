@@ -3,7 +3,7 @@
 A squadron-grown idea, modelled on the Red Flag 81-2 kneeboards: the whole side
 shares one code-word table — a **push word per task** (STRIKE / SEAD / OCA / …) plus
 a couple of mission-wide event words — so every flight's kneeboard lists the same
-table and a single call ("Red Kite") tells everyone that SEAD is pushing.
+table and a single call ("Cobalt") tells everyone that SEAD is pushing.
 
 The table is generated once per turn from a randomly chosen *themed* pool (so a
 mission's words feel deliberate), stored on the ``Coalition`` (stable while a planner
@@ -72,50 +72,37 @@ def present_categories(tasks: Iterable[FlightType]) -> Set[PushCategory]:
 
 
 #: Themed word pools — one is chosen per turn so a mission's code words read as a
-#: coherent set (cf. Red Flag 81-2's "outlaws" / "birds"). None are stock DCS
-#: callsigns. Each pool needs at least ``len(PushCategory) + 3`` words.
+#: coherent set. Deliberately **short single words** (quick to say and unambiguous
+#: over the radio), and none are stock DCS callsigns or standard brevity terms. Each
+#: pool needs at least ``len(PushCategory) + 3`` words.
 _THEMES: Dict[str, List[str]] = {
-    "Outlaws": [
-        "Jesse James",
-        "Billy the Kid",
-        "Bounty Hunter",
-        "Wild Bunch",
-        "Tombstone",
-        "Deadwood",
-        "Rustler",
-        "Stagecoach",
-        "Six Shooter",
-        "Dry Gulch",
-        "Hangtown",
-        "Gunsmoke",
+    "Steel": [
+        "Iron",
+        "Cobalt",
+        "Copper",
+        "Bronze",
+        "Pewter",
+        "Tungsten",
+        "Chrome",
+        "Brass",
+        "Nickel",
+        "Titanium",
+        "Gunmetal",
+        "Zinc",
     ],
-    "Raptors": [
-        "Bald Eagle",
-        "Red Kite",
-        "Vulture",
-        "Goshawk",
-        "Peregrine",
-        "Buzzard",
-        "Kestrel",
-        "Condor",
-        "Shrike",
-        "Sea Eagle",
-        "Caracara",
-        "Harrier Hawk",
-    ],
-    "Storms": [
-        "Thunderhead",
-        "Cloudburst",
-        "Hailstone",
-        "Whirlwind",
-        "Downpour",
-        "Squall Line",
-        "Cold Front",
-        "Gale Force",
-        "Snowdrift",
-        "Black Ice",
-        "Dust Devil",
-        "Rip Tide",
+    "Spectrum": [
+        "Crimson",
+        "Scarlet",
+        "Amber",
+        "Indigo",
+        "Onyx",
+        "Ivory",
+        "Teal",
+        "Maroon",
+        "Violet",
+        "Magenta",
+        "Umber",
+        "Sienna",
     ],
     "Bedrock": [
         "Granite",
@@ -125,25 +112,25 @@ _THEMES: Dict[str, List[str]] = {
         "Flint",
         "Cinder",
         "Slate",
+        "Marble",
+        "Shale",
+        "Gravel",
         "Sandstone",
         "Limestone",
-        "Marble",
-        "Gravel Pit",
-        "Bedrock",
     ],
-    "Rivers": [
-        "Rio Grande",
-        "Big Muddy",
-        "Whitewater",
-        "Backwater",
-        "Crosscurrent",
-        "Tailwater",
-        "Headwaters",
-        "Floodplain",
-        "Driftwood",
-        "Watershed",
-        "Snake River",
-        "Rapids",
+    "Pack": [
+        "Jackal",
+        "Lynx",
+        "Badger",
+        "Wolverine",
+        "Bison",
+        "Mongoose",
+        "Gator",
+        "Bobcat",
+        "Hyena",
+        "Caribou",
+        "Marten",
+        "Ferret",
     ],
 }
 

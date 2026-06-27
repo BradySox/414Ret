@@ -894,11 +894,14 @@ Dynamic-front movement design (why the stance/cadence logic looks the way it doe
 
 - Plugin: `resources/plugins/tic/` (`TIC_v1.1.lua` + `tic_414_init.lua` +
   `plugin.json`; options: `stormtrooper`, `createMenus`, `boundPause`,
-  `ambientFire`). Script injection is NOT a work order - it's
-  `_inject_tic_script()` in `game/missiongenerator/luagenerator.py` (scramble
-  pattern): a DoScript preamble pre-seeds `GLSCO.*` from
-  `dcsRetribution.plugins.tic.*` and sets `AutoInitialize/AutoStart = false`,
-  then DoScriptFile TIC_v1.1.lua, then DoScriptFile `tic_414_init.lua`, which
+  `ambientFire`). Script injection is NOT a work order - it runs in the uniform
+  late-init pass: `TicPlugin` (`game/plugins/tic.py`, registered in
+  `manager.py`) declares a `late_init_preamble()` (pre-seeds `GLSCO.*` from
+  `dcsRetribution.plugins.tic.*` and sets `AutoInitialize/AutoStart = false`)
+  plus `late_init_files()` (`TIC_v1.1.lua`, `tic_414_init.lua`), gated on
+  `mission_data.tic_groups`; `inject_plugins()`'s second pass DoScriptFiles them
+  after all plugin config. (Was `_inject_tic_script()` — the "scramble pattern".)
+  `tic_414_init.lua` then
   installs the 414th ambient-fire extension (wraps
   `GLSCO_COMBATANT:simulate()`: combatants with no LOS target have a 50%
   chance per firing cycle to area-fire a salvo at 30-150 m around the nearest

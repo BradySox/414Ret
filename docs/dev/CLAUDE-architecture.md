@@ -5,12 +5,16 @@ runtime behavior (EW, ISR, recon scoring, frontline firefights, ATC) is driven b
 plugins. When a feature has both, the Python side sets up and the Lua side executes — don't
 move runtime logic into the planner or vice versa.
 
-**Plugin script injection (the "scramble pattern").** Most 414th plugins are normal work-order
-plugins, but TIC, TARS, and SCAR are injected by hand in
-`game/missiongenerator/luagenerator.py` (`_inject_*_script()`), appended **after**
-`inject_plugins()` so `dcsRetribution.plugins.<name>` already exists, then `DoScriptFile`
-the vendored class + a `*_414_init.lua` that owns construction. If the init file is removed
-or errors, that feature silently never starts.
+**Plugin script injection (the uniform late-init pass).** Most 414th plugins are normal
+work-order plugins. TIC, TARS, and SCAR additionally need their main script loaded **after**
+every plugin's config table exists (their init reads `dcsRetribution.plugins.<name>` / MOOSE
+at file scope) — an ordering the per-plugin work-order pass can't express. They are `LuaPlugin`
+subclasses (`game/plugins/{tic,tars,scar}.py`, registered in `manager.py`'s `_PLUGIN_CLASSES`)
+declaring `late_init_files()` / `late_init_preamble()` / `should_late_init()`; `inject_plugins()`
+runs a **second pass** that calls `inject_late_init()` on each after the normal config pass. A
+missing/renamed init file is now caught by a test (`game/plugins/tests/test_late_init.py`)
+instead of the feature silently never starting. (Replaces the old hand-injected
+`_inject_*_script()` "scramble pattern".)
 
 **Viewer-aware visibility layer (recon fog).** One layer drives two player-facing fog rules.
 AI planning and threat math always use ground truth (`viewer=None`); only the human (BLUE)

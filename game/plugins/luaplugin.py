@@ -212,3 +212,45 @@ class LuaPlugin(PluginSettings):
             lua_generator.inject_other_plugin_resources(
                 self.definition.identifier, resource_file
             )
+
+    # --- Late-init lifecycle (the "after everything else is configured" pass) ---
+    #
+    # A few plugins (TIC, TARS, SCAR) must load their main script AFTER every
+    # plugin's configuration has been injected, because their init reads
+    # dcsRetribution.plugins.<id> / MOOSE at file scope. The base LuaPluginWorkOrder
+    # path can't express that ordering (a plugin's scripts load before its own
+    # config), so those features were previously hand-injected in LuaGenerator.
+    # These hooks let such a plugin declare what to load late instead. The defaults
+    # are no-ops, so the other plugins are unaffected.
+
+    def late_init_files(self) -> List[str]:
+        """Resource-relative .lua files to load AFTER all plugin config.
+
+        Empty (the default) means this plugin has no late-init pass.
+        """
+        return []
+
+    def late_init_comment(self) -> str:
+        """Comment for the late-init TriggerStart (shown in the .miz triggers)."""
+        return self.name
+
+    def late_init_preamble(self, lua_generator: LuaGenerator) -> Optional[str]:
+        """Optional inline Lua emitted (DoScript) right before the files load."""
+        return None
+
+    def should_late_init(self, lua_generator: LuaGenerator) -> bool:
+        """Whether the late-init pass should fire for this mission.
+
+        Default: fire when the plugin is enabled and actually declares files.
+        Subclasses override to add mission-data gates (e.g. only when frontline
+        groups were handed to TIC, or a SCAR tasking was planned).
+        """
+        return self.enabled and bool(self.late_init_files())
+
+    def inject_late_init(self, lua_generator: LuaGenerator) -> None:
+        lua_generator.inject_late_plugin_scripts(
+            self.identifier,
+            self.late_init_files(),
+            self.late_init_comment(),
+            self.late_init_preamble(lua_generator),
+        )

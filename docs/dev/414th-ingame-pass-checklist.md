@@ -1055,6 +1055,27 @@ so the two docs don't drift.
   or the Soviet SURA Visor wrongly removed; the dropdown shows nothing selected; a non-helmet
   property (laser code, datalink) changed by the gate.
 
+### I4 — Frontline clustered laydown + default stance (PR #823 adoption) · §9 · ☐ UNTESTED (planner + TIC-guard test-covered, adjudicated 2026-06-26)
+- **Why:** Adopted PR #823's proportional mixed armor clusters + even-spread placement
+  (`ai_ground_planner.py`, `frontline_clustering.py`, `flotgenerator._generate_groups`), with
+  #823's DCS-task cohesive maneuver TIC-guarded behind `not self.tic_enabled`. Composition /
+  placement is unit-tested and the TIC guard is locked by
+  `tests/missiongenerator/test_flotgenerator_tic_guard.py`; only the in-sim *look* of the laydown
+  needs eyeballing. Two builds to watch: TIC-on (default) and TIC-off.
+- **Setup:** Generate a campaign mission with a populated armor front. (a) TIC ON (default):
+  inspect/fly the front. (b) TIC OFF: regenerate and inspect to exercise the #823 maneuver path.
+- **Pass (TIC on):** frontline armor spawns in evenly-spread clusters (no bunching at one offset),
+  mixed/alternating armor types, SHORAD/ATGM/recon positioned around each wedge (recon ahead,
+  SHORAD/ATGM behind), nothing stacked on the FLOT; movement is still the TIC scripted firefight,
+  SHORAD/RECON static. **Pass (TIC off):** clusters maneuver cohesively (wedge advances, followers
+  keep formation; APC-led wedges don't split in BREAKTHROUGH). **Default stance:** with auto-stance
+  OFF, a new campaign / freshly captured player CP starts on the configured stance.
+- **Fail signature:** units bunched at one along-front offset or stacked on the FLOT; single-type
+  monoculture groups (composition not applied); on a TIC build, armor/ATGM driving via DCS AI tasks
+  or SHORAD/RECON maneuvering (the #823 maneuver leaked past the TIC guard — should be impossible,
+  test-locked); on a TIC-off build, clusters splitting apart in BREAKTHROUGH; the default-stance
+  setting ignored at new-game/capture.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions
@@ -1070,7 +1091,8 @@ Highest leverage: planner/placement bugs affect *every* campaign, and you verify
 them by inspecting the ATO + map, not by flying.
 - A2 (QRA base-defense doctrine), B2 (DEAD reachability gate), B3 (threat-weighted
   BARCAP orbit), B4 (TARCAP/escort reach), C1 + C2 (AWACS/tanker front-anchor +
-  depth), F6 (SCAR auto-plan appears in ATO).
+  depth), F6 (SCAR auto-plan appears in ATO), I4 (frontline clustered laydown —
+  inspect the front-line armor spread on the map).
 - Setup needs: active land front, enemy airbase ≈90 NM from FLOT, an armor
   concentration near the front, AWACS+tanker support, `scar_autoplan` ON.
 

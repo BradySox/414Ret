@@ -110,8 +110,10 @@ and selected later upstream fixes.
 - **Troops In Contact (TIC)** produces prolonged, formation-aware frontline firefights
   with ambient suppressive fire instead of letting vanilla ground AI instantly erase the
   battle.
-- Frontline formations are distributed along the line rather than piled onto one patch of
-  terrain.
+- Frontline forces deploy as **mixed combat clusters** — an armor wedge with embedded air
+  defense, an anti-tank standoff pair, and leading recon — spread evenly along the line
+  rather than piled onto one patch of terrain. You can also set a **default front-line
+  stance** (HQ Automation) for your sectors when you're managing stances yourself.
 - Civilian regional traffic adds light rear-area activity, while the 414th-tuned
   **Splash Damage 3** build improves weapon effects without returning to the plugin's
   harsher stock values.

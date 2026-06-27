@@ -22,6 +22,36 @@
             "nameInUI": "On-screen CSAR message duration (s)",
             "mnemonic": "messageTime",
             "defaultValue": 15
+        },
+        {
+            "nameInUI": "Enemy capture race: the enemy may try to seize a downed pilot before rescue",
+            "mnemonic": "captureEnabled",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "Capture race: chance (%) an ejected pilot draws an enemy snatch party",
+            "mnemonic": "captureChance",
+            "defaultValue": 50
+        },
+        {
+            "nameInUI": "Capture race: how far from the survivor the snatch party appears (m)",
+            "mnemonic": "captureSpawnDistance",
+            "defaultValue": 4000
+        },
+        {
+            "nameInUI": "Capture race: how close the party must reach the survivor to seize them (m)",
+            "mnemonic": "captureRange",
+            "defaultValue": 150
+        },
+        {
+            "nameInUI": "Capture race: seconds the party must hold on the survivor to capture them",
+            "mnemonic": "captureDwell",
+            "defaultValue": 30
+        },
+        {
+            "nameInUI": "Capture race: number of infantry in the enemy snatch party",
+            "mnemonic": "capturePartySize",
+            "defaultValue": 5
         }
     ],
     "scriptsWorkOrders": [],

@@ -108,6 +108,182 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     csar:Start()
 
     -------------------------------------------------------------------------------
+    -- Enemy capture race (414th SCAR rescue rework, Phase 2)
+    --
+    -- When a HUMAN pilot ejects, MOOSE CSAR spawns the downed pilot above. With a
+    -- configurable chance the enemy now pushes a small infantry "snatch party" at
+    -- that survivor. The Sandy (SCAR) escort + the rescue helo must kill the party
+    -- (or get the pilot out) before it closes: if the party holds within captureRange
+    -- of the survivor for captureDwell seconds AND the pilot has not been rescued, the
+    -- pilot is CAPTURED -- retired from CSAR and appended to the combat_sar_captures
+    -- state global ({unit=<original airframe name>, x=, y=}) so the campaign can hold
+    -- them as a recoverable POW (Phase 3/4).
+    --
+    -- Vanilla DCS only: the party is plain CJTF_RED infantry built with the proven
+    -- mist.dynAdd schema (same as the retired scar plugin). pcall-guarded throughout
+    -- so a malformed survivor record degrades to a logged warning, never a CTD.
+    -------------------------------------------------------------------------------
+    local capture = {
+        enabled = true,
+        chance = 50,
+        spawnDistance = 4000,
+        captureRange = 150,
+        captureDwell = 30,
+        partySize = 5,
+    }
+    if dcsRetribution.plugins and dcsRetribution.plugins.combatsar then
+        local o = dcsRetribution.plugins.combatsar
+        if o.captureEnabled ~= nil then capture.enabled = o.captureEnabled end
+        if o.captureChance ~= nil then capture.chance = tonumber(o.captureChance) or capture.chance end
+        if o.captureSpawnDistance ~= nil then capture.spawnDistance = tonumber(o.captureSpawnDistance) or capture.spawnDistance end
+        if o.captureRange ~= nil then capture.captureRange = tonumber(o.captureRange) or capture.captureRange end
+        if o.captureDwell ~= nil then capture.captureDwell = tonumber(o.captureDwell) or capture.captureDwell end
+        if o.capturePartySize ~= nil then capture.partySize = tonumber(o.capturePartySize) or capture.partySize end
+    end
+
+    if capture.enabled then
+        local CAPTURE_POLL = 5          -- seconds between survivor/party re-evaluations
+        local PARTY_TYPE = "Soldier AK" -- vanilla DCS infantry (spawned CJTF_RED)
+        local PARTY_SPEED = 5.5         -- m/s on foot: slow enough that the race is winnable
+        local tracks = {}               -- survivor name -> { partyName, dwell }
+        local snatchCounter = 0
+        combat_sar_captures = combat_sar_captures or {}
+
+        local function captureMsg(text)
+            trigger.action.outTextForCoalition(coalition.side.BLUE, text, messageTime * 2)
+        end
+
+        -- Spawn a CJTF_RED infantry party `spawnDistance` from the survivor, routed
+        -- straight at them. Returns the spawned group name (or nil on failure).
+        local function spawnSnatchParty(survivorCoord)
+            snatchCounter = snatchCounter + 1
+            local gname = string.format("CSAR Snatch Party %d", snatchCounter)
+            local spawnCoord = survivorCoord:Translate(capture.spawnDistance, math.random(0, 359))
+            local sp = spawnCoord:GetVec2()   -- {x = north, y = east}
+            local sv = survivorCoord:GetVec2()
+            local units = {}
+            for i = 1, math.max(1, capture.partySize) do
+                units[i] = {
+                    ["type"] = PARTY_TYPE,
+                    ["name"] = string.format("%s U%d", gname, i),
+                    ["x"] = sp.x + math.random(-15, 15),
+                    ["y"] = sp.y + math.random(-15, 15),
+                    ["heading"] = 0,
+                    ["skill"] = "Average",
+                    ["playerCanDrive"] = false,
+                }
+            end
+            local group_data = {
+                ["visible"] = false,
+                ["hidden"] = false,
+                ["name"] = gname,
+                ["task"] = {},
+                ["category"] = Group.Category.GROUND,
+                ["country"] = country.id.CJTF_RED,
+                ["units"] = units,
+                ["route"] = {
+                    ["points"] = {
+                        [1] = { ["x"] = sp.x, ["y"] = sp.y, ["type"] = "Turning Point",
+                                ["action"] = "Off Road", ["speed"] = PARTY_SPEED },
+                        [2] = { ["x"] = sv.x, ["y"] = sv.y, ["type"] = "Turning Point",
+                                ["action"] = "Off Road", ["speed"] = PARTY_SPEED },
+                    },
+                },
+            }
+            local ok, spawned = pcall(mist.dynAdd, group_data)
+            if not ok or not spawned then
+                env.warning("combatsar: snatch-party spawn failed: " .. tostring(spawned))
+                return nil
+            end
+            -- Red smoke marks where the party started so the Sandy escort can find it.
+            pcall(trigger.action.smoke, { x = sp.x, y = 0, z = sp.y }, trigger.smokeColor.Red)
+            return spawned.name or gname
+        end
+
+        local function findSurvivor(name)
+            for _, p in pairs(csar.downedPilots or {}) do
+                if p.name == name and p.alive then
+                    return p
+                end
+            end
+            return nil
+        end
+
+        local function captureTick()
+            local ok, err = pcall(function()
+                -- 1) New survivors: roll the chance, maybe push a snatch party.
+                for _, pilot in pairs(csar.downedPilots or {}) do
+                    if pilot.alive and pilot.name and not tracks[pilot.name] then
+                        tracks[pilot.name] = { partyName = nil, dwell = 0 }
+                        local coord = pilot.group and pilot.group:GetCoordinate()
+                        if coord and not pilot.wetfeet
+                            and math.random(1, 100) <= capture.chance then
+                            local partyName = spawnSnatchParty(coord)
+                            if partyName then
+                                tracks[pilot.name].partyName = partyName
+                                captureMsg("MAYDAY: enemy ground forces are moving to capture a "
+                                    .. "downed pilot (red smoke). SANDY -- protect the survivor, "
+                                    .. "kill the snatch party!")
+                            end
+                        end
+                    end
+                end
+                -- 2) Active parties: advance the capture clock or clean up.
+                for name, t in pairs(tracks) do
+                    if t.partyName then
+                        local pilot = findSurvivor(name)
+                        local party = GROUP:FindByName(t.partyName)
+                        if not pilot then
+                            -- rescued or dead: stand the party down, stop tracking.
+                            if party and party:IsAlive() then party:Destroy() end
+                            t.partyName = nil
+                        elseif not (party and party:IsAlive()) then
+                            -- Sandy killed the party: the survivor is safe from it.
+                            captureMsg("Capture party neutralized -- the downed pilot is safe. "
+                                .. "Continue the recovery.")
+                            t.partyName = nil
+                        else
+                            local pc = pilot.group:GetCoordinate()
+                            local gc = party:GetCoordinate()
+                            if pc and gc and gc:Get2DDistance(pc) <= capture.captureRange then
+                                t.dwell = t.dwell + CAPTURE_POLL
+                                if t.dwell >= capture.captureDwell then
+                                    local sv = pc:GetVec2()
+                                    table.insert(combat_sar_captures, {
+                                        unit = pilot.originalUnit or "",
+                                        x = sv.x,
+                                        y = sv.y,
+                                    })
+                                    dirty_state = true
+                                    csar:_RemoveNameFromDownedPilots(name, true)
+                                    pcall(function() pilot.group:Destroy() end)
+                                    party:Destroy()
+                                    t.partyName = nil
+                                    captureMsg("Downed pilot CAPTURED by enemy forces -- now a "
+                                        .. "POW. A recovery may be possible on a later turn.")
+                                end
+                            else
+                                t.dwell = 0
+                            end
+                        end
+                    end
+                end
+            end)
+            if not ok then
+                env.warning("combatsar: capture tick error (continuing): " .. tostring(err))
+            end
+            return timer.getTime() + CAPTURE_POLL
+        end
+
+        timer.scheduleFunction(captureTick, {}, timer.getTime() + CAPTURE_POLL)
+        env.info(string.format(
+            "DCSRetribution|Combat SAR - enemy capture race armed (chance %d%%, spawn %dm, "
+                .. "capture %dm/%ds, party %d)",
+            capture.chance, capture.spawnDistance, capture.captureRange,
+            capture.captureDwell, capture.partySize))
+    end
+
+    -------------------------------------------------------------------------------
     -- AI standing alert (auto_combat_sar): MOOSE CSAR above is player-rescue only,
     -- so for real AI auto-rescue we stand up MOOSE AICSAR. AICSAR spawns its OWN
     -- rescue helos (cloned from heloTemplate) from a home AIRBASE and routes them to

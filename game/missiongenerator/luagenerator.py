@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import textwrap
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -44,124 +43,6 @@ class LuaGenerator:
     def generate(self) -> None:
         self.generate_plugin_data()
         self.inject_plugins()
-        self._inject_tic_script()
-        self._inject_tars_script()
-        self._inject_scar_script()
-
-    def _inject_tic_script(self) -> None:
-        """Inject TIC_v1.1.lua (Troops In Contact, by Grendel) as a core script.
-
-        Fires only when the TIC plugin is enabled and the FLOT generator handed
-        frontline groups over to TIC (mission_data.tic_groups non-empty). The
-        preamble pre-seeds the GLSCO config table from the plugin options
-        before the script's file-scope auto-initialization runs. MOOSE is
-        already loaded by the base plugin at this point in the trigger order.
-        """
-        if not self.mission_data.tic_groups:
-            return
-        script_path = Path("./resources/plugins/tic/TIC_v1.1.lua")
-        if not script_path.exists():
-            logging.error(
-                "TIC_v1.1.lua not found at %s — TIC-named frontline groups "
-                "will stay late-activated and never spawn",
-                script_path.resolve(),
-            )
-            return
-        init_path = Path("./resources/plugins/tic/tic_414_init.lua")
-        if not init_path.exists():
-            logging.error(
-                "tic_414_init.lua not found at %s — TIC battle would never "
-                "initialize; skipping TIC entirely",
-                init_path.resolve(),
-            )
-            return
-        preamble = textwrap.dedent("""\
-            -- Pre-seed TIC (GLSCO) configuration from Retribution plugin
-            -- options. TIC respects values that exist before it loads.
-            -- AutoInitialize/AutoStart are disabled because tic_414_init.lua
-            -- (loaded right after the main script) installs the 414th's
-            -- ambient-fire extension and then owns Initialize/Activate.
-            GLSCO = GLSCO or {}
-            GLSCO.AutoInitialize = false
-            GLSCO.AutoStart = false
-            if dcsRetribution and dcsRetribution.plugins
-                    and dcsRetribution.plugins.tic then
-                GLSCO.StormTrooperAI =
-                    dcsRetribution.plugins.tic.stormtrooper == true
-                GLSCO.CreateMenus =
-                    dcsRetribution.plugins.tic.createMenus == true
-            end
-            """)
-        trigger = TriggerStart(comment="Load TIC_v1.1 (frontline battle sim)")
-        trigger.add_action(DoScript(String(preamble)))
-        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
-        trigger.add_action(DoScriptFile(fileref))
-        init_fileref = self.mission.map_resource.add_resource_file(init_path.resolve())
-        trigger.add_action(DoScriptFile(init_fileref))
-        self.mission.triggerrules.triggers.append(trigger)
-
-    @staticmethod
-    def _plugin_enabled(identifier: str) -> bool:
-        for plugin in LuaPluginManager.plugins():
-            if plugin.definition.identifier == identifier:
-                return plugin.enabled
-        return False
-
-    def _inject_tars_script(self) -> None:
-        """Inject Ops.TARS (vendored) + the 414th config/bridge layer.
-
-        Fires only when the TARS plugin is enabled. TARS.lua defines the class
-        but does NOT self-instantiate; tars_414_init.lua calls TARS:New(),
-        applies the 414th config (theater-correct target/loadout filters), and
-        bridges captures into the tars_recon_captures global the base plugin
-        serializes into state.json. Appended after inject_plugins() so
-        dcsRetribution.plugins.tars already exists; MOOSE is loaded earlier by
-        the base plugin.
-        """
-        if not self._plugin_enabled("tars"):
-            return
-        script_path = Path("./resources/plugins/tars/TARS.lua")
-        init_path = Path("./resources/plugins/tars/tars_414_init.lua")
-        for path in (script_path, init_path):
-            if not path.exists():
-                logging.error(
-                    "TARS plugin file not found at %s — recon disabled",
-                    path.resolve(),
-                )
-                return
-        trigger = TriggerStart(comment="Load Ops.TARS (player recon / TARPS film)")
-        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
-        trigger.add_action(DoScriptFile(fileref))
-        init_fileref = self.mission.map_resource.add_resource_file(init_path.resolve())
-        trigger.add_action(DoScriptFile(init_fileref))
-        self.mission.triggerrules.triggers.append(trigger)
-
-    def _inject_scar_script(self) -> None:
-        """Inject the SCAR scenario/results bridge.
-
-        Fires only when the SCAR plugin is enabled and at least one SCAR flight
-        was planned (mission_data.scar_taskings non-empty). The
-        dcsRetribution.Scar config table is already emitted by
-        generate_plugin_data(); scar_414_init.lua reads it, spawns the
-        placeholder HVT per tasking, runs the pass/fail watcher, and appends to
-        the scar_results global the base plugin serializes into state.json.
-        MOOSE/mist are loaded earlier by the base plugin.
-        """
-        if not self._plugin_enabled("scar"):
-            return
-        if not self.mission_data.scar_taskings:
-            return
-        script_path = Path("./resources/plugins/scar/scar_414_init.lua")
-        if not script_path.exists():
-            logging.error(
-                "scar_414_init.lua not found at %s — SCAR scenario disabled",
-                script_path.resolve(),
-            )
-            return
-        trigger = TriggerStart(comment="Load SCAR scenario bridge")
-        fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
-        trigger.add_action(DoScriptFile(fileref))
-        self.mission.triggerrules.triggers.append(trigger)
 
     def generate_plugin_data(self) -> None:
         lua_data = LuaData("dcsRetribution")
@@ -650,6 +531,46 @@ class LuaGenerator:
         filename = resource_path.resolve()
         self.mission.map_resource.add_resource_file(filename)
 
+    def inject_late_plugin_scripts(
+        self,
+        plugin_mnemonic: str,
+        files: list[str],
+        comment: str,
+        preamble: Optional[str] = None,
+    ) -> None:
+        """Load a plugin's late-init scripts in a single trigger, after config.
+
+        Emits one TriggerStart containing an optional inline ``preamble``
+        (DoScript) followed by a DoScriptFile for each file in order. This runs
+        in inject_plugins()'s second pass, so every plugin's
+        dcsRetribution.plugins.<id> table (and MOOSE) already exists. If any
+        declared file is missing the whole pass is skipped with a loud error,
+        instead of the feature silently never starting.
+        """
+        if not files:
+            return
+        plugin_path = Path("./resources/plugins", plugin_mnemonic)
+        resolved: list[Path] = []
+        for file in files:
+            script_path = Path(plugin_path, file)
+            if not script_path.exists():
+                logging.error(
+                    "Cannot find %s for plugin %s — late-init skipped, the "
+                    "feature will not start this mission",
+                    script_path,
+                    plugin_mnemonic,
+                )
+                return
+            resolved.append(script_path)
+
+        trigger = TriggerStart(comment=comment)
+        if preamble:
+            trigger.add_action(DoScript(String(preamble)))
+        for script_path in resolved:
+            fileref = self.mission.map_resource.add_resource_file(script_path.resolve())
+            trigger.add_action(DoScriptFile(fileref))
+        self.mission.triggerrules.triggers.append(trigger)
+
     def _ew_excluded_c130j_groups(self) -> list[str]:
         """Group names of C-130J-30 flights flying a NON-EW role this mission.
 
@@ -677,6 +598,13 @@ class LuaGenerator:
                 plugin.inject_scripts(self)
                 plugin.inject_configuration(self)
                 plugin.inject_other_resource_files(self)
+        # Second pass: late-init scripts (TIC/TARS/SCAR) that must load AFTER
+        # every plugin's config table exists. Ordering within this pass follows
+        # plugins.json; the features share no Lua globals so relative order is
+        # immaterial. Replaces the old hand-injected _inject_*_script tail.
+        for plugin in LuaPluginManager.plugins():
+            if plugin.should_late_init(self):
+                plugin.inject_late_init(self)
 
 
 class LuaValue:

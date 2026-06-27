@@ -26,18 +26,25 @@ At mission generation Retribution reads the work orders and injects the referenc
 into the `.miz`, so the scripts run when the mission starts. The `base` plugin is the
 mandatory core every mission loads.
 
-### The "scramble pattern": hand-injected plugins
+### The late-init pass: load-after-config plugins
 
 Most plugins are ordinary work-order plugins. But three of the fork's features —
-**TIC**, **TARS**, and **SCAR** — are injected by hand in
-`game/missiongenerator/luagenerator.py` (`_inject_*_script()`), appended **after**
-`inject_plugins()` so that `dcsRetribution.plugins.<name>` already exists. The injector
-then `DoScriptFile`s the vendored MOOSE class plus a small `*_414_init.lua` that owns
-construction.
+**TIC**, **TARS**, and **SCAR** — must load their main script **after** every plugin's
+configuration has been injected, because their init reads `dcsRetribution.plugins.<name>`
+(and MOOSE) the moment it loads. The normal work-order pass loads a plugin's scripts before
+its own config, so it can't express that ordering.
 
-The consequence to remember: if an init file is removed or errors, that feature **silently
-never starts** — the mission generates fine, the behavior just never appears. When a
-hand-injected feature isn't running in-game, check its init script first.
+These three are `LuaPlugin` subclasses (`game/plugins/tic.py`, `tars.py`, `scar.py`,
+registered in `game/plugins/manager.py`) that declare what to load late via
+`late_init_files()`, an optional `late_init_preamble()`, and a `should_late_init()` gate.
+`inject_plugins()` then runs a **second pass** that loads each one's files after the normal
+config pass — so the vendored MOOSE class plus the small `*_414_init.lua` that owns
+construction land last, with everything they need already present.
+
+The robustness win over the old hand-injected approach: a missing or renamed init file is
+now caught by an automated test (`game/plugins/tests/test_late_init.py`) at CI time, instead
+of the feature **silently never starting** in-game. (This replaces the former
+`_inject_*_script()` "scramble pattern".)
 
 ## The framework: MOOSE (MIST is retired)
 

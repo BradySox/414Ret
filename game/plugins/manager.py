@@ -6,9 +6,15 @@ from typing import Dict, List, Type
 from game.settings import Settings
 from .luaplugin import LuaPlugin
 from .mooseatis import MooseAtisPlugin
+from .scar import ScarPlugin
+from .tars import TarsPlugin
+from .tic import TicPlugin
 
 _PLUGIN_CLASSES: Dict[str, Type[LuaPlugin]] = {
     "MooseAtis": MooseAtisPlugin,
+    "tic": TicPlugin,
+    "tars": TarsPlugin,
+    "scar": ScarPlugin,
 }
 
 

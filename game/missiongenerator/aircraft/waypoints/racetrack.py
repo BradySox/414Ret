@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Optional
 
 from dcs.point import MovingPoint
 from dcs.task import (
@@ -46,23 +47,11 @@ class RaceTrackBuilder(PydcsWaypointBuilder):
         if self.flight.flight_type is FlightType.REFUELING:
             self.configure_refueling_actions(waypoint)
 
-        # TODO: Move the properties of this task into the flight plan?
-        # CAP is the only current user of this so it's not a big deal, but might
-        # be good to make this usable for things like BAI when we add that
-        # later.
-        cap_types = {FlightType.BARCAP, FlightType.TARCAP}
-        if self.flight.flight_type in cap_types:
-            engagement_distance = int(flight_plan.engagement_distance.meters)
-            waypoint.tasks.append(
-                EngageTargets(
-                    max_distance=engagement_distance,
-                    targets=[
-                        Targets.All.Air,
-                        Targets.All.Missile.AntishipMissiles,
-                        Targets.All.Missile.CruiseMissiles,
-                    ],
-                )
-            )
+        # The engage task must precede the orbit task (see note above), so an AI
+        # that finds targets shoots and only orbits when there's nothing to hit.
+        engage = self._engage_targets_task(flight_plan)
+        if engage is not None:
+            waypoint.tasks.append(engage)
 
         orbit = OrbitAction(
             altitude=waypoint.alt,
@@ -78,6 +67,39 @@ class RaceTrackBuilder(PydcsWaypointBuilder):
         create_stop_orbit_trigger(racetrack, self.package, self.mission, elapsed)
         # end of hotfix
         waypoint.add_task(racetrack)
+
+    def _engage_targets_task(
+        self, flight_plan: PatrollingFlightPlan[Any]
+    ) -> Optional[EngageTargets]:
+        """The patrol's engage task by flight type, or None for a pure orbit.
+
+        CAP (BARCAP/TARCAP) engages air. The 414th Sandy RESCAP escort (SCAR)
+        engages GROUND threats near the FLOT / a downed pilot instead of just
+        orbiting -- an AI SCAR patrol otherwise got no engage task and sat idle
+        in-game (2026-06-27). Both use the flight plan's engagement_distance as the
+        bubble; rescue craft (Combat SAR helo/King), AEW&C and tankers keep a pure
+        orbit (return None).
+        """
+        distance = int(flight_plan.engagement_distance.meters)
+        if self.flight.flight_type in {FlightType.BARCAP, FlightType.TARCAP}:
+            return EngageTargets(
+                max_distance=distance,
+                targets=[
+                    Targets.All.Air,
+                    Targets.All.Missile.AntishipMissiles,
+                    Targets.All.Missile.CruiseMissiles,
+                ],
+            )
+        if self.flight.flight_type is FlightType.SCAR:
+            return EngageTargets(
+                max_distance=distance,
+                targets=[
+                    Targets.All.GroundUnits.GroundVehicles,
+                    Targets.All.GroundUnits.AirDefence.AAA,
+                    Targets.All.GroundUnits.Infantry,
+                ],
+            )
+        return None
 
     def configure_refueling_actions(self, waypoint: MovingPoint) -> None:
         waypoint.add_task(Tanker())

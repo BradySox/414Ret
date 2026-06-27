@@ -929,6 +929,36 @@ so the two docs don't drift.
   thresholds); SHORAD/AAA wrongly promoted out of POINT; or SAMs never go RED even pressed at true range
   (a deeper detection issue beyond this fix — re-open M2).
 
+### G16 — LotATC export plugin restored · Plugin hygiene · ☐ UNTESTED (restored to `plugins.json` 2026-06-27)
+- **Context:** The `lotatc` plugin (export RED/BLUE anti-air threat circles + symbols to LotATC
+  scopes) was silently dropped from the active plugin list during the QRA-reserve integration and
+  is now restored, plus a cross-wired config option fixed ("Export anti-air symbols" was driving the
+  "Export BLUE anti-air" flag).
+- **Setup:** Enable **LotATC Export** in the Plugin Options page, set `LOTATC_DRAWINGS_DIR` (or rely
+  on the Saved Games default), desanitize `MissionScripting.lua` (needs `lfs`/`io`/`os`), generate +
+  run a mission with red SAM/AAA sites, then open the export in LotATC.
+- **Pass:** `threatZones.json` (+ `threatSymbols.json` when symbols enabled) appear under the export
+  path and red AA threat circles render on the LotATC scope; toggling "Export anti-air symbols" off
+  actually suppresses the symbol file (the bug just fixed); `dcs.log` shows the
+  `DCSRetribution|LotATC Export plugin - writing …` lines with no Lua error.
+- **Fail signature:** No export files written; a Lua error in `dcs.log`; or the symbols toggle has no
+  effect. **Known limitation (not a fail):** per-ring NATO-name labels stay blank — that enrichment
+  read the removed Skynet `redIADS`/`blueIADS` globals; circles/symbols still export, labelled by
+  unit name + class.
+
+### G17 — BigEye EWR plugin restored · Plugin hygiene · ☐ UNTESTED (restored to `plugins.json` 2026-06-27)
+- **Context:** `bigeye` (MOOSE `Ops.INTEL` early-warning radar that broadcasts text BRA / picture /
+  bogey-dope calls to players) is the documented successor to the retired `ewrs` script, but had
+  itself been silently dropped during the QRA-reserve integration — so players had no EW picture
+  calls. Restored to the active plugin list (off by default). Independent of MANTIS (player-comms
+  only; does not feed the IADS).
+- **Setup:** Enable **BigEye EWR** in the Plugin Options page, generate + run a mission with a player
+  flight and airborne enemy contacts; use the F10 BigEye radio menu to enable reports.
+- **Pass:** BigEye F10 menu present; periodic text threat reports list contacts with BRA + aspect,
+  honoring the report-interval / max-units options; NCTR/NATO-name options behave as set.
+- **Fail signature:** No BigEye F10 menu; no reports; a Lua error in `dcs.log`; or option values
+  (intervals, max units, sensor flags) ignored.
+
 ---
 
 ## H. Kneeboards

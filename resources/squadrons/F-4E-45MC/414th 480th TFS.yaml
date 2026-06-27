@@ -1,0 +1,13 @@
+---
+name: 480th Tactical Fighter Squadron
+nickname: Warhawks
+country: USA
+role: Fighter Bomber
+aircraft: F-4E-45MC Phantom II
+livery: "RS68-517_SEA_526TFS"
+mission_types:
+  - SEAD
+  - SEAD Sweep
+  - SEAD Escort
+  - DEAD
+  - Escort

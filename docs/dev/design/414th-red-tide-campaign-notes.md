@@ -393,6 +393,20 @@ squadron now references such a def, with `aircraft_type:` kept as a fallback air
 live in `Saved Games\DCS\Liveries` (per-user, squadron-distributed); a non-414th player who
 lacks the pack falls back to the airframe default for those names (cosmetic only).
 
+**480th SEAD-Sweep gap (fixed 2026-06-27).** A liveries-folder audit of the live build found
+the SEAD-Sweep F-4E slot referenced `480th Tactical Fighter Squadron`, for which **no
+squadron def existed**. With no name match, `find_squadron_by_name` returned `None` and
+`find_preferred_squadron` fell through to `find_squadron_for_airframe`, which does
+`random.choice` over **every loaded F-4E def with no country filter** — and because Blufor is
+`any_country`, that pool includes the Egyptian/Greek/**Israeli**/Iranian/Japanese/RAF/ROKAF/
+Turkish F-4E defs. So the NATO SEAD package was spawning Israeli *Kurnass* (and other foreign)
+Phantoms at random. Fixed by adding `resources/squadrons/F-4E-45MC/414th 480th TFS.yaml`
+(name `480th Tactical Fighter Squadron`, `country: USA`, livery `RS68-517_SEA_526TFS` — an
+installed, previously-unused USAFE Ramstein paint), mirroring the 512th/526th defs. A
+resolver pass (`find_squadron_by_name` + airframe `capable_of`) over all 51 campaign squadron
+references now reports **0 unbound slots**; the 480th is the last random-livery leak in the
+roster.
+
 ## Known caveats — verify on first in-game load
 
 The Lua plugins/terrain can't be exercised here; pydcs/DCS aren't runnable in CI. Confirm:

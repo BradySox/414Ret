@@ -413,16 +413,26 @@ so the two docs don't drift.
 - **Fail signature:** anything drives/flees; a SCUD relocates or launches; an instant "failed" the
   moment the area goes live (the arrival-fail gate leaked); a `scar_414_init.lua` Lua error.
 
-### F8 — SCAR inverted SOF capture (dwell on the live commander) · §15 / PR #187 · ☐ UNTESTED
+### F8 — SCAR inverted SOF capture (dwell on the live commander) · §15 / PR #187 · ☐ UNTESTED (auto-capture / impossible-capture bug fixed; binding test-covered, adjudicated 2026-06-26)
+- **Fix (2026-06-26):** the loiter rework left the SOF capture broken both ways — the scripted
+  fallback team spawned on the *static* commander and **auto-captured with no player** (armor
+  variant), while the spawn variant's HVT held ~15 NM from the kill-box centre so the capture point
+  (on the centre) was nowhere near the commander → **capture impossible**. Now `maybe_bind_sof` binds
+  **only a player-delivered team** (no scripted fallback, no HVT-distance prebind — both chase-only),
+  and `_make_static` re-homes the spawn HVT onto the centre so `sofX/Y` sits on the commander.
+  Covered by `tests/test_scar_bridge.py` (delivered-only bind; HVT at centre). Residual is the in-sim
+  end-to-end.
 - **Setup:** `scar_command_post_intel` ON, a SOF team in stock, a SOF insert fragged onto the SCAR
-  package. Deliver the team near the held target; leave the command vehicle ALIVE.
-- **Pass:** With the SOF team holding on the **live** command vehicle for ~`SCAR_SOF_DWELL_S` (30s),
-  the area resolves **captured** (commander reveal + SOF refund next turn). Killing the command
-  vehicle instead forfeits the capture (it's just a kill); leaving the commander resets the dwell.
-- **Fail signature:** instant capture on co-location (dwell not enforced); capture fires with the
-  commander already dead; or no capture path at all when a live team holds on a live commander.
-  Known v1 nuance to watch: the scripted-fallback team spawns at the held commander, so a capture
-  can auto-complete without a real player delivery (Phase-2c tuning).
+  package. Airdrop the team **onto the held commander** (the SOF mark); leave the command vehicle ALIVE.
+- **Pass:** With the player-delivered SOF team holding on the **live** command vehicle for
+  ~`SCAR_SOF_DWELL_S` (30s), the area resolves **captured** (commander reveal + SOF refund next turn).
+  Killing the command vehicle instead forfeits the capture (it's just a kill); leaving the commander
+  resets the dwell. **With NO team delivered, the area never auto-captures** (it fails at the window).
+- **Fail signature:** any **capture without a player-delivered team** (the auto-capture bug returns);
+  capture impossible for the spawn variant (HVT/commander not at the kill-box centre); instant capture
+  on co-location (dwell not enforced); capture with the commander already dead. Tuning to watch: the
+  drop must land within the capture radius (`SCAR_SOF_CAPTURE_RADIUS_M`, 600 m) of the commander — if
+  that proves too tight for a deliberate airdrop, bump it.
 
 ### F9 — SCAR King talk-on gate (Phase 2 + 3) · §15 / PR #189 · ☐ UNTESTED
 - **Setup:** Fly a SCAR flight to its kill box (cross the ~50 NM check-in ring); leave it on station.

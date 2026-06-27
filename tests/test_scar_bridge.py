@@ -229,6 +229,11 @@ def test_spawn_hvt_holds_static() -> None:
     for convoy in tasking.convoys:
         assert (convoy.dest_x, convoy.dest_y) == (convoy.spawn_x, convoy.spawn_y)
         assert convoy.speed_ms == 0.0
+    # The fake HVT is re-homed onto the kill-box centre (it was placed ~15 NM out as the
+    # old chase's start point); otherwise it would freeze away from its decoys and from
+    # the SOF capture point, which sits on the commander riding in it.
+    hvt = next(c for c in tasking.convoys if c.role == "hvt")
+    assert (hvt.spawn_x, hvt.spawn_y) == (tasking.center_x, tasking.center_y)
 
 
 def test_armor_target_binds_real_group_and_holds_static() -> None:
@@ -776,23 +781,29 @@ def test_lua_night_illum_and_say_again_backstop() -> None:
     assert "recue(area)" in say
 
 
-def test_lua_spawn_sof_prefers_a_delivered_team_then_falls_back() -> None:
-    # Phase 2c-2 hybrid: spawn_sof binds capture to a player-delivered team near
-    # the ambush point when one exists, and only scripted-spawns a fallback
-    # otherwise. The detection skips our own SCAR- spawns.
+def test_lua_sof_capture_binds_only_a_delivered_team() -> None:
+    # Loiter rework: the inverted static capture binds ONLY to a player-delivered SOF
+    # team (maybe_bind_sof -> find_delivered_sof). The old scripted fallback that spawned
+    # a team near the (now static) commander is gone -- it would auto-capture with no
+    # player action -- and so is the HVT-distance prebind (meaningless for a static
+    # target). No delivery => no capture.
     script = Path("resources/plugins/scar/scar_414_init.lua").read_text(
         encoding="utf-8"
     )
-    spawn_sof = script.split("local function spawn_sof(area)", maxsplit=1)[1].split(
-        "local function hvt_in_fail_zone(area)", maxsplit=1
+    # The scripted-fallback spawner and its prebind gate are removed entirely.
+    assert "local function spawn_sof(area)" not in script
+    assert "SOF_PREBIND_M" not in script
+    bind = script.split("local function maybe_bind_sof(area)", maxsplit=1)[1].split(
+        "local set_group_route", maxsplit=1
     )[0]
-    # Prefers the delivered team and returns before the scripted spawn.
-    assert "find_delivered_sof(area)" in spawn_sof
-    assert "area.sofGroup = delivered" in spawn_sof
-    # The detector scans friendly ground groups and excludes our own spawns.
+    # The binder takes a delivered team and never spawns one itself.
+    assert "find_delivered_sof(area)" in bind
+    assert "area.sofGroup = delivered" in bind
+    assert "mist.dynAdd" not in bind
+    # The detector scans friendly ground groups and excludes our own SCAR- spawns.
     detector = script.split("local function find_delivered_sof(area)", maxsplit=1)[
         1
-    ].split("local function spawn_sof(area)", maxsplit=1)[0]
+    ].split("local function hvt_in_fail_zone(area)", maxsplit=1)[0]
     assert "coalition.getGroups" in detector
     assert 'string.sub(gname, 1, 5) ~= "SCAR-"' in detector
 

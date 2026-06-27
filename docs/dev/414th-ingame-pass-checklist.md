@@ -23,6 +23,7 @@ so the two docs don't drift.
 | ◐ PARTIAL | Flown, but not under the conditions that stress the fix |
 | ☑ VERIFIED | Watched for the fail signature in-game; did not occur (note date/Tacview) |
 | ✗ REGRESSED | Fail signature reproduced in-game — reopen the fix |
+| ⊘ RETIRED | Feature dormant/removed — the scenario no longer runs; not a pending test |
 
 ---
 
@@ -328,6 +329,14 @@ so the two docs don't drift.
 
 ## F. SCAR
 
+> **NOTE (2026-06-27):** The **armor-hunt SCAR scenario is retired** by the survivor-rescue rework
+> (SCAR → "Sandy" rescue escort). `ScarPlugin.generate_plugin_data()` now clears `scar_taskings`, so
+> `scar_414_init.lua` never injects — the loiter / SOF-capture / King-designation scenario does not
+> run. Rows **F5, F7, F8, F9, F10, F11** are therefore **⊘ RETIRED**, not pending tests; do not re-fly
+> them. F1/F2/F4 still cover live SCAR features (HVT movement / recon-fog / results bridge). The
+> rescue rework's own runtime (capture race, POW recovery, Sandy) is tracked under **G8–G13** + the
+> SCAR-rescue rows. See `docs/dev/design/414th-scar-rescue-rework-notes.md` and features §15.
+
 ### F1 — HVT movement + SOF capture loop · §15 · ☑ VERIFIED (2026-06-23)
 - **Verified (2026-06-23):** seen in-game — the HVT drives/flees on activation
   and the capture loop behaves as designed (no alarm-RED pinning).
@@ -368,7 +377,7 @@ so the two docs don't drift.
 - Verified in-game: `SCAR area scar-N: launched/failed` round-tripped through
   the TARS channel into the debrief. No action; listed for completeness.
 
-### F5 — Mis-ID budget penalty (R7) · §15 · ☐ UNTESTED
+### F5 — Mis-ID budget penalty (R7) · §15 · ⊘ RETIRED (armor-hunt SCAR scenario dormant — rescue rework zeroes `scar_taskings`; was never flown, now moot)
 - **Logic-reviewed 2026-06-25 (de-risked, not flown):** the whole chain reads correct.
   Lua (`scar_414_init.lua`): `misid_group_index` is populated **only** for `role ==
   "decoy"/"clutter"` (spawn paths L858-859 / L1033-1034) — the HVT, command vehicle, and
@@ -407,7 +416,7 @@ so the two docs don't drift.
   SCAR-capable squadron / fulfiller bailed); a red SCAR package appears; or a
   SCAR package appears with the setting off.
 
-### F7 — SCAR loiter/static hold (no chase, fail = window) · §15 / PR #187 · ☐ UNTESTED
+### F7 — SCAR loiter/static hold (no chase, fail = window) · §15 / PR #187 · ⊘ RETIRED (armor-hunt SCAR retired by the rescue rework — scenario no longer runs)
 - **Setup:** Plan a SCAR flight against a real enemy armor TGO. Fly to the kill box.
 - **Pass:** The bound armor (and any spawned decoys/clutter) **holds in place** — nothing drives off
   toward a city; a bound missile site stays inert (no relocation, no launch). Killing the armor
@@ -416,7 +425,7 @@ so the two docs don't drift.
 - **Fail signature:** anything drives/flees; a SCUD relocates or launches; an instant "failed" the
   moment the area goes live (the arrival-fail gate leaked); a `scar_414_init.lua` Lua error.
 
-### F8 — SCAR inverted SOF capture (dwell on the live commander) · §15 / PR #187 · ☐ UNTESTED (auto-capture / impossible-capture bug fixed; binding test-covered, adjudicated 2026-06-26)
+### F8 — SCAR inverted SOF capture (dwell on the live commander) · §15 / PR #187 · ⊘ RETIRED (armor-hunt SCAR retired by the rescue rework — scenario no longer runs; capture is now the rescue POW loop, G8–G13)
 - **Fix (2026-06-26):** the loiter rework left the SOF capture broken both ways — the scripted
   fallback team spawned on the *static* commander and **auto-captured with no player** (armor
   variant), while the spawn variant's HVT held ~15 NM from the kill-box centre so the capture point
@@ -437,7 +446,7 @@ so the two docs don't drift.
   drop must land within the capture radius (`SCAR_SOF_CAPTURE_RADIUS_M`, 600 m) of the commander — if
   that proves too tight for a deliberate airdrop, bump it.
 
-### F9 — SCAR King talk-on gate (Phase 2 + 3) · §15 / PR #189 · ☐ UNTESTED
+### F9 — SCAR King talk-on gate (Phase 2 + 3) · §15 / PR #189 · ⊘ RETIRED (armor-hunt SCAR designation retired by the rescue rework — scenario no longer runs)
 - **Setup:** Fly a SCAR flight to its kill box (cross the ~50 NM check-in ring); leave it on station.
 - **Pass (stage 1, talk-on, on check-in):** the on-scene controller ("MAGIC") cues **once** — GREEN
   smoke at the box centre + one persistent map mark + a descriptive "find + ID the real one, stand by
@@ -457,7 +466,7 @@ so the two docs don't drift.
   (`scar_outtext` regressed to `outTextForCoalition`, or the on-task/King audience empty); or a
   `scar_414_init.lua` Lua error.
 
-### F10 — SCAR King laser/IR designation (Phase 3b) · §15 / PR #189 · ☐ UNTESTED
+### F10 — SCAR King laser/IR designation (Phase 3b) · §15 / PR #189 · ⊘ RETIRED (armor-hunt SCAR designation retired by the rescue rework — scenario no longer runs)
 - **Setup:** Frag **both** a C-130 **King** (a Combat SAR C-130) and a SCAR striker; get the King on
   station over the SCAR box. Fly the SCAR to the box and let the talk-on escalate (or wait the window).
 - **Pass:** After the precise designation, with a King within ~25 NM the King **lases** the real
@@ -469,7 +478,7 @@ so the two docs don't drift.
   `maybe_drop_laser`); wrong code published; or a `scar_414_init.lua` Lua error / bad `Spot.createLaser`
   signature. (Per-area laser-code allocation is a deferred refinement — a fixed 1688 is fine here.)
 
-### F11 — SCAR designation polish: night illum + "say again" F10 (Phase 4) · §15 / PR #189 · ☐ UNTESTED
+### F11 — SCAR designation polish: night illum + "say again" F10 (Phase 4) · §15 / PR #189 · ⊘ RETIRED (armor-hunt SCAR designation retired by the rescue rework — scenario no longer runs)
 - **Setup:** Fly a SCAR at **night** to the box; also try the F10 entry by day.
 - **Pass:** At night each smoke cue (GREEN box / RED target) is accompanied by an **illumination
   flare** over the cue point (smoke alone is invisible after dark). F10 shows **one** entry — "MAGIC:
@@ -682,7 +691,13 @@ so the two docs don't drift.
   AI pilot tracking). The **AI-ON** path (helo spawns from FARP, flies the rescue) still needs its
   own run with the setting on.
 
-### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ◐ PARTIAL (player King = no scripted TACAN by design; AI King untested)
+### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ◐ PARTIAL (player-King F10 LARS menu COCKPIT-CONFIRMED 2026-06-27; AI-King scripted TACAN still untested)
+- **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**
+  the player-flown King's **F10 → Combat SAR → LARS menu works** ("F10 LARS good") — the #196
+  player-King menu-attach fix is verified live. The remaining PARTIAL is only the **AI-King scripted
+  TACAN beacon** (player King has no AI controller, so it dials TACAN in-cockpit by design — not a
+  fault). *(This confirmation was given in-game and dropped — PR #226 recorded only the headless
+  evidence, not the three cockpit wins; recovered here.)*
 - **Setup:** Plan a player **C-130** Combat SAR ("King") alongside a **CH-47** Combat SAR. Fly the
   King; have a human pilot eject in the area. **For the scripted TACAN path, the King must be AI**
   (e.g. `auto_combat_sar` standing alert) — a player-flown King sets TACAN in-cockpit (see below).
@@ -761,7 +776,14 @@ so the two docs don't drift.
   and "spares a pilot" (the `SOFRESCUE` prefix routing in `OnAfterRescued`); double refund for one
   team recovered by both paths.
 
-### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ◐ PARTIAL
+### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ◐ PARTIAL (King EW/ISR-clean COCKPIT-CONFIRMED 2026-06-27 + door guns 2026-06-25; only the King's wing-tank render residual)
+- **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**
+  the C-130J-30 King flies **clean of the EW/ISR menu** ("Kings no EW ISR") — the `EwExcludedGroups`
+  per-group deny-list works in-cockpit. Combined with the **CH-47 door M60D guns confirmed 2026-06-25**
+  ("loadout good"), the only residual on this row is the King's external **wing tanks visibly rendering
+  on the model** (payload added 2026-06-25; user can eyeball it on the ground — they fly the King, not
+  the CH-47). *(The EW-clean confirmation was given in-game and dropped — PR #226 captured only the
+  headless/live-log evidence; recovered here.)*
 - **Data re-confirmed headless 2026-06-26:** the `Retribution Combat SAR` payloads resolve —
   CH-47Fbl1 mounts the door guns (`{CH47_PORT_M60D}`/`{CH47_STBD_M60D}`) and C-130J-30 mounts
   the two wing tanks (`{C130J_Ext_Tank_L}`/`{C130J_Ext_Tank_R}`); both YAMLs carry a
@@ -1313,7 +1335,14 @@ so the two docs don't drift.
   controls; a preset not flipping the expected fields; a blank page icon; a console error opening
   the dialog.
 
-### K2 — Kneeboard cover page (op/turn header + SITREP + index) · §29 / §30 · ☐ UNTESTED (logic unit-tested + render-smoke-verified 2026-06-27)
+### K2 — Kneeboard cover page (op/turn header + SITREP + index) · §29 / §30 · ◐ PARTIAL (render COCKPIT-CONFIRMED 2026-06-27; SITREP-number accuracy across turns still to eyeball)
+- **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**
+  the kneeboard deck (cover page + compact deck) renders cleanly in the cockpit — **"Kneeboards look
+  fantastic."** That clears the render/legibility half of this row (corroborating H2/H9, already
+  VERIFIED). Residual is only **SITREP-number accuracy from turn 2 on** (losses/captures/recoveries
+  matching the prior turn's debrief) and the index start-page math on a live multi-flight deck.
+  *(This confirmation was given in-game and dropped — PR #226 recorded only the headless evidence;
+  recovered here.)*
 - **Now hosts the SITREP (§29) AND the shared-airframe index (§27/H10)** on one always-present cover
   page. This row supersedes the standalone SITREP-band and index-page checks.
 - **Headless adjudication (2026-06-27):** `tests/test_sitrep.py` covers the SITREP model + formatting

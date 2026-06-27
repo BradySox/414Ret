@@ -147,15 +147,14 @@ and selected later upstream fixes.
   and an adaptive 4th page (recon target photo when target recon is on, otherwise the fuel ladder + full
   package list). The optional pages below fold into these instead of sprawling to a dozen pages; a simple
   CAP gets two. Turn off *Compact kneeboard* for the full multi-page deck with recon imagery.
-- A **campaign SITREP band** on the briefing/Game Plan page gives you a "what happened last turn"
-  brief in the cockpit: both sides' losses (the enemy's as *claimed*), bases captured or lost, and
-  downed pilots recovered. It appears from your second mission on, hides after a quiet turn, and only
-  shows when it fits under the flight plan. On by default (*Campaign SITREP band*, Kneeboards page).
+- Every flight's kneeboard opens on a **cover page**: the operation name, turn, and date up top; a
+  **"last turn" SITREP** (both sides' losses — the enemy's as *claimed* — bases captured or lost, and
+  downed pilots recovered); and, when several flights share an airframe (DCS stacks them into one
+  kneeboard), a **flight index** — each callsign, task, and start page — so you flip straight to your
+  own deck. The SITREP appears from your second mission on and hides after a quiet turn (*Campaign
+  SITREP band*, Kneeboards page, on by default).
 - Kneeboards are restyled to use the page: clean headings with underline rules and spacing
   (no wasted bottom-half), and the Friendly Packages list flows into two columns when long.
-- When several flights share an airframe (DCS shows them one stacked kneeboard), a one-page
-  **kneeboard index** is added up front — each flight's callsign, task, and start page — so you flip
-  straight to your own deck. A single flight of a type is unchanged.
 - **Custom kneeboards** can be imported from the *Kneeboards* toolbar button — add an image
   once and it's injected into every flight's kneeboard (or scoped to one airframe), stored in
   the campaign save, instead of hand-editing each mission.

@@ -324,14 +324,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `record_sitrep` step that reads the debriefing it already has — per-side losses (`loss_counts`),
     base captures (the cached pre-commit snapshot), Combat SAR rescues — into a `Sitrep`
     (`game/sitrep.py`) stored as `game.last_sitrep` (pickled, `__setstate__` default None). Enemy
-    losses are framed as **"claimed"** to respect the recon-fog model. It rides the `BriefingPage`
-    cover (full + compact decks, §25) via the same generator-computes-lines pattern as the BLUF band,
-    drawn at the bottom through `_draw_section_if_fits` so it never pushes the flight plan off; hidden
-    on turn 1 / a quiet turn / when the `generate_sitrep_kneeboard` toggle (Kneeboards page, default
-    ON) is off. v1 covers losses/captures/rescues; front movement + SCAR commander capture are
+    losses are framed as **"claimed"** to respect the recon-fog model. The SITREP renders on the
+    always-present **cover page (§30)** as a "SITREP — Turn N" section, gated by `sitrep_for_kneeboard`;
+    hidden on turn 1 / a quiet turn / when the `generate_sitrep_kneeboard` toggle (Kneeboards page,
+    default ON) is off. v1 covers losses/captures/rescues; front movement + SCAR commander capture are
     deferred. (`game/sitrep.py`, `game/sim/missionresultsprocessor.py`, `game/game.py`,
     `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`; features doc §29,
     checklist K2.)
+30. **Dedicated kneeboard cover page** — a single front sheet that **always** leads a flight's deck,
+    consolidating three things: the **operation/turn/date header** (new — every deck opens telling you
+    what op + turn), the previous turn's **SITREP** (§29, moved off the briefing-page band so it stops
+    crowding the flight plan), and the shared-airframe **flight index** (§27, was a separate conditional
+    page). `CoverPage` (`_build_cover_page`) is always prepended in `KneeboardGenerator.generate`,
+    replacing the conditional `KneeboardIndexPage` and the `BriefingPage` SITREP band. The cover is
+    page 1 so decks start on page 2 (the §27 start-page math is preserved); the index section appears
+    only for 2+ shared-airframe flights, and the SITREP section only when there's something to report.
+    (`game/missiongenerator/kneeboard.py`, `game/sitrep.py`; features doc §30, checklist K2/H10.)
 
 ---
 

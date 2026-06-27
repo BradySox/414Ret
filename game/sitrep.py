@@ -108,13 +108,14 @@ class Sitrep:
         return lines
 
 
-def sitrep_band_lines(sitrep: Optional[Sitrep], enabled: bool) -> Optional[List[str]]:
-    """Full kneeboard band (header + body), or None when there's nothing to show.
+def sitrep_for_kneeboard(sitrep: Optional[Sitrep], enabled: bool) -> Optional[Sitrep]:
+    """The SITREP to render on the kneeboard cover, or None when nothing to show.
 
     Returns None when the toggle is off, there is no prior turn, or the previous
-    turn was quiet (no losses/captures/rescues) — so the band never prints empty.
+    turn was quiet (no losses/captures/rescues) — so the cover never prints an
+    empty SITREP section. The cover page renders the heading (with the turn) and
+    the body itself; see ``Sitrep.kneeboard_lines``.
     """
     if not enabled or sitrep is None or sitrep.is_empty:
         return None
-    header = f"Turn {sitrep.turn} - {sitrep.day.strftime('%d %b %Y')}"
-    return [header] + sitrep.kneeboard_lines()
+    return sitrep

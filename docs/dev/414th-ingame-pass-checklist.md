@@ -1107,8 +1107,11 @@ so the two docs don't drift.
   `Squadron.faker` wiring didn't take); blank/garbled names; or a recruitment crash on a locale
   with no gendered names (guarded + test-locked — should be impossible).
 
-### H10 — Shared-airframe kneeboard index · §27 · ☐ UNTESTED (page math unit-tested 2026-06-26)
-- **Headless adjudication (2026-06-26):** `tests/missiongenerator/test_kneeboard_index.py` covers the
+### H10 — Shared-airframe kneeboard index · §27 / §30 · ☐ UNTESTED (folded into the cover page — verify under K2)
+- **Folded into the cover page (§30).** The standalone index page is gone; the index is now a section
+  on the always-present cover, so its in-game check is covered by **K2**. (Page-math + lone-flight
+  no-index regression now in `tests/missiongenerator/test_kneeboard_cover.py`.)
+- **Headless adjudication (2026-06-26):** *(historical — was `tests/missiongenerator/test_kneeboard_index.py`)* covers the
   start-page math (index is page 1, blocks start at 2 and advance by block size), callsign grouping +
   sort, and the index page render. **Residual (in-sim only):** the index actually appears in-cockpit
   and its page numbers line up with the stacked deck DCS builds.
@@ -1184,25 +1187,28 @@ so the two docs don't drift.
   controls; a preset not flipping the expected fields; a blank page icon; a console error opening
   the dialog.
 
-### K2 — Campaign SITREP kneeboard band · §29 · ☐ UNTESTED (logic unit-tested + render-smoke-verified 2026-06-27)
-- **Headless adjudication (2026-06-27):** `tests/test_sitrep.py` covers the model + formatting
-  (side split, captured/lost by side, Combat SAR count, "claimed" enemy phrasing, singular/plural,
-  and the band-gating: off when disabled / no prior turn / quiet turn). `record_sitrep` is wired into
-  `commit()` (and added to the asserted `COMMIT_STEPS`). A **render smoke** drew the band through the
-  real `KneeboardPageWriter` (heading + five lines, 20 KB PNG, correct text). Kneeboard golden tests
-  unchanged (band defaults inert when there's no `last_sitrep`). **Residual (in-cockpit only):** the
-  band's look on a live kneeboard and that the numbers match the turn just flown.
-- **Setup:** Fly turn 1 of any campaign with `generate_sitrep_kneeboard` ON (default). On **turn 2**,
-  open the briefing / Game Plan kneeboard page.
-- **Pass:** A "CAMPAIGN SITREP" band shows at the bottom of the cover page — `Turn N - <date>`, friendly
-  losses, enemy (claimed) losses, any bases captured/lost, any pilots recovered — matching the previous
-  turn. **Turn 1 shows no band** (no prior turn); a **quiet turn** (no losses/captures/rescues) shows
-  none; with the toggle **off**, none. A flight with a **long flight plan** drops the band (fit guard)
-  rather than clipping the plan.
-- **Fail signature:** band present on turn 1 or after a quiet turn (gating wrong); numbers that don't
-  match the debrief; enemy losses not labelled "claimed"; the band pushing the flight plan off the page
-  (the `_draw_section_if_fits` guard failed); the band missing when there were real results; a stale
-  SITREP from two turns ago (capture not running each `commit`).
+### K2 — Kneeboard cover page (op/turn header + SITREP + index) · §29 / §30 · ☐ UNTESTED (logic unit-tested + render-smoke-verified 2026-06-27)
+- **Now hosts the SITREP (§29) AND the shared-airframe index (§27/H10)** on one always-present cover
+  page. This row supersedes the standalone SITREP-band and index-page checks.
+- **Headless adjudication (2026-06-27):** `tests/test_sitrep.py` covers the SITREP model + formatting
+  (side split, captured/lost by side, Combat SAR count, "claimed" enemy phrasing, singular/plural) and
+  `sitrep_for_kneeboard` gating (off / no prior turn / quiet turn). `tests/missiongenerator/test_kneeboard_cover.py`
+  covers the cover assembly: index start-page math (cover = page 1, blocks at 2/5/9), a lone flight gets
+  a cover with **no** index section, SITREP gating, and a full render. `record_sitrep` is wired into
+  `commit()` (and added to the asserted `COMMIT_STEPS`). A **render smoke** drew the whole cover (op/turn
+  header + SITREP + index table) through the real `KneeboardPageWriter` (41 KB PNG, correct text).
+  **Residual (in-cockpit only):** the cover's look on a live kneeboard and that the numbers + page
+  numbers match.
+- **Setup:** Generate a mission (and fly a turn so turn 2 has a prior-turn SITREP). Open the kneeboard;
+  for the index, frag **2+ client flights of one airframe**.
+- **Pass:** **Page 1 is the cover** — `"<Operation> — Turn N"` + date always; a **"SITREP — Turn N-1"**
+  section from turn 2 on (friendly + enemy-claimed losses, bases captured/lost, pilots recovered,
+  matching the previous turn); and a **flight index** (callsign / task / start page) when 2+ share the
+  airframe, whose start pages land on the right decks. **Turn 1 / a quiet turn / toggle off** → no SITREP
+  section. A lone flight → cover with no index section.
+- **Fail signature:** no cover page; SITREP present on turn 1 or after a quiet turn (gating wrong);
+  numbers not matching the debrief; enemy losses not "claimed"; index start pages off by the cover; an
+  index shown for a lone flight; a stale SITREP from two turns ago (capture not running each `commit`).
 
 ---
 

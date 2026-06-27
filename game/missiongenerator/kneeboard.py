@@ -49,7 +49,7 @@ from game.dcs.aircrafttype import AircraftType
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
 from game.settings.settings import TargetIntelPrecision
-from game.sitrep import sitrep_band_lines
+from game.sitrep import Sitrep, sitrep_for_kneeboard
 from game.theater import FrontLine, TheaterGroundObject, TheaterUnit
 from game.theater.bullseye import Bullseye
 from game.theater.controlpoint import Airfield, ControlPoint
@@ -558,7 +558,6 @@ class BriefingPage(KneeboardPage):
         push_line: Optional[str] = None,
         threat_line: Optional[str] = None,
         page_title: str = "Mission Info",
-        sitrep_lines: Optional[list[str]] = None,
     ) -> None:
         self.flight = flight
         self.bullseye = bullseye
@@ -577,10 +576,6 @@ class BriefingPage(KneeboardPage):
         self.task_line = task_line
         self.push_line = push_line
         self.threat_line = threat_line
-        # Campaign SITREP band (§29): a short "what happened last turn" summary,
-        # computed by the generator and drawn at the bottom of this cover page
-        # only if it fits under the flight plan. None when off / nothing to show.
-        self.sitrep_lines = sitrep_lines
         # De-duplication (design §4): drop the weather block when the recon Departure
         # page already carries it, and the Min-fuel column when the Fuel Ladder page
         # owns the fuel ladder. The Friendly Packages list moved to its own page.
@@ -752,17 +747,6 @@ class BriefingPage(KneeboardPage):
             for idx, code in enumerate(self.flight.laser_codes, start=1):
                 codes.append([str(idx), "" if code is None else str(code)])
             writer.table(codes, ["#", "Laser Code"])
-
-        # Campaign SITREP band last, and only if it fits under everything above,
-        # so it never pushes the (critical) flight plan off the page (§29).
-        if self.sitrep_lines:
-            _draw_section_if_fits(writer, self.dark_kneeboard, self._render_sitrep)
-
-    def _render_sitrep(self, writer: KneeboardPageWriter) -> None:
-        writer.heading("CAMPAIGN SITREP")
-        writer.rule()
-        for line in self.sitrep_lines or []:
-            writer.text(line, wrap=True)
 
     def _departure_elevation_m(self) -> Optional[float]:
         """DCS-mesh field elevation (m) of the departure field, or None.
@@ -2658,38 +2642,67 @@ class PackagesMapPage(KneeboardPage):
         writer.write(path)
 
 
-class KneeboardIndexPage(KneeboardPage):
-    """Front index for an airframe whose kneeboard several flights share.
+class CoverPage(KneeboardPage):
+    """Always-present front sheet that leads a flight's (airframe's) kneeboard deck.
 
-    DCS scopes kneeboards per *airframe*, not per group, so every pilot of a type sees
-    all of that type's flight decks stacked together. When 2+ client flights share an
-    airframe this one page is prepended listing each flight's callsign, task, and start
-    page, so a pilot flips straight to their own deck instead of hunting through the
-    stack. Not emitted for a lone flight (no stack, no bloat).
+    Every deck opens on this page (§30). It carries:
+
+    * the operation name, turn, and date — so you always know what you're flying;
+    * the previous turn's campaign SITREP (§29) — both sides' losses (enemy as
+      *claimed*), bases captured/lost, pilots recovered — when there's anything to
+      report; and
+    * a flight index when several client flights share the airframe (DCS stacks
+      them) so a pilot flips straight to their own block.
+
+    The SITREP and index sections are each optional; the op/turn header is always
+    drawn. The cover is page 1, so flight decks start on page 2.
     """
 
     HEADERS = ["Flight", "Task", "Page"]
 
     def __init__(
         self,
+        *,
+        campaign_name: Optional[str],
+        turn: int,
+        day: datetime.date,
+        sitrep: Optional[Sitrep],
+        index_rows: Optional[List[List[str]]],
         aircraft: AircraftType,
-        rows: List[List[str]],
         dark_kneeboard: bool,
     ) -> None:
+        self.campaign_name = campaign_name
+        self.turn = turn
+        self.day = day
+        self.sitrep = sitrep
+        self.index_rows = index_rows
         self.aircraft = aircraft
-        self.rows = rows
         self.dark_kneeboard = dark_kneeboard
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        writer.title(f"{self.aircraft.display_name} — Kneeboard Index")
-        writer.text(
-            "DCS shows every flight of this airframe the same kneeboard, so the decks "
-            "below are stacked together. Flip to your callsign's start page.",
-            wrap=True,
-        )
-        writer.vspace(8)
-        writer.table(self.rows, headers=self.HEADERS)
+        op = self.campaign_name or "Campaign"
+        writer.title(f"{op} — Turn {self.turn}")
+        writer.text(self.day.strftime("%A %d %B %Y"))
+
+        if self.sitrep is not None:
+            writer.vspace(10)
+            writer.heading(f"SITREP — Turn {self.sitrep.turn}")
+            writer.rule()
+            for line in self.sitrep.kneeboard_lines():
+                writer.text(line, wrap=True)
+
+        if self.index_rows:
+            writer.vspace(10)
+            writer.heading(f"{self.aircraft.display_name} — Flight Index")
+            writer.rule()
+            writer.text(
+                "DCS stacks every flight of this airframe into one kneeboard. "
+                "Flip to your callsign's start page.",
+                wrap=True,
+            )
+            writer.vspace(6)
+            writer.table(self.index_rows, headers=self.HEADERS)
         writer.write(path)
 
 
@@ -2758,13 +2771,12 @@ class KneeboardGenerator(MissionInfoGenerator):
                 concrete = [c for page in pages for c in page.paginate()]
                 flight_blocks.append((flight, concrete))
 
-            ordered_pages: List[KneeboardPage] = []
-            # Prepend the index only when the deck is shared, so a lone flight's deck
-            # is unchanged (no extra page).
-            if len(flight_blocks) > 1:
-                ordered_pages.append(
-                    self._build_kneeboard_index(aircraft, flight_blocks)
-                )
+            # Every deck opens on a cover page (op/turn/date + the previous turn's
+            # SITREP), which also carries a flight index when 2+ client flights
+            # share this airframe (§30).
+            ordered_pages: List[KneeboardPage] = [
+                self._build_cover_page(aircraft, flight_blocks)
+            ]
             for _flight, concrete in flight_blocks:
                 ordered_pages.extend(concrete)
 
@@ -2823,22 +2835,43 @@ class KneeboardGenerator(MissionInfoGenerator):
             grouped.sort(key=lambda f: f.callsign)
         return by_airframe
 
-    def _build_kneeboard_index(
+    def _build_cover_page(
         self,
         aircraft: AircraftType,
         flight_blocks: List[Tuple[FlightData, List[KneeboardPage]]],
     ) -> KneeboardPage:
-        """A one-page callsign -> start-page index fronting a shared-airframe deck."""
-        rows: List[List[str]] = []
-        # The index itself is page 1, so the first flight's block starts on page 2.
-        page_cursor = 2
-        for flight, concrete in flight_blocks:
-            name = flight.callsign
-            if flight.custom_name:
-                name += f' ("{flight.custom_name}")'
-            rows.append([name, flight.flight_type.value, str(page_cursor)])
-            page_cursor += len(concrete)
-        return KneeboardIndexPage(aircraft, rows, self.dark_kneeboard)
+        """The always-present cover sheet leading a flight's stacked deck (§30).
+
+        Carries the op/turn/date header and the previous turn's SITREP; adds a
+        callsign -> start-page index only when 2+ client flights share the
+        airframe. The cover is page 1, so the first block starts on page 2.
+        """
+        index_rows: Optional[List[List[str]]] = None
+        if len(flight_blocks) > 1:
+            index_rows = []
+            page_cursor = 2  # the cover is page 1
+            for flight, concrete in flight_blocks:
+                name = flight.callsign
+                if flight.custom_name:
+                    name += f' ("{flight.custom_name}")'
+                index_rows.append([name, flight.flight_type.value, str(page_cursor)])
+                page_cursor += len(concrete)
+        return CoverPage(
+            campaign_name=self.game.campaign_name,
+            turn=self.game.turn,
+            day=self.game.current_day,
+            sitrep=self._cover_sitrep(),
+            index_rows=index_rows,
+            aircraft=aircraft,
+            dark_kneeboard=self.dark_kneeboard,
+        )
+
+    def _cover_sitrep(self) -> Optional[Sitrep]:
+        """The SITREP to show on the cover, gated by the setting + non-empty (§29)."""
+        return sitrep_for_kneeboard(
+            getattr(self.game, "last_sitrep", None),
+            self.game.settings.generate_sitrep_kneeboard,
+        )
 
     def generate_task_page(self, flight: FlightData) -> Optional[KneeboardPage]:
         if flight.flight_type in (FlightType.DEAD, FlightType.SEAD):
@@ -2908,7 +2941,6 @@ class KneeboardGenerator(MissionInfoGenerator):
                 push_line=push_line,
                 threat_line=threat_line,
                 page_title="Game Plan",
-                sitrep_lines=self._sitrep_lines(),
             )
         )
 
@@ -3072,7 +3104,6 @@ class KneeboardGenerator(MissionInfoGenerator):
                 task_line=task_line,
                 push_line=push_line,
                 threat_line=threat_line,
-                sitrep_lines=self._sitrep_lines(),
             ),
             SupportPage(
                 flight,
@@ -3161,13 +3192,6 @@ class KneeboardGenerator(MissionInfoGenerator):
             pages.extend(self.generate_packages_map_page(flight))
 
         return pages
-
-    def _sitrep_lines(self) -> Optional[list[str]]:
-        """The campaign SITREP band for the briefing cover page (§29), or None."""
-        return sitrep_band_lines(
-            getattr(self.game, "last_sitrep", None),
-            self.game.settings.generate_sitrep_kneeboard,
-        )
 
     def _bluf_lines(
         self, flight: FlightData, threat_cards: List[ThreatCard]

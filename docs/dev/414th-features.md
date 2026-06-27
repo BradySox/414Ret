@@ -1840,6 +1840,10 @@ in `on_game_tick`. Other stop conditions and `force_continue` are unchanged.
 
 ## §27 — Shared-airframe kneeboard index (co-op orientation)
 
+> **Superseded surface (§30):** the standalone `KneeboardIndexPage` was folded into the always-present
+> **cover page** — the index is now a *section* on the cover (shown only when 2+ client flights share
+> the airframe). The grouping + start-page math below are preserved; only the host page changed.
+
 DCS scopes kneeboards per *airframe*, not per group, so every pilot of a type sees all of that type's
 flight decks stacked together (see the `client_flights_by_airframe` note). A 4-ship-of-Hornets
 squadron flips through four decks to find theirs.
@@ -1963,26 +1967,23 @@ stores it as `game.last_sitrep`.
 
 ### Surface (kneeboard cover band)
 
-Per the design discussion it rides the **cover page** (`BriefingPage` — "Mission Info" in the full
-deck, "Game Plan" in the compact deck, §25), not a standalone page. `KneeboardGenerator._sitrep_lines`
-calls `sitrep_band_lines(game.last_sitrep, settings.generate_sitrep_kneeboard)` (the same
-generator-computes-lines / page-renders pattern as the §25 BLUF band) and passes the result to both
-`BriefingPage` constructions. `BriefingPage._render_sitrep` draws a "CAMPAIGN SITREP" heading + the
-lines **at the bottom of the page via `_draw_section_if_fits`** — so it only appears if it fits under
-the (critical) flight plan, in either deck mode, and never forces a 5th compact page.
-
-`sitrep_band_lines` returns `None` — no band — when the toggle is off, there is no prior turn, or the
-previous turn was quiet (`Sitrep.is_empty`), so the band never prints empty.
+The model + capture live here; the **render surface is the dedicated cover page (§30)**. The generator
+gates the SITREP with `sitrep_for_kneeboard(game.last_sitrep, settings.generate_sitrep_kneeboard)`
+(returns the `Sitrep`, or `None` when the toggle is off / there is no prior turn / the previous turn
+was quiet via `Sitrep.is_empty`), and `CoverPage` renders a "SITREP — Turn N" heading +
+`Sitrep.kneeboard_lines()`. *(It shipped first as a band on the `BriefingPage` cover via
+`_draw_section_if_fits`; §30 consolidated it onto a real always-present cover sheet alongside the
+op/turn header and the shared-airframe index.)*
 
 ### Files & tests
 
 | Area | Path |
 |---|---|
-| Model + builder + band formatter | `game/sitrep.py` (`Sitrep`, `SideLosses`, `sitrep_band_lines`) |
+| Model + builder + gate | `game/sitrep.py` (`Sitrep`, `SideLosses`, `sitrep_for_kneeboard`) |
 | Capture hook | `game/sim/missionresultsprocessor.py` (`record_sitrep`, last in `commit`) |
 | Persistence | `game/game.py` (`last_sitrep` + `__setstate__` default) |
 | Setting | `game/settings/settings.py` (`generate_sitrep_kneeboard`, default ON, Kneeboards page) |
-| Render | `game/missiongenerator/kneeboard.py` (`BriefingPage` band, `_sitrep_lines`) |
+| Render | `game/missiongenerator/kneeboard.py` (`CoverPage`, `_cover_sitrep`) — see §30 |
 | Tests | `tests/test_sitrep.py`; `COMMIT_STEPS` updated in `tests/test_missionresultsprocessor.py` |
 
 ### Gotchas / deferred
@@ -1994,7 +1995,54 @@ previous turn was quiet (`Sitrep.is_empty`), so the band never prints empty.
   debrief doesn't carry, and the SCAR signal isn't cleanly exposed at commit yet.
 - **Player = BLUE** (the debrief-window convention). A RED-human setup would label sides from the
   wrong perspective; revisit if/when a campaign flips the human to red.
-- **Needs an in-game pass (kneeboard eyeball):** fly turn 1, then on turn 2 confirm the band appears
-  on the cover page with correct losses/captures, that a quiet turn / turn 1 shows none, and that a
-  long flight plan suppresses it (fit guard) rather than clipping. The band render is
-  smoke-verified; only the in-cockpit look + the live numbers are the residual.
+- **Needs an in-game pass (kneeboard eyeball):** folded into the §30 cover-page check — the SITREP now
+  renders as a section on the always-present cover page (no fit guard). Confirm on turn 2 it shows the
+  previous turn's losses/captures, and that turn 1 / a quiet turn shows no SITREP section. The numbers
+  + render are smoke-verified; only the in-cockpit look is the residual.
+
+## §30 — Dedicated kneeboard cover page
+
+A single front sheet that **always** leads a flight's kneeboard deck, consolidating three things that
+were previously scattered: the operation/turn header (new), the previous turn's SITREP (§29, was a band
+competing for space at the bottom of the briefing page), and the shared-airframe flight index (§27, was
+a separate page that only appeared for 2+ flights).
+
+`CoverPage` (`game/missiongenerator/kneeboard.py`) is built by `_build_cover_page` and **always
+prepended** in `generate()` (replacing the conditional `KneeboardIndexPage`). It draws:
+
+- **Header (always):** `"<Operation> — Turn N"` + the in-game date (`game.campaign_name`, `game.turn`,
+  `game.current_day`). So every deck opens telling you what op and turn you're flying.
+- **SITREP (when there's anything to report):** `"SITREP — Turn N-1"` + `Sitrep.kneeboard_lines()`,
+  gated by `_cover_sitrep` → `sitrep_for_kneeboard` (§29). The model/capture are unchanged; only the
+  render moved off the `BriefingPage` band onto the cover, so it's prominent and stops crowding the
+  flight plan (the old `_draw_section_if_fits` band + `BriefingPage.sitrep_lines` were removed).
+- **Flight index (when 2+ client flights share the airframe):** the §27 callsign → start-page table,
+  folded in as a section. The cover is **page 1**, so the first flight's block starts on **page 2** (the
+  start-page cursor is unchanged from §27; a lone flight simply gets a cover with no index section).
+
+### Why consolidate
+
+The SITREP no longer competes for space on a busy Mission Info / Game Plan page, the index is no longer
+a conditional standalone page, and a pilot **always** gets an at-a-glance "what op / what turn / what
+happened / who's flying" sheet up front. Page numbering generalises cleanly (cover always page 1).
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Cover page + assembly | `game/missiongenerator/kneeboard.py` (`CoverPage`, `_build_cover_page`, `_cover_sitrep`, `generate`) |
+| SITREP gate | `game/sitrep.py` (`sitrep_for_kneeboard`) |
+| Tests | `tests/missiongenerator/test_kneeboard_cover.py` (start-page math, lone-flight no-index, SITREP gating, render) |
+
+### Gotchas / deferred
+
+- **Replaces §27 + the §29 band surface.** `KneeboardIndexPage` / `_build_kneeboard_index` and
+  `BriefingPage.sitrep_lines` / `_render_sitrep` are gone — folded into `CoverPage`. The §27 index
+  behaviour (and its start-page math) is preserved, just hosted on the cover.
+- **Every deck now has a cover**, including a single-flight deck (which previously had no extra page).
+  That is intended — the op/turn header is the point.
+- **Needs an in-game pass (kneeboard eyeball):** generate a mission and open the kneeboard. Page 1 is the
+  cover: op name + turn + date always; the previous turn's SITREP section from turn 2 on (absent on
+  turn 1 / a quiet turn); and a flight index when 2+ client flights share the airframe, whose start
+  pages land on the right decks. The render is smoke-verified; only the in-cockpit look + live page
+  numbers are the residual.

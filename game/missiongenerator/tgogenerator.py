@@ -296,11 +296,11 @@ class GroundObjectGenerator:
                         # Special handling for scenery objects
                         self.add_trigger_zone_for_scenery(unit)
                         if (
-                            self.game.settings.plugin_option("skynetiads")
+                            self.game.settings.plugin_option("mantisiads")
                             and isinstance(group, IadsGroundGroup)
                             and group.iads_role.participate
                         ):
-                            # Generate a unit which can be controlled by skynet
+                            # Generate a unit the IADS engine (MANTIS) can control
                             self.generate_iads_command_unit(unit)
                     else:
                         # Create a static group for each static unit

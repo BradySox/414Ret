@@ -325,17 +325,13 @@ class LuaGenerator:
                     aa_item.add_key_value("positionX", str(ground_object.position.x))
                     aa_item.add_key_value("positionY", str(ground_object.position.y))
 
-        # Generate IADS Lua Item. The IADS node/connection data is emitted the same
-        # way regardless of engine; an `engine` marker tells the Lua config bridges
-        # which one should act (skynetiads-config.lua vs mantis-config.lua) — the
-        # non-selected bridge no-ops. Default is SKYNET; MANTIS is gated behind the
-        # (not-yet-UI-exposed) iads_engine setting and needs an in-game pass before
-        # the default flips (docs/dev/design/414th-mantis-migration-notes.md).
-        iads_engine = self.game.settings.iads_engine
+        # Generate IADS Lua Item. The IADS node/connection data drives MANTIS
+        # (resources/plugins/mantisiads), now the sole IADS engine (Skynet removed).
+        # The `engine` marker is retained as "mantis" for the bridge's sanity log.
         iads_object = lua_data.add_item("IADS")
         # NB: emit the marker as a nested item, not add_key_value — LuaData.serialize
         # drops scalar key-values on an object that also has nested items.
-        iads_object.add_item("engine").set_value(iads_engine.value)
+        iads_object.add_item("engine").set_value("mantis")
         # These should always be created even if they are empty.
         iads_object.get_or_create_item("BLUE")
         iads_object.get_or_create_item("RED")

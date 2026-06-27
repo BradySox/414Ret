@@ -158,10 +158,6 @@ class IadsNetwork:
             nodes.append(iads_node)
         return nodes
 
-    def skynet_nodes(self, game: Game) -> list[IadsNode]:
-        """Backwards-compatible alias for :meth:`iads_nodes`."""
-        return self.iads_nodes(game)
-
     def _update_iads_comms_and_power(
         self, tgo: TheaterGroundObject, events: GameUpdateEvents
     ) -> None:

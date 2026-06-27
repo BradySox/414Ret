@@ -78,8 +78,11 @@ file. This guide is the map; those are the territory.
     (routing + networking + C2); MANTIS is the default IADS engine),
     `414th-framework-consolidation-notes.md` (the MIST-retirement roadmap + per-phase plan, now done),
     `414th-mantis-migration-notes.md` + `414th-mantis-vs-skynet-iads-parity.md` (the Skynet → MANTIS
-    IADS engine: phases 3–5 built + flight-validated; **MANTIS is now the `iads_engine` default for new
-    campaigns** (existing saves stay on their engine via the `__setstate__` Skynet pin); Skynet still selectable),
+    IADS engine migration, now **complete**: **MANTIS is the sole IADS engine — Skynet is removed**
+    (the `skynetiads` plugin, the `iads_engine` selector, and the dual-engine wiring are all dropped;
+    a tiny `IadsEngine` enum stub remains only so pre-removal saves unpickle before the value is
+    migrated out). The shared IADS data model — `IadsNetwork`, `IadsRole`, `IadsProperties` and the
+    `Skynet*` back-compat aliases — stays; MANTIS consumes it),
     `414th-moose-ops-opportunity-map.md` (which MOOSE `Ops.*` modules to adopt vs. keep in Python —
     e.g. `Ops.Chief` stays out; **the next phase now that MIST is gone**), and the per-plugin decisions
     `414th-ewrs-retirement-decision.md`, `414th-dismounts-decision.md` (both retired),

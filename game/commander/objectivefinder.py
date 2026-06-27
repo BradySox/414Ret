@@ -126,9 +126,9 @@ class ObjectiveFinder:
 
                 if isinstance(
                     ground_object, IadsBuildingGroundObject
-                ) and not self.game.settings.plugin_option("skynetiads"):
-                    # Prevent strike targets on IADS Buildings when skynet features
-                    # are disabled as they do not serve any purpose
+                ) and not self.game.settings.plugin_option("mantisiads"):
+                    # Prevent strike targets on IADS Buildings when the IADS engine
+                    # (MANTIS) is disabled as they do not serve any purpose
                     continue
 
                 if ground_object.is_dead():

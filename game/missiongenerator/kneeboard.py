@@ -1241,6 +1241,23 @@ class SeadTaskPage(KneeboardPage):
         task = "DEAD" if self.flight.flight_type == FlightType.DEAD else "SEAD"
         writer.title(f"{self.flight.callsign} {task} Target Info{custom_name_title}")
 
+        target = self.flight.package.target
+        if not self._target_identified and isinstance(target, TheaterGroundObject):
+            # Recon fog (§3): the site is on the map as a threat (you know roughly
+            # where), but it hasn't been identified -- so don't hand over its full
+            # composition + HARM codes. Give the area cue + intel-tier band and prompt
+            # recon, the same way the Threat Intel Brief redacts undiscovered sites.
+            cue = self._bullseye_cue_for(target.position)
+            writer.heading(f"{task} target area — {cue}")
+            band = target.air_defense_band or "Air-defense site"
+            writer.text(
+                f"{band}. Composition not yet identified — fly TARPS recon (or "
+                "strike/scout the site) to reveal the emitters and their HARM codes.",
+                wrap=True,
+            )
+            writer.write(path)
+            return
+
         if self._use_target_area_cues:
             # Consolidated view: one bullseye cue for the *center of the site* (not
             # one per unit -- that was cluttered) plus the single target-area
@@ -1281,6 +1298,20 @@ class SeadTaskPage(KneeboardPage):
             self.alic_for(unit),
             unit.position.latlng().format_dms(include_decimal_seconds=True),
         ]
+
+    @property
+    def _target_identified(self) -> bool:
+        """Whether the player has discovered this site's composition (recon fog §3).
+
+        Gates the emitter/ALIC breakdown: an un-identified site (``known_for`` False)
+        is redacted to its intel-tier band so the kneeboard doesn't hand over the full
+        composition before it's been recon'd. A non-TGO target (shouldn't happen for
+        SEAD/DEAD) is treated as identified.
+        """
+        target = self.flight.package.target
+        if not isinstance(target, TheaterGroundObject):
+            return True
+        return target.known_for(self.flight.friendly)
 
     @property
     def _approximate_target_intel(self) -> bool:

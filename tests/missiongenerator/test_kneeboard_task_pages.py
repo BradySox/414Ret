@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import MagicMock
 
 from dcs.vehicles import AirDefence
 
@@ -9,6 +10,7 @@ from game.ato.flighttype import FlightType
 from game.missiongenerator.kneeboard import KneeboardGenerator, SeadTaskPage
 from game.missiongenerator.scarluadata import ScarTasking
 from game.settings.settings import TargetIntelPrecision
+from game.theater.theatergroundobject import SamGroundObject
 
 
 class _DummyPosition:
@@ -101,6 +103,27 @@ def test_scar_tasking_is_matched_to_its_flight_by_target() -> None:
     assert gen._scar_tasking_for(stray) is None  # type: ignore[arg-type]
     none_target = SimpleNamespace(package=SimpleNamespace(target=None))
     assert gen._scar_tasking_for(none_target) is None  # type: ignore[arg-type]
+
+
+def _sead_flight_with_target(known: bool) -> Any:
+    target = MagicMock(spec=SamGroundObject)
+    target.known_for.return_value = known
+    flight = _flight(FlightType.SEAD, TargetIntelPrecision.EXACT)
+    flight.package.target = target
+    flight.friendly = object()
+    flight.custom_name = None
+    return flight
+
+
+def test_sead_target_is_redacted_until_the_site_is_identified() -> None:
+    # Recon fog (§3): an undiscovered site's emitter/HARM breakdown is withheld.
+    page = SeadTaskPage(_sead_flight_with_target(known=False), _bullseye(), False)
+    assert page._target_identified is False
+
+
+def test_sead_target_is_shown_once_identified() -> None:
+    page = SeadTaskPage(_sead_flight_with_target(known=True), _bullseye(), False)
+    assert page._target_identified is True
 
 
 def test_sead_task_page_keeps_exact_coords_with_exact_intel() -> None:

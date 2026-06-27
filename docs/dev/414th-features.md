@@ -450,6 +450,16 @@ controls four behaviors together when set to Approximate:
   target to its `TARGET_POINT` waypoint **by order** (not position), so it stays
   populated even when Approximate intel offsets the waypoint.
   (`game/missiongenerator/kneeboard.py`)
+- **Recon-fog redaction (§3).** Both the cue and exact views only list the emitters once the
+  site is **identified**: `SeadTaskPage._target_identified` gates on
+  `TheaterGroundObject.known_for(viewer)`, and an un-discovered site is redacted to its
+  **intel-tier band** + a bullseye cue + "Composition not yet identified — fly TARPS recon…",
+  withholding the emitter breakdown and HARM codes until the site is scouted/struck/photographed
+  (the same way the Threat Intel Brief redacts unknown sites). Without this the SEAD target list
+  handed over the full composition of any un-recon'd site, defeating recon's purpose. *Known gap:*
+  the experimental recon **Detail** page still draws the composition from satellite imagery
+  regardless of `known_for` — a deeper question for that page (it IS a recon product), tracked
+  separately; the standalone SEAD page is the one fixed here.
 
 ---
 

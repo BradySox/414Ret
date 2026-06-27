@@ -18,18 +18,9 @@
 
 env.info("DCSRetribution|MANTIS-IADS plugin - configuration")
 
+-- MANTIS is the sole IADS engine (Skynet removed); this bridge always runs when
+-- there is IADS data and the bundled MOOSE MANTIS class is present.
 if dcsRetribution and dcsRetribution.IADS and MANTIS then
-
-    local engine = dcsRetribution.IADS.engine or "skynet"
-    if engine ~= "mantis" then
-        env.info(
-            string.format(
-                "DCSRetribution|MANTIS-IADS plugin - IADS engine is '%s', not 'mantis'; skipping",
-                tostring(engine)
-            )
-        )
-        return
-    end
 
     -- specific options (defaults mirror MANTIS' own defaults)
     local createRedIADS = true

@@ -376,3 +376,34 @@ reconcile it with MANTIS. Retribution stops pre-writing an alarm state for the e
 **Not in scope here** (separate items raised in the same pass, still open): MANTIS detection
 cueing/coverage, the DE-vs-S radar-range pick for SAMs that carry both, and whether MANTIS is
 detecting A/G & G/G munitions as contacts.
+
+---
+
+## 12. Skynet removed — MANTIS is the sole IADS engine (2026-06-27)
+
+The migration is finished: **Skynet is gone**, so there is one IADS engine and no engine selector
+to reason about (simpler + more flexible).
+
+**Removed:**
+- the `resources/plugins/skynetiads/` plugin (compiled Lua + config bridge), and its entry in
+  `resources/plugins/plugins.json`;
+- the `iads_engine` **setting** + its UI row + the `__setstate__` Skynet-pin (`settings.py`);
+- the engine **marker/selection**: `luagenerator` now emits `engine="mantis"` unconditionally and
+  `mantis-config.lua` dropped its `if engine ~= "mantis" then return` skip-guard (the bridge always runs);
+- the dead `IadsNetwork.skynet_nodes` alias and `tests/settings/test_iads_engine_setting.py`.
+
+**Re-pointed:** the two `plugin_option("skynetiads")` gates (strike-target suppression on IADS
+buildings in `objectivefinder`; the IADS command-unit generation in `tgogenerator`) now read
+`plugin_option("mantisiads")`, so IADS structures still generate under MANTIS.
+
+**Kept (deliberately):**
+- the shared **IADS data model** — `IadsNetwork`, `IadsRole` (incl. `skynet_value`), `IadsProperties`
+  and the `SkynetProperties`/`SkynetNode` back-compat aliases. MANTIS consumes this via `luagenerator`;
+  the `Skynet*` names are internal/cosmetic and renaming them risks persisted-field churn, so they stay.
+- a tiny **`IadsEngine` enum stub** (`settings.py`) — kept *only* so a campaign saved before the removal
+  still unpickles (the persisted `iads_engine` enum), after which `_migrate_legacy_settings` drops the
+  orphan key. Verified by loading real pre-removal saves headless (they load; the key is gone). Safe to
+  delete once no live save predates the removal.
+
+**Save safety:** `pytest` green (1076) and both flown campaign saves load headless with `iads_engine`
+migrated out — no bricked campaigns.

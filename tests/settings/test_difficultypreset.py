@@ -55,9 +55,9 @@ def test_apply_then_detect_round_trips(preset: DifficultyPreset) -> None:
 
 
 def test_apply_leaves_unrelated_fields_untouched() -> None:
-    ns = SimpleNamespace(iads_engine="sentinel", supercarrier="sentinel")
+    ns = SimpleNamespace(use_auto_fog="sentinel", supercarrier="sentinel")
     apply_preset(cast(Settings, ns), DifficultyPreset.ACE)
-    assert ns.iads_engine == "sentinel"
+    assert ns.use_auto_fog == "sentinel"
     assert ns.supercarrier == "sentinel"
 
 

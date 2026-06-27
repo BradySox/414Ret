@@ -120,19 +120,19 @@ local unitPayloads = {
 					["num"] = 3,
 				},
 				[4] = {
-					["CLSID"] = "",
+					["CLSID"] = "{BCE4E030-38E9-423E-98ED-24BE3DA87C32}",
 					["num"] = 5,
 				},
 				[5] = {
-					["CLSID"] = "",
+					["CLSID"] = "{BCE4E030-38E9-423E-98ED-24BE3DA87C32}",
 					["num"] = 6,
 				},
 				[6] = {
-					["CLSID"] = "",
+					["CLSID"] = "{BCE4E030-38E9-423E-98ED-24BE3DA87C32}",
 					["num"] = 7,
 				},
 				[7] = {
-					["CLSID"] = "",
+					["CLSID"] = "{BCE4E030-38E9-423E-98ED-24BE3DA87C32}",
 					["num"] = 8,
 				},
 				[8] = {
@@ -148,11 +148,11 @@ local unitPayloads = {
 					["num"] = 12,
 				},
 				[11] = {
-					["CLSID"] = "{0D33DDAE-524F-4A4E-B5B8-621754FE3ADE}",
+					["CLSID"] = "{BCE4E030-38E9-423E-98ED-24BE3DA87C32}",
 					["num"] = 9,
 				},
 				[12] = {
-					["CLSID"] = "{0D33DDAE-524F-4A4E-B5B8-621754FE3ADE}",
+					["CLSID"] = "{BCE4E030-38E9-423E-98ED-24BE3DA87C32}",
 					["num"] = 4,
 				},
 			},

@@ -868,6 +868,22 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
 - Malformed mod payload Lua (CJS Super Hornet v2.4 uses local-var table indices that the
   pydcs Lua parser rejects with `ValueError`): patched loader in `qt_ui/main.py`
   (`_patch_pydcs_payload_loader()`), plus the offending files are skipped with a warning.
+- **Loadout integrity (jets flying clean / wrong ordnance).** A fleet-wide audit found two
+  silent failure modes that dropped whole presets: (1) a stray empty pylon (`["CLSID"] = ""`
+  / `<CLEAN>`) made `Loadout.valid_payload` reject the entire loadout (244 presets across 44
+  airframes) — fixed by skipping empty stations; and (2) stale/dead CLSIDs (AJS-37 `{Rb15}`,
+  the F/A-18E/F STA-02 JSOW `BRU55`→`BRU` rename) — repaired in `resources/customized_payloads`.
+  Plus `ANTISHIP` gained the Strike fallback every other A2G task already had (so an anti-ship
+  jet without an anti-ship preset carries iron bombs, not nothing). Guarded by
+  `tests/data/test_weapons.py` (`test_valid_payload_ignores_empty_stations`,
+  `test_antiship_falls_back_to_strike_loadout_names`,
+  `test_customized_payload_clsids_resolve_or_are_known_stragglers` — fails on any *new* dead
+  CLSID). A follow-up pass fixed the **F-14A Block 135-GR Early** (its `.lua` had the *Late*
+  variant's `unitType` so its ground presets were never applied), authored a missing
+  **F-14A Block 95-GR Export** payload file (iron-bomb presets — no LANTIRN), and switched the
+  **Tornado IDS STRIKE** preset from TGP-less LGBs to iron Mk-82. Methodology + remaining
+  residuals (mod-weapon stragglers, low-impact early-date noise):
+  `docs/dev/design/414th-loadout-integrity-audit-notes.md`.
 - Spurious "past start times" warning for player CAP: a BARCAP/TARCAP is meant to be
   on-station at mission start, so a cold-start spin-up legitimately begins before mission
   start — and the scheduler reserves only the 2-min AI startup while a player-flown flight

@@ -285,7 +285,16 @@ class Loadout:
     @staticmethod
     def valid_payload(pylons: Dict[int, Dict[str, str]]) -> bool:
         for p in pylons.values():
-            if Weapon.with_clsid(p["CLSID"]) is None:
+            clsid = p["CLSID"]
+            # An empty/cleared station ("" or the DCS "<CLEAN>" sentinel) is a valid
+            # empty pylon, not an invalid loadout. Without this, a single stray empty
+            # slot makes the whole preset fail validation and get silently skipped --
+            # the planner then flies a fallback (often a clean A2A loadout) or nothing.
+            # Empty pylons drop out harmlessly when the Loadout is built (None pylons
+            # are filtered in __init__), so just skip them here.
+            if clsid in ("", "<CLEAN>"):
+                continue
+            if Weapon.with_clsid(clsid) is None:
                 return False
         return True
 
@@ -359,6 +368,12 @@ class Loadout:
         loadout_names[FlightType.DEAD].extend(loadout_names[FlightType.BAI])
         # OCA/Runway falls back to Strike
         loadout_names[FlightType.OCA_RUNWAY].extend(loadout_names[FlightType.STRIKE])
+        # Anti-ship falls back to Strike. Anti-ship is the only A2G task with no
+        # fallback, so a jet tasked Anti-ship without a dedicated anti-ship preset
+        # (no AShM in its kit) otherwise resolves to an EMPTY loadout and flies clean.
+        # Iron bombs on shipping beat no ordnance at all; its own anti-ship preset is
+        # still preferred first.
+        loadout_names[FlightType.ANTISHIP].extend(loadout_names[FlightType.STRIKE])
         yield from loadout_names[task]
 
     @classmethod

@@ -9,6 +9,7 @@ from dcs.planes import F_16C_50, FA_18C_hornet
 
 from game.data.weapons import Weapon, WeaponGroup, WeaponType
 from game.ato.loadouts import Loadout
+from game.ato.flighttype import FlightType
 from game.dcs.aircrafttype import AircraftType
 from game.factions.faction import Faction
 
@@ -222,3 +223,100 @@ def test_custom_payload_targeting_pods_do_not_fall_back_to_unknown() -> None:
             weapon.clsid,
             weapon.weapon_group.name,
         )
+
+
+# A real, covered weapon CLSID used as a fixture for the valid_payload tests below.
+_AIM9M_CLSID = "{6CEB49FC-DED8-4DED-B053-E1F033FF72D3}"
+
+
+def test_valid_payload_ignores_empty_stations() -> None:
+    # Sanity: the fixture weapon resolves.
+    assert Weapon.with_clsid(_AIM9M_CLSID) is not None
+
+    # A stray empty ("") or "<CLEAN>" station is an empty pylon, NOT an invalid
+    # loadout. Without this, a single empty slot made valid_payload reject the whole
+    # preset, so the planner silently flew a fallback (often clean A2A) or nothing --
+    # e.g. the Tornado IDS STRIKE / Mosquito presets that carried real bombs.
+    pylons = {
+        1: {"CLSID": _AIM9M_CLSID},
+        2: {"CLSID": ""},
+        3: {"CLSID": "<CLEAN>"},
+    }
+    assert Loadout.valid_payload(pylons) is True
+
+    # A genuinely unknown (dead) CLSID still invalidates the loadout.
+    dead = {1: {"CLSID": _AIM9M_CLSID}, 2: {"CLSID": "{NOT_A_REAL_CLSID}"}}
+    assert Loadout.valid_payload(dead) is False
+
+
+def test_antiship_falls_back_to_strike_loadout_names() -> None:
+    names = list(Loadout.default_loadout_names_for(FlightType.ANTISHIP))
+    # The jet's own anti-ship presets are still preferred first...
+    assert names[0].endswith("Anti-ship")
+    assert "ANTISHIP" in names
+    # ...but Anti-ship now falls back to the Strike family, so a jet tasked Anti-ship
+    # without a dedicated anti-ship preset carries iron bombs instead of an EMPTY
+    # loadout. (Anti-ship was the only A2G task with no fallback.)
+    strike_names = set(Loadout.default_loadout_names_for(FlightType.STRIKE))
+    assert strike_names.issubset(set(names))
+
+
+# Dead CLSIDs that reference MOD-pack weapons absent from base pydcs (and from
+# pydcs_extensions): SA342 Gazelle, Su-57, Mirage F1, the F-22A pack, UH-60L, OH-6A,
+# plus two non-task manufacturer presets. Their presets degrade via the fallback chain
+# (not fatal), but the ids can't be resolved in a base install. Tracked as follow-up.
+# Any NEW unresolved CLSID outside this set is a regression: a preset that references
+# it is silently dropped (the bug this audit fixed), so the test fails loudly.
+_KNOWN_MOD_STRAGGLER_CLSIDS = frozenset(
+    {
+        "<CLEAN-200.5>",  # Mi-8MT air-assault ballast marker
+        "{2x Mk-82 SWA}",  # F-4E-45MC manufacturer preset
+        "{DIS_RKT_90_UG}",  # JF-17 manufacturer preset
+        "{BLG66_BELOUGA}",  # Mirage F1 (Aerges) cluster bomb
+        "{KH_59MK2}",  # Su-57 (mod) standoff missile
+        "{HOT3D}",  # SA342 Gazelle (mod) ATGM
+        "{HOT3G}",  # SA342 Gazelle (mod) ATGM
+        "FAS}",  # SA342 Gazelle (mod) malformed marker
+        "{MBDA_MistralD}",  # SA342 Gazelle (mod) Mistral
+        "{MBDA_MistralG}",  # SA342 Gazelle (mod) Mistral
+        "{F22_IRST}",  # F-22A (mod) IRST pod
+        "{GBU32_JDAM}",  # F-22A (mod) JDAM
+        "{MAKO_A2G_C}",  # F-22A (mod) standoff
+        "{OH-6 M134 Minigun}",  # OH-6A (mod) door gun
+        "{OH-6 M60 Door}",  # OH-6A (mod) door gun
+        "{UH60L_M2_GUNNER}",  # UH-60L (mod) door gun
+        "{UH60L_M60_GUNNER}",  # UH-60L (mod) door gun
+        "{UH60_FUEL_TANK_200}",  # UH-60L (mod) tank
+        "{Exocet}",  # Super Etendard (mod) Exocet AShM
+        "{AS_30L}",  # Super Etendard / Jaguar (mod) AS-30L
+        "{SCALP}",  # Rafale / Mirage (mod) SCALP-EG cruise missile
+        "{RAFALE_MBDA_METEOR}",  # Rafale (mod) Meteor
+        "{Thales_RBE2}",  # Rafale (mod) RBE2 radar
+        "{GBU_49}",  # Mirage 2000D / Rafale (mod) GBU-49
+        "{PTB-1500}",  # mod aircraft fuel tank
+        "{6C0D552F-570B-42ff-9F6D-F10D9C1D4E1C}",  # mod weapon (GUID id)
+    }
+)
+
+
+def test_customized_payload_clsids_resolve_or_are_known_stragglers() -> None:
+    payload_clsids: set[str] = set()
+    for path in Path("resources/customized_payloads").glob("*.lua"):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        payload_clsids.update(re.findall(r'\["CLSID"\]\s*=\s*"([^"]+)"', text))
+
+    unresolved = {
+        clsid
+        for clsid in payload_clsids
+        if clsid not in ("", "<CLEAN>")
+        and Weapon.with_clsid(clsid) is None
+        and clsid not in _KNOWN_MOD_STRAGGLER_CLSIDS
+    }
+
+    assert not unresolved, (
+        "Customized-payload presets reference CLSID(s) that resolve to no weapon and "
+        "are not known mod stragglers. The whole preset is silently dropped, so the "
+        "jet flies a fallback or clean. Fix the CLSID (or add to "
+        "_KNOWN_MOD_STRAGGLER_CLSIDS if it is a mod weapon):\n"
+        + "\n".join(sorted(unresolved))
+    )

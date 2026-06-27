@@ -41,11 +41,11 @@ local unitPayloads = {
 			["name"] = "ANTISHIP",
 			["pylons"] = {
 				[1] = {
-					["CLSID"] = "{Rb15}",
+					["CLSID"] = "{Rb15AI}",
 					["num"] = 6,
 				},
 				[2] = {
-					["CLSID"] = "{Rb15}",
+					["CLSID"] = "{Rb15AI}",
 					["num"] = 2,
 				},
 				[3] = {

@@ -92,9 +92,11 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     local csar = CSAR:New("blue", pilotTemplate, "CSAR")
     csar:SetOwnSetPilotGroups(rescueSet)
 
-    -- Ejection-only, blue-side behaviour. enableForAI gates AI participation:
-    -- false (default) = human-initiated only; true = AI standing-alert rescue.
-    csar.enableForAI = enableForAI
+    -- Ejection-only, blue-side, PLAYER-flown rescues. We force CSAR's own AI
+    -- participation OFF: MOOSE CSAR's enableForAI merely *tracks* AI ejections, it
+    -- never flies an AI helo to the survivor. The standing-alert AI auto-rescue is
+    -- handled instead by MOOSE AICSAR below (gated on the same enableForAI flag).
+    csar.enableForAI = false
     csar.csarOncrash = false          -- ejection rescues only, not every crash
     csar.allowDownedPilotCAcontrol = false
     csar.autosmoke = autosmoke
@@ -104,6 +106,49 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
     csar.allowFARPRescue = true       -- delivering to a friendly FARP/airfield counts
 
     csar:Start()
+
+    -------------------------------------------------------------------------------
+    -- AI standing alert (auto_combat_sar): MOOSE CSAR above is player-rescue only,
+    -- so for real AI auto-rescue we stand up MOOSE AICSAR. AICSAR spawns its OWN
+    -- rescue helos (cloned from heloTemplate) from a home AIRBASE and routes them to
+    -- downed pilots, delivering to a ZONE_AIRBASE at that base. It auto-starts inside
+    -- :New, and its autoonoff (default true) makes it stand down whenever a player is
+    -- crewing a rescue helo -- so it never competes with the player-flown CSAR above.
+    --
+    -- KNOWN v1 LIMITATION (in-game pass): AICSAR spawns an anonymous pilot clone and
+    -- destroys the original ejected unit, so it does NOT carry the lost airframe's
+    -- unit name through to delivery -- the campaign spare-pilot scoring (combat_sar_
+    -- rescues, fed by the player CSAR path above) is therefore NOT credited for an
+    -- AICSAR auto-rescue yet. The v1 goal is the behaviour: an AI helo actually
+    -- launches, flies out, picks the pilot up, and RTBs (the old path did nothing).
+    -- Also: a player ejecting from a fixed-wing while no human is in any helo gets
+    -- handled by BOTH engines (CSAR spawns a flyable downed pilot; AICSAR also spawns
+    -- its clone + auto-rescues) -- a cosmetic double-spawn to evaluate in the pass.
+    -------------------------------------------------------------------------------
+    if enableForAI and AICSAR and data.heloTemplate and data.farp then
+        local farpAirbase = AIRBASE:FindByName(data.farp)
+        if farpAirbase then
+            local mashZone = ZONE_AIRBASE:New(data.farp)
+            local aicsar = AICSAR:New(
+                "CSAR", "blue", pilotTemplate, data.heloTemplate, farpAirbase, mashZone
+            )
+            -- Default max reach is 50 NM from the FARP; a Combat SAR base often sits
+            -- well behind the FLOT, so widen it so forward ejections are in range.
+            aicsar.maxdistance = UTILS.NMToMeters(150)
+            env.info(string.format(
+                "DCSRetribution|Combat SAR - AICSAR AI standing alert armed "
+                    .. "(helo template '%s', FARP '%s')",
+                tostring(data.heloTemplate),
+                tostring(data.farp)
+            ))
+        else
+            env.warning(
+                "DCSRetribution|Combat SAR - AICSAR: FARP airbase '"
+                    .. tostring(data.farp)
+                    .. "' not found; AI auto-rescue inactive."
+            )
+        end
+    end
 
     -------------------------------------------------------------------------------
     -- Rescue scoring: report every pilot delivered home so the campaign can spare

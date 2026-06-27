@@ -449,7 +449,7 @@ class LuaGenerator:
         clones at each crash site as the downed pilot. Blue-only. ``enableForAI``
         carries the standing-alert setting (auto_combat_sar) to the runtime.
         """
-        rescue_helos: list[str] = []
+        rescue_flights: list[FlightData] = []
         kings: list[FlightData] = []
         for flight in self.mission_data.flights:
             if flight.flight_type is not FlightType.COMBAT_SAR:
@@ -457,9 +457,10 @@ class LuaGenerator:
             if not flight.friendly.is_blue:
                 continue
             if flight.aircraft_type.helicopter:
-                rescue_helos.append(flight.group_name)
+                rescue_flights.append(flight)
             else:
                 kings.append(flight)
+        rescue_helos = [flight.group_name for flight in rescue_flights]
 
         # No rescue helo tasked -> the CSAR service is simply absent this mission.
         # Skip the template too so we never leave an orphan group in the .miz.
@@ -474,9 +475,11 @@ class LuaGenerator:
             )
             return
 
-        # With the standing-alert setting on, let MOOSE CSAR commandeer AI rescue
-        # helos (an orbiting AI CH-47 diverts to the crash site). This also makes AI
-        # ejections rescuable. With it off, CSAR stays human-initiated only (Phase 2).
+        # The standing-alert setting (auto_combat_sar) turns on AI auto-rescue.
+        # MOOSE's player-centric CSAR cannot fly an AI rescue itself (its own
+        # enableForAI only *tracks* AI ejections), so the Lua bridge stands up MOOSE
+        # AICSAR for that path -- see combatsar-config.lua. enableForAI is the flag it
+        # keys on; with it off, only player-flown CSAR runs (human-initiated).
         enable_for_ai = self.game.settings.auto_combat_sar
 
         # Emit as a fully nested object: LuaData drops scalar key/values on a node
@@ -488,6 +491,18 @@ class LuaGenerator:
             "true" if enable_for_ai else "false"
         )
         combat_sar.add_item("rescueHelos").set_data_array(rescue_helos)
+
+        # AI standing alert (AICSAR) needs a helo group to clone + a home airbase to
+        # launch from and deliver to. Reuse the first rescue flight's group as the
+        # clone template and its departure field as the FARP; the Lua side resolves
+        # the AIRBASE + a delivery ZONE_AIRBASE from that name. AICSAR's autoonoff
+        # (default) stands it down whenever a player is crewing a rescue helo, so it
+        # never competes with the player-flown CSAR path.
+        if enable_for_ai and rescue_flights:
+            combat_sar.add_item("heloTemplate").set_value(rescue_flights[0].group_name)
+            combat_sar.add_item("farp").set_value(
+                rescue_flights[0].departure.airfield_name
+            )
 
         # Each King (C-130) lights the TACAN the rescue helo homes on.
         kings_item = combat_sar.add_item("kings")

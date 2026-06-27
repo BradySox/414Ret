@@ -453,6 +453,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "generate_threat_intel_kneeboard",
                     "enable_package_code_words",
                     "generate_fuel_ladder_kneeboard",
+                    "generate_sitrep_kneeboard",
                     "target_recon_extra_threat_search_nmi",
                 ],
             ),
@@ -1703,6 +1704,18 @@ class Settings:
             "RTB at each steerpoint, plus the margin between them and Bingo/Joker. The "
             "burn model is an estimate, so treat the numbers as planning figures. Off "
             "by default."
+        ),
+    )
+    generate_sitrep_kneeboard: bool = boolean_option(
+        "Campaign SITREP band on the briefing page",
+        MISSION_GENERATOR_PAGE,
+        KNEEBOARD_SECTION,
+        default=True,
+        detail=(
+            "Add a short 'what happened last turn' band to the briefing/Game Plan "
+            "kneeboard page: both sides' losses (enemy as claimed), bases captured or "
+            "lost, and downed pilots recovered. Hidden on turn 1 and after a quiet "
+            "turn, and only drawn when it fits under the flight plan. On by default."
         ),
     )
     target_recon_extra_threat_search_nmi: int = bounded_int_option(

@@ -49,6 +49,7 @@ from game.dcs.aircrafttype import AircraftType
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
 from game.settings.settings import TargetIntelPrecision
+from game.sitrep import sitrep_band_lines
 from game.theater import FrontLine, TheaterGroundObject, TheaterUnit
 from game.theater.bullseye import Bullseye
 from game.theater.controlpoint import Airfield, ControlPoint
@@ -557,6 +558,7 @@ class BriefingPage(KneeboardPage):
         push_line: Optional[str] = None,
         threat_line: Optional[str] = None,
         page_title: str = "Mission Info",
+        sitrep_lines: Optional[list[str]] = None,
     ) -> None:
         self.flight = flight
         self.bullseye = bullseye
@@ -575,6 +577,10 @@ class BriefingPage(KneeboardPage):
         self.task_line = task_line
         self.push_line = push_line
         self.threat_line = threat_line
+        # Campaign SITREP band (§29): a short "what happened last turn" summary,
+        # computed by the generator and drawn at the bottom of this cover page
+        # only if it fits under the flight plan. None when off / nothing to show.
+        self.sitrep_lines = sitrep_lines
         # De-duplication (design §4): drop the weather block when the recon Departure
         # page already carries it, and the Min-fuel column when the Fuel Ladder page
         # owns the fuel ladder. The Friendly Packages list moved to its own page.
@@ -746,6 +752,17 @@ class BriefingPage(KneeboardPage):
             for idx, code in enumerate(self.flight.laser_codes, start=1):
                 codes.append([str(idx), "" if code is None else str(code)])
             writer.table(codes, ["#", "Laser Code"])
+
+        # Campaign SITREP band last, and only if it fits under everything above,
+        # so it never pushes the (critical) flight plan off the page (§29).
+        if self.sitrep_lines:
+            _draw_section_if_fits(writer, self.dark_kneeboard, self._render_sitrep)
+
+    def _render_sitrep(self, writer: KneeboardPageWriter) -> None:
+        writer.heading("CAMPAIGN SITREP")
+        writer.rule()
+        for line in self.sitrep_lines or []:
+            writer.text(line, wrap=True)
 
     def _departure_elevation_m(self) -> Optional[float]:
         """DCS-mesh field elevation (m) of the departure field, or None.
@@ -2891,6 +2908,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                 push_line=push_line,
                 threat_line=threat_line,
                 page_title="Game Plan",
+                sitrep_lines=self._sitrep_lines(),
             )
         )
 
@@ -3054,6 +3072,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                 task_line=task_line,
                 push_line=push_line,
                 threat_line=threat_line,
+                sitrep_lines=self._sitrep_lines(),
             ),
             SupportPage(
                 flight,
@@ -3142,6 +3161,13 @@ class KneeboardGenerator(MissionInfoGenerator):
             pages.extend(self.generate_packages_map_page(flight))
 
         return pages
+
+    def _sitrep_lines(self) -> Optional[list[str]]:
+        """The campaign SITREP band for the briefing cover page (§29), or None."""
+        return sitrep_band_lines(
+            getattr(self.game, "last_sitrep", None),
+            self.game.settings.generate_sitrep_kneeboard,
+        )
 
     def _bluf_lines(
         self, flight: FlightData, threat_cards: List[ThreatCard]

@@ -1935,3 +1935,66 @@ wingman quality, not a difficulty lever) is deliberately left alone by every pre
   pages/sections read cleanly, the preset bar tops Difficulty & Realism, each preset flips the
   expected controls, and "Current:" tracks. The build + apply flow is offscreen-smoke-verified and
   the logic is unit-tested; only the visual feel is unexercised by CI.
+
+## §29 — Campaign SITREP kneeboard band
+
+A "what happened last turn" digest on the player's next kneeboard — a morning intel brief in the
+cockpit. It reads numbers the campaign already tallies; it does not recompute the war.
+
+### Capture (`game/sitrep.py`)
+
+`Sitrep` is a small frozen dataclass (turn, day, friendly/enemy `SideLosses`, captured/lost control
+points, pilots recovered). `Sitrep.from_debriefing` reads straight off the `Debriefing` that
+`MissionResultsProcessor.commit()` already has: per-side losses from `loss_counts()` (aircraft /
+front-line / site units), captures from the **cached** `base_captures` snapshot, and Combat SAR
+deliveries from `state_data.combat_sar_rescues`. A new last `commit()` sub-step, `record_sitrep`,
+stores it as `game.last_sitrep`.
+
+- **Enemy losses are framed as "claimed"** — same numbers, battle-damage phrasing — to stay
+  consistent with the recon-fog model (§3). The campaign already committed the real losses; the band
+  is the player-facing read-off.
+- **Timing:** `commit()` runs (in `missionsimulation.py`) *before* the turn increments, so
+  `game.turn` / `game.current_day` are the just-played turn. The band then shows on the **next**
+  turn's kneeboard. Captured bases use the pre-commit `base_captures` attribute, **not** a re-call of
+  `base_capture_events()`, which would re-evaluate ownership after `commit_captures` flipped the
+  bases and drop them.
+- **Persistence:** `game.last_sitrep` is pickled; `__setstate__` defaults it to `None` for old saves
+  (no migration). `None` on turn 1.
+
+### Surface (kneeboard cover band)
+
+Per the design discussion it rides the **cover page** (`BriefingPage` — "Mission Info" in the full
+deck, "Game Plan" in the compact deck, §25), not a standalone page. `KneeboardGenerator._sitrep_lines`
+calls `sitrep_band_lines(game.last_sitrep, settings.generate_sitrep_kneeboard)` (the same
+generator-computes-lines / page-renders pattern as the §25 BLUF band) and passes the result to both
+`BriefingPage` constructions. `BriefingPage._render_sitrep` draws a "CAMPAIGN SITREP" heading + the
+lines **at the bottom of the page via `_draw_section_if_fits`** — so it only appears if it fits under
+the (critical) flight plan, in either deck mode, and never forces a 5th compact page.
+
+`sitrep_band_lines` returns `None` — no band — when the toggle is off, there is no prior turn, or the
+previous turn was quiet (`Sitrep.is_empty`), so the band never prints empty.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Model + builder + band formatter | `game/sitrep.py` (`Sitrep`, `SideLosses`, `sitrep_band_lines`) |
+| Capture hook | `game/sim/missionresultsprocessor.py` (`record_sitrep`, last in `commit`) |
+| Persistence | `game/game.py` (`last_sitrep` + `__setstate__` default) |
+| Setting | `game/settings/settings.py` (`generate_sitrep_kneeboard`, default ON, Kneeboards page) |
+| Render | `game/missiongenerator/kneeboard.py` (`BriefingPage` band, `_sitrep_lines`) |
+| Tests | `tests/test_sitrep.py`; `COMMIT_STEPS` updated in `tests/test_missionresultsprocessor.py` |
+
+### Gotchas / deferred
+
+- **`commit` sub-step list is asserted.** `test_missionresultsprocessor.py` stubs every processor
+  method and checks the exact set, so adding `record_sitrep` required adding it to `COMMIT_STEPS`.
+- **v1 scope:** losses, captures, and Combat SAR rescues. **Front-line movement and the SCAR
+  commander capture are deferred** — front movement needs a turn-over-turn position delta the
+  debrief doesn't carry, and the SCAR signal isn't cleanly exposed at commit yet.
+- **Player = BLUE** (the debrief-window convention). A RED-human setup would label sides from the
+  wrong perspective; revisit if/when a campaign flips the human to red.
+- **Needs an in-game pass (kneeboard eyeball):** fly turn 1, then on turn 2 confirm the band appears
+  on the cover page with correct losses/captures, that a quiet turn / turn 1 shows none, and that a
+  long flight plan suppresses it (fit guard) rather than clipping. The band render is
+  smoke-verified; only the in-cockpit look + the live numbers are the residual.

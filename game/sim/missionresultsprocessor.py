@@ -11,6 +11,7 @@ from game.missiongenerator.interceptattrition import (
     reconcile_intercept_losses,
 )
 from game.profiling import logged_duration
+from game.sitrep import Sitrep
 from game.squadrons.squadron import Squadron
 from game.theater.theatergroundobject import TheaterGroundObject
 from game.theater import ControlPoint, Player
@@ -77,6 +78,18 @@ class MissionResultsProcessor:
                 self.commit_captures(debriefing, events)
             with logged_duration("record_carcasses"):
                 self.record_carcasses(debriefing)
+            with logged_duration("record_sitrep"):
+                self.record_sitrep(debriefing)
+
+    def record_sitrep(self, debriefing: Debriefing) -> None:
+        # Capture a one-turn campaign summary for the next turn's kneeboard cover
+        # band (§29). Reads numbers the debriefing already tallied; commit() runs
+        # before the turn increments, so game.turn/current_day are the just-played
+        # turn. All inputs are debriefing-derived and unaffected by commit order,
+        # so this can run last.
+        self.game.last_sitrep = Sitrep.from_debriefing(
+            debriefing, self.game.turn, self.game.current_day
+        )
 
     @staticmethod
     def _combat_sar_rescued_unit_ids(debriefing: Debriefing) -> set[int]:

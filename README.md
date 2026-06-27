@@ -62,8 +62,10 @@ and selected later upstream fixes.
   onto the held command vehicle to take him alive (a clean grab reveals enemy command posts) — no
   insert, no capture. A botched grab strands the team as a "downed SOF team" objective you can fly
   a **helo CSAR recovery** against on a later turn before it is overrun. An opt-in `SCAR
-  auto-planning` setting can frag a SCAR hunt into your ATO automatically each turn (off by default
-  while the in-mission scripting is being playtested).
+  auto-planning` setting can frag **up to a couple** of SCAR hunts into your ATO automatically each
+  turn — spread across **different** armor groups (count capped by `SCAR hunts per turn`, default 2;
+  pair with `planner unpredictability` to vary which groups), augmenting the AI's BAI rather than
+  replacing it (off by default while the in-mission scripting is being playtested).
 - **Combat SAR** makes a downed pilot worth flying for. A CH-47 orbits near the front as the
   rescuer while a C-130 holds overhead as the HC-130 "King" — on-scene command with an
   air-tracking TACAN the helo homes on (an AI King lights it automatically; a player King

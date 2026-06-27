@@ -281,6 +281,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "auto_add_tarps_recon",
                     "scar_autoplan",
+                    "scar_autoplan_per_turn",
                     "scar_misid_penalty",
                 ],
             ),
@@ -842,13 +843,30 @@ class Settings:
         default=False,
         invert=False,
         detail=(
-            "When enabled, the auto-planner adds one player-flyable SCAR package "
-            "to the blue ATO each turn against a suitable enemy armor "
-            "concentration near the front, so a moving-target hunt is already on "
-            "the board without hand-building it. Off by default while the SCAR "
-            "in-mission scripting is still being playtested in the cockpit; turn "
-            "it on once you are happy flying hand-built SCAR sorties. The AI side "
-            "is unaffected (it still uses BAI for anti-armor)."
+            "When enabled, the auto-planner adds up to 'SCAR hunts per turn' "
+            "player-flyable SCAR packages to the blue ATO each turn against "
+            "suitable enemy armor concentrations near the front, so moving-target "
+            "hunts are already on the board without hand-building them. Each lands "
+            "on a different armor group (no stacking). Off by default while the "
+            "SCAR in-mission scripting is still being playtested in the cockpit; "
+            "turn it on once you are happy flying hand-built SCAR sorties. This "
+            "augments BAI rather than replacing it — the AI still uses BAI for "
+            "anti-armor on the groups SCAR does not claim."
+        ),
+    )
+    scar_autoplan_per_turn: int = bounded_int_option(
+        "SCAR hunts per turn (max SCAR packages the auto-planner frags into the blue ATO)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=2,
+        min=1,
+        max=8,
+        detail=(
+            "Caps how many player-flyable SCAR hunts the auto-planner adds per turn "
+            "(only when 'SCAR auto-planning' is on). Each lands on a different enemy "
+            "armor concentration. Pair with the 'planner unpredictability' setting to "
+            "randomise which groups get hunted turn-to-turn. 2 keeps it deliberate; "
+            "raise it for a SCAR-heavy ATO."
         ),
     )
     scar_misid_penalty: int = bounded_int_option(

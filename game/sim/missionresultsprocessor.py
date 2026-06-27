@@ -37,6 +37,8 @@ class MissionResultsProcessor:
         with logged_duration("Committing mission results"):
             with logged_duration("commit_air_losses"):
                 self.commit_air_losses(debriefing)
+            with logged_duration("record_pow_captures"):
+                self.record_pow_captures(debriefing)
             with logged_duration("commit_intercept_losses"):
                 self.commit_intercept_losses(debriefing)
             with logged_duration("commit_pilot_experience"):
@@ -108,20 +110,74 @@ class MissionResultsProcessor:
                 rescued.add(id(flying))
         return rescued
 
+    @staticmethod
+    def _combat_sar_captured_unit_ids(debriefing: Debriefing) -> set[int]:
+        """Identity set of the FlyingUnit losses whose pilot the enemy CAPTURED
+        (the Combat SAR snatch party reached them before rescue).
+
+        Like the rescue set, each capture carries the ejected aircraft's original
+        DCS unit name, so it resolves through the unit map to the FlyingUnit in
+        ``air_losses``. A captured pilot is held as a POW, not killed.
+        """
+        captured: set[int] = set()
+        for unit_name, _x, _y in (
+            getattr(debriefing.state_data, "combat_sar_captures", []) or []
+        ):
+            flying = debriefing.unit_map.flight(unit_name)
+            if flying is not None:
+                captured.add(id(flying))
+        return captured
+
+    def record_pow_captures(self, debriefing: Debriefing) -> None:
+        """Hold each captured pilot as a recoverable POW.
+
+        ``commit_air_losses`` already spared the kill (a POW is not KIA); here we
+        create the recovery objective -- a ``PendingPowRecovery`` on the (blue)
+        coalition carrying the airframe unit name (to spare the aviator on a
+        successful recovery) and the capture position (the POW is held at the
+        nearest enemy airfield, resolved when the objective is surfaced). Combat SAR
+        is blue-only, so captures belong to the blue coalition. Fail-safe: an empty
+        capture list (the normal case) is a no-op.
+        """
+        from game.pow_recovery import PendingPowRecovery
+
+        rescued = self._combat_sar_rescued_unit_ids(debriefing)
+        for unit_name, x, y in (
+            getattr(debriefing.state_data, "combat_sar_captures", []) or []
+        ):
+            flying = debriefing.unit_map.flight(unit_name)
+            if flying is not None and id(flying) in rescued:
+                # Defensive: a pilot recorded as both rescued and captured is
+                # treated as rescued (the rescue already spared them).
+                continue
+            self.game.blue.pending_pow_recoveries.append(
+                PendingPowRecovery(airframe_unit_name=unit_name, x=x, y=y)
+            )
+
     def commit_air_losses(self, debriefing: Debriefing) -> None:
-        # A Combat SAR pickup loses the airframe but saves the aviator: the loss is
-        # still attrited below, only the pilot is spared the kill.
+        # A Combat SAR pickup loses the airframe but saves the aviator; an enemy
+        # capture loses the airframe but holds the aviator as a POW. Either way the
+        # loss is still attrited below, only the pilot is spared the kill (a POW is
+        # recoverable -- record_pow_captures hangs the recovery objective).
         rescued_unit_ids = self._combat_sar_rescued_unit_ids(debriefing)
+        captured_unit_ids = self._combat_sar_captured_unit_ids(debriefing)
         for loss in debriefing.air_losses.losses:
             rescued = id(loss) in rescued_unit_ids
+            captured = (id(loss) in captured_unit_ids) and not rescued
             if rescued and loss.pilot is not None:
                 logging.info(
                     f"Combat SAR recovered the pilot of {loss.flight.unit_type} "
                     f"from {loss.flight.squadron}; airframe lost, aviator saved."
                 )
+            elif captured and loss.pilot is not None:
+                logging.info(
+                    f"Enemy captured the pilot of {loss.flight.unit_type} from "
+                    f"{loss.flight.squadron}; airframe lost, aviator held as POW."
+                )
             if (
                 loss.pilot is not None
                 and not rescued
+                and not captured
                 and (
                     not loss.pilot.player
                     or not self.game.settings.invulnerable_player_pilots

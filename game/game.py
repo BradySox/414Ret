@@ -532,6 +532,13 @@ class Game:
 
         sync_downed_sof_objectives(self)
 
+        # Surface captured-pilot POWs as recovery objectives held at enemy
+        # airfields (SCAR rescue rework, Phase 3). Rebuilt from each coalition's
+        # pending_pow_recoveries; idempotent like the SOF sync above.
+        from game.pow_objectives import sync_pow_objectives
+
+        sync_pow_objectives(self)
+
         # Materialise any TGOs queued for this turn via drop-spawn.
         from game.theater.unitplacement import (
             process_pending_placements,

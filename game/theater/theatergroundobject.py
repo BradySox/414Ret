@@ -932,6 +932,56 @@ class DownedSofGroundObject(TheaterGroundObject):
                 yield FlightType.CSAR
 
 
+class CapturedPilotGroundObject(TheaterGroundObject):
+    """A pilot captured by an enemy snatch party (Combat SAR rescue rework, Phase
+    3), surfaced as a recovery objective held at an enemy airfield.
+
+    Created dynamically each turn from the owning coalition's
+    ``pending_pow_recoveries`` (not authored in the .miz), positioned at the
+    nearest enemy control point (the "airfield" holding the POW) and anchored to a
+    friendly control point's ``connected_objectives`` so it renders as a friendly
+    recovery objective. It is *our* captured pilot, so it is friendly to its owner
+    and offers only a CSAR (recovery) mission to that side -- the enemy gets no
+    tasking against it.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        location: PresetLocation,
+        control_point: ControlPoint,
+    ) -> None:
+        super().__init__(
+            name=name,
+            category="captured_pilot",
+            location=location,
+            control_point=control_point,
+            sea_object=False,
+            task=None,
+        )
+
+    @property
+    def symbol_set_and_entity(self) -> tuple[SymbolSet, Entity]:
+        return SymbolSet.LAND_UNIT, LandUnitEntity.UNSPECIFIED
+
+    @property
+    def capturable(self) -> bool:
+        return False
+
+    @property
+    def purchasable(self) -> bool:
+        return False
+
+    def mission_types(self, for_player: Player) -> Iterator[FlightType]:
+        from game.ato import FlightType
+
+        # Only the owning side can task a recovery raid; offer CSAR (helo
+        # extraction of the POW from the enemy field). No enemy tasking and no
+        # other friendly missions -- this is our captured pilot, not a target.
+        if self.is_friendly(for_player):
+            yield FlightType.CSAR
+
+
 class EwrGroundObject(IadsGroundObject):
     def __init__(
         self,

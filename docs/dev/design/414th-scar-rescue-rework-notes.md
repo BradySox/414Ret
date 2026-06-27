@@ -1,26 +1,35 @@
 # SCAR rework — survivor rescue: the King / Jolly Green / Sandy package (design)
 
-**Status:** **Phase 1 MERGED** (PR #241, 2026-06-27). **Phase 2 BUILT** on branch
-`claude/scar-rescue-phase2` (the enemy-capture race — Lua on the `combatsar` plugin; in-game pass
-owed). Phases 3–5 designed below, not started.
-
-Phase 2 as built: the `combatsar` plugin now rolls a per-survivor chance that an enemy CJTF_RED
-infantry **snatch party** (`mist.dynAdd`) spawns `captureSpawnDistance` from a downed pilot and walks
-at them (red smoke + a coalition MAYDAY cue). A 5 s poll advances a capture clock while a party holds
-within `captureRange`; at `captureDwell` seconds (pilot un-rescued) the pilot is **CAPTURED** — retired
-from CSAR (`_RemoveNameFromDownedPilots`), its group destroyed, and `{unit, x, y}` appended to a new
-`combat_sar_captures` state global (declared + serialised in `dcs_retribution.lua`). Killing the party
-first **saves** the pilot. Six plugin tunables (`captureEnabled`/`Chance`/`SpawnDistance`/`Range`/
-`Dwell`/`PartySize`). Phase 3 (Python) parses `combat_sar_captures` into a POW objective.
-
-> **Phase 2 in-game pass:** eject near a blue Combat SAR package → sometimes red smoke + a snatch
-> party appears and walks in → kill it = "party neutralized"; let it reach the survivor for the dwell
-> = "CAPTURED" + the survivor despawns; `dcs.log` clean; `state.json` carries `combat_sar_captures`. Supersedes the armor-hunting "loiter-and-task under the King" rework
+**Status:** **Phase 1 MERGED** (PR #241). **Phase 2 MERGED** (PR #243 — the enemy-capture race).
+**Phase 3 BUILT** (PR #245 — captured pilots held as recoverable POWs at an enemy airfield). Phases 4–5
+designed below, not started. Supersedes the armor-hunting "loiter-and-task under the King" rework
 (`414th-scar-king-fac-notes.md` — **retired**; PR #189 to be abandoned, not merged). **Date:** 2026-06-27.
 
-> **Doc sync owed at commit/PR time:** `414th-features.md` §15, `README.md`, CLAUDE.md §15, and the
-> in-game-pass checklist (F5/F7–F11 armor-SCAR rows) still describe the retired armor hunt — update
-> them when Phase 1 is committed, not before (more phases land first).
+Phase 2 as built: the `combatsar` plugin rolls a per-survivor chance that an enemy CJTF_RED infantry
+**snatch party** (`mist.dynAdd`) spawns `captureSpawnDistance` from a downed pilot and walks at them
+(red smoke + a coalition MAYDAY cue). A 5 s poll advances a capture clock while a party holds within
+`captureRange`; at `captureDwell` seconds (pilot un-rescued) the pilot is **CAPTURED** — retired from
+CSAR (`_RemoveNameFromDownedPilots`), its group destroyed, and `{unit, x, y}` appended to the
+`combat_sar_captures` state global (declared + serialised in `dcs_retribution.lua`). Killing the party
+first **saves** the pilot. Six plugin tunables (`captureEnabled`/`Chance`/`SpawnDistance`/`Range`/
+`Dwell`/`PartySize`).
+
+> **Phase 2 in-game pass owed:** eject near a blue Combat SAR package → sometimes red smoke + a snatch
+> party appears and walks in → kill it = "party neutralized"; let it reach the survivor for the dwell =
+> "CAPTURED" + the survivor despawns; `dcs.log` clean; `state.json` carries `combat_sar_captures`.
+
+Phase 3 as built (Python; consumes the Phase 2 `combat_sar_captures` state global): `commit_air_losses`
+spares a captured pilot the kill (a POW is not KIA) and `record_pow_captures` creates a
+`PendingPowRecovery` (`game/pow_recovery.py`) on the blue coalition — persisted, save-migrated, aged on
+a 4-turn recovery clock. `game/pow_objectives.py` rebuilds each POW every turn as a
+`CapturedPilotGroundObject` at the nearest **enemy airfield** (anchored to a friendly CP for
+ownership), offering **CSAR** recovery to the owning side only. Fail-safe: no captures = no-op. Phase 4
+wires the actual recovery (delivering the POW home spares the aviator + an airfield-captured-frees-POW
+path).
+
+> **Doc sync owed:** `414th-features.md` §15, `README.md`, CLAUDE.md §15, and the in-game-pass checklist
+> (F5/F7–F11 armor-SCAR rows) still describe the retired armor hunt — sync them once the rework's phases
+> are merged, not before.
 **Related:** [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the King + Jolly Green + MOOSE
 `CSAR` engine this builds on), `414th-scar-king-fac-notes.md` (the retired armor direction),
 `414th-scar-task-spec.md` (the original SCAR — fully superseded), CLAUDE.md §15 (SCAR) + §21 (Combat

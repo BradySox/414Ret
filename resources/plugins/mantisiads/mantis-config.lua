@@ -40,9 +40,13 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- slip through a SAM's (now range-correct) ring before it reacted.
     local detectInterval = 15
     local ewrGrouping = 5000
+    -- Max simultaneously-active SAMs per band; 0 = unlimited (every in-range SAM
+    -- of that band engages). Long/medium default uncapped so the strategic IADS is
+    -- a real SEAD fight you can't fly through; short/point keep a rolling cap so the
+    -- SHORAD layer doesn't all light up at once on a low ingress.
     local maxActiveShort = 2
-    local maxActiveMid = 2
-    local maxActiveLong = 1
+    local maxActiveMid = 0
+    local maxActiveLong = 0
     local maxActivePoint = 6
     local autoRelocateEwr = false
     local enableC2Degradation = true
@@ -316,7 +320,19 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         mantis:SetSAMRange(samRange)
         mantis:SetDetectInterval(detectInterval)
         mantis:SetEWRGrouping(ewrGrouping)
-        mantis:SetMaxActiveSAMs(maxActiveShort, maxActiveMid, maxActiveLong, nil, maxActivePoint)
+        -- 0 means "no cap" for us; MANTIS wants a number, so pass one larger than
+        -- any campaign's SAM count to let every in-range SAM of that band engage.
+        local function uncap(n)
+            if n == nil or n == 0 then return 9999 end
+            return n
+        end
+        mantis:SetMaxActiveSAMs(
+            uncap(maxActiveShort),
+            uncap(maxActiveMid),
+            uncap(maxActiveLong),
+            nil,
+            uncap(maxActivePoint)
+        )
         if autoRelocateEwr then
             -- EWR-only relocation; HQ relocation needs a command center (phase 5).
             mantis:SetAutoRelocate(false, true)

@@ -34,22 +34,22 @@
             "defaultValue": 5000
         },
         {
-            "nameInUI": "Max simultaneously-active short-range SAMs per threat",
+            "nameInUI": "Max simultaneously-active short-range SAMs per threat (0 = unlimited)",
             "mnemonic": "maxActiveShort",
             "defaultValue": 2
         },
         {
-            "nameInUI": "Max simultaneously-active medium-range SAMs per threat",
+            "nameInUI": "Max simultaneously-active medium-range SAMs per threat (0 = unlimited)",
             "mnemonic": "maxActiveMid",
-            "defaultValue": 2
+            "defaultValue": 0
         },
         {
-            "nameInUI": "Max simultaneously-active long-range SAMs per threat",
+            "nameInUI": "Max simultaneously-active long-range SAMs per threat (0 = unlimited)",
             "mnemonic": "maxActiveLong",
-            "defaultValue": 1
+            "defaultValue": 0
         },
         {
-            "nameInUI": "Max simultaneously-active point-defense SAMs per threat",
+            "nameInUI": "Max simultaneously-active point-defense SAMs per threat (0 = unlimited)",
             "mnemonic": "maxActivePoint",
             "defaultValue": 6
         },

@@ -19,3 +19,6 @@ tasks:    # defined in flighttype.py
   TARCAP: 500
   BARCAP: 520
   Armed Recon: 180
+secondary_tasks:
+  - Armed Recon
+  - Strike

@@ -32,6 +32,12 @@ tasks:
   SEAD Escort: 230
   Strike: 315
   TARCAP: 645
+secondary_tasks:
+  - Armed Recon
+  - BAI
+  - CAS
+  - SCAR
+  - Strike
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

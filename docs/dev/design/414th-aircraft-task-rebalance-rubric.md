@@ -121,3 +121,30 @@ Flankers/Mirages and over-high Escort on pure fighters/interceptors tightened to
 bombers' BAI/Anti-ship reined in below their Strike primary. No mods, support, novelty, or
 deliberate suppressions touched. **Full "tighten everywhere" remains deferred** pending
 in-game scramble/CAP validation — re-run with relaxed guards only after that.
+
+## Auto-assignment gating via `secondary_tasks` (2026-06-27)
+
+Task *weights* set who is best for a role; `secondary_tasks` sets who the auto-planner will
+**never auto-assign** a role to (the jet keeps the capability for *manual* fragging):
+`auto_assignable = iter_task_capabilities() − secondary_tasks` (`game/squadrons/squadrondef.py`).
+This list had been near-empty (only `DEAD`, on 20 jets), so two "wrong role" patterns leaked:
+
+1. **Bombers on ARMED_RECON.** `AircraftType.__post_init__` enriches `task_priorities` with
+   derived lanes — `ARMED_RECON` ← CAS/BAI, `SCAR` ← CAS, `SEAD_SWEEP` ← SEAD, etc. **SCAR**
+   was gated on the DCS **AFAC** task (#228, "no more bomber SCAR"), but **ARMED_RECON was
+   never gated**, so every bomber holding a called-coordinate CAS weight (B-1B, B-52H, Tu-160,
+   Tu-22, Tu-16, H-6J, B-21, …) became auto-taskable to *roam-hunt* — which it can't do.
+   There is **no clean code discriminator** for "strategic bomber" (DCS `CAS`/`AFAC`/`GroundAttack`
+   flags don't separate B-1B from MiG-27/Gripen, and an AFAC gate would wrongly strip armed
+   recon from 44 legit non-AFAC attackers), so the fix is per-airframe `secondary_tasks`, not a
+   code gate. **The enrichment stays ungated: any NEW bomber needs `secondary_tasks: [Armed Recon]`
+   (and `SCAR` if it has the AFAC task, like the B-21).**
+2. **Air-superiority fighters on mud.** Token A2G weights on pure fighters made them
+   auto-taskable for CAS/BAI/Strike. Demoted the clear air-superiority/interceptor cases
+   (Su-27, [CH] Su-27P1M, Mirage 2000C, F-15D Baz, F-8E) off auto-A2G; **left** genuine
+   light-multiroles (MiG-17/21/23, Mirage F1) which really did fly A2G.
+
+**What landed: 16 files.** Bombers off `Armed Recon` (B-1B/B2/B-52H/B-21/Tu-160/Tu-160M2/
+Tu-22D/Tu-22KD/Tu-16/H-6J; B-21 also off `SCAR`); fighters off their auto-A2G. Verified with a
+role audit: questionable ARMED_RECON 22→11 (rest are attack helos / Bombcat F-14s / weight-0
+drones), A2A-on-mud 13→7 (rest are the kept multiroles). `pytest` green.

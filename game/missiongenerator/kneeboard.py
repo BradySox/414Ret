@@ -77,7 +77,6 @@ from .kneeboard_recon.atis import (
     wind_from_deg,
 )
 from .missiondata import AwacsInfo, TankerInfo
-from .scarluadata import ScarTasking
 from ..persistency import kneeboards_dir
 
 if TYPE_CHECKING:
@@ -1688,15 +1687,9 @@ class ScarTaskPage(KneeboardPage):
     rescue and talks Sandy on; this page is role guidance, not exact values.
     """
 
-    def __init__(
-        self,
-        flight: FlightData,
-        dark_kneeboard: bool,
-        tasking: Optional[ScarTasking] = None,
-    ) -> None:
+    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
         self.flight = flight
         self.dark_kneeboard = dark_kneeboard
-        self.tasking = tasking
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -2845,31 +2838,11 @@ class KneeboardGenerator(MissionInfoGenerator):
         }
     )
 
-    def __init__(
-        self,
-        mission: Mission,
-        game: "Game",
-        scar_taskings: Optional[List[ScarTasking]] = None,
-    ) -> None:
+    def __init__(self, mission: Mission, game: "Game") -> None:
         super().__init__(mission, game)
         self.dark_kneeboard = self.game.settings.generate_dark_kneeboard and (
             self.mission.start_time.hour > 19 or self.mission.start_time.hour < 7
         )
-        # SCAR taskings (one per SCAR target), so a SCAR flight's kneeboard can carry
-        # its own target signature instead of relying on the coalition-wide call.
-        self.scar_taskings: List[ScarTasking] = scar_taskings or []
-
-    def _scar_tasking_for(self, flight: FlightData) -> Optional[ScarTasking]:
-        """The SCAR tasking built for this flight's package target, if any. Matched by
-        object identity (same generation pass; see ScarTasking.target_id)."""
-        target = getattr(flight.package, "target", None)
-        if target is None:
-            return None
-        target_id = id(target)
-        for tasking in self.scar_taskings:
-            if tasking.target_id == target_id:
-                return tasking
-        return None
 
     def generate(self) -> None:
         """Generates a kneeboard per client flight, grouped by airframe.
@@ -3039,9 +3012,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                     king_beacons.append(f.combat_sar_king)
             return CombatSarTaskPage(flight, king_beacons, self.dark_kneeboard)
         elif flight.flight_type is FlightType.SCAR:
-            return ScarTaskPage(
-                flight, self.dark_kneeboard, self._scar_tasking_for(flight)
-            )
+            return ScarTaskPage(flight, self.dark_kneeboard)
         return None
 
     def _compact_kneeboard_pages(

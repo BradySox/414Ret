@@ -30,7 +30,7 @@ def _generator(*, code_words_on: bool) -> KneeboardGenerator:
         ),
         coalition_for=lambda friendly: coalition,
     )
-    return KneeboardGenerator(mission, game, None)  # type: ignore[arg-type]
+    return KneeboardGenerator(mission, game)  # type: ignore[arg-type]
 
 
 def _flight(flight_type: FlightType = FlightType.STRIKE) -> Any:

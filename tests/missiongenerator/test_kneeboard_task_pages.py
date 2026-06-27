@@ -8,11 +8,9 @@ from dcs.vehicles import AirDefence
 
 from game.ato.flighttype import FlightType
 from game.missiongenerator.kneeboard import (
-    KneeboardGenerator,
     KneeboardPageWriter,
     SeadTaskPage,
 )
-from game.missiongenerator.scarluadata import ScarTasking
 from game.settings.settings import TargetIntelPrecision
 from game.theater.theatergroundobject import SamGroundObject
 
@@ -76,37 +74,6 @@ def test_dead_task_page_consolidates_to_single_site_cue() -> None:
     assert row[0] == "3"
     assert row[1] == "SA-6 STR"
     assert row[3] == "N 35 00 00 E 36 00 00"
-
-
-def _kneeboard_generator(taskings: list[ScarTasking]) -> KneeboardGenerator:
-    mission = SimpleNamespace(start_time=SimpleNamespace(hour=12))
-    game = SimpleNamespace(settings=SimpleNamespace(generate_dark_kneeboard=False))
-    return KneeboardGenerator(mission, game, taskings)  # type: ignore[arg-type]
-
-
-def test_scar_tasking_is_matched_to_its_flight_by_target() -> None:
-    # The kneeboard links a SCAR flight to its tasking by the identity of the package
-    # target (same generation pass), so the right signature lands on the right page.
-    target = object()
-    mine = ScarTasking(
-        tasking_id="blue-scar-1",
-        variant="spawn",
-        target_id=id(target),
-        signature_text="1x SA-9 + 1x command vehicle + 2x truck",
-    )
-    theirs = ScarTasking(
-        tasking_id="blue-scar-2", variant="spawn", target_id=id(object())
-    )
-    gen = _kneeboard_generator([theirs, mine])
-
-    flight = SimpleNamespace(package=SimpleNamespace(target=target))
-    assert gen._scar_tasking_for(flight) is mine  # type: ignore[arg-type]
-
-    # A target with no tasking (or a flight with no target) resolves to None.
-    stray = SimpleNamespace(package=SimpleNamespace(target=object()))
-    assert gen._scar_tasking_for(stray) is None  # type: ignore[arg-type]
-    none_target = SimpleNamespace(package=SimpleNamespace(target=None))
-    assert gen._scar_tasking_for(none_target) is None  # type: ignore[arg-type]
 
 
 def _sead_flight_with_target(known: bool) -> Any:

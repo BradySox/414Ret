@@ -1142,226 +1142,67 @@ A polish pass over the **LUA Plugins Options** page so every plugin explains its
 
 ## 15. SCAR — RESCAP "Sandy" rescue escort (rescue rework)
 
-> ⚠️ **SUPERSEDED (2026-06-27) — read `docs/dev/design/414th-scar-rescue-rework-notes.md`.** SCAR was
-> repurposed from the armor-hunt task below into the **RESCAP "Sandy"** escort of the **Combat SAR
-> package** (King + Jolly Green + Sandy). The armor hunt + SOF commander-capture scenario described
-> in the rest of this section is **retired/dormant** (the SOF/CSAR recovery plumbing was repurposed
-> for the POW path). Current behaviour: `FlightType.SCAR` = an A-10C/AH-64D rescue escort scoped to the
-> FLOT; an **enemy-capture race** (`combatsar` plugin) lets a snatch party seize a downed pilot
-> (`combat_sar_captures`); a captured pilot becomes a **POW held at an enemy airfield**
-> (`PendingPowRecovery` + `CapturedPilotGroundObject`); a **surviving CSAR raid** or **recapturing the
-> field** frees the aviator while an abandoned POW (4-turn clock) is killed (`surviving_pows`); AI
-> safety-net package via `auto_combat_sar`. Key files: `game/pow_recovery.py`, `game/pow_objectives.py`,
-> `game/sim/missionresultsprocessor.py` (`record_pow_captures` / `commit_pow_recoveries`),
-> `resources/plugins/combatsar/`. The historical armor-hunt detail below is kept for reference only.
+> **Rework complete (2026-06-27).** SCAR was repurposed from an armor-hunt task into the **RESCAP
+> "Sandy"** rescue escort of the **Combat SAR package** (King + Jolly Green + Sandy). The old
+> moving-HVT armor-hunt scenario *and* its auto-planner were **deleted** (detailed below); the
+> SOF/CSAR recovery plumbing was repurposed for the POW path. Design source of truth:
+> `docs/dev/design/414th-scar-rescue-rework-notes.md`.
 
-A player-flown `FlightType.SCAR`: work a defined area to find and prosecute a high-value
-target hidden among look-alike decoys + clutter and light AAA. Design ground truth:
-`docs/dev/design/414th-scar-task-spec.md` (the original moving model) and
-`docs/dev/design/414th-scar-king-fac-notes.md` (the loiter rework — read this first now).
-SME-facing open questions: `docs/dev/design/414th-scar-commander-sme-questions.md`.
+**The shipped feature.** `FlightType.SCAR` is the **Sandy** rescue-escort role in the Combat SAR
+package — it no longer hunts armor. The retired armor-hunt scenario (the moving-HVT "find the real
+one among look-alike decoys" chase) and its opt-in auto-planner were **removed on 2026-06-27**:
+`game/missiongenerator/scarluadata.py`, the `scar` Lua plugin (`resources/plugins/scar/`, dropped
+from `plugins.json`), `game/plugins/scar.py` + its `manager.py` registration, `PlanScarHunts` /
+`PlanScar`, the `scar_autoplan*` settings, the `mission_data.scar_taskings` plumbing, and the
+`test_scar_bridge.py` / `test_scar_autoplan.py` suites are all gone. The only symbol that outlived
+the armor hunt is the SOF-team unit-name pair (`SCAR_SOF_UNIT_BLUE` / `SCAR_SOF_UNIT_RED`),
+relocated to the live rescue module `game/scar_rescue.py` (its only consumers are now the
+rescue/POW objectives + scoring).
 
-> 🔄 **Loiter-and-task rework — Phase 1 (PR #187, draft; pending in-game pass).** The original
-> design was a **chase**: the HVT (spawned runner / bound real armor / bound SCUD) fled to a
-> city and "fail" was it arriving. That is **retired**. SCAR now plans like the Combat SAR
-> package — the flight **loiters over a STATIC kill box** and the **C-130 "King" on-scene
-> commander** designates a **real, static armor TGO** to service. Because the target is a real
-> campaign TGO, kills attrit the enemy through the **normal ground-loss/debrief path** — there is
-> **no SCAR-specific success/failed scoring** (the plugin still emits those statuses, but they're
-> log-only; `commit_scar_results` only acts on `captured` + mis-ID + strandings). What's landed
-> on the branch:
-> - **`_make_static`** (`scarluadata.py`) zeroes all movement: the bound real group + spawned
->   decoys hold (dest == spawn, speed 0), the tasking dest/fire-point collapse onto the area
->   centre, and the SOF capture point moves onto the held target.
-> - **Lua static guards** (`scar_414_init.lua`): nothing drives, the SCUD stays inert
->   (WEAPON_HOLD), the instant arrival-fail is gated off — **fail = window timeout only**.
-> - **Inverted SOF capture**: the SOF team (player-delivered, bound by `maybe_bind_sof`) assaults
->   the **held command vehicle** and must hold on the **live** commander for `SCAR_SOF_DWELL_S`
->   (the dwell stops co-location instant-firing); killing the commander forfeits the capture.
-> - The bridge tests are rewritten to the static contract.
->
-> **Still to do** (later phases, separate PRs): the **King designation bridge** (smoke / map mark /
-> laser / IR / message) + the **talk-on ID puzzle** + R7, then polish. ⚠️ **Designation is
-> voice-first:** the King is a *player* who talks the strikers on over **SRS live voice** — the
-> scripted aids are **additive, skippable complements** (for an AI King / silent comms), never a
-> scripted-popup-only flow. The moving-model details below describe the retired path (code is
-> bypassed, not yet deleted).
+**Planner side (Python, CI-tested).** `FlightType.SCAR` (`game/ato/flighttype.py`) stays an
+air-to-ground primary, eligible on the **A-10C / AH-64D** rescue-escort airframes. It is
+**player-selectable**, and the AI fields it through the Combat SAR standing alert: `PlanCombatSar`
+(`game/commander/tasks/primitive/combatsar.py`) proposes the package = **1 King (C-130) + 1 Jolly
+Green (rescue helo) + 1 Sandy (SCAR)** when `auto_combat_sar` is on (`combat_sar_targets` is empty
+otherwise, so the default-off path is a pure no-op). A free Sandy degrades gracefully — if no
+A-10/Apache is available the fulfiller simply skips it. **BAI is untouched**; deleting the SCAR
+auto-planner that used to *steal* enemy battle positions hands them all back to BAI.
 
-- **Planner side (Python, CI-tested):** `FlightType.SCAR` (`game/ato/flighttype.py`,
-  air-to-ground primary, `ATTACK_STRIKE`); `ScarFlightPlan` cloned from Armed Recon
-  (`game/ato/flightplans/scar.py`) + builder dispatch; `configure_scar`
-  (`aircraftbehavior.py`, CAS-family task); **AFAC-gated** capability enrichment
-  (`game/dcs/aircrafttype.py.__post_init__` — SCAR is the airborne-FAC role, so only
-  aircraft DCS lets fly the **AFAC** task inherit it; strategic bombers like the B-1B / B-52
-  carry a CAS priority for dropping on *called* coordinates but lack AFAC and are excluded,
-  so the auto-planner never frags a bomber for the find-and-control hunt; covered by
-  `tests/test_aircraft_tasking_roles.py`); `mission_types` exposure (`missiontarget.py`); CAS loadout
-  fallback (`loadouts.py`); primary-task order (`package.py`). SCAR is player-selectable;
-  the auto-planner never frags it (no commander task) — auto-planning is a later phase.
-  **BAI is deliberately untouched** (still the AI/auto-planner anti-armor/convoy task).
-- **Scenario bridge:** `game/missiongenerator/scarluadata.py` builds a `ScarTasking` per
-  SCAR-targeted area (`build_scar_taskings(game, mission_start)`), emitted as
-  `dcsRetribution.Scar` via `populate_scar_lua`; injected by `_inject_scar_script()` in
-  `luagenerator.py` (gated on the `scar` plugin + a planned SCAR flight, mirrors the TARS
-  inject pattern). Three variants by target type:
-  - `spawn` (generic/rare convoy): spawns the whole ground picture — HVT signature convoy
-    (SA-9 + command + 2 trucks) + 2 partial-signature decoys + plain-truck clutter +
-    a light threat laydown — fleeing to the nearest enemy-held CP (the "city"). success =
-    HVT killed; fail = it reaches the city (command vehicle despawns) or the window expires.
-  - `armor` (real, **fully-mobile** `VehicleGroupGroundObject`): binds the REAL group as the
-    HVT (flees to the city) and mixes in spawned decoys derived from its live composition. A
-    group containing towed/static units (`SCAR_IMMOBILE_GROUND_TYPES` — e.g. a KS-19 flak gun;
-    `_group_is_mobile`) is NOT bound (it would strand the immobile unit, 2026-06-20 feedback) —
-    it falls through to the fully-mobile `spawn` picture instead.
-  - `missile` (real `MissileSiteGroundObject`, SCUD): the launcher races to a firing position
-    and actually launches at its target city on arrival (`FireAtPoint`) — the launch is the
-    fail. Stock random fire task suppressed for SCAR targets (`MissileSiteGenerator._is_scar_target`).
-- **Timing (important — proximity-gated as of 2026-06-21):** the whole picture (HVT + command
-  + decoys + clutter) **spawns PARKED at mission start** so the discrimination puzzle is present
-  whenever the player arrives, but the columns only **bug out once the strike package crosses the
-  activation ring** (`SCAR_PROXIMITY_M`, 50 NM; `package_near` in `scar_414_init.lua`, which counts
-  only **human-flown (client) aircraft** so an AI tanker/AWACS/CAP transiting the ring can't start
-  the chase before the player gets there). The fail
-  clock opens **on activation** (`activate_movement`: `deadline = now + window`), not at mission
-  start. This is the A-10 crews' fix (2026-06-20): the target is moving as you arrive but can
-  never be "long gone" if the jets are slow. It supersedes two earlier models — the original
-  TOT anchor (`go_live_s`; MP doesn't fly a TOT, so it only moved "right as we fired Mavs") and
-  the interim move-from-spawn (which leaned on slow pacing as the only escape guard). `go_live_s`
-  is still emitted but gates nothing; a kill before activation still counts as success. Each
-  parked group is recorded as a `mover` (`add_mover`) and routed on activation via `set_group_route`
-  (which forces alarm-GREEN so towed/SCUD groups actually drive; `mist.goRoute` — a hand-rolled
-  `setTask` did NOT reliably move them, don't revert). SOF capture binds to a **player-delivered**
-  team near the (static) commander (`maybe_bind_sof` → `find_delivered_sof`); there is **no scripted
-  fallback** and no HVT-distance prebind — both made sense only for the retired chase, and a fallback
-  would spawn on the held commander and auto-capture with no player (the loiter-rework capture bug,
-  fixed). No delivery = no capture. Tunables in `scar_414_init.lua` (`SCAR_PROXIMITY_M`)
-  / `scarluadata.py` (`SCAR_TRAVEL_M` ~15 NM, `SCAR_WINDOW_S`). **Verified in-game 2026-06-23**
-  (HVT drives/flees on activation; no alarm-RED pinning — checklist F1).
-- **Results bridge:** the `scar` plugin (`resources/plugins/scar/`, default ON) writes the
-  global `scar_results` (status per tasking); rides the proven TARS channel
-  (`dcs_retribution.lua` `write_state` → `StateData.scar_results` in `debriefing.py` →
-  `MissionResultsProcessor.commit_scar_results`, currently log-only). Verified round-trip
-  in-game 2026-06-17/18 (`SCAR area scar-N: launched/failed`).
-- **F10/briefing cues** (R11) drawn from the plugin: target signature, no-strike/firing-position
-  marks, decoy warning, addressed to the SCAR flight's coalition. The target mark now points at
-  the **search area center** (`centerX/centerY` on the tasking), NOT the exact HVT unit
-  (2026-06-20: a pin on the one correct group made it trivial) — combined with spawn-time decoys
-  and the HVT moving off its start point, the player must reconnoiter to ID it.
-- **MAGIC voice calls are group-targeted, NOT coalition-wide (2026-06-25).** The on-scene
-  controller's running cues — talk-on, RED-smoke designation, "King laser ON — code 1688", and
-  the F10 "say again" — went out via `outTextForCoalition`, blasting every BLUE pilot in theatre.
-  They now route through `scar_outtext(side, area, …)` (`scar_414_init.lua`), which `outTextForGroup`s
-  only the **human-flown SCAR-side flights on task** (a client unit inside the `SCAR_PROXIMITY_M`
-  ring of the area) **plus any King group** (`dcsRetribution.CombatSAR.kings`, BLUE-only) — so the
-  C-130 King player gets the call to relay by voice, matching the voice-first design. The one-time
-  **"SCAR INTEL" task briefings** (`brief_spawn`/`brief_armor`/`brief_missile`) intentionally stay
-  coalition-wide: they fire at mission start when every pilot is still on the ramp, with no on-task
-  audience to target yet — the kneeboard below is their targeted home.
-- **SCAR task kneeboard carries the per-tasking signature (2026-06-25).** `ScarTaskPage`
-  (`kneeboard.py`) now renders a **TARGET SIGNATURE** section with the flight's own HVT signature
-  (e.g. "1x SA-9 + 1x command vehicle + 2x truck") + decoy warning, so the pilot can win the ID
-  puzzle off the kneeboard instead of the coalition blast — **no exact target coords by design**
-  (finding it in the box is the task). Each `ScarTasking` carries a player-readable `signature_text`
-  (`_readable_signature`, name map mirrors the Lua `SCAR_UNIT_NAMES`) + a transient `target_id`
-  (`id(package.target)`); `KneeboardGenerator._scar_tasking_for(flight)` matches the flight to its
-  tasking by `id(flight.package.target)` within the generation pass (`mission_data.scar_taskings`,
-  built before `notify_info_generators`). Tests: `tests/test_scar_bridge.py` (signature/target_id),
-  `tests/missiongenerator/test_kneeboard_task_pages.py` (the flight↔tasking match).
-- Tests: `tests/test_scar.py` (FlightType + dispatch), `tests/test_scar_bridge.py`
-  (collection/emission/parse). **Lua needs in-game validation (not CI-runnable).**
-- Commander-capture campaign engine — **Phase 1 BUILT (gated by `scar_command_post_intel`,
-  now default ON for new campaigns while the feature is playtested; existing saves keep their
-  stored value)**: the whole commander-capture / SOF / CSAR stack below hangs off this one
-  setting (the "(gated …)" markers mean "behind this gate"). Enemy command posts
-  (`commandcenter` TGOs) are hidden ENTIRELY from
-  the player's map (`TheaterGroundObject.hidden_on_player_map(viewer)` gates `server/tgos/models.py`
-  `all_in_game` + `triggergenerator.py` `_gen_markers`) until revealed by capturing a commander
-  (`Coalition.captured_commander`, persisted + save-migrated; flipped by a `captured` SCAR result
-  in `commit_scar_results`) OR the normal discovery (`_command_post_revealed()` = capture or
-  `discovered_by_player`). `known_for` still gates composition. AI/planner use ground truth
-  (`viewer=None`). SME-answered 2026-06-18: reveal ALL, permanent, full reveal w/ exact coords,
-  ~2-3 posts/campaign. Tests: `tests/test_scar_command_post_fog.py`. **UI/fog side confirmed
-  in-game 2026-06-23** (posts hidden; the "Reveal fog of war" overview toggle shows both sides) —
-  the full capture→permanent-reveal carryover across turns still owes a pass (checklist F2).
-- Commander-capture **Phase 2a + 2c-1 BUILT (gated; capture loop verified in-game 2026-06-23,
-  checklist F1)** — the scripted SOF capture loop that PRODUCES the `captured` result. When `scar_command_post_intel` is on, the
-  generator allocates a bought, dedicated SOF infantry asset from friendly base inventory and
-  drops that team (`mist.dynAdd`, no CTLD dependency yet) at
-  `SCAR_SOF_LEAD_FRAC` (0.7) of the HVT's spawn→dest route; the SCAR plugin's `scar_check`
-  resolves `captured` when the un-killed command vehicle drives within `SCAR_SOF_CAPTURE_RADIUS_M`
-  (600 m) **and the spawned SOF group is still alive**. Priority killed > captured >
-  escaped/timeout; spawn + armor variants only. The finite pool uses the distinct
-  `SOF Team (BLUFOR|OPFOR)` GroundUnitTypes (price 8); SOF inventory is excluded from
-  front-line deployment ratios, combat-strength scoring, and automatic redeployment. A BLUE
-  capture spends one BLUE team before base-capture ownership changes are committed. Files:
-  `scarluadata.py` (`_sof_ambush`, `sof_*` fields, `_emit_sof`), `scar_414_init.lua`
-  (`maybe_bind_sof` → `find_delivered_sof`, `sof_assaulting`, the `captured` branch, `mark_sof`).
-  (The original Phase 2c-1 `spawn_sof` scripted stand-in was removed by the loiter rework — it
-  auto-captured on a static target.)
-  Plan: `docs/dev/design/414th-scar-phase2-sof-plan.md`. Tests: `tests/test_scar_bridge.py`.
-- Commander-capture **Phase 2c-2 BUILT (gated, #56)** — the player-flown insert. A
-  `FlightType.SOF` air-assault-shaped delivery flyable by **fixed-wing transports** (the C-130
-  "drop"; helos are reserved for recovery) inserts the capture team onto the (static) commander at
-  the kill box. The capture binds **only** to that player-delivered team (`find_delivered_sof`); the
-  loiter rework removed the scripted fallback, which on a static target would spawn on the commander
-  and auto-capture with no player (and removed the dead spawn-15-NM-out geometry so `sofX/Y`=centre
-  actually sits on the commander). No insert = no capture.
-  Economy is **debit-on-frag** (`commit_sof_deployments`): one bought team per fragged insert,
-  regardless of capture outcome. A clean capture **refunds** the team (it escapes with the
-  hostage); a botch **strands** it. See plan §9d. **EW exclusion verified in-game 2026-06-23**
-  ("the EW is gone" — the `c130j` plugin is correctly skipped on the SOF C-130; checklist F3).
-- Commander-capture **Phase 2c-3 / slice C BUILT (gated; recovery resolves in pure Python, no
-  new Lua)** — a botched/late capture strands the team, surfaced next turn as a first-class CSAR
-  objective:
-  - **Lifecycle** (`game/scar_rescue.py`): `PendingSofRescue` on each `Coalition.pending_csars`
-    (save-migrated) ages one turn per `Coalition.end_turn` and is written off at the turn cap
-    (default 3) **or** when its anchor base is overrun (`surviving_rescues`).
-  - **Surfacing** (`game/scar_objectives.py`, `DownedSofGroundObject`): rebuilt each
-    `initialize_turn` into a friendly "downed SOF team" TGO at the strand point, anchored to the
-    nearest friendly control point and registered in `db.tgos`; carries the physical team and
-    offers only `FlightType.CSAR` to the owning side.
-  - **Recovery** (`FlightType.CSAR` → `AirAssaultFlightPlan`, helo-only): a helo extraction;
-    `commit_sof_recoveries` recovers the team when a CSAR flight was flown at the objective and the
-    helo survived the deep sortie → refunds the bought team + clears the rescue (before captures
-    flip ownership). **A Combat SAR flight (§21) can also extract the team** in-mission (MOOSE
-    CASEVAC) — `commit_sof_recoveries` credits either path, refunding once.
-  - Tests: `tests/test_scar_rescue.py`, `tests/test_scar_objectives.py`,
-    `tests/test_aircraft_tasking_roles.py`, `tests/test_scar_command_post_fog.py`. Full design +
-    the Python-vs-Lua resolution decision: plan §9e.
-- **Mis-ID penalty BUILT (R7, gated by `scar_misid_penalty`)** — destroying one of an area's
-  decoy/clutter convoys on a SCAR sortie now costs budget, so picking out the real HVT matters.
-  Lua (`scar_414_init.lua`): decoy/clutter spawns register in `misid_group_index`; a new
-  `S_EVENT_KILL` branch in `scar_event_handler:onEvent` charges a mis-ID (`record_misid`) only
-  when the killer's coalition is the prosecuting (SCAR) side, mirroring a running `misId` count
-  onto the area's `scar_results` entry (preserved across `mark_result`). Python:
-  `debriefing.py` parses `misId` into `StateData.scar_misid`; `MissionResultsProcessor`
-  `_commit_scar_misid` debits `scar_misid_penalty` × count from the offending side's budget
-  (`Coalition.adjust_budget`), per blue/red prefix (legacy unprefixed = blue). The setting
-  (Campaign Doctrine, default **8** ≈ one SOF team; 0 disables and only logs) makes it tunable
-  and additive. Tests: `tests/test_scar_command_post_fog.py` (debit by side, legacy-id, zero
-  penalty, no-misid), `tests/test_scar_bridge.py` (parse + Lua-handler wiring). **Lua needs an
-  in-game pass.**
-- **Phase-3 auto-planning BUILT (opt-in, gated by `scar_autoplan`, default OFF)** — "SCAR
-  shows up in the turn's ATO without the player building it." `PlanScarHunts`
-  (`game/commander/tasks/compound/scarhunts.py`) frags **up to `scar_autoplan_per_turn` (default
-  2)** player-flyable SCAR packages per turn against enemy battle positions, via the thin
-  `PlanScar` (`primitive/scar.py`, BAI-shaped: `FlightType.SCAR` + common escorts). Like
-  `PlanBai`, **each `PlanScar` consumes its battle position** (`eliminate_battle_position` + a
-  `has_battle_position` precondition), so the hunts land on **different** armor groups instead of
-  stacking package-after-package on the single top target (the bug this fixed — the missing
-  consume let the planner re-pick the same #1 group every loop). Selection runs through
-  `shuffled_by_priority`, so the `ownfor_planner_unpredictability` lever varies which groups get
-  hunted turn-to-turn (0 = deterministic priority order); a `scar_hunts_planned` counter on
-  `TheaterState` enforces the per-turn cap. Wired late/low-priority in `PlanNextAction` (after
-  `DegradeIads`), so it **augments** BAI rather than replacing it — BAI (planned earlier, also
-  consuming) covers the armor groups SCAR doesn't claim. **Blue-only by design** — SCAR is a
-  human discrimination puzzle, so the AI keeps using BAI for anti-armor and never frags SCAR for
-  itself. Default OFF so it's a strict no-op until the SCAR in-mission Lua (F1/F3/F5) has had a
-  cockpit pass. Tests: `tests/test_scar_autoplan.py` (off/red/no-target no-op, a hunt per
-  distinct battle position, per-turn cap respected, `PlanScar` consumes its target + proposes
-  SCAR + escorts). If Tyler's C-130 `DEPLOYMENT` work ever lands, our
-  `FlightType.SOF` + inventory-debit-on-frag should converge onto his `PendingDeployments`
-  shape (shared `Coalition` + `MissionResultsProcessor` + `FlightType`).
+**The enemy capture race (runtime — `combatsar` plugin).** On a downed-pilot spawn the `combatsar`
+plugin rolls a chance to spawn an enemy **snatch party** that walks at the survivor (red smoke + a
+MAYDAY cue); the King smokes/marks/calls it so Sandy engages. Kill the party to save the pilot;
+let it dwell on the survivor un-rescued and the pilot is **CAPTURED** — appended to the
+`combat_sar_captures` state global (location + airframe unit name), parsed back by
+`Debriefing.parse_combat_sar_captures`. Six plugin tunables
+(`captureEnabled` / `Chance` / `SpawnDistance` / `Range` / `Dwell` / `PartySize`).
+
+**Capture → POW → recovery (Python).** `record_pow_captures` (`game/sim/missionresultsprocessor.py`)
+turns each capture into a `PendingPowRecovery` (`game/pow_recovery.py`) on the blue coalition
+(persisted, save-migrated, 4-turn clock); `commit_air_losses` spares a captured pilot the KIA (a
+POW is not killed). Each turn `game/pow_objectives.py` rebuilds the POW as a
+`CapturedPilotGroundObject` (`game/theater/theatergroundobject.py`) at the nearest **enemy
+airfield**, offering **CSAR** recovery to the owning side. Recovery resolves two ways: a
+**surviving CSAR raid** fragged at the holding field (`commit_pow_recoveries`, matched by airframe
+unit name) frees the aviator; and `surviving_pows` (`game/pow_recovery.py`, run from
+`Coalition.end_turn`) frees a POW whose **holding field is recaptured**, decrements the clock
+otherwise, and **kills** an abandoned POW at zero (permanent loss). v1 fidelity gap: a held pilot
+isn't pulled from the active roster.
+
+**The rescue substrate (repurposed, live).** The SOF-recovery plumbing that once served the
+armor-hunt commander-capture is now the POW/rescue substrate: `PendingSofRescue` +
+`Coalition.pending_csars` + the turn-cap/overrun loss clock (`game/scar_rescue.py`), and
+`DownedSofGroundObject` rebuilt each turn into a CP-anchored map objective (`game/scar_objectives.py`
+`sync_downed_sof_objectives`), gated by `scar_command_post_intel`. `commit_sof_recoveries` refunds
+a delivered SOF team. The **Sandy kneeboard** is `ScarTaskPage` (`game/missiongenerator/kneeboard.py`)
+— role guidance for holding with the King/Jolly, suppressing the threats around the survivor, and
+walking the rescue helo in.
+
+**Settings / state.** `scar_command_post_intel` (Campaign Doctrine; gates the on-map POW/SOF
+objectives) and `auto_combat_sar` (the AI standing alert). State globals: `combat_sar_captures`
+(captures) and `combat_sar_rescues` (pilot-spared credit). **Tests:**
+`tests/test_scar_command_post_fog.py` (intel-fog of the POW/command objectives + the SOF debit),
+plus the Combat SAR / POW coverage in `tests/test_missionresultsprocessor.py`. The capture race +
+King cueing + POW recovery **need an in-game pass** (checklist G8–G14).
 
 ### SOF insert generation fixes (2026-06-22)
 

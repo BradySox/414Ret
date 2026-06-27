@@ -38,7 +38,7 @@ class QArmorRecruitmentMenu(UnitTransactionFrame[GroundUnitType]):
         # buys it and the ground planner never deploys it (INFANTRY class) — this menu
         # is the player-only acquisition path. can_buy is affordability-only.
         if self.game_model.game.settings.scar_command_post_intel:
-            from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+            from game.scar_rescue import SCAR_SOF_UNIT_BLUE
 
             try:
                 unit_types.add(GroundUnitType.named(SCAR_SOF_UNIT_BLUE))

@@ -135,7 +135,7 @@ def test_capture_refunds_the_sof_team_that_escaped() -> None:
     # capture reveals the command posts AND returns the team to the pool, netting
     # out the debit-on-frag. It spends nothing here.
     from game.dcs.groundunittype import GroundUnitType
-    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+    from game.scar_rescue import SCAR_SOF_UNIT_BLUE
 
     processor, game = _processor(setting_on=True)
     unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
@@ -157,7 +157,7 @@ def test_flown_sof_insert_debits_a_team_from_its_origin_base() -> None:
     # Phase 2c-2: each fragged SOF insert spends one bought team from its origin
     # base, regardless of the capture outcome.
     from game.dcs.groundunittype import GroundUnitType
-    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+    from game.scar_rescue import SCAR_SOF_UNIT_BLUE
 
     processor, game = _processor(setting_on=True)
     unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
@@ -175,7 +175,7 @@ def test_two_inserts_on_one_target_debit_only_one_team() -> None:
     # A single HVT delivers one team however many inserts are fragged at it, so
     # consumption is deduped by target — no double-charge.
     from game.dcs.groundunittype import GroundUnitType
-    from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+    from game.scar_rescue import SCAR_SOF_UNIT_BLUE
 
     processor, game = _processor(setting_on=True)
     unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)

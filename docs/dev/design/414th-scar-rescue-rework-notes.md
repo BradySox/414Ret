@@ -1,10 +1,18 @@
 # SCAR rework — survivor rescue: the King / Jolly Green / Sandy package (design)
 
-**Status:** **Phases 1–3 MERGED** (PRs #241 / #243 / #245). **Phase 4 BUILT** (PR #247 — the POW
-recovery loop: a CSAR raid or recapturing the holding airfield **frees** the held aviator; an abandoned
-POW is **killed**). **Phase 5** (AI safety-net package + polish) designed below, not started. Supersedes
-the armor-hunting "loiter-and-task under the King" rework (`414th-scar-king-fac-notes.md` — **retired**;
-PR #189 to be abandoned, not merged). **Date:** 2026-06-27.
+**Status:** **Phases 1–4 MERGED** (PRs #241 / #243 / #245 / #247 — the POW recovery loop: a CSAR raid
+or recapturing the holding airfield **frees** the held aviator; an abandoned POW is **killed**).
+**Phase 5 AI safety net DONE** — `PlanCombatSar.propose_flight(FlightType.SCAR, 1)`
+(`game/commander/tasks/primitive/combatsar.py`) fields a Sandy alongside the standing King + Jolly
+alert, so the AI suppresses the threats around a downed pilot instead of just orbiting (remaining
+Phase-5 polish: kneeboards, SITREP line, night/illum cues). **Dead-code deletion DONE (2026-06-27):**
+the retired armor-hunt machinery — `game/missiongenerator/scarluadata.py`, the `scar` Lua plugin
+(`resources/plugins/scar/`, dropped from `plugins.json`), `game/plugins/scar.py`, `PlanScarHunts` /
+`PlanScar`, the `scar_autoplan*` settings, the `mission_data.scar_taskings` plumbing, and the
+`test_scar_bridge.py` / `test_scar_autoplan.py` suites — is removed; the live SOF unit-name pair
+(`SCAR_SOF_UNIT_BLUE` / `RED`) moved to `game/scar_rescue.py`. Supersedes the armor-hunting
+"loiter-and-task under the King" rework (`414th-scar-king-fac-notes.md` — **retired**; PR #189
+abandoned). **Date:** 2026-06-27.
 
 Phase 4 as built (Python): the held aviator is now a real stake. `PendingPowRecovery` carries the
 captured `Pilot`. `commit_pow_recoveries` frees a POW when a **surviving CSAR flight** is fragged
@@ -37,9 +45,10 @@ ownership), offering **CSAR** recovery to the owning side only. Fail-safe: no ca
 wires the actual recovery (delivering the POW home spares the aviator + an airfield-captured-frees-POW
 path).
 
-> **Doc sync owed:** `414th-features.md` §15, `README.md`, CLAUDE.md §15, and the in-game-pass checklist
-> (F5/F7–F11 armor-SCAR rows) still describe the retired armor hunt — sync them once the rework's phases
-> are merged, not before.
+> **Doc sync DONE (2026-06-27):** `414th-features.md` §15 (retired armor-hunt body replaced with the
+> shipped Sandy/POW writeup), CLAUDE.md/AGENTS.md §15, and the feature index are synced to the shipped
+> design; `README.md` was already accurate; the in-game-pass checklist's dead armor-SCAR rows were
+> retired in #259.
 **Related:** [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the King + Jolly Green + MOOSE
 `CSAR` engine this builds on), `414th-scar-king-fac-notes.md` (the retired armor direction),
 `414th-scar-task-spec.md` (the original SCAR — fully superseded), CLAUDE.md §15 (SCAR) + §21 (Combat
@@ -126,7 +135,7 @@ every survivor is. The retiring `scar` plugin's armor-hunt scenario is **not** t
 | **2 — The enemy capture race** | Emit capture params into `dcsRetribution.CombatSAR`. On downed-pilot spawn, sometimes spawn an enemy **snatch party** that races to the survivor; King smokes/marks/calls it so Sandy engages; party reaches survivor first → **CAPTURED** (despawn pilot, write a new `combat_sar_captures` state global). | In-game `.miz`: eject → snatch party races → kill it to save / let it arrive to lose; `dcs.log` clean |
 | **3 — Capture → POW objective** | Python parses `combat_sar_captures`; a captured pilot becomes a **POW** at debrief (distinct from KIA and from un-rescued) and creates a `PendingPowRecovery` **anchored at an enemy airfield/holding point**, surfaced as a map objective (mirror `scar_objectives.py`). | Retribution app: capture → debrief shows POW + a recovery objective at an enemy field |
 | **4 — Raid to recover the POW** | Wire `PendingPowRecovery` into the recovery path (SOF/CSAR raid or Combat SAR CASEVAC at the holding field): recovering the POW **spares the aviator** (deferred `combat_sar_rescues` credit). Turn-cap/overrun loss clock from `scar_rescue.py`. | Retribution app: capture turn N → raid turn N+1 → pilot back |
-| **5 — AI safety net + polish** | Extend `auto_combat_sar` to field King + Jolly + **1** Sandy. Kneeboards (Sandy RESCAP page; King capture callouts), SITREP line, night/illum cues, naming polish. | In-game + app |
+| **5 — AI safety net + polish** | ✅ AI safety net **DONE** — `auto_combat_sar` fields King + Jolly + **1** Sandy (`PlanCombatSar`). Sandy RESCAP kneeboard (`ScarTaskPage`) landed. Deferred polish: King capture callouts, SITREP line, night/illum cues, naming. | In-game + app |
 
 ### Why scoring is nearly free
 Killing the snatch party attrits enemy ground units through the **normal ground-loss path** (real

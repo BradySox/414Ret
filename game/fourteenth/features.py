@@ -77,7 +77,7 @@ FEATURES: tuple[Feature, ...] = (
         "scar_rescue",
         'SCAR — RESCAP "Sandy" rescue escort',
         15,
-        plugin_id="scar",
+        plugin_id="combatsar",
         settings_fields=("scar_command_post_intel",),
     ),
     Feature("settings_qol_audit", "Settings QOL audit", 16),

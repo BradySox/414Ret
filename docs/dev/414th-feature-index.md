@@ -26,7 +26,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §12 | TARS recon engine | `tars` | — |
 | §13 | Flight Control ATC _(retired)_ | — | — |
 | §14 | Plugin Options UI | — | — |
-| §15 | SCAR — RESCAP "Sandy" rescue escort | `scar` | `scar_command_post_intel` |
+| §15 | SCAR — RESCAP "Sandy" rescue escort | `combatsar` | `scar_command_post_intel` |
 | §16 | Settings QOL audit | — | — |
 | §17 | Auto-planner target unpredictability | — | `ownfor_planner_unpredictability`, `opfor_planner_unpredictability` |
 | §18 | Fog-of-war overview toggle | — | — |

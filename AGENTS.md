@@ -151,10 +151,13 @@ a checkbox in the custom map layers panel (`MapLayersControl`, §18), driven by 
 `PUT`s `/fog-of-war/reveal` then re-pulls `/game`.
 (`game/theater/theatergroup.py`, `theatergroundobject.py`; see features doc §3.)
 
-**Save migration.** Removed/renamed enums migrate old pickles in `FlightType._missing_`
-(runtime) and `persistency.py` `_handle_flight_type` (unpickler); fog state migrates in
-`__setstate__`. When you remove or rename a persisted field, add the migration in both
-places so existing campaigns don't brick.
+**Save migration.** Removed/renamed enum *values* migrate in **one place**:
+`FlightType._missing_` (`game/ato/flighttype.py`) maps legacy persisted strings to live
+members via the `_LEGACY_FLIGHT_TYPE_VALUES` table. The unpickler (`persistency.py`
+`_handle_flight_type`) calls `FlightType(value)`, which routes through `_missing_`, so it
+carries **no** parallel remap table — only unknown-value tolerance (degrade to BARCAP).
+Other persisted state (e.g. fog) migrates in each class's `__setstate__`. When you rename a
+persisted enum value, add the entry to `_LEGACY_FLIGHT_TYPE_VALUES` only.
 
 **Lua plugin discipline.** Lua 5.1 only, vanilla DCS units only (no HighDigitSAMs etc.),
 define functions before first use. The `lua-lint.yml` CI workflow runs `luac5.1 -p` over

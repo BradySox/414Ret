@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import io
 
-from game.ato.flighttype import FlightType
+from game.ato.flighttype import FlightType, _LEGACY_FLIGHT_TYPE_VALUES
 from game.persistency import MigrationUnpickler
 
 
@@ -21,6 +21,7 @@ def test_missing_maps_legacy_values() -> None:
     # Enum value lookup (the path pickle uses to rehydrate an enum member).
     assert FlightType("Scramble") is FlightType.BARCAP
     assert FlightType("ISR") is FlightType.JAMMING
+    assert FlightType("Cargo Transport") is FlightType.TRANSPORT
     # Live values are unaffected.
     assert FlightType("BARCAP") is FlightType.BARCAP
 
@@ -29,9 +30,25 @@ def test_unpickler_flight_type_migration() -> None:
     unpickler = MigrationUnpickler(io.BytesIO(b""))
     migrate = unpickler._handle_flight_type("game.ato.flighttype", "FlightType")
     assert migrate is not None
+    # The unpickler keeps no remap table of its own: these resolve through
+    # FlightType._missing_ via FlightType(value).
     assert migrate("Scramble") is FlightType.BARCAP
     assert migrate("ISR") is FlightType.JAMMING
+    assert migrate("Cargo Transport") is FlightType.TRANSPORT
     assert migrate("TARCAP") is FlightType.TARCAP
+
+
+def test_legacy_table_is_single_source_for_both_paths() -> None:
+    # Every legacy remap must resolve identically through the runtime path
+    # (FlightType(value)) and the unpickler path -- proving the table is the
+    # one source of truth and the unpickler no longer duplicates it.
+    unpickler = MigrationUnpickler(io.BytesIO(b""))
+    migrate = unpickler._handle_flight_type("game.ato.flighttype", "FlightType")
+    assert migrate is not None
+    assert _LEGACY_FLIGHT_TYPE_VALUES  # guard against an empty table
+    for legacy_value, expected in _LEGACY_FLIGHT_TYPE_VALUES.items():
+        assert FlightType(legacy_value) is expected
+        assert migrate(legacy_value) is expected
 
 
 def test_unpickler_substitutes_barcap_for_unknown_value() -> None:

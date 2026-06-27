@@ -168,3 +168,29 @@ def test_csar_excludes_fixed_wing(variant_id: str, tmp_path: Path) -> None:
     # and fighters never get the CSAR lane.
     aircraft = _aircraft(tmp_path, variant_id)
     assert not aircraft.capable_of(FlightType.CSAR)
+
+
+@pytest.mark.parametrize(
+    ("variant_id", "scar_capable"),
+    [
+        # SCAR is the airborne-FAC role (loiter over a kill box, find/ID the real
+        # target, control the attack), so only aircraft DCS lets fly the AFAC task
+        # get the lane. Strategic bombers carry a CAS priority -- they drop on
+        # *called* coordinates -- but lack AFAC, so they must NOT be SCAR-fragged
+        # (a B-1 can't hunt a kill box). See AircraftType.__post_init__.
+        ("A-10C Thunderbolt II (Suite 7)", True),
+        ("F-16CM Fighting Falcon (Block 50)", True),
+        ("F/A-18C Hornet (Lot 20)", True),
+        ("F-15E Strike Eagle", True),
+        ("B-1B Lancer", False),
+        ("B-52H Stratofortress", False),
+    ],
+)
+def test_scar_excludes_strategic_bombers(
+    variant_id: str, scar_capable: bool, tmp_path: Path
+) -> None:
+    aircraft = _aircraft(tmp_path, variant_id)
+    assert aircraft.capable_of(FlightType.SCAR) is scar_capable
+    # Excluding SCAR is not excluding CAS -- the bombers still drop on called
+    # coordinates; they just don't run the find-and-control hunt.
+    assert aircraft.capable_of(FlightType.CAS)

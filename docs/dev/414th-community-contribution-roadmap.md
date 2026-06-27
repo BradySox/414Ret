@@ -78,7 +78,7 @@ rest is the community capability.
 | Settings QOL audit (dead-field cleanup, AiRadioBehavior enum + migration) | Medium | none | — (settings-migration tests exist; confirm the AiRadioBehavior case before carve) | 🟢 |
 | Drop-spawn unit placement (Python core: `place_unit_group`, TGO + SSE) | High | none | **no dedicated unit test — readiness gap; only server-route tests exist** | 🟡 — §20 in-game pass + add coverage first |
 | Campaign maker / blank canvas (Python core) | High (the "major release") | none | `test_blanktheater.py`, `test_campaignairwingconfig_empty.py` | 🟡 — Increment C (support buildings) deferred; in-game BC-rows pending |
-| Recon fog-of-war core (viewer-aware visibility) | Medium (player-facing) | `hidden_on_player_map` / SCAR command-post gate → drop; TARPS damage-lag → PR #2 | `test_recon_intel_fog.py`, `test_recon_intel_api_fog.py`, `test_merad_reveal.py` | 🟢 (inv #8) — already carved + verified on upstream `dev` |
+| Recon fog-of-war core (viewer-aware visibility) | Medium (player-facing) | `hidden_on_player_map` / SCAR command-post gate → drop; TARPS damage-lag → PR #2 | `test_recon_intel_fog.py`, `test_recon_intel_api_fog.py`, `test_merad_reveal.py` | 🔵 (inv #8) — **pushed as PR #828, in review**; PR #2 (TARPS damage-lag) still to carve |
 
 ### Tier 2 — client (React, needs the CI rebuild)
 
@@ -112,22 +112,34 @@ project's own freeze policy ("no new feature work until the queue drains") *is* 
 upstreaming gate, because a cluster of ☑ VERIFIED Lua-free rows is exactly an
 upstream-PR batch.
 
+> **⚠️ Crowded-zone reality (2026-06-27).** Upstream `dev` is now actively worked by
+> **prokop7** (#676 BARCAP, #674 SEAD/DEAD, #678 BAI, #677 attack-infra, #679/#680 ground)
+> and **geofffranks** (#782 QRA, #772 SEAD, #823 frontline, #754 kneeboard, #765 waypoints,
+> #821 ATIS). Several waves below now **collide** with those PRs (flagged inline). The rule the
+> squadron set — *don't step on others* — means: check `gh pr list` for the surface first, and
+> when someone else owns it, **contribute by reviewing their PR**, not by opening a rival one.
+
 1. **Wave 0 — trivia (now).** `descriptionInUI` plugin-description UI. One field, ten
-   lines, no behavior change. Warm-up PR that also lands a UX win.
+   lines, no behavior change. Warm-up PR that also lands a UX win. **No collision.**
 2. **Wave 1 — the verified pure-Python fixes (now).** Inventory items 1–6: landmap
    perf, DEAD gate, support orbit, negative-start, runway fallback, despawn accounting
-   (Python half). All ☑ VERIFIED. Carve against a clean `dev`, one PR each. This is the
-   concrete "given back to the hub" deliverable.
-3. **Wave 2 — recon fog (already carved).** Push the prepared `fog-of-war-complete`
-   patch stack (PR #1 fog core, PR #2 TARPS damage-lag) from a checkout with creds.
-4. **Wave 3 — the bigger pure-Python features.** Air-defense planning, planner
-   unpredictability, MFD SAM hiding, target precision, kneeboard pagination, weapon
-   dates, settings QOL, drop-spawn (after adding a unit test), campaign
-   maker (after Increment C + the BC in-game pass). Each its own default-preserving PR.
+   (Python half). All ☑ VERIFIED. Carve against a clean `dev`, one PR each. **⚠️ DEAD gate
+   (inv #2) now collides with prokop7 #674 + geofffranks #772, and support orbit (inv #3)
+   overlaps prokop7 #676 — HOLD those two; landmap perf, negative-start, and runway fallback
+   are still clear.**
+3. **Wave 2 — recon fog.** **Done for PR #1 — pushed as [#828](https://github.com/dcs-retribution/dcs-retribution/pull/828), in review.**
+   Remaining: carve **PR #2** (TARPS recon platform + `alive_for` BDA damage-lag) once #828 lands.
+4. **Wave 3 — the bigger pure-Python features.** Planner unpredictability, MFD SAM hiding
+   (already pushed: #794), target precision, weapon dates, settings QOL, drop-spawn (after
+   adding a unit test), campaign maker (after Increment C + the BC in-game pass). **⚠️ Air-defense
+   planning is REMOVED from this wave — prokop7 #676 owns BARCAP; kneeboard pagination waits for
+   geofffranks #754 to land first.** Each remaining item its own default-preserving PR.
 5. **Wave 4 — the vendored-Lua features.** SCAR base task, TARS, TIC,
    QRA, C-130J framework. Each needs: split from the 414th doctrine/economy layer,
    default-OFF gate, an in-game pass, and ideally a sympathetic upstream Lua maintainer.
-   Highest value, highest effort — pursue once Waves 1–3 establish a track record.
+   **⚠️ QRA feeds geofffranks #782 — support that PR, don't resubmit; TIC/frontline overlaps
+   #823 (already adopted) + Druss99 #681.** Highest value, highest effort — pursue once Waves
+   1–3 establish a track record.
 
 **The honest read:** "ship it back to the hub" makes sense for *most of the fork* — just
 not as one monolithic push, and not the content/identity layer. The seam between

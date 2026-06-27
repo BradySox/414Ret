@@ -29,8 +29,19 @@ unvalidated "fix" is not something to ask upstream to take.
 | 🟢 READY | Lua-free, tested, in-game VERIFIED — carve the PR now |
 | 🟡 NEAR | Tested but needs an in-game pass (checklist row) before submitting |
 | 🟠 CARE | Touches Lua / a vendored script — split the upstreamable Python from the fork glue |
-| 🔵 DONE | Already an open/merged upstream PR |
+| 🔵 DONE / IN REVIEW | Already a merged or open upstream PR |
+| ⚪ WITHDRAWN | Was pushed, then self-closed — NOT upstream; re-carve if wanted |
 | ⛔ NEVER | Fork-specific — keep on `main`, do not upstream |
+
+> **⚠️ Crowded-zone check before any carve (added 2026-06-27).** Upstream `dev` is now
+> actively worked by **prokop7** (a full planning-revamp suite: #676 BARCAP, #674 SEAD/DEAD,
+> #678 BAI, #677 attack-infra, #679/#680 ground repairs) and **geofffranks** (#782 QRA,
+> #772 SEAD, #823 frontline, #754 kneeboard, #765 waypoints, #821 ATIS). **Do not carve any
+> planning / SEAD / DEAD / BARCAP / QRA / frontline / kneeboard item without first checking
+> `gh pr list -R dcs-retribution/dcs-retribution` for an in-flight PR on the same surface** —
+> that is exactly the "stepping on others" the squadron flagged. The safe lane right now is
+> the Lua-free items nobody else is touching (landmap perf, `descriptionInUI`, weapon dates,
+> target precision, negative-start check, settings QOL). See the live ledger in `CLAUDE.md`.
 
 ---
 
@@ -44,8 +55,8 @@ unvalidated "fix" is not something to ask upstream to take.
 | 4 | Player-despawn loss accounting | 🟠 CARE | High (false combat losses) | D1 ☑ |
 | 5 | SOF C-130 runway-start fallback | 🟢 READY | Medium (general spawner fix) | E ☑ |
 | 6 | Negative-start-packages takeoff-time check | 🟢 READY | Low/Medium (UI false-warn) | n/a |
-| 7 | AAQ-33 targeting-pod era restriction | 🔵 DONE | — | — |
-| 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🟢 READY | Medium (player-facing) — carved + verified on dev | — |
+| 7 | AAQ-33 targeting-pod era restriction | ⚪ WITHDRAWN | — (PR #786 self-closed; still fork-only) | — |
+| 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🔵 IN REVIEW | Medium (player-facing) — **pushed as PR #828**, awaiting review | — |
 | 9 | Combat SAR — pilot rescue flight type + scoring | 🟠 CARE / 🟡 NEAR | High (whole new playable loop) | G8–G11, H2 ☐ |
 
 ---
@@ -76,6 +87,9 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Tests:** `tests/test_dead_planning.py`.
 - **In-game pass:** B2 ☑ VERIFIED 2026-06-24 — blue defers deep strikes until the
   belt is down. Cleared to carve.
+- **⚠️ Collision (2026-06-27):** prokop7's **#674 (SEAD/DEAD revamp)** and geofffranks'
+  **#772 (SEAD loiter-and-react)** are both live on this exact surface. **HOLD** — review
+  theirs and check for overlap before opening a competing DEAD-gate PR.
 
 ### 3. Support-orbit depth + front-anchor — 🟢 READY
 - **What:** AWACS/tanker racetracks anchored on the FLOT (#84) and held at a
@@ -86,6 +100,10 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Files:** `game/ato/flightplans/supportorbit.py`.
 - **Tests:** `tests/test_support_orbit.py`.
 - **In-game pass:** C1 + C2 ☑ VERIFIED 2026-06-24. Cleared to carve.
+- **⚠️ Note (2026-06-27):** the related lateral-deconfliction carve was opened as **PR #790
+  and then self-withdrawn** — so support-orbit work is **not** upstream. The depth/front-anchor
+  fix here is distinct from #790; re-confirm no overlap with prokop7's #676 (BARCAP, touches
+  orbit geometry) before re-pushing.
 
 ### 4. Player-despawn loss accounting — 🟠 CARE
 - **What:** a player dropping to spectator (or a mission ending with players
@@ -126,15 +144,19 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Note:** `qt_ui` isn't in the CI mypy path upstream either; Black-clean is the
   bar.
 
-### 7. AAQ-33 targeting-pod era restriction — 🔵 DONE
-- Already open as upstream **#786** (`codex/fix-aaq33-era-restriction`). No
-  action here; listed so it isn't re-carved.
+### 7. AAQ-33 targeting-pod era restriction — ⚪ WITHDRAWN
+- Was opened as upstream **#786** (`codex/fix-aaq33-era-restriction`), then
+  **self-closed by bradyccox on 2026-06-13** (no maintainer rejection). It is therefore
+  **NOT upstream and still fork-only.** If the fix is wanted upstream, re-carve and
+  re-open a fresh PR against a clean `dev`.
 
-### 8. Recon fog-of-war — 🟢 READY (carved + verified 2026-06-23)
-- **Carved & verified:** `fog-of-war-complete.patch` (17 files, +473/-14) applies
-  cleanly on upstream `dev` `a31357b` and passes `black`, `mypy game tests` (439
-  files), and 9 fog `pytest`s in a clean upstream checkout. Ready to `git am` + push
-  from a checkout with creds.
+### 8. Recon fog-of-war — 🔵 IN REVIEW (pushed as PR #828)
+- **Pushed:** carved + opened upstream as **[PR #828](https://github.com/dcs-retribution/dcs-retribution/pull/828)**
+  (2026-06-23, +473/-14, `mergeable`, `REVIEW_REQUIRED`). Awaiting a maintainer review;
+  no action owed beyond responding to feedback when it arrives.
+- **History:** `fog-of-war-complete.patch` (17 files, +473/-14) applied cleanly on upstream
+  `dev` `a31357b` and passed `black`, `mypy game tests` (439 files), and 9 fog `pytest`s in a
+  clean upstream checkout before being pushed as #828.
 - **What:** the recon intel-fog (enemy site composition + threat/detection rings
   hidden until the site is attacked/scouted/destroyed) plus the transient
   "Reveal fog of war" overview toggle. Carved as a **2-PR stack**: PR #1 = the fog

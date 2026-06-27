@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from typing import Any, Iterable, cast
 
 from game.debriefing import Debriefing
-from game.sitrep import SideLosses, Sitrep, sitrep_band_lines
+from game.sitrep import SideLosses, Sitrep, sitrep_for_kneeboard
 from game.theater.player import Player
 
 
@@ -91,17 +91,14 @@ def test_loss_phrase_handles_none_and_site_plural() -> None:
     assert lines[1] == "Enemy (claimed): 2 sites"  # plural
 
 
-def test_band_lines_gating() -> None:
+def test_sitrep_for_kneeboard_gating() -> None:
     sitrep = Sitrep(
         7, date(1988, 6, 6), SideLosses(2, 0, 0), SideLosses(0, 0, 0), [], [], 0
     )
     empty = Sitrep(
         7, date(1988, 6, 6), SideLosses(0, 0, 0), SideLosses(0, 0, 0), [], [], 0
     )
-    assert sitrep_band_lines(sitrep, enabled=False) is None  # toggle off
-    assert sitrep_band_lines(None, enabled=True) is None  # turn 1 / no prior
-    assert sitrep_band_lines(empty, enabled=True) is None  # quiet turn
-    lines = sitrep_band_lines(sitrep, enabled=True)
-    assert lines is not None
-    assert lines[0] == "Turn 7 - 06 Jun 1988"
-    assert lines[1] == "Friendly losses: 2 air"
+    assert sitrep_for_kneeboard(sitrep, enabled=False) is None  # toggle off
+    assert sitrep_for_kneeboard(None, enabled=True) is None  # turn 1 / no prior
+    assert sitrep_for_kneeboard(empty, enabled=True) is None  # quiet turn
+    assert sitrep_for_kneeboard(sitrep, enabled=True) is sitrep  # shown

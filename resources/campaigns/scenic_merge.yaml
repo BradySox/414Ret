@@ -99,7 +99,7 @@ squadrons:
       size: 4
     - primary: AEW&C
       aircraft:
-        - E-3
+        - E-3A
       size: 2
     - primary: BARCAP
       secondary: any
@@ -210,7 +210,7 @@ squadrons:
     - primary: CAS
       secondary: air-to-ground
       aircraft:
-        - Mi-24V Hind-F
+        - Mi-24V Hind-E
       size: 2
   # OPFOR Third FOB
   FOB Khvosh:
@@ -231,7 +231,7 @@ squadrons:
     - primary: CAS
       secondary: air-to-ground
       aircraft:
-        - Mi-24V Hind-F
+        - Mi-24V Hind-E
       size: 2
   # OPFOR L1F1
   FOB Tang-e Dalan:
@@ -401,7 +401,7 @@ squadrons:
       size: 2
     - primary: Transport
       aircraft:
-        - IL-78MD
+        - IL-78M
       size: 2
     - primary: BARCAP
       secondary: any

@@ -174,7 +174,7 @@ squadrons:
     - primary: Transport
       aircraft:
         - C-17A
-        - IL-78MD
+        - IL-78M
 
   # Al Minhad AFB:
   # The initial front line base. Contains CAS aircraft, as well as an air-to-air

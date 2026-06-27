@@ -129,7 +129,7 @@ squadrons:
     - primary: CAS
       secondary: air-to-ground
       aircraft:
-        - Mi-24V Hind-F
+        - Mi-24V Hind-E
       size: 6
   # OPFOR Third FOB
   FOB Khvosh:

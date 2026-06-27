@@ -137,7 +137,7 @@ squadrons:
       size: 1
     - primary: Transport
       aircraft:
-        - IL-78MD
+        - IL-78M
       size: 1
   # OPFOR First FOB
   FOB Gecitkale:

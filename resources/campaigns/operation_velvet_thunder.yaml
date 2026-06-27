@@ -21,9 +21,9 @@ recommended_start_date: 1970-11-29
 version: "10.8"
 settings:
   airbase_threat_range: 20
-  a4_skyhawk: true
-  f111c: true
-  ov10a_bronco: true
+  a4_skyhawk: false
+  f111c: false
+  ov10a_bronco: false
   vietnamwarvessels: true
   squadron_start_full: true
 squadrons:
@@ -37,7 +37,7 @@ squadrons:
     - primary: CAS
       secondary: any
       aircraft:
-        - OV-10A Bronco
+        - A-1H Skyraider
       size: 8
     - primary: SEAD
       secondary: any
@@ -47,7 +47,7 @@ squadrons:
     - primary: BAI
       secondary: any
       aircraft:
-        - F-111C Aardvark
+        - A-6E Intruder
         - F-4E-45MC Phantom II
       size: 8
     - primary: SEAD Sweep
@@ -89,12 +89,11 @@ squadrons:
       secondary: any
       aircraft:
         - F-8E Crusader
-        - A-4E Skyhawk
       size: 8
     - primary: BAI
       secondary: any
       aircraft:
-        - A-4E Skyhawk
+        - A-6E Intruder
       size: 8
     - primary: DEAD
       secondary: any

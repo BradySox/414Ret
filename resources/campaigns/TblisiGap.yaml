@@ -34,7 +34,6 @@ squadrons:
       aircraft:
         - Su-25 Frogfoot
         - A-10C Thunderbolt II (Suite 3)
-        - A-4E Skyhawk
         - A-10A Thunderbolt II
     - primary: Refueling
     - primary: AEW&C

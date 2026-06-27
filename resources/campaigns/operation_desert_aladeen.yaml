@@ -46,7 +46,7 @@ squadrons:
     - primary: Strike
       secondary: air-to-ground
       aircraft:
-        - "[CH] B-21"
+        - "B-1B Lancer"
         - F-14B Tomcat
       size: 12
     - primary: Escort

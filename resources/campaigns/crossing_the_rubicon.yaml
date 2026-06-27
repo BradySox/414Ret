@@ -20,7 +20,7 @@ performance: 2
 recommended_start_date: 1988-07-13
 version: "10.8"
 settings:
-  f111c: true
+  f111c: false
   squadron_start_full: true
 squadrons:
   #Ramstein
@@ -87,7 +87,7 @@ squadrons:
     - primary: OCA/Runway
       secondary: any
       aircraft:
-        - F-111C Aardvark
+        - F-15E Strike Eagle (Suite 4+)
         - F-4E-45MC Phantom II
       size: 8
   #Frankfurt

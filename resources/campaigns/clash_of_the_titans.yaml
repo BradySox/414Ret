@@ -66,7 +66,7 @@ squadrons:
     - primary: DEAD
       secondary: any
       aircraft:
-        - "[CH] B-21"
+        - "B-1B Lancer"
         - F-16CM Fighting Falcon (Block 50)
       size: 12
     - primary: CAS

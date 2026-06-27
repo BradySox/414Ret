@@ -89,7 +89,7 @@ squadrons:
     - primary: Strike
       secondary: air-to-ground
       aircraft:
-        - "[CH] B-21"
+        - "B-1B Lancer"
         - F-117A Nighthawk
       size: 12
   #Tel Nof
@@ -145,7 +145,7 @@ squadrons:
     - primary: Air Assault
       secondary: any
       aircraft:
-        - UH-60L
+        - UH-60A
         - UH-60A
       size: 4
   #Borj El Arab International Airport

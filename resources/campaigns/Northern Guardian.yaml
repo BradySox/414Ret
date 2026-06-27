@@ -30,7 +30,7 @@ settings:
   squadron_start_full: true
   russianmilitaryassetspack: true
   usamilitaryassetspack: true
-  swedishmilitaryassetspack: true
+  swedishmilitaryassetspack: false
 squadrons:
   #Fassberg
   11:

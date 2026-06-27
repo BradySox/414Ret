@@ -280,14 +280,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     content into at most four pages instead of the ~10-page sprawl: **P1 Game Plan** (a **BLUF** band —
     task/target/TOT, push + success/abort code words, top live threat + how-to-defeat, bullseye — over
     airfields/route/fuel/weather), **P2 Threats & Targets** (target ALIC over the enemy-AD threat cards),
-    **P3 Comms & Coordination** (radios + AWACS/tanker/JTAC + code words + brevity + packages), and an
-    adaptive **P4 Flex** (recon target photo when target-recon imagery is on, else Fuel Ladder + the full
-    package list, which then drops off P3). The composite pages reuse the existing page classes via new
-    `render_into`/`render_*` section methods + `_draw_section_if_fits` (lower-priority sections drop rather
-    than spill past 4); the BLUF strings come from `_bluf_lines` (top-threat is always-on). The map image +
-    Notes page aren't generated in this mode; turning it **off** restores the full multi-page deck
-    byte-for-byte (separate assembly path `_compact_kneeboard_pages`). (`game/missiongenerator/kneeboard.py`,
-    `game/settings/settings.py`; features doc §4, checklist H9.)
+    **P3 Comms & Coordination** (radios + AWACS/tanker/JTAC + code words + brevity), and an
+    adaptive **P4 Flex** (recon target photo when target-recon imagery is on, else just the Fuel Ladder).
+    The **friendly-package list** rides on the always-present **cover page** (§30) in compact mode (recon
+    imagery owns the flex slot, so it had nowhere else; built once per shared-airframe deck). The **Fuel
+    Ladder** is one glanceable `Fuel` column (planned remaining) per steerpoint with the RTB surplus —
+    constant across the route by construction — surfaced once, replacing the redundant Plan/Min/Margin trio.
+    The composite pages reuse the existing page classes via new `render_into`/`render_*` section methods +
+    `_draw_section_if_fits` (lower-priority sections drop rather than spill past 4; `render_section`
+    self-guards so a dropped package list never strands a lonely heading); the BLUF strings come from
+    `_bluf_lines` (top-threat is always-on). The map image + Notes page aren't generated in this mode;
+    turning it **off** restores the full multi-page deck byte-for-byte (separate assembly path
+    `_compact_kneeboard_pages`). (`game/missiongenerator/kneeboard.py`, `game/settings/settings.py`;
+    features doc §4, checklist H9.)
 26. **Off-mission combat fidelity + PLAYER_AT_IP fix** — the sim auto-resolves engagements the player
     doesn't fly. Abstract combat was numbers-only coin flips (more flights win; survivors die 50/50; SAMs a
     flat 50%), so obsolete jets beat modern ones and SEAD meant nothing. `game/sim/combat/capability.py`
@@ -332,13 +337,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`; features doc §29,
     checklist K2.)
 30. **Dedicated kneeboard cover page** — a single front sheet that **always** leads a flight's deck,
-    consolidating three things: the **operation/turn/date header** (new — every deck opens telling you
+    consolidating four things: the **operation/turn/date header** (new — every deck opens telling you
     what op + turn), the previous turn's **SITREP** (§29, moved off the briefing-page band so it stops
-    crowding the flight plan), and the shared-airframe **flight index** (§27, was a separate conditional
-    page). `CoverPage` (`_build_cover_page`) is always prepended in `KneeboardGenerator.generate`,
-    replacing the conditional `KneeboardIndexPage` and the `BriefingPage` SITREP band. The cover is
-    page 1 so decks start on page 2 (the §27 start-page math is preserved); the index section appears
-    only for 2+ shared-airframe flights, and the SITREP section only when there's something to report.
+    crowding the flight plan), the shared-airframe **flight index** (§27, was a separate conditional
+    page), and — in compact mode — the coalition-wide **friendly-package list** (moved here because the
+    recon photo owns the flex page, and the cover's lower half was empty; §25). `CoverPage`
+    (`_build_cover_page`) is always prepended in `KneeboardGenerator.generate`, replacing the conditional
+    `KneeboardIndexPage` and the `BriefingPage` SITREP band. The cover is page 1 so decks start on page 2
+    (the §27 start-page math is preserved); the index section appears only for 2+ shared-airframe flights,
+    the SITREP section only when there's something to report, and the packages section only in compact mode
+    (the full deck keeps its standalone `FriendlyPackagesPage`).
     (`game/missiongenerator/kneeboard.py`, `game/sitrep.py`; features doc §30, checklist K2/H10.)
 
 ---

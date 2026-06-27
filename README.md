@@ -145,16 +145,18 @@ and selected later upstream fixes.
 - The player kneeboard is a **compact 3-4 page deck** (on by default): **Game Plan** (a BLUF up top —
   task/target/TOT, push + success/abort code words, the #1 live threat and how to defeat it, bullseye —
   then airfields, route, fuel, weather), **Threats & Targets** (your aimpoints over the enemy air-defense
-  cards), **Comms & Coordination** (radios, AWACS/tanker/JTAC, code words, brevity, friendly packages),
-  and an adaptive 4th page (recon target photo when target recon is on, otherwise the fuel ladder + full
-  package list). The optional pages below fold into these instead of sprawling to a dozen pages; a simple
-  CAP gets two. Turn off *Compact kneeboard* for the full multi-page deck with recon imagery.
+  cards), **Comms & Coordination** (radios, AWACS/tanker/JTAC, code words, brevity), and an adaptive
+  4th page (recon target photo when target recon is on, otherwise the fuel ladder). The friendly-package
+  list rides on the cover page (below). The optional pages below fold into these instead of sprawling to
+  a dozen pages; a simple CAP gets two. Turn off *Compact kneeboard* for the full multi-page deck with
+  recon imagery.
 - Every flight's kneeboard opens on a **cover page**: the operation name, turn, and date up top; a
   **"last turn" SITREP** (both sides' losses — the enemy's as *claimed* — bases captured or lost, and
-  downed pilots recovered); and, when several flights share an airframe (DCS stacks them into one
-  kneeboard), a **flight index** — each callsign, task, and start page — so you flip straight to your
-  own deck. The SITREP appears from your second mission on and hides after a quiet turn (*Campaign
-  SITREP band*, Kneeboards page, on by default).
+  downed pilots recovered); when several flights share an airframe (DCS stacks them into one kneeboard),
+  a **flight index** — each callsign, task, and start page — so you flip straight to your own deck; and
+  the **friendly-package list** (who's hitting what, and when) in its otherwise-empty lower half. The
+  SITREP appears from your second mission on and hides after a quiet turn (*Campaign SITREP band*,
+  Kneeboards page, on by default).
 - Kneeboards are restyled to use the page: clean headings with underline rules and spacing
   (no wasted bottom-half), and the Friendly Packages list flows into two columns when long.
 - **Custom kneeboards** can be imported from the *Kneeboards* toolbar button — add an image
@@ -172,9 +174,9 @@ and selected later upstream fixes.
   `PUSH <word>` tag on the join waypoint — to build a briefing. A **Comms & Brevity** kneeboard
   page carries the table (your task marked) plus a brevity crib filtered to your task. Fresh words
   every turn, stable while you plan. Off by default.
-- Optional **Fuel Ladder** kneeboard page — the planned fuel remaining vs. the minimum to get home
-  at each steerpoint, plus the margin between them (negative = you can't make it home as planned,
-  tank or divert) and Bingo/Joker. Off by default.
+- Optional **Fuel Ladder** kneeboard page — one glanceable column of planned fuel remaining at each
+  steerpoint, with the RTB margin (how much you have to spare over what you need to get home — negative
+  means tank or divert) called out once and Bingo/Joker. Off by default.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
 - When *Restrict weapons by campaign date* is on, era-defining **cockpit options** are now gated
   alongside the weapons: a pre-2003 campaign no longer offers (or quietly spawns) a **JHMCS**

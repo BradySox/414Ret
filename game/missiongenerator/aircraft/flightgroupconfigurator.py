@@ -247,7 +247,13 @@ class FlightGroupConfigurator:
     ) -> None:
         self.set_skill(unit, member)
 
-        if (code := member.tgp_laser_code) is not None:
+        # Only surface the laser code on the kneeboard when this member's loadout can
+        # actually use it (LGB or targeting pod). An escort F/A-18 still gets a code
+        # allocated (member.tgp_laser_code, applied to the unit for the .miz), but
+        # printing a Laser Code page for an aircraft carrying neither is just noise.
+        if (
+            code := member.tgp_laser_code
+        ) is not None and member.loadout.uses_laser_code():
             laser_codes.append(code.code)
         else:
             laser_codes.append(None)

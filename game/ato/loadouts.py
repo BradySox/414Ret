@@ -78,6 +78,28 @@ class Loadout:
                 return True
         return False
 
+    def uses_laser_code(self) -> bool:
+        """True if the loadout has any use for a laser code.
+
+        That's a laser-guided weapon to drop -- a laser-guided bomb (``WeaponType.LGB``)
+        or any store carrying a ``laser_code`` setting (LJDAM, laser Maverick, APKWS laser
+        rockets) -- or a **targeting pod** (``WeaponType.TGP``) to designate with (own or
+        buddy lase). Used to gate the kneeboard Laser Code page: an escort carrying neither
+        has no use for a code, while a DEAD/strike flight with LGBs or a TGP does.
+
+        Pods are matched by *type*, not ``accepts_laser_code`` -- a TGP store exposes no
+        ``laser_code`` setting -- and LGBs by type too, since a handful of LGB stores
+        (e.g. the AUF2 GBU-12 rack) likewise lack the setting while still being laser-guided.
+        """
+        for weapon in self.pylons.values():
+            if weapon is None:
+                continue
+            if weapon.weapon_group.type in (WeaponType.LGB, WeaponType.TGP):
+                return True
+            if weapon.accepts_laser_code():
+                return True
+        return False
+
     @staticmethod
     def _fallback_for(
         weapon: Weapon,

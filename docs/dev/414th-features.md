@@ -374,13 +374,19 @@ cross-campaign leakage). Old saves migrate via a `__setstate__` `setdefault`. Co
 (`game/missiongenerator/kneeboard.py`) auto-generates the enemy air-defense dossier for a player
 flight as **one card per system** (sites aggregated), modelled on the per-system threat cards in
 professional campaign Intelligence Briefings (design note `414th-campaign-doc-ideas-harvest.md`).
-`build_threat_intel_cards()` groups enemy `SamGroundObject` / `EwrGroundObject` by system
-(named via the recon module's `_greatest_alive_threat`) and each card pairs the **live** campaign
-numbers — engagement range (MEZ), detection range, HARM **ALIC** code (`AlicCodes`), live/dead
-site counts, and bullseye cues — with a **curated reference** from the new
-`game/data/threat_reference.py` (`ThreatReference` = guidance type, engagement ceiling, and a
-**"how to defeat"** tactics note), keyed by the same DCS unit ids as `AlicCodes` and matched on
-any of a site's units. **Recon-fog aware** (§3): a site the player has not identified
+`build_threat_intel_cards()` groups enemy `SamGroundObject` / `EwrGroundObject` by system and each
+card pairs the **live** campaign numbers — engagement range (MEZ), detection range, HARM **ALIC**
+code (`AlicCodes`), live/dead site counts, and bullseye cues — with a **curated reference** from the
+new `game/data/threat_reference.py` (`ThreatReference` = guidance type, engagement ceiling, and a
+**"how to defeat"** tactics note), keyed by the same DCS unit ids as `AlicCodes`. A card's **name and
+reference** come from `_system_identity()`, which ranks a site's units by `_CARD_IDENTITY_PRIORITY` so
+the **weapon system** (track radar / TELAR / launcher — the HARM-targetable shooter) is what names and
+describes the card, *not* the co-located search / acquisition / EW radar whose DCS display name reads
+"… SR". This is deliberately the inverse of the recon-map ring's `_greatest_alive_threat` (which keys
+on the lethal radar to size the engagement ring): a SEAD/DEAD brief should read "SA-5 S-200 Square Pair
+TR", not "ST-68U Tin Shield SR" — and it fixes a real bug where an SA-5 site pulled the weaponless EWR
+reference ("No weapons") from its acquisition radar despite a 138 nm MEZ. A bare radar site (nothing
+lethal co-located) still honestly names itself. **Recon-fog aware** (§3): a site the player has not identified
 (`known_for(player)` False) contributes only to a per-band "Unidentified MERAD" card — system,
 ring, HARM code and defeat note withheld until a TARPS overflight reveals it — and the intro line
 counts the still-unidentified sites. Cards sort live-most-lethal → unidentified and pack down the
@@ -419,11 +425,18 @@ computes by walking the plan backward over the per-leg burn model). The **Fuel L
 (`FuelLadderCard`) adds the missing half — the **planned fuel remaining** at each steerpoint
 (`FlightWaypoint.fuel_planned`, a new forward pass `WaypointGenerator._estimate_planned_fuel_for`
 that subtracts each leg's burn from the starting load `flight.fuel × KG_TO_LBS − taxi`, topping
-back up at a tanker `REFUEL` waypoint) — and the **margin** (Plan − Min) so a pilot sees both what
-they should have and what they need, with a negative margin flagging a sortie they can't fly home
-as planned. The burn model is approximate (it's the same estimate that drives `min_fuel`), so the
-card is labelled as planning figures. Gated by `generate_fuel_ladder_kneeboard` (default OFF);
-covered by `tests/missiongenerator/test_fuel_ladder.py`. In-game pass ☑ VERIFIED 2026-06-26 (H7). The last of the
+back up at a tanker `REFUEL` waypoint). The card shows **one glanceable `Fuel` column** (planned
+remaining) per RTB steerpoint. It deliberately does **not** print the old Plan/Min/Margin three
+columns: the per-waypoint margin (Plan − Min) is **constant across the whole route by construction**
+(start fuel − total burn − reserve, since the two figures are walked from opposite ends with the same
+per-leg burn), and Min is just Plan minus that constant — so both repeated the same number on every
+row. They collapse to a single **RTB margin** call-out above the ladder (`+N` spare, or a `−N` "tank or
+divert" warning), computed as the worst-case `min(fuel_planned − min_fuel)` so a tanker leg's reset is
+still caught. Post-landing reference points (e.g. the bullseye, which carry a forward-burn `fuel` but no
+min-to-RTB) are filtered off the ladder. The burn model is approximate (it's the same estimate that
+drives `min_fuel`), so the card is labelled as planning figures. Gated by `generate_fuel_ladder_kneeboard`
+(default OFF); the model is covered by `tests/missiongenerator/test_fuel_ladder.py` and the card render by
+`tests/missiongenerator/test_fuel_ladder_card.py`. In-game pass ☑ VERIFIED 2026-06-26 (H7). The last of the
 three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc-ideas-harvest.md`).
 
 **Compact 3-4 page kneeboard deck + BLUF.** With every optional page enabled the deck ran to
@@ -437,19 +450,34 @@ three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc
   the essentials, then the airfields, route (with the Min-fuel column), weather, bingo/joker and laser
   codes. The BLUF strings are computed by `KneeboardGenerator._bluf_lines` and passed in (the page stays
   decoupled from the threat/code-word models); the top-threat line is **always-on** (the threat cards are
-  computed unconditionally, independent of the brief-page toggle).
+  computed unconditionally, independent of the brief-page toggle). The **Laser Code** table is printed
+  only when the flight's loadout can actually use one — a laser-guided weapon (`WeaponType.LGB`, or any
+  store with a `laser_code` setting: LJDAM, laser Maverick, APKWS) or a targeting pod (`WeaponType.TGP`),
+  via `Loadout.uses_laser_code()`. A player still gets a code allocated on the unit (so it's there if they
+  re-arm), but an air-to-air escort or HARM-only SEAD flight no longer carries a meaningless code page
+  (`FlightGroupConfigurator.configure_flight_member` appends `None` to `FlightData.laser_codes` when the
+  loadout has no use for it, and the page is gated on `any(laser_codes)`).
 - **P2 Threats & Targets** (`CombatIntelPage`) draws the flight's target ALIC/coords (the per-task page's
   new `render_into`) over the enemy-AD **threat cards** (`ThreatIntelBriefPage.render_cards`, which packs
   as many as fit). Skipped entirely when a flight has neither (e.g. a BARCAP), giving it a 2-page deck.
 - **P3 Comms & Coordination** (`CommsCoordPage`) composes the support sections (comm ladder + AWACS/
   tanker/JTAC, via `SupportPage._render(draw_title=False, fill=False, include_airfield_dir=False)`) with
-  the code words + brevity crib (`BrevityCard.render_code_words`/`render_brevity`) and the friendly-package
-  list. Lower-priority sections draw only if they fit (`_draw_section_if_fits`), never spilling to a 5th.
+  the code words + brevity crib (`BrevityCard.render_code_words`/`render_brevity`). Lower-priority sections
+  draw only if they fit (`_draw_section_if_fits`), never spilling to a 5th. (The friendly-package list used
+  to ride here / on the flex page and got squeezed out when the page was full; it now lives on the **cover
+  page** — see below — so P3 has room for the brevity crib.)
 - **P4 Flex** is adaptive: the **recon target photo** (`_recon_detail_page`, the `DetailReconPage`/
   `AirbaseReconPage`/`FrontLineDetailPage` only — not the Departure/Overview pages) when
-  `generate_target_recon_kneeboard` is on, otherwise a text `FlexReferencePage` with the **Fuel Ladder**
-  (`FuelLadderCard.render_into`) + the **full friendly-package list** (which then drops off P3 to
-  declutter it).
+  `generate_target_recon_kneeboard` is on, otherwise a text `FlexReferencePage` with just the **Fuel
+  Ladder** (`FuelLadderCard.render_into`).
+
+The **friendly-package coordination list** rides on the always-present **cover page** in compact mode
+(`_build_cover_page`): with recon imagery owning the flex slot it had nowhere else to go, and the cover's
+lower half is otherwise empty. It's coalition-wide, so it's built **once** for the whole shared-airframe
+deck from a representative flight. `FriendlyPackagesPage.render_section` self-guards — its table is
+**self-limiting** (drops overflow rather than paginating), so a host fit-check can't tell when zero rows
+survive; the section probes its own post-heading capacity and draws **nothing** (no stranded "Friendly
+Packages" heading) when not even one row fits.
 
 The theater/package-targets **map** image and the **Notes** page are not generated in compact mode.
 Turning `compact_kneeboard` **off** restores the full multi-page deck (every optional page standalone,
@@ -2047,6 +2075,13 @@ prepended** in `generate()` (replacing the conditional `KneeboardIndexPage`). It
 - **Flight index (when 2+ client flights share the airframe):** the §27 callsign → start-page table,
   folded in as a section. The cover is **page 1**, so the first flight's block starts on **page 2** (the
   start-page cursor is unchanged from §27; a lone flight simply gets a cover with no index section).
+- **Friendly-package list (compact mode):** the coalition-wide package coordination list
+  (`build_all_packages_rows` → `FriendlyPackagesPage.render_section`), built **once** for the shared deck
+  from a representative flight. In the compact deck the recon photo owns the flex page, leaving the package
+  list nowhere to go; the cover's otherwise-empty lower half is its home. Gated by
+  `generate_all_packages_kneeboard` **and** `compact_kneeboard` (the full multi-page deck keeps its own
+  standalone `FriendlyPackagesPage`, so the cover would duplicate it). `render_section` self-guards against
+  a stranded heading when the cover is full.
 
 ### Why consolidate
 

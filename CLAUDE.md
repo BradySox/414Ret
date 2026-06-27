@@ -47,6 +47,11 @@ file. This guide is the map; those are the territory.
 - [docs/dev/414th-features.md](docs/dev/414th-features.md) — **the deep dive**: every 414th
   feature with file paths, gotchas, tests, and deferred work. Read the relevant section
   before editing a feature.
+- [docs/dev/414th-feature-index.md](docs/dev/414th-feature-index.md) — the **feature wiring
+  map**: a generated table of every feature that has concrete wiring (plugin and/or
+  `Settings` field). Source of truth is the **feature registry** `game/fourteenth/features.py`
+  (regenerate with `python -m game.fourteenth.features`); a test (`tests/fourteenth/`) fails CI
+  if a setting/plugin reference goes stale or the doc drifts. Add wired features there.
 - [docs/dev/414th-ingame-pass-checklist.md](docs/dev/414th-ingame-pass-checklist.md) — the
   **in-game pass tracker**: every "needs an in-game pass" item with an observable pass
   criterion + the fail signature to watch for. Update status when you fly it; clear the tag

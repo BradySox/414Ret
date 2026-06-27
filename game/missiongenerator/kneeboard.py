@@ -29,7 +29,7 @@ import textwrap
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
+from typing import Callable, Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 from dcs.mapping import Point
@@ -49,9 +49,9 @@ from game.dcs.aircrafttype import AircraftType
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
 from game.settings.settings import TargetIntelPrecision
-from game.theater import TheaterGroundObject, TheaterUnit
+from game.theater import FrontLine, TheaterGroundObject, TheaterUnit
 from game.theater.bullseye import Bullseye
-from game.theater.controlpoint import Airfield
+from game.theater.controlpoint import Airfield, ControlPoint
 from game.theater.theatergroundobject import EwrGroundObject, SamGroundObject
 from game.utils import Distance, UnitSystem, inches_hg, meters, mps, pounds
 from game.weather.weather import Weather
@@ -64,6 +64,9 @@ from .kneeboard_recon.pages import (
     _FLIGHT_TYPES_WITH_RECON,
     _greatest_alive_threat,
     _should_emit_departure,
+    AirbaseReconPage,
+    DetailReconPage,
+    FrontLineDetailPage,
 )
 from .kneeboard_recon.atis import (
     THUNDERSTORM_PRESSURE_DROP_INHG,
@@ -550,6 +553,10 @@ class BriefingPage(KneeboardPage):
         theater: Optional["ConflictTheater"] = None,
         omit_weather: bool = False,
         omit_min_fuel: bool = False,
+        task_line: Optional[str] = None,
+        push_line: Optional[str] = None,
+        threat_line: Optional[str] = None,
+        page_title: str = "Mission Info",
     ) -> None:
         self.flight = flight
         self.bullseye = bullseye
@@ -558,6 +565,16 @@ class BriefingPage(KneeboardPage):
         self.dark_kneeboard = dark_kneeboard
         self.theater = theater
         self.atis_by_name = atis_by_name or {}
+        # Page heading; the compact deck renames this to "Game Plan" to match its
+        # three-page naming (Game Plan / Threats & Targets / Comms & Coordination).
+        self.page_title = page_title
+        # BLUF (bottom line up front): the few items a pilot needs even if this is
+        # the only kneeboard page they read (design §4 -- priority on the page they
+        # open to first). Computed by the generator and passed in so the page stays
+        # decoupled from the threat/code-word models; any may be None.
+        self.task_line = task_line
+        self.push_line = push_line
+        self.threat_line = threat_line
         # De-duplication (design §4): drop the weather block when the recon Departure
         # page already carries it, and the Min-fuel column when the Fuel Ladder page
         # owns the fuel ladder. The Friendly Packages list moved to its own page.
@@ -580,7 +597,21 @@ class BriefingPage(KneeboardPage):
             custom_name_title = ' ("{}")'.format(self.flight.custom_name)
         else:
             custom_name_title = ""
-        writer.title(f"{self.flight.callsign} Mission Info{custom_name_title}")
+        writer.title(f"{self.flight.callsign} {self.page_title}{custom_name_title}")
+
+        # BLUF block: task/target/TOT, push + event code words, the single most
+        # lethal live threat, and bullseye -- the priority items on the page players
+        # open to first (design §4). Kept tight so the flight-plan table still fits
+        # on this same page. Each line is optional; bullseye is always present.
+        bluf = [
+            line for line in (self.task_line, self.push_line, self.threat_line) if line
+        ]
+        bluf.append(f"BULLSEYE {self.bullseye.position.latlng().format_dms()}")
+        writer.heading("BLUF")
+        writer.rule()
+        for line in bluf:
+            writer.text(line, wrap=True)
+        writer.vspace(8)
 
         # TODO: Handle carriers.
         writer.heading("Airfield Info")
@@ -640,8 +671,6 @@ class BriefingPage(KneeboardPage):
             headers=headers,
             font=self.flight_plan_font,
         )
-
-        writer.text(f"Bullseye: {self.bullseye.position.latlng().format_dms()}")
 
         fl = self.flight
 
@@ -894,6 +923,23 @@ class FriendlyPackagesPage(KneeboardPage):
             self.rows, headers=self.HEADERS, font=font
         )
 
+    def render_section(self, writer: KneeboardPageWriter) -> None:
+        """Draw heading + two-column table at the cursor (no title; for composite use).
+
+        Rows that don't fit below the cursor are dropped rather than paginated, so the
+        compact deck stays within its page budget.
+        """
+        writer.heading(self.HEADING)
+        writer.rule()
+        font = self._font()
+        single_capacity = writer.remaining_table_rows(font, bool(self.HEADERS))
+        if len(self.rows) <= single_capacity:
+            writer.table_paginated(self.rows, headers=self.HEADERS, font=font)
+        else:
+            writer.table_two_column_paginated(
+                self.rows, headers=self.HEADERS, font=font
+            )
+
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
         self._render(writer)
@@ -982,13 +1028,27 @@ class SupportPage(KneeboardPage):
             )
         return pages
 
-    def _render(self, writer: KneeboardPageWriter) -> List[List[str]]:
-        """Draw the Support Info page; return airfield rows that overflowed."""
-        if self.flight.custom_name:
-            custom_name_title = ' ("{}")'.format(self.flight.custom_name)
-        else:
-            custom_name_title = ""
-        writer.title(f"{self.flight.callsign} Support Info{custom_name_title}")
+    def _render(
+        self,
+        writer: KneeboardPageWriter,
+        *,
+        draw_title: bool = True,
+        fill: bool = True,
+        include_airfield_dir: bool = True,
+    ) -> List[List[str]]:
+        """Draw the Support Info page; return airfield rows that overflowed.
+
+        ``draw_title`` / ``fill`` / ``include_airfield_dir`` let the compact deck's
+        Comms & Coordination page reuse this without the page title, with tight
+        section spacing (so code words + brevity + packages fit below), and without
+        the friendly-field directory (the relevant fields are on the Game Plan page).
+        """
+        if draw_title:
+            if self.flight.custom_name:
+                custom_name_title = ' ("{}")'.format(self.flight.custom_name)
+            else:
+                custom_name_title = ""
+            writer.title(f"{self.flight.callsign} Support Info{custom_name_title}")
 
         # Package FREQ / TOT line, above the boxed section tables.
         package = self.flight.package
@@ -1112,8 +1172,10 @@ class SupportPage(KneeboardPage):
         # vertical space as even gaps so the tables breathe down the page
         # (light underline-rule headings, no boxes). With a directory present we
         # use a small fixed gap and let the directory fill the rest (it paginates).
+        # In compact mode (``fill=False``) keep a small fixed gap so code words +
+        # brevity + packages fit below on the same page.
         gap = 12
-        if not self.airfield_rows:
+        if fill and not self.airfield_rows:
             probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
             probe.y = writer.y
             render_sections(probe, 0)
@@ -1125,7 +1187,7 @@ class SupportPage(KneeboardPage):
         # Airfield Directory (friendly fields: ATC / ATIS / TACAN / I(C)LS / RWY).
         # Rows that don't fit spill onto a continuation page (see paginate()).
         overflow: List[List[str]] = []
-        if self.airfield_rows:
+        if include_airfield_dir and self.airfield_rows:
             writer.text(self.AIRFIELD_HEADING, font=writer.heading_font)
             writer.rule()
             overflow = writer.table_paginated(
@@ -1234,12 +1296,31 @@ class SeadTaskPage(KneeboardPage):
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        if self.flight.custom_name:
-            custom_name_title = ' ("{}")'.format(self.flight.custom_name)
-        else:
-            custom_name_title = ""
+        self.render_into(writer)
+        writer.write(path)
+
+    def render_into(
+        self, writer: KneeboardPageWriter, *, draw_title: bool = True
+    ) -> None:
         task = "DEAD" if self.flight.flight_type == FlightType.DEAD else "SEAD"
-        writer.title(f"{self.flight.callsign} {task} Target Info{custom_name_title}")
+        if draw_title:
+            if self.flight.custom_name:
+                custom_name_title = ' ("{}")'.format(self.flight.custom_name)
+            else:
+                custom_name_title = ""
+            writer.title(
+                f"{self.flight.callsign} {task} Target Info{custom_name_title}"
+            )
+
+        # Larger-than-default fonts: this page carries only a few rows, so bigger type
+        # fills the page and reads better in the cockpit. The exact-coords table keeps
+        # the default font (its long coordinate strings need the narrower glyphs).
+        body_font = ImageFont.truetype(
+            "courbd.ttf", 20, layout_engine=ImageFont.Layout.BASIC
+        )
+        area_font = ImageFont.truetype(
+            "courbd.ttf", 24, layout_engine=ImageFont.Layout.BASIC
+        )
 
         target = self.flight.package.target
         if not self._target_identified and isinstance(target, TheaterGroundObject):
@@ -1253,9 +1334,9 @@ class SeadTaskPage(KneeboardPage):
             writer.text(
                 f"{band}. Composition not yet identified — fly TARPS recon (or "
                 "strike/scout the site) to reveal the emitters and their HARM codes.",
+                font=body_font,
                 wrap=True,
             )
-            writer.write(path)
             return
 
         if self._use_target_area_cues:
@@ -1275,6 +1356,7 @@ class SeadTaskPage(KneeboardPage):
                     for t in self.target_units
                 ],
                 headers=["Description", "ALIC"],
+                font=area_font,
             )
         else:
             # Exact (SEAD) view: per-emitter steerpoint + precise coordinates.
@@ -1288,8 +1370,6 @@ class SeadTaskPage(KneeboardPage):
                 ],
                 headers=["STPT", "Description", "ALIC", "Location"],
             )
-
-        writer.write(path)
 
     def target_info_row(self, unit: TheaterUnit, number: Optional[int]) -> List[str]:
         return [
@@ -1344,11 +1424,18 @@ class StrikeTaskPage(KneeboardPage):
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        if self.flight.custom_name:
-            custom_name_title = ' ("{}")'.format(self.flight.custom_name)
-        else:
-            custom_name_title = ""
-        writer.title(f"{self.flight.callsign} Strike Task Info{custom_name_title}")
+        self.render_into(writer)
+        writer.write(path)
+
+    def render_into(
+        self, writer: KneeboardPageWriter, *, draw_title: bool = True
+    ) -> None:
+        if draw_title:
+            if self.flight.custom_name:
+                custom_name_title = ' ("{}")'.format(self.flight.custom_name)
+            else:
+                custom_name_title = ""
+            writer.title(f"{self.flight.callsign} Strike Task Info{custom_name_title}")
 
         is_f15e = self.flight.units[0].unit_type == F_15ESE
         headers = ["STPT", "Description", "Location"]
@@ -1376,8 +1463,6 @@ class StrikeTaskPage(KneeboardPage):
             ],
             headers=headers,
         )
-
-        writer.write(path)
 
     @staticmethod
     def _target_description(display_name: str, index: int, is_f15e: bool) -> str:
@@ -1436,8 +1521,19 @@ class CombatSarTaskPage(KneeboardPage):
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        self.render_into(writer)
+        writer.write(path)
+
+    def render_into(
+        self,
+        writer: KneeboardPageWriter,
+        *,
+        draw_title: bool = True,
+        fill: bool = True,
+    ) -> None:
         custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
-        writer.title(f"{self.flight.callsign} Combat SAR{custom}")
+        if draw_title:
+            writer.title(f"{self.flight.callsign} Combat SAR{custom}")
 
         # Larger body/heading type than the page defaults: this briefing is a few
         # short paragraphs, so we scale up and space the sections out (an
@@ -1533,6 +1629,12 @@ class CombatSarTaskPage(KneeboardPage):
                 if i < len(sections) - 1:
                     w.vspace(section_gap)
 
+        if not fill:
+            # Composite (compact deck) use: fixed modest gap, no fill-distribute, so
+            # the brief sits below any threat cards without claiming the whole page.
+            render(writer, 16)
+            return
+
         # Probe the natural height with no extra spacing, then distribute the
         # leftover vertical space as even gaps between sections so the page
         # breathes top-to-bottom — capped so a short brief doesn't leave yawning
@@ -1544,7 +1646,6 @@ class CombatSarTaskPage(KneeboardPage):
         section_gap = int(max(16, min(80, leftover // max(1, len(sections) - 1))))
 
         render(writer, section_gap)
-        writer.write(path)
 
 
 class ScarTaskPage(KneeboardPage):
@@ -1568,8 +1669,17 @@ class ScarTaskPage(KneeboardPage):
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
-        writer.title(f"{self.flight.callsign} SCAR{custom}")
+        self.render_into(writer)
+        writer.write(path)
+
+    def render_into(
+        self, writer: KneeboardPageWriter, *, draw_title: bool = True
+    ) -> None:
+        if draw_title:
+            custom = (
+                f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+            )
+            writer.title(f"{self.flight.callsign} SCAR{custom}")
 
         writer.heading("TASK")
         writer.text(
@@ -1612,8 +1722,6 @@ class ScarTaskPage(KneeboardPage):
             "(and re-calls the laser code).",
             wrap=True,
         )
-
-        writer.write(path)
 
 
 def build_airfield_directory_rows(
@@ -1883,12 +1991,12 @@ class ThreatIntelBriefPage(KneeboardPage):
 
     def _heading_font(self) -> ImageFont.FreeTypeFont:
         return ImageFont.truetype(
-            "courbd.ttf", 22, layout_engine=ImageFont.Layout.BASIC
+            "courbd.ttf", 26, layout_engine=ImageFont.Layout.BASIC
         )
 
     def _body_font(self) -> ImageFont.FreeTypeFont:
         return ImageFont.truetype(
-            "courbd.ttf", 16, layout_engine=ImageFont.Layout.BASIC
+            "courbd.ttf", 19, layout_engine=ImageFont.Layout.BASIC
         )
 
     def _draw_header(self, writer: KneeboardPageWriter) -> None:
@@ -1937,6 +2045,22 @@ class ThreatIntelBriefPage(KneeboardPage):
         probe.y = 0
         self._render_card(probe, card)
         return probe.y
+
+    def render_cards(self, writer: KneeboardPageWriter) -> int:
+        """Draw as many cards as fit below the cursor; return the number drawn.
+
+        Used by the compact deck's Threats & Targets page, which composes the cards
+        under a shared title with the target ALIC table. Greedy single-page fill (no
+        continuation) so the compact deck stays within its page budget.
+        """
+        limit = writer.image_size[1] - writer.page_margin
+        drawn = 0
+        for card in self.cards:
+            if drawn and writer.y + self._card_height(card) > limit:
+                break
+            self._render_card(writer, card)
+            drawn += 1
+        return drawn
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -1993,11 +2117,23 @@ class BrevityCard(KneeboardPage):
         self.flight = flight
         self.dark_kneeboard = dark_kneeboard
 
-    def write(self, path: Path) -> None:
-        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
-        writer.title(f"{self.flight.callsign} Comms & Brevity{custom}")
+    @staticmethod
+    def _table_font() -> ImageFont.FreeTypeFont:
+        # Larger fonts than the defaults: this card is sparse, so a bigger type fills
+        # the page and reads better at a glance in the cockpit.
+        return ImageFont.truetype(
+            "courbd.ttf", 24, layout_engine=ImageFont.Layout.BASIC
+        )
 
+    @staticmethod
+    def _brevity_font() -> ImageFont.FreeTypeFont:
+        return ImageFont.truetype(
+            "courbd.ttf", 20, layout_engine=ImageFont.Layout.BASIC
+        )
+
+    def render_code_words(self, writer: KneeboardPageWriter) -> None:
+        """Draw the code-word + event tables (no page title; for composite reuse)."""
+        table_font = self._table_font()
         coalition = self.flight.squadron.coalition
         code_words = coalition.code_words
         own = push_category_for(self.flight.flight_type)
@@ -2017,28 +2153,37 @@ class BrevityCard(KneeboardPage):
             if category is own:
                 word = f"{word}  (you)"
             push_rows.append([category.value, word])
-        writer.table(push_rows, headers=["Task push", "Word"])
+        writer.table(push_rows, headers=["Task push", "Word"], font=table_font)
 
         event_rows = [["SUCCESS", code_words.success], ["ABORT", code_words.abort]]
         if PushCategory.EW in present:
             event_rows.append(["STOP JAM", code_words.stop_jam])
-        writer.table(event_rows, headers=["Event", "Word"])
+        writer.table(event_rows, headers=["Event", "Word"], font=table_font)
         writer.text(
             "Call over SRS. Your task's push word is marked (you); a push call tells "
             "the whole package who's committing. SUCCESS on target down, ABORT to "
             "knock it off.",
             wrap=True,
         )
-        writer.vspace(12)
 
+    def render_brevity(self, writer: KneeboardPageWriter) -> None:
+        """Draw the task-filtered brevity crib (no page title; for composite reuse)."""
         label, lines = brevity_for(self.flight.flight_type)
         writer.heading(f"Brevity — {label}")
         writer.rule()
         writer.table(
             [[term, meaning] for term, meaning in lines],
             headers=["Call", "Meaning"],
-            font=writer.content_font,
+            font=self._brevity_font(),
         )
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        writer.title(f"{self.flight.callsign} Comms & Brevity{custom}")
+        self.render_code_words(writer)
+        writer.vspace(12)
+        self.render_brevity(writer)
         writer.write(path)
 
 
@@ -2066,8 +2211,25 @@ class FuelLadderCard(KneeboardPage):
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
         custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
         writer.title(f"{self.flight.callsign} Fuel Ladder{custom}")
+        self.render_into(writer, draw_heading=False)
+        writer.write(path)
 
+    def render_into(
+        self, writer: KneeboardPageWriter, *, draw_heading: bool = True
+    ) -> None:
+        """Draw the fuel ladder + Bingo/Joker (no page title; for composite reuse)."""
         units = self.flight.aircraft_type.kneeboard_units
+        # Larger-than-default table font: the ladder is short, so a bigger type fills
+        # the page and is easier to read in the cockpit.
+        ladder_font = ImageFont.truetype(
+            "courbd.ttf", 22, layout_engine=ImageFont.Layout.BASIC
+        )
+        bingo_font = ImageFont.truetype(
+            "courbd.ttf", 24, layout_engine=ImageFont.Layout.BASIC
+        )
+        if draw_heading:
+            writer.heading("Fuel Ladder")
+            writer.rule()
         writer.text(
             f"Planned fuel remaining vs. minimum to RTB at each steerpoint, in "
             f"{units.mass_uom}. Margin = Plan - Min; a negative margin means you can't "
@@ -2098,7 +2260,7 @@ class FuelLadderCard(KneeboardPage):
             writer.table(
                 rows,
                 headers=["#", "Action", "Plan", "Min", "Margin"],
-                font=writer.content_font,
+                font=ladder_font,
             )
         else:
             writer.text("No fuel estimate available for this aircraft.")
@@ -2113,7 +2275,163 @@ class FuelLadderCard(KneeboardPage):
                     ]
                 ],
                 headers=["Bingo", "Joker"],
+                font=bingo_font,
             )
+
+
+def _draw_section_if_fits(
+    writer: KneeboardPageWriter,
+    dark: bool,
+    render_fn: Callable[[KneeboardPageWriter], None],
+    *,
+    gap: int = 14,
+) -> None:
+    """Draw a section (preceded by a gap) only if it fits below the cursor.
+
+    Keeps the compact deck within its page budget: a section that would overflow the
+    page is dropped rather than spilled onto an extra page. Shared by the composite
+    Comms & Coordination and Flex Reference pages.
+    """
+    probe = KneeboardPageWriter(dark_theme=dark)
+    probe.x, probe.y = writer.x, writer.y
+    probe.vspace(gap)
+    render_fn(probe)
+    if probe.y <= (writer.image_size[1] - writer.page_margin):
+        writer.vspace(gap)
+        render_fn(writer)
+
+
+class CombatIntelPage(KneeboardPage):
+    """Compact-deck page 2: the flight's target info over the enemy air-defense cards.
+
+    Composes the per-task target page (SEAD/DEAD/Strike ALIC + coords, or the
+    SCAR / Combat SAR brief) with the Threat Intel cards under one title, so the player
+    gets "what am I hitting / what's shooting at me" on a single page. The target is
+    drawn first (it's the flight's own tasking and short); the threat cards then fill
+    the remaining space, packing as many as fit. Part of the compact 3-page kneeboard
+    (``settings.compact_kneeboard``).
+    """
+
+    def __init__(
+        self,
+        flight: FlightData,
+        threat_page: Optional[ThreatIntelBriefPage],
+        target_page: Optional[KneeboardPage],
+        dark_kneeboard: bool,
+    ) -> None:
+        self.flight = flight
+        self.threat_page = threat_page
+        self.target_page = target_page
+        self.dark_kneeboard = dark_kneeboard
+
+    def _title(self) -> str:
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        return f"{self.flight.callsign} Threats & Targets{custom}"
+
+    def _render_target_into(self, writer: KneeboardPageWriter) -> None:
+        page = self.target_page
+        if isinstance(page, CombatSarTaskPage):
+            page.render_into(writer, draw_title=False, fill=False)
+        elif isinstance(page, (SeadTaskPage, StrikeTaskPage, ScarTaskPage)):
+            page.render_into(writer, draw_title=False)
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        writer.title(self._title())
+        if self.target_page is not None:
+            self._render_target_into(writer)
+            writer.vspace(14)
+        if self.threat_page is not None:
+            writer.heading("Enemy Air Defenses")
+            writer.rule()
+            writer.text(self.threat_page._intro(), wrap=True)
+            writer.vspace(4)
+            self.threat_page.render_cards(writer)
+        writer.write(path)
+
+
+class CommsCoordPage(KneeboardPage):
+    """Compact-deck page 3: comms + coordination, composed under one title.
+
+    The support sections (package comm ladder, AWACS, tankers, JTAC) over the code
+    words + brevity crib and the friendly-package list. Lower-priority sections are
+    only drawn if they fit below the cursor, so the page never spills to a fourth.
+    Part of the compact 3-page kneeboard (``settings.compact_kneeboard``).
+    """
+
+    def __init__(
+        self,
+        flight: FlightData,
+        support_page: SupportPage,
+        brevity_card: Optional[BrevityCard],
+        packages_page: Optional[FriendlyPackagesPage],
+        dark_kneeboard: bool,
+    ) -> None:
+        self.flight = flight
+        self.support_page = support_page
+        self.brevity_card = brevity_card
+        self.packages_page = packages_page
+        self.dark_kneeboard = dark_kneeboard
+
+    def _title(self) -> str:
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        return f"{self.flight.callsign} Comms & Coordination{custom}"
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        writer.title(self._title())
+        dark = self.dark_kneeboard
+        # Support sections (no own title, tight spacing, no field directory).
+        self.support_page._render(
+            writer, draw_title=False, fill=False, include_airfield_dir=False
+        )
+        if self.brevity_card is not None:
+            _draw_section_if_fits(writer, dark, self.brevity_card.render_code_words)
+            _draw_section_if_fits(writer, dark, self.brevity_card.render_brevity)
+        if self.packages_page is not None:
+            _draw_section_if_fits(writer, dark, self.packages_page.render_section)
+        writer.write(path)
+
+
+class FlexReferencePage(KneeboardPage):
+    """Compact-deck page 4 (text mode): the Fuel Ladder over the friendly-package list.
+
+    The flex page that appears when recon imagery isn't generated. It restores the
+    Fuel Ladder (planned vs. minimum + margin) the 3-page deck would otherwise drop and
+    gives the friendly-package list a full page (decluttering Comms & Coordination).
+    Sections draw only if they fit. Part of the compact deck (settings.compact_kneeboard).
+    """
+
+    def __init__(
+        self,
+        flight: FlightData,
+        fuel_card: Optional["FuelLadderCard"],
+        packages_page: Optional[FriendlyPackagesPage],
+        dark_kneeboard: bool,
+    ) -> None:
+        self.flight = flight
+        self.fuel_card = fuel_card
+        self.packages_page = packages_page
+        self.dark_kneeboard = dark_kneeboard
+
+    def _title(self) -> str:
+        parts = []
+        if self.fuel_card is not None:
+            parts.append("Fuel")
+        if self.packages_page is not None:
+            parts.append("Packages")
+        name = " & ".join(parts) if parts else "Reference"
+        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
+        return f"{self.flight.callsign} {name}{custom}"
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        writer.title(self._title())
+        dark = self.dark_kneeboard
+        if self.fuel_card is not None:
+            self.fuel_card.render_into(writer, draw_heading=True)
+        if self.packages_page is not None:
+            _draw_section_if_fits(writer, dark, self.packages_page.render_section)
         writer.write(path)
 
 
@@ -2462,6 +2780,148 @@ class KneeboardGenerator(MissionInfoGenerator):
             )
         return None
 
+    def _compact_kneeboard_pages(
+        self,
+        flight: FlightData,
+        package_flights: List[FlightData],
+        zoned_time: datetime.datetime,
+        airfield_rows: List[List[str]],
+        threat_cards: List[ThreatCard],
+        unidentified: int,
+        task_line: Optional[str],
+        push_line: Optional[str],
+        threat_line: Optional[str],
+    ) -> List[KneeboardPage]:
+        """Build the compact deck: at most four pages (settings.compact_kneeboard).
+
+        Page 1 Game Plan (BLUF + route + fuel + fields + weather), page 2 Threats &
+        Targets (target ALIC over the enemy AD cards; skipped when there's neither),
+        page 3 Comms & Coordination (radios + AWACS/tanker/JTAC + code words + brevity
+        + friendly packages). Page 4 is an adaptive flex page: when target-recon imagery
+        is enabled it carries the recon target photo, otherwise a text page with the
+        Fuel Ladder + the full friendly-package list (which then drops off page 3 to
+        declutter it). Theater/package map images are never generated in this mode.
+        """
+        dark = self.dark_kneeboard
+        pages: List[KneeboardPage] = []
+
+        # Page 1 — Game Plan. Weather + the per-waypoint Min (bingo) column stay on
+        # this page in compact mode (the recon Departure / Fuel Ladder pages that would
+        # otherwise own them are not generated).
+        pages.append(
+            BriefingPage(
+                flight,
+                self.game.coalition_for(flight.friendly).bullseye,
+                self.game.conditions.weather,
+                zoned_time,
+                dark,
+                atis_by_name=self.atis_by_name,
+                theater=self.game.theater,
+                omit_weather=False,
+                omit_min_fuel=False,
+                task_line=task_line,
+                push_line=push_line,
+                threat_line=threat_line,
+                page_title="Game Plan",
+            )
+        )
+
+        # Page 2 — Threats & Targets. Skipped entirely when the flight has neither a
+        # target page nor any enemy air defenses to brief (e.g. a BARCAP over friendly
+        # territory), so such flights get a 2-page deck.
+        threat_page = (
+            ThreatIntelBriefPage(flight, threat_cards, unidentified, dark)
+            if threat_cards
+            else None
+        )
+        target_page = self.generate_task_page(flight)
+        if threat_page is not None or target_page is not None:
+            pages.append(CombatIntelPage(flight, threat_page, target_page, dark))
+
+        # Page 4 (decided first, so page 3 knows whether it keeps the package list).
+        # Recon imagery wins the flex slot when enabled; otherwise a text flex page
+        # carries the Fuel Ladder + the full friendly-package list.
+        packages_page: Optional[FriendlyPackagesPage] = None
+        if self.game.settings.generate_all_packages_kneeboard:
+            package_rows = self.build_all_packages_rows(flight)
+            if package_rows:
+                packages_page = FriendlyPackagesPage(flight, package_rows, dark)
+
+        recon_detail = self._recon_detail_page(flight)
+        fuel_card = (
+            FuelLadderCard(flight, dark)
+            if self.game.settings.generate_fuel_ladder_kneeboard
+            else None
+        )
+        page4: Optional[KneeboardPage] = None
+        packages_on_comms = packages_page
+        if recon_detail is not None:
+            # Recon target photo takes the flex slot; the package list stays on page 3.
+            page4 = recon_detail
+        elif fuel_card is not None or packages_page is not None:
+            # Text flex page: Fuel Ladder + the full package list (moved off page 3).
+            page4 = FlexReferencePage(flight, fuel_card, packages_page, dark)
+            packages_on_comms = None
+
+        # Page 3 — Comms & Coordination (keeps the package list only when page 4 didn't
+        # take it onto the text flex page).
+        support_page = SupportPage(
+            flight,
+            package_flights,
+            self.comms,
+            self.awacs,
+            self.tankers,
+            self.jtacs,
+            zoned_time,
+            dark,
+            airfield_rows=airfield_rows,
+        )
+        brevity_card = (
+            BrevityCard(flight, dark)
+            if self.game.settings.enable_package_code_words
+            else None
+        )
+        pages.append(
+            CommsCoordPage(flight, support_page, brevity_card, packages_on_comms, dark)
+        )
+
+        if page4 is not None:
+            pages.append(page4)
+
+        return pages
+
+    def _recon_detail_page(self, flight: FlightData) -> Optional[KneeboardPage]:
+        """The single recon target-imagery page for this flight, or None.
+
+        Mirrors the target-detail branch of ``generate_recon_pages`` (the satellite
+        photo of the target: ground object, airbase, or front line) so the compact
+        deck can carry just that page as its flex slot. Skips the Departure + Overview
+        pages the full recon deck would also emit. None when target recon is disabled,
+        the flight isn't an air-to-ground recon type, or it has no eligible target.
+        """
+        if not self.game.settings.generate_target_recon_kneeboard:
+            return None
+        if flight.flight_type not in _FLIGHT_TYPES_WITH_RECON:
+            return None
+        target = getattr(flight.package, "target", None)
+        if target is None:
+            return None
+        if isinstance(target, ControlPoint):
+            if getattr(target, "dcs_airport", None) is not None:
+                return AirbaseReconPage(
+                    flight=flight, game=self.game, dark=self.dark_kneeboard
+                )
+            return None
+        if isinstance(target, FrontLine):
+            return FrontLineDetailPage(
+                flight=flight, game=self.game, dark=self.dark_kneeboard
+            )
+        if isinstance(target, TheaterGroundObject):
+            return DetailReconPage(
+                flight=flight, game=self.game, dark=self.dark_kneeboard
+            )
+        return None
+
     def generate_flight_kneeboard(
         self, flight: FlightData, package_flights: List[FlightData]
     ) -> List[KneeboardPage]:
@@ -2490,6 +2950,28 @@ class KneeboardGenerator(MissionInfoGenerator):
         # The Fuel Ladder page carries the per-waypoint bingo (Min) fuel + planned + margin.
         omit_min_fuel = self.game.settings.generate_fuel_ladder_kneeboard
 
+        # Threat cards are computed once and feed both the always-on BLUF top-threat
+        # line on the Mission Info page and (when enabled) the dedicated Threat Intel
+        # Brief. Computed unconditionally so the BLUF can warn about the single most
+        # lethal system even when the full brief page is off.
+        threat_cards, unidentified = build_threat_intel_cards(self.game, flight)
+        task_line, push_line, threat_line = self._bluf_lines(flight, threat_cards)
+
+        # Compact 3-page deck (default): fold the optional content into at most three
+        # text pages and skip the image pages. See settings.compact_kneeboard.
+        if self.game.settings.compact_kneeboard:
+            return self._compact_kneeboard_pages(
+                flight,
+                package_flights,
+                zoned_time,
+                airfield_rows,
+                threat_cards,
+                unidentified,
+                task_line,
+                push_line,
+                threat_line,
+            )
+
         pages: List[KneeboardPage] = [
             BriefingPage(
                 flight,
@@ -2501,6 +2983,9 @@ class KneeboardGenerator(MissionInfoGenerator):
                 theater=self.game.theater,
                 omit_weather=omit_weather,
                 omit_min_fuel=omit_min_fuel,
+                task_line=task_line,
+                push_line=push_line,
+                threat_line=threat_line,
             ),
             SupportPage(
                 flight,
@@ -2544,15 +3029,14 @@ class KneeboardGenerator(MissionInfoGenerator):
             pages.append(target_page)
 
         # Enemy air-defense dossier (per-system cards, recon-fog aware), gated by
-        # setting. Only appended when there are enemy air defenses to brief.
-        if self.game.settings.generate_threat_intel_kneeboard:
-            threat_cards, unidentified = build_threat_intel_cards(self.game, flight)
-            if threat_cards:
-                pages.append(
-                    ThreatIntelBriefPage(
-                        flight, threat_cards, unidentified, self.dark_kneeboard
-                    )
+        # setting. Reuses the cards already built for the BLUF; only appended when
+        # there are enemy air defenses to brief.
+        if self.game.settings.generate_threat_intel_kneeboard and threat_cards:
+            pages.append(
+                ThreatIntelBriefPage(
+                    flight, threat_cards, unidentified, self.dark_kneeboard
                 )
+            )
 
         # Comms & Brevity card: package code words + task-filtered brevity, gated by
         # the feature toggle. The code words are also surfaced to planners (ATO package
@@ -2590,6 +3074,54 @@ class KneeboardGenerator(MissionInfoGenerator):
             pages.extend(self.generate_packages_map_page(flight))
 
         return pages
+
+    def _bluf_lines(
+        self, flight: FlightData, threat_cards: List[ThreatCard]
+    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """Compute the BLUF lines for the Mission Info page (priority on page one).
+
+        Returns ``(task_line, push_line, threat_line)``; any may be None. The task
+        line is always present (task, plus target/TOT when applicable); the push line
+        is gated on the code-words feature; the threat line is the single most lethal
+        live, identified system from the already-built threat cards.
+        """
+        # Task / target / TOT.
+        parts = [flight.flight_type.value]
+        target = getattr(flight.package, "target", None)
+        target_name = getattr(target, "name", None)
+        if target_name:
+            parts.append(_abbreviated_target_name(target_name)[:40])
+        task_line = "TASK  " + "  —  ".join(parts)
+        tot = getattr(flight.package, "time_over_target", None)
+        utc = flight.aircraft_type.utc_kneeboard
+        if tot is not None and tot != datetime.datetime.min:
+            task_line += (
+                f"   TOT {SupportPage._format_time(self._to_kneeboard_time(tot, utc))}"
+            )
+
+        # Push + event code words (gated by the feature toggle).
+        push_line: Optional[str] = None
+        if self.game.settings.enable_package_code_words:
+            code_words = self.game.coalition_for(flight.friendly).code_words
+            bits: List[str] = []
+            push = code_words.push_for(flight.flight_type)
+            if push:
+                bits.append(f"PUSH {push}")
+            bits.append(f"SUCCESS {code_words.success}")
+            bits.append(f"ABORT {code_words.abort}")
+            push_line = "   ".join(bits)
+
+        # Single most lethal live, identified threat (cards are sorted lethal-first).
+        threat_line: Optional[str] = None
+        for card in threat_cards:
+            if card.identified and card.live:
+                defeat = card.defeat or card.guidance
+                threat_line = f"TOP THREAT  {card.system} — MEZ {card.mez_nm} nm"
+                if defeat and defeat != "—":
+                    threat_line += f" — {defeat}"
+                break
+
+        return task_line, push_line, threat_line
 
     def _to_kneeboard_time(
         self, time: Optional[datetime.datetime], utc: bool

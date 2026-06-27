@@ -270,6 +270,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     defaulted-JHMCS case is caught. (`game/dcs/aircraftproperties.py`,
     `game/missiongenerator/aircraft/flightgroupconfigurator.py`,
     `qt_ui/windows/mission/flight/payload/propertycombobox.py`; features doc §24, checklist I3.)
+25. **Compact 3-4 page kneeboard deck** — `compact_kneeboard` (default ON) folds the optional kneeboard
+    content into at most four pages instead of the ~10-page sprawl: **P1 Game Plan** (a **BLUF** band —
+    task/target/TOT, push + success/abort code words, top live threat + how-to-defeat, bullseye — over
+    airfields/route/fuel/weather), **P2 Threats & Targets** (target ALIC over the enemy-AD threat cards),
+    **P3 Comms & Coordination** (radios + AWACS/tanker/JTAC + code words + brevity + packages), and an
+    adaptive **P4 Flex** (recon target photo when target-recon imagery is on, else Fuel Ladder + the full
+    package list, which then drops off P3). The composite pages reuse the existing page classes via new
+    `render_into`/`render_*` section methods + `_draw_section_if_fits` (lower-priority sections drop rather
+    than spill past 4); the BLUF strings come from `_bluf_lines` (top-threat is always-on). The map image +
+    Notes page aren't generated in this mode; turning it **off** restores the full multi-page deck
+    byte-for-byte (separate assembly path `_compact_kneeboard_pages`). (`game/missiongenerator/kneeboard.py`,
+    `game/settings/settings.py`; features doc §4, checklist H9.)
 
 ---
 

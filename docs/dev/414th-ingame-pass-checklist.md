@@ -946,6 +946,31 @@ so the two docs don't drift.
   when all three options are off (a default-path regression — the omit flags must default to keep);
   Mission Info's flight-plan column count wrong (uom row mismatched with headers).
 
+### H9 — Compact 3-4 page kneeboard deck · §4 · ☐ UNTESTED (page-count + composite render test-covered, adjudicated 2026-06-26)
+- **What it is:** `compact_kneeboard` (default **ON**) folds the optional kneeboard content into at
+  most four pages — **P1 Game Plan** (BLUF: task/target/TOT, push+event code words, top live threat
+  + defeat, bullseye; then airfields, route with Min fuel, weather, bingo/joker, laser), **P2 Threats
+  & Targets** (target ALIC/coords over the enemy-AD threat cards), **P3 Comms & Coordination** (comm
+  ladder + AWACS/tanker/JTAC + code words + brevity + packages), and an adaptive **P4 Flex** (recon
+  target photo when recon imagery is on, else Fuel Ladder + the full friendly-package list, which then
+  drops off P3). The theater/package map + Notes page are not generated in this mode.
+- **Headless adjudication (2026-06-26):** `tests/missiongenerator/test_compact_kneeboard.py` covers the
+  BLUF line composition (task/push gated on code words/always-on top threat) and a single-page render of
+  the composite Threats & Targets page; the page-selection logic caps at four by construction (P1 always,
+  P2 iff threats/target, P3 always, P4 iff recon-detail or fuel/packages). Sample renders of all four
+  pages reviewed. **Residual (in-sim only):** in-cockpit legibility of the denser pages and that the P4
+  recon photo renders against live satellite tiles.
+- **Setup:** Generate a ground-start SEAD/Strike flight with the deck **default** (compact ON). Then a
+  second pass with `compact_kneeboard` **OFF** to confirm the full multi-page deck (with recon imagery)
+  is unchanged. Try a BARCAP (no target/threats) to confirm the 2-page degenerate deck.
+- **Pass:** Compact ON → **≤4 pages**, titled Game Plan / Threats & Targets / Comms & Coordination /
+  (Fuel & Packages or recon photo); BLUF band tops P1; no page spills to a 5th; a BARCAP over friendly
+  ground gets 2 pages (P2 absent, P4 absent). Compact OFF → the prior multi-page deck is byte-for-byte
+  unchanged (Mission Info, Support, separate Threat/Brevity/Fuel/Recon/Packages pages).
+- **Fail signature:** a 5th page appearing (cap breached); a section printed on two pages (e.g. packages
+  on both P3 and P4); the full-deck (OFF) path changed; the P4 recon photo missing when recon is on; the
+  BLUF top-threat absent when a live enemy SAM exists.
+
 ---
 
 ## I. Mission generation

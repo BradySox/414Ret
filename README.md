@@ -129,6 +129,13 @@ and selected later upstream fixes.
   editing supports practical bulk changes.
 - Debriefing begins with mission impact — territorial changes, runway damage, and losses —
   before the full event detail.
+- The player kneeboard is a **compact 3-4 page deck** (on by default): **Game Plan** (a BLUF up top —
+  task/target/TOT, push + success/abort code words, the #1 live threat and how to defeat it, bullseye —
+  then airfields, route, fuel, weather), **Threats & Targets** (your aimpoints over the enemy air-defense
+  cards), **Comms & Coordination** (radios, AWACS/tanker/JTAC, code words, brevity, friendly packages),
+  and an adaptive 4th page (recon target photo when target recon is on, otherwise the fuel ladder + full
+  package list). The optional pages below fold into these instead of sprawling to a dozen pages; a simple
+  CAP gets two. Turn off *Compact kneeboard* for the full multi-page deck with recon imagery.
 - Kneeboards are restyled to use the page: clean headings with underline rules and spacing
   (no wasted bottom-half), and the Friendly Packages list flows into two columns when long.
 - **Custom kneeboards** can be imported from the *Kneeboards* toolbar button — add an image

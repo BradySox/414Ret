@@ -416,6 +416,38 @@ card is labelled as planning figures. Gated by `generate_fuel_ladder_kneeboard` 
 covered by `tests/missiongenerator/test_fuel_ladder.py`. In-game pass pending (H7). The last of the
 three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc-ideas-harvest.md`).
 
+**Compact 3-4 page kneeboard deck + BLUF.** With every optional page enabled the deck ran to
+~10 pages, and players usually only read the first. `compact_kneeboard` (default **ON**,
+`game/settings/settings.py`) consolidates the deck into **at most four pages**, folding the optional
+*sections* into fixed pages instead of appending their own:
+
+- **P1 Game Plan** (the `BriefingPage`, renamed via its new `page_title`) leads with a **BLUF** band —
+  `TASK`/target/TOT, `PUSH` + `SUCCESS`/`ABORT` code words, `TOP THREAT` (the single most-lethal live
+  identified system + its MEZ + how to defeat it) and bullseye — so the page they open to first carries
+  the essentials, then the airfields, route (with the Min-fuel column), weather, bingo/joker and laser
+  codes. The BLUF strings are computed by `KneeboardGenerator._bluf_lines` and passed in (the page stays
+  decoupled from the threat/code-word models); the top-threat line is **always-on** (the threat cards are
+  computed unconditionally, independent of the brief-page toggle).
+- **P2 Threats & Targets** (`CombatIntelPage`) draws the flight's target ALIC/coords (the per-task page's
+  new `render_into`) over the enemy-AD **threat cards** (`ThreatIntelBriefPage.render_cards`, which packs
+  as many as fit). Skipped entirely when a flight has neither (e.g. a BARCAP), giving it a 2-page deck.
+- **P3 Comms & Coordination** (`CommsCoordPage`) composes the support sections (comm ladder + AWACS/
+  tanker/JTAC, via `SupportPage._render(draw_title=False, fill=False, include_airfield_dir=False)`) with
+  the code words + brevity crib (`BrevityCard.render_code_words`/`render_brevity`) and the friendly-package
+  list. Lower-priority sections draw only if they fit (`_draw_section_if_fits`), never spilling to a 5th.
+- **P4 Flex** is adaptive: the **recon target photo** (`_recon_detail_page`, the `DetailReconPage`/
+  `AirbaseReconPage`/`FrontLineDetailPage` only — not the Departure/Overview pages) when
+  `generate_target_recon_kneeboard` is on, otherwise a text `FlexReferencePage` with the **Fuel Ladder**
+  (`FuelLadderCard.render_into`) + the **full friendly-package list** (which then drops off P3 to
+  declutter it).
+
+The theater/package-targets **map** image and the **Notes** page are not generated in compact mode.
+Turning `compact_kneeboard` **off** restores the full multi-page deck (every optional page standalone,
+recon imagery included) byte-for-byte — the old page classes are unchanged; the compact deck is a
+separate assembly path (`KneeboardGenerator._compact_kneeboard_pages`). Covered by
+`tests/missiongenerator/test_compact_kneeboard.py` (BLUF composition + the page-2 composite render);
+in-game pass pending (H9).
+
 ---
 
 ## 5. Player target location precision

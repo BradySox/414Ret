@@ -1255,6 +1255,24 @@ class Settings:
             "the pilot leg unreadable."
         ),
     )
+    compact_kneeboard: bool = boolean_option(
+        "Compact kneeboard (3-4 pages)",
+        MISSION_GENERATOR_PAGE,
+        KNEEBOARD_SECTION,
+        default=True,
+        detail=(
+            "Consolidate the player kneeboard into at most four pages — Game Plan "
+            "(BLUF + route + fuel + fields + weather), Threats & Targets (enemy "
+            "air-defense cards + target ALIC), Comms & Coordination (radios + "
+            "AWACS/tanker/JTAC + code words + brevity + friendly packages), and an "
+            "adaptive flex page: the recon target photo when target-recon imagery is "
+            "enabled, otherwise the Fuel Ladder + the full friendly-package list. The "
+            "optional kneeboard sections below fold into these pages instead of adding "
+            "their own, and the flex page only appears when it has content. The "
+            "theater/package-targets map is not generated in this mode. Turn off for "
+            "the full multi-page deck."
+        ),
+    )
     generate_target_recon_kneeboard: bool = boolean_option(
         "Generate target recon kneeboard pages",
         MISSION_GENERATOR_PAGE,

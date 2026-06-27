@@ -65,7 +65,7 @@ rest is the community capability.
 |---|---|---|---|---|
 | Landmap terrain-query perf | High (≈7 min off ground-gen) | none | gen-covered | 🔵 **PR #842** (inv #1) |
 | Plugin `descriptionInUI` field (§14) | High (discoverability) | splashdamage3 desc (414th) | — | 🔵 **PR #841** (inv #10) |
-| Era-gate payload options: JHMCS property gating (§24) + AAQ-33 redo | High (era realism) | none | — | 🟡 planned combined PR (inv #11) |
+| Era-gate payload options: JHMCS property gating (§24) + AAQ-33 redo | High (era realism) | none | `test_aircraftproperties.py`, `test_weapons.py` | 🔵 **PR #843** (inv #11) |
 | DEAD reachability gate on follow-on strikes | High (planner correctness) | none | `test_dead_planning.py` | 🟢 (inv #2, B2 ☑) |
 | Support-orbit depth + front-anchor | High (red AWACS/tanker placement) | none | `test_support_orbit.py` | 🟢 (inv #3, C1/C2 ☑) |
 | Negative-start-packages takeoff check | Low/Med (UI false-warn) | none | `test_negative_start_packages.py` | 🟢 (inv #6) |

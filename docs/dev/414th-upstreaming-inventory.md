@@ -59,7 +59,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🔵 IN REVIEW | Medium (player-facing) — **pushed as PR #828**, awaiting review | — |
 | 9 | Combat SAR — pilot rescue flight type + scoring | 🟠 CARE / 🟡 NEAR | High (whole new playable loop) | G8–G11, H2 ☐ |
 | 10 | Plugin `descriptionInUI` field (Plugin Options UI, §14) | 🔵 IN REVIEW | High (discoverability) — **pushed as PR #841** | — |
-| 11 | Era-gate payload-editor options (JHMCS property gating §24 **+** AAQ-33 redo) | 🟡 NEAR (ready, planned combined PR) | High (era realism, opt-in) | I3 ☐ |
+| 11 | Era-gate payload-editor options (JHMCS property gating §24 **+** AAQ-33 redo) | 🔵 IN REVIEW | High (era realism, opt-in) — **pushed as PR #843** | I3 ☐ |
 
 ---
 
@@ -213,7 +213,7 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Carve note:** the fork's `splashdamage3` description is 414th-specific (pinned build) —
   intentionally **not** carried to upstream.
 
-### 11. Era-gate payload-editor options (JHMCS §24 + AAQ-33 redo) — 🟡 NEAR (planned combined PR)
+### 11. Era-gate payload-editor options (JHMCS §24 + AAQ-33 redo) — 🔵 IN REVIEW (pushed as PR #843, 2026-06-27)
 - **What:** extend the already-upstream `restrict_weapons_by_date` toggle from weapons to
   payload-editor *properties* and *targeting pods*. Two pieces, one PR:
   - **JHMCS property gating (§24):** the new self-contained `game/dcs/aircraftproperties.py`
@@ -228,7 +228,7 @@ unvalidated "fix" is not something to ask upstream to take.
   any open upstream PR; entirely fork-only today (verified 2026-06-27: no `degrade_props`/
   JHMCS anywhere upstream). Cleaner than the weapon-date *balance* rule (which overlaps the
   already-merged #826 and is opinion-based — keep that on `main`).
-- **Status:** decided 2026-06-27 to do later as one PR; not yet carved. **In-game pass I3 ☐.**
+- **Status:** opened 2026-06-27 as **[PR #843](https://github.com/dcs-retribution/dcs-retribution/pull/843)** (15 files: new `aircraftproperties.py` + generator gate + payload-editor UI chain + 6 pod yamls + 2 tests). Black/mypy/pytest validated locally (28 tests pass). The #786 patch re-applied cleanly on current `dev` and the custom-payload coverage test still passes. **In-game pass I3 ☐** still pending a flight.
 
 ---
 

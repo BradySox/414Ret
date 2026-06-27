@@ -104,6 +104,14 @@ and selected later upstream fixes.
   priorities have received a conservative role-based rebalance.
 - Soviet/Russian air defenses use improved legacy SAM layouts and radar composition.
   Campaign-map SAM rings, emitters, routes, and IADS links are easier to inspect and read.
+- **Off-mission engagements are weighted, not coin flips.** The AI-vs-AI fights resolved while you
+  fast-forward now account for aircraft capability and numbers (a modern fighter beats an obsolete
+  one more often than not, but a pair can still overwhelm a lone jet), and SEAD/SEAD-capable flights
+  are credited for surviving SAMs — so the campaign state you inherit between sorties reads
+  believably instead of randomly.
+- **"Player at IP" fast-forward now actually puts you at your IP.** An AI skirmish elsewhere no longer
+  stops the fast-forward short and spawns you back on the ramp; only a fight your own flight is in
+  still pauses so you can fly it.
 
 ### The generated mission feels occupied
 
@@ -140,6 +148,9 @@ and selected later upstream fixes.
   CAP gets two. Turn off *Compact kneeboard* for the full multi-page deck with recon imagery.
 - Kneeboards are restyled to use the page: clean headings with underline rules and spacing
   (no wasted bottom-half), and the Friendly Packages list flows into two columns when long.
+- When several flights share an airframe (DCS shows them one stacked kneeboard), a one-page
+  **kneeboard index** is added up front — each flight's callsign, task, and start page — so you flip
+  straight to your own deck. A single flight of a type is unchanged.
 - **Custom kneeboards** can be imported from the *Kneeboards* toolbar button — add an image
   once and it's injected into every flight's kneeboard (or scoped to one airframe), stored in
   the campaign save, instead of hand-editing each mission.

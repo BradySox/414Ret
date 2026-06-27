@@ -282,6 +282,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Notes page aren't generated in this mode; turning it **off** restores the full multi-page deck
     byte-for-byte (separate assembly path `_compact_kneeboard_pages`). (`game/missiongenerator/kneeboard.py`,
     `game/settings/settings.py`; features doc §4, checklist H9.)
+26. **Off-mission combat fidelity + PLAYER_AT_IP fix** — the sim auto-resolves engagements the player
+    doesn't fly. Abstract combat was numbers-only coin flips (more flights win; survivors die 50/50; SAMs a
+    flat 50%), so obsolete jets beat modern ones and SEAD meant nothing. `game/sim/combat/capability.py`
+    now weights A2A by best A2A `task_priority` × count (win = strength share, survivor loss scales with
+    margin, clamped ≤ legacy 0.5) and SAM survival by SEAD role/capability + engaging-site count; `aircombat.py`
+    / `defendingsam.py` call it (`SKIP` untouched). Separately, **"Player at IP"** was silently defeated by
+    the default `PAUSE` resolution ending the fast-forward at the first combat *anywhere* before a
+    ground-started player reached its IP; `AircraftSimulation._combat_pauses_fast_forward` now lets AI-only
+    combats keep resolving during a `PLAYER_AT_IP` fast-forward (only player-involving combats pause).
+    (`game/sim/combat/`, `game/sim/aircraftsimulation.py`; features doc §26, checklist J1/J2.)
+27. **Shared-airframe kneeboard index** — DCS scopes kneeboards per *airframe*, so every pilot of a type
+    sees all that type's flight decks stacked. `KneeboardGenerator.generate` keeps each flight's pages a
+    contiguous, callsign-sorted block and prepends a one-page **index** (callsign / task / start page) only
+    when 2+ client flights share the airframe (a lone flight is unchanged). `pages_by_airframe` →
+    `client_flights_by_airframe` + `_build_kneeboard_index` + `KneeboardIndexPage`.
+    (`game/missiongenerator/kneeboard.py`; features doc §27, checklist H10.)
 
 ---
 

@@ -26,6 +26,12 @@ tasks:
   OCA/Runway: 265
   Strike: 360
   TARCAP: 560
+secondary_tasks:
+  - Armed Recon
+  - BAI
+  - CAS
+  - SCAR
+  - Strike
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

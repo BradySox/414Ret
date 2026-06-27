@@ -21,6 +21,9 @@ tasks:
   OCA/Runway: 740
   OCA/Aircraft: 670
   Strike: 760
+secondary_tasks:
+  - Armed Recon
+  - SCAR
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: boom

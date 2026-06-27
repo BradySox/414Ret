@@ -24,3 +24,5 @@ tasks:
   OCA/Aircraft: 430
   OCA/Runway: 545
   Strike: 570
+secondary_tasks:
+  - Armed Recon

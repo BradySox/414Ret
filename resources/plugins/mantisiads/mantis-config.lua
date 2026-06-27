@@ -36,7 +36,9 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     local createBlueIADS = true
     local useEmOnOff = true
     local samRange = 95
-    local detectInterval = 30
+    -- 15s (was 30) so the IADS cues/hands off briskly -- a 30s poll let targets
+    -- slip through a SAM's (now range-correct) ring before it reacted.
+    local detectInterval = 15
     local ewrGrouping = 5000
     local maxActiveShort = 2
     local maxActiveMid = 2

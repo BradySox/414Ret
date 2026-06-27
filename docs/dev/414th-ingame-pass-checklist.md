@@ -848,6 +848,17 @@ so the two docs don't drift.
   ingress. `0` is the new "unlimited" sentinel (`uncap()` in `mantis-config.lua`). Watch in-game that
   flying into a medium/long ring now draws fire (mind the overhead dead-zone) and the low SHORAD
   still rolls rather than swarming.
+- **EMCON starves detection — the real engagement bug (2026-06-27, 4th pass):** a 23-min flight
+  drew **no fire at all** despite correct bands + uncapped actives. `dcs.log`: RED `CheckLoop 0`
+  for the whole flight = MANTIS' **detection set was empty**, so `_CheckLoop` had nothing to
+  engage. Cause (read in `Moose.lua`): MANTIS detection feeds from two `INTEL` sources — EWRs
+  (`IntelOne`) **and the SAMs themselves** (`IntelTwo`) — but with **Emissions Control ON** MANTIS
+  forces every SAM radar dark (`EnableEmission(false)`), so `IntelTwo` is empty and detection
+  collapses onto the ~5 dedicated EWRs, which miss a low/forward target → blind network → no SAM
+  ever fires. **Fix: default Emissions Control OFF** (`useEmOnOff` default → `false`) so the SAMs
+  (and SAM-as-EWRs) search on their own radars, feed detection, and engage what's in range — an
+  RWR-visible, reliably-engaging IADS. **Re-fly:** flying into a ring should now draw fire promptly;
+  re-enable EMCON only on campaigns with proven EWR coverage.
 - **Refinement (found in-game 2026-06-27, 2nd pass):** the override loaded (`SAM range override active
   (57 …)`) but several `(SAM)` sites still came up POINT and an **SA-5 (255 km!) site read POINT**. Cause:
   a Retribution SAM **site has multiple groups under one codename** (the main SAM + a co-located

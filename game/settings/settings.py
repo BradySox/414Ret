@@ -2167,7 +2167,10 @@ class Settings:
         # successor, and ewrs is superseded by the MOOSE Ops.INTEL-based "bigeye"
         # EWR (see docs/dev/design/414th-dismounts-decision.md and
         # 414th-ewrs-retirement-decision.md). The "flightcontrol" MOOSE
-        # FLIGHTCONTROL ATC plugin was retired as a half-baked feature.
+        # FLIGHTCONTROL ATC plugin was retired as a half-baked feature. The "arty"
+        # (CG ArtySpotter) and "artymbot" (Mbot Call-Artillery) player fire-support
+        # scripts were retired as unused: both had been silently dropped from the
+        # active plugin list and their directories are now removed.
         for plugin_key in [
             key
             for key in self.plugins
@@ -2181,6 +2184,10 @@ class Settings:
             or key.startswith("ewrs.")
             or key == "flightcontrol"
             or key.startswith("flightcontrol.")
+            or key == "arty"
+            or key.startswith("arty.")
+            or key == "artymbot"
+            or key.startswith("artymbot.")
         ]:
             del self.plugins[plugin_key]
 

@@ -41,7 +41,7 @@ if dcsRetribution then
             exportBlueAA = dcsRetribution.plugins.lotatc.exportBlueAA
             logger:info(string.format("DCSRetribution|LotATC Export plugin - exportBlueAA = %s",tostring(exportBlueAA)))
 
-            exportBlueAA = dcsRetribution.plugins.lotatc.exportSymbols
+            exportSymbols = dcsRetribution.plugins.lotatc.exportSymbols
             logger:info(string.format("DCSRetribution|LotATC Export plugin - exportSymbols = %s",tostring(exportSymbols)))
         end
     end

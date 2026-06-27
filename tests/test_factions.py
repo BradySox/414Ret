@@ -29,10 +29,41 @@ from dcs.ships import (
 )
 from dcs.vehicles import Armor, Unarmed, Infantry, Artillery
 
+from game import persistency
+from game.dcs.aircrafttype import AircraftType
 from game.factions.faction import Faction
 
 THIS_DIR = Path(__file__).parent
 RESOURCES_DIR = THIS_DIR / "resources"
+
+
+@pytest.fixture(autouse=True)
+def _init_persistency(tmp_path_factory: pytest.TempPathFactory) -> None:
+    # AircraftType loading reads the DCS saved-game folder (weapon-injection dir),
+    # which is only configured once the app boots. Point it at an empty temp dir.
+    persistency.setup(str(tmp_path_factory.mktemp("saved_games")), False, 0)
+
+
+def test_unknown_aircraft_name_skipped_not_whole_faction() -> None:
+    # A single unresolved aircraft name must NOT drop the entire faction (the
+    # "wrl 2.json" footgun where one bad name made the whole faction vanish from
+    # the New Game list). The bad name is skipped; the rest of the roster loads.
+    faction = Faction.from_dict(
+        {
+            "name": "Tolerant Test Faction",
+            "country": "USA",
+            "aircrafts": ["C-130J-30", "Definitely Not A Real Plane"],
+        }
+    )
+    assert faction.aircraft == {AircraftType.named("C-130J-30")}
+
+
+def test_c130j30_super_hercules_alias_resolves() -> None:
+    # Hand-authored factions often name the J-30 by its full DCS module title;
+    # the migrator alias resolves it to the same interned type instance.
+    assert AircraftType.named("C-130J-30 Super Hercules") is AircraftType.named(
+        "C-130J-30"
+    )
 
 
 class TestFactionLoader(unittest.TestCase):

@@ -555,6 +555,9 @@ class AircraftType(UnitType[Type[FlyingType]]):
             # it too), so in-progress campaigns with a C-130 squadron resolve to the
             # J-30 instead of bricking on load. The KC-130/KC-130J tankers stay.
             "C-130": "C-130J-30",
+            # Hand-authored factions often name the J-30 by its full DCS module
+            # title; alias it so the faction doesn't fail to load on that string.
+            "C-130J-30 Super Hercules": "C-130J-30",
         }
 
     @classmethod

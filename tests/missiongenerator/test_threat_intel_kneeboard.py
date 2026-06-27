@@ -8,6 +8,8 @@ from dcs.vehicles import AirDefence
 
 from game.data.units import UnitClass
 from game.missiongenerator.kneeboard import (
+    KneeboardPageWriter,
+    ThreatCard,
     ThreatIntelBriefPage,
     build_threat_intel_cards,
 )
@@ -283,14 +285,48 @@ def test_ewr_card_reports_detection_range_and_defeat_note() -> None:
     assert "blind" in card.defeat.lower()
 
 
-def test_intro_calls_for_recon_only_when_sites_are_unidentified() -> None:
+def test_intro_calls_for_recon_but_withholds_the_unidentified_count() -> None:
     flight = _flight()
     with_unknowns = ThreatIntelBriefPage(flight, [], 3, False)
-    assert "fly TARPS recon to ID" in with_unknowns._intro()
-    assert "3 site(s)" in with_unknowns._intro()
+    intro = with_unknowns._intro()
+    assert "fly TARPS recon to ID" in intro
+    # The number of unidentified (often mobile) sites is intel we wouldn't have.
+    assert "3 site" not in intro
+    assert "Unidentified contacts remain" in intro
 
     none_unknown = ThreatIntelBriefPage(flight, [], 0, False)
     assert "TARPS" not in none_unknown._intro()
+
+
+def test_unidentified_card_shows_bearings_without_a_count() -> None:
+    # An unidentified card lists detected-contact bearings but neither a "N site(s)"
+    # headline nor a "+N" overflow total (which would leak the count); overflow past
+    # the cap is an ellipsis.
+    cues = [f"0{i:02d}/30" for i in range(12)]
+    card = ThreatCard(
+        system="Unidentified SHORAD",
+        band="SHORAD",
+        identified=False,
+        guidance="—",
+        ceiling="—",
+        mez_nm="—",
+        detect_nm="—",
+        harm="—",
+        live=12,
+        dead=0,
+        cues=cues,
+        defeat="",
+        sort_range_m=0.0,
+    )
+    page = ThreatIntelBriefPage(_flight(), [card], 12, False)
+    writer = KneeboardPageWriter()
+    page._render_card(writer, card)
+    text = writer.get_text_string()
+
+    assert "site(s)" not in text  # no count headline
+    assert "+" not in text  # no "+N" overflow total
+    assert "…" in text  # capped contacts end in an ellipsis instead
+    assert "fly TARPS to ID" in text.lower() or "Fly TARPS to ID" in text
 
 
 def test_title_includes_custom_name_and_continuation_marker() -> None:

@@ -396,7 +396,6 @@ class FlightPlanBuilder:
             ),
             self._format_alt(waypoint.waypoint.alt),
             self._waypoint_distance(waypoint.waypoint),
-            self._waypoint_bearing(waypoint.waypoint),
             self._ground_speed(waypoint.waypoint),
             self._format_time(waypoint.waypoint.tot),
             self._format_time(waypoint.waypoint.departure_time),
@@ -423,13 +422,6 @@ class FlightPlanBuilder:
         )
 
         return f"{self.units.distance_long(distance):.1f}"
-
-    def _waypoint_bearing(self, waypoint: FlightWaypoint) -> str:
-        if self.last_waypoint is None:
-            return "-"
-        bearing = self.last_waypoint.position.heading_between_point(waypoint.position)
-
-        return f"{(bearing):.0f}"
 
     def _ground_speed(self, waypoint: FlightWaypoint) -> str:
         if self.last_waypoint is None:
@@ -652,13 +644,12 @@ class BriefingPage(KneeboardPage):
         for num, waypoint in enumerate(self.flight.waypoints):
             flight_plan_builder.add_waypoint(num, waypoint)
 
-        headers = ["#", "Action", "Alt", "Dist", "Brg", "GSPD", "Time", "Departure"]
+        headers = ["#", "Action", "Alt", "Dist", "GSPD", "Time", "Departure"]
         uom_row = [
             "",
             "",
             units.distance_short_uom,
             units.distance_long_uom,
-            "T",
             units.speed_uom,
             "",
             "",
@@ -2045,10 +2036,9 @@ class ThreatIntelBriefPage(KneeboardPage):
     def _intro(self) -> str:
         intro = "Enemy air-defense laydown. MEZ in nm; BE = bullseye bearing/range."
         if self.unidentified:
-            intro += (
-                f" {self.unidentified} site(s) still unidentified — "
-                "fly TARPS recon to ID."
-            )
+            # No total count: how many unidentified (often mobile) sites are in
+            # theatre is intel we wouldn't realistically have (design §3).
+            intro += " Unidentified contacts remain — fly TARPS recon to ID."
         return intro
 
     def _heading_font(self) -> ImageFont.FreeTypeFont:
@@ -2074,6 +2064,20 @@ class ThreatIntelBriefPage(KneeboardPage):
             shown += f", +{len(cues) - limit}"
         return shown
 
+    @staticmethod
+    def _unknown_cues_text(cues: List[str], limit: int) -> str:
+        """Detected-contact bearings for an *unidentified* card.
+
+        Unlike ``_cues_text``, overflow is an ellipsis, never the remaining count
+        ("+N"): the number of unidentified (often mobile) sites is intel we wouldn't
+        realistically have, so the card shows where contacts were detected without
+        publishing a theatre inventory total (design §3).
+        """
+        shown = ", ".join(cues[:limit])
+        if len(cues) > limit:
+            shown += ", …"
+        return shown
+
     def _render_card(self, writer: KneeboardPageWriter, card: ThreatCard) -> None:
         body = self._body_font()
         writer.text(card.system, font=self._heading_font())
@@ -2095,8 +2099,7 @@ class ThreatIntelBriefPage(KneeboardPage):
                 writer.text(f"DEFEAT: {card.defeat}", font=body, wrap=True)
         else:
             writer.text(
-                f"{card.live} site(s) — fly TARPS to ID.   "
-                f"BE {self._cues_text(card.cues, 8)}",
+                f"Fly TARPS to ID.   BE {self._unknown_cues_text(card.cues, 8)}",
                 font=body,
                 wrap=True,
             )
@@ -2763,8 +2766,16 @@ class CoverPage(KneeboardPage):
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
         op = self.campaign_name or "Campaign"
-        writer.title(f"{op} — Turn {self.turn}")
-        writer.text(self.day.strftime("%A %d %B %Y"))
+        # The cover is a standalone sheet, so it carries its own oversized header --
+        # bigger than the rest of the deck -- so the op/turn reads at a glance.
+        op_turn_font = ImageFont.truetype(
+            "courbd.ttf", 48, layout_engine=ImageFont.Layout.BASIC
+        )
+        date_font = ImageFont.truetype(
+            "courbd.ttf", 26, layout_engine=ImageFont.Layout.BASIC
+        )
+        writer.text(f"{op} — Turn {self.turn}", font=op_turn_font)
+        writer.text(self.day.strftime("%A %d %B %Y"), font=date_font)
 
         if self.sitrep is not None:
             writer.vspace(10)

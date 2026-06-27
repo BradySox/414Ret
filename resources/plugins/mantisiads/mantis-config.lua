@@ -25,14 +25,18 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- specific options (defaults mirror MANTIS' own defaults)
     local createRedIADS = true
     local createBlueIADS = true
-    -- Emissions control default OFF. With it ON, MANTIS forces every SAM radar dark
-    -- (EnableEmission(false)) until the network cues it, so the SAMs contribute
-    -- nothing to detection (MANTIS' IntelTwo) and the whole network depends on the
-    -- handful of dedicated EWRs -- which routinely miss a low/forward target, leaving
-    -- the detection set empty (CheckLoop 0) and NO SAM ever engaging. OFF lets every
-    -- SAM (and SAM-as-EWR) search on its own radar, feed detection, and engage what's
-    -- in range -- a reliable, RWR-visible IADS. Flip it back on for a stealthy
-    -- EWR-cued network once detection coverage is proven.
+    -- Emissions control default OFF. In BOTH modes MANTIS holds each SAM passive
+    -- (radar dark) until the network's detection set cues it -- a SAM never self-
+    -- detects, so detection always rides on the always-on sensors: dedicated EWRs
+    -- and any AWACS (a SAM-as-EWR is itself held dark, so it contributes nothing
+    -- until cued). The difference is the WAKE: with EmOnOff ON, MANTIS wakes a SAM
+    -- via EnableEmission(true) -- the flaky DCS call that often fails to re-light
+    -- the radar in time, so a cued SAM still never shoots. With it OFF (AlarmState),
+    -- MANTIS wakes via OptionAlarmStateRed(), which reliably engages -- which is why
+    -- it is MANTIS' own default. Flip it back ON for a stealthier network only once
+    -- detection coverage (EWR + AWACS) is proven. NB: the AWACS half of detection
+    -- only works if every AWACS is folded into its coalition's EWR set -- see
+    -- add_awacs below, and do not regress it to a live-group lookup.
     local useEmOnOff = false
     local samRange = 95
     -- 15s (was 30) so the IADS cues/hands off briskly -- a 30s poll let targets
@@ -130,12 +134,26 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         return sam_names, ewr_names
     end
 
-    -- Fold any AWACS for this coalition into the EWR set (by group name).
-    local function add_awacs(ewr_names, coalition_side)
+    -- Fold any AWACS for this coalition into the EWR set, BY NAME.
+    --
+    -- An AWACS is the network's only always-on wide-area sensor: every SAM (and
+    -- SAM-as-EWR) is held dark/green by MANTIS until cued, so without a dedicated
+    -- EWR or an AWACS feeding detection the whole net stays blind (CheckLoop 0)
+    -- and no SAM ever engages.
+    --
+    -- We must NOT gate on the live group (the old Group.getByName check): a
+    -- ground-starting AWACS -- e.g. an A-50 that taxis out of Kastrup after
+    -- mission start -- is not a spawned Group when this bridge builds at T0, so
+    -- getByName returned nil and the AWACS was silently dropped. (An air-starting
+    -- AWACS like a blue E-3A happened to resolve, which is why blue detection
+    -- worked and red went blind in the same mission.) Instead we add the name
+    -- using the coalition emitted in the data table. MANTIS' EWR SET_GROUP is
+    -- dynamic (we pass dynamic=true -> FilterStart), so a name added now is
+    -- matched the moment the AWACS spawns and starts radiating.
+    local function add_awacs(ewr_names, coalition_str)
         if dcsRetribution.AWACs then
             for _, data in pairs(dcsRetribution.AWACs) do
-                local group = Group.getByName(data.dcsGroupName)
-                if group and group:getCoalition() == coalition_side then
+                if data.coalition == coalition_str then
                     table.insert(ewr_names, data.dcsGroupName)
                 end
             end
@@ -277,12 +295,12 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             coalition_prefix, c2PollInterval))
     end
 
-    local function build(coalition_prefix, coalition_side, coalition_str, debug)
+    local function build(coalition_prefix, coalition_str, debug)
         local coalition_iads = dcsRetribution.IADS[coalition_prefix]
         if not coalition_iads then return end
 
         local sam_names, ewr_names = collect(coalition_iads)
-        add_awacs(ewr_names, coalition_side)
+        add_awacs(ewr_names, coalition_str)
 
         if #sam_names == 0 and #ewr_names == 0 then
             env.info(
@@ -455,10 +473,10 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     end
 
     if createRedIADS then
-        build("RED", coalition.side.RED, "red", debugRED)
+        build("RED", "red", debugRED)
     end
     if createBlueIADS then
-        build("BLUE", coalition.side.BLUE, "blue", debugBLUE)
+        build("BLUE", "blue", debugBLUE)
     end
 
 end

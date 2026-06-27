@@ -407,3 +407,38 @@ buildings in `objectivefinder`; the IADS command-unit generation in `tgogenerato
 
 **Save safety:** `pytest` green (1076) and both flown campaign saves load headless with `iads_engine`
 migrated out — no bricked campaigns.
+
+---
+
+## 13. AWACS detection fold fix — ground-start AWACS reached the net (2026-06-27)
+
+**Symptom (in-game, GermanyCW):** EMCON off (§12 / #242 already in), bands correct (G15), uncapped
+actives — yet flying over 3 SAMs drew **no fire**. `dcs.log` was decisive: **RED `CheckLoop 0` × 492**
+(detection set empty all flight) while **BLUE `CheckLoop 6`**. A RED-specific *detection* failure.
+
+**Root cause + the correct mental model:** in **both** EMCON and AlarmState, MANTIS holds each SAM
+**passive until cued** — a SAM never self-detects, and a SAM-as-EWR is held dark too. So detection
+rides entirely on the **always-on sensors**: dedicated EWRs and any **AWACS**. (This corrects the
+4th-pass belief that EMCON-off lets SAMs "search on their own radar and feed detection" — it does
+not; the win from #242 is purely a *reliable wake*, `OptionAlarmStateRed` vs the flaky
+`EnableEmission(true)`.) RED's A-50 (`Kastrup AEW&C`) **ground-starts**, so it was not a spawned
+group when the bridge built at T0; `add_awacs` gated on a live `Group.getByName`, which returned
+**nil** and silently dropped it. BLUE's E-3A **air-starts**, resolved, and fed detection — exactly
+why blue saw 6 and red saw 0. With no dedicated-EWR coverage at Haina either, **RED had zero eyes**.
+
+**Fix (`mantis-config.lua` + `luagenerator.py`):** fold each AWACS into its coalition's EWR set
+**by name**, using a new `coalition` field emitted into the `AWACs` Lua table — never a live-group
+lookup. MANTIS' EWR `SET_GROUP` is dynamic (`MANTIS:New(..., dynamic=true, ...)` → `FilterStart`),
+so the prefix added at T0 is matched the instant the A-50 taxis airborne and radiates; `INTEL` reads
+the live set each cycle, so the late detector counts. No MOOSE-source edit.
+
+**Why not `SetAwacs()`:** it sets `advAwacs`, but the dedicated airborne stream it implies
+(`StartAwacsDetection`, a 250 km `DETECTION_AREAS` with its own `FilterStart`) is **defined but
+never called** in our bundled MOOSE 0.9.34 — dead code. The `advAwacs` path that *does* run just
+`table.insert`s the awacs prefix into `ewr_templates` — i.e. the same fold we do directly. So the
+by-name EWR fold is the whole fix.
+
+**Caveat (open):** this restores detection only for factions that **have** an AWACS. An AWACS-less
+RED still relies on dedicated EWR coverage, since SAM-as-EWRs stay dark — if a future campaign proves
+blind without an AWACS, the next lever is keeping SAM-as-EWR units always-on (trades the EMCON ghost
+for those sites). Not done yet; flagged in the G15 checklist row.

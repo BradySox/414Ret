@@ -211,6 +211,15 @@ class LuaGenerator:
             awacs_item.add_key_value("dcsGroupName", awacs.group_name)
             awacs_item.add_key_value("callsign", awacs.callsign)
             awacs_item.add_key_value("radio", str(awacs.freq.mhz))
+            # Coalition is needed by the MANTIS IADS bridge, which folds each
+            # AWACS into its own coalition's EWR set as an always-on wide-area
+            # sensor. It must come from here, not from inspecting the live group:
+            # a ground-starting AWACS (e.g. an A-50 that taxis out after mission
+            # start) is not yet a spawned group when the bridge builds, so a
+            # runtime coalition lookup silently dropped it. (mantis-config.lua)
+            awacs_item.add_key_value(
+                "coalition", "blue" if awacs.blue.is_blue else "red"
+            )
 
         jtacs_object = lua_data.add_item("JTACs")
         for jtac in self.mission_data.jtacs:

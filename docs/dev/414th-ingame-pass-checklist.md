@@ -859,6 +859,24 @@ so the two docs don't drift.
   (and SAM-as-EWRs) search on their own radars, feed detection, and engage what's in range — an
   RWR-visible, reliably-engaging IADS. **Re-fly:** flying into a ring should now draw fire promptly;
   re-enable EMCON only on campaigns with proven EWR coverage.
+- **AWACS never reached the detection net — the actual blind-RED bug (2026-06-27, 5th pass):** even
+  with EMCON **off**, a re-fly over 3 SAMs at Haina still drew **no fire**. `dcs.log` was decisive:
+  RED `CheckLoop 0` × **492** (detection set empty the entire flight) while **BLUE `CheckLoop 6`**
+  (blue detection fine) — a RED-specific detection failure, not a wake failure. Cause: this corrects
+  the 4th-pass note above — in **both** EMCON and AlarmState a SAM is held **passive until cued**
+  (it never self-detects; SAM-as-EWRs are dark too), so detection rides entirely on the **always-on
+  sensors: dedicated EWRs + the AWACS**. RED's A-50 (`Kastrup AEW&C`) **ground-starts**, so it was not
+  a spawned group when the bridge built at T0 — and `add_awacs` gated on a live `Group.getByName`,
+  which returned nil and **silently dropped it**. BLUE's E-3A **air-starts**, resolved, and fed
+  detection — exactly why blue saw 6 and red saw 0. With no dedicated-EWR coverage at Haina either,
+  RED had **zero eyes**. **Fix:** `add_awacs` now folds each AWACS **by name** using a `coalition`
+  field newly emitted into the `AWACs` Lua table (`luagenerator.py`), instead of inspecting a live
+  group. MANTIS' EWR `SET_GROUP` is dynamic (`dynamic=true → FilterStart`), so the name added at T0
+  is matched the moment the A-50 taxis airborne and starts radiating. (`SetAwacs()`/
+  `StartAwacsDetection()` were the wrong lever — `StartAwacsDetection` is **dead code, never called**
+  in our MOOSE.) **Caveat:** this only restores detection for factions that **have** an AWACS; an
+  AWACS-less RED still depends on dedicated EWR coverage (SAM-as-EWRs stay dark) — a separate
+  always-on-EWR question if a future campaign proves blind without an AWACS.
 - **Refinement (found in-game 2026-06-27, 2nd pass):** the override loaded (`SAM range override active
   (57 …)`) but several `(SAM)` sites still came up POINT and an **SA-5 (255 km!) site read POINT**. Cause:
   a Retribution SAM **site has multiple groups under one codename** (the main SAM + a co-located
@@ -875,6 +893,8 @@ so the two docs don't drift.
   MANTIS status shows SAMs flipping to **RED** when you press a ring (not stuck 0/all-GREEN), and a HARM
   shot triggers the SAM's **SEAD evasion** (radar drops / shoot-and-scoot). With MANTIS debug on, the
   `SAM ... is type LONG/MEDIUM` traces match the real SAM types. No `mantis-config.lua` Lua error.
+  **Detection check (5th-pass fix):** with a RED AWACS airborne, `dcs.log` RED **`CheckLoop` should go
+  non-zero** as you ingress (not 492× `CheckLoop 0`); a ground-starting A-50 must still wake the net.
 - **Fail signature:** medium/long SAMs still typed POINT or still only engage at point range (override
   not resolving the group — check the `... range override active` count is non-zero and that codenames
   in `dcsRetribution.RedAA` match the group names); a SAM banded too high/low (tune `BAND_*_M`

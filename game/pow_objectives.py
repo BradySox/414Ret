@@ -98,13 +98,16 @@ def _friendly_anchor(
 
 def _build_pow_objective(
     game: Game,
+    pow_entry: PendingPowRecovery,
     holding_cp: ControlPoint,
     anchor: ControlPoint,
     unit: GroundUnitType,
 ) -> None:
     point = holding_cp.position
     location = PresetLocation(_OBJECTIVE_NAME, point)
-    tgo = CapturedPilotGroundObject(_OBJECTIVE_NAME, location, anchor)
+    tgo = CapturedPilotGroundObject(
+        _OBJECTIVE_NAME, location, anchor, pow_entry.airframe_unit_name
+    )
     position = PointWithHeading.from_point(point, Heading.from_degrees(0))
     group = TheaterGroup(game.next_group_id(), _OBJECTIVE_NAME, position, [], tgo)
     group.units.append(
@@ -137,4 +140,4 @@ def sync_pow_objectives(game: Game) -> None:
             anchor = _friendly_anchor(game, coalition, holding)
             if anchor is None:
                 continue
-            _build_pow_objective(game, holding, anchor, unit)
+            _build_pow_objective(game, pow_entry, holding, anchor, unit)

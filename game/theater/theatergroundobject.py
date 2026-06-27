@@ -950,6 +950,7 @@ class CapturedPilotGroundObject(TheaterGroundObject):
         name: str,
         location: PresetLocation,
         control_point: ControlPoint,
+        airframe_unit_name: str = "",
     ) -> None:
         super().__init__(
             name=name,
@@ -959,6 +960,10 @@ class CapturedPilotGroundObject(TheaterGroundObject):
             sea_object=False,
             task=None,
         )
+        # The captured aviator's airframe DCS unit name -- the key that ties a
+        # recovery (a surviving CSAR raid on this objective) back to its
+        # PendingPowRecovery in commit_pow_recoveries.
+        self.airframe_unit_name = airframe_unit_name
 
     @property
     def symbol_set_and_entity(self) -> tuple[SymbolSet, Entity]:

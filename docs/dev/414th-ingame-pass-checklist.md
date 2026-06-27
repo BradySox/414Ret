@@ -609,7 +609,17 @@ so the two docs don't drift.
   `base/plugin.json` revert. **Remaining:** fly across more campaigns/maps, then delete
   `mist_4_5_126.lua` as the final cleanup.
 
-### G8 — Combat SAR pilot rescue (`combatsar` / MOOSE CSAR) · Combat SAR Phase 2 · ☐ UNTESTED
+### G8 — Combat SAR pilot rescue (`combatsar` / MOOSE CSAR) · Combat SAR Phase 2 · ☐ UNTESTED (plumbing confirmed in live log 2026-06-27)
+- **Live-log confirmation (2026-06-27, GermanyCW Fulda/Haina, `dcs.log`):** the plugin armed
+  clean — `CSAR (Blue) | Started (1.0.34)` then `DCSRetribution|Combat SAR plugin - CSAR started
+  with 1 rescue helo group(s), 1 King(s), template 'Combat SAR Downed Pilot', enableForAI=false`.
+  So: the `Combat SAR Downed Pilot` template **resolved** (the "missing template" fail signature
+  is absent), the rescue-helo group and King both registered, **no `combatsar-config.lua` Lua
+  error** anywhere in the run, and `enableForAI=false` (correct, setting off — the "AI ejection
+  spawns a pilot" leak can't occur). **Residual (still in-cockpit):** the actual pickup→deliver→
+  count loop — and note that loop needs a **player in the rescue helo**: in this sortie the CH-47F
+  is an **AI group** and the only player client is the C-130J-30 King, so flying the King alone
+  does not exercise the pickup.
 - **Setup:** A campaign with a blue **CH-47** squadron; plan a **Combat SAR** flight (CH-47) near
   the FLOT (optionally a C-130 Combat SAR "King" too). Fly it, then have a **human** pilot eject in
   the area (a second slot, or eject yourself from a separate fighter).
@@ -635,6 +645,17 @@ so the two docs don't drift.
   CH-47 could never reach an ejection. Combat SAR now flies a **dedicated forward hold**
   (`game/ato/flightplans/combatsar.py`): front-anchored, **15 NM** threat buffer, **5 NM** racetrack
   half-length. Re-observe that the planned CSAR orbit now sits **near the FLOT**, not back at AWACS depth.
+- **Placement adjudicated headless (2026-06-27):** Measured the real anchor the planner computes on the
+  live `autosave.retribution` (GermanyCW, Fulda/Haina front) by calling `support_orbit_anchor` for the
+  Combat SAR 15 NM buffer and contrasting with the 80 NM AEW&C buffer it replaced. Result: CSAR orbit
+  centre **25.2 NM** from the FLOT (auto-pushed back from the 15 NM nominal only as far as needed to clear
+  the red threat ring) vs the AWACS-depth anchor at **90.3 NM** — **65 NM further forward**. Orbit centre
+  **and both racetrack endpoints test clear of the red threat zone** (`threatened()=False`), and the
+  racetrack is a tight **10.0 NM** hold (not the 60 NM AEW&C track). So the placement fail signatures —
+  "orbit again at AWACS depth / mirrors the AWACS racetrack" and "orbit inside an enemy threat ring" — do
+  **not** occur on this campaign; the forward-hold fix is structurally in effect. **Residual (cockpit
+  only):** the AI helo actually **spawning from the FARP and flying the rescue** (the MOOSE `AICSAR`
+  runtime) and the package appearing in the ATO with `auto_combat_sar` ON — neither is headless-provable.
 - **Setup:** Enable **Automatic Combat SAR** (HQ automation settings; default OFF). Campaign with a
   blue **CH-47** squadron + budget. Auto-plan turn 1 (observe-only, don't fly the CSAR).
 - **Pass:** A blue **AI** `Combat SAR` package appears in the ATO, **holding a tight racetrack near an
@@ -655,6 +676,11 @@ so the two docs don't drift.
   (`enableForAI` not reaching the engine, or MOOSE AI-rescue routing vs. Retribution's flight plan);
   or the AI rescue routing fights the despawn/RTB logic. **Off-state regression check:** with the
   setting OFF, confirm no CSAR is auto-planned and `enableForAI=false` is logged.
+- **Off-state confirmed in live log (2026-06-27, GermanyCW, `dcs.log`):** with `auto_combat_sar`
+  OFF, the plugin logged `... CSAR started with 1 rescue helo group(s), 1 King(s), ...
+  enableForAI=false` — i.e. the standing-alert AI path is correctly dormant (no AICSAR spawn, no
+  AI pilot tracking). The **AI-ON** path (helo spawns from FARP, flies the rescue) still needs its
+  own run with the setting on.
 
 ### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ◐ PARTIAL (player King = no scripted TACAN by design; AI King untested)
 - **Setup:** Plan a player **C-130** Combat SAR ("King") alongside a **CH-47** Combat SAR. Fly the
@@ -742,6 +768,17 @@ so the two docs don't drift.
   `Combat SAR` task; the `C-130 → C-130J-30` migrator alias is present
   (`aircrafttype.py`). **Residual (in-sim only):** the King visibly rendering the wing tanks
   and flying **clean of the EW/ISR menu** (EW per-group deny-list `EwExcludedGroups`).
+- **Live-save airframe confirm (2026-06-27):** the flown `autosave.retribution` (GermanyCW) blue wing
+  actually carries **both** Combat SAR airframes as real squadrons — `CH-47Fbl1` (5th Battalion 159th
+  Aviation) and `C-130J-30` (910th Airlift Wing) — and both report `capable_of(COMBAT_SAR)=True`, while
+  the legacy `C-130`/`CH-47F` ids are absent (the migrator left no stragglers). So this campaign can frag
+  Combat SAR on both airframes today with no edits; the load succeeded with no `C-130` migrator crash.
+- **Live-mission registration confirmed (2026-06-27, `dcs.log`):** the generated GermanyCW mission
+  registered both — the rescue helo as an AI group (`Front line Fulda/Haina Combat SAR | CH-47F Block I`,
+  2 ships) and the King as a **player client** (`Register Client: ... C-130J-30 | Pilot #1`) — and the
+  plugin then reported `1 rescue helo group(s), 1 King(s)`. So both airframes frag + register with no Lua
+  error; the C-130J-30 cockpit cold-started fine. **Still in-cockpit:** door-guns/wing-tanks visible on
+  the model and the King clean of the EW/ISR menu.
 - **In-game 2026-06-25:** tasking offered on **both** airframes ✅; CH-47Fbl1 spawns with its
   **door M60D guns** ✅ ("loadout good"). **Found:** the C-130J-30 King spawned with **no loadout /
   no wing tanks** — the documented removable-pylon case. **Fixed 2026-06-25:** added a
@@ -1089,7 +1126,18 @@ so the two docs don't drift.
   test-locked); on a TIC-off build, clusters splitting apart in BREAKTHROUGH; the default-stance
   setting ignored at new-game/capture.
 
-### I5 — Nation-aware pilot names · §23 · ☐ UNTESTED (logic fully unit-tested 2026-06-26)
+### I5 — Nation-aware pilot names · §23 · ☐ UNTESTED (logic unit-tested 2026-06-26; **live-save confirmed 2026-06-27**)
+- **Live-save confirmation (2026-06-27):** Loaded the actual flown campaign
+  (`autosave.retribution`, GermanyCW turn 2, Blufor Late Cold War vs Russia 1980) headless and
+  resolved every squadron's `faker` against its `country`. The blue wing is a genuine **4-nation
+  CJTF** and each squadron draws its **own** nation locale even though the blue faction's
+  `locales` is `None` (so there is no shared-faction locale to fall back to): USA squadrons →
+  `en_US`, JaboG 31 / GAF JG 74 → `de_DE`, IAF 69 FS → `he_IL`, Ala 14 (Mirage F1) → `es_ES`;
+  every red squadron → `ru_RU`. Countries used: blue `[Germany, Israel, Spain, USA]`, red
+  `[Russia]` — **no cross-coalition country overlap** (the illegal-`.miz` fail signature). This
+  is a stronger real case than the unit tests (4 live nations). **Residual (in-sim only):** the
+  AI radio actually *playing* the per-nation voice — the country-assignment half of that is I1,
+  already VERIFIED in-game 2026-06-26.
 - **Headless adjudication (2026-06-26):** the country→locale resolver is fully covered by
   `tests/squadrons/test_pilotnames.py` (mapped country → its own-locale Faker; unmapped /
   multinational / `None` → faction fallback; locale cache independent of fallback; **every**

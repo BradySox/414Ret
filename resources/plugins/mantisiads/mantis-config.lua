@@ -351,6 +351,83 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         end
     end
 
+    -- -------------------------------------------------------------------------
+    -- SAM range/type override (414th SEAD fix).
+    --
+    -- MANTIS classifies a SAM's range/band by scanning the group's unit type
+    -- names against its built-in SamData table, breaking on the FIRST match
+    -- (MANTIS:_GetSAMRange / _GetSAMDataFromUnits). Retribution SAM sites carry
+    -- MULTIPLE radars (search + track + launchers + a co-located "Dog Ear" EWR in
+    -- many sites), so that scan picks the wrong radar and mis-types medium/long
+    -- SAMs (SA-6 / SA-10 / SA-11) as POINT. A POINT SAM drops into MANTIS' autono-
+    -- mous-SHORAD set instead of the network, never gets EMCON-coordinated, and
+    -- only engages at point-blank range -- so nothing emits at standoff and there
+    -- is nothing to SEAD (the "SAMs never engaged / stayed GREEN" report).
+    --
+    -- Fix: classify each SAM from Retribution's OWN threat range, which the planner
+    -- already computes and emits per group as dcsRetribution.{Red,Blue}AA[].range
+    -- (the MEZ, in metres). We override _GetSAMRange to return that range + the
+    -- band it implies, bypassing the broken unit scan. Pure Lua in our bridge, no
+    -- MOOSE-source edit; any group we can't resolve falls back to MANTIS' native
+    -- logic, so this can only improve classification, never crash it.
+    local retribution_sam_range = {}  -- codename -> threat range (metres)
+    local function index_aa(aa)
+        if type(aa) ~= "table" then return end
+        for _, item in pairs(aa) do
+            if item.name and item.range then
+                retribution_sam_range[item.name] = tonumber(item.range)
+            end
+        end
+    end
+    index_aa(dcsRetribution.RedAA)
+    index_aa(dcsRetribution.BlueAA)
+    local _rangecount = 0
+    for _ in pairs(retribution_sam_range) do _rangecount = _rangecount + 1 end
+    env.info(string.format(
+        "DCSRetribution|MANTIS-IADS plugin - SAM range override active (%d AD group "
+            .. "range(s) from Retribution; SAMs banded by true MEZ, not unit scan)",
+        _rangecount))
+
+    -- Range thresholds (metres) -> MANTIS band, mirroring MANTIS' own SamData bands
+    -- (LONG = SA-10/SA-5/Patriot, MEDIUM = SA-2/6/11, SHORT = SA-3/8/Rapier,
+    -- POINT = SA-9/15/Gepard/AAA). Engagement ceiling per band feeds MANTIS' height
+    -- pre-filter so a long SAM still services high targets and a point SAM does not.
+    local BAND_LONG_M = 50000
+    local BAND_MEDIUM_M = 18000
+    local BAND_SHORT_M = 8000
+    local CEILING_M = {
+        [MANTIS.SamType.LONG] = 25000,
+        [MANTIS.SamType.MEDIUM] = 15000,
+        [MANTIS.SamType.SHORT] = 8000,
+        [MANTIS.SamType.POINT] = 4000,
+    }
+
+    local function retribution_range_for(grpname)
+        for codename, rng in pairs(retribution_sam_range) do
+            if codename ~= "" and string.find(grpname, codename, 1, true) then
+                return rng
+            end
+        end
+        return nil
+    end
+
+    local _orig_GetSAMRange = MANTIS._GetSAMRange
+    function MANTIS:_GetSAMRange(grpname)
+        local rng = retribution_range_for(grpname)
+        if rng and rng > 0 then
+            local band
+            if rng >= BAND_LONG_M then band = MANTIS.SamType.LONG
+            elseif rng >= BAND_MEDIUM_M then band = MANTIS.SamType.MEDIUM
+            elseif rng >= BAND_SHORT_M then band = MANTIS.SamType.SHORT
+            else band = MANTIS.SamType.POINT end
+            -- Match MANTIS' own detection-radius padding (radiusscale) so a SAM
+            -- still wakes a little before a target reaches lethal range.
+            local scale = MANTIS.radiusscale[band] or 1
+            return rng * scale, CEILING_M[band], band, 0
+        end
+        return _orig_GetSAMRange(self, grpname)
+    end
+
     if createRedIADS then
         build("RED", coalition.side.RED, "red", debugRED)
     end

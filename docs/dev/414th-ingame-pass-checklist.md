@@ -829,6 +829,29 @@ so the two docs don't drift.
   `ALARM_STATE`/emission write crept into the jammer — must never happen; check `suppressSAMRoe`/
   `restoreSAMRoe` are still ROE-only).
 
+### G15 — MANTIS SAM range/band override (SEAD) · §2 / MANTIS migration · ☐ UNTESTED
+- **Bug (found in-game 2026-06-27, GermanyCW):** under MANTIS nearly every Retribution SAM was typed
+  **POINT** — confirmed SA-6/SA-10/SA-11/SA-2/SA-3 all POINT (SA-8 wrongly MEDIUM) — so the IADS only
+  engaged at ~point-blank range, nothing emitted at standoff, and **SEAD had no targets** ("SAMs never
+  engaged / stayed GREEN"). Root cause: MANTIS classifies a SAM by scanning the group's unit type-names
+  against its built-in `SamData` table, breaking on the first match; Retribution's multi-radar sites
+  (search + track + launchers + a co-located "Dog Ear" EWR) make it pick the wrong radar. The fix
+  (`mantis-config.lua`) overrides `MANTIS._GetSAMRange` to band each SAM by **Retribution's own threat
+  range** (`dcsRetribution.{Red,Blue}AA[].range`, the planner's MEZ), falling back to MANTIS' native
+  logic for anything it can't resolve. Pure-Lua bridge change, no MOOSE-source edit.
+- **Setup:** New campaign (MANTIS engine) with a layered SAM threat incl. at least one medium/long SAM
+  (SA-6/SA-11/SA-10). `dcs.log` should show `... SAM range override active (N AD group range(s) ...)`.
+  Fly a **striker into a SAM ring** (not a C-130 in friendly air) and bring a SEAD/HARM shooter.
+- **Pass:** an SA-10/SA-6/SA-11 goes **active on RWR at its true range** (tens of NM, not ~3 NM), the
+  MANTIS status shows SAMs flipping to **RED** when you press a ring (not stuck 0/all-GREEN), and a HARM
+  shot triggers the SAM's **SEAD evasion** (radar drops / shoot-and-scoot). With MANTIS debug on, the
+  `SAM ... is type LONG/MEDIUM` traces match the real SAM types. No `mantis-config.lua` Lua error.
+- **Fail signature:** medium/long SAMs still typed POINT or still only engage at point range (override
+  not resolving the group — check the `... range override active` count is non-zero and that codenames
+  in `dcsRetribution.RedAA` match the group names); a SAM banded too high/low (tune `BAND_*_M`
+  thresholds); SHORAD/AAA wrongly promoted out of POINT; or SAMs never go RED even pressed at true range
+  (a deeper detection issue beyond this fix — re-open M2).
+
 ---
 
 ## H. Kneeboards

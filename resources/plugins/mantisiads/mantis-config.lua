@@ -73,12 +73,35 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- SAM or EWR set never collapses MANTIS' FilterPrefixes into a match-all.
     local NO_MATCH = "__RetributionMantisNoMatch__"
 
+    -- MANTIS' SET_GROUP:FilterPrefixes matches each "prefix" with string.find
+    -- WITHOUT the plain flag (Moose.lua ~13321) -- i.e. it treats the prefix as a
+    -- Lua PATTERN, escaping only "-". Every Retribution group name carries
+    -- pattern-magic characters (e.g. "0145 | GRYPHON (SAM)" has "(" and ")"), so an
+    -- unescaped name never matches its own group: MANTIS ends up controlling ZERO
+    -- SAMs and they run vanilla DCS AI with radars always on (the "SAM track radar
+    -- emitting in search mode on ingress / no EMCON" bug). Escape the magic chars
+    -- (except "-", which MANTIS' own gsub already handles -- escaping it here would
+    -- double-escape it) so each prefix matches its literal group name.
+    local function escape_prefix(name)
+        -- Capture the magic char so "%1" is valid in the replacement (a no-capture
+        -- pattern with "%1" raises "invalid capture index" at runtime in Lua 5.1).
+        return (name:gsub("([%(%)%.%%%+%*%?%[%]%^%$])", "%%%1"))
+    end
+    local function escape_prefixes(names)
+        local out = {}
+        for i = 1, #names do
+            out[i] = escape_prefix(names[i])
+        end
+        return out
+    end
+
     -- Collect the exact DCS group names for a coalition's SAM and EWR sets.
-    -- MANTIS:New accepts a table of name prefixes and matches any group whose
-    -- name starts with an entry; passing exact generated group names makes each
-    -- group match itself, so no group renaming is required.
-    -- (Known v1 caveat: if one group name is a strict prefix of another, the
-    --  shorter would also match the longer -- watch for this in the in-game pass.)
+    -- MANTIS:New accepts a table of name prefixes and matches any group whose name
+    -- CONTAINS an entry (Lua-pattern string.find). We escape each name with
+    -- escape_prefix before handing it to MANTIS (see above), so a generated name
+    -- matches its own group literally and no group renaming is required.
+    -- (Known caveat: if one group name is a substring of another, the shorter would
+    --  also match the longer -- watch for this in the in-game pass.)
     local function collect(coalition_iads)
         local sam_names = {}
         local ewr_names = {}
@@ -279,8 +302,12 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         )
 
         -- MANTIS:New(name, samprefix, ewrprefix, hq, coalition, dynamic, awacs, EmOnOff, Padding, Zones)
+        -- Pass FilterPrefixes-safe (Lua-pattern-escaped) names so MANTIS actually
+        -- resolves our parenthesized "... (SAM)" group names (see escape_prefix). The
+        -- raw sam_names stay for the exact-match C2 lookups (GROUP:FindByName) below.
         local mantis = MANTIS:New(
-            name, sam_names, ewr_names, nil, coalition_str, true, nil, useEmOnOff, nil, nil
+            name, escape_prefixes(sam_names), escape_prefixes(ewr_names), nil,
+            coalition_str, true, nil, useEmOnOff, nil, nil
         )
 
         -- Phase-4 tuning (applied before Start so detection/engagement pick them up).
@@ -302,6 +329,21 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             mantis:Debug(true)
         end
         mantis:Start()
+
+        -- Diagnostic (the EMCON ground truth): how many real groups MANTIS resolved
+        -- from our names. If SAM resolves to 0 (or fewer than we passed), the
+        -- FilterPrefixes match is failing and the SAMs are running vanilla DCS AI
+        -- (radars always on, no EMCON). With the escape_prefix fix it should match
+        -- the SAM/EWR counts we passed. Watch this line on the next in-game pass.
+        local resolved_sams = (mantis.SAM_Group and mantis.SAM_Group:CountAlive()) or 0
+        local resolved_ewrs = (mantis.EWR_Group and mantis.EWR_Group:CountAlive()) or 0
+        env.info(
+            string.format(
+                "DCSRetribution|MANTIS-IADS plugin - %s resolved %d/%d SAM + %d EWR live "
+                    .. "group(s) (0 SAM = name match failed -> SAMs run vanilla, no EMCON)",
+                name, resolved_sams, #sam_names, resolved_ewrs
+            )
+        )
 
         -- Phase-5: arm the comms/power/command-center C2 degradation watcher.
         if enableC2Degradation then

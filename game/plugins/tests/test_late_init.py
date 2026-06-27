@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 
 from game.missiongenerator.luagenerator import LuaGenerator
 from game.plugins.luaplugin import LuaPlugin
-from game.plugins.scar import ScarPlugin
 from game.plugins.tars import TarsPlugin
 from game.plugins.tic import TicPlugin
 
@@ -42,15 +41,6 @@ def test_tars_gates_on_enabled() -> None:
     assert _enabled_plugin(TarsPlugin, "tars", False).should_late_init(_gen()) is False
 
 
-def test_scar_gates_on_enabled_and_taskings() -> None:
-    on = _enabled_plugin(ScarPlugin, "scar", True)
-    off = _enabled_plugin(ScarPlugin, "scar", False)
-    assert on.should_late_init(_gen(scar_taskings=["t"])) is True
-    # Dormant today: generate_plugin_data() clears scar_taskings -> no injection.
-    assert on.should_late_init(_gen(scar_taskings=[])) is False
-    assert off.should_late_init(_gen(scar_taskings=["t"])) is False
-
-
 def test_plain_plugin_has_no_late_init() -> None:
     plain = _enabled_plugin(LuaPlugin, "ctld", True)
     assert plain.late_init_files() == []
@@ -65,7 +55,6 @@ def test_declared_late_init_files_exist() -> None:
     for identifier, cls in (
         ("tic", TicPlugin),
         ("tars", TarsPlugin),
-        ("scar", ScarPlugin),
     ):
         plugin = cls.__new__(cls)
         for filename in plugin.late_init_files():

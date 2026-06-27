@@ -13,6 +13,14 @@ if TYPE_CHECKING:
 # the other). Persisted campaign state lives on Coalition.pending_csars.
 DEFAULT_SOF_RESCUE_TURNS = 3
 
+# DCS unit-type names for the physical SOF / downed-team infantry the rescue path
+# spawns (the team a CSAR helo extracts, and the body a captured pilot becomes).
+# Per-side so each coalition fields its own. (Relocated from the retired
+# ``scarluadata`` armor-hunt module, which once spawned these inside its scenario;
+# the rescue/POW substrate is now their only consumer.)
+SCAR_SOF_UNIT_BLUE = "SOF Team (BLUFOR)"
+SCAR_SOF_UNIT_RED = "SOF Team (OPFOR)"
+
 
 @dataclass
 class PendingSofRescue:

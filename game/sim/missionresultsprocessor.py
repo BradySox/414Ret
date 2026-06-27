@@ -420,7 +420,7 @@ class MissionResultsProcessor:
         commander's escort self-extracts). No-op if the SOF unit type isn't
         present or blue holds no base."""
         from game.dcs.groundunittype import GroundUnitType
-        from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE
+        from game.scar_rescue import SCAR_SOF_UNIT_BLUE
 
         try:
             unit = GroundUnitType.named(SCAR_SOF_UNIT_BLUE)
@@ -474,11 +474,11 @@ class MissionResultsProcessor:
         if not self.game.settings.scar_command_post_intel:
             return
         from game.theater.theatergroundobject import DownedSofGroundObject
-        from game.missiongenerator.scarluadata import (
+        from game.scar_rescue import (
             SCAR_SOF_UNIT_BLUE,
             SCAR_SOF_UNIT_RED,
+            sof_rescue_pickup_name,
         )
-        from game.scar_rescue import sof_rescue_pickup_name
 
         # state_data is only absent on lightweight Debriefings built for tests; a
         # real debrief always carries it (see qra_losses_by_type for the same guard).
@@ -535,7 +535,7 @@ class MissionResultsProcessor:
         if not self.game.settings.scar_command_post_intel:
             return
         from game.dcs.groundunittype import GroundUnitType
-        from game.missiongenerator.scarluadata import (
+        from game.scar_rescue import (
             SCAR_SOF_UNIT_BLUE,
             SCAR_SOF_UNIT_RED,
         )

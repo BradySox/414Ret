@@ -15,8 +15,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from game.dcs.groundunittype import GroundUnitType
-from game.missiongenerator.scarluadata import SCAR_SOF_UNIT_BLUE, SCAR_SOF_UNIT_RED
 from game.point_with_heading import PointWithHeading
+from game.scar_rescue import SCAR_SOF_UNIT_BLUE, SCAR_SOF_UNIT_RED
 from game.theater.presetlocation import PresetLocation
 from game.theater.theatergroundobject import CapturedPilotGroundObject
 from game.theater.theatergroup import TheaterGroup, TheaterUnit

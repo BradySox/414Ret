@@ -216,8 +216,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     an enemy airfield** (`PendingPowRecovery` + `CapturedPilotGroundObject`, offering CSAR). A
     **surviving CSAR raid** or **recapturing the field** frees the aviator; a POW abandoned past the
     4-turn clock is **killed**. AI safety-net package via `auto_combat_sar` (King + Jolly + 1 Sandy).
-    The old armor hunt + SOF commander-capture scenario is **retired/dormant** (the SOF/CSAR recovery
-    plumbing was repurposed for the POW). features doc §15.
+    The old armor-hunt scenario + its auto-planner are **deleted** (2026-06-27: `scarluadata.py`, the
+    `scar` plugin, `PlanScarHunts`/`PlanScar`, `scar_autoplan*`); the SOF/CSAR recovery plumbing was
+    repurposed for the POW path. features doc §15.
 16. **Settings QOL audit** — dead/duplicate setting cleanup (four fields removed), AI-radio
     booleans consolidated into the `AiRadioBehavior` enum with deterministic save migration,
     plugin wording, and a UI-layer grouping/dependency handoff

@@ -243,17 +243,6 @@ class LuaGenerator:
 
         populate_intercept_lua(lua_data, self.mission_data.intercept_entries)
 
-        # SCAR armor-hunt scenario RETIRED (rescue rework — see
-        # docs/dev/design/414th-scar-rescue-rework-notes.md). SCAR is being
-        # repurposed into the Sandy rescue-escort role, so it no longer spawns a
-        # moving-HVT armor picture. Emit no taskings: dcsRetribution.Scar is never
-        # written, so the scenario bridge (_inject_scar_script) and the scar plugin
-        # stay dormant. The SOF capture/recovery machinery rides this same channel
-        # and is likewise dormant until the POW rework (Phase 3/4); the dormant
-        # scarluadata builders + the scar plugin are kept for now and deleted in a
-        # later cleanup once the rescue path has flown.
-        self.mission_data.scar_taskings = []
-
         # Add artillery and support units info
         artillery_object = lua_data.add_item("artilleryGroups")
         ground_artillery_group_collection = artillery_object.get_or_create_item(

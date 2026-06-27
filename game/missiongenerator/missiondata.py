@@ -11,7 +11,6 @@ from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
 from game.missiongenerator.interceptluadata import InterceptEntry
-from game.missiongenerator.scarluadata import ScarTasking
 from game.runways import RunwayData
 
 if TYPE_CHECKING:
@@ -147,7 +146,4 @@ class MissionData:
     # Names of frontline ground groups handed over to the Troops In Contact
     # script (TIC plugin). Non-empty means TIC_v1.1.lua must be injected.
     tic_groups: list[str] = field(default_factory=list)
-    # One entry per planned SCAR flight. Non-empty means scar_414_init.lua must
-    # be injected (the SCAR scenario/results bridge).
-    scar_taskings: list[ScarTasking] = field(default_factory=list)
     atis_frequencies: list[AtisInfo] = field(default_factory=list)

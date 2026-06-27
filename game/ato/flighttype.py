@@ -71,17 +71,16 @@ class FlightType(Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> FlightType | None:
-        """Handle legacy persisted values from older 414th builds."""
-        if value == "ISR":
-            return cls.JAMMING
-        # The 414th's SCRAMBLE QRA flight type was retired; it always behaved as a
-        # BARCAP (BarCap flight plan, configure_cap, BARCAP loadout). Map old saves.
-        if value == "Scramble":
-            return cls.BARCAP
-        # The Pretense campaign export (and its AI cargo flight type) was removed.
-        # Only exported Pretense .miz used it, but migrate any stray persisted value.
-        if value == "Cargo Transport":
-            return cls.TRANSPORT
+        """Remap legacy persisted values from older 414th builds.
+
+        The remap table (_LEGACY_FLIGHT_TYPE_VALUES, below the class) is THE
+        single source of truth: both runtime enum lookups (``FlightType("ISR")``)
+        and the save unpickler (``persistency._handle_flight_type``, which calls
+        ``FlightType(value)``) resolve through here, so a legacy rename is added
+        in exactly one place.
+        """
+        if isinstance(value, str):
+            return _LEGACY_FLIGHT_TYPE_VALUES.get(value)
         return None
 
     def __str__(self) -> str:
@@ -194,3 +193,19 @@ class FlightType(Enum):
             # Combat SAR is a standing pilot-rescue orbit (same SIDC entity).
             FlightType.COMBAT_SAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
         }.get(self, AirEntity.UNSPECIFIED)
+
+
+# Legacy persisted FlightType values from older 414th builds, remapped on load.
+# THE single source of truth for value renames: FlightType._missing_ (runtime
+# lookups) and persistency._handle_flight_type (the unpickler, via
+# FlightType(value)) both resolve through here. Add a "legacy value" -> live
+# member entry here ONLY -- do not reintroduce a parallel table in the unpickler.
+_LEGACY_FLIGHT_TYPE_VALUES: dict[str, FlightType] = {
+    # C-130 EW/ISR consolidation: the old generic ISR type became JAMMING.
+    "ISR": FlightType.JAMMING,
+    # The retired SCRAMBLE QRA type always behaved as a BARCAP (BarCap flight
+    # plan, configure_cap, BARCAP loadout).
+    "Scramble": FlightType.BARCAP,
+    # The removed Pretense campaign export's AI cargo flight type.
+    "Cargo Transport": FlightType.TRANSPORT,
+}

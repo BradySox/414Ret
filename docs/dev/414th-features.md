@@ -73,9 +73,11 @@ dispatcher above is the only live QRA path. Both the `reactive_scramble.lua` scr
 `FlightType.SCRAMBLE` enum (plus its `Scramble:` aircraft-task weights and `- Scramble`
 squadron mission-type entries in `resources/units|squadrons|campaigns/*.yaml`) have been
 removed. SCRAMBLE always behaved as a BARCAP, so old saves are migrated SCRAMBLE -> BARCAP
-in two places: `FlightType._missing_` (runtime lookups) and `persistency.py`
-`_handle_flight_type` (the unpickler). `FlightType.INTERCEPTION` is the only remaining
-legacy A2A type and is kept for upstream save compatibility.
+in one place: `FlightType._missing_`'s `_LEGACY_FLIGHT_TYPE_VALUES` table (runtime lookups);
+the unpickler (`persistency.py` `_handle_flight_type`) routes legacy values through
+`FlightType(value)` → `_missing_`, so it no longer duplicates the remap.
+`FlightType.INTERCEPTION` is the only remaining legacy A2A type and is kept for upstream save
+compatibility.
 
 ---
 

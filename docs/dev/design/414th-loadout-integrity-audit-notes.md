@@ -1,7 +1,8 @@
 # 414th loadout/task/date integrity audit + fixes
 
-Status: **pass 1 landed** (2026-06-27). Systemic root-cause fixes + the verifiable data
-repairs are in; a short list of mod-weapon residuals is tracked below for a later pass.
+Status: **passes 1 + 2 landed** (2026-06-27). Systemic root-cause fixes, the verifiable
+data repairs, and the F-14A / Tornado preset fixes are in; the remaining residuals are
+mod-weapon stragglers and low-impact early-date noise (tracked below).
 
 ## Why this exists
 
@@ -51,25 +52,35 @@ failure modes**, plus one resolver gap.
   `Weapon.with_clsid`, or is in the documented `_KNOWN_MOD_STRAGGLER_CLSIDS` allowlist. Any
   *new* dead CLSID fails the build loudly (this is the bug that previously rotted silently).
 
-## Tracked residuals (next pass — NOT fixed here)
+## Pass 2 fixes (2026-06-27)
+
+- **F-14A "Block 135 Early": one-line `unitType` bug.** `F-14A-135-GR-Early.lua` already
+  carried every ground preset, but its `["unitType"]` said `"F-14A-135-GR"` (the *Late*
+  variant's dcs id, a copy-paste error), so the loader never applied them to the Early jet
+  (dcs id `F-14A-135-GR-Early`). Fixed the `unitType`. The Early *can* mount LANTIRN, so its
+  LGB presets resolve intact.
+- **F-14A "Block 95 Export": no payload file at all.** Created `F-14A-95-GR.lua` (dcs id
+  `F-14A-95-GR`) with **iron-bomb** ground presets (CAS/Strike = Mk-82, BAI/DEAD = Mk-20,
+  OCA = Mk-82) — the Iranian F-14A had no LANTIRN/PGM, so no LGBs.
+- **Tornado IDS STRIKE: LGBs without a TGP.** The empty-pylon fix made the preset resolve,
+  exposing GBU-16 LGBs with no targeting pod (no Tornado TGP exists in base pydcs), so
+  `replace_lgbs_if_no_tgp` stripped them. Switched STRIKE to 6× Mk-82 iron (matching its
+  working CAS preset). Verified all three resolve to real A2G at 2010.
+
+## Tracked residuals (low priority — NOT fixed)
 
 - **Mod-weapon dead CLSIDs (allowlisted).** ~26 ids on mod airframes (SA342 Gazelle, Su-57,
   Mirage F1, the F-22A pack, Rafale, Super Étendard, UH-60L, OH-6A) reference weapons absent
   from base pydcs *and* `pydcs_extensions`. They degrade via the fallback chain (not fatal)
   and can't be resolved without the mod. Listed in `_KNOWN_MOD_STRAGGLER_CLSIDS`. Fix = install
   the mod's current ids or strip those weapons from the affected presets (a per-preset call).
-- **F-14A "Block 135 Early" / "Block 95 Export": no A2G preset.** Both are tasked
-  CAS/BAI/Strike/DEAD/etc. but only carry CAP presets (the "Late" variant has the bombcat
-  presets). They resolve EMPTY for ground roles. Fix = author the missing ground presets (or
-  remove the ground tasks from those variants).
-- **Tornado IDS STRIKE carries LGBs with no TGP.** The empty-pylon fix made the preset
-  resolve, exposing that it holds GBU-16 LGBs and no targeting pod, so
-  `replace_lgbs_if_no_tgp` strips them → no A2G. Its CAS preset (Mk-82) is fine. Fix = add a
-  TGP or switch the STRIKE preset to iron bombs.
-- **Date-gate fragility at early dates.** ~47 (aircraft, task) pairs degrade to A2A-only only
-  at pre-~1995 dates (e.g. F-104, Tu-16, F-16A SEAD @1972) — the preset's sole A2G is a
-  date-gated weapon whose fallback chain bottoms out. Low impact unless flying early-era
-  campaigns; a per-preset "add a non-gated bomb fallback" pass.
+- **Early-date A2A-only degrade — mostly noise.** The audit flagged ~47 (aircraft, task) pairs
+  resolving A2A-only, but the bulk are **not real**: anachronistic test dates (MQ-9/Predator
+  drones and the F-16A tested "in 1972", before they existed — the intro-year filter
+  under-excludes when `year_introduced` is non-numeric) plus `[CH]` CurrentHill mod aircraft.
+  The genuine remainder is a handful of Cold-War bombers/interceptors (Tu-16, H-6J, F-104)
+  whose sole A2G is a date-gated weapon at a pre-~1995 date. Low impact unless flying early-era;
+  no clean root-weapon cluster, so deferred rather than a 47-preset churn.
 
 ## Re-running the audit
 

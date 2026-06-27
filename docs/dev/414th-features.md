@@ -878,8 +878,11 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   `tests/data/test_weapons.py` (`test_valid_payload_ignores_empty_stations`,
   `test_antiship_falls_back_to_strike_loadout_names`,
   `test_customized_payload_clsids_resolve_or_are_known_stragglers` — fails on any *new* dead
-  CLSID). Methodology + tracked residuals (mod-weapon stragglers, F-14A Early/Export missing
-  A2G presets, Tornado IDS STRIKE no-TGP, early-date gate fragility):
+  CLSID). A follow-up pass fixed the **F-14A Block 135-GR Early** (its `.lua` had the *Late*
+  variant's `unitType` so its ground presets were never applied), authored a missing
+  **F-14A Block 95-GR Export** payload file (iron-bomb presets — no LANTIRN), and switched the
+  **Tornado IDS STRIKE** preset from TGP-less LGBs to iron Mk-82. Methodology + remaining
+  residuals (mod-weapon stragglers, low-impact early-date noise):
   `docs/dev/design/414th-loadout-integrity-audit-notes.md`.
 - Spurious "past start times" warning for player CAP: a BARCAP/TARCAP is meant to be
   on-station at mission start, so a cold-start spin-up legitimately begins before mission

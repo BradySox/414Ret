@@ -15,6 +15,12 @@ a Tacview/log reference and a date. When a row reaches `VERIFIED`, also drop the
 *"needs an in-game pass"* tag from the matching section of `414th-features.md`
 so the two docs don't drift.
 
+> **Headless queue status (2026-06-27):** the desk-adjudicable work is **exhausted**. The
+> Python/Lua-logic layer behind every outstanding row is test-covered and was re-verified **green on
+> branch** (227 backing tests + `test_late_init`), so the remaining items are gated on a live cockpit
+> pass, not further headless analysis. Don't re-run the test sweep expecting a status flip — ☑ VERIFIED
+> requires watching the fail signature in DCS.
+
 ## Status legend
 
 | Mark | Meaning |
@@ -643,6 +649,13 @@ so the two docs don't drift.
   check `allowFARPRescue` / that a friendly airfield is in range.
 
 ### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☐ UNTESTED
+- **Live-save + branch re-verify (2026-06-27, headless session `78eae772`):** loaded the live
+  `autosave.retribution` (Nevada/Tonopah, turn 1) headless with `auto_combat_sar` **ON** — the blue ATO
+  frags **both** Combat SAR airframes (`CH-47F Block I` + `C-130J-30` King) and **red frags zero**, so
+  the blue-gate holds on a real auto-planned ATO (the "CSAR planned for red" fail signature did not
+  occur). `test_combat_sar_planning.py` + the scoring/placement suite re-ran **green on this branch**.
+  **Residual unchanged (cockpit only):** the AI helo actually **spawning from the FARP and flying the
+  rescue** (MOOSE `AICSAR` runtime) — not headless-provable.
 - **AI rescue re-wired to MOOSE `AICSAR` 2026-06-26 (PR pending in-game pass):** the 2026-06-26
   playtest showed the AI rescue helo just orbited and never recovered anyone — MOOSE CSAR's
   `enableForAI` only *tracks* AI ejections, it never flies an AI helo. The AI path now uses

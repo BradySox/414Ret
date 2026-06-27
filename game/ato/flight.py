@@ -17,7 +17,7 @@ from .flightstate import FlightState, Navigating, Uninitialized
 from .flightstate.killed import Killed
 from .flighttype import FlightType
 from .loadouts import Weapon
-from ..radio.CallsignContainer import CallsignContainer
+from ..radio.CallsignContainer import Callsign, CallsignContainer
 from ..radio.RadioFrequencyContainer import RadioFrequencyContainer
 from ..radio.TacanContainer import TacanContainer
 from ..radio.radios import RadioFrequency
@@ -58,6 +58,32 @@ def roll_plane_altitude_offset(low: int, high: int) -> int:
     return 1000 * random.randint(low, high)
 
 
+# 414th: fixed "role" callsigns for the rescue/EW package. They are surfaced in the
+# per-flight callsign picker (available_callsigns) and used to default a fresh
+# flight's callsign, but stay player-editable (a soft lock). They are NOT stock DCS
+# callsigns, so FlightGroupSpawner registers the chosen one into the spawn country's
+# callsign pool before spawning (pydcs ValueErrors on an unknown callsign). The AI
+# cannot voice them (no audio for unknown names), but every display reads the role.
+_ROLE_CALLSIGN_BY_TYPE: dict[FlightType, str] = {
+    FlightType.SCAR: "Sandy",  # RESCAP escort (A-10 / Apache)
+    FlightType.JAMMING: "Toxic",  # EC-130H/RC-130H EW C-130
+}
+
+#: Every fixed role callsign, for the spawner's "is this a custom callsign?" guard.
+ROLE_CALLSIGNS: frozenset[str] = frozenset({"King", "Jolly", "Sandy", "Toxic"})
+
+
+def role_callsign(flight_type: FlightType, is_helicopter: bool) -> Optional[str]:
+    """The fixed role callsign for a 414th rescue/EW role, or None if there isn't one.
+
+    Combat SAR splits by airframe: the C-130 on-scene commander is "King", the
+    rescue helo is "Jolly".
+    """
+    if flight_type is FlightType.COMBAT_SAR:
+        return "Jolly" if is_helicopter else "King"
+    return _ROLE_CALLSIGN_BY_TYPE.get(flight_type)
+
+
 class Flight(
     SidcDescribable, RadioFrequencyContainer, TacanContainer, CallsignContainer
 ):
@@ -82,6 +108,17 @@ class Flight(
         self.coalition = squadron.coalition
         self.squadron = squadron
         self.flight_type = flight_type
+        # 414th: default a fresh flight's callsign to its fixed role callsign
+        # (King / Jolly / Sandy / Toxic) when one applies, numbered after any
+        # same-role flights already fragged. Soft -- editable in the picker.
+        # Defensive airframe lookup so a lightweight Flight (tests) never crashes.
+        if self.callsign is None:
+            is_heli = bool(
+                getattr(getattr(squadron, "aircraft", None), "helicopter", False)
+            )
+            role = role_callsign(flight_type, is_heli)
+            if role is not None:
+                self.callsign = Callsign(role, self._next_role_callsign_nr(role))
         if claim_inv:
             self.squadron.claim_inventory(count)
         if roster is None:
@@ -170,7 +207,27 @@ class Flight(
                 if "Combined Joint Task Forces" in country_name or c == country_name:
                     for name in dcs_unit.callnames[c]:
                         callsigns.add(name)
+        # 414th: offer the flight's fixed role callsign (King/Jolly/Sandy/Toxic) in
+        # the picker too, so the rescue/EW roles can keep their callsign.
+        role = role_callsign(self.flight_type, self.squadron.aircraft.helicopter)
+        if role is not None:
+            callsigns.add(role)
         return sorted(callsigns)
+
+    def _next_role_callsign_nr(self, role: str) -> int:
+        # Number a defaulted role callsign after any same-role flights already
+        # fragged (Sandy 1, Sandy 2, ...). Best-effort + guarded for lightweight
+        # Flights built without a full ATO (tests); falls back to 1.
+        try:
+            used = sum(
+                1
+                for package in self.coalition.ato.packages
+                for flight in package.flights
+                if flight.callsign is not None and flight.callsign.name == role
+            )
+        except (AttributeError, TypeError):
+            used = 0
+        return used + 1
 
     @property
     def flight_plan(self) -> FlightPlan[Any]:

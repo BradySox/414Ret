@@ -29,6 +29,7 @@ from dcs.unitgroup import (
 )
 
 from game.ato import Flight
+from game.ato.flight import ROLE_CALLSIGNS
 from game.ato.flightstate import InFlight
 from game.ato.starttype import StartType
 from game.ato.traveltime import GroundSpeed
@@ -100,6 +101,7 @@ class FlightGroupSpawner:
         Aircraft that are already in the air will be spawned at their estimated
         location, speed, and altitude based on their flight plan.
         """
+        self._register_custom_callsign()
         if (
             self.flight.state.is_waiting_for_start
             or self.flight.state.spawn_type is not StartType.IN_FLIGHT
@@ -110,6 +112,21 @@ class FlightGroupSpawner:
         grp = self.generate_mid_mission()
         self.flight.group_id = grp.id
         return grp
+
+    def _register_custom_callsign(self) -> None:
+        """A 414th role callsign (King/Jolly/Sandy/Toxic) is not a stock DCS
+        callsign, so register the flight's chosen name into the spawn country's
+        callsign pool before pydcs assigns it -- pydcs ValueErrors on a callsign
+        not in that pool (dcs ``mission._assign_callsign``). Idempotent; a no-op
+        for stock callsigns and for a category with no callsign pool."""
+        callsign = self.flight.callsign
+        if callsign is None or callsign.name not in ROLE_CALLSIGNS:
+            return
+        category = self.flight.unit_type.dcs_unit_type.category
+        category = "Air" if category == "Interceptor" else category
+        pool = self.country.callsign.get(category)
+        if pool is not None and callsign.name not in pool:
+            pool.append(callsign.name)
 
     def create_idle_aircraft(self) -> Optional[FlyingGroup[Any]]:
         group = None

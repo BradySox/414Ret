@@ -1,0 +1,65 @@
+"""Role callsigns for the 414th rescue/EW package (SCAR rescue rework).
+
+The C-130 on-scene commander is "King", the rescue helo "Jolly", the SCAR escort
+"Sandy", and the EW C-130 "Toxic". These default a fresh flight's callsign and are
+offered in the existing per-flight callsign picker. They are not stock DCS
+callsigns, so FlightGroupSpawner registers the chosen one into the spawn country's
+callsign pool before pydcs assigns it (pydcs ValueErrors on an unknown callsign).
+"""
+
+from __future__ import annotations
+
+from types import SimpleNamespace
+from typing import Any, cast
+
+from game.ato.flight import ROLE_CALLSIGNS, role_callsign
+from game.ato.flighttype import FlightType
+from game.missiongenerator.aircraft.flightgroupspawner import FlightGroupSpawner
+from game.radio.CallsignContainer import Callsign
+
+
+def test_role_callsign_by_type_and_airframe() -> None:
+    assert role_callsign(FlightType.SCAR, is_helicopter=False) == "Sandy"
+    assert role_callsign(FlightType.SCAR, is_helicopter=True) == "Sandy"  # Apache
+    assert role_callsign(FlightType.JAMMING, is_helicopter=False) == "Toxic"
+    # Combat SAR splits by airframe.
+    assert role_callsign(FlightType.COMBAT_SAR, is_helicopter=False) == "King"  # C-130
+    assert role_callsign(FlightType.COMBAT_SAR, is_helicopter=True) == "Jolly"  # helo
+    # Everything else keeps its normal callsign.
+    assert role_callsign(FlightType.CAS, is_helicopter=False) is None
+    assert set(ROLE_CALLSIGNS) == {"King", "Jolly", "Sandy", "Toxic"}
+
+
+def _spawner(callsign_name: str, category: str, pool: list[str]) -> Any:
+    spawner = FlightGroupSpawner.__new__(FlightGroupSpawner)
+    spawner.flight = cast(
+        Any,
+        SimpleNamespace(
+            callsign=Callsign(callsign_name, 1),
+            unit_type=SimpleNamespace(dcs_unit_type=SimpleNamespace(category=category)),
+        ),
+    )
+    spawner.country = cast(Any, SimpleNamespace(callsign={category: pool}))
+    return spawner
+
+
+def test_role_callsign_is_registered_into_the_country_pool() -> None:
+    # "Sandy" isn't a stock DCS callsign -> the spawner injects it so pydcs can
+    # resolve it instead of raising ValueError.
+    pool = ["Enfield", "Springfield"]
+    _spawner("Sandy", "Plane", pool)._register_custom_callsign()
+    assert "Sandy" in pool
+
+
+def test_role_callsign_injection_is_idempotent() -> None:
+    pool = ["Enfield"]
+    spawner = _spawner("King", "Plane", pool)
+    spawner._register_custom_callsign()
+    spawner._register_custom_callsign()
+    assert pool.count("King") == 1
+
+
+def test_stock_callsign_is_left_untouched() -> None:
+    pool = ["Enfield", "Springfield"]
+    _spawner("Enfield", "Plane", pool)._register_custom_callsign()
+    assert pool == ["Enfield", "Springfield"]  # not a role callsign -> no-op

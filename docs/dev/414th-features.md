@@ -526,6 +526,13 @@ controls four behaviors together when set to Approximate:
   target to its `TARGET_POINT` waypoint **by order** (not position), so it stays
   populated even when Approximate intel offsets the waypoint.
   (`game/missiongenerator/kneeboard.py`)
+- **Emitters only, not the whole site.** Both tables list only the **HARM-targetable emitters**
+  — units with an **ALIC** code (radars and self-contained TELs) via `_emitter_units` — not the
+  launchers, command trucks and AAA guns that pad `strike_targets`. The cue table additionally
+  **dedupes by type** (one row per `Description | ALIC`), so it neither enumerates every launcher
+  nor publishes exact unit counts. A site with no coded emitter (a pure AAA/launcher group) falls
+  back to the full unit list so the page is never blank. The exact view keeps one row per emitter
+  (distinct coords) and preserves the by-order STPT pairing via the unit's original index.
 - **Recon-fog redaction (§3).** Both the cue and exact views only list the emitters once the
   site is **identified**: `SeadTaskPage._target_identified` gates on
   `TheaterGroundObject.known_for(viewer)`, and an un-discovered site is redacted to its

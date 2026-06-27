@@ -7,7 +7,11 @@ from unittest.mock import MagicMock
 from dcs.vehicles import AirDefence
 
 from game.ato.flighttype import FlightType
-from game.missiongenerator.kneeboard import KneeboardGenerator, SeadTaskPage
+from game.missiongenerator.kneeboard import (
+    KneeboardGenerator,
+    KneeboardPageWriter,
+    SeadTaskPage,
+)
 from game.missiongenerator.scarluadata import ScarTasking
 from game.settings.settings import TargetIntelPrecision
 from game.theater.theatergroundobject import SamGroundObject
@@ -124,6 +128,48 @@ def test_sead_target_is_redacted_until_the_site_is_identified() -> None:
 def test_sead_target_is_shown_once_identified() -> None:
     page = SeadTaskPage(_sead_flight_with_target(known=True), _bullseye(), False)
     assert page._target_identified is True
+
+
+def _unit(type_id: str, type_name: str, name: str) -> Any:
+    return SimpleNamespace(
+        type=SimpleNamespace(id=type_id, name=type_name),
+        name=name,
+        position=_DummyPosition("loc"),
+    )
+
+
+def test_sead_area_view_lists_only_emitters_and_dedupes() -> None:
+    # The SEAD/DEAD aimpoint table is a HARM reference, so it lists only the
+    # ALIC-coded emitters (radars / self-contained TELs) -- one row per type. The
+    # launchers, command trucks and AAA guns that pad the group are hidden, so the
+    # page no longer reveals the whole site composition + exact counts.
+    flight = _flight(FlightType.SEAD, TargetIntelPrecision.APPROXIMATE)
+    flight.friendly = object()
+    flight.custom_name = None
+    flight.waypoints = []
+    target = MagicMock(spec=SamGroundObject)
+    target.known_for.return_value = True
+    target.position = _DummyPosition("center")
+    target.strike_targets = [
+        _unit(AirDefence.Kub_1S91_str.id, 'SAM SA-6 "Straight Flush" STR', "str"),
+        _unit("Ural-4320-no-alic", "Truck Ural-4320", "truck"),
+        _unit(AirDefence.Osa_9A33_ln.id, 'SAM SA-8 Osa "Gecko" TEL', "osa-1"),
+        _unit(AirDefence.Osa_9A33_ln.id, 'SAM SA-8 Osa "Gecko" TEL', "osa-2"),
+        _unit("KS-19-no-alic", "AAA KS-19 100mm", "gun"),
+    ]
+    flight.package.target = target
+    page = SeadTaskPage(flight, _bullseye(), False)
+    assert page._use_target_area_cues is True
+
+    writer = KneeboardPageWriter()
+    page.render_into(writer, draw_title=False)
+    text = writer.get_text_string()
+
+    assert "Straight Flush" in text  # emitter shown
+    assert "Gecko" in text  # emitter shown
+    assert text.count("Gecko") == 1  # duplicate Osa TEL deduped to one row
+    assert "Ural-4320" not in text  # truck hidden
+    assert "KS-19" not in text  # AAA gun hidden
 
 
 def test_sead_task_page_keeps_exact_coords_with_exact_intel() -> None:

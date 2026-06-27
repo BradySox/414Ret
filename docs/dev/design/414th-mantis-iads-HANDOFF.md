@@ -47,6 +47,27 @@ Full results + caveats in `414th-ingame-pass-checklist.md` **G6**.
 eyeballed (lower risk). Separately noted: 13-of-14 red SAMs hung off one power node — a
 connection-graph concentration worth a later look (Python IADS-gen, not MANTIS).
 
+## 🔴 CRITICAL FIX 2026-06-26 — MANTIS was controlling ZERO SAMs (EMCON never worked)
+
+The "minor remaining" note above (human-flown "dark until in range" not eyeballed) turned out to hide
+the core bug. A 2026-06-26 playtest eyeballed it: SA-2/SA-6 **track radars emitted in search mode on
+ingress** — no EMCON at all. Root cause: MOOSE `SET_GROUP:FilterPrefixes` matches each prefix with
+`string.find(name, prefix)` **as a Lua pattern** (Moose.lua ~13321), escaping only `-`. Every
+Retribution SAM group is named `NNNN | CALLSIGN (SAM)`; the `(...)` is read as a pattern capture, so a
+name never matches its own group. `mantis.SAM_Group` was therefore **empty** — MANTIS controlled **0
+SAMs**, which then ran vanilla DCS AI (radars always on). True for **every MANTIS campaign since it
+became the default**.
+
+Why G6 still "passed": the C2 layer (`setup_c2`) uses `GROUP:FindByName` (exact, not patterns), so
+comms/power/decapitation worked and masked the dead core. The "SAMs stayed offline after a power kill"
+observation was the C2 `SetAIOff`, **not** MANTIS EMCON.
+
+**Fix (PR `claude/mantis-emcon-prefix-fix`):** `mantis-config.lua` now Lua-pattern-escapes every name
+before handing it to `MANTIS:New` (`escape_prefix`), and logs `resolved N/M SAM + K EWR live group(s)`
+right after `Start()` as the EMCON ground truth (**0 SAM = still broken**). **Re-run G6** watching that
+log line (should equal the SAM count) and confirm in-cockpit that SA-2/3/6 track radars stay dark until
+you're in range.
+
 ## ⭐ THE next step — MANTIS is the default; CTLD is now the gate
 
 With G6 passed, **MANTIS is now the default IADS engine for new campaigns** (flipped 2026-06-24;

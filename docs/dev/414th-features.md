@@ -1277,16 +1277,19 @@ Two fixes so the SOF C-130 airdrop actually generates as a flyable ground sortie
   start" retry was previously gated to `FlightType.JAMMING` only — now it applies to **any
   non-helo flight** with a cold/warm start at an airfield (runway starts need no parking slot).
   Helos (helipads/ground spawns) are unaffected.
-- **EW plugin de-conflict** (`game/missiongenerator/luagenerator.py`, `inject_plugins` +
-  `_sof_c130_present`). The C-130J Mission Systems (EW/ISR) plugin attaches to **every**
-  `C-130J-30` by airframe alone (`eligibleTypeNames = {["C-130J-30"]=true}` in
-  `c130j_mission_systems.lua`), so it would bolt the EW menu/behavior onto a SOF insert flown by
-  the same airframe. When any planned `FlightType.SOF` flight is a C-130J-30, the `c130j` plugin
-  is skipped for that mission (logged). Tradeoff: you can't fly the EW jet and run a SOF insert in
-  the same mission; letting them coexist would need a Lua-side per-group exclusion instead.
-  **EW de-conflict verified in-game 2026-06-23** ("the EW is gone" on the SOF C-130; checklist
-  F3); the runway-fallback half still wants a pass. Both are upstream-PR candidates (the runway
-  fallback is a general spawner fix; the EW gate is fork-specific to the `c130j` plugin).
+- **EW plugin de-conflict** (`game/missiongenerator/luagenerator.py`,
+  `_ew_excluded_c130j_groups` + the `c130j` plugin's `isEligible`). The C-130J Mission Systems
+  (EW/ISR) plugin attaches to **every** `C-130J-30` by airframe alone
+  (`eligibleTypeNames = {["C-130J-30"]=true}` in `c130j_mission_systems.lua`), so it would bolt
+  the EW menu/behavior onto a SOF insert or Combat SAR King flown by the same airframe. The
+  generator emits a **per-group deny-list** — `dcsRetribution.EwExcludedGroups`, the group names of
+  C-130J-30 flights in a non-EW role (`FlightType.SOF`/`COMBAT_SAR`, both coalitions) — and the
+  plugin's `isEligible` skips exactly those groups (by `getGroup():getName()`). This **replaced the
+  old mission-wide plugin skip** (`_non_ew_c130j_present`), which also stripped EW from a co-present
+  **JAMMING** C-130J-30; an EW jet and a SOF/King C-130J can now fly the same mission. The old
+  whole-plugin skip was verified in-game 2026-06-23 ("the EW is gone" on the SOF C-130); the
+  per-group version needs a fresh pass (checklist **J3**), as does the runway-fallback half.
+  Upstream-PR candidate (fork-specific to the `c130j` plugin).
 
 ---
 
@@ -1550,9 +1553,10 @@ returns to the squadron).
   King spawned clean / tankless (a G13 in-game finding, fixed 2026-06-25). (Loadout names resolve
   `Retribution Combat SAR` → `Liberation Combat SAR` → empty; an airframe with no Combat SAR
   payload just flies clean.)
-  Because the EW (`c130j`) plugin claims every C-130J-30 by airframe, the generator suppresses
-  it for any mission with a SOF-insert or Combat SAR King C-130J-30 (`_non_ew_c130j_present`) so
-  the King flies clean.
+  Because the EW (`c130j`) plugin claims every C-130J-30 by airframe, the generator emits a
+  per-group deny-list (`_ew_excluded_c130j_groups` → `dcsRetribution.EwExcludedGroups`) of the
+  SOF-insert / Combat SAR King C-130J-30 group names so the King (and SOF) fly clean while a
+  co-present JAMMING C-130J keeps its EW systems (see §15 EW de-conflict).
 
 ### Rescue scoring (the gameplay-loop payoff)
 
@@ -1574,7 +1578,7 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Layer | File |
 |---|---|
 | Flight type | `game/ato/flighttype.py` — `COMBAT_SAR` |
-| Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) and King **C-130J-30** (the only C-130) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`). EW de-conflict: `luagenerator._non_ew_c130j_present` |
+| Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) and King **C-130J-30** (the only C-130) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`). EW de-conflict: `luagenerator._ew_excluded_c130j_groups` (per-group deny-list) |
 | Flight plan | reuses `game/ato/flightplans/aewc.py` (FLOT support orbit) |
 | Planning | `game/commander/tasks/primitive/combatsar.py`, `…/compound/combatsarsupport.py`, `theaterstate.py` (`combat_sar_targets`) |
 | Setting | `game/settings/settings.py` — `auto_combat_sar` |

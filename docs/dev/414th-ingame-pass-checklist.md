@@ -353,11 +353,14 @@ so the two docs don't drift.
 - **Fail signature:** Command posts visible on the player map before reveal, or
   a reveal that doesn't persist across turns.
 
-### F3 — Player-flown SOF insert + C-130 EW exclusion · #56 / §15 · ☑ VERIFIED (2026-06-23)
+### F3 — Player-flown SOF insert + C-130 EW exclusion · #56 / §15 · ☑ VERIFIED (2026-06-23; mechanism changed to per-group — re-confirm via J3)
 - **Verified (2026-06-23):** flown — "the EW is gone": the `c130j` EW menu/behavior
   is correctly absent on the SOF insert C-130J-30 (the de-conflict gate fires).
-- **Pass:** The player can fly the air-assault-shaped delivery; the `c130j` EW
-  plugin is skipped for that mission (logged).
+- **Mechanism change (2026-06-26):** the de-conflict no longer skips the whole `c130j` plugin for
+  the mission — it now excludes just the SOF/King group via the per-group deny-list (see **J3**), so
+  the observable outcome (EW absent on the SOF insert) is unchanged but the path is new.
+- **Pass:** The player can fly the air-assault-shaped delivery; the SOF C-130J flies clean of the
+  `c130j` EW menu (now via `dcsRetribution.EwExcludedGroups`, not a whole-mission plugin skip).
 - **Fail signature (watched, did not occur):** EW menu appears on the SOF insert;
   or the insert can't be planned/flown by the fixed-wing transport.
 
@@ -738,7 +741,7 @@ so the two docs don't drift.
   the two wing tanks (`{C130J_Ext_Tank_L}`/`{C130J_Ext_Tank_R}`); both YAMLs carry a
   `Combat SAR` task; the `C-130 → C-130J-30` migrator alias is present
   (`aircrafttype.py`). **Residual (in-sim only):** the King visibly rendering the wing tanks
-  and flying **clean of the EW/ISR menu** (`_non_ew_c130j_present` suppression).
+  and flying **clean of the EW/ISR menu** (EW per-group deny-list `EwExcludedGroups`).
 - **In-game 2026-06-25:** tasking offered on **both** airframes ✅; CH-47Fbl1 spawns with its
   **door M60D guns** ✅ ("loadout good"). **Found:** the C-130J-30 King spawned with **no loadout /
   no wing tanks** — the documented removable-pylon case. **Fixed 2026-06-25:** added a
@@ -746,7 +749,7 @@ so the two docs don't drift.
   (`resources/customized_payloads/C-130J-30.lua`) mounting the two external wing tanks
   (`{C130J_Ext_Tank_L}` Pylon 1 + `{C130J_Ext_Tank_R}` Pylon 2; CLSIDs validated against the module).
   **Re-observe:** the King now spawns with visible underwing tanks. **Still to verify:** the King
-  flies **clean of the EW/ISR menu** (the other half of this row — `_non_ew_c130j_present` suppression).
+  flies **clean of the EW/ISR menu** (the other half of this row — EW per-group deny-list `EwExcludedGroups`).
 - **Setup:** A blue faction with **CH-47Fbl1** and **C-130J-30** squadrons. Plan a **Combat SAR**
   flight in each. (The stock AI C-130 is retired — C-130J-30, the Airplane Simulation Company
   module, is the only C-130; a fresh game and an in-progress save with an old "C-130" squadron must
@@ -761,7 +764,7 @@ so the two docs don't drift.
   resolve, else it falls back to empty; check the door-gun CLSIDs `{CH47_PORT_M60D}`/`{CH47_STBD_M60D}`
   are valid for the installed module); the King has no visible wing tanks (then they are a removable
   pylon on the C-130J-30 module, not model-default — needs the module's tank CLSID added to a King
-  payload); the King wears the EW/ISR menu (the `_non_ew_c130j_present` suppression didn't fire); an
+  payload); the King wears the EW/ISR menu (the `EwExcludedGroups` deny-list didn't exclude it); an
   old save with a "C-130" squadron fails to load (the `C-130 → C-130J-30` migrator alias is missing).
 
 ### G14 — C-130J jamming vs MANTIS IADS (no EMCON interference) · §2 / MANTIS migration · ☐ UNTESTED (ROE-only invariant verified 2026-06-26)
@@ -1123,6 +1126,20 @@ so the two docs don't drift.
   happening elsewhere; if the player's *own* flight is engaged en route the sim still pauses there.
 - **Fail signature:** player spawns at their configured ground start (the bug returns); or the sim
   never stops / the player ends up far past the IP.
+
+### J3 — Per-group C-130J EW de-confliction (JAMMING + SOF/King coexist) · §2 / §15 · ☐ UNTESTED (helper + plugin wiring test-covered, adjudicated 2026-06-26)
+- **Headless adjudication (2026-06-26):** `tests/missiongenerator/test_ew_deconfliction.py` covers
+  `_ew_excluded_c130j_groups` (only `SOF`/`COMBAT_SAR` C-130J-30 group names, not the JAMMING jet or
+  non-C-130J helos) and the `c130j` plugin wiring (reads `dcsRetribution.EwExcludedGroups`,
+  `isEligible` rejects an excluded group). **Residual (in-sim only):** the runtime attach decision.
+  Supersedes the old mission-wide skip verified under F3.
+- **Setup:** Frag **both** a JAMMING C-130J-30 **and** a SOF-insert or Combat SAR King C-130J-30 in
+  the **same** mission (the case the old whole-plugin skip broke). Generate and fly/inspect.
+- **Pass:** the JAMMING jet keeps its full `c130j` EW/ISR menu; the SOF/King C-130J flies **clean**
+  (no EW menu). With no SOF/King fragged, every C-130J-30 still gets EW (unchanged baseline).
+- **Fail signature:** the JAMMING jet loses its EW menu when a SOF/King is present (the old
+  mission-wide skip regressed); the SOF/King wears the EW menu (deny-list not applied / group-name
+  mismatch); or a Lua error in the `c130j` `isEligible` path.
 
 ---
 

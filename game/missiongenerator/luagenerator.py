@@ -432,6 +432,14 @@ class LuaGenerator:
 
         self._generate_combat_sar(lua_data)
 
+        # C-130J EW de-confliction: hand the c130j plugin the group names of C-130J-30
+        # flights in a non-EW role (SOF insert / Combat SAR King) so it skips just those,
+        # instead of the whole mission losing EW when one is present (which also stripped a
+        # co-present JAMMING C-130J-30). Always emitted; empty list = exclude nothing.
+        lua_data.add_item("EwExcludedGroups").set_data_array(
+            self._ew_excluded_c130j_groups()
+        )
+
         trigger = TriggerStart(comment="Set DCS Retribution data")
         trigger.add_action(DoScript(String(lua_data.create_operations_lua())))
         self.mission.triggerrules.triggers.append(trigger)
@@ -635,37 +643,29 @@ class LuaGenerator:
         filename = resource_path.resolve()
         self.mission.map_resource.add_resource_file(filename)
 
-    def _non_ew_c130j_present(self) -> bool:
-        """True if a non-EW role is flying the C-130J-30 this mission.
+    def _ew_excluded_c130j_groups(self) -> list[str]:
+        """Group names of C-130J-30 flights flying a NON-EW role this mission.
 
-        The EW plugin (C-130J Mission Systems) attaches to every C-130J-30 by
-        airframe alone (its eligibility check is purely ``getTypeName() ==
-        "C-130J-30"``), so it would hijack any other C-130J-30 role -- bolting the
-        EW/ISR menu and behavior onto it. That matters for the two roles that must
-        fly clean: the **SOF insert** airdrop and the **Combat SAR "King"** orbit
-        (both are C-130J-30 now that the stock C-130 was retired). When either is in
-        the mission we suppress the EW plugin so it doesn't commandeer them. (A plain
-        Transport C-130J-30 was already the airframe before consolidation, so this
-        does not change its behaviour.)
+        The EW plugin (C-130J Mission Systems) attaches to every C-130J-30 by airframe
+        alone (its eligibility check is purely ``getTypeName() == "C-130J-30"``), so it
+        would bolt the EW/ISR menu and behavior onto any other C-130J-30 role. Two roles
+        must fly clean: the **SOF insert** airdrop and the **Combat SAR "King"** orbit
+        (both are C-130J-30 now that the stock C-130 was retired). Rather than skip the
+        whole EW plugin for the mission -- which also stripped EW from a legitimate
+        **JAMMING** C-130J-30 flying alongside -- we hand the plugin a per-group deny-list
+        (emitted as ``dcsRetribution.EwExcludedGroups``) so it skips only these aircraft
+        and still claims the EW jet. Both coalitions; empty when none apply.
         """
         non_ew = (FlightType.SOF, FlightType.COMBAT_SAR)
-        for coalition in (self.game.blue, self.game.red):
-            for package in coalition.ato.packages:
-                for flight in package.flights:
-                    if flight.flight_type in non_ew and flight.is_c130j:
-                        return True
-        return False
+        c130j = AircraftType.named("C-130J-30")
+        return [
+            flight.group_name
+            for flight in self.mission_data.flights
+            if flight.flight_type in non_ew and flight.aircraft_type == c130j
+        ]
 
     def inject_plugins(self) -> None:
-        skip_ew = self._non_ew_c130j_present()
         for plugin in LuaPluginManager.plugins():
-            if skip_ew and plugin.definition.identifier == "c130j":
-                logging.warning(
-                    "A SOF insert or Combat SAR King is flying the C-130J-30 the EW "
-                    "plugin claims by airframe; skipping the C-130J Mission Systems "
-                    "(EW) plugin for this mission so it doesn't hijack that aircraft."
-                )
-                continue
             if plugin.enabled:
                 plugin.inject_scripts(self)
                 plugin.inject_configuration(self)

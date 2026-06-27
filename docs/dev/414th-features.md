@@ -345,7 +345,7 @@ data several times; a single-home-per-datum pass fixes it, each change condition
   satellite view — **but only in EXACT intel** (the recon page shows exact coords while the task
   page intentionally fuzzes them in Approximate mode, §5, so the fold never leaks a fuzzed target).
 The wiring lives in `KneeboardGenerator.generate_flight_kneeboard`. Visual change → in-game pass
-**H8**.
+**H8 ☑ VERIFIED 2026-06-26**.
 
 **Custom kneeboard import (UI, stored in the save).** DCS kneeboards are per-**airframe**, not
 per-flight, so to add your own kneeboard page to a fleet of player flights you'd otherwise
@@ -358,7 +358,7 @@ scoped to a single airframe (the finest grain DCS allows). Injection is
 (the `""` key = all client flights, an airframe id = that type only), mirroring the existing
 global `Saved Games/.../Retribution/Kneeboards` folder loader but **per-campaign** (no
 cross-campaign leakage). Old saves migrate via a `__setstate__` `setdefault`. Covered by
-`tests/missiongenerator/test_custom_kneeboards.py`; the Qt dialog itself needs an in-game pass.
+`tests/missiongenerator/test_custom_kneeboards.py`; the Qt dialog itself: in-game pass ☑ VERIFIED 2026-06-26 (H4).
 
 **Threat Intel Brief kneeboard (auto-generated enemy AD dossier).** A `ThreatIntelBriefPage`
 (`game/missiongenerator/kneeboard.py`) auto-generates the enemy air-defense dossier for a player
@@ -376,7 +376,7 @@ ring, HARM code and defeat note withheld until a TARPS overflight reveals it —
 counts the still-unidentified sites. Cards sort live-most-lethal → unidentified and pack down the
 page; overflow flows onto `(cont.)` continuation pages via the page's own card-packing
 `paginate()`. Gated by `generate_threat_intel_kneeboard` (default OFF); covered by
-`tests/missiongenerator/test_threat_intel_kneeboard.py`. In-game pass pending (H5). *(Per-system
+`tests/missiongenerator/test_threat_intel_kneeboard.py`. In-game pass ☑ VERIFIED 2026-06-26 (H5). *(Per-system
 photos were evaluated and deferred — DCS ships only `.dds` model textures, not portraits; reading
 + converting them at gen-time is fragile for marginal value on a 960px page.)*
 
@@ -401,7 +401,7 @@ SEAD / STRIKE / CAS / EW / CONTROL / GENERAL). All of it is a *human* comms aid 
 off the words (multiplayer missions, not the single-player campaigns the idea came from). One
 toggle, `enable_package_code_words` (default OFF), gates the panel, tooltip, waypoint echo, and
 kneeboard page together. Covered by `tests/ato/test_codewords.py` +
-`tests/data/test_brevity_reference.py`; in-game / planner-UI pass pending (H6).
+`tests/data/test_brevity_reference.py`; in-game / planner-UI pass ☑ VERIFIED 2026-06-26 (H6).
 
 **Fuel ladder kneeboard card.** The flight-plan page already shows the *minimum* fuel required at
 each waypoint (`FlightWaypoint.min_fuel`, the bingo-at-waypoint value the waypoint generator
@@ -413,7 +413,7 @@ back up at a tanker `REFUEL` waypoint) — and the **margin** (Plan − Min) so 
 they should have and what they need, with a negative margin flagging a sortie they can't fly home
 as planned. The burn model is approximate (it's the same estimate that drives `min_fuel`), so the
 card is labelled as planning figures. Gated by `generate_fuel_ladder_kneeboard` (default OFF);
-covered by `tests/missiongenerator/test_fuel_ladder.py`. In-game pass pending (H7). The last of the
+covered by `tests/missiongenerator/test_fuel_ladder.py`. In-game pass ☑ VERIFIED 2026-06-26 (H7). The last of the
 three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc-ideas-harvest.md`).
 
 **Compact 3-4 page kneeboard deck + BLUF.** With every optional page enabled the deck ran to
@@ -446,7 +446,7 @@ Turning `compact_kneeboard` **off** restores the full multi-page deck (every opt
 recon imagery included) byte-for-byte — the old page classes are unchanged; the compact deck is a
 separate assembly path (`KneeboardGenerator._compact_kneeboard_pages`). Covered by
 `tests/missiongenerator/test_compact_kneeboard.py` (BLUF composition + the page-2 composite render);
-in-game pass pending (H9).
+in-game pass ☑ VERIFIED 2026-06-26 (H9).
 
 ---
 
@@ -738,8 +738,9 @@ parks each tanker on the strongest cluster of demand for *its own* method.
   `list[RefuelingTarget]` field change needs **no save migration**.
 
 Tests: `tests/test_refueling_targets.py` (mixed fleet → one tanker per method; boom-only/untagged/
-permissive/no-matching-tanker fallbacks). **Needs an in-game pass** — confirm a mixed boom+probe
-BLUE ATO frags two tankers and each method's receivers tank from the right one (checklist C5).
+permissive/no-matching-tanker fallbacks). **In-game pass ☑ VERIFIED 2026-06-26 (C5)** — planner/data
++ live-save confirmed (matching, per-method fragging, demand placement); the in-sim residual
+(receivers physically plugging in) was not eyeballed.
 
 ### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
 
@@ -1666,9 +1667,8 @@ exactly the intent.
 - **Ground units stay on the faction country.** TGOs, statics, convoys, and the player helo group
   still spawn under `p_country`/`e_country` (`tgogenerator.py`, etc.) — harmless, since ground
   units have no nation voice comms. Only air units carry the per-squadron nation today.
-- **Needs an in-game pass.** CI can't verify DCS actually plays the per-nation voiceovers; add a
-  row to the in-game-pass checklist and confirm a mixed-nation CJTF side in the mission editor /
-  in flight before clearing.
+- **In-game pass ☑ VERIFIED 2026-06-26 (I1).** Confirmed in flight — a mixed-nation CJTF side plays
+  the per-nation voiceovers; the headless `CountryAssigner` adjudication held up live.
 
 ## §24 — Date-gated aircraft properties (helmet-mounted cueing)
 
@@ -1729,8 +1729,8 @@ the baseline "no modern cueing" option (`Not installed` / `Visor Only`, id `0`).
   generic. No new setting: it rides the existing `restrict_weapons_by_date` toggle.
 - **No faction override.** Unlike weapons (`weapons_introduction_year_overrides`), the property gate
   uses a single global year. Add per-faction overrides only if a campaign needs them.
-- **Needs an in-game pass.** CI proves the helpers + clamp logic; confirm in-game that a pre-2003
-  generated mission actually shows the baseline helmet option (not JHMCS) on an F/A-18/F-16.
+- **In-game pass ☑ VERIFIED 2026-06-26 (I3).** Confirmed in flight — a pre-2003 generated mission
+  shows the baseline helmet option (not JHMCS) on an F/A-18/F-16; NVG and the Soviet SURA Visor untouched.
 
 ## §26 — Off-mission combat fidelity + PLAYER_AT_IP fast-forward
 

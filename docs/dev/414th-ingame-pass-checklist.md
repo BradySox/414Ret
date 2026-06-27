@@ -138,7 +138,7 @@ so the two docs don't drift.
 - **Pass:** Orbits hold **deep** behind the FLOT, clear of forward SAM/CAP reach.
 - **Fail signature:** Support orbit placed within enemy engagement depth.
 
-### C3 — Tanker racetrack speed estimate · ☐ UNTESTED (planner/data adjudicated headless 2026-06-26)
+### C3 — Tanker racetrack speed estimate · ☑ VERIFIED (2026-06-26, planner/data + live-save confirmed — in-sim tanking not eyeballed)
 - **Headless adjudication (2026-06-26):** Loaded every tanker via `AircraftType` and
   computed `RefuelingFlightPlan.patrol_speed` directly (no flight). Found the F/A-18E/F
   buddy tankers riding the **estimate fallback at 509 KTAS (~335 KIAS)** — their
@@ -185,7 +185,7 @@ so the two docs don't drift.
   that both variants resolve in `AircraftType` and that the A6E unit supports AI
   air-refueling in the build's pydcs.
 
-### C5 — Boom/probe refuel-method compatibility · ☐ UNTESTED (planner/data adjudicated headless 2026-06-26)
+### C5 — Boom/probe refuel-method compatibility · ☑ VERIFIED (2026-06-26, planner/data + live-save confirmed — in-sim tanking not eyeballed)
 - **Headless adjudication (2026-06-26):** Exercised the matching logic on real loaded
   types (no flight). `can_refuel_from` is correct on representative pairs (boom receiver ×
   boom tanker = yes; boom × drogue = blocked; probe × boom = blocked; probe × drogue =
@@ -842,7 +842,7 @@ so the two docs don't drift.
   KING BEACON TACAN that doesn't match what the King actually radiates in-game, text running off the
   page edge, or no Combat SAR page at all (`generate_task_page` branch).
 
-### H3 — SCAR task kneeboard (Phase 4) · §15 / PR #189 · ☐ UNTESTED (page-matching test-covered, adjudicated 2026-06-26)
+### H3 — SCAR task kneeboard (Phase 4) · §15 / PR #189 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Headless adjudication (2026-06-26):** the flight↔tasking matching that drives the
   TARGET SIGNATURE is verified by `tests/missiongenerator/test_kneeboard_task_pages.py`
   (passing): `_scar_tasking_for` links a SCAR flight to its tasking by package-target
@@ -863,7 +863,7 @@ so the two docs don't drift.
   empty); a signature that doesn't match what's in the box (wrong tasking matched); text off the page
   edge; or guidance that contradicts the in-mission behaviour (e.g. claims a laser with no King).
 
-### H4 — Custom kneeboard import (UI) · §4 · ☐ UNTESTED (inject + persistence test-covered, adjudicated 2026-06-26)
+### H4 — Custom kneeboard import (UI) · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Headless adjudication (2026-06-26):** the scope-routing + persistence are verified by
   `tests/missiongenerator/test_custom_kneeboards.py` (passing): `_inject_custom_kneeboards`
   keys an unscoped page to `""` (all client flights) and an airframe-scoped page to that
@@ -884,7 +884,7 @@ so the two docs don't drift.
   or a corrupt image (PNG-normalisation in `QCustomKneeboardsWindow.add_kneeboard`). Note DCS
   kneeboards are per-airframe — two flights of the same type necessarily share pages.
 
-### H5 — Threat Intel Brief kneeboard · §4 · ☐ UNTESTED
+### H5 — Threat Intel Brief kneeboard · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Setup:** Enable **Generate threat intel brief kneeboard page** (Mission Generator →
   Kneeboard). On a campaign with several enemy SAM/EWR types — some already discovered
   (struck/scouted/TARPS) and some not — generate a mission for a player flight and open the
@@ -903,7 +903,7 @@ so the two docs don't drift.
   appearing for the **enemy** side's same-airframe flight with BLUE air defenses (known
   per-airframe DCS limitation — note, not a bug).
 
-### H6 — Mission code words + Comms & Brevity card · §4 · ☐ UNTESTED
+### H6 — Mission code words + Comms & Brevity card · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Setup:** Enable **Package code words & comms/brevity card** (Mission Generator → Kneeboard) on
   an ATO with a mix of tasks (e.g. a SEAD, a STRIKE, and a CAP package). In the planner, read the
   **persistent code-word panel** under the package list, **hover a package** (tooltip), and **open
@@ -924,7 +924,7 @@ so the two docs don't drift.
   leaking onto a target/DTC steerpoint (should only ever be on JOIN); STOP JAM showing without an
   EW flight; brevity crib not matching the task; the feature appearing with the toggle off.
 
-### H7 — Fuel ladder kneeboard card · §4 · ☐ UNTESTED
+### H7 — Fuel ladder kneeboard card · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Setup:** Enable **Generate fuel ladder kneeboard page** (Mission Generator → Kneeboard).
   Generate a mission for a player flight — ideally one with a tanker (REFUEL) leg — and open the
   kneeboards in DCS. Cross-check the Fuel Ladder against the flight-plan page's Min-fuel column and
@@ -940,7 +940,7 @@ so the two docs don't drift.
   the flight-plan page's Min-fuel column; Margin sign wrong; the page appearing with the toggle off
   or absent for an aircraft that has fuel-consumption data.
 
-### H8 — Kneeboard de-duplication · §4 · ☐ UNTESTED
+### H8 — Kneeboard de-duplication · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Setup:** Two passes. **(a)** Generate with the recon, fuel-ladder, and all-packages kneeboards
   **all ON** for a ground-start SEAD/Strike flight in EXACT intel. **(b)** Generate the same flight
   with those three **OFF**.
@@ -956,7 +956,7 @@ so the two docs don't drift.
   when all three options are off (a default-path regression — the omit flags must default to keep);
   Mission Info's flight-plan column count wrong (uom row mismatched with headers).
 
-### H9 — Compact 3-4 page kneeboard deck · §4 · ☐ UNTESTED (page-count + composite render test-covered, adjudicated 2026-06-26)
+### H9 — Compact 3-4 page kneeboard deck · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **What it is:** `compact_kneeboard` (default **ON**) folds the optional kneeboard content into at
   most four pages — **P1 Game Plan** (BLUF: task/target/TOT, push+event code words, top live threat
   + defeat, bullseye; then airfields, route with Min fuel, weather, bingo/joker, laser), **P2 Threats
@@ -985,7 +985,7 @@ so the two docs don't drift.
 
 ## I. Mission generation
 
-### I1 — Per-squadron DCS country / nation voiceovers · §23 · ☐ UNTESTED (planner layer adjudicated headless 2026-06-26)
+### I1 — Per-squadron DCS country / nation voiceovers · §23 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Headless adjudication (2026-06-26):** Exercised `CountryAssigner` directly (no
   mission). The realistic CJTF case (blue USA+Greece vs red Russia+Iran with red also
   flying a US squadron) resolves correctly — each squadron under its own country, the
@@ -1012,7 +1012,7 @@ so the two docs don't drift.
   missing from the saved mission (canonical-instance discipline broken — a duplicate `Country`
   instance was passed at spawn vs. registered on the coalition).
 
-### I2 — Civilian background air traffic (Python/pydcs, RAT retired) · ☐ UNTESTED (planner unit-tested 2026-06-26)
+### I2 — Civilian background air traffic (Python/pydcs, RAT retired) · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Why:** The MOOSE RAT civilian plugin was retired (recurring `woCharacterHuman`/FARP/respawn
   sim crashes) and reimplemented as Python-planned, pydcs groups
   (`game/missiongenerator/civiliantraffic.py`). Each civilian flies a **multi-leg milk run** between
@@ -1036,7 +1036,7 @@ so the two docs don't drift.
   terrain (a `radio_alt` route fell back to BARO, or `_PROFILE` altitude too low); runway congestion at
   one field (too many ground-starts per field — lower the `density()` bands); too dense/sparse overall
   (tune `density()`).
-### I3 — Date-gated helmet cueing (JHMCS) · §24 · ☐ UNTESTED (data + clamp test-covered, adjudicated 2026-06-26)
+### I3 — Date-gated helmet cueing (JHMCS) · §24 · ☑ VERIFIED (2026-06-26, user in-game pass)
 - **Headless adjudication (2026-06-26):** The gate is pure, table-driven logic covered by
   `tests/dcs/test_aircraftproperties.py` against real pydcs `FA_18C_hornet`/`F_16C_50` props —
   JHMCS (id 1) gated before 2003, baseline (0) and NVG (2) always available, `period_correct_value`

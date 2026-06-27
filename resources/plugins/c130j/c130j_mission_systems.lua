@@ -245,6 +245,21 @@ end
 
 local eligibleTypeNames = { ["C-130J-30"] = true }
 
+-- 414th EW de-confliction: the generator emits dcsRetribution.EwExcludedGroups -- the
+-- group names of C-130J-30 flights flying a NON-EW role (SOF insert, Combat SAR "King")
+-- that must fly clean and must NOT have the EW/ISR systems bolted on by airframe. Build a
+-- name->true lookup once (the dcsRetribution data trigger runs before this plugin loads;
+-- an empty/absent table just means "exclude nothing" = the old claim-every-C-130J-30).
+local ewExcludedGroups = {}
+do
+    local excluded = dcsRetribution and dcsRetribution.EwExcludedGroups
+    if type(excluded) == "table" then
+        for _, name in pairs(excluded) do
+            ewExcludedGroups[tostring(name)] = true
+        end
+    end
+end
+
 -- ---------------------------------------------------------------------------
 -- Shared unit registry
 -- ---------------------------------------------------------------------------
@@ -1854,6 +1869,16 @@ local function pushUnique(t, v) for i = 1, #t do if t[i] == v then return end en
 
 local function isEligible(unit)
     if not unit or not unit.isExist or not unit:isExist() then return false end
+    -- A C-130J-30 fragged for a non-EW role (SOF insert / Combat SAR King) flies clean:
+    -- never claim it, even though it shares the airframe. Checked by group name so a
+    -- legitimate JAMMING C-130J-30 in the same mission keeps its EW/ISR systems.
+    if next(ewExcludedGroups) ~= nil then
+        local ok, gname = pcall(function()
+            local g = unit:getGroup()
+            return g and g:getName() or nil
+        end)
+        if ok and gname and ewExcludedGroups[gname] then return false end
+    end
     if eligibleTypeNames[unit:getTypeName() or ""] then return true end
     local nm = unit:getName() or ""
     return string.find(nm, "Compass Call") or string.find(nm, "Rivet")

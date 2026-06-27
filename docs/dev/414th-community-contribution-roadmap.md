@@ -63,7 +63,9 @@ rest is the community capability.
 
 | Feature | Community value | 414th slice to strip | Tests | Readiness |
 |---|---|---|---|---|
-| Landmap terrain-query perf | High (≈7 min off ground-gen) | none | gen-covered | 🟢 (inv #1) |
+| Landmap terrain-query perf | High (≈7 min off ground-gen) | none | gen-covered | 🔵 **PR #842** (inv #1) |
+| Plugin `descriptionInUI` field (§14) | High (discoverability) | splashdamage3 desc (414th) | — | 🔵 **PR #841** (inv #10) |
+| Era-gate payload options: JHMCS property gating (§24) + AAQ-33 redo | High (era realism) | none | — | 🟡 planned combined PR (inv #11) |
 | DEAD reachability gate on follow-on strikes | High (planner correctness) | none | `test_dead_planning.py` | 🟢 (inv #2, B2 ☑) |
 | Support-orbit depth + front-anchor | High (red AWACS/tanker placement) | none | `test_support_orbit.py` | 🟢 (inv #3, C1/C2 ☑) |
 | Negative-start-packages takeoff check | Low/Med (UI false-warn) | none | `test_negative_start_packages.py` | 🟢 (inv #6) |
@@ -119,14 +121,13 @@ upstream-PR batch.
 > squadron set — *don't step on others* — means: check `gh pr list` for the surface first, and
 > when someone else owns it, **contribute by reviewing their PR**, not by opening a rival one.
 
-1. **Wave 0 — trivia (now).** `descriptionInUI` plugin-description UI. One field, ten
-   lines, no behavior change. Warm-up PR that also lands a UX win. **No collision.**
-2. **Wave 1 — the verified pure-Python fixes (now).** Inventory items 1–6: landmap
+1. **Wave 0 — trivia.** ✅ **DONE — `descriptionInUI` plugin-description UI pushed as PR #841**
+   (2026-06-27). One field, backward-compatible, + 8 bundled-plugin descriptions populated.
+2. **Wave 1 — the verified pure-Python fixes.** Inventory items 1–6: landmap
    perf, DEAD gate, support orbit, negative-start, runway fallback, despawn accounting
-   (Python half). All ☑ VERIFIED. Carve against a clean `dev`, one PR each. **⚠️ DEAD gate
+   (Python half). ✅ **Landmap perf pushed as PR #842** (2026-06-27). **⚠️ DEAD gate
    (inv #2) now collides with prokop7 #674 + geofffranks #772, and support orbit (inv #3)
-   overlaps prokop7 #676 — HOLD those two; landmap perf, negative-start, and runway fallback
-   are still clear.**
+   overlaps prokop7 #676 — HOLD those two; negative-start and runway fallback are still clear.**
 3. **Wave 2 — recon fog.** **Done for PR #1 — pushed as [#828](https://github.com/dcs-retribution/dcs-retribution/pull/828), in review.**
    Remaining: carve **PR #2** (TARPS recon platform + `alive_for` BDA damage-lag) once #828 lands.
 4. **Wave 3 — the bigger pure-Python features.** Planner unpredictability, MFD SAM hiding

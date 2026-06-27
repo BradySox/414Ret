@@ -356,6 +356,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `bradyccox`):
 
 - **Open (awaiting review):**
+  - [#842](https://github.com/dcs-retribution/dcs-retribution/pull/842) landmap prepared-index perf (carve queue item 1) — opened 2026-06-27.
+  - [#841](https://github.com/dcs-retribution/dcs-retribution/pull/841) plugin `descriptionInUI` field (§14, carve queue item 10) — opened 2026-06-27.
   - [#828](https://github.com/dcs-retribution/dcs-retribution/pull/828) recon fog-of-war (§3) — the flagship carve, mergeable.
   - [#806](https://github.com/dcs-retribution/dcs-retribution/pull/806) configurable cruise/patrol altitude.
   - [#805](https://github.com/dcs-retribution/dcs-retribution/pull/805) bulk waypoint altitude UI — ⚠️ **CHANGES_REQUESTED, action owed**.
@@ -367,6 +369,7 @@ Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored
   - Several created mid-June show `mergeable: UNKNOWN` — **likely need a rebase on current `dev`**.
 - **Merged:** [#826](https://github.com/dcs-retribution/dcs-retribution/pull/826) weapons coverage/repairs · [#789](https://github.com/dcs-retribution/dcs-retribution/pull/789) inverted OPFOR aggressiveness fix.
 - **Self-withdrawn (NOT rejected, NOT upstream):** [#784](https://github.com/dcs-retribution/dcs-retribution/pull/784) Iran pack · [#786](https://github.com/dcs-retribution/dcs-retribution/pull/786) AAQ-33 era restriction · [#790](https://github.com/dcs-retribution/dcs-retribution/pull/790) orbit deconfliction. The Iran pack and AAQ-33 fix are therefore **still fork-only** — re-carve if wanted.
+- **Planned next carve (decided 2026-06-27, not yet opened):** one combined **"era-gate payload-editor options"** PR = JHMCS property gating (§24) **+** a redo of the withdrawn #786 AAQ-33 pod fix. Self-contained, no 414th deps, builds on the upstream `restrict_weapons_by_date` toggle. See upstreaming-inventory item 11.
 
 **Crowded upstream zones — do NOT carve into these without coordinating** (active non-414th PRs):
 - Planning revamps — prokop7 [#676](https://github.com/dcs-retribution/dcs-retribution/pull/676) BARCAP, [#674](https://github.com/dcs-retribution/dcs-retribution/pull/674) SEAD/DEAD, [#678](https://github.com/dcs-retribution/dcs-retribution/pull/678) BAI, [#677](https://github.com/dcs-retribution/dcs-retribution/pull/677) attack-infra.

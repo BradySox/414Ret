@@ -49,28 +49,34 @@ unvalidated "fix" is not something to ask upstream to take.
 
 | # | Fix | Readiness | Value | Checklist |
 |---|---|---|---|---|
-| 1 | Landmap terrain-query perf | 🟢 READY | High (broad: ~7 min off ground-gen) | n/a (perf, gen-covered) |
+| 1 | Landmap terrain-query perf | 🔵 IN REVIEW | High (broad: ~7 min off ground-gen) — **pushed as PR #842** | n/a (perf, gen-covered) |
 | 2 | DEAD reachability gate on follow-on strikes | 🟢 READY | High (planner correctness) | B2 ☑ |
 | 3 | Support-orbit depth + front-anchor | 🟢 READY | High (red AWACS/tanker placement) | C1, C2 ☑ |
 | 4 | Player-despawn loss accounting | 🟠 CARE | High (false combat losses) | D1 ☑ |
 | 5 | SOF C-130 runway-start fallback | 🟢 READY | Medium (general spawner fix) | E ☑ |
 | 6 | Negative-start-packages takeoff-time check | 🟢 READY | Low/Medium (UI false-warn) | n/a |
-| 7 | AAQ-33 targeting-pod era restriction | ⚪ WITHDRAWN | — (PR #786 self-closed; still fork-only) | — |
+| 7 | AAQ-33 targeting-pod era restriction | ⚪ WITHDRAWN → ↪ item 11 | — (PR #786 self-closed; re-carve bundled with §24, see item 11) | — |
 | 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🔵 IN REVIEW | Medium (player-facing) — **pushed as PR #828**, awaiting review | — |
 | 9 | Combat SAR — pilot rescue flight type + scoring | 🟠 CARE / 🟡 NEAR | High (whole new playable loop) | G8–G11, H2 ☐ |
+| 10 | Plugin `descriptionInUI` field (Plugin Options UI, §14) | 🔵 IN REVIEW | High (discoverability) — **pushed as PR #841** | — |
+| 11 | Era-gate payload-editor options (JHMCS property gating §24 **+** AAQ-33 redo) | 🟡 NEAR (ready, planned combined PR) | High (era realism, opt-in) | I3 ☐ |
 
 ---
 
 ## Details
 
-### 1. Landmap terrain-query perf — 🟢 READY
+### 1. Landmap terrain-query perf — 🔵 IN REVIEW (pushed as PR #842, 2026-06-27)
 - **What:** `is_on_land`/`is_in_sea` must test the **prepared** `MultiPolygon`,
   and `pickle` bypasses `__post_init__`, so the spatial index has to be rebuilt
   on load. Fixing both cut a ~7-minute ground-generation stall.
+- **Carve note (corrected on carve):** upstream **already** prepares the index in
+  `Landmap.__post_init__` — but it's dead at runtime because landmaps always load
+  from pickle. The genuine delta carved into PR #842 was (a) `is_on_land`/`is_in_sea`
+  testing the whole prepared `MultiPolygon` instead of looping `.geoms`, and (b)
+  `load_landmap` re-running `Landmap.prepare()` after the pickle load. **Files:**
+  `game/theater/landmap.py` + `game/theater/conflicttheater.py` (not `__setstate__`).
 - **Why upstream cares:** pure perf, zero behavior change, benefits every
   theater/campaign — the easiest possible upstream sell.
-- **Files:** `game/theater/conflicttheater.py` (landmap query + `__setstate__`/
-  index rebuild).
 - **In-game pass:** not required — it's a generation-time perf fix already
   exercised by the normal campaign-gen path.
 - **Note:** confirm whether the prepared-geometry dependency is satisfied in a
@@ -144,11 +150,14 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Note:** `qt_ui` isn't in the CI mypy path upstream either; Black-clean is the
   bar.
 
-### 7. AAQ-33 targeting-pod era restriction — ⚪ WITHDRAWN
+### 7. AAQ-33 targeting-pod era restriction — ⚪ WITHDRAWN → re-carve as part of item 11
 - Was opened as upstream **#786** (`codex/fix-aaq33-era-restriction`), then
   **self-closed by bradyccox on 2026-06-13** (no maintainer rejection). It is therefore
-  **NOT upstream and still fork-only.** If the fix is wanted upstream, re-carve and
-  re-open a fresh PR against a clean `dev`.
+  **NOT upstream and still fork-only.**
+- **Decision (2026-06-27):** do not re-open #786 standalone. **Bundle it with the JHMCS
+  property gating (§24) into one "era-gate payload-editor options" PR** — see item 11.
+  Both share the theme of gating payload-editor choices by campaign date off the existing
+  `restrict_weapons_by_date` toggle, so they present better together.
 
 ### 8. Recon fog-of-war — 🔵 IN REVIEW (pushed as PR #828)
 - **Pushed:** carved + opened upstream as **[PR #828](https://github.com/dcs-retribution/dcs-retribution/pull/828)**
@@ -194,6 +203,32 @@ unvalidated "fix" is not something to ask upstream to take.
   is flown, not before. The scoring is fail-safe (empty export = pre-scoring behaviour), which
   de-risks the carve but does not substitute for flying it.
 - **Source of truth:** `docs/dev/design/414th-combat-sar-spec.md`, features doc §21.
+
+### 10. Plugin `descriptionInUI` field — 🔵 IN REVIEW (pushed as PR #841, 2026-06-27)
+- **What:** an optional `descriptionInUI` string in the plugin manifest, rendered as an
+  italic word-wrapped line atop that plugin's options box. Backward-compatible (defaults
+  to `""`); also populated for 8 bundled upstream plugins so the field is demonstrated.
+- **Files:** `game/plugins/luaplugin.py` + `qt_ui/windows/settings/plugins.py` + 8
+  `resources/plugins/*/plugin.json`. No 414th deps; the cheapest community win in the repo.
+- **Carve note:** the fork's `splashdamage3` description is 414th-specific (pinned build) —
+  intentionally **not** carried to upstream.
+
+### 11. Era-gate payload-editor options (JHMCS §24 + AAQ-33 redo) — 🟡 NEAR (planned combined PR)
+- **What:** extend the already-upstream `restrict_weapons_by_date` toggle from weapons to
+  payload-editor *properties* and *targeting pods*. Two pieces, one PR:
+  - **JHMCS property gating (§24):** the new self-contained `game/dcs/aircraftproperties.py`
+    (103 lines, pydcs-only) + `degrade_props_for_date` in
+    `game/missiongenerator/aircraft/flightgroupconfigurator.py` + the dropdown filter in
+    `qt_ui/windows/mission/flight/payload/propertycombobox.py`. Hides/clamps JHMCS
+    (fielded ~2003) in pre-2003 missions. Keyed by value *label* so the Su-30/Su-35 "SURA
+    Visor" (same id) is **not** gated.
+  - **AAQ-33 targeting-pod era restriction:** the fix from withdrawn #786 (item 7).
+- **Why combined:** same theme (gate payload-editor choices by campaign date off one
+  existing toggle); historically grounded (a fact, not a balance opinion); no overlap with
+  any open upstream PR; entirely fork-only today (verified 2026-06-27: no `degrade_props`/
+  JHMCS anywhere upstream). Cleaner than the weapon-date *balance* rule (which overlaps the
+  already-merged #826 and is opinion-based — keep that on `main`).
+- **Status:** decided 2026-06-27 to do later as one PR; not yet carved. **In-game pass I3 ☐.**
 
 ---
 

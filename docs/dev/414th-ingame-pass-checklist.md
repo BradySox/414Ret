@@ -1540,6 +1540,18 @@ so the two docs don't drift.
   fires far inland (range gate wrong); auto bombardment never fires or fires every tick (cadence wrong);
   `TaskFireAtPoint`/`getMarkPanels`/`missionCommands` Lua error in `dcs.log`; an escort wandering off station.
 
+### L4 — Vietnam compressed-theater support-orbit standoff · PR #314 · ☐ UNTESTED (headless-verified; map-readable, no flying)
+- **Headless adjudication:** `game/ato/flightplans/supportorbit.py::support_orbit_anchor` on the live Khe Sanh
+  save: at 25/20 NM the AEW&C/tanker orbit sits **83/74 km** behind the front (vs 148 km at the old 60 NM),
+  still 37-46 km clear of the threat. Guard test `tests/test_vietnam_content.py::test_vietnam_campaign_tightens_support_orbits`
+  pins the 3 campaign values + the untouched 80/70 defaults.
+- **Setup:** Start a **NEW** Khe Sanh / Yankee Station / Velvet Thunder game (existing saves bake the old
+  buffer in) and auto-plan a turn.
+- **Pass:** On the planner map the AEW&C and tanker racetracks hug the front (~75-90 km back), not flung to
+  the map edge; their escorts no longer sprawl across the theater. Large (non-Vietnam) campaigns are unchanged.
+- **Fail signature:** orbits still ~150 km back / at the map edge; a tanker sitting inside a SAM ring (buffer
+  too low); the buffer not applied (check Air Doctrine page shows 25/20 after campaign-select).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

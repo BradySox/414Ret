@@ -49,6 +49,11 @@ P3 (behaviour taskings) outstanding.
   gunfire; Yankee Station coastal → naval gunfire on). Applied on campaign-select via the existing
   `QNewGameSettings._load_campaign_settings`. Test: `tests/test_vietnam_content.py::test_vietnam_campaign_era_preseed_applies`.
   The dedicated New-Game "Vietnam" *card* (filter the list + brand the front door) is still TODO.
+  The same pre-seed blocks also pin a tighter **AEW&C/tanker standoff** (`aewc_threat_buffer_min_distance: 25`
+  / `tanker_threat_buffer_min_distance: 20`, vs the 80/70 NM defaults) so support orbits hug the compressed
+  Vietnam fronts instead of sprawling to the map edge — diagnosed from a "support flies round the north edge"
+  playtest (the cause was the support standoff, **not** threat routing; a SAM wall would worsen it). Per-campaign
+  so large maps keep the wide defaults; PR #314, guard `tests/test_vietnam_content.py::test_vietnam_campaign_tightens_support_orbits`.
 - **P3 (behaviour) — strike-deadlock fix DONE (the urgent one).** Root-caused 2026-06-28 from a live
   Khe Sanh save reporting "no BAI/Strike": **0/28 strike + 0/13 BAI targets were plannable** because
   retribution refuses to strike a target still covered by an air defense (`target_area_preconditions_met`),

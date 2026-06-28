@@ -33,6 +33,9 @@ pieces below:*
 **Period of report:** opening of the siege, 21 January 1968
 **Subject:** NVA forces investing Khe Sanh Combat Base; friendly situation; the air plan
 
+![Marines in a trenchline on the Khe Sanh perimeter, 1968](img/khe-sanh/khe-sanh-marines-trenchline.jpg)
+<sub>26th Marines in the perimeter trenches, Khe Sanh, 1968. *USMC Archives (CC BY 2.0), via Wikimedia Commons; full [image credits](khe-sanh-visual-briefing.md#image-credits--sources).*</sub>
+
 ## Bottom Line Up Front
 
 Two-plus NVA divisions have invested the Marine combat base at **Khe Sanh** in northwestern Quảng
@@ -51,6 +54,9 @@ once did to the French at Dien Bien Phu — *in reverse*. The garrison's job is 
 the hills; **our job in the air is to make the massing fatal.**
 
 ## Section I — How We Got Here
+
+![President Johnson and advisers around a terrain model of the Khe Sanh area in the White House Situation Room](img/khe-sanh/khe-sanh-lbj-situation-model.jpg)
+<sub>Washington watched it hour by hour: President Johnson briefed over a terrain model of Khe Sanh in the White House Situation Room — the "Dien Bien Phu in reverse" anxiety reached the top. *White House photo by Yoichi Okamoto (public domain), via Wikimedia Commons.*</sub>
 
 Khe Sanh sits astride **Route 9** and overlooks the NVA infiltration routes from Laos (the Ho Chi
 Minh Trail complex). Through late 1967 the **NVA 304th and 325C Divisions** moved into the hills
@@ -121,6 +127,9 @@ the target. This is why radar bombing and the Super Gaggle exist. The terrain is
 border. Route 9, the only road, is cut and ambush-laced.
 
 ## Section VI — The Threat to Aircraft
+
+![The Khe Sanh airstrip in 1968](img/khe-sanh/khe-sanh-airstrip-1968.jpg)
+<sub>The Khe Sanh airstrip, 1968 — the deadliest gauntlet of all, ranged by NVA guns on the approach. *USAF photo (public domain), via Wikimedia Commons.*</sub>
 
 **Flak, not missiles.** The killers are the **automatic AAA (12.7–37 mm)** low and the **57 mm**
 reaching to medium altitude, plus small arms over every pass — concentrated on the **hill targets**

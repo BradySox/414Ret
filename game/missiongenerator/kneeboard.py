@@ -2722,6 +2722,26 @@ def _brief_laser(laser_codes: List[Optional[int]]) -> str:
     return " / ".join(codes)
 
 
+def _brief_freq(flight: Any, freq: Optional[Any]) -> str:
+    """A freq with its **preset channel** when the radio is on one ("COMM1 Ch4 264.0").
+
+    So the pilot can just select the preset button instead of dialling the frequency.
+    Falls back to the bare freq when there's no preset (or no channel data).
+    """
+    if freq is None:
+        return ""
+    mhz = f"{freq.mhz:.1f}"
+    channel_for = getattr(flight, "channel_for", None)
+    channel = channel_for(freq) if callable(channel_for) else None
+    if channel is None:
+        return mhz
+    try:
+        name = flight.aircraft_type.channel_name(channel.radio_id, channel.channel)
+    except Exception:
+        name = f"Ch{channel.channel}"
+    return f"{name} {mhz}"
+
+
 def _brief_loadout(units: List[Any]) -> str:
     """One-line **ordnance** summary from the lead aircraft's generated pylons.
 
@@ -2798,7 +2818,7 @@ class BriefSheetData:
     threats_air: str
     threats_sam: str
     game_plan: str
-    comms: List[Tuple[str, str]]  # [(label, value), ...]
+    comms: List[Tuple[str, str]]  # [(prefix=label+callsign, channel+freq value), ...]
     guard: str
     push_word: Optional[str]
     success_word: Optional[str]
@@ -2912,6 +2932,39 @@ class BriefSheetPage(KneeboardPage):
         runs.append(("_" * fills, writer.col_muted))
         writer.text_runs(runs, font=font)
 
+    def _wrapped_entries(
+        self,
+        writer: KneeboardPageWriter,
+        label: str,
+        entries: List[Tuple[str, str]],
+        font: ImageFont.FreeTypeFont,
+        value_color: Optional[Tuple[int, int, int]],
+    ) -> None:
+        """A labelled row of ``(prefix, value)`` entries that wraps at entry boundaries.
+
+        The prefix is plain, the value coloured; continuation lines indent to the value
+        column. Used for COMMS, where channels + the tanker TACAN can overflow one line.
+        """
+        label_str = f"{label:<{self.LABEL_W}}"
+        value_x = writer.x + int(round(font.getlength(label_str)))
+        right = writer.image_size[0] - writer.page_margin
+        lines: List[List[Tuple[str, Optional[Tuple[int, int, int]]]]] = [[]]
+        cursor = float(value_x)
+        for prefix, value in entries:
+            sep = "  " if lines[-1] else ""
+            width = font.getlength(sep + prefix + value)
+            if lines[-1] and cursor + width > right:
+                lines.append([])
+                cursor = float(value_x)
+                sep = ""
+                width = font.getlength(prefix + value)
+            lines[-1].append((sep + prefix, None))
+            lines[-1].append((value, value_color))
+            cursor += width
+        for i, line_runs in enumerate(lines):
+            prefix_col = label_str if i == 0 else " " * self.LABEL_W
+            writer.text_runs([(prefix_col, writer.col_muted)] + line_runs, font=font)
+
     def _prose(
         self,
         writer: KneeboardPageWriter,
@@ -2990,16 +3043,9 @@ class BriefSheetPage(KneeboardPage):
         self._prose(writer, "GAME PLAN", d.game_plan, body)
         writer.rule(gap_above=12, gap_below=12)
 
-        comms_runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = []
-        for i, (label, value) in enumerate(d.comms):
-            if i:
-                comms_runs.append(("  ", None))
-            comms_runs.append((f"{label} ", None))
-            comms_runs.append((value, writer.col_nav))
-        if comms_runs:
-            comms_runs.append(("  GUARD ", None))
-            comms_runs.append((d.guard, writer.col_nav))
-            self._row(writer, "COMMS", comms_runs, body)
+        if d.comms:
+            entries = list(d.comms) + [("GUARD ", d.guard)]
+            self._wrapped_entries(writer, "COMMS", entries, body, writer.col_nav)
         else:
             self._blank_line(writer, "COMMS", body)
         code_runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = []
@@ -3305,7 +3351,9 @@ class CoverPage(KneeboardPage):
         date_font = ImageFont.truetype(
             "courbd.ttf", 26, layout_engine=ImageFont.Layout.BASIC
         )
-        writer.text(f"{op} — Turn {self.turn}", font=op_turn_font)
+        # Wrap a long operation name onto multiple lines rather than running it off
+        # the page (the big font overflows for long campaign titles).
+        writer.text(f"{op} — Turn {self.turn}", font=op_turn_font, wrap=True)
         writer.text(self.day.strftime("%A %d %B %Y"), font=date_font)
 
         if self.sitrep is not None:
@@ -3876,16 +3924,22 @@ class KneeboardGenerator(MissionInfoGenerator):
         code_words = (
             coalition.code_words if game.settings.enable_package_code_words else None
         )
+        # Each comms entry is (prefix, value): the prefix (label + callsign) is plain,
+        # the value (preset channel + freq, plus the tanker's TACAN) is the coloured
+        # part. Channels let the pilot select a preset button instead of dialling.
         comms: List[Tuple[str, str]] = []
         pkg_freq = getattr(flight.package, "frequency", None)
         if pkg_freq is not None:
-            comms.append(("PKG", f"{pkg_freq.mhz:.1f}"))
+            comms.append(("PKG ", _brief_freq(flight, pkg_freq)))
         if self.awacs:
             awacs = self.awacs[0]
-            comms.append(("AWACS", f"{awacs.callsign} {awacs.freq.mhz:.1f}"))
+            comms.append((f"AWACS {awacs.callsign} ", _brief_freq(flight, awacs.freq)))
         if self.tankers:
             tanker = self.tankers[0]
-            comms.append(("TKR", f"{tanker.callsign} {tanker.freq.mhz:.1f}"))
+            tanker_value = _brief_freq(flight, tanker.freq)
+            if getattr(tanker, "tacan", None) is not None:
+                tanker_value += f" {tanker.tacan}"
+            comms.append((f"TKR {tanker.callsign} ", tanker_value))
 
         return BriefSheetData(
             op_turn=f"{(game.campaign_name or 'Campaign').upper()} · TURN {game.turn}",

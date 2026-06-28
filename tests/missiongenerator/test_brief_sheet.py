@@ -108,6 +108,20 @@ def test_brief_loadout_summarises_pylons() -> None:
     assert summary.startswith("2×")  # the doubled station is counted
 
 
+def test_brief_freq_includes_preset_channel() -> None:
+    from game.missiongenerator.kneeboard import _brief_freq
+
+    freq = SimpleNamespace(mhz=264.0)
+    bare = SimpleNamespace()  # no channel_for -> bare freq
+    assert _brief_freq(bare, freq) == "264.0"
+    assert _brief_freq(bare, None) == ""
+    preset = SimpleNamespace(
+        channel_for=lambda f: SimpleNamespace(radio_id=1, channel=4),
+        aircraft_type=SimpleNamespace(channel_name=lambda r, c: f"COMM{r} Ch{c}"),
+    )
+    assert _brief_freq(preset, freq) == "COMM1 Ch4 264.0"
+
+
 def test_brief_sheet_page_renders_and_colour_codes(tmp_path: Path) -> None:
     data = BriefSheetData(
         op_turn="RED TIDE · TURN 2",
@@ -123,7 +137,7 @@ def test_brief_sheet_page_renders_and_colour_codes(tmp_path: Path) -> None:
         threats_air="MiG-29 CAP near the front.",
         threats_sam="SA-5 138nm",
         game_plan="HARM from standoff.",
-        comms=[("PKG", "264.0")],
+        comms=[("PKG ", "264.0")],
         guard="243.0",
         push_word="Cobalt",
         success_word="Crimson",
@@ -219,7 +233,7 @@ def test_build_brief_sheet_data_populates_from_the_mission() -> None:
     assert data.push_word == "Cobalt" and data.abort_word == "Teal"
     assert "SA-5 S-200 138nm" in data.threats_sam
     assert data.game_plan == "Stand off."
-    assert data.comms[0] == ("PKG", "264.0")
+    assert data.comms[0] == ("PKG ", "264.0")  # no preset channel on the fake flight
     assert data.laser == "1688"  # the None member code is dropped
     assert data.bullseye == "N50 E10"
     # Empty enemy faction -> the loose fallback air-threat line, never a crash.

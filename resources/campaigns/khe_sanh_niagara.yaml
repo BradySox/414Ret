@@ -86,6 +86,16 @@ squadrons:
       secondary: air-to-air
       aircraft: [F-8E Crusader]
       size: 8
+    - primary: AEW&C
+      aircraft: [EC-121D Warning Star]
+      size: 2
+    - primary: Armed Recon
+      secondary: air-to-ground
+      aircraft: [RF-101B Voodoo]
+      size: 4
+    - primary: Strike
+      aircraft: [B-52H Stratofortress]
+      size: 4
     - primary: Refueling
       aircraft: [KC-135 Stratotanker]
       size: 2
@@ -119,15 +129,10 @@ squadrons:
       secondary: air-to-ground
       aircraft: [A-4E Skyhawk]
       size: 12
-
-  # --- Guam (Arc Light off-map B-52) ---
-  Guam:
-    - primary: Strike
-      aircraft: [B-52H Stratofortress]
+    - primary: Armed Recon
+      secondary: air-to-ground
+      aircraft: [RA-5C Vigilante]
       size: 4
-    - primary: Refueling
-      aircraft: [KC-135 Stratotanker]
-      size: 2
 
   # --- NVA: the hills (Sukhumi) ---
   Sukhumi-Babushara:

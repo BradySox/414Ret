@@ -10,7 +10,9 @@ back into the campaign as **confirmed intelligence**.
 TARPS stands for the **Tactical Airborne Reconnaissance Pod System** — the real F-14 recon pod.
 Here it is a dedicated flight type (`FlightType.TARPS`) backed by the **TARS** (Tactical Air
 Recon System) runtime engine, which films what the jet overflies and feeds the results into the
-campaign's battle-damage picture at debrief.
+campaign's battle-damage picture at debrief. The flight type is **airframe-agnostic**: the F-14 is
+the modern carrier of the role, but any aircraft tagged with the `TARPS` task can fly it — see
+[Vietnam-era recon birds](#vietnam-era-recon-birds) below.
 
 > **In-game-pass status:** TARS is **default ON** and code-complete, but the Lua can't run in CI
 > so it still warrants a cockpit pass — confirm the F10 film menu unlocks with the shipped F-14
@@ -55,6 +57,25 @@ ingress point.
 > If you ever see the F10 film menu fail to unlock, it is almost always a stale weapon CLSID in
 > the loadout — DCS rejects the whole payload and silently drops the pod with it. See
 > [Custom Loadouts](Custom-Loadouts) for the CLSID-currency gotcha.
+
+### Vietnam-era recon birds
+
+The TARPS role is not F-14-only. The two dedicated Vietnam-era tactical photo-recon aircraft fly
+it as their **primary** job:
+
+| Aircraft | Service | Notes |
+|---|---|---|
+| **RF-101B Voodoo** | USAF, land-based | Supersonic low-level photo recon; the classic Vietnam "Voodoo" run |
+| **RA-5C Vigilante** | US Navy, carrier-based | Carrier recon over Yankee Station |
+
+These are unarmed camera ships with **built-in cameras** rather than the F-14's external
+`{F14-TARPS}` pod, so their TARPS loadout is a clean, weaponless fit (the **Retribution TARPS**
+payload — no external stores). They still keep a low-priority **Armed Recon** fallback so a
+squadron is never stranded with nothing to do, but TARPS is what they are for. The **Khe Sanh
+(Operation Niagara)** campaign fields one squadron of each, tasked TARPS by default.
+
+The runtime is identical to the F-14's: overfly the target, recover the aircraft, and the
+photographed sites are confirmed at debrief.
 
 ---
 

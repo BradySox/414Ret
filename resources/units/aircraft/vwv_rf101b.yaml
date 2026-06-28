@@ -8,6 +8,7 @@ variants:
 max_range: 600
 gunfighter: false
 tasks:
+  TARPS: 700        # primary role: unarmed tactical photo-recon (414th TARPS overflight)
   Armed Recon: 435
   Strike: 1
   BARCAP: 1

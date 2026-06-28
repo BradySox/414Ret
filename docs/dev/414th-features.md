@@ -151,7 +151,9 @@ saves drop the field via `_migrate_legacy_settings`. See
 `FlightType.TARPS` adds player-flown F-14 recon. All F-14 variants carry the
 `{F14-TARPS}` pod on station 6 (editor-verified). The auto-planner appends a single
 TARPS sortie to Strike / DEAD packages when `auto_add_tarps_recon` is enabled and a
-TARPS-capable squadron is available.
+TARPS-capable squadron is available. The flight type is **airframe-agnostic** — it is
+gated purely by the `TARPS` task in the airframe's `tasks:` table, not hard-coded to the
+F-14 — so the Vietnam-era recon birds carry it too (see below).
 
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
   `configure_tarps()` — single overflight waypoint ~5 min behind the strikers.
@@ -174,7 +176,18 @@ TARPS-capable squadron is available.
   with AIM-9L wingtips. **CLSIDs must be current** — stale ones (`{SHOULDER AIM-7MH}`,
   `{LAU-138 wtip - AIM-9M}`) made DCS reject the whole loadout on load and silently drop
   the TARPS pod with it. The vanilla `F-14A.lua` still uses the old GUID-form loadout.
-- Tests: `tests/test_tarps_recon.py`.
+- **Vietnam-era recon birds (VWV mod):** the dedicated tactical photo-recon ships —
+  **RF-101B Voodoo** (`vwv_rf101b`, USAF land-based) and **RA-5C Vigilante** (`vwv_ra-5`,
+  USN carrier) — carry `TARPS: 700` as their **primary** task (their old `Armed Recon` is
+  kept as a lower-priority fallback so a squadron is never idle). They are unarmed camera
+  ships with built-in cameras (no external pod), so their `Retribution TARPS` payload is a
+  clean, weaponless fit — empty pylons, matched by name; the runtime recon task is set by
+  `configure_tarps`, so the payload's `tasks` tag is only ME role-menu placement.
+  Files: `resources/units/aircraft/vwv_{rf101b,ra-5}.yaml` +
+  `resources/customized_payloads/vwv_{rf101b,ra-5}.lua`. The **Khe Sanh (Niagara)** campaign
+  fields one squadron of each, tasked `primary: TARPS`
+  (`resources/campaigns/khe_sanh_niagara.yaml`).
+- Tests: `tests/test_tarps_recon.py` (Tomcat + Vietnam-recon TARPS-capability gates).
 
 **Visibility / recon fog** — one viewer-aware layer drives two player-facing fog rules.
 AI planning and threat math always use ground truth (`viewer=None`); only the human

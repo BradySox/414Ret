@@ -27,9 +27,10 @@ and selected later upstream fixes.
 - Enemy sites can be known without their exact composition, strength, damage state, or
   threat rings being known. Attacking or scouting a site reveals it; confirmed battle
   damage can require a surviving recon pass.
-- **TARPS** is a real player task for F-14s, supported by the **TARS** film-and-debrief
-  system. What the aircraft photographs is carried back into the campaign as confirmed
-  intelligence.
+- **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
+  (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
+  film-and-debrief system. What the aircraft photographs is carried back into the campaign as
+  confirmed intelligence.
 - When you need the ground truth anyway — debugging a campaign, planning the opposing side,
   or just checking the real laydown — tick **Reveal fog of war (overview)** in the map's layer
   panel (top-right, with the other enemy-intel toggles). It turns the fog off and shows the

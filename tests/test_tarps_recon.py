@@ -36,6 +36,13 @@ TOMCAT_VARIANT_IDS: tuple[str, ...] = (
     "F-14B Tomcat",
 )
 
+# Vietnam-era dedicated photo-recon birds (VWV mod pack). TARPS is their primary
+# role — unarmed camera ships, see resources/units/aircraft/vwv_{rf101b,ra-5}.yaml.
+VIETNAM_RECON_VARIANT_IDS: tuple[str, ...] = (
+    "RF-101B Voodoo",
+    "RA-5C Vigilante",
+)
+
 
 def test_tarps_flight_type_is_recon_support() -> None:
     # TARPS is a non-combat recon role: neither air-to-air nor air-to-ground.
@@ -63,6 +70,14 @@ def test_tarps_only_package_identifies_tarps_as_primary_task() -> None:
     TOMCAT_VARIANT_IDS,
 )
 def test_all_tomcat_variants_can_plan_tarps(variant_id: str, tmp_path: Path) -> None:
+    persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
+    assert AircraftType.named(variant_id).capable_of(FlightType.TARPS)
+
+
+@pytest.mark.parametrize("variant_id", VIETNAM_RECON_VARIANT_IDS)
+def test_vietnam_recon_planes_can_plan_tarps(variant_id: str, tmp_path: Path) -> None:
+    # The Vietnam-era recon birds were extended from the F-14 to fly TARPS too, so
+    # the auto-planner can pair them with Strike/DEAD packages in period campaigns.
     persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
     assert AircraftType.named(variant_id).capable_of(FlightType.TARPS)
 

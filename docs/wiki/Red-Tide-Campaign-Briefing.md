@@ -8,10 +8,10 @@ every op night. Print it, fork it, scribble on it.*
 > **The Red Tide doc set — use the right tool:**
 > 1. **This handbook** — the operational working reference. Real ORBAT, brief templates, package
 >    recipes, comms cards, phase plan, threat-defeat. *Start here to build a brief.*
-> 2. **[red-tide-intel-assessment.md](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md)** — the in-fiction intel pack:
+> 2. **[red-tide-intel-assessment.md](Red-Tide-Intel-Assessment)** — the in-fiction intel pack:
 >    backstory, enemy ORBAT with lore, courses of action, the read-aloud spoken brief, and the
 >    one-page pilot threat card. *Use it for narrative colour and the mass brief.*
-> 3. **[red-tide-visual-briefing.md](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-visual-briefing.md)** — the picture brief: theater
+> 3. **[red-tide-visual-briefing.md](Red-Tide-Visual-Briefing)** — the picture brief: theater
 >    map, SAM-ring profile, target-priority flow, ORBAT diagrams. *Use it for the screen-share.*
 >
 > Everything tactical here is grounded in the actual `red_tide.yaml` / `red_tide.miz` files. The
@@ -177,7 +177,7 @@ the auto-planner flies. Sizes are starting squadron strength.*
 ## 4 · The enemy in one screen
 
 Full enemy ORBAT, lore, and courses of action are in
-**[red-tide-intel-assessment.md](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md)**. The working summary:
+**[red-tide-intel-assessment.md](Red-Tide-Intel-Assessment)**. The working summary:
 
 **Priority kills (worth a squadron each):**
 
@@ -287,8 +287,8 @@ A repeatable Saturday flow. The **mission commander (MC)** owns the plan; everyo
    front anchor, and kneeboards generated.
 
 **At the brief (MC, ~10 min):** run the §7 template. Use the
-[spoken brief](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md#part-3--five-minute-spoken-brief-read-aloud-script) for
-colour and the [visual briefing](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-visual-briefing.md) on screen.
+[spoken brief](Red-Tide-Intel-Assessment#part-3--five-minute-spoken-brief-read-aloud-script) for
+colour and the [visual briefing](Red-Tide-Visual-Briefing) on screen.
 
 **Flight leads:** brief your own flight's game plan, comms, and contracts off the package brief.
 
@@ -575,8 +575,8 @@ OPEN SAR / POW (4-turn clock): _________________________________________
 ---
 
 *Companion docs: in-fiction lore & spoken brief →
-[red-tide-intel-assessment.md](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md); picture brief & maps →
-[red-tide-visual-briefing.md](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-visual-briefing.md). Build/edit notes for the campaign
+[red-tide-intel-assessment.md](Red-Tide-Intel-Assessment); picture brief & maps →
+[red-tide-visual-briefing.md](Red-Tide-Visual-Briefing). Build/edit notes for the campaign
 itself → [../dev/design/414th-red-tide-campaign-notes.md](https://github.com/bradyccox/414Ret/blob/main/docs/dev/design/414th-red-tide-campaign-notes.md).
 All regiments, callsigns, personalities, and the "ZAPAD" operation name are fiction in the* Red Storm
 Rising *tradition and freely editable.*

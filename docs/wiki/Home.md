@@ -61,6 +61,8 @@ campaign files (ORBAT, threats, and economy read straight from the campaign + fa
 - **[Red Tide — Campaign Briefing](Red-Tide-Campaign-Briefing)** — the brief-builder: friendly/enemy ORBAT, phase plan, op-night runbook, a fill-in mission-brief template, package recipes, comms/code-word card, and threat-defeat reference.
 - **[Red Tide — Role Cards](Red-Tide-Role-Cards)** — print-and-fly kneeboard cards for each player role.
 - **[Red Tide — First Three Turns](Red-Tide-First-Three-Turns)** — a worked example of the brief template across the opening turns.
+- **[Red Tide — Intel Assessment](Red-Tide-Intel-Assessment)** — in-fiction intel pack: backstory, enemy ORBAT, courses of action, threat card, and the read-aloud spoken brief.
+- **[Red Tide — Visual Briefing](Red-Tide-Visual-Briefing)** — theater map, SAM-ring profile, and target-priority / ORBAT diagrams.
 
 ## Customization and modding
 

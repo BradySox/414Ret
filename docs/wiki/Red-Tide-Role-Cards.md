@@ -180,8 +180,8 @@ DOWNED-PILOT CONTRACT: get clear, high/defensible ground, guard/SAR freq, authen
 
 *Companion docs: [Campaign Briefing Handbook](Red-Tide-Campaign-Briefing) ·
 [First three turns worked example](Red-Tide-First-Three-Turns) ·
-[Intel assessment (lore)](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md) ·
-[Visual briefing](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-visual-briefing.md). Loadouts are recommended period baselines; actual
+[Intel assessment (lore)](Red-Tide-Intel-Assessment) ·
+[Visual briefing](Red-Tide-Visual-Briefing). Loadouts are recommended period baselines; actual
 stores depend on the mission's loadout editor and difficulty settings.*
 
 

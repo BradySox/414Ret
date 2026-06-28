@@ -62,30 +62,30 @@ squadrons:
     - primary: CAS
       secondary: air-to-ground
       aircraft: [AH-1W SuperCobra]
-      size: 4
+      size: 2
     - primary: CAS
       secondary: air-to-ground
       aircraft: [OV-10A Bronco]
-      size: 4
+      size: 2
     - primary: CAS
       secondary: air-to-ground
       aircraft: [A-1H Skyraider]
-      size: 4
+      size: 2
     - primary: Air Assault
       secondary: any
       aircraft: [UH-1H Iroquois]
-      size: 4
+      size: 2
 
   # --- Da Nang (forward strip: Skyraiders, Crusaders, helos) ---
   Batumi:
     - primary: CAS
       secondary: air-to-ground
       aircraft: [A-1H Skyraider]
-      size: 8
+      size: 4
     - primary: BARCAP
       secondary: air-to-air
       aircraft: [F-8E Crusader]
-      size: 8
+      size: 4
     - primary: Air Assault
       secondary: any
       aircraft: [CH-53E]
@@ -93,25 +93,25 @@ squadrons:
     - primary: Air Assault
       secondary: any
       aircraft: [UH-1H Iroquois]
-      size: 4
+      size: 2
 
   # --- Tbilisi-Lochini (deep-east rear: fast jets + heavy fixed-wing) ---
   Tbilisi-Lochini:
     - primary: CAS
       secondary: air-to-ground
       aircraft: [F-100D Super Sabre]
-      size: 12
+      size: 6
     - primary: Strike
       secondary: air-to-ground
       aircraft: [F-4E-45MC Phantom II]
-      size: 12
+      size: 6
     - primary: Armed Recon
       secondary: air-to-ground
       aircraft: [RF-101B Voodoo]
-      size: 4
+      size: 2
     - primary: Strike
       aircraft: [B-52H Stratofortress]
-      size: 4
+      size: 2
     - primary: AEW&C
       aircraft: [EC-121D Warning Star]
       size: 2
@@ -121,7 +121,7 @@ squadrons:
     - primary: Transport
       secondary: any
       aircraft: [C-130J-30]
-      size: 4
+      size: 2
 
   # --- Yankee Station carriers ---
   Naval-1:
@@ -131,30 +131,30 @@ squadrons:
     - primary: BARCAP
       secondary: air-to-air
       aircraft: [F-8E Crusader]
-      size: 12
+      size: 6
     - primary: Strike
       secondary: air-to-ground
       aircraft: [A-4E Skyhawk]
-      size: 12
+      size: 6
     - primary: Strike
       secondary: air-to-ground
       aircraft: [A-4E Skyhawk]
-      size: 12
+      size: 6
     - primary: Armed Recon
       secondary: air-to-ground
       aircraft: [RA-5C Vigilante]
-      size: 4
+      size: 2
 
   # --- Yankee Station carrier #2 (Bon Homme Richard) ---
   Naval-2:
     - primary: Strike
       secondary: air-to-ground
       aircraft: [A-6E Intruder]
-      size: 12
+      size: 6
     - primary: CAS
       secondary: air-to-ground
       aircraft: [A-4E Skyhawk]
-      size: 12
+      size: 6
 
   # --- NVA: the hills (Sukhumi) ---
   Sukhumi-Babushara:

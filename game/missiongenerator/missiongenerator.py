@@ -277,6 +277,10 @@ class MissionGenerator:
         from game.missiongenerator.civiliantraffic import CivilianTrafficGenerator
 
         CivilianTrafficGenerator(self.mission, self.game).generate()
+
+        from game.missiongenerator.basedamage import BaseDamageGenerator
+
+        BaseDamageGenerator(self.mission, self.game).generate()
         aircraft_generator.spawn_unused_aircraft()
 
         self.mission_data.flights = aircraft_generator.flights

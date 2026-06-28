@@ -12,6 +12,28 @@ working brief-builder, the **[Campaign Briefing Handbook](khe-sanh-campaign-hand
 
 ---
 
+## Historical imagery (1968)
+
+*Real photographs of the siege — **public domain** US-military photos except where noted. They set
+the scene; the Caucasus map is the play space. Full attribution in [Image credits](#image-credits--sources).*
+
+![C-130 on the Khe Sanh strip amid pallets and battle smoke, 1968](img/khe-sanh/khe-sanh-c130-takeoff.jpg)
+<sub>**The lifeline under fire** — a C-130 on the strip amid supply pallets and smoke, 1968. *USAF (PD).*</sub>
+
+![Marines unloading a C-130B at Khe Sanh, 1968](img/khe-sanh/khe-sanh-c130-unload.jpg)
+<sub>**Aerial resupply** — unloading a 772nd TAS C-130B; the period caption notes a "mortar hole in the ramp." *USAF (PD).*</sub>
+
+![Marines offload a CH-53 at Khe Sanh, 23 January 1968](img/khe-sanh/khe-sanh-ch53-offload.jpg)
+<sub>**Hill resupply by helo** — offloading a CH-53, 23 Jan 1968; the kind of run the "Super Gaggle" escorted through the flak. *USMC/USN (PD).*</sub>
+
+![The Khe Sanh airstrip, 1968](img/khe-sanh/khe-sanh-airstrip-1968.jpg)
+<sub>**The airstrip gauntlet** — the strip, ranged by NVA guns on the approach. *USAF (PD).*</sub>
+
+![26th Marines in the perimeter trenches, Khe Sanh 1968](img/khe-sanh/khe-sanh-marines-trenchline.jpg)
+<sub>**The perimeter** — 26th Marines in the trenchline. *USMC Archives (CC BY 2.0).*</sub>
+
+---
+
 ## The siege at a glance — 21 January 1968
 
 Khe Sanh (Kutaisi) is **encircled**. Its only lifeline is air. Blue's relief pocket (Da Nang/Batumi
@@ -116,6 +138,26 @@ graph TD
 ```
 
 *Highlighted: the workhorses — the **FAC(A)**, the **carrier strike** (A-4/A-6), and **Arc Light**.*
+
+---
+
+## Image credits & sources
+
+All historical photographs come from **Wikimedia Commons** and are **public domain** as works of the
+U.S. federal government, except the perimeter trenchline (CC BY 2.0, credited). **No copyrighted
+press imagery is used** (no AP/UPI/Duncan/Leroy, etc.).
+
+| Image | Author / source | License | Wikimedia Commons file |
+|---|---|---|---|
+| C-130 on the strip | U.S. Air Force | Public domain | `C-130 Hercules taking off from Khe Sanh 1968.jpg` |
+| Marines unload C-130B | U.S. Air Force | Public domain | `Marines unload 772nd TAS C-130B at Khe Sanh 1968.jpg` |
+| Marines offload CH-53 | U.S. Marine Corps / Dept. of the Navy | Public domain | `Marines offload a CH-53 at Khe Sanh, 23 January 1968.jpg` |
+| Khe Sanh airstrip | U.S. Air Force | Public domain | `Khe Sanh Airport - 1968.jpg` |
+| LBJ situation-room model | White House photo — Yoichi Okamoto | Public domain | `L B Johnson Model Khe Sanh.jpeg` |
+| Perimeter trenchline | USMC Archives (Flickr) | CC BY 2.0 | `26 Marines trenchline.jpg` |
+
+Files are committed to the repo at `docs/campaigns/img/khe-sanh/`; each original is at
+`https://commons.wikimedia.org/wiki/File:<file name above>`.
 
 ---
 

@@ -89,22 +89,9 @@ squadrons:
       secondary: air-to-air
       aircraft: [F-8E Crusader]
       size: 8
-    - primary: AEW&C
-      aircraft: [EC-121D Warning Star]
-      size: 2
     - primary: Armed Recon
       secondary: air-to-ground
       aircraft: [RF-101B Voodoo]
-      size: 4
-    - primary: Strike
-      aircraft: [B-52H Stratofortress]
-      size: 4
-    - primary: Refueling
-      aircraft: [KC-135 Stratotanker]
-      size: 2
-    - primary: Transport
-      secondary: any
-      aircraft: [C-130J-30]
       size: 4
     - primary: Air Assault
       secondary: any
@@ -113,6 +100,22 @@ squadrons:
     - primary: Air Assault
       secondary: any
       aircraft: [UH-1H Iroquois]
+      size: 4
+
+  # --- Tbilisi-Lochini (deep-east rear: heavy fixed-wing, out of the fight) ---
+  Tbilisi-Lochini:
+    - primary: Strike
+      aircraft: [B-52H Stratofortress]
+      size: 4
+    - primary: AEW&C
+      aircraft: [EC-121D Warning Star]
+      size: 2
+    - primary: Refueling
+      aircraft: [KC-135 Stratotanker]
+      size: 2
+    - primary: Transport
+      secondary: any
+      aircraft: [C-130J-30]
       size: 4
 
   # --- Yankee Station carriers ---

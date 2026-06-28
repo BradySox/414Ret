@@ -131,6 +131,12 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("generate_sitrep_kneeboard",),
     ),
     Feature("kneeboard_cover_page", "Dedicated kneeboard cover page", 30),
+    Feature(
+        "brief_sheet_kneeboard",
+        "One-page Brief Sheet + deck-wide colour scheme",
+        31,
+        settings_fields=("compact_kneeboard",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

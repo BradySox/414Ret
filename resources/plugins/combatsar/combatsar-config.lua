@@ -317,6 +317,72 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
                 tostring(data.heloTemplate),
                 tostring(data.farp)
             ))
+
+            -- 414th: dispatch the AI rescue at EJECTION, not at landing.
+            -- Stock AICSAR only reacts to S_EVENT_LANDING_AFTER_EJECTION -- the
+            -- downed pilot has to touch down first (~8-9 min under canopy from a
+            -- high ejection), and that DCS event is unreliable for AI pilots, so an
+            -- AI shoot-down often drew no rescue at all (in-game pass G9, 2026-06-28:
+            -- a blue AI ejected, the mission ended 57 s later with the pilot still
+            -- at ~3 km, and nothing launched). AICSAR's own eject fast-path
+            -- (UseEventEject + _EjectEventHandler) is PLAYER-only -- it bails unless
+            -- IniPlayerName is set -- so AI needs this bridge.
+            --
+            -- Setting UseEventEject makes AICSAR's landing handler early-return, so
+            -- there is no second dispatch if the flaky landing event later fires
+            -- (clean dedup); we then drive its dispatch (_EventHandler) ourselves
+            -- the instant a blue AI pilot ejects, spawning the survivor under the
+            -- ejection point and sending a helo immediately. Blue only (AICSAR is
+            -- blue; red CSAR is not built). pcall-guarded so a malformed event
+            -- degrades to a logged warning, never a CTD. autoonoff still applies
+            -- inside _EventHandler (it stands down while a human crews a rescue helo).
+            aicsar.UseEventEject = true
+            local aiEjectDispatched = {} -- aircraft name -> true (one rescue per airframe; dedups a 2-seat double-eject)
+            local aiEjectBridge = {}
+            function aiEjectBridge:onEvent(event)
+                if not event or event.id ~= world.event.S_EVENT_EJECTION then
+                    return
+                end
+                local unit = event.initiator
+                if not unit then
+                    return
+                end
+                local okp, player = pcall(function()
+                    return unit.getPlayerName and unit:getPlayerName()
+                end)
+                if okp and player then
+                    return -- players: handled by the player CSAR + AICSAR's own eject path
+                end
+                local okn, name = pcall(function()
+                    return unit.getName and unit:getName()
+                end)
+                if not okn or not name or aiEjectDispatched[name] then
+                    return
+                end
+                local okc, coa = pcall(function()
+                    return unit:getCoalition()
+                end)
+                if not okc or coa ~= coalition.side.BLUE then
+                    return -- AICSAR is blue; ignore red/neutral ejections
+                end
+                aiEjectDispatched[name] = true
+                local ok, err = pcall(function()
+                    aicsar:_EventHandler(event, true)
+                end)
+                if ok then
+                    env.info(
+                        "DCSRetribution|Combat SAR - AI eject rescue dispatched for '"
+                            .. tostring(name)
+                            .. "'"
+                    )
+                else
+                    env.warning(
+                        "DCSRetribution|Combat SAR - AI eject dispatch error (continuing): "
+                            .. tostring(err)
+                    )
+                end
+            end
+            world.addEventHandler(aiEjectBridge)
         else
             env.warning(
                 "DCSRetribution|Combat SAR - AICSAR: FARP airbase '"

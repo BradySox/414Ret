@@ -648,7 +648,23 @@ so the two docs don't drift.
   set mis-bound); or double event-handling with the SOF CSAR. If the helo can't deliver anywhere,
   check `allowFARPRescue` / that a friendly airfield is in range.
 
-### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☐ UNTESTED
+### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☐ UNTESTED (in-game FAIL 2026-06-28 root-caused; eject-trigger fix landed, re-fly owed)
+- **In-game pass 2026-06-28 (session `f08e522b`) — AI rescue did NOT trigger; root-caused + fixed; re-fly owed.**
+  Flew the C-130 King with `auto_combat_sar` ON (GermanyCW Fulda/Haina, turn 1). A **blue AI ejected**
+  near the front (Tacview: 2 `Country=de`/`Color=Blue` chutes at ~3 km). Plugin armed correctly —
+  `CSAR (Blue) Started`, `AICSAR ... armed (helo template ..., FARP 'Frankfurt')`, `enableForAI=true`,
+  King `TACAN 39Y, LARS menu attached`. **No rescue launched; LARS showed no survivor.** Root cause
+  (read from `Moose.lua`): stock **AICSAR dispatches only on `S_EVENT_LANDING_AFTER_EJECTION`** — the
+  pilot must touch down (~8–9 min under canopy from ~3 km) and that DCS event is unreliable for AI; its
+  eject fast-path is player-only (`IniPlayerName`). The mission ended **57 s after the ejection** (pilot
+  still at ~3 km in Tacview), so nothing could have started even on a clean run. **Fix landed
+  (`combatsar-config.lua`):** `aicsar.UseEventEject=true` (landing handler no-ops → dedup) + an ejection
+  bridge that calls `aicsar:_EventHandler(event, true)` the instant a blue AI ejects → survivor spawns
+  under the ejection point + helo launches immediately. **Re-fly owed:** AI ejects in range → an AI helo
+  spawns from the FARP within seconds and recovers; `dcs.log` shows
+  `Combat SAR - AI eject rescue dispatched for '<unit>'`. **Secondary finding (not fixed here):** the
+  King's **LARS never lists AI survivors** (player CSAR runs `enableForAI=false`) — follow-up if humans
+  should be able to cue AI rescues. **Don't re-mark this UNTESTED without flying the fix.**
 - **Live-save + branch re-verify (2026-06-27, headless session `78eae772`):** loaded the live
   `autosave.retribution` (Nevada/Tonopah, turn 1) headless with `auto_combat_sar` **ON** — the blue ATO
   frags **both** Combat SAR airframes (`CH-47F Block I` + `C-130J-30` King) and **red frags zero**, so

@@ -998,7 +998,7 @@ so the two docs don't drift.
 - **Fail signature:** No BigEye F10 menu; no reports; a Lua error in `dcs.log`; or option values
   (intervals, max units, sensor flags) ignored.
 
-### G18 — Blind-IADS warning + Red Tide red EWR coverage · MANTIS migration / Red Tide · ☐ UNTESTED (added 2026-06-28; headless-validated: scan flips Red Tide AMBER→OK, faction EWR-FG 0→1, full suite green)
+### G18 — Blind-IADS warning + Red Tide red EWR coverage · MANTIS migration / Red Tide · ☑ VERIFIED (2026-06-28, audience in-game pass — Red Tide red EWR coverage confirmed)
 - **Context:** MANTIS detection rides only on dedicated EWRs + AWACS (SAMs and SAM-as-EWRs are held
   dark), so a campaign with radar SAMs but no EWR markers and no AWACS has a blind red net. Two
   changes: (1) a per-coalition **blind-network warning** — generation-time `luagenerator.py`

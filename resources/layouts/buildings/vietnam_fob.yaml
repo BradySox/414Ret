@@ -1,0 +1,492 @@
+name: vietnam_fob
+generic: true
+tasks:
+- FOB
+groups:
+- FOB:
+  - name: vfob 22
+    statics:
+    - vfob 22-0
+    - vfob 22-1
+    - vfob 22-2
+    - vfob 22-3
+    - vfob 22-4
+    - vfob 22-5
+    - vfob 22-6
+    - vfob 22-7
+    - vfob 22-8
+    - vfob 22-9
+    - vfob 22-10
+    - vfob 22-11
+    - vfob 22-12
+    - vfob 22-13
+    - vfob 22-14
+    - vfob 22-15
+    unit_count:
+    - 16
+    unit_types:
+    - Sandbag_08
+  - name: vfob 8
+    statics:
+    - vfob 8-0
+    - vfob 8-1
+    - vfob 8-2
+    - vfob 8-3
+    unit_count:
+    - 4
+    unit_types:
+    - CH-47Fbl1
+  - name: vfob 0
+    statics:
+    - vfob 0-0
+    - vfob 0-1
+    - vfob 0-2
+    - vfob 0-3
+    - vfob 0-4
+    - vfob 0-5
+    - vfob 0-6
+    - vfob 0-7
+    unit_count:
+    - 8
+    unit_types:
+    - Invisible FARP
+  - name: vfob 1
+    statics:
+    - vfob 1-0
+    - vfob 1-1
+    - vfob 1-2
+    - vfob 1-3
+    unit_count:
+    - 4
+    unit_types:
+    - Hangar B
+  - name: vfob 13
+    statics:
+    - vfob 13-0
+    - vfob 13-1
+    - vfob 13-2
+    - vfob 13-3
+    - vfob 13-4
+    - vfob 13-5
+    - vfob 13-6
+    - vfob 13-7
+    - vfob 13-8
+    - vfob 13-9
+    unit_count:
+    - 10
+    unit_types:
+    - FARP Tent
+  - name: vfob 29
+    statics:
+    - vfob 29-0
+    - vfob 29-1
+    - vfob 29-2
+    unit_count:
+    - 3
+    unit_types:
+    - container_20ft
+  - name: vfob 30
+    statics:
+    - vfob 30-0
+    - vfob 30-1
+    unit_count:
+    - 2
+    unit_types:
+    - container_40ft
+  - name: vfob 31
+    statics:
+    - vfob 31-0
+    - vfob 31-1
+    - vfob 31-2
+    unit_count:
+    - 3
+    unit_types:
+    - Container white
+  - name: vfob 32
+    statics:
+    - vfob 32-0
+    - vfob 32-1
+    unit_count:
+    - 2
+    unit_types:
+    - Container brown
+  - name: vfob 17
+    statics:
+    - vfob 17-0
+    - vfob 17-1
+    unit_count:
+    - 2
+    unit_types:
+    - Camouflage05
+  - name: vfob 16
+    statics:
+    - vfob 16-0
+    - vfob 16-1
+    - vfob 16-2
+    unit_count:
+    - 3
+    unit_types:
+    - Camouflage04
+  - name: vfob 19
+    statics:
+    - vfob 19-0
+    - vfob 19-1
+    - vfob 19-2
+    - vfob 19-3
+    unit_count:
+    - 4
+    unit_types:
+    - AM32a-60_01
+  - name: vfob 9
+    statics:
+    - vfob 9-0
+    - vfob 9-1
+    - vfob 9-2
+    - vfob 9-3
+    unit_count:
+    - 4
+    unit_types:
+    - UH-1H
+  - name: vfob 4
+    statics:
+    - vfob 4-0
+    - vfob 4-1
+    unit_count:
+    - 2
+    unit_types:
+    - Shelter02
+  - name: vfob 25
+    statics:
+    - vfob 25-0
+    unit_count:
+    - 1
+    unit_types:
+    - Sandbag_15
+  - name: vfob 23
+    statics:
+    - vfob 23-0
+    - vfob 23-1
+    - vfob 23-2
+    - vfob 23-3
+    unit_count:
+    - 4
+    unit_types:
+    - Sandbag_13
+  - name: vfob 27
+    statics:
+    - vfob 27-0
+    - vfob 27-1
+    - vfob 27-2
+    unit_count:
+    - 3
+    unit_types:
+    - Black_Tyre_WF
+  - name: vfob 2
+    statics:
+    - vfob 2-0
+    - vfob 2-1
+    - vfob 2-2
+    - vfob 2-3
+    unit_count:
+    - 4
+    unit_types:
+    - Garage small B
+  - name: vfob 3
+    statics:
+    - vfob 3-0
+    - vfob 3-1
+    unit_count:
+    - 2
+    unit_types:
+    - Garage B
+  - name: vfob 24
+    statics:
+    - vfob 24-0
+    - vfob 24-1
+    - vfob 24-2
+    - vfob 24-3
+    unit_count:
+    - 4
+    unit_types:
+    - Sandbag_05
+  - name: vfob 15
+    statics:
+    - vfob 15-0
+    - vfob 15-1
+    unit_count:
+    - 2
+    unit_types:
+    - Tent01
+  - name: vfob 14
+    statics:
+    - vfob 14-0
+    - vfob 14-1
+    - vfob 14-2
+    - vfob 14-3
+    - vfob 14-4
+    unit_count:
+    - 5
+    unit_types:
+    - Tent05
+  - name: vfob 18
+    statics:
+    - vfob 18-0
+    - vfob 18-1
+    unit_count:
+    - 2
+    unit_types:
+    - Camouflage07
+  - name: vfob 21
+    statics:
+    - vfob 21-0
+    unit_count:
+    - 1
+    unit_types:
+    - P20_drivable
+  - name: vfob 28
+    statics:
+    - vfob 28-0
+    - vfob 28-1
+    - vfob 28-2
+    - vfob 28-3
+    unit_count:
+    - 4
+    unit_types:
+    - FireExtinguisher03
+  - name: vfob 26
+    statics:
+    - vfob 26-0
+    - vfob 26-1
+    - vfob 26-2
+    - vfob 26-3
+    - vfob 26-4
+    - vfob 26-5
+    - vfob 26-6
+    - vfob 26-7
+    unit_count:
+    - 8
+    unit_types:
+    - Oil Barrel
+  - name: vfob 34
+    statics:
+    - vfob 34-0
+    - vfob 34-1
+    - vfob 34-2
+    - vfob 34-3
+    - vfob 34-4
+    - vfob 34-5
+    unit_count:
+    - 6
+    unit_types:
+    - vap_mutt
+  - name: vfob 35
+    statics:
+    - vfob 35-0
+    - vfob 35-1
+    - vfob 35-2
+    unit_count:
+    - 3
+    unit_types:
+    - vap_mule
+  - name: vfob 33
+    statics:
+    - vfob 33-0
+    - vfob 33-1
+    - vfob 33-2
+    - vfob 33-3
+    - vfob 33-4
+    - vfob 33-5
+    unit_count:
+    - 6
+    unit_types:
+    - vap_m35_truck
+  - name: vfob 20
+    statics:
+    - vfob 20-0
+    - vfob 20-1
+    - vfob 20-2
+    - vfob 20-3
+    unit_count:
+    - 4
+    unit_types:
+    - AA8
+  - name: vfob 44
+    statics:
+    - vfob 44-0
+    - vfob 44-1
+    - vfob 44-2
+    unit_count:
+    - 3
+    unit_types:
+    - trunks_long_cargo
+  - name: vfob 10
+    statics:
+    - vfob 10-0
+    - vfob 10-1
+    unit_count:
+    - 2
+    unit_types:
+    - OH-6A
+  - name: vfob 11
+    statics:
+    - vfob 11-0
+    unit_count:
+    - 1
+    unit_types:
+    - Patriot AMG
+  - name: vfob 12
+    statics:
+    - vfob 12-0
+    unit_count:
+    - 1
+    unit_types:
+    - Patriot ECS
+  - name: vfob 36
+    statics:
+    - vfob 36-0
+    - vfob 36-1
+    - vfob 36-2
+    - vfob 36-3
+    unit_count:
+    - 4
+    unit_types:
+    - vap_ammo_box_pile
+  - name: vfob 38
+    statics:
+    - vfob 38-0
+    - vfob 38-1
+    unit_count:
+    - 2
+    unit_types:
+    - vap_barrel_red
+  - name: vfob 37
+    statics:
+    - vfob 37-0
+    - vfob 37-1
+    - vfob 37-2
+    unit_count:
+    - 3
+    unit_types:
+    - vap_barrels
+  - name: vfob 41
+    statics:
+    - vfob 41-0
+    - vfob 41-1
+    unit_count:
+    - 2
+    unit_types:
+    - vap_ammo_50cal_line
+  - name: vfob 42
+    statics:
+    - vfob 42-0
+    - vfob 42-1
+    unit_count:
+    - 2
+    unit_types:
+    - vap_ammo_50cal_pack
+  - name: vfob 40
+    statics:
+    - vfob 40-0
+    - vfob 40-1
+    - vfob 40-2
+    unit_count:
+    - 3
+    unit_types:
+    - vap_mixed_cargo_2
+  - name: vfob 39
+    statics:
+    - vfob 39-0
+    - vfob 39-1
+    - vfob 39-2
+    unit_count:
+    - 3
+    unit_types:
+    - vap_mixed_cargo_1
+  - name: vfob 5
+    statics:
+    - vfob 5-0
+    - vfob 5-1
+    - vfob 5-2
+    - vfob 5-3
+    - vfob 5-4
+    - vfob 5-5
+    - vfob 5-6
+    - vfob 5-7
+    unit_count:
+    - 8
+    unit_types:
+    - Vulcan
+  - name: vfob 6
+    statics:
+    - vfob 6-0
+    - vfob 6-1
+    - vfob 6-2
+    - vfob 6-3
+    - vfob 6-4
+    - vfob 6-5
+    unit_count:
+    - 6
+    unit_types:
+    - ZU-23 Emplacement
+  - name: vfob 7
+    statics:
+    - vfob 7-0
+    - vfob 7-1
+    - vfob 7-2
+    - vfob 7-3
+    - vfob 7-4
+    - vfob 7-5
+    unit_count:
+    - 6
+    unit_types:
+    - ERO_ZU23_pos
+  - name: vfob 45
+    statics:
+    - vfob 45-0
+    - vfob 45-1
+    unit_count:
+    - 2
+    unit_types:
+    - CV_59_Large_Forklift
+  - name: vfob 46
+    statics:
+    - vfob 46-0
+    - vfob 46-1
+    - vfob 46-2
+    unit_count:
+    - 3
+    unit_types:
+    - CV_59_H60
+  - name: vfob 47
+    statics:
+    - vfob 47-0
+    - vfob 47-1
+    unit_count:
+    - 2
+    unit_types:
+    - MJ-1_01
+  - name: vfob 48
+    statics:
+    - vfob 48-0
+    unit_count:
+    - 1
+    unit_types:
+    - MJ-1_02
+  - name: vfob 49
+    statics:
+    - vfob 49-0
+    - vfob 49-1
+    - vfob 49-2
+    unit_count:
+    - 3
+    unit_types:
+    - ERO_Container
+  - name: vfob 43
+    statics:
+    - vfob 43-0
+    - vfob 43-1
+    unit_count:
+    - 2
+    unit_types:
+    - vap_mre_boxes
+layout_file: resources/layouts/buildings/vietnam_fob.miz

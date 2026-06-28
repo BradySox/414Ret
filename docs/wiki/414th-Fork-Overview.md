@@ -37,14 +37,14 @@ Full detail: **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)**.
 
 ## Missions are built for squadron play
 
-- **[SCAR](SCAR)** — a player-led moving-target hunt: identify the real HVT among decoys and
-  clutter, then stop it before it reaches safety. Prosecuting the wrong convoy is a
-  mis-identification that costs budget. An experimental
-  **[SOF commander-capture path](SOF-and-Commander-Capture)** uses finite purchased SOF teams to
-  capture a commander alive, with a downed-team helo-CSAR recovery loop.
-- **[Combat SAR](Combat-SAR)** — makes a downed pilot worth flying for. A CH-47 rescuer orbits
-  the front while a C-130 holds overhead as the HC-130 "King". Recover a human pilot and deliver
-  them to a friendly field and the campaign **spares the aviator** (you still lose the jet).
+- **[Combat SAR](Combat-SAR)** + **[SCAR "Sandy"](SCAR)** — makes a downed pilot worth flying
+  for. A standing **rescue package** (a C-130 "King" overhead, a rescue helo "Jolly Green", and
+  2–4 **Sandy** escorts on `FlightType.SCAR`) recovers a downed human pilot; deliver them to a
+  friendly field and the campaign **spares the aviator** (you still lose the jet). The enemy may
+  race a snatch party to **capture** the survivor — kill it, or the pilot becomes a **POW** you
+  recover over later turns. (`FlightType.SCAR` was repurposed from a retired armor-hunt task into
+  the Sandy role; the old SOF
+  **[commander-capture loop](SOF-and-Commander-Capture)** went dormant with it.)
 - **[Electronic Warfare and ISR](Electronic-Warfare-and-ISR)** — the **JAMMING** flight type
   turns the C-130J into an EC-130H/RC-130H-style standoff jammer and ELINT/ISR platform. This is
   the only 414th scripted EW model; the old generic fighter-pod jammer is retired.
@@ -65,7 +65,7 @@ Full detail: **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)**.
   belt is genuinely down.
 - An optional **auto-planner unpredictability** doctrine knob (per side, off by default) varies
   which offensive targets the enemy services first.
-- New campaigns default to the **MANTIS** IADS engine (Skynet still selectable).
+- Enemy air defenses run on the **MANTIS** IADS engine — the sole engine (Skynet was removed; older saves migrate automatically).
 
 Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 
@@ -107,10 +107,11 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 - A **settings audit** removed dead/duplicate options and consolidated the AI-radio toggles into
   a single **AI wingman radio behavior** choice; existing campaigns migrate automatically.
 
-Most campaign-facing systems have their own setting or plugin toggle. The experimental SCAR
-commander-capture mechanics are on by default for new campaigns while being playtested (toggle
-`SCAR command-post intel` on the Campaign Doctrine page to turn them off); existing campaigns
-keep whatever they were saved with.
+Most campaign-facing systems have their own setting or plugin toggle. The **command-post intel
+fog** (enemy command posts hidden until you find them by strike/scout/TARPS) is on by default for
+new campaigns — toggle `SCAR command-post intel` on the Campaign Doctrine page to turn it off. The
+older SOF commander-**capture** economy it once fed is currently dormant (see
+**[SOF and Commander Capture](SOF-and-Commander-Capture)**).
 
 ---
 

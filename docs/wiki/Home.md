@@ -33,7 +33,7 @@ adapted to how this fork actually plans and flies a campaign.
 
 - **[Mission Planning](Mission-planning)** — packages, TOT, task types, the auto-planner.
 - **[Air Defense and the Air War](Air-Defense-and-the-Air-War)** — BARCAP, QRA, SEAD, support orbits.
-- **[IADS Engines: MANTIS and Skynet](IADS-Engines-MANTIS-and-Skynet)** — the runtime air-defense brain.
+- **[IADS Engine: MANTIS](IADS-Engine-MANTIS)** — the runtime air-defense brain.
 - **[Frontline Stances and Movement](Frontline-Stances-and-Movement)** — the ground war.
 - **[Base Capture](Base-Capture)** — taking and losing control points.
 - **[Squadrons and Pilots](Squadrons-and-Pilots)** — pilots, experience, replacements.
@@ -45,8 +45,8 @@ adapted to how this fork actually plans and flies a campaign.
 - **[What's Different in the 414th Fork](414th-Fork-Overview)** — the overview.
 - **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)** — recon intel-fog, BDA lag, approximate targeting.
 - **[TARPS Reconnaissance](TARPS-Reconnaissance)** — fly the F-14 photo recon; the TARS film engine.
-- **[SCAR](SCAR)** — hunt a moving high-value target among decoys.
-- **[SOF and Commander Capture](SOF-and-Commander-Capture)** — the finite SOF-team capture/recovery loop.
+- **[SCAR](SCAR)** — the "Sandy" rescue escort for a downed pilot.
+- **[SOF and Commander Capture](SOF-and-Commander-Capture)** — enemy command-post fog (the SOF capture loop is dormant).
 - **[Combat SAR](Combat-SAR)** — rescue a downed pilot and get them home.
 - **[Electronic Warfare and ISR](Electronic-Warfare-and-ISR)** — the C-130J JAMMING platform.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline battle simulation.

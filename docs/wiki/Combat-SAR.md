@@ -19,25 +19,29 @@ can also extract a stranded SOF team.
 
 ---
 
-## The two roles: rescuer and King
+## The rescue package: Jolly Green, King, and Sandy
 
-Combat SAR is flown as a two-element idea, modeled on a real HC-130 + helo package. Both
-elements are player-selectable when you build the package, and both fly a **support-style orbit
-anchored on the front line** — the same FLOT-anchored racetrack that AWACS and tankers use, sat
-behind the threat rings rather than over them.
+Combat SAR is flown as a three-part package, modeled on real combat-SAR doctrine. The rescuer
+(Jolly Green) and the King are the Combat SAR flight types below; the **Sandy** escort is
+`FlightType.SCAR` — see [SCAR](SCAR) for how Sandy is flown.
 
 | Element | Airframe | Role |
 |---|---|---|
-| **Rescuer** | **CH-47Fbl1** (the player-flyable ED Chinook) | Orbits near the FLOT behind the threat rings; flies in, lands, boards the survivor, and delivers them to any friendly field or FARP. Carries a door-gun fit (port + starboard M60D) for self-protection on the ingress. |
+| **Jolly Green** (rescuer) | **CH-47Fbl1** (the player-flyable ED Chinook) | Flies in, lands, boards the survivor, and delivers them to any friendly field or FARP. Carries a door-gun fit (port + starboard M60D) for self-protection on the ingress. |
 | **King** | **C-130J-30** | Flies the overhead **HC-130 "King"** on-scene-command orbit: lights the homing beacon and runs the survivor locator. It never lands at a crash site. |
+| **Sandy** ×2–4 | **A-10C / AH-64D** | RESCAP escort (`FlightType.SCAR`): protect the survivor, suppress the threats around them, walk Jolly in. See [SCAR](SCAR). |
+
+The rescuer holds **near the FLOT**, not at AWACS depth — its racetrack sits just outside FLOT
+SHORAD/MANPAD reach (a short ~15 NM threat buffer) on a tight helo-sized orbit, so a slow helo is
+actually within reach of an ejection instead of 80 NM back. (Earlier builds parked it at the
+tanker/AWACS standoff; that was fixed so the rescue can reach a deep ejection in time.) Its loiter
+altitude is clamped to the campaign's helicopter combat altitude automatically — you do not tune
+it.
 
 An AI **CH-47D** is the fallback rescuer (no weapon stations). The King is *overhead presence and
 command*, **not** a tanker — the C-130 cannot act as a DCS aerial-refueling tanker, and the
 Chinook couldn't take fuel from it anyway, so the King role is deliberately never wired into the
 refueling system.
-
-Because the rescuer reuses the support-orbit flight plan, its loiter altitude is clamped to the
-campaign's helicopter combat altitude automatically — you do not tune it.
 
 ---
 
@@ -69,6 +73,35 @@ human helo in the mission. Plugin options let you tune the feel:
 
 ---
 
+## The enemy capture race
+
+A rescue is a race, not a milk run. When a pilot goes down, the enemy may send a **snatch party**
+to seize the survivor before you can pull them out:
+
+1. On a downed-pilot spawn there's a chance an enemy infantry party appears a short distance away
+   (**red smoke** + a **MAYDAY** cue) and walks straight at the survivor. The King smokes/marks and
+   calls it so the **Sandy** escort can engage.
+2. **Kill the party** and the pilot is safe for pickup as normal.
+3. **Let it reach the survivor** and dwell there un-rescued, and the pilot is **CAPTURED** — taken
+   off the rescue board and held as a **POW**.
+
+Six plugin tunables control the race (`captureEnabled` / `captureChance` / `captureSpawnDistance` /
+`captureRange` / `captureDwell` / `capturePartySize`), so you can dial how often and how aggressive
+the snatch attempts are.
+
+### If captured: the POW recovery loop
+
+A captured pilot is **not killed at debrief** — they become a POW held at the **nearest enemy
+airfield**, surfaced next turn as a recoverable objective offering **CSAR**. You get the aviator
+back two ways:
+
+- **Fly a surviving CSAR raid** at the holding field, **or**
+- **Recapture the holding airfield** with the ground war.
+
+Either frees the pilot (they stay in the squadron). A POW left too long is on a **4-turn clock** —
+abandon them past it and the aviator is **killed for good**. So a capture turns one rescue into a
+multi-turn problem you can still win.
+
 ## Rescue scoring — the payoff
 
 The point of a rescue is to save the pilot, so the loop closes inside the campaign model:
@@ -96,34 +129,37 @@ over a campaign.
 By default Combat SAR is something you plan and fly. You can also enable an AI standing alert
 with the **`auto_combat_sar`** setting (HQ automation page, **default OFF**). With it on:
 
-- the planner auto-plans one Combat SAR orbit per turn for blue, ASAP, so the alert is up before
-  the first losses; and
-- the engine is told it may **commandeer an orbiting AI CH-47** to fly the pickup — which also
-  makes **AI** ejections rescuable, not just human ones.
+- the planner auto-plans the package per turn for blue — **King + Jolly Green + 1 Sandy** — so the
+  escorted alert is up before the first losses; and
+- the rescue helo **air-starts on station** near the FLOT (a slow helo spooling up from a rear
+  field never reaches a deep ejection in time); and
+- the AI rescue is flown by the MOOSE **AICSAR** engine, which spawns its own rescue helo from the
+  alert's home FARP and delivers there. (The earlier "commandeer an orbiting AI helo" path was
+  dropped after a playtest showed MOOSE CSAR only *tracks* AI ejections and never actually flies an
+  AI helo.) AICSAR **stands itself down** the moment a player crews a rescue helo, so it never
+  competes with the player-flown path.
 
-Airframe scarcity self-limits the alert: no CH-47 available, no orbit planned. Combat SAR is
+Airframe scarcity self-limits the alert: no rescue helo available, no orbit planned. Combat SAR is
 **blue-only** — the engine is built for blue, so a red Combat SAR would just fly an inert orbit
 and is never auto-tasked.
+
+> **v1 limitations (pending the in-game pass):** an AI auto-rescue does **not** yet credit the
+> spare-pilot scoring (it spawns an anonymous clone, losing the original pilot's identity), and a
+> player ejecting from a fixed-wing with no human helo up can be double-handled by both engines (a
+> cosmetic double-spawn).
 
 ---
 
 ## Extracting a stranded SOF team
 
-The same rescue helo can extract a stranded SCAR **SOF team** in-mission. When the SCAR
-commander-capture feature is on and a team has been stranded by a botched grab, the generator
-emits that on-map "downed SOF team" and the plugin spawns it as a MOOSE **CASEVAC** ground
-pickup at its strand point. A Combat SAR helo boards and delivers it exactly like a downed
-pilot, and the campaign credits the recovery — refunding the bought team.
+The rescue substrate can also extract a stranded **SOF team** in-mission (boarding it as a MOOSE
+**CASEVAC** pickup exactly like a downed pilot, distinct from the dedicated `FlightType.CSAR`
+air-assault recovery, routed by a `SOFRESCUE` name prefix so the two channels never double-count).
 
-This runs **alongside** the dedicated `FlightType.CSAR` air-assault recovery, not instead of it;
-a team recovered by either path refunds only once. The pilot-sparing channel and the
-SOF-recovery channel are kept distinct (routed by a `SOFRESCUE` name prefix) so there is no
-double-counting and no double ejection-handling. See
-[SOF and Commander Capture](SOF-and-Commander-Capture) for how teams get stranded in the first
-place.
-
-> With the AI alert on, an AI Combat SAR helo can be commandeered to extract a team too — and it
-> *will* penetrate deep enemy territory to reach the strand, which is risky by design.
+> **Currently dormant.** This serviced the old SCAR commander-capture loop, which was retired with
+> the SCAR armor hunt on 2026-06-27 — no in-mission trigger strands a SOF team today, so this path
+> doesn't fire in the shipped build. The Python plumbing remains. See
+> [SOF and Commander Capture](SOF-and-Commander-Capture) for the status.
 
 ---
 

@@ -148,20 +148,19 @@ shut their radars down reactively — and it's why a HARM is less likely to scor
 than against a dumb SAM, and why DEAD's bomb/ATGM kill is often the only reliable way to remove a
 networked site.
 
-**MANTIS is the default engine for new campaigns**, with Skynet still selectable; existing saves
-keep whichever engine they were created with (a save-state pin). The engine, how the two differ,
-and the advanced comms/power/command-center degradation graph have their own page:
+**MANTIS is the IADS engine for every campaign** — it is the sole engine (Skynet was removed), and
+older saves migrate to it automatically. The engine and the advanced comms/power/command-center
+degradation graph have their own page:
 
-> **→ [IADS Engines: MANTIS and Skynet](IADS-Engines-MANTIS-and-Skynet)** for what the engine
-> does, MANTIS vs Skynet, advanced IADS, and how to choose.
+> **→ [IADS Engine: MANTIS](IADS-Engine-MANTIS)** for what the engine does, advanced IADS, and
+> the Skynet removal.
 
 ## See also
 
 - [Mission-planning](Mission-planning) — packages, TOT timing, and the full per-task detail
   (SEAD/DEAD decision guide, BARCAP, escorts).
 - [Air-Wing-Configuration](Air-Wing-Configuration) — squadron setup and the QRA reserve.
-- [IADS Engines: MANTIS and Skynet](IADS-Engines-MANTIS-and-Skynet) — the runtime engine behind
-  enemy air defenses.
+- [IADS Engine: MANTIS](IADS-Engine-MANTIS) — the runtime engine behind enemy air defenses.
 - [Electronic Warfare and ISR](Electronic-Warfare-and-ISR) — the C-130J jammer/ELINT platform.
 - [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance) — recon fog and the overview
   reveal toggle that shows true threat rings.

@@ -51,10 +51,10 @@ Large campaigns can stress CPU and GPU. These options trade detail for framerate
 
 ### Fork note: IADS engine
 
-Upstream's performance IADS is Skynet. This fork defaults new campaigns to a **MANTIS**
-IADS engine (Skynet is still selectable, and existing saves stay on whatever they were saved
-with). Functionally it serves the same role — managing SAM activation — so the performance
-guidance above still applies. See the project README and IADS design notes for detail.
+Upstream's performance IADS is Skynet. This fork runs the **MANTIS** IADS engine instead —
+Skynet was removed, and older saves migrate automatically. Functionally it serves the same role
+— managing SAM activation and networking — so the performance guidance above still applies. See
+[IADS Engine: MANTIS](IADS-Engine-MANTIS) for detail.
 
 ## Auto-purchase options
 

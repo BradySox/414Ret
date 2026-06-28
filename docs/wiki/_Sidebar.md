@@ -12,7 +12,7 @@
 **Campaign mechanics**
 - [Mission Planning](Mission-planning)
 - [Air Defense & the Air War](Air-Defense-and-the-Air-War)
-- [IADS Engines: MANTIS & Skynet](IADS-Engines-MANTIS-and-Skynet)
+- [IADS Engine: MANTIS](IADS-Engine-MANTIS)
 - [Frontline Stances & Movement](Frontline-Stances-and-Movement)
 - [Base Capture](Base-Capture)
 - [Squadrons & Pilots](Squadrons-and-Pilots)

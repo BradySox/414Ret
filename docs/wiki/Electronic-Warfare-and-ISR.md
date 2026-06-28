@@ -154,5 +154,5 @@ loaded.
 
 - [Mission planning](Mission-planning)
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War)
-- [IADS Engines: MANTIS and Skynet](IADS-Engines-MANTIS-and-Skynet)
+- [IADS Engine: MANTIS](IADS-Engine-MANTIS)
 - [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)

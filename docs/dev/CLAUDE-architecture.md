@@ -6,10 +6,10 @@ plugins. When a feature has both, the Python side sets up and the Lua side execu
 move runtime logic into the planner or vice versa.
 
 **Plugin script injection (the uniform late-init pass).** Most 414th plugins are normal
-work-order plugins. TIC, TARS, and SCAR additionally need their main script loaded **after**
+work-order plugins. TIC, TARS, and MooseAtis additionally need their main script loaded **after**
 every plugin's config table exists (their init reads `dcsRetribution.plugins.<name>` / MOOSE
 at file scope) — an ordering the per-plugin work-order pass can't express. They are `LuaPlugin`
-subclasses (`game/plugins/{tic,tars,scar}.py`, registered in `manager.py`'s `_PLUGIN_CLASSES`)
+subclasses (`game/plugins/{tic,tars,mooseatis}.py`, registered in `manager.py`'s `_PLUGIN_CLASSES`)
 declaring `late_init_files()` / `late_init_preamble()` / `should_late_init()`; `inject_plugins()`
 runs a **second pass** that calls `inject_late_init()` on each after the normal config pass. A
 missing/renamed init file is now caught by a test (`game/plugins/tests/test_late_init.py`)

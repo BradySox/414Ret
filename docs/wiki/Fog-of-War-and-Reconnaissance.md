@@ -26,8 +26,10 @@ Discovery is sticky: once a site is scouted or attacked, it stays revealed. Both
 governed by the **`recon_intel_fog`** setting (Campaign Doctrine page, **default ON**). Older
 saves are migrated to fully revealed, so the fog is felt mainly on new campaigns.
 
-A third, related gate hides enemy **command posts** entirely from your map for the SCAR
-commander-capture feature — see [SCAR](SCAR) and the `scar_command_post_intel` setting.
+A third, related gate (the **`scar_command_post_intel`** setting, **default ON** for new
+campaigns) hides enemy **command posts** entirely from your map until you discover them by
+strike/scout/TARPS — so mapping the enemy command network is itself a recon task. See
+[SOF and Commander Capture](SOF-and-Commander-Capture).
 
 ## Lifting the fog: TARPS photo recon
 

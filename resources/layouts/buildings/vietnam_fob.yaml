@@ -1,5 +1,5 @@
 name: vietnam_fob
-generic: true
+generic: false
 tasks:
 - FOB
 groups:
@@ -26,6 +26,7 @@ groups:
     - 16
     unit_types:
     - Sandbag_08
+    optional: true
   - name: vfob 8
     statics:
     - vfob 8-0
@@ -36,6 +37,7 @@ groups:
     - 4
     unit_types:
     - CH-47Fbl1
+    optional: true
   - name: vfob 0
     statics:
     - vfob 0-0
@@ -50,6 +52,7 @@ groups:
     - 8
     unit_types:
     - Invisible FARP
+    optional: true
   - name: vfob 1
     statics:
     - vfob 1-0
@@ -60,6 +63,7 @@ groups:
     - 4
     unit_types:
     - Hangar B
+    optional: true
   - name: vfob 13
     statics:
     - vfob 13-0
@@ -76,6 +80,7 @@ groups:
     - 10
     unit_types:
     - FARP Tent
+    optional: true
   - name: vfob 29
     statics:
     - vfob 29-0
@@ -85,6 +90,7 @@ groups:
     - 3
     unit_types:
     - container_20ft
+    optional: true
   - name: vfob 30
     statics:
     - vfob 30-0
@@ -93,6 +99,7 @@ groups:
     - 2
     unit_types:
     - container_40ft
+    optional: true
   - name: vfob 31
     statics:
     - vfob 31-0
@@ -102,6 +109,7 @@ groups:
     - 3
     unit_types:
     - Container white
+    optional: true
   - name: vfob 32
     statics:
     - vfob 32-0
@@ -110,6 +118,7 @@ groups:
     - 2
     unit_types:
     - Container brown
+    optional: true
   - name: vfob 17
     statics:
     - vfob 17-0
@@ -118,6 +127,7 @@ groups:
     - 2
     unit_types:
     - Camouflage05
+    optional: true
   - name: vfob 16
     statics:
     - vfob 16-0
@@ -127,6 +137,7 @@ groups:
     - 3
     unit_types:
     - Camouflage04
+    optional: true
   - name: vfob 19
     statics:
     - vfob 19-0
@@ -137,6 +148,7 @@ groups:
     - 4
     unit_types:
     - AM32a-60_01
+    optional: true
   - name: vfob 9
     statics:
     - vfob 9-0
@@ -147,6 +159,7 @@ groups:
     - 4
     unit_types:
     - UH-1H
+    optional: true
   - name: vfob 4
     statics:
     - vfob 4-0
@@ -155,6 +168,7 @@ groups:
     - 2
     unit_types:
     - Shelter02
+    optional: true
   - name: vfob 25
     statics:
     - vfob 25-0
@@ -162,6 +176,7 @@ groups:
     - 1
     unit_types:
     - Sandbag_15
+    optional: true
   - name: vfob 23
     statics:
     - vfob 23-0
@@ -172,6 +187,7 @@ groups:
     - 4
     unit_types:
     - Sandbag_13
+    optional: true
   - name: vfob 27
     statics:
     - vfob 27-0
@@ -181,6 +197,7 @@ groups:
     - 3
     unit_types:
     - Black_Tyre_WF
+    optional: true
   - name: vfob 2
     statics:
     - vfob 2-0
@@ -191,6 +208,7 @@ groups:
     - 4
     unit_types:
     - Garage small B
+    optional: true
   - name: vfob 3
     statics:
     - vfob 3-0
@@ -199,6 +217,7 @@ groups:
     - 2
     unit_types:
     - Garage B
+    optional: true
   - name: vfob 24
     statics:
     - vfob 24-0
@@ -209,6 +228,7 @@ groups:
     - 4
     unit_types:
     - Sandbag_05
+    optional: true
   - name: vfob 15
     statics:
     - vfob 15-0
@@ -217,6 +237,7 @@ groups:
     - 2
     unit_types:
     - Tent01
+    optional: true
   - name: vfob 14
     statics:
     - vfob 14-0
@@ -228,6 +249,7 @@ groups:
     - 5
     unit_types:
     - Tent05
+    optional: true
   - name: vfob 18
     statics:
     - vfob 18-0
@@ -236,6 +258,7 @@ groups:
     - 2
     unit_types:
     - Camouflage07
+    optional: true
   - name: vfob 21
     statics:
     - vfob 21-0
@@ -243,6 +266,7 @@ groups:
     - 1
     unit_types:
     - P20_drivable
+    optional: true
   - name: vfob 28
     statics:
     - vfob 28-0
@@ -253,6 +277,7 @@ groups:
     - 4
     unit_types:
     - FireExtinguisher03
+    optional: true
   - name: vfob 26
     statics:
     - vfob 26-0
@@ -267,6 +292,7 @@ groups:
     - 8
     unit_types:
     - Oil Barrel
+    optional: true
   - name: vfob 34
     statics:
     - vfob 34-0
@@ -279,6 +305,7 @@ groups:
     - 6
     unit_types:
     - vap_mutt
+    optional: true
   - name: vfob 35
     statics:
     - vfob 35-0
@@ -288,6 +315,7 @@ groups:
     - 3
     unit_types:
     - vap_mule
+    optional: true
   - name: vfob 33
     statics:
     - vfob 33-0
@@ -300,6 +328,7 @@ groups:
     - 6
     unit_types:
     - vap_m35_truck
+    optional: true
   - name: vfob 20
     statics:
     - vfob 20-0
@@ -310,6 +339,7 @@ groups:
     - 4
     unit_types:
     - AA8
+    optional: true
   - name: vfob 44
     statics:
     - vfob 44-0
@@ -319,6 +349,7 @@ groups:
     - 3
     unit_types:
     - trunks_long_cargo
+    optional: true
   - name: vfob 10
     statics:
     - vfob 10-0
@@ -327,6 +358,7 @@ groups:
     - 2
     unit_types:
     - OH-6A
+    optional: true
   - name: vfob 11
     statics:
     - vfob 11-0
@@ -334,6 +366,7 @@ groups:
     - 1
     unit_types:
     - Patriot AMG
+    optional: true
   - name: vfob 12
     statics:
     - vfob 12-0
@@ -341,6 +374,7 @@ groups:
     - 1
     unit_types:
     - Patriot ECS
+    optional: true
   - name: vfob 36
     statics:
     - vfob 36-0
@@ -351,6 +385,7 @@ groups:
     - 4
     unit_types:
     - vap_ammo_box_pile
+    optional: true
   - name: vfob 38
     statics:
     - vfob 38-0
@@ -359,6 +394,7 @@ groups:
     - 2
     unit_types:
     - vap_barrel_red
+    optional: true
   - name: vfob 37
     statics:
     - vfob 37-0
@@ -368,6 +404,7 @@ groups:
     - 3
     unit_types:
     - vap_barrels
+    optional: true
   - name: vfob 41
     statics:
     - vfob 41-0
@@ -376,6 +413,7 @@ groups:
     - 2
     unit_types:
     - vap_ammo_50cal_line
+    optional: true
   - name: vfob 42
     statics:
     - vfob 42-0
@@ -384,6 +422,7 @@ groups:
     - 2
     unit_types:
     - vap_ammo_50cal_pack
+    optional: true
   - name: vfob 40
     statics:
     - vfob 40-0
@@ -393,6 +432,7 @@ groups:
     - 3
     unit_types:
     - vap_mixed_cargo_2
+    optional: true
   - name: vfob 39
     statics:
     - vfob 39-0
@@ -402,6 +442,7 @@ groups:
     - 3
     unit_types:
     - vap_mixed_cargo_1
+    optional: true
   - name: vfob 5
     statics:
     - vfob 5-0
@@ -416,6 +457,7 @@ groups:
     - 8
     unit_types:
     - Vulcan
+    optional: true
   - name: vfob 6
     statics:
     - vfob 6-0
@@ -428,6 +470,7 @@ groups:
     - 6
     unit_types:
     - ZU-23 Emplacement
+    optional: true
   - name: vfob 7
     statics:
     - vfob 7-0
@@ -440,6 +483,7 @@ groups:
     - 6
     unit_types:
     - ERO_ZU23_pos
+    optional: true
   - name: vfob 45
     statics:
     - vfob 45-0
@@ -448,6 +492,7 @@ groups:
     - 2
     unit_types:
     - CV_59_Large_Forklift
+    optional: true
   - name: vfob 46
     statics:
     - vfob 46-0
@@ -457,6 +502,7 @@ groups:
     - 3
     unit_types:
     - CV_59_H60
+    optional: true
   - name: vfob 47
     statics:
     - vfob 47-0
@@ -465,6 +511,7 @@ groups:
     - 2
     unit_types:
     - MJ-1_01
+    optional: true
   - name: vfob 48
     statics:
     - vfob 48-0
@@ -472,6 +519,7 @@ groups:
     - 1
     unit_types:
     - MJ-1_02
+    optional: true
   - name: vfob 49
     statics:
     - vfob 49-0
@@ -481,6 +529,7 @@ groups:
     - 3
     unit_types:
     - ERO_Container
+    optional: true
   - name: vfob 43
     statics:
     - vfob 43-0
@@ -489,4 +538,5 @@ groups:
     - 2
     unit_types:
     - vap_mre_boxes
+    optional: true
 layout_file: resources/layouts/buildings/vietnam_fob.miz

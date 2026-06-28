@@ -1,6 +1,8 @@
 {
   "country": "Vietnam",
   "name": "NVA 1970",
+  "excluded_generic_layouts": ["fob1"],
+  "extra_layouts": ["vietnam_fob"],
   "authors": "Starfire",
   "description": "<p>North Vietnamese Army during the Vietnam War from 1965 to 1975</p>",
   "locales": [

@@ -133,6 +133,18 @@ class Faction:
     # A list of all supported sets of units
     preset_groups: list[ForceGroup] = field(default_factory=list)
 
+    # Names of generic layouts this faction must NOT use, by layout name. Lets a faction
+    # opt out of a shared generic layout so a themed alternative wins deterministically
+    # (e.g. the Vietnam factions exclude "fob1" so FOBs always render the "vietnam_fob"
+    # layout instead of a coin-flip between the two FOB layouts).
+    excluded_generic_layouts: list[str] = field(default_factory=list)
+
+    # Names of NON-generic layouts this faction opts INTO, by layout name. The counterpart
+    # to excluded_generic_layouts: a themed layout is kept non-generic (so it never leaks
+    # into other factions/campaigns) and only the factions that list it here get it
+    # (e.g. the Vietnam factions opt into "vietnam_fob").
+    extra_layouts: list[str] = field(default_factory=list)
+
     # Possible Missile site generators for this faction
     missiles: Set[GroundUnitType] = field(default_factory=set)
 
@@ -305,6 +317,9 @@ class Faction:
         faction.preset_groups = [
             ForceGroup.from_preset_group(g) for g in json.get("preset_groups", [])
         ]
+
+        faction.excluded_generic_layouts = json.get("excluded_generic_layouts", [])
+        faction.extra_layouts = json.get("extra_layouts", [])
 
         faction.requirements = json.get("requirements", {})
 

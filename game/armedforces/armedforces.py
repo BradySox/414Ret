@@ -37,10 +37,18 @@ class ArmedForces:
         """Initialize the ArmedForces for the given faction.
         This will create a ForceGroup for each generic Layout and PresetGroup"""
 
-        # Generate ForceGroup for all generic layouts by iterating over
-        # all layouts which are usable by the given faction.
+        # Generate ForceGroup for each layout this faction should use: every generic
+        # layout it hasn't opted out of (faction.excluded_generic_layouts), plus any
+        # NON-generic layout it has opted into (faction.extra_layouts). Together these let
+        # a themed alternative win deterministically for a tasking instead of being merged
+        # in and picked ~50/50 (e.g. the Vietnam factions exclude "fob1" and opt into the
+        # non-generic "vietnam_fob", so FOBs always render the Vietnam layout while other
+        # factions/campaigns keep "fob1" untouched).
         for layout in LAYOUTS.layouts:
-            if layout.generic and layout.usable_by_faction(faction):
+            opted_in = (
+                layout.generic and layout.name not in faction.excluded_generic_layouts
+            ) or (layout.name in faction.extra_layouts)
+            if opted_in and layout.usable_by_faction(faction):
                 # Creates a faction compatible ForceGroup
                 self.add_or_update_force_group(ForceGroup.for_layout(layout, faction))
 

@@ -1,6 +1,8 @@
 {
   "country": "Vietnam",
   "name": "Viet Cong 1965",
+  "excluded_generic_layouts": ["fob1"],
+  "extra_layouts": ["vietnam_fob"],
   "authors": "Starfire",
   "description": "<p>Lightly armed guerrilla forces representing the Viet Cong in 1965, equipped for asymmetric warfare with minimal heavy weaponry.</p>",
   "locales": [

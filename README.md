@@ -168,7 +168,10 @@ and selected later upstream fixes.
   every turn, stable while you plan. Off by default.
 - Optional **Fuel Ladder** kneeboard page — one glanceable column of planned fuel remaining at each
   steerpoint, with the RTB margin (how much you have to spare over what you need to get home — negative
-  means tank or divert) called out once and Bingo/Joker. Off by default.
+  means tank or divert) called out once and Bingo/Joker. Off by default. Now shows for **every**
+  flyable airframe: aircraft without hand-measured fuel data (the C-130J "King", the helicopters,
+  warbirds, ...) get a rough estimate derived from their fuel capacity instead of the old "No fuel
+  estimate available" placeholder.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
 - When *Restrict weapons by campaign date* is on, era-defining **cockpit options** are now gated
   alongside the weapons: a pre-2003 campaign no longer offers (or quietly spawns) a **JHMCS**

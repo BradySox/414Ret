@@ -446,6 +446,23 @@ drives `min_fuel`), so the card is labelled as planning figures. Gated by `gener
 `tests/missiongenerator/test_fuel_ladder_card.py`. In-game pass ☑ VERIFIED 2026-06-26 (H7). The last of the
 three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc-ideas-harvest.md`).
 
+*Estimated-fuel fallback for dataless airframes.* The ladder originally only rendered for the ~22
+airframes that ship a hand-measured `fuel:` block (`AircraftType.fuel_consumption`); everything else —
+including the **C-130J "King"**, the helicopters, and the warbirds — showed *"No fuel estimate available
+for this aircraft."* `AircraftType.estimated_fuel_consumption` (`game/dcs/aircrafttype.py`) now
+synthesises a rough `FuelConsumption` from the airframe's internal capacity (`fuel_max`) scaled by an
+assumed still-air cruise endurance, bucketed **helicopter / heavy-transport / combat** (heavy detected
+by pydcs default task — Transport/Refueling/AWACS/Reconnaissance — or airframe length ≥ 28 m). The
+combat bucket is calibrated against the measured references (F/A-18C ~22 ppm, F-16C ~12 ppm; the
+estimate lands at ~21 for the Hornet) and the heavy bucket against the C-130J (~16 ppm); climb/combat
+are multiples of cruise. It is **kneeboard-scoped on purpose** — the waypoint generator's two estimate
+passes (`_estimate_min_fuel_for` / `_estimate_planned_fuel_for`) resolve `fuel_consumption or
+estimated_fuel_consumption` and thread the chosen one through `FlightPlan.fuel_consumption_between_points`
+(now taking an optional `consumption` override), but **`unit_type.fuel_consumption` is left `None`**, so
+the flight planner's tanker tasking (`formationattack`) and the in-flight fuel sim (`inflight.py`) keep
+using measured data only and gain no new blast radius. A real `fuel:` block always wins. Covered by
+`tests/dcs/test_estimated_fuel_consumption.py`.
+
 **Compact 3-4 page kneeboard deck + BLUF.** With every optional page enabled the deck ran to
 ~10 pages, and players usually only read the first. `compact_kneeboard` (default **ON**,
 `game/settings/settings.py`) consolidates the deck into **at most four pages**, folding the optional

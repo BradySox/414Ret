@@ -23,6 +23,7 @@ from ..starttype import StartType
 from ..traveltime import GroundSpeed
 
 if TYPE_CHECKING:
+    from game.dcs.aircrafttype import FuelConsumption
     from game.theater import ControlPoint
     from ..flight import Flight
     from ..flightwaypoint import FlightWaypoint
@@ -152,24 +153,35 @@ class FlightPlan(ABC, Generic[LayoutT]):
         return set()
 
     def fuel_consumption_between_points(
-        self, a: FlightWaypoint, b: FlightWaypoint
+        self,
+        a: FlightWaypoint,
+        b: FlightWaypoint,
+        consumption: FuelConsumption | None = None,
     ) -> float | None:
-        ppm = self.fuel_rate_to_between_points(a, b)
+        ppm = self.fuel_rate_to_between_points(a, b, consumption)
         if ppm is None:
             return None
         distance = meters(a.position.distance_to_point(b.position))
         return distance.nautical_miles * ppm
 
     def fuel_rate_to_between_points(
-        self, a: FlightWaypoint, b: FlightWaypoint
+        self,
+        a: FlightWaypoint,
+        b: FlightWaypoint,
+        consumption: FuelConsumption | None = None,
     ) -> float | None:
-        if self.flight.unit_type.fuel_consumption is None:
+        # Callers may pass an explicit consumption (the kneeboard uses an *estimated*
+        # one for airframes with no measured data); the planner / in-flight sim leave
+        # it None and get measured data only.
+        if consumption is None:
+            consumption = self.flight.unit_type.fuel_consumption
+        if consumption is None:
             return None
         if a.waypoint_type is FlightWaypointType.TAKEOFF:
-            return self.flight.unit_type.fuel_consumption.climb
+            return consumption.climb
         if b in self.combat_speed_waypoints:
-            return self.flight.unit_type.fuel_consumption.combat
-        return self.flight.unit_type.fuel_consumption.cruise
+            return consumption.combat
+        return consumption.cruise
 
     @property
     def tot_waypoint(self) -> FlightWaypoint:

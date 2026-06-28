@@ -95,7 +95,7 @@ squadrons:
       size: 12
     - primary: Strike
       secondary: air-to-ground
-      aircraft: [F-4E Phantom II]
+      aircraft: [F-4E-45MC Phantom II]
       size: 12
     - primary: Armed Recon
       secondary: air-to-ground
@@ -126,10 +126,6 @@ squadrons:
       size: 12
     - primary: Strike
       secondary: air-to-ground
-      aircraft: [A-6A Intruder]
-      size: 12
-    - primary: Strike
-      secondary: air-to-ground
       aircraft: [A-4E Skyhawk]
       size: 12
     - primary: Strike
@@ -143,6 +139,10 @@ squadrons:
 
   # --- Yankee Station carrier #2 (Bon Homme Richard) ---
   Naval-2:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [A-6A Intruder]
+      size: 12
     - primary: CAS
       secondary: air-to-ground
       aircraft: [A-4E Skyhawk]

@@ -252,7 +252,7 @@ squadrons:
        - primary: Escort
          secondary: air-to-air
          aircraft: 
-           - F-4E Phantom II
+           - F-4E-45MC Phantom II
          size: 12
        
        - primary: Escort
@@ -403,7 +403,7 @@ squadrons:
        - primary: Strike
          secondary: air-to-ground
          aircraft:
-           - F-4E Phantom II
+           - F-4E-45MC Phantom II
          size: 12
 
        - primary: Strike
@@ -421,7 +421,7 @@ squadrons:
        - primary: Strike
          secondary: air-to-ground
          aircraft:
-           - F-4E Phantom II
+           - F-4E-45MC Phantom II
          size: 12
     
     #Saigon
@@ -440,19 +440,19 @@ squadrons:
       - primary: BARCAP
         secondary: air-to-air
         aircraft:
-          - F-4E Phantom II
+          - F-4E-45MC Phantom II
         size: 12
 
       - primary: SEAD
         secondary: air-to-ground
         aircraft:
-          - F-4E Phantom II
+          - F-4E-45MC Phantom II
         size: 12
          
       - primary: Strike
         secondary: air-to-ground
         aircraft:
-          - F-4E Phantom II
+          - F-4E-45MC Phantom II
         size: 12
         
       - primary: Transport

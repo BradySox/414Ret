@@ -29,6 +29,7 @@ advanced_iads: true
 settings:
   vietnamwarvessels: true
   russianmilitaryassetspack: true
+  a4_skyhawk: true
   ov10a_bronco: true
   f111c: true
   oh_6: true
@@ -56,6 +57,10 @@ squadrons:
       size: 4
     - primary: CAS
       secondary: air-to-ground
+      aircraft: [OV-10A Bronco]
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
       aircraft: [A-1H Skyraider]
       size: 4
     - primary: Air Assault
@@ -63,36 +68,16 @@ squadrons:
       aircraft: [UH-1H Iroquois]
       size: 4
 
-  # --- Da Nang (tac-air rear + Pegasus relief) ---
+  # --- Da Nang (forward strip: Skyraiders, Crusaders, helos) ---
   Batumi:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft: [A-4E Skyhawk]
-      size: 12
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft: [F-100D Super Sabre]
-      size: 12
-    - primary: Strike
-      secondary: air-to-ground
-      aircraft: [F-4E Phantom II]
-      size: 12
     - primary: CAS
       secondary: air-to-ground
       aircraft: [A-1H Skyraider]
       size: 8
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft: [OV-10A Bronco]
-      size: 4
     - primary: BARCAP
       secondary: air-to-air
       aircraft: [F-8E Crusader]
       size: 8
-    - primary: Armed Recon
-      secondary: air-to-ground
-      aircraft: [RF-101B Voodoo]
-      size: 4
     - primary: Air Assault
       secondary: any
       aircraft: [CH-53E]
@@ -102,8 +87,20 @@ squadrons:
       aircraft: [UH-1H Iroquois]
       size: 4
 
-  # --- Tbilisi-Lochini (deep-east rear: heavy fixed-wing, out of the fight) ---
+  # --- Tbilisi-Lochini (deep-east rear: fast jets + heavy fixed-wing) ---
   Tbilisi-Lochini:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [F-100D Super Sabre]
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [F-4E-45MC Phantom II]
+      size: 12
+    - primary: Armed Recon
+      secondary: air-to-ground
+      aircraft: [RF-101B Voodoo]
+      size: 4
     - primary: Strike
       aircraft: [B-52H Stratofortress]
       size: 4
@@ -129,7 +126,7 @@ squadrons:
       size: 12
     - primary: Strike
       secondary: air-to-ground
-      aircraft: [A-6A Intruder]
+      aircraft: [A-4E Skyhawk]
       size: 12
     - primary: Strike
       secondary: air-to-ground
@@ -139,6 +136,17 @@ squadrons:
       secondary: air-to-ground
       aircraft: [RA-5C Vigilante]
       size: 4
+
+  # --- Yankee Station carrier #2 (Bon Homme Richard) ---
+  Naval-2:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [A-6A Intruder]
+      size: 12
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [A-4E Skyhawk]
+      size: 12
 
   # --- NVA: the hills (Sukhumi) ---
   Sukhumi-Babushara:

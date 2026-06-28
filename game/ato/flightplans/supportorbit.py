@@ -15,6 +15,11 @@ into friendly territory along the stable enemy->friendly axis until it is at
 least ``threat_buffer`` from the enemy threat zone. The result is centered on
 the front and at the configured standoff regardless of where the supporting
 squadron is based.
+
+The one exception is a support orbit tasked to a **carrier/fleet** target: it
+holds with its task force (anchored on the carrier, only nudged clear of the
+threat zone) instead of marching up to the land FLOT, so a carrier E-2C/tanker
+covers the boat rather than flying ~200 NM forward to cover the front.
 """
 
 from __future__ import annotations
@@ -62,11 +67,24 @@ def support_orbit_anchor(
     (the standoff point behind the front) and ``toward_enemy`` is the heading
     pointing at the enemy -- callers orient the racetrack perpendicular to it so
     the orbit runs parallel to the FLOT.
+
+    A support orbit tasked to a **carrier/fleet** is the exception: it holds with
+    its task force instead of marching up to the land FLOT. So a carrier E-2C (or
+    a carrier tanker) covers the boat rather than being flung ~200 NM forward to
+    the front. It anchors on the carrier and is only nudged clear of the threat
+    zone (no forward/deep standoff march).
     """
-    front = _relevant_front(theater, target)
+    # ControlPoints expose is_carrier/is_fleet; other MissionTargets (front
+    # lines, ground objects, refueling points) do not -- treat those as land.
+    carrier_target = getattr(target, "is_carrier", False) or getattr(
+        target, "is_fleet", False
+    )
+
+    front = None if carrier_target else _relevant_front(theater, target)
     if front is None:
-        # No active front (e.g. opening turn): fall back to anchoring on the
-        # target and standing off from the nearest threat boundary.
+        # Either a carrier/fleet orbit (hold with the task force) or no active
+        # front (e.g. opening turn): anchor on the target and stand off from the
+        # nearest threat boundary.
         anchor = target.position
         boundary = threat_zones.closest_boundary(anchor)
         toward_enemy = Heading.from_degrees(anchor.heading_between_point(boundary))
@@ -85,11 +103,16 @@ def support_orbit_anchor(
 
     # Base standoff behind the front: the player holds forward at 1x the buffer
     # for coverage; the AI holds deep (AI_SUPPORT_DEPTH_FACTOR x) so red
-    # tankers/AWACS don't loiter near the FLOT.
-    factor = 1.0 if player.is_blue else AI_SUPPORT_DEPTH_FACTOR
-    base_push = threat_buffer * factor
-    if base_push > meters(0):
-        center = center.point_from_heading(away_from_enemy.degrees, base_push.meters)
+    # tankers/AWACS don't loiter near the FLOT. A carrier orbit skips this march
+    # entirely -- it stays on the fleet and is only pushed clear of the threat
+    # zone below.
+    if not carrier_target:
+        factor = 1.0 if player.is_blue else AI_SUPPORT_DEPTH_FACTOR
+        base_push = threat_buffer * factor
+        if base_push > meters(0):
+            center = center.point_from_heading(
+                away_from_enemy.degrees, base_push.meters
+            )
 
     # Then guarantee it is at least threat_buffer clear of the enemy threat zone,
     # pushing further into friendly airspace if the base standoff left it exposed.

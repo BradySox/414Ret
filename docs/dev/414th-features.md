@@ -746,6 +746,25 @@ deep. Verified by recomputing the broken save: red AWACS `+326/−175 NM → cen
 behind`, blue forward-but-centered. Tests: `tests/test_support_orbit.py`. Upstream-core
 flight-plan code, so an upstream-PR candidate. **Lua-free; in-game pass ☑ VERIFIED 2026-06-24 (C1/C2).**
 
+**Carrier/fleet exception (2026-06-28).** Front-anchoring a support orbit makes sense for a
+land-based AWACS/tanker, but it flung *carrier* AEW&C (E-2C) up to the land FLOT — covering the
+fighting instead of the boat it launched from. The auto-planner already tasks one AEW&C per
+carrier CP (`theaterstate.aewc_targets = [carrier CPs] + farthest-friendly CP`), so the *target*
+already encodes which orbit belongs to which fleet; only the placement ignored it. Now
+`support_orbit_anchor` checks `is_carrier`/`is_fleet` on the target (other `MissionTarget`s lack
+the attribute → treated as land) and, for a carrier/fleet target, **anchors on the carrier and
+only nudges clear of the threat zone** — no FLOT re-center, no forward/AI-deep march. So the E-2C
+covers its task force while a land EC-121/E-3 still front-anchors for forward coverage, with no
+map-specific tuning (purely `is_carrier`-keyed → campaign-agnostic). `aewc.py`'s lateral
+anti-stack spread is also scoped to AEW&C flights sharing the **same target** (anchor), so a land
+AWACS no longer shoves a carrier E-2 off its boat now that the two sit on different anchors.
+Verified by recomputing the `auto gen` Caucasus save (2× E-2C + 1× EC-121, the same
+headless-recompute method that VERIFIED the C1/C2 parent fix): the carrier E-2Cs went from
+**~218 NM** off their carriers to **~32 NM** (centered on the boat); the EC-121 stays forward on
+the front. Tests: `tests/test_support_orbit.py` (`test_carrier_target_holds_on_the_fleet`,
+`test_fleet_target_also_holds_on_the_fleet`). **Lua-free; geometry change, no new in-game-pass row
+(folds under the C1/C2 support-orbit item).**
+
 ### Theater tanker placement from receiver demand (2026-06-25)
 
 **Symptom.** A shared theater tanker is planned at `closest_friendly_control_point()` then

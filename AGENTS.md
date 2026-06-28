@@ -107,7 +107,14 @@ file. This guide is the map; those are the territory.
     minimal-F10 designation; thin MOOSE bridge, not `Ops.Chief`; future auto-planned commander),
     `414th-combat-sar-normal-task-notes.md` (make Combat SAR a normal, default-on, **two-sided**
     auto-task: AI rescues AI on blue+red, players can drop in; phased verify-blue → default-on →
-    AI-rescue scoring → symmetric red; today the engine is blue-only + the AI-rescue scoring is cosmetic)
+    AI-rescue scoring → symmetric red; today the engine is blue-only + the AI-rescue scoring is cosmetic),
+    `414th-vietnam-retribution-notes.md` + `414th-vietnam-retribution-HANDOFF.md` (**Vietnam
+    Retribution mode** — a dedicated New-Game "Vietnam" shell over the shared engine: filters
+    content to Vietnam campaigns/factions/maps, applies an era preset, and produces
+    **doctrine-gated taskings with era-correct names** (MiGCAP/Iron Hand/Alpha Strike/Sandy) via a
+    new `VIETNAM_DOCTRINE`. Decided: doctrine-gated + display-rename (one `FlightType` enum, no new
+    persisted values) + dedicated shell reusing the metadata-driven wizard; fork identity, **not
+    upstreamable**. **HANDOFF is the start-here**; phased P0–P4, design only so far)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.

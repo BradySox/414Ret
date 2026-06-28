@@ -21,7 +21,7 @@ recommended_start_date: 1970-11-29
 version: "10.8"
 settings:
   airbase_threat_range: 20
-  a4_skyhawk: false
+  a4_skyhawk: true
   f111c: true
   ov10a_bronco: true
   vietnamwarvessels: true

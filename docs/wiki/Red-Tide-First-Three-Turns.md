@@ -207,8 +207,8 @@ Backfires and liberate Copenhagen, opening the Straits.
 
 *Companion docs: [Campaign Briefing Handbook](Red-Tide-Campaign-Briefing) ·
 [Role kneeboard cards](Red-Tide-Role-Cards) ·
-[Intel assessment (lore)](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-intel-assessment.md) ·
-[Visual briefing](https://github.com/bradyccox/414Ret/blob/main/docs/campaigns/red-tide-visual-briefing.md). Callsigns/freqs/code words here are illustrative and
+[Intel assessment (lore)](Red-Tide-Intel-Assessment) ·
+[Visual briefing](Red-Tide-Visual-Briefing). Callsigns/freqs/code words here are illustrative and
 freely editable; the ORBAT and phase logic are from the campaign files.*
 
 

@@ -35,6 +35,8 @@
 - [Red Tide: Briefing](Red-Tide-Campaign-Briefing)
 - [Red Tide: Role Cards](Red-Tide-Role-Cards)
 - [Red Tide: First Three Turns](Red-Tide-First-Three-Turns)
+- [Red Tide: Intel Assessment](Red-Tide-Intel-Assessment)
+- [Red Tide: Visual Briefing](Red-Tide-Visual-Briefing)
 
 **Customization**
 - [Custom Campaigns](Custom-Campaigns)

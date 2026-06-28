@@ -304,6 +304,18 @@ considered and declined.
       (plain ints — no enum/timedelta conversion). **In-game watch:** confirm the AI doesn't stall
       the offensive — if blue under-flies, raise aggressiveness back toward 15–20 or bump
       `recommended_player_income_multiplier`; if blue *still* out-flies the human, trim those further.
+12. **Red dedicated EWR coverage** (2026-06-28). Added **4 red `1L13 EWR` marker groups** to the
+    red `["vehicle"]` block (`groupId`/`unitId` 409–412, past the mission max), each placed ~3 km
+    NE of a long/medium red SAM site so they fall in red territory along the strategic belt.
+    `MizCampaignLoader.ewrs` (marker type `AirDefence.x_1L13_EWR`) turns each into a dedicated
+    `EwrGroundObject` at the nearest red CP. **Why:** under MANTIS the red SAM net was previously
+    detection-blind until the ground-start A-50 climbed (no dedicated red EWRs at all — the whole
+    campaign rode on one AWACS; see the in-game-pass G18 / G15 5th-pass notes). Paired with the
+    `EWR 1L13` faction add above so the markers actually fill. **Edit method:** done via pydcs
+    (`Mission.vehicle_group` + `save`) — a load→save round-trip was first verified to preserve all
+    58 red vehicles, 12 red statics (incl. the advanced-IADS command-center/comms/power cells), and
+    the blue side byte-for-count, so the usual hand-edit-Lua caution didn't apply here. Headless
+    validated: loader now sees 4 red EWR markers; the IADS-detection scan flips Red Tide AMBER→OK.
 
 ### Fulda forward heli base + supply re-route
 
@@ -325,6 +337,13 @@ considered and declined.
 - `resources/factions/russia_1980.json` — added `SA-11` (Buk) and `SA-10/S-300PS` preset
   groups. Both are vanilla DCS and match the names already used by `russia_1990`. This is a
   **shared-faction** change, so the original Crossing the Rubicon also gets the tougher IADS.
+- `resources/factions/russia_1980.json` — added **`EWR 1L13`** to `air_defense_units` so the
+  faction can field a **dedicated early-warning radar** (`EarlyWarningRadar` ForceGroup went
+  `0 → 1`). Required because under MANTIS every SAM is held dark until cued, so the red net's
+  detection rides on dedicated EWRs + the A-50; with `EWR-FG = 0` the red `.miz` EWR markers
+  below could never have been filled (`generate_ewrs` would log "no ForceGroup for EWR"). 1L13
+  "Box Spring" is era-appropriate for 1988 (`russia_1990` already uses it). Shared/additive —
+  only enables the airframe; no other campaign places red EWR markers, so nothing else changes.
 - `resources/factions/blufor_late_coldwar.json` — added `KC-135 Stratotanker MPRS` to
   `tankers` so the Frankfurt MPRS (drogue) squadron's def actually loads (the loader drops any
   def whose airframe isn't in the faction). Also shared, but additive — it only makes the

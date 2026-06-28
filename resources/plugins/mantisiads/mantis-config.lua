@@ -160,6 +160,26 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         end
     end
 
+    -- Count entries in an IADS sub-table (Sam/SamAsEwr/Ewr); they may be sparse, so
+    -- count with pairs() rather than the length operator.
+    local function count_entries(t)
+        local n = 0
+        if t then for _ in pairs(t) do n = n + 1 end end
+        return n
+    end
+
+    -- Count AWACS for a coalition -- the only always-on wide-area sensor besides a
+    -- dedicated EWR site.
+    local function count_awacs(coalition_str)
+        local n = 0
+        if dcsRetribution.AWACs then
+            for _, data in pairs(dcsRetribution.AWACs) do
+                if data.coalition == coalition_str then n = n + 1 end
+            end
+        end
+        return n
+    end
+
     -- Phase-5 C2 layer: re-implement Skynet's comms / power / command-center
     -- degradation on top of MANTIS (which has no connection graph of its own).
     -- The per-SAM ConnectionNode/PowerSource arrays and the coalition's
@@ -301,6 +321,24 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
 
         local sam_names, ewr_names = collect(coalition_iads)
         add_awacs(ewr_names, coalition_str)
+
+        -- 414th: warn about a BLIND network -- radar SAMs present but no always-on
+        -- detector. In MANTIS every SAM (and SAM-as-EWR) is held dark until cued, so
+        -- detection rides solely on dedicated EWR sites + AWACS. A coalition with
+        -- shooters but neither never cues a SAM: every site stays GREEN and nothing
+        -- emits to SEAD. (Mirrors the generation-time check in luagenerator.py; this
+        -- one fires from the live .miz so it catches the actual flown laydown.)
+        local n_shooters = count_entries(coalition_iads.Sam)
+            + count_entries(coalition_iads.SamAsEwr)
+        local n_detectors = count_entries(coalition_iads.Ewr) + count_awacs(coalition_str)
+        if n_shooters > 0 and n_detectors == 0 then
+            env.warning(string.format(
+                "DCSRetribution|MANTIS-IADS plugin - %s-IADS has %d radar SAM group(s) "
+                    .. "but NO always-on detection source (dedicated EWR or AWACS). Every "
+                    .. "SAM is held dark until cued, so this network is BLIND and its SAMs "
+                    .. "will never engage. Add an EWR site or an AWACS for this coalition.",
+                coalition_prefix, n_shooters))
+        end
 
         if #sam_names == 0 and #ewr_names == 0 then
             env.info(

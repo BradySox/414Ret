@@ -227,10 +227,16 @@ class LuaGenerator:
         iads_object.get_or_create_item("RED")
         # Should probably do the same with all the roles... but the script is already
         # tolerant of those being empty.
+        # 414th: tally each coalition's radar SAM "shooters" (held dark until cued
+        # by MANTIS) vs. its always-on detectors (dedicated EWR sites only). A
+        # SAM-as-EWR is itself held dark and contributes no detection, so it counts
+        # as a shooter, not a detector. AWACS are folded in below. A coalition with
+        # shooters but no detector has a BLIND network whose SAMs never engage.
+        iads_shooters = {"BLUE": 0, "RED": 0}
+        iads_detectors = {"BLUE": 0, "RED": 0}
         for node in self.game.theater.iads_network.iads_nodes(self.game):
-            coalition = iads_object.get_or_create_item(
-                "BLUE" if node.player.is_blue else "RED"
-            )
+            coalition_key = "BLUE" if node.player.is_blue else "RED"
+            coalition = iads_object.get_or_create_item(coalition_key)
             iads_type = coalition.get_or_create_item(node.iads_role.skynet_value)
             iads_element = iads_type.add_item()
             iads_element.add_key_value("dcsGroupName", node.dcs_name)
@@ -238,8 +244,34 @@ class LuaGenerator:
                 # add additional SkynetProperties to SAM Sites
                 for property, value in node.properties.items():
                     iads_element.add_key_value(property, value)
+                iads_shooters[coalition_key] += 1
+            elif node.iads_role == IadsRole.EWR:
+                iads_detectors[coalition_key] += 1
             for role, connections in node.connections.items():
                 iads_element.add_data_array(role, connections)
+
+        # An AWACS is the network's only other always-on wide-area sensor; fold it
+        # into the detector tally (the MANTIS bridge folds it into the EWR set).
+        for awacs in self.mission_data.awacs:
+            iads_detectors["BLUE" if awacs.blue.is_blue else "RED"] += 1
+
+        # Warn (at generation time, while it can still be fixed) about a coalition
+        # that fields radar SAMs but has NO always-on detection feeding them. Under
+        # MANTIS every SAM is held dark until cued, so detection rides solely on
+        # dedicated EWR sites + AWACS; a coalition with neither is blind and its
+        # SAMs never engage (they stay GREEN). Common cause: a campaign with no EWR
+        # preset locations / a faction with no EWR ForceGroup, and no AWACS fragged.
+        for side in ("BLUE", "RED"):
+            if iads_shooters[side] > 0 and iads_detectors[side] == 0:
+                logging.warning(
+                    "IADS: %s fields %d radar SAM group(s) but has NO always-on "
+                    "detection source (dedicated EWR or AWACS). Under MANTIS every SAM "
+                    "is held dark until cued, so this network is BLIND -- its SAMs will "
+                    "never engage. Add an EWR site or an AWACS for %s.",
+                    side,
+                    iads_shooters[side],
+                    side,
+                )
 
         populate_intercept_lua(lua_data, self.mission_data.intercept_entries)
 

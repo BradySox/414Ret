@@ -145,7 +145,10 @@ def test_carrier_target_holds_on_the_fleet() -> None:
 
     # Anchored on the carrier, not pulled toward the front.
     assert center.distance_to_point(carrier.position) < 1
-    assert center.distance_to_point(FakePoint(0.0, 0.0)) > nautical_miles(100).meters
+    assert (
+        center.distance_to_point(FakePoint(0.0, 0.0))  # type: ignore[arg-type]
+        > nautical_miles(100).meters
+    )
 
 
 def test_fleet_target_also_holds_on_the_fleet() -> None:

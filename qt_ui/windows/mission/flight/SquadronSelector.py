@@ -83,7 +83,8 @@ class SquadronSelector(QComboBox):
 
     def _tooltip_for_squadron(self, squadron, task: FlightType) -> str:
         details = [
-            f"Primary role: {squadron.primary_task.value}",
+            f"Primary role: "
+            f"{squadron.coalition.doctrine.display_name_for(squadron.primary_task)}",
             f"Auto-assignable for this task: {'Yes' if squadron.can_auto_assign(task) else 'No'}",
             f"Untasked aircraft: {squadron.untasked_aircraft}",
             f"Departure base: {squadron.location.name}",

@@ -137,7 +137,7 @@ class AircraftInventoryData:
     @classmethod
     def from_flight(cls, flight: Flight) -> Iterator[AircraftInventoryData]:
         num_units = flight.count
-        flight_type = flight.flight_type.value
+        flight_type = flight.task_display_name
         target = flight.package.target.name
         for idx in range(0, num_units):
             pilot = flight.roster.pilot_at(idx)

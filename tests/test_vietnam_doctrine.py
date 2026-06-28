@@ -98,3 +98,29 @@ def test_vietnam_faction_jsons_declare_vietnam_doctrine() -> None:
         assert (
             data.get("doctrine") == "vietnam"
         ), f"{name} must declare 'doctrine: vietnam' (P1 repoint)."
+
+
+def test_flight_task_display_name_resolves_through_coalition_doctrine() -> None:
+    # P1b: the display read-path. Flight.task_display_name navigates
+    # coalition -> doctrine -> display_name_for; lock that path + the rename.
+    from types import SimpleNamespace
+
+    from game.ato.flight import Flight
+
+    flight = Flight.__new__(Flight)
+    flight.coalition = SimpleNamespace(doctrine=VIETNAM_DOCTRINE)  # type: ignore[assignment]
+    flight.flight_type = FlightType.SEAD
+    assert flight.task_display_name == "Iron Hand"
+
+
+def test_flightdata_task_display_name_resolves_through_squadron_doctrine() -> None:
+    from types import SimpleNamespace
+
+    from game.missiongenerator.aircraft.flightdata import FlightData
+
+    fd = FlightData.__new__(FlightData)
+    fd.squadron = SimpleNamespace(  # type: ignore[assignment]
+        coalition=SimpleNamespace(doctrine=VIETNAM_DOCTRINE)
+    )
+    fd.flight_type = FlightType.STRIKE
+    assert fd.task_display_name == "Alpha Strike"

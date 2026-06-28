@@ -36,6 +36,7 @@ def _generator(*, code_words_on: bool) -> KneeboardGenerator:
 def _flight(flight_type: FlightType = FlightType.STRIKE) -> Any:
     return SimpleNamespace(
         flight_type=flight_type,
+        task_display_name=flight_type.value,
         friendly=object(),
         aircraft_type=SimpleNamespace(utc_kneeboard=False),
         package=SimpleNamespace(
@@ -134,6 +135,7 @@ def _strike_flight() -> Any:
         callsign="Hammer 1",
         custom_name=None,
         flight_type=FlightType.STRIKE,
+        task_display_name=FlightType.STRIKE.value,
         units=[SimpleNamespace(unit_type=object())],
         waypoints=[
             wp("INGRESS", FlightWaypointType.NAV),

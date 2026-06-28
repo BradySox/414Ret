@@ -119,6 +119,13 @@ class FlightData:
         """List of playable units in the flight."""
         return [u for u in self.units if u.is_human()]
 
+    @property
+    def task_display_name(self) -> str:
+        """The flight's tasking label under its coalition's doctrine -- the Vietnam
+        rename layer (e.g. STRIKE -> "Alpha Strike"). Falls back to the canonical
+        ``FlightType.value`` when the doctrine supplies no override. Display only."""
+        return self.squadron.coalition.doctrine.display_name_for(self.flight_type)
+
     def num_radio_channels(self, radio_id: int) -> int:
         """Returns the number of preset channels for the given radio."""
         # Note: pydcs only initializes the radio presets for client slots.

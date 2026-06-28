@@ -19,7 +19,7 @@ class QFlightTypeTaskInfo(QGroupBox):
             )
 
         self.task = QLabel("Task:")
-        self.task_type = QLabel(str(flight.flight_type))
+        self.task_type = QLabel(flight.task_display_name)
         self.task_type.setProperty("style", flight.flight_type.name)
 
         layout.addWidget(self.aircraft_icon, 0, 0)

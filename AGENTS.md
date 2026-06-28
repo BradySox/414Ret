@@ -117,9 +117,10 @@ file. This guide is the map; those are the territory.
     suite lives inside: three thin layers over the one engine — a New Game "Vietnam" shell + content
     filter + a doctrine profile (`VIETNAM_DOCTRINE`) that renames taskings (MiGCAP/Iron Hand/Alpha
     Strike/Sandy) via a display-only override on `Doctrine` (never the persisted enum) and will gate the
-    planner whitelist. **P0 (era tags) + P1 (doctrine model + 10-faction repoint) landed**; P1b display
-    read-path + P2 shell/preset + P3 behaviour taskings outstanding. The Ops suite's Arc Light/flak/NGFS
-    are this design's P4 flavor, already built)
+    planner whitelist. **P0 (era tags) + P1 (doctrine model + 10-faction repoint) + P1b (display read-path:
+    the renames now show in the kneeboard + the manual task picker + the flight/squadron UI via
+    `Flight/FlightData.task_display_name`) landed**; P2 shell/preset + P3 behaviour taskings outstanding.
+    The Ops suite's Arc Light/flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.

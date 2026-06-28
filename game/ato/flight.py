@@ -304,6 +304,14 @@ class Flight(
         return self.squadron.aircraft
 
     @property
+    def task_display_name(self) -> str:
+        """The flight's tasking label under its coalition's doctrine -- the Vietnam
+        rename layer (e.g. STRIKE -> "Alpha Strike"). Falls back to the canonical
+        ``FlightType.value`` when the doctrine supplies no override. Display only: the
+        persisted enum value is untouched."""
+        return self.coalition.doctrine.display_name_for(self.flight_type)
+
+    @property
     def is_lha(self) -> bool:
         return self.unit_type.lha_capable
 

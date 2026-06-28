@@ -320,7 +320,7 @@ class QFlightWaypointTab(QFrame):
             self.plan_type_label.setText("<small><b>Plan:</b> Custom</small>")
         else:
             self.plan_type_label.setText(
-                f"<small><b>Plan:</b> Standard ({self.flight.flight_type})</small>"
+                f"<small><b>Plan:</b> Standard ({self.flight.task_display_name})</small>"
             )
         self.convert_button.setEnabled(not is_custom)
 

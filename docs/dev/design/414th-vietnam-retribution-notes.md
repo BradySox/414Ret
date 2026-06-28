@@ -1,6 +1,6 @@
 # 414th — "Vietnam Retribution" mode — design notes
 
-**Status:** **P0 + P1 (doctrine model) landed**; P1b (display read-path) + P2 (shell/preset) +
+**Status:** **P0 + P1 (doctrine model) + P1b (display read-path) landed**; P2 (shell/preset) +
 P3 (behaviour taskings) outstanding.
 **Decided direction:**
 - Tasking redesign = **doctrine-gated + rename** (one `FlightType` enum, no new enum values).
@@ -31,11 +31,19 @@ P3 (behaviour taskings) outstanding.
   - **Borderline repoints to confirm:** `usa_1965.json` / `usa_1970.json` are *generic* 1965/1970
     US factions (not Vietnam-War-named). They're Vietnam-*era*, so the renames fit, but they could
     be used in other Cold-War-SEA scenarios. Repointed per the design's faction list; flag if undesired.
-- **P1b — display read-path — TODO.** The renames are in the model but **not yet surfaced**: the
-  kneeboard (~10 sites) + ~9 `qt_ui` sites still render `FlightType.value`. Route them through
-  `doctrine.display_name_for(...)` (the player faction's doctrine). Several `kneeboard.py` helpers
-  take a bare `FlightType` and need the doctrine threaded in. Do it comprehensively (avoid
-  "Alpha Strike here, Strike there").
+- **P1b — display read-path — DONE.** The renames now **surface**. `Flight.task_display_name` +
+  `FlightData.task_display_name` (→ `coalition.doctrine.display_name_for(flight_type)`) are the
+  accessors; routed through the **kneeboard** (7 label sites + `_brief_mission` now takes the label;
+  logic comparisons untouched) and the **qt_ui** flight/task surfaces: the **manual flight task picker**
+  (`QFlightTypeComboBox`, doctrine passed from `QFlightCreator`; item *data* stays the `FlightType`),
+  the **squadron primary-task picker** (`PrimaryTaskSelector`), the flight-creation summary, the
+  flight list (`AirWingDialog`), flight task label (`QFlightTypeTaskInfo`), plan label
+  (`QFlightWaypointTab`), the squadron auto-assign rows/checkboxes (`AirWingConfigurationDialog`,
+  `SquadronDialog`), and the squadron-selector tooltip. Tests:
+  `tests/test_vietnam_doctrine.py` (the two properties), `tests/missiongenerator/test_brief_sheet.py`
+  (the `_brief_mission` label). **Deferred (graceful canonical fallback):** the "Add new Squadron"
+  popup (`SquadronConfigPopup` has no coalition context), the `QPackageDialog` package-summary label
+  (`Package` exposes no coalition), and the `SeadTaskPage` SEAD/DEAD page-internal header.
 - **P2 / P3 / P4** — see §9.
 
 ---
@@ -157,7 +165,9 @@ preset + list filtering — **not** a second wizard.
 ## 9. Phased plan
 
 - **P0 — content tags + verification.** ✅ DONE.
-- **P1 — doctrine model.** ✅ DONE (model + faction repoint + tests). **P1b — display read-path** TODO.
+- **P1 — doctrine model.** ✅ DONE (model + faction repoint + tests). **P1b — display read-path** ✅ DONE
+  (kneeboard + manual task picker + flight/squadron UI labels route through `*.task_display_name` /
+  the picker doctrine).
 - **P2 — era preset + shell.** Mirror `difficultypreset.py`; New Game "Vietnam" card + list filtering.
 - **P3 — behaviour taskings.** Alpha Strike sizing; Iron Hand = Shrike-vs-emitter; set the Vietnam
   whitelist (drop DEAD/ANTISHIP) + gate the planner edge + verify clean degradation (in-game-pass row).

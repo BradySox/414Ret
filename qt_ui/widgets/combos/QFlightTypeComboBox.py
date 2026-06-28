@@ -1,11 +1,16 @@
 """Combo box for selecting a flight's task type."""
 
+from typing import TYPE_CHECKING, Optional
+
 from PySide6.QtWidgets import QComboBox
 
 from game.ato.flighttype import FlightType
 from game.settings.settings import Settings
 from game.theater import ConflictTheater, MissionTarget
 from game.theater.player import Player
+
+if TYPE_CHECKING:
+    from game.data.doctrine import Doctrine
 
 
 class QFlightTypeComboBox(QComboBox):
@@ -17,6 +22,7 @@ class QFlightTypeComboBox(QComboBox):
         target: MissionTarget,
         settings: Settings,
         is_ownfor: bool,
+        doctrine: Optional["Doctrine"] = None,
     ) -> None:
         super().__init__()
         self.theater = theater
@@ -29,4 +35,11 @@ class QFlightTypeComboBox(QComboBox):
             ):
                 # Only add Air Assault if ctld plugin is enabled
                 continue
-            self.addItem(str(mission_type), userData=mission_type)
+            # Display the doctrine's tasking label (the Vietnam rename); the userData
+            # stays the canonical FlightType, so all selection logic is unaffected.
+            label = (
+                doctrine.display_name_for(mission_type)
+                if doctrine is not None
+                else str(mission_type)
+            )
+            self.addItem(label, userData=mission_type)

@@ -102,7 +102,11 @@ class AutoAssignedTaskControls(QVBoxLayout):
 
         for task in FlightType:
             if self.squadron_model.squadron.capable_of(task):
-                checkbox = QCheckBox(text=task.value)
+                checkbox = QCheckBox(
+                    text=self.squadron_model.squadron.coalition.doctrine.display_name_for(
+                        task
+                    )
+                )
                 checkbox.setChecked(squadron_model.is_auto_assignable(task))
                 checkbox.toggled.connect(make_callback(task))
                 self.addWidget(checkbox)

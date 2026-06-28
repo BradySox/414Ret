@@ -1,6 +1,8 @@
 {
   "country": "Vietnam",
   "name": "Vietnam 1965",
+  "excluded_generic_layouts": ["fob1"],
+  "extra_layouts": ["vietnam_fob"],
   "authors": "Starfire",
   "description": "<p>The People's Army of Vietnam (PAVN), also referred to by US and allied forces as the North Vietnamese Army (NVA), during the Vietnam War from 1965 to 1975</p>",
   "locales": [

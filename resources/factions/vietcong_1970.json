@@ -1,6 +1,8 @@
 {
   "country": "Vietnam",
   "name": "Viet Cong 1970",
+  "excluded_generic_layouts": ["fob1"],
+  "extra_layouts": ["vietnam_fob"],
   "authors": "Ghosti",
   "description": "<p>National Liberation Front of South Vietnam during the Vietnam War from 1965 to 1975. Includes air units of the PAVN/VPAF. Requires TeTeT's Vietnam War Vessels (includes the Vietnam Asset Pack/VAP).</p>",
   "locales": [

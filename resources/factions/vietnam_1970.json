@@ -1,6 +1,8 @@
 {
   "country": "Vietnam",
   "name": "Vietnam 1970",
+  "excluded_generic_layouts": ["fob1"],
+  "extra_layouts": ["vietnam_fob"],
   "authors": "NoGoodNews",
   "description": "<p>North Vietnamese armed forces as of 1970.</p>",
   "aircrafts": [

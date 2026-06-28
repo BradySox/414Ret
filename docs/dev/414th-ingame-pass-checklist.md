@@ -368,7 +368,7 @@ so the two docs don't drift.
 - **Fail signature:** Command posts visible on the player map before reveal, or
   a reveal that doesn't persist across turns.
 
-### F3 — Player-flown SOF insert + C-130 EW exclusion · #56 / §15 · ☑ VERIFIED (2026-06-23; mechanism changed to per-group — re-confirm via J3)
+### F3 — Player-flown SOF insert + C-130 EW exclusion · #56 / §15 · ☑ VERIFIED (2026-06-23; per-group mechanism re-confirmed via J3, 2026-06-28 audience pass)
 - **Verified (2026-06-23):** flown — "the EW is gone": the `c130j` EW menu/behavior
   is correctly absent on the SOF insert C-130J-30 (the de-conflict gate fires).
 - **Mechanism change (2026-06-26):** the de-conflict no longer skips the whole `c130j` plugin for
@@ -805,7 +805,7 @@ so the two docs don't drift.
   and "spares a pilot" (the `SOFRESCUE` prefix routing in `OnAfterRescued`); double refund for one
   team recovered by both paths.
 
-### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ◐ PARTIAL (King EW/ISR-clean COCKPIT-CONFIRMED 2026-06-27 + door guns 2026-06-25; only the King's wing-tank render residual)
+### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ☑ VERIFIED (2026-06-28, audience in-game pass — King wing-tank render OK; EW/ISR-clean + door guns previously confirmed)
 - **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**
   the C-130J-30 King flies **clean of the EW/ISR menu** ("Kings no EW ISR") — the `EwExcludedGroups`
   per-group deny-list works in-cockpit. Combined with the **CH-47 door M60D guns confirmed 2026-06-25**
@@ -855,7 +855,7 @@ so the two docs don't drift.
   payload); the King wears the EW/ISR menu (the `EwExcludedGroups` deny-list didn't exclude it); an
   old save with a "C-130" squadron fails to load (the `C-130 → C-130J-30` migrator alias is missing).
 
-### G14 — C-130J jamming vs MANTIS IADS (no EMCON interference) · §2 / MANTIS migration · ☐ UNTESTED (ROE-only invariant verified 2026-06-26)
+### G14 — C-130J jamming vs MANTIS IADS (no EMCON interference) · §2 / MANTIS migration · ☑ VERIFIED (2026-06-28, audience in-game pass — EW jamming works, no MANTIS EMCON interference)
 - **Invariant verified by reading 2026-06-26:** the "must never happen" failure mode (an
   `ALARM_STATE`/emission write creeping into the jammer) is structurally precluded.
   `suppressSAMRoe`/`restoreSAMRoe` (`c130j/c130j_mission_systems.lua:645-659`) are nothing but
@@ -985,7 +985,7 @@ so the two docs don't drift.
   read the removed Skynet `redIADS`/`blueIADS` globals; circles/symbols still export, labelled by
   unit name + class.
 
-### G17 — BigEye EWR plugin restored · Plugin hygiene · ☐ UNTESTED (restored to `plugins.json` 2026-06-27)
+### G17 — BigEye EWR plugin restored · Plugin hygiene · ☑ VERIFIED (2026-06-28, audience in-game pass)
 - **Context:** `bigeye` (MOOSE `Ops.INTEL` early-warning radar that broadcasts text BRA / picture /
   bogey-dope calls to players) is the documented successor to the retired `ewrs` script, but had
   itself been silently dropped during the QRA-reserve integration — so players had no EW picture
@@ -1292,7 +1292,7 @@ so the two docs don't drift.
   or the Soviet SURA Visor wrongly removed; the dropdown shows nothing selected; a non-helmet
   property (laser code, datalink) changed by the gate.
 
-### I4 — Frontline clustered laydown + default stance (PR #823 adoption) · §9 · ☐ UNTESTED (planner + TIC-guard test-covered, adjudicated 2026-06-26)
+### I4 — Frontline clustered laydown + default stance (PR #823 adoption) · §9 · ☑ VERIFIED (2026-06-28, audience in-game pass — front clustered along the line)
 - **Why:** Adopted PR #823's proportional mixed armor clusters + even-spread placement
   (`ai_ground_planner.py`, `frontline_clustering.py`, `flotgenerator._generate_groups`), with
   #823's DCS-task cohesive maneuver TIC-guarded behind `not self.tic_enabled`. Composition /
@@ -1313,7 +1313,7 @@ so the two docs don't drift.
   test-locked); on a TIC-off build, clusters splitting apart in BREAKTHROUGH; the default-stance
   setting ignored at new-game/capture.
 
-### I5 — Nation-aware pilot names · §23 · ☐ UNTESTED (logic unit-tested 2026-06-26; **live-save confirmed 2026-06-27**)
+### I5 — Nation-aware pilot names · §23 · ☑ VERIFIED (2026-06-28, audience in-game pass — names match squadron nationality; live-save confirmed 2026-06-27)
 - **Live-save confirmation (2026-06-27):** Loaded the actual flown campaign
   (`autosave.retribution`, GermanyCW turn 2, Blufor Late Cold War vs Russia 1980) headless and
   resolved every squadron's `faker` against its `country`. The blue wing is a genuine **4-nation
@@ -1375,7 +1375,7 @@ so the two docs don't drift.
   measured-data airframe's ladder (the estimate must never override a real `fuel:` block); planner
   suddenly fragging tankers for the King (the fallback must stay out of `unit_type.fuel_consumption`).
 
-### J1 — Capability-weighted off-mission combat · §26 · ☐ UNTESTED (scoring unit-tested 2026-06-26)
+### J1 — Capability-weighted off-mission combat · §26 · ☑ VERIFIED (2026-06-28, audience in-game pass — user "good, I think"; off-mission auto-resolve looked right, not deeply scrutinized)
 - **Headless adjudication (2026-06-26):** `tests/test_combat_resolution_capability.py` covers the
   scoring (A2A strength = best A2A `task_priority` × count; win = strength share; survivor loss scales
   with margin, clamped ≤ legacy 0.5; SAM death halved for SEAD, stacked by site count, clamped). 39
@@ -1389,7 +1389,7 @@ so the two docs don't drift.
 - **Fail signature:** outcomes feel random (elite jets routinely lost to obsolete ones), or one side
   always wins; SEAD no better off than a bomber against SAMs.
 
-### J2 — "Player at IP" fast-forward spawns at the IP · §26 · ☐ UNTESTED (gate unit-tested 2026-06-26)
+### J2 — "Player at IP" fast-forward spawns at the IP · §26 · ☑ VERIFIED (2026-06-28, audience in-game pass — spawns at the IP)
 - **Headless adjudication (2026-06-26):** `tests/test_player_at_ip_fast_forward.py` covers the gate
   (AI-only combat does not pause a PLAYER_AT_IP fast-forward; a player-involving combat still does;
   other stop conditions / `force_continue` unchanged). **Residual (in-sim only):** the actual spawn
@@ -1401,7 +1401,7 @@ so the two docs don't drift.
 - **Fail signature:** player spawns at their configured ground start (the bug returns); or the sim
   never stops / the player ends up far past the IP.
 
-### J3 — Per-group C-130J EW de-confliction (JAMMING + SOF/King coexist) · §2 / §15 · ☐ UNTESTED (helper + plugin wiring test-covered, adjudicated 2026-06-26)
+### J3 — Per-group C-130J EW de-confliction (JAMMING + SOF/King coexist) · §2 / §15 · ☑ VERIFIED (2026-06-28, audience in-game pass — EW jet + SOF/King C-130J coexist; non-EW C-130J has no EW menu)
 - **Headless adjudication (2026-06-26):** `tests/missiongenerator/test_ew_deconfliction.py` covers
   `_ew_excluded_c130j_groups` (only `SOF`/`COMBAT_SAR` C-130J-30 group names, not the JAMMING jet or
   non-C-130J helos) and the `c130j` plugin wiring (reads `dcsRetribution.EwExcludedGroups`,
@@ -1419,7 +1419,7 @@ so the two docs don't drift.
 
 ## K. Settings UI
 
-### K1 — Settings IA reorg + difficulty presets · §28 · ☐ UNTESTED (logic unit-tested + offscreen-build-verified 2026-06-27)
+### K1 — Settings IA reorg + difficulty presets · §28 · ☑ VERIFIED (2026-06-28, audience in-game pass)
 - **Headless adjudication (2026-06-27):** `tests/settings/test_field_layout.py` locks the reorg
   (FIELD_LAYOUT covers every user field exactly once, the UI walk emits each once, the six pages are
   in the designed order, no section > 13 settings) and `tests/settings/test_difficultypreset.py`
@@ -1440,7 +1440,7 @@ so the two docs don't drift.
   controls; a preset not flipping the expected fields; a blank page icon; a console error opening
   the dialog.
 
-### K2 — Kneeboard cover page (op/turn header + SITREP + index) · §29 / §30 · ◐ PARTIAL (render COCKPIT-CONFIRMED 2026-06-27; SITREP-number accuracy across turns still to eyeball)
+### K2 — Kneeboard cover page (op/turn header + SITREP + index) · §29 / §30 · ☑ VERIFIED (2026-06-28, audience in-game pass — SITREP numbers across turns OK; render previously confirmed)
 - **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**
   the kneeboard deck (cover page + compact deck) renders cleanly in the cockpit — **"Kneeboards look
   fantastic."** That clears the render/legibility half of this row (corroborating H2/H9, already

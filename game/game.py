@@ -122,6 +122,10 @@ class Game:
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
+        # True if this game was built from a blank canvas (set at finalize). Gates the
+        # "Save as Campaign" action (campaign maker Increment D) — a hand-built theater
+        # can be bottled as a reusable .miz-less campaign; a normal .miz campaign can't.
+        self.from_blank_canvas = False
         # NB: This is the *start* date. It is never updated.
         self.date = date(start_date.year, start_date.month, start_date.day)
         self.game_stats = GameStats()
@@ -175,6 +179,7 @@ class Game:
     def __setstate__(self, state: dict[str, Any]) -> None:
         state.setdefault("pending_unit_placements", [])
         state.setdefault("blank_canvas_setup", False)
+        state.setdefault("from_blank_canvas", False)
         state.setdefault("custom_kneeboards", [])
         state.setdefault("last_sitrep", None)
         self.__dict__.update(state)

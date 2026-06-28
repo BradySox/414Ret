@@ -9,6 +9,7 @@ from PySide6.QtGui import QCloseEvent, QIcon, QAction, QGuiApplication, QActionG
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
+    QInputDialog,
     QMainWindow,
     QMessageBox,
     QSplitter,
@@ -236,6 +237,17 @@ class QLiberationWindow(QMainWindow):
         self.finalizeCampaignAction.triggered.connect(self.finalizeCampaign)
         self.finalizeCampaignAction.setVisible(False)
 
+        # Campaign maker: save a finalized blank canvas as a reusable campaign.
+        self.saveCampaignAction = QAction("Save as Campaign", self)
+        self.saveCampaignAction.setIcon(QIcon(CONST.ICONS["New"]))
+        self.saveCampaignAction.setToolTip(
+            "Save this hand-built map as a reusable campaign that appears in the New "
+            "Game list — its ownership and air-defence/armor/economy laydown are "
+            "rebuilt each time you start it."
+        )
+        self.saveCampaignAction.triggered.connect(self.saveCampaign)
+        self.saveCampaignAction.setVisible(False)
+
         self.enable_game_actions(False)
 
     def enable_game_actions(self, enabled: bool):
@@ -267,6 +279,7 @@ class QLiberationWindow(QMainWindow):
         self.actions_bar.addAction(self.openNotesAction)
         self.actions_bar.addAction(self.openCustomKneeboardsAction)
         self.actions_bar.addAction(self.finalizeCampaignAction)
+        self.actions_bar.addAction(self.saveCampaignAction)
 
     def initMenuBar(self):
         self.menu = self.menuBar()
@@ -437,9 +450,47 @@ class QLiberationWindow(QMainWindow):
         GameUpdateSignal.get_instance().game_loaded.emit(self.game)
 
     def _update_blank_canvas_action(self) -> None:
-        """Show the Finalize action only while painting a blank-canvas setup game."""
-        self.finalizeCampaignAction.setVisible(
-            self.game is not None and self.game.blank_canvas_setup
+        """Show the Finalize action only while painting a blank-canvas setup game,
+        and the Save-as-Campaign action only on a finalized blank-canvas game."""
+        in_setup = self.game is not None and self.game.blank_canvas_setup
+        self.finalizeCampaignAction.setVisible(in_setup)
+        self.saveCampaignAction.setVisible(
+            self.game is not None
+            and self.game.from_blank_canvas
+            and not self.game.blank_canvas_setup
+        )
+
+    def saveCampaign(self) -> None:
+        """Bottle a finalized blank canvas as a reusable campaign YAML the New Game
+        list can load (campaign maker Increment D)."""
+        from game.campaignloader.blankcampaign import save_blank_campaign
+
+        if self.game is None or not self.game.from_blank_canvas:
+            return
+
+        name, ok = QInputDialog.getText(
+            self,
+            "Save as Campaign",
+            "Campaign name (appears in the New Game list):",
+            text=f"My {self.game.theater.terrain.name} Campaign",
+        )
+        if not ok or not name.strip():
+            return
+
+        try:
+            campaigns_dir = persistency.base_path() / "Retribution" / "Campaigns"
+            path = save_blank_campaign(self.game, campaigns_dir, name.strip())
+        except Exception as exc:  # noqa: BLE001 — surface any IO/serialise failure
+            logging.exception("Failed to save blank-canvas campaign")
+            QMessageBox.warning(self, "Could not save campaign", str(exc))
+            return
+
+        QMessageBox.information(
+            self,
+            "Campaign saved",
+            f"Saved '{name.strip()}' to:\n{path}\n\n"
+            "Start it any time from New Game → it rebuilds this map's ownership and "
+            "air-defence / armor / economy laydown.",
         )
 
     def finalizeCampaign(self) -> None:

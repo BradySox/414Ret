@@ -36,6 +36,7 @@ def _flight(
     return SimpleNamespace(
         callsign=callsign,
         flight_type=flight_type,
+        task_display_name=flight_type.value,
         custom_name=custom_name,
         aircraft_type=aircraft,
         client_units=[object()] if client else [],

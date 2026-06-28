@@ -84,7 +84,11 @@ class MissionTypeControls(QGridLayout):
             )
             self.mission_types.append(mission_type)
 
-            self.addWidget(QLabel(task.value), i + 1, 0)
+            self.addWidget(
+                QLabel(self.squadron.coalition.doctrine.display_name_for(task)),
+                i + 1,
+                0,
+            )
             self.addWidget(mission_type, i + 1, 1)
 
     @property
@@ -339,7 +343,9 @@ class SquadronConfigurationBox(QGroupBox):
         try:
             self.name_edit.setText(self.squadron.name)
             self.nickname_edit.setText(self.squadron.nickname)
-            self.primary_task_selector.setCurrentText(self.squadron.primary_task.value)
+            self.primary_task_selector.setCurrentText(
+                self.primary_task_selector.label_for(self.squadron.primary_task)
+            )
             index = self.livery_selector.findText(self.squadron.livery)
             self.livery_selector.setCurrentIndex(index)
             self.max_size_selector.setValue(self.squadron.max_size)

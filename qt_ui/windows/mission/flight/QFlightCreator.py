@@ -46,6 +46,8 @@ class QFlightCreator(QDialog):
         self.game = game
         self.package = package
         self.custom_name_text = None
+        # Coalition doctrine drives the Vietnam tasking renames in the picker + summary.
+        self._doctrine = (game.blue if is_ownfor else game.red).doctrine
 
         # Make dialog modal to prevent background windows to close unexpectedly.
         self.setModal(True)
@@ -56,7 +58,11 @@ class QFlightCreator(QDialog):
         layout = QVBoxLayout()
 
         self.task_selector = QFlightTypeComboBox(
-            self.game.theater, package.target, self.game.settings, is_ownfor
+            self.game.theater,
+            package.target,
+            self.game.settings,
+            is_ownfor,
+            self._doctrine,
         )
         self.task_selector.setCurrentIndex(0)
         self.task_selector.currentIndexChanged.connect(self.on_task_changed)
@@ -361,13 +367,15 @@ class QFlightCreator(QDialog):
             return
         if aircraft is None:
             self.selection_summary.setText(
-                f"{task.value} is selected for this target, but no compatible aircraft "
+                f"{self._doctrine.display_name_for(task)} is selected for this target, "
+                "but no compatible aircraft "
                 "are currently available in the air wing."
             )
             return
         if squadron is None:
             self.selection_summary.setText(
-                f"{aircraft.display_name} can fly {task.value}, but no squadron with a "
+                f"{aircraft.display_name} can fly {self._doctrine.display_name_for(task)}, "
+                "but no squadron with a "
                 "working runway and spare aircraft is currently available."
             )
             return
@@ -375,10 +383,14 @@ class QFlightCreator(QDialog):
         role_alignment = (
             "primary-role match"
             if squadron.primary_task == task
-            else f"non-primary role for this squadron (primary: {squadron.primary_task.value})"
+            else (
+                "non-primary role for this squadron "
+                f"(primary: {self._doctrine.display_name_for(squadron.primary_task)})"
+            )
         )
         self.selection_summary.setText(
-            f"{aircraft.display_name} will fly {task.value} from {squadron.location.name} "
+            f"{aircraft.display_name} will fly {self._doctrine.display_name_for(task)} "
+            f"from {squadron.location.name} "
             f"with {squadron.untasked_aircraft} untasked aircraft available. "
             f"Selected squadron is a {role_alignment}. "
             f"Current loadout: {loadout or 'None'}."

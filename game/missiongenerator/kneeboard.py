@@ -673,7 +673,7 @@ class BriefingPage(KneeboardPage):
 
         writer.heading(
             f"Flight Plan ({self.flight.squadron.aircraft.variant_id} - "
-            f"{self.flight.flight_type.value})"
+            f"{self.flight.task_display_name})"
         )
         writer.rule()
 
@@ -1109,7 +1109,7 @@ class SupportPage(KneeboardPage):
             comm_ladder.append(
                 [
                     comm.name,
-                    str(self.flight.flight_type),
+                    self.flight.task_display_name,
                     KneeboardPageWriter.wrap_line(str(self.flight.aircraft_type), 23),
                     str(len(self.flight.units)),
                     self.format_frequency(comm.freq),
@@ -1122,7 +1122,7 @@ class SupportPage(KneeboardPage):
             comm_ladder.append(
                 [
                     callsign,
-                    str(f.flight_type),
+                    f.task_display_name,
                     KneeboardPageWriter.wrap_line(str(f.aircraft_type), 23),
                     str(len(f.units)),
                     self.format_frequency(f.intra_flight_channel),
@@ -2676,14 +2676,18 @@ def _brief_route(waypoints: List[FlightWaypoint]) -> List[Tuple[str, str]]:
     return route
 
 
-def _brief_mission(flight_type: FlightType, target_name: str) -> str:
-    """One-line MISSION statement from the task + target."""
+def _brief_mission(flight_type: FlightType, target_name: str, task_label: str) -> str:
+    """One-line MISSION statement from the task + target.
+
+    ``task_label`` is the doctrine display name (the Vietnam rename, e.g. "Alpha
+    Strike"); the verb table stays keyed by the canonical ``FlightType``.
+    """
     verb = _BRIEF_TASK_VERB.get(flight_type)
     if verb and target_name:
         return f"{verb} {target_name}."
     if target_name:
-        return f"{flight_type.value} — {target_name}."
-    return f"{flight_type.value} as fragged."
+        return f"{task_label} — {target_name}."
+    return f"{task_label} as fragged."
 
 
 def _brief_sam_threats(cards: List[ThreatCard], limit: int = 3) -> str:
@@ -3515,7 +3519,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                 name = flight.callsign
                 if flight.custom_name:
                     name += f' ("{flight.custom_name}")'
-                index_rows.append([name, flight.flight_type.value, str(page_cursor)])
+                index_rows.append([name, flight.task_display_name, str(page_cursor)])
                 page_cursor += len(concrete)
 
         # Friendly-package list on the cover (compact mode only — the full deck keeps
@@ -3861,7 +3865,7 @@ class KneeboardGenerator(MissionInfoGenerator):
         live, identified system from the already-built threat cards.
         """
         # Task / target / TOT.
-        parts = [flight.flight_type.value]
+        parts = [flight.task_display_name]
         target = getattr(flight.package, "target", None)
         target_name = getattr(target, "name", None)
         if target_name:
@@ -3948,10 +3952,12 @@ class KneeboardGenerator(MissionInfoGenerator):
             mc=None,
             ident=(
                 f"{flight.callsign} · {flight.aircraft_type.variant_id} · "
-                f"{flight.size}-ship · {flight.flight_type.value}"
+                f"{flight.size}-ship · {flight.task_display_name}"
             ),
             tot=tot,
-            mission=_brief_mission(flight.flight_type, target_name),
+            mission=_brief_mission(
+                flight.flight_type, target_name, flight.task_display_name
+            ),
             route=_brief_route(flight.waypoints),
             bingo=fuel(flight.bingo_fuel),
             joker=fuel(flight.joker_fuel),

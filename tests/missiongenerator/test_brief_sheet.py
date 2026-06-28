@@ -51,12 +51,14 @@ def test_brief_route_labels_points_and_collapses_repeats() -> None:
 
 def test_brief_mission_builds_a_sentence() -> None:
     assert (
-        _brief_mission(FlightType.SEAD, "BONGO")
+        _brief_mission(FlightType.SEAD, "BONGO", "SEAD")
         == "Suppress the air defenses at BONGO."
     )
-    assert _brief_mission(FlightType.STRIKE, "Depot 4") == "Strike Depot 4."
+    assert _brief_mission(FlightType.STRIKE, "Depot 4", "Strike") == "Strike Depot 4."
     # No target (a patrol) falls back to a fragged line, never an empty string.
-    assert _brief_mission(FlightType.BARCAP, "") == "BARCAP as fragged."
+    assert _brief_mission(FlightType.BARCAP, "", "BARCAP") == "BARCAP as fragged."
+    # The doctrine display label (Vietnam rename) is used in the no-verb fallback.
+    assert _brief_mission(FlightType.BARCAP, "", "MiGCAP") == "MiGCAP as fragged."
 
 
 def _card(system: str, mez: str, defeat: str = "", live: int = 1) -> ThreatCard:
@@ -195,6 +197,7 @@ def _flight() -> Any:
         friendly=object(),
         size=2,
         flight_type=FlightType.SEAD,
+        task_display_name=FlightType.SEAD.value,
         aircraft_type=SimpleNamespace(
             kneeboard_units=units, utc_kneeboard=False, variant_id="F/A-18C"
         ),

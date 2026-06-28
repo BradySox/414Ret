@@ -1,0 +1,100 @@
+"""P1 of the Vietnam Retribution mode: the VIETNAM_DOCTRINE profile.
+
+Locks the doctrine *model* (display-name rename layer + tasking-whitelist mechanism,
+behaviour cloned from COLDWAR) and the faction repoint, so a regression that drops the
+renames, re-gates the whitelist, or unpoints a faction fails CI. See
+docs/dev/design/414th-vietnam-retribution-notes.md.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import replace
+from pathlib import Path
+
+from game.ato.flighttype import FlightType
+from game.data.doctrine import (
+    ALL_DOCTRINES,
+    COLDWAR_DOCTRINE,
+    MODERN_DOCTRINE,
+    VIETNAM_DOCTRINE,
+    WWII_DOCTRINE,
+)
+from game.settings import Settings
+
+_FACTIONS = Path(__file__).resolve().parents[1] / "resources" / "factions"
+
+# The factions repointed from "coldwar" to "vietnam" doctrine in P1.
+_VIETNAM_DOCTRINE_FACTIONS = [
+    "USA 1970 Vietnam War.json",
+    "USA 1971 Vietnam War.json",
+    "USSR 1971 Vietnam War.json",
+    "nva_1970.json",
+    "vietcong_1965.json",
+    "vietcong_1970.json",
+    "vietnam_1965.json",
+    "vietnam_1970.json",
+    "usa_1965.json",
+    "usa_1970.json",
+]
+
+
+def test_vietnam_doctrine_registered() -> None:
+    assert VIETNAM_DOCTRINE in ALL_DOCTRINES
+    assert VIETNAM_DOCTRINE.name == "vietnam"
+
+
+def test_display_name_overrides_iconic_taskings() -> None:
+    assert VIETNAM_DOCTRINE.display_name_for(FlightType.BARCAP) == "MiGCAP"
+    assert VIETNAM_DOCTRINE.display_name_for(FlightType.STRIKE) == "Alpha Strike"
+    assert VIETNAM_DOCTRINE.display_name_for(FlightType.SEAD) == "Iron Hand"
+    assert VIETNAM_DOCTRINE.display_name_for(FlightType.SCAR) == "Sandy"
+
+
+def test_unmapped_tasking_falls_back_to_enum_value() -> None:
+    # CAS is intentionally not renamed -> the canonical persisted label.
+    assert VIETNAM_DOCTRINE.display_name_for(FlightType.CAS) == FlightType.CAS.value
+
+
+def test_existing_doctrines_have_no_renames() -> None:
+    for doctrine in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+        assert dict(doctrine.task_display_names) == {}
+        assert doctrine.display_name_for(FlightType.BARCAP) == FlightType.BARCAP.value
+
+
+def test_whitelist_none_allows_everything() -> None:
+    # P1 keeps every doctrine's whitelist open (behaviour == COLDWAR); P3 narrows Vietnam.
+    for doctrine in ALL_DOCTRINES:
+        assert doctrine.tasking_whitelist is None
+        assert doctrine.allows(FlightType.DEAD)
+        assert doctrine.allows(FlightType.ANTISHIP)
+
+
+def test_allows_respects_a_whitelist() -> None:
+    gated = replace(VIETNAM_DOCTRINE, tasking_whitelist=frozenset({FlightType.STRIKE}))
+    assert gated.allows(FlightType.STRIKE)
+    assert not gated.allows(FlightType.DEAD)
+
+
+def test_vietnam_behaviour_clones_coldwar() -> None:
+    # Only the display layer (and the name) differ; every planning field matches COLDWAR.
+    rebadged = replace(
+        VIETNAM_DOCTRINE, name="coldwar", task_display_names={}, tasking_whitelist=None
+    )
+    assert rebadged == COLDWAR_DOCTRINE
+
+
+def test_from_settings_preserves_renames_and_whitelist() -> None:
+    # from_settings rebuilds the frozen dataclass field by field -- the additive fields
+    # must survive, or a settings-adjusted Vietnam doctrine would silently lose its renames.
+    out = VIETNAM_DOCTRINE.from_settings(Settings())
+    assert out.display_name_for(FlightType.STRIKE) == "Alpha Strike"
+    assert out.tasking_whitelist is None
+
+
+def test_vietnam_faction_jsons_declare_vietnam_doctrine() -> None:
+    for name in _VIETNAM_DOCTRINE_FACTIONS:
+        data = json.loads((_FACTIONS / name).read_text(encoding="utf-8"))
+        assert (
+            data.get("doctrine") == "vietnam"
+        ), f"{name} must declare 'doctrine: vietnam' (P1 repoint)."

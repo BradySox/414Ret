@@ -137,6 +137,27 @@ FEATURES: tuple[Feature, ...] = (
         31,
         settings_fields=("compact_kneeboard",),
     ),
+    Feature(
+        "vietnam_arc_light",
+        "Arc Light heavy-bomber Strike carpet",
+        32,
+        plugin_id="vietnamops",
+        settings_fields=("vietnam_arc_light",),
+    ),
+    Feature(
+        "vietnam_flak_gauntlet",
+        "AAA flak gauntlet",
+        33,
+        plugin_id="vietnamops",
+        settings_fields=("vietnam_flak_gauntlet",),
+    ),
+    Feature(
+        "vietnam_naval_gunfire",
+        "Naval gunfire support",
+        34,
+        plugin_id="vietnamops",
+        settings_fields=("vietnam_naval_gunfire",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

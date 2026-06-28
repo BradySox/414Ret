@@ -1,0 +1,84 @@
+{
+    "nameInUI": "Vietnam Ops (period mechanics)",
+    "descriptionInUI": "Runtime for the Vietnam Ops suite -- opt-in period air-war mechanics gated by the 'Vietnam Ops' campaign settings page. Inert unless a Vietnam Ops setting is on (the mission generator emits dcsRetribution.VietnamOps only then). Arc Light: a heavy-bomber (B-52) Strike walks a carpet of bombs across its target at the run-in instead of dropping a single aimpoint (tactical strikers unaffected). AAA flak gauntlet: aircraft within range and below the ceiling of an opposing AAA gun draw barrage flak that tightens against predictable run-ins and widens when jinking. Naval gunfire support: offshore gun ships shell shore targets -- a player F10 'Naval Fire Mission' menu fires on the last F10 map marker, and (optionally) ships automatically bombard the nearest in-range enemy ground target each cadence. Coastal campaigns only.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Arc Light carpet length along the run-in (m)",
+            "mnemonic": "arcLightLength",
+            "defaultValue": 1700
+        },
+        {
+            "nameInUI": "Arc Light carpet width across the run-in (m)",
+            "mnemonic": "arcLightWidth",
+            "defaultValue": 500
+        },
+        {
+            "nameInUI": "Arc Light per-blast power (kg TNT equivalent)",
+            "mnemonic": "arcLightBlastPower",
+            "defaultValue": 300
+        },
+        {
+            "nameInUI": "Arc Light: range from target the bomber releases the carpet (NM)",
+            "mnemonic": "arcLightTriggerNm",
+            "defaultValue": 8
+        },
+        {
+            "nameInUI": "Flak gauntlet: AAA gun horizontal reach (m)",
+            "mnemonic": "flakEngageRangeM",
+            "defaultValue": 4500
+        },
+        {
+            "nameInUI": "Flak gauntlet: effective flak ceiling above ground (m)",
+            "mnemonic": "flakCeilingM",
+            "defaultValue": 4500
+        },
+        {
+            "nameInUI": "Flak gauntlet: tightest barrage miss, predictable flight (m)",
+            "mnemonic": "flakMinMissM",
+            "defaultValue": 70
+        },
+        {
+            "nameInUI": "Flak gauntlet: loosest barrage miss, jinking (m)",
+            "mnemonic": "flakMaxMissM",
+            "defaultValue": 250
+        },
+        {
+            "nameInUI": "Flak gauntlet: per-burst power (small = mostly visual)",
+            "mnemonic": "flakBlastPower",
+            "defaultValue": 8
+        },
+        {
+            "nameInUI": "Naval gunfire: gun reach for ship/target selection (m)",
+            "mnemonic": "ngfsRangeM",
+            "defaultValue": 20000
+        },
+        {
+            "nameInUI": "Naval gunfire: shells per fire mission",
+            "mnemonic": "ngfsRounds",
+            "defaultValue": 12
+        },
+        {
+            "nameInUI": "Naval gunfire: salvo dispersion radius (m)",
+            "mnemonic": "ngfsSalvoRadiusM",
+            "defaultValue": 80
+        },
+        {
+            "nameInUI": "Naval gunfire: automatic coastal bombardment",
+            "mnemonic": "ngfsAuto",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "Naval gunfire: seconds between automatic fire missions",
+            "mnemonic": "ngfsAutoIntervalS",
+            "defaultValue": 90
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "vietnamops-config.lua",
+            "mnemonic": "vietnamops-config"
+        }
+    ]
+}

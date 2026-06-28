@@ -1,6 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from datetime import timedelta
+from typing import FrozenSet, Mapping, Optional
 
+from game.ato.flighttype import FlightType
 from game.data.units import UnitClass
 from game.settings import Settings
 from game.utils import Distance, feet, nautical_miles, Speed, knots
@@ -91,6 +93,26 @@ class Doctrine:
 
     escort_engagement_range: Distance
 
+    #: Per-doctrine display-name overrides for taskings, e.g. ``{BARCAP: "MiGCAP"}``.
+    #: A *display layer only* -- it does NOT touch the persisted ``FlightType`` value,
+    #: so saves stay compatible (see the Vietnam Retribution design note). Empty (the
+    #: default) means every tasking uses ``FlightType.value``, the existing behaviour.
+    task_display_names: Mapping[FlightType, str] = field(default_factory=dict)
+
+    #: The taskings the auto-planner may produce under this doctrine. ``None`` (the
+    #: default) means no restriction -- the existing behaviour. Used to drop era-
+    #: inappropriate taskings (e.g. DEAD/ANTISHIP under Vietnam doctrine) at the
+    #: planner edge.
+    tasking_whitelist: Optional[FrozenSet[FlightType]] = None
+
+    def display_name_for(self, flight_type: FlightType) -> str:
+        """The doctrine's display label for a tasking (the rename layer)."""
+        return self.task_display_names.get(flight_type, flight_type.value)
+
+    def allows(self, flight_type: FlightType) -> bool:
+        """Whether the auto-planner may produce this tasking under this doctrine."""
+        return self.tasking_whitelist is None or flight_type in self.tasking_whitelist
+
     def from_settings(self, settings: Settings) -> "Doctrine":
         # not sure if we're actually going to need this one,
         # let it be for the time being, perhaps we'll make doctrines configurable...
@@ -126,6 +148,8 @@ class Doctrine:
             escort_spacing=self.escort_spacing,
             sead_escort_engagement_range=self.sead_escort_engagement_range,
             escort_engagement_range=self.escort_engagement_range,
+            task_display_names=self.task_display_names,
+            tasking_whitelist=self.tasking_whitelist,
         )
 
 
@@ -260,8 +284,40 @@ WWII_DOCTRINE = Doctrine(
     escort_engagement_range=nautical_miles(5),
 )
 
+# Vietnam-era tasking renames (the "Vietnam Retribution" mode display layer). Keys are
+# the persisted FlightType members; values are the era display labels shown in the UI /
+# kneeboard. Only the iconic, unambiguous renames are mapped -- everything unmapped keeps
+# its canonical FlightType.value. NB: this is display-only; the enum values are untouched.
+VIETNAM_TASK_DISPLAY_NAMES: Mapping[FlightType, str] = {
+    FlightType.BARCAP: "MiGCAP",
+    FlightType.INTERCEPTION: "GCI Intercept",
+    FlightType.SEAD: "Iron Hand",
+    FlightType.SEAD_ESCORT: "Iron Hand Escort",
+    FlightType.SEAD_SWEEP: "Weasel Sweep",
+    FlightType.STRIKE: "Alpha Strike",
+    FlightType.BAI: "Interdiction",
+    FlightType.OCA_RUNWAY: "Airfield Strike",
+    FlightType.OCA_AIRCRAFT: "Airfield Strike",
+    FlightType.TARPS: "Photo Recon",
+    FlightType.SCAR: "Sandy",
+    FlightType.JAMMING: "Standoff Jamming",
+    FlightType.AEWC: "College Eye",
+    FlightType.TRANSPORT: "Airlift",
+}
+
+# Vietnam doctrine. Behaviour (geometry/flags) is a COLDWAR clone for now; the era
+# identity is the display-name layer. The tasking whitelist is left None (no planner
+# gating) until the behaviour phase (P3) drops DEAD/ANTISHIP and verifies the planner
+# degrades. See docs/dev/design/414th-vietnam-retribution-notes.md.
+VIETNAM_DOCTRINE = replace(
+    COLDWAR_DOCTRINE,
+    name="vietnam",
+    task_display_names=VIETNAM_TASK_DISPLAY_NAMES,
+)
+
 ALL_DOCTRINES = [
     COLDWAR_DOCTRINE,
     MODERN_DOCTRINE,
     WWII_DOCTRINE,
+    VIETNAM_DOCTRINE,
 ]

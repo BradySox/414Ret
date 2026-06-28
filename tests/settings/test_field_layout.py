@@ -33,6 +33,7 @@ def test_pages_are_in_the_designed_order() -> None:
         "Campaign Management",
         "Mission Generation",
         "Kneeboards",
+        "Vietnam Ops",
         "Performance",
     ]
 

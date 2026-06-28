@@ -107,7 +107,19 @@ file. This guide is the map; those are the territory.
     minimal-F10 designation; thin MOOSE bridge, not `Ops.Chief`; future auto-planned commander),
     `414th-combat-sar-normal-task-notes.md` (make Combat SAR a normal, default-on, **two-sided**
     auto-task: AI rescues AI on blue+red, players can drop in; phased verify-blue → default-on →
-    AI-rescue scoring → symmetric red; today the engine is blue-only + the AI-rescue scoring is cosmetic)
+    AI-rescue scoring → symmetric red; today the engine is blue-only + the AI-rescue scoring is cosmetic),
+    `414th-vietnam-ops-notes.md` (**Vietnam Ops suite** — a `Vietnam Ops` settings page gating five
+    opt-in period mechanics: Arc Light as a heavy-bomber Strike *effect*, AAA flak gauntlet, naval
+    gunfire support, Armed-Recon truck-convoy interdiction, Super Gaggle resupply; Tier-A runtime only,
+    default OFF / campaign-flipped ON; **Phases 1–3 landed** = the settings page + §32 Arc Light + §33
+    flak gauntlet + §34 naval gunfire; phases 4–5 follow, each on its own branch),
+    `414th-vietnam-retribution-notes.md` (**"Vietnam Retribution" mode** — the *framing* layer the Ops
+    suite lives inside: three thin layers over the one engine — a New Game "Vietnam" shell + content
+    filter + a doctrine profile (`VIETNAM_DOCTRINE`) that renames taskings (MiGCAP/Iron Hand/Alpha
+    Strike/Sandy) via a display-only override on `Doctrine` (never the persisted enum) and will gate the
+    planner whitelist. **P0 (era tags) + P1 (doctrine model + 10-faction repoint) landed**; P1b display
+    read-path + P2 shell/preset + P3 behaviour taskings outstanding. The Ops suite's Arc Light/flak/NGFS
+    are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.
@@ -386,6 +398,38 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the **P2 threat cards** (amber MEZ/Detect, blue HARM/cues) and the **P3 code words** (push blue, SUCCESS
     green, ABORT red) so the whole deck reads as one product. Loadout/laser validated against a real `.miz`.
     (`game/missiongenerator/kneeboard.py`; features doc §31, checklist needs an in-game pass.)
+32. **Arc Light heavy-bomber Strike carpet** — the first **Vietnam Ops suite** feature (design note
+    `414th-vietnam-ops-notes.md`; settings page §28 "Vietnam Ops"). Reframes Arc Light as an *effect of the
+    Strike task*, **not** a new `FlightType`: when a heavy bomber (B-52H/B-1B/Tu-95MS/Tu-142/Tu-160/Tu-22M3)
+    flies a `STRIKE`, the runtime walks a carpet of explosions across the target at the run-in instead of a
+    single aimpoint, modelling Operation Niagara. Tier-A config bridge — Python emits `dcsRetribution.VietnamOps.arcLight`
+    (each eligible bomber group + its target centre) only when the `vietnam_arc_light` toggle is on, and the
+    `vietnamops` plugin watches each bomber, then on reaching the release range walks a box of `trigger.action.explosion`
+    impacts oriented along the bomber's bearing-to-target (carpet length/width/power/release-range are plugin
+    options). A bomber shot down before the run-in never fires — losses stay native; tactical strikers are
+    untouched. (`game/missiongenerator/vietnamopsluadata.py`, `game/missiongenerator/luagenerator.py`,
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §32, checklist L1.)
+33. **AAA flak gauntlet** — the second **Vietnam Ops suite** feature: recreates the AAA-heavy Vietnam
+    threat environment (the standing "real threat = AAA, not SAMs/MiGs" gap). With `vietnam_flak_gauntlet`
+    on, the `vietnamops` plugin discovers AAA guns at **runtime** by the DCS `AAA` unit attribute (frontline
+    ZSU/Shilka belts + airfield guns), and any opposing aircraft within an alive gun's range and below the
+    effective ceiling draws **barrage flak bursts** (`trigger.action.explosion` airbursts at altitude). A
+    steady, predictable heading+altitude **tightens** the bursts (and a sustained predictable run draws the
+    occasional close "tracking" round); jinking/varying altitude widens them — atmospheric pressure to
+    manoeuvre, mostly visual with a modest tunable bite, **not** a hidden hard-kill SAM. Python emits only an
+    on-marker (`dcsRetribution.VietnamOps.flak`); range/ceiling/miss-distances/power are plugin options.
+    Symmetric (both sides' AAA). (`game/missiongenerator/vietnamopsluadata.py`, `resources/plugins/vietnamops/`,
+    `game/settings/settings.py`; features doc §33, checklist L2.)
+34. **Naval gunfire support** — the third **Vietnam Ops suite** feature: offshore gun ships shell shore
+    targets. Python (`_populate_naval_gunfire`) emits each naval gun ship (CRUISER/DESTROYER/FRIGATE — the
+    VWV battleship New Jersey is class Destroyer, so it's covered) + its coalition; the `vietnamops` plugin
+    runs **two modes** off that list: a **player F10 "Naval Fire Mission"** menu fires the nearest in-range
+    friendly gun ship on the coalition's last F10 map marker (`world.getMarkPanels`), and an **automatic
+    coastal bombardment** where each gun ship shells the nearest opposing ground target within gun range every
+    cadence (`MOOSE TaskFireAtPoint`, the TIC artillery path). **Coastal by construction** — with no enemy
+    ground (or no marker) in a ship's range nothing fires, so inland campaigns (Khe Sanh) no-op. Range/rounds/
+    salvo/auto-cadence are plugin options. (`game/missiongenerator/vietnamopsluadata.py`,
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §34, checklist L3.)
 
 ---
 

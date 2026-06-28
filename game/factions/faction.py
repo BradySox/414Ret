@@ -37,6 +37,7 @@ from game.data.doctrine import (
     MODERN_DOCTRINE,
     COLDWAR_DOCTRINE,
     WWII_DOCTRINE,
+    VIETNAM_DOCTRINE,
 )
 from game.data.groups import GroupRole
 from game.data.units import UnitClass
@@ -363,6 +364,8 @@ class Faction:
             faction.doctrine = COLDWAR_DOCTRINE
         elif doctrine == "ww2":
             faction.doctrine = WWII_DOCTRINE
+        elif doctrine == "vietnam":
+            faction.doctrine = VIETNAM_DOCTRINE
         else:
             faction.doctrine = MODERN_DOCTRINE
 

@@ -39,13 +39,15 @@
     "F-8E Crusader",
     "F-8E(FN) Crusader",
     "RA-5C Vigilante",
+    "RF-101B Voodoo",
     "SH-2F Seasprite",
     "CH-46D Sea Knight",
     "CH-46D Sea Knight (Late)",
     "L-1049G Constellation"
   ],
   "awacs": [
-    "E-2C Hawkeye"
+    "E-2C Hawkeye",
+    "EC-121D Warning Star"
   ],
   "tankers": [
     "KC-130",
@@ -81,14 +83,22 @@
     "Hawk"
   ],
   "naval_units": [
-    "DDG Arleigh Burke IIa",
+    "[VWV] CVAN-65 USS Enterprise '66",
     "[VWV] CVA-31 Bon Homme Richard",
     "CV-59 Forrestal",
+    "[VWV] BB-62 USS New Jersey 1968",
+    "[VWV] CLG-5 USS Oklahoma City",
     "USS Allen M. Sumner (DD-692)",
     "USS Fletcher FRAM II Destroyer",
     "USS Laffey (DD-724)",
     "USS Maddox (DD-731)",
-    "USS The Sullivans (DD-537)"
+    "USS The Sullivans (DD-537)",
+    "[VWV] DE-1052 USS Knox",
+    "[VWV] DE-1054 USS Gray",
+    "[VWV] DE-1087 USS Kirk",
+    "[VWV] ATC(H) Tango",
+    "[VWV] ATC(H) Tango Heavy",
+    "[VWV] CCB Charlie"
   ],
   "carrier_names": [
     "[VWV] CVA-31 Bon Homme Richard",

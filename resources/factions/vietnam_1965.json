@@ -18,13 +18,14 @@
   "frontline_units": [
     "BRDM-2",
     "T-55A",
+    "[CH] T-54 MBT",
+    "[CH] ASU-85 LT",
     "PT-76",
     "M2A1 Half-Track",
     "Grad MRL FDDM (FC)"
   ],
   "artillery_units": [
     "BM-21 Grad",
-    "Mortar 2B11 120mm",
     "VAP VC Type63 107mm MLRS"
   ],
   "logistics_units": [

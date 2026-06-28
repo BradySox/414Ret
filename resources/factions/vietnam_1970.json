@@ -21,15 +21,15 @@
     "BRDM-2",
     "PT-76",
     "T-55A",
+    "[CH] T-54 MBT",
+    "[CH] ASU-85 LT",
     "ZU-23 on Ural-375",
     "ZSU-57-2 'Sparka'",
-    "S-60 57mm",
-    "BTR-80"
+    "S-60 57mm"
   ],
   "artillery_units": [
     "BM-21 Grad",
-    "MO 120 RT",
-    "Mortar 2B11 120mm"
+    "MO 120 RT"
   ],
   "logistics_units": [
     "Truck Ural-375",
@@ -48,7 +48,6 @@
   ],
   "air_defense_units": [
     "AAA KS-19 100mm",
-    "8.8 cm Flak 18",
     "S-60 57mm",
     "AAA ZU-23 Closed Emplacement",
     "AAA ZU-23 Emplacement",
@@ -57,8 +56,8 @@
     "ZU-23 on Ural-375"
   ],
   "naval_units": [
-    "P258 Leeds Castle",
-    "LST Mk.II"
+    "Boat Armed Hi-speed",
+    "Boat Schnellboot type S130"
   ],
   "requirements": {
     "Vietnam War Vessels (v2.3.0)": "https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/"
@@ -95,9 +94,6 @@
     ]
   },
   "liveries_overrides_ground_forces": {
-    "BTR-80": [
-      "autumn"
-    ],
     "Infantry AK": [
       "VIETNAM",
       "CHINA",

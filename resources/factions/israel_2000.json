@@ -22,7 +22,7 @@
     "F-4E Phantom II",
     "F-4E-45MC Phantom II",
     "UH-1H Iroquois",
-    "UH-60L"
+    "UH-60A"
   ],
   "awacs": [
     "E-2C Hawkeye"
@@ -69,7 +69,7 @@
   "has_jtac": true,
   "jtac_unit": "MQ-9 Reaper",
   "liveries_overrides": {
-    "UH-60L": [
+    "UH-60A": [
       "Israeli Air Force"
     ]
   },

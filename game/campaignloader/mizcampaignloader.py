@@ -753,6 +753,23 @@ class MizCampaignLoader:
                 origin, list(reversed(waypoints))
             )
 
+    def apply_control_point_strengths(self) -> None:
+        """Override a control point's starting ground strength from the campaign YAML
+        (``control_point_strengths: {<cp name>: 0..1}``). The front line between two enemy
+        CPs sits at ``strength_pct * route_length`` from the blue CP, so setting a besieged
+        base low (a depleted garrison) pulls every front in toward it. New-game only -- a
+        save restores its own persisted strength."""
+        strengths = self.campaign_data.get("control_point_strengths", {})
+        by_name = {cp.name: cp for cp in self.control_points.values()}
+        for name, value in strengths.items():
+            cp = by_name.get(name)
+            if cp is None:
+                logging.warning(
+                    "control_point_strengths: no control point named '%s'", name
+                )
+                continue
+            cp.base.strength = max(0.0, min(1.0, float(value)))
+
     def populate_theater(self) -> None:
         for control_point in self.control_points.values():
             self.theater.add_controlpoint(control_point)
@@ -761,6 +778,7 @@ class MizCampaignLoader:
         self.add_shipping_lanes()
         self.add_yaml_supply_routes()
         self.add_yaml_shipping_lanes()
+        self.apply_control_point_strengths()
         self.add_rebel_zones()
 
     def get_ctld_zones(self, prefix: str) -> List[Tuple[Point, float]]:

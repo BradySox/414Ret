@@ -10,6 +10,7 @@ from game.commander.tasks.compound.attackships import AttackShips
 from game.commander.tasks.compound.capturebases import CaptureBases
 from game.commander.tasks.compound.defendbases import DefendBases
 from game.commander.tasks.compound.degradeiads import DegradeIads
+from game.commander.tasks.compound.frontlinecas import PlanFrontLineCas
 from game.commander.tasks.compound.interdictreinforcements import (
     InterdictReinforcements,
 )
@@ -31,6 +32,11 @@ class PlanNextAction(CompoundTask[TheaterState]):
         yield [InterdictReinforcements()]
         yield [AttackBattlePositions()]
         yield [CaptureBases()]
+        # CAS decoupled from the capture/ground-stance decision: plan CAS on any
+        # front still contested after CaptureBases (incl. fronts where we're
+        # winning the ground war and only set an aggressive stance). Runs after
+        # CaptureBases so losing fronts keep first claim on the CAS/escort jets.
+        yield [PlanFrontLineCas()]
         yield [AttackAirInfrastructure(self.aircraft_cold_start)]
         yield [AttackBuildings()]
         yield [AttackShips()]

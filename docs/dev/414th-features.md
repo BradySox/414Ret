@@ -831,6 +831,37 @@ permissive/no-matching-tanker fallbacks). **In-game pass ☑ VERIFIED 2026-06-26
 + live-save confirmed (matching, per-method fragging, demand placement); the in-sim residual
 (receivers physically plugging in) was not eyeballed.
 
+### CAS decoupled from the ground-stance decision (2026-06-28)
+
+**Symptom (headless adjudication of a Caucasus Vietnam save).** A side **winning** the ground war
+got **zero** CAS. CAS was only reachable as the *last* alternative inside
+`CaptureBase → DestroyEnemyGroundUnits` — behind the `BreakthroughAttack` / `EliminationAttack` /
+`AggressiveAttack` ground-stance tasks (`game/commander/tasks/primitive/*.py`). Those win whenever a
+side has a front-line force advantage (Aggressive ≥ 0.8, Elimination ≥ 1.5, Breakthrough ≥ 2.0), and a
+winning `BreakthroughAttack` *removes the front from `active_front_lines` outright* — so `CaptureBase`
+never re-runs and CAS is never even evaluated for that front. On the worked save (blue 87 vs red
+15/123/15) the two fronts blue dominated set an aggressive stance and got no CAS; only the one front
+where blue was outnumbered reached `PlanCas`.
+
+**Fix — a dedicated CAS task, decoupled from the stance machinery.** New compound task
+`PlanFrontLineCas` (`game/commander/tasks/compound/frontlinecas.py`) yields one `[PlanCas(front)]` per
+**still-vulnerable** front, wired into `PlanNextAction` (`nextaction.py`) **after** `CaptureBases`. The
+ground-stance logic is untouched — an aggressive stance and a CAS package now coexist on the same
+front. Ordering and idempotency fall out of the existing model:
+- `PlanCas.apply_effects` removes the front from `vulnerable_front_lines`, so a contested front already
+  CAS'd by the original capture path (its higher-priority slot) is skipped — **nothing is
+  double-planned**.
+- Running *after* `CaptureBases` means the more urgent **losing** fronts keep first claim on the
+  limited CAS/escort jets; the dominant fronts CAS in the lower slot the capture path left empty.
+- `vulnerable_front_lines` is rebuilt each turn from the active fronts and only consumed by `PlanCas`,
+  so it is exactly "fronts not yet CAS'd" — no new state, **no save migration**.
+
+**Verified** by recomputing the worked save against the real remaining inventory: all three fronts now
+fulfil a CAS package (CAS + SEAD_SWEEP + a TARCAP escort), where before only the outnumbered front was
+even *reached*. (Co-requisite: the carrier's air group must be visible to the planner — see the VWV
+Enterprise `runway_is_operational` fix — or the contested-front TARCAP escort can't be sourced.)
+Tests: `tests/commander/test_frontlinecas.py`. **Lua-free; in-game pass pending.**
+
 ### DEAD reachability gate — no more bombers tasked into a live belt (2026-06-22)
 
 **Symptom (Red Tide AI test):** blue B-1/B-52/F-15E strikes were tasked ~30 km behind the

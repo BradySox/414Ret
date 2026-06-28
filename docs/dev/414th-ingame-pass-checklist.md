@@ -918,6 +918,16 @@ so the two docs don't drift.
   in our MOOSE.) **Caveat:** this only restores detection for factions that **have** an AWACS; an
   AWACS-less RED still depends on dedicated EWR coverage (SAM-as-EWRs stay dark) — a separate
   always-on-EWR question if a future campaign proves blind without an AWACS.
+- **AWACS-less caveat now instrumented + audited (2026-06-28):** the caveat above is now caught
+  automatically — a per-coalition **"blind network" warning** fires when a side has radar SAMs but
+  **zero always-on detectors** (dedicated EWR + AWACS), at generation (`luagenerator.py`,
+  `logging.warning`) and at runtime (`mantis-config.lua` `env.warning` in `build()`). A scan of all
+  64 bundled campaigns (reusing `MizCampaignLoader`) found **3 genuinely BLIND** (Vietnam 1970/1965,
+  Egypt 1973 — radar SAMs, no EWR markers, faction has no AWACS) and **18 AMBER** (radar SAMs, no EWR
+  markers, but the faction has an AWACS, so detection hangs entirely on it). Dedicated EWRs come ONLY
+  from `.miz` `1L13` markers via the `Early-Warning_Radar` layout — SAM layouts don't bundle one — and
+  the faction must field an EWR-class unit, so a campaign needs both. **Red Tide fixed (G18).** See
+  `414th-red-tide-campaign-notes.md`.
 - **Refinement (found in-game 2026-06-27, 2nd pass):** the override loaded (`SAM range override active
   (57 …)`) but several `(SAM)` sites still came up POINT and an **SA-5 (255 km!) site read POINT**. Cause:
   a Retribution SAM **site has multiple groups under one codename** (the main SAM + a co-located
@@ -971,6 +981,24 @@ so the two docs don't drift.
   honoring the report-interval / max-units options; NCTR/NATO-name options behave as set.
 - **Fail signature:** No BigEye F10 menu; no reports; a Lua error in `dcs.log`; or option values
   (intervals, max units, sensor flags) ignored.
+
+### G18 — Blind-IADS warning + Red Tide red EWR coverage · MANTIS migration / Red Tide · ☐ UNTESTED (added 2026-06-28; headless-validated: scan flips Red Tide AMBER→OK, faction EWR-FG 0→1, full suite green)
+- **Context:** MANTIS detection rides only on dedicated EWRs + AWACS (SAMs and SAM-as-EWRs are held
+  dark), so a campaign with radar SAMs but no EWR markers and no AWACS has a blind red net. Two
+  changes: (1) a per-coalition **blind-network warning** — generation-time `luagenerator.py`
+  (`logging.warning`) + runtime `mantis-config.lua` (`env.warning` in `build()`, via
+  `count_entries`/`count_awacs`); (2) **Red Tide** went from 0 dedicated red EWRs (entirely
+  A-50-dependent) to 4 — added `EWR 1L13` to the **Russia 1980** faction (`EWR-FG` 0→1, era-OK for
+  1988) and 4 red `1L13` EWR markers to `red_tide.miz` near the long/medium SAM belt.
+- **Setup:** (a) generate any campaign and read the app log for `IADS: <side> ... NO always-on
+  detection source` on a known-blind one (e.g. Operation Gazelle / Egypt 1973); (b) generate + fly
+  **Red Tide** with the A-50 left on the ground / not fragged.
+- **Pass:** (a) the warning fires for a blind coalition and stays silent for a covered one; (b) in
+  Red Tide, `dcs.log` shows the RED build resolving **≥4 dedicated EWR group names** and RED
+  `CheckLoop` climbing **before** the A-50 is airborne — red SAMs draw fire even with no AWACS up.
+- **Fail signature:** warning never fires on a blind campaign (or false-fires on a covered one); Red
+  Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
+  `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
 ---
 

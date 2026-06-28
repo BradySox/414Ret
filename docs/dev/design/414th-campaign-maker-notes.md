@@ -281,14 +281,19 @@ runnability criterion + the fail signature above.
 
 ---
 
-## Increment D — save-as-campaign (design spike, 2026-06-27)
+## Increment D — save-as-campaign (CORE BUILT 2026-06-27; D.3 Qt UI remaining)
 
 **Goal.** Bottle a hand-built theater (a finalized blank canvas + drop-spawned
 units + the §C.2 default laydown) as a **reusable campaign** that shows up in the
 New Game list like any shipped campaign — so a built map can be replayed fresh
 (different date / factions / settings), not just resumed as a one-off `.retribution`
-save. This is the "major release" payoff and the explicit **long arc**: it is
-*designed and keystone-proven here, not yet built*.
+save. This is the "major release" payoff.
+
+**Status:** the **serialize + rebuild core (D.1 + D.2) is BUILT and headless-verified**
+(`game/campaignloader/blankcampaign.py` + the `Campaign.load_theater` branch +
+`tests/test_blankcampaign.py`); a saved campaign round-trips ownership + the
+preset-native laydown through the real New-Game machinery. The only remaining piece is
+**D.3 — the Qt "Save as Campaign" button** (writes the YAML; can't be CI/headless-tested).
 
 ### The seam
 
@@ -349,24 +354,30 @@ exactly what's on the map (the §C.2 seed, drop-spawn §20, and scenery alike).
 
 ### Build plan (phased; each phase its own PR + headless gate)
 
-- **D.1 — serializer + `.miz`-less load path (the keystone, terrain + ownership).**
-  New `game/campaignloader/blankcampaign.py`: `serialize_blank_campaign(game) ->
-  dict` and `build_blank_theater_from_descriptor(data, advanced_iads) ->
-  ConflictTheater` (wraps `generate_blank_theater(ownership=…)`).
-  `Campaign.load_theater` branches: `if self.data.get("blank_canvas"):` →
-  build-from-descriptor, **else** the existing `MizCampaignLoader` path (so shipped
-  campaigns are untouched). Unit-test the round-trip. *Inert until D.3 writes such a
-  YAML — safe to land first.*
-- **D.2 — ground-object serialization (the meat).** Walk every owned CP's
-  `connected_objectives`, emit each `TheaterGroundObject` as `{side, category, task,
-  anchor, groups:[units]}`. Rebuild on load via a **`category`/`task` → TGO-subclass
-  factory** (mirror `MizCampaignLoader`'s construction + `scar_objectives._build_objective`'s
-  manual `TheaterGroup`/`TheaterUnit` assembly). There are ~17 TGO subclasses
-  (`SamGroundObject`, `BuildingGroundObject`, `VehicleGroupGroundObject`,
-  `EwrGroundObject`, `MissileSiteGroundObject`, …) with no single existing factory —
-  this is the fiddly slice and needs its own in-game pass (does the rebuilt IADS
-  wire? do threat rings + SEAD/BAI targeting behave?). Headless gate: build → save →
-  `Campaign.from_file` → `load_theater` → assert the ground-object graph matches.
+- **D.1 + D.2 — serializer + `.miz`-less load path + laydown ✅ BUILT + HEADLESS-VERIFIED
+  (2026-06-27).** `game/campaignloader/blankcampaign.py`: `serialize_blank_campaign(game)`
+  captures ownership + a `sites` list (anchor CP + side + **`GroupTask` + position** per
+  ground object), `blank_campaign_document(game, name=…)` wraps it in a full campaign YAML
+  (stamped `version = CAMPAIGN_FORMAT_VERSION` so the New-Game gate doesn't hide it), and
+  `build_blank_theater_from_descriptor(terrain, descriptor, advanced_iads)` rebuilds.
+  `Campaign.load_theater` branches on the `blank_canvas` key → the builder, **else** the
+  existing `MizCampaignLoader` path (shipped campaigns untouched).
+  **The key design improvement over the original D.2 plan:** rather than serialize raw units
+  and reconstruct ~17 TGO subclasses via a `category`→class factory, the rebuild stores the
+  **laydown intent** — re-populating each CP's `preset_locations` keyed by the site's
+  `GroupTask` (`_TASK_TO_PRESET`), so the **normal** `GameGenerator.generate()` places every
+  site through its own battle-tested path (`generate_aa`/`generate_ewrs`/`generate_armor_groups`/
+  `generate_factories`/…). That **eliminates the TGO-factory entirely**, wires the IADS for
+  free (`begin_turn_0` → `initialize_network`), and is **cross-faction-safe** (re-rolling with a
+  different faction generates appropriate units; no unit-availability landmine). Storing intent
+  not exact units means a placed S-300 re-rolls as "some LORAD" — acceptable v1; exact-layout
+  fidelity is deferred. Tasks with no preset generator (FUEL/OIL flavour buildings) and
+  dynamic/naval objects are **not** round-tripped.
+  **Verified:** pure logic unit-tested (`tests/test_blankcampaign.py`: map validity, serialize,
+  site→preset routing, version stamping). Full headless round-trip through the **real**
+  `Campaign.from_file` → `load_theater` → `GameGenerator.generate()` (Caucasus, 4 bases,
+  `[CH] Russia 2020`): ownership matches and every preset-native task count matches exactly
+  (BASE_DEFENSE/SHORAD/MERAD/EWR/FACTORY/AMMO 4↔4); FUEL/OIL drop as designed.
 - **D.3 — Qt "Save as Campaign" action + thumbnail.** A toolbar action (visible on a
   finalized game) that calls the serializer, writes `<saved games>/Retribution/
   Campaigns/<slug>.yaml`, and snapshots a menu thumbnail. New-Game then lists it via
@@ -379,12 +390,17 @@ exactly what's on the map (the §C.2 seed, drop-spawn §20, and scenery alike).
 
 ### Risks / open questions
 
-- **Faithful TGO rebuild (D.2)** is the real risk: the rebuilt SAM/EWR must wire into
-  the IADS (`begin_turn_0` → `initialize_network`) and carry correct threat/role data.
-  Serializing real unit-type ids (not layouts) gives the best fidelity; in-game pass
-  is mandatory.
-- **Unit-type availability across factions.** A saved campaign re-rolled with a
-  different faction may reference unit types that faction can't field. Decide: clamp
-  to the new faction's accessible units, or pin the campaign to its built factions.
-- **Version gate.** A saved descriptor must stamp the live `CAMPAIGN_FORMAT_VERSION`
-  or New-Game hides it ([[campaign-version-gate-gotcha]]).
+- ~~**Faithful TGO rebuild (D.2)**~~ — **RESOLVED by the intent-based rebuild:** the
+  preset-locations approach routes every site through the normal generator, so the IADS
+  wires for free and no TGO-subclass factory exists to get wrong (headless-confirmed:
+  11 IADS nodes on the §C.2 verification; exact preset-native counts on the round-trip).
+- ~~**Unit-type availability across factions**~~ — **RESOLVED:** storing the laydown *intent*
+  (task) not exact units means rebuild draws from whatever faction is re-rolled, so there is
+  no cross-faction unit-availability landmine. The cost is exact-layout fidelity (deferred).
+- **Version gate.** Handled — `blank_campaign_document` stamps the live
+  `CAMPAIGN_FORMAT_VERSION` so New-Game does not hide the saved campaign
+  ([[campaign-version-gate-gotcha]]).
+- **Remaining (D.3):** the Qt "Save as Campaign" action + thumbnail (the only piece that
+  can't be headless-verified) and, for full fidelity, optional exact-layout preservation +
+  FUEL/OIL/flavour buildings (a post-generation pass like `_synthesize_support_buildings`,
+  which needs a generated game — not available in `load_theater`).

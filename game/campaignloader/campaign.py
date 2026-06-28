@@ -138,6 +138,17 @@ class Campaign:
         return None
 
     def load_theater(self, advanced_iads: bool) -> ConflictTheater:
+        # 414th save-as-campaign (Increment D): a hand-built blank canvas carries a
+        # `blank_canvas` descriptor instead of a `.miz`; rebuild from it directly.
+        blank_canvas = self.data.get("blank_canvas")
+        if blank_canvas is not None:
+            from .blankcampaign import build_blank_theater_from_descriptor
+
+            with logged_duration("Building blank-canvas theater"):
+                return build_blank_theater_from_descriptor(
+                    self.data["theater"], blank_canvas, advanced_iads
+                )
+
         t = TheaterLoader(self.data["theater"].lower()).load()
 
         try:

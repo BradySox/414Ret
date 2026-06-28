@@ -1,0 +1,144 @@
+---
+name: "Caucasus - Khe Sanh: Operation Niagara"
+theater: Caucasus
+authors: 414th JFG (fork of NoGoodNews' 1968 Yankee Station)
+description:
+    <p>21 January 1968. The NVA have thrown two divisions around the Marine combat base
+    at <strong>Khe Sanh</strong>, and the only way in is by air. You hold an encircled
+    forward field while <strong>Operation Niagara</strong> — round-the-clock tac air,
+    Arc Light, and aerial resupply — keeps the garrison alive, then break the ring with
+    the <strong>Operation Pegasus</strong> relief from Da Nang.</p>
+    <p>Khe Sanh (Kutaisi) is cut off on all sides by the NVA in the hills (Sukhumi),
+    along Route 9 (Senaki), and at Lang Vei (Kobuleti) — where PT-76 and T-54 armor
+    waits. Your relief pocket and the carriers on Yankee Station sit to the south at
+    Da Nang (Batumi). The threat is wall-to-wall <strong>AAA</strong>, not MiGs — there
+    are no MANPADS in 1968.</p>
+    <p><strong>Pump up "Fortunate Son" and hold the line.</strong></p>
+recommended_player_faction: USA 1970 Vietnam War
+recommended_enemy_faction: NVA 1970
+recommended_start_date: 1968-01-21
+recommended_player_money: 3000
+recommended_enemy_money: 1500
+recommended_player_income_multiplier: 1.5
+recommended_enemy_income_multiplier: 1.2
+miz: khe_sanh_niagara.miz
+performance: 2
+version: "10.8"
+advanced_iads: true
+
+settings:
+  vietnamwarvessels: true
+  russianmilitaryassetspack: true
+  ov10a_bronco: true
+  manpads: false
+  night_day_missions: NightMissions.OnlyDay
+  automate_runway_repair: true
+  automate_front_line_reinforcements: true
+  automate_aircraft_reinforcements: false
+  desired_player_mission_duration: 60
+  external_views_allowed: true
+  max_frontline_width: 20
+  invulnerable_player_pilots: true
+  player_skill: "Excellent"
+  enemy_skill: "Average"
+  enemy_vehicle_skill: "Average"
+  labels: "Dot Only"
+
+squadrons:
+  # --- Khe Sanh Combat Base (besieged garrison air) ---
+  Kutaisi:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [AH-1W SuperCobra]
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [A-1H Skyraider]
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft: [UH-1H Iroquois]
+      size: 4
+
+  # --- Da Nang (tac-air rear + Pegasus relief) ---
+  Batumi:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [A-4E Skyhawk]
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [F-4E Phantom II]
+      size: 12
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [A-1H Skyraider]
+      size: 8
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [OV-10A Bronco]
+      size: 4
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [F-8E Crusader]
+      size: 8
+    - primary: Refueling
+      aircraft: [KC-135 Stratotanker]
+      size: 2
+    - primary: Transport
+      secondary: any
+      aircraft: [C-130J-30]
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft: [CH-53E]
+      size: 2
+    - primary: Air Assault
+      secondary: any
+      aircraft: [UH-1H Iroquois]
+      size: 4
+
+  # --- Yankee Station carriers ---
+  Naval-1:
+    - primary: AEW&C
+      aircraft: [E-2C Hawkeye]
+      size: 2
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [F-4B Phantom II]
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [A-6A Intruder]
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [A-4E Skyhawk]
+      size: 12
+
+  # --- Guam (Arc Light off-map B-52) ---
+  Guam:
+    - primary: Strike
+      aircraft: [B-52H Stratofortress]
+      size: 4
+    - primary: Refueling
+      aircraft: [KC-135 Stratotanker]
+      size: 2
+
+  # --- NVA: the hills (Sukhumi) ---
+  Sukhumi-Babushara:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+
+  # --- NVA: Route 9 / token MiG presence (Senaki) ---
+  Senaki-Kolkhi:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [MiG-21bis Fishbed-N]
+      size: 8
+    - primary: Transport
+      secondary: any
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4

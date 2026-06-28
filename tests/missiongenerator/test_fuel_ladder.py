@@ -14,10 +14,13 @@ def _wp(wptype: FlightWaypointType = FlightWaypointType.NAV) -> Any:
 
 def _generator(*, taxi: float, fuel_kg: float, per_leg: float | None) -> Any:
     flight = SimpleNamespace(
-        unit_type=SimpleNamespace(fuel_consumption=SimpleNamespace(taxi=taxi)),
+        unit_type=SimpleNamespace(
+            fuel_consumption=SimpleNamespace(taxi=taxi),
+            estimated_fuel_consumption=None,
+        ),
         fuel=fuel_kg,
         flight_plan=SimpleNamespace(
-            fuel_consumption_between_points=lambda a, b: per_leg
+            fuel_consumption_between_points=lambda a, b, consumption=None: per_leg
         ),
     )
     gen = WaypointGenerator.__new__(WaypointGenerator)
@@ -60,7 +63,10 @@ def test_planned_fuel_never_goes_negative() -> None:
 
 def test_no_fuel_consumption_data_is_a_noop() -> None:
     flight = SimpleNamespace(
-        unit_type=SimpleNamespace(fuel_consumption=None), fuel=5000.0
+        unit_type=SimpleNamespace(
+            fuel_consumption=None, estimated_fuel_consumption=None
+        ),
+        fuel=5000.0,
     )
     gen = WaypointGenerator.__new__(WaypointGenerator)
     gen.flight = flight  # type: ignore[assignment]

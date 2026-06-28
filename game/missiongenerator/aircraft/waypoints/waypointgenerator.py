@@ -237,10 +237,16 @@ class WaypointGenerator:
         )
 
     def _estimate_min_fuel_for(self, waypoints: list[FlightWaypoint]) -> None:
-        if self.flight.unit_type.fuel_consumption is None:
+        # Fall back to a rough estimate from fuel capacity for the many airframes with
+        # no hand-measured data, so the kneeboard fuel ladder still renders. This stays
+        # out of the planner / sim, which read unit_type.fuel_consumption directly.
+        consumption = (
+            self.flight.unit_type.fuel_consumption
+            or self.flight.unit_type.estimated_fuel_consumption
+        )
+        if consumption is None:
             return
 
-        consumption = self.flight.unit_type.fuel_consumption
         min_fuel: float = consumption.min_safe
 
         # The flight plan (in reverse) up to and including the arrival point.
@@ -256,7 +262,9 @@ class WaypointGenerator:
             return
 
         for b, a in pairwise(main_flight_plan):
-            for_leg = self.flight.flight_plan.fuel_consumption_between_points(a, b)
+            for_leg = self.flight.flight_plan.fuel_consumption_between_points(
+                a, b, consumption
+            )
             if for_leg is None:
                 continue
             min_fuel += for_leg
@@ -273,10 +281,14 @@ class WaypointGenerator:
         Mirrors ``_estimate_min_fuel_for`` but walks forward from the starting load,
         subtracting each leg's burn, so the kneeboard can show planned remaining
         alongside the minimum required. Tops back up to a full load at a tanker
-        (REFUEL) waypoint. No-op when the aircraft has no fuel-consumption data or no
-        starting fuel.
+        (REFUEL) waypoint. Falls back to a capacity-derived estimate for airframes
+        with no measured data; a no-op only when even that is unavailable (no fuel
+        capacity) or there is no starting fuel.
         """
-        consumption = self.flight.unit_type.fuel_consumption
+        consumption = (
+            self.flight.unit_type.fuel_consumption
+            or self.flight.unit_type.estimated_fuel_consumption
+        )
         start_fuel_kg = getattr(self.flight, "fuel", None)
         if consumption is None or start_fuel_kg is None:
             return
@@ -287,7 +299,7 @@ class WaypointGenerator:
         for waypoint in waypoints:
             if previous is not None:
                 for_leg = self.flight.flight_plan.fuel_consumption_between_points(
-                    previous, waypoint
+                    previous, waypoint, consumption
                 )
                 if for_leg is not None:
                     remaining -= for_leg

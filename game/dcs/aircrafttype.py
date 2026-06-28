@@ -12,7 +12,7 @@ from typing import Any, ClassVar, Dict, Iterator, Optional, TYPE_CHECKING, Type
 import yaml
 from dcs.helicopters import helicopter_map
 from dcs.planes import plane_map
-from dcs.task import AFAC
+from dcs.task import AFAC, AWACS, Reconnaissance, Refueling, Transport
 from dcs.unitpropertydescription import UnitPropertyDescription
 from dcs.unittype import FlyingType
 from dcs.weapons_data import weapon_ids
@@ -50,6 +50,7 @@ from game.radio.channels import (
 from game.utils import (
     Distance,
     ImperialUnits,
+    KG_TO_LBS,
     MetricUnits,
     NauticalUnits,
     SPEED_OF_SOUND_AT_SEA_LEVEL,
@@ -215,6 +216,13 @@ class FuelConsumption:
             float(data["combat_ppm"]),
             int(data["min_safe"]),
         )
+
+
+# pydcs default-task classes that mark an aircraft as a large, fuel-efficient
+# "heavy" (transport / tanker / AWACS / recon). Heavies burn far less fuel per
+# pound carried than combat jets, so the estimated fuel ladder gives them a much
+# longer cruise endurance. See AircraftType.estimated_fuel_consumption.
+_HEAVY_AIRFRAME_TASKS = frozenset({Transport, Refueling, AWACS, Reconnaissance})
 
 
 # TODO: Split into PlaneType and HelicopterType?
@@ -389,6 +397,70 @@ class AircraftType(UnitType[Type[FlyingType]]):
     @property
     def max_fuel(self) -> float:
         return self.dcs_unit_type.fuel_max
+
+    @property
+    def _is_heavy_airframe(self) -> bool:
+        """True for large, fuel-efficient airframes (transports/tankers/AWACS/recon
+        and big bombers), which get a much longer estimated cruise endurance than
+        combat jets. Detected by the pydcs default task or, as a fallback, by airframe
+        length (every flyable fighter/attack jet is well under 28 m)."""
+        if self.dcs_unit_type.task_default in _HEAVY_AIRFRAME_TASKS:
+            return True
+        return getattr(self.dcs_unit_type, "length", 0.0) >= 28.0
+
+    @cached_property
+    def estimated_fuel_consumption(self) -> Optional[FuelConsumption]:
+        """A rough FuelConsumption synthesised from internal fuel capacity, for the
+        many airframes that ship no hand-measured ``fuel:`` data block.
+
+        Used **only** to draw the kneeboard fuel ladder / bingo estimate for player
+        flights when measured data is absent -- it is deliberately *not* wired into
+        ``fuel_consumption``, so the flight planner (tanker tasking) and the in-flight
+        fuel sim keep using measured data only and gain no new blast radius.
+
+        The model scales burn to the airframe's internal fuel by an assumed still-air
+        cruise endurance (NM on a full internal load), bucketed helicopter /
+        heavy-transport / combat. The combat bucket is calibrated against the measured
+        references (F/A-18C ~22 ppm, F-16C ~12 ppm) and the heavy bucket against the
+        C-130J (~16 ppm); climb/combat are multiples of cruise. These are planning
+        approximations, not measurements -- a real ``fuel:`` block always wins.
+        """
+        fuel_lbs = self.max_fuel * KG_TO_LBS
+        if fuel_lbs <= 0:
+            return None
+        # (cruise endurance NM, climb x, combat x, taxi fraction, reserve fraction)
+        if self.helicopter:
+            cruise_nm, climb_x, combat_x, taxi_frac, reserve_frac = (
+                280.0,
+                1.3,
+                1.2,
+                0.004,
+                0.12,
+            )
+        elif self._is_heavy_airframe:
+            cruise_nm, climb_x, combat_x, taxi_frac, reserve_frac = (
+                2700.0,
+                1.5,
+                1.2,
+                0.005,
+                0.05,
+            )
+        else:  # combat jets / attack / warbirds
+            cruise_nm, climb_x, combat_x, taxi_frac, reserve_frac = (
+                520.0,
+                2.0,
+                1.6,
+                0.015,
+                0.15,
+            )
+        cruise = fuel_lbs / cruise_nm
+        return FuelConsumption(
+            taxi=max(50, round(fuel_lbs * taxi_frac)),
+            climb=round(cruise * climb_x, 1),
+            cruise=round(cruise, 1),
+            combat=round(cruise * combat_x, 1),
+            min_safe=max(200, round(fuel_lbs * reserve_frac)),
+        )
 
     @cached_property
     def max_speed(self) -> Speed:

@@ -1313,6 +1313,24 @@ so the two docs don't drift.
 - **Fail signature:** no index when 2+ share a type; wrong start pages; an index wrongly added for a
   lone flight; flights out of the listed order.
 
+### H11 — Estimated fuel ladder for dataless airframes · §4 · ☐ UNTESTED (estimate sanity-banded in `tests/dcs/test_estimated_fuel_consumption.py`, 2026-06-27)
+- **What it is:** `AircraftType.estimated_fuel_consumption` synthesises a rough `FuelConsumption` from
+  the airframe's `fuel_max` (bucketed helicopter / heavy-transport / combat) so the Fuel Ladder card
+  renders for airframes with **no** hand-measured `fuel:` block — the **C-130J "King"**, helicopters,
+  warbirds, etc. Kneeboard-scoped: planner tanker tasking + in-flight sim are untouched.
+- **Setup:** Enable **Generate fuel ladder kneeboard page**. Frag a player flight in an airframe with
+  no measured fuel data — ideally the **C-130J King** (the reported case) and a helicopter — and open
+  the kneeboard. Cross-check against H7 for an airframe that *does* have measured data (e.g. F/A-18C).
+- **Pass:** the King / helo Fuel Ladder page **renders a descending ladder** with an RTB margin call-out
+  and Bingo/Joker instead of *"No fuel estimate available for this aircraft."* Numbers are plausible
+  planning figures (the King cruises ~16 lb/NM, full ~43k lb, so it should *not* read negative-margin
+  on a normal sortie). Measured-data airframes are unchanged from H7.
+- **Fail signature:** the placeholder text still showing for the King/helo; a ladder that's all `-`
+  (no planned column — `flight.fuel` missing); wildly implausible numbers (e.g. the King reading
+  ~80 lb/NM, a sign the heavy bucket isn't being picked — check `_is_heavy_airframe`); any change to a
+  measured-data airframe's ladder (the estimate must never override a real `fuel:` block); planner
+  suddenly fragging tankers for the King (the fallback must stay out of `unit_type.fuel_consumption`).
+
 ### J1 — Capability-weighted off-mission combat · §26 · ☐ UNTESTED (scoring unit-tested 2026-06-26)
 - **Headless adjudication (2026-06-26):** `tests/test_combat_resolution_capability.py` covers the
   scoring (A2A strength = best A2A `task_priority` × count; win = strength share; survivor loss scales

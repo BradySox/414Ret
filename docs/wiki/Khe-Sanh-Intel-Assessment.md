@@ -68,6 +68,9 @@ attacks on **Hill 861** and the bombardment that blew the base ammunition dump. 
 a feint to draw forces away from the cities before Tet, or Tet was the feint for Khe Sanh, is debated
 to this day. It does not change the mission: **hold, and bleed them from the air.**
 
+![Tactical map of allied and enemy units in the Khe Sanh area, January 1968](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/campaigns/img/khe-sanh/khe-sanh-units-jan1968.jpg)
+<sub>The siege in one map: the 26th Marines on the hills + ARVN Rangers at the base, ringed by the NVA 304th/325C/320th/95C divisions, January 1968. *US Navy map (public domain); full [image credits](Khe-Sanh-Visual-Briefing#image-credits--sources).*</sub>
+
 ## Section II — Enemy Order of Battle (Ground — the real fight)
 
 The NVA threat here is **on the ground**, not in the air.

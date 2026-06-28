@@ -71,6 +71,9 @@ break the siege with the Pegasus relief.**
 This is a **dynamic campaign** built around a **siege topology**. There's no scripted ending — you
 win by relieving Khe Sanh and rolling the NVA off the perimeter.
 
+![Map of the Khe Sanh valley — base, airstrip, hill outposts, Route 9, Lang Vei](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/campaigns/img/khe-sanh/khe-sanh-valley-map.jpg)
+<sub>The real ground the layout abstracts: the base + airstrip, the hill outposts, Route 9 east, and Lang Vei to the SW. *Public domain; see the [visual briefing](Khe-Sanh-Visual-Briefing) for the aerial + Jan-1968 disposition map and full [credits](Khe-Sanh-Visual-Briefing#image-credits--sources).*</sub>
+
 **The map (Caucasus → Vietnam):**
 
 | Vietnam | Caucasus CP | Side | Role |

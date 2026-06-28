@@ -26,6 +26,14 @@ performance: 2
 version: "10.8"
 advanced_iads: true
 
+# Besieged Khe Sanh: a depleted Kutaisi garrison pulls the siege fronts in close. The front
+# between two enemy CPs sits at strength_pct * route_length from the blue CP, so a weak blue
+# Kutaisi (vs full-strength NVA) starts the fight near the perimeter instead of at the route
+# midpoint. Tune 0..1 -- lower = tighter siege (~0.25 -> fronts ~7/13/28 km on the
+# Senaki/Kobuleti/Sukhumi axes; Sukhumi stays the outlier, its airfield is 136 km off).
+control_point_strengths:
+  Kutaisi: 0.25
+
 settings:
   vietnamwarvessels: true
   russianmilitaryassetspack: true

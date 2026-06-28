@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 import pytest
+import yaml
 
 from game import persistency
 from game.campaignloader.campaign import Campaign
@@ -177,6 +178,29 @@ def test_khe_sanh_carrier_squadrons_carrier_capable(
         f"{offenders}. The current DCS F-4 is land-based only -- use a "
         "carrier-capable type (e.g. F-8E Crusader)."
     )
+
+
+def test_khe_sanh_control_point_strengths_applied(
+    khe_sanh: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
+) -> None:
+    """``control_point_strengths`` from the campaign YAML override each named CP's starting
+    ground strength on the new-game path. Khe Sanh sets a depleted Kutaisi so the siege fronts
+    start near the perimeter -- the front between two enemy CPs sits at
+    ``strength_pct * route_length`` from the blue CP, so without this Kutaisi would start at
+    full strength and the fronts would sit at the route midpoint (far out)."""
+    _campaign, theater, _air_wing = khe_sanh
+    data = yaml.safe_load(
+        (_CAMPAIGNS / "khe_sanh_niagara.yaml").read_text(encoding="utf-8")
+    )
+    strengths = data.get("control_point_strengths", {})
+    assert strengths, "Khe Sanh should set control_point_strengths (besieged Kutaisi)."
+
+    by_name = {cp.name: cp for cp in theater.controlpoints}
+    for name, value in strengths.items():
+        assert name in by_name, f"control_point_strengths names unknown CP {name!r}"
+        assert by_name[name].base.strength == pytest.approx(float(value))
+    # The whole point: Kutaisi is depleted (< full strength) so the fronts pull in close.
+    assert by_name["Kutaisi"].base.strength < 1.0
 
 
 @pytest.mark.parametrize("campaign_file", _CH_ARMOR_CAMPAIGNS)

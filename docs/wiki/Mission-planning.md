@@ -79,7 +79,7 @@ coverage is established before the strikers arrive. The full set of rules, in on
 | CAS | Loiter / search start | 0 (patrol begins at TOT) | — |
 | Armed Recon | Search start | 0 (patrol begins at TOT) | — |
 | BAI | Weapons on target | 0 (package TOT) | Against a stationary armour group. |
-| SCAR | On-station / search start | 0 (patrol-start) | Player hunt for a moving HVT; see [SCAR](SCAR). |
+| SCAR | On-station / orbit start | 0 (patrol-start) | "Sandy" rescue escort over a downed pilot; see [SCAR](SCAR). |
 | TARPS | On-station / photo run start | 0 (patrol-start) | Player photo recon; see [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance). |
 | JAMMING | Standoff orbit start | 0 (orbit begins at TOT) | C-130J EW/ISR racetrack outside the threat zone; see [Electronic-Warfare-and-ISR](Electronic-Warfare-and-ISR). |
 | Combat SAR | On-station / orbit start | 0 (patrol-start) | Player pilot-rescue; see [Combat-SAR](Combat-SAR). |
@@ -125,9 +125,9 @@ Each task below uses the same field order so the page is scannable:
 - **Player technique** — how a human flies it well.
 - **AI limitations** — what to expect when the AI flies it.
 - **IADS notes** — behaviour changes under the runtime IADS engine, where relevant
-  (air-defence tasks). 414Ret defaults new campaigns to MANTIS; Skynet stays selectable, and
-  existing saves keep their engine. Both shut radars down reactively, so the notes apply to
-  either — see [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
+  (air-defence tasks). 414Ret runs **MANTIS** for every campaign (the sole engine; Skynet was
+  removed). It shuts radars down reactively, so a HARM is less likely to score an emitter kill —
+  see [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
 Tasks are grouped by family: Air-to-Air, Suppression (SEAD/DEAD), Air-to-Ground strike,
 Battlefield support, and Support & logistics. The fork's player task types — SCAR, TARPS,
@@ -345,22 +345,22 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   BAI remains the normal planner task for conventional anti-armour work.
 - **AI limitations:** Best against a stationary group; same visual-acquisition caveats apply.
 
-#### SCAR (Strike Coordination and Reconnaissance)
+#### SCAR ("Sandy" rescue escort)
 
-- **Purpose:** Find and kill a designated **moving** high-value target (HVT) in a defined area
-  before it reaches safety (or, for a SCUD, its launch point).
-- **Valid targets:** One HVT with a complete, recognisable signature, hidden among plain-truck
-  clutter and partial-signature decoys. A real armour or missile site can become the moving
-  objective instead of a disposable scripted stand-in.
-- **Package role:** Lead / standalone; coordination with other flights is player-run.
-- **TOT meaning:** Start of the on-station/search window (patrol-start).
-- **Player technique:** Sweep the box, read convoy signatures, prosecute the HVT — and **don't
-  hit the wrong convoy**: a mis-ID costs budget (tunable via the `SCAR mis-ID penalty` Campaign
-  Doctrine setting). A fail clock runs as the HVT drives toward where it can no longer be
-  struck.
-- **AI limitations:** The find/ID/handoff judgment is a live-player capability; this is a player
-  task. An opt-in `SCAR auto-planning` setting can frag it into your ATO automatically. See
-  [SCAR](SCAR).
+- **Purpose:** Escort a combat-SAR rescue — protect the downed pilot, suppress the threats around
+  them, and walk the rescue helo (Jolly Green) in. The "Sandy" role.
+- **Valid targets:** Whatever threatens the survivor — AAA, MANPADs, and any enemy snatch party
+  closing to **capture** the pilot. Worked off the King's cues.
+- **Typical airframes:** **A-10C / AH-64D** (the loiter-and-fight escort airframes).
+- **Package role:** Part of the combat-SAR package (King + Jolly Green + 2–4 Sandy); coordination
+  is player-run off the King.
+- **TOT meaning:** Start of the on-station/orbit window (patrol-start).
+- **Player technique:** Hold with the King and Jolly, suppress around the survivor, and clear the
+  helo's run-in. Kill the snatch party before it reaches the pilot — let it dwell and the pilot is
+  captured. See [SCAR](SCAR) and [Combat SAR](Combat-SAR).
+- **AI limitations:** The AI fields a Sandy only as part of the combat-SAR standing alert
+  (`auto_combat_sar`, default off). *(SCAR was repurposed from a retired armor-hunt task; the
+  conventional anti-armour task is **BAI**, which is unchanged.)*
 
 #### Armed Recon
 
@@ -409,15 +409,17 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 
 - **Purpose:** Recover a downed pilot and return them to a friendly field.
 - **Valid targets:** A downed (ejected) friendly pilot near the front line.
-- **Package role:** Lead / standalone (player pilot-rescue task). A CH-47 orbits the FLOT as the
-  rescuer; a C-130 flies the HC-130 "King" overhead orbit.
-- **Typical airframes:** CH-47 (rescuer) + C-130 (King); helicopter recovery.
+- **Package role:** Lead of the combat-SAR package. A CH-47 (Jolly Green) holds near the FLOT as
+  the rescuer; a C-130 flies the HC-130 "King" overhead; 2–4 [Sandy](SCAR) escorts protect the
+  survivor.
+- **Typical airframes:** CH-47 (rescuer) + C-130 (King) + A-10C/AH-64D (Sandy); helicopter recovery.
 - **TOT meaning:** Start of the on-station / orbit window (patrol-start).
 - **Player technique:** Home on the survivor's air-tracking TACAN, use the F10 survivor-locator
   readout, pick the pilot up, and deliver them to any friendly field — the campaign then
-  **spares the aviator** (you still lose the jet).
+  **spares the aviator** (you still lose the jet). Watch for an enemy snatch party racing to
+  **capture** the survivor.
 - **AI limitations:** Player-flown, with an optional AI standing alert (`auto_combat_sar`,
-  default off). Distinct from the SCAR SOF-recovery CSAR. See [Combat-SAR](Combat-SAR).
+  default off) that fields King + Jolly + 1 Sandy. See [Combat-SAR](Combat-SAR).
 
 #### Air Assault
 
@@ -448,7 +450,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   around your packages (QRA, BARCAP layering, support orbits, SEAD/DEAD reachability, IADS).
 - [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance) — recon fog, TARPS, and the
   overview reveal toggle.
-- [SCAR](SCAR) — the moving-HVT hunt and the optional commander-capture / SOF path.
+- [SCAR](SCAR) — the "Sandy" rescue-escort role in the combat-SAR package.
 - [Combat-SAR](Combat-SAR) — the downed-pilot rescue loop.
 - [Electronic-Warfare-and-ISR](Electronic-Warfare-and-ISR) — the C-130J JAMMING platform.
 - [Getting-Started](Getting-Started) — first-campaign walkthrough.

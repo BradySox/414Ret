@@ -1,8 +1,8 @@
 # Lua Plugins
 
 Retribution plans and spawns a mission in Python, but the **runtime behavior** inside the
-generated `.miz` — electronic warfare, recon scoring, frontline firefights, tower comms,
-the SCAR hunt — is driven by **Lua plugins** injected into the mission. This page explains
+generated `.miz` — electronic warfare, recon scoring, frontline firefights, combat-SAR
+rescues — is driven by **Lua plugins** injected into the mission. This page explains
 how the plugin system works, the fork's hand-injected plugins, the Lua discipline the CI
 gate enforces, and lists the notable 414Ret plugins.
 
@@ -28,13 +28,13 @@ mandatory core every mission loads.
 
 ### The late-init pass: load-after-config plugins
 
-Most plugins are ordinary work-order plugins. But three of the fork's features —
-**TIC**, **TARS**, and **SCAR** — must load their main script **after** every plugin's
+Most plugins are ordinary work-order plugins. But a couple of the fork's features —
+**TIC** and **TARS** — must load their main script **after** every plugin's
 configuration has been injected, because their init reads `dcsRetribution.plugins.<name>`
 (and MOOSE) the moment it loads. The normal work-order pass loads a plugin's scripts before
 its own config, so it can't express that ordering.
 
-These three are `LuaPlugin` subclasses (`game/plugins/tic.py`, `tars.py`, `scar.py`,
+These are `LuaPlugin` subclasses (`game/plugins/tic.py`, `tars.py`,
 registered in `game/plugins/manager.py`) that declare what to load late via
 `late_init_files()`, an optional `late_init_preamble()`, and a `should_late_init()` gate.
 `inject_plugins()` then runs a **second pass** that loads each one's files after the normal
@@ -52,8 +52,8 @@ The in-mission framework is **MOOSE** (a bundled `Moose.lua`; some plugins vendo
 verbatim). **MIST is retired** — the MIST-to-MOOSE consolidation is complete. The `base`
 plugin's `"mist"` work order now loads `resources/plugins/base/mist_moose_shim.lua`, a
 vanilla-DCS compatibility shim implementing only the `mist.*` symbols the remaining
-consumers (CTLD, SCAR, intercept glue, core script, Skynet) actually call, so the old
-`mist_4_5_126.lua` no longer loads. Write new runtime logic against MOOSE.
+consumers (CTLD, the intercept glue, the core script, and the combat-SAR plugin) actually
+call, so the old `mist_4_5_126.lua` no longer loads. Write new runtime logic against MOOSE.
 
 MOOSE API docs:
 https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html
@@ -86,14 +86,15 @@ ELINT tracks as sliders.
 |---|---|
 | `base` | Mandatory core scripts, the MIST→MOOSE shim, and `Moose.lua`. |
 | `c130j` | Turns the C-130J into an EC-130H/RC-130H EW + ISR/ELINT platform (`FlightType.JAMMING`). Replaces the retired generic `ewrj` jammer. |
-| `tic` | Troops In Contact — prolonged, formation-aware frontline firefights with ambient suppressive fire. (Scramble pattern.) |
-| `tars` | TARS recon engine — films TARPS passes and feeds confirmed BDA back to the campaign. (Scramble pattern.) |
-| `scar` | The in-mission SCAR moving-HVT hunt scenario. (Scramble pattern.) |
-| `combatsar` | Bespoke player pilot-rescue: CH-47 rescuer + HC-130 "King" overhead, MOOSE `CSAR` engine, rescue scoring. |
+| `tic` | Troops In Contact — prolonged, formation-aware frontline firefights with ambient suppressive fire. (Late-init plugin.) |
+| `tars` | TARS recon engine — films TARPS passes and feeds confirmed BDA back to the campaign. (Late-init plugin.) |
+| `combatsar` | The combat-SAR package runtime: rescue helo (Jolly Green) + HC-130 "King" (TACAN/LARS) + the MOOSE `CSAR`/`AICSAR` engines, the enemy snatch-party **capture race**, and rescue scoring. |
 | `intercept` | Per-squadron QRA intercept reserve feeding the MOOSE `AI_A2A_DISPATCHER`. |
-| `skynetiads` / `mantisiads` | IADS engines. MANTIS is the default for new campaigns; Skynet stays selectable. |
+| `mantisiads` | The IADS engine — MOOSE **MANTIS**. The sole IADS engine; Skynet was removed (see [IADS Engine: MANTIS](IADS-Engine-MANTIS)). |
 | `splashdamage3` | The 414th's buddy-tuned Splash Damage 3 weapon-effects build (settings locked by design — do not re-add the config layer). |
-| `ctld`, `airboss`, `arty`, plus `Moose*` helpers | Stock MOOSE-based logistics, carrier, artillery, and utility plugins. |
+| `lotatc` | LotATC export — feeds the campaign's air picture to a LotATC controller. |
+| `bigeye` | BigEye — EWR/early-warning radar reporting. |
+| `ctld`, `airboss`, plus `Moose*` helpers (`MooseSoundhandler`, `MooseMarkerOps`, `MooseAtis`) | Stock MOOSE-based logistics, carrier, and utility plugins. |
 
 > Civilian background air traffic is **no longer a Lua plugin** — it was reimplemented
 > as Python-planned, pydcs-spawned air traffic (`game/missiongenerator/civiliantraffic.py`),
@@ -109,8 +110,8 @@ sets up and spawns, Lua executes — don't move runtime logic into the planner o
 
 ## See also
 
-- [Custom Campaigns](Custom-Campaigns) — campaigns and the IADS engines
+- [Custom Campaigns](Custom-Campaigns) — campaigns and the IADS engine
 - [Electronic Warfare and ISR](Electronic-Warfare-and-ISR) — the `c130j` plugin in play
 - [Troops In Contact](Troops-In-Contact) — the `tic` plugin in play
-- [SCAR](SCAR) — the `scar` plugin in play
+- [Combat SAR](Combat-SAR) — the `combatsar` plugin in play
 - [Dedicated Server Guide](Dedicated-Server-Guide) — running plugin-driven missions on a server

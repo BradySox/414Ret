@@ -1,131 +1,79 @@
-# SCAR — Strike Coordination and Reconnaissance
+# SCAR — "Sandy" rescue escort
 
-SCAR is a player-flown hunt. You work a defined area to find and kill a moving high-value target
-(HVT) hidden among look-alike decoys and clutter, before it reaches safety. It is the air-to-
-ground answer to "the target is out there moving — go find the real one and prosecute it," and it
-rewards reading the picture over trusting a single pin on the map. SCAR sits between
-[CAS](Mission-planning) (needs troops in contact), BAI (a known, fixed group), and Armed Recon
-(small-radius targets of opportunity): the skill it tests is **discrimination**, not a free-fire
-sweep.
+SCAR is the **rescue-escort ("Sandy")** role inside the fork's combat-SAR package. When a friendly
+pilot is down, a SCAR flight gets eyes on the survivor, **suppresses the threats around them**, and
+**walks the rescue helo in** — the classic USAF "Sandy" job. It is flown on the **A-10C** or
+**AH-64D**, the airframes built to loiter low over a survivor and trade fire with whatever is
+trying to reach them.
 
-`FlightType.SCAR` is **player-selectable** when you build a package. The auto-planner does not
-frag it by default (see [auto-planning](#auto-planning-off-by-default)). BAI remains the AI's
-anti-armor/convoy task — SCAR is the human discrimination puzzle, not an AI behavior.
+> **This is a rework.** SCAR used to be a moving-armor *hunt* (find the real high-value target
+> among look-alike decoys). That armor-hunt scenario — and its auto-planner — were **retired on
+> 2026-06-27** and the task was repurposed into the rescue-escort role described here. The fork's
+> conventional anti-armour task is **BAI**, which is unchanged. If you came here looking for the
+> old "hunt the SCUD/convoy" mission, it no longer exists.
 
-> **In-game-pass status:** the planner, scenario bridge, command-post fog, and capture loop are
-> verified in-game. Still owing a cockpit pass: the **mis-ID budget penalty** Lua (checklist F5)
-> and the capture → permanent-reveal carryover across turns (F2).
-
----
-
-## The core loop
-
-When you fly a SCAR sortie, the search area is populated at mission start with:
-
-- the **real HVT** — a signature convoy (or a real ground object; see
-  [target types](#three-target-types) below);
-- **partial-signature decoys** that look almost right; and
-- **plain-truck clutter** and a light threat laydown (AAA).
-
-The whole picture is **parked** when you arrive, so the discrimination puzzle is always there to
-solve. The columns only **bug out once your strike package crosses the activation ring** — 50 NM,
-counting only **human-flown** aircraft, so a transiting AI tanker or AWACS can't start the chase
-before you get there. The fail clock starts on that activation, not at mission start: the target
-is already moving as you arrive, but it can never be "long gone" before slow jets reach the area.
-
-**Outcomes:**
-
-- **Success** — you identify and kill the HVT.
-- **Fail** — the HVT reaches the nearest enemy-held city, **or** (for a SCUD) reaches its firing
-  position and launches, **or** the window expires.
+> **In-game-pass status:** the planner side is CI-tested; the in-mission enemy-capture race, King
+> cueing, and POW recovery still owe a cockpit pass (checklist G8–G14).
 
 ---
 
-## Reading the picture
+## The combat-SAR package
 
-This is the heart of SCAR, so it's worth being explicit about what you're given and what you're
-not:
+SCAR is one element of a three-part package, modelled on real combat-SAR doctrine:
 
-- The **target mark points at the search-area center**, not the HVT. Combined with spawn-time
-  decoys and the HVT moving off its start point, the mark is a starting place to look, never the
-  answer.
-- The **briefing and F10 cues** give you the **target signature** (the specific mix of vehicles
-  that make up the real HVT — e.g. a SAM TEL plus a command vehicle plus two support trucks), the
-  **no-strike / firing-position marks**, and a **decoy warning**.
-- The decoys carry a **partial** signature — close, but missing a piece — and the clutter is
-  plain trucks. Your job is to **reconnoiter the convoys and match the full signature** before you
-  release.
-
-Practical technique: get eyes on each candidate column before committing. Read the composition
-against the briefed signature, watch which column is making for the city (or, for a SCUD, the
-firing position), and prosecute only when the picture matches. You can pass talk-ons to other
-flights in your package — coordination across aircraft is player-run, which is the "coordination"
-in Strike Coordination and Reconnaissance.
-
----
-
-## Three target types
-
-| Variant | What it is | Win / lose |
+| Element | Role | Airframe |
 |---|---|---|
-| **spawn** (generic convoy) | A fully scripted ground picture: HVT signature convoy + partial decoys + plain clutter + light threats | Win = HVT killed; lose = it reaches the city or the window expires |
-| **armor** (real, fully-mobile group) | Binds a **real** mobile vehicle group on the map as the HVT and mixes in decoys derived from its live composition | Same; a group containing towed/static units (e.g. a KS-19 flak gun) falls back to the spawn picture so nothing is stranded |
-| **missile** (real SCUD site) | The launcher races to a firing position and actually **launches** at its target city on arrival | The launch is the fail — stop it before it shoots |
+| **King** | Airborne mission commander — TACAN beacon, F10 survivor locator (LARS), voice cueing | C-130J |
+| **Jolly Green** | The rescue / pickup — flies in, lands, boards the survivor, delivers them home | Rescue helo (CH-47…) |
+| **Sandy** ×2–4 | **RESCAP escort** — protect the survivor, kill the threats around them, walk Jolly in | A-10C / AH-64D (`FlightType.SCAR`) |
 
-So real armor and missile sites already on the map can themselves become the SCAR objective, not
-just abstract convoys.
-
----
-
-## Mis-ID penalty — discrimination has a cost
-
-Because the decoys look almost right, destroying the wrong convoy has to hurt — otherwise you'd
-just shoot everything in the box. Killing one of the area's decoy/clutter columns on a SCAR
-sortie **debits budget**. The charge applies only when the prosecuting (SCAR) side gets the kill.
-
-The amount is the **`scar_misid_penalty`** setting (Campaign Doctrine, **default 8** — about the
-cost of one SOF team). Set it to **0** to disable the budget hit, in which case mis-IDs are only
-logged. (The Lua side of this still wants an in-game pass — checklist F5.)
+The standing package is **1 King + 1 Jolly Green + 2–4 Sandy**. The King and Jolly Green are the
+[Combat SAR](Combat-SAR) flight types; **Sandy is `FlightType.SCAR`**. See
+[Combat SAR](Combat-SAR) for the rescue mechanics, the King's beacon/LARS, and the rescue scoring
+that spares the aviator at debrief.
 
 ---
 
-## Commander capture (experimental)
+## Flying Sandy
 
-SCAR also drives an experimental **commander-capture** path: rather than killing the HVT, you can
-capture the enemy commander alive with a finite, purchased special-operations team — a clean grab
-permanently reveals the enemy command network, and a botched grab strands your team and starts a
-rescue subplot. It is gated by the **`scar_command_post_intel`** setting (Campaign Doctrine,
-**default ON for new campaigns** while it is playtested).
+`FlightType.SCAR` is **player-selectable** when you build a package, eligible on the A-10C and
+AH-64D. Your job over the survivor:
 
-This is a whole campaign-layer loop of its own — buying SOF teams, the C-130 insert, the capture
-geometry, and the multi-turn CSAR recovery if a team is stranded. It has its own page:
+- **Hold with the King and Jolly.** The King is the on-scene commander — it smokes/marks the
+  threats and talks the picture. Work to its cues.
+- **Suppress the threats around the downed pilot.** AAA, MANPADs, and any enemy ground party
+  closing on the survivor are yours to put down so the helo can get in.
+- **Watch for the snatch party.** On an ejection the enemy may send infantry to **capture** the
+  survivor (red smoke + a MAYDAY cue). Kill it before it reaches the pilot — if it dwells on the
+  survivor un-rescued, the pilot is **captured** and becomes a POW. (Full detail in
+  [Combat SAR](Combat-SAR).)
+- **Walk the helo in.** Keep the threats down and clear the run-in so Jolly Green can land, board,
+  and extract.
 
-> **→ [SOF and Commander Capture](SOF-and-Commander-Capture)** for the full economy, the insert,
-> capture outcomes, and the recovery loop.
+A Sandy kneeboard page carries this role guidance — holding with the King/Jolly, suppressing
+around the survivor, and walking the rescue helo in.
 
 ---
 
-## Auto-planning (off by default)
+## AI standing alert
 
-`PlanScarHunts` can frag **one** player-flyable SCAR package per turn against the highest-priority
-enemy battle position. It is gated by the **`scar_autoplan`** setting (**default OFF**) and is
-**blue-only by design** — the AI keeps using BAI for anti-armor and never frags SCAR for itself.
-It's left off until the in-mission Lua has had a full cockpit pass; flip it on once you're
-comfortable flying SCAR by hand.
+The AI fields SCAR only as part of the combat-SAR standing alert. With the **`auto_combat_sar`**
+setting on (HQ automation, **default OFF**), the planner proposes the package — **1 King + 1 Jolly
+Green + 1 Sandy** — so a downed pilot has escort overhead instead of an orbiting helo with no
+protection. A free Sandy degrades gracefully: if no A-10/Apache is available, the alert simply
+skips it. There is no separate SCAR auto-planner, and **BAI is untouched** — retiring the old SCAR
+auto-planner handed every enemy battle position back to BAI.
 
 ## Settings reference
 
 | Setting | Default | Effect |
 |---|---|---|
-| `FlightType.SCAR` | player-selectable | Build a SCAR hunt by hand |
-| `scar_misid_penalty` | 8 | Budget cost per wrong convoy prosecuted (0 disables) |
-| `scar_command_post_intel` | ON (new campaigns) | Enables the SOF commander-capture loop and hides enemy command posts |
-| `scar_autoplan` | OFF | Auto-frag one blue SCAR package per turn |
+| `FlightType.SCAR` | player-selectable | Build a Sandy rescue-escort flight (A-10C / AH-64D) |
+| `auto_combat_sar` | OFF | AI standing alert: King + Jolly Green + 1 Sandy when a rescue is needed |
 
 ## See also
 
-- [SOF and Commander Capture](SOF-and-Commander-Capture)
-- [Combat SAR](Combat-SAR)
+- [Combat SAR](Combat-SAR) — the rescue package, the King beacon/LARS, capture race, and scoring
 - [TARPS Reconnaissance](TARPS-Reconnaissance)
-- [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)
 - [Mission planning](Mission-planning)
+- [Air Defense and the Air War](Air-Defense-and-the-Air-War)

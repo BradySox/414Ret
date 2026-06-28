@@ -91,7 +91,7 @@ What it demonstrates:
   (Kastrup) is added as a red enclave, Fulda is flipped blue as a forward FARP, and a
   carrier air wing is brought ashore — all hand-edits to the warehouse/country blocks.
 - **Advanced IADS in range mode.** `advanced_iads: true` with co-located Command Center +
-  Comms + power statics per red base, giving Skynet/MANTIS a destroyable C2 layer.
+  Comms + power statics per red base, giving MANTIS a destroyable C2 layer.
 - **YAML supply routes** instead of baked front-line groups, re-anchored on exact control
   point coordinates.
 - **Named, liveried squadrons.** Every squadron references a predefined squadron def, so

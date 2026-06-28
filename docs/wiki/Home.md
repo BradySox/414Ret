@@ -53,6 +53,15 @@ adapted to how this fork actually plans and flies a campaign.
 - **[Map Layers and Interface](Map-Layers-and-Interface)** — the unified layers panel and UI work.
 - **[Drop-Spawn Unit Placement](Drop-Spawn-Unit-Placement)** — right-click sandbox placement.
 
+## Campaigns
+
+Briefing material for the 414th's campaigns — built to plan and brief an op, grounded in the
+campaign files (ORBAT, threats, and economy read straight from the campaign + faction data).
+
+- **[Red Tide — Campaign Briefing](Red-Tide-Campaign-Briefing)** — the brief-builder: friendly/enemy ORBAT, phase plan, op-night runbook, a fill-in mission-brief template, package recipes, comms/code-word card, and threat-defeat reference.
+- **[Red Tide — Role Cards](Red-Tide-Role-Cards)** — print-and-fly kneeboard cards for each player role.
+- **[Red Tide — First Three Turns](Red-Tide-First-Three-Turns)** — a worked example of the brief template across the opening turns.
+
 ## Customization and modding
 
 - **[Custom Campaigns](Custom-Campaigns)**

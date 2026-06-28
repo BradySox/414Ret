@@ -31,6 +31,11 @@
 - [Map Layers & Interface](Map-Layers-and-Interface)
 - [Drop-Spawn Placement](Drop-Spawn-Unit-Placement)
 
+**Campaigns**
+- [Red Tide: Briefing](Red-Tide-Campaign-Briefing)
+- [Red Tide: Role Cards](Red-Tide-Role-Cards)
+- [Red Tide: First Three Turns](Red-Tide-First-Three-Turns)
+
 **Customization**
 - [Custom Campaigns](Custom-Campaigns)
 - [Custom Factions](Custom-Factions)

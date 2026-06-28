@@ -63,7 +63,14 @@ from game.sidc import (
 )
 from game.theater.presetlocation import PresetLocation
 from game.utils import Distance, Heading, meters
-from pydcs_extensions import L02, L52, L61, USS_Bon_Homme_Richard
+from pydcs_extensions import (
+    L02,
+    L52,
+    L61,
+    USS_Bon_Homme_Richard,
+    USS_Enterprise_1966,
+    USS_Enterprise_1969,
+)
 from .base import Base
 from .frontline import FrontLine
 from .interfaces.CTLD import CTLD
@@ -1504,6 +1511,8 @@ class NavalControlPoint(
                     L61,
                     CV_1143_5,
                     USS_Bon_Homme_Richard,  # Vietnam War Vessels Mod
+                    USS_Enterprise_1966,  # Vietnam War Vessels Mod
+                    USS_Enterprise_1969,  # Vietnam War Vessels Mod
                     CVN_71,
                     CVN_72,
                     CVN_73,

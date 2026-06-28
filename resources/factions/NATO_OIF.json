@@ -37,8 +37,7 @@
     "SA 342M Gazelle Mistral",
     "Tornado GR4",
     "UH-1H Iroquois",
-    "UH-60A",
-    "UH-60L"
+    "UH-60A"
   ],
   "awacs": [
     "E-2C Hawkeye",
@@ -46,7 +45,6 @@
   ],
   "tankers": [
     "KC-130",
-    "KC-130J",
     "KC-135 Stratotanker MPRS",
     "KC-135 Stratotanker",
     "S-3B Tanker"

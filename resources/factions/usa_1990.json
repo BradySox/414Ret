@@ -35,8 +35,7 @@
     "S-3B Viking",
     "SH-60B Seahawk",
     "UH-1H Iroquois",
-    "UH-60A",
-    "UH-60L"
+    "UH-60A"
   ],
   "awacs": [
     "E-2C Hawkeye",
@@ -44,7 +43,6 @@
   ],
   "tankers": [
     "KC-130",
-    "KC-130J",
     "KC-135 Stratotanker",
     "S-3B Tanker"
   ],

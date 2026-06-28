@@ -33,7 +33,6 @@
     "F-4E-45MC Phantom II",
     "F-5E Tiger II",
     "F-5E Tiger II (FC)",
-    "F-111C Aardvark",
     "OH-58D(R) Kiowa Warrior",
     "Mi-8MTV2 Hip",
     "MiG-21bis Fishbed-N",
@@ -49,8 +48,7 @@
     "SH-60B Seahawk",
     "Tornado IDS",
     "UH-1H Iroquois",
-    "UH-60A",
-    "UH-60L"
+    "UH-60A"
   ],
   "awacs": [
     "E-2C Hawkeye",

@@ -23,7 +23,7 @@
     "F/A-18C Hornet (Lot 20)",
     "Mirage 2000C",
     "UH-1H Iroquois",
-    "UH-60L"
+    "UH-60A"
   ],
   "awacs": [
     "E-2C Hawkeye"
@@ -99,7 +99,7 @@
     "Mirage 2000C": [
       "UAE Air Force"
     ],
-    "UH-60L": [
+    "UH-60A": [
       "Israeli Air Force"
     ]
   },

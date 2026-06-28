@@ -1328,6 +1328,14 @@ handoff lives in [`docs/dev/settings-qol-audit.md`](settings-qol-audit.md).
 - **Plugin wording**: `descriptionInUI` added to the QRA `intercept` and `splashdamage3`
   plugins (the latter notes its tuning is locked by design). Splash Damage values and the
   tuned script are unchanged.
+- **Consolidated the ground-start truck toggles** (2026-06-28). The "Ground start" section
+  had four near-identical booleans — supply trucks and ground-power trucks each split across
+  *airbase* and *roadbase* variants. Folded each pair into one airbase+roadbase toggle
+  (`ground_start_trucks`, `ground_start_ground_power_trucks`); the two `*_roadbase` fields are
+  removed from `Settings`, `_LAYOUT_SPEC`, and the runtime consumers (`tgogenerator.py`,
+  `flightgroupspawner.py`). `_migrate_legacy_settings` OR-merges an old save's per-base-type
+  values (enabled at *either* base type stays enabled) and drops the retired keys. Covered by
+  `tests/settings/test_settings_qol_migration.py`.
 
 ---
 
@@ -1811,6 +1819,32 @@ the baseline "no modern cueing" option (`Not installed` / `Visor Only`, id `0`).
   uses a single global year. Add per-faction overrides only if a campaign needs them.
 - **In-game pass ☑ VERIFIED 2026-06-26 (I3).** Confirmed in flight — a pre-2003 generated mission
   shows the baseline helmet option (not JHMCS) on an F/A-18/F-16; NVG and the Soviet SURA Visor untouched.
+
+### Sibling gate — date-gated ground-support vehicles (FARP / airfield)
+
+The same date-gating philosophy now also reaches the **ground-support trucks** spawned at FARP and
+airfield ground-starts (the fuel tanker, ammo truck, and ground-power APA). Previously
+`farp_truck_types_for_country` (`game/missiongenerator/tgogenerator.py`) was date-blind — a 1968
+mission could spawn 1985 M978 HEMTT tankers on the ramp. The picker was also a ~155-line
+`if country_id in [...]` chain.
+
+The 2026-06-28 modernization pass made it **data-driven + date-aware**:
+
+- The country→doctrine-bloc membership moved to module-level `frozenset`s
+  (`_SOVIET_PATTERN_COUNTRIES`, `_WESTERN_PATTERN_COUNTRIES`, `_AXIS_PATTERN_COUNTRIES`) and the
+  vehicle pools to module-level lists. Behavior is identical to the old chain (same countries, same
+  pools) absent date-gating.
+- A hand-authored `_GROUND_SUPPORT_INTRO_YEAR` table (pydcs carries no vehicle service dates, same
+  as properties) drives `_support_vehicles_in_service(pool, year)`, which filters each pool to types
+  in service by the mission year. It **rides the existing `restrict_weapons_by_date` toggle** — no
+  new setting — with the year passed from `game.date.year` at the two call sites.
+- **Fail-safe fallback:** an emptied pool falls back to its single oldest member, so generation
+  never fails for want of a period-correct vehicle. This matters because vanilla DCS has **no**
+  Vietnam-era US logistics truck — the M978 HEMTT (1985) is the oldest US tanker and stays the
+  fallback, while the red/NVA side gets genuinely period-correct GAZ-66 (1964) / Ural-375 (1961).
+- Covered by `tests/missiongenerator/test_farp_truck_dates.py` (filter keeps only in-service types,
+  empty-pool fallback, Vietnam-era red is period-correct, US falls back without crashing, no-year =
+  legacy behavior). Generic — a clean upstream-carve candidate alongside the §24 property gate.
 
 ## §26 — Off-mission combat fidelity + PLAYER_AT_IP fast-forward
 

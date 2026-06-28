@@ -519,12 +519,8 @@ class FlightGroupSpawner:
         # Hot start aircraft which require ground power to start, when ground power
         # trucks have been disabled for performance reasons
         ground_power_available = (
-            is_airbase
-            and self.flight.coalition.game.settings.ground_start_ground_power_trucks
-        ) or (
-            is_roadbase
-            and self.flight.coalition.game.settings.ground_start_ground_power_trucks_roadbase
-        )
+            is_airbase or is_roadbase
+        ) and self.flight.coalition.game.settings.ground_start_ground_power_trucks
 
         # Also hot start aircraft which require ground crew support (ground air or chock removal)
         # which might not be available at roadbases

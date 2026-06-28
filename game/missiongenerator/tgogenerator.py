@@ -100,41 +100,41 @@ AA_CP_MIN_DISTANCE = 40000
 _PORTABLE_TACAN_OFFSET_M = 50
 
 
-def farp_truck_types_for_country(
-    country_id: int,
-) -> Tuple[Type[VehicleType], Type[VehicleType], Type[VehicleType]]:
-    soviet_tankers: List[Type[VehicleType]] = [
-        Unarmed.ATMZ_5,
-        Unarmed.ATZ_10,
-        Unarmed.ATZ_5,
-        Unarmed.ATZ_60_Maz,
-        Unarmed.TZ_22_KrAZ,
-    ]
-    soviet_trucks: List[Type[VehicleType]] = [
-        Unarmed.S_75_ZIL,
-        Unarmed.GAZ_3308,
-        Unarmed.GAZ_66,
-        Unarmed.KAMAZ_Truck,
-        Unarmed.KrAZ6322,
-        Unarmed.Ural_375,
-        Unarmed.Ural_375_PBU,
-        Unarmed.Ural_4320_31,
-        Unarmed.Ural_4320T,
-        Unarmed.ZIL_135,
-    ]
+# Vehicle pools for FARP / airfield ground-support equipment, grouped by
+# doctrine bloc. Country -> pool membership is data-driven via the frozensets
+# below; multi-source coalitions (CJTF / UN / unknown) compose their pools
+# inline in farp_truck_types_for_country.
+_SOVIET_TANKERS: List[Type[VehicleType]] = [
+    Unarmed.ATMZ_5,
+    Unarmed.ATZ_10,
+    Unarmed.ATZ_5,
+    Unarmed.ATZ_60_Maz,
+    Unarmed.TZ_22_KrAZ,
+]
+_SOVIET_TRUCKS: List[Type[VehicleType]] = [
+    Unarmed.S_75_ZIL,
+    Unarmed.GAZ_3308,
+    Unarmed.GAZ_66,
+    Unarmed.KAMAZ_Truck,
+    Unarmed.KrAZ6322,
+    Unarmed.Ural_375,
+    Unarmed.Ural_375_PBU,
+    Unarmed.Ural_4320_31,
+    Unarmed.Ural_4320T,
+    Unarmed.ZIL_135,
+]
+_AXIS_TRUCKS: List[Type[VehicleType]] = [Unarmed.Blitz_36_6700A]
+_US_TANKERS: List[Type[VehicleType]] = [Unarmed.M978_HEMTT_Tanker]
+_US_TRUCKS: List[Type[VehicleType]] = [Unarmed.M_818]
+_UK_TRUCKS: List[Type[VehicleType]] = [Unarmed.Bedford_MWD]
+_GROUND_POWER_TRUCKS: List[Type[VehicleType]] = [
+    Unarmed.Ural_4320_APA_5D,
+    Unarmed.ZiL_131_APA_80,
+]
 
-    axis_trucks: List[Type[VehicleType]] = [Unarmed.Blitz_36_6700A]
-
-    us_tankers: List[Type[VehicleType]] = [Unarmed.M978_HEMTT_Tanker]
-    us_trucks: List[Type[VehicleType]] = [Unarmed.M_818]
-    uk_trucks: List[Type[VehicleType]] = [Unarmed.Bedford_MWD]
-
-    ground_power_trucks: List[Type[VehicleType]] = [
-        Unarmed.Ural_4320_APA_5D,
-        Unarmed.ZiL_131_APA_80,
-    ]
-
-    if country_id in [
+# Countries that field Soviet/Russian-pattern logistics vehicles.
+_SOVIET_PATTERN_COUNTRIES: frozenset[int] = frozenset(
+    {
         Abkhazia.id,
         Algeria.id,
         Bahrain.id,
@@ -181,13 +181,15 @@ def farp_truck_types_for_country(
         Vietnam.id,
         Yemen.id,
         Yugoslavia.id,
-    ]:
-        tanker_type = random.choice(soviet_tankers)
-        ammo_truck_type = random.choice(soviet_trucks)
-    elif country_id in [ItalianSocialRepublic.id, ThirdReich.id]:
-        tanker_type = random.choice(soviet_tankers)
-        ammo_truck_type = random.choice(axis_trucks)
-    elif country_id in [
+    }
+)
+# WWII-era Axis countries (Soviet-pattern refuelers, Opel Blitz cargo trucks).
+_AXIS_PATTERN_COUNTRIES: frozenset[int] = frozenset(
+    {ItalianSocialRepublic.id, ThirdReich.id}
+)
+# Countries that field US/Western-pattern logistics vehicles.
+_WESTERN_PATTERN_COUNTRIES: frozenset[int] = frozenset(
+    {
         Argentina.id,
         Australia.id,
         Austria.id,
@@ -226,38 +228,100 @@ def farp_truck_types_for_country(
         USA.id,
         USAFAggressors.id,
         UnitedArabEmirates.id,
-    ]:
-        tanker_type = random.choice(us_tankers)
-        ammo_truck_type = random.choice(us_trucks)
-    elif country_id in [UK.id]:
-        tanker_type = random.choice(us_tankers)
-        ammo_truck_type = random.choice(uk_trucks)
-    elif country_id in [CombinedJointTaskForcesBlue.id]:
-        tanker_types = us_tankers
-        truck_types = us_trucks + uk_trucks
+    }
+)
 
-        tanker_type = random.choice(tanker_types)
-        ammo_truck_type = random.choice(truck_types)
-    elif country_id in [CombinedJointTaskForcesRed.id]:
-        tanker_types = us_tankers
-        truck_types = us_trucks + uk_trucks
+# Approximate in-service years for the ground-support vehicles above. pydcs
+# carries no unit service dates, so this small table is hand-authored
+# (conservative -- when unsure, older) purely so date-restricted missions (the
+# restrict_weapons_by_date setting) spawn period-correct equipment instead of,
+# e.g., 1985 HEMTTs on a 1968 ramp. It only ever *filters* the pools; an emptied
+# pool falls back to its oldest member so generation never fails for lack of a
+# period-correct vehicle (there is, for instance, no Vietnam-era US fuel truck
+# in vanilla DCS -- the M978 HEMTT is the oldest available and stays the
+# fallback).
+_GROUND_SUPPORT_INTRO_YEAR: Dict[Type[VehicleType], int] = {
+    # Soviet / Russian refuelers
+    Unarmed.ATZ_60_Maz: 1965,
+    Unarmed.ATZ_5: 1966,
+    Unarmed.TZ_22_KrAZ: 1967,
+    Unarmed.ATMZ_5: 1975,
+    Unarmed.ATZ_10: 1980,
+    # Soviet / Russian cargo trucks
+    Unarmed.S_75_ZIL: 1957,
+    Unarmed.ZIL_135: 1960,
+    Unarmed.Ural_375: 1961,
+    Unarmed.Ural_375_PBU: 1961,
+    Unarmed.GAZ_66: 1964,
+    Unarmed.KAMAZ_Truck: 1976,
+    Unarmed.Ural_4320_31: 1977,
+    Unarmed.Ural_4320T: 1977,
+    Unarmed.KrAZ6322: 1994,
+    Unarmed.GAZ_3308: 1995,
+    # Western cargo trucks / refuelers
+    Unarmed.M_818: 1970,
+    Unarmed.M978_HEMTT_Tanker: 1985,
+    # WWII-era trucks (Axis / early UK)
+    Unarmed.Blitz_36_6700A: 1936,
+    Unarmed.Bedford_MWD: 1939,
+    # Ground power units (APA)
+    Unarmed.ZiL_131_APA_80: 1967,
+    Unarmed.Ural_4320_APA_5D: 1977,
+}
 
-        tanker_type = random.choice(tanker_types)
-        ammo_truck_type = random.choice(truck_types)
-    elif country_id in [UnitedNationsPeacekeepers.id]:
-        tanker_types = soviet_tankers + us_tankers
-        truck_types = soviet_trucks + us_trucks + uk_trucks
 
-        tanker_type = random.choice(tanker_types)
-        ammo_truck_type = random.choice(truck_types)
+def _support_vehicles_in_service(
+    candidates: List[Type[VehicleType]], year: Optional[int]
+) -> List[Type[VehicleType]]:
+    """Restrict a support-vehicle pool to types in service by ``year``.
+
+    ``year`` is None when date restriction is off (no filtering). When the
+    filter would empty the pool it falls back to the single oldest candidate, so
+    date-restricted generation never fails for want of a period-correct vehicle.
+    """
+    if year is None:
+        return candidates
+    in_service = [v for v in candidates if _GROUND_SUPPORT_INTRO_YEAR.get(v, 0) <= year]
+    if in_service:
+        return in_service
+    return [min(candidates, key=lambda v: _GROUND_SUPPORT_INTRO_YEAR.get(v, 0))]
+
+
+def farp_truck_types_for_country(
+    country_id: int,
+    year: Optional[int] = None,
+) -> Tuple[Type[VehicleType], Type[VehicleType], Type[VehicleType]]:
+    """Pick (fuel, ammo, ground-power) support vehicles for a country.
+
+    When ``year`` is given the pools are date-filtered so date-restricted
+    missions spawn period-correct equipment; otherwise the full (legacy) pools
+    are used.
+    """
+    if country_id in _SOVIET_PATTERN_COUNTRIES:
+        tanker_pool, truck_pool = _SOVIET_TANKERS, _SOVIET_TRUCKS
+    elif country_id in _AXIS_PATTERN_COUNTRIES:
+        tanker_pool, truck_pool = _SOVIET_TANKERS, _AXIS_TRUCKS
+    elif country_id == UK.id:
+        tanker_pool, truck_pool = _US_TANKERS, _UK_TRUCKS
+    elif country_id in _WESTERN_PATTERN_COUNTRIES:
+        tanker_pool, truck_pool = _US_TANKERS, _US_TRUCKS
+    elif country_id in (
+        CombinedJointTaskForcesBlue.id,
+        CombinedJointTaskForcesRed.id,
+    ):
+        tanker_pool, truck_pool = _US_TANKERS, _US_TRUCKS + _UK_TRUCKS
+    elif country_id == UnitedNationsPeacekeepers.id:
+        tanker_pool = _SOVIET_TANKERS + _US_TANKERS
+        truck_pool = _SOVIET_TRUCKS + _US_TRUCKS + _UK_TRUCKS
     else:
-        tanker_types = soviet_tankers + us_tankers
-        truck_types = soviet_trucks + us_trucks + uk_trucks + axis_trucks
+        tanker_pool = _SOVIET_TANKERS + _US_TANKERS
+        truck_pool = _SOVIET_TRUCKS + _US_TRUCKS + _UK_TRUCKS + _AXIS_TRUCKS
 
-        tanker_type = random.choice(tanker_types)
-        ammo_truck_type = random.choice(truck_types)
-
-    power_truck_type = random.choice(ground_power_trucks)
+    tanker_type = random.choice(_support_vehicles_in_service(tanker_pool, year))
+    ammo_truck_type = random.choice(_support_vehicles_in_service(truck_pool, year))
+    power_truck_type = random.choice(
+        _support_vehicles_in_service(_GROUND_POWER_TRUCKS, year)
+    )
 
     return tanker_type, ammo_truck_type, power_truck_type
 
@@ -1068,7 +1132,12 @@ class GroundSpawnRoadbaseGenerator:
         self.ground_spawns_roadbase.append((sg, ground_spawn[1]))
 
         tanker_type, ammo_truck_type, power_truck_type = farp_truck_types_for_country(
-            country.id
+            country.id,
+            year=(
+                self.game.date.year
+                if self.game.settings.restrict_weapons_by_date
+                else None
+            ),
         )
 
         if self.game.settings.ground_start_airbase_statics_farps_remove and isinstance(
@@ -1104,7 +1173,7 @@ class GroundSpawnRoadbaseGenerator:
 
         if not cull_farp_statics:
             # Generate ammo truck/farp and fuel truck/stack for each pad
-            if self.game.settings.ground_start_trucks_roadbase:
+            if self.game.settings.ground_start_trucks:
                 self.m.vehicle_group(
                     country=country,
                     name=(name + "_fuel"),
@@ -1146,7 +1215,7 @@ class GroundSpawnRoadbaseGenerator:
                     ).point_from_heading(ground_spawn[0].heading.degrees + 180, 10),
                     heading=pad.heading + 180,
                 )
-            if self.game.settings.ground_start_ground_power_trucks_roadbase:
+            if self.game.settings.ground_start_ground_power_trucks:
                 self.m.vehicle_group(
                     country=country,
                     name=(name + "_power"),
@@ -1217,7 +1286,12 @@ class GroundSpawnLargeGenerator:
         # ammo_truck_type: Type[VehicleType]
 
         tanker_type, ammo_truck_type, power_truck_type = farp_truck_types_for_country(
-            country.id
+            country.id,
+            year=(
+                self.game.date.year
+                if self.game.settings.restrict_weapons_by_date
+                else None
+            ),
         )
 
         warehouse = Airport(
@@ -1347,7 +1421,12 @@ class GroundSpawnGenerator:
         # ammo_truck_type: Type[VehicleType]
 
         tanker_type, ammo_truck_type, power_truck_type = farp_truck_types_for_country(
-            country.id
+            country.id,
+            year=(
+                self.game.date.year
+                if self.game.settings.restrict_weapons_by_date
+                else None
+            ),
         )
 
         if self.game.settings.ground_start_airbase_statics_farps_remove and isinstance(

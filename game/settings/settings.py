@@ -409,9 +409,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "ground_start_ai_planes",
                     "ground_start_scenery_remove_triggers",
                     "ground_start_trucks",
-                    "ground_start_trucks_roadbase",
                     "ground_start_ground_power_trucks",
-                    "ground_start_ground_power_trucks_roadbase",
                     "ground_start_airbase_statics_farps_remove",
                 ],
             ),
@@ -1899,35 +1897,23 @@ class Settings:
         ),
     )
     ground_start_trucks: bool = boolean_option(
-        "Spawn trucks at ground spawns in airbases instead of FARP statics",
+        "Spawn supply trucks at ground starts instead of FARP statics",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         default=False,
-        detail=("Might have a negative performance impact."),
-    )
-    ground_start_trucks_roadbase: bool = boolean_option(
-        "Spawn trucks at ground spawns in roadbases instead of FARP statics",
-        MISSION_GENERATOR_PAGE,
-        GAMEPLAY_SECTION,
-        default=False,
-        detail=("Might have a negative performance impact."),
-    )
-    ground_start_ground_power_trucks: bool = boolean_option(
-        "Spawn ground power trucks at ground starts in airbases",
-        MISSION_GENERATOR_PAGE,
-        GAMEPLAY_SECTION,
-        default=True,
         detail=(
-            "Needed to cold-start some aircraft types. Might have a performance impact."
+            "Applies to both airbases and roadbases. "
+            "Might have a negative performance impact."
         ),
     )
-    ground_start_ground_power_trucks_roadbase: bool = boolean_option(
-        "Spawn ground power trucks at ground starts in roadbases",
+    ground_start_ground_power_trucks: bool = boolean_option(
+        "Spawn ground power trucks at ground starts",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         default=True,
         detail=(
-            "Needed to cold-start some aircraft types. Might have a performance impact."
+            "Applies to both airbases and roadbases. Needed to cold-start some "
+            "aircraft types. Might have a performance impact."
         ),
     )
     ground_start_airbase_statics_farps_remove: bool = boolean_option(
@@ -2299,6 +2285,22 @@ class Settings:
     def _migrate_legacy_settings(state: dict[str, Any]) -> dict[str, Any]:
         migrated = dict(state)
 
+        # The per-base-type ground-start truck toggles were consolidated: the old
+        # roadbase-specific options folded into the single airbase+roadbase
+        # toggles. Preserve intent -- a save that had trucks enabled at *either*
+        # base type keeps them enabled. The obsolete roadbase keys are dropped
+        # in the obsolete-key sweep below.
+        if "ground_start_trucks_roadbase" in migrated:
+            migrated["ground_start_trucks"] = bool(
+                migrated.get("ground_start_trucks", False)
+                or migrated.get("ground_start_trucks_roadbase", False)
+            )
+        if "ground_start_ground_power_trucks_roadbase" in migrated:
+            migrated["ground_start_ground_power_trucks"] = bool(
+                migrated.get("ground_start_ground_power_trucks", True)
+                or migrated.get("ground_start_ground_power_trucks_roadbase", True)
+            )
+
         if "ai_radio_behavior" not in migrated:
             silence_ai_radios = migrated.get("silence_ai_radios", False)
             limit_ai_radios = migrated.get("limit_ai_radios", True)
@@ -2340,6 +2342,10 @@ class Settings:
             # became the sole engine. Drop the persisted value (the IadsEngine stub
             # only exists so the old enum still unpickles before this pop).
             "iads_engine",
+            # Consolidated into the single airbase+roadbase ground-start truck
+            # toggles (value already merged above).
+            "ground_start_trucks_roadbase",
+            "ground_start_ground_power_trucks_roadbase",
         ):
             migrated.pop(obsolete_key, None)
 

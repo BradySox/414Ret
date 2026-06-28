@@ -113,6 +113,10 @@ file. This guide is the map; those are the territory.
     gunfire support, Armed-Recon truck-convoy interdiction, Super Gaggle resupply; Tier-A runtime only,
     default OFF / campaign-flipped ON; **Phases 1–3 landed** = the settings page + §32 Arc Light + §33
     flak gauntlet + §34 naval gunfire; phases 4–5 follow, each on its own branch),
+    `414th-vietnam-airbase-harassment-notes.md` (**Vietnam Ops §F — airbase harassment**: scoped-only
+    sapper/mortar/rocket standoff fire on opposing-occupied fields, following the §33 flak runtime
+    pattern; hard requirement = never target a player-spawn field + a startup grace period; no code yet,
+    build on its own branch with an in-game pass),
     `414th-vietnam-retribution-notes.md` (**"Vietnam Retribution" mode** — the *framing* layer the Ops
     suite lives inside: three thin layers over the one engine — a New Game "Vietnam" shell + content
     filter + a doctrine profile (`VIETNAM_DOCTRINE`) that renames taskings (MiGCAP/Iron Hand/Alpha

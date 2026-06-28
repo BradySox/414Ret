@@ -181,6 +181,10 @@ and selected later upstream fixes.
   alongside the weapons: a pre-2003 campaign no longer offers (or quietly spawns) a **JHMCS**
   helmet-mounted sight, falling back to the period-correct visor. NVG and other era-appropriate
   options stay available.
+- The same toggle now also makes the **support trucks** at airbase and FARP ground-starts
+  period-correct: a Vietnam-era mission parks GAZ-66 / Ural-375 logistics trucks on the ramp
+  instead of modern HEMTTs, falling back to the oldest available vehicle when nothing earlier
+  exists in DCS.
 
 ### Additional 414th content and integrations
 
@@ -188,8 +192,9 @@ and selected later upstream fixes.
   `[CH] Iran 2020` faction behind a new-game mod toggle.
 - The **settings screen** was audited end-to-end: dead and duplicate options were removed,
   the two AI-radio toggles were merged into a single **AI wingman radio behavior** choice
-  (Normal / Suppress contact reports / Radio silence), and many labels were clarified.
-  Existing campaigns migrate automatically on load.
+  (Normal / Suppress contact reports / Radio silence), the four redundant ground-start truck
+  toggles were folded into two (supply trucks / ground-power trucks, each covering both airbases
+  and roadbases), and many labels were clarified. Existing campaigns migrate automatically on load.
 - The **settings pages were reorganized** so options are easy to find: the two giant catch-all
   lists are gone, replaced by six focused pages (**Difficulty & Realism, Air Doctrine, Campaign
   Management, Mission Generation, Kneeboards, Performance**). New **one-click difficulty presets**

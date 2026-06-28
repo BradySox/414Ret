@@ -60,3 +60,47 @@ def test_obsolete_settings_are_not_user_visible() -> None:
     assert "pretense_num_of_cargo_planes" not in names
     assert "nevatim_parking_fix" not in names
     assert "perf_red_alert_state" not in names
+    # The per-base-type ground-start truck toggles were consolidated.
+    assert "ground_start_trucks_roadbase" not in names
+    assert "ground_start_ground_power_trucks_roadbase" not in names
+
+
+def test_ground_start_truck_toggles_merge_either_base_type() -> None:
+    # A save that enabled trucks at *either* base type keeps them enabled after
+    # the airbase/roadbase toggles are consolidated into one.
+    enabled_at_roadbase_only = Settings._migrate_legacy_settings(
+        {"ground_start_trucks": False, "ground_start_trucks_roadbase": True}
+    )
+    assert enabled_at_roadbase_only["ground_start_trucks"] is True
+    assert "ground_start_trucks_roadbase" not in enabled_at_roadbase_only
+
+    enabled_at_airbase_only = Settings._migrate_legacy_settings(
+        {"ground_start_trucks": True, "ground_start_trucks_roadbase": False}
+    )
+    assert enabled_at_airbase_only["ground_start_trucks"] is True
+
+    disabled_everywhere = Settings._migrate_legacy_settings(
+        {"ground_start_trucks": False, "ground_start_trucks_roadbase": False}
+    )
+    assert disabled_everywhere["ground_start_trucks"] is False
+
+
+def test_ground_power_truck_toggles_merge_either_base_type() -> None:
+    # Same consolidation for the ground-power trucks (which default ON). A save
+    # that turned them off at *both* base types stays off; otherwise on.
+    off_at_both = Settings._migrate_legacy_settings(
+        {
+            "ground_start_ground_power_trucks": False,
+            "ground_start_ground_power_trucks_roadbase": False,
+        }
+    )
+    assert off_at_both["ground_start_ground_power_trucks"] is False
+    assert "ground_start_ground_power_trucks_roadbase" not in off_at_both
+
+    off_at_roadbase_only = Settings._migrate_legacy_settings(
+        {
+            "ground_start_ground_power_trucks": True,
+            "ground_start_ground_power_trucks_roadbase": False,
+        }
+    )
+    assert off_at_roadbase_only["ground_start_ground_power_trucks"] is True

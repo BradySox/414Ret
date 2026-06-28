@@ -29,7 +29,7 @@ import textwrap
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 from dcs.mapping import Point
@@ -46,6 +46,7 @@ from game.data.alic import AlicCodes
 from game.data.brevity_reference import brevity_for
 from game.data.threat_reference import ThreatReference, reference_for
 from game.data.units import UnitClass
+from game.data.weapons import Weapon, WeaponType
 from game.dcs.aircrafttype import AircraftType
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
@@ -95,11 +96,28 @@ class KneeboardPageWriter:
         if dark_theme:
             self.foreground_fill = (215, 200, 200)
             self.background_fill = (10, 5, 5)
+            # Semantic accent palette for the Brief Sheet (§ brief sheet). Colour
+            # encodes meaning, not decoration: nav/comms, caution, go, emergency.
+            # Light, desaturated shades read on the near-black night background.
+            self.col_nav = (127, 176, 216)  # blue: route, freqs, bullseye, divert
+            self.col_caution = (216, 176, 112)  # amber: threats, bingo/joker
+            self.col_success = (132, 192, 138)  # green: SUCCESS / go
+            self.col_danger = (224, 138, 138)  # red: ABORT / emergency
+            self.col_muted = (150, 134, 134)  # field labels
+            self.col_emphasis = (240, 232, 232)  # header lines
         else:
             self.foreground_fill = (15, 15, 15)
             # Light grey rather than near-white: avoids glare under HDR / Auto-HDR
             # while staying perfectly readable in daylight.
             self.background_fill = (210, 210, 210)
+            # Darker variants of the same four hues so they stay legible on the
+            # daytime light-grey background (the night shades would wash out).
+            self.col_nav = (24, 86, 140)
+            self.col_caution = (130, 84, 12)
+            self.col_success = (28, 104, 40)
+            self.col_danger = (158, 36, 36)
+            self.col_muted = (96, 88, 88)
+            self.col_emphasis = (0, 0, 0)
         self.image_size = (960, 1080)
         self.image = Image.new("RGB", self.image_size, self.background_fill)
         # These font sizes create a relatively full page for current sorties. If
@@ -155,6 +173,30 @@ class KneeboardPageWriter:
         height = abs(box[1] - box[3])  # abs(top - bottom) => offset
         self.y += height + self.line_spacing
         self.text_buffer.append(text)
+
+    def text_runs(
+        self,
+        runs: List[Tuple[str, Optional[Tuple[int, int, int]]]],
+        font: Optional[ImageFont.FreeTypeFont] = None,
+    ) -> None:
+        """Draw a single line made of coloured segments, left to right.
+
+        Each run is ``(text, fill)``; ``fill`` None falls back to the foreground.
+        Runs carry their own spacing (trailing blanks), so the caller controls gaps.
+        Advances the cursor one line down. Used by the Brief Sheet to colour
+        individual tokens (a freq, the ABORT word) inside an otherwise plain line.
+        """
+        if font is None:
+            font = self.content_font
+        x = self.x
+        for text, fill in runs:
+            self.draw.text(
+                (x, self.y), text, font=font, fill=fill or self.foreground_fill
+            )
+            x += int(round(font.getlength(text)))
+            self.text_buffer.append(text)
+        box = self.draw.textbbox((self.x, self.y), "Ag", font=font)
+        self.y += abs(box[1] - box[3]) + self.line_spacing
 
     def flush_text_buffer(self) -> None:
         self.text_buffer = []
@@ -2101,30 +2143,48 @@ class ThreatIntelBriefPage(KneeboardPage):
 
     def _render_card(self, writer: KneeboardPageWriter, card: ThreatCard) -> None:
         body = self._body_font()
-        writer.text(card.system, font=self._heading_font())
+        # System name in emphasis; the same four-colour scheme as the Brief Sheet --
+        # amber = the threat envelope (MEZ/Detect), blue = the HARM code + bullseye cues.
+        writer.text(card.system, font=self._heading_font(), fill=writer.col_emphasis)
         writer.rule(gap_below=4)
         if card.identified:
             writer.text(
                 f"Guidance: {card.guidance}    Ceiling: {card.ceiling}", font=body
             )
-            writer.text(
-                f"MEZ: {card.mez_nm} nm   Detect: {card.detect_nm} nm   "
-                f"HARM: {card.harm}   Band: {card.band}",
+            writer.text_runs(
+                [
+                    ("MEZ ", None),
+                    (f"{card.mez_nm} nm", writer.col_caution),
+                    ("   Detect ", None),
+                    (f"{card.detect_nm} nm", writer.col_caution),
+                    ("   HARM ", None),
+                    (card.harm, writer.col_nav),
+                    ("   Band ", None),
+                    (card.band, None),
+                ],
                 font=body,
             )
             sites = f"Sites: {card.live} live"
             if card.dead:
                 sites += f" / {card.dead} dead"
-            writer.text(f"{sites}   BE {self._cues_text(card.cues, 6)}", font=body)
+            writer.text_runs(
+                [
+                    (f"{sites}   BE ", None),
+                    (self._cues_text(card.cues, 6), writer.col_nav),
+                ],
+                font=body,
+            )
             if card.defeat:
                 writer.text(f"DEFEAT: {card.defeat}", font=body, wrap=True)
         else:
-            writer.text(
-                f"Fly TARPS to ID.   BE {self._unknown_cues_text(card.cues, 8)}",
+            writer.text_runs(
+                [
+                    ("Fly TARPS to ID.   BE ", None),
+                    (self._unknown_cues_text(card.cues, 8), writer.col_nav),
+                ],
                 font=body,
-                wrap=True,
             )
-        writer.vspace(12)
+        writer.vspace(16)
 
     def _card_height(self, card: ThreatCard) -> int:
         probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -2231,20 +2291,40 @@ class BrevityCard(KneeboardPage):
 
         writer.heading(f"Code Words — {code_words.theme}")
         writer.rule()
-        push_rows = []
+        # Same scheme as the Brief Sheet's CODE line: push words blue (your task
+        # marked), SUCCESS green, ABORT red, STOP JAM amber -- so the call you need is
+        # found by colour. Rendered as coloured rows (not a flat table) to carry it.
         for category in PushCategory:
             if category not in present:
                 continue
-            word = code_words.push[category]
+            runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = [
+                (f"{category.value:<10}", writer.col_muted),
+                (code_words.push[category], writer.col_nav),
+            ]
             if category is own:
-                word = f"{word}  (you)"
-            push_rows.append([category.value, word])
-        writer.table(push_rows, headers=["Task push", "Word"], font=table_font)
-
-        event_rows = [["SUCCESS", code_words.success], ["ABORT", code_words.abort]]
+                runs.append(("  (you)", writer.col_emphasis))
+            writer.text_runs(runs, font=table_font)
+        writer.vspace(8)
+        writer.text_runs(
+            [
+                ("SUCCESS   ", writer.col_muted),
+                (code_words.success, writer.col_success),
+            ],
+            font=table_font,
+        )
+        writer.text_runs(
+            [("ABORT     ", writer.col_muted), (code_words.abort, writer.col_danger)],
+            font=table_font,
+        )
         if PushCategory.EW in present:
-            event_rows.append(["STOP JAM", code_words.stop_jam])
-        writer.table(event_rows, headers=["Event", "Word"], font=table_font)
+            writer.text_runs(
+                [
+                    ("STOP JAM  ", writer.col_muted),
+                    (code_words.stop_jam, writer.col_caution),
+                ],
+                font=table_font,
+            )
+        writer.vspace(6)
         writer.text(
             "Call over SRS. Your task's push word is marked (you); a push call tells "
             "the whole package who's committing. SUCCESS on target down, ABORT to "
@@ -2534,6 +2614,436 @@ class FlexReferencePage(KneeboardPage):
         if self.packages_page is not None:
             _draw_section_if_fits(writer, dark, self.packages_page.render_section)
         writer.write(path)
+
+
+#: Flight-plan waypoint types mapped to the Brief Sheet's one-line route labels.
+_ROUTE_LABELS: Dict[FlightWaypointType, str] = {
+    FlightWaypointType.PATROL: "HOLD",
+    FlightWaypointType.PATROL_TRACK: "HOLD",
+    FlightWaypointType.LOITER: "HOLD",
+    FlightWaypointType.SEAD_LOITER: "HOLD",
+    FlightWaypointType.JOIN: "JOIN",
+    FlightWaypointType.INGRESS_STRIKE: "IP",
+    FlightWaypointType.INGRESS_SEAD: "IP",
+    FlightWaypointType.INGRESS_CAS: "IP",
+    FlightWaypointType.INGRESS_ESCORT: "IP",
+    FlightWaypointType.INGRESS_DEAD: "IP",
+    FlightWaypointType.INGRESS_SWEEP: "IP",
+    FlightWaypointType.INGRESS_BAI: "IP",
+    FlightWaypointType.INGRESS_OCA_RUNWAY: "IP",
+    FlightWaypointType.INGRESS_OCA_AIRCRAFT: "IP",
+    FlightWaypointType.INGRESS_AIR_ASSAULT: "IP",
+    FlightWaypointType.INGRESS_ANTI_SHIP: "IP",
+    FlightWaypointType.INGRESS_SEAD_SWEEP: "IP",
+    FlightWaypointType.INGRESS_ARMED_RECON: "IP",
+    FlightWaypointType.INGRESS_RECON: "IP",
+    FlightWaypointType.TARGET_POINT: "TGT",
+    FlightWaypointType.TARGET_GROUP_LOC: "TGT",
+    FlightWaypointType.TARGET_SHIP: "TGT",
+    FlightWaypointType.SPLIT: "EGRESS",
+    FlightWaypointType.EGRESS: "EGRESS",
+}
+
+#: Task -> mission-sentence verb for the Brief Sheet's one-line MISSION statement.
+_BRIEF_TASK_VERB: Dict[FlightType, str] = {
+    FlightType.SEAD: "Suppress the air defenses at",
+    FlightType.DEAD: "Destroy the air defenses at",
+    FlightType.STRIKE: "Strike",
+    FlightType.BAI: "Interdict armor vic",
+    FlightType.CAS: "CAS in support of troops vic",
+    FlightType.OCA_RUNWAY: "Crater the runway at",
+    FlightType.OCA_AIRCRAFT: "Destroy aircraft on the ground at",
+    FlightType.ANTISHIP: "Anti-ship strike on",
+    FlightType.SCAR: "Hunt and kill armor vic",
+    FlightType.ARMED_RECON: "Armed recon vic",
+}
+
+
+def _brief_route(waypoints: List[FlightWaypoint]) -> List[Tuple[str, str]]:
+    """Labelled one-line route -- Hold/Join/IP/Tgt/Egress -- with the **steerpoint
+    number** of each point (so the pilot can dial it up; the detailed steerpoint table
+    is gone in compact mode). The number is the waypoint's index, matching the `#`
+    column the old flight-plan table used. Collapses consecutive same-role points.
+    """
+    route: List[Tuple[str, str]] = []
+    for number, waypoint in enumerate(waypoints):
+        label = _ROUTE_LABELS.get(waypoint.waypoint_type)
+        if label is None:
+            continue
+        if route and route[-1][0] == label:
+            continue  # collapse consecutive same-role points (e.g. several TGTs)
+        route.append((label, str(number)))
+    return route
+
+
+def _brief_mission(flight_type: FlightType, target_name: str) -> str:
+    """One-line MISSION statement from the task + target."""
+    verb = _BRIEF_TASK_VERB.get(flight_type)
+    if verb and target_name:
+        return f"{verb} {target_name}."
+    if target_name:
+        return f"{flight_type.value} — {target_name}."
+    return f"{flight_type.value} as fragged."
+
+
+def _brief_sam_threats(cards: List[ThreatCard], limit: int = 3) -> str:
+    """Condensed top live SAM/AD systems: 'SA-5 S-200 138nm · SA-10 65nm · ...'."""
+    bits: List[str] = []
+    for card in cards:
+        if not (card.identified and card.live):
+            continue
+        label = card.system.split('"')[0] if '"' in card.system else card.system
+        label = " ".join(label.replace("SAM ", "").split()[:3])[:16]
+        suffix = f" {card.mez_nm}nm" if card.mez_nm not in ("—", "") else ""
+        bits.append(f"{label}{suffix}".strip())
+        if len(bits) >= limit:
+            break
+    return " · ".join(bits)
+
+
+def _brief_game_plan(cards: List[ThreatCard], limit: int = 150) -> str:
+    """The most-lethal live system's 'how to defeat' note, trimmed to a line or two."""
+    for card in cards:
+        if card.identified and card.live and card.defeat:
+            text = card.defeat.strip()
+            if len(text) <= limit:
+                return text
+            cut = text[:limit].rsplit(" ", 1)[0]
+            return f"{cut} …"
+    return ""
+
+
+def _brief_laser(laser_codes: List[Optional[int]]) -> str:
+    """Distinct laser codes for the flight (already gated to laser-capable loadouts)."""
+    codes: List[str] = []
+    for code in laser_codes:
+        if code is not None and str(code) not in codes:
+            codes.append(str(code))
+    return " / ".join(codes)
+
+
+def _brief_loadout(units: List[Any]) -> str:
+    """One-line **ordnance** summary from the lead aircraft's generated pylons.
+
+    Keeps the munitions a pilot briefs (bombs, missiles, rockets); a targeting pod
+    collapses to a single "TGP" and fuel tanks to "bag". Skips the noise -- ECM pods,
+    empty/clean stations, and clsids that don't resolve to a named weapon. Counts by
+    station and strips a rack multiplier from the name ("2xGBU-12" -> "GBU-12").
+    """
+    if not units:
+        return ""
+    pylons = getattr(units[0], "pylons", None) or {}
+    counts: Dict[str, int] = {}
+    order: List[str] = []
+    has_tgp = False
+    has_hts = False
+    for station in pylons.values():
+        clsid = station.get("CLSID") if isinstance(station, dict) else None
+        if not clsid:
+            continue
+        weapon = Weapon.with_clsid(clsid)
+        if weapon is None:
+            continue
+        if getattr(weapon.weapon_group, "type", None) is WeaponType.TGP:
+            has_tgp = True
+            continue
+        name = (getattr(weapon.weapon_group, "name", None) or weapon.name or "").strip()
+        low = name.lower()
+        if "harm targeting" in low:  # AN/ASQ-213 HTS pod -- a SEAD sensor, not a weapon
+            has_hts = True
+            continue
+        if (
+            not name
+            or name == "Unknown"
+            or "clean" in low
+            or "pylon" in low
+            or "ecm" in low
+            or "jammer" in low
+        ):
+            continue
+        if "fuel" in low or "tank" in low:
+            name = "bag"
+        elif name[0].isdigit() and "x" in name[:4].lower():
+            name = name.split("x", 1)[1].strip()  # strip a rack multiplier
+        if name not in counts:
+            order.append(name)
+        counts[name] = counts.get(name, 0) + 1
+    parts = [(f"{counts[n]}× {n}" if counts[n] > 1 else n) for n in order]
+    if has_hts:
+        parts.append("HTS")
+    if has_tgp:
+        parts.append("TGP")
+    return " · ".join(parts)
+
+
+@dataclass
+class BriefSheetData:
+    """Auto-filled field values for the one-page Brief Sheet (computed by the generator).
+
+    The page is a pure renderer of this; the generator pulls each value from the
+    mission data so the layout stays decoupled from the campaign model (the BLUF
+    pattern). Optional/empty fields are simply skipped on the page.
+    """
+
+    op_turn: str  # "RED TIDE · TURN 2 · MSN 4"
+    mc: Optional[str]  # mission commander (AWACS), or None
+    ident: str  # "ROMAN 7 · F/A-18C · 2-ship · SEAD"
+    tot: Optional[str]
+    mission: str
+    route: List[Tuple[str, str]]  # [(label, steerpoint number), ...]
+    bingo: str
+    joker: str
+    divert: str
+    hard_deck: str
+    threats_air: str
+    threats_sam: str
+    game_plan: str
+    comms: List[Tuple[str, str]]  # [(label, value), ...]
+    guard: str
+    push_word: Optional[str]
+    success_word: Optional[str]
+    abort_word: Optional[str]
+    threat_word: Optional[str]
+    bullseye: str
+    fields: str
+    weather: str
+    loadout: str
+    laser: str
+    sar: List[Tuple[str, str]]  # [(role, callsign), ...]
+    if_down: Optional[str]
+
+
+class BriefSheetPage(KneeboardPage):
+    """The compact deck's lead page (P1): the one-page Brief Sheet.
+
+    A consolidated, scannable mission brief modelled on the squadron's printed
+    Appendix A one-pager (the Red Tide briefing handbook): header, mission, a
+    labelled one-line route (Hold/Join/IP/Tgt/Egress), admin, threats, game plan,
+    comms, code words, bullseye, fields, weather, loadout and Combat SAR -- the
+    fields previously spread across the Game Plan, Comms and Combat SAR pages,
+    summarised onto one scan-in-five-seconds page (the detail pages stay behind it).
+
+    A four-colour **semantic** scheme (theme-aware via the writer's palette) does
+    real work -- blue = nav/comms (route, freqs, bullseye, divert, SAR callsigns,
+    push), amber = caution (threats, bingo/joker, THREAT word), green = SUCCESS,
+    red = ABORT + the "if down" line -- so a freq, a fuel gate or the abort word is
+    found without reading a label.
+    """
+
+    LABEL_W = 10  # monospace label-column width (chars), so values align
+
+    def __init__(
+        self, flight: FlightData, data: BriefSheetData, dark_kneeboard: bool
+    ) -> None:
+        self.flight = flight
+        self.data = data
+        self.dark_kneeboard = dark_kneeboard
+
+    @staticmethod
+    def _font(size: int) -> ImageFont.FreeTypeFont:
+        return ImageFont.truetype(
+            "courbd.ttf", size, layout_engine=ImageFont.Layout.BASIC
+        )
+
+    def write(self, path: Path) -> None:
+        # Roomier line spacing than the default: the sheet only fills the top of the
+        # page, so the extra air makes it far less cramped to read at a glance.
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard, line_spacing=20)
+        self.render_into(writer)
+        writer.write(path)
+
+    def _ends(
+        self,
+        writer: KneeboardPageWriter,
+        left: str,
+        right: str,
+        font: ImageFont.FreeTypeFont,
+    ) -> None:
+        """A header line: ``left`` at the margin, ``right`` flush to the right edge."""
+        writer.draw.text(
+            (writer.x, writer.y), left, font=font, fill=writer.col_emphasis
+        )
+        writer.text_buffer.append(left)
+        if right:
+            rx = (
+                writer.image_size[0]
+                - writer.page_margin
+                - int(round(font.getlength(right)))
+            )
+            writer.draw.text((rx, writer.y), right, font=font, fill=writer.col_emphasis)
+            writer.text_buffer.append(right)
+        box = writer.draw.textbbox((writer.x, writer.y), "Ag", font=font)
+        writer.y += abs(box[1] - box[3]) + writer.line_spacing
+
+    def _row(
+        self,
+        writer: KneeboardPageWriter,
+        label: str,
+        runs: List[Tuple[str, Optional[Tuple[int, int, int]]]],
+        font: ImageFont.FreeTypeFont,
+    ) -> None:
+        """A labelled single line of coloured value runs (label in the muted column)."""
+        prefix = (f"{label:<{self.LABEL_W}}", writer.col_muted)
+        writer.text_runs([prefix] + runs, font=font)
+
+    def _blank_line(
+        self,
+        writer: KneeboardPageWriter,
+        label: str,
+        font: ImageFont.FreeTypeFont,
+        lead: str = "",
+        lead_color: Optional[Tuple[int, int, int]] = None,
+    ) -> None:
+        """A labelled fill-in blank (a `______` rule) for an empty field.
+
+        Keeps the row in place -- like the printed brief sheet's blanks -- so the
+        layout is stable and the pilot can write the value in, rather than the field
+        collapsing and everything below it shifting up.
+        """
+        label_str = f"{label:<{self.LABEL_W}}"
+        used = font.getlength(label_str) + (font.getlength(lead) if lead else 0.0)
+        avail = writer.image_size[0] - writer.page_margin - writer.x - used
+        fills = max(4, int(avail / (font.getlength("_") or 1.0)))
+        runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = [
+            (label_str, writer.col_muted)
+        ]
+        if lead:
+            runs.append((lead, lead_color))
+        runs.append(("_" * fills, writer.col_muted))
+        writer.text_runs(runs, font=font)
+
+    def _prose(
+        self,
+        writer: KneeboardPageWriter,
+        label: str,
+        value: str,
+        font: ImageFont.FreeTypeFont,
+        color: Optional[Tuple[int, int, int]] = None,
+    ) -> None:
+        """A labelled, word-wrapped text field; empty -> a fill-in blank."""
+        if not value:
+            self._blank_line(writer, label, font)
+            return
+        char_w = font.getlength("0") or 1.0
+        avail = writer.image_size[0] - writer.page_margin - writer.x
+        value_chars = max(8, int((avail - font.getlength(" " * self.LABEL_W)) / char_w))
+        lines = KneeboardPageWriter.wrap_line(value, value_chars).split("\n")
+        for i, line in enumerate(lines):
+            prefix = f"{label:<{self.LABEL_W}}" if i == 0 else " " * self.LABEL_W
+            writer.text_runs([(prefix, writer.col_muted), (line, color)], font=font)
+
+    def render_into(
+        self, writer: KneeboardPageWriter, *, draw_title: bool = True
+    ) -> None:
+        d = self.data
+        body = self._font(19)
+        head = self._font(23)
+
+        self._ends(writer, d.op_turn, f"MC: {d.mc}" if d.mc else "", head)
+        writer.rule(gap_above=4, gap_below=8)
+        self._ends(writer, d.ident, f"TOT {d.tot}" if d.tot else "", head)
+        writer.vspace(16)
+
+        self._prose(writer, "MISSION", d.mission, body)
+        if d.route:
+            runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = []
+            for i, (label, number) in enumerate(d.route):
+                if i:
+                    runs.append((" → ", None))
+                runs.append((f"{label} ", writer.col_nav))
+                runs.append((number, None))
+            self._row(writer, "ROUTE", runs, body)
+        else:
+            self._blank_line(writer, "ROUTE", body)
+        self._row(
+            writer,
+            "ADMIN",
+            [
+                ("BINGO ", None),
+                (d.bingo, writer.col_caution),
+                ("  JOKER ", None),
+                (d.joker, writer.col_caution),
+                ("  DIVERT ", None),
+                (d.divert, writer.col_nav),
+                ("  HARD DECK ", None),
+                (d.hard_deck, None),
+            ],
+            body,
+        )
+        writer.rule(gap_above=12, gap_below=12)
+
+        if d.threats_air:
+            self._row(
+                writer,
+                "THREATS",
+                [("AIR  ", writer.col_caution), (d.threats_air, None)],
+                body,
+            )
+        else:
+            self._blank_line(writer, "THREATS", body, "AIR  ", writer.col_caution)
+        if d.threats_sam:
+            self._row(
+                writer, "", [("SAM  ", writer.col_caution), (d.threats_sam, None)], body
+            )
+        else:
+            self._blank_line(writer, "", body, "SAM  ", writer.col_caution)
+        self._prose(writer, "GAME PLAN", d.game_plan, body)
+        writer.rule(gap_above=12, gap_below=12)
+
+        comms_runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = []
+        for i, (label, value) in enumerate(d.comms):
+            if i:
+                comms_runs.append(("  ", None))
+            comms_runs.append((f"{label} ", None))
+            comms_runs.append((value, writer.col_nav))
+        if comms_runs:
+            comms_runs.append(("  GUARD ", None))
+            comms_runs.append((d.guard, writer.col_nav))
+            self._row(writer, "COMMS", comms_runs, body)
+        else:
+            self._blank_line(writer, "COMMS", body)
+        code_runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = []
+        for label, word, color in (
+            ("PUSH", d.push_word, writer.col_nav),
+            ("SUCCESS", d.success_word, writer.col_success),
+            ("ABORT", d.abort_word, writer.col_danger),
+            ("THREAT", d.threat_word, writer.col_caution),
+        ):
+            if word:
+                if code_runs:
+                    code_runs.append(("  ", None))
+                code_runs.append((f"{label} ", None))
+                code_runs.append((word, color))
+        if code_runs:
+            self._row(writer, "CODE", code_runs, body)
+        else:
+            self._blank_line(writer, "CODE", body)
+        if d.bullseye:
+            self._row(writer, "BULLSEYE", [(d.bullseye, writer.col_nav)], body)
+        else:
+            self._blank_line(writer, "BULLSEYE", body)
+        self._prose(writer, "FIELDS", d.fields, body)
+        self._prose(writer, "WX", d.weather, body)
+        writer.rule(gap_above=12, gap_below=12)
+
+        self._prose(writer, "LOADOUT", d.loadout, body)
+        # LASER stays conditional: it's only meaningful for laser-capable loadouts
+        # (the gating from the laser-code feature), so a non-laser jet shows no row.
+        if d.laser:
+            self._row(writer, "LASER", [(d.laser, None)], body)
+        if d.sar:
+            sar_runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = []
+            for i, (role, callsign) in enumerate(d.sar):
+                if i:
+                    sar_runs.append(("  ", None))
+                sar_runs.append((f"{role} ", None))
+                sar_runs.append((callsign, writer.col_nav))
+            self._row(writer, "SAR", sar_runs, body)
+        else:
+            self._blank_line(writer, "SAR", body)
+        if d.if_down:
+            self._prose(writer, "", f"If down: {d.if_down}", body, writer.col_danger)
+        self._blank_line(writer, "NOTES", body)
 
 
 class NotesPage(KneeboardPage):
@@ -3040,24 +3550,16 @@ class KneeboardGenerator(MissionInfoGenerator):
         dark = self.dark_kneeboard
         pages: List[KneeboardPage] = []
 
-        # Page 1 — Game Plan. Weather + the per-waypoint Min (bingo) column stay on
-        # this page in compact mode (the recon Departure / Fuel Ladder pages that would
-        # otherwise own them are not generated).
+        # Page 1 — Brief Sheet: the consolidated one-page brief (header, mission,
+        # labelled route, admin, threats, game plan, comms, code words, bullseye,
+        # fields, loadout, SAR), modelled on the squadron's printed Appendix A
+        # one-pager and colour-coded. It replaces the dense Game Plan; the detailed
+        # per-waypoint steerpoint table drops off the kneeboard (the one-line route
+        # covers nav and DCS shows the full plan in-sim), and the Threats/Comms detail
+        # pages stay behind it.
         pages.append(
-            BriefingPage(
-                flight,
-                self.game.coalition_for(flight.friendly).bullseye,
-                self.game.conditions.weather,
-                zoned_time,
-                dark,
-                atis_by_name=self.atis_by_name,
-                theater=self.game.theater,
-                omit_weather=False,
-                omit_min_fuel=False,
-                task_line=task_line,
-                push_line=push_line,
-                threat_line=threat_line,
-                page_title="Game Plan",
+            BriefSheetPage(
+                flight, self._build_brief_sheet_data(flight, threat_cards), dark
             )
         )
 
@@ -3345,6 +3847,157 @@ class KneeboardGenerator(MissionInfoGenerator):
                 break
 
         return task_line, push_line, threat_line
+
+    def _build_brief_sheet_data(
+        self, flight: FlightData, threat_cards: List[ThreatCard]
+    ) -> "BriefSheetData":
+        """Auto-fill the one-page Brief Sheet (compact deck P1) from the mission.
+
+        Pulls each field from data the generator already holds (BLUF pattern), so the
+        page stays a pure renderer. Best-effort, defensive: a field whose source is
+        missing falls back to "—"/empty and the page simply skips it.
+        """
+        game = self.game
+        coalition = game.coalition_for(flight.friendly)
+        units = flight.aircraft_type.kneeboard_units
+        utc = flight.aircraft_type.utc_kneeboard
+
+        tot: Optional[str] = None
+        tot_dt = getattr(flight.package, "time_over_target", None)
+        if tot_dt is not None and tot_dt != datetime.datetime.min:
+            tot = SupportPage._format_time(self._to_kneeboard_time(tot_dt, utc))
+
+        target = getattr(flight.package, "target", None)
+        target_name = _abbreviated_target_name(getattr(target, "name", "") or "")[:36]
+
+        def fuel(value: Optional[float]) -> str:
+            return f"{units.mass(pounds(value)):.0f}" if value else "—"
+
+        code_words = (
+            coalition.code_words if game.settings.enable_package_code_words else None
+        )
+        comms: List[Tuple[str, str]] = []
+        pkg_freq = getattr(flight.package, "frequency", None)
+        if pkg_freq is not None:
+            comms.append(("PKG", f"{pkg_freq.mhz:.1f}"))
+        if self.awacs:
+            awacs = self.awacs[0]
+            comms.append(("AWACS", f"{awacs.callsign} {awacs.freq.mhz:.1f}"))
+        if self.tankers:
+            tanker = self.tankers[0]
+            comms.append(("TKR", f"{tanker.callsign} {tanker.freq.mhz:.1f}"))
+
+        return BriefSheetData(
+            op_turn=f"{(game.campaign_name or 'Campaign').upper()} · TURN {game.turn}",
+            mc=None,
+            ident=(
+                f"{flight.callsign} · {flight.aircraft_type.variant_id} · "
+                f"{flight.size}-ship · {flight.flight_type.value}"
+            ),
+            tot=tot,
+            mission=_brief_mission(flight.flight_type, target_name),
+            route=_brief_route(flight.waypoints),
+            bingo=fuel(flight.bingo_fuel),
+            joker=fuel(flight.joker_fuel),
+            divert=flight.divert.airfield_name if flight.divert else "—",
+            hard_deck="—",
+            threats_air=self._brief_air_threats(flight),
+            threats_sam=_brief_sam_threats(threat_cards),
+            game_plan=_brief_game_plan(threat_cards),
+            comms=comms,
+            guard="243.0",
+            push_word=(code_words.push_for(flight.flight_type) if code_words else None),
+            success_word=code_words.success if code_words else None,
+            abort_word=code_words.abort if code_words else None,
+            threat_word=None,
+            bullseye=coalition.bullseye.position.latlng().format_dms(),
+            fields=self._brief_fields(flight),
+            weather="",
+            loadout=_brief_loadout(flight.units),
+            laser=_brief_laser(flight.laser_codes),
+            sar=self._brief_sar(flight),
+            if_down="beacon on, squawk 7700, get to high ground, voice on GUARD",
+        )
+
+    def _brief_air_threats(self, flight: FlightData) -> str:
+        """Loose, faction-derived air-threat line (the enemy's likely CAP fighters)."""
+        try:
+            opponent = self.game.coalition_for(flight.friendly).opponent
+            fighters = [
+                ac
+                for ac in opponent.faction.aircraft
+                if ac.capable_of(FlightType.BARCAP)
+            ]
+            fighters.sort(
+                key=lambda ac: ac.task_priority(FlightType.BARCAP), reverse=True
+            )
+            names: List[str] = []
+            for aircraft in fighters:
+                if aircraft.variant_id not in names:
+                    names.append(aircraft.variant_id)
+                if len(names) >= 2:
+                    break
+            if names:
+                return f"{' / '.join(names)} CAP likely near the front."
+        except Exception:
+            pass
+        return "Enemy CAP possible near the front."
+
+    def _brief_fields(self, flight: FlightData) -> str:
+        """Departure / recovery / divert fields with runway, ATC and TACAN.
+
+        Carries the airfield nav that the old Game Plan's Airfield Info table held
+        (runway, ATC freq, TCN) so the consolidated sheet doesn't lose it; the divert
+        is named only.
+        """
+
+        def field(
+            label: str, runway: Optional[RunwayData], full: bool
+        ) -> Optional[str]:
+            if runway is None:
+                return None
+            bit = f"{label} {runway.airfield_name}"
+            if getattr(runway, "runway_name", None):
+                bit += f" {runway.runway_name}"
+            if full:
+                atc = getattr(runway, "atc", None)
+                if atc is not None:
+                    bit += f" ATC {atc.mhz:.1f}"
+                tacan = getattr(runway, "tacan", None)
+                if tacan is not None:
+                    bit += f" TCN {tacan}"
+            return bit
+
+        parts = [
+            field("Dep", flight.departure, True),
+            field("Rec", flight.arrival, True),
+            field("Divert", flight.divert, False),
+        ]
+        return " · ".join(part for part in parts if part)
+
+    def _brief_sar(self, flight: FlightData) -> List[Tuple[str, str]]:
+        """King / Jolly / Sandy callsigns from the side's Combat SAR + SCAR flights."""
+        king: Optional[str] = None
+        jolly: Optional[str] = None
+        sandy: Optional[str] = None
+        for other in self.flights:
+            if other.friendly is not flight.friendly:
+                continue
+            if other.flight_type is FlightType.COMBAT_SAR:
+                if other.combat_sar_king is not None:
+                    king = other.combat_sar_king.callsign
+                elif jolly is None:
+                    jolly = other.callsign
+            elif other.flight_type is FlightType.SCAR and sandy is None:
+                sandy = other.callsign
+        sar: List[Tuple[str, str]] = []
+        if king:
+            sar.append(("King", king))
+        if jolly:
+            sar.append(("Jolly", jolly))
+        if sandy:
+            sar.append(("Sandy", sandy))
+        return sar
 
     def _to_kneeboard_time(
         self, time: Optional[datetime.datetime], utc: bool

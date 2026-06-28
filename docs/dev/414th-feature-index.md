@@ -42,5 +42,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §28 | Settings IA reorg + difficulty presets | — | — |
 | §29 | Campaign SITREP kneeboard band | — | `generate_sitrep_kneeboard` |
 | §30 | Dedicated kneeboard cover page | — | — |
+| §31 | One-page Brief Sheet + deck-wide colour scheme | — | `compact_kneeboard` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

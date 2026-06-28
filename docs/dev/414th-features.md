@@ -468,29 +468,26 @@ using measured data only and gain no new blast radius. A real `fuel:` block alwa
 `game/settings/settings.py`) consolidates the deck into **at most four pages**, folding the optional
 *sections* into fixed pages instead of appending their own:
 
-- **P1 Game Plan** (the `BriefingPage`, renamed via its new `page_title`) leads with a **BLUF** band —
-  `TASK`/target/TOT, `PUSH` + `SUCCESS`/`ABORT` code words, `TOP THREAT` (the single most-lethal live
-  identified system + its MEZ + how to defeat it) and bullseye — so the page they open to first carries
-  the essentials, then the airfields, route (steerpoint table — Alt/Dist/GSPD/Time, with the Min-fuel
-  column; the leg **bearing** column was dropped as low-value clutter), weather, bingo/joker and laser
-  codes. The BLUF strings are computed by `KneeboardGenerator._bluf_lines` and passed in (the page stays
-  decoupled from the threat/code-word models); the top-threat line is **always-on** (the threat cards are
-  computed unconditionally, independent of the brief-page toggle). The **Laser Code** table is printed
-  only when the flight's loadout can actually use one — a laser-guided weapon (`WeaponType.LGB`, or any
-  store with a `laser_code` setting: LJDAM, laser Maverick, APKWS) or a targeting pod (`WeaponType.TGP`),
-  via `Loadout.uses_laser_code()`. A player still gets a code allocated on the unit (so it's there if they
-  re-arm), but an air-to-air escort or HARM-only SEAD flight no longer carries a meaningless code page
-  (`FlightGroupConfigurator.configure_flight_member` appends `None` to `FlightData.laser_codes` when the
-  loadout has no use for it, and the page is gated on `any(laser_codes)`).
+- **P1 Brief Sheet** (`BriefSheetPage`, replacing the old `BriefingPage` "Game Plan" — see §31) is the
+  consolidated, scannable one-pager modelled on the squadron's printed Appendix A brief sheet: header,
+  mission, a **labelled route with steerpoint numbers** (`HOLD 1 → JOIN 2 → IP 3 → TGT 5 → EGRESS 6`),
+  admin (bingo/joker/divert), threats (air + SAM), game plan, comms, code words, bullseye, fields
+  (RWY/ATC/TCN), loadout, laser codes and Combat SAR — all **auto-filled** by
+  `KneeboardGenerator._build_brief_sheet_data` and **colour-coded** (blue nav/comms, amber threats/fuel,
+  green success, red abort). The detailed steerpoint table + weather drop off the kneeboard (the one-line
+  route covers nav; DCS shows the full plan in-sim). The `BriefingPage` "Game Plan" + BLUF survive for the
+  **full (non-compact) deck** only.
 - **P2 Threats & Targets** (`CombatIntelPage`) draws the flight's target ALIC/coords (the per-task page's
   new `render_into`) over the enemy-AD **threat cards** (`ThreatIntelBriefPage.render_cards`, which packs
-  as many as fit). Skipped entirely when a flight has neither (e.g. a BARCAP), giving it a 2-page deck.
+  as many as fit, now **colour-coded** to match the Brief Sheet — amber MEZ/Detect, blue HARM code +
+  bullseye cues, emphasised system name). Skipped entirely when a flight has neither (e.g. a BARCAP).
 - **P3 Comms & Coordination** (`CommsCoordPage`) composes the support sections (comm ladder + AWACS/
   tanker/JTAC, via `SupportPage._render(draw_title=False, fill=False, include_airfield_dir=False)`) with
-  the code words + brevity crib (`BrevityCard.render_code_words`/`render_brevity`). Lower-priority sections
-  draw only if they fit (`_draw_section_if_fits`), never spilling to a 5th. (The friendly-package list used
-  to ride here / on the flex page and got squeezed out when the page was full; it now lives on the **cover
-  page** — see below — so P3 has room for the brevity crib.)
+  the **colour-coded code words** (`BrevityCard.render_code_words` — push words blue, SUCCESS green, ABORT
+  red, STOP JAM amber, matching the Brief Sheet) + brevity crib. Lower-priority sections draw only if they
+  fit (`_draw_section_if_fits`), never spilling to a 5th. (The friendly-package list used to ride here /
+  on the flex page and got squeezed out when the page was full; it now lives on the **cover page** — see
+  below — so P3 has room for the brevity crib.)
 - **P4 Flex** is adaptive: the **recon target photo** (`_recon_detail_page`, the `DetailReconPage`/
   `AirbaseReconPage`/`FrontLineDetailPage` only — not the Departure/Overview pages) when
   `generate_target_recon_kneeboard` is on, otherwise a text `FlexReferencePage` with just the **Fuel
@@ -2044,3 +2041,55 @@ happened / who's flying" sheet up front. Page numbering generalises cleanly (cov
   turn 1 / a quiet turn); and a flight index when 2+ client flights share the airframe, whose start
   pages land on the right decks. The render is smoke-verified; only the in-cockpit look + live page
   numbers are the residual.
+
+## §31 — One-page Brief Sheet + deck-wide colour scheme
+
+The compact deck's lead page is the **Brief Sheet** (`BriefSheetPage`), a single scannable page modelled
+on the squadron's printed **Appendix A** one-pager (the Red Tide briefing handbook, `docs/wiki/`). It
+replaces the dense `BriefingPage` "Game Plan" (BLUF band over a full steerpoint table + weather) — the
+page you open to first is now a *summary*, with the Threats/Comms detail pages behind it.
+
+**Auto-fill (`KneeboardGenerator._build_brief_sheet_data`).** The page is a pure renderer of a
+`BriefSheetData`; the generator pulls each field from data it already holds (the BLUF pattern):
+
+- **Route** — `_brief_route` walks `flight.waypoints`, mapping types to `HOLD/JOIN/IP/TGT/EGRESS` and
+  carrying each point's **steerpoint number** (the waypoint index, matching the old flight-plan `#`
+  column) so the pilot can dial it up; the detailed steerpoint table is gone in compact mode.
+- **Loadout** — `_brief_loadout` summarises the lead jet's generated pylons (`units[0].pylons` → `Weapon`)
+  to the *ordnance*: counts by type, strips rack multipliers (`2xGBU-12` → `GBU-12`), collapses the TGP
+  and HTS pods to `TGP`/`HTS`, and drops ECM / clean / unresolved stations.
+- **Threats** — SAM from the threat cards (`_brief_sam_threats`, top live systems condensed); **air** from
+  the enemy faction's fighters (`_brief_air_threats`, `faction.aircraft` filtered by
+  `capable_of(BARCAP)`), kept loose to respect fog. **Game plan** = the most-lethal system's defeat note.
+- The rest re-surface existing data: TOT, push/success/abort code words, bullseye, bingo/joker, divert,
+  comms (`self.awacs/tankers` + package freq), fields (RWY/ATC/TCN via `_brief_fields`), laser codes
+  (`_brief_laser`, gated as §25), and Combat SAR (`_brief_sar`: King/Jolly/Sandy from the side's flights).
+
+**Fill-in blanks.** An empty field doesn't collapse — it renders a `______` rule (`_blank_line`) like the
+printed template, so the layout is stable and the pilot can write the value in. A `NOTES` blank always
+closes the sheet. (`LASER` is the one conditional row — gated to laser-capable loadouts, §25.)
+
+**Deck-wide colour scheme.** A four-colour **semantic** palette lives on `KneeboardPageWriter`
+(theme-aware: lighter shades on the night theme, darker on the day theme) with a new `text_runs`
+primitive that draws a line of coloured segments: **blue** = nav/comms (route, freqs, bullseye, divert,
+SAR callsigns, push), **amber** = caution (threats, bingo/joker), **green** = SUCCESS, **red** = ABORT +
+the "if down" line. The same scheme is applied to **P2** (threat cards — amber MEZ/Detect, blue HARM
+code + cues, emphasised system name) and **P3** (code words — push blue, SUCCESS green, ABORT red, STOP
+JAM amber), so the whole deck reads as one product. The multi-column comm-ladder/AWACS/tanker tables stay
+as plain `tabulate` reference tables (colouring cells is disproportionate).
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Page + data + helpers | `game/missiongenerator/kneeboard.py` (`BriefSheetPage`, `BriefSheetData`, `_build_brief_sheet_data`, `_brief_*`, `KneeboardPageWriter.text_runs` + `col_*` palette) |
+| Tests | `tests/missiongenerator/test_brief_sheet.py` (route/loadout/threats/mission helpers, render, end-to-end data build) |
+
+### Gotchas / deferred
+
+- **Replaces the compact `BriefingPage`/BLUF.** The full (non-compact) deck still uses `BriefingPage` +
+  `_bluf_lines`; only the compact P1 changed.
+- **Weather (`WX`) is left as a blank** for now — populating it from the `Weather` object is deferred; the
+  blank lets a pilot write it. **Validated against a real `.miz`** (loadout cleanup + laser codes were
+  caught that way); the residual is an **in-game pass** — generate a mission and eyeball the colours +
+  auto-filled fields in the cockpit.

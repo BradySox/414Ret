@@ -134,14 +134,17 @@ and selected later upstream fixes.
   editing supports practical bulk changes.
 - Debriefing begins with mission impact — territorial changes, runway damage, and losses —
   before the full event detail.
-- The player kneeboard is a **compact 3-4 page deck** (on by default): **Game Plan** (a BLUF up top —
-  task/target/TOT, push + success/abort code words, the #1 live threat and how to defeat it, bullseye —
-  then airfields, route, fuel, weather), **Threats & Targets** (your aimpoints over the enemy air-defense
-  cards), **Comms & Coordination** (radios, AWACS/tanker/JTAC, code words, brevity), and an adaptive
-  4th page (recon target photo when target recon is on, otherwise the fuel ladder). The friendly-package
-  list rides on the cover page (below). The optional pages below fold into these instead of sprawling to
-  a dozen pages; a simple CAP gets two. Turn off *Compact kneeboard* for the full multi-page deck with
-  recon imagery.
+- The player kneeboard is a **compact 3-4 page deck** (on by default), led by a **one-page Brief Sheet** —
+  a single scannable, **colour-coded** brief modelled on the squadron's printed brief sheet: header,
+  mission, a labelled route with **steerpoint numbers** (`HOLD 1 → JOIN 2 → IP 3 → TGT 5 → EGRESS 6`),
+  bingo/joker/divert, air + SAM threats, game plan, comms, code words, bullseye, fields (RWY/ATC/TCN),
+  loadout, laser codes, and Combat SAR — all filled in from the mission. Colour does the work: **blue** for
+  nav and freqs, **amber** for threats and fuel, **green** for the success word, **red** for abort, so you
+  find what you need at a glance. Empty fields keep a `______` fill-in blank, like a real brief sheet, so
+  you can write the rest in. Behind it: **Threats & Targets** (your aimpoints over the enemy air-defense
+  cards) and **Comms & Coordination** (radios, AWACS/tanker/JTAC, code words, brevity), both colour-coded
+  to match, plus an adaptive 4th page (recon target photo when target recon is on, otherwise the fuel
+  ladder). A simple CAP gets two pages. Turn off *Compact kneeboard* for the full multi-page deck.
 - Every flight's kneeboard opens on a **cover page**: the operation name, turn, and date up top; a
   **"last turn" SITREP** (both sides' losses — the enemy's as *claimed* — bases captured or lost, and
   downed pilots recovered); when several flights share an airframe (DCS stacks them into one kneeboard),

@@ -301,10 +301,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/missiongenerator/aircraft/flightgroupconfigurator.py`,
     `qt_ui/windows/mission/flight/payload/propertycombobox.py`; features doc §24, checklist I3.)
 25. **Compact 3-4 page kneeboard deck** — `compact_kneeboard` (default ON) folds the optional kneeboard
-    content into at most four pages instead of the ~10-page sprawl: **P1 Game Plan** (a **BLUF** band —
-    task/target/TOT, push + success/abort code words, top live threat + how-to-defeat, bullseye — over
-    airfields/route/fuel/weather), **P2 Threats & Targets** (target ALIC over the enemy-AD threat cards),
-    **P3 Comms & Coordination** (radios + AWACS/tanker/JTAC + code words + brevity), and an
+    content into at most four pages instead of the ~10-page sprawl: **P1 Brief Sheet** (the consolidated
+    colour-coded one-pager — §31 — replacing the old Game Plan/BLUF), **P2 Threats & Targets** (target ALIC
+    over the enemy-AD threat cards, colour-coded to match), **P3 Comms & Coordination** (radios +
+    AWACS/tanker/JTAC + colour-coded code words + brevity), and an
     adaptive **P4 Flex** (recon target photo when target-recon imagery is on, else just the Fuel Ladder).
     The **friendly-package list** rides on the always-present **cover page** (§30) in compact mode (recon
     imagery owns the flex slot, so it had nowhere else; built once per shared-airframe deck). The **Fuel
@@ -372,6 +372,20 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the SITREP section only when there's something to report, and the packages section only in compact mode
     (the full deck keeps its standalone `FriendlyPackagesPage`).
     (`game/missiongenerator/kneeboard.py`, `game/sitrep.py`; features doc §30, checklist K2/H10.)
+31. **One-page Brief Sheet + deck-wide colour scheme** — the compact deck's lead page is now a single
+    scannable **Brief Sheet** (`BriefSheetPage`) modelled on the squadron's printed Appendix A one-pager
+    (Red Tide handbook): header, mission, a **labelled route with steerpoint numbers**
+    (`HOLD 1 → JOIN 2 → IP 3 → TGT 5 → EGRESS 6`), admin, threats (air + SAM), game plan, comms, code words,
+    bullseye, fields (RWY/ATC/TCN), loadout, laser, Combat SAR — **auto-filled** by
+    `_build_brief_sheet_data` (route from waypoints, loadout from the jet's pylons cleaned to ordnance, air
+    threats from the enemy faction's fighters, the rest re-surfaced). It replaces the dense Game Plan/BLUF
+    (which survives for the full non-compact deck). Empty fields render a `______` **fill-in blank**
+    (`_blank_line`) like the printed template — the layout never collapses — plus a `NOTES` blank. A new
+    **theme-aware four-colour semantic palette** on `KneeboardPageWriter` (+ a `text_runs` inline-colour
+    primitive) — blue nav/comms, amber threats/fuel, green success, red abort — is applied across **P1**,
+    the **P2 threat cards** (amber MEZ/Detect, blue HARM/cues) and the **P3 code words** (push blue, SUCCESS
+    green, ABORT red) so the whole deck reads as one product. Loadout/laser validated against a real `.miz`.
+    (`game/missiongenerator/kneeboard.py`; features doc §31, checklist needs an in-game pass.)
 
 ---
 

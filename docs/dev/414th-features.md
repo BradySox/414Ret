@@ -1478,7 +1478,16 @@ returns to the squadron).
   now stands up `AICSAR`, which spawns its own rescue helos from the FARP `AIRBASE` and delivers
   to a `ZONE_AIRBASE` there; its `autoonoff` (default) stands it down whenever a player crews a
   rescue helo, so it never competes with the player-flown CSAR path (which stays
-  `enableForAI=false`). **v1 limitations (pending the G9 in-game pass):** AICSAR auto-rescues do
+  `enableForAI=false`). **Eject-triggered dispatch (2026-06-28, G9 fix).** Stock `AICSAR` only acts
+  on `S_EVENT_LANDING_AFTER_EJECTION` — the downed pilot must touch down first (~8–9 min under
+  canopy from a high ejection) and that event is unreliable for AI, so an AI shoot-down often drew
+  no rescue (G9 in-game pass: a blue AI ejected, the mission ended 57 s later with the pilot still
+  at ~3 km, nothing launched). `AICSAR`'s own eject fast-path is player-only (`IniPlayerName`), so
+  `combatsar-config.lua` sets `aicsar.UseEventEject = true` (the landing handler then early-returns
+  → clean dedup) and adds an **ejection bridge** (`world.addEventHandler`) that calls
+  `aicsar:_EventHandler(event, true)` the instant a **blue AI** pilot ejects, spawning the survivor
+  under the ejection point and launching a helo immediately (pcall-guarded; one dispatch per
+  airframe; `autoonoff` still applies). **v1 limitations (pending the G9 in-game pass):** AICSAR auto-rescues do
   **not** yet credit the spare-pilot scoring (it spawns an anonymous pilot clone, losing the
   original unit name); and a player ejecting from a fixed-wing with no human helo up is
   double-handled by both engines (cosmetic double-spawn).

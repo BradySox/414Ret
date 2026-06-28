@@ -66,6 +66,10 @@ squadrons:
       secondary: air-to-ground
       aircraft: [A-4E Skyhawk]
       size: 12
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [F-100D Super Sabre]
+      size: 12
     - primary: Strike
       secondary: air-to-ground
       aircraft: [F-4E Phantom II]

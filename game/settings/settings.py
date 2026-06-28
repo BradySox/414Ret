@@ -423,6 +423,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "max_frontline_width",
                     "use_auto_fog",
+                    "base_battle_damage",
                 ],
             ),
         ],
@@ -1959,6 +1960,19 @@ class Settings:
         "Use DCS' automatic fog setting",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
+        default=True,
+    )
+
+    base_battle_damage: bool = boolean_option(
+        "Battle damage at depleted bases (fires, smoke, wreckage)",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        detail=(
+            "A base's ground strength drives how battered it looks: a besieged, ground-down "
+            "field gets scattered fires, smoke and destroyed-building wreckage so it reads as "
+            "under siege, while staying fully operational (cosmetic only -- the runway is "
+            "untouched). Costs some FPS; turn off if a heavily-hit base impacts performance."
+        ),
         default=True,
     )
 

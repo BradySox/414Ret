@@ -201,6 +201,37 @@ def test_vietnam_campaign_era_preseed_applies(campaign_file: str) -> None:
         )
 
 
+# The Vietnam theaters are geometrically compressed, so the upstream 80/70 NM AEW&C/
+# tanker standoff overshoots: on a small map it stands the orbits ~150 km behind the
+# front, sprawling support (and its escorts) toward the map edge. These campaigns pin a
+# tighter buffer (orbits ~75-90 km back, still clear of the threat). Per-campaign by
+# design -- large maps keep the wide defaults -- so guard both ends.
+_COMPRESSED_SUPPORT_BUFFERS = [
+    "khe_sanh_niagara.yaml",
+    "1968_Yankee_Station.yaml",
+    "operation_velvet_thunder.yaml",
+]
+
+
+@pytest.mark.parametrize("campaign_file", _COMPRESSED_SUPPORT_BUFFERS)
+def test_vietnam_campaign_tightens_support_orbits(campaign_file: str) -> None:
+    from game.settings import Settings
+
+    campaign = Campaign.from_file(_CAMPAIGNS / campaign_file)
+    settings = Settings()
+    settings.__dict__.update(Settings.deserialize_state_dict(campaign.settings))
+    assert settings.aewc_threat_buffer_min_distance == 25, (
+        f"{campaign_file}: AEW&C buffer should be 25 NM so the orbit hugs the "
+        "compressed front instead of sprawling to the map edge."
+    )
+    assert (
+        settings.tanker_threat_buffer_min_distance == 20
+    ), f"{campaign_file}: tanker buffer should be 20 NM for the compressed front."
+    # Large/other campaigns are untouched: the defaults stay wide.
+    assert Settings().aewc_threat_buffer_min_distance == 80
+    assert Settings().tanker_threat_buffer_min_distance == 70
+
+
 @pytest.mark.parametrize(
     "faction_file",
     [

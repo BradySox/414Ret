@@ -32,11 +32,20 @@
 - [Drop-Spawn Placement](Drop-Spawn-Unit-Placement)
 
 **Campaigns**
+
+*Germany — Red Tide (1988)*
 - [Red Tide: Briefing](Red-Tide-Campaign-Briefing)
 - [Red Tide: Role Cards](Red-Tide-Role-Cards)
 - [Red Tide: First Three Turns](Red-Tide-First-Three-Turns)
 - [Red Tide: Intel Assessment](Red-Tide-Intel-Assessment)
 - [Red Tide: Visual Briefing](Red-Tide-Visual-Briefing)
+
+*Khe Sanh: Operation Niagara (1968)*
+- [Khe Sanh: Briefing](Khe-Sanh-Campaign-Briefing)
+- [Khe Sanh: Role Cards](Khe-Sanh-Role-Cards)
+- [Khe Sanh: First Three Turns](Khe-Sanh-First-Three-Turns)
+- [Khe Sanh: Intel Assessment](Khe-Sanh-Intel-Assessment)
+- [Khe Sanh: Visual Briefing](Khe-Sanh-Visual-Briefing)
 
 **Customization**
 - [Custom Campaigns](Custom-Campaigns)

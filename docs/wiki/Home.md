@@ -58,11 +58,21 @@ adapted to how this fork actually plans and flies a campaign.
 Briefing material for the 414th's campaigns — built to plan and brief an op, grounded in the
 campaign files (ORBAT, threats, and economy read straight from the campaign + faction data).
 
+### Germany — Red Tide *(Cold-War-gone-hot, 1988 — Tom Clancy flavour)*
+
 - **[Red Tide — Campaign Briefing](Red-Tide-Campaign-Briefing)** — the brief-builder: friendly/enemy ORBAT, phase plan, op-night runbook, a fill-in mission-brief template, package recipes, comms/code-word card, and threat-defeat reference.
 - **[Red Tide — Role Cards](Red-Tide-Role-Cards)** — print-and-fly kneeboard cards for each player role.
 - **[Red Tide — First Three Turns](Red-Tide-First-Three-Turns)** — a worked example of the brief template across the opening turns.
 - **[Red Tide — Intel Assessment](Red-Tide-Intel-Assessment)** — in-fiction intel pack: backstory, enemy ORBAT, courses of action, threat card, and the read-aloud spoken brief.
 - **[Red Tide — Visual Briefing](Red-Tide-Visual-Briefing)** — theater map, SAM-ring profile, and target-priority / ORBAT diagrams.
+
+### Khe Sanh: Operation Niagara *(historical, 1968 — rooted in the real siege)*
+
+- **[Khe Sanh — Campaign Briefing](Khe-Sanh-Campaign-Briefing)** — the brief-builder: friendly/enemy ORBAT, the siege win-geometry, phase plan, op-night runbook, mission-brief template, package recipes, comms/FAC card, and the AAA threat-defeat reference.
+- **[Khe Sanh — Role Cards](Khe-Sanh-Role-Cards)** — print-and-fly kneeboard cards per player role, with period-1968 loadouts.
+- **[Khe Sanh — First Three Turns](Khe-Sanh-First-Three-Turns)** — a worked example of the brief template across the opening turns.
+- **[Khe Sanh — Intel Assessment](Khe-Sanh-Intel-Assessment)** — the historical intelligence pack (real OOB, commanders, Niagara/Pegasus) + threat card + read-aloud brief.
+- **[Khe Sanh — Visual Briefing](Khe-Sanh-Visual-Briefing)** — the siege map, AAA threat profile, and target-priority / ORBAT diagrams.
 
 ## Customization and modding
 

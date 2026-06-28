@@ -25,7 +25,9 @@ _CAMPAIGNS = _REPO / "resources" / "campaigns"
 CUT_MOD_AIRCRAFT = [
     "UH-60L",  # -> UH-60A
     "KC-130J",  # -> KC-135 Stratotanker
-    "F-111C Aardvark",  # -> F-15E Strike Eagle (Suite 4+), or removed (period factions)
+    # F-111C Aardvark un-cut 2026-06-28: re-introduced for the Vietnam campaigns
+    # (Combat Lancer, 1968). The mod is shipped and the USA Vietnam factions now
+    # reference it with f111c:true, so it must NOT be guarded as a cut mod.
     "[CH] B-21",  # -> B-1B Lancer
     "[CH] MiG-29MU2",  # -> MiG-29S Fulcrum-C
     "[CH] Su-24MU",  # -> Su-24M Fencer-D

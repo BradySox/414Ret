@@ -16,6 +16,7 @@
     "F-100D Super Sabre",
     "A-4E Skyhawk",
     "A-6E Intruder",
+    "F-111C Aardvark",
     "OV-10A Bronco",
     "B-52H Stratofortress",
     "C-47 Skytrain",
@@ -62,6 +63,7 @@
   ],
   "naval_units": [
     "FFG Oliver Hazard Perry",
+    "[VWV] CVAN-65 USS Enterprise '66",
     "[VWV] CVA-31 Bon Homme Richard",
     "CV-59 Forrestal",
     "USS Allen M. Sumner (DD-692)",

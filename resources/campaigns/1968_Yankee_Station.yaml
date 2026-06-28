@@ -50,10 +50,13 @@ settings:
   su57_felon: false
   frenchpack: false
   high_digit_sams: false
-  ov10a_bronco: false
+  ov10a_bronco: true
   swedishmilitaryassetspack: false
   vietnamwarvessels: true
   russianmilitaryassetspack: true
+  f111c: true
+  oh_6: true
+  oh_6_vietnamassetpack: true
 
 # Difficulty settings
 # AI Difficulty

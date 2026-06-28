@@ -130,6 +130,40 @@ def test_ai_support_sits_deeper_than_player() -> None:
     assert red_behind > blue_behind
 
 
+def test_carrier_target_holds_on_the_fleet() -> None:
+    # A carrier-tasked support orbit (E-2C / carrier tanker) must stay with the
+    # boat instead of marching up to the land FLOT. Front is centered at the
+    # origin; the carrier is 300 km south of it.
+    theater, _ = _theater_with_front()
+    threat = NoNearbyThreat()
+    buffer = nautical_miles(80)
+    carrier = SimpleNamespace(position=FakePoint(0.0, -300_000.0), is_carrier=True)
+
+    center, _heading = support_orbit_anchor(
+        theater, SimpleNamespace(is_blue=True), threat, carrier, buffer  # type: ignore[arg-type]
+    )
+
+    # Anchored on the carrier, not pulled toward the front.
+    assert center.distance_to_point(carrier.position) < 1
+    assert center.distance_to_point(FakePoint(0.0, 0.0)) > nautical_miles(100).meters
+
+
+def test_fleet_target_also_holds_on_the_fleet() -> None:
+    # is_fleet (a non-carrier boat) triggers the same hold-with-the-task-force
+    # behavior as is_carrier.
+    theater, _ = _theater_with_front()
+    threat = NoNearbyThreat()
+    buffer = nautical_miles(80)
+    fleet = SimpleNamespace(position=FakePoint(0.0, -300_000.0), is_fleet=True)
+
+    center, _heading = support_orbit_anchor(
+        theater, SimpleNamespace(is_blue=False), threat, fleet, buffer  # type: ignore[arg-type]
+    )
+
+    # No AI deep-hold march either -- it stays on the boat.
+    assert center.distance_to_point(fleet.position) < 1
+
+
 def test_no_front_falls_back_to_target_anchor() -> None:
     # No active front: anchor on the target, stood off from the threat boundary.
     theater = SimpleNamespace(conflicts=lambda: iter([]))

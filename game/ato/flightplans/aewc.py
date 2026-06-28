@@ -43,28 +43,31 @@ class Builder(IBuilder[AewcFlightPlan, PatrollingLayout]):
         )
 
         # Anchor on the front line and stand off into friendly airspace, centered
-        # on the fighting and parallel to the FLOT. See supportorbit for why this
-        # replaced the old per-CP anchoring (which flung AI AWACS off-axis).
+        # on the fighting and parallel to the FLOT -- except a carrier-tasked AWACS,
+        # which anchors on its carrier (covers the fleet). See supportorbit for why
+        # this replaced the old per-CP anchoring (which flung AI AWACS off-axis).
         base_center, orbit_heading = AirspaceGeometry(
             self.theater, self.coalition.player, self.threat_zones
         ).standoff_anchor(self.package.target, threat_buffer)
 
-        # When multiple AWACS are planned, spread their orbits laterally along
-        # the front so each covers a different section rather than stacking.
-        # Orbits are spaced one full racetrack width (2 * half_distance) apart,
-        # centered on the natural orbit point.
-        all_awacs = sorted(
+        # When multiple AWACS share the same anchor (same supported target) spread
+        # their orbits laterally so each covers a different section rather than
+        # stacking; orbits are spaced one full racetrack width (2 * half_distance)
+        # apart, centered on the natural orbit point. Scoping to same-target peers
+        # keeps a carrier E-2 from being shoved off its boat by an off-axis land
+        # AWACS now that the two no longer share a front anchor.
+        peers = sorted(
             [
                 f
                 for p in self.coalition.ato.packages
                 for f in p.flights
-                if f.flight_type is FlightType.AEWC
+                if f.flight_type is FlightType.AEWC and p.target is self.package.target
             ],
             key=lambda f: str(f.id),
         )
-        n = len(all_awacs)
+        n = len(peers)
         try:
-            idx = next(i for i, f in enumerate(all_awacs) if f is self.flight)
+            idx = next(i for i, f in enumerate(peers) if f is self.flight)
         except StopIteration:
             idx = 0
 

@@ -115,6 +115,18 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
     def fulfill_mission(self, state: TheaterState) -> bool:
         color = "blue" if state.context.coalition.player.is_blue else "red"
         self.propose_flights()
+        # Era gating (e.g. Vietnam has no SEAD/DEAD/anti-ship): drop any tasking the
+        # doctrine disallows. The primary flight is always proposed first, so if IT is
+        # disallowed (a DEAD/anti-ship package) scrub the whole mission; otherwise drop
+        # only the disallowed escorts (e.g. SEAD) and fly the package without them. A
+        # doctrine with no whitelist (every non-Vietnam doctrine) allows everything, so
+        # this is a no-op there.
+        doctrine = state.context.coalition.doctrine
+        if self.flights and not doctrine.allows(self.flights[0].task):
+            return False
+        self.flights = [f for f in self.flights if doctrine.allows(f.task)]
+        if not self.flights:
+            return False
         fulfiller = PackageFulfiller(
             state.context.coalition,
             state.context.theater,

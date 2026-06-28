@@ -323,17 +323,42 @@ VIETNAM_TASK_DISPLAY_NAMES: Mapping[FlightType, str] = {
     FlightType.TRANSPORT: "Airlift",
 }
 
+# Taskings the Vietnam auto-planner must never produce. Vietnam air wings have no
+# reliable SEAD (the current campaigns field no Wild Weasel) and no naval threat worth
+# an anti-ship strike, and the strike planner already punches through air defenses
+# without suppression (strike_through_air_defense_threat). Leaving these in only wastes
+# planning attempts the faction can't fulfill AND mis-assigns era jets to roles they
+# never flew -- e.g. an A-1 Skyraider grabbed for a "SEAD Sweep" because its DCS task
+# list happens to include SEAD. DEAD/ANTISHIP are package *primaries* (dropping them
+# scrubs the whole package); the SEAD trio only ever appears as *escorts* (dropping
+# them flies the package unescorted, which pairs with plan_strikes_without_full_escort).
+VIETNAM_DROPPED_TASKINGS: FrozenSet[FlightType] = frozenset(
+    {
+        FlightType.DEAD,
+        FlightType.SEAD,
+        FlightType.SEAD_ESCORT,
+        FlightType.SEAD_SWEEP,
+        FlightType.ANTISHIP,
+    }
+)
+
+# The allowed set is computed from the whole enum minus the drops, so a newly added
+# FlightType defaults to allowed (fail-open) rather than being silently gated out.
+VIETNAM_TASKING_WHITELIST: FrozenSet[FlightType] = frozenset(
+    set(FlightType) - VIETNAM_DROPPED_TASKINGS
+)
+
 # Vietnam doctrine. Behaviour is mostly a COLDWAR clone; the era identity is the
-# display-name layer plus one behaviour change (P3): strike_through_air_defense_threat,
-# because Vietnam air wings have no reliable SEAD, so the modern "suppress the SAM/AAA
-# before you strike" rule otherwise deadlocks the entire offensive fleet (root-caused
-# 2026-06-28: 0/28 strike + 0/13 BAI targets plannable, all threat-blocked). The tasking
-# whitelist is left None until DEAD/ANTISHIP are dropped. See
-# docs/dev/design/414th-vietnam-retribution-notes.md.
+# display-name layer plus two behaviour changes (P3): strike_through_air_defense_threat
+# (Vietnam has no reliable SEAD, so the modern "suppress before you strike" rule
+# otherwise deadlocks the whole offensive fleet -- root-caused 2026-06-28: 0/28 strike +
+# 0/13 BAI targets plannable, all threat-blocked) and the tasking whitelist above that
+# drops SEAD/DEAD/anti-ship. See docs/dev/design/414th-vietnam-retribution-notes.md.
 VIETNAM_DOCTRINE = replace(
     COLDWAR_DOCTRINE,
     name="vietnam",
     task_display_names=VIETNAM_TASK_DISPLAY_NAMES,
+    tasking_whitelist=VIETNAM_TASKING_WHITELIST,
     strike_through_air_defense_threat=True,
     plan_strikes_without_full_escort=True,
 )

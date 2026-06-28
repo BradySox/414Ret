@@ -212,6 +212,7 @@ supply_routes:
   - waypoints:
       - [-220592, 564392]
       - [-221759, 567877]
+      - [-228734, 588409]  # coastal bend -- straightens the corner this leg was cutting
       - [-234737, 590675]
       - [-245024, 609789]
       - [-255955, 630099]
@@ -223,6 +224,7 @@ supply_routes:
       - [-255955, 630099]
       - [-245024, 609789]
       - [-234737, 590675]
+      - [-228734, 588409]  # coastal bend -- straightens the corner this leg was cutting
       - [-221759, 567877]
       - [-220592, 564392]
   # Kutaisi -> Hill 881S  (forward blue FOB; friendly link, airlift-supplied with Kutaisi)

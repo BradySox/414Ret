@@ -31,7 +31,8 @@ max_range: 1000    # combat range without droptanks [nmi]
 gunfighter: false
 variants:
   RA-5C Vigilante: {}
-tasks:   
+tasks:
+  TARPS: 700        # primary role: carrier-based tactical photo-recon (414th TARPS overflight)
   Armed Recon: 410
   Strike: 1
   BARCAP: 1

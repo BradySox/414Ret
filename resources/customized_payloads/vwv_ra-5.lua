@@ -39,6 +39,22 @@ local unitPayloads = {
 			{
 				[1]=10
 			}
+		},
+		[4]=
+		{
+			-- 414th TARPS photo-recon overflight: built-in cameras, no external stores.
+			-- Loadout is matched by name ("Retribution TARPS"); the runtime recon task
+			-- is set by aircraftbehavior.configure_tarps, so the tasks tag is only the
+			-- ME role-menu placement (mirrors the recon Armed Recon entry).
+			["displayName"]="Retribution TARPS",
+			["name"]="Retribution TARPS",
+			["pylons"]=
+			{
+			},
+			["tasks"]=
+			{
+				[1]=17
+			}
 		}
 	},
 	["unitType"]="vwv_ra-5"

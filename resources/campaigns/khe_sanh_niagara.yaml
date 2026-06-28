@@ -105,7 +105,7 @@ squadrons:
       secondary: air-to-ground
       aircraft: [F-4E-45MC Phantom II]
       size: 6
-    - primary: Armed Recon
+    - primary: TARPS
       secondary: air-to-ground
       aircraft: [RF-101B Voodoo]
       size: 2
@@ -140,7 +140,7 @@ squadrons:
       secondary: air-to-ground
       aircraft: [A-4E Skyhawk]
       size: 6
-    - primary: Armed Recon
+    - primary: TARPS
       secondary: air-to-ground
       aircraft: [RA-5C Vigilante]
       size: 2

@@ -1016,6 +1016,24 @@ so the two docs don't drift.
   Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
+### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ☐ UNTESTED
+- **Context:** TARPS was extended off the F-14 onto the two dedicated Vietnam photo-recon ships —
+  **RF-101B Voodoo** (`vwv_rf101b`, land-based) and **RA-5C Vigilante** (`vwv_ra-5`, carrier). They
+  carry `TARPS: 700` as their primary task and a clean, weaponless **Retribution TARPS** payload
+  (built-in cameras, empty pylons). The Khe Sanh (Niagara) campaign tasks one squadron of each
+  `primary: TARPS`. Headless-verified 2026-06-28: both report `capable_of(TARPS)`, the loadout
+  resolves to `Retribution TARPS`, and `primary: TARPS` parses as a squadron config.
+- **Setup:** Generate **Khe Sanh (Operation Niagara)** with `auto_add_tarps_recon` on; let the
+  planner frag a Strike/DEAD package the RF-101B or RA-5C squadron is in range for (or hand-frag a
+  TARPS package on either type). Generate + run the mission.
+- **Pass:** The recon bird spawns with the clean `Retribution TARPS` loadout (no offensive stores),
+  flies the recon ingress and **overflies** the target ~5 min behind the strikers, recovers, and the
+  photographed site's BDA confirms at debrief (same as the F-14 path, G2). With TARS on, captures
+  reach the debrief.
+- **Fail signature:** Squadron never gets tasked TARPS; the jet spawns with a wrong/empty loadout or
+  bombing tasks; the AI flies an aborting attack pattern and never crosses the target; or the
+  overflight produces no BDA confirmation.
+
 ---
 
 ## H. Kneeboards

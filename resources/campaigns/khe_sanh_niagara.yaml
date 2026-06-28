@@ -36,6 +36,10 @@ control_point_strengths:
   Kutaisi: 0.25
 
 settings:
+  # Vietnam Ops period mechanics (era pre-seed). Inland siege -> no naval gunfire.
+  vietnam_arc_light: true
+  vietnam_flak_gauntlet: true
+  restrict_weapons_by_date: true
   vietnamwarvessels: true
   russianmilitaryassetspack: true
   a4_skyhawk: true

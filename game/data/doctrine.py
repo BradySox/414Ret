@@ -105,6 +105,22 @@ class Doctrine:
     #: planner edge.
     tasking_whitelist: Optional[FrozenSet[FlightType]] = None
 
+    #: When True, Strike/BAI may be planned into target areas still covered by enemy
+    #: air defenses instead of waiting for a SEAD/DEAD suppression first. Needed for
+    #: eras with no reliable SEAD (Vietnam): otherwise dense AAA/SAM coverage blocks
+    #: every offensive target and the whole attack fleet deadlocks. The threat is still
+    #: recorded for DEAD targeting; the planner just stops *blocking* on it. A simple
+    #: ``= False`` default (not ``field(...)``) so old pickled doctrines fall back to it.
+    strike_through_air_defense_threat: bool = False
+
+    #: When True, an offensive package whose required A2A/SEAD escort cannot be
+    #: allocated (no fighter free) is flown UNESCORTED rather than scrubbed. Needed for
+    #: eras with too few fighters to escort everything (Vietnam: the handful of fighters
+    #: are consumed escorting AWACS/tankers + BARCAP, so without this every Strike/BAI/CAS
+    #: scrubs on its missing escort). Pairs with strike_through_air_defense_threat to
+    #: unblock the offensive fleet. Simple ``= False`` default (save-safe class attr).
+    plan_strikes_without_full_escort: bool = False
+
     def display_name_for(self, flight_type: FlightType) -> str:
         """The doctrine's display label for a tasking (the rename layer)."""
         return self.task_display_names.get(flight_type, flight_type.value)
@@ -150,6 +166,8 @@ class Doctrine:
             escort_engagement_range=self.escort_engagement_range,
             task_display_names=self.task_display_names,
             tasking_whitelist=self.tasking_whitelist,
+            strike_through_air_defense_threat=self.strike_through_air_defense_threat,
+            plan_strikes_without_full_escort=self.plan_strikes_without_full_escort,
         )
 
 
@@ -305,14 +323,19 @@ VIETNAM_TASK_DISPLAY_NAMES: Mapping[FlightType, str] = {
     FlightType.TRANSPORT: "Airlift",
 }
 
-# Vietnam doctrine. Behaviour (geometry/flags) is a COLDWAR clone for now; the era
-# identity is the display-name layer. The tasking whitelist is left None (no planner
-# gating) until the behaviour phase (P3) drops DEAD/ANTISHIP and verifies the planner
-# degrades. See docs/dev/design/414th-vietnam-retribution-notes.md.
+# Vietnam doctrine. Behaviour is mostly a COLDWAR clone; the era identity is the
+# display-name layer plus one behaviour change (P3): strike_through_air_defense_threat,
+# because Vietnam air wings have no reliable SEAD, so the modern "suppress the SAM/AAA
+# before you strike" rule otherwise deadlocks the entire offensive fleet (root-caused
+# 2026-06-28: 0/28 strike + 0/13 BAI targets plannable, all threat-blocked). The tasking
+# whitelist is left None until DEAD/ANTISHIP are dropped. See
+# docs/dev/design/414th-vietnam-retribution-notes.md.
 VIETNAM_DOCTRINE = replace(
     COLDWAR_DOCTRINE,
     name="vietnam",
     task_display_names=VIETNAM_TASK_DISPLAY_NAMES,
+    strike_through_air_defense_threat=True,
+    plan_strikes_without_full_escort=True,
 )
 
 ALL_DOCTRINES = [

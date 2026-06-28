@@ -214,6 +214,14 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
                     threatened = True
                 if iads_threat not in state.threatening_air_defenses:
                     state.threatening_air_defenses.append(iads_threat)
+
+        # Eras with no reliable SEAD (Vietnam) accept the air-defense risk and strike
+        # into a threatened area rather than waiting for a suppression that can never
+        # happen -- otherwise dense AAA/SAM coverage blocks every offensive target and
+        # the whole attack fleet deadlocks. The threats are still recorded above (for
+        # DEAD targeting); the doctrine just stops *blocking* on them.
+        if state.context.coalition.doctrine.strike_through_air_defense_threat:
+            return True
         return not threatened
 
     def _get_weighted_threat_range(

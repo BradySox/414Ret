@@ -301,12 +301,24 @@ class PackageFulfiller:
                     )
 
         # Check again for unavailable aircraft. If the escort was required and
-        # none were found, scrub the mission.
+        # none were found, scrub the mission -- UNLESS the doctrine flies unescorted
+        # (Vietnam): with too few fighters to escort everything, a missing A2A/SEAD
+        # escort must not deadlock the strike. When only the *escorts* are missing
+        # (the main flights planned), prune them and fly the package unescorted.
         if missing_types:
-            self.scrub_mission_missing_aircraft(
-                mission, builder, missing_types, escorts, purchase_multiplier
-            )
-            return None
+            escort_only = builder.package.flights and missing_types <= {
+                FlightType.ESCORT,
+                FlightType.SEAD_ESCORT,
+                FlightType.SEAD_SWEEP,
+                FlightType.TARCAP,
+            }
+            if self.coalition.doctrine.plan_strikes_without_full_escort and escort_only:
+                missing_types.clear()
+            else:
+                self.scrub_mission_missing_aircraft(
+                    mission, builder, missing_types, escorts, purchase_multiplier
+                )
+                return None
 
         # Optionally pair a photo-recon flight (e.g. F-14 TARPS) with Strike/DEAD
         # packages. This is purely additive: it is never allowed to scrub the

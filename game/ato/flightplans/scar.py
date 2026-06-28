@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Type
+from typing import Optional, Type
+
+from dcs import Point
 
 from game.ato.flightplans.airspacegeometry import AirspaceGeometry
 from game.ato.flightplans.ibuilder import IBuilder
 from game.ato.flightplans.patrolling import PatrollingFlightPlan, PatrollingLayout
 from game.ato.flightplans.uizonedisplay import UiZone, UiZoneDisplay
 from game.ato.flightplans.waypointbuilder import WaypointBuilder
+from game.ato.flighttype import FlightType
 from game.utils import Distance, Speed, knots, meters, nautical_miles
 
 # SCAR ("Sandy") — the RESCAP escort leg of the Combat SAR rescue package (rescue
@@ -59,16 +62,45 @@ class ScarFlightPlan(PatrollingFlightPlan[PatrollingLayout], UiZoneDisplay):
 
 
 class Builder(IBuilder[ScarFlightPlan, PatrollingLayout]):
+    def _king_hold_center(self) -> Optional[Point]:
+        """Centre of the King's hold racetrack, so Sandy co-orbits the C-130 King.
+
+        The King is the fixed-wing ``COMBAT_SAR`` flight in the same package (the
+        helo ``COMBAT_SAR`` flight is the Jolly Green pickup). Accessing its
+        ``flight_plan`` lazily builds it; the King's plan depends only on the package
+        target and the ``COMBAT_SAR`` flights -- never on SCAR -- so there is no
+        recursion. Returns None when the package fields no King (the AI safety net
+        without a C-130, or a solo Sandy), so the caller falls back to the FLOT centre.
+        """
+        for flight in self.package.flights:
+            if (
+                flight is not self.flight
+                and flight.flight_type is FlightType.COMBAT_SAR
+                and not flight.is_helo
+            ):
+                layout = flight.flight_plan.layout
+                start = getattr(layout, "patrol_start", None)
+                end = getattr(layout, "patrol_end", None)
+                if start is not None and end is not None:
+                    return start.position.lerp(end.position, 0.5)
+        return None
+
     def layout(self) -> PatrollingLayout:
         half = nautical_miles(SCAR_LOITER_HALF_NM)
 
         # Orient the racetrack parallel to the FLOT (the standoff-anchor heading the
-        # support orbits use) but CENTRE it on the front -- Sandy holds near the
-        # fighting where pilots go down, it does not stand off like AWACS.
+        # support orbits use) and CENTRE it on the King's hold so Sandy escorts
+        # (co-orbits) the C-130 on-scene commander instead of flying an independent
+        # racetrack over the front. Falls back to the front centre when there is no
+        # King in the package (AI safety net without a C-130, or a solo Sandy). Sandy
+        # holds near the fighting where pilots go down -- it does not stand off like
+        # AWACS -- and engages threats in its box via the CAS task + weapons-free ROE
+        # (configure_scar). Walking Jolly Green in once a pickup starts is voice-first
+        # (the King talks the Sandys on) and a combatsar runtime follow-up for the AI.
         _, orbit_heading = AirspaceGeometry(
             self.theater, self.coalition.player, self.threat_zones
         ).standoff_anchor(self.package.target, meters(0))
-        center = self.package.target.position
+        center = self._king_hold_center() or self.package.target.position
 
         racetrack_start = center.point_from_heading(
             orbit_heading.right.degrees, half.meters

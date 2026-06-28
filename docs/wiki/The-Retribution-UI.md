@@ -19,7 +19,7 @@ The fork makes the map easier to read: SAM rings, emitters, routes, and IADS lin
 The toolbar across the top is your campaign control strip. From here you:
 
 - **Save and load** the campaign, and start a **New Game** (the wizard described in [Getting Started](Getting-Started)).
-- Open **Settings** — the difficulty, doctrine, plugin, and cheat options. The fork audited this screen: dead and duplicate options were removed, AI-radio toggles were merged into a single **AI wingman radio behavior** choice, and labels were clarified. Doctrine settings here also expose the fork's air-defense, SCAR, and unpredictability knobs.
+- Open **Settings** — the difficulty, doctrine, plugin, and cheat options. The fork reorganised this screen into six focused pages (Difficulty & Realism · Air Doctrine · Campaign Management · Mission Generation · Kneeboards · Performance) with one-click **difficulty presets** (Casual / Normal / Veteran / Ace) on the Difficulty & Realism page; a settings audit also removed dead/duplicate options and merged the AI-radio toggles into a single **AI wingman radio behavior** choice. Doctrine settings here expose the fork's air-defense, SCAR, and unpredictability knobs.
 - **Generate the mission / take off** — produce the `.miz` for the current turn and hand off to DCS.
 - **Advance the turn / fast-forward** — resolve and move the campaign forward after a mission, or let the AI auto-resolve.
 - Open the **Air Wing** and finance/intel summaries for the current state.

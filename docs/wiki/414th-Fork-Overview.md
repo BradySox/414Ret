@@ -21,9 +21,9 @@ Upstream shows you the enemy laydown. The fork fogs it, so reconnaissance become
 - Enemy sites can be **known without their composition, strength, damage state, or threat
   rings** being known. Attacking or scouting a site reveals it; confirmed battle damage can
   require a surviving recon pass (BDA damage lag).
-- **[TARPS](TARPS-Reconnaissance)** is a real player task for F-14s, backed by the **TARS**
-  film-and-debrief engine — what the aircraft photographs is carried back into the campaign as
-  confirmed intelligence.
+- **[TARPS](TARPS-Reconnaissance)** is a real player task (the F-14, plus the Vietnam-era
+  **RF-101B Voodoo** and **RA-5C Vigilante** recon birds), backed by the **TARS** film-and-debrief
+  engine — what the aircraft photographs is carried back into the campaign as confirmed intelligence.
 - An optional **Approximate target area** mode removes perfect coordinates and offsets
   steerpoints, so visual acquisition, talk-ons, and recon matter. Mobile short-range defenses
   are kept off player datalinks while larger SAM sites stay available for deliberate SEAD/DEAD.
@@ -90,6 +90,9 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 - The **[unified map layers panel](Map-Layers-and-Interface)** replaces both stock Leaflet
   controls with one dark-themed, grouped, collapsible control — with one-click preset views
   (Default / SEAD / Recon / Clean) and remembered choices between sessions.
+- The **[kneeboard deck](Kneeboards)** opens on a single cover page (op/turn header, the previous
+  turn's SITREP, and a flight index) and can fold into a compact 3–4 page deck; you can also import
+  your own kneeboard images per campaign.
 - Debriefing begins with a **Mission Impact** summary — territorial changes, runway damage, and
   losses — before the full event detail.
 
@@ -102,10 +105,18 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 - **CurrentHill Iran** integration — Shahed-136 and IRGCN FAC assets plus a `[CH] Iran 2020`
   faction behind a new-game mod toggle (see **[Custom Factions](Custom-Factions)**).
 - **Germany - Red Tide** — a *Red Storm Rising*-flavoured 1988 NATO counteroffensive campaign
-  built for the 414th, with named historical squadrons and liveries (see
-  **[Custom Campaigns](Custom-Campaigns)**).
-- A **settings audit** removed dead/duplicate options and consolidated the AI-radio toggles into
-  a single **AI wingman radio behavior** choice; existing campaigns migrate automatically.
+  built for the 414th, with named historical squadrons and liveries.
+- **Khe Sanh: Operation Niagara** — a historical 1968 siege campaign on Caucasus: an encircled
+  blue base kept alive by air, where the threat is **AAA, not MiGs**. Both shipped 414th campaigns
+  have a full player-facing **briefing pack** on the wiki (ORBAT, phase plan, mission-brief
+  template, threat-defeat, role cards) — see the Campaigns section of **[Home](Home)** and
+  **[Custom Campaigns](Custom-Campaigns)**.
+- The **settings dialog** is reorganised into six focused pages with one-click **difficulty
+  presets** (Casual / Normal / Veteran / Ace), and a settings audit removed dead/duplicate options
+  and merged the AI-radio toggles into a single **AI wingman radio behavior** choice. Existing
+  campaigns migrate automatically.
+- Each squadron can spawn under its **own DCS nation** (nation-specific voiceovers) with
+  **nation-aware pilot names** (see **[Squadrons and Pilots](Squadrons-and-Pilots)**).
 
 Most campaign-facing systems have their own setting or plugin toggle. The **command-post intel
 fog** (enemy command posts hidden until you find them by strike/scout/TARPS) is on by default for

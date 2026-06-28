@@ -64,7 +64,12 @@ Retribution knows each unit and weapon's introduction year. A campaign's
 service: a 1988 campaign won't auto-purchase or spawn a unit introduced in 2015. So you
 can list modern variants in a faction and rely on the campaign date to restrict what
 actually appears. The fork extends this to weapon coverage — modern munitions are
-date-gated the same way (see `docs/dev/design/414th-weapon-dates-proposal.md`).
+date-gated the same way (see `docs/dev/design/414th-weapon-dates-proposal.md`) — and to
+era-defining **payload-editor properties**: with `restrict_weapons_by_date` on, the **JHMCS**
+helmet sight (fielded ~2003) is hidden from the dropdown and clamped to the baseline visor when
+generating a pre-2003 mission. A faction can also nudge specific weapons with
+`weapons_introduction_year_overrides` (e.g. the NVA's MiG-17 missiles pushed past the era so the
+Fresco stays guns-only).
 
 ## The `[CH] Iran 2020` faction and CurrentHill Iran pack
 

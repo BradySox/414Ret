@@ -81,6 +81,16 @@ So when you add or edit a loadout:
 
 Keeping CLSIDs current is the single most important discipline for custom loadouts.
 
+## Date-gated stores and properties
+
+With **Restrict weapons by campaign date** on (a difficulty setting — off by default, on for the
+Veteran/Ace presets), the payload editor hides stores **and properties** that postdate the campaign:
+modern munitions drop out of the lists, and era-defining options like the **JHMCS** helmet sight are
+removed and clamped to the baseline visor for a pre-2003 mission. The generator is authoritative —
+even a *defaulted* JHMCS is degraded at generation — so a period campaign stays period-correct
+without hand-editing every loadout. See [Custom Factions](Custom-Factions) for the unit/weapon side
+of date gating.
+
 ## See also
 
 - [Custom Factions](Custom-Factions) — which aircraft a side can field

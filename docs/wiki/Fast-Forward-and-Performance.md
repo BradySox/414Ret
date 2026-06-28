@@ -27,6 +27,13 @@ contact." Related options:
   combining auto-resolve with "Never" for player interruptions means fast-forward will never
   stop.
 
+  > **Fork note:** the auto-resolver is **capability-weighted**, not a coin flip. Air-to-air is
+  > decided by best A2A task-priority × aircraft count (a modern fighter beats an obsolete one, and
+  > escorts matter), and SAM survival scales with SEAD role/capability and the number of engaging
+  > sites. AI-only combats also keep resolving during a *Player at IP* fast-forward, so a
+  > ground-started player still spawns at its IP instead of the fast-forward halting at the first
+  > unrelated fight.
+
 Once you push **Take off**, you cannot change settings — to make changes you must reload the
 game state.
 

@@ -51,7 +51,7 @@ Retribution temporarily modifies your DCS `MissionScripting.lua` so it can recor
 
 ## First launch
 
-On first run, point Retribution at your DCS World installation and your `Saved Games\DCS` folder when prompted. It uses these to detect your installed modules (which determines the aircraft and campaigns available to you) and to write generated missions and DTC content into the right place.
+On first run, point Retribution at your DCS World installation and your `Saved Games\DCS` folder when prompted. It uses these to detect your installed modules (which determines the aircraft and campaigns available to you) and to write generated missions into the right place.
 
 Once it knows where DCS lives, start a campaign from the **New Game** wizard. The wizard walks you through:
 

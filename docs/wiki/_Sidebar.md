@@ -29,6 +29,7 @@
 - [Electronic Warfare & ISR](Electronic-Warfare-and-ISR)
 - [Troops In Contact](Troops-In-Contact)
 - [Map Layers & Interface](Map-Layers-and-Interface)
+- [Kneeboards](Kneeboards)
 - [Drop-Spawn Placement](Drop-Spawn-Unit-Placement)
 
 **Campaigns**

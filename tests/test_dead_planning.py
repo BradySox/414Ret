@@ -118,3 +118,23 @@ def test_dead_without_live_radar_sam_uses_sead_escort_not_sweep() -> None:
         FlightType.ESCORT,
         FlightType.SEAD_ESCORT,
     ]
+
+
+def test_vietnam_doctrine_scrubs_the_whole_dead_package() -> None:
+    # The Vietnam tasking whitelist drops DEAD (a package primary), so fulfill_mission
+    # must scrub the mission *before* it builds a fulfiller -- no SEAD planning, no
+    # purchase requests, no A-1 grabbed for a SEAD escort. DEAD is proposed first, so
+    # the primary-disallowed branch returns False before the fulfiller line is reached
+    # (which is why this needs no theater/tracer/db fakes).
+    from game.data.doctrine import VIETNAM_DOCTRINE
+
+    task = PlanDead(_target(has_live_radar_sam=True))  # type: ignore[arg-type]
+    state = SimpleNamespace(
+        context=SimpleNamespace(
+            coalition=SimpleNamespace(
+                player=SimpleNamespace(is_blue=True),
+                doctrine=VIETNAM_DOCTRINE,
+            )
+        )
+    )
+    assert task.fulfill_mission(state) is False  # type: ignore[arg-type]

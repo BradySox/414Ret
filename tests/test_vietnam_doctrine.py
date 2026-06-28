@@ -62,12 +62,37 @@ def test_existing_doctrines_have_no_renames() -> None:
         assert doctrine.display_name_for(FlightType.BARCAP) == FlightType.BARCAP.value
 
 
-def test_whitelist_none_allows_everything() -> None:
-    # P1 keeps every doctrine's whitelist open (behaviour == COLDWAR); P3 narrows Vietnam.
-    for doctrine in ALL_DOCTRINES:
+def test_non_vietnam_whitelists_stay_open() -> None:
+    # Every non-Vietnam doctrine keeps its whitelist open (behaviour == COLDWAR).
+    for doctrine in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
         assert doctrine.tasking_whitelist is None
         assert doctrine.allows(FlightType.DEAD)
         assert doctrine.allows(FlightType.ANTISHIP)
+
+
+def test_vietnam_whitelist_drops_sead_dead_antiship() -> None:
+    # P3: Vietnam has no reliable SEAD and no naval threat, so the auto-planner must not
+    # produce SEAD/DEAD/anti-ship -- this is what stops an A-1 being tasked a SEAD sweep.
+    for dropped in (
+        FlightType.DEAD,
+        FlightType.SEAD,
+        FlightType.SEAD_ESCORT,
+        FlightType.SEAD_SWEEP,
+        FlightType.ANTISHIP,
+    ):
+        assert not VIETNAM_DOCTRINE.allows(dropped), dropped
+    # The core taskings the campaign still flies stay allowed.
+    for kept in (
+        FlightType.STRIKE,
+        FlightType.BAI,
+        FlightType.CAS,
+        FlightType.BARCAP,
+        FlightType.ESCORT,
+        FlightType.TARCAP,
+        FlightType.ARMED_RECON,
+        FlightType.AEWC,
+    ):
+        assert VIETNAM_DOCTRINE.allows(kept), kept
 
 
 def test_allows_respects_a_whitelist() -> None:
@@ -105,7 +130,9 @@ def test_from_settings_preserves_renames_whitelist_and_flags() -> None:
     # must survive, or a settings-adjusted Vietnam doctrine would silently lose them.
     out = VIETNAM_DOCTRINE.from_settings(Settings())
     assert out.display_name_for(FlightType.STRIKE) == "Alpha Strike"
-    assert out.tasking_whitelist is None
+    assert out.tasking_whitelist is not None
+    assert not out.allows(FlightType.DEAD)
+    assert out.allows(FlightType.STRIKE)
     assert out.strike_through_air_defense_threat is True
     assert out.plan_strikes_without_full_escort is True
 

@@ -66,8 +66,22 @@ P3 (behaviour taskings) outstanding.
   `plan_strikes_without_full_escort` (a missing A2A/SEAD escort prunes instead of scrubbing the package —
   `game/commander/packagefulfiller.py`). Headless-verified on the reported save: BLUE **7 → 19 packages**,
   now planning CAS/BAI/Strike/Armed-Recon. **Existing saves don't benefit** (the old doctrine is pickled
-  flags-off) — needs a NEW game. Still TODO in P3: Alpha Strike sizing, Iron Hand = Shrike-vs-emitter,
-  drop DEAD/ANTISHIP from the whitelist (the 66 wasted DEAD attempts).
+  flags-off) — needs a NEW game.
+- **P3 (behaviour) — tasking whitelist DONE.** The `tasking_whitelist`/`Doctrine.allows()` mechanism
+  (built unused in P1) is now wired at the planner edge. `VIETNAM_DOCTRINE` drops
+  **SEAD + SEAD_ESCORT + SEAD_SWEEP + DEAD + ANTISHIP** (`VIETNAM_DROPPED_TASKINGS`; the allowed set is
+  the whole enum minus those, so new FlightTypes fail-open). The gate lives in
+  `PackagePlanningTask.fulfill_mission`: the package primary is always proposed first, so a disallowed
+  primary (DEAD/ANTISHIP) scrubs the whole mission, while a disallowed *escort* (the SEAD trio) is just
+  dropped and the package flies on (pairs with `plan_strikes_without_full_escort`). Motivated by a playtest
+  "A-1 on SEAD Sweep" — a squadron's auto-assignable tasks are `aircraft caps − secondary` (`squadrondef.py`),
+  and the A-1H's DCS task list includes SEAD, so the planner's SEAD-escort proposals grabbed it. Headless on
+  the live save: SEAD/DEAD/anti-ship **13 → 0**, and freeing those airframes *raised* offensive output
+  (STRIKE 1→5, BAI 6→13, packages 19→31). Drops all SEAD per the "no reliable SEAD" premise (no current
+  Vietnam campaign fields a Wild Weasel); revisit per-faction if one ever does. Tests:
+  `test_vietnam_doctrine.py::test_vietnam_whitelist_drops_sead_dead_antiship` + the `fulfill_mission` scrub
+  in `test_dead_planning.py::test_vietnam_doctrine_scrubs_the_whole_dead_package`. Still TODO in P3:
+  Alpha Strike package sizing, Iron Hand = Shrike-vs-live-emitter.
 - **P4** — see §9.
 
 ---

@@ -76,20 +76,38 @@ def test_allows_respects_a_whitelist() -> None:
     assert not gated.allows(FlightType.DEAD)
 
 
-def test_vietnam_behaviour_clones_coldwar() -> None:
-    # Only the display layer (and the name) differ; every planning field matches COLDWAR.
+def test_vietnam_geometry_matches_coldwar() -> None:
+    # Vietnam shares COLDWAR's planning geometry; it differs only in the display layer
+    # (name + renames) and the two P3 behaviour flags. Reset exactly those -> COLDWAR.
     rebadged = replace(
-        VIETNAM_DOCTRINE, name="coldwar", task_display_names={}, tasking_whitelist=None
+        VIETNAM_DOCTRINE,
+        name="coldwar",
+        task_display_names={},
+        tasking_whitelist=None,
+        strike_through_air_defense_threat=False,
+        plan_strikes_without_full_escort=False,
     )
     assert rebadged == COLDWAR_DOCTRINE
 
 
-def test_from_settings_preserves_renames_and_whitelist() -> None:
+def test_vietnam_relaxes_strike_gates_only() -> None:
+    # P3: with no reliable SEAD and few fighters, Vietnam strikes into unsuppressed air
+    # defenses AND flies unescorted rather than deadlocking the whole offensive fleet.
+    assert VIETNAM_DOCTRINE.strike_through_air_defense_threat is True
+    assert VIETNAM_DOCTRINE.plan_strikes_without_full_escort is True
+    for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+        assert d.strike_through_air_defense_threat is False
+        assert d.plan_strikes_without_full_escort is False
+
+
+def test_from_settings_preserves_renames_whitelist_and_flags() -> None:
     # from_settings rebuilds the frozen dataclass field by field -- the additive fields
-    # must survive, or a settings-adjusted Vietnam doctrine would silently lose its renames.
+    # must survive, or a settings-adjusted Vietnam doctrine would silently lose them.
     out = VIETNAM_DOCTRINE.from_settings(Settings())
     assert out.display_name_for(FlightType.STRIKE) == "Alpha Strike"
     assert out.tasking_whitelist is None
+    assert out.strike_through_air_defense_threat is True
+    assert out.plan_strikes_without_full_escort is True
 
 
 def test_vietnam_faction_jsons_declare_vietnam_doctrine() -> None:

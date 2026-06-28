@@ -44,7 +44,26 @@ P3 (behaviour taskings) outstanding.
   (the `_brief_mission` label). **Deferred (graceful canonical fallback):** the "Add new Squadron"
   popup (`SquadronConfigPopup` has no coalition context), the `QPackageDialog` package-summary label
   (`Package` exposes no coalition), and the `SeadTaskPage` SEAD/DEAD page-internal header.
-- **P2 / P3 / P4** — see §9.
+- **P2 (era pre-seed) — DONE.** The 3 Vietnam campaigns' `settings:` blocks turn the Vietnam Ops
+  mechanics + `restrict_weapons_by_date` on (per-campaign: Khe Sanh/Velvet Thunder inland → no naval
+  gunfire; Yankee Station coastal → naval gunfire on). Applied on campaign-select via the existing
+  `QNewGameSettings._load_campaign_settings`. Test: `tests/test_vietnam_content.py::test_vietnam_campaign_era_preseed_applies`.
+  The dedicated New-Game "Vietnam" *card* (filter the list + brand the front door) is still TODO.
+- **P3 (behaviour) — strike-deadlock fix DONE (the urgent one).** Root-caused 2026-06-28 from a live
+  Khe Sanh save reporting "no BAI/Strike": **0/28 strike + 0/13 BAI targets were plannable** because
+  retribution refuses to strike a target still covered by an air defense (`target_area_preconditions_met`),
+  and Vietnam has no reliable SEAD to clear it (66 DEAD attempts, all scrubbed) → total deadlock of a
+  15-squadron / 77-target offensive fleet. **Not** a fork regression: the gate, the escort logic, and the
+  offensive task tree are all upstream-identical (the fork only *added* the beneficial CAS-decoupling), so
+  upstream deadlocks here too — it's a retribution-vs-no-SEAD-era mismatch. Fix = two additive `Doctrine`
+  flags (default False; VIETNAM True): `strike_through_air_defense_threat` (plan Strike/BAI into threatened
+  areas; threats still recorded for DEAD targeting — `game/commander/tasks/packageplanningtask.py`) +
+  `plan_strikes_without_full_escort` (a missing A2A/SEAD escort prunes instead of scrubbing the package —
+  `game/commander/packagefulfiller.py`). Headless-verified on the reported save: BLUE **7 → 19 packages**,
+  now planning CAS/BAI/Strike/Armed-Recon. **Existing saves don't benefit** (the old doctrine is pickled
+  flags-off) — needs a NEW game. Still TODO in P3: Alpha Strike sizing, Iron Hand = Shrike-vs-emitter,
+  drop DEAD/ANTISHIP from the whitelist (the 66 wasted DEAD attempts).
+- **P4** — see §9.
 
 ---
 

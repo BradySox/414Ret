@@ -24,6 +24,11 @@ version: "10.6"
 advanced_iads: true
 
 settings:
+  # Vietnam Ops period mechanics (era pre-seed). Coastal carrier war -> naval gunfire on.
+  vietnam_arc_light: true
+  vietnam_flak_gauntlet: true
+  vietnam_naval_gunfire: true
+  restrict_weapons_by_date: true
   automate_runway_repair: true
   automate_front_line_reinforcements: true
   automate_aircraft_reinforcements: false

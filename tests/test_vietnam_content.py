@@ -160,6 +160,47 @@ def test_vietnam_campaigns_tagged_era_vietnam(campaign_file: str) -> None:
     )
 
 
+# P2 era pre-seed: the campaign settings: block that auto-applies (on campaign-select,
+# via QNewGameSettings._load_campaign_settings -> Settings.deserialize_state_dict) to turn
+# the Vietnam Ops mechanics + era weapon gating on. Per-campaign because they differ
+# (Khe Sanh is inland -> no naval gunfire; Yankee Station is coastal -> yes).
+_ERA_PRESEED: dict[str, dict[str, bool]] = {
+    "khe_sanh_niagara.yaml": {
+        "vietnam_arc_light": True,
+        "vietnam_flak_gauntlet": True,
+        "vietnam_naval_gunfire": False,  # inland
+        "restrict_weapons_by_date": True,
+    },
+    "1968_Yankee_Station.yaml": {
+        "vietnam_arc_light": True,
+        "vietnam_flak_gauntlet": True,
+        "vietnam_naval_gunfire": True,  # coastal
+        "restrict_weapons_by_date": True,
+    },
+    "operation_velvet_thunder.yaml": {
+        "vietnam_arc_light": True,
+        "vietnam_flak_gauntlet": True,
+        "vietnam_naval_gunfire": False,
+        "restrict_weapons_by_date": True,
+    },
+}
+
+
+@pytest.mark.parametrize("campaign_file", list(_ERA_PRESEED))
+def test_vietnam_campaign_era_preseed_applies(campaign_file: str) -> None:
+    from game.settings import Settings
+
+    campaign = Campaign.from_file(_CAMPAIGNS / campaign_file)
+    # Mirror the wizard: deserialize the campaign settings: block onto a default Settings.
+    settings = Settings()
+    settings.__dict__.update(Settings.deserialize_state_dict(campaign.settings))
+    for field, expected in _ERA_PRESEED[campaign_file].items():
+        assert getattr(settings, field) == expected, (
+            f"{campaign_file}: era pre-seed '{field}' should be {expected} after the "
+            "campaign settings: block is applied in the New Game wizard."
+        )
+
+
 @pytest.mark.parametrize(
     "faction_file",
     [

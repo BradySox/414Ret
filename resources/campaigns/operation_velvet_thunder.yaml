@@ -21,6 +21,10 @@ performance: 1
 recommended_start_date: 1970-11-29
 version: "10.8"
 settings:
+  # Vietnam Ops period mechanics (era pre-seed). Jungle COIN -> no naval gunfire.
+  vietnam_arc_light: true
+  vietnam_flak_gauntlet: true
+  restrict_weapons_by_date: true
   airbase_threat_range: 20
   a4_skyhawk: true
   f111c: true

@@ -117,9 +117,14 @@ file. This guide is the map; those are the territory.
     suite lives inside: three thin layers over the one engine — a New Game "Vietnam" shell + content
     filter + a doctrine profile (`VIETNAM_DOCTRINE`) that renames taskings (MiGCAP/Iron Hand/Alpha
     Strike/Sandy) via a display-only override on `Doctrine` (never the persisted enum) and will gate the
-    planner whitelist. **P0 (era tags) + P1 (doctrine model + 10-faction repoint) + P1b (display read-path:
-    the renames now show in the kneeboard + the manual task picker + the flight/squadron UI via
-    `Flight/FlightData.task_display_name`) landed**; P2 shell/preset + P3 behaviour taskings outstanding.
+    planner whitelist. **P0 (era tags) + P1 (doctrine model + 10-faction repoint) + P1b (display read-path)
+    + P2 era pre-seed (Vietnam campaigns auto-enable the Ops mechanics on select) + P3 strike-deadlock fix
+    landed**; the New-Game "Vietnam" *card* + the rest of P3 (Alpha Strike sizing, Iron Hand, drop
+    DEAD/ANTISHIP) outstanding. **P3 strike-deadlock**: Vietnam has no SEAD, so retribution's "suppress the
+    air defense before you strike" rule deadlocked the whole offensive fleet (0/28 strike + 0/13 BAI
+    plannable — an upstream-shared behaviour, not a fork bug); two additive default-False `Doctrine` flags
+    (`strike_through_air_defense_threat`, `plan_strikes_without_full_escort`) let Vietnam strike into
+    threatened areas + fly unescorted (headless-verified 7→19 BLUE packages; needs a NEW game).
     The Ops suite's Arc Light/flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).

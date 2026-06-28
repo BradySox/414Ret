@@ -27,7 +27,11 @@ routing are pure and unit-tested. See
 from __future__ import annotations
 
 import logging
+import re
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
+
+import yaml
 
 from game.data.groups import GroupTask
 from game.theater.controlpoint import Airfield, ControlPoint
@@ -139,6 +143,29 @@ def blank_campaign_document(
         "advanced_iads": game.theater.iads_network.advanced_iads,
         "blank_canvas": serialize_blank_campaign(game),
     }
+
+
+def _slugify(name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    return slug or "blank-campaign"
+
+
+def save_blank_campaign(game: Game, directory: Path, name: str) -> Path:
+    """Write a built blank-canvas game out as a reusable campaign YAML in
+    *directory* (the user's ``Retribution/Campaigns`` folder) under a slug of
+    *name*, returning the path. The New-Game list picks it up via
+    ``Campaign.load_each``'s scan of that folder. The terrain's own menu thumbnail
+    is reused automatically by ``Campaign.from_file`` — no image is generated.
+    """
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    document = blank_campaign_document(game, name=name)
+    path = directory / f"{_slugify(name)}.yaml"
+    path.write_text(
+        yaml.safe_dump(document, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
+    logger.info("Saved blank-canvas campaign %r to %s", name, path)
+    return path
 
 
 def _apply_sites(theater: ConflictTheater, sites: list[dict[str, Any]]) -> int:

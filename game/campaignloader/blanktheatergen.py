@@ -175,6 +175,9 @@ def finalize_blank_canvas(setup_game: Game) -> Game:
     ).generate()
 
     _synthesize_support_buildings(game)
+    # Mark the origin so the "Save as Campaign" action (Increment D) can offer to
+    # bottle this hand-built theater as a reusable campaign.
+    game.from_blank_canvas = True
     return game
 
 

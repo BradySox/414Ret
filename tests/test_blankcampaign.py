@@ -13,11 +13,17 @@ from types import SimpleNamespace
 from typing import Any, Optional
 from unittest.mock import MagicMock
 
+from pathlib import Path
+
+import yaml
+
 from game.campaignloader.blankcampaign import (
     _TASK_TO_PRESET,
     _apply_sites,
+    _slugify,
     _task_by_name,
     blank_campaign_document,
+    save_blank_campaign,
     serialize_blank_campaign,
 )
 from game.data.groups import GroupTask
@@ -140,3 +146,32 @@ def test_campaign_document_stamps_current_version_and_has_no_miz() -> None:
     assert doc["recommended_player_faction"] == "USA 2005"
     assert "miz" not in doc
     assert "blank_canvas" in doc and "ownership" in doc["blank_canvas"]
+
+
+def test_slugify() -> None:
+    assert _slugify("My Cool War!") == "my-cool-war"
+    assert _slugify("  Op: Red Tide  ") == "op-red-tide"
+    assert _slugify("!!!") == "blank-campaign"  # fallback when nothing survives
+
+
+def test_save_blank_campaign_writes_loadable_yaml(tmp_path: Path) -> None:
+    game = SimpleNamespace(
+        theater=SimpleNamespace(
+            controlpoints=[],
+            ground_objects=[],
+            terrain=SimpleNamespace(name="Caucasus"),
+            iads_network=SimpleNamespace(advanced_iads=False),
+        ),
+        blue=SimpleNamespace(faction=SimpleNamespace(name="USA 2005"), budget=2000),
+        red=SimpleNamespace(faction=SimpleNamespace(name="Russia 2010"), budget=1500),
+    )
+
+    path = save_blank_campaign(game, tmp_path / "Campaigns", "My Cool War!")  # type: ignore[arg-type]
+
+    assert path.name == "my-cool-war.yaml"
+    assert path.exists()
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert doc["name"] == "My Cool War!"
+    assert doc["theater"] == "Caucasus"
+    assert "miz" not in doc
+    assert "blank_canvas" in doc

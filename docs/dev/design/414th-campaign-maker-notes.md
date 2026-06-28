@@ -281,7 +281,7 @@ runnability criterion + the fail signature above.
 
 ---
 
-## Increment D — save-as-campaign (CORE BUILT 2026-06-27; D.3 Qt UI remaining)
+## Increment D — save-as-campaign (BUILT 2026-06-27; needs an in-app click-test)
 
 **Goal.** Bottle a hand-built theater (a finalized blank canvas + drop-spawned
 units + the §C.2 default laydown) as a **reusable campaign** that shows up in the
@@ -289,11 +289,14 @@ New Game list like any shipped campaign — so a built map can be replayed fresh
 (different date / factions / settings), not just resumed as a one-off `.retribution`
 save. This is the "major release" payoff.
 
-**Status:** the **serialize + rebuild core (D.1 + D.2) is BUILT and headless-verified**
-(`game/campaignloader/blankcampaign.py` + the `Campaign.load_theater` branch +
-`tests/test_blankcampaign.py`); a saved campaign round-trips ownership + the
-preset-native laydown through the real New-Game machinery. The only remaining piece is
-**D.3 — the Qt "Save as Campaign" button** (writes the YAML; can't be CI/headless-tested).
+**Status: D.1 + D.2 + D.3 all BUILT.** Core (`game/campaignloader/blankcampaign.py` +
+the `Campaign.load_theater` branch + `tests/test_blankcampaign.py`) is headless-verified;
+the **Qt "Save as Campaign" toolbar action** (`QLiberationWindow.saveCampaign`, gated by
+the new `Game.from_blank_canvas` flag set at finalize) writes the YAML into
+`Retribution/Campaigns`. Headless-confirmed end to end: finalize sets the flag →
+`save_blank_campaign` writes `my-test-war.yaml` → `Campaign.from_file` loads it as
+**compatible (shows in New Game)** → `load_theater` rebuilds the laydown. The only
+unexercised step is the literal button-click + name dialog (checklist BC-H).
 
 ### The seam
 
@@ -378,12 +381,17 @@ exactly what's on the map (the §C.2 seed, drop-spawn §20, and scenery alike).
   `Campaign.from_file` → `load_theater` → `GameGenerator.generate()` (Caucasus, 4 bases,
   `[CH] Russia 2020`): ownership matches and every preset-native task count matches exactly
   (BASE_DEFENSE/SHORAD/MERAD/EWR/FACTORY/AMMO 4↔4); FUEL/OIL drop as designed.
-- **D.3 — Qt "Save as Campaign" action + thumbnail.** A toolbar action (visible on a
-  finalized game) that calls the serializer, writes `<saved games>/Retribution/
-  Campaigns/<slug>.yaml`, and snapshots a menu thumbnail. New-Game then lists it via
-  the existing `load_each()` scan — no wizard change needed. (Mind the **version
-  gate**: stamp `version` = the app's `CAMPAIGN_FORMAT_VERSION` or the campaign is
-  silently hidden — see `[[campaign-version-gate-gotcha]]`.)
+- **D.3 — Qt "Save as Campaign" action ✅ BUILT (2026-06-27).** A toolbar action
+  (`QLiberationWindow.saveCampaign`) visible only on a finalized blank-canvas game
+  (gated by the new persisted `Game.from_blank_canvas` flag, set in
+  `finalize_blank_canvas`; `__init__`/`__setstate__` default False). It prompts for a
+  name (`QInputDialog`), calls `save_blank_campaign(game, …/Retribution/Campaigns, name)`
+  (slug filename, `_slugify`), and confirms. New-Game lists it via the existing
+  `load_each()` scan — no wizard change. The **version gate** is handled in
+  `blank_campaign_document` (stamps the live `CAMPAIGN_FORMAT_VERSION`, so the campaign
+  is not hidden — `[[campaign-version-gate-gotcha]]`). No thumbnail is generated: the
+  terrain's own menu thumbnail is reused by `Campaign.from_file`. The write helper is
+  unit-tested; only the literal click + dialog need an in-app pass (BC-H).
 - **D.4 — polish.** Squadron/air-wing presets in the descriptor (so a saved campaign
   can pre-staff bases), supply-route overrides, FOB/FARP capture, round-trip of
   drop-spawn respawn flags.
@@ -400,7 +408,9 @@ exactly what's on the map (the §C.2 seed, drop-spawn §20, and scenery alike).
 - **Version gate.** Handled — `blank_campaign_document` stamps the live
   `CAMPAIGN_FORMAT_VERSION` so New-Game does not hide the saved campaign
   ([[campaign-version-gate-gotcha]]).
-- **Remaining (D.3):** the Qt "Save as Campaign" action + thumbnail (the only piece that
-  can't be headless-verified) and, for full fidelity, optional exact-layout preservation +
-  FUEL/OIL/flavour buildings (a post-generation pass like `_synthesize_support_buildings`,
-  which needs a generated game — not available in `load_theater`).
+- **Deferred (D.4 polish):** exact-layout preservation (store the chosen group, not just
+  the task) + FUEL/OIL/flavour buildings (a post-generation pass like
+  `_synthesize_support_buildings`, which needs a generated game — not available in
+  `load_theater`) + squadron/air-wing presets in the descriptor (pre-staff bases) +
+  drop-spawn respawn flags. The only outstanding *verification* is the BC-H in-app
+  click-test (the button/dialog itself).

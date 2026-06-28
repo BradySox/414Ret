@@ -7,7 +7,9 @@ it back. In the* Red Storm Rising *tradition; all names, regiments, and the Sovi
 ("ZAPAD") are fiction, historically flavoured, and freely editable.*
 
 *For a picture brief — theater map, SAM threat profile, and target-priority / ORBAT diagrams —
-see **[red-tide-visual-briefing.md](red-tide-visual-briefing.md)**.*
+see **[red-tide-visual-briefing.md](red-tide-visual-briefing.md)**. To **build a brief** — real
+friendly ORBAT, fill-in mission-brief template, package recipes, comms cards, and the phase plan —
+see the **[Campaign Briefing Handbook](red-tide-campaign-handbook.md)**.*
 
 *This pack is written to match the campaign exactly — the red regiments below are the squadron
 names you will see in the in-game ATO. Three pieces:*
@@ -15,6 +17,19 @@ names you will see in the in-game ATO. Three pieces:*
 1. **Intelligence Assessment** — backstory, full order of battle, courses of action, target deck.
 2. **Pilot's Threat Card** — one-page kneeboard quick-reference.
 3. **Five-Minute Spoken Brief** — a read-aloud script for the mass brief.
+
+> 🟡 **Provenance — this pack predates the build.** It was written as *narrative ahead of the
+> campaign being finished*, so read it as flavour, not spec. What's been re-checked against the
+> source files and **is accurate:** the red **order of battle** (Annex A) — every regiment, field,
+> and airframe matches `red_tide.yaml`; and the **threat list** (Annex B) — every SAM/EWR/Scud and
+> the Tarantul/Grisha SAGs exist in `russia_1980.json`. What to **treat as flavour, not mechanics:**
+> the SAM "shoot-and-scoot in transit" language (DCS sites are static within a generated mission;
+> the planner repositions mobile SAMs *between turns*, so "fly today's recon" is the real takeaway);
+> the **networked-IADS** "kill the C2 to drop the SAMs" idea (designed against the retired **Skynet**
+> engine — the fork now runs **MANTIS**; unverified in-game — the dependable lever is killing the
+> EWR/A-50 *picture*); and note this pack predates **Combat SAR**, which exists in the build but is
+> still in in-game testing. For the file-grounded working reference, see the
+> **[Campaign Briefing Handbook](red-tide-campaign-handbook.md)**.
 
 ---
 ---

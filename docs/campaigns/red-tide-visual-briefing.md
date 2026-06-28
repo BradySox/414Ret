@@ -3,7 +3,17 @@
 *A picture brief for **Germany - Red Tide**. The theater map and SAM profile are generated from
 the campaign's actual airfield coordinates and order of battle; the flow/ORBAT charts render on
 GitHub. For the full text product — assessment, kneeboard threat card, and read-aloud brief — see
-**[red-tide-intel-assessment.md](red-tide-intel-assessment.md)**.*
+**[red-tide-intel-assessment.md](red-tide-intel-assessment.md)**. To **build a brief** — real
+friendly ORBAT, mission-brief template, package recipes, comms cards, and the phase plan — see the
+**[Campaign Briefing Handbook](red-tide-campaign-handbook.md)**.*
+
+> 🟡 **Provenance — this brief predates the build.** The **ORBAT diagram** matches `red_tide.yaml`
+> and the airfields/threats are real, so the picture is sound. But the static **theater map** and
+> **SAM-ring** PNGs are a *snapshot* — bases, the FLOT, and SAM positions move as the campaign is
+> flown, so trust the live Retribution map over these images on the night. And the SAM rings are
+> reach guidance, not a promise the **networked-IADS** "kill-C2" mechanic works (it was built for
+> the retired Skynet engine; the fork now runs MANTIS — unverified in-game). File-grounded working
+> reference: the **[Campaign Briefing Handbook](red-tide-campaign-handbook.md)**.
 
 ---
 

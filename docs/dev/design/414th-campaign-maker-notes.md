@@ -124,7 +124,9 @@ path and keeps them off the map entirely.
   avoidance beyond the land check, per-base variety/scaling, seeding the front-line
   ground-unit *inventory* (`base.armor`) for a real FLOT push (only BASE_DEFENSE
   armor TGOs are seeded today). Needs an in-game pass (fly a finalized blank canvas).
-- **Increment D+ — save a hand-built theater as a reusable campaign.**
+- **Increment D — save a hand-built theater as a reusable campaign (DESIGN SPIKE
+  2026-06-27; keystone proven headless, not yet built).** See the dedicated design
+  section **"Increment D — save-as-campaign"** below.
 
 ### Airfield count caveat
 
@@ -276,3 +278,113 @@ both-coalitions guarantee, degenerate all-same-point, single/empty, link de-dup 
 `k`). Increments 2–3 are gated on the in-game pass — add a row to
 `docs/dev/414th-ingame-pass-checklist.md` when the glue lands, with the no-fronts
 runnability criterion + the fail signature above.
+
+---
+
+## Increment D — save-as-campaign (design spike, 2026-06-27)
+
+**Goal.** Bottle a hand-built theater (a finalized blank canvas + drop-spawned
+units + the §C.2 default laydown) as a **reusable campaign** that shows up in the
+New Game list like any shipped campaign — so a built map can be replayed fresh
+(different date / factions / settings), not just resumed as a one-off `.retribution`
+save. This is the "major release" payoff and the explicit **long arc**: it is
+*designed and keystone-proven here, not yet built*.
+
+### The seam
+
+A `Campaign` = a YAML descriptor + a `.miz`. `Campaign.load_theater`
+(`campaign.py`) loads the terrain, then `MizCampaignLoader.populate_theater()`
+parses the `.miz` into control points, supply routes and preset SAM/armor/building
+locations. The whole New-Game wizard keys off `Campaign.load_each()`, which scans
+`<saved games>/Retribution/Campaigns` **and** `resources/campaigns`.
+
+### Three approaches considered
+
+1. **Write a real `.miz`** (reverse `MizCampaignLoader`). "Proper" — the saved
+   campaign is indistinguishable from a shipped one — but requires authoring a
+   pydcs `Mission` with placeholder groups that exactly match every
+   `MizCampaignLoader` parsing convention (CP airfields, supply-route vehicle
+   groups, preset SAM/armor/building/IADS naming). High effort, fragile, and most
+   of it is redundant for a blank canvas. **Rejected.**
+2. **Just pickle the `Game`.** Already possible (a finalized game saves like any
+   other). But it's a *resume*, not a *reusable* campaign — no New-Game entry, no
+   re-roll of date/factions/budget. Doesn't meet the ask. **Insufficient alone.**
+3. **`.miz`-less blank-canvas campaign (RECOMMENDED).** A blank-canvas theater is
+   already built **without a `.miz`** (`generate_blank_theater` +
+   `_seed_air_defenses_and_armor` + drop-spawn). So don't write a `.miz` — serialize
+   the *inputs* that produced the theater (terrain + ownership + the ground-object
+   graph) into the campaign YAML itself, and teach `Campaign.load_theater` to
+   **rebuild** from that descriptor instead of parsing a `.miz`.
+
+### Keystone — PROVEN headless (2026-06-27)
+
+The rebuild primitive already exists and is faithful: serialize a built theater's
+ownership → `generate_blank_theater(terrain, ownership=…)` reproduces an **identical**
+theater. Verified on Caucasus (4 painted bases): same control points, same sides,
+same 12 derived front-edges, `ROUND-TRIP MATCH: True`. So the terrain + ownership +
+fronts spine round-trips for free; the only net-new work is **(a)** serializing the
+ground objects, **(b)** the `load_theater` branch, and **(c)** the save UI.
+
+### Descriptor schema (lives in the campaign YAML)
+
+```yaml
+name: "My Hand-Built War"
+theater: Caucasus
+version: <current CAMPAIGN_FORMAT_VERSION>   # honor the version gate (see notes)
+recommended_player_faction / recommended_enemy_faction / dates / money: …  # normal
+blank_canvas:                 # presence of THIS key routes load_theater to the rebuild
+  ownership: { Anapa-Vityazevo: blue, Krymsk: red, … }   # airfield name -> side
+  ground_objects:             # the hand-placed + seeded TGOs, serialized as raw units
+    - side: blue
+      category: <TGO.category>          # e.g. "aa", "armor", "factory", "ewr"
+      task: <GroupTask.name or null>    # SHORAD / MERAD / BASE_DEFENSE / FACTORY / …
+      anchor_airfield: Anapa-Vityazevo  # nearest owned CP it attaches to
+      groups:
+        - units: [ { type: <dcs_unit_type_id>, x: …, y: …, heading: … }, … ]
+```
+
+Serializing **raw units** (not a layout name) sidesteps the fact that a placed
+`TheaterGroundObject` doesn't remember which `TgoLayout` built it — and round-trips
+exactly what's on the map (the §C.2 seed, drop-spawn §20, and scenery alike).
+
+### Build plan (phased; each phase its own PR + headless gate)
+
+- **D.1 — serializer + `.miz`-less load path (the keystone, terrain + ownership).**
+  New `game/campaignloader/blankcampaign.py`: `serialize_blank_campaign(game) ->
+  dict` and `build_blank_theater_from_descriptor(data, advanced_iads) ->
+  ConflictTheater` (wraps `generate_blank_theater(ownership=…)`).
+  `Campaign.load_theater` branches: `if self.data.get("blank_canvas"):` →
+  build-from-descriptor, **else** the existing `MizCampaignLoader` path (so shipped
+  campaigns are untouched). Unit-test the round-trip. *Inert until D.3 writes such a
+  YAML — safe to land first.*
+- **D.2 — ground-object serialization (the meat).** Walk every owned CP's
+  `connected_objectives`, emit each `TheaterGroundObject` as `{side, category, task,
+  anchor, groups:[units]}`. Rebuild on load via a **`category`/`task` → TGO-subclass
+  factory** (mirror `MizCampaignLoader`'s construction + `scar_objectives._build_objective`'s
+  manual `TheaterGroup`/`TheaterUnit` assembly). There are ~17 TGO subclasses
+  (`SamGroundObject`, `BuildingGroundObject`, `VehicleGroupGroundObject`,
+  `EwrGroundObject`, `MissileSiteGroundObject`, …) with no single existing factory —
+  this is the fiddly slice and needs its own in-game pass (does the rebuilt IADS
+  wire? do threat rings + SEAD/BAI targeting behave?). Headless gate: build → save →
+  `Campaign.from_file` → `load_theater` → assert the ground-object graph matches.
+- **D.3 — Qt "Save as Campaign" action + thumbnail.** A toolbar action (visible on a
+  finalized game) that calls the serializer, writes `<saved games>/Retribution/
+  Campaigns/<slug>.yaml`, and snapshots a menu thumbnail. New-Game then lists it via
+  the existing `load_each()` scan — no wizard change needed. (Mind the **version
+  gate**: stamp `version` = the app's `CAMPAIGN_FORMAT_VERSION` or the campaign is
+  silently hidden — see `[[campaign-version-gate-gotcha]]`.)
+- **D.4 — polish.** Squadron/air-wing presets in the descriptor (so a saved campaign
+  can pre-staff bases), supply-route overrides, FOB/FARP capture, round-trip of
+  drop-spawn respawn flags.
+
+### Risks / open questions
+
+- **Faithful TGO rebuild (D.2)** is the real risk: the rebuilt SAM/EWR must wire into
+  the IADS (`begin_turn_0` → `initialize_network`) and carry correct threat/role data.
+  Serializing real unit-type ids (not layouts) gives the best fidelity; in-game pass
+  is mandatory.
+- **Unit-type availability across factions.** A saved campaign re-rolled with a
+  different faction may reference unit types that faction can't field. Decide: clamp
+  to the new faction's accessible units, or pin the campaign to its built factions.
+- **Version gate.** A saved descriptor must stamp the live `CAMPAIGN_FORMAT_VERSION`
+  or New-Game hides it ([[campaign-version-gate-gotcha]]).

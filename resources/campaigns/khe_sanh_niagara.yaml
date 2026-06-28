@@ -165,3 +165,44 @@ squadrons:
       secondary: any
       aircraft: [Mi-8MTV2 Hip]
       size: 4
+
+# --- Ground supply routes. Prettied to follow the coast/valleys (no more ruler-straight
+# lines across the sea) and routed THROUGH the destructible bridges, so cutting a span is a
+# visible interdiction of the road. Migrated from the .miz M-113 path groups to YAML; those
+# .miz route groups were deleted so routes aren't duplicated. Retribution draws straight
+# segments between waypoints (no pathfinding) and derives the front geometry from the route,
+# so every leg stays on land and progresses monotonically toward the destination CP. The
+# first/last waypoint snaps to the origin/destination control point.
+supply_routes:
+  # Kutaisi -> Senaki  ("Thanh Hoa-Hanoi") -- crosses a Senaki (Rioni) bridge
+  - waypoints:
+      - [-284887, 683859]
+      - [-283471, 653818]
+      - [-281782, 647279]
+  # Kutaisi -> Kobuleti  ("Vinh-Hai Pong") -- via the Poti/Senaki junction crossing
+  - waypoints:
+      - [-284887, 683859]
+      - [-286913, 650062]
+      - [-317962, 635633]
+  # Senaki -> Kobuleti  ("Don Hoi-Cambodia") -- crosses a Senaki bridge
+  - waypoints:
+      - [-281782, 647279]
+      - [-286455, 641207]
+      - [-317962, 635633]
+  # Sukhumi -> Senaki  ("Da Nang-Senaki") -- coastal road, crosses the Sukhumi + a Senaki bridge
+  - waypoints:
+      - [-220592, 564392]
+      - [-221759, 567877]
+      - [-234737, 590675]
+      - [-245024, 609789]
+      - [-255955, 630099]
+      - [-286455, 641207]
+      - [-281782, 647279]
+  # Kutaisi -> Sukhumi  ("Tanh Hoa Bridges-Tahn Hoa") -- coastal road, crosses the Sukhumi bridge
+  - waypoints:
+      - [-284887, 683859]
+      - [-255955, 630099]
+      - [-245024, 609789]
+      - [-234737, 590675]
+      - [-221759, 567877]
+      - [-220592, 564392]

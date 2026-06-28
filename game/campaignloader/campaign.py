@@ -60,6 +60,11 @@ class Campaign:
     advanced_iads: bool
     settings: Dict[str, Any]
 
+    #: Optional content tag for the New Game era shells (e.g. "vietnam"). Drives the
+    #: "Vietnam Retribution" mode's campaign-list filter; None for ordinary campaigns.
+    #: See docs/dev/design/414th-vietnam-retribution-notes.md.
+    era: Optional[str] = None
+
     @classmethod
     def from_file(cls, path: Path) -> Campaign:
         with path.open(encoding="utf-8") as campaign_file:
@@ -122,6 +127,7 @@ class Campaign:
             path,
             data.get("advanced_iads", False),
             data.get("settings", {}),
+            data.get("era"),
         )
 
     @classmethod

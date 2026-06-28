@@ -196,6 +196,19 @@ and selected later upstream fixes.
   — **Casual / Normal / Veteran / Ace** — sit atop the Difficulty & Realism page and set AI skill,
   economy, player aids, and realism/restrictions together as a starting point; you can still
   fine-tune any individual setting afterward, and *Normal* restores the stock defaults.
+- A new **Vietnam Ops** settings page holds opt-in period mechanics for the Vietnam-era
+  campaigns (off by default; the Khe Sanh / Yankee Station campaigns turn the relevant ones
+  on). The first is **Arc Light**: fly a **Strike with a heavy bomber** (B-52) and instead of a
+  single aimpoint it walks a *carpet* of bombs across the target on the run-in, the way Operation
+  Niagara saturated the hills around Khe Sanh — tactical strikers are unaffected. The second is an
+  **AAA flak gauntlet**: fly within range and below the ceiling of an enemy AAA gun and you draw
+  barrage flak that *tightens* when you fly a steady, predictable line and *widens* when you jink —
+  the AAA-heavy Vietnam threat the engine never modelled, as pressure to manoeuvre rather than a
+  hidden missile. The third is **naval gunfire support** for coastal campaigns: offshore gun ships
+  (the New Jersey's 16-inch batteries, cruisers, destroyers) shell shore targets — call a fire mission
+  on an F10 map marker from the radio menu, or let the ships bombard enemy coastal positions
+  automatically. More period mechanics (trail interdiction, hilltop resupply) are on the way; see
+  [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md).
 - A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 NATO
   counteroffensive, built for the 414th. The Warsaw Pact opened the war by overrunning the
   Fulda Gap, taking Hamburg, and seizing Copenhagen — but the Soviet thrust has culminated,

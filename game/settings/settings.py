@@ -171,6 +171,10 @@ DIFFICULTY_REALISM_PAGE = "Difficulty & Realism"
 AIR_DOCTRINE_PAGE = "Air Doctrine"
 MISSION_GENERATION_PAGE = "Mission Generation"
 KNEEBOARDS_PAGE = "Kneeboards"
+# Period-ops suite — Vietnam-era runtime mechanics, opt-in, default OFF globally and
+# flipped ON by the Vietnam campaign YAMLs' settings: block. See
+# docs/dev/design/414th-vietnam-ops-notes.md.
+VIETNAM_OPS_PAGE = "Vietnam Ops"
 PERFORMANCE_PAGE = "Performance"
 
 _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
@@ -443,6 +447,26 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "generate_fuel_ladder_kneeboard",
                     "generate_sitrep_kneeboard",
                     "target_recon_extra_threat_search_nmi",
+                ],
+            ),
+        ],
+    ),
+    (
+        VIETNAM_OPS_PAGE,
+        [
+            (
+                "Fire support",
+                [
+                    "vietnam_arc_light",
+                    "vietnam_naval_gunfire",
+                ],
+            ),
+            (
+                "Battlefield & interdiction",
+                [
+                    "vietnam_flak_gauntlet",
+                    "vietnam_convoy_interdiction",
+                    "vietnam_super_gaggle",
                 ],
             ),
         ],
@@ -1974,6 +1998,68 @@ class Settings:
             "untouched). Costs some FPS; turn off if a heavily-hit base impacts performance."
         ),
         default=True,
+    )
+
+    # Vietnam Ops (period-ops suite) -- opt-in Vietnam-era runtime mechanics. All
+    # default OFF globally; the Vietnam campaign YAMLs flip the relevant ones ON via
+    # their settings: block. These are SCAFFOLD toggles: each gates a feature that
+    # lands on its own branch (see docs/dev/design/414th-vietnam-ops-notes.md). Until
+    # that feature lands, the toggle is inert.
+    vietnam_arc_light: bool = boolean_option(
+        "Arc Light area bombing (heavy bombers)",
+        VIETNAM_OPS_PAGE,
+        "Fire support",
+        detail=(
+            "Heavy-bomber (B-52) Strike missions saturate the target area with a walking "
+            "carpet of bombs at time-on-target instead of a single aimpoint, modelling the "
+            "Operation Niagara Arc Light strikes. Tactical strikers (F-4/A-4) are unaffected."
+        ),
+        default=False,
+    )
+    vietnam_naval_gunfire: bool = boolean_option(
+        "Naval gunfire support",
+        VIETNAM_OPS_PAGE,
+        "Fire support",
+        detail=(
+            "Offshore gun ships (battleship/cruiser main batteries) deliver call-for-fire "
+            "bombardment against coastal targets. Coastal campaigns only -- has no effect "
+            "inland (e.g. Khe Sanh), where naval gunfire never reached."
+        ),
+        default=False,
+    )
+    vietnam_flak_gauntlet: bool = boolean_option(
+        "AAA flak gauntlet",
+        VIETNAM_OPS_PAGE,
+        "Battlefield & interdiction",
+        detail=(
+            "Enemy anti-aircraft artillery throws barrage flak bursts and tracer streams "
+            "across the target area and thickens against predictable run-in lines, recreating "
+            "the AAA-heavy Vietnam threat environment. Atmospheric pressure to jink -- not a "
+            "new invisible-SAM lethality model."
+        ),
+        default=False,
+    )
+    vietnam_convoy_interdiction: bool = boolean_option(
+        "Truck-convoy interdiction",
+        VIETNAM_OPS_PAGE,
+        "Battlefield & interdiction",
+        detail=(
+            "Armed Recon missions over enemy road corridors find a moving supply convoy that "
+            "scatters and hides when hunted; destroying it dents enemy logistics. Models Ho "
+            "Chi Minh Trail / Steel Tiger interdiction."
+        ),
+        default=False,
+    )
+    vietnam_super_gaggle: bool = boolean_option(
+        "Super Gaggle hilltop resupply",
+        VIETNAM_OPS_PAGE,
+        "Battlefield & interdiction",
+        detail=(
+            "Auto-plans escorted helicopter resupply packages to cut-off friendly outposts "
+            "(fast-mover AAA suppression + helo cargo drop), modelling the Khe Sanh 'Super "
+            "Gaggle'."
+        ),
+        default=False,
     )
 
     # Performance

@@ -43,5 +43,8 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §29 | Campaign SITREP kneeboard band | — | `generate_sitrep_kneeboard` |
 | §30 | Dedicated kneeboard cover page | — | — |
 | §31 | One-page Brief Sheet + deck-wide colour scheme | — | `compact_kneeboard` |
+| §32 | Arc Light heavy-bomber Strike carpet | `vietnamops` | `vietnam_arc_light` |
+| §33 | AAA flak gauntlet | `vietnamops` | `vietnam_flak_gauntlet` |
+| §34 | Naval gunfire support | `vietnamops` | `vietnam_naval_gunfire` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

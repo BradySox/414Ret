@@ -119,6 +119,8 @@ def load_icons():
     ICONS["Air Doctrine"] = ICONS["Campaign Doctrine"]
     ICONS["Kneeboards"] = ICONS["Notes"]
     ICONS["Performance"] = ICONS["Generator"]
+    # Vietnam Ops (period-ops suite) settings page.
+    ICONS["Vietnam Ops"] = ICONS["Ordnance"]
 
     ICONS["TaskCAS"] = QPixmap("./resources/ui/tasks/cas.png")
     ICONS["TaskCAP"] = QPixmap("./resources/ui/tasks/cap.png")

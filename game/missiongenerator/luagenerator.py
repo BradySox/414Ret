@@ -22,6 +22,7 @@ from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
 from .interceptluadata import populate_intercept_lua
 from .missiondata import MissionData
+from .vietnamopsluadata import populate_vietnam_ops_lua
 
 if TYPE_CHECKING:
     from game import Game
@@ -348,6 +349,10 @@ class LuaGenerator:
         lua_data.add_item("EwExcludedGroups").set_data_array(
             self._ew_excluded_c130j_groups()
         )
+
+        # Vietnam Ops suite (Arc Light, etc.) -- emits dcsRetribution.VietnamOps only
+        # when a suite feature is enabled; the vietnamops plugin gates on data presence.
+        populate_vietnam_ops_lua(lua_data, self.game, self.mission_data)
 
         trigger = TriggerStart(comment="Set DCS Retribution data")
         trigger.add_action(DoScript(String(lua_data.create_operations_lua())))

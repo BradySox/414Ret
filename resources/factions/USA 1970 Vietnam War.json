@@ -116,7 +116,7 @@
     "OV-10A Bronco": "https://forum.dcs.world/topic/307951-ov-10a-bronco-mod-by-split-air-teamand-more/",
     "Vietnam War Vessels (v2.3.0)": "https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/"
   },
-  "doctrine": "coldwar",
+  "doctrine": "vietnam",
   "liveries_overrides": {
     "CH-47D": [
       "US Army - 14-08200"

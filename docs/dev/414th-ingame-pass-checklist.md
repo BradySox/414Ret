@@ -1490,6 +1490,58 @@ so the two docs don't drift.
 
 ---
 
+## L. Vietnam Ops
+
+### L1 — Arc Light heavy-bomber Strike carpet · §32 · ☐ UNTESTED (emitter test-covered; carpet is Lua, needs a cockpit pass + power/density tuning)
+- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the Python
+  emitter — only a heavy-bomber (`HEAVY_BOMBER_DCS_IDS`) `STRIKE` produces an `arcLight` record, the
+  toggle off emits no `VietnamOps` node, and a non-bomber Strike emits no record. The carpet itself
+  (`resources/plugins/vietnamops/vietnamops-config.lua`) is Lua and can only be exercised in a live mission.
+- **Setup:** A campaign with the **Vietnam Ops → Arc Light** setting **on** and a **B-52 STRIKE** fragged
+  against a ground target (e.g. Khe Sanh with `vietnam_arc_light: true`). Watch the B-52 run in.
+- **Pass:** As the B-52 closes inside the release range (~8 NM) of its target, a **walking carpet** of
+  explosions marches across the target box, oriented along the run-in, with a coalition "ARC LIGHT inbound"
+  message. Ground units in the box take damage (flows to debrief). A B-52 shot down *before* the run-in
+  fires **no** carpet. A non-bomber (F-4/A-4) Strike behaves normally (single aimpoint). `dcs.log` clean.
+- **Fail signature:** no carpet despite a healthy B-52 reaching the target; carpet fires for a tactical
+  striker; carpet on a dead/destroyed bomber; explosions stacked at one point (no walk / bad heading);
+  `land.getHeight`/`explosion` Lua error in `dcs.log`; FPS hit from over-dense impacts (tune
+  `arcLightBlastPower`/length/width down).
+
+### L2 — AAA flak gauntlet · §33 · ☐ UNTESTED (emitter test-covered; flak is runtime Lua, needs a cockpit pass + lethality/density tuning)
+- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the on-marker
+  emission (flak node only when the setting is on, independent of Arc Light). The flak itself — AAA discovery
+  by attribute, the engagement geometry, and the predictability ramp — is runtime Lua, exercisable only live.
+- **Setup:** A campaign with **Vietnam Ops → AAA flak gauntlet** on and enemy **AAA guns** (ZSU/Shilka/airfield
+  guns) near a target. Fly through their range below ~4500 m AGL: first a steady, predictable run, then jinking.
+- **Pass:** Flying within range/below ceiling draws **barrage flak bursts** around the aircraft. A **steady**
+  heading+altitude **tightens** them (and a sustained steady run draws the occasional close round); **jinking /
+  changing altitude widens** them. Out of range / on the deck (<120 m) / above the ceiling → no flak. Both
+  sides' AAA behave symmetrically. `dcs.log` clean; no FPS collapse.
+- **Fail signature:** no flak despite flying over live AAA in range; flak with **no** AAA nearby; flak that
+  ignores predictability (always tight or always loose); flak so dense/lethal it reads as a hidden SAM
+  (dial `flakBlastPower` / miss / range down); `getVelocity`/`hasAttribute`/`explosion` Lua error in
+  `dcs.log`; FPS hit on a dense mission.
+
+### L3 — Naval gunfire support · §34 · ☐ UNTESTED (emitter test-covered; both runtime modes are Lua, need a cockpit pass)
+- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the gun-ship
+  emission (CRUISER/DESTROYER/FRIGATE incl. the New Jersey, carrier excluded, coalition carried; off /
+  no-gun-ship = no node). The F10 menu, marker read, ship/target selection, and `TaskFireAtPoint` are runtime
+  Lua, exercisable only live.
+- **Setup:** A **coastal** campaign with **Vietnam Ops → Naval gunfire** on and a friendly **gun ship**
+  (New Jersey / cruiser / destroyer) offshore within ~20 km of enemy coastal ground. Place an F10 map marker
+  on a coastal target and use **radio menu → Naval Fire Mission → Fire on last F10 map marker**. Also just
+  wait for the automatic bombardment.
+- **Pass:** The F10 call lands shells on the marker from the nearest in-range ship (with a "SHOT" message);
+  out of range gives "no gun ship in range." With auto on, ships periodically shell the nearest in-range
+  enemy coastal ground without input. **Inland** missions (no ship in range) produce **no** fire. `dcs.log`
+  clean.
+- **Fail signature:** F10 menu absent despite an owned gun ship; marker call does nothing / errors; ship
+  fires far inland (range gate wrong); auto bombardment never fires or fires every tick (cadence wrong);
+  `TaskFireAtPoint`/`getMarkPanels`/`missionCommands` Lua error in `dcs.log`; an escort wandering off station.
+
+---
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

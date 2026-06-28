@@ -149,6 +149,36 @@ def test_vietnam_faction_units_all_resolve(faction_file: Path) -> None:
     )
 
 
+@pytest.mark.parametrize("campaign_file", _CH_ARMOR_CAMPAIGNS)
+def test_vietnam_campaigns_tagged_era_vietnam(campaign_file: str) -> None:
+    # The New Game "Vietnam" shell filters the campaign list by this tag; an untagged
+    # Vietnam campaign would silently vanish from the shell (P0 of the Vietnam mode).
+    campaign = Campaign.from_file(_CAMPAIGNS / campaign_file)
+    assert campaign.era == "vietnam", (
+        f"{campaign_file} must declare 'era: vietnam' so the New Game Vietnam shell "
+        "lists it. See docs/dev/design/414th-vietnam-retribution-notes.md."
+    )
+
+
+@pytest.mark.parametrize(
+    "faction_file",
+    [
+        "USA 1970 Vietnam War.json",
+        "vietnam_1970.json",
+        "nva_1970.json",
+        "usa_1965.json",
+    ],
+)
+def test_vietnam_factions_load_vietnam_doctrine(faction_file: str) -> None:
+    # End-to-end: the faction loader maps the JSON "vietnam" string to VIETNAM_DOCTRINE
+    # (P1 of the Vietnam Retribution mode), not the COLDWAR default.
+    from game.data.doctrine import VIETNAM_DOCTRINE
+
+    data = json.loads((_FACTIONS / faction_file).read_text(encoding="utf-8"))
+    faction = Faction.from_dict(data)
+    assert faction.doctrine is VIETNAM_DOCTRINE
+
+
 def test_khe_sanh_carrier_squadrons_carrier_capable(
     khe_sanh: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
 ) -> None:

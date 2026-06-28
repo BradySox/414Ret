@@ -2137,3 +2137,154 @@ as plain `tabulate` reference tables (colouring cells is disproportionate).
   blank lets a pilot write it. **Validated against a real `.miz`** (loadout cleanup + laser codes were
   caught that way); the residual is an **in-game pass** — generate a mission and eyeball the colours +
   auto-filled fields in the cockpit.
+
+## §32 — Arc Light heavy-bomber Strike carpet (Vietnam Ops suite)
+
+The first **Vietnam Ops suite** feature (suite design note
+[`414th-vietnam-ops-notes.md`](design/414th-vietnam-ops-notes.md); the suite lives under a "Vietnam Ops"
+settings page, §28). Retribution's modern engine never modelled the Operation Niagara **Arc Light** B-52
+area strikes; this adds them as an **effect of the existing Strike task** — explicitly **not** a new
+`FlightType` (the user's reframe). When a heavy bomber flies a `STRIKE`, the runtime walks a carpet of
+bombs across the target at the run-in instead of dropping a single aimpoint.
+
+### How it works (the Tier-A config bridge)
+
+Python plans an ordinary Strike; the carpet is a runtime effect. `populate_vietnam_ops_lua`
+(`game/missiongenerator/vietnamopsluadata.py`, called from `LuaGenerator.generate_plugin_data`) emits
+`dcsRetribution.VietnamOps.arcLight` **only when** `Settings.vietnam_arc_light` is on, with one record per
+eligible flight: a `STRIKE` whose `aircraft_type.dcs_unit_type.id` is in `HEAVY_BOMBER_DCS_IDS`
+(`B-52H`/`B-1B`/`Tu-95MS`/`Tu-142`/`Tu-160`/`Tu-22M3` — vanilla DCS heavy bombers only). Each record carries
+the bomber **group name** and its **target centre** (`package.target.position`, pydcs x=north / y=east).
+
+The `vietnamops` plugin (`resources/plugins/vietnamops/vietnamops-config.lua`) watches each bomber group
+on a 5 s poll; when the lead unit closes inside the release range (default 8 NM), it fires a **one-shot
+carpet**: a box of `trigger.action.explosion` impacts oriented along the bomber's **bearing to the target**
+(its run-in), rows stepping along-track with a small delay so it visibly walks, columns spreading it
+cross-track, with per-impact jitter. Carpet length/width/per-blast power/release-range are plugin
+`specificOptions` (defaults 1700×500 m, 300 kg, 8 NM). `pcall`-guarded throughout; inert with no
+`VietnamOps` data, so non-Vietnam missions never load any of it.
+
+### Why this shape
+
+- **Losses stay native.** A bomber shot down before the run-in simply never fires its carpet, and where the
+  box overlaps real ground TGOs the damage flows through the normal ground-loss path — no bespoke scoring.
+- **Tactical strikers are untouched.** The heavy-bomber id gate means an F-4/A-4 Strike is an ordinary
+  single-aimpoint strike.
+- **Scripted carpet, not AI bombing.** AI B-52 bombing of a point target is inaccurate and unsatisfying; a
+  scripted walking box over the area is both more reliable and more historical (Arc Light *boxes*).
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`populate_vietnam_ops_lua`, `HEAVY_BOMBER_DCS_IDS`) |
+| Hook | `game/missiongenerator/luagenerator.py` (call in `generate_plugin_data`) |
+| Plugin | `resources/plugins/vietnamops/` (`plugin.json`, `vietnamops-config.lua`) |
+| Setting | `game/settings/settings.py` (`vietnam_arc_light`, "Vietnam Ops" page) |
+| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (eligibility gate, off = no node, no bombers = no record) |
+
+### Gotchas / deferred — needs an in-game pass
+
+- **Blast power / density are first-cut and need tuning in the cockpit** (checklist **L1**): too weak and
+  Arc Light underwhelms, too strong and it lags / over-kills. The defaults are a starting point.
+- **Coordinate mapping:** pydcs Point (x=north, y=east) → DCS world vec3 `{x=north, y=alt, z=east}` is done
+  Lua-side; ground height per impact from `land.getHeight`.
+- **Symmetric by design:** any side's eligible heavy-bomber Strike carpets (a red Tu-95 too). Gated globally
+  by the toggle; Vietnam campaign YAMLs flip it on.
+- **Suite is Phase 1 of 5** — flak gauntlet, NGFS, convoy interdiction, Super Gaggle follow (see the suite
+  design note).
+
+## §33 — AAA flak gauntlet (Vietnam Ops suite)
+
+The second **Vietnam Ops suite** feature. The fork's standing note is that the *real* Vietnam threat was
+**AAA, not SAMs/MiGs**, yet Retribution's threat model is SAM/MEZ-centric and barely represents it. This adds
+the AAA *atmosphere* campaign-wide: fly within range and below the ceiling of an opposing AAA gun and you draw
+barrage flak; fly it predictably and the flak tightens.
+
+### How it works
+
+Unlike Arc Light, the flak needs **no per-mission threat data** — Python (`_populate_flak`) emits only an
+on-marker `dcsRetribution.VietnamOps.flak = { enabled = "true" }` when `Settings.vietnam_flak_gauntlet` is on.
+The `vietnamops` plugin does the rest:
+
+- **AAA discovery (runtime).** Every ~30 s it sweeps both coalitions' ground units and keeps the ones with the
+  DCS **`AAA`** attribute (so frontline ZSU-23/Shilka belts *and* airfield guns all contribute), grouped by
+  side. No unit-name plumbing, and late-spawned guns are picked up.
+- **Engagement.** Every 2.5 s, for each airborne aircraft between the floor (120 m AGL) and the ceiling
+  (4500 m AGL), it counts alive **opposing** AAA guns within horizontal range (4500 m, capped at 3 for
+  density) and, if any, spawns barrage bursts near the aircraft at its altitude.
+- **Predictability.** A per-aircraft factor ramps up while heading (±8°) and altitude (±40 m) hold steady and
+  drops fast on a jink. The barrage **miss distance** lerps from loose (250 m, jinking) to tight (70 m,
+  predictable); a sustained predictable run (factor > 0.66) also draws one **close "tracking" round** per tick
+  (tighter miss, ~2.5× power) — the modest bite that punishes straight-and-level flight.
+
+Bursts are `trigger.action.explosion` airbursts (small default power) — **mostly visual pressure to jink, not
+a hidden hard-kill SAM**. Symmetric: both sides' AAA flak the other side. `pcall`-guarded throughout; inert
+without the `flak` marker.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Emitter (on-marker) | `game/missiongenerator/vietnamopsluadata.py` (`_populate_flak`) |
+| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (flak section) |
+| Setting / options | `game/settings/settings.py` (`vietnam_flak_gauntlet`); plugin `specificOptions` (range/ceiling/miss/power) |
+| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (marker on/off, independence from Arc Light) |
+
+### Gotchas / deferred — needs an in-game pass (checklist L2)
+
+- **Lethality + density are first-cut and need cockpit tuning** — the riskiest feel call in the suite. Too
+  tame = no pressure; too tight/dense = an unfair invisible threat or an FPS hit. Defaults are conservative
+  (mostly visual); `flakBlastPower` / miss distances / range are the knobs.
+- **Runtime cost:** the 2.5 s sweep iterates airborne aircraft × nearby AAA (capped). Bounded and pcall-
+  guarded, but watch FPS on a very dense mission.
+- **Deferred polish:** tracer streams from the airstrip AAA belts (v1 is barrage puffs only); a per-pilot
+  "heavy flak — jink" cue.
+
+## §34 — Naval gunfire support (Vietnam Ops suite)
+
+The third **Vietnam Ops suite** feature: offshore gun ships (the iconic New Jersey 16″ batteries, plus
+cruisers/destroyers/frigates) deliver shore bombardment — a capability the modern engine never modelled.
+
+### How it works
+
+`_populate_naval_gunfire` reuses the generator's existing ship-artillery classification — naval groups whose
+lead unit is class **CRUISER / DESTROYER / FRIGATE** (the VWV battleship *New Jersey* is class `Destroyer`, so
+it's covered) — and emits each as `dcsRetribution.VietnamOps.navalGunfire.ships[] = { group, coalition }`
+(coalition from `TheaterGroundObject.faction_color`). Targets and ranging are resolved live, so the node only
+needs which ships have guns and whose side they're on.
+
+The `vietnamops` plugin runs **two modes** off that list (both via `MOOSE GROUP:TaskFireAtPoint` + `PushTask`,
+the same path TIC uses for naval artillery):
+
+- **Player call-for-fire (F10).** Each coalition that owns gun ships gets an F10 **"Naval Fire Mission →
+  Fire on last F10 map marker"** command. It reads the coalition's most recent F10 mark
+  (`world.getMarkPanels`) and fires the nearest in-range friendly gun ship there (with a "SHOT"/"no ship in
+  range" call back).
+- **Automatic coastal bombardment.** Every cadence (default 90 s), each alive gun ship shells the nearest
+  **opposing** ground target within gun range. Because ships sit offshore and the range gate is ~20 km, this
+  only ever reaches **coastal** targets — the feature is coastal-by-construction and **no-ops inland** (Khe
+  Sanh), exactly as intended. Toggleable (`ngfsAuto`).
+
+Symmetric (either side's gun ships). `pcall`-guarded; inert without the `navalGunfire` node.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_naval_gunfire`, `NAVAL_GUN_SHIP_CLASSES`) |
+| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (NGFS section) |
+| Setting / options | `game/settings/settings.py` (`vietnam_naval_gunfire`); plugin `specificOptions` (range/rounds/salvo/auto/cadence) |
+| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (gun-ship classification + coalition, carrier excluded, off / no-gun-ship = no node) |
+
+### Gotchas / deferred — needs an in-game pass (checklist L3)
+
+- **Coastal only.** Inland campaigns have no gun ship in range and correctly produce nothing; this is the
+  historicity gate (Khe Sanh saw no naval gunfire). Keep `vietnam_naval_gunfire` **off** for inland YAMLs.
+- **Gun reach is a selection gate, not a DCS truth.** `ngfsRangeM` (default 20 km) picks the ship/target; the
+  actual round only impacts if the DCS gun can range it. Tune to the ship types in play during the pass.
+- **Escort ships:** tasking a gun ship `FireAtPoint` can pull an *escort* off its station. Fine for a
+  dedicated NGFS ship; watch it on a screening destroyer.
+- **Deferred:** JTAC auto-lase → auto fire-mission (reading CTLD's laser target couples to CTLD internals);
+  the F10 marker call + auto bombardment cover the capability for v1. "Fire on my position" (needs per-group
+  menus) also deferred in favour of the marker call.

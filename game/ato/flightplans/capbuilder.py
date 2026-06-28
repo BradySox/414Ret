@@ -7,7 +7,7 @@ from typing import Any, TYPE_CHECKING, TypeVar
 from dcs import Point
 from shapely.geometry import Point as ShapelyPoint
 
-from game.utils import Heading, meters, nautical_miles
+from game.utils import Distance, Heading, meters, nautical_miles
 from .flightplan import FlightPlan
 from .patrolling import PatrollingLayout
 from ..closestairfields import ObjectiveDistanceCache
@@ -29,6 +29,32 @@ LayoutT = TypeVar("LayoutT", bound=PatrollingLayout)
 # (how many waves) is handled separately in theaterstate.py; this is the
 # placement half of the same feature.
 BARCAP_THREAT_FORWARD_BIAS = 0.75
+
+
+def cap_orbit_distance_band(
+    cap_min: Distance, cap_max: Distance, distance_to_no_fly: Distance
+) -> tuple[Distance, Distance]:
+    """Clamp the CAP orbit distance (from the defended point) to a forward band.
+
+    ``distance_to_no_fly`` is how far forward -- toward the enemy -- the orbit can
+    sit while keeping its commit range out of the enemy threat zone. On a quiet
+    flank it's large, so the band is the full doctrine ``cap_min..cap_max``; as the
+    defended point nears the threat it pulls the *outer* bound in.
+
+    When the defended point sits inside (or within commit range of) the enemy
+    threat zone, ``distance_to_no_fly`` drops below ``cap_min`` and can go negative:
+    there is no forward standoff that keeps the commit range clear. The old
+    ``min(cap_*, distance_to_no_fly)`` then drove BOTH bounds onto that
+    sub-minimum (often negative) value, which placed the racetrack *behind* the
+    defended point -- pointing away from the threat -- and, being a single value,
+    killed all placement jitter and the threat forward-bias (its
+    ``max > min`` guard could never fire). Fall back to the full doctrine band
+    instead: a base already inside the threat ring buys nothing from a deeper
+    standoff, so keep the orbit forward with a normal spread.
+    """
+    if distance_to_no_fly < cap_min:
+        return cap_min, cap_max
+    return cap_min, min(cap_max, distance_to_no_fly)
 
 
 class CapBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
@@ -109,11 +135,10 @@ class CapBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
                 self.doctrine.cap_max_track_length - self.doctrine.cap_min_track_length
             )
 
-        min_cap_distance = min(
-            self.doctrine.cap_min_distance_from_cp, distance_to_no_fly
-        )
-        max_cap_distance = min(
-            self.doctrine.cap_max_distance_from_cp, distance_to_no_fly
+        min_cap_distance, max_cap_distance = cap_orbit_distance_band(
+            self.doctrine.cap_min_distance_from_cp,
+            self.doctrine.cap_max_distance_from_cp,
+            distance_to_no_fly,
         )
 
         # Bias the orbit forward in contested sectors. At threat factor 0 (quiet

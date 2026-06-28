@@ -2918,8 +2918,10 @@ class BriefSheetPage(KneeboardPage):
 
         Keeps the row in place -- like the printed brief sheet's blanks -- so the
         layout is stable and the pilot can write the value in, rather than the field
-        collapsing and everything below it shifting up.
+        collapsing and everything below it shifting up. A little air above the rule
+        gives the write-in line room (the underscore sits low on the baseline).
         """
+        writer.vspace(8)
         label_str = f"{label:<{self.LABEL_W}}"
         used = font.getlength(label_str) + (font.getlength(lead) if lead else 0.0)
         avail = writer.image_size[0] - writer.page_margin - writer.x - used
@@ -4030,20 +4032,25 @@ class KneeboardGenerator(MissionInfoGenerator):
         return " · ".join(part for part in parts if part)
 
     def _brief_sar(self, flight: FlightData) -> List[Tuple[str, str]]:
-        """King / Jolly / Sandy callsigns from the side's Combat SAR + SCAR flights."""
+        """King / Jolly / Sandy rescue assets from the side's Combat SAR + SCAR flights.
+
+        The role IS the callsign (the SAR package flies as King / Jolly / Sandy), so the
+        value is the **aircraft type** -- what to look for -- not a redundant callsign.
+        """
         king: Optional[str] = None
         jolly: Optional[str] = None
         sandy: Optional[str] = None
         for other in self.flights:
             if other.friendly is not flight.friendly:
                 continue
+            airframe = other.aircraft_type.variant_id
             if other.flight_type is FlightType.COMBAT_SAR:
                 if other.combat_sar_king is not None:
-                    king = other.combat_sar_king.callsign
+                    king = airframe
                 elif jolly is None:
-                    jolly = other.callsign
+                    jolly = airframe
             elif other.flight_type is FlightType.SCAR and sandy is None:
-                sandy = other.callsign
+                sandy = airframe
         sar: List[Tuple[str, str]] = []
         if king:
             sar.append(("King", king))

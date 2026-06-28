@@ -104,7 +104,10 @@ file. This guide is the map; those are the territory.
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),
     `414th-scar-king-fac-notes.md` (SCAR rework: a player-first loiter/"hold" package tasked by
     the C-130 "King" on-scene commander onto real static armor TGOs so losses track natively;
-    minimal-F10 designation; thin MOOSE bridge, not `Ops.Chief`; future auto-planned commander)
+    minimal-F10 designation; thin MOOSE bridge, not `Ops.Chief`; future auto-planned commander),
+    `414th-combat-sar-normal-task-notes.md` (make Combat SAR a normal, default-on, **two-sided**
+    auto-task: AI rescues AI on blue+red, players can drop in; phased verify-blue → default-on →
+    AI-rescue scoring → symmetric red; today the engine is blue-only + the AI-rescue scoring is cosmetic)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.

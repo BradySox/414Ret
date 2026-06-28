@@ -30,6 +30,9 @@ settings:
   vietnamwarvessels: true
   russianmilitaryassetspack: true
   ov10a_bronco: true
+  f111c: true
+  oh_6: true
+  oh_6_vietnamassetpack: true
   manpads: false
   night_day_missions: NightMissions.OnlyDay
   automate_runway_repair: true

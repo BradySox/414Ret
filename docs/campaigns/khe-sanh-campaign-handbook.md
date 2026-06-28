@@ -5,6 +5,9 @@
 geometry, a fill-in mission-brief template, package recipes, a comms/FAC card, the AAA threat-defeat
 reference, and a phased campaign plan. Print it, fork it, scribble on it.*
 
+![A C-130 on the Khe Sanh airstrip amid supply pallets, smoke, and the surrounding hills, 1968](img/khe-sanh/khe-sanh-c130-takeoff.jpg)
+<sub>The lifeline under fire — a C-130 on the Khe Sanh strip, 1968. *USAF photo (public domain), via Wikimedia Commons; full [image credits](khe-sanh-visual-briefing.md#image-credits--sources).*</sub>
+
 > 🟢🟡 **Provenance & confidence — read this.** This handbook is read **straight from the campaign
 > files** — `resources/campaigns/khe_sanh_niagara.yaml`, `resources/factions/USA 1970 Vietnam War.json`,
 > and `resources/factions/nva_1970.json`. Trust the ORBAT, factions, economy, settings, supply
@@ -67,6 +70,9 @@ break the siege with the Pegasus relief.**
 
 This is a **dynamic campaign** built around a **siege topology**. There's no scripted ending — you
 win by relieving Khe Sanh and rolling the NVA off the perimeter.
+
+![Map of the Khe Sanh valley — base, airstrip, hill outposts, Route 9, Lang Vei](img/khe-sanh/khe-sanh-valley-map.jpg)
+<sub>The real ground the layout abstracts: the base + airstrip, the hill outposts, Route 9 east, and Lang Vei to the SW. *Public domain; see the [visual briefing](khe-sanh-visual-briefing.md) for the aerial + Jan-1968 disposition map and full [credits](khe-sanh-visual-briefing.md#image-credits--sources).*</sub>
 
 **The map (Caucasus → Vietnam):**
 

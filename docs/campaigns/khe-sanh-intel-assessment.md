@@ -33,6 +33,9 @@ pieces below:*
 **Period of report:** opening of the siege, 21 January 1968
 **Subject:** NVA forces investing Khe Sanh Combat Base; friendly situation; the air plan
 
+![Marines in a trenchline on the Khe Sanh perimeter, 1968](img/khe-sanh/khe-sanh-marines-trenchline.jpg)
+<sub>26th Marines in the perimeter trenches, Khe Sanh, 1968. *USMC Archives (CC BY 2.0), via Wikimedia Commons; full [image credits](khe-sanh-visual-briefing.md#image-credits--sources).*</sub>
+
 ## Bottom Line Up Front
 
 Two-plus NVA divisions have invested the Marine combat base at **Khe Sanh** in northwestern Quảng
@@ -52,6 +55,9 @@ the hills; **our job in the air is to make the massing fatal.**
 
 ## Section I — How We Got Here
 
+![President Johnson and advisers around a terrain model of the Khe Sanh area in the White House Situation Room](img/khe-sanh/khe-sanh-lbj-situation-model.jpg)
+<sub>Washington watched it hour by hour: President Johnson briefed over a terrain model of Khe Sanh in the White House Situation Room — the "Dien Bien Phu in reverse" anxiety reached the top. *White House photo by Yoichi Okamoto (public domain), via Wikimedia Commons.*</sub>
+
 Khe Sanh sits astride **Route 9** and overlooks the NVA infiltration routes from Laos (the Ho Chi
 Minh Trail complex). Through late 1967 the **NVA 304th and 325C Divisions** moved into the hills
 around the base, with elements of the **320th and 324th** and the **202nd Armored Regiment** in
@@ -61,6 +67,9 @@ The siege opened on **21 January 1968** — nine days before the nationwide **Te
 attacks on **Hill 861** and the bombardment that blew the base ammunition dump. Whether Khe Sanh was
 a feint to draw forces away from the cities before Tet, or Tet was the feint for Khe Sanh, is debated
 to this day. It does not change the mission: **hold, and bleed them from the air.**
+
+![Tactical map of allied and enemy units in the Khe Sanh area, January 1968](img/khe-sanh/khe-sanh-units-jan1968.jpg)
+<sub>The siege in one map: the 26th Marines on the hills + ARVN Rangers at the base, ringed by the NVA 304th/325C/320th/95C divisions, January 1968. *US Navy map (public domain); full [image credits](khe-sanh-visual-briefing.md#image-credits--sources).*</sub>
 
 ## Section II — Enemy Order of Battle (Ground — the real fight)
 
@@ -121,6 +130,9 @@ the target. This is why radar bombing and the Super Gaggle exist. The terrain is
 border. Route 9, the only road, is cut and ambush-laced.
 
 ## Section VI — The Threat to Aircraft
+
+![The Khe Sanh airstrip in 1968](img/khe-sanh/khe-sanh-airstrip-1968.jpg)
+<sub>The Khe Sanh airstrip, 1968 — the deadliest gauntlet of all, ranged by NVA guns on the approach. *USAF photo (public domain), via Wikimedia Commons.*</sub>
 
 **Flak, not missiles.** The killers are the **automatic AAA (12.7–37 mm)** low and the **57 mm**
 reaching to medium altitude, plus small arms over every pass — concentrated on the **hill targets**

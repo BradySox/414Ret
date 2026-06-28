@@ -47,6 +47,10 @@ version: "10.8"
 - `advanced_iads: true` turns on networked air defense (see below).
 - `recommended_*_money` / `*_income_multiplier` set the starting and per-turn economy per
   side — the lever for making one side the aggressor.
+- `control_point_strengths:` (optional) overrides a base's starting strength (`0..1`). The
+  front between two bases sits at `strength × route-length` from the blue base, so a weak base
+  pulls the front in toward itself — used by **Khe Sanh** to start the siege tight around a
+  depleted Kutaisi (`0.25`).
 - These are **recommended** defaults; the new-game wizard can override them.
 
 ### Supply routes, IADS, and squadrons
@@ -99,7 +103,30 @@ What it demonstrates:
   Voodoo, the 414th TFS, JFG Hornets) fly on the blue side — no mismatched paint.
 
 The full build log, including the `.miz` edit points and gotchas, is in
-`docs/dev/design/414th-red-tide-campaign-notes.md`.
+`docs/dev/design/414th-red-tide-campaign-notes.md`. For the player-facing briefing pack, see the
+**[Red Tide — Campaign Briefing](Red-Tide-Campaign-Briefing)** and its companion pages.
+
+## Worked example: Khe Sanh — Operation Niagara
+
+`khe_sanh_niagara.yaml` + `khe_sanh_niagara.miz` is the 414th's **historical** siege campaign on
+the **Caucasus** terrain (a fork of *1968 Yankee Station*), set during the 1968 siege of Khe Sanh.
+Where Red Tide is Tom Clancy flavour, this one is rooted in the real battle. It demonstrates a
+different toolbox:
+
+- **Siege topology + `control_point_strengths`.** Blue's besieged base (Kutaisi = Khe Sanh) is
+  encircled by red CPs and started at `0.25` strength, so the front rings the base from turn one.
+- **Asymmetric design through factions, not flags.** `USA 1970 Vietnam War` (air-rich) vs
+  `NVA 1970` (ground-heavy, air-light) — the threat is **AAA**, not MiGs, and there are **no
+  MANPADS** (period-correct). Red gets few air squadrons so its economy flows to the ground.
+- **Mod-pack toggles in the campaign `settings:` block** — `vietnamwarvessels`,
+  `russianmilitaryassetspack` (NVA `[CH]` armor), `ov10a_bronco`, `a4_skyhawk`, etc.
+- **Carrier-capable airframes only on carriers** — A-4E/A-6/F-8E/E-2C/RA-5C, not the land-based
+  DCS F-4 (a real gotcha; see [Squadrons and Pilots](Squadrons-and-Pilots)).
+- **Themed FOB layout** — a blue forward FARP (Hill 881S) via the faction's `extra_layouts` /
+  `excluded_generic_layouts` (see [Custom Factions](Custom-Factions)).
+
+Design log: `docs/dev/design/414th-khe-sanh-campaign-notes.md`. Player-facing briefing pack:
+**[Khe Sanh — Campaign Briefing](Khe-Sanh-Campaign-Briefing)** and its companions.
 
 ## See also
 

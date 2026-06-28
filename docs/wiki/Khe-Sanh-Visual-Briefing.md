@@ -1,125 +1,108 @@
 # Khe Sanh: Operation Niagara — Visual Briefing
 
-*A picture brief for **Caucasus - Khe Sanh: Operation Niagara**. The diagrams render on GitHub and
-the wiki. For the full text product — the historical intelligence assessment, kneeboard threat card,
+*A picture brief for **Caucasus - Khe Sanh: Operation Niagara** — **real maps and aerial photography**
+of the 1968 siege. For the full text product — the historical intelligence assessment, threat card,
 and read-aloud brief — see **[khe-sanh-intel-assessment.md](Khe-Sanh-Intel-Assessment)**; for the
 working brief-builder, the **[Campaign Briefing Handbook](Khe-Sanh-Campaign-Briefing)**.*
 
-> 🟢🟡 **Rooted in history.** The order of battle, geography, and target priorities are the real
-> siege (21 Jan – 9 Apr 1968), mapped onto the Caucasus terrain. Gameplay concessions (token MiG-17s,
-> deep-rear SA-2, modern module stand-ins) are flagged. **No photographic theater map is bundled
-> yet** — the schematics below stand in; a real annotated map/threat overlay can be added later.
+> 🟢🟡 **Rooted in history.** The map and aerial below are the **real** siege, mapped onto the
+> Caucasus terrain for play. All imagery is **public domain** (US Government works) — full attribution
+> in [Image credits](#image-credits--sources). Gameplay concessions (token MiG-17s, deep-rear SA-2,
+> modern module stand-ins) are flagged in the intel pack.
 
 ---
 
-## The siege at a glance — 21 January 1968
+## The base you're keeping alive — Khe Sanh from the air
 
-Khe Sanh (Kutaisi) is **encircled**. Its only lifeline is air. Blue's relief pocket (Da Nang/Batumi
-+ the carriers) is *separate* — the win is to break in along Route 9 (Operation Pegasus).
+![Aerial view of Khe Sanh Combat Base and its airstrip among the hills, 1967](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/campaigns/img/khe-sanh/khe-sanh-aerial-1967.jpg)
+<sub>**Khe Sanh Combat Base from the air, 1967** — the airstrip on its plateau, ringed by the hills the
+NVA would seize. This is the field that must be kept alive by air alone — **Kutaisi** in the campaign.
+*USMC photo (public domain).*</sub>
 
-```mermaid
-flowchart TB
-    subgraph RING["THE SIEGE RING (NVA) — closing on Khe Sanh"]
-      H["Sukhumi — the hills 881/861/558<br/>artillery + AAA on the high ground"]:::red
-      R9["Senaki — Route 9 / Pegasus axis<br/>(+ token MiG-17 — gameplay)"]:::red
-      LV["Kobuleti — Lang Vei<br/>PT-76 / T-54 ARMOR"]:::red
-    end
-    KS["★ KUTAISI = KHE SANH COMBAT BASE<br/>26th Marines · encircled · air-only resupply<br/>strength 0.25"]:::blue
-    H -->|siege| KS
-    R9 -->|siege| KS
-    LV -->|siege| KS
+---
 
-    subgraph RELIEF["BLUE RELIEF POCKET (separate, to the south/east)"]
-      DN["Batumi — Da Nang<br/>tac air + Pegasus staging"]:::blue
-      CV["Naval-1 / Naval-2 — Yankee Station<br/>A-4 · A-6 · F-8 · RA-5 · E-2"]:::blue
-      RR["Tbilisi-Lochini — deep rear<br/>F-100 · F-4 · B-52 Arc Light · EC-121 · KC-135"]:::blue
-    end
-    DN ==>|OPERATION PEGASUS: push up Route 9| LV
-    DN ==>|link up & break the siege| R9
-    CV -.air.-> KS
-    RR -.Arc Light / airlift.-> KS
+## The ground — the Khe Sanh valley
 
-    classDef blue fill:#13405a,stroke:#2f8fd0,color:#eaf4ff;
-    classDef red fill:#5a1622,stroke:#e0402f,color:#ffd9d2;
-```
+![Map of the Khe Sanh valley showing the base, airstrip, hill outposts, Route 9 and Lang Vei](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/campaigns/img/khe-sanh/khe-sanh-valley-map.jpg)
+<sub>**The real terrain.** The combat base + airstrip, the hill outposts (**881S/N, 861, 558, 950**),
+**Route 9 (QL-9)** east to Ca Lu, and the **Lang Vei** Special Forces camp to the southwest.
+*Public domain.*</sub>
+
+**How the ground maps onto the Caucasus play area:**
+
+| Real place | Caucasus CP | Side |
+|---|---|---|
+| Khe Sanh Combat Base | **Kutaisi** (0.25 strength — besieged) | BLUE |
+| Hill 881S outpost | **Hill 881S FOB** | BLUE |
+| The hills + NVA artillery | **Sukhumi** | RED |
+| Route 9 / Pegasus axis | **Senaki** | RED |
+| Lang Vei (PT-76 armor) | **Kobuleti** | RED |
+| Da Nang (tac-air rear + relief) | **Batumi** | BLUE |
+| Yankee Station carriers | **Naval-1 / Naval-2** | BLUE |
+| Deep rear (heavy jets, B-52, tanker) | **Tbilisi-Lochini** | BLUE |
+
+---
+
+## The siege — dispositions, January 1968
+
+![Tactical map of allied and enemy units in the Khe Sanh area, January 1968](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/campaigns/img/khe-sanh/khe-sanh-units-jan1968.jpg)
+<sub>**Allied & enemy units, January 1968.** The **26th Marines** (1/26, 2/26, 3/26) hold the hill
+outposts and the base with the **ARVN 37th Rangers** (arrived 27 Jan), ringed by the **NVA 304th,
+325C, 320th and 95C** divisions and Route-9 approaches. *US Navy map (public domain).* The campaign's
+siege ring (red **Sukhumi / Senaki / Kobuleti** around blue **Kutaisi**) abstracts exactly this.</sub>
 
 ---
 
 ## The threat is flak, not missiles
 
-No MiGs worth the name, no SAMs at the base, **no MANPADS** (none existed in 1968). You fly against
-**guns** — and because there are no missiles, **medium altitude is comparatively safe.** The men who
+No real MiG threat, no SAMs at the base, **no MANPADS** (none existed in 1968). You fly against
+**guns** — and because there are no missiles, **medium altitude is comparatively safe**; the men who
 died flew into the auto-AAA or made repeat passes.
 
-```mermaid
-flowchart LR
-    A["YOUR JET"]:::hd
-    A --> B["57mm — S-60 / ZSU-57-2<br/>reaches MEDIUM alt<br/>roll in from above, dive, jink out"]:::amb
-    A --> C["23mm ZSU-23-4 SHILKA<br/>RADAR-directed, accurate<br/>terrain-mask, new axis"]:::amb
-    A --> D["23mm ZU-23 + 12.7/14.5mm<br/>lethal LOW<br/>don't loiter low, one pass"]:::amb
-    A --> E["THE AIRSTRIP GAUNTLET<br/>guns range the Khe Sanh approach"]:::amb
-    A --> F["MiG-17F (token) — GUNS ONLY<br/>SA-2 (deep rear)<br/>🟡 gameplay, not history"]:::minor
-    classDef hd fill:#13405a,stroke:#2f8fd0,color:#eaf4ff;
-    classDef amb fill:#3a2a10,stroke:#d8a72a,color:#ffe9c2;
-    classDef minor fill:#241016,stroke:#7a3a3a,color:#e8c9c4;
-```
+| Threat | Type | The play |
+|---|---|---|
+| **ZSU-23-4 Shilka** | radar-directed 23 mm | accurate — terrain-mask, re-attack from a new axis |
+| **ZSU-57-2 / S-60** | 57 mm (optical) | reaches medium alt — roll in from above, dive, egress jinking |
+| **ZU-23 + 12.7/14.5 mm** | low auto-AAA | lethal low — one pass, vary heading, don't loiter |
+| **The airstrip approach** | the gauntlet | guns range the Khe Sanh strip — suppress before the airlift commits |
+| **MiG-17F (token) / SA-2 (depth)** | — | 🟡 gameplay only — no real MiG/SAM threat at Khe Sanh |
 
 ---
 
 ## Target priority — how the air war wins
 
-```mermaid
-flowchart TD
-    A([Operation Niagara<br/>keep the base alive · destroy the massed NVA from the air]):::hd
-    A --> B[1 · The artillery<br/>Co Roc 130/152mm + hill guns — AIR-ONLY target]:::t
-    A --> C[2 · The armor at Lang Vei<br/>PT-76 / T-54 — kill before it hits the wire]:::t
-    B --> D[3 · Massed infantry / assembly areas<br/>ARC LIGHT]:::t
-    C --> D
-    D --> E[4 · Approach trenches + supply road/bridges<br/>interdiction]:::t
-    E --> F([5 · Operation Pegasus<br/>push up Route 9 · link up · break the siege]):::hd
-    classDef hd fill:#13405a,stroke:#2f8fd0,color:#eaf4ff;
-    classDef t fill:#241016,stroke:#e0402f,color:#ffd9d2;
-```
+1. **The artillery** — Co Roc 130/152 mm + the hill guns. Air-only target; it does the killing. **#1.**
+2. **The armor at Lang Vei** — PT-76 / T-54. Kill it before it hits the wire.
+3. **Massed infantry / assembly areas** — the **Arc Light** set.
+4. **Approach trenches + the supply road/bridges** — interdiction (cut the spans).
+5. **Operation Pegasus** — push up Route 9, link up with Khe Sanh, break the siege.
+
+*Full target deck + courses of action: [intel assessment §VIII](Khe-Sanh-Intel-Assessment).*
 
 ---
 
-## Friendly air — Operation Niagara
+## Image credits & sources
 
-```mermaid
-graph TD
-    HQ[["OPERATION NIAGARA<br/>Marine 1st MAW · Navy TF77 · USAF 7th AF"]]:::hq
+All imagery is from **Wikimedia Commons** and is **public domain** as a work of the U.S. federal
+government, except the perimeter trenchline (CC BY 2.0, credited). **No copyrighted press imagery is
+used** (no AP/UPI/Duncan/Leroy).
 
-    HQ --> KS["★ Khe Sanh / Kutaisi — besieged garrison air"]:::cap
-    KS --> KS1["A-1H Skyraider 'Sandy' · CAS"]:::u
-    KS --> KS2["OV-10 Bronco · FAC(A) 🟡 stand-in for O-1/O-2"]:::pri
-    KS --> KS3["AH-1W · gunship · UH-1H medevac"]:::u
+| Image | Where used | Author / source | License | Commons file |
+|---|---|---|---|---|
+| Khe Sanh aerial, 1967 | this page | U.S. Marine Corps | Public domain | `12 - Aerials - Khe Sanh - September 12, 1967 - DPLA - …jpg` |
+| Khe Sanh valley map | this page | U.S. Government | Public domain | `Khe Sanh Area Map.jpg` |
+| Units, January 1968 | this page | U.S. Navy | Public domain | `KhSh9.jpg` |
+| C-130 on the strip | handbook | U.S. Air Force | Public domain | `C-130 Hercules taking off from Khe Sanh 1968.jpg` |
+| Khe Sanh airstrip | intel assessment | U.S. Air Force | Public domain | `Khe Sanh Airport - 1968.jpg` |
+| LBJ situation-room model | intel assessment | White House — Yoichi Okamoto | Public domain | `L B Johnson Model Khe Sanh.jpeg` |
+| Perimeter trenchline | intel assessment | USMC Archives (Flickr) | CC BY 2.0 | `26 Marines trenchline.jpg` |
 
-    HQ --> DN["Batumi — Da Nang"]:::f
-    DN --> DN1["A-1H Skyraider · CAS"]:::u
-    DN --> DN2["F-8E Crusader · BARCAP"]:::u
-    DN --> DN3["CH-53E · UH-1H · lift"]:::u
-
-    HQ --> CV["Yankee Station carriers"]:::f
-    CV --> CV1["A-4E Skyhawk · A-6E Intruder · strike/CAS"]:::pri
-    CV --> CV2["F-8E · BARCAP · E-2C · RA-5C recon"]:::u
-
-    HQ --> RR["Tbilisi-Lochini — deep rear"]:::f
-    RR --> RR1["B-52H · ARC LIGHT 🟡 stand-in for B-52D"]:::pri
-    RR --> RR2["F-100D · F-4E · RF-101B recon"]:::u
-    RR --> RR3["EC-121D AEW · KC-135 tanker · C-130 airlift"]:::u
-
-    classDef hq fill:#0d2b45,stroke:#2f8fd0,color:#fff;
-    classDef cap fill:#16405a,stroke:#5fb0e0,color:#eaf4ff;
-    classDef f fill:#13303f,stroke:#2f6f90,color:#dceaf4;
-    classDef u fill:#10202a,stroke:#3a6a7a,color:#cfe2ec;
-    classDef pri fill:#1a4a2a,stroke:#5fd089,color:#e8ffe8;
-```
-
-*Highlighted: the workhorses — the **FAC(A)**, the **carrier strike** (A-4/A-6), and **Arc Light**.*
+Files live in the repo at `docs/campaigns/img/khe-sanh/`; each original is at
+`https://commons.wikimedia.org/wiki/File:<file name above>`.
 
 ---
 
-*Order of battle, geography, and priorities are the historical siege mapped to Caucasus; gameplay
+*Maps, aerial, geography, and target priorities are the historical siege mapped to Caucasus; gameplay
 concessions are flagged 🟡. Full history + read-aloud brief:
 [khe-sanh-intel-assessment.md](Khe-Sanh-Intel-Assessment). Working reference:
 [Campaign Briefing Handbook](Khe-Sanh-Campaign-Briefing).*

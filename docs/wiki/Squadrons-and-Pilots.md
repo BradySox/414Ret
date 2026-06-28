@@ -59,6 +59,20 @@ real identity — GSFG and VVS regiments on the red side, 414th Joint Fighter Gr
 (VMF-29, Voodoo, the 414th TFS, JFG Hornets) on the blue side — so the air war no longer
 spawns aircraft in liveries that do not fit the unit flying them.
 
+## Fork difference: per-squadron nation and nation-aware pilot names
+
+On a multinational coalition (like `Combined Joint Task Forces Blue`), each squadron now spawns its
+air units under its **own DCS country** rather than one shared faction country. A mixed-nation side
+therefore gets **nation-specific voiceovers and radio comms** instead of one voice for the whole
+coalition. A `CountryAssigner` resolves the country per squadron, registers each nation on the
+coalition, and enforces the DCS **one-country-per-coalition** rule (blue claims a country first; a
+colliding red squadron falls back to the red faction country). It's a no-op for single-nation
+factions.
+
+**Pilot names follow the nation too.** Each squadron's roster is generated from **its own country's**
+name pool — a Greek squadron gets Greek names, an Iranian one Persian, and so on — falling back to
+the faction's locale for unmapped or multinational countries, so generation never breaks.
+
 ## See also
 
 - [Combat SAR](Combat-SAR)

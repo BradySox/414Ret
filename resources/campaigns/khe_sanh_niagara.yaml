@@ -206,3 +206,7 @@ supply_routes:
       - [-234737, 590675]
       - [-221759, 567877]
       - [-220592, 564392]
+  # Kutaisi -> Hill 881S  (forward blue FOB; friendly link, airlift-supplied with Kutaisi)
+  - waypoints:
+      - [-284887, 683859]
+      - [-284042, 673895]

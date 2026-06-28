@@ -1,6 +1,8 @@
 {
   "country": "USA",
   "name": "1971 USA Vietnam War",
+  "excluded_generic_layouts": ["fob1"],
+  "extra_layouts": ["vietnam_fob"],
   "authors": "Turbolious",
   "description": "<p>US Army 1971 in Vietnam.</p>",
   "locales": [

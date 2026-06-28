@@ -1,6 +1,8 @@
 {
   "country": "USA",
   "name": "USA 1970 Vietnam War",
+  "excluded_generic_layouts": ["fob1"],
+  "extra_layouts": ["vietnam_fob"],
   "authors": "NoGoodNews",
   "description": "<p>US army in the 70s at the end of the war in Vietnam.</p>",
   "locales": [

@@ -29,10 +29,14 @@ if TYPE_CHECKING:
 DAMAGE_THRESHOLD = 0.6
 MAX_FIRES_PER_BASE = 8
 MAX_WRECKS_PER_BASE = 6
-# Keep damage in the field footprint but off the operational core: offset from a parking
+# Wreckage stays in the field footprint but off the operational core: offset from a parking
 # slot (apron edge) by this band, or ring this far out from a runway-less FOB centre.
 APRON_OFFSET_M = (70.0, 220.0)
 FOB_RING_M = (80.0, 360.0)
+# Fires spread WIDE so they ring the field rather than knot up at the parking clusters: one
+# fire per angular sector, at a random radius out to (footprint extent + this) from centre.
+# Fires are non-blocking visual effects, so they can range past the apron the wreckage can't.
+FIRE_SPREAD_M = 600.0
 
 # Vanilla building statics that read well as rubble when spawned dead. All ship with base DCS.
 _WRECK_TYPES = [
@@ -78,8 +82,8 @@ class BaseDamageGenerator:
                 wreck_id += 1
                 x, y = self._scatter(rng, anchors)
                 self._spawn_wreck(rng, country, f"BaseDamage-{cp.id}-{wreck_id}", x, y)
-            for _ in range(round(intensity * MAX_FIRES_PER_BASE)):
-                x, y = self._scatter(rng, anchors)
+            n_fires = round(intensity * MAX_FIRES_PER_BASE)
+            for x, y in self._fire_positions(rng, anchors, n_fires):
                 fires.append(self._fire_point(rng, intensity, x, y))
         if fires:
             self._inject_fire_script(fires)
@@ -106,6 +110,29 @@ class BaseDamageGenerator:
         r = rng.uniform(lo, hi)
         a = rng.uniform(0, 2 * math.pi)
         return ax + r * math.cos(a), ay + r * math.sin(a)
+
+    @staticmethod
+    def _footprint(anchors: list[tuple[float, float]]) -> tuple[float, float, float]:
+        """Centre + extent (max anchor distance from centre; 0 for a single-point FOB)."""
+        cx = sum(a[0] for a in anchors) / len(anchors)
+        cy = sum(a[1] for a in anchors) / len(anchors)
+        extent = max((math.hypot(a[0] - cx, a[1] - cy) for a in anchors), default=0.0)
+        return cx, cy, extent
+
+    def _fire_positions(
+        self, rng: random.Random, anchors: list[tuple[float, float]], n: int
+    ) -> list[tuple[float, float]]:
+        """Spread ``n`` fires around the base: one per angular sector (+ jitter) at a random
+        radius, so they ring the field instead of knotting at the parking clusters."""
+        cx, cy, extent = self._footprint(anchors)
+        min_r = extent * 0.3 + 80.0
+        max_r = extent + FIRE_SPREAD_M
+        out: list[tuple[float, float]] = []
+        for i in range(n):
+            angle = (i + rng.random()) * 2 * math.pi / max(n, 1)
+            r = rng.uniform(min_r, max_r)
+            out.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+        return out
 
     @staticmethod
     def _fire_point(

@@ -8,9 +8,12 @@ from dcs.countries import USA
 from dcs.mapping import Point
 from dcs.mission import Mission
 
+import math
+
 from game.missiongenerator.basedamage import (
     APRON_OFFSET_M,
     DAMAGE_THRESHOLD,
+    FIRE_SPREAD_M,
     BaseDamageGenerator,
 )
 
@@ -122,6 +125,18 @@ def test_toggle_off_disables_everything() -> None:
     BaseDamageGenerator(mission, _Game([cp], on=False)).generate()  # type: ignore[arg-type]
     assert _wreck_count(mission) == 0
     assert _fire_triggers(mission) == 0
+
+
+def test_fires_spread_around_the_base_not_clustered() -> None:
+    # Fires must ring the field, not knot up at one spot. Even a single-anchor FOB (the worst
+    # case -- no parking slots) should spread its fires well past the old tight ring.
+    import random
+
+    generator = BaseDamageGenerator.__new__(BaseDamageGenerator)
+    fob_anchor = [(-284042.0, 673895.0)]
+    fires = generator._fire_positions(random.Random(1), fob_anchor, 5)
+    spread = max(math.hypot(a[0] - b[0], a[1] - b[1]) for a in fires for b in fires)
+    assert spread > FIRE_SPREAD_M  # > 600 m apart, vs the old ~360 m ring
 
 
 def test_damage_stays_within_apron_band_of_a_slot() -> None:

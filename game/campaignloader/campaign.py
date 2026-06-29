@@ -224,6 +224,17 @@ class Campaign:
             return False
         return True
 
+    def matches_era(self, era: Optional[str]) -> bool:
+        """Whether this campaign belongs to the given New Game era shell.
+
+        ``era is None`` means "no era filter" (the default front door lists every
+        campaign), so it always matches. Otherwise the campaign's own ``era`` tag
+        must equal the requested one -- this is what the "Vietnam" card uses to show
+        only ``era: vietnam`` campaigns. See
+        docs/dev/design/414th-vietnam-retribution-notes.md.
+        """
+        return era is None or self.era == era
+
     @staticmethod
     def iter_campaigns_in_dir(path: Path) -> Iterator[Path]:
         yield from path.glob("*.yaml")

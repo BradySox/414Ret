@@ -48,7 +48,17 @@ P3 (behaviour taskings) outstanding.
   mechanics + `restrict_weapons_by_date` on (per-campaign: Khe Sanh/Velvet Thunder inland → no naval
   gunfire; Yankee Station coastal → naval gunfire on). Applied on campaign-select via the existing
   `QNewGameSettings._load_campaign_settings`. Test: `tests/test_vietnam_content.py::test_vietnam_campaign_era_preseed_applies`.
-  The dedicated New-Game "Vietnam" *card* (filter the list + brand the front door) is still TODO.
+- **P2 (New-Game "Vietnam" card) — DONE.** A third radio in the Intro page's "Campaign type" group
+  (`IntroPage`, alongside "included" + blank-canvas), registering a `vietnamMode` field. When set,
+  `TheaterConfiguration.initializePage` filters the campaign list to `era: vietnam` via the new
+  `Campaign.matches_era(era)` predicate threaded through `QCampaignList.setup_content(..., era=...)`
+  (and the "show incompatible" toggle now re-applies the active `_era_filter`). `accept()` is **unchanged**
+  — a Vietnam card game is a normal included-campaign game; the card *only* filters the list, and the
+  settings/faction pre-seed already rides on per-campaign select (P2 era pre-seed above). Mirrors the proven
+  blank-canvas field+initializePage pattern. The filter predicate is game-side + unit-tested
+  (`test_vietnam_content.py::test_matches_era_drives_the_vietnam_card_filter`); the radio/field wiring is
+  qt_ui (not in CI mypy) and needs an **in-app pass** (checklist L5): the visual render + the
+  vietnamMode→filter path can't be exercised headless (the campaign-list item build needs the DCS install dir).
   The same pre-seed blocks also pin a tighter **AEW&C/tanker standoff** (`aewc_threat_buffer_min_distance: 25`
   / `tanker_threat_buffer_min_distance: 20`, vs the 80/70 NM defaults) so support orbits hug the compressed
   Vietnam fronts instead of sprawling to the map edge — diagnosed from a "support flies round the north edge"

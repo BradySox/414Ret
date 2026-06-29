@@ -1552,6 +1552,21 @@ so the two docs don't drift.
 - **Fail signature:** orbits still ~150 km back / at the map edge; a tanker sitting inside a SAM ring (buffer
   too low); the buffer not applied (check Air Doctrine page shows 25/20 after campaign-select).
 
+### L5 — New-Game "Vietnam" card · Vietnam mode P2 shell · ☐ UNTESTED (filter predicate test-covered; Qt render needs the app)
+- **Headless adjudication:** the filter predicate `Campaign.matches_era` is unit-tested
+  (`tests/test_vietnam_content.py::test_matches_era_drives_the_vietnam_card_filter`) and the Qt modules import
+  clean. The radio/field render + the `vietnamMode`→list-filter path can't be exercised headless (the
+  campaign-list item build needs the DCS install dir).
+- **Setup:** Open **New Game**. On the Introduction page, "Campaign type" now has a third option, **Vietnam**.
+- **Pass:** Selecting **Vietnam** → the next (Theater) page is titled "Vietnam" and lists **only** the three
+  Vietnam campaigns (Khe Sanh, Yankee Station, Velvet Thunder); selecting one still pre-loads its settings +
+  recommended factions. Going **back** and choosing "Play an included campaign" restores the full list;
+  "blank canvas" still shows the terrain picker. The "Show incompatible campaigns" toggle keeps the Vietnam
+  filter applied.
+- **Fail signature:** no Vietnam radio; Vietnam shows all campaigns (filter not applied) or an empty list;
+  switching back to "included" stays filtered; the "show incompatible" toggle drops the era filter; a crash
+  arriving on the Theater page.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

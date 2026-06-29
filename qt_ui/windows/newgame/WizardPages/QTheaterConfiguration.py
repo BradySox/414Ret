@@ -80,6 +80,10 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
 
         self.faction_selection = faction_selection
 
+        # The active era-shell filter (set from the Intro "Vietnam" card via the
+        # vietnamMode field in initializePage); None lists every campaign.
+        self._era_filter: Optional[str] = None
+
         self.setTitle("Theater configuration")
         self.setSubTitle("\nChoose a terrain and time period for this game.")
         self.setPixmap(
@@ -102,7 +106,9 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
             campaigns, show_incompatible_campaigns_checkbox.isChecked()
         )
         show_incompatible_campaigns_checkbox.toggled.connect(
-            lambda checked: self.campaignList.setup_content(show_incompatible=checked)
+            lambda checked: self.campaignList.setup_content(
+                show_incompatible=checked, era=self._era_filter
+            )
         )
         self.registerField("selectedCampaign", self.campaignList)
 
@@ -250,15 +256,19 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
 
     def initializePage(self) -> None:
         super().initializePage()
-        # The blank-canvas (campaign maker) path only uses the selected campaign
-        # for its terrain, so present a clean terrain picker instead of the full
-        # included-campaign list. initializePage fires each time the user arrives
-        # from the Introduction page, so toggling the radio re-applies the mode.
+        # The Intro page's "Campaign type" card drives which list we present. The
+        # blank-canvas (campaign maker) path only uses the selected campaign for its
+        # terrain, so it gets a clean terrain picker; the "Vietnam" card filters the
+        # campaign list to era: vietnam; otherwise the full included-campaign list.
+        # initializePage fires each time the user arrives from the Introduction page,
+        # so changing the radio re-applies the mode.
         wizard = self.wizard()
         terrain_only = bool(wizard.field("blankCanvas")) if wizard else False
-        self._set_terrain_only_mode(terrain_only)
+        vietnam = bool(wizard.field("vietnamMode")) if wizard else False
+        self._set_mode(terrain_only=terrain_only, vietnam=vietnam)
 
-    def _set_terrain_only_mode(self, terrain_only: bool) -> None:
+    def _set_mode(self, terrain_only: bool, vietnam: bool = False) -> None:
+        self._era_filter = "vietnam" if (vietnam and not terrain_only) else None
         if terrain_only:
             self.setTitle("Theater")
             self.setSubTitle(
@@ -266,6 +276,15 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
                 "ownership and place defenses on the map yourself."
             )
             self.campaignList.setup_terrain_content()
+        elif vietnam:
+            self.setTitle("Vietnam")
+            self.setSubTitle(
+                "\nChoose a Vietnam-era campaign. The period mechanics (Arc Light, "
+                "AAA flak, era weapons) and recommended factions pre-load on select."
+            )
+            self.campaignList.setup_content(
+                self.show_incompatible_campaigns_checkbox.isChecked(), era="vietnam"
+            )
         else:
             self.setTitle("Theater configuration")
             self.setSubTitle("\nChoose a terrain and time period for this game.")
@@ -325,11 +344,13 @@ class QCampaignList(QListView):
     def selected_campaign(self) -> Optional[Campaign]:
         return self.currentIndex().data(QCampaignList.CampaignRole)
 
-    def setup_content(self, show_incompatible: bool) -> None:
+    def setup_content(self, show_incompatible: bool, era: Optional[str] = None) -> None:
         self.selectionModel().blockSignals(True)
         try:
             self.campaign_model.clear()
             for campaign in self.campaigns:
+                if not campaign.matches_era(era):
+                    continue
                 if show_incompatible or campaign.is_compatible:
                     item = QCampaignItem(campaign)
                     self.campaign_model.appendRow(item)

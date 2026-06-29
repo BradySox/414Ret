@@ -300,12 +300,11 @@ class TheaterState(WorldState["TheaterState"]):
         aewc_targets.append(finder.farthest_friendly_control_point())
 
         # 414th Combat SAR standing alert: one pilot-rescue orbit per active front,
-        # but only for the (blue) player coalition that the MOOSE CSAR engine serves,
-        # and only when the setting is on. Off/red -> empty, so nothing is planned.
+        # for EITHER coalition when the setting is on (the survivor-ledger runtime is
+        # coalition-generic). A side without rescue airframes simply fails to fill the
+        # package, so this degrades to a no-op there. Off -> empty, nothing planned.
         combat_sar_targets: list[MissionTarget] = (
-            list(finder.front_lines())
-            if game.settings.auto_combat_sar and player.is_blue
-            else []
+            list(finder.front_lines()) if game.settings.auto_combat_sar else []
         )
 
         enemy_air_defenses = list(finder.enemy_air_defenses())

@@ -6,6 +6,65 @@ standing alert into a **normal auto-planned task on both coalitions**. · **Date
 `414th-scar-rescue-rework-notes.md` (Sandy/POW/capture rework), CLAUDE.md §21 (Combat SAR) +
 §15 (SCAR "Sandy"). In-game-pass rows: **G8–G14**.
 
+## LOCKED 2026-06-28 — Route 1: one owned survivor ledger (supersedes the two-engine split)
+
+**User picked route 1.** Replace the two disjoint MOOSE engines — player-only `CSAR`
+(owns scoring + the capture race) and AI-only `AICSAR` (anonymous clones) — with **one
+plugin-owned survivor ledger** that is the single source of truth, coalition-generic, with
+**player and AI rescues judged by the SAME geometry logic**. This fixes the root cause
+diagnosed in the 2026-06-28 Vietnam test: the campaign-meaningful machinery (rescue credit,
+capture→POW) was bolted onto the human-only engine, so AI losses — the common case —
+produced nothing.
+
+### Why the two-engine split fails (evidence, 2026-06-28)
+- Capture race iterates `csar.downedPilots`; `csar.enableForAI=false` ⇒ AI ejections never
+  enter it ⇒ **AI can never be captured** (`combatsar-config.lua:99/204/215`).
+- AI rescues run on `AICSAR`, which spawns an **anonymous clone** and never fires CSAR's
+  `OnAfterRescued` ⇒ **AI rescues are uncredited** (`:294`, `:430`).
+- Net in the test: 5 AI pilots ejected, AICSAR flew, but `combat_sar_captures=[]` and
+  `combat_sar_rescues=[]` ⇒ nothing reached the turn processor ⇒ no POW, no spared pilots.
+
+### The ledger (Lua, in-mission — single source of truth)
+`survivors[id] = { unit=<orig airframe unit name>, coalition="blue"|"red",`
+`group=<downed-pilot group name>, coord=<vec2>, state="down"|"boarding"|"rescued"|`
+`"captured"|"dead", party=<snatch group|nil>, dwell=<s>, t0=<time> }`
+
+- **Register** on `S_EVENT_EJECTION` for **either** coalition (one world event handler —
+  already prototyped as the AI eject bridge). Spawn a downed-pilot group from that
+  coalition's template; record the real `unit` name + coalition + coord.
+- **Rescue judging (engine-agnostic, identical for player & AI):** poll — a *friendly* helo
+  (human- or AI-crewed) within `loadDistance` of a `down` survivor for `boardDwell`s ⇒
+  `boarding` (pilot attached to that helo); that helo lands at / reaches a friendly
+  airfield/FARP ⇒ `rescued` ⇒ append the real `unit` to `combat_sar_rescues`. Helo
+  destroyed with the pilot aboard ⇒ survivor returns to `down`.
+- **AI dispatch:** spawn a rescue helo from the survivor's coalition's nearest friendly
+  field and route it to the survivor (reuse the existing FARP/route plumbing). **No anonymous
+  clone** — the ledger holds identity, so the AI rescue credits exactly like the player path.
+- **Capture race:** same logic, but reads the **ledger** (not `csar.downedPilots`); snatch
+  party = the **opposing** coalition; on capture append `{unit,x,y,coalition}` to
+  `combat_sar_captures`.
+- **Player drop-in:** any human-crewed friendly helo satisfies the same proximity rule ⇒
+  identical credit. The King LARS F10 locator stays.
+- **Tradeoff:** we drop MOOSE CSAR's radio-menu pickup UX (request-smoke, "wounded runs to
+  helo", board countdown) for the simpler land-near-survivor geometry. Revisit if players
+  miss it; the locator + smoke-on-spawn cover "find the pilot".
+
+### Coalition-generic data contract (Python → Lua)
+Generator emits both sides (e.g. `dcsRetribution.CombatSAR.red = { pilotTemplate,
+rescueHelos[], kings[], farp }` mirroring blue). Planner frags both. `record_pow_captures`
+/ `pow_recovery` / `pow_objectives` / `Coalition.end_turn` handle the **capturing** coalition
+generically (captured red pilot held at a blue field, recoverable by red, and vice-versa).
+
+### Build order (each independently shippable; blue-first verify → red)
+1. **Lua ledger core** — replace CSAR+AICSAR with the ledger (blue wired live, code written
+   coalition-generic). Capture + AI dispatch + player pickup + scoring all read the ledger.
+   → **in-game pass G8/G9/G11**. *(Drafted in scratchpad, swapped in only when complete, so
+   the live plugin never sits half-rewritten.)*
+2. **Python coalition-generic emit + scoring** — red template/helos/king; both-sided
+   `record_pow_captures`. Verifiable via pytest; inert until the Lua red path is on.
+3. **Enable red** — drop the blue filters in the plugin + the `player.is_blue` planner gate.
+4. **Default ON + save migration + docs** — only after the blue in-game pass passes.
+
 ## Vision (user's words, locked 2026-06-27)
 
 > I want the system to work where it's auto-fragged for AI to go pick up AIs (hopefully with red

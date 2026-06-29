@@ -1,128 +1,49 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
--- Combat SAR configuration bridge for DCS Retribution
+-- Combat SAR configuration bridge for DCS Retribution -- SURVIVOR LEDGER rewrite
 --
--- Stands up a MOOSE CSAR engine for the BLUE coalition from the
--- dcsRetribution.CombatSAR data table emitted by the mission generator. CSAR
--- ships inside the bundled MOOSE (base plugin's Moose.lua), so this plugin only
--- supplies configuration -- there is no separate script to load.
+-- ROUTE 1 (locked 2026-06-28, docs/dev/design/414th-combat-sar-normal-task-notes.md):
+-- replace the two disjoint MOOSE engines (player-only CSAR that owned scoring+capture;
+-- AI-only AICSAR with anonymous clones) with ONE plugin-owned survivor ledger that is the
+-- single source of truth. Player and AI rescues are judged by the SAME logic, so an AI->AI
+-- rescue credits exactly like a player rescue, and AI ejections are capturable (-> POW).
+-- Coalition-generic: blue is wired live from the existing data fields; red turns on the day
+-- the generator emits dcsRetribution.CombatSAR.red (no further plugin changes needed).
 --
--- When a HUMAN pilot ejects, MOOSE CSAR spawns a downed pilot (cloned from the
--- late-activation `pilotTemplate` group the generator dropped into the .miz) with
--- a radio beacon. The CH-47 flights tasked Combat SAR (rescueHelos) can then fly
--- in and recover them. C-130 Combat SAR flights (kings) only fly the overhead
--- "King" orbit -- they are NOT in the rescue set and never land at a crash site.
+-- Flow per downed pilot:
+--   * S_EVENT_EJECTION (either coalition) -> register a survivor in the ledger, spawn a
+--     downed-pilot group (cloned from that coalition's pilotTemplate), pop red smoke.
+--   * Capture race: the OPPOSING coalition may push a snatch party; holding within range for
+--     captureDwell s with the pilot un-rescued -> CAPTURED (append combat_sar_captures, POW).
+--   * Rescue (engine-agnostic): a friendly helo (PLAYER, landed/low+slow within pickup range)
+--     boards the survivor; delivering to any friendly airfield/FARP -> RESCUED (append
+--     combat_sar_rescues, pilot spared at debrief). AI auto-rescue reuses MOOSE OPSTRANSPORT
+--     (proven AICSAR routing) but carries the LEDGER's real identity, so it credits too.
+--   * Stranded SOF teams (SCAR loop) ride the same pickup -> combat_sar_sof_recoveries.
 --
--- Each King lights a TACAN beacon (air-tracking, so it follows the orbit; every
--- rescue helo we use has a TACAN receiver) the helo homes on, and carries a "LARS"
--- F10 button that reads MOOSE CSAR's live downed-pilot table and reports every
--- active survivor (position + bearing/range from the King) for the King crew to
--- relay. TACAN is the single homing solution: an ADF radio beacon was dropped
--- (MOOSE's RadioBeacon is fixed-point and the King is a mover, so it would need a
--- position-refresh loop for no gain over the TACAN). King beacon/menu attach on
--- group BIRTH so a delayed or air-spawned (AI standing-alert) King is covered too.
---
--- Blue-side. enableForAI is driven by the auto_combat_sar setting (carried in the
--- data): OFF (default) makes MOOSE CSAR act ONLY on human-initiated events
--- (Moose.lua CSAR:_EventHandler early-returns when enableForAI==false and
--- IniPlayerName==nil) -- the "downed HUMAN pilots, player-flown" behaviour; ON lets
--- AI rescue helos be commandeered for a standing alert (AI ejections count too).
---
--- Inert unless dcsRetribution.CombatSAR exists (the generator emits it only when
--- at least one blue Combat SAR flight is present). Independent of the SOF-recovery
--- CSAR (FlightType.CSAR / the SCAR loop): separate flight type, separate plugin.
+-- The King (C-130) still lights an air-tracking TACAN and carries the LARS F10 locator, which
+-- now reads the ledger. Vanilla DCS only; pcall-guarded throughout so a bad record degrades to
+-- a logged warning, never a CTD. Writes the dcs_retribution core globals combat_sar_rescues /
+-- combat_sar_captures / combat_sar_sof_recoveries (persisted to state.json), setting dirty_state.
 -- see docs/dev/design/414th-combat-sar-spec.md
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-env.info("DCSRetribution|Combat SAR plugin - configuration")
+env.info("DCSRetribution|Combat SAR plugin - configuration (survivor ledger)")
 
-if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
+if dcsRetribution and dcsRetribution.CombatSAR then
 
     local data = dcsRetribution.CombatSAR
-    local rescueHelos = data.rescueHelos or {}
-    local pilotTemplate = data.pilotTemplate
-    -- enableForAI is emitted as a string ("true"/"false"). On = AI standing alert
-    -- (Settings.auto_combat_sar): MOOSE CSAR may commandeer an orbiting AI CH-47 to
-    -- rescue, and AI ejections become rescuable too. Off = human-initiated only.
-    local enableForAI = (data.enableForAI == "true") or (data.enableForAI == true)
 
-    if not pilotTemplate or #rescueHelos == 0 then
-        env.info("DCSRetribution|Combat SAR plugin - no rescue helos / template; skipping")
-        return
-    end
-
-    -- specific options (defaults mirror MOOSE CSAR's own defaults)
-    local autosmoke = false
-    local loadDistance = 75
-    local rescueHoverHeight = 20
+    ---------------------------------------------------------------------------
+    -- Tunables (overridable via dcsRetribution.plugins.combatsar)
+    ---------------------------------------------------------------------------
+    local POLL = 5                 -- s between ledger re-evaluations
+    local PICKUP_RANGE = 150       -- m: helo-to-survivor horizontal distance to board
+    local PICKUP_AGL = 30          -- m: helo must be landed / low-hover to board
+    local PICKUP_SPEED = 60        -- km/h: ...and slow
+    local HOME_RANGE = 2500        -- m: helo-to-friendly-airbase to count as delivered
+    local AI_DISPATCH_DELAY = 60   -- s grace before AI auto-rescue launches
     local messageTime = 15
 
-    if dcsRetribution.plugins and dcsRetribution.plugins.combatsar then
-        local opts = dcsRetribution.plugins.combatsar
-        if opts.autosmoke ~= nil then autosmoke = opts.autosmoke end
-        if opts.loadDistance ~= nil then loadDistance = opts.loadDistance end
-        if opts.rescueHoverHeight ~= nil then rescueHoverHeight = opts.rescueHoverHeight end
-        if opts.messageTime ~= nil then messageTime = opts.messageTime end
-    end
-
-    -- A prefix that no generated group name starts with, so an empty rescue set
-    -- never collapses SET_GROUP:FilterPrefixes into a match-all (mirrors the
-    -- MANTIS bridge). We already early-return on an empty set above, but keep the
-    -- sentinel as a belt-and-braces guard.
-    local NO_MATCH = "__RetributionCombatSARNoMatch__"
-    local prefixes = {}
-    for _, name in pairs(rescueHelos) do
-        table.insert(prefixes, name)
-    end
-    if #prefixes == 0 then
-        table.insert(prefixes, NO_MATCH)
-    end
-
-    -- Bind the rescue set to the EXACT generated CH-47 group names (each name
-    -- matches itself as a prefix -- the same trick the MANTIS bridge uses, so no
-    -- group renaming is required). FilterCategoryHelicopter() keeps the set to
-    -- rotary wing even if a name ever collides with a non-helo group.
-    local rescueSet = SET_GROUP:New()
-        :FilterCoalitions("blue")
-        :FilterPrefixes(prefixes)
-        :FilterCategoryHelicopter()
-        :FilterStart()
-
-    -- Build the CSAR engine. Template = the downed-pilot group MOOSE clones at the
-    -- crash site; Alias "CSAR" drives the menu/label.
-    local csar = CSAR:New("blue", pilotTemplate, "CSAR")
-    csar:SetOwnSetPilotGroups(rescueSet)
-
-    -- Ejection-only, blue-side, PLAYER-flown rescues. We force CSAR's own AI
-    -- participation OFF: MOOSE CSAR's enableForAI merely *tracks* AI ejections, it
-    -- never flies an AI helo to the survivor. The standing-alert AI auto-rescue is
-    -- handled instead by MOOSE AICSAR below (gated on the same enableForAI flag).
-    csar.enableForAI = false
-    csar.csarOncrash = false          -- ejection rescues only, not every crash
-    csar.allowDownedPilotCAcontrol = false
-    csar.autosmoke = autosmoke
-    csar.loadDistance = loadDistance
-    csar.rescuehoverheight = rescueHoverHeight
-    csar.messageTime = messageTime
-    csar.allowFARPRescue = true       -- delivering to a friendly FARP/airfield counts
-
-    csar:Start()
-
-    -------------------------------------------------------------------------------
-    -- Enemy capture race (414th SCAR rescue rework, Phase 2)
-    --
-    -- When a HUMAN pilot ejects, MOOSE CSAR spawns the downed pilot above. With a
-    -- configurable chance the enemy now pushes a small infantry "snatch party" at
-    -- that survivor. The Sandy (SCAR) escort + the rescue helo must kill the party
-    -- (or get the pilot out) before it closes: if the party holds within captureRange
-    -- of the survivor for captureDwell seconds AND the pilot has not been rescued, the
-    -- pilot is CAPTURED -- retired from CSAR and appended to the combat_sar_captures
-    -- state global ({unit=<original airframe name>, x=, y=}) so the campaign can hold
-    -- them as a recoverable POW (Phase 3/4).
-    --
-    -- Vanilla DCS only: the party is plain CJTF_RED infantry built with the proven
-    -- mist.dynAdd schema (same as the retired scar plugin). pcall-guarded throughout
-    -- so a malformed survivor record degrades to a logged warning, never a CTD.
-    -------------------------------------------------------------------------------
     local capture = {
         enabled = true,
         chance = 50,
@@ -131,8 +52,15 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
         captureDwell = 30,
         partySize = 5,
     }
+
     if dcsRetribution.plugins and dcsRetribution.plugins.combatsar then
         local o = dcsRetribution.plugins.combatsar
+        if o.messageTime ~= nil then messageTime = tonumber(o.messageTime) or messageTime end
+        if o.pickupRange ~= nil then PICKUP_RANGE = tonumber(o.pickupRange) or PICKUP_RANGE end
+        if o.pickupAGL ~= nil then PICKUP_AGL = tonumber(o.pickupAGL) or PICKUP_AGL end
+        if o.pickupSpeed ~= nil then PICKUP_SPEED = tonumber(o.pickupSpeed) or PICKUP_SPEED end
+        if o.homeRange ~= nil then HOME_RANGE = tonumber(o.homeRange) or HOME_RANGE end
+        if o.aiDispatchDelay ~= nil then AI_DISPATCH_DELAY = tonumber(o.aiDispatchDelay) or AI_DISPATCH_DELAY end
         if o.captureEnabled ~= nil then capture.enabled = o.captureEnabled end
         if o.captureChance ~= nil then capture.chance = tonumber(o.captureChance) or capture.chance end
         if o.captureSpawnDistance ~= nil then capture.spawnDistance = tonumber(o.captureSpawnDistance) or capture.spawnDistance end
@@ -141,468 +69,544 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
         if o.capturePartySize ~= nil then capture.partySize = tonumber(o.capturePartySize) or capture.partySize end
     end
 
-    if capture.enabled then
-        local CAPTURE_POLL = 5          -- seconds between survivor/party re-evaluations
-        local PARTY_TYPE = "Soldier AK" -- vanilla DCS infantry (spawned CJTF_RED)
-        local PARTY_SPEED = 5.5         -- m/s on foot: slow enough that the race is winnable
-        local tracks = {}               -- survivor name -> { partyName, dwell }
-        local snatchCounter = 0
-        combat_sar_captures = combat_sar_captures or {}
+    ---------------------------------------------------------------------------
+    -- Coalition configs (blue from the existing top-level fields for back-compat;
+    -- red from data.red when the generator emits it -- the only thing red needs).
+    ---------------------------------------------------------------------------
+    local function readBool(v, default)
+        if v == nil then return default end
+        return (v == true) or (v == "true")
+    end
 
-        local function captureMsg(text)
-            trigger.action.outTextForCoalition(coalition.side.BLUE, text, messageTime * 2)
-        end
+    local configs = {}
+    local cfgBySide = {}
 
-        -- Spawn a CJTF_RED infantry party `spawnDistance` from the survivor, routed
-        -- straight at them. Returns the spawned group name (or nil on failure).
-        local function spawnSnatchParty(survivorCoord)
-            snatchCounter = snatchCounter + 1
-            local gname = string.format("CSAR Snatch Party %d", snatchCounter)
-            local spawnCoord = survivorCoord:Translate(capture.spawnDistance, math.random(0, 359))
-            local sp = spawnCoord:GetVec2()   -- {x = north, y = east}
-            local sv = survivorCoord:GetVec2()
-            local units = {}
-            for i = 1, math.max(1, capture.partySize) do
-                units[i] = {
-                    ["type"] = PARTY_TYPE,
-                    ["name"] = string.format("%s U%d", gname, i),
-                    ["x"] = sp.x + math.random(-15, 15),
-                    ["y"] = sp.y + math.random(-15, 15),
-                    ["heading"] = 0,
-                    ["skill"] = "Average",
-                    ["playerCanDrive"] = false,
-                }
+    local function addConfig(color, side, enemySide, enemyCountry, c)
+        if not c or not c.pilotTemplate then return end
+        local helos = c.rescueHelos or {}
+        if #helos == 0 then return end
+        local cfg = {
+            color = color,
+            side = side,
+            enemySide = enemySide,
+            enemyCountry = enemyCountry,
+            pilotTemplate = c.pilotTemplate,
+            rescueHelos = helos,
+            heloTemplate = c.heloTemplate,
+            farp = c.farp,
+            kings = c.kings or {},
+            sofTeams = c.sofTeams or {},
+            enableForAI = readBool(c.enableForAI, false),
+        }
+        configs[#configs + 1] = cfg
+        cfgBySide[side] = cfg
+    end
+
+    addConfig("blue", coalition.side.BLUE, coalition.side.RED, country.id.CJTF_RED, data)
+    if data.red then
+        addConfig("red", coalition.side.RED, coalition.side.BLUE, country.id.CJTF_BLUE, data.red)
+    end
+
+    if #configs == 0 then
+        env.info("DCSRetribution|Combat SAR plugin - no rescue helos/template; skipping")
+        return
+    end
+
+    -- Live-updating friendly-helo sets (one per coalition) for player pickup detection.
+    for _, cfg in ipairs(configs) do
+        cfg.heloSet = SET_GROUP:New()
+            :FilterCoalitions(cfg.color)
+            :FilterCategoryHelicopter()
+            :FilterStart()
+    end
+
+    ---------------------------------------------------------------------------
+    -- The ledger: the single source of truth for every downed survivor.
+    --   survivors[id] = { id, unit, isSof, color, side, cfg, group, groupName,
+    --                     coord, state, party, dwell, dispatched, aiManaged,
+    --                     heloName, credited, captureRolled, t0 }
+    -- state: "down" -> "boarding" -> "rescued" | "captured" | "dead"
+    ---------------------------------------------------------------------------
+    local survivors = {}
+    combat_sar_rescues = combat_sar_rescues or {}
+    combat_sar_captures = combat_sar_captures or {}
+    combat_sar_sof_recoveries = combat_sar_sof_recoveries or {}
+    local spawnIndex = 0
+    local snatchCounter = 0
+
+    ---------------------------------------------------------------------------
+    -- Helpers (defined before first use -- definition order matters in DCS Lua)
+    ---------------------------------------------------------------------------
+    local function msgToCoalition(side, text)
+        pcall(trigger.action.outTextForCoalition, side, text, messageTime * 2)
+    end
+
+    -- A unit is "landed / low-hover and slow" (a deliberate pickup posture).
+    local function unitLowSlow(u)
+        if not u or not u:IsAlive() then return false end
+        local c = u:GetCoordinate()
+        if not c then return false end
+        local agl = (u:GetHeight() or 0) - (c:GetLandHeight() or 0)
+        local spd = u:GetVelocityKMH() or 999
+        return agl <= PICKUP_AGL and spd <= PICKUP_SPEED
+    end
+
+    -- True if the coordinate is over water (no land-based snatch party there).
+    local function isWater(coord)
+        local ok, st = pcall(land.getSurfaceType, coord:GetVec2())
+        return ok and (st == land.SurfaceType.WATER or st == land.SurfaceType.SHALLOW_WATER)
+    end
+
+    -- Nearest friendly airbase/FARP/ship point to a coordinate (delivery target).
+    local function nearestFriendlyAirbase(side, coord)
+        local okc, abs = pcall(coalition.getAirbases, side)
+        if not okc or not abs then return nil, nil end
+        local cv = coord:GetVec3()
+        local best, bestd = nil, nil
+        for _, ab in pairs(abs) do
+            local okp, p = pcall(function() return ab:getPoint() end)
+            if okp and p then
+                local d = math.sqrt((p.x - cv.x) ^ 2 + (p.z - cv.z) ^ 2)
+                if not bestd or d < bestd then bestd = d; best = p end
             end
-            local group_data = {
-                ["visible"] = false,
-                ["hidden"] = false,
-                ["name"] = gname,
-                ["task"] = {},
-                ["category"] = Group.Category.GROUND,
-                ["country"] = country.id.CJTF_RED,
-                ["units"] = units,
-                ["route"] = {
-                    ["points"] = {
-                        [1] = { ["x"] = sp.x, ["y"] = sp.y, ["type"] = "Turning Point",
-                                ["action"] = "Off Road", ["speed"] = PARTY_SPEED },
-                        [2] = { ["x"] = sv.x, ["y"] = sv.y, ["type"] = "Turning Point",
-                                ["action"] = "Off Road", ["speed"] = PARTY_SPEED },
-                    },
-                },
+        end
+        return best, bestd
+    end
+
+    -- Spawn a downed-pilot group cloned from the coalition's late-activation template.
+    local function spawnSurvivorGroup(cfg, coord, label)
+        spawnIndex = spawnIndex + 1
+        local alias = string.format("CombatSAR %s %d", label or "Survivor", spawnIndex)
+        local grp = nil
+        local ok, res = pcall(function()
+            return SPAWN:NewWithAlias(cfg.pilotTemplate, alias)
+                :InitDelayOff()
+                :SpawnFromCoordinate(coord)
+        end)
+        if ok then grp = res else env.warning("combatsar: survivor spawn failed: " .. tostring(res)) end
+        return grp
+    end
+
+    -- Spare/extract credit. Pilots -> combat_sar_rescues (spared at debrief); SOF teams ->
+    -- combat_sar_sof_recoveries (recovered + refunded). Both keyed by the ORIGINAL unit name
+    -- DCS reports in kill/crash events, so Retribution maps it straight back to the loss.
+    local function creditRescue(entry)
+        if entry.credited then return end
+        entry.credited = true
+        entry.state = "rescued"
+        if entry.isSof then
+            table.insert(combat_sar_sof_recoveries, entry.unit)
+            env.info("DCSRetribution|Combat SAR - stranded SOF team " .. tostring(entry.unit)
+                .. " extracted home; campaign will recover + refund it")
+        else
+            if entry.unit and entry.unit ~= "" then
+                table.insert(combat_sar_rescues, entry.unit)
+            end
+            env.info("DCSRetribution|Combat SAR - pilot of " .. tostring(entry.unit)
+                .. " delivered home; campaign will spare them")
+        end
+        dirty_state = true
+        msgToCoalition(entry.side, "RESCUE COMPLETE: survivor delivered to a friendly field.")
+    end
+
+    -- Capture credit: hold the aviator as a recoverable POW (Python record_pow_captures reads
+    -- unit/x/y; the extra coalition key is forward-compat for the red POW path, ignored today).
+    local function recordCapture(entry)
+        local v
+        local u = entry.group and entry.group:GetUnit(1)
+        local c = u and u:GetCoordinate()
+        v = (c and c:GetVec2()) or entry.coord:GetVec2()
+        table.insert(combat_sar_captures, {
+            unit = entry.unit or "",
+            x = v.x,
+            y = v.y,
+            coalition = entry.color,
+        })
+        dirty_state = true
+        entry.state = "captured"
+        msgToCoalition(entry.side, "Downed pilot CAPTURED by enemy forces -- now a POW. "
+            .. "A recovery may be possible on a later turn.")
+    end
+
+    -- Spawn the OPPOSING coalition's snatch party spawnDistance from the survivor, routed in.
+    local function spawnSnatchParty(cfg, survivorCoord)
+        snatchCounter = snatchCounter + 1
+        local gname = string.format("CSAR Snatch Party %d", snatchCounter)
+        local spawnCoord = survivorCoord:Translate(capture.spawnDistance, math.random(0, 359))
+        local sp = spawnCoord:GetVec2()
+        local sv = survivorCoord:GetVec2()
+        local units = {}
+        for i = 1, math.max(1, capture.partySize) do
+            units[i] = {
+                ["type"] = "Soldier AK",  -- vanilla DCS infantry
+                ["name"] = string.format("%s U%d", gname, i),
+                ["x"] = sp.x + math.random(-15, 15),
+                ["y"] = sp.y + math.random(-15, 15),
+                ["heading"] = 0,
+                ["skill"] = "Average",
+                ["playerCanDrive"] = false,
             }
-            local ok, spawned = pcall(mist.dynAdd, group_data)
-            if not ok or not spawned then
-                env.warning("combatsar: snatch-party spawn failed: " .. tostring(spawned))
-                return nil
-            end
-            -- Red smoke marks where the party started so the Sandy escort can find it.
-            pcall(trigger.action.smoke, { x = sp.x, y = 0, z = sp.y }, trigger.smokeColor.Red)
-            return spawned.name or gname
         end
-
-        local function findSurvivor(name)
-            for _, p in pairs(csar.downedPilots or {}) do
-                if p.name == name and p.alive then
-                    return p
-                end
-            end
+        local group_data = {
+            ["visible"] = false,
+            ["hidden"] = false,
+            ["name"] = gname,
+            ["task"] = {},
+            ["category"] = Group.Category.GROUND,
+            ["country"] = cfg.enemyCountry,
+            ["units"] = units,
+            ["route"] = {
+                ["points"] = {
+                    [1] = { ["x"] = sp.x, ["y"] = sp.y, ["type"] = "Turning Point",
+                            ["action"] = "Off Road", ["speed"] = 5.5 },
+                    [2] = { ["x"] = sv.x, ["y"] = sv.y, ["type"] = "Turning Point",
+                            ["action"] = "Off Road", ["speed"] = 5.5 },
+                },
+            },
+        }
+        local ok, spawned = pcall(mist.dynAdd, group_data)
+        if not ok or not spawned then
+            env.warning("combatsar: snatch-party spawn failed: " .. tostring(spawned))
             return nil
         end
-
-        local function captureTick()
-            local ok, err = pcall(function()
-                -- 1) New survivors: roll the chance, maybe push a snatch party.
-                for _, pilot in pairs(csar.downedPilots or {}) do
-                    if pilot.alive and pilot.name and not tracks[pilot.name] then
-                        tracks[pilot.name] = { partyName = nil, dwell = 0 }
-                        local coord = pilot.group and pilot.group:GetCoordinate()
-                        if coord and not pilot.wetfeet
-                            and math.random(1, 100) <= capture.chance then
-                            local partyName = spawnSnatchParty(coord)
-                            if partyName then
-                                tracks[pilot.name].partyName = partyName
-                                captureMsg("MAYDAY: enemy ground forces are moving to capture a "
-                                    .. "downed pilot (red smoke). SANDY -- protect the survivor, "
-                                    .. "kill the snatch party!")
-                            end
-                        end
-                    end
-                end
-                -- 2) Active parties: advance the capture clock or clean up.
-                for name, t in pairs(tracks) do
-                    if t.partyName then
-                        local pilot = findSurvivor(name)
-                        local party = GROUP:FindByName(t.partyName)
-                        if not pilot then
-                            -- rescued or dead: stand the party down, stop tracking.
-                            if party and party:IsAlive() then party:Destroy() end
-                            t.partyName = nil
-                        elseif not (party and party:IsAlive()) then
-                            -- Sandy killed the party: the survivor is safe from it.
-                            captureMsg("Capture party neutralized -- the downed pilot is safe. "
-                                .. "Continue the recovery.")
-                            t.partyName = nil
-                        else
-                            local pc = pilot.group:GetCoordinate()
-                            local gc = party:GetCoordinate()
-                            if pc and gc and gc:Get2DDistance(pc) <= capture.captureRange then
-                                t.dwell = t.dwell + CAPTURE_POLL
-                                if t.dwell >= capture.captureDwell then
-                                    local sv = pc:GetVec2()
-                                    table.insert(combat_sar_captures, {
-                                        unit = pilot.originalUnit or "",
-                                        x = sv.x,
-                                        y = sv.y,
-                                    })
-                                    dirty_state = true
-                                    csar:_RemoveNameFromDownedPilots(name, true)
-                                    pcall(function() pilot.group:Destroy() end)
-                                    party:Destroy()
-                                    t.partyName = nil
-                                    captureMsg("Downed pilot CAPTURED by enemy forces -- now a "
-                                        .. "POW. A recovery may be possible on a later turn.")
-                                end
-                            else
-                                t.dwell = 0
-                            end
-                        end
-                    end
-                end
-            end)
-            if not ok then
-                env.warning("combatsar: capture tick error (continuing): " .. tostring(err))
-            end
-            return timer.getTime() + CAPTURE_POLL
-        end
-
-        timer.scheduleFunction(captureTick, {}, timer.getTime() + CAPTURE_POLL)
-        env.info(string.format(
-            "DCSRetribution|Combat SAR - enemy capture race armed (chance %d%%, spawn %dm, "
-                .. "capture %dm/%ds, party %d)",
-            capture.chance, capture.spawnDistance, capture.captureRange,
-            capture.captureDwell, capture.partySize))
+        pcall(trigger.action.smoke, { x = sp.x, y = 0, z = sp.y }, trigger.smokeColor.Red)
+        return spawned.name or gname
     end
 
-    -------------------------------------------------------------------------------
-    -- AI standing alert (auto_combat_sar): MOOSE CSAR above is player-rescue only,
-    -- so for real AI auto-rescue we stand up MOOSE AICSAR. AICSAR spawns its OWN
-    -- rescue helos (cloned from heloTemplate) from a home AIRBASE and routes them to
-    -- downed pilots, delivering to a ZONE_AIRBASE at that base. It auto-starts inside
-    -- :New, and its autoonoff (default true) makes it stand down whenever a player is
-    -- crewing a rescue helo -- so it never competes with the player-flown CSAR above.
-    --
-    -- KNOWN v1 LIMITATION (in-game pass): AICSAR spawns an anonymous pilot clone and
-    -- destroys the original ejected unit, so it does NOT carry the lost airframe's
-    -- unit name through to delivery -- the campaign spare-pilot scoring (combat_sar_
-    -- rescues, fed by the player CSAR path above) is therefore NOT credited for an
-    -- AICSAR auto-rescue yet. The v1 goal is the behaviour: an AI helo actually
-    -- launches, flies out, picks the pilot up, and RTBs (the old path did nothing).
-    -- Also: a player ejecting from a fixed-wing while no human is in any helo gets
-    -- handled by BOTH engines (CSAR spawns a flyable downed pilot; AICSAR also spawns
-    -- its clone + auto-rescues) -- a cosmetic double-spawn to evaluate in the pass.
-    -------------------------------------------------------------------------------
-    if enableForAI and AICSAR and data.heloTemplate and data.farp then
-        local farpAirbase = AIRBASE:FindByName(data.farp)
-        if farpAirbase then
-            local mashZone = ZONE_AIRBASE:New(data.farp)
-            local aicsar = AICSAR:New(
-                "CSAR", "blue", pilotTemplate, data.heloTemplate, farpAirbase, mashZone
-            )
-            -- Default max reach is 50 NM from the FARP; a Combat SAR base often sits
-            -- well behind the FLOT, so widen it so forward ejections are in range.
-            aicsar.maxdistance = UTILS.NMToMeters(150)
-            env.info(string.format(
-                "DCSRetribution|Combat SAR - AICSAR AI standing alert armed "
-                    .. "(helo template '%s', FARP '%s')",
-                tostring(data.heloTemplate),
-                tostring(data.farp)
-            ))
-
-            -- 414th: dispatch the AI rescue at EJECTION, not at landing.
-            -- Stock AICSAR only reacts to S_EVENT_LANDING_AFTER_EJECTION -- the
-            -- downed pilot has to touch down first (~8-9 min under canopy from a
-            -- high ejection), and that DCS event is unreliable for AI pilots, so an
-            -- AI shoot-down often drew no rescue at all (in-game pass G9, 2026-06-28:
-            -- a blue AI ejected, the mission ended 57 s later with the pilot still
-            -- at ~3 km, and nothing launched). AICSAR's own eject fast-path
-            -- (UseEventEject + _EjectEventHandler) is PLAYER-only -- it bails unless
-            -- IniPlayerName is set -- so AI needs this bridge.
-            --
-            -- Setting UseEventEject makes AICSAR's landing handler early-return, so
-            -- there is no second dispatch if the flaky landing event later fires
-            -- (clean dedup); we then drive its dispatch (_EventHandler) ourselves
-            -- the instant a blue AI pilot ejects, spawning the survivor under the
-            -- ejection point and sending a helo immediately. Blue only (AICSAR is
-            -- blue; red CSAR is not built). pcall-guarded so a malformed event
-            -- degrades to a logged warning, never a CTD. autoonoff still applies
-            -- inside _EventHandler (it stands down while a human crews a rescue helo).
-            aicsar.UseEventEject = true
-            local aiEjectDispatched = {} -- aircraft name -> true (one rescue per airframe; dedups a 2-seat double-eject)
-            local aiEjectBridge = {}
-            function aiEjectBridge:onEvent(event)
-                if not event or event.id ~= world.event.S_EVENT_EJECTION then
-                    return
-                end
-                local unit = event.initiator
-                if not unit then
-                    return
-                end
-                local okp, player = pcall(function()
-                    return unit.getPlayerName and unit:getPlayerName()
-                end)
-                if okp and player then
-                    return -- players: handled by the player CSAR + AICSAR's own eject path
-                end
-                local okn, name = pcall(function()
-                    return unit.getName and unit:getName()
-                end)
-                if not okn or not name or aiEjectDispatched[name] then
-                    return
-                end
-                local okc, coa = pcall(function()
-                    return unit:getCoalition()
-                end)
-                if not okc or coa ~= coalition.side.BLUE then
-                    return -- AICSAR is blue; ignore red/neutral ejections
-                end
-                aiEjectDispatched[name] = true
-                local ok, err = pcall(function()
-                    aicsar:_EventHandler(event, true)
-                end)
-                if ok then
-                    env.info(
-                        "DCSRetribution|Combat SAR - AI eject rescue dispatched for '"
-                            .. tostring(name)
-                            .. "'"
-                    )
-                else
-                    env.warning(
-                        "DCSRetribution|Combat SAR - AI eject dispatch error (continuing): "
-                            .. tostring(err)
-                    )
-                end
-            end
-            world.addEventHandler(aiEjectBridge)
-        else
-            env.warning(
-                "DCSRetribution|Combat SAR - AICSAR: FARP airbase '"
-                    .. tostring(data.farp)
-                    .. "' not found; AI auto-rescue inactive."
-            )
-        end
-    end
-
-    -------------------------------------------------------------------------------
-    -- Rescue scoring: report every pilot delivered home so the campaign can spare
-    -- the aviator (the airframe is still lost, but the experienced pilot returns to
-    -- the squadron instead of being killed at debrief).
-    --
-    -- MOOSE CSAR keeps the ejected aircraft's ORIGINAL unit name on each downed-pilot
-    -- track and carries it into inTransitGroups when the pilot boards. We capture it
-    -- on Boarded and only CREDIT it on Rescued -- the FSM event _RescuePilots fires
-    -- after delivering the onboard pilots to a friendly field/FARP. A rescue helo
-    -- shot down with pilots aboard never reaches Rescued, so those pilots are
-    -- (correctly) never credited. The original unit name is exactly what DCS reports
-    -- in the kill/crash events, so Retribution maps it straight back to the lost
-    -- flight and skips killing that pilot. Appends to the dcsRetribution-core global
-    -- combat_sar_rescues (written into state.json by dcs_retribution.lua).
-    --
-    -- The SAME pickup path also extracts stranded SCAR SOF teams (spawned as CASEVAC
-    -- below): those carry a SOFRESCUE_<x>_<y> name, which we route to a separate
-    -- combat_sar_sof_recoveries channel (clears the rescue + refunds the team)
-    -- instead of the pilot-sparing one.
-    -------------------------------------------------------------------------------
-    local onboardByHeli = {}  -- heliName -> { woundedGroupName -> originalUnit }
-
-    local function isSofRescue(name)
-        return type(name) == "string" and string.sub(name, 1, 9) == "SOFRESCUE"
-    end
-
-    function csar:OnAfterBoarded(_From, _Event, _To, heliName, woundedGroupName, _desc)
-        local transit = self.inTransitGroups[heliName]
-        local entry = transit and transit[woundedGroupName]
-        if entry and entry.originalUnit and entry.originalUnit ~= "" then
-            onboardByHeli[heliName] = onboardByHeli[heliName] or {}
-            onboardByHeli[heliName][woundedGroupName] = entry.originalUnit
-        end
-    end
-
-    function csar:OnAfterRescued(_From, _Event, _To, _heliUnit, heliName, _pilotsSaved)
-        local delivered = onboardByHeli[heliName]
-        if not delivered then
-            return
-        end
-        combat_sar_rescues = combat_sar_rescues or {}
-        combat_sar_sof_recoveries = combat_sar_sof_recoveries or {}
-        for _, originalUnit in pairs(delivered) do
-            if isSofRescue(originalUnit) then
-                table.insert(combat_sar_sof_recoveries, originalUnit)
-                env.info("DCSRetribution|Combat SAR - stranded SOF team " .. tostring(originalUnit)
-                    .. " extracted home; campaign will recover + refund it")
-            else
-                table.insert(combat_sar_rescues, originalUnit)
-                env.info("DCSRetribution|Combat SAR - pilot of " .. tostring(originalUnit)
-                    .. " delivered home; campaign will spare them")
-            end
-        end
-        onboardByHeli[heliName] = nil
-        dirty_state = true  -- force the next scheduled state write to include it
-    end
-
-    -------------------------------------------------------------------------------
-    -- Stranded SOF teams (SCAR commander-capture loop): a botched capture leaves a
-    -- SOF team in enemy territory. Spawn each on-map team (emitted by the generator)
-    -- as a MOOSE CSAR CASEVAC at its strand point, so the same Combat SAR rescue
-    -- helo can fly out, board it, and deliver it to a friendly field -- which clears
-    -- the rescue and refunds the team at debrief. CASEVAC reuses the pilotTemplate
-    -- group and the exact board/deliver path (so OnAfterRescued above sees it); the
-    -- SOFRESCUE_ name is what Python recomputes to match the delivery. The C-130 SOF
-    -- *insert* is unchanged (CTLD) -- only the recovery rides Combat SAR.
-    -------------------------------------------------------------------------------
-    local sofTeams = data.sofTeams or {}
-    for _, team in pairs(sofTeams) do
-        local x = tonumber(team.x)
-        local y = tonumber(team.y)
-        if team.name and x and y then
-            -- Generator emits pydcs (x = north, y = east); the DCS world vec3 is
-            -- { x = north, y = 0, z = east }, matching the SCAR plugin's convention.
-            local coord = COORDINATE:NewFromVec3({ x = x, y = 0, z = y })
-            csar:SpawnCASEVAC(coord, coalition.side.BLUE, "Stranded SOF team", false, team.name, "SOF Team", true)
-        end
-    end
-
-    -------------------------------------------------------------------------------
-    -- C-130 "King": TACAN beacon + LARS survivor-locator menu
-    -------------------------------------------------------------------------------
-
-    -- LARS: read the live downed-pilot table and message the King group a list of
-    -- all active survivors (nearest first) with position and bearing/range from the
-    -- King, for the crew to relay (the helo homes on the King's TACAN). Coordinate
-    -- text reuses MOOSE CSAR's own settings-aware formatter so it matches the
-    -- player's chosen coord system.
-    local function larsReport(csarEngine, kingGroup)
-        -- Failsafe discipline: an F10 LARS query reads MOOSE CSAR's live downed-pilot
-        -- table (group handles can be stale, internal formatters can change); contain it
-        -- so a runtime error can't throw out of the menu command.
+    -- AI auto-rescue: reuse MOOSE OPSTRANSPORT (the proven AICSAR routing) to fly a helo out,
+    -- board the LEDGER's survivor group as cargo, and deliver it to the FARP -- crediting the
+    -- real unit on unload. No anonymous clone: identity lives in the ledger entry.
+    local function dispatchAIRescue(entry)
         local ok, err = pcall(function()
-        local kingUnit = kingGroup:GetUnit(1)
-        if not kingUnit or not kingUnit:IsAlive() then
-            return
-        end
-        local kingCoord = kingUnit:GetCoordinate()
-        local entries = {}
-        for _, pilot in pairs(csarEngine.downedPilots or {}) do
-            if pilot.group and pilot.alive then
-                local woundedCoord = pilot.group:GetCoordinate()
-                if woundedCoord then
-                    local coordText = csarEngine:_GetPositionOfWounded(
-                        pilot.group, kingUnit
-                    )
-                    local dist = kingCoord:Get2DDistance(woundedCoord)
-                    local bearing = math.floor(kingCoord:HeadingTo(woundedCoord) + 0.5) % 360
-                    local nm = UTILS.MetersToNM(dist)
-                    table.insert(entries, {
-                        dist = dist,
-                        text = string.format(
-                            "%s: %s (brg %03d / %.0f nm)",
-                            tostring(pilot.desc or "Survivor"),
-                            coordText,
-                            bearing,
-                            nm
-                        ),
-                    })
+            local cfg = entry.cfg
+            if not cfg.heloTemplate or not cfg.farp then return end
+            if not (entry.group and entry.group:IsAlive()) then return end
+            local farp = AIRBASE:FindByName(cfg.farp)
+            if not farp then
+                env.warning("combatsar: AI dispatch - FARP '" .. tostring(cfg.farp) .. "' not found")
+                return
+            end
+            local pickupzone = ZONE_GROUP:New(entry.groupName, entry.group, 300)
+            local opstransport = OPSTRANSPORT:New(entry.group, pickupzone, farp:GetZone())
+            spawnIndex = spawnIndex + 1
+            local newhelo = SPAWN:NewWithAlias(cfg.heloTemplate, string.format("CombatSAR Rescue %d", spawnIndex))
+                :InitUnControlled(true)
+                :InitDelayOff()
+                :Spawn()
+            if not newhelo then return end
+            local fg = FLIGHTGROUP:New(newhelo)
+            fg:SetHomebase(farp)
+            fg:Activate()
+            fg:SetDefaultAltitude(1500)
+            fg:SetDefaultSpeed(100)
+            fg:AddOpsTransport(opstransport)
+            entry.aiManaged = true
+            entry.heloName = newhelo:GetName()
+            -- Credit when the survivor cargo is unloaded at the FARP.
+            function fg:OnAfterUnloaded(_From, _Event, _To, _OpsGroupCargo)
+                if entry.state ~= "rescued" and entry.state ~= "captured" then
+                    creditRescue(entry)
                 end
             end
-        end
-        table.sort(entries, function(a, b) return a.dist < b.dist end)
-        local msg
-        if #entries == 0 then
-            msg = "LARS: no active survivor radios."
-        else
-            msg = "LARS - active survivors (nearest first):"
-            for _, entry in pairs(entries) do
-                msg = msg .. "\n" .. entry.text
-            end
-        end
-        MESSAGE:New(msg, messageTime * 2):ToGroup(kingGroup)
+            msgToCoalition(entry.side, "RESCUE: an AI helo has launched for the downed pilot.")
         end)
         if not ok then
-            env.warning("combatsar: LARS report error (continuing): " .. tostring(err))
+            env.warning("combatsar: AI dispatch error (continuing): " .. tostring(err))
         end
     end
 
-    local function addLarsMenu(csarEngine, kingGroup)
-        local root = MENU_GROUP:New(kingGroup, "Combat SAR")
-        MENU_GROUP_COMMAND:New(
-            kingGroup, "LARS - Locate Survivors", root, larsReport, csarEngine, kingGroup
-        )
-    end
-
-    local kings = data.kings or {}
-    local kingByName = {}
-    for _, king in pairs(kings) do
-        if king.group then
-            kingByName[king.group] = king
+    -- Register a new survivor + spawn its group. Deduped by id (caller guarantees uniqueness).
+    local function registerSurvivor(cfg, unitName, coord, isSof)
+        local id = unitName
+        if not id or id == "" then
+            spawnIndex = spawnIndex + 1
+            id = "survivor_" .. spawnIndex
+        end
+        if survivors[id] then return end
+        local grp = spawnSurvivorGroup(cfg, coord, isSof and "SOF" or "Survivor")
+        if not grp then return end
+        survivors[id] = {
+            id = id,
+            unit = unitName or "",
+            isSof = isSof or false,
+            color = cfg.color,
+            side = cfg.side,
+            cfg = cfg,
+            group = grp,
+            groupName = grp:GetName(),
+            coord = coord,
+            state = "down",
+            party = nil,
+            dwell = 0,
+            dispatched = false,
+            aiManaged = false,
+            credited = false,
+            captureRolled = false,
+            t0 = timer.getTime(),
+        }
+        pcall(trigger.action.smoke, coord:GetVec3(), trigger.smokeColor.Red)
+        if isSof then
+            msgToCoalition(cfg.side, "Stranded team in the field -- Combat SAR can extract it.")
+        else
+            msgToCoalition(cfg.side, "MAYDAY: pilot down (red smoke) -- Combat SAR is on it.")
         end
     end
 
-    -- Activate a King's TACAN beacon + LARS menu once (dedup so the start sweep and
-    -- the birth handler can't double up the F10 menu).
-    local activatedKings = {}
-    local function activateKing(grp, reason)
-        if not grp then
+    -- Find a friendly helo deliberately picking up this survivor (landed/low+slow within range).
+    -- Excludes the AI-managed transport helo (that path credits via OPSTRANSPORT, not geometry).
+    local function findBoardingHelo(entry)
+        local u0 = entry.group and entry.group:GetUnit(1)
+        local sc = u0 and u0:GetCoordinate()
+        if not sc then return nil end
+        local found = nil
+        entry.cfg.heloSet:ForEachGroupAlive(function(g)
+            if found then return end
+            local name = g:GetName()
+            if entry.aiManaged and name == entry.heloName then return end
+            local u = g:GetUnit(1)
+            if not (u and u:IsAlive()) then return end
+            local gc = u:GetCoordinate()
+            if not gc then return end
+            if gc:Get2DDistance(sc) <= PICKUP_RANGE and unitLowSlow(u) then
+                found = g
+            end
+        end)
+        return found
+    end
+
+    -- Advance (or stand down) the capture clock for a survivor with an active snatch party.
+    local function advanceCapture(entry)
+        local party = entry.party and GROUP:FindByName(entry.party)
+        if not (party and party:IsAlive()) then
+            if entry.party then
+                msgToCoalition(entry.side, "Capture party neutralized -- the downed pilot is safe. "
+                    .. "Continue the recovery.")
+            end
+            entry.party = nil
+            entry.dwell = 0
             return
         end
-        local name = grp:GetName()
-        if activatedKings[name] then
-            return
+        local pu = entry.group and entry.group:GetUnit(1)
+        local gu = party:GetUnit(1)
+        local pc = pu and pu:GetCoordinate()
+        local gc = gu and gu:GetCoordinate()
+        if pc and gc and gc:Get2DDistance(pc) <= capture.captureRange then
+            entry.dwell = (entry.dwell or 0) + POLL
+            if entry.dwell >= capture.captureDwell then
+                recordCapture(entry)
+                pcall(function() entry.group:Destroy() end)
+                pcall(function() party:Destroy() end)
+                entry.party = nil
+            end
+        else
+            entry.dwell = 0
         end
-        local king = kingByName[name]
-        if not king then
-            return
+    end
+
+    ---------------------------------------------------------------------------
+    -- Eject handler: register every ejection for a configured coalition.
+    ---------------------------------------------------------------------------
+    local ejectSeen = {}  -- aircraft unit name -> true (one survivor per airframe)
+    local ejectBridge = {}
+    function ejectBridge:onEvent(event)
+        local ok, err = pcall(function()
+            if not event or event.id ~= world.event.S_EVENT_EJECTION then return end
+            local init = event.initiator
+            if not init then return end
+            local okn, name = pcall(function() return init:getName() end)
+            if not okn or not name or ejectSeen[name] then return end
+            local okc, cn = pcall(function() return init:getCoalition() end)
+            if not okc then return end
+            local cfg = cfgBySide[cn]
+            if not cfg then return end  -- coalition not wired (e.g. red before its data lands)
+            local okp, pos = pcall(function() return init:getPosition().p end)
+            if not okp or not pos then return end
+            ejectSeen[name] = true
+            registerSurvivor(cfg, name, COORDINATE:NewFromVec3(pos), false)
+        end)
+        if not ok then
+            env.warning("combatsar: eject handler error (continuing): " .. tostring(err))
         end
-        if not grp:IsAlive() then
-            return
-        end
-        local unit = grp:GetUnit(1)
-        if not unit then
-            return
-        end
-        activatedKings[name] = true
-        if king.tacanChannel then
-            -- Only push the scripted ActivateBeacon command to an AI-controlled, live
-            -- unit. A player-occupied King has no AI controller, so the command has "no
-            -- executor" (logged as an AI::Controller exception) and -- because an
-            -- air-tracking beacon is re-evaluated every sim tick against the host unit --
-            -- is the suspected trigger for the discrete-command-queue CTD seen in-game.
-            -- Player crews set TACAN in-cockpit instead; the LARS menu still attaches.
-            if unit and unit:IsAlive() and unit:GetPlayerName() == nil then
-                unit:GetBeacon():ActivateTACAN(
-                    tonumber(king.tacanChannel),
-                    king.tacanBand or "Y",
-                    king.callsign or "KING",
-                    true
-                )
+    end
+    world.addEventHandler(ejectBridge)
+
+    ---------------------------------------------------------------------------
+    -- Stranded SOF teams (SCAR commander-capture loop): each on-map team emitted by the
+    -- generator becomes a ledger survivor the same rescue helo can extract. SOFRESCUE_ name
+    -- is what Python recomputes to match the delivery; no capture race for these.
+    ---------------------------------------------------------------------------
+    for _, cfg in ipairs(configs) do
+        for _, team in pairs(cfg.sofTeams) do
+            local x = tonumber(team.x)
+            local y = tonumber(team.y)
+            if team.name and x and y then
+                -- Generator emits pydcs (x = north, y = east); DCS vec3 = { x = north, y = 0, z = east }.
+                registerSurvivor(cfg, team.name, COORDINATE:NewFromVec3({ x = x, y = 0, z = y }), true)
             end
         end
-        addLarsMenu(csar, grp)
-        env.info(
-            string.format(
-                "DCSRetribution|Combat SAR King - activated '%s' via %s (TACAN %s%s, LARS menu attached)",
-                name,
-                tostring(reason or "unknown"),
-                tostring(king.tacanChannel or "none"),
-                tostring(king.tacanBand or "")
-            )
-        )
     end
 
-    -- Kings already present at mission start...
+    ---------------------------------------------------------------------------
+    -- Main tick: drive every survivor through the ledger state machine.
+    ---------------------------------------------------------------------------
+    local function tick()
+        local ok, err = pcall(function()
+            for id, e in pairs(survivors) do
+                if e.state == "down" then
+                    -- Capture race: roll a snatch party once per survivor (pilots only, on land).
+                    if capture.enabled and not e.isSof and not e.captureRolled then
+                        e.captureRolled = true
+                        local u = e.group and e.group:GetUnit(1)
+                        local c = u and u:GetCoordinate()
+                        if c and not isWater(c) and math.random(1, 100) <= capture.chance then
+                            e.party = spawnSnatchParty(e.cfg, c)
+                            if e.party then
+                                msgToCoalition(e.side, "MAYDAY: enemy ground forces are moving to "
+                                    .. "capture the downed pilot (red smoke). SANDY -- protect the "
+                                    .. "survivor, kill the snatch party!")
+                            end
+                        end
+                    end
+                    -- Player / manual pickup (AI-managed survivors credit via OPSTRANSPORT instead).
+                    if not e.aiManaged then
+                        local helo = findBoardingHelo(e)
+                        if helo then
+                            e.state = "boarding"
+                            e.heloName = helo:GetName()
+                            pcall(function() e.group:Destroy() end)
+                            msgToCoalition(e.side, "Survivor aboard -- RTB to a friendly field to "
+                                .. "complete the rescue.")
+                        end
+                    end
+                    -- AI auto-rescue after a short grace (lets a player or the orbiting alert react).
+                    if e.state == "down" and e.cfg.enableForAI and not e.dispatched
+                        and (timer.getTime() - e.t0) >= AI_DISPATCH_DELAY then
+                        e.dispatched = true
+                        dispatchAIRescue(e)
+                    end
+                    -- Capture clock (only meaningful while still down).
+                    if e.party then advanceCapture(e) end
+
+                elseif e.state == "boarding" and not e.aiManaged then
+                    -- Player-carried survivor: rescued when the helo reaches a friendly field low+slow.
+                    local helo = GROUP:FindByName(e.heloName)
+                    if not (helo and helo:IsAlive()) then
+                        -- Lost the ride: re-drop the survivor where they were.
+                        e.state = "down"
+                        e.heloName = nil
+                        local grp = spawnSurvivorGroup(e.cfg, e.coord, "Survivor")
+                        if grp then e.group = grp; e.groupName = grp:GetName() end
+                    else
+                        local u = helo:GetUnit(1)
+                        local hc = u and u:GetCoordinate()
+                        if hc then
+                            local _, dist = nearestFriendlyAirbase(e.side, hc)
+                            if dist and dist <= HOME_RANGE and unitLowSlow(u) then
+                                creditRescue(e)
+                            end
+                        end
+                    end
+                end
+
+                -- Reap finished entries.
+                if e.state == "rescued" or e.state == "captured" or e.state == "dead" then
+                    survivors[id] = nil
+                end
+            end
+        end)
+        if not ok then
+            env.warning("combatsar: tick error (continuing): " .. tostring(err))
+        end
+        return timer.getTime() + POLL
+    end
+    timer.scheduleFunction(tick, {}, timer.getTime() + POLL)
+
+    ---------------------------------------------------------------------------
+    -- C-130 "King": air-tracking TACAN beacon + LARS survivor-locator menu (reads the ledger)
+    ---------------------------------------------------------------------------
+    local function larsReport(side, kingGroup)
+        local ok, err = pcall(function()
+            local kingUnit = kingGroup:GetUnit(1)
+            if not kingUnit or not kingUnit:IsAlive() then return end
+            local kingCoord = kingUnit:GetCoordinate()
+            local entries = {}
+            for _, e in pairs(survivors) do
+                if e.side == side and (e.state == "down" or e.state == "boarding") then
+                    local u = e.group and e.group:GetUnit(1)
+                    local wc = u and u:GetCoordinate()
+                    if wc then
+                        local dist = kingCoord:Get2DDistance(wc)
+                        local bearing = math.floor(kingCoord:HeadingTo(wc) + 0.5) % 360
+                        entries[#entries + 1] = {
+                            dist = dist,
+                            text = string.format("%s: %s (brg %03d / %.0f nm)",
+                                e.isSof and "SOF team" or "Survivor",
+                                wc:ToStringMGRS(),
+                                bearing,
+                                UTILS.MetersToNM(dist)),
+                        }
+                    end
+                end
+            end
+            table.sort(entries, function(a, b) return a.dist < b.dist end)
+            local msg
+            if #entries == 0 then
+                msg = "LARS: no active survivors."
+            else
+                msg = "LARS - active survivors (nearest first):"
+                for _, entry in ipairs(entries) do msg = msg .. "\n" .. entry.text end
+            end
+            MESSAGE:New(msg, messageTime * 2):ToGroup(kingGroup)
+        end)
+        if not ok then env.warning("combatsar: LARS report error (continuing): " .. tostring(err)) end
+    end
+
+    local kingByName = {}
+    for _, cfg in ipairs(configs) do
+        for _, king in pairs(cfg.kings) do
+            if king.group then
+                kingByName[king.group] = { king = king, side = cfg.side }
+            end
+        end
+    end
+
+    local activatedKings = {}
+    local function activateKing(grp, reason)
+        if not grp then return end
+        local name = grp:GetName()
+        if activatedKings[name] then return end
+        local rec = kingByName[name]
+        if not rec then return end
+        if not grp:IsAlive() then return end
+        local unit = grp:GetUnit(1)
+        if not unit then return end
+        local king = rec.king
+        activatedKings[name] = true
+        if king.tacanChannel then
+            -- Only AI-controlled (no player) Kings get the scripted beacon command; a player
+            -- King sets TACAN in-cockpit (the air-tracking beacon on a player unit is the
+            -- suspected discrete-command-queue CTD trigger). LARS menu still attaches.
+            if unit:IsAlive() and unit:GetPlayerName() == nil then
+                pcall(function()
+                    unit:GetBeacon():ActivateTACAN(
+                        tonumber(king.tacanChannel),
+                        king.tacanBand or "Y",
+                        king.callsign or "KING",
+                        true)
+                end)
+            end
+        end
+        local root = MENU_GROUP:New(grp, "Combat SAR")
+        MENU_GROUP_COMMAND:New(grp, "LARS - Locate Survivors", root, larsReport, rec.side, grp)
+        env.info(string.format(
+            "DCSRetribution|Combat SAR King - activated '%s' via %s (TACAN %s%s, LARS menu attached)",
+            name, tostring(reason or "unknown"),
+            tostring(king.tacanChannel or "none"), tostring(king.tacanBand or "")))
+    end
+
     for name, _ in pairs(kingByName) do
         local grp = GROUP:FindByName(name)
-        if grp and grp:IsAlive() then
-            activateKing(grp, "mission-start")
-        end
+        if grp and grp:IsAlive() then activateKing(grp, "mission-start") end
     end
 
     local function activateKingFromEvent(EventData, reason)
@@ -611,50 +615,30 @@ if dcsRetribution and dcsRetribution.CombatSAR and CSAR then
             grp = GROUP:FindByName(EventData.IniGroupName)
         end
         if grp and kingByName[grp:GetName()] then
-            -- Client-slot player entry can race F10 menu creation. Try now, then
-            -- once more after DCS has fully attached the player to the group.
             activateKing(grp, reason)
             if not activatedKings[grp:GetName()] then
                 local groupName = grp:GetName()
-                timer.scheduleFunction(
-                    function()
-                        activateKing(
-                            GROUP:FindByName(groupName),
-                            tostring(reason) .. "-deferred"
-                        )
-                    end,
-                    nil,
-                    timer.getTime() + 1
-                )
+                timer.scheduleFunction(function()
+                    activateKing(GROUP:FindByName(groupName), tostring(reason) .. "-deferred")
+                end, nil, timer.getTime() + 1)
             end
         end
     end
 
-    -- ...and any that spawn later (delayed / AI standing-alert Kings), plus client
-    -- slot player-entry events where the group exists before it is truly usable.
-    local function onKingBirth(self, EventData)
-        activateKingFromEvent(EventData, "birth")
-    end
-
-    local function onKingPlayerEnter(self, EventData)
-        activateKingFromEvent(EventData, "player-enter")
-    end
-
     local kingBirthHandler = EVENTHANDLER:New()
-    kingBirthHandler:HandleEvent(EVENTS.Birth, onKingBirth)
-    kingBirthHandler:HandleEvent(EVENTS.PlayerEnterAircraft, onKingPlayerEnter)
-    kingBirthHandler:HandleEvent(EVENTS.PlayerEnterUnit, onKingPlayerEnter)
+    kingBirthHandler:HandleEvent(EVENTS.Birth, function(_, e) activateKingFromEvent(e, "birth") end)
+    kingBirthHandler:HandleEvent(EVENTS.PlayerEnterAircraft, function(_, e) activateKingFromEvent(e, "player-enter") end)
+    kingBirthHandler:HandleEvent(EVENTS.PlayerEnterUnit, function(_, e) activateKingFromEvent(e, "player-enter") end)
 
-    env.info(
-        string.format(
-            "DCSRetribution|Combat SAR plugin - CSAR started with %d rescue helo group(s), %d King(s), template '%s', enableForAI=%s",
-            #rescueHelos,
-            #kings,
-            tostring(pilotTemplate),
-            tostring(enableForAI)
-        )
-    )
+    local kingCount = 0
+    for _ in pairs(kingByName) do kingCount = kingCount + 1 end
+    env.info(string.format(
+        "DCSRetribution|Combat SAR plugin - survivor ledger started (%d coalition(s), %d King(s), "
+            .. "capture %s, AI-rescue %s)",
+        #configs, kingCount,
+        capture.enabled and "on" or "off",
+        cfgBySide[coalition.side.BLUE] and cfgBySide[coalition.side.BLUE].enableForAI and "on" or "off"))
 
 else
-    env.info("DCSRetribution|Combat SAR plugin - dcsRetribution.CombatSAR / CSAR not present; skipping")
+    env.info("DCSRetribution|Combat SAR plugin - dcsRetribution.CombatSAR not present; skipping")
 end

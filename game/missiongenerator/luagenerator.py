@@ -26,6 +26,7 @@ from .vietnamopsluadata import populate_vietnam_ops_lua
 
 if TYPE_CHECKING:
     from game import Game
+    from game.coalition import Coalition
     from .aircraft.flightdata import FlightData
 
 
@@ -361,73 +362,93 @@ class LuaGenerator:
         self._inject_atis_lua()
 
     def _generate_combat_sar(self, lua_data: LuaData) -> None:
-        """Emit dcsRetribution.CombatSAR + the downed-pilot template group.
+        """Emit dcsRetribution.CombatSAR + the downed-pilot template group(s).
 
-        Combat SAR (FlightType.COMBAT_SAR) is a player-flown pilot-rescue orbit
-        executed at runtime by the MOOSE CSAR engine (resources/plugins/combatsar).
-        Python's job is only to (1) tell the Lua bridge which generated groups are
-        the CH-47 rescue helos (and which C-130s fly the "King" orbit, with their nav
-        beacons), and (2) drop one late-activation infantry group that MOOSE CSAR
-        clones at each crash site as the downed pilot. Blue-only. ``enableForAI``
-        carries the standing-alert setting (auto_combat_sar) to the runtime.
+        Combat SAR (FlightType.COMBAT_SAR) is executed at runtime by the survivor-
+        ledger plugin (resources/plugins/combatsar). Python's job, per coalition, is
+        to (1) tell the Lua bridge which generated groups are the rescue helos (and
+        which C-130s fly the "King" orbit, with their nav beacons), and (2) drop one
+        late-activation infantry group per side that the runtime clones at each crash
+        site as the downed pilot. Blue rides the top-level keys (back-compat); red
+        rides a nested ``red`` node, so a side with no Combat SAR flights isn't
+        emitted at all. ``enableForAI`` carries the standing-alert setting
+        (auto_combat_sar); the ledger runtime is coalition-generic.
         """
-        rescue_flights: list[FlightData] = []
-        kings: list[FlightData] = []
+        blue_rescue: list[FlightData] = []
+        blue_kings: list[FlightData] = []
+        red_rescue: list[FlightData] = []
+        red_kings: list[FlightData] = []
         for flight in self.mission_data.flights:
             if flight.flight_type is not FlightType.COMBAT_SAR:
                 continue
-            if not flight.friendly.is_blue:
-                continue
-            if flight.aircraft_type.helicopter:
-                rescue_flights.append(flight)
+            if flight.friendly.is_blue:
+                bucket = blue_rescue if flight.aircraft_type.helicopter else blue_kings
             else:
-                kings.append(flight)
-        rescue_helos = [flight.group_name for flight in rescue_flights]
+                bucket = red_rescue if flight.aircraft_type.helicopter else red_kings
+            bucket.append(flight)
 
-        # No rescue helo tasked -> the CSAR service is simply absent this mission.
-        # Skip the template too so we never leave an orphan group in the .miz.
-        if not rescue_helos:
+        # No rescue helo on either side -> the CSAR service is simply absent this
+        # mission. Skip the template(s) too so we never leave an orphan group.
+        if not blue_rescue and not red_rescue:
             return
 
-        template_name = self._generate_combat_sar_pilot_template()
-        if template_name is None:
-            logging.warning(
-                "Combat SAR: could not build the downed-pilot template; "
-                "skipping CSAR setup for this mission."
-            )
-            return
-
-        # The standing-alert setting (auto_combat_sar) turns on AI auto-rescue.
-        # MOOSE's player-centric CSAR cannot fly an AI rescue itself (its own
-        # enableForAI only *tracks* AI ejections), so the Lua bridge stands up MOOSE
-        # AICSAR for that path -- see combatsar-config.lua. enableForAI is the flag it
-        # keys on; with it off, only player-flown CSAR runs (human-initiated).
         enable_for_ai = self.game.settings.auto_combat_sar
+        combat_sar: Optional[LuaItem] = None
 
-        # Emit as a fully nested object: LuaData drops scalar key/values on a node
-        # that also has add_item() children, so pilotTemplate/enableForAI/rescueHelos
-        # must be single-value child items alongside the nested kings list.
-        combat_sar = lua_data.add_item("CombatSAR")
-        combat_sar.add_item("pilotTemplate").set_value(template_name)
-        combat_sar.add_item("enableForAI").set_value(
-            "true" if enable_for_ai else "false"
+        if blue_rescue:
+            template = self._generate_combat_sar_pilot_template(self.game.blue)
+            if template is not None:
+                combat_sar = lua_data.add_item("CombatSAR")
+                self._emit_combat_sar_side(
+                    combat_sar,
+                    template,
+                    blue_rescue,
+                    blue_kings,
+                    self.game.blue,
+                    enable_for_ai,
+                )
+
+        if red_rescue:
+            template = self._generate_combat_sar_pilot_template(self.game.red)
+            if template is not None:
+                if combat_sar is None:
+                    combat_sar = lua_data.add_item("CombatSAR")
+                self._emit_combat_sar_side(
+                    combat_sar.add_item("red"),
+                    template,
+                    red_rescue,
+                    red_kings,
+                    self.game.red,
+                    enable_for_ai,
+                )
+
+    def _emit_combat_sar_side(
+        self,
+        node: LuaItem,
+        template_name: str,
+        rescue_flights: list["FlightData"],
+        kings: list["FlightData"],
+        coalition: "Coalition",
+        enable_for_ai: bool,
+    ) -> None:
+        """Populate one coalition's Combat SAR node (the blue top-level node or the
+        nested ``red`` node). Scalars are emitted as single-value child items so the
+        LuaData serializer keeps them alongside the nested kings/sofTeams lists.
+        """
+        node.add_item("pilotTemplate").set_value(template_name)
+        node.add_item("enableForAI").set_value("true" if enable_for_ai else "false")
+        node.add_item("rescueHelos").set_data_array(
+            [flight.group_name for flight in rescue_flights]
         )
-        combat_sar.add_item("rescueHelos").set_data_array(rescue_helos)
 
-        # AI standing alert (AICSAR) needs a helo group to clone + a home airbase to
-        # launch from and deliver to. Reuse the first rescue flight's group as the
-        # clone template and its departure field as the FARP; the Lua side resolves
-        # the AIRBASE + a delivery ZONE_AIRBASE from that name. AICSAR's autoonoff
-        # (default) stands it down whenever a player is crewing a rescue helo, so it
-        # never competes with the player-flown CSAR path.
+        # AI auto-rescue needs a helo group to clone + a home airbase to launch from
+        # and deliver to. Reuse the first rescue flight's group + its departure field.
         if enable_for_ai and rescue_flights:
-            combat_sar.add_item("heloTemplate").set_value(rescue_flights[0].group_name)
-            combat_sar.add_item("farp").set_value(
-                rescue_flights[0].departure.airfield_name
-            )
+            node.add_item("heloTemplate").set_value(rescue_flights[0].group_name)
+            node.add_item("farp").set_value(rescue_flights[0].departure.airfield_name)
 
         # Each King (C-130) lights the TACAN the rescue helo homes on.
-        kings_item = combat_sar.add_item("kings")
+        kings_item = node.add_item("kings")
         for king in kings:
             item = kings_item.add_item()
             item.add_key_value("group", king.group_name)
@@ -441,14 +462,12 @@ class LuaGenerator:
                     item.add_key_value("tacanBand", beacon.tacan.band.value)
 
         # Stranded SOF teams (SCAR commander-capture loop): offer each on-map team
-        # as a CASEVAC pickup so the SAME Combat SAR rescue helo can extract it.
-        # Delivery clears the rescue + refunds the team at debrief. Only the SOF
-        # *recovery* is wired here; the C-130 SOF insert (CTLD) is unchanged. Gated
-        # on the SCAR intel feature; the anchor check keeps it to teams surfaced as
-        # an objective this turn (a freshly-stranded team surfaces next turn).
+        # as a CASEVAC pickup so the SAME rescue helo can extract it. Delivery clears
+        # the rescue + refunds the team at debrief. Gated on the SCAR intel feature;
+        # the anchor check keeps it to teams surfaced as an objective this turn.
         if self.game.settings.scar_command_post_intel:
-            teams_item = combat_sar.add_item("sofTeams")
-            for rescue in self.game.blue.pending_csars:
+            teams_item = node.add_item("sofTeams")
+            for rescue in coalition.pending_csars:
                 if rescue.anchor_cp_id is None:
                     continue
                 item = teams_item.add_item()
@@ -456,10 +475,13 @@ class LuaGenerator:
                 item.add_key_value("x", str(rescue.x))
                 item.add_key_value("y", str(rescue.y))
 
-    def _generate_combat_sar_pilot_template(self) -> Optional[str]:
-        """Add a hidden, late-activation infantry group for MOOSE CSAR to clone as
-        the downed pilot. Returns its group name, or None if it can't be built."""
-        faction = self.game.blue.faction
+    def _generate_combat_sar_pilot_template(
+        self, coalition: "Coalition"
+    ) -> Optional[str]:
+        """Add a hidden, late-activation infantry group the runtime clones as the
+        downed pilot for this coalition. Returns its group name, or None if the side
+        holds no base. Blue and red get distinct group names so both can coexist."""
+        faction = coalition.faction
         infantry = next(faction.infantry_with_class(UnitClass.INFANTRY), None)
         if infantry is not None:
             dcs_unit_type = infantry.dcs_unit_type
@@ -470,14 +492,22 @@ class LuaGenerator:
             dcs_unit_type = Infantry.Soldier_M4
 
         anchor = next(
-            (cp for cp in self.game.theater.controlpoints if cp.captured.is_blue),
+            (
+                cp
+                for cp in self.game.theater.controlpoints
+                if cp.captured is coalition.player
+            ),
             None,
         )
         if anchor is None:
             return None
 
         country = self.mission.country(faction.country.name)
-        group_name = "Combat SAR Downed Pilot"
+        group_name = (
+            "Combat SAR Downed Pilot"
+            if coalition.player.is_blue
+            else "Combat SAR Downed Pilot RED"
+        )
         group = self.mission.vehicle_group(
             country,
             group_name,

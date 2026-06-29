@@ -122,7 +122,7 @@ class MissionResultsProcessor:
         ``air_losses``. A captured pilot is held as a POW, not killed.
         """
         captured: set[int] = set()
-        for unit_name, _x, _y in (
+        for unit_name, _x, _y, _color in (
             getattr(debriefing.state_data, "combat_sar_captures", []) or []
         ):
             flying = debriefing.unit_map.flight(unit_name)
@@ -134,17 +134,18 @@ class MissionResultsProcessor:
         """Hold each captured pilot as a recoverable POW.
 
         ``commit_air_losses`` already spared the kill (a POW is not KIA); here we
-        create the recovery objective -- a ``PendingPowRecovery`` on the (blue)
-        coalition carrying the airframe unit name (to spare the aviator on a
-        successful recovery) and the capture position (the POW is held at the
-        nearest enemy airfield, resolved when the objective is surfaced). Combat SAR
-        is blue-only, so captures belong to the blue coalition. Fail-safe: an empty
-        capture list (the normal case) is a no-op.
+        create the recovery objective -- a ``PendingPowRecovery`` on the SURVIVOR's
+        coalition (the side that wants its aviator back) carrying the airframe unit
+        name (to spare the aviator on a successful recovery) and the capture position
+        (the POW is held at the nearest enemy airfield, resolved when the objective is
+        surfaced). The capture record's ``coalition`` is the survivor's side, so a blue
+        survivor -> blue recovery and a red survivor -> red recovery. Fail-safe: an
+        empty capture list (the normal case) is a no-op.
         """
         from game.pow_recovery import PendingPowRecovery
 
         rescued = self._combat_sar_rescued_unit_ids(debriefing)
-        for unit_name, x, y in (
+        for unit_name, x, y, color in (
             getattr(debriefing.state_data, "combat_sar_captures", []) or []
         ):
             flying = debriefing.unit_map.flight(unit_name)
@@ -156,7 +157,8 @@ class MissionResultsProcessor:
             # raid (commit_pow_recoveries) or kill them if the POW is abandoned
             # (Coalition.end_turn -> surviving_pows).
             pilot = flying.pilot if flying is not None else None
-            self.game.blue.pending_pow_recoveries.append(
+            coalition = self.game.red if color == "red" else self.game.blue
+            coalition.pending_pow_recoveries.append(
                 PendingPowRecovery(airframe_unit_name=unit_name, x=x, y=y, pilot=pilot)
             )
 

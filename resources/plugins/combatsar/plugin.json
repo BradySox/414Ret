@@ -1,25 +1,35 @@
 {
     "nameInUI": "Combat SAR (pilot rescue)",
-    "descriptionInUI": "MOOSE CSAR runtime for the Combat SAR flight task. When a pilot ejects, a downed-pilot is spawned with a radio beacon and the CH-47 flights tasked Combat SAR can fly in, hover/land, and recover them. Delivering a downed pilot to a friendly field spares that aviator in the campaign (the airframe is still lost). C-130 flights tasked Combat SAR fly the HC-130 'King' overhead orbit, light an air-tracking TACAN beacon every rescue helo homes on, and carry a 'LARS' F10 button that lists every active survivor (position, bearing/range from the King) to relay. Inert unless at least one blue Combat SAR flight is in the mission (the mission generator emits dcsRetribution.CombatSAR only then). Blue-side. By default only HUMAN ejections count and rescue is player-flown; turning on the 'Automatic Combat SAR' campaign setting also lets AI rescue helos be commandeered for a standing alert (and makes AI ejections rescuable).",
+    "descriptionInUI": "Combat SAR runtime built on a single survivor ledger (414th rework). When a pilot ejects, a downed pilot is spawned with red smoke and tracked in one ledger; a friendly helo - player- or AI-crewed - that lands low and slow next to the survivor boards them, and delivering to any friendly field/FARP spares that aviator in the campaign (the airframe is still lost). The enemy may race a snatch party to seize the survivor first - if they hold on the pilot they are taken as a recoverable POW. With the 'Automatic Combat SAR' campaign setting on, an AI rescue helo is dispatched automatically and AI ejections count too, so AI rescues AI (credited) just like a player rescue. C-130 flights tasked Combat SAR fly the 'King' overhead orbit, light an air-tracking TACAN beacon, and carry a 'LARS' F10 button listing every active survivor (position, bearing/range from the King). Inert unless at least one Combat SAR flight is in the mission (the generator emits dcsRetribution.CombatSAR only then).",
     "defaultValue": true,
     "specificOptions": [
         {
-            "nameInUI": "Auto-smoke the downed pilot when a rescue helo is near",
-            "mnemonic": "autosmoke",
-            "defaultValue": false
+            "nameInUI": "Pickup distance: how close a helo must be to board the survivor (m)",
+            "mnemonic": "pickupRange",
+            "defaultValue": 150
         },
         {
-            "nameInUI": "Pickup distance for boarding the downed pilot (m)",
-            "mnemonic": "loadDistance",
-            "defaultValue": 75
+            "nameInUI": "Pickup ceiling: max height AGL the helo may be to board (m)",
+            "mnemonic": "pickupAGL",
+            "defaultValue": 30
         },
         {
-            "nameInUI": "Rescue-hover height the helo must hold to pick up (m)",
-            "mnemonic": "rescueHoverHeight",
-            "defaultValue": 20
+            "nameInUI": "Pickup speed: max ground speed the helo may have to board (km/h)",
+            "mnemonic": "pickupSpeed",
+            "defaultValue": 60
         },
         {
-            "nameInUI": "On-screen CSAR message duration (s)",
+            "nameInUI": "Delivery distance: how close to a friendly field counts as rescued (m)",
+            "mnemonic": "homeRange",
+            "defaultValue": 2500
+        },
+        {
+            "nameInUI": "AI auto-rescue: seconds before an AI helo launches for a downed pilot",
+            "mnemonic": "aiDispatchDelay",
+            "defaultValue": 60
+        },
+        {
+            "nameInUI": "On-screen Combat SAR message duration (s)",
             "mnemonic": "messageTime",
             "defaultValue": 15
         },

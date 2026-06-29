@@ -56,6 +56,17 @@ so the two docs don't drift.
 - **Fail signature:** QRA pushing forward over the FLOT (the pre-tuning
   behavior that prompted lowering the radii).
 
+### A3 — Player-manned QRA alert flight · §1 · ☐ NEEDS PASS
+- **Setup:** A BARCAP-capable, player-flyable squadron at an airfield; set its
+  "…of which player-manned" spinbox (under QRA reserve) ≥ 1. Take the turn and generate.
+- **Pass:** A cold-start BARCAP package named "QRA Alert (<squadron>)" appears in the player
+  ATO, parked on the alert pad, flyable, orbiting **over its own field** (not pushed forward);
+  the AI QRA dispatcher for that base fields the reserve **minus** the manned airframes (no
+  duplicate jet both parked-as-player and air-spawned). Losses reconcile correctly at debrief.
+- **Fail signature:** the alert flight's racetrack pushed forward toward the FLOT; the same
+  airframe both manned and air-spawned by the dispatcher (double-spawn); a depleted-pool error
+  on generation; or the AI dispatcher count not dropping when the player mans some.
+
 ---
 
 ## B. Planner placement / target logic (Lua-free Python)
@@ -1608,12 +1619,14 @@ checks come first.
 ### Session 1 — Standard land-front, auto-plan turn 1, **observe only** (no sortie)
 Highest leverage: planner/placement bugs affect *every* campaign, and you verify
 them by inspecting the ATO + map, not by flying.
-- A2 (QRA base-defense doctrine), B2 (DEAD reachability gate), B3 (threat-weighted
+- A2 (QRA base-defense doctrine), A3 (player-manned QRA alert flight appears in the
+  ATO + dispatcher debit), B2 (DEAD reachability gate), B3 (threat-weighted
   BARCAP orbit), B4 (TARCAP/escort reach), C1 + C2 (AWACS/tanker front-anchor +
   depth), F6 (SCAR auto-plan appears in ATO), I4 (frontline clustered laydown —
   inspect the front-line armor spread on the map).
 - Setup needs: active land front, enemy airbase ≈90 NM from FLOT, an armor
-  concentration near the front, AWACS+tanker support, `scar_autoplan` ON.
+  concentration near the front, AWACS+tanker support, `scar_autoplan` ON, and a
+  player-flyable BARCAP squadron with its "…of which player-manned" spinbox ≥ 1 (A3).
 
 ### Session 2 — Fly a strike package off that campaign
 - A1 (QRA scramble profile — trigger a raid, include a high-elev alert base),

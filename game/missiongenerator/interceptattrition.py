@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, Mapping
 
-from game.squadrons.intercept_reserve import qra_resource_count
+from game.squadrons.intercept_reserve import ai_qra_resource_count
 
 if TYPE_CHECKING:
     from game.squadrons.squadron import Squadron
@@ -32,8 +32,14 @@ def fielded_qra_by_squadron(
             if squadron.pilot_limits_enabled
             else None
         )
-        fielded = qra_resource_count(
-            squadron.intercept_reserve, squadron.owned_aircraft, available_pilots
+        # The AI-dispatcher baseline excludes any player-manned QRA airframes
+        # (those fly as a normal ATO flight and take losses through the usual
+        # path), matching what the generator seeded the dispatcher with.
+        fielded = ai_qra_resource_count(
+            squadron.intercept_reserve,
+            squadron.owned_aircraft,
+            available_pilots,
+            squadron.qra_player_manned,
         )
         if fielded <= 0:
             continue

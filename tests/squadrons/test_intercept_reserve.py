@@ -4,7 +4,9 @@ import random
 
 from game.squadrons.intercept_reserve import (
     QRA_SINGLE_SHIP_PROBABILITY,
+    ai_qra_resource_count,
     clamp_intercept_reserve,
+    qra_player_manned_count,
     qra_resource_count,
     qra_scramble_grouping,
     repropagated_intercept_reserve,
@@ -105,6 +107,50 @@ def test_repropagate_new_value_is_clamped_to_max_size() -> None:
 
 def test_repropagate_no_op_when_old_equals_new() -> None:
     assert repropagated_intercept_reserve(True, 2, 2, 2, 12) == 2
+
+
+def test_player_manned_capped_by_reserve() -> None:
+    # The player can never man more of the reserve than exists.
+    assert qra_player_manned_count(5, 3, 10) == 3
+
+
+def test_player_manned_capped_by_owned() -> None:
+    # Nor more airframes than the squadron actually owns.
+    assert qra_player_manned_count(5, 10, 2) == 2
+
+
+def test_player_manned_floors_at_zero() -> None:
+    assert qra_player_manned_count(-1, 5, 5) == 0
+
+
+def test_player_manned_within_bounds_is_unchanged() -> None:
+    assert qra_player_manned_count(2, 5, 5) == 2
+
+
+def test_ai_qra_count_splits_reserve_with_player() -> None:
+    # Reserve 5, player mans 2, owned ample -> AI dispatcher fields the other 3.
+    assert ai_qra_resource_count(5, 10, None, 2) == 3
+
+
+def test_ai_qra_count_unchanged_when_none_manned() -> None:
+    # No player-manned jets -> identical to the plain reserve count.
+    assert ai_qra_resource_count(5, 10, None, 0) == 5
+    assert ai_qra_resource_count(5, 10, None, 0) == qra_resource_count(5, 10, None)
+
+
+def test_ai_qra_count_after_attrition_splits_survivors() -> None:
+    # Owned attrited to 3, player mans 2 of the reserve -> only 1 left for the AI.
+    assert ai_qra_resource_count(5, 3, None, 2) == 1
+
+
+def test_ai_qra_count_zero_when_all_manned() -> None:
+    # Player mans the whole reserve -> the AI dispatcher fields nothing.
+    assert ai_qra_resource_count(5, 10, None, 5) == 0
+
+
+def test_ai_qra_count_still_pilot_capped() -> None:
+    # The available-pilot cap applies to the AI share unchanged.
+    assert ai_qra_resource_count(5, 10, 1, 2) == 1
 
 
 def test_qra_grouping_only_ever_one_or_two() -> None:

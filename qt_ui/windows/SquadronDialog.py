@@ -358,6 +358,30 @@ class SquadronDialog(QDialog):
         self.qra_reserve_selector.valueChanged.connect(self.on_qra_reserve_changed)
         left_column.addWidget(self.qra_reserve_selector)
 
+        left_column.addWidget(QLabel("…of which player-manned"))
+        self.qra_player_manned_selector = QSpinBox()
+        self.qra_player_manned_selector.lineEdit().setEnabled(False)
+        self.qra_player_manned_selector.setToolTip(
+            "How many of the QRA reserve you'll fly yourself. These spawn cold on "
+            "the alert pad as a base-defense CAP each mission and are removed from "
+            "the AI scramble pool; you decide when to scramble."
+        )
+        self.qra_player_manned_selector.setMinimum(0)
+        self.qra_player_manned_selector.setMaximum(self.squadron.intercept_reserve)
+        self.qra_player_manned_selector.setValue(self.squadron.qra_player_manned)
+        if (
+            not self.squadron.capable_of(FlightType.BARCAP)
+            or not self.squadron.aircraft.flyable
+        ):
+            self.qra_player_manned_selector.setEnabled(False)
+            self.qra_player_manned_selector.setToolTip(
+                "Player-manned QRA needs a player-flyable squadron capable of BARCAP."
+            )
+        self.qra_player_manned_selector.valueChanged.connect(
+            self.on_qra_player_manned_changed
+        )
+        left_column.addWidget(self.qra_player_manned_selector)
+
         auto_assigned_tasks = AutoAssignedTaskControls(squadron_model)
         left_column.addLayout(auto_assigned_tasks)
 
@@ -488,6 +512,12 @@ class SquadronDialog(QDialog):
 
     def on_qra_reserve_changed(self, value: int) -> None:
         self.squadron.intercept_reserve = value
+        # The player can never man more of the reserve than exists; keep the
+        # dependent spinbox bounded (its valueChanged clamps the model in turn).
+        self.qra_player_manned_selector.setMaximum(value)
+
+    def on_qra_player_manned_changed(self, value: int) -> None:
+        self.squadron.qra_player_manned = value
 
     def _aircraft_stats_text(self) -> str:
         s = self.squadron

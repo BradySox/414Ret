@@ -82,7 +82,9 @@ and selected later upstream fixes.
 
 ### The air war behaves like a campaign, not a queue of isolated sorties
 
-- Squadrons can hold aircraft in a **QRA intercept reserve** for runtime base defense.
+- Squadrons can hold aircraft in a **QRA intercept reserve** for runtime base defense — and
+  you can **man part of it yourself**: set how many of the reserve are player-flown and a
+  cold-start, home-field alert BARCAP is fragged for you each mission, ready to scramble.
 - BARCAP coverage uses overlapping, jittered, threat-weighted waves and a more useful
   forward defensive line. Quiet sectors retain baseline coverage; contested sectors gain
   more.

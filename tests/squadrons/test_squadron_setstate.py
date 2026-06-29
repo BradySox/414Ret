@@ -14,3 +14,16 @@ def test_setstate_preserves_saved_intercept_reserve() -> None:
     squadron = Squadron.__new__(Squadron)
     squadron.__setstate__({"name": "Test", "livery_set": [], "intercept_reserve": 3})
     assert squadron.intercept_reserve == 3
+
+
+def test_setstate_defaults_qra_player_manned_for_old_saves() -> None:
+    # Saves pickled before player-manned QRA existed must load with the default.
+    squadron = Squadron.__new__(Squadron)
+    squadron.__setstate__({"name": "Test", "livery_set": []})
+    assert squadron.qra_player_manned == 0
+
+
+def test_setstate_preserves_saved_qra_player_manned() -> None:
+    squadron = Squadron.__new__(Squadron)
+    squadron.__setstate__({"name": "Test", "livery_set": [], "qra_player_manned": 2})
+    assert squadron.qra_player_manned == 2

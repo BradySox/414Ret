@@ -65,7 +65,7 @@ class CapBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         # forward-middle center + the enemy-facing heading (computed front-relative in
         # TheaterState.from_game), so just lay the racetrack there parallel to the FLOT.
         # All other BARCAP/TARCAP targets fall through to the legacy placement below.
-        from game.theater import ForwardBarcapZone
+        from game.theater import ForwardBarcapZone, HomeBaseDefenseZone
 
         if isinstance(location, ForwardBarcapZone):
             track_length = random.randint(
@@ -78,6 +78,28 @@ class CapBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             start = location.position.point_from_heading(
                 parallel.opposite.degrees, half
             )
+            return start, end
+
+        # Player-manned QRA base-defense CAP (§1): orbit *over* the home field
+        # instead of pushing forward toward the enemy. Straddle the base position
+        # with a short racetrack oriented toward the nearest enemy airfield, so the
+        # alert flight defends the field it launched from. (See HomeBaseDefenseZone.)
+        if isinstance(location, HomeBaseDefenseZone):
+            closest_cache = ObjectiveDistanceCache.get_closest_airfields(location)
+            heading = Heading.from_degrees(0)
+            for airfield in closest_cache.closest_airfields:
+                if airfield.captured != self.is_player:
+                    heading = Heading.from_degrees(
+                        location.position.heading_between_point(airfield.position)
+                    )
+                    break
+            track_length = random.randint(
+                int(self.doctrine.cap_min_track_length.meters),
+                int(self.doctrine.cap_max_track_length.meters),
+            )
+            half = track_length / 2
+            end = location.position.point_from_heading(heading.degrees, half)
+            start = location.position.point_from_heading(heading.opposite.degrees, half)
             return start, end
 
         closest_cache = ObjectiveDistanceCache.get_closest_airfields(location)

@@ -294,6 +294,82 @@ class Coalition:
                     MissionScheduler(
                         self, self.game.settings.desired_player_mission_duration
                     ).schedule_missions(now)
+                if self.player.is_blue:
+                    with tracer.trace(f"{color} player QRA alert"):
+                        self._plan_player_qra(now)
+
+    def _plan_player_qra(self, now: datetime) -> None:
+        """Frag a cold-start, home-defense BARCAP for each squadron put on
+        player-manned QRA (``Squadron.qra_player_manned``).
+
+        These alert flights sit over their own field (a ``HomeBaseDefenseZone``
+        target) and the player decides when to scramble; the message that a raid is
+        inbound is a later phase. The manned airframes are debited from the AI QRA
+        dispatcher at mission generation (``AircraftGenerator.spawn_intercept_templates``)
+        so a jet is never both on the pad and air-spawned. BLUE only -- the human
+        side. See docs/dev/design/414th-qra-player-manning-notes.md.
+        """
+        from game.ato.flight import Flight
+        from game.ato.flightmember import apply_default_player_laser_code
+        from game.ato.flighttype import FlightType
+        from game.ato.package import Package
+        from game.ato.starttype import StartType
+        from game.squadrons.intercept_reserve import qra_player_manned_count
+        from game.theater import Airfield, HomeBaseDefenseZone
+
+        for squadron in self.air_wing.iter_squadrons():
+            if squadron.qra_player_manned <= 0:
+                continue
+            # AI QRA only fields at airfields (spawn_intercept_templates); keep the
+            # player alert consistent so the dispatcher debit always has a match.
+            if not isinstance(squadron.location, Airfield):
+                continue
+            if not squadron.capable_of(FlightType.BARCAP):
+                continue
+            if not squadron.aircraft.flyable:
+                continue
+            manned = qra_player_manned_count(
+                squadron.qra_player_manned,
+                squadron.intercept_reserve,
+                squadron.owned_aircraft,
+            )
+            if manned <= 0:
+                continue
+
+            base = squadron.location
+            target = HomeBaseDefenseZone(f"QRA Alert {base.name}", base.position, self)
+            package = Package(
+                target,
+                self.game.db.flights,
+                auto_asap=True,
+                custom_name=f"QRA Alert ({squadron})",
+            )
+            # claim_inv=False: these airframes come from the QRA reserve, which is
+            # already held out of the squadron's untasked pool -- claiming again
+            # would double-spend (and could raise on a depleted pool).
+            flight = Flight(
+                package,
+                squadron,
+                manned,
+                FlightType.BARCAP,
+                StartType.COLD,
+                divert=None,
+                claim_inv=False,
+            )
+            # Make every alert airframe a player slot (the roster auto-claimed its
+            # pilots on construction), then allocate laser codes -- the helper is a
+            # no-op for any member left without a pilot.
+            for member in flight.roster.members:
+                if member.pilot is not None:
+                    member.pilot.player = True
+            for member in flight.roster.members:
+                apply_default_player_laser_code(
+                    member, self.game.settings, self.game.laser_code_registry
+                )
+            package.add_flight(flight)
+            flight.recreate_flight_plan()
+            package.set_tot_asap(now)
+            self.ato.add_package(package)
 
     def plan_procurement(self) -> None:
         # The first turn needs to buy a *lot* of aircraft to fill CAPs, so it gets much

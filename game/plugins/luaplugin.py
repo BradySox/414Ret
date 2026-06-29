@@ -175,12 +175,30 @@ class LuaPlugin(PluginSettings):
         for work_order in self.definition.work_orders:
             work_order.work(lua_generator)
 
+    @staticmethod
+    def _lua_literal(value: Any) -> str:
+        """Render a plugin-option value as a Lua literal.
+
+        ``bool`` -> ``true``/``false``; ``int``/``float`` -> the number; anything
+        else -> a quoted, escaped Lua string. ``bool`` is checked first because it
+        subclasses ``int``. (Previously every value was ``str(...).lower()`` emitted
+        bare -- fine for bools/numbers, but a *string* option such as the Vietnam
+        convoy ``convoyTruckType: "Ural-375"`` became the bare token ``ural-375``,
+        which Lua parsed as ``ural - 375`` -> "arithmetic on global 'ural'".)
+        """
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if isinstance(value, (int, float)):
+            return str(value)
+        escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+
     def inject_configuration(self, lua_generator: LuaGenerator) -> None:
         # inject the plugin options
         if self.options:
             option_decls = []
             for option in self.options:
-                value = str(option.get_value).lower()
+                value = self._lua_literal(option.get_value)
                 name = option.identifier
                 option_decls.append(f"    dcsRetribution.plugins.{name} = {value}")
 

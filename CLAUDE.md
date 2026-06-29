@@ -221,8 +221,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    **Player-manned QRA**: `Squadron.qra_player_manned` carves N of the reserve into a
    cold-start, home-field base-defense BARCAP (`HomeBaseDefenseZone`) fragged for the human at
    planning (`Coalition._plan_player_qra`, BLUE only); those airframes are debited from the AI
-   dispatcher (`ai_qra_resource_count`) so a jet is never both manned and air-spawned. Design
-   note `414th-qra-player-manning-notes.md`; checklist A3 (needs an in-game pass).
+   dispatcher (`ai_qra_resource_count`) so a jet is never both manned and air-spawned. A
+   Phase-3 **scramble cue** (`PlayerAlertEntry` → `dcsRetribution.Intercept.PLAYER_ALERT` →
+   `intercept-config.lua`) calls the player to scramble when a raid closes inside the GCI
+   radius + a lead margin. Design note `414th-qra-player-manning-notes.md`; checklist A3/A4
+   (need an in-game pass).
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +

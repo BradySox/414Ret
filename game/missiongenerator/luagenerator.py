@@ -275,7 +275,11 @@ class LuaGenerator:
                     side,
                 )
 
-        populate_intercept_lua(lua_data, self.mission_data.intercept_entries)
+        populate_intercept_lua(
+            lua_data,
+            self.mission_data.intercept_entries,
+            self.mission_data.player_alert_entries,
+        )
 
         # Add artillery and support units info
         artillery_object = lua_data.add_item("artilleryGroups")

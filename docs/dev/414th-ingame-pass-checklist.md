@@ -67,6 +67,16 @@ so the two docs don't drift.
   airframe both manned and air-spawned by the dispatcher (double-spawn); a depleted-pool error
   on generation; or the AI dispatcher count not dropping when the player mans some.
 
+### A4 — Player QRA scramble cue · §1 · ☐ NEEDS PASS
+- **Setup:** A player-manned QRA base (A3 setup); fly/trigger an enemy air raid toward it.
+- **Pass:** as a bandit closes inside the cue radius (the AI GCI radius + ~30 NM lead, so it
+  fires *before* the AI would scramble), a coalition text "QRA SCRAMBLE — <base>: bandits
+  <brg> for <rng> nm, angels <N>" appears; the call repeats no more often than ~2 min; the
+  bearing/range/altitude roughly match the inbound contact. It never auto-launches the player.
+- **Fail signature:** no message (PLAYER_ALERT records absent, or `coalition.getGroups`/
+  `AIRBASE:FindByName` wrong); message spam (debounce broken); wildly wrong BRA (north/east
+  axis or `atan2` argument order wrong); a Lua error in `dcs.log` from the scan.
+
 ---
 
 ## B. Planner placement / target logic (Lua-free Python)
@@ -1630,9 +1640,11 @@ them by inspecting the ATO + map, not by flying.
 
 ### Session 2 — Fly a strike package off that campaign
 - A1 (QRA scramble profile — trigger a raid, include a high-elev alert base),
-  C3 (tanker speed), C5 (boom/probe match), C6 (fuel-driven pre/post-vul tanking),
-  C4 (A-6E attack/tanker split — buy both), H1 (kneeboard overflow on a busy
-  theater), D1 (player-despawn loss — land/despawn then end).
+  A4 (player QRA scramble cue — sit a player-manned alert base and confirm the
+  "SCRAMBLE" call fires as the raid closes), C3 (tanker speed), C5 (boom/probe
+  match), C6 (fuel-driven pre/post-vul tanking), C4 (A-6E attack/tanker split —
+  buy both), H1 (kneeboard overflow on a busy theater), D1 (player-despawn loss —
+  land/despawn then end).
 
 ### Session 3 — SCAR commander-capture campaign
 - F2 (capture → permanent reveal carryover across turns), F5 (mis-ID penalty —

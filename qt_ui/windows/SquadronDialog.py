@@ -382,6 +382,21 @@ class SquadronDialog(QDialog):
         )
         left_column.addWidget(self.qra_player_manned_selector)
 
+        self.qra_ai_wingman_checkbox = QCheckBox("Fly lead, rest are AI wingmen")
+        self.qra_ai_wingman_checkbox.setToolTip(
+            "On: you fly the alert flight's lead and the other airframes are AI "
+            "wingmen (single-player). Off: every alert airframe is a client slot so "
+            "multiple pilots can crew it (co-op). No effect on a single-ship alert."
+        )
+        self.qra_ai_wingman_checkbox.setChecked(self.squadron.qra_player_ai_wingman)
+        if (
+            not self.squadron.capable_of(FlightType.BARCAP)
+            or not self.squadron.aircraft.flyable
+        ):
+            self.qra_ai_wingman_checkbox.setEnabled(False)
+        self.qra_ai_wingman_checkbox.toggled.connect(self.on_qra_ai_wingman_toggled)
+        left_column.addWidget(self.qra_ai_wingman_checkbox)
+
         auto_assigned_tasks = AutoAssignedTaskControls(squadron_model)
         left_column.addLayout(auto_assigned_tasks)
 
@@ -518,6 +533,9 @@ class SquadronDialog(QDialog):
 
     def on_qra_player_manned_changed(self, value: int) -> None:
         self.squadron.qra_player_manned = value
+
+    def on_qra_ai_wingman_toggled(self, checked: bool) -> None:
+        self.squadron.qra_player_ai_wingman = checked
 
     def _aircraft_stats_text(self) -> str:
         s = self.squadron

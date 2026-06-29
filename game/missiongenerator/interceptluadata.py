@@ -14,6 +14,22 @@ DEFAULT_BACKSTOP_EWR_TYPE = {"BLUE": "FPS-117", "RED": "55G6 EWR"}
 
 
 @dataclass(frozen=True)
+class PlayerAlertEntry:
+    """A base with a player-manned QRA alert flight (§1, player-manning).
+
+    Drives the "raid inbound — scramble" cue: the Lua scans for hostile aircraft
+    within ``scramble_radius_nm`` (+ a lead margin so a cold start has time) of the
+    base and calls the player to scramble. Separate from ``InterceptEntry`` because
+    a base can be *fully* player-manned (no AI dispatcher entry at all).
+    """
+
+    airbase_name: str
+    coalition: str  # "BLUE" or "RED" (player QRA is BLUE today)
+    #: The AI scramble (GCI) radius in NM; the player cue fires a margin beyond it.
+    scramble_radius_nm: int
+
+
+@dataclass(frozen=True)
 class InterceptEntry:
     squadron_id: str
     squadron_name: str
@@ -34,11 +50,16 @@ class InterceptEntry:
     backstop_ewr_type: str
 
 
-def populate_intercept_lua(root: "LuaData", entries: Iterable[InterceptEntry]) -> None:
+def populate_intercept_lua(
+    root: "LuaData",
+    entries: Iterable[InterceptEntry],
+    player_alert_entries: Iterable[PlayerAlertEntry] = (),
+) -> None:
     """Build the ``dcsRetribution.Intercept`` subtree (mirrors the IADS pattern).
 
-    Always creates BLUE and RED buckets so the Lua side can iterate them
-    unconditionally, then appends one record per reserved squadron.
+    Always creates BLUE, RED, and PLAYER_ALERT buckets so the Lua side can iterate
+    them unconditionally, then appends one record per reserved squadron (AI
+    dispatcher) and one per player-manned alert base.
     """
     intercept = root.add_item("Intercept")
     buckets = {
@@ -58,3 +79,10 @@ def populate_intercept_lua(root: "LuaData", entries: Iterable[InterceptEntry]) -
         record.add_key_value("commsEnabled", "true" if entry.comms_enabled else "false")
         record.add_key_value("countryId", str(entry.country_id))
         record.add_key_value("backstopEwrType", entry.backstop_ewr_type)
+
+    alerts = intercept.get_or_create_item("PLAYER_ALERT")
+    for alert in player_alert_entries:
+        record = alerts.add_item()
+        record.add_key_value("airbaseName", alert.airbase_name)
+        record.add_key_value("coalition", alert.coalition)
+        record.add_key_value("scrambleRadiusNm", str(alert.scramble_radius_nm))

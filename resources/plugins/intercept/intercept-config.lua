@@ -426,11 +426,115 @@ local function refresh_survivors()
     mist.scheduleFunction(refresh_survivors, {}, timer.getTime() + REFRESH_INTERVAL)
 end
 
+-- ---------------------------------------------------------------------------
+-- Player-manned QRA scramble cue (414th, §1 player-manning)
+-- For each base with a player alert flight (dcsRetribution.Intercept.PLAYER_ALERT),
+-- watch for hostile aircraft closing inside the cue radius and call the player to
+-- scramble. The cue fires a lead margin BEYOND the AI scramble (GCI) radius so a
+-- cold-started human has spool-up + taxi time. It is player-facing only and never
+-- launches anything — the alert flight is a normal client flight the human flies.
+-- Needs an in-game pass (checklist A4).
+-- ---------------------------------------------------------------------------
+local PLAYER_SCRAMBLE_LEAD_NM = 30   -- cue fires this far beyond the AI GCI radius
+local PLAYER_ALERT_INTERVAL = 20     -- seconds between scans
+local PLAYER_ALERT_REPEAT = 120      -- min seconds between re-announcements per base
+local PLAYER_ALERT_DURATION = 25     -- seconds the on-screen call stays up
+
+local COALITION_SIDE = { BLUE = coalition.side.BLUE, RED = coalition.side.RED }
+
+-- base_vec2: MOOSE Vec2 {x=north, y=east}; p: DCS Vec3 {x=north, y=alt, z=east}.
+local function alert_bearing_range(base_vec2, p)
+    local north_delta = p.x - base_vec2.x
+    local east_delta = p.z - base_vec2.y
+    local brg = math.deg(math.atan2(east_delta, north_delta))
+    if brg < 0 then brg = brg + 360 end
+    local rng_nm = math.sqrt(north_delta * north_delta + east_delta * east_delta) / NM
+    local angels = math.floor(((p.y or 0) * 3.28084) / 1000 + 0.5)
+    return brg, rng_nm, angels
+end
+
+-- Nearest alive enemy aircraft (fixed- or rotary-wing) within max_dist_m of the
+-- base, or nil. Uses the raw DCS coalition scan (cheap at QRA scale).
+local function nearest_hostile(base_vec2, enemy_side, max_dist_m)
+    local best_p, best_d
+    for _, category in ipairs({ Group.Category.AIRPLANE, Group.Category.HELICOPTER }) do
+        local ok, groups = pcall(coalition.getGroups, enemy_side, category)
+        if ok and groups then
+            for _, grp in ipairs(groups) do
+                local units = grp:getUnits()
+                if units then
+                    for _, u in ipairs(units) do
+                        if u:isExist() and u:getLife() > 0 then
+                            local p = u:getPoint()
+                            local dx = p.x - base_vec2.x
+                            local dz = p.z - base_vec2.y
+                            local d = math.sqrt(dx * dx + dz * dz)
+                            if d <= max_dist_m and (not best_d or d < best_d) then
+                                best_p, best_d = p, d
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return best_p
+end
+
+local function setup_player_alerts(records)
+    if not records or #records == 0 then return end
+
+    local bases = {}
+    for _, rec in ipairs(records) do
+        local airbase = AIRBASE:FindByName(rec.airbaseName)
+        local own_side = COALITION_SIDE[rec.coalition]
+        if airbase and own_side then
+            local enemy_side = (own_side == coalition.side.BLUE)
+                and coalition.side.RED or coalition.side.BLUE
+            local scramble_nm = tonumber(rec.scrambleRadiusNm) or 60
+            bases[#bases + 1] = {
+                name = rec.airbaseName,
+                vec2 = airbase:GetVec2(),
+                own_side = own_side,
+                enemy_side = enemy_side,
+                cue_radius_m = (scramble_nm + PLAYER_SCRAMBLE_LEAD_NM) * NM,
+            }
+        end
+    end
+    if #bases == 0 then return end
+
+    local last_alert = {}
+
+    local function scan()
+        local now = timer.getTime()
+        for _, b in ipairs(bases) do
+            local hostile = nearest_hostile(b.vec2, b.enemy_side, b.cue_radius_m)
+            if hostile then
+                local last = last_alert[b.name] or -1e9
+                if now - last >= PLAYER_ALERT_REPEAT then
+                    last_alert[b.name] = now
+                    local brg, rng, angels = alert_bearing_range(b.vec2, hostile)
+                    local msg = string.format(
+                        "QRA SCRAMBLE -- %s: bandits %03d for %d nm, angels %d. Launch when ready.",
+                        b.name, math.floor(brg + 0.5), math.floor(rng + 0.5), angels)
+                    trigger.action.outTextForCoalition(b.own_side, msg, PLAYER_ALERT_DURATION)
+                end
+            end
+        end
+        mist.scheduleFunction(scan, {}, timer.getTime() + PLAYER_ALERT_INTERVAL)
+    end
+
+    -- Start after the dispatcher build window so the world is fully up.
+    mist.scheduleFunction(scan, {}, timer.getTime() + BUILD_DELAY + 2)
+end
+
 if dcsRetribution.Intercept then
     local blue = dcsRetribution.Intercept.BLUE or {}
     local red = dcsRetribution.Intercept.RED or {}
     build_dispatcher("BLUE", blue)
     build_dispatcher("RED", red)
+
+    setup_player_alerts(dcsRetribution.Intercept.PLAYER_ALERT or {})
 
     -- The registry is populated by the deferred build (BUILD_DELAY in); start the
     -- survivor poll well after that and after the dispatcher FSM auto-start.

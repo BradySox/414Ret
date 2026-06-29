@@ -53,6 +53,21 @@ def qra_player_manned_count(
     return max(0, min(player_manned, intercept_reserve, owned_aircraft))
 
 
+def qra_player_client_slots(player_manned: int, ai_wingman: bool) -> int:
+    """How many of the alert flight's airframes are human (client) slots.
+
+    The alert flight is always ``player_manned`` airframes (that's what's carved
+    from the reserve and debited from the AI dispatcher -- unaffected by this).
+    This only decides *crewing*: with ``ai_wingman`` off every slot is a client
+    (multi-human co-op alert); with it on only the lead is a client and the rest
+    fly as AI wingmen (a human-lead section in single-player). A single-ship alert
+    (``player_manned`` 1) has no wingman either way.
+    """
+    if ai_wingman and player_manned >= 1:
+        return 1
+    return max(0, player_manned)
+
+
 def ai_qra_resource_count(
     intercept_reserve: int,
     owned_aircraft: int,

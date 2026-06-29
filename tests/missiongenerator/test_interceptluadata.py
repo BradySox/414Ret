@@ -1,5 +1,6 @@
 from game.missiongenerator.interceptluadata import (
     InterceptEntry,
+    PlayerAlertEntry,
     populate_intercept_lua,
 )
 from game.missiongenerator.luagenerator import LuaData
@@ -85,3 +86,34 @@ def test_backstop_ewr_type_is_serialized() -> None:
     serialized = root.serialize()
     assert "backstopEwrType" in serialized
     assert "55G6 EWR" in serialized
+
+
+def test_empty_entries_creates_player_alert_bucket() -> None:
+    root = LuaData("dcsRetribution")
+    populate_intercept_lua(root, [])
+    intercept = root.get_item("Intercept")
+    assert isinstance(intercept, LuaData)
+    alerts = intercept.get_item("PLAYER_ALERT")
+    assert isinstance(alerts, LuaData)
+    assert len(alerts.objects) == 0
+
+
+def test_player_alert_entry_is_serialized() -> None:
+    root = LuaData("dcsRetribution")
+    populate_intercept_lua(
+        root,
+        [],
+        [
+            PlayerAlertEntry(
+                airbase_name="Batumi", coalition="BLUE", scramble_radius_nm=60
+            )
+        ],
+    )
+    intercept = root.get_item("Intercept")
+    assert isinstance(intercept, LuaData)
+    alerts = intercept.get_item("PLAYER_ALERT")
+    assert isinstance(alerts, LuaData)
+    assert len(alerts.objects) == 1
+    serialized = alerts.serialize()
+    assert "Batumi" in serialized
+    assert "scrambleRadiusNm" in serialized

@@ -92,6 +92,13 @@ class Squadron:
     #: intercept_reserve.py and docs/dev/design/414th-qra-player-manning-notes.md.
     qra_player_manned: int = 0
 
+    #: When True, the player-manned QRA alert flight is crewed as a human *lead*
+    #: with the remaining airframes as AI wingmen (single-player section); when
+    #: False every airframe is a client slot (multi-human co-op alert). Does not
+    #: change the alert flight size or the AI-dispatcher debit. See
+    #: game/squadrons/intercept_reserve.py:qra_player_client_slots.
+    qra_player_ai_wingman: bool = False
+
     def __setstate__(self, state: dict[str, Any]) -> None:
         if "id" not in state:
             state["id"] = uuid4()
@@ -109,6 +116,8 @@ class Squadron:
             state["intercept_reserve"] = 0
         if "qra_player_manned" not in state:
             state["qra_player_manned"] = 0
+        if "qra_player_ai_wingman" not in state:
+            state["qra_player_ai_wingman"] = False
         self.__dict__.update(state)
 
     def __str__(self) -> str:

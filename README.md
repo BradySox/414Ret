@@ -84,7 +84,10 @@ and selected later upstream fixes.
 
 - Squadrons can hold aircraft in a **QRA intercept reserve** for runtime base defense — and
   you can **man part of it yourself**: set how many of the reserve are player-flown and a
-  cold-start, home-field alert BARCAP is fragged for you each mission, ready to scramble.
+  cold-start, home-field alert BARCAP is fragged for you each mission, ready to scramble. You
+  get a **"raid inbound — scramble"** radio call when bandits close on the field, and decide
+  when to launch. Crew it for co-op (every alert jet a client slot) or fly lead with AI
+  wingmen.
 - BARCAP coverage uses overlapping, jittered, threat-weighted waves and a more useful
   forward defensive line. Quiet sectors retain baseline coverage; contested sectors gain
   more.

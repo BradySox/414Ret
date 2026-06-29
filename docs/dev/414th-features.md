@@ -1555,7 +1555,7 @@ returns to the squadron).
   → clean dedup) and adds an **ejection bridge** (`world.addEventHandler`) that calls
   `aicsar:_EventHandler(event, true)` the instant a **blue AI** pilot ejects, spawning the survivor
   under the ejection point and launching a helo immediately (pcall-guarded; one dispatch per
-  airframe; `autoonoff` still applies). **v1 limitations (pending the G9 in-game pass):** AICSAR auto-rescues do
+  airframe; `autoonoff` still applies). **The G9 dispatch re-fly PASSED 2026-06-28 (audience pass, user verdict "good").** **v1 limitations (still open):** AICSAR auto-rescues do
   **not** yet credit the spare-pilot scoring (it spawns an anonymous pilot clone, losing the
   original unit name); and a player ejecting from a fixed-wing with no human helo up is
   double-handled by both engines (cosmetic double-spawn).
@@ -2217,10 +2217,11 @@ cross-track, with per-impact jitter. Carpet length/width/per-blast power/release
 | Setting | `game/settings/settings.py` (`vietnam_arc_light`, "Vietnam Ops" page) |
 | Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (eligibility gate, off = no node, no bombers = no record) |
 
-### Gotchas / deferred — needs an in-game pass
+### Gotchas / deferred — in-game pass ☑ VERIFIED 2026-06-28 (L1)
 
-- **Blast power / density are first-cut and need tuning in the cockpit** (checklist **L1**): too weak and
-  Arc Light underwhelms, too strong and it lags / over-kills. The defaults are a starting point.
+- **Blast power / density verified acceptable in the cockpit 2026-06-28** (checklist **L1**, audience pass,
+  user verdict "good" — the carpet walks across the box, no FPS hit, no tuning requested). The knobs remain
+  if a future campaign wants more/less: too weak and Arc Light underwhelms, too strong and it lags / over-kills.
 - **Coordinate mapping:** pydcs Point (x=north, y=east) → DCS world vec3 `{x=north, y=alt, z=east}` is done
   Lua-side; ground height per impact from `land.getHeight`.
 - **Symmetric by design:** any side's eligible heavy-bomber Strike carpets (a red Tu-95 too). Gated globally
@@ -2265,11 +2266,14 @@ without the `flak` marker.
 | Setting / options | `game/settings/settings.py` (`vietnam_flak_gauntlet`); plugin `specificOptions` (range/ceiling/miss/power) |
 | Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (marker on/off, independence from Arc Light) |
 
-### Gotchas / deferred — needs an in-game pass (checklist L2)
+### Gotchas / deferred — in-game pass ◐ PARTIAL (checklist L2): works very well but too accurate, tuning owed
 
-- **Lethality + density are first-cut and need cockpit tuning** — the riskiest feel call in the suite. Too
-  tame = no pressure; too tight/dense = an unfair invisible threat or an FPS hit. Defaults are conservative
-  (mostly visual); `flakBlastPower` / miss distances / range are the knobs.
+- **Lethality tuning OWED (in-game 2026-06-28, audience pass, user "too accurate but working very well").**
+  The mechanic plays great but the bursts kill too reliably — it reads as a hard-kill threat, not the intended
+  mostly-visual pressure. The lethal lever is the close **"tracking" round** (`flakBurst`: `miss = MIN_MISS*0.35`
+  ≈ 24 m at `blast = BLAST*2.5` = 20, fired once `factor > 0.66`) on top of the tight `MIN_MISS = 70` floor.
+  Soften the **defaults**: raise `MIN_MISS`, soften + rarefy the tracking round, possibly drop `flakBlastPower`.
+  Re-fly after tuning. `flakBlastPower` / miss distances / range are the knobs.
 - **Runtime cost:** the 2.5 s sweep iterates airborne aircraft × nearby AAA (capped). Bounded and pcall-
   guarded, but watch FPS on a very dense mission.
 - **Deferred polish:** tracer streams from the airstrip AAA belts (v1 is barrage puffs only); a per-pilot

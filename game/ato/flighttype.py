@@ -63,7 +63,7 @@ class FlightType(Enum):
     SEAD_SWEEP = "SEAD Sweep"  # Reintroduce legacy "engage-whatever-you-can-find" SEAD
     ARMED_RECON = "Armed Recon"
     RECOVERY = "Recovery"
-    TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +5 min behind strikers
+    TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +2 min behind strikers
     SCAR = "SCAR"  # Rescue-escort "Sandy" in the Combat SAR package: A-10/Apache that protects the downed pilot, suppresses threats, and walks Jolly Green in. Repurposed from the retired strike-coord/armor-hunt task (see 414th-scar-rescue-rework-notes.md).
     SOF = "SOF Insert"  # C-130 airdrop that inserts a SOF capture team at a SCAR ambush point (helo does the CSAR recovery)
     CSAR = "CSAR"  # Helo extraction of a SOF team stranded by a botched SCAR capture (the recovery leg of the SOF loop)

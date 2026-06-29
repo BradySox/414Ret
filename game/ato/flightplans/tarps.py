@@ -17,10 +17,11 @@ class TarpsFlightPlan(FormationAttackFlightPlan):
     """Tactical photo-recon overflight (F-14B TARPS).
 
     Routes a strike-style ingress / target overflight / egress, but carries a
-    positive TOT offset so the recon bird passes over the target ~5 minutes
-    behind the strikers — i.e. a post-strike BDA / discovery pass rather than an
-    attack. The flight itself drops nothing; the recon value (imagery) is handled
-    out-of-band and is intentionally not modeled here (fog of war stays intact).
+    positive TOT offset so the recon bird passes over the target a couple of
+    minutes behind the strikers — i.e. a post-strike BDA / discovery pass rather
+    than an attack. The flight itself drops nothing; the recon value (imagery) is
+    handled out-of-band and is intentionally not modeled here (fog of war stays
+    intact).
     """
 
     @staticmethod
@@ -28,8 +29,13 @@ class TarpsFlightPlan(FormationAttackFlightPlan):
         return Builder
 
     def default_tot_offset(self) -> timedelta:
-        # Overfly the target after the strikers have hit it (post-strike BDA).
-        return timedelta(minutes=5)
+        # Overfly the target shortly after the strikers have hit it (post-strike
+        # BDA). Kept tight (2 min) on purpose: the unarmed recon bird ingresses
+        # the threatened corridor WITH the package so it shares the escort window,
+        # instead of trailing in alone minutes later where MiGs pick it off (the
+        # AI escort splits at the strikers' egress and turns back short of the
+        # target, so a lone late straggler is uncovered). See checklist G19.
+        return timedelta(minutes=2)
 
 
 class Builder(FormationAttackBuilder[TarpsFlightPlan, FormationAttackLayout]):

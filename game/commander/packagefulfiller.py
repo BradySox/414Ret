@@ -139,8 +139,9 @@ class PackageFulfiller:
         Gated by the ``auto_add_tarps_recon`` setting, the package's primary task,
         and whether the target warrants imagery (``warrants_recon``). Crucially this
         never scrubs the mission: if no TARPS-capable squadron is in range the
-        recon flight is simply omitted. The flight's +5 min TOT offset comes from
-        ``TarpsFlightPlan``.
+        recon flight is simply omitted. The flight's +2 min TOT offset comes from
+        ``TarpsFlightPlan`` (tight on purpose so it ingresses under the package's
+        escort window rather than trailing in alone — see checklist G19).
         """
         if not self.auto_add_tarps_recon:
             logging.debug(

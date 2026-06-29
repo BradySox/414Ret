@@ -88,7 +88,7 @@ class FlightPlanBuilderTypes:
             # Armed Recon area/ingress machinery (see ScarFlightPlan).
             FlightType.SCAR: ScarFlightPlan.builder_type(),
             FlightType.RECOVERY: RecoveryTankerFlightPlan.builder_type(),
-            # TARPS = strike-style target overflight, but +5 min behind the package
+            # TARPS = strike-style target overflight, but +2 min behind the package
             # TOT for a post-strike BDA / recon pass (see TarpsFlightPlan).
             FlightType.TARPS: TarpsFlightPlan.builder_type(),
         }

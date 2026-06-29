@@ -2,7 +2,7 @@
 
 TARPS is a recon/BDA overflight auto-paired with Strike/DEAD packages. These
 tests lock in the two design-critical pieces that are cheap to verify without a
-full game fixture: the +5 min post-strike TOT offset, and the ``warrants_recon``
+full game fixture: the tight post-strike TOT offset, and the ``warrants_recon``
 target gate that decides which targets get a TARPS pass.
 """
 
@@ -53,10 +53,15 @@ def test_tarps_flight_type_is_recon_support() -> None:
 
 
 def test_tarps_tot_offset_is_post_strike() -> None:
-    # The whole point of the feature: overfly the target 5 minutes behind the
-    # strikers for a post-strike BDA pass.
+    # The whole point of the feature: overfly the target a short hop behind the
+    # strikers for a post-strike BDA pass. Kept tight (2 min, not 5) so the
+    # unarmed recon bird ingresses within the package's escort window instead of
+    # trailing in alone where MiGs pick it off (checklist G19). Still strictly
+    # post-strike (positive offset).
     plan = object.__new__(TarpsFlightPlan)
-    assert plan.default_tot_offset() == timedelta(minutes=5)
+    offset = plan.default_tot_offset()
+    assert offset == timedelta(minutes=2)
+    assert offset > timedelta(0)
 
 
 def test_tarps_only_package_identifies_tarps_as_primary_task() -> None:
@@ -80,6 +85,25 @@ def test_vietnam_recon_planes_can_plan_tarps(variant_id: str, tmp_path: Path) ->
     # the auto-planner can pair them with Strike/DEAD packages in period campaigns.
     persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
     assert AircraftType.named(variant_id).capable_of(FlightType.TARPS)
+
+
+@pytest.mark.parametrize("variant_id", VIETNAM_RECON_VARIANT_IDS)
+def test_vietnam_recon_planes_are_tarps_only(variant_id: str, tmp_path: Path) -> None:
+    # These are UNARMED photo birds (weaponless loadout). The planner must never
+    # task them to attack or escort -- they'd spawn empty and fly an aborting
+    # pattern. Guards against re-adding combat tasks to their YAMLs, which (via the
+    # ARMED_RECON enrich on CAS/BAI) is what put them on Armed Recon. See G19.
+    persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16880)
+    bird = AircraftType.named(variant_id)
+    for task in (
+        FlightType.ARMED_RECON,
+        FlightType.STRIKE,
+        FlightType.CAS,
+        FlightType.BAI,
+        FlightType.BARCAP,
+        FlightType.ESCORT,
+    ):
+        assert not bird.capable_of(task), f"{variant_id} should not be {task}"
 
 
 @pytest.mark.parametrize("variant_id", TOMCAT_VARIANT_IDS)

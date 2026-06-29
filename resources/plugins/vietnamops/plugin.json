@@ -36,7 +36,7 @@
         {
             "nameInUI": "Flak gauntlet: tightest barrage miss, predictable flight (m)",
             "mnemonic": "flakMinMissM",
-            "defaultValue": 70
+            "defaultValue": 110
         },
         {
             "nameInUI": "Flak gauntlet: loosest barrage miss, jinking (m)",
@@ -46,7 +46,7 @@
         {
             "nameInUI": "Flak gauntlet: per-burst power (small = mostly visual)",
             "mnemonic": "flakBlastPower",
-            "defaultValue": 8
+            "defaultValue": 6
         },
         {
             "nameInUI": "Naval gunfire: gun reach for ship/target selection (m)",

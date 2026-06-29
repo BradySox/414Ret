@@ -32,8 +32,8 @@ gunfighter: false
 variants:
   RA-5C Vigilante: {}
 tasks:
+  # Unarmed photo-recon bird: TARPS ONLY. No Armed Recon / Strike / BARCAP / CAS
+  # -- it carries no ordnance (weaponless "Retribution TARPS" loadout), so the
+  # planner must never task it to attack or escort or it spawns empty and flies an
+  # aborting pattern. Single-task is fine (tankers/AWACS work the same way). G19.
   TARPS: 700        # primary role: carrier-based tactical photo-recon (414th TARPS overflight)
-  Armed Recon: 410
-  Strike: 1
-  BARCAP: 1
-  CAS: 1

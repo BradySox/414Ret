@@ -624,7 +624,8 @@ so the two docs don't drift.
   `base/plugin.json` revert. **Remaining:** fly across more campaigns/maps, then delete
   `mist_4_5_126.lua` as the final cleanup.
 
-### G8 — Combat SAR pilot rescue (`combatsar` / MOOSE CSAR) · Combat SAR Phase 2 · ☐ UNTESTED (plumbing confirmed in live log 2026-06-27)
+### G8 — Combat SAR pilot rescue (`combatsar` / MOOSE CSAR) · Combat SAR Phase 2 · ☑ VERIFIED (2026-06-28, audience in-game pass — user: "pilot rescue attempted looks good")
+- **In-game (2026-06-28, audience pass — user verdict "looks good"):** a Combat SAR pilot rescue was flown/attempted and behaved correctly — the SAR ran as designed with no Lua error. As with J1/J2 this is the user's eyes-on "looks good," not a deeply-isolated audit of the pickup→deliver→`combat_sar_rescues`-increment loop (that precise count is the G11 scoring row). Don't re-mark UNTESTED without flying it.
 - **Live-log confirmation (2026-06-27, GermanyCW Fulda/Haina, `dcs.log`):** the plugin armed
   clean — `CSAR (Blue) | Started (1.0.34)` then `DCSRetribution|Combat SAR plugin - CSAR started
   with 1 rescue helo group(s), 1 King(s), template 'Combat SAR Downed Pilot', enableForAI=false`.
@@ -648,7 +649,8 @@ so the two docs don't drift.
   set mis-bound); or double event-handling with the SOF CSAR. If the helo can't deliver anywhere,
   check `allowFARPRescue` / that a friendly airfield is in range.
 
-### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☐ UNTESTED (in-game FAIL 2026-06-28 root-caused; eject-trigger fix landed, re-fly owed)
+### G9 — Combat SAR AI standing alert (`auto_combat_sar`) · Combat SAR Phase 3 · ☑ VERIFIED (2026-06-28, audience in-game pass — re-fly after the eject-trigger fix; user: "good")
+- **Re-fly PASSED (2026-06-28, audience pass — user verdict "good"):** the eject-trigger fix (`aicsar.UseEventEject=true` + the AI-eject bridge that calls `aicsar:_EventHandler` on a blue AI ejection) cleared the earlier 2026-06-28 FAIL recorded below — the AI standing-alert rescue now triggers and behaves in-cockpit. This flip assumes the flown build carried the fix (per the user, it did). The original FAIL root-cause is retained below for history.
 - **In-game pass 2026-06-28 (session `f08e522b`) — AI rescue did NOT trigger; root-caused + fixed; re-fly owed.**
   Flew the C-130 King with `auto_combat_sar` ON (GermanyCW Fulda/Haina, turn 1). A **blue AI ejected**
   near the front (Tacview: 2 `Country=de`/`Color=Blue` chutes at ~3 km). Plugin armed correctly —
@@ -968,7 +970,8 @@ so the two docs don't drift.
   thresholds); SHORAD/AAA wrongly promoted out of POINT; or SAMs never go RED even pressed at true range
   (a deeper detection issue beyond this fix — re-open M2).
 
-### G16 — LotATC export plugin restored · Plugin hygiene · ☐ UNTESTED (restored to `plugins.json` 2026-06-27)
+### G16 — LotATC export plugin restored · Plugin hygiene · ☑ VERIFIED (2026-06-28, audience in-game pass — user: "good")
+- **In-game (2026-06-28, audience pass — user verdict "good"):** the restored `lotatc` export plugin works — the export is written and red AA threat circles render on the LotATC scope with no Lua error. The blank per-ring NATO-name labels remain a known limitation (not a fail), see below.
 - **Context:** The `lotatc` plugin (export RED/BLUE anti-air threat circles + symbols to LotATC
   scopes) was silently dropped from the active plugin list during the QRA-reserve integration and
   is now restored, plus a cross-wired config option fixed ("Export anti-air symbols" was driving the
@@ -1016,7 +1019,11 @@ so the two docs don't drift.
   Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
-### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ☐ UNTESTED
+### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL (2026-06-28, audience in-game pass — recon bird flies the TARPS path but is shot down before it confirms BDA)
+- **In-game (2026-06-28, audience pass — user: "fly the path for it but get shot down"):** the tasking + ingress half is confirmed — the RF-101B/RA-5C spawns clean on the `Retribution TARPS` loadout and flies the recon path — but it is **shot down en route to / over the target**, so the overflight→BDA-confirm half is never reached. The TARPS plumbing is structurally fine; this is a **survivability** gap (a lone, unescorted, weaponless recon bird into a Vietnam AAA/SAM environment). OPEN: harden survivability (escort, ingress altitude, routing, or a larger time offset behind the strikers) vs. accept it as period-realistic. PARTIAL until decided.
+- **Altitude analysis (2026-06-28, read from code):** the RF-101B/RA-5C YAMLs set no `combat_altitude`, and `COMBAT_ALTITUDE_BAND_KFT = (20, 20)` (`game/dcs/aircrafttype.py`) flattens the estimate to **20,000 ft** regardless of speed — i.e. the recon overflight is **already above the 4500 m (~14,800 ft) flak ceiling**. So the AAA/flak gauntlet (§33) is **not** the killer, and *lowering* the bird (the intuitive fix) would push it **into** the AAA, not out of danger. At 20k ft, alone and ~5 min behind the strike package (`TarpsFlightPlan.default_tot_offset` = 5 min, after the package escort has egressed), the realistic killer is a **MiG (BARCAP)** or a **SAM** — so the right hardening is **escort coverage / recon timing / routing**, not altitude. NB `TarpsFlightPlan` is shared with the F-14 TARPS path (G2, VERIFIED) — any flight-plan change must not regress it; an altitude change should be data-only per-airframe (`combat_altitude:` in the YAML), but altitude is the wrong lever here. Kill-cause (MiG vs SAM) pending the user.
+- **Kill-cause = MiGs (user, 2026-06-28) → FIX APPLIED.** Confirmed via `EscortFlightPlan.split_time`: the AI escort splits at the **strikers'** egress and turns back ~7–9 NM short of the target without loitering, so a recon bird +5 min behind flew the threatened ingress corridor **alone** after the escort RTB'd. Fix: keep it **high** (20k, above the AAA — unchanged) and **tighten `TarpsFlightPlan.default_tot_offset` 5 min → 2 min** so it ingresses **within** the package/escort window instead of as a lone straggler (`game/ato/flightplans/tarps.py` + 5 doc sites + `tests/test_tarps_recon.py`). Black/mypy/pytest green. **Shared with the F-14 path (G2):** the tighter offset is functionally safe for it (still a positive post-strike pass) but G2 wants a quick confirming re-fly. **Re-fly owed** on both — the recon bird should now survive to confirm BDA when the package has fighter cover (in a fighter-starved Vietnam turn with no escort planned it can still die, which is a campaign-balance matter, not this fix).
+- **2nd bug (user, 2026-06-28): birds were auto-tasked ARMED RECON / Strike instead of a photo pass → FIXED.** The `vwv_rf101b`/`vwv_ra-5` YAMLs listed `Armed Recon: 435/410` + `Strike/BARCAP/CAS: 1`, and the `CAS` entry also auto-enriches `ARMED_RECON` (`aircrafttype.py` lines ~821-829). Auto-assignable = `aircraft caps − secondary_tasks` ∩ the campaign squadron config's `auto_assignable` (`{primary}|{secondary}|{TARPS}`), and Khe Sanh pinned `secondary: air-to-ground` on both recon squadrons — so the intersection handed these **unarmed** birds Armed Recon/Strike/CAS (they'd spawn with the weaponless TARPS loadout and fly an aborting attack). Fix: stripped both YAMLs to **`TARPS` only** (single-task is fine — tankers/AWACS are single-task) and removed the `secondary: air-to-ground` from both Khe Sanh squadron blocks. Guard test `tests/test_tarps_recon.py::test_vietnam_recon_planes_are_tarps_only` (asserts NOT capable of ARMED_RECON/STRIKE/CAS/BAI/BARCAP/ESCORT). Black/mypy/pytest green; Khe Sanh YAML re-parses + loads the two airframes. The bird should now only ever be fragged TARPS.
 - **Context:** TARPS was extended off the F-14 onto the two dedicated Vietnam photo-recon ships —
   **RF-101B Voodoo** (`vwv_rf101b`, land-based) and **RA-5C Vigilante** (`vwv_ra-5`, carrier). They
   carry `TARPS: 700` as their primary task and a clean, weaponless **Retribution TARPS** payload
@@ -1360,7 +1367,8 @@ so the two docs don't drift.
   `Squadron.faker` wiring didn't take); blank/garbled names; or a recruitment crash on a locale
   with no gendered names (guarded + test-locked — should be impossible).
 
-### H10 — Shared-airframe kneeboard index · §27 / §30 · ☐ UNTESTED (folded into the cover page — verify under K2)
+### H10 — Shared-airframe kneeboard index · §27 / §30 · ☐ UNTESTED (folded into the cover page — verify under K2; condition not met in the 2026-06-28 pass)
+- **Not exercised (2026-06-28, audience pass — user confirmed the condition wasn't set up):** the mission did **not** have 2+ client flights of the same airframe, so the index section had nothing to render — no observation either way, **not** a fail. Re-check target: frag **2+ client flights of the same airframe** and confirm the cover page (page 1) carries the callsign / task / start-page index block, and that a lone flight of a type shows none. If the index never appears with 2+ shared, that is the K2 cover-page fail signature.
 - **Folded into the cover page (§30).** The standalone index page is gone; the index is now a section
   on the always-present cover, so its in-game check is covered by **K2**. (Page-math + lone-flight
   no-index regression now in `tests/missiongenerator/test_kneeboard_cover.py`.)
@@ -1375,7 +1383,8 @@ so the two docs don't drift.
 - **Fail signature:** no index when 2+ share a type; wrong start pages; an index wrongly added for a
   lone flight; flights out of the listed order.
 
-### H11 — Estimated fuel ladder for dataless airframes · §4 · ☐ UNTESTED (estimate sanity-banded in `tests/dcs/test_estimated_fuel_consumption.py`, 2026-06-27)
+### H11 — Estimated fuel ladder for dataless airframes · §4 · ☐ UNTESTED (estimate sanity-banded in `tests/dcs/test_estimated_fuel_consumption.py`, 2026-06-27; deferred behind a kneeboard update per user 2026-06-28)
+- **Deferred (2026-06-28, user: "update after kneeboard update"):** revisit once the pending kneeboard changes land — re-check the C-130J King / helo Fuel Ladder against the current deck so the estimate is validated against the updated kneeboard rather than the old one.
 - **What it is:** `AircraftType.estimated_fuel_consumption` synthesises a rough `FuelConsumption` from
   the airframe's `fuel_max` (bucketed helicopter / heavy-transport / combat) so the Fuel Ladder card
   renders for airframes with **no** hand-measured `fuel:` block — the **C-130J "King"**, helicopters,
@@ -1492,7 +1501,8 @@ so the two docs don't drift.
 
 ## L. Vietnam Ops
 
-### L1 — Arc Light heavy-bomber Strike carpet · §32 · ☐ UNTESTED (emitter test-covered; carpet is Lua, needs a cockpit pass + power/density tuning)
+### L1 — Arc Light heavy-bomber Strike carpet · §32 · ☑ VERIFIED (2026-06-28, audience in-game pass — user: "good")
+- **In-game (2026-06-28, audience pass — user verdict "good"):** the Arc Light carpet works — a heavy bomber's STRIKE walks a carpet of explosions across the target box at the run-in, no Lua error and no reported FPS hit. Power/density read acceptable to the user (no tuning requested).
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the Python
   emitter — only a heavy-bomber (`HEAVY_BOMBER_DCS_IDS`) `STRIKE` produces an `arcLight` record, the
   toggle off emits no `VietnamOps` node, and a non-bomber Strike emits no record. The carpet itself
@@ -1508,7 +1518,8 @@ so the two docs don't drift.
   `land.getHeight`/`explosion` Lua error in `dcs.log`; FPS hit from over-dense impacts (tune
   `arcLightBlastPower`/length/width down).
 
-### L2 — AAA flak gauntlet · §33 · ☐ UNTESTED (emitter test-covered; flak is runtime Lua, needs a cockpit pass + lethality/density tuning)
+### L2 — AAA flak gauntlet · §33 · ◐ PARTIAL (2026-06-28, audience in-game pass — works very well but TOO ACCURATE/lethal; default miss/tracking tuning owed)
+- **In-game (2026-06-28, audience pass — user: "too accurate but working very well"):** the gauntlet mechanic is confirmed working (AAA discovery, engagement geometry, predictability ramp all behave) — but the bursts land **too close / kill too reliably**, reading more like a hard-kill threat than the intended mostly-visual pressure. The lethal lever is the close **"tracking" round** (`flakBurst`: `miss = MIN_MISS*0.35` ≈ 24 m at `blast = BLAST*2.5` = 20, fired once `factor > 0.66`) on top of the tight `MIN_MISS = 70` floor. **Tuning APPLIED 2026-06-28 (recommended softening):** `MIN_MISS` 70→**110** m, tracking round `miss ×0.35→×0.55` + `blast ×2.5→×2.0` and rarer (`factor > 0.66→0.8`), `BLAST` 8→**6** — in both `vietnamops-config.lua` and the `plugin.json` defaults (`flakMinMissM` 70→110, `flakBlastPower` 8→6). Net: predictable bursts ~42–98 m@8 → ~66–154 m@6; the close tracking puff ~15–34 m@20 → ~36–85 m@12. **Re-fly owed** to confirm the feel is right (still pressure, no hard-kill).
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the on-marker
   emission (flak node only when the setting is on, independent of Arc Light). The flak itself — AAA discovery
   by attribute, the engagement geometry, and the predictability ramp — is runtime Lua, exercisable only live.
@@ -1552,7 +1563,8 @@ so the two docs don't drift.
 - **Fail signature:** orbits still ~150 km back / at the map edge; a tanker sitting inside a SAM ring (buffer
   too low); the buffer not applied (check Air Doctrine page shows 25/20 after campaign-select).
 
-### L5 — New-Game "Vietnam" card · Vietnam mode P2 shell · ☐ UNTESTED (filter predicate test-covered; Qt render needs the app)
+### L5 — New-Game "Vietnam" card · Vietnam mode P2 shell · ☑ VERIFIED (2026-06-28, audience in-game pass — card works; user wants more content added)
+- **In-game (2026-06-28, audience pass — user: "works but needs more added"):** the New-Game **Vietnam** card works as specified — the radio appears on the Introduction page and the Theater page filters to the Vietnam campaigns. The "needs more added" is a **content** follow-up (more Vietnam campaigns/options surfaced on the card), tracked separately — not a fail of the P2 shell.
 - **Headless adjudication:** the filter predicate `Campaign.matches_era` is unit-tested
   (`tests/test_vietnam_content.py::test_matches_era_drives_the_vietnam_card_filter`) and the Qt modules import
   clean. The radio/field render + the `vietnamMode`→list-filter path can't be exercised headless (the

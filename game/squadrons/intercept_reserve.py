@@ -38,6 +38,43 @@ def qra_resource_count(
     return count
 
 
+def qra_player_manned_count(
+    player_manned: int, intercept_reserve: int, owned_aircraft: int
+) -> int:
+    """Airframes of the QRA reserve a human pilot mans (the alert flight size).
+
+    ``player_manned`` is the per-squadron setting for how many of the reserve are
+    flown by the player on hot-alert instead of the AI dispatcher. It can never
+    exceed the reserve itself, nor the airframes the squadron actually owns. Kept
+    independent of the live untasked-pilot pool so the count is stable between
+    planning (where the alert flight is fragged) and mission generation (where the
+    AI dispatcher count is debited) -- both call this with the same inputs.
+    """
+    return max(0, min(player_manned, intercept_reserve, owned_aircraft))
+
+
+def ai_qra_resource_count(
+    intercept_reserve: int,
+    owned_aircraft: int,
+    available_pilots: Optional[int],
+    player_manned: int,
+) -> int:
+    """QRA airframes the AI dispatcher fields after the player mans their share.
+
+    The player-manned airframes (``qra_player_manned_count``) are carved out of the
+    reserve *and* the owned pool before the usual ``qra_resource_count`` clamp, so
+    the AI never spawns a jet the player is already sitting in (no double-spawn) and
+    a partially-attrited squadron splits its survivors correctly between the two.
+    The available-pilot cap is left as-is: the alert flight claims its pilots during
+    planning, so by mission-generation time ``available_pilots`` already excludes
+    them -- subtracting again here would double-count.
+    """
+    manned = qra_player_manned_count(player_manned, intercept_reserve, owned_aircraft)
+    return qra_resource_count(
+        intercept_reserve - manned, owned_aircraft - manned, available_pilots
+    )
+
+
 def qra_scramble_grouping(rng: Optional[random.Random] = None) -> int:
     """How many interceptors a base launches per QRA scramble: 1 or 2.
 

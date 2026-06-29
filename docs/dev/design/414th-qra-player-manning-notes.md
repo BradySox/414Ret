@@ -1,13 +1,22 @@
-# 414th — Player-Manned QRA (design notes, DRAFT)
+# 414th — Player-Manned QRA (design notes)
 
-> Status: **design only, not yet landed.** This note plans letting a human pilot
-> "man" a Quick-Reaction-Alert slot instead of QRA being purely AI. Read
-> `414th-air-defense-planning-notes.md` (QRA intent) and features doc §1 first.
+> Status: **LANDED (Phase 2, 2026-06-29) — needs an in-game pass (checklist A3).**
+> Lets a human pilot "man" part of a Quick-Reaction-Alert reserve instead of QRA
+> being purely AI. Read `414th-air-defense-planning-notes.md` (QRA intent) and
+> features doc §1 first; the engineering write-up is features §1 "Player-manned QRA".
 >
-> Scope decision captured: we write the plan before any code (the user's call).
-> Baseline architecture choice is **reuse `FlightType.BARCAP`** (no new enum, no
-> save migration) — the new-`FlightType.QRA` alternative is documented in §6 but
-> not the recommended path.
+> **Implemented design** (the two decisions that shaped it):
+> - **Reserve-derived** (§4 Approach B): a per-squadron `qra_player_manned` count
+>   carves N of the reserve into an auto-fragged alert flight and debits the AI
+>   dispatcher — not a hand-built flight.
+> - **Full ATO flight** (the user's call over the simpler bare-client-spawn): the
+>   alert jet is a real `Package`+`Flight` in the ATO, so it gets a flight plan,
+>   task loadout, kneeboard, briefing, and normal loss accounting.
+> - **Reuse `FlightType.BARCAP`** (no new enum, no save migration); the dedicated
+>   `FlightType.QRA` alternative stays documented in §6 but unbuilt.
+>
+> Deferred to a later phase: the "raid inbound — scramble" F10/radio cue and an
+> AI-wingman option for a manned 2-ship.
 
 ---
 

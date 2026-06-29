@@ -479,6 +479,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `bradyccox`):
 
 - **Open (awaiting review):**
+  - [#845](https://github.com/dcs-retribution/dcs-retribution/pull/845) F-4E-45MC (Heatblur) default-loadout rebuild — all 13 Retribution presets re-sourced from the module's built-in loadouts (period AIM-7E2/9L A2A baseline vs the old all-modern AIM-7M); data-only `customized_payloads` change, no fork deps, validated headless against upstream (CLSID-resolve + station-legal + task-resolution) — opened 2026-06-28. Fork twin: [414Ret#322](https://github.com/bradyccox/414Ret/pull/322).
   - [#843](https://github.com/dcs-retribution/dcs-retribution/pull/843) era-gate payload-editor options: JHMCS property gating (§24) + targeting-pod era data (re-does withdrawn #786) (carve queue item 11) — opened 2026-06-27.
   - [#842](https://github.com/dcs-retribution/dcs-retribution/pull/842) landmap prepared-index perf (carve queue item 1) — opened 2026-06-27.
   - [#841](https://github.com/dcs-retribution/dcs-retribution/pull/841) plugin `descriptionInUI` field (§14, carve queue item 10) — opened 2026-06-27.

@@ -71,6 +71,19 @@ env.info("TIC Script BEGIN " .. version)
 
 if GLSCO == nil then GLSCO = {} end
 
+-- 414th perf: the GLSCO routines below emitted these lines via env.info on every combatant
+-- every cycle, which on a dense battlefield floods dcs.log (DCS starts dropping -- "messages
+-- lost") and burns CPU (notably the per-combatant table serialize in logState()). Route the
+-- per-cycle chatter through a flag, default OFF; flip TIC_GLSCO_VERBOSE = true to restore it
+-- when debugging TIC. (The targeting broadcast's O(n^2) cost is a separate, deeper issue --
+-- see the comment in GLSCO_TRACKER:broadcast.)
+TIC_GLSCO_VERBOSE = false
+function GLSCO_DEBUGLOG(msg)
+   if TIC_GLSCO_VERBOSE then
+      env.info(msg)
+   end
+end
+
 -- Prefix
 GLSCO.Keyword = "TIC"
 GLSCO.Bookend = "#"
@@ -2246,7 +2259,7 @@ end
 function GLSCO_COMBATANT:mergeProfiles()
 
    if self:IsIFV() then
-      env.info("IFV: "..self:GetName())
+      GLSCO_DEBUGLOG("IFV: "..self:GetName())
    end
 
    local profile = GLSCO.GENERIC_PROFILE
@@ -2323,6 +2336,8 @@ function GLSCO_COMBATANT:drawState()
 end
 
 function GLSCO_COMBATANT:logState()
+
+   if not TIC_GLSCO_VERBOSE then return end  -- 414th perf: skip the per-combatant serialize unless debugging
 
    local state =
    {
@@ -3879,7 +3894,7 @@ function GLSCO_FORMATION:findNearestCarrier(coord)
    if minDistance > 2000 then
       return nil
    else
-      env.info("Nearest: "..nearest:GetName().." dist="..minDistance)
+      GLSCO_DEBUGLOG("Nearest: "..nearest:GetName().." dist="..minDistance)
       return nearest
    end
 
@@ -3949,7 +3964,7 @@ end
 
 function GLSCO_SPOTTER:poll()
 
-   env.info("GLSCO_SPOTTER: polling...")
+   GLSCO_DEBUGLOG("GLSCO_SPOTTER: polling...")
 
    if not self.group:IsAlive() then
       self:StopSpotting()
@@ -4163,7 +4178,7 @@ function GLSCO_TRACKER:broadcast()
    -- This function contains a O(n^2) loop, so as the number of units scales on the battlefield, 
    -- this function will slow down. 
 
-   env.info("GLSCO_TRACKER: Providing targeting info to all combatants...")
+   GLSCO_DEBUGLOG("GLSCO_TRACKER: Providing targeting info to all combatants...")
 
    local targets = GLSCO_TARGETS:New()
 
@@ -4228,7 +4243,7 @@ function GLSCO_TRACKER:broadcast()
       self.red[i]:SetTargetList(combatants)
    end
   
-   env.info("GLSCO_TRACKER: done")
+   GLSCO_DEBUGLOG("GLSCO_TRACKER: done")
 
 end
 
@@ -4332,13 +4347,13 @@ function GLSCO_SCHEDULER:schedule(formation)
       local offset = wp:GetOptions():GetOffsetTime()
       if offset ~= nil then
          local offsetDelay = offset*60
-         env.info("GLSCO_SCHEDULER: formation="..formation:GetName().."; wp="..num..";  t+"..offset.." will start in "..offsetDelay.." seconds")
+         GLSCO_DEBUGLOG("GLSCO_SCHEDULER: formation="..formation:GetName().."; wp="..num..";  t+"..offset.." will start in "..offsetDelay.." seconds")
          self.scheduler:Schedule(nil, GLSCO_SCHEDULER.doAction, {scheduler, formation, num, stamp}, offsetDelay)
       end
       
       local flag = wp:GetOptions():GetFlag()
       if flag ~= nil then
-         env.info("GLSCO_SCHEDULER: formation="..formation:GetName().."; wp="..num..";  flag="..flag)
+         GLSCO_DEBUGLOG("GLSCO_SCHEDULER: formation="..formation:GetName().."; wp="..num..";  flag="..flag)
          local index = self:getScheduleIndex()
          --SCHEDULER:New():Schedule(MasterObject,SchedulerFunction,SchedulerArguments,Start,Repeat,RandomizeFactor,Stop,TraceLevel,Fsm)
          local schedId = self.scheduler:Schedule(nil, GLSCO_SCHEDULER.doActionIfFlagOn, {scheduler, formation, num, stamp, flag, index}, 5, 15)
@@ -4347,7 +4362,7 @@ function GLSCO_SCHEDULER:schedule(formation)
 	  
       local strength = wp:GetOptions():GetStrength()
       if strength ~= nil then
-         env.info("GLSCO_SCHEDULER: formation="..formation:GetName().."; wp="..num..";  strength="..strength)
+         GLSCO_DEBUGLOG("GLSCO_SCHEDULER: formation="..formation:GetName().."; wp="..num..";  strength="..strength)
          local index = self:getScheduleIndex()
          local schedId = self.scheduler:Schedule(nil, GLSCO_SCHEDULER.doActionIfLosses, {scheduler, formation, num, stamp, strength, index}, 5, 15)
          self:addSchedule(index, schedId)

@@ -212,7 +212,10 @@ and selected later upstream fixes.
   hidden missile. The third is **naval gunfire support** for coastal campaigns: offshore gun ships
   (the New Jersey's 16-inch batteries, cruisers, destroyers) shell shore targets — call a fire mission
   on an F10 map marker from the radio menu, or let the ships bombard enemy coastal positions
-  automatically. More period mechanics (trail interdiction, hilltop resupply) are on the way; see
+  automatically. The fourth is **convoy interdiction (Steel Tiger)**: a moving enemy truck column rolls
+  the supply road behind the front (the Ho Chi Minh Trail), hunt it down on an Armed Recon — it goes to
+  ground under cover when you close in, and a fresh column rolls once the old one is wiped. (Hilltop
+  resupply is still on the way.) See
   [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md).
 - A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 NATO
   counteroffensive, built for the 414th. The Warsaw Pact opened the war by overrunning the

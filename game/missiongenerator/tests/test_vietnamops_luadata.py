@@ -10,6 +10,7 @@ from game.missiongenerator.vietnamopsluadata import (
     HEAVY_BOMBER_DCS_IDS,
     populate_vietnam_ops_lua,
 )
+from game.theater import Player
 
 
 def _flight(dcs_id: str, flight_type: FlightType, group_name: str) -> Any:
@@ -37,6 +38,9 @@ def _emit(
     flak: bool = False,
     ngfs: bool = False,
     ground_objects: list[Any] | None = None,
+    convoy: bool = False,
+    control_points: list[Any] | None = None,
+    fronts: list[Any] | None = None,
 ) -> str:
     root = LuaData("dcsRetribution")
     game = SimpleNamespace(
@@ -44,12 +48,43 @@ def _emit(
             vietnam_arc_light=arc_light,
             vietnam_flak_gauntlet=flak,
             vietnam_naval_gunfire=ngfs,
+            vietnam_convoy_interdiction=convoy,
         ),
-        theater=SimpleNamespace(ground_objects=ground_objects or []),
+        theater=SimpleNamespace(
+            ground_objects=ground_objects or [],
+            controlpoints=control_points or [],
+            conflicts=lambda: list(fronts or []),
+        ),
     )
     mission_data = SimpleNamespace(flights=flights)
     populate_vietnam_ops_lua(root, game, mission_data)  # type: ignore[arg-type]
     return root.create_operations_lua()
+
+
+def _pt(x: float, y: float) -> Any:
+    return SimpleNamespace(x=x, y=y)
+
+
+class _CP:
+    """A hashable duck-typed ControlPoint -- the convoy emitter keys ``convoy_routes``
+    by the connected CP, so the fake must be usable as a dict key (SimpleNamespace is
+    not hashable)."""
+
+    def __init__(self, name: str, captured: Any, convoy_routes: dict[Any, Any]) -> None:
+        self.id = name
+        self.captured = captured
+        self.convoy_routes = convoy_routes
+
+
+def _cp(name: str, captured: Any, convoy_routes: dict[Any, Any]) -> _CP:
+    return _CP(name, captured, convoy_routes)
+
+
+def _front() -> Any:
+    # Distance-to-front is faked as the point's |x|, so a smaller-x corridor is "nearer".
+    return SimpleNamespace(
+        position=SimpleNamespace(distance_to_point=lambda pt: abs(pt.x))
+    )
 
 
 def test_arc_light_matches_only_heavy_bomber_strike() -> None:
@@ -122,3 +157,41 @@ def test_naval_gunfire_no_node_without_gun_ships() -> None:
     gos = [_ship_go("CV Carrier", UnitClass.AIRCRAFT_CARRIER, "BLUE")]
     lua = _emit([], ngfs=True, ground_objects=gos)
     assert "navalGunfire" not in lua
+
+
+def test_convoy_picks_the_enemy_corridor_nearest_the_front() -> None:
+    # Two RED->RED supply roads; the corridor whose midpoint is nearer the front (smaller
+    # |x|) is the one emitted. A RED->BLUE road is the contested front, never a corridor.
+    r1 = _cp("R1", Player.RED, {})
+    r2 = _cp("R2", Player.RED, {})
+    r3 = _cp("R3", Player.RED, {})
+    b1 = _cp("B1", Player.BLUE, {})
+    r1.convoy_routes = {
+        r2: (_pt(11, 10), _pt(100, 10), _pt(190, 10)),  # midpoint x=100 (near)
+        b1: (_pt(1, 1), _pt(2, 2)),  # RED->BLUE: the front, must be ignored
+    }
+    r2.convoy_routes = {r3: (_pt(511, 20), _pt(555, 20), _pt(599, 20))}  # x=555 (far)
+    lua = _emit([], convoy=True, control_points=[r1, r2, r3, b1], fronts=[_front()])
+    assert "VietnamOps" in lua
+    assert "convoy" in lua
+    assert "RED" in lua  # the enemy column's coalition
+    assert "190" in lua  # a waypoint unique to the near corridor
+    assert "599" not in lua  # the far corridor is not chosen
+
+
+def test_convoy_off_no_node() -> None:
+    r1 = _cp("R1", Player.RED, {})
+    r2 = _cp("R2", Player.RED, {})
+    r1.convoy_routes = {r2: (_pt(1, 1), _pt(2, 2))}
+    lua = _emit([], convoy=False, control_points=[r1, r2], fronts=[_front()])
+    assert "convoy" not in lua
+
+
+def test_convoy_no_node_without_an_enemy_supply_road() -> None:
+    # Only a RED->BLUE (front) road exists -> no enemy supply corridor -> no node.
+    r1 = _cp("R1", Player.RED, {})
+    b1 = _cp("B1", Player.BLUE, {})
+    r1.convoy_routes = {b1: (_pt(1, 1), _pt(2, 2))}
+    lua = _emit([], convoy=True, control_points=[r1, b1], fronts=[_front()])
+    # The VietnamOps node may exist (the toggle is on) but carries no convoy sub-node.
+    assert "convoy" not in lua

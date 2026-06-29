@@ -1567,6 +1567,22 @@ so the two docs don't drift.
   switching back to "included" stays filtered; the "show incompatible" toggle drops the era filter; a crash
   arriving on the Theater page.
 
+### L6 — Convoy interdiction (Steel Tiger) · §35 · ☐ UNTESTED (emit test-covered; the spawn Lua needs a cockpit pass)
+- **Headless adjudication:** the corridor pick (`_populate_convoy_interdiction`) is unit-tested
+  (`game/missiongenerator/tests/test_vietnamops_luadata.py` — picks the nearest enemy→enemy road, ignores the
+  RED→BLUE front, off = no node) and verified on the live Khe Sanh save (chose Senaki→Kobuleti, 23.5 km behind
+  the FLOT). The **runtime spawn is unverified** — `coalition.addGroup`, the red country, and the
+  halt-under-threat behaviour can't be exercised headless.
+- **Setup:** Start a **NEW** game with **Vietnam Ops → Convoy interdiction** on (a campaign with an enemy
+  supply road behind the front — Khe Sanh). Fly toward the chosen corridor (the road nearest the FLOT in red
+  territory) / frag an Armed Recon there.
+- **Pass:** a moving enemy truck column drives the road; it **halts** when you close inside the scatter range
+  and rolls again when you leave; destroying it shows "Enemy supply convoy destroyed on the trail" and a fresh
+  column rolls after the respawn delay. `dcs.log` clean (no `coalition.addGroup` errors).
+- **Fail signature:** no convoy spawns (group-data structure wrong / red country not on the red coalition);
+  the column never moves or never halts (`setOnOff`/route wrong); spams respawns; `coalition.addGroup` Lua
+  error in `dcs.log`. Tune speed/scatter-range/respawn/truck-count via the plugin options.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

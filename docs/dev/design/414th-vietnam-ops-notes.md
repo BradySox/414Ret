@@ -2,8 +2,11 @@
 
 **Status:** **Phases 1–3 landed** — the `Vietnam Ops` settings page (Phase 0 scaffold) + §32 **Arc
 Light** (checklist L1) + §33 **AAA flak gauntlet** (L2) + §34 **Naval gunfire support** (L3), all
-registered + emitter-tested; the runtime Lua of each needs an in-game pass. Phases 4–5 (convoy /
-Super Gaggle) follow, each on its own branch + in-game pass before registration.
+registered + emitter-tested; the runtime Lua of each needs an in-game pass. **Phase 4 (§D convoy
+interdiction §35) landed** — corridor pick emitter-tested, the spawn Lua pending an in-game pass
+(checklist L6). Phase 5 (§E Super Gaggle) is **blocked**: it needs an auto-plannable CTLD cargo run
+the engine doesn't have yet (AIR_ASSAULT assaults a contested LZ, it doesn't resupply a friendly
+besieged base — `best_squadron` returns None), so a v1 via AIR_ASSAULT was a no-op and was discarded.
 **Date:** 2026-06-28
 **Related:** [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md)
 (why this is Tier-A only, never `Ops.Chief`), [`414th-tic-dynamic-fronts-notes.md`](414th-tic-dynamic-fronts-notes.md)

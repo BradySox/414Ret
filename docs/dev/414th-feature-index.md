@@ -46,5 +46,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §32 | Arc Light heavy-bomber Strike carpet | `vietnamops` | `vietnam_arc_light` |
 | §33 | AAA flak gauntlet | `vietnamops` | `vietnam_flak_gauntlet` |
 | §34 | Naval gunfire support | `vietnamops` | `vietnam_naval_gunfire` |
+| §35 | Convoy interdiction (Steel Tiger) | `vietnamops` | `vietnam_convoy_interdiction` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

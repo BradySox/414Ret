@@ -318,7 +318,14 @@ class QPackageDialog(QDialog):
         player_slots = sum(f.client_count for f in flights)
         missing_pilots = sum(f.missing_pilots for f in flights)
         departures = sorted({f.departure.name for f in flights})
-        primary_task = package.primary_task.value if package.primary_task else "Unknown"
+        # Use the planning coalition's doctrine display name (Vietnam era renames, e.g.
+        # "Alpha Strike") -- the package primary task is set only when flights exist, and
+        # they share a coalition. Identical to the canonical value for stock doctrines.
+        primary_task = (
+            package.flights[0].coalition.doctrine.display_name_for(package.primary_task)
+            if package.primary_task is not None
+            else "Unknown"
+        )
         tot_text = package.time_over_target.strftime("%H:%M:%S")
         timing_text = (
             f"TOT: {tot_text} (ASAP)" if package.auto_asap else f"TOT: {tot_text}"

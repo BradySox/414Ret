@@ -22,6 +22,16 @@ Two rules drive the player-facing picture:
 | **Recon intel-fog** | A newly appeared enemy site shows on the map as a targetable marker — you see its position, category, and allegiance — but its **composition and threat/detection rings stay hidden** until you attack, scout, or destroy it. Until then the intel panel reads "Not yet scouted — composition unknown." |
 | **BDA damage lag** | When you strike an enemy site, its units keep showing as alive until a recon pass **confirms** the kill. You do not get an instant, accurate kill count just for dropping bombs. |
 
+The same enemy SAM site, before and after it is scouted — the recon intel-fog in one picture:
+
+![The target intel dialog for an unscouted enemy SAM site: known live units, detection range, and threat range all read "Unknown (not scouted)", and the units list reads "Not yet scouted — composition unknown"](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/fog-intel-not-scouted.png)
+
+*Before — an enemy medium-range SAM as it first appears: you know it exists, its type band, and which missions are valid against it, but live units, detection range, and threat range all read **"Unknown (not scouted)."***
+
+![The same site after a recon pass: known live units 9/9, detection range 54 NM, threat range 27 NM, and the full unit list resolved to SA-11 Buk "Gadfly" launchers, command, search radar, and support vehicles](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/fog-intel-scouted.png)
+
+*After — once scouted (or struck/TARPS'd), the same dialog resolves to truth: 9/9 live, 54 NM detection, 27 NM threat, and the actual SA-11 Buk composition you now have to plan SEAD/DEAD against.*
+
 Discovery is sticky: once a site is scouted or attacked, it stays revealed. Both rules are
 governed by the **`recon_intel_fog`** setting (Campaign Doctrine page, **default ON**). Older
 saves are migrated to fully revealed, so the fog is felt mainly on new campaigns.

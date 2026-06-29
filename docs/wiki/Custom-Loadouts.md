@@ -5,6 +5,10 @@ type. You can override those defaults per aircraft so that, for example, every S
 spawns with your preferred bombs. This page explains the two ways to set custom loadouts
 and the CLSID pitfall that silently breaks them.
 
+![The Edit flight Payload tab: flight-member and same-loadout/same-livery toggles, the assigned TGP laser code with a preset-code selector, an internal-fuel slider, the named-loadout dropdown, and the per-pylon station list with a Save Payload / Create Backup row](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/edit-flight-payload.png)
+
+*The flight payload editor. The named-loadout dropdown (here an `IRON` profile) is where a `Retribution <mission type>` loadout gets picked up; tick **Use custom loadout** to set pylons by hand. Laser code and internal fuel are set on the same tab.*
+
 ## Two ways to customize
 
 ### 1. Name a loadout in the Mission Editor (per-install)

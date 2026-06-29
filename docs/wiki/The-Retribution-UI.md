@@ -2,6 +2,10 @@
 
 This page is a tour of the main 414Ret window so you know where to click. Retribution runs outside DCS as a desktop app: the center of the screen is a live theater **map**, the edges and top hold the controls for planning a turn, and a series of dialogs let you inspect the enemy, build packages, and read the debrief. The workflow is map-centric — most planning starts by clicking something on the map or by opening a panel from the toolbar.
 
+![The 414Ret main window: the campaign control strip across the top, the ATO/packages and flights panels down the left, the live theater map in the center, the unified map layers panel at right, and the info panel along the bottom](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/ui-overview.jpg)
+
+*The main window during turn planning on Germany — Red Tide: top control strip, the ATO/packages and flights columns on the left, the live map (here showing a clicked SAM site's intel popup), and the map layers panel on the right.*
+
 If you are brand new, read [Getting Started](Getting-Started) first, then come back here for the layout.
 
 ## The map
@@ -53,6 +57,10 @@ Intelligence here is deliberately incomplete: in 414Ret an enemy site can be *kn
 ## The debrief
 
 After a mission, the **debrief** opens with **mission impact first** — territorial changes, runway and base damage, and losses — before the full event-by-event detail. This is where you confirm what the turn cost and gained before advancing. The Combat SAR feature also resolves here: a downed human pilot you recovered and delivered to a friendly field is spared at debrief (you still lose the airframe, but the aviator returns to the squadron).
+
+![The debrief's Casualty report, leading with a Mission Impact block — mission status, bases lost/captured, runway damage — above the per-side loss lists for both coalitions](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/debrief-mission-impact.png)
+
+*The debrief leads with the Mission Impact summary (end-state, captures, runway damage, loss counts) before the full casualty tables.*
 
 ## See also
 

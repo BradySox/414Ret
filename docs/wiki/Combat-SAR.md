@@ -47,6 +47,10 @@ refueling system.
 
 ## How a rescue works, step by step
 
+![The rescue-helo Combat SAR kneeboard page: ROLE, HOW IT WORKS, PICKUP, and a KING BEACON block telling the crew to home on the HC-130 King's TACAN to find the rescue area](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-combat-sar.png)
+
+*The rescue helo's kneeboard page: how the pickup works and the **King beacon** block — home on the HC-130 "King" TACAN to find the survivor's area.*
+
 1. A **human** pilot ejects in the area. The MOOSE CSAR engine catches the ejection event and
    spawns the downed pilot on the ground with a beacon. (It only reacts to **human** ejections
    and only to **ejections** — not AI, not ordinary crashes — unless the AI standing alert is

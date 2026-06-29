@@ -24,7 +24,17 @@ class PlanStrike(PackagePlanningTask[TheaterGroundObject]):
 
     def propose_flights(self) -> None:
         tgt_count = self.target.alive_unit_count()
-        self.propose_flight(FlightType.STRIKE, min(4, (tgt_count // 2) + tgt_count % 2))
+        size = min(4, (tgt_count // 2) + tgt_count % 2)
+        # Alpha Strike: the planning doctrine may fan multiple coordinated strike
+        # sections onto one target (Vietnam = 2) instead of a single section. They share
+        # a TOT, so the target is hit harder; aircraft scarcity means fewer separate
+        # targets get struck per turn. Non-Vietnam doctrines keep the stock single
+        # section (1). The strike target is enemy-owned, so the *planning* coalition is
+        # the target owner's opponent -- read its doctrine, not the target's.
+        planner = self.target.coalition.opponent
+        sections = max(1, planner.doctrine.strike_flight_count)
+        for _ in range(sections):
+            self.propose_flight(FlightType.STRIKE, size)
         self.propose_common_escorts()
         if self.target.coalition.game.settings.autoplan_tankers_for_strike:
             self.propose_flight(FlightType.REFUELING, 1, EscortType.Refuel)

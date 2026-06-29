@@ -123,8 +123,8 @@ file. This guide is the map; those are the territory.
     Strike/Sandy) via a display-only override on `Doctrine` (never the persisted enum) and gates the
     planner whitelist. **P0 (era tags) + P1 (doctrine model + 10-faction repoint) + P1b (display read-path)
     + P2 era pre-seed (Vietnam campaigns auto-enable the Ops mechanics on select) + P3 strike-deadlock fix
-    + P3 tasking whitelist landed**; the New-Game "Vietnam" *card* + the rest of P3 (Alpha Strike sizing,
-    Iron Hand = Shrike-vs-emitter) outstanding. **P3 strike-deadlock**: Vietnam has no SEAD, so
+    + P3 tasking whitelist + P3 Alpha Strike sizing landed**; the New-Game "Vietnam" *card* outstanding
+    (Iron Hand = Shrike-vs-emitter is moot now SEAD is dropped). **P3 strike-deadlock**: Vietnam has no SEAD, so
     retribution's "suppress the air defense before you strike" rule deadlocked the whole offensive fleet
     (0/28 strike + 0/13 BAI plannable — an upstream-shared behaviour, not a fork bug); two additive
     default-False `Doctrine` flags (`strike_through_air_defense_threat`, `plan_strikes_without_full_escort`)
@@ -132,7 +132,11 @@ file. This guide is the map; those are the territory.
     NEW game). **P3 tasking whitelist**: `VIETNAM_DOCTRINE.tasking_whitelist` drops SEAD/SEAD_ESCORT/
     SEAD_SWEEP/DEAD/ANTISHIP, gated in `PackagePlanningTask.fulfill_mission` (disallowed primary scrubs the
     package; disallowed escort is just dropped) — fixes era jets on wrong tasks (an A-1 on SEAD Sweep) and
-    headless-verified SEAD/DEAD/anti-ship 13→0 while STRIKE 1→5 / BAI 6→13 rose. The Ops suite's Arc Light/
+    headless-verified SEAD/DEAD/anti-ship 13→0 while STRIKE 1→5 / BAI 6→13 rose. **P3 Alpha Strike**:
+    `Doctrine.strike_flight_count` (default 1; Vietnam 2) fans N coordinated, shared-TOT STRIKE sections onto
+    one target in `PlanStrike` (reads the *planner's* doctrine via `target.coalition.opponent.doctrine` — the
+    target is enemy-owned); concentration not extra aircraft (same 10 strike a/c, 5 single→3 double targets,
+    hit twice as hard). The Ops suite's Arc Light/
     flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).

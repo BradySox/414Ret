@@ -161,9 +161,9 @@ if suite.flak and suite.flak.enabled then
     local ENGAGE_RANGE = 4500   -- m, horizontal gun reach
     local CEILING = 4500        -- m AGL, effective flak ceiling
     local FLOOR = 120           -- m AGL, below this the aircraft is on the deck
-    local MIN_MISS = 70         -- m, tightest barrage miss (fully predictable)
+    local MIN_MISS = 110        -- m, tightest barrage miss (fully predictable) -- softened 2026-06-28 (L2: was too accurate)
     local MAX_MISS = 250        -- m, loosest barrage miss (jinking)
-    local BLAST = 8             -- per-burst power (small -- mostly visual)
+    local BLAST = 6             -- per-burst power (small -- mostly visual) -- softened 2026-06-28 (L2)
     local BURSTS_PER_SITE = 1
     local MAX_SITES = 3         -- cap stacked density from many guns
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
@@ -261,8 +261,8 @@ if suite.flak and suite.flak.enabled then
     local function flakBurst(p, factor, tracking)
         local miss, blast
         if tracking then
-            miss = MIN_MISS * 0.35   -- a close tracking round for a sustained steady run
-            blast = BLAST * 2.5
+            miss = MIN_MISS * 0.55   -- a close tracking round for a sustained steady run (softened 2026-06-28, L2)
+            blast = BLAST * 2.0
         else
             miss = MAX_MISS - (MAX_MISS - MIN_MISS) * factor
             blast = BLAST
@@ -303,7 +303,7 @@ if suite.flak and suite.flak.enabled then
                                         if sites > 0 then
                                             local factor = predictability(u, p)
                                             for i = 1, sites * BURSTS_PER_SITE do
-                                                flakBurst(p, factor, i == 1 and factor > 0.66)
+                                                flakBurst(p, factor, i == 1 and factor > 0.8)
                                             end
                                         else
                                             steady[u:getName()] = nil

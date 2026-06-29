@@ -807,8 +807,9 @@ class Settings:
             "If checked, the auto-planner appends a single photo-recon flight "
             "(e.g. F-14 TARPS) to Strike and DEAD packages against high-value "
             "targets (air defenses, factories, command posts, bridges). The recon "
-            "bird overflies the target ~5 minutes behind the strikers for a "
-            "post-strike BDA pass. Requires a TARPS-capable squadron in range; if "
+            "bird overflies the target a couple of minutes behind the strikers "
+            "for a post-strike BDA pass (kept tight so it stays under the package "
+            "escort window). Requires a TARPS-capable squadron in range; if "
             "none is available the flight is simply skipped (the strike is never "
             "scrubbed)."
         ),

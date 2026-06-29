@@ -10,7 +10,7 @@ from dcs.unitgroup import ShipGroup
 from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
-from game.missiongenerator.interceptluadata import InterceptEntry
+from game.missiongenerator.interceptluadata import InterceptEntry, PlayerAlertEntry
 from game.runways import RunwayData
 
 if TYPE_CHECKING:
@@ -143,6 +143,9 @@ class MissionData:
     player_frontline_groups: list[FrontlineUnitGroupsInfo] = field(default_factory=list)
     enemy_frontline_groups: list[FrontlineUnitGroupsInfo] = field(default_factory=list)
     intercept_entries: list[InterceptEntry] = field(default_factory=list)
+    # Bases with a player-manned QRA alert flight (§1); drives the Lua "raid
+    # inbound — scramble" cue in intercept-config.lua.
+    player_alert_entries: list[PlayerAlertEntry] = field(default_factory=list)
     # Names of frontline ground groups handed over to the Troops In Contact
     # script (TIC plugin). Non-empty means TIC_v1.1.lua must be injected.
     tic_groups: list[str] = field(default_factory=list)

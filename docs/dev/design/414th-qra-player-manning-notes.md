@@ -15,8 +15,10 @@
 > - **Reuse `FlightType.BARCAP`** (no new enum, no save migration); the dedicated
 >   `FlightType.QRA` alternative stays documented in §6 but unbuilt.
 >
-> Deferred to a later phase: the "raid inbound — scramble" F10/radio cue and an
-> AI-wingman option for a manned 2-ship.
+> Phase 3 (2026-06-29): the **"raid inbound — scramble" cue** is now built — a
+> per-base scan in `intercept-config.lua` (fed by `PLAYER_ALERT` records) calls the
+> player to scramble when a hostile closes inside the AI GCI radius + a lead margin.
+> Still deferred: an AI-wingman option for a manned 2-ship.
 
 ---
 

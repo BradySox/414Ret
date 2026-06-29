@@ -28,10 +28,12 @@ from game.missiongenerator.countryassigner import CountryAssigner
 from game.missiongenerator.interceptluadata import (
     DEFAULT_BACKSTOP_EWR_TYPE,
     InterceptEntry,
+    PlayerAlertEntry,
 )
 from game.missiongenerator.missiondata import MissionData
 from game.squadrons.intercept_reserve import (
     ai_qra_resource_count,
+    qra_player_manned_count,
     qra_scramble_grouping,
 )
 from game.radio.radios import RadioRegistry
@@ -256,6 +258,23 @@ class AircraftGenerator:
                     if squadron.pilot_limits_enabled
                     else None
                 )
+                # A blue squadron the player has put on QRA gets a "raid inbound —
+                # scramble" cue at its base (the alert flight itself is fragged at
+                # planning, in Coalition._plan_player_qra). Emitted even when the AI
+                # dispatcher entry below is skipped (a fully player-manned base).
+                manned = qra_player_manned_count(
+                    squadron.qra_player_manned,
+                    squadron.intercept_reserve,
+                    squadron.owned_aircraft,
+                )
+                if base_is_blue and manned > 0:
+                    self.mission_data.player_alert_entries.append(
+                        PlayerAlertEntry(
+                            airbase_name=control_point.name,
+                            coalition="BLUE",
+                            scramble_radius_nm=gci_max_radius_nm,
+                        )
+                    )
                 # Player-manned QRA airframes (§1) are fragged as a cold-start
                 # alert flight at planning, so they're debited here -- the AI
                 # dispatcher only fields the reserve the player didn't take.

@@ -103,8 +103,17 @@ base-defense BARCAP the player sits on the pad and scrambles at will.
   player's share.
 - UI: a dependent "…of which player-manned" spinbox under the QRA reserve in
   `qt_ui/windows/SquadronDialog.py`, bounded by the reserve and synced when it changes.
-- Deferred: the "raid inbound — scramble" F10/radio cue (Phase 3) and an AI-wingman option for
-  a manned 2-ship. Runtime (cold alert spawn + flight plan) needs an in-game pass (A3).
+- Scramble cue (Phase 3): `spawn_intercept_templates` also emits a `PlayerAlertEntry`
+  (`game/missiongenerator/interceptluadata.py`, `dcsRetribution.Intercept.PLAYER_ALERT`) per
+  blue manned base; `resources/plugins/intercept/intercept-config.lua` runs a periodic scan
+  that calls the player to scramble (`outTextForCoalition`, "QRA SCRAMBLE — base: bandits
+  BRG/range, angels N") when a hostile aircraft closes inside the **cue radius** = the AI GCI
+  radius **+ `PLAYER_SCRAMBLE_LEAD_NM`** (default 30 NM), so a cold start has spool-up + taxi
+  time. Player-facing only — it never launches anything; the human decides. Debounced per base
+  (`PLAYER_ALERT_REPEAT`). Needs an in-game pass (A4).
+- Deferred: an AI-wingman option for a manned 2-ship (today every manned airframe is a player
+  client slot). Runtime (cold alert spawn + flight plan + scramble cue) needs an in-game pass
+  (A3/A4).
 
 Legacy note: the old ramp-scramble system has been fully retired — the upstream PR #782
 dispatcher above is the only live QRA path. Both the `reactive_scramble.lua` script and the

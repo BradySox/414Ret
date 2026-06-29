@@ -27,3 +27,17 @@ def test_setstate_preserves_saved_qra_player_manned() -> None:
     squadron = Squadron.__new__(Squadron)
     squadron.__setstate__({"name": "Test", "livery_set": [], "qra_player_manned": 2})
     assert squadron.qra_player_manned == 2
+
+
+def test_setstate_defaults_qra_player_ai_wingman_for_old_saves() -> None:
+    squadron = Squadron.__new__(Squadron)
+    squadron.__setstate__({"name": "Test", "livery_set": []})
+    assert squadron.qra_player_ai_wingman is False
+
+
+def test_setstate_preserves_saved_qra_player_ai_wingman() -> None:
+    squadron = Squadron.__new__(Squadron)
+    squadron.__setstate__(
+        {"name": "Test", "livery_set": [], "qra_player_ai_wingman": True}
+    )
+    assert squadron.qra_player_ai_wingman is True

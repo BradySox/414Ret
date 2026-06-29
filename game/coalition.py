@@ -314,7 +314,10 @@ class Coalition:
         from game.ato.flighttype import FlightType
         from game.ato.package import Package
         from game.ato.starttype import StartType
-        from game.squadrons.intercept_reserve import qra_player_manned_count
+        from game.squadrons.intercept_reserve import (
+            qra_player_client_slots,
+            qra_player_manned_count,
+        )
         from game.theater import Airfield, HomeBaseDefenseZone
 
         for squadron in self.air_wing.iter_squadrons():
@@ -356,12 +359,17 @@ class Coalition:
                 divert=None,
                 claim_inv=False,
             )
-            # Make every alert airframe a player slot (the roster auto-claimed its
-            # pilots on construction), then allocate laser codes -- the helper is a
-            # no-op for any member left without a pilot.
-            for member in flight.roster.members:
+            # Crew the alert flight: every airframe is a client slot (co-op alert)
+            # unless the squadron opted into an AI wingman, in which case only the
+            # lead is a client and the rest fly as AI. The roster auto-claimed its
+            # pilots on construction; flip the player flag per slot. Laser codes are
+            # then allocated (a no-op for AI members / any member without a pilot).
+            client_slots = qra_player_client_slots(
+                manned, squadron.qra_player_ai_wingman
+            )
+            for index, member in enumerate(flight.roster.members):
                 if member.pilot is not None:
-                    member.pilot.player = True
+                    member.pilot.player = index < client_slots
             for member in flight.roster.members:
                 apply_default_player_laser_code(
                     member, self.game.settings, self.game.laser_code_registry

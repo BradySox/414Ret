@@ -18,7 +18,10 @@
 > Phase 3 (2026-06-29): the **"raid inbound — scramble" cue** is now built — a
 > per-base scan in `intercept-config.lua` (fed by `PLAYER_ALERT` records) calls the
 > player to scramble when a hostile closes inside the AI GCI radius + a lead margin.
-> Still deferred: an AI-wingman option for a manned 2-ship.
+> The **AI-wingman option** is also built: `Squadron.qra_player_ai_wingman` crews the
+> alert flight as a human lead + AI wingmen (vs. all-client co-op) without changing
+> its size or the dispatcher debit (`qra_player_client_slots`). Nothing deferred now
+> beyond the in-game pass (A3/A4).
 
 ---
 

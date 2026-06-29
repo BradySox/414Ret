@@ -6,6 +6,7 @@ from game.squadrons.intercept_reserve import (
     QRA_SINGLE_SHIP_PROBABILITY,
     ai_qra_resource_count,
     clamp_intercept_reserve,
+    qra_player_client_slots,
     qra_player_manned_count,
     qra_resource_count,
     qra_scramble_grouping,
@@ -151,6 +152,28 @@ def test_ai_qra_count_zero_when_all_manned() -> None:
 def test_ai_qra_count_still_pilot_capped() -> None:
     # The available-pilot cap applies to the AI share unchanged.
     assert ai_qra_resource_count(5, 10, 1, 2) == 1
+
+
+def test_client_slots_all_client_without_wingman() -> None:
+    # Co-op alert: every manned airframe is a client slot.
+    assert qra_player_client_slots(2, False) == 2
+
+
+def test_client_slots_lead_only_with_wingman() -> None:
+    # AI-wingman section: only the lead is a client, the rest fly as AI.
+    assert qra_player_client_slots(2, True) == 1
+    assert qra_player_client_slots(4, True) == 1
+
+
+def test_client_slots_single_ship_has_no_wingman() -> None:
+    # A one-ship alert is lead-only either way.
+    assert qra_player_client_slots(1, True) == 1
+    assert qra_player_client_slots(1, False) == 1
+
+
+def test_client_slots_zero_is_zero() -> None:
+    assert qra_player_client_slots(0, True) == 0
+    assert qra_player_client_slots(0, False) == 0
 
 
 def test_qra_grouping_only_ever_one_or_two() -> None:

@@ -19,9 +19,10 @@ reference, and a phased campaign plan. Print it, fork it, scribble on it.*
 
 > ⚠️ **Mods/modules required.** This campaign won't load or spawn correctly without the period
 > content it's built on. From the campaign + faction files: **Vietnam War Vessels (v2.3.0)**,
-> **OV-10A Bronco mod**, **Russian Military Assets Pack** (`[CH]` T-54/ASU-85), **WW2 Asset Pack**
-> (NVA), and the era modules it slots — **A-4E, A-1 Skyraider, F-8E, A-6, F-100, OV-10, OH-6**, plus
-> the F-4/F-111C/B-52 it lists. Make sure your squadron's install matches before op night.
+> **OV-10A Bronco mod**, **Russian Military Assets Pack** (`[CH]` T-54/ASU-85), and the era modules
+> it slots — **A-4E, A-1 Skyraider, F-8E, A-6, F-100, OV-10, OH-6**, plus the F-4/F-111C/B-52 it
+> lists. (The paid **WWII Assets Pack is no longer required** — its one NVA unit was swapped for a
+> core-DCS vehicle.) Make sure your squadron's install matches before op night.
 
 ---
 

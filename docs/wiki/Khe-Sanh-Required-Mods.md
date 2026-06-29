@@ -18,12 +18,15 @@ where to download it.** Read alongside the [Campaign Briefing](Khe-Sanh-Campaign
 Everyone on the server needs the **content packs** (or the campaign won't load / units won't
 spawn the same for everyone). You only need the **aircraft** for the seat you actually fly.
 
-**Install these four content packs no matter what you fly:**
+**Install these three content packs no matter what you fly:**
 
 1. **Vietnam War Vessels (VWV)** — ships **and** most of the period aircraft (Crusader, Skyraider, Voodoo, Vigilante, MiG-17, EC-121).
 2. **CurrentHill Russian Military Assets Pack** — the NVA armor / AAA / SAMs.
-3. **WW2 Assets Pack** (ED) — NVA infantry and period guns.
-4. **OH-6A Cayuse mod** — the scout helo + its Vietnam asset pack.
+3. **OH-6A Cayuse mod** — the scout helo + its Vietnam asset pack.
+
+> 💡 **No paid asset packs needed.** Khe Sanh runs entirely on **free** mods + core DCS. The NVA
+> ground OOB used to pull one half-track from ED's **paid** WWII Assets Pack; that's been swapped
+> for a core-DCS vehicle, so the WWII pack is **no longer required** — don't buy it for this campaign.
 
 Then grab the **free aircraft mod** (or **paid module**) for your jet from the tables below.
 
@@ -32,14 +35,18 @@ Then grab the **free aircraft mod** (or **paid module**) for your jet from the t
 ## 1 · Content & asset packs — *required for the campaign to load*
 
 If your install is missing one of these, the mission either won't generate or units will be
-invisible/replaced. **Every player needs all four.**
+invisible/replaced. **Every player needs all three** — and all three are free.
 
 | Pack | What it adds to Khe Sanh | Cost | Download |
 |---|---|---|---|
 | **Vietnam War Vessels (VWV) v2.3.0** — Tetet | Yankee Station ships **+** the bundled period aircraft (see §4 below) | Free | [Forum thread](https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/) · [GitHub releases](https://github.com/tspindler-cms/tetet-vwv/releases) |
 | **Russian Military Assets Pack** — CurrentHill | NVA ground OOB: `[CH]` T-54 & PT-76 armor, ASU-85, ZSU/AAA guns, SA-2/SA-3 | Free | [currenthill.com/russia](https://www.currenthill.com/russia) |
-| **WW2 Assets Pack** — Eagle Dynamics | NVA infantry, towed guns and other period ground furniture | Free DLC (install from the in-game Module Manager) | [DCS store page](https://www.digitalcombatsimulator.com/en/products/other/wwii_assets_pack/) |
 | **OH-6A Cayuse + Vietnam Asset Pack** — tobi-be | The OH-6 scout helo and its bundled period scenery/assets | Free | [github.com/tobi-be/DCS-OH-6A](https://github.com/tobi-be/DCS-OH-6A) |
+
+> ℹ️ **The paid WWII Assets Pack is not required.** The NVA ground forces are built from the
+> CurrentHill pack + core DCS units; the lone ED-paid-pack vehicle they used to field (an M2A1
+> half-track) was swapped for a core-DCS APC, so you don't need ED's WWII Assets Pack for this
+> campaign.
 
 ---
 
@@ -121,7 +128,7 @@ Stratotanker** · **E-2C Hawkeye**.
 
 ## 7 · Quick "what do I need?" by role
 
-| If you're flying… | You need (on top of the four §1 packs) |
+| If you're flying… | You need (on top of the three §1 packs) |
 |---|---|
 | **FAC(A) / light CAS** (OV-10A) | OV-10A mod (§2) |
 | **Sandy / perimeter CAS** (A-1H) | nothing extra — A-1H is in **VWV** |

@@ -160,6 +160,21 @@ def test_vietnam_campaigns_tagged_era_vietnam(campaign_file: str) -> None:
     )
 
 
+def test_matches_era_drives_the_vietnam_card_filter() -> None:
+    # The New Game "Vietnam" card lists only era: vietnam campaigns; the default front
+    # door (era=None) lists everything. This predicate is what QCampaignList filters on.
+    khe = Campaign.from_file(_CAMPAIGNS / "khe_sanh_niagara.yaml")
+    assert khe.matches_era("vietnam")  # shown by the Vietnam card
+    assert khe.matches_era(None)  # and by the default (no filter)
+    assert not khe.matches_era("ww2")  # but not by some other era shell
+
+    # A non-Vietnam campaign is hidden by the Vietnam card, shown by the default.
+    non_vietnam = next((c for c in Campaign.load_each() if c.era != "vietnam"), None)
+    assert non_vietnam is not None, "expected at least one non-Vietnam campaign"
+    assert not non_vietnam.matches_era("vietnam")
+    assert non_vietnam.matches_era(None)
+
+
 # P2 era pre-seed: the campaign settings: block that auto-applies (on campaign-select,
 # via QNewGameSettings._load_campaign_settings -> Settings.deserialize_state_dict) to turn
 # the Vietnam Ops mechanics + era weapon gating on. Per-campaign because they differ

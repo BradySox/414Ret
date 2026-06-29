@@ -196,6 +196,20 @@ class IntroPage(QtWidgets.QWizardPage):
         included_desc.setWordWrap(True)
         included_desc.setIndent(22)
 
+        # The "Vietnam" card: filters the next page's campaign list to era: vietnam
+        # and leans on those campaigns' own settings/faction pre-seed. It is still an
+        # included-campaign game (accept() takes the normal branch), so the only thing
+        # the vietnamMode field changes is which campaigns are shown.
+        self.vietnam_radio = QtWidgets.QRadioButton("Vietnam")
+        self.registerField("vietnamMode", self.vietnam_radio)
+        vietnam_desc = QtWidgets.QLabel(
+            "Fly the air war over Vietnam: only Vietnam-era campaigns (Khe Sanh, "
+            "Yankee Station, Velvet Thunder), with Arc Light, AAA flak, period "
+            "weapons, and era taskings (MiGCAP, Alpha Strike, Sandy) pre-loaded."
+        )
+        vietnam_desc.setWordWrap(True)
+        vietnam_desc.setIndent(22)
+
         self.blank_canvas_radio = QtWidgets.QRadioButton(
             "Build your own (blank canvas — experimental)"
         )
@@ -212,6 +226,9 @@ class IntroPage(QtWidgets.QWizardPage):
         type_layout = QtWidgets.QVBoxLayout()
         type_layout.addWidget(self.included_radio)
         type_layout.addWidget(included_desc)
+        type_layout.addSpacing(10)
+        type_layout.addWidget(self.vietnam_radio)
+        type_layout.addWidget(vietnam_desc)
         type_layout.addSpacing(10)
         type_layout.addWidget(self.blank_canvas_radio)
         type_layout.addWidget(blank_desc)

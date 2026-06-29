@@ -1,109 +1,113 @@
 # Khe Sanh: Operation Niagara — Required Mods & Modules
 
 *The squadron's one-stop install list for **Caucasus - Khe Sanh: Operation Niagara**. Hand this
-page to anyone joining op night: it says **what each mod adds, whether it costs money, and exactly
-where to download it.** Read alongside the [Campaign Briefing](Khe-Sanh-Campaign-Briefing).*
+page to anyone joining op night: it says **what you must install, what you can fly, what's free vs
+paid, and exactly where to download it.** Read alongside the [Campaign Briefing](Khe-Sanh-Campaign-Briefing).*
 
 > 🟢 **Provenance — read this.** This list is read **straight from the campaign + faction files**
 > (`resources/campaigns/khe_sanh_niagara.yaml`, `resources/factions/USA 1970 Vietnam War.json`,
-> `resources/factions/nva_1970.json`). The airframes and asset packs below are exactly what the
-> campaign fields and what its `requirements`/settings flag. **Free mods install into**
-> `Saved Games\DCS\Mods\aircraft\` (or `...\Mods\tech\` for asset packs); **paid items** are DCS
-> store modules you install from the in-game Module Manager.
+> `resources/factions/nva_1970.json`). The airframes and packs below are exactly what the campaign
+> fields and what its `requirements`/settings flag.
 
 ---
 
-## TL;DR — the minimum to fly op night
+## How to read this page
 
-Everyone on the server needs the **content packs** (or the campaign won't load / units won't
-spawn the same for everyone). You only need the **aircraft** for the seat you actually fly.
+Retribution generates **one mission** each turn that contains **every** flight and unit — yours,
+your squadmates', the AI support, and the whole red side. So the rule is simple:
 
-**Install these three content packs no matter what you fly:**
+- **If the mission contains it, every client needs the mod.** A free mod that appears anywhere in
+  the `.miz` is **required for everyone**, even if you never fly it — without it the mission won't
+  load and you'll fail the multiplayer integrity check. **The OV-10 Bronco is a free mod that's in
+  the mission, so it's required for the whole squadron, not "only if you fly FAC."**
+- **Paid DCS store modules are the one exception.** DCS will load a mission containing a paid
+  aircraft you don't own — it just shows up as AI you can't take. So you only need a **paid module**
+  to *pilot that seat yourself*.
+- **Some airframes ship with DCS** (core AI units) — nothing to download at all.
 
-1. **Vietnam War Vessels (VWV)** — ships **and** most of the period aircraft (Crusader, Skyraider, Voodoo, Vigilante, MiG-17, EC-121).
-2. **CurrentHill Russian Military Assets Pack** — the NVA armor / AAA / SAMs.
-3. **OH-6A Cayuse mod** — the scout helo + its Vietnam asset pack.
-
-> 💡 **No paid asset packs needed.** Khe Sanh runs entirely on **free** mods + core DCS. The NVA
-> ground OOB used to pull one half-track from ED's **paid** WWII Assets Pack; that's been swapped
-> for a core-DCS vehicle, so the WWII pack is **no longer required** — don't buy it for this campaign.
-
-Then grab the **free aircraft mod** (or **paid module**) for your jet from the tables below.
-
----
-
-## 1 · Content & asset packs — *required for the campaign to load*
-
-If your install is missing one of these, the mission either won't generate or units will be
-invisible/replaced. **Every player needs all three** — and all three are free.
-
-| Pack | What it adds to Khe Sanh | Cost | Download |
-|---|---|---|---|
-| **Vietnam War Vessels (VWV) v2.3.0** — Tetet | Yankee Station ships **+** the bundled period aircraft (see §4 below) | Free | [Forum thread](https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/) · [GitHub releases](https://github.com/tspindler-cms/tetet-vwv/releases) |
-| **Russian Military Assets Pack** — CurrentHill | NVA ground OOB: `[CH]` T-54 & PT-76 armor, ASU-85, ZSU/AAA guns, SA-2/SA-3 | Free | [currenthill.com/russia](https://www.currenthill.com/russia) |
-| **OH-6A Cayuse + Vietnam Asset Pack** — tobi-be | The OH-6 scout helo and its bundled period scenery/assets | Free | [github.com/tobi-be/DCS-OH-6A](https://github.com/tobi-be/DCS-OH-6A) |
-
-> ℹ️ **The paid WWII Assets Pack is not required.** The NVA ground forces are built from the
-> CurrentHill pack + core DCS units; the lone ED-paid-pack vehicle they used to field (an M2A1
-> half-track) was swapped for a core-DCS APC, so you don't need ED's WWII Assets Pack for this
-> campaign.
+Three buckets, in order: **§1 install these (required, all free) → §2 what you can fly → §3 comes
+with DCS.**
 
 ---
 
-## 2 · Free aircraft mods — *download per seat*
+## TL;DR — op-night install
 
-Drop these into `Saved Games\DCS\Mods\aircraft\`. Free, community-made, flyable unless noted.
+1. **Install every mod in [§1](#1--required-mods--everyone-installs-all-of-these).** All free, all
+   mandatory for everyone — the mission is built from them.
+2. **To fly a fast-mover or the Huey, also buy its [paid module](#2--what-you-can-fly--player-seats)**
+   (F-4E, F-100D, or UH-1H). Everything else flyable is already covered by §1.
+3. **Match versions** across the squadron and load mods with a mod manager (see [§4](#4--installing--keeping-it-tidy)).
 
-| Aircraft (squadron) | Role at Khe Sanh | Mod / author | Download |
-|---|---|---|---|
-| **OV-10A Bronco** | Kutaisi FAC(A) / CAS | OV-10A — Split-Air team | [Forum thread](https://forum.dcs.world/topic/307951-ov-10a-bronco-mod-by-split-air-teamand-more/) |
-| **A-4E Skyhawk** | Yankee Station Strike/CAS | Community A-4E-C | [GitHub](https://github.com/Community-A-4E/community-a4e-c) · [releases](https://heclak.github.io/community-a4e-c/) |
-| **A-6E Intruder** | Naval-2 Strike | A-6E Intruder — CorsairCat | [github.com/CorsairCat/DCS-A-6E-Intruder](https://github.com/CorsairCat/DCS-A-6E-Intruder) |
-| **C-130J-30** | Tbilisi airlift (the Niagara lifeline) | Super Hercules — Anubis | [Forum thread](https://forum.dcs.world/topic/252075-dcs-super-hercules-mod-by-anubis/) |
-| **F-111C Aardvark** | Deep strike (faction option) | F-111C mod | [Forum thread](https://forum.dcs.world/topic/352553-f-111c-mod-update/) |
-| *VSN aircraft collection* | AI period jets the faction can spawn (VSN F-100/F-105/F-4 family, etc.) | VSN flyable mods | [VSN mods thread](https://forum.dcs.world/topic/147247-vsn-flyable-aircraft-mods/) |
-
-> The **F-8E Crusader, A-1H Skyraider, RF-101B Voodoo, RA-5C Vigilante, EC-121D Warning Star and
-> MiG-17F** are **not separate downloads** — they ship inside the **Vietnam War Vessels** pack
-> (§1 / §4). Install VWV and you have them.
+> 💡 **No paid *asset* packs needed.** Khe Sanh's required content is 100% free mods + core DCS. The
+> NVA used to pull one half-track from ED's **paid** WWII Assets Pack; it's been swapped for a
+> core-DCS vehicle, so **the WWII Assets Pack is no longer required — don't buy it for this campaign.**
 
 ---
 
-## 3 · Paid DCS modules — *only if you fly that seat*
+## 1 · Required mods — *everyone installs all of these*
 
-These are full store modules, not free mods. You only need the one for the seat you're flying;
-AI flights of these types still work for everyone via the Module Manager's free assets, but to
-**pilot** them you own the module.
+Every player on the server needs **all** of these. They're free, and they're in the generated
+mission — a missing one means the mission won't load / you fail the integrity check.
 
-| Module | Seat at Khe Sanh | Maker |
+| Mod / pack | What it adds to Khe Sanh | Download |
 |---|---|---|
-| **DCS: F-4E Phantom II** | Tbilisi Strike (**F-4E-45MC**) | Heatblur |
-| **DCS: F-100D Super Sabre** | Tbilisi CAS (**F-100D**) | Grinnelli Designs |
-| **DCS: UH-1H Huey** | Air Assault / medevac / resupply | Eagle Dynamics |
-| **DCS: Mi-8MTV2 Magnificent Eight** | NVA transport/CAS helo (red AI) | Eagle Dynamics |
+| **Vietnam War Vessels (VWV) v2.3.0** — Tetet | Yankee Station ships **+** the period **AI** aircraft (F-8E, A-1H, RF-101B, RA-5C, EC-121D, MiG-17F — see [§3](#whats-inside-vwv)) | [Forum thread](https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/) · [GitHub releases](https://github.com/tspindler-cms/tetet-vwv/releases) |
+| **Russian Military Assets Pack** — CurrentHill | The NVA ground OOB: `[CH]` T-54 & PT-76 armor, ASU-85, ZSU/AAA guns, SA-2/SA-3 | [currenthill.com/russia](https://www.currenthill.com/russia) |
+| **OH-6A Cayuse + Vietnam Asset Pack** — tobi-be | The OH-6 scout helo and its bundled period assets | [github.com/tobi-be/DCS-OH-6A](https://github.com/tobi-be/DCS-OH-6A) |
+| **OV-10A Bronco** — Split-Air team | The FAC(A) "Covey" bird (a **flyable** seat — see §2) | [Forum thread](https://forum.dcs.world/topic/307951-ov-10a-bronco-mod-by-split-air-teamand-more/) |
+| **Community A-4E-C Skyhawk** | The carrier Skyhawk (a **flyable** seat — see §2) | [GitHub](https://github.com/Community-A-4E/community-a4e-c) · [releases](https://heclak.github.io/community-a4e-c/) |
+| **A-6E Intruder** — CorsairCat | The Naval-2 Intruder (a **flyable** seat — see §2) | [github.com/CorsairCat/DCS-A-6E-Intruder](https://github.com/CorsairCat/DCS-A-6E-Intruder) |
+| **C-130J-30 Super Hercules** — Anubis | The Niagara airlift lifeline (a **flyable** seat — see §2) | [Forum thread](https://forum.dcs.world/topic/252075-dcs-super-hercules-mod-by-anubis/) |
+| **F-111C Aardvark** — Warpigs | Deep-strike AI the blue faction can field as reinforcements | [Forum thread](https://forum.dcs.world/topic/352553-f-111c-mod-update/) |
+| **VSN aircraft collection** | Period AI jets (VSN F-100/F-105/F-4 family) the factions can field as reinforcements | [VSN mods thread](https://forum.dcs.world/topic/147247-vsn-flyable-aircraft-mods/) |
+
+> ℹ️ **Why the F-111C / VSN set is on the required list.** The starting squadrons don't include
+> them, but the factions can spawn them as **reinforcements** as the campaign runs — and the moment
+> one lands in a generated mission, every client needs it. Install them up front so a later turn
+> doesn't lock someone out.
+>
+> All of the above install into `Saved Games\DCS\Mods\aircraft\` (aircraft) or `...\Mods\tech\`
+> (asset packs) — follow each mod's own readme if it differs.
 
 ---
 
-## 4 · What's already inside Vietnam War Vessels (don't double-download)
+## 2 · What you can fly — *player seats*
 
-Installing VWV gives you all of these aircraft as well as the Yankee Station ships — there is no
-separate mod to chase for them:
+These are the seats a human can actually take in this campaign. Everything else the mission spawns
+is **AI** (see §3 and the VWV note below).
 
-- **F-8E Crusader** (BARCAP — Da Nang & the carriers)
-- **A-1H Skyraider** (the forward "Sandy" CAS bird)
-- **RF-101B Voodoo** & **RA-5C Vigilante** (TARPS photo recon)
-- **EC-121D Warning Star** (AEW&C)
-- **MiG-17F Fresco-C** (the token NVA guns-only fighters)
-- L-1049 Constellation, O-1 Bird Dog, CH-46D Sea Knight, SH-2F Seasprite (faction extras)
+| Seat | Role at Khe Sanh | What you need to fly it |
+|---|---|---|
+| **OV-10A Bronco** | FAC(A) "Covey" / light CAS | **Free** — the OV-10A mod (already in §1) |
+| **A-4E Skyhawk** | Carrier Strike / CAS | **Free** — Community A-4E-C (already in §1) |
+| **A-6E Intruder** | Naval-2 anti-armor Strike | **Free** — CorsairCat A-6E (already in §1) |
+| **C-130J-30** | Airlift (the Niagara lifeline) | **Free** — Anubis Super Hercules (already in §1) |
+| **F-111C Aardvark** | Deep strike (reinforcement) | **Free** — F-111C mod (already in §1) |
+| **F-4E-45MC Phantom II** | Tbilisi Strike | **Paid** — [DCS: F-4E Phantom II](https://www.digitalcombatsimulator.com/en/products/planes/phantom/) (Heatblur) |
+| **F-100D Super Sabre** | Tbilisi CAS | **Paid** — [DCS: F-100D Super Sabre](https://www.digitalcombatsimulator.com/en/products/planes/f-100d/) (Grinnelli Designs) |
+| **UH-1H Iroquois** | Air Assault / medevac / resupply | **Paid** — [DCS: UH-1H Huey](https://www.digitalcombatsimulator.com/en/products/helicopters/uh-1h/) (Eagle Dynamics) |
+
+> The three **paid** seats (F-4E, F-100D, UH-1H) are only needed by the person flying them — AI and
+> other players' copies load fine for everyone via DCS. The five **free** seats need no extra
+> purchase; you already installed them in §1.
 
 ---
 
-## 5 · Stock DCS — *no download needed*
+## 3 · Comes with DCS / AI-only — *no action*
 
-These are core DCS units (AI). They spawn for everyone with a base install — nothing to grab:
-
+**Core DCS AI units (ship with the base sim — nothing to download):**
 **AH-1W SuperCobra** · **CH-53E Super Stallion** · **B-52H Stratofortress** · **KC-135
-Stratotanker** · **E-2C Hawkeye**.
+Stratotanker** · **E-2C Hawkeye**. These are AI stand-ins — not pilotable.
+
+<a name="whats-inside-vwv"></a>
+**Inside Vietnam War Vessels (installed in §1 — AI-only, don't go hunting for separate mods):**
+the **F-8E Crusader**, **A-1H Skyraider**, **RF-101B Voodoo** & **RA-5C Vigilante** (recon),
+**EC-121D Warning Star** (AEW&C), **MiG-17F Fresco-C** (red fighters), plus L-1049 Constellation,
+O-1 Bird Dog, CH-46D Sea Knight and SH-2F Seasprite. They populate the war as **AI** — you don't
+fly these in this campaign even though they appear on the role cards as *roles*.
+
+**Red side (NVA) is all AI:** the **Mi-8MTV2** (a paid ED module, but red AI here — blue players
+never need to own it) and the VWV **MiG-17F**.
 
 > Several airframes are deliberate **modern stand-ins** for the period type (AH-1W for AH-1G, A-6E
 > for A-6A, F-4E for F-4B/C, CH-53E for CH-53) — see the
@@ -111,37 +115,42 @@ Stratotanker** · **E-2C Hawkeye**.
 
 ---
 
-## 6 · Installing & keeping it tidy
+## 4 · Installing & keeping it tidy
 
 - **Aircraft mods → `Saved Games\DCS\Mods\aircraft\`**; **asset packs → `...\Mods\tech\`** (each
-  mod's readme says which — follow the readme over this line if they differ).
-- Use a mod manager (**OvGME** or **DCS-Mod-Manager**) so you can disable the Vietnam set when you
-  play other servers and re-enable it for op night. Loose mods left in `Saved Games` can trip the
-  integrity check on some MP servers.
-- **Match versions across the squadron.** Everyone should run the **same VWV / CurrentHill
-  versions** — a mismatch shows up as missing or wrong units mid-mission. Pin the version in your
+  mod's readme is authoritative if it differs).
+- Use a mod manager (**OvGME** or **DCS-Mod-Manager**) so you can disable the whole Vietnam set when
+  you play other servers and re-enable it for op night. Loose mods left in `Saved Games` can trip
+  the integrity check on some MP servers.
+- **Match versions across the squadron.** Everyone runs the **same VWV / CurrentHill / mod
+  versions** — a mismatch shows up as missing or wrong units mid-mission. Pin the versions in your
   squadron's pre-op post.
 - Launch **Retribution before DCS**, then generate and fly the mission as normal
   (see [Getting Started](Getting-Started)).
 
 ---
 
-## 7 · Quick "what do I need?" by role
+## 5 · Quick "what do I need?" by role
 
-| If you're flying… | You need (on top of the three §1 packs) |
+**Everyone:** install all of [§1](#1--required-mods--everyone-installs-all-of-these) first — that's non-negotiable.
+
+| If you're flying… | On top of §1, you also need… |
 |---|---|
-| **FAC(A) / light CAS** (OV-10A) | OV-10A mod (§2) |
-| **Sandy / perimeter CAS** (A-1H) | nothing extra — A-1H is in **VWV** |
-| **Carrier strike** (A-4E / A-6E) | Community A-4E-C and/or CorsairCat A-6E (§2) |
-| **BARCAP** (F-8E) | nothing extra — F-8E is in **VWV** |
-| **Photo recon** (RF-101B / RA-5C) | nothing extra — both are in **VWV** |
-| **Fast-mover strike/CAS** (F-4E-45MC / F-100D) | the paid **Heatblur F-4E** / **Grinnelli F-100D** module (§3) |
-| **Airlift** (C-130J-30) | Anubis Super Hercules mod (§2) |
-| **Rotary lift / air assault** (UH-1H) | the paid **UH-1H Huey** module (§3) |
+| **FAC(A)** (OV-10A) | nothing — free, already in §1 |
+| **Carrier Strike / CAS** (A-4E / A-6E) | nothing — free, already in §1 |
+| **Airlift** (C-130J-30) | nothing — free, already in §1 |
+| **Deep strike** (F-111C) | nothing — free, already in §1 |
+| **Tbilisi Strike** (F-4E-45MC) | the **paid** Heatblur **F-4E** module |
+| **Tbilisi CAS** (F-100D) | the **paid** Grinnelli **F-100D** module |
+| **Air Assault / medevac** (UH-1H) | the **paid** ED **UH-1H Huey** module |
+
+> Roles like **Sandy A-1H**, **BARCAP F-8E**, and **photo-recon RF-101B/RA-5C** appear on the role
+> cards but are flown by **AI** in this campaign (VWV birds) — there's no player seat to grab and
+> nothing extra to install beyond §1.
 
 ---
 
 *Sources for this page: the campaign's own `khe_sanh_niagara.yaml` (squadrons + settings flags),
 the `USA 1970 Vietnam War` / `nva_1970` faction `requirements`, and the fork's bundled mod support
-(`pydcs_extensions/`). If a download link rots, the mod's name + author above is enough to find the
+(`pydcs_extensions/`). If a download link rots, the mod's name + author is enough to find the
 current host on the [ED Forums](https://forum.dcs.world/forum/1155-flyabledrivable-mods-for-dcs-world/).*

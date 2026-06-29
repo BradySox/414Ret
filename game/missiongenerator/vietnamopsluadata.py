@@ -28,6 +28,8 @@ from game.ato import FlightType
 from game.data.units import UnitClass
 
 if TYPE_CHECKING:
+    from dcs.mapping import Point
+
     from game import Game
 
     from .aircraft.flightdata import FlightData
@@ -77,6 +79,7 @@ def populate_vietnam_ops_lua(
         settings.vietnam_arc_light
         or settings.vietnam_flak_gauntlet
         or settings.vietnam_naval_gunfire
+        or settings.vietnam_convoy_interdiction
     ):
         return
 
@@ -88,6 +91,8 @@ def populate_vietnam_ops_lua(
         _populate_flak(vietnam)
     if settings.vietnam_naval_gunfire:
         _populate_naval_gunfire(vietnam, game)
+    if settings.vietnam_convoy_interdiction:
+        _populate_convoy_interdiction(vietnam, game)
 
 
 def _populate_arc_light(vietnam: "LuaItem", mission_data: "MissionData") -> None:
@@ -162,6 +167,63 @@ def _populate_naval_gunfire(vietnam: "LuaItem", game: "Game") -> None:
         record = ships_item.add_item()
         record.add_key_value("group", group_name)
         record.add_key_value("coalition", coalition)  # "BLUE" / "RED"
+
+
+def _populate_convoy_interdiction(vietnam: "LuaItem", game: "Game") -> None:
+    """Emit the enemy supply **corridor** nearest the FLOT (Steel Tiger interdiction).
+
+    The auto-planner surfaces this through Armed Recon; the runtime seeds a moving truck
+    convoy on the chosen road that scatters when hunted. Python only picks the corridor
+    (the enemy reinforcement road closest to the fighting -- reusing the engine's existing
+    ``convoy_routes`` so the kill ties back to real red logistics) and emits its path.
+    Inland or not, an enemy with no road behind the front simply yields no node -> the
+    plugin no-ops. The opfor is the side the human fights; for the Vietnam case that is RED.
+    """
+    from game.theater import ControlPoint, Player
+
+    fronts = list(game.theater.conflicts())
+    if not fronts:
+        return
+
+    def enemy(cp: "ControlPoint") -> bool:
+        return cp.captured == Player.RED
+
+    best_path: tuple["Point", ...] = ()
+    best_distance = float("inf")
+    seen: set[frozenset[str]] = set()
+    for cp in game.theater.controlpoints:
+        if not enemy(cp):
+            continue
+        for other, path in cp.convoy_routes.items():
+            # Only enemy -> enemy roads (a supply corridor behind the lines); an enemy ->
+            # friendly road is the contested front itself.
+            if not enemy(other) or len(path) < 2:
+                continue
+            key = frozenset((str(cp.id), str(other.id)))
+            if key in seen:
+                continue
+            seen.add(key)
+            midpoint = path[len(path) // 2]
+            distance = min(
+                front.position.distance_to_point(midpoint) for front in fronts
+            )
+            if distance < best_distance:
+                best_distance = distance
+                best_path = path
+
+    if not best_path:
+        return
+
+    convoy = vietnam.add_item("convoy")
+    # A node serializes EITHER its key-values OR its child items, not both, so the
+    # scalar coalition is emitted as its own child rather than a sibling key-value.
+    convoy.add_item("coalition").set_value("RED")
+    waypoints = convoy.add_item("waypoints")
+    for point in best_path:
+        record = waypoints.add_item()
+        # pydcs Point: x = north, y = east (the Lua maps these onto the DCS world vec2).
+        record.add_key_value("x", str(point.x))
+        record.add_key_value("y", str(point.y))
 
 
 def _target_position(flight: "FlightData") -> tuple[float, float] | None:

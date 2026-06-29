@@ -111,8 +111,10 @@ file. This guide is the map; those are the territory.
     `414th-vietnam-ops-notes.md` (**Vietnam Ops suite** — a `Vietnam Ops` settings page gating five
     opt-in period mechanics: Arc Light as a heavy-bomber Strike *effect*, AAA flak gauntlet, naval
     gunfire support, Armed-Recon truck-convoy interdiction, Super Gaggle resupply; Tier-A runtime only,
-    default OFF / campaign-flipped ON; **Phases 1–3 landed** = the settings page + §32 Arc Light + §33
-    flak gauntlet + §34 naval gunfire; phases 4–5 follow, each on its own branch),
+    default OFF / campaign-flipped ON; **Phases 1–4 landed** = the settings page + §32 Arc Light + §33
+    flak gauntlet + §34 naval gunfire + §35 convoy interdiction (the Steel Tiger trail; spawn Lua pending
+    an in-game pass, L6); phase 5 (Super Gaggle) is blocked on an auto-plannable CTLD cargo run the
+    engine lacks),
     `414th-vietnam-airbase-harassment-notes.md` (**Vietnam Ops §F — airbase harassment**: scoped-only
     sapper/mortar/rocket standoff fire on opposing-occupied fields, following the §33 flak runtime
     pattern; hard requirement = never target a player-spawn field + a startup grace period; no code yet,
@@ -450,6 +452,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     ground (or no marker) in a ship's range nothing fires, so inland campaigns (Khe Sanh) no-op. Range/rounds/
     salvo/auto-cadence are plugin options. (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §34, checklist L3.)
+35. **Convoy interdiction (Steel Tiger)** — the fourth **Vietnam Ops suite** feature: a moving enemy supply
+    column on the road behind the FLOT (Steel Tiger / Ho Chi Minh Trail), surfaced through Armed Recon. Python
+    (`_populate_convoy_interdiction`) picks the **enemy reinforcement road nearest the front** — reusing the
+    engine's existing `convoy_routes` so the target ties to real red logistics — and emits its path +
+    coalition (`dcsRetribution.VietnamOps.convoy`); the `vietnamops` plugin spawns a vanilla truck column
+    (`coalition.addGroup`) that drives the corridor, **halts under cover** (`setOnOff`) when an opposing
+    aircraft closes inside the scatter range, and **rolls a fresh column** a while after the old one is wiped,
+    so the trail keeps flowing. Corridor selection (nearest convoy route) is the user's chosen design; the
+    runtime spawn is **unverified Lua pending an in-game pass** (checklist L6). Speed/scatter-range/respawn/
+    truck-count/type are plugin options. (`game/missiongenerator/vietnamopsluadata.py`,
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §35, checklist L6.)
 
 ---
 

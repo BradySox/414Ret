@@ -1,6 +1,6 @@
 {
     "nameInUI": "Vietnam Ops (period mechanics)",
-    "descriptionInUI": "Runtime for the Vietnam Ops suite -- opt-in period air-war mechanics gated by the 'Vietnam Ops' campaign settings page. Inert unless a Vietnam Ops setting is on (the mission generator emits dcsRetribution.VietnamOps only then). Arc Light: a heavy-bomber (B-52) Strike walks a carpet of bombs across its target at the run-in instead of dropping a single aimpoint (tactical strikers unaffected). AAA flak gauntlet: aircraft within range and below the ceiling of an opposing AAA gun draw barrage flak that tightens against predictable run-ins and widens when jinking. Naval gunfire support: offshore gun ships shell shore targets -- a player F10 'Naval Fire Mission' menu fires on the last F10 map marker, and (optionally) ships automatically bombard the nearest in-range enemy ground target each cadence. Coastal campaigns only.",
+    "descriptionInUI": "Runtime for the Vietnam Ops suite -- opt-in period air-war mechanics gated by the 'Vietnam Ops' campaign settings page. Inert unless a Vietnam Ops setting is on (the mission generator emits dcsRetribution.VietnamOps only then). Arc Light: a heavy-bomber (B-52) Strike walks a carpet of bombs across its target at the run-in instead of dropping a single aimpoint (tactical strikers unaffected). AAA flak gauntlet: aircraft within range and below the ceiling of an opposing AAA gun draw barrage flak that tightens against predictable run-ins and widens when jinking. Naval gunfire support: offshore gun ships shell shore targets -- a player F10 'Naval Fire Mission' menu fires on the last F10 map marker, and (optionally) ships automatically bombard the nearest in-range enemy ground target each cadence. Coastal campaigns only. Convoy interdiction: a moving enemy truck column rolls the supply road nearest the front (Steel Tiger / Ho Chi Minh Trail), halts under cover when an aircraft closes in, and re-rolls a fresh column after it is wiped -- hunt it via an Armed Recon corridor.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -72,6 +72,31 @@
             "nameInUI": "Naval gunfire: seconds between automatic fire missions",
             "mnemonic": "ngfsAutoIntervalS",
             "defaultValue": 90
+        },
+        {
+            "nameInUI": "Convoy interdiction: trail speed (kph)",
+            "mnemonic": "convoySpeedKph",
+            "defaultValue": 30
+        },
+        {
+            "nameInUI": "Convoy interdiction: halt if an enemy aircraft is within (m)",
+            "mnemonic": "convoyScatterRangeM",
+            "defaultValue": 9260
+        },
+        {
+            "nameInUI": "Convoy interdiction: seconds before a fresh column rolls after a wipe",
+            "mnemonic": "convoyRespawnS",
+            "defaultValue": 600
+        },
+        {
+            "nameInUI": "Convoy interdiction: trucks per column",
+            "mnemonic": "convoyUnits",
+            "defaultValue": 8
+        },
+        {
+            "nameInUI": "Convoy interdiction: truck DCS type",
+            "mnemonic": "convoyTruckType",
+            "defaultValue": "Ural-375"
         }
     ],
     "scriptsWorkOrders": [],

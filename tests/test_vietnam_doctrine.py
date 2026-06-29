@@ -103,7 +103,7 @@ def test_allows_respects_a_whitelist() -> None:
 
 def test_vietnam_geometry_matches_coldwar() -> None:
     # Vietnam shares COLDWAR's planning geometry; it differs only in the display layer
-    # (name + renames) and the two P3 behaviour flags. Reset exactly those -> COLDWAR.
+    # (name + renames) and the P3 behaviour fields. Reset exactly those -> COLDWAR.
     rebadged = replace(
         VIETNAM_DOCTRINE,
         name="coldwar",
@@ -111,6 +111,7 @@ def test_vietnam_geometry_matches_coldwar() -> None:
         tasking_whitelist=None,
         strike_through_air_defense_threat=False,
         plan_strikes_without_full_escort=False,
+        strike_flight_count=1,
     )
     assert rebadged == COLDWAR_DOCTRINE
 
@@ -125,6 +126,14 @@ def test_vietnam_relaxes_strike_gates_only() -> None:
         assert d.plan_strikes_without_full_escort is False
 
 
+def test_vietnam_alpha_strike_fans_two_sections() -> None:
+    # P3: a Vietnam STRIKE fans two coordinated sections onto one target; every other
+    # doctrine keeps the stock single section.
+    assert VIETNAM_DOCTRINE.strike_flight_count == 2
+    for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+        assert d.strike_flight_count == 1
+
+
 def test_from_settings_preserves_renames_whitelist_and_flags() -> None:
     # from_settings rebuilds the frozen dataclass field by field -- the additive fields
     # must survive, or a settings-adjusted Vietnam doctrine would silently lose them.
@@ -135,6 +144,7 @@ def test_from_settings_preserves_renames_whitelist_and_flags() -> None:
     assert out.allows(FlightType.STRIKE)
     assert out.strike_through_air_defense_threat is True
     assert out.plan_strikes_without_full_escort is True
+    assert out.strike_flight_count == 2
 
 
 def test_vietnam_faction_jsons_declare_vietnam_doctrine() -> None:

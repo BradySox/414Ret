@@ -80,8 +80,19 @@ P3 (behaviour taskings) outstanding.
   (STRIKE 1→5, BAI 6→13, packages 19→31). Drops all SEAD per the "no reliable SEAD" premise (no current
   Vietnam campaign fields a Wild Weasel); revisit per-faction if one ever does. Tests:
   `test_vietnam_doctrine.py::test_vietnam_whitelist_drops_sead_dead_antiship` + the `fulfill_mission` scrub
-  in `test_dead_planning.py::test_vietnam_doctrine_scrubs_the_whole_dead_package`. Still TODO in P3:
-  Alpha Strike package sizing, Iron Hand = Shrike-vs-live-emitter.
+  in `test_dead_planning.py::test_vietnam_doctrine_scrubs_the_whole_dead_package`.
+- **P3 (behaviour) — Alpha Strike sizing DONE.** A new `Doctrine.strike_flight_count` (default 1; Vietnam = 2)
+  makes `PlanStrike.propose_flights` fan N coordinated STRIKE sections onto one target instead of one. The two
+  sections share a TOT (verified identical), so the target is hit harder; aircraft scarcity is the limiter, so
+  the trade-off is **concentration, not more aircraft** — headless on the live save: same 10 strike aircraft,
+  **5 single-section targets → 3 double-section targets** (each hit twice as hard, 0 broken plans). **Gotcha:**
+  the strike target is *enemy*-owned, so `PlanStrike` reads the *planner's* doctrine via
+  `self.target.coalition.opponent.doctrine` (reading `target.coalition.doctrine` gets the target owner's — the
+  headless verify caught this; the unit test alone missed it). Single `= 1` default is save-safe, clamped `>= 1`.
+  Tests: `test_strike_planning.py` + `test_vietnam_doctrine.py::test_vietnam_alpha_strike_fans_two_sections`.
+  The fewer/harder-strikes **trade-off is a balance choice — tunable via the doctrine constant.** Still TODO in
+  P3: Iron Hand = Shrike-vs-live-emitter (**moot** now SEAD is dropped from Vietnam — revisit only if a
+  weasel-fielding Vietnam campaign appears).
 - **P4** — see §9.
 
 ---

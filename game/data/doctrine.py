@@ -121,6 +121,15 @@ class Doctrine:
     #: unblock the offensive fleet. Simple ``= False`` default (save-safe class attr).
     plan_strikes_without_full_escort: bool = False
 
+    #: How many coordinated STRIKE sections an "Alpha Strike" fans onto one target.
+    #: The default 1 is the stock single-section strike. Raising it (Vietnam = 2)
+    #: concentrates more aircraft on the same aimpoint at a *shared TOT* -- a real
+    #: Alpha Strike -- so each struck target is hit harder, at the cost of covering
+    #: fewer separate targets per turn (same total air effort, fewer/harder strikes;
+    #: aircraft scarcity is the limiter either way). Simple ``= 1`` default (save-safe
+    #: class attr); clamped to >= 1 at the planner edge.
+    strike_flight_count: int = 1
+
     def display_name_for(self, flight_type: FlightType) -> str:
         """The doctrine's display label for a tasking (the rename layer)."""
         return self.task_display_names.get(flight_type, flight_type.value)
@@ -168,6 +177,7 @@ class Doctrine:
             tasking_whitelist=self.tasking_whitelist,
             strike_through_air_defense_threat=self.strike_through_air_defense_threat,
             plan_strikes_without_full_escort=self.plan_strikes_without_full_escort,
+            strike_flight_count=self.strike_flight_count,
         )
 
 
@@ -349,11 +359,12 @@ VIETNAM_TASKING_WHITELIST: FrozenSet[FlightType] = frozenset(
 )
 
 # Vietnam doctrine. Behaviour is mostly a COLDWAR clone; the era identity is the
-# display-name layer plus two behaviour changes (P3): strike_through_air_defense_threat
+# display-name layer plus the P3 behaviour changes: strike_through_air_defense_threat
 # (Vietnam has no reliable SEAD, so the modern "suppress before you strike" rule
 # otherwise deadlocks the whole offensive fleet -- root-caused 2026-06-28: 0/28 strike +
-# 0/13 BAI targets plannable, all threat-blocked) and the tasking whitelist above that
-# drops SEAD/DEAD/anti-ship. See docs/dev/design/414th-vietnam-retribution-notes.md.
+# 0/13 BAI targets plannable, all threat-blocked); the tasking whitelist above that
+# drops SEAD/DEAD/anti-ship; and strike_flight_count=2 so a STRIKE fans two coordinated
+# sections onto one target (an "Alpha Strike"). See docs/dev/design/414th-vietnam-retribution-notes.md.
 VIETNAM_DOCTRINE = replace(
     COLDWAR_DOCTRINE,
     name="vietnam",
@@ -361,6 +372,7 @@ VIETNAM_DOCTRINE = replace(
     tasking_whitelist=VIETNAM_TASKING_WHITELIST,
     strike_through_air_defense_threat=True,
     plan_strikes_without_full_escort=True,
+    strike_flight_count=2,
 )
 
 ALL_DOCTRINES = [

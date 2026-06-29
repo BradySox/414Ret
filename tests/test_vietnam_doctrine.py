@@ -179,3 +179,27 @@ def test_flightdata_task_display_name_resolves_through_squadron_doctrine() -> No
     )
     fd.flight_type = FlightType.STRIKE
     assert fd.task_display_name == "Alpha Strike"
+
+
+def test_package_description_uses_doctrine_rename() -> None:
+    # The planning table's package label routes through the doctrine display layer
+    # (the deferred P1b site): a Vietnam package reads "Alpha Strike"/"MiGCAP", a stock
+    # package keeps the canonical label and the combined "OCA Strike" tag.
+    from types import SimpleNamespace
+
+    from game.ato.package import Package
+
+    def label(flight_type: FlightType, doctrine: object) -> str:
+        flight = SimpleNamespace(
+            flight_type=flight_type, coalition=SimpleNamespace(doctrine=doctrine)
+        )
+        pkg = Package.__new__(Package)
+        pkg.flights = [flight]  # type: ignore[list-item]
+        return pkg.package_description
+
+    assert label(FlightType.STRIKE, VIETNAM_DOCTRINE) == "Alpha Strike"
+    assert label(FlightType.BARCAP, VIETNAM_DOCTRINE) == "MiGCAP"
+    assert label(FlightType.OCA_RUNWAY, VIETNAM_DOCTRINE) == "Airfield Strike"
+    # Non-Vietnam doctrine is unchanged, including the combined OCA label.
+    assert label(FlightType.STRIKE, COLDWAR_DOCTRINE) == "Strike"
+    assert label(FlightType.OCA_RUNWAY, COLDWAR_DOCTRINE) == "OCA Strike"

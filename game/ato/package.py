@@ -217,10 +217,21 @@ class Package(RadioFrequencyContainer):
 
     @property
     def package_description(self) -> str:
-        """Generates a package description based on flight composition."""
+        """Generates a package description based on flight composition.
+
+        Uses the planning coalition's doctrine display name when it renames the
+        primary task (the Vietnam era layer: STRIKE -> "Alpha Strike", BARCAP ->
+        "MiGCAP", OCA -> "Airfield Strike", ...). Every flight in a package shares a
+        coalition, so the doctrine is read off one flight. When the doctrine has no
+        override (every non-Vietnam doctrine), the canonical labelling is kept
+        unchanged -- including the combined "OCA Strike" label.
+        """
         task = self.primary_task
         if task is None:
             return "No mission"
+        doctrine = self.flights[0].coalition.doctrine if self.flights else None
+        if doctrine is not None and task in doctrine.task_display_names:
+            return doctrine.display_name_for(task)
         oca_strike_types = {FlightType.OCA_AIRCRAFT, FlightType.OCA_RUNWAY}
         if task in oca_strike_types:
             return "OCA Strike"

@@ -387,7 +387,15 @@ class Flight(
         return self.__str__()
 
     def __str__(self) -> str:
-        string = f"[{self.flight_type}] {self.count} x {self.unit_type} - {self.start_type.value}"
+        # Prefer the doctrine display label (era renames, e.g. STRIKE -> "Alpha
+        # Strike"); identical to the canonical task for every non-Vietnam doctrine.
+        # __str__ must never raise, so fall back to the raw task if the coalition /
+        # doctrine isn't reachable (e.g. a partially-restored flight in a log line).
+        try:
+            task: object = self.task_display_name
+        except Exception:
+            task = self.flight_type
+        string = f"[{task}] {self.count} x {self.unit_type} - {self.start_type.value}"
         if self.custom_name:
             return f"{self.custom_name} - {string}"
         return string

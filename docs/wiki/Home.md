@@ -69,6 +69,7 @@ campaign files (ORBAT, threats, and economy read straight from the campaign + fa
 
 ### Khe Sanh: Operation Niagara *(historical, 1968 — rooted in the real siege)*
 
+- **[Khe Sanh — Required Mods](Khe-Sanh-Required-Mods)** — the squadron install list: every required mod/module, what it adds, whether it's free, and where to download it. Read this first.
 - **[Khe Sanh — Campaign Briefing](Khe-Sanh-Campaign-Briefing)** — the brief-builder: friendly/enemy ORBAT, the siege win-geometry, phase plan, op-night runbook, mission-brief template, package recipes, comms/FAC card, and the AAA threat-defeat reference.
 - **[Khe Sanh — Role Cards](Khe-Sanh-Role-Cards)** — print-and-fly kneeboard cards per player role, with period-1968 loadouts.
 - **[Khe Sanh — First Three Turns](Khe-Sanh-First-Three-Turns)** — a worked example of the brief template across the opening turns.

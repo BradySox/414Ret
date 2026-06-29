@@ -68,6 +68,44 @@ is legacy only and should not be extended.
   `qt_ui/windows/basemenu/airfield/QAircraftRecruitmentMenu.py`,
   `qt_ui/windows/basemenu/QBaseMenu2.py`, and the debrief/settings windows.
 
+### Player-manned QRA (2026-06-29)
+
+A human pilot can man part of a squadron's QRA reserve instead of leaving it all to the AI
+dispatcher (design note `docs/dev/design/414th-qra-player-manning-notes.md`; in-game pass A3).
+The AI QRA is a runtime MOOSE air-spawn with no ATO flight to take a slot on, so the player
+share is fragged as a **real ATO flight** at planning instead — a cold-start, home-field
+base-defense BARCAP the player sits on the pad and scrambles at will.
+
+- Model: `Squadron.qra_player_manned` (per squadron, default 0, `__setstate__` migrates old
+  saves) records how many of `intercept_reserve` the player flies. It only re-labels reserve
+  airframes — `untasked_aircraft` already excludes the whole reserve, so the planner pool is
+  untouched.
+- Accounting (`game/squadrons/intercept_reserve.py`): `qra_player_manned_count()` clamps the
+  setting to the reserve and owned airframes; `ai_qra_resource_count()` carves the manned
+  airframes out of both the reserve and owned pool before the usual `qra_resource_count`
+  clamp, so the AI dispatcher fields only the player's leftovers (no double-spawn). The
+  available-pilot cap is *not* re-reduced — the alert flight already claimed its pilots at
+  planning. Both the generator and the debrief baseline call `ai_qra_resource_count` so the
+  AI count and its loss reconciliation always agree. Tests in
+  `tests/squadrons/test_intercept_reserve.py`.
+- Home-field orbit: `HomeBaseDefenseZone` (`game/theater/missiontarget.py`) is the package
+  target; `CapBuilder.cap_racetrack_for_objective` (`game/ato/flightplans/capbuilder.py`) lays
+  a short racetrack **straddling the base** (oriented toward the nearest enemy field) instead
+  of pushing forward like a control-point BARCAP.
+- Generation hook: `Coalition._plan_player_qra()` (`game/coalition.py`), called from
+  `plan_missions` **BLUE only** after scheduling, frags one `HomeBaseDefenseZone` BARCAP
+  package per eligible squadron (airfield-based, BARCAP-capable, flyable) with `manned`
+  cold-start airframes, `claim_inv=False` (the airframes come from the reserve, not the
+  untasked pool), every member marked a player slot, a normal flight plan + ASAP TOT. Because
+  it's a real ATO flight it gets the full loadout/kneeboard/debrief treatment and is editable.
+- Dispatcher debit: `spawn_intercept_templates()` now seeds the `InterceptEntry.resource_count`
+  from `ai_qra_resource_count`, so the runtime dispatcher launches the reserve minus the
+  player's share.
+- UI: a dependent "…of which player-manned" spinbox under the QRA reserve in
+  `qt_ui/windows/SquadronDialog.py`, bounded by the reserve and synced when it changes.
+- Deferred: the "raid inbound — scramble" F10/radio cue (Phase 3) and an AI-wingman option for
+  a manned 2-ship. Runtime (cold alert spawn + flight plan) needs an in-game pass (A3).
+
 Legacy note: the old ramp-scramble system has been fully retired — the upstream PR #782
 dispatcher above is the only live QRA path. Both the `reactive_scramble.lua` script and the
 `FlightType.SCRAMBLE` enum (plus its `Scramble:` aircraft-task weights and `- Scramble`

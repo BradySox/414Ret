@@ -86,6 +86,12 @@ class Squadron:
     #: Number of airframes held on QRA (hot-alert intercept). 0 = none.
     intercept_reserve: int = 0
 
+    #: How many of ``intercept_reserve`` the player mans themselves on hot-alert
+    #: (a cold-start base-defense BARCAP fragged at planning) instead of the AI
+    #: dispatcher. 0 = none; bounded by the reserve. See game/squadrons/
+    #: intercept_reserve.py and docs/dev/design/414th-qra-player-manning-notes.md.
+    qra_player_manned: int = 0
+
     def __setstate__(self, state: dict[str, Any]) -> None:
         if "id" not in state:
             state["id"] = uuid4()
@@ -101,6 +107,8 @@ class Squadron:
             state["purchased_aircraft"] = 0
         if "intercept_reserve" not in state:
             state["intercept_reserve"] = 0
+        if "qra_player_manned" not in state:
+            state["qra_player_manned"] = 0
         self.__dict__.update(state)
 
     def __str__(self) -> str:

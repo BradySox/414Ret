@@ -42,6 +42,7 @@
 - [Red Tide: Visual Briefing](Red-Tide-Visual-Briefing)
 
 *Khe Sanh: Operation Niagara (1968)*
+- [Khe Sanh: Required Mods](Khe-Sanh-Required-Mods)
 - [Khe Sanh: Briefing](Khe-Sanh-Campaign-Briefing)
 - [Khe Sanh: Role Cards](Khe-Sanh-Role-Cards)
 - [Khe Sanh: First Three Turns](Khe-Sanh-First-Three-Turns)

@@ -31,7 +31,7 @@ from game.missiongenerator.interceptluadata import (
 )
 from game.missiongenerator.missiondata import MissionData
 from game.squadrons.intercept_reserve import (
-    qra_resource_count,
+    ai_qra_resource_count,
     qra_scramble_grouping,
 )
 from game.radio.radios import RadioRegistry
@@ -256,10 +256,14 @@ class AircraftGenerator:
                     if squadron.pilot_limits_enabled
                     else None
                 )
-                resource_count = qra_resource_count(
+                # Player-manned QRA airframes (§1) are fragged as a cold-start
+                # alert flight at planning, so they're debited here -- the AI
+                # dispatcher only fields the reserve the player didn't take.
+                resource_count = ai_qra_resource_count(
                     squadron.intercept_reserve,
                     squadron.owned_aircraft,
                     available_pilots,
+                    squadron.qra_player_manned,
                 )
                 if resource_count <= 0:
                     continue

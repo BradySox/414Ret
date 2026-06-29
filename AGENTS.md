@@ -218,6 +218,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 
 1. **QRA intercept reserve** — per-squadron alert reserve feeding the upstream PR #782 Moose
    `AI_A2A_DISPATCHER`. Base-defense posture by default. (Old ramp-scramble is retired.)
+   **Player-manned QRA**: `Squadron.qra_player_manned` carves N of the reserve into a
+   cold-start, home-field base-defense BARCAP (`HomeBaseDefenseZone`) fragged for the human at
+   planning (`Coalition._plan_player_qra`, BLUE only); those airframes are debited from the AI
+   dispatcher (`ai_qra_resource_count`) so a jet is never both manned and air-spawned. Design
+   note `414th-qra-player-manning-notes.md`; checklist A3 (needs an in-game pass).
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +

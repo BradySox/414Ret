@@ -109,7 +109,7 @@ local function lotatcExport_threat_circles_for_faction(faction, color, isFriend)
     local drawings = {}
 
     for _,aa in pairs(faction) do
-        logger:info(string.format("DCSRetribution|LotATC Export plugin - exporting threat circle for %s", aa.dcsGroupName))
+        logger:info(string.format("DCSRetribution|LotATC Export plugin - exporting threat circle for %s", aa.dcsGroupName or "(unnamed)"))
 
         local convLat, convLon = coord.LOtoLL({x = aa.positionX, y = 0, z = aa.positionY})
 

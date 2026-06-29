@@ -36,6 +36,10 @@ A TARPS overflight is the clean way to lift both: photograph a site you just hit
 BDA, or photograph a freshly-discovered site to learn what is actually there before you commit a
 strike package to it.
 
+![An in-cockpit Threat Intel Brief kneeboard page listing enemy air defenses as "Unidentified AAA / LORAD / MERAD / SHORAD", each line tagged "fly TARPS recon to ID"](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-recon-fog.jpg)
+
+*Recon intel-fog in the cockpit: enemy air defenses show as **Unidentified** with a "fly TARPS recon to ID" prompt — composition stays hidden until a recon pass lifts the fog.*
+
 The AI planner and threat math always use full ground truth, so flying (or skipping) TARPS never
 disadvantages the auto-planner — the fog is a **player-facing** information layer only.
 

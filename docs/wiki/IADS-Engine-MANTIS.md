@@ -14,6 +14,10 @@ campaign. There is **no engine to choose**: the old MANTIS-vs-Skynet selector is
 
 ---
 
+![The campaign map with the enemy IADS network layer on: red SAM threat rings overlapping across the theater, with cyan command/early-warning links and green power/comms links tying the sites, EWRs, and command nodes together into one connected network](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/map-iads-network.jpg)
+
+*The enemy IADS as the map draws it: overlapping red threat rings, with the cyan links (track handoff / early warning) and green links (power & comms in advanced IADS) showing which nodes hold the network together — and therefore what's worth striking.*
+
 ## What an IADS engine does
 
 - **Networking and track handoff.** EWRs, AWACS, and radar SAMs share contacts; a site can shoot
@@ -85,6 +89,10 @@ then on. You do not need to do anything.
 ---
 
 ## Settings reference
+
+![The MANTIS IADS settings page in 414Ret, with toggles for creating the RED/BLUE IADS coalitions, networking, command-center degradation, detection-update interval, per-threat active-SAM caps, EMCON, and HARM-defense behaviour](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/settings-mantis-iads.png)
+
+*The MANTIS options page. Most of this is wired up automatically per campaign — the defaults (emissions control off, networking on) are what the fork standardised on; see the notes above before changing them.*
 
 | Setting | Default | Effect |
 |---|---|---|

@@ -37,6 +37,10 @@ old ~10-page deck:
 | **P3 — Comms & Coordination** | Radios + AWACS/tanker/JTAC + code words + brevity. |
 | **P4 — Flex** | The recon target photo when target-recon imagery is on, otherwise the Fuel Ladder. |
 
+![A Threats & Targets kneeboard page: a SEAD target-area ALIC table over the enemy air-defense threat cards, each SAM card listing guidance, band, range and ceiling](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-threats.png)
+
+*A generated Threats & Targets page (P2): the target ALIC over the enemy-AD threat cards. In the compact deck these cards are colour-coded (amber MEZ/detect, blue HARM/cues); the shot above is from the full deck.*
+
 Turning `compact_kneeboard` **off** restores the full multi-page deck **byte-for-byte** — the map
 image and Notes page come back, and each section gets its own page again. The compact deck is a
 separate assembly path, so nothing is lost by switching.
@@ -59,6 +63,10 @@ product.
 One glanceable **Fuel** column (planned remaining) per steerpoint, with the RTB surplus — surfaced
 once, replacing the old redundant Plan/Min/Margin trio. Aircraft with no fuel-burn data get a
 sanity-banded **estimate** rather than a blank.
+
+![A Fuel & Packages kneeboard page showing the Fuel Ladder: planned remaining vs. minimum-to-RTB per steerpoint with the margin, plus Bingo/Joker figures](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/kneeboard-fuel-ladder.png)
+
+*The Fuel Ladder: planned fuel remaining at each steerpoint against minimum-to-RTB, with the surplus margin and Bingo/Joker.*
 
 ---
 
@@ -87,6 +95,10 @@ Old saves migrate automatically (no custom kneeboards until you add them).
 ---
 
 ## Settings reference
+
+![The Kneeboards settings page with toggles for generating the target-recon page, the friendly-packages page, the brief-sheet/BLUF page, the comms/code-words/brevity card, and the extra threat-search radius](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/settings-kneeboards.png)
+
+*The Kneeboards settings page — the toggles that decide which optional pages the compact deck folds in.*
 
 | Setting | Page | Default | Effect |
 |---|---|---|---|

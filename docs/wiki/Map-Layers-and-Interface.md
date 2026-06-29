@@ -11,6 +11,10 @@ top-left threat-zone / navmesh / terrain box — are replaced by **one custom, d
 control** that matches the rest of the app. It owns the visibility of every overlay and adds
 grouping, presets, and persistence.
 
+![The unified map layers panel: Default/SEAD/Recon/Clean preset buttons and a Clarity/Firefly/Topographic basemap row across the top, then collapsible groups — Friendly & shared, Air defences, Enemy intel (with the Reveal fog of war overview toggle), Allied & flight plans, Threat zones, Navmesh & terrain — and a Hide all overlays button](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/map-layers-panel.png)
+
+*The panel: preset views and basemap selector at the top, then the grouped, collapsible layer toggles. The advanced groups (Allied & flight plans, Threat zones, Navmesh & terrain) start collapsed.*
+
 - **Collapsible grouped sections.** Layers are organized into groups — Friendly & shared,
   Air defences, Enemy intel, Allied & flight plans, Threat zones, and Navmesh & terrain. The
   advanced groups start collapsed so the list stays short.
@@ -45,6 +49,10 @@ not just raw numbers:
   counts, detection and threat range, IADS membership, the hide-on-MFD flag, and
   capturable/purchasable status. (Sites you haven't scouted read "composition unknown" — that
   is the recon fog at work.)
+
+  ![The target intel dialog for an unscouted enemy SAM site, with known units, detection range, and threat range all reading "Unknown (not scouted)"](https://raw.githubusercontent.com/bradyccox/414Ret/main/docs/wiki/img/fog-intel-not-scouted.png)
+
+  *The Target Intel panel on an unscouted site — the counts and ranges read "Unknown (not scouted)" until you scout it. See [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance) for the before/after.*
 - **Mission Impact debrief summary.** The debriefing now leads with a Mission Impact block —
   mission end-state, bases captured/lost, runway damage, and loss counts for both sides —
   above the full casualty tables.

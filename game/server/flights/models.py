@@ -144,7 +144,10 @@ class FlightJs(BaseModel):
             waypoints=waypoints,
             aircraft=flight.unit_type.display_name,
             num_aircraft=flight.count,
-            flight_type=flight.flight_type.value,
+            # The map label uses the doctrine display name (era renames, e.g.
+            # "Alpha Strike"); the client consumes this purely for display, and it is
+            # identical to the canonical task value for every non-Vietnam doctrine.
+            flight_type=flight.task_display_name,
             callsign=flight.custom_name,
             package_target=package.target.name,
             package_tot=tot.strftime("%H:%M:%SZ") if tot != datetime.min else "",

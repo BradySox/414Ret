@@ -42,8 +42,19 @@ P3 (behaviour taskings) outstanding.
   `SquadronDialog`), and the squadron-selector tooltip. Tests:
   `tests/test_vietnam_doctrine.py` (the two properties), `tests/missiongenerator/test_brief_sheet.py`
   (the `_brief_mission` label). **Deferred (graceful canonical fallback):** the "Add new Squadron"
-  popup (`SquadronConfigPopup` has no coalition context), the `QPackageDialog` package-summary label
-  (`Package` exposes no coalition), and the `SeadTaskPage` SEAD/DEAD page-internal header.
+  popup (`SquadronConfigPopup` has no coalition context) and the `SeadTaskPage` SEAD/DEAD
+  page-internal header.
+- **P1b follow-up — package/flight planning labels — DONE.** The earlier-deferred *planning table* labels
+  now rename too (the user saw the old labels in the ATO/package list under Vietnam). `Package` exposes no
+  coalition, but every flight in a package shares one, so `Package.package_description` reads the doctrine
+  off `self.flights[0].coalition` (renames the primary task; keeps the combined "OCA Strike" tag for
+  un-renamed doctrines). `Flight.__str__` (the per-flight rows in the ATO/package lists, `[task] N x type`)
+  now uses `task_display_name` with a `try/except` fallback so `__str__` can never raise on a partially
+  restored flight. The **map** flight label is covered too: `game/server/flights/models.py` serializes
+  `flight_type=flight.task_display_name` (the client uses it display-only — `FlightPlan.tsx`). All three are
+  byte-identical to canonical under every non-Vietnam doctrine (`str(FlightType)==.value`). Headless: real
+  Vietnam packages read **College Eye / MiGCAP / Interdiction / Alpha Strike**. Test:
+  `test_vietnam_doctrine.py::test_package_description_uses_doctrine_rename`.
 - **P2 (era pre-seed) — DONE.** The 3 Vietnam campaigns' `settings:` blocks turn the Vietnam Ops
   mechanics + `restrict_weapons_by_date` on (per-campaign: Khe Sanh/Velvet Thunder inland → no naval
   gunfire; Yankee Station coastal → naval gunfire on). Applied on campaign-select via the existing

@@ -35,7 +35,8 @@ with DCS.**
 1. **Install every mod in [§1](#1--required-mods--everyone-installs-all-of-these).** All free, all
    mandatory for everyone — the mission is built from them.
 2. **To fly a fast-mover or the Huey, also buy its [paid module](#2--what-you-can-fly--player-seats)**
-   (F-4E, F-100D, or UH-1H). Everything else flyable is already covered by §1.
+   (F-4E, F-100D, or UH-1H). The only two **free** flyable seats — OV-10A and A-4E — are already
+   covered by §1; every other mod aircraft in the campaign is **AI-only**.
 3. **Match versions** across the squadron and load mods with a mod manager (see [§4](#4--installing--keeping-it-tidy)).
 
 > 💡 **No paid *asset* packs needed.** Khe Sanh's required content is 100% free mods + core DCS. The
@@ -56,9 +57,9 @@ mission — a missing one means the mission won't load / you fail the integrity 
 | **OH-6A Cayuse + Vietnam Asset Pack** — tobi-be | The OH-6 scout helo and its bundled period assets | [github.com/tobi-be/DCS-OH-6A](https://github.com/tobi-be/DCS-OH-6A) |
 | **OV-10A Bronco** — Split-Air team | The FAC(A) "Covey" bird (a **flyable** seat — see §2) | [Forum thread](https://forum.dcs.world/topic/307951-ov-10a-bronco-mod-by-split-air-teamand-more/) |
 | **Community A-4E-C Skyhawk** | The carrier Skyhawk (a **flyable** seat — see §2) | [GitHub](https://github.com/Community-A-4E/community-a4e-c) · [releases](https://heclak.github.io/community-a4e-c/) |
-| **A-6E Intruder** — CorsairCat | The Naval-2 Intruder (a **flyable** seat — see §2) | [github.com/CorsairCat/DCS-A-6E-Intruder](https://github.com/CorsairCat/DCS-A-6E-Intruder) |
-| **C-130J-30 Super Hercules** — Anubis | The Niagara airlift lifeline (a **flyable** seat — see §2) | [Forum thread](https://forum.dcs.world/topic/252075-dcs-super-hercules-mod-by-anubis/) |
-| **F-111C Aardvark** — Warpigs | Deep-strike AI the blue faction can field as reinforcements | [Forum thread](https://forum.dcs.world/topic/352553-f-111c-mod-update/) |
+| **A-6E Intruder** — CorsairCat | The Naval-2 anti-armor Strike bird (**AI** — see §3) | [github.com/CorsairCat/DCS-A-6E-Intruder](https://github.com/CorsairCat/DCS-A-6E-Intruder) |
+| **C-130J-30 Super Hercules** — Anubis | The Niagara airlift lifeline (**AI** — see §3) | [Forum thread](https://forum.dcs.world/topic/252075-dcs-super-hercules-mod-by-anubis/) |
+| **F-111C Aardvark** — Warpigs | Deep-strike **AI** the blue faction can field as reinforcements | [Forum thread](https://forum.dcs.world/topic/352553-f-111c-mod-update/) |
 | **VSN aircraft collection** | Period AI jets (VSN F-100/F-105/F-4 family) the factions can field as reinforcements | [VSN mods thread](https://forum.dcs.world/topic/147247-vsn-flyable-aircraft-mods/) |
 
 > ℹ️ **Why the F-111C / VSN set is on the required list.** The starting squadrons don't include
@@ -78,18 +79,18 @@ is **AI** (see §3 and the VWV note below).
 
 | Seat | Role at Khe Sanh | What you need to fly it |
 |---|---|---|
-| **OV-10A Bronco** | FAC(A) "Covey" / light CAS | **Free** — the OV-10A mod (already in §1) |
-| **A-4E Skyhawk** | Carrier Strike / CAS | **Free** — Community A-4E-C (already in §1) |
-| **A-6E Intruder** | Naval-2 anti-armor Strike | **Free** — CorsairCat A-6E (already in §1) |
-| **C-130J-30** | Airlift (the Niagara lifeline) | **Free** — Anubis Super Hercules (already in §1) |
-| **F-111C Aardvark** | Deep strike (reinforcement) | **Free** — F-111C mod (already in §1) |
-| **F-4E-45MC Phantom II** | Tbilisi Strike | **Paid** — [DCS: F-4E Phantom II](https://www.digitalcombatsimulator.com/en/products/planes/phantom/) (Heatblur) |
-| **F-100D Super Sabre** | Tbilisi CAS | **Paid** — [DCS: F-100D Super Sabre](https://www.digitalcombatsimulator.com/en/products/planes/f-100d/) (Grinnelli Designs) |
-| **UH-1H Iroquois** | Air Assault / medevac / resupply | **Paid** — [DCS: UH-1H Huey](https://www.digitalcombatsimulator.com/en/products/helicopters/uh-1h/) (Eagle Dynamics) |
+| **OV-10A Bronco** | FAC(A) "Covey" / light CAS | **Free mod** — the OV-10A mod (already in §1) |
+| **A-4E Skyhawk** | Carrier Strike / CAS | **Free mod** — Community A-4E-C (already in §1) |
+| **F-4E-45MC Phantom II** | Tbilisi Strike | **Paid module** — [DCS: F-4E Phantom II](https://www.digitalcombatsimulator.com/en/products/planes/phantom/) (Heatblur) |
+| **F-100D Super Sabre** | Tbilisi CAS | **Paid module** — [DCS: F-100D Super Sabre](https://www.digitalcombatsimulator.com/en/products/planes/f-100d/) (Grinnelli Designs) |
+| **UH-1H Iroquois** | Air Assault / medevac / resupply | **Paid module** — [DCS: UH-1H Huey](https://www.digitalcombatsimulator.com/en/products/helicopters/uh-1h/) (Eagle Dynamics) |
 
-> The three **paid** seats (F-4E, F-100D, UH-1H) are only needed by the person flying them — AI and
-> other players' copies load fine for everyone via DCS. The five **free** seats need no extra
-> purchase; you already installed them in §1.
+> Only **two** of the campaign's mod aircraft are genuinely **player-flyable** — the **OV-10A** and
+> the **A-4E-C** (both free, already in §1). The three fast/rotary seats below them are full **paid
+> DCS store modules** — and you only need the module to pilot that seat yourself; AI and other
+> players' copies load fine for everyone. **Every other mod aircraft in this campaign is AI-only**
+> (see §3) — the A-6E, C-130, F-111C, the VSN family and all the VWV birds are mods you *install*
+> but don't *fly*.
 
 ---
 
@@ -105,6 +106,11 @@ the **F-8E Crusader**, **A-1H Skyraider**, **RF-101B Voodoo** & **RA-5C Vigilant
 **EC-121D Warning Star** (AEW&C), **MiG-17F Fresco-C** (red fighters), plus L-1049 Constellation,
 O-1 Bird Dog, CH-46D Sea Knight and SH-2F Seasprite. They populate the war as **AI** — you don't
 fly these in this campaign even though they appear on the role cards as *roles*.
+
+**Other AI mod aircraft (installed in §1, but AI-only — not player seats):** the **A-6E Intruder**
+(CorsairCat), **C-130J-30** (Anubis), **F-111C** (Warpigs) and the **VSN** F-100/F-105/F-4 family.
+You install these as required mods because the mission / reinforcements spawn them, but they fly as
+**AI** — there's no cockpit to take in this campaign.
 
 **Red side (NVA) is all AI:** the **Mi-8MTV2** (a paid ED module, but red AI here — blue players
 never need to own it) and the VWV **MiG-17F**.
@@ -136,17 +142,16 @@ never need to own it) and the VWV **MiG-17F**.
 
 | If you're flying… | On top of §1, you also need… |
 |---|---|
-| **FAC(A)** (OV-10A) | nothing — free, already in §1 |
-| **Carrier Strike / CAS** (A-4E / A-6E) | nothing — free, already in §1 |
-| **Airlift** (C-130J-30) | nothing — free, already in §1 |
-| **Deep strike** (F-111C) | nothing — free, already in §1 |
+| **FAC(A)** (OV-10A) | nothing — free mod, already in §1 |
+| **Carrier Strike / CAS** (A-4E) | nothing — free mod, already in §1 |
 | **Tbilisi Strike** (F-4E-45MC) | the **paid** Heatblur **F-4E** module |
 | **Tbilisi CAS** (F-100D) | the **paid** Grinnelli **F-100D** module |
 | **Air Assault / medevac** (UH-1H) | the **paid** ED **UH-1H Huey** module |
 
-> Roles like **Sandy A-1H**, **BARCAP F-8E**, and **photo-recon RF-101B/RA-5C** appear on the role
-> cards but are flown by **AI** in this campaign (VWV birds) — there's no player seat to grab and
-> nothing extra to install beyond §1.
+> Many roles on the kneeboard cards are flown by **AI** in this campaign — there's no player seat to
+> grab and nothing extra to install beyond §1: **Sandy A-1H**, **BARCAP F-8E**, **photo-recon
+> RF-101B/RA-5C** (VWV birds), plus **Naval-2 strike A-6E**, **airlift C-130J-30** and **deep-strike
+> F-111C** (AI mods). The only player seats are the five in §2.
 
 ---
 

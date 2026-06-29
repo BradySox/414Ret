@@ -252,6 +252,15 @@ unvalidated "fix" is not something to ask upstream to take.
   > slivers above stay here.
 - **Splash Damage 3.4.2 414th buddy-tuned build** — pinned, intentionally
   divergent from upstream/source. Never push upstream or overwrite from it.
+- **AGM-65 Maverick date-fallback → Mk-20 Rockeye** (`resources/weapons/standoff/AGM-65A.yaml`,
+  `fallback: Mk-20 Rockeye`). The whole AGM-65 family chains its pre-1972 degrade through this
+  node; the fork degrades Mavericks to an anti-armor cluster (Rockeye) rather than the
+  ~1100 lb TV-guided AGM-62 Walleye, because a Maverick is a CAS/anti-armor PGM. **Upstream
+  rejected this** on PR #847 (Druss99: loadout/fallback choices target AI mission performance,
+  not historical accuracy, and the Walleye is the preferred standoff-class fallback), so #847's
+  AGM-65A was reverted to the upstream `AGM-62 Walleye II`. **Keep the Rockeye reroute on the
+  fork** — do NOT let a future carve or dev-pull "fix" it back to Walleye. (The expanded AGM-65A
+  CLSID coverage is shared with upstream and is fine to keep in sync.)
 - **PR #823 frontline merge divergences** (adopted 2026-06-26, not a carve-out —
   the inverse: we pulled upstream PR #823's composition/stance *into* the fork).
   Two fork-specific divergences to **preserve when #823 (or its descendants) lands

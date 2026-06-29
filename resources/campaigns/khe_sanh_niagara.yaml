@@ -4,11 +4,11 @@ era: vietnam
 theater: Caucasus
 authors: 414th JFG (fork of NoGoodNews' 1968 Yankee Station)
 description:
-    <p>21 January 1968. The NVA have thrown two divisions around the Marine combat base
-    at <strong>Khe Sanh</strong>, and the only way in is by air. You hold an encircled
-    forward field while <strong>Operation Niagara</strong> — round-the-clock tac air,
-    Arc Light, and aerial resupply — keeps the garrison alive, then break the ring with
-    the <strong>Operation Pegasus</strong> relief from Da Nang.</p>
+    <p><strong>Khe Sanh, summer 1968.</strong> The NVA have thrown two divisions around the
+    Marine combat base, and the only way in is by air. You hold an encircled forward field
+    while <strong>Operation Niagara</strong> — round-the-clock tac air, Arc Light, and aerial
+    resupply — keeps the garrison alive, then break the ring with an <strong>Operation
+    Pegasus</strong>-style relief from Da Nang.</p>
     <p>Khe Sanh (Kutaisi) is cut off on all sides by the NVA in the hills (Sukhumi),
     along Route 9 (Senaki), and at Lang Vei (Kobuleti) — where PT-76 and T-54 armor
     waits. Your relief pocket and the carriers on Yankee Station sit to the south at
@@ -17,7 +17,7 @@ description:
     <p><strong>Pump up "Fortunate Son" and hold the line.</strong></p>
 recommended_player_faction: USA 1970 Vietnam War
 recommended_enemy_faction: NVA 1970
-recommended_start_date: 1968-01-21
+recommended_start_date: 1968-07-15  # summer: keeps the Caucasus map green (Jan = snow on Kutaisi). Year stays 1968 for weapon/era gating.
 recommended_player_money: 3000
 recommended_enemy_money: 1500
 recommended_player_income_multiplier: 1.5

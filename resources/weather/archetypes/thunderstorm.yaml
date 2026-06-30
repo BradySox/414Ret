@@ -3,12 +3,15 @@ id: thunderstorm
 wind:
   speed:
     weibull:
+      # 414th: trimmed the upper-level scale_kts (was 2000m/8000m = 20/20), kept windier
+      # than fair weather since a storm should blow. The generator adds each layer's scale
+      # onto the one below, so the old values put ~60 kt winds at 8000m. tests/test_wind_tuning.py.
       at_msl:
         shape: 6
         scale_kts: 20
       at_2000m:
         shape: 6.2
-        scale_kts: 20
+        scale_kts: 14
       at_8000m:
         shape: 6.4
-        scale_kts: 20
+        scale_kts: 14

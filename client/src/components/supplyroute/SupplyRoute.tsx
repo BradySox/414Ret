@@ -1,4 +1,7 @@
-import { SupplyRoute as SupplyRouteModel } from "../../api/liberationApi";
+import {
+  SupplyRoute as SupplyRouteModel,
+  useOpenNewSupplyRoutePackageDialogMutation,
+} from "../../api/liberationApi";
 import SplitLines from "../splitlines/SplitLines";
 import { Polyline as LPolyline } from "leaflet";
 import { useEffect, useRef } from "react";
@@ -43,6 +46,7 @@ function colorFor(route: SupplyRouteModel) {
 export default function SupplyRoute(props: SupplyRouteProps) {
   const color = colorFor(props.route);
   const weight = props.route.is_sea ? 4 : 6;
+  const [openInterdictionPackage] = useOpenNewSupplyRoutePackageDialogMutation();
 
   const path = useRef<LPolyline | null>();
 
@@ -56,8 +60,15 @@ export default function SupplyRoute(props: SupplyRouteProps) {
   return (
     <Polyline
       positions={props.route.points}
-      pathOptions={{ color: color, weight: weight}}
+      pathOptions={{ color: color, weight: weight }}
       ref={(ref) => (path.current = ref)}
+      eventHandlers={{
+        // Right-click an enemy supply route to frag an Armed Recon interdiction
+        // package against its enemy end. The server no-ops (404) for a friendly route.
+        contextmenu: () => {
+          openInterdictionPackage({ routeId: props.route.id });
+        },
+      }}
     >
       <SupplyRouteTooltip {...props} />
       <ActiveSupplyRouteHighlight {...props} />

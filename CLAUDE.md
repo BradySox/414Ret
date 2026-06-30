@@ -475,6 +475,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     runtime spawn is **unverified Lua pending an in-game pass** (checklist L6). Speed/scatter-range/respawn/
     truck-count/type are plugin options. (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §35, checklist L6.)
+    **Right-click planning (added per playtest):** the player **right-clicks an enemy supply route** on the
+    map to frag the interdiction package — `SupplyRoute.tsx` `contextmenu` → `POST /qt/create-package/supply-route/{route_id}`
+    → `interdiction_target_for_route_id` resolves the route (its id now encodes the two CP ids) to the enemy
+    end (contested CP first) → the Qt package dialog opens there to pick **Armed Recon**; friendly routes 404.
+    Supersedes the old "no right-click" design stance; still an Armed Recon frag, just discoverable on the
+    route. The client API hook is hand-added to the generated `_liberationApi.ts` (codegen unavailable
+    locally). (`game/server/qt/routes.py`, `game/server/supplyroutes/models.py`,
+    `client/src/components/supplyroute/SupplyRoute.tsx`; test `tests/server/test_supply_route_interdiction.py`;
+    checklist L7 — needs an in-app pass + the CI client rebuild.)
 
 ---
 

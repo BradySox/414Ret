@@ -50,7 +50,8 @@ settings:
   russianmilitaryassetspack: true
   a4_skyhawk: true
   ov10a_bronco: true
-  f111c: true
+  f111c: false
+  squadron_start_full: true
   oh_6: true
   oh_6_vietnamassetpack: true
   manpads: false

@@ -82,7 +82,12 @@ class FrontLine(MissionTarget):
         return (self.blue_cp, self.red_cp) == (other.blue_cp, other.red_cp)
 
     def __hash__(self) -> int:
-        return hash((self.blue_cp, self.red_cp))
+        # MUST stay identity-based, NOT hash((self.blue_cp, self.red_cp)).
+        # Pickle can call __hash__ before __setstate__ when a FrontLine is a set
+        # member / dict key, so a state-dependent hash raises AttributeError and
+        # breaks save loading. See upstream "Fix save loading" (605d8f057);
+        # #53's audit re-broke this once already. Do not "tidy" it to match __eq__.
+        return hash(id(self))
 
     def _compute_position(self) -> Point:
         return self.point_along_route_from_blue(self._blue_route_progress)

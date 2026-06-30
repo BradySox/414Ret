@@ -59,15 +59,8 @@ mission — a missing one means the mission won't load / you fail the integrity 
 | **Community A-4E-C Skyhawk** | The carrier Skyhawk (a **flyable** seat — see §2) | [GitHub](https://github.com/Community-A-4E/community-a4e-c) · [releases](https://heclak.github.io/community-a4e-c/) |
 | **A-6E Intruder** — CorsairCat | The Naval-2 anti-armor Strike bird (**AI** — see §3) | [github.com/CorsairCat/DCS-A-6E-Intruder](https://github.com/CorsairCat/DCS-A-6E-Intruder) |
 | **C-130J-30 Super Hercules** — Anubis | The Niagara airlift lifeline (**AI** — see §3) | [Forum thread](https://forum.dcs.world/topic/252075-dcs-super-hercules-mod-by-anubis/) |
-| **F-111C Aardvark** — Warpigs | Deep-strike **AI** the blue faction can field as reinforcements | [Forum thread](https://forum.dcs.world/topic/352553-f-111c-mod-update/) |
-| **VSN aircraft collection** | Period AI jets (VSN F-100/F-105/F-4 family) the factions can field as reinforcements | [VSN mods thread](https://forum.dcs.world/topic/147247-vsn-flyable-aircraft-mods/) |
 
-> ℹ️ **Why the F-111C / VSN set is on the required list.** The starting squadrons don't include
-> them, but the factions can spawn them as **reinforcements** as the campaign runs — and the moment
-> one lands in a generated mission, every client needs it. Install them up front so a later turn
-> doesn't lock someone out.
->
-> All of the above install into `Saved Games\DCS\Mods\aircraft\` (aircraft) or `...\Mods\tech\`
+> ℹ️ All of the above install into `Saved Games\DCS\Mods\aircraft\` (aircraft) or `...\Mods\tech\`
 > (asset packs) — follow each mod's own readme if it differs.
 
 ---
@@ -89,8 +82,7 @@ is **AI** (see §3 and the VWV note below).
 > the **A-4E-C** (both free, already in §1). The three fast/rotary seats below them are full **paid
 > DCS store modules** — and you only need the module to pilot that seat yourself; AI and other
 > players' copies load fine for everyone. **Every other mod aircraft in this campaign is AI-only**
-> (see §3) — the A-6E, C-130, F-111C, the VSN family and all the VWV birds are mods you *install*
-> but don't *fly*.
+> (see §3) — the A-6E, C-130 and all the VWV birds are mods you *install* but don't *fly*.
 
 ---
 
@@ -108,9 +100,8 @@ O-1 Bird Dog, CH-46D Sea Knight and SH-2F Seasprite. They populate the war as **
 fly these in this campaign even though they appear on the role cards as *roles*.
 
 **Other AI mod aircraft (installed in §1, but AI-only — not player seats):** the **A-6E Intruder**
-(CorsairCat), **C-130J-30** (Anubis), **F-111C** (Warpigs) and the **VSN** F-100/F-105/F-4 family.
-You install these as required mods because the mission / reinforcements spawn them, but they fly as
-**AI** — there's no cockpit to take in this campaign.
+(CorsairCat) and **C-130J-30** (Anubis). You install these as required mods because the mission
+spawns them, but they fly as **AI** — there's no cockpit to take in this campaign.
 
 **Red side (NVA) is all AI:** the **Mi-8MTV2** (a paid ED module, but red AI here — blue players
 never need to own it) and the VWV **MiG-17F**.
@@ -150,8 +141,8 @@ never need to own it) and the VWV **MiG-17F**.
 
 > Many roles on the kneeboard cards are flown by **AI** in this campaign — there's no player seat to
 > grab and nothing extra to install beyond §1: **Sandy A-1H**, **BARCAP F-8E**, **photo-recon
-> RF-101B/RA-5C** (VWV birds), plus **Naval-2 strike A-6E**, **airlift C-130J-30** and **deep-strike
-> F-111C** (AI mods). The only player seats are the five in §2.
+> RF-101B/RA-5C** (VWV birds), plus **Naval-2 strike A-6E** and **airlift C-130J-30** (AI mods). The
+> only player seats are the five in §2.
 
 ---
 

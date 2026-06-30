@@ -137,11 +137,13 @@ file. This guide is the map; those are the territory.
     SEAD_SWEEP/DEAD/ANTISHIP, gated in `PackagePlanningTask.fulfill_mission` (disallowed primary scrubs the
     package; disallowed escort is just dropped) — fixes era jets on wrong tasks (an A-1 on SEAD Sweep) and
     headless-verified SEAD/DEAD/anti-ship 13→0 while STRIKE 1→5 / BAI 6→13 rose. **P3 Alpha Strike**:
-    `Doctrine.strike_flight_count` (default 1; Vietnam 2) fans N coordinated, shared-TOT STRIKE sections onto
-    one target in `PlanStrike` (reads the *planner's* doctrine via `target.coalition.opponent.doctrine` — the
-    target is enemy-owned); concentration not extra aircraft (same 10 strike a/c, 5 single→3 double targets,
-    hit twice as hard). The Ops suite's Arc Light/
-    flak/NGFS are this design's P4 flavor, already built)
+    `Doctrine.strike_flight_count` (default 1) can fan N coordinated, shared-TOT STRIKE sections onto one
+    target in `PlanStrike` (reads the *planner's* doctrine via `target.coalition.opponent.doctrine` — the
+    target is enemy-owned). Vietnam first fanned 2 sections, but playtest feedback showed that left the bombers
+    **unescorted**, so Vietnam now flies a **single section + a forced fighter escort** (`strike_flight_count=1`
+    + `always_escort_strikes`, which forces the A2A escort "needed" in `check_needed_escorts` even with no
+    detected air threat; still pruned when no fighter is free — reserving a fighter ahead of BARCAP is a deeper
+    deferred lever). The Ops suite's Arc Light/flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.

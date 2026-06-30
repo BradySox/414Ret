@@ -112,6 +112,7 @@ def test_vietnam_geometry_matches_coldwar() -> None:
         strike_through_air_defense_threat=False,
         plan_strikes_without_full_escort=False,
         strike_flight_count=1,
+        always_escort_strikes=False,
     )
     assert rebadged == COLDWAR_DOCTRINE
 
@@ -126,12 +127,15 @@ def test_vietnam_relaxes_strike_gates_only() -> None:
         assert d.plan_strikes_without_full_escort is False
 
 
-def test_vietnam_alpha_strike_fans_two_sections() -> None:
-    # P3: a Vietnam STRIKE fans two coordinated sections onto one target; every other
-    # doctrine keeps the stock single section.
-    assert VIETNAM_DOCTRINE.strike_flight_count == 2
+def test_vietnam_strike_is_single_section_and_force_escorted() -> None:
+    # Playtest feedback retired the 2-section Alpha Strike fan: a Vietnam STRIKE flies a
+    # single section + a forced fighter escort (always_escort_strikes) instead of two
+    # unescorted bomber sections. Every doctrine plans one section.
+    assert VIETNAM_DOCTRINE.strike_flight_count == 1
+    assert VIETNAM_DOCTRINE.always_escort_strikes is True
     for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
         assert d.strike_flight_count == 1
+        assert d.always_escort_strikes is False
 
 
 def test_from_settings_preserves_renames_whitelist_and_flags() -> None:
@@ -144,7 +148,8 @@ def test_from_settings_preserves_renames_whitelist_and_flags() -> None:
     assert out.allows(FlightType.STRIKE)
     assert out.strike_through_air_defense_threat is True
     assert out.plan_strikes_without_full_escort is True
-    assert out.strike_flight_count == 2
+    assert out.strike_flight_count == 1
+    assert out.always_escort_strikes is True
 
 
 def test_vietnam_faction_jsons_declare_vietnam_doctrine() -> None:

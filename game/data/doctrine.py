@@ -122,13 +122,21 @@ class Doctrine:
     plan_strikes_without_full_escort: bool = False
 
     #: How many coordinated STRIKE sections an "Alpha Strike" fans onto one target.
-    #: The default 1 is the stock single-section strike. Raising it (Vietnam = 2)
-    #: concentrates more aircraft on the same aimpoint at a *shared TOT* -- a real
-    #: Alpha Strike -- so each struck target is hit harder, at the cost of covering
-    #: fewer separate targets per turn (same total air effort, fewer/harder strikes;
-    #: aircraft scarcity is the limiter either way). Simple ``= 1`` default (save-safe
-    #: class attr); clamped to >= 1 at the planner edge.
+    #: The default 1 is the stock single-section strike. Raising it (> 1) concentrates
+    #: more aircraft on the same aimpoint at a *shared TOT* -- a real Alpha Strike -- so
+    #: each struck target is hit harder, at the cost of covering fewer separate targets
+    #: per turn (same total air effort, fewer/harder strikes; aircraft scarcity is the
+    #: limiter either way). Simple ``= 1`` default (save-safe class attr); clamped to
+    #: >= 1 at the planner edge.
     strike_flight_count: int = 1
+
+    #: When True, a STRIKE-led package always plans an A2A fighter escort even when the
+    #: planner detects no air threat on the route -- the era's MiG presence is sparse and
+    #: unpredictable and the bombers are the most exposed asset, so they should not fly
+    #: naked. The escort is still pruned when no fighter is free (can_plan_escort), and
+    #: the package then flies unescorted under plan_strikes_without_full_escort. Simple
+    #: ``= False`` default (save-safe class attr).
+    always_escort_strikes: bool = False
 
     def display_name_for(self, flight_type: FlightType) -> str:
         """The doctrine's display label for a tasking (the rename layer)."""
@@ -178,6 +186,7 @@ class Doctrine:
             strike_through_air_defense_threat=self.strike_through_air_defense_threat,
             plan_strikes_without_full_escort=self.plan_strikes_without_full_escort,
             strike_flight_count=self.strike_flight_count,
+            always_escort_strikes=self.always_escort_strikes,
         )
 
 
@@ -363,8 +372,10 @@ VIETNAM_TASKING_WHITELIST: FrozenSet[FlightType] = frozenset(
 # (Vietnam has no reliable SEAD, so the modern "suppress before you strike" rule
 # otherwise deadlocks the whole offensive fleet -- root-caused 2026-06-28: 0/28 strike +
 # 0/13 BAI targets plannable, all threat-blocked); the tasking whitelist above that
-# drops SEAD/DEAD/anti-ship; and strike_flight_count=2 so a STRIKE fans two coordinated
-# sections onto one target (an "Alpha Strike"). See docs/dev/design/414th-vietnam-retribution-notes.md.
+# drops SEAD/DEAD/anti-ship; and -- per playtest feedback -- a STRIKE flies a single
+# section (strike_flight_count=1; the old 2-section "Alpha Strike" fan left the bombers
+# unescorted) but always pulls a fighter escort (always_escort_strikes) so the strike
+# package isn't naked. See docs/dev/design/414th-vietnam-retribution-notes.md.
 VIETNAM_DOCTRINE = replace(
     COLDWAR_DOCTRINE,
     name="vietnam",
@@ -372,7 +383,8 @@ VIETNAM_DOCTRINE = replace(
     tasking_whitelist=VIETNAM_TASKING_WHITELIST,
     strike_through_air_defense_threat=True,
     plan_strikes_without_full_escort=True,
-    strike_flight_count=2,
+    strike_flight_count=1,
+    always_escort_strikes=True,
 )
 
 ALL_DOCTRINES = [

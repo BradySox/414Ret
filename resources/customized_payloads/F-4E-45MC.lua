@@ -34,11 +34,11 @@ local unitPayloads = {
 					["num"] = 1,
 				},
 				[8] = {
-					["CLSID"] = "{HB_F4EAGM-65D_LAU88_2x_Right}",
+					["CLSID"] = "{HB_F4E_AGM-65D_LAU117_SWA}",
 					["num"] = 11,
 				},
 				[9] = {
-					["CLSID"] = "{HB_F4EAGM-65D_LAU88_2x_Left}",
+					["CLSID"] = "{HB_F4E_AGM-65D_LAU117_SWA}",
 					["num"] = 3,
 				},
 				[10] = {
@@ -46,19 +46,19 @@ local unitPayloads = {
 					["num"] = 14,
 				},
 				[11] = {
-					["CLSID"] = "<CLEAN>",
+					["CLSID"] = "{AIM-9L}",
 					["num"] = 4,
 				},
 				[12] = {
-					["CLSID"] = "<CLEAN>",
+					["CLSID"] = "{AIM-9L}",
 					["num"] = 2,
 				},
 				[13] = {
-					["CLSID"] = "<CLEAN>",
+					["CLSID"] = "{AIM-9L}",
 					["num"] = 12,
 				},
 				[14] = {
-					["CLSID"] = "<CLEAN>",
+					["CLSID"] = "{AIM-9L}",
 					["num"] = 10,
 				},
 			},

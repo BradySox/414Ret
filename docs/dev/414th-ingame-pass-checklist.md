@@ -1681,8 +1681,8 @@ so the two docs don't drift.
   anywhere along the coloured line. **Must be a build that includes this change** (the client is rebuilt by
   CI on merge; a stale `client/build` won't have the handler).
 - **Pass:** right-clicking an **enemy** supply route opens the new-package dialog targeting the road's enemy
-  end; pick **Armed Recon** and it frags. Right-clicking a fully-**friendly** route does nothing (server 404,
-  no dialog).
+  end, with the add-flight dialog auto-opened and **Armed Recon pre-selected** — pick aircraft and it frags.
+  Right-clicking a fully-**friendly** route does nothing (server 404, no dialog).
 - **Fail signature:** right-click does nothing on an enemy route (the hand-added
   `useOpenNewSupplyRoutePackageDialogMutation` hook or the `contextmenu` handler is wrong); a JS error in the
   client console; the dialog opens on the wrong CP. Needs the CI client rebuild (hand-edited generated API).

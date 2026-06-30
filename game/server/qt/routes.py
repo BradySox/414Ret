@@ -86,7 +86,8 @@ def new_supply_route_package(
             status.HTTP_404_NOT_FOUND,
             detail=f"No interdictable enemy control point on supply route {route_id}",
         )
-    qt.create_new_package(target)
+    # Interdiction frag: opens the package dialog pre-selected on Armed Recon.
+    qt.create_new_interdiction_package(target)
 
 
 @router.post(

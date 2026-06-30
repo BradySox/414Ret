@@ -3,6 +3,7 @@
 from typing import Optional
 
 from game.ato.flight import Flight
+from game.ato.flighttype import FlightType
 from game.theater.missiontarget import MissionTarget
 from .models import GameModel, PackageModel
 from .windows.mission.QEditFlightDialog import QEditFlightDialog
@@ -35,12 +36,24 @@ class Dialog:
         cls.game_model = game_model
 
     @classmethod
-    def open_new_package_dialog(cls, mission_target: MissionTarget, parent=None):
-        """Opens the dialog to create a new package with the given target."""
+    def open_new_package_dialog(
+        cls,
+        mission_target: MissionTarget,
+        default_task: Optional[FlightType] = None,
+        parent=None,
+    ):
+        """Opens the dialog to create a new package with the given target.
+
+        ``default_task`` (e.g. Armed Recon for a supply-route interdiction frag)
+        pre-selects that task and auto-opens the add-flight dialog, so the player lands
+        ready to pick aircraft for it.
+        """
         cls.new_package_dialog = QNewPackageDialog(
-            cls.game_model, mission_target, parent=parent
+            cls.game_model, mission_target, default_task=default_task, parent=parent
         )
         cls.new_package_dialog.show()
+        if default_task is not None:
+            cls.new_package_dialog.on_add_flight()
 
     @classmethod
     def open_edit_package_dialog(cls, package_model: PackageModel):

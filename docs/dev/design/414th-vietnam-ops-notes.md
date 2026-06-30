@@ -162,8 +162,12 @@ dialog). This **supersedes** the earlier "no right-click" stance — it's still 
 a new task or a runtime spawn), just made discoverable on the route itself. Client API hook is
 hand-added to the generated `_liberationApi.ts` (codegen unavailable here; matches what
 `regenerate-api` would emit). Test: `tests/server/test_supply_route_interdiction.py`; in-app pass L7.
-**Deferred:** pre-selecting Armed Recon in the dialog + an Armed Recon flight plan that patrols the
-exact road (today it frags against the enemy CP, not the road geometry).
+**Pre-select Armed Recon — DONE:** an interdiction frag opens the package dialog with the add-flight
+dialog auto-opened and **Armed Recon pre-selected** — a parallel `create_new_interdiction_package`
+callback/signal carries the target, and its handler threads `default_task=ARMED_RECON` into
+`QNewPackageDialog` → `QFlightCreator` (which selects it if the target offers it; an enemy CP does, via
+`MissionTarget.mission_types`). **Deferred:** an Armed Recon flight plan that patrols the exact road
+(today it frags against the enemy CP, not the road geometry).
 
 **DoD / in-game pass:** an Armed Recon corridor frag yields a moving convoy that reacts to being
 hunted; killing it registers a logistics hit at debrief; `dcs.log` clean.

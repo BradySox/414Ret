@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from game.ato.flight import Flight
+from game.ato.flighttype import FlightType
 from game.ato.flightplans.planningerror import PlanningError
 from game.ato.package import Package
 from game.game import Game
@@ -64,6 +65,9 @@ class QPackageDialog(QDialog):
         self.game_model = game_model
         self.package_model = model
         self.add_flight_dialog: Optional[QFlightCreator] = None
+        # Pre-selected task for the add-flight dialog (set by QNewPackageDialog for an
+        # interdiction frag). None -> the picker defaults to its first task.
+        self.default_task: Optional[FlightType] = None
 
         self.setMinimumSize(1000, 440)
         self.setWindowTitle(
@@ -236,6 +240,7 @@ class QPackageDialog(QDialog):
             self.game,
             self.package_model.package,
             is_ownfor=self.game_model.is_ownfor,
+            default_task=self.default_task,
             parent=self.window(),
         )
         self.add_flight_dialog.created.connect(self.add_flight)
@@ -379,7 +384,11 @@ class QNewPackageDialog(QPackageDialog):
     """
 
     def __init__(
-        self, game_model: GameModel, target: MissionTarget, parent=None
+        self,
+        game_model: GameModel,
+        target: MissionTarget,
+        default_task: Optional[FlightType] = None,
+        parent=None,
     ) -> None:
         super().__init__(
             game_model,
@@ -388,6 +397,7 @@ class QNewPackageDialog(QPackageDialog):
             ),
             parent=parent,
         )
+        self.default_task = default_task
         self.ato_model = (
             game_model.ato_model if game_model.is_ownfor else game_model.red_ato_model
         )

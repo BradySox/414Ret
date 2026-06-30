@@ -133,6 +133,11 @@ class Game:
         # Player-imported kneeboard images injected into client flights at mission
         # generation (managed in the UI; see game/customkneeboard.py).
         self.custom_kneeboards: list[CustomKneeboard] = []
+        # Opaque JSON blob with the web client's map-layer panel state (which layers
+        # are visible, base map, which groups are open). The client owns the
+        # (de)serialization; the game just stores it so the choices travel with the
+        # save instead of being lost on reload.
+        self.client_map_layers: Optional[str] = None
         self.ground_planners: dict[UUID, GroundPlanner] = {}
         self.informations: list[Information] = []
         self.message("Game Start", "-" * 40)
@@ -182,6 +187,7 @@ class Game:
         state.setdefault("from_blank_canvas", False)
         state.setdefault("custom_kneeboards", [])
         state.setdefault("last_sitrep", None)
+        state.setdefault("client_map_layers", None)
         self.__dict__.update(state)
         if not hasattr(self, "laser_code_registry"):
             self.laser_code_registry = LaserCodeRegistry()

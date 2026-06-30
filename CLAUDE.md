@@ -478,7 +478,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **Right-click planning (added per playtest):** the player **right-clicks an enemy supply route** on the
     map to frag the interdiction package — `SupplyRoute.tsx` `contextmenu` → `POST /qt/create-package/supply-route/{route_id}`
     → `interdiction_target_for_route_id` resolves the route (its id now encodes the two CP ids) to the enemy
-    end (contested CP first) → the Qt package dialog opens there to pick **Armed Recon**; friendly routes 404.
+    end (contested CP first) → the Qt package dialog opens there **pre-selected on Armed Recon** (the add-flight dialog auto-opens); friendly routes 404.
     Supersedes the old "no right-click" design stance; still an Armed Recon frag, just discoverable on the
     route. The client API hook is hand-added to the generated `_liberationApi.ts` (codegen unavailable
     locally). (`game/server/qt/routes.py`, `game/server/supplyroutes/models.py`,

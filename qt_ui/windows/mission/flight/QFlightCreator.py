@@ -17,6 +17,7 @@ from dcs.unittype import FlyingType
 
 from game import Game
 from game.ato.flight import Flight
+from game.ato.flighttype import FlightType
 from game.ato.flightroster import FlightRoster
 from game.ato.flightmember import apply_default_player_laser_code
 from game.ato.loadouts import Loadout
@@ -38,7 +39,12 @@ class QFlightCreator(QDialog):
     created = Signal(Flight)
 
     def __init__(
-        self, game: Game, package: Package, is_ownfor: bool, parent=None
+        self,
+        game: Game,
+        package: Package,
+        is_ownfor: bool,
+        default_task: Optional[FlightType] = None,
+        parent=None,
     ) -> None:
         super().__init__(parent=parent)
         self.setMinimumWidth(400)
@@ -64,7 +70,15 @@ class QFlightCreator(QDialog):
             is_ownfor,
             self._doctrine,
         )
-        self.task_selector.setCurrentIndex(0)
+        # Pre-select the requested task (e.g. Armed Recon for an interdiction frag) if
+        # it is offered for this target; otherwise fall back to the first task.
+        default_index = 0
+        if default_task is not None:
+            for i in range(self.task_selector.count()):
+                if self.task_selector.itemData(i) == default_task:
+                    default_index = i
+                    break
+        self.task_selector.setCurrentIndex(default_index)
         self.task_selector.currentIndexChanged.connect(self.on_task_changed)
         layout.addLayout(QLabeledWidget("Task:", self.task_selector))
 

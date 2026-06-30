@@ -1676,7 +1676,10 @@ so the two docs don't drift.
   enemy end, prefers the contested CP, returns None for a friendly/malformed route). The **client
   right-click → `POST /qt/create-package/supply-route/{id}` → Qt package dialog** path is React/Qt and can't
   be exercised headless.
-- **Setup:** Load any campaign with a visible enemy supply route (enable the Supply Routes map layer).
+- **Setup:** Load any campaign with a visible enemy supply route (enable the Supply Routes map layer). The
+  visible line is thin and sent to the back, so the route carries a **wide invisible hit-line** — right-click
+  anywhere along the coloured line. **Must be a build that includes this change** (the client is rebuilt by
+  CI on merge; a stale `client/build` won't have the handler).
 - **Pass:** right-clicking an **enemy** supply route opens the new-package dialog targeting the road's enemy
   end; pick **Armed Recon** and it frags. Right-clicking a fully-**friendly** route does nothing (server 404,
   no dialog).

@@ -58,20 +58,33 @@ export default function SupplyRoute(props: SupplyRouteProps) {
   });
 
   return (
-    <Polyline
-      positions={props.route.points}
-      pathOptions={{ color: color, weight: weight }}
-      ref={(ref) => (path.current = ref)}
-      eventHandlers={{
-        // Right-click an enemy supply route to frag an Armed Recon interdiction
-        // package against its enemy end. The server no-ops (404) for a friendly route.
-        contextmenu: () => {
-          openInterdictionPackage({ routeId: props.route.id });
-        },
-      }}
-    >
-      <SupplyRouteTooltip {...props} />
-      <ActiveSupplyRouteHighlight {...props} />
-    </Polyline>
+    <>
+      <Polyline
+        positions={props.route.points}
+        pathOptions={{ color: color, weight: weight }}
+        ref={(ref) => (path.current = ref)}
+      >
+        <ActiveSupplyRouteHighlight {...props} />
+      </Polyline>
+      {/* A fat, invisible hit line. The visible route above is only weight 6 and is
+          sent to the back (so the active-transport highlight draws on top), which makes
+          it nearly impossible to right-click directly. This wide overlay is the actual
+          target for the hover tooltip and the right-click interdiction frag. Threat
+          zones are non-interactive and this layer renders below the front lines, so the
+          wide hit line does not swallow their clicks. */}
+      <Polyline
+        positions={props.route.points}
+        pathOptions={{ opacity: 0, weight: 16 }}
+        eventHandlers={{
+          // Right-click an enemy supply route to frag an Armed Recon interdiction
+          // package against its enemy end. The server no-ops (404) for a friendly route.
+          contextmenu: () => {
+            openInterdictionPackage({ routeId: props.route.id });
+          },
+        }}
+      >
+        <SupplyRouteTooltip {...props} />
+      </Polyline>
+    </>
   );
 }

@@ -63,3 +63,26 @@ def test_stock_callsign_is_left_untouched() -> None:
     pool = ["Enfield", "Springfield"]
     _spawner("Enfield", "Plane", pool)._register_custom_callsign()
     assert pool == ["Enfield", "Springfield"]  # not a role callsign -> no-op
+
+
+def test_role_callsign_is_deregistered_after_spawn() -> None:
+    # The role name must be pulled back out of the shared pool once it's stamped on
+    # the group -- otherwise pydcs's next_callsign_category() (a random.choice over
+    # the pool) hands King/Sandy/etc. to unrelated auto-named flights. This is the
+    # "callsign applied to all aircraft" regression.
+    pool = ["Enfield", "Springfield"]
+    spawner = _spawner("Sandy", "Plane", pool)
+    spawner._register_custom_callsign()
+    assert "Sandy" in pool  # present only while this group is being spawned
+    spawner._deregister_custom_callsign()
+    assert pool == ["Enfield", "Springfield"]  # back to the stock pool -> no leak
+
+
+def test_deregister_is_idempotent_and_skips_stock_callsigns() -> None:
+    pool = ["Enfield"]
+    # A role callsign never registered: removing it is a safe no-op.
+    _spawner("King", "Plane", pool)._deregister_custom_callsign()
+    assert pool == ["Enfield"]
+    # A stock callsign: never removed even if it happens to be in the pool.
+    _spawner("Enfield", "Plane", pool)._deregister_custom_callsign()
+    assert pool == ["Enfield"]

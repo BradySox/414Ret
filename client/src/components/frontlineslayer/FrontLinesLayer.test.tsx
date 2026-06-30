@@ -45,7 +45,9 @@ describe("FrontLinesLayer", () => {
         },
       },
     });
-    expect(mockPolyline).toHaveBeenCalledTimes(2);
+    // Each front line draws two polylines: the visible weight-16 line and a wide,
+    // invisible hit line for right-clicking (2 fronts x 2 = 4).
+    expect(mockPolyline).toHaveBeenCalledTimes(4);
     expect(mockPolyline).toHaveBeenCalledWith(
       expect.objectContaining({
         positions: extents,

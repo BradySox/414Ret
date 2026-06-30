@@ -105,17 +105,22 @@ P3 (behaviour taskings) outstanding.
   Vietnam campaign fields a Wild Weasel); revisit per-faction if one ever does. Tests:
   `test_vietnam_doctrine.py::test_vietnam_whitelist_drops_sead_dead_antiship` + the `fulfill_mission` scrub
   in `test_dead_planning.py::test_vietnam_doctrine_scrubs_the_whole_dead_package`.
-- **P3 (behaviour) — Alpha Strike sizing DONE.** A new `Doctrine.strike_flight_count` (default 1; Vietnam = 2)
-  makes `PlanStrike.propose_flights` fan N coordinated STRIKE sections onto one target instead of one. The two
-  sections share a TOT (verified identical), so the target is hit harder; aircraft scarcity is the limiter, so
-  the trade-off is **concentration, not more aircraft** — headless on the live save: same 10 strike aircraft,
-  **5 single-section targets → 3 double-section targets** (each hit twice as hard, 0 broken plans). **Gotcha:**
-  the strike target is *enemy*-owned, so `PlanStrike` reads the *planner's* doctrine via
-  `self.target.coalition.opponent.doctrine` (reading `target.coalition.doctrine` gets the target owner's — the
-  headless verify caught this; the unit test alone missed it). Single `= 1` default is save-safe, clamped `>= 1`.
-  Tests: `test_strike_planning.py` + `test_vietnam_doctrine.py::test_vietnam_alpha_strike_fans_two_sections`.
-  The fewer/harder-strikes **trade-off is a balance choice — tunable via the doctrine constant.** Still TODO in
-  P3: Iron Hand = Shrike-vs-live-emitter (**moot** now SEAD is dropped from Vietnam — revisit only if a
+- **P3 (behaviour) — Alpha Strike: single section + forced escort (UPDATED per playtest).**
+  `Doctrine.strike_flight_count` (default 1) can fan N coordinated, shared-TOT STRIKE sections onto one
+  target in `PlanStrike.propose_flights`. Vietnam first fanned **2** sections (concentration, not more
+  aircraft — headless: same 10 strike a/c, 5 single→3 double targets). **Playtest feedback retired that:**
+  the doubled bomber sections flew **unescorted**, so Vietnam now flies a **single section + a forced fighter
+  escort** (`strike_flight_count=1` + the new `always_escort_strikes`). The flag forces the A2A escort
+  "needed" in `PackageFulfiller.check_needed_escorts` for STRIKE-led packages even when no air threat is
+  detected on the route (still pruned by `can_plan_escort` + `plan_strikes_without_full_escort` when no
+  fighter is free). **Gotcha:** the strike target is *enemy*-owned, so `PlanStrike` reads the *planner's*
+  doctrine via `self.target.coalition.opponent.doctrine`. Both flags are save-safe (`= 1` / `= False`)
+  defaults. Tests: `test_strike_planning.py` (single section + `test_always_escort_strikes_forces_a2a_escort`)
+  + `test_vietnam_doctrine.py::test_vietnam_strike_is_single_section_and_force_escorted`. **Known limit:**
+  the forced flag only guarantees the escort is *planned when a fighter is free* — it does not reserve a
+  fighter ahead of BARCAP (HTN step #2 vs strikes at #8), so a fighter-starved campaign can still fly the
+  strike naked; reserving fighters for strike escorts is a deeper, deferred lever. **Still TODO in P3:**
+  Iron Hand = Shrike-vs-live-emitter (**moot** now SEAD is dropped from Vietnam — revisit only if a
   weasel-fielding Vietnam campaign appears).
 - **P4** — see §9.
 

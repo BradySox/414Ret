@@ -198,6 +198,15 @@ class PackageFulfiller:
                 list(flight.flight_plan.escorted_waypoints())
             ):
                 threats[EscortType.Sead] = True
+        # 414th: under doctrines that always escort strikes (Vietnam), a STRIKE-led
+        # package pulls a fighter escort even when no air threat is detected on the
+        # route -- the sparse, unpredictable MiG presence still warrants cover and the
+        # bombers are the most exposed asset. Still gated downstream by can_plan_escort
+        # (no fighter free -> pruned) + plan_strikes_without_full_escort.
+        if self.doctrine.always_escort_strikes:
+            primary = builder.package.primary_flight
+            if primary is not None and primary.flight_type is FlightType.STRIKE:
+                threats[EscortType.AirToAir] = True
         return threats
 
     def can_plan_escort(self, type: EscortType) -> bool:

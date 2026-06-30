@@ -1298,11 +1298,18 @@ auto-planner that used to *steal* enemy battle positions hands them all back to 
 
 **The enemy capture race (runtime — `combatsar` plugin).** On a downed-pilot spawn the `combatsar`
 plugin rolls a chance to spawn an enemy **snatch party** that walks at the survivor (red smoke + a
-MAYDAY cue); the King smokes/marks/calls it so Sandy engages. Kill the party to save the pilot;
-let it dwell on the survivor un-rescued and the pilot is **CAPTURED** — appended to the
+MAYDAY cue); the King smokes/marks/calls it so Sandy engages. The party is now **several small,
+dispersed teams** (default 3) ringed around the survivor on different bearings and converging
+independently — the same total infantry split into fire teams rather than one long marching column,
+which reads as a single target. The party spawns on the **enemy coalition**: Python emits the
+opposing side's faction country (`enemyCountry`, always registered on the enemy coalition in the
+`.miz`) and the plugin spawns the teams under it; the old hardcoded `CJTF_RED`/`CJTF_BLUE` constant
+is only a fallback (those countries aren't registered when the factions use real/CH nations — e.g.
+Vietnam — which previously put the snatch party on the wrong side). Kill the party to save the
+pilot; let any team dwell on the survivor un-rescued and the pilot is **CAPTURED** — appended to the
 `combat_sar_captures` state global (location + airframe unit name), parsed back by
-`Debriefing.parse_combat_sar_captures`. Six plugin tunables
-(`captureEnabled` / `Chance` / `SpawnDistance` / `Range` / `Dwell` / `PartySize`).
+`Debriefing.parse_combat_sar_captures`. Seven plugin tunables
+(`captureEnabled` / `Chance` / `SpawnDistance` / `Range` / `Dwell` / `PartySize` / `Teams`).
 
 **Capture → POW → recovery (Python).** `record_pow_captures` (`game/sim/missionresultsprocessor.py`)
 turns each capture into a `PendingPowRecovery` (`game/pow_recovery.py`) on the blue coalition
@@ -1590,26 +1597,31 @@ returns to the squadron).
 - **AI standing alert** — `Settings.auto_combat_sar` (HQ automation, default OFF) auto-plans
   one COMBAT_SAR orbit per turn for blue via `PlanCombatSar` / `PlanCombatSarSupport`
   (mirrors AEWC/refuel support). With it on, the generator emits `enableForAI=true` plus a
-  `heloTemplate` (the first rescue flight's group, cloned at runtime) and `farp` (that
-  flight's departure field). **The AI rescue is flown by MOOSE `AICSAR`, not CSAR** — the
-  2026-06-26 playtest confirmed MOOSE CSAR's `enableForAI` only *tracks* AI ejections and
-  never flies an AI helo ("Jolly Green flew a racetrack and did nothing"). `combatsar-config.lua`
-  now stands up `AICSAR`, which spawns its own rescue helos from the FARP `AIRBASE` and delivers
-  to a `ZONE_AIRBASE` there; its `autoonoff` (default) stands it down whenever a player crews a
-  rescue helo, so it never competes with the player-flown CSAR path (which stays
-  `enableForAI=false`). **Eject-triggered dispatch (2026-06-28, G9 fix).** Stock `AICSAR` only acts
-  on `S_EVENT_LANDING_AFTER_EJECTION` — the downed pilot must touch down first (~8–9 min under
-  canopy from a high ejection) and that event is unreliable for AI, so an AI shoot-down often drew
-  no rescue (G9 in-game pass: a blue AI ejected, the mission ended 57 s later with the pilot still
-  at ~3 km, nothing launched). `AICSAR`'s own eject fast-path is player-only (`IniPlayerName`), so
-  `combatsar-config.lua` sets `aicsar.UseEventEject = true` (the landing handler then early-returns
-  → clean dedup) and adds an **ejection bridge** (`world.addEventHandler`) that calls
-  `aicsar:_EventHandler(event, true)` the instant a **blue AI** pilot ejects, spawning the survivor
-  under the ejection point and launching a helo immediately (pcall-guarded; one dispatch per
-  airframe; `autoonoff` still applies). **The G9 dispatch re-fly PASSED 2026-06-28 (audience pass, user verdict "good").** **v1 limitations (still open):** AICSAR auto-rescues do
-  **not** yet credit the spare-pilot scoring (it spawns an anonymous pilot clone, losing the
-  original unit name); and a player ejecting from a fixed-wing with no human helo up is
-  double-handled by both engines (cosmetic double-spawn).
+  `heloTemplate` (the first rescue flight's group, used as the clone-fallback template) and `farp`
+  (that flight's departure field). **The AI rescue runs in the plugin's own survivor ledger, not
+  MOOSE `AICSAR`/`CSAR`** (the 2026-06-26 playtest confirmed MOOSE CSAR's `enableForAI` only
+  *tracks* AI ejections and never flies a helo — "Jolly Green flew a racetrack and did nothing").
+  `combatsar-config.lua` registers every AI/player ejection through an **ejection bridge**
+  (`world.addEventHandler` on `S_EVENT_EJECTION`, pcall-guarded, one survivor per airframe) — so a
+  shoot-down dispatches immediately rather than waiting on the unreliable
+  `S_EVENT_LANDING_AFTER_EJECTION` (the G9 fix). After `AI_DISPATCH_DELAY` grace (lets a player or
+  on-station crew react), `dispatchAIRescue` flies a helo via MOOSE `OPSTRANSPORT` to board the
+  ledger's survivor as cargo and deliver it to the FARP, **crediting the real unit** on unload
+  (`OnAfterUnloaded` → `combat_sar_rescues`; no anonymous clone — identity lives in the ledger
+  entry, so AI rescues score the spare-pilot credit too).
+- **Commandeer-first dispatch (2026-06-29, G9b fix).** `dispatchAIRescue` used to **always** clone a
+  fresh helo (`SPAWN:NewWithAlias("CombatSAR Rescue N", …)`) from the FARP, so every AI ejection
+  piled a new helo on top of the rescue flight already orbiting the FLOT (Tacview-confirmed: 8+
+  `CombatSAR Rescue N` clones spawned co-located with the idle `Front line … Combat SAR` helos).
+  It now **commandeers the nearest alive, idle, AI-crewed rescue helo** already in the mission
+  (`commandeerRescueHelo` over `cfg.rescueHelos`, wrapped in a `FLIGHTGROUP` + `AddOpsTransport`),
+  marks it busy, and frees it again on delivery so it can serve the next ejection; it only falls
+  back to cloning from `heloTemplate` when every planned rescue helo is dead or already committed.
+  Player-crewed helos are skipped (`groupHasPlayer`), so it never competes with a human's CSAR. The
+  live-group `FLIGHTGROUP` takeover of an orbiting AI flight **needs an in-game pass** (checklist
+  G9b). **The earlier G9 eject-dispatch re-fly PASSED 2026-06-28 (audience pass, user "good").**
+  **v1 limitation (still open):** a player ejecting from a fixed-wing with no human helo up can be
+  double-handled (cosmetic double-spawn).
 - **King beacon = TACAN only.** Each King lights an **air-tracking TACAN** (follows the
   moving orbit; every rescue helo we use has a receiver) — the single homing solution.
   An ADF radio beacon was **considered and dropped** (MOOSE's `RadioBeacon` is fixed-point

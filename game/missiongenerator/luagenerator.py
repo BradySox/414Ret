@@ -441,6 +441,14 @@ class LuaGenerator:
         """
         node.add_item("pilotTemplate").set_value(template_name)
         node.add_item("enableForAI").set_value("true" if enable_for_ai else "false")
+        # The enemy snatch party must spawn on the OPPOSING coalition. Emit that side's
+        # faction country (always registered on the enemy coalition in this .miz) so the
+        # plugin spawns it on the right side -- the old hardcoded CJTF_* constant is not
+        # registered when the factions use real/CH nations (e.g. Vietnam), which put the
+        # snatch party on the wrong coalition.
+        node.add_item("enemyCountry").set_value(
+            str(coalition.opponent.faction.country.id)
+        )
         node.add_item("rescueHelos").set_data_array(
             [flight.group_name for flight in rescue_flights]
         )

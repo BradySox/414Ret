@@ -32,6 +32,7 @@ Design (see PR discussion):
 from __future__ import annotations
 
 import logging
+import math
 import random
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Sequence, Type
@@ -41,11 +42,21 @@ from dcs.mapping import Point
 from dcs.mission import StartType
 from dcs.planes import An_26B, An_30M, C_130, Yak_52
 from dcs.task import OptROE, SetInvisibleCommand
-from dcs.unittype import FlyingType
+from dcs.unittype import FlyingType, ShipType
+
+from pydcs_extensions.vietnamwarvessels.vietnamwarvessels import (
+    vwv_junk,
+    vwv_sampan_canopy,
+    vwv_sampan_covered,
+    vwv_sampan_covered_ak47,
+    vwv_sampan_open,
+    vwv_sampan_open_box,
+)
 
 if TYPE_CHECKING:
     from dcs.country import Country
     from dcs.mission import Mission
+    from game.factions.faction import Faction
     from game.game import Game
 
 # ── Routing knobs ─────────────────────────────────────────────────────────────
@@ -78,6 +89,25 @@ _PROFILE: dict[Type[FlyingType], tuple[int, int, bool]] = {
 FW_TYPES: tuple[Type[FlyingType], ...] = (C_130, An_26B, An_30M, Yak_52)
 HELO_TYPES: tuple[Type[FlyingType], ...] = (Mi_8MT, UH_1H, SA342M)
 
+# ── Naval civilian traffic (Sampans/Junks) ──────────────────────────────────────
+# Only spawned when the campaign's faction requirements call for Vietnam War Vessels
+# (see _faction_requires_vwv) -- these hulls don't exist outside that mod. Real-world
+# top speed for both hull families is ~1-2 m/s, so unlike the air milk runs these never
+# leave the immediate vicinity of their anchor; a tight loiter near a known-water point
+# (a carrier/LHA control point) is realistic and avoids needing real water pathfinding.
+NAVAL_TYPES: tuple[Type[ShipType], ...] = (
+    vwv_junk,
+    vwv_sampan_open,
+    vwv_sampan_canopy,
+    vwv_sampan_covered,
+    vwv_sampan_covered_ak47,
+    vwv_sampan_open_box,
+)
+NAVAL_SPEED_MS = 1.5  # matches the mod's own ~1-2 m/s hull speeds
+NAVAL_LOITER_RADIUS_M = 1_500  # tight loiter around the anchor
+NAVAL_LOITER_LEGS = 3  # waypoints in the loiter chain, excluding the anchor itself
+NAVAL_PER_ANCHOR = (1, 2)  # min/max boats spawned per coastal anchor
+
 
 @dataclass(frozen=True)
 class _Field:
@@ -100,6 +130,11 @@ class CivilianRoute:
     radio_alt: bool
     start_time_s: int
     is_helo: bool
+
+
+def _neutral_country(mission: "Mission") -> "Optional[Country]":
+    countries = list(mission.coalition["neutrals"].countries.values())
+    return countries[0] if countries else None
 
 
 def _dist2(a: Point, b: Point) -> float:
@@ -174,6 +209,26 @@ def build_chain(
         chain.append(nxt)
         previous, current = current, nxt
     return tuple(chain)
+
+
+def loiter_chain(
+    anchor: Point, radius_m: float, n_legs: int, rng: random.Random
+) -> tuple[Point, ...]:
+    """A small, irregular loop of points around ``anchor``, each leg within
+    ``radius_m``, for slow ambient traffic that never strays far from its anchor."""
+    base_angle = rng.uniform(0, 2 * math.pi)
+    points = []
+    for i in range(n_legs):
+        angle = base_angle + i * (2 * math.pi / n_legs) + rng.uniform(-0.3, 0.3)
+        r = radius_m * rng.uniform(0.4, 1.0)
+        points.append(
+            Point(
+                anchor.x + r * math.cos(angle),
+                anchor.y + r * math.sin(angle),
+                anchor._terrain,
+            )
+        )
+    return tuple(points)
 
 
 def plan_routes(
@@ -261,8 +316,7 @@ class CivilianTrafficGenerator:
         return fields
 
     def _neutral_country(self) -> "Optional[Country]":
-        countries = list(self.mission.coalition["neutrals"].countries.values())
-        return countries[0] if countries else None
+        return _neutral_country(self.mission)
 
     def generate(self) -> None:
         country = self._neutral_country()
@@ -330,5 +384,98 @@ class CivilianTrafficGenerator:
             group.points[0].tasks.append(SetInvisibleCommand(True))
         except Exception:  # pragma: no cover - defensive; never block generation
             logging.exception("Failed to spawn civilian flight %s", name)
+            return False
+        return True
+
+
+def _faction_requires_vwv(faction: "Faction") -> bool:
+    return any("vietnam war vessels" in key.lower() for key in faction.requirements)
+
+
+@dataclass(frozen=True)
+class NavalRoute:
+    """One planned ambient boat: a slow loiter loop around a coastal anchor."""
+
+    ship_type: Type[ShipType]
+    chain: tuple[Point, ...]
+
+
+class NavalCivilianTrafficGenerator:
+    """Plans and spawns ambient Sampans/Junks near coastal control points.
+
+    Only runs when a faction's requirements call for Vietnam War Vessels -- these hulls
+    are mod-only and otherwise unavailable. See ``CivilianTrafficGenerator`` for the air
+    traffic layer this complements.
+    """
+
+    def __init__(
+        self, mission: Mission, game: Game, rng: Optional[random.Random] = None
+    ) -> None:
+        self.mission = mission
+        self.game = game
+        self.rng = rng or random.Random()
+
+    def _vwv_available(self) -> bool:
+        return _faction_requires_vwv(self.game.blue.faction) or _faction_requires_vwv(
+            self.game.red.faction
+        )
+
+    def coastal_anchors(self) -> list[Point]:
+        """Carrier/LHA control points: the only theater positions guaranteed to be
+        navigable water, so no separate water-pathfinding is needed."""
+        return [
+            cp.position
+            for cp in self.game.theater.controlpoints
+            if cp.is_carrier or cp.is_lha
+        ]
+
+    def generate(self) -> None:
+        if not self._vwv_available():
+            return
+
+        country = _neutral_country(self.mission)
+        if country is None:
+            logging.warning(
+                "No neutral country available — skipping naval civilian traffic"
+            )
+            return
+
+        anchors = self.coastal_anchors()
+        routes: list[NavalRoute] = []
+        for anchor in anchors:
+            count = self.rng.randint(*NAVAL_PER_ANCHOR)
+            for _ in range(count):
+                ship_type = self.rng.choice(NAVAL_TYPES)
+                chain = loiter_chain(
+                    anchor, NAVAL_LOITER_RADIUS_M, NAVAL_LOITER_LEGS, self.rng
+                )
+                routes.append(NavalRoute(ship_type=ship_type, chain=chain))
+
+        spawned = sum(
+            1 for idx, route in enumerate(routes) if self._spawn(country, idx, route)
+        )
+        logging.info(
+            "Naval civilian traffic: %d boats near %d coastal anchor(s)",
+            spawned,
+            len(anchors),
+        )
+
+    def _spawn(self, country: "Country", idx: int, route: NavalRoute) -> bool:
+        name = f"CIV_{route.ship_type.id}_{idx}"
+        try:
+            group = self.mission.ship_group(
+                country=country,
+                name=name,
+                _type=route.ship_type,
+                position=route.chain[0],
+                group_size=1,
+            )
+            for point in route.chain[1:]:
+                group.add_waypoint(point, NAVAL_SPEED_MS)
+
+            group.points[0].tasks.append(OptROE(OptROE.Values.WeaponHold))
+            group.points[0].tasks.append(SetInvisibleCommand(True))
+        except Exception:  # pragma: no cover - defensive; never block generation
+            logging.exception("Failed to spawn naval civilian traffic %s", name)
             return False
         return True

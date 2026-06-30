@@ -274,9 +274,13 @@ class MissionGenerator:
             tgo_generator.runways,
         )
         aircraft_generator.spawn_intercept_templates()
-        from game.missiongenerator.civiliantraffic import CivilianTrafficGenerator
+        from game.missiongenerator.civiliantraffic import (
+            CivilianTrafficGenerator,
+            NavalCivilianTrafficGenerator,
+        )
 
         CivilianTrafficGenerator(self.mission, self.game).generate()
+        NavalCivilianTrafficGenerator(self.mission, self.game).generate()
 
         from game.missiongenerator.basedamage import BaseDamageGenerator
 

@@ -59,9 +59,14 @@
             "defaultValue": 30
         },
         {
-            "nameInUI": "Capture race: number of infantry in the enemy snatch party",
+            "nameInUI": "Capture race: total infantry in the enemy snatch party (split across the teams below)",
             "mnemonic": "capturePartySize",
             "defaultValue": 5
+        },
+        {
+            "nameInUI": "Capture race: number of dispersed snatch teams (small groups converging from different bearings)",
+            "mnemonic": "captureTeams",
+            "defaultValue": 3
         }
     ],
     "scriptsWorkOrders": [],

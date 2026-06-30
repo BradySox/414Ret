@@ -50,7 +50,8 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         spawnDistance = 4000,
         captureRange = 150,
         captureDwell = 30,
-        partySize = 5,
+        partySize = 5,    -- total infantry, split across `teams` small groups
+        teams = 3,        -- spawn this many dispersed teams instead of one column
     }
 
     if dcsRetribution.plugins and dcsRetribution.plugins.combatsar then
@@ -67,6 +68,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         if o.captureRange ~= nil then capture.captureRange = tonumber(o.captureRange) or capture.captureRange end
         if o.captureDwell ~= nil then capture.captureDwell = tonumber(o.captureDwell) or capture.captureDwell end
         if o.capturePartySize ~= nil then capture.partySize = tonumber(o.capturePartySize) or capture.partySize end
+        if o.captureTeams ~= nil then capture.teams = tonumber(o.captureTeams) or capture.teams end
     end
 
     ---------------------------------------------------------------------------
@@ -89,7 +91,11 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             color = color,
             side = side,
             enemySide = enemySide,
-            enemyCountry = enemyCountry,
+            -- Prefer the generator-emitted enemy faction country (always registered on
+            -- the enemy coalition in this .miz); the CJTF_* constant is only a fallback
+            -- for older saves -- it is NOT registered when the factions use real/CH
+            -- nations (e.g. Vietnam), which spawned the snatch party on the wrong side.
+            enemyCountry = tonumber(c.enemyCountry) or enemyCountry,
             pilotTemplate = c.pilotTemplate,
             rescueHelos = helos,
             heloTemplate = c.heloTemplate,
@@ -228,15 +234,14 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             .. "A recovery may be possible on a later turn.")
     end
 
-    -- Spawn the OPPOSING coalition's snatch party spawnDistance from the survivor, routed in.
-    local function spawnSnatchParty(cfg, survivorCoord)
+    -- Spawn one small snatch team (a single ground group) of `size` soldiers at `teamCoord`,
+    -- routed to converge on the survivor. Returns the spawned group name, or nil on failure.
+    local function spawnSnatchTeam(cfg, teamCoord, sv, size)
         snatchCounter = snatchCounter + 1
         local gname = string.format("CSAR Snatch Party %d", snatchCounter)
-        local spawnCoord = survivorCoord:Translate(capture.spawnDistance, math.random(0, 359))
-        local sp = spawnCoord:GetVec2()
-        local sv = survivorCoord:GetVec2()
+        local sp = teamCoord:GetVec2()
         local units = {}
-        for i = 1, math.max(1, capture.partySize) do
+        for i = 1, math.max(1, size) do
             units[i] = {
                 ["type"] = "Soldier AK",  -- vanilla DCS infantry
                 ["name"] = string.format("%s U%d", gname, i),
@@ -266,20 +271,80 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         }
         local ok, spawned = pcall(mist.dynAdd, group_data)
         if not ok or not spawned then
-            env.warning("combatsar: snatch-party spawn failed: " .. tostring(spawned))
+            env.warning("combatsar: snatch-team spawn failed: " .. tostring(spawned))
             return nil
         end
         pcall(trigger.action.smoke, { x = sp.x, y = 0, z = sp.y }, trigger.smokeColor.Red)
         return spawned.name or gname
     end
 
-    -- AI auto-rescue: reuse MOOSE OPSTRANSPORT (the proven AICSAR routing) to fly a helo out,
-    -- board the LEDGER's survivor group as cargo, and deliver it to the FARP -- crediting the
-    -- real unit on unload. No anonymous clone: identity lives in the ledger entry.
+    -- Spawn the OPPOSING coalition's snatch party: several small teams ringed around the
+    -- survivor at spawnDistance on different bearings, each routed in. Returns the list of
+    -- spawned group names (nil if none spawned) -- one long marching column reads as a single
+    -- target, so disperse the same total infantry into independent fire teams.
+    local function spawnSnatchParty(cfg, survivorCoord)
+        local total = math.max(1, capture.partySize)
+        local teams = math.max(1, math.min(math.floor(capture.teams), total))
+        local sv = survivorCoord:GetVec2()
+        local baseBearing = math.random(0, 359)
+        local names = {}
+        local remaining = total
+        for t = 1, teams do
+            -- Even split of the remaining soldiers across the remaining teams.
+            local size = math.ceil(remaining / (teams - t + 1))
+            remaining = remaining - size
+            local bearing = (baseBearing + (t - 1) * (360 / teams) + math.random(-20, 20)) % 360
+            local teamCoord = survivorCoord:Translate(capture.spawnDistance, bearing)
+            local name = spawnSnatchTeam(cfg, teamCoord, sv, size)
+            if name then names[#names + 1] = name end
+        end
+        if #names == 0 then return nil end
+        return names
+    end
+
+    -- Rescue helos currently committed to a survivor, so two ejections don't grab the same one and
+    -- we don't re-task a helo already mid-rescue. Freed again when its survivor is delivered.
+    local busyHelos = {}
+
+    -- True if any unit in the group is player-crewed (never commandeer a human's helo).
+    local function groupHasPlayer(g)
+        local ok, units = pcall(function() return g:GetUnits() end)
+        if not ok or not units then return false end
+        for _, u in ipairs(units) do
+            local okn, name = pcall(function() return u:GetPlayerName() end)
+            if okn and name and name ~= "" then return true end
+        end
+        return false
+    end
+
+    -- Find the nearest alive, idle, AI rescue helo ALREADY in the mission (the planned Combat SAR
+    -- flight orbiting the FLOT) to commandeer for this pickup, rather than spawning a fresh clone.
+    local function commandeerRescueHelo(cfg, survivorCoord)
+        local best, bestName, bestD = nil, nil, nil
+        for _, name in ipairs(cfg.rescueHelos or {}) do
+            if not busyHelos[name] then
+                local g = GROUP:FindByName(name)
+                if g and g:IsAlive() and not groupHasPlayer(g) then
+                    local u = g:GetUnit(1)
+                    local c = u and u:IsAlive() and u:GetCoordinate()
+                    if c and survivorCoord then
+                        local d = c:Get2DDistance(survivorCoord)
+                        if not bestD or d < bestD then best, bestName, bestD = g, name, d end
+                    end
+                end
+            end
+        end
+        return best, bestName
+    end
+
+    -- AI auto-rescue: send a helo to board the LEDGER's survivor as cargo (MOOSE OPSTRANSPORT, the
+    -- proven AICSAR routing) and deliver it to the FARP, crediting the real unit on unload. PREFER to
+    -- commandeer a rescue helo already flying the Combat SAR orbit; only clone a fresh one from the
+    -- FARP when every planned rescue helo is dead or already committed. Identity lives in the ledger.
     local function dispatchAIRescue(entry)
         local ok, err = pcall(function()
             local cfg = entry.cfg
-            if not cfg.heloTemplate or not cfg.farp then return end
+            if not cfg.farp then return end
             if not (entry.group and entry.group:IsAlive()) then return end
             local farp = AIRBASE:FindByName(cfg.farp)
             if not farp then
@@ -288,27 +353,48 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             end
             local pickupzone = ZONE_GROUP:New(entry.groupName, entry.group, 300)
             local opstransport = OPSTRANSPORT:New(entry.group, pickupzone, farp:GetZone())
-            spawnIndex = spawnIndex + 1
-            local newhelo = SPAWN:NewWithAlias(cfg.heloTemplate, string.format("CombatSAR Rescue %d", spawnIndex))
-                :InitUnControlled(true)
-                :InitDelayOff()
-                :Spawn()
-            if not newhelo then return end
-            local fg = FLIGHTGROUP:New(newhelo)
+
+            local helo, heloName = commandeerRescueHelo(cfg, entry.group:GetCoordinate())
+            local fg
+            local commandeered = false
+            if helo then
+                fg = FLIGHTGROUP:New(helo)
+                busyHelos[heloName] = true
+                commandeered = true
+            elseif cfg.heloTemplate then
+                spawnIndex = spawnIndex + 1
+                heloName = string.format("CombatSAR Rescue %d", spawnIndex)
+                local newhelo = SPAWN:NewWithAlias(cfg.heloTemplate, heloName)
+                    :InitUnControlled(true)
+                    :InitDelayOff()
+                    :Spawn()
+                if not newhelo then return end
+                fg = FLIGHTGROUP:New(newhelo)
+                fg:Activate()
+                heloName = newhelo:GetName()
+            else
+                return  -- nothing alive to commandeer and no template to clone
+            end
             fg:SetHomebase(farp)
-            fg:Activate()
             fg:SetDefaultAltitude(1500)
             fg:SetDefaultSpeed(100)
             fg:AddOpsTransport(opstransport)
             entry.aiManaged = true
-            entry.heloName = newhelo:GetName()
-            -- Credit when the survivor cargo is unloaded at the FARP.
+            entry.heloName = heloName
+            -- Credit when the survivor cargo is unloaded at the FARP; release a commandeered helo
+            -- so it can serve a later ejection instead of forcing a fresh clone every time.
             function fg:OnAfterUnloaded(_From, _Event, _To, _OpsGroupCargo)
                 if entry.state ~= "rescued" and entry.state ~= "captured" then
                     creditRescue(entry)
                 end
+                if commandeered and heloName then busyHelos[heloName] = nil end
             end
-            msgToCoalition(entry.side, "RESCUE: an AI helo has launched for the downed pilot.")
+            if commandeered then
+                msgToCoalition(entry.side,
+                    "RESCUE: a Combat SAR helo on station is diverting to the downed pilot.")
+            else
+                msgToCoalition(entry.side, "RESCUE: an AI helo has launched for the downed pilot.")
+            end
         end)
         if not ok then
             env.warning("combatsar: AI dispatch error (continuing): " .. tostring(err))
@@ -375,9 +461,17 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     end
 
     -- Advance (or stand down) the capture clock for a survivor with an active snatch party.
+    -- entry.party is a list of team group names; the party is neutralized only when every
+    -- team is dead, and any one surviving team holding on the pilot runs the capture clock.
     local function advanceCapture(entry)
-        local party = entry.party and GROUP:FindByName(entry.party)
-        if not (party and party:IsAlive()) then
+        local alive = {}
+        if entry.party then
+            for _, gname in ipairs(entry.party) do
+                local g = GROUP:FindByName(gname)
+                if g and g:IsAlive() then alive[#alive + 1] = g end
+            end
+        end
+        if #alive == 0 then
             if entry.party then
                 msgToCoalition(entry.side, "Capture party neutralized -- the downed pilot is safe. "
                     .. "Continue the recovery.")
@@ -387,15 +481,26 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             return
         end
         local pu = entry.group and entry.group:GetUnit(1)
-        local gu = party:GetUnit(1)
         local pc = pu and pu:GetCoordinate()
-        local gc = gu and gu:GetCoordinate()
-        if pc and gc and gc:Get2DDistance(pc) <= capture.captureRange then
+        local inRange = false
+        if pc then
+            for _, g in ipairs(alive) do
+                local gu = g:GetUnit(1)
+                local gc = gu and gu:GetCoordinate()
+                if gc and gc:Get2DDistance(pc) <= capture.captureRange then
+                    inRange = true
+                    break
+                end
+            end
+        end
+        if inRange then
             entry.dwell = (entry.dwell or 0) + POLL
             if entry.dwell >= capture.captureDwell then
                 recordCapture(entry)
                 pcall(function() entry.group:Destroy() end)
-                pcall(function() party:Destroy() end)
+                for _, g in ipairs(alive) do
+                    pcall(function() g:Destroy() end)
+                end
                 entry.party = nil
             end
         else

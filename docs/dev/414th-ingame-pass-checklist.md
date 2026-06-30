@@ -1062,6 +1062,60 @@ so the two docs don't drift.
   bombing tasks; the AI flies an aborting attack pattern and never crosses the target; or the
   overflight produces no BDA confirmation.
 
+### G20 — Combat SAR enemy snatch party (correct coalition + dispersed teams) · §15 · ☐ UNTESTED (fix applied 2026-06-29 — was spawning on the wrong side as one column)
+- **Bug (user report, 2026-06-29, screenshot):** the capture-race snatch party rendered on the map as
+  **friendly/green** (wrong coalition) and as **one long marching column** ("AK74" line) rather than
+  enemy ground forces. Root cause: the `combatsar` plugin hardcoded `country.id.CJTF_RED`/`CJTF_BLUE`
+  for the enemy ground spawn, but in a Vietnam/CH-faction `.miz` those CJTF countries are **not
+  registered** on either coalition (the factions use real/CH nations), so `coalition.addGroup` placed
+  the party on the wrong side; and all `partySize` soldiers spawned as a single group routed on one
+  waypoint, forming a column.
+- **Fix (2026-06-29):** Python now emits `enemyCountry` = the opposing side's faction country id
+  (`coalition.opponent.faction.country.id`, always registered on the enemy coalition) and the plugin
+  spawns the party under it (CJTF constant kept only as a fallback). `spawnSnatchParty` now spawns
+  **several small teams** (`captureTeams`, default 3) ringed around the survivor on different bearings,
+  each its own group converging independently; `advanceCapture` tracks the list (neutralized only when
+  every team is dead; any team holding on the pilot runs the capture clock). Lua syntax read-checked;
+  Black/mypy/pytest green.
+- **Setup:** A campaign whose factions use **real/CH nations** (e.g. Khe Sanh / a Vietnam Ops
+  campaign), `captureEnabled` on. Eject a blue pilot near the FLOT and let the capture roll hit.
+- **Pass:** The snatch party shows **RED/enemy** on the F10 map (not green) and appears as **3 small
+  dispersed teams** converging from different directions (not one column). Killing all teams clears the
+  capture (`Capture party neutralized` cue); letting one team dwell on the survivor still results in
+  `CAPTURED` → POW.
+- **Fail signature:** snatch party still friendly/neutral-coloured (the `enemyCountry` emit didn't
+  reach the plugin, or `addGroup` fell back to an unregistered CJTF country — check the emitted
+  `dcsRetribution.CombatSAR(.red).enemyCountry`); still one long column (teams not splitting); or the
+  capture never fires because `advanceCapture` lost track of the multi-group party (all teams reported
+  dead while alive).
+
+### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ☐ UNTESTED (fix applied 2026-06-29 — was always cloning a fresh helo)
+- **Bug (user report + Tacview, 2026-06-29):** with `auto_combat_sar` on, every AI ejection made
+  `dispatchAIRescue` clone a brand-new `CombatSAR Rescue N` helo from the FARP instead of using the
+  Combat SAR flight already orbiting the FLOT. Tacview from `…retribution_nextturn` shows 8+
+  `CombatSAR Rescue N` CH-53E/Mi-8 clones spawned **co-located with** the idle
+  `Front line … Combat SAR` helos at the same field — "the AI prefers to spawn a group instead of
+  commandeering the ones already on the front lines."
+- **Fix (2026-06-29):** `dispatchAIRescue` now calls `commandeerRescueHelo` first — picks the nearest
+  alive, idle, **AI-crewed** rescue helo from `cfg.rescueHelos` (skips player-crewed via
+  `groupHasPlayer`), wraps it in a `FLIGHTGROUP`, `AddOpsTransport`s the survivor pickup, marks it
+  busy (`busyHelos`), and frees it on delivery so it cycles to the next ejection. It only clones a
+  fresh `CombatSAR Rescue N` from `heloTemplate` when every planned rescue helo is dead or already
+  committed. Lua syntax read-checked.
+- **Setup:** Khe Sanh / any campaign with `auto_combat_sar` on so a COMBAT_SAR helo orbits the FLOT.
+  Down several AI pilots near the front over a few minutes and watch the rescue dispatch (Tacview).
+- **Pass:** When a pilot ejects, an **already-orbiting** `Front line … Combat SAR` helo **diverts** to
+  the survivor (message "a Combat SAR helo on station is diverting…"), boards, and delivers to the
+  FARP — **no** new `CombatSAR Rescue N` clone appears while a planned helo is available. A fresh
+  clone only spawns once all orbiting rescue helos are dead/busy. The delivered pilot is spared at
+  debrief (G11).
+- **Fail signature:** a `CombatSAR Rescue N` clone still spawns while an idle `Front line … Combat SAR`
+  helo orbits (commandeer not firing — check `cfg.rescueHelos` is populated and `FLIGHTGROUP:New` on a
+  live AI group takes the OpsTransport); the commandeered helo never diverts / errors on takeover
+  (`combatsar: AI dispatch error` in `dcs.log` — the live-group `FLIGHTGROUP` wrap is the risk to
+  watch); a human's rescue helo gets hijacked by the AI (the `groupHasPlayer` guard failed); or a
+  helo stays stuck `busy` and never serves a later ejection (free-on-`OnAfterUnloaded` not firing).
+
 ---
 
 ## H. Kneeboards

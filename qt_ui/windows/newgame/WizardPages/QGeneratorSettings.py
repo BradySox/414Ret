@@ -140,7 +140,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
                 self.iranmilitaryassetspack,
             ),
             (
-                "CurrentHill Russian Military Assets pack (2.0.0)",
+                "CurrentHill Russian Military Assets pack (2.0.1)",
                 self.russianmilitaryassetspack,
             ),
             (
@@ -162,9 +162,9 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             ("F-22A Raptor (v2.0.0 released May 2025)", self.f22_raptor),
             ("F-111C Aardvark (Warpig Production v2.260208)", self.f111c),
             ("High Digit SAMs (v1.4.0)", self.high_digit_sams),
-            ("OH-6 Vietnam Asset Pack (v1.0)", self.oh_6_vietnamassetpack),
+            ("OH-6 Vietnam Asset Pack (v1.2)", self.oh_6_vietnamassetpack),
             ("OV-10A Bronco", self.ov10a_bronco),
-            ("Vietnam War Vessels (v3.0.0 by TeTeT)", self.vietnamwarvessels),
+            ("Vietnam War Vessels (v3.2.0 by TeTeT)", self.vietnamwarvessels),
             ("CJS FA-18E/F/G Super Hornet (v2.4)", self.fa_18efg),
             ("CJS FA-18E/F Super Hornet Tanker (v2.4)", self.fa18ef_tanker),
         ]

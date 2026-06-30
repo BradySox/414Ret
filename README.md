@@ -219,8 +219,9 @@ and selected later upstream fixes.
   on an F10 map marker from the radio menu, or let the ships bombard enemy coastal positions
   automatically. The fourth is **convoy interdiction (Steel Tiger)**: a moving enemy truck column rolls
   the supply road behind the front (the Ho Chi Minh Trail), hunt it down on an Armed Recon — it goes to
-  ground under cover when you close in, and a fresh column rolls once the old one is wiped. (Hilltop
-  resupply is still on the way.) See
+  ground under cover when you close in, and a fresh column rolls once the old one is wiped. **Right-click
+  an enemy supply route** on the map to frag the interdiction package straight onto that corridor.
+  (Hilltop resupply is still on the way.) See
   [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md).
 - A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 NATO
   counteroffensive, built for the 414th. The Warsaw Pact opened the war by overrunning the

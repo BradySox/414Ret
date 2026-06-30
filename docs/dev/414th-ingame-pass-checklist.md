@@ -1670,6 +1670,20 @@ so the two docs don't drift.
   the column never moves or never halts (`setOnOff`/route wrong); spams respawns; `coalition.addGroup` Lua
   error in `dcs.log`. Tune speed/scatter-range/respawn/truck-count via the plugin options.
 
+### L7 — Right-click supply-route interdiction · §35 · ☐ UNTESTED (server resolution test-covered; the right-click → Qt dialog path needs an in-app pass)
+- **Headless adjudication:** `interdiction_target_for_route_id` is unit-tested
+  (`tests/server/test_supply_route_interdiction.py` — resolves the `"<cp_a_id>:<cp_b_id>"` route id to the
+  enemy end, prefers the contested CP, returns None for a friendly/malformed route). The **client
+  right-click → `POST /qt/create-package/supply-route/{id}` → Qt package dialog** path is React/Qt and can't
+  be exercised headless.
+- **Setup:** Load any campaign with a visible enemy supply route (enable the Supply Routes map layer).
+- **Pass:** right-clicking an **enemy** supply route opens the new-package dialog targeting the road's enemy
+  end; pick **Armed Recon** and it frags. Right-clicking a fully-**friendly** route does nothing (server 404,
+  no dialog).
+- **Fail signature:** right-click does nothing on an enemy route (the hand-added
+  `useOpenNewSupplyRoutePackageDialogMutation` hook or the `contextmenu` handler is wrong); a JS error in the
+  client console; the dialog opens on the wrong CP. Needs the CI client rebuild (hand-edited generated API).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

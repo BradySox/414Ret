@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from game import Game
 from ..dependencies import GameContext, QtCallbacks, QtContext
+from ..supplyroutes.models import interdiction_target_for_route_id
 
 router: APIRouter = APIRouter(prefix="/qt")
 
@@ -65,6 +66,27 @@ def new_cp_package(
             detail=f"Game has no control point with ID {cp_id}",
         )
     qt.create_new_package(cp)
+
+
+@router.post(
+    "/create-package/supply-route/{route_id}",
+    operation_id="open_new_supply_route_package_dialog",
+    status_code=status.HTTP_200_OK,
+)
+def new_supply_route_package(
+    route_id: str,
+    game: Game = Depends(GameContext.require),
+    qt: QtCallbacks = Depends(QtContext.get),
+) -> None:
+    """Right-clicking an enemy supply route frags an interdiction package (an Armed
+    Recon corridor) against the road's enemy end -- the convoy's source/destination."""
+    target = interdiction_target_for_route_id(game, route_id)
+    if target is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"No interdictable enemy control point on supply route {route_id}",
+        )
+    qt.create_new_package(target)
 
 
 @router.post(

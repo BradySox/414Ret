@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
+from uuid import UUID
 
 from dcs import Point
 from pydantic import BaseModel
@@ -81,19 +82,11 @@ class SupplyRouteJs(BaseModel):
         else:
             blue = False
         return SupplyRouteJs(
-            # Although these are not persistent objects in the backend, the frontend
-            # needs unique IDs for anything that it will use in a list. That means that
-            # any data that we expose as a list most likely needs a unique ID. List
-            # indexes are **not** sufficient as IDs across game loads, as any indexes
-            # that persist between games will not be updated in the UI.
-            #
-            # Generating a UUID for these ephemeral objects is awkward, but does not
-            # cause any issues since the only thing the ID is used for is to
-            # disambiguate objects across save games.
-            #
+            # Unique, stable list key for the frontend, encoding the two control-point
+            # ids ("<cp_a_id>:<cp_b_id>") so the supply-route interdiction endpoint
+            # (game/server/qt/routes.py) can resolve the route back to its CPs.
             # https://reactjs.org/docs/lists-and-keys.html#keys
-            # https://github.com/dcs-liberation/dcs_liberation/issues/2167
-            id=f"{a}:{b}",
+            id=f"{a.id}:{b.id}",
             points=[p.latlng() for p in points],
             front_active=not sea and a.front_is_active(b),
             is_sea=sea,
@@ -128,3 +121,27 @@ class SupplyRouteJs(BaseModel):
                     )
                 )
         return routes
+
+
+def interdiction_target_for_route_id(
+    game: Game, route_id: str
+) -> Optional[ControlPoint]:
+    """Resolve a supply-route id ("<cp_a_id>:<cp_b_id>") to the enemy control point a
+    blue player would interdict: the red end of the road, preferring the contested end
+    (one feeding an active front) so the Armed Recon is fragged where the convoy runs.
+    Returns None for a malformed id or an all-friendly route (nothing to interdict).
+    """
+    parts = route_id.split(":")
+    if len(parts) != 2:
+        return None
+    try:
+        endpoints = [
+            game.theater.find_control_point_by_id(UUID(part)) for part in parts
+        ]
+    except (ValueError, KeyError):
+        return None
+    enemy = [cp for cp in endpoints if not cp.captured.is_blue]
+    if not enemy:
+        return None
+    enemy.sort(key=lambda cp: 0 if cp.has_active_frontline else 1)
+    return enemy[0]

@@ -126,6 +126,15 @@ const injectedRtkApi = api.injectEndpoints({
         method: "POST",
       }),
     }),
+    openNewSupplyRoutePackageDialog: build.mutation<
+      OpenNewSupplyRoutePackageDialogApiResponse,
+      OpenNewSupplyRoutePackageDialogApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/qt/create-package/supply-route/${queryArg.routeId}`,
+        method: "POST",
+      }),
+    }),
     openNewTgoPackageDialog: build.mutation<
       OpenNewTgoPackageDialogApiResponse,
       OpenNewTgoPackageDialogApiArg
@@ -343,6 +352,11 @@ export type OpenNewFrontLinePackageDialogApiResponse =
   /** status 200 Successful Response */ any;
 export type OpenNewFrontLinePackageDialogApiArg = {
   frontLineId: string;
+};
+export type OpenNewSupplyRoutePackageDialogApiResponse =
+  /** status 200 Successful Response */ any;
+export type OpenNewSupplyRoutePackageDialogApiArg = {
+  routeId: string;
 };
 export type OpenNewTgoPackageDialogApiResponse =
   /** status 200 Successful Response */ any;
@@ -609,6 +623,7 @@ export const {
   useGetThreatZonesQuery,
   useGetNavmeshQuery,
   useOpenNewFrontLinePackageDialogMutation,
+  useOpenNewSupplyRoutePackageDialogMutation,
   useOpenNewTgoPackageDialogMutation,
   useOpenTgoInfoDialogMutation,
   useOpenNewControlPointPackageDialogMutation,

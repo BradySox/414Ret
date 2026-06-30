@@ -152,10 +152,18 @@ lights at night). Tie the kill to **red logistics**: destroying the convoy dents
 corridor feeds (lean on the existing supply-route economy so the loss is real, not cosmetic).
 Models Steel Tiger / Ho Chi Minh Trail interdiction. Gated by `vietnam_convoy_interdiction`.
 
-**Open (UI/geometry):** exactly how the corridor is chosen and shown (nearest red supply route
-to the FLOT? a designated road segment? player-picked on the map?) — settle when speccing §D's
-own branch. The headline UX decision (Armed Recon corridor, not a new task or a right-click
-spawn) is locked.
+**UI (DONE — right-click to frag, per playtest):** the player **right-clicks an enemy supply route**
+on the map to frag the interdiction package. `SupplyRoute.tsx` gains a `contextmenu` handler →
+`POST /qt/create-package/supply-route/{route_id}` (`game/server/qt/routes.py`) →
+`interdiction_target_for_route_id` resolves the route to its enemy end (the contested one first) → the
+Qt package dialog opens there, where the player picks **Armed Recon**. The route id now encodes the
+two CP ids (`"<cp_a_id>:<cp_b_id>"`) so the endpoint can resolve it; a fully-friendly route 404s (no
+dialog). This **supersedes** the earlier "no right-click" stance — it's still an Armed Recon frag (not
+a new task or a runtime spawn), just made discoverable on the route itself. Client API hook is
+hand-added to the generated `_liberationApi.ts` (codegen unavailable here; matches what
+`regenerate-api` would emit). Test: `tests/server/test_supply_route_interdiction.py`; in-app pass L7.
+**Deferred:** pre-selecting Armed Recon in the dialog + an Armed Recon flight plan that patrols the
+exact road (today it frags against the enemy CP, not the road geometry).
 
 **DoD / in-game pass:** an Armed Recon corridor frag yields a moving convoy that reacts to being
 hunted; killing it registers a logistics hit at debrief; `dcs.log` clean.

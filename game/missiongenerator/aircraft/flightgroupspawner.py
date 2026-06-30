@@ -102,14 +102,21 @@ class FlightGroupSpawner:
         location, speed, and altitude based on their flight plan.
         """
         self._register_custom_callsign()
-        if (
-            self.flight.state.is_waiting_for_start
-            or self.flight.state.spawn_type is not StartType.IN_FLIGHT
-        ):
-            grp = self.generate_flight_at_departure()
-            self.flight.group_id = grp.id
-            return grp
-        grp = self.generate_mid_mission()
+        try:
+            if (
+                self.flight.state.is_waiting_for_start
+                or self.flight.state.spawn_type is not StartType.IN_FLIGHT
+            ):
+                grp = self.generate_flight_at_departure()
+            else:
+                grp = self.generate_mid_mission()
+        finally:
+            # Pull the role callsign back out of the shared country pool now that
+            # pydcs has stamped it onto THIS group. Left in, next_callsign_category()
+            # would randomly hand King/Jolly/Sandy/Toxic to unrelated auto-named
+            # flights of the same country/category (the reported "applied to all
+            # aircraft" bug).
+            self._deregister_custom_callsign()
         self.flight.group_id = grp.id
         return grp
 
@@ -127,6 +134,24 @@ class FlightGroupSpawner:
         pool = self.country.callsign.get(category)
         if pool is not None and callsign.name not in pool:
             pool.append(callsign.name)
+
+    def _deregister_custom_callsign(self) -> None:
+        """Undo :meth:`_register_custom_callsign`: remove the 414th role callsign
+        from the spawn country's shared pool once pydcs has assigned it to this
+        group. The group's own callsign is already written into each unit's
+        ``callsign_dict`` by ``_assign_callsign``, so pulling the name out of the
+        pool afterward leaves this flight untouched -- it only stops pydcs's
+        ``next_callsign_category`` (a ``random.choice`` over the pool) from handing
+        the role name to other auto-named flights of the same country/category.
+        Idempotent; a no-op for stock callsigns and for a category with no pool."""
+        callsign = self.flight.callsign
+        if callsign is None or callsign.name not in ROLE_CALLSIGNS:
+            return
+        category = self.flight.unit_type.dcs_unit_type.category
+        category = "Air" if category == "Interceptor" else category
+        pool = self.country.callsign.get(category)
+        if pool is not None and callsign.name in pool:
+            pool.remove(callsign.name)
 
     def create_idle_aircraft(self) -> Optional[FlyingGroup[Any]]:
         group = None

@@ -9,8 +9,8 @@ shape, not the specifics.*
 > **How to read this.** The phase logic, ORBAT, geography, and historical references are **real**
 > (from `khe_sanh_niagara.yaml` and the record of the siege). **Callsigns, frequencies, code words,
 > TOTs and exact target coordinates are illustrative** — marked *(ex.)* — they come from the mission
-> you generate each turn, not the campaign file. Khe Sanh is **dynamic**: the automated NVA ring
-> keeps pressing, so re-plan each turn off the live map and the SITREP. The arc mirrors the real
+> you generate each turn, not the campaign file. Khe Sanh is **dynamic**: the automated NVA Route 9
+> corridor keeps pressing, so re-plan each turn off the live map and the SITREP. The arc mirrors the real
 > opening: the 21 Jan bombardment, the early hill fights, and the 6–7 Feb Lang Vei armor assault.
 
 ---
@@ -28,7 +28,7 @@ MISSION #: 001      MC: COVEY LEAD (ex.)
 
 1. SITUATION
    Last turn (SITREP): campaign open — the ammo dump is hit, the base is encircled.
-   Siege now: ring tight around Kutaisi (0.25). Airlift is the only lifeline.
+   Siege now: the Route 9 front sits tight against Kutaisi (0.25). Airlift is the only lifeline.
    Enemy: hill artillery + AAA (Sukhumi); armor reported toward Lang Vei (Kobuleti);
           Co Roc guns range the base. No MiGs over the base; flak everywhere.
    Friendly: 26th Marines holding the hills (881S/861); airlift inbound.
@@ -86,7 +86,7 @@ MISSION #: 002      MC: COVEY LEAD (ex.)
 
 1. SITUATION
    Last turn (SITREP): [Turn 1 — perimeter held? airlift in? guns located?]
-   Siege now: ring holding; artillery still ranging the base from the hills + Co Roc.
+   Siege now: the Route 9 front is holding; artillery still ranging the base from the hills + Co Roc.
    Enemy: AAA on the Sukhumi hills; PT-76/T-54 staging toward Lang Vei (Kobuleti).
    Friendly: airlift continuing; recon up to map the guns and the armor.
 
@@ -130,8 +130,8 @@ MISSION #: 002      MC: COVEY LEAD (ex.)
 ## Turn 3 — Kill the Lang Vei armor *(Phase 2 opens)*
 
 **Intent:** destroy the PT-76/T-54 at Lang Vei before it can repeat history against a hill or the
-wire, keep pounding the artillery, and start nudging the Batumi front toward Kobuleti (Pegasus).
-(Historically: the night of 6–7 Feb, NVA armor overran Lang Vei — beat them to it.)
+wire, keep pounding the artillery, and start driving the Route 9 front back from the perimeter toward
+Senaki (Pegasus). (Historically: the night of 6–7 Feb, NVA armor overran Lang Vei — beat them to it.)
 
 ```
 ======================  KHE SANH — MISSION BRIEF  ======================
@@ -140,9 +140,9 @@ MISSION #: 003      MC: COVEY LEAD (ex.)
 
 1. SITUATION
    Last turn (SITREP): [Turn 2 — AAA degraded? artillery hit? armor fixed at Lang Vei?]
-   Siege now: ring holding; armor massed near Lang Vei (Kobuleti) — the danger.
+   Siege now: the Route 9 front is holding; armor massed at Lang Vei (Kobuleti) feeding the Senaki spearhead — the danger.
    Enemy: PT-76/T-54 at Lang Vei; residual hill AAA; Co Roc guns still firing.
-   Friendly: airlift steady; ground at Batumi ready to start the Pegasus push.
+   Friendly: airlift steady; the Khe Sanh perimeter ready to start the Pegasus push out along Route 9.
 
 2. MISSION
    "The Niagara package will destroy the Lang Vei armor and continue counter-battery strikes,
@@ -161,7 +161,7 @@ MISSION #: 003      MC: COVEY LEAD (ex.)
         - Medium-alt Rockeye deliveries; HObo suppresses the guns around the armor first.
         - Vary axis; Shilka -> mask + new axis; one pass when hot.
    d. Loadout: INTRUDER Rockeye-heavy; see role cards.
-   e. Success: armor destroyed; counter-battery continued; front starts up the Pegasus axis.
+   e. Success: armor destroyed; counter-battery continued; the Senaki front starts to yield up Route 9.
       Abort the armor strike if the FAC can't fix it / weather closes it — keep CAS + airlift.
 
 4. COORDINATION & COMMS   (ex.)
@@ -174,7 +174,7 @@ MISSION #: 003      MC: COVEY LEAD (ex.)
 6. CONTINGENCIES
    - Armor already moving on the wire (TIC): COVEY runs danger-close CAS to stop it first.
    - Weather closes Lang Vei: A-6E radar deliveries or slip the strike; keep counter-battery up.
-   - Front stalls: more BAI/CAS on the Kobuleti approach before pushing again.
+   - Front stalls: more BAI/CAS on the Senaki spearhead (and its Lang Vei/hill feeders) before pushing again.
 ========================================================================
 ```
 
@@ -184,10 +184,11 @@ MISSION #: 003      MC: COVEY LEAD (ex.)
 
 Per the [phase plan](khe-sanh-campaign-handbook.md#5--campaign-conops--the-phase-plan): finish
 **Phase 2** (clear the armor and the worst of the hill artillery), then run **Phase 3 — Operation
-Pegasus**: push the front from Batumi up Route 9 through **Kobuleti / Senaki** to **link up with
-Kutaisi** and break the siege, with CAS/BAI ahead of the advance, bridge interdiction behind the NVA,
-Arc Light on the divisional rear, and the airlift running until the road opens. (Historically:
-Pegasus, 1–14 April 1968 — the 1st Cavalry up Route 9, link-up 8 April.)
+Pegasus**: drive the **Senaki front** back off the Khe Sanh perimeter and **retake Senaki** to break
+the siege, then roll up the now-frontline feeder bases (**Lang Vei/Kobuleti**, the **hills/Sukhumi**) —
+with CAS/BAI ahead of the advance, bridge interdiction on the NVA supply spans, Arc Light on the
+divisional rear, and the airlift running until the road opens. (Historically: Pegasus, 1–14 April
+1968 — the 1st Cavalry up Route 9, link-up 8 April.)
 
 > Re-plan every turn off the **live map + SITREP**, not this script. The value is the *loop*: keep
 > the base fed → suppress the guns → kill the massed ground (armor, artillery, infantry) → push the

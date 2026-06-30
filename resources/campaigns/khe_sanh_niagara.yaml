@@ -27,11 +27,11 @@ performance: 2
 version: "10.8"
 advanced_iads: true
 
-# Besieged Khe Sanh: a depleted Kutaisi garrison pulls the siege fronts in close. The front
+# Besieged Khe Sanh: a depleted Kutaisi garrison pulls the siege front in close. The front
 # between two enemy CPs sits at strength_pct * route_length from the blue CP, so a weak blue
 # Kutaisi (vs full-strength NVA) starts the fight near the perimeter instead of at the route
-# midpoint. Tune 0..1 -- lower = tighter siege (~0.25 -> fronts ~7/13/28 km on the
-# Senaki/Kobuleti/Sukhumi axes; Sukhumi stays the outlier, its airfield is 136 km off).
+# midpoint. With the single Senaki->Kutaisi axis (see supply_routes), 0.25 holds the front
+# ~7 km off the wire. Tune 0..1 -- lower = tighter siege.
 control_point_strengths:
   Kutaisi: 0.25
 
@@ -187,30 +187,27 @@ squadrons:
       aircraft: [Mi-8MTV2 Hip]
       size: 4
 
-# --- Ground supply routes. Prettied to follow the coast/valleys (no more ruler-straight
-# lines across the sea) and routed THROUGH the destructible bridges, so cutting a span is a
-# visible interdiction of the road. Migrated from the .miz M-113 path groups to YAML; those
-# .miz route groups were deleted so routes aren't duplicated. Retribution draws straight
-# segments between waypoints (no pathfinding) and derives the front geometry from the route,
-# so every leg stays on land and progresses monotonically toward the destination CP. The
-# first/last waypoint snaps to the origin/destination control point.
+# --- Ground supply routes / front graph. A front line forms on every blue<->red connection
+# (the loader derives front geometry from these routes; no .miz M-113 groups). The siege is
+# a SINGLE axis: Senaki -> Kutaisi is the only blue<->red link, so it is the one front. The
+# other NVA bases (Sukhumi, Kobuleti) feed Senaki by red<->red road only -- they reinforce the
+# spearhead instead of opening fronts of their own, so all the NVA pressure funnels down Route 9
+# onto Kutaisi (Operation Pegasus axis). Every red leg is routed THROUGH the destructible
+# bridges, so cutting a span chokes the whole siege. Retribution draws straight segments between
+# waypoints (no pathfinding); first/last waypoint snaps to the origin/destination CP.
 supply_routes:
-  # Kutaisi -> Senaki  ("Thanh Hoa-Hanoi") -- crosses a Senaki (Rioni) bridge
+  # Senaki -> Kutaisi  (THE front; "Thanh Hoa-Hanoi") -- crosses the Senaki (Rioni) bridge
   - waypoints:
       - [-284887, 683859]
       - [-283471, 653818]
       - [-281782, 647279]
-  # Kutaisi -> Kobuleti  ("Vinh-Hai Pong") -- via the Poti/Senaki junction crossing
-  - waypoints:
-      - [-284887, 683859]
-      - [-286913, 650062]
-      - [-317962, 635633]
-  # Senaki -> Kobuleti  ("Don Hoi-Cambodia") -- crosses a Senaki bridge
+  # Kobuleti -> Senaki  (NVA rear feeds the spearhead; "Don Hoi-Cambodia") -- crosses a Senaki bridge
   - waypoints:
       - [-281782, 647279]
       - [-286455, 641207]
       - [-317962, 635633]
-  # Sukhumi -> Senaki  ("Da Nang-Senaki") -- coastal road, crosses the Sukhumi + a Senaki bridge
+  # Sukhumi -> Senaki  (NVA rear feeds the spearhead; "Da Nang-Senaki") -- coastal road,
+  # crosses the Sukhumi + a Senaki bridge
   - waypoints:
       - [-220592, 564392]
       - [-221759, 567877]
@@ -220,15 +217,6 @@ supply_routes:
       - [-255955, 630099]
       - [-286455, 641207]
       - [-281782, 647279]
-  # Kutaisi -> Sukhumi  ("Tanh Hoa Bridges-Tahn Hoa") -- coastal road, crosses the Sukhumi bridge
-  - waypoints:
-      - [-284887, 683859]
-      - [-255955, 630099]
-      - [-245024, 609789]
-      - [-234737, 590675]
-      - [-228734, 588409]  # coastal bend -- straightens the corner this leg was cutting
-      - [-221759, 567877]
-      - [-220592, 564392]
   # Kutaisi -> Hill 881S  (forward blue FOB; friendly link, airlift-supplied with Kutaisi)
   - waypoints:
       - [-284887, 683859]

@@ -48,8 +48,9 @@ NVA would seize. This is the field that must be kept alive by air alone — **Ku
 ![Tactical map of allied and enemy units in the Khe Sanh area, January 1968](img/khe-sanh/khe-sanh-units-jan1968.jpg)
 <sub>**Allied & enemy units, January 1968.** The **26th Marines** (1/26, 2/26, 3/26) hold the hill
 outposts and the base with the **ARVN 37th Rangers** (arrived 27 Jan), ringed by the **NVA 304th,
-325C, 320th and 95C** divisions and Route-9 approaches. *US Navy map (public domain).* The campaign's
-siege ring (red **Sukhumi / Senaki / Kobuleti** around blue **Kutaisi**) abstracts exactly this.</sub>
+325C, 320th and 95C** divisions and Route-9 approaches. *US Navy map (public domain).* The campaign
+abstracts this as a single Route 9 siege axis — red **Senaki** presses blue **Kutaisi**, fed from the
+NVA rear at **Sukhumi** (the hills) and **Kobuleti** (Lang Vei).</sub>
 
 ---
 

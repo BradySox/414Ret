@@ -310,8 +310,9 @@ viewers through ~15 call sites:
   re-pull of `/game`, whose `tgos`/`iads_network`/`threat_zones` are rebuilt through the (now
   short-circuiting) fog paths, so composition, rings, and hidden command posts appear — and
   re-hide when unchecked, because `TgoJs.all_in_game` re-applies the `hidden_on_player_map`
-  filter. Defaults off; the panel persists other layer choices to localStorage but deliberately
-  excludes the fog overview, so it is never restored on load.
+  filter. Defaults off; the panel persists other layer choices to the campaign save (and a
+  localStorage cache; see §18) but deliberately excludes the fog overview, so it is never
+  restored on load.
 - Note: it lives entirely in the React client, so it needs the rebuilt bundle — CI's
   `npm run build` ships it in the `latest` release. The Python chokepoints + the
   `/fog-of-war/reveal` endpoint are covered by the existing fog tests
@@ -1460,8 +1461,13 @@ dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `
   via `LayersControl.Overlay`, so the panel can group, theme, collapse, and preset freely.
 - **Collapsible groups** (Friendly & shared / Air defences / Enemy intel / Allied & flight
   plans / Threat zones / Navmesh & terrain). The advanced groups start collapsed so the list
-  stays short; group + layer + base-map choices persist to `localStorage`
-  (`fjg.mapLayers.v1` → bumped to `…v2`), except the fog overview (see §3).
+  stays short; group + layer + base-map choices persist to the **campaign save** (with a
+  `localStorage` cache, `fjg.mapLayers.v1` → bumped to `…v2`), except the fog overview (see §3).
+  The panel `GET`s `/game/map-layers` on mount (the save wins over the localStorage seed) and
+  `PUT`s the same blob back, debounced, on change; it is stored opaquely on
+  `Game.client_map_layers` (`game/game.py`, `__setstate__` defaults it for old saves) and
+  carried by the per-turn autosave, so choices survive turns and reopening the app (QtWebEngine
+  drops `localStorage` on reload). Server side: `game/server/game/routes.py` (`MapLayersJs`).
 - **Preset views** — Default / SEAD / Recon / Clean, plus a "Hide all overlays" button.
 - **Folded in the old top-left control**: threat zones render via the existing
   `ThreatZonesLayer` (+ `ThreatZoneFilter`) and navmesh via `NavMeshLayer` (both already raw);

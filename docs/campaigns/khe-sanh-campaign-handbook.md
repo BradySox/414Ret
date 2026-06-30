@@ -54,9 +54,9 @@ reference, and a phased campaign plan. Print it, fork it, scribble on it.*
 | **Date / setting** | 21 January 1968 — the siege of Khe Sanh; *Operation Niagara* air umbrella |
 | **Our side** | **USA 1970 Vietnam War** — Marine/Navy/USAF/Army air, the carriers on Yankee Station |
 | **Enemy** | **NVA 1970** — ground-heavy (armor + artillery + AAA), air-light (token guns-only MiG-17s) |
-| **Posture** | **Asymmetric.** Blue owns the air; red owns the ground and the initiative. Keep the base alive, then break the ring. |
+| **Posture** | **Asymmetric.** Blue owns the air; red owns the ground and the initiative. Keep the base alive, then break out along Route 9. |
 | **Economy skew** | Blue favoured — start $3000 / income ×1.5 vs red $1500 / ×1.2 (red's money feeds the ground) |
-| **Front reinforcements** | `automate_front_line_reinforcements: true` — the ring keeps pressing on its own |
+| **Front reinforcements** | `automate_front_line_reinforcements: true` — the NVA corridor keeps pressing on its own |
 | **Threat profile** | **Wall-to-wall AAA** (12.7–57 mm + radar Shilka), armor at Lang Vei, SA-2/SA-3 in depth. **No MANPADS** (none existed in 1968). |
 | **Difficulty cushions** | `invulnerable_player_pilots: true`, `player_skill: Excellent`, enemy `Average`, day-only missions |
 | **Module note** | Many airframes are modern stand-ins for the period type (AH-1W for AH-1G, A-6E for A-6A, F-4E for F-4B/C, CH-53E for CH-53) |
@@ -79,32 +79,39 @@ win by relieving Khe Sanh and rolling the NVA off the perimeter.
 
 | Vietnam | Caucasus CP | Side | Role |
 |---|---|---|---|
-| **Khe Sanh Combat Base** | **Kutaisi** | BLUE | the besieged base — encircled, air-only resupply (starts at **0.25 strength**) |
+| **Khe Sanh Combat Base** | **Kutaisi** | BLUE | the besieged base — air-only resupply, holds the one front (starts at **0.25 strength**) |
 | Hill 881S (forward outpost) | **Hill 881S FOB** | BLUE | blue forward FOB, airlift-supplied with Kutaisi |
-| The hills (881/861/558) + NVA artillery | **Sukhumi** | RED | the siege ring NW — artillery + AAA on the high ground |
-| Route 9 / Pegasus axis | **Senaki** | RED | the NW approach the relief must reopen (token MiG-17s here) |
-| Lang Vei SF camp | **Kobuleti** | RED | SW — the **armor threat** (PT-76 / `[CH]` T-54), Route 9 |
-| Da Nang (tac-air rear + relief) | **Batumi** | BLUE | main blue tac-air base + the Pegasus ground-relief pocket |
+| Route 9 / the siege front | **Senaki** | RED | **the one front** — the NVA spearhead pressing Khe Sanh down Route 9 (token MiG-17s here) |
+| The hills (881/861/558) + NVA artillery | **Sukhumi** | RED | NVA rear — hill artillery + AAA; **feeds the Senaki front by road** (no front of its own) |
+| Lang Vei SF camp | **Kobuleti** | RED | NVA rear — the **armor threat** (PT-76 / `[CH]` T-54); **feeds Senaki by road** (no front of its own) |
+| Da Nang (tac-air rear) | **Batumi** | BLUE | main blue tac-air base — an **air-only pocket** (no land front) |
 | Yankee Station | **Naval-1 / Naval-2** | BLUE | the carriers offshore (A-4/A-6/F-8/RA-5/E-2) |
 | Deep-east rear | **Tbilisi-Lochini** | BLUE | the heavy rear: fast jets, B-52 Arc Light, EC-121, tanker, airlift |
 
-**The siege geometry:** Kutaisi (blue) is **encircled** — every land-adjacent CP (Senaki, Sukhumi,
-Kobuleti) is red, so the front **rings the base** and its only lifeline is air. Blue's *other*
-holding (Batumi + the carriers) is a **separate pocket**, not land-adjacent to Kutaisi. Kutaisi's
-**0.25 strength** pulls the siege fronts in tight (~7/13/28 km on the Senaki/Kobuleti/Sukhumi axes).
+**The siege geometry (single corridor):** Khe Sanh (Kutaisi, blue, **0.25 strength**) is besieged
+down **one ground axis** — the **Senaki → Kutaisi front along Route 9** is the only blue↔red contact,
+so it is the *only* front line on the map (the 0.25 strength holds it ~7 km off the wire). The other
+NVA bases don't open fronts of their own: they **feed the Senaki spearhead by road** — **Sukhumi (the
+hills)** and **Kobuleti (Lang Vei)** both run their reinforcements and supply into Senaki, so every
+NVA truck funnels through Senaki's river bridges. Blue's other holdings (Da Nang/Batumi, the carriers,
+the deep-east rear) are **air-only pockets** — they fly the whole war but have no land front; the only
+ground fight is the Route 9 corridor.
 
-**The win arc = Operation Pegasus:** push from **Batumi** through **Kobuleti / Senaki** to **link up
-with Kutaisi** — that breaks the siege. Get there by:
-- **Keeping the base alive** — CAS on the perimeter, airlift/resupply into Kutaisi + Hill 881S.
-- **Killing NVA ground** — BAI/CAS on the hill artillery and the Lang Vei armor; Arc Light on the
-  massed infantry. Red's economy feeds ground reinforcements (`×1.2`, automated), so attriting the
-  ring is how the line moves your way.
-- **The ground relief** — as the front advances up the Pegasus axis, the encircling CPs flip and the
-  ring opens.
+**The win arc = Operation Pegasus (break out along Route 9):** there's one ground front, so the whole
+campaign turns on it — hold it at the wire, grind the NVA down, then drive it back to relieve the base:
+- **Keep the base alive** — CAS on the perimeter, airlift/resupply into Kutaisi + Hill 881S.
+- **Choke the corridor** — BAI/CAS on the hill artillery (Sukhumi) and the Lang Vei armor (Kobuleti)
+  *before they reach the front*, plus **bridge interdiction**: every NVA supply leg crosses a
+  destructible span (the Rioni bridge on the Senaki↔Kutaisi front; the Sukhumi + Senaki spans on the
+  feeder roads), so cutting one chokes the whole siege (§8). Arc Light on the massed infantry. Red's
+  economy feeds the spearhead (`×1.2`, automated), so attriting it is how the line moves your way.
+- **Break out** — as you bleed the spearhead, the Route 9 front yields; push it back and **take Senaki
+  = siege broken.** Once Senaki flips blue, fresh fronts open onto the feeder bases — roll up **Lang
+  Vei (Kobuleti)** and **the hills (Sukhumi)** to finish.
 
 > **Tempo:** unlike a SAM-belt air war, the limiting factor here is **how fast you can grind the
-> ring** while the airlift keeps the garrison fed. Air superiority is essentially free — spend your
-> sorties on the ground fight, not on chasing MiGs.
+> Route 9 corridor** while the airlift keeps the garrison fed. Air superiority is essentially free —
+> spend your sorties on the ground fight, not on chasing MiGs.
 
 ---
 
@@ -226,8 +233,9 @@ blue owns the water (and brings the *New Jersey* / *Oklahoma City* gun line — 
 
 ## 5 · Campaign CONOPS — the phase plan
 
-The historical arc (Niagara → Pegasus) becomes a phased plan. Phases overlap; the automated ring
-keeps pressing, so the early phases are about *not losing the base* while you build toward the relief.
+The historical arc (Niagara → Pegasus) becomes a phased plan. Phases overlap; the automated NVA
+corridor keeps pressing, so the early phases are about *not losing the base* while you build toward
+the breakout.
 
 ### Phase 0 — Hold the perimeter & keep the lifeline open *(turns 1–2)*
 - **Objective:** don't lose Khe Sanh. Blunt the closest assaults; keep Kutaisi + Hill 881S supplied.
@@ -241,18 +249,21 @@ keeps pressing, so the early phases are about *not losing the base* while you bu
   CAS; first **Arc Light** boxes on massed infantry. Keep CAS feeding the perimeter.
 - **Win when:** the worst of the perimeter AAA is suppressed and the armor/artillery is mapped.
 
-### Phase 2 — Kill the armor & the artillery *(turns 4–7)*
-- **Objective:** destroy the **Lang Vei (Kobuleti) armor** and the hill (Sukhumi) artillery — the
-  things that can crack the wire.
+### Phase 2 — Kill the armor & the artillery feeding the front *(turns 4–7)*
+- **Objective:** destroy the **Lang Vei (Kobuleti) armor** and the hill (Sukhumi) artillery *before
+  they reach the Senaki spearhead* — the things that can crack the wire — and **cut the feeder bridges**.
 - **Fly:** dedicated anti-armor strikes (A-6E/A-4E/F-100 with Rockeye/snake/napalm), sustained Arc
-  Light, naval gunfire if you want it. Push the Batumi front toward Kobuleti.
-- **Win when:** the armor threat is gone and the ground front starts moving up the Pegasus axis.
+  Light, **bridge interdiction** on the Sukhumi/Senaki feeder spans (§8), naval gunfire on the coastal
+  feeder road if you want it.
+- **Win when:** the armor/artillery is gone, the feeder roads are cut, and the Route 9 front stops
+  gaining ground.
 
-### Phase 3 — Operation Pegasus: break the ring *(turns 7+)*
-- **Objective:** advance from **Batumi** through **Kobuleti / Senaki** to **link up with Kutaisi**.
-- **Fly:** CAS/BAI ahead of the advancing front, interdiction of the supply road (cut the bridges —
-  see §8), Arc Light on the NVA divisional rear, continued airlift until the road opens.
-- **Win when:** the front reaches Kutaisi — **siege broken.**
+### Phase 3 — Operation Pegasus: break out along Route 9 *(turns 7+)*
+- **Objective:** drive the **Senaki front** back off the Khe Sanh perimeter and **retake Senaki**,
+  then roll up the now-frontline feeder bases (Lang Vei/Kobuleti, the hills/Sukhumi).
+- **Fly:** CAS/BAI ahead of the advancing front, continued bridge/road interdiction (cut the spans —
+  see §8), Arc Light on the NVA rear, continued airlift until the road opens.
+- **Win when:** Senaki falls and the NVA are rolled off the perimeter — **siege broken.**
 
 > Carry one idea through every phase: **the air keeps the base alive; the ground fight wins it.**
 > Don't let the airlift lapse while you chase the offensive.
@@ -308,7 +319,7 @@ MISSION #: [____]      MC: [callsign]
 
 1. SITUATION
    Last turn (SITREP): [losses / front movement / base status]
-   Siege now: [where the ring is; is the airlift flowing?]
+   Siege now: [where the Route 9 front sits; is the airlift flowing?]
    Enemy: [AAA known on this axis / armor or arty located / token MiG note]
    Friendly: [adjacent packages, the ground push, airlift status]
    Weather / light: DAY. [ceiling / vis / wind]
@@ -364,10 +375,10 @@ afterthought**.
 | **Anti-armor (Lang Vei)** | 2–4× A-6E or A-4E (Rockeye/snake/napalm) | OV-10 FAC | Kill the PT-76/T-54 at Kobuleti. The signature BAI mission. |
 | **Arc Light** | 1–3× B-52H | (recon to fix the box) | Area saturation on massed infantry/arty. Deconflict the box hard. |
 | **Hill interdiction** | 2–4× A-4E / F-100D / A-6E | OV-10 FAC + recon | Beat down the Sukhumi artillery + AAA. |
-| **Road/bridge interdiction** | 2× A-6E / A-4E | recon | Cut the destructible bridges on the NVA supply axis (Route 9). |
+| **Road/bridge interdiction** | 2× A-6E / A-4E | recon | Cut the destructible bridges — **all** NVA supply funnels through Senaki's spans (the Rioni front bridge + the Sukhumi/Senaki feeders), so a dropped span chokes the whole siege. |
 | **BARCAP (cheap)** | 2× F-8E | EC-121 / E-2 picture | Token MiG-17 insurance. Guns + AIM-9 is plenty. |
 | **Airlift / resupply** | C-130J + UH-1H | (CAS on call) | Keep Kutaisi + Hill 881S fed. Protect the strip from ranging guns. |
-| **Naval gunfire (optional)** | *New Jersey* / *Oklahoma City* gun line | — | The faction carries the BB/CLG; shore bombardment of the coastal ring. |
+| **Naval gunfire (optional)** | *New Jersey* / *Oklahoma City* gun line | — | The faction carries the BB/CLG; shore bombardment of the coastal feeder road (the Sukhumi → Senaki axis). |
 | **Combat SAR (§11)** | A-1H "Sandy" ×2 + UH-1H/CH-53E | AH-1W | Stand up when aircrew goes down over the hills. |
 
 > Put a **FAC (OV-10)** over any CAS push — talk-ons and Willie-Pete marks are how you put iron on a

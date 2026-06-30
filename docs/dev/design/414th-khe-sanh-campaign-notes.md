@@ -4,8 +4,9 @@ Status: **built + headless-validated** (2026-06-28). `khe_sanh_niagara.yaml` +
 `khe_sanh_niagara.miz` are in `resources/campaigns/` — the `.miz` was scripted by forking
 `1968_Yankee_Station.miz` (pydcs load → re-color airfields → rebuild front edges → save;
 pydcs `save()` works here, the old "broken" note was stale). Retribution's `MizCampaignLoader`
-loads it with **Kutaisi blue + encircled by red Senaki/Sukhumi/Kobuleti** and Batumi/carriers
-as the relief pocket. Leftover Yankee-Station FOBs were stripped (1 blue + 8 red). Base
+loads it with **Kutaisi blue, besieged on a single Route 9 front by red Senaki** (with red
+Sukhumi/Kobuleti feeding Senaki from the rear — see the revised Topology below) and Batumi/carriers
+as the air-only relief pocket. Leftover Yankee-Station FOBs were stripped (1 blue + 8 red). Base
 defenses are **faction-generated from the inherited preset-location markers** (the correct
 Retribution mechanism — not hand-placed groups): verified the red ring carries heavy AAA +
 armor (incl. the Lang Vei armor group at Kobuleti, filled by NVA PT-76/`[CH] T-54`) + SAM
@@ -51,11 +52,24 @@ a different topology). NW-Vietnam highlands mapped onto the foot of the Caucasus
 | Yankee Station | **1–2 CV in the Black Sea off Batumi/Poti** | BLUE | offshore strike + BARCAP (A-4/A-6/F-8/F-4/E-2) |
 | NVA divisional rear / Laos / DMZ | **Tbilisi-Vaziani** area | RED | deep rear — SA-2 belt, supply depots, token MiG-21 |
 
-**Topology:** Kutaisi (blue) is **encircled** — its adjacent CPs (Senaki, Sukhumi, Kobuleti)
-are all red, so the front line rings it and its only lifeline is air. Blue's *other* holding
-(Batumi + carriers) is a **separate pocket**, not land-adjacent to Kutaisi. The blue win
-arc = push from Batumi through Kobuleti/Senaki to **link up with Kutaisi** = break the siege
+**Topology (single-axis siege, revised 2026-06-29):** Kutaisi (blue) is besieged down **one
+ground corridor** — **Senaki → Kutaisi (Route 9)** is the sole blue↔red link, so it is the only
+front. The other NVA bases feed that spearhead by red↔red road instead of opening fronts of
+their own: **Sukhumi (the hills) → Senaki** and **Kobuleti (Lang Vei) → Senaki**. All NVA
+logistics therefore funnel through Senaki's bridges, so cutting a span (Rioni at the
+Senaki↔Kutaisi crossing; the Sukhumi/Senaki spans on the feeders) chokes the whole siege.
+Blue's *other* holding (Batumi + carriers) is a **separate air-only pocket**, not land-adjacent
+to Kutaisi. The blue win arc = hold the Route 9 corridor, then drive it back to relieve Kutaisi
 = Operation Pegasus.
+
+*Why the single axis (was a three-front encirclement ring around Kutaisi):* one front concentrates
+the NVA push into a single legible Pegasus corridor, makes the destructible-bridge interdiction
+decisive (one supply chain, not three), and **thins the front-line ground-unit count** — which
+directly relieves the TIC/GLSCO siege framerate sink. Implemented purely in `supply_routes`
+(drop the Kutaisi→Sukhumi and Kutaisi→Kobuleti convoy routes; the feeder routes already existed);
+headless-verified to exactly one front. **Tradeoff:** a single axis is all-or-nothing — losing
+that front loses Kutaisi, where the old ring gave defense-in-depth. `max_frontline_width: 20` +
+the blue air umbrella + Kutaisi 0.25 strength (front ~7 km off the wire) keep it holdable.
 
 ## Factions
 

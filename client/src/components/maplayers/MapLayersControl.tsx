@@ -32,8 +32,9 @@ import "./MapLayersControl.css";
 // A custom, dark-themed replacement for the two stock Leaflet layer controls.
 // Everything lives in one collapsible, grouped panel: common layers up top,
 // advanced/debug overlays (threat zones, navmesh, terrain) tucked into groups
-// that start collapsed so the list stays short. Choices persist across sessions,
-// EXCEPT the fog overview, which is transient server-side view state.
+// that start collapsed so the list stays short. Choices are persisted into the
+// campaign save (with a localStorage cache), EXCEPT the fog overview, which is
+// transient server-side view state.
 
 type LayerId =
   | "controlPoints"
@@ -343,6 +344,9 @@ export default function MapLayersControl() {
     ...defaultGroups(),
     ...(persisted.openGroups ?? {}),
   }));
+  // Becomes true once the saved state has been pulled from the campaign (or the
+  // fetch failed); gates the write-back so the default seed can't clobber it.
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     const control = new L.Control({ position: "topright" });
@@ -357,14 +361,54 @@ export default function MapLayersControl() {
     };
   }, [map]);
 
+  // On mount, pull the map-layer state out of the campaign save. It travels with
+  // the .retribution file, unlike localStorage, which QtWebEngine drops on reload
+  // (so the panel forgot its layers after every turn). The save wins over the
+  // localStorage seed when present.
+  useEffect(() => {
+    let cancelled = false;
+    backend
+      .get("/game/map-layers")
+      .then((res) => {
+        if (cancelled) return;
+        const raw: string | null | undefined = res.data?.state;
+        if (!raw) return;
+        const saved = JSON.parse(raw) as {
+          visible?: Partial<Record<LayerId, boolean>>;
+          baseMap?: BaseMap;
+          openGroups?: Record<string, boolean>;
+        };
+        // revealFog is transient and never written to the blob, so it stays off.
+        if (saved.visible) setVisible((v) => ({ ...v, ...saved.visible }));
+        if (saved.baseMap) setBaseMap(saved.baseMap);
+        if (saved.openGroups) setOpenGroups((g) => ({ ...g, ...saved.openGroups }));
+      })
+      .catch(() => {
+        // No game loaded yet or backend offline: keep the localStorage seed.
+      })
+      .finally(() => {
+        if (!cancelled) loadedRef.current = true;
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     // Persist everything except the fog overview, which is transient view state.
     const persistable: Partial<Record<LayerId, boolean>> = { ...visible };
     delete persistable.revealFog;
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ visible: persistable, baseMap, openGroups })
-    );
+    const payload = JSON.stringify({ visible: persistable, baseMap, openGroups });
+    localStorage.setItem(STORAGE_KEY, payload);
+    // Also persist into the campaign save (debounced) so the choices survive turns
+    // and reopening the app, not just same-origin localStorage. Don't write back
+    // until we've loaded it, or the default seed would clobber the stored state in
+    // the window before the GET resolves.
+    if (!loadedRef.current) return;
+    const id = setTimeout(() => {
+      backend.put("/game/map-layers", { state: payload }).catch(() => {});
+    }, 500);
+    return () => clearTimeout(id);
   }, [visible, baseMap, openGroups]);
 
   // Radar-emitter highlight is a pure client flag; keep the slice in sync with

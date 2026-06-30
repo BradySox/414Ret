@@ -286,7 +286,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 19. **Unified map layers panel** — one custom, dark-themed Leaflet control
     (`client/src/components/maplayers/MapLayersControl.tsx`) replacing both stock layer controls:
     collapsible grouped sections (advanced groups start collapsed), preset views (Default / SEAD /
-    Recon / Clean), and `localStorage`-persisted choices (except the transient fog overview). The
+    Recon / Clean), and choices persisted to the campaign save (localStorage-cached), except the
+    transient fog overview (`GET`/`PUT /game/map-layers` → `Game.client_map_layers`). The
     old top-left threat-zone/navmesh/terrain control is folded in; side-effect toggles run via
     `useEffect`, not Leaflet add/remove. Client-only; needs the CI client rebuild (features doc §18).
 20. **Drop-spawn: map right-click unit placement** — right-click blank map space → Qt dialog

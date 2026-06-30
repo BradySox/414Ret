@@ -36,12 +36,14 @@ class QtCallbacks:
     def __init__(
         self,
         create_new_package: Callable[[MissionTarget], None],
+        create_new_interdiction_package: Callable[[MissionTarget], None],
         show_tgo_info: Callable[[TheaterGroundObject], None],
         show_control_point_info: Callable[[ControlPoint], None],
         select_flight: Callable[[Flight], None],
         open_place_unit_group_dialog: Callable[[float, float], None],
     ) -> None:
         self.create_new_package = create_new_package
+        self.create_new_interdiction_package = create_new_interdiction_package
         self.show_tgo_info = show_tgo_info
         self.show_control_point_info = show_control_point_info
         self.select_flight = select_flight

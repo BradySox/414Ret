@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 import qt_ui.uiconstants as CONST
 from game import Game, VERSION, persistency, Migrator
 from game.ato import Flight
+from game.ato.flighttype import FlightType
 from game.debriefing import Debriefing
 from game.game import TurnState
 from game.layout import LAYOUTS
@@ -55,6 +56,7 @@ from qt_ui.windows.stats.QStatsWindow import QStatsWindow
 
 class QLiberationWindow(QMainWindow):
     new_package_signal = Signal(MissionTarget)
+    new_interdiction_package_signal = Signal(MissionTarget)
     tgo_info_signal = Signal(TheaterGroundObject)
     control_point_info_signal = Signal(ControlPoint)
     select_flight_signal = Signal(Flight)
@@ -71,7 +73,14 @@ class QLiberationWindow(QMainWindow):
         self.game_model = GameModel(game, self.sim_controller)
         GameContext.set_model(self.game_model)
         self.new_package_signal.connect(
-            lambda target: Dialog.open_new_package_dialog(target, self)
+            lambda target: Dialog.open_new_package_dialog(target, parent=self)
+        )
+        # Right-click an enemy supply route -> open the package dialog pre-selected on
+        # Armed Recon (the convoy-interdiction frag, §35).
+        self.new_interdiction_package_signal.connect(
+            lambda target: Dialog.open_new_package_dialog(
+                target, default_task=FlightType.ARMED_RECON, parent=self
+            )
         )
         self.tgo_info_signal.connect(self.open_tgo_info_dialog)
         self.control_point_info_signal.connect(self.open_control_point_info_dialog)
@@ -80,6 +89,7 @@ class QLiberationWindow(QMainWindow):
         QtContext.set_callbacks(
             QtCallbacks(
                 lambda target: self.new_package_signal.emit(target),
+                lambda target: self.new_interdiction_package_signal.emit(target),
                 lambda tgo: self.tgo_info_signal.emit(tgo),
                 lambda cp: self.control_point_info_signal.emit(cp),
                 lambda flight: self.select_flight_signal.emit(flight),

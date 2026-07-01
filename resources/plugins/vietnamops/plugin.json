@@ -1,6 +1,6 @@
 {
     "nameInUI": "Vietnam Ops (period mechanics)",
-    "descriptionInUI": "Runtime for the Vietnam Ops suite -- opt-in period air-war mechanics gated by the 'Vietnam Ops' campaign settings page. Inert unless a Vietnam Ops setting is on (the mission generator emits dcsRetribution.VietnamOps only then). Arc Light: a heavy-bomber (B-52) Strike walks a carpet of bombs across its target at the run-in instead of dropping a single aimpoint (tactical strikers unaffected). AAA flak gauntlet: aircraft within range and below the ceiling of an opposing AAA gun draw barrage flak that tightens against predictable run-ins and widens when jinking. Naval gunfire support: offshore gun ships shell shore targets -- a player F10 'Naval Fire Mission' menu fires on the last F10 map marker, and (optionally) ships automatically bombard the nearest in-range enemy ground target each cadence. Coastal campaigns only. Convoy interdiction: a moving enemy truck column rolls the supply road nearest the front (Steel Tiger / Ho Chi Minh Trail), halts under cover when an aircraft closes in, and re-rolls a fresh column after it is wiped -- hunt it via an Armed Recon corridor.",
+    "descriptionInUI": "Runtime for the Vietnam Ops suite -- opt-in period air-war mechanics gated by the 'Vietnam Ops' campaign settings page. Inert unless a Vietnam Ops setting is on (the mission generator emits dcsRetribution.VietnamOps only then). Arc Light: a heavy-bomber (B-52) Strike walks a carpet of bombs across its target at the run-in instead of dropping a single aimpoint (tactical strikers unaffected). AAA flak gauntlet: aircraft within range and below the ceiling of an opposing AAA gun draw barrage flak that tightens against predictable run-ins and widens when jinking. Naval gunfire support: offshore gun ships shell shore targets -- a player F10 'Naval Fire Mission' menu fires on the last F10 map marker, and (optionally) ships automatically bombard the nearest in-range enemy ground target each cadence. Coastal campaigns only. Convoy interdiction: a moving enemy truck column rolls the supply road nearest the front (Steel Tiger / Ho Chi Minh Trail), halts under cover when an aircraft closes in, and re-rolls a fresh column after it is wiped -- hunt it via an Armed Recon corridor. Airbase harassment: forward, opposing-occupied airfields draw sporadic standoff rocket/mortar fire near the ramp after a startup grace period; your own spawn fields are never targeted. Super Gaggle: a formation of transport helos runs supplies into a cut-off forward friendly outpost (launch -> outpost -> back, re-rolling on a cadence), which the player can fly escort for -- the Khe Sanh hilltop resupply.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -122,6 +122,31 @@
             "nameInUI": "Airbase harassment: startup grace period, no fire (s)",
             "mnemonic": "harassGraceS",
             "defaultValue": 300
+        },
+        {
+            "nameInUI": "Super Gaggle: transport helo DCS type",
+            "mnemonic": "gaggleHeloType",
+            "defaultValue": "UH-1H"
+        },
+        {
+            "nameInUI": "Super Gaggle: helos per resupply run",
+            "mnemonic": "gaggleCount",
+            "defaultValue": 3
+        },
+        {
+            "nameInUI": "Super Gaggle: transit speed (kph)",
+            "mnemonic": "gaggleSpeedKph",
+            "defaultValue": 220
+        },
+        {
+            "nameInUI": "Super Gaggle: transit altitude (m radio)",
+            "mnemonic": "gaggleAltM",
+            "defaultValue": 150
+        },
+        {
+            "nameInUI": "Super Gaggle: seconds before a fresh run launches",
+            "mnemonic": "gaggleRespawnS",
+            "defaultValue": 900
         }
     ],
     "scriptsWorkOrders": [],

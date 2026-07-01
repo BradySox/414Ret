@@ -512,6 +512,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     rounds/event, dispersion, per-blast power, grace. (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §36, checklist L8 — needs an
     in-game pass.)
+37. **Super Gaggle hilltop resupply** — the sixth **Vietnam Ops suite** feature (design note
+    `414th-vietnam-ops-notes.md`, §E): a formation of transport helos runs supplies into a cut-off forward
+    friendly outpost while the player can fly escort — the Khe Sanh "Super Gaggle." The design's planner-template
+    v1 is **blocked on an auto-plannable CTLD cargo run the engine lacks**, so this ships **runtime-only**,
+    following the §35 convoy pattern instead: `_populate_super_gaggle` (`vietnamopsluadata.py`) picks the
+    friendly (BLUE) **FOB/FARP nearest a front** as the besieged outpost (within `GAGGLE_OUTPOST_FRONT_REACH_M`
+    ≈ 150 km) and the nearest **other** friendly helo-capable field as the launch point, emitting
+    `{ coalition, outpost{name,x,y}, launch{x,y} }`. No forward friendly outpost / no launch field / no front ⇒
+    no node ⇒ plugin no-ops. The `vietnamops` plugin spawns a helo gaggle (default 3× UH-1H, `coalition.addGroup`)
+    that flies launch → outpost → back, announces delivery on reaching the outpost, and **re-rolls a fresh run**
+    a cadence after the old one is delivered or shot down. The fast-mover AAA-suppression **choreography** that
+    made the historical gaggle distinctive is a **deferred increment** (per the design's phasing); v1 is the
+    helo run + the escort opportunity. Runtime-cosmetic (no supply-economy effect, like the convoy); blue-only
+    (symmetry deferred, like the convoy). Plugin options: helo type, count, speed, altitude, respawn cadence.
+    (`game/missiongenerator/vietnamopsluadata.py`, `resources/plugins/vietnamops/`, `game/settings/settings.py`;
+    features doc §37, checklist L9 — needs an in-game pass.)
 
 ---
 

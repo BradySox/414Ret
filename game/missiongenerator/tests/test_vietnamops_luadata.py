@@ -7,6 +7,7 @@ from game.ato import FlightType
 from game.data.units import UnitClass
 from game.missiongenerator.luagenerator import LuaData
 from game.missiongenerator.vietnamopsluadata import (
+    GAGGLE_OUTPOST_FRONT_REACH_M,
     HARASSMENT_FRONT_REACH_M,
     HEAVY_BOMBER_DCS_IDS,
     populate_vietnam_ops_lua,
@@ -44,6 +45,7 @@ def _emit(
     fronts: list[Any] | None = None,
     harassment: bool = False,
     coalitions: list[Any] | None = None,
+    super_gaggle: bool = False,
 ) -> str:
     root = LuaData("dcsRetribution")
     game = SimpleNamespace(
@@ -53,6 +55,7 @@ def _emit(
             vietnam_naval_gunfire=ngfs,
             vietnam_convoy_interdiction=convoy,
             vietnam_airbase_harassment=harassment,
+            vietnam_super_gaggle=super_gaggle,
         ),
         theater=SimpleNamespace(
             ground_objects=ground_objects or [],
@@ -202,24 +205,45 @@ def test_convoy_no_node_without_an_enemy_supply_road() -> None:
     assert "convoy" not in lua
 
 
-class _Field:
-    """A hashable duck-typed airfield/FARP ControlPoint for the harassment emitter.
+class _GeoPoint:
+    """A point that can measure distance to another point (for the launch-field pick)."""
 
-    The emitter reads ``cptype``/``captured``/``position``/``full_name`` and puts the CP in
-    an *exclude* set, so (like ``_CP``) it must be hashable -- SimpleNamespace is not.
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
+    def distance_to_point(self, other: "_GeoPoint") -> float:
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
+
+
+class _Field:
+    """A hashable duck-typed airfield/FARP/FOB ControlPoint for the harassment + Super
+    Gaggle emitters.
+
+    The harassment emitter reads ``cptype``/``captured``/``position``/``full_name`` and puts
+    the CP in an *exclude* set, so (like ``_CP``) it must be hashable -- SimpleNamespace is
+    not. The Super Gaggle emitter additionally measures ``position.distance_to_point`` when
+    picking the launch field, so the position is a ``_GeoPoint``.
     """
 
     def __init__(
-        self, name: str, cptype: ControlPointType, captured: Any, x: float
+        self,
+        name: str,
+        cptype: ControlPointType,
+        captured: Any,
+        x: float,
+        y: float = 0.0,
     ) -> None:
         self.full_name = name
         self.cptype = cptype
         self.captured = captured
-        self.position = SimpleNamespace(x=x, y=0.0)
+        self.position = _GeoPoint(x, y)
 
 
-def _field(name: str, cptype: ControlPointType, captured: Any, x: float) -> _Field:
-    return _Field(name, cptype, captured, x)
+def _field(
+    name: str, cptype: ControlPointType, captured: Any, x: float, y: float = 0.0
+) -> _Field:
+    return _Field(name, cptype, captured, x, y)
 
 
 def _coalition_with_client_at(departure: Any) -> Any:
@@ -305,3 +329,87 @@ def test_airbase_harassment_client_spawn_field_is_excluded_not_targeted() -> Non
     # The spawn field appears exactly once (in excludedFields) -- never as a target record,
     # which would make it appear a second time as a `name = "Player FARP"` field entry.
     assert lua.count("Player FARP") == 1
+
+
+def test_super_gaggle_off_no_node() -> None:
+    outpost = _field("Hill 861", ControlPointType.FOB, Player.BLUE, 10_000)
+    launch = _field("Da Nang", ControlPointType.AIRBASE, Player.BLUE, 60_000)
+    lua = _emit(
+        [], super_gaggle=False, control_points=[outpost, launch], fronts=[_front()]
+    )
+    assert "superGaggle" not in lua
+
+
+def test_super_gaggle_emits_outpost_and_launch() -> None:
+    outpost = _field("Hill 861", ControlPointType.FOB, Player.BLUE, 10_000)
+    launch = _field("Da Nang", ControlPointType.AIRBASE, Player.BLUE, 60_000)
+    lua = _emit(
+        [], super_gaggle=True, control_points=[outpost, launch], fronts=[_front()]
+    )
+    assert "VietnamOps" in lua
+    assert "superGaggle" in lua
+    assert "Hill 861" in lua  # the besieged outpost (destination)
+    assert "BLUE" in lua  # the friendly resupply coalition
+
+
+def test_super_gaggle_picks_nearest_outpost_and_launch() -> None:
+    # Two friendly FOBs: the one nearer the front (smaller |x|) is the besieged outpost.
+    near_outpost = _field("Hill 861", ControlPointType.FOB, Player.BLUE, 10_000)
+    far_outpost = _field("Rear FOB", ControlPointType.FOB, Player.BLUE, 90_000)
+    # Two launch fields: the one geographically nearer the chosen outpost is used.
+    near_launch = _field("Khe Sanh", ControlPointType.AIRBASE, Player.BLUE, 30_000)
+    far_launch = _field("Da Nang", ControlPointType.AIRBASE, Player.BLUE, 200_000)
+    lua = _emit(
+        [],
+        super_gaggle=True,
+        control_points=[far_outpost, near_outpost, far_launch, near_launch],
+        fronts=[_front()],
+    )
+    assert "Hill 861" in lua  # nearest-front outpost chosen
+    assert "Rear FOB" not in lua
+    # The launch field is emitted only as coordinates (no name), so assert via the picked
+    # outpost being the near one; the near launch's coords come from x=30_000.
+    assert "30000" in lua  # near launch's x coordinate
+    assert "200000" not in lua  # far launch not chosen
+
+
+def test_super_gaggle_no_node_without_a_friendly_outpost() -> None:
+    # A friendly airbase but no FOB/FARP outpost -> nothing besieged -> no node.
+    launch = _field("Da Nang", ControlPointType.AIRBASE, Player.BLUE, 30_000)
+    lua = _emit([], super_gaggle=True, control_points=[launch], fronts=[_front()])
+    assert "superGaggle" not in lua
+
+
+def test_super_gaggle_no_node_without_a_launch_field() -> None:
+    # A besieged FOB but no other friendly helo-capable field to launch from -> no node.
+    outpost = _field("Hill 861", ControlPointType.FOB, Player.BLUE, 10_000)
+    lua = _emit([], super_gaggle=True, control_points=[outpost], fronts=[_front()])
+    assert "superGaggle" not in lua
+
+
+def test_super_gaggle_ignores_enemy_and_rear_outposts() -> None:
+    enemy = _field("NVA Hill", ControlPointType.FOB, Player.RED, 8_000)  # not friendly
+    rear = _field(
+        "Rear FOB",
+        ControlPointType.FOB,
+        Player.BLUE,
+        GAGGLE_OUTPOST_FRONT_REACH_M + 50_000,  # too deep behind the lines
+    )
+    outpost = _field("Hill 861", ControlPointType.FOB, Player.BLUE, 10_000)
+    launch = _field("Khe Sanh", ControlPointType.AIRBASE, Player.BLUE, 40_000)
+    lua = _emit(
+        [],
+        super_gaggle=True,
+        control_points=[enemy, rear, outpost, launch],
+        fronts=[_front()],
+    )
+    assert "Hill 861" in lua
+    assert "NVA Hill" not in lua  # enemy outpost never gets a friendly resupply
+    assert "Rear FOB" not in lua  # rear outpost isn't besieged
+
+
+def test_super_gaggle_no_node_without_a_front() -> None:
+    outpost = _field("Hill 861", ControlPointType.FOB, Player.BLUE, 10_000)
+    launch = _field("Da Nang", ControlPointType.AIRBASE, Player.BLUE, 60_000)
+    lua = _emit([], super_gaggle=True, control_points=[outpost, launch], fronts=[])
+    assert "superGaggle" not in lua

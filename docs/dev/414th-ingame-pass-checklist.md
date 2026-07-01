@@ -1965,6 +1965,24 @@ so the two docs don't drift.
   wildly off the ramp (centroid/dispersion wrong); too lethal to parked jets (dial power/dispersion down, as
   §33 flak needed); a `trigger.action.explosion` / `land.getHeight` / `timer.scheduleFunction` Lua error.
 
+### L9 — Super Gaggle hilltop resupply · §37 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the emitter — the
+  outpost + launch + coalition are emitted when on; it picks the friendly FOB/FARP nearest the front and the
+  nearest launch field; off / no-outpost / no-launch / no-front / enemy-or-rear-only outposts yield no node.
+  The runtime helo spawn (`coalition.addGroup`), the launch→outpost→back routing, and the
+  deliver/lost/respawn state machine are runtime Lua, exercisable only live.
+- **Setup:** A Vietnam campaign with **Vietnam Ops → Super Gaggle** on and a **friendly forward FOB/FARP** near
+  the front (a cut-off hilltop) plus a friendly rear airfield/FARP to launch from (Khe Sanh laydown qualifies).
+  Fast-forward or fly; optionally intercept-escort the gaggle.
+- **Pass:** A 3-ship UH-1H gaggle spawns over the launch field, flies to the outpost, and announces "SUPER
+  GAGGLE inbound" then "delivered" on arrival; a fresh run re-rolls a cadence later; a shot-down gaggle
+  announces "down" and re-rolls. `dcs.log` shows "Super Gaggle armed (outpost …, 3x UH-1H)" and no
+  `coalition.addGroup` Lua error.
+- **Fail signature:** the gaggle never spawns (addGroup group-data malformed / bad country / helo type
+  unavailable); helos spawn but don't move or fly into terrain (route altitude/`alt_type` wrong); the
+  deliver/lost/respawn cues never fire or fire repeatedly (tick state machine wrong); a `Group.getByName` /
+  `getUnit` / `destroy` Lua error in `dcs.log`; a run that never recycles (stuck after delivery).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

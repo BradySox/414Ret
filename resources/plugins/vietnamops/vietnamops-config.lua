@@ -754,3 +754,183 @@ if suite.airbaseHarassment and suite.airbaseHarassment.fields then
             .. "(every ~%ds, %d rounds, dispersion %dm, power %d, grace %ds)",
         count, INTERVAL, ROUNDS, DISPERSION, BLAST, GRACE))
 end
+
+-------------------------------------------------------------------------------
+-- Super Gaggle hilltop resupply
+--
+-- Models the Khe Sanh "Super Gaggle": a formation of transport helos runs supplies
+-- into a cut-off forward friendly outpost while the player can fly escort. The
+-- generator emits the besieged outpost + a rear launch field + coalition
+-- (dcsRetribution.VietnamOps.superGaggle); this spawns a helo gaggle that flies
+-- launch -> outpost -> back, announces delivery when it reaches the outpost, and rolls
+-- a fresh gaggle a while after the old one is delivered or lost, so the run keeps going.
+-- Runtime-only (the planner-template design is blocked on an auto-plannable CTLD cargo
+-- run the engine lacks); the fast-mover AAA-suppression choreography is a deferred
+-- increment. Vanilla-DCS spawning + pcall-guarded. NEEDS A COCKPIT PASS: runtime helo
+-- spawning + routing can't be exercised headless.
+-------------------------------------------------------------------------------
+if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch then
+    pcall(function()
+        local HELO = "UH-1H"
+        local COUNT = 3            -- helos in the gaggle
+        local SPEED = 220 / 3.6    -- m/s (~220 kph cruise)
+        local ALT = 150            -- m, radio-altitude air start / transit height
+        local RESPAWN = 900        -- s after a gaggle ends before the next launches
+        if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
+            local o = dcsRetribution.plugins.vietnamops
+            HELO = o.gaggleHeloType or HELO
+            COUNT = tonumber(o.gaggleCount) or COUNT
+            SPEED = (tonumber(o.gaggleSpeedKph) or 220) / 3.6
+            ALT = tonumber(o.gaggleAltM) or ALT
+            RESPAWN = tonumber(o.gaggleRespawnS) or RESPAWN
+        end
+
+        local DELIVER_RADIUS = 1500  -- m: within this of the outpost counts as delivered
+        local MISSION_TIME = 600     -- s: recycle a gaggle that has flown its window
+        local POLL = 10
+
+        local SIDE = (suite.superGaggle.coalition == "RED") and coalition.side.RED
+            or coalition.side.BLUE
+        local COUNTRY = (SIDE == coalition.side.RED) and country.id.RUSSIA or country.id.USA
+
+        local outpost = {
+            x = tonumber(suite.superGaggle.outpost.x),
+            y = tonumber(suite.superGaggle.outpost.y),
+        }
+        local outpostName = suite.superGaggle.outpost.name or "the outpost"
+        local launch = {
+            x = tonumber(suite.superGaggle.launch.x),
+            y = tonumber(suite.superGaggle.launch.y),
+        }
+        if not (outpost.x and outpost.y and launch.x and launch.y) then
+            return
+        end
+
+        local spawnCount = 0
+        local currentName = nil
+        local spawnTime = 0
+        local delivered = false
+
+        local function wp(px, py)
+            return {
+                x = px,
+                y = py,
+                alt = ALT,
+                alt_type = "RADIO",
+                type = "Turning Point",
+                action = "Turning Point",
+                speed = SPEED,
+                ETA = 0,
+                ETA_locked = false,
+                formation_template = "",
+                speed_locked = true,
+            }
+        end
+
+        local function spawnGaggle()
+            spawnCount = spawnCount + 1
+            delivered = false
+            local gname = "SuperGaggle-" .. spawnCount
+            local units = {}
+            for i = 1, COUNT do
+                units[i] = {
+                    type = HELO,
+                    name = gname .. "-" .. i,
+                    x = launch.x - (i - 1) * 40, -- string the gaggle out over the field
+                    y = launch.y,
+                    alt = ALT,
+                    alt_type = "RADIO",
+                    heading = 0,
+                    skill = "Average",
+                }
+            end
+            local groupData = {
+                visible = false,
+                hidden = false,
+                name = gname,
+                start_time = 0,
+                task = "Transport",
+                route = {
+                    points = {
+                        wp(launch.x, launch.y),
+                        wp(outpost.x, outpost.y),
+                        wp(launch.x, launch.y),
+                    },
+                },
+                units = units,
+            }
+            if pcall(coalition.addGroup, COUNTRY, Group.Category.HELICOPTER, groupData) then
+                currentName = gname
+                spawnTime = timer.getTime()
+                trigger.action.outTextForCoalition(
+                    SIDE,
+                    "SUPER GAGGLE -- resupply helos inbound to " .. outpostName
+                        .. ". Escort welcome.",
+                    20
+                )
+            else
+                currentName = nil
+            end
+        end
+
+        local function scheduleRespawn()
+            currentName = nil
+            timer.scheduleFunction(function()
+                spawnGaggle()
+                return nil
+            end, {}, timer.getTime() + RESPAWN)
+        end
+
+        local function tick()
+            local ok, err = pcall(function()
+                if currentName == nil then
+                    return -- waiting on a scheduled respawn
+                end
+                local g = Group.getByName(currentName)
+                local pos = nil
+                if g and g:getSize() > 0 then
+                    local u = g:getUnit(1)
+                    if u and u:isExist() then
+                        pos = u:getPoint()
+                    end
+                end
+                if pos == nil then
+                    trigger.action.outTextForCoalition(
+                        SIDE,
+                        "Super Gaggle down -- resupply run lost inbound to " .. outpostName .. ".",
+                        15
+                    )
+                    scheduleRespawn()
+                    return
+                end
+                if not delivered then
+                    local dx, dz = pos.x - outpost.x, pos.z - outpost.y
+                    if (dx * dx + dz * dz) <= (DELIVER_RADIUS * DELIVER_RADIUS) then
+                        delivered = true
+                        trigger.action.outTextForCoalition(
+                            SIDE,
+                            "Super Gaggle delivered -- " .. outpostName .. " resupplied.",
+                            15
+                        )
+                    end
+                end
+                if timer.getTime() - spawnTime > MISSION_TIME then
+                    pcall(function()
+                        g:destroy()
+                    end)
+                    scheduleRespawn()
+                end
+            end)
+            if not ok then
+                env.warning("vietnamops: super gaggle tick error (continuing): " .. tostring(err))
+            end
+            return timer.getTime() + POLL
+        end
+
+        spawnGaggle()
+        timer.scheduleFunction(tick, {}, timer.getTime() + POLL)
+        env.info(string.format(
+            "DCSRetribution|Vietnam Ops - Super Gaggle armed (outpost %s, %dx %s)",
+            outpostName, COUNT, HELO))
+    end)
+end

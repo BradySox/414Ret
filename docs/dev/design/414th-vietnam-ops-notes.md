@@ -4,10 +4,14 @@
 Light** (checklist L1) + §33 **AAA flak gauntlet** (L2) + §34 **Naval gunfire support** (L3), all
 registered + emitter-tested; the runtime Lua of each needs an in-game pass. **Phase 4 (§D convoy
 interdiction §35) landed** — corridor pick emitter-tested, the spawn Lua pending an in-game pass
-(checklist L6). Phase 5 (§E Super Gaggle) is **blocked**: it needs an auto-plannable CTLD cargo run
-the engine doesn't have yet (AIR_ASSAULT assaults a contested LZ, it doesn't resupply a friendly
-besieged base — `best_squadron` returns None), so a v1 via AIR_ASSAULT was a no-op and was discarded.
-**Date:** 2026-06-28
+(checklist L6). **Phase 5 (§E Super Gaggle §37) landed 2026-07-01 — runtime, not the planner.** The
+planner-template v1 stayed blocked (no auto-plannable CTLD cargo run; AIR_ASSAULT assaults a contested LZ,
+it doesn't resupply a friendly besieged base — `best_squadron` returns None), so §E shipped the **runtime**
+path instead, exactly like §35 convoy: Python picks the besieged outpost + launch field, the plugin spawns
+and flies a helo gaggle, re-rolling on a cadence. The fast-mover suppression choreography stays deferred (its
+originally-planned "optional later increment"). Emitter-tested; the spawn Lua needs an in-game pass (checklist
+L9).
+**Date:** 2026-06-28 (designed) · 2026-07-01 (§E landed runtime)
 **Related:** [`414th-moose-ops-opportunity-map.md`](414th-moose-ops-opportunity-map.md)
 (why this is Tier-A only, never `Ops.Chief`), [`414th-tic-dynamic-fronts-notes.md`](414th-tic-dynamic-fronts-notes.md)
 (TIC firefights — the flak/convoy effects reuse its `TaskFireAtPoint` pattern),
@@ -172,22 +176,25 @@ callback/signal carries the target, and its handler threads `default_task=ARMED_
 **DoD / in-game pass:** an Armed Recon corridor frag yields a moving convoy that reacts to being
 hunted; killing it registers a logistics hit at debrief; `dcs.log` clean.
 
-## §E — "Super Gaggle" hilltop resupply
+## §E — "Super Gaggle" hilltop resupply — LANDED 2026-07-01 (runtime, CLAUDE.md §37)
 
-**Decision (user) + answer to "do we have to script that?":** **mostly no.** The resupply drop
-itself is already expressible with existing parts — a **CTLD** helo cargo run to the cut-off
-outpost + a CAS/escort package over the same hilltop. The *only* thing a script buys is the
-**choreography** (the fast-mover AAA-suppression window + the tight "gaggle" timing) that made it
-distinctive at Khe Sanh.
+**Original decision (user):** the resupply drop is expressible with existing parts (a CTLD helo cargo run +
+a CAS/escort package); the *only* thing a script buys is the **choreography** (the fast-mover AAA-suppression
+window + the tight "gaggle" timing) that made it distinctive at Khe Sanh.
 
-**Mechanism (v1, no new Lua).** A **planner package template**: when `vietnam_super_gaggle` is on
-and a friendly outpost is cut off / under-supplied, auto-plan the package (suppress + cargo +
-escort) the same way `auto_combat_sar` / the AWACS/tanker auto-support already self-plan. The
-choreography (a thin timing layer that opens the suppression window before the helos commit) is
-an **optional later increment**, not v1.
+**What shipped (runtime, not the planner).** The planner-template v1 below stayed blocked (no auto-plannable
+CTLD cargo run — see the top-of-file status), so §E shipped as a **runtime Vietnam Ops feature**, the same
+shape as §35 convoy: `_populate_super_gaggle` (`vietnamopsluadata.py`) picks the friendly (BLUE) FOB/FARP
+nearest a front as the besieged outpost + the nearest other friendly helo-capable field as the launch point;
+the `vietnamops` plugin spawns a helo gaggle (default 3 × UH-1H) that flies launch → outpost → back, announces
+delivery, and re-rolls on a cadence. The player can escort it. Runtime-cosmetic (no supply-economy effect),
+blue-only (symmetry deferred), and the **fast-mover suppression choreography remains the deferred later
+increment**. Emitter-tested; runtime Lua pending an in-game pass (checklist L9).
 
-**DoD / in-game pass:** with the toggle on and an outpost cut off, the planner frags an escorted
-resupply package to it; the helo delivers via CTLD; turning the toggle off stops the auto-frag.
+**Original planner-template design (NOT built — kept for the future increment).** A planner package template:
+when `vietnam_super_gaggle` is on and a friendly outpost is cut off, auto-plan the package (suppress + cargo +
+escort) the way `auto_combat_sar` self-plans. Blocked on the missing auto-plannable CTLD cargo run; revisit if
+that capability lands.
 
 ---
 
@@ -200,7 +207,7 @@ resupply package to it; the helo delivers via CTLD; turning the toggle off stops
 | 2 | §B Flak gauntlet | same |
 | 3 | §C NGFS | same |
 | 4 | §D Convoy interdiction | same |
-| 5 | §E Super Gaggle | same |
+| 5 | §E Super Gaggle (runtime; planner-template deferred) | same |
 
 Each numbered feature is added to `game/fourteenth/features.py` (with its `plugin_id` +
 `settings_fields`), the generated `414th-feature-index.md` is regenerated, an in-game-pass

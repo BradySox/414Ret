@@ -50,6 +50,7 @@ adapted to how this fork actually plans and flies a campaign.
 - **[Combat SAR](Combat-SAR)** — rescue a downed pilot and get them home.
 - **[Electronic Warfare and ISR](Electronic-Warfare-and-ISR)** — the C-130J JAMMING platform.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline battle simulation.
+- **[Vietnam Ops](Vietnam-Ops)** — the opt-in period-mechanics suite: Arc Light, AAA flak, naval gunfire, convoy interdiction, airbase siege, Super Gaggle, FAC(A).
 - **[Map Layers and Interface](Map-Layers-and-Interface)** — the unified layers panel and UI work.
 - **[Kneeboards](Kneeboards)** — the cover page, compact 3–4 page deck, SITREP band, and custom import.
 - **[Drop-Spawn Unit Placement](Drop-Spawn-Unit-Placement)** — right-click sandbox placement.

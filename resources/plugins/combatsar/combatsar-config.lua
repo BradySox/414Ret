@@ -675,6 +675,14 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         end
     end
 
+    -- 2026-06-30 in-game finding: a live session never logged a single King
+    -- activation across ~80 minutes despite correct group-name data (verified
+    -- against the generated .miz), on either the mission-start scan or the
+    -- Birth/PlayerEnterAircraft/PlayerEnterUnit event path. Every early-return
+    -- below was silent, so there was no way to tell which guard was tripping.
+    -- Each now logs why, and a periodic sweep (below, alongside the survivor
+    -- tick) retries any King still unactivated instead of relying on a single
+    -- event firing at the right moment.
     local activatedKings = {}
     local function activateKing(grp, reason)
         if not grp then return end
@@ -682,9 +690,17 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         if activatedKings[name] then return end
         local rec = kingByName[name]
         if not rec then return end
-        if not grp:IsAlive() then return end
+        if not grp:IsAlive() then
+            env.info("DCSRetribution|Combat SAR King - '" .. name .. "' not yet alive ("
+                .. tostring(reason or "unknown") .. "); will retry")
+            return
+        end
         local unit = grp:GetUnit(1)
-        if not unit then return end
+        if not unit then
+            env.info("DCSRetribution|Combat SAR King - '" .. name .. "' has no unit #1 ("
+                .. tostring(reason or "unknown") .. "); will retry")
+            return
+        end
         local king = rec.king
         activatedKings[name] = true
         if king.tacanChannel then
@@ -711,13 +727,26 @@ if dcsRetribution and dcsRetribution.CombatSAR then
 
     for name, _ in pairs(kingByName) do
         local grp = GROUP:FindByName(name)
-        if grp and grp:IsAlive() then activateKing(grp, "mission-start") end
+        if grp and grp:IsAlive() then
+            activateKing(grp, "mission-start")
+        else
+            env.info("DCSRetribution|Combat SAR King - '" .. name
+                .. "' not found/alive at mission-start; will retry")
+        end
     end
 
     local function activateKingFromEvent(EventData, reason)
         local grp = EventData and EventData.IniGroup
         if not grp and EventData and EventData.IniGroupName then
             grp = GROUP:FindByName(EventData.IniGroupName)
+        end
+        -- Some event types populate IniUnit but not IniGroup/IniGroupName (observed
+        -- 2026-06-30: PlayerEnterAircraft/PlayerEnterUnit never resolved a King via
+        -- either field, so activation never fired) -- fall back to the unit's own
+        -- owning group.
+        if not grp and EventData and EventData.IniUnit then
+            local ok, g = pcall(function() return EventData.IniUnit:GetGroup() end)
+            if ok then grp = g end
         end
         if grp and kingByName[grp:GetName()] then
             activateKing(grp, reason)
@@ -734,6 +763,29 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     kingBirthHandler:HandleEvent(EVENTS.Birth, function(_, e) activateKingFromEvent(e, "birth") end)
     kingBirthHandler:HandleEvent(EVENTS.PlayerEnterAircraft, function(_, e) activateKingFromEvent(e, "player-enter") end)
     kingBirthHandler:HandleEvent(EVENTS.PlayerEnterUnit, function(_, e) activateKingFromEvent(e, "player-enter") end)
+
+    -- Safety net: neither the mission-start scan nor the birth/player-enter events
+    -- are guaranteed to catch a King the moment it becomes alive (e.g. a client
+    -- slot that isn't truly queryable until the sim clock is actually running, or
+    -- an event whose group fields didn't resolve). Re-sweep every POLL until every
+    -- known King has activated, then stop.
+    local function retryUnactivatedKings()
+        local pending = false
+        for name, _ in pairs(kingByName) do
+            if not activatedKings[name] then
+                pending = true
+                local grp = GROUP:FindByName(name)
+                if grp and grp:IsAlive() then
+                    activateKing(grp, "retry-sweep")
+                end
+            end
+        end
+        if pending then
+            return timer.getTime() + POLL
+        end
+        return nil
+    end
+    timer.scheduleFunction(retryUnactivatedKings, {}, timer.getTime() + POLL)
 
     local kingCount = 0
     for _ in pairs(kingByName) do kingCount = kingCount + 1 end

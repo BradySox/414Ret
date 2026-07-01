@@ -74,8 +74,11 @@ def test_capture_is_surfaced_at_the_enemy_airfield() -> None:
     held = _pows([friendly, enemy])
     assert len(held) == 1
     tgo = held[0]
-    # Positioned at the enemy airfield, anchored to the friendly CP, carries the POW.
-    assert (tgo.position.x, tgo.position.y) == (1000.0, 2000.0)
+    # Positioned near the enemy airfield (offset toward the friendly anchor so the
+    # marker clears the airbase's own icon -- not exactly on top of it), anchored
+    # to the friendly CP, carries the POW.
+    offset = tgo.position.distance_to_point(enemy.position)
+    assert 0 < offset < enemy.position.distance_to_point(friendly.position)
     assert tgo.control_point is friendly
     assert tgo.unit_count == 1
     # The holding enemy field is recorded, and the TGO is registered for fragging.

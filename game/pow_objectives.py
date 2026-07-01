@@ -2,12 +2,13 @@
 rework, Phase 3).
 
 Each ``PendingPowRecovery`` on a coalition is rebuilt every turn into a
-``CapturedPilotGroundObject`` positioned at the nearest ENEMY control point (the
-"airfield" holding the POW) and anchored to the nearest friendly control point's
-``connected_objectives`` so it renders as a friendly recovery objective. The
-objects are *dynamic* (not authored in the campaign .miz): torn down and rebuilt
-each turn so the set always matches the live ``pending_pow_recoveries``. Mirrors
-``game/scar_objectives.py``.
+``CapturedPilotGroundObject`` positioned just outside the nearest ENEMY control
+point (the "airfield" holding the POW), offset ``_MARKER_OFFSET_M`` toward the
+friendly anchor so the map marker clears the airfield's own icon, and anchored
+to the nearest friendly control point's ``connected_objectives`` so it renders
+as a friendly recovery objective. The objects are *dynamic* (not authored in the
+campaign .miz): torn down and rebuilt each turn so the set always matches the
+live ``pending_pow_recoveries``. Mirrors ``game/scar_objectives.py``.
 """
 
 from __future__ import annotations
@@ -29,6 +30,12 @@ if TYPE_CHECKING:
     from game.theater import ControlPoint
 
 _OBJECTIVE_NAME = "Captured Pilot"
+
+# The objective is deliberately positioned near the holding airfield rather than
+# exactly on it -- the map marker sat on top of the airbase's own icon, making it
+# unclickable (2026-06-30 in-game report). Recovery is matched by airframe name,
+# not exact position (see commit_pow_recoveries), so this offset is cosmetic-only.
+_MARKER_OFFSET_M = 900
 
 
 def _pow_unit(coalition: Coalition) -> Optional[GroundUnitType]:
@@ -103,7 +110,10 @@ def _build_pow_objective(
     anchor: ControlPoint,
     unit: GroundUnitType,
 ) -> None:
-    point = holding_cp.position
+    # Offset toward the friendly anchor so the marker clears the airfield's own
+    # icon on the map (still reads as "held at this airfield").
+    heading = holding_cp.position.heading_between_point(anchor.position)
+    point = holding_cp.position.point_from_heading(heading, _MARKER_OFFSET_M)
     location = PresetLocation(_OBJECTIVE_NAME, point)
     tgo = CapturedPilotGroundObject(
         _OBJECTIVE_NAME, location, anchor, pow_entry.airframe_unit_name

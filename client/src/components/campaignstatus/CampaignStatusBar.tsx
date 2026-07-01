@@ -15,14 +15,18 @@ export default function CampaignStatusBar() {
   if (status == null) {
     return null;
   }
-  const date = new Date(status.date);
-  const dateText = isNaN(date.getTime())
-    ? status.date
-    : date.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+  // Parse the ISO campaign date as LOCAL, not UTC: `new Date("1968-07-15")`
+  // is UTC midnight, which toLocaleDateString renders as Jul 14 in any
+  // western-hemisphere zone -- the ribbon showed the day before the game date.
+  const [y, m, d] = status.date.split("-").map(Number);
+  const dateText =
+    y && m && d
+      ? new Date(y, m - 1, d).toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : status.date;
   return (
     <div className="campaign-status-bar" title={status.phase_narrative ?? ""}>
       <span className="campaign-status-name">

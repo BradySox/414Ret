@@ -117,7 +117,8 @@ base-defense BARCAP the player sits on the pad and scrambles at will.
   alert) when off, or just the lead (rest fly as AI wingmen, single-player section) when on.
   `Coalition._plan_player_qra` marks `member.pilot.player` per slot accordingly. UI: a "Fly
   lead, rest are AI wingmen" checkbox under the spinbox.
-- Runtime (cold alert spawn + flight plan + scramble cue) needs an in-game pass (A3/A4).
+- Runtime (cold alert spawn + flight plan + scramble cue) **verified in-game 2026-07-01** (checklist
+  A3/A4 — user pass "A3/A4 good").
 
 Legacy note: the old ramp-scramble system has been fully retired — the upstream PR #782
 dispatcher above is the only live QRA path. Both the `reactive_scramble.lua` script and the

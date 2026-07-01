@@ -56,7 +56,10 @@ so the two docs don't drift.
 - **Fail signature:** QRA pushing forward over the FLOT (the pre-tuning
   behavior that prompted lowering the radii).
 
-### A3 — Player-manned QRA alert flight · §1 · ☐ NEEDS PASS
+### A3 — Player-manned QRA alert flight · §1 · ☑ VERIFIED (2026-07-01, user pass — "A3 good")
+- **Verified (2026-07-01, user in-app/in-game pass):** the player-manned QRA alert flight generated and
+  behaved per the pass criteria — no double-spawn, no depleted-pool error, the alert flight held over its
+  own field. Fail signature did not occur.
 - **Setup:** A BARCAP-capable, player-flyable squadron at an airfield; set its
   "…of which player-manned" spinbox (under QRA reserve) ≥ 1. Take the turn and generate.
 - **Pass:** A cold-start BARCAP package named "QRA Alert (<squadron>)" appears in the player
@@ -67,7 +70,9 @@ so the two docs don't drift.
   airframe both manned and air-spawned by the dispatcher (double-spawn); a depleted-pool error
   on generation; or the AI dispatcher count not dropping when the player mans some.
 
-### A4 — Player QRA scramble cue · §1 · ☐ NEEDS PASS
+### A4 — Player QRA scramble cue · §1 · ☑ VERIFIED (2026-07-01, user pass — "A4 good")
+- **Verified (2026-07-01, user in-game pass):** the scramble cue fired as designed — no missing message,
+  no spam, sane BRA. Fail signature did not occur.
 - **Setup:** A player-manned QRA base (A3 setup); fly/trigger an enemy air raid toward it.
 - **Pass:** as a bandit closes inside the cue radius (the AI GCI radius + ~30 NM lead, so it
   fires *before* the AI would scramble), a coalition text "QRA SCRAMBLE — <base>: bandits
@@ -1086,16 +1091,28 @@ so the two docs don't drift.
   Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
-### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL (2026-06-28, audience in-game pass — recon bird flies the TARPS path but is shot down before it confirms BDA)
-- **Reconfirmed (2026-06-30, flown session — `state.json`/`dcs.log`):** same failure mode repeated —
-  **both** TARPS flights this session (`RAVEN TARPS|2|15|RF-101B Voodoo| Pilot #1` and
-  `BLOODHOUND TARPS|2|10|RF-101B Voodoo| Pilot #2`) are in `crash_events`, and
-  `tars_recon_captures` is empty (`0`). No change to the diagnosis — the 2026-06-28 fix (tighter
-  `default_tot_offset`, keep recon high) targets a lone-straggler-behind-a-departed-escort case; this
-  session's front (Kutaisi/Senaki-Kolkhi) is thick with AAA/SAM/MiG activity (see the broader blue
-  loss count this session), so recon-bird survivability may still be a standing campaign-balance issue
-  independent of the escort-timing fix. Not re-marking VERIFIED/REGRESSED — same open question as
-  before (accept as period-realistic vs. harden further).
+### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL (Tacview trace 2026-07-01: NOT all shot down — 2 of 4 survived, but STILL 0 BDA captures → a second, capture-side gap)
+- **Tacview trace (2026-07-01, `Tacview-20260630-171831…`, per user request):** the earlier "all shot
+  down" read was too strong. Tracing all four TARPS ships:
+  - `BLOODHOUND TARPS #1` — **survived** to end of recording (bubble-culled far away = RTB, not a kill).
+  - `BLOODHOUND TARPS #2` — **killed** at 00:56:17, ~941 m alt.
+  - `RAVEN TARPS #1` — **killed** at 00:38:50, ~47 m alt (low — flew into terrain / shot down on the deck).
+  - `RAVEN TARPS #2` — **survived** to end of recording (bubble-culled far away = RTB).
+  So **2 of 4 died, one from each 2-ship survived** — the survivability picture is materially better than
+  "recon bird always dies," consistent with the user's "seemed fine last time." **BUT `tars_recon_captures`
+  is still `0`** — the two survivors produced **no BDA confirmation**. That reframes the gap: it is no longer
+  purely survivability. Even a surviving TARPS ship isn't yielding a capture, which points at a **second
+  issue** — either the survivors RTB'd **without overflying** the target (lead lost / abort), or the TARS
+  capture path isn't firing for them. **Next diagnostic:** confirm whether either survivor actually crossed
+  its target (needs the target coords from the `.miz` waypoints) before blaming the capture path.
+- **Also seen in this Tacview (separate bug, likely stale-save):** RF-101Bs were **also** flying
+  `Tbilisi-Lochini BARCAP` — the "recon bird auto-tasked BARCAP" bug the 2026-06-28 fix was supposed to kill
+  (stripped `vwv_rf101b`/`vwv_ra-5` to TARPS-only). This campaign is a **turn-5 save on Caucasus** almost
+  certainly **started before that fix** (a stale save freezes squadron capabilities at gen — see
+  [[stale-save-vs-clobber]]), and the fix only touched the Khe Sanh squadron blocks, so a NEW game is needed
+  to confirm the BARCAP-tasking is actually gone here.
+- **Prior (2026-06-30, `state.json`):** `RAVEN TARPS #1` + `BLOODHOUND TARPS #2` in `crash_events`,
+  `tars_recon_captures` empty — matches the Tacview (the two that died are exactly those two).
 - **In-game (2026-06-28, audience pass — user: "fly the path for it but get shot down"):** the tasking + ingress half is confirmed — the RF-101B/RA-5C spawns clean on the `Retribution TARPS` loadout and flies the recon path — but it is **shot down en route to / over the target**, so the overflight→BDA-confirm half is never reached. The TARPS plumbing is structurally fine; this is a **survivability** gap (a lone, unescorted, weaponless recon bird into a Vietnam AAA/SAM environment). OPEN: harden survivability (escort, ingress altitude, routing, or a larger time offset behind the strikers) vs. accept it as period-realistic. PARTIAL until decided.
 - **Altitude analysis (2026-06-28, read from code):** the RF-101B/RA-5C YAMLs set no `combat_altitude`, and `COMBAT_ALTITUDE_BAND_KFT = (20, 20)` (`game/dcs/aircrafttype.py`) flattens the estimate to **20,000 ft** regardless of speed — i.e. the recon overflight is **already above the 4500 m (~14,800 ft) flak ceiling**. So the AAA/flak gauntlet (§33) is **not** the killer, and *lowering* the bird (the intuitive fix) would push it **into** the AAA, not out of danger. At 20k ft, alone and ~5 min behind the strike package (`TarpsFlightPlan.default_tot_offset` = 5 min, after the package escort has egressed), the realistic killer is a **MiG (BARCAP)** or a **SAM** — so the right hardening is **escort coverage / recon timing / routing**, not altitude. NB `TarpsFlightPlan` is shared with the F-14 TARPS path (G2, VERIFIED) — any flight-plan change must not regress it; an altitude change should be data-only per-airframe (`combat_altitude:` in the YAML), but altitude is the wrong lever here. Kill-cause (MiG vs SAM) pending the user.
 - **Kill-cause = MiGs (user, 2026-06-28) → FIX APPLIED.** Confirmed via `EscortFlightPlan.split_time`: the AI escort splits at the **strikers'** egress and turns back ~7–9 NM short of the target without loitering, so a recon bird +5 min behind flew the threatened ingress corridor **alone** after the escort RTB'd. Fix: keep it **high** (20k, above the AAA — unchanged) and **tighten `TarpsFlightPlan.default_tot_offset` 5 min → 2 min** so it ingresses **within** the package/escort window instead of as a lone straggler (`game/ato/flightplans/tarps.py` + 5 doc sites + `tests/test_tarps_recon.py`). Black/mypy/pytest green. **Shared with the F-14 path (G2):** the tighter offset is functionally safe for it (still a positive post-strike pass) but G2 wants a quick confirming re-fly. **Re-fly owed** on both — the recon bird should now survive to confirm BDA when the package has fighter cover (in a fighter-starved Vietnam turn with no escort planned it can still die, which is a campaign-balance matter, not this fix).
@@ -1824,7 +1841,18 @@ so the two docs don't drift.
   fires far inland (range gate wrong); auto bombardment never fires or fires every tick (cadence wrong);
   `TaskFireAtPoint`/`getMarkPanels`/`missionCommands` Lua error in `dcs.log`; an escort wandering off station.
 
-### L4 — Vietnam compressed-theater support-orbit standoff · PR #314 · ☐ UNTESTED (headless-verified; map-readable, no flying)
+### L4 — Vietnam compressed-theater support-orbit standoff · PR #314 · ☑ VERIFIED (2026-07-01, user map read — working as designed; tuning question open)
+- **Verified (2026-07-01, user in-app map read):** the AEW&C/tanker orbit reads "fine" on the planner map —
+  sits ~**40–50 miles** (≈65–80 km) behind the front, matching the headless calc (83/74 km at the 25/20 NM
+  buffer) and clear of the map edge. The fail signature (orbit ~150 km back / flung to the edge) did not
+  occur — the PR #314 tightening is confirmed applied on a live campaign.
+- **⚠️ Tuning question (user, 2026-07-01): "40–50 miles seems pretty long."** This is the tightened value
+  *working as designed* — but the user still finds it far for a compressed Vietnam theater. If we want it
+  closer, the lever is the per-campaign `aewc_threat_buffer` / `tanker_threat_buffer` (currently 25/20 NM);
+  dropping them further pulls the orbit in, at the cost of less standoff from forward threats. **Not a bug —
+  a balance call.** Left VERIFIED (the fix works); a follow-up buffer-tune is optional. NB the orbit also
+  carries a racetrack half-length on top of the buffer, so the *near* end sits closer than the buffer figure
+  alone.
 - **Headless adjudication:** `game/ato/flightplans/supportorbit.py::support_orbit_anchor` on the live Khe Sanh
   save: at 25/20 NM the AEW&C/tanker orbit sits **83/74 km** behind the front (vs 148 km at the old 60 NM),
   still 37-46 km clear of the threat. Guard test `tests/test_vietnam_content.py::test_vietnam_campaign_tightens_support_orbits`
@@ -1878,7 +1906,22 @@ so the two docs don't drift.
   the column never moves or never halts (`setOnOff`/route wrong); spams respawns; `coalition.addGroup` Lua
   error in `dcs.log`. Tune speed/scatter-range/respawn/truck-count via the plugin options.
 
-### L7 — Right-click supply-route interdiction · §35 · ☐ UNTESTED (server resolution test-covered; the right-click → Qt dialog path needs an in-app pass)
+### L7 — Right-click supply-route interdiction · §35 · ☐ UNTESTED (2026-07-01: "still nothing" root-caused to a STALE LOCAL CLIENT BUILD, not a code bug — client rebuilt, needs a re-test)
+- **2026-07-01 — "still nothing" is a build problem, not the feature.** The user right-clicked an enemy
+  supply route and nothing happened (same as the prior session). Root cause confirmed: the local checkout's
+  `client/build/static/js/main.9ba023ba.js` was dated **June 23** and contained **zero** occurrences of
+  `create-package/supply-route` — i.e. the compiled client predates the feature (merged in #349/#351). The
+  **source** on `main` is correct (`SupplyRoute.tsx` `contextmenu` → `useOpenNewSupplyRoutePackageDialogMutation`;
+  the hook + endpoint in `_liberationApi.ts`), it was just never compiled into what the user runs
+  (`run_retribution.bat` serves the local `client/build`, not a CI build). **Fix applied 2026-07-01:** rebuilt
+  the client (`cd client && CI=false npm run build`) → new bundle `main.c050b70d.js` **does** contain the
+  endpoint; the stale bundle is replaced. **Re-test after restarting the app** (or run the fresh `latest`
+  release, which ships a CI-built client). This is the same stale-`client/build` trap as the
+  [[local-client-rebuild-for-react-features]] memory — any React feature needs a client rebuild the local run
+  won't do automatically.
+- **Headless adjudication (unchanged):** the server resolution is test-covered
+  (`tests/server/test_supply_route_interdiction.py`); only the React `contextmenu` → Qt dialog path needs the
+  in-app pass — now unblocked by the rebuild.
 - **Headless adjudication:** `interdiction_target_for_route_id` is unit-tested
   (`tests/server/test_supply_route_interdiction.py` — resolves the `"<cp_a_id>:<cp_b_id>"` route id to the
   enemy end, prefers the contested CP, returns None for a friendly/malformed route). The **client
@@ -1954,6 +1997,12 @@ rows (B, C, D, E) then becomes the upstream-PR carve-out batch.
 ---
 
 ### §20 Drop-spawn (in-game-pass required)
+
+**Status (user, 2026-07-01): the core UI worked in a prior pass** — "drop spawn was good [in a prior]
+form." Takes **20-A** (right-click blank map → Qt dialog) and **20-B** (confirm → marker appears
+immediately) as user-confirmed. The remaining rows (20-H off-default guard, 20-C remove, 20-D deploy-next-turn,
+20-E terrain, 20-F range, 20-G free-placement) are **not individually confirmed** — check them the next time
+the placement dialog is open.
 
 | # | Observable criterion | Fail signature |
 |---|---|---|

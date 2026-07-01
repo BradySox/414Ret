@@ -43,6 +43,9 @@
     "Mortar 2B11 120mm"
   ],
   "air_defense_units": [
+    "AAA ZU-23 Toyota technical",
+    "AAA ZU-23 Toyota armored technical",
+    "AAA ZU-23 Insurgent (ERO)",
     "SA-9 Strela",
     "ZSU-57-2 'Sparka'",
     "SPAAA LC with ZU-23",
@@ -52,7 +55,9 @@
     "ZU-23 on Ural-375 Insurgent",
     "ZSU-23-4 Shilka"
   ],
-  "preset_groups": [],
+  "preset_groups": [
+    "ZU-23 Technicals (ERO)"
+  ],
   "naval_units": [],
   "missiles": [
     "SSM SS-1C Scud-B"

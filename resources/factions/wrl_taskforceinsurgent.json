@@ -159,6 +159,7 @@
     "SA-3/S-125 V-601P/5V27",
     "SA-6",
     "KS-19/SON-9",
+    "ZU-23 Technicals (ERO)",
     "Russian Navy"
   ],
   "naval_units": [
@@ -167,6 +168,9 @@
     "CV 1143.5 Admiral Kuznetsov"
   ],
   "air_defense_units": [
+    "AAA ZU-23 Toyota technical",
+    "AAA ZU-23 Toyota armored technical",
+    "AAA ZU-23 Insurgent (ERO)",
     "EWR 1L13",
     "EWR 55G6",
     "SA-9 Strela",

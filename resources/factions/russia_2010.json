@@ -60,7 +60,7 @@
   "infantry_units": [
     "Infantry AK-74 Rus",
     "MANPADS SA-18 Igla \"Grouse\"",
-    "SAM SA-24 Igla-S manpad",
+    "MANPADS SA-18 Igla-S \"Grouse\"",
     "Mortar 2B11 120mm",
     "Paratrooper AKS",
     "Paratrooper RPG-16"
@@ -76,6 +76,7 @@
     "SA-20/S-300PMU-1",
     "SA-20B/S-300PMU-2",
     "SA-23/S-300VM",
+    "SA-21/S-400",
     "Russian Navy"
   ],
   "naval_units": [
@@ -91,6 +92,7 @@
   "air_defense_units": [
     "EWR 1L13",
     "EWR 55G6",
+    "EWR 55G6U Nebo-U",
     "SAM SA-8 Osa \"Gecko\" TEL",
     "SA-9 Strela",
     "SA-13 Gopher (9K35 Strela-10M3)",

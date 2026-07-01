@@ -203,6 +203,13 @@ FEATURES: tuple[Feature, ...] = (
         40,
         settings_fields=("campaign_phases",),
     ),
+    Feature(
+        # Gated by the ModSettings/New Game `high_digit_sams` toggle (a wizard
+        # field, not a Settings dataclass field) -- hence no settings_fields.
+        "hds_ultimate_compilation",
+        "High Digit SAMs Ultimate Compilation support",
+        41,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

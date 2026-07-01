@@ -67,6 +67,7 @@ _LONG = [
     "SA-20",
     "SA-23",
     "KS19",
+    "KS-19",
 ]
 _MEDIUM = [
     "Hawk",

@@ -2147,6 +2147,27 @@ so the two docs don't drift.
   (stale `active_restricted_zones`); the planner deadlocks with nothing to strike in phase 1 (locked-class
   list too broad for that campaign's target set — trim `locked_targets` in the campaign YAML).
 
+## N. Mod support
+
+### N1 — High Digit SAMs Ultimate Compilation units in-game · §41 · ☐ UNTESTED (built 2026-07-01; unit data read from the installed mod, factions/presets/layouts headless-verified)
+- **Headless adjudication:** every new unit name resolves, all presets/layouts load, and all 25+ touched
+  factions parse and strip correctly with the toggle both ways (the id-correct `remove_vehicle` fix verified
+  headless). What CI *cannot* adjudicate is DCS itself accepting the unit type ids at spawn and the runtime
+  behavior of the new sites.
+- **Setup:** the Ultimate Compilation (v1.4.3+) installed; a NEW campaign vs. a modern Russia faction
+  (russia_2020 / redfor_current) with the "High Digit SAMs - Ultimate Compilation" toggle ON. For the period
+  layer, a Vietnam campaign with the toggle ON (SA-7s + the P-37 Bar Lock EWR).
+- **Pass:** S-400 / S-300V4 / SAMP-T / S-300PT sites generate and the mission loads without a "unit type not
+  found" DCS error; their threat rings render at the new ranges; MANTIS resolves them into the IADS (the
+  "resolved N/M SAM" dcs.log line counts them) and they engage at standoff; Pantsir-SM fills SHORAD slots;
+  SA-7 infantry actually launch; the P-37 feeds MANTIS EWR detection on period red factions; insurgent
+  ZU-23 technicals spawn at AAA sites.
+- **Fail signature:** DCS refuses the mission / silently drops a group (a type-id typo — cross-check the id
+  against the mod's `entry.lua` unit list); MANTIS logs "Could not match radar data" AND the site never
+  wakes (the banding override failed — check `dcsRetribution.RedAA` emits the group); a 40N6E site
+  dominates a small map absurdly (keep the `SA-21/S-400` preset out of small campaigns); SA-7 teams never
+  fire (manpad class/attribute mismatch).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

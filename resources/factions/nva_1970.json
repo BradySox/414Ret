@@ -33,6 +33,7 @@
     "Truck Ural-375"
   ],
   "infantry_units": [
+    "SAM SA-7 Strela-2 manpad",
     "Infantry AK-74 Rus",
     "Infantry RPG"
   ],
@@ -47,6 +48,7 @@
     "Boat Armed Hi-speed"
   ],
   "air_defense_units": [
+    "EWR P-37 Bar Lock",
     "SAM P19 \"Flat Face\" SR (SA-2/3)",
     "S-60 57mm",
     "ZSU-57-2 'Sparka'",

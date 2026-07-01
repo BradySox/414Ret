@@ -161,7 +161,10 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             ),
             ("F-22A Raptor (v2.0.0 released May 2025)", self.f22_raptor),
             ("F-111C Aardvark (Warpig Production v2.260208)", self.f111c),
-            ("High Digit SAMs (v1.4.0)", self.high_digit_sams),
+            (
+                "High Digit SAMs - Ultimate Compilation (v1.4.3+)",
+                self.high_digit_sams,
+            ),
             ("OH-6 Vietnam Asset Pack (v1.2)", self.oh_6_vietnamassetpack),
             ("OV-10A Bronco", self.ov10a_bronco),
             ("Vietnam War Vessels (v3.2.0 by TeTeT)", self.vietnamwarvessels),

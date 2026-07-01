@@ -19,6 +19,7 @@ import FlightPlansLayer from "../flightplanslayer";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
+import RestrictedZonesLayer from "../restrictedzones";
 import SupplyRoutesLayer from "../supplyrouteslayer";
 import {
   ExclusionZonesLayer,
@@ -74,7 +75,8 @@ type LayerId =
   | "inclusionZones"
   | "exclusionZones"
   | "seaZones"
-  | "cullingZones";
+  | "cullingZones"
+  | "restrictedZones";
 
 type BaseMap = "clarity" | "firefly" | "topo";
 
@@ -161,6 +163,12 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   exclusionZones: { label: "Exclusion zones", node: <ExclusionZonesLayer /> },
   seaZones: { label: "Sea zones", node: <SeaZonesLayer /> },
   cullingZones: { label: "Culling exclusion zones", node: <CullingExclusionLayer /> },
+  // ROE restricted zones (campaign phases W4). Only authored ROE campaigns emit
+  // zones, so the layer is a no-op everywhere else even while toggled on.
+  restrictedZones: {
+    label: "ROE restricted zones",
+    node: <RestrictedZonesLayer />,
+  },
 };
 
 const ALL_IDS = Object.keys(OVERLAYS) as LayerId[];
@@ -215,6 +223,7 @@ const GROUPS: GroupDef[] = [
       { id: "enemySamThreat" },
       { id: "enemySamDetection" },
       { id: "enemyIads" },
+      { id: "restrictedZones" },
     ],
   },
   {
@@ -262,6 +271,7 @@ const GROUPS: GroupDef[] = [
 ];
 
 const DEFAULT_ON: LayerId[] = [
+  "restrictedZones",
   "controlPoints",
   "aircraft",
   "combat",

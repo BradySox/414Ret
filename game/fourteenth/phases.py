@@ -14,8 +14,22 @@ already exists via the accessors the phase-pilot confirmed), the mandatory hyste
 (S3.3: min-dwell + monotonic-forward; asymmetric regression thresholds are
 implemented but regression stays opt-in/authored, i.e. off in v1), and the S3.4
 legibility string ("Interdiction -- enemy IADS 22% / air threat low / front static")
-so an inferred phase always explains itself. Tier 1/2 YAML authoring lands with P2
-(the Vietnam W4 arcs); nothing here reads a campaign ``phases:`` block yet.
+so an inferred phase always explains itself.
+
+W4 adds the **P2 authored tier + the ROE escalation layer** (spec:
+414th-vietnam-political-will-roe-notes.md S3): a campaign YAML may carry a
+``phases:`` block of authored :class:`CampaignPhase`\\ s that **override** Tier-0
+inference -- advanced sequentially by turn pins (``min_turn``) or accelerated by
+``advance_when`` conditions (bleeding political will speeds escalation --
+historically backwards-sounding, historically true). Authored phases may carry
+**restricted zones** (circles where offensive tasking is forbidden -- the planner
+gate scrubs packages targeting inside; sanctuary airfields fall out) and
+**locked target classes** (``target_release``: e.g. no power/factory strikes until
+the phase releases them). Player enforcement is SOFT: the debrief charges a sharp
+will penalty for kills inside an active zone (:func:`count_roe_violations`) -- the
+LBJ-era pilot could always break the rules and answer for it. Definitions are
+re-derived from the campaign YAML at load (module cache) and never pickled, so
+editing a campaign's phases can't corrupt a save.
 
 Boundaries (the S17 invariant): reactive defense stays deterministic. The emphasis
 only reorders the *offensive* HTN root methods -- ``TheaterSupport`` /
@@ -30,11 +44,13 @@ baseline, no emphasis, no status line.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from game import Game
+    from game.debriefing import Debriefing
 
 # --- S3.2 thresholds (v1; refined by the 6-campaign pilot) --------------------------
 
@@ -75,11 +91,44 @@ PHASE_MIN_DWELL_TURNS = 2
 
 
 @dataclass(frozen=True)
+class RestrictedZone:
+    """A circle where offensive tasking is forbidden (authored phases, W4).
+
+    ``center_cp`` names a control point (resolved at runtime so the zone follows
+    the campaign's real laydown); explicit ``x``/``y`` theater coordinates are the
+    fallback for a zone anchored off-base. Radius is authored in NM.
+    """
+
+    radius_nm: float
+    center_cp: Optional[str] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
+    name: str = ""
+
+
+@dataclass(frozen=True)
+class PhaseCondition:
+    """An ``advance_when`` condition set: ANY satisfied field advances the arc.
+
+    ``min_turn`` here is an acceleration pin *inside* the condition; the next
+    phase's own ``min_turn`` is the scheduled escalation date. ``blue_will_below``
+    couples escalation to the W1 political-will economy (Washington's patience for
+    restraint runs out); ``enemy_iads_below`` releases escalation on rollback
+    progress (ratio vs. the turn-0 baseline).
+    """
+
+    min_turn: Optional[int] = None
+    blue_will_below: Optional[float] = None
+    enemy_iads_below: Optional[float] = None
+
+
+@dataclass(frozen=True)
 class CampaignPhase:
     """A doctrine-like profile active for part of a campaign (spec S2.1).
 
-    Tier 0 uses only these fields; the authored-tier fields (``min_turn``,
-    ``advance_when``, whitelist deltas, objectives) arrive with P2/W4.
+    Tier 0 fills only key/name/narrative/emphasis; the authored tier (P2/W4) adds
+    the transition fields (``min_turn``, ``advance_when``) and the ROE payload
+    (``restricted_zones``, ``locked_target_classes``).
     ``emphasis`` is the full ordering of ``PlanNextAction``'s *offensive* root
     methods by class name -- the soft reweight of S4. Kept as names so this module
     never imports the commander (no cycles); ``nextaction.py`` resolves them and a
@@ -90,6 +139,17 @@ class CampaignPhase:
     name: str
     narrative: str
     emphasis: tuple[str, ...] = ()
+    #: Earliest campaign turn this phase may begin (authored arcs; 0 = no pin).
+    min_turn: int = 0
+    #: Optional acceleration conditions to LEAVE this phase (authored arcs).
+    advance_when: Optional[PhaseCondition] = None
+    #: Circles where offensive tasking is forbidden while this phase is active.
+    restricted_zones: tuple[RestrictedZone, ...] = ()
+    #: Strike-target classes still locked in this phase (TGO ``category`` strings,
+    #: plus the special ``"airfield"`` for OCA against a control point).
+    locked_target_classes: tuple[str, ...] = ()
+    #: True for phases parsed from a campaign ``phases:`` block.
+    authored: bool = False
 
 
 #: PlanNextAction's offensive tail in its stock order. The fixed reactive prefix
@@ -401,6 +461,13 @@ def update_campaign_phase(game: "Game") -> None:
         baseline = snapshot_baseline(game)
         game.phase_baseline = baseline
 
+    # An authored arc (a campaign `phases:` block, P2/W4) overrides Tier-0
+    # inference entirely -- the author owns the transitions.
+    arc = authored_arc_for(game)
+    if arc:
+        _update_authored_phase(game, arc, baseline)
+        return
+
     metrics = collect_metrics(game, baseline)
     current = getattr(game, "current_phase_key", None)
     new_key = _next_phase_key(
@@ -422,10 +489,295 @@ def update_campaign_phase(game: "Game") -> None:
 
 
 def active_phase(game: "Game") -> Optional[CampaignPhase]:
-    """The phase consumers read (planner emphasis, kneeboard, server payload)."""
+    """The phase consumers read (planner emphasis, kneeboard, server payload).
+
+    Authored keys resolve against the campaign's arc first; a stale authored key
+    (the campaign's ``phases:`` block was edited or removed under a save) resolves
+    to None here and Tier 0 reassigns on the next ``initialize_turn`` -- the spec
+    S5 "definitions re-derived at load" behaviour.
+    """
     if not getattr(game.settings, "campaign_phases", False):
         return None
     key = getattr(game, "current_phase_key", None)
     if key is None:
         return None
+    for phase in authored_arc_for(game):
+        if phase.key == key:
+            return phase
     return PHASES.get(key)
+
+
+# --- the authored tier (P2) + the ROE escalation layer (W4) --------------------------
+
+#: Authored-arc cache keyed by campaign name. Definitions live in the campaign
+#: YAML and are re-derived per process (never pickled); tests may inject here.
+_ARC_CACHE: dict[str, tuple[CampaignPhase, ...]] = {}
+
+
+def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
+    """Parse a campaign YAML ``phases:`` block into authored phases.
+
+    ``emphasis`` names a Tier-0 phase key to borrow that planner ordering
+    (``rollback`` / ``interdiction`` / ``offensive``); omitted means no planner
+    bias for that phase. Raises on structurally invalid entries so a bad campaign
+    fails loudly in tests rather than silently losing its arc.
+    """
+    if not raw:
+        return ()
+    if not isinstance(raw, list):
+        raise ValueError(f"phases: must be a list, got {type(raw).__name__}")
+    phases = []
+    for entry in raw:
+        if not isinstance(entry, dict) or "key" not in entry:
+            raise ValueError(f"phases: entry needs a 'key': {entry!r}")
+        emphasis_key = entry.get("emphasis")
+        if emphasis_key is not None and emphasis_key not in PHASES:
+            raise ValueError(
+                f"phases: unknown emphasis {emphasis_key!r} (want one of "
+                f"{sorted(PHASES)})"
+            )
+        emphasis = PHASES[emphasis_key].emphasis if emphasis_key else ()
+        zones = []
+        for zone in entry.get("restricted_zones") or []:
+            if "radius_nm" not in zone or not (
+                zone.get("center") or ("x" in zone and "y" in zone)
+            ):
+                raise ValueError(
+                    f"restricted_zones: entry needs radius_nm and a center "
+                    f"(CP name) or x/y: {zone!r}"
+                )
+            zones.append(
+                RestrictedZone(
+                    radius_nm=float(zone["radius_nm"]),
+                    center_cp=zone.get("center"),
+                    x=zone.get("x"),
+                    y=zone.get("y"),
+                    name=str(zone.get("name", "")),
+                )
+            )
+        advance = entry.get("advance_when")
+        condition = None
+        if advance:
+            condition = PhaseCondition(
+                min_turn=advance.get("min_turn"),
+                blue_will_below=advance.get("blue_will_below"),
+                enemy_iads_below=advance.get("enemy_iads_below"),
+            )
+        phases.append(
+            CampaignPhase(
+                key=str(entry["key"]),
+                name=str(entry.get("name", entry["key"])),
+                narrative=str(entry.get("narrative", "")),
+                emphasis=emphasis,
+                min_turn=int(entry.get("min_turn", 0)),
+                advance_when=condition,
+                restricted_zones=tuple(zones),
+                locked_target_classes=tuple(entry.get("locked_targets") or ()),
+                authored=True,
+            )
+        )
+    return tuple(phases)
+
+
+def authored_arc_for(game: "Game") -> tuple[CampaignPhase, ...]:
+    """The campaign's authored arc, or () for Tier-0 campaigns.
+
+    Re-derived from the campaign YAML by name (spec S5: definitions are never
+    pickled) and cached per process. Any lookup/parse failure degrades to Tier 0
+    with a log, never a crash -- an old save whose campaign was removed still
+    plays.
+    """
+    name = getattr(game, "campaign_name", None)
+    if not name:
+        return ()
+    if name in _ARC_CACHE:
+        return _ARC_CACHE[name]
+    arc: tuple[CampaignPhase, ...] = ()
+    try:
+        import yaml
+
+        from game.campaignloader.campaign import Campaign
+
+        for path in Campaign.iter_campaign_defs():
+            try:
+                with path.open(encoding="utf-8") as campaign_file:
+                    data = yaml.safe_load(campaign_file)
+            except Exception:  # noqa: BLE001 -- one bad yaml must not kill the scan
+                continue
+            if isinstance(data, dict) and data.get("name") == name:
+                arc = parse_phases(data.get("phases"))
+                break
+    except Exception:  # noqa: BLE001
+        logging.exception("Campaign phases: authored-arc lookup failed for %r", name)
+        arc = ()
+    _ARC_CACHE[name] = arc
+    return arc
+
+
+def _condition_satisfied(
+    game: "Game", condition: Optional[PhaseCondition], baseline: PhaseBaseline
+) -> bool:
+    """ANY specified field of an ``advance_when`` set advances the arc."""
+    if condition is None:
+        return False
+    if condition.min_turn is not None and game.turn >= condition.min_turn:
+        return True
+    if condition.blue_will_below is not None:
+        will = getattr(game.blue, "political_will", None)
+        if will is not None and will < condition.blue_will_below:
+            return True
+    if condition.enemy_iads_below is not None and baseline.sam_sites:
+        ratio = _enemy_sam_sites(game) / baseline.sam_sites
+        if ratio < condition.enemy_iads_below:
+            return True
+    return False
+
+
+def _update_authored_phase(
+    game: "Game", arc: tuple[CampaignPhase, ...], baseline: PhaseBaseline
+) -> None:
+    """Advance an authored arc: sequential, forward-only, author-owned.
+
+    Move from phase i to i+1 when the *next* phase's ``min_turn`` is reached
+    (the scheduled escalation date; 0 = no schedule) OR the *current* phase's
+    ``advance_when`` is satisfied (the acceleration coupling). A save that adopts
+    an arc mid-campaign (or whose stored key vanished from an edited arc) enters
+    at the latest turn-eligible phase.
+    """
+    keys = [phase.key for phase in arc]
+    current = getattr(game, "current_phase_key", None)
+    if current in keys:
+        index = keys.index(current)
+    else:
+        index = 0
+        for i, phase in enumerate(arc):
+            if phase.min_turn and game.turn >= phase.min_turn:
+                index = i
+    while index + 1 < len(arc):
+        next_phase = arc[index + 1]
+        scheduled = next_phase.min_turn > 0 and game.turn >= next_phase.min_turn
+        accelerated = _condition_satisfied(game, arc[index].advance_when, baseline)
+        if not (scheduled or accelerated):
+            break
+        index += 1
+    phase = arc[index]
+    if phase.key != current:
+        game.current_phase_key = phase.key
+        game.phase_entered_on_turn = game.turn
+        if current is not None:
+            game.message(f"Campaign enters {phase.name}", phase.narrative)
+    game.phase_status_line = f"{phase.name} — phase {index + 1} of {len(arc)}" + (
+        " · ROE restrictions active" if phase.restricted_zones else ""
+    )
+
+
+def _target_class(target: object) -> Optional[str]:
+    """The ``target_release`` class of a mission target.
+
+    Control points (OCA) are the special ``"airfield"`` class; ground objects use
+    their ``category`` string (power, factory, fuel, ammo, ware, comms, aa, ...).
+    Other targets (front lines, convoys) have no class and are never class-gated.
+    """
+    from game.theater import ControlPoint
+    from game.theater.theatergroundobject import TheaterGroundObject
+
+    if isinstance(target, ControlPoint):
+        return "airfield"
+    if isinstance(target, TheaterGroundObject):
+        return target.category
+    return None
+
+
+def _resolved_zones(
+    game: "Game", phase: CampaignPhase
+) -> list[tuple[str, "object", float]]:
+    """Resolve a phase's zones to (name, center Point, radius meters).
+
+    A zone naming a control point absent from this theater resolves to nothing
+    (logged once per resolution) rather than crashing -- authored data must never
+    brick a campaign.
+    """
+    zones: list[tuple[str, object, float]] = []
+    for zone in phase.restricted_zones:
+        center = None
+        if zone.center_cp is not None:
+            for cp in game.theater.controlpoints:
+                if cp.name == zone.center_cp:
+                    center = cp.position
+                    break
+            if center is None:
+                logging.warning(
+                    "Restricted zone %r: no control point named %r in this theater",
+                    zone.name or zone.center_cp,
+                    zone.center_cp,
+                )
+        elif zone.x is not None and zone.y is not None:
+            center = game.point_in_world(zone.x, zone.y)
+        if center is not None:
+            zones.append(
+                (
+                    zone.name or zone.center_cp or "Restricted zone",
+                    center,
+                    zone.radius_nm * 1852.0,
+                )
+            )
+    return zones
+
+
+def active_restricted_zones(game: "Game") -> list[tuple[str, "object", float]]:
+    """The active phase's resolved zones -- the map layer / server payload feed."""
+    phase = active_phase(game)
+    if phase is None:
+        return []
+    return _resolved_zones(game, phase)
+
+
+def roe_blocks_target(game: "Game", target: object) -> bool:
+    """True when the active phase's ROE forbids offensive tasking at ``target``.
+
+    The AI planner gate (read in ``PackagePlanningTask.fulfill_mission`` next to
+    the Vietnam ``tasking_whitelist``): a locked target class is blocked anywhere;
+    any target inside an active restricted zone is blocked regardless of class
+    (sanctuary airfields fall out of this). BLUE-only by the caller (the ROE is
+    Washington's, not Hanoi's). The *player* is never hard-blocked -- their
+    enforcement is the will penalty (:func:`count_roe_violations`).
+    """
+    phase = active_phase(game)
+    if phase is None:
+        return False
+    target_class = _target_class(target)
+    if target_class is not None and target_class in phase.locked_target_classes:
+        return True
+    position = getattr(target, "position", None)
+    if position is None:
+        return False
+    for _name, center, radius_m in _resolved_zones(game, phase):
+        if center.distance_to_point(position) <= radius_m:  # type: ignore[attr-defined]
+            return True
+    return False
+
+
+def count_roe_violations(game: "Game", debriefing: "Debriefing") -> int:
+    """Enemy ground kills inside an active restricted zone this turn.
+
+    The SOFT player enforcement: nothing stops the strike, but each kill inside a
+    zone drains political will sharply (weighted in ``political_will.py``). Reads
+    the debriefing's enemy ground-object losses (the strike-damage ledger; their
+    theater units carry positions).
+    """
+    zones = active_restricted_zones(game)
+    if not zones:
+        return 0
+    violations = 0
+    ground_losses = getattr(debriefing, "ground_losses", None)
+    if ground_losses is None:
+        return 0
+    for mapping in getattr(ground_losses, "enemy_ground_objects", []) or []:
+        position = getattr(mapping.theater_unit, "position", None)
+        if position is None:
+            continue
+        for _name, center, radius_m in zones:
+            if center.distance_to_point(position) <= radius_m:  # type: ignore[attr-defined]
+                violations += 1
+                break
+    return violations

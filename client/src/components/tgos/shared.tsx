@@ -16,6 +16,15 @@ export function TgoTooltip(props: { tgo: TgoModel }) {
   return (
     <Tooltip>
       {`${props.tgo.name} (${props.tgo.control_point_name})`}
+      {/* ROE (campaign phases W4): the target is visible but off-limits this
+          phase -- you can see it, you may not hit it. Striking it anyway costs
+          political will. */}
+      {props.tgo.roe_restricted && (
+        <>
+          <br />
+          <b style={{ color: "#d43a3a" }}>RESTRICTED — ROE</b>
+        </>
+      )}
       <br />
       <SplitLines items={props.tgo.units} />
     </Tooltip>

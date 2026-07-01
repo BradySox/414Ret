@@ -73,6 +73,27 @@ class CampaignStatusJs(BaseModel):
         )
 
 
+class RestrictedZoneJs(BaseModel):
+    """An active ROE restricted zone (campaign phases W4) for the map layer."""
+
+    name: str
+    center: LeafletPoint
+    radius_m: float
+
+    @staticmethod
+    def all_in_game(game: Game) -> list[RestrictedZoneJs]:
+        from game.fourteenth.phases import active_restricted_zones
+
+        return [
+            RestrictedZoneJs(
+                name=name,
+                center=LeafletPoint.from_latlng(center.latlng()),  # type: ignore[attr-defined]
+                radius_m=radius_m,
+            )
+            for name, center, radius_m in active_restricted_zones(game)
+        ]
+
+
 class GameJs(BaseModel):
     control_points: list[ControlPointJs]
     tgos: list[TgoJs]
@@ -95,6 +116,8 @@ class GameJs(BaseModel):
     # Campaign-status ribbon (phases W3): turn/date/campaign + the inferred phase
     # (+ political will on Vietnam campaigns).
     campaign_status: CampaignStatusJs
+    # Active ROE restricted zones (phases W4); empty outside authored ROE phases.
+    restricted_zones: list[RestrictedZoneJs]
 
     class Config:
         title = "Game"
@@ -105,6 +128,7 @@ class GameJs(BaseModel):
             blank_canvas_setup=game.blank_canvas_setup,
             enable_unit_placement=game.settings.enable_unit_placement,
             campaign_status=CampaignStatusJs.from_game(game),
+            restricted_zones=RestrictedZoneJs.all_in_game(game),
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             supply_routes=SupplyRouteJs.all_in_game(game),

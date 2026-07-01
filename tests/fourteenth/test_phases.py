@@ -9,8 +9,11 @@ emphasis contract between game/fourteenth/phases.py and PlanNextAction.
 
 from __future__ import annotations
 
+import math
 from types import SimpleNamespace
 from typing import Any, Optional
+
+import pytest
 
 from game.commander.tasks.compound.nextaction import PlanNextAction
 from game.fourteenth.phases import (
@@ -21,14 +24,19 @@ from game.fourteenth.phases import (
     OFFENSIVE_METHODS,
     PHASE_MIN_DWELL_TURNS,
     PHASES,
+    CampaignPhase,
     PhaseBaseline,
     PhaseMetrics,
     ROLLBACK_SAM_FLOOR,
     _next_phase_key,
     active_phase,
+    active_restricted_zones,
     classify,
     collect_metrics,
+    count_roe_violations,
     legibility,
+    parse_phases,
+    roe_blocks_target,
     update_campaign_phase,
 )
 
@@ -173,6 +181,9 @@ def _duck_game(
     current: Optional[str] = None,
     entered: Optional[int] = None,
     baseline: Optional[PhaseBaseline] = None,
+    campaign_name: Optional[str] = None,
+    controlpoints: Optional[list[Any]] = None,
+    blue_will: Optional[float] = None,
 ) -> Any:
     messages: list[tuple[str, str]] = []
     game = SimpleNamespace(
@@ -180,7 +191,7 @@ def _duck_game(
         theater=SimpleNamespace(
             ground_objects=[],
             conflicts=lambda: [],
-            controlpoints=[],
+            controlpoints=controlpoints or [],
         ),
         air_wing_for=lambda player: SimpleNamespace(iter_squadrons=lambda: []),
         turn=turn,
@@ -189,6 +200,8 @@ def _duck_game(
         phase_entered_on_turn=entered,
         phase_status_line=None,
         phase_baseline=baseline,
+        campaign_name=campaign_name,
+        blue=SimpleNamespace(political_will=blue_will),
         messages=messages,
     )
     game.message = lambda title, text="": messages.append((title, text))
@@ -309,3 +322,150 @@ def test_each_valid_method_keeps_the_reactive_prefix_and_tail() -> None:
     assert names[-1] == "RecoverySupport"
     assert names[3:-1] == list(PHASES["offensive"].emphasis)
     assert names[3] == "CaptureBases"
+
+
+# --- W4: the authored tier + the ROE escalation layer ---------------------------------
+
+
+class _Pt:
+    """Flat-plane point stub with the one method the zone math calls."""
+
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
+    def distance_to_point(self, other: "_Pt") -> float:
+        return math.hypot(self.x - other.x, self.y - other.y)
+
+
+def _authored_arc() -> tuple[CampaignPhase, ...]:
+    return parse_phases(
+        [
+            {
+                "key": "rolling_thunder",
+                "name": "Rolling Thunder",
+                "narrative": "Restraint.",
+                "emphasis": "interdiction",
+                "restricted_zones": [
+                    {"center": "Hanoi", "radius_nm": 10, "name": "Hanoi sanctuary"}
+                ],
+                "locked_targets": ["factory", "airfield"],
+                "advance_when": {"blue_will_below": 75},
+            },
+            {
+                "key": "linebacker",
+                "name": "Linebacker",
+                "emphasis": "rollback",
+                "min_turn": 6,
+            },
+            {
+                "key": "linebacker_ii",
+                "name": "Linebacker II",
+                "emphasis": "offensive",
+                "min_turn": 10,
+            },
+        ]
+    )
+
+
+@pytest.fixture
+def authored_game() -> Any:
+    from game.fourteenth import phases
+
+    hanoi = SimpleNamespace(name="Hanoi", position=_Pt(0.0, 0.0))
+    game = _duck_game(campaign_name="ROE Test", controlpoints=[hanoi], blue_will=100.0)
+    phases._ARC_CACHE["ROE Test"] = _authored_arc()
+    yield game
+    del phases._ARC_CACHE["ROE Test"]
+
+
+def test_authored_arc_overrides_tier0_and_holds_opening(authored_game: Any) -> None:
+    update_campaign_phase(authored_game)
+    assert authored_game.current_phase_key == "rolling_thunder"
+    phase = active_phase(authored_game)
+    assert phase is not None and phase.authored
+    # Borrowed Tier-0 emphasis reaches the planner order.
+    assert phase.emphasis == PHASES["interdiction"].emphasis
+    assert "phase 1 of 3" in authored_game.phase_status_line
+    assert "ROE restrictions active" in authored_game.phase_status_line
+    assert authored_game.messages == []  # opening assignment is silent
+
+
+def test_authored_arc_advances_on_schedule_once(authored_game: Any) -> None:
+    authored_game.current_phase_key = "rolling_thunder"
+    authored_game.turn = 6
+    update_campaign_phase(authored_game)
+    assert authored_game.current_phase_key == "linebacker"
+    assert len(authored_game.messages) == 1
+    assert "Linebacker" in authored_game.messages[0][0]
+    # Same-turn re-init: stable, no repeat announcement.
+    update_campaign_phase(authored_game)
+    assert authored_game.current_phase_key == "linebacker"
+    assert len(authored_game.messages) == 1
+
+
+def test_authored_arc_accelerates_on_bleeding_will(authored_game: Any) -> None:
+    # Turn 2 is well before the schedule, but Washington is bleeding.
+    authored_game.current_phase_key = "rolling_thunder"
+    authored_game.turn = 2
+    authored_game.blue.political_will = 60.0
+    update_campaign_phase(authored_game)
+    assert authored_game.current_phase_key == "linebacker"
+
+
+def test_authored_arc_skips_ahead_for_a_late_adopting_save(authored_game: Any) -> None:
+    # A mid-campaign save with no stored key enters at the turn-eligible phase.
+    authored_game.turn = 11
+    update_campaign_phase(authored_game)
+    assert authored_game.current_phase_key == "linebacker_ii"
+
+
+def test_roe_blocks_zone_and_locked_class(authored_game: Any) -> None:
+    update_campaign_phase(authored_game)
+    nm = 1852.0
+    inside = SimpleNamespace(position=_Pt(5 * nm, 0.0))
+    outside = SimpleNamespace(position=_Pt(50 * nm, 0.0))
+    assert roe_blocks_target(authored_game, inside)
+    assert not roe_blocks_target(authored_game, outside)
+    # Advance to Linebacker II: no zones, nothing locked.
+    authored_game.turn = 10
+    update_campaign_phase(authored_game)
+    assert authored_game.current_phase_key == "linebacker_ii"
+    assert not roe_blocks_target(authored_game, inside)
+
+
+def test_roe_ignores_everything_without_an_authored_phase() -> None:
+    game = _duck_game(on=True, current="rollback", entered=0)
+    target = SimpleNamespace(position=_Pt(0.0, 0.0))
+    assert not roe_blocks_target(game, target)
+    assert active_restricted_zones(game) == []
+
+
+def test_count_roe_violations(authored_game: Any) -> None:
+    update_campaign_phase(authored_game)
+    nm = 1852.0
+
+    def mapping(x: float) -> Any:
+        return SimpleNamespace(theater_unit=SimpleNamespace(position=_Pt(x, 0.0)))
+
+    debriefing = SimpleNamespace(
+        ground_losses=SimpleNamespace(
+            enemy_ground_objects=[mapping(2 * nm), mapping(8 * nm), mapping(60 * nm)]
+        )
+    )
+    assert count_roe_violations(authored_game, debriefing) == 2  # type: ignore[arg-type]
+
+
+def test_count_roe_violations_zero_without_zones() -> None:
+    game = _duck_game(on=True, current="interdiction", entered=0)
+    debriefing = SimpleNamespace(ground_losses=SimpleNamespace(enemy_ground_objects=[]))
+    assert count_roe_violations(game, debriefing) == 0  # type: ignore[arg-type]
+
+
+def test_parse_phases_rejects_bad_entries() -> None:
+    with pytest.raises(ValueError):
+        parse_phases([{"name": "no key"}])
+    with pytest.raises(ValueError):
+        parse_phases([{"key": "x", "emphasis": "not-a-phase"}])
+    with pytest.raises(ValueError):
+        parse_phases([{"key": "x", "restricted_zones": [{"radius_nm": 10}]}])

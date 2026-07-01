@@ -46,6 +46,10 @@ BLUE_PILOT_RESCUED_REFUND = 0.5  # a Combat SAR save softens the airframe blow
 BLUE_BASE_LOST = 3.0
 BLUE_ENEMY_AIR_CLAIMED = 0.25  # restores: a claimed MiG kill plays well at home
 BLUE_PASSIVE_REGEN = 0.5
+#: W4 ROE coupling: each kill inside an active restricted zone (see
+#: phases.count_roe_violations) is a headline -- the sharp soft-enforcement drain
+#: that makes the zones bind the player without hard-blocking them.
+BLUE_ROE_VIOLATION = 4.0
 
 # --- RED (Regime Resolve) feed weights. Resolve is hard: airframes barely register;
 # the trail is the artery.
@@ -161,6 +165,20 @@ def _blue_delta(game: "Game", debriefing: "Debriefing") -> float:
 
     blue_losses = debriefing.loss_counts(Player.BLUE)
     delta -= blue_losses.bases_lost * BLUE_BASE_LOST
+
+    # ROE violations (W4): kills inside an active restricted zone draw a sharp
+    # penalty -- the LBJ-era pilot could break the rules, but Washington answered
+    # for it. Zero whenever no authored phase with zones is active.
+    from game.fourteenth.phases import count_roe_violations
+
+    violations = count_roe_violations(game, debriefing)
+    if violations:
+        delta -= violations * BLUE_ROE_VIOLATION
+        game.message(
+            "ROE violation",
+            f"{violations} target(s) destroyed inside a restricted zone this "
+            "turn. Washington takes the heat -- political will pays the bill.",
+        )
 
     # Claimed enemy air kills play well at home (claimed, per the recon-fog framing).
     delta += debriefing.loss_counts(Player.RED).aircraft * BLUE_ENEMY_AIR_CLAIMED

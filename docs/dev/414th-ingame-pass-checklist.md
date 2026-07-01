@@ -2122,6 +2122,31 @@ so the two docs don't drift.
   `campaign_status` missing from `/game`); a transition announces every turn (message-once regression).
   Knobs: the `ROLLBACK_SAM_FLOOR`/`IADS_*`/`PHASE_MIN_DWELL_TURNS` constants in `game/fourteenth/phases.py`.
 
+### M4 — ROE escalation arc: zones, target release, will coupling (campaign layer W4) · §40 · ☐ UNTESTED (built 2026-07-01; arc/gate/violation logic fully unit-tested, the lived Rolling Thunder → Linebacker II experience needs a played Vietnam campaign; zones layer needs the CI client rebuild)
+- **Headless adjudication:** authored-arc parsing (all 4 Vietnam YAMLs guarded in
+  `tests/test_vietnam_content.py`), sequential/scheduled/will-accelerated advancement, the planner ROE gate
+  (zone + locked class), and the violation counter are locked in `tests/fourteenth/test_phases.py`. What CI
+  *cannot* adjudicate: whether the arc **feels like Rolling Thunder** in play (restraint that visibly binds,
+  then releases) and whether the AI planner meaningfully redirects rather than starves.
+- **Setup:** a NEW Vietnam campaign (arcs ship in all four). Open the map: the **red dashed sanctuary
+  circle** (Tbilisi at Yankee Station/Steel Tiger, Sukhumi at Khe Sanh, Saipan at Velvet Thunder) should
+  draw, and deep factories/airfields inside show **RESTRICTED — ROE** on hover. Play turns through the arc
+  (Bombing Halt ≈ turn 8, Linebacker ≈ 11, Linebacker II ≈ 16 — earlier if your will bleeds).
+- **Pass:** phase 1: the BLUE auto-planner never frags strike/OCA into the zone or against locked classes
+  (factories/power/airfields), while the front/trail war runs normally; **you** can still strike the zone —
+  and doing so posts "ROE violation" and visibly dents Political Will next debrief; transitions announce
+  once, the ribbon/kneeboard track the arc ("phase 2 of 4"), zones shrink at Linebacker and vanish at
+  Linebacker II, after which the planner hits the deep targets; a non-Vietnam campaign shows no zones and
+  plans stock.
+- **Fail signature:** the AI strikes into the sanctuary in phase 1 (gate not reached — check
+  `roe_blocks_target` wiring in `PackagePlanningTask.fulfill_mission`); the player is hard-blocked from
+  striking the zone (enforcement must stay soft); no will penalty after a zone kill (violation counter not
+  seeing debrief positions); the arc never advances (min_turns/`advance_when` mis-parsed — check the YAML) or
+  skips straight to Linebacker II on turn 1 (min_turn 0 bug); the zone circle doesn't draw (client build
+  stale — the L7 lesson — or `restricted_zones` missing from `/game`); zones linger after Linebacker II
+  (stale `active_restricted_zones`); the planner deadlocks with nothing to strike in phase 1 (locked-class
+  list too broad for that campaign's target set — trim `locked_targets` in the campaign YAML).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

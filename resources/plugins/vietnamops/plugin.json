@@ -1,57 +1,59 @@
 {
     "nameInUI": "Vietnam Ops (period mechanics)",
-    "descriptionInUI": "Runtime for the Vietnam Ops suite -- opt-in period air-war mechanics gated by the 'Vietnam Ops' campaign settings page. Inert unless a Vietnam Ops setting is on (the mission generator emits dcsRetribution.VietnamOps only then). Arc Light: a heavy-bomber (B-52) Strike walks a carpet of bombs across its target at the run-in instead of dropping a single aimpoint (tactical strikers unaffected). AAA flak gauntlet: aircraft within range and below the ceiling of an opposing AAA gun draw barrage flak that tightens against predictable run-ins and widens when jinking. Naval gunfire support: offshore gun ships shell shore targets -- a player F10 'Naval Fire Mission' menu fires on the last F10 map marker, and (optionally) ships automatically bombard the nearest in-range enemy ground target each cadence. Coastal campaigns only. (Convoy interdiction is not a plugin behaviour: it creates a real, tracked enemy convoy in the campaign force model, hunted via an Armed Recon corridor, so it needs no runtime here.) Airbase harassment: forward, opposing-occupied airfields draw sporadic standoff rocket/mortar fire near the ramp after a startup grace period; your own spawn fields are never targeted. Super Gaggle: a formation of transport helos runs supplies into a cut-off forward friendly outpost (launch -> outpost -> back, re-rolling on a cadence), which the player can fly escort for -- the Khe Sanh hilltop resupply. FAC(A): an airborne forward air controller (OV-10 Bronco) loitering over the front marks nearby enemy ground with white-phosphorus smoke so you can visually acquire the target and roll in. Snake and nape: an attack aircraft making a low, fast pass over enemy ground lays a wall of fire (napalm + retarded bombs) across the target -- rewards flying the CAS run in low and on the deck; both sides' attack jets get it.",
+    "descriptionInUI": "Runtime for the Vietnam Ops suite -- opt-in period air-war mechanics gated by the 'Vietnam Ops' campaign settings page. Inert unless a Vietnam Ops setting is on (the mission generator emits dcsRetribution.VietnamOps only then). Arc Light: a heavy-bomber (B-52) Strike walks a carpet of bombs across its target at the run-in instead of dropping a single aimpoint (tactical strikers unaffected). AAA flak gauntlet: aircraft within range and below the ceiling of an opposing AAA gun draw barrage flak that tightens against predictable run-ins and widens when jinking. Naval gunfire support: offshore gun ships shell shore targets -- a player F10 'Naval Fire Mission' menu fires on the last F10 map marker, and (optionally) ships automatically bombard the nearest in-range enemy ground target each cadence. Coastal campaigns only. (Convoy interdiction is not a plugin behaviour: it creates a real, tracked enemy convoy in the campaign force model, hunted via an Armed Recon corridor, so it needs no runtime here.) Airbase harassment: forward, opposing-occupied airfields draw sporadic standoff rocket/mortar fire near the ramp after a startup grace period; your own spawn fields are never targeted. Super Gaggle: a formation of transport helos runs supplies into a cut-off forward friendly outpost (launch -> outpost -> back, re-rolling on a cadence), which the player can fly escort for -- the Khe Sanh hilltop resupply. FAC(A): an airborne forward air controller (OV-10 Bronco) loitering over the front marks nearby enemy ground with white-phosphorus smoke so you can visually acquire the target and roll in. Snake and nape: an attack aircraft making a low, fast pass over enemy ground lays a wall of fire (napalm + retarded bombs) across the target -- rewards flying the CAS run in low and on the deck; both sides' attack jets get it. All distances/speeds are in imperial units (ft / NM / kts).",
     "defaultValue": true,
     "specificOptions": [
         {
-            "nameInUI": "Arc Light carpet length along the run-in (m)",
-            "mnemonic": "arcLightLength",
-            "defaultValue": 1700
+            "nameInUI": "Arc Light carpet length along the run-in (ft)",
+            "mnemonic": "arcLightLengthFt",
+            "defaultValue": 6000,
+            "maximumValue": 20000
         },
         {
-            "nameInUI": "Arc Light carpet width across the run-in (m)",
-            "mnemonic": "arcLightWidth",
-            "defaultValue": 500
+            "nameInUI": "Arc Light carpet width across the run-in (ft)",
+            "mnemonic": "arcLightWidthFt",
+            "defaultValue": 1500
         },
         {
-            "nameInUI": "Arc Light per-blast power (kg TNT equivalent)",
-            "mnemonic": "arcLightBlastPower",
-            "defaultValue": 300
+            "nameInUI": "Arc Light per-blast power (lb TNT equivalent)",
+            "mnemonic": "arcLightBlastLb",
+            "defaultValue": 660
         },
         {
             "nameInUI": "Arc Light: range from target the bomber releases the carpet (NM)",
-            "mnemonic": "arcLightTriggerNm",
-            "defaultValue": 8
+            "mnemonic": "arcLightReleaseNm",
+            "defaultValue": 3
         },
         {
-            "nameInUI": "Flak gauntlet: AAA gun horizontal reach (m)",
-            "mnemonic": "flakEngageRangeM",
-            "defaultValue": 4500
+            "nameInUI": "Flak gauntlet: AAA gun horizontal reach (NM)",
+            "mnemonic": "flakRangeNm",
+            "defaultValue": 2.5
         },
         {
-            "nameInUI": "Flak gauntlet: effective flak ceiling above ground (m)",
-            "mnemonic": "flakCeilingM",
-            "defaultValue": 4500
+            "nameInUI": "Flak gauntlet: effective flak ceiling above ground (ft AGL)",
+            "mnemonic": "flakCeilingFt",
+            "defaultValue": 15000,
+            "maximumValue": 40000
         },
         {
-            "nameInUI": "Flak gauntlet: tightest barrage miss, predictable flight (m)",
-            "mnemonic": "flakMinMissM",
-            "defaultValue": 150
+            "nameInUI": "Flak gauntlet: tightest barrage miss, predictable flight (ft)",
+            "mnemonic": "flakMinMissFt",
+            "defaultValue": 500
         },
         {
-            "nameInUI": "Flak gauntlet: loosest barrage miss, jinking (m)",
-            "mnemonic": "flakMaxMissM",
-            "defaultValue": 320
+            "nameInUI": "Flak gauntlet: loosest barrage miss, jinking (ft)",
+            "mnemonic": "flakMaxMissFt",
+            "defaultValue": 1000
         },
         {
             "nameInUI": "Flak gauntlet: per-burst power (small = mostly visual)",
-            "mnemonic": "flakBlastPower",
+            "mnemonic": "flakBurstPower",
             "defaultValue": 6
         },
         {
-            "nameInUI": "Naval gunfire: gun reach for ship/target selection (m)",
-            "mnemonic": "ngfsRangeM",
-            "defaultValue": 20000
+            "nameInUI": "Naval gunfire: gun reach for ship/target selection (NM)",
+            "mnemonic": "ngfsRangeNm",
+            "defaultValue": 10
         },
         {
             "nameInUI": "Naval gunfire: shells per fire mission",
@@ -59,9 +61,9 @@
             "defaultValue": 12
         },
         {
-            "nameInUI": "Naval gunfire: salvo dispersion radius (m)",
-            "mnemonic": "ngfsSalvoRadiusM",
-            "defaultValue": 80
+            "nameInUI": "Naval gunfire: salvo dispersion radius (ft)",
+            "mnemonic": "ngfsSalvoRadiusFt",
+            "defaultValue": 250
         },
         {
             "nameInUI": "Naval gunfire: automatic coastal bombardment",
@@ -84,9 +86,9 @@
             "defaultValue": 5
         },
         {
-            "nameInUI": "Airbase harassment: impact dispersion radius (m)",
-            "mnemonic": "harassDispersionM",
-            "defaultValue": 260
+            "nameInUI": "Airbase harassment: impact dispersion radius (ft)",
+            "mnemonic": "harassDispersionFt",
+            "defaultValue": 850
         },
         {
             "nameInUI": "Airbase harassment: per-impact power (small = mostly noise)",
@@ -99,19 +101,20 @@
             "defaultValue": 300
         },
         {
-            "nameInUI": "Super Gaggle: transit speed (kph)",
-            "mnemonic": "gaggleSpeedKph",
-            "defaultValue": 220
+            "nameInUI": "Super Gaggle: transit speed (kts)",
+            "mnemonic": "gaggleSpeedKts",
+            "defaultValue": 110
         },
         {
-            "nameInUI": "Super Gaggle: transit altitude (m radio)",
-            "mnemonic": "gaggleAltM",
-            "defaultValue": 150
+            "nameInUI": "Super Gaggle: transit altitude (ft AGL)",
+            "mnemonic": "gaggleAltFt",
+            "defaultValue": 500
         },
         {
-            "nameInUI": "Super Gaggle: suppressor transit/attack altitude (m baro)",
-            "mnemonic": "gaggleSuppressorAltM",
-            "defaultValue": 2000
+            "nameInUI": "Super Gaggle: suppressor transit/attack altitude (ft MSL)",
+            "mnemonic": "gaggleSuppressorAltFt",
+            "defaultValue": 6500,
+            "maximumValue": 30000
         },
         {
             "nameInUI": "FAC(A): forward-air-controller aircraft DCS type",
@@ -119,9 +122,9 @@
             "defaultValue": "Bronco-OV-10A"
         },
         {
-            "nameInUI": "FAC(A): range the FAC spots + marks ground (m)",
-            "mnemonic": "facRangeM",
-            "defaultValue": 5556
+            "nameInUI": "FAC(A): range the FAC spots + marks ground (NM)",
+            "mnemonic": "facRangeNm",
+            "defaultValue": 3
         },
         {
             "nameInUI": "FAC(A): seconds between target marks per FAC",
@@ -129,24 +132,24 @@
             "defaultValue": 120
         },
         {
-            "nameInUI": "Snake and nape: max height above ground for a napalm run (m)",
-            "mnemonic": "napeCeilingM",
-            "defaultValue": 150
+            "nameInUI": "Snake and nape: max height above ground for a napalm run (ft AGL)",
+            "mnemonic": "napeCeilingFt",
+            "defaultValue": 500
         },
         {
-            "nameInUI": "Snake and nape: minimum ground speed for a delivery pass (m/s)",
-            "mnemonic": "napeMinSpeedMs",
-            "defaultValue": 100
+            "nameInUI": "Snake and nape: minimum ground speed for a delivery pass (kts)",
+            "mnemonic": "napeMinSpeedKts",
+            "defaultValue": 180
         },
         {
-            "nameInUI": "Snake and nape: range from enemy ground that triggers the lay (m)",
-            "mnemonic": "napeDropRangeM",
-            "defaultValue": 400
+            "nameInUI": "Snake and nape: range from enemy ground that triggers the lay (ft)",
+            "mnemonic": "napeDropRangeFt",
+            "defaultValue": 1300
         },
         {
-            "nameInUI": "Snake and nape: length of the fire swath along the run-in (m)",
-            "mnemonic": "napeSwathLengthM",
-            "defaultValue": 250
+            "nameInUI": "Snake and nape: length of the fire swath along the run-in (ft)",
+            "mnemonic": "napeSwathLengthFt",
+            "defaultValue": 800
         },
         {
             "nameInUI": "Snake and nape: fire nodes laid along the swath",

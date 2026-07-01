@@ -25,23 +25,31 @@ end
 
 local suite = dcsRetribution.VietnamOps
 
+-- Plugin options are authored in imperial units (ft / NM / kts / lb) -- the units the
+-- squadron flies in -- while the DCS API is metric, so every option is converted to
+-- meters / m/s / kg exactly once, here at read time. Internal math stays metric.
+local FT_TO_M = 0.3048
+local NM_TO_M = 1852
+local KTS_TO_MS = 0.514444
+local LB_TO_KG = 0.453592
+
 -------------------------------------------------------------------------------
 -- Arc Light: heavy-bomber Strike carpet
 -------------------------------------------------------------------------------
 if suite.arcLight and suite.arcLight.strikes then
-    -- Tunables (plugin specificOptions), with safe defaults.
-    local CARPET_LENGTH = 1700      -- m, along the run-in
-    local CARPET_WIDTH = 500        -- m, across the run-in
-    local BLAST_POWER = 300         -- per-impact kg TNT equivalent
-    local RELEASE_RANGE = 8 * 1852  -- m from target to begin the pass
+    -- Tunables (plugin specificOptions, imperial), with safe defaults. Release at 3 NM
+    -- so the carpet lands with the bomber nearly overhead (the ballistic forward throw
+    -- from ~30k ft is ~2.5-3 NM); the old 8 NM fired the box a full minute early.
+    local CARPET_LENGTH = 6000 * FT_TO_M  -- m, along the run-in (option in ft)
+    local CARPET_WIDTH = 1500 * FT_TO_M   -- m, across the run-in (option in ft)
+    local BLAST_POWER = 660 * LB_TO_KG    -- per-impact power (option in lb TNT equiv.)
+    local RELEASE_RANGE = 3 * NM_TO_M     -- m from target to begin the pass
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
         local o = dcsRetribution.plugins.vietnamops
-        CARPET_LENGTH = tonumber(o.arcLightLength) or CARPET_LENGTH
-        CARPET_WIDTH = tonumber(o.arcLightWidth) or CARPET_WIDTH
-        BLAST_POWER = tonumber(o.arcLightBlastPower) or BLAST_POWER
-        if o.arcLightTriggerNm ~= nil then
-            RELEASE_RANGE = (tonumber(o.arcLightTriggerNm) or 8) * 1852
-        end
+        CARPET_LENGTH = (tonumber(o.arcLightLengthFt) or 6000) * FT_TO_M
+        CARPET_WIDTH = (tonumber(o.arcLightWidthFt) or 1500) * FT_TO_M
+        BLAST_POWER = (tonumber(o.arcLightBlastLb) or 660) * LB_TO_KG
+        RELEASE_RANGE = (tonumber(o.arcLightReleaseNm) or 3) * NM_TO_M
     end
 
     local ROWS = 14         -- along-track sticks (each a delayed step -> the "walk")
@@ -139,8 +147,8 @@ if suite.arcLight and suite.arcLight.strikes then
     end
     env.info(string.format(
         "DCSRetribution|Vietnam Ops - Arc Light armed for %d heavy-bomber strike(s) "
-            .. "(carpet %dx%dm, power %d, release %.1f NM)",
-        count, CARPET_LENGTH, CARPET_WIDTH, BLAST_POWER, RELEASE_RANGE / 1852))
+            .. "(carpet %.0fx%.0fm, power %.0f, release %.1f NM)",
+        count, CARPET_LENGTH, CARPET_WIDTH, BLAST_POWER, RELEASE_RANGE / NM_TO_M))
 end
 
 -------------------------------------------------------------------------------
@@ -158,21 +166,24 @@ end
 -- pcall-guarded. Gated on dcsRetribution.VietnamOps.flak.
 -------------------------------------------------------------------------------
 if suite.flak and suite.flak.enabled then
-    local ENGAGE_RANGE = 4500   -- m, horizontal gun reach
-    local CEILING = 4500        -- m AGL, effective flak ceiling
-    local FLOOR = 120           -- m AGL, below this the aircraft is on the deck
-    local MIN_MISS = 150        -- m, tightest barrage miss (fully predictable) -- widened 2026-07-01 (L2: still too lethal after the 2026-06-28 pass; was 110)
-    local MAX_MISS = 320        -- m, loosest barrage miss (jinking) -- widened 2026-07-01 (L2; was 250)
-    local BLAST = 6             -- per-burst power (small -- mostly visual)
+    -- Imperial options; the L2 softening (2026-07-01: miss 150/320 m, blast 6) carries
+    -- into the imperial defaults (500/1000 ft). The mnemonic rename also flushes any
+    -- stale pre-softening per-campaign values (the L2 config-mismatch finding).
+    local ENGAGE_RANGE = 2.5 * NM_TO_M   -- m, horizontal gun reach (option in NM)
+    local CEILING = 15000 * FT_TO_M      -- m AGL, effective flak ceiling (option in ft)
+    local FLOOR = 120                    -- m AGL, below this the aircraft is on the deck
+    local MIN_MISS = 500 * FT_TO_M       -- m, tightest barrage miss (option in ft)
+    local MAX_MISS = 1000 * FT_TO_M      -- m, loosest barrage miss, jinking (option in ft)
+    local BLAST = 6                      -- per-burst power (small -- mostly visual)
     local BURSTS_PER_SITE = 1
     local MAX_SITES = 3         -- cap stacked density from many guns
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
         local o = dcsRetribution.plugins.vietnamops
-        ENGAGE_RANGE = tonumber(o.flakEngageRangeM) or ENGAGE_RANGE
-        CEILING = tonumber(o.flakCeilingM) or CEILING
-        MIN_MISS = tonumber(o.flakMinMissM) or MIN_MISS
-        MAX_MISS = tonumber(o.flakMaxMissM) or MAX_MISS
-        BLAST = tonumber(o.flakBlastPower) or BLAST
+        ENGAGE_RANGE = (tonumber(o.flakRangeNm) or 2.5) * NM_TO_M
+        CEILING = (tonumber(o.flakCeilingFt) or 15000) * FT_TO_M
+        MIN_MISS = (tonumber(o.flakMinMissFt) or 500) * FT_TO_M
+        MAX_MISS = (tonumber(o.flakMaxMissFt) or 1000) * FT_TO_M
+        BLAST = tonumber(o.flakBurstPower) or BLAST
     end
 
     local POLL = 2.5            -- s between flak evaluations
@@ -336,8 +347,8 @@ if suite.flak and suite.flak.enabled then
     timer.scheduleFunction(refreshAAA, {}, timer.getTime() + AAA_REFRESH)
     timer.scheduleFunction(flakTick, {}, timer.getTime() + POLL)
     env.info(string.format(
-        "DCSRetribution|Vietnam Ops - AAA flak gauntlet armed (range %dm, ceiling %dm, "
-            .. "miss %d-%dm, power %d)",
+        "DCSRetribution|Vietnam Ops - AAA flak gauntlet armed (range %.0fm, ceiling %.0fm, "
+            .. "miss %.0f-%.0fm, power %d)",
         ENGAGE_RANGE, CEILING, MIN_MISS, MAX_MISS, BLAST))
 end
 
@@ -357,16 +368,16 @@ end
 -- (as the TIC artillery path uses) + raw DCS for target discovery / menus. pcall-guarded.
 -------------------------------------------------------------------------------
 if suite.navalGunfire and suite.navalGunfire.ships then
-    local RANGE = 20000         -- m, gun reach for ship/target selection
-    local ROUNDS = 12           -- shells per fire mission
-    local SALVO_RADIUS = 80     -- m, dispersion radius
-    local AUTO = true           -- automatic coastal bombardment on
-    local AUTO_INTERVAL = 90    -- s between automatic fire missions
+    local RANGE = 10 * NM_TO_M       -- m, gun reach for ship/target selection (option in NM)
+    local ROUNDS = 12                -- shells per fire mission
+    local SALVO_RADIUS = 250 * FT_TO_M  -- m, dispersion radius (option in ft)
+    local AUTO = true                -- automatic coastal bombardment on
+    local AUTO_INTERVAL = 90         -- s between automatic fire missions
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
         local o = dcsRetribution.plugins.vietnamops
-        RANGE = tonumber(o.ngfsRangeM) or RANGE
+        RANGE = (tonumber(o.ngfsRangeNm) or 10) * NM_TO_M
         ROUNDS = tonumber(o.ngfsRounds) or ROUNDS
-        SALVO_RADIUS = tonumber(o.ngfsSalvoRadiusM) or SALVO_RADIUS
+        SALVO_RADIUS = (tonumber(o.ngfsSalvoRadiusFt) or 250) * FT_TO_M
         if o.ngfsAuto ~= nil then AUTO = o.ngfsAuto end
         AUTO_INTERVAL = tonumber(o.ngfsAutoIntervalS) or AUTO_INTERVAL
     end
@@ -489,7 +500,7 @@ if suite.navalGunfire and suite.navalGunfire.ships then
     end
     env.info(string.format(
         "DCSRetribution|Vietnam Ops - Naval gunfire armed (%d/%d gun ship(s) blue/red, "
-            .. "range %dm, %d rounds, auto %s)",
+            .. "range %.0fm, %d rounds, auto %s)",
         #shipsBySide[coalition.side.BLUE], #shipsBySide[coalition.side.RED],
         RANGE, ROUNDS, tostring(AUTO)))
 end
@@ -509,14 +520,14 @@ end
 if suite.airbaseHarassment and suite.airbaseHarassment.fields then
     local INTERVAL = 240        -- s, mean seconds between events on a field (randomized)
     local ROUNDS = 5            -- impacts per event (a short barrage)
-    local DISPERSION = 260      -- m, radius the impacts scatter over the ramp
+    local DISPERSION = 850 * FT_TO_M  -- m, radius the impacts scatter over the ramp (option in ft)
     local BLAST = 8             -- per-impact power (small -- mostly noise/smoke)
     local GRACE = 300           -- s, hard no-fire window at mission start (alignment)
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
         local o = dcsRetribution.plugins.vietnamops
         INTERVAL = tonumber(o.harassIntervalS) or INTERVAL
         ROUNDS = tonumber(o.harassRoundsPerEvent) or ROUNDS
-        DISPERSION = tonumber(o.harassDispersionM) or DISPERSION
+        DISPERSION = (tonumber(o.harassDispersionFt) or 850) * FT_TO_M
         BLAST = tonumber(o.harassBlastPower) or BLAST
         GRACE = tonumber(o.harassGraceS) or GRACE
     end
@@ -592,7 +603,7 @@ if suite.airbaseHarassment and suite.airbaseHarassment.fields then
     end
     env.info(string.format(
         "DCSRetribution|Vietnam Ops - Airbase harassment armed for %d field(s) "
-            .. "(every ~%ds, %d rounds, dispersion %dm, power %d, grace %ds)",
+            .. "(every ~%ds, %d rounds, dispersion %.0fm, power %d, grace %ds)",
         count, INTERVAL, ROUNDS, DISPERSION, BLAST, GRACE))
 end
 
@@ -613,14 +624,14 @@ end
 if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch
     and suite.superGaggle.helo and suite.superGaggle.helo.names then
     pcall(function()
-        local SPEED = 220 / 3.6    -- m/s (~220 kph cruise)
-        local ALT = 150            -- m, radio-altitude air start / transit height
-        local SUPPRESS_ALT = 2000  -- m (baro) transit/attack altitude
+        local SPEED = 110 * KTS_TO_MS      -- m/s (~110 kts loaded-Huey cruise; option in kts)
+        local ALT = 500 * FT_TO_M          -- m, radio-altitude air start / transit height (option in ft AGL)
+        local SUPPRESS_ALT = 6500 * FT_TO_M  -- m (baro) transit/attack altitude (option in ft MSL)
         if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
             local o = dcsRetribution.plugins.vietnamops
-            SPEED = (tonumber(o.gaggleSpeedKph) or 220) / 3.6
-            ALT = tonumber(o.gaggleAltM) or ALT
-            SUPPRESS_ALT = tonumber(o.gaggleSuppressorAltM) or SUPPRESS_ALT
+            SPEED = (tonumber(o.gaggleSpeedKts) or 110) * KTS_TO_MS
+            ALT = (tonumber(o.gaggleAltFt) or 500) * FT_TO_M
+            SUPPRESS_ALT = (tonumber(o.gaggleSuppressorAltFt) or 6500) * FT_TO_M
         end
 
         local DELIVER_RADIUS = 1500  -- m: within this of the outpost counts as delivered
@@ -807,12 +818,12 @@ end
 -------------------------------------------------------------------------------
 if suite.fac and suite.fac.enabled then
     local FAC_TYPE = "Bronco-OV-10A"  -- the DCS unit type of the FAC aircraft
-    local FAC_RANGE = 5556            -- m (3 NM): how far the FAC spots + marks ground
+    local FAC_RANGE = 3 * NM_TO_M     -- m: how far the FAC spots + marks ground (option in NM)
     local FAC_INTERVAL = 120          -- s between marks per FAC (smoke lasts ~5 min)
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
         local o = dcsRetribution.plugins.vietnamops
         FAC_TYPE = o.facType or FAC_TYPE
-        FAC_RANGE = tonumber(o.facRangeM) or FAC_RANGE
+        FAC_RANGE = (tonumber(o.facRangeNm) or 3) * NM_TO_M
         FAC_INTERVAL = tonumber(o.facIntervalS) or FAC_INTERVAL
     end
 
@@ -876,7 +887,7 @@ if suite.fac and suite.fac.enabled then
 
     timer.scheduleFunction(facTick, {}, timer.getTime() + FAC_INTERVAL)
     env.info(string.format(
-        "DCSRetribution|Vietnam Ops - FAC(A) marking armed (type %s, range %dm, every %ds)",
+        "DCSRetribution|Vietnam Ops - FAC(A) marking armed (type %s, range %.0fm, every %ds)",
         FAC_TYPE, FAC_RANGE, FAC_INTERVAL))
 end
 
@@ -895,10 +906,11 @@ end
 -- dcsRetribution.VietnamOps.snakeNape.
 -------------------------------------------------------------------------------
 if suite.snakeNape and suite.snakeNape.enabled then
-    local CEILING = 150         -- m AGL, must be at/below this to count as a napalm run
-    local MIN_SPEED = 100       -- m/s (~195 kt) ground speed, a fast delivery pass
-    local DROP_RANGE = 400      -- m from an enemy ground unit that triggers the lay
-    local SWATH_LENGTH = 250    -- m, length of the fire line along the run-in
+    local CEILING = 500 * FT_TO_M      -- m AGL, at/below this counts as a napalm run (option in ft)
+    local MIN_SPEED = 180 * KTS_TO_MS  -- m/s ground speed, a fast delivery pass (option in kts;
+                                       -- 180 kts keeps a loaded A-1 Skyraider run eligible)
+    local DROP_RANGE = 1300 * FT_TO_M  -- m from an enemy ground unit that triggers the lay (option in ft)
+    local SWATH_LENGTH = 800 * FT_TO_M -- m, length of the fire line along the run-in (option in ft)
     local FIRE_NODES = 5        -- fire effects laid along the swath
     local FIRE_PRESET = 2       -- effectSmokeBig preset: 1 small .. 4 huge smoke-and-fire
     local FIRE_DENSITY = 0.5    -- 0..1 effect density
@@ -907,10 +919,10 @@ if suite.snakeNape and suite.snakeNape.enabled then
     local COOLDOWN = 25         -- s per aircraft between lays (one pass = one wall of fire)
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
         local o = dcsRetribution.plugins.vietnamops
-        CEILING = tonumber(o.napeCeilingM) or CEILING
-        MIN_SPEED = tonumber(o.napeMinSpeedMs) or MIN_SPEED
-        DROP_RANGE = tonumber(o.napeDropRangeM) or DROP_RANGE
-        SWATH_LENGTH = tonumber(o.napeSwathLengthM) or SWATH_LENGTH
+        CEILING = (tonumber(o.napeCeilingFt) or 500) * FT_TO_M
+        MIN_SPEED = (tonumber(o.napeMinSpeedKts) or 180) * KTS_TO_MS
+        DROP_RANGE = (tonumber(o.napeDropRangeFt) or 1300) * FT_TO_M
+        SWATH_LENGTH = (tonumber(o.napeSwathLengthFt) or 800) * FT_TO_M
         FIRE_NODES = tonumber(o.napeFireNodes) or FIRE_NODES
         BLAST = tonumber(o.napeBlastPower) or BLAST
     end
@@ -1025,7 +1037,7 @@ if suite.snakeNape and suite.snakeNape.enabled then
 
     timer.scheduleFunction(napeTick, {}, timer.getTime() + POLL)
     env.info(string.format(
-        "DCSRetribution|Vietnam Ops - Snake and nape armed (ceiling %dm AGL, min speed %dm/s, "
-            .. "drop range %dm, swath %dm x %d nodes, blast %d)",
+        "DCSRetribution|Vietnam Ops - Snake and nape armed (ceiling %.0fm AGL, min speed %.0fm/s, "
+            .. "drop range %.0fm, swath %.0fm x %d nodes, blast %d)",
         CEILING, MIN_SPEED, DROP_RANGE, SWATH_LENGTH, FIRE_NODES, BLAST))
 end

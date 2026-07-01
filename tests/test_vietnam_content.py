@@ -184,18 +184,27 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_arc_light": True,
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": False,  # inland
+        "vietnam_convoy_interdiction": True,
+        "vietnam_airbase_harassment": True,  # the besieged-strip story
+        "vietnam_super_gaggle": True,  # the cut-off-garrison resupply story
         "restrict_weapons_by_date": True,
     },
     "1968_Yankee_Station.yaml": {
         "vietnam_arc_light": True,
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": True,  # coastal
+        "vietnam_convoy_interdiction": True,  # the campaign's own Ho Chi Minh Trail
+        "vietnam_airbase_harassment": True,
+        "vietnam_super_gaggle": True,
         "restrict_weapons_by_date": True,
     },
     "operation_velvet_thunder.yaml": {
         "vietnam_arc_light": True,
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": False,
+        "vietnam_convoy_interdiction": True,
+        "vietnam_airbase_harassment": True,
+        "vietnam_super_gaggle": True,
         "restrict_weapons_by_date": True,
     },
 }

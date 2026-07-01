@@ -99,6 +99,21 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
+    month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
+    Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —
+    weighted airframe losses with a B-52 multiplier, POWs draining per turn held, ROE
+    violations, trail-logistics attrition for RED) with a **negotiation win/loss**
+    (`check_win_loss` branch: break Hanoi's resolve before Washington's patience breaks —
+    territory win stays) and (2) **ROE / Route-Package escalation** riding the campaign-phases
+    spec's P0–P2 + two authored extensions (`restricted_zones` soft-enforced by will penalties,
+    `target_release` gates with RESTRICTED map badges, a Rolling Thunder → Linebacker II arc
+    for the 4 Vietnam campaigns; sanctuary airfields fall out of zones). Delivery W1–W5, one PR
+    each (W5 = the thin QRA→GCI ambush adaptation). **W1 landed** (observe-only will:
+    `Coalition.political_will` + the `vietnam_political_will` toggle + the
+    `record_political_will` debrief feed in `game/fourteenth/political_will.py` + the SITREP
+    will band); W2–W5 outstanding. All default-off, `vietnam_political_will` gated, no
+    debrief-schema/Lua changes W1–W4),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
     layer, active per turn-range, that biases the auto-planner's offensive intent + shows in
     the UI/kneeboard; three authoring tiers over one `CampaignPhase` object — **Tier 0

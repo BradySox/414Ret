@@ -102,3 +102,41 @@ def test_sitrep_for_kneeboard_gating() -> None:
     assert sitrep_for_kneeboard(None, enabled=True) is None  # turn 1 / no prior
     assert sitrep_for_kneeboard(empty, enabled=True) is None  # quiet turn
     assert sitrep_for_kneeboard(sitrep, enabled=True) is sitrep  # shown
+
+
+def test_will_band_renders_only_when_tracked() -> None:
+    # W1 political will: both values set -> one "Political will" line; untracked
+    # (None, the default and the pre-W1 pickle shape) -> no line at all.
+    tracked = Sitrep(
+        7,
+        date(1968, 2, 1),
+        SideLosses(1, 0, 0),
+        SideLosses(0, 0, 0),
+        [],
+        [],
+        0,
+        blue_will=83.4,
+        red_will=91.0,
+    )
+    lines = tracked.kneeboard_lines()
+    assert "Political will 83% -- enemy resolve 91% (est)" in lines
+
+    untracked = Sitrep(
+        7, date(1968, 2, 1), SideLosses(1, 0, 0), SideLosses(0, 0, 0), [], [], 0
+    )
+    assert not any("Political will" in line for line in untracked.kneeboard_lines())
+
+
+def test_will_band_does_not_make_a_quiet_turn_reportable() -> None:
+    quiet = Sitrep(
+        3,
+        date(1968, 2, 1),
+        SideLosses(0, 0, 0),
+        SideLosses(0, 0, 0),
+        [],
+        [],
+        0,
+        blue_will=90.0,
+        red_will=95.0,
+    )
+    assert quiet.is_empty  # the will line rides along with news; it isn't news.

@@ -245,13 +245,35 @@ def extract_lite(miz_path: str, yaml_path: str | None = None) -> dict:
     return out
 
 
+# --- engine-mode task buckets (FlightType enum names -> lite's air_oob keys) --
+_ENGINE_FIGHTER = {"BARCAP", "TARCAP", "INTERCEPTION", "ESCORT", "SWEEP"}
+_ENGINE_SEAD = {"SEAD", "DEAD", "SEAD_ESCORT", "SEAD_SWEEP"}
+_ENGINE_STRIKE = {
+    "STRIKE",
+    "CAS",
+    "BAI",
+    "ANTISHIP",
+    "OCA_RUNWAY",
+    "OCA_AIRCRAFT",
+    "ARMED_RECON",
+}
+
+
 def extract_engine(yaml_path: str) -> dict:
-    """High-fidelity laydown via the real new-game pipeline. Needs the fork pydcs."""
+    """High-fidelity laydown via the real new-game pipeline. Needs the fork pydcs.
+
+    Emits the same `sides` / `air_oob` keys as extract_lite (so the classifier
+    consumes either shape), plus engine-only detail (IadsRole census, front lines,
+    threat-zone areas). SAM banding reads each TGO's GroupTask — LORAD/MERAD is
+    the planner's own rollback-target definition (degradeiads.py) — because
+    IadsRole.SAM also swallows SHORAD and IadsRole.EWR swallows AAA/navy.
+    """
     from datetime import datetime
     from pathlib import Path
 
     from game import persistency
     from game.campaignloader.campaign import Campaign
+    from game.data.groups import GroupTask
     from game.factions import FACTIONS
     from game.settings import Settings
     from game.theater.player import Player
@@ -289,7 +311,9 @@ def extract_engine(yaml_path: str) -> dict:
         no_enemy_navy=False,
         tgo_config=campaign.load_ground_forces_config(),
         carrier_config=campaign.load_carrier_config(),
-        squadrons_start_full=False,
+        # Full squadrons: the laydown wants the intended air OOB, not the
+        # deliveries-pending zero of a staggered start.
+        squadrons_start_full=True,
     )
     generator = GameGenerator(
         player=player,
@@ -302,11 +326,59 @@ def extract_engine(yaml_path: str) -> dict:
         campaign_name=campaign.name,
     )
     game = generator.generate()
-    game.begin_turn_0(squadrons_start_full=False)
+    game.begin_turn_0(squadrons_start_full=True)
 
     own = {"BLUE": 0, "RED": 0, "NEUTRAL": 0}
     for cp in game.theater.controlpoints:
         own[cp.captured.name] = own.get(cp.captured.name, 0) + 1
+
+    # Capturable-pool proxy for campaign length: Retribution assigns every CP to
+    # a side, so the raw .miz neutral-airfield count (what --lite measures) is
+    # read separately to keep the long-war heuristic comparable across modes.
+    neutral_pool = 0
+    miz = _yaml_meta(yaml_path).get("miz")
+    if miz:
+        try:
+            from dcs.lua import loads
+
+            z = zipfile.ZipFile(os.path.join(os.path.dirname(yaml_path), miz))
+            wh = loads(z.read("warehouses").decode("utf-8", "replace"))["warehouses"]
+            for _k, v in (wh.get("airports", {}) or {}).items():
+                c = (v.get("coalition") if isinstance(v, dict) else None) or "NEUTRAL"
+                if c == "NEUTRAL":
+                    neutral_pool += 1
+        except Exception:  # noqa: BLE001
+            pass
+
+    # SAM banding by TGO GroupTask (LORAD/MERAD == the planner's DEAD/SEAD
+    # rollback target set), emitted in extract_lite's `sides` shape.
+    band_by_task = {
+        GroupTask.LORAD: "long",
+        GroupTask.MERAD: "medium",
+        GroupTask.SHORAD: "shorad",
+        GroupTask.POINT_DEFENSE: "shorad",
+        GroupTask.AAA: "shorad",
+        GroupTask.EARLY_WARNING_RADAR: "ewr",
+    }
+    sides: dict = {}
+    for side in ("BLUE", "RED"):
+        sides[side.lower()] = {
+            "sam": {"long": 0, "medium": 0, "shorad": 0, "ewr": 0},
+            "sam_sites": {"long": 0, "medium": 0, "shorad": 0, "ewr": 0},
+            "sam_long_medium": 0,
+        }
+    for tgo in game.theater.ground_objects:
+        owner = tgo.control_point.captured.name
+        if owner not in ("BLUE", "RED"):
+            continue
+        band = band_by_task.get(tgo.task) if tgo.task else None
+        if band is None:
+            continue
+        bucket = sides[owner.lower()]
+        bucket["sam_sites"][band] += 1
+        bucket["sam"][band] += sum(1 for u in tgo.units if u.alive)
+    for s in sides.values():
+        s["sam_long_medium"] = s["sam"]["long"] + s["sam"]["medium"]
 
     roles: dict = {"BLUE": {}, "RED": {}}
     for node in game.theater.iads_network.iads_nodes(game):
@@ -315,14 +387,25 @@ def extract_engine(yaml_path: str) -> dict:
         roles[side][role] = roles[side].get(role, 0) + 1
 
     fronts = [
-        f"{fl.from_cp.name} <-> {fl.to_cp.name}" for fl in game.theater.conflicts()
+        f"{fl.blue_cp.name} <-> {fl.red_cp.name}" for fl in game.theater.conflicts()
     ]
 
     air: dict = {"BLUE": {}, "RED": {}}
+    oob: dict = {}
     for pl in (Player.BLUE, Player.RED):
+        bucket = oob.setdefault(
+            pl.name, {"fighter": 0, "sead": 0, "strike": 0, "squadrons": 0}
+        )
         for sq in game.air_wing_for(pl).iter_squadrons():
             task = sq.primary_task.name if sq.primary_task else "NONE"
             air[pl.name][task] = air[pl.name].get(task, 0) + sq.owned_aircraft
+            bucket["squadrons"] += 1
+            if task in _ENGINE_FIGHTER:
+                bucket["fighter"] += sq.owned_aircraft
+            elif task in _ENGINE_SEAD:
+                bucket["sead"] += sq.owned_aircraft
+            elif task in _ENGINE_STRIKE:
+                bucket["strike"] += sq.owned_aircraft
 
     threat = {}
     for pl in (Player.BLUE, Player.RED):
@@ -337,6 +420,9 @@ def extract_engine(yaml_path: str) -> dict:
         "theater": theater.terrain.name,
         "date": str(game.date),
         "airfields": own,
+        "neutral_pool": neutral_pool,
+        "sides": sides,
+        "air_oob": oob,
         "iads_roles": roles,
         "front_lines": fronts,
         "air_inventory_by_task": air,

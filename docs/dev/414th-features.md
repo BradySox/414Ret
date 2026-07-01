@@ -1059,6 +1059,17 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   **Residual to watch in-game:** if the engine tears the mission down without per-player
   `PLAYER_LEAVE_UNIT` events, those despawn-crashes aren't caught — land/despawn before ending
   remains the belt-and-suspenders.
+- New Game crash on an authored-but-empty `aircraft:` key (2026-07-01): a campaign-YAML
+  squadron whose `aircraft:` key exists but has no entries parses as `None`, and
+  `DefaultSquadronAssigner.find_squadron_for` iterated it —
+  `TypeError: 'NoneType' object is not iterable` at game generation. *Northern Guardian* and
+  *WRL Noisy Cricket (Redux)* both ship such squadrons, so New Game on either crashed (found
+  by the campaign-phases `--engine --all` batch, which exercises the real generation pipeline
+  for every campaign). `SquadronConfig.from_data` now treats it as `[]` — the existing "any
+  aircraft compatible with the primary task" fallback — in
+  `game/campaignloader/campaignairwingconfig.py`. Generic upstream-code fix on upstream
+  campaigns (upstream-PR candidate). Test:
+  `tests/test_campaignairwingconfig_empty.py::test_authored_empty_aircraft_key_reads_as_any`.
 
 ---
 

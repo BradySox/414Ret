@@ -99,6 +99,24 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
+    layer, active per turn-range, that biases the auto-planner's offensive intent + shows in
+    the UI/kneeboard; three authoring tiers over one `CampaignPhase` object — **Tier 0
+    inference is the default for all 66 campaigns** (a turn-by-turn classifier reads live IADS
+    ratio / air threat / front momentum / territory via existing accessors → rollback →
+    interdiction → offensive, with hysteresis), Tier 1 = YAML-tuned, Tier 2 = authored arcs
+    for the 3 hand-built campaigns; rides the `VIETNAM_DOCTRINE` override precedent, composes
+    with doctrine, never a commander rewrite; reactive defense stays deterministic (§17
+    boundary). A **6-campaign inference pilot** (4 modern + 2 Vietnam) is done — see
+    `414th-campaign-phases-pilot.md` + the reusable `tools/campaign_phase_laydown.py`
+    (`--lite` raw-`.miz` parse / `--engine` real pipeline); it surfaced two threshold
+    refinements now in the spec: an **absolute long+medium-SAM floor** gate (Khe Sanh 0 SAM
+    skips Rollback, Velvet Thunder's SA-2 belt keeps it — same era, opposite arc) and EWR
+    de-weighting. A **batch draft across all 66 campaigns** is done too — `tools/campaign_phase_classify.py`
+    (the offline §3.2 classifier reference impl) + `414th-campaign-phases-all66-draft.md` (a
+    generated opening-phase/arc table: 55 Rollback / 6 Air Superiority / 4 Interdiction; known
+    `--lite` caveats = mod-SAM undercount, auto-assign air blindspot, era-from-date). Design only; P0
+    plumbing not started),
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),

@@ -280,7 +280,7 @@ def test_reconcile_all_helos_lost_no_delivery_credit() -> None:
 
 
 def test_reconcile_no_commitment_is_a_noop() -> None:
-    game = SimpleNamespace(super_gaggle_commitment=None)
+    game: Any = SimpleNamespace(super_gaggle_commitment=None)
     reconcile_super_gaggle(game, _debrief(["anything"]))  # must not raise
 
 

@@ -584,6 +584,16 @@ export type UnculledZone = {
   position: LatLng;
   radius: number;
 };
+export type CampaignStatus = {
+  campaign_name?: string | null;
+  turn: number;
+  date: string;
+  phase_name?: string | null;
+  phase_status?: string | null;
+  phase_narrative?: string | null;
+  blue_will?: number | null;
+  red_will?: number | null;
+};
 export type Game = {
   control_points: ControlPoint[];
   tgos: Tgo[];
@@ -598,6 +608,7 @@ export type Game = {
   map_zones: MapZones;
   blank_canvas_setup: boolean;
   enable_unit_placement: boolean;
+  campaign_status?: CampaignStatus | null;
 };
 export type MapZones = {
   inclusion: LatLng[][][];

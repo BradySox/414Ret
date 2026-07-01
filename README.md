@@ -206,6 +206,16 @@ and selected later upstream fixes.
   — **Casual / Normal / Veteran / Ace** — sit atop the Difficulty & Realism page and set AI skill,
   economy, player aids, and realism/restrictions together as a starting point; you can still
   fine-tune any individual setting afterward, and *Normal* restores the stock defaults.
+- **Campaign phases**: every campaign now knows what *phase* of the air war it is in — **Air
+  Superiority** (roll back the SAM belt, blunt the MiGs), **Interdiction** (choke reinforcement and
+  logistics), then the **Offensive** (take ground) — inferred each turn from the live IADS, enemy air,
+  and front movement, with no campaign authoring required. A slim **status ribbon over the map** (also
+  showing campaign, turn, and date — previously nowhere in the web UI) and a band on the kneeboard
+  cover page always show the phase *and why* ("Interdiction — enemy IADS 22% · air threat low · front
+  static"), and the campaign announces each transition. The auto-planner leans its offensive tasking to
+  match the phase — SEAD/OCA first while rolling back, BAI/Armed Recon in Interdiction, CAS and base
+  capture on the push — while your defenses stay untouched. On by default; a single Campaign Management
+  toggle turns it off. On the Vietnam campaigns the ribbon also carries the **political-will meters**.
 - A new **Vietnam Ops** settings page holds opt-in period mechanics for the Vietnam-era
   campaigns (off by default; the Khe Sanh / Yankee Station campaigns turn the relevant ones
   on). The first is **Arc Light**: fly a **Strike with a heavy bomber** (B-52) and instead of a

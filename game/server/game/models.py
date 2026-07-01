@@ -32,6 +32,47 @@ class MapLayersJs(BaseModel):
     state: str | None = None
 
 
+class CampaignStatusJs(BaseModel):
+    """The campaign-status ribbon payload (campaign phases W3).
+
+    GameJs previously carried no turn, date, or campaign name at all; the phase
+    (and, on Vietnam campaigns, the political-will meters) ride in on the same
+    small payload. The phase fields are None when `campaign_phases` is off and
+    the will fields are None outside `vietnam_political_will` campaigns -- the
+    client hides whatever is absent.
+    """
+
+    campaign_name: str | None
+    turn: int
+    date: str
+    phase_name: str | None
+    phase_status: str | None
+    phase_narrative: str | None
+    blue_will: float | None
+    red_will: float | None
+
+    @staticmethod
+    def from_game(game: Game) -> CampaignStatusJs:
+        from game.fourteenth.phases import active_phase
+
+        phase = active_phase(game)
+        blue_will: float | None = None
+        red_will: float | None = None
+        if getattr(game.settings, "vietnam_political_will", False):
+            blue_will = getattr(game.blue, "political_will", None)
+            red_will = getattr(game.red, "political_will", None)
+        return CampaignStatusJs(
+            campaign_name=game.campaign_name,
+            turn=game.turn,
+            date=game.current_day.isoformat(),
+            phase_name=phase.name if phase is not None else None,
+            phase_status=getattr(game, "phase_status_line", None),
+            phase_narrative=phase.narrative if phase is not None else None,
+            blue_will=blue_will,
+            red_will=red_will,
+        )
+
+
 class GameJs(BaseModel):
     control_points: list[ControlPointJs]
     tgos: list[TgoJs]
@@ -51,6 +92,9 @@ class GameJs(BaseModel):
     # the Place Unit Group dialog, so the client skips the POST entirely and a plain
     # right-click stays free for package planning.
     enable_unit_placement: bool
+    # Campaign-status ribbon (phases W3): turn/date/campaign + the inferred phase
+    # (+ political will on Vietnam campaigns).
+    campaign_status: CampaignStatusJs
 
     class Config:
         title = "Game"
@@ -60,6 +104,7 @@ class GameJs(BaseModel):
         return GameJs(
             blank_canvas_setup=game.blank_canvas_setup,
             enable_unit_placement=game.settings.enable_unit_placement,
+            campaign_status=CampaignStatusJs.from_game(game),
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             supply_routes=SupplyRouteJs.all_in_game(game),

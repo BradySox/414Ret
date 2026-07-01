@@ -3336,6 +3336,8 @@ class CoverPage(KneeboardPage):
         packages: Optional["FriendlyPackagesPage"],
         aircraft: AircraftType,
         dark_kneeboard: bool,
+        phase_line: Optional[str] = None,
+        phase_narrative: Optional[str] = None,
     ) -> None:
         self.campaign_name = campaign_name
         self.turn = turn
@@ -3345,6 +3347,8 @@ class CoverPage(KneeboardPage):
         self.packages = packages
         self.aircraft = aircraft
         self.dark_kneeboard = dark_kneeboard
+        self.phase_line = phase_line
+        self.phase_narrative = phase_narrative
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -3361,6 +3365,16 @@ class CoverPage(KneeboardPage):
         # the page (the big font overflows for long campaign titles).
         writer.text(f"{op} — Turn {self.turn}", font=op_turn_font, wrap=True)
         writer.text(self.day.strftime("%A %d %B %Y"), font=date_font)
+
+        if self.phase_line is not None:
+            # Campaign phase (W3): the inferred phase + its §3.4 "why" so the deck
+            # opens telling you what stage of the war you're flying in.
+            writer.vspace(10)
+            writer.heading("CAMPAIGN PHASE")
+            writer.rule()
+            writer.text(self.phase_line, wrap=True)
+            if self.phase_narrative:
+                writer.text(self.phase_narrative, wrap=True)
 
         if self.sitrep is not None:
             writer.vspace(10)
@@ -3538,6 +3552,9 @@ class KneeboardGenerator(MissionInfoGenerator):
                     representative, rows, self.dark_kneeboard
                 )
 
+        from game.fourteenth.phases import active_phase
+
+        phase = active_phase(self.game)
         return CoverPage(
             campaign_name=self.game.campaign_name,
             turn=self.game.turn,
@@ -3547,6 +3564,8 @@ class KneeboardGenerator(MissionInfoGenerator):
             packages=packages,
             aircraft=aircraft,
             dark_kneeboard=self.dark_kneeboard,
+            phase_line=getattr(self.game, "phase_status_line", None),
+            phase_narrative=phase.narrative if phase is not None else None,
         )
 
     def _cover_sitrep(self) -> Optional[Sitrep]:

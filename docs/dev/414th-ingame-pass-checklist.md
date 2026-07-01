@@ -2094,6 +2094,31 @@ so the two docs don't drift.
   short of a base it should capture (disarm/gating regression — the clamp must clear when the setting is
   off). Knob: `STATIC_FRONT_BAND` in `game/fourteenth/static_front.py`.
 
+### M3 — Campaign phase arc & planner emphasis · §40 · ☐ UNTESTED (built 2026-07-01; classifier/hysteresis/emphasis fully unit-tested, the lived arc + planner feel need a played campaign; client ribbon needs the CI rebuild)
+- **Headless adjudication:** the §3.2 thresholds (SAM floor, peer guard, offensive gate), §3.3 hysteresis
+  (dwell, monotonic-forward, the asymmetric regression margin), the §3.4 legibility string, the update
+  gating/idempotence, and the `PlanNextAction` reactive-prefix/emphasis contract are all locked in
+  `tests/fourteenth/test_phases.py`. What CI *cannot* adjudicate: whether the inferred arc **advances at a
+  believable pace** over a real campaign and whether the emphasis **visibly shifts the ATO** without starving
+  anything critical.
+- **Setup:** any campaign (default ON). Ideal probes: a dense-IADS modern campaign (should open in Air
+  Superiority) and Khe Sanh (0 SAM — should open in Interdiction). Read the phase on the map ribbon + the
+  kneeboard cover band; play/auto-resolve turns while SEAD attrites the belt.
+- **Pass:** the opening phase matches the laydown (belt ⇒ Air Superiority; Khe Sanh ⇒ Interdiction); the
+  ribbon/cover show the same phase + a sensible "why" line; as the SAM belt drops below ~half, the campaign
+  announces and enters Interdiction (after the 2-turn dwell), and the BLUE ATO visibly tilts (more
+  BAI/Armed Recon/OCA, less DEAD-first); with the front advancing and IADS <30 % it enters Offensive (CAS/
+  capture-weighted); the phase never regresses; red planning and reactive defense (BARCAP/QRA/DefendBases)
+  look unchanged; toggling `campaign_phases` off clears the ribbon band and restores stock planning.
+- **Fail signature:** phase flaps turn-to-turn (dwell broken); a zero-SAM campaign opens in Air Superiority
+  (floor gate not reading the IADS network — check `_enemy_sam_groups` roles); the phase never leaves Air
+  Superiority though the belt is dead (air-threat signal stuck — check red air-superiority squadron counts);
+  the ATO shows no tilt at all across a phase change (emphasis not reaching the planner — check
+  `_offensive_order` and that the coalition is BLUE); defensive flights change with the phase (§17 boundary
+  breach); the ribbon shows nothing on a new game (client build stale — the L7 lesson — or
+  `campaign_status` missing from `/game`); a transition announces every turn (message-once regression).
+  Knobs: the `ROLLBACK_SAM_FLOOR`/`IADS_*`/`PHASE_MIN_DWELL_TURNS` constants in `game/fourteenth/phases.py`.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

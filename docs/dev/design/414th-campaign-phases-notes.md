@@ -1,6 +1,11 @@
 # 414th — Campaign Phases (inferred + authored) — design notes
 
-**Status:** design only. Scoped 2026-07-01. Nothing landed yet. This note is the
+**Status:** **P0 + P1 LANDED** (2026-07-01, Vietnam campaign layer W3 / feature §40 —
+`game/fourteenth/phases.py`, the §2.1 object + §3 Tier-0 classifier + §3.3 hysteresis +
+§4 soft emphasis in `PlanNextAction` + §5 persistence + the kneeboard cover band and the
+client campaign-status ribbon, gated by `campaign_phases` default ON; in-game pass =
+checklist M3). P2 (conditions/objectives/whitelists — Tier 1/2 authoring) and P3
+(authored arcs) are next, riding the Vietnam W4 ROE work. This note is the
 **spec of record** for the phase model, the inference classifier, and the planner/UI
 hooks; implementation is staged (see *Rollout* at the end). Design decisions locked with
 the user this session are marked **[DECIDED]**.
@@ -265,11 +270,12 @@ prove the extraction pipeline + judge draft quality, *then* green-light the full
 
 ## 8. Rollout (staged)
 
-- **P0 — plumbing (no behavior change):** `CampaignPhase` model + Campaign YAML load +
+- **P0 — plumbing (no behavior change):** ✅ LANDED (W3) — `CampaignPhase` model +
   `Game` phase state/baseline + `__setstate__` migration + expose turn/date/campaign/phase in
-  `GameJs`. Kneeboard cover + status band light up. Nothing planner-facing yet.
-- **P1 — inference + emphasis:** the §3 classifier drives the §4 soft reweight for **all**
-  campaigns. Generic arc, hysteresis, legibility string.
+  `GameJs`. Kneeboard cover + status band light up. (The Campaign YAML `phases:` load moved
+  to P2 with the rest of the authoring tiers — Tier 0 needs no YAML.)
+- **P1 — inference + emphasis:** ✅ LANDED (W3) — the §3 classifier drives the §4 soft reweight
+  for **all** campaigns. Generic arc, hysteresis, legibility string.
 - **P2 — conditions, objectives, whitelists:** `advance_when` conditions, objectives
   checklist, optional per-phase hard whitelist deltas (Tier 1/2 authoring unlocked).
 - **P3 — authored arcs:** convert the squadron's three wiki campaign breakdowns into real

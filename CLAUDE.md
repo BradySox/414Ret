@@ -107,8 +107,13 @@ file. This guide is the map; those are the territory.
     interdiction → offensive, with hysteresis), Tier 1 = YAML-tuned, Tier 2 = authored arcs
     for the 3 hand-built campaigns; rides the `VIETNAM_DOCTRINE` override precedent, composes
     with doctrine, never a commander rewrite; reactive defense stays deterministic (§17
-    boundary). Includes a plan to headless-load all 66 `.miz` and batch-**draft** phase plans
-    (pilot 6 → fan out). Design only; P0 plumbing not started),
+    boundary). A **6-campaign inference pilot** (4 modern + 2 Vietnam) is done — see
+    `414th-campaign-phases-pilot.md` + the reusable `tools/campaign_phase_laydown.py`
+    (`--lite` raw-`.miz` parse / `--engine` real pipeline); it surfaced two threshold
+    refinements now in the spec: an **absolute long+medium-SAM floor** gate (Khe Sanh 0 SAM
+    skips Rollback, Velvet Thunder's SA-2 belt keeps it — same era, opposite arc) and EWR
+    de-weighting. Batch-draft across all 66 is the fan-out next step. Design only; P0
+    plumbing not started),
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),

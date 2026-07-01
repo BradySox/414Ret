@@ -108,11 +108,20 @@ and stores them on `Game` (`game.phase_baseline`) for the ratio math. Baselines 
 old saves (default: re-snapshot at first load, or treat ratios as 1.0 until a baseline
 exists).
 
-### 3.2 Phase boundaries (v1 thresholds — tunable, validated by the pilot §6)
+### 3.2 Phase boundaries (v1 thresholds — refined by the pilot, see the pilot note)
 
-Evaluated in order; first match wins (with hysteresis, §3.3):
+**Absolute-SAM-floor gate (checked first — the pilot's key finding).** `iads_ratio` alone
+can't open the campaign correctly: at turn 0 *every* campaign's ratio is `1.0`, yet a
+zero-SAM Vietnam theater and a dense S-300 theater must not both open in Rollback. So before
+the ratio checks: **if the turn-0 baseline of long+medium SAM launchers is below
+`ROLLBACK_SAM_FLOOR` (≈ 3), there is no meaningful Rollback phase — open the campaign in
+Interdiction.** (Pilot: Khe Sanh 0 SAM ⇒ skips Rollback; Velvet Thunder 12 SAM ⇒ keeps it —
+same era, opposite arc, decided by laydown.)
 
-1. **Rollback / Air Superiority** — the default early phase.
+Then, evaluated in order; first match wins (with hysteresis, §3.3):
+
+1. **Rollback / Air Superiority** — the default early phase *(only reachable if the SAM floor
+   is met)*.
    *Enter/stay when* `iads_ratio ≥ 0.5` **or** `air_threat == present`.
    Intent: win the air, degrade the SAM belt.
 2. **Interdiction** — air largely won, ground not yet moving.
@@ -126,19 +135,29 @@ Evaluated in order; first match wins (with hysteresis, §3.3):
 4. **Consolidation** *(optional)* — enemy near collapse.
    *Enter when* `base_ratio ≥ 0.8`.
 
+**IADS strength = long+medium SAM launcher count, not EWR.** The pilot found EWR counts are
+wildly author-dependent (Black Sea placed 50; the other five placed 0, letting SAM radars do
+EWR duty). So `iads_ratio` is computed over **long+medium launchers**; EWR is flavor only.
+
+**Peer-fight guard.** When the sides are air-symmetric (pilot: Slava Ukraini, Ukraine vs
+Russia), the Rollback→Interdiction transition gates on `air_threat_absent AND iads_down`, not
+IADS alone — otherwise it advances while red air is still a real threat.
+
 `exchange` (loss ratio) is a **tie-breaker only** — it nudges dwell/advance timing, it never
 selects a phase on its own (too noisy turn-to-turn).
 
-These numbers are the starting point; the 6-campaign pilot (§6) exists to sanity-check them
-against real theaters (Black Sea 2005, Caen 1944, Desert Sabre 2011, a Vietnam campaign, a
-Syria WRL campaign, a Falklands campaign) before they harden.
+These thresholds were sanity-checked against six real laydowns (4 modern + 2 Vietnam, dense-
+IADS↔no-IADS) — see [`414th-campaign-phases-pilot.md`](414th-campaign-phases-pilot.md). The
+absolute-floor gate is now a **P1 requirement**, not optional.
 
 ### 3.3 Hysteresis (mandatory)
 
 A live-metric classifier flaps. Two guards, both required:
 
 - **Min-dwell:** once entered, a phase holds for ≥ `PHASE_MIN_DWELL_TURNS` (default 2)
-  before any transition is considered.
+  before any transition is considered. Rollback's dwell should **scale with L+M SAM density**
+  (pilot: Anvil 21 / Noisy 25 SAM ⇒ long Rollback; Slava 7 ⇒ short), and overall pacing tracks
+  the capturable (neutral) airfield pool.
 - **Asymmetric thresholds:** advancing forward uses the thresholds above; *regressing* to an
   earlier phase requires the reverse condition to be met by a margin (e.g. IADS must climb
   back above `0.6`, not merely `0.5`, to fall from Interdiction back to Rollback — models a

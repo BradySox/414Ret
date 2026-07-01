@@ -50,10 +50,25 @@ adapted to how this fork actually plans and flies a campaign.
 - **[Combat SAR](Combat-SAR)** — rescue a downed pilot and get them home.
 - **[Electronic Warfare and ISR](Electronic-Warfare-and-ISR)** — the C-130J JAMMING platform.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline battle simulation.
-- **[Vietnam Ops](Vietnam-Ops)** — the opt-in period-mechanics suite: Arc Light, AAA flak, naval gunfire, convoy interdiction, airbase siege, Super Gaggle, FAC(A).
 - **[Map Layers and Interface](Map-Layers-and-Interface)** — the unified layers panel and UI work.
 - **[Kneeboards](Kneeboards)** — the cover page, compact 3–4 page deck, SITREP band, and custom import.
 - **[Drop-Spawn Unit Placement](Drop-Spawn-Unit-Placement)** — right-click sandbox placement.
+
+## Vietnam Ops
+
+The **[Vietnam Ops](Vietnam-Ops)** suite is a set of opt-in, period-authentic mechanics that
+recreate the missions and threats that defined the Vietnam air war — the things the modern
+SAM-and-MiG engine never modelled. Every toggle defaults off; the Vietnam campaigns (Khe Sanh,
+Yankee Station) flip the relevant ones on. See the **[Vietnam Ops](Vietnam-Ops)** page for the
+full suite, the settings-page gating model, and per-feature how-to.
+
+- **[Arc Light](Vietnam-Ops#1--arc-light)** — B-52 heavy bombers walk a carpet of bombs across the target.
+- **[AAA Flak Gauntlet](Vietnam-Ops#2--aaa-flak-gauntlet)** — barrage flak that thickens against predictable run-ins.
+- **[Naval Gunfire Support](Vietnam-Ops#3--naval-gunfire-support)** — offshore gun ships shell coastal targets (call-for-fire + auto).
+- **[Convoy Interdiction](Vietnam-Ops#4--convoy-interdiction-steel-tiger)** — a Ho Chi Minh Trail supply column you hunt via Armed Recon.
+- **[Airbase Harassment](Vietnam-Ops#5--airbase-harassment-rocketmortar-siege)** — forward airfields under sporadic rocket/mortar siege.
+- **[Super Gaggle](Vietnam-Ops#6--super-gaggle-hilltop-resupply)** — escort resupply helos into a cut-off hilltop outpost.
+- **[FAC(A) Marking](Vietnam-Ops#7--faca-willie-pete-target-marking)** — an OV-10 Bronco marks targets with willie-pete smoke.
 
 ## Campaigns
 

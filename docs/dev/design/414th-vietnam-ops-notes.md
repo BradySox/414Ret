@@ -149,12 +149,18 @@ campaign); inland campaigns see nothing; `dcs.log` clean.
 **Decision (user):** surface it through the existing **`ARMED_RECON`** task — frag Armed Recon
 on an enemy road corridor; MOOSE seeds a moving convoy in the corridor; find-and-kill.
 
-**Mechanism.** Extend `ARMED_RECON` so an enemy **road corridor** in red territory is a valid
-target (Python picks the corridor + emits it). At runtime a `convoy` plugin spawns a moving
-truck column on the road that **scatters/hides** when hunted (stops under tree cover, kills
-lights at night). Tie the kill to **red logistics**: destroying the convoy dents the supply the
-corridor feeds (lean on the existing supply-route economy so the loss is real, not cosmetic).
-Models Steel Tiger / Ho Chi Minh Trail interdiction. Gated by `vietnam_convoy_interdiction`.
+**Mechanism — LANDED as a real force-model convoy (reworked 2026-07-01, CLAUDE.md §35).** The v1
+implementation took a shortcut the design warned against: it spawned a **phantom** truck column at runtime
+(`vietnamops` plugin `coalition.addGroup`). Those trucks weren't in Retribution's `UnitMap`, so killing them
+was cosmetic — the exact "cosmetic loss" this note said to avoid ("so the loss is real, not cosmetic"). The
+rework fulfils the original intent by using the engine's **real convoy system**:
+`ensure_enemy_trail_convoy` (`game/fourteenth/vietnam_convoy.py`, once per turn from `finish_turn`) skims a
+few of the opfor's **real** rear-area ground units and moves them toward the front on the road corridor
+nearest the FLOT via a real `TransferOrder` (`coalition.transfers.new_transfer` → `commit_losses` debits the
+source base). Retribution already spawns those convoys as road-moving groups, makes them Armed-Recon / BAI
+objectives, and records their destruction as `enemy_convoy` (the units never arrive). So the kill is **real
+logistics attrition**, natively recorded — no phantom, no plugin runtime. The old `_populate_convoy_interdiction`
+emitter and the Lua convoy section are deleted. Gated by `vietnam_convoy_interdiction`; fully no-op safe.
 
 **UI (DONE — right-click to frag, per playtest):** the player **right-clicks an enemy supply route**
 on the map to frag the interdiction package. `SupplyRoute.tsx` gains a `contextmenu` handler →
@@ -173,8 +179,9 @@ callback/signal carries the target, and its handler threads `default_task=ARMED_
 `MissionTarget.mission_types`). **Deferred:** an Armed Recon flight plan that patrols the exact road
 (today it frags against the enemy CP, not the road geometry).
 
-**DoD / in-game pass:** an Armed Recon corridor frag yields a moving convoy that reacts to being
-hunted; killing it registers a logistics hit at debrief; `dcs.log` clean.
+**DoD / in-game pass (L6, re-opened by the rework):** a Vietnam turn produces a real red convoy on a road
+behind the front, offered as an Armed-Recon / BAI objective; killing it registers an `enemy_convoy` loss at
+debrief and those units never reach their destination CP.
 
 ## §E — "Super Gaggle" hilltop resupply — LANDED 2026-07-01 (runtime, CLAUDE.md §37)
 

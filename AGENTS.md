@@ -507,18 +507,21 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     salvo/auto-cadence are plugin options. (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §34, checklist L3.)
 35. **Convoy interdiction (Steel Tiger)** — the fourth **Vietnam Ops suite** feature: a moving enemy supply
-    column on the road behind the FLOT (Steel Tiger / Ho Chi Minh Trail), surfaced through Armed Recon. Python
-    (`_populate_convoy_interdiction`) picks the **enemy reinforcement road nearest the front** — reusing the
-    engine's existing `convoy_routes` so the target ties to real red logistics — and emits its path +
-    coalition (`dcsRetribution.VietnamOps.convoy`); the `vietnamops` plugin spawns a vanilla truck column
-    (`coalition.addGroup`) that drives the corridor, **halts under cover** (`setOnOff`) when an opposing
-    aircraft closes inside the scatter range, and **rolls a fresh column** a while after the old one is wiped,
-    so the trail keeps flowing. Corridor selection (nearest convoy route) is the user's chosen design; the
-    runtime spawn is **verified 2026-06-30** (checklist L6 — a full flown session's `dcs.log` showed a
-    complete spawn→drive→wipe→respawn cycle, no `coalition.addGroup` Lua errors; halt-under-threat not
-    separately confirmed). Speed/scatter-range/respawn/
-    truck-count/type are plugin options. (`game/missiongenerator/vietnamopsluadata.py`,
-    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §35; checklist L6.)
+    column on the road behind the FLOT (Steel Tiger / Ho Chi Minh Trail), surfaced through Armed Recon. **Now a
+    real, tracked convoy in the force model, not a phantom runtime spawn** (reworked 2026-07-01 to eliminate a
+    "free non-existent unit" — the old `coalition.addGroup` trucks existed only in the `.miz`, so killing them
+    cost the enemy nothing and no loss was recorded). Retribution already models convoys
+    (`coalition.transfers.convoys` carry real ground units, spawn as road-moving groups via `ConvoyGenerator`,
+    are Armed-Recon/BAI targets, and their loss is recorded as `enemy_convoy` so the units never arrive), so the
+    feature now just **ensures one is flowing**: `ensure_enemy_trail_convoy` (`game/fourteenth/vietnam_convoy.py`,
+    run once per turn from `finish_turn`) — when `vietnam_convoy_interdiction` is on and the opfor has no convoy
+    travelling — moves a few of the opfor's **real** rear-area ground units toward the road corridor nearest the
+    front, debited from the source base (`new_transfer` → `commit_losses`). So interdicting the trail now denies
+    the enemy real reinforcements (kill it and they never reach the line; let it through and they do), and the
+    kill is recorded natively. Fully guarded (no front / no rear units / no road corridor ⇒ no-op; the engine's
+    organic convoys still serve). **No `vietnamops` plugin runtime** any longer — the emitter and the Lua convoy
+    section are removed. (`game/fourteenth/vietnam_convoy.py`, `game/game.py`,
+    `game/settings/settings.py`; features doc §35; checklist L6.)
     **Right-click planning (added per playtest):** the player **right-clicks an enemy supply route** on the
     map to frag the interdiction package — `SupplyRoute.tsx` `contextmenu` → `POST /qt/create-package/supply-route/{route_id}`
     → `interdiction_target_for_route_id` resolves the route (its id now encodes the two CP ids) to the enemy

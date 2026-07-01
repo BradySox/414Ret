@@ -46,7 +46,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §32 | Arc Light heavy-bomber Strike carpet | `vietnamops` | `vietnam_arc_light` |
 | §33 | AAA flak gauntlet | `vietnamops` | `vietnam_flak_gauntlet` |
 | §34 | Naval gunfire support | `vietnamops` | `vietnam_naval_gunfire` |
-| §35 | Convoy interdiction (Steel Tiger) | `vietnamops` | `vietnam_convoy_interdiction` |
+| §35 | Convoy interdiction (Steel Tiger) | — | `vietnam_convoy_interdiction` |
 | §36 | Airbase harassment (rocket/mortar siege) | `vietnamops` | `vietnam_airbase_harassment` |
 | §37 | Super Gaggle hilltop resupply | `vietnamops` | `vietnam_super_gaggle` |
 | §38 | FAC(A) willie-pete target marking | `vietnamops` | `vietnam_fac_marking` |

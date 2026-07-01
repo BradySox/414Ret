@@ -339,6 +339,15 @@ class Game:
         for control_point in self.theater.controlpoints:
             control_point.process_turn(self)
 
+        # Vietnam Ops convoy interdiction (§35): ensure the opfor has a *real*, tracked
+        # convoy flowing on the trail corridor to interdict (replacing the old phantom
+        # runtime spawn). Once per turn, after transfers are processed and the network is
+        # current; a no-op unless the setting is on and a real corridor + spare rear units
+        # exist. See game/fourteenth/vietnam_convoy.py.
+        from game.fourteenth.vietnam_convoy import ensure_enemy_trail_convoy
+
+        ensure_enemy_trail_convoy(self)
+
         # Movable ship TGOs snap to their destination and re-parent to the
         # nearest friendly CP. Runs after captures are committed (process_results
         # precedes pass_turn -> finish_turn), so re-parenting sees post-capture

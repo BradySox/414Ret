@@ -217,10 +217,11 @@ and selected later upstream fixes.
   hidden missile. The third is **naval gunfire support** for coastal campaigns: offshore gun ships
   (the New Jersey's 16-inch batteries, cruisers, destroyers) shell shore targets — call a fire mission
   on an F10 map marker from the radio menu, or let the ships bombard enemy coastal positions
-  automatically. The fourth is **convoy interdiction (Steel Tiger)**: a moving enemy truck column rolls
-  the supply road behind the front (the Ho Chi Minh Trail), hunt it down on an Armed Recon — it goes to
-  ground under cover when you close in, and a fresh column rolls once the old one is wiped. **Right-click
-  an enemy supply route** on the map to frag the interdiction package straight onto that corridor. The fifth
+  automatically. The fourth is **convoy interdiction (Steel Tiger)**: the enemy runs a **real** supply
+  convoy up the road behind the front (the Ho Chi Minh Trail) — carrying actual reinforcements, so hunting it
+  down on an Armed Recon genuinely denies the enemy those units, and letting it through means they reach the
+  line. It's a live logistics target in the campaign, not a scripted prop. **Right-click an enemy supply route**
+  on the map to frag the interdiction package straight onto that corridor. The fifth
   is **airbase harassment**: forward enemy airfields draw sporadic rocket/mortar fire near the ramp — the
   near-constant siege of Bien Hoa, Da Nang, and the Khe Sanh strip — so the rear stops feeling like a safe
   area. *Your* active spawn fields are never targeted, and a startup grace period keeps it off while you're

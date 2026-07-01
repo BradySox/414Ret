@@ -1921,31 +1921,29 @@ so the two docs don't drift.
   switching back to "included" stays filtered; the "show incompatible" toggle drops the era filter; a crash
   arriving on the Theater page.
 
-### L6 — Convoy interdiction (Steel Tiger) · §35 · ☑ VERIFIED (2026-06-30, `dcs.log` — "Vietnam v2.miz" session, full spawn→wipe→respawn cycle)
-- **Verified (2026-06-30, flown session — `Vietnam v2.miz` / `dcs.log`):** `VietnamConvoy-1` registered
-  at mission load (`00:17:32`, "Convoy interdiction armed (3 waypoint corridor)"), then
-  `VietnamConvoy-2` registered at `01:22:00` — 64m28s later, with **no intervening mission reload** (the
-  session ran continuously from `00:17:29` to the Tacview save at `01:29:50`). That gap is only
-  consistent with the column having been fully wiped around `01:12:00` (≈54 min of driving/
-  interdiction) and the 600 s `RESPAWN` timer then rolling a fresh column — i.e. a complete
-  spawn→drive→destroy→respawn cycle happened live, with no `coalition.addGroup` Lua errors in the log.
-  Fail signature (no spawn / never moves / Lua error) did not occur. Still open: the halt-under-threat
-  (`setOnOff`) behavior wasn't specifically confirmed (would need a Tacview pass flown close enough to
-  the corridor to force a halt).
-- **Headless adjudication:** the corridor pick (`_populate_convoy_interdiction`) is unit-tested
-  (`game/missiongenerator/tests/test_vietnamops_luadata.py` — picks the nearest enemy→enemy road, ignores the
-  RED→BLUE front, off = no node) and verified on the live Khe Sanh save (chose Senaki→Kobuleti, 23.5 km behind
-  the FLOT). The **runtime spawn is unverified** — `coalition.addGroup`, the red country, and the
-  halt-under-threat behaviour can't be exercised headless.
-- **Setup:** Start a **NEW** game with **Vietnam Ops → Convoy interdiction** on (a campaign with an enemy
-  supply road behind the front — Khe Sanh). Fly toward the chosen corridor (the road nearest the FLOT in red
-  territory) / frag an Armed Recon there.
-- **Pass:** a moving enemy truck column drives the road; it **halts** when you close inside the scatter range
-  and rolls again when you leave; destroying it shows "Enemy supply convoy destroyed on the trail" and a fresh
-  column rolls after the respawn delay. `dcs.log` clean (no `coalition.addGroup` errors).
-- **Fail signature:** no convoy spawns (group-data structure wrong / red country not on the red coalition);
-  the column never moves or never halts (`setOnOff`/route wrong); spams respawns; `coalition.addGroup` Lua
-  error in `dcs.log`. Tune speed/scatter-range/respawn/truck-count via the plugin options.
+### L6 — Convoy interdiction (Steel Tiger) · §35 · ☐ UNTESTED (REWORKED 2026-07-01: phantom runtime spawn → real, tracked force-model convoy; the old VERIFIED runtime pass is obsolete)
+- **What changed:** the convoy is no longer a `vietnamops`-plugin `coalition.addGroup` phantom (a free,
+  unrecorded unit). It is now a **real, tracked enemy convoy** created in the force model
+  (`game/fourteenth/vietnam_convoy.py` `ensure_enemy_trail_convoy`, run once per turn from `finish_turn`):
+  it skims a few of the opfor's real rear units and moves them toward the front via a real `TransferOrder`,
+  so interdicting it denies real reinforcements and the loss is recorded as `enemy_convoy`. The prior
+  2026-06-30 runtime-cycle verification no longer applies (there is no runtime spawn to verify).
+- **Headless adjudication:** `tests/fourteenth/test_vietnam_convoy.py` locks the corridor pick (nearest
+  opfor→opfor road, ignores the opfor→friendly front), the unit skim (fraction cap), the guards (setting off /
+  convoy already flowing / turn 0 → no-op), and that a real `TransferOrder` of skimmed rear units is created.
+  `test_vietnamops_luadata.py` asserts the emitter never emits a `convoy` node. The end-to-end convoy spawn +
+  BAI-objective + loss-recording is engine behaviour that only a flown turn exercises.
+- **Setup:** Start a **NEW** game with **Vietnam Ops → Convoy interdiction** on (a Vietnam campaign with an
+  enemy supply road behind the front — Khe Sanh). Advance a turn so `finish_turn` runs, then inspect the map.
+- **Pass:** a **real red convoy** is present on a road behind the front (visible on the map, and offered as an
+  **Armed Recon / BAI objective**); flying the Armed Recon and destroying it registers an **enemy_convoy loss**
+  at debrief and those units **do not arrive** at their destination CP (the source CP's armour dropped by the
+  skimmed count when the convoy was created). Right-clicking the enemy supply route still frags Armed Recon
+  onto that corridor (L7).
+- **Fail signature:** no convoy ever appears despite the opfor having rear armour and a road corridor (corridor
+  pick / transfer creation broken); the convoy isn't a targetable objective; killing it records nothing at
+  debrief (it wasn't a real `Convoy` — check `arrange_transport` took the Road leg); the source CP is gutted
+  (skim cap wrong).
 
 ### L7 — Right-click supply-route interdiction · §35 · ☐ UNTESTED (2026-07-01: "still nothing" root-caused to a STALE LOCAL CLIENT BUILD, not a code bug — client rebuilt, needs a re-test)
 - **2026-07-01 — "still nothing" is a build problem, not the feature.** The user right-clicked an enemy

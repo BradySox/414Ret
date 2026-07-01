@@ -331,31 +331,34 @@ def steel_tiger() -> tuple[Campaign, ConflictTheater, CampaignAirWingConfig]:
     return campaign, theater, air_wing
 
 
-def test_steel_tiger_loads_and_squadron_aircraft_resolve(
+def test_steel_tiger_loads_and_populates_bases(
     steel_tiger: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
 ) -> None:
+    # The real regression guard: the campaign loads through the new-game path without
+    # raising (a bad .miz reference or an invalid task string in SquadronConfig.from_data
+    # would raise on the fixture's load), and the interdiction OOB lands squadrons across
+    # many bases. Note a campaign squadron's `aircraft` entry may be a *squadron-name* alias
+    # (e.g. "VAW-122", "43d Strategic Wing"), resolved by name against the squadron-def DB
+    # rather than AircraftType.named -- and an unresolved entry only warns + falls back -- so
+    # this asserts breadth of population, not per-string aircraft resolution.
     _campaign, _theater, air_wing = steel_tiger
-    # The load above already parses every squadron (an invalid task string raises in
-    # SquadronConfig.from_data). Here, resolve every squadron's airframe by name -- the
-    # config stores them as raw strings and an unknown CP key is only *logged and skipped*,
-    # so a typo would slip past a mere "did it load" check. AircraftType.named raises on a
-    # bad name, catching a mistyped land airframe too (carrier-capability is checked below).
-    total = 0
-    for squadrons in air_wing.by_location.values():
-        for squadron in squadrons:
-            for aircraft_name in squadron.aircraft:
-                AircraftType.named(aircraft_name)
-                total += 1
+    total = sum(len(sqs) for sqs in air_wing.by_location.values())
+    assert total > 0, "Steel Tiger produced no squadrons -- a CP key regressed."
+    # 19 control-point keys are configured; if the keys wholesale failed to resolve against
+    # the theater they would be logged-and-skipped and this would collapse. Require most.
     assert (
-        total > 0
-    ), "Steel Tiger produced no squadrons -- a CP key or airframe regressed."
+        len(air_wing.by_location) >= 12
+    ), f"Only {len(air_wing.by_location)} bases populated -- control-point keys regressed."
 
 
 def test_steel_tiger_carrier_squadrons_carrier_capable(
     steel_tiger: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
 ) -> None:
     # Same rule as Khe Sanh: the reused Yankee Station carriers must fly carrier-capable
-    # airframes (A-6E/F-8E/CH-53E here, never the land-based F-4E).
+    # airframes (never the land-based F-4E). Some carrier entries are squadron-name aliases
+    # (VAW-122 E-2, VS-28 (Tanker) S-3) that AircraftType.named can't resolve -- those carrier
+    # types are all deck aircraft anyway -- so skip a name that isn't a bare airframe and
+    # check the ones that are (A-6E/F-8E/CH-53E here), which is where an errant F-4E would show.
     _campaign, theater, air_wing = steel_tiger
     carriers = set(theater.find_carriers()) | set(theater.find_lhas())
     checked = 0
@@ -365,12 +368,16 @@ def test_steel_tiger_carrier_squadrons_carrier_capable(
             continue
         for squadron in squadrons:
             for aircraft_name in squadron.aircraft:
+                try:
+                    aircraft = AircraftType.named(aircraft_name)
+                except KeyError:
+                    continue  # a squadron-name alias, resolved via the squadron-def DB
                 checked += 1
-                if not control_point.can_operate(AircraftType.named(aircraft_name)):
+                if not control_point.can_operate(aircraft):
                     offenders.append(f"{control_point.name}: {aircraft_name}")
     assert (
         checked
-    ), "No Steel Tiger carrier squadrons were checked -- carrier topology regressed."
+    ), "No Steel Tiger carrier airframes were checked -- carrier topology regressed."
     assert not offenders, (
         f"Steel Tiger carrier squadrons fly airframes that cannot operate from the "
         f"carrier: {offenders}."

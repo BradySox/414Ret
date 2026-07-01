@@ -67,6 +67,11 @@ reference, and a phased campaign plan. Print it, fork it, scribble on it.*
 way in is by air — **hold the perimeter with round-the-clock tac air, Arc Light, and airlift, then
 break the siege with the Pegasus relief.**
 
+> The period mechanics this campaign flips on — Arc Light carpet bombing, the AAA flak gauntlet,
+> airbase harassment, the Super Gaggle resupply, and FAC(A) willie-pete marking — are all part of
+> the opt-in **[Vietnam Ops](Vietnam-Ops)** suite. Read that page for how each one works and how to
+> tune it.
+
 ---
 
 ## 2 · Win conditions & how the siege breaks

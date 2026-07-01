@@ -256,8 +256,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 15. **SCAR — RESCAP "Sandy" rescue escort** — repurposed (rescue rework, design note
     `414th-scar-rescue-rework-notes.md`) from the **retired** armor-hunt task into the rescue-escort
     role of the **Combat SAR package** (`FlightType.SCAR`, A-10C/AH-64D, scoped to the FLOT). The
-    standing package = **1 King (C-130) + 1 Jolly Green (helo) + 2–4 Sandy**; Sandy protects the downed
-    pilot, suppresses the threats around them, and walks the rescue helo in. **Enemy-capture race**
+    standing package = **1 King (C-130) + 1 Jolly Green (helo) + 2–4 Sandy**; Sandy's racetrack is
+    planned once at generation, but an **AI-crewed** Sandy is now **dynamically diverted** at runtime
+    (`combatsar` plugin, added 2026-07-01) off that racetrack to hold + actively engage
+    (`EnRouteTaskEngageTargetsInZone`) near a live ejection once one occurs, freeing again once the
+    survivor is resolved — a player-flown Sandy is untouched (voice/SRS coordination). "Walking the
+    rescue helo in" itself is still voice-first only, not scripted, for either. features doc §15,
+    checklist G23 (new — unflown). **Enemy-capture race**
     (`combatsar` plugin): on ejection an enemy snatch party (several small dispersed teams, spawned
     under the opposing faction's country) may race to seize the survivor — kill it
     to save, or the pilot is **CAPTURED** (`combat_sar_captures` state global) and held as a **POW at

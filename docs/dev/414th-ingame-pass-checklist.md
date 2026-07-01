@@ -1248,6 +1248,47 @@ so the two docs don't drift.
 - **Fail signature:** the `AssertionError` recurs; the flight plans with no real ingress (routes
   straight through threat zones with no IP); the marker still overlaps the airfield icon.
 
+### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ☐ UNTESTED (built 2026-07-01, unflown Lua)
+- **Context (user request, 2026-06-30):** after G21/G22, the user asked to build the AI Sandy
+  retasking that G21's investigation found was designed-but-never-built (the code's own comment
+  called it "a combatsar runtime follow-up for the AI"; a 2026-06-30 in-game report — "Sandy's did
+  nothing but fly their orbit path" — was consistent with that gap, not a bug at the time).
+- **Built (2026-07-01):** `luagenerator.py` now buckets `FlightType.SCAR` flights per coalition into
+  `dcsRetribution.CombatSAR(.red).sandys` (group names, alongside the existing `kings`/`rescueHelos`
+  — Sandy was previously **absent** from the CombatSAR data table entirely, so the runtime had no way
+  to know which groups were Sandys). `combatsar-config.lua` builds `sandyByName`, and on every tick a
+  survivor is `"down"`, `dispatchSandy` finds the nearest alive, idle, **non-player** Sandy within
+  `sandyMaxRangeM` (default 55.56 km / 30 NM) and pushes a combo task —
+  `TaskOrbitCircleAtVec2` (hold near the survivor, inheriting the Sandy's own current altitude/speed)
+  + `EnRouteTaskEngageTargetsInZone` (actively hunts `"Ground Units"` within `sandyEngageRadiusM`,
+  default 5.56 km / 3 NM) — replacing its planned racetrack task. Commits one Sandy per survivor
+  (`busySandy`), retries every 5s `POLL` until one frees up, releases it (`ClearTasks()`, resuming its
+  own planned route) once the survivor is rescued/captured/dead. A player-flown Sandy is never
+  retasked (`groupHasPlayer` guard, same pattern as rescue-helo commandeering). Two new plugin
+  options: `sandyMaxRangeM`, `sandyEngageRadiusM`.
+- **Test coverage:** the Python bucketing/emission is unit-tested
+  (`tests/missiongenerator/test_combat_sar_sandy_luadata.py` — a SCAR flight lands in `sandys`, never
+  `rescueHelos`/`kings`; red/blue route to the right node; empty when no Sandy present). **The Lua
+  runtime is entirely unflown** — no local Lua interpreter (CLAUDE.md constraint), read-verified only
+  (balanced blocks, correct Moose API signatures cross-checked against `Moose.lua` — `TaskOrbitCircleAtVec2`,
+  `EnRouteTaskEngageTargetsInZone`, `TaskCombo`, `SetTask`, `ClearTasks`, `GetVelocityMPS` all confirmed
+  to exist with the parameter orders used). The Lua 5.1 syntax gate (CI, blocking) passed on the PR.
+- **Setup:** A campaign with an AI-crewed Sandy (SCAR) flight in a Combat SAR package — `auto_combat_sar`
+  on for the safety-net package, or a player-fragged package with an AI Sandy wingman/second flight.
+  Eject an AI or player pilot near the FLOT within Sandy's `sandyMaxRangeM`.
+- **Pass:** Within one `POLL` (5s) of the ejection, the AI Sandy breaks from its racetrack, holds near
+  the survivor's position, and actively engages any snatch party / hostile ground unit that enters its
+  engage radius — visibly more assertive than passively orbiting its old box. A coalition message
+  ("SANDY \<name\> is diverting…") announces the divert. Once the survivor is rescued/captured/dead, the
+  Sandy resumes its normal patrol. A **player-flown** Sandy is completely unaffected (still just files
+  its planned racetrack, no forced retask).
+- **Fail signature:** no divert at all (Sandy stays on its old racetrack — check
+  `dcsRetribution.CombatSAR.sandys` is populated in the generated `.miz` and `combatsar: Sandy dispatch
+  error` in `dcs.log`); a **player-flown** Sandy gets yanked off its route (the `groupHasPlayer` guard
+  failed); the Sandy never returns to patrol after release (`ClearTasks()` didn't resume the route); two
+  survivors fight over the same Sandy (`busySandy` bookkeeping broken); a Lua error in `dcs.log`
+  (`combatsar-config.lua` around `dispatchSandy`/`findFreeSandy`/`releaseSandy`).
+
 ---
 
 ## H. Kneeboards

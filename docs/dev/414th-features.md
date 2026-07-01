@@ -2848,7 +2848,10 @@ P2, riding the Vietnam W4 arcs).
 - **Surfaces**: the kneeboard **cover page** (§30) gains a CAMPAIGN PHASE band (status line + narrative); the
   web client gains a **campaign-status ribbon** over the map (`CampaignStatusBar`) fed by a new
   `GameJs.campaign_status` payload (campaign name / turn / date — previously never sent to the client at all —
-  + phase + the political-will meters on Vietnam campaigns, each segment self-hiding when absent).
+  + phase + the political-will meters on Vietnam campaigns, each segment self-hiding when absent); and the
+  **Qt intel box** (`qt_ui/widgets/QIntelBox.py`) gains Campaign phase + Political will rows (tooltips carry
+  the §3.4 "why" string and the negotiation framing; both rows hide entirely on games without the feature, so
+  a stock campaign's box is unchanged).
 
 | Piece | Where |
 |---|---|

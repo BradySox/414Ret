@@ -86,22 +86,22 @@ def _game(
 
 def test_skim_takes_up_to_cap_from_the_deepest_stock() -> None:
     base_cp = _CP("rear", "RED", 100.0, {"tank": 10, "apc": 4})
-    units = _skim_units(base_cp, 4)
+    units = _skim_units(base_cp, 4)  # type: ignore[arg-type]
     assert sum(units.values()) == 4
     # Skims the most numerous type first (depth, not a base's only unit of a kind).
-    assert units.get("tank", 0) >= units.get("apc", 0)
+    assert units.get("tank", 0) >= units.get("apc", 0)  # type: ignore[call-overload]
 
 
 def test_skim_never_exceeds_the_source_fraction() -> None:
     base_cp = _CP("rear", "RED", 100.0, {"tank": 6})
-    units = _skim_units(base_cp, 4)
+    units = _skim_units(base_cp, 4)  # type: ignore[arg-type]
     # Half of 6 = 3, so the cap of 4 is clamped to 3 (never guts the base).
     assert sum(units.values()) == int(6 * MAX_SOURCE_FRACTION) == 3
 
 
 def test_skim_returns_empty_for_a_thin_source() -> None:
-    assert _skim_units(_CP("rear", "RED", 100.0, {"tank": 1}), 4) == {}
-    assert _skim_units(_CP("rear", "RED", 100.0, {}), 4) == {}
+    assert _skim_units(_CP("rear", "RED", 100.0, {"tank": 1}), 4) == {}  # type: ignore[arg-type]
+    assert _skim_units(_CP("rear", "RED", 100.0, {}), 4) == {}  # type: ignore[arg-type]
 
 
 # ---- _pick_trail_corridor ----------------------------------------------------------

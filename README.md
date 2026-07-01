@@ -227,7 +227,14 @@ and selected later upstream fixes.
   still starting up. The sixth is the **Super Gaggle**: a formation of transport helos runs supplies into a
   cut-off forward friendly outpost (fly launch field → outpost → back, re-rolling on a cadence), which you can
   escort in — the Khe Sanh hilltop resupply. See
-  [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md).
+  [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md). The Vietnam
+  campaigns (Khe Sanh, 1968 Yankee Station, Velvet Thunder) now turn on the whole suite by default.
+- A new **Steel Tiger: Trail Interdiction** campaign — the air war to strangle the **Ho Chi Minh Trail** in
+  1968. An *interdiction*-focused Vietnam scenario on the Yankee Station laydown, with the whole Vietnam Ops
+  suite on and **convoy interdiction as the centrepiece**: the moving trail column behind the enemy line is
+  your signature target. The order of battle is tilted to armed reconnaissance and BAI — Navy Intruders,
+  Skyraiders and Broncos hunting the road, B-52 Arc Light on the staging areas — over a wall-to-wall AAA
+  threat rather than MiGs.
 - A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 NATO
   counteroffensive, built for the 414th. The Warsaw Pact opened the war by overrunning the
   Fulda Gap, taking Hamburg, and seizing Copenhagen — but the Soviet thrust has culminated,

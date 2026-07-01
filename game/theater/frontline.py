@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass
-from typing import Any, Iterator, List, TYPE_CHECKING, Tuple
+from typing import Any, Iterator, List, Optional, TYPE_CHECKING, Tuple
 
 from dcs.mapping import Point
 
@@ -46,6 +46,12 @@ class FrontLine(MissionTarget):
     Overwrites the entirety of MissionTarget __init__ method to allow for
     dynamic position calculation.
     """
+
+    # Vietnam static front (game/fourteenth/static_front.py). Class-level defaults so
+    # pre-feature pickles resolve to "unarmed" -- FrontLine has no __setstate__, and
+    # these must never become required instance state.
+    static_front_clamp: Optional[Tuple[float, float]] = None
+    static_front_anchor: Optional[float] = None
 
     def __init__(
         self,
@@ -196,11 +202,23 @@ class FrontLine(MissionTarget):
         """
         total_strength = self.blue_cp.base.strength + self.red_cp.base.strength
         if self.blue_cp.base.strength == 0:
-            return self._adjust_for_min_dist(0)
-        if self.red_cp.base.strength == 0:
-            return self._adjust_for_min_dist(self.route_length)
-        strength_pct = self.blue_cp.base.strength / total_strength
-        return self._adjust_for_min_dist(strength_pct * self.route_length)
+            distance = 0.0
+        elif self.red_cp.base.strength == 0:
+            distance = self.route_length
+        else:
+            strength_pct = self.blue_cp.base.strength / total_strength
+            distance = strength_pct * self.route_length
+        # Vietnam static front (campaign layer): when armed by
+        # game/fourteenth/static_front.py, the front oscillates inside a band around its
+        # campaign-start anchor instead of sweeping to a base -- the era's ground war was
+        # attrition at fixed positions, not maneuver. The strength battle above still
+        # happens (and feeds political will); only the position mapping is clamped.
+        # getattr: pre-feature pickles carry no instance attr (the class default
+        # covers them); non-Vietnam games are disarmed to None every turn.
+        clamp = getattr(self, "static_front_clamp", None)
+        if clamp is not None:
+            distance = min(max(distance, clamp[0]), clamp[1])
+        return self._adjust_for_min_dist(distance)
 
     def _adjust_for_min_dist(self, distance: float) -> float:
         """

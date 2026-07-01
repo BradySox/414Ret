@@ -117,8 +117,14 @@ file. This guide is the map; those are the territory.
     agrees to terms", BLUE will exhausted → LOSS "Washington orders withdrawal", BLUE-loss
     precedence on a simultaneous collapse; territory victory untouched — plus once-only
     era-framed exhaustion banners and the 4 Vietnam campaigns preseeding the toggle; weight
-    balance = checklist M1). W3–W5 outstanding. All default-off, `vietnam_political_will`
-    gated, no debrief-schema/Lua changes W1–W4),
+    balance = checklist M1); **W2b landed** = the **static front** (`vietnam_static_front`,
+    preseeded ×4 — `game/fourteenth/static_front.py` clamps each front's position to a ±10 %
+    band around its campaign-start anchor via a `FrontLine._blue_route_progress` clamp hook,
+    so the strength battle bends the line + feeds will but never sweep-captures a base; Air
+    Assault stays the one territorial lever; armed/disarmed idempotently from
+    `Game.initialize_turn`; in-game pass = checklist M2). W3–W5 outstanding. All default-off,
+    `vietnam_political_will`/`vietnam_static_front` gated, no debrief-schema/Lua changes
+    W1–W4),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
     layer, active per turn-range, that biases the auto-planner's offensive intent + shows in
     the UI/kneeboard; three authoring tiers over one `CampaignPhase` object — **Tier 0

@@ -191,6 +191,7 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_fac_marking": True,  # the whole battlefield suite is on
         "vietnam_snake_and_nape": True,
         "vietnam_political_will": True,
+        "vietnam_static_front": True,
         "restrict_weapons_by_date": True,
     },
     "1968_Yankee_Station.yaml": {
@@ -203,6 +204,7 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_fac_marking": True,
         "vietnam_snake_and_nape": True,
         "vietnam_political_will": True,
+        "vietnam_static_front": True,
         "restrict_weapons_by_date": True,
     },
     "operation_velvet_thunder.yaml": {
@@ -215,6 +217,7 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_fac_marking": True,
         "vietnam_snake_and_nape": True,
         "vietnam_political_will": True,
+        "vietnam_static_front": True,
         "restrict_weapons_by_date": True,
     },
     "steel_tiger.yaml": {
@@ -227,6 +230,7 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_fac_marking": True,
         "vietnam_snake_and_nape": True,
         "vietnam_political_will": True,
+        "vietnam_static_front": True,
         "restrict_weapons_by_date": True,
     },
 }

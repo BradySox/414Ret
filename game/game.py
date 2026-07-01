@@ -594,6 +594,14 @@ class Game:
             process_pending_placements(self, coalition)
             process_respawns(self, coalition)
 
+        # Arm (or disarm) the Vietnam static-front clamp before the ground war is
+        # planned, so this turn's front positions already respect the band.
+        # Idempotent, so safe under the multiple-init-per-turn cases above; a front
+        # that first appears after an Air Assault capture is anchored on first sight.
+        from game.fourteenth.static_front import apply_static_front
+
+        apply_static_front(self)
+
         # Plan GroundWar
         self.ground_planners = {}
         for cp in self.theater.controlpoints:

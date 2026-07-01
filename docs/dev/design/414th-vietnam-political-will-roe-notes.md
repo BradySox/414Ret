@@ -9,7 +9,9 @@ agrees to terms"; BLUE will exhausted → LOSS "Washington orders withdrawal"; B
 precedence on a simultaneous collapse; territory victory untouched), era-framed exhaustion
 banners fire once on the crossing edge, and the 4 Vietnam campaigns preseed
 `vietnam_political_will: true` (guarded in `_ERA_PRESEED`). The design-§7 feed weights shipped
-as-is — the balance pass moved to the first played campaign (checklist M1). W3–W5 outstanding.
+as-is — the balance pass moved to the first played campaign (checklist M1). **W2b (the static
+front) LANDED**: `vietnam_static_front` clamps each front's position to a ±10 % band around its
+campaign-start anchor (§2b below; checklist M2). W3–W5 outstanding.
 This is the **spec of record** for the month-scale
 rework that makes Vietnam mode different at the *campaign* layer, approved 2026-07-01:
 **(1) a political-will economy with a negotiation victory** and **(2) an ROE / Route-Package
@@ -80,6 +82,47 @@ absolutes). The SITREP (§29) and kneeboard cover (§30) carry a will band every
 players must be able to *see* the pressure meter move in the cockpit, or the whole system
 is invisible bookkeeping. A client status band lands with the phases P0 payload (§3).
 
+## 2b. The static front (W2b) — bounded oscillation, no sweep-captures
+
+Vietnam's ground war was static attrition — Khe Sanh sat besieged for 77 days without the
+line *going* anywhere — but the engine's front position is a pure function of the two bases'
+strength ratio (`FrontLine._blue_route_progress` = `blue_strength/total × route_length`, then
+the 5 km min-CP-distance adjustment). A sustained strength edge therefore sweeps the front
+onto a base and captures it (captures are *physical only*: front reaches a base → frontline
+units spawn on its doorstep → runtime `base_captures` events → `commit_captures`; there is no
+capture-on-strength-zero code path). That maneuver-war outcome is wrong for the era, and it
+short-circuits the whole campaign layer: the war should end at the table (§2), with attrition
+paying out through will (§1) — not with the front strolling into Hanoi.
+
+**User decisions (2026-07-01):** bounded oscillation with a **±10 % band** (not a frozen
+front — pressure must still read on the map), and **Air Assault captures stay** (deliberate
+heliborne ops remain the one territorial lever; only the automatic front-sweep capture path
+is removed).
+
+**Mechanism** (`game/fourteenth/static_front.py` + a clamp hook in
+`FrontLine._blue_route_progress`):
+
+- `apply_static_front(game)` runs from `Game.initialize_turn` right before ground-war
+  planning (idempotent — initialize_turn can run several times per turn). Setting off ⇒
+  every front's clamp is cleared (clean disarm; non-Vietnam campaigns and toggled-off saves
+  get stock behaviour). Setting on ⇒ each front gets an **anchor** captured once from its
+  raw, unclamped position — turn 0 for a new campaign; the current position when enabled
+  mid-campaign (documented as acceptable); a front that first appears after an Air Assault
+  capture is anchored where it forms — and a clamp of
+  `±STATIC_FRONT_BAND (0.10) × route_length` around that anchor.
+- The clamp applies to the *position mapping only*, before the min-CP-distance adjustment.
+  The strength battle underneath is fully alive: pushes bend the line inside the band and
+  keep feeding the will economy; the front just can never reach a base.
+- Pickle safety: `FrontLine` has no `__setstate__` and a pickle-sensitive identity
+  `__hash__` (untouched). The two new attrs (`static_front_clamp`, `static_front_anchor`)
+  are **class-level defaults** read with `getattr(..., None)`, so pre-feature saves resolve
+  to "unarmed" and nothing new is required instance state.
+- Setting: `vietnam_static_front` (default OFF, Vietnam Ops page, "Campaign" section next to
+  the will toggle), preseeded `true` in the 4 Vietnam campaign YAMLs (guarded in
+  `_ERA_PRESEED`). Tests: `tests/fourteenth/test_static_front.py` (band math, arm/disarm/
+  anchor-once, the real `FrontLine` clamp path at strength extremes, min-dist-after-clamp).
+  In-game pass: checklist **M2**.
+
 ## 3. ROE / Route-Package escalation (rides campaign phases)
 
 Implements the campaign-phases spec's P0–P2 (`CampaignPhase` plumbing + inference +
@@ -115,6 +158,7 @@ Tier-0 campaigns never see them):
 | **W0** | This design note | none |
 | **W1** | Will model on `Coalition` + debrief feeds + SITREP/kneeboard band. **Observe-only** — no win-condition change, numbers just move. | low (additive; the §29/§37 processor pattern) |
 | **W2** | `check_win_loss` branch + `vietnam_political_will` setting + campaign preseeds + feed-weight balance pass | low-medium (win logic; gated) |
+| **W2b** | `vietnam_static_front` — the bounded-oscillation front clamp (§2b) so attrition pays out in will, not sweep-captures | low (position mapping only; gated + disarmable) |
 | **W3** | Campaign-phases **P0 + P1** exactly per the phases spec (plumbing, classifier, soft emphasis, status band) — all campaigns | medium (commander-adjacent; spec is written) |
 | **W4** | `restricted_zones` + `target_release` + will coupling + the authored Vietnam arcs + map layer | medium-high (planner gate + UI) |
 | **W5** | §6 QRA→GCI ambush adaptation + sanctuary integration | medium (mostly tuning) |

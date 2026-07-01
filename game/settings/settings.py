@@ -456,6 +456,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Campaign",
                 [
                     "vietnam_political_will",
+                    "vietnam_static_front",
                 ],
             ),
             (
@@ -2024,7 +2025,7 @@ class Settings:
         default=False,
     )
     vietnam_political_will: bool = boolean_option(
-        "Political will tracking (observe-only)",
+        "Political will tracking",
         VIETNAM_OPS_PAGE,
         "Campaign",
         detail=(
@@ -2032,8 +2033,23 @@ class Settings:
             "(Washington's patience: drained by airframe losses, POWs held in Hanoi, "
             "lost ground; a B-52 loss is a national event) versus the enemy's Regime "
             "Resolve (drained by trail-logistics strangulation and attrition). "
-            "Currently observe-only: the numbers move on the SITREP each turn but do "
-            "not yet decide the war. The negotiation victory arrives in a later update."
+            "Decides the war at the negotiating table: break the enemy's resolve "
+            "before your will runs out and Hanoi agrees to terms; run dry first and "
+            "Washington orders the withdrawal. Territory victory still applies."
+        ),
+        default=False,
+    )
+    vietnam_static_front: bool = boolean_option(
+        "Static front (bounded siege line)",
+        VIETNAM_OPS_PAGE,
+        "Campaign",
+        detail=(
+            "The ground front holds as a siege line: it bends with the strength "
+            "battle inside a narrow band around where the campaign started, but "
+            "never sweeps onto a base to capture it -- Vietnam's ground war was "
+            "attrition in place, not maneuver. Deliberate Air Assault operations "
+            "still capture bases (the one territorial lever), and attrition still "
+            "pays out through Political Will, where the war is decided."
         ),
         default=False,
     )

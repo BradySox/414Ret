@@ -2074,6 +2074,26 @@ so the two docs don't drift.
   (crossing-edge regression); a non-Vietnam campaign shows the will message at all (gating regression).
   Tune the `BLUE_*`/`RED_*` weights in `game/fourteenth/political_will.py`.
 
+### M2 — Static front holds the band (campaign layer W2b) · Vietnam campaign layer · ☐ UNTESTED (built 2026-07-01; clamp math + arm/disarm/anchor fully unit-tested, the multi-turn map behaviour needs a played campaign)
+- **Headless adjudication:** the band math, arm/disarm idempotence, anchor-once capture, and the real
+  `FrontLine` clamp path at strength extremes are locked in `tests/fourteenth/test_static_front.py`. What CI
+  *cannot* adjudicate is the **multi-turn map feel**: whether a ±10 % band reads as a living siege line over a
+  played campaign (pressure visibly bends the front) rather than a dead-still one, and that the interplay with
+  captures behaves in a real game.
+- **Setup:** a NEW Vietnam campaign (any of the four — `vietnam_static_front` preseeds on). Play several turns
+  letting the ground war swing (win some front engagements, lose some); watch the front line on the map.
+- **Pass:** the front visibly shifts turn-to-turn with the strength battle but stays inside a narrow band
+  around its campaign-start position; neither side's front ever reaches/captures a base by ground sweep even
+  after a lopsided run of turns; a deliberate **Air Assault still captures** its target base; a non-Vietnam
+  campaign's fronts sweep exactly as before.
+- **Fail signature:** the front sits pinned dead-still across turns while strengths swing (clamp too tight /
+  band effectively 0 — check `STATIC_FRONT_BAND` and that the anchor wasn't captured from an already-clamped
+  position); the front walks onto a base and captures it (arming missed — `apply_static_front` not running in
+  `initialize_turn`, or the setting didn't preseed); an Air Assault fails to capture (the clamp leaked into
+  the capture path — it must only touch `_blue_route_progress`); a **non-Vietnam** campaign's front stops
+  short of a base it should capture (disarm/gating regression — the clamp must clear when the setting is
+  off). Knob: `STATIC_FRONT_BAND` in `game/fourteenth/static_front.py`.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

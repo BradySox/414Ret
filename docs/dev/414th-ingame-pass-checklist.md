@@ -1306,14 +1306,14 @@ so the two docs don't drift.
   — Sandy was previously **absent** from the CombatSAR data table entirely, so the runtime had no way
   to know which groups were Sandys). `combatsar-config.lua` builds `sandyByName`, and on every tick a
   survivor is `"down"`, `dispatchSandy` finds the nearest alive, idle, **non-player** Sandy within
-  `sandyMaxRangeM` (default 55.56 km / 30 NM) and pushes a combo task —
-  `TaskOrbitCircleAtVec2` (hold near the survivor, inheriting the Sandy's own current altitude/speed)
-  + `EnRouteTaskEngageTargetsInZone` (actively hunts `"Ground Units"` within `sandyEngageRadiusM`,
-  default 5.56 km / 3 NM) — replacing its planned racetrack task. Commits one Sandy per survivor
-  (`busySandy`), retries every 5s `POLL` until one frees up, releases it (`ClearTasks()`, resuming its
-  own planned route) once the survivor is rescued/captured/dead. A player-flown Sandy is never
-  retasked (`groupHasPlayer` guard, same pattern as rescue-helo commandeering). Two new plugin
-  options: `sandyMaxRangeM`, `sandyEngageRadiusM`.
+  `sandyMaxRangeNm` (default 30 NM; imperial-unit rename 2026-07-01, was `sandyMaxRangeM`) and pushes
+  a combo task — `TaskOrbitCircleAtVec2` (hold near the survivor, inheriting the Sandy's own current
+  altitude/speed) + `EnRouteTaskEngageTargetsInZone` (actively hunts `"Ground Units"` within
+  `sandyEngageRadiusNm`, default 3 NM) — replacing its planned racetrack task. Commits one Sandy per
+  survivor (`busySandy`), retries every 5s `POLL` until one frees up, releases it (`ClearTasks()`,
+  resuming its own planned route) once the survivor is rescued/captured/dead. A player-flown Sandy is
+  never retasked (`groupHasPlayer` guard, same pattern as rescue-helo commandeering). Two new plugin
+  options: `sandyMaxRangeNm`, `sandyEngageRadiusNm`.
 - **Test coverage:** the Python bucketing/emission is unit-tested
   (`tests/missiongenerator/test_combat_sar_sandy_luadata.py` — a SCAR flight lands in `sandys`, never
   `rescueHelos`/`kings`; red/blue route to the right node; empty when no Sandy present). **The Lua
@@ -1323,7 +1323,7 @@ so the two docs don't drift.
   to exist with the parameter orders used). The Lua 5.1 syntax gate (CI, blocking) passed on the PR.
 - **Setup:** A campaign with an AI-crewed Sandy (SCAR) flight in a Combat SAR package — `auto_combat_sar`
   on for the safety-net package, or a player-fragged package with an AI Sandy wingman/second flight.
-  Eject an AI or player pilot near the FLOT within Sandy's `sandyMaxRangeM`.
+  Eject an AI or player pilot near the FLOT within Sandy's `sandyMaxRangeNm`.
 - **Pass:** Within one `POLL` (5s) of the ejection, the AI Sandy breaks from its racetrack, holds near
   the survivor's position, and actively engages any snatch party / hostile ground unit that enters its
   engage radius — visibly more assertive than passively orbiting its old box. A coalition message

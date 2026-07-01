@@ -36,23 +36,30 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     ---------------------------------------------------------------------------
     -- Tunables (overridable via dcsRetribution.plugins.combatsar)
     ---------------------------------------------------------------------------
+    -- Distance/speed options are authored in imperial units (ft / NM / kts) -- the units
+    -- the squadron flies in -- and converted here once; internal math stays metric
+    -- (MOOSE/DCS native; PICKUP_SPEED stays km/h because it compares GetVelocityKMH()).
+    local FT_TO_M = 0.3048
+    local NM_TO_M = 1852
+    local KTS_TO_KMH = 1.852
+
     local POLL = 5                 -- s between ledger re-evaluations
-    local PICKUP_RANGE = 150       -- m: helo-to-survivor horizontal distance to board
-    local PICKUP_AGL = 30          -- m: helo must be landed / low-hover to board
-    local PICKUP_SPEED = 60        -- km/h: ...and slow
-    local HOME_RANGE = 2500        -- m: helo-to-friendly-airbase to count as delivered
+    local PICKUP_RANGE = 500 * FT_TO_M  -- m: helo-to-survivor horizontal distance to board (option in ft)
+    local PICKUP_AGL = 100 * FT_TO_M    -- m: helo must be landed / low-hover to board (option in ft)
+    local PICKUP_SPEED = 30 * KTS_TO_KMH  -- km/h: ...and slow (option in kts)
+    local HOME_RANGE = 1.5 * NM_TO_M    -- m: helo-to-friendly-airbase to count as delivered (option in NM)
     local AI_DISPATCH_DELAY = 60   -- s grace before AI auto-rescue launches
     local AI_DISPATCH_RETRY = 20   -- s backoff before retrying a failed AI dispatch
     local AI_DISPATCH_MAX_TRIES = 3  -- give up AI dispatch after this many failed attempts
     local messageTime = 15
-    local SANDY_MAX_RANGE = 55560  -- m (~30 NM): max distance to retask a free AI Sandy
-    local SANDY_ENGAGE_RADIUS = 5556  -- m (~3 NM): EngageTargetsInZone radius around the survivor
+    local SANDY_MAX_RANGE = 30 * NM_TO_M     -- m: max distance to retask a free AI Sandy (option in NM)
+    local SANDY_ENGAGE_RADIUS = 3 * NM_TO_M  -- m: EngageTargetsInZone radius around the survivor (option in NM)
 
     local capture = {
         enabled = true,
         chance = 50,
-        spawnDistance = 4000,
-        captureRange = 150,
+        spawnDistance = 2 * NM_TO_M,    -- m (option in NM)
+        captureRange = 500 * FT_TO_M,   -- m (option in ft)
         captureDwell = 30,
         partySize = 5,    -- total infantry, split across `teams` small groups
         teams = 3,        -- spawn this many dispersed teams instead of one column
@@ -61,20 +68,20 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     if dcsRetribution.plugins and dcsRetribution.plugins.combatsar then
         local o = dcsRetribution.plugins.combatsar
         if o.messageTime ~= nil then messageTime = tonumber(o.messageTime) or messageTime end
-        if o.pickupRange ~= nil then PICKUP_RANGE = tonumber(o.pickupRange) or PICKUP_RANGE end
-        if o.pickupAGL ~= nil then PICKUP_AGL = tonumber(o.pickupAGL) or PICKUP_AGL end
-        if o.pickupSpeed ~= nil then PICKUP_SPEED = tonumber(o.pickupSpeed) or PICKUP_SPEED end
-        if o.homeRange ~= nil then HOME_RANGE = tonumber(o.homeRange) or HOME_RANGE end
+        if o.pickupRangeFt ~= nil then PICKUP_RANGE = (tonumber(o.pickupRangeFt) or 500) * FT_TO_M end
+        if o.pickupAGLFt ~= nil then PICKUP_AGL = (tonumber(o.pickupAGLFt) or 100) * FT_TO_M end
+        if o.pickupSpeedKts ~= nil then PICKUP_SPEED = (tonumber(o.pickupSpeedKts) or 30) * KTS_TO_KMH end
+        if o.homeRangeNm ~= nil then HOME_RANGE = (tonumber(o.homeRangeNm) or 1.5) * NM_TO_M end
         if o.aiDispatchDelay ~= nil then AI_DISPATCH_DELAY = tonumber(o.aiDispatchDelay) or AI_DISPATCH_DELAY end
         if o.captureEnabled ~= nil then capture.enabled = o.captureEnabled end
         if o.captureChance ~= nil then capture.chance = tonumber(o.captureChance) or capture.chance end
-        if o.captureSpawnDistance ~= nil then capture.spawnDistance = tonumber(o.captureSpawnDistance) or capture.spawnDistance end
-        if o.captureRange ~= nil then capture.captureRange = tonumber(o.captureRange) or capture.captureRange end
+        if o.captureSpawnDistanceNm ~= nil then capture.spawnDistance = (tonumber(o.captureSpawnDistanceNm) or 2) * NM_TO_M end
+        if o.captureRangeFt ~= nil then capture.captureRange = (tonumber(o.captureRangeFt) or 500) * FT_TO_M end
         if o.captureDwell ~= nil then capture.captureDwell = tonumber(o.captureDwell) or capture.captureDwell end
         if o.capturePartySize ~= nil then capture.partySize = tonumber(o.capturePartySize) or capture.partySize end
         if o.captureTeams ~= nil then capture.teams = tonumber(o.captureTeams) or capture.teams end
-        if o.sandyMaxRangeM ~= nil then SANDY_MAX_RANGE = tonumber(o.sandyMaxRangeM) or SANDY_MAX_RANGE end
-        if o.sandyEngageRadiusM ~= nil then SANDY_ENGAGE_RADIUS = tonumber(o.sandyEngageRadiusM) or SANDY_ENGAGE_RADIUS end
+        if o.sandyMaxRangeNm ~= nil then SANDY_MAX_RANGE = (tonumber(o.sandyMaxRangeNm) or 30) * NM_TO_M end
+        if o.sandyEngageRadiusNm ~= nil then SANDY_ENGAGE_RADIUS = (tonumber(o.sandyEngageRadiusNm) or 3) * NM_TO_M end
     end
 
     ---------------------------------------------------------------------------

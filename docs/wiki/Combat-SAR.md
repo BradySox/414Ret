@@ -89,9 +89,9 @@ to seize the survivor before you can pull them out:
 3. **Let it reach the survivor** and dwell there un-rescued, and the pilot is **CAPTURED** — taken
    off the rescue board and held as a **POW**.
 
-Six plugin tunables control the race (`captureEnabled` / `captureChance` / `captureSpawnDistance` /
-`captureRange` / `captureDwell` / `capturePartySize`), so you can dial how often and how aggressive
-the snatch attempts are.
+Plugin tunables control the race (`captureEnabled` / `captureChance` / `captureSpawnDistanceNm` /
+`captureRangeFt` / `captureDwell` / `capturePartySize` / `captureTeams` — distances in NM/ft), so you
+can dial how often and how aggressive the snatch attempts are.
 
 ### If captured: the POW recovery loop
 

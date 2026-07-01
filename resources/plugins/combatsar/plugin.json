@@ -4,24 +4,24 @@
     "defaultValue": true,
     "specificOptions": [
         {
-            "nameInUI": "Pickup distance: how close a helo must be to board the survivor (m)",
-            "mnemonic": "pickupRange",
-            "defaultValue": 150
+            "nameInUI": "Pickup distance: how close a helo must be to board the survivor (ft)",
+            "mnemonic": "pickupRangeFt",
+            "defaultValue": 500
         },
         {
-            "nameInUI": "Pickup ceiling: max height AGL the helo may be to board (m)",
-            "mnemonic": "pickupAGL",
+            "nameInUI": "Pickup ceiling: max height AGL the helo may be to board (ft)",
+            "mnemonic": "pickupAGLFt",
+            "defaultValue": 100
+        },
+        {
+            "nameInUI": "Pickup speed: max ground speed the helo may have to board (kts)",
+            "mnemonic": "pickupSpeedKts",
             "defaultValue": 30
         },
         {
-            "nameInUI": "Pickup speed: max ground speed the helo may have to board (km/h)",
-            "mnemonic": "pickupSpeed",
-            "defaultValue": 60
-        },
-        {
-            "nameInUI": "Delivery distance: how close to a friendly field counts as rescued (m)",
-            "mnemonic": "homeRange",
-            "defaultValue": 2500
+            "nameInUI": "Delivery distance: how close to a friendly field counts as rescued (NM)",
+            "mnemonic": "homeRangeNm",
+            "defaultValue": 1.5
         },
         {
             "nameInUI": "AI auto-rescue: seconds before an AI helo launches for a downed pilot",
@@ -44,14 +44,14 @@
             "defaultValue": 50
         },
         {
-            "nameInUI": "Capture race: how far from the survivor the snatch party appears (m)",
-            "mnemonic": "captureSpawnDistance",
-            "defaultValue": 4000
+            "nameInUI": "Capture race: how far from the survivor the snatch party appears (NM)",
+            "mnemonic": "captureSpawnDistanceNm",
+            "defaultValue": 2
         },
         {
-            "nameInUI": "Capture race: how close the party must reach the survivor to seize them (m)",
-            "mnemonic": "captureRange",
-            "defaultValue": 150
+            "nameInUI": "Capture race: how close the party must reach the survivor to seize them (ft)",
+            "mnemonic": "captureRangeFt",
+            "defaultValue": 500
         },
         {
             "nameInUI": "Capture race: seconds the party must hold on the survivor to capture them",
@@ -69,14 +69,14 @@
             "defaultValue": 3
         },
         {
-            "nameInUI": "Sandy AI retasking: max distance to divert a free AI Sandy to a downed pilot (m)",
-            "mnemonic": "sandyMaxRangeM",
-            "defaultValue": 55560
+            "nameInUI": "Sandy AI retasking: max distance to divert a free AI Sandy to a downed pilot (NM)",
+            "mnemonic": "sandyMaxRangeNm",
+            "defaultValue": 30
         },
         {
-            "nameInUI": "Sandy AI retasking: radius of the engagement zone it holds around the survivor (m)",
-            "mnemonic": "sandyEngageRadiusM",
-            "defaultValue": 5556
+            "nameInUI": "Sandy AI retasking: radius of the engagement zone it holds around the survivor (NM)",
+            "mnemonic": "sandyEngageRadiusNm",
+            "defaultValue": 3
         }
     ],
     "scriptsWorkOrders": [],

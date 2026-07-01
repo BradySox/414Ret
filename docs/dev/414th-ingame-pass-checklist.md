@@ -1783,7 +1783,17 @@ so the two docs don't drift.
   `land.getHeight`/`explosion` Lua error in `dcs.log`; FPS hit from over-dense impacts (tune
   `arcLightBlastPower`/length/width down).
 
-### L2 — AAA flak gauntlet · §33 · ◐ PARTIAL (2026-06-28, audience in-game pass — works very well but TOO ACCURATE/lethal; default miss/tracking tuning owed)
+### L2 — AAA flak gauntlet · §33 · ◐ PARTIAL (2026-06-28 audience pass: TOO ACCURATE/lethal → 2nd softening applied 2026-07-01, needs a re-fly)
+- **Second softening applied 2026-07-01 (L2 tuning owed from the 2026-06-28 pass).** The lethality that
+  remained was the close **"tracking" round firing every 2.5 s tick** once a jet held a steady line for ~10 s
+  (`factor > 0.8`), reading as a hard-kill rather than pressure. Changes (`vietnamops-config.lua` + matched
+  `plugin.json` defaults): base misses **widened** `MIN_MISS` 110→**150** m / `MAX_MISS` 250→**320** m; the
+  tracking round is now **occasional not constant** — gated behind a sustained steady run (`factor > 0.85`,
+  was 0.8) **and** a per-tick probability (`TRACKING_CHANCE = 0.3`), and softened (`miss ×0.55→×0.75`,
+  `blast ×2.0→×1.5`). Net: a predictable line now draws bursts ~90–210 m (was ~66–154 m) with only the
+  *occasional* ~85–160 m close round instead of one every tick; jinking stays loose. `BLAST` unchanged (6).
+  Lua syntax gate + `plugin.json` parse green. **Re-fly owed** to confirm the feel is right (pressure to
+  manoeuvre, no hard-kill) — this is why the row stays PARTIAL.
 - **⚠️ Config-mismatch finding (2026-06-30, `dcs.log`):** the flown session's plugin options were
   **`ceiling 5000m, power 8`** — but the *current* `plugin.json` defaults (post-2026-06-28 softening,
   confirmed by reading `vietnamops-config.lua` + `plugin.json` today) are `flakCeilingM=4500` /
@@ -1954,6 +1964,24 @@ so the two docs don't drift.
   is broken. Also: fire during the grace window; a steady metronome instead of a sporadic cadence; impacts
   wildly off the ramp (centroid/dispersion wrong); too lethal to parked jets (dial power/dispersion down, as
   §33 flak needed); a `trigger.action.explosion` / `land.getHeight` / `timer.scheduleFunction` Lua error.
+
+### L9 — Super Gaggle hilltop resupply · §37 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the emitter — the
+  outpost + launch + coalition are emitted when on; it picks the friendly FOB/FARP nearest the front and the
+  nearest launch field; off / no-outpost / no-launch / no-front / enemy-or-rear-only outposts yield no node.
+  The runtime helo spawn (`coalition.addGroup`), the launch→outpost→back routing, and the
+  deliver/lost/respawn state machine are runtime Lua, exercisable only live.
+- **Setup:** A Vietnam campaign with **Vietnam Ops → Super Gaggle** on and a **friendly forward FOB/FARP** near
+  the front (a cut-off hilltop) plus a friendly rear airfield/FARP to launch from (Khe Sanh laydown qualifies).
+  Fast-forward or fly; optionally intercept-escort the gaggle.
+- **Pass:** A 3-ship UH-1H gaggle spawns over the launch field, flies to the outpost, and announces "SUPER
+  GAGGLE inbound" then "delivered" on arrival; a fresh run re-rolls a cadence later; a shot-down gaggle
+  announces "down" and re-rolls. `dcs.log` shows "Super Gaggle armed (outpost …, 3x UH-1H)" and no
+  `coalition.addGroup` Lua error.
+- **Fail signature:** the gaggle never spawns (addGroup group-data malformed / bad country / helo type
+  unavailable); helos spawn but don't move or fly into terrain (route altitude/`alt_type` wrong); the
+  deliver/lost/respawn cues never fire or fire repeatedly (tick state machine wrong); a `Group.getByName` /
+  `getUnit` / `destroy` Lua error in `dcs.log`; a run that never recycles (stuck after delivery).
 
 ---
 

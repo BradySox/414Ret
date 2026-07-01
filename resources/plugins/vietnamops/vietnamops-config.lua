@@ -161,9 +161,9 @@ if suite.flak and suite.flak.enabled then
     local ENGAGE_RANGE = 4500   -- m, horizontal gun reach
     local CEILING = 4500        -- m AGL, effective flak ceiling
     local FLOOR = 120           -- m AGL, below this the aircraft is on the deck
-    local MIN_MISS = 110        -- m, tightest barrage miss (fully predictable) -- softened 2026-06-28 (L2: was too accurate)
-    local MAX_MISS = 250        -- m, loosest barrage miss (jinking)
-    local BLAST = 6             -- per-burst power (small -- mostly visual) -- softened 2026-06-28 (L2)
+    local MIN_MISS = 150        -- m, tightest barrage miss (fully predictable) -- widened 2026-07-01 (L2: still too lethal after the 2026-06-28 pass; was 110)
+    local MAX_MISS = 320        -- m, loosest barrage miss (jinking) -- widened 2026-07-01 (L2; was 250)
+    local BLAST = 6             -- per-burst power (small -- mostly visual)
     local BURSTS_PER_SITE = 1
     local MAX_SITES = 3         -- cap stacked density from many guns
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
@@ -180,6 +180,12 @@ if suite.flak and suite.flak.enabled then
     local ALT_STEADY_M = 40     -- altitude change under this counts as "steady"
     local FACTOR_STEP = 0.2     -- predictability ramp per steady tick
     local AAA_REFRESH = 30      -- s between AAA-unit rediscovery sweeps
+    -- Tracking rounds are the "bite" for flying a predictable line, but firing one EVERY
+    -- tick (2.5 s) once steady is what read as a hard-kill on the L2 pass. Gate them: they
+    -- need a *sustained* steady run (TRACKING_FACTOR) and only land occasionally
+    -- (TRACKING_CHANCE per eligible tick) -- "the occasional close round," per the design.
+    local TRACKING_FACTOR = 0.85   -- predictability above which a tracking round is possible (was 0.8)
+    local TRACKING_CHANCE = 0.3    -- per-tick probability one lands, so it is occasional not constant
 
     local function opposite(side)
         if side == coalition.side.RED then
@@ -261,8 +267,8 @@ if suite.flak and suite.flak.enabled then
     local function flakBurst(p, factor, tracking)
         local miss, blast
         if tracking then
-            miss = MIN_MISS * 0.55   -- a close tracking round for a sustained steady run (softened 2026-06-28, L2)
-            blast = BLAST * 2.0
+            miss = MIN_MISS * 0.75   -- a closer tracking round for a sustained steady run (widened 2026-07-01, L2; was 0.55)
+            blast = BLAST * 1.5      -- softened 2026-07-01 (L2; was 2.0)
         else
             miss = MAX_MISS - (MAX_MISS - MIN_MISS) * factor
             blast = BLAST
@@ -302,8 +308,12 @@ if suite.flak and suite.flak.enabled then
                                         end
                                         if sites > 0 then
                                             local factor = predictability(u, p)
+                                            -- One occasional close "tracking" round only on a
+                                            -- sustained steady run -- not every tick (L2 fix).
+                                            local tracking = factor > TRACKING_FACTOR
+                                                and math.random() < TRACKING_CHANCE
                                             for i = 1, sites * BURSTS_PER_SITE do
-                                                flakBurst(p, factor, i == 1 and factor > 0.8)
+                                                flakBurst(p, factor, i == 1 and tracking)
                                             end
                                         else
                                             steady[u:getName()] = nil
@@ -743,4 +753,184 @@ if suite.airbaseHarassment and suite.airbaseHarassment.fields then
         "DCSRetribution|Vietnam Ops - Airbase harassment armed for %d field(s) "
             .. "(every ~%ds, %d rounds, dispersion %dm, power %d, grace %ds)",
         count, INTERVAL, ROUNDS, DISPERSION, BLAST, GRACE))
+end
+
+-------------------------------------------------------------------------------
+-- Super Gaggle hilltop resupply
+--
+-- Models the Khe Sanh "Super Gaggle": a formation of transport helos runs supplies
+-- into a cut-off forward friendly outpost while the player can fly escort. The
+-- generator emits the besieged outpost + a rear launch field + coalition
+-- (dcsRetribution.VietnamOps.superGaggle); this spawns a helo gaggle that flies
+-- launch -> outpost -> back, announces delivery when it reaches the outpost, and rolls
+-- a fresh gaggle a while after the old one is delivered or lost, so the run keeps going.
+-- Runtime-only (the planner-template design is blocked on an auto-plannable CTLD cargo
+-- run the engine lacks); the fast-mover AAA-suppression choreography is a deferred
+-- increment. Vanilla-DCS spawning + pcall-guarded. NEEDS A COCKPIT PASS: runtime helo
+-- spawning + routing can't be exercised headless.
+-------------------------------------------------------------------------------
+if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch then
+    pcall(function()
+        local HELO = "UH-1H"
+        local COUNT = 3            -- helos in the gaggle
+        local SPEED = 220 / 3.6    -- m/s (~220 kph cruise)
+        local ALT = 150            -- m, radio-altitude air start / transit height
+        local RESPAWN = 900        -- s after a gaggle ends before the next launches
+        if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
+            local o = dcsRetribution.plugins.vietnamops
+            HELO = o.gaggleHeloType or HELO
+            COUNT = tonumber(o.gaggleCount) or COUNT
+            SPEED = (tonumber(o.gaggleSpeedKph) or 220) / 3.6
+            ALT = tonumber(o.gaggleAltM) or ALT
+            RESPAWN = tonumber(o.gaggleRespawnS) or RESPAWN
+        end
+
+        local DELIVER_RADIUS = 1500  -- m: within this of the outpost counts as delivered
+        local MISSION_TIME = 600     -- s: recycle a gaggle that has flown its window
+        local POLL = 10
+
+        local SIDE = (suite.superGaggle.coalition == "RED") and coalition.side.RED
+            or coalition.side.BLUE
+        local COUNTRY = (SIDE == coalition.side.RED) and country.id.RUSSIA or country.id.USA
+
+        local outpost = {
+            x = tonumber(suite.superGaggle.outpost.x),
+            y = tonumber(suite.superGaggle.outpost.y),
+        }
+        local outpostName = suite.superGaggle.outpost.name or "the outpost"
+        local launch = {
+            x = tonumber(suite.superGaggle.launch.x),
+            y = tonumber(suite.superGaggle.launch.y),
+        }
+        if not (outpost.x and outpost.y and launch.x and launch.y) then
+            return
+        end
+
+        local spawnCount = 0
+        local currentName = nil
+        local spawnTime = 0
+        local delivered = false
+
+        local function wp(px, py)
+            return {
+                x = px,
+                y = py,
+                alt = ALT,
+                alt_type = "RADIO",
+                type = "Turning Point",
+                action = "Turning Point",
+                speed = SPEED,
+                ETA = 0,
+                ETA_locked = false,
+                formation_template = "",
+                speed_locked = true,
+            }
+        end
+
+        local function spawnGaggle()
+            spawnCount = spawnCount + 1
+            delivered = false
+            local gname = "SuperGaggle-" .. spawnCount
+            local units = {}
+            for i = 1, COUNT do
+                units[i] = {
+                    type = HELO,
+                    name = gname .. "-" .. i,
+                    x = launch.x - (i - 1) * 40, -- string the gaggle out over the field
+                    y = launch.y,
+                    alt = ALT,
+                    alt_type = "RADIO",
+                    heading = 0,
+                    skill = "Average",
+                }
+            end
+            local groupData = {
+                visible = false,
+                hidden = false,
+                name = gname,
+                start_time = 0,
+                task = "Transport",
+                route = {
+                    points = {
+                        wp(launch.x, launch.y),
+                        wp(outpost.x, outpost.y),
+                        wp(launch.x, launch.y),
+                    },
+                },
+                units = units,
+            }
+            if pcall(coalition.addGroup, COUNTRY, Group.Category.HELICOPTER, groupData) then
+                currentName = gname
+                spawnTime = timer.getTime()
+                trigger.action.outTextForCoalition(
+                    SIDE,
+                    "SUPER GAGGLE -- resupply helos inbound to " .. outpostName
+                        .. ". Escort welcome.",
+                    20
+                )
+            else
+                currentName = nil
+            end
+        end
+
+        local function scheduleRespawn()
+            currentName = nil
+            timer.scheduleFunction(function()
+                spawnGaggle()
+                return nil
+            end, {}, timer.getTime() + RESPAWN)
+        end
+
+        local function tick()
+            local ok, err = pcall(function()
+                if currentName == nil then
+                    return -- waiting on a scheduled respawn
+                end
+                local g = Group.getByName(currentName)
+                local pos = nil
+                if g and g:getSize() > 0 then
+                    local u = g:getUnit(1)
+                    if u and u:isExist() then
+                        pos = u:getPoint()
+                    end
+                end
+                if pos == nil then
+                    trigger.action.outTextForCoalition(
+                        SIDE,
+                        "Super Gaggle down -- resupply run lost inbound to " .. outpostName .. ".",
+                        15
+                    )
+                    scheduleRespawn()
+                    return
+                end
+                if not delivered then
+                    local dx, dz = pos.x - outpost.x, pos.z - outpost.y
+                    if (dx * dx + dz * dz) <= (DELIVER_RADIUS * DELIVER_RADIUS) then
+                        delivered = true
+                        trigger.action.outTextForCoalition(
+                            SIDE,
+                            "Super Gaggle delivered -- " .. outpostName .. " resupplied.",
+                            15
+                        )
+                    end
+                end
+                if timer.getTime() - spawnTime > MISSION_TIME then
+                    pcall(function()
+                        g:destroy()
+                    end)
+                    scheduleRespawn()
+                end
+            end)
+            if not ok then
+                env.warning("vietnamops: super gaggle tick error (continuing): " .. tostring(err))
+            end
+            return timer.getTime() + POLL
+        end
+
+        spawnGaggle()
+        timer.scheduleFunction(tick, {}, timer.getTime() + POLL)
+        env.info(string.format(
+            "DCSRetribution|Vietnam Ops - Super Gaggle armed (outpost %s, %dx %s)",
+            outpostName, COUNT, HELO))
+    end)
 end

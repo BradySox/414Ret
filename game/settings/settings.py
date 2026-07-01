@@ -2056,9 +2056,10 @@ class Settings:
         VIETNAM_OPS_PAGE,
         "Battlefield & interdiction",
         detail=(
-            "Auto-plans escorted helicopter resupply packages to cut-off friendly outposts "
-            "(fast-mover AAA suppression + helo cargo drop), modelling the Khe Sanh 'Super "
-            "Gaggle'."
+            "A formation of transport helos runs supplies into a cut-off forward friendly "
+            "outpost (fly launch field -> outpost -> back, re-rolling on a cadence), which "
+            "you can fly escort for -- modelling the Khe Sanh 'Super Gaggle'. Needs a "
+            "friendly forward outpost near the front, or it has no effect."
         ),
         default=False,
     )

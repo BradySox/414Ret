@@ -2361,14 +2361,20 @@ without the `flak` marker.
 | Setting / options | `game/settings/settings.py` (`vietnam_flak_gauntlet`); plugin `specificOptions` (range/ceiling/miss/power) |
 | Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (marker on/off, independence from Arc Light) |
 
-### Gotchas / deferred — in-game pass ◐ PARTIAL (checklist L2): works very well but too accurate, tuning owed
+### Gotchas / deferred — in-game pass ◐ PARTIAL (checklist L2): too accurate on the 2026-06-28 pass; softened twice, re-fly owed
 
-- **Lethality tuning OWED (in-game 2026-06-28, audience pass, user "too accurate but working very well").**
-  The mechanic plays great but the bursts kill too reliably — it reads as a hard-kill threat, not the intended
-  mostly-visual pressure. The lethal lever is the close **"tracking" round** (`flakBurst`: `miss = MIN_MISS*0.35`
-  ≈ 24 m at `blast = BLAST*2.5` = 20, fired once `factor > 0.66`) on top of the tight `MIN_MISS = 70` floor.
-  Soften the **defaults**: raise `MIN_MISS`, soften + rarefy the tracking round, possibly drop `flakBlastPower`.
-  Re-fly after tuning. `flakBlastPower` / miss distances / range are the knobs.
+- **Lethality softened twice; re-fly owed.** The 2026-06-28 audience pass ("too accurate but working very
+  well") read as a hard-kill threat rather than the intended mostly-visual pressure. The lever is the close
+  **"tracking" round**. Two tuning passes since:
+  - **2026-06-28:** `MIN_MISS` 70→110 m, tracking `miss ×0.35→×0.55` / `blast ×2.5→×2.0` and rarer
+    (`factor > 0.66→0.8`), `BLAST` 8→6.
+  - **2026-07-01 (L2):** the remaining lethality was the tracking round firing **every 2.5 s tick** once a jet
+    held a steady line ~10 s. Now: base misses widened `MIN_MISS` 110→**150** / `MAX_MISS` 250→**320** m, and
+    the tracking round is **occasional** — gated behind a sustained steady run (`factor > 0.85`) **and** a
+    per-tick probability (`TRACKING_CHANCE = 0.3`) — and softened (`miss ×0.55→×0.75`, `blast ×2.0→×1.5`).
+  Both passes changed `vietnamops-config.lua` **and** the matched `plugin.json` defaults. Still `◐ PARTIAL`
+  until a re-fly confirms the feel (pressure to manoeuvre, no hard-kill). `flakBlastPower` / miss distances /
+  range remain the campaign-side knobs.
 - **Runtime cost:** the 2.5 s sweep iterates airborne aircraft × nearby AAA (capped). Bounded and pcall-
   guarded, but watch FPS on a very dense mission.
 - **Deferred polish:** tracer streams from the airstrip AAA belts (v1 is barrage puffs only); a per-pilot
@@ -2547,3 +2553,63 @@ It emits `dcsRetribution.VietnamOps.airbaseHarassment = { fields = { {name,x,y,c
   risk for immersion) was deliberately deferred — v1 excludes every player-spawn field unconditionally.
 - **Runtime-cosmetic only.** Destroyed parking statics are runtime damage (like §33/§34); there is no BDA
   feedback into the campaign model.
+
+## §37 — Super Gaggle hilltop resupply (Vietnam Ops suite)
+
+The sixth **Vietnam Ops suite** feature (design note `414th-vietnam-ops-notes.md`, §E). Models the Khe Sanh
+"Super Gaggle": a formation of transport helos runs supplies into a cut-off forward friendly outpost while the
+player can fly escort. The base engine has no besieged-outpost resupply; this makes the forward hilltops feel
+supplied-under-fire the way they historically were.
+
+### Scope decision — runtime, not the planner
+
+The design's v1 was a **planner-template** auto-frag (suppress + cargo + escort package, self-planned like
+`auto_combat_sar`). That is **blocked on an auto-plannable CTLD cargo run the engine lacks** — there is no
+FlightType/tasking that fragments a helo cargo-delivery to a specific outpost. Rather than build that whole
+commander-brain capability, this ships **runtime-only**, exactly like the §35 convoy: Python picks the
+geography and the `vietnamops` plugin spawns/flies the gaggle. The distinctive **fast-mover AAA-suppression
+choreography** (the timing window that opened before the helos committed) is a **deferred later increment**,
+explicitly called out as post-v1 in the design's phasing.
+
+### How it works
+
+**Python picks the geography (`vietnamopsluadata.py` `_populate_super_gaggle`).** It selects the friendly
+(BLUE) **FOB/FARP nearest a front** as the besieged outpost — gated to within `GAGGLE_OUTPOST_FRONT_REACH_M`
+(≈ 150 km) so a rear base is never chosen — and the nearest **other** friendly helo-capable field
+(`AIRBASE`/`FARP`) as the launch point. It emits
+`dcsRetribution.VietnamOps.superGaggle = { coalition = "BLUE", outpost = {name,x,y}, launch = {x,y} }`. No
+forward friendly outpost, no launch field, or no front ⇒ no node ⇒ the plugin no-ops.
+
+**The `vietnamops` plugin runs the gaggle at runtime** (vanilla DCS `coalition.addGroup`, `pcall`-guarded):
+- Spawns a helo gaggle (default 3 × `UH-1H`, air-started over the launch field) routed **launch → outpost →
+  back**, with a "SUPER GAGGLE — resupply helos inbound … Escort welcome" cue to the friendly coalition.
+- A 10 s tick announces **"delivered"** once the lead helo reaches the outpost (within `DELIVER_RADIUS`), and
+  **"down"** if the gaggle is destroyed en route (losses stay native).
+- **Re-rolls a fresh run** a cadence (default 900 s) after the old one is delivered *or* lost, so the resupply
+  keeps flowing across a long mission (a completed run is recycled after `MISSION_TIME`).
+- Tunables (plugin `specificOptions`): helo type, count, transit speed, transit altitude, respawn cadence.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_super_gaggle`, `GAGGLE_OUTPOST_CP_TYPES`, `GAGGLE_LAUNCH_CP_TYPES`, `GAGGLE_OUTPOST_FRONT_REACH_M`) |
+| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (Super Gaggle section) |
+| Setting / options | `game/settings/settings.py` (`vietnam_super_gaggle`); plugin `specificOptions` (helo type/count/speed/altitude/respawn) |
+| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (emits outpost+launch+coalition when on; picks the nearest-front outpost + nearest launch; off / no-outpost / no-launch / no-front / enemy+rear outposts → no node) |
+
+### Gotchas / deferred
+
+- **Runtime is unflown (checklist L9).** The Lua passes the `luac5.1 -p` gate, but runtime helo spawning +
+  routing + the deliver/respawn state machine can't be exercised headless — needs a cockpit pass. Watch that
+  the helos actually reach the outpost (routing/altitude), the delivery/lost/respawn cues fire once each, and
+  `coalition.addGroup` throws no Lua error in `dcs.log`.
+- **Choreography deferred (the design's own phasing).** No fast-mover AAA-suppression window in v1 — the gaggle
+  runs the gauntlet with only the player as optional escort. Adding a suppression escort pair on a timing lead
+  is the next increment.
+- **Runtime-cosmetic.** The delivery has no supply-economy effect (like the §35 convoy); the value is
+  immersion + the escort opportunity.
+- **Blue-only (symmetry deferred).** The emitter hard-picks the BLUE outpost (the human's cut-off hilltops),
+  mirroring the convoy's RED-only stance; a red-player mirror would be a follow-on.
+- **Not a helo-slot dependency.** The gaggle is spawned at runtime by coordinate, so the outpost can be a
+  ground-only FOB (the Khe Sanh case) — the helos fly to its position, they don't need a parking slot there.

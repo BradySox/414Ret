@@ -1,0 +1,58 @@
+/* Campaign-status ribbon (campaign phases W3). Floats over the top of the map,
+   centered, styled to match the dark map-layers panel. Sits above Leaflet panes
+   (max Leaflet pane z-index is 700; controls are 1000) but below dialogs. */
+.campaign-status-bar {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 14px;
+  background: #161e2bee;
+  color: #d7dde6;
+  border: 1px solid #23344a;
+  border-radius: 6px;
+  font: 13px/1.3 system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: auto;
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.campaign-status-name {
+  font-weight: 600;
+  color: #e8f0fb;
+}
+
+.campaign-status-item {
+  color: #9aa6b6;
+}
+
+.campaign-status-phase {
+  color: #cfe0f3;
+  background: #23344a;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.campaign-status-will {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.campaign-status-will-blue {
+  color: #cfe0f3;
+  background: #1d3a5f;
+}
+
+.campaign-status-will-red {
+  color: #f3d3d3;
+  background: #5f1d1d;
+}

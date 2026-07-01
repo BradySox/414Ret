@@ -318,6 +318,12 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
         CAMPAIGN_MANAGEMENT_PAGE,
         [
             (
+                "Campaign phases",
+                [
+                    "campaign_phases",
+                ],
+            ),
+            (
                 "HQ automation",
                 [
                     "automate_runway_repair",
@@ -1320,6 +1326,24 @@ class Settings:
         detail=(
             "If set, squadrons will not be able to buy more aircraft than the configured maximum."
         ),
+    )
+
+    # Campaign phases (W3, docs/dev/design/414th-campaign-phases-notes.md). Tier-0
+    # inference is the DECIDED default for every campaign; this is the kill switch.
+    campaign_phases: bool = boolean_option(
+        "Campaign phases",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign phases",
+        detail=(
+            "The campaign tracks what phase of the air war it is in -- Air "
+            "Superiority (roll back the SAM belt, blunt enemy fighters), "
+            "Interdiction (choke reinforcement and logistics), then the Offensive "
+            "(take ground) -- inferred each turn from the live IADS, air threat, and "
+            "front movement. The phase shows on the kneeboard and status band, and "
+            "the auto-planner leans its offensive tasking to match. Reactive defense "
+            "is never affected. Turn off for the phase-blind stock planner."
+        ),
+        default=True,
     )
 
     # HQ Automation

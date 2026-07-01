@@ -50,6 +50,7 @@ from .weather.conditions import Conditions
 if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
+    from .fourteenth.phases import PhaseBaseline
     from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .navmesh import NavMesh
     from .sim import GameUpdateEvents
@@ -124,6 +125,14 @@ class Game:
         # BLUE squadrons; None when the feature is off or no gaggle is plannable. Losses are
         # charged back to the squadrons at debrief. Replanned each turn in finish_turn.
         self.super_gaggle_commitment: Optional["SuperGaggleCommitment"] = None
+        # Campaign phases (W3, docs/dev/design/414th-campaign-phases-notes.md §5):
+        # only the *pointer* + the turn-0 baseline persist; phase definitions are
+        # code (Tier 0) and re-derived, never pickled. Resolved each turn in
+        # initialize_turn by game.fourteenth.phases.update_campaign_phase.
+        self.current_phase_key: Optional[str] = None
+        self.phase_entered_on_turn: Optional[int] = None
+        self.phase_status_line: Optional[str] = None
+        self.phase_baseline: Optional["PhaseBaseline"] = None
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -194,6 +203,12 @@ class Game:
         state.setdefault("last_sitrep", None)
         state.setdefault("client_map_layers", None)
         state.setdefault("super_gaggle_commitment", None)
+        # Campaign phases (W3): pre-feature saves compute a phase on their next
+        # initialize_turn; the baseline re-snapshots then (spec §5 migration).
+        state.setdefault("current_phase_key", None)
+        state.setdefault("phase_entered_on_turn", None)
+        state.setdefault("phase_status_line", None)
+        state.setdefault("phase_baseline", None)
         self.__dict__.update(state)
         if not hasattr(self, "laser_code_registry"):
             self.laser_code_registry = LaserCodeRegistry()
@@ -563,6 +578,13 @@ class Game:
         # Plan flights & combat for next turn
         with logged_duration("Threat zone computation"):
             self.compute_threat_zones(events)
+
+        # Resolve this turn's campaign phase (W3) BEFORE the coalitions plan, so the
+        # commander's soft emphasis reads the fresh phase. Idempotent under the
+        # multiple-init-per-turn cases above; lazily snapshots the turn-0 baseline.
+        from game.fourteenth.phases import update_campaign_phase
+
+        update_campaign_phase(self)
 
         # Plan Coalition specific turn
         if for_blue:

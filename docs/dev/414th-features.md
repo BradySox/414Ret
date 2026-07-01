@@ -2799,3 +2799,75 @@ Same shape as §33 flak and §38 FAC — an **on-marker + runtime discovery**, n
 - **The per-node bite is real (by design).** Unlike flak's mostly-visual power, the default blast is tuned to
   hurt soft targets — that *is* the feature (napalm was devastating to infantry/trucks). Dial `napeBlastPower`
   down for a purely-cosmetic wall of fire.
+
+## §40 — Campaign phases (inferred arc + planner emphasis)
+
+Every campaign — including the 63 base-Retribution campaigns that ship with nothing but a YAML header —
+knows what **phase** of the air war it is in, the UI shows it, and the auto-planner biases its offensive
+intent to match. A phase is a doctrine-like profile, **time-sliced instead of campaign-wide**, resolved fresh
+each turn from live campaign state (the VIETNAM_DOCTRINE display-and-gate precedent — never a commander
+rewrite, never a persisted-enum mutation). Spec of record:
+[`414th-campaign-phases-notes.md`](design/414th-campaign-phases-notes.md); this landing is **P0 + P1**
+(Tier-0 inference for all campaigns; Tier 1/2 YAML authoring + advance_when conditions + whitelist deltas are
+P2, riding the Vietnam W4 arcs).
+
+### How it works
+
+- **The model** (`game/fourteenth/phases.py`): three generic `CampaignPhase`s — **Air Superiority**
+  (`rollback`), **Interdiction**, **Offensive** — each carrying a narrative and an `emphasis` ordering of
+  `PlanNextAction`'s offensive HTN root methods (kept as class *names* so the module never imports the
+  commander; a sync test locks the two).
+- **The classifier** (spec §3.2, thresholds refined by the 6-campaign pilot + the #379 engine-authoritative
+  all-66 re-run): each turn it reads pre-existing accessors — alive enemy long+medium SAM **sites** banded by
+  the TGO's `GroupTask` LORAD/MERAD, the exact set `degradeiads.py` rolls back (the §3.1 correction:
+  `IadsRole` **cannot** band this — its `SAM` role swallows SHORAD and its `EWR` role swallows AAA/navy; EWR
+  stays excluded as author-noise), enemy air-superiority airframes off the red air wing, mean front movement
+  vs. the turn-0 anchor, base ratio, last turn's captures off the SITREP — and picks the phase.
+  The **absolute-SAM-floor gate** (`ROLLBACK_SAM_FLOOR` = 3) is the pilot's key finding, with the engine-run
+  corrected examples: the genuine below-floor campaigns are Shattered Dagger / Battle for No Man's Land /
+  Valley of Rotary / Northern Guardian (open in Interdiction); Velvet Thunder sits exactly at the floor and
+  keeps Rollback; **Khe Sanh is not below the floor in real gameplay** (the generator fills 4 SA-2/SA-3
+  batteries — the pilot's original 0-SAM read was a `--lite` artifact). Real enemy air without a belt still
+  holds the air-superiority fight. The **peer-fight guard** falls out of the same shape:
+  Rollback only releases when the IADS is down AND the air threat is gone.
+- **Hysteresis** (spec §3.3, mandatory): min-dwell `PHASE_MIN_DWELL_TURNS` = 2, **monotonic-forward** by
+  default (regression is authored-only/P2; the asymmetric `IADS_ROLLBACK_REENTER` = 0.6 margin is implemented
+  and test-locked behind the flag).
+- **Baselines** (spec §5): nothing in the engine persists an initial front line or IADS count, so
+  `PhaseBaseline` snapshots them lazily on the classifier's first gated run (turn 0 for a new game; first
+  load for an old save — the accepted migration). Persisted on `Game` with the phase pointer
+  (`current_phase_key`, `phase_entered_on_turn`, `phase_status_line`) via `__setstate__` setdefaults.
+- **Planner consumption** (spec §4): `PlanNextAction.each_valid_method` keeps the reactive prefix
+  (`TheaterSupport`/`ProtectAirSpace`/`DefendBases`) and the `RecoverySupport` tail **fixed** — the §17
+  boundary, reactive defense stays deterministic — and reorders only the offensive middle per the active
+  phase's `emphasis`, which shifts which objectives get first claim on the limited offensive aircraft.
+  **BLUE only**: the phase is the campaign's (blue-perspective) arc; red keeps stock order.
+- **Legibility** (spec §3.4): the phase always explains itself — "Interdiction — enemy IADS 22% · air threat
+  low · front static" — via `legibility()`, stored as `game.phase_status_line`. Phase *transitions* post an
+  Information message once (the campaign-start assignment is silent).
+- **Surfaces**: the kneeboard **cover page** (§30) gains a CAMPAIGN PHASE band (status line + narrative); the
+  web client gains a **campaign-status ribbon** over the map (`CampaignStatusBar`) fed by a new
+  `GameJs.campaign_status` payload (campaign name / turn / date — previously never sent to the client at all —
+  + phase + the political-will meters on Vietnam campaigns, each segment self-hiding when absent).
+
+| Piece | Where |
+|---|---|
+| Model + classifier + hysteresis | `game/fourteenth/phases.py` |
+| Game state + migration + per-turn hook | `game/game.py` (`initialize_turn`, `__setstate__`) |
+| Planner emphasis | `game/commander/tasks/compound/nextaction.py` (`_offensive_order`) |
+| Kneeboard band | `game/missiongenerator/kneeboard.py` (`CoverPage`) |
+| Server payload | `game/server/game/models.py` (`CampaignStatusJs`) |
+| Client ribbon | `client/src/components/campaignstatus/` + `api/campaignStatusSlice.ts` |
+| Setting | `game/settings/settings.py` (`campaign_phases`, default ON, Campaign Management) |
+| Tests | `tests/fourteenth/test_phases.py` (thresholds, hysteresis, legibility, update gating, emphasis sync + ordering) |
+
+### Gotchas / deferred
+
+- **Default ON for every campaign** ([DECIDED] Tier-0 inference is the default). The `campaign_phases`
+  toggle is the kill switch if the emphasis misbehaves in a live campaign — checklist **M3**.
+- **The phase never gates reactive defense** (§17 boundary) and never forbids a task in Tier 0 — it is a
+  bias and a narrative, not a new commander. Hard whitelist deltas are authored-only (P2).
+- **Client ribbon needs the CI client rebuild** (`_liberationApi.ts` types hand-added; no local npm).
+- **Deferred**: Consolidation phase (spec leaves it optional, v1 ships three), a red-perspective arc,
+  Tier 1/2 YAML authoring + `advance_when` + objectives checklist (P2), authored Vietnam Rolling Thunder →
+  Linebacker II arcs (W4), New Game wizard arc preview, SAM-density-scaled Rollback dwell.

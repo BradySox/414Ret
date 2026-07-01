@@ -11,7 +11,9 @@ banners fire once on the crossing edge, and the 4 Vietnam campaigns preseed
 `vietnam_political_will: true` (guarded in `_ERA_PRESEED`). The design-§7 feed weights shipped
 as-is — the balance pass moved to the first played campaign (checklist M1). **W2b (the static
 front) LANDED**: `vietnam_static_front` clamps each front's position to a ±10 % band around its
-campaign-start anchor (§2b below; checklist M2). W3–W5 outstanding.
+campaign-start anchor (§2b below; checklist M2). **W3 LANDED**: campaign-phases P0+P1 per the
+phases spec (feature §40 — Tier-0 inference + hysteresis + planner emphasis + status surfaces,
+generic across all campaigns; the §3 ROE extensions ride it in W4). W4–W5 outstanding.
 This is the **spec of record** for the month-scale
 rework that makes Vietnam mode different at the *campaign* layer, approved 2026-07-01:
 **(1) a political-will economy with a negotiation victory** and **(2) an ROE / Route-Package

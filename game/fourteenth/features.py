@@ -195,6 +195,14 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="vietnamops",
         settings_fields=("vietnam_snake_and_nape",),
     ),
+    Feature(
+        # Pure engine feature (no Lua): the Tier-0 phase classifier + the HTN soft
+        # emphasis + the status surfaces, in game/fourteenth/phases.py.
+        "campaign_phases",
+        "Campaign phases (inferred arc + planner emphasis)",
+        40,
+        settings_fields=("campaign_phases",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

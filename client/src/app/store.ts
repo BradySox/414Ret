@@ -1,4 +1,5 @@
 import { baseApi } from "../api/baseApi";
+import campaignStatusReducer from "../api/campaignStatusSlice";
 import combatReducer from "../api/combatSlice";
 import controlPointsReducer from "../api/controlPointsSlice";
 import flightsReducer from "../api/flightsSlice";
@@ -20,6 +21,7 @@ import {
 } from "@reduxjs/toolkit";
 
 const rootReducer = combineReducers({
+  campaignStatus: campaignStatusReducer,
   combat: combatReducer,
   controlPoints: controlPointsReducer,
   flights: flightsReducer,

@@ -642,3 +642,105 @@ if suite.convoy and suite.convoy.waypoints then
         )
     end)
 end
+
+-------------------------------------------------------------------------------
+-- Airbase harassment: sporadic standoff rocket/mortar fire on forward fields
+--
+-- Recreates the near-constant siege of the Vietnam-era airfields (Bien Hoa, Da Nang,
+-- the Khe Sanh strip): each forward, occupied field the generator emitted draws a small,
+-- dispersed cluster of impacts near the ramp on a randomized cadence. Mostly noise/smoke
+-- with a modest, tunable bite -- NOT precision counter-air. The generator has already
+-- filtered out every player-spawn field (so a cold-and-dark player is never shelled), and
+-- a startup grace period suppresses all fire while everyone is still aligning. Vanilla
+-- DCS (trigger.action.explosion), pcall-guarded. Gated on
+-- dcsRetribution.VietnamOps.airbaseHarassment.
+-------------------------------------------------------------------------------
+if suite.airbaseHarassment and suite.airbaseHarassment.fields then
+    local INTERVAL = 240        -- s, mean seconds between events on a field (randomized)
+    local ROUNDS = 5            -- impacts per event (a short barrage)
+    local DISPERSION = 260      -- m, radius the impacts scatter over the ramp
+    local BLAST = 8             -- per-impact power (small -- mostly noise/smoke)
+    local GRACE = 300           -- s, hard no-fire window at mission start (alignment)
+    if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
+        local o = dcsRetribution.plugins.vietnamops
+        INTERVAL = tonumber(o.harassIntervalS) or INTERVAL
+        ROUNDS = tonumber(o.harassRoundsPerEvent) or ROUNDS
+        DISPERSION = tonumber(o.harassDispersionM) or DISPERSION
+        BLAST = tonumber(o.harassBlastPower) or BLAST
+        GRACE = tonumber(o.harassGraceS) or GRACE
+    end
+
+    local STEP_TIME = 0.4       -- s between the impacts of one barrage (walking effect)
+    local INTERVAL_JITTER = 0.5 -- +/- fraction of INTERVAL, so the cadence is sporadic
+
+    -- Defense-in-depth: names the generator says must never be touched. Python already
+    -- excludes them from `fields`, but honor the list too so a mismatch can only under-fire.
+    local excluded = {}
+    if suite.airbaseHarassment.excludedFields then
+        for _, nm in pairs(suite.airbaseHarassment.excludedFields) do
+            excluded[tostring(nm)] = true
+        end
+    end
+
+    -- Land one dispersed barrage near (cx, cz) [north, east].
+    local function dropBarrage(cx, cz)
+        for i = 1, ROUNDS do
+            local ang = math.random() * 2 * math.pi
+            local r = DISPERSION * math.sqrt(math.random())  -- uniform over the disc
+            local north = cx + r * math.cos(ang)
+            local east = cz + r * math.sin(ang)
+            timer.scheduleFunction(function()
+                local h = land.getHeight({ x = north, y = east }) or 0
+                trigger.action.explosion({ x = north, y = h, z = east }, BLAST)
+                return nil
+            end, {}, timer.getTime() + (i - 1) * STEP_TIME)
+        end
+    end
+
+    local function nextDelay()
+        local jitter = 1 + (math.random() * 2 - 1) * INTERVAL_JITTER
+        return math.max(20, INTERVAL * jitter)
+    end
+
+    local function watch(field)
+        local name = field.name and tostring(field.name) or nil
+        local cx = tonumber(field.x)  -- north
+        local cz = tonumber(field.y)  -- east (pydcs y -> DCS z)
+        if not cx or not cz then
+            return
+        end
+        if name and excluded[name] then
+            return  -- a player field slipped through: never fire on it.
+        end
+        local side = (field.coalition == "BLUE") and coalition.side.BLUE or coalition.side.RED
+
+        local function tick()
+            local ok, err = pcall(function()
+                dropBarrage(cx, cz)
+                pcall(
+                    trigger.action.outTextForCoalition,
+                    side,
+                    "Incoming -- standoff fire on " .. (name or "the field") .. ".",
+                    15
+                )
+            end)
+            if not ok then
+                env.warning("vietnamops: harassment tick error (continuing): " .. tostring(err))
+            end
+            return timer.getTime() + nextDelay()
+        end
+
+        -- First event after the grace period, then on the randomized cadence.
+        timer.scheduleFunction(tick, {}, timer.getTime() + GRACE + nextDelay())
+    end
+
+    local count = 0
+    for _, field in pairs(suite.airbaseHarassment.fields) do
+        watch(field)
+        count = count + 1
+    end
+    env.info(string.format(
+        "DCSRetribution|Vietnam Ops - Airbase harassment armed for %d field(s) "
+            .. "(every ~%ds, %d rounds, dispersion %dm, power %d, grace %ds)",
+        count, INTERVAL, ROUNDS, DISPERSION, BLAST, GRACE))
+end

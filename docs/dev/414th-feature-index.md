@@ -47,5 +47,6 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §33 | AAA flak gauntlet | `vietnamops` | `vietnam_flak_gauntlet` |
 | §34 | Naval gunfire support | `vietnamops` | `vietnam_naval_gunfire` |
 | §35 | Convoy interdiction (Steel Tiger) | `vietnamops` | `vietnam_convoy_interdiction` |
+| §36 | Airbase harassment (rocket/mortar siege) | `vietnamops` | `vietnam_airbase_harassment` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |

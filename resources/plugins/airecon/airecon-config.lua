@@ -27,7 +27,7 @@ end
 tars_recon_captures = tars_recon_captures or {}
 
 local TRIGGER_RANGE = 5 * 1852  -- m: the flight must close within this of the target to "photograph" it
-local CAPTURE_RADIUS = 4000     -- m: enemy ground within this of the target is captured
+local CAPTURE_RADIUS = 2 * 1852 -- m: enemy ground within this of the target is captured (option in NM)
 local CAPTURE_CAP = 25          -- max units recorded per recon flight
 local POLL = 10                 -- s between position checks
 if dcsRetribution.plugins and dcsRetribution.plugins.airecon then
@@ -35,7 +35,9 @@ if dcsRetribution.plugins and dcsRetribution.plugins.airecon then
     if o.triggerRangeNm ~= nil then
         TRIGGER_RANGE = (tonumber(o.triggerRangeNm) or 5) * 1852
     end
-    CAPTURE_RADIUS = tonumber(o.captureRadiusM) or CAPTURE_RADIUS
+    if o.captureRadiusNm ~= nil then
+        CAPTURE_RADIUS = (tonumber(o.captureRadiusNm) or 2) * 1852
+    end
     CAPTURE_CAP = tonumber(o.captureCap) or CAPTURE_CAP
     POLL = tonumber(o.pollS) or POLL
 end

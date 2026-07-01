@@ -6,13 +6,17 @@
 -- inside the bundled MOOSE (base plugin's Moose.lua), so this plugin only
 -- supplies configuration -- there is no separate script to load.
 --
--- This bridge only acts when the selected IADS engine is "mantis"
--- (dcsRetribution.IADS.engine, set from Settings.iads_engine). Otherwise it
--- no-ops so the Skynet bridge (skynetiads-config.lua) runs instead.
+-- MANTIS is the SOLE IADS engine (Skynet removed): there is no engine selector
+-- (the old Settings.iads_engine / dcsRetribution.IADS.engine gate and the
+-- skynetiads-config.lua bridge are gone), so this always runs when there is IADS
+-- data and the bundled MOOSE MANTIS class is present -- see the gate at line ~23.
 --
--- Phase 1 scope: core networking (SAM/EWR detection coordination + emissions
--- control). NOT yet implemented: shoot-and-scoot relocation, command-center /
--- comms / power C2 degradation, explicit point-defense pairing, per-unit tuning.
+-- Implemented: core networking (SAM/EWR detection coordination + emissions
+-- control) AND the Phase-5 C2 layer (command-center / comms / power degradation,
+-- below -- in-game-verified, checklist G6). Still deferred: PROACTIVE SHORAD
+-- shoot-and-scoot between zones (AddScootZones, needs Python-generated zones --
+-- note reactive SAM scoot is already automatic via MANTIS' integrated SEAD),
+-- explicit point-defense pairing, per-unit tuning.
 -- see docs/dev/design/414th-mantis-migration-notes.md
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -194,7 +198,7 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- it may re-enable a SAM we disabled on its next detection cycle. If the G6
     -- pass shows degradation not "sticking", the fix is to also drop the SAM from
     -- MANTIS' managed set (no clean public API yet) rather than only toggling the
-    -- group. Gated behind iads_engine=MANTIS, so this never affects Skynet missions.
+    -- group. (Skynet is removed -- MANTIS is the only engine -- so this always runs.)
     local function setup_c2(coalition_prefix, coalition_iads, sam_groups, policy_dark)
         local comms_deps = {} -- comms unit name -> { dependent SAM group names }
         local power_deps = {} -- power unit name -> { dependent SAM group names }

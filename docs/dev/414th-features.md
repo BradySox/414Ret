@@ -2413,3 +2413,66 @@ Symmetric (either side's gun ships). `pcall`-guarded; inert without the `navalGu
 - **Deferred:** JTAC auto-lase → auto fire-mission (reading CTLD's laser target couples to CTLD internals);
   the F10 marker call + auto bombardment cover the capability for v1. "Fire on my position" (needs per-group
   menus) also deferred in favour of the marker call.
+
+---
+
+## §35 — Convoy interdiction (Steel Tiger) (Vietnam Ops suite)
+
+The fourth **Vietnam Ops suite** feature: a moving enemy supply column on the road behind the FLOT — the
+Ho Chi Minh Trail / Operation Steel Tiger — surfaced to the player through Armed Recon. The modern engine
+models logistics as an abstract `convoy_routes` transfer; this makes one of those routes a **flyable,
+interdictable target** that keeps flowing.
+
+### How it works
+
+**Python picks the corridor (`vietnamopsluadata.py` `_populate_convoy_interdiction`).** It walks the enemy
+control points and their `convoy_routes`, keeps only **enemy→enemy** roads (an enemy→friendly road *is* the
+contested front, not a rear supply line), and chooses the one whose midpoint is **nearest the FLOT**
+(`game.theater.conflicts()`). Reusing the engine's real `convoy_routes` ties the target to actual red
+logistics rather than inventing a road. It emits the chosen path + coalition as
+`dcsRetribution.VietnamOps.convoy = { coalition = "RED", waypoints = { {x,y}, … } }`. No enemy road behind
+the front (e.g. a single-CP front) ⇒ no node ⇒ the plugin no-ops.
+
+**The `vietnamops` plugin runs the column at runtime** (vanilla DCS `coalition.addGroup`, `pcall`-guarded):
+- Spawns a truck column (default 8 × `Ural-375`, strung out along the road) on the emitted corridor,
+  driving it end to end **On Road**.
+- **Halts under cover** (`Controller:setOnOff(false)`) whenever an opposing aircraft closes inside the
+  scatter range (default 5 NM), and rolls again once the sky clears — the trucks "go to ground" when hunted.
+- **Rolls a fresh column** a delay (default 600 s) after the old one is wiped, with a "convoy destroyed on
+  the trail" cue, so the trail keeps producing targets across a long mission.
+- Tunables (plugin `specificOptions`): speed, scatter range, respawn delay, truck count, truck type.
+
+**Right-click planning (added per playtest).** Rather than hunting for the corridor, the player
+**right-clicks an enemy supply route** on the map to frag the interdiction package:
+`SupplyRoute.tsx`'s `contextmenu` on the wide invisible hit-line → `POST /qt/create-package/supply-route/{route_id}`
+→ `interdiction_target_for_route_id` (`game/server/supplyroutes/models.py`) resolves the route id — which now
+encodes both CP ids as `"<cp_a_id>:<cp_b_id>"` — to the **enemy end** (preferring the contested CP), and the
+Qt new-package dialog opens there with the add-flight dialog auto-opened and **Armed Recon pre-selected**. A
+friendly (all-blue) route resolves to nothing and 404s. Still an Armed Recon frag — just discoverable on the
+route instead of requiring the player to know where to look.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Corridor emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_convoy_interdiction`) |
+| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (convoy section) |
+| Right-click server | `game/server/qt/routes.py` (`POST /qt/create-package/supply-route/{id}`), `game/server/supplyroutes/models.py` (`interdiction_target_for_route_id`, route id encodes both CP ids) |
+| Right-click client | `client/src/components/supplyroute/SupplyRoute.tsx` (`contextmenu` → `useOpenNewSupplyRoutePackageDialogMutation`; hook hand-added to `_liberationApi.ts`) |
+| Setting / options | `game/settings/settings.py` (`vietnam_convoy_interdiction`); plugin `specificOptions` (speed/scatter/respawn/count/type) |
+| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (corridor pick: nearest enemy→enemy road, ignores the RED→BLUE front, off = no node); `tests/server/test_supply_route_interdiction.py` (route-id → enemy-end resolution, contested-CP preference, friendly/malformed → None) |
+
+### Gotchas / deferred
+
+- **Runtime spawn verified 2026-06-30** (checklist L6): a flown Khe Sanh session's `dcs.log` showed a
+  complete spawn → drive → wipe → respawn cycle (`VietnamConvoy-1` then `VietnamConvoy-2` ~64 min later, no
+  intervening reload), no `coalition.addGroup` Lua errors. The **halt-under-threat** (`setOnOff`) leg wasn't
+  isolated in that pass — it needs a Tacview flown close enough to the corridor to force a halt.
+- **Right-click path (checklist L7) needs an in-app pass + a CI client rebuild.** The server resolution is
+  test-covered; the React `contextmenu` → Qt dialog path can't be exercised headless, and the client hook was
+  **hand-added** to the generated `_liberationApi.ts` (codegen unavailable locally), so a stale `client/build`
+  won't have it.
+- **Corridor selection is deliberately "nearest enemy→enemy road."** On a theater with several rear roads it
+  fragments to one; picking multiple / rotating corridors is a possible future refinement.
+- **Blue-side symmetry not built:** the emitter hard-picks the RED supply road (the human fights red in the
+  Vietnam case). A blue convoy for a red-player campaign would be a follow-on.

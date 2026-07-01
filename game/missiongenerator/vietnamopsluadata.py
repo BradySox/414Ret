@@ -352,15 +352,17 @@ def _populate_super_gaggle(vietnam: "LuaItem", game: "Game") -> None:
 
     # The exact airframes to spawn, by real per-unit name, so a killed name maps straight back
     # to a squadron at debrief. Counts are implicit in the name lists (no respawn -> bounded).
+    # `type` must be a named child item, not add_key_value: a node with child items (the
+    # `names` list) serializes ONLY its children, silently dropping any key-values.
     helo = gaggle.add_item("helo")
-    helo.add_key_value("type", commitment.helo_type)
+    helo.add_item("type").set_value(commitment.helo_type)
     helo_names = helo.add_item("names")
     for name in commitment.helo_unit_names:
         helo_names.add_item().set_value(name)
 
     if commitment.supp_type and commitment.supp_unit_names:
         supp = gaggle.add_item("suppressor")
-        supp.add_key_value("type", commitment.supp_type)
+        supp.add_item("type").set_value(commitment.supp_type)
         supp_names = supp.add_item("names")
         for name in commitment.supp_unit_names:
             supp_names.add_item().set_value(name)

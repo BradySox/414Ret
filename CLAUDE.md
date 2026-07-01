@@ -540,6 +540,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     suppressor count/type/altitude. (`game/missiongenerator/vietnamopsluadata.py`, `resources/plugins/vietnamops/`,
     `game/settings/settings.py`; features doc §37, checklist L9 — needs an in-game pass; the suppressor's default
     loadout / effectiveness is the #1 tuning item.)
+38. **FAC(A) willie-pete target marking** — the seventh **Vietnam Ops suite** feature: the iconic Vietnam
+    forward air controller. An airborne OV-10 Bronco loitering over the battle area marks nearby enemy ground
+    with **white-phosphorus smoke** so the player (and AI strikers) can visually acquire the target and roll in
+    — the ground JTAC (which *lases*, stationary) already exists, so this is the distinct *airborne, smoke*
+    half. Same shape as §33 flak (an on-marker + runtime discovery): Python emits only
+    `dcsRetribution.VietnamOps.fac = { enabled }` (`_populate_fac`); the `vietnamops` plugin discovers airborne
+    friendly units of the FAC type (default `Bronco-OV-10A`) at runtime and, on a cadence, drops white smoke
+    (`trigger.action.smoke`, willie pete) on the nearest opposing ground unit within range + a "cleared hot"
+    cue. Symmetric (only OV-10 owners have FACs, so blue-effective in practice); needs a friendly OV-10
+    airborne over the front, or it no-ops. Runtime-cosmetic (a marker, no gameplay-model change). Plugin
+    options: FAC type, spot/mark range, mark cadence. (`game/missiongenerator/vietnamopsluadata.py`,
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §38, checklist L10 — needs an
+    in-game pass.)
 
 ---
 

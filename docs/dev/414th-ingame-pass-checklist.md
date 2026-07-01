@@ -2021,6 +2021,21 @@ so the two docs don't drift.
   `getUnit` / `destroy` Lua error in `dcs.log`; a run that never recycles (stuck after delivery); the suppressor
   group is orphaned (not despawned on recycle) or its spawn failure breaks the helo run.
 
+### L10 — FAC(A) willie-pete target marking · §38 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `fac` on-marker
+  (emitted when `vietnam_fac_marking` is on, independent of the other suite features; off = no node). The
+  runtime OV-10 discovery, the nearest-enemy scan, and `trigger.action.smoke` placement are runtime Lua,
+  exercisable only live.
+- **Setup:** A Vietnam campaign with **Vietnam Ops → FAC(A) marking** on and a friendly **OV-10 Bronco**
+  airborne over the front within ~3 NM of enemy ground (the campaigns field OV-10 CAS squadrons). Fly near a
+  Bronco working the battle area and watch for the smoke.
+- **Pass:** the Bronco periodically drops **white** smoke on the nearest enemy ground unit within range, with a
+  "target marked with willie pete — cleared hot" cue to its coalition; `dcs.log` shows "FAC(A) marking armed".
+- **Fail signature:** smoke lands on friendlies or empty ground (wrong side / no nearest-enemy gate); no smoke
+  despite an OV-10 over enemy ground (type-name mismatch — confirm `Bronco-OV-10A` is the mod's DCS type, or
+  set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;
+  the mark cadence is far too frequent (smoke spam) or never fires.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

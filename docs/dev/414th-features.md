@@ -2660,3 +2660,47 @@ forward friendly outpost, no launch field, or no front ⇒ no node ⇒ the plugi
   mirroring the convoy's RED-only stance; a red-player mirror would be a follow-on.
 - **Not a helo-slot dependency.** The gaggle is spawned at runtime by coordinate, so the outpost can be a
   ground-only FOB (the Khe Sanh case) — the helos fly to its position, they don't need a parking slot there.
+
+## §38 — FAC(A) willie-pete target marking (Vietnam Ops suite)
+
+The seventh **Vietnam Ops suite** feature: the iconic Vietnam **forward air controller (airborne)**. An
+OV-10 Bronco loitering over the battle area marks nearby enemy ground with **white-phosphorus smoke** so the
+strikers — and the player — can visually acquire the target and roll in. The engine already has a **ground
+JTAC** (stationary, *lases* targets for CAS); this is the distinct **airborne, smoke-marking** half that the
+JTAC doesn't cover, and it's the defining Vietnam FAC image (the Bronco putting willie pete on the target).
+
+### How it works
+
+Same shape as §33 flak — an **on-marker + runtime discovery**, no per-mission data:
+- **Python** (`vietnamopsluadata.py` `_populate_fac`) emits only
+  `dcsRetribution.VietnamOps.fac = { enabled = true }` when `vietnam_fac_marking` is on.
+- **The `vietnamops` plugin** discovers the FAC aircraft itself at runtime — airborne, alive friendly units
+  whose DCS type matches the FAC type (default `Bronco-OV-10A`) — and, on a cadence (default 120 s, so the
+  ~5 min smoke stays fresh), drops **white smoke** (`trigger.action.smoke`, willie pete) on the **nearest
+  opposing ground unit** within the spot/mark range (default 3 NM) of the FAC, plus a "target marked with
+  willie pete — cleared hot" cue to the FAC's coalition. Symmetric by construction (both sides scanned), but
+  only OV-10 owners have FACs, so it's blue-effective in practice. No friendly OV-10 airborne over the front
+  ⇒ nothing marked.
+- Tunables (plugin `specificOptions`): FAC aircraft type, spot/mark range, mark cadence.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_fac`) |
+| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (FAC section) |
+| Setting / options | `game/settings/settings.py` (`vietnam_fac_marking`); plugin `specificOptions` (type/range/cadence) |
+| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (the `fac` on-marker is emitted when the setting is on, independent of the other suite features; off = no node) |
+
+### Gotchas / deferred
+
+- **Runtime is unflown (checklist L10).** The Lua passes the `luac5.1 -p` gate, but the runtime OV-10
+  discovery, the nearest-enemy scan, and `trigger.action.smoke` placement can't be exercised headless. Watch
+  that the smoke lands on real enemy ground near the Bronco (not on friendlies / empty ground) and that
+  `dcs.log` shows "FAC(A) marking armed" with no Lua error.
+- **Marking only — no auto-assignment (deferred).** v1 marks the target with smoke; it does **not** assign the
+  target to a CAS package or coordinate a strike (that overlaps the ground-JTAC/tasking systems). The
+  smoke-mark is the iconic, low-risk core; FAC→CAS coordination is a possible later increment.
+- **Runtime-cosmetic.** A smoke plume, no gameplay-model change — the value is the visual target cue.
+- **FAC type is a single configurable id.** Default `Bronco-OV-10A`; the O-2 Skymaster or another light FAC
+  could be added as a discovered type in a later pass.

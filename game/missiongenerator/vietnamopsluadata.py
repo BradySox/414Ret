@@ -18,6 +18,12 @@ Features so far:
   coalition; the runtime offers a player F10 call-for-fire (on the last F10 map marker) and
   an automatic coastal bombardment of in-range enemy ground targets. Coastal campaigns only
   (inland missions have no gun ships in range, so it no-ops).
+* **Airbase harassment** (``vietnam_airbase_harassment``): emits each forward, occupied
+  airfield/FARP (parking centroid + coalition) plus the player-spawn *exclude* set; the
+  runtime lands sporadic standoff rocket/mortar clusters near the ramp, modelling the
+  near-constant siege of Bien Hoa/Da Nang/Khe Sanh. Client-spawn fields are filtered out in
+  Python (never emitted) and a startup grace period is honored Lua-side, so a cold-starting
+  player is never shelled.
 """
 
 from __future__ import annotations
@@ -26,11 +32,13 @@ from typing import TYPE_CHECKING
 
 from game.ato import FlightType
 from game.data.units import UnitClass
+from game.theater import ControlPointType
 
 if TYPE_CHECKING:
     from dcs.mapping import Point
 
     from game import Game
+    from game.theater import ControlPoint
 
     from .aircraft.flightdata import FlightData
     from .luagenerator import LuaData, LuaItem
@@ -63,6 +71,21 @@ NAVAL_GUN_SHIP_CLASSES = frozenset(
     }
 )
 
+#: Control-point types that host aircraft and so can be harassed on the ramp. Carriers /
+#: LHAs (their own ControlPointType) and FOBs (ground-only, no parking) are excluded -- the
+#: siege modelled here is 122 mm rockets / 82 mm mortars walking a land field's ramp.
+HARASSABLE_CP_TYPES = frozenset(
+    {
+        ControlPointType.AIRBASE,
+        ControlPointType.FARP,
+    }
+)
+
+#: How near a front line a field must be to count as "forward / contested" and so eligible
+#: for harassment. A field deeper in the rear than this is a safe area and is never shelled
+#: (design rule 4: forward-only by construction, like NGFS's gun-range gate). ~200 km.
+HARASSMENT_FRONT_REACH_M = 200_000.0
+
 
 def populate_vietnam_ops_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
@@ -80,6 +103,7 @@ def populate_vietnam_ops_lua(
         or settings.vietnam_flak_gauntlet
         or settings.vietnam_naval_gunfire
         or settings.vietnam_convoy_interdiction
+        or settings.vietnam_airbase_harassment
     ):
         return
 
@@ -93,6 +117,8 @@ def populate_vietnam_ops_lua(
         _populate_naval_gunfire(vietnam, game)
     if settings.vietnam_convoy_interdiction:
         _populate_convoy_interdiction(vietnam, game)
+    if settings.vietnam_airbase_harassment:
+        _populate_airbase_harassment(vietnam, game)
 
 
 def _populate_arc_light(vietnam: "LuaItem", mission_data: "MissionData") -> None:
@@ -224,6 +250,87 @@ def _populate_convoy_interdiction(vietnam: "LuaItem", game: "Game") -> None:
         # pydcs Point: x = north, y = east (the Lua maps these onto the DCS world vec2).
         record.add_key_value("x", str(point.x))
         record.add_key_value("y", str(point.y))
+
+
+def _client_spawn_control_points(game: "Game") -> set["ControlPoint"]:
+    """Fields a player flight uses this mission -- the hard *never-harass* exclude set.
+
+    Walks every planned package on both sides for flights carrying at least one client, and
+    collects each such flight's departure, divert, and arrival control points. This is the
+    #1 anti-grief guarantee (design rule 1): a player cold-and-dark on the ramp, or taxiing
+    in to recover, must never be shelled. Mirrors the ``cull_farp_statics`` walk in
+    ``tgogenerator.py`` (``ato.packages -> flights -> squadron.location``).
+    """
+    excluded: set["ControlPoint"] = set()
+    for coalition in game.coalitions:
+        for package in coalition.ato.packages:
+            for flight in package.flights:
+                if flight.client_count <= 0:
+                    continue
+                excluded.add(flight.departure)
+                excluded.add(flight.arrival)
+                if flight.divert is not None:
+                    excluded.add(flight.divert)
+    return excluded
+
+
+def _populate_airbase_harassment(vietnam: "LuaItem", game: "Game") -> None:
+    """Emit each forward, occupied airfield/FARP for standoff harassment fire.
+
+    Recreates the near-constant rocket/mortar siege of the Vietnam-era airfields (Bien Hoa,
+    Da Nang, the Khe Sanh strip). For every occupied land airfield/FARP that is *forward*
+    (within :data:`HARASSMENT_FRONT_REACH_M` of a front) and is **not** a player-spawn field
+    this mission, emit its name + parking centroid + coalition; the runtime periodically
+    lands a small, dispersed impact cluster near the ramp. Client-spawn fields are filtered
+    out here (never emitted -- the authoritative anti-grief guarantee) and are additionally
+    surfaced under ``excludedFields`` for the Lua to log/double-guard.
+
+    Forward-only by construction (design rule 4): a campaign with no front, or no field near
+    one, yields no ``fields`` node and the plugin no-ops -- so a deep-rear or peacetime
+    mission is never shelled.
+    """
+    fronts = list(game.theater.conflicts())
+    if not fronts:
+        return
+
+    excluded = _client_spawn_control_points(game)
+
+    fields: list[tuple[str, float, float, str]] = []
+    for cp in game.theater.controlpoints:
+        if cp.cptype not in HARASSABLE_CP_TYPES:
+            continue
+        if cp.captured.is_neutral:
+            continue
+        if cp in excluded:
+            continue
+        distance = min(
+            front.position.distance_to_point(cp.position) for front in fronts
+        )
+        if distance > HARASSMENT_FRONT_REACH_M:
+            continue
+        color = "BLUE" if cp.captured.is_blue else "RED"
+        fields.append((cp.full_name, cp.position.x, cp.position.y, color))
+
+    if not fields:
+        return
+
+    harass = vietnam.add_item("airbaseHarassment")
+    fields_item = harass.add_item("fields")
+    for name, x, y, color in fields:
+        record = fields_item.add_item()
+        record.add_key_value("name", name)
+        # pydcs Point: x = north, y = east. The Lua maps these onto the DCS world vec3
+        # ({ x = north, y = alt, z = east }) when it places the impacts.
+        record.add_key_value("x", str(x))
+        record.add_key_value("y", str(y))
+        record.add_key_value("coalition", color)  # "BLUE" / "RED", the field's owner.
+
+    # Defense-in-depth: the runtime already only sees eligible fields, but emitting the
+    # names it must never touch lets the Lua log the guard and skip any name match.
+    if excluded:
+        excluded_item = harass.add_item("excludedFields")
+        for excluded_cp in excluded:
+            excluded_item.add_item().set_value(excluded_cp.full_name)
 
 
 def _target_position(flight: "FlightData") -> tuple[float, float] | None:

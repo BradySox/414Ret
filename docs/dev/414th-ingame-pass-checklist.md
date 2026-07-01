@@ -1938,6 +1938,23 @@ so the two docs don't drift.
   `useOpenNewSupplyRoutePackageDialogMutation` hook or the `contextmenu` handler is wrong); a JS error in the
   client console; the dialog opens on the wrong CP. Needs the CI client rebuild (hand-edited generated API).
 
+### L8 — Airbase harassment (rocket/mortar siege) · §36 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the emitter — a
+  forward, occupied airfield/FARP is emitted; a rear / neutral / carrier / off / no-front field yields no node;
+  a **lone client-spawn field yields no node** and a client-spawn field alongside an enemy field is excluded
+  from the targets but listed under `excludedFields`. The scheduled per-field loop, the grace period, the
+  randomized cadence, and the `trigger.action.explosion` placement are runtime Lua, exercisable only live.
+- **Setup:** A Vietnam campaign with **Vietnam Ops → Airbase harassment** on and a forward, **AI-occupied**
+  enemy airfield/FARP within ~200 km of the front (Da Nang / Khe Sanh laydowns qualify). Fly (or fast-forward)
+  past the startup grace period (default 5 min) and watch the enemy ramp.
+- **Pass:** After the grace period, small dispersed explosion barrages land near the enemy field's parking area
+  on a sporadic cadence, with an "Incoming — standoff fire on <field>" cue to the owning side. **Your own spawn
+  field(s) are never touched.** `dcs.log` shows "Airbase harassment armed for N field(s)" and no Lua errors.
+- **Fail signature (the #1 watch-item): ANY impact on or near a client-spawn field** — the anti-grief guarantee
+  is broken. Also: fire during the grace window; a steady metronome instead of a sporadic cadence; impacts
+  wildly off the ramp (centroid/dispersion wrong); too lethal to parked jets (dial power/dispersion down, as
+  §33 flak needed); a `trigger.action.explosion` / `land.getHeight` / `timer.scheduleFunction` Lua error.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

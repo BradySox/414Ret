@@ -1,10 +1,11 @@
 # 414th Vietnam Ops — Airbase harassment (sapper / mortar / rocket) — design note
 
-**Status:** **DESIGN ONLY — not built.** Scoped during the ground-start modernization pass
-(2026-06-28). This is the next candidate Vietnam Ops feature after the convoy / Super Gaggle
-phases; it has no code, toggle, or registry entry yet. Build it on its own branch with an
-in-game pass before registration, like every other suite feature.
-**Date:** 2026-06-28
+**Status:** **LANDED (2026-07-01) — CLAUDE.md §36.** Built as designed: the `vietnam_airbase_harassment`
+toggle, the `_populate_airbase_harassment` emitter (+ `_client_spawn_control_points` exclude walk), the
+`vietnamops` plugin runtime, the plugin options, the registry (§36), and emitter tests are all in. The
+player-spawn exclusion + startup grace were treated as hard requirements (see "critical design tension").
+**Still owed: an in-game pass** (checklist L8) — the runtime Lua can't be exercised headless.
+**Date:** 2026-06-28 (designed) · 2026-07-01 (landed)
 **Related:** [`414th-vietnam-ops-notes.md`](414th-vietnam-ops-notes.md) (the suite this belongs
 to — read its "Architecture posture" + "settings page" sections first; this feature is **§F** of
 that suite), [`414th-tic-dynamic-fronts-notes.md`](414th-tic-dynamic-fronts-notes.md) (the

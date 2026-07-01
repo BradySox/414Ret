@@ -464,6 +464,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "vietnam_flak_gauntlet",
                     "vietnam_convoy_interdiction",
+                    "vietnam_airbase_harassment",
                     "vietnam_super_gaggle",
                 ],
             ),
@@ -2034,6 +2035,19 @@ class Settings:
             "Armed Recon missions over enemy road corridors find a moving supply convoy that "
             "scatters and hides when hunted; destroying it dents enemy logistics. Models Ho "
             "Chi Minh Trail / Steel Tiger interdiction."
+        ),
+        default=False,
+    )
+    vietnam_airbase_harassment: bool = boolean_option(
+        "Airbase harassment (rocket/mortar siege)",
+        VIETNAM_OPS_PAGE,
+        "Battlefield & interdiction",
+        detail=(
+            "Forward, occupied airfields draw sporadic standoff rocket/mortar fire near the "
+            "ramp -- the near-constant siege of Bien Hoa/Da Nang/Khe Sanh -- so the rear "
+            "isn't a safe area. Your own active spawn fields are never targeted, and a "
+            "startup grace period protects a cold-starting player. Mostly atmospheric with a "
+            "modest, tunable bite."
         ),
         default=False,
     )

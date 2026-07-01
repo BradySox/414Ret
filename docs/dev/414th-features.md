@@ -2484,3 +2484,66 @@ route instead of requiring the player to know where to look.
   fragments to one; picking multiple / rotating corridors is a possible future refinement.
 - **Blue-side symmetry not built:** the emitter hard-picks the RED supply road (the human fights red in the
   Vietnam case). A blue convoy for a red-player campaign would be a follow-on.
+
+## §36 — Airbase harassment (rocket/mortar siege) (Vietnam Ops suite)
+
+The fifth **Vietnam Ops suite** feature (design note `414th-vietnam-airbase-harassment-notes.md`, §F). The
+Vietnam air war was fought as much *on the ground at the airbase* as in the air — Bien Hoa, Tan Son Nhut,
+Da Nang, Chu Lai, and the Khe Sanh strip were under near-constant 122 mm rocket / 82 mm mortar / sapper
+standoff attack for years. None of that exists in the base engine: an occupied airbase is a perfectly safe
+rear area until the FLOT reaches it. This makes the forward strips feel contested — the missing other half of
+the "the rear isn't safe" picture that §33 (flak over the *target*) started.
+
+### How it works
+
+**Python picks the eligible fields (`vietnamopsluadata.py` `_populate_airbase_harassment`).** For every land
+airfield/FARP control point it keeps only those that are:
+
+- **an airfield or FARP** (`HARASSABLE_CP_TYPES = {AIRBASE, FARP}`) — carriers/LHAs (their own control-point
+  types) and ground-only FOBs are skipped; the siege modelled here is fire on a land ramp,
+- **occupied** (`not cp.captured.is_neutral`),
+- **forward** — within `HARASSMENT_FRONT_REACH_M` (≈ 200 km) of a front (`game.theater.conflicts()`), so a
+  deep-rear field is never shelled; **no front ⇒ no node ⇒ the plugin no-ops** (forward-only by construction,
+  the same posture as NGFS's gun-range gate), and
+- **not a player-spawn field this mission** — the departure, arrival, or divert of any client flight, from
+  `_client_spawn_control_points` (mirrors the `cull_farp_statics` walk in `tgogenerator.py`). This is the #1
+  anti-grief guarantee: it is enforced **in Python** (an excluded field never enters the emitted `fields`
+  list), and the exclude set is *also* emitted under `excludedFields` as a cheap Lua-side double-guard.
+
+It emits `dcsRetribution.VietnamOps.airbaseHarassment = { fields = { {name,x,y,coalition}, … }, excludedFields
+= { … } }` (the coalition is the field's owner, for the "incoming" cue and symmetry).
+
+**The `vietnamops` plugin runs the siege at runtime** (vanilla DCS `trigger.action.explosion`, `pcall`-guarded):
+- One scheduled loop per emitted field. The **first** event fires only after a **startup grace period**
+  (default 300 s) so nobody is shelled mid-alignment, then repeats on a **randomized cadence** (default ~240 s
+  ± 50 %) — historical harassment was sporadic, not a metronome.
+- Each event lands a short **barrage** (default 5 impacts, walked 0.4 s apart) scattered uniformly over a
+  **dispersion disc** (default 260 m) around the parking centroid, at a small **per-impact power** (default 8)
+  — mostly noise/smoke with a modest, tunable bite. A direct hit on a parked static is a bonus, not the goal.
+- A defensive Lua re-check skips any field whose name is in `excludedFields` (belt-and-suspenders over the
+  Python filter), and announces "Incoming — standoff fire on <field>" to the owning coalition.
+- Tunables (plugin `specificOptions`): interval, rounds/event, dispersion radius, per-blast power, grace.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_airbase_harassment`, `_client_spawn_control_points`, `HARASSABLE_CP_TYPES`, `HARASSMENT_FRONT_REACH_M`) |
+| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (airbase-harassment section) |
+| Setting / options | `game/settings/settings.py` (`vietnam_airbase_harassment`); plugin `specificOptions` (interval/rounds/dispersion/power/grace) |
+| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (forward occupied field emitted; rear / neutral / carrier / off / no-front → no node; a lone client-spawn field yields no node; a client-spawn field is excluded from targets but listed under `excludedFields`) |
+
+### Gotchas / deferred
+
+- **Never grief the cold-starting player.** The player-spawn exclusion + the startup grace period are **hard
+  requirements**, not options (design note "critical design tension"). The Python filter is authoritative; the
+  Lua exclude re-check and grace period are additional layers. The #1 in-game fail signature is any impact on
+  or near a client-spawn field — watch for it on the pass (checklist L8).
+- **Runtime is unflown (checklist L8).** The Lua passes the `luac5.1 -p` syntax gate but the scheduled loop,
+  the explosion placement, and the grace/cadence timing can't be exercised headless — it needs a cockpit pass.
+  Tune power/dispersion down if it reads as too lethal (as §33 flak did on its first audience pass).
+- **Symmetric but forward-gated.** Both sides' forward fields qualify; a theater with no contested field near a
+  front emits nothing. Optional low-rate harassment of the player's *own* forward strips (accepting the grief
+  risk for immersion) was deliberately deferred — v1 excludes every player-spawn field unconditionally.
+- **Runtime-cosmetic only.** Destroyed parking statics are runtime damage (like §33/§34); there is no BDA
+  feedback into the campaign model.

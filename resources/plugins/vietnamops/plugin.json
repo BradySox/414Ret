@@ -97,6 +97,31 @@
             "nameInUI": "Convoy interdiction: truck DCS type",
             "mnemonic": "convoyTruckType",
             "defaultValue": "Ural-375"
+        },
+        {
+            "nameInUI": "Airbase harassment: seconds between events per field (randomized)",
+            "mnemonic": "harassIntervalS",
+            "defaultValue": 240
+        },
+        {
+            "nameInUI": "Airbase harassment: impacts per event (barrage)",
+            "mnemonic": "harassRoundsPerEvent",
+            "defaultValue": 5
+        },
+        {
+            "nameInUI": "Airbase harassment: impact dispersion radius (m)",
+            "mnemonic": "harassDispersionM",
+            "defaultValue": 260
+        },
+        {
+            "nameInUI": "Airbase harassment: per-impact power (small = mostly noise)",
+            "mnemonic": "harassBlastPower",
+            "defaultValue": 8
+        },
+        {
+            "nameInUI": "Airbase harassment: startup grace period, no fire (s)",
+            "mnemonic": "harassGraceS",
+            "defaultValue": 300
         }
     ],
     "scriptsWorkOrders": [],

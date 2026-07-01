@@ -220,8 +220,11 @@ and selected later upstream fixes.
   automatically. The fourth is **convoy interdiction (Steel Tiger)**: a moving enemy truck column rolls
   the supply road behind the front (the Ho Chi Minh Trail), hunt it down on an Armed Recon — it goes to
   ground under cover when you close in, and a fresh column rolls once the old one is wiped. **Right-click
-  an enemy supply route** on the map to frag the interdiction package straight onto that corridor.
-  (Hilltop resupply is still on the way.) See
+  an enemy supply route** on the map to frag the interdiction package straight onto that corridor. The fifth
+  is **airbase harassment**: forward enemy airfields draw sporadic rocket/mortar fire near the ramp — the
+  near-constant siege of Bien Hoa, Da Nang, and the Khe Sanh strip — so the rear stops feeling like a safe
+  area. *Your* active spawn fields are never targeted, and a startup grace period keeps it off while you're
+  still starting up. (Hilltop resupply is still on the way.) See
   [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md).
 - A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 NATO
   counteroffensive, built for the 414th. The Warsaw Pact opened the war by overrunning the

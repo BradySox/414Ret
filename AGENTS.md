@@ -121,8 +121,8 @@ file. This guide is the map; those are the territory.
     cargo run the engine lacks),
     `414th-vietnam-airbase-harassment-notes.md` (**Vietnam Ops §F — airbase harassment**: scoped-only
     sapper/mortar/rocket standoff fire on opposing-occupied fields, following the §33 flak runtime
-    pattern; hard requirement = never target a player-spawn field + a startup grace period; no code yet,
-    build on its own branch with an in-game pass),
+    pattern; hard requirement = never target a player-spawn field + a startup grace period. **LANDED** as
+    CLAUDE.md §36 — the emitter + plugin runtime are in; needs an in-game pass, checklist L8),
     `414th-vietnam-retribution-notes.md` (**"Vietnam Retribution" mode** — the *framing* layer the Ops
     suite lives inside: three thin layers over the one engine — a New Game "Vietnam" shell + content
     filter + a doctrine profile (`VIETNAM_DOCTRINE`) that renames taskings (MiGCAP/Iron Hand/Alpha
@@ -485,8 +485,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     complete spawn→drive→wipe→respawn cycle, no `coalition.addGroup` Lua errors; halt-under-threat not
     separately confirmed). Speed/scatter-range/respawn/
     truck-count/type are plugin options. (`game/missiongenerator/vietnamopsluadata.py`,
-    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §35 — **note: §35 has no
-    matching section in 414th-features.md yet, a pre-existing doc gap**; checklist L6.)
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §35; checklist L6.)
     **Right-click planning (added per playtest):** the player **right-clicks an enemy supply route** on the
     map to frag the interdiction package — `SupplyRoute.tsx` `contextmenu` → `POST /qt/create-package/supply-route/{route_id}`
     → `interdiction_target_for_route_id` resolves the route (its id now encodes the two CP ids) to the enemy
@@ -496,6 +495,23 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     locally). (`game/server/qt/routes.py`, `game/server/supplyroutes/models.py`,
     `client/src/components/supplyroute/SupplyRoute.tsx`; test `tests/server/test_supply_route_interdiction.py`;
     checklist L7 — needs an in-app pass + the CI client rebuild.)
+36. **Airbase harassment (rocket/mortar siege)** — the fifth **Vietnam Ops suite** feature (design note
+    `414th-vietnam-airbase-harassment-notes.md`, §F): forward, opposing-occupied airfields draw sporadic
+    standoff rocket/mortar fire near the ramp, recreating the near-constant siege of Bien Hoa/Da Nang/the Khe
+    Sanh strip — "the rear isn't a safe area." Same shape as §33 flak: Python emits a small target list and the
+    `vietnamops` plugin runs the runtime. `_populate_airbase_harassment` (`vietnamopsluadata.py`) walks the
+    airfield/FARP control points and emits each one that is **occupied** (non-neutral), **forward** (within
+    `HARASSMENT_FRONT_REACH_M` ≈ 200 km of a front — so a deep-rear or peacetime field is never shelled; no
+    front ⇒ no node ⇒ plugin no-ops), and **not a player-spawn field this mission** (departure/arrival/divert of
+    any client flight — the hard anti-grief guarantee, filtered in Python so an excluded field can never become
+    a target; the exclude set is also emitted under `excludedFields` as a Lua-side double-guard). Each record is
+    `{ name, x, y, coalition }`. The plugin schedules a per-field loop that, **after a startup grace period**
+    (default 300 s, so nobody is shelled mid-alignment), lands a small dispersed `trigger.action.explosion`
+    barrage near the parking centroid on a randomized cadence — mostly noise/smoke with a modest, tunable bite,
+    not precision counter-air. Symmetric (whichever side's forward fields qualify). Plugin options: interval,
+    rounds/event, dispersion, per-blast power, grace. (`game/missiongenerator/vietnamopsluadata.py`,
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §36, checklist L8 — needs an
+    in-game pass.)
 
 ---
 

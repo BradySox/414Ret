@@ -99,6 +99,16 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
+    layer, active per turn-range, that biases the auto-planner's offensive intent + shows in
+    the UI/kneeboard; three authoring tiers over one `CampaignPhase` object — **Tier 0
+    inference is the default for all 66 campaigns** (a turn-by-turn classifier reads live IADS
+    ratio / air threat / front momentum / territory via existing accessors → rollback →
+    interdiction → offensive, with hysteresis), Tier 1 = YAML-tuned, Tier 2 = authored arcs
+    for the 3 hand-built campaigns; rides the `VIETNAM_DOCTRINE` override precedent, composes
+    with doctrine, never a commander rewrite; reactive defense stays deterministic (§17
+    boundary). Includes a plan to headless-load all 66 `.miz` and batch-**draft** phase plans
+    (pilot 6 → fan out). Design only; P0 plumbing not started),
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),

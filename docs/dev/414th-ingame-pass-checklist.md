@@ -2102,7 +2102,7 @@ so the two docs don't drift.
   short of a base it should capture (disarm/gating regression — the clamp must clear when the setting is
   off). Knob: `STATIC_FRONT_BAND` in `game/fourteenth/static_front.py`.
 
-### M3 — Campaign phase arc & planner emphasis · §40 · ☐ UNTESTED (built 2026-07-01; classifier/hysteresis/emphasis fully unit-tested, the lived arc + planner feel need a played campaign; client ribbon needs the CI rebuild)
+### M3 — Campaign phase arc & planner emphasis · §40 · ◐ PARTIAL (2026-07-01 live Khe Sanh session: ribbon + arc expander + phase copy render correctly on the rebuilt client, authored opening = Rolling Thunder as expected; still owed = a Tier-0 (non-Vietnam) campaign's inferred arc pacing + visible ATO tilt across a transition)
 - **Headless adjudication:** the §3.2 thresholds (SAM floor, peer guard, offensive gate), §3.3 hysteresis
   (dwell, monotonic-forward, the asymmetric regression margin), the §3.4 legibility string, the update
   gating/idempotence, and the `PlanNextAction` reactive-prefix/emphasis contract are all locked in
@@ -2130,7 +2130,7 @@ so the two docs don't drift.
   `campaign_status` missing from `/game`); a transition announces every turn (message-once regression).
   Knobs: the `ROLLBACK_SAM_FLOOR`/`IADS_*`/`PHASE_MIN_DWELL_TURNS` constants in `game/fourteenth/phases.py`.
 
-### M4 — ROE escalation arc: zones, target release, will coupling (campaign layer W4) · §40 · ☐ UNTESTED (built 2026-07-01; arc/gate/violation logic fully unit-tested, the lived Rolling Thunder → Linebacker II experience needs a played Vietnam campaign; zones layer needs the CI client rebuild)
+### M4 — ROE escalation arc: zones, target release, will coupling (campaign layer W4) · §40 · ◐ PARTIAL (2026-07-01 live Khe Sanh playthrough, session jolly-einstein: **phase-1 AI obedience VERIFIED** — turn-1 save `Hanoi.retribution` adjudicated headless: 10 BLUE packages (1 CAS / 5 BAI / 3 STRIKE / 1 CSAR), **0 ROE violations**, 34 legal vs 42 locked red TGOs, no planner starvation; **scheduled Halt transition VERIFIED in-game** — turn 8 entered The Bombing Halt on the min_turn pin, zone expanded 20→28 NM, tooltip detail + "Eases at Linebacker (~turn 11)" correct. Still owed = the Linebacker release redirect (STRIKE/OCA onto freed classes ~turn 11), the player-violation will penalty firing live, and Linebacker II zone removal)
 - **Headless adjudication:** authored-arc parsing (all 4 Vietnam YAMLs guarded in
   `tests/test_vietnam_content.py`), sequential/scheduled/will-accelerated advancement, the planner ROE gate
   (zone + locked class), and the violation counter are locked in `tests/fourteenth/test_phases.py`. What CI

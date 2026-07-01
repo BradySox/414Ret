@@ -272,7 +272,9 @@ and selected later upstream fixes.
   **RESTRICTED** badge you can see but may not hit — the defining Rolling Thunder frustration — and the AI
   planner obeys. *You* can always break the rules; the strike goes through, and Political Will pays the bill.
   Escalation arrives on schedule or **faster the more your will bleeds**, until Linebacker II takes the gloves
-  off entirely.
+  off entirely. And the MiGs fight like it's 1968: Vietnam-era interceptors fly **GCI hit-and-run** — they
+  scramble late, slash your strike package close to the target, refuse to chase far from their field, and go
+  home after one pass — while their sanctuary bases stay untouchable until the escalation lifts.
 - A new **Steel Tiger: Trail Interdiction** campaign — the air war to strangle the **Ho Chi Minh Trail** in
   1968. An *interdiction*-focused Vietnam scenario on the Yankee Station laydown, with the whole Vietnam Ops
   suite on and **convoy interdiction as the centrepiece**: the moving trail column behind the enemy line is

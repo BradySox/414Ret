@@ -131,6 +131,28 @@ the unpickler (`persistency.py` `_handle_flight_type`) routes legacy values thro
 `FlightType.INTERCEPTION` is the only remaining legacy A2A type and is kept for upstream save
 compatibility.
 
+### GCI-ambush posture (Vietnam campaign layer W5)
+
+The Vietnam adaptation of the QRA dispatcher (will-note §6; checklist **M5**). `Doctrine.gci_ambush`
+(True only on `VIETNAM_DOCTRINE`) flips a side's dispatcher from the modern stand-and-fight duel to the
+era's GCI hit-and-run:
+
+- **Python** (`dispatcher_tuning` in `game/missiongenerator/interceptluadata.py`, called per side in
+  `spawn_intercept_templates`): the engage radius shrinks to the doctrine's `cap_engagement_range`
+  (22 NM — the P1c close-fight number) and the scramble (GCI) radius caps at `AMBUSH_GCI_RADIUS_NM`
+  (40 NM) so the MiGs launch **late** and slash the strike package near its target instead of meeting
+  the sweep at the border. A tighter user setting always wins (min). The `ambush` flag rides each
+  `InterceptEntry` (`ambushPosture` in the Lua table).
+- **Lua** (`intercept-config.lua`): an ambush coalition's dispatcher gets the hit-and-run leash —
+  `SetDisengageRadius(50 NM)` (Moose aborts the engagement when the defender is that far from home) and
+  `SetDefaultFuelThreshold(0.35)` (one slash, then RTB to re-arm) versus Moose's 162 NM / 0.15 defaults.
+- **Sanctuary basing** falls out of the W4 restricted zones for free: an airfield inside an active zone
+  can't be OCA'd (test-locked in `tests/fourteenth/test_phases.py`), so the MiGs are safe on the ground
+  until the arc's escalation lifts the zone — the Rolling Thunder problem, on purpose.
+- Symmetric by doctrine (a Vietnam-doctrine blue side gets the same posture); every other doctrine
+  passes the QRA settings through untouched (test-locked in `tests/test_vietnam_doctrine.py` +
+  `tests/missiongenerator/test_interceptluadata.py`).
+
 ---
 
 ## 2. JAMMING flight type — C-130J EW/ISR

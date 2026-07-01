@@ -117,3 +117,16 @@ def test_player_alert_entry_is_serialized() -> None:
     serialized = alerts.serialize()
     assert "Batumi" in serialized
     assert "scrambleRadiusNm" in serialized
+
+
+def test_ambush_posture_is_serialized() -> None:
+    # W5 GCI-ambush: the flag rides each record so the Lua can leash the
+    # coalition's defenders; default (no ambush) serializes false.
+    root = LuaData("dcsRetribution")
+    populate_intercept_lua(root, [_entry(ambush=True)])
+    serialized = root.serialize()
+    assert 'ambushPosture = "true"' in serialized
+
+    root_default = LuaData("dcsRetribution")
+    populate_intercept_lua(root_default, [_entry()])
+    assert 'ambushPosture = "false"' in root_default.serialize()

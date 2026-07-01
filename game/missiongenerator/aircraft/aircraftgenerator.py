@@ -29,6 +29,7 @@ from game.missiongenerator.interceptluadata import (
     DEFAULT_BACKSTOP_EWR_TYPE,
     InterceptEntry,
     PlayerAlertEntry,
+    dispatcher_tuning,
 )
 from game.missiongenerator.missiondata import MissionData
 from game.squadrons.intercept_reserve import (
@@ -237,8 +238,8 @@ class AircraftGenerator:
                     break
 
     def spawn_intercept_templates(self) -> None:
-        engagement_range_nm = self.game.settings.qra_engagement_range_nm
-        gci_max_radius_nm = self.game.settings.qra_gci_max_radius_nm
+        setting_engagement_nm = self.game.settings.qra_engagement_range_nm
+        setting_gci_nm = self.game.settings.qra_gci_max_radius_nm
         comms_enabled = self.game.settings.qra_comms_enabled
 
         for control_point in self.game.theater.controlpoints:
@@ -246,6 +247,14 @@ class AircraftGenerator:
                 continue
 
             base_is_blue = control_point.captured.is_blue
+            # GCI-ambush posture (Vietnam W5): a gci_ambush doctrine shrinks this
+            # side's engage/scramble radii to the era's late, close GCI slash and
+            # flags the Lua-side hit-and-run leash. Other doctrines pass the
+            # settings through unchanged.
+            doctrine = self.game.coalition_for(control_point.captured).doctrine
+            engagement_range_nm, gci_max_radius_nm, ambush = dispatcher_tuning(
+                doctrine, setting_engagement_nm, setting_gci_nm
+            )
 
             for squadron in control_point.squadrons:
                 if not squadron.capable_of(FlightType.BARCAP):
@@ -337,6 +346,7 @@ class AircraftGenerator:
                             backstop_ewr_type=DEFAULT_BACKSTOP_EWR_TYPE[
                                 "BLUE" if base_is_blue else "RED"
                             ],
+                            ambush=ambush,
                         )
                     )
                 finally:

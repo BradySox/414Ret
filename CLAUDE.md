@@ -127,9 +127,12 @@ file. This guide is the map; those are the territory.
     escalation layer (authored `phases:` arcs ×4 Vietnam campaigns — Rolling Thunder → Bombing
     Halt → Linebacker → Linebacker II — with `restricted_zones` soft-enforced by will penalties,
     `locked_targets` target-release gates + RESTRICTED badges, the red dashed map layer, and
-    will-coupled `advance_when` escalation; in-game pass = checklist M4). W5 outstanding. The
+    will-coupled `advance_when` escalation; in-game pass = checklist M4); **W5 landed** = the
+    GCI-ambush adaptation (`Doctrine.gci_ambush` → late-scramble/close-engage dispatcher tuning
+    + the intercept Lua's hit-and-run leash; sanctuary basing falls out of the W4 zones;
+    checklist M5). **The campaign-layer arc W0–W5 is COMPLETE.** The
     Vietnam pieces stay default-off (`vietnam_political_will`/`vietnam_static_front` gated); no
-    debrief-schema/Lua changes W1–W4),
+    debrief-schema changes anywhere in the arc),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
     layer, active per turn-range, that biases the auto-planner's offensive intent + shows in
     the UI/kneeboard; three authoring tiers over one `CampaignPhase` object — **Tier 0
@@ -298,7 +301,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    Phase-3 **scramble cue** (`PlayerAlertEntry` → `dcsRetribution.Intercept.PLAYER_ALERT` →
    `intercept-config.lua`) calls the player to scramble when a raid closes inside the GCI
    radius + a lead margin. Design note `414th-qra-player-manning-notes.md`; checklist A3/A4
-   (need an in-game pass).
+   (need an in-game pass). **GCI-ambush posture** (Vietnam campaign layer W5):
+   `Doctrine.gci_ambush` (VIETNAM only) makes a side's dispatcher fly era hit-and-run GCI —
+   engage radius shrunk to the doctrine's 22 NM cap range, scramble capped at 40 NM (late
+   launch, slash the strike package near its target), and a Lua-side leash (disengage 50 NM
+   from home + RTB at 35 % fuel) so MiGs hit once and recover; other doctrines pass the QRA
+   settings through unchanged (`dispatcher_tuning` in `interceptluadata.py`; checklist M5).
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +

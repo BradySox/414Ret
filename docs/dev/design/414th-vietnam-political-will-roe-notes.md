@@ -21,7 +21,13 @@ drain will sharply via `count_roe_violations` + `BLUE_ROE_VIOLATION`), `target_r
 per-phase `locked_targets` classes (RESTRICTED badge on the TGO tooltip; sanctuary airfields
 fall out of the zones), the red dashed map layer, and the authored **Rolling Thunder → Bombing
 Halt → Linebacker → Linebacker II** arcs in all 4 Vietnam campaigns (Tbilisi/Sukhumi/Saipan
-play Hanoi per laydown; in-game pass = checklist M4). W5 outstanding.
+play Hanoi per laydown; in-game pass = checklist M4). **W5 LANDED** — the §6 GCI-ambush
+adaptation: `Doctrine.gci_ambush` (VIETNAM only) shrinks the QRA dispatcher's engage radius
+to `cap_engagement_range` + caps the scramble radius at 40 NM (`dispatcher_tuning` in
+`interceptluadata.py`, per-side in `spawn_intercept_templates`), and the intercept Lua leashes
+ambush defenders (disengage 50 NM from home + RTB at 35 % fuel — hit, run, recover); sanctuary
+basing falls out of the W4 zones (test-locked). In-game pass = checklist M5.
+**The campaign-layer arc W0–W5 is COMPLETE.**
 This is the **spec of record** for the month-scale
 rework that makes Vietnam mode different at the *campaign* layer, approved 2026-07-01:
 **(1) a political-will economy with a negotiation victory** and **(2) an ROE / Route-Package
@@ -185,11 +191,13 @@ features (CSAR, POW, flak attrition, convoy) matter immediately, before phases e
   `Debriefing` already carries (the lesson of §35/§37: the campaign layer is where the
   accounting belongs).
 
-## 6. GCI-ambush MiGs + sanctuaries (thin — adaptation, not construction)
+## 6. GCI-ambush MiGs + sanctuaries (thin — adaptation, not construction) — ✅ LANDED (W5)
 
 User call 2026-07-01: "mostly there with QRA, probably just needs adapting." Agreed. The QRA
 reserve already feeds the Moose `AI_A2A_DISPATCHER` (§1) — scramble-on-detection *is* the
-GCI model. The Vietnam adaptation, deferred to W5:
+GCI model. The Vietnam adaptation, landed as W5 exactly per the plan below
+(`Doctrine.gci_ambush` → `dispatcher_tuning` → the intercept plugin's hit-and-run leash;
+sanctuary basing verified test-side off the W4 zones; checklist M5):
 
 - **Dispatcher posture per doctrine:** Vietnam-doctrine squadrons get ambush parameters —
   short engagement radius (the P1c 22 NM already helps), hit-and-run disengage (engage

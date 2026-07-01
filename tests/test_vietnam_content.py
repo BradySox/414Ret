@@ -75,6 +75,7 @@ _CH_ARMOR_CAMPAIGNS = [
     "khe_sanh_niagara.yaml",
     "1968_Yankee_Station.yaml",
     "operation_velvet_thunder.yaml",
+    "steel_tiger.yaml",
 ]
 
 
@@ -184,18 +185,36 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_arc_light": True,
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": False,  # inland
+        "vietnam_convoy_interdiction": True,
+        "vietnam_airbase_harassment": True,  # the besieged-strip story
+        "vietnam_super_gaggle": True,  # the cut-off-garrison resupply story
         "restrict_weapons_by_date": True,
     },
     "1968_Yankee_Station.yaml": {
         "vietnam_arc_light": True,
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": True,  # coastal
+        "vietnam_convoy_interdiction": True,  # the campaign's own Ho Chi Minh Trail
+        "vietnam_airbase_harassment": True,
+        "vietnam_super_gaggle": True,
         "restrict_weapons_by_date": True,
     },
     "operation_velvet_thunder.yaml": {
         "vietnam_arc_light": True,
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": False,
+        "vietnam_convoy_interdiction": True,
+        "vietnam_airbase_harassment": True,
+        "vietnam_super_gaggle": True,
+        "restrict_weapons_by_date": True,
+    },
+    "steel_tiger.yaml": {
+        "vietnam_arc_light": True,
+        "vietnam_flak_gauntlet": True,
+        "vietnam_naval_gunfire": True,  # shares the coastal Yankee Station laydown
+        "vietnam_convoy_interdiction": True,  # the campaign's centrepiece
+        "vietnam_airbase_harassment": True,
+        "vietnam_super_gaggle": True,
         "restrict_weapons_by_date": True,
     },
 }
@@ -225,6 +244,7 @@ _COMPRESSED_SUPPORT_BUFFERS = [
     "khe_sanh_niagara.yaml",
     "1968_Yankee_Station.yaml",
     "operation_velvet_thunder.yaml",
+    "steel_tiger.yaml",
 ]
 
 
@@ -294,6 +314,73 @@ def test_khe_sanh_carrier_squadrons_carrier_capable(
         f"Carrier squadrons fly airframes that cannot operate from the carrier: "
         f"{offenders}. The current DCS F-4 is land-based only -- use a "
         "carrier-capable type (e.g. F-8E Crusader)."
+    )
+
+
+@pytest.fixture(scope="module")
+def steel_tiger() -> tuple[Campaign, ConflictTheater, CampaignAirWingConfig]:
+    """The Steel Tiger campaign loaded through the real new-game path, once.
+
+    Steel Tiger reuses the 1968 Yankee Station .miz with an interdiction-tilted OOB, so
+    this is the guard that its hand-authored squadron block actually resolves against that
+    theater (every airframe loads, every control-point key exists).
+    """
+    campaign = Campaign.from_file(_CAMPAIGNS / "steel_tiger.yaml")
+    theater = campaign.load_theater(campaign.advanced_iads)
+    air_wing = campaign.load_air_wing_config(theater)
+    return campaign, theater, air_wing
+
+
+def test_steel_tiger_loads_and_populates_bases(
+    steel_tiger: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
+) -> None:
+    # The real regression guard: the campaign loads through the new-game path without
+    # raising (a bad .miz reference or an invalid task string in SquadronConfig.from_data
+    # would raise on the fixture's load), and the interdiction OOB lands squadrons across
+    # many bases. Note a campaign squadron's `aircraft` entry may be a *squadron-name* alias
+    # (e.g. "VAW-122", "43d Strategic Wing"), resolved by name against the squadron-def DB
+    # rather than AircraftType.named -- and an unresolved entry only warns + falls back -- so
+    # this asserts breadth of population, not per-string aircraft resolution.
+    _campaign, _theater, air_wing = steel_tiger
+    total = sum(len(sqs) for sqs in air_wing.by_location.values())
+    assert total > 0, "Steel Tiger produced no squadrons -- a CP key regressed."
+    # 19 control-point keys are configured; if the keys wholesale failed to resolve against
+    # the theater they would be logged-and-skipped and this would collapse. Require most.
+    assert (
+        len(air_wing.by_location) >= 12
+    ), f"Only {len(air_wing.by_location)} bases populated -- control-point keys regressed."
+
+
+def test_steel_tiger_carrier_squadrons_carrier_capable(
+    steel_tiger: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
+) -> None:
+    # Same rule as Khe Sanh: the reused Yankee Station carriers must fly carrier-capable
+    # airframes (never the land-based F-4E). Some carrier entries are squadron-name aliases
+    # (VAW-122 E-2, VS-28 (Tanker) S-3) that AircraftType.named can't resolve -- those carrier
+    # types are all deck aircraft anyway -- so skip a name that isn't a bare airframe and
+    # check the ones that are (A-6E/F-8E/CH-53E here), which is where an errant F-4E would show.
+    _campaign, theater, air_wing = steel_tiger
+    carriers = set(theater.find_carriers()) | set(theater.find_lhas())
+    checked = 0
+    offenders: list[str] = []
+    for control_point, squadrons in air_wing.by_location.items():
+        if control_point not in carriers:
+            continue
+        for squadron in squadrons:
+            for aircraft_name in squadron.aircraft:
+                try:
+                    aircraft = AircraftType.named(aircraft_name)
+                except KeyError:
+                    continue  # a squadron-name alias, resolved via the squadron-def DB
+                checked += 1
+                if not control_point.can_operate(aircraft):
+                    offenders.append(f"{control_point.name}: {aircraft_name}")
+    assert (
+        checked
+    ), "No Steel Tiger carrier airframes were checked -- carrier topology regressed."
+    assert not offenders, (
+        f"Steel Tiger carrier squadrons fly airframes that cannot operate from the "
+        f"carrier: {offenders}."
     )
 
 

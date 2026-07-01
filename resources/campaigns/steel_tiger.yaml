@@ -1,0 +1,423 @@
+---
+name: "Caucasus - Steel Tiger: Trail Interdiction"
+era: vietnam
+theater: Caucasus
+authors: 414th JFG (interdiction reframing of NoGoodNews' 1968 Yankee Station)
+description:
+    <p><strong>The Laotian panhandle, 1968.</strong> Everything the NVA throws at the South
+    moves down the <strong>Ho Chi Minh Trail</strong> — trucks, guns, and men, night after
+    night, under triple-canopy jungle. <strong>Operation Steel Tiger</strong> is the air war
+    to strangle it — round-the-clock armed reconnaissance, Arc Light on the choke points, and
+    fast movers hunting the convoys before the cargo ever reaches the front.</p>
+    <p>This is an <em>interdiction</em> campaign. The trail behind the enemy line is a live,
+    moving target — find the column, kill it, and roll the next one back before it can be
+    replaced. The threat is wall-to-wall <strong>AAA</strong> along the roads, not MiGs; the
+    carriers on Yankee Station and the strips at Da Nang put the ordnance on target, and the
+    B-52 cells out of Guam and Thailand flatten the staging areas.</p>
+    <p><strong>Cut the trail. Pump up "Fortunate Son" and go to work.</strong></p>
+    <p><strong>Note:</strong> shares the 1968 Yankee Station theater laydown; intended to be
+    played with the A-4 Skyhawk, OV-10A Bronco, and Vietnam War Vessels mods active.</p>
+
+recommended_player_faction: USA 1970 Vietnam War
+recommended_enemy_faction: Vietnam 1970
+recommended_start_date: 1968-04-03
+recommended_player_money: 3000
+recommended_enemy_money: 1200
+# Interdiction economy: the point is to out-attrit the trail, so the player runs a healthy
+# sustained income while the enemy's throughput is pinched (every killed convoy hurts).
+recommended_player_income_multiplier: 2.0
+recommended_enemy_income_multiplier: 1.1
+miz: 1968_Yankee_Station.miz
+performance: 2
+version: "10.8"
+advanced_iads: true
+
+settings:
+  # Vietnam Ops period mechanics (era pre-seed). Convoy interdiction is the CENTREPIECE —
+  # the moving trail column is the campaign's signature target. Coastal (Yankee Station
+  # laydown) -> naval gunfire on; Arc Light flattens the staging areas; flak is the trail's
+  # teeth; airbase harassment presses the forward strips; the Super Gaggle resupplies the
+  # cut-off FOB.
+  vietnam_arc_light: true
+  vietnam_flak_gauntlet: true
+  vietnam_naval_gunfire: true
+  vietnam_convoy_interdiction: true
+  vietnam_airbase_harassment: true
+  vietnam_super_gaggle: true
+  restrict_weapons_by_date: true
+  # Compressed theater: tuck AEW&C/tanker orbits close to the front. The 80/70 NM defaults
+  # stand off ~150 km on a small map, sprawling support to the map edge; 25/20 NM holds them
+  # ~75-90 km back. Per-campaign, so large maps are untouched.
+  aewc_threat_buffer_min_distance: 25
+  tanker_threat_buffer_min_distance: 20
+  automate_runway_repair: true
+  automate_front_line_reinforcements: true
+  automate_aircraft_reinforcements: false
+  no_enemy_navy: false
+  desired_player_mission_duration: 60
+  external_views_allowed: true
+  max_frontline_width: 30
+
+  # Mods to be used
+  a4_skyhawk: true
+  ov10a_bronco: true
+  vietnamwarvessels: true
+  russianmilitaryassetspack: true
+  oh_6: true
+  oh_6_vietnamassetpack: true
+  squadron_start_full: true
+
+  # Difficulty
+  player_skill: "Excellent"
+  enemy_skill: "Average"
+  enemy_vehicle_skill: "Average"
+  invulnerable_player_pilots: true
+  manpads: false
+  night_day_missions: NightMissions.OnlyDay
+  labels: "Dot Only"
+
+# Order of battle — tilted toward interdiction. Same control-point keys + airframes as the
+# 1968 Yankee Station laydown (this campaign shares its .miz), with the Navy Intruders and
+# the land-based strikers retasked from area Strike to BAI/CAS armed reconnaissance so the
+# fleet is pointed at the trail rather than fixed targets, and the pure BARCAP thinned (the
+# panhandle is an AAA fight, not a MiG fight).
+squadrons:
+  # US NAVY -- CV-61 Ranger
+  Naval-1:
+    - primary: AEW&C
+      aircraft: [VAW-122]
+      size: 2
+    - primary: Refueling
+      aircraft: [VS-28 (Tanker)]
+      size: 2
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [F-8E Crusader]
+      size: 8
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: Air Assault
+      secondary: any
+      aircraft: [CH-53E]
+      size: 2
+
+  # US NAVY -- CV-59 Forrestal
+  Naval-2:
+    - primary: AEW&C
+      aircraft: [VAW-123]
+      size: 2
+    - primary: Refueling
+      aircraft: [VS-24 (Tanker)]
+      size: 2
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [F-8E Crusader]
+      size: 8
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft: [A-6E Intruder]
+      size: 12
+    - primary: Transport
+      secondary: any
+      aircraft: [CH-53E]
+      size: 2
+
+  # USAF -- Guam (Andersen AFB): the Arc Light cells
+  Guam:
+    - primary: Strike
+      aircraft: [43d Strategic Wing]
+      size: 4
+    - primary: Strike
+      aircraft: [0038 43d Strategic Wing 0038]
+      size: 4
+    - primary: Refueling
+      aircraft: [KC-135 Stratotanker]
+      size: 2
+    - primary: Escort
+      secondary: air-to-air
+      aircraft: [F-4E-45MC Phantom II]
+      size: 12
+    - primary: Transport
+      secondary: any
+      aircraft: [C-130J-30]
+      size: 4
+
+  # Da Nang (Gudauta): the armed-recon / CAS strip that works the trail by day
+  21:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [A-1H Skyraider]
+      size: 12
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [OV-10A Bronco]
+      size: 8
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [A-1H Skyraider]
+      size: 8
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [AH-1W SuperCobra]
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft: [C-130J-30]
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft: [UH-1H Iroquois]
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft: [UH-1H Iroquois]
+      size: 4
+
+  # FOB Khe-Sahn: the cut-off forward strip (Super Gaggle destination)
+  FOB Khe-Sahn:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [AH-1W SuperCobra]
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft: [UH-1H Iroquois]
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft: [UH-1H Iroquois]
+      size: 4
+
+  # Nha Trang (Sochi-Adler)
+  18:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [F-5E Tiger II]
+      size: 8
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [F-100D Super Sabre]
+      size: 12
+    - primary: Transport
+      secondary: any
+      aircraft: [C-130J-30]
+      size: 4
+
+  # Ubon (Thailand): Phantoms + the second Arc Light cell
+  16:
+    - primary: Refueling
+      aircraft: [KC-130]
+      size: 2
+    - primary: Transport
+      secondary: any
+      aircraft: [C-130J-30]
+      size: 4
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [F-5E Tiger II]
+      size: 8
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [F-4E-45MC Phantom II]
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [307th Strategic Wing]
+      size: 4
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft: [0059 307th Strategic Wing]
+      size: 4
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft: [F-4E-45MC Phantom II]
+      size: 12
+
+  # Saigon (Krymsk)
+  15:
+    - primary: Refueling
+      aircraft: [KC-135 Stratotanker]
+      size: 2
+    - primary: Transport
+      secondary: any
+      aircraft: [C-130J-30]
+      size: 4
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [F-4E-45MC Phantom II]
+      size: 8
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft: [F-4E-45MC Phantom II]
+      size: 12
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [F-4E-45MC Phantom II]
+      size: 12
+    - primary: Transport
+      secondary: any
+      aircraft: [CH-47D]
+      size: 4
+
+  # --- NVA / trail order of battle (unchanged from the Yankee Station laydown) ---
+  # Hai Pong (Batumi)
+  22:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [MiG-15bis Fagot]
+      size: 12
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [MiG-19P Farmer-B]
+      size: 12
+
+  # Vinh (Kobuleti)
+  23:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [MiG-15bis Fagot]
+      size: 12
+    - primary: Transport
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+
+  # Thanh Hoa (Senaki)
+  24:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [MiG-15bis Fagot]
+      size: 12
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft: [MiG-19P Farmer-B]
+      size: 12
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft: [MiG-19P Farmer-B]
+      size: 12
+
+  # Hanoi (Kutaisi)
+  25:
+    - primary: BARCAP
+      aircraft: [MiG-15bis Fagot]
+      size: 12
+    - primary: BARCAP
+      aircraft: [MiG-21bis Fishbed-N]
+      size: 8
+
+  # Don Hoi (Sukhumi)
+  20:
+    - primary: BARCAP
+      aircraft: [MiG-21bis Fishbed-N]
+      size: 8
+    - primary: BARCAP
+      aircraft: [MiG-21bis Fishbed-N]
+      size: 8
+
+  # Dien Bien Phu (Beslan)
+  32:
+    - primary: Transport
+      aircraft: [An-26B, An-30M]
+      size: 4
+
+  # Yen Bai (Tbilisi-Lochini)
+  29:
+    - primary: BARCAP
+      aircraft: [MiG-21bis Fishbed-N]
+      size: 8
+    - primary: Transport
+      aircraft: [An-30M, An-26B]
+      size: 4
+
+  # Soganlug
+  Soganlug:
+    - primary: Transport
+      aircraft: [An-30M, An-26B]
+      size: 4
+
+  # FOB Cambodia (trail source)
+  FOB Cambodia:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+
+  # FOB Thailand
+  FOB Thailand:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+
+  # FOB Laos (the Ho Chi Minh Trail source)
+  FOB Laos:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft: [Mi-8MTV2 Hip]
+      size: 4

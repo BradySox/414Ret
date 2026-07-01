@@ -1,0 +1,42 @@
+{
+    "nameInUI": "AI recon BDA capture",
+    "descriptionInUI": "The player TARPS film system (MOOSE TARS) only works for a human in the recon slot, so AI-flown recon flights never confirmed any battle-damage assessment. This records BDA for an AI recon flight (player coalition) that survives to overfly its target: when the flight closes within range of the target, the enemy ground units there are written into the same recon ledger the player film menu feeds, so the campaign fog-of-war lifts on what the AI recon photographed. A recon flight shot down or aborting before the target confirms nothing. Inert unless the mission has AI recon flights.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Overfly range that triggers the photo capture (NM)",
+            "mnemonic": "triggerRangeNm",
+            "defaultValue": 5,
+            "minimumValue": 1,
+            "maximumValue": 40
+        },
+        {
+            "nameInUI": "Radius around the target whose enemy units are captured (m)",
+            "mnemonic": "captureRadiusM",
+            "defaultValue": 4000,
+            "minimumValue": 250,
+            "maximumValue": 20000
+        },
+        {
+            "nameInUI": "Max units captured per recon flight",
+            "mnemonic": "captureCap",
+            "defaultValue": 25,
+            "minimumValue": 1,
+            "maximumValue": 200
+        },
+        {
+            "nameInUI": "Seconds between recon-flight position checks",
+            "mnemonic": "pollS",
+            "defaultValue": 10,
+            "minimumValue": 2,
+            "maximumValue": 60
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "airecon-config.lua",
+            "mnemonic": "airecon-config"
+        }
+    ]
+}

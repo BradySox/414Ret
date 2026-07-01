@@ -1091,7 +1091,20 @@ so the two docs don't drift.
   Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
-### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL (Tacview trace 2026-07-01: NOT all shot down — 2 of 4 survived, but STILL 0 BDA captures → a second, capture-side gap)
+### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL (capture-side gap ROOT-CAUSED + fixed 2026-07-01 via the `airecon` plugin; needs a re-fly)
+- **Root cause of the "0 captures for AI survivors" gap + fix (2026-07-01).** Traced it to the MOOSE
+  TARS film engine being **player-only**: `TARS.lua`'s birth handler does
+  `if not unit or not unit:GetPlayerName() then return end`, so an AI-flown recon flight is dropped
+  outright — no menu, no filming, no capture, *ever*, regardless of survival or overflight. So the AI
+  recon birds could never confirm BDA; it was never a survivability or overflight bug on the capture
+  side. **Fixed** by a new **`airecon` plugin** (features doc §3): Python emits each AI-flown,
+  player-coalition `TARPS` flight + its target (`aireconluadata.py`), and the plugin records the enemy
+  ground units at the target into the same `tars_recon_captures` ledger when the flight survives to
+  overfly (within the trigger range), so the debrief credits it exactly like a player capture. A
+  shot-down / aborting recon flight still confirms nothing. Emitter-tested; **needs a re-fly** to
+  confirm a surviving AI recon bird now yields `tars_recon_captures` entries (was 0) and that
+  `airecon` logs "armed for N flight(s)" / "captured N unit(s)" with no Lua error. The separate
+  *survivability* work (tighter recon TOT offset, TARPS-only tasking) already landed below.
 - **Tacview trace (2026-07-01, `Tacview-20260630-171831…`, per user request):** the earlier "all shot
   down" read was too strong. Tracing all four TARPS ships:
   - `BLOODHOUND TARPS #1` — **survived** to end of recording (bubble-culled far away = RTB, not a kill).

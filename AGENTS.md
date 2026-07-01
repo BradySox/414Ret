@@ -112,7 +112,10 @@ file. This guide is the map; those are the territory.
     (`--lite` raw-`.miz` parse / `--engine` real pipeline); it surfaced two threshold
     refinements now in the spec: an **absolute long+medium-SAM floor** gate (Khe Sanh 0 SAM
     skips Rollback, Velvet Thunder's SA-2 belt keeps it — same era, opposite arc) and EWR
-    de-weighting. Batch-draft across all 66 is the fan-out next step. Design only; P0
+    de-weighting. A **batch draft across all 66 campaigns** is done too — `tools/campaign_phase_classify.py`
+    (the offline §3.2 classifier reference impl) + `414th-campaign-phases-all66-draft.md` (a
+    generated opening-phase/arc table: 55 Rollback / 6 Air Superiority / 4 Interdiction; known
+    `--lite` caveats = mod-SAM undercount, auto-assign air blindspot, era-from-date). Design only; P0
     plumbing not started),
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;

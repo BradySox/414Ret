@@ -98,28 +98,6 @@ HARASSABLE_CP_TYPES = frozenset(
 #: (design rule 4: forward-only by construction, like NGFS's gun-range gate). ~200 km.
 HARASSMENT_FRONT_REACH_M = 200_000.0
 
-#: Control-point types treated as a besieged **outpost** for the Super Gaggle -- a forward
-#: FOB (ground-only hilltop, the Khe Sanh case) or FARP. The helos deliver to its position.
-GAGGLE_OUTPOST_CP_TYPES = frozenset(
-    {
-        ControlPointType.FOB,
-        ControlPointType.FARP,
-    }
-)
-
-#: Control-point types the resupply gaggle can **launch** from -- a rear field that hosts
-#: helicopters (an airbase or FARP). The launch point is just a spawn origin at runtime.
-GAGGLE_LAUNCH_CP_TYPES = frozenset(
-    {
-        ControlPointType.AIRBASE,
-        ControlPointType.FARP,
-    }
-)
-
-#: How near a front an outpost must be to count as "besieged / cut off" and so worth a
-#: Super Gaggle. No forward friendly outpost within this ⇒ no node ⇒ the plugin no-ops.
-GAGGLE_OUTPOST_FRONT_REACH_M = 150_000.0
-
 
 def populate_vietnam_ops_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
@@ -344,65 +322,48 @@ def _populate_airbase_harassment(vietnam: "LuaItem", game: "Game") -> None:
 
 
 def _populate_super_gaggle(vietnam: "LuaItem", game: "Game") -> None:
-    """Emit a besieged friendly outpost + a rear launch field for a resupply gaggle.
+    """Emit the turn's planned Super Gaggle run (real squadron airframes + names).
 
     Models the Khe Sanh "Super Gaggle": a formation of transport helos runs supplies into a
-    cut-off forward outpost while the player can fly escort. **Runtime-only** -- the design's
-    planner-template v1 is blocked on an auto-plannable CTLD cargo run the engine lacks, so
-    this follows the convoy pattern instead (Python picks the geography; the ``vietnamops``
-    plugin spawns and flies the gaggle, re-rolling on a cadence). Picks the friendly (BLUE)
-    FOB/FARP nearest a front as the besieged outpost, and the nearest OTHER friendly
-    helo-capable field as the launch point. No forward friendly outpost (or no launch field,
-    or no front) ⇒ no node ⇒ the plugin no-ops. The fast-mover AAA-suppression choreography
-    that made the historical gaggle distinctive is a deferred later increment (per the design
-    note's phasing); v1 is the helo resupply run + the escort opportunity.
+    cut-off forward outpost while the player can fly escort. The geography + squadron selection
+    happen once per turn in ``game/fourteenth/super_gaggle.py`` (``plan_super_gaggle``), which
+    draws the helos + suppressors from **real BLUE squadrons** and records the exact per-airframe
+    unit names in ``game.super_gaggle_commitment``; the plugin spawns **exactly those** airframes,
+    by name, **once** (no respawn), and a killed name is charged back to its squadron at debrief
+    (§37). No committed gaggle (feature off / no besieged outpost / no launch field / no helo
+    squadron with airframes) ⇒ no node ⇒ the plugin no-ops.
     """
-    from game.theater import Player
-
-    fronts = list(game.theater.conflicts())
-    if not fronts:
+    commitment = getattr(game, "super_gaggle_commitment", None)
+    if commitment is None:
         return
-
-    def distance_to_front(cp: "ControlPoint") -> float:
-        return min(front.position.distance_to_point(cp.position) for front in fronts)
-
-    outposts = [
-        cp
-        for cp in game.theater.controlpoints
-        if cp.captured == Player.BLUE
-        and cp.cptype in GAGGLE_OUTPOST_CP_TYPES
-        and distance_to_front(cp) <= GAGGLE_OUTPOST_FRONT_REACH_M
-    ]
-    if not outposts:
-        return
-    outpost = min(outposts, key=distance_to_front)
-
-    launch_fields = [
-        cp
-        for cp in game.theater.controlpoints
-        if cp.captured == Player.BLUE
-        and cp is not outpost
-        and cp.cptype in GAGGLE_LAUNCH_CP_TYPES
-    ]
-    if not launch_fields:
-        return
-    launch = min(
-        launch_fields,
-        key=lambda cp: cp.position.distance_to_point(outpost.position),
-    )
 
     gaggle = vietnam.add_item("superGaggle")
     # A node serializes EITHER its key-values OR its child items, not both, so the scalar
     # coalition is emitted as its own child (mirrors the convoy node).
     gaggle.add_item("coalition").set_value("BLUE")
     outpost_item = gaggle.add_item("outpost")
-    outpost_item.add_key_value("name", outpost.full_name)
+    outpost_item.add_key_value("name", commitment.outpost_name)
     # pydcs Point: x = north, y = east (the Lua maps these onto the DCS world vec2/vec3).
-    outpost_item.add_key_value("x", str(outpost.position.x))
-    outpost_item.add_key_value("y", str(outpost.position.y))
+    outpost_item.add_key_value("x", str(commitment.outpost_x))
+    outpost_item.add_key_value("y", str(commitment.outpost_y))
     launch_item = gaggle.add_item("launch")
-    launch_item.add_key_value("x", str(launch.position.x))
-    launch_item.add_key_value("y", str(launch.position.y))
+    launch_item.add_key_value("x", str(commitment.launch_x))
+    launch_item.add_key_value("y", str(commitment.launch_y))
+
+    # The exact airframes to spawn, by real per-unit name, so a killed name maps straight back
+    # to a squadron at debrief. Counts are implicit in the name lists (no respawn -> bounded).
+    helo = gaggle.add_item("helo")
+    helo.add_key_value("type", commitment.helo_type)
+    helo_names = helo.add_item("names")
+    for name in commitment.helo_unit_names:
+        helo_names.add_item().set_value(name)
+
+    if commitment.supp_type and commitment.supp_unit_names:
+        supp = gaggle.add_item("suppressor")
+        supp.add_key_value("type", commitment.supp_type)
+        supp_names = supp.add_item("names")
+        for name in commitment.supp_unit_names:
+            supp_names.add_item().set_value(name)
 
 
 def _target_position(flight: "FlightData") -> tuple[float, float] | None:

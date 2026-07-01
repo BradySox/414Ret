@@ -2615,68 +2615,77 @@ The sixth **Vietnam Ops suite** feature (design note `414th-vietnam-ops-notes.md
 player can fly escort. The base engine has no besieged-outpost resupply; this makes the forward hilltops feel
 supplied-under-fire the way they historically were.
 
-### Scope decision — runtime, not the planner
+### Scope decision — real squadron airframes, not the planner (reworked 2026-07-01)
 
 The design's v1 was a **planner-template** auto-frag (suppress + cargo + escort package, self-planned like
-`auto_combat_sar`). That is **blocked on an auto-plannable CTLD cargo run the engine lacks** — there is no
-FlightType/tasking that fragments a helo cargo-delivery to a specific outpost. Rather than build that whole
-commander-brain capability, this ships **runtime-only**, exactly like the §35 convoy: Python picks the
-geography and the `vietnamops` plugin spawns/flies the gaggle. The distinctive **fast-mover AAA-suppression
-choreography** (the fast movers that worked the guns so the helos could get in — A-4 Skyhawks at the
-historical Khe Sanh gaggle) **landed 2026-07-01** as a second increment (below), after the helo run shipped.
+`auto_combat_sar`), **blocked on an auto-plannable CTLD cargo run the engine lacks**. v1 shipped runtime-only
+like the §35 convoy — but that spawned **phantom** helos + suppressors (`coalition.addGroup`) on an
+**unbounded respawn loop**: free BLUE airframes the campaign never accounted for, whose loss was never a real
+loss. The rework keeps the runtime spawn (still no CTLD dependency) but makes the airframes **real**: they are
+drawn from real BLUE squadrons and their losses are charged back at debrief ("debit a squadron + track
+losses").
 
 ### How it works
 
-**Python picks the geography (`vietnamopsluadata.py` `_populate_super_gaggle`).** It selects the friendly
-(BLUE) **FOB/FARP nearest a front** as the besieged outpost — gated to within `GAGGLE_OUTPOST_FRONT_REACH_M`
-(≈ 150 km) so a rear base is never chosen — and the nearest **other** friendly helo-capable field
-(`AIRBASE`/`FARP`) as the launch point. It emits
-`dcsRetribution.VietnamOps.superGaggle = { coalition = "BLUE", outpost = {name,x,y}, launch = {x,y} }`. No
-forward friendly outpost, no launch field, or no front ⇒ no node ⇒ the plugin no-ops.
+**Python plans the run from real squadrons once per turn (`game/fourteenth/super_gaggle.py`
+`plan_super_gaggle`, from `finish_turn`).** It selects the besieged BLUE **FOB/FARP nearest a front** (within
+`OUTPOST_FRONT_REACH_M` ≈ 150 km) + the nearest **other** BLUE helo-capable field as the launch point, a
+**real BLUE helicopter squadron** (nearest the launch field, with airframes) to fly the gaggle, and a **real
+BLUE attack squadron** (CAS-capable) for the suppressors. It records a `SuperGaggleCommitment` on the game
+(persisted, `__setstate__` default `None`): the squadron ids, the squadrons' own aircraft types, the **exact
+per-airframe unit names** the plugin will spawn (`SuperGaggle-T{turn}-Helo-N` / `-Sandy-N`), and the geometry.
+Counts are `DESIRED_HELOS` (3) / `DESIRED_SUPPRESSORS` (2), each **capped by the squadron's `owned_aircraft`**.
+No feature / no outpost / no launch / no helo squadron with airframes ⇒ **no commitment** (the gaggle is never
+free-spawned).
 
-**The `vietnamops` plugin runs the gaggle at runtime** (vanilla DCS `coalition.addGroup`, `pcall`-guarded):
-- Spawns a helo gaggle (default 3 × `UH-1H`, air-started over the launch field) routed **launch → outpost →
-  back**, with a "SUPER GAGGLE — resupply helos inbound … Escort welcome" cue to the friendly coalition.
-- A 10 s tick announces **"delivered"** once the lead helo reaches the outpost (within `DELIVER_RADIUS`), and
-  **"down"** if the gaggle is destroyed en route (losses stay native).
-- **Re-rolls a fresh run** a cadence (default 900 s) after the old one is delivered *or* lost, so the resupply
-  keeps flowing across a long mission (a completed run is recycled after `MISSION_TIME`).
-- **Fast-mover suppression choreography (2026-07-01).** Each gaggle also launches a short attack flight
-  (default 2 × `A-4E-C` — the historical Super Gaggle suppressor) that flies **launch → over the outpost
-  (CAS task, so the AI works the nearby AAA) → back** at a higher altitude, tied to the gaggle's lifecycle
-  (spawned with it via `spawnSuppressors`, destroyed with it via `despawnSuppressors` at the single
-  `scheduleRespawn` choke point). The "inbound" cue notes "Fast movers suppressing the guns" when they
-  spawned. The whole suppressor spawn is its own `pcall`, so if the type's mod isn't loaded (or it fails to
-  spawn) the helo run is untouched. Set the suppressor count to 0 to disable.
-- Tunables (plugin `specificOptions`): helo type, count, transit speed, transit altitude, respawn cadence;
-  suppressor count / type / altitude.
+**The emitter serializes the commitment (`vietnamopsluadata.py` `_populate_super_gaggle`).** It reads
+`game.super_gaggle_commitment` and emits
+`superGaggle = { coalition, outpost{name,x,y}, launch{x,y}, helo{type,names[]}, suppressor{type,names[]} }`.
+No commitment ⇒ no node.
+
+**The `vietnamops` plugin spawns exactly the committed airframes, once** (vanilla DCS `coalition.addGroup`,
+`pcall`-guarded): a helo group named with the committed helo unit names (launch → outpost → back), and the
+suppressor attack flight with the committed suppressor names (launch → over the outpost on a CAS task → back).
+**No respawn loop** — the run flies once (airframes are bounded to the commitment), and a single tick fires the
+"delivered" / "down" cue then stops. The "inbound" cue notes the suppressors when they spawned.
+
+**Losses are charged back at debrief (`missionresultsprocessor.commit_super_gaggle` →
+`super_gaggle.reconcile_super_gaggle`).** Because the spawned units aren't in the `UnitMap`, a killed gaggle
+airframe's name lands in the debrief's **`killed_ground_units`** (see `Debriefing.from_json` — aircraft
+classification requires a `UnitMap` flight). Reconcile counts each committed unit name found in either killed
+list and debits its squadron (`owned_aircraft -= lost`, `destroyed_aircraft += lost`) — a **real airframe
+loss**. Survivors cost nothing (a returning detachment — no pre-debit/return bookkeeping), and if any helo
+survived the run is treated as **delivered** and the outpost gets a small `affect_strength` boost. The
+commitment is then cleared (charged once). **No base-Lua / debrief-schema change** was needed — the existing
+`dcs_retribution.lua` death-event capture already records the names.
 
 ### Files & tests
 
 | Area | Path |
 |---|---|
-| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_super_gaggle`, `GAGGLE_OUTPOST_CP_TYPES`, `GAGGLE_LAUNCH_CP_TYPES`, `GAGGLE_OUTPOST_FRONT_REACH_M`) |
-| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (Super Gaggle section) |
-| Setting / options | `game/settings/settings.py` (`vietnam_super_gaggle`); plugin `specificOptions` (helo type/count/speed/altitude/respawn) |
-| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (emits outpost+launch+coalition when on; picks the nearest-front outpost + nearest launch; off / no-outpost / no-launch / no-front / enemy+rear outposts → no node) |
+| Plan + reconcile | `game/fourteenth/super_gaggle.py` (`plan_super_gaggle`, `reconcile_super_gaggle`, `SuperGaggleCommitment`) |
+| Turn hook / debrief | `game/game.py` (`finish_turn` → `plan_super_gaggle`; `super_gaggle_commitment` persisted), `game/sim/missionresultsprocessor.py` (`commit_super_gaggle`) |
+| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_super_gaggle`, reads the commitment) |
+| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (Super Gaggle section — single run, committed names) |
+| Setting / options | `game/settings/settings.py` (`vietnam_super_gaggle`); plugin `specificOptions` (transit speed / altitudes only — type & count come from the squadrons) |
+| Tests | `tests/fourteenth/test_super_gaggle.py` (plan draws real squadron airframes with capped counts, clears when off / no outpost / no helo squadron; reconcile charges only killed names, floors at 0, credits delivery on survival, clears the commitment). `game/missiongenerator/tests/test_vietnamops_luadata.py` (emitter serializes a commitment's outpost/launch/helo+suppressor names; no commitment → no node). |
 
 ### Gotchas / deferred
 
-- **Runtime is unflown (checklist L9).** The Lua passes the `luac5.1 -p` gate, but runtime helo spawning +
-  routing + the deliver/respawn state machine can't be exercised headless — needs a cockpit pass. Watch that
-  the helos actually reach the outpost (routing/altitude), the delivery/lost/respawn cues fire once each, and
-  `coalition.addGroup` throws no Lua error in `dcs.log`.
-- **Suppressor weapons are the #1 in-game tuning item.** The suppressor group spawns with DCS's *default*
-  loadout for its type (no explicit `payload` — a per-mod pylon table is too fragile to hand-author blind), so
-  its actual ordnance/effectiveness against the AAA is unverified: it may strafe, or it may be a visual-only
-  presence. Confirm on the in-game pass and, if it needs teeth, give it an explicit payload or a scripted
-  suppression effect. A spawn failure is already harmless (guarded → helo run proceeds, cue omits the line).
-- **Runtime-cosmetic.** The delivery has no supply-economy effect (like the §35 convoy); the value is
-  immersion + the escort opportunity.
-- **Blue-only (symmetry deferred).** The emitter hard-picks the BLUE outpost (the human's cut-off hilltops),
-  mirroring the convoy's RED-only stance; a red-player mirror would be a follow-on.
-- **Not a helo-slot dependency.** The gaggle is spawned at runtime by coordinate, so the outpost can be a
-  ground-only FOB (the Khe Sanh case) — the helos fly to its position, they don't need a parking slot there.
+- **Runtime is unflown (checklist L9, re-opened by the rework).** The Lua passes `luac5.1 -p`, but the spawn +
+  routing + the single-run cue tick can't be exercised headless. Watch that the helos reach the outpost, the
+  delivery/down cue fires **once** (no respawn), `coalition.addGroup` throws no Lua error, and — the key new
+  check — that a shot-down gaggle helo shows up as a **squadron airframe loss** at debrief (owned count drops).
+- **Loss accounting rides on the committed unit names appearing in the debrief.** If DCS ever failed to emit a
+  death event for a runtime-spawned unit, that airframe wouldn't be charged (it would read as a survivor). The
+  in-game pass should confirm a killed gaggle name lands in the state / debrief.
+- **Suppressor weapons are still a tuning item.** The suppressor spawns with its squadron aircraft's *default*
+  loadout (no explicit `payload`), so its effectiveness against the AAA is unverified — it may strafe or be a
+  visual presence. A spawn failure stays harmless (guarded; the helo run proceeds).
+- **Blue-only (symmetry deferred).** The plan hard-picks the BLUE outpost; a red-player mirror is a follow-on.
+- **Delivery credit is modest + survival-gated.** A clean run nudges the outpost's ground strength; a wiped run
+  credits nothing. Tuning `DELIVERY_STRENGTH_BONUS` (or making delivery signal explicit rather than
+  "any-helo-survived") is a possible refinement.
 
 ## §38 — FAC(A) willie-pete target marking (Vietnam Ops suite)
 

@@ -1994,30 +1994,34 @@ so the two docs don't drift.
   wildly off the ramp (centroid/dispersion wrong); too lethal to parked jets (dial power/dispersion down, as
   §33 flak needed); a `trigger.action.explosion` / `land.getHeight` / `timer.scheduleFunction` Lua error.
 
-### L9 — Super Gaggle hilltop resupply · §37 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
-- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the emitter — the
-  outpost + launch + coalition are emitted when on; it picks the friendly FOB/FARP nearest the front and the
-  nearest launch field; off / no-outpost / no-launch / no-front / enemy-or-rear-only outposts yield no node.
-  The runtime helo spawn (`coalition.addGroup`), the launch→outpost→back routing, and the
-  deliver/lost/respawn state machine are runtime Lua, exercisable only live.
+### L9 — Super Gaggle hilltop resupply · §37 · ☐ UNTESTED (REWORKED 2026-07-01: phantom respawn spawn → real squadron airframes + tracked losses)
+- **What changed:** the gaggle is no longer a phantom, unbounded-respawn `coalition.addGroup` spawn. It is
+  planned once per turn from **real BLUE squadrons** (`game/fourteenth/super_gaggle.py` `plan_super_gaggle`),
+  spawns **exactly** the committed airframes (by name) **once** (no respawn), and a shot-down committed airframe
+  is charged back to its squadron at debrief (`reconcile_super_gaggle`). The **key new check** is the loss
+  accounting, not the spawn.
+- **Headless adjudication:** `tests/fourteenth/test_super_gaggle.py` locks the plan (draws real squadron
+  airframes, counts capped by `owned_aircraft`, clears when off / no outpost / no helo squadron) and the
+  reconcile (charges only killed committed names, floors at 0, credits delivery on any-helo-survival, clears the
+  commitment). `test_vietnamops_luadata.py` locks the emitter (serializes the commitment; no commitment → no
+  node). The runtime helo spawn + routing + the single-run cue are Lua, exercisable only live.
 - **Setup:** A Vietnam campaign with **Vietnam Ops → Super Gaggle** on and a **friendly forward FOB/FARP** near
-  the front (a cut-off hilltop) plus a friendly rear airfield/FARP to launch from (Khe Sanh laydown qualifies).
-  Fast-forward or fly; optionally intercept-escort the gaggle.
-- **Pass:** A 3-ship UH-1H gaggle spawns over the launch field, flies to the outpost, and announces "SUPER
-  GAGGLE inbound" then "delivered" on arrival; a fresh run re-rolls a cadence later; a shot-down gaggle
-  announces "down" and re-rolls. `dcs.log` shows "Super Gaggle armed (outpost …, 3x UH-1H)" and no
-  `coalition.addGroup` Lua error.
-- **Choreography (added 2026-07-01):** a fast-mover suppression flight (default 2× A-4E-C) should spawn with
-  the gaggle, fly over the outpost, and be gone when the run recycles; the inbound cue reads "Fast movers
-  suppressing the guns." **#1 tuning item:** the suppressors spawn with DCS's default loadout (no explicit
-  payload), so confirm whether they actually attack the AAA or are visual-only — if they need teeth, give them
-  a payload or a scripted suppression effect. A suppressor spawn failure must NOT affect the helo run (guarded)
-  and the cue then omits the "fast movers" line.
-- **Fail signature:** the gaggle never spawns (addGroup group-data malformed / bad country / helo type
-  unavailable); helos spawn but don't move or fly into terrain (route altitude/`alt_type` wrong); the
-  deliver/lost/respawn cues never fire or fire repeatedly (tick state machine wrong); a `Group.getByName` /
-  `getUnit` / `destroy` Lua error in `dcs.log`; a run that never recycles (stuck after delivery); the suppressor
-  group is orphaned (not despawned on recycle) or its spawn failure breaks the helo run.
+  the front plus a friendly rear airfield/FARP to launch from (Khe Sanh laydown qualifies), and a BLUE
+  helicopter squadron with airframes. Advance a turn (so `plan_super_gaggle` runs), then fly/fast-forward.
+- **Pass:** a helo gaggle drawn from the real helo squadron (its own aircraft type) spawns over the launch
+  field, flies to the outpost, and announces "SUPER GAGGLE inbound" then "delivered" on arrival — **once, no
+  re-roll**. `dcs.log` shows "Super Gaggle armed (outpost …, Nx …, single run)". **Critically:** a shot-down
+  gaggle helo shows up at debrief as a **real airframe loss to that squadron** (its `owned_aircraft` drops); a
+  clean delivery bolsters the outpost's ground strength.
+- **Choreography:** a fast-mover suppression flight (the committed attack squadron's airframes) spawns with the
+  gaggle, flies over the outpost, and its losses are likewise charged back. The suppressors spawn with their
+  squadron aircraft's default loadout — confirm whether they actually attack the AAA or are visual-only. A
+  suppressor spawn failure must NOT affect the helo run (guarded); the cue then omits the "fast movers" line.
+- **Fail signature:** no gaggle despite a helo squadron + outpost + launch (plan/commitment broken); the gaggle
+  **re-rolls** (respawn not removed); a killed gaggle helo is **not** charged to the squadron at debrief (the
+  loss-accounting failed — its unit name didn't reach the debrief killed lists, or the squadron-id lookup
+  missed); the outpost isn't bolstered on a clean run; a `coalition.addGroup` / `Group.getByName` Lua error in
+  `dcs.log`; the squadron owned count goes negative (floor failed).
 
 ### L10 — FAC(A) willie-pete target marking · §38 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `fac` on-marker

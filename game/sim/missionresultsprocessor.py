@@ -82,8 +82,18 @@ class MissionResultsProcessor:
                 self.commit_captures(debriefing, events)
             with logged_duration("record_carcasses"):
                 self.record_carcasses(debriefing)
+            with logged_duration("commit_super_gaggle"):
+                self.commit_super_gaggle(debriefing)
             with logged_duration("record_sitrep"):
                 self.record_sitrep(debriefing)
+
+    def commit_super_gaggle(self, debriefing: Debriefing) -> None:
+        # Vietnam Ops §37: charge Super Gaggle airframe losses back to the real BLUE
+        # squadrons that flew them, and credit the outpost on delivery. No-op when there was
+        # no committed gaggle this turn.
+        from game.fourteenth.super_gaggle import reconcile_super_gaggle
+
+        reconcile_super_gaggle(self.game, debriefing)
 
     def record_sitrep(self, debriefing: Debriefing) -> None:
         # Capture a one-turn campaign summary for the next turn's kneeboard cover

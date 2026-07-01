@@ -112,9 +112,9 @@ file. This guide is the map; those are the territory.
     opt-in period mechanics: Arc Light as a heavy-bomber Strike *effect*, AAA flak gauntlet, naval
     gunfire support, Armed-Recon truck-convoy interdiction, Super Gaggle resupply; Tier-A runtime only,
     default OFF / campaign-flipped ON; **Phases 1–4 landed** = the settings page + §32 Arc Light + §33
-    flak gauntlet + §34 naval gunfire + §35 convoy interdiction (the Steel Tiger trail; spawn Lua pending
-    an in-game pass, L6); phase 5 (Super Gaggle) is blocked on an auto-plannable CTLD cargo run the
-    engine lacks),
+    flak gauntlet + §34 naval gunfire + §35 convoy interdiction (the Steel Tiger trail; spawn Lua
+    **verified 2026-06-30**, checklist L6); phase 5 (Super Gaggle) is blocked on an auto-plannable CTLD
+    cargo run the engine lacks),
     `414th-vietnam-airbase-harassment-notes.md` (**Vietnam Ops §F — airbase harassment**: scoped-only
     sapper/mortar/rocket standoff fire on opposing-occupied fields, following the §33 flak runtime
     pattern; hard requirement = never target a player-spawn field + a startup grace period; no code yet,
@@ -472,9 +472,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`coalition.addGroup`) that drives the corridor, **halts under cover** (`setOnOff`) when an opposing
     aircraft closes inside the scatter range, and **rolls a fresh column** a while after the old one is wiped,
     so the trail keeps flowing. Corridor selection (nearest convoy route) is the user's chosen design; the
-    runtime spawn is **unverified Lua pending an in-game pass** (checklist L6). Speed/scatter-range/respawn/
+    runtime spawn is **verified 2026-06-30** (checklist L6 — a full flown session's `dcs.log` showed a
+    complete spawn→drive→wipe→respawn cycle, no `coalition.addGroup` Lua errors; halt-under-threat not
+    separately confirmed). Speed/scatter-range/respawn/
     truck-count/type are plugin options. (`game/missiongenerator/vietnamopsluadata.py`,
-    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §35, checklist L6.)
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §35 — **note: §35 has no
+    matching section in 414th-features.md yet, a pre-existing doc gap**; checklist L6.)
     **Right-click planning (added per playtest):** the player **right-clicks an enemy supply route** on the
     map to frag the interdiction package — `SupplyRoute.tsx` `contextmenu` → `POST /qt/create-package/supply-route/{route_id}`
     → `interdiction_target_for_route_id` resolves the route (its id now encodes the two CP ids) to the enemy

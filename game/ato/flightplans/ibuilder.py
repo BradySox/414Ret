@@ -6,6 +6,7 @@ from typing import Any, Generic, TYPE_CHECKING, TypeVar
 from game.navmesh import NavMeshError
 from .flightplan import FlightPlan, Layout
 from .planningerror import PlanningError
+from ..flighttype import FlightType
 from ..packagewaypoints import PackageWaypoints
 
 if TYPE_CHECKING:
@@ -46,8 +47,15 @@ class IBuilder(ABC, Generic[FlightPlanT, LayoutT]):
 
     def _generate_package_waypoints_if_needed(self, dump_debug_info: bool) -> None:
         # Package waypoints are only valid for offensive missions. Skip this if the
-        # target is friendly.
-        if self.package.target.is_friendly(self.is_player):
+        # target is friendly -- except CSAR, whose only legal target (a downed
+        # team / captured-pilot POW objective) is deliberately flagged "friendly"
+        # so it renders/tasks correctly for its owning side, even though it's
+        # physically positioned at the enemy control point holding the POW. CSAR
+        # always needs a real offensive ingress route to get there.
+        if (
+            self.flight.flight_type is not FlightType.CSAR
+            and self.package.target.is_friendly(self.is_player)
+        ):
             return
 
         if self.package.waypoints is None or dump_debug_info:

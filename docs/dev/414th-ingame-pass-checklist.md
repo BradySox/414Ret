@@ -743,7 +743,35 @@ so the two docs don't drift.
   AI pilot tracking). The **AI-ON** path (helo spawns from FARP, flies the rescue) still needs its
   own run with the setting on.
 
-### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ◐ PARTIAL (player-King F10 LARS menu COCKPIT-CONFIRMED 2026-06-27; AI-King scripted TACAN still untested)
+### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ✗ REGRESSED → fix applied 2026-06-30 (root-caused; needs re-fly)
+- **Regression (2026-06-30, flown session — user: "c130 had no F10 menu for LARS"):** the player-flown
+  King's LARS menu, previously cockpit-confirmed 2026-06-27, did **not** appear this session.
+  `dcs.log` shows **zero** `Combat SAR King - activated` lines across ~80 minutes and two mission
+  loads, despite the player successfully joining the King's cockpit both times
+  (`Player 'Wizard 1-4 | Flash 402' joined unit '...C-130J-30| Pilot #1'` at `00:10:27` and again at
+  `00:18:02` after a mission reload) and the generated `.miz`'s `dcsRetribution.CombatSAR.kings`
+  table carrying the **exact correct** group name (`Front line Kutaisi/Senaki-Kolkhi Combat SAR|2|18|
+  C-130J-30|`, verified byte-for-byte against the DCS client-registration log line) — so this was not
+  a group-name mismatch. **Root cause (best available without a Lua interpreter — CLAUDE.md prohibits
+  running/compiling Lua here, so this is read-diagnosed):** `activateKing()`'s early-return guards
+  (not-alive / no-unit / not-found) were all silent (no logging), and the only two activation paths —
+  a one-shot mission-start scan and the `Birth`/`PlayerEnterAircraft`/`PlayerEnterUnit` event handlers
+  — both had single points of failure: the mission-start scan never retries if the King isn't queryable
+  yet (e.g. during the pre-"sim running" briefing/slot-selection pause — this session's log shows the
+  sim didn't reach `state=ssRunning` until `00:18:30`, well after the player joined the King at
+  `00:18:02`), and the event path resolves the group via `EventData.IniGroup`/`IniGroupName`, both of
+  which can be unpopulated for `PlayerEnterAircraft`/`PlayerEnterUnit` (confirmed via `Moose.lua`:
+  `IniUnit` is populated far more reliably than `IniGroup`/`IniGroupName` for these event types).
+- **Fix applied (2026-06-30, `resources/plugins/combatsar/combatsar-config.lua`):** (1) every early-return
+  in `activateKing()` now logs why (`Combat SAR King - '<name>' not yet alive/has no unit #1 (<reason>)`),
+  turning a future silent failure into something diagnosable in `dcs.log`; (2) `activateKingFromEvent`
+  now falls back to `EventData.IniUnit:GetGroup()` when `IniGroup`/`IniGroupName` are both absent; (3) a
+  new periodic **retry sweep** (`retryUnactivatedKings`, piggybacked on the existing 5 s `POLL` cadence)
+  re-tries `GROUP:FindByName` for any King not yet in `activatedKings` every 5 s until it succeeds, so no
+  single missed mission-start/event moment can permanently block activation for the rest of the mission.
+  Lua syntax read-checked (balanced blocks verified by hand — no local interpreter available).
+  **Needs a re-fly** to confirm the LARS menu now appears and `Combat SAR King - activated` shows in
+  `dcs.log`.
 - **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**
   the player-flown King's **F10 → Combat SAR → LARS menu works** ("F10 LARS good") — the #196
   player-King menu-attach fix is verified live. The remaining PARTIAL is only the **AI-King scripted
@@ -781,7 +809,25 @@ so the two docs don't drift.
   Re-test on a build containing #196: the player King's LARS menu appears (immediately or within ~1 s) and
   the new `... LARS menu attached` line shows in the log.
 
-### G11 — Combat SAR rescue scoring (pilot spared at debrief) · Combat SAR Phase 4 · ☐ UNTESTED (scoring layer test-covered, adjudicated 2026-06-26)
+### G11 — Combat SAR rescue scoring (pilot spared at debrief) · Combat SAR Phase 4 · ☑ VERIFIED (2026-06-30, `414TH.retribution` save + `state.json` — user confirmed "rescue worked")
+- **Verified (2026-06-30, headless save load — `414TH.retribution`, turn 5):** `game.last_sitrep`
+  reads `Sitrep(turn=4, ..., pilots_recovered=3)` — the SITREP the debrief itself computed from
+  `commit_air_losses`, matching `state.json.combat_sar_rescues`'s 3 entries exactly and the debriefing
+  screenshot's loss counts (10 USA / 7 Vietnam aircraft) verbatim. This is the Python-side confirmation
+  the prior PARTIAL note was waiting on — the delivered pilots were genuinely spared, not just logged
+  by the Lua bridge. User cockpit-confirmed the same thing independently ("rescue worked"). Fail
+  signature did not occur.
+- **Partial (2026-06-30, flown session — `state.json`):** `combat_sar_rescues` came back non-empty with
+  **3** real, well-formed unit names (`Kutaisi_AJS37_475-1`, `Kutaisi_UH-1H_536-1`,
+  `Kutaisi_AH-64D BLK.II_928-1`) — direct proof the Lua `OnAfterRescued` → `combat_sar_rescues` bridge
+  fired for 3 separate live deliveries this session, and the names are self-consistent with
+  `crash_events` (e.g. `Kutaisi_UH-1H_534-1`/`_630-1` crashed — unrescued — while `_536-1` did not, i.e.
+  it was picked up before loss). This directly answers the row's flagged residual (whether the Lua's
+  `originalUnit` name actually matches what DCS reports). **Not confirmed from these artifacts:**
+  whether `commit_air_losses` on the Python side actually spared these 3 pilots at debrief (that only
+  shows up in the processed campaign save / squadron roster after Retribution ingests this
+  `state.json`, which we don't have here) — check the next turn's squadron roster or debrief log to
+  close this out.
 - **Headless adjudication (2026-06-26):** the Python scoring is verified by
   `tests/test_combat_sar_scoring.py` (passing): `commit_air_losses` spares exactly the
   rescued pilot (`pilot.kill` not called) while still attriting the airframe
@@ -1041,6 +1087,15 @@ so the two docs don't drift.
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
 ### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL (2026-06-28, audience in-game pass — recon bird flies the TARPS path but is shot down before it confirms BDA)
+- **Reconfirmed (2026-06-30, flown session — `state.json`/`dcs.log`):** same failure mode repeated —
+  **both** TARPS flights this session (`RAVEN TARPS|2|15|RF-101B Voodoo| Pilot #1` and
+  `BLOODHOUND TARPS|2|10|RF-101B Voodoo| Pilot #2`) are in `crash_events`, and
+  `tars_recon_captures` is empty (`0`). No change to the diagnosis — the 2026-06-28 fix (tighter
+  `default_tot_offset`, keep recon high) targets a lone-straggler-behind-a-departed-escort case; this
+  session's front (Kutaisi/Senaki-Kolkhi) is thick with AAA/SAM/MiG activity (see the broader blue
+  loss count this session), so recon-bird survivability may still be a standing campaign-balance issue
+  independent of the escort-timing fix. Not re-marking VERIFIED/REGRESSED — same open question as
+  before (accept as period-realistic vs. harden further).
 - **In-game (2026-06-28, audience pass — user: "fly the path for it but get shot down"):** the tasking + ingress half is confirmed — the RF-101B/RA-5C spawns clean on the `Retribution TARPS` loadout and flies the recon path — but it is **shot down en route to / over the target**, so the overflight→BDA-confirm half is never reached. The TARPS plumbing is structurally fine; this is a **survivability** gap (a lone, unescorted, weaponless recon bird into a Vietnam AAA/SAM environment). OPEN: harden survivability (escort, ingress altitude, routing, or a larger time offset behind the strikers) vs. accept it as period-realistic. PARTIAL until decided.
 - **Altitude analysis (2026-06-28, read from code):** the RF-101B/RA-5C YAMLs set no `combat_altitude`, and `COMBAT_ALTITUDE_BAND_KFT = (20, 20)` (`game/dcs/aircrafttype.py`) flattens the estimate to **20,000 ft** regardless of speed — i.e. the recon overflight is **already above the 4500 m (~14,800 ft) flak ceiling**. So the AAA/flak gauntlet (§33) is **not** the killer, and *lowering* the bird (the intuitive fix) would push it **into** the AAA, not out of danger. At 20k ft, alone and ~5 min behind the strike package (`TarpsFlightPlan.default_tot_offset` = 5 min, after the package escort has egressed), the realistic killer is a **MiG (BARCAP)** or a **SAM** — so the right hardening is **escort coverage / recon timing / routing**, not altitude. NB `TarpsFlightPlan` is shared with the F-14 TARPS path (G2, VERIFIED) — any flight-plan change must not regress it; an altitude change should be data-only per-airframe (`combat_altitude:` in the YAML), but altitude is the wrong lever here. Kill-cause (MiG vs SAM) pending the user.
 - **Kill-cause = MiGs (user, 2026-06-28) → FIX APPLIED.** Confirmed via `EscortFlightPlan.split_time`: the AI escort splits at the **strikers'** egress and turns back ~7–9 NM short of the target without loitering, so a recon bird +5 min behind flew the threatened ingress corridor **alone** after the escort RTB'd. Fix: keep it **high** (20k, above the AAA — unchanged) and **tighten `TarpsFlightPlan.default_tot_offset` 5 min → 2 min** so it ingresses **within** the package/escort window instead of as a lone straggler (`game/ato/flightplans/tarps.py` + 5 doc sites + `tests/test_tarps_recon.py`). Black/mypy/pytest green. **Shared with the F-14 path (G2):** the tighter offset is functionally safe for it (still a positive post-strike pass) but G2 wants a quick confirming re-fly. **Re-fly owed** on both — the recon bird should now survive to confirm BDA when the package has fighter cover (in a fighter-starved Vietnam turn with no escort planned it can still die, which is a campaign-balance matter, not this fix).
@@ -1062,7 +1117,26 @@ so the two docs don't drift.
   bombing tasks; the AI flies an aborting attack pattern and never crosses the target; or the
   overflight produces no BDA confirmation.
 
-### G20 — Combat SAR enemy snatch party (correct coalition + dispersed teams) · §15 · ☐ UNTESTED (fix applied 2026-06-29 — was spawning on the wrong side as one column)
+### G20 — Combat SAR enemy snatch party (correct coalition + dispersed teams) · §15 · ☑ VERIFIED (2026-06-30, `dcs.log`/`state.json`/Tacview — "Vietnam v2.miz" session)
+- **Verified (2026-06-30, flown session — `Vietnam v2.miz` / `dcs.log` / `state.json` /
+  `Tacview-20260630-171831-DCS-Host-Vietnam v2.zip.acmi`):** `state.json.combat_sar_captures` recorded
+  a genuine **BLUE** aircrew captured (`Front line Kutaisi/Senaki-Kolkhi CAS|2|27|A-1H Skyraider|
+  Pilot #1`) — a snatch party can only capture a survivor it is hostile to, so this alone proves the
+  party spawned on the **correct (enemy) coalition**, not the friendly/wrong-side bug. `dead_events`/
+  `kill_events` also show at least **20 independently-numbered** `CSAR Snatch Party <N> U1..U10` groups
+  (parties 1, 2, 3, 4, 8, 13, 14, 15, 16, 19, 20, 21, 23, 24, 25, 27, 30, 31, 37, 48 all appear as
+  distinct 9–10-unit groups converging on different survivors across the session) — **dispersed small
+  teams**, not the old one-column bug. Both fail signatures (wrong-coalition, single column) did not
+  occur.
+- **User note (2026-06-30):** "blue csar snatch party?" — the user also saw a **blue-coalition**
+  snatch party. This session's generated `.miz` carries `dcsRetribution.CombatSAR` for **both**
+  coalitions (`red.rescueHelos` is populated too — a red Mi-8MTV2 Combat SAR flight), so a blue party
+  hunting a downed **red** pilot is the expected mirror image of the red-vs-blue capture already
+  verified above, not a bug — `red.pending_pow_recoveries` came back empty from the headless save load
+  (no red pilot was ultimately held), consistent with either no capture completing or a rescue beating
+  it. Flag if what was actually seen was a *friendly-colored* party menacing a **blue** survivor
+  instead (that would be the pre-fix bug reappearing) — the report as written reads as the symmetric,
+  working case.
 - **Bug (user report, 2026-06-29, screenshot):** the capture-race snatch party rendered on the map as
   **friendly/green** (wrong coalition) and as **one long marching column** ("AK74" line) rather than
   enemy ground forces. Root cause: the `combatsar` plugin hardcoded `country.id.CJTF_RED`/`CJTF_BLUE`
@@ -1089,7 +1163,27 @@ so the two docs don't drift.
   capture never fires because `advanceCapture` lost track of the multi-group party (all teams reported
   dead while alive).
 
-### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ☐ UNTESTED (fix applied 2026-06-29 — was always cloning a fresh helo)
+### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ◐ PARTIAL (2026-06-30, `dcs.log`/`state.json` — clone-fallback confirmed correct; the documented "errors on takeover" fail signature also reproduced repeatedly)
+- **Partial (2026-06-30, flown session — `dcs.log`/`state.json`):** Two findings, one good and one a
+  genuine open bug:
+  - **Clone-fallback confirmed working as designed:** `dcs.log` shows `OPSTRANSPORT [UID=6] | Carrier
+    OPSGROUP CombatSAR Rescue 15#001 dead!` — i.e. `spawnIndex` had reached **≥15** clones from the
+    FARP. This session's blue helo losses were heavy (multiple `Front line … Combat SAR|…|Mi-8MTV2`
+    and `Kutaisi_UH-1H_*` crashes in `crash_events`), so on-station helos were frequently dead/unavailable
+    — exactly the documented condition under which falling back to a fresh clone is *correct*, not a bug.
+  - **The row's own anticipated fail signature reproduced:** this row's text explicitly flags
+    `combatsar: AI dispatch error` in `dcs.log` — "the live-group `FLIGHTGROUP` wrap is the risk to
+    watch" — as the fail signature for a failed *commandeer* attempt. `dcs.log` shows exactly that
+    warning **9 times** across the session (`combatsar: AI dispatch error (continuing):
+    [string "l10n/DEFAULT/Moose.lua"]:11714: table index is nil`). Moose.lua:11714 is
+    `self.Templates.ClientsByID[UnitTemplate.unitId]=UnitTemplate` inside `_RegisterGroupTemplate`,
+    firing when a `Client`/`Player`-skill unit template has a **nil `unitId`** — i.e. commandeering (or
+    cloning) is triggering a Moose DATABASE template re-scan that trips over some unit's malformed
+    template elsewhere in the mission. It's `pcall`-guarded so it doesn't crash and 3 rescues still
+    completed (G11), but that specific dispatch attempt aborts, so it's worth root-causing rather than
+    dismissing — **reopen candidate**, not yet a clean pass. `combat_sar_rescues` (3 entries) proves
+    *some* dispatches complete; we can't tell from these artifacts whether any of the 9 errored attempts
+    correspond to a survivor who was never rescued.
 - **Bug (user report + Tacview, 2026-06-29):** with `auto_combat_sar` on, every AI ejection made
   `dispatchAIRescue` clone a brand-new `CombatSAR Rescue N` helo from the FARP instead of using the
   Combat SAR flight already orbiting the FLOT. Tacview from `…retribution_nextturn` shows 8+
@@ -1115,6 +1209,44 @@ so the two docs don't drift.
   (`combatsar: AI dispatch error` in `dcs.log` — the live-group `FLIGHTGROUP` wrap is the risk to
   watch); a human's rescue helo gets hijacked by the AI (the `groupHasPlayer` guard failed); or a
   helo stays stuck `busy` and never serves a later ejection (free-on-`OnAfterUnloaded` not firing).
+
+### G22 — Captured-pilot POW recovery raid: planning crash + map marker · §15 · ☐ UNTESTED (2 fixes applied 2026-06-30, needs a re-fly)
+- **Bug (user report, 2026-06-30 — screenshot of "An unexpected error occurred"):** planning a
+  recovery flight against a captured-pilot POW objective (F10 "save pilot at airbase") crashed with
+  `AssertionError` in `AirAssaultFlightPlan.Builder.layout()` (`assert self.package.waypoints is not
+  None`), raised from `ibuilder.py`'s `_generate_package_waypoints_if_needed` while computing the ATO
+  list's `sizeHint`. **Root cause:** `CapturedPilotGroundObject` is deliberately flagged
+  `is_friendly()==True` (§15 design: it's *our* POW, so it renders/tasks as a friendly recovery
+  objective) even though it's physically positioned at the enemy airfield holding the POW — but
+  `_generate_package_waypoints_if_needed`'s "friendly target → skip offensive routing" shortcut used
+  that same flag to decide whether the package needed an ingress route, so `package.waypoints` was
+  never populated and the CSAR-only builder's unconditional assertion tripped. **Confirmed exactly
+  this scenario exists in the user's own save:** loading `414TH.retribution` headless finds a live
+  `CapturedPilotGroundObject` at Batumi offering `FlightType.CSAR` to blue with `is_friendly==True` —
+  the precise repro condition.
+- **Fix (2026-06-30, `game/ato/flightplans/ibuilder.py`):** `_generate_package_waypoints_if_needed` now
+  always generates package waypoints for `FlightType.CSAR` regardless of the friendly flag (CSAR's only
+  legal target is always physically enemy territory by construction). Covered by a new focused unit
+  test (`tests/ato/flightplans/test_ibuilder_package_waypoints.py`, 3 cases: CSAR still routes against a
+  friendly-flagged target, a non-CSAR type still skips for a friendly target, a genuinely offensive
+  target still routes). Black/mypy/pytest green.
+- **2nd bug (user report, 2026-06-30):** "captured pilot box shows on the map as intended but it needs
+  to be offset from the base so you can click it" — the POW marker rendered exactly on top of the
+  holding airfield's own icon (`pow_objectives.py` positioned it at `holding_cp.position` with zero
+  offset), making it unclickable.
+- **Fix (2026-06-30, `game/pow_objectives.py`):** the marker is now offset `_MARKER_OFFSET_M` (900 m)
+  toward the friendly anchor, clearing the airfield's icon while still reading as "held at this
+  airfield." Recovery is matched by airframe name, not position (`commit_pow_recoveries`), so the
+  offset is purely cosmetic. `tests/test_pow_objectives.py` updated to assert the offset instead of
+  exact-position equality; all green.
+- **Setup:** A campaign with a `PendingPowRecovery` on the map (a captured pilot from the Combat SAR
+  capture race, §15/G20). Open the map, confirm the POW marker sits clear of the holding airfield's
+  icon and is clickable, then plan a CSAR recovery flight against it.
+- **Pass:** The marker is clickable without zooming past the airfield icon; planning the CSAR flight
+  does not crash, and the flight gets a real offensive-style ingress route into enemy territory (not a
+  degenerate/local-only route).
+- **Fail signature:** the `AssertionError` recurs; the flight plans with no real ingress (routes
+  straight through threat zones with no IP); the marker still overlaps the airfield icon.
 
 ---
 
@@ -1594,6 +1726,20 @@ so the two docs don't drift.
   `arcLightBlastPower`/length/width down).
 
 ### L2 — AAA flak gauntlet · §33 · ◐ PARTIAL (2026-06-28, audience in-game pass — works very well but TOO ACCURATE/lethal; default miss/tracking tuning owed)
+- **⚠️ Config-mismatch finding (2026-06-30, `dcs.log`):** the flown session's plugin options were
+  **`ceiling 5000m, power 8`** — but the *current* `plugin.json` defaults (post-2026-06-28 softening,
+  confirmed by reading `vietnamops-config.lua` + `plugin.json` today) are `flakCeilingM=4500` /
+  `flakBlastPower=6`. `power=8` is the exact **pre-softening** value (`BLAST 8→6`); `ceiling=5000` was
+  never a documented value either way. This means this session's flak lethality was **not** exercised
+  against the current softened tuning — either this `.miz`'s plugin options are a stale campaign-side
+  override that predates the 2026-06-28 fix, or someone deliberately dialed it back up. Blue took heavy
+  losses this session (whole 3-ship BLOODHOUND Strike A-6E flight, whole 3-ship Kutaisi BARCAP A-4E
+  flight, both TARPS RF-101Bs, several SCAR/CAS helos — 29 `crash_events` total), which is *consistent*
+  with an over-tuned flak gauntlet but wasn't isolated from SAM/MiG kills (scripted `explosion()` calls
+  don't leave a Tacview object or a per-burst log line, so per-kill attribution needs deeper Tacview
+  geometry work this pass didn't do). **Before re-flying this row:** check the campaign's saved Vietnam
+  Ops plugin options (or regenerate) and confirm `flakBlastPower`/`flakCeilingM` are actually reading
+  the current 6/4500 defaults, not a stale 8/5000.
 - **In-game (2026-06-28, audience pass — user: "too accurate but working very well"):** the gauntlet mechanic is confirmed working (AAA discovery, engagement geometry, predictability ramp all behave) — but the bursts land **too close / kill too reliably**, reading more like a hard-kill threat than the intended mostly-visual pressure. The lethal lever is the close **"tracking" round** (`flakBurst`: `miss = MIN_MISS*0.35` ≈ 24 m at `blast = BLAST*2.5` = 20, fired once `factor > 0.66`) on top of the tight `MIN_MISS = 70` floor. **Tuning APPLIED 2026-06-28 (recommended softening):** `MIN_MISS` 70→**110** m, tracking round `miss ×0.35→×0.55` + `blast ×2.5→×2.0` and rarer (`factor > 0.66→0.8`), `BLAST` 8→**6** — in both `vietnamops-config.lua` and the `plugin.json` defaults (`flakMinMissM` 70→110, `flakBlastPower` 8→6). Net: predictable bursts ~42–98 m@8 → ~66–154 m@6; the close tracking puff ~15–34 m@20 → ~36–85 m@12. **Re-fly owed** to confirm the feel is right (still pressure, no hard-kill).
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the on-marker
   emission (flak node only when the setting is on, independent of Arc Light). The flak itself — AAA discovery
@@ -1610,6 +1756,17 @@ so the two docs don't drift.
   `dcs.log`; FPS hit on a dense mission.
 
 ### L3 — Naval gunfire support · §34 · ☐ UNTESTED (emitter test-covered; both runtime modes are Lua, need a cockpit pass)
+- **Inconclusive session (2026-06-30, Tacview):** `dcs.log` confirms the emitter armed 2 blue
+  gun ships (`Naval gunfire armed (2/0 gun ship(s) blue/red, range 20000m, ...)`) — 2× VWV
+  `DE-1052 USS Knox` escorting a carrier strike group. But scanning every `Projectile+Shell` object in
+  the Tacview ACMI (34k+ shell events) found **no naval-caliber shell type** (only tank/AAA-caliber
+  ammo like `M68_105_HE`, `KS19_100HE`, etc. — nothing matching the Knox's 5" mount), and the ship
+  group's recorded position is well offshore of the active front (Kutaisi/Senaki-Kolkhi, well inland).
+  That's consistent with the documented **"coastal only by construction"** limitation (no enemy ground
+  in the ships' 20 km range ⇒ nothing fires) rather than a bug — but it means this row **still wasn't
+  actually exercised**. To close it out: fly (or auto-plan) a campaign whose front sits within ~20 km
+  of the coast, or manually reposition a gun ship group near enemy ground and either wait for the auto
+  cadence or use **radio → Naval Fire Mission → Fire on last F10 map marker**.
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the gun-ship
   emission (CRUISER/DESTROYER/FRIGATE incl. the New Jersey, carrier excluded, coalition carried; off /
   no-gun-ship = no node). The F10 menu, marker read, ship/target selection, and `TaskFireAtPoint` are runtime
@@ -1654,7 +1811,17 @@ so the two docs don't drift.
   switching back to "included" stays filtered; the "show incompatible" toggle drops the era filter; a crash
   arriving on the Theater page.
 
-### L6 — Convoy interdiction (Steel Tiger) · §35 · ☐ UNTESTED (emit test-covered; the spawn Lua needs a cockpit pass)
+### L6 — Convoy interdiction (Steel Tiger) · §35 · ☑ VERIFIED (2026-06-30, `dcs.log` — "Vietnam v2.miz" session, full spawn→wipe→respawn cycle)
+- **Verified (2026-06-30, flown session — `Vietnam v2.miz` / `dcs.log`):** `VietnamConvoy-1` registered
+  at mission load (`00:17:32`, "Convoy interdiction armed (3 waypoint corridor)"), then
+  `VietnamConvoy-2` registered at `01:22:00` — 64m28s later, with **no intervening mission reload** (the
+  session ran continuously from `00:17:29` to the Tacview save at `01:29:50`). That gap is only
+  consistent with the column having been fully wiped around `01:12:00` (≈54 min of driving/
+  interdiction) and the 600 s `RESPAWN` timer then rolling a fresh column — i.e. a complete
+  spawn→drive→destroy→respawn cycle happened live, with no `coalition.addGroup` Lua errors in the log.
+  Fail signature (no spawn / never moves / Lua error) did not occur. Still open: the halt-under-threat
+  (`setOnOff`) behavior wasn't specifically confirmed (would need a Tacview pass flown close enough to
+  the corridor to force a halt).
 - **Headless adjudication:** the corridor pick (`_populate_convoy_interdiction`) is unit-tested
   (`game/missiongenerator/tests/test_vietnamops_luadata.py` — picks the nearest enemy→enemy road, ignores the
   RED→BLUE front, off = no node) and verified on the live Khe Sanh save (chose Senaki→Kobuleti, 23.5 km behind

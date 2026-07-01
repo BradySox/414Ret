@@ -1340,6 +1340,21 @@ objectives) and `auto_combat_sar` (the AI standing alert). State globals: `comba
 plus the Combat SAR / POW coverage in `tests/test_missionresultsprocessor.py`. The capture race +
 King cueing + POW recovery **need an in-game pass** (checklist G8–G14).
 
+**Gotcha — Sandy is a static hold, not a dynamic responder (confirmed by design, 2026-06-30).**
+`ScarFlightPlan`/`Builder` (`game/ato/flightplans/scar.py`) plans Sandy's racetrack **once at
+mission generation**, centred on the King's own hold position (or the FLOT centre with no King), with
+a fixed 5 NM `engagement_distance` and a weapons-free CAS ROE (`configure_scar`,
+`game/missiongenerator/aircraft/aircraftbehavior.py`) — so an AI Sandy engages whatever hostile ground
+units it detects *inside that pre-planned box*, but the box never moves to follow wherever a pilot
+actually ejects later in the mission. "Walking Jolly Green in" is explicitly **voice-first** for a
+player Sandy (the King talks them on over comms — there is no scripted mechanic) and is flagged in the
+code's own comment as **"a combatsar runtime follow-up for the AI"** — i.e. dynamic AI re-tasking
+toward a live ejection is deferred, unbuilt work, not a bug. A 2026-06-30 in-game report ("Sandy's did
+nothing but fly their orbit path") is consistent with this: the ejection/snatch-party incident simply
+didn't occur inside Sandy's fixed box. Building dynamic re-tasking (detect an ejection/snatch party,
+break Sandy off its racetrack to engage) would be a `combatsar` plugin runtime addition, not a planner
+change.
+
 ### SOF insert generation fixes (2026-06-22)
 
 Two fixes so the SOF C-130 airdrop actually generates as a flyable ground sortie:
@@ -1615,7 +1630,7 @@ returns to the squadron).
   ledger's survivor as cargo and deliver it to the FARP, **crediting the real unit** on unload
   (`OnAfterUnloaded` → `combat_sar_rescues`; no anonymous clone — identity lives in the ledger
   entry, so AI rescues score the spare-pilot credit too).
-- **Commandeer-first dispatch (2026-06-29, G9b fix).** `dispatchAIRescue` used to **always** clone a
+- **Commandeer-first dispatch (2026-06-29, G21 fix).** `dispatchAIRescue` used to **always** clone a
   fresh helo (`SPAWN:NewWithAlias("CombatSAR Rescue N", …)`) from the FARP, so every AI ejection
   piled a new helo on top of the rescue flight already orbiting the FLOT (Tacview-confirmed: 8+
   `CombatSAR Rescue N` clones spawned co-located with the idle `Front line … Combat SAR` helos).
@@ -1624,8 +1639,11 @@ returns to the squadron).
   marks it busy, and frees it again on delivery so it can serve the next ejection; it only falls
   back to cloning from `heloTemplate` when every planned rescue helo is dead or already committed.
   Player-crewed helos are skipped (`groupHasPlayer`), so it never competes with a human's CSAR. The
-  live-group `FLIGHTGROUP` takeover of an orbiting AI flight **needs an in-game pass** (checklist
-  G9b). **The earlier G9 eject-dispatch re-fly PASSED 2026-06-28 (audience pass, user "good").**
+  live-group `FLIGHTGROUP` takeover of an orbiting AI flight is ◐ **PARTIAL** as of a 2026-06-30 flown
+  session (checklist G21): the clone-fallback path is confirmed correct, but the row's own anticipated
+  fail signature (`combatsar: AI dispatch error` — a Moose `_RegisterGroupTemplate` "table index is
+  nil" on a nil `unitId`) also reproduced 9× in that session's `dcs.log`, `pcall`-guarded so it didn't
+  block the 3 rescues that completed, but worth root-causing. **The earlier G9 eject-dispatch re-fly PASSED 2026-06-28 (audience pass, user "good").**
   **v1 limitation (still open):** a player ejecting from a fixed-wing with no human helo up can be
   double-handled (cosmetic double-spawn).
 - **King beacon = TACAN only.** Each King lights an **air-tracking TACAN** (follows the

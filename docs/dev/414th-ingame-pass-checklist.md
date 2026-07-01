@@ -1799,6 +1799,11 @@ so the two docs don't drift.
 
 ### L1 — Arc Light heavy-bomber Strike carpet · §32 · ☑ VERIFIED (2026-06-28, audience in-game pass — user: "good")
 - **In-game (2026-06-28, audience pass — user verdict "good"):** the Arc Light carpet works — a heavy bomber's STRIKE walks a carpet of explosions across the target box at the run-in, no Lua error and no reported FPS hit. Power/density read acceptable to the user (no tuning requested).
+- **Default retune 2026-07-01 (imperial-unit options):** release range moved **8 → 3 NM** (`arcLightReleaseNm`)
+  so the carpet lands with the bomber nearly overhead (matching the ~2.5–3 NM ballistic forward throw from
+  ~30k ft) instead of firing a full minute early; carpet defaults re-expressed as 6,000×1,500 ft / 660 lb
+  (≈ the verified 1700×500 m / 300 kg). Mechanics unchanged — the VERIFIED verdict stands; just note the
+  carpet now appears later on the run-in.
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the Python
   emitter — only a heavy-bomber (`HEAVY_BOMBER_DCS_IDS`) `STRIKE` produces an `arcLight` record, the
   toggle off emits no `VietnamOps` node, and a non-bomber Strike emits no record. The carpet itself
@@ -1838,7 +1843,10 @@ so the two docs don't drift.
   don't leave a Tacview object or a per-burst log line, so per-kill attribution needs deeper Tacview
   geometry work this pass didn't do). **Before re-flying this row:** check the campaign's saved Vietnam
   Ops plugin options (or regenerate) and confirm `flakBlastPower`/`flakCeilingM` are actually reading
-  the current 6/4500 defaults, not a stale 8/5000.
+  the current 6/4500 defaults, not a stale 8/5000. **RESOLVED BY THE 2026-07-01 IMPERIAL RENAME:** the
+  flak options are now `flakRangeNm`/`flakCeilingFt`/`flakMinMissFt`/`flakMaxMissFt`/`flakBurstPower`
+  (2.5 NM / 15,000 ft / 500 ft / 1,000 ft / 6) — the old metric keys are ignored, so every campaign
+  re-seeds the softened defaults and the stale-`8/5000` mismatch can't recur. Re-fly on the new defaults.
 - **In-game (2026-06-28, audience pass — user: "too accurate but working very well"):** the gauntlet mechanic is confirmed working (AAA discovery, engagement geometry, predictability ramp all behave) — but the bursts land **too close / kill too reliably**, reading more like a hard-kill threat than the intended mostly-visual pressure. The lethal lever is the close **"tracking" round** (`flakBurst`: `miss = MIN_MISS*0.35` ≈ 24 m at `blast = BLAST*2.5` = 20, fired once `factor > 0.66`) on top of the tight `MIN_MISS = 70` floor. **Tuning APPLIED 2026-06-28 (recommended softening):** `MIN_MISS` 70→**110** m, tracking round `miss ×0.35→×0.55` + `blast ×2.5→×2.0` and rarer (`factor > 0.66→0.8`), `BLAST` 8→**6** — in both `vietnamops-config.lua` and the `plugin.json` defaults (`flakMinMissM` 70→110, `flakBlastPower` 8→6). Net: predictable bursts ~42–98 m@8 → ~66–154 m@6; the close tracking puff ~15–34 m@20 → ~36–85 m@12. **Re-fly owed** to confirm the feel is right (still pressure, no hard-kill).
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the on-marker
   emission (flak node only when the setting is on, independent of Arc Light). The flak itself — AAA discovery

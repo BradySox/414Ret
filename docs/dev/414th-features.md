@@ -2334,12 +2334,15 @@ eligible flight: a `STRIKE` whose `aircraft_type.dcs_unit_type.id` is in `HEAVY_
 the bomber **group name** and its **target centre** (`package.target.position`, pydcs x=north / y=east).
 
 The `vietnamops` plugin (`resources/plugins/vietnamops/vietnamops-config.lua`) watches each bomber group
-on a 5 s poll; when the lead unit closes inside the release range (default 8 NM), it fires a **one-shot
-carpet**: a box of `trigger.action.explosion` impacts oriented along the bomber's **bearing to the target**
-(its run-in), rows stepping along-track with a small delay so it visibly walks, columns spreading it
-cross-track, with per-impact jitter. Carpet length/width/per-blast power/release-range are plugin
-`specificOptions` (defaults 1700×500 m, 300 kg, 8 NM). `pcall`-guarded throughout; inert with no
-`VietnamOps` data, so non-Vietnam missions never load any of it.
+on a 5 s poll; when the lead unit closes inside the release range (default 3 NM — retuned 2026-07-01 from
+8 NM so the carpet lands with the bomber nearly overhead, matching the ~2.5–3 NM ballistic forward throw
+from ~30k ft, instead of firing a full minute early), it fires a **one-shot carpet**: a box of
+`trigger.action.explosion` impacts oriented along the bomber's **bearing to the target** (its run-in), rows
+stepping along-track with a small delay so it visibly walks, columns spreading it cross-track, with
+per-impact jitter. Carpet length/width/per-blast power/release-range are plugin `specificOptions`
+(**imperial-unit options since 2026-07-01**; defaults 6,000×1,500 ft, 660 lb TNT, 3 NM — the Lua converts
+to metric at read time). `pcall`-guarded throughout; inert with no `VietnamOps` data, so non-Vietnam
+missions never load any of it.
 
 ### Why this shape
 
@@ -2389,12 +2392,12 @@ The `vietnamops` plugin does the rest:
   DCS **`AAA`** attribute (so frontline ZSU-23/Shilka belts *and* airfield guns all contribute), grouped by
   side. No unit-name plumbing, and late-spawned guns are picked up.
 - **Engagement.** Every 2.5 s, for each airborne aircraft between the floor (120 m AGL) and the ceiling
-  (4500 m AGL), it counts alive **opposing** AAA guns within horizontal range (4500 m, capped at 3 for
-  density) and, if any, spawns barrage bursts near the aircraft at its altitude.
+  (default 15,000 ft AGL), it counts alive **opposing** AAA guns within horizontal range (default 2.5 NM,
+  capped at 3 for density) and, if any, spawns barrage bursts near the aircraft at its altitude.
 - **Predictability.** A per-aircraft factor ramps up while heading (±8°) and altitude (±40 m) hold steady and
-  drops fast on a jink. The barrage **miss distance** lerps from loose (250 m, jinking) to tight (70 m,
-  predictable); a sustained predictable run (factor > 0.66) also draws one **close "tracking" round** per tick
-  (tighter miss, ~2.5× power) — the modest bite that punishes straight-and-level flight.
+  drops fast on a jink. The barrage **miss distance** lerps from loose (1,000 ft, jinking) to tight (500 ft,
+  predictable); a *sustained* predictable run (factor > 0.85) also occasionally (30 %/tick) draws one **close
+  "tracking" round** (tighter miss, ×1.5 power) — the modest bite that punishes straight-and-level flight.
 
 Bursts are `trigger.action.explosion` airbursts (small default power) — **mostly visual pressure to jink, not
 a hidden hard-kill SAM**. Symmetric: both sides' AAA flak the other side. `pcall`-guarded throughout; inert
@@ -2421,8 +2424,14 @@ without the `flak` marker.
     the tracking round is **occasional** — gated behind a sustained steady run (`factor > 0.85`) **and** a
     per-tick probability (`TRACKING_CHANCE = 0.3`) — and softened (`miss ×0.55→×0.75`, `blast ×2.0→×1.5`).
   Both passes changed `vietnamops-config.lua` **and** the matched `plugin.json` defaults. Still `◐ PARTIAL`
-  until a re-fly confirms the feel (pressure to manoeuvre, no hard-kill). `flakBlastPower` / miss distances /
+  until a re-fly confirms the feel (pressure to manoeuvre, no hard-kill). `flakBurstPower` / miss distances /
   range remain the campaign-side knobs.
+- **Imperial-unit options (2026-07-01).** All flak options are now authored in imperial units and the
+  mnemonics were renamed (`flakRangeNm` 2.5 NM / `flakCeilingFt` 15,000 ft / `flakMinMissFt` 500 ft /
+  `flakMaxMissFt` 1,000 ft / `flakBurstPower` 6); the Lua converts to metric at read time. The rename also
+  deliberately **flushes stale per-campaign saved options** — the L2 config-mismatch finding (a flown session
+  still reading pre-softening `110/250/8` + `ceiling 5000`) can't recur, because the old metric keys are
+  simply ignored and the softened imperial defaults seed fresh.
 - **Runtime cost:** the 2.5 s sweep iterates airborne aircraft × nearby AAA (capped). Bounded and pcall-
   guarded, but watch FPS on a very dense mission.
 - **Deferred polish:** tracer streams from the airstrip AAA belts (v1 is barrage puffs only); a per-pilot
@@ -2449,7 +2458,7 @@ the same path TIC uses for naval artillery):
   (`world.getMarkPanels`) and fires the nearest in-range friendly gun ship there (with a "SHOT"/"no ship in
   range" call back).
 - **Automatic coastal bombardment.** Every cadence (default 90 s), each alive gun ship shells the nearest
-  **opposing** ground target within gun range. Because ships sit offshore and the range gate is ~20 km, this
+  **opposing** ground target within gun range. Because ships sit offshore and the range gate is ~10 NM, this
   only ever reaches **coastal** targets — the feature is coastal-by-construction and **no-ops inland** (Khe
   Sanh), exactly as intended. Toggleable (`ngfsAuto`).
 
@@ -2468,8 +2477,9 @@ Symmetric (either side's gun ships). `pcall`-guarded; inert without the `navalGu
 
 - **Coastal only.** Inland campaigns have no gun ship in range and correctly produce nothing; this is the
   historicity gate (Khe Sanh saw no naval gunfire). Keep `vietnam_naval_gunfire` **off** for inland YAMLs.
-- **Gun reach is a selection gate, not a DCS truth.** `ngfsRangeM` (default 20 km) picks the ship/target; the
-  actual round only impacts if the DCS gun can range it. Tune to the ship types in play during the pass.
+- **Gun reach is a selection gate, not a DCS truth.** `ngfsRangeNm` (default 10 NM; imperial-unit options
+  since 2026-07-01) picks the ship/target; the actual round only impacts if the DCS gun can range it. Tune to
+  the ship types in play during the pass (a 5″ destroyer ranges ~9 NM; the New Jersey's 16″ far more).
 - **Escort ships:** tasking a gun ship `FireAtPoint` can pull an *escort* off its station. Fine for a
   dedicated NGFS ship; watch it on a screening destroyer.
 - **Deferred:** JTAC auto-lase → auto fire-mission (reading CTLD's laser target couples to CTLD internals);
@@ -2593,7 +2603,8 @@ It emits `dcsRetribution.VietnamOps.airbaseHarassment = { fields = { {name,x,y,c
   — mostly noise/smoke with a modest, tunable bite. A direct hit on a parked static is a bonus, not the goal.
 - A defensive Lua re-check skips any field whose name is in `excludedFields` (belt-and-suspenders over the
   Python filter), and announces "Incoming — standoff fire on <field>" to the owning coalition.
-- Tunables (plugin `specificOptions`): interval, rounds/event, dispersion radius, per-blast power, grace.
+- Tunables (plugin `specificOptions`): interval, rounds/event, dispersion radius (ft, `harassDispersionFt` —
+  imperial-unit options since 2026-07-01), per-blast power, grace.
 
 ### Files & tests
 
@@ -2718,7 +2729,8 @@ Same shape as §33 flak — an **on-marker + runtime discovery**, no per-mission
   willie pete — cleared hot" cue to the FAC's coalition. Symmetric by construction (both sides scanned), but
   only OV-10 owners have FACs, so it's blue-effective in practice. No friendly OV-10 airborne over the front
   ⇒ nothing marked.
-- Tunables (plugin `specificOptions`): FAC aircraft type, spot/mark range, mark cadence.
+- Tunables (plugin `specificOptions`): FAC aircraft type, spot/mark range (NM, `facRangeNm` — imperial-unit
+  options since 2026-07-01), mark cadence.
 
 ### Files & tests
 
@@ -2772,8 +2784,9 @@ Same shape as §33 flak and §38 FAC — an **on-marker + runtime discovery**, n
   bite is earned, not ambient.
 - Symmetric by construction (both sides' attack jets are scanned). No attacker down low over enemy ground ⇒
   nothing laid.
-- Tunables (plugin `specificOptions`): run-in ceiling (m AGL), min speed (m/s), drop range (m), swath length
-  (m), fire-node count, per-node power.
+- Tunables (plugin `specificOptions`, imperial since 2026-07-01): run-in ceiling (ft AGL), min speed (kts —
+  default 180 kts keeps a loaded A-1 Skyraider pass eligible), drop range (ft), swath length (ft), fire-node
+  count, per-node power.
 
 ### Files & tests
 

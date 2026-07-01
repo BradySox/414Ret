@@ -549,24 +549,28 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §36, checklist L8 — needs an
     in-game pass.)
 37. **Super Gaggle hilltop resupply** — the sixth **Vietnam Ops suite** feature (design note
-    `414th-vietnam-ops-notes.md`, §E): a formation of transport helos runs supplies into a cut-off forward
-    friendly outpost while the player can fly escort — the Khe Sanh "Super Gaggle." The design's planner-template
-    v1 is **blocked on an auto-plannable CTLD cargo run the engine lacks**, so this ships **runtime-only**,
-    following the §35 convoy pattern instead: `_populate_super_gaggle` (`vietnamopsluadata.py`) picks the
-    friendly (BLUE) **FOB/FARP nearest a front** as the besieged outpost (within `GAGGLE_OUTPOST_FRONT_REACH_M`
-    ≈ 150 km) and the nearest **other** friendly helo-capable field as the launch point, emitting
-    `{ coalition, outpost{name,x,y}, launch{x,y} }`. No forward friendly outpost / no launch field / no front ⇒
-    no node ⇒ plugin no-ops. The `vietnamops` plugin spawns a helo gaggle (default 3× UH-1H, `coalition.addGroup`)
-    that flies launch → outpost → back, announces delivery on reaching the outpost, and **re-rolls a fresh run**
-    a cadence after the old one is delivered or shot down. The fast-mover AAA-suppression **choreography** that
-    made the historical gaggle distinctive **landed 2026-07-01**: each run also launches a short attack flight
-    (default 2× `A-4E-C`, the historical suppressor) that flies launch → over the outpost (CAS task, so the AI
-    works the AAA) → back, tied to the gaggle lifecycle and its own `pcall` (a spawn failure leaves the helo run
-    intact; count 0 disables). Runtime-cosmetic (no supply-economy effect, like the convoy); blue-only
-    (symmetry deferred, like the convoy). Plugin options: helo type, count, speed, altitude, respawn cadence;
-    suppressor count/type/altitude. (`game/missiongenerator/vietnamopsluadata.py`, `resources/plugins/vietnamops/`,
-    `game/settings/settings.py`; features doc §37, checklist L9 — needs an in-game pass; the suppressor's default
-    loadout / effectiveness is the #1 tuning item.)
+    `414th-vietnam-ops-notes.md`, §E): a formation of transport helos (+ a fast-mover AAA-suppression flight)
+    runs supplies into a cut-off forward friendly outpost while the player can fly escort — the Khe Sanh "Super
+    Gaggle." **Drawn from real BLUE squadrons + losses tracked, not a phantom spawn** (reworked 2026-07-01 to
+    eliminate free airframes — the old `coalition.addGroup` helos were unaccounted units on an **unbounded
+    respawn loop**, so losing them cost nothing). The gaggle is now planned once per turn from **real squadrons**:
+    `plan_super_gaggle` (`game/fourteenth/super_gaggle.py`, run from `finish_turn`) picks the besieged BLUE
+    FOB/FARP near a front + a rear launch field, a **real BLUE helo squadron** to fly the run + a **real BLUE
+    attack squadron** for the suppressors, and records a `SuperGaggleCommitment` (persisted on the game: the
+    squadrons + the exact per-airframe unit names + geometry). `_populate_super_gaggle` emits that commitment; the
+    `vietnamops` plugin spawns **exactly those** airframes, by name, **once** (no respawn — airframes are bounded
+    to the commitment). At debrief, `reconcile_super_gaggle` (`missionresultsprocessor.commit_super_gaggle`) charges
+    each committed unit name found in the debrief's killed units back to its squadron (`owned_aircraft -= lost`,
+    `destroyed_aircraft += lost`) — a **real airframe loss**, exactly like any other; survivors cost nothing (a
+    returning detachment, so no pre-debit/return), and a delivered run credits the outpost a small ground-strength
+    boost. No base-Lua / debrief-schema change: the spawned units already fire the DCS death events
+    `dcs_retribution.lua` records, so their names land in the debrief killed lists (as untracked ground units,
+    since they aren't in the `UnitMap`) and are matched by name. Fully guarded (feature off / no outpost / no
+    launch / no helo squadron with airframes ⇒ no commitment ⇒ no node ⇒ plugin no-ops). Blue-only (symmetry
+    deferred). Plugin options now just speed/altitudes (type/count come from the squadrons). (`game/fourteenth/super_gaggle.py`,
+    `game/game.py`, `game/sim/missionresultsprocessor.py`, `game/missiongenerator/vietnamopsluadata.py`,
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §37, checklist L9 — needs an
+    in-game pass.)
 38. **FAC(A) willie-pete target marking** — the seventh **Vietnam Ops suite** feature: the iconic Vietnam
     forward air controller. An airborne OV-10 Bronco loitering over the battle area marks nearby enemy ground
     with **white-phosphorus smoke** so the player (and AI strikers) can visually acquire the target and roll in

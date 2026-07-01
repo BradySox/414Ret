@@ -50,6 +50,7 @@ from .weather.conditions import Conditions
 if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
+    from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .navmesh import NavMesh
     from .sim import GameUpdateEvents
     from .squadrons import AirWing
@@ -119,6 +120,10 @@ class Game:
         # shown on the next turn's kneeboard cover band. None until the first
         # mission is flown; persisted.
         self.last_sitrep: Optional[Sitrep] = None
+        # Vietnam Ops Super Gaggle (§37): the turn's planned resupply run, drawn from real
+        # BLUE squadrons; None when the feature is off or no gaggle is plannable. Losses are
+        # charged back to the squadrons at debrief. Replanned each turn in finish_turn.
+        self.super_gaggle_commitment: Optional["SuperGaggleCommitment"] = None
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -188,6 +193,7 @@ class Game:
         state.setdefault("custom_kneeboards", [])
         state.setdefault("last_sitrep", None)
         state.setdefault("client_map_layers", None)
+        state.setdefault("super_gaggle_commitment", None)
         self.__dict__.update(state)
         if not hasattr(self, "laser_code_registry"):
             self.laser_code_registry = LaserCodeRegistry()
@@ -347,6 +353,14 @@ class Game:
         from game.fourteenth.vietnam_convoy import ensure_enemy_trail_convoy
 
         ensure_enemy_trail_convoy(self)
+
+        # Vietnam Ops Super Gaggle (§37): (re)plan the turn's resupply run from real BLUE
+        # squadrons (drawing the helos + suppressors from actual airframes, whose losses are
+        # charged back at debrief), or clear it. No-op unless the setting is on and a besieged
+        # outpost + launch field + a helo squadron with airframes all exist.
+        from game.fourteenth.super_gaggle import plan_super_gaggle
+
+        plan_super_gaggle(self)
 
         # Movable ship TGOs snap to their destination and re-parent to the
         # nearest friendly CP. Runs after captures are committed (process_results

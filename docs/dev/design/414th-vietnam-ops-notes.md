@@ -189,17 +189,23 @@ debrief and those units never reach their destination CP.
 a CAS/escort package); the *only* thing a script buys is the **choreography** (the fast-mover AAA-suppression
 window + the tight "gaggle" timing) that made it distinctive at Khe Sanh.
 
-**What shipped (runtime, not the planner).** The planner-template v1 below stayed blocked (no auto-plannable
-CTLD cargo run — see the top-of-file status), so §E shipped as a **runtime Vietnam Ops feature**, the same
-shape as §35 convoy: `_populate_super_gaggle` (`vietnamopsluadata.py`) picks the friendly (BLUE) FOB/FARP
-nearest a front as the besieged outpost + the nearest other friendly helo-capable field as the launch point;
-the `vietnamops` plugin spawns a helo gaggle (default 3 × UH-1H) that flies launch → outpost → back, announces
-delivery, and re-rolls on a cadence. The player can escort it. Runtime-cosmetic (no supply-economy effect),
-blue-only (symmetry deferred). The **fast-mover AAA-suppression choreography landed 2026-07-01**: each run
-also launches a short attack flight (default 2 × A-4E-C, the historical suppressor) that flies launch → over
-the outpost (CAS task) → back, tied to the gaggle lifecycle and its own `pcall`. Emitter-tested; runtime Lua
-pending an in-game pass (checklist L9) — the suppressor's default loadout / effectiveness is the open tuning
-item (it spawns with DCS's default payload; give it an explicit one or a scripted effect if it needs teeth).
+**What shipped (real squadron airframes + tracked losses, reworked 2026-07-01).** The planner-template v1
+below stayed blocked (no auto-plannable CTLD cargo run — see the top-of-file status), so §E shipped runtime.
+v1 spawned **phantom** helos + suppressors on an unbounded respawn loop (free, unaccounted airframes — the
+same "free non-existent unit" the §35 convoy had). The rework keeps the runtime spawn but wires it into the
+force model ("debit a squadron + track losses"): `plan_super_gaggle` (`game/fourteenth/super_gaggle.py`, run
+once per turn from `finish_turn`) picks the besieged BLUE FOB/FARP + launch field **and a real BLUE helo
+squadron + attack squadron**, recording a `SuperGaggleCommitment` (squadrons + the exact per-airframe unit
+names + geometry). `_populate_super_gaggle` emits that commitment; the `vietnamops` plugin spawns **exactly
+those** airframes, by name, **once** (no respawn — bounded to the commitment). At debrief,
+`reconcile_super_gaggle` (`missionresultsprocessor.commit_super_gaggle`) charges each committed name found in
+the debrief's killed units back to its squadron (a real airframe loss); survivors cost nothing, and a
+delivered run credits the outpost a small ground-strength boost. No base-Lua / debrief-schema change (the
+spawned units already fire the death events `dcs_retribution.lua` records; their names land in
+`killed_ground_units` and are matched). The fast-mover suppression flight is now the committed attack
+squadron's airframes (launch → over the outpost on a CAS task → back). The player can escort it; blue-only.
+Test-covered (`tests/fourteenth/test_super_gaggle.py`); runtime Lua pending an in-game pass (checklist L9) —
+the suppressor's default loadout / effectiveness is the open tuning item.
 
 **Original planner-template design (NOT built — kept for the future increment).** A planner package template:
 when `vietnam_super_gaggle` is on and a friendly outpost is cut off, auto-plan the package (suppress + cargo +

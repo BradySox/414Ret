@@ -225,9 +225,10 @@ and selected later upstream fixes.
   is **airbase harassment**: forward enemy airfields draw sporadic rocket/mortar fire near the ramp — the
   near-constant siege of Bien Hoa, Da Nang, and the Khe Sanh strip — so the rear stops feeling like a safe
   area. *Your* active spawn fields are never targeted, and a startup grace period keeps it off while you're
-  still starting up. The sixth is the **Super Gaggle**: a formation of transport helos runs supplies into a
-  cut-off forward friendly outpost (fly launch field → outpost → back, re-rolling on a cadence), which you can
-  escort in — the Khe Sanh hilltop resupply. The seventh is **FAC(A) marking**: an airborne forward air
+  still starting up. The sixth is the **Super Gaggle**: a formation of transport helos — drawn from a **real** friendly
+  helicopter squadron, with a fast-mover suppression flight — runs supplies into a cut-off forward outpost
+  (launch field → outpost → back), which you can escort in. Lose a helo and it's a real airframe loss to that
+  squadron; get the supplies in and the garrison is bolstered — the Khe Sanh hilltop resupply. The seventh is **FAC(A) marking**: an airborne forward air
   controller (an OV-10 Bronco loitering over the battle area) marks nearby enemy ground with **white-phosphorus
   smoke** so you can visually acquire the target and roll in — the iconic Vietnam Bronco putting willie pete on
   the target. The eighth is **snake and nape**: fly an **attack aircraft low and fast** over enemy troops and

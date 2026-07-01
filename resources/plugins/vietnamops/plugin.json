@@ -99,16 +99,6 @@
             "defaultValue": 300
         },
         {
-            "nameInUI": "Super Gaggle: transport helo DCS type",
-            "mnemonic": "gaggleHeloType",
-            "defaultValue": "UH-1H"
-        },
-        {
-            "nameInUI": "Super Gaggle: helos per resupply run",
-            "mnemonic": "gaggleCount",
-            "defaultValue": 3
-        },
-        {
             "nameInUI": "Super Gaggle: transit speed (kph)",
             "mnemonic": "gaggleSpeedKph",
             "defaultValue": 220
@@ -117,21 +107,6 @@
             "nameInUI": "Super Gaggle: transit altitude (m radio)",
             "mnemonic": "gaggleAltM",
             "defaultValue": 150
-        },
-        {
-            "nameInUI": "Super Gaggle: seconds before a fresh run launches",
-            "mnemonic": "gaggleRespawnS",
-            "defaultValue": 900
-        },
-        {
-            "nameInUI": "Super Gaggle: fast-mover suppressors per run (0 = off)",
-            "mnemonic": "gaggleSuppressors",
-            "defaultValue": 2
-        },
-        {
-            "nameInUI": "Super Gaggle: suppressor aircraft DCS type",
-            "mnemonic": "gaggleSuppressorType",
-            "defaultValue": "A-4E-C"
         },
         {
             "nameInUI": "Super Gaggle: suppressor transit/attack altitude (m baro)",

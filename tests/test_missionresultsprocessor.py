@@ -43,6 +43,7 @@ COMMIT_STEPS = [
     "commit_sof_recoveries",
     "commit_pow_recoveries",
     "record_carcasses",
+    "commit_super_gaggle",
     "record_sitrep",
 ]
 

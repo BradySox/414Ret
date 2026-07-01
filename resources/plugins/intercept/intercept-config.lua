@@ -123,6 +123,12 @@ local BUILD_DELAY = 5  -- seconds; let mist.dynAdd backstops register before SET
 local SCRAMBLE_SPEED_KT = 300   -- air-spawn airspeed (was effectively ~0 -> near-stall)
 local SCRAMBLE_AGL_M = 760      -- ~2,500 ft above the LAUNCHING field's elevation
 
+-- GCI-ambush hit-and-run leash (Vietnam campaign layer W5); applied only when the
+-- generator marks a coalition's records ambushPosture=true (gci_ambush doctrine).
+-- Both tunable; need an in-game pass (checklist M5).
+local AMBUSH_DISENGAGE_NM = 50      -- break off when this far from home base (Moose default ~162 NM)
+local AMBUSH_FUEL_THRESHOLD = 0.35  -- RTB at 35% fuel: one slash, then home (default 0.15)
+
 -- ---------------------------------------------------------------------------
 -- MOOSE BUG WORKAROUND — air-spawn takeoff event
 -- Upstream fix filed as MOOSE PR #2595
@@ -247,6 +253,10 @@ local function build_dispatcher(coalition_name, records)
     local comms_enabled = records[1].commsEnabled ~= "false"
     local scramble_radius_nm = tonumber(records[1].gciMaxRadiusNm) or 60
     local engagement_range_nm = tonumber(records[1].engagementRangeNm) or 38
+    -- GCI-ambush posture (Vietnam campaign layer W5). The generator already
+    -- shrank this side's engage/scramble radii for a late, close GCI slash; the
+    -- Lua half is the hit-and-run leash below (disengage radius + fuel threshold).
+    local ambush_posture = records[1].ambushPosture == "true"
 
     -- Always spawn a hidden backstop EWR at each defended base so there is a
     -- guaranteed detection source even when the IADS network is destroyed.
@@ -315,6 +325,15 @@ local function build_dispatcher(coalition_name, records)
         dispatcher:SetEngageRadius(engagement_range_nm * NM)
         dispatcher:SetTacticalDisplay(false)  -- debug F10 overview; off in normal play
         dispatcher:SetGciRadius(scramble_radius_nm * NM)
+        if ambush_posture then
+            -- Vietnam W5 hit-and-run: leash the defenders close to home
+            -- (DistanceFromHomeBase > DisengageRadius aborts the engagement in
+            -- Moose AI_AIR) and send them home early on fuel, so a MiG slashes
+            -- the raid once and recovers instead of fighting to destruction.
+            -- Moose's defaults are 300 km / 0.15.
+            dispatcher:SetDisengageRadius(AMBUSH_DISENGAGE_NM * NM)
+            dispatcher:SetDefaultFuelThreshold(AMBUSH_FUEL_THRESHOLD, 0)
+        end
         if comms_enabled then
             dispatcher:SetSendMessages(true)
         end

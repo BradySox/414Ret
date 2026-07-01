@@ -138,6 +138,16 @@ class Doctrine:
     #: ``= False`` default (save-safe class attr).
     always_escort_strikes: bool = False
 
+    #: GCI-ambush posture (Vietnam campaign layer W5, will-note section 6). When True,
+    #: this side's QRA intercept dispatcher flies era GCI hit-and-run instead of the
+    #: modern duel: the engage radius shrinks to ``cap_engagement_range`` (the P1c
+    #: close-fight number), the scramble (GCI) radius tightens so MiGs launch LATE and
+    #: slash the strike package near its target instead of meeting the sweep far out,
+    #: and the Lua side leashes the defenders (small disengage radius + a high fuel
+    #: threshold) so they hit, run, and recover rather than fight to destruction.
+    #: Simple ``= False`` default (save-safe class attr).
+    gci_ambush: bool = False
+
     def display_name_for(self, flight_type: FlightType) -> str:
         """The doctrine's display label for a tasking (the rename layer)."""
         return self.task_display_names.get(flight_type, flight_type.value)
@@ -187,6 +197,7 @@ class Doctrine:
             plan_strikes_without_full_escort=self.plan_strikes_without_full_escort,
             strike_flight_count=self.strike_flight_count,
             always_escort_strikes=self.always_escort_strikes,
+            gci_ambush=self.gci_ambush,
         )
 
 
@@ -408,6 +419,7 @@ VIETNAM_DOCTRINE = replace(
     plan_strikes_without_full_escort=True,
     strike_flight_count=1,
     always_escort_strikes=True,
+    gci_ambush=True,
     cap_engagement_range=nautical_miles(22),
     escort_engagement_range=nautical_miles(10),
     rtb_speed=knots(400),

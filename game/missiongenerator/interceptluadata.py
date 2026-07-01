@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable
 
 if TYPE_CHECKING:
+    from game.data.doctrine import Doctrine
     from game.missiongenerator.luagenerator import LuaData
 
 
@@ -11,6 +12,32 @@ if TYPE_CHECKING:
 #: ship with the base game; the Lua skips a base's backstop if the type is not
 #: present in the running DCS build (see intercept-config.lua).
 DEFAULT_BACKSTOP_EWR_TYPE = {"BLUE": "FPS-117", "RED": "55G6 EWR"}
+
+#: GCI-ambush scramble radius cap (Vietnam W5). An ambush-doctrine side scrambles
+#: LATE -- the raid is already deep when the MiGs launch, so the intercept happens
+#: near the strike package's target instead of duelling the sweep at the border.
+#: The stock setting still applies when it is tighter.
+AMBUSH_GCI_RADIUS_NM = 40
+
+
+def dispatcher_tuning(
+    doctrine: "Doctrine", engagement_range_nm: int, gci_max_radius_nm: int
+) -> tuple[int, int, bool]:
+    """(engage NM, scramble NM, ambush?) for one side's QRA dispatcher (W5).
+
+    A ``gci_ambush`` doctrine (Vietnam) shrinks the engage radius to the doctrine's
+    own close-fight ``cap_engagement_range`` (the P1c era number) and caps the
+    scramble radius at :data:`AMBUSH_GCI_RADIUS_NM`; the returned flag additionally
+    drives the Lua-side hit-and-run leash (fuel threshold + disengage radius).
+    Every other doctrine passes the settings through untouched.
+    """
+    if not getattr(doctrine, "gci_ambush", False):
+        return engagement_range_nm, gci_max_radius_nm, False
+    ambush_engage = min(
+        engagement_range_nm, round(doctrine.cap_engagement_range.nautical_miles)
+    )
+    ambush_scramble = min(gci_max_radius_nm, AMBUSH_GCI_RADIUS_NM)
+    return ambush_engage, ambush_scramble, True
 
 
 @dataclass(frozen=True)
@@ -48,6 +75,10 @@ class InterceptEntry:
     country_id: int
     #: DCS unit type for the per-base backstop EWR.
     backstop_ewr_type: str
+    #: GCI-ambush posture (Vietnam W5): the Lua leashes this side's defenders
+    #: (small disengage radius + high fuel threshold = hit-and-run). Defaulted so
+    #: pre-W5 callers/tests are unaffected.
+    ambush: bool = False
 
 
 def populate_intercept_lua(
@@ -79,6 +110,7 @@ def populate_intercept_lua(
         record.add_key_value("commsEnabled", "true" if entry.comms_enabled else "false")
         record.add_key_value("countryId", str(entry.country_id))
         record.add_key_value("backstopEwrType", entry.backstop_ewr_type)
+        record.add_key_value("ambushPosture", "true" if entry.ambush else "false")
 
     alerts = intercept.get_or_create_item("PLAYER_ALERT")
     for alert in player_alert_entries:

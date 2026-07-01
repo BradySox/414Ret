@@ -2147,6 +2147,28 @@ so the two docs don't drift.
   (stale `active_restricted_zones`); the planner deadlocks with nothing to strike in phase 1 (locked-class
   list too broad for that campaign's target set — trim `locked_targets` in the campaign YAML).
 
+### M5 — GCI-ambush MiGs: late scramble, one slash, home (campaign layer W5) · §1 · ☐ UNTESTED (built 2026-07-01; doctrine/tuning/serialization unit-tested + sanctuary basing test-locked, the dispatcher behaviour is runtime Lua/Moose — needs a cockpit pass)
+- **Headless adjudication:** `Doctrine.gci_ambush` (Vietnam-only), the `dispatcher_tuning` radii math
+  (engage → 22 NM cap range, scramble capped at 40 NM, tighter settings still win), the `ambushPosture`
+  record serialization, and the W4 sanctuary-basing fallout (an airfield inside a zone can't be OCA'd) are
+  all locked in tests. What CI *cannot* adjudicate: the actual Moose defender behaviour under the leash
+  (`SetDisengageRadius` 50 NM + fuel threshold 0.35).
+- **Setup:** a NEW Vietnam campaign; fly a BLUE strike package toward a red QRA field (with the Rolling
+  Thunder sanctuary active, the MiG base itself is un-OCA-able — the classic problem). Watch `dcs.log` /
+  the F10 map for the red scramble.
+- **Pass:** MiGs scramble **late** (raid inside ~40 NM of the field, not at the 100 NM border), run a
+  **close** intercept (engage ≤ ~22 NM — a slashing merge, not a BVR duel), **break off** rather than chase
+  beyond ~50 NM from their base, and RTB early on fuel — the raid gets hit once, hard, and the MiGs live to
+  ambush again next mission; blue QRA (same doctrine) behaves alike; a modern campaign's QRA is byte-for-byte
+  unchanged (settings pass through).
+- **Fail signature:** MiGs still launch at the full setting radius (tuning not reaching the record — check
+  `dispatcher_tuning` wiring / `ambushPosture` in the generated `dcsRetribution.Intercept`); defenders chase
+  to the map edge or fight to destruction (leash not applied — the records[1] read or the
+  `SetDisengageRadius`/`SetDefaultFuelThreshold` calls); no scramble at all (backstop/detection regression —
+  unrelated to W5, see A2); a Lua error in `intercept-config.lua` (the `AMBUSH_*` locals are file-scope,
+  defined before build_dispatcher — verify load order if edited). Knobs: `AMBUSH_GCI_RADIUS_NM`
+  (interceptluadata.py), `AMBUSH_DISENGAGE_NM` / `AMBUSH_FUEL_THRESHOLD` (intercept-config.lua).
+
 ## N. Mod support
 
 ### N1 — High Digit SAMs Ultimate Compilation units in-game · §41 · ☐ UNTESTED (built 2026-07-01; unit data read from the installed mod, factions/presets/layouts headless-verified)

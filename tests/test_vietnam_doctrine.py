@@ -117,6 +117,7 @@ def test_vietnam_differs_from_coldwar_only_in_the_intended_fields() -> None:
         plan_strikes_without_full_escort=False,
         strike_flight_count=1,
         always_escort_strikes=False,
+        gci_ambush=False,
         cap_engagement_range=COLDWAR_DOCTRINE.cap_engagement_range,
         escort_engagement_range=COLDWAR_DOCTRINE.escort_engagement_range,
         rtb_speed=COLDWAR_DOCTRINE.rtb_speed,
@@ -247,3 +248,36 @@ def test_package_description_uses_doctrine_rename() -> None:
     # Non-Vietnam doctrine is unchanged, including the combined OCA label.
     assert label(FlightType.STRIKE, COLDWAR_DOCTRINE) == "Strike"
     assert label(FlightType.OCA_RUNWAY, COLDWAR_DOCTRINE) == "OCA Strike"
+
+
+def test_vietnam_gci_ambush_posture() -> None:
+    # W5: only Vietnam doctrine flies the GCI hit-and-run ambush; every other
+    # doctrine keeps the modern stand-and-fight dispatcher defaults.
+    assert VIETNAM_DOCTRINE.gci_ambush is True
+    for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+        assert d.gci_ambush is False
+
+
+def test_dispatcher_tuning_shrinks_radii_for_ambush_doctrine() -> None:
+    from game.missiongenerator.interceptluadata import (
+        AMBUSH_GCI_RADIUS_NM,
+        dispatcher_tuning,
+    )
+
+    engage, scramble, ambush = dispatcher_tuning(VIETNAM_DOCTRINE, 60, 100)
+    assert ambush is True
+    # Engage radius collapses to the P1c close-fight number...
+    assert engage == round(VIETNAM_DOCTRINE.cap_engagement_range.nautical_miles)
+    # ...and the scramble radius caps at the late-launch ambush distance.
+    assert scramble == AMBUSH_GCI_RADIUS_NM
+    # A tighter user setting still wins (min, never max).
+    engage_tight, scramble_tight, _ = dispatcher_tuning(VIETNAM_DOCTRINE, 15, 30)
+    assert engage_tight == 15
+    assert scramble_tight == 30
+
+
+def test_dispatcher_tuning_passes_settings_through_for_other_doctrines() -> None:
+    from game.missiongenerator.interceptluadata import dispatcher_tuning
+
+    for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+        assert dispatcher_tuning(d, 60, 100) == (60, 100, False)

@@ -469,3 +469,26 @@ def test_parse_phases_rejects_bad_entries() -> None:
         parse_phases([{"key": "x", "emphasis": "not-a-phase"}])
     with pytest.raises(ValueError):
         parse_phases([{"key": "x", "restricted_zones": [{"radius_nm": 10}]}])
+
+
+def test_sanctuary_airfield_falls_out_of_the_zone(authored_game: Any) -> None:
+    # W5 sanctuary basing: an enemy airfield inside an active restricted zone
+    # cannot be OCA'd (blocked as a zone target AND as the "airfield" class while
+    # locked), so the MiGs based there are safe on the ground until the zone
+    # lifts -- the Rolling Thunder problem, emerging from W4 for free. Real
+    # Airfield instance via the fork's __new__ trick so isinstance() runs.
+    from game.theater.controlpoint import Airfield
+
+    update_campaign_phase(authored_game)
+    nm = 1852.0
+    field = Airfield.__new__(Airfield)
+    field.position = _Pt(5 * nm, 0.0)  # type: ignore[assignment]
+    assert roe_blocks_target(authored_game, field)
+    # Outside the zone it is still blocked in phase 1: "airfield" is a locked class.
+    field.position = _Pt(50 * nm, 0.0)  # type: ignore[assignment]
+    assert roe_blocks_target(authored_game, field)
+    # Linebacker II releases everything -- the sanctuary lifts.
+    authored_game.turn = 10
+    update_campaign_phase(authored_game)
+    field.position = _Pt(5 * nm, 0.0)  # type: ignore[assignment]
+    assert not roe_blocks_target(authored_game, field)

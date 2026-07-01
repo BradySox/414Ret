@@ -38,10 +38,13 @@ if TYPE_CHECKING:
 
 # --- S3.2 thresholds (v1; refined by the 6-campaign pilot) --------------------------
 
-#: Below this many enemy long+medium SAM groups at turn 0 there is no meaningful
+#: Below this many enemy long+medium SAM sites at turn 0 there is no meaningful
 #: Rollback phase -- the campaign opens in Interdiction (or Air Superiority when real
-#: enemy air exists). The pilot's key finding: Khe Sanh (0 SAM) must skip Rollback,
-#: Velvet Thunder (SA-2 belt) must keep it -- same era, opposite arc.
+#: enemy air exists). Engine-corrected examples (#379 all-66 re-run): the genuine
+#: below-floor cases are Shattered Dagger / No Man's Land / Valley of Rotary /
+#: Northern Guardian; Velvet Thunder sits exactly at the floor (3 SA-2 sites) and
+#: keeps Rollback. (Khe Sanh was the pilot's original example but is NOT below the
+#: floor in real gameplay -- the generator fills 4 SA-2/SA-3 batteries there.)
 ROLLBACK_SAM_FLOOR = 3
 
 #: Enemy fighter airframes that still justify holding an air-superiority fight.
@@ -171,7 +174,7 @@ class PhaseBaseline:
     load for a pre-feature save, which the spec documents as acceptable).
     """
 
-    sam_groups: int
+    sam_sites: int
     enemy_fighters: int
     #: Blue route-progress fraction per front, keyed "blue_cp_id:red_cp_id".
     front_fractions: dict[str, float] = field(default_factory=dict)
@@ -242,24 +245,25 @@ def _next_phase_key(
 # --- live-state collection (S3.1 signals; accessors confirmed by the pilot) ---------
 
 
-def _enemy_sam_groups(game: "Game") -> int:
-    """Alive enemy long+medium SAM groups (IadsRole SAM / SAM_AS_EWR).
+def _enemy_sam_sites(game: "Game") -> int:
+    """Alive enemy long+medium SAM sites: TGOs tasked LORAD / MERAD.
 
-    Walks the raw IADS network nodes rather than ``iads_nodes(game)`` so culling
-    never skews the metric. EWR is deliberately excluded (pilot: EWR counts are
-    wildly author-dependent); SHORAD/point defense likewise.
+    Bands by the TGO's ``GroupTask`` — the exact target set ``degradeiads.py`` rolls
+    back — per the spec §3.1 correction from the all-66 engine re-run (#379):
+    ``IadsRole`` CANNOT band this (its ``SAM`` role swallows SHORAD and its ``EWR``
+    role swallows AAA/navy). EWR stays deliberately excluded (author-noise);
+    SHORAD/point defense likewise, by construction of the LORAD/MERAD set.
     """
-    from game.theater.iadsnetwork.iadsrole import IadsRole
+    from game.data.groups import GroupTask
     from game.theater.player import Player
 
     count = 0
-    for node in game.theater.iads_network.nodes:
-        group = node.group
-        if group.iads_role not in (IadsRole.SAM, IadsRole.SAM_AS_EWR):
+    for tgo in game.theater.ground_objects:
+        if tgo.task not in (GroupTask.LORAD, GroupTask.MERAD):
             continue
-        if group.ground_object.is_friendly(Player.BLUE):
+        if tgo.is_friendly(Player.BLUE):
             continue
-        if any(unit.alive for unit in group.units):
+        if any(unit.alive for group in tgo.groups for unit in group.units):
             count += 1
     return count
 
@@ -311,15 +315,15 @@ def _base_counts(game: "Game") -> tuple[int, int]:
 
 def snapshot_baseline(game: "Game") -> PhaseBaseline:
     return PhaseBaseline(
-        sam_groups=_enemy_sam_groups(game),
+        sam_sites=_enemy_sam_sites(game),
         enemy_fighters=_enemy_fighters(game),
         front_fractions=_front_fractions(game),
     )
 
 
 def collect_metrics(game: "Game", baseline: PhaseBaseline) -> PhaseMetrics:
-    sam_alive = _enemy_sam_groups(game)
-    iads_ratio = sam_alive / baseline.sam_groups if baseline.sam_groups else 0.0
+    sam_alive = _enemy_sam_sites(game)
+    iads_ratio = sam_alive / baseline.sam_sites if baseline.sam_sites else 0.0
 
     fighters_alive = _enemy_fighters(game)
     fighter_ratio = (
@@ -345,7 +349,7 @@ def collect_metrics(game: "Game", baseline: PhaseBaseline) -> PhaseMetrics:
     base_ratio = blue / total if total else 0.0
 
     return PhaseMetrics(
-        sam_baseline=baseline.sam_groups,
+        sam_baseline=baseline.sam_sites,
         sam_alive=sam_alive,
         iads_ratio=iads_ratio,
         fighters_baseline=baseline.enemy_fighters,

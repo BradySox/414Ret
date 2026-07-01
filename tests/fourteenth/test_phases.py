@@ -70,7 +70,9 @@ def test_sam_floor_unmet_with_real_air_holds_air_superiority() -> None:
 
 
 def test_sam_floor_unmet_and_weak_air_opens_in_interdiction() -> None:
-    # The Khe Sanh finding: 0 SAM + no real air => no Rollback phase at all.
+    # The genuine below-floor shape (Shattered Dagger / Valley of Rotary et al.,
+    # per the #379 engine-authoritative all-66 run): no belt + no real air => no
+    # Rollback phase at all.
     m = _metrics(sam_baseline=0, iads_ratio=0.0, air_threat_present=False)
     assert classify(m) == "interdiction"
 
@@ -176,7 +178,7 @@ def _duck_game(
     game = SimpleNamespace(
         settings=SimpleNamespace(campaign_phases=on),
         theater=SimpleNamespace(
-            iads_network=SimpleNamespace(nodes=[]),
+            ground_objects=[],
             conflicts=lambda: [],
             controlpoints=[],
         ),
@@ -222,7 +224,7 @@ def test_update_snapshots_baseline_and_assigns_opening_phase() -> None:
 def test_update_announces_a_transition_once() -> None:
     # Start in rollback (as if the belt existed), with the live theater empty the
     # classifier targets interdiction once the dwell releases.
-    baseline = PhaseBaseline(sam_groups=12, enemy_fighters=0)
+    baseline = PhaseBaseline(sam_sites=12, enemy_fighters=0)
     game = _duck_game(
         on=True,
         turn=PHASE_MIN_DWELL_TURNS,
@@ -241,7 +243,7 @@ def test_update_announces_a_transition_once() -> None:
 
 def test_collect_metrics_reads_the_duck_theater() -> None:
     baseline = PhaseBaseline(
-        sam_groups=4, enemy_fighters=10, front_fractions={"a:b": 0.5}
+        sam_sites=4, enemy_fighters=10, front_fractions={"a:b": 0.5}
     )
     game = _duck_game(on=True)
     m = collect_metrics(game, baseline)

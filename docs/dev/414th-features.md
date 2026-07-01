@@ -2817,13 +2817,18 @@ P2, riding the Vietnam W4 arcs).
   (`rollback`), **Interdiction**, **Offensive** — each carrying a narrative and an `emphasis` ordering of
   `PlanNextAction`'s offensive HTN root methods (kept as class *names* so the module never imports the
   commander; a sync test locks the two).
-- **The classifier** (spec §3.2, thresholds refined by the 6-campaign pilot): each turn it reads pre-existing
-  accessors — alive enemy long+medium SAM groups off the raw IADS-network nodes (`IadsRole.SAM`/`SAM_AS_EWR`;
-  EWR deliberately excluded as author-noise), enemy air-superiority airframes off the red air wing, mean front
-  movement vs. the turn-0 anchor, base ratio, last turn's captures off the SITREP — and picks the phase.
-  The **absolute-SAM-floor gate** (`ROLLBACK_SAM_FLOOR` = 3) is the pilot's key finding: a zero-SAM Vietnam
-  theater opens in Interdiction (Khe Sanh) while an SA-2 belt keeps Rollback (Velvet Thunder); real enemy air
-  without a belt still holds the air-superiority fight. The **peer-fight guard** falls out of the same shape:
+- **The classifier** (spec §3.2, thresholds refined by the 6-campaign pilot + the #379 engine-authoritative
+  all-66 re-run): each turn it reads pre-existing accessors — alive enemy long+medium SAM **sites** banded by
+  the TGO's `GroupTask` LORAD/MERAD, the exact set `degradeiads.py` rolls back (the §3.1 correction:
+  `IadsRole` **cannot** band this — its `SAM` role swallows SHORAD and its `EWR` role swallows AAA/navy; EWR
+  stays excluded as author-noise), enemy air-superiority airframes off the red air wing, mean front movement
+  vs. the turn-0 anchor, base ratio, last turn's captures off the SITREP — and picks the phase.
+  The **absolute-SAM-floor gate** (`ROLLBACK_SAM_FLOOR` = 3) is the pilot's key finding, with the engine-run
+  corrected examples: the genuine below-floor campaigns are Shattered Dagger / Battle for No Man's Land /
+  Valley of Rotary / Northern Guardian (open in Interdiction); Velvet Thunder sits exactly at the floor and
+  keeps Rollback; **Khe Sanh is not below the floor in real gameplay** (the generator fills 4 SA-2/SA-3
+  batteries — the pilot's original 0-SAM read was a `--lite` artifact). Real enemy air without a belt still
+  holds the air-superiority fight. The **peer-fight guard** falls out of the same shape:
   Rollback only releases when the IADS is down AND the air threat is gone.
 - **Hysteresis** (spec §3.3, mandatory): min-dwell `PHASE_MIN_DWELL_TURNS` = 2, **monotonic-forward** by
   default (regression is authored-only/P2; the asymmetric `IADS_ROLLBACK_REENTER` = 0.6 margin is implemented

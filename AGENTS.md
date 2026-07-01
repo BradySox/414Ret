@@ -638,10 +638,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     *phase* of the air war it is in, the UI shows it, and the auto-planner biases its offensive intent to match
     (spec `414th-campaign-phases-notes.md`; this is its **P0+P1**, landed as Vietnam campaign layer W3). A
     turn-by-turn Tier-0 classifier (`game/fourteenth/phases.py`) reads live state via existing accessors —
-    alive enemy long+medium SAMs vs. a lazily-snapshotted turn-0 `PhaseBaseline`, enemy air-superiority
-    airframes, mean front movement, last turn's captures — and picks **Air Superiority → Interdiction →
-    Offensive** with the pilot's **absolute-SAM-floor gate** (a zero-SAM Vietnam theater skips Rollback; an
-    SA-2 belt keeps it), a peer-fight guard, min-dwell hysteresis, and monotonic-forward defaulting
+    alive enemy long+medium SAM **sites** (TGO `GroupTask` LORAD/MERAD, the DEAD planner's own set — the
+    #379-corrected banding, never `IadsRole`) vs. a lazily-snapshotted turn-0 `PhaseBaseline`, enemy
+    air-superiority airframes, mean front movement, last turn's captures — and picks **Air Superiority →
+    Interdiction → Offensive** with the pilot's **absolute-SAM-floor gate** (a genuinely belt-less theater
+    skips Rollback — Shattered Dagger/Valley of Rotary et al., NOT Khe Sanh, which the generator fills with
+    SA-2/SA-3), a peer-fight guard, min-dwell hysteresis, and monotonic-forward defaulting
     (regression is authored-only, P2). The active phase reorders **only the offensive middle** of
     `PlanNextAction`'s HTN root methods (BLUE only; the reactive prefix + tail are fixed — the §17 boundary),
     shifting which objectives get first claim on offensive jets. Always explains itself (§3.4 legibility:

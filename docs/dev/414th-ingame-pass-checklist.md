@@ -2102,16 +2102,19 @@ so the two docs don't drift.
   believable pace** over a real campaign and whether the emphasis **visibly shifts the ATO** without starving
   anything critical.
 - **Setup:** any campaign (default ON). Ideal probes: a dense-IADS modern campaign (should open in Air
-  Superiority) and Khe Sanh (0 SAM — should open in Interdiction). Read the phase on the map ribbon + the
-  kneeboard cover band; play/auto-resolve turns while SEAD attrites the belt.
-- **Pass:** the opening phase matches the laydown (belt ⇒ Air Superiority; Khe Sanh ⇒ Interdiction); the
+  Superiority) and a genuine below-floor campaign — Shattered Dagger / Battle for No Man's Land / Valley of
+  Rotary / Northern Guardian (should open in Interdiction; **not** Khe Sanh — the generator fills 4 SA-2/SA-3
+  batteries there, so it opens in Air Superiority per the #379 engine-authoritative all-66 table). Read the
+  phase on the map ribbon + the kneeboard cover band; play/auto-resolve turns while SEAD attrites the belt.
+- **Pass:** the opening phase matches the engine-authoritative all-66 draft table for the campaign; the
   ribbon/cover show the same phase + a sensible "why" line; as the SAM belt drops below ~half, the campaign
   announces and enters Interdiction (after the 2-turn dwell), and the BLUE ATO visibly tilts (more
   BAI/Armed Recon/OCA, less DEAD-first); with the front advancing and IADS <30 % it enters Offensive (CAS/
   capture-weighted); the phase never regresses; red planning and reactive defense (BARCAP/QRA/DefendBases)
   look unchanged; toggling `campaign_phases` off clears the ribbon band and restores stock planning.
-- **Fail signature:** phase flaps turn-to-turn (dwell broken); a zero-SAM campaign opens in Air Superiority
-  (floor gate not reading the IADS network — check `_enemy_sam_groups` roles); the phase never leaves Air
+- **Fail signature:** phase flaps turn-to-turn (dwell broken); a genuine below-floor campaign opens in Air
+  Superiority (floor gate miscounting — check `_enemy_sam_sites`, which bands enemy TGOs by `GroupTask`
+  LORAD/MERAD, the DEAD planner's own target set, NOT `IadsRole`); the phase never leaves Air
   Superiority though the belt is dead (air-threat signal stuck — check red air-superiority squadron counts);
   the ATO shows no tilt at all across a phase change (emphasis not reaching the planner — check
   `_offensive_order` and that the coalition is BLUE); defensive flights change with the phase (§17 boundary

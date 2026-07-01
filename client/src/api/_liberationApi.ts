@@ -537,6 +537,7 @@ export type Tgo = {
   mobile: boolean;
   destination?: LatLng;
   user_placed: boolean;
+  roe_restricted?: boolean;
 };
 export type SupplyRoute = {
   id: string;
@@ -584,6 +585,11 @@ export type UnculledZone = {
   position: LatLng;
   radius: number;
 };
+export type RestrictedZone = {
+  name: string;
+  center: LatLng;
+  radius_m: number;
+};
 export type CampaignStatus = {
   campaign_name?: string | null;
   turn: number;
@@ -609,6 +615,7 @@ export type Game = {
   blank_canvas_setup: boolean;
   enable_unit_placement: boolean;
   campaign_status?: CampaignStatus | null;
+  restricted_zones?: RestrictedZone[];
 };
 export type MapZones = {
   inclusion: LatLng[][][];

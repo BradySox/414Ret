@@ -31,6 +31,11 @@ class TgoJs(BaseModel):
     mobile: bool
     destination: Optional[LeafletPoint]
     user_placed: bool
+    # ROE escalation (campaign phases W4): True while the active authored phase
+    # forbids offensive tasking here (inside a restricted zone or a still-locked
+    # target class). The site stays visible and targetable -- the defining Rolling
+    # Thunder frustration -- it just wears a RESTRICTED badge.
+    roe_restricted: bool = False
 
     class Config:
         title = "Tgo"
@@ -67,6 +72,11 @@ class TgoJs(BaseModel):
             and tgo.target_position is not None
         ):
             destination = LeafletPoint.from_latlng(tgo.target_position.latlng())
+        from game.fourteenth.phases import roe_blocks_target
+
+        roe_restricted = not blue and roe_blocks_target(
+            tgo.control_point.coalition.game, tgo
+        )
         return TgoJs(
             id=tgo.id,
             name=tgo.name,
@@ -83,6 +93,7 @@ class TgoJs(BaseModel):
             mobile=mobile,
             destination=destination,
             user_placed=tgo.user_placed,
+            roe_restricted=roe_restricted,
         )
 
     @staticmethod

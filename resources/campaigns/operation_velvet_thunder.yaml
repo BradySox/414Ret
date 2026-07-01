@@ -156,3 +156,59 @@ squadrons:
         - MiG-19P Farmer-B
 
       size: 8
+
+# Vietnam campaign layer W4: the authored ROE escalation arc (campaign phases P2,
+# spec docs/dev/design/414th-vietnam-political-will-roe-notes.md section 3). Rolling
+# Thunder's restrictions -> the bombing halt -> Linebacker -> Linebacker II. Zones
+# shrink and target classes release as the arc escalates; bleeding political will
+# ACCELERATES escalation (advance_when) -- Washington's patience for restraint runs
+# out. Zone centers are control-point names from this campaign's laydown.
+phases:
+  - key: rolling_thunder
+    name: Rolling Thunder
+    narrative: >-
+      Gradual pressure under Washington's thumb: interdict the flow south, but the
+      deep targets are off the list and Saipan is sanctuary.
+    emphasis: interdiction
+    restricted_zones:
+      - center: Saipan Intl
+        radius_nm: 15
+        name: Saipan sanctuary
+    locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
+    advance_when:
+      blue_will_below: 75
+  - key: bombing_halt
+    name: The Bombing Halt
+    narrative: >-
+      Washington halts the deep war to talk. Restraint tightens; the trail war and
+      the front are all that is authorized.
+    emphasis: interdiction
+    min_turn: 8
+    restricted_zones:
+      - center: Saipan Intl
+        radius_nm: 22
+        name: Saipan sanctuary (expanded for the talks)
+    locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
+    advance_when:
+      blue_will_below: 65
+  - key: linebacker
+    name: Linebacker
+    narrative: >-
+      The talks stalled and the gloves come part-way off: airfields and the deep
+      target classes release, only the inner sanctuary still binds.
+    emphasis: rollback
+    min_turn: 11
+    restricted_zones:
+      - center: Saipan Intl
+        radius_nm: 6
+        name: Saipan sanctuary (inner ring)
+    advance_when:
+      blue_will_below: 50
+      enemy_iads_below: 0.4
+  - key: linebacker_ii
+    name: Linebacker II
+    narrative: >-
+      Maximum effort. No sanctuaries, no restricted classes -- break the regime's
+      resolve at the negotiating table by force.
+    emphasis: offensive
+    min_turn: 16

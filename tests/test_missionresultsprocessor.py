@@ -44,6 +44,7 @@ COMMIT_STEPS = [
     "commit_pow_recoveries",
     "record_carcasses",
     "commit_super_gaggle",
+    "record_political_will",
     "record_sitrep",
 ]
 

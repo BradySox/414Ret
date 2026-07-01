@@ -1,6 +1,10 @@
 # 414th — Political Will & ROE escalation (the Vietnam campaign layer) — design notes
 
-**Status:** DESIGN ONLY — nothing landed. This is the **spec of record** for the month-scale
+**Status:** **W1 LANDED** (the observe-only political-will model: `Coalition.political_will`,
+the `vietnam_political_will` setting, the debrief feed `game/fourteenth/political_will.py` via
+`missionresultsprocessor.record_political_will`, and the SITREP band line; tests
+`tests/fourteenth/test_political_will.py` + the sitrep will-band tests). W2–W5 outstanding.
+This is the **spec of record** for the month-scale
 rework that makes Vietnam mode different at the *campaign* layer, approved 2026-07-01:
 **(1) a political-will economy with a negotiation victory** and **(2) an ROE / Route-Package
 escalation system** riding the campaign-phases spec

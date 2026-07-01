@@ -61,6 +61,13 @@ class Coalition:
         # capture race), held as POWs at an enemy field and recoverable for a few
         # turns. Persisted; surfaced as map objectives and aged each turn.
         self.pending_pow_recoveries: list[PendingPowRecovery] = []
+        # Vietnam campaign layer (W1): this side's political capital for the war --
+        # BLUE reads it as Political Will (Washington's patience), RED as Regime
+        # Resolve (Hanoi's capacity to absorb punishment). 0-100; fed each turn from
+        # the debriefing when vietnam_political_will is on (observe-only until the
+        # W2 negotiation win/loss lands). Persisted campaign state.
+        # See docs/dev/design/414th-vietnam-political-will-roe-notes.md.
+        self.political_will: float = 100.0
         # Money the automated HQ spent per category last turn (front_line,
         # runways, buildings, ground_objects, aircraft). Surfaced in the
         # Finances dialog so the player sees where their income went.
@@ -164,6 +171,8 @@ class Coalition:
         state.setdefault("pending_pow_recoveries", [])
         # Migration: older saves predate the per-turn HQ expense breakdown.
         state.setdefault("last_turn_expenses", {})
+        # Migration: older saves predate the Vietnam political-will layer (W1).
+        state.setdefault("political_will", 100.0)
 
         self.__dict__.update(state)
         # Regenerate any state that was not persisted.

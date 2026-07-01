@@ -84,8 +84,20 @@ class MissionResultsProcessor:
                 self.record_carcasses(debriefing)
             with logged_duration("commit_super_gaggle"):
                 self.commit_super_gaggle(debriefing)
+            # Political will feeds AFTER the loss/POW/capture steps (so the held-POW
+            # trickle reads post-recovery state) and BEFORE the SITREP (so the band
+            # shows this turn's fresh values).
+            with logged_duration("record_political_will"):
+                self.record_political_will(debriefing)
             with logged_duration("record_sitrep"):
                 self.record_sitrep(debriefing)
+
+    def record_political_will(self, debriefing: Debriefing) -> None:
+        # Vietnam campaign layer W1 (observe-only): feed both sides' political will
+        # from the turn's debriefing. No-op unless vietnam_political_will is on.
+        from game.fourteenth.political_will import update_political_will
+
+        update_political_will(self.game, debriefing)
 
     def commit_super_gaggle(self, debriefing: Debriefing) -> None:
         # Vietnam Ops §37: charge Super Gaggle airframe losses back to the real BLUE
@@ -101,8 +113,15 @@ class MissionResultsProcessor:
         # before the turn increments, so game.turn/current_day are the just-played
         # turn. All inputs are debriefing-derived and unaffected by commit order,
         # so this can run last.
+        # The will band rides along only when tracking is on (W1): record_political_will
+        # has already run this commit, so these are the turn's fresh values.
+        will_on = getattr(self.game.settings, "vietnam_political_will", False)
         self.game.last_sitrep = Sitrep.from_debriefing(
-            debriefing, self.game.turn, self.game.current_day
+            debriefing,
+            self.game.turn,
+            self.game.current_day,
+            blue_will=self.game.blue.political_will if will_on else None,
+            red_will=self.game.red.political_will if will_on else None,
         )
 
     @staticmethod

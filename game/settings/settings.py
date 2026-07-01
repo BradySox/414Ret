@@ -453,6 +453,12 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
         VIETNAM_OPS_PAGE,
         [
             (
+                "Campaign",
+                [
+                    "vietnam_political_will",
+                ],
+            ),
+            (
                 "Fire support",
                 [
                     "vietnam_arc_light",
@@ -2014,6 +2020,20 @@ class Settings:
             "Offshore gun ships (battleship/cruiser main batteries) deliver call-for-fire "
             "bombardment against coastal targets. Coastal campaigns only -- has no effect "
             "inland (e.g. Khe Sanh), where naval gunfire never reached."
+        ),
+        default=False,
+    )
+    vietnam_political_will: bool = boolean_option(
+        "Political will tracking (observe-only)",
+        VIETNAM_OPS_PAGE,
+        "Campaign",
+        detail=(
+            "Track each side's political capital for the war -- your Political Will "
+            "(Washington's patience: drained by airframe losses, POWs held in Hanoi, "
+            "lost ground; a B-52 loss is a national event) versus the enemy's Regime "
+            "Resolve (drained by trail-logistics strangulation and attrition). "
+            "Currently observe-only: the numbers move on the SITREP each turn but do "
+            "not yet decide the war. The negotiation victory arrives in a later update."
         ),
         default=False,
     )

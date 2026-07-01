@@ -52,9 +52,17 @@ class Sitrep:
     captured: List[str]  # control points the player took this turn
     lost: List[str]  # control points the player lost this turn
     pilots_recovered: int  # Combat SAR deliveries home
+    #: Vietnam campaign layer (W1): post-turn Political Will / Regime Resolve
+    #: percentages, set only when vietnam_political_will is on. None (and absent on
+    #: pre-W1 pickled sitreps -- read via getattr) hides the band line entirely.
+    blue_will: Optional[float] = None
+    red_will: Optional[float] = None
 
     @property
     def is_empty(self) -> bool:
+        # Deliberately ignores the will fields: a quiet turn stays quiet even when
+        # will tracking is on (the will line rides along with real news, it isn't
+        # news by itself).
         return not (
             self.friendly.any
             or self.enemy.any
@@ -64,7 +72,14 @@ class Sitrep:
         )
 
     @classmethod
-    def from_debriefing(cls, debriefing: Debriefing, turn: int, day: date) -> "Sitrep":
+    def from_debriefing(
+        cls,
+        debriefing: Debriefing,
+        turn: int,
+        day: date,
+        blue_will: Optional[float] = None,
+        red_will: Optional[float] = None,
+    ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
         red = debriefing.loss_counts(Player.RED)
         # Use the cached base_captures snapshot (computed when the Debriefing was
@@ -90,6 +105,8 @@ class Sitrep:
             captured=captured,
             lost=lost,
             pilots_recovered=len(debriefing.state_data.combat_sar_rescues),
+            blue_will=blue_will,
+            red_will=red_will,
         )
 
     def kneeboard_lines(self) -> List[str]:
@@ -105,6 +122,14 @@ class Sitrep:
         if self.pilots_recovered:
             plural = "s" if self.pilots_recovered != 1 else ""
             lines.append(f"Recovered {self.pilots_recovered} downed pilot{plural}")
+        # getattr: pre-W1 pickled sitreps lack the will fields entirely.
+        blue_will = getattr(self, "blue_will", None)
+        red_will = getattr(self, "red_will", None)
+        if blue_will is not None and red_will is not None:
+            lines.append(
+                f"Political will {blue_will:.0f}% -- enemy resolve {red_will:.0f}% "
+                "(est)"
+            )
         return lines
 
 

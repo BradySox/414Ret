@@ -1,4 +1,4 @@
-"""Vietnam campaign layer W1: the political-will economy (observe-only).
+"""Vietnam campaign layer W1+W2: the political-will economy and negotiation ending.
 
 Spec: docs/dev/design/414th-vietnam-political-will-roe-notes.md. One mechanic, two
 labels: BLUE tracks **Political Will** (Washington's patience), RED tracks **Regime
@@ -7,10 +7,14 @@ Resolve** (Hanoi's capacity to absorb punishment). Both live on
 from the ``Debriefing`` the mission-results processor already has -- no new Lua, no
 debrief-schema change (the §29 SITREP / §37 reconcile precedent).
 
-W1 is **observe-only**: the numbers move and surface (SITREP band, info log) but gate
-nothing. The W2 increment adds the negotiation win/loss branch in ``check_win_loss``
-(break Hanoi's resolve before Washington's patience breaks). Everything is behind the
-``vietnam_political_will`` setting -- off means this module never runs.
+W1 landed the observe-only economy (numbers move + SITREP band). W2 attaches the
+consequence: ``negotiation_verdict`` backs a branch in ``Game.check_win_loss`` ahead
+of the territory checks -- **RED resolve exhausted = WIN** (Hanoi agrees to terms;
+you never had to take a base), **BLUE will exhausted = LOSS** (Washington orders
+withdrawal, whatever the map says), with BLUE-loss precedence if both break on the
+same turn (your patience broke first -- no cheap simultaneous win). Territory victory
+stays untouched. Everything is behind the ``vietnam_political_will`` setting -- off
+means this module never runs and the branch never fires.
 
 The two sides drain differently (historically honest -- Hanoi absorbed catastrophic
 loss ratios; Washington bled from every news cycle):
@@ -27,7 +31,7 @@ loss ratios; Washington bled from every news cycle):
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, Optional, cast
 
 if TYPE_CHECKING:
     from game import Game
@@ -55,13 +59,38 @@ WILL_MAX = 100.0
 WILL_MIN = 0.0
 
 
+def negotiation_verdict(game: "Game") -> Optional[Literal["win", "loss"]]:
+    """The W2 negotiation ending, or None while the war goes on.
+
+    Backs the ``vietnam_political_will``-gated branch in ``Game.check_win_loss``
+    (decoupled from ``TurnState`` so this module never imports the game core):
+
+    * BLUE will exhausted -> ``"loss"`` -- Washington orders withdrawal, even with
+      the front intact.
+    * RED resolve exhausted -> ``"win"`` -- Hanoi agrees to terms; no base capture
+      required.
+
+    BLUE-loss takes precedence when both break on the same turn (your patience broke
+    first -- a simultaneous collapse is never a cheap win). Returns None with the
+    setting off, so non-Vietnam campaigns never touch this path.
+    """
+    if not getattr(game.settings, "vietnam_political_will", False):
+        return None
+    if game.blue.political_will <= WILL_MIN:
+        return "loss"
+    if game.red.political_will <= WILL_MIN:
+        return "win"
+    return None
+
+
 def update_political_will(game: "Game", debriefing: "Debriefing") -> None:
     """Feed both sides' will from the turn's debriefing (observe-only in W1).
 
     Runs once per flown turn from the mission-results processor, after the loss and
     POW steps have committed (so the held-POW trickle reads post-recovery state).
-    No-op unless ``vietnam_political_will`` is on. Values clamp to [0, 100]; W1
-    attaches no consequence to either bound.
+    No-op unless ``vietnam_political_will`` is on. Values clamp to [0, 100]; hitting
+    zero ends the war via the negotiation branch in ``Game.check_win_loss`` (W2),
+    announced here with era-framed copy on the crossing edge.
     """
     if not getattr(game.settings, "vietnam_political_will", False):
         return
@@ -69,8 +98,27 @@ def update_political_will(game: "Game", debriefing: "Debriefing") -> None:
     blue_delta = _blue_delta(game, debriefing)
     red_delta = _red_delta(game, debriefing)
 
-    game.blue.political_will = _clamp(game.blue.political_will + blue_delta)
-    game.red.political_will = _clamp(game.red.political_will + red_delta)
+    blue_before = game.blue.political_will
+    red_before = game.red.political_will
+    game.blue.political_will = _clamp(blue_before + blue_delta)
+    game.red.political_will = _clamp(red_before + red_delta)
+
+    # Era-framed exhaustion cues (W2): the generic win/loss dialog fires from
+    # check_win_loss; these messages carry the negotiation framing. Crossing-edge
+    # only, so a side sitting at zero doesn't repeat the banner every turn.
+    if game.blue.political_will <= WILL_MIN < blue_before:
+        game.message(
+            "Washington orders withdrawal",
+            "Political will is exhausted -- the home front has turned. The war "
+            "ends on their terms, whatever the map says.",
+        )
+    if game.red.political_will <= WILL_MIN < red_before:
+        game.message(
+            "Hanoi agrees to terms",
+            "The regime's resolve is broken -- negotiators are en route to "
+            "Paris. The pressure campaign has done what the front line never "
+            "had to.",
+        )
 
     logging.info(
         "Political will: BLUE %+0.1f -> %.1f, RED %+0.1f -> %.1f",

@@ -476,6 +476,17 @@ class Game:
         if self.blank_canvas_setup:
             return TurnState.CONTINUE
 
+        # Vietnam campaign layer (W2): the negotiation ending, ahead of the territory
+        # checks -- break Hanoi's resolve before Washington's patience breaks. Gated on
+        # vietnam_political_will (returns None when off); territory victory stays.
+        from game.fourteenth.political_will import negotiation_verdict
+
+        verdict = negotiation_verdict(self)
+        if verdict == "loss":
+            return TurnState.LOSS
+        if verdict == "win":
+            return TurnState.WIN
+
         if not self.theater.player_points(state_check=True):
             return TurnState.LOSS
 

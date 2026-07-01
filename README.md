@@ -234,8 +234,8 @@ and selected later upstream fixes.
   *punishes* a predictable line), this *rewards* pressing the run in on the deck, and the fire genuinely hurts
   soft targets. See
   [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md). The Vietnam
-  campaigns (Khe Sanh, 1968 Yankee Station, Velvet Thunder) turn on the fire-support and battlefield mechanics
-  by default; the newest additions (FAC(A) marking and snake and nape) are a toggle away on the Vietnam Ops page.
+  campaigns (Khe Sanh, 1968 Yankee Station, Velvet Thunder, Steel Tiger) turn on the whole battlefield suite by
+  default — naval gunfire only on the coastal ones, where offshore guns can actually reach the shore.
 - A new **Steel Tiger: Trail Interdiction** campaign — the air war to strangle the **Ho Chi Minh Trail** in
   1968. An *interdiction*-focused Vietnam scenario on the Yankee Station laydown, with the whole Vietnam Ops
   suite on and **convoy interdiction as the centrepiece**: the moving trail column behind the enemy line is

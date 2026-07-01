@@ -188,6 +188,8 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_convoy_interdiction": True,
         "vietnam_airbase_harassment": True,  # the besieged-strip story
         "vietnam_super_gaggle": True,  # the cut-off-garrison resupply story
+        "vietnam_fac_marking": True,  # the whole battlefield suite is on
+        "vietnam_snake_and_nape": True,
         "restrict_weapons_by_date": True,
     },
     "1968_Yankee_Station.yaml": {
@@ -197,6 +199,8 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_convoy_interdiction": True,  # the campaign's own Ho Chi Minh Trail
         "vietnam_airbase_harassment": True,
         "vietnam_super_gaggle": True,
+        "vietnam_fac_marking": True,
+        "vietnam_snake_and_nape": True,
         "restrict_weapons_by_date": True,
     },
     "operation_velvet_thunder.yaml": {
@@ -206,6 +210,8 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_convoy_interdiction": True,
         "vietnam_airbase_harassment": True,
         "vietnam_super_gaggle": True,
+        "vietnam_fac_marking": True,
+        "vietnam_snake_and_nape": True,
         "restrict_weapons_by_date": True,
     },
     "steel_tiger.yaml": {
@@ -215,6 +221,8 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_convoy_interdiction": True,  # the campaign's centrepiece
         "vietnam_airbase_harassment": True,
         "vietnam_super_gaggle": True,
+        "vietnam_fac_marking": True,
+        "vietnam_snake_and_nape": True,
         "restrict_weapons_by_date": True,
     },
 }

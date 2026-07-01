@@ -42,6 +42,19 @@ class QIntelBox(QGroupBox):
         self.economic_strength = QLabel()
         summary.addWidget(self.economic_strength, 2, 1)
 
+        # Campaign phase (§40) + political will (Vietnam campaign layer). Both
+        # rows hide entirely when their feature is off, so a stock campaign's
+        # intel box is unchanged.
+        self._phase_title = QLabel("Campaign phase:")
+        summary.addWidget(self._phase_title, 3, 0)
+        self.campaign_phase = QLabel()
+        summary.addWidget(self.campaign_phase, 3, 1)
+
+        self._will_title = QLabel("Political will:")
+        summary.addWidget(self._will_title, 4, 0)
+        self.political_will = QLabel()
+        summary.addWidget(self.political_will, 4, 1)
+
         self.details = QPushButton()
         self.details.setMinimumHeight(50)
         self.details.setMinimumWidth(210)
@@ -102,6 +115,7 @@ class QIntelBox(QGroupBox):
             self.air_strength.setText("no data")
             self.ground_strength.setText("no data")
             self.economic_strength.setText("no data")
+            self._update_campaign_rows()
             return
 
         data = self.game.game_stats.data_per_turn[-1]
@@ -121,6 +135,42 @@ class QIntelBox(QGroupBox):
         if self.game.turn == 0:
             self.air_strength.setText("gathering intel")
             self.ground_strength.setText("gathering intel")
+
+        self._update_campaign_rows()
+
+    def _update_campaign_rows(self) -> None:
+        """The campaign-phase (§40) and political-will (Vietnam) rows.
+
+        Each row shows only when its feature is live for this game; the full
+        legibility "why" string rides on the tooltip so the box stays compact.
+        """
+        from game.fourteenth.phases import active_phase
+
+        phase = active_phase(self.game) if self.game is not None else None
+        show_phase = phase is not None
+        self._phase_title.setVisible(show_phase)
+        self.campaign_phase.setVisible(show_phase)
+        if phase is not None:
+            self.campaign_phase.setText(phase.name)
+            status = getattr(self.game, "phase_status_line", None) or ""
+            tooltip = f"{status}\n{phase.narrative}".strip()
+            self.campaign_phase.setToolTip(tooltip)
+            self._phase_title.setToolTip(tooltip)
+
+        show_will = self.game is not None and getattr(
+            self.game.settings, "vietnam_political_will", False
+        )
+        self._will_title.setVisible(show_will)
+        self.political_will.setVisible(show_will)
+        if show_will and self.game is not None:
+            blue = getattr(self.game.blue, "political_will", None)
+            red = getattr(self.game.red, "political_will", None)
+            if blue is not None and red is not None:
+                self.political_will.setText(f"{blue:.0f}% vs resolve {red:.0f}%")
+                self.political_will.setToolTip(
+                    "Washington's patience vs Hanoi's resolve. Either side "
+                    "hitting zero ends the war at the negotiating table."
+                )
 
     def open_details_window(self) -> None:
         self.details_window = IntelWindow(self.game)

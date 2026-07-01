@@ -196,11 +196,19 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("vietnam_snake_and_nape",),
     ),
     Feature(
+        # Pure engine feature (no Lua): the Tier-0 phase classifier + the HTN soft
+        # emphasis + the status surfaces, in game/fourteenth/phases.py.
+        "campaign_phases",
+        "Campaign phases (inferred arc + planner emphasis)",
+        40,
+        settings_fields=("campaign_phases",),
+    ),
+    Feature(
         # Gated by the ModSettings/New Game `high_digit_sams` toggle (a wizard
         # field, not a Settings dataclass field) -- hence no settings_fields.
         "hds_ultimate_compilation",
         "High Digit SAMs Ultimate Compilation support",
-        40,
+        41,
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.

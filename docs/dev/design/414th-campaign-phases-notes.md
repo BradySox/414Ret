@@ -1,6 +1,11 @@
 # 414th — Campaign Phases (inferred + authored) — design notes
 
-**Status:** design only. Scoped 2026-07-01. Nothing landed yet. This note is the
+**Status:** **P0 + P1 LANDED** (2026-07-01, Vietnam campaign layer W3 / feature §40 —
+`game/fourteenth/phases.py`, the §2.1 object + §3 Tier-0 classifier + §3.3 hysteresis +
+§4 soft emphasis in `PlanNextAction` + §5 persistence + the kneeboard cover band and the
+client campaign-status ribbon, gated by `campaign_phases` default ON; in-game pass =
+checklist M3). P2 (conditions/objectives/whitelists — Tier 1/2 authoring) and P3
+(authored arcs) are next, riding the Vietnam W4 ROE work. This note is the
 **spec of record** for the phase model, the inference classifier, and the planner/UI
 hooks; implementation is staged (see *Rollout* at the end). Design decisions locked with
 the user this session are marked **[DECIDED]**.
@@ -95,7 +100,7 @@ new measurement plumbing — accessors confirmed 2026-07-01) and picks the phase
 
 | Signal | Accessor | Derived metric |
 |---|---|---|
-| **Enemy IADS strength** | `game.theater.iads_network.iads_nodes(game)`, filter `IadsRole`, alive via `TheaterUnit.alive` | `iads_ratio` = alive enemy long+medium SAMs ÷ **turn-0 baseline** (`SAM_AS_EWR` = long, `SAM` = medium; `POINT_DEFENSE`/SHORAD excluded) |
+| **Enemy IADS strength** | enemy TGOs with `tgo.task in {GroupTask.LORAD, GroupTask.MERAD}` (the same set `degradeiads.py` targets), alive via `TheaterUnit.alive` | `iads_ratio` = alive enemy long+medium SAM **sites** ÷ **turn-0 baseline**. (Corrected by the engine re-run: banding by `IadsRole` can't work — `IadsRole.SAM` also swallows SHORAD and `IadsRole.EWR` swallows AAA/navy — so band by the TGO's `GroupTask` instead.) |
 | **Enemy air threat** | `ThreatZones.for_faction(game, enemy)` (`.air_engagement`, `.airbases`) | `air_threat` = enemy fighter/CAP reach coverage (coarse: present / degraded / absent) |
 | **Enemy air inventory** | `air_wing.iter_squadrons()` → `owned_aircraft` × `primary_task==CAP` | `enemy_fighters` count vs. turn-0 baseline |
 | **Front momentum** | `FrontLine.position` (snapshot at turn 0 — **not persisted natively**) | `front_progress` = signed displacement of FLOT vs. turn-0 baseline |
@@ -113,10 +118,14 @@ exists).
 **Absolute-SAM-floor gate (checked first — the pilot's key finding).** `iads_ratio` alone
 can't open the campaign correctly: at turn 0 *every* campaign's ratio is `1.0`, yet a
 zero-SAM Vietnam theater and a dense S-300 theater must not both open in Rollback. So before
-the ratio checks: **if the turn-0 baseline of long+medium SAM launchers is below
+the ratio checks: **if the turn-0 baseline of long+medium SAM sites is below
 `ROLLBACK_SAM_FLOOR` (≈ 3), there is no meaningful Rollback phase — open the campaign in
-Interdiction.** (Pilot: Khe Sanh 0 SAM ⇒ skips Rollback; Velvet Thunder 12 SAM ⇒ keeps it —
-same era, opposite arc, decided by laydown.)
+Interdiction.** (Engine-corrected examples — the pilot's original "Khe Sanh 0 SAM" case was a
+`--lite` artifact; the generator actually fills 4 SA-2/SA-3 batteries there, see the pilot-note
+addendum. The genuine below-floor cases across all 66 are Shattered Dagger, Battle for No Man's
+Land, Valley of Rotary, and Northern Guardian ⇒ they skip Rollback; Velvet Thunder sits exactly
+at the floor with 3 SA-2 sites ⇒ keeps it — same permissive-air era, opposite arc, decided by
+laydown.)
 
 Then, evaluated in order; first match wins (with hysteresis, §3.3):
 
@@ -261,11 +270,12 @@ prove the extraction pipeline + judge draft quality, *then* green-light the full
 
 ## 8. Rollout (staged)
 
-- **P0 — plumbing (no behavior change):** `CampaignPhase` model + Campaign YAML load +
+- **P0 — plumbing (no behavior change):** ✅ LANDED (W3) — `CampaignPhase` model +
   `Game` phase state/baseline + `__setstate__` migration + expose turn/date/campaign/phase in
-  `GameJs`. Kneeboard cover + status band light up. Nothing planner-facing yet.
-- **P1 — inference + emphasis:** the §3 classifier drives the §4 soft reweight for **all**
-  campaigns. Generic arc, hysteresis, legibility string.
+  `GameJs`. Kneeboard cover + status band light up. (The Campaign YAML `phases:` load moved
+  to P2 with the rest of the authoring tiers — Tier 0 needs no YAML.)
+- **P1 — inference + emphasis:** ✅ LANDED (W3) — the §3 classifier drives the §4 soft reweight
+  for **all** campaigns. Generic arc, hysteresis, legibility string.
 - **P2 — conditions, objectives, whitelists:** `advance_when` conditions, objectives
   checklist, optional per-phase hard whitelist deltas (Tier 1/2 authoring unlocked).
 - **P3 — authored arcs:** convert the squadron's three wiki campaign breakdowns into real

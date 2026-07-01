@@ -122,9 +122,10 @@ file. This guide is the map; those are the territory.
     band around its campaign-start anchor via a `FrontLine._blue_route_progress` clamp hook,
     so the strength battle bends the line + feeds will but never sweep-captures a base; Air
     Assault stays the one territorial lever; armed/disarmed idempotently from
-    `Game.initialize_turn`; in-game pass = checklist M2). W3–W5 outstanding. All default-off,
-    `vietnam_political_will`/`vietnam_static_front` gated, no debrief-schema/Lua changes
-    W1–W4),
+    `Game.initialize_turn`; in-game pass = checklist M2); **W3 landed** = campaign-phases P0+P1
+    (feature §40 — generic, all campaigns, `campaign_phases` default ON). W4–W5 outstanding. The
+    Vietnam pieces stay default-off (`vietnam_political_will`/`vietnam_static_front` gated); no
+    debrief-schema/Lua changes W1–W4),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
     layer, active per turn-range, that biases the auto-planner's offensive intent + shows in
     the UI/kneeboard; three authoring tiers over one `CampaignPhase` object — **Tier 0
@@ -136,13 +137,22 @@ file. This guide is the map; those are the territory.
     boundary). A **6-campaign inference pilot** (4 modern + 2 Vietnam) is done — see
     `414th-campaign-phases-pilot.md` + the reusable `tools/campaign_phase_laydown.py`
     (`--lite` raw-`.miz` parse / `--engine` real pipeline); it surfaced two threshold
-    refinements now in the spec: an **absolute long+medium-SAM floor** gate (Khe Sanh 0 SAM
-    skips Rollback, Velvet Thunder's SA-2 belt keeps it — same era, opposite arc) and EWR
-    de-weighting. A **batch draft across all 66 campaigns** is done too — `tools/campaign_phase_classify.py`
-    (the offline §3.2 classifier reference impl) + `414th-campaign-phases-all66-draft.md` (a
-    generated opening-phase/arc table: 55 Rollback / 6 Air Superiority / 4 Interdiction; known
-    `--lite` caveats = mod-SAM undercount, auto-assign air blindspot, era-from-date). Design only; P0
-    plumbing not started),
+    refinements now in the spec: an **absolute long+medium-SAM floor** gate and EWR
+    de-weighting. The **all-66 draft table is now `--engine`-authoritative** (re-run
+    2026-07-01 on the real install) — `tools/campaign_phase_classify.py` (the offline §3.2
+    classifier reference impl; `--laydown` consumes a saved engine dump) +
+    `414th-campaign-phases-all66-draft.md` (57 Rollback / 5 Air Superiority / 4 Interdiction).
+    The engine run closed all three `--lite` blind spots (mod-SAM undercount, auto-assign air,
+    and the newly found **generator-filled AA slots**) and corrected the pilot's headline:
+    **Khe Sanh actually fields 4 generated SA-2/SA-3 batteries ⇒ opens Rollback**; the genuine
+    below-floor cases are Shattered Dagger / No Man's Land / Valley of Rotary / Northern
+    Guardian, with Velvet Thunder exactly at the floor (3 sites, keeps Rollback). SAM banding
+    reads TGO `GroupTask` LORAD/MERAD (the DEAD planner's own target set) — `IadsRole` can't
+    band it (its SAM role swallows SHORAD). **P0+P1 LANDED** as feature §40 / Vietnam campaign
+    layer W3 — Tier-0 inference + hysteresis + the HTN soft emphasis + the kneeboard/client
+    status surfaces are live for all campaigns (`campaign_phases`, default ON; the runtime
+    classifier bands by the same LORAD/MERAD set); P2 (Tier 1/2 authoring, `advance_when`,
+    objectives, whitelist deltas) + P3 (authored arcs) ride W4),
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),
@@ -624,7 +634,29 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     fire-node count, per-node power. (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §39, checklist L11 — needs an
     in-game pass.)
-40. **High Digit SAMs "Ultimate Compilation" support** — the HDS mod support retargeted from the abandoned
+40. **Campaign phases (inferred arc + planner emphasis)** — every campaign (all 66, zero authoring) knows what
+    *phase* of the air war it is in, the UI shows it, and the auto-planner biases its offensive intent to match
+    (spec `414th-campaign-phases-notes.md`; this is its **P0+P1**, landed as Vietnam campaign layer W3). A
+    turn-by-turn Tier-0 classifier (`game/fourteenth/phases.py`) reads live state via existing accessors —
+    alive enemy long+medium SAM **sites** (TGO `GroupTask` LORAD/MERAD, the DEAD planner's own set — the
+    #379-corrected banding, never `IadsRole`) vs. a lazily-snapshotted turn-0 `PhaseBaseline`, enemy
+    air-superiority airframes, mean front movement, last turn's captures — and picks **Air Superiority →
+    Interdiction → Offensive** with the pilot's **absolute-SAM-floor gate** (a genuinely belt-less theater
+    skips Rollback — Shattered Dagger/Valley of Rotary et al., NOT Khe Sanh, which the generator fills with
+    SA-2/SA-3), a peer-fight guard, min-dwell hysteresis, and monotonic-forward defaulting
+    (regression is authored-only, P2). The active phase reorders **only the offensive middle** of
+    `PlanNextAction`'s HTN root methods (BLUE only; the reactive prefix + tail are fixed — the §17 boundary),
+    shifting which objectives get first claim on offensive jets. Always explains itself (§3.4 legibility:
+    "Interdiction — enemy IADS 22% · air threat low · front static") on the kneeboard **cover-page band** and
+    a new **client campaign-status ribbon** (`CampaignStatusBar` over the map, fed by `GameJs.campaign_status`
+    — which also carries campaign name/turn/date, previously never sent to the client, + the political-will
+    meters on Vietnam campaigns). Gated by `campaign_phases` (default **ON** — [DECIDED] Tier-0 inference is
+    the default; the toggle is the kill switch). Tier 1/2 YAML authoring, `advance_when`, objectives, and the
+    authored Vietnam arcs are P2/W4. (`game/fourteenth/phases.py`, `game/game.py`,
+    `game/commander/tasks/compound/nextaction.py`, `game/missiongenerator/kneeboard.py`,
+    `game/server/game/models.py`, `client/src/components/campaignstatus/`; features doc §40, checklist M3 —
+    needs an in-game pass + the CI client rebuild.)
+41. **High Digit SAMs "Ultimate Compilation" support** — the HDS mod support retargeted from the abandoned
     original v1.4.0 to the maintained successor (https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation,
     v1.4.3+), same `high_digit_sams` toggle (wizard label updated). Unit data read from the **installed mod's
     own Database luas**. Absorbs the breaking changes — renamed S-300PS radars (`30N6 MAST tr`/`76N6E sr`/
@@ -639,7 +671,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     in passing: `Faction.remove_vehicle` matches DCS type **ids**, and the old name-based HDS strips silently
     never removed anything (upstream-carve candidate). (`pydcs_extensions/highdigitsams/`,
     `game/data/radar_db.py`, `game/factions/faction.py`, `resources/{groups,layouts,units,factions}/`;
-    features doc §40, checklist N1 — needs an in-game pass.)
+    features doc §41, checklist N1 — needs an in-game pass.)
 
 ---
 

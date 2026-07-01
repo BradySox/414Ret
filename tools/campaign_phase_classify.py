@@ -63,7 +63,13 @@ def _era(meta: dict) -> str:
 
 def classify(meta: dict, lay: dict) -> dict:
     red = lay["sides"]["red"]
-    sam = red["sam_long_medium"]
+    # Engine laydowns band by TGO site (what the DEAD planner actually targets)
+    # and their unit counts include radars/support, so the floor gate runs on
+    # sites there; lite laydowns only have the keyword-matched unit count.
+    if "sam_sites" in red:
+        sam = red["sam_sites"]["long"] + red["sam_sites"]["medium"]
+    else:
+        sam = red["sam_long_medium"]
     oob = lay.get("air_oob", {})
     red_air = oob.get("RED", {})
     blue_air = oob.get("BLUE", {})
@@ -82,7 +88,9 @@ def classify(meta: dict, lay: dict) -> dict:
         and friendly_fighters >= PEER_MIN
         and 0.7 <= (enemy_fighters / max(friendly_fighters, 1)) <= 1.4
     )
-    neutral = lay["airfields"].get("NEUTRAL", 0)
+    # Engine laydowns assign every CP to a side, so the capturable-pool proxy
+    # rides the raw .miz neutral-airfield count they carry as neutral_pool.
+    neutral = lay.get("neutral_pool", lay["airfields"].get("NEUTRAL", 0))
     era = _era(meta)
 
     reasons = [f"enemy L+M SAM={sam}"]
@@ -147,40 +155,69 @@ def _resolve(names: list[str]) -> list[str]:
     return [n if n.endswith(".yaml") else n + ".yaml" for n in names]
 
 
+def _row(meta: dict, lay: dict, fallback_name: str) -> dict:
+    verdict = classify(meta, lay)
+    red = lay["sides"]["red"]
+    if "sam_sites" in red:
+        sam_lm: int | str = (
+            f"{red['sam_sites']['long'] + red['sam_sites']['medium']} "
+            f"({red['sam_long_medium']}u)"
+        )
+    else:
+        sam_lm = red["sam_long_medium"]
+    return {
+        "campaign": meta.get("name", fallback_name),
+        "theater": meta.get("theater", "?"),
+        "date": (
+            meta.get("recommended_start_date", "").split()[0]
+            if meta.get("recommended_start_date")
+            else "?"
+        ),
+        "enemy_sam_lm": sam_lm,
+        "enemy_fighters": lay.get("air_oob", {}).get("RED", {}).get("fighter", 0),
+        **verdict,
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--json", action="store_true", help="emit JSON instead of a markdown table"
     )
+    ap.add_argument(
+        "--laydown",
+        help="classify from a saved campaign_phase_laydown.py JSON (e.g. an "
+        "--engine --all dump) instead of extracting --lite laydowns here",
+    )
     ap.add_argument("names", nargs="*", help="campaign yaml stems (default: all)")
     args = ap.parse_args()
 
     rows = []
-    for n in _resolve(args.names):
-        y = os.path.join(CAMP, n)
-        try:
-            meta = _yaml_meta(y)
-            lay = extract_lite(os.path.join(CAMP, meta.get("miz", "")), y)
-            verdict = classify(meta, lay)
-            red = lay["sides"]["red"]
-            rows.append(
-                {
-                    "campaign": meta.get("name", n[:-5]),
-                    "theater": meta.get("theater", "?"),
-                    "date": (
-                        meta.get("recommended_start_date", "").split()[0]
-                        if meta.get("recommended_start_date")
-                        else "?"
-                    ),
-                    "enemy_sam_lm": red["sam_long_medium"],
-                    "enemy_fighters": lay.get("air_oob", {})
-                    .get("RED", {})
-                    .get("fighter", 0),
-                    **verdict,
-                }
-            )
-        except Exception as exc:  # noqa: BLE001
-            rows.append({"campaign": n[:-5], "error": f"{type(exc).__name__}: {exc}"})
+    if args.laydown:
+        with open(args.laydown, encoding="utf-8") as f:
+            dump = json.load(f)
+        for stem, entry in sorted(dump.items()):
+            if args.names and stem not in [n.removesuffix(".yaml") for n in args.names]:
+                continue
+            lay = entry.get("laydown", {})
+            if "error" in lay:
+                rows.append({"campaign": stem, "error": lay["error"]})
+                continue
+            try:
+                rows.append(_row(entry.get("meta", {}), lay, stem))
+            except Exception as exc:  # noqa: BLE001
+                rows.append({"campaign": stem, "error": f"{type(exc).__name__}: {exc}"})
+    else:
+        for n in _resolve(args.names):
+            y = os.path.join(CAMP, n)
+            try:
+                meta = _yaml_meta(y)
+                lay = extract_lite(os.path.join(CAMP, meta.get("miz", "")), y)
+                rows.append(_row(meta, lay, n[:-5]))
+            except Exception as exc:  # noqa: BLE001
+                rows.append(
+                    {"campaign": n[:-5], "error": f"{type(exc).__name__}: {exc}"}
+                )
 
     if args.json:
         print(json.dumps(rows, indent=2, default=str))

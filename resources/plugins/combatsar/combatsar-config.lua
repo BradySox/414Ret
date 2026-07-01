@@ -42,6 +42,8 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     local PICKUP_SPEED = 60        -- km/h: ...and slow
     local HOME_RANGE = 2500        -- m: helo-to-friendly-airbase to count as delivered
     local AI_DISPATCH_DELAY = 60   -- s grace before AI auto-rescue launches
+    local AI_DISPATCH_RETRY = 20   -- s backoff before retrying a failed AI dispatch
+    local AI_DISPATCH_MAX_TRIES = 3  -- give up AI dispatch after this many failed attempts
     local messageTime = 15
     local SANDY_MAX_RANGE = 55560  -- m (~30 NM): max distance to retask a free AI Sandy
     local SANDY_ENGAGE_RADIUS = 5556  -- m (~3 NM): EngageTargetsInZone radius around the survivor
@@ -121,6 +123,44 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     if #configs == 0 then
         env.info("DCSRetribution|Combat SAR plugin - no rescue helos/template; skipping")
         return
+    end
+
+    -- Root-cause guard for the "Moose.lua:11714 table index is nil" crash seen when the AI
+    -- rescue dispatch CLONES a Combat SAR helo (G21). MOOSE's DATABASE:_RegisterGroupTemplate
+    -- does `Templates.ClientsByID[unit.unitId] = unit` for every Client/Player-skill unit,
+    -- which throws when a client slot's template carries a nil unitId (a mission-generation
+    -- quirk). The rescue helos are player-flyable (Client skill), so SPAWN:Spawn() re-registers
+    -- their template and trips this. Backfill a synthetic, collision-safe unitId on any client
+    -- template missing one, so registration never indexes a nil. Only touches already-broken
+    -- (nil-unitId) templates; pcall-guarded so it can never break init.
+    local function sanitizeClientTemplates()
+        if not (_DATABASE and _DATABASE.Templates and _DATABASE.Templates.Groups) then
+            return 0
+        end
+        local synthetic = 9000000  -- above any real DCS unitId, so ClientsByID never collides
+        local patched = 0
+        for _, groupEntry in pairs(_DATABASE.Templates.Groups) do
+            local template = groupEntry and groupEntry.Template
+            local units = template and template.units
+            if type(units) == "table" then
+                for _, unit in pairs(units) do
+                    if type(unit) == "table"
+                        and (unit.skill == "Client" or unit.skill == "Player")
+                        and unit.unitId == nil then
+                        synthetic = synthetic + 1
+                        unit.unitId = synthetic
+                        patched = patched + 1
+                    end
+                end
+            end
+        end
+        return patched
+    end
+    local okSanitize, patchedCount = pcall(sanitizeClientTemplates)
+    if okSanitize and patchedCount and patchedCount > 0 then
+        env.info(string.format(
+            "DCSRetribution|Combat SAR plugin - backfilled unitId on %d client template(s) "
+                .. "(Moose _RegisterGroupTemplate nil-index guard)", patchedCount))
     end
 
     -- Live-updating friendly-helo sets (one per coalition) for player pickup detection.
@@ -364,7 +404,9 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             local commandeered = false
             if helo then
                 fg = FLIGHTGROUP:New(helo)
-                busyHelos[heloName] = true
+                -- NB: mark busy only on the success path below, so a mid-dispatch error
+                -- never strands a commandeered helo as permanently busy (it stays available
+                -- for the retry).
                 commandeered = true
             elseif cfg.heloTemplate then
                 spawnIndex = spawnIndex + 1
@@ -384,6 +426,9 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             fg:SetDefaultAltitude(1500)
             fg:SetDefaultSpeed(100)
             fg:AddOpsTransport(opstransport)
+            -- Past the last throwing call: commit the commandeer now, so an error above never
+            -- leaked a busy mark.
+            if commandeered and heloName then busyHelos[heloName] = true end
             entry.aiManaged = true
             entry.heloName = heloName
             -- Credit when the survivor cargo is unloaded at the FARP; release a commandeered helo
@@ -400,10 +445,13 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             else
                 msgToCoalition(entry.side, "RESCUE: an AI helo has launched for the downed pilot.")
             end
+            return true  -- dispatch fully set up
         end)
         if not ok then
             env.warning("combatsar: AI dispatch error (continuing): " .. tostring(err))
+            return false  -- a Lua error (e.g. a MOOSE template crash) -> the caller may retry
         end
+        return true  -- success or a clean give-up (no FARP/template) -> settled, no retry
     end
 
     -- Register a new survivor + spawn its group. Deduped by id (caller guarantees uniqueness).
@@ -673,11 +721,23 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                                 .. "complete the rescue.")
                         end
                     end
-                    -- AI auto-rescue after a short grace (lets a player or the orbiting alert react).
+                    -- AI auto-rescue after a short grace (lets a player or the orbiting alert
+                    -- react). Retry a FAILED dispatch (a MOOSE template error, etc.) a few times
+                    -- with backoff rather than abandoning the survivor on the first error --
+                    -- `e.dispatched` is only latched once the dispatch actually succeeds.
                     if e.state == "down" and e.cfg.enableForAI and not e.dispatched
-                        and (timer.getTime() - e.t0) >= AI_DISPATCH_DELAY then
-                        e.dispatched = true
-                        dispatchAIRescue(e)
+                        and (timer.getTime() - e.t0) >= AI_DISPATCH_DELAY
+                        and (not e.nextDispatchAt or timer.getTime() >= e.nextDispatchAt) then
+                        if dispatchAIRescue(e) then
+                            e.dispatched = true
+                        else
+                            e.dispatchTries = (e.dispatchTries or 0) + 1
+                            if e.dispatchTries >= AI_DISPATCH_MAX_TRIES then
+                                e.dispatched = true  -- give up; leave the survivor to a player pickup
+                            else
+                                e.nextDispatchAt = timer.getTime() + AI_DISPATCH_RETRY
+                            end
+                        end
                     end
                     -- Sandy retasking: no grace period -- protecting the survivor starts
                     -- immediately. Retries every tick until a free AI Sandy is found.

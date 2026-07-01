@@ -1180,7 +1180,7 @@ so the two docs don't drift.
   capture never fires because `advanceCapture` lost track of the multi-group party (all teams reported
   dead while alive).
 
-### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ◐ PARTIAL (2026-06-30, `dcs.log`/`state.json` — clone-fallback confirmed correct; the documented "errors on takeover" fail signature also reproduced repeatedly)
+### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ◐ PARTIAL (clone-fallback confirmed correct; the "table index is nil" dispatch error root-caused + fixed 2026-07-01, needs a re-fly)
 - **Partial (2026-06-30, flown session — `dcs.log`/`state.json`):** Two findings, one good and one a
   genuine open bug:
   - **Clone-fallback confirmed working as designed:** `dcs.log` shows `OPSTRANSPORT [UID=6] | Carrier
@@ -1226,6 +1226,24 @@ so the two docs don't drift.
   (`combatsar: AI dispatch error` in `dcs.log` — the live-group `FLIGHTGROUP` wrap is the risk to
   watch); a human's rescue helo gets hijacked by the AI (the `groupHasPlayer` guard failed); or a
   helo stays stuck `busy` and never serves a later ejection (free-on-`OnAfterUnloaded` not firing).
+- **Root-cause fix applied 2026-07-01 (the "dispatch error / table index is nil" leg).** Traced the
+  `Moose.lua:11714: table index is nil` to `DATABASE:_RegisterGroupTemplate` doing
+  `Templates.ClientsByID[unit.unitId] = unit` for every Client/Player-skill unit — which throws when a
+  client slot's template has a **nil `unitId`**. The Combat SAR rescue helos are player-flyable (Client
+  skill), and the crash is on the **clone** path (`SPAWN(cfg.heloTemplate):Spawn()` →
+  `DATABASE:Spawn` → `_RegisterGroupTemplate`; the commandeer path goes through `_RegisterDynamicGroup`,
+  which never touches line 11714). Three changes in `combatsar-config.lua`:
+  1. **Root cause — init sweep** (`sanitizeClientTemplates`): at plugin init, backfill a synthetic,
+     collision-safe `unitId` (≥ 9000001) on any Client/Player template carrying a nil one, so
+     registration never indexes a nil. `pcall`-guarded; only touches already-broken templates.
+  2. **Bounded retry:** `dispatchAIRescue` now returns success; the caller only latches `e.dispatched`
+     once it actually succeeds, retrying a *failed* dispatch up to 3× with a 20 s backoff (was: latch
+     before dispatch, so one error abandoned the survivor forever).
+  3. **Leak-proof commandeer:** the `busyHelos` mark now happens only on the success path, so a
+     mid-dispatch error can't strand a commandeered helo as permanently busy (it stays available for the
+     retry).
+  Lua syntax gate green. **Needs a re-fly** to confirm the 11714 error is gone from `dcs.log` and every
+  errored survivor now gets rescued (was 9 errored attempts / 3 completed).
 
 ### G22 — Captured-pilot POW recovery raid: planning crash + map marker · §15 · ☐ UNTESTED (2 fixes applied 2026-06-30, needs a re-fly)
 - **Bug (user report, 2026-06-30 — screenshot of "An unexpected error occurred"):** planning a

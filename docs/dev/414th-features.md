@@ -1651,7 +1651,19 @@ returns to the squadron).
   session (checklist G21): the clone-fallback path is confirmed correct, but the row's own anticipated
   fail signature (`combatsar: AI dispatch error` — a Moose `_RegisterGroupTemplate` "table index is
   nil" on a nil `unitId`) also reproduced 9× in that session's `dcs.log`, `pcall`-guarded so it didn't
-  block the 3 rescues that completed, but worth root-causing. **The earlier G9 eject-dispatch re-fly PASSED 2026-06-28 (audience pass, user "good").**
+  block the 3 rescues that completed. **The earlier G9 eject-dispatch re-fly PASSED 2026-06-28 (audience pass, user "good").**
+- **"Table index is nil" dispatch error root-caused + fixed (2026-07-01, G21).** The rescue helos are
+  player-flyable (Client skill), and MOOSE's `DATABASE:_RegisterGroupTemplate` does
+  `Templates.ClientsByID[unit.unitId] = unit` for every Client/Player-skill unit — which throws when a
+  client slot's template carries a **nil `unitId`** (a `.miz`-generation quirk). The crash is on the
+  **clone** path (`SPAWN(heloTemplate):Spawn()` re-registers the template); the commandeer path uses
+  `_RegisterDynamicGroup`, which never touches that line. Three fixes: (1) an init sweep
+  (`sanitizeClientTemplates`) backfills a synthetic collision-safe `unitId` on any nil-`unitId` client
+  template so registration never indexes a nil — the root cause; (2) `dispatchAIRescue` now returns
+  success and the caller retries a *failed* dispatch up to 3× with backoff instead of latching
+  `e.dispatched` before the attempt (which abandoned the survivor on the first error); (3) the
+  `busyHelos` mark moved to the success path so a mid-dispatch error can't strand a commandeered helo
+  as permanently busy. Needs a re-fly to confirm (checklist G21).
   **v1 limitation (still open):** a player ejecting from a fixed-wing with no human helo up can be
   double-handled (cosmetic double-spawn).
 - **King beacon = TACAN only.** Each King lights an **air-tracking TACAN** (follows the

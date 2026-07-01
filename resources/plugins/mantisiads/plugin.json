@@ -29,9 +29,9 @@
             "defaultValue": 15
         },
         {
-            "nameInUI": "EWR detection grouping radius (m)",
-            "mnemonic": "ewrGrouping",
-            "defaultValue": 5000
+            "nameInUI": "EWR detection grouping radius (NM)",
+            "mnemonic": "ewrGroupingNm",
+            "defaultValue": 2.7
         },
         {
             "nameInUI": "Max simultaneously-active short-range SAMs per threat (0 = unlimited)",

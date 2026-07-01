@@ -1409,14 +1409,17 @@ Sandys (player Sandys are untouched — voice/SRS coordination stays the intende
 buckets `FlightType.SCAR` flights per coalition into `dcsRetribution.CombatSAR(.red).sandys` (group
 names only, alongside the existing `kings`/`rescueHelos`); `combatsar-config.lua` builds a
 `sandyByName` map and, on every tick a survivor is `"down"`, `dispatchSandy` finds the nearest alive,
-idle, **non-player** Sandy within `sandyMaxRangeM` (default 55.56 km / 30 NM) and pushes a combo DCS
+idle, **non-player** Sandy within `sandyMaxRangeNm` (default 30 NM) and pushes a combo DCS
 task — `TaskOrbitCircleAtVec2` (hold near the survivor, at the Sandy's own current altitude/speed) plus
 an `EnRouteTaskEngageTargetsInZone` sub-task (actively hunts `"Ground Units"` within
-`sandyEngageRadiusM`, default 5.56 km / 3 NM, around the survivor) — replacing its DCS-assigned
+`sandyEngageRadiusNm`, default 3 NM, around the survivor) — replacing its DCS-assigned
 racetrack task. `configure_scar`'s weapons-free ROE (unchanged) does the actual engaging once
 retasked. Commits at most one Sandy per survivor (`busySandy`), retries every `POLL` (5s) until one
 frees up, and releases it (`ClearTasks()`, which resumes the group's own planned route) once the
-survivor is rescued/captured/dead. Two new plugin options: `sandyMaxRangeM`, `sandyEngageRadiusM`.
+survivor is rescued/captured/dead. Two new plugin options: `sandyMaxRangeNm`, `sandyEngageRadiusNm`
+(imperial-unit options since 2026-07-01; the whole Combat SAR option set is now ft / NM / kts —
+`pickupRangeFt`/`pickupAGLFt`/`pickupSpeedKts`/`homeRangeNm`/`captureSpawnDistanceNm`/`captureRangeFt`
+— converted to metric at read time in the Lua, defaults equivalent to the old metric values).
 Python bucketing/emission is unit-tested
 (`tests/missiongenerator/test_combat_sar_sandy_luadata.py`); the Lua runtime is **unflown** (no local
 Lua interpreter — read-verified only) and needs a cockpit pass (checklist G23).

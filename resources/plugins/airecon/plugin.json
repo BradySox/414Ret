@@ -11,11 +11,11 @@
             "maximumValue": 40
         },
         {
-            "nameInUI": "Radius around the target whose enemy units are captured (m)",
-            "mnemonic": "captureRadiusM",
-            "defaultValue": 4000,
-            "minimumValue": 250,
-            "maximumValue": 20000
+            "nameInUI": "Radius around the target whose enemy units are captured (NM)",
+            "mnemonic": "captureRadiusNm",
+            "defaultValue": 2,
+            "minimumValue": 1,
+            "maximumValue": 10
         },
         {
             "nameInUI": "Max units captured per recon flight",

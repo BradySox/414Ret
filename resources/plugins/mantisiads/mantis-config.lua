@@ -46,7 +46,10 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- 15s (was 30) so the IADS cues/hands off briskly -- a 30s poll let targets
     -- slip through a SAM's (now range-correct) ring before it reacted.
     local detectInterval = 15
-    local ewrGrouping = 5000
+    -- Option is authored in NM (imperial UI); MOOSE SetEWRGrouping wants meters. The
+    -- 2.7 NM default is 5,000 m -- MANTIS' own default, deliberately unchanged (G6-passed
+    -- tuning). Only the unit the campaign author types changed.
+    local ewrGrouping = 2.7 * 1852
     -- Max simultaneously-active SAMs per band; 0 = unlimited (every in-range SAM
     -- of that band engages). Long/medium default uncapped so the strategic IADS is
     -- a real SEAD fight you can't fly through; short/point keep a rolling cap so the
@@ -69,7 +72,7 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         if opts.useEmOnOff ~= nil then useEmOnOff = opts.useEmOnOff end
         if opts.samRange ~= nil then samRange = opts.samRange end
         if opts.detectInterval ~= nil then detectInterval = opts.detectInterval end
-        if opts.ewrGrouping ~= nil then ewrGrouping = opts.ewrGrouping end
+        if opts.ewrGroupingNm ~= nil then ewrGrouping = (tonumber(opts.ewrGroupingNm) or 2.7) * 1852 end
         if opts.maxActiveShort ~= nil then maxActiveShort = opts.maxActiveShort end
         if opts.maxActiveMid ~= nil then maxActiveMid = opts.maxActiveMid end
         if opts.maxActiveLong ~= nil then maxActiveLong = opts.maxActiveLong end

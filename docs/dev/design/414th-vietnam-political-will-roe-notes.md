@@ -1,9 +1,15 @@
 # 414th — Political Will & ROE escalation (the Vietnam campaign layer) — design notes
 
-**Status:** **W1 LANDED** (the observe-only political-will model: `Coalition.political_will`,
-the `vietnam_political_will` setting, the debrief feed `game/fourteenth/political_will.py` via
-`missionresultsprocessor.record_political_will`, and the SITREP band line; tests
-`tests/fourteenth/test_political_will.py` + the sitrep will-band tests). W2–W5 outstanding.
+**Status:** **W1 + W2 LANDED.** W1 = the observe-only political-will model
+(`Coalition.political_will`, the `vietnam_political_will` setting, the debrief feed
+`game/fourteenth/political_will.py` via `missionresultsprocessor.record_political_will`, the
+SITREP band line). W2 = the **negotiation ending**: `negotiation_verdict` backs a gated branch
+in `Game.check_win_loss` ahead of the territory checks (RED resolve exhausted → WIN "Hanoi
+agrees to terms"; BLUE will exhausted → LOSS "Washington orders withdrawal"; BLUE-loss
+precedence on a simultaneous collapse; territory victory untouched), era-framed exhaustion
+banners fire once on the crossing edge, and the 4 Vietnam campaigns preseed
+`vietnam_political_will: true` (guarded in `_ERA_PRESEED`). The design-§7 feed weights shipped
+as-is — the balance pass moved to the first played campaign (checklist M1). W3–W5 outstanding.
 This is the **spec of record** for the month-scale
 rework that makes Vietnam mode different at the *campaign* layer, approved 2026-07-01:
 **(1) a political-will economy with a negotiation victory** and **(2) an ROE / Route-Package

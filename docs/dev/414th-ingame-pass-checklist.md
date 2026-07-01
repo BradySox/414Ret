@@ -2057,6 +2057,23 @@ so the two docs don't drift.
   `hasAttribute` Lua error; the lay repeats every tick (cooldown not honoured); it triggers from altitude or at
   low speed (the ceiling/speed gate is wrong); the bite is far too strong/weak (`napeBlastPower`).
 
+### M1 — Political will pacing & feed weights (campaign layer W1+W2) · Vietnam campaign layer · ☐ UNTESTED (built 2026-07-01; model + verdict fully unit-tested, pacing needs a played campaign)
+- **Headless adjudication:** the feed model and the negotiation verdict are locked in
+  `tests/fourteenth/test_political_will.py` (weighted losses, POW trickle, rescue refund, clamps, off-switch,
+  win/loss/precedence, crossing-edge banners) and the SITREP band in the sitrep tests. What CI *cannot*
+  adjudicate is **pacing**: whether the design-§7 weights drive either side to zero on a satisfying arc
+  (~15–30 turns of a normal Vietnam campaign), or collapse/stall the war absurdly fast/slow.
+- **Setup:** a NEW Vietnam campaign (any of the four — `vietnam_political_will` preseeds on). Play several
+  turns normally; read the per-turn "Political will" message + the SITREP will band.
+- **Pass:** both meters move visibly each flown turn but neither side loses double digits from an ordinary
+  turn; a B-52 loss or a POW visibly dents BLUE; convoy kills visibly dent RED; a quiet turn heals slightly;
+  the arc feels like it *would* resolve in 15–30 turns of consistent play.
+- **Fail signature:** will collapses in <5 turns of normal play (weights too hot — halve the loss weights);
+  the meters barely move by turn 10 (too cold); the passive regen out-heals ordinary attrition so the meters
+  pin at 100 (regen too high vs. weights); the exhaustion banner fires repeatedly every turn at zero
+  (crossing-edge regression); a non-Vietnam campaign shows the will message at all (gating regression).
+  Tune the `BLUE_*`/`RED_*` weights in `game/fourteenth/political_will.py`.
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

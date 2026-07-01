@@ -47,6 +47,7 @@ settings:
   vietnam_super_gaggle: true
   vietnam_fac_marking: true
   vietnam_snake_and_nape: true
+  vietnam_political_will: true
   restrict_weapons_by_date: true
   # Compressed theater: tuck AEW&C/tanker orbits close to the front. The 80/70 NM
   # defaults stand off ~150 km on a small map, sprawling support to the map edge;

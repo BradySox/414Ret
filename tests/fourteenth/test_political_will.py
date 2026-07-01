@@ -24,6 +24,7 @@ from game.fourteenth.political_will import (
     RED_CONVOY_UNIT_LOST,
     RED_PASSIVE_REGEN,
     WILL_MAX,
+    negotiation_verdict,
     update_political_will,
 )
 
@@ -90,15 +91,18 @@ def _game(
     red_will: float = 100.0,
     pows_held: int = 0,
 ) -> Any:
-    return SimpleNamespace(
+    messages: list[str] = []
+    game = SimpleNamespace(
         settings=SimpleNamespace(vietnam_political_will=on),
         blue=SimpleNamespace(
             political_will=blue_will,
             pending_pow_recoveries=[object()] * pows_held,
         ),
         red=SimpleNamespace(political_will=red_will),
-        message=lambda title, text="": None,
+        messages=messages,
     )
+    game.message = lambda title, text="": messages.append(title)
+    return game
 
 
 def test_off_switch_touches_nothing() -> None:
@@ -183,3 +187,49 @@ def test_will_floors_at_zero() -> None:
     game = _game(blue_will=2.0)
     update_political_will(game, _debrief(blue_air_by_type={_aircraft_type("B-52H"): 3}))
     assert game.blue.political_will == 0.0
+
+
+# ---- W2: the negotiation ending ------------------------------------------------------
+
+
+def test_verdict_none_when_setting_off() -> None:
+    # Even at zero will, non-Vietnam campaigns never touch the negotiation branch.
+    assert negotiation_verdict(_game(on=False, blue_will=0.0, red_will=0.0)) is None
+
+
+def test_verdict_none_while_both_sides_hold() -> None:
+    assert negotiation_verdict(_game(blue_will=1.0, red_will=1.0)) is None
+
+
+def test_blue_exhaustion_is_a_loss() -> None:
+    # Washington orders withdrawal -- even with the front intact.
+    assert negotiation_verdict(_game(blue_will=0.0, red_will=55.0)) == "loss"
+
+
+def test_red_exhaustion_is_a_win() -> None:
+    # Hanoi agrees to terms -- no base capture required.
+    assert negotiation_verdict(_game(blue_will=40.0, red_will=0.0)) == "win"
+
+
+def test_simultaneous_collapse_is_a_loss() -> None:
+    # BLUE-loss precedence: your patience broke first; never a cheap win.
+    assert negotiation_verdict(_game(blue_will=0.0, red_will=0.0)) == "loss"
+
+
+def test_exhaustion_banner_fires_on_the_crossing_edge_only() -> None:
+    # Driving BLUE to zero raises the withdrawal banner once...
+    game = _game(blue_will=1.0)
+    update_political_will(game, _debrief(blue_air_by_type={_aircraft_type("B-52H"): 1}))
+    assert game.blue.political_will == 0.0
+    assert "Washington orders withdrawal" in game.messages
+    # ...and a side already sitting at zero does not repeat it every turn.
+    withdrawals = game.messages.count("Washington orders withdrawal")
+    update_political_will(game, _debrief(blue_air_by_type={_aircraft_type("B-52H"): 1}))
+    assert game.messages.count("Washington orders withdrawal") == withdrawals
+
+
+def test_red_exhaustion_banner_is_era_framed() -> None:
+    game = _game(red_will=1.0)
+    update_political_will(game, _debrief(red_counts=_counts(convoy=4)))
+    assert game.red.political_will == 0.0
+    assert "Hanoi agrees to terms" in game.messages

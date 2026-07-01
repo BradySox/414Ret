@@ -109,11 +109,16 @@ file. This guide is the map; those are the territory.
     spec's P0–P2 + two authored extensions (`restricted_zones` soft-enforced by will penalties,
     `target_release` gates with RESTRICTED map badges, a Rolling Thunder → Linebacker II arc
     for the 4 Vietnam campaigns; sanctuary airfields fall out of zones). Delivery W1–W5, one PR
-    each (W5 = the thin QRA→GCI ambush adaptation). **W1 landed** (observe-only will:
-    `Coalition.political_will` + the `vietnam_political_will` toggle + the
+    each (W5 = the thin QRA→GCI ambush adaptation). **W1 + W2 landed** — W1 = the observe-only
+    will (`Coalition.political_will` + the `vietnam_political_will` toggle + the
     `record_political_will` debrief feed in `game/fourteenth/political_will.py` + the SITREP
-    will band); W2–W5 outstanding. All default-off, `vietnam_political_will` gated, no
-    debrief-schema/Lua changes W1–W4),
+    will band); W2 = the **negotiation ending** (`negotiation_verdict` backing a gated
+    `check_win_loss` branch ahead of the territory checks — RED resolve exhausted → WIN "Hanoi
+    agrees to terms", BLUE will exhausted → LOSS "Washington orders withdrawal", BLUE-loss
+    precedence on a simultaneous collapse; territory victory untouched — plus once-only
+    era-framed exhaustion banners and the 4 Vietnam campaigns preseeding the toggle; weight
+    balance = checklist M1). W3–W5 outstanding. All default-off, `vietnam_political_will`
+    gated, no debrief-schema/Lua changes W1–W4),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
     layer, active per turn-range, that biases the auto-planner's offensive intent + shows in
     the UI/kneeboard; three authoring tiers over one `CampaignPhase` object — **Tier 0

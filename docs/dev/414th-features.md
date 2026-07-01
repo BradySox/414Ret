@@ -1340,20 +1340,27 @@ objectives) and `auto_combat_sar` (the AI standing alert). State globals: `comba
 plus the Combat SAR / POW coverage in `tests/test_missionresultsprocessor.py`. The capture race +
 King cueing + POW recovery **need an in-game pass** (checklist G8–G14).
 
-**Gotcha — Sandy is a static hold, not a dynamic responder (confirmed by design, 2026-06-30).**
-`ScarFlightPlan`/`Builder` (`game/ato/flightplans/scar.py`) plans Sandy's racetrack **once at
-mission generation**, centred on the King's own hold position (or the FLOT centre with no King), with
-a fixed 5 NM `engagement_distance` and a weapons-free CAS ROE (`configure_scar`,
-`game/missiongenerator/aircraft/aircraftbehavior.py`) — so an AI Sandy engages whatever hostile ground
-units it detects *inside that pre-planned box*, but the box never moves to follow wherever a pilot
-actually ejects later in the mission. "Walking Jolly Green in" is explicitly **voice-first** for a
-player Sandy (the King talks them on over comms — there is no scripted mechanic) and is flagged in the
-code's own comment as **"a combatsar runtime follow-up for the AI"** — i.e. dynamic AI re-tasking
-toward a live ejection is deferred, unbuilt work, not a bug. A 2026-06-30 in-game report ("Sandy's did
-nothing but fly their orbit path") is consistent with this: the ejection/snatch-party incident simply
-didn't occur inside Sandy's fixed box. Building dynamic re-tasking (detect an ejection/snatch party,
-break Sandy off its racetrack to engage) would be a `combatsar` plugin runtime addition, not a planner
-change.
+**Sandy AI dynamic retasking (runtime — `combatsar` plugin, added 2026-07-01).** `ScarFlightPlan`/
+`Builder` (`game/ato/flightplans/scar.py`) still plans Sandy's racetrack once at generation, centred
+on the King's hold (or the FLOT centre with no King) — that part is unchanged. What was missing: the
+box never moved to follow wherever a pilot actually ejected later in the mission (a 2026-06-30
+in-game report — "Sandy's did nothing but fly their orbit path" — and the code's own comment flagging
+this as "a combatsar runtime follow-up for the AI"). The runtime now closes that gap for **AI-crewed**
+Sandys (player Sandys are untouched — voice/SRS coordination stays the intended path): `luagenerator.py`
+buckets `FlightType.SCAR` flights per coalition into `dcsRetribution.CombatSAR(.red).sandys` (group
+names only, alongside the existing `kings`/`rescueHelos`); `combatsar-config.lua` builds a
+`sandyByName` map and, on every tick a survivor is `"down"`, `dispatchSandy` finds the nearest alive,
+idle, **non-player** Sandy within `sandyMaxRangeM` (default 55.56 km / 30 NM) and pushes a combo DCS
+task — `TaskOrbitCircleAtVec2` (hold near the survivor, at the Sandy's own current altitude/speed) plus
+an `EnRouteTaskEngageTargetsInZone` sub-task (actively hunts `"Ground Units"` within
+`sandyEngageRadiusM`, default 5.56 km / 3 NM, around the survivor) — replacing its DCS-assigned
+racetrack task. `configure_scar`'s weapons-free ROE (unchanged) does the actual engaging once
+retasked. Commits at most one Sandy per survivor (`busySandy`), retries every `POLL` (5s) until one
+frees up, and releases it (`ClearTasks()`, which resumes the group's own planned route) once the
+survivor is rescued/captured/dead. Two new plugin options: `sandyMaxRangeM`, `sandyEngageRadiusM`.
+Python bucketing/emission is unit-tested
+(`tests/missiongenerator/test_combat_sar_sandy_luadata.py`); the Lua runtime is **unflown** (no local
+Lua interpreter — read-verified only) and needs a cockpit pass (checklist G23).
 
 ### SOF insert generation fixes (2026-06-22)
 

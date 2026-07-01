@@ -43,6 +43,8 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     local HOME_RANGE = 2500        -- m: helo-to-friendly-airbase to count as delivered
     local AI_DISPATCH_DELAY = 60   -- s grace before AI auto-rescue launches
     local messageTime = 15
+    local SANDY_MAX_RANGE = 55560  -- m (~30 NM): max distance to retask a free AI Sandy
+    local SANDY_ENGAGE_RADIUS = 5556  -- m (~3 NM): EngageTargetsInZone radius around the survivor
 
     local capture = {
         enabled = true,
@@ -69,6 +71,8 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         if o.captureDwell ~= nil then capture.captureDwell = tonumber(o.captureDwell) or capture.captureDwell end
         if o.capturePartySize ~= nil then capture.partySize = tonumber(o.capturePartySize) or capture.partySize end
         if o.captureTeams ~= nil then capture.teams = tonumber(o.captureTeams) or capture.teams end
+        if o.sandyMaxRangeM ~= nil then SANDY_MAX_RANGE = tonumber(o.sandyMaxRangeM) or SANDY_MAX_RANGE end
+        if o.sandyEngageRadiusM ~= nil then SANDY_ENGAGE_RADIUS = tonumber(o.sandyEngageRadiusM) or SANDY_ENGAGE_RADIUS end
     end
 
     ---------------------------------------------------------------------------
@@ -101,6 +105,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             heloTemplate = c.heloTemplate,
             farp = c.farp,
             kings = c.kings or {},
+            sandys = c.sandys or {},
             sofTeams = c.sofTeams or {},
             enableForAI = readBool(c.enableForAI, false),
         }
@@ -426,6 +431,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             dwell = 0,
             dispatched = false,
             aiManaged = false,
+            sandyName = nil,
             credited = false,
             captureRolled = false,
             t0 = timer.getTime(),
@@ -552,6 +558,90 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     end
 
     ---------------------------------------------------------------------------
+    -- Sandy (SCAR) AI retasking: divert a free AI-crewed Sandy off its planned
+    -- racetrack to hold and actively engage near a live ejection instead of
+    -- staying in its static pre-planned box (previously the only behaviour --
+    -- see 414th-features.md §15). The Sandy's own weapons-free ROE + CAS task
+    -- (configure_scar, set at generation) does the actual shooting once
+    -- retasked; this just moves where it's looking. Player-flown Sandys are
+    -- never touched (voice/SRS coordination is the intended path for those).
+    ---------------------------------------------------------------------------
+    local sandyByName = {}
+    for _, cfg in ipairs(configs) do
+        for _, name in ipairs(cfg.sandys) do
+            sandyByName[name] = cfg.side
+        end
+    end
+
+    local busySandy = {}  -- sandy group name -> survivor id it's committed to
+
+    -- Nearest alive, idle, AI-crewed Sandy of the right side within range of coord.
+    local function findFreeSandy(side, coord)
+        local best, bestName, bestD = nil, nil, nil
+        for name, sandySide in pairs(sandyByName) do
+            if sandySide == side and not busySandy[name] then
+                local g = GROUP:FindByName(name)
+                if g and g:IsAlive() and not groupHasPlayer(g) then
+                    local u = g:GetUnit(1)
+                    local c = u and u:IsAlive() and u:GetCoordinate()
+                    if c then
+                        local d = c:Get2DDistance(coord)
+                        if d <= SANDY_MAX_RANGE and (not bestD or d < bestD) then
+                            best, bestName, bestD = g, name, d
+                        end
+                    end
+                end
+            end
+        end
+        return best, bestName
+    end
+
+    -- Divert a free Sandy to hold near and actively work the area around this
+    -- survivor. Commits at most one Sandy per survivor; retries every tick
+    -- until one frees up (all busy/dead/out of range this tick -> just wait).
+    local function dispatchSandy(entry)
+        if entry.sandyName then return end
+        local pu = entry.group and entry.group:GetUnit(1)
+        local pc = pu and pu:IsAlive() and pu:GetCoordinate()
+        if not pc then return end
+        local sandy, sandyName = findFreeSandy(entry.side, pc)
+        if not sandy then return end
+        local ok, err = pcall(function()
+            local u = sandy:GetUnit(1)
+            local speed = u:GetVelocityMPS()
+            if not speed or speed < UTILS.KnotsToMps(80) then
+                speed = UTILS.KnotsToMps(150)
+            end
+            local point = pc:GetVec2()
+            local orbit = sandy:TaskOrbitCircleAtVec2(point, 1500, speed)
+            local engage = sandy:EnRouteTaskEngageTargetsInZone(
+                point, SANDY_ENGAGE_RADIUS, { "Ground Units" }, 0)
+            sandy:SetTask(sandy:TaskCombo({ engage, orbit }))
+        end)
+        if not ok then
+            env.warning("combatsar: Sandy dispatch error (continuing): " .. tostring(err))
+            return
+        end
+        busySandy[sandyName] = entry.id
+        entry.sandyName = sandyName
+        msgToCoalition(entry.side, "SANDY " .. sandyName
+            .. " is diverting to hold over the downed pilot.")
+    end
+
+    -- Free a committed Sandy once its survivor is resolved (rescued/captured/
+    -- dead) so it can serve a later ejection. ClearTasks() resets the DCS
+    -- controller task, which resumes the group's own planned mission route.
+    local function releaseSandy(entry)
+        if not entry.sandyName then return end
+        busySandy[entry.sandyName] = nil
+        local g = GROUP:FindByName(entry.sandyName)
+        entry.sandyName = nil
+        if g and g:IsAlive() then
+            pcall(function() g:ClearTasks() end)
+        end
+    end
+
+    ---------------------------------------------------------------------------
     -- Main tick: drive every survivor through the ledger state machine.
     ---------------------------------------------------------------------------
     local function tick()
@@ -589,6 +679,11 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                         e.dispatched = true
                         dispatchAIRescue(e)
                     end
+                    -- Sandy retasking: no grace period -- protecting the survivor starts
+                    -- immediately. Retries every tick until a free AI Sandy is found.
+                    if e.state == "down" then
+                        dispatchSandy(e)
+                    end
                     -- Capture clock (only meaningful while still down).
                     if e.party then advanceCapture(e) end
 
@@ -615,6 +710,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
 
                 -- Reap finished entries.
                 if e.state == "rescued" or e.state == "captured" or e.state == "dead" then
+                    releaseSandy(e)
                     survivors[id] = nil
                 end
             end
@@ -789,10 +885,12 @@ if dcsRetribution and dcsRetribution.CombatSAR then
 
     local kingCount = 0
     for _ in pairs(kingByName) do kingCount = kingCount + 1 end
+    local sandyCount = 0
+    for _ in pairs(sandyByName) do sandyCount = sandyCount + 1 end
     env.info(string.format(
         "DCSRetribution|Combat SAR plugin - survivor ledger started (%d coalition(s), %d King(s), "
-            .. "capture %s, AI-rescue %s)",
-        #configs, kingCount,
+            .. "%d Sandy(s), capture %s, AI-rescue %s)",
+        #configs, kingCount, sandyCount,
         capture.enabled and "on" or "off",
         cfgBySide[coalition.side.BLUE] and cfgBySide[coalition.side.BLUE].enableForAI and "on" or "off"))
 

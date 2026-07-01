@@ -380,9 +380,15 @@ class LuaGenerator:
         """
         blue_rescue: list[FlightData] = []
         blue_kings: list[FlightData] = []
+        blue_sandys: list[FlightData] = []
         red_rescue: list[FlightData] = []
         red_kings: list[FlightData] = []
+        red_sandys: list[FlightData] = []
         for flight in self.mission_data.flights:
+            if flight.flight_type is FlightType.SCAR:
+                bucket = blue_sandys if flight.friendly.is_blue else red_sandys
+                bucket.append(flight)
+                continue
             if flight.flight_type is not FlightType.COMBAT_SAR:
                 continue
             if flight.friendly.is_blue:
@@ -408,6 +414,7 @@ class LuaGenerator:
                     template,
                     blue_rescue,
                     blue_kings,
+                    blue_sandys,
                     self.game.blue,
                     enable_for_ai,
                 )
@@ -422,6 +429,7 @@ class LuaGenerator:
                     template,
                     red_rescue,
                     red_kings,
+                    red_sandys,
                     self.game.red,
                     enable_for_ai,
                 )
@@ -432,6 +440,7 @@ class LuaGenerator:
         template_name: str,
         rescue_flights: list["FlightData"],
         kings: list["FlightData"],
+        sandys: list["FlightData"],
         coalition: "Coalition",
         enable_for_ai: bool,
     ) -> None:
@@ -472,6 +481,11 @@ class LuaGenerator:
                 if beacon.tacan is not None:
                     item.add_key_value("tacanChannel", str(beacon.tacan.number))
                     item.add_key_value("tacanBand", beacon.tacan.band.value)
+
+        # Sandy (FlightType.SCAR) rescue-escort flights: the runtime re-tasks an
+        # AI-crewed Sandy off its planned racetrack to hold near a live ejection
+        # (dynamic AI retasking -- player Sandys stay on voice/SRS coordination).
+        node.add_item("sandys").set_data_array([flight.group_name for flight in sandys])
 
         # Stranded SOF teams (SCAR commander-capture loop): offer each on-map team
         # as a CASEVAC pickup so the SAME rescue helo can extract it. Delivery clears

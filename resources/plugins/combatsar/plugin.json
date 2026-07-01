@@ -1,6 +1,6 @@
 {
     "nameInUI": "Combat SAR (pilot rescue)",
-    "descriptionInUI": "Combat SAR runtime built on a single survivor ledger (414th rework). When a pilot ejects, a downed pilot is spawned with red smoke and tracked in one ledger; a friendly helo - player- or AI-crewed - that lands low and slow next to the survivor boards them, and delivering to any friendly field/FARP spares that aviator in the campaign (the airframe is still lost). The enemy may race a snatch party to seize the survivor first - if they hold on the pilot they are taken as a recoverable POW. With the 'Automatic Combat SAR' campaign setting on, an AI rescue helo is dispatched automatically and AI ejections count too, so AI rescues AI (credited) just like a player rescue. C-130 flights tasked Combat SAR fly the 'King' overhead orbit, light an air-tracking TACAN beacon, and carry a 'LARS' F10 button listing every active survivor (position, bearing/range from the King). Inert unless at least one Combat SAR flight is in the mission (the generator emits dcsRetribution.CombatSAR only then).",
+    "descriptionInUI": "Combat SAR runtime built on a single survivor ledger (414th rework). When a pilot ejects, a downed pilot is spawned with red smoke and tracked in one ledger; a friendly helo - player- or AI-crewed - that lands low and slow next to the survivor boards them, and delivering to any friendly field/FARP spares that aviator in the campaign (the airframe is still lost). The enemy may race a snatch party to seize the survivor first - if they hold on the pilot they are taken as a recoverable POW. With the 'Automatic Combat SAR' campaign setting on, an AI rescue helo is dispatched automatically and AI ejections count too, so AI rescues AI (credited) just like a player rescue. C-130 flights tasked Combat SAR fly the 'King' overhead orbit, light an air-tracking TACAN beacon, and carry a 'LARS' F10 button listing every active survivor (position, bearing/range from the King). An AI-crewed 'Sandy' rescue-escort (SCAR task, A-10C/AH-64D) is dynamically diverted off its planned patrol to hold and actively engage near a live ejection, freeing again once the survivor is rescued/captured/dead -- a player-flown Sandy is unaffected and coordinates by voice instead. Inert unless at least one Combat SAR flight is in the mission (the generator emits dcsRetribution.CombatSAR only then).",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -67,6 +67,16 @@
             "nameInUI": "Capture race: number of dispersed snatch teams (small groups converging from different bearings)",
             "mnemonic": "captureTeams",
             "defaultValue": 3
+        },
+        {
+            "nameInUI": "Sandy AI retasking: max distance to divert a free AI Sandy to a downed pilot (m)",
+            "mnemonic": "sandyMaxRangeM",
+            "defaultValue": 55560
+        },
+        {
+            "nameInUI": "Sandy AI retasking: radius of the engagement zone it holds around the survivor (m)",
+            "mnemonic": "sandyEngageRadiusM",
+            "defaultValue": 5556
         }
     ],
     "scriptsWorkOrders": [],

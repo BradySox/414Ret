@@ -684,7 +684,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     presets on the extended S-300 Site, **SAMP/T** (+NG) on a new Patriot-geometry `SAMP/T Battery` layout,
     **Pantsir-SM** SHORAD, **SA-7/7b manpads**, 4 EWRs (the **P-37 Bar Lock** closes the period red EWR
     blind-net gap across 16 factions), ERO **ZU-23 Toyota technicals** for insurgents. Era-respecting stock
-    faction wiring (modern Russia/redfor, france_2005, Vietnam/70s-80s reds, insurgents). MANTIS needs no
+    faction wiring (modern Russia/redfor, france_2005, 70s-80s Middle-East/NK reds get SA-7/7b, Vietnam reds
+    the P-37 only — SA-7s dropped from the 4 Vietnam factions per squadron call — insurgents the technicals). MANTIS needs no
     change (the bridge bands SAMs by Retribution's emitted threat range, not MANTIS's unit-name scan). Fixed
     in passing: `Faction.remove_vehicle` matches DCS type **ids**, and the old name-based HDS strips silently
     never removed anything (upstream-carve candidate). (`pydcs_extensions/highdigitsams/`,

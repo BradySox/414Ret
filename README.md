@@ -199,7 +199,7 @@ and selected later upstream fixes.
   [Ultimate Compilation](https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation)
   (v1.4.3+) instead of the abandoned original — same new-game toggle, plus its new content:
   **S-400** and **S-300V4** batteries, the S-300PT, **Pantsir-SM** point defense, the French
-  **SAMP/T** Aster battery, **SA-7/SA-7b manpads** for the Vietnam-era and 70s–80s red factions,
+  **SAMP/T** Aster battery, **SA-7/SA-7b manpads** for the 70s–80s red factions,
   new early-warning radars (the period **P-37 Bar Lock** gives Cold-War red factions a real EWR
   net for the IADS), and insurgent **ZU-23 Toyota technicals**.
 - The **settings screen** was audited end-to-end: dead and duplicate options were removed,

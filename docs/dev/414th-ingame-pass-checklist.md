@@ -2156,11 +2156,12 @@ so the two docs don't drift.
   behavior of the new sites.
 - **Setup:** the Ultimate Compilation (v1.4.3+) installed; a NEW campaign vs. a modern Russia faction
   (russia_2020 / redfor_current) with the "High Digit SAMs - Ultimate Compilation" toggle ON. For the period
-  layer, a Vietnam campaign with the toggle ON (SA-7s + the P-37 Bar Lock EWR).
+  layer, a Vietnam campaign with the toggle ON (the P-37 Bar Lock EWR; for SA-7 launches use a 70s
+  Middle-East red like syria_1973 — the Vietnam factions deliberately carry no SA-7).
 - **Pass:** S-400 / S-300V4 / SAMP-T / S-300PT sites generate and the mission loads without a "unit type not
   found" DCS error; their threat rings render at the new ranges; MANTIS resolves them into the IADS (the
   "resolved N/M SAM" dcs.log line counts them) and they engage at standoff; Pantsir-SM fills SHORAD slots;
-  SA-7 infantry actually launch; the P-37 feeds MANTIS EWR detection on period red factions; insurgent
+  SA-7 infantry actually launch (syria_1973 etc.); the P-37 feeds MANTIS EWR detection on period red factions; insurgent
   ZU-23 technicals spawn at AAA sites.
 - **Fail signature:** DCS refuses the mission / silently drops a group (a type-id typo — cross-check the id
   against the mod's `entry.lua` unit list); MANTIS logs "Could not match radar data" AND the site never

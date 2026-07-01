@@ -538,6 +538,7 @@ export type Tgo = {
   destination?: LatLng;
   user_placed: boolean;
   roe_restricted?: boolean;
+  roe_reason?: string | null;
 };
 export type SupplyRoute = {
   id: string;
@@ -589,6 +590,21 @@ export type RestrictedZone = {
   name: string;
   center: LatLng;
   radius_m: number;
+  detail?: string;
+};
+export type PhaseArcEntry = {
+  key: string;
+  name: string;
+  narrative: string;
+  min_turn: number;
+  locked: string[];
+  zones: string[];
+  current: boolean;
+};
+export type CampaignEvent = {
+  turn: number;
+  title: string;
+  text: string;
 };
 export type CampaignStatus = {
   campaign_name?: string | null;
@@ -599,6 +615,9 @@ export type CampaignStatus = {
   phase_narrative?: string | null;
   blue_will?: number | null;
   red_will?: number | null;
+  phases?: PhaseArcEntry[];
+  will_history?: [number, number, number][];
+  events?: CampaignEvent[];
 };
 export type Game = {
   control_points: ControlPoint[];

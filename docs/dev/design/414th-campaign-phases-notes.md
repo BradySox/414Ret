@@ -4,8 +4,11 @@
 `game/fourteenth/phases.py`, the §2.1 object + §3 Tier-0 classifier + §3.3 hysteresis +
 §4 soft emphasis in `PlanNextAction` + §5 persistence + the kneeboard cover band and the
 client campaign-status ribbon, gated by `campaign_phases` default ON; in-game pass =
-checklist M3). P2 (conditions/objectives/whitelists — Tier 1/2 authoring) and P3
-(authored arcs) are next, riding the Vietnam W4 ROE work. This note is the
+checklist M3). **P2 + first P3 arcs LANDED** (Vietnam W4): the `phases:` YAML load,
+`advance_when` conditions, the ROE `restricted_zones`/`locked_targets` payload + planner gate,
+and the Rolling Thunder → Linebacker II arcs in the 4 Vietnam campaigns (checklist M4). Open:
+objectives checklist, per-phase whitelist deltas, `front_line_stance`, the 3 wiki-campaign
+arcs. This note is the
 **spec of record** for the phase model, the inference classifier, and the planner/UI
 hooks; implementation is staged (see *Rollout* at the end). Design decisions locked with
 the user this session are marked **[DECIDED]**.
@@ -276,10 +279,15 @@ prove the extraction pipeline + judge draft quality, *then* green-light the full
   to P2 with the rest of the authoring tiers — Tier 0 needs no YAML.)
 - **P1 — inference + emphasis:** ✅ LANDED (W3) — the §3 classifier drives the §4 soft reweight
   for **all** campaigns. Generic arc, hysteresis, legibility string.
-- **P2 — conditions, objectives, whitelists:** `advance_when` conditions, objectives
-  checklist, optional per-phase hard whitelist deltas (Tier 1/2 authoring unlocked).
-- **P3 — authored arcs:** convert the squadron's three wiki campaign breakdowns into real
-  `phases:` blocks. This is where the hand-written phase docs become executable.
+- **P2 — conditions, objectives, whitelists:** ✅ MOSTLY LANDED (Vietnam W4) — the campaign
+  `phases:` YAML load, `advance_when` conditions (min_turn / blue_will_below / enemy_iads_below),
+  and the ROE payload (`restricted_zones` + `locked_targets` target-release gates, read in
+  `PackagePlanningTask.fulfill_mission`) are in via `game/fourteenth/phases.py` (`parse_phases`,
+  `authored_arc_for`). Still open from P2: the objectives checklist (display), per-phase
+  `tasking_whitelist` deltas, and `front_line_stance` nudges.
+- **P3 — authored arcs:** ✅ FIRST FOUR LANDED (Vietnam W4) — Rolling Thunder → Bombing Halt →
+  Linebacker → Linebacker II `phases:` blocks in the 4 Vietnam campaigns. Converting the
+  squadron's three wiki campaign breakdowns (Red Tide et al.) is still open.
 - **(parallel) Batch draft:** §7 pilot → full 66 fan-out.
 
 ---

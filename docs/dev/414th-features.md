@@ -2871,3 +2871,31 @@ P2, riding the Vietnam W4 arcs).
 - **Deferred**: Consolidation phase (spec leaves it optional, v1 ships three), a red-perspective arc,
   Tier 1/2 YAML authoring + `advance_when` + objectives checklist (P2), authored Vietnam Rolling Thunder →
   Linebacker II arcs (W4), New Game wizard arc preview, SAM-density-scaled Rollback dwell.
+
+### W4 — the authored tier (P2) + the ROE escalation layer
+
+Vietnam campaign layer **W4** rides this feature: a campaign YAML may now carry a `phases:` block of
+**authored phases** that override Tier-0 inference (`parse_phases` + `authored_arc_for`, cached per process,
+re-derived at load per spec §5 — never pickled). Authored transitions: the next phase's `min_turn` is the
+scheduled escalation date; the current phase's `advance_when` (any-of `min_turn` / `blue_will_below` /
+`enemy_iads_below`) accelerates it — bleeding political will speeds escalation. The ROE payload:
+
+- **`restricted_zones`** — circles (CP-name or x/y centered, radius NM) where offensive tasking is
+  forbidden. The **AI planner gate** sits in `PackagePlanningTask.fulfill_mission` next to the Vietnam
+  `tasking_whitelist` read (`roe_blocks_target`, BLUE-only); sanctuary airfields fall out (a CP inside a
+  zone can't be OCA'd). The **player is never hard-blocked**: kills inside an active zone are counted at
+  debrief (`count_roe_violations`) and drain Political Will sharply (`BLUE_ROE_VIOLATION` in
+  `political_will.py`, with an "ROE violation" message).
+- **`locked_targets`** (target_release) — TGO `category` strings (+ special `airfield`) still locked in a
+  phase; blocked in the same planner gate, badged **RESTRICTED — ROE** on the TGO tooltip
+  (`TgoJs.roe_restricted`) instead of vanishing — the defining Rolling Thunder frustration, on purpose.
+- **Map layer** — `GameJs.restricted_zones` → `RestrictedZonesLayer` (red dashed circles + sticky tooltip),
+  in the layers panel "Enemy intel" group, default ON (renders nothing outside authored ROE campaigns).
+- **The authored arcs** — all 4 Vietnam campaigns ship **Rolling Thunder → The Bombing Halt → Linebacker →
+  Linebacker II** (sanctuary on Tbilisi-Lochini for Yankee Station/Steel Tiger, Sukhumi-Babushara for Khe
+  Sanh, Saipan Intl for Velvet Thunder; zones shrink then vanish, target classes release, schedule ~turns
+  8/11/16 accelerated by will). Structure guarded in `tests/test_vietnam_content.py`; behaviour in
+  `tests/fourteenth/test_phases.py`. In-game pass: checklist **M4**.
+
+Still open from P2: the objectives checklist (display), per-phase `tasking_whitelist` deltas, and
+`front_line_stance` nudges; plus the 3 wiki-campaign arcs (P3).

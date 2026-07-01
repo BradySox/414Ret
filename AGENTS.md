@@ -123,7 +123,11 @@ file. This guide is the map; those are the territory.
     so the strength battle bends the line + feeds will but never sweep-captures a base; Air
     Assault stays the one territorial lever; armed/disarmed idempotently from
     `Game.initialize_turn`; in-game pass = checklist M2); **W3 landed** = campaign-phases P0+P1
-    (feature §40 — generic, all campaigns, `campaign_phases` default ON). W4–W5 outstanding. The
+    (feature §40 — generic, all campaigns, `campaign_phases` default ON); **W4 landed** = the ROE
+    escalation layer (authored `phases:` arcs ×4 Vietnam campaigns — Rolling Thunder → Bombing
+    Halt → Linebacker → Linebacker II — with `restricted_zones` soft-enforced by will penalties,
+    `locked_targets` target-release gates + RESTRICTED badges, the red dashed map layer, and
+    will-coupled `advance_when` escalation; in-game pass = checklist M4). W5 outstanding. The
     Vietnam pieces stay default-off (`vietnam_political_will`/`vietnam_static_front` gated); no
     debrief-schema/Lua changes W1–W4),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*
@@ -151,8 +155,11 @@ file. This guide is the map; those are the territory.
     band it (its SAM role swallows SHORAD). **P0+P1 LANDED** as feature §40 / Vietnam campaign
     layer W3 — Tier-0 inference + hysteresis + the HTN soft emphasis + the kneeboard/client
     status surfaces are live for all campaigns (`campaign_phases`, default ON; the runtime
-    classifier bands by the same LORAD/MERAD set); P2 (Tier 1/2 authoring, `advance_when`,
-    objectives, whitelist deltas) + P3 (authored arcs) ride W4),
+    classifier bands by the same LORAD/MERAD set). **P2 + first P3 arcs LANDED** (Vietnam W4):
+    the `phases:` YAML authoring tier, `advance_when` conditions, the ROE zones/release payload
+    + planner gate, and the 4 Vietnam Rolling Thunder → Linebacker II arcs; still open =
+    objectives checklist, per-phase whitelist deltas, `front_line_stance`, the 3 wiki-campaign
+    arcs),
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),
@@ -651,11 +658,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     a new **client campaign-status ribbon** (`CampaignStatusBar` over the map, fed by `GameJs.campaign_status`
     — which also carries campaign name/turn/date, previously never sent to the client, + the political-will
     meters on Vietnam campaigns). Gated by `campaign_phases` (default **ON** — [DECIDED] Tier-0 inference is
-    the default; the toggle is the kill switch). Tier 1/2 YAML authoring, `advance_when`, objectives, and the
-    authored Vietnam arcs are P2/W4. (`game/fourteenth/phases.py`, `game/game.py`,
-    `game/commander/tasks/compound/nextaction.py`, `game/missiongenerator/kneeboard.py`,
-    `game/server/game/models.py`, `client/src/components/campaignstatus/`; features doc §40, checklist M3 —
-    needs an in-game pass + the CI client rebuild.)
+    the default; the toggle is the kill switch). **W4 added the authored tier (P2) + the ROE escalation
+    layer**: a campaign `phases:` YAML block overrides Tier 0 (`parse_phases`/`authored_arc_for`, re-derived
+    at load, never pickled) with `min_turn`-scheduled + `advance_when`-accelerated transitions
+    (`blue_will_below` couples escalation to the will economy), **restricted zones** (AI planner gate
+    `roe_blocks_target` in `PackagePlanningTask.fulfill_mission`, BLUE-only; sanctuary airfields fall out;
+    the player is never hard-blocked — zone kills drain will via `count_roe_violations` +
+    `BLUE_ROE_VIOLATION`), **target release** (`locked_targets` classes, RESTRICTED — ROE badge on the TGO
+    tooltip instead of vanishing), a red dashed **map layer** (`GameJs.restricted_zones` →
+    `RestrictedZonesLayer`, Enemy intel group, default ON), and the authored **Rolling Thunder → Bombing
+    Halt → Linebacker → Linebacker II arcs in all 4 Vietnam campaigns** (Tbilisi/Sukhumi/Saipan play Hanoi
+    per laydown). (`game/fourteenth/phases.py`, `game/game.py`,
+    `game/commander/tasks/compound/nextaction.py`, `game/commander/tasks/packageplanningtask.py`,
+    `game/fourteenth/political_will.py`, `game/missiongenerator/kneeboard.py`, `game/server/game/models.py`,
+    `game/server/tgos/models.py`, `client/src/components/campaignstatus/`,
+    `client/src/components/restrictedzones/`; features doc §40, checklist M3 + M4 — need an in-game pass +
+    the CI client rebuild.)
 
 ---
 

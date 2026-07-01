@@ -259,7 +259,13 @@ and selected later upstream fixes.
   started — pressure reads on the map — but never sweeps onto a base to capture it; deliberate **Air Assault**
   operations remain the one way to take ground, and attrition pays out through political will instead. Both are
   opt-in (Vietnam Ops → Campaign) and preseeded on in the four Vietnam campaigns; watch the will meters move on
-  the SITREP band each turn.
+  the SITREP band each turn. And the four campaigns now fly under **Washington's rules of engagement**: an
+  authored **Rolling Thunder → Bombing Halt → Linebacker → Linebacker II** arc where a red dashed **sanctuary
+  zone** on the map (the "Hanoi" hub) is off-limits, deep target classes (factories, power, airfields) show a
+  **RESTRICTED** badge you can see but may not hit — the defining Rolling Thunder frustration — and the AI
+  planner obeys. *You* can always break the rules; the strike goes through, and Political Will pays the bill.
+  Escalation arrives on schedule or **faster the more your will bleeds**, until Linebacker II takes the gloves
+  off entirely.
 - A new **Steel Tiger: Trail Interdiction** campaign — the air war to strangle the **Ho Chi Minh Trail** in
   1968. An *interdiction*-focused Vietnam scenario on the Yankee Station laydown, with the whole Vietnam Ops
   suite on and **convoy interdiction as the centrepiece**: the moving trail column behind the enemy line is

@@ -450,3 +450,32 @@ def test_ch_armor_campaigns_enable_russian_pack(campaign_file: str) -> None:
         "enable 'russianmilitaryassetspack' in settings -- apply_mod_settings will "
         "silently strip that armor. Add 'russianmilitaryassetspack: true'."
     )
+
+
+# W4: every Vietnam campaign carries the authored Rolling Thunder -> Linebacker II
+# ROE arc (campaign phases P2). Guard the structure so an edit can't silently drop
+# a campaign's arc or break its parse (a bad block degrades to Tier-0 at runtime,
+# which would quietly lose the whole ROE layer).
+_ROE_ARC_KEYS = ["rolling_thunder", "bombing_halt", "linebacker", "linebacker_ii"]
+
+
+@pytest.mark.parametrize("campaign_file", list(_ERA_PRESEED))
+def test_vietnam_campaign_authored_roe_arc(campaign_file: str) -> None:
+    import yaml
+
+    from game.fourteenth.phases import parse_phases
+
+    with (_CAMPAIGNS / campaign_file).open(encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    arc = parse_phases(data.get("phases"))
+    assert [p.key for p in arc] == _ROE_ARC_KEYS, campaign_file
+    # Rolling Thunder binds: a sanctuary zone + locked deep-target classes.
+    assert arc[0].restricted_zones and arc[0].locked_target_classes, campaign_file
+    # Escalation is will-coupled from the first phase.
+    assert arc[0].advance_when is not None, campaign_file
+    assert arc[0].advance_when.blue_will_below is not None, campaign_file
+    # Linebacker II is unrestricted: no zones, nothing locked.
+    assert not arc[3].restricted_zones and not arc[3].locked_target_classes
+    # The scheduled escalation dates are strictly increasing.
+    pins = [p.min_turn for p in arc[1:]]
+    assert pins == sorted(pins) and all(p > 0 for p in pins), campaign_file

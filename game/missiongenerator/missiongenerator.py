@@ -40,6 +40,7 @@ from .kneeboard import KneeboardGenerator
 from .luagenerator import LuaGenerator
 from .missiondata import MissionData
 from .rebelliongenerator import RebellionGenerator
+from .motorpoolpopulator import MotorpoolPopulator
 from .tgogenerator import TgoGenerator
 from .triggergenerator import TriggerGenerator
 from .visualsgenerator import VisualsGenerator
@@ -109,6 +110,7 @@ class MissionGenerator:
             self.unit_map,
             self.mission_data,
         )
+        MotorpoolPopulator(self.game).populate()
         tgo_generator.generate()
 
         logging.info("MIZ generation: convoys and cargo ships")

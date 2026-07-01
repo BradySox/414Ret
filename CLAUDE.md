@@ -523,11 +523,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     no node ⇒ plugin no-ops. The `vietnamops` plugin spawns a helo gaggle (default 3× UH-1H, `coalition.addGroup`)
     that flies launch → outpost → back, announces delivery on reaching the outpost, and **re-rolls a fresh run**
     a cadence after the old one is delivered or shot down. The fast-mover AAA-suppression **choreography** that
-    made the historical gaggle distinctive is a **deferred increment** (per the design's phasing); v1 is the
-    helo run + the escort opportunity. Runtime-cosmetic (no supply-economy effect, like the convoy); blue-only
-    (symmetry deferred, like the convoy). Plugin options: helo type, count, speed, altitude, respawn cadence.
-    (`game/missiongenerator/vietnamopsluadata.py`, `resources/plugins/vietnamops/`, `game/settings/settings.py`;
-    features doc §37, checklist L9 — needs an in-game pass.)
+    made the historical gaggle distinctive **landed 2026-07-01**: each run also launches a short attack flight
+    (default 2× `A-4E-C`, the historical suppressor) that flies launch → over the outpost (CAS task, so the AI
+    works the AAA) → back, tied to the gaggle lifecycle and its own `pcall` (a spawn failure leaves the helo run
+    intact; count 0 disables). Runtime-cosmetic (no supply-economy effect, like the convoy); blue-only
+    (symmetry deferred, like the convoy). Plugin options: helo type, count, speed, altitude, respawn cadence;
+    suppressor count/type/altitude. (`game/missiongenerator/vietnamopsluadata.py`, `resources/plugins/vietnamops/`,
+    `game/settings/settings.py`; features doc §37, checklist L9 — needs an in-game pass; the suppressor's default
+    loadout / effectiveness is the #1 tuning item.)
 
 ---
 

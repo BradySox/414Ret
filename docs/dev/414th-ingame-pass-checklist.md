@@ -1996,10 +1996,17 @@ so the two docs don't drift.
   GAGGLE inbound" then "delivered" on arrival; a fresh run re-rolls a cadence later; a shot-down gaggle
   announces "down" and re-rolls. `dcs.log` shows "Super Gaggle armed (outpost …, 3x UH-1H)" and no
   `coalition.addGroup` Lua error.
+- **Choreography (added 2026-07-01):** a fast-mover suppression flight (default 2× A-4E-C) should spawn with
+  the gaggle, fly over the outpost, and be gone when the run recycles; the inbound cue reads "Fast movers
+  suppressing the guns." **#1 tuning item:** the suppressors spawn with DCS's default loadout (no explicit
+  payload), so confirm whether they actually attack the AAA or are visual-only — if they need teeth, give them
+  a payload or a scripted suppression effect. A suppressor spawn failure must NOT affect the helo run (guarded)
+  and the cue then omits the "fast movers" line.
 - **Fail signature:** the gaggle never spawns (addGroup group-data malformed / bad country / helo type
   unavailable); helos spawn but don't move or fly into terrain (route altitude/`alt_type` wrong); the
   deliver/lost/respawn cues never fire or fire repeatedly (tick state machine wrong); a `Group.getByName` /
-  `getUnit` / `destroy` Lua error in `dcs.log`; a run that never recycles (stuck after delivery).
+  `getUnit` / `destroy` Lua error in `dcs.log`; a run that never recycles (stuck after delivery); the suppressor
+  group is orphaned (not despawned on recycle) or its spawn failure breaks the helo run.
 
 ---
 

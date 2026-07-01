@@ -776,6 +776,14 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch 
         local SPEED = 220 / 3.6    -- m/s (~220 kph cruise)
         local ALT = 150            -- m, radio-altitude air start / transit height
         local RESPAWN = 900        -- s after a gaggle ends before the next launches
+        -- AAA-suppression choreography: the fast movers that worked the guns so the helos
+        -- could get in (A-4 Skyhawks at the historical Khe Sanh gaggle). A short attack
+        -- flight launches with each gaggle, flies over the outpost with a CAS task, and is
+        -- recycled with it. Best-effort + pcall-guarded: a spawn failure (e.g. the type's
+        -- mod isn't loaded) leaves the helo run untouched. Set count 0 to disable.
+        local SUPPRESSORS = 2         -- fast movers in the suppression flight (0 = off)
+        local SUPPRESS_TYPE = "A-4E-C"  -- the classic Super Gaggle suppressor
+        local SUPPRESS_ALT = 2000     -- m (baro) transit/attack altitude
         if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
             local o = dcsRetribution.plugins.vietnamops
             HELO = o.gaggleHeloType or HELO
@@ -783,6 +791,11 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch 
             SPEED = (tonumber(o.gaggleSpeedKph) or 220) / 3.6
             ALT = tonumber(o.gaggleAltM) or ALT
             RESPAWN = tonumber(o.gaggleRespawnS) or RESPAWN
+            if o.gaggleSuppressors ~= nil then
+                SUPPRESSORS = tonumber(o.gaggleSuppressors) or SUPPRESSORS
+            end
+            SUPPRESS_TYPE = o.gaggleSuppressorType or SUPPRESS_TYPE
+            SUPPRESS_ALT = tonumber(o.gaggleSuppressorAltM) or SUPPRESS_ALT
         end
 
         local DELIVER_RADIUS = 1500  -- m: within this of the outpost counts as delivered
@@ -808,23 +821,79 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch 
 
         local spawnCount = 0
         local currentName = nil
+        local currentSuppressorName = nil
         local spawnTime = 0
         local delivered = false
 
-        local function wp(px, py)
+        local function wp(px, py, alt, altType, speed)
             return {
                 x = px,
                 y = py,
-                alt = ALT,
-                alt_type = "RADIO",
+                alt = alt,
+                alt_type = altType,
                 type = "Turning Point",
                 action = "Turning Point",
-                speed = SPEED,
+                speed = speed,
                 ETA = 0,
                 ETA_locked = false,
                 formation_template = "",
                 speed_locked = true,
             }
+        end
+
+        -- Fast-mover suppression flight: launch -> over the outpost (CAS, so the AI works the
+        -- nearby AAA) -> back. A separate group tied to the gaggle's lifecycle; pcall-guarded
+        -- so a bad/unloaded type never breaks the helo run.
+        local function spawnSuppressors(gname)
+            if SUPPRESSORS <= 0 then
+                return
+            end
+            local sname = gname .. "-Sandy"
+            local units = {}
+            for i = 1, SUPPRESSORS do
+                units[i] = {
+                    type = SUPPRESS_TYPE,
+                    name = sname .. "-" .. i,
+                    x = launch.x - (i - 1) * 60,
+                    y = launch.y,
+                    alt = SUPPRESS_ALT,
+                    alt_type = "BARO",
+                    heading = 0,
+                    skill = "Good",
+                }
+            end
+            local groupData = {
+                visible = false,
+                hidden = false,
+                name = sname,
+                start_time = 0,
+                task = "CAS",
+                route = {
+                    points = {
+                        wp(launch.x, launch.y, SUPPRESS_ALT, "BARO", 250),
+                        wp(outpost.x, outpost.y, SUPPRESS_ALT, "BARO", 250),
+                        wp(launch.x, launch.y, SUPPRESS_ALT, "BARO", 250),
+                    },
+                },
+                units = units,
+            }
+            if pcall(coalition.addGroup, COUNTRY, Group.Category.AIRPLANE, groupData) then
+                currentSuppressorName = sname
+            else
+                currentSuppressorName = nil
+            end
+        end
+
+        local function despawnSuppressors()
+            if currentSuppressorName then
+                pcall(function()
+                    local sg = Group.getByName(currentSuppressorName)
+                    if sg then
+                        sg:destroy()
+                    end
+                end)
+                currentSuppressorName = nil
+            end
         end
 
         local function spawnGaggle()
@@ -852,9 +921,9 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch 
                 task = "Transport",
                 route = {
                     points = {
-                        wp(launch.x, launch.y),
-                        wp(outpost.x, outpost.y),
-                        wp(launch.x, launch.y),
+                        wp(launch.x, launch.y, ALT, "RADIO", SPEED),
+                        wp(outpost.x, outpost.y, ALT, "RADIO", SPEED),
+                        wp(launch.x, launch.y, ALT, "RADIO", SPEED),
                     },
                 },
                 units = units,
@@ -862,10 +931,14 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch 
             if pcall(coalition.addGroup, COUNTRY, Group.Category.HELICOPTER, groupData) then
                 currentName = gname
                 spawnTime = timer.getTime()
+                spawnSuppressors(gname)  -- fast movers work the guns; guarded, so it can't
+                --                          break the helo run if the type won't spawn.
+                local suppressing = currentSuppressorName ~= nil
                 trigger.action.outTextForCoalition(
                     SIDE,
-                    "SUPER GAGGLE -- resupply helos inbound to " .. outpostName
-                        .. ". Escort welcome.",
+                    "SUPER GAGGLE -- resupply helos inbound to " .. outpostName .. "."
+                        .. (suppressing and " Fast movers suppressing the guns." or "")
+                        .. " Escort welcome.",
                     20
                 )
             else
@@ -875,6 +948,7 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch 
 
         local function scheduleRespawn()
             currentName = nil
+            despawnSuppressors()  -- both recycle paths funnel here, so clean up the escort too
             timer.scheduleFunction(function()
                 spawnGaggle()
                 return nil

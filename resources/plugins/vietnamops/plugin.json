@@ -147,6 +147,21 @@
             "nameInUI": "Super Gaggle: seconds before a fresh run launches",
             "mnemonic": "gaggleRespawnS",
             "defaultValue": 900
+        },
+        {
+            "nameInUI": "Super Gaggle: fast-mover suppressors per run (0 = off)",
+            "mnemonic": "gaggleSuppressors",
+            "defaultValue": 2
+        },
+        {
+            "nameInUI": "Super Gaggle: suppressor aircraft DCS type",
+            "mnemonic": "gaggleSuppressorType",
+            "defaultValue": "A-4E-C"
+        },
+        {
+            "nameInUI": "Super Gaggle: suppressor transit/attack altitude (m baro)",
+            "mnemonic": "gaggleSuppressorAltM",
+            "defaultValue": 2000
         }
     ],
     "scriptsWorkOrders": [],

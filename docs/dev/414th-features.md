@@ -2580,8 +2580,8 @@ The design's v1 was a **planner-template** auto-frag (suppress + cargo + escort 
 FlightType/tasking that fragments a helo cargo-delivery to a specific outpost. Rather than build that whole
 commander-brain capability, this ships **runtime-only**, exactly like the §35 convoy: Python picks the
 geography and the `vietnamops` plugin spawns/flies the gaggle. The distinctive **fast-mover AAA-suppression
-choreography** (the timing window that opened before the helos committed) is a **deferred later increment**,
-explicitly called out as post-v1 in the design's phasing.
+choreography** (the fast movers that worked the guns so the helos could get in — A-4 Skyhawks at the
+historical Khe Sanh gaggle) **landed 2026-07-01** as a second increment (below), after the helo run shipped.
 
 ### How it works
 
@@ -2599,7 +2599,15 @@ forward friendly outpost, no launch field, or no front ⇒ no node ⇒ the plugi
   **"down"** if the gaggle is destroyed en route (losses stay native).
 - **Re-rolls a fresh run** a cadence (default 900 s) after the old one is delivered *or* lost, so the resupply
   keeps flowing across a long mission (a completed run is recycled after `MISSION_TIME`).
-- Tunables (plugin `specificOptions`): helo type, count, transit speed, transit altitude, respawn cadence.
+- **Fast-mover suppression choreography (2026-07-01).** Each gaggle also launches a short attack flight
+  (default 2 × `A-4E-C` — the historical Super Gaggle suppressor) that flies **launch → over the outpost
+  (CAS task, so the AI works the nearby AAA) → back** at a higher altitude, tied to the gaggle's lifecycle
+  (spawned with it via `spawnSuppressors`, destroyed with it via `despawnSuppressors` at the single
+  `scheduleRespawn` choke point). The "inbound" cue notes "Fast movers suppressing the guns" when they
+  spawned. The whole suppressor spawn is its own `pcall`, so if the type's mod isn't loaded (or it fails to
+  spawn) the helo run is untouched. Set the suppressor count to 0 to disable.
+- Tunables (plugin `specificOptions`): helo type, count, transit speed, transit altitude, respawn cadence;
+  suppressor count / type / altitude.
 
 ### Files & tests
 
@@ -2616,9 +2624,11 @@ forward friendly outpost, no launch field, or no front ⇒ no node ⇒ the plugi
   routing + the deliver/respawn state machine can't be exercised headless — needs a cockpit pass. Watch that
   the helos actually reach the outpost (routing/altitude), the delivery/lost/respawn cues fire once each, and
   `coalition.addGroup` throws no Lua error in `dcs.log`.
-- **Choreography deferred (the design's own phasing).** No fast-mover AAA-suppression window in v1 — the gaggle
-  runs the gauntlet with only the player as optional escort. Adding a suppression escort pair on a timing lead
-  is the next increment.
+- **Suppressor weapons are the #1 in-game tuning item.** The suppressor group spawns with DCS's *default*
+  loadout for its type (no explicit `payload` — a per-mod pylon table is too fragile to hand-author blind), so
+  its actual ordnance/effectiveness against the AAA is unverified: it may strafe, or it may be a visual-only
+  presence. Confirm on the in-game pass and, if it needs teeth, give it an explicit payload or a scripted
+  suppression effect. A spawn failure is already harmless (guarded → helo run proceeds, cue omits the line).
 - **Runtime-cosmetic.** The delivery has no supply-economy effect (like the §35 convoy); the value is
   immersion + the escort opportunity.
 - **Blue-only (symmetry deferred).** The emitter hard-picks the BLUE outpost (the human's cut-off hilltops),

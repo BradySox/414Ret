@@ -58,6 +58,7 @@
   ],
   "naval_units": [],
   "air_defense_units": [
+    "EWR P-37 Bar Lock",
     "SAM P19 \"Flat Face\" SR (SA-2/3)",
     "ZSU-57-2 'Sparka'",
     "AAA ZU-23 Closed Emplacement",

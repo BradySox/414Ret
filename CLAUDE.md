@@ -624,6 +624,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     fire-node count, per-node power. (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §39, checklist L11 — needs an
     in-game pass.)
+40. **High Digit SAMs "Ultimate Compilation" support** — the HDS mod support retargeted from the abandoned
+    original v1.4.0 to the maintained successor (https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation,
+    v1.4.3+), same `high_digit_sams` toggle (wizard label updated). Unit data read from the **installed mod's
+    own Database luas**. Absorbs the breaking changes — renamed S-300PS radars (`30N6 MAST tr`/`76N6E sr`/
+    `64H6E MOD sr`) re-pointed in the S-300 Site layout + SA-10B preset + `radar_db.py`; dropped HDS
+    KS-19/SON-9/SA-24 replaced by vanilla equivalents (retired pydcs classes + unit YAMLs kept as save-compat
+    tombstones ONLY — never reference them) — and adds the new families: **S-400/SA-21 + S-300V4 + S-300PT**
+    presets on the extended S-300 Site, **SAMP/T** (+NG) on a new Patriot-geometry `SAMP/T Battery` layout,
+    **Pantsir-SM** SHORAD, **SA-7/7b manpads**, 4 EWRs (the **P-37 Bar Lock** closes the period red EWR
+    blind-net gap across 16 factions), ERO **ZU-23 Toyota technicals** for insurgents. Era-respecting stock
+    faction wiring (modern Russia/redfor, france_2005, Vietnam/70s-80s reds, insurgents). MANTIS needs no
+    change (the bridge bands SAMs by Retribution's emitted threat range, not MANTIS's unit-name scan). Fixed
+    in passing: `Faction.remove_vehicle` matches DCS type **ids**, and the old name-based HDS strips silently
+    never removed anything (upstream-carve candidate). (`pydcs_extensions/highdigitsams/`,
+    `game/data/radar_db.py`, `game/factions/faction.py`, `resources/{groups,layouts,units,factions}/`;
+    features doc §40, checklist N1 — needs an in-game pass.)
 
 ---
 

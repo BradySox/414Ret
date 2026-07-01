@@ -41,6 +41,7 @@
     "Truck Ural-375"
   ],
   "infantry_units": [
+    "SAM SA-7B Strela-2M manpad",
     "Infantry AK-74 Rus",
     "MANPADS SA-18 Igla-S \"Grouse\"",
     "Paratrooper AKS",
@@ -61,6 +62,7 @@
     "Corvette 1241.1 Molniya"
   ],
   "air_defense_units": [
+    "EWR P-37 Bar Lock",
     "EWR 1L13",
     "EWR 55G6",
     "SAM SA-5 S-200 ST-68U \"Tin Shield\" SR",

@@ -55,6 +55,7 @@
   ],
   "air_defense_units": [],
   "preset_groups": [
+    "SAMP/T",
     "Hawk",
     "Roland"
   ],

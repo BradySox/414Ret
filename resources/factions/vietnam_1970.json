@@ -41,6 +41,8 @@
     "Truck Opel Blitz"
   ],
   "infantry_units": [
+    "SAM SA-7B Strela-2M manpad",
+    "SAM SA-7 Strela-2 manpad",
     "Infantry AK-74 Rus",
     "Infantry RPG"
   ],
@@ -49,6 +51,7 @@
     "HQ-2"
   ],
   "air_defense_units": [
+    "EWR P-37 Bar Lock",
     "AAA KS-19 100mm",
     "S-60 57mm",
     "AAA ZU-23 Closed Emplacement",

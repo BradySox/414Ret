@@ -38,6 +38,9 @@
   ],
   "missiles": [],
   "air_defense_units": [
+    "AAA ZU-23 Toyota technical",
+    "AAA ZU-23 Toyota armored technical",
+    "AAA ZU-23 Insurgent (ERO)",
     "SA-9 Strela",
     "SPAAA LC with ZU-23",
     "SPAAA HL with ZU-23",
@@ -45,6 +48,8 @@
     "AAA ZU-23 Insurgent Closed Emplacement",
     "ZU-23 on Ural-375 Insurgent"
   ],
-  "preset_groups": [],
+  "preset_groups": [
+    "ZU-23 Technicals (ERO)"
+  ],
   "naval_units": []
 }

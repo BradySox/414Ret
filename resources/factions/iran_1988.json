@@ -42,6 +42,7 @@
     "Truck Ural-375"
   ],
   "infantry_units": [
+    "SAM SA-7 Strela-2 manpad",
     "Infantry RPG",
     "Insurgent AK-74",
     "MANPADS SA-18 Igla \"Grouse\" Ins"
@@ -60,6 +61,7 @@
     "Frigate 1135M Rezky"
   ],
   "air_defense_units": [
+    "EWR P-37 Bar Lock",
     "SAM P19 \"Flat Face\" SR (SA-2/3)",
     "SAM Hawk SR (AN/MPQ-50)",
     "ZSU-57-2 'Sparka'",

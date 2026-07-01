@@ -72,6 +72,7 @@
     "SA-6",
     "SA-11",
     "SA-10/S-300PS",
+    "SA-10A/S-300PT",
     "KS-19/SON-9"
   ],
   "naval_units": [
@@ -79,6 +80,7 @@
     "Corvette 1124.4 Grish"
   ],
   "air_defense_units": [
+    "EWR P-37 Bar Lock",
     "SAM P19 \"Flat Face\" SR (SA-2/3)",
     "SAM SA-5 S-200 ST-68U \"Tin Shield\" SR",
     "EWR 1L13",

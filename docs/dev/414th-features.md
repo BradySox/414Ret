@@ -2788,3 +2788,69 @@ Same shape as §33 flak and §38 FAC — an **on-marker + runtime discovery**, n
 - **The per-node bite is real (by design).** Unlike flak's mostly-visual power, the default blast is tuned to
   hurt soft targets — that *is* the feature (napalm was devastating to infantry/trucks). Dial `napeBlastPower`
   down for a purely-cosmetic wall of fire.
+
+## §40 — High Digit SAMs "Ultimate Compilation" support
+
+Retribution's High Digit SAMs mod support targeted the original **HighDigitSAMs v1.4.0**, a mod that has
+been unmaintained for years. The fork now targets its actively-maintained successor, the
+**[HighDigitSAMs Ultimate Compilation](https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation)**
+(v1.4.3+ — HighDigitSAMs + SAM Pack + SAM Sites Asset Pack + IDF Assets Pack in one install). The same
+`high_digit_sams` New Game toggle gates everything (relabeled in the wizard); no save migration is needed.
+All unit data was read from the **installed mod's own Database lua files** (launcher threat = missile
+`distanceMax`, tracker detection = the vehicle-file tracking range), not guessed from specs.
+
+### What changed vs. v1.4.0
+
+- **Dropped by the mod** (DCS core now has vanilla equivalents): the HDS `KS19` / `Fire Can radar` AAA pair
+  (vanilla KS-19/SON-9 and the existing `KS-19/SON-9` preset replace them — the redundant `KS-19_HDS`
+  preset is deleted) and the `SA-24 Igla-S manpad` (factions re-pointed to the vanilla SA-18 Igla-S).
+- **Renamed S-300PS radars**: `40B6M MAST tr` → `30N6 MAST tr`, `40B6MD MAST sr` → `76N6E sr`,
+  `64H6E TRAILER sr` → `64H6E MOD sr` — the S-300 Site layout, the SA-10B preset, `radar_db.py`, and the
+  Morocco faction livery map were re-pointed. The retired pydcs classes (and their unit YAMLs) are **kept
+  registered for save-compat only** — do not reference them in factions/presets/layouts.
+- **New families added** (38 → 80 registered units): **S-400/SA-21** (3 LN types incl. the 400 km 40N6E,
+  2 TR, 3 SR, CP), **S-300V4** (3 LN incl. the 380 km 9M82MDE, TR, 2 SR, CP), the **S-300PT** launcher,
+  a PMU2 mast TR, **Pantsir-SM** (SHORAD class), the **SAMP/T battery** (ARABEL/Ground Fire 300 STRs, C2,
+  ECS, EPP, Block 1/1NT TELs), **SA-7/SA-7b manpads**, four **EWRs** (P-37 Bar Lock, 55G6U Nebo-U, 1L119
+  Nebo-SVU, generic tower), and the **ERO pack** (ZU-23 Toyota technicals, insurgent ZU-23, SA-2 site
+  props). The IDF pack the compilation bundles was already supported via the separate `irondome` toggle
+  (identical unit ids).
+
+### Wiring
+
+- **Presets** (`resources/groups/`): new `SA-21/S-400`, `SA-23B/S-300V4`, `SA-10A/S-300PT` (all riding the
+  extended S-300 Site layout), `SAMP/T` + `SAMP/T NG` (new `SAMP/T Battery` layout reusing
+  `Patriot_Battery.miz` geometry), `Pantsir-SM SHORAD`, `ZU-23 Technicals (ERO)`.
+- **Factions**: modern Russia/redfor get S-400 + V4 + Pantsir-SM + Nebo EWRs; russia_1980 gets the S-300PT;
+  france_2005 gets SAMP/T; Vietnam-era/70s-80s reds get SA-7/7b + the P-37 Bar Lock (which also closes the
+  "red faction has zero EWR units" MANTIS blind-net gap for 16 period factions); insurgents get the ERO
+  technicals.
+- **MANTIS needs no changes**: the 414th bridge already bands every SAM by Retribution's own emitted threat
+  range (overriding MANTIS's `SamData` unit-name scan), so the new units classify correctly from the pydcs
+  threat ranges.
+- **Bug fixed in passing**: `Faction.remove_vehicle` matches the DCS unit type **id**, but the pre-existing
+  HDS strips passed display *names* — so `SAM SA-14 Strela-3 manpad`/`SA-24`/`Polyana-D4M1` were silently
+  never stripped when the mod was off. All strips now use ids (upstream-carve candidate).
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Unit registry | `pydcs_extensions/highdigitsams/highdigitsams.py` (new families + retired-unit tombstones) |
+| Unit YAMLs | `resources/units/ground_units/` (42 new files, filename = DCS type id) |
+| Radar DB | `game/data/radar_db.py` (new TRs/STRs, launcher→tracker pairs, SR/EWR radar labels) |
+| Layouts / presets | `resources/layouts/anti_air/S-300_Site.yaml` (extended), `SAMPT_Battery.yaml` (new), `resources/groups/` |
+| Mod gating | `game/factions/faction.py` (id-correct strip list), `qt_ui/.../QGeneratorSettings.py` (label) |
+| Factions | 25+ `resources/factions/*.json` (fixes + era-respecting enrichment) |
+| Tests | suite-wide faction/layout loading; headless smoke: all preset units resolve, all factions load with the toggle both ways |
+
+### Gotchas / deferred
+
+- **Needs an in-game pass (checklist N1).** Spawn/engagement of the new sites (S-400/V4/SAMP-T), MANTIS
+  banding of the 300+ km launchers, and SA-7 infantry launches can't be exercised headless.
+- Detection/threat ranges intentionally mirror the *mod's* numbers, not real-world spec sheets — a 400 km
+  40N6E MEZ ring is dominating on any map; treat the `SA-21/S-400` preset as a strategic-tier buy.
+- The `SAMPT_MLT` (Aster-15) and Block 2 TELs, the ZPU-2 Toyota variants, and the Gazetchik-decoy UNITS_WITH_RADAR
+  entry are **not** loaded/registered — the mod's own `entry.lua` comments the first three out; match it.
+- Old saves referencing retired units keep unpickling (classes + YAMLs kept), but a pre-migration campaign
+  generating a mission with a retired unit id will fail against the new mod in DCS — start a new game.

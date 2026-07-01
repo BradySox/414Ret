@@ -2470,28 +2470,40 @@ Symmetric (either side's gun ships). `pcall`-guarded; inert without the `navalGu
 ## §35 — Convoy interdiction (Steel Tiger) (Vietnam Ops suite)
 
 The fourth **Vietnam Ops suite** feature: a moving enemy supply column on the road behind the FLOT — the
-Ho Chi Minh Trail / Operation Steel Tiger — surfaced to the player through Armed Recon. The modern engine
-models logistics as an abstract `convoy_routes` transfer; this makes one of those routes a **flyable,
-interdictable target** that keeps flowing.
+Ho Chi Minh Trail / Operation Steel Tiger — surfaced to the player through Armed Recon.
 
-### How it works
+### How it works — a *real* convoy in the force model (reworked 2026-07-01)
 
-**Python picks the corridor (`vietnamopsluadata.py` `_populate_convoy_interdiction`).** It walks the enemy
-control points and their `convoy_routes`, keeps only **enemy→enemy** roads (an enemy→friendly road *is* the
-contested front, not a rear supply line), and chooses the one whose midpoint is **nearest the FLOT**
-(`game.theater.conflicts()`). Reusing the engine's real `convoy_routes` ties the target to actual red
-logistics rather than inventing a road. It emits the chosen path + coalition as
-`dcsRetribution.VietnamOps.convoy = { coalition = "RED", waypoints = { {x,y}, … } }`. No enemy road behind
-the front (e.g. a single-CP front) ⇒ no node ⇒ the plugin no-ops.
+**The problem with the original.** v1 emitted a corridor and the `vietnamops` plugin spawned a vanilla truck
+column at runtime (`coalition.addGroup`). Those trucks existed **only inside the generated `.miz`** —
+Retribution's force model and debrief never knew about them (their names weren't in the `UnitMap`), so
+killing the convoy **cost the enemy nothing** and the loss was never recorded. That is exactly a "free,
+non-existent unit": a target with no consequence. A respawn loop made it worse (unbounded free trucks).
 
-**The `vietnamops` plugin runs the column at runtime** (vanilla DCS `coalition.addGroup`, `pcall`-guarded):
-- Spawns a truck column (default 8 × `Ural-375`, strung out along the road) on the emitted corridor,
-  driving it end to end **On Road**.
-- **Halts under cover** (`Controller:setOnOff(false)`) whenever an opposing aircraft closes inside the
-  scatter range (default 5 NM), and rolls again once the sky clears — the trucks "go to ground" when hunted.
-- **Rolls a fresh column** a delay (default 600 s) after the old one is wiped, with a "convoy destroyed on
-  the trail" cue, so the trail keeps producing targets across a long mission.
-- Tunables (plugin `specificOptions`): speed, scatter range, respawn delay, truck count, truck type.
+**The fix: use the engine's real convoy system.** Retribution already models convoys as first-class,
+tracked objects — `coalition.transfers.convoys` carry **real ground units** between control points, spawn as
+road-moving `VehicleGroup`s (`ConvoyGenerator`), are already **Armed-Recon / BAI objectives**
+(`ObjectiveFinder.convoys`), and their destruction is recorded (`Debriefing.dead_ground_units` →
+`enemy_convoy`) so the transferred units **never arrive**. So convoy interdiction no longer *invents* a
+convoy — it **ensures a real one is flowing on the trail**:
+
+- **`ensure_enemy_trail_convoy` (`game/fourteenth/vietnam_convoy.py`)** runs **once per turn** from
+  `Game.finish_turn` (after the AI's own transfer processing, so it's idempotent — it does nothing if the
+  opfor already has a convoy travelling). When `vietnam_convoy_interdiction` is on it:
+  - picks the road **corridor nearest the front** on the real control-point graph — a rear opfor base with
+    spare armour (`_pick_trail_corridor`) feeding the road-connected opfor base nearest the FLOT (the end
+    nearer the front is the destination; opfor→friendly roads are the contested front and are skipped);
+  - **skims a few real rear units** off the source base (`_skim_units`, capped at `MAX_CONVOY_UNITS` = 4 and
+    never more than half the base's armour, so a source is never gutted);
+  - creates a real `TransferOrder` via `coalition.transfers.new_transfer`, which **debits the units from the
+    source base** (`commit_losses`) and — on a road first-leg — spawns a real, tracked `Convoy`.
+- **Result:** interdicting the trail now **denies the enemy real reinforcements** (kill the convoy and those
+  units never reach the line; let it through and they do), and the kill is recorded natively as an
+  `enemy_convoy` loss. It is genuine force planning, not a cosmetic effect.
+- **Fully guarded / no-op safe:** no front, no rear units, no road corridor, or a convoy already flowing ⇒ it
+  does nothing, and the engine's organic convoys still serve as targets. **The `vietnamops` plugin has no
+  convoy runtime at all** now — the emitter (`_populate_convoy_interdiction`) and the Lua convoy section are
+  deleted, and the convoy `specificOptions` are removed.
 
 **Right-click planning (added per playtest).** Rather than hunting for the corridor, the player
 **right-clicks an enemy supply route** on the map to frag the interdiction package:
@@ -2506,27 +2518,32 @@ route instead of requiring the player to know where to look.
 
 | Area | Path |
 |---|---|
-| Corridor emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_convoy_interdiction`) |
-| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (convoy section) |
+| Force-model convoy | `game/fourteenth/vietnam_convoy.py` (`ensure_enemy_trail_convoy`, `_pick_trail_corridor`, `_skim_units`) |
+| Turn hook | `game/game.py` (`finish_turn`, once per turn after transfer processing) |
 | Right-click server | `game/server/qt/routes.py` (`POST /qt/create-package/supply-route/{id}`), `game/server/supplyroutes/models.py` (`interdiction_target_for_route_id`, route id encodes both CP ids) |
 | Right-click client | `client/src/components/supplyroute/SupplyRoute.tsx` (`contextmenu` → `useOpenNewSupplyRoutePackageDialogMutation`; hook hand-added to `_liberationApi.ts`) |
-| Setting / options | `game/settings/settings.py` (`vietnam_convoy_interdiction`); plugin `specificOptions` (speed/scatter/respawn/count/type) |
-| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (corridor pick: nearest enemy→enemy road, ignores the RED→BLUE front, off = no node); `tests/server/test_supply_route_interdiction.py` (route-id → enemy-end resolution, contested-CP preference, friendly/malformed → None) |
+| Setting | `game/settings/settings.py` (`vietnam_convoy_interdiction`) — no plugin options (the plugin has no convoy runtime) |
+| Tests | `tests/fourteenth/test_vietnam_convoy.py` (corridor pick: nearest opfor→opfor road, ignores the opfor→friendly front; unit skim respects the fraction cap; setting-off / convoy-already-flowing / turn-0 no-op; creates a real `TransferOrder` of skimmed rear units). `game/missiongenerator/tests/test_vietnamops_luadata.py` asserts the emitter **never** emits a `convoy` node. `tests/server/test_supply_route_interdiction.py` (route-id → enemy-end resolution). |
 
 ### Gotchas / deferred
 
-- **Runtime spawn verified 2026-06-30** (checklist L6): a flown Khe Sanh session's `dcs.log` showed a
-  complete spawn → drive → wipe → respawn cycle (`VietnamConvoy-1` then `VietnamConvoy-2` ~64 min later, no
-  intervening reload), no `coalition.addGroup` Lua errors. The **halt-under-threat** (`setOnOff`) leg wasn't
-  isolated in that pass — it needs a Tacview flown close enough to the corridor to force a halt.
+- **The convoy is a real force change, gated behind the toggle.** Because it moves real enemy units toward
+  the front, it slightly *helps* the enemy reinforce — which is the point of interdiction: the player pays
+  for *not* flying the Armed Recon. It only runs when `vietnam_convoy_interdiction` is on (Vietnam campaigns),
+  so the blast radius is contained.
+- **Needs an in-game pass (checklist L6, re-opened by the rework).** The unit logic is test-covered, but
+  confirm in a flown Vietnam turn that a real red convoy is present on a road behind the front, that it shows
+  as an Armed-Recon / BAI objective, and that killing it registers as an `enemy_convoy` loss (the units don't
+  arrive). The old runtime-spawn verification is obsolete.
 - **Right-click path (checklist L7) needs an in-app pass + a CI client rebuild.** The server resolution is
   test-covered; the React `contextmenu` → Qt dialog path can't be exercised headless, and the client hook was
   **hand-added** to the generated `_liberationApi.ts` (codegen unavailable locally), so a stale `client/build`
-  won't have it.
-- **Corridor selection is deliberately "nearest enemy→enemy road."** On a theater with several rear roads it
-  fragments to one; picking multiple / rotating corridors is a possible future refinement.
-- **Blue-side symmetry not built:** the emitter hard-picks the RED supply road (the human fights red in the
-  Vietnam case). A blue convoy for a red-player campaign would be a follow-on.
+  won't have it. It now frags Armed Recon onto the corridor where the **real** convoy travels.
+- **Opfor is hard-picked as RED** (the human fights red in the Vietnam case). A blue-side convoy for a
+  red-player campaign would be a follow-on.
+- **Reliably-present, not always-present.** If the opfor has no spare rear armour or no road corridor, no
+  convoy is nudged that turn (the engine's organic transfers may still produce one). Guaranteeing a target
+  every single turn regardless of the enemy's stock is a possible refinement.
 
 ## §36 — Airbase harassment (rocket/mortar siege) (Vietnam Ops suite)
 

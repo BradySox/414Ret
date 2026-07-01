@@ -32,6 +32,12 @@ Features so far:
   attack aircraft (by the DCS "Attack airplanes" attribute) making a low, fast pass over
   opposing ground and lays a napalm swath (a line of fire + a modest bite) across the target,
   modelling the iconic low-level napalm CAS delivery. Symmetric; no per-mission data from Python.
+
+**Convoy interdiction** (``vietnam_convoy_interdiction``) is intentionally NOT here: it emits
+no Lua node. Rather than spawn a phantom truck column at runtime, it now creates a *real*,
+tracked enemy convoy in the force model (``game/fourteenth/vietnam_convoy.py``, run from
+``finish_turn``) so interdicting it costs the opfor real reinforcements and the loss is
+recorded natively. See §35.
 """
 
 from __future__ import annotations
@@ -43,8 +49,6 @@ from game.data.units import UnitClass
 from game.theater import ControlPointType
 
 if TYPE_CHECKING:
-    from dcs.mapping import Point
-
     from game import Game
     from game.theater import ControlPoint
 
@@ -127,12 +131,14 @@ def populate_vietnam_ops_lua(
     """
     settings = game.settings
 
-    # Extend this guard as each suite feature lands.
+    # Extend this guard as each suite feature lands. NB: vietnam_convoy_interdiction is
+    # deliberately absent -- it no longer emits a Lua node. Convoy interdiction is now a
+    # real, tracked enemy convoy created in the force model (game/fourteenth/vietnam_convoy.py
+    # from finish_turn), not a phantom runtime spawn, so it needs nothing from the plugin.
     if not (
         settings.vietnam_arc_light
         or settings.vietnam_flak_gauntlet
         or settings.vietnam_naval_gunfire
-        or settings.vietnam_convoy_interdiction
         or settings.vietnam_airbase_harassment
         or settings.vietnam_super_gaggle
         or settings.vietnam_fac_marking
@@ -148,8 +154,6 @@ def populate_vietnam_ops_lua(
         _populate_flak(vietnam)
     if settings.vietnam_naval_gunfire:
         _populate_naval_gunfire(vietnam, game)
-    if settings.vietnam_convoy_interdiction:
-        _populate_convoy_interdiction(vietnam, game)
     if settings.vietnam_airbase_harassment:
         _populate_airbase_harassment(vietnam, game)
     if settings.vietnam_super_gaggle:
@@ -256,63 +260,6 @@ def _populate_naval_gunfire(vietnam: "LuaItem", game: "Game") -> None:
         record = ships_item.add_item()
         record.add_key_value("group", group_name)
         record.add_key_value("coalition", coalition)  # "BLUE" / "RED"
-
-
-def _populate_convoy_interdiction(vietnam: "LuaItem", game: "Game") -> None:
-    """Emit the enemy supply **corridor** nearest the FLOT (Steel Tiger interdiction).
-
-    The auto-planner surfaces this through Armed Recon; the runtime seeds a moving truck
-    convoy on the chosen road that scatters when hunted. Python only picks the corridor
-    (the enemy reinforcement road closest to the fighting -- reusing the engine's existing
-    ``convoy_routes`` so the kill ties back to real red logistics) and emits its path.
-    Inland or not, an enemy with no road behind the front simply yields no node -> the
-    plugin no-ops. The opfor is the side the human fights; for the Vietnam case that is RED.
-    """
-    from game.theater import ControlPoint, Player
-
-    fronts = list(game.theater.conflicts())
-    if not fronts:
-        return
-
-    def enemy(cp: "ControlPoint") -> bool:
-        return cp.captured == Player.RED
-
-    best_path: tuple["Point", ...] = ()
-    best_distance = float("inf")
-    seen: set[frozenset[str]] = set()
-    for cp in game.theater.controlpoints:
-        if not enemy(cp):
-            continue
-        for other, path in cp.convoy_routes.items():
-            # Only enemy -> enemy roads (a supply corridor behind the lines); an enemy ->
-            # friendly road is the contested front itself.
-            if not enemy(other) or len(path) < 2:
-                continue
-            key = frozenset((str(cp.id), str(other.id)))
-            if key in seen:
-                continue
-            seen.add(key)
-            midpoint = path[len(path) // 2]
-            distance = min(
-                front.position.distance_to_point(midpoint) for front in fronts
-            )
-            if distance < best_distance:
-                best_distance = distance
-                best_path = path
-
-    if not best_path:
-        return
-
-    convoy = vietnam.add_item("convoy")
-    # A node serializes EITHER its key-values OR its child items, not both, so the
-    # scalar coalition is emitted as its own child rather than a sibling key-value.
-    convoy.add_item("coalition").set_value("RED")
-    waypoints = convoy.add_item("waypoints")
-    for point in best_path:
-        record = waypoints.add_item()
-        # pydcs Point: x = north, y = east (the Lua maps these onto the DCS world vec2).
-        record.add_key_value("x", str(point.x))
-        record.add_key_value("y", str(point.y))
 
 
 def _client_spawn_control_points(game: "Game") -> set["ControlPoint"]:

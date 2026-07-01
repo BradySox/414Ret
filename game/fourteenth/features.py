@@ -159,10 +159,12 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("vietnam_naval_gunfire",),
     ),
     Feature(
+        # Convoy interdiction is a force-model feature (a real, tracked enemy convoy created
+        # in game/fourteenth/vietnam_convoy.py from finish_turn), not a vietnamops plugin
+        # behaviour -- hence no plugin_id.
         "vietnam_convoy_interdiction",
         "Convoy interdiction (Steel Tiger)",
         35,
-        plugin_id="vietnamops",
         settings_fields=("vietnam_convoy_interdiction",),
     ),
     Feature(

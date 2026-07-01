@@ -20,7 +20,9 @@ from game.data.doctrine import (
     VIETNAM_DOCTRINE,
     WWII_DOCTRINE,
 )
+from game.data.units import UnitClass
 from game.settings import Settings
+from game.utils import knots, nautical_miles
 
 _FACTIONS = Path(__file__).resolve().parents[1] / "resources" / "factions"
 
@@ -101,9 +103,11 @@ def test_allows_respects_a_whitelist() -> None:
     assert not gated.allows(FlightType.DEAD)
 
 
-def test_vietnam_geometry_matches_coldwar() -> None:
-    # Vietnam shares COLDWAR's planning geometry; it differs only in the display layer
-    # (name + renames) and the P3 behaviour fields. Reset exactly those -> COLDWAR.
+def test_vietnam_differs_from_coldwar_only_in_the_intended_fields() -> None:
+    # Vietnam is a COLDWAR clone EXCEPT for a known, enumerated set of deltas: the display
+    # layer (name + renames), the P3 behaviour fields, and the period-authentic planner
+    # numbers (A2A engagement ranges, rtb_speed, ground OOB). Resetting exactly those must
+    # recover COLDWAR -- so no *other* geometry silently drifted.
     rebadged = replace(
         VIETNAM_DOCTRINE,
         name="coldwar",
@@ -113,8 +117,43 @@ def test_vietnam_geometry_matches_coldwar() -> None:
         plan_strikes_without_full_escort=False,
         strike_flight_count=1,
         always_escort_strikes=False,
+        cap_engagement_range=COLDWAR_DOCTRINE.cap_engagement_range,
+        escort_engagement_range=COLDWAR_DOCTRINE.escort_engagement_range,
+        rtb_speed=COLDWAR_DOCTRINE.rtb_speed,
+        ground_unit_procurement_ratios=COLDWAR_DOCTRINE.ground_unit_procurement_ratios,
     )
     assert rebadged == COLDWAR_DOCTRINE
+
+
+def test_vietnam_a2a_ranges_are_period_short() -> None:
+    # Early Sparrow/short-IR Sidewinder + guns -> engage far closer than the Cold War BVR
+    # standoff, turning intercepts into visual merges (period feel at the planner level).
+    assert VIETNAM_DOCTRINE.cap_engagement_range < COLDWAR_DOCTRINE.cap_engagement_range
+    assert (
+        VIETNAM_DOCTRINE.escort_engagement_range
+        < COLDWAR_DOCTRINE.escort_engagement_range
+    )
+    assert VIETNAM_DOCTRINE.cap_engagement_range == nautical_miles(22)
+    assert VIETNAM_DOCTRINE.escort_engagement_range == nautical_miles(10)
+
+
+def test_vietnam_rtb_speed_is_subsonic_period() -> None:
+    assert VIETNAM_DOCTRINE.rtb_speed < COLDWAR_DOCTRINE.rtb_speed
+    assert VIETNAM_DOCTRINE.rtb_speed == knots(400)
+
+
+def test_vietnam_ground_oob_is_infantry_heavy_no_atgm() -> None:
+    # The Vietnam ground war was infantry/artillery/AAA-heavy with only light armour -- the
+    # opposite of Cold War's TANK+ATGM+IFV fist. ATGM/IFV are the Yom Kippur / Central-Front
+    # weapons and are never procured under Vietnam doctrine (ratio 0).
+    viet = VIETNAM_DOCTRINE.ground_unit_procurement_ratios
+    cw = COLDWAR_DOCTRINE.ground_unit_procurement_ratios
+    assert viet.for_unit_class(UnitClass.INFANTRY) > viet.for_unit_class(UnitClass.TANK)
+    assert viet.for_unit_class(UnitClass.TANK) < cw.for_unit_class(UnitClass.TANK)
+    assert viet.for_unit_class(UnitClass.ATGM) == 0
+    assert viet.for_unit_class(UnitClass.IFV) == 0
+    # ... which Cold War DID field, so the difference is real, not a shared empty.
+    assert cw.for_unit_class(UnitClass.ATGM) > 0
 
 
 def test_vietnam_relaxes_strike_gates_only() -> None:

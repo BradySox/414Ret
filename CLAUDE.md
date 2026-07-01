@@ -128,6 +128,12 @@ file. This guide is the map; those are the territory.
     filter + a doctrine profile (`VIETNAM_DOCTRINE`) that renames taskings (MiGCAP/Iron Hand/Alpha
     Strike/Sandy) via a display-only override on `Doctrine` (never the persisted enum) and gates the
     planner whitelist. **P0 (era tags) + P1 (doctrine model + 10-faction repoint) + P1b (display read-path)
+    + P1c (period-authentic planner *numbers*: A2A engagement ranges shortened to the early-missile/gun era
+    — `cap_engagement_range` 35→22 NM, `escort_engagement_range` 20→10 NM so MiGCAP/escort fight close not
+    BVR; `rtb_speed` 450→400 kt; and a `VIETNAM_GROUND_PROCUREMENT` OOB that is infantry/artillery/AAA-heavy
+    with light armour and **no ATGM/IFV** — the ATGM-decisive war was Yom Kippur, not Vietnam. So the doctrine
+    now makes the era *play* differently, not just read differently; rebadge-equality test extended + range/
+    speed/ground-ratio tests added)
     + P2 era pre-seed (Vietnam campaigns auto-enable the Ops mechanics on select) + P2 New-Game "Vietnam" card
     (Intro `vietnamMode` radio → `TheaterConfiguration` filters the list to `era: vietnam` via
     `Campaign.matches_era`; needs an in-app pass) + P3 strike-deadlock fix + P3 tasking whitelist + P3 Alpha

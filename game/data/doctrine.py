@@ -367,15 +367,38 @@ VIETNAM_TASKING_WHITELIST: FrozenSet[FlightType] = frozenset(
     set(FlightType) - VIETNAM_DROPPED_TASKINGS
 )
 
-# Vietnam doctrine. Behaviour is mostly a COLDWAR clone; the era identity is the
-# display-name layer plus the P3 behaviour changes: strike_through_air_defense_threat
-# (Vietnam has no reliable SEAD, so the modern "suppress before you strike" rule
-# otherwise deadlocks the whole offensive fleet -- root-caused 2026-06-28: 0/28 strike +
-# 0/13 BAI targets plannable, all threat-blocked); the tasking whitelist above that
-# drops SEAD/DEAD/anti-ship; and -- per playtest feedback -- a STRIKE flies a single
-# section (strike_flight_count=1; the old 2-section "Alpha Strike" fan left the bombers
-# unescorted) but always pulls a fighter escort (always_escort_strikes) so the strike
-# package isn't naked. See docs/dev/design/414th-vietnam-retribution-notes.md.
+# Period-authentic Vietnam ground order of battle. The Cold War Central-Front ratio is an
+# armour + ATGM + IFV fist (TANK:4, ATGM:2, IFV:2); the Vietnam ground war was the opposite
+# -- infantry-dominant, artillery-heavy, with only light/late armour and NO meaningful ATGM
+# or IFV presence (the ATGM-decisive war was Yom Kippur, not Vietnam). This buys the two
+# sides a genuinely different ground force to strike/defend: mass infantry + guns + mobile
+# AAA (SHORAD) instead of tank divisions. ATGM/IFV are omitted (ratio 0 -> never procured;
+# see procurement.most_needed_unit_class). Applies to every faction on VIETNAM_DOCTRINE.
+VIETNAM_GROUND_PROCUREMENT = GroundUnitProcurementRatios(
+    {
+        UnitClass.INFANTRY: 4,
+        UnitClass.APC: 3,
+        UnitClass.ARTILLERY: 2,
+        UnitClass.TANK: 2,
+        UnitClass.SHORAD: 2,
+        UnitClass.RECON: 1,
+    }
+)
+
+# Vietnam doctrine. The era identity is the display-name layer + the P3 behaviour changes
+# (strike_through_air_defense_threat -- Vietnam has no reliable SEAD, so the modern "suppress
+# before you strike" rule otherwise deadlocks the whole offensive fleet, root-caused
+# 2026-06-28: 0/28 strike + 0/13 BAI plannable; the tasking whitelist that drops
+# SEAD/DEAD/anti-ship; a single-section STRIKE (strike_flight_count=1) that always pulls a
+# fighter escort (always_escort_strikes)) -- PLUS the period-authentic planner *numbers* that
+# make the era play differently, not just read differently:
+#   * A2A engagement ranges are knife-fight, not BVR: the early Sparrow (AIM-7E, unreliable)
+#     and short IR Sidewinder (AIM-9B/D) + guns fight close, so MiGCAP/escort engage far
+#     nearer than the modern standoff -- cap 35->22 NM, escort 20->10 NM (between WWII 20/5
+#     and Cold War 35/20). This turns intercepts into visual merges instead of BVR shots.
+#   * rtb_speed drops to the subsonic period cruise (450 -> 400 kt).
+#   * the ground OOB above (infantry/artillery/AAA-heavy, no ATGM/IFV).
+# See docs/dev/design/414th-vietnam-retribution-notes.md.
 VIETNAM_DOCTRINE = replace(
     COLDWAR_DOCTRINE,
     name="vietnam",
@@ -385,6 +408,10 @@ VIETNAM_DOCTRINE = replace(
     plan_strikes_without_full_escort=True,
     strike_flight_count=1,
     always_escort_strikes=True,
+    cap_engagement_range=nautical_miles(22),
+    escort_engagement_range=nautical_miles(10),
+    rtb_speed=knots(400),
+    ground_unit_procurement_ratios=VIETNAM_GROUND_PROCUREMENT,
 )
 
 ALL_DOCTRINES = [

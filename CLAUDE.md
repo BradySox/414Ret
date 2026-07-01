@@ -136,13 +136,18 @@ file. This guide is the map; those are the territory.
     boundary). A **6-campaign inference pilot** (4 modern + 2 Vietnam) is done — see
     `414th-campaign-phases-pilot.md` + the reusable `tools/campaign_phase_laydown.py`
     (`--lite` raw-`.miz` parse / `--engine` real pipeline); it surfaced two threshold
-    refinements now in the spec: an **absolute long+medium-SAM floor** gate (Khe Sanh 0 SAM
-    skips Rollback, Velvet Thunder's SA-2 belt keeps it — same era, opposite arc) and EWR
-    de-weighting. A **batch draft across all 66 campaigns** is done too — `tools/campaign_phase_classify.py`
-    (the offline §3.2 classifier reference impl) + `414th-campaign-phases-all66-draft.md` (a
-    generated opening-phase/arc table: 55 Rollback / 6 Air Superiority / 4 Interdiction; known
-    `--lite` caveats = mod-SAM undercount, auto-assign air blindspot, era-from-date). Design only; P0
-    plumbing not started),
+    refinements now in the spec: an **absolute long+medium-SAM floor** gate and EWR
+    de-weighting. The **all-66 draft table is now `--engine`-authoritative** (re-run
+    2026-07-01 on the real install) — `tools/campaign_phase_classify.py` (the offline §3.2
+    classifier reference impl; `--laydown` consumes a saved engine dump) +
+    `414th-campaign-phases-all66-draft.md` (57 Rollback / 5 Air Superiority / 4 Interdiction).
+    The engine run closed all three `--lite` blind spots (mod-SAM undercount, auto-assign air,
+    and the newly found **generator-filled AA slots**) and corrected the pilot's headline:
+    **Khe Sanh actually fields 4 generated SA-2/SA-3 batteries ⇒ opens Rollback**; the genuine
+    below-floor cases are Shattered Dagger / No Man's Land / Valley of Rotary / Northern
+    Guardian, with Velvet Thunder exactly at the floor (3 sites, keeps Rollback). SAM banding
+    reads TGO `GroupTask` LORAD/MERAD (the DEAD planner's own target set) — `IadsRole` can't
+    band it (its SAM role swallows SHORAD). Design only; P0 plumbing not started),
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),

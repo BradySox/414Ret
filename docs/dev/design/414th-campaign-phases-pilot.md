@@ -5,6 +5,18 @@
 the Tier-0 classifier's §3.2 thresholds against real laydowns and drafts an inferred arc per
 campaign. Two threshold refinements landed back into the spec as a result.
 
+> **⚠️ Engine-re-run addendum (2026-07-01, same day, later).** The `--engine --all` re-run
+> ([`414th-campaign-phases-all66-draft.md`](414th-campaign-phases-all66-draft.md)) surfaced a
+> **third `--lite` blind spot** this pilot never saw: Retribution *generates* SAM sites into a
+> campaign's air-defense TGO slots from the faction, and `--lite` only reads units authored in
+> the `.miz`. That corrects this note's headline example: **Khe Sanh is NOT a 0-SAM theater in
+> actual gameplay** — the generator fills 4 real SA-75/S-125 batteries for the NVA (Sukhumi /
+> Senaki / Kobuleti), so it opens in **Rollback** under engine truth. The **absolute-SAM-floor
+> gate itself survives** (refinement 1 stands): the genuine below-floor cases are Shattered
+> Dagger, Battle for No Man's Land, Valley of Rotary, and Northern Guardian, and Velvet Thunder
+> sits exactly at the floor (3 SA-2 sites) and keeps Rollback. The "same era, opposite arc"
+> value proposition still holds — decided by laydown — just not on the Khe Sanh↔Velvet pair.
+
 ## Method
 
 The real engine can't run in the CI sandbox (the pinned pydcs is dcs-retribution's fork, whose

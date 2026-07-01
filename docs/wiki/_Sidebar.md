@@ -28,10 +28,19 @@
 - [Combat SAR](Combat-SAR)
 - [Electronic Warfare & ISR](Electronic-Warfare-and-ISR)
 - [Troops In Contact](Troops-In-Contact)
-- [Vietnam Ops](Vietnam-Ops)
 - [Map Layers & Interface](Map-Layers-and-Interface)
 - [Kneeboards](Kneeboards)
 - [Drop-Spawn Placement](Drop-Spawn-Unit-Placement)
+
+**Vietnam Ops**
+- [Overview](Vietnam-Ops)
+- [Arc Light](Vietnam-Ops#1--arc-light)
+- [AAA Flak Gauntlet](Vietnam-Ops#2--aaa-flak-gauntlet)
+- [Naval Gunfire](Vietnam-Ops#3--naval-gunfire-support)
+- [Convoy Interdiction](Vietnam-Ops#4--convoy-interdiction-steel-tiger)
+- [Airbase Harassment](Vietnam-Ops#5--airbase-harassment-rocketmortar-siege)
+- [Super Gaggle](Vietnam-Ops#6--super-gaggle-hilltop-resupply)
+- [FAC(A) Marking](Vietnam-Ops#7--faca-willie-pete-target-marking)
 
 **Campaigns**
 

@@ -26,7 +26,10 @@ from game.theater import ControlPointType, Player
 
 
 def _pos(front_dist: float, coord: float = 0.0) -> Any:
+    # x/y are read into the commitment; front_dist/coord drive the fake geometry.
     return SimpleNamespace(
+        x=coord,
+        y=coord,
         front_dist=front_dist,
         coord=coord,
         distance_to_point=lambda other: abs(coord - other.coord),

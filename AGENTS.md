@@ -106,8 +106,12 @@ file. This guide is the map; those are the territory.
     the C-130 "King" on-scene commander onto real static armor TGOs so losses track natively;
     minimal-F10 designation; thin MOOSE bridge, not `Ops.Chief`; future auto-planned commander),
     `414th-combat-sar-normal-task-notes.md` (make Combat SAR a normal, default-on, **two-sided**
-    auto-task: AI rescues AI on blue+red, players can drop in; phased verify-blue → default-on →
-    AI-rescue scoring → symmetric red; today the engine is blue-only + the AI-rescue scoring is cosmetic),
+    auto-task: AI rescues AI on blue+red, players can drop in. **Route 1 (the owned survivor ledger)
+    HAS since shipped** — `combatsar-config.lua` credits AI rescues by real identity and makes AI
+    ejections capturable → POW, coalition-generic runtime (verified 2026-06-30, G11/G20); the note's
+    "AI-rescue scoring is cosmetic / AICSAR anonymous clone" diagnosis is now stale. What's still
+    **design-only** is the surrounding framing: default-on (`auto_combat_sar` still defaults OFF) +
+    auto-planned **symmetric red** (only blue is auto-fragged today)),
     `414th-vietnam-ops-notes.md` (**Vietnam Ops suite** — a `Vietnam Ops` settings page gating five
     opt-in period mechanics: Arc Light as a heavy-bomber Strike *effect*, AAA flak gauntlet, naval
     gunfire support, Armed-Recon truck-convoy interdiction, Super Gaggle resupply; Tier-A runtime only,

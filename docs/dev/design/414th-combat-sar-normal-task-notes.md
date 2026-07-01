@@ -1,7 +1,16 @@
 # Combat SAR as a normal, two-sided auto-task (design / scoping)
 
-**Status:** DESIGN ONLY — not started. Scopes turning Combat SAR from a blue-only, opt-in
-standing alert into a **normal auto-planned task on both coalitions**. · **Date:** 2026-06-27
+**Status (updated 2026-07-01):** the **Route 1 survivor-ledger core (below) HAS SHIPPED** —
+`resources/plugins/combatsar/combatsar-config.lua` is that ledger. AI rescues now credit by real
+identity (`creditRescue` from `dispatchAIRescue`; verified in-game 2026-06-30, 3 credited rescues in
+`state.json` / `game.last_sitrep.pilots_recovered=3`, checklist G11), AI ejections are capturable →
+POW (a captured A-1H pilot in the same session, G20), and the runtime is coalition-generic (consumes
+`dcsRetribution.CombatSAR.red`). So the "AICSAR anonymous-clone / uncredited AI rescue" problem this
+note diagnoses is **already fixed** — do NOT re-implement the ledger. **What remains DESIGN-ONLY** is
+the surrounding *framing*: making Combat SAR a **default-on, auto-planned task on both coalitions**
+(`auto_combat_sar` still defaults OFF and only plans blue; red has the runtime data path but nothing
+auto-frags red Combat SAR packages) — i.e. Phases 1 (blue default-on) + 3 (symmetric red auto-planning)
+below. · **Date:** 2026-06-27 (status refreshed 2026-07-01)
 **Related:** [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the shipped blue feature),
 `414th-scar-rescue-rework-notes.md` (Sandy/POW/capture rework), CLAUDE.md §21 (Combat SAR) +
 §15 (SCAR "Sandy"). In-game-pass rows: **G8–G14**.

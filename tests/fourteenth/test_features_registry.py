@@ -23,6 +23,7 @@ from game.settings.settings import Settings
 
 CLAUDE_MD = Path("CLAUDE.md")
 CHECKLIST = Path("docs/dev/414th-ingame-pass-checklist.md")
+FEATURES_DOC = Path("docs/dev/414th-features.md")
 
 
 def _settings_field_names() -> set[str]:
@@ -51,6 +52,22 @@ def _checklist_sections() -> set[int]:
     """Every `· §N ·` feature reference in the in-game-pass checklist rows."""
     text = CHECKLIST.read_text(encoding="utf-8")
     return {int(m.group(1)) for m in re.finditer(r"·\s*§(\d+)", text)}
+
+
+def _claude_features_doc_pointers() -> set[int]:
+    """Every "features doc §N" pointer in CLAUDE.md — the section it tells a reader
+    to go read in 414th-features.md."""
+    text = CLAUDE_MD.read_text(encoding="utf-8")
+    return {int(m.group(1)) for m in re.finditer(r"features doc §(\d+)", text)}
+
+
+def _features_doc_section_headings() -> set[int]:
+    """Section numbers with an actual `## §N` or `## N.` heading in 414th-features.md."""
+    text = FEATURES_DOC.read_text(encoding="utf-8")
+    nums: set[int] = set()
+    for m in re.finditer(r"^## (?:§(\d+)|(\d+)\.)", text, re.M):
+        nums.add(int(m.group(1) or m.group(2)))
+    return nums
 
 
 def test_keys_are_unique() -> None:
@@ -101,6 +118,25 @@ def test_checklist_sections_are_registered() -> None:
     assert not unregistered, (
         f"in-game-pass checklist references unregistered section(s): "
         f"{sorted(unregistered)}"
+    )
+
+
+def test_features_doc_pointers_resolve() -> None:
+    # Every "features doc §N" pointer in CLAUDE.md must resolve to a real section
+    # heading in 414th-features.md. This closes the blind spot that let §35 (Convoy
+    # interdiction) ship registered + listed + checklist-referenced but with NO
+    # engineering section written (found in the 2026-07-01 docs-vs-code audit): the
+    # other registry/list/checklist tests validate the pointer *triangle* but never
+    # that the destination section actually exists. Some features intentionally point
+    # at a shared section (e.g. the kneeboard features → §4, the map-layers feature →
+    # §18); those still resolve because the target heading exists, so this stays green
+    # for the deliberate redirects and only fails on a genuinely missing section.
+    pointers = _claude_features_doc_pointers()
+    headings = _features_doc_section_headings()
+    missing = sorted(pointers - headings)
+    assert not missing, (
+        "CLAUDE.md 'features doc §N' pointer(s) with no matching section heading in "
+        f"docs/dev/414th-features.md: {missing}"
     )
 
 

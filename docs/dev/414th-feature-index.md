@@ -51,3 +51,4 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §37 | Super Gaggle hilltop resupply | `vietnamops` | `vietnam_super_gaggle` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
+| — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

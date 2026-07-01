@@ -183,6 +183,7 @@ FEATURES: tuple[Feature, ...] = (
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),
     Feature("splash_damage", "Splash Damage (414th tuned)", plugin_id="splashdamage3"),
+    Feature("ai_recon_capture", "AI recon BDA capture (§3 TARPS)", plugin_id="airecon"),
 )
 
 # Path (relative to repo root) of the generated feature-catalog doc.

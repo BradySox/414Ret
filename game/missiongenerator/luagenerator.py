@@ -20,6 +20,7 @@ from game.scar_rescue import sof_rescue_pickup_name
 from game.theater import TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
+from .aireconluadata import populate_ai_recon_lua
 from .interceptluadata import populate_intercept_lua
 from .missiondata import MissionData
 from .vietnamopsluadata import populate_vietnam_ops_lua
@@ -358,6 +359,11 @@ class LuaGenerator:
         # Vietnam Ops suite (Arc Light, etc.) -- emits dcsRetribution.VietnamOps only
         # when a suite feature is enabled; the vietnamops plugin gates on data presence.
         populate_vietnam_ops_lua(lua_data, self.game, self.mission_data)
+
+        # AI recon auto-capture -- emits dcsRetribution.AIRecon only when there are
+        # AI-flown player-coalition TARPS flights; the airecon plugin records their BDA
+        # (the player TARS path is player-only and never fires for AI recon; G19).
+        populate_ai_recon_lua(lua_data, self.game, self.mission_data)
 
         trigger = TriggerStart(comment="Set DCS Retribution data")
         trigger.add_action(DoScript(String(lua_data.create_operations_lua())))

@@ -235,7 +235,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +
-   recon intel-fog) makes recon worth flying.
+   recon intel-fog) makes recon worth flying. **AI recon BDA capture** (`airecon` plugin, added
+   2026-07-01) closes the G19 gap that the MOOSE TARS film path is **player-only** (its birth
+   handler drops any non-player unit), so auto-paired *AI* recon flights confirmed nothing:
+   `populate_ai_recon_lua` (`aireconluadata.py`) emits each AI-flown, player-coalition (BLUE)
+   `TARPS` flight + its target; the `airecon` plugin watches each and, when it survives to overfly
+   (within a trigger range of the target), records the enemy ground units there into the same
+   `tars_recon_captures` ledger the player film menu feeds — so the debrief
+   (`debriefing.py`→`tars_reconned_tgos`) treats an AI recon capture identically. A shot-down /
+   aborting recon flight confirms nothing (one-shot). Player-crewed TARPS is never emitted (still
+   the F10 film path); blue-only. Emitter-tested; runtime Lua needs an in-game pass (checklist G19).
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact

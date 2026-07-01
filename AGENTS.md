@@ -577,6 +577,20 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     options: FAC type, spot/mark range, mark cadence. (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §38, checklist L10 — needs an
     in-game pass.)
+39. **Snake and nape (napalm CAS)** — the eighth **Vietnam Ops suite** feature: the iconic low-level napalm
+    CAS delivery ("snake" = Snakeye retarded bombs, "nape" = napalm). Same shape as §33 flak / §38 FAC (an
+    on-marker + runtime discovery): Python emits only `dcsRetribution.VietnamOps.snakeNape = { enabled }`
+    (`_populate_snake_nape`); the `vietnamops` plugin discovers **attack aircraft** at runtime (by the DCS
+    `Attack airplanes` attribute) making a **low** (≤ ceiling AGL), **fast** pass **close over an alive opposing
+    ground unit**, and lays a **napalm swath** — a line of `trigger.action.effectSmokeBig` fires (auto-stopped
+    after a burn time) + a modest per-node `trigger.action.explosion` bite — oriented along the run-in, once per
+    pass (a per-aircraft cooldown). Unlike the flak gauntlet (which *punishes* predictable flight), this
+    *rewards* pressing the CAS run in on the deck; napalm's real bite on soft targets is the point, and it only
+    fires on a deliberate low pass over the enemy. Symmetric (both sides' attack jets); needs an attacker down
+    low over enemy ground, or it no-ops. Plugin options: run-in ceiling, min speed, drop range, swath length,
+    fire-node count, per-node power. (`game/missiongenerator/vietnamopsluadata.py`,
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §39, checklist L11 — needs an
+    in-game pass.)
 
 ---
 

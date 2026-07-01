@@ -50,6 +50,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §36 | Airbase harassment (rocket/mortar siege) | `vietnamops` | `vietnam_airbase_harassment` |
 | §37 | Super Gaggle hilltop resupply | `vietnamops` | `vietnam_super_gaggle` |
 | §38 | FAC(A) willie-pete target marking | `vietnamops` | `vietnam_fac_marking` |
+| §39 | Snake and nape (napalm CAS) | `vietnamops` | `vietnam_snake_and_nape` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

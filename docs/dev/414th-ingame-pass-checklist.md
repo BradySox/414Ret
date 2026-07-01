@@ -2036,6 +2036,25 @@ so the two docs don't drift.
   set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;
   the mark cadence is far too frequent (smoke spam) or never fires.
 
+### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+- **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `snakeNape`
+  on-marker (emitted when `vietnam_snake_and_nape` is on, independent of the other suite features; off = no
+  node). The runtime attack-plane discovery, the low/fast/near gating, and the `effectSmokeBig`/`explosion`
+  placement are runtime Lua, exercisable only live.
+- **Setup:** A Vietnam campaign with **Vietnam Ops → Snake and nape** on. Fly an **attack aircraft** (A-1/A-4/
+  A-37/Su-25/OV-10 — anything that carries the DCS `Attack airplanes` attribute) a **low, fast** pass (≤150 m
+  AGL, ≥100 m/s) directly over an enemy ground unit.
+- **Pass:** a line of **fire** (smoke-and-fire effects) lays **along your run-in heading** across the target,
+  the nearby soft targets take damage, and a "SNAKE AND NAPE — napalm on the deck" cue appears; the fires burn
+  ~90 s then stop; `dcs.log` shows "Snake and nape armed" with no Lua error. One pass = one wall of fire (the
+  per-aircraft cooldown), not a per-tick stream.
+- **Fail signature:** no fire despite a low/fast pass over enemy ground (the **`Attack airplanes` attribute
+  doesn't match your jet** — the #1 suspect; widen the gate/type if so, or confirm you were low + fast +
+  within drop range); fire lays across instead of along the run-in (heading/frame bug); fires never stop
+  (permanent infernos — `stopEffect` failing); an `effectSmokeBig` / `stopEffect` / `land.getHeight` /
+  `hasAttribute` Lua error; the lay repeats every tick (cooldown not honoured); it triggers from altitude or at
+  low speed (the ceiling/speed gate is wrong); the bite is far too strong/weak (`napeBlastPower`).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

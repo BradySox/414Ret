@@ -1,0 +1,65 @@
+/* Turn-events feed (item-5 UI): bottom-left over the map, matching the dark
+   ribbon/panel palette. Above Leaflet panes, below dialogs. */
+.events-feed {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  font: 12px/1.45 system-ui, sans-serif;
+  pointer-events: auto;
+}
+
+.events-feed-chip {
+  align-self: flex-start;
+  background: #161e2bee;
+  color: #cfe0f3;
+  border: 1px solid #23344a;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.events-feed-chip:hover {
+  background: #1c283a;
+}
+
+.events-feed-list {
+  background: #161e2bf5;
+  color: #d7dde6;
+  border: 1px solid #23344a;
+  border-radius: 6px;
+  padding: 8px 10px;
+  width: 380px;
+  max-width: 88vw;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.events-feed-entry {
+  border-left: 3px solid #23344a;
+  padding: 2px 8px;
+}
+
+.events-feed-title {
+  color: #e8f0fb;
+  font-weight: 600;
+}
+
+.events-feed-turn {
+  color: #8593a5;
+  font-weight: 400;
+  margin-right: 6px;
+  font-size: 11px;
+}
+
+.events-feed-text {
+  color: #9aa6b6;
+  margin-top: 1px;
+}

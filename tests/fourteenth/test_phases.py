@@ -492,3 +492,70 @@ def test_sanctuary_airfield_falls_out_of_the_zone(authored_game: Any) -> None:
     update_campaign_phase(authored_game)
     field.position = _Pt(5 * nm, 0.0)  # type: ignore[assignment]
     assert not roe_blocks_target(authored_game, field)
+
+
+# --- the campaign-layer UI feeds (arc expander / badge reason / zone detail) ---------
+
+
+def test_roe_restriction_reason_names_the_class_or_the_zone(
+    authored_game: Any,
+) -> None:
+    from game.fourteenth.phases import roe_restriction_reason
+    from game.theater.controlpoint import Airfield
+
+    update_campaign_phase(authored_game)
+    nm = 1852.0
+    # A locked class far from any circle: the reason is the class lock (the
+    # playtest confusion -- a badged factory with no zone nearby looked broken).
+    field = Airfield.__new__(Airfield)
+    field.position = _Pt(50 * nm, 0.0)  # type: ignore[assignment]
+    assert roe_restriction_reason(authored_game, field) == (
+        "airfield targets are locked this phase"
+    )
+    # An unlocked-class target inside the circle: the reason is the sanctuary.
+    inside = SimpleNamespace(position=_Pt(5 * nm, 0.0))
+    assert roe_restriction_reason(authored_game, inside) == "inside Hanoi sanctuary"
+    # An unlocked-class target outside: no reason, no badge -- AAA is fair game.
+    outside = SimpleNamespace(position=_Pt(50 * nm, 0.0))
+    assert roe_restriction_reason(authored_game, outside) is None
+
+
+def test_arc_overview_authored(authored_game: Any) -> None:
+    from game.fourteenth.phases import arc_overview
+
+    update_campaign_phase(authored_game)
+    overview = arc_overview(authored_game)
+    assert [entry["key"] for entry in overview] == [
+        "rolling_thunder",
+        "linebacker",
+        "linebacker_ii",
+    ]
+    assert overview[0]["current"] is True
+    assert overview[0]["locked"] == ["factory", "airfield"]
+    assert overview[0]["zones"] == ["Hanoi sanctuary"]
+    assert overview[1]["min_turn"] == 6 and overview[1]["current"] is False
+
+
+def test_arc_overview_tier0_and_disarmed() -> None:
+    from game.fourteenth.phases import arc_overview
+
+    game = _duck_game(on=True, current="interdiction", entered=0)
+    overview = arc_overview(game)
+    assert [entry["key"] for entry in overview] == [
+        "rollback",
+        "interdiction",
+        "offensive",
+    ]
+    assert [entry["current"] for entry in overview] == [False, True, False]
+    assert arc_overview(_duck_game(on=False)) == []
+
+
+def test_zone_detail_names_locks_and_the_lift(authored_game: Any) -> None:
+    from game.fourteenth.phases import zone_detail
+
+    update_campaign_phase(authored_game)
+    detail = zone_detail(authored_game)
+    assert "factory, airfield" in detail
+    assert "Eases at Linebacker (~turn 6)" in detail
+    # Tier-0 phases carry no authored ROE: no zone, no detail.
+    assert zone_detail(_duck_game(on=True, current="interdiction", entered=0)) == ""

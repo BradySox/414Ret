@@ -742,19 +742,94 @@ def roe_blocks_target(game: "Game", target: object) -> bool:
     Washington's, not Hanoi's). The *player* is never hard-blocked -- their
     enforcement is the will penalty (:func:`count_roe_violations`).
     """
+    return roe_restriction_reason(game, target) is not None
+
+
+def roe_restriction_reason(game: "Game", target: object) -> Optional[str]:
+    """Why the ROE forbids ``target`` this phase, or None when it doesn't.
+
+    The player-facing half of :func:`roe_blocks_target` (same logic, same order):
+    a class lock reads "factory targets are locked this phase", a zone hit reads
+    "inside Hanoi sanctuary" -- so the map badge explains itself instead of a
+    bare RESTRICTED (playtest: a locked factory with no circle nearby read as a
+    render bug). AAA/armor and other unlocked classes outside the zones return
+    None and carry no badge: flak is always fair game.
+    """
     phase = active_phase(game)
     if phase is None:
-        return False
+        return None
     target_class = _target_class(target)
     if target_class is not None and target_class in phase.locked_target_classes:
-        return True
+        return f"{target_class} targets are locked this phase"
     position = getattr(target, "position", None)
     if position is None:
-        return False
-    for _name, center, radius_m in _resolved_zones(game, phase):
+        return None
+    for name, center, radius_m in _resolved_zones(game, phase):
         if center.distance_to_point(position) <= radius_m:  # type: ignore[attr-defined]
-            return True
-    return False
+            return f"inside {name}"
+    return None
+
+
+def _arc_for_display(game: "Game") -> tuple[CampaignPhase, ...]:
+    """The campaign's arc for UI purposes: authored, else the Tier-0 sequence."""
+    return authored_arc_for(game) or (ROLLBACK, INTERDICTION, OFFENSIVE)
+
+
+def arc_overview(game: "Game") -> list[dict[str, object]]:
+    """The whole phase arc for the client expander (W3 item-1 UI).
+
+    One dict per phase: key/name/narrative, the scheduled ``min_turn`` (0 = not
+    turn-pinned -- Tier-0 arcs advance adaptively), the locked target classes,
+    the zone names, and whether it is the current phase. Empty when phases are
+    off or no phase has resolved yet.
+    """
+    if active_phase(game) is None:
+        return []
+    current = getattr(game, "current_phase_key", None)
+    overview: list[dict[str, object]] = []
+    for phase in _arc_for_display(game):
+        overview.append(
+            {
+                "key": phase.key,
+                "name": phase.name,
+                "narrative": phase.narrative,
+                "min_turn": phase.min_turn,
+                "locked": list(phase.locked_target_classes),
+                "zones": [
+                    zone.name or zone.center_cp or "Restricted zone"
+                    for zone in phase.restricted_zones
+                ],
+                "current": phase.key == current,
+            }
+        )
+    return overview
+
+
+def zone_detail(game: "Game") -> str:
+    """One line for the zone tooltip: what the ROE locks now, and when it eases.
+
+    Playtest-driven (item-4 UI): the circle alone didn't explain that buildings
+    are locked everywhere while AAA stays fair game, or that the restriction is
+    temporary. Empty when no authored phase is active.
+    """
+    phase = active_phase(game)
+    if phase is None or not phase.authored:
+        return ""
+    locked = (
+        ", ".join(phase.locked_target_classes)
+        if phase.locked_target_classes
+        else "none"
+    )
+    detail = f"No offensive tasking inside. Locked classes everywhere: {locked}."
+    arc = authored_arc_for(game)
+    keys = [p.key for p in arc]
+    if phase.key in keys:
+        index = keys.index(phase.key)
+        if index + 1 < len(arc):
+            nxt = arc[index + 1]
+            when = f" (~turn {nxt.min_turn})" if nxt.min_turn else ""
+            detail += f" Eases at {nxt.name}{when}."
+    return detail
 
 
 def count_roe_violations(game: "Game", debriefing: "Debriefing") -> int:

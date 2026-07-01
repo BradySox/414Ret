@@ -18,11 +18,18 @@ export function TgoTooltip(props: { tgo: TgoModel }) {
       {`${props.tgo.name} (${props.tgo.control_point_name})`}
       {/* ROE (campaign phases W4): the target is visible but off-limits this
           phase -- you can see it, you may not hit it. Striking it anyway costs
-          political will. */}
+          political will. The reason line says WHY (class lock vs sanctuary) so
+          a locked factory far from any circle doesn't read as a render bug. */}
       {props.tgo.roe_restricted && (
         <>
           <br />
           <b style={{ color: "#d43a3a" }}>RESTRICTED — ROE</b>
+          {props.tgo.roe_reason && (
+            <>
+              <br />
+              <span style={{ color: "#a34040" }}>{props.tgo.roe_reason}</span>
+            </>
+          )}
         </>
       )}
       <br />

@@ -23,7 +23,15 @@ export default function RestrictedZonesLayer() {
           fillOpacity={0.06}
           interactive
         >
-          <Tooltip sticky>{`${zone.name} — RESTRICTED (ROE)`}</Tooltip>
+          <Tooltip sticky>
+            <b>{`${zone.name} — RESTRICTED (ROE)`}</b>
+            {zone.detail && (
+              <>
+                <br />
+                {zone.detail}
+              </>
+            )}
+          </Tooltip>
         </Circle>
       ))}
     </LayerGroup>

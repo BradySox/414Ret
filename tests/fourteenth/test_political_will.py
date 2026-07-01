@@ -233,3 +233,22 @@ def test_red_exhaustion_banner_is_era_framed() -> None:
     update_political_will(game, _debrief(red_counts=_counts(convoy=4)))
     assert game.red.political_will == 0.0
     assert "Hanoi agrees to terms" in game.messages
+
+
+def test_will_history_records_a_point_per_flown_turn() -> None:
+    game = _game(blue_will=90.0, red_will=95.0)
+    game.will_history = []
+    game.turn = 3
+    update_political_will(game, _debrief(blue_counts=_counts(aircraft=2)))
+    assert len(game.will_history) == 1
+    turn, blue, red = game.will_history[0]
+    assert turn == 3
+    assert blue == game.blue.political_will
+    assert red == game.red.political_will
+
+
+def test_will_history_absent_on_legacy_games_is_tolerated() -> None:
+    # Pre-feature saves mid-commit carry no will_history; the feed must not crash.
+    game = _game()
+    update_political_will(game, _debrief())
+    assert not hasattr(game, "will_history")

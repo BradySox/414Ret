@@ -1,12 +1,19 @@
 /* Campaign-status ribbon (campaign phases W3). Floats over the top of the map,
    centered, styled to match the dark map-layers panel. Sits above Leaflet panes
    (max Leaflet pane z-index is 700; controls are 1000) but below dialogs. */
-.campaign-status-bar {
+.campaign-status-wrap {
   position: absolute;
   top: 8px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.campaign-status-bar {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -55,4 +62,113 @@
 .campaign-status-will-red {
   color: #f3d3d3;
   background: #5f1d1d;
+}
+
+.campaign-status-phase.expandable {
+  cursor: pointer;
+}
+
+.campaign-status-phase.expandable:hover {
+  background: #2d445f;
+}
+
+.campaign-status-caret {
+  color: #9aa6b6;
+}
+
+/* The arc expander panel (item-1 UI): the campaign's phase sequence + the
+   political-will sparkline, unfolding under the ribbon. */
+.campaign-status-panel {
+  background: #161e2bf5;
+  color: #d7dde6;
+  border: 1px solid #23344a;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font: 12px/1.45 system-ui, sans-serif;
+  width: 460px;
+  max-width: 92vw;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.campaign-phase-row {
+  border-left: 3px solid #23344a;
+  padding: 4px 10px;
+}
+
+.campaign-phase-row.current {
+  border-left-color: #cfe0f3;
+  background: #1c283a;
+  border-radius: 0 4px 4px 0;
+}
+
+.campaign-phase-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.campaign-phase-index {
+  color: #8593a5;
+  font-size: 11px;
+}
+
+.campaign-phase-name {
+  font-weight: 600;
+  color: #e8f0fb;
+}
+
+.campaign-phase-when {
+  margin-left: auto;
+  color: #9aa6b6;
+  font-size: 11px;
+}
+
+.campaign-phase-row.current .campaign-phase-when {
+  color: #cfe0f3;
+  font-weight: 600;
+}
+
+.campaign-phase-narrative {
+  color: #aeb9c8;
+  margin-top: 2px;
+}
+
+.campaign-phase-rules {
+  color: #8593a5;
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.campaign-status-panel-will {
+  border-top: 1px solid #23344a;
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.campaign-status-panel-will-label {
+  color: #9aa6b6;
+  font-size: 11px;
+}
+
+.campaign-status-sparkline .spark-blue {
+  fill: none;
+  stroke: #5f8fc9;
+  stroke-width: 2;
+}
+
+.campaign-status-sparkline .spark-red {
+  fill: none;
+  stroke: #c56a6a;
+  stroke-width: 2;
+}
+
+.campaign-status-sparkline .spark-mid {
+  stroke: #23344a;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
 }

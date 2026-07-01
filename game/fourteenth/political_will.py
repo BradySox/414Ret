@@ -27,11 +27,11 @@ loss ratios; Washington bled from every news cycle):
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from game import Game
-    from game.debriefing import Debriefing
+    from game.debriefing import AirLosses, Debriefing
 
 # --- BLUE (Political Will) feed weights -- design-note §7 starting values; tuned in W2.
 BLUE_AIRFRAME_LOSS = 1.0
@@ -94,8 +94,10 @@ def _blue_delta(game: "Game", debriefing: "Debriefing") -> float:
     delta = BLUE_PASSIVE_REGEN
 
     # Airframe losses, weighted by what fell. by_type keys are AircraftTypes; heavy
-    # bombers reuse the §32 Arc Light identification set.
-    for aircraft_type, count in debriefing.air_losses.by_type(Player.BLUE).items():
+    # bombers reuse the §32 Arc Light identification set. getattr+cast sidesteps the
+    # mypy has-type quirk on Debriefing's init-assigned attrs (the sitrep.py precedent).
+    air_losses = cast("AirLosses", getattr(debriefing, "air_losses"))
+    for aircraft_type, count in air_losses.by_type(Player.BLUE).items():
         heavy = aircraft_type.dcs_unit_type.id in HEAVY_BOMBER_DCS_IDS
         delta -= count * (BLUE_HEAVY_BOMBER_LOSS if heavy else BLUE_AIRFRAME_LOSS)
 

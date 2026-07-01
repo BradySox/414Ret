@@ -161,9 +161,9 @@ if suite.flak and suite.flak.enabled then
     local ENGAGE_RANGE = 4500   -- m, horizontal gun reach
     local CEILING = 4500        -- m AGL, effective flak ceiling
     local FLOOR = 120           -- m AGL, below this the aircraft is on the deck
-    local MIN_MISS = 110        -- m, tightest barrage miss (fully predictable) -- softened 2026-06-28 (L2: was too accurate)
-    local MAX_MISS = 250        -- m, loosest barrage miss (jinking)
-    local BLAST = 6             -- per-burst power (small -- mostly visual) -- softened 2026-06-28 (L2)
+    local MIN_MISS = 150        -- m, tightest barrage miss (fully predictable) -- widened 2026-07-01 (L2: still too lethal after the 2026-06-28 pass; was 110)
+    local MAX_MISS = 320        -- m, loosest barrage miss (jinking) -- widened 2026-07-01 (L2; was 250)
+    local BLAST = 6             -- per-burst power (small -- mostly visual)
     local BURSTS_PER_SITE = 1
     local MAX_SITES = 3         -- cap stacked density from many guns
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
@@ -180,6 +180,12 @@ if suite.flak and suite.flak.enabled then
     local ALT_STEADY_M = 40     -- altitude change under this counts as "steady"
     local FACTOR_STEP = 0.2     -- predictability ramp per steady tick
     local AAA_REFRESH = 30      -- s between AAA-unit rediscovery sweeps
+    -- Tracking rounds are the "bite" for flying a predictable line, but firing one EVERY
+    -- tick (2.5 s) once steady is what read as a hard-kill on the L2 pass. Gate them: they
+    -- need a *sustained* steady run (TRACKING_FACTOR) and only land occasionally
+    -- (TRACKING_CHANCE per eligible tick) -- "the occasional close round," per the design.
+    local TRACKING_FACTOR = 0.85   -- predictability above which a tracking round is possible (was 0.8)
+    local TRACKING_CHANCE = 0.3    -- per-tick probability one lands, so it is occasional not constant
 
     local function opposite(side)
         if side == coalition.side.RED then
@@ -261,8 +267,8 @@ if suite.flak and suite.flak.enabled then
     local function flakBurst(p, factor, tracking)
         local miss, blast
         if tracking then
-            miss = MIN_MISS * 0.55   -- a close tracking round for a sustained steady run (softened 2026-06-28, L2)
-            blast = BLAST * 2.0
+            miss = MIN_MISS * 0.75   -- a closer tracking round for a sustained steady run (widened 2026-07-01, L2; was 0.55)
+            blast = BLAST * 1.5      -- softened 2026-07-01 (L2; was 2.0)
         else
             miss = MAX_MISS - (MAX_MISS - MIN_MISS) * factor
             blast = BLAST
@@ -302,8 +308,12 @@ if suite.flak and suite.flak.enabled then
                                         end
                                         if sites > 0 then
                                             local factor = predictability(u, p)
+                                            -- One occasional close "tracking" round only on a
+                                            -- sustained steady run -- not every tick (L2 fix).
+                                            local tracking = factor > TRACKING_FACTOR
+                                                and math.random() < TRACKING_CHANCE
                                             for i = 1, sites * BURSTS_PER_SITE do
-                                                flakBurst(p, factor, i == 1 and factor > 0.8)
+                                                flakBurst(p, factor, i == 1 and tracking)
                                             end
                                         else
                                             steady[u:getName()] = nil

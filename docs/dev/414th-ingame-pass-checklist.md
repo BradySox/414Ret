@@ -1783,7 +1783,17 @@ so the two docs don't drift.
   `land.getHeight`/`explosion` Lua error in `dcs.log`; FPS hit from over-dense impacts (tune
   `arcLightBlastPower`/length/width down).
 
-### L2 — AAA flak gauntlet · §33 · ◐ PARTIAL (2026-06-28, audience in-game pass — works very well but TOO ACCURATE/lethal; default miss/tracking tuning owed)
+### L2 — AAA flak gauntlet · §33 · ◐ PARTIAL (2026-06-28 audience pass: TOO ACCURATE/lethal → 2nd softening applied 2026-07-01, needs a re-fly)
+- **Second softening applied 2026-07-01 (L2 tuning owed from the 2026-06-28 pass).** The lethality that
+  remained was the close **"tracking" round firing every 2.5 s tick** once a jet held a steady line for ~10 s
+  (`factor > 0.8`), reading as a hard-kill rather than pressure. Changes (`vietnamops-config.lua` + matched
+  `plugin.json` defaults): base misses **widened** `MIN_MISS` 110→**150** m / `MAX_MISS` 250→**320** m; the
+  tracking round is now **occasional not constant** — gated behind a sustained steady run (`factor > 0.85`,
+  was 0.8) **and** a per-tick probability (`TRACKING_CHANCE = 0.3`), and softened (`miss ×0.55→×0.75`,
+  `blast ×2.0→×1.5`). Net: a predictable line now draws bursts ~90–210 m (was ~66–154 m) with only the
+  *occasional* ~85–160 m close round instead of one every tick; jinking stays loose. `BLAST` unchanged (6).
+  Lua syntax gate + `plugin.json` parse green. **Re-fly owed** to confirm the feel is right (pressure to
+  manoeuvre, no hard-kill) — this is why the row stays PARTIAL.
 - **⚠️ Config-mismatch finding (2026-06-30, `dcs.log`):** the flown session's plugin options were
   **`ceiling 5000m, power 8`** — but the *current* `plugin.json` defaults (post-2026-06-28 softening,
   confirmed by reading `vietnamops-config.lua` + `plugin.json` today) are `flakCeilingM=4500` /

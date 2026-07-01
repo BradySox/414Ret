@@ -2361,14 +2361,20 @@ without the `flak` marker.
 | Setting / options | `game/settings/settings.py` (`vietnam_flak_gauntlet`); plugin `specificOptions` (range/ceiling/miss/power) |
 | Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (marker on/off, independence from Arc Light) |
 
-### Gotchas / deferred — in-game pass ◐ PARTIAL (checklist L2): works very well but too accurate, tuning owed
+### Gotchas / deferred — in-game pass ◐ PARTIAL (checklist L2): too accurate on the 2026-06-28 pass; softened twice, re-fly owed
 
-- **Lethality tuning OWED (in-game 2026-06-28, audience pass, user "too accurate but working very well").**
-  The mechanic plays great but the bursts kill too reliably — it reads as a hard-kill threat, not the intended
-  mostly-visual pressure. The lethal lever is the close **"tracking" round** (`flakBurst`: `miss = MIN_MISS*0.35`
-  ≈ 24 m at `blast = BLAST*2.5` = 20, fired once `factor > 0.66`) on top of the tight `MIN_MISS = 70` floor.
-  Soften the **defaults**: raise `MIN_MISS`, soften + rarefy the tracking round, possibly drop `flakBlastPower`.
-  Re-fly after tuning. `flakBlastPower` / miss distances / range are the knobs.
+- **Lethality softened twice; re-fly owed.** The 2026-06-28 audience pass ("too accurate but working very
+  well") read as a hard-kill threat rather than the intended mostly-visual pressure. The lever is the close
+  **"tracking" round**. Two tuning passes since:
+  - **2026-06-28:** `MIN_MISS` 70→110 m, tracking `miss ×0.35→×0.55` / `blast ×2.5→×2.0` and rarer
+    (`factor > 0.66→0.8`), `BLAST` 8→6.
+  - **2026-07-01 (L2):** the remaining lethality was the tracking round firing **every 2.5 s tick** once a jet
+    held a steady line ~10 s. Now: base misses widened `MIN_MISS` 110→**150** / `MAX_MISS` 250→**320** m, and
+    the tracking round is **occasional** — gated behind a sustained steady run (`factor > 0.85`) **and** a
+    per-tick probability (`TRACKING_CHANCE = 0.3`) — and softened (`miss ×0.55→×0.75`, `blast ×2.0→×1.5`).
+  Both passes changed `vietnamops-config.lua` **and** the matched `plugin.json` defaults. Still `◐ PARTIAL`
+  until a re-fly confirms the feel (pressure to manoeuvre, no hard-kill). `flakBlastPower` / miss distances /
+  range remain the campaign-side knobs.
 - **Runtime cost:** the 2.5 s sweep iterates airborne aircraft × nearby AAA (capped). Bounded and pcall-
   guarded, but watch FPS on a very dense mission.
 - **Deferred polish:** tracer streams from the airstrip AAA belts (v1 is barrage puffs only); a per-pilot

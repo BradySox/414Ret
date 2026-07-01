@@ -36,12 +36,12 @@
         {
             "nameInUI": "Flak gauntlet: tightest barrage miss, predictable flight (m)",
             "mnemonic": "flakMinMissM",
-            "defaultValue": 110
+            "defaultValue": 150
         },
         {
             "nameInUI": "Flak gauntlet: loosest barrage miss, jinking (m)",
             "mnemonic": "flakMaxMissM",
-            "defaultValue": 250
+            "defaultValue": 320
         },
         {
             "nameInUI": "Flak gauntlet: per-burst power (small = mostly visual)",

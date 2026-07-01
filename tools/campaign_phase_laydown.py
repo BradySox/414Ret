@@ -33,7 +33,23 @@ import json
 import os
 import zipfile
 
+import yaml
+
 CAMP = "resources/campaigns"
+
+# --- air order-of-battle task buckets (for the YAML squadrons block) ---------
+_FIGHTER = {"BARCAP", "CAP", "TARCAP", "Fighter sweep", "Escort", "Interception"}
+_SEAD = {"SEAD", "DEAD", "SEAD Escort"}
+_STRIKE = {
+    "Strike",
+    "CAS",
+    "BAI",
+    "Anti-ship",
+    "OCA/Aircraft",
+    "OCA/Runway",
+    "Armed Recon",
+    "Anti-ship Strike",
+}
 
 # --- vanilla-DCS air-defence tiering (ordered substring match) --------------
 # Only used by --lite. The engine mode reads real IadsRole / group tasks instead.
@@ -133,7 +149,43 @@ def _yaml_meta(yaml_path: str) -> dict:
     return meta
 
 
-def extract_lite(miz_path: str) -> dict:
+def _air_oob(yaml_path: str, ownership: dict) -> dict:
+    """Enemy/friendly air order of battle from the YAML `squadrons:` block.
+
+    Keyed by control-point id, which for airfields == the DCS airbase id, so we
+    attribute each squadron to a side via `ownership` (airbase id -> coalition).
+    Named CPs (e.g. "Blue CV" carriers) are attributed by their Blue/Red label.
+    Campaigns that omit the block (faction auto-assignment) return zeros — a
+    known --lite blind spot the --engine mode closes.
+    """
+    try:
+        data = yaml.safe_load(open(yaml_path, encoding="utf-8", errors="replace"))
+    except Exception:  # noqa: BLE001
+        return {}
+    oob: dict = {}
+    for cid, squadrons in (data.get("squadrons", {}) or {}).items():
+        try:
+            side = ownership.get(int(cid), "NEUTRAL") or "NEUTRAL"
+        except (ValueError, TypeError):
+            label = str(cid).lower()
+            side = "BLUE" if "blue" in label else "RED" if "red" in label else "NEUTRAL"
+        bucket = oob.setdefault(
+            side, {"fighter": 0, "sead": 0, "strike": 0, "squadrons": 0}
+        )
+        for entry in squadrons or []:
+            bucket["squadrons"] += 1
+            task = (entry.get("primary") or "").strip()
+            size = entry.get("size", 4)
+            if task in _FIGHTER:
+                bucket["fighter"] += size
+            elif task in _SEAD:
+                bucket["sead"] += size
+            elif task in _STRIKE:
+                bucket["strike"] += size
+    return oob
+
+
+def extract_lite(miz_path: str, yaml_path: str | None = None) -> dict:
     from dcs.lua import loads
 
     z = zipfile.ZipFile(miz_path)
@@ -141,11 +193,18 @@ def extract_lite(miz_path: str) -> dict:
     warehouses = loads(z.read("warehouses").decode("utf-8", "replace"))["warehouses"]
 
     own = {"BLUE": 0, "RED": 0, "NEUTRAL": 0}
+    ownership: dict = {}
     for _k, v in (warehouses.get("airports", {}) or {}).items():
         c = (v.get("coalition") if isinstance(v, dict) else None) or "NEUTRAL"
         own[c] = own.get(c, 0) + 1
+        try:
+            ownership[int(_k)] = c
+        except (ValueError, TypeError):
+            pass
 
     out: dict = {"mode": "lite", "airfields": own, "sides": {}}
+    if yaml_path:
+        out["air_oob"] = _air_oob(yaml_path, ownership)
     for side in ("blue", "red"):
         sam = {"long": 0, "medium": 0, "shorad": 0, "ewr": 0}
         veh = ships = statics = 0
@@ -315,7 +374,7 @@ def main() -> None:
             if args.engine:
                 lay = extract_engine(y)
             else:
-                lay = extract_lite(os.path.join(CAMP, meta.get("miz", "")))
+                lay = extract_lite(os.path.join(CAMP, meta.get("miz", "")), y)
         except Exception as exc:  # noqa: BLE001 — keep the batch going
             lay = {"error": f"{type(exc).__name__}: {exc}"}
         results[stem] = {"meta": meta, "laydown": lay}

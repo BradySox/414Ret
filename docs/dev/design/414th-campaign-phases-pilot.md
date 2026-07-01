@@ -11,7 +11,8 @@ The real engine can't run in the CI sandbox (the pinned pydcs is dcs-retribution
 GitHub source is egress-blocked here). So this pilot used the **`--lite`** path of
 `tools/campaign_phase_laydown.py` — it parses each `.miz`'s `mission` + `warehouses` Lua tables
 directly via `dcs.lua` (no fork units needed) and reads airfield ownership + an AD-tier count
-off a hand-curated vanilla-DCS type table. **Lower fidelity than the engine** (ownership == raw
+off a hand-curated vanilla-DCS type table, plus the campaign YAML's `squadrons:` block for the
+air order of battle. **Lower fidelity than the engine** (ownership == raw
 DCS airfield coalition; no Retribution front model; SAM tiers approximate), but more than enough
 to pressure-test the phase boundaries. Re-run with **`--engine`** on a real Retribution install
 for the authoritative numbers (control-point ownership, `IadsRole`, front lines, squadron
@@ -32,6 +33,30 @@ Spread chosen for structural variety (per user: weight modern + Vietnam; drop WW
 | Velvet Thunder | 1970 | Marianas | 12 (1/11) | 23 | 0 | 2/3/3 | 8/77 |
 
 (Player is BLUE in all six; "enemy" = RED.)
+
+### Air order of battle (from the YAML `squadrons:` block)
+
+The `.miz` carries the ground/IADS picture, but the campaign **YAML** carries the air order of
+battle — a `squadrons:` block keyed by control-point id (== the DCS airbase id for airfields),
+which the extractor attributes to a side via `.miz` airport ownership. This is read directly
+from plain-text YAML (no engine), and it supplies the **air-threat** signal that IADS counts
+alone miss:
+
+| Campaign | BLUE fig/SEAD/strike | RED fig/SEAD/strike | Note |
+|---|:--|:--|---|
+| Black Sea | 16/12/32 | 16/12/36 | symmetric air |
+| Slava Ukraini | 24/24/24 | **24**/12/24 | **peer air** — empirically confirms the §3.2 peer-fight guard |
+| Anvil of War | 40/52/36 | 40/36/44 | large symmetric air war |
+| Noisy Cricket | 28/**72**/20 | **58**/28/20 | RED fighter-superior (58); blue's 72 SEAD vs the Iran belt |
+| Khe Sanh | 0/0/0 | 0/0/0 | **no explicit block** → faction auto-assign (lite blind spot) |
+| Velvet Thunder | 16/16/36 | 16/**0**/8 | RED **0 SEAD** = era-correct |
+
+Takeaways: **enemy fighter count is a first-class phase driver** (Noisy Cricket's RED 58 makes
+"win the air first" a real task even before IADS), and **symmetric fighter counts detect the
+peer fight** (Slava 24-vs-24) that gates the Rollback→Interdiction transition on
+`air_threat_absent AND iads_down`. **Caveat:** campaigns that omit the block and rely on
+`DefaultSquadronAssigner` (Khe Sanh) read as 0/0/0 in `--lite` — the `--engine` mode, which sees
+the assigned squadrons, closes this.
 
 ## Drafted arcs (what the Tier-0 classifier should infer)
 

@@ -188,8 +188,11 @@ shape as §35 convoy: `_populate_super_gaggle` (`vietnamopsluadata.py`) picks th
 nearest a front as the besieged outpost + the nearest other friendly helo-capable field as the launch point;
 the `vietnamops` plugin spawns a helo gaggle (default 3 × UH-1H) that flies launch → outpost → back, announces
 delivery, and re-rolls on a cadence. The player can escort it. Runtime-cosmetic (no supply-economy effect),
-blue-only (symmetry deferred), and the **fast-mover suppression choreography remains the deferred later
-increment**. Emitter-tested; runtime Lua pending an in-game pass (checklist L9).
+blue-only (symmetry deferred). The **fast-mover AAA-suppression choreography landed 2026-07-01**: each run
+also launches a short attack flight (default 2 × A-4E-C, the historical suppressor) that flies launch → over
+the outpost (CAS task) → back, tied to the gaggle lifecycle and its own `pcall`. Emitter-tested; runtime Lua
+pending an in-game pass (checklist L9) — the suppressor's default loadout / effectiveness is the open tuning
+item (it spawns with DCS's default payload; give it an explicit one or a scripted effect if it needs teeth).
 
 **Original planner-template design (NOT built — kept for the future increment).** A planner package template:
 when `vietnam_super_gaggle` is on and a friendly outpost is cut off, auto-plan the package (suppress + cargo +

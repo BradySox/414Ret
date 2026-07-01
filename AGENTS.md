@@ -684,7 +684,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     presets on the extended S-300 Site, **SAMP/T** (+NG) on a new Patriot-geometry `SAMP/T Battery` layout,
     **Pantsir-SM** SHORAD, **SA-7/7b manpads**, 4 EWRs (the **P-37 Bar Lock** closes the period red EWR
     blind-net gap across 16 factions), ERO **ZU-23 Toyota technicals** for insurgents. Era-respecting stock
-    faction wiring (modern Russia/redfor, france_2005, Vietnam/70s-80s reds, insurgents). MANTIS needs no
+    faction wiring (modern Russia/redfor, france_2005, 70s-80s Middle-East/NK reds get SA-7/7b, Vietnam reds
+    the P-37 only — SA-7s dropped from the 4 Vietnam factions per squadron call — insurgents the technicals). MANTIS needs no
     change (the bridge bands SAMs by Retribution's emitted threat range, not MANTIS's unit-name scan). Fixed
     in passing: `Faction.remove_vehicle` matches DCS type **ids**, and the old name-based HDS strips silently
     never removed anything (upstream-carve candidate). (`pydcs_extensions/highdigitsams/`,
@@ -706,6 +707,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `bradyccox`):
 
 - **Open (awaiting review):**
+  - [#851](https://github.com/dcs-retribution/dcs-retribution/pull/851) High Digit SAMs **Ultimate Compilation** support (§41's generic core) — retargets the HDS toggle to the maintained mod: renamed-radar re-points, retired-unit tombstones, the 42 new units + 7 presets + SAMP/T layout, and the `remove_vehicle` id-vs-name strip fix. NO 414th faction enrichment (P-37/SA-7/S-400 wiring stays fork-side). Validated headless against upstream dev — opened 2026-07-01. Landed on the fork as [414Ret#382](https://github.com/bradyccox/414Ret/pull/382).
   - [#847](https://github.com/dcs-retribution/dcs-retribution/pull/847) F-4E-45MC (Heatblur) loadout rebuild **+** Maverick date-fallback fix — all 13 F-4E presets re-sourced from the module's built-in loadouts (period AIM-7E2/9L A2A baseline vs the old all-modern AIM-7M), **and** the AGM-65 family's date-fallback rerouted AGM-62 Walleye → Mk-20 Rockeye (Mavericks were degrading to Walleyes on pre-1972 campaigns). Data-only (2 files), validated headless against upstream (CLSID-resolve + station-legal + task-resolution + weapon-DB load) — opened 2026-06-28; **consolidates the former #845 + #846**. Landed on the fork as [414Ret#322](https://github.com/bradyccox/414Ret/pull/322) + [#325](https://github.com/bradyccox/414Ret/pull/325).
   - [#843](https://github.com/dcs-retribution/dcs-retribution/pull/843) era-gate payload-editor options: JHMCS property gating (§24) + targeting-pod era data (re-does withdrawn #786) (carve queue item 11) — opened 2026-06-27. **Druss99 CHANGES_REQUESTED addressed 2026-06-29**: helmet-cueing dates moved to `resources/aircraftproperties/helmets/*.yaml` (mirroring the weapons era model, per his ask) + extended to Soviet HMS/SURA Visor & A-10C HMCS; CI green. ⚠️ **Owes a reviewer re-request** — Druss99 is NOT in the re-request list, so the PR sits blocked with no signal for him to re-review.
   - [#842](https://github.com/dcs-retribution/dcs-retribution/pull/842) landmap prepared-index perf (carve queue item 1) — opened 2026-06-27.

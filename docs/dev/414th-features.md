@@ -2933,7 +2933,8 @@ All unit data was read from the **installed mod's own Database lua files** (laun
   extended S-300 Site layout), `SAMP/T` + `SAMP/T NG` (new `SAMP/T Battery` layout reusing
   `Patriot_Battery.miz` geometry), `Pantsir-SM SHORAD`, `ZU-23 Technicals (ERO)`.
 - **Factions**: modern Russia/redfor get S-400 + V4 + Pantsir-SM + Nebo EWRs; russia_1980 gets the S-300PT;
-  france_2005 gets SAMP/T; Vietnam-era/70s-80s reds get SA-7/7b + the P-37 Bar Lock (which also closes the
+  france_2005 gets SAMP/T; 70s-80s Middle-East/NK reds get SA-7/7b and Vietnam-era + Cold-War reds the
+  P-37 Bar Lock (which also closes the
   "red faction has zero EWR units" MANTIS blind-net gap for 16 period factions); insurgents get the ERO
   technicals.
 - **MANTIS needs no changes**: the 414th bridge already bands every SAM by Retribution's own emitted threat
@@ -2958,7 +2959,9 @@ All unit data was read from the **installed mod's own Database lua files** (laun
 ### Gotchas / deferred
 
 - **Needs an in-game pass (checklist N1).** Spawn/engagement of the new sites (S-400/V4/SAMP-T), MANTIS
-  banding of the 300+ km launchers, and SA-7 infantry launches can't be exercised headless.
+  banding of the 300+ km launchers, and SA-7 infantry launches can't be exercised headless. (Per squadron
+  call, the SA-7/7b are NOT wired into the 4 Vietnam factions — they keep only the P-37; the manpads stay
+  on syria_1973/1982, iraq_1991, north_korea_2000, iran_1988 and remain available to custom factions.)
 - Detection/threat ranges intentionally mirror the *mod's* numbers, not real-world spec sheets — a 400 km
   40N6E MEZ ring is dominating on any map; treat the `SA-21/S-400` preset as a strategic-tier buy.
 - The `SAMPT_MLT` (Aster-15) and Block 2 TELs, the ZPU-2 Toyota variants, and the Gazetchik-decoy UNITS_WITH_RADAR

@@ -201,6 +201,29 @@ that capability lands.
 
 ---
 
+## §G — "Snake and nape" napalm CAS effect — LANDED 2026-07-01 (runtime, CLAUDE.md §39)
+
+The signature Vietnam CAS delivery: an attacker rolls in low and fast and lays a **wall of fire** across the
+enemy ("snake" = Snakeye retarded bombs, "nape" = napalm). DCS doesn't model napalm as an effective AI/soft-
+target weapon, so this is the flavor layer that makes the on-the-deck run *do* something — and it's the
+**reward** counterpart to the flak gauntlet's *punishment*: flak thickens against a predictable straight run;
+snake-and-nape pays off pressing in low over the target.
+
+**What shipped (runtime, on-marker + discovery — the §B flak / §38 FAC shape).** `_populate_snake_nape`
+(`vietnamopsluadata.py`) emits only `snakeNape = { enabled = true }` when `vietnam_snake_and_nape` is on. The
+`vietnamops` plugin discovers **attack aircraft** at runtime (DCS `Attack airplanes` attribute) making a
+**low** (≤ ceiling AGL), **fast** (≥ min speed), **near-an-enemy-ground-unit** pass and lays a **napalm swath**
+— a line of `effectSmokeBig` fires along the run-in heading (auto-`stopEffect` after a burn time) + a modest
+per-node `explosion` bite — once per pass (a per-aircraft cooldown). Symmetric (both sides' attack jets).
+Emitter-tested; runtime Lua pending an in-game pass (checklist L11) — the open item is confirming the
+`Attack airplanes` attribute matches the intended CAS jets in-mission (widen the gate if not).
+
+**Deferred.** A weapon-release-tied version (matching an actual napalm/Snakeye `S_EVENT_SHOT` rather than a
+proximity/low-pass gate) is the possible later increment; `S_EVENT_SHOT` weapon-id matching is brittle across
+modules, so v1 uses the pass gate as the low-risk flavor core.
+
+---
+
 ## Phasing (each its own branch + in-game pass; never merge unflown)
 
 | Phase | Scope | Registry/doc work when it lands |
@@ -211,6 +234,7 @@ that capability lands.
 | 3 | §C NGFS | same |
 | 4 | §D Convoy interdiction | same |
 | 5 | §E Super Gaggle (runtime; planner-template deferred) | same |
+| — | §G Snake and nape (runtime napalm CAS effect; CLAUDE.md §39) | same |
 
 Each numbered feature is added to `game/fourteenth/features.py` (with its `plugin_id` +
 `settings_fields`), the generated `414th-feature-index.md` is regenerated, an in-game-pass

@@ -1094,3 +1094,153 @@ if suite.fac and suite.fac.enabled then
         "DCSRetribution|Vietnam Ops - FAC(A) marking armed (type %s, range %dm, every %ds)",
         FAC_TYPE, FAC_RANGE, FAC_INTERVAL))
 end
+
+-------------------------------------------------------------------------------
+-- Snake and nape: low-level napalm CAS delivery
+--
+-- The iconic Vietnam close-air-support pass: an attack aircraft rolls in low and fast and
+-- lays a wall of fire ("snake" = Snakeye retarded bombs, "nape" = napalm) across the enemy.
+-- Like the flak gauntlet and FAC, the runtime discovers the delivering aircraft itself --
+-- an airborne attack plane (DCS "Attack airplanes" attribute) that is LOW (below the run-in
+-- ceiling), FAST, and passing close over an alive opposing ground unit -- and lays a napalm
+-- swath (a line of fire effects + a modest per-node bite) oriented along the run-in, once
+-- per pass (a per-aircraft cooldown). Rewards flying the CAS run in on the deck rather than
+-- lobbing from altitude; symmetric (both sides' attack jets). Pure DCS
+-- (trigger.action.effectSmokeBig + explosion), pcall-guarded. Gated on
+-- dcsRetribution.VietnamOps.snakeNape.
+-------------------------------------------------------------------------------
+if suite.snakeNape and suite.snakeNape.enabled then
+    local CEILING = 150         -- m AGL, must be at/below this to count as a napalm run
+    local MIN_SPEED = 100       -- m/s (~195 kt) ground speed, a fast delivery pass
+    local DROP_RANGE = 400      -- m from an enemy ground unit that triggers the lay
+    local SWATH_LENGTH = 250    -- m, length of the fire line along the run-in
+    local FIRE_NODES = 5        -- fire effects laid along the swath
+    local FIRE_PRESET = 2       -- effectSmokeBig preset: 1 small .. 4 huge smoke-and-fire
+    local FIRE_DENSITY = 0.5    -- 0..1 effect density
+    local BURN_TIME = 90        -- s each fire burns before it is stopped
+    local BLAST = 40            -- per-node explosion power (napalm's bite on soft targets)
+    local COOLDOWN = 25         -- s per aircraft between lays (one pass = one wall of fire)
+    if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
+        local o = dcsRetribution.plugins.vietnamops
+        CEILING = tonumber(o.napeCeilingM) or CEILING
+        MIN_SPEED = tonumber(o.napeMinSpeedMs) or MIN_SPEED
+        DROP_RANGE = tonumber(o.napeDropRangeM) or DROP_RANGE
+        SWATH_LENGTH = tonumber(o.napeSwathLengthM) or SWATH_LENGTH
+        FIRE_NODES = tonumber(o.napeFireNodes) or FIRE_NODES
+        BLAST = tonumber(o.napeBlastPower) or BLAST
+    end
+
+    local POLL = 2              -- s between delivery-pass evaluations
+    local JITTER = 20           -- m random scatter per fire/impact node
+    local fireId = 0            -- unique-name counter for effectSmokeBig / stopEffect
+
+    local function napeOpposite(side)
+        if side == coalition.side.RED then
+            return coalition.side.BLUE
+        end
+        return coalition.side.RED
+    end
+
+    -- Run-in heading (radians) in the (north, east) frame from the aircraft velocity, or
+    -- nil if it is too slow to read a direction.
+    local function runInHeading(u)
+        local v = u:getVelocity()
+        if not v then
+            return nil
+        end
+        if math.sqrt(v.x * v.x + v.z * v.z) < 1 then
+            return nil
+        end
+        return math.atan2(v.z, v.x)  -- atan2(east, north)
+    end
+
+    -- Nearest alive opposing ground unit within DROP_RANGE of (fx, fz) [north, east].
+    local function nearestEnemyGround(enemySide, fx, fz)
+        local best, bestD = nil, nil
+        for _, grp in pairs(coalition.getGroups(enemySide, Group.Category.GROUND) or {}) do
+            for _, u in pairs(grp:getUnits() or {}) do
+                if u:isExist() and u:getLife() > 0 then
+                    local p = u:getPoint()
+                    local dx, dz = p.x - fx, p.z - fz
+                    local d2 = dx * dx + dz * dz
+                    if d2 <= (DROP_RANGE * DROP_RANGE) and (not bestD or d2 < bestD) then
+                        best, bestD = p, d2
+                    end
+                end
+            end
+        end
+        return best
+    end
+
+    -- Lay a line of fire across (cx, cz) [north, east] oriented along headingRad.
+    local function layNapalm(cx, cz, headingRad)
+        local cosH, sinH = math.cos(headingRad), math.sin(headingRad)
+        local span = (FIRE_NODES > 1) and (FIRE_NODES - 1) or 1
+        for i = 0, FIRE_NODES - 1 do
+            local along = (i / span - 0.5) * SWATH_LENGTH
+            local north = cx + along * cosH + math.random(-JITTER, JITTER)
+            local east = cz + along * sinH + math.random(-JITTER, JITTER)
+            local h = land.getHeight({ x = north, y = east }) or 0
+            local pt = { x = north, y = h, z = east }
+            fireId = fireId + 1
+            local ename = "vnnape-" .. fireId
+            pcall(trigger.action.effectSmokeBig, pt, FIRE_PRESET, FIRE_DENSITY, ename)
+            timer.scheduleFunction(function()
+                pcall(trigger.action.stopEffect, ename)
+                return nil
+            end, {}, timer.getTime() + BURN_TIME)
+            if BLAST > 0 then
+                trigger.action.explosion(pt, BLAST)
+            end
+        end
+    end
+
+    local lastLay = {}  -- unit name -> last-lay time (per-aircraft cooldown)
+
+    local function napeTick()
+        local ok, err = pcall(function()
+            local now = timer.getTime()
+            for _, side in pairs({ coalition.side.RED, coalition.side.BLUE }) do
+                local enemySide = napeOpposite(side)
+                for _, grp in pairs(coalition.getGroups(side, Group.Category.AIRPLANE) or {}) do
+                    for _, u in pairs(grp:getUnits() or {}) do
+                        if u:isExist() and u:getLife() > 0 and u:inAir()
+                            and u:hasAttribute("Attack airplanes") then
+                            local name = u:getName()
+                            if not lastLay[name] or (now - lastLay[name]) >= COOLDOWN then
+                                local p = u:getPoint()
+                                local agl = p.y - (land.getHeight({ x = p.x, y = p.z }) or 0)
+                                local v = u:getVelocity()
+                                local spd = v and math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z) or 0
+                                if agl <= CEILING and spd >= MIN_SPEED then
+                                    local tgt = nearestEnemyGround(enemySide, p.x, p.z)
+                                    if tgt then
+                                        local hdg = runInHeading(u) or 0
+                                        layNapalm(tgt.x, tgt.z, hdg)
+                                        lastLay[name] = now
+                                        pcall(
+                                            trigger.action.outTextForCoalition,
+                                            side,
+                                            "SNAKE AND NAPE -- napalm on the deck.",
+                                            15
+                                        )
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+        if not ok then
+            env.warning("vietnamops: snake-and-nape tick error (continuing): " .. tostring(err))
+        end
+        return timer.getTime() + POLL
+    end
+
+    timer.scheduleFunction(napeTick, {}, timer.getTime() + POLL)
+    env.info(string.format(
+        "DCSRetribution|Vietnam Ops - Snake and nape armed (ceiling %dm AGL, min speed %dm/s, "
+            .. "drop range %dm, swath %dm x %d nodes, blast %d)",
+        CEILING, MIN_SPEED, DROP_RANGE, SWATH_LENGTH, FIRE_NODES, BLAST))
+end

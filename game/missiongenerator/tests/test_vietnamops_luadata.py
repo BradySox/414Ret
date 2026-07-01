@@ -47,6 +47,7 @@ def _emit(
     coalitions: list[Any] | None = None,
     super_gaggle: bool = False,
     fac: bool = False,
+    snake_nape: bool = False,
 ) -> str:
     root = LuaData("dcsRetribution")
     game = SimpleNamespace(
@@ -58,6 +59,7 @@ def _emit(
             vietnam_airbase_harassment=harassment,
             vietnam_super_gaggle=super_gaggle,
             vietnam_fac_marking=fac,
+            vietnam_snake_and_nape=snake_nape,
         ),
         theater=SimpleNamespace(
             ground_objects=ground_objects or [],
@@ -149,6 +151,25 @@ def test_fac_is_independent_of_flak() -> None:
     lua = _emit([], fac=True)
     assert "fac" in lua
     assert "flak" not in lua
+
+
+def test_snake_nape_marker_emitted_when_on() -> None:
+    lua = _emit([], snake_nape=True)
+    assert "VietnamOps" in lua
+    assert "snakeNape" in lua
+    assert "enabled" in lua
+
+
+def test_snake_nape_off_no_node() -> None:
+    lua = _emit([], snake_nape=False)
+    assert "VietnamOps" not in lua
+
+
+def test_snake_nape_is_independent_of_fac() -> None:
+    # Snake-and-nape on, FAC off: a snakeNape node, no fac node (on-markers don't leak).
+    lua = _emit([], snake_nape=True)
+    assert "snakeNape" in lua
+    assert "fac" not in lua
 
 
 def test_no_arclight_record_without_eligible_bombers() -> None:

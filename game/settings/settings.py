@@ -457,6 +457,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "vietnam_arc_light",
                     "vietnam_naval_gunfire",
+                    "vietnam_snake_and_nape",
                 ],
             ),
             (
@@ -2013,6 +2014,19 @@ class Settings:
             "Offshore gun ships (battleship/cruiser main batteries) deliver call-for-fire "
             "bombardment against coastal targets. Coastal campaigns only -- has no effect "
             "inland (e.g. Khe Sanh), where naval gunfire never reached."
+        ),
+        default=False,
+    )
+    vietnam_snake_and_nape: bool = boolean_option(
+        "Snake and nape (napalm CAS)",
+        VIETNAM_OPS_PAGE,
+        "Fire support",
+        detail=(
+            "An attack aircraft making a low, fast pass over enemy ground lays a wall of "
+            "fire across the target -- the iconic Vietnam 'snake and nape' CAS delivery "
+            "(retarded bombs + napalm). Rewards flying the run in low and on the deck; "
+            "both sides' attack jets get it. Needs an attacker down low over enemy troops, "
+            "or it has no effect."
         ),
         default=False,
     )

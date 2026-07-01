@@ -226,9 +226,16 @@ and selected later upstream fixes.
   area. *Your* active spawn fields are never targeted, and a startup grace period keeps it off while you're
   still starting up. The sixth is the **Super Gaggle**: a formation of transport helos runs supplies into a
   cut-off forward friendly outpost (fly launch field → outpost → back, re-rolling on a cadence), which you can
-  escort in — the Khe Sanh hilltop resupply. See
+  escort in — the Khe Sanh hilltop resupply. The seventh is **FAC(A) marking**: an airborne forward air
+  controller (an OV-10 Bronco loitering over the battle area) marks nearby enemy ground with **white-phosphorus
+  smoke** so you can visually acquire the target and roll in — the iconic Vietnam Bronco putting willie pete on
+  the target. The eighth is **snake and nape**: fly an **attack aircraft low and fast** over enemy troops and
+  you lay a **wall of fire** across them — the signature Vietnam napalm CAS run. Unlike the flak gauntlet (which
+  *punishes* a predictable line), this *rewards* pressing the run in on the deck, and the fire genuinely hurts
+  soft targets. See
   [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md). The Vietnam
-  campaigns (Khe Sanh, 1968 Yankee Station, Velvet Thunder) now turn on the whole suite by default.
+  campaigns (Khe Sanh, 1968 Yankee Station, Velvet Thunder) turn on the fire-support and battlefield mechanics
+  by default; the newest additions (FAC(A) marking and snake and nape) are a toggle away on the Vietnam Ops page.
 - A new **Steel Tiger: Trail Interdiction** campaign — the air war to strangle the **Ho Chi Minh Trail** in
   1968. An *interdiction*-focused Vietnam scenario on the Yankee Station laydown, with the whole Vietnam Ops
   suite on and **convoy interdiction as the centrepiece**: the moving trail column behind the enemy line is

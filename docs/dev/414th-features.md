@@ -2704,3 +2704,61 @@ Same shape as §33 flak — an **on-marker + runtime discovery**, no per-mission
 - **Runtime-cosmetic.** A smoke plume, no gameplay-model change — the value is the visual target cue.
 - **FAC type is a single configurable id.** Default `Bronco-OV-10A`; the O-2 Skymaster or another light FAC
   could be added as a discovered type in a later pass.
+
+## §39 — Snake and nape (napalm CAS) (Vietnam Ops suite)
+
+The eighth **Vietnam Ops suite** feature: the iconic low-level napalm close-air-support delivery — **"snake
+and nape"** ("snake" = Snakeye retarded/high-drag bombs, "nape" = napalm canisters), the signature Vietnam CAS
+run where an attacker rolls in low and fast and lays a **wall of fire** across the enemy. DCS doesn't model
+napalm as an effective AI/soft-target weapon, so this is the flavor layer that makes the on-the-deck run *do*
+something visible and lethal to troops in the open.
+
+### How it works
+
+Same shape as §33 flak and §38 FAC — an **on-marker + runtime discovery**, no per-mission data:
+- **Python** (`vietnamopsluadata.py` `_populate_snake_nape`) emits only
+  `dcsRetribution.VietnamOps.snakeNape = { enabled = true }` when `vietnam_snake_and_nape` is on.
+- **The `vietnamops` plugin** discovers the delivering aircraft itself at runtime — airborne, alive **attack
+  aircraft** (gated by the DCS `Attack airplanes` attribute, the same attribute-discovery approach flak uses
+  for `AAA`) that are **low** (at or below the run-in ceiling AGL, default 150 m), **fast** (ground speed at or
+  above the min-speed gate, default 100 m/s), and passing **close over an alive opposing ground unit** (within
+  the drop range, default 400 m). On such a pass it lays a **napalm swath**: a line of
+  `trigger.action.effectSmokeBig` fire nodes (default 5, medium smoke-and-fire preset) spread along the
+  aircraft's **run-in heading** (read from its velocity, so the fire lays along the flight path, not across it),
+  each auto-**stopped** after a burn time (default 90 s, via `trigger.action.stopEffect`) so fires don't pile up,
+  plus a modest per-node `trigger.action.explosion` (default 40) — napalm's real bite on soft targets. A
+  per-aircraft **cooldown** (default 25 s) means one pass = one wall of fire, not a per-tick stream. A
+  "SNAKE AND NAPE — napalm on the deck" cue goes to the delivering coalition.
+- **Rewards, doesn't punish.** Unlike the flak gauntlet (which *thickens* against a predictable straight run),
+  snake-and-nape *pays off* pressing the CAS run in low and on the deck — the risk of getting low is the
+  trade for laying effective fire. It only ever fires on a deliberate low pass over enemy ground, so the real
+  bite is earned, not ambient.
+- Symmetric by construction (both sides' attack jets are scanned). No attacker down low over enemy ground ⇒
+  nothing laid.
+- Tunables (plugin `specificOptions`): run-in ceiling (m AGL), min speed (m/s), drop range (m), swath length
+  (m), fire-node count, per-node power.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_snake_nape`) |
+| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (Snake and nape section) |
+| Setting / options | `game/settings/settings.py` (`vietnam_snake_and_nape`); plugin `specificOptions` (ceiling/speed/range/swath/nodes/power) |
+| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (the `snakeNape` on-marker is emitted when the setting is on, independent of the other suite features; off = no node) |
+
+### Gotchas / deferred
+
+- **Runtime is unflown (checklist L11).** The Lua passes the `luac5.1 -p` gate, but the runtime attack-plane
+  discovery, the low/fast/near gating, and the `effectSmokeBig`/`explosion` placement can't be exercised
+  headless. #1 thing to confirm in the cockpit: the **`Attack airplanes` attribute** actually matches the
+  intended CAS jets in-mission (A-1/A-4/A-37/Su-25/OV-10 etc.) — if a wanted type doesn't carry it, widen the
+  gate. Also watch that the fire lays **along** the run-in over real enemy ground (not on friendlies), that the
+  fires **stop** after the burn time (no permanent infernos), and that `dcs.log` shows "Snake and nape armed"
+  with no Lua error.
+- **Proximity trigger, not weapon-release.** v1 fires on a qualifying low/fast pass over enemy ground rather
+  than tracking an actual napalm/Snakeye weapon release (`S_EVENT_SHOT` weapon-id matching is brittle across
+  modules). The pass gate is the low-risk flavor core; a release-tied version is a possible later increment.
+- **The per-node bite is real (by design).** Unlike flak's mostly-visual power, the default blast is tuned to
+  hurt soft targets — that *is* the feature (napalm was devastating to infantry/trucks). Dial `napeBlastPower`
+  down for a purely-cosmetic wall of fire.

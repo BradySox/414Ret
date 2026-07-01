@@ -1,7 +1,7 @@
 # 414th — "Vietnam Retribution" mode — design notes
 
-**Status:** **P0 + P1 (doctrine model) + P1b (display read-path) landed**; P2 (shell/preset) +
-P3 (behaviour taskings) outstanding.
+**Status:** **P0 + P1 (doctrine model) + P1b (display read-path) + P1c (period planner numbers) landed**;
+P2 (shell/preset) + P3 (behaviour taskings) outstanding.
 **Decided direction:**
 - Tasking redesign = **doctrine-gated + rename** (one `FlightType` enum, no new enum values).
 - New-game entry = **dedicated shell over the shared engine** (a Vietnam card on the New Game
@@ -25,9 +25,18 @@ P3 (behaviour taskings) outstanding.
   Interdiction / Photo Recon / …) and an (open, `None`) `tasking_whitelist`. Two additive frozen-
   dataclass fields with defaults (so MODERN/COLDWAR/WWII are untouched) + `display_name_for()` /
   `allows()` helpers; `from_settings` carries them. Faction loader maps `"vietnam"`; the **10**
-  Vietnam factions are repointed from `coldwar`. Behaviour is identical to COLDWAR (verified by a
-  rebadge-equality test). Tests: `tests/test_vietnam_doctrine.py`,
+  Vietnam factions are repointed from `coldwar`. Tests: `tests/test_vietnam_doctrine.py`,
   `tests/test_vietnam_content.py::test_vietnam_factions_load_vietnam_doctrine`.
+  - **P1c — period-authentic planner *numbers* (2026-07-01).** The doctrine is no longer a *pure*
+    COLDWAR clone: on top of the display/whitelist/P3 layers it now overrides the planner values that
+    make the era play differently, not just read differently — **A2A engagement ranges** shortened to
+    the early-missile/gun era (`cap_engagement_range` 35→22 NM, `escort_engagement_range` 20→10 NM, so
+    MiGCAP/escort fight close instead of BVR standoff), **`rtb_speed`** 450→400 kt (subsonic period
+    cruise), and a **period ground OOB** (`VIETNAM_GROUND_PROCUREMENT`: infantry-dominant + artillery +
+    mobile-AAA/SHORAD, light armour, and **no ATGM/IFV** — the ATGM-decisive war was Yom Kippur, not
+    Vietnam). The rebadge-equality test now resets these four fields too (so it still proves nothing
+    *else* drifted), plus dedicated tests lock the shorter ranges / subsonic RTB / infantry-heavy,
+    ATGM-free ground ratio.
   - **Borderline repoints to confirm:** `usa_1965.json` / `usa_1970.json` are *generic* 1965/1970
     US factions (not Vietnam-War-named). They're Vietnam-*era*, so the renames fit, but they could
     be used in other Cold-War-SEA scenarios. Repointed per the design's faction list; flag if undesired.

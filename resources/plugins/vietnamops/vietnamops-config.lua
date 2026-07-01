@@ -1008,3 +1008,89 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch 
             outpostName, COUNT, HELO))
     end)
 end
+
+-------------------------------------------------------------------------------
+-- FAC(A) willie-pete target marking
+--
+-- The iconic Vietnam forward air controller: an OV-10 Bronco loitering over the battle
+-- area marks enemy ground with white-phosphorus smoke so the strikers (and the player)
+-- can visually acquire the target and roll in. Like the flak gauntlet, the runtime
+-- discovers the FAC aircraft itself (airborne friendly units of the FAC type) and marks
+-- the nearest opposing ground unit in range on a cadence -- so it needs a friendly OV-10
+-- airborne over the front to do anything. Pure DCS (trigger.action.smoke), pcall-guarded.
+-- Gated on dcsRetribution.VietnamOps.fac.
+-------------------------------------------------------------------------------
+if suite.fac and suite.fac.enabled then
+    local FAC_TYPE = "Bronco-OV-10A"  -- the DCS unit type of the FAC aircraft
+    local FAC_RANGE = 5556            -- m (3 NM): how far the FAC spots + marks ground
+    local FAC_INTERVAL = 120          -- s between marks per FAC (smoke lasts ~5 min)
+    if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
+        local o = dcsRetribution.plugins.vietnamops
+        FAC_TYPE = o.facType or FAC_TYPE
+        FAC_RANGE = tonumber(o.facRangeM) or FAC_RANGE
+        FAC_INTERVAL = tonumber(o.facIntervalS) or FAC_INTERVAL
+    end
+
+    local WHITE_SMOKE = 2  -- trigger.smokeColor: 0 green, 1 red, 2 white (willie pete), 3 orange, 4 blue
+
+    local function facOpposite(side)
+        if side == coalition.side.RED then
+            return coalition.side.BLUE
+        end
+        return coalition.side.RED
+    end
+
+    -- Nearest alive opposing ground unit within FAC_RANGE of (fx, fz) [north, east].
+    local function nearestEnemyGround(enemySide, fx, fz)
+        local best, bestD = nil, nil
+        for _, grp in pairs(coalition.getGroups(enemySide, Group.Category.GROUND) or {}) do
+            for _, u in pairs(grp:getUnits() or {}) do
+                if u:isExist() and u:getLife() > 0 then
+                    local p = u:getPoint()
+                    local dx, dz = p.x - fx, p.z - fz
+                    local d2 = dx * dx + dz * dz
+                    if d2 <= (FAC_RANGE * FAC_RANGE) and (not bestD or d2 < bestD) then
+                        best, bestD = p, d2
+                    end
+                end
+            end
+        end
+        return best
+    end
+
+    local function facTick()
+        local ok, err = pcall(function()
+            for _, side in pairs({ coalition.side.RED, coalition.side.BLUE }) do
+                local enemySide = facOpposite(side)
+                for _, grp in pairs(coalition.getGroups(side, Group.Category.AIRPLANE) or {}) do
+                    for _, u in pairs(grp:getUnits() or {}) do
+                        if u:isExist() and u:getLife() > 0 and u:inAir()
+                            and u:getTypeName() == FAC_TYPE then
+                            local fp = u:getPoint()
+                            local tgt = nearestEnemyGround(enemySide, fp.x, fp.z)
+                            if tgt then
+                                local h = land.getHeight({ x = tgt.x, y = tgt.z }) or tgt.y
+                                trigger.action.smoke({ x = tgt.x, y = h, z = tgt.z }, WHITE_SMOKE)
+                                pcall(
+                                    trigger.action.outTextForCoalition,
+                                    side,
+                                    "FAC: target marked with willie pete -- cleared hot.",
+                                    20
+                                )
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+        if not ok then
+            env.warning("vietnamops: FAC tick error (continuing): " .. tostring(err))
+        end
+        return timer.getTime() + FAC_INTERVAL
+    end
+
+    timer.scheduleFunction(facTick, {}, timer.getTime() + FAC_INTERVAL)
+    env.info(string.format(
+        "DCSRetribution|Vietnam Ops - FAC(A) marking armed (type %s, range %dm, every %ds)",
+        FAC_TYPE, FAC_RANGE, FAC_INTERVAL))
+end

@@ -24,6 +24,10 @@ Features so far:
   near-constant siege of Bien Hoa/Da Nang/Khe Sanh. Client-spawn fields are filtered out in
   Python (never emitted) and a startup grace period is honored Lua-side, so a cold-starting
   player is never shelled.
+* **FAC(A) marking** (``vietnam_fac_marking``): an on-marker only -- the runtime discovers
+  airborne friendly OV-10 Broncos by DCS unit type and marks the nearest opposing ground with
+  white-phosphorus smoke on a cadence (the iconic Vietnam forward air controller). No
+  per-mission data is emitted from Python.
 """
 
 from __future__ import annotations
@@ -127,6 +131,7 @@ def populate_vietnam_ops_lua(
         or settings.vietnam_convoy_interdiction
         or settings.vietnam_airbase_harassment
         or settings.vietnam_super_gaggle
+        or settings.vietnam_fac_marking
     ):
         return
 
@@ -144,6 +149,20 @@ def populate_vietnam_ops_lua(
         _populate_airbase_harassment(vietnam, game)
     if settings.vietnam_super_gaggle:
         _populate_super_gaggle(vietnam, game)
+    if settings.vietnam_fac_marking:
+        _populate_fac(vietnam)
+
+
+def _populate_fac(vietnam: "LuaItem") -> None:
+    """Emit the FAC(A) marking on-marker.
+
+    Like the flak gauntlet, the runtime discovers the FAC aircraft itself (airborne
+    friendly OV-10 Broncos, by DCS unit type) and marks nearby opposing ground with
+    white-phosphorus smoke, so the node only signals the feature is on -- no per-mission
+    data needs emitting from Python.
+    """
+    fac = vietnam.add_item("fac")
+    fac.add_key_value("enabled", "true")
 
 
 def _populate_arc_light(vietnam: "LuaItem", mission_data: "MissionData") -> None:

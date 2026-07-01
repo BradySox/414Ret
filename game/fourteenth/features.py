@@ -179,6 +179,13 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="vietnamops",
         settings_fields=("vietnam_super_gaggle",),
     ),
+    Feature(
+        "vietnam_fac_marking",
+        "FAC(A) willie-pete target marking",
+        38,
+        plugin_id="vietnamops",
+        settings_fields=("vietnam_fac_marking",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

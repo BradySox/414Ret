@@ -466,6 +466,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "vietnam_convoy_interdiction",
                     "vietnam_airbase_harassment",
                     "vietnam_super_gaggle",
+                    "vietnam_fac_marking",
                 ],
             ),
         ],
@@ -2060,6 +2061,18 @@ class Settings:
             "outpost (fly launch field -> outpost -> back, re-rolling on a cadence), which "
             "you can fly escort for -- modelling the Khe Sanh 'Super Gaggle'. Needs a "
             "friendly forward outpost near the front, or it has no effect."
+        ),
+        default=False,
+    )
+    vietnam_fac_marking: bool = boolean_option(
+        "FAC(A) willie-pete target marking",
+        VIETNAM_OPS_PAGE,
+        "Battlefield & interdiction",
+        detail=(
+            "Airborne forward air controllers (OV-10 Broncos loitering near the front) mark "
+            "nearby enemy ground with white-phosphorus smoke so you can visually acquire the "
+            "target and roll in -- the iconic Vietnam FAC. Needs a friendly OV-10 airborne "
+            "over the battle area, or it has no effect."
         ),
         default=False,
     )

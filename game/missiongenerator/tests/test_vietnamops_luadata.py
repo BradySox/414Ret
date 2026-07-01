@@ -46,6 +46,7 @@ def _emit(
     harassment: bool = False,
     coalitions: list[Any] | None = None,
     super_gaggle: bool = False,
+    fac: bool = False,
 ) -> str:
     root = LuaData("dcsRetribution")
     game = SimpleNamespace(
@@ -56,6 +57,7 @@ def _emit(
             vietnam_convoy_interdiction=convoy,
             vietnam_airbase_harassment=harassment,
             vietnam_super_gaggle=super_gaggle,
+            vietnam_fac_marking=fac,
         ),
         theater=SimpleNamespace(
             ground_objects=ground_objects or [],
@@ -128,6 +130,25 @@ def test_flak_and_arc_light_are_independent() -> None:
     lua = _emit([], arc_light=False, flak=True)
     assert "flak" in lua
     assert "arcLight" not in lua
+
+
+def test_fac_marker_emitted_when_on() -> None:
+    lua = _emit([], fac=True)
+    assert "VietnamOps" in lua
+    assert "fac" in lua
+    assert "enabled" in lua
+
+
+def test_fac_off_no_node() -> None:
+    lua = _emit([], fac=False)
+    assert "VietnamOps" not in lua
+
+
+def test_fac_is_independent_of_flak() -> None:
+    # FAC on, flak off: a fac node, no flak node (the on-markers don't leak into each other).
+    lua = _emit([], fac=True)
+    assert "fac" in lua
+    assert "flak" not in lua
 
 
 def test_no_arclight_record_without_eligible_bombers() -> None:

@@ -64,8 +64,8 @@ died flew into the auto-AAA or made repeat passes.
 | **ZSU-23-4 Shilka** | radar-directed 23 mm | accurate — terrain-mask, re-attack from a new axis |
 | **ZSU-57-2 / S-60** | 57 mm (optical) | reaches medium alt — roll in from above, dive, egress jinking |
 | **ZU-23 + 12.7/14.5 mm** | low auto-AAA | lethal low — one pass, vary heading, don't loiter |
-| **The airstrip approach** | the gauntlet | guns range the Khe Sanh strip — suppress before the airlift commits |
-| **MiG-17F (token) / SA-2 (depth)** | — | 🟡 gameplay only — no real MiG/SAM threat at Khe Sanh |
+| **The airstrip approach** | the gauntlet | guns range the Khe Sanh strip — and the harassment runtime shells it — suppress before the airlift commits |
+| **MiG-17F (token) / SA-2 ×4 (depth)** | — | 🟡 gameplay only — guns-only GCI ambushers + a deep-rear SAM problem for the Linebacker phases; no real MiG/SAM threat at Khe Sanh |
 
 ---
 
@@ -74,10 +74,15 @@ died flew into the auto-AAA or made repeat passes.
 1. **The artillery** — Co Roc 130/152 mm + the hill guns. Air-only target; it does the killing. **#1.**
 2. **The armor at Lang Vei** — PT-76 / T-54. Kill it before it hits the wire.
 3. **Massed infantry / assembly areas** — the **Arc Light** set.
-4. **Approach trenches + the supply road/bridges** — interdiction (cut the spans).
-5. **Operation Pegasus** — push up Route 9, link up with Khe Sanh, break the siege.
+4. **Approach trenches + the supply road/bridges** — interdiction (cut the spans; the Route 9
+   convoys are real reinforcements).
+5. **Operation Pegasus** — **Air Assault** captures up the Route 9 axis (the static front bends
+   but never sweeps — the helos take the ground), link up with Khe Sanh, break the siege.
 
-*Full target deck + courses of action: [intel assessment §VIII](Khe-Sanh-Intel-Assessment).*
+*Everything above is legal from turn 1 — the **ROE arc** locks only the deep target classes and
+the northern sanctuary until the Linebacker phases release them
+([handbook §3](Khe-Sanh-Campaign-Briefing#3--the-war-upstairs--political-will--the-roe-arc)).
+Full target deck + courses of action: [intel assessment §VIII](Khe-Sanh-Intel-Assessment).*
 
 ---
 

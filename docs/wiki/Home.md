@@ -95,11 +95,19 @@ campaign files (ORBAT, threats, and economy read straight from the campaign + fa
 ### Khe Sanh: Operation Niagara *(historical, 1968 — rooted in the real siege)*
 
 - **[Khe Sanh — Required Mods](Khe-Sanh-Required-Mods)** — the squadron install list: every required mod/module, what it adds, whether it's free, and where to download it. Read this first.
-- **[Khe Sanh — Campaign Briefing](Khe-Sanh-Campaign-Briefing)** — the brief-builder: friendly/enemy ORBAT, the siege win-geometry, phase plan, op-night runbook, mission-brief template, package recipes, comms/FAC card, and the AAA threat-defeat reference.
+- **[Khe Sanh — Campaign Briefing](Khe-Sanh-Campaign-Briefing)** — the brief-builder: friendly/enemy ORBAT, the siege win-geometry, the **political-will / ROE arc playbook** (Rolling Thunder → Linebacker II), the phase plan, op-night runbook, mission-brief template, package recipes, comms/FAC card, and the AAA threat-defeat reference.
 - **[Khe Sanh — Role Cards](Khe-Sanh-Role-Cards)** — print-and-fly kneeboard cards per player role, with period-1968 loadouts.
 - **[Khe Sanh — First Three Turns](Khe-Sanh-First-Three-Turns)** — a worked example of the brief template across the opening turns.
 - **[Khe Sanh — Intel Assessment](Khe-Sanh-Intel-Assessment)** — the historical intelligence pack (real OOB, commanders, Niagara/Pegasus) + threat card + read-aloud brief.
 - **[Khe Sanh — Visual Briefing](Khe-Sanh-Visual-Briefing)** — the siege map, AAA threat profile, and target-priority / ORBAT diagrams.
+
+### Red Flag 81-2 *(Nevada, 1981 — the exercise played as the war it rehearses)*
+
+- **[Red Flag 81-2 — Required Mods](Red-Flag-81-2-Required-Mods)** — the (short) install list: VWV + the OV-10, plus the era modules. Read this first.
+- **[Red Flag 81-2 — Campaign Briefing](Red-Flag-81-2-Campaign-Briefing)** — the brief-builder: the exercise framing, the escalation arc and **the Box**, ORBAT, package recipes, and the emulator-array threat-defeat reference.
+- **[Red Flag 81-2 — Role Cards](Red-Flag-81-2-Role-Cards)** — print-and-fly kneeboard cards per player role, with period-1981 loadouts.
+- **[Red Flag 81-2 — First Three Turns](Red-Flag-81-2-First-Three-Turns)** — a worked example of Week One: map the array, Iron Hand the corridor, kill the armor.
+- **[Red Flag 81-2 — Intel Assessment](Red-Flag-81-2-Intel-Assessment)** — the real-exercise study (Red Baron → Red Flag, the aggressors, Constant Peg at Tonopah, the range array) + threat card + read-aloud brief.
 
 ## Customization and modding
 

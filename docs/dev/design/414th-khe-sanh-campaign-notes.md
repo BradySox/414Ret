@@ -10,9 +10,13 @@ as the air-only relief pocket. Leftover Yankee-Station FOBs were stripped (1 blu
 defenses are **faction-generated from the inherited preset-location markers** (the correct
 Retribution mechanism — not hand-placed groups): verified the red ring carries heavy AAA +
 armor (incl. the Lang Vei armor group at Kobuleti, filled by NVA PT-76/`[CH] T-54`) + SAM
-sites + IADS C2. **Pending (authenticity tuning, non-blocking):** Khe Sanh/Kutaisi inherits
-Hanoi's 12 factories + 8 SAM sites — thin those for a firebase feel; relocate SA-2 to depth;
-then the **in-game flight verify**. The fork builder is `scratchpad/khe_build.py`. Standalone
+sites + IADS C2. **The authenticity tuning is DONE** (the `.miz` was fully rebuilt — inherited
+objects wiped, siege laydown hand-placed: AAA belt ~31 sites at the perimeter/approaches, exactly
+4 SA-2 in the deep rear, 13 armor groups, 3 IADS C2 cells) and the campaign has been **flown
+live** (July 2026 — the phase ribbon + the full W4 ROE arc verified in-game, checklist M3/M4).
+The player-facing docs live on the wiki (`docs/wiki/Khe-Sanh-*.md`, rewritten 2026-07-02 to the
+current build: campaign layer W1–W6, single-axis siege, halved air wing, TARPS recon, summer
+clock). The fork builder was `scratchpad/khe_build.py`. Standalone
 Vietnam campaign for Caucasus, distinct from `1968_Yankee_Station` (the broad North/South air
 war); this one is a **siege**.
 

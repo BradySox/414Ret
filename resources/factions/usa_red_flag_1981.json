@@ -1,0 +1,66 @@
+{
+  "country": "USA",
+  "name": "USA Red Flag 1981",
+  "authors": "414th JFG",
+  "description": "<p>The Blue Force of Red Flag 81-2: a TAC F-4E wing detachment to Nellis AFB with its supporting cast — A-10As fresh to the flag, OV-10 FACs, SAC Arc Light cells and the tanker bridge. Flies the Vietnam doctrine the exercise was built to rehearse.</p>",
+  "locales": [
+    "en_US"
+  ],
+  "aircrafts": [
+    "F-4E-45MC Phantom II",
+    "A-10A Thunderbolt II",
+    "OV-10A Bronco",
+    "RF-101B Voodoo",
+    "B-52H Stratofortress",
+    "C-130J-30",
+    "UH-1H Iroquois",
+    "CH-47D",
+    "AH-1W SuperCobra"
+  ],
+  "awacs": [
+    "E-3A"
+  ],
+  "tankers": [
+    "KC-135 Stratotanker"
+  ],
+  "frontline_units": [
+    "M113",
+    "M163 Vulcan Air Defense System",
+    "M60A3 \"Patton\"",
+    "M151A1C MUTT w/ 106mm Recoilless Rifle"
+  ],
+  "artillery_units": [
+    "M109A6 Paladin"
+  ],
+  "infantry_units": [
+    "Infantry M249",
+    "Infantry M4 Georgia"
+  ],
+  "logistics_units": [
+    "Truck M818 6x6",
+    "M151 1/4-ton 4x4 utility truck"
+  ],
+  "air_defense_units": [
+    "SAM Hawk SR (AN/MPQ-50)",
+    "M163 Vulcan Air Defense System",
+    "M48 Chaparral"
+  ],
+  "missiles": [],
+  "preset_groups": [
+    "Hawk"
+  ],
+  "naval_units": [],
+  "has_jtac": true,
+  "jtac_unit": "OV-10A Bronco",
+  "requirements": {
+    "OV-10A Bronco": "https://forum.dcs.world/topic/307951-ov-10a-bronco-mod-by-split-air-teamand-more/",
+    "Vietnam War Vessels (v3.2.0)": "https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/"
+  },
+  "doctrine": "vietnam",
+  "liveries_overrides": {
+    "KC-135 Stratotanker": [
+      "927th ARW USAF",
+      "412th FLTS USAF KC-135R"
+    ]
+  }
+}

@@ -89,13 +89,14 @@ def _add_dog_ear_if_needed(force_group: ForceGroup) -> None:
     Soviet factions have no direct Dog Ear access, so the unit has to be added to
     the group itself, but only when a layout actually has a slot for it. The
     generic SHORAD layout is shared by every faction, so it is additionally gated
-    to Soviet SHORAD (marker units) to avoid handing a Sborka to e.g. US Avengers;
-    the dedicated Soviet SAM-site layouts (SA-2/3/5, S-300) carry the slot only in
-    their own templates, so no extra gate is needed there.
+    to Soviet SHORAD (marker units) to avoid handing a Sborka to e.g. US Avengers.
+    SHORAD groups only: the Sborka is a regimental SHORAD acquisition radar, not
+    part of SA-2/3/5 or S-300 site TO&E (and a mid-1980s anachronism at the
+    Vietnam-era SA-2 sites), so the SAM-site layouts carry no Dog Ear slot.
     """
     if not _layout_offers_dog_ear(force_group.layouts):
         return
-    if GroupTask.SHORAD in force_group.tasks and not _has_soviet_shorad(
+    if GroupTask.SHORAD not in force_group.tasks or not _has_soviet_shorad(
         force_group.units
     ):
         return

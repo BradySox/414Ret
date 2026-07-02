@@ -266,3 +266,157 @@ def test_shell_sanity_regen_refills_and_cache_kills_throttle() -> None:
     _run_turns(game, 3, 4)
     assert cp.base.total_armor == 9  # 8 + floor(0.5*2) = 9, hole still open
     assert cp.base.total_armor < 12
+
+
+# ---- the TGO revival channel (C3: air-assault laydowns have no Base garrison) -----
+
+
+def _cell_unit(
+    *, alive: bool, unit_class: UnitClass = UnitClass.IFV, price: int = 2
+) -> Any:
+    unit = SimpleNamespace(
+        alive=alive,
+        is_vehicle=True,
+        unit_type=SimpleNamespace(unit_class=unit_class, price=price),
+        ground_object=None,
+    )
+    return unit
+
+
+def _cell_tgo(name: str, units: list[Any]) -> Any:
+    tgo = SimpleNamespace(category="vehicle", name=name, units=units)
+    for unit in units:
+        unit.ground_object = tgo
+    return tgo
+
+
+def test_revival_refills_dead_tgo_cells_toward_the_anchor() -> None:
+    # The C3 laydown: no Base garrison at all -- the stronghold's force is its
+    # vehicle-group TGOs. 4 alive at anchor; 3 die; full health revives 2/turn.
+    units = [_cell_unit(alive=True) for _ in range(4)]
+    cells = _cell_tgo("Stronghold cells", units)
+    cp = _cp(caches=[cells])
+    game = _game(turn=0, cps=[cp])
+    regenerate_insurgent_cells(game)  # snapshot: tgo_cap 4
+    assert game.coin_state["cp-1"]["tgo_cap"] == 4
+    for unit in units[:3]:
+        unit.alive = False
+    _run_turns(game, 1, 1)
+    assert sum(1 for u in units if u.alive) == 3
+    _run_turns(game, 2, 2)
+    assert sum(1 for u in units if u.alive) == 4
+    _run_turns(game, 3, 6)
+    assert sum(1 for u in units if u.alive) == 4  # revive, never grow
+
+
+def test_revival_respects_the_whitelist() -> None:
+    # Anchor = the eligible alive set at snapshot; a dead BMP (IFV over the price
+    # ceiling) and a dead SAM are outside the whitelist AND the anchor -- they
+    # never come back. Killing the anchored technical opens a revivable slot.
+    technical = _cell_unit(alive=True, unit_class=UnitClass.IFV, price=2)
+    bmp = _cell_unit(alive=False, unit_class=UnitClass.IFV, price=16)
+    sam = _cell_unit(alive=False, unit_class=UnitClass.LAUNCHER, price=9)
+    cells = _cell_tgo("Mixed cells", [technical, bmp, sam])
+    cp = _cp(caches=[cells])
+    game = _game(turn=0, cps=[cp])
+    regenerate_insurgent_cells(game)
+    # Anchor counts only eligible units: the one alive technical.
+    assert game.coin_state["cp-1"]["tgo_cap"] == 1
+    technical.alive = False
+    _run_turns(game, 1, 4)
+    assert technical.alive is True
+    assert bmp.alive is False
+    assert sam.alive is False
+
+
+def test_revival_is_cache_throttled_too() -> None:
+    caches = [_cache(), _cache()]
+    units = [_cell_unit(alive=True) for _ in range(8)]
+    cells = _cell_tgo("Cells", units)
+    cp = _cp(caches=caches + [cells])
+    game = _game(turn=0, cps=[cp])
+    regenerate_insurgent_cells(game)
+    for cache in caches:
+        cache.units[0].alive = False
+    for unit in units[:6]:
+        unit.alive = False
+    _run_turns(game, 1, 4)
+    # Floor rate 0.5/turn: 2 units over 4 turns, not 8.
+    assert sum(1 for u in units if u.alive) == 4
+
+
+def test_armor_channel_takes_priority_over_revival() -> None:
+    # A CP with BOTH a garrison deficit and a dead anchored cell: the 2/turn
+    # budget fills the garrison first, then revives with the remainder.
+    units = [_cell_unit(alive=True), _cell_unit(alive=True)]
+    cells = _cell_tgo("Cells", units)
+    cp = _cp(garrison={TECHNICAL: 4}, caches=[cells])
+    game = _game(turn=0, cps=[cp])
+    regenerate_insurgent_cells(game)  # caps: garrison 4, tgo 2
+    cp.base.commit_losses({TECHNICAL: 1})
+    units[1].alive = False
+    _run_turns(game, 1, 1)
+    assert cp.base.total_armor == 4  # 1 commissioned
+    assert units[1].alive is True  # 1 revived with the remaining budget
+
+
+def test_revive_fires_tgo_events_when_provided() -> None:
+    updated = []
+    events = SimpleNamespace(update_tgo=lambda tgo: updated.append(tgo))
+    unit = _cell_unit(alive=True)
+    cells = _cell_tgo("Cells", [unit])
+    cp = _cp(caches=[cells])
+    game = _game(turn=0, cps=[cp])
+    regenerate_insurgent_cells(game, events)
+    unit.alive = False
+    game.turn = 1
+    regenerate_insurgent_cells(game, events)
+    assert unit.alive is True
+    assert updated == [cells]
+
+
+# ---- the C3 campaign definition lock ----------------------------------------------
+
+
+def test_enduring_resolve_campaign_definition() -> None:
+    # CI lock on the COIN campaign's authored blocks: a typo in the will profile or
+    # arc degrades silently at runtime (by design), so the shipped YAML is asserted
+    # here instead.
+    from pathlib import Path
+
+    import yaml
+
+    from game.fourteenth.phases import parse_phases
+    from game.fourteenth.political_will import parse_will_profile
+
+    path = Path("resources/campaigns/coin_enduring_resolve.yaml")
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    # The whole COIN stack preseeds on.
+    for key in (
+        "coin_insurgency",
+        "vietnam_political_will",
+        "vietnam_convoy_interdiction",
+        "vietnam_airbase_harassment",
+    ):
+        assert data["settings"][key] is True, key
+    # The miz the tool builds ships next to the yaml.
+    assert (path.parent / data["miz"]).exists()
+    # The original zeroed the economy; the fork restores a small real income.
+    assert data["recommended_enemy_money"] > 0
+
+    profile = parse_will_profile(data["will"])
+    assert profile.blue.label == "The Coalition's mandate"
+    assert profile.red.label == "the insurgency's momentum"
+    assert profile.weights.red_cache_lost == 4.0
+    assert profile.weights.red_ground_unit_lost == 0.05  # body count buys nothing
+    assert profile.weights.blue_passive_regen == 0.0  # time drains a mandate
+
+    arc = parse_phases(data["phases"])
+    assert [phase.key for phase in arc] == ["disrupt", "clear_hold", "build"]
+    for phase in arc:
+        # The caches must always be legal targets -- never lock ammo (or anything).
+        assert phase.locked_target_classes == ()
+        # The population-center rings are permanent, coordinate-anchored.
+        assert len(phase.restricted_zones) == 2
+        assert all(z.x is not None and z.y is not None for z in phase.restricted_zones)

@@ -1,0 +1,201 @@
+---
+name: Afghanistan - Operation Enduring Resolve (COIN)
+theater: Afghanistan
+authors: 414th JFG (fork of Starfire's Operation Shattered Dagger)
+description: >-
+  <p><strong>Helmand and Kandahar, 2006 — the first living counterinsurgency campaign.</strong>
+  The insurgency holds a web of strongholds and captured FOBs across the south, and it does not
+  fight like an army. Its cells <strong>regenerate</strong>: every insurgent-held stronghold
+  quietly refills toward its original strength each turn, fed by hidden <strong>ammo caches</strong>
+  and the ratline of trail convoys. Body count alone wins nothing here.</p>
+  <p>Find the caches (recon them — then strike them) to collapse a stronghold's regeneration,
+  interdict the supply trail, and take the strongholds back with air assaults. The war is decided
+  by the <strong>will meters</strong>: the Coalition's mandate bleeds from every airframe lost,
+  every base lost, and every strike into a population center; the insurgency's momentum bleeds
+  from its caches, its convoys, and its strongholds — almost never from its dead fighters.
+  Break their momentum before your mandate runs out.</p>
+  <p>Laydown by Starfire (Operation Shattered Dagger); the COIN layer — cache-throttled cell
+  regeneration, the inverted will economy, and the campaign arc — is the 414th's.</p>
+recommended_player_faction: USA 2005
+recommended_enemy_faction: Toyota Al Gaib 2001
+miz: coin_enduring_resolve.miz
+performance: 1
+recommended_start_date: 2006-04-24
+# A small real income (the original zeroed it entirely because the stock economy
+# bought SAMs): the C1 regen engine is the insurgency's real supply, and the ratline
+# needs rear units to move. Kept low so procurement stays a trickle.
+recommended_enemy_money: 250
+recommended_enemy_income_multiplier: 0.25
+version: "10.8"
+settings:
+  squadron_start_full: true
+  # The COIN stack (feature docs: 414th-coin-insurgent-replenishment-notes.md):
+  # cache-throttled cell regeneration + the ratline + FOB standoff fire + the
+  # will economy that decides the war.
+  coin_insurgency: true
+  vietnam_convoy_interdiction: true
+  vietnam_airbase_harassment: true
+  vietnam_political_will: true
+
+# The inverted COIN will economy (design note §4): the insurgency's dead fighters are
+# nearly free; its caches, convoys, and strongholds are the currency. The Coalition
+# pays for airframes, bases, ROE violations near the towns — and gets no passive
+# regen, because time itself drains a mandate.
+will:
+  blue:
+    label: The Coalition's mandate
+    exhaustion_title: The Coalition withdraws
+    exhaustion_body: >-
+      The mandate is spent -- the capitals order the drawdown, and the valleys
+      go back to the shadows.
+  red:
+    label: the insurgency's momentum
+    exhaustion_title: The insurgency collapses
+    exhaustion_body: >-
+      The caches are ash, the ratline is cut, and the fighters melt away --
+      the valleys go quiet.
+  weights:
+    blue_airframe_loss: 2.0
+    blue_roe_violation: 6.0
+    blue_base_lost: 5.0
+    blue_passive_regen: 0.0
+    red_ground_unit_lost: 0.05
+    red_base_lost: 5.0
+    red_cache_lost: 4.0
+    red_passive_regen: 1.0
+
+# Clear -> Hold -> Build, will-coupled. The population-center rings are permanent
+# (every phase) -- collateral near the towns pays in mandate, never a hard block.
+# NOTE: never lock the `ammo` class -- the caches must always be legal targets.
+phases:
+  - key: disrupt
+    name: Disrupt the Network
+    narrative: >-
+      Map the insurgency before you fight it: find the caches, cut the ratline,
+      and open the road out of Kandahar. The strongholds can wait -- their supply
+      cannot.
+    emphasis: interdiction
+    objectives:
+      - Recon and destroy ammo caches -- each one killed slows that stronghold's regeneration
+      - Interdict the trail convoys -- the ratline feeds the momentum meter
+      - text: Retake FOB Frontenac -- the gate out of Kandahar
+        done_when:
+          capture_cp: FOB Frontenac
+    restricted_zones:
+      # Coordinate-anchored: Bost/Herat are neutral fields that never instantiate
+      # as control points in this laydown, so `center:` cannot resolve them.
+      - x: -267202.1
+        y: -170619.6
+        radius_nm: 8
+        name: Lashkar Gah -- population center
+      - x: 25820.9
+        y: -371274.6
+        radius_nm: 8
+        name: Herat -- population center
+    advance_when:
+      capture_cp: FOB Frontenac
+  - key: clear_hold
+    name: Clear and Hold
+    min_turn: 10
+    red_tempo:
+      trail_surge: 2.0
+    narrative: >-
+      Take the strongholds back with air assaults -- and hold them. The network
+      answers with a supply surge; a cleared stronghold left alone invites the
+      shadows back in.
+    emphasis: offensive
+    objectives:
+      - text: Clear the Helmand ring -- retake Kamp Hadrian
+        done_when:
+          capture_cp: Kamp Hadrian
+      - text: Bleed the momentum below half
+        done_when:
+          red_resolve_below: 50
+      - Hold what you clear -- garrisons and patience beat body count
+    restricted_zones:
+      # Coordinate-anchored: Bost/Herat are neutral fields that never instantiate
+      # as control points in this laydown, so `center:` cannot resolve them.
+      - x: -267202.1
+        y: -170619.6
+        radius_nm: 8
+        name: Lashkar Gah -- population center
+      - x: 25820.9
+        y: -371274.6
+        radius_nm: 8
+        name: Herat -- population center
+    advance_when:
+      red_resolve_below: 45
+  - key: build
+    name: Break the Momentum
+    min_turn: 20
+    narrative: >-
+      The network is cracking. Keep the caches dead, keep the strongholds held,
+      and take the war to Tarinkot -- momentum, once broken, does not come back.
+    emphasis: offensive
+    objectives:
+      - text: Retake Tarinkot -- the insurgency's northern anchor
+        done_when:
+          capture_cp: Tarinkot
+      - text: Break the insurgency's momentum
+        done_when:
+          red_resolve_below: 25
+    restricted_zones:
+      # Coordinate-anchored: Bost/Herat are neutral fields that never instantiate
+      # as control points in this laydown, so `center:` cannot resolve them.
+      - x: -267202.1
+        y: -170619.6
+        radius_nm: 8
+        name: Lashkar Gah -- population center
+      - x: 25820.9
+        y: -371274.6
+        radius_nm: 8
+        name: Herat -- population center
+
+squadrons:
+  #Kandahar
+  7:
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - C-130J-30
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - A-10C Thunderbolt II (Suite 7)
+      size: 4
+  # Kandahar Heliport
+  15:
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - UH-60A
+      size: 4
+    - primary: CAS
+      secondary: any
+      aircraft:
+        - OH-58D(R) Kiowa Warrior
+      size: 4
+  #Camp Bastion
+  10:
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - AV-8B Harrier II Night Attack
+      size: 4
+    - primary: AEW&C
+      aircraft:
+        - E-3A
+      size: 1
+  #Camp Bastion Heliport
+  13:
+    - primary: CAS
+      secondary: any
+      aircraft:
+        - AH-64D Apache Longbow
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - CH-47F Block I
+      size: 4

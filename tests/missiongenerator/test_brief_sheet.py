@@ -169,7 +169,7 @@ def test_brief_sheet_page_renders_and_colour_codes(tmp_path: Path) -> None:
         threat_word=None,
         bullseye="N50 E10",
         fields="Dep Hahn 21",
-        weather="",
+        weather="QNH 29.92 inHg / 1013 hPa · Wind 240°/12kt",
         loadout="2× AGM-88",
         laser="1688",
         sar=[("King", "Toxic")],
@@ -182,7 +182,7 @@ def test_brief_sheet_page_renders_and_colour_codes(tmp_path: Path) -> None:
     page.write(out)
     assert out.exists()
     text = out.with_suffix(".txt").read_text("utf8")
-    for token in ("ROMAN 7", "HOLD", "BINGO", "Cobalt", "If down"):
+    for token in ("ROMAN 7", "HOLD", "BINGO", "Cobalt", "If down", "QNH"):
         assert token in text
 
 
@@ -242,6 +242,30 @@ def _flight() -> Any:
         laser_codes=[1688, None],
         combat_sar_king=None,
     )
+
+
+def test_brief_weather_reports_qnh_and_surface_wind() -> None:
+    gen = _generator()
+    gen.game.conditions = SimpleNamespace(  # type: ignore[assignment]
+        weather=SimpleNamespace(
+            atmospheric=SimpleNamespace(
+                qnh=SimpleNamespace(inches_hg=29.92), temperature_celsius=15.0
+            ),
+            wind=SimpleNamespace(at_0m=SimpleNamespace(direction=240.0, speed=6.0)),
+        )
+    )
+    gen.game.theater = None  # type: ignore[assignment]
+    line = gen._brief_weather(_flight())
+    assert line.startswith("QNH 29.92 inHg / 1013 hPa")
+    assert "Wind" in line and line.endswith("kt")
+    # No theater -> no field elevation -> raw sea-level QNH and no QFE.
+    assert "QFE" not in line
+
+
+def test_brief_weather_is_best_effort() -> None:
+    # The fake generator carries no weather at all: the WX field falls back to
+    # the fill-in blank rather than crashing sheet generation.
+    assert _generator()._brief_weather(_flight()) == ""
 
 
 def test_build_brief_sheet_data_populates_from_the_mission() -> None:

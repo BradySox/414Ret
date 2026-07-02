@@ -588,9 +588,11 @@ using measured data only and gain no new blast radius. A real `fuel:` block alwa
   consecutive strike points collapses to one `TGT` range, bullseye/divert are skipped as they have their
   own fields, and the block wraps at entry boundaries — large packages routinely take 2-3 lines),
   admin (bingo/joker/divert), threats (air + SAM), game plan, comms, code words, bullseye, fields
-  (RWY/ATC/TCN), loadout, laser codes and Combat SAR — all **auto-filled** by
+  (RWY/ATC/TCN), WX (departure-field **QNH/QFE** — the same temperature-corrected altimeter the ATIS
+  reports, via the shared `_airfield_elevation_m` lookup — + surface wind), loadout, laser codes and
+  Combat SAR — all **auto-filled** by
   `KneeboardGenerator._build_brief_sheet_data` and **colour-coded** (blue nav/comms, amber threats/fuel,
-  green success, red abort). The detailed steerpoint table + weather drop off the kneeboard (the route
+  green success, red abort). The detailed steerpoint table + weather *page* drop off the kneeboard (the route
   block is compact mode's per-waypoint nav+timing surface; times are HH:MM — the header TOT and the
   jet's locked ETAs carry the seconds). The `BriefingPage` "Game Plan" + BLUF survive for the
   **full (non-compact) deck** only.
@@ -2312,7 +2314,10 @@ page you open to first is now a *summary*, with the Threats/Comms detail pages b
   the enemy faction's fighters (`_brief_air_threats`, `faction.aircraft` filtered by
   `capable_of(BARCAP)`), kept loose to respect fog. **Game plan** = the most-lethal system's defeat note.
 - The rest re-surface existing data: TOT, push/success/abort code words, bullseye, bingo/joker, divert,
-  comms (`self.awacs/tankers` + package freq), fields (RWY/ATC/TCN via `_brief_fields`), laser codes
+  comms (`self.awacs/tankers` + package freq), fields (RWY/ATC/TCN via `_brief_fields`), WX
+  (`_brief_weather`: departure-field QNH — temperature-corrected via `_airfield_elevation_m`, the same
+  lookup the full deck's weather block and recon ATIS use — QFE when the elevation is known, + surface
+  wind; best-effort, empty on any missing source), laser codes
   (`_brief_laser`, gated as §25), and Combat SAR (`_brief_sar`: King/Jolly/Sandy from the side's flights).
 
 **Fill-in blanks.** An empty field doesn't collapse — it renders a `______` rule (`_blank_line`) like the

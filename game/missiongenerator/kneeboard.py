@@ -573,6 +573,28 @@ class TableKneeboardPage(KneeboardPage):
         writer.write(path)
 
 
+def _airfield_elevation_m(
+    theater: Optional["ConflictTheater"], airfield_name: str
+) -> Optional[float]:
+    """DCS-mesh field elevation (m) of a named airfield, or None.
+
+    Looks up the airport via the theater's controlpoints (matched by airfield
+    name) and reads ``elevation_m`` from ``resources/airport_imagery/<terrain>.json``.
+    None when no theater, no matching control point, or no elevation shipped.
+    Shared by the full deck's weather block and the Brief Sheet's WX line so both
+    walk the same lookup chain as the recon ATIS pipeline.
+    """
+    if theater is None or not airfield_name:
+        return None
+    for cp in theater.controlpoints:
+        dcs_ap = getattr(cp, "dcs_airport", None)
+        if dcs_ap is None:
+            continue
+        if cp.full_name == airfield_name or dcs_ap.name == airfield_name:
+            return _airport_imagery.field_elevation_for_airport(theater.terrain, dcs_ap)
+    return None
+
+
 class BriefingPage(KneeboardPage):
     """A kneeboard page containing briefing information."""
 
@@ -781,33 +803,8 @@ class BriefingPage(KneeboardPage):
             writer.table(codes, ["#", "Laser Code"])
 
     def _departure_elevation_m(self) -> Optional[float]:
-        """DCS-mesh field elevation (m) of the departure field, or None.
-
-        Looks up the departure airport via the theater's controlpoints (matched
-        by airfield name) and reads ``elevation_m`` from
-        ``resources/airport_imagery/<terrain>.json``. None when no theater, no
-        matching control point, or no elevation shipped.
-        """
-        if self.theater is None:
-            return None
-        dep = self.flight.departure
-        airport = None
-        for cp in self.theater.controlpoints:
-            dcs_ap = getattr(cp, "dcs_airport", None)
-            if dcs_ap is None:
-                continue
-            if cp.full_name == dep.airfield_name or dcs_ap.name == dep.airfield_name:
-                airport = dcs_ap
-                break
-        if airport is None:
-            return None
-        # Shared helper with the recon ATIS pipeline so both consumers walk
-        # the same lookup chain (load â†’ for_airport â†’ elevation_m). When
-        # this lookup changes (alt source for elevation, new key for
-        # matching airports), both surfaces update together.
-        return _airport_imagery.field_elevation_for_airport(
-            self.theater.terrain, airport
-        )
+        """DCS-mesh field elevation (m) of the departure field, or None."""
+        return _airfield_elevation_m(self.theater, self.flight.departure.airfield_name)
 
     def _altimeter_setting_inhg(self, elevation_m: Optional[float]) -> float:
         """Temperature-corrected altimeter-setting QNH (what ATIS reports) for a
@@ -4090,12 +4087,45 @@ class KneeboardGenerator(MissionInfoGenerator):
             threat_word=None,
             bullseye=coalition.bullseye.position.latlng().format_dms(),
             fields=self._brief_fields(flight),
-            weather="",
+            weather=self._brief_weather(flight),
             loadout=_brief_loadout(flight.units),
             laser=_brief_laser(flight.laser_codes),
             sar=self._brief_sar(flight),
             if_down="beacon on, squawk 7700, get to high ground, voice on GUARD",
         )
+
+    def _brief_weather(self, flight: FlightData) -> str:
+        """Compact WX line: the departure field's altimeter + surface wind.
+
+        QNH is the same temperature-corrected altimeter setting the full deck's
+        weather block and the in-sim ATIS report; QFE is included when the field
+        elevation is known. Best-effort like the rest of the sheet -- any missing
+        source falls back to the fill-in blank.
+        """
+        try:
+            weather = self.game.conditions.weather
+            airfield = flight.departure.airfield_name if flight.departure else ""
+            elevation_m = _airfield_elevation_m(self.game.theater, airfield)
+            qnh_inhg = weather.atmospheric.qnh.inches_hg
+            if elevation_m is not None:
+                qnh_inhg = altimeter_setting_inhg(
+                    qnh_inhg, elevation_m, weather.atmospheric.temperature_celsius
+                )
+            qnh = inches_hg(qnh_inhg)
+            parts = [f"QNH {qnh.inches_hg:.2f} inHg / {qnh.hecto_pascals:.0f} hPa"]
+            if elevation_m is not None:
+                qfe = inches_hg(compute_qfe_inhg(qnh_inhg, elevation_m))
+                parts.append(
+                    f"QFE {qfe.inches_hg:.2f} inHg / {qfe.hecto_pascals:.0f} hPa"
+                )
+            wind = weather.wind.at_0m
+            parts.append(
+                f"Wind {wind_from_deg(wind.direction)}°"
+                f"/{round(mps(wind.speed).knots)}kt"
+            )
+            return " · ".join(parts)
+        except Exception:
+            return ""
 
     def _brief_air_threats(self, flight: FlightData) -> str:
         """Loose, faction-derived air-threat line (the enemy's likely CAP fighters)."""

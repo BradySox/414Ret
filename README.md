@@ -152,7 +152,8 @@ and selected later upstream fixes.
   JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10` — every waypoint listed; multiple strike points collapse
   to one range),
   bingo/joker/divert, air + SAM threats, game plan, comms, code words, bullseye, fields (RWY/ATC/TCN),
-  loadout, laser codes, and Combat SAR — all filled in from the mission. Colour does the work: **blue** for
+  weather (departure-field **QNH/QFE** + surface wind), loadout, laser codes, and Combat SAR — all
+  filled in from the mission. Colour does the work: **blue** for
   nav and freqs, **amber** for threats and fuel, **green** for the success word, **red** for abort, so you
   find what you need at a glance. Empty fields keep a `______` fill-in blank, like a real brief sheet, so
   you can write the rest in. Behind it: **Threats & Targets** (your aimpoints over the enemy air-defense

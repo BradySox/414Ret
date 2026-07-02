@@ -540,7 +540,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (Red Tide handbook): header, mission, the **full labelled route — every steerpoint with number +
     planned time** (`HOLD 1 12:32 → TKR 2 12:38 → JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10`; consecutive
     strike points collapse to a range), admin, threats (air + SAM), game plan, comms, code words,
-    bullseye, fields (RWY/ATC/TCN), loadout, laser, Combat SAR — **auto-filled** by
+    bullseye, fields (RWY/ATC/TCN), WX (departure-field QNH/QFE + surface wind), loadout, laser,
+    Combat SAR — **auto-filled** by
     `_build_brief_sheet_data` (route from waypoints, loadout from the jet's pylons cleaned to ordnance, air
     threats from the enemy faction's fighters, the rest re-surfaced). It replaces the dense Game Plan/BLUF
     (which survives for the full non-compact deck). Empty fields render a `______` **fill-in blank**

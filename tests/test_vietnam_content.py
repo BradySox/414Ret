@@ -284,22 +284,30 @@ def test_vietnam_campaign_tightens_support_orbits(campaign_file: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "faction_file",
+    ("faction_file", "doctrine_name"),
     [
-        "USA 1970 Vietnam War.json",
-        "vietnam_1970.json",
-        "nva_1970.json",
-        "usa_1965.json",
+        # BLUE flies the offensive doctrine; Hanoi's factions fly the air-defense
+        # split (no Alpha Strike fan / escort reserve / forced strike escorts).
+        ("USA 1970 Vietnam War.json", "vietnam"),
+        ("usa_1965.json", "vietnam"),
+        ("vietnam_1970.json", "vietnam_air_defense"),
+        ("nva_1970.json", "vietnam_air_defense"),
     ],
 )
-def test_vietnam_factions_load_vietnam_doctrine(faction_file: str) -> None:
-    # End-to-end: the faction loader maps the JSON "vietnam" string to VIETNAM_DOCTRINE
-    # (P1 of the Vietnam Retribution mode), not the COLDWAR default.
-    from game.data.doctrine import VIETNAM_DOCTRINE
+def test_vietnam_factions_load_vietnam_doctrine(
+    faction_file: str, doctrine_name: str
+) -> None:
+    # End-to-end: the faction loader maps the JSON doctrine string to the right
+    # Vietnam doctrine (P1 + the red split), not the COLDWAR/MODERN default.
+    from game.data.doctrine import VIETNAM_AIR_DEFENSE_DOCTRINE, VIETNAM_DOCTRINE
 
+    expected = {
+        "vietnam": VIETNAM_DOCTRINE,
+        "vietnam_air_defense": VIETNAM_AIR_DEFENSE_DOCTRINE,
+    }[doctrine_name]
     data = json.loads((_FACTIONS / faction_file).read_text(encoding="utf-8"))
     faction = Faction.from_dict(data)
-    assert faction.doctrine is VIETNAM_DOCTRINE
+    assert faction.doctrine is expected
 
 
 def test_khe_sanh_carrier_squadrons_carrier_capable(

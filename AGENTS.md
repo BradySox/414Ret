@@ -99,6 +99,11 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-vietnam-red-tempo-notes.md` (**W6 — phase-coupled red tempo**: an optional authored
+    `red_tempo:` block per phase — `trail_surge` convoy multiplier during halts, a Tet/Easter
+    `ground_offensive` front-stance pulse still bounded by the W2b clamp, `resolve_regen` so a long
+    Bombing Halt costs BLUE leverage; authored-only, no schema change, the next Vietnam arc after
+    W0–W5 + the red doctrine split),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —
@@ -191,7 +196,12 @@ file. This guide is the map; those are the territory.
     suite lives inside: three thin layers over the one engine — a New Game "Vietnam" shell + content
     filter + a doctrine profile (`VIETNAM_DOCTRINE`) that renames taskings (MiGCAP/Iron Hand/Alpha
     Strike/Sandy) via a display-only override on `Doctrine` (never the persisted enum) and gates the
-    planner whitelist. **P0 (era tags) + P1 (doctrine model + 10-faction repoint) + P1b (display read-path)
+    planner whitelist — split 2026-07-01 into the offensive `VIETNAM_DOCTRINE` (BLUE + the what-if USSR
+    bomber faction) and `VIETNAM_AIR_DEFENSE_DOCTRINE` for Hanoi's factions (NVA/Vietcong/North Vietnam ×5):
+    same era identity (renames/whitelist/knife-fight ranges/`gci_ambush`) minus BLUE's offensive levers (no
+    Alpha Strike fan, no forced strike escorts, **no strike-escort reserve trimming the defensive BARCAP** —
+    red's air force IS its BARCAP, and the reserve was stealing MiGs from the W5 ambush posture).
+    **P0 (era tags) + P1 (doctrine model + 10-faction repoint) + P1b (display read-path)
     + P1c (period-authentic planner *numbers*: A2A engagement ranges shortened to the early-missile/gun era
     — `cap_engagement_range` 35→22 NM, `escort_engagement_range` 20→10 NM so MiGCAP/escort fight close not
     BVR; `rtb_speed` 450→400 kt; and a `VIETNAM_GROUND_PROCUREMENT` OOB that is infantry/artillery/AAA-heavy

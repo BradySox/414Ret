@@ -464,9 +464,29 @@ VIETNAM_DOCTRINE = replace(
     ground_unit_procurement_ratios=VIETNAM_GROUND_PROCUREMENT,
 )
 
+# The red half of the Vietnam air war. Hanoi's air arm was a pure GCI air-defense
+# force: it massed nothing and escorted nothing (the NVAF flew essentially zero
+# offensive strikes) -- it AMBUSHED. Same era identity as VIETNAM_DOCTRINE (the
+# display renames, tasking whitelist, knife-fight ranges, subsonic RTB, ground OOB,
+# gci_ambush) minus BLUE's offensive levers: no Alpha Strike fan, no forced strike
+# escorts, and critically NO strike-escort reserve -- banking MiGs for strike
+# escorts would trim the defensive BARCAP that IS this force's entire job and
+# starve the W5 ambush posture. Point the red Vietnam factions (NVA/Vietcong/
+# North Vietnam) here; the what-if "USSR 1971" faction keeps the offensive
+# VIETNAM_DOCTRINE (if you field Badgers, massed raids are the point).
+VIETNAM_AIR_DEFENSE_DOCTRINE = replace(
+    VIETNAM_DOCTRINE,
+    name="vietnam_air_defense",
+    strike_flight_count=1,
+    always_escort_strikes=False,
+    strike_escort_reserve=0,
+    escort_support_aircraft=True,
+)
+
 ALL_DOCTRINES = [
     COLDWAR_DOCTRINE,
     MODERN_DOCTRINE,
     WWII_DOCTRINE,
     VIETNAM_DOCTRINE,
+    VIETNAM_AIR_DEFENSE_DOCTRINE,
 ]

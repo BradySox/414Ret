@@ -58,7 +58,7 @@
   "requirements": {
     "Vietnam War Vessels (v3.2.0)": "https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/"
   },
-  "doctrine": "vietnam",
+  "doctrine": "vietnam_air_defense",
   "weapons_introduction_year_overrides": {
     "R-3R - AAM, radar guided": 1980,
     "R-60 x 2": 1980,

@@ -114,12 +114,29 @@ class PhaseCondition:
     phase's own ``min_turn`` is the scheduled escalation date. ``blue_will_below``
     couples escalation to the W1 political-will economy (Washington's patience for
     restraint runs out); ``enemy_iads_below`` releases escalation on rollback
-    progress (ratio vs. the turn-0 baseline).
+    progress (ratio vs. the turn-0 baseline). ``red_resolve_below`` reads Hanoi's
+    Regime Resolve and ``capture_cp`` a named control point falling to BLUE --
+    both usable as ``advance_when`` triggers and as objective ``done_when`` ticks.
     """
 
     min_turn: Optional[int] = None
     blue_will_below: Optional[float] = None
     enemy_iads_below: Optional[float] = None
+    red_resolve_below: Optional[float] = None
+    capture_cp: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class PhaseObjective:
+    """One line of a phase's objectives checklist (P2 'objectives', display).
+
+    ``done_when`` is an optional :class:`PhaseCondition` evaluated live for the
+    expander tick; None means a display-only bullet (guidance the engine can't
+    measure, e.g. "respect the sanctuaries").
+    """
+
+    text: str
+    done_when: Optional[PhaseCondition] = None
 
 
 @dataclass(frozen=True)
@@ -148,6 +165,11 @@ class CampaignPhase:
     #: Strike-target classes still locked in this phase (TGO ``category`` strings,
     #: plus the special ``"airfield"`` for OCA against a control point).
     locked_target_classes: tuple[str, ...] = ()
+    #: The phase's objectives checklist (P2 'objectives'): what this phase is FOR,
+    #: shown with live done-ticks in the arc expander. Display guidance, never a
+    #: gate -- transitions stay owned by min_turn/advance_when (or Tier-0
+    #: inference).
+    objectives: tuple[PhaseObjective, ...] = ()
     #: True for phases parsed from a campaign ``phases:`` block.
     authored: bool = False
     #: W6 red-tempo levers (authored-only; Tier-0 phases never set them -- see
@@ -181,6 +203,13 @@ ROLLBACK = CampaignPhase(
     key="rollback",
     name="Air Superiority",
     narrative="Win the air: degrade the SAM belt and blunt the enemy fighter force.",
+    objectives=(
+        PhaseObjective(
+            f"Roll the SAM belt back below {IADS_ROLLBACK_HOLD:.0%} strength",
+            done_when=PhaseCondition(enemy_iads_below=IADS_ROLLBACK_HOLD),
+        ),
+        PhaseObjective("Blunt the enemy fighter force (sweeps, OCA, intercepts)"),
+    ),
     emphasis=(
         "DegradeIads",
         "AttackAirInfrastructure",
@@ -197,6 +226,13 @@ INTERDICTION = CampaignPhase(
     key="interdiction",
     name="Interdiction",
     narrative="The air is largely won: choke enemy reinforcement and logistics.",
+    objectives=(
+        PhaseObjective(
+            f"Grind the enemy IADS below {IADS_OFFENSIVE_CEILING:.0%} strength",
+            done_when=PhaseCondition(enemy_iads_below=IADS_OFFENSIVE_CEILING),
+        ),
+        PhaseObjective("Choke reinforcement: kill convoys and rear-area depots"),
+    ),
     emphasis=(
         "InterdictReinforcements",
         "AttackAirInfrastructure",
@@ -213,6 +249,10 @@ OFFENSIVE = CampaignPhase(
     key="offensive",
     name="Offensive",
     narrative="Air won and the ground fight is live: take ground.",
+    objectives=(
+        PhaseObjective("Take enemy bases and push the front to the victory line"),
+        PhaseObjective("Keep the won air: CAS flows only while the SAMs stay down"),
+    ),
     # CaptureBases stays ahead of PlanFrontLineCas (losing fronts keep first claim
     # on the CAS jets -- the stock-order comment in nextaction.py).
     emphasis=(
@@ -525,6 +565,21 @@ def active_phase(game: "Game") -> Optional[CampaignPhase]:
 _ARC_CACHE: dict[str, tuple[CampaignPhase, ...]] = {}
 
 
+def _parse_condition(raw: object) -> Optional[PhaseCondition]:
+    """Parse an ``advance_when`` / objective ``done_when`` mapping, or None."""
+    if not raw:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError(f"condition must be a mapping: {raw!r}")
+    return PhaseCondition(
+        min_turn=raw.get("min_turn"),
+        blue_will_below=raw.get("blue_will_below"),
+        enemy_iads_below=raw.get("enemy_iads_below"),
+        red_resolve_below=raw.get("red_resolve_below"),
+        capture_cp=raw.get("capture_cp"),
+    )
+
+
 def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
     """Parse a campaign YAML ``phases:`` block into authored phases.
 
@@ -566,14 +621,23 @@ def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
                     name=str(zone.get("name", "")),
                 )
             )
-        advance = entry.get("advance_when")
-        condition = None
-        if advance:
-            condition = PhaseCondition(
-                min_turn=advance.get("min_turn"),
-                blue_will_below=advance.get("blue_will_below"),
-                enemy_iads_below=advance.get("enemy_iads_below"),
-            )
+        condition = _parse_condition(entry.get("advance_when"))
+        objectives = []
+        for objective in entry.get("objectives") or []:
+            if isinstance(objective, str):
+                objectives.append(PhaseObjective(text=objective))
+            elif isinstance(objective, dict) and "text" in objective:
+                objectives.append(
+                    PhaseObjective(
+                        text=str(objective["text"]),
+                        done_when=_parse_condition(objective.get("done_when")),
+                    )
+                )
+            else:
+                raise ValueError(
+                    f"objectives: entry must be a string or a mapping with "
+                    f"'text': {objective!r}"
+                )
         tempo = entry.get("red_tempo") or {}
         if not isinstance(tempo, dict):
             raise ValueError(f"red_tempo: must be a mapping: {tempo!r}")
@@ -587,6 +651,7 @@ def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
                 advance_when=condition,
                 restricted_zones=tuple(zones),
                 locked_target_classes=tuple(entry.get("locked_targets") or ()),
+                objectives=tuple(objectives),
                 authored=True,
                 trail_surge=float(tempo.get("trail_surge", 1.0)),
                 ground_offensive_turns=int(tempo.get("ground_offensive", 0)),
@@ -647,6 +712,17 @@ def _condition_satisfied(
         ratio = _enemy_sam_sites(game) / baseline.sam_sites
         if ratio < condition.enemy_iads_below:
             return True
+    if condition.red_resolve_below is not None:
+        resolve = getattr(getattr(game, "red", None), "political_will", None)
+        if resolve is not None and resolve < condition.red_resolve_below:
+            return True
+    if condition.capture_cp is not None:
+        for cp in game.theater.controlpoints:
+            if cp.name != condition.capture_cp:
+                continue
+            captured = getattr(cp, "captured", None)
+            if captured is not None and captured.is_blue:
+                return True
     return False
 
 
@@ -872,19 +948,112 @@ def _arc_for_display(game: "Game") -> tuple[CampaignPhase, ...]:
     return authored_arc_for(game) or (ROLLBACK, INTERDICTION, OFFENSIVE)
 
 
+#: How each Tier-0 phase advances (the classifier's own thresholds, spelled out
+#: for the expander -- an inferred arc should explain its transitions the same
+#: way an authored one does). The Offensive phase is terminal.
+_TIER0_ADVANCE = {
+    "rollback": (
+        f"Advances once the enemy IADS falls below {IADS_ROLLBACK_HOLD:.0%} "
+        "and the enemy air threat fades"
+    ),
+    "interdiction": (
+        f"Advances once the enemy IADS falls below {IADS_OFFENSIVE_CEILING:.0%} "
+        "and the front starts moving (or a base falls)"
+    ),
+    "offensive": "",
+}
+
+
+def _describe_condition(
+    game: "Game",
+    condition: PhaseCondition,
+    baseline: Optional[PhaseBaseline],
+    live: bool,
+) -> str:
+    """An ``advance_when`` set as prose; live values only on the active phase."""
+    bits = []
+    if condition.blue_will_below is not None:
+        now = ""
+        will = getattr(getattr(game, "blue", None), "political_will", None)
+        if live and will is not None:
+            now = f" (now {will:.0f})"
+        bits.append(f"will falls below {condition.blue_will_below:g}{now}")
+    if condition.enemy_iads_below is not None:
+        now = ""
+        if live and baseline is not None and baseline.sam_sites:
+            ratio = _enemy_sam_sites(game) / baseline.sam_sites
+            now = f" (now {ratio:.0%})"
+        bits.append(f"enemy IADS falls below {condition.enemy_iads_below:.0%}{now}")
+    if condition.red_resolve_below is not None:
+        now = ""
+        resolve = getattr(getattr(game, "red", None), "political_will", None)
+        if live and resolve is not None:
+            now = f" (now {resolve:.0f})"
+        bits.append(f"enemy resolve falls below {condition.red_resolve_below:g}{now}")
+    if condition.capture_cp is not None:
+        bits.append(f"{condition.capture_cp} is captured")
+    if condition.min_turn is not None:
+        bits.append(f"turn {condition.min_turn} arrives")
+    return " or ".join(bits)
+
+
+def _advance_display(
+    game: "Game", arc: tuple[CampaignPhase, ...], index: int, live: bool
+) -> str:
+    """How the arc LEAVES phase ``index``, for its expander row.
+
+    Authored phases spell out the ``advance_when`` acceleration (the schedule --
+    the next phase's ``min_turn`` -- already shows on the next row's header);
+    Tier-0 phases spell out the classifier thresholds they advance on. Empty for
+    a terminal phase or one with no early-out.
+    """
+    phase = arc[index]
+    if not phase.authored:
+        return _TIER0_ADVANCE.get(phase.key, "")
+    if index + 1 >= len(arc) or phase.advance_when is None:
+        return ""
+    baseline = getattr(game, "phase_baseline", None)
+    described = _describe_condition(game, phase.advance_when, baseline, live)
+    if not described:
+        return ""
+    return f"Escalates early if {described}"
+
+
+def _objective_states(game: "Game", phase: CampaignPhase) -> list[dict[str, object]]:
+    """The phase's objectives with live done-ticks (None = display-only)."""
+    baseline = getattr(game, "phase_baseline", None) or PhaseBaseline(
+        sam_sites=0, enemy_fighters=0
+    )
+    return [
+        {
+            "text": objective.text,
+            "done": (
+                None
+                if objective.done_when is None
+                else _condition_satisfied(game, objective.done_when, baseline)
+            ),
+        }
+        for objective in phase.objectives
+    ]
+
+
 def arc_overview(game: "Game") -> list[dict[str, object]]:
     """The whole phase arc for the client expander (W3 item-1 UI).
 
     One dict per phase: key/name/narrative, the scheduled ``min_turn`` (0 = not
     turn-pinned -- Tier-0 arcs advance adaptively), the locked target classes,
-    the zone names, and whether it is the current phase. Empty when phases are
-    off or no phase has resolved yet.
+    the zone names, whether it is the current phase, how the arc leaves it
+    (``advance`` -- the transition-transparency string, live values on the
+    current phase), and the objectives checklist with live done-ticks. Empty
+    when phases are off or no phase has resolved yet.
     """
     if active_phase(game) is None:
         return []
     current = getattr(game, "current_phase_key", None)
+    arc = _arc_for_display(game)
     overview: list[dict[str, object]] = []
-    for phase in _arc_for_display(game):
+    for index, phase in enumerate(arc):
+        is_current = phase.key == current
         overview.append(
             {
                 "key": phase.key,
@@ -896,7 +1065,9 @@ def arc_overview(game: "Game") -> list[dict[str, object]]:
                     zone.name or zone.center_cp or "Restricted zone"
                     for zone in phase.restricted_zones
                 ],
-                "current": phase.key == current,
+                "current": is_current,
+                "advance": _advance_display(game, arc, index, live=is_current),
+                "objectives": _objective_states(game, phase),
             }
         )
     return overview

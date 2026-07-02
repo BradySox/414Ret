@@ -235,6 +235,74 @@ def test_red_exhaustion_banner_is_era_framed() -> None:
     assert "Hanoi agrees to terms" in game.messages
 
 
+# ---- the attribution ledger ----------------------------------------------------------
+
+
+def test_ledger_records_labeled_moves_per_turn() -> None:
+    from game.fourteenth.political_will import ledger_notes, update_political_will
+
+    game = _game(pows_held=2)
+    game.turn = 5
+    update_political_will(
+        game,
+        _debrief(
+            blue_air_by_type={_aircraft_type("B-52H"): 1, _aircraft_type("F-4E"): 2},
+            red_counts=_counts(convoy=3),
+        ),
+    )
+    entry = game.will_ledger[-1]
+    assert entry.turn == 5
+    blue = dict(entry.blue_moves)
+    assert blue["heavy bombers x1 down"] == -BLUE_HEAVY_BOMBER_LOSS
+    assert blue["airframes x2 lost"] == -2 * BLUE_AIRFRAME_LOSS
+    assert blue["POWs held x2"] == -2 * BLUE_POW_HELD_PER_TURN
+    assert blue["passive regen"] == BLUE_PASSIVE_REGEN
+    red = dict(entry.red_moves)
+    assert red["trail convoys x3"] == -3 * RED_CONVOY_UNIT_LOST
+    # The deltas are the component sums, matching the meter movement exactly.
+    assert entry.blue_delta == sum(blue.values())
+    assert 100.0 - game.blue.political_will == -entry.blue_delta
+    # And the rendered notes lead with the delta.
+    blue_note, red_note = ledger_notes(game)
+    assert blue_note is not None and blue_note.startswith(f"{entry.blue_delta:+.1f}:")
+    assert red_note is not None and "trail convoys x3" in red_note
+
+
+def test_ledger_caps_its_length() -> None:
+    from game.fourteenth.political_will import WILL_LEDGER_CAP, update_political_will
+
+    game = _game()
+    for turn in range(WILL_LEDGER_CAP + 10):
+        game.turn = turn
+        update_political_will(game, _debrief())
+    assert len(game.will_ledger) == WILL_LEDGER_CAP
+    assert game.will_ledger[-1].turn == WILL_LEDGER_CAP + 9
+
+
+def test_ledger_untouched_when_off() -> None:
+    from game.fourteenth.political_will import latest_ledger_entry, ledger_notes
+
+    game = _game(on=False)
+    update_political_will(game, _debrief(blue_counts=_counts(aircraft=2)))
+    assert latest_ledger_entry(game) is None
+    assert ledger_notes(game) == (None, None)
+
+
+def test_format_moves_ranks_by_magnitude() -> None:
+    from game.fourteenth.political_will import format_moves
+
+    line = format_moves(
+        (
+            ("passive regen", 0.5),
+            ("heavy bombers x1 down", -6.0),
+            ("POWs held x1", -0.5),
+        ),
+        limit=2,
+    )
+    assert line.startswith("heavy bombers x1 down -6.0")
+    assert "POWs held" not in line  # ties broken by order, limit respected
+
+
 def test_game_stats_records_will_per_turn() -> None:
     # The will trend rides the existing game_stats per-turn series (the Stats
     # window / client sparkline source), not a bespoke history list.

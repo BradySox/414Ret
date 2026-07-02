@@ -57,6 +57,10 @@ class Sitrep:
     #: pre-W1 pickled sitreps -- read via getattr) hides the band line entirely.
     blue_will: Optional[float] = None
     red_will: Optional[float] = None
+    #: The turn's will attribution (the W1 ledger): one rendered top-movers line
+    #: per side, e.g. '-4.0: heavy bombers x1 down -6.0 · …'. None hides the lines.
+    blue_will_note: Optional[str] = None
+    red_will_note: Optional[str] = None
 
     @property
     def is_empty(self) -> bool:
@@ -79,6 +83,8 @@ class Sitrep:
         day: date,
         blue_will: Optional[float] = None,
         red_will: Optional[float] = None,
+        blue_will_note: Optional[str] = None,
+        red_will_note: Optional[str] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
         red = debriefing.loss_counts(Player.RED)
@@ -107,6 +113,8 @@ class Sitrep:
             pilots_recovered=len(debriefing.state_data.combat_sar_rescues),
             blue_will=blue_will,
             red_will=red_will,
+            blue_will_note=blue_will_note,
+            red_will_note=red_will_note,
         )
 
     def kneeboard_lines(self) -> List[str]:
@@ -130,6 +138,14 @@ class Sitrep:
                 f"Political will {blue_will:.0f}% -- enemy resolve {red_will:.0f}% "
                 "(est)"
             )
+            # The attribution ledger (why the numbers moved); absent on pre-ledger
+            # pickled sitreps and hidden whenever the will line itself is.
+            blue_note = getattr(self, "blue_will_note", None)
+            if blue_note:
+                lines.append(f"Will movers: {blue_note}")
+            red_note = getattr(self, "red_will_note", None)
+            if red_note:
+                lines.append(f"Enemy resolve movers: {red_note}")
         return lines
 
 

@@ -236,6 +236,16 @@ and selected later upstream fixes.
   match the phase — SEAD/OCA first while rolling back, BAI/Armed Recon in Interdiction, CAS and base
   capture on the push — while your defenses stay untouched. On by default; a single Campaign Management
   toggle turns it off. On the Vietnam campaigns the ribbon also carries the **political-will meters**.
+  Click the phase chip and the **arc expander** now reads like a war plan: every phase shows an
+  **objectives checklist with live ticks** (measurable goals — "break the SAM belt below 40%" — check
+  themselves off as the campaign state moves; guidance lines stay plain bullets) and spells out **when
+  and why the next phase arrives** — the schedule *and* the acceleration ("Escalates early if will
+  falls below 65 (now 100)"), for inferred arcs just as much as the authored Vietnam ones. Hover the
+  **WILL/RESOLVE meters** (or read the SITREP band) for the new **attribution ledger** — exactly which
+  feeds moved the number last turn ("heavy bombers ×1 down −6.0 · POWs held ×3 −1.5"), so the will
+  economy stops being a mystery meter. And when you plan a package onto an ROE-restricted target, the
+  package dialog now warns you **before you fly** — the strike is never blocked, but the political-will
+  bill is a knowing choice at planning instead of a surprise at debrief.
 - A new **Vietnam Ops** settings page holds opt-in period mechanics for the Vietnam-era
   campaigns (off by default; the Khe Sanh / Yankee Station campaigns turn the relevant ones
   on). The first is **Arc Light**: fly a **Strike with a heavy bomber** (B-52) and instead of a

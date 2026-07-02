@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
     from .fourteenth.phases import PhaseBaseline
+    from .fourteenth.political_will import WillLedgerEntry
     from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .navmesh import NavMesh
     from .sim import GameUpdateEvents
@@ -136,6 +137,10 @@ class Game:
         # W6 red tempo: the last turn resolve-regen was applied (idempotence
         # guard for the multiple-init-per-turn cases).
         self.red_tempo_regen_turn: Optional[int] = None
+        # Political-will attribution ledger (W1 legibility): one entry per flown
+        # turn saying WHY the will moved (per-feed components), appended by
+        # update_political_will and capped there. Empty outside Vietnam campaigns.
+        self.will_ledger: list["WillLedgerEntry"] = []
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -213,6 +218,7 @@ class Game:
         state.setdefault("phase_status_line", None)
         state.setdefault("phase_baseline", None)
         state.setdefault("red_tempo_regen_turn", None)
+        state.setdefault("will_ledger", [])
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.

@@ -32,6 +32,17 @@ class MapLayersJs(BaseModel):
     state: str | None = None
 
 
+class PhaseObjectiveJs(BaseModel):
+    """One objectives-checklist row for a phase (live tick in the expander).
+
+    ``done`` is None for display-only guidance the engine can't measure -- the
+    client renders a plain bullet instead of a tick box.
+    """
+
+    text: str
+    done: bool | None
+
+
 class PhaseArcEntryJs(BaseModel):
     """One phase of the campaign's arc, for the ribbon's expander panel."""
 
@@ -45,6 +56,12 @@ class PhaseArcEntryJs(BaseModel):
     #: Restricted-zone display names active in this phase.
     zones: list[str]
     current: bool
+    #: How the arc leaves this phase (transition transparency): the authored
+    #: ``advance_when`` acceleration spelled out with live values on the current
+    #: phase, or the Tier-0 classifier thresholds. Empty = terminal / schedule-only.
+    advance: str
+    #: The phase's objectives checklist with live done-ticks.
+    objectives: list[PhaseObjectiveJs]
 
 
 class CampaignEventJs(BaseModel):
@@ -75,6 +92,11 @@ class CampaignStatusJs(BaseModel):
     phase_narrative: str | None
     blue_will: float | None
     red_will: float | None
+    #: The latest flown turn's will attribution (the W1 ledger), one rendered
+    #: top-movers line per side -- the meter hover / expander note. None when the
+    #: ledger is empty or will tracking is off.
+    blue_will_note: str | None
+    red_will_note: str | None
     phases: list[PhaseArcEntryJs]
     #: (turn, blue, red) per flown turn, most recent last; capped for payload size.
     will_history: list[tuple[int, float, float]]
@@ -83,14 +105,18 @@ class CampaignStatusJs(BaseModel):
     @staticmethod
     def from_game(game: Game) -> CampaignStatusJs:
         from game.fourteenth.phases import active_phase, arc_overview
+        from game.fourteenth.political_will import ledger_notes
 
         phase = active_phase(game)
         blue_will: float | None = None
         red_will: float | None = None
+        blue_will_note: str | None = None
+        red_will_note: str | None = None
         history: list[tuple[int, float, float]] = []
         if getattr(game.settings, "vietnam_political_will", False):
             blue_will = getattr(game.blue, "political_will", None)
             red_will = getattr(game.red, "political_will", None)
+            blue_will_note, red_will_note = ledger_notes(game)
             # The will trend rides game_stats' per-turn series (one record per
             # turn, deduped across re-inits) -- the same source the Qt Stats
             # window charts, covering skipped turns as flat segments.
@@ -122,6 +148,8 @@ class CampaignStatusJs(BaseModel):
             phase_narrative=phase.narrative if phase is not None else None,
             blue_will=blue_will,
             red_will=red_will,
+            blue_will_note=blue_will_note,
+            red_will_note=red_will_note,
             phases=[PhaseArcEntryJs(**entry) for entry in arc_overview(game)],
             will_history=history,
             events=events,

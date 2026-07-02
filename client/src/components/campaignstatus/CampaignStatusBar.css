@@ -142,6 +142,42 @@
   font-size: 11px;
 }
 
+/* Transition transparency: how the arc leaves this phase (live values on the
+   current phase). Styled as a quiet footnote under the rules. */
+.campaign-phase-advance {
+  color: #b9a06a;
+  margin-top: 2px;
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* The phase objectives checklist: live done-ticks on measurable goals, plain
+   bullets on display-only guidance. */
+.campaign-phase-objectives {
+  list-style: none;
+  margin: 3px 0 0;
+  padding: 0;
+  font-size: 11px;
+}
+
+.campaign-phase-objectives li {
+  color: #aeb9c8;
+}
+
+.campaign-phase-objectives .objective-tick {
+  display: inline-block;
+  width: 14px;
+  color: #8593a5;
+}
+
+.campaign-phase-objectives .objective-done {
+  color: #7dbd8a;
+}
+
+.campaign-phase-objectives .objective-done .objective-tick {
+  color: #7dbd8a;
+}
+
 .campaign-status-panel-will {
   border-top: 1px solid #23344a;
   padding-top: 8px;
@@ -171,4 +207,22 @@
   stroke: #23344a;
   stroke-width: 1;
   stroke-dasharray: 4 4;
+}
+
+/* The will-attribution notes (why the meters moved last turn). */
+.campaign-status-panel-notes {
+  border-top: 1px solid #23344a;
+  padding-top: 6px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.will-note-blue {
+  color: #9db8d9;
+}
+
+.will-note-red {
+  color: #d9a3a3;
 }

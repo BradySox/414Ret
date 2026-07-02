@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from game.debriefing import Debriefing
 from game.data.units import FRONTLINE_UNIT_CLASSES
@@ -100,14 +100,23 @@ class MissionResultsProcessor:
         # turn. All inputs are debriefing-derived and unaffected by commit order,
         # so this can run last.
         # The will band rides along only when tracking is on (W1): record_political_will
-        # has already run this commit, so these are the turn's fresh values.
+        # has already run this commit, so these are the turn's fresh values -- and the
+        # ledger's latest entry is this turn's attribution (the movers lines).
         will_on = getattr(self.game.settings, "vietnam_political_will", False)
+        blue_note: Optional[str] = None
+        red_note: Optional[str] = None
+        if will_on:
+            from game.fourteenth.political_will import ledger_notes
+
+            blue_note, red_note = ledger_notes(self.game)
         self.game.last_sitrep = Sitrep.from_debriefing(
             debriefing,
             self.game.turn,
             self.game.current_day,
             blue_will=self.game.blue.political_will if will_on else None,
             red_will=self.game.red.political_will if will_on else None,
+            blue_will_note=blue_note,
+            red_will_note=red_note,
         )
 
     @staticmethod

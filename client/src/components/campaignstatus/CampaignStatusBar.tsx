@@ -91,12 +91,26 @@ export default function CampaignStatusBar() {
           </span>
         )}
         {status.blue_will != null && (
-          <span className="campaign-status-will campaign-status-will-blue">
+          <span
+            className="campaign-status-will campaign-status-will-blue"
+            title={
+              status.blue_will_note
+                ? `Last turn ${status.blue_will_note}`
+                : "Washington's political will"
+            }
+          >
             WILL {Math.round(status.blue_will)}
           </span>
         )}
         {status.red_will != null && (
-          <span className="campaign-status-will campaign-status-will-red">
+          <span
+            className="campaign-status-will campaign-status-will-red"
+            title={
+              status.red_will_note
+                ? `Last turn ${status.red_will_note}`
+                : "Hanoi's regime resolve"
+            }
+          >
             RESOLVE {Math.round(status.red_will)}
           </span>
         )}
@@ -129,6 +143,31 @@ export default function CampaignStatusBar() {
                     {phase.narrative}
                   </div>
                 )}
+                {phase.objectives.length > 0 && (
+                  <ul className="campaign-phase-objectives">
+                    {phase.objectives.map((objective, oidx) => (
+                      <li
+                        key={oidx}
+                        className={
+                          objective.done == null
+                            ? "objective-info"
+                            : objective.done
+                              ? "objective-done"
+                              : "objective-open"
+                        }
+                      >
+                        <span className="objective-tick">
+                          {objective.done == null
+                            ? "•"
+                            : objective.done
+                              ? "✓"
+                              : "○"}
+                        </span>
+                        {objective.text}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="campaign-phase-rules">
                   {phase.locked.length > 0 ? (
                     <span>
@@ -142,6 +181,9 @@ export default function CampaignStatusBar() {
                     <span> Sanctuary: {phase.zones.join(", ")}.</span>
                   )}
                 </div>
+                {phase.advance && (
+                  <div className="campaign-phase-advance">{phase.advance}.</div>
+                )}
               </div>
             </div>
           ))}
@@ -151,6 +193,20 @@ export default function CampaignStatusBar() {
                 Will over time
               </span>
               <WillSparkline history={history} />
+            </div>
+          )}
+          {(status.blue_will_note || status.red_will_note) && (
+            <div className="campaign-status-panel-notes">
+              {status.blue_will_note && (
+                <div className="will-note will-note-blue">
+                  WILL last turn {status.blue_will_note}
+                </div>
+              )}
+              {status.red_will_note && (
+                <div className="will-note will-note-red">
+                  RESOLVE last turn {status.red_will_note}
+                </div>
+              )}
             </div>
           )}
         </div>

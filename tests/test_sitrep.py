@@ -127,6 +127,40 @@ def test_will_band_renders_only_when_tracked() -> None:
     assert not any("Political will" in line for line in untracked.kneeboard_lines())
 
 
+def test_will_movers_lines_render_with_the_band() -> None:
+    # The attribution ledger notes ride under the will line; a sitrep without
+    # notes (or a pre-ledger pickle, which lacks the attrs entirely) shows none.
+    tracked = Sitrep(
+        7,
+        date(1968, 2, 1),
+        SideLosses(1, 0, 0),
+        SideLosses(0, 0, 0),
+        [],
+        [],
+        0,
+        blue_will=83.4,
+        red_will=91.0,
+        blue_will_note="-4.0: heavy bombers x1 down -6.0 · passive regen +0.5",
+        red_will_note="-1.0: trail convoys x1 -1.5 · passive regen +0.8",
+    )
+    lines = tracked.kneeboard_lines()
+    assert any(line.startswith("Will movers: -4.0") for line in lines)
+    assert any(line.startswith("Enemy resolve movers: -1.0") for line in lines)
+
+    bare = Sitrep(
+        7,
+        date(1968, 2, 1),
+        SideLosses(1, 0, 0),
+        SideLosses(0, 0, 0),
+        [],
+        [],
+        0,
+        blue_will=83.4,
+        red_will=91.0,
+    )
+    assert not any("movers" in line for line in bare.kneeboard_lines())
+
+
 def test_will_band_does_not_make_a_quiet_turn_reportable() -> None:
     quiet = Sitrep(
         3,

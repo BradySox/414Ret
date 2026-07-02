@@ -1,10 +1,22 @@
 # 414th — COIN insurgent replenishment — design notes
 
-**Status: DESIGN ONLY (2026-07-02).** Nothing here is built. This is the design-pass
-blocker for the COIN campaign called out in `414th-will-generalization-notes.md` §5/§6
-— squadron call 2026-07-02: COIN is the next campaign direction (Korea dropped), base
-skeleton = a fork of **Operation Shattered Dagger**, and **no campaign work starts
-until this model is agreed.**
+**Status: C1 LANDED (2026-07-02); C2–C4 design-only.** The regen core of §3 is built
+(`game/fourteenth/coin.py`, the `coin_insurgency` setting, the `finish_turn` hook,
+`tests/fourteenth/test_coin.py` — including the multi-turn shell-sanity test that is
+the C1.5 trigger bar). This note remains the spec for the rest of the C-series. It is
+the design pass for the COIN campaign called out in
+`414th-will-generalization-notes.md` §5/§6 — squadron call 2026-07-02: COIN is the
+next campaign direction (Korea dropped), base skeleton = a fork of **Operation
+Shattered Dagger**.
+
+One C1 implementation deviation from §3.1 as drafted: the unit whitelist is a class
+set **plus a price ceiling** (`REGEN_MAX_UNIT_PRICE` = 10). The unit data classes the
+insurgent *technicals* as IFV (price 2–4), so a flat "never IFV" rule would have
+excluded the signature insurgent unit; the ceiling is what actually keeps BMPs
+(14–16) and Grads (15) out while letting technicals, ZU-23s (4–6), and light MLRS
+trucks (10) in. Tanks/ATGMs/SAMs/radars stay excluded by class regardless of price.
+Caches bind by **TGO-to-CP ownership** (engine-native) rather than the drafted
+radius.
 
 ---
 
@@ -140,9 +152,13 @@ shows it's needed (per the generalization note §6).
 
 ## 6. Delivery plan (one PR each, C-series)
 
-- **C1 — the regen core**: `game/fourteenth/coin.py` (trickle + anchor cap + cache
-  health + whitelist), the `coin_insurgency` setting, `finish_turn` hook, full unit
-  tests (anchored cap, cache throttle + floor, whitelist, off-switch, no-op guards).
+- **C1 — the regen core** ✅ **LANDED 2026-07-02**: `game/fourteenth/coin.py`
+  (trickle + anchor cap + cache health + whitelist + fractional carry), the
+  `coin_insurgency` setting (Campaign Management, default OFF), the `finish_turn`
+  hook, `tests/fourteenth/test_coin.py` (anchored cap, cache throttle + floor,
+  whitelist, off-switch, blue/neutral guards, mid-campaign enable, multi-turn
+  shell sanity). State pickles as `game.coin_state` (plain dict, getattr-guarded —
+  pre-feature saves untouched).
 - **C1.5 — the re-infiltration design pass** (design only, squadron call §7.3):
   written **immediately after C1 is verified working** (headless multi-turn sanity —
   regen visibly refills a stronghold, cache kills visibly throttle it), before or in

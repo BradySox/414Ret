@@ -111,8 +111,14 @@ file. This guide is the map; those are the territory.
     infantry/technicals/AAA, gated `coin_insurgency` default OFF; will coupling inverts
     the Vietnam weights (body count ≈ worthless, caches/ROE/patience decide) via the
     `will:` profiles + a planned inert-by-default `red_cache_lost` weight; the §35 trail
-    machinery is the ratline. Delivery C1 regen core → C1.5 re-infiltration design pass
-    (owed immediately after C1 verifiably works — squadron call) → C2 will feed → C3
+    machinery is the ratline. Delivery: **C1 regen core LANDED 2026-07-02**
+    (`game/fourteenth/coin.py` + `coin_insurgency` (Campaign Management, default OFF) +
+    the `finish_turn` hook + `tests/fourteenth/test_coin.py`; whitelist = class set +
+    price ≤ 10 ceiling, because the unit data classes the insurgent technicals as IFV —
+    the ceiling, not the class, is what keeps BMPs/Grads out; caches bind by TGO-to-CP
+    ownership; state pickles as `game.coin_state`, getattr-guarded) → C1.5
+    re-infiltration design pass (owed immediately after C1 verifiably works — squadron
+    call; the headless bar is met by the shell-sanity test) → C2 will feed → C3
     campaign fork → C4 dispersed cells; §7 squadron calls RESOLVED 2026-07-02: 25 %
     cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved

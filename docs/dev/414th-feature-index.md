@@ -54,6 +54,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §40 | Campaign phases (inferred arc + planner emphasis) | — | `campaign_phases` |
 | §41 | High Digit SAMs Ultimate Compilation support | — | — |
 | §42 | Local DCS chart base layers (map tiles) | — | — |
+| §43 | Per-aircraft flight defaults (save fuel + properties) | — | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

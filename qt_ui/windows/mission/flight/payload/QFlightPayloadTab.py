@@ -4,6 +4,8 @@ from PySide6.QtWidgets import (
     QFrame,
     QLabel,
     QHBoxLayout,
+    QMessageBox,
+    QPushButton,
     QVBoxLayout,
     QWidget,
     QSpinBox,
@@ -206,6 +208,11 @@ class QFlightPayloadTab(QFrame):
         self.fuel_selector = DcsFuelSelector(flight)
         layout.addLayout(self.fuel_selector)
 
+        # 414th (§43): remember the fuel + aircraft properties above as this
+        # airframe's default so every new flight of the type starts pre-configured.
+        # (Loadout has its own "Save Payload"; laser code has a global setting.)
+        layout.addLayout(self._build_flight_defaults_row())
+
         self.loadout_selector = DcsLoadoutSelector(
             flight, self.member_selector.selected_member
         )
@@ -317,3 +324,65 @@ class QFlightPayloadTab(QFrame):
         else:
             self.member_selector.selected_member.livery = livery
             self.member_selector.selected_member.use_livery_set = use_livery_set
+
+    # 414th (§43): per-aircraft "save flight defaults" -- persist the fuel +
+    # property-editor knobs so a new flight of this type starts pre-configured.
+    def _build_flight_defaults_row(self) -> QHBoxLayout:
+        from game.fourteenth import flight_defaults
+
+        row = QHBoxLayout()
+        row.addWidget(
+            QLabel(f"Defaults for {self.flight.unit_type.display_name}:"),
+        )
+        row.addStretch(1)
+
+        self.save_defaults_btn = QPushButton("Save as default")
+        self.save_defaults_btn.setToolTip(
+            "Remember the current internal fuel and aircraft settings (condition, "
+            "wear & tear, spawn type, etc.) as the default for every new "
+            f"{self.flight.unit_type.display_name} flight."
+        )
+        self.save_defaults_btn.clicked.connect(self._on_save_flight_defaults)
+        row.addWidget(self.save_defaults_btn)
+
+        self.clear_defaults_btn = QPushButton("Clear default")
+        self.clear_defaults_btn.setToolTip(
+            f"Forget the saved default for {self.flight.unit_type.display_name}."
+        )
+        self.clear_defaults_btn.clicked.connect(self._on_clear_flight_defaults)
+        self.clear_defaults_btn.setEnabled(
+            flight_defaults.has_defaults_for(self.flight.unit_type.dcs_unit_type.id)
+        )
+        row.addWidget(self.clear_defaults_btn)
+        return row
+
+    def _on_save_flight_defaults(self) -> None:
+        from game.fourteenth import flight_defaults
+
+        name = self.flight.unit_type.display_name
+        flight_defaults.save_defaults_for(
+            self.flight.unit_type.dcs_unit_type.id,
+            self.flight.fuel,
+            self.member_selector.selected_member.properties,
+        )
+        self.clear_defaults_btn.setEnabled(True)
+        QMessageBox.information(
+            self,
+            "Flight defaults saved",
+            f"Saved the current fuel and aircraft settings as the default for "
+            f"{name}.\nNew {name} flights will start pre-configured with these "
+            f"values (loadout and laser code are set separately).",
+        )
+
+    def _on_clear_flight_defaults(self) -> None:
+        from game.fourteenth import flight_defaults
+
+        name = self.flight.unit_type.display_name
+        flight_defaults.clear_defaults_for(self.flight.unit_type.dcs_unit_type.id)
+        self.clear_defaults_btn.setEnabled(False)
+        QMessageBox.information(
+            self,
+            "Flight defaults cleared",
+            f"Removed the saved default for {name}. New {name} flights will use the "
+            f"stock values again.",
+        )

@@ -2315,6 +2315,29 @@ so the two docs don't drift.
   miz); the will message shows Washington/Hanoi (profile lookup failed — name mismatch degrades to defaults);
   the arc opens on a Tier-0 phase (authored parse failed); zone rings missing from the map (x/y anchor bug).
 
+---
+
+## Q. Planner / payload UI
+
+### Q1 — Per-aircraft flight defaults save + apply · §43 · ☐ UNTESTED (built 2026-07-02; store/apply fully unit-tested, the button + the "new flight opens pre-configured" behaviour is Qt UI)
+- **Headless adjudication:** the store round-trips (save → reload from disk), `apply_flight_defaults` seeds
+  fuel + `member.properties` for a BLUE fresh flight, skips RED, no-ops with no saved entry, clamps fuel to
+  the airframe tank, and stays silent when persistency isn't set up — all in
+  `tests/fourteenth/test_flight_defaults.py`. What CI can't exercise is the Qt button and the "the box opens
+  already set the way I want" experience.
+- **Setup:** any campaign; open a flight's **Edit flight → Payload** tab. Change Internal Fuel (e.g. to 80%),
+  Aircraft Condition, Wear & Tear, and/or Spawn Type; click **Save as default**. Then create a *new* package
+  with a flight of the **same airframe** and open its Payload tab.
+- **Pass:** the new flight's Payload tab already shows the saved fuel + property values (no re-entry); **Clear
+  default** is enabled once a default exists and, after clicking it, a further new flight of that airframe is
+  back to stock values; the store lives at `Saved Games\Retribution\flight_defaults.json` and survives an app
+  restart / a New Game; a *different* airframe is unaffected; enemy (RED) flights are never altered.
+- **Fail signature:** new flights still open at stock fuel/condition (apply not firing — confirm the flight is
+  BLUE and freshly created, not a clone; check `flight_defaults.json` wrote); a saved sub-full fuel default
+  never appears (fuel stored in kg — a unit mixup would show a clamped-to-max value); a crash on flight
+  creation (the apply path must be a silent no-op on any error — it is wrapped, so a stack trace means the
+  guard was bypassed); RED flights changing (the `coalition.player.is_blue` gate failed).
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

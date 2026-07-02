@@ -447,6 +447,17 @@ def kneeboards_dir() -> Path:
     return _create_dir_if_needed(base_path() / "Retribution" / "Kneeboards")
 
 
+def flight_defaults_path() -> Path:
+    """JSON store for the 414th per-aircraft "save flight defaults" QOL feature.
+
+    Holds each airframe's preferred internal fuel + cockpit properties so a new
+    flight starts pre-configured. Global (survives across campaigns), never part of
+    a save game -- the same shape as the DCS ``UnitPayloads`` files the loadout
+    "Save Payload" button writes. See ``game/fourteenth/flight_defaults.py``.
+    """
+    return _create_dir_if_needed(base_path() / "Retribution") / "flight_defaults.json"
+
+
 def payloads_dir(backup: bool = False) -> Path:
     payloads = base_path() / "MissionEditor" / "UnitPayloads"
     if backup:

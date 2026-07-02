@@ -583,12 +583,16 @@ using measured data only and gain no new blast radius. A real `fuel:` block alwa
 
 - **P1 Brief Sheet** (`BriefSheetPage`, replacing the old `BriefingPage` "Game Plan" — see §31) is the
   consolidated, scannable one-pager modelled on the squadron's printed Appendix A brief sheet: header,
-  mission, a **labelled route with steerpoint numbers** (`HOLD 1 → JOIN 2 → IP 3 → TGT 5 → EGRESS 6`),
+  mission, the **full labelled route — every steerpoint with its number and planned time**
+  (`T/O 0 12:14 → HOLD 1 12:32 → TKR 2 12:38 → JOIN 3 12:49 → IP 4 → TGT 5-8 13:01 → …`; a run of
+  consecutive strike points collapses to one `TGT` range, bullseye/divert are skipped as they have their
+  own fields, and the block wraps at entry boundaries — large packages routinely take 2-3 lines),
   admin (bingo/joker/divert), threats (air + SAM), game plan, comms, code words, bullseye, fields
   (RWY/ATC/TCN), loadout, laser codes and Combat SAR — all **auto-filled** by
   `KneeboardGenerator._build_brief_sheet_data` and **colour-coded** (blue nav/comms, amber threats/fuel,
-  green success, red abort). The detailed steerpoint table + weather drop off the kneeboard (the one-line
-  route covers nav; DCS shows the full plan in-sim). The `BriefingPage` "Game Plan" + BLUF survive for the
+  green success, red abort). The detailed steerpoint table + weather drop off the kneeboard (the route
+  block is compact mode's per-waypoint nav+timing surface; times are HH:MM — the header TOT and the
+  jet's locked ETAs carry the seconds). The `BriefingPage` "Game Plan" + BLUF survive for the
   **full (non-compact) deck** only.
 - **P2 Threats & Targets** (`CombatIntelPage`) draws the flight's target ALIC/coords (the per-task page's
   new `render_into`) over the enemy-AD **threat cards** (`ThreatIntelBriefPage.render_cards`, which packs

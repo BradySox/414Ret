@@ -2616,8 +2616,19 @@ class FlexReferencePage(KneeboardPage):
         writer.write(path)
 
 
-#: Flight-plan waypoint types mapped to the Brief Sheet's one-line route labels.
+#: Flight-plan waypoint types mapped to the Brief Sheet's route labels.
 _ROUTE_LABELS: Dict[FlightWaypointType, str] = {
+    FlightWaypointType.TAKEOFF: "T/O",
+    FlightWaypointType.ASCEND_POINT: "CLIMB",
+    FlightWaypointType.NAV: "NAV",
+    FlightWaypointType.CUSTOM: "WPT",
+    FlightWaypointType.DESCENT_POINT: "DESCENT",
+    FlightWaypointType.LANDING_POINT: "LAND",
+    FlightWaypointType.CARGO_STOP: "STOP",
+    FlightWaypointType.PICKUP_ZONE: "PICKUP",
+    FlightWaypointType.DROPOFF_ZONE: "DROP",
+    FlightWaypointType.REFUEL: "TKR",
+    FlightWaypointType.RECOVERY_TANKER: "TKR",
     FlightWaypointType.PATROL: "HOLD",
     FlightWaypointType.PATROL_TRACK: "HOLD",
     FlightWaypointType.LOITER: "HOLD",
@@ -2659,20 +2670,43 @@ _BRIEF_TASK_VERB: Dict[FlightType, str] = {
 }
 
 
-def _brief_route(waypoints: List[FlightWaypoint]) -> List[Tuple[str, str]]:
-    """Labelled one-line route -- Hold/Join/IP/Tgt/Egress -- with the **steerpoint
-    number** of each point (so the pilot can dial it up; the detailed steerpoint table
-    is gone in compact mode). The number is the waypoint's index, matching the `#`
-    column the old flight-plan table used. Collapses consecutive same-role points.
+#: Route entries the sheet skips: each already has a dedicated field (BULLSEYE the
+#: bullseye line, DIVERT the ADMIN row), so listing them in the route is noise.
+_ROUTE_SKIP = {FlightWaypointType.BULLSEYE, FlightWaypointType.DIVERT}
+
+_ROUTE_TARGET_TYPES = {
+    FlightWaypointType.TARGET_POINT,
+    FlightWaypointType.TARGET_GROUP_LOC,
+    FlightWaypointType.TARGET_SHIP,
+}
+
+
+def _brief_route(
+    waypoints: List[FlightWaypoint],
+    format_time: Callable[[FlightWaypoint], str],
+) -> List[Tuple[str, str, str]]:
+    """The full labelled route: **every steerpoint** with its dial-up number and its
+    planned time (the detailed steerpoint table is gone in compact mode, so this is
+    the sheet's timing surface -- large packages coordinate joins/pushes off it).
+    The number is the waypoint's index, matching the `#` column the old flight-plan
+    table used. A run of consecutive strike points collapses to a single TGT entry
+    with a number range (a strike can list a dozen aimpoints sharing one attack
+    run); bullseye and the divert are skipped (each has its own field).
     """
-    route: List[Tuple[str, str]] = []
+    route: List[Tuple[str, str, str]] = []
     for number, waypoint in enumerate(waypoints):
-        label = _ROUTE_LABELS.get(waypoint.waypoint_type)
-        if label is None:
+        if waypoint.waypoint_type in _ROUTE_SKIP:
             continue
-        if route and route[-1][0] == label:
-            continue  # collapse consecutive same-role points (e.g. several TGTs)
-        route.append((label, str(number)))
+        if (
+            route
+            and waypoint.waypoint_type in _ROUTE_TARGET_TYPES
+            and route[-1][0] == "TGT"
+        ):
+            first = route[-1][1].split("-")[0]
+            route[-1] = ("TGT", f"{first}-{number}", route[-1][2])
+            continue
+        label = _ROUTE_LABELS.get(waypoint.waypoint_type, "WPT")
+        route.append((label, str(number), format_time(waypoint)))
     return route
 
 
@@ -2811,10 +2845,10 @@ class BriefSheetData:
 
     op_turn: str  # "RED TIDE · TURN 2 · MSN 4"
     mc: Optional[str]  # mission commander (AWACS), or None
-    ident: str  # "ROMAN 7 · F/A-18C · 2-ship · SEAD"
+    ident: str  # "ROMAN 7 · 2-ship SEAD · F/A-18C"
     tot: Optional[str]
     mission: str
-    route: List[Tuple[str, str]]  # [(label, steerpoint number), ...]
+    route: List[Tuple[str, str, str]]  # [(label, steerpoint number, time), ...]
     bingo: str
     joker: str
     divert: str
@@ -2841,11 +2875,12 @@ class BriefSheetPage(KneeboardPage):
     """The compact deck's lead page (P1): the one-page Brief Sheet.
 
     A consolidated, scannable mission brief modelled on the squadron's printed
-    Appendix A one-pager (the Red Tide briefing handbook): header, mission, a
-    labelled one-line route (Hold/Join/IP/Tgt/Egress), admin, threats, game plan,
-    comms, code words, bullseye, fields, weather, loadout and Combat SAR -- the
-    fields previously spread across the Game Plan, Comms and Combat SAR pages,
-    summarised onto one scan-in-five-seconds page (the detail pages stay behind it).
+    Appendix A one-pager (the Red Tide briefing handbook): header, mission, the
+    full labelled route (every steerpoint with number + time; consecutive strike
+    points collapse to a range), admin, threats, game plan, comms, code words,
+    bullseye, fields, weather, loadout and Combat SAR -- the fields previously
+    spread across the Game Plan, Comms and Combat SAR pages, summarised onto one
+    scan-in-five-seconds page (the detail pages stay behind it).
 
     A four-colour **semantic** scheme (theme-aware via the writer's palette) does
     real work -- blue = nav/comms (route, freqs, bullseye, divert, SAR callsigns,
@@ -2883,7 +2918,23 @@ class BriefSheetPage(KneeboardPage):
         right: str,
         font: ImageFont.FreeTypeFont,
     ) -> None:
-        """A header line: ``left`` at the margin, ``right`` flush to the right edge."""
+        """A header line: ``left`` at the margin, ``right`` flush to the right edge.
+
+        ``left`` is trimmed with an ellipsis rather than allowed to overprint
+        ``right`` (a long airframe name + a TOT collide otherwise).
+        """
+        if right:
+            avail = (
+                writer.image_size[0]
+                - writer.page_margin
+                - writer.x
+                - font.getlength(right)
+                - font.getlength("  ")
+            )
+            if font.getlength(left) > avail:
+                while left and font.getlength(left + "...") > avail:
+                    left = left[:-1]
+                left = left.rstrip() + "..."
         writer.draw.text(
             (writer.x, writer.y), left, font=font, fill=writer.col_emphasis
         )
@@ -2971,6 +3022,44 @@ class BriefSheetPage(KneeboardPage):
             prefix_col = label_str if i == 0 else " " * self.LABEL_W
             writer.text_runs([(prefix_col, writer.col_muted)] + line_runs, font=font)
 
+    def _route_block(
+        self,
+        writer: KneeboardPageWriter,
+        route: List[Tuple[str, str, str]],
+        font: ImageFont.FreeTypeFont,
+    ) -> None:
+        """The ROUTE field: every steerpoint as ``LABEL n time``, arrow-separated,
+        wrapping at entry boundaries with continuation lines indented to the value
+        column (a large package's full route routinely takes two or three lines).
+        """
+        label_str = f"{'ROUTE':<{self.LABEL_W}}"
+        value_x = writer.x + int(round(font.getlength(label_str)))
+        right = writer.image_size[0] - writer.page_margin
+        lines: List[List[Tuple[str, Optional[Tuple[int, int, int]]]]] = [[]]
+        cursor = float(value_x)
+        for label, number, time in route:
+            entry: List[Tuple[str, Optional[Tuple[int, int, int]]]] = [
+                (f"{label} ", writer.col_nav),
+                (number, None),
+            ]
+            if time:
+                entry.append((f" {time}", writer.col_muted))
+            entry_text = "".join(run[0] for run in entry)
+            sep = " → " if lines[-1] else ""
+            width = font.getlength(sep + entry_text)
+            if lines[-1] and cursor + width > right:
+                lines.append([])
+                cursor = float(value_x)
+                sep = ""
+                width = font.getlength(entry_text)
+            if sep:
+                lines[-1].append((sep, None))
+            lines[-1].extend(entry)
+            cursor += width
+        for i, line_runs in enumerate(lines):
+            prefix = label_str if i == 0 else " " * self.LABEL_W
+            writer.text_runs([(prefix, writer.col_muted)] + line_runs, font=font)
+
     def _prose(
         self,
         writer: KneeboardPageWriter,
@@ -3005,13 +3094,7 @@ class BriefSheetPage(KneeboardPage):
 
         self._prose(writer, "MISSION", d.mission, body)
         if d.route:
-            runs: List[Tuple[str, Optional[Tuple[int, int, int]]]] = []
-            for i, (label, number) in enumerate(d.route):
-                if i:
-                    runs.append((" → ", None))
-                runs.append((f"{label} ", writer.col_nav))
-                runs.append((number, None))
-            self._row(writer, "ROUTE", runs, body)
+            self._route_block(writer, d.route, body)
         else:
             self._blank_line(writer, "ROUTE", body)
         self._row(
@@ -3966,18 +4049,32 @@ class KneeboardGenerator(MissionInfoGenerator):
                 tanker_value += f" {tanker.tacan}"
             comms.append((f"TKR {tanker.callsign} ", tanker_value))
 
+        def waypoint_time(waypoint: FlightWaypoint) -> str:
+            # Prefer the planned ToT; a hold/patrol point may only carry a departure
+            # (push) time. Minutes are the coordination currency on the sheet; the
+            # header TOT and the jet's locked ETAs carry the seconds.
+            time = waypoint.tot or waypoint.departure_time
+            local = self._to_kneeboard_time(time, utc)
+            if local is None:
+                return ""
+            suffix = "Z" if local.tzinfo is not None else ""
+            return f"{local.strftime('%H:%M')}{suffix}"
+
         return BriefSheetData(
             op_turn=f"{(game.campaign_name or 'Campaign').upper()} · TURN {game.turn}",
             mc=None,
+            # Task and size ahead of the airframe: the header truncates from the
+            # right when it would collide with the TOT, and the airframe's long
+            # variant name is the expendable part.
             ident=(
-                f"{flight.callsign} · {flight.aircraft_type.variant_id} · "
-                f"{flight.size}-ship · {flight.task_display_name}"
+                f"{flight.callsign} · {flight.size}-ship "
+                f"{flight.task_display_name} · {flight.aircraft_type.variant_id}"
             ),
             tot=tot,
             mission=_brief_mission(
                 flight.flight_type, target_name, flight.task_display_name
             ),
-            route=_brief_route(flight.waypoints),
+            route=_brief_route(flight.waypoints, waypoint_time),
             bingo=fuel(flight.bingo_fuel),
             joker=fuel(flight.joker_fuel),
             divert=flight.divert.airfield_name if flight.divert else "—",

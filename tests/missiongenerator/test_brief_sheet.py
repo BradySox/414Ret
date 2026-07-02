@@ -22,30 +22,52 @@ from game.missiongenerator.kneeboard import (
 )
 
 
-def _wp(wptype: FlightWaypointType, name: str) -> Any:
-    return SimpleNamespace(waypoint_type=wptype, name=name, pretty_name=name)
+def _wp(
+    wptype: FlightWaypointType,
+    name: str,
+    tot: datetime.datetime | None = None,
+    departure_time: datetime.datetime | None = None,
+) -> Any:
+    return SimpleNamespace(
+        waypoint_type=wptype,
+        name=name,
+        pretty_name=name,
+        tot=tot,
+        departure_time=departure_time,
+    )
 
 
-def test_brief_route_labels_points_and_collapses_repeats() -> None:
+def test_brief_route_lists_every_point_and_collapses_target_runs() -> None:
+    t = datetime.datetime(2020, 1, 1, 19, 5, 0)
     waypoints = [
-        _wp(FlightWaypointType.TAKEOFF, "Hahn"),  # not a route role -> skipped
-        _wp(FlightWaypointType.LOITER, "Scabbard"),
+        _wp(FlightWaypointType.TAKEOFF, "Hahn", tot=t),
+        _wp(FlightWaypointType.LOITER, "Scabbard", departure_time=t),
+        _wp(FlightWaypointType.REFUEL, "Texaco"),
         _wp(FlightWaypointType.JOIN, "Lancer"),
         _wp(FlightWaypointType.INGRESS_SEAD, "INGRESS on Bongo"),
         _wp(FlightWaypointType.TARGET_POINT, "Bongo"),
-        _wp(FlightWaypointType.TARGET_POINT, "Bongo"),  # second TGT collapses
+        _wp(FlightWaypointType.TARGET_POINT, "Bongo"),
+        _wp(FlightWaypointType.TARGET_POINT, "Bongo"),
         _wp(FlightWaypointType.SPLIT, "Picket"),
-        _wp(FlightWaypointType.LANDING_POINT, "Hahn"),  # skipped
+        _wp(FlightWaypointType.LANDING_POINT, "Hahn"),
+        _wp(FlightWaypointType.BULLSEYE, "bulls"),  # own field -> skipped
     ]
-    route = _brief_route(waypoints)
-    # Each point carries its steerpoint number (the waypoint index); the second
-    # TARGET_POINT (index 5) collapses into the first TGT (index 4).
+
+    def fmt(waypoint: Any) -> str:
+        return "19:05" if (waypoint.tot or waypoint.departure_time) else ""
+
+    route = _brief_route(waypoints, fmt)
+    # Every steerpoint is listed with its number (the waypoint index) and time;
+    # the run of TARGET_POINTs (5-7) collapses to one TGT entry with a range.
     assert route == [
-        ("HOLD", "1"),
-        ("JOIN", "2"),
-        ("IP", "3"),
-        ("TGT", "4"),
-        ("EGRESS", "6"),
+        ("T/O", "0", "19:05"),
+        ("HOLD", "1", "19:05"),  # hold carries its push (departure) time
+        ("TKR", "2", ""),
+        ("JOIN", "3", ""),
+        ("IP", "4", ""),
+        ("TGT", "5-7", ""),
+        ("EGRESS", "8", ""),
+        ("LAND", "9", ""),
     ]
 
 
@@ -128,10 +150,10 @@ def test_brief_sheet_page_renders_and_colour_codes(tmp_path: Path) -> None:
     data = BriefSheetData(
         op_turn="RED TIDE · TURN 2",
         mc=None,
-        ident="ROMAN 7 · F/A-18C · 2-ship · SEAD",
+        ident="ROMAN 7 · 2-ship SEAD · F/A-18C",
         tot="19:30Z",
         mission="Suppress the SA-2/3 belt vic BONGO.",
-        route=[("HOLD", "1"), ("IP", "3"), ("TGT", "5")],
+        route=[("HOLD", "1", "19:05"), ("IP", "3", "19:21"), ("TGT", "5", "19:30")],
         bingo="5100",
         joker="6100",
         divert="Frankfurt",
@@ -229,9 +251,10 @@ def test_build_brief_sheet_data_populates_from_the_mission() -> None:
     data = gen._build_brief_sheet_data(flight, cards)
 
     assert data.op_turn == "RED TIDE · TURN 2"
-    assert data.ident == "Roman 7 · F/A-18C · 2-ship · SEAD"
+    assert data.ident == "Roman 7 · 2-ship SEAD · F/A-18C"
     assert data.mission == "Suppress the air defenses at BONGO."
-    assert data.route[0] == ("JOIN", "0")  # first waypoint is the join, steerpoint 0
+    # First waypoint is the join, steerpoint 0; the fake carries no times.
+    assert data.route[0] == ("JOIN", "0", "")
     assert data.bingo == "5100" and data.divert == "Frankfurt"
     assert data.push_word == "Cobalt" and data.abort_word == "Teal"
     assert "SA-5 S-200 138nm" in data.threats_sam

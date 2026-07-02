@@ -537,8 +537,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`game/missiongenerator/kneeboard.py`, `game/sitrep.py`; features doc §30, checklist K2/H10.)
 31. **One-page Brief Sheet + deck-wide colour scheme** — the compact deck's lead page is now a single
     scannable **Brief Sheet** (`BriefSheetPage`) modelled on the squadron's printed Appendix A one-pager
-    (Red Tide handbook): header, mission, a **labelled route with steerpoint numbers**
-    (`HOLD 1 → JOIN 2 → IP 3 → TGT 5 → EGRESS 6`), admin, threats (air + SAM), game plan, comms, code words,
+    (Red Tide handbook): header, mission, the **full labelled route — every steerpoint with number +
+    planned time** (`HOLD 1 12:32 → TKR 2 12:38 → JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10`; consecutive
+    strike points collapse to a range), admin, threats (air + SAM), game plan, comms, code words,
     bullseye, fields (RWY/ATC/TCN), loadout, laser, Combat SAR — **auto-filled** by
     `_build_brief_sheet_data` (route from waypoints, loadout from the jet's pylons cleaned to ordnance, air
     threats from the enemy faction's fighters, the rest re-surfaced). It replaces the dense Game Plan/BLUF

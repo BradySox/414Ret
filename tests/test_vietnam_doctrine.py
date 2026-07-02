@@ -58,9 +58,10 @@ def test_vietnam_doctrine_registered() -> None:
 
 def test_air_defense_doctrine_differs_only_in_the_offensive_levers() -> None:
     # The red split: Hanoi's air arm keeps the whole Vietnam era identity (renames,
-    # whitelist, knife-fight ranges, gci_ambush, ground OOB) and sheds ONLY BLUE's
-    # offensive levers -- resetting exactly those must recover VIETNAM_DOCTRINE, so
-    # no other geometry silently drifts between the two.
+    # knife-fight ranges, gci_ambush, ground OOB) and sheds ONLY BLUE's offensive
+    # levers (plus the narrower tasking whitelist below) -- resetting exactly those
+    # must recover VIETNAM_DOCTRINE, so no other geometry silently drifts between
+    # the two.
     rebadged = replace(
         VIETNAM_AIR_DEFENSE_DOCTRINE,
         name="vietnam",
@@ -68,6 +69,7 @@ def test_air_defense_doctrine_differs_only_in_the_offensive_levers() -> None:
         always_escort_strikes=True,
         strike_escort_reserve=VIETNAM_DOCTRINE.strike_escort_reserve,
         escort_support_aircraft=False,
+        tasking_whitelist=VIETNAM_DOCTRINE.tasking_whitelist,
     )
     assert rebadged == VIETNAM_DOCTRINE
     # The defensive identity survives the split.
@@ -80,6 +82,12 @@ def test_air_defense_doctrine_differs_only_in_the_offensive_levers() -> None:
     assert VIETNAM_AIR_DEFENSE_DOCTRINE.strike_escort_reserve == 0
     assert VIETNAM_AIR_DEFENSE_DOCTRINE.always_escort_strikes is False
     assert VIETNAM_AIR_DEFENSE_DOCTRINE.escort_support_aircraft is True
+    # Hanoi never heli-assaulted a foreign air base -- Air Assault is a mass/insertion
+    # mission, not an ambush. BLUE keeps it; red doesn't (2026-07-02 playtest finding:
+    # red was air-assaulting 1968 Yankee Station's Maykop-Khanskaya, the Ubon/"Thailand"
+    # rear base, purely because it had no garrison TGO).
+    assert not VIETNAM_AIR_DEFENSE_DOCTRINE.allows(FlightType.AIR_ASSAULT)
+    assert VIETNAM_DOCTRINE.allows(FlightType.AIR_ASSAULT)
 
 
 def test_display_name_overrides_iconic_taskings() -> None:

@@ -56,6 +56,10 @@ settings:
   # Tunable live on the Air Doctrine settings page.
   aewc_threat_buffer_min_distance: 25
   tanker_threat_buffer_min_distance: 20
+  # Red flies a GCI-ambush war (VIETNAM_AIR_DEFENSE_DOCTRINE): hold more MiGs on hot alert
+  # for reactive scrambles instead of standing forward BARCAP orbits. 4 QRA airframes per
+  # BARCAP-capable OPFOR squadron (was the global default of 2). OWNFOR unchanged.
+  opfor_default_qra_reserve: 4
   vietnamwarvessels: true
   high_digit_sams: true
   russianmilitaryassetspack: true

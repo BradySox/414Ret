@@ -518,16 +518,33 @@ VIETNAM_DOCTRINE = replace(
     low_level_attack_altitude=feet(500),
 )
 
+# Hanoi never mounted a heliborne ground assault on a foreign air base -- Air Assault
+# is a mass/insertion mission, exactly what the GCI-only force above doesn't do. Root
+# cause of a 2026-07-02 playtest finding: with no whitelist narrowing, the generic
+# (side-agnostic) PlanAirAssault task happily proposed Air Assault packages against any
+# undefended enemy CP theater-wide -- including 1968 Yankee Station's Maykop-Khanskaya
+# (the Ubon/"Thailand" stand-in, deep rear, no plausible ground-threat axis) purely
+# because that CP had no garrison TGO. Dropping AIR_ASSAULT here is the doctrine-side
+# fix; an undefended-rear-CP laydown gap can still make other tasks (Armed Recon, etc.)
+# land on a rear base -- that's the generic engine behaviour every doctrine shares, not
+# unique to this split, so it's left alone.
+VIETNAM_AIR_DEFENSE_DROPPED_TASKINGS: FrozenSet[FlightType] = frozenset(
+    VIETNAM_DROPPED_TASKINGS | {FlightType.AIR_ASSAULT}
+)
+VIETNAM_AIR_DEFENSE_TASKING_WHITELIST: FrozenSet[FlightType] = frozenset(
+    set(FlightType) - VIETNAM_AIR_DEFENSE_DROPPED_TASKINGS
+)
+
 # The red half of the Vietnam air war. Hanoi's air arm was a pure GCI air-defense
 # force: it massed nothing and escorted nothing (the NVAF flew essentially zero
 # offensive strikes) -- it AMBUSHED. Same era identity as VIETNAM_DOCTRINE (the
-# display renames, tasking whitelist, knife-fight ranges, subsonic RTB, ground OOB,
-# gci_ambush) minus BLUE's offensive levers: no Alpha Strike fan, no forced strike
-# escorts, and critically NO strike-escort reserve -- banking MiGs for strike
-# escorts would trim the defensive BARCAP that IS this force's entire job and
-# starve the W5 ambush posture. Point the red Vietnam factions (NVA/Vietcong/
-# North Vietnam) here; the what-if "USSR 1971" faction keeps the offensive
-# VIETNAM_DOCTRINE (if you field Badgers, massed raids are the point).
+# display renames, knife-fight ranges, subsonic RTB, ground OOB, gci_ambush) minus
+# BLUE's offensive levers: no Alpha Strike fan, no forced strike escorts, critically NO
+# strike-escort reserve -- banking MiGs for strike escorts would trim the defensive
+# BARCAP that IS this force's entire job and starve the W5 ambush posture -- and a
+# narrower tasking whitelist that drops AIR_ASSAULT (see above). Point the red Vietnam
+# factions (NVA/Vietcong/North Vietnam) here; the what-if "USSR 1971" faction keeps the
+# offensive VIETNAM_DOCTRINE (if you field Badgers, massed raids are the point).
 VIETNAM_AIR_DEFENSE_DOCTRINE = replace(
     VIETNAM_DOCTRINE,
     name="vietnam_air_defense",
@@ -535,6 +552,7 @@ VIETNAM_AIR_DEFENSE_DOCTRINE = replace(
     always_escort_strikes=False,
     strike_escort_reserve=0,
     escort_support_aircraft=True,
+    tasking_whitelist=VIETNAM_AIR_DEFENSE_TASKING_WHITELIST,
 )
 
 ALL_DOCTRINES = [

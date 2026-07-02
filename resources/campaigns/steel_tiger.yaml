@@ -58,6 +58,10 @@ settings:
   # ~75-90 km back. Per-campaign, so large maps are untouched.
   aewc_threat_buffer_min_distance: 25
   tanker_threat_buffer_min_distance: 20
+  # Red flies a GCI-ambush war (VIETNAM_AIR_DEFENSE_DOCTRINE): hold more MiGs on hot alert
+  # for reactive scrambles instead of standing forward BARCAP orbits. 4 QRA airframes per
+  # BARCAP-capable OPFOR squadron (was the global default of 2). OWNFOR unchanged.
+  opfor_default_qra_reserve: 4
   automate_runway_repair: true
   automate_front_line_reinforcements: true
   automate_aircraft_reinforcements: false
@@ -272,10 +276,13 @@ squadrons:
       aircraft: [MiG-17F Fresco-C]
       size: 8
 
-  # Haiphong (Senaki-Kolkhi): the delta port feeding the trail
+  # Haiphong (Senaki-Kolkhi): the delta port feeding the trail. MiG-17Fs are DEFENSIVE
+  # (MiGCAP) -- Hanoi flew a GCI-ambush war (VIETNAM_AIR_DEFENSE_DOCTRINE), not fast-mover
+  # interdiction; a BAI/air-to-ground primary put them on Interdiction/Strike (red
+  # "aggression"). BARCAP + air-to-air keeps them intercepting and arms their QRA reserve.
   Senaki-Kolkhi:
-    - primary: BAI
-      secondary: air-to-ground
+    - primary: BARCAP
+      secondary: air-to-air
       aircraft: [MiG-17F Fresco-C]
       size: 8
     - primary: Transport

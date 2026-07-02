@@ -255,9 +255,26 @@ file. This guide is the map; those are the territory.
     Strike/Sandy) via a display-only override on `Doctrine` (never the persisted enum) and gates the
     planner whitelist — split 2026-07-01 into the offensive `VIETNAM_DOCTRINE` (BLUE + the what-if USSR
     bomber faction) and `VIETNAM_AIR_DEFENSE_DOCTRINE` for Hanoi's factions (NVA/Vietcong/North Vietnam ×5):
-    same era identity (renames/whitelist/knife-fight ranges/`gci_ambush`) minus BLUE's offensive levers (no
+    same era identity (renames/knife-fight ranges/`gci_ambush`) minus BLUE's offensive levers (no
     Alpha Strike fan, no forced strike escorts, **no strike-escort reserve trimming the defensive BARCAP** —
-    red's air force IS its BARCAP, and the reserve was stealing MiGs from the W5 ambush posture).
+    red's air force IS its BARCAP, and the reserve was stealing MiGs from the W5 ambush posture) **and a
+    narrower tasking whitelist** (2026-07-02: a played 1968 Yankee Station turn 1 caught red Air Assaulting
+    `Maykop-Khanskaya`, the Ubon/"Thailand" rear base, purely because it had no garrison TGO — the generic
+    `PlanAirAssault` task has no front-proximity/sanctuary awareness, and nothing stopped red from proposing
+    it; `VIETNAM_AIR_DEFENSE_DOCTRINE` now also drops `AIR_ASSAULT` from its whitelist, a mass/insertion
+    mission the GCI-only ambush force never flew — BAI/CAS/Strike/Armed Recon stay whitelisted for red's
+    *helo* squadrons, and Armed-Recon-vs-CP is generic engine behaviour every doctrine shares). **The bulk
+    of that same playtest's "red aggression" was campaign squadron-role authoring, not the doctrine**: red
+    MiG-17F/21 fast-mover squadrons carried `primary: BAI` / an `air-to-ground` secondary, auto-assigning them
+    to Interdiction/Strike (which the QRA reserve can't touch — it only governs BARCAP-auto-assignable
+    squadrons). Fixed at the campaign layer across **all 5 Vietnam campaigns** (Yankee Station / Steel Tiger /
+    Khe Sanh [already clean] / Red Flag 81-2 / Velvet Thunder): every red MiG/aggressor fighter squadron is
+    now `primary: BARCAP` + `secondary: air-to-air` (defensive auto-set only), and each campaign seeds
+    `opfor_default_qra_reserve: 4` (was the global 2) so more MiGs sit on reactive hot-alert than standing
+    forward BARCAP orbits — the genuine GCI-ambush posture, which also activates the re-roled fast movers'
+    previously-dead reserve (QRA seeding keys off airframe BARCAP capability). OWNFOR unchanged; NEW game
+    required. Guards: `test_vietnam_red_fighters_are_defensively_tasked` +
+    `test_vietnam_campaign_seeds_opfor_qra_reserve`.
     **P0 (era tags) + P1 (doctrine model + 10-faction repoint) + P1b (display read-path)
     + P1c (period-authentic planner *numbers*: A2A engagement ranges shortened to the early-missile/gun era
     — `cap_engagement_range` 35→22 NM, `escort_engagement_range` 20→10 NM so MiGCAP/escort fight close not

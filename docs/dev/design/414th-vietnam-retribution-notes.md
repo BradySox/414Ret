@@ -179,14 +179,42 @@ machinery that already exists.
 - **Factions:** `USA 1970/1971 Vietnam War`, `USSR 1971 Vietnam War`, `usa_1965/1970` fly
   `doctrine: vietnam` (P1); **the red split (2026-07-01)** moved Hanoi's factions —
   `vietnam_1965/1970`, `nva_1970`, `vietcong_1965/1970` — to `doctrine: vietnam_air_defense`
-  (`VIETNAM_AIR_DEFENSE_DOCTRINE`): same era identity (renames/whitelist/knife-fight
-  ranges/`gci_ambush`) minus BLUE's offensive levers — no Alpha Strike fan, no forced strike
-  escorts, **no strike-escort reserve** (it was trimming the defensive BARCAP that IS the NVAF's
-  whole job to bank MiGs for strikes Hanoi never flew). The what-if USSR faction keeps the
-  offensive doctrine (fielding Badgers = wanting massed raids). Tests:
-  `test_air_defense_doctrine_differs_only_in_the_offensive_levers` +
-  `test_faction_loader_resolves_air_defense_doctrine` (the loader elif falls back to MODERN on an
-  unknown string, so the round-trip is test-locked).
+  (`VIETNAM_AIR_DEFENSE_DOCTRINE`): same era identity (renames/knife-fight ranges/`gci_ambush`)
+  minus BLUE's offensive levers — no Alpha Strike fan, no forced strike escorts, **no
+  strike-escort reserve** (it was trimming the defensive BARCAP that IS the NVAF's whole job to
+  bank MiGs for strikes Hanoi never flew). The what-if USSR faction keeps the offensive doctrine
+  (fielding Badgers = wanting massed raids). **2026-07-02 whitelist narrowing**: a played 1968
+  Yankee Station turn 1 showed red Air Assaulting `Maykop-Khanskaya` (the Ubon/"Thailand" rear
+  base) purely because it had no garrison TGO — the generic, side-agnostic `PlanAirAssault` task
+  has no front-proximity/sanctuary awareness, and nothing in the doctrine stopped red from
+  proposing it. `VIETNAM_AIR_DEFENSE_DOCTRINE.tasking_whitelist` now additionally drops
+  `AIR_ASSAULT` (`VIETNAM_AIR_DEFENSE_DROPPED_TASKINGS`/`VIETNAM_AIR_DEFENSE_TASKING_WHITELIST`) —
+  a mass/insertion mission a GCI-only ambush force never flew. BAI/CAS/Strike/Armed Recon stay
+  whitelisted (red *helo* squadrons legitimately fly CAS/Armed Recon at the front, and
+  Armed-Recon-vs-CP is generic engine behaviour shared by every doctrine, not unique to this
+  split). Tests: `test_air_defense_doctrine_differs_only_in_the_offensive_levers` (now also
+  resets `tasking_whitelist` in the rebadge and asserts `AIR_ASSAULT` is red-disallowed/
+  blue-allowed) + `test_faction_loader_resolves_air_defense_doctrine` (the loader elif falls back
+  to MODERN on an unknown string, so the round-trip is test-locked).
+- **Red MiG posture is a campaign-content decision, not just the doctrine (2026-07-02).** The
+  whitelist above stops red from *proposing* AIR_ASSAULT, but the bulk of the "red aggression"
+  in the Yankee Station playtest came from **squadron role authoring**: several red MiG-17F/21
+  fast-mover squadrons carried a `primary: BAI` (or an `air-to-ground` secondary), which
+  auto-assigned them to Interdiction/Strike/Armed Recon/CAS. The QRA reserve can't touch those —
+  it only governs BARCAP-auto-assignable squadrons. Fixed at the campaign layer across **all five
+  Vietnam campaigns** (`1968_Yankee_Station`, `steel_tiger`, `khe_sanh_niagara` [already clean],
+  `red_flag_81_2`, `operation_velvet_thunder`): every red MiG/aggressor fighter squadron is now
+  `primary: BARCAP` + `secondary: air-to-air` (defensive auto-set only — MiGCAP/Escort/Sweep/
+  Intercept/TARCAP), so Hanoi's fast movers intercept instead of interdict (red helos still fly
+  CAS/Armed Recon at the front). **And** each campaign now seeds `opfor_default_qra_reserve: 4`
+  (was the global default 2) so more MiGs sit on reactive hot-alert instead of standing forward
+  BARCAP orbits — the genuine GCI-ambush posture, and it *activates* the re-roled fast movers'
+  previously-dead reserve (seeding keys off airframe BARCAP capability, so a BAI-tasked MiG-17F
+  was already carrying a reserve it could never scramble). OWNFOR is left on the default (red-only
+  posture). Tests: `test_vietnam_red_fighters_are_defensively_tasked` (no red fighter squadron is
+  auto-assignable to an offensive task, per red control point) +
+  `test_vietnam_campaign_seeds_opfor_qra_reserve` (all five carry reserve 4). NEW game required
+  (squadron roles + the QRA seed are applied at generation).
 - **Campaigns:** `1968_Yankee_Station`, `khe_sanh_niagara`, `operation_velvet_thunder` (now
   `era: vietnam`). All on Caucasus/Marianas overlays; **no native DCS Vietnam map**.
 - **~18 era mod packs** in `pydcs_extensions/` (a4ec, a6a, a7e, f4, f100/104/105/106, f9f, f111c,

@@ -33,6 +33,7 @@ import pytest
 import yaml
 
 from game import persistency
+from game.ato.flighttype import FlightType
 from game.campaignloader.campaign import Campaign
 from game.campaignloader.campaignairwingconfig import CampaignAirWingConfig
 from game.dcs.aircrafttype import AircraftType
@@ -281,6 +282,98 @@ def test_vietnam_campaign_tightens_support_orbits(campaign_file: str) -> None:
     # Large/other campaigns are untouched: the defaults stay wide.
     assert Settings().aewc_threat_buffer_min_distance == 80
     assert Settings().tanker_threat_buffer_min_distance == 70
+
+
+# The Vietnam air war is a GCI-ambush war: Hanoi's air arm (VIETNAM_AIR_DEFENSE_DOCTRINE)
+# intercepts, it does not fly fast-mover interdiction/strike. A 2026-07-02 played Yankee
+# Station turn 1 showed red flying BAI/Strike/Armed-Recon/Air-Assault packages because
+# several red MiG squadrons were authored with a BAI (or air-to-ground-secondary) role,
+# which auto-assigned them to the offensive task set. These two guards lock the fix:
+#   1. red fighter squadrons carry NO air-to-ground auto-assignment (defensive only), and
+#   2. the campaigns hold more MiGs on QRA hot-alert (opfor reserve 4, not the global 2)
+#      so they scramble reactively instead of standing forward BARCAP orbits.
+# operation_velvet_thunder is included -- it carried the same anachronism (a primary-BAI
+# MiG-21 at Saipan + air-to-ground MiG escorts).
+_GCI_AMBUSH_CAMPAIGNS = [
+    "1968_Yankee_Station.yaml",
+    "steel_tiger.yaml",
+    "khe_sanh_niagara.yaml",
+    "red_flag_81_2.yaml",
+    "operation_velvet_thunder.yaml",
+]
+
+# The auto-assignable tasks that mean "this squadron flies offense" -- exactly what a
+# GCI-only ambush force must never be handed.
+_OFFENSIVE_TASKS = {
+    FlightType.BAI,
+    FlightType.STRIKE,
+    FlightType.ARMED_RECON,
+    FlightType.CAS,
+    FlightType.OCA_RUNWAY,
+    FlightType.OCA_AIRCRAFT,
+    FlightType.AIR_ASSAULT,
+    FlightType.SCAR,
+}
+
+# Fighter airframes that make a red squadron an interceptor (not a helo/transport).
+_RED_FIGHTER_MARKERS = ("MiG", "F-5", "Su-")
+
+
+@pytest.mark.parametrize("campaign_file", _GCI_AMBUSH_CAMPAIGNS)
+def test_vietnam_red_fighters_are_defensively_tasked(campaign_file: str) -> None:
+    from game.theater.player import Player
+
+    campaign = Campaign.from_file(_CAMPAIGNS / campaign_file)
+    theater = campaign.load_theater(campaign.advanced_iads)
+    red_cps = {
+        cp for cp in theater.controlpoints if cp.starting_coalition == Player.RED
+    }
+    air_wing = campaign.load_air_wing_config(theater)
+
+    checked = 0
+    offenders: list[str] = []
+    for control_point, squadron_configs in air_wing.by_location.items():
+        if control_point not in red_cps:
+            continue  # BLUE is the offensive side -- only Hanoi must be GCI-only.
+        for squadron_config in squadron_configs:
+            aircraft = list(squadron_config.aircraft)
+            if not any(
+                marker in a for a in aircraft for marker in _RED_FIGHTER_MARKERS
+            ):
+                continue  # helos/transports aren't the ambush force.
+            checked += 1
+            bad = squadron_config.auto_assignable & _OFFENSIVE_TASKS
+            if bad:
+                offenders.append(
+                    f"{control_point.name} {aircraft}: {sorted(t.value for t in bad)}"
+                )
+    assert checked, (
+        f"{campaign_file}: no red fighter squadrons found -- the red OOB or the "
+        "control-point keys regressed."
+    )
+    assert not offenders, (
+        f"{campaign_file}: red MiG/aggressor squadrons are auto-assignable to offensive "
+        f"tasks -- Hanoi flies GCI-ambush (MiGCAP), not interdiction. Give them a BARCAP "
+        f"primary + air-to-air secondary. Offenders: {offenders}"
+    )
+
+
+@pytest.mark.parametrize("campaign_file", _GCI_AMBUSH_CAMPAIGNS)
+def test_vietnam_campaign_seeds_opfor_qra_reserve(campaign_file: str) -> None:
+    from game.settings import Settings
+
+    campaign = Campaign.from_file(_CAMPAIGNS / campaign_file)
+    settings = Settings()
+    settings.__dict__.update(Settings.deserialize_state_dict(campaign.settings))
+    assert settings.opfor_default_qra_reserve == 4, (
+        f"{campaign_file}: OPFOR should seed 4 QRA airframes per BARCAP-capable squadron "
+        "so red holds MiGs on reactive hot-alert instead of standing forward BARCAP orbits."
+    )
+    # OWNFOR is deliberately left on the global default (0) -- this posture is red-only.
+    assert settings.ownfor_default_qra_reserve == 0, (
+        f"{campaign_file}: OWNFOR QRA reserve should stay at the default; the GCI-ambush "
+        "posture is red-only."
+    )
 
 
 @pytest.mark.parametrize(

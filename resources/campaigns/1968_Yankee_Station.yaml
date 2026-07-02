@@ -57,6 +57,10 @@ settings:
   # Tunable live on the Air Doctrine settings page.
   aewc_threat_buffer_min_distance: 25
   tanker_threat_buffer_min_distance: 20
+  # Red flies a GCI-ambush war (VIETNAM_AIR_DEFENSE_DOCTRINE): hold more MiGs on hot alert
+  # for reactive scrambles instead of standing forward BARCAP orbits. 4 QRA airframes per
+  # BARCAP-capable OPFOR squadron (was the global default of 2). OWNFOR unchanged.
+  opfor_default_qra_reserve: 4
   automate_runway_repair: true
   automate_front_line_reinforcements: true
   automate_aircraft_reinforcements: false
@@ -340,10 +344,14 @@ squadrons:
             - Mi-8MTV2 Hip
           size: 4
 
-    # Haiphong (Senaki-Kolkhi): the delta port
+    # Haiphong (Senaki-Kolkhi): the delta port. The MiG-17Fs are DEFENSIVE (MiGCAP) --
+    # Hanoi's air arm flew a pure GCI-ambush war (VIETNAM_AIR_DEFENSE_DOCTRINE), essentially
+    # zero offensive fast-mover strikes. A BAI/air-to-ground primary auto-assigned them to
+    # Interdiction/Strike/Armed Recon, which read as red "aggression" in playtest; BARCAP +
+    # air-to-air keeps them intercepting and lets their QRA reserve actually scramble.
     Senaki-Kolkhi:
-        - primary: BAI
-          secondary: air-to-ground
+        - primary: BARCAP
+          secondary: air-to-air
           aircraft:
             - MiG-17F Fresco-C
           size: 8
@@ -357,10 +365,11 @@ squadrons:
             - An-26B
           size: 4
 
-    # Vinh (Sukhumi-Babushara): panhandle staging
+    # Vinh (Sukhumi-Babushara): panhandle staging. MiG-17Fs defensive (MiGCAP), same as
+    # Senaki -- Hanoi's fast movers ambush, they don't interdict.
     Sukhumi-Babushara:
-        - primary: BAI
-          secondary: air-to-ground
+        - primary: BARCAP
+          secondary: air-to-air
           aircraft:
             - MiG-17F Fresco-C
           size: 8

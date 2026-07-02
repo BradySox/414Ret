@@ -143,7 +143,8 @@ class FormationAttackLayout(FormationLayout):
     lineup: Optional[FlightWaypoint] = None
     #: Pre-vul (ingress-side) refuel point, used when fuel calculations say the flight
     #: can't fight through the vul on internal fuel. The egress-side ``refuel`` field
-    #: (inherited) is the post-vul point. At most one is set; see _refuel_tasking.
+    #: (inherited) is the post-vul point. Either or both may be set (BOTH tanks pre-
+    #: and post-vul); see _refuel_tasking.
     refuel_pre: Optional[FlightWaypoint] = None
 
     def delete_waypoint(self, waypoint: FlightWaypoint) -> bool:

@@ -102,6 +102,10 @@ and selected later upstream fixes.
 - AWACS and tanker racetracks are anchored on the front line and stand off into friendly
   airspace, so support orbits sit centered behind the fighting at a sane distance instead of
   being flung far off-axis or pinned onto a home airfield.
+- Flight plans **budget real time at the tanker**: a flight with a refuel stop launches and
+  pushes early enough to cycle the whole flight through the boom and still make its join and
+  TOT, and the package tanker is on station for ingress-side (pre-vul) refuels instead of only
+  arriving for the trip home.
 - An optional **auto-planner unpredictability** doctrine knob (per side, off by default)
   varies which offensive targets the enemy services first, so red stops striking the same
   targets in the same order every turn. Its reactive air defenses stay just as sharp.

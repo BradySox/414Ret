@@ -91,14 +91,23 @@ class FormationFlightPlan(LoiterFlightPlan, ABC):
 
     @property
     def push_time(self) -> datetime:
-        hold2join_time = (
-            self.travel_time_between_waypoints(
-                self.layout.hold,
-                self.layout.join,
-            )
-            if self.layout.hold
-            else timedelta(0)
-        )
+        if self.layout.hold is None:
+            return self.join_time
+        # Follow the actual route from the hold to the join -- nav legs and any
+        # pre-vul tanker stop included -- rather than the straight hold-join line,
+        # so the flight departs the hold early enough to take gas and still make
+        # the join on time.
+        hold2join_time = timedelta()
+        departed_hold = False
+        for a, b in self.edges(until=self.layout.join):
+            if a == self.layout.hold:
+                departed_hold = True
+                # Push time is the departure from the hold, so the hold dwell
+                # that total_time_between_waypoints charges to this edge does
+                # not count against the transit.
+                hold2join_time += self.travel_time_between_waypoints(a, b)
+            elif departed_hold:
+                hold2join_time += self.total_time_between_waypoints(a, b)
         return self.join_time - hold2join_time
 
     @property

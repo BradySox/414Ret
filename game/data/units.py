@@ -81,6 +81,22 @@ MOBILE_AIR_DEFENSE_UNIT_CLASSES = frozenset(
     }
 )
 
+# DCS unit ids of heavy bombers. Vanilla DCS heavy bombers only (per the fork's
+# vanilla-units rule). Shared by two Vietnam-era consumers: the Arc Light emitter
+# (game/missiongenerator/vietnamopsluadata.py -- a Strike by anything not in this
+# set is an ordinary single-aimpoint strike) and the doctrine low-level attack
+# profile (game/data/doctrine.py -- a heavy is never pressed onto the deck).
+HEAVY_BOMBER_DCS_IDS = frozenset(
+    {
+        "B-52H",
+        "B-1B",
+        "Tu-95MS",
+        "Tu-142",
+        "Tu-160",
+        "Tu-22M3",
+    }
+)
+
 # Unit classes the strategic ground-war planner can actually deploy at a front.
 # Other inventory-backed assets (notably the SCAR SOF teams, which are INFANTRY)
 # may live in Base.armor, but must not dilute deployment ratios or count as

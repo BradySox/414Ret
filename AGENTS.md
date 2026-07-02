@@ -244,7 +244,13 @@ file. This guide is the map; those are the territory.
     BVR; `rtb_speed` 450→400 kt; and a `VIETNAM_GROUND_PROCUREMENT` OOB that is infantry/artillery/AAA-heavy
     with light armour and **no ATGM/IFV** — the ATGM-decisive war was Yom Kippur, not Vietnam. So the doctrine
     now makes the era *play* differently, not just read differently; rebadge-equality test extended + range/
-    speed/ground-ratio tests added)
+    speed/ground-ratio tests added. **P1c addendum 2026-07-02 — the low-level attack profile**:
+    `Doctrine.low_level_attack_altitude` (Vietnam = 500 ft, both doctrines) presses CAS/BAI/Armed-Recon combat
+    legs onto the deck — RADIO/AGL waypoints via `WaypointBuilder.get_combat_altitude` + the CAS track-floor
+    bypass — so AI attack flights can trip the §39 snake-and-nape release gate (500 ft = the `napeCeilingFt`
+    default) and fly inside the §33 flak envelope; Strike (Alpha Strike dives + B-52 Arc Light), helos, and
+    heavies exempt (`HEAVY_BOMBER_DCS_IDS` moved to `game/data/units.py`); the AI's actual release altitude is
+    the remaining L11 flown check, NEW game required)
     + P2 era pre-seed (Vietnam campaigns auto-enable the Ops mechanics on select) + P2 New-Game "Vietnam" card
     (Intro `vietnamMode` radio → `TheaterConfiguration` filters the list to `era: vietnam` via
     `Campaign.matches_era`; needs an in-app pass) + P3 strike-deadlock fix + P3 tasking whitelist + P3 Alpha

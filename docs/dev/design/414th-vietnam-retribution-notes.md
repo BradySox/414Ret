@@ -37,6 +37,16 @@ P2 (shell/preset) + P3 (behaviour taskings) outstanding.
     Vietnam). The rebadge-equality test now resets these four fields too (so it still proves nothing
     *else* drifted), plus dedicated tests lock the shorter ranges / subsonic RTB / infantry-heavy,
     ATGM-free ground ratio.
+    - **P1c addendum — the low-level attack profile (2026-07-02, the queued HIGH-PRIORITY build).**
+      `Doctrine.low_level_attack_altitude` (Vietnam doctrines = **500 ft**, both sides): caps the
+      combat-altitude legs of **CAS/BAI/Armed Recon** plans in `WaypointBuilder.get_combat_altitude`
+      (+ bypasses the CAS 1,000 m track floor), pressing era attack runs onto the deck at RADIO/AGL
+      waypoints so AI flights can trip the §39 snake-and-nape release gate (500 ft = the
+      `napeCeilingFt` default) and fly inside the §33 flak envelope. Strike (Alpha Strike dive
+      profiles, B-52 Arc Light), helos, and heavies (`HEAVY_BOMBER_DCS_IDS`, now in
+      `game/data/units.py`) are exempt via `low_level_attack_altitude_for`. Tests:
+      `tests/ato/flightplans/test_low_level_attack_profile.py` + the rebadge test resets the field.
+      Flown confirmation of the AI's actual release altitude rides checklist L11; NEW game required.
   - **Borderline repoints to confirm:** `usa_1965.json` / `usa_1970.json` are *generic* 1965/1970
     US factions (not Vietnam-War-named). They're Vietnam-*era*, so the renames fit, but they could
     be used in other Cold-War-SEA scenarios. Repointed per the design's faction list; flag if undesired.

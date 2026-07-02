@@ -2911,12 +2911,21 @@ weapon-tracking pattern), no per-mission data:
   `dcs.log` for the armed line and widen `napeWeaponPatterns`. Also watch that the fire appears **at the
   impact points** (seconds after release, not at the release), that the fires **stop** after the burn time
   (no permanent infernos), and that a Mk-77 drop shows **only** the Splash Damage napalm (no doubled effect).
-- **Player-triggered only in practice (squadron call, 2026-07-01, still true).** AI attack flights never fly
-  the deck — Retribution's generated BAI/CAS plans hold them at their planned altitudes (the 2026-07-01
-  Yankee Station session's A-1s flew the whole mission at 6,400 m), so AI won't pass the release-profile gate
-  even when it drops Snakeyes. The feature is a **player-CAS reward** as shipped; making AI lay napalm needs
-  authored low-level ingress/attack altitudes in the Vietnam attack flight plans — a separate planner
-  increment (candidate: a `VIETNAM_DOCTRINE` low-level attack profile), not an L11 bug.
+- **AI eligibility is now authored (2026-07-02): the doctrine low-level attack profile.** The 2026-07-01
+  squadron call ("player-triggered only in practice — AI attack flights never fly the deck"; the Yankee
+  Station session's A-1s sat at 6,400 m all mission) is addressed by the planner increment it named:
+  `Doctrine.low_level_attack_altitude` (`game/data/doctrine.py`, Vietnam = **500 ft**, matching the
+  `napeCeilingFt` default) caps the combat-altitude legs — ingress, the attack run, egress, and the attack
+  plan's nav legs — of **CAS / BAI / Armed Recon** flights in `WaypointBuilder.get_combat_altitude` (+ the
+  `cas()` 1,000 m track floor is bypassed), so era attackers press their runs in on the deck at RADIO/AGL
+  waypoints. Strike is deliberately exempt (Alpha Strike dive deliveries + B-52 Arc Light, which rides
+  Strike), as are helos (own AGL logic) and heavies (`HEAVY_BOMBER_DCS_IDS`, now shared from
+  `game/data/units.py`). Gate helper `low_level_attack_altitude_for` is unit-tested
+  (`tests/ato/flightplans/test_low_level_attack_profile.py`); the **flown half is still owed** — the plan
+  puts the AI low, but whether the DCS AI's own `AttackGroup` delivery releases ≤ 500 ft AGL is an L11
+  cockpit question (if it climbs to dive-bomb anyway, next levers: pass `altitude=` on the BAI
+  `AttackGroup` task or raise `napeCeilingFt`). The §33 flak interplay (low + steady = tighter bursts) now
+  applies to AI runs too — that trade is the point. NEW game required (doctrines pickle by value).
 - **Detonation-anchored (2026-07-02 rework).** v1 was proximity-triggered — a 2 s poll laying a fixed swath
   on the *nearest enemy unit* whenever an `Attack airplanes`-attributed aircraft crossed a low/fast/near
   gate. That fired with **no ordnance released** (a dry low pass = a free napalm wall), made **aim

@@ -19,6 +19,7 @@ from dcs.mapping import Point, Vector2
 
 from game.ato.flightwaypoint import AltitudeReference, FlightWaypoint
 from game.ato.flightwaypointtype import FlightWaypointType
+from game.data.doctrine import low_level_attack_altitude_for
 from game.data.weapons import WeaponType
 from game.settings.settings import TargetIntelPrecision
 from game.theater import (
@@ -103,7 +104,26 @@ class WaypointBuilder:
 
     @property
     def get_combat_altitude(self) -> Distance:
-        return self.get_altitude(self.flight.unit_type.preferred_combat_altitude)
+        altitude = self.get_altitude(self.flight.unit_type.preferred_combat_altitude)
+        cap = self._low_level_attack_cap
+        if cap is not None:
+            return min(altitude, cap)
+        return altitude
+
+    @property
+    def _low_level_attack_cap(self) -> Optional[Distance]:
+        """The doctrine's authored low-level attack ceiling for this flight, if any.
+
+        When set (Vietnam CAS/BAI/Armed Recon), the combat-altitude legs press in on
+        the deck; at/below AGL_TRANSITION_ALT the waypoints become RADIO, so the run
+        terrain-follows. Wins over the doctrine's min_combat_altitude by design.
+        """
+        return low_level_attack_altitude_for(
+            self.doctrine,
+            self.flight.flight_type,
+            self.is_helo,
+            self.flight.unit_type.dcs_unit_type.id,
+        )
 
     def get_altitude(self, alt: Distance) -> Distance:
         randomized_alt = feet(round(alt.feet + self.flight.plane_altitude_offset))
@@ -535,6 +555,14 @@ class WaypointBuilder:
             altitude = meters(
                 max(feet(500).meters, weather.clouds.base - feet(500).meters)
             )
+        # The stock CAS track floors at 1,000 m AGL; an authored low-level attack
+        # profile (Vietnam) instead presses the track down to its own ceiling, and
+        # the cloud adjustment above may only lower it further, never raise it.
+        floor = meters(1000)
+        cap = self._low_level_attack_cap
+        if cap is not None:
+            altitude = min(altitude, cap)
+            floor = meters(0)
         return FlightWaypoint(
             "CAS",
             FlightWaypointType.CAS,
@@ -542,7 +570,7 @@ class WaypointBuilder:
             (
                 feet(self.flight.coalition.game.settings.heli_combat_alt_agl)
                 if self.is_helo
-                else max(meters(1000), altitude)
+                else max(floor, altitude)
             ),
             "RADIO",
             description="Provide CAS",

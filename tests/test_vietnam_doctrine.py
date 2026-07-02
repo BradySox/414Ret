@@ -156,6 +156,7 @@ def test_vietnam_differs_from_coldwar_only_in_the_intended_fields() -> None:
         gci_ambush=False,
         strike_escort_reserve=0,
         escort_support_aircraft=True,
+        low_level_attack_altitude=None,
         cap_engagement_range=COLDWAR_DOCTRINE.cap_engagement_range,
         escort_engagement_range=COLDWAR_DOCTRINE.escort_engagement_range,
         rtb_speed=COLDWAR_DOCTRINE.rtb_speed,
@@ -330,6 +331,23 @@ def test_package_description_uses_doctrine_rename() -> None:
     # Non-Vietnam doctrine is unchanged, including the combined OCA label.
     assert label(COLDWAR_DOCTRINE, strike2) == "Strike"
     assert label(COLDWAR_DOCTRINE, (FlightType.OCA_RUNWAY, 2)) == "OCA Strike"
+
+
+def test_vietnam_authored_low_level_attack_profile() -> None:
+    # The deck-level delivery that lets AI attack flights trip the §39 snake-and-nape
+    # release gate (and fly inside the §33 flak envelope): Vietnam CAS/BAI/Armed Recon
+    # cap their combat legs at 500 ft (the napeCeilingFt default). Both Vietnam
+    # doctrines fly it; every stock doctrine keeps None (stock altitudes).
+    from game.utils import feet
+
+    assert VIETNAM_DOCTRINE.low_level_attack_altitude == feet(500)
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.low_level_attack_altitude == feet(500)
+    for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+        assert d.low_level_attack_altitude is None
+    # from_settings rebuilds field by field -- the profile must survive.
+    assert VIETNAM_DOCTRINE.from_settings(Settings()).low_level_attack_altitude == feet(
+        500
+    )
 
 
 def test_vietnam_gci_ambush_posture() -> None:

@@ -2050,18 +2050,23 @@ so the two docs don't drift.
   set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;
   the mark cadence is far too frequent (smoke spam) or never fires.
 
-### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (REWORKED 2026-07-02: proximity heuristic → detonation-anchored `S_EVENT_SHOT` + weapon tracking; runtime Lua unflown — **player-triggered only in practice**, see 2026-07-01 note)
+### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (REWORKED 2026-07-02: proximity heuristic → detonation-anchored `S_EVENT_SHOT` + weapon tracking; runtime Lua unflown — AI deck-level plans now authored 2026-07-02, AI leg unflown too)
 - **Detonation-anchored (2026-07-02 rework — this row tests the NEW trigger):** fire now keys off a **real
   eligible-bomb release** (weapon type name vs the `napeWeaponPatterns` option, default `SNAKEYE`; Mk-77 cans
   excluded — Splash Damage owns real napalm) made from a low + fast **release profile**, with each weapon
   tracked to impact and one fire node + bite laid **at the real impact point**. A dry pass lays nothing; a
   miss burns where it missed; the swath is your actual ripple.
-- **Player-only in practice (squadron call, 2026-07-01, session `intelligent-dubinsky`, still true):** AI
-  attack flights never fly the deck — Retribution's generated BAI/CAS plans keep them at their planned
-  altitudes (the 2026-07-01 session's A-1s sat at 6,400 m all mission), so AI won't pass the release-profile
-  gate even when it drops Snakeyes. The test **is** a player pass; a player-CAS reward until someone authors
-  low-level ingress/attack altitudes into the Vietnam attack flight plans (deferred planner work, not an L11
-  bug).
+- **AI leg (2026-07-02 — the doctrine low-level attack profile, supersedes the "player-only in practice"
+  note):** the 2026-07-01 diagnosis (AI attack flights never fly the deck — the session's A-1s sat at
+  6,400 m, so AI could never pass the release gate) is now addressed in the planner:
+  `Doctrine.low_level_attack_altitude` (Vietnam = 500 ft, = the `napeCeilingFt` default) presses Vietnam
+  **CAS/BAI/Armed Recon** plans onto the deck (RADIO/AGL legs; Strike/helos/heavies exempt — §39 features
+  note). Gate helper + waypoint clamp are unit-tested; **the flown question** is whether the DCS AI's own
+  `AttackGroup` delivery then releases ≤ 500 ft AGL or climbs to dive-bomb anyway. Watch an AI Interdiction/
+  CAS A-1/A-4 with Snakeyes over the front: **pass** = it runs in low and its impacts lay §39 fire; **fail
+  signature** = the flight presses in at ~500 ft AGL but pops to altitude at the attack and no fire lays
+  (next levers: `altitude=` on the BAI `AttackGroup` task, or raise `napeCeilingFt`). Needs a NEW game
+  (doctrines pickle by value). Terrain check rides along: no AI CFIT on the low legs in Caucasus valleys.
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `snakeNape`
   on-marker (emitted when `vietnam_snake_and_nape` is on, independent of the other suite features; off = no
   node). The `S_EVENT_SHOT` matching, the release-profile gate, the weapon tracking/`land.getIP` impact

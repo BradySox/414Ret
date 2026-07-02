@@ -3,9 +3,22 @@ from datetime import timedelta
 from typing import FrozenSet, Mapping, Optional
 
 from game.ato.flighttype import FlightType
-from game.data.units import UnitClass
+from game.data.units import HEAVY_BOMBER_DCS_IDS, UnitClass
 from game.settings import Settings
 from game.utils import Distance, feet, nautical_miles, Speed, knots
+
+# The attack taskings the doctrine low-level attack profile applies to: the CAS /
+# interdiction / road-recon runs whose era delivery was pressed in on the deck
+# (Snakeye laydown, napalm, guns). Deliberately NOT Strike -- fixed-installation
+# strikes (and B-52 Arc Light, which rides Strike) keep their dive/level profiles --
+# and not the recon/support taskings, which have their own altitude logic.
+LOW_LEVEL_ATTACK_TASKS: FrozenSet[FlightType] = frozenset(
+    {
+        FlightType.CAS,
+        FlightType.BAI,
+        FlightType.ARMED_RECON,
+    }
+)
 
 
 @dataclass
@@ -161,6 +174,19 @@ class Doctrine:
     #: B-52s flew naked. 0 = stock behaviour. Simple ``= 0`` default (save-safe).
     strike_escort_reserve: int = 0
 
+    #: Authored low-level attack profile: when set, CAS/BAI/Armed-Recon flight plans
+    #: (LOW_LEVEL_ATTACK_TASKS) cap their combat-altitude legs -- ingress, the attack
+    #: run, egress, and the attack plan's nav legs -- at this altitude instead of the
+    #: airframe's preferred combat altitude, so era attackers press their runs in on
+    #: the deck (the Vietnam Snakeye/napalm delivery) rather than level-bombing from
+    #: altitude. Below the 5,000 ft AGL transition the waypoints become RADIO (AGL),
+    #: so the run terrain-follows. Helos keep their own AGL logic and heavy bombers
+    #: (HEAVY_BOMBER_DCS_IDS) are never pressed onto the deck. This is what lets AI
+    #: flights trip the runtime low/fast gates (the §39 snake-and-nape release
+    #: profile, the §33 flak's tracking logic) that were player-only in practice.
+    #: ``None`` (a save-safe class-attr default) = stock behaviour.
+    low_level_attack_altitude: Optional[Distance] = None
+
     #: When False, AEW&C and tanker packages fly without a dedicated fighter escort.
     #: The support orbits hold station behind friendly air (and against W5's leashed
     #: GCI-ambush MiGs they are unreachable anyway), yet the HTN plans them FIRST --
@@ -221,8 +247,30 @@ class Doctrine:
             always_escort_strikes=self.always_escort_strikes,
             gci_ambush=self.gci_ambush,
             strike_escort_reserve=self.strike_escort_reserve,
+            low_level_attack_altitude=self.low_level_attack_altitude,
             escort_support_aircraft=self.escort_support_aircraft,
         )
+
+
+def low_level_attack_altitude_for(
+    doctrine: Doctrine,
+    flight_type: FlightType,
+    is_helo: bool,
+    dcs_unit_id: str,
+) -> Optional[Distance]:
+    """The doctrine's authored low-level attack ceiling for one flight, or None.
+
+    Applies only to the LOW_LEVEL_ATTACK_TASKS attack runs; helos (their own AGL
+    logic) and heavy bombers (never pressed onto the deck) are exempt. None = the
+    flight keeps its stock combat altitude.
+    """
+    if doctrine.low_level_attack_altitude is None:
+        return None
+    if flight_type not in LOW_LEVEL_ATTACK_TASKS:
+        return None
+    if is_helo or dcs_unit_id in HEAVY_BOMBER_DCS_IDS:
+        return None
+    return doctrine.low_level_attack_altitude
 
 
 MODERN_DOCTRINE = Doctrine(
@@ -462,6 +510,12 @@ VIETNAM_DOCTRINE = replace(
     escort_engagement_range=nautical_miles(10),
     rtb_speed=knots(400),
     ground_unit_procurement_ratios=VIETNAM_GROUND_PROCUREMENT,
+    # The era CAS/interdiction delivery: press the run in on the deck. 500 ft
+    # matches the §39 snake-and-nape release ceiling (napeCeilingFt default), so
+    # an AI Snakeye pass flown at plan altitude is release-eligible; it also puts
+    # the run inside the §33 flak envelope -- that interplay is the point. Applies
+    # to both Vietnam doctrines (the air-defense split inherits it below).
+    low_level_attack_altitude=feet(500),
 )
 
 # The red half of the Vietnam air war. Hanoi's air arm was a pure GCI air-defense

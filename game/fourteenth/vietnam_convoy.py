@@ -70,12 +70,22 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
     if sum(1 for _ in coalition.transfers.convoys) >= max_convoys:
         return
 
-    corridor = _pick_trail_corridor(game, coalition)
+    # COIN (coin_insurgency): the insurgency has no factories or transfers, so the
+    # rear strongholds hold no Base.armor to skim -- the ratline is EXTERNAL
+    # support entering at the rear. Seed the source with a small stock of
+    # whitelisted irregular kit before skimming (bounded: just enough that the
+    # skim fraction yields one convoy load; the remainder is the rear buffer).
+    coin = getattr(game.settings, "coin_insurgency", False)
+
+    corridor = _pick_trail_corridor(game, coalition, allow_empty_source=coin)
     if corridor is None:
         return
     source, destination = corridor
 
-    units = _skim_units(source, round(MAX_CONVOY_UNITS * surge))
+    load = round(MAX_CONVOY_UNITS * surge)
+    if coin:
+        _seed_ratline_source(game, coalition, source, load)
+    units = _skim_units(source, load)
     if not units:
         return
 
@@ -87,7 +97,7 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
 
 
 def _pick_trail_corridor(
-    game: "Game", coalition: "Coalition"
+    game: "Game", coalition: "Coalition", allow_empty_source: bool = False
 ) -> Optional[tuple["ControlPoint", "ControlPoint"]]:
     """Pick (source, destination) for the trail convoy: a rear opfor base with spare armour
     feeding the road-connected opfor base nearest the front.
@@ -96,12 +106,26 @@ def _pick_trail_corridor(
     the real control-point graph so the transfer produces a real convoy. Returns None if no
     opfor-to-opfor road corridor with a stocked rear source exists.
     """
+    # "Toward the fighting": front lines when the campaign has them; on a
+    # front-less laydown (the COIN air-assault geometry -- no CP adjacency, no
+    # conflicts) fall back to the opposing coalition's control points, so the
+    # trail still flows toward where the enemy actually is. No fronts AND no
+    # opposing CPs means there is genuinely no war to supply -- no corridor.
     fronts = list(game.theater.conflicts())
-    if not fronts:
+    if fronts:
+        reference = [front.position for front in fronts]
+    else:
+        reference = [
+            cp.position
+            for cp in game.theater.controlpoints
+            if cp.captured != coalition.player
+            and not getattr(cp.captured, "is_neutral", False)
+        ]
+    if not reference:
         return None
 
     def distance_to_front(cp: "ControlPoint") -> float:
-        return min(front.position.distance_to_point(cp.position) for front in fronts)
+        return min(point.distance_to_point(cp.position) for point in reference)
 
     best: Optional[tuple["ControlPoint", "ControlPoint"]] = None
     best_front_distance = float("inf")
@@ -118,13 +142,38 @@ def _pick_trail_corridor(
                 destination, source = cp, other
             else:
                 destination, source = other, cp
-            if source.base.total_armor <= 0:
+            if source.base.total_armor <= 0 and not allow_empty_source:
                 continue
             front_distance = distance_to_front(destination)
             if front_distance < best_front_distance:
                 best_front_distance = front_distance
                 best = (source, destination)
     return best
+
+
+def _seed_ratline_source(
+    game: "Game", coalition: "Coalition", source: "ControlPoint", load: int
+) -> None:
+    """Top the rear source up to twice a convoy load with whitelisted units (COIN).
+
+    ``_skim_units`` takes at most :data:`MAX_SOURCE_FRACTION` (half) of the source's
+    stock, so a 2x-load stock yields exactly one full convoy and leaves the rest as
+    the rear buffer -- stable across cycles, never a growing pile. Free by design
+    (the external-support framing, design note §3.3); the units only ever exist to
+    ride the trail, where interdicting them is a real loss and a resolve drain.
+    Uses the C1 regen whitelist, cycled by turn for a mixed column.
+    """
+    from game.fourteenth.coin import regen_unit_pool
+
+    pool = regen_unit_pool(coalition)
+    if not pool:
+        return
+    deficit = 2 * load - source.base.total_armor
+    if deficit <= 0:
+        return
+    start = getattr(game, "turn", 0) % len(pool)
+    for i in range(deficit):
+        source.base.commission_units({pool[(start + i) % len(pool)]: 1})
 
 
 def _skim_units(source: "ControlPoint", cap: int) -> dict["GroundUnitType", int]:

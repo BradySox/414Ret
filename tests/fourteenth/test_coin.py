@@ -405,6 +405,11 @@ def test_enduring_resolve_campaign_definition() -> None:
     assert (path.parent / data["miz"]).exists()
     # The original zeroed the economy; the fork restores a small real income.
     assert data["recommended_enemy_money"] > 0
+    # The ratline: authored red<->red supply corridors (the original laydown had
+    # zero CP connectivity, so the trail machinery had nothing to run on).
+    assert len(data["supply_routes"]) >= 8
+    for route in data["supply_routes"]:
+        assert len(route["waypoints"]) >= 2
 
     profile = parse_will_profile(data["will"])
     assert profile.blue.label == "The Coalition's mandate"

@@ -203,3 +203,103 @@ def test_no_transfer_on_turn_zero() -> None:
     game = _game(on=True, control_points=[rear, front_cp], fronts=[_front()], turn=0)
     ensure_enemy_trail_convoy(game)
     assert game.red.transfers.created == []
+
+
+# ---- the COIN front-less ratline (C3 follow-up) -------------------------------------
+
+
+class _CoinUnit:
+    """Whitelist-passing GroundUnitType fake for the ratline seed pool."""
+
+    def __init__(self, name: str) -> None:
+        from game.data.units import UnitClass
+
+        self.display_name = name
+        self.unit_class = UnitClass.IFV
+        self.price = 2
+
+
+def _positioned(cp: _CP, distance_to_others: dict[str, float]) -> _CP:
+    """Give a fake CP a position whose distance_to_point reads the other's dist."""
+    cp.position = SimpleNamespace(
+        dist=cp.position.dist,
+        distance_to_point=lambda pos: pos.dist,
+    )
+    return cp
+
+
+def test_corridor_falls_back_to_opposing_cps_when_frontless() -> None:
+    # No fronts (the COIN air-assault laydown): the corridor orients toward the
+    # opposing CPs instead. "dist" doubles as distance-to-blue here.
+    rear = _CP("rear", "RED", 100.0, {"truck": 8})
+    forward = _CP("forward", "RED", 10.0, {"truck": 1})
+    blue = _CP("kandahar", "BLUE", 0.0, {})
+    for cp in (rear, forward, blue):
+        _positioned(cp, {})
+    rear.convoy_routes[forward] = object()
+    forward.convoy_routes[rear] = object()
+    game = SimpleNamespace(
+        theater=SimpleNamespace(
+            controlpoints=[rear, forward, blue], conflicts=lambda: []
+        )
+    )
+    corridor = _pick_trail_corridor(game, SimpleNamespace(player="RED"))  # type: ignore[arg-type]
+    assert corridor is not None
+    source, destination = corridor
+    assert source.name == "rear"
+    assert destination.name == "forward"
+
+
+def test_frontless_without_opposing_cps_is_still_none() -> None:
+    rear = _CP("rear", "RED", 100.0, {"truck": 8})
+    game = SimpleNamespace(
+        theater=SimpleNamespace(controlpoints=[rear], conflicts=lambda: [])
+    )
+    assert (
+        _pick_trail_corridor(game, SimpleNamespace(player="RED")) is None  # type: ignore[arg-type]
+    )
+
+
+def test_coin_seeds_an_empty_rear_source_and_ships_a_convoy() -> None:
+    # The COIN reality: every stronghold's Base.armor is empty. With
+    # coin_insurgency on, the ratline seeds the rear source with whitelisted kit
+    # (external support) and ships a real convoy off it.
+    rear = _CP("rear", "RED", 100.0, {})
+    forward = _CP("forward", "RED", 10.0, {})
+    blue = _CP("kandahar", "BLUE", 0.0, {})
+    for cp in (rear, forward, blue):
+        _positioned(cp, {})
+    rear.convoy_routes[forward] = object()
+    forward.convoy_routes[rear] = object()
+
+    def commission(units: dict[Any, int]) -> None:
+        for unit_type, count in units.items():
+            rear.base.armor[unit_type] = rear.base.armor.get(unit_type, 0) + count
+
+    rear.base.commission_units = commission  # type: ignore[attr-defined]
+    game = _game(on=True, control_points=[rear, forward, blue], fronts=[])
+    game.settings.coin_insurgency = True
+    game.red.faction = SimpleNamespace(frontline_units={_CoinUnit("Toyota")})
+    ensure_enemy_trail_convoy(game)
+    created = game.red.transfers.created
+    assert len(created) == 1
+    order = created[0]
+    assert sum(order.units.values()) == 4  # a full MAX_CONVOY_UNITS load
+    # Seeded to exactly 2x the load: the real new_transfer debits the skimmed 4,
+    # leaving a 4-unit rear buffer (the fake transfer ledger doesn't debit).
+    assert rear.base.total_armor == 8
+
+
+def test_no_coin_seeding_without_the_toggle() -> None:
+    # Vietnam campaigns (or COIN with the insurgency off) never conjure stock:
+    # an empty rear stays an empty rear and no convoy ships.
+    rear = _CP("rear", "RED", 100.0, {})
+    forward = _CP("forward", "RED", 10.0, {})
+    blue = _CP("kandahar", "BLUE", 0.0, {})
+    for cp in (rear, forward, blue):
+        _positioned(cp, {})
+    rear.convoy_routes[forward] = object()
+    game = _game(on=True, control_points=[rear, forward, blue], fronts=[])
+    ensure_enemy_trail_convoy(game)
+    assert game.red.transfers.created == []
+    assert rear.base.total_armor == 0

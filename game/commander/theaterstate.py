@@ -300,11 +300,15 @@ class TheaterState(WorldState["TheaterState"]):
         aewc_targets.append(finder.farthest_friendly_control_point())
 
         # 414th Combat SAR standing alert: one pilot-rescue orbit per active front,
-        # for EITHER coalition when the setting is on (the survivor-ledger runtime is
-        # coalition-generic). A side without rescue airframes simply fails to fill the
-        # package, so this degrades to a no-op there. Off -> empty, nothing planned.
+        # BLUE only (squadron call 2026-07-01: red flies no CSAR at all -- red rescue
+        # packages burned airframes, and every red ejection spawned a BLUE snatch
+        # party racing across the map, which was pure noise). The survivor-ledger
+        # runtime stays coalition-generic; only red's planning + the Lua red node
+        # are withheld. Off -> empty, nothing planned.
         combat_sar_targets: list[MissionTarget] = (
-            list(finder.front_lines()) if game.settings.auto_combat_sar else []
+            list(finder.front_lines())
+            if game.settings.auto_combat_sar and player.is_blue
+            else []
         )
 
         enemy_air_defenses = list(finder.enemy_air_defenses())

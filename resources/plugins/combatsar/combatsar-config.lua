@@ -6,8 +6,11 @@
 -- AI-only AICSAR with anonymous clones) with ONE plugin-owned survivor ledger that is the
 -- single source of truth. Player and AI rescues are judged by the SAME logic, so an AI->AI
 -- rescue credits exactly like a player rescue, and AI ejections are capturable (-> POW).
--- Coalition-generic: blue is wired live from the existing data fields; red turns on the day
--- the generator emits dcsRetribution.CombatSAR.red (no further plugin changes needed).
+-- Coalition-generic: blue is wired live from the existing data fields; red would turn on the
+-- day the generator emits dcsRetribution.CombatSAR.red (no further plugin changes needed) --
+-- but per the squadron call of 2026-07-01 the generator DELIBERATELY never emits it: red flies
+-- no CSAR, red ejections register no survivor, and no BLUE snatch party spawns to race a red
+-- pilot (that traffic was pure noise). The red path below stays as dormant capability.
 --
 -- Flow per downed pilot:
 --   * S_EVENT_EJECTION (either coalition) -> register a survivor in the ledger, spawn a

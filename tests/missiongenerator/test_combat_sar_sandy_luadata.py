@@ -4,8 +4,9 @@ Sandy previously wasn't part of the CombatSAR data table at all -- the runtime h
 no way to know which groups were the rescue-escort flights, so it could never
 dynamically retask one toward a live ejection (see 414th-features.md §15 gotcha
 and docs/dev/design/414th-scar-rescue-rework-notes.md). This locks the bucketing
-(a SCAR flight lands in blue_sandys/red_sandys, never in the rescue/king buckets)
-and the emission (the side's node carries a "sandys" list of group names).
+(a SCAR flight lands in the sandys bucket, never in the rescue/king buckets), the
+emission (the node carries a "sandys" list of group names), and the blue-only rule
+(red flights are ignored; no red node is ever emitted -- squadron call 2026-07-01).
 """
 
 from __future__ import annotations
@@ -107,7 +108,10 @@ def test_no_sandy_flights_emits_an_empty_list() -> None:
     assert _string_list(combat_sar.get_item("sandys")) == []
 
 
-def test_red_sandy_lands_on_the_red_node() -> None:
+def test_red_flights_are_ignored_and_no_red_node_is_emitted() -> None:
+    # Squadron call 2026-07-01: red flies no CSAR. Even if red COMBAT_SAR/SCAR
+    # flights exist (an old save), the emitter ignores them -- no red node means
+    # the plugin registers no red survivors and spawns no BLUE snatch party.
     flights = [
         _fd("RedJolly-1", FlightType.COMBAT_SAR, is_blue=False, helo=True),
         _fd("RedSandy-1", FlightType.SCAR, is_blue=False),
@@ -120,7 +124,16 @@ def test_red_sandy_lands_on_the_red_node() -> None:
 
     combat_sar = lua_data.get_item("CombatSAR")
     assert combat_sar is not None
+    assert _string_list(combat_sar.get_item("rescueHelos")) == ["BlueJolly-1"]
     assert _string_list(combat_sar.get_item("sandys")) == []
-    red_node = combat_sar.get_item("red")
-    assert red_node is not None
-    assert _string_list(red_node.get_item("sandys")) == ["RedSandy-1"]
+    assert combat_sar.get_item("red") is None
+
+
+def test_red_only_flights_emit_no_combat_sar_at_all() -> None:
+    flights = [_fd("RedJolly-1", FlightType.COMBAT_SAR, is_blue=False, helo=True)]
+    gen = _generator(flights)
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    assert lua_data.get_item("CombatSAR") is None

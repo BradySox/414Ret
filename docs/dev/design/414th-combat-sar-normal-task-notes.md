@@ -4,13 +4,17 @@
 `resources/plugins/combatsar/combatsar-config.lua` is that ledger. AI rescues now credit by real
 identity (`creditRescue` from `dispatchAIRescue`; verified in-game 2026-06-30, 3 credited rescues in
 `state.json` / `game.last_sitrep.pilots_recovered=3`, checklist G11), AI ejections are capturable →
-POW (a captured A-1H pilot in the same session, G20), and the runtime is coalition-generic (consumes
-`dcsRetribution.CombatSAR.red`). So the "AICSAR anonymous-clone / uncredited AI rescue" problem this
-note diagnoses is **already fixed** — do NOT re-implement the ledger. **What remains DESIGN-ONLY** is
-the surrounding *framing*: making Combat SAR a **default-on, auto-planned task on both coalitions**
-(`auto_combat_sar` still defaults OFF and only plans blue; red has the runtime data path but nothing
-auto-frags red Combat SAR packages) — i.e. Phases 1 (blue default-on) + 3 (symmetric red auto-planning)
-below. · **Date:** 2026-06-27 (status refreshed 2026-07-01)
+POW (a captured A-1H pilot in the same session, G20), and the runtime is coalition-generic (would
+consume `dcsRetribution.CombatSAR.red`). So the "AICSAR anonymous-clone / uncredited AI rescue"
+problem this note diagnoses is **already fixed** — do NOT re-implement the ledger.
+**Phase 3 (symmetric red) is REJECTED — squadron call 2026-07-01: red flies NO CSAR.** Red combat-SAR
+planning briefly existed via the coalition-generic `combat_sar_targets` seeding and produced exactly
+the noise this note worried about: red rescue packages burning airframes and a **BLUE snatch party
+spawning to race every red ejection**. The seeding is now BLUE-gated (`theaterstate.py`), the
+generator **never emits the `red` Lua node** (`luagenerator._generate_combat_sar`), and the plugin's
+red path stays dormant capability only. Do not re-enable without a fresh squadron call. What remains
+design-only from this note is just Phase 1 (blue default-on; `auto_combat_sar` still defaults OFF).
+· **Date:** 2026-06-27 (status refreshed 2026-07-01)
 **Related:** [`414th-combat-sar-spec.md`](414th-combat-sar-spec.md) (the shipped blue feature),
 `414th-scar-rescue-rework-notes.md` (Sandy/POW/capture rework), CLAUDE.md §21 (Combat SAR) +
 §15 (SCAR "Sandy"). In-game-pass rows: **G8–G14**.

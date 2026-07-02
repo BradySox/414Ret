@@ -2853,33 +2853,45 @@ The eighth **Vietnam Ops suite** feature: the iconic low-level napalm close-air-
 and nape"** ("snake" = Snakeye retarded/high-drag bombs, "nape" = napalm canisters), the signature Vietnam CAS
 run where an attacker rolls in low and fast and lays a **wall of fire** across the enemy. DCS doesn't model
 napalm as an effective AI/soft-target weapon, so this is the flavor layer that makes the on-the-deck run *do*
-something visible and lethal to troops in the open.
+something visible and lethal to troops in the open. **Detonation-anchored since 2026-07-02**: the fire is
+tied to real ordnance impacts, not a proximity heuristic.
 
 ### How it works
 
-Same shape as §33 flak and §38 FAC — an **on-marker + runtime discovery**, no per-mission data:
+The on-marker is the §33 flak / §38 FAC shape; the runtime is **event-driven** (the Splash Damage
+weapon-tracking pattern), no per-mission data:
 - **Python** (`vietnamopsluadata.py` `_populate_snake_nape`) emits only
   `dcsRetribution.VietnamOps.snakeNape = { enabled = true }` when `vietnam_snake_and_nape` is on.
-- **The `vietnamops` plugin** discovers the delivering aircraft itself at runtime — airborne, alive **attack
-  aircraft** (gated by the DCS `Attack airplanes` attribute, the same attribute-discovery approach flak uses
-  for `AAA`) that are **low** (at or below the run-in ceiling AGL, default 150 m), **fast** (ground speed at or
-  above the min-speed gate, default 100 m/s), and passing **close over an alive opposing ground unit** (within
-  the drop range, default 400 m). On such a pass it lays a **napalm swath**: a line of
-  `trigger.action.effectSmokeBig` fire nodes (default 5, medium smoke-and-fire preset) spread along the
-  aircraft's **run-in heading** (read from its velocity, so the fire lays along the flight path, not across it),
-  each auto-**stopped** after a burn time (default 90 s, via `trigger.action.stopEffect`) so fires don't pile up,
-  plus a modest per-node `trigger.action.explosion` (default 40) — napalm's real bite on soft targets. A
-  per-aircraft **cooldown** (default 25 s) means one pass = one wall of fire, not a per-tick stream. A
-  "SNAKE AND NAPE — napalm on the deck" cue goes to the delivering coalition.
+- **Release gate.** A `world.addEventHandler` `S_EVENT_SHOT` handler catches each release of an **eligible
+  retarded bomb** — the weapon's DCS type name matched (case-insensitive plain-text, comma-separated
+  patterns; default `SNAKEYE`, which catches the native `MK_82SNAKEYE` and the mod packs' Mk-81/82 Snakeye
+  variants) — made from a qualifying **delivery profile at the moment of release**: the shooter airborne,
+  at/below the run-in ceiling AGL (default 500 ft) and at/above the min ground speed (default 180 kts — keeps
+  a loaded A-1 Skyraider run eligible). High, slow, or ineligible-ordnance releases are ignored: the ordnance
+  **and** the profile are both the cost of the fire.
+- **Track to detonation.** Each caught weapon joins a fast sample loop (0.1 s steps, alive only while an
+  eligible weapon is in flight — a low Snakeye flies ~2–6 s) recording position/velocity. When the weapon
+  stops existing it has detonated: the impact point is resolved by terrain-intersecting the final flight path
+  (`land.getIP` on the last sample — the Splash Damage pattern, with a snap-to-ground fallback) and **one
+  fire node** (`trigger.action.effectSmokeBig`, medium preset, auto-**stopped** after 90 s) **+ a modest
+  `trigger.action.explosion` bite** (default 40 — napalm's real soft-target lethality, on top of the bomb's
+  own native HE) is laid **at the real impact point**. The **wall of fire emerges from your actual ripple
+  spacing** — a 6-bomb ripple burns as a 6-node line along the fall line; a dry pass lays nothing; a miss
+  burns where it missed. The "SNAKE AND NAPE — napalm on the deck" cue fires once per salvo (a short
+  per-shooter window), not per bomb.
+- **Real napalm is excluded.** Mk-77 fire bombs (`MK77mod0/1-WPN`, the A-4E-C's cans) are skipped whatever
+  the pattern list says — the bundled (locked) Splash Damage build already renders real napalm end-to-end
+  (`napalm_mk77_enabled`: tracked impact fireballs, phosphor, unit damage), and double-rendering would stack
+  effects. SD owns real nape; §39 owns the Snakeye stand-in.
 - **Rewards, doesn't punish.** Unlike the flak gauntlet (which *thickens* against a predictable straight run),
-  snake-and-nape *pays off* pressing the CAS run in low and on the deck — the risk of getting low is the
-  trade for laying effective fire. It only ever fires on a deliberate low pass over enemy ground, so the real
-  bite is earned, not ambient.
-- Symmetric by construction (both sides' attack jets are scanned). No attacker down low over enemy ground ⇒
-  nothing laid.
-- Tunables (plugin `specificOptions`, imperial since 2026-07-01): run-in ceiling (ft AGL), min speed (kts —
-  default 180 kts keeps a loaded A-1 Skyraider pass eligible), drop range (ft), swath length (ft), fire-node
-  count, per-node power.
+  snake-and-nape *pays off* pressing the CAS run in on the deck — the risk of getting low is the trade for
+  laying effective fire, and now the aim matters too.
+- Symmetric by construction (any side's qualifying release; no aircraft-attribute gate — carrying and
+  dropping the ordnance low **is** the eligibility, so a Snakeye-armed F-4 counts even though it lacks the
+  `Attack airplanes` attribute the v1 scan required).
+- Tunables (plugin `specificOptions`, imperial): release ceiling (ft AGL), min release speed (kts), the
+  ordnance pattern list (`napeWeaponPatterns` — add e.g. `MK_82` to let plain slick low drops count),
+  per-impact power.
 
 ### Files & tests
 
@@ -2887,30 +2899,34 @@ Same shape as §33 flak and §38 FAC — an **on-marker + runtime discovery**, n
 |---|---|
 | Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_snake_nape`) |
 | Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (Snake and nape section) |
-| Setting / options | `game/settings/settings.py` (`vietnam_snake_and_nape`); plugin `specificOptions` (ceiling/speed/range/swath/nodes/power) |
+| Setting / options | `game/settings/settings.py` (`vietnam_snake_and_nape`); plugin `specificOptions` (release ceiling/speed, weapon patterns, per-impact power) |
 | Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (the `snakeNape` on-marker is emitted when the setting is on, independent of the other suite features; off = no node) |
 
 ### Gotchas / deferred
 
-- **Runtime is unflown (checklist L11).** The Lua passes the `luac5.1 -p` gate, but the runtime attack-plane
-  discovery, the low/fast/near gating, and the `effectSmokeBig`/`explosion` placement can't be exercised
-  headless. #1 thing to confirm in the cockpit: the **`Attack airplanes` attribute** actually matches the
-  intended CAS jets in-mission (A-1/A-4/A-37/Su-25/OV-10 etc.) — if a wanted type doesn't carry it, widen the
-  gate. Also watch that the fire lays **along** the run-in over real enemy ground (not on friendlies), that the
-  fires **stop** after the burn time (no permanent infernos), and that `dcs.log` shows "Snake and nape armed"
-  with no Lua error.
-- **Player-triggered only in practice (squadron call, 2026-07-01).** AI attack flights never trip the
-  low/fast gate on their own — Retribution's generated BAI/CAS plans hold them at their planned altitudes
-  (the 2026-07-01 Yankee Station session's A-1s flew the whole mission at 6,400 m) and nothing commands a
-  deck run unless it's written into the waypoint plan. The feature is a **player-CAS reward** as shipped;
-  making AI lay napalm needs authored low-level ingress/attack altitudes in the Vietnam attack flight plans —
-  a separate planner increment (candidate: a `VIETNAM_DOCTRINE` low-level attack profile), not an L11 bug.
-- **Proximity trigger, not weapon-release.** v1 fires on a qualifying low/fast pass over enemy ground rather
-  than tracking an actual napalm/Snakeye weapon release (`S_EVENT_SHOT` weapon-id matching is brittle across
-  modules). The pass gate is the low-risk flavor core; a release-tied version is a possible later increment.
-- **The per-node bite is real (by design).** Unlike flak's mostly-visual power, the default blast is tuned to
-  hurt soft targets — that *is* the feature (napalm was devastating to infantry/trucks). Dial `napeBlastPower`
-  down for a purely-cosmetic wall of fire.
+- **Runtime is unflown (checklist L11).** The Lua passes the `luac5.1 -p` gate, but the `S_EVENT_SHOT`
+  handler, the weapon tracking, and the `effectSmokeBig`/`explosion` placement can't be exercised headless.
+  #1 thing to confirm in the cockpit: the released Snakeye's **type name actually matches the pattern list**
+  across the flown modules (native + A-4E-C/mod-pack variants) — if a wanted bomb doesn't lay fire, check
+  `dcs.log` for the armed line and widen `napeWeaponPatterns`. Also watch that the fire appears **at the
+  impact points** (seconds after release, not at the release), that the fires **stop** after the burn time
+  (no permanent infernos), and that a Mk-77 drop shows **only** the Splash Damage napalm (no doubled effect).
+- **Player-triggered only in practice (squadron call, 2026-07-01, still true).** AI attack flights never fly
+  the deck — Retribution's generated BAI/CAS plans hold them at their planned altitudes (the 2026-07-01
+  Yankee Station session's A-1s flew the whole mission at 6,400 m), so AI won't pass the release-profile gate
+  even when it drops Snakeyes. The feature is a **player-CAS reward** as shipped; making AI lay napalm needs
+  authored low-level ingress/attack altitudes in the Vietnam attack flight plans — a separate planner
+  increment (candidate: a `VIETNAM_DOCTRINE` low-level attack profile), not an L11 bug.
+- **Detonation-anchored (2026-07-02 rework).** v1 was proximity-triggered — a 2 s poll laying a fixed swath
+  on the *nearest enemy unit* whenever an `Attack airplanes`-attributed aircraft crossed a low/fast/near
+  gate. That fired with **no ordnance released** (a dry low pass = a free napalm wall), made **aim
+  irrelevant** (you couldn't miss — and a perfect drop just outside the scan range rendered nothing), and
+  mistimed/misoriented the fire. The rework ties everything to real releases and real impacts; the retired
+  options (`napeDropRangeFt`/`napeSwathLengthFt`/`napeFireNodes`, plus the per-aircraft cooldown) gave way
+  to `napeWeaponPatterns` — bombs are the cost now, so no cooldown is needed.
+- **The per-impact bite is real (by design).** Unlike flak's mostly-visual power, the default blast is tuned
+  to hurt soft targets — that *is* the feature (napalm was devastating to infantry/trucks), stacked on the
+  Snakeye's own native HE. Dial `napeBlastPower` down (or to 0) for a purely-cosmetic wall of fire.
 
 ## §40 — Campaign phases (inferred arc + planner emphasis)
 

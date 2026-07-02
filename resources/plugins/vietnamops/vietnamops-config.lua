@@ -899,150 +899,239 @@ end
 -------------------------------------------------------------------------------
 -- Snake and nape: low-level napalm CAS delivery
 --
--- The iconic Vietnam close-air-support pass: an attack aircraft rolls in low and fast and
--- lays a wall of fire ("snake" = Snakeye retarded bombs, "nape" = napalm) across the enemy.
--- Like the flak gauntlet and FAC, the runtime discovers the delivering aircraft itself --
--- an airborne attack plane (DCS "Attack airplanes" attribute) that is LOW (below the run-in
--- ceiling), FAST, and passing close over an alive opposing ground unit -- and lays a napalm
--- swath (a line of fire effects + a modest per-node bite) oriented along the run-in, once
--- per pass (a per-aircraft cooldown). Rewards flying the CAS run in on the deck rather than
--- lobbing from altitude; symmetric (both sides' attack jets). Pure DCS
+-- The iconic Vietnam close-air-support pass: an attacker rolls in low and fast and lays a
+-- wall of fire ("snake" = Snakeye retarded bombs, "nape" = napalm) across the enemy.
+-- Detonation-anchored: an S_EVENT_SHOT handler catches each eligible retarded-bomb release
+-- (weapon type name matched against a configurable pattern list, default SNAKEYE) made from
+-- a qualifying delivery profile -- LOW (at/below the run-in ceiling AGL) and FAST (at/above
+-- the min ground speed) at the moment of release -- then tracks the weapon to impact
+-- (Splash Damage's land.getIP pattern) and lays ONE fire node + a modest napalm bite at the
+-- REAL impact point. The swath emerges from the actual ripple spacing; a dry pass lays
+-- nothing, and a miss burns where it missed. Real Mk-77 fire bombs are excluded here --
+-- the bundled Splash Damage build already renders those (napalm_mk77_enabled), and
+-- double-rendering would stack effects. Rewards flying the CAS run in on the deck rather
+-- than lobbing from altitude; symmetric (any side's release qualifies). Pure DCS
 -- (trigger.action.effectSmokeBig + explosion), pcall-guarded. Gated on
 -- dcsRetribution.VietnamOps.snakeNape.
 -------------------------------------------------------------------------------
 if suite.snakeNape and suite.snakeNape.enabled then
-    local CEILING = 500 * FT_TO_M      -- m AGL, at/below this counts as a napalm run (option in ft)
-    local MIN_SPEED = 180 * KTS_TO_MS  -- m/s ground speed, a fast delivery pass (option in kts;
-                                       -- 180 kts keeps a loaded A-1 Skyraider run eligible)
-    local DROP_RANGE = 1300 * FT_TO_M  -- m from an enemy ground unit that triggers the lay (option in ft)
-    local SWATH_LENGTH = 800 * FT_TO_M -- m, length of the fire line along the run-in (option in ft)
-    local FIRE_NODES = 5        -- fire effects laid along the swath
-    local FIRE_PRESET = 2       -- effectSmokeBig preset: 1 small .. 4 huge smoke-and-fire
-    local FIRE_DENSITY = 0.5    -- 0..1 effect density
-    local BURN_TIME = 90        -- s each fire burns before it is stopped
-    local BLAST = 40            -- per-node explosion power (napalm's bite on soft targets)
-    local COOLDOWN = 25         -- s per aircraft between lays (one pass = one wall of fire)
+    local CEILING = 500 * FT_TO_M      -- m AGL at release, at/below counts as a napalm run (option in ft)
+    local MIN_SPEED = 180 * KTS_TO_MS  -- m/s ground speed at release, a fast delivery pass (option in
+                                       -- kts; 180 kts keeps a loaded A-1 Skyraider run eligible)
+    local BLAST = 40                   -- per-impact explosion power (napalm's bite on soft targets)
+    local WEAPON_PATTERNS = "SNAKEYE"  -- comma-separated, case-insensitive plain-text matches against
+                                       -- the released weapon's DCS type name (option)
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
         local o = dcsRetribution.plugins.vietnamops
         CEILING = (tonumber(o.napeCeilingFt) or 500) * FT_TO_M
         MIN_SPEED = (tonumber(o.napeMinSpeedKts) or 180) * KTS_TO_MS
-        DROP_RANGE = (tonumber(o.napeDropRangeFt) or 1300) * FT_TO_M
-        SWATH_LENGTH = (tonumber(o.napeSwathLengthFt) or 800) * FT_TO_M
-        FIRE_NODES = tonumber(o.napeFireNodes) or FIRE_NODES
         BLAST = tonumber(o.napeBlastPower) or BLAST
+        if type(o.napeWeaponPatterns) == "string" and o.napeWeaponPatterns ~= "" then
+            WEAPON_PATTERNS = o.napeWeaponPatterns
+        end
     end
 
-    local POLL = 2              -- s between delivery-pass evaluations
-    local JITTER = 20           -- m random scatter per fire/impact node
+    local TRACK_STEP = 0.1      -- s between tracked-weapon samples (a low Snakeye flies ~2-6 s)
+    local MAX_TRACK_TIME = 60   -- s safety cap per tracked weapon (never track forever)
+    local FIRE_PRESET = 2       -- effectSmokeBig preset: 1 small .. 4 huge smoke-and-fire
+    local FIRE_DENSITY = 0.5    -- 0..1 effect density
+    local BURN_TIME = 90        -- s each fire burns before it is stopped
+    local CUE_WINDOW = 5        -- s: impacts from the same aircraft within this share one cue
     local fireId = 0            -- unique-name counter for effectSmokeBig / stopEffect
 
-    local function napeOpposite(side)
-        if side == coalition.side.RED then
-            return coalition.side.BLUE
+    -- Eligible-ordnance matcher: lowercased plain-text finds against the weapon type name.
+    local patterns = {}
+    for pat in string.gmatch(WEAPON_PATTERNS, "[^,]+") do
+        pat = string.gsub(string.gsub(pat, "^%s+", ""), "%s+$", "")
+        if pat ~= "" then
+            patterns[#patterns + 1] = string.lower(pat)
         end
-        return coalition.side.RED
     end
 
-    -- Run-in heading (radians) in the (north, east) frame from the aircraft velocity, or
-    -- nil if it is too slow to read a direction.
-    local function runInHeading(u)
-        local v = u:getVelocity()
-        if not v then
-            return nil
+    -- Real napalm cans are owned end-to-end by the bundled Splash Damage build
+    -- (napalm_mk77_enabled: tracked impact fireballs, phosphor, unit damage) -- never
+    -- double-render them here, whatever the pattern list says.
+    local NAPALM_TYPES = { ["mk77mod0-wpn"] = true, ["mk77mod1-wpn"] = true }
+
+    local function isEligibleWeapon(typeName)
+        local t = string.lower(typeName or "")
+        if t == "" or NAPALM_TYPES[t] then
+            return false
         end
-        if math.sqrt(v.x * v.x + v.z * v.z) < 1 then
-            return nil
+        for i = 1, #patterns do
+            if string.find(t, patterns[i], 1, true) then
+                return true
+            end
         end
-        return math.atan2(v.z, v.x)  -- atan2(east, north)
+        return false
     end
 
-    -- Nearest alive opposing ground unit within DROP_RANGE of (fx, fz) [north, east].
-    local function nearestEnemyGround(enemySide, fx, fz)
-        local best, bestD = nil, nil
-        for _, grp in pairs(coalition.getGroups(enemySide, Group.Category.GROUND) or {}) do
-            for _, u in pairs(grp:getUnits() or {}) do
-                if u:isExist() and u:getLife() > 0 then
-                    local p = u:getPoint()
-                    local dx, dz = p.x - fx, p.z - fz
-                    local d2 = dx * dx + dz * dz
-                    if d2 <= (DROP_RANGE * DROP_RANGE) and (not bestD or d2 < bestD) then
-                        best, bestD = p, d2
-                    end
+    -- One fire node + bite at an impact point.
+    local function layFire(pt)
+        fireId = fireId + 1
+        local ename = "vnnape-" .. fireId
+        pcall(trigger.action.effectSmokeBig, pt, FIRE_PRESET, FIRE_DENSITY, ename)
+        timer.scheduleFunction(function()
+            pcall(trigger.action.stopEffect, ename)
+            return nil
+        end, {}, timer.getTime() + BURN_TIME)
+        if BLAST > 0 then
+            trigger.action.explosion(pt, BLAST)
+        end
+    end
+
+    -- Resolve a vanished weapon's impact point from its last sampled position/velocity:
+    -- terrain-intersect along the final flight path (the Splash Damage land.getIP pattern),
+    -- falling back to the last position snapped to ground height.
+    local function resolveImpact(track)
+        local p, v = track.pos, track.vel
+        if not p then
+            return nil
+        end
+        if v then
+            local spd = math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+            if spd > 1 then
+                local dir = { x = v.x / spd, y = v.y / spd, z = v.z / spd }
+                local okIp, ip = pcall(land.getIP, p, dir, math.max(spd * 0.5, 100))
+                if okIp and ip then
+                    return ip
                 end
             end
         end
-        return best
+        local h = land.getHeight({ x = p.x, y = p.z }) or 0
+        return { x = p.x, y = h, z = p.z }
     end
 
-    -- Lay a line of fire across (cx, cz) [north, east] oriented along headingRad.
-    local function layNapalm(cx, cz, headingRad)
-        local cosH, sinH = math.cos(headingRad), math.sin(headingRad)
-        local span = (FIRE_NODES > 1) and (FIRE_NODES - 1) or 1
-        for i = 0, FIRE_NODES - 1 do
-            local along = (i / span - 0.5) * SWATH_LENGTH
-            local north = cx + along * cosH + math.random(-JITTER, JITTER)
-            local east = cz + along * sinH + math.random(-JITTER, JITTER)
-            local h = land.getHeight({ x = north, y = east }) or 0
-            local pt = { x = north, y = h, z = east }
-            fireId = fireId + 1
-            local ename = "vnnape-" .. fireId
-            pcall(trigger.action.effectSmokeBig, pt, FIRE_PRESET, FIRE_DENSITY, ename)
-            timer.scheduleFunction(function()
-                pcall(trigger.action.stopEffect, ename)
-                return nil
-            end, {}, timer.getTime() + BURN_TIME)
-            if BLAST > 0 then
-                trigger.action.explosion(pt, BLAST)
-            end
+    local tracked = {}       -- in-flight eligible weapons: {wpn, pos, vel, side, shooter, shotTime}
+    local trackerArmed = false
+    local lastCue = {}       -- shooter name -> last cue time (one cue per ripple, not per bomb)
+
+    local function cueSalvo(track)
+        local now = timer.getTime()
+        local key = track.shooter or "?"
+        if lastCue[key] and (now - lastCue[key]) < CUE_WINDOW then
+            return
+        end
+        lastCue[key] = now
+        if track.side then
+            pcall(
+                trigger.action.outTextForCoalition,
+                track.side,
+                "SNAKE AND NAPE -- napalm on the deck.",
+                15
+            )
         end
     end
 
-    local lastLay = {}  -- unit name -> last-lay time (per-aircraft cooldown)
-
-    local function napeTick()
-        local ok, err = pcall(function()
-            local now = timer.getTime()
-            for _, side in pairs({ coalition.side.RED, coalition.side.BLUE }) do
-                local enemySide = napeOpposite(side)
-                for _, grp in pairs(coalition.getGroups(side, Group.Category.AIRPLANE) or {}) do
-                    for _, u in pairs(grp:getUnits() or {}) do
-                        if u:isExist() and u:getLife() > 0 and u:inAir()
-                            and u:hasAttribute("Attack airplanes") then
-                            local name = u:getName()
-                            if not lastLay[name] or (now - lastLay[name]) >= COOLDOWN then
-                                local p = u:getPoint()
-                                local agl = p.y - (land.getHeight({ x = p.x, y = p.z }) or 0)
-                                local v = u:getVelocity()
-                                local spd = v and math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z) or 0
-                                if agl <= CEILING and spd >= MIN_SPEED then
-                                    local tgt = nearestEnemyGround(enemySide, p.x, p.z)
-                                    if tgt then
-                                        local hdg = runInHeading(u) or 0
-                                        layNapalm(tgt.x, tgt.z, hdg)
-                                        lastLay[name] = now
-                                        pcall(
-                                            trigger.action.outTextForCoalition,
-                                            side,
-                                            "SNAKE AND NAPE -- napalm on the deck.",
-                                            15
-                                        )
-                                    end
-                                end
-                            end
-                        end
-                    end
+    -- Fast sample loop, alive only while an eligible weapon is in flight: refresh each
+    -- tracked weapon's position/velocity; when one stops existing it has detonated -- lay
+    -- the fire at its resolved impact point.
+    local function napeTrack()
+        local now = timer.getTime()
+        local i = 1
+        while i <= #tracked do
+            local track = tracked[i]
+            local okExist, exists = pcall(function()
+                return track.wpn:isExist()
+            end)
+            if okExist and exists then
+                local okSample, p, v = pcall(function()
+                    return track.wpn:getPoint(), track.wpn:getVelocity()
+                end)
+                if okSample then
+                    track.pos = p or track.pos
+                    track.vel = v or track.vel
                 end
+                if (now - track.shotTime) > MAX_TRACK_TIME then
+                    table.remove(tracked, i)
+                else
+                    i = i + 1
+                end
+            else
+                local pt = resolveImpact(track)
+                if pt then
+                    layFire(pt)
+                    cueSalvo(track)
+                end
+                table.remove(tracked, i)
             end
-        end)
+        end
+        if #tracked == 0 then
+            trackerArmed = false
+            return nil
+        end
+        return now + TRACK_STEP
+    end
+
+    local function napeTrackTick()
+        local ok, err = pcall(napeTrack)
         if not ok then
-            env.warning("vietnamops: snake-and-nape tick error (continuing): " .. tostring(err))
+            env.warning("vietnamops: snake-and-nape track error (continuing): " .. tostring(err))
+            trackerArmed = false
+            return nil
         end
-        return timer.getTime() + POLL
+        if trackerArmed then
+            return timer.getTime() + TRACK_STEP
+        end
+        return nil
     end
 
-    timer.scheduleFunction(napeTick, {}, timer.getTime() + POLL)
+    -- Release gate: an eligible weapon released from a low + fast delivery profile starts
+    -- a track. High, slow, or ineligible-ordnance releases are ignored -- the ordnance and
+    -- the profile are both the cost of the fire.
+    local function onNapeShot(event)
+        if event.id ~= world.event.S_EVENT_SHOT then
+            return
+        end
+        local wpn, shooter = event.weapon, event.initiator
+        if not (wpn and shooter) then
+            return
+        end
+        local okName, typeName = pcall(function()
+            return wpn:getTypeName()
+        end)
+        if not (okName and isEligibleWeapon(typeName)) then
+            return
+        end
+        local okProfile, qualifies, side, shooterName = pcall(function()
+            if not (shooter.isExist and shooter:isExist() and shooter.inAir and shooter:inAir()) then
+                return false, nil, nil
+            end
+            local p = shooter:getPoint()
+            local agl = p.y - (land.getHeight({ x = p.x, y = p.z }) or 0)
+            local v = shooter:getVelocity()
+            local spd = v and math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z) or 0
+            return (agl <= CEILING and spd >= MIN_SPEED), shooter:getCoalition(), shooter:getName()
+        end)
+        if not (okProfile and qualifies) then
+            return
+        end
+        tracked[#tracked + 1] = {
+            wpn = wpn,
+            pos = nil,
+            vel = nil,
+            side = side,
+            shooter = shooterName,
+            shotTime = timer.getTime(),
+        }
+        if not trackerArmed then
+            trackerArmed = true
+            timer.scheduleFunction(napeTrackTick, {}, timer.getTime() + TRACK_STEP)
+        end
+    end
+
+    world.addEventHandler({
+        onEvent = function(self, event)
+            local ok, err = pcall(onNapeShot, event)
+            if not ok then
+                env.warning(
+                    "vietnamops: snake-and-nape shot handler error (continuing): " .. tostring(err)
+                )
+            end
+        end,
+    })
     env.info(string.format(
-        "DCSRetribution|Vietnam Ops - Snake and nape armed (ceiling %.0fm AGL, min speed %.0fm/s, "
-            .. "drop range %.0fm, swath %.0fm x %d nodes, blast %d)",
-        CEILING, MIN_SPEED, DROP_RANGE, SWATH_LENGTH, FIRE_NODES, BLAST))
+        "DCSRetribution|Vietnam Ops - Snake and nape armed (release gate %.0fm AGL / %.0fm/s, "
+            .. "ordnance '%s', per-impact blast %d)",
+        CEILING, MIN_SPEED, WEAPON_PATTERNS, BLAST))
 end

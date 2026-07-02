@@ -222,18 +222,29 @@ target weapon, so this is the flavor layer that makes the on-the-deck run *do* s
 **reward** counterpart to the flak gauntlet's *punishment*: flak thickens against a predictable straight run;
 snake-and-nape pays off pressing in low over the target.
 
-**What shipped (runtime, on-marker + discovery — the §B flak / §38 FAC shape).** `_populate_snake_nape`
-(`vietnamopsluadata.py`) emits only `snakeNape = { enabled = true }` when `vietnam_snake_and_nape` is on. The
-`vietnamops` plugin discovers **attack aircraft** at runtime (DCS `Attack airplanes` attribute) making a
-**low** (≤ ceiling AGL), **fast** (≥ min speed), **near-an-enemy-ground-unit** pass and lays a **napalm swath**
-— a line of `effectSmokeBig` fires along the run-in heading (auto-`stopEffect` after a burn time) + a modest
-per-node `explosion` bite — once per pass (a per-aircraft cooldown). Symmetric (both sides' attack jets).
-Emitter-tested; runtime Lua pending an in-game pass (checklist L11) — the open item is confirming the
-`Attack airplanes` attribute matches the intended CAS jets in-mission (widen the gate if not).
+**What shipped (runtime, on-marker + a detonation-anchored event handler — REWORKED 2026-07-02).**
+`_populate_snake_nape` (`vietnamopsluadata.py`) emits only `snakeNape = { enabled = true }` when
+`vietnam_snake_and_nape` is on (unchanged). The `vietnamops` plugin is now **weapon-release-tied**: an
+`S_EVENT_SHOT` handler catches each **eligible retarded-bomb release** — the weapon's DCS type name matched
+against a configurable comma-separated pattern list (default `SNAKEYE`, catching the native `MK_82SNAKEYE`
+and the mod packs' Mk-81/82 Snakeye variants) — made from a qualifying **delivery profile at the moment of
+release** (≤ ceiling AGL + ≥ min ground speed, the "pressed in on the deck" gate). Each caught weapon is
+**tracked to impact** (a fast sample loop, alive only while a weapon is in flight; impact resolved via
+`land.getIP` on the last position/velocity — the Splash Damage pattern) and **one fire node
+(`effectSmokeBig`, auto-`stopEffect` after a burn time) + a modest `explosion` bite** is laid at the **real
+impact point**. The wall of fire emerges from the actual ripple spacing; a dry pass lays nothing, a miss
+burns where it missed, and the cue fires once per salvo (a short per-shooter window), not per bomb.
+**Mk-77 fire bombs are excluded** whatever the pattern list says — the bundled (locked) Splash Damage build
+already renders real napalm end-to-end (`napalm_mk77_enabled`: tracked fireballs, phosphor, unit damage),
+and double-rendering would stack effects; SD owns real nape, this owns the Snakeye stand-in.
+Symmetric (any side's qualifying release). Emitter-tested; runtime Lua pending an in-game pass (L11).
 
-**Deferred.** A weapon-release-tied version (matching an actual napalm/Snakeye `S_EVENT_SHOT` rather than a
-proximity/low-pass gate) is the possible later increment; `S_EVENT_SHOT` weapon-id matching is brittle across
-modules, so v1 uses the pass gate as the low-risk flavor core.
+**v1 (2026-07-01, superseded).** The first cut was proximity-triggered — a 2 s poll laying a fixed swath on
+the *nearest enemy unit* whenever an `Attack airplanes`-attributed aircraft crossed a low/fast/near gate.
+That fired with **no ordnance released** (a dry low pass = a free napalm wall), made **aim irrelevant** (the
+swath centered on the enemy, not the impacts), and mistimed/misoriented the fire (poll tick + aircraft
+heading instead of detonation + fall line). The 2026-07-02 rework replaced it; the retired plugin options
+(`napeDropRangeFt`/`napeSwathLengthFt`/`napeFireNodes`) gave way to `napeWeaponPatterns`.
 
 ---
 

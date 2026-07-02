@@ -45,7 +45,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from game.ato import FlightType
-from game.data.units import UnitClass
+from game.data.units import HEAVY_BOMBER_DCS_IDS, UnitClass
 from game.theater import ControlPointType
 
 if TYPE_CHECKING:
@@ -57,20 +57,10 @@ if TYPE_CHECKING:
     from .missiondata import MissionData
 
 
-#: DCS unit ids of heavy bombers whose Strike is flown as an Arc Light carpet. Vanilla
-#: DCS heavy bombers only (per the fork's vanilla-units rule). A Strike by anything not
-#: in this set is an ordinary single-aimpoint strike -- the gate that keeps an F-4 / A-4
-#: tactical strike untouched.
-HEAVY_BOMBER_DCS_IDS = frozenset(
-    {
-        "B-52H",
-        "B-1B",
-        "Tu-95MS",
-        "Tu-142",
-        "Tu-160",
-        "Tu-22M3",
-    }
-)
+# HEAVY_BOMBER_DCS_IDS (the Arc Light eligibility set -- a Strike by anything not in
+# it is an ordinary single-aimpoint strike, the gate that keeps an F-4 / A-4 tactical
+# strike untouched) is imported from game.data.units: the doctrine low-level attack
+# profile shares it, and game/ato must not import game/missiongenerator.
 
 #: Naval unit classes that carry deck guns usable for shore bombardment. Mirrors the
 #: classes the generator already treats as ship artillery; the VWV battleship (New Jersey)

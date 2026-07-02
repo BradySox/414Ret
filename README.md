@@ -277,7 +277,10 @@ and selected later upstream fixes.
   bomb's **real impact point erupts in napalm fire** — the signature Vietnam CAS run, with the wall of fire
   drawn by your actual ripple (a dry pass lays nothing; a miss burns where it missed). Unlike the flak
   gauntlet (which *punishes* a predictable line), this *rewards* pressing the run in on the deck, and the
-  fire genuinely hurts soft targets. Real Mk-77 napalm cans keep their own (Splash Damage) fireballs. See
+  fire genuinely hurts soft targets. Real Mk-77 napalm cans keep their own (Splash Damage) fireballs. And it
+  isn't just you: under the Vietnam doctrines, **AI CAS/interdiction flights now fly their attack runs on the
+  deck too** (an authored 500 ft low-level profile — Skyraiders pressing in low instead of level-bombing from
+  20,000 ft), so an AI Snakeye pass can lay the same fire — and eats the same AAA. See
   [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md). The Vietnam
   campaigns (Khe Sanh, 1968 Yankee Station, Velvet Thunder, Steel Tiger) turn on the whole battlefield suite by
   default — naval gunfire only on the coastal ones, where offshore guns can actually reach the shore.

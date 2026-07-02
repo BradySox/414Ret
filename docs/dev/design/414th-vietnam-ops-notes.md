@@ -246,6 +246,17 @@ swath centered on the enemy, not the impacts), and mistimed/misoriented the fire
 heading instead of detonation + fall line). The 2026-07-02 rework replaced it; the retired plugin options
 (`napeDropRangeFt`/`napeSwathLengthFt`/`napeFireNodes`) gave way to `napeWeaponPatterns`.
 
+**AI can now trip the gate (2026-07-02 — the doctrine low-level attack profile).** The 2026-07-01 squadron
+call flagged the feature as player-only in practice: Retribution's generated plans held AI attackers at
+altitude (A-1s at 6,400 m), so no AI release could ever pass the ≤ 500 ft gate. The planner increment that
+fixes it is `Doctrine.low_level_attack_altitude` (`game/data/doctrine.py`; Vietnam doctrines = **500 ft**,
+matching the `napeCeilingFt` default): `WaypointBuilder.get_combat_altitude` caps the combat legs of
+**CAS/BAI/Armed Recon** plans (ingress → run → egress + the attack nav legs) at the authored ceiling, going
+RADIO/AGL below the 5,000 ft transition so the run terrain-follows; the stock CAS 1,000 m track floor is
+bypassed. Strike is exempt (Alpha Strike dive profiles + B-52 Arc Light rides Strike); helos and heavies
+(`HEAVY_BOMBER_DCS_IDS`, moved to `game/data/units.py` for sharing) are never pressed down. Whether the DCS
+AI's own `AttackGroup` delivery actually releases that low is the remaining L11 cockpit question.
+
 ---
 
 ## Phasing (each its own branch + in-game pass; never merge unflown)

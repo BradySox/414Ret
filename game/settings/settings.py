@@ -2136,10 +2136,10 @@ class Settings:
         VIETNAM_OPS_PAGE,
         "Battlefield & interdiction",
         detail=(
-            "A formation of transport helos runs supplies into a cut-off forward friendly "
-            "outpost (fly launch field -> outpost -> back, re-rolling on a cadence), which "
-            "you can fly escort for -- modelling the Khe Sanh 'Super Gaggle'. Needs a "
-            "friendly forward outpost near the front, or it has no effect."
+            "A formation of transport helos runs one supply run per turn into a cut-off "
+            "forward friendly outpost (launch field -> outpost -> back), tracked live on the "
+            "F10 map so you can find it and fly escort -- modelling the Khe Sanh 'Super "
+            "Gaggle'. Needs a friendly forward outpost near the front, or it has no effect."
         ),
         default=False,
     )
@@ -2149,9 +2149,10 @@ class Settings:
         "Battlefield & interdiction",
         detail=(
             "Airborne forward air controllers (OV-10 Broncos loitering near the front) mark "
-            "nearby enemy ground with white-phosphorus smoke so you can visually acquire the "
-            "target and roll in -- the iconic Vietnam FAC. Needs a friendly OV-10 airborne "
-            "over the battle area, or it has no effect."
+            "the nearest enemy ground concentration with white-phosphorus smoke AND a named "
+            "F10 map mark (e.g. 'BTR-60 x6'), so you can find the target and roll in -- the "
+            "iconic Vietnam FAC. Needs a friendly OV-10 airborne over the battle area, or it "
+            "has no effect."
         ),
         default=False,
     )

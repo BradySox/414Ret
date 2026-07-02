@@ -757,9 +757,28 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch
             SIDE,
             "SUPER GAGGLE -- resupply helos inbound to " .. outpostName .. "."
                 .. (suppressing and " Fast movers suppressing the guns." or "")
-                .. " Escort welcome.",
+                .. " Marked on the F10 map -- escort welcome.",
             20
         )
+
+        -- One live F10 map mark on the inbound gaggle, refreshed each tick so the player can
+        -- actually FIND and escort it (the old "escort welcome" cue gave no location at all).
+        -- High id base avoids colliding with other systems; removed on delivery or loss.
+        local gaggleMarkSeq = 980000
+        local gaggleMarkId = nil
+        local function refreshGaggleMark(pos)
+            gaggleMarkSeq = gaggleMarkSeq + 1
+            local newId = gaggleMarkSeq
+            pcall(trigger.action.markToCoalition, newId,
+                "SUPER GAGGLE -- resupply inbound to " .. outpostName,
+                { x = pos.x, y = pos.y, z = pos.z }, SIDE, true)
+            if gaggleMarkId then pcall(trigger.action.removeMark, gaggleMarkId) end
+            gaggleMarkId = newId
+        end
+        local function clearGaggleMark()
+            if gaggleMarkId then pcall(trigger.action.removeMark, gaggleMarkId) end
+            gaggleMarkId = nil
+        end
 
         -- Watch the single run to delivery or loss, then stop (no respawn). Airframe losses
         -- are charged to the squadrons at debrief via the committed unit names, so nothing
@@ -775,6 +794,7 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch
                     end
                 end
                 if pos == nil then
+                    clearGaggleMark()
                     trigger.action.outTextForCoalition(
                         SIDE,
                         "Super Gaggle down -- resupply run lost inbound to " .. outpostName .. ".",
@@ -782,8 +802,10 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch
                     )
                     return true  -- run over
                 end
+                refreshGaggleMark(pos)
                 local dx, dz = pos.x - outpost.x, pos.z - outpost.y
                 if (dx * dx + dz * dz) <= (DELIVER_RADIUS * DELIVER_RADIUS) then
+                    clearGaggleMark()
                     trigger.action.outTextForCoalition(
                         SIDE,
                         "Super Gaggle delivered -- " .. outpostName .. " resupplied.",
@@ -834,6 +856,13 @@ if suite.fac and suite.fac.enabled then
 
     local WHITE_SMOKE = 2  -- trigger.smokeColor: 0 green, 1 red, 2 white (willie pete), 3 orange, 4 blue
 
+    -- One live F10 map mark per FAC aircraft (keyed by unit name), refreshed each tick so the
+    -- marked target is FINDABLE from anywhere on the map -- not a bare "cleared hot" text with
+    -- no location -- and unambiguously the FAC: the Bronco's own WP rockets make smoke but no
+    -- F10 mark. High id base avoids colliding with other systems' marks.
+    local facMarkSeq = 970000
+    local facMarks = {}  -- FAC unit name -> current mark id
+
     local function facOpposite(side)
         if side == coalition.side.RED then
             return coalition.side.BLUE
@@ -841,22 +870,29 @@ if suite.fac and suite.fac.enabled then
         return coalition.side.RED
     end
 
-    -- Nearest alive opposing ground unit within FAC_RANGE of (fx, fz) [north, east].
-    local function nearestEnemyGround(enemySide, fx, fz)
-        local best, bestD = nil, nil
+    -- The most worthwhile opposing ground group within FAC_RANGE of (fx, fz) [north, east]:
+    -- the one with the most alive units in range (tie -> first found). Returns the lead unit's
+    -- point, the in-range unit count, and a representative type name -- so the mark and callout
+    -- name the target ("BTR-60 x6") instead of the FAC picking whatever lone truck is nearest.
+    local function bestEnemyGround(enemySide, fx, fz)
+        local bestPos, bestCount, bestType = nil, 0, nil
         for _, grp in pairs(coalition.getGroups(enemySide, Group.Category.GROUND) or {}) do
+            local count, lead, leadType = 0, nil, nil
             for _, u in pairs(grp:getUnits() or {}) do
                 if u:isExist() and u:getLife() > 0 then
                     local p = u:getPoint()
                     local dx, dz = p.x - fx, p.z - fz
-                    local d2 = dx * dx + dz * dz
-                    if d2 <= (FAC_RANGE * FAC_RANGE) and (not bestD or d2 < bestD) then
-                        best, bestD = p, d2
+                    if (dx * dx + dz * dz) <= (FAC_RANGE * FAC_RANGE) then
+                        count = count + 1
+                        if not lead then lead, leadType = p, u:getTypeName() end
                     end
                 end
             end
+            if count > bestCount then
+                bestPos, bestCount, bestType = lead, count, leadType
+            end
         end
-        return best
+        return bestPos, bestCount, bestType
     end
 
     local function facTick()
@@ -868,14 +904,28 @@ if suite.fac and suite.fac.enabled then
                         if u:isExist() and u:getLife() > 0 and u:inAir()
                             and u:getTypeName() == FAC_TYPE then
                             local fp = u:getPoint()
-                            local tgt = nearestEnemyGround(enemySide, fp.x, fp.z)
+                            local tgt, count, typ = bestEnemyGround(enemySide, fp.x, fp.z)
                             if tgt then
                                 local h = land.getHeight({ x = tgt.x, y = tgt.z }) or tgt.y
-                                trigger.action.smoke({ x = tgt.x, y = h, z = tgt.z }, WHITE_SMOKE)
+                                local mark = { x = tgt.x, y = h, z = tgt.z }
+                                trigger.action.smoke(mark, WHITE_SMOKE)
+                                local desc = (typ or "enemy ground")
+                                    .. ((count and count > 1) and (" x" .. count) or "")
+                                -- Refresh this FAC's single map mark (drop the previous one).
+                                facMarkSeq = facMarkSeq + 1
+                                local newId = facMarkSeq
+                                pcall(trigger.action.markToCoalition, newId,
+                                    "FAC(A): " .. desc .. " -- willie pete, cleared hot",
+                                    mark, side, true)
+                                local nm = u:getName()
+                                if facMarks[nm] then
+                                    pcall(trigger.action.removeMark, facMarks[nm])
+                                end
+                                facMarks[nm] = newId
                                 pcall(
                                     trigger.action.outTextForCoalition,
                                     side,
-                                    "FAC: target marked with willie pete -- cleared hot.",
+                                    "FAC: " .. desc .. " marked -- willie pete on the deck, see F10, cleared hot.",
                                     20
                                 )
                             end

@@ -2021,10 +2021,12 @@ so the two docs don't drift.
   the front plus a friendly rear airfield/FARP to launch from (Khe Sanh laydown qualifies), and a BLUE
   helicopter squadron with airframes. Advance a turn (so `plan_super_gaggle` runs), then fly/fast-forward.
 - **Pass:** a helo gaggle drawn from the real helo squadron (its own aircraft type) spawns over the launch
-  field, flies to the outpost, and announces "SUPER GAGGLE inbound" then "delivered" on arrival — **once, no
-  re-roll**. `dcs.log` shows "Super Gaggle armed (outpost …, Nx …, single run)". **Critically:** a shot-down
-  gaggle helo shows up at debrief as a **real airframe loss to that squadron** (its `owned_aircraft` drops); a
-  clean delivery bolsters the outpost's ground strength.
+  field, flies to the outpost, and announces "SUPER GAGGLE inbound … Marked on the F10 map" then "delivered" on
+  arrival — **once, no re-roll**. A **live F10 map mark** tracks the gaggle the whole way (moves with the lead
+  helo, disappears on delivery/loss) so it's findable and escortable from anywhere on the map. `dcs.log` shows
+  "Super Gaggle armed (outpost …, Nx …, single run)". **Critically:** a shot-down gaggle helo shows up at
+  debrief as a **real airframe loss to that squadron** (its `owned_aircraft` drops); a clean delivery bolsters
+  the outpost's ground strength.
 - **Choreography:** a fast-mover suppression flight (the committed attack squadron's airframes) spawns with the
   gaggle, flies over the outpost, and its losses are likewise charged back. The suppressors spawn with their
   squadron aircraft's default loadout — confirm whether they actually attack the AAA or are visual-only. A
@@ -2035,7 +2037,7 @@ so the two docs don't drift.
   missed); the outpost isn't bolstered on a clean run; a `coalition.addGroup` / `Group.getByName` Lua error in
   `dcs.log`; the squadron owned count goes negative (floor failed).
 
-### L10 — FAC(A) willie-pete target marking · §38 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: user observed the OV-10 putting WP on a target — but the Bronco also carries real WP rockets, so this may have been the AI's own ordnance rather than the plugin's smoke mark; a confirmed white-smoke column + the "FAC: … cleared hot" cue still owed)
+### L10 — FAC(A) willie-pete target marking · §38 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: user observed the OV-10 putting WP on a target — but the Bronco also carries real WP rockets, so this may have been the AI's own ordnance rather than the plugin's smoke mark; a confirmed white-smoke column + the "FAC: … cleared hot" cue still owed. **Findability pass 2026-07-02** resolves the ambiguity: the plugin now lays a **named F10 map mark** at the target — rockets make no F10 mark, so the mark is unambiguously the FAC; re-fly to confirm the mark appears and names the target cluster)
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `fac` on-marker
   (emitted when `vietnam_fac_marking` is on, independent of the other suite features; off = no node). The
   runtime OV-10 discovery, the nearest-enemy scan, and `trigger.action.smoke` placement are runtime Lua,
@@ -2043,8 +2045,11 @@ so the two docs don't drift.
 - **Setup:** A Vietnam campaign with **Vietnam Ops → FAC(A) marking** on and a friendly **OV-10 Bronco**
   airborne over the front within ~3 NM of enemy ground (the campaigns field OV-10 CAS squadrons). Fly near a
   Bronco working the battle area and watch for the smoke.
-- **Pass:** the Bronco periodically drops **white** smoke on the nearest enemy ground unit within range, with a
-  "target marked with willie pete — cleared hot" cue to its coalition; `dcs.log` shows "FAC(A) marking armed".
+- **Pass:** the Bronco periodically drops **white** smoke on the largest enemy ground concentration in range
+  **and** a named **F10 map mark** appears there (e.g. "FAC(A): BTR-60 x6 — willie pete, cleared hot"), with a
+  "FAC: … marked — see F10, cleared hot" cue to its coalition; `dcs.log` shows "FAC(A) marking armed". The F10
+  mark refreshes as the FAC re-marks and is the tell that distinguishes the feature from the Bronco's own WP
+  rockets (rockets leave no map mark).
 - **Fail signature:** smoke lands on friendlies or empty ground (wrong side / no nearest-enemy gate); no smoke
   despite an OV-10 over enemy ground (type-name mismatch — confirm `Bronco-OV-10A` is the mod's DCS type, or
   set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;

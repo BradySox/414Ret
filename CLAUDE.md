@@ -216,8 +216,16 @@ file. This guide is the map; those are the territory.
     target is enemy-owned). Vietnam first fanned 2 sections, but playtest feedback showed that left the bombers
     **unescorted**, so Vietnam now flies a **single section + a forced fighter escort** (`strike_flight_count=1`
     + `always_escort_strikes`, which forces the A2A escort "needed" in `check_needed_escorts` even with no
-    detected air threat; still pruned when no fighter is free — reserving a fighter ahead of BARCAP is a deeper
-    deferred lever). The Ops suite's Arc Light/flak/NGFS are this design's P4 flavor, already built)
+    detected air threat; still pruned when no fighter is free). The **fighter-economy levers** landed after
+    the Linebacker naked-B-52 playtest (2026-07-01): `Doctrine.escort_support_aircraft=False` (Vietnam) drops
+    the AEWC/tanker fighter escorts that consumed 8 of 10 fighters before any strike planned
+    (`fulfill_mission` filter), and `Doctrine.strike_escort_reserve=4` +
+    `AirspaceGeometry.trim_rounds_for_escort_reserve` trims BARCAP volume (coldest CPs first, down to
+    abandoning low-threat coverage but never the hottest location) so the fighter force escorts the
+    *shooters* — save-replan verified: support escorts 8→0 jets, BARCAP 10→2, fighters now on CAS TARCAP +
+    BAI escorts; deep strikes still queue behind those under threat (a fair follow-up: strike-first escort
+    priority). Doctrines are pickled by value — a NEW game carries the new numbers. The Ops suite's Arc
+    Light/flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.

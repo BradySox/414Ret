@@ -118,6 +118,8 @@ def test_vietnam_differs_from_coldwar_only_in_the_intended_fields() -> None:
         strike_flight_count=1,
         always_escort_strikes=False,
         gci_ambush=False,
+        strike_escort_reserve=0,
+        escort_support_aircraft=True,
         cap_engagement_range=COLDWAR_DOCTRINE.cap_engagement_range,
         escort_engagement_range=COLDWAR_DOCTRINE.escort_engagement_range,
         rtb_speed=COLDWAR_DOCTRINE.rtb_speed,
@@ -281,3 +283,19 @@ def test_dispatcher_tuning_passes_settings_through_for_other_doctrines() -> None
 
     for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
         assert dispatcher_tuning(d, 60, 100) == (60, 100, False)
+
+
+def test_vietnam_reserves_fighters_for_strike_escort() -> None:
+    # The "reserve a fighter ahead of BARCAP" lever: only Vietnam holds fighters
+    # back so always_escort_strikes can actually fill (naked-B-52 playtest fix).
+    assert VIETNAM_DOCTRINE.strike_escort_reserve == 4
+    for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+        assert d.strike_escort_reserve == 0
+
+
+def test_vietnam_support_orbits_fly_unescorted() -> None:
+    # The fighter-economy half of the escort fix: AWACS/tanker escorts consumed
+    # the whole fighter force before any strike proposed its own. Vietnam-only.
+    assert VIETNAM_DOCTRINE.escort_support_aircraft is False
+    for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
+        assert d.escort_support_aircraft is True

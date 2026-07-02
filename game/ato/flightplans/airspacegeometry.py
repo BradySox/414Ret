@@ -28,8 +28,9 @@ too-coupled) -- is in
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import Any, TYPE_CHECKING, Optional
 
 from game.ato.flightplans.supportorbit import (
     forward_cap_front_anchor,
@@ -123,3 +124,58 @@ class AirspaceGeometry:
             bonus = baseline_rounds * (BARCAP_THREAT_CEILING - 1)
             rounds = baseline_rounds + round(factor * bonus)
         return 2 * rounds if is_fleet else rounds
+
+    @staticmethod
+    def trim_rounds_for_escort_reserve(
+        rounds: dict[Any, int],
+        threat_scores: dict[Any, float],
+        available_fighters: int,
+        reserve: int,
+        jets_per_round: int = 2,
+    ) -> dict[Any, int]:
+        """Free ~``reserve`` fighters from BARCAP volume when the pool is short.
+
+        The ``Doctrine.strike_escort_reserve`` lever: the HTN plans BARCAP before
+        any strike, so on fighter-poor eras (Vietnam) every airframe is committed
+        by the time ``always_escort_strikes`` requests escorts, and they all prune
+        -- B-52s fly naked through Linebacker. This trims BARCAP *demand* instead:
+        drop one round at a time from the least-threatened location until the
+        remaining demand fits under ``available - reserve``. Coverage thins to one
+        round per location first; if even those floors are unaffordable, whole
+        low-threat locations are abandoned (MiGCAP where it matters -- the era
+        answer), but the single highest-threat location always keeps a round.
+
+        No-ops when the pool comfortably covers demand plus the reserve, so
+        fighter-rich campaigns keep their full threat-weighted volume. Pure and
+        key-agnostic; a staticmethod like :func:`barcap_rounds`, its demand-side
+        sibling.
+        """
+        trimmed = dict(rounds)
+        if reserve <= 0 or not trimmed:
+            return trimmed
+        demand = jets_per_round * sum(trimmed.values())
+        if available_fighters >= demand + reserve:
+            return trimmed
+        # BARCAP planning consumes airframes until DEMAND or SUPPLY runs out, so
+        # freeing jets means cutting demand BELOW supply-minus-reserve -- not
+        # merely trimming `reserve`-worth of rounds off an oversubscribed total.
+        affordable_rounds = max(0, available_fighters - reserve) // jets_per_round
+        rounds_to_free = sum(trimmed.values()) - affordable_rounds
+        hottest = max(trimmed, key=lambda key: threat_scores.get(key, 0.0))
+        while rounds_to_free > 0:
+            # Phase 1: thin everything to a one-round floor, coldest first.
+            candidates = [key for key, count in trimmed.items() if count > 1]
+            if not candidates:
+                # Phase 2: floors are still unaffordable -- abandon whole
+                # low-threat locations, never the hottest one.
+                candidates = [
+                    key
+                    for key, count in trimmed.items()
+                    if count > 0 and key != hottest
+                ]
+                if not candidates:
+                    break
+            weakest = min(candidates, key=lambda key: threat_scores.get(key, 0.0))
+            trimmed[weakest] -= 1
+            rounds_to_free -= 1
+        return trimmed

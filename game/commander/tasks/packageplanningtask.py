@@ -127,6 +127,14 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
         self.flights = [f for f in self.flights if doctrine.allows(f.task)]
         if not self.flights:
             return False
+        # Fighter-poor eras (Vietnam) don't tie a fighter section to every rear
+        # support orbit: AEWC/tanker packages fly unescorted so the fighters are
+        # still free when the strikes -- planned later -- request theirs.
+        if not doctrine.escort_support_aircraft and self.flights[0].task in (
+            FlightType.AEWC,
+            FlightType.REFUELING,
+        ):
+            self.flights = [f for f in self.flights if f.task is not FlightType.ESCORT]
         # ROE escalation (campaign phases W4): an authored phase may forbid
         # offensive tasking inside a restricted zone (Route-Package sanctuaries)
         # or against a still-locked target class (target_release). BLUE-only --

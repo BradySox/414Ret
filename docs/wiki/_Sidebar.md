@@ -60,6 +60,13 @@
 - [Khe Sanh: Intel Assessment](Khe-Sanh-Intel-Assessment)
 - [Khe Sanh: Visual Briefing](Khe-Sanh-Visual-Briefing)
 
+*Red Flag 81-2 (Nevada, 1981)*
+- [Red Flag: Required Mods](Red-Flag-81-2-Required-Mods)
+- [Red Flag: Briefing](Red-Flag-81-2-Campaign-Briefing)
+- [Red Flag: Role Cards](Red-Flag-81-2-Role-Cards)
+- [Red Flag: First Three Turns](Red-Flag-81-2-First-Three-Turns)
+- [Red Flag: Intel Assessment](Red-Flag-81-2-Intel-Assessment)
+
 **Customization**
 - [Custom Campaigns](Custom-Campaigns)
 - [Custom Factions](Custom-Factions)

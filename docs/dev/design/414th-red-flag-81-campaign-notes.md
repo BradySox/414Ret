@@ -245,6 +245,8 @@ Mirrors Yankee Station's block except:
 - [x] Factions ×2
 - [x] Campaign YAML (squadrons, routes, phases arc, preseed)
 - [x] First-cut `.miz` (script-built from `exercise_vegas_nerve.miz`)
+- [x] Wiki campaign pack (`docs/wiki/Red-Flag-81-2-*.md` ×5: briefing / intel / role cards /
+  first-three-turns / required mods — carries the 🟡 unflown + first-cut-laydown flags)
 - [ ] **Re-point laydown at the real 81-2 `.miz`** (user supplying tonight)
 - [ ] Headless validation: campaign loads, front forms, phases parse (CI test run)
 - [ ] Balance pass: red economy vs. the 13-turn arc; will-feed weights

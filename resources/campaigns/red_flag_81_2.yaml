@@ -50,6 +50,10 @@ settings:
   # Station -- the 80/70 NM defaults sprawl support to the map edge).
   aewc_threat_buffer_min_distance: 25
   tanker_threat_buffer_min_distance: 20
+  # Red flies the Red Eagles' GCI-ambush doctrine (VIETNAM_AIR_DEFENSE_DOCTRINE): hold more
+  # aggressor MiGs on hot alert for reactive scrambles instead of standing forward BARCAP
+  # orbits. 4 QRA airframes per BARCAP-capable OPFOR squadron (was the global default of 2).
+  opfor_default_qra_reserve: 4
   automate_runway_repair: true
   automate_front_line_reinforcements: true
   automate_aircraft_reinforcements: false
@@ -239,10 +243,13 @@ squadrons:
             - An-26B
           size: 4
 
-    # Beatty -- western red logistics node (the Tolicha Peak corridor)
+    # Beatty -- western red logistics node (the Tolicha Peak corridor). The aggressor
+    # MiG-17Fs fly the Red Eagles' GCI-ambush doctrine (VIETNAM_AIR_DEFENSE_DOCTRINE), so
+    # they intercept (MiGCAP), not interdict -- a BAI/air-to-ground primary put them on
+    # Strike/Interdiction against blue, which is not the Red Flag aggressor concept.
     Beatty:
-        - primary: BAI
-          secondary: air-to-ground
+        - primary: BARCAP
+          secondary: air-to-air
           aircraft:
             - MiG-17F Fresco-C
           size: 6

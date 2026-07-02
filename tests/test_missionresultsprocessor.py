@@ -37,10 +37,6 @@ COMMIT_STEPS = [
     "commit_damaged_runways",
     "commit_captures",
     "commit_front_line_battle_impact",
-    "commit_scar_results",
-    "commit_sof_deployments",
-    "commit_sof_strandings",
-    "commit_sof_recoveries",
     "commit_pow_recoveries",
     "record_carcasses",
     "commit_super_gaggle",
@@ -110,12 +106,6 @@ def test_battle_impact_scored_before_captures_flip_ownership() -> None:
     assert calls.index("commit_front_line_battle_impact") < calls.index(
         "commit_captures"
     ), "front-line scoring must run before bases are captured"
-    assert calls.index("commit_sof_deployments") < calls.index(
-        "commit_captures"
-    ), "SOF inventory must be spent before a source base can change ownership"
-    assert calls.index("commit_sof_recoveries") < calls.index(
-        "commit_captures"
-    ), "recovered SOF must be refunded before a base can change ownership"
 
 
 def test_redeployment_leaves_non_frontline_inventory_in_place() -> None:

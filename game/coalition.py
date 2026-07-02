@@ -17,7 +17,6 @@ from game.orderedset import OrderedSet
 from game.procurement import AircraftProcurementRequest, ProcurementAi
 from game.profiling import MultiEventTracer, logged_duration
 from game.pow_recovery import PendingPowRecovery, surviving_pows
-from game.scar_rescue import PendingSofRescue, surviving_rescues
 from game.squadrons import AirWing
 from game.theater.bullseye import Bullseye
 from game.theater.player import Player
@@ -50,13 +49,12 @@ class Coalition:
         self.air_wing = AirWing(player, game, self.faction)
         self.armed_forces = ArmedForces(self.faction)
         self.transfers = PendingTransfers(game, player)
-        # SCAR campaign engine: set once this coalition captures an enemy
-        # commander, which reveals the enemy's command posts (gated by the
-        # scar_command_post_intel setting). Persisted campaign state.
+        # SCAR campaign engine: True once this coalition captured an enemy
+        # commander, which permanently reveals the enemy's command posts (gated by
+        # the scar_command_post_intel setting). The capture economy that SET this
+        # was removed 2026-07-01; the flag is kept (persisted) so old saves keep
+        # their reveal, and the command-post fog still reads it.
         self.captured_commander = False
-        # SOF teams stranded by a botched SCAR capture, awaiting a CSAR pickup
-        # next turn(s). Persisted; surfaced as map objectives and aged each turn.
-        self.pending_csars: list[PendingSofRescue] = []
         # Pilots captured by the Combat SAR enemy snatch party (the rescue rework's
         # capture race), held as POWs at an enemy field and recoverable for a few
         # turns. Persisted; surfaced as map objectives and aged each turn.
@@ -165,8 +163,10 @@ class Coalition:
 
         # Migration: older saves predate the SCAR commander-capture flag.
         state.setdefault("captured_commander", False)
-        # Migration: older saves predate the SOF CSAR pending-rescue list.
-        state.setdefault("pending_csars", [])
+        # Migration: the SOF capture economy was removed 2026-07-01. Old saves may
+        # carry a pending-rescue list (of tombstone PendingSofRescue objects, kept
+        # unpicklable-safe in game.scar_rescue); drop it -- nothing reads it.
+        state.pop("pending_csars", None)
         # Migration: older saves predate the captured-pilot POW recovery list.
         state.setdefault("pending_pow_recoveries", [])
         # Migration: older saves predate the per-turn HQ expense breakdown.
@@ -231,15 +231,6 @@ class Coalition:
         # coalition-specific turn-end happens before the theater-wide turn-end, so this
         # is handled correctly.
         self.transfers.perform_transfers()
-
-        # Age stranded-SOF CSAR pickups and drop any lost to the turn cap or to the
-        # enemy overrunning their anchor base. end_turn runs exactly once per turn,
-        # unlike initialize_turn, so it's the correct place to do this. Gated with
-        # the rest of the SCAR SOF feature.
-        if self.game.settings.scar_command_post_intel:
-            self.pending_csars = surviving_rescues(
-                self.game, self.player, self.pending_csars
-            )
 
         # Advance the captured-pilot POW clock: free those whose holding airfield
         # we recaptured, kill those held past the recovery window, keep the rest.

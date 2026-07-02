@@ -855,29 +855,11 @@ so the two docs don't drift.
   without delivery). Empty list ⇒ pre-scoring behaviour (everyone dies) — that is the safe fallback,
   not a separate bug.
 
-### G12 — Combat SAR extracts a stranded SOF team · Combat SAR + SCAR · ☐ UNTESTED (scoring layer test-covered, adjudicated 2026-06-26)
-- **Headless adjudication (2026-06-26):** the SOF-extraction scoring is verified by
-  `tests/test_combat_sar_scoring.py` (passing): `sof_rescue_pickup_name` is stable and
-  `SOFRESCUE`-prefixed (rounded strand metres), `commit_sof_recoveries` clears + refunds
-  the delivered team while leaving an un-rescued one pending, the path is blue-only, and a
-  SOF recovery does **not** leak into `combat_sar_rescues` (the two channels stay separate).
-  Parsing tolerates malformed input. **Residual (in-sim only):** the CASEVAC actually
-  spawning at the strand point and the generation-vs-debrief name agreeing end-to-end.
-- **Setup:** A campaign with **SCAR command-post intel** on and a **stranded SOF team** on the map (a
-  "Downed SOF Team" objective from a botched capture; or cheat one in). Plan a **Combat SAR** CH-47.
-  Fly out to the team's strand point, board it (F10 `CSAR`), and **deliver it to a friendly field**.
-- **Pass:** The stranded team spawns as a CASEVAC pickup at the strand point; the Combat SAR helo
-  boards + delivers it. At debrief the **pending rescue clears and one SOF team is refunded** to a
-  friendly base (same as a dedicated `CSAR` air-assault recovery). `dcs.log` shows
-  `Combat SAR - stranded SOF team SOFRESCUE_… extracted home`. A *downed pilot* delivered in the same
-  mission is still spared (the two channels don't cross). With `auto_combat_sar` on, an **AI** Combat
-  SAR helo can do the extraction too (it will fly deep — expect losses).
-- **Fail signature:** no CASEVAC spawns (generator emitted no `sofTeams`, or `scar_command_post_intel`
-  off, or no rescue helo so the data is skipped); the team delivers but the rescue isn't cleared/
-  refunded (`SOFRESCUE_<x>_<y>` name mismatch between `sof_rescue_pickup_name` at generation vs
-  debrief — check the strand-coord rounding); or a SOF extraction wrongly lands in `combat_sar_rescues`
-  and "spares a pilot" (the `SOFRESCUE` prefix routing in `OnAfterRescued`); double refund for one
-  team recovered by both paths.
+### G12 — Combat SAR extracts a stranded SOF team · Combat SAR + SCAR · ✗ RETIRED (2026-07-01 — the dormant SOF capture economy was removed; nothing can strand a team, so there is nothing to extract)
+- The whole channel this row tested (`sofTeams` emission → `SOFRESCUE` CASEVAC → `combat_sar_sof_recoveries`
+  → `commit_sof_recoveries` refund) was deleted with the rest of the dead commander-capture loop
+  (features doc §15). The scoring layer had been headless-adjudicated 2026-06-26 but the path was
+  unreachable in a normal campaign since the armor-hunt plugin was removed (#266). Do not re-fly.
 
 ### G13 — Combat SAR airframes: armed Chinook + flyable King · Combat SAR · ☑ VERIFIED (2026-06-28, audience in-game pass — King wing-tank render OK; EW/ISR-clean + door guns previously confirmed)
 - **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**

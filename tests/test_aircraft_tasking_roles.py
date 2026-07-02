@@ -107,15 +107,6 @@ def test_representative_aircraft_tasking_lanes(
         ), f"{variant_id} should not be capable of {task.name}"
 
 
-def test_transport_aircraft_can_fly_sof_insert(tmp_path: Path) -> None:
-    # The SOF insert is the C-130 "drop" leg: a fixed-wing transport airdrop that
-    # reuses the air-assault CTLD delivery, so transports inherit the SOF lane
-    # (see AircraftType.__post_init__).
-    aircraft = _aircraft(tmp_path, "C-130J-30")
-    assert aircraft.capable_of(FlightType.TRANSPORT)
-    assert aircraft.capable_of(FlightType.SOF)
-
-
 def test_stock_c130_migrates_to_the_player_module(tmp_path: Path) -> None:
     # The stock AI-only C-130 transport was retired in favor of the player-flyable
     # C-130J-30; the name migrator resolves an in-progress campaign's "C-130"
@@ -143,20 +134,9 @@ def test_combat_sar_eligibility(variant_id: str, capable: bool, tmp_path: Path) 
     assert aircraft.capable_of(FlightType.COMBAT_SAR) is capable
 
 
-@pytest.mark.parametrize("variant_id", ["UH-1H Iroquois", "F-15C Eagle"])
-def test_sof_insert_excludes_helos_and_non_transports(
-    variant_id: str, tmp_path: Path
-) -> None:
-    # Helicopters fly the CSAR recovery leg, not the insert, so the SOF lane must
-    # not leak onto them; and aircraft without a transport lane (fighters) never
-    # get it either.
-    aircraft = _aircraft(tmp_path, variant_id)
-    assert not aircraft.capable_of(FlightType.SOF)
-
-
 def test_air_assault_helo_can_fly_csar_recovery(tmp_path: Path) -> None:
-    # CSAR is the helo recovery leg of the SOF loop; helicopters that can already
-    # air-assault inherit the lane (see AircraftType.__post_init__).
+    # CSAR is the helo recovery raid for a captured POW; helicopters that can
+    # already air-assault inherit the lane (see AircraftType.__post_init__).
     aircraft = _aircraft(tmp_path, "UH-1H Iroquois")
     assert aircraft.capable_of(FlightType.AIR_ASSAULT)
     assert aircraft.capable_of(FlightType.CSAR)
@@ -164,8 +144,8 @@ def test_air_assault_helo_can_fly_csar_recovery(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("variant_id", ["C-130J-30", "F-15C Eagle"])
 def test_csar_excludes_fixed_wing(variant_id: str, tmp_path: Path) -> None:
-    # The recovery leg is rotary-wing: fixed-wing transports (the SOF insert leg)
-    # and fighters never get the CSAR lane.
+    # The recovery raid is rotary-wing: fixed-wing transports and fighters never
+    # get the CSAR lane.
     aircraft = _aircraft(tmp_path, variant_id)
     assert not aircraft.capable_of(FlightType.CSAR)
 

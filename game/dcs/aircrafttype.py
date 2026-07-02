@@ -349,20 +349,9 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 if fixed_wing_afac or self.helicopter:
                     enrich[FlightType.SCAR] = value
 
-        # SOF insert is a fixed-wing transport airdrop (the C-130 "drop" leg): it
-        # delivers a SCAR capture team to an ambush point via the air-assault CTLD
-        # target zone. Helicopters fly the CSAR recovery leg, not the insert, so the
-        # SOF lane is inherited by fixed-wing transports only.
-        if (
-            FlightType.SOF not in self.task_priorities
-            and not self.helicopter
-            and (value := self.task_priorities.get(FlightType.TRANSPORT))
-        ):
-            enrich[FlightType.SOF] = value
-
-        # CSAR is the helicopter recovery leg of the SOF loop: a helo extraction of
-        # a team stranded by a botched SCAR capture, reusing the air-assault CTLD
-        # delivery in reverse. Inherited by helicopters that can already air-assault.
+        # CSAR is the helo recovery raid for a captured POW, reusing the
+        # air-assault CTLD delivery in reverse. Inherited by helicopters that can
+        # already air-assault.
         if (
             FlightType.CSAR not in self.task_priorities
             and self.helicopter

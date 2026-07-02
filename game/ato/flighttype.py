@@ -65,8 +65,7 @@ class FlightType(Enum):
     RECOVERY = "Recovery"
     TARPS = "TARPS"  # Player-flown F-14 photo recon — overflies target +2 min behind strikers
     SCAR = "SCAR"  # Rescue-escort "Sandy" in the Combat SAR package: A-10/Apache that protects the downed pilot, suppresses threats, and walks Jolly Green in. Repurposed from the retired strike-coord/armor-hunt task (see 414th-scar-rescue-rework-notes.md).
-    SOF = "SOF Insert"  # C-130 airdrop that inserts a SOF capture team at a SCAR ambush point (helo does the CSAR recovery)
-    CSAR = "CSAR"  # Helo extraction of a SOF team stranded by a botched SCAR capture (the recovery leg of the SOF loop)
+    CSAR = "CSAR"  # Helo recovery raid: extract a captured POW from the enemy airfield holding them (Combat SAR capture race -> POW loop; see 414th-scar-rescue-rework-notes.md)
     COMBAT_SAR = "Combat SAR"  # Standing pilot-rescue orbit near the FLOT (CH-47 pickup + C-130 "King"); rescues downed HUMAN pilots via MOOSE CSAR. Distinct from the SOF-recovery CSAR. Support orbit, modeled on RECOVERY/AEWC.
 
     @classmethod
@@ -119,7 +118,6 @@ class FlightType(Enum):
             FlightType.SEAD_SWEEP,
             FlightType.ARMED_RECON,
             FlightType.SCAR,
-            FlightType.SOF,
             FlightType.CSAR,
         }
 
@@ -141,7 +139,6 @@ class FlightType(Enum):
             FlightType.AIR_ASSAULT,
             FlightType.TARPS,
             FlightType.SCAR,
-            FlightType.SOF,
             FlightType.CSAR,
         }
 
@@ -186,9 +183,7 @@ class FlightType(Enum):
             FlightType.TARCAP: AirEntity.FIGHTER,
             FlightType.TRANSPORT: AirEntity.UTILITY,
             FlightType.AIR_ASSAULT: AirEntity.ROTARY_WING,
-            # SOF insert is a fixed-wing transport airdrop (C-130), like TRANSPORT.
-            FlightType.SOF: AirEntity.UTILITY,
-            # CSAR is a helo recovery of a stranded SOF team.
+            # CSAR is the helo recovery raid for a captured POW.
             FlightType.CSAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
             # Combat SAR is a standing pilot-rescue orbit (same SIDC entity).
             FlightType.COMBAT_SAR: AirEntity.COMBAT_SEARCH_AND_RESCUE,
@@ -208,4 +203,8 @@ _LEGACY_FLIGHT_TYPE_VALUES: dict[str, FlightType] = {
     "Scramble": FlightType.BARCAP,
     # The removed Pretense campaign export's AI cargo flight type.
     "Cargo Transport": FlightType.TRANSPORT,
+    # The retired SOF capture-economy insert (a C-130 airdrop). The whole
+    # commander-capture loop is dead code removed 2026-07-01; a persisted SOF
+    # flight degrades to the closest surviving C-130 task.
+    "SOF Insert": FlightType.TRANSPORT,
 }

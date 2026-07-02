@@ -1376,6 +1376,17 @@ A polish pass over the **LUA Plugins Options** page so every plugin explains its
 > moving-HVT armor-hunt scenario *and* its auto-planner were **deleted** (detailed below); the
 > SOF/CSAR recovery plumbing was repurposed for the POW path. Design source of truth:
 > `docs/dev/design/414th-scar-rescue-rework-notes.md`.
+>
+> **Dormant SOF capture economy REMOVED (2026-07-01).** The unreachable remnant of the old loop —
+> `FlightType.SOF` (the C-130 insert), the commander-capture reveal/refund + mis-ID penalty
+> (`commit_scar_results`/`commit_sof_*`, the `scar_misid_penalty` setting), the stranded-team
+> objectives (`game/scar_objectives.py`, `Coalition.pending_csars`), and the plugin's
+> `sofTeams`/`SOFRESCUE` CASEVAC channel — is deleted. Nothing had triggered it since the armor-hunt
+> plugin was removed. Save-compat tombstones: `PendingSofRescue` + `purge_legacy_sof_state` in
+> `game/scar_rescue.py`, the no-tasking `DownedSofGroundObject` class, the `"SOF Insert"` →
+> `TRANSPORT` legacy flight-type remap, and `Coalition.__setstate__` dropping `pending_csars`.
+> Still live: the command-post fog (`scar_command_post_intel`), the persisted `captured_commander`
+> reveal an old save may carry, and the whole POW loop below.
 
 **The shipped feature.** `FlightType.SCAR` is the **Sandy** rescue-escort role in the Combat SAR
 package — it no longer hunts armor. The retired armor-hunt scenario (the moving-HVT "find the real
@@ -1384,9 +1395,9 @@ one among look-alike decoys" chase) and its opt-in auto-planner were **removed o
 from `plugins.json`), `game/plugins/scar.py` + its `manager.py` registration, `PlanScarHunts` /
 `PlanScar`, the `scar_autoplan*` settings, the `mission_data.scar_taskings` plumbing, and the
 `test_scar_bridge.py` / `test_scar_autoplan.py` suites are all gone. The only symbol that outlived
-the armor hunt is the SOF-team unit-name pair (`SCAR_SOF_UNIT_BLUE` / `SCAR_SOF_UNIT_RED`),
-relocated to the live rescue module `game/scar_rescue.py` (its only consumers are now the
-rescue/POW objectives + scoring).
+the armor hunt is the SOF-team unit-name pair, now `_POW_UNIT_BLUE` / `_POW_UNIT_RED` in
+`game/pow_objectives.py` (the POW body is the sole consumer of the "SOF Team" unit variants; the
+unit YAML variants are kept for it).
 
 **Planner side (Python, CI-tested).** `FlightType.SCAR` (`game/ato/flighttype.py`) stays an
 air-to-ground primary, eligible on the **A-10C / AH-64D** rescue-escort airframes. It is
@@ -1428,20 +1439,16 @@ unit name) frees the aviator; and `surviving_pows` (`game/pow_recovery.py`, run 
 otherwise, and **kills** an abandoned POW at zero (permanent loss). v1 fidelity gap: a held pilot
 isn't pulled from the active roster.
 
-**The rescue substrate (repurposed, live).** The SOF-recovery plumbing that once served the
-armor-hunt commander-capture is now the POW/rescue substrate: `PendingSofRescue` +
-`Coalition.pending_csars` + the turn-cap/overrun loss clock (`game/scar_rescue.py`), and
-`DownedSofGroundObject` rebuilt each turn into a CP-anchored map objective (`game/scar_objectives.py`
-`sync_downed_sof_objectives`), gated by `scar_command_post_intel`. `commit_sof_recoveries` refunds
-a delivered SOF team. The **Sandy kneeboard** is `ScarTaskPage` (`game/missiongenerator/kneeboard.py`)
-— role guidance for holding with the King/Jolly, suppressing the threats around the survivor, and
-walking the rescue helo in.
+**The Sandy kneeboard** is `ScarTaskPage` (`game/missiongenerator/kneeboard.py`) — role guidance
+for holding with the King/Jolly, suppressing the threats around the survivor, and walking the
+rescue helo in.
 
-**Settings / state.** `scar_command_post_intel` (Campaign Doctrine; gates the on-map POW/SOF
-objectives) and `auto_combat_sar` (the AI standing alert). State globals: `combat_sar_captures`
+**Settings / state.** `scar_command_post_intel` (Campaign Doctrine; gates the command-post fog)
+and `auto_combat_sar` (the AI standing alert). State globals: `combat_sar_captures`
 (captures) and `combat_sar_rescues` (pilot-spared credit). **Tests:**
-`tests/test_scar_command_post_fog.py` (intel-fog of the POW/command objectives + the SOF debit),
-plus the Combat SAR / POW coverage in `tests/test_missionresultsprocessor.py`. The capture race +
+`tests/test_scar_command_post_fog.py` (the command-post intel fog),
+`tests/test_scar_rescue.py` (the SOF save-compat tombstones + purge), plus the Combat SAR / POW
+coverage in `tests/test_missionresultsprocessor.py`. The capture race +
 King cueing + POW recovery **need an in-game pass** (checklist G8–G14).
 
 **Sandy AI dynamic retasking (runtime — `combatsar` plugin, added 2026-07-01).** `ScarFlightPlan`/
@@ -1470,6 +1477,11 @@ Python bucketing/emission is unit-tested
 Lua interpreter — read-verified only) and needs a cockpit pass (checklist G23).
 
 ### SOF insert generation fixes (2026-06-22)
+
+> **Historical.** The SOF insert itself was removed with the dormant capture economy (2026-07-01,
+> §15). The two fixes below outlived it in generalized form: the runway fallback applies to any
+> non-helo flight, and the EW deny-list still covers the Combat SAR King (`FlightType.SOF` is
+> simply no longer in the non-EW set).
 
 Two fixes so the SOF C-130 airdrop actually generates as a flyable ground sortie:
 
@@ -1701,8 +1713,8 @@ this faction)" the faction has no units in the matching `unit_classes` for that 
 G8–G10, H2, and the G11 scoring row). Python plans + scores; MOOSE CSAR (Lua) executes.
 Design source of truth: [`docs/dev/design/414th-combat-sar-spec.md`](design/414th-combat-sar-spec.md).
 
-A bespoke pilot-rescue flight task, distinct from the SOF-recovery `FlightType.CSAR`
-in the SCAR loop (§15). A **CH-47** orbits near the FLOT as the rescuer; a **C-130**
+A bespoke pilot-rescue flight task, distinct from the POW-recovery `FlightType.CSAR`
+raid in the SCAR loop (§15). A **CH-47** orbits near the FLOT as the rescuer; a **C-130**
 flies the overhead **HC-130 "King"** on-scene-command orbit. When a **human** pilot
 ejects in the area, MOOSE CSAR spawns the downed pilot with a beacon and the CH-47
 flies in, lands, and delivers them to any friendly field/FARP — and the campaign
@@ -1806,8 +1818,8 @@ returns to the squadron).
   payload just flies clean.)
   Because the EW (`c130j`) plugin claims every C-130J-30 by airframe, the generator emits a
   per-group deny-list (`_ew_excluded_c130j_groups` → `dcsRetribution.EwExcludedGroups`) of the
-  SOF-insert / Combat SAR King C-130J-30 group names so the King (and SOF) fly clean while a
-  co-present JAMMING C-130J keeps its EW systems (see §15 EW de-conflict).
+  Combat SAR King C-130J-30 group names so the King flies clean while a co-present JAMMING C-130J
+  keeps its EW systems (see §15 EW de-conflict).
 
 ### Rescue scoring (the gameplay-loop payoff)
 
@@ -1838,26 +1850,16 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Kneeboard | `game/missiongenerator/kneeboard.py` — `CombatSarTaskPage` |
 | Scoring (Lua) | `resources/plugins/base/dcs_retribution.lua` (`combat_sar_rescues` global + `write_state`), `resources/plugins/combatsar/combatsar-config.lua` (CSAR bridge + `OnAfterBoarded`/`OnAfterRescued`) |
 | Scoring (Py) | `game/debriefing.py` (`StateData.combat_sar_rescues`), `game/sim/missionresultsprocessor.py` (`commit_air_losses` spares rescued pilots) |
-| SOF recovery | `game/scar_rescue.py` (`sof_rescue_pickup_name`), `luagenerator.py` (emits `sofTeams`), `combatsar-config.lua` (`SpawnCASEVAC` + `SOFRESCUE` routing → `combat_sar_sof_recoveries`), `dcs_retribution.lua` (global), `debriefing.py` (`StateData.combat_sar_sof_recoveries`), `missionresultsprocessor.py` (`commit_sof_recoveries` credits a delivered team) |
 | Tests | `tests/test_combat_sar_scoring.py` |
 
 ### Gotchas
 
-- **Combat SAR also handles the SOF recovery** (§15): the same rescue helo can extract a stranded
-  SCAR SOF team in-mission. The generator emits each on-map team (`self.game.blue.pending_csars`,
-  anchored) and the plugin spawns it as a MOOSE CSAR **CASEVAC** (`SpawnCASEVAC`) at its strand
-  point; the helo boards + delivers it like a downed pilot. The CASEVAC name is
-  `SOFRESCUE_<x>_<y>` (`sof_rescue_pickup_name`), routed by `OnAfterRescued` to the
-  `combat_sar_sof_recoveries` global; `commit_sof_recoveries` recomputes the name per
-  `PendingSofRescue` to clear it + refund the team — *alongside* (not replacing) the dedicated
-  `FlightType.CSAR` air-assault recovery, and a team recovered by both refunds once. The SOF
-  *insert* (CTLD C-130) is untouched. AI participation follows `auto_combat_sar` (the AI alert will
-  divert deep to extract a team — risky by design).
-- **No double ejection-handling.** The MOOSE `CSAR` engine is the only ejection listener (CTLD's
-  handler is commented out, `CTLD.lua:8254`); the SOF *team* is a CASEVAC ground pickup, never an
-  ejection. The pilot-sparing (`combat_sar_rescues`) and SOF-recovery (`combat_sar_sof_recoveries`)
-  channels stay distinct, routed by the `SOFRESCUE` name prefix. The F10 "CSAR" menu shows on any
-  helo player, but pickups are gated to the Combat SAR rescue set (`SetOwnSetPilotGroups`).
+- **The SOF-recovery CASEVAC channel is gone** (removed 2026-07-01 with the dormant capture
+  economy, §15): the ledger tracks ejected pilots only; there is no `sofTeams` emission,
+  `SOFRESCUE` routing, or `combat_sar_sof_recoveries` global any more.
+- **No double ejection-handling.** The survivor ledger is the only ejection listener (CTLD's
+  handler is commented out, `CTLD.lua:8254`). The F10 "CSAR" menu shows on any
+  helo player, but pickups are gated to the Combat SAR rescue set.
 - **Blue-only.** The CSAR engine is built for `"blue"`; a red COMBAT_SAR would just fly an
   inert orbit, so red is never auto-tasked.
 - **King ≠ tanker.** The C-130 cannot be a DCS aerial-refueling tanker, and the CH-47 couldn't

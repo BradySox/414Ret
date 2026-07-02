@@ -323,22 +323,6 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
             ]
             if self.warrants_recon:
                 yield FlightType.TARPS
-            # SOF insert (a C-130 airdrop of a SCAR capture team) is a player-only
-            # companion to a SCAR tasking on this target. Gated behind the
-            # commander-capture feature and the CTLD plugin it delivers through;
-            # the AI never plans it (no proposing task), so this only adds a
-            # manually selectable option. The settings lookup is defensive because
-            # some lightweight contexts hold a control point without a coalition.
-            try:
-                settings = self.control_point.coalition.game.settings
-            except (RuntimeError, AttributeError):
-                settings = None
-            if (
-                settings is not None
-                and settings.scar_command_post_intel
-                and settings.plugin_option("ctld")
-            ):
-                yield FlightType.SOF
         yield from super().mission_types(for_player)
 
     @property
@@ -877,15 +861,14 @@ class VehicleGroupGroundObject(TheaterGroundObject):
 
 
 class DownedSofGroundObject(TheaterGroundObject):
-    """A SOF team stranded by a botched SCAR capture, surfaced as a first-class
-    recovery objective (SCAR Phase 2c-3).
+    """SAVE-COMPAT TOMBSTONE for the retired SOF capture economy (removed
+    2026-07-01 with the rest of the dormant commander-capture loop).
 
-    Created dynamically each turn from the owning coalition's
-    ``pending_csars`` (not authored in the campaign .miz) and attached to a
-    friendly control point's ``connected_objectives`` at the strand point. It is
-    *our* team, so it is friendly to its owner and offers only a CSAR (helo
-    extraction) mission to that side -- the enemy gets no tasking against it. The
-    infantry group it carries is the physical team the recovery helo extracts.
+    Old saves may still carry pickled instances (the "downed SOF team" objectives
+    the loop created dynamically each turn); the class must exist for those to
+    unpickle. A tombstone offers no tasking and is purged from the theater at
+    turn initialization (``game.scar_rescue.purge_legacy_sof_state``). Do not
+    create new instances.
     """
 
     def __init__(
@@ -916,20 +899,9 @@ class DownedSofGroundObject(TheaterGroundObject):
         return False
 
     def mission_types(self, for_player: Player) -> Iterator[FlightType]:
-        from game.ato import FlightType
-
-        # Only the owning side, and only with the SCAR commander-capture feature
-        # on, can task a recovery. No enemy tasking and no other friendly missions
-        # (this is a downed team, not a target). The settings lookup is defensive
-        # because some lightweight contexts hold a control point without a
-        # coalition.
-        if self.is_friendly(for_player):
-            try:
-                settings = self.control_point.coalition.game.settings
-            except (RuntimeError, AttributeError):
-                settings = None
-            if settings is not None and settings.scar_command_post_intel:
-                yield FlightType.CSAR
+        # Tombstone: never offer tasking (a stale instance from an old save is
+        # purged at the next turn initialization anyway).
+        return iter(())
 
 
 class CapturedPilotGroundObject(TheaterGroundObject):

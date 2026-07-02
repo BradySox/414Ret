@@ -1,7 +1,7 @@
 """Tests for the C-130J EW de-confliction (per-group deny-list).
 
-The c130j EW/ISR plugin claims every C-130J-30 by airframe. A SOF insert or Combat SAR
-"King" C-130J-30 must fly clean, but the previous fix skipped the whole plugin for the
+The c130j EW/ISR plugin claims every C-130J-30 by airframe. A Combat SAR "King"
+C-130J-30 must fly clean, but the previous fix skipped the whole plugin for the
 mission -- which also stripped EW from a co-present JAMMING C-130J-30. Now the generator
 emits a per-group deny-list (``dcsRetribution.EwExcludedGroups``) that the plugin honors,
 so only the non-EW aircraft are skipped and the EW jet keeps its systems.
@@ -31,14 +31,13 @@ def test_ew_excluded_groups_lists_only_non_ew_c130j_flights(tmp_path: Path) -> N
     other = SimpleNamespace()  # any non-C-130J airframe (never == the C-130J type)
     flights = [
         _fd("KING-1", FlightType.COMBAT_SAR, c130j),  # excluded (King)
-        _fd("SOF-1", FlightType.SOF, c130j),  # excluded (SOF insert)
         _fd("JAM-1", FlightType.JAMMING, c130j),  # NOT excluded -- the EW jet itself
         _fd("KING-HELO", FlightType.COMBAT_SAR, other),  # NOT excluded -- not a C-130J
         _fd("STRIKE-1", FlightType.STRIKE, other),  # NOT excluded
     ]
     gen = LuaGenerator.__new__(LuaGenerator)
     gen.mission_data = SimpleNamespace(flights=flights)  # type: ignore[assignment]
-    assert gen._ew_excluded_c130j_groups() == ["KING-1", "SOF-1"]
+    assert gen._ew_excluded_c130j_groups() == ["KING-1"]
 
 
 def test_ew_excluded_groups_empty_when_no_non_ew_c130j(tmp_path: Path) -> None:

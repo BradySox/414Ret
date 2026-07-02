@@ -8,7 +8,7 @@ friendly anchor so the map marker clears the airfield's own icon, and anchored
 to the nearest friendly control point's ``connected_objectives`` so it renders
 as a friendly recovery objective. The objects are *dynamic* (not authored in the
 campaign .miz): torn down and rebuilt each turn so the set always matches the
-live ``pending_pow_recoveries``. Mirrors ``game/scar_objectives.py``.
+live ``pending_pow_recoveries``.
 """
 
 from __future__ import annotations
@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Optional
 
 from game.dcs.groundunittype import GroundUnitType
 from game.point_with_heading import PointWithHeading
-from game.scar_rescue import SCAR_SOF_UNIT_BLUE, SCAR_SOF_UNIT_RED
 from game.theater.presetlocation import PresetLocation
 from game.theater.theatergroundobject import CapturedPilotGroundObject
 from game.theater.theatergroup import TheaterGroup, TheaterUnit
@@ -31,6 +30,14 @@ if TYPE_CHECKING:
 
 _OBJECTIVE_NAME = "Captured Pilot"
 
+# DCS unit-type names (variant ids) for the per-side special-forces infantry that
+# stands in for the captured pilot. (Relocated here from the retired SOF
+# capture-economy module ``game/scar_rescue.py`` when that loop's dead code was
+# removed 2026-07-01 -- the POW body is now these variants' only consumer; the
+# unit YAML variants are kept for it.)
+_POW_UNIT_BLUE = "SOF Team (BLUFOR)"
+_POW_UNIT_RED = "SOF Team (OPFOR)"
+
 # The objective is deliberately positioned near the holding airfield rather than
 # exactly on it -- the map marker sat on top of the airbase's own icon, making it
 # unclickable (2026-06-30 in-game report). Recovery is matched by airframe name,
@@ -39,9 +46,9 @@ _MARKER_OFFSET_M = 900
 
 
 def _pow_unit(coalition: Coalition) -> Optional[GroundUnitType]:
-    # A single soldier stands in for the captured pilot; reuse the SCAR SOF
-    # infantry type (a known-valid vanilla unit per side).
-    name = SCAR_SOF_UNIT_BLUE if coalition.player.is_blue else SCAR_SOF_UNIT_RED
+    # A single soldier stands in for the captured pilot (a known-valid vanilla
+    # unit variant per side).
+    name = _POW_UNIT_BLUE if coalition.player.is_blue else _POW_UNIT_RED
     try:
         return GroundUnitType.named(name)
     except KeyError:

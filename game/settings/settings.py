@@ -273,7 +273,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Recon & SCAR planning",
                 [
                     "auto_add_tarps_recon",
-                    "scar_misid_penalty",
                 ],
             ),
             (
@@ -854,28 +853,11 @@ class Settings:
         invert=False,
         detail=(
             "When enabled, enemy command posts stay hidden on the map until you "
-            "capture an enemy commander on a SCAR sortie — capturing commanders "
-            "is how you map the enemy command network over a campaign, and it "
-            "drives the SOF insert / commander-capture / CSAR-recovery loop. On by "
-            "default for new campaigns while the feature is being playtested; "
-            "existing campaigns keep whatever they were saved with. Turn it off to "
-            "restore plain enemy command-post visibility."
-        ),
-    )
-    scar_misid_penalty: int = bounded_int_option(
-        "SCAR mis-ID penalty (budget cost per wrong convoy prosecuted on a SCAR sortie)",
-        page=CAMPAIGN_DOCTRINE_PAGE,
-        section=GENERAL_SECTION,
-        default=8,
-        min=0,
-        max=100,
-        detail=(
-            "On a SCAR sortie the target hides among decoy and clutter convoys. "
-            "Destroying one of those wrong convoys is a mis-identification: this "
-            "many budget points are deducted from your side per decoy/clutter "
-            "group your aircraft destroy, so picking out the real HVT actually "
-            "matters. Set to 0 to disable the penalty (mis-IDs are still reported "
-            "in the log). The default (8) is roughly the price of one SOF team."
+            "discover them the normal way — strike near them, scout them, or "
+            "photograph them on a TARPS pass — so mapping the enemy command "
+            "network is itself a reconnaissance task. On by default for new "
+            "campaigns; existing campaigns keep whatever they were saved with. "
+            "Turn it off to restore plain enemy command-post visibility."
         ),
     )
     aircraft_per_recovery_tanker: int = bounded_int_option(
@@ -2449,6 +2431,10 @@ class Settings:
             # toggles (value already merged above).
             "ground_start_trucks_roadbase",
             "ground_start_ground_power_trucks_roadbase",
+            # The SCAR mis-ID budget penalty died with the SOF capture economy
+            # (dead code removed 2026-07-01; nothing wrote scar_misid since the
+            # armor-hunt plugin was deleted).
+            "scar_misid_penalty",
         ):
             migrated.pop(obsolete_key, None)
 

@@ -181,7 +181,6 @@ class Package(RadioFrequencyContainer):
             FlightType.DEAD,
             FlightType.TRANSPORT,
             FlightType.AIR_ASSAULT,
-            FlightType.SOF,
             FlightType.CSAR,
             FlightType.COMBAT_SAR,
             FlightType.ARMED_RECON,

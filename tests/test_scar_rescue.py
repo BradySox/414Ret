@@ -1,108 +1,71 @@
-"""SCAR CSAR pending-rescue lifecycle (Phase 2c-3, slice C1).
+"""Save-compat tombstones for the retired SOF capture economy (removed 2026-07-01).
 
-A SOF team stranded by a botched SCAR capture becomes a ``PendingSofRescue`` on
-its coalition. The turn-cap loss condition ages each rescue down one turn per
-``Coalition.end_turn`` and writes it off when it reaches zero. These tests pin
-that countdown in isolation (the per-turn hook + the pure aging helper).
+The loop's dead code is gone; what remains is the unpickle tombstone
+(``PendingSofRescue``), the theater sweep for stale "downed SOF team" objectives
+a pre-retirement save still carries, and the no-tasking guarantee on the
+tombstoned ground-object class.
 """
 
 from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any, cast
-from uuid import uuid4
 
-from game.scar_rescue import (
-    DEFAULT_SOF_RESCUE_TURNS,
-    PendingSofRescue,
-    age_pending_rescues,
-    surviving_rescues,
-)
+from game.scar_rescue import PendingSofRescue, purge_legacy_sof_state
 from game.theater import Player
+from game.theater.theatergroundobject import DownedSofGroundObject
 
 
-def test_aging_decrements_turns_remaining() -> None:
-    survivors = age_pending_rescues([PendingSofRescue(1.0, 2.0, turns_remaining=3)])
-    assert survivors == [PendingSofRescue(1.0, 2.0, turns_remaining=2)]
+def test_pending_sof_rescue_tombstone_constructs() -> None:
+    # Old saves unpickle PendingSofRescue instances before Coalition.__setstate__
+    # drops the list, so the class must keep its persisted field shape.
+    rescue = PendingSofRescue(x=1.0, y=2.0)
+    assert rescue.turns_remaining == 3
+    assert rescue.anchor_cp_id is None
 
 
-def test_rescue_dropped_when_countdown_reaches_zero() -> None:
-    # A team with one turn left ages out and is written off this turn.
-    assert age_pending_rescues([PendingSofRescue(1.0, 2.0, turns_remaining=1)]) == []
+def _downed_sof(tgo_id: str) -> Any:
+    tgo = DownedSofGroundObject.__new__(DownedSofGroundObject)
+    tgo.id = tgo_id  # type: ignore[assignment]
+    return tgo
 
 
-def test_aging_is_independent_per_rescue() -> None:
-    survivors = age_pending_rescues(
-        [
-            PendingSofRescue(1.0, 1.0, turns_remaining=1),  # ages out
-            PendingSofRescue(2.0, 2.0, turns_remaining=3),  # survives
-        ]
+def test_purge_removes_stale_downed_sof_objectives() -> None:
+    stale = _downed_sof("sof-1")
+    keeper = SimpleNamespace(id="live-1")
+    cp = SimpleNamespace(connected_objectives=[stale, keeper])
+    removed: list[str] = []
+    game = SimpleNamespace(
+        theater=SimpleNamespace(controlpoints=[cp]),
+        db=SimpleNamespace(
+            tgos=SimpleNamespace(
+                objects={"sof-1": stale}, remove=lambda tgo_id: removed.append(tgo_id)
+            )
+        ),
     )
-    assert survivors == [PendingSofRescue(2.0, 2.0, turns_remaining=2)]
+
+    purge_legacy_sof_state(cast(Any, game))
+
+    assert cp.connected_objectives == [keeper]
+    assert removed == ["sof-1"]
 
 
-def test_full_lifespan_from_default_is_finite() -> None:
-    # A team stranded at the default cap survives a fixed number of turns then
-    # is written off -- the countdown never runs forever.
-    rescues = [PendingSofRescue(0.0, 0.0)]
-    assert rescues[0].turns_remaining == DEFAULT_SOF_RESCUE_TURNS
-    turns_survived = 0
-    while rescues:
-        rescues = age_pending_rescues(rescues)
-        turns_survived += 1
-    assert turns_survived == DEFAULT_SOF_RESCUE_TURNS
+def test_purge_is_a_noop_on_a_clean_theater() -> None:
+    keeper = SimpleNamespace(id="live-1")
+    cp = SimpleNamespace(connected_objectives=[keeper])
+    game = SimpleNamespace(
+        theater=SimpleNamespace(controlpoints=[cp]),
+        db=SimpleNamespace(tgos=SimpleNamespace(objects={}, remove=lambda _: None)),
+    )
+
+    purge_legacy_sof_state(cast(Any, game))
+
+    assert cp.connected_objectives == [keeper]
 
 
-def test_empty_list_is_a_noop() -> None:
-    assert age_pending_rescues([]) == []
-
-
-def _game_holding(anchor_id: Any, captured_by: Player) -> Any:
-    """A fake game whose theater has one control point (``anchor_id``) currently
-    held by ``captured_by``."""
-    anchor = SimpleNamespace(id=anchor_id, captured=captured_by)
-
-    def find(cp_id: Any) -> Any:
-        if cp_id == anchor_id:
-            return anchor
-        raise KeyError(cp_id)
-
-    return SimpleNamespace(theater=SimpleNamespace(find_control_point_by_id=find))
-
-
-def test_overrun_drops_rescue_when_anchor_is_captured() -> None:
-    # The anchor base flipped to the enemy -> the front overran the team.
-    anchor_id = uuid4()
-    game = _game_holding(anchor_id, Player.RED)
-    rescue = PendingSofRescue(1.0, 2.0, turns_remaining=3, anchor_cp_id=anchor_id)
-
-    assert surviving_rescues(cast(Any, game), Player.BLUE, [rescue]) == []
-
-
-def test_anchored_rescue_survives_while_anchor_is_held() -> None:
-    anchor_id = uuid4()
-    game = _game_holding(anchor_id, Player.BLUE)
-    rescue = PendingSofRescue(1.0, 2.0, turns_remaining=3, anchor_cp_id=anchor_id)
-
-    # Still ours -> only the turn cap ticks down.
-    assert surviving_rescues(cast(Any, game), Player.BLUE, [rescue]) == [
-        PendingSofRescue(1.0, 2.0, turns_remaining=2, anchor_cp_id=anchor_id)
-    ]
-
-
-def test_overrun_drops_rescue_when_anchor_no_longer_exists() -> None:
-    game = _game_holding(uuid4(), Player.BLUE)
-    rescue = PendingSofRescue(1.0, 2.0, turns_remaining=3, anchor_cp_id=uuid4())
-
-    assert surviving_rescues(cast(Any, game), Player.BLUE, [rescue]) == []
-
-
-def test_unanchored_rescue_is_never_overrun() -> None:
-    # Stranded this turn (anchor assigned next turn at surfacing); it ages but is
-    # not subject to the overrun check yet.
-    game = _game_holding(uuid4(), Player.RED)
-    rescue = PendingSofRescue(1.0, 2.0, turns_remaining=3, anchor_cp_id=None)
-
-    assert surviving_rescues(cast(Any, game), Player.BLUE, [rescue]) == [
-        PendingSofRescue(1.0, 2.0, turns_remaining=2, anchor_cp_id=None)
-    ]
+def test_tombstoned_objective_offers_no_tasking() -> None:
+    # A stale instance from an old save must never surface a plannable mission
+    # (it is purged at the next turn initialization anyway).
+    tgo = _downed_sof("sof-1")
+    assert list(tgo.mission_types(Player.BLUE)) == []
+    assert list(tgo.mission_types(Player.RED)) == []

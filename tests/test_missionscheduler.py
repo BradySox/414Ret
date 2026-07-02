@@ -150,22 +150,21 @@ def _schedule_one(task: FlightType) -> datetime:
     return pkg.time_over_target
 
 
-@pytest.mark.parametrize("task", [FlightType.SCAR, FlightType.SOF])
-def test_scar_and_sof_are_scheduled_asap(task: FlightType) -> None:
-    # SCAR (and its SOF insert) must be tasked as early as the flight can reach
-    # the area (stub earliest_tot == NOW), so the moving HVT/SCUD isn't parked for
-    # most of the mission. Not spread across the turn like other strike packages.
-    assert _schedule_one(task) == NOW
+def test_scar_is_scheduled_asap() -> None:
+    # A Sandy rescue escort must be tasked as early as the flight can reach the
+    # area (stub earliest_tot == NOW), not spread across the turn like other
+    # strike packages.
+    assert _schedule_one(FlightType.SCAR) == NOW
 
 
 def test_strike_is_still_spread_into_the_turn() -> None:
-    # Contrast: a normal strike keeps the spread-out start, unlike SCAR/SOF which
-    # are pinned to NOW. The start is a 5 min base offset plus ±5 min uniform
+    # Contrast: a normal strike keeps the spread-out start, unlike SCAR which is
+    # pinned to NOW. The start is a 5 min base offset plus ±5 min uniform
     # jitter, so a single draw can legitimately land exactly on NOW when the
     # jitter fully cancels the base (clamped at 0). Asserting `> NOW` on one draw
     # is therefore flaky; assert on the distribution instead: the overwhelming
     # majority of starts fall strictly after NOW, which never happens for the
-    # always-NOW SCAR/SOF case above.
+    # always-NOW SCAR case above.
     samples = [_schedule_one(FlightType.STRIKE) for _ in range(200)]
     after_now = [t for t in samples if t > NOW]
     assert len(after_now) >= 0.9 * len(samples)

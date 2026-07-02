@@ -398,8 +398,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **surviving CSAR raid** or **recapturing the field** frees the aviator; a POW abandoned past the
     4-turn clock is **killed**. AI safety-net package via `auto_combat_sar` (King + Jolly + 1 Sandy).
     The old armor-hunt scenario + its auto-planner are **deleted** (2026-06-27: `scarluadata.py`, the
-    `scar` plugin, `PlanScarHunts`/`PlanScar`, `scar_autoplan*`); the SOF/CSAR recovery plumbing was
-    repurposed for the POW path. features doc §15.
+    `scar` plugin, `PlanScarHunts`/`PlanScar`, `scar_autoplan*`); the CSAR recovery plumbing was
+    repurposed for the POW path. The **dormant SOF capture economy was removed 2026-07-01**
+    (`FlightType.SOF`, the commander-capture reveal/refund, stranded-team objectives, the plugin's
+    SOFRESCUE channel, `scar_misid_penalty` — save-compat tombstones in `game/scar_rescue.py`);
+    the command-post fog (`scar_command_post_intel`) stays live. features doc §15.
 16. **Settings QOL audit** — dead/duplicate setting cleanup (four fields removed), AI-radio
     booleans consolidated into the `AiRadioBehavior` enum with deterministic save migration,
     plugin wording, and a UI-layer grouping/dependency handoff
@@ -439,7 +442,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     aviator at debrief (airframe still lost) — the `combatsar` plugin's `OnAfterBoarded`/`OnAfterRescued`
     hooks append the ejected unit name to the `combat_sar_rescues` state global, and
     `commit_air_losses` skips that pilot's kill (fail-safe: empty list = pre-scoring behaviour).
-    Distinct from the SCAR SOF-recovery `FlightType.CSAR` (§15). (`game/ato/flighttype.py`,
+    Distinct from the POW-recovery `FlightType.CSAR` raid (§15). (`game/ato/flighttype.py`,
     `game/commander/tasks/primitive/combatsar.py`, `game/sim/missionresultsprocessor.py`,
     `resources/plugins/combatsar/`; features doc §21, spec `414th-combat-sar-spec.md`.)
 22. **Kneeboard space-utilisation + custom import** — sparse kneeboard pages (Combat SAR,

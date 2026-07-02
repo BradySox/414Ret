@@ -16,7 +16,6 @@ from game.ato import FlightType
 from game.data.units import UnitClass
 from game.dcs.aircrafttype import AircraftType
 from game.plugins import LuaPluginManager
-from game.scar_rescue import sof_rescue_pickup_name
 from game.theater import TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
@@ -432,7 +431,7 @@ class LuaGenerator:
     ) -> None:
         """Populate the (blue) Combat SAR node. Scalars are emitted as single-value
         child items so the LuaData serializer keeps them alongside the nested
-        kings/sofTeams lists.
+        kings/sandys lists.
         """
         node.add_item("pilotTemplate").set_value(template_name)
         node.add_item("enableForAI").set_value("true" if enable_for_ai else "false")
@@ -472,20 +471,6 @@ class LuaGenerator:
         # AI-crewed Sandy off its planned racetrack to hold near a live ejection
         # (dynamic AI retasking -- player Sandys stay on voice/SRS coordination).
         node.add_item("sandys").set_data_array([flight.group_name for flight in sandys])
-
-        # Stranded SOF teams (SCAR commander-capture loop): offer each on-map team
-        # as a CASEVAC pickup so the SAME rescue helo can extract it. Delivery clears
-        # the rescue + refunds the team at debrief. Gated on the SCAR intel feature;
-        # the anchor check keeps it to teams surfaced as an objective this turn.
-        if self.game.settings.scar_command_post_intel:
-            teams_item = node.add_item("sofTeams")
-            for rescue in coalition.pending_csars:
-                if rescue.anchor_cp_id is None:
-                    continue
-                item = teams_item.add_item()
-                item.add_key_value("name", sof_rescue_pickup_name(rescue))
-                item.add_key_value("x", str(rescue.x))
-                item.add_key_value("y", str(rescue.y))
 
     def _generate_combat_sar_pilot_template(
         self, coalition: "Coalition"
@@ -644,15 +629,15 @@ class LuaGenerator:
 
         The EW plugin (C-130J Mission Systems) attaches to every C-130J-30 by airframe
         alone (its eligibility check is purely ``getTypeName() == "C-130J-30"``), so it
-        would bolt the EW/ISR menu and behavior onto any other C-130J-30 role. Two roles
-        must fly clean: the **SOF insert** airdrop and the **Combat SAR "King"** orbit
-        (both are C-130J-30 now that the stock C-130 was retired). Rather than skip the
-        whole EW plugin for the mission -- which also stripped EW from a legitimate
-        **JAMMING** C-130J-30 flying alongside -- we hand the plugin a per-group deny-list
-        (emitted as ``dcsRetribution.EwExcludedGroups``) so it skips only these aircraft
-        and still claims the EW jet. Both coalitions; empty when none apply.
+        would bolt the EW/ISR menu and behavior onto any other C-130J-30 role. The
+        **Combat SAR "King"** orbit must fly clean (a C-130J-30 now that the stock
+        C-130 was retired). Rather than skip the whole EW plugin for the mission --
+        which also stripped EW from a legitimate **JAMMING** C-130J-30 flying
+        alongside -- we hand the plugin a per-group deny-list (emitted as
+        ``dcsRetribution.EwExcludedGroups``) so it skips only these aircraft and
+        still claims the EW jet. Both coalitions; empty when none apply.
         """
-        non_ew = (FlightType.SOF, FlightType.COMBAT_SAR)
+        non_ew = (FlightType.COMBAT_SAR,)
         c130j = AircraftType.named("C-130J-30")
         return [
             flight.group_name

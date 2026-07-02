@@ -21,12 +21,11 @@
 --     boards the survivor; delivering to any friendly airfield/FARP -> RESCUED (append
 --     combat_sar_rescues, pilot spared at debrief). AI auto-rescue reuses MOOSE OPSTRANSPORT
 --     (proven AICSAR routing) but carries the LEDGER's real identity, so it credits too.
---   * Stranded SOF teams (SCAR loop) ride the same pickup -> combat_sar_sof_recoveries.
 --
 -- The King (C-130) still lights an air-tracking TACAN and carries the LARS F10 locator, which
 -- now reads the ledger. Vanilla DCS only; pcall-guarded throughout so a bad record degrades to
 -- a logged warning, never a CTD. Writes the dcs_retribution core globals combat_sar_rescues /
--- combat_sar_captures / combat_sar_sof_recoveries (persisted to state.json), setting dirty_state.
+-- combat_sar_captures (persisted to state.json), setting dirty_state.
 -- see docs/dev/design/414th-combat-sar-spec.md
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -118,7 +117,6 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             farp = c.farp,
             kings = c.kings or {},
             sandys = c.sandys or {},
-            sofTeams = c.sofTeams or {},
             enableForAI = readBool(c.enableForAI, false),
         }
         configs[#configs + 1] = cfg
@@ -191,7 +189,6 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     local survivors = {}
     combat_sar_rescues = combat_sar_rescues or {}
     combat_sar_captures = combat_sar_captures or {}
-    combat_sar_sof_recoveries = combat_sar_sof_recoveries or {}
     local spawnIndex = 0
     local snatchCounter = 0
 
@@ -248,24 +245,18 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         return grp
     end
 
-    -- Spare/extract credit. Pilots -> combat_sar_rescues (spared at debrief); SOF teams ->
-    -- combat_sar_sof_recoveries (recovered + refunded). Both keyed by the ORIGINAL unit name
-    -- DCS reports in kill/crash events, so Retribution maps it straight back to the loss.
+    -- Spare credit: pilots -> combat_sar_rescues (spared at debrief), keyed by the
+    -- ORIGINAL unit name DCS reports in kill/crash events, so Retribution maps it
+    -- straight back to the loss.
     local function creditRescue(entry)
         if entry.credited then return end
         entry.credited = true
         entry.state = "rescued"
-        if entry.isSof then
-            table.insert(combat_sar_sof_recoveries, entry.unit)
-            env.info("DCSRetribution|Combat SAR - stranded SOF team " .. tostring(entry.unit)
-                .. " extracted home; campaign will recover + refund it")
-        else
-            if entry.unit and entry.unit ~= "" then
-                table.insert(combat_sar_rescues, entry.unit)
-            end
-            env.info("DCSRetribution|Combat SAR - pilot of " .. tostring(entry.unit)
-                .. " delivered home; campaign will spare them")
+        if entry.unit and entry.unit ~= "" then
+            table.insert(combat_sar_rescues, entry.unit)
         end
+        env.info("DCSRetribution|Combat SAR - pilot of " .. tostring(entry.unit)
+            .. " delivered home; campaign will spare them")
         dirty_state = true
         msgToCoalition(entry.side, "RESCUE COMPLETE: survivor delivered to a friendly field.")
     end
@@ -465,19 +456,18 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     end
 
     -- Register a new survivor + spawn its group. Deduped by id (caller guarantees uniqueness).
-    local function registerSurvivor(cfg, unitName, coord, isSof)
+    local function registerSurvivor(cfg, unitName, coord)
         local id = unitName
         if not id or id == "" then
             spawnIndex = spawnIndex + 1
             id = "survivor_" .. spawnIndex
         end
         if survivors[id] then return end
-        local grp = spawnSurvivorGroup(cfg, coord, isSof and "SOF" or "Survivor")
+        local grp = spawnSurvivorGroup(cfg, coord, "Survivor")
         if not grp then return end
         survivors[id] = {
             id = id,
             unit = unitName or "",
-            isSof = isSof or false,
             color = cfg.color,
             side = cfg.side,
             cfg = cfg,
@@ -495,11 +485,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             t0 = timer.getTime(),
         }
         pcall(trigger.action.smoke, coord:GetVec3(), trigger.smokeColor.Red)
-        if isSof then
-            msgToCoalition(cfg.side, "Stranded team in the field -- Combat SAR can extract it.")
-        else
-            msgToCoalition(cfg.side, "MAYDAY: pilot down (red smoke) -- Combat SAR is on it.")
-        end
+        msgToCoalition(cfg.side, "MAYDAY: pilot down (red smoke) -- Combat SAR is on it.")
     end
 
     -- Find a friendly helo deliberately picking up this survivor (landed/low+slow within range).
@@ -591,29 +577,13 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             local okp, pos = pcall(function() return init:getPosition().p end)
             if not okp or not pos then return end
             ejectSeen[name] = true
-            registerSurvivor(cfg, name, COORDINATE:NewFromVec3(pos), false)
+            registerSurvivor(cfg, name, COORDINATE:NewFromVec3(pos))
         end)
         if not ok then
             env.warning("combatsar: eject handler error (continuing): " .. tostring(err))
         end
     end
     world.addEventHandler(ejectBridge)
-
-    ---------------------------------------------------------------------------
-    -- Stranded SOF teams (SCAR commander-capture loop): each on-map team emitted by the
-    -- generator becomes a ledger survivor the same rescue helo can extract. SOFRESCUE_ name
-    -- is what Python recomputes to match the delivery; no capture race for these.
-    ---------------------------------------------------------------------------
-    for _, cfg in ipairs(configs) do
-        for _, team in pairs(cfg.sofTeams) do
-            local x = tonumber(team.x)
-            local y = tonumber(team.y)
-            if team.name and x and y then
-                -- Generator emits pydcs (x = north, y = east); DCS vec3 = { x = north, y = 0, z = east }.
-                registerSurvivor(cfg, team.name, COORDINATE:NewFromVec3({ x = x, y = 0, z = y }), true)
-            end
-        end
-    end
 
     ---------------------------------------------------------------------------
     -- Sandy (SCAR) AI retasking: divert a free AI-crewed Sandy off its planned
@@ -706,8 +676,8 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         local ok, err = pcall(function()
             for id, e in pairs(survivors) do
                 if e.state == "down" then
-                    -- Capture race: roll a snatch party once per survivor (pilots only, on land).
-                    if capture.enabled and not e.isSof and not e.captureRolled then
+                    -- Capture race: roll a snatch party once per survivor (on land).
+                    if capture.enabled and not e.captureRolled then
                         e.captureRolled = true
                         local u = e.group and e.group:GetUnit(1)
                         local c = u and u:GetCoordinate()
@@ -810,8 +780,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                         local bearing = math.floor(kingCoord:HeadingTo(wc) + 0.5) % 360
                         entries[#entries + 1] = {
                             dist = dist,
-                            text = string.format("%s: %s (brg %03d / %.0f nm)",
-                                e.isSof and "SOF team" or "Survivor",
+                            text = string.format("Survivor: %s (brg %03d / %.0f nm)",
                                 wc:ToStringMGRS(),
                                 bearing,
                                 UTILS.MetersToNM(dist)),

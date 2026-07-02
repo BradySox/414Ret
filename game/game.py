@@ -600,12 +600,12 @@ class Game:
         if for_red:
             self.red.initialize_turn(self.turn == 0 and squadrons_start_full)
 
-        # Surface stranded-SOF teams as "downed SOF team" recovery objectives
-        # (SCAR 2c-3). Rebuilt from each coalition's pending_csars; idempotent, so
-        # safe under the multiple-init-per-turn cases documented above.
-        from game.scar_objectives import sync_downed_sof_objectives
+        # Sweep any stale "downed SOF team" objectives a pre-retirement save still
+        # carries (the SOF capture economy was removed 2026-07-01; the objectives
+        # were dynamic and are no longer rebuilt). No-op on current campaigns.
+        from game.scar_rescue import purge_legacy_sof_state
 
-        sync_downed_sof_objectives(self)
+        purge_legacy_sof_state(self)
 
         # Surface captured-pilot POWs as recovery objectives held at enemy
         # airfields (SCAR rescue rework, Phase 3). Rebuilt from each coalition's

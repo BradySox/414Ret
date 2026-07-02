@@ -273,20 +273,9 @@ def test_mission_types_enemy(monkeypatch: pytest.MonkeyPatch) -> None:
     assert FlightType.TARPS not in mission_types
 
 
-@pytest.mark.parametrize(
-    ("feature_on", "ctld_on", "expect_sof"),
-    [(True, True, True), (False, True, False), (True, False, False)],
-)
-def test_sof_insert_offered_only_with_feature_and_ctld(
-    feature_on: bool,
-    ctld_on: bool,
-    expect_sof: bool,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """SOF insert is offered against an enemy target only when the
-    commander-capture feature and the CTLD plugin are both enabled."""
-    from unittest.mock import MagicMock
-
+def test_sof_insert_is_never_offered(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The SOF capture economy was removed 2026-07-01: no target offers a SOF
+    insert any more ("SOF Insert" isn't even a live FlightType value)."""
     dummy_location = PresetLocation(
         name="dummy_location", position=Point(0, 0, None), heading=Heading(0)  # type: ignore
     )
@@ -305,13 +294,5 @@ def test_sof_insert_offered_only_with_feature_and_ctld(
         control_point=dummy_control_point,
         task=None,
     )
-    settings = MagicMock()
-    settings.scar_command_post_intel = feature_on
-    settings.plugin_option.return_value = ctld_on
-    # Replace the control point so the settings lookup resolves (the real one has
-    # no coalition wired in this lightweight fixture).
-    building.control_point = MagicMock()
-    building.control_point.coalition.game.settings = settings
-
     mission_types = list(building.mission_types(for_player=Player.RED))
-    assert (FlightType.SOF in mission_types) is expect_sof
+    assert "SOF Insert" not in [task.value for task in mission_types]

@@ -134,24 +134,6 @@ class StateData:
     #: plugin is disabled.
     tars_recon_captures: List[str]
 
-    #: Per-SCAR-area outcome reported by the SCAR scenario bridge, keyed by
-    #: tasking id -> status ("success"/"failed"/...). Empty when the SCAR plugin
-    #: is disabled or no SCAR flight was planned. Skeleton: logged only, no
-    #: campaign effect yet (scoring/consequence is a later increment).
-    scar_results: dict[str, str]
-
-    #: SOF teams stranded by a botched SCAR capture this mission (Phase 2c-3):
-    #: ``(tasking_id, x, y)`` per team, from the ``sofStranded{X,Y}`` markers the
-    #: SCAR bridge tags onto a failed area whose team survived. Each becomes a
-    #: persisted next-turn CSAR objective. Empty otherwise.
-    sof_strandings: list[tuple[str, float, float]]
-
-    #: Mis-identifications per SCAR area this mission: ``tasking_id -> count`` of
-    #: decoy/clutter convoys the prosecuting side destroyed (the ``misId`` field
-    #: the SCAR bridge tags onto each area's entry). Drives the R7 mis-ID budget
-    #: penalty. Empty when no wrong convoy was hit (or SCAR is off).
-    scar_misid: dict[str, int]
-
     #: Original aircraft unit names of pilots delivered home by Combat SAR this
     #: mission (the ``combatsar`` plugin appends one per rescued pilot). Each name
     #: is the ejected aircraft DCS reports in its kill/crash events, so the loss is
@@ -159,13 +141,6 @@ class StateData:
     #: returns to the squadron though the airframe is still lost. Empty when Combat
     #: SAR is off or no one was rescued.
     combat_sar_rescues: List[str]
-
-    #: ``SOFRESCUE_<x>_<y>`` names of stranded SCAR SOF teams extracted home by a
-    #: Combat SAR rescue helo this mission (the ``combatsar`` plugin spawns each
-    #: stranded team as a CASEVAC and reports the delivery here). ``commit_sof_
-    #: recoveries`` recomputes the name from each pending rescue to clear it and
-    #: refund the team. Empty when the SCAR feature is off or none were extracted.
-    combat_sar_sof_recoveries: List[str]
 
     #: ``(airframe_unit_name, x, y, coalition)`` per pilot CAPTURED by an enemy snatch
     #: party before rescue this mission (the ``combatsar`` enemy-capture race appends
@@ -248,9 +223,6 @@ class StateData:
         combat_sar_rescues = parse_combat_sar_rescues(
             data.get("combat_sar_rescues", [])
         )
-        combat_sar_sof_recoveries = parse_combat_sar_rescues(
-            data.get("combat_sar_sof_recoveries", [])
-        )
 
         def parse_combat_sar_captures(
             raw: Any,
@@ -285,59 +257,6 @@ class StateData:
             data.get("combat_sar_captures", [])
         )
 
-        def parse_scar_results(raw: Any) -> dict[str, str]:
-            # The SCAR bridge writes scar_results[taskingId] = {status=...}. The
-            # Lua JSON encoder serializes it as a dict (or [] when empty). Pull
-            # taskingId -> status defensively, tolerating either a {status=...}
-            # table or a bare status string per entry.
-            if not isinstance(raw, dict):
-                return {}
-            results: dict[str, str] = {}
-            for key, value in raw.items():
-                if isinstance(value, dict):
-                    status = value.get("status")
-                    if isinstance(status, str) and status:
-                        results[str(key)] = status
-                elif isinstance(value, str) and value:
-                    results[str(key)] = value
-            return results
-
-        def parse_sof_strandings(raw: Any) -> list[tuple[str, float, float]]:
-            # A failed area whose SOF team survived carries sofStrandedX/Y on its
-            # scar_results entry. Pull (taskingId, x, y) for the next-turn CSAR
-            # objective, defensively (skip malformed/coordless entries).
-            if not isinstance(raw, dict):
-                return []
-            strandings: list[tuple[str, float, float]] = []
-            for key, value in raw.items():
-                if not isinstance(value, dict):
-                    continue
-                x = value.get("sofStrandedX")
-                y = value.get("sofStrandedY")
-                if isinstance(x, (int, float)) and isinstance(y, (int, float)):
-                    strandings.append((str(key), float(x), float(y)))
-            return strandings
-
-        def parse_scar_misid(raw: Any) -> dict[str, int]:
-            # A wrong-convoy kill tags ``misId`` (a running count) onto the area's
-            # scar_results entry. Pull taskingId -> count defensively, skipping
-            # non-positive or malformed values.
-            if not isinstance(raw, dict):
-                return {}
-            misid: dict[str, int] = {}
-            for key, value in raw.items():
-                if not isinstance(value, dict):
-                    continue
-                count = value.get("misId")
-                if isinstance(count, (int, float)) and count > 0:
-                    misid[str(key)] = int(count)
-            return misid
-
-        raw_scar = data.get("scar_results", {})
-        scar_results = parse_scar_results(raw_scar)
-        sof_strandings = parse_sof_strandings(raw_scar)
-        scar_misid = parse_scar_misid(raw_scar)
-
         return cls(
             mission_ended=data.get("mission_ended", False),
             killed_aircraft=killed_aircraft,
@@ -346,11 +265,7 @@ class StateData:
             base_capture_events=data.get("base_capture_events", []),
             intercept_survivors=intercept_survivors,
             tars_recon_captures=tars_recon_captures,
-            scar_results=scar_results,
-            sof_strandings=sof_strandings,
-            scar_misid=scar_misid,
             combat_sar_rescues=combat_sar_rescues,
-            combat_sar_sof_recoveries=combat_sar_sof_recoveries,
             combat_sar_captures=combat_sar_captures,
         )
 

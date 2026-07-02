@@ -103,7 +103,6 @@ class AircraftBehavior:
         elif self.task in [
             FlightType.TRANSPORT,
             FlightType.AIR_ASSAULT,
-            FlightType.SOF,
             FlightType.CSAR,
             # Combat SAR flies a FLOT orbit (AEWC-style plan) but the airframe is a
             # CH-47/C-130 rescue craft: transport behavior (defensive, evade, NOT

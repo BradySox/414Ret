@@ -685,19 +685,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §38, checklist L10 — needs an
     in-game pass.)
 39. **Snake and nape (napalm CAS)** — the eighth **Vietnam Ops suite** feature: the iconic low-level napalm
-    CAS delivery ("snake" = Snakeye retarded bombs, "nape" = napalm). Same shape as §33 flak / §38 FAC (an
-    on-marker + runtime discovery): Python emits only `dcsRetribution.VietnamOps.snakeNape = { enabled }`
-    (`_populate_snake_nape`); the `vietnamops` plugin discovers **attack aircraft** at runtime (by the DCS
-    `Attack airplanes` attribute) making a **low** (≤ ceiling AGL), **fast** pass **close over an alive opposing
-    ground unit**, and lays a **napalm swath** — a line of `trigger.action.effectSmokeBig` fires (auto-stopped
-    after a burn time) + a modest per-node `trigger.action.explosion` bite — oriented along the run-in, once per
-    pass (a per-aircraft cooldown). Unlike the flak gauntlet (which *punishes* predictable flight), this
-    *rewards* pressing the CAS run in on the deck; napalm's real bite on soft targets is the point, and it only
-    fires on a deliberate low pass over the enemy. Symmetric (both sides' attack jets); needs an attacker down
-    low over enemy ground, or it no-ops. Plugin options: run-in ceiling, min speed, drop range, swath length,
-    fire-node count, per-node power. (`game/missiongenerator/vietnamopsluadata.py`,
-    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §39, checklist L11 — needs an
-    in-game pass.)
+    CAS delivery ("snake" = Snakeye retarded bombs, "nape" = napalm). **Detonation-anchored (reworked
+    2026-07-02)**: Python still emits only `dcsRetribution.VietnamOps.snakeNape = { enabled }`
+    (`_populate_snake_nape`); the `vietnamops` plugin now hooks **`S_EVENT_SHOT`**, catches each **eligible
+    retarded-bomb release** (weapon type name vs a comma-separated pattern option, default `SNAKEYE`) made
+    from a qualifying **release profile** (≤ ceiling AGL + ≥ min ground speed — the "pressed in on the deck"
+    gate), **tracks the weapon to impact** (`land.getIP` on the last sample, the Splash Damage pattern) and
+    lays **one `trigger.action.effectSmokeBig` fire (auto-stopped after a burn time) + a modest
+    `trigger.action.explosion` bite at each real impact point** — the wall of fire emerges from the actual
+    ripple; a dry pass lays nothing, a miss burns where it missed; one cue per salvo. **Mk-77 fire bombs are
+    excluded** (the locked Splash Damage build renders real napalm — no double-render). Unlike the flak
+    gauntlet (which *punishes* predictable flight), this *rewards* pressing the CAS run in on the deck.
+    Symmetric (any side's qualifying release; no aircraft-attribute gate — the ordnance is the eligibility).
+    Plugin options: release ceiling, min release speed, `napeWeaponPatterns`, per-impact power (the v1
+    proximity heuristic + its drop-range/swath/node options are retired).
+    (`game/missiongenerator/vietnamopsluadata.py`, `resources/plugins/vietnamops/`,
+    `game/settings/settings.py`; features doc §39, checklist L11 — needs an in-game pass.)
 40. **Campaign phases (inferred arc + planner emphasis)** — every campaign (all 66, zero authoring) knows what
     *phase* of the air war it is in, the UI shows it, and the auto-planner biases its offensive intent to match
     (spec `414th-campaign-phases-notes.md`; this is its **P0+P1**, landed as Vietnam campaign layer W3). A

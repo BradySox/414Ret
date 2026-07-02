@@ -273,10 +273,11 @@ and selected later upstream fixes.
   squadron; get the supplies in and the garrison is bolstered — the Khe Sanh hilltop resupply. The seventh is **FAC(A) marking**: an airborne forward air
   controller (an OV-10 Bronco loitering over the battle area) marks nearby enemy ground with **white-phosphorus
   smoke** so you can visually acquire the target and roll in — the iconic Vietnam Bronco putting willie pete on
-  the target. The eighth is **snake and nape**: fly an **attack aircraft low and fast** over enemy troops and
-  you lay a **wall of fire** across them — the signature Vietnam napalm CAS run. Unlike the flak gauntlet (which
-  *punishes* a predictable line), this *rewards* pressing the run in on the deck, and the fire genuinely hurts
-  soft targets. See
+  the target. The eighth is **snake and nape**: press a **low, fast Snakeye delivery** onto enemy troops and each
+  bomb's **real impact point erupts in napalm fire** — the signature Vietnam CAS run, with the wall of fire
+  drawn by your actual ripple (a dry pass lays nothing; a miss burns where it missed). Unlike the flak
+  gauntlet (which *punishes* a predictable line), this *rewards* pressing the run in on the deck, and the
+  fire genuinely hurts soft targets. Real Mk-77 napalm cans keep their own (Splash Damage) fireballs. See
   [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md). The Vietnam
   campaigns (Khe Sanh, 1968 Yankee Station, Velvet Thunder, Steel Tiger) turn on the whole battlefield suite by
   default — naval gunfire only on the coastal ones, where offshore guns can actually reach the shore.

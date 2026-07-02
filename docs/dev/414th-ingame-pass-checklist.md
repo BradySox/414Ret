@@ -2050,30 +2050,40 @@ so the two docs don't drift.
   set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;
   the mark cadence is far too frequent (smoke spam) or never fires.
 
-### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown — **player-triggered only in practice**, see 2026-07-01 note)
-- **Player-only in practice (squadron call, 2026-07-01, session `intelligent-dubinsky`):** AI attack flights
-  will **never** trip the low/fast gate on their own — Retribution's generated BAI/CAS plans keep them at
-  their planned altitudes (the 2026-07-01 session's A-1s sat at 6,400 m all mission) and nothing commands a
-  deck run "unless you write it in the waypoint plan." So do NOT wait for AI to exercise this row: the test
-  **is** a player pass, and the feature is effectively a player-CAS reward until someone authors low-level
-  ingress/attack altitudes into the Vietnam attack flight plans (deferred planner work, not an L11 bug).
+### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (REWORKED 2026-07-02: proximity heuristic → detonation-anchored `S_EVENT_SHOT` + weapon tracking; runtime Lua unflown — **player-triggered only in practice**, see 2026-07-01 note)
+- **Detonation-anchored (2026-07-02 rework — this row tests the NEW trigger):** fire now keys off a **real
+  eligible-bomb release** (weapon type name vs the `napeWeaponPatterns` option, default `SNAKEYE`; Mk-77 cans
+  excluded — Splash Damage owns real napalm) made from a low + fast **release profile**, with each weapon
+  tracked to impact and one fire node + bite laid **at the real impact point**. A dry pass lays nothing; a
+  miss burns where it missed; the swath is your actual ripple.
+- **Player-only in practice (squadron call, 2026-07-01, session `intelligent-dubinsky`, still true):** AI
+  attack flights never fly the deck — Retribution's generated BAI/CAS plans keep them at their planned
+  altitudes (the 2026-07-01 session's A-1s sat at 6,400 m all mission), so AI won't pass the release-profile
+  gate even when it drops Snakeyes. The test **is** a player pass; a player-CAS reward until someone authors
+  low-level ingress/attack altitudes into the Vietnam attack flight plans (deferred planner work, not an L11
+  bug).
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `snakeNape`
   on-marker (emitted when `vietnam_snake_and_nape` is on, independent of the other suite features; off = no
-  node). The runtime attack-plane discovery, the low/fast/near gating, and the `effectSmokeBig`/`explosion`
-  placement are runtime Lua, exercisable only live.
-- **Setup:** A Vietnam campaign with **Vietnam Ops → Snake and nape** on. **Fly it yourself** in an attack
-  aircraft (A-1/A-4/A-37/Su-25/OV-10 — anything that carries the DCS `Attack airplanes` attribute): a **low,
-  fast** pass (≤150 m AGL, ≥100 m/s) directly over an enemy ground unit.
-- **Pass:** a line of **fire** (smoke-and-fire effects) lays **along your run-in heading** across the target,
-  the nearby soft targets take damage, and a "SNAKE AND NAPE — napalm on the deck" cue appears; the fires burn
-  ~90 s then stop; `dcs.log` shows "Snake and nape armed" with no Lua error. One pass = one wall of fire (the
-  per-aircraft cooldown), not a per-tick stream.
-- **Fail signature:** no fire despite a low/fast pass over enemy ground (the **`Attack airplanes` attribute
-  doesn't match your jet** — the #1 suspect; widen the gate/type if so, or confirm you were low + fast +
-  within drop range); fire lays across instead of along the run-in (heading/frame bug); fires never stop
-  (permanent infernos — `stopEffect` failing); an `effectSmokeBig` / `stopEffect` / `land.getHeight` /
-  `hasAttribute` Lua error; the lay repeats every tick (cooldown not honoured); it triggers from altitude or at
-  low speed (the ceiling/speed gate is wrong); the bite is far too strong/weak (`napeBlastPower`).
+  node). The `S_EVENT_SHOT` matching, the release-profile gate, the weapon tracking/`land.getIP` impact
+  resolution, and the `effectSmokeBig`/`explosion` placement are runtime Lua, exercisable only live.
+- **Setup:** A Vietnam campaign with **Vietnam Ops → Snake and nape** on. **Fly it yourself** in anything
+  carrying **Mk-82 (or Mk-81) Snakeyes** (A-4/A-1/F-4 etc. — no aircraft-type gate any more): ripple a pair+
+  off a **low, fast** delivery (≤500 ft AGL, ≥180 kts ground speed at release) onto enemy ground. Also fly
+  one **control**: a dry low pass (no release) and, if flying the A-4E-C, one **Mk-77** drop.
+- **Pass:** each Snakeye impact point erupts in a smoke-and-fire node a beat after release (at the bombs'
+  fall line — the ripple draws the wall of fire), nearby soft targets take the extra bite, and one
+  "SNAKE AND NAPE — napalm on the deck" cue appears per salvo (not per bomb); the fires burn ~90 s then stop;
+  the dry pass lays **nothing**; a deliberate miss burns at the miss point, not on the target; a Mk-77 drop
+  shows only the Splash Damage napalm (no doubled §39 fire on top); `dcs.log` shows "Snake and nape armed
+  (release gate …, ordnance 'SNAKEYE' …)" with no Lua error.
+- **Fail signature:** no fire despite a low/fast Snakeye release (the **weapon type name doesn't match the
+  pattern list** — the #1 suspect, esp. mod-pack Snakeyes; check `dcs.log`, widen `napeWeaponPatterns`); fire
+  at the release point or the aircraft instead of the impacts (tracking/`land.getIP` bug); fire on a dry pass
+  (release gate broken); a doubled effect on Mk-77 (exclusion broken); fires never stop (permanent infernos —
+  `stopEffect` failing); a cue per bomb instead of per salvo; an `S_EVENT_SHOT` handler error in `dcs.log`
+  (the handler is pcall-wrapped — any "snake-and-nape shot handler error" line counts); it triggers from
+  altitude or at low speed (the release ceiling/speed gate wrong); the bite far too strong/weak
+  (`napeBlastPower`).
 
 ### M1 — Political will pacing & feed weights (campaign layer W1+W2) · Vietnam campaign layer · ☐ UNTESTED (built 2026-07-01; model + verdict fully unit-tested, pacing needs a played campaign)
 - **Headless adjudication:** the feed model and the negotiation verdict are locked in

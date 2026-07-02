@@ -2068,14 +2068,20 @@ so the two docs don't drift.
   set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;
   the mark cadence is far too frequent (smoke spam) or never fires.
 
-### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown — **player-triggered only in practice**, see 2026-07-01 note)
+- **Player-only in practice (squadron call, 2026-07-01, session `intelligent-dubinsky`):** AI attack flights
+  will **never** trip the low/fast gate on their own — Retribution's generated BAI/CAS plans keep them at
+  their planned altitudes (the 2026-07-01 session's A-1s sat at 6,400 m all mission) and nothing commands a
+  deck run "unless you write it in the waypoint plan." So do NOT wait for AI to exercise this row: the test
+  **is** a player pass, and the feature is effectively a player-CAS reward until someone authors low-level
+  ingress/attack altitudes into the Vietnam attack flight plans (deferred planner work, not an L11 bug).
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `snakeNape`
   on-marker (emitted when `vietnam_snake_and_nape` is on, independent of the other suite features; off = no
   node). The runtime attack-plane discovery, the low/fast/near gating, and the `effectSmokeBig`/`explosion`
   placement are runtime Lua, exercisable only live.
-- **Setup:** A Vietnam campaign with **Vietnam Ops → Snake and nape** on. Fly an **attack aircraft** (A-1/A-4/
-  A-37/Su-25/OV-10 — anything that carries the DCS `Attack airplanes` attribute) a **low, fast** pass (≤150 m
-  AGL, ≥100 m/s) directly over an enemy ground unit.
+- **Setup:** A Vietnam campaign with **Vietnam Ops → Snake and nape** on. **Fly it yourself** in an attack
+  aircraft (A-1/A-4/A-37/Su-25/OV-10 — anything that carries the DCS `Attack airplanes` attribute): a **low,
+  fast** pass (≤150 m AGL, ≥100 m/s) directly over an enemy ground unit.
 - **Pass:** a line of **fire** (smoke-and-fire effects) lays **along your run-in heading** across the target,
   the nearby soft targets take damage, and a "SNAKE AND NAPE — napalm on the deck" cue appears; the fires burn
   ~90 s then stop; `dcs.log` shows "Snake and nape armed" with no Lua error. One pass = one wall of fire (the

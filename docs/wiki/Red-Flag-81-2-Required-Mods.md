@@ -47,8 +47,8 @@ A paid module a player doesn't own still loads fine for everyone else — it jus
 ## Comes with DCS — nothing to install
 
 **B-52H Stratofortress** · **KC-135 Stratotanker** · **E-3A Sentry** · **AH-1W SuperCobra** ·
-**CH-47D** · **An-26B** — plus the whole ground threat array (SA-2/SA-3, ZSU-23-4, Hawk, Vulcan,
-the armor). Nothing to download.
+**CH-47D** · **An-26B** — plus the whole ground threat array (SA-2/SA-3/SA-6/SA-8, KS-19 + Fire
+Can flak, ZSU-23-4, Vulcan, the armor). Nothing to download.
 
 ---
 

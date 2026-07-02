@@ -7,13 +7,14 @@ hold the FEBA, open the corridors. Copy the shape, not the specifics.*
 > **How to read this.** The ORBAT, geography, ROE, and threat array are **real** (from
 > `red_flag_81_2.yaml` and its miz). **Callsigns, frequencies, TOTs, meter values and exact
 > coordinates are illustrative** — marked *(ex.)*. The campaign is dynamic — re-plan each turn off
-> the live map, the SITREP, and the campaign status ribbon. 🟡 *The campaign is unflown and the
-> laydown is a first cut — site positions may shift when the reference miz lands; the plan's
-> logic won't.*
+> the live map, the SITREP, and the campaign status ribbon. 🟡 *The campaign is unflown; the
+> laydown is re-pointed at the commercial 81-2 reference miz (2026-07-02) — read exact site
+> positions off the live map, the plan's logic holds.*
 
 > **The standing ROE (Week One):** **the Box (Groom Lake, 12 NM)** + the Tonopah off-range ring
 > (8 NM); **all deep target classes locked**. Legal: the FEBA, the armor arrays, the convoys, the
-> AAA, and the **SA-2/SA-3 sites** (ground objects — Iron Hand is open for business from turn 1).
+> AAA, and the **SA-2/SA-3/SA-6/SA-8 sites** (ground objects — Iron Hand is open for business
+> from turn 1).
 
 ---
 
@@ -30,8 +31,9 @@ MISSION #: 001      MC: BUICK LEAD (ex.)
 1. SITUATION
    The meters: WILL 100 · RESOLVE 100 (ex.) · Phase: WEEK ONE — Box 12nm +
      Tonopah ring 8nm; deep classes locked (cover page).
-   Enemy: SA-2 rings reported Tolicha Peak + Pahute (unmapped); ZSU belts on the
-     corridors; aggressor F-5Es at TTR on GCI alert; armor on the FEBA.
+   Enemy: SAM rings reported Tolicha Peak + the mock-airfield complexes (unmapped);
+     KS-19/ZSU flak belts on the corridors; aggressor F-5Es at TTR on GCI alert;
+     armor on the FEBA.
    Friendly: FEBA holding north of Camp Mercury; Mercury/Indian Springs may draw
      harassment fire.
 
@@ -42,7 +44,8 @@ MISSION #: 001      MC: BUICK LEAD (ex.)
 3. EXECUTION
    a. Main effort: FILM THE ARRAY. Nobody presses a ring we haven't plotted.
    b. Scheme of maneuver:
-        - SLICE 1 (RF-101B TARPS) — high-speed run: Tolicha complex + Pahute site.
+        - SLICE 1 (RF-101B TARPS) — high-speed run: Tolicha complex + the main
+          mock-airfield ring.
           One pass, film, home. Escorted at range by BUICK.
         - BUICK 1-2 (F-4E escort) — MiGCAP between the TTR axis and SLICE's track.
           The ambush comes late + close: hold at the target end.
@@ -77,12 +80,12 @@ MISSION #: 002      MC: BUICK LEAD (ex.)
 
 1. SITUATION
    The meters: WILL [___] · RESOLVE [___] · Phase: WEEK ONE.
-   Enemy: Tolicha SA-2 ×2 + Pahute SA-2 PLOTTED (Turn 1 film); SA-3 suspected at
-     the mock airfield; convoy traffic on the Beatty corridor.
+   Enemy: Tolicha SA-2 + the south SA-6 PLOTTED (Turn 1 film); SA-6/SA-8 ring at
+     the main mock airfield; convoy traffic on the Beatty corridor.
    Friendly: FEBA stable; film library building.
 
 2. MISSION
-   "The package will destroy the Tolicha Peak SA-2 sites and interdict the Beatty
+   "The package will destroy the Tolicha Peak SAM complex and interdict the Beatty
     corridor convoy, in order to open the western approach."
 
 3. EXECUTION
@@ -97,7 +100,7 @@ MISSION #: 002      MC: BUICK LEAD (ex.)
         - NAIL 1 + HOG (OV-10 + A-10A) — FEBA CAS continues.
    c. Game plan vs the ARRAY: ingress BELOW the SA-2 envelope in the valleys; pop,
       deliver, back down. If launched on: beam, notch, unload — then re-attack from
-      a NEW axis. ZSU belt at the sites: one pass each, no admiring.
+      a NEW axis. KS-19/ZSU belts at the sites: one pass each, no admiring.
    d. ROE check: Tolicha sites are ground objects — legal. The mock airfield
       BUILDINGS stay locked until Week Two: do not shift targets onto the complex.
    e. Success: ≥1 Fan Song down + the convoy killed. Abort: undegraded ring +
@@ -105,8 +108,9 @@ MISSION #: 002      MC: BUICK LEAD (ex.)
 
 4. COMMS (ex.): as Turn 1. SAM call: "SAM, TOLICHA WEST, [clock]".
 5. SAR: Sandy briefed for the western valleys — deepest tracks yet. Win the race.
-6. CONTINGENCIES: SA-3 at the airfield wakes up -> it's point defense; stay out of
-   its ring, it can't chase you. Convoy through -> expect a harder FEBA next turn.
+6. CONTINGENCIES: the airfield-ring SAM wakes up -> it's point defense; stay out
+   of its ring, it can't chase you (the SA-8 can move — treat it like a gun that
+   shoots missiles). Convoy through -> expect a harder FEBA next turn.
 =============================================================================
 ```
 
@@ -125,8 +129,8 @@ MISSION #: 003      MC: CADILLAC LEAD (ex.)
 1. SITUATION
    The meters: WILL [___] · RESOLVE [___] · Phase: WEEK ONE (Week Two ~turn 6 —
      sooner if Will is bleeding).
-   Enemy: Kawich Valley + Gold Flat armor arrays filmed; TTR SA-2 ring still up;
-     aggressors 0-for-[N] or [N]-for-us — read the SITREP honestly.
+   Enemy: the two Kawich Valley armor arrays filmed; the TTR-approach SA-6 still
+     up; aggressors 0-for-[N] or [N]-for-us — read the SITREP honestly.
    Friendly: western corridor opening; Mercury fed.
 
 2. MISSION
@@ -137,13 +141,14 @@ MISSION #: 003      MC: CADILLAC LEAD (ex.)
    a. Main effort: THE KAWICH ARRAY — it's the Week Two push's spearhead.
    b. Scheme of maneuver:
         - HOG 1-4 (A-10A) — Rockeye + gun on the array, terrain approach from the SW
-          (the TTR SA-2 ring covers the northern half — stay south of the plotted arc).
+          (the TTR-approach SA-6 covers the northern half — stay south of the arc).
         - CADILLAC 1-2 (F-4E escort) — the rematch: hold between TTR and the Hogs.
           They'll slash once at the array; kill them in the run, let the leash take
           the survivors home. NOBODY follows toward Groom.
-        - BUICK 1-2 (F-4E strike) — TTR ring Iron Hand if the film supports it,
-          else FEBA counter-battery.
-        - SLICE 1 (TARPS) — BDA run on Tolicha + film Gold Flat for next turn.
+        - BUICK 1-2 (F-4E strike) — Iron Hand the TTR-approach SA-6 if the film
+          supports it, else FEBA counter-battery.
+        - SLICE 1 (TARPS) — BDA run on Tolicha + film the Gold Flat Fire Can flak
+          band for next turn.
    c. ROE check: arrays/sites legal; TTR the FIELD stays locked (airfield class)
       until Surge Week — the ring around it is fair game now.
    d. Success: the array combat-ineffective + BDA filmed. The SITREP should show

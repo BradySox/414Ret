@@ -26,6 +26,16 @@ from dcs.mapping import Point
 from dcs.mission import Mission
 from dcs.vehicles import AirDefence, Armor, Unarmed
 
+# pydcs class naming differs between the release package (X_5p73_s_125_ln,
+# X_1L13_EWR) and the retribution fork (lowercase x_...); accept either so the
+# builder runs in both environments.
+S125_MARKER = getattr(AirDefence, "X_5p73_s_125_ln", None) or getattr(
+    AirDefence, "x_5p73_s_125_ln"
+)
+EWR_MARKER = getattr(AirDefence, "X_1L13_EWR", None) or getattr(
+    AirDefence, "x_1L13_EWR"
+)
+
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "resources/campaigns/exercise_vegas_nerve.miz"
 DST = REPO / "resources/campaigns/red_flag_81_2.miz"
@@ -33,41 +43,69 @@ DST = REPO / "resources/campaigns/red_flag_81_2.miz"
 BLUE_AIRPORTS = {4, 1}  # Nellis, Creech (Indian Springs)
 RED_AIRPORTS = {2, 16, 17, 18, 5}  # Groom, Pahute Mesa, Tonopah, TTR, Beatty
 
-# --- The laydown (design note section 3) -- edit these when the reference
-# --- 81-2 miz arrives, then re-run.
+# --- The laydown (design note section 3), re-pointed 2026-07-02 at the
+# --- Reflected Simulations "F-4E Red Flag 81-2" reference miz set: positions
+# --- below are cross-mission cluster centers extracted from the 15 campaign
+# --- missions (raw-Lua parse; see the design note for the method + census).
 SA2_SITES = [
-    (-318000, -163000),  # Tolicha Peak west complex
-    (-305000, -155000),  # Tolicha Peak north
-    (-232000, -170000),  # TTR ring
-    (-300000, -138000),  # Pahute Mesa
-    (-292000, -95000),  # Groom box edge
+    (-270620, -182300),  # Tolicha Peak complex -- the ref's one full S-75 site
 ]
 SA3_SITES = [
-    (-224000, -177000),  # TTR field
-    (-315000, -158000),  # mock airfield complex
+    (-248510, -189000),  # NW airfield/EWR complex (SW of TTR)
 ]
-# No SHORAD markers: the 1981 Red Force faction has no SAM-SHORAD unit (guns
-# were the point defense), so the FEBA/strip point defense is AAA too.
+# MERAD to the loader like the SA-2/SA-3 markers (Hawk marker type keeps them
+# distinct in the ME); the faction's "SA-6" preset gives the fill variety. The
+# reference fields four Kub sites -- the aggressor MUTES Straight Flush play.
+SA6_SITES = [
+    (-264410, -159010),  # main mock airfield south
+    (-274480, -179250),  # Tolicha Peak south
+    (-219490, -164060),  # TTR south-east approach (full 11-unit ref site)
+]
+# SHORAD (Strela marker -> faction SA-8 Osa): the two real ref SA-8 positions
+# plus two stand-ins for the ref's dense eastern "Smokey" GTR-18 manpad belt
+# (100 SA-18 sims in the reference; the squadron's no-manpads call stands, so
+# the belt reads as point SAMs instead).
+SHORAD_SITES = [
+    (-263000, -149800),  # central band (ref SA-8; offset off the EWR it guards)
+    (-261040, -161380),  # main mock airfield west (ref SA-8)
+    (-253930, -123080),  # Smoky belt west
+    (-242390, -115590),  # Smoky belt east
+]
 AAA_SITES = [
+    # Range-array gun belts (reference positions; KS-19/SON-9 heavy flak +
+    # ZSU fills come from the faction).
+    (-268650, -180950),  # Tolicha KS-19 north belt
+    (-270900, -184600),  # Tolicha south / POL-farm guns
+    (-268590, -164010),  # main mock airfield guns
+    (-249420, -185720),  # NW complex guns
+    (-241270, -188920),  # NW satellite (ref "EWR-1") guns
+    (-269600, -126100),  # east mock airfield (ref "AirfieldZEUS")
+    (-264400, -153480),  # central band column guard
+    (-259520, -140510),  # Fire Can site
+    (-282500, -171400),  # refueler camp west
+    (-285700, -149700),  # fuel-camp guard west (ref "FuelAAA-1")
+    (-284650, -141700),  # fuel-camp guard east (ref "FuelAAA")
+    # Campaign-fabric point defense (kept from the first cut: red fields, the
+    # FEBA, and the front corridor feed the flak gauntlet).
     (-321000, -149500),  # FOB Tolicha
     (-304500, -131500),  # Pahute strip
     (-334000, -125000),  # FEBA corridor
-    (-322000, -168000),  # western (Beatty) corridor
     (-227500, -172500),  # TTR
     (-289500, -89000),  # Groom
     (-329000, -172000),  # Beatty
     (-199000, -198000),  # Tonopah civil
 ]
 EWR_SITES = [
-    (-205000, -195000),  # Tonopah (P-37 Bar Lock when HDS is on)
-    (-265000, -75000),  # Groom / east approach
+    (-296700, -169930),  # deep south-west (Beatty corridor; ref "EWR-5")
+    (-263360, -151050),  # central band -- the GCI heart
+    (-249070, -187460),  # NW airfield complex (ref "EWR-1")
 ]
 ARMOR_SITES = [
-    (-255000, -150000),  # Kawich Valley array
-    (-280000, -140000),  # Gold Flat array
-    (-325000, -143000),  # FEBA north
-    (-318000, -152000),  # FEBA west
-    (-291000, -92000),  # Groom defense
+    (-271490, -182790),  # Tolicha T-55 array
+    (-249000, -186600),  # NW complex T-55 array
+    (-266840, -126420),  # east mock airfield armor (ref "Ground-1")
+    (-252210, -118490),  # Smoky belt armor (ref "PepsiTarget")
+    (-247670, -121600),  # Smoky belt array (ref "RocketTarget", 24 units)
 ]
 FOBS = [
     ("Camp Mercury", "blue", (-352000, -103000)),
@@ -75,16 +113,29 @@ FOBS = [
 ]
 # (static type, owner, position). Factories are only read from the BLUE country
 # block (loader quirk); objective coalition follows the nearest control point.
+# The four "strike" range complexes are the reference's F-86F-dressed mock
+# airfields; the Tolicha ammo pair is its train marshalling yard + POL farm.
 STATIC_TARGETS = [
-    ("factory", "blue", (-316000, -157000)),  # mock airfield industry
-    ("strike", "red", (-315500, -158500)),  # mock airfield complex
-    ("strike", "red", (-225000, -176000)),  # TTR industrial
-    ("ammo", "red", (-198500, -199500)),  # Tonopah depot
-    ("ammo", "red", (-331500, -173500)),  # Beatty depot
+    ("factory", "blue", (-267000, -161900)),  # main mock airfield industry
+    ("strike", "red", (-267800, -162510)),  # main mock airfield (24-Sabre ramp)
+    ("strike", "red", (-275000, -178690)),  # Tolicha mock airfield
+    ("strike", "red", (-249520, -185780)),  # NW airfield complex
+    ("strike", "red", (-269380, -125890)),  # east mock airfield
+    ("ammo", "red", (-269000, -182100)),  # Tolicha marshalling yard (train)
+    ("ammo", "red", (-270770, -185280)),  # Tolicha POL farm (32-tank ref site)
+    ("ammo", "red", (-248730, -186710)),  # NW truck park (51 trucks in ref)
+    ("strike", "red", (-225000, -176000)),  # TTR industrial (campaign economy)
+    ("ammo", "red", (-198500, -199500)),  # Tonopah depot (campaign economy)
+    ("ammo", "red", (-331500, -173500)),  # Beatty depot (campaign economy)
     ("c2", "red", (-288000, -88500)),  # Red Force C2 inside the Box
 ]
+# Blue point defense is AAA-only by loader rule: MizCampaignLoader reads
+# MERAD/SHORAD markers from the RED country block only (its aaa property is
+# the one that scans both), so a blue Hawk marker is silently dropped -- the
+# first cut's "Hawk at Creech" never actually loaded. The player faction
+# carries the Hawk preset for purchase instead.
 BLUE_DEFENSE = [
-    ("merad", (-359000, -72000)),  # Hawk at Creech
+    ("aaa", (-359000, -72000)),  # Vulcan at Creech
     ("aaa", (-396500, -15500)),  # Vulcan at Nellis
 ]
 CONVOY_SPAWNS = [
@@ -164,15 +215,19 @@ def main() -> None:
     for x, y in SA2_SITES:
         vgroup(red, "SA2", AirDefence.S_75M_Volhov, x, y)
     for x, y in SA3_SITES:
-        vgroup(red, "SA3", AirDefence.X_5p73_s_125_ln, x, y)
+        vgroup(red, "SA3", S125_MARKER, x, y)
+    for x, y in SA6_SITES:
+        vgroup(red, "SA6", AirDefence.Hawk_ln, x, y)
+    for x, y in SHORAD_SITES:
+        vgroup(red, "SHORAD", AirDefence.Strela_1_9P31, x, y)
     for x, y in AAA_SITES:
         vgroup(red, "AAA", AirDefence.ZSU_23_4_Shilka, x, y)
     for x, y in EWR_SITES:
-        vgroup(red, "EWR", AirDefence.X_1L13_EWR, x, y)
+        vgroup(red, "EWR", EWR_MARKER, x, y)
     for x, y in ARMOR_SITES:
         vgroup(red, "ARMOR", Armor.M_1_Abrams, x, y)
 
-    blue_defense_types = {"merad": AirDefence.Hawk_ln, "aaa": AirDefence.Vulcan}
+    blue_defense_types = {"aaa": AirDefence.Vulcan}
     for kind, (x, y) in BLUE_DEFENSE:
         vgroup(blue, kind.upper(), blue_defense_types[kind], x, y)
 

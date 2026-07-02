@@ -330,8 +330,10 @@ and selected later upstream fixes.
   F-4E wing detachment deploys to **Nellis, January 1981** (after the Reflected Simulations campaign the
   squadron flies) against the **integrated Red Force of the real 1981 exercise**: 64th/65th **Aggressor
   F-5Es** flying MiG-21 GCI hit-and-run, the **4477th "Red Eagles" Constant Peg MiGs out of Tonopah Test
-  Range** (their actual 1981 field), an **SA-2/SA-3 emulator array around Tolicha Peak**, AAA on every
-  corridor, and a simulated enemy army on a FEBA north of Camp Mercury. The whole **Vietnam mechanics
+  Range** (their actual 1981 field), an **SA-2/SA-3/SA-6/SA-8 emulator array around Tolicha Peak**,
+  Fire Can-directed **KS-19 flak belts** on every corridor, four F-86-dressed **mock airfields**, and a
+  simulated enemy army on a FEBA north of Camp Mercury — the range laydown **re-pointed at the commercial
+  81-2 campaign's own mission files** (a NEW game picks it up). The whole **Vietnam mechanics
   stack rides along** — Red Flag *is* the institutionalized Vietnam feedback loop — political will as the
   TAC assessment, the static front as the exercise FEBA, and a three-phase escalation arc (**Week One →
   Force on Force → Surge Week**) that releases target classes as you prove the force. The **Groom Lake

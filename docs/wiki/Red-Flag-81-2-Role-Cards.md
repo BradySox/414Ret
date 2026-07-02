@@ -68,16 +68,18 @@ JOB: The FEBA, the armor arrays, and the convoy war on the range roads.
 
 LOADOUT ('81): Mk-82 · Mk-20 ROCKEYE · the GAU-8 · AIM-9 self-defense
 GAME PLAN
-  • Kawich Valley + Gold Flat tank arrays and the FEBA armor are your target set —
-    legal from turn 1, FAC-marked when the Bronco's up.
+  • The Kawich Valley target arrays, the Tolicha/NW-complex T-55 arrays and the
+    FEBA armor are your target set — legal from turn 1, FAC-marked when the
+    Bronco's up.
   • TRAIL WAR: right-click the enemy supply route on the map — the package
     pre-fills Armed Recon. The convoys are red's real reinforcements; kill them
     on the road and the FEBA never gets them. Decisive all campaign.
   • You live in the gun envelope by trade: the gauntlet TIGHTENS on steady flying.
     Vary the run-in, use the terrain, one pass per axis.
 THREAT
-  • ZSU belts on every corridor; the SA-2 rings overlap some of your ground —
-    know where the sites are (TARPS film) and stay under/around the envelope.
+  • KS-19/ZSU flak belts on every corridor (the 100mm reaches high — jink); the
+    SAM rings + the Smoky-belt SA-8s overlap some of your ground — know where the
+    sites are (TARPS film) and stay under/around the envelope.
   • An F-5 slash can reach you — keep a lookout, be ready to spit one out in a turn.
 COMMS: FAC 9-line when marked; GUNS calls with clock + type. TANKER: boom (rarely needed).
 ====================================================================

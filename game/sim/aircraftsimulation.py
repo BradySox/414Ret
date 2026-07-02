@@ -90,12 +90,14 @@ class AircraftSimulation:
             return
 
         # Find completed flights, removing them from the ATO and returning aircraft
-        # and pilots back to the squadron.
-        for flight in self.iter_flights():
-            if type(flight.state) == Completed:
-                flight.package.remove_flight(flight)
-                if len(flight.package.flights) == 0:
-                    flight.squadron.coalition.ato.remove_package(flight.package)
+        # and pilots back to the squadron. Snapshot first: iter_flights() yields
+        # lazily from the live package/ATO lists, and removing from those while
+        # iterating skips the element after each removal.
+        completed = [f for f in self.iter_flights() if isinstance(f.state, Completed)]
+        for flight in completed:
+            flight.package.remove_flight(flight)
+            if len(flight.package.flights) == 0:
+                flight.squadron.coalition.ato.remove_package(flight.package)
 
         if any(
             self._combat_pauses_fast_forward(

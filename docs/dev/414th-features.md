@@ -2687,8 +2687,10 @@ free-spawned).
 
 **The emitter serializes the commitment (`vietnamopsluadata.py` `_populate_super_gaggle`).** It reads
 `game.super_gaggle_commitment` and emits
-`superGaggle = { coalition, outpost{name,x,y}, launch{x,y}, helo{type,names[]}, suppressor{type,names[]} }`.
-No commitment ⇒ no node.
+`superGaggle = { coalition, countryId, outpost{name,x,y}, launch{x,y}, helo{type,names[]}, suppressor{type,names[]} }`.
+No commitment ⇒ no node. `countryId` is the BLUE faction's DCS country (2026-07-01 audit fix): the plugin
+spawns under it because `coalition.addGroup` places units on whatever coalition owns the country — the old
+hardcoded USA fallback (kept only for pre-fix saves) spawned the gaggle NEUTRAL for any non-US blue faction.
 
 **The `vietnamops` plugin spawns exactly the committed airframes, once** (vanilla DCS `coalition.addGroup`,
 `pcall`-guarded): a helo group named with the committed helo unit names (launch → outpost → back), and the

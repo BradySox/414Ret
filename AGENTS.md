@@ -683,8 +683,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `BLUE_ROE_VIOLATION`), **target release** (`locked_targets` classes, RESTRICTED — ROE badge on the TGO
     tooltip instead of vanishing), a red dashed **map layer** (`GameJs.restricted_zones` →
     `RestrictedZonesLayer`, Enemy intel group, default ON), and the authored **Rolling Thunder → Bombing
-    Halt → Linebacker → Linebacker II arcs in all 4 Vietnam campaigns** (Tbilisi/Sukhumi/Saipan play Hanoi
-    per laydown). (`game/fourteenth/phases.py`, `game/game.py`,
+    Halt → Linebacker → Linebacker II arcs in all 4 Vietnam campaigns** (Kutaisi/Sukhumi/Saipan play Hanoi
+    per laydown; the Yankee Station/Steel Tiger coastal-ladder recast also keeps a permanent Tbilisi "PRC
+    border" ring in every phase). (`game/fourteenth/phases.py`, `game/game.py`,
     `game/commander/tasks/compound/nextaction.py`, `game/commander/tasks/packageplanningtask.py`,
     `game/fourteenth/political_will.py`, `game/missiongenerator/kneeboard.py`, `game/server/game/models.py`,
     `game/server/tgos/models.py`, `client/src/components/campaignstatus/`,

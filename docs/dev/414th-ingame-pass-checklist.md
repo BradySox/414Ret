@@ -2137,15 +2137,17 @@ so the two docs don't drift.
   *cannot* adjudicate: whether the arc **feels like Rolling Thunder** in play (restraint that visibly binds,
   then releases) and whether the AI planner meaningfully redirects rather than starves.
 - **Setup:** a NEW Vietnam campaign (arcs ship in all four). Open the map: the **red dashed sanctuary
-  circle** (Tbilisi at Yankee Station/Steel Tiger, Sukhumi at Khe Sanh, Saipan at Velvet Thunder) should
+  circles** (Kutaisi/Hanoi + Senaki/Haiphong plus the permanent Tbilisi "PRC border" ring at Yankee
+  Station/Steel Tiger — the coastal-ladder recast; Sukhumi at Khe Sanh, Saipan at Velvet Thunder) should
   draw, and deep factories/airfields inside show **RESTRICTED — ROE** on hover. Play turns through the arc
   (Bombing Halt ≈ turn 8, Linebacker ≈ 11, Linebacker II ≈ 16 — earlier if your will bleeds).
 - **Pass:** phase 1: the BLUE auto-planner never frags strike/OCA into the zone or against locked classes
   (factories/power/airfields), while the front/trail war runs normally; **you** can still strike the zone —
   and doing so posts "ROE violation" and visibly dents Political Will next debrief; transitions announce
   once, the ribbon/kneeboard track the arc ("phase 2 of 4"), zones shrink at Linebacker and vanish at
-  Linebacker II, after which the planner hits the deep targets; a non-Vietnam campaign shows no zones and
-  plans stock.
+  Linebacker II (except the permanent PRC ring on the Yankee Station/Steel Tiger laydown, which must keep
+  drawing and keep the AI off Tbilisi forever), after which the planner hits the deep targets; a non-Vietnam
+  campaign shows no zones and plans stock.
 - **Fail signature:** the AI strikes into the sanctuary in phase 1 (gate not reached — check
   `roe_blocks_target` wiring in `PackagePlanningTask.fulfill_mission`); the player is hard-blocked from
   striking the zone (enforcement must stay soft); no will penalty after a zone kill (violation counter not

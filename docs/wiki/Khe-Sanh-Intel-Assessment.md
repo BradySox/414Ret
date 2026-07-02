@@ -17,12 +17,21 @@ pieces below:*
 > drawn from the historical record of the siege (21 Jan – 9 Apr 1968). The campaign maps it onto the
 > Caucasus terrain and makes a few **gameplay concessions you should know are not historical**:
 > a **token MiG-17 presence** (the VPAF did **not** contest the air over Khe Sanh — it was far south,
-> out of range, and the MiGs defended the North); **SA-2/SA-3 only in the deep rear** (SA-2s were a
-> *North Vietnam* threat — there were **none** at Khe Sanh); and **modern module stand-ins** for the
+> out of range, and the MiGs defended the North); **exactly four SA-2 sites in the deep rear** (SA-2s
+> were a *North Vietnam* threat — there were **none** at Khe Sanh; the perimeter is pure AAA, as it
+> was); a **summer campaign clock** (15 July 1968 — a January start snows in the Caucasus map; the
+> history stays January–April); and **modern module stand-ins** for the
 > period types (AH-1W for the AH-1G, A-6E for the A-6A, F-4E for the F-4B/C/D, CH-53E for the
 > CH-53A/CH-46, B-52H for the B-52D, and the **OV-10** — which actually entered combat ~July 1968, so
 > it stands in for the period O-1/O-2 Bird Dog FACs). The **real** threat to aircraft was **AAA and
 > small arms** — not MiGs, not SAMs, and **no MANPADS** (the SA-7 didn't appear until 1972).
+>
+> **One mechanic is now part of the history lesson:** the campaign plays the *political* siege too.
+> Washington's patience and Hanoi's resolve are live meters (the LBJ situation-room photo below is
+> the point), and the war escalates through an authored **Rolling Thunder → Bombing Halt →
+> Linebacker → Linebacker II ROE arc** — sanctuaries, locked target classes, and a red answer at
+> each step. Mechanics: [Vietnam Campaign Layer](Vietnam-Campaign-Layer); the Khe Sanh-specific
+> playbook: [handbook §3](Khe-Sanh-Campaign-Briefing#3--the-war-upstairs--political-will--the-roe-arc).
 
 ---
 ---
@@ -98,10 +107,12 @@ The NVA threat here is **on the ground**, not in the air.
 North against *Rolling Thunder*; Khe Sanh was out of its reach and not its mission. **No SA-2s are
 sited here** — the surface-to-air missile threat was a North Vietnam problem.
 
-> 🟡 **DCS concession:** the campaign fields a **token MiG-17F flight** (Senaki) and may place
-> **SA-2/SA-3 in the deep rear** so the air-to-air and SEAD systems have *something* to do. Treat
-> both as gameplay seasoning, not history. The MiGs are **guns-only** (their missiles are date-gated
-> out), and any SA-2 belongs in depth, never over the perimeter.
+> 🟡 **DCS concession:** the campaign fields a **token MiG-17F squadron** (Senaki) and **four SA-2
+> sites in the deep rear** so the air-to-air picture has *something* in it. Treat both as gameplay
+> seasoning, not history. The MiGs are **guns-only** (their missiles are date-gated out) and fly the
+> NVA **GCI-ambush doctrine** — late scramble, one slashing pass through a package near its target,
+> then home on a short leash. The SA-2s never threaten the perimeter; they matter only if you fly
+> deep in the Linebacker phases.
 
 ## Section IV — Friendly Forces
 
@@ -197,8 +208,8 @@ weather. *Our answer: the on-call CAS stack, the FAC, and Arc Light on the assem
 | **57 mm AAA (S-60 / ZSU-57-2)** | hills, approaches | Reaches medium altitude |
 | **23 mm (ZU-23 / ZSU-23-4 Shilka)** | everywhere, esp. low | Shilka is radar-directed — accurate |
 | **12.7/14.5 mm + small arms** | every target, the strip | Lethal low; the airstrip gauntlet |
-| **MiG-17F (token)** | Senaki | 🟡 gameplay only; guns-only; no real MiG threat here |
-| **SA-2/SA-3 (depth)** | deep rear | 🟡 gameplay only; none historically at Khe Sanh |
+| **MiG-17F (token)** | Senaki | 🟡 gameplay only; guns-only GCI ambushers; no real MiG threat here |
+| **SA-2 ×4 (depth)** | deep rear | 🟡 gameplay only; none historically at Khe Sanh — a Linebacker-phase problem |
 | **MANPADS** | — | **None.** No SA-7 until 1972. |
 
 ---

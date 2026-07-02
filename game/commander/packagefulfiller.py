@@ -209,6 +209,28 @@ class PackageFulfiller:
                 threats[EscortType.AirToAir] = True
         return threats
 
+    def escort_reserve_withholds(
+        self, builder: PackageBuilder, escort: ProposedFlight
+    ) -> bool:
+        """True when the strike-escort reserve refuses this package a fighter escort.
+
+        The fence half of ``Doctrine.strike_escort_reserve``: the BARCAP trim
+        (``TheaterState.from_game``) frees ~reserve fighters, but any package
+        planned before the strikes (BAI, OCA, even CAS in a true famine) could
+        still spend them on its own A2A escort. Only a STRIKE-led package may dip
+        the live untasked-fighter pool below the reserve -- those airframes are
+        held for the bombers' MiGCAP, the era answer. A withheld escort is not a
+        shortage: the package flies without it (exactly as if no threat warranted
+        one) and no procurement order is placed.
+        """
+        reserve = self.doctrine.strike_escort_reserve
+        if reserve <= 0 or escort.escort_type is not EscortType.AirToAir:
+            return False
+        primary = builder.package.primary_flight
+        if primary is not None and primary.flight_type is FlightType.STRIKE:
+            return False
+        return self.air_wing.untasked_fighters() - escort.num_aircraft < reserve
+
     def can_plan_escort(self, type: EscortType) -> bool:
         if type == EscortType.AirToAir:
             # An AirToAir escort is proposed as ESCORT for most packages but as
@@ -302,6 +324,8 @@ class PackageFulfiller:
             # This list was generated from the not None set, so this should be
             # impossible.
             assert escort.escort_type is not None
+            if self.escort_reserve_withholds(builder, escort):
+                continue
             if needed_escorts[escort.escort_type] and self.can_plan_escort(
                 escort.escort_type
             ):

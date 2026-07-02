@@ -340,18 +340,7 @@ class TheaterState(WorldState["TheaterState"]):
         # airframes stay untasked for the escorts planned later this same run.
         escort_reserve = coalition.doctrine.strike_escort_reserve
         if escort_reserve > 0:
-            fighter_tasks = {
-                FlightType.BARCAP,
-                FlightType.TARCAP,
-                FlightType.ESCORT,
-                FlightType.SWEEP,
-                FlightType.INTERCEPTION,
-            }
-            available_fighters = sum(
-                squadron.untasked_aircraft
-                for squadron in coalition.air_wing.iter_squadrons()
-                if squadron.primary_task in fighter_tasks
-            )
+            available_fighters = coalition.air_wing.untasked_fighters()
             barcaps_needed = AirspaceGeometry.trim_rounds_for_escort_reserve(
                 barcaps_needed,
                 barcap_threat_scores,

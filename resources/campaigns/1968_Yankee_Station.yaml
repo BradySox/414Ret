@@ -64,6 +64,11 @@ settings:
   automate_runway_repair: true
   automate_front_line_reinforcements: true
   automate_aircraft_reinforcements: false
+  # Big theater OOB (Navy + USAF over-the-ridge wings + the whole NVAF/trail web): stand
+  # the squadrons up at full strength on turn 0 instead of trickling them in via purchases.
+  # Each squadron fills to min(size, available parking) at its base. Pre-checks the New
+  # Game "Squadrons start full" generator option; applies to both coalitions.
+  squadron_start_full: true
   no_enemy_navy: false
   desired_player_mission_duration: 60
   external_views_allowed: true

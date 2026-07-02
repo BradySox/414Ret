@@ -48,9 +48,11 @@ separate assembly path, so nothing is lost by switching.
 ### The Brief Sheet
 
 The compact deck's lead page is a single scannable **Brief Sheet** modelled on a printed squadron
-one-pager: header, mission, a **labelled route with steerpoint numbers**
-(`HOLD 1 → JOIN 2 → IP 3 → TGT 5 → EGRESS 6`), admin, threats (air + SAM), game plan, comms, code
-words, bullseye, fields (RWY/ATC/TCN), loadout, laser, and Combat SAR — **auto-filled** from the
+one-pager: header, mission, the **full route — every steerpoint with its number and planned time**
+(`HOLD 1 12:32 → TKR 2 12:38 → JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10`; multiple strike points
+collapse to one range), admin, threats (air + SAM), game plan, comms, code
+words, bullseye, fields (RWY/ATC/TCN), WX (departure-field QNH/QFE + surface wind), loadout, laser,
+and Combat SAR — **auto-filled** from the
 flight plan, the jet's pylons, and the enemy faction. Empty fields render a `______` fill-in blank
 like a real template, so the layout never collapses.
 

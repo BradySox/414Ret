@@ -43,8 +43,7 @@ Full detail: **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)**.
   friendly field and the campaign **spares the aviator** (you still lose the jet). The enemy may
   race a snatch party to **capture** the survivor — kill it, or the pilot becomes a **POW** you
   recover over later turns. (`FlightType.SCAR` was repurposed from a retired armor-hunt task into
-  the Sandy role; the old SOF
-  **[commander-capture loop](SOF-and-Commander-Capture)** went dormant with it.)
+  the Sandy role; the old SOF commander-capture loop was retired with it.)
 - **[Electronic Warfare and ISR](Electronic-Warfare-and-ISR)** — the **JAMMING** flight type
   turns the C-130J into an EC-130H/RC-130H-style standoff jammer and ELINT/ISR platform. This is
   the only 414th scripted EW model; the old generic fighter-pod jammer is retired.
@@ -120,9 +119,8 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 
 Most campaign-facing systems have their own setting or plugin toggle. The **command-post intel
 fog** (enemy command posts hidden until you find them by strike/scout/TARPS) is on by default for
-new campaigns — toggle `SCAR command-post intel` on the Campaign Doctrine page to turn it off. The
-older SOF commander-**capture** economy it once fed is currently dormant (see
-**[SOF and Commander Capture](SOF-and-Commander-Capture)**).
+new campaigns — toggle `SCAR command-post intel` on the Campaign Doctrine page to turn it off
+(details on **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)**).
 
 ---
 

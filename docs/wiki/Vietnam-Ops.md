@@ -4,26 +4,28 @@
 things the modern air-war engine never modelled — the missions and threats that *defined* the
 Vietnam air war. Retribution's mission taxonomy (BARCAP/SEAD/DEAD/Strike) and threat model (SAM
 rings, MEZ geometry) assume a SAM-and-MiG war. Vietnam was the opposite: **AAA-saturated,
-FAC-directed, B-52-and-helicopter-heavy**, with naval gunfire, trail interdiction, and airbases
-under near-constant siege. This suite layers those missing pieces on top of the same engine.
+FAC-directed, B-52-and-helicopter-heavy**, with naval gunfire, trail interdiction, napalm CAS,
+and airbases under near-constant siege. This suite layers those missing pieces on top of the
+same engine.
 
-Everything here is a **runtime effect inside the generated mission**: Python plans the geometry
-and force composition, and the bundled `vietnamops` Lua plugin executes the behaviour. None of it
-touches the campaign brain (economy, planner, procurement, save format) — so a feature is
-independently opt-in, and turning its toggle off removes its behaviour cleanly, exactly like
-MANTIS, Combat SAR, and TIC.
+Most of the suite is a **runtime effect inside the generated mission**: Python plans the geometry
+and force composition, and the bundled `vietnamops` Lua plugin executes the behaviour. Two
+features go deeper — **convoy interdiction** and the **Super Gaggle** plug into the real force
+model, so the trucks you kill and the helos you lose are genuine campaign assets (see their
+sections). Every feature is independently opt-in, and turning its toggle off removes its
+behaviour cleanly, exactly like MANTIS, Combat SAR, and TIC.
 
-> Most of these effects are **atmospheric / cosmetic** — they make the battlespace *feel* like
-> Vietnam. Where a scripted effect overlaps a real target (an Arc Light box over a supply dump, a
-> convoy you actually kill), the damage flows through the normal loss path, so it attrits
-> natively. None of them add a hidden lethality model or a bespoke scoring system.
+> Vietnam content now comes in **two layers**. This page is the *mission-level* Ops suite — flak,
+> Arc Light, the trail, the gaggle. The *campaign-level* war — political will, the Rolling
+> Thunder → Linebacker II ROE arc, ambush MiGs, the Easter Offensive — is
+> **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)**.
 
 ---
 
 ## The Vietnam Ops settings page
 
-All seven toggles live on their own **Vietnam Ops** settings page (alongside Difficulty &
-Realism, Air Doctrine, and the rest), split into two sections:
+The toggles live on their own **Vietnam Ops** settings page (alongside Difficulty & Realism, Air
+Doctrine, and the rest). The mission-level suite:
 
 | Section | Toggle | Feature |
 |---|---|---|
@@ -34,19 +36,23 @@ Realism, Air Doctrine, and the rest), split into two sections:
 | Battlefield & interdiction | Airbase harassment (rocket/mortar siege) | [§5 Airbase harassment](#5--airbase-harassment-rocketmortar-siege) |
 | Battlefield & interdiction | Super Gaggle hilltop resupply | [§6 Super Gaggle](#6--super-gaggle-hilltop-resupply) |
 | Battlefield & interdiction | FAC(A) willie-pete target marking | [§7 FAC(A) marking](#7--faca-willie-pete-target-marking) |
+| Battlefield & interdiction | Snake and nape (napalm CAS) | [§8 Snake and nape](#8--snake-and-nape-napalm-cas) |
+| Campaign | Political will tracking | [The Campaign Layer](Vietnam-Campaign-Layer) |
+| Campaign | Static front (bounded siege line) | [The Campaign Layer](Vietnam-Campaign-Layer) |
 
 **Gating model.** Every toggle defaults **OFF**, so a modern campaign never sees flak puffs or
-carpet bombing. The Vietnam campaign YAMLs (Khe Sanh, Yankee Station) flip the relevant ones
-**ON** through their `settings:` block, so a Vietnam game lights up out of the box while a
-Cold-War campaign stays clean. You can flip any of them by hand on the settings page at any time.
+carpet bombing. The Vietnam campaign YAMLs (Khe Sanh, Yankee Station, Velvet Thunder, Steel
+Tiger) flip the relevant ones **ON** through their `settings:` block, so a Vietnam game lights up
+out of the box while a Cold-War campaign stays clean. You can flip any of them by hand on the
+settings page at any time.
 
 The underlying capabilities are **era-flexible** — flak, Arc Light, naval gunfire, and convoy
 interdiction all work in any era — but the page name follows the "Vietnam stuff" framing.
 
 Each effect is **symmetric by construction** where it makes sense (either side's heavy bombers
-carpet, either side's AAA flaks), but several are effectively blue-side in practice because only
-one coalition fields the relevant unit (only OV-10 owners have FACs; the convoy and gaggle
-emitters currently hard-pick the red road / blue outpost).
+carpet, either side's AAA flaks, either side's attack jets nape), but several are effectively
+blue-side in practice because only one coalition fields the relevant unit (only OV-10 owners have
+FACs; the gaggle draws from blue squadrons; the trail is the enemy's road).
 
 ---
 
@@ -68,10 +74,14 @@ unaffected — the heavy-bomber gate means only the big jets carpet.
 - **Losses stay native.** A bomber shot down before the run-in simply never drops its carpet;
   where the box overlaps real ground targets the damage is real.
 - **Tunable** (plugin options): carpet length/width, per-blast power, release range.
+- **Pairs with the campaign layer:** under Vietnam doctrine the B-52s now arrive as a massed,
+  escorted [Alpha Strike](Vietnam-Campaign-Layer#the-real-alpha-strike) instead of a lone naked
+  section — and losing one is a national event on the
+  [political-will meter](Vietnam-Campaign-Layer#political-will).
 
 ## 2 — AAA flak gauntlet
 
-*Toggle: **AAA flak gauntlet** · in-game pass: ◐ partial (softened for lethality; re-fly owed)*
+*Toggle: **AAA flak gauntlet** · in-game pass: ◐ partial (softened twice for lethality; re-fly owed)*
 
 The single biggest **atmosphere** upgrade. The real Vietnam threat was **AAA, not SAMs or MiGs**,
 and the engine's SAM/MEZ threat model barely represents it. With this on, fly within range and
@@ -113,23 +123,27 @@ This belongs to Yankee Station / I-Corps coastal operations.
 
 ## 4 — Convoy interdiction (Steel Tiger)
 
-*Toggle: **Truck-convoy interdiction** · in-game pass: partial (spawn cycle verified; right-click frag untested)*
+*Toggle: **Truck-convoy interdiction** · in-game pass: ☐ untested (reworked — the old phantom-spawn pass is obsolete)*
 
 A moving **enemy supply column** on the road behind the front — the Ho Chi Minh Trail / Operation
-Steel Tiger — surfaced to the player through **Armed Recon**. The engine models logistics as an
-abstract transfer; this makes one of those real supply routes a **flyable, interdictable target**
-that keeps flowing.
+Steel Tiger — surfaced to the player through **Armed Recon**. This is no longer a cosmetic truck
+spawn: **the convoy is real**. Each turn the engine makes sure the enemy has a genuine supply
+column flowing — actual rear-area ground units, debited from their source base, moving up the
+road corridor nearest the front through Retribution's own convoy system.
 
-- **Where it is.** Python picks the enemy supply road **nearest the front** (reusing the engine's
-  real `convoy_routes`, so the target ties to actual red logistics) and spawns a truck column
-  (default 8 × Ural-375) driving it end to end.
-- **It reacts to being hunted.** The column **halts under cover** when an opposing aircraft closes
-  inside the scatter range, then rolls again once the sky clears — the trucks "go to ground."
-- **It keeps flowing.** A while after a column is wiped, a fresh one rolls out with a "convoy
-  destroyed on the trail" cue, so the trail keeps producing targets across a long mission.
+- **Kill it and it matters.** The trucks carry real reinforcements. Interdict the column and
+  those units **never reach the line**; let it through and they do. The kill is recorded natively
+  in the debrief — no bespoke scoring.
+- **Where it is.** The corridor is the enemy-held road nearest the fighting, resolved on the real
+  control-point graph, so the target always ties to actual enemy logistics.
 - **Right-click to frag.** Instead of hunting for the corridor, **right-click an enemy supply
   route** on the map to open the package dialog there with **Armed Recon pre-selected**. (A
-  fully-friendly route won't offer it.)
+  fully-friendly route won't offer it.) The Armed Recon flight plan sweeps the hunted road
+  start-to-end rather than orbiting one point.
+- **The trail surges during bombing halts.** On the authored Vietnam campaigns, the
+  [Bombing Halt phase](Vietnam-Campaign-Layer#red-answers-the-arc) opens the logistics window
+  Hanoi historically used: **two concurrent, bigger convoys** run the trail while the halt holds.
+  More targets for you — and more reinforcements for them if you don't fly.
 
 ## 5 — Airbase harassment (rocket/mortar siege)
 
@@ -154,26 +168,21 @@ of "the rear isn't safe" that the flak gauntlet started over the target.
 
 ## 6 — Super Gaggle hilltop resupply
 
-*Toggle: **Super Gaggle hilltop resupply** · in-game pass: ☐ untested · blue-side*
+*Toggle: **Super Gaggle hilltop resupply** · in-game pass: ☐ untested (reworked — real squadrons, tracked losses) · blue-side*
 
 Models the Khe Sanh **"Super Gaggle"**: a formation of transport helos runs supplies into a
-**cut-off forward friendly outpost** while you can fly escort. The base engine has no
-besieged-outpost resupply; this makes the forward hilltops feel supplied-under-fire the way they
-historically were.
+**cut-off forward friendly outpost** while you can fly escort. This is no longer a phantom spawn
+on a respawn loop: **the gaggle is drawn from your real squadrons and its losses are real.**
 
-- **What spawns.** Python picks the friendly **FOB/FARP nearest a front** as the besieged outpost
-  and the nearest other friendly field as the launch point. The plugin flies a helo gaggle
-  (default 3 × UH-1H) **launch → outpost → back**, announces "delivered" on arrival (or "down" if
-  shot down en route), and **re-rolls a fresh run** on a cadence so the resupply keeps flowing.
-- **Fast-mover suppression choreography.** Each run also launches a short **attack flight**
-  (default 2 × A-4E-C — the historical suppressor) that works the AAA over the outpost while the
-  helos get in, tied to the gaggle's lifecycle. Set the suppressor count to 0 to disable.
+- **What flies.** Each turn the engine picks the besieged blue FOB/FARP near a front, a rear
+  launch field, a **real blue helo squadron** for the run and a **real blue attack squadron** for
+  the AAA suppressors, and commits those exact airframes — once, no respawn loop.
+- **Losses are charged.** A helo shot down on the run is a real airframe loss against its
+  squadron at the debrief, exactly like any other flight. Survivors return; a delivered run
+  credits the outpost a small ground-strength boost — so the gaggle now has stakes in both
+  directions.
 - **Fly escort.** The gaggle is the mission — you can shepherd it in. It needs a friendly forward
-  outpost near the front, or it has no effect.
-
-> **Runtime-cosmetic.** The delivery has no supply-economy effect (like the convoy); the value is
-> the immersion and the escort opportunity. The suppressor spawns with its type's default loadout,
-> so its actual bite against the guns is the #1 open tuning item.
+  outpost near the front and a helo squadron with airframes, or it quietly stands down.
 
 ## 7 — FAC(A) willie-pete target marking
 
@@ -191,6 +200,24 @@ cover, and it's the defining Vietnam FAC image (the Bronco putting willie pete o
 - **Marking only.** v1 puts smoke on the target; it doesn't auto-assign the target to a CAS
   package. The visual cue is the point.
 
+## 8 — Snake and nape (napalm CAS)
+
+*Toggle: **Snake and nape (napalm CAS)** · in-game pass: ☐ untested*
+
+The iconic low-level napalm delivery — "snake" for Snakeye retarded bombs, "nape" for napalm.
+Where the [flak gauntlet](#2--aaa-flak-gauntlet) *punishes* predictable flying, this **rewards
+pressing the CAS run in on the deck**.
+
+- **How it works.** Make a **low** (below the run-in ceiling AGL), **fast** pass **directly over
+  a live enemy ground unit** in an attack aircraft, and the runtime lays a **napalm swath** along
+  your run-in — a line of burning fire effects (auto-extinguished after a burn time) plus a
+  modest real bite per fire node. Once per pass, per-aircraft cooldown.
+- **It only fires on a deliberate pass.** High, slow, or off-target passes do nothing — you have
+  to fly the profile. Discovery is by the DCS *attack aircraft* attribute, so any attack jet on
+  either side can nape; no planning or toggling per-flight.
+- **Tunable** (plugin options): ceiling, minimum speed, drop range, swath length, fire-node
+  count, per-node power.
+
 ---
 
 ## In-game pass status at a glance
@@ -201,26 +228,29 @@ cockpit pass to confirm feel and behaviour. Current state:
 | Feature | Status |
 |---|---|
 | Arc Light | ✅ Verified in the cockpit |
-| Flak gauntlet | ◐ Partial — softened for lethality, re-fly owed |
-| Convoy interdiction | ◐ Partial — spawn/respawn cycle verified; halt-under-threat + right-click frag untested |
+| Flak gauntlet | ◐ Partial — softened twice for lethality, re-fly owed |
 | Naval gunfire | ☐ Untested (both runtime modes) |
+| Convoy interdiction | ☐ Untested — **reworked** to real force-model convoys; the old phantom-spawn pass no longer applies |
 | Airbase harassment | ☐ Untested |
-| Super Gaggle | ☐ Untested |
+| Super Gaggle | ☐ Untested — **reworked** to real squadron airframes + tracked losses |
 | FAC(A) marking | ☐ Untested |
+| Snake and nape | ☐ Untested |
 
 If you fly any of the untested effects, the biggest things to watch: the flak should *pressure you
 to jink*, not hard-kill you; airbase harassment must **never** land on a player-spawn field; naval
-gunfire should do nothing on an inland map.
+gunfire should do nothing on an inland map; a dead convoy's units should never arrive at the
+front.
 
 ## See also
 
+- **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** — the war *over* the war: political
+  will, the Rolling Thunder → Linebacker II ROE arc, ambush MiGs, Alpha Strikes, and the enemy's
+  phase-coupled tempo.
 - **[Khe Sanh — Campaign Briefing](Khe-Sanh-Campaign-Briefing)** — the inland Vietnam campaign
   that ships several of these toggles on.
 - **[Combat SAR](Combat-SAR)** and **[SCAR](SCAR)** — the Sandy/King rescue package, the other
   half of the Vietnam-era content.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline firefight sim the flak/convoy effects
   reuse for their fire plumbing.
-- **[Lua Plugins](Lua-Plugins)** — where the per-feature tunables (burst power, carpet size, convoy
-  count, cadences) live as plugin options.
-</content>
-</invoke>
+- **[Lua Plugins](Lua-Plugins)** — where the per-feature tunables (burst power, carpet size,
+  cadences) live as plugin options.

@@ -33,6 +33,7 @@
 
 **Vietnam Ops**
 - [Overview](Vietnam-Ops)
+- [The Campaign Layer](Vietnam-Campaign-Layer)
 - [Arc Light](Vietnam-Ops#1--arc-light)
 - [AAA Flak Gauntlet](Vietnam-Ops#2--aaa-flak-gauntlet)
 - [Naval Gunfire](Vietnam-Ops#3--naval-gunfire-support)
@@ -40,6 +41,7 @@
 - [Airbase Harassment](Vietnam-Ops#5--airbase-harassment-rocketmortar-siege)
 - [Super Gaggle](Vietnam-Ops#6--super-gaggle-hilltop-resupply)
 - [FAC(A) Marking](Vietnam-Ops#7--faca-willie-pete-target-marking)
+- [Snake and Nape](Vietnam-Ops#8--snake-and-nape-napalm-cas)
 
 **Campaigns**
 

@@ -58,16 +58,26 @@ adapted to how this fork actually plans and flies a campaign.
 The **[Vietnam Ops](Vietnam-Ops)** suite is a set of opt-in, period-authentic mechanics that
 recreate the missions and threats that defined the Vietnam air war — the things the modern
 SAM-and-MiG engine never modelled. Every toggle defaults off; the Vietnam campaigns (Khe Sanh,
-Yankee Station) flip the relevant ones on. See the **[Vietnam Ops](Vietnam-Ops)** page for the
-full suite, the settings-page gating model, and per-feature how-to.
+Yankee Station, Velvet Thunder, Steel Tiger) flip the relevant ones on. See the
+**[Vietnam Ops](Vietnam-Ops)** page for the full suite, the settings-page gating model, and
+per-feature how-to.
 
 - **[Arc Light](Vietnam-Ops#1--arc-light)** — B-52 heavy bombers walk a carpet of bombs across the target.
 - **[AAA Flak Gauntlet](Vietnam-Ops#2--aaa-flak-gauntlet)** — barrage flak that thickens against predictable run-ins.
 - **[Naval Gunfire Support](Vietnam-Ops#3--naval-gunfire-support)** — offshore gun ships shell coastal targets (call-for-fire + auto).
-- **[Convoy Interdiction](Vietnam-Ops#4--convoy-interdiction-steel-tiger)** — a Ho Chi Minh Trail supply column you hunt via Armed Recon.
+- **[Convoy Interdiction](Vietnam-Ops#4--convoy-interdiction-steel-tiger)** — a real Ho Chi Minh Trail supply column you hunt via Armed Recon; kill it and its reinforcements never arrive.
 - **[Airbase Harassment](Vietnam-Ops#5--airbase-harassment-rocketmortar-siege)** — forward airfields under sporadic rocket/mortar siege.
-- **[Super Gaggle](Vietnam-Ops#6--super-gaggle-hilltop-resupply)** — escort resupply helos into a cut-off hilltop outpost.
+- **[Super Gaggle](Vietnam-Ops#6--super-gaggle-hilltop-resupply)** — escort real squadron helos resupplying a cut-off hilltop outpost.
 - **[FAC(A) Marking](Vietnam-Ops#7--faca-willie-pete-target-marking)** — an OV-10 Bronco marks targets with willie-pete smoke.
+- **[Snake and Nape](Vietnam-Ops#8--snake-and-nape-napalm-cas)** — a low, fast CAS pass over the enemy lays a burning napalm swath.
+
+On top of the mission-level suite, **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** makes
+the *campaign* play like the era: a **political-will economy** decided at the negotiating table
+(break Hanoi's resolve before Washington's patience runs out), a **static siege-line front**, the
+authored **Rolling Thunder → Linebacker II ROE arc** (sanctuary zones, target release, escalation
+coupled to your bleeding will), **GCI-ambush MiGs** flying Hanoi's actual air-defense doctrine,
+massed escorted **Alpha Strikes**, and a red side whose **tempo answers the arc** — the trail
+surges during bombing halts and the Easter Offensive lands when Linebacker opens.
 
 ## Campaigns
 

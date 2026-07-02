@@ -36,6 +36,10 @@ settings:
   vietnam_convoy_interdiction: true
   vietnam_airbase_harassment: true
   vietnam_political_will: true
+  # The insurgent faction's ERO ZU-23 technicals/emplacements are §41 HDS
+  # Ultimate Compilation content — they resolve only with the mod on (and drop
+  # silently without it, so a mod-less install still plays).
+  high_digit_sams: true
 
 # The inverted COIN will economy (design note §4): the insurgency's dead fighters are
 # nearly free; its caches, convoys, and strongholds are the currency. The Coalition

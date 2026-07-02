@@ -398,6 +398,7 @@ def test_enduring_resolve_campaign_definition() -> None:
         "vietnam_political_will",
         "vietnam_convoy_interdiction",
         "vietnam_airbase_harassment",
+        "high_digit_sams",  # the faction's ERO technicals are HDS content
     ):
         assert data["settings"][key] is True, key
     # The miz the tool builds ships next to the yaml.

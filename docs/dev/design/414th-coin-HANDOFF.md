@@ -56,6 +56,10 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
 - **Bost/Herat never instantiate as CPs** (neutral fields) — the population-center
   ROE rings are **coordinate-anchored** (`x:`/`y:`), not `center:`-named.
 - Never `locked_targets: [ammo]` in the arc — the caches must always be legal.
+- **Toyota Al Gaib 2001 was missing most of the insurgent kit** (user catch 2026-07-02,
+  fixed): the DIM' technicals, the §41 ERO ZU-23 family + preset group, and the SA-9
+  now match the sibling insurgent factions (still no armor by design). The campaign
+  preseeds `high_digit_sams` so the ERO units resolve.
 - The ratline works by preseeding `vietnam_convoy_interdiction` directly (the module
   is coalition-generic inside); the "widen the gate to honor `coin_insurgency`"
   refactor from the note §3.3 was **not needed** and remains undone by choice.

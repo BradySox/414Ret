@@ -213,10 +213,22 @@ file. This guide is the map; those are the territory.
     headless-verified SEAD/DEAD/anti-ship 13→0 while STRIKE 1→5 / BAI 6→13 rose. **P3 Alpha Strike**:
     `Doctrine.strike_flight_count` (default 1) can fan N coordinated, shared-TOT STRIKE sections onto one
     target in `PlanStrike` (reads the *planner's* doctrine via `target.coalition.opponent.doctrine` — the
-    target is enemy-owned). Vietnam first fanned 2 sections, but playtest feedback showed that left the bombers
-    **unescorted**, so Vietnam now flies a **single section + a forced fighter escort** (`strike_flight_count=1`
-    + `always_escort_strikes`, which forces the A2A escort "needed" in `check_needed_escorts` even with no
-    detected air threat; still pruned when no fighter is free). The **fighter-economy levers** landed after
+    target is enemy-owned). Vietnam masses a **surge deck-load: up to 4 sections + a forced fighter escort**
+    on ONE target — the real Alpha Strike (`strike_flight_count=4` + `always_escort_strikes`, which forces
+    the A2A escort "needed" in `check_needed_escorts` even with no detected air threat; still pruned when no
+    fighter is free). Only the first section is required — the rest are **surge sections**
+    (`ProposedFlight.optional`, honored in `plan_mission`): they plan when a squadron has the jets and drop
+    silently when not (no scrub, no purchase order), so the top-priority target absorbs the strike fleet and
+    later strikes shrink toward single sections (replay: `WOLVERINE: STRIKE x2 ×4 + ESCORT x2 + TARPS`, 11
+    aircraft on one target, while `NEWT` flies the leftover single section). The fan was briefly reverted to
+    1 when the sections flew naked; restored once the fighter-economy levers held.
+    The **"Alpha Strike" label is earned, not flat** (user playtest caught four separate 2-ships each
+    wearing the name): `Package.is_massed_strike` (≥2 STRIKE sections totalling ≥4 bombers) gates the era
+    rename at all three display sites (`package_description`, `Flight.task_display_name`,
+    `FlightData.task_display_name`) — a lone section (or a pair of single-ships) reads plain "Strike".
+    **No solo strikers**: strike section size is floored at 2 for every doctrine (1-unit targets were
+    producing single A-4s flying strikes alone; a tiny target now draws a real 2-ship section or nothing). The
+    **fighter-economy levers** landed after
     the Linebacker naked-B-52 playtest (2026-07-01): `Doctrine.escort_support_aircraft=False` (Vietnam) drops
     the AEWC/tanker fighter escorts that consumed 8 of 10 fighters before any strike planned
     (`fulfill_mission` filter), and `Doctrine.strike_escort_reserve=4` +

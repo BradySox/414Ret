@@ -126,7 +126,11 @@ class Doctrine:
     #: more aircraft on the same aimpoint at a *shared TOT* -- a real Alpha Strike -- so
     #: each struck target is hit harder, at the cost of covering fewer separate targets
     #: per turn (same total air effort, fewer/harder strikes; aircraft scarcity is the
-    #: limiter either way). Simple ``= 1`` default (save-safe class attr); clamped to
+    #: limiter either way). This is a CAP, not a guarantee: only the first section is
+    #: required -- the rest are surge sections (ProposedFlight.optional) that mass on
+    #: as deep as the live inventory allows and drop silently when the jets run out,
+    #: so the deck-load lands on the highest-priority target and later strikes shrink
+    #: instead of scrubbing. Simple ``= 1`` default (save-safe class attr); clamped to
     #: >= 1 at the planner edge.
     strike_flight_count: int = 1
 
@@ -420,8 +424,9 @@ VIETNAM_GROUND_PROCUREMENT = GroundUnitProcurementRatios(
 # (strike_through_air_defense_threat -- Vietnam has no reliable SEAD, so the modern "suppress
 # before you strike" rule otherwise deadlocks the whole offensive fleet, root-caused
 # 2026-06-28: 0/28 strike + 0/13 BAI plannable; the tasking whitelist that drops
-# SEAD/DEAD/anti-ship; a single-section STRIKE (strike_flight_count=1) that always pulls a
-# fighter escort (always_escort_strikes)) -- PLUS the period-authentic planner *numbers* that
+# SEAD/DEAD/anti-ship; a massed STRIKE deck-load (strike_flight_count=4, the real Alpha
+# Strike -- up to 4 surge sections on one target, shared TOT) that always pulls a fighter
+# escort (always_escort_strikes)) -- PLUS the period-authentic planner *numbers* that
 # make the era play differently, not just read differently:
 #   * A2A engagement ranges are knife-fight, not BVR: the early Sparrow (AIM-7E, unreliable)
 #     and short IR Sidewinder (AIM-9B/D) + guns fight close, so MiGCAP/escort engage far
@@ -437,7 +442,14 @@ VIETNAM_DOCTRINE = replace(
     tasking_whitelist=VIETNAM_TASKING_WHITELIST,
     strike_through_air_defense_threat=True,
     plan_strikes_without_full_escort=True,
-    strike_flight_count=1,
+    # A real Alpha Strike: mass up to 4 coordinated shared-TOT sections -- a
+    # deck-load -- on ONE target (fewer targets struck per turn, each hit hard).
+    # Only the first section is required; the rest surge on as inventory allows,
+    # so the top-priority target absorbs the strike fleet and later targets get
+    # the leftovers. First shipped as 2, reverted to 1 when the sections flew
+    # naked; restored and deepened once the fighter economy held
+    # (escort_support_aircraft off + strike_escort_reserve + its fence).
+    strike_flight_count=4,
     always_escort_strikes=True,
     gci_ambush=True,
     # Hold two escort sections' worth of fighters out of BARCAP so the forced

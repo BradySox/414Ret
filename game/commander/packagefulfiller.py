@@ -281,6 +281,18 @@ class PackageFulfiller:
                 # If the package does not need escorts they may be pruned.
                 escorts.append(proposed_flight)
                 continue
+            if proposed_flight.optional:
+                # A surge flight (the Alpha Strike fan's extra sections): plan it
+                # when a squadron has the jets, drop it silently when not -- never
+                # scrub the package, never place a purchase order.
+                if not builder.plan_flight(proposed_flight, ignore_range):
+                    logging.debug(
+                        "Optional %s surge flight dropped for %s: no aircraft "
+                        "available",
+                        proposed_flight.task,
+                        mission.location.name,
+                    )
+                continue
             if not self.air_wing_can_plan(proposed_flight.task):
                 # This air wing can never plan this mission type because they do not
                 # have compatible aircraft or squadrons. Skip fulfillment so that we

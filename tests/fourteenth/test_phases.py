@@ -494,6 +494,53 @@ def test_sanctuary_airfield_falls_out_of_the_zone(authored_game: Any) -> None:
     assert not roe_blocks_target(authored_game, field)
 
 
+def test_roe_summary_spells_out_off_limits_and_cleared(authored_game: Any) -> None:
+    # The kneeboard cover's CAMPAIGN PHASE band: OFF LIMITS (zones with radii),
+    # LOCKED (withheld classes), CLEARED (classes the enemy actually fields and
+    # the phase released, plus the never-gated front fight).
+    from game.fourteenth.phases import roe_summary_lines
+    from game.theater import Player
+
+    update_campaign_phase(authored_game)
+    hanoi = authored_game.theater.controlpoints[0]
+    hanoi.captured = Player.RED
+    hanoi.dcs_airport = object()
+    hanoi.connected_objectives = [
+        SimpleNamespace(category="factory"),
+        SimpleNamespace(category="aa"),
+        SimpleNamespace(category="ammo"),
+        SimpleNamespace(category="village"),  # never advertised as a target
+    ]
+    friendly = SimpleNamespace(
+        name="Home Plate",
+        position=_Pt(0.0, 0.0),
+        captured=Player.BLUE,
+        dcs_airport=object(),
+        connected_objectives=[SimpleNamespace(category="fuel")],
+    )
+    authored_game.theater.controlpoints.append(friendly)
+
+    lines = dict(roe_summary_lines(authored_game))
+    assert lines["OFF LIMITS"] == "Hanoi sanctuary 10 nm"
+    assert lines["LOCKED"] == "factories, airfields (OCA)"
+    # Derived from the enemy laydown minus the locked classes; blue-owned fuel
+    # and the enemy village never appear.
+    assert lines["CLEARED"] == "air defenses, ammo depots, front-line forces & convoys"
+
+    # Linebacker II releases everything: no ROE payload, no band.
+    authored_game.turn = 10
+    update_campaign_phase(authored_game)
+    assert roe_summary_lines(authored_game) == []
+
+
+def test_roe_summary_empty_without_an_authored_phase() -> None:
+    from game.fourteenth.phases import roe_summary_lines
+
+    game = _duck_game(on=True, current="rollback", entered=0)
+    assert roe_summary_lines(game) == []
+    assert roe_summary_lines(_duck_game(on=False)) == []
+
+
 # --- the campaign-layer UI feeds (arc expander / badge reason / zone detail) ---------
 
 

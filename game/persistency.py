@@ -416,6 +416,17 @@ def layouts_dir() -> Path:
     return _create_dir_if_needed(base_path() / "Retribution" / "Layouts")
 
 
+def map_tiles_dir() -> Path:
+    """Local XYZ tile pyramids served to the client map as base layers.
+
+    One subdirectory per tileset (``<name>/{z}/{x}/{y}.png`` plus a
+    ``tileset.json`` sidecar), produced by ``tools/tile_geotiff.py``. Purely
+    local content — never bundled with the app; the client only offers a
+    tileset that actually exists here.
+    """
+    return _create_dir_if_needed(base_path() / "Retribution" / "MapTiles")
+
+
 def waypoint_debug_directory() -> Path:
     return _create_dir_if_needed(debug_dir() / "Waypoints")
 

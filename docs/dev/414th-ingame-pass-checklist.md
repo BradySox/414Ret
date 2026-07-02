@@ -2199,6 +2199,26 @@ so the two docs don't drift.
   dominates a small map absurdly (keep the `SA-21/S-400` preset out of small campaigns); SA-7 teams never
   fire (manpad class/attribute mismatch).
 
+## O. Client map
+
+### O1 — Local DCS chart base layer renders + aligns · §42 · ☐ UNTESTED (built 2026-07-01; routes test-covered, tiles generated locally; needs an in-app pass + the CI client rebuild)
+- **What CI covers:** the `/map-tiles` listing/serving routes (meta parse, malformed-meta skip, 404s,
+  traversal guard) are unit-tested, and the tiler ran clean over Flappie's Caucasus GeoTIFF. What CI cannot
+  adjudicate is the chart actually rendering in the app and *aligning* with the campaign overlays.
+- **Setup:** tiles installed at `Saved Games\Retribution\MapTiles\caucasus_flappie` (slice with
+  `tools/tile_geotiff.py` if absent); any **Caucasus** campaign loaded; a client build that includes the
+  base-map button.
+- **Pass:** a "DCS Caucasus chart" button appears in the map layers panel's base-map row; selecting it swaps
+  the basemap to the chart with no gray holes inside the theater at zooms ~6-12; control points / front
+  lines / TGO markers sit on the chart exactly where they sat on Esri imagery (spot-check an airfield: the
+  CP marker on its chart runway symbol); the choice survives a reload; on a machine/dir without tiles the
+  button simply doesn't appear.
+- **Fail signature:** markers visibly offset from the chart (georeference/tiling math bug — check one tile's
+  bounds against the TIFF's ModelTiepoint); gray tiles inside the theater (pyramid gaps — re-run the tiler);
+  the button never appears with tiles present (GET `/map-tiles/` — malformed `tileset.json` is skipped with
+  a server-log warning); the map goes blank after selecting (tile URL/port mismatch — the layer URL must ride
+  `HTTP_URL` like every other backend call).
+
 ---
 
 ## Drain order — batch the queue into ~5 flight sessions

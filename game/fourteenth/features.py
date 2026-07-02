@@ -210,6 +210,14 @@ FEATURES: tuple[Feature, ...] = (
         "High Digit SAMs Ultimate Compilation support",
         41,
     ),
+    Feature(
+        # No plugin, no Settings toggle: availability is on-disk content (a
+        # tileset under Saved Games/Retribution/MapTiles, sliced by
+        # tools/tile_geotiff.py and served by game/server/maptiles).
+        "local_map_tiles",
+        "Local DCS chart base layers (map tiles)",
+        42,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

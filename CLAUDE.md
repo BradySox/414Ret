@@ -723,6 +723,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     never removed anything (upstream-carve candidate). (`pydcs_extensions/highdigitsams/`,
     `game/data/radar_db.py`, `game/factions/faction.py`, `resources/{groups,layouts,units,factions}/`;
     features doc §41, checklist N1 — needs an in-game pass.)
+42. **Local DCS chart base layers (map tiles)** — locally installed XYZ tile pyramids appear as extra
+    base-map choices in the map layers panel (§19), so the campaign map can show a chart of the *DCS*
+    terrain (e.g. Flappie's "accurate DCS Caucasus map" GeoTIFF) instead of mismatching real-world Esri
+    imagery. Purely local, never bundled (community-chart copyright): `tools/tile_geotiff.py` (standalone
+    Pillow, no GDAL) slices an EPSG:3857 GeoTIFF into `Saved Games/Retribution/MapTiles/<name>/{z}/{x}/{y}.png`
+    + a `tileset.json` sidecar; game-independent `/map-tiles` routes list/serve whatever exists there
+    (traversal-safe name/int params); `MapLayersControl` fetches the list once and adds one segmented
+    base-map button per set (`local:<name>`, persisted like the stock choices, Clarity fallback when tiles
+    vanish). No Settings toggle — on-disk content is the switch. (`tools/tile_geotiff.py`,
+    `game/persistency.py` `map_tiles_dir`, `game/server/maptiles/`,
+    `client/src/components/maplayers/MapLayersControl.tsx`; features doc §42, checklist O1 — needs an
+    in-app pass + the CI client rebuild.)
 
 ---
 

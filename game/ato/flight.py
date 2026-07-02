@@ -307,8 +307,12 @@ class Flight(
     def task_display_name(self) -> str:
         """The flight's tasking label under its coalition's doctrine -- the Vietnam
         rename layer (e.g. STRIKE -> "Alpha Strike"). Falls back to the canonical
-        ``FlightType.value`` when the doctrine supplies no override. Display only: the
-        persisted enum value is untouched."""
+        ``FlightType.value`` when the doctrine supplies no override. A STRIKE flight
+        only reads the era "Alpha Strike" label when its package actually masses
+        (>= 2 sections on one target); a lone section is a plain Strike. Display
+        only: the persisted enum value is untouched."""
+        if self.flight_type is FlightType.STRIKE and not self.package.is_massed_strike:
+            return FlightType.STRIKE.value
         return self.coalition.doctrine.display_name_for(self.flight_type)
 
     @property

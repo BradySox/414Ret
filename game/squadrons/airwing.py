@@ -189,6 +189,29 @@ class AirWing:
     def iter_squadrons(self) -> Iterator[Squadron]:
         return itertools.chain.from_iterable(self.squadrons.values())
 
+    def untasked_fighters(self) -> int:
+        """Fighters (by squadron primary task) not yet claimed by planning this turn.
+
+        The pool ``Doctrine.strike_escort_reserve`` budgets against: read once for
+        the BARCAP trim in ``TheaterState.from_game`` and again live inside
+        ``PackageFulfiller``'s escort loop, where ``claim_inventory`` has already
+        debited every flight planned so far this run.
+        """
+        from game.ato.flighttype import FlightType
+
+        fighter_tasks = {
+            FlightType.BARCAP,
+            FlightType.TARCAP,
+            FlightType.ESCORT,
+            FlightType.SWEEP,
+            FlightType.INTERCEPTION,
+        }
+        return sum(
+            squadron.untasked_aircraft
+            for squadron in self.iter_squadrons()
+            if squadron.primary_task in fighter_tasks
+        )
+
     def repropagate_qra_reserve(self, old_default: int, new_default: int) -> None:
         """Re-apply a changed QRA-reserve default to this wing's squadrons."""
         if old_default == new_default:

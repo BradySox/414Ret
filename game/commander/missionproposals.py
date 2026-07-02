@@ -41,6 +41,12 @@ class ProposedFlight:
     #: gets a tanker for each). None leaves tanker selection unconstrained.
     refuel_method: Optional[AirRefuelType] = field(default=None)
 
+    #: A surge flight: planned when a squadron has the jets, dropped silently when
+    #: not -- it never scrubs the package and never places a purchase order. Used by
+    #: the Alpha Strike fan (PlanStrike) so the extra sections mass onto the target
+    #: only as deep as the live inventory allows.
+    optional: bool = field(default=False)
+
     def __str__(self) -> str:
         return f"{self.task} {self.num_aircraft} ship"
 

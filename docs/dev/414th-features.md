@@ -2687,8 +2687,10 @@ free-spawned).
 
 **The emitter serializes the commitment (`vietnamopsluadata.py` `_populate_super_gaggle`).** It reads
 `game.super_gaggle_commitment` and emits
-`superGaggle = { coalition, outpost{name,x,y}, launch{x,y}, helo{type,names[]}, suppressor{type,names[]} }`.
-No commitment ⇒ no node.
+`superGaggle = { coalition, countryId, outpost{name,x,y}, launch{x,y}, helo{type,names[]}, suppressor{type,names[]} }`.
+No commitment ⇒ no node. `countryId` is the BLUE faction's DCS country (2026-07-01 audit fix): the plugin
+spawns under it because `coalition.addGroup` places units on whatever coalition owns the country — the old
+hardcoded USA fallback (kept only for pre-fix saves) spawned the gaggle NEUTRAL for any non-US blue faction.
 
 **The `vietnamops` plugin spawns exactly the committed airframes, once** (vanilla DCS `coalition.addGroup`,
 `pcall`-guarded): a helo group named with the committed helo unit names (launch → outpost → back), and the
@@ -3009,3 +3011,54 @@ All unit data was read from the **installed mod's own Database lua files** (laun
   entry are **not** loaded/registered — the mod's own `entry.lua` comments the first three out; match it.
 - Old saves referencing retired units keep unpickling (classes + YAMLs kept), but a pre-migration campaign
   generating a mission with a retired unit id will fail against the new mod in DCS — start a new game.
+
+## §42 — Local DCS chart base layers (map tiles)
+
+The client map's three stock base layers are real-world Esri imagery, which does not match the terrain DCS
+actually models (roads, towns, forests, even coastlines differ). This feature lets a **locally installed**
+tile pyramid — e.g. one sliced from Flappie's community "accurate DCS Caucasus map" GeoTIFF, which is drawn
+from the DCS terrain itself — appear as an extra base-map choice in the unified map layers panel (§19), so
+the campaign map shows what the pilot will actually see in the sim.
+
+**Purely local content, never bundled.** Tiles live under
+`Saved Games/Retribution/MapTiles/<name>/{z}/{x}/{y}.png` with a `tileset.json` sidecar (display name, zoom
+range, WGS84 bounds, attribution). The server advertises whatever exists there; on machines with no tiles
+the panel shows only the three stock buttons and nothing else changes. Copyright is the reason for the
+local-only design: community charts are redistributed at their authors' pleasure, so the repo carries the
+*tooling*, not the imagery.
+
+### Wiring
+
+- **Tiler** — `tools/tile_geotiff.py`: standalone Pillow-only tool (no GDAL) that slices an **EPSG:3857**
+  GeoTIFF into a z5..native XYZ pyramid + writes the `tileset.json`. The georeference is read from the
+  TIFF's ModelPixelScale/ModelTiepoint tags; non-Web-Mercator inputs are rejected (no reprojection).
+  Native zoom = finest standard zoom at least as fine as the source (Flappie's 39.1 m/px Caucasus → z12).
+- **Storage** — `persistency.map_tiles_dir()` → `<Saved Games>/Retribution/MapTiles`.
+- **Server** — `game/server/maptiles/`: `GET /map-tiles/` lists installed sets (malformed
+  `tileset.json` is skipped with a warning, never fatal); `GET /map-tiles/{name}/{z}/{x}/{y}.png` serves a
+  tile or 404s. Game-independent (no campaign loaded required). Traversal-safe: `{name}` is restricted to
+  `[A-Za-z0-9_-]+` and z/x/y are typed ints.
+- **Client** — `MapLayersControl.tsx`: fetches `/map-tiles/` once on mount; each set adds a segmented
+  base-map button (`local:<name>`, persisted like the stock choices). Selected → a react-leaflet
+  `TileLayer` pointed at the server URL with the set's bounds/min/maxNativeZoom/attribution; a persisted
+  choice whose tiles are gone falls back to Clarity.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Tiler tool | `tools/tile_geotiff.py` |
+| Storage | `game/persistency.py` (`map_tiles_dir`) |
+| Server routes | `game/server/maptiles/{routes,models}.py`, registered in `game/server/app.py` |
+| Client | `client/src/components/maplayers/MapLayersControl.tsx` + `.css` |
+| Tests | `tests/server/test_map_tiles_routes.py` (listing, meta, malformed-meta skip, tile serving, 404s, traversal) |
+
+### Gotchas / deferred
+
+- **Needs an in-app pass (checklist O1):** the chart rendering/alignment over the campaign overlays can't
+  be exercised headless, and the client change needs the CI client rebuild.
+- The tile pyramid is ~10k PNGs (~0.5 GB) per theater at z12 — regenerate with the tiler, delete the set's
+  folder to uninstall. Zooming past the native zoom upscales (maxZoom 19), which is expected to look soft.
+- The base-map button appears for every installed set regardless of the loaded campaign's theater — a
+  Caucasus chart on a Syria campaign just renders off-map (its `bounds` stop tile requests); switch back
+  to a stock base map. Theater-aware filtering is deferred until a second theater chart exists.

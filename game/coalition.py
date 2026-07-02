@@ -285,7 +285,14 @@ class Coalition:
         # This isn't quite right. If the player has ground purchases automated we should
         # be refunding the ground units, and if they have air automated but not ground
         # we should be refunding air units.
-        if self.player and not self.game.settings.automate_aircraft_reinforcements:
+        # NB: self.player is a Player enum (always truthy), so the old bare
+        # `if self.player` skipped the refund for RED/neutral too whenever the
+        # (BLUE-intent) setting was off. Only the human-managed BLUE coalition
+        # should keep its manual orders; the AI always refunds and re-plans.
+        if (
+            self.player.is_blue
+            and not self.game.settings.automate_aircraft_reinforcements
+        ):
             return
 
         for cp in self.game.theater.control_points_for(self.player):

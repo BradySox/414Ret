@@ -324,6 +324,34 @@ class TheaterState(WorldState["TheaterState"]):
         }
         max_barcap_threat = max(barcap_threat_scores.values(), default=0.0)
 
+        barcaps_needed = {
+            cp: AirspaceGeometry.barcap_rounds(
+                barcap_rounds,
+                barcap_threat_scores[cp],
+                max_barcap_threat,
+                cp.is_fleet,
+            )
+            for cp in vulnerable_cps
+        }
+        # Strike-escort reserve (Doctrine.strike_escort_reserve): on fighter-poor
+        # eras the HTN spends every fighter on BARCAP before any strike proposes
+        # its escort, so always_escort_strikes prunes to nothing. Trim BARCAP
+        # demand (least-threatened CPs first, never below one round) so ~reserve
+        # airframes stay untasked for the escorts planned later this same run.
+        escort_reserve = coalition.doctrine.strike_escort_reserve
+        if escort_reserve > 0:
+            available_fighters = coalition.air_wing.untasked_fighters()
+            barcaps_needed = AirspaceGeometry.trim_rounds_for_escort_reserve(
+                barcaps_needed,
+                barcap_threat_scores,
+                available_fighters,
+                escort_reserve,
+                # Worst-case BARCAP flight size (the fpa weights roll 2-4 ships):
+                # the reserve is a guarantee, so budget rounds pessimistically --
+                # under-trimming just re-starves the escorts (playtest-proven).
+                jets_per_round=4,
+            )
+
         # 414th red forward-BARCAP layer: on large maps, add ONE forward-middle
         # BARCAP screen per red CP that anchors an active front, in addition to the
         # rear BARCAP above. "Large" = the rear CP sits farther from the FLOT than the
@@ -354,15 +382,7 @@ class TheaterState(WorldState["TheaterState"]):
 
         return TheaterState(
             context=context,
-            barcaps_needed={
-                cp: AirspaceGeometry.barcap_rounds(
-                    barcap_rounds,
-                    barcap_threat_scores[cp],
-                    max_barcap_threat,
-                    cp.is_fleet,
-                )
-                for cp in vulnerable_cps
-            },
+            barcaps_needed=barcaps_needed,
             forward_barcaps_needed=forward_barcaps_needed,
             active_front_lines=list(finder.front_lines()),
             front_line_stances={f: None for f in finder.front_lines()},

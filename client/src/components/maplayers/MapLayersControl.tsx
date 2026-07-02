@@ -1,10 +1,10 @@
 import { Fragment, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useMap } from "react-leaflet";
+import { TileLayer, useMap } from "react-leaflet";
 import { BasemapLayer } from "react-esri-leaflet";
-import L from "leaflet";
+import L, { LatLngBoundsExpression } from "leaflet";
 
-import backend from "../../api/backend";
+import backend, { HTTP_URL } from "../../api/backend";
 import reloadGameState from "../../api/gamestate";
 import { setHighlightEmitters } from "../../api/mapSlice";
 import { useAppDispatch } from "../../app/hooks";
@@ -78,7 +78,20 @@ type LayerId =
   | "cullingZones"
   | "restrictedZones";
 
-type BaseMap = "clarity" | "firefly" | "topo";
+type BaseMap = "clarity" | "firefly" | "topo" | `local:${string}`;
+
+// A locally installed tile pyramid (Saved Games/Retribution/MapTiles, sliced
+// by tools/tile_geotiff.py) that the server advertises via GET /map-tiles/.
+// Purely local content: the base-map button for a set only exists on machines
+// that have the tiles, so nothing ships with the app.
+interface LocalTileSet {
+  name: string;
+  display_name: string;
+  min_zoom: number;
+  max_zoom: number;
+  bounds: LatLngBoundsExpression;
+  attribution: string;
+}
 
 const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   controlPoints: { label: "Control points", node: <ControlPointsLayer /> },
@@ -350,6 +363,7 @@ export default function MapLayersControl() {
     revealFog: false, // transient: never restored from storage
   }));
   const [baseMap, setBaseMap] = useState<BaseMap>(persisted.baseMap ?? "clarity");
+  const [localTileSets, setLocalTileSets] = useState<LocalTileSet[]>([]);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => ({
     ...defaultGroups(),
     ...(persisted.openGroups ?? {}),
@@ -421,6 +435,21 @@ export default function MapLayersControl() {
     return () => clearTimeout(id);
   }, [visible, baseMap, openGroups]);
 
+  // Discover locally installed tile pyramids once. Failure (offline backend,
+  // no MapTiles dir) just means the three stock base maps are all we offer.
+  useEffect(() => {
+    let cancelled = false;
+    backend
+      .get("/map-tiles/")
+      .then((res) => {
+        if (!cancelled && Array.isArray(res.data)) setLocalTileSets(res.data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Radar-emitter highlight is a pure client flag; keep the slice in sync with
   // the checkbox (the initial dispatch matches the default, so it is harmless).
   useEffect(() => {
@@ -449,6 +478,11 @@ export default function MapLayersControl() {
   const toggleGroup = (key: string) =>
     setOpenGroups((g) => ({ ...g, [key]: !g[key] }));
 
+  // A persisted "local:" choice whose tiles are gone (or not yet listed)
+  // falls back to Clarity rather than an empty map.
+  const activeLocalSet = baseMap.startsWith("local:")
+    ? localTileSets.find((ts) => `local:${ts.name}` === baseMap)
+    : undefined;
   const baseName =
     baseMap === "firefly"
       ? "ImageryFirefly"
@@ -486,6 +520,9 @@ export default function MapLayersControl() {
             ["clarity", "Clarity"],
             ["firefly", "Firefly"],
             ["topo", "Topographic"],
+            ...localTileSets.map(
+              (ts) => [`local:${ts.name}`, ts.display_name] as [BaseMap, string]
+            ),
           ] as [BaseMap, string][]
         ).map(([k, label]) => (
           <button
@@ -519,7 +556,19 @@ export default function MapLayersControl() {
 
   return (
     <>
-      <BasemapLayer key={baseName} name={baseName} />
+      {activeLocalSet ? (
+        <TileLayer
+          key={`local:${activeLocalSet.name}`}
+          url={`${HTTP_URL}map-tiles/${activeLocalSet.name}/{z}/{x}/{y}.png`}
+          minNativeZoom={activeLocalSet.min_zoom}
+          maxNativeZoom={activeLocalSet.max_zoom}
+          maxZoom={19}
+          bounds={activeLocalSet.bounds}
+          attribution={activeLocalSet.attribution}
+        />
+      ) : (
+        <BasemapLayer key={baseName} name={baseName} />
+      )}
       {ALL_IDS.map((id) =>
         visible[id] ? <Fragment key={id}>{OVERLAYS[id].node}</Fragment> : null
       )}

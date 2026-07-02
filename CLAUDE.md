@@ -213,11 +213,35 @@ file. This guide is the map; those are the territory.
     headless-verified SEAD/DEAD/anti-ship 13→0 while STRIKE 1→5 / BAI 6→13 rose. **P3 Alpha Strike**:
     `Doctrine.strike_flight_count` (default 1) can fan N coordinated, shared-TOT STRIKE sections onto one
     target in `PlanStrike` (reads the *planner's* doctrine via `target.coalition.opponent.doctrine` — the
-    target is enemy-owned). Vietnam first fanned 2 sections, but playtest feedback showed that left the bombers
-    **unescorted**, so Vietnam now flies a **single section + a forced fighter escort** (`strike_flight_count=1`
-    + `always_escort_strikes`, which forces the A2A escort "needed" in `check_needed_escorts` even with no
-    detected air threat; still pruned when no fighter is free — reserving a fighter ahead of BARCAP is a deeper
-    deferred lever). The Ops suite's Arc Light/flak/NGFS are this design's P4 flavor, already built)
+    target is enemy-owned). Vietnam masses a **surge deck-load: up to 4 sections + a forced fighter escort**
+    on ONE target — the real Alpha Strike (`strike_flight_count=4` + `always_escort_strikes`, which forces
+    the A2A escort "needed" in `check_needed_escorts` even with no detected air threat; still pruned when no
+    fighter is free). Only the first section is required — the rest are **surge sections**
+    (`ProposedFlight.optional`, honored in `plan_mission`): they plan when a squadron has the jets and drop
+    silently when not (no scrub, no purchase order), so the top-priority target absorbs the strike fleet and
+    later strikes shrink toward single sections (replay: `WOLVERINE: STRIKE x2 ×4 + ESCORT x2 + TARPS`, 11
+    aircraft on one target, while `NEWT` flies the leftover single section). The fan was briefly reverted to
+    1 when the sections flew naked; restored once the fighter-economy levers held.
+    The **"Alpha Strike" label is earned, not flat** (user playtest caught four separate 2-ships each
+    wearing the name): `Package.is_massed_strike` (≥2 STRIKE sections totalling ≥4 bombers) gates the era
+    rename at all three display sites (`package_description`, `Flight.task_display_name`,
+    `FlightData.task_display_name`) — a lone section (or a pair of single-ships) reads plain "Strike".
+    **No solo strikers**: strike section size is floored at 2 for every doctrine (1-unit targets were
+    producing single A-4s flying strikes alone; a tiny target now draws a real 2-ship section or nothing). The
+    **fighter-economy levers** landed after
+    the Linebacker naked-B-52 playtest (2026-07-01): `Doctrine.escort_support_aircraft=False` (Vietnam) drops
+    the AEWC/tanker fighter escorts that consumed 8 of 10 fighters before any strike planned
+    (`fulfill_mission` filter), and `Doctrine.strike_escort_reserve=4` +
+    `AirspaceGeometry.trim_rounds_for_escort_reserve` trims BARCAP volume (coldest CPs first, down to
+    abandoning low-threat coverage but never the hottest location) so the fighter force escorts the
+    *shooters* — save-replan verified: support escorts 8→0 jets, BARCAP 10→2. The reserve is also **fenced**
+    (`PackageFulfiller.escort_reserve_withholds`, the strike-first escort priority): a non-STRIKE package
+    (BAI, OCA, even CAS in a true famine) is refused its A2A escort whenever planning it would dip the live
+    `AirWing.untasked_fighters()` pool below the reserve — only a STRIKE-led package may spend those last
+    airframes, so the freed fighters actually reach the bombers instead of the first BAI section planned. A
+    withheld escort is not a shortage (the package flies unescorted, no procurement order). Doctrines are
+    pickled by value — a NEW game carries the new numbers. The Ops suite's Arc
+    Light/flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).
 - `AGENTS.md` mirrors this file — see **Conventions** below for the sync process.
@@ -699,6 +723,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     never removed anything (upstream-carve candidate). (`pydcs_extensions/highdigitsams/`,
     `game/data/radar_db.py`, `game/factions/faction.py`, `resources/{groups,layouts,units,factions}/`;
     features doc §41, checklist N1 — needs an in-game pass.)
+42. **Local DCS chart base layers (map tiles)** — locally installed XYZ tile pyramids appear as extra
+    base-map choices in the map layers panel (§19), so the campaign map can show a chart of the *DCS*
+    terrain (e.g. Flappie's "accurate DCS Caucasus map" GeoTIFF) instead of mismatching real-world Esri
+    imagery. Purely local, never bundled (community-chart copyright): `tools/tile_geotiff.py` (standalone
+    Pillow, no GDAL) slices an EPSG:3857 GeoTIFF into `Saved Games/Retribution/MapTiles/<name>/{z}/{x}/{y}.png`
+    + a `tileset.json` sidecar; game-independent `/map-tiles` routes list/serve whatever exists there
+    (traversal-safe name/int params); `MapLayersControl` fetches the list once and adds one segmented
+    base-map button per set (`local:<name>`, persisted like the stock choices, Clarity fallback when tiles
+    vanish). No Settings toggle — on-disk content is the switch. (`tools/tile_geotiff.py`,
+    `game/persistency.py` `map_tiles_dir`, `game/server/maptiles/`,
+    `client/src/components/maplayers/MapLayersControl.tsx`; features doc §42, checklist O1 — needs an
+    in-app pass + the CI client rebuild.)
 
 ---
 

@@ -235,20 +235,28 @@ def test_red_exhaustion_banner_is_era_framed() -> None:
     assert "Hanoi agrees to terms" in game.messages
 
 
-def test_will_history_records_a_point_per_flown_turn() -> None:
+def test_game_stats_records_will_per_turn() -> None:
+    # The will trend rides the existing game_stats per-turn series (the Stats
+    # window / client sparkline source), not a bespoke history list.
+    from game.models.game_stats import GameStats
+
     game = _game(blue_will=90.0, red_will=95.0)
-    game.will_history = []
-    game.turn = 3
-    update_political_will(game, _debrief(blue_counts=_counts(aircraft=2)))
-    assert len(game.will_history) == 1
-    turn, blue, red = game.will_history[0]
-    assert turn == 3
-    assert blue == game.blue.political_will
-    assert red == game.red.political_will
+    game.turn = 0
+    game.theater = SimpleNamespace(controlpoints=[])
+    stats = GameStats()
+    stats.update(game)
+    assert len(stats.data_per_turn) == 1
+    assert stats.data_per_turn[0].allied_units.political_will == 90.0
+    assert stats.data_per_turn[0].enemy_units.political_will == 95.0
 
 
-def test_will_history_absent_on_legacy_games_is_tolerated() -> None:
-    # Pre-feature saves mid-commit carry no will_history; the feed must not crash.
-    game = _game()
-    update_political_will(game, _debrief())
-    assert not hasattr(game, "will_history")
+def test_game_stats_will_none_when_feature_off() -> None:
+    from game.models.game_stats import GameStats
+
+    game = _game(on=False)
+    game.turn = 0
+    game.theater = SimpleNamespace(controlpoints=[])
+    stats = GameStats()
+    stats.update(game)
+    assert stats.data_per_turn[0].allied_units.political_will is None
+    assert stats.data_per_turn[0].enemy_units.political_will is None

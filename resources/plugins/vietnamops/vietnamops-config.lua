@@ -639,7 +639,12 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch
 
         local SIDE = (suite.superGaggle.coalition == "RED") and coalition.side.RED
             or coalition.side.BLUE
-        local COUNTRY = (SIDE == coalition.side.RED) and country.id.RUSSIA or country.id.USA
+        -- Spawn under the country the generator emitted (the owning faction's
+        -- country, registered on the right coalition in this .miz). The hardcoded
+        -- USA/RUSSIA fallback only survives for pre-fix saves: a country not on
+        -- the owning coalition would spawn the gaggle NEUTRAL.
+        local COUNTRY = tonumber(suite.superGaggle.countryId)
+            or ((SIDE == coalition.side.RED) and country.id.RUSSIA or country.id.USA)
 
         local outpost = {
             x = tonumber(suite.superGaggle.outpost.x),

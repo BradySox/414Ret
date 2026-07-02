@@ -133,9 +133,6 @@ class Game:
         self.phase_entered_on_turn: Optional[int] = None
         self.phase_status_line: Optional[str] = None
         self.phase_baseline: Optional["PhaseBaseline"] = None
-        # Political-will history (W1 UI): one (turn, blue, red) point per flown
-        # turn, appended by update_political_will; drives the client sparkline.
-        self.will_history: list[tuple[int, float, float]] = []
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -212,7 +209,10 @@ class Game:
         state.setdefault("phase_entered_on_turn", None)
         state.setdefault("phase_status_line", None)
         state.setdefault("phase_baseline", None)
-        state.setdefault("will_history", [])
+        # will_history (a briefly-shipped bespoke per-turn series) was folded into
+        # game_stats' FactionTurnMetadata.political_will; drop it from any save
+        # written in the interim so it doesn't linger as dead state.
+        state.pop("will_history", None)
         self.__dict__.update(state)
         if not hasattr(self, "laser_code_registry"):
             self.laser_code_registry = LaserCodeRegistry()

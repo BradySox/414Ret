@@ -113,7 +113,7 @@ file. This guide is the map; those are the territory.
     phantom spawns — throttled by destroyable ammo-cache TGOs, whitelisted to
     infantry/technicals/AAA, gated `coin_insurgency` default OFF; will coupling inverts
     the Vietnam weights (body count ≈ worthless, caches/ROE/patience decide) via the
-    `will:` profiles + a planned inert-by-default `red_cache_lost` weight; the §35 trail
+    `will:` profiles + a planned inert-by-default `red_cache_lost` weight (C2, landed); the §35 trail
     machinery is the ratline. Delivery: **C1 regen core LANDED 2026-07-02**
     (`game/fourteenth/coin.py` + `coin_insurgency` (Campaign Management, default OFF) +
     the `finish_turn` hook + `tests/fourteenth/test_coin.py`; whitelist = class set +
@@ -128,7 +128,8 @@ file. This guide is the map; those are the territory.
     stronghold's C1 cache health, will handoff = a labeled `blue_base_lost`-weight
     move recorded via `coin_state`; gated `coin_reinfiltration` default OFF; BUILD slot
     after C3, 4 open squadron calls in its §8) → C2 will feed → C3
-    campaign fork → C4 dispersed cells; §7 squadron calls RESOLVED 2026-07-02: 25 %
+    campaign fork → C4 dispersed cells (C2 LANDED 2026-07-02: `WillWeights.red_cache_lost` default 0.0 + the
+    `_red_caches_destroyed` fully-dead per-TGO feed in `political_will.py`); §7 squadron calls RESOLVED 2026-07-02: 25 %
     cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE

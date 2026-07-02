@@ -2036,12 +2036,14 @@ class Settings:
         "Campaign",
         detail=(
             "Track each side's political capital for the war -- your Political Will "
-            "(Washington's patience: drained by airframe losses, POWs held in Hanoi, "
-            "lost ground; a B-52 loss is a national event) versus the enemy's Regime "
-            "Resolve (drained by trail-logistics strangulation and attrition). "
+            "(drained by airframe losses -- a heavy bomber is a national event -- "
+            "POWs taken and held, warships sunk, and lost ground) versus the enemy's "
+            "Regime Resolve (drained by logistics strangulation and attrition). "
             "Decides the war at the negotiating table: break the enemy's resolve "
-            "before your will runs out and Hanoi agrees to terms; run dry first and "
-            "Washington orders the withdrawal. Territory victory still applies."
+            "before your will runs out, or run dry first and be ordered home. "
+            "Territory victory still applies. Framing and feed weights default to "
+            "the Vietnam layer (Washington vs Hanoi); a campaign's will: block can "
+            "re-label and re-weight them for any era."
         ),
         default=False,
     )

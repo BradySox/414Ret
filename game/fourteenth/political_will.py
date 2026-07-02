@@ -26,17 +26,27 @@ loss ratios; Washington bled from every news cycle):
   regeneration restore it.
 * **RED** drains mostly from **logistics strangulation** -- trail convoy losses (§35's
   real, tracked convoys) and ground attrition -- and barely from airframe losses.
+
+**The mechanic is campaign-generic; only the defaults are Vietnam.** A campaign's
+``will:`` YAML block (see :func:`parse_will_profile` and
+docs/dev/design/414th-will-generalization-notes.md) can re-label both meters and
+their exhaustion banners (Falklands: London vs. the Junta) and re-weight every feed
+(a warship sunk outweighing an airframe). Profiles follow the phases-S5 rule:
+re-derived from the campaign YAML by name at load, cached per process, never
+pickled, and any lookup/parse failure degrades to the Vietnam-framed defaults with
+a log -- so the 4 Vietnam campaigns (no ``will:`` block) behave exactly as before.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Optional, cast
+from dataclasses import dataclass, fields
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 if TYPE_CHECKING:
     from game import Game
     from game.debriefing import AirLosses, Debriefing
+    from game.theater import Player as PlayerT
 
 # --- BLUE (Political Will) feed weights -- design-note §7 starting values; tuned in W2.
 BLUE_AIRFRAME_LOSS = 1.0
@@ -51,6 +61,10 @@ BLUE_PASSIVE_REGEN = 0.5
 #: phases.count_roe_violations) is a headline -- the sharp soft-enforcement drain
 #: that makes the zones bind the player without hard-blocking them.
 BLUE_ROE_VIOLATION = 4.0
+#: A warship sunk is front-page news (a Sheffield, not a truck). Counted from the
+#: debriefing's ground-object losses by TheaterUnit.is_ship; rare in Vietnam, the
+#: load-bearing feed for naval wars (Falklands re-weights it up).
+BLUE_SHIP_LOST = 4.0
 
 # --- RED (Regime Resolve) feed weights. Resolve is hard: airframes barely register;
 # the trail is the artery.
@@ -59,6 +73,8 @@ RED_GROUND_UNIT_LOST = 0.25
 RED_AIRFRAME_LOSS = 0.25
 RED_BASE_LOST = 3.0
 RED_PASSIVE_REGEN = 0.75
+#: Ships leave RED's generic ground-attrition pool and drain at their own weight.
+RED_SHIP_LOST = 0.5
 
 WILL_MAX = 100.0
 WILL_MIN = 0.0
@@ -66,6 +82,169 @@ WILL_MIN = 0.0
 #: Turns of attribution kept on the game (the sparkline already covers the long
 #: trend; the ledger answers "why did it move").
 WILL_LEDGER_CAP = 60
+
+
+@dataclass(frozen=True)
+class WillSideCopy:
+    """One side's player-facing framing: the meter label + the exhaustion banner."""
+
+    #: Possessive meter framing, capitalized as it should print ("Washington's
+    #: patience") -- used mid-sentence in the per-turn message, as the ribbon
+    #: meter tooltip, and in the Stats chart legend.
+    label: str
+    exhaustion_title: str
+    exhaustion_body: str
+
+
+_VIETNAM_BLUE_COPY = WillSideCopy(
+    label="Washington's patience",
+    exhaustion_title="Washington orders withdrawal",
+    exhaustion_body=(
+        "Political will is exhausted -- the home front has turned. The war "
+        "ends on their terms, whatever the map says."
+    ),
+)
+_VIETNAM_RED_COPY = WillSideCopy(
+    label="Hanoi's resolve",
+    exhaustion_title="Hanoi agrees to terms",
+    exhaustion_body=(
+        "The regime's resolve is broken -- negotiators are en route to "
+        "Paris. The pressure campaign has done what the front line never "
+        "had to."
+    ),
+)
+
+
+@dataclass(frozen=True)
+class WillWeights:
+    """Every feed weight, defaulting to the Vietnam constants above.
+
+    A campaign's ``will: weights:`` mapping overrides fields by name; an unknown
+    key is a parse error (caught by :func:`will_profile_for`, which degrades to
+    the defaults) so a typo never silently no-ops a rebalance.
+    """
+
+    blue_airframe_loss: float = BLUE_AIRFRAME_LOSS
+    blue_heavy_bomber_loss: float = BLUE_HEAVY_BOMBER_LOSS
+    blue_pow_taken: float = BLUE_POW_TAKEN
+    blue_pow_held_per_turn: float = BLUE_POW_HELD_PER_TURN
+    blue_pilot_rescued_refund: float = BLUE_PILOT_RESCUED_REFUND
+    blue_base_lost: float = BLUE_BASE_LOST
+    blue_enemy_air_claimed: float = BLUE_ENEMY_AIR_CLAIMED
+    blue_passive_regen: float = BLUE_PASSIVE_REGEN
+    blue_roe_violation: float = BLUE_ROE_VIOLATION
+    blue_ship_lost: float = BLUE_SHIP_LOST
+    red_convoy_unit_lost: float = RED_CONVOY_UNIT_LOST
+    red_ground_unit_lost: float = RED_GROUND_UNIT_LOST
+    red_airframe_loss: float = RED_AIRFRAME_LOSS
+    red_base_lost: float = RED_BASE_LOST
+    red_passive_regen: float = RED_PASSIVE_REGEN
+    red_ship_lost: float = RED_SHIP_LOST
+
+
+@dataclass(frozen=True)
+class WillProfile:
+    """A campaign's authored will framing + feed weights (default: Vietnam)."""
+
+    blue: WillSideCopy = _VIETNAM_BLUE_COPY
+    red: WillSideCopy = _VIETNAM_RED_COPY
+    weights: WillWeights = WillWeights()
+
+
+DEFAULT_WILL_PROFILE = WillProfile()
+
+#: Parsed profiles per campaign name (the phases _ARC_CACHE precedent); tests may
+#: seed/clear entries directly.
+_PROFILE_CACHE: dict[str, WillProfile] = {}
+
+
+def _parse_side_copy(raw: Any, default: WillSideCopy) -> WillSideCopy:
+    """One side's ``will: blue:``/``red:`` mapping; absent fields keep the default."""
+    if raw is None:
+        return default
+    if not isinstance(raw, dict):
+        raise ValueError(f"will side block must be a mapping: {raw!r}")
+    return WillSideCopy(
+        label=str(raw.get("label", default.label)),
+        exhaustion_title=str(raw.get("exhaustion_title", default.exhaustion_title)),
+        exhaustion_body=str(raw.get("exhaustion_body", default.exhaustion_body)),
+    )
+
+
+def parse_will_profile(raw: Any) -> WillProfile:
+    """Parse a campaign's ``will:`` YAML block; None means the Vietnam defaults.
+
+    Schema (every key optional; anything absent keeps its default)::
+
+        will:
+          blue:
+            label: Downing Street's patience
+            exhaustion_title: London recalls the task force
+            exhaustion_body: ...
+          red:
+            label: the Junta's resolve
+            exhaustion_title: The Junta capitulates
+            exhaustion_body: ...
+          weights:
+            blue_ship_lost: 8
+            red_ship_lost: 6
+
+    Raises ValueError on a malformed block (wrong shape, unknown weight key) --
+    :func:`will_profile_for` catches it and degrades to the defaults with a log.
+    """
+    if raw is None:
+        return DEFAULT_WILL_PROFILE
+    if not isinstance(raw, dict):
+        raise ValueError(f"will: must be a mapping: {raw!r}")
+    weights_raw = raw.get("weights") or {}
+    if not isinstance(weights_raw, dict):
+        raise ValueError(f"will.weights: must be a mapping: {weights_raw!r}")
+    known = {field.name for field in fields(WillWeights)}
+    unknown = sorted(set(weights_raw) - known)
+    if unknown:
+        raise ValueError(f"will.weights: unknown keys {unknown}")
+    return WillProfile(
+        blue=_parse_side_copy(raw.get("blue"), _VIETNAM_BLUE_COPY),
+        red=_parse_side_copy(raw.get("red"), _VIETNAM_RED_COPY),
+        weights=WillWeights(
+            **{key: float(value) for key, value in weights_raw.items()}
+        ),
+    )
+
+
+def will_profile_for(game: "Game") -> WillProfile:
+    """The campaign's authored will profile, or the Vietnam defaults.
+
+    Re-derived from the campaign YAML by name (the phases-S5 rule: definitions
+    are never pickled) and cached per process. Any lookup/parse failure degrades
+    to the defaults with a log, never a crash -- an old save whose campaign was
+    removed still plays.
+    """
+    name = getattr(game, "campaign_name", None)
+    if not name:
+        return DEFAULT_WILL_PROFILE
+    if name in _PROFILE_CACHE:
+        return _PROFILE_CACHE[name]
+    profile = DEFAULT_WILL_PROFILE
+    try:
+        import yaml
+
+        from game.campaignloader.campaign import Campaign
+
+        for path in Campaign.iter_campaign_defs():
+            try:
+                with path.open(encoding="utf-8") as campaign_file:
+                    data = yaml.safe_load(campaign_file)
+            except Exception:  # noqa: BLE001 -- one bad yaml must not kill the scan
+                continue
+            if isinstance(data, dict) and data.get("name") == name:
+                profile = parse_will_profile(data.get("will"))
+                break
+    except Exception:  # noqa: BLE001
+        logging.exception("Political will: profile lookup failed for %r", name)
+        profile = DEFAULT_WILL_PROFILE
+    _PROFILE_CACHE[name] = profile
+    return profile
 
 
 @dataclass(frozen=True)
@@ -150,8 +329,9 @@ def update_political_will(game: "Game", debriefing: "Debriefing") -> None:
     if not getattr(game.settings, "vietnam_political_will", False):
         return
 
-    blue_moves = _blue_moves(game, debriefing)
-    red_moves = _red_moves(game, debriefing)
+    profile = will_profile_for(game)
+    blue_moves = _blue_moves(game, debriefing, profile.weights)
+    red_moves = _red_moves(game, debriefing, profile.weights)
     blue_delta = sum(value for _label, value in blue_moves)
     red_delta = sum(value for _label, value in red_moves)
 
@@ -178,21 +358,13 @@ def update_political_will(game: "Game", debriefing: "Debriefing") -> None:
     del ledger[:-WILL_LEDGER_CAP]
 
     # Era-framed exhaustion cues (W2): the generic win/loss dialog fires from
-    # check_win_loss; these messages carry the negotiation framing. Crossing-edge
-    # only, so a side sitting at zero doesn't repeat the banner every turn.
+    # check_win_loss; these messages carry the negotiation framing (from the
+    # campaign's will profile; Vietnam copy by default). Crossing-edge only, so
+    # a side sitting at zero doesn't repeat the banner every turn.
     if game.blue.political_will <= WILL_MIN < blue_before:
-        game.message(
-            "Washington orders withdrawal",
-            "Political will is exhausted -- the home front has turned. The war "
-            "ends on their terms, whatever the map says.",
-        )
+        game.message(profile.blue.exhaustion_title, profile.blue.exhaustion_body)
     if game.red.political_will <= WILL_MIN < red_before:
-        game.message(
-            "Hanoi agrees to terms",
-            "The regime's resolve is broken -- negotiators are en route to "
-            "Paris. The pressure campaign has done what the front line never "
-            "had to.",
-        )
+        game.message(profile.red.exhaustion_title, profile.red.exhaustion_body)
 
     logging.info(
         "Political will: BLUE %+0.1f -> %.1f, RED %+0.1f -> %.1f",
@@ -203,19 +375,42 @@ def update_political_will(game: "Game", debriefing: "Debriefing") -> None:
     )
     game.message(
         "Political will",
-        f"Washington's patience {game.blue.political_will:.0f}% "
+        f"{profile.blue.label} {game.blue.political_will:.0f}% "
         f"({blue_delta:+.1f} — {format_moves(tuple(blue_moves), limit=3)}); "
-        f"Hanoi's resolve {game.red.political_will:.0f}% "
+        f"{profile.red.label} {game.red.political_will:.0f}% "
         f"({red_delta:+.1f} — {format_moves(tuple(red_moves), limit=3)}).",
     )
 
 
-def _blue_moves(game: "Game", debriefing: "Debriefing") -> list[tuple[str, float]]:
+def _ship_losses(debriefing: "Debriefing", player: "PlayerT") -> int:
+    """This turn's sunk warship units (naval TGO units in the ground-object losses).
+
+    getattr-guarded like the rest of the feeds: lightweight test debriefings carry
+    no ground_losses, and a missing attribute means no ships, never a crash.
+    """
+    ground_losses = getattr(debriefing, "ground_losses", None)
+    if ground_losses is None:
+        return 0
+    losses = (
+        getattr(ground_losses, "player_ground_objects", [])
+        if player.is_blue
+        else getattr(ground_losses, "enemy_ground_objects", [])
+    )
+    return sum(
+        1
+        for loss in losses
+        if getattr(getattr(loss, "theater_unit", None), "is_ship", False)
+    )
+
+
+def _blue_moves(
+    game: "Game", debriefing: "Debriefing", weights: WillWeights
+) -> list[tuple[str, float]]:
     """BLUE's labeled feed components this turn, in feed order (sum = the delta)."""
     from game.missiongenerator.vietnamopsluadata import HEAVY_BOMBER_DCS_IDS
     from game.theater import Player
 
-    moves: list[tuple[str, float]] = [("passive regen", BLUE_PASSIVE_REGEN)]
+    moves: list[tuple[str, float]] = [("passive regen", weights.blue_passive_regen)]
 
     # Airframe losses, weighted by what fell. by_type keys are AircraftTypes; heavy
     # bombers reuse the §32 Arc Light identification set. getattr+cast sidesteps the
@@ -230,21 +425,35 @@ def _blue_moves(game: "Game", debriefing: "Debriefing") -> list[tuple[str, float
             tactical += count
     if heavies:
         moves.append(
-            (f"heavy bombers x{heavies} down", -heavies * BLUE_HEAVY_BOMBER_LOSS)
+            (
+                f"heavy bombers x{heavies} down",
+                -heavies * weights.blue_heavy_bomber_loss,
+            )
         )
     if tactical:
-        moves.append((f"airframes x{tactical} lost", -tactical * BLUE_AIRFRAME_LOSS))
+        moves.append(
+            (f"airframes x{tactical} lost", -tactical * weights.blue_airframe_loss)
+        )
+
+    # Warships sunk (naval TGO units): rare in Vietnam, the headline feed for
+    # naval wars -- a Falklands profile re-weights it up.
+    ships = _ship_losses(debriefing, Player.BLUE)
+    if ships:
+        moves.append((f"warships x{ships} sunk", -ships * weights.blue_ship_lost))
 
     # Aviators: fresh captures hit now; every POW still held drains a trickle. Runs
     # after commit_pow_recoveries, so a freed aviator stops draining the same turn.
     captures = getattr(debriefing.state_data, "combat_sar_captures", []) or []
     if captures:
         moves.append(
-            (f"aviators captured x{len(captures)}", -len(captures) * BLUE_POW_TAKEN)
+            (
+                f"aviators captured x{len(captures)}",
+                -len(captures) * weights.blue_pow_taken,
+            )
         )
     pows = len(game.blue.pending_pow_recoveries)
     if pows:
-        moves.append((f"POWs held x{pows}", -pows * BLUE_POW_HELD_PER_TURN))
+        moves.append((f"POWs held x{pows}", -pows * weights.blue_pow_held_per_turn))
 
     # A rescue is a headline: refund part of the airframe cost per pilot saved.
     rescues = getattr(debriefing.state_data, "combat_sar_rescues", []) or []
@@ -252,13 +461,15 @@ def _blue_moves(game: "Game", debriefing: "Debriefing") -> list[tuple[str, float
         moves.append(
             (
                 f"pilots rescued x{len(rescues)}",
-                len(rescues) * BLUE_PILOT_RESCUED_REFUND,
+                len(rescues) * weights.blue_pilot_rescued_refund,
             )
         )
 
     bases_lost = debriefing.loss_counts(Player.BLUE).bases_lost
     if bases_lost:
-        moves.append((f"bases lost x{bases_lost}", -bases_lost * BLUE_BASE_LOST))
+        moves.append(
+            (f"bases lost x{bases_lost}", -bases_lost * weights.blue_base_lost)
+        )
 
     # ROE violations (W4): kills inside an active restricted zone draw a sharp
     # penalty -- the LBJ-era pilot could break the rules, but Washington answered
@@ -268,7 +479,7 @@ def _blue_moves(game: "Game", debriefing: "Debriefing") -> list[tuple[str, float
     violations = count_roe_violations(game, debriefing)
     if violations:
         moves.append(
-            (f"ROE violations x{violations}", -violations * BLUE_ROE_VIOLATION)
+            (f"ROE violations x{violations}", -violations * weights.blue_roe_violation)
         )
         game.message(
             "ROE violation",
@@ -280,17 +491,19 @@ def _blue_moves(game: "Game", debriefing: "Debriefing") -> list[tuple[str, float
     claimed = debriefing.loss_counts(Player.RED).aircraft
     if claimed:
         moves.append(
-            (f"claimed MiG kills x{claimed}", claimed * BLUE_ENEMY_AIR_CLAIMED)
+            (f"claimed MiG kills x{claimed}", claimed * weights.blue_enemy_air_claimed)
         )
 
     return moves
 
 
-def _red_moves(game: "Game", debriefing: "Debriefing") -> list[tuple[str, float]]:
+def _red_moves(
+    game: "Game", debriefing: "Debriefing", weights: WillWeights
+) -> list[tuple[str, float]]:
     """RED's labeled feed components this turn, in feed order (sum = the delta)."""
     from game.theater import Player
 
-    moves: list[tuple[str, float]] = [("passive regen", RED_PASSIVE_REGEN)]
+    moves: list[tuple[str, float]] = [("passive regen", weights.red_passive_regen)]
 
     red_losses = debriefing.loss_counts(Player.RED)
     # The trail is the artery: convoy kills (the §35 real convoys) bite hardest.
@@ -298,24 +511,31 @@ def _red_moves(game: "Game", debriefing: "Debriefing") -> list[tuple[str, float]
         moves.append(
             (
                 f"trail convoys x{red_losses.convoy}",
-                -red_losses.convoy * RED_CONVOY_UNIT_LOST,
+                -red_losses.convoy * weights.red_convoy_unit_lost,
             )
         )
-    ground = red_losses.front_line + red_losses.ground_objects
+    # Warships leave the generic attrition pool and drain at their own weight
+    # (never below zero: a fake debriefing may set the count without the lists).
+    ships = _ship_losses(debriefing, Player.RED)
+    ground = red_losses.front_line + max(0, red_losses.ground_objects - ships)
     if ground:
-        moves.append((f"ground attrition x{ground}", -ground * RED_GROUND_UNIT_LOST))
+        moves.append(
+            (f"ground attrition x{ground}", -ground * weights.red_ground_unit_lost)
+        )
+    if ships:
+        moves.append((f"warships x{ships} sunk", -ships * weights.red_ship_lost))
     if red_losses.aircraft:
         moves.append(
             (
                 f"airframes x{red_losses.aircraft} lost",
-                -red_losses.aircraft * RED_AIRFRAME_LOSS,
+                -red_losses.aircraft * weights.red_airframe_loss,
             )
         )
     if red_losses.bases_lost:
         moves.append(
             (
                 f"bases lost x{red_losses.bases_lost}",
-                -red_losses.bases_lost * RED_BASE_LOST,
+                -red_losses.bases_lost * weights.red_base_lost,
             )
         )
 

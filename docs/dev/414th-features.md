@@ -3075,6 +3075,26 @@ Still open from P2: per-phase `tasking_whitelist` deltas and `front_line_stance`
 pulse covers the red half; a blue-side authored stance nudge is still open); plus the 3 wiki-campaign
 arcs (P3).
 
+### Will profiles (2026-07-02) — the any-era generalization
+
+The will economy's Vietnam framing and weights are now only the **defaults** of a campaign-authorable
+**will profile** (design note `414th-will-generalization-notes.md`). A campaign YAML's `will:` block
+(sibling of `phases:`) re-labels both meters and their exhaustion banners (`blue:`/`red:` →
+`WillSideCopy`: `label`, `exhaustion_title`, `exhaustion_body`) and re-weights every feed (`weights:` →
+`WillWeights`, one field per constant; unknown keys are parse errors so a typo never silently no-ops a
+rebalance). Profiles follow the phases-S5 rule — re-derived from the campaign YAML by name
+(`will_profile_for`, cached in `_PROFILE_CACHE`), never pickled, any failure degrading to the defaults
+with a log — so the 4 Vietnam campaigns (no block) are byte-identical to the pre-profile behavior
+(`test_default_profile_is_the_vietnam_framing`). A new **warship feed** closes the naval gap
+(Falklands prerequisite): `blue_ship_lost` 4.0 / `red_ship_lost` 0.5, counted from the debriefing's
+ground-object losses by `TheaterUnit.is_ship`, with RED's ships subtracted from the generic
+ground-attrition pool (never double-counted). Label surfaces that follow the profile: the per-turn
+message + exhaustion banners, the client ribbon meter tooltips (`CampaignStatusJs.blue/red_will_label`,
+Vietnam-string fallbacks in `CampaignStatusBar.tsx`), the Qt intel-box tooltip, and the Stats
+will-chart legend. Tests: the "will profiles" section of `tests/fourteenth/test_political_will.py`
+(default-equivalence, parse/degrade, ship feed, authored labels driving banners). No new runtime Lua —
+the M1 pacing pass now also covers tuning via `will: weights:`.
+
 ## §41 — High Digit SAMs "Ultimate Compilation" support
 
 Retribution's High Digit SAMs mod support targeted the original **HighDigitSAMs v1.4.0**, a mod that has

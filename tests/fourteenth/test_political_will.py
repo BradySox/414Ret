@@ -1,16 +1,23 @@
 """Vietnam campaign layer W1: the political-will economy (observe-only).
 
 Locks the feed model: BLUE (Political Will) drains from weighted airframe losses
-(heavy bombers cost more), POW captures + a per-turn held trickle, and lost bases,
-softened by Combat SAR rescues and claimed enemy air kills; RED (Regime Resolve)
-drains mostly from trail-convoy and ground attrition, barely from airframes. Off
-switch, clamping, and the SITREP threading are the safety rails.
+(heavy bombers cost more), POW captures + a per-turn held trickle, warships sunk,
+and lost bases, softened by Combat SAR rescues and claimed enemy air kills; RED
+(Regime Resolve) drains mostly from trail-convoy and ground attrition, barely from
+airframes. Off switch, clamping, and the SITREP threading are the safety rails.
+
+The generalization layer (will profiles): the Vietnam framing and weights are only
+the *defaults* -- a campaign's ``will:`` YAML block re-labels and re-weights the
+economy. The default-equivalence tests here are the guarantee that the 4 Vietnam
+campaigns (no ``will:`` block) are byte-identical to the pre-profile behavior.
 """
 
 from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any
+
+import pytest
 
 from game.fourteenth.political_will import (
     BLUE_AIRFRAME_LOSS,
@@ -21,16 +28,33 @@ from game.fourteenth.political_will import (
     BLUE_PILOT_RESCUED_REFUND,
     BLUE_POW_HELD_PER_TURN,
     BLUE_POW_TAKEN,
+    BLUE_ROE_VIOLATION,
+    BLUE_SHIP_LOST,
+    RED_AIRFRAME_LOSS,
+    RED_BASE_LOST,
     RED_CONVOY_UNIT_LOST,
+    RED_GROUND_UNIT_LOST,
     RED_PASSIVE_REGEN,
+    RED_SHIP_LOST,
     WILL_MAX,
+    DEFAULT_WILL_PROFILE,
+    WillProfile,
+    WillSideCopy,
+    WillWeights,
+    _PROFILE_CACHE,
     negotiation_verdict,
+    parse_will_profile,
     update_political_will,
+    will_profile_for,
 )
 
 
 def _counts(
-    aircraft: int = 0, convoy: int = 0, bases_lost: int = 0, ground: int = 0
+    aircraft: int = 0,
+    convoy: int = 0,
+    bases_lost: int = 0,
+    ground: int = 0,
+    ground_objects: int = 0,
 ) -> Any:
     return SimpleNamespace(
         aircraft=aircraft,
@@ -38,7 +62,7 @@ def _counts(
         convoy=convoy,
         cargo_ships=0,
         airlift_cargo=0,
-        ground_objects=0,
+        ground_objects=ground_objects,
         scenery=0,
         bases_lost=bases_lost,
     )
@@ -55,6 +79,10 @@ def _aircraft_type(dcs_id: str) -> Any:
     return _AircraftType(dcs_id)
 
 
+def _tgo_loss(is_ship: bool = False) -> Any:
+    return SimpleNamespace(theater_unit=SimpleNamespace(is_ship=is_ship))
+
+
 def _debrief(
     *,
     blue_air_by_type: dict[Any, int] | None = None,
@@ -62,6 +90,8 @@ def _debrief(
     red_counts: Any = None,
     captures: list[Any] | None = None,
     rescues: list[str] | None = None,
+    blue_ships: int = 0,
+    red_ships: int = 0,
 ) -> Any:
     from game.theater import Player
 
@@ -71,7 +101,7 @@ def _debrief(
     def loss_counts(player: Any) -> Any:
         return blue if player is Player.BLUE else red
 
-    return SimpleNamespace(
+    debrief = SimpleNamespace(
         air_losses=SimpleNamespace(
             by_type=lambda player: (
                 dict(blue_air_by_type or {}) if player is Player.BLUE else {}
@@ -82,6 +112,14 @@ def _debrief(
             combat_sar_captures=captures or [], combat_sar_rescues=rescues or []
         ),
     )
+    if blue_ships or red_ships:
+        # Ship losses ride the ground-object loss lists (TheaterUnit.is_ship);
+        # most tests omit ground_losses entirely, matching the getattr guard.
+        debrief.ground_losses = SimpleNamespace(
+            player_ground_objects=[_tgo_loss(is_ship=True)] * blue_ships,
+            enemy_ground_objects=[_tgo_loss(is_ship=True)] * red_ships,
+        )
+    return debrief
 
 
 def _game(
@@ -328,3 +366,174 @@ def test_game_stats_will_none_when_feature_off() -> None:
     stats.update(game)
     assert stats.data_per_turn[0].allied_units.political_will is None
     assert stats.data_per_turn[0].enemy_units.political_will is None
+
+
+# ---- will profiles: labels + tunable weights + the ship feed ---------------------------
+
+
+def test_default_profile_is_the_vietnam_framing() -> None:
+    # The default-equivalence guarantee: no `will:` block means the exact
+    # pre-profile constants and copy, so the 4 Vietnam campaigns are unchanged.
+    profile = DEFAULT_WILL_PROFILE
+    assert profile.blue.label == "Washington's patience"
+    assert profile.blue.exhaustion_title == "Washington orders withdrawal"
+    assert profile.red.label == "Hanoi's resolve"
+    assert profile.red.exhaustion_title == "Hanoi agrees to terms"
+    weights = profile.weights
+    assert weights.blue_airframe_loss == BLUE_AIRFRAME_LOSS
+    assert weights.blue_heavy_bomber_loss == BLUE_HEAVY_BOMBER_LOSS
+    assert weights.blue_pow_taken == BLUE_POW_TAKEN
+    assert weights.blue_pow_held_per_turn == BLUE_POW_HELD_PER_TURN
+    assert weights.blue_pilot_rescued_refund == BLUE_PILOT_RESCUED_REFUND
+    assert weights.blue_base_lost == BLUE_BASE_LOST
+    assert weights.blue_enemy_air_claimed == BLUE_ENEMY_AIR_CLAIMED
+    assert weights.blue_passive_regen == BLUE_PASSIVE_REGEN
+    assert weights.blue_roe_violation == BLUE_ROE_VIOLATION
+    assert weights.blue_ship_lost == BLUE_SHIP_LOST
+    assert weights.red_convoy_unit_lost == RED_CONVOY_UNIT_LOST
+    assert weights.red_ground_unit_lost == RED_GROUND_UNIT_LOST
+    assert weights.red_airframe_loss == RED_AIRFRAME_LOSS
+    assert weights.red_base_lost == RED_BASE_LOST
+    assert weights.red_passive_regen == RED_PASSIVE_REGEN
+    assert weights.red_ship_lost == RED_SHIP_LOST
+
+
+def test_parse_none_and_empty_keep_the_defaults() -> None:
+    assert parse_will_profile(None) is DEFAULT_WILL_PROFILE
+    assert parse_will_profile({}) == DEFAULT_WILL_PROFILE
+
+
+def test_parse_authored_labels_and_weights() -> None:
+    profile = parse_will_profile(
+        {
+            "blue": {
+                "label": "Downing Street's patience",
+                "exhaustion_title": "London recalls the task force",
+            },
+            "red": {"label": "the Junta's resolve"},
+            "weights": {"blue_ship_lost": 8, "red_ship_lost": 6.5},
+        }
+    )
+    assert profile.blue.label == "Downing Street's patience"
+    assert profile.blue.exhaustion_title == "London recalls the task force"
+    # Anything not authored keeps its default -- copy and weights alike.
+    assert profile.blue.exhaustion_body == DEFAULT_WILL_PROFILE.blue.exhaustion_body
+    assert profile.red.label == "the Junta's resolve"
+    assert profile.red.exhaustion_title == "Hanoi agrees to terms"
+    assert profile.weights.blue_ship_lost == 8.0
+    assert profile.weights.red_ship_lost == 6.5
+    assert profile.weights.blue_airframe_loss == BLUE_AIRFRAME_LOSS
+
+
+def test_parse_rejects_unknown_weight_keys() -> None:
+    # A typo must be a loud parse error (degraded by will_profile_for), never a
+    # silently no-op'd rebalance.
+    with pytest.raises(ValueError, match="unknown keys"):
+        parse_will_profile({"weights": {"blue_shp_lost": 8}})
+    with pytest.raises(ValueError, match="must be a mapping"):
+        parse_will_profile({"weights": [1, 2]})
+    with pytest.raises(ValueError, match="must be a mapping"):
+        parse_will_profile("nope")
+
+
+def test_profile_lookup_reads_campaign_yaml(tmp_path: Any, monkeypatch: Any) -> None:
+    from game.campaignloader.campaign import Campaign
+
+    campaign = tmp_path / "falklands.yaml"
+    campaign.write_text(
+        "name: Test Falklands\n"
+        "will:\n"
+        "  blue:\n"
+        "    label: London's patience\n"
+        "  weights:\n"
+        "    blue_ship_lost: 8\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        Campaign, "iter_campaign_defs", classmethod(lambda cls: iter([campaign]))
+    )
+    _PROFILE_CACHE.pop("Test Falklands", None)
+    try:
+        game = _game()
+        game.campaign_name = "Test Falklands"
+        profile = will_profile_for(game)
+        assert profile.blue.label == "London's patience"
+        assert profile.weights.blue_ship_lost == 8.0
+    finally:
+        _PROFILE_CACHE.pop("Test Falklands", None)
+
+
+def test_profile_lookup_degrades_on_a_bad_block(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    from game.campaignloader.campaign import Campaign
+
+    campaign = tmp_path / "broken.yaml"
+    campaign.write_text(
+        "name: Test Broken\nwill:\n  weights:\n    not_a_weight: 3\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        Campaign, "iter_campaign_defs", classmethod(lambda cls: iter([campaign]))
+    )
+    _PROFILE_CACHE.pop("Test Broken", None)
+    try:
+        game = _game()
+        game.campaign_name = "Test Broken"
+        assert will_profile_for(game) == DEFAULT_WILL_PROFILE
+    finally:
+        _PROFILE_CACHE.pop("Test Broken", None)
+
+
+def test_no_campaign_name_means_the_defaults() -> None:
+    assert will_profile_for(_game()) is DEFAULT_WILL_PROFILE
+
+
+def test_blue_ship_loss_drains_will() -> None:
+    game = _game()
+    update_political_will(game, _debrief(blue_ships=2))
+    expected = 100.0 + BLUE_PASSIVE_REGEN - 2 * BLUE_SHIP_LOST
+    assert game.blue.political_will == expected
+    assert dict(game.will_ledger[-1].blue_moves)["warships x2 sunk"] == (
+        -2 * BLUE_SHIP_LOST
+    )
+
+
+def test_red_ships_leave_the_ground_attrition_pool() -> None:
+    # 3 ground-object units died, 2 of them warships: attrition counts 1, the
+    # ships drain at their own weight -- never double-counted.
+    game = _game()
+    update_political_will(
+        game, _debrief(red_counts=_counts(ground_objects=3), red_ships=2)
+    )
+    red = dict(game.will_ledger[-1].red_moves)
+    assert red["ground attrition x1"] == -RED_GROUND_UNIT_LOST
+    assert red["warships x2 sunk"] == -2 * RED_SHIP_LOST
+
+
+def test_authored_profile_drives_weights_and_banners() -> None:
+    profile = WillProfile(
+        blue=WillSideCopy(
+            label="London's patience",
+            exhaustion_title="London recalls the task force",
+            exhaustion_body="The war cabinet has folded.",
+        ),
+        red=WillSideCopy(
+            label="the Junta's resolve",
+            exhaustion_title="The Junta capitulates",
+            exhaustion_body="Buenos Aires sues for peace.",
+        ),
+        weights=WillWeights(blue_ship_lost=200.0),
+    )
+    _PROFILE_CACHE["Test Falklands Live"] = profile
+    try:
+        game = _game()
+        game.campaign_name = "Test Falklands Live"
+        update_political_will(game, _debrief(blue_ships=1))
+        # The authored ship weight drove BLUE straight to the floor...
+        assert game.blue.political_will == 0.0
+        # ...and the banner + per-turn message carry the authored framing.
+        assert "London recalls the task force" in game.messages
+        assert "Washington orders withdrawal" not in game.messages
+    finally:
+        del _PROFILE_CACHE["Test Falklands Live"]

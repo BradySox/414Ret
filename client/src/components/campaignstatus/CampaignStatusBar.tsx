@@ -96,7 +96,7 @@ export default function CampaignStatusBar() {
             title={
               status.blue_will_note
                 ? `Last turn ${status.blue_will_note}`
-                : "Washington's political will"
+                : (status.blue_will_label ?? "Washington's political will")
             }
           >
             WILL {Math.round(status.blue_will)}
@@ -108,7 +108,7 @@ export default function CampaignStatusBar() {
             title={
               status.red_will_note
                 ? `Last turn ${status.red_will_note}`
-                : "Hanoi's regime resolve"
+                : (status.red_will_label ?? "Hanoi's regime resolve")
             }
           >
             RESOLVE {Math.round(status.red_will)}

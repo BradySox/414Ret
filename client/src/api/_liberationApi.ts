@@ -621,6 +621,8 @@ export type CampaignStatus = {
   phase_narrative?: string | null;
   blue_will?: number | null;
   red_will?: number | null;
+  blue_will_label?: string | null;
+  red_will_label?: string | null;
   blue_will_note?: string | null;
   red_will_note?: string | null;
   phases?: PhaseArcEntry[];

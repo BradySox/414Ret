@@ -51,6 +51,11 @@ One mechanic, two labels: BLUE tracks **Political Will** (Washington/home-front 
 RED tracks **Regime Resolve** (Hanoi's capacity to absorb punishment). Doctrine supplies the
 display name (the §P1b display-layer precedent); the model is symmetric.
 
+> **Generalized 2026-07-02:** the Washington/Hanoi framing and the feed weights are now
+> only the *defaults* of a campaign-authorable **will profile** (`will:` YAML block —
+> labels, exhaustion banners, per-feed weights, plus a new warship-loss feed). See
+> `414th-will-generalization-notes.md`; the model below is unchanged.
+
 - **Model:** `Coalition.political_will: float` (0–100, start 100; tunable per campaign via
   the `settings:` block). Persisted; migrated with a `__setstate__` default so old saves
   load (the `last_sitrep`/`super_gaggle_commitment` pattern).

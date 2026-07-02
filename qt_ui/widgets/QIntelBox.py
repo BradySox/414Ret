@@ -166,9 +166,12 @@ class QIntelBox(QGroupBox):
             blue = getattr(self.game.blue, "political_will", None)
             red = getattr(self.game.red, "political_will", None)
             if blue is not None and red is not None:
+                from game.fourteenth.political_will import will_profile_for
+
+                profile = will_profile_for(self.game)
                 self.political_will.setText(f"{blue:.0f}% vs resolve {red:.0f}%")
                 self.political_will.setToolTip(
-                    "Washington's patience vs Hanoi's resolve. Either side "
+                    f"{profile.blue.label} vs {profile.red.label}. Either side "
                     "hitting zero ends the war at the negotiating table."
                 )
 

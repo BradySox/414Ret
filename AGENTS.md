@@ -143,7 +143,16 @@ file. This guide is the map; those are the territory.
     pressure on the will economy, never sweep-captures; the pulse implies the ≥2.0 trail surge);
     authored-only so Tier-0/generic campaigns are untouched; hook = `apply_red_tempo` in
     `initialize_turn` after the coalitions plan; checklist M6). **The campaign-layer arc W0–W6 is
-    COMPLETE.** The
+    COMPLETE.** **The will economy generalized 2026-07-02** (design note
+    `414th-will-generalization-notes.md`): the Washington/Hanoi framing + every feed weight are now
+    only the *defaults* of a campaign-authorable **will profile** — a `will:` YAML block (sibling of
+    `phases:`) re-labels the meters/exhaustion banners and re-weights the feeds, parsed by
+    `parse_will_profile`/`will_profile_for` on the phases-S5 rederive-never-pickle rule, degrading to
+    the Vietnam defaults on any failure (the 4 Vietnam campaigns carry no block ⇒ byte-identical);
+    plus a new **warship feed** (`blue_ship_lost` 4.0 / `red_ship_lost` 0.5 via `TheaterUnit.is_ship`,
+    ships subtracted from RED's generic attrition pool — the Falklands prerequisite). Any-era survey +
+    the COIN direction (squadron pick; blocked on a COIN laydown + insurgent-replenishment design
+    pass; Korea dropped) live in that note. The
     Vietnam pieces stay default-off (`vietnam_political_will`/`vietnam_static_front` gated); no
     debrief-schema changes anywhere in the arc),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*

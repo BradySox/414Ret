@@ -2094,7 +2094,11 @@ so the two docs don't drift.
   the meters barely move by turn 10 (too cold); the passive regen out-heals ordinary attrition so the meters
   pin at 100 (regen too high vs. weights); the exhaustion banner fires repeatedly every turn at zero
   (crossing-edge regression); a non-Vietnam campaign shows the will message at all (gating regression).
-  Tune the `BLUE_*`/`RED_*` weights in `game/fourteenth/political_will.py`.
+  Tune the `BLUE_*`/`RED_*` weights in `game/fourteenth/political_will.py` — or, since the 2026-07-02
+  will-profile generalization, per campaign via a `will: weights:` YAML block (no code change; see
+  `414th-will-generalization-notes.md`). The new warship feed (`blue_ship_lost`/`red_ship_lost`) barely
+  moves on the Vietnam defaults — a sunk vessel showing an outsized will swing means a profile weight, not
+  this pass.
 
 ### M2 — Static front holds the band (campaign layer W2b) · Vietnam campaign layer · ☐ UNTESTED (built 2026-07-01; clamp math + arm/disarm/anchor fully unit-tested, the multi-turn map behaviour needs a played campaign)
 - **Headless adjudication:** the band math, arm/disarm idempotence, anchor-once capture, and the real

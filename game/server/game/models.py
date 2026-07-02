@@ -92,6 +92,10 @@ class CampaignStatusJs(BaseModel):
     phase_narrative: str | None
     blue_will: float | None
     red_will: float | None
+    #: The campaign's authored will framing (the will-profile labels; Vietnam
+    #: defaults) -- the meter tooltips. None whenever the meters are.
+    blue_will_label: str | None
+    red_will_label: str | None
     #: The latest flown turn's will attribution (the W1 ledger), one rendered
     #: top-movers line per side -- the meter hover / expander note. None when the
     #: ledger is empty or will tracking is off.
@@ -105,17 +109,22 @@ class CampaignStatusJs(BaseModel):
     @staticmethod
     def from_game(game: Game) -> CampaignStatusJs:
         from game.fourteenth.phases import active_phase, arc_overview
-        from game.fourteenth.political_will import ledger_notes
+        from game.fourteenth.political_will import ledger_notes, will_profile_for
 
         phase = active_phase(game)
         blue_will: float | None = None
         red_will: float | None = None
+        blue_will_label: str | None = None
+        red_will_label: str | None = None
         blue_will_note: str | None = None
         red_will_note: str | None = None
         history: list[tuple[int, float, float]] = []
         if getattr(game.settings, "vietnam_political_will", False):
             blue_will = getattr(game.blue, "political_will", None)
             red_will = getattr(game.red, "political_will", None)
+            profile = will_profile_for(game)
+            blue_will_label = profile.blue.label
+            red_will_label = profile.red.label
             blue_will_note, red_will_note = ledger_notes(game)
             # The will trend rides game_stats' per-turn series (one record per
             # turn, deduped across re-inits) -- the same source the Qt Stats
@@ -148,6 +157,8 @@ class CampaignStatusJs(BaseModel):
             phase_narrative=phase.narrative if phase is not None else None,
             blue_will=blue_will,
             red_will=red_will,
+            blue_will_label=blue_will_label,
+            red_will_label=red_will_label,
             blue_will_note=blue_will_note,
             red_will_note=red_will_note,
             phases=[PhaseArcEntryJs(**entry) for entry in arc_overview(game)],

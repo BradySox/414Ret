@@ -1399,7 +1399,11 @@ auto-planner that used to *steal* enemy battle positions hands them all back to 
 
 **The enemy capture race (runtime — `combatsar` plugin).** On a downed-pilot spawn the `combatsar`
 plugin rolls a chance to spawn an enemy **snatch party** that walks at the survivor (red smoke + a
-MAYDAY cue); the King smokes/marks/calls it so Sandy engages. The party is now **several small,
+MAYDAY cue); the King smokes/marks/calls it so Sandy engages. **BLUE survivors only** (squadron
+call 2026-07-01: red flies NO CSAR — `combat_sar_targets` seeding is blue-gated in
+`theaterstate.py` and `_generate_combat_sar` never emits the `CombatSAR.red` Lua node, so a red
+ejection registers no survivor and no BLUE snatch party ever spawns to race it; the plugin's
+coalition-generic red path stays dormant capability). The party is now **several small,
 dispersed teams** (default 3) ringed around the survivor on different bearings and converging
 independently — the same total infantry split into fire teams rather than one long marching column,
 which reads as a single target. The party spawns on the **enemy coalition**: Python emits the

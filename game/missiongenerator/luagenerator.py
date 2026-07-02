@@ -372,73 +372,53 @@ class LuaGenerator:
         self._inject_atis_lua()
 
     def _generate_combat_sar(self, lua_data: LuaData) -> None:
-        """Emit dcsRetribution.CombatSAR + the downed-pilot template group(s).
+        """Emit dcsRetribution.CombatSAR + the downed-pilot template group.
 
         Combat SAR (FlightType.COMBAT_SAR) is executed at runtime by the survivor-
-        ledger plugin (resources/plugins/combatsar). Python's job, per coalition, is
-        to (1) tell the Lua bridge which generated groups are the rescue helos (and
-        which C-130s fly the "King" orbit, with their nav beacons), and (2) drop one
-        late-activation infantry group per side that the runtime clones at each crash
-        site as the downed pilot. Blue rides the top-level keys (back-compat); red
-        rides a nested ``red`` node, so a side with no Combat SAR flights isn't
-        emitted at all. ``enableForAI`` carries the standing-alert setting
-        (auto_combat_sar); the ledger runtime is coalition-generic.
+        ledger plugin (resources/plugins/combatsar). Python's job is to (1) tell the
+        Lua bridge which generated groups are the rescue helos (and which C-130s fly
+        the "King" orbit, with their nav beacons), and (2) drop one late-activation
+        infantry group that the runtime clones at each crash site as the downed
+        pilot. ``enableForAI`` carries the standing-alert setting (auto_combat_sar).
+
+        BLUE ONLY (squadron call 2026-07-01): the plugin's survivor ledger is
+        coalition-generic and would run red the day a ``red`` node is emitted, but
+        we deliberately never emit it -- red flies no CSAR, red ejections register
+        no survivor, and no BLUE snatch party spawns to race a red pilot (that
+        traffic was pure noise). Red flights are ignored here even if a save
+        somehow still carries them.
         """
         blue_rescue: list[FlightData] = []
         blue_kings: list[FlightData] = []
         blue_sandys: list[FlightData] = []
-        red_rescue: list[FlightData] = []
-        red_kings: list[FlightData] = []
-        red_sandys: list[FlightData] = []
         for flight in self.mission_data.flights:
+            if not flight.friendly.is_blue:
+                continue
             if flight.flight_type is FlightType.SCAR:
-                bucket = blue_sandys if flight.friendly.is_blue else red_sandys
-                bucket.append(flight)
+                blue_sandys.append(flight)
                 continue
             if flight.flight_type is not FlightType.COMBAT_SAR:
                 continue
-            if flight.friendly.is_blue:
-                bucket = blue_rescue if flight.aircraft_type.helicopter else blue_kings
-            else:
-                bucket = red_rescue if flight.aircraft_type.helicopter else red_kings
+            bucket = blue_rescue if flight.aircraft_type.helicopter else blue_kings
             bucket.append(flight)
 
-        # No rescue helo on either side -> the CSAR service is simply absent this
-        # mission. Skip the template(s) too so we never leave an orphan group.
-        if not blue_rescue and not red_rescue:
+        # No rescue helo -> the CSAR service is simply absent this mission. Skip
+        # the template too so we never leave an orphan group.
+        if not blue_rescue:
             return
 
-        enable_for_ai = self.game.settings.auto_combat_sar
-        combat_sar: Optional[LuaItem] = None
-
-        if blue_rescue:
-            template = self._generate_combat_sar_pilot_template(self.game.blue)
-            if template is not None:
-                combat_sar = lua_data.add_item("CombatSAR")
-                self._emit_combat_sar_side(
-                    combat_sar,
-                    template,
-                    blue_rescue,
-                    blue_kings,
-                    blue_sandys,
-                    self.game.blue,
-                    enable_for_ai,
-                )
-
-        if red_rescue:
-            template = self._generate_combat_sar_pilot_template(self.game.red)
-            if template is not None:
-                if combat_sar is None:
-                    combat_sar = lua_data.add_item("CombatSAR")
-                self._emit_combat_sar_side(
-                    combat_sar.add_item("red"),
-                    template,
-                    red_rescue,
-                    red_kings,
-                    red_sandys,
-                    self.game.red,
-                    enable_for_ai,
-                )
+        template = self._generate_combat_sar_pilot_template(self.game.blue)
+        if template is None:
+            return
+        self._emit_combat_sar_side(
+            lua_data.add_item("CombatSAR"),
+            template,
+            blue_rescue,
+            blue_kings,
+            blue_sandys,
+            self.game.blue,
+            self.game.settings.auto_combat_sar,
+        )
 
     def _emit_combat_sar_side(
         self,
@@ -450,9 +430,9 @@ class LuaGenerator:
         coalition: "Coalition",
         enable_for_ai: bool,
     ) -> None:
-        """Populate one coalition's Combat SAR node (the blue top-level node or the
-        nested ``red`` node). Scalars are emitted as single-value child items so the
-        LuaData serializer keeps them alongside the nested kings/sofTeams lists.
+        """Populate the (blue) Combat SAR node. Scalars are emitted as single-value
+        child items so the LuaData serializer keeps them alongside the nested
+        kings/sofTeams lists.
         """
         node.add_item("pilotTemplate").set_value(template_name)
         node.add_item("enableForAI").set_value("true" if enable_for_ai else "false")

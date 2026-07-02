@@ -178,13 +178,15 @@ file. This guide is the map; those are the territory.
     `414th-scar-king-fac-notes.md` (SCAR rework: a player-first loiter/"hold" package tasked by
     the C-130 "King" on-scene commander onto real static armor TGOs so losses track natively;
     minimal-F10 designation; thin MOOSE bridge, not `Ops.Chief`; future auto-planned commander),
-    `414th-combat-sar-normal-task-notes.md` (make Combat SAR a normal, default-on, **two-sided**
-    auto-task: AI rescues AI on blue+red, players can drop in. **Route 1 (the owned survivor ledger)
-    HAS since shipped** — `combatsar-config.lua` credits AI rescues by real identity and makes AI
-    ejections capturable → POW, coalition-generic runtime (verified 2026-06-30, G11/G20); the note's
-    "AI-rescue scoring is cosmetic / AICSAR anonymous clone" diagnosis is now stale. What's still
-    **design-only** is the surrounding framing: default-on (`auto_combat_sar` still defaults OFF) +
-    auto-planned **symmetric red** (only blue is auto-fragged today)),
+    `414th-combat-sar-normal-task-notes.md` (make Combat SAR a normal, default-on auto-task.
+    **Route 1 (the owned survivor ledger) HAS since shipped** — `combatsar-config.lua` credits AI
+    rescues by real identity and makes AI ejections capturable → POW, coalition-generic runtime
+    (verified 2026-06-30, G11/G20); the note's "AI-rescue scoring is cosmetic / AICSAR anonymous
+    clone" diagnosis is now stale. **Symmetric red is REJECTED** (squadron call 2026-07-01: red
+    flies NO CSAR — `combat_sar_targets` seeding is BLUE-gated, the generator never emits the
+    `CombatSAR.red` Lua node, so red ejections register no survivor and no BLUE snatch party
+    spawns; the plugin's red path stays dormant). Still design-only: default-on
+    (`auto_combat_sar` defaults OFF)),
     `414th-vietnam-ops-notes.md` (**Vietnam Ops suite** — a `Vietnam Ops` settings page gating five
     opt-in period mechanics: Arc Light as a heavy-bomber Strike *effect*, AAA flak gauntlet, naval
     gunfire support, Armed-Recon truck-convoy interdiction, Super Gaggle resupply; Tier-A runtime only,

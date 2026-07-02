@@ -159,11 +159,13 @@ shows it's needed (per the generalization note §6).
   whitelist, off-switch, blue/neutral guards, mid-campaign enable, multi-turn
   shell sanity). State pickles as `game.coin_state` (plain dict, getattr-guarded —
   pre-feature saves untouched).
-- **C1.5 — the re-infiltration design pass** (design only, squadron call §7.3):
-  written **immediately after C1 is verified working** (headless multi-turn sanity —
-  regen visibly refills a stronghold, cache kills visibly throttle it), before or in
-  parallel with C3. Scope: the insurgency retaking neutral/lost CPs, cache-seeded and
-  will-coupled; its own note.
+- **C1.5 — the re-infiltration design pass** ✅ **WRITTEN 2026-07-02** (squadron call
+  §7.3's commitment, delivered on the C1 shell-sanity bar):
+  `414th-coin-reinfiltration-notes.md` — a staged, announced, counterable pipeline
+  (cell → cache → engine-native `ControlPoint.capture` flip) under a **conservation
+  bound** (relocate, never grow), gated `coin_reinfiltration` default OFF. Build slot:
+  after C3 (needs real campaign geometry to tune against); 4 open squadron calls in
+  its §8.
 - **C2 — will coupling**: `red_cache_lost` weight (default 0.0, default-equivalence
   preserved), the cache-loss feed, tests.
 - **C3 — the campaign**: fork Shattered Dagger (credit Starfire, the Khe Sanh/

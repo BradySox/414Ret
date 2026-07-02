@@ -116,9 +116,15 @@ file. This guide is the map; those are the territory.
     the `finish_turn` hook + `tests/fourteenth/test_coin.py`; whitelist = class set +
     price ≤ 10 ceiling, because the unit data classes the insurgent technicals as IFV —
     the ceiling, not the class, is what keeps BMPs/Grads out; caches bind by TGO-to-CP
-    ownership; state pickles as `game.coin_state`, getattr-guarded) → C1.5
-    re-infiltration design pass (owed immediately after C1 verifiably works — squadron
-    call; the headless bar is met by the shell-sanity test) → C2 will feed → C3
+    ownership; state pickles as `game.coin_state`, getattr-guarded) → **C1.5
+    re-infiltration design DONE 2026-07-02** (`414th-coin-reinfiltration-notes.md` —
+    a staged, announced, counterable pipeline: real cell TGO → seeded ammo-cache TGO →
+    engine-native `ControlPoint.capture` flip + a weak `REINFIL_GARRISON` C1 re-anchor,
+    under a **conservation bound** (relocate, never grow — red CP count never exceeds
+    turn 0) with the §36 player-field exclusion, projection gated on the source
+    stronghold's C1 cache health, will handoff = a labeled `blue_base_lost`-weight
+    move recorded via `coin_state`; gated `coin_reinfiltration` default OFF; BUILD slot
+    after C3, 4 open squadron calls in its §8) → C2 will feed → C3
     campaign fork → C4 dispersed cells; §7 squadron calls RESOLVED 2026-07-02: 25 %
     cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved

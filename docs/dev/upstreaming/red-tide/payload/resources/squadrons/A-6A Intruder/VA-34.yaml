@@ -1,0 +1,12 @@
+---
+name: VA-34
+nickname: Blue Blasters
+country: USA
+role: Attack
+aircraft: A-6E Intruder
+livery: "VA34-500-1987"
+mission_types:
+  - OCA/Aircraft
+  - Strike
+  - BAI
+  - Anti-ship

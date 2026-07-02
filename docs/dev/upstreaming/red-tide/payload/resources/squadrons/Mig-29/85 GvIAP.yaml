@@ -1,0 +1,13 @@
+---
+name: 85th Guards Fighter Aviation Regiment
+nickname: 85 GvIAP
+country: Russia
+role: Fighter
+aircraft: MiG-29A Fulcrum-A
+livery: "Air Force Standard"
+female_pilot_percentage: 0
+mission_types:
+  - BARCAP
+  - TARCAP
+  - Escort
+  - Fighter sweep

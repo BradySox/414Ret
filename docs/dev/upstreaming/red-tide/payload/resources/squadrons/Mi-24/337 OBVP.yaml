@@ -1,0 +1,12 @@
+---
+name: 337th Independent Combat Helicopter Regiment
+nickname: Krokodil
+country: Russia
+role: Attack Helicopter
+aircraft: Mi-24P Hind-F
+livery: "262nd_SHQ_USSR"
+female_pilot_percentage: 0
+mission_types:
+  - CAS
+  - Escort
+  - Armed Reconnaissance

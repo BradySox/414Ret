@@ -1,0 +1,10 @@
+---
+name: 1023rd Heavy Bomber Aviation Regiment
+nickname: Medved
+country: Russia
+role: Strategic Bomber
+aircraft: Tu-95MS Bear-H
+female_pilot_percentage: 0
+mission_types:
+  - Strike
+  - Anti-ship

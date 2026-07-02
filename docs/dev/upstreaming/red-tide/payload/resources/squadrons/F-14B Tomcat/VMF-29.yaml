@@ -1,0 +1,12 @@
+---
+name: VMF-29
+nickname: Vandals
+country: USA
+role: Fighter
+aircraft: F-14B Tomcat
+livery: "VMF-29 Line"
+mission_types:
+  - Escort
+  - TARCAP
+  - BARCAP
+  - Fighter sweep

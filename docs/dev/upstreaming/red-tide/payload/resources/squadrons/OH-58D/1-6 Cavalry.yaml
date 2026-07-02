@@ -1,0 +1,11 @@
+---
+name: 1-6 Cavalry
+nickname: Pale Horse
+country: USA
+role: Armed Scout
+aircraft: OH-58D(R) Kiowa Warrior
+livery: "US 1-6 A 161"
+mission_types:
+  - Armed Reconnaissance
+  - CAS
+  - Escort

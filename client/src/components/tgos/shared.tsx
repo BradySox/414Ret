@@ -1,5 +1,6 @@
 import { Tgo as TgoModel } from "../../api/liberationApi";
 import SplitLines from "../splitlines/SplitLines";
+import summarizeUnits from "../unitsummary/summarizeUnits";
 import { Icon, Point } from "leaflet";
 import ms from "milsymbol";
 import { Tooltip } from "react-leaflet";
@@ -33,7 +34,9 @@ export function TgoTooltip(props: { tgo: TgoModel }) {
         </>
       )}
       <br />
-      <SplitLines items={props.tgo.units} />
+      {/* Condensed: an objective's units collapse to per-type counts and cap
+          out, so a FOB's hundred statics don't fill the screen on hover. */}
+      <SplitLines items={summarizeUnits(props.tgo.units)} />
     </Tooltip>
   );
 }

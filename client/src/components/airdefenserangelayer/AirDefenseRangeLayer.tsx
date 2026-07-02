@@ -8,6 +8,7 @@ import {
 } from "../../api/mapSlice";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { LatLng } from "../../api/liberationApi";
+import summarizeUnits from "../unitsummary/summarizeUnits";
 import { Fragment } from "react";
 import { Circle, CircleMarker, LayerGroup, Tooltip } from "react-leaflet";
 
@@ -31,14 +32,9 @@ export function colorFor(blue: boolean, detection: boolean) {
 
 // Bright colour used to mark the hovered ring and its emitter.
 const HIGHLIGHT_COLOR = "#ffff00";
-
-// Collapse a unit list like ["SA-6 TEL", "SA-6 TEL", "Straight Flush"] into
-// ["2x SA-6 TEL", "Straight Flush"] so the ring tooltip names the SAM compactly.
-function summarizeUnits(units: string[]): string[] {
-  const counts = new Map<string, number>();
-  units.forEach((unit) => counts.set(unit, (counts.get(unit) ?? 0) + 1));
-  return Array.from(counts, ([name, n]) => (n > 1 ? `${n}x ${name}` : name));
-}
+// The ring tooltip's unit list rides the shared summarizeUnits condenser, which
+// also strips the "0007 | " id prefixes that used to defeat the duplicate
+// collapse here (every unit's name was unique, so nothing ever counted up).
 
 // Draws one emitter's range rings. Used for both TGOs and carrier/LHA control
 // points (whose ship group is not emitted as a standalone TGO). The id is the

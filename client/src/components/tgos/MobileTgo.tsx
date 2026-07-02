@@ -13,6 +13,7 @@ import {
 } from "../../api/mapSlice";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import SplitLines from "../splitlines/SplitLines";
+import summarizeUnits from "../unitsummary/summarizeUnits";
 import { MovementPath, MovementPathHandle } from "../controlpoints/MovementPath";
 import { TgoTooltip, iconForTgo } from "./shared";
 import { LatLng, Marker as LMarker, LatLngLiteral } from "leaflet";
@@ -136,7 +137,7 @@ function PrimaryMarker(props: PrimaryMarkerProps) {
             <>
               {`${props.tgo.name} (${props.tgo.control_point_name})`}
               <br />
-              <SplitLines items={props.tgo.units} />
+              <SplitLines items={summarizeUnits(props.tgo.units)} />
             </>
           )
     );

@@ -114,26 +114,33 @@ P2 (shell/preset) + P3 (behaviour taskings) outstanding.
   Vietnam campaign fields a Wild Weasel); revisit per-faction if one ever does. Tests:
   `test_vietnam_doctrine.py::test_vietnam_whitelist_drops_sead_dead_antiship` + the `fulfill_mission` scrub
   in `test_dead_planning.py::test_vietnam_doctrine_scrubs_the_whole_dead_package`.
-- **P3 (behaviour) — Alpha Strike: massed 2-section fan + forced escort + EARNED label
-  (RESTORED after the fighter-economy fixes).**
-  `Doctrine.strike_flight_count` (default 1) fans N coordinated, shared-TOT STRIKE sections onto one
-  target in `PlanStrike.propose_flights`. Vietnam first fanned **2** sections (concentration, not more
-  aircraft — headless: same 10 strike a/c, 5 single→3 double targets), was **reverted to 1** when the
-  playtest showed the doubled bomber sections flying **unescorted**, and is now **restored to 2** — the
-  starvation was never the fan's fault: support orbits + BARCAP consumed the fighter pool first. The
-  fighter-economy levers (`escort_support_aircraft=False` + `strike_escort_reserve=4` + the
-  `escort_reserve_withholds` fence) hold escorts for the bombers, so the massed sections fly covered
-  (`always_escort_strikes` forces the A2A escort "needed" in `PackageFulfiller.check_needed_escorts`
-  even with no detected air threat; still pruned by `can_plan_escort` + flown unescorted under
-  `plan_strikes_without_full_escort` only in a true famine). **The label is earned, not flat:** a user
-  playtest caught four separate 2-ship strikes each named "Alpha Strike" — a real alpha strike is a
-  massed deck-load on ONE target, so `Package.is_massed_strike` (>= 2 STRIKE sections) now gates the
-  rename at all three display sites (`Package.package_description`, `Flight.task_display_name`,
-  `FlightData.task_display_name`); a single-section strike reads plain "Strike".
-  **Gotcha:** the strike target is *enemy*-owned, so `PlanStrike` reads the *planner's*
+- **P3 (behaviour) — Alpha Strike: the surge deck-load + forced escort + EARNED label
+  (RESTORED and deepened after the fighter-economy fixes).**
+  `Doctrine.strike_flight_count` (default 1) fans up to N coordinated, shared-TOT STRIKE sections onto
+  one target in `PlanStrike.propose_flights` — Vietnam = **4**, and only the **first section is
+  required**: the rest are **surge sections** (`ProposedFlight.optional`, honored in
+  `PackageFulfiller.plan_mission`) that plan when a squadron has the jets and drop silently when not —
+  never scrubbing the package, never placing a purchase order. Emergent behaviour: the top-priority
+  strike target absorbs the strike fleet (the deck-load) and later strike targets shrink toward single
+  sections as the pool drains — no per-turn "one alpha" state needed, the inventory does it. History:
+  first fanned **2** sections, **reverted to 1** when the playtest showed the sections flying
+  **unescorted** — but the starvation was never the fan's fault: support orbits + BARCAP consumed the
+  fighter pool first. The fighter-economy levers (`escort_support_aircraft=False` +
+  `strike_escort_reserve=4` + the `escort_reserve_withholds` fence) hold escorts for the bombers, so
+  the massed sections fly covered (`always_escort_strikes` forces the A2A escort "needed" in
+  `PackageFulfiller.check_needed_escorts` even with no detected air threat; still pruned by
+  `can_plan_escort` + flown unescorted under `plan_strikes_without_full_escort` only in a true famine).
+  **The label is earned, not flat:** a user playtest caught four separate 2-ship strikes each named
+  "Alpha Strike" — a real alpha strike is a massed deck-load on ONE target, so
+  `Package.is_massed_strike` (**>= 2 STRIKE sections totalling >= 4 bombers**) gates the rename at all
+  three display sites (`Package.package_description`, `Flight.task_display_name`,
+  `FlightData.task_display_name`); a lone section — or a pair of single-ships on a trivial target —
+  reads plain "Strike". Replay proof (live turn-11 Linebacker save): `[Alpha Strike] WOLVERINE: STRIKE
+  x2 ×4 + ESCORT x2 + TARPS` (11 aircraft, one target) while `NEWT` flies the leftover single section
+  as `[Strike]`. **Gotcha:** the strike target is *enemy*-owned, so `PlanStrike` reads the *planner's*
   doctrine via `self.target.coalition.opponent.doctrine`. All flags are save-safe class-attr defaults.
-  Tests: `test_strike_planning.py` (2-section Vietnam fan + `test_always_escort_strikes_forces_a2a_escort`)
-  + `test_vietnam_doctrine.py::test_vietnam_strike_is_massed_and_force_escorted` + the massing-gate
+  Tests: `test_strike_planning.py` (1 required + 3 surge sections; stock = single required) +
+  `test_vietnam_doctrine.py::test_vietnam_strike_is_massed_and_force_escorted` + the massing-gate
   display tests. **Still TODO in P3:**
   Iron Hand = Shrike-vs-live-emitter (**moot** now SEAD is dropped from Vietnam — revisit only if a
   weasel-fielding Vietnam campaign appears).

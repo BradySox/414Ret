@@ -217,15 +217,15 @@ class Package(RadioFrequencyContainer):
 
     @property
     def is_massed_strike(self) -> bool:
-        """True when >= 2 coordinated STRIKE sections share this package's target.
+        """True when this package masses a real strike deck-load on its target.
 
-        The only shape that earns the era "Alpha Strike" label: a real alpha
-        strike is a massed deck-load on ONE target (strike_flight_count > 1), so
-        a lone section keeps the plain canonical "Strike" name even under a
-        doctrine that renames the task.
+        The only shape that earns the era "Alpha Strike" label: >= 2 coordinated
+        STRIKE sections (the strike_flight_count fan) totalling >= 4 bombers. A
+        lone section -- or a pair of single-ships on a trivial target -- keeps the
+        plain canonical "Strike" name even under a doctrine that renames the task.
         """
-        strikes = sum(1 for f in self.flights if f.flight_type is FlightType.STRIKE)
-        return strikes >= 2
+        strike_flights = [f for f in self.flights if f.flight_type is FlightType.STRIKE]
+        return len(strike_flights) >= 2 and sum(f.count for f in strike_flights) >= 4
 
     @property
     def package_description(self) -> str:

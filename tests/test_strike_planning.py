@@ -1,11 +1,15 @@
 """PlanStrike fans `doctrine.strike_flight_count` coordinated sections onto a target.
 
 Locks the section count at the proposal layer so a regression that drops the doctrine
-read fails CI. Stock doctrines plan a single section; Vietnam masses TWO coordinated
-shared-TOT sections on one target -- the real Alpha Strike -- plus the forced fighter
-escort (always_escort_strikes; see test_always_escort_strikes_forces_a2a_escort). The
-fan was briefly reverted to 1 when the sections flew naked; restored once the fighter
-economy held (escort_support_aircraft off + strike_escort_reserve + its fence). See
+read fails CI. Stock doctrines plan a single section; Vietnam masses up to FOUR
+coordinated shared-TOT sections on one target -- the real Alpha Strike deck-load --
+plus the forced fighter escort (always_escort_strikes; see
+test_always_escort_strikes_forces_a2a_escort). Only the first section is required: the
+rest are surge sections (ProposedFlight.optional) that plan when a squadron has the
+jets and drop silently when not, so the top-priority target absorbs the strike fleet
+and later strike targets shrink instead of scrubbing. The fan was briefly reverted to
+1 when the sections flew naked; restored once the fighter economy held
+(escort_support_aircraft off + strike_escort_reserve + its fence). See
 docs/dev/design/414th-vietnam-retribution-notes.md (P3).
 """
 
@@ -38,22 +42,23 @@ def _target(doctrine: Doctrine, units: int = 6) -> SimpleNamespace:
     )
 
 
-def _strike_sections(doctrine: Doctrine) -> list[int]:
+def _strike_sections(doctrine: Doctrine) -> list[bool]:
+    """The proposed STRIKE sections, as their `optional` (surge) flags in order."""
     task = PlanStrike(_target(doctrine))  # type: ignore[arg-type]
     task.propose_flights()
-    return [f.num_aircraft for f in task.flights if f.task is FlightType.STRIKE]
+    return [f.optional for f in task.flights if f.task is FlightType.STRIKE]
 
 
 def test_stock_doctrines_plan_a_single_strike_section() -> None:
     for doctrine in (MODERN_DOCTRINE, COLDWAR_DOCTRINE):
-        assert len(_strike_sections(doctrine)) == 1
+        assert _strike_sections(doctrine) == [False]
 
 
-def test_vietnam_masses_two_strike_sections() -> None:
-    # The real Alpha Strike: Vietnam fans TWO coordinated shared-TOT sections onto ONE
-    # target (fewer targets struck per turn, each hit hard), with the forced fighter
-    # escort riding along (always_escort_strikes).
-    assert len(_strike_sections(VIETNAM_DOCTRINE)) == 2
+def test_vietnam_masses_a_deck_load_of_surge_sections() -> None:
+    # The real Alpha Strike: Vietnam fans up to FOUR coordinated shared-TOT sections
+    # onto ONE target. Only the first is required; the surge sections are optional so
+    # the fan masses as deep as inventory allows instead of scrubbing the package.
+    assert _strike_sections(VIETNAM_DOCTRINE) == [False, True, True, True]
 
 
 def test_always_escort_strikes_forces_a2a_escort() -> None:

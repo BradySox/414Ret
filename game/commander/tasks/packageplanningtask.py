@@ -76,6 +76,7 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
         escort_type: Optional[EscortType] = None,
         refuel_method: Optional[AirRefuelType] = None,
         preferred_type: Optional[AircraftType] = None,
+        optional: bool = False,
     ) -> None:
         self.flights.append(
             ProposedFlight(
@@ -84,6 +85,7 @@ class PackagePlanningTask(TheaterCommanderTask, Generic[MissionTargetT]):
                 escort_type,
                 preferred_type=preferred_type,
                 refuel_method=refuel_method,
+                optional=optional,
             )
         )
 

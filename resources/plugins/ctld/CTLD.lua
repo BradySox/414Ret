@@ -6140,6 +6140,11 @@ function ctld.updateRepackMenu(_playerUnitName)
             local repackableVehicles = ctld.getUnitsInRepackRadius(_playerUnitName, ctld.maximumDistanceRepackableUnitsSearch)
             if repackableVehicles then
                 --ctld.logTrace("FG_ ctld.vehicleCommandsPath[_playerUnitName] = %s", ctld.p(ctld.vehicleCommandsPath[_playerUnitName]))
+                if ctld.vehicleCommandsPath[_playerUnitName] == nil then
+                    -- no vehicle menu was ever built for this unit (seen live 2026-07-01:
+                    -- a landing event reached here before/without menu setup) -- nothing to update
+                    return
+                end
                 local RepackPreviousMenu = mist.utils.deepCopy(ctld.vehicleCommandsPath[_playerUnitName])
                 local RepackCommandsPath = mist.utils.deepCopy(ctld.vehicleCommandsPath[_playerUnitName])
                 local repackSubMenuText  = ctld.i18n_translate("Repack Vehicles")

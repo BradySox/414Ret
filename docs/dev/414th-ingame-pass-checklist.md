@@ -1193,7 +1193,21 @@ so the two docs don't drift.
   capture never fires because `advanceCapture` lost track of the multi-group party (all teams reported
   dead while alive).
 
-### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ◐ PARTIAL (clone-fallback confirmed correct; the "table index is nil" dispatch error root-caused + fixed 2026-07-01, needs a re-fly)
+### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ◐ PARTIAL (dispatch-error fix VERIFIED 2026-07-01 re-fly — 0 errors across 5 dispatches; the commandeer-vs-clone preference itself still unproven)
+- **Re-fly (2026-07-01, flown Yankee Station session `intelligent-dubinsky` — `dcs.log` + Tacview):** the
+  "table index is nil" dispatch error did **not** reproduce — zero `combatsar: AI dispatch error` lines across
+  **5** AI rescue dispatches (`CombatSAR Rescue 4/5/9/11/13`, Mi-8s red + CH-53Es blue — the ledger ran
+  coalition-generically on 4 separate ejections, 16 snatch parties spawned on both sides). The 2026-07-01 fix
+  held. **Still unproven:** the commandeer preference — blue clones 11/13 spawned while the planned
+  `Front line … Combat SAR|2|43|CH-53E` was still alive; it may have been legitimately busy with the earlier
+  AH-1W-crew survivors (the artifacts can't distinguish busy from skipped), and red's planned Mi-8 died at
+  t≈109 s so red's clones were correct fallback. No rescue *completed* inside the 33-min window
+  (`combat_sar_rescues`/`combat_sar_captures` both empty at mission end — races still running), so watch a
+  longer session for the divert message + a delivery. **Caveat:** this flight predates
+  [#407](https://github.com/bradyccox/414Ret/pull/407) — red-side Combat SAR (the red dispatches 4/5/9 and
+  the blue snatch parties racing red ejections observed here) has since been removed by squadron call;
+  future sessions will only show the blue rescue/capture loop. The dispatch-fix evidence stands (same code
+  path).
 - **Partial (2026-06-30, flown session — `dcs.log`/`state.json`):** Two findings, one good and one a
   genuine open bug:
   - **Clone-fallback confirmed working as designed:** `dcs.log` shows `OPSTRANSPORT [UID=6] | Carrier
@@ -1819,7 +1833,7 @@ so the two docs don't drift.
   `land.getHeight`/`explosion` Lua error in `dcs.log`; FPS hit from over-dense impacts (tune
   `arcLightBlastPower`/length/width down).
 
-### L2 — AAA flak gauntlet · §33 · ◐ PARTIAL (2026-06-28 audience pass: TOO ACCURATE/lethal → 2nd softening applied 2026-07-01, needs a re-fly)
+### L2 — AAA flak gauntlet · §33 · ☑ VERIFIED (2026-07-01 flown Yankee Station session `intelligent-dubinsky`, user pass: bursts "light but fairer" after the 2nd softening — the too-accurate/lethal fail signature did not recur; player death that mission was a MiG gun kill, not flak. If it now reads *too* light, raise `flakPower`/narrow the miss band)
 - **Second softening applied 2026-07-01 (L2 tuning owed from the 2026-06-28 pass).** The lethality that
   remained was the close **"tracking" round firing every 2.5 s tick** once a jet held a steady line for ~10 s
   (`factor > 0.8`), reading as a hard-kill rather than pressure. Changes (`vietnamops-config.lua` + matched
@@ -1985,7 +1999,7 @@ so the two docs don't drift.
   `useOpenNewSupplyRoutePackageDialogMutation` hook or the `contextmenu` handler is wrong); a JS error in the
   client console; the dialog opens on the wrong CP. Needs the CI client rebuild (hand-edited generated API).
 
-### L8 — Airbase harassment (rocket/mortar siege) · §36 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+### L8 — Airbase harassment (rocket/mortar siege) · §36 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: armed for 4 fields, user saw the "Incoming — standoff fire on …" cue in-mission → the barrage loop fires past the grace period; the impacts themselves + the player-spawn-field exclusion not yet visually confirmed)
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the emitter — a
   forward, occupied airfield/FARP is emitted; a rear / neutral / carrier / off / no-front field yields no node;
   a **lone client-spawn field yields no node** and a client-spawn field alongside an enemy field is excluded
@@ -2002,7 +2016,15 @@ so the two docs don't drift.
   wildly off the ramp (centroid/dispersion wrong); too lethal to parked jets (dial power/dispersion down, as
   §33 flak needed); a `trigger.action.explosion` / `land.getHeight` / `timer.scheduleFunction` Lua error.
 
-### L9 — Super Gaggle hilltop resupply · §37 · ☐ UNTESTED (REWORKED 2026-07-01: phantom respawn spawn → real squadron airframes + tracked losses)
+### L9 — Super Gaggle hilltop resupply · §37 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky` — the runtime run PASSED; the key loss-accounting leg unexercised, no gaggle helo died)
+- **Partial (2026-07-01, flown session — Tacview + `dcs.log`):** `dcs.log` shows `Super Gaggle armed
+  (outpost FOB Khe Sanh, 2x CH-53E, single run)`; `SuperGaggleHelos` (2× CH-53E, the committed real-squadron
+  airframes by name) + `SuperGaggleSandy` (2× F-4E suppressors) spawned **once** at t≈73 s. Tacview: the helo
+  pair launched from Sochi-Adler, flew the 13 km run and **overflew FOB Khe Sanh at t≈300 s** (~180 m), then
+  returned, loitered and **landed back at the launch field** — no re-roll, no respawn, no `coalition.addGroup`
+  error. The Sandys escorted the run window (Sandy-1 landed + despawned at ~1,076 s). **Unexercised:** both
+  helos survived, so the debrief charge-back (`reconcile_super_gaggle`) and the outpost ground-strength credit
+  weren't stressed — the row's key check still needs a session where a gaggle helo is shot down.
 - **What changed:** the gaggle is no longer a phantom, unbounded-respawn `coalition.addGroup` spawn. It is
   planned once per turn from **real BLUE squadrons** (`game/fourteenth/super_gaggle.py` `plan_super_gaggle`),
   spawns **exactly** the committed airframes (by name) **once** (no respawn), and a shot-down committed airframe
@@ -2031,7 +2053,7 @@ so the two docs don't drift.
   missed); the outpost isn't bolstered on a clean run; a `coalition.addGroup` / `Group.getByName` Lua error in
   `dcs.log`; the squadron owned count goes negative (floor failed).
 
-### L10 — FAC(A) willie-pete target marking · §38 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+### L10 — FAC(A) willie-pete target marking · §38 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: user observed the OV-10 putting WP on a target — but the Bronco also carries real WP rockets, so this may have been the AI's own ordnance rather than the plugin's smoke mark; a confirmed white-smoke column + the "FAC: … cleared hot" cue still owed)
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `fac` on-marker
   (emitted when `vietnam_fac_marking` is on, independent of the other suite features; off = no node). The
   runtime OV-10 discovery, the nearest-enemy scan, and `trigger.action.smoke` placement are runtime Lua,
@@ -2046,14 +2068,20 @@ so the two docs don't drift.
   set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;
   the mark cadence is far too frequent (smoke spam) or never fires.
 
-### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown)
+### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (built 2026-07-01; emitter test-covered, runtime Lua unflown — **player-triggered only in practice**, see 2026-07-01 note)
+- **Player-only in practice (squadron call, 2026-07-01, session `intelligent-dubinsky`):** AI attack flights
+  will **never** trip the low/fast gate on their own — Retribution's generated BAI/CAS plans keep them at
+  their planned altitudes (the 2026-07-01 session's A-1s sat at 6,400 m all mission) and nothing commands a
+  deck run "unless you write it in the waypoint plan." So do NOT wait for AI to exercise this row: the test
+  **is** a player pass, and the feature is effectively a player-CAS reward until someone authors low-level
+  ingress/attack altitudes into the Vietnam attack flight plans (deferred planner work, not an L11 bug).
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `snakeNape`
   on-marker (emitted when `vietnam_snake_and_nape` is on, independent of the other suite features; off = no
   node). The runtime attack-plane discovery, the low/fast/near gating, and the `effectSmokeBig`/`explosion`
   placement are runtime Lua, exercisable only live.
-- **Setup:** A Vietnam campaign with **Vietnam Ops → Snake and nape** on. Fly an **attack aircraft** (A-1/A-4/
-  A-37/Su-25/OV-10 — anything that carries the DCS `Attack airplanes` attribute) a **low, fast** pass (≤150 m
-  AGL, ≥100 m/s) directly over an enemy ground unit.
+- **Setup:** A Vietnam campaign with **Vietnam Ops → Snake and nape** on. **Fly it yourself** in an attack
+  aircraft (A-1/A-4/A-37/Su-25/OV-10 — anything that carries the DCS `Attack airplanes` attribute): a **low,
+  fast** pass (≤150 m AGL, ≥100 m/s) directly over an enemy ground unit.
 - **Pass:** a line of **fire** (smoke-and-fire effects) lays **along your run-in heading** across the target,
   the nearby soft targets take damage, and a "SNAKE AND NAPE — napalm on the deck" cue appears; the fires burn
   ~90 s then stop; `dcs.log` shows "Snake and nape armed" with no Lua error. One pass = one wall of fire (the
@@ -2157,7 +2185,16 @@ so the two docs don't drift.
   (stale `active_restricted_zones`); the planner deadlocks with nothing to strike in phase 1 (locked-class
   list too broad for that campaign's target set — trim `locked_targets` in the campaign YAML).
 
-### M5 — GCI-ambush MiGs: late scramble, one slash, home (campaign layer W5) · §1 · ☐ UNTESTED (built 2026-07-01; doctrine/tuning/serialization unit-tested + sanctuary basing test-locked, the dispatcher behaviour is runtime Lua/Moose — needs a cockpit pass)
+### M5 — GCI-ambush MiGs: late scramble, one slash, home (campaign layer W5) · §1 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky` — the slash + leash VERIFIED in Tacview; still owed = measuring the 40 NM late-launch trigger against a known raid)
+- **Partial (2026-07-01, flown session — Tacview `Tacview-20260701-225522-…retribution_nextturn` + `dcs.log`):**
+  a red `Intercept|Sukhumi-Babushara|…` MiG-17F pair launched at t≈460 s, ran a **close** intercept into the
+  Gudauta fight (~25 NM from its base), and **gunned down the player's F-4E** (Flash, Gudauta Armed Recon) at
+  ~1,150 m with the MiG inside ~1–2 km — a slashing merge, no BVR duel. The lead was traded (killed by a GAR-8
+  at t≈876 s); the survivor **broke off** after the fight, climbed to ~4,500 m and egressed SE toward home
+  plate — no chase-to-map-edge, no fight-to-destruction, no `intercept-config.lua` error in `dcs.log`. The
+  leash behaviour (one slash, disengage, RTB at altitude) is exactly the W5 design. **Not yet measured:** the
+  40 NM late-scramble trigger (couldn't reconstruct which raid the dispatcher launched against, so the launch
+  radius is unconfirmed) and blue-side parity.
 - **Headless adjudication:** `Doctrine.gci_ambush` (Vietnam-only), the `dispatcher_tuning` radii math
   (engage → 22 NM cap range, scramble capped at 40 NM, tighter settings still win), the `ambushPosture`
   record serialization, and the W4 sanctuary-basing fallout (an airfield inside a zone can't be OCA'd) are

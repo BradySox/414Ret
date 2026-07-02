@@ -124,4 +124,6 @@ Ranked by fit, from the 2026-07-02 review of the 66-campaign / 134-faction inven
 - **Cargo-ship losses as a red logistics feed** (sea trail) — the debriefing already
   tracks them separately; fold into a naval-war profile when one is authored.
 - **The COIN laydown + insurgent replenishment model** — the real blocker for #1 above;
-  needs its own design note before any campaign is written.
+  now designed (not built) in `414th-coin-insurgent-replenishment-notes.md` (2026-07-02:
+  base = a fork of Operation Shattered Dagger; free anchored-cap cell regeneration
+  throttled by destroyable cache TGOs; the C1–C4 delivery plan).

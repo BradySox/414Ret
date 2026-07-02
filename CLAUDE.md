@@ -103,6 +103,16 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-coin-insurgent-replenishment-notes.md` (**the COIN campaign direction** —
+    squadron pick 2026-07-02, Korea dropped; base = a fork of Operation Shattered Dagger
+    whose zeroed enemy income confirms the gap. Free, anchored-cap insurgent cell
+    regeneration from `finish_turn` — real units via `Base.commission_units`, never
+    phantom spawns — throttled by destroyable ammo-cache TGOs, whitelisted to
+    infantry/technicals/AAA, gated `coin_insurgency` default OFF; will coupling inverts
+    the Vietnam weights (body count ≈ worthless, caches/ROE/patience decide) via the
+    `will:` profiles + a planned inert-by-default `red_cache_lost` weight; the §35 trail
+    machinery is the ratline. Delivery C1 regen core → C2 will feed → C3 campaign fork →
+    C4 dispersed cells; 3 open squadron calls in §7),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

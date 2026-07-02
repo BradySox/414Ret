@@ -36,6 +36,10 @@ settings:
   vietnam_convoy_interdiction: true
   vietnam_airbase_harassment: true
   vietnam_political_will: true
+  # The insurgent faction's ERO ZU-23 technicals/emplacements are §41 HDS
+  # Ultimate Compilation content — they resolve only with the mod on (and drop
+  # silently without it, so a mod-less install still plays).
+  high_digit_sams: true
 
 # The inverted COIN will economy (design note §4): the insurgency's dead fighters are
 # nearly free; its caches, convoys, and strongholds are the currency. The Coalition
@@ -150,6 +154,48 @@ phases:
         y: -371274.6
         radius_nm: 8
         name: Herat -- population center
+
+# The ratline: red<->red supply corridors between the strongholds (the original
+# laydown had NO connectivity, so the §35 trail machinery had nothing to run on).
+# Endpoints are exact stronghold coordinates so closest-CP binding is unambiguous;
+# red-red only -- a red-blue route would create a front line, and this stays an
+# air-assault campaign. Two chains: the western ratline out of Farah, and the
+# northern one out of Tarinkot toward the Kandahar gate.
+supply_routes:
+  # Farah (rear airfield) -> FOB Delaram II
+  - waypoints:
+      - [-178644, -378451]
+      - [-195000, -320000]
+      - [-203597, -258944]
+  # FOB Delaram II -> ANP Hill
+  - waypoints:
+      - [-203597, -258944]
+      - [-185000, -210000]
+      - [-174184, -162657]
+  # ANP Hill -> FOB Jackson
+  - waypoints:
+      - [-174184, -162657]
+      - [-209298, -127205]
+  # FOB Jackson -> FOB Zeebrugge (the Helmand ring)
+  - waypoints:
+      - [-209298, -127205]
+      - [-181518, -101421]
+  # Tarinkot (rear airfield) -> Kamp Hadrian
+  - waypoints:
+      - [-148524, -31352]
+      - [-146856, -66510]
+  # Kamp Hadrian -> Firebase Cobra
+  - waypoints:
+      - [-146856, -66510]
+      - [-111672, -60214]
+  # Tarinkot -> FOB Martello
+  - waypoints:
+      - [-148524, -31352]
+      - [-189960, -7031]
+  # FOB Martello -> FOB Frontenac (the Kandahar gate)
+  - waypoints:
+      - [-189960, -7031]
+      - [-231043, -30347]
 
 squadrons:
   #Kandahar

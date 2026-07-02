@@ -5,6 +5,10 @@
   "description": "<p>Total Terror Through Toyota Technicals.</p>",
   "aircrafts": [],
   "frontline_units": [
+    "DIM' TOYOTA GREEN",
+    "DIM' TOYOTA DESERT",
+    "DIM' TOYOTA BLUE",
+    "DIM' KAMIKAZE",
     "Scout LC with DSHK 12.7mm",
     "Scout LC with KORD 12.7mm",
     "Scout HL with DSHK 12.7mm",
@@ -29,10 +33,18 @@
   ],
   "missiles": [],
   "air_defense_units": [
+    "SA-9 Strela",
+    "AAA ZU-23 Insurgent Closed Emplacement",
+    "AAA ZU-23 Insurgent Emplacement",
+    "AAA ZU-23 Insurgent (ERO)",
+    "AAA ZU-23 Toyota armored technical",
+    "AAA ZU-23 Toyota technical",
     "SPAAA LC with ZU-23",
     "SPAAA HL with ZU-23",
     "ZU-23 on Ural-375 Insurgent"
   ],
-  "preset_groups": [],
+  "preset_groups": [
+    "ZU-23 Technicals (ERO)"
+  ],
   "naval_units": []
 }

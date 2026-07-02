@@ -56,9 +56,20 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
 - **Bost/Herat never instantiate as CPs** (neutral fields) — the population-center
   ROE rings are **coordinate-anchored** (`x:`/`y:`), not `center:`-named.
 - Never `locked_targets: [ammo]` in the arc — the caches must always be legal.
-- The ratline works by preseeding `vietnam_convoy_interdiction` directly (the module
-  is coalition-generic inside); the "widen the gate to honor `coin_insurgency`"
-  refactor from the note §3.3 was **not needed** and remains undone by choice.
+- **Toyota Al Gaib 2001 was missing most of the insurgent kit** (user catch 2026-07-02,
+  fixed): the DIM' technicals, the §41 ERO ZU-23 family + preset group, and the SA-9
+  now match the sibling insurgent factions (still no armor by design). The campaign
+  preseeds `high_digit_sams` so the ERO units resolve.
+- The ratline needed three fixes to actually run here (user catch 2026-07-02: "the
+  ROE page talks about supplies on the trail but there is no supply lines"): the
+  laydown had **zero CP connectivity** (now 8 authored red↔red `supply_routes:`
+  corridors in the YAML — never red↔blue, that would create a front),
+  `_pick_trail_corridor` **required front lines** (now falls back to orienting
+  toward the opposing CPs when front-less), and every stronghold's `Base.armor` was
+  **empty** so there was nothing to skim (now `coin_insurgency`-gated rear seeding:
+  the source is topped up to 2× a convoy load with whitelisted kit — the
+  external-support framing — so the skim ships a full column and leaves a stable
+  rear buffer). Engine-probe verified: turn 1 ships Martello → Frontenac.
 
 ## After P1
 

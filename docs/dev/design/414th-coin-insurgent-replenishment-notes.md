@@ -118,12 +118,19 @@ and destroy** — no new TGO type needed:
 
 ### 3.3 The ratline (reuse, not construction)
 
-The §35 trail-convoy machinery is already the insurgent supply-interdiction
-mechanic — `ensure_enemy_trail_convoy` just needs its gate widened (a shared helper
-honoring `coin_insurgency` **or** `vietnam_convoy_interdiction`; the module is
-already coalition-generic inside). A convoy killed on the ratline is a real loss and
-(§4) a resolve hit. Deliberately *not* coupling convoy arrival to cache health in
-v1 — one throttle (caches → regen) keeps the loop legible.
+The §35 trail-convoy machinery is the insurgent supply-interdiction mechanic —
+**extended for the front-less COIN reality (landed with C3, 2026-07-02)**: the
+campaign preseeds `vietnam_convoy_interdiction` (no gate change needed), and
+`vietnam_convoy.py` gained (a) a **front-less corridor fallback** (no
+`theater.conflicts()` ⇒ orient toward the opposing coalition's CPs) and (b)
+**`coin_insurgency`-gated rear seeding** (`_seed_ratline_source`): the insurgency
+holds no `Base.armor` to skim, so the rear source is topped up to 2× a convoy load
+with C1-whitelisted kit — the external-support framing — before the normal skim
+ships a full column and leaves a stable rear buffer. The campaign authors the
+red↔red `supply_routes:` corridors the machinery runs on. A convoy killed on the
+ratline is a real loss and (§4) a resolve hit. Deliberately *not* coupling convoy
+arrival to cache health in v1 — one throttle (caches → regen) keeps the loop
+legible.
 
 ## 4. Will coupling (rides the #417 profiles)
 

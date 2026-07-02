@@ -17,19 +17,30 @@ class ArmedReconIngressBuilder(PydcsWaypointBuilder):
         ecm_option = OptECMUsing(value=OptECMUsing.Values.UseIfDetectedLockByRadar)
         waypoint.tasks.append(ecm_option)
 
-        waypoint.add_task(
-            ControlledTask(
-                EngageTargetsInZone(
-                    position=self.flight.flight_plan.tot_waypoint.position,
-                    radius=int(
-                        nautical_miles(
-                            self.flight.coalition.game.settings.armed_recon_engagement_range_distance
-                        ).meters
-                    ),
-                    targets=[
-                        Targets.All.GroundUnits,
-                        Targets.All.Air.Helicopters,
-                    ],
+        # One engage zone per search point. A road sweep (convoy / supply-route
+        # hunting) plans SEARCH START/MID/END target points along the hunted
+        # route, so the zones chain into a corridor covering the whole road; a
+        # classic single-point plan degrades to the one zone it always had.
+        flight_plan = self.flight.flight_plan
+        positions = [
+            target.position
+            for target in getattr(flight_plan.layout, "targets", []) or []
+        ] or [flight_plan.tot_waypoint.position]
+        radius = int(
+            nautical_miles(
+                self.flight.coalition.game.settings.armed_recon_engagement_range_distance
+            ).meters
+        )
+        for position in positions:
+            waypoint.add_task(
+                ControlledTask(
+                    EngageTargetsInZone(
+                        position=position,
+                        radius=radius,
+                        targets=[
+                            Targets.All.GroundUnits,
+                            Targets.All.Air.Helicopters,
+                        ],
+                    )
                 )
             )
-        )

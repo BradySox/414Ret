@@ -34,11 +34,16 @@ class QWillChart(QFrame):
             and (red := getattr(data.enemy_units, "political_will", None)) is not None
         ]
 
+        # Legend labels ride the campaign's will profile (Vietnam framing by
+        # default; a `will:` YAML block re-labels them).
+        from game.fourteenth.political_will import will_profile_for
+
+        profile = will_profile_for(self.game)
         blueSerie = QtCharts.QLineSeries()
-        blueSerie.setName("Political Will (Washington)")
+        blueSerie.setName(f"Political Will ({profile.blue.label})")
         redSerie = QtCharts.QLineSeries()
         redSerie.setColor(Qt.GlobalColor.red)
-        redSerie.setName("Regime Resolve (Hanoi)")
+        redSerie.setName(f"Regime Resolve ({profile.red.label})")
         for turn, blue, red in points:
             blueSerie.append(QPointF(turn, blue))
             redSerie.append(QPointF(turn, red))

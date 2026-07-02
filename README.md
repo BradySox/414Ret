@@ -292,7 +292,10 @@ and selected later upstream fixes.
   started — pressure reads on the map — but never sweeps onto a base to capture it; deliberate **Air Assault**
   operations remain the one way to take ground, and attrition pays out through political will instead. Both are
   opt-in (Vietnam Ops → Campaign) and preseeded on in the four Vietnam campaigns; watch the will meters move on
-  the SITREP band each turn. And the four campaigns now fly under **Washington's rules of engagement**: an
+  the SITREP band each turn. The Washington/Hanoi framing is just the default: any campaign can carry its own
+  **will profile** (a `will:` block in the campaign YAML) that renames the meters, rewrites the exhaustion
+  headlines, and re-weights every feed for its era — including a new **warship-loss feed**, so a naval war
+  (a Falklands, say) bleeds will from sunk ships the way Vietnam bleeds it from downed B-52s. And the four campaigns now fly under **Washington's rules of engagement**: an
   authored **Rolling Thunder → Bombing Halt → Linebacker → Linebacker II** arc where a red dashed **sanctuary
   zone** on the map (the "Hanoi" hub) is off-limits, deep target classes (factories, power, airfields) show a
   **RESTRICTED** badge you can see but may not hit — the defining Rolling Thunder frustration — and the AI

@@ -103,6 +103,18 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-coin-insurgent-replenishment-notes.md` (**the COIN campaign direction** —
+    squadron pick 2026-07-02, Korea dropped; base = a fork of Operation Shattered Dagger
+    whose zeroed enemy income confirms the gap. Free, anchored-cap insurgent cell
+    regeneration from `finish_turn` — real units via `Base.commission_units`, never
+    phantom spawns — throttled by destroyable ammo-cache TGOs, whitelisted to
+    infantry/technicals/AAA, gated `coin_insurgency` default OFF; will coupling inverts
+    the Vietnam weights (body count ≈ worthless, caches/ROE/patience decide) via the
+    `will:` profiles + a planned inert-by-default `red_cache_lost` weight; the §35 trail
+    machinery is the ratline. Delivery C1 regen core → C1.5 re-infiltration design pass
+    (owed immediately after C1 verifiably works — squadron call) → C2 will feed → C3
+    campaign fork → C4 dispersed cells; §7 squadron calls RESOLVED 2026-07-02: 25 %
+    cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —
@@ -143,7 +155,16 @@ file. This guide is the map; those are the territory.
     pressure on the will economy, never sweep-captures; the pulse implies the ≥2.0 trail surge);
     authored-only so Tier-0/generic campaigns are untouched; hook = `apply_red_tempo` in
     `initialize_turn` after the coalitions plan; checklist M6). **The campaign-layer arc W0–W6 is
-    COMPLETE.** The
+    COMPLETE.** **The will economy generalized 2026-07-02** (design note
+    `414th-will-generalization-notes.md`): the Washington/Hanoi framing + every feed weight are now
+    only the *defaults* of a campaign-authorable **will profile** — a `will:` YAML block (sibling of
+    `phases:`) re-labels the meters/exhaustion banners and re-weights the feeds, parsed by
+    `parse_will_profile`/`will_profile_for` on the phases-S5 rederive-never-pickle rule, degrading to
+    the Vietnam defaults on any failure (the 4 Vietnam campaigns carry no block ⇒ byte-identical);
+    plus a new **warship feed** (`blue_ship_lost` 4.0 / `red_ship_lost` 0.5 via `TheaterUnit.is_ship`,
+    ships subtracted from RED's generic attrition pool — the Falklands prerequisite). Any-era survey +
+    the COIN direction (squadron pick; blocked on a COIN laydown + insurgent-replenishment design
+    pass; Korea dropped) live in that note. The
     Vietnam pieces stay default-off (`vietnam_political_will`/`vietnam_static_front` gated); no
     debrief-schema changes anywhere in the arc),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*

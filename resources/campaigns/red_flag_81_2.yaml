@@ -1,0 +1,391 @@
+---
+name: Nevada - Red Flag 81-2
+era: vietnam
+theater: Nevada
+authors: 414th JFG (laydown after Reflected Simulations' F-4E Red Flag 81-2)
+description:
+    <p><strong>Nellis AFB, January 1981.</strong> Your F-4E wing detachment has arrived for
+    <strong>Red Flag 81-2</strong> &mdash; the ultimate war game, flown over the Nevada
+    ranges the way it was meant to be fought &mdash; the war the exercise was built to rehearse.
+    The Red Force holds the north ranges &mdash; <strong>64th/65th Aggressor F-5Es</strong>
+    flying MiG-21 GCI doctrine, the <strong>4477th "Red Eagles" Constant Peg MiGs out of
+    Tonopah Test Range</strong>, an SA-2/SA-3 emulator array around <strong>Tolicha
+    Peak</strong>, AAA belts on every corridor, and a simulated enemy army dug in on the
+    FEBA north of <strong>Camp Mercury</strong>.</p>
+    <p>The flag escalates week by week &mdash; restrictions release as you prove the force
+    &mdash; but the <strong>Groom Lake box never opens</strong> &mdash; enter it and the
+    assessment bleeds. Break the Red Force's capacity to contest before the TAC assessment breaks you,
+    and the detachment graduates.</p>
+    <p><strong>Check six &mdash; the aggressors brief your kills at the bar tonight.</strong></p>
+
+recommended_player_faction: USA Red Flag 1981
+recommended_enemy_faction: Red Force 1981 (Nellis Aggressors)
+recommended_start_date: 1981-01-26
+recommended_player_money: 2500
+recommended_enemy_money: 1200
+recommended_player_income_multiplier: 1.5
+recommended_enemy_income_multiplier: 1.0
+miz: red_flag_81_2.miz
+performance: 1
+version: "10.8"
+advanced_iads: true
+
+settings:
+  # Vietnam mechanics preseed (era pre-seed, per the design note
+  # docs/dev/design/414th-red-flag-81-campaign-notes.md section 6). Red Flag IS the
+  # institutionalized Vietnam feedback loop, so the whole stack applies -- except
+  # naval gunfire: the NTTR has no sea.
+  vietnam_arc_light: true
+  vietnam_flak_gauntlet: true
+  vietnam_naval_gunfire: false
+  vietnam_convoy_interdiction: true
+  vietnam_airbase_harassment: true
+  vietnam_super_gaggle: true
+  vietnam_fac_marking: true
+  vietnam_snake_and_nape: true
+  vietnam_political_will: true
+  vietnam_static_front: true
+  restrict_weapons_by_date: true
+  # Compressed theater: tuck AEW&C/tanker orbits close (same rationale as Yankee
+  # Station -- the 80/70 NM defaults sprawl support to the map edge).
+  aewc_threat_buffer_min_distance: 25
+  tanker_threat_buffer_min_distance: 20
+  automate_runway_repair: true
+  automate_front_line_reinforcements: true
+  automate_aircraft_reinforcements: false
+  no_enemy_navy: true
+  desired_player_mission_duration: 60
+  external_views_allowed: true
+  max_frontline_width: 30
+  # Everything is staged before an exercise begins.
+  squadron_start_full: true
+
+ #Mods to be used
+  a4_skyhawk: false
+  a6a_intruder: false
+  a7e_corsair2: false
+  f4bc_phantom: false
+  f15d_baz: false
+  f_16_idf: false
+  fa_18efg: false
+  f22_raptor: false
+  f84g_thunderjet: false
+  f100_supersabre: false
+  f104_starfighter: false
+  f105_thunderchief: false
+  uh_60l: false
+  jas39_gripen: false
+  su30_flanker_h: false
+  su57_felon: false
+  frenchpack: false
+  high_digit_sams: false
+  ov10a_bronco: true
+  swedishmilitaryassetspack: false
+  vietnamwarvessels: true
+  russianmilitaryassetspack: false
+  f111c: false
+  oh_6: false
+  oh_6_vietnamassetpack: false
+
+# Difficulty settings
+# AI Difficulty -- the aggressors are hand-picked; the airframes are the handicap.
+  player_skill: "Excellent"
+  enemy_skill: "High"
+  enemy_vehicle_skill: "Average"
+  invulnerable_player_pilots: true
+  manpads: false
+  night_day_missions: NightMissions.OnlyDay
+
+# Mission Restrictions
+  labels: "Dot Only"
+
+# Order of battle. Blue = the 81-2 deployment at Nellis (F-4E wing detachment +
+# support), the Indian Springs (Creech) forward helo field, the Camp Mercury FOB
+# toe-hold, and SAC's off-map Arc Light/tanker cells. Red = the integrated Red
+# Force: aggressor F-5Es and the 4477th's Constant Peg MiGs at Tonopah Test Range,
+# the Groom Lake sanctuary reserve, and forward strips feeding the FEBA. No SEAD
+# squadrons -- the Vietnam doctrine drops SEAD from the tasking whitelist (Iron
+# Hand rides the strike packages).
+squadrons:
+    # Nellis AFB -- the deployment ramp
+    Nellis:
+        - primary: Strike
+          secondary: air-to-ground
+          aircraft:
+            - F-4E-45MC Phantom II
+          size: 12
+        - primary: Escort
+          secondary: air-to-air
+          aircraft:
+            - F-4E-45MC Phantom II
+          size: 10
+        - primary: BAI
+          secondary: air-to-ground
+          aircraft:
+            - A-10A Thunderbolt II
+          size: 8
+        - primary: CAS
+          secondary: air-to-ground
+          aircraft:
+            - OV-10A Bronco
+          size: 4
+        - primary: TARPS
+          # Unarmed photo bird, TARPS only -- no secondary (the old air-to-ground
+          # alias is what put recon birds on Armed Recon/Strike, G19).
+          aircraft:
+            - RF-101B Voodoo
+          size: 2
+        - primary: AEW&C
+          aircraft:
+            - E-3A
+          size: 1
+        - primary: Refueling
+          aircraft:
+            - KC-135 Stratotanker
+          size: 3
+        - primary: Transport
+          secondary: any
+          aircraft:
+            - C-130J-30
+          size: 2
+
+    # Indian Springs AAF (Creech's 1981 name) -- forward helo field on the range boundary
+    Creech:
+        - primary: CAS
+          secondary: air-to-ground
+          aircraft:
+            - AH-1W SuperCobra
+          size: 4
+        - primary: Air Assault
+          secondary: any
+          aircraft:
+            - UH-1H Iroquois
+          size: 4
+        - primary: Transport
+          secondary: any
+          aircraft:
+            - CH-47D
+          size: 2
+
+    # Camp Mercury -- blue's toe-hold inside the range boundary (Super Gaggle destination)
+    Camp Mercury:
+        - primary: Air Assault
+          secondary: any
+          aircraft:
+            - UH-1H Iroquois
+          size: 4
+        - primary: Transport
+          secondary: any
+          aircraft:
+            - UH-1H Iroquois
+          size: 4
+
+    # SAC (off-map): the Arc Light cells + the tanker bridge
+    Strategic Air Command:
+        - primary: Strike
+          aircraft:
+            - B-52H Stratofortress
+          size: 4
+        - primary: Refueling
+          aircraft:
+            - KC-135 Stratotanker
+          size: 2
+
+    # --- Red Force ---
+
+    # Tonopah Test Range -- the aggressor hub (the 4477th's real 1981 field)
+    Tonopah Test Range:
+        - primary: BARCAP
+          aircraft:
+            - F-5E Tiger II (FC)
+          size: 10
+        - primary: BARCAP
+          aircraft:
+            - MiG-21bis Fishbed-N
+          size: 6
+        - primary: CAS
+          secondary: air-to-ground
+          aircraft:
+            - Mi-8MTV2 Hip
+          size: 4
+        - primary: Transport
+          aircraft:
+            - An-26B
+          size: 2
+
+    # Groom Lake -- the Box: the sanctuary reserve your ROE never releases
+    Groom Lake:
+        - primary: BARCAP
+          aircraft:
+            - MiG-21MF Fishbed-J
+          size: 6
+        - primary: BARCAP
+          aircraft:
+            - MiG-17F Fresco-C
+          size: 6
+        - primary: Transport
+          aircraft:
+            - Mi-8MTV2 Hip
+          size: 4
+
+    # Tonopah (civil) -- red rear depot
+    Tonopah:
+        - primary: BARCAP
+          aircraft:
+            - F-5E Tiger II (FC)
+          size: 8
+        - primary: Transport
+          aircraft:
+            - An-26B
+          size: 4
+
+    # Beatty -- western red logistics node (the Tolicha Peak corridor)
+    Beatty:
+        - primary: BAI
+          secondary: air-to-ground
+          aircraft:
+            - MiG-17F Fresco-C
+          size: 6
+        - primary: Transport
+          aircraft:
+            - Mi-8MTV2 Hip
+          size: 4
+
+    # Pahute Mesa Airstrip -- forward red strip feeding the FEBA
+    Pahute Mesa:
+        - primary: CAS
+          secondary: air-to-ground
+          aircraft:
+            - Mi-8MTV2 Hip
+          size: 4
+        - primary: Air Assault
+          secondary: any
+          aircraft:
+            - Mi-8MTV2 Hip
+          size: 4
+
+    # FOB Tolicha -- the red FEBA anchor
+    FOB Tolicha:
+        - primary: Air Assault
+          secondary: any
+          aircraft:
+            - Mi-8MTV2 Hip
+          size: 4
+        - primary: Transport
+          secondary: any
+          aircraft:
+            - Mi-8MTV2 Hip
+          size: 4
+
+# --- Ground supply routes / front graph. A front line forms on every blue<->red
+# connection, so the SINGLE Camp Mercury <-> FOB Tolicha route below is THE front:
+# the simulated FEBA up the Nevada Test Site corridor. Everything else is red<->red
+# (the range logistics web feeding the FEBA -- interdiction targets, never new
+# fronts) or blue<->blue (Nellis to Indian Springs to Camp Mercury). The loader
+# snaps first/last waypoints to the nearest control point.
+supply_routes:
+  # THE FRONT -- Camp Mercury (BLUE FOB) <-> FOB Tolicha (RED FOB) across the NTS.
+  # vietnam_static_front pins the line near its start anchor.
+  - waypoints:
+      - [-352000, -103000]
+      - [-345000, -112000]
+      - [-338000, -122000]
+      - [-331000, -131000]
+      - [-326000, -140000]
+      - [-322000, -148000]
+  # Nellis -> Indian Springs (Creech): US-95 north-west out of Las Vegas
+  - waypoints:
+      - [-398195, -17233]
+      - [-388000, -40000]
+      - [-375000, -58000]
+      - [-360507, -75590]
+  # Indian Springs (Creech) -> Camp Mercury: the NTS gate road
+  - waypoints:
+      - [-360507, -75590]
+      - [-356000, -88000]
+      - [-352000, -103000]
+  # Tonopah (civil) -> Tonopah Test Range: red rear depot to the aggressor hub
+  - waypoints:
+      - [-197282, -201302]
+      - [-210000, -190000]
+      - [-226505, -174698]
+  # Tonopah Test Range -> Pahute Mesa: down the Kawich/Gold Flat corridor
+  - waypoints:
+      - [-226505, -174698]
+      - [-250000, -160000]
+      - [-275000, -145000]
+      - [-303620, -132937]
+  # Pahute Mesa -> FOB Tolicha: the last leg to the FEBA anchor
+  - waypoints:
+      - [-303620, -132937]
+      - [-313000, -141000]
+      - [-322000, -148000]
+  # Beatty -> FOB Tolicha: the western Tolicha Peak corridor
+  - waypoints:
+      - [-330553, -174958]
+      - [-326000, -160000]
+      - [-322000, -148000]
+  # Tonopah Test Range -> Beatty: the US-95 west corridor
+  - waypoints:
+      - [-226505, -174698]
+      - [-260000, -180000]
+      - [-295000, -180000]
+      - [-330553, -174958]
+  # Groom Lake -> Pahute Mesa: the Box feeds the FEBA
+  - waypoints:
+      - [-288604, -86870]
+      - [-295000, -110000]
+      - [-303620, -132937]
+
+# The authored exercise arc (campaign phases P2, same schema as Yankee Station's
+# Rolling Thunder -> Linebacker II arc; design note section 5). The flag escalates
+# week by week; bleeding the TAC assessment (political will) ACCELERATES escalation
+# -- the exercise pushes harder when the force is struggling. The Groom Lake box is
+# present in EVERY phase and never releases.
+phases:
+  - key: week_one
+    name: "Week One: Familiarization"
+    narrative: >-
+      Fly the corridors, learn the threat array. The deep target complexes are off
+      the list and the rear ranges stay cold; work the FEBA and the convoys while
+      the aggressors probe the packages.
+    emphasis: interdiction
+    restricted_zones:
+      - center: Groom Lake
+        radius_nm: 12
+        name: The Box (R-4808N)
+      - center: Tonopah
+        radius_nm: 8
+        name: Off-range restriction (Tonopah rear)
+    locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
+    advance_when:
+      blue_will_below: 75
+  - key: week_two
+    name: "Week Two: Force on Force"
+    narrative: >-
+      The deep target classes release and the Red Force answers -- the scripted
+      ground push rolls against the FEBA. Take the fight into the range complexes;
+      the airfields are still off the list.
+    emphasis: rollback
+    min_turn: 6
+    red_tempo:
+      ground_offensive: 2
+    restricted_zones:
+      - center: Groom Lake
+        radius_nm: 12
+        name: The Box (R-4808N)
+    locked_targets: [airfield]
+    advance_when:
+      blue_will_below: 60
+  - key: final_exam
+    name: "Surge Week: Final Exam"
+    narrative: >-
+      Maximum effort. Everything releases -- Tonopah Test Range and the forward
+      strips are OCA targets. Break the Red Force's capacity to contest before the
+      assessment breaks you. Only the Box still binds; it never releases.
+    emphasis: offensive
+    min_turn: 11
+    restricted_zones:
+      - center: Groom Lake
+        radius_nm: 12
+        name: The Box (R-4808N)

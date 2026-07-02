@@ -1,0 +1,61 @@
+{
+  "country": "USAF Aggressors",
+  "name": "Red Force 1981 (Nellis Aggressors)",
+  "authors": "414th JFG",
+  "description": "<p>The integrated Red Force of Red Flag 81-2: 64th/65th Aggressor Squadron F-5Es flying MiG-21 GCI doctrine, the 4477th TES 'Red Eagles' Constant Peg MiGs out of Tonopah Test Range, the SA-2/SA-3 emulator array and AAA belts of the north ranges, and the simulated enemy army holding the FEBA.</p>",
+  "locales": [
+    "en_US"
+  ],
+  "aircrafts": [
+    "F-5E Tiger II",
+    "F-5E Tiger II (FC)",
+    "MiG-21bis Fishbed-N",
+    "MiG-21MF Fishbed-J",
+    "MiG-17F Fresco-C",
+    "Mi-8MTV2 Hip",
+    "An-26B"
+  ],
+  "awacs": [],
+  "tankers": [],
+  "frontline_units": [
+    "BRDM-2",
+    "PT-76",
+    "T-55A",
+    "ZU-23 on Ural-375",
+    "ZSU-57-2 'Sparka'",
+    "S-60 57mm"
+  ],
+  "artillery_units": [
+    "BM-21 Grad"
+  ],
+  "logistics_units": [
+    "Truck Ural-375",
+    "Truck GAZ-66",
+    "LUV UAZ-469 Jeep"
+  ],
+  "infantry_units": [
+    "Infantry AK-74 Rus",
+    "Infantry RPG"
+  ],
+  "preset_groups": [
+    "SA-2/S-75",
+    "SA-3/S-125",
+    "SA-2/S-75 with ZSU-23/57"
+  ],
+  "air_defense_units": [
+    "EWR P-37 Bar Lock",
+    "AAA KS-19 100mm",
+    "S-60 57mm",
+    "AAA ZU-23 Emplacement",
+    "ZSU-23-4 Shilka",
+    "ZSU-57-2 'Sparka'",
+    "ZU-23 on Ural-375"
+  ],
+  "missiles": [],
+  "naval_units": [],
+  "has_jtac": false,
+  "requirements": {
+    "Vietnam War Vessels (v3.2.0)": "https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/"
+  },
+  "doctrine": "vietnam_air_defense"
+}

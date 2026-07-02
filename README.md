@@ -309,6 +309,16 @@ and selected later upstream fixes.
   Rolling Thunder's restraint finally costs something — plus a **permanent "PRC border" ring at Tbilisi**
   that never releases, even in Linebacker II, exactly like the real war. Existing saves keep the old board;
   the recast needs a **NEW** game.
+- A new **Nevada - Red Flag 81-2** campaign — the ultimate war game, played as the war it rehearses. An
+  F-4E wing detachment deploys to **Nellis, January 1981** (after the Reflected Simulations campaign the
+  squadron flies) against the **integrated Red Force of the real 1981 exercise**: 64th/65th **Aggressor
+  F-5Es** flying MiG-21 GCI hit-and-run, the **4477th "Red Eagles" Constant Peg MiGs out of Tonopah Test
+  Range** (their actual 1981 field), an **SA-2/SA-3 emulator array around Tolicha Peak**, AAA on every
+  corridor, and a simulated enemy army on a FEBA north of Camp Mercury. The whole **Vietnam mechanics
+  stack rides along** — Red Flag *is* the institutionalized Vietnam feedback loop — political will as the
+  TAC assessment, the static front as the exercise FEBA, and a three-phase escalation arc (**Week One →
+  Force on Force → Surge Week**) that releases target classes as you prove the force. The **Groom Lake
+  box never opens** — enter it and the assessment bleeds, exactly like the real range.
 - A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 NATO
   counteroffensive, built for the 414th. The Warsaw Pact opened the war by overrunning the
   Fulda Gap, taking Hamburg, and seizing Copenhagen — but the Soviet thrust has culminated,

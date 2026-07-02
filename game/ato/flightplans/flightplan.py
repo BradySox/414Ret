@@ -19,6 +19,7 @@ from game.typeguard import self_type_guard
 from game.utils import Distance, Speed, meters
 from .planningerror import PlanningError
 from ..flightwaypointtype import FlightWaypointType
+from ..refueltasking import refuel_service_time
 from ..starttype import StartType
 from ..traveltime import GroundSpeed
 
@@ -234,6 +235,16 @@ class FlightPlan(ABC, Generic[LayoutT]):
         # model.
         return timedelta(seconds=math.floor(total.total_seconds()))
 
+    @property
+    def refuel_duration(self) -> timedelta:
+        """Time budgeted at a tanker for the whole flight to top off.
+
+        The same per-receiver service time the package tanker budgets into its own
+        on-station duration, so the receiver's schedule and the tanker's window
+        agree.
+        """
+        return refuel_service_time(self.flight.roster.max_size)
+
     def total_time_between_waypoints(
         self, a: FlightWaypoint, b: FlightWaypoint
     ) -> timedelta:
@@ -242,7 +253,13 @@ class FlightPlan(ABC, Generic[LayoutT]):
         The total time between waypoints differs from the travel time in that it may
         include additional time for actions such as loitering.
         """
-        return self.travel_time_between_waypoints(a, b)
+        total = self.travel_time_between_waypoints(a, b)
+        if a.waypoint_type is FlightWaypointType.REFUEL:
+            # Departing a tanker: the flight first spends its time on the boom, so
+            # everything before the refuel point shifts earlier (takeoff included)
+            # and everything after keeps its time.
+            total += self.refuel_duration
+        return total
 
     def travel_time_between_waypoints(
         self, a: FlightWaypoint, b: FlightWaypoint

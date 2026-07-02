@@ -13,6 +13,7 @@ from .waypointbuilder import WaypointBuilder
 from ..flighttype import FlightType
 from ..flightwaypoint import FlightWaypoint
 from ..flightwaypointtype import FlightWaypointType
+from ..refueltasking import refuel_service_time
 
 
 class PackageRefuelingFlightPlan(RefuelingFlightPlan):
@@ -22,7 +23,7 @@ class PackageRefuelingFlightPlan(RefuelingFlightPlan):
 
     @property
     def patrol_duration(self) -> timedelta:
-        refuel_time_minutes = 5
+        service_time = timedelta(minutes=5)
         tanker = self.flight.unit_type
         for flight in self.package.flights:
             if flight.flight_type is FlightType.REFUELING:
@@ -32,10 +33,13 @@ class PackageRefuelingFlightPlan(RefuelingFlightPlan):
                 # Skip aircraft whose refueling method this tanker can't service
                 # (e.g. a boom tanker and a probe-only receiver).
                 continue
-            flight_size = flight.roster.max_size
-            refuel_time_minutes += 4 * flight_size + 1
+            service_time += refuel_service_time(flight.roster.max_size)
 
-        return timedelta(minutes=refuel_time_minutes)
+        # When the window opened early for a pre-vul receiver, extend the stay by
+        # the same amount so the on-station end still covers the post-vul service
+        # (patrol_end_time = patrol_start_time + patrol_duration).
+        early_open = self._post_vul_on_station_time - self.patrol_start_time
+        return service_time + early_open
 
     def target_area_waypoint(self) -> FlightWaypoint:
         return FlightWaypoint(
@@ -47,7 +51,8 @@ class PackageRefuelingFlightPlan(RefuelingFlightPlan):
         )
 
     @property
-    def patrol_start_time(self) -> datetime:
+    def _post_vul_on_station_time(self) -> datetime:
+        """When the tanker must be on station for the post-vul (egress) receivers."""
         altitude = self.flight.unit_type.patrol_altitude
 
         if altitude is None:
@@ -80,6 +85,35 @@ class PackageRefuelingFlightPlan(RefuelingFlightPlan):
             + delay_split_to_refuel
             - timedelta(minutes=1.5)
         )
+
+    @property
+    def _earliest_pre_vul_receiver_time(self) -> datetime | None:
+        """When the first pre-vul (ingress) receiver reaches its refuel point."""
+        tanker = self.flight.unit_type
+        times: list[datetime] = []
+        for flight in self.package.flights:
+            if flight.flight_type is FlightType.REFUELING:
+                continue
+            if not flight.unit_type.can_refuel_from(tanker):
+                continue
+            refuel_pre = getattr(flight.flight_plan.layout, "refuel_pre", None)
+            if refuel_pre is None:
+                continue
+            arrival = flight.flight_plan.chained_tot_for_waypoint(refuel_pre)
+            if arrival is not None:
+                times.append(arrival)
+        return min(times, default=None)
+
+    @property
+    def patrol_start_time(self) -> datetime:
+        # On station in time for the post-vul receivers, or earlier when a
+        # pre-vul receiver tanks on its way in; patrol_duration stretches by the
+        # early opening so the window still covers the post-vul service.
+        start = self._post_vul_on_station_time
+        earliest_pre_vul = self._earliest_pre_vul_receiver_time
+        if earliest_pre_vul is not None:
+            start = min(start, earliest_pre_vul - timedelta(minutes=1.5))
+        return start
 
 
 class Builder(IBuilder[PackageRefuelingFlightPlan, PatrollingLayout]):

@@ -941,6 +941,41 @@ permissive/no-matching-tanker fallbacks). **In-game pass ☑ VERIFIED 2026-06-26
 + live-save confirmed (matching, per-method fragging, demand placement); the in-sim residual
 (receivers physically plugging in) was not eyeballed.
 
+### Refuel stops budgeted into flight-plan timing (2026-07-01)
+
+**Symptom (player report, screenshot of a DEAD flight's waypoint list).** A flight with a
+pre-vul tanker stop had under three minutes between its `REFUEL` waypoint and the join — the
+schedule budgeted **zero** time on the boom. The tanker's own plan already budgeted service time
+per receiver (`4 min × flight size + 1`), but the receiver's timeline treated `REFUEL` as a plain
+nav point, so a tanking flight was always late to the join/TOT. Worse, the package tanker's
+on-station window (`patrol_start_time`) was anchored **post-vul only** (TOT + egress legs), so a
+pre-vul receiver reached the track long before the tanker existed there.
+
+**Fix — both sides of the rendezvous budget the same stop** (shared
+`refuel_service_time(flight_size)` in `game/ato/refueltasking.py`):
+
+- **Receiver dwell** — `FlightPlan.total_time_between_waypoints` adds `refuel_duration`
+  (= the tanker's per-receiver budget) to any edge leaving a `REFUEL` waypoint. Because takeoff
+  time and the chained waypoint ETAs sum this method per leg, everything before the tanker
+  (takeoff included) shifts earlier and everything after keeps its time.
+- **Hold push through the tanker** — `FormationFlightPlan.push_time` now follows the actual
+  route from the hold to the join (nav legs + the pre-vul stop) instead of the straight
+  hold→join line, so the flight departs the hold early enough to tank and still make the join.
+- **Sim sync** — the fast-forward sim (`flightstate/inflight.py`) spends the planned stop on the
+  `REFUEL` leg too, so simulated positions don't run minutes ahead of the DCS-written ETAs.
+- **Tanker window opens pre-vul** — `PackageRefuelingFlightPlan.patrol_start_time` is
+  `min(post-vul anchor, earliest pre-vul receiver arrival − 1.5 min)` (receiver arrival via its
+  `chained_tot_for_waypoint(refuel_pre)`), and `patrol_duration` stretches by the early opening
+  so `patrol_end_time` still covers the post-vul service.
+
+Also fixed in passing: the stale `FormationAttackLayout.refuel_pre` comment ("at most one is
+set" — `BOTH` tasking sets pre- *and* post-vul points).
+
+Tests: `tests/ato/flightplans/test_refuel_timing.py` (dwell on the refuel edge, per-size service
+time, push time with/without a pre-vul stop, tanker window post-vul-only vs early-open). Needs an
+in-game sanity pass only in the sense that AI tanking pace varies; the schedule now budgets the
+same time the tanker always reserved.
+
 ### CAS decoupled from the ground-stance decision (2026-06-28)
 
 **Symptom (headless adjudication of a Caucasus Vietnam save).** A side **winning** the ground war

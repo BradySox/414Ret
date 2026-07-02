@@ -19,6 +19,7 @@ must share the same unit (pounds, matching ``FuelConsumption``).
 
 from __future__ import annotations
 
+from datetime import timedelta
 from enum import Enum, unique
 from typing import TYPE_CHECKING, Sequence
 
@@ -32,6 +33,16 @@ if TYPE_CHECKING:
 
 #: One nautical mile in meters, for converting leg lengths to the per-nm fuel rates.
 _METERS_PER_NAUTICAL_MILE = 1852.0
+
+
+def refuel_service_time(flight_size: int) -> timedelta:
+    """Time budgeted for one flight to cycle a tanker (every jet topping off).
+
+    Shared by both sides of the rendezvous: the receiver's flight plan spends this
+    at its refuel waypoint, and the package tanker budgets the same amount of
+    on-station time per receiving flight, so neither out-schedules the other.
+    """
+    return timedelta(minutes=4 * flight_size + 1)
 
 
 @unique

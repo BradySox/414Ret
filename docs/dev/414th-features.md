@@ -2485,7 +2485,7 @@ without the `flak` marker.
 | Setting / options | `game/settings/settings.py` (`vietnam_flak_gauntlet`); plugin `specificOptions` (range/ceiling/miss/power) |
 | Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (marker on/off, independence from Arc Light) |
 
-### Gotchas / deferred — in-game pass ◐ PARTIAL (checklist L2): too accurate on the 2026-06-28 pass; softened twice, re-fly owed
+### Gotchas / deferred — in-game pass ☑ VERIFIED 2026-07-01 (checklist L2): 2nd softening flown, user pass "light but fairer"
 
 - **Lethality softened twice; re-fly owed.** The 2026-06-28 audience pass ("too accurate but working very
   well") read as a hard-kill threat rather than the intended mostly-visual pressure. The lever is the close
@@ -2496,9 +2496,10 @@ without the `flak` marker.
     held a steady line ~10 s. Now: base misses widened `MIN_MISS` 110→**150** / `MAX_MISS` 250→**320** m, and
     the tracking round is **occasional** — gated behind a sustained steady run (`factor > 0.85`) **and** a
     per-tick probability (`TRACKING_CHANCE = 0.3`) — and softened (`miss ×0.55→×0.75`, `blast ×2.0→×1.5`).
-  Both passes changed `vietnamops-config.lua` **and** the matched `plugin.json` defaults. Still `◐ PARTIAL`
-  until a re-fly confirms the feel (pressure to manoeuvre, no hard-kill). `flakBurstPower` / miss distances /
-  range remain the campaign-side knobs.
+  Both passes changed `vietnamops-config.lua` **and** the matched `plugin.json` defaults. **The 2026-07-01
+  re-fly (Yankee Station, session `intelligent-dubinsky`) confirmed the feel** — user pass: bursts "light but
+  fairer", no hard-kill (the mission's player loss was a MiG gun kill, not flak) → `☑ VERIFIED`. If the
+  gauntlet now reads *too* light, `flakBurstPower` / miss distances / range remain the campaign-side knobs.
 - **Imperial-unit options (2026-07-01).** All flak options are now authored in imperial units and the
   mnemonics were renamed (`flakRangeNm` 2.5 NM / `flakCeilingFt` 15,000 ft / `flakMinMissFt` 500 ft /
   `flakMaxMissFt` 1,000 ft / `flakBurstPower` 6); the Lua converts to metric at read time. The rename also

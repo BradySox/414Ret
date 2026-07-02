@@ -69,10 +69,14 @@ end
 
 local function lotatcExport_get_name(unit, isFriend)
     local classification = "SAM"
+    -- a group/unit name can be nil for generator-filled AA (seen live 2026-07-01);
+    -- one unnamed entry must not kill the whole export
+    local groupName = unit.dcsGroupName or ""
+    local unitName = unit.name or "unknown"
 
-    if string.find(unit.dcsGroupName, "|EWR|", 1, true) then
+    if string.find(groupName, "|EWR|", 1, true) then
         classification = "EWR"
-    elseif string.find(unit.dcsGroupName, "|AA", 1, true) then
+    elseif string.find(groupName, "|AA", 1, true) then
         classification = "AAA"
     end
 
@@ -80,9 +84,9 @@ local function lotatcExport_get_name(unit, isFriend)
 
     local name = nil
     if not natoName then
-        name = string.format("%s|%s", unit.name, classification)
+        name = string.format("%s|%s", unitName, classification)
     else
-        name = string.format("%s|%s|%s", unit.name, classification, natoName)
+        name = string.format("%s|%s|%s", unitName, classification, natoName)
     end
 
     return name, classification

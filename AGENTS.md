@@ -222,9 +222,13 @@ file. This guide is the map; those are the territory.
     (`fulfill_mission` filter), and `Doctrine.strike_escort_reserve=4` +
     `AirspaceGeometry.trim_rounds_for_escort_reserve` trims BARCAP volume (coldest CPs first, down to
     abandoning low-threat coverage but never the hottest location) so the fighter force escorts the
-    *shooters* — save-replan verified: support escorts 8→0 jets, BARCAP 10→2, fighters now on CAS TARCAP +
-    BAI escorts; deep strikes still queue behind those under threat (a fair follow-up: strike-first escort
-    priority). Doctrines are pickled by value — a NEW game carries the new numbers. The Ops suite's Arc
+    *shooters* — save-replan verified: support escorts 8→0 jets, BARCAP 10→2. The reserve is also **fenced**
+    (`PackageFulfiller.escort_reserve_withholds`, the strike-first escort priority): a non-STRIKE package
+    (BAI, OCA, even CAS in a true famine) is refused its A2A escort whenever planning it would dip the live
+    `AirWing.untasked_fighters()` pool below the reserve — only a STRIKE-led package may spend those last
+    airframes, so the freed fighters actually reach the bombers instead of the first BAI section planned. A
+    withheld escort is not a shortage (the package flies unescorted, no procurement order). Doctrines are
+    pickled by value — a NEW game carries the new numbers. The Ops suite's Arc
     Light/flak/NGFS are this design's P4 flavor, already built)
 - [README.upstream.md](README.upstream.md) — unmodified upstream project README (setup,
   dependencies, wiki links).

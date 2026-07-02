@@ -3113,7 +3113,7 @@ with a log — so the 4 Vietnam campaigns (no block) are byte-identical to the p
 (`test_default_profile_is_the_vietnam_framing`). A new **warship feed** closes the naval gap
 (Falklands prerequisite): `blue_ship_lost` 4.0 / `red_ship_lost` 0.5, counted from the debriefing's
 ground-object losses by `TheaterUnit.is_ship`, with RED's ships subtracted from the generic
-ground-attrition pool (never double-counted). Label surfaces that follow the profile: the per-turn
+ground-attrition pool (never double-counted). COIN C2 added `red_cache_lost` (default 0.0 — inert outside COIN): each RED ammo-category TGO destroyed this turn (fully dead, per-TGO dedup, post-loss-commit) drains resolve at the campaign's price, on top of generic attrition. Label surfaces that follow the profile: the per-turn
 message + exhaustion banners, the client ribbon meter tooltips (`CampaignStatusJs.blue/red_will_label`,
 Vietnam-string fallbacks in `CampaignStatusBar.tsx`), the Qt intel-box tooltip, and the Stats
 will-chart legend. Tests: the "will profiles" section of `tests/fourteenth/test_political_will.py`

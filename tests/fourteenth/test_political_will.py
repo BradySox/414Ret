@@ -35,6 +35,7 @@ from game.fourteenth.political_will import (
     RED_CONVOY_UNIT_LOST,
     RED_GROUND_UNIT_LOST,
     RED_PASSIVE_REGEN,
+    RED_CACHE_LOST,
     RED_SHIP_LOST,
     WILL_MAX,
     DEFAULT_WILL_PROFILE,
@@ -92,6 +93,7 @@ def _debrief(
     rescues: list[str] | None = None,
     blue_ships: int = 0,
     red_ships: int = 0,
+    red_tgo_losses: list[Any] | None = None,
 ) -> Any:
     from game.theater import Player
 
@@ -112,12 +114,13 @@ def _debrief(
             combat_sar_captures=captures or [], combat_sar_rescues=rescues or []
         ),
     )
-    if blue_ships or red_ships:
+    if blue_ships or red_ships or red_tgo_losses:
         # Ship losses ride the ground-object loss lists (TheaterUnit.is_ship);
         # most tests omit ground_losses entirely, matching the getattr guard.
         debrief.ground_losses = SimpleNamespace(
             player_ground_objects=[_tgo_loss(is_ship=True)] * blue_ships,
-            enemy_ground_objects=[_tgo_loss(is_ship=True)] * red_ships,
+            enemy_ground_objects=[_tgo_loss(is_ship=True)] * red_ships
+            + list(red_tgo_losses or []),
         )
     return debrief
 
@@ -396,6 +399,7 @@ def test_default_profile_is_the_vietnam_framing() -> None:
     assert weights.red_base_lost == RED_BASE_LOST
     assert weights.red_passive_regen == RED_PASSIVE_REGEN
     assert weights.red_ship_lost == RED_SHIP_LOST
+    assert weights.red_cache_lost == RED_CACHE_LOST == 0.0  # inert outside COIN
 
 
 def test_parse_none_and_empty_keep_the_defaults() -> None:
@@ -537,3 +541,61 @@ def test_authored_profile_drives_weights_and_banners() -> None:
         assert "Washington orders withdrawal" not in game.messages
     finally:
         del _PROFILE_CACHE["Test Falklands Live"]
+
+
+# ---- COIN C2: the destroyed-cache feed ---------------------------------------------
+
+
+def _cache_tgo(dead: bool = True) -> Any:
+    """A red ammo-cache TGO (category "ammo"); dead means every unit destroyed."""
+    return SimpleNamespace(category="ammo", units=[SimpleNamespace(alive=not dead)])
+
+
+def _tgo_unit_loss(tgo: Any) -> Any:
+    """One killed unit of *tgo* as a ground-object loss entry (never a ship)."""
+    return SimpleNamespace(
+        theater_unit=SimpleNamespace(is_ship=False, ground_object=tgo)
+    )
+
+
+def test_cache_feed_is_inert_by_default() -> None:
+    # The Vietnam defaults price red_cache_lost at 0.0: even a destroyed cache
+    # produces no move, so pre-COIN campaigns are untouched.
+    game = _game()
+    update_political_will(
+        game, _debrief(red_tgo_losses=[_tgo_unit_loss(_cache_tgo(dead=True))])
+    )
+    labels = [label for label, _value in game.will_ledger[-1].red_moves]
+    assert not any("cache" in label for label in labels)
+
+
+def test_priced_cache_feed_counts_destroyed_caches_once() -> None:
+    profile = WillProfile(weights=WillWeights(red_cache_lost=5.0))
+    _PROFILE_CACHE["Test COIN"] = profile
+    try:
+        game = _game()
+        game.campaign_name = "Test COIN"
+        destroyed = _cache_tgo(dead=True)
+        also_destroyed = _cache_tgo(dead=True)
+        damaged = _cache_tgo(dead=False)  # a unit died but the cache still stands
+        not_a_cache = SimpleNamespace(
+            category="fuel", units=[SimpleNamespace(alive=False)]
+        )
+        update_political_will(
+            game,
+            _debrief(
+                red_tgo_losses=[
+                    _tgo_unit_loss(destroyed),
+                    _tgo_unit_loss(destroyed),  # second unit of the SAME cache
+                    _tgo_unit_loss(also_destroyed),
+                    _tgo_unit_loss(damaged),
+                    _tgo_unit_loss(not_a_cache),
+                ]
+            ),
+        )
+        red = dict(game.will_ledger[-1].red_moves)
+        # Two distinct destroyed caches: deduped per TGO; the damaged cache and
+        # the non-ammo TGO never count.
+        assert red["ammo caches x2 destroyed"] == -2 * 5.0
+    finally:
+        del _PROFILE_CACHE["Test COIN"]

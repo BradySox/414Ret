@@ -75,6 +75,14 @@ RED_BASE_LOST = 3.0
 RED_PASSIVE_REGEN = 0.75
 #: Ships leave RED's generic ground-attrition pool and drain at their own weight.
 RED_SHIP_LOST = 0.5
+#: COIN C2: each of RED's ammo caches *destroyed* this turn (a ``category ==
+#: "ammo"`` TGO whose last unit died -- the same objects the coin module throttles
+#: regeneration on). Inert by default (0.0) so Vietnam and every non-COIN campaign
+#: are untouched; the COIN campaign's ``will:`` block prices it (caches are the
+#: insurgency's real currency). The cache's own building units still count in the
+#: generic ground-attrition feed -- this weight is the *strategic* loss on top,
+#: not a reclassification (unlike ships, which move pools).
+RED_CACHE_LOST = 0.0
 
 WILL_MAX = 100.0
 WILL_MIN = 0.0
@@ -140,6 +148,7 @@ class WillWeights:
     red_base_lost: float = RED_BASE_LOST
     red_passive_regen: float = RED_PASSIVE_REGEN
     red_ship_lost: float = RED_SHIP_LOST
+    red_cache_lost: float = RED_CACHE_LOST
 
 
 @dataclass(frozen=True)
@@ -403,6 +412,30 @@ def _ship_losses(debriefing: "Debriefing", player: "PlayerT") -> int:
     )
 
 
+def _red_caches_destroyed(debriefing: "Debriefing") -> int:
+    """RED ammo caches *destroyed* this turn (COIN C2).
+
+    A cache is a ``category == "ammo"`` TGO -- the object the coin module throttles
+    regeneration on. Counted as destroyed when it appears in the turn's RED
+    ground-object losses AND no unit of it remains alive (this runs after the loss
+    commit, so ``alive`` reflects post-strike truth); a damaged-but-standing cache
+    is not a headline. Distinct TGOs, so a two-building cache never counts twice.
+    getattr-guarded like the other feeds.
+    """
+    ground_losses = getattr(debriefing, "ground_losses", None)
+    if ground_losses is None:
+        return 0
+    destroyed_ids = set()
+    for loss in getattr(ground_losses, "enemy_ground_objects", []):
+        tgo = getattr(getattr(loss, "theater_unit", None), "ground_object", None)
+        if tgo is None or getattr(tgo, "category", None) != "ammo":
+            continue
+        if any(unit.alive for unit in tgo.units):
+            continue
+        destroyed_ids.add(id(tgo))
+    return len(destroyed_ids)
+
+
 def _blue_moves(
     game: "Game", debriefing: "Debriefing", weights: WillWeights
 ) -> list[tuple[str, float]]:
@@ -524,6 +557,16 @@ def _red_moves(
         )
     if ships:
         moves.append((f"warships x{ships} sunk", -ships * weights.red_ship_lost))
+    # COIN C2: destroyed ammo caches are the insurgency's strategic loss, on top of
+    # the generic attrition their building units already count as. Inert unless the
+    # campaign's will profile prices red_cache_lost (default 0.0), so the count is
+    # only computed when it can matter.
+    if weights.red_cache_lost:
+        caches = _red_caches_destroyed(debriefing)
+        if caches:
+            moves.append(
+                (f"ammo caches x{caches} destroyed", -caches * weights.red_cache_lost)
+            )
     if red_losses.aircraft:
         moves.append(
             (

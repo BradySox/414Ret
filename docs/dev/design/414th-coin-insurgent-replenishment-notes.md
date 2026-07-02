@@ -131,11 +131,15 @@ inverts the Vietnam weights — the insurgency's whole theory of victory is that
 Labels: BLUE ≈ "the Coalition's mandate", RED ≈ "the insurgency's momentum";
 exhaustion = "The Coalition withdraws" / "The insurgency collapses".
 
-**One small engine follow-on**: a `red_cache_lost` weight in `WillWeights`
-(default **0.0** — inert everywhere else), fed by the coin module identifying its
-cache TGOs in the turn's ground-object losses. Destroying caches is then the double
-lever: throttles regeneration *and* drains momentum. (Without it, caches ride the
-generic `ground_objects` count — acceptable v1 fallback, weaker signal.)
+**The engine follow-on LANDED as C2 (2026-07-02)**: `WillWeights.red_cache_lost`
+(default **0.0** — inert everywhere else), fed by `_red_caches_destroyed` in
+`political_will.py`: a RED `category == "ammo"` TGO appearing in the turn's
+ground-object losses with **no unit left alive** counts once (distinct TGOs; a
+damaged-but-standing cache is not a headline; runs post-loss-commit so `alive` is
+post-strike truth). The cache's building units still count in generic ground
+attrition — the weight is the *strategic* loss on top, not a pool move like ships.
+Destroying caches is the double lever: throttles regeneration *and* drains
+momentum.
 
 `blue_passive_regen: 0` in the profile already gives the "duration drain lite";
 a true negative per-turn drain (`blue_turn_drain`) stays deferred until pacing play
@@ -166,8 +170,10 @@ shows it's needed (per the generalization note §6).
   bound** (relocate, never grow), gated `coin_reinfiltration` default OFF. Build slot:
   after C3 (needs real campaign geometry to tune against); 4 open squadron calls in
   its §8.
-- **C2 — will coupling**: `red_cache_lost` weight (default 0.0, default-equivalence
-  preserved), the cache-loss feed, tests.
+- **C2 — will coupling** ✅ **LANDED 2026-07-02**: `red_cache_lost` weight (default
+  0.0, default-equivalence preserved and test-locked), the destroyed-cache feed
+  (`_red_caches_destroyed`, per-TGO dedup + fully-dead gate), tests in
+  `test_political_will.py` (inert-by-default + priced counting).
 - **C3 — the campaign**: fork Shattered Dagger (credit Starfire, the Khe Sanh/
   Yankee Station precedent) — restore a real (small) insurgent income, preseed
   `coin_insurgency` + harassment (§36) + convoy interdiction (§35) + the `will:`

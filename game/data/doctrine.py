@@ -148,6 +148,24 @@ class Doctrine:
     #: Simple ``= False`` default (save-safe class attr).
     gci_ambush: bool = False
 
+    #: Fighter airframes held back from BARCAP volume so strike escorts can fill --
+    #: the "reserve a fighter ahead of BARCAP" lever that always_escort_strikes was
+    #: missing. When the fighter pool is short, the least-threatened bases give up
+    #: BARCAP rounds (never below one round each) until roughly this many airframes
+    #: stay untasked for the escort requests that come later in the planning order.
+    #: Playtest (Khe Sanh, Linebacker tempo): with 0 reserve every escort pruned and
+    #: B-52s flew naked. 0 = stock behaviour. Simple ``= 0`` default (save-safe).
+    strike_escort_reserve: int = 0
+
+    #: When False, AEW&C and tanker packages fly without a dedicated fighter escort.
+    #: The support orbits hold station behind friendly air (and against W5's leashed
+    #: GCI-ambush MiGs they are unreachable anyway), yet the HTN plans them FIRST --
+    #: on a fighter-poor era their escorts consume the whole fighter force before a
+    #: single strike proposes its own (the Khe Sanh playtest: 3 AWACS + 1 tanker
+    #: escort = 8 of 10 fighters). Vietnam sends the fighters with the strikes
+    #: instead. True = stock behaviour (save-safe class attr).
+    escort_support_aircraft: bool = True
+
     def display_name_for(self, flight_type: FlightType) -> str:
         """The doctrine's display label for a tasking (the rename layer)."""
         return self.task_display_names.get(flight_type, flight_type.value)
@@ -198,6 +216,8 @@ class Doctrine:
             strike_flight_count=self.strike_flight_count,
             always_escort_strikes=self.always_escort_strikes,
             gci_ambush=self.gci_ambush,
+            strike_escort_reserve=self.strike_escort_reserve,
+            escort_support_aircraft=self.escort_support_aircraft,
         )
 
 
@@ -420,6 +440,12 @@ VIETNAM_DOCTRINE = replace(
     strike_flight_count=1,
     always_escort_strikes=True,
     gci_ambush=True,
+    # Hold two escort sections' worth of fighters out of BARCAP so the forced
+    # strike escorts can actually fill (the Linebacker naked-B-52 playtest).
+    strike_escort_reserve=4,
+    # ...and stop the support orbits from hoarding them first: AWACS/tanker
+    # escorts consumed 8 of 10 fighters before any strike could propose one.
+    escort_support_aircraft=False,
     cap_engagement_range=nautical_miles(22),
     escort_engagement_range=nautical_miles(10),
     rtb_speed=knots(400),

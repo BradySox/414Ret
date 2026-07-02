@@ -301,3 +301,50 @@ def test_normalized_air_threat_zero_when_theater_is_quiet(
     b = _NormCP("b", [])
     finder = _norm_finder([a, b], monkeypatch)
     assert finder.normalized_air_threat(a) == 0.0  # type: ignore[arg-type]
+
+
+# --- the strike-escort reserve trim (Doctrine.strike_escort_reserve) -----------------
+
+
+def test_escort_reserve_trims_least_threatened_first() -> None:
+    from game.ato.flightplans.airspacegeometry import AirspaceGeometry
+
+    rounds = {"hot": 4, "warm": 3, "cold": 3}
+    threat = {"hot": 1.0, "warm": 0.5, "cold": 0.1}
+    # Demand = 2*10 = 20 jets; pool 20 < 20 + 4 -> shortage; free ceil(4/2)=2 rounds.
+    trimmed = AirspaceGeometry.trim_rounds_for_escort_reserve(rounds, threat, 20, 4)
+    assert trimmed == {"hot": 4, "warm": 3, "cold": 1}
+    # The hottest CP never gave up a round; only the coldest paid.
+
+
+def test_escort_reserve_abandons_cold_locations_but_never_the_hottest() -> None:
+    from game.ato.flightplans.airspacegeometry import AirspaceGeometry
+
+    rounds = {"hot": 1, "cold": 1, "colder": 1}
+    trimmed = AirspaceGeometry.trim_rounds_for_escort_reserve(
+        rounds, {"hot": 1.0, "cold": 0.4, "colder": 0.1}, 0, 8
+    )
+    # Even the one-round floors are unaffordable: low-threat coverage is
+    # abandoned entirely (MiGCAP where it matters), the hottest keeps its round.
+    assert trimmed == {"hot": 1, "cold": 0, "colder": 0}
+
+
+def test_escort_reserve_noop_when_fighters_are_plentiful() -> None:
+    from game.ato.flightplans.airspacegeometry import AirspaceGeometry
+
+    rounds = {"a": 3, "b": 3}
+    # Demand 12 + reserve 4 = 16 <= 40: fighter-rich, keep full volume.
+    trimmed = AirspaceGeometry.trim_rounds_for_escort_reserve(
+        rounds, {"a": 1.0, "b": 0.5}, 40, 4
+    )
+    assert trimmed == rounds
+
+
+def test_escort_reserve_zero_is_stock() -> None:
+    from game.ato.flightplans.airspacegeometry import AirspaceGeometry
+
+    rounds = {"a": 3}
+    assert (
+        AirspaceGeometry.trim_rounds_for_escort_reserve(rounds, {"a": 1.0}, 0, 0)
+        == rounds
+    )

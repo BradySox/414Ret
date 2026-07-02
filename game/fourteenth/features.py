@@ -218,6 +218,14 @@ FEATURES: tuple[Feature, ...] = (
         "Local DCS chart base layers (map tiles)",
         42,
     ),
+    Feature(
+        # No plugin, no Settings toggle: on-disk content is the switch (a JSON
+        # store under Saved Games/Retribution, written from the payload tab by
+        # game/fourteenth/flight_defaults.py, applied in Flight.__init__).
+        "flight_defaults",
+        "Per-aircraft flight defaults (save fuel + properties)",
+        43,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

@@ -845,6 +845,23 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/persistency.py` `map_tiles_dir`, `game/server/maptiles/`,
     `client/src/components/maplayers/MapLayersControl.tsx`; features doc §42, checklist O1 — needs an
     in-app pass + the CI client rebuild.)
+43. **Per-aircraft flight defaults (save fuel + properties)** — the Edit-flight → **Payload** tab's aircraft
+    knobs (Internal Fuel, Aircraft Condition, Wear & Tear, Spawn Type, and any other property-editor value)
+    are re-seeded from the pydcs engine defaults on every new flight, so a player who wants their F/A-18C to
+    always spawn hot with 80% fuel had to redo it each package. This adds a **"Save as default"** (+ **"Clear
+    default"**) button to that tab that remembers the current fuel + properties **per airframe**, so every new
+    flight of that type opens pre-configured — the same persistence the loadout dropdown already has (its
+    "Save Payload" button) and the player laser code already has (a campaign-wide setting; this covers the
+    *rest* of the box). A JSON store keyed by DCS aircraft id
+    (`game/persistency.py` `flight_defaults_path()` → `Saved Games/Retribution/flight_defaults.json`), written
+    from the tab and applied in `Flight.__init__` after `initialize_fuel()` — **only for a genuinely fresh
+    flight (`roster is None`) on the BLUE coalition** (`coalition.player.is_blue`, never enemy AI, never a
+    clone that already carries member edits), fuel clamped to the airframe tank, every step a best-effort
+    silent no-op (missing/corrupt store, no entry, headless test). No Settings toggle — on-disk content is the
+    switch, like the payloads files; it applies to BLUE AI flights of the type too (intended — "default for
+    this aircraft"). (`game/fourteenth/flight_defaults.py`, `game/persistency.py`, `game/ato/flight.py`,
+    `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py`; features doc §43, checklist Q1 — needs an
+    in-app pass.)
 
 ---
 

@@ -137,6 +137,17 @@ class Flight(
             self.tcn_name = callsign_tcn
 
         self.initialize_fuel()
+        # 414th (§43): seed a genuinely fresh player-side flight's fuel + cockpit
+        # properties (condition/wear/spawn/...) from the per-aircraft "save as
+        # default" store. Only when roster is None -- a brand-new flight, never a
+        # clone that already carries member edits -- and BLUE only, so it never
+        # touches enemy AI. Fully defensive: a no-op when nothing is saved or
+        # persistency isn't set up (headless tests). Runs after initialize_fuel so
+        # it wins over the engine's full-tank default.
+        if roster is None:
+            from game.fourteenth.flight_defaults import apply_flight_defaults
+
+            apply_flight_defaults(self)
         self.use_same_loadout_for_all_members = True
         self.use_same_livery_for_all_members = True
         # 414th: a demand-based service point set by the post-planning theater-tanker

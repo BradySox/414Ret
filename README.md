@@ -148,6 +148,11 @@ and selected later upstream fixes.
   available aircraft, and target distance without making planners hunt across windows.
 - The map provides clearer SAM, route, emitter, and IADS interaction; waypoint altitude
   editing supports practical bulk changes.
+- The **Payload** tab can **save your aircraft settings as a per-airframe default** — set the internal
+  fuel, aircraft condition, wear & tear, and spawn type the way you like, click *Save as default*, and
+  every new flight of that airframe opens pre-configured instead of resetting to stock each package
+  (*Clear default* forgets it). The loadout has always had its own *Save Payload* and the player laser
+  code has a campaign setting; this covers the rest of that box. Applies to your side only.
 - Debriefing begins with mission impact — territorial changes, runway damage, and losses —
   before the full event detail.
 - The player kneeboard is a **compact 3-4 page deck** (on by default), led by a **one-page Brief Sheet** —

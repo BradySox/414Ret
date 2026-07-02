@@ -3239,3 +3239,60 @@ local-only design: community charts are redistributed at their authors' pleasure
 - The base-map button appears for every installed set regardless of the loaded campaign's theater — a
   Caucasus chart on a Syria campaign just renders off-map (its `bounds` stop tile requests); switch back
   to a stock base map. Theater-aware filtering is deferred until a second theater chart exists.
+
+## §43 — Per-aircraft flight defaults (save fuel + properties)
+
+The Edit-flight → **Payload** tab's aircraft knobs — **Internal Fuel Quantity**, **Aircraft Condition**,
+**Aircraft Wear and Tear**, **Aircraft Type On Spawn**, and any other property-editor value (HMD, ripple,
+etc.) — are re-seeded from the pydcs engine defaults every time a flight is created. A player who always
+wants (say) their F/A-18C to spawn hot with 80% fuel had to redo those on every package. This feature gives
+that box the same persistence the loadout dropdown already has (its **Save Payload** button) and the player
+laser code already has (a campaign-wide setting): a **"Save as default"** button that remembers the current
+fuel + properties **per airframe**, so every new flight of that type starts pre-configured.
+
+**Opt-in and inert until used.** No Settings toggle — on-disk content is the switch, exactly like the DCS
+`UnitPayloads` files. Until a user saves a default for an airframe, nothing changes.
+
+### Wiring
+
+- **Store** — `game/fourteenth/flight_defaults.py`: a JSON file
+  (`game/persistency.py` `flight_defaults_path()` → `<Saved Games>/Retribution/flight_defaults.json`),
+  keyed by DCS aircraft id → `{"fuel": <kg>, "properties": {<prop id>: <scalar>}}`. **Global** (survives
+  across campaigns), **never part of a save game** — the same shape and lifetime as the `UnitPayloads`
+  files. Loaded once and cached in a module global (`invalidate_cache()` for tests); the writers keep the
+  cache and file in lockstep. `properties` holds only what the user actually set in the property editor (an
+  untouched knob isn't stored and falls back to the engine default).
+- **Apply** — `apply_flight_defaults(flight)` is called from `Flight.__init__` immediately after
+  `initialize_fuel()`, but **only when `roster is None`** (a genuinely fresh flight, never a clone that
+  already carries member edits) and **only for the BLUE coalition** (`coalition.player.is_blue` — a `Player`
+  enum, never bare truthiness), so enemy AI is never touched. It clamps the saved fuel to the airframe's
+  tank and `update()`s each member's `properties`. Everything is best-effort: a missing store (persistency
+  not set up in a headless test), a malformed file, or an airframe with no entry is a silent no-op — it can
+  never break flight generation.
+- **UI** — `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py`: a row under the fuel slider with
+  **Save as default** (captures the selected member's `properties` + `flight.fuel`) and **Clear default**
+  (enabled only when a default exists, via `has_defaults_for`). Both confirm with a `QMessageBox`.
+- **Display point** — the property widgets already read `member.properties.get(id, default)` (see
+  `propertyspinbox.py` / `propertycombobox.py`), so a seeded value shows immediately when the tab opens for
+  a new flight — the whole point of the feature.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Store | `game/fourteenth/flight_defaults.py` |
+| Path | `game/persistency.py` (`flight_defaults_path`) |
+| Apply hook | `game/ato/flight.py` (`Flight.__init__`, after `initialize_fuel`) |
+| UI | `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py` |
+| Tests | `tests/fourteenth/test_flight_defaults.py` (round-trip + reload, BLUE-only apply, red/no-entry no-ops, fuel clamp, clear, missing-persistency silence) |
+
+### Gotchas / deferred
+
+- **Applies to BLUE AI flights too, including fuel.** "Default for this aircraft" means every fresh BLUE
+  flight of the type, not only the ones you fly — so a saved sub-full fuel default reduces the starting fuel
+  of BLUE AI flights of that airframe as well (same as dragging the slider would). This is intended; it
+  mirrors the manual slider and only ever affects your own side. Red is never touched.
+- **Captures what's currently in the property editor**, i.e. the selected flight member. With "use same
+  loadout for all members" on (the norm), that's uniform; per-member property divergence isn't saved.
+- **Needs an in-app pass (checklist Q1):** the button + the "new flight opens pre-configured" behaviour is
+  Qt UI that CI can't exercise. The store/apply logic itself is unit-tested.

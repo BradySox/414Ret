@@ -141,6 +141,10 @@ class Game:
         # turn saying WHY the will moved (per-feed components), appended by
         # update_political_will and capped there. Empty outside Vietnam campaigns.
         self.will_ledger: list["WillLedgerEntry"] = []
+        # COIN C1 per-CP regen anchors (garrison cap / cache total / fractional
+        # carry), keyed by str(cp.id). Plain primitives so saves stay simple;
+        # populated lazily by game.fourteenth.coin when coin_insurgency is on.
+        self.coin_state: dict[str, dict[str, Any]] = {}
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -219,6 +223,7 @@ class Game:
         state.setdefault("phase_baseline", None)
         state.setdefault("red_tempo_regen_turn", None)
         state.setdefault("will_ledger", [])
+        state.setdefault("coin_state", {})
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.
@@ -382,6 +387,15 @@ class Game:
         from game.fourteenth.vietnam_convoy import ensure_enemy_trail_convoy
 
         ensure_enemy_trail_convoy(self)
+
+        # COIN C1 (design note 414th-coin-insurgent-replenishment-notes.md §3):
+        # insurgent-held strongholds regenerate a free, cache-throttled trickle of
+        # irregular units toward their anchored garrison cap. No-op unless
+        # coin_insurgency is on. Real units via Base.commission_units -- losses
+        # track natively; never a phantom spawn.
+        from game.fourteenth.coin import regenerate_insurgent_cells
+
+        regenerate_insurgent_cells(self)
 
         # Vietnam Ops Super Gaggle (§37): (re)plan the turn's resupply run from real BLUE
         # squadrons (drawing the helos + suppressors from actual airframes, whose losses are

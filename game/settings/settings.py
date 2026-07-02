@@ -323,6 +323,12 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                "Insurgency",
+                [
+                    "coin_insurgency",
+                ],
+            ),
+            (
                 "HQ automation",
                 [
                     "automate_runway_repair",
@@ -1221,6 +1227,21 @@ class Settings:
         detail=(
             "Restricts weapon availability based on the campaign date. Data is "
             "extremely incomplete so does not affect all weapons."
+        ),
+    )
+    coin_insurgency: bool = boolean_option(
+        "COIN insurgent replenishment",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "The enemy fights as an insurgency: its strongholds freely regenerate a "
+            "small trickle of irregular units each turn (infantry, technicals, AAA "
+            "-- never armor or SAMs), refilling toward their campaign-start garrison "
+            "but never growing. The rate is throttled by each stronghold's ammo "
+            "caches -- find and destroy them to collapse the trickle to a residual "
+            "floor. Body count alone cannot win; caches, the supply trail, and "
+            "patience decide. Intended for COIN campaigns that preseed it on."
         ),
     )
     apply_target_overrides_to_loadouts: bool = boolean_option(

@@ -143,6 +143,11 @@ shows it's needed (per the generalization note §6).
 - **C1 — the regen core**: `game/fourteenth/coin.py` (trickle + anchor cap + cache
   health + whitelist), the `coin_insurgency` setting, `finish_turn` hook, full unit
   tests (anchored cap, cache throttle + floor, whitelist, off-switch, no-op guards).
+- **C1.5 — the re-infiltration design pass** (design only, squadron call §7.3):
+  written **immediately after C1 is verified working** (headless multi-turn sanity —
+  regen visibly refills a stronghold, cache kills visibly throttle it), before or in
+  parallel with C3. Scope: the insurgency retaking neutral/lost CPs, cache-seeded and
+  will-coupled; its own note.
 - **C2 — will coupling**: `red_cache_lost` weight (default 0.0, default-equivalence
   preserved), the cache-loss feed, tests.
 - **C3 — the campaign**: fork Shattered Dagger (credit Starfire, the Khe Sanh/
@@ -154,11 +159,15 @@ shows it's needed (per the generalization note §6).
   contested CPs via the §20 `place_unit_group` machinery (mortar teams in the blue
   rear). Optional texture; not load-bearing.
 
-## 7. Open questions (need squadron calls before C1)
+## 7. Squadron calls — RESOLVED 2026-07-02
 
-1. **Cache floor** — 25% residual trickle when all caches are dead, or a true zero
-   ("cleared means cleared")? Proposed: 25% floor, the will economy ends the war.
-2. **Cache categories** — `ammo` only, or `ammo` + `factory` + `ware`? Proposed:
-   `ammo` only in the engine; the campaign author controls density in the miz.
-3. **Re-infiltration** of neutral/lost CPs (the insurgency *retaking* ground) —
-   proposed **deferred entirely**; v1 insurgency defends and bleeds, never expands.
+1. **Cache floor: [DECIDED] 25% residual trickle** when all caches are dead — a
+   cleared stronghold decays under sustained pressure but infiltration never fully
+   stops; the will economy is what ends the war.
+2. **Cache categories: [DECIDED] `ammo` only** in the engine; the campaign author
+   controls cache density in the miz.
+3. **Re-infiltration: [DECIDED] deferred from v1** (the v1 insurgency defends and
+   bleeds, never expands) — **but with a hard follow-up commitment**: a full
+   re-infiltration design pass (its own note — the insurgency retaking neutral/lost
+   ground, presumably cache-seeded and will-coupled) is owed **immediately after the
+   C1 shell is verified working**, not parked indefinitely. See C1.5 in §6.

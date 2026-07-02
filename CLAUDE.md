@@ -111,8 +111,10 @@ file. This guide is the map; those are the territory.
     infantry/technicals/AAA, gated `coin_insurgency` default OFF; will coupling inverts
     the Vietnam weights (body count ≈ worthless, caches/ROE/patience decide) via the
     `will:` profiles + a planned inert-by-default `red_cache_lost` weight; the §35 trail
-    machinery is the ratline. Delivery C1 regen core → C2 will feed → C3 campaign fork →
-    C4 dispersed cells; 3 open squadron calls in §7),
+    machinery is the ratline. Delivery C1 regen core → C1.5 re-infiltration design pass
+    (owed immediately after C1 verifiably works — squadron call) → C2 will feed → C3
+    campaign fork → C4 dispersed cells; §7 squadron calls RESOLVED 2026-07-02: 25 %
+    cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

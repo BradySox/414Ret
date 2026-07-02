@@ -39,6 +39,12 @@ and selected later upstream fixes.
 - The **map layer panel** is a single grouped, collapsible control (dark-themed to match the
   app) with one-click **preset views** — Default, SEAD, Recon, Clean — and it remembers your
   layer choices between sessions.
+- The campaign map can use a **chart of the DCS terrain itself** as its base map instead of
+  real-world satellite imagery (which doesn't match what you'll see in the sim): slice any
+  Web-Mercator GeoTIFF — e.g. Flappie's community "accurate DCS Caucasus map" — with
+  `tools/tile_geotiff.py` into `Saved Games\Retribution\MapTiles\`, and a button for it appears
+  in the layer panel's base-map row. Purely local: nothing is bundled, and machines without
+  tiles see no change.
 - An optional **Approximate target area** mode removes perfect player coordinates and
   offsets steerpoints, making visual acquisition, talk-ons, and reconnaissance matter.
   Against mobile SAMs, DEAD and SEAD flights get a single fuzzed target-area waypoint

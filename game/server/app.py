@@ -9,6 +9,7 @@ from . import (
     fogofwar,
     frontlines,
     game,
+    maptiles,
     mapzones,
     navmesh,
     qt,
@@ -27,6 +28,7 @@ app.include_router(flights.router)
 app.include_router(fogofwar.router)
 app.include_router(frontlines.router)
 app.include_router(game.router)
+app.include_router(maptiles.router)
 app.include_router(mapzones.router)
 app.include_router(navmesh.router)
 app.include_router(qt.router)

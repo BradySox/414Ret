@@ -53,6 +53,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §39 | Snake and nape (napalm CAS) | `vietnamops` | `vietnam_snake_and_nape` |
 | §40 | Campaign phases (inferred arc + planner emphasis) | — | `campaign_phases` |
 | §41 | High Digit SAMs Ultimate Compilation support | — | — |
+| §42 | Local DCS chart base layers (map tiles) | — | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

@@ -2935,10 +2935,12 @@ scheduled escalation date; the current phase's `advance_when` (any-of `min_turn`
 - **Map layer** — `GameJs.restricted_zones` → `RestrictedZonesLayer` (red dashed circles + sticky tooltip),
   in the layers panel "Enemy intel" group, default ON (renders nothing outside authored ROE campaigns).
 - **The authored arcs** — all 4 Vietnam campaigns ship **Rolling Thunder → The Bombing Halt → Linebacker →
-  Linebacker II** (sanctuary on Tbilisi-Lochini for Yankee Station/Steel Tiger, Sukhumi-Babushara for Khe
-  Sanh, Saipan Intl for Velvet Thunder; zones shrink then vanish, target classes release, schedule ~turns
-  8/11/16 accelerated by will). Structure guarded in `tests/test_vietnam_content.py`; behaviour in
-  `tests/fourteenth/test_phases.py`. In-game pass: checklist **M4**.
+  Linebacker II** (sanctuary on Kutaisi/Hanoi + Senaki/Haiphong for Yankee Station/Steel Tiger — the 2026-07
+  coastal-ladder recast — plus a **permanent Tbilisi-Lochini "PRC border" ring those two keep in every
+  phase, Linebacker II included**; Sukhumi-Babushara for Khe Sanh, Saipan Intl for Velvet Thunder; zones
+  shrink then release, target classes release, schedule ~turns 8/11/16 accelerated by will). Structure
+  guarded in `tests/test_vietnam_content.py`; behaviour in `tests/fourteenth/test_phases.py`. In-game pass:
+  checklist **M4**.
 
 Still open from P2: the objectives checklist (display), per-phase `tasking_whitelist` deltas, and
 `front_line_stance` nudges; plus the 3 wiki-campaign arcs (P3).

@@ -20,8 +20,9 @@ so bleeding will speeds escalation), `restricted_zones` (AI planner gate in
 drain will sharply via `count_roe_violations` + `BLUE_ROE_VIOLATION`), `target_release` as
 per-phase `locked_targets` classes (RESTRICTED badge on the TGO tooltip; sanctuary airfields
 fall out of the zones), the red dashed map layer, and the authored **Rolling Thunder → Bombing
-Halt → Linebacker → Linebacker II** arcs in all 4 Vietnam campaigns (Tbilisi/Sukhumi/Saipan
-play Hanoi per laydown; in-game pass = checklist M4). **W5 LANDED** — the §6 GCI-ambush
+Halt → Linebacker → Linebacker II** arcs in all 4 Vietnam campaigns (Kutaisi/Sukhumi/Saipan
+play Hanoi per laydown after the 2026-07 Yankee Station coastal-ladder recast, which also keeps
+a permanent Tbilisi "PRC border" ring in every phase; in-game pass = checklist M4). **W5 LANDED** — the §6 GCI-ambush
 adaptation: `Doctrine.gci_ambush` (VIETNAM only) shrinks the QRA dispatcher's engage radius
 to `cap_engagement_range` + caps the scramble radius at 40 NM (`dispatcher_tuning` in
 `interceptluadata.py`, per-side in `spawn_intercept_templates`), and the intercept Lua leashes

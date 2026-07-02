@@ -474,8 +474,13 @@ def test_vietnam_campaign_authored_roe_arc(campaign_file: str) -> None:
     # Escalation is will-coupled from the first phase.
     assert arc[0].advance_when is not None, campaign_file
     assert arc[0].advance_when.blue_will_below is not None, campaign_file
-    # Linebacker II is unrestricted: no zones, nothing locked.
-    assert not arc[3].restricted_zones and not arc[3].locked_target_classes
+    # Linebacker II: nothing locked, and no sanctuary except the permanent
+    # "PRC border" ring (the Yankee Station / Steel Tiger coastal-ladder laydown
+    # keeps it in every phase -- MiGs across the border stayed safe in the real
+    # war too; Khe Sanh / Velvet Thunder release everything).
+    assert not arc[3].locked_target_classes, campaign_file
+    for zone in arc[3].restricted_zones:
+        assert "PRC border" in zone.name, campaign_file
     # The scheduled escalation dates are strictly increasing.
     pins = [p.min_turn for p in arc[1:]]
     assert pins == sorted(pins) and all(p > 0 for p in pins), campaign_file

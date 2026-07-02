@@ -287,6 +287,19 @@ and selected later upstream fixes.
   your signature target. The order of battle is tilted to armed reconnaissance and BAI — Navy Intruders,
   Skyraiders and Broncos hunting the road, B-52 Arc Light on the staging areas — over a wall-to-wall AAA
   threat rather than MiGs.
+- The **1968 Yankee Station theater has been recast as a "coastal ladder"** (Steel Tiger shares it). North
+  Vietnam now lives where the terrain says it should: **Hanoi (Kutaisi)** inland up the river delta behind
+  its SA-2 ring, **Haiphong (Senaki)** on the coast, and the route packages laddering south through **Vinh
+  (Sukhumi)** and **Dong Hoi (Gudauta)** to a single **DMZ front at the Psou narrows**, held from **Da Nang
+  (Sochi-Adler)** and the **FOB Khe Sanh** hill outpost right under the line. The carriers moved onto a
+  proper **Yankee Station off the delta**; the Air Force crosses the mountains from the **"Thailand" fields**
+  (Ubon = Maykop, Takhli/Korat = Mineralnye Vody) — the real 1968 Navy/USAF split falls out of the geometry.
+  The **Ho Chi Minh Trail is now a real, cuttable supply web**: the trail FOBs carry their real names (Mu
+  Gia, Ban Karai, Ban Laboy, Tchepone…), every leg crosses a bridge, and the last leg feeds the front. The
+  ROE sanctuary now sits over **Hanoi itself** — where the MiGs, the SAMs and the industry actually are, so
+  Rolling Thunder's restraint finally costs something — plus a **permanent "PRC border" ring at Tbilisi**
+  that never releases, even in Linebacker II, exactly like the real war. Existing saves keep the old board;
+  the recast needs a **NEW** game.
 - A new **Germany - Red Tide** campaign — a *Red Storm Rising*-flavoured 1988 NATO
   counteroffensive, built for the 414th. The Warsaw Pact opened the war by overrunning the
   Fulda Gap, taking Hamburg, and seizing Copenhagen — but the Soviet thrust has culminated,

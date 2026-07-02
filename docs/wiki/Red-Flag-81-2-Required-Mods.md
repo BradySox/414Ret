@@ -20,10 +20,10 @@ Everyone on the server needs both.
 |---|---|---|---|
 | Vietnam War Vessels (VWV) v3.2.0 | Tetet | The **RF-101B** recon bird + the Constant Peg **MiG-17F / MiG-21MF** (AI) | [Forum thread](https://forum.dcs.world/topic/338387-tetets-vietnam-war-vessels/) · [GitHub releases](https://github.com/tspindler-cms/tetet-vwv/releases) |
 | OV-10A Bronco v1.24 | Split-Air Team | FAC(A) / light CAS, **flyable** | [Forum thread](https://forum.dcs.world/topic/307951-ov-10a-bronco-mod-by-split-air-teamand-more/) |
+| High Digit SAMs — Ultimate Compilation v1.4.3+ | dcs-sams | The Red Force's period **P-37 "Bar Lock" EWR** — the GCI eyes behind the ambush (the campaign ships `high_digit_sams: true`) | [GitHub](https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation) |
 
 *(No CurrentHill packs, no Community A-4E, no OH-6 for this one — the 1981 factions are built on
-vanilla + the two mods above. `high_digit_sams` is **off** by default; turning it on upgrades the
-red EWR sites to the period **P-37 Bar Lock**.)*
+vanilla + the three mods above.)*
 
 ---
 

@@ -216,7 +216,7 @@ strike packages).
 | **SA-2 (×5)** | Tolicha Peak ×2, TTR ring, Pahute, the Box edge | The classic emulators — real Fan Song behavior; beat them the 1968-proven way (§10) |
 | **SA-3 (×2)** | TTR field + the mock airfield | Point defense — quicker off the rail than the SA-2 |
 | **ZSU-23-4 belts (×8)** | Every corridor + every red field | The [flak gauntlet](Vietnam-Ops#2--aaa-flak-gauntlet) — predictable flying tightens it |
-| **EWR (×2)** | Tonopah + the Groom approach | The GCI eyes behind the ambush (P-37 Bar Lock with HDS installed) |
+| **EWR (×2)** | Tonopah + the Groom approach | The **P-37 Bar Lock** GCI eyes behind the ambush (HDS ships ON for this campaign) |
 | **Hawk + Vulcan** | Creech + Nellis (BLUE) | Your own base defense |
 
 **And the rear isn't safe:** with airbase harassment on, red "sapper play" lands sporadic

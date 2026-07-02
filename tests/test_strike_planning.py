@@ -1,9 +1,11 @@
 """PlanStrike fans `doctrine.strike_flight_count` coordinated sections onto a target.
 
 Locks the section count at the proposal layer so a regression that drops the doctrine
-read fails CI. Every doctrine now plans a single section -- playtest feedback retired the
-2-section Vietnam "Alpha Strike" fan in favour of one section + a forced fighter escort
-(always_escort_strikes; see test_always_escort_strikes_forces_a2a_escort). See
+read fails CI. Stock doctrines plan a single section; Vietnam masses TWO coordinated
+shared-TOT sections on one target -- the real Alpha Strike -- plus the forced fighter
+escort (always_escort_strikes; see test_always_escort_strikes_forces_a2a_escort). The
+fan was briefly reverted to 1 when the sections flew naked; restored once the fighter
+economy held (escort_support_aircraft off + strike_escort_reserve + its fence). See
 docs/dev/design/414th-vietnam-retribution-notes.md (P3).
 """
 
@@ -47,11 +49,11 @@ def test_stock_doctrines_plan_a_single_strike_section() -> None:
         assert len(_strike_sections(doctrine)) == 1
 
 
-def test_vietnam_plans_a_single_strike_section() -> None:
-    # Playtest feedback retired the 2-section Alpha Strike fan: a Vietnam STRIKE flies one
-    # section + a forced fighter escort (always_escort_strikes) instead of two unescorted
-    # bomber sections.
-    assert len(_strike_sections(VIETNAM_DOCTRINE)) == 1
+def test_vietnam_masses_two_strike_sections() -> None:
+    # The real Alpha Strike: Vietnam fans TWO coordinated shared-TOT sections onto ONE
+    # target (fewer targets struck per turn, each hit hard), with the forced fighter
+    # escort riding along (always_escort_strikes).
+    assert len(_strike_sections(VIETNAM_DOCTRINE)) == 2
 
 
 def test_always_escort_strikes_forces_a2a_escort() -> None:

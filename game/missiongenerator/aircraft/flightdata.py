@@ -6,12 +6,13 @@ from typing import Optional, TYPE_CHECKING
 
 from dcs.flyingunit import FlyingUnit
 
+from game.ato.flighttype import FlightType
 from game.ato.starttype import StartType
 from game.callsigns import create_group_callsign_from_unit
 from game.squadrons import Squadron
 
 if TYPE_CHECKING:
-    from game.ato import FlightType, FlightWaypoint, Package
+    from game.ato import FlightWaypoint, Package
     from game.dcs.aircrafttype import AircraftType
     from game.radio.radios import RadioFrequency
     from game.radio.tacan import TacanChannel
@@ -123,7 +124,12 @@ class FlightData:
     def task_display_name(self) -> str:
         """The flight's tasking label under its coalition's doctrine -- the Vietnam
         rename layer (e.g. STRIKE -> "Alpha Strike"). Falls back to the canonical
-        ``FlightType.value`` when the doctrine supplies no override. Display only."""
+        ``FlightType.value`` when the doctrine supplies no override. A STRIKE flight
+        only reads the era "Alpha Strike" label when its package actually masses
+        (>= 2 sections on one target); a lone section is a plain Strike. Display
+        only."""
+        if self.flight_type is FlightType.STRIKE and not self.package.is_massed_strike:
+            return FlightType.STRIKE.value
         return self.squadron.coalition.doctrine.display_name_for(self.flight_type)
 
     def num_radio_channels(self, radio_id: int) -> int:

@@ -420,8 +420,9 @@ VIETNAM_GROUND_PROCUREMENT = GroundUnitProcurementRatios(
 # (strike_through_air_defense_threat -- Vietnam has no reliable SEAD, so the modern "suppress
 # before you strike" rule otherwise deadlocks the whole offensive fleet, root-caused
 # 2026-06-28: 0/28 strike + 0/13 BAI plannable; the tasking whitelist that drops
-# SEAD/DEAD/anti-ship; a single-section STRIKE (strike_flight_count=1) that always pulls a
-# fighter escort (always_escort_strikes)) -- PLUS the period-authentic planner *numbers* that
+# SEAD/DEAD/anti-ship; a massed 2-section STRIKE (strike_flight_count=2, the real Alpha
+# Strike -- one target, shared TOT) that always pulls a fighter escort
+# (always_escort_strikes)) -- PLUS the period-authentic planner *numbers* that
 # make the era play differently, not just read differently:
 #   * A2A engagement ranges are knife-fight, not BVR: the early Sparrow (AIM-7E, unreliable)
 #     and short IR Sidewinder (AIM-9B/D) + guns fight close, so MiGCAP/escort engage far
@@ -437,7 +438,11 @@ VIETNAM_DOCTRINE = replace(
     tasking_whitelist=VIETNAM_TASKING_WHITELIST,
     strike_through_air_defense_threat=True,
     plan_strikes_without_full_escort=True,
-    strike_flight_count=1,
+    # A real Alpha Strike: mass 2 coordinated shared-TOT sections on ONE target
+    # (fewer targets struck per turn, each hit hard). First shipped as 2, reverted
+    # to 1 when the sections flew naked; restored once the fighter economy held
+    # (escort_support_aircraft off + strike_escort_reserve + its fence).
+    strike_flight_count=2,
     always_escort_strikes=True,
     gci_ambush=True,
     # Hold two escort sections' worth of fighters out of BARCAP so the forced

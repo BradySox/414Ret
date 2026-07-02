@@ -169,11 +169,12 @@ def test_vietnam_relaxes_strike_gates_only() -> None:
         assert d.plan_strikes_without_full_escort is False
 
 
-def test_vietnam_strike_is_single_section_and_force_escorted() -> None:
-    # Playtest feedback retired the 2-section Alpha Strike fan: a Vietnam STRIKE flies a
-    # single section + a forced fighter escort (always_escort_strikes) instead of two
-    # unescorted bomber sections. Every doctrine plans one section.
-    assert VIETNAM_DOCTRINE.strike_flight_count == 1
+def test_vietnam_strike_is_massed_and_force_escorted() -> None:
+    # The real Alpha Strike: Vietnam masses TWO coordinated shared-TOT sections on one
+    # target + the forced fighter escort (always_escort_strikes). Restored from the
+    # single-section revert once the fighter economy held (escort_support_aircraft off
+    # + strike_escort_reserve + its fence). Stock doctrines keep the single section.
+    assert VIETNAM_DOCTRINE.strike_flight_count == 2
     assert VIETNAM_DOCTRINE.always_escort_strikes is True
     for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
         assert d.strike_flight_count == 1
@@ -190,7 +191,7 @@ def test_from_settings_preserves_renames_whitelist_and_flags() -> None:
     assert out.allows(FlightType.STRIKE)
     assert out.strike_through_air_defense_threat is True
     assert out.plan_strikes_without_full_escort is True
-    assert out.strike_flight_count == 1
+    assert out.strike_flight_count == 2
     assert out.always_escort_strikes is True
 
 
@@ -213,6 +214,13 @@ def test_flight_task_display_name_resolves_through_coalition_doctrine() -> None:
     flight.coalition = SimpleNamespace(doctrine=VIETNAM_DOCTRINE)  # type: ignore[assignment]
     flight.flight_type = FlightType.SEAD
     assert flight.task_display_name == "Iron Hand"
+    # A STRIKE flight only earns "Alpha Strike" when its package masses; a lone
+    # section is a plain Strike (a real alpha strike is a deck-load, not a 2-ship).
+    flight.flight_type = FlightType.STRIKE
+    flight.package = SimpleNamespace(is_massed_strike=False)  # type: ignore[assignment]
+    assert flight.task_display_name == "Strike"
+    flight.package = SimpleNamespace(is_massed_strike=True)  # type: ignore[assignment]
+    assert flight.task_display_name == "Alpha Strike"
 
 
 def test_flightdata_task_display_name_resolves_through_squadron_doctrine() -> None:
@@ -225,31 +233,44 @@ def test_flightdata_task_display_name_resolves_through_squadron_doctrine() -> No
         coalition=SimpleNamespace(doctrine=VIETNAM_DOCTRINE)
     )
     fd.flight_type = FlightType.STRIKE
+    # The massing gate applies here too: lone section = "Strike".
+    fd.package = SimpleNamespace(is_massed_strike=False)  # type: ignore[assignment]
+    assert fd.task_display_name == "Strike"
+    fd.package = SimpleNamespace(is_massed_strike=True)  # type: ignore[assignment]
     assert fd.task_display_name == "Alpha Strike"
 
 
 def test_package_description_uses_doctrine_rename() -> None:
     # The planning table's package label routes through the doctrine display layer
     # (the deferred P1b site): a Vietnam package reads "Alpha Strike"/"MiGCAP", a stock
-    # package keeps the canonical label and the combined "OCA Strike" tag.
+    # package keeps the canonical label and the combined "OCA Strike" tag. The
+    # "Alpha Strike" label is EARNED: only a package massing >= 2 STRIKE sections
+    # reads it; a single-section strike stays a plain "Strike".
     from types import SimpleNamespace
 
     from game.ato.package import Package
 
-    def label(flight_type: FlightType, doctrine: object) -> str:
-        flight = SimpleNamespace(
-            flight_type=flight_type, coalition=SimpleNamespace(doctrine=doctrine)
-        )
+    def label(doctrine: object, *flight_types: FlightType) -> str:
+        flights = [
+            SimpleNamespace(
+                flight_type=flight_type, coalition=SimpleNamespace(doctrine=doctrine)
+            )
+            for flight_type in flight_types
+        ]
         pkg = Package.__new__(Package)
-        pkg.flights = [flight]  # type: ignore[list-item]
+        pkg.flights = flights  # type: ignore[assignment]
         return pkg.package_description
 
-    assert label(FlightType.STRIKE, VIETNAM_DOCTRINE) == "Alpha Strike"
-    assert label(FlightType.BARCAP, VIETNAM_DOCTRINE) == "MiGCAP"
-    assert label(FlightType.OCA_RUNWAY, VIETNAM_DOCTRINE) == "Airfield Strike"
+    # Massed = Alpha Strike; a lone section is just a Strike.
+    assert (
+        label(VIETNAM_DOCTRINE, FlightType.STRIKE, FlightType.STRIKE) == "Alpha Strike"
+    )
+    assert label(VIETNAM_DOCTRINE, FlightType.STRIKE) == "Strike"
+    assert label(VIETNAM_DOCTRINE, FlightType.BARCAP) == "MiGCAP"
+    assert label(VIETNAM_DOCTRINE, FlightType.OCA_RUNWAY) == "Airfield Strike"
     # Non-Vietnam doctrine is unchanged, including the combined OCA label.
-    assert label(FlightType.STRIKE, COLDWAR_DOCTRINE) == "Strike"
-    assert label(FlightType.OCA_RUNWAY, COLDWAR_DOCTRINE) == "OCA Strike"
+    assert label(COLDWAR_DOCTRINE, FlightType.STRIKE) == "Strike"
+    assert label(COLDWAR_DOCTRINE, FlightType.OCA_RUNWAY) == "OCA Strike"
 
 
 def test_vietnam_gci_ambush_posture() -> None:

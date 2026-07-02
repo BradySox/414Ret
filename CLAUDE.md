@@ -213,10 +213,14 @@ file. This guide is the map; those are the territory.
     headless-verified SEAD/DEAD/anti-ship 13→0 while STRIKE 1→5 / BAI 6→13 rose. **P3 Alpha Strike**:
     `Doctrine.strike_flight_count` (default 1) can fan N coordinated, shared-TOT STRIKE sections onto one
     target in `PlanStrike` (reads the *planner's* doctrine via `target.coalition.opponent.doctrine` — the
-    target is enemy-owned). Vietnam first fanned 2 sections, but playtest feedback showed that left the bombers
-    **unescorted**, so Vietnam now flies a **single section + a forced fighter escort** (`strike_flight_count=1`
-    + `always_escort_strikes`, which forces the A2A escort "needed" in `check_needed_escorts` even with no
-    detected air threat; still pruned when no fighter is free). The **fighter-economy levers** landed after
+    target is enemy-owned). Vietnam masses **2 sections + a forced fighter escort** on ONE target — the real
+    Alpha Strike (`strike_flight_count=2` + `always_escort_strikes`, which forces the A2A escort "needed" in
+    `check_needed_escorts` even with no detected air threat; still pruned when no fighter is free). The fan
+    was briefly reverted to 1 when the sections flew naked; restored once the fighter-economy levers held.
+    The **"Alpha Strike" label is earned, not flat** (user playtest caught four separate 2-ships each
+    wearing the name): `Package.is_massed_strike` (≥2 STRIKE sections) gates the era rename at all three
+    display sites (`package_description`, `Flight.task_display_name`, `FlightData.task_display_name`) — a
+    lone section reads plain "Strike". The **fighter-economy levers** landed after
     the Linebacker naked-B-52 playtest (2026-07-01): `Doctrine.escort_support_aircraft=False` (Vietnam) drops
     the AEWC/tanker fighter escorts that consumed 8 of 10 fighters before any strike planned
     (`fulfill_mission` filter), and `Doctrine.strike_escort_reserve=4` +

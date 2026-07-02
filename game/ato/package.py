@@ -216,6 +216,18 @@ class Package(RadioFrequencyContainer):
         return some_mission
 
     @property
+    def is_massed_strike(self) -> bool:
+        """True when >= 2 coordinated STRIKE sections share this package's target.
+
+        The only shape that earns the era "Alpha Strike" label: a real alpha
+        strike is a massed deck-load on ONE target (strike_flight_count > 1), so
+        a lone section keeps the plain canonical "Strike" name even under a
+        doctrine that renames the task.
+        """
+        strikes = sum(1 for f in self.flights if f.flight_type is FlightType.STRIKE)
+        return strikes >= 2
+
+    @property
     def package_description(self) -> str:
         """Generates a package description based on flight composition.
 
@@ -224,14 +236,17 @@ class Package(RadioFrequencyContainer):
         "MiGCAP", OCA -> "Airfield Strike", ...). Every flight in a package shares a
         coalition, so the doctrine is read off one flight. When the doctrine has no
         override (every non-Vietnam doctrine), the canonical labelling is kept
-        unchanged -- including the combined "OCA Strike" label.
+        unchanged -- including the combined "OCA Strike" label. A STRIKE package
+        only reads "Alpha Strike" when it actually masses (is_massed_strike); a
+        single-section strike is labelled plain "Strike".
         """
         task = self.primary_task
         if task is None:
             return "No mission"
         doctrine = self.flights[0].coalition.doctrine if self.flights else None
         if doctrine is not None and task in doctrine.task_display_names:
-            return doctrine.display_name_for(task)
+            if task is not FlightType.STRIKE or self.is_massed_strike:
+                return doctrine.display_name_for(task)
         oca_strike_types = {FlightType.OCA_AIRCRAFT, FlightType.OCA_RUNWAY}
         if task in oca_strike_types:
             return "OCA Strike"

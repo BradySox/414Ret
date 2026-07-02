@@ -336,8 +336,9 @@ and selected later upstream fixes.
   **regenerate**: cleared cells come back toward their original strength each turn — and your last recon
   picture stands until you re-fly it — throttled by **hidden ammo caches** you recon and strike; kill a
   stronghold's caches and its regeneration collapses to a trickle. The war is decided at the will meters:
-  **the Coalition's mandate** (airframes, lost bases, strikes near the Lashkar Gah and Herat
-  population-center rings, and plain time) against **the insurgency's momentum** (caches, trail convoys,
+  **the Coalition's mandate** (airframes, lost bases, strikes into the Lashkar Gah
+  population-center ring — where the insurgency hides its caches and runs its trail, so the restraint
+  actually costs something — and plain time) against **the insurgency's momentum** (caches, trail convoys,
   strongholds — almost never its dead fighters). Disrupt the Network → Clear and Hold → Break the
   Momentum, with FOB standoff fire and the supply-trail ratline running throughout. Body count alone
   wins nothing.

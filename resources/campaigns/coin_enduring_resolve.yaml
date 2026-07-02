@@ -86,16 +86,13 @@ phases:
         done_when:
           capture_cp: FOB Frontenac
     restricted_zones:
-      # Coordinate-anchored: Bost/Herat are neutral fields that never instantiate
-      # as control points in this laydown, so `center:` cannot resolve them.
+      # Coordinate-anchored (Bost never instantiates as a CP, so `center:` cannot
+      # name it). The ring has TEETH: FOB Geronimo's caches hide in the town and
+      # the Geronimo ratline leg transits it -- striking either pays in mandate.
       - x: -267202.1
         y: -170619.6
         radius_nm: 8
         name: Lashkar Gah -- population center
-      - x: 25820.9
-        y: -371274.6
-        radius_nm: 8
-        name: Herat -- population center
     advance_when:
       capture_cp: FOB Frontenac
   - key: clear_hold
@@ -117,16 +114,13 @@ phases:
           red_resolve_below: 50
       - Hold what you clear -- garrisons and patience beat body count
     restricted_zones:
-      # Coordinate-anchored: Bost/Herat are neutral fields that never instantiate
-      # as control points in this laydown, so `center:` cannot resolve them.
+      # Coordinate-anchored (Bost never instantiates as a CP, so `center:` cannot
+      # name it). The ring has TEETH: FOB Geronimo's caches hide in the town and
+      # the Geronimo ratline leg transits it -- striking either pays in mandate.
       - x: -267202.1
         y: -170619.6
         radius_nm: 8
         name: Lashkar Gah -- population center
-      - x: 25820.9
-        y: -371274.6
-        radius_nm: 8
-        name: Herat -- population center
     advance_when:
       red_resolve_below: 45
   - key: build
@@ -144,16 +138,13 @@ phases:
         done_when:
           red_resolve_below: 25
     restricted_zones:
-      # Coordinate-anchored: Bost/Herat are neutral fields that never instantiate
-      # as control points in this laydown, so `center:` cannot resolve them.
+      # Coordinate-anchored (Bost never instantiates as a CP, so `center:` cannot
+      # name it). The ring has TEETH: FOB Geronimo's caches hide in the town and
+      # the Geronimo ratline leg transits it -- striking either pays in mandate.
       - x: -267202.1
         y: -170619.6
         radius_nm: 8
         name: Lashkar Gah -- population center
-      - x: 25820.9
-        y: -371274.6
-        radius_nm: 8
-        name: Herat -- population center
 
 # The ratline: red<->red supply corridors between the strongholds (the original
 # laydown had NO connectivity, so the §35 trail machinery had nothing to run on).
@@ -196,6 +187,12 @@ supply_routes:
   - waypoints:
       - [-189960, -7031]
       - [-231043, -30347]
+  # FOB Geronimo -> FOB Zeebrugge, THROUGH the Lashkar Gah ring -- the insurgency
+  # moves supplies under civilian cover; interdicting this leg in-town costs will.
+  - waypoints:
+      - [-285099, -180708]
+      - [-267202, -170619]
+      - [-181518, -101421]
 
 squadrons:
   #Kandahar

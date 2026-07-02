@@ -53,8 +53,16 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   COIN laydown with real ground routes exercises the garrison channel instead.
 - The insurgent **technicals are class IFV** in the unit data — the whitelist is
   class set + **price ≤ 10**; the ceiling (not the class) is what excludes BMPs/Grads.
-- **Bost/Herat never instantiate as CPs** (neutral fields) — the population-center
-  ROE rings are **coordinate-anchored** (`x:`/`y:`), not `center:`-named.
+- **Bost never instantiates as a CP** (neutral field) — the population-center ring is
+  **coordinate-anchored** (`x:`/`y:`), not `center:`-named.
+- **A ROE ring must guard something** (user catch 2026-07-02: "the population centres
+  are empty of objectives — why would we ever go there?"). The empty Herat ring was
+  CUT; the Lashkar Gah ring got teeth: **FOB Geronimo's two caches hide in the town**
+  (positions overridden in the build tool, still closest-CP-bound to Geronimo at
+  ~15-20 km vs Bastion's ~38) and the **Geronimo → Zeebrugge ratline leg transits the
+  ring** — starving Geronimo or interdicting that column in-town pays in mandate; the
+  clean alternatives (air-assault the FOB, catch the convoy outside the ring) cost
+  more effort. That's the hearts-and-minds dilemma the ring exists to price.
 - Never `locked_targets: [ammo]` in the arc — the caches must always be legal.
 - **Toyota Al Gaib 2001 was missing most of the insurgent kit** (user catch 2026-07-02,
   fixed): the DIM' technicals, the §41 ERO ZU-23 family + preset group, and the SA-9

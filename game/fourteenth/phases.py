@@ -150,6 +150,17 @@ class CampaignPhase:
     locked_target_classes: tuple[str, ...] = ()
     #: True for phases parsed from a campaign ``phases:`` block.
     authored: bool = False
+    #: W6 red-tempo levers (authored-only; Tier-0 phases never set them -- see
+    #: docs/dev/design/414th-vietnam-red-tempo-notes.md). ``trail_surge``
+    #: multiplies the trail-convoy budget while the phase holds (bombing halts
+    #: were logistics windows); ``ground_offensive_turns`` flips RED's front
+    #: stances aggressive for N turns from phase entry (the Tet/Easter pulse --
+    #: the W2b static-front clamp still bounds the movement); ``resolve_regen``
+    #: is Regime Resolve regained per turn while the phase holds (Hanoi recovers
+    #: when unbombed, so a long halt costs Washington leverage).
+    trail_surge: float = 1.0
+    ground_offensive_turns: int = 0
+    resolve_regen: float = 0.0
 
 
 #: PlanNextAction's offensive tail in its stock order. The fixed reactive prefix
@@ -563,6 +574,9 @@ def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
                 blue_will_below=advance.get("blue_will_below"),
                 enemy_iads_below=advance.get("enemy_iads_below"),
             )
+        tempo = entry.get("red_tempo") or {}
+        if not isinstance(tempo, dict):
+            raise ValueError(f"red_tempo: must be a mapping: {tempo!r}")
         phases.append(
             CampaignPhase(
                 key=str(entry["key"]),
@@ -574,6 +588,9 @@ def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
                 restricted_zones=tuple(zones),
                 locked_target_classes=tuple(entry.get("locked_targets") or ()),
                 authored=True,
+                trail_surge=float(tempo.get("trail_surge", 1.0)),
+                ground_offensive_turns=int(tempo.get("ground_offensive", 0)),
+                resolve_regen=float(tempo.get("resolve_regen", 0.0)),
             )
         )
     return tuple(phases)

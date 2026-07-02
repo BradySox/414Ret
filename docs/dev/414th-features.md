@@ -2985,9 +2985,23 @@ scheduled escalation date; the current phase's `advance_when` (any-of `min_turn`
   shrink then release, target classes release, schedule ~turns 8/11/16 accelerated by will). Structure
   guarded in `tests/test_vietnam_content.py`; behaviour in `tests/fourteenth/test_phases.py`. In-game pass:
   checklist **M4**.
+- **Phase-coupled red tempo (W6)** — Hanoi *answers* the arc (design note
+  `414th-vietnam-red-tempo-notes.md`): an optional authored per-phase `red_tempo:` block parsed onto
+  `CampaignPhase` (`trail_surge` / `ground_offensive` / `resolve_regen`), applied by
+  `game/fourteenth/red_tempo.py`. The Bombing Halt is a **logistics window** — the trail runs two
+  concurrent, bigger convoys (`ensure_enemy_trail_convoy` reads `trail_surge_multiplier`) and Regime
+  Resolve regains 1.5/turn (once-per-turn guard `Game.red_tempo_regen_turn`), so waiting out the halt
+  costs Washington leverage; Linebacker entry fires a 3-turn **Tet/Easter ground-offensive pulse**
+  (`apply_red_tempo` in `initialize_turn`, after the coalitions plan and before GroundPlanner reads
+  `cp.stances`) that raises red's front stances to AGGRESSIVE (raise-only — a winning commander keeps
+  BREAKTHROUGH) with the trail surging alongside (`GROUND_OFFENSIVE_MIN_SURGE`); the W2b static-front
+  clamp still bounds the movement, so the pulse bleeds BLUE's will rather than sweep-capturing. Authored
+  phases only — Tier-0/generic campaigns are complete no-ops. Tests: `tests/fourteenth/test_red_tempo.py`.
+  In-game pass: checklist **M6**.
 
 Still open from P2: the objectives checklist (display), per-phase `tasking_whitelist` deltas, and
-`front_line_stance` nudges; plus the 3 wiki-campaign arcs (P3).
+`front_line_stance` nudges (the W6 red pulse covers the red half; a blue-side authored stance nudge is
+still open); plus the 3 wiki-campaign arcs (P3).
 
 ## §41 — High Digit SAMs "Ultimate Compilation" support
 

@@ -133,6 +133,9 @@ class Game:
         self.phase_entered_on_turn: Optional[int] = None
         self.phase_status_line: Optional[str] = None
         self.phase_baseline: Optional["PhaseBaseline"] = None
+        # W6 red tempo: the last turn resolve-regen was applied (idempotence
+        # guard for the multiple-init-per-turn cases).
+        self.red_tempo_regen_turn: Optional[int] = None
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -209,6 +212,7 @@ class Game:
         state.setdefault("phase_entered_on_turn", None)
         state.setdefault("phase_status_line", None)
         state.setdefault("phase_baseline", None)
+        state.setdefault("red_tempo_regen_turn", None)
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.
@@ -627,6 +631,14 @@ class Game:
         from game.fourteenth.static_front import apply_static_front
 
         apply_static_front(self)
+
+        # W6 red tempo: during an authored ground-offensive pulse raise Hanoi's
+        # front stances (after the coalitions plan, so it has the final say;
+        # before GroundPlanner reads cp.stances) + apply any resolve regen.
+        # Fully-guarded no-op without an active authored phase.
+        from game.fourteenth.red_tempo import apply_red_tempo
+
+        apply_red_tempo(self)
 
         # Plan GroundWar
         self.ground_planners = {}

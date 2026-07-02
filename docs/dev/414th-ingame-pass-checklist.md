@@ -2179,6 +2179,27 @@ so the two docs don't drift.
   defined before build_dispatcher — verify load order if edited). Knobs: `AMBUSH_GCI_RADIUS_NM`
   (interceptluadata.py), `AMBUSH_DISENGAGE_NM` / `AMBUSH_FUEL_THRESHOLD` (intercept-config.lua).
 
+### M6 — Phase-coupled red tempo: halt surge, Easter pulse, resolve regen (campaign layer W6) · Vietnam campaign layer · ☐ UNTESTED (built 2026-07-01; parse/window/stance/regen/convoy-surge all unit-tested, the multi-turn campaign feel needs a played arc)
+- **Headless adjudication:** the `red_tempo:` parse, the ground-offensive window math, the raise-only
+  stance pulse, the once-per-turn regen guard, the end-to-end convoy surge (second column + doubled skim),
+  and the 4 arcs' authored blocks are all locked in `tests/fourteenth/test_red_tempo.py`. What CI cannot
+  adjudicate: the multi-turn *feel* — whether the Halt reads as a logistics window and the Linebacker-entry
+  ground pulse reads as the Easter Offensive.
+- **Setup:** a NEW Vietnam campaign (Khe Sanh or Yankee Station) with `vietnam_political_will` +
+  `vietnam_convoy_interdiction` on; play (or fast-forward) into the Bombing Halt (~turn 8) and across the
+  Linebacker entry (~turn 11).
+- **Pass:** during the Halt, up to TWO trail convoys flow at once with bigger loads (Armed Recon has
+  visibly more trail targets) and Hanoi's resolve ticks UP ~1.5/turn on the Stats will chart while blue's
+  deep war is locked; on Linebacker entry, red front stances go aggressive for ~3 turns (the front presses
+  BLUE inside the W2b band — pressure, not sweep-captures) with the trail surging alongside; after the
+  pulse window red reverts to the commander's own stance choices; a modern (non-authored) campaign shows
+  zero change.
+- **Fail signature:** resolve regenerating every init of the same turn (the `red_tempo_regen_turn` guard);
+  red stances stuck aggressive after the window (the raise should stop applying — check
+  `ground_offensive_active` window math); three+ convoys stacking (the `max_convoys` cap); a Tier-0
+  campaign surging (only *authored* phases may carry `red_tempo` — check `_active_authored_phase`).
+  Knobs: the per-phase `red_tempo:` YAML values; `GROUND_OFFENSIVE_MIN_SURGE` (red_tempo.py).
+
 ## N. Mod support
 
 ### N1 — High Digit SAMs Ultimate Compilation units in-game · §41 · ☐ UNTESTED (built 2026-07-01; unit data read from the installed mod, factions/presets/layouts headless-verified)

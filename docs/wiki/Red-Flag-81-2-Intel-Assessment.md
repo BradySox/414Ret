@@ -22,7 +22,9 @@ see the **[Campaign Briefing Handbook](Red-Flag-81-2-Campaign-Briefing)**. Three
 > the types are right, the quantities are gameplay); and the will/resolve meters read the **TAC
 > exercise assessment** into the Vietnam political-will engine. Module stand-ins: F-4E-45MC for
 > the 336th's F-4Es (exact), A-10A (exact), RF-101B standing in for the RF-4C, B-52H for the
-> B-52D/G, CH-47D/UH-1H for the period lift.
+> B-52D/G, CH-47D/UH-1H for the period lift. The range laydown itself is **re-pointed at the
+> commercial 81-2 campaign's own mission files** (2026-07-02) — the site positions below are the
+> reference's, not guesses.
 
 ---
 ---
@@ -78,14 +80,17 @@ The Phantom was the backbone TAC fighter of Red Flag's first decade:
 
 ## Section III — The Red Force (ground & the array)
 
-- **The threat array:** **SA-2 and SA-3 emulator sites** with real emitter behavior, **"Smoky
-  SAM"** (GTR-18) visual launch simulators, **ZSU-23-4 and AAA gun simulators**, and GCI/EW
-  emitters concentrated around the **Tolicha Peak Electronic Combat Range** (between Tonopah and
-  Beatty) and the north ranges. The Red Team historically set up on the **west side** of the
-  Nellis range complex — exactly where this campaign puts it.
-- **The targets:** 50+ types across ranges 61–76 — a **mock airfield** dressed with mothballed
-  airframes at Tolicha Peak, **convoys** (some moving), **tank arrays** (Kawich Valley / Gold
-  Flat in the campaign), trains, industrial complexes, POL, bridges, radar/SAM/AAA sites.
+- **The threat array:** **SA-2, SA-3, SA-6 and SA-8 emulator sites** with real emitter behavior,
+  **"Smoky SAM"** (GTR-18) visual launch simulators saturating the eastern corridor, and — the
+  reference campaign's defining feature — **Fire Can-directed KS-19 heavy flak belts** with
+  ZSU-23-4/ZSU-57 gun lines, plus GCI/EW emitters concentrated around the **Tolicha Peak
+  Electronic Combat Range** (between Tonopah and Beatty) and the north ranges. The Red Team
+  historically set up on the **west side** of the Nellis range complex — exactly where this
+  campaign puts it.
+- **The targets:** 50+ types across ranges 61–76 — **four mock airfields** dressed with
+  mothballed F-86 airframes (the main 24-Sabre complex, Tolicha south, the NW complex, the east
+  range), **convoys**, **tank arrays** (the two Kawich Valley arrays in the campaign), the
+  Tolicha **train marshalling yard and POL farm**, industrial complexes, radar/SAM/AAA sites.
 - **The Box:** the **Groom Lake restricted airspace** sat inside the range complex and was
   **never** released to exercise traffic. Enter it and your flag was over. In the campaign it
   never releases either — violations bleed the assessment (Political Will) instead of your wings.
@@ -128,11 +133,11 @@ week loses this campaign exactly the way ten sloppy missions lost crews over Han
 |---|---|---|
 | **F-5E aggressors** | TTR + Tonopah | High-skill GCI ambush — late, close, once |
 | **Constant Peg MiGs** | TTR + the Box | MiG-21bis/MF + MiG-17F; the Box reserve recovers into sanctuary |
-| **SA-2 ×5** | Tolicha ×2, TTR, Pahute, Box edge | The emulator rings — the graduate course |
-| **SA-3 ×2** | TTR + the mock airfield | Point defense, less reaction margin |
-| **ZSU-23-4 belts** | every corridor + field | The flak gauntlet — punishes the predictable |
-| **EWR ×2** | Tonopah + Groom approach | The GCI eyes behind the ambush |
-| **Armor arrays + convoys** | Kawich, Gold Flat, the FEBA, the roads | Your BAI war — and red's real reinforcements |
+| **SAM rings ×5** (SA-2/SA-3/SA-6 mix) | Tolicha ×2, the NW complex, the main mock airfield, the TTR approach | The emulator rings — the graduate course |
+| **SA-8 ×4** | Gold Flat, the mock airfield, the Smoky belt ×2 | Mobile point SAMs — the Smoky SAM analog |
+| **KS-19/Fire Can + ZSU belts** | every complex, corridor + field | The flak gauntlet — heavy guns first, punishes the predictable |
+| **EWR ×3** | the SW corridor, Gold Flat, the NW complex | The GCI eyes behind the ambush |
+| **Armor arrays + convoys** | Kawich Valley ×2, Tolicha, the NW + east complexes, the FEBA, the roads | Your BAI war — and red's real reinforcements |
 
 ---
 ---
@@ -149,12 +154,14 @@ THE AMBUSH (F-5E / MiG-21 / MiG-17, GCI-vectored)
   • Small jets, guns-and-heaters: keep speed, fight in the vertical, mutual support.
 
 THE ARRAY
-  SA-2 (x5: Tolicha x2, TTR, Pahute, Box edge)
+  SAM RINGS (x5, SA-2/SA-3/SA-6 mix: Tolicha x2, NW complex, mock airfield, TTR appr.)
      .. no steady medium-high flight in range. Beam + notch a launch; or Iron Hand
-        the site first — it's a legal target from turn 1.
-  SA-3 (x2: TTR, mock airfield) .. same geometry, less margin. Expect it at the field.
-  ZSU-23-4 BELTS (every corridor) .. the gauntlet TIGHTENS on steady flying. Jink.
-  EWR (Tonopah, Groom approach) .. the eyes behind the GCI — killing them blinds the net.
+        the site first — it's a legal target from turn 1. SA-6 rings move less
+        margin than the Fan Song — respect the arc.
+  SA-8 (x4: Gold Flat, mock airfield, Smoky belt x2) .. mobile point SAM. Terrain.
+  KS-19 FIRE CAN FLAK + ZSU BELTS (every complex) .. the gauntlet TIGHTENS on
+        steady flying — the 100mm reaches HIGH. Jink; kill the Fire Can, blind it.
+  EWR (x3: SW corridor, Gold Flat, NW complex) .. the GCI eyes — kill to blind the net.
 
 RULES TO LIVE BY (they're why Red Flag exists)
   • Film first (TARPS), then strike. An unmapped site is the one that gets you.
@@ -191,9 +198,9 @@ overfly the block of airspace around Groom Lake. Not once. Not chasing a kill, n
 corner home. **The Box is closed.** It stays closed all three weeks, and every violation gets
 briefed to people whose signatures matter.
 
-The ground threat is the array: **SA-2 and SA-3 sites around Tolicha Peak and the Test Range that
-behave exactly like the ones over Hanoi**, gun belts on every corridor, and radar eyes at Tonopah
-feeding their GCI. The counters are the ones we paid for in the Route Packs: know where the site
+The ground threat is the array: **SA-2, SA-3 and SA-6 sites around Tolicha Peak and the range
+complexes that behave exactly like the ones over Hanoi**, Fire Can-directed hundred-millimeter
+flak and gun belts on every corridor, and radar eyes on the ranges feeding their GCI. The counters are the ones we paid for in the Route Packs: know where the site
 is before you fly there — that's what the recon birds are for — never give a Fan Song steady,
 predictable flight in its envelope, beam the launch, make the missile chase a moving target. And
 the guns: vary everything, one pass, don't go low to admire your work.

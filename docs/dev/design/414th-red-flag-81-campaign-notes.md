@@ -8,12 +8,11 @@ runtime suite, Vietnam doctrines). The styling/laydown reference is the commerci
 **Reflected Simulations "F-4E Red Flag 81-2"** DCS campaign the squadron flies (its
 kneeboard idiom is already harvested in `414th-campaign-doc-ideas-harvest.md` §1).
 
-> **Laydown refinement pending:** the squadron is supplying the actual 81-2 campaign
-> `.miz` so the range-target laydown (mock airfield, SAM emulator rings, convoy routes,
-> tank arrays) can be re-pointed at the real placements. The current `.miz` is a
-> historically-plausible first cut built from the dreamlandresort/NTTR public record.
-> When the reference arrives: compare target coordinates, adjust markers, keep this doc
-> in sync.
+> **Laydown refined against the reference (2026-07-02):** the squadron supplied the
+> Reflected 81-2 campaign's 15 mission `.miz` files and the laydown tables were
+> re-pointed at the real placements (see §3a for the extraction method and what the
+> reference actually showed). The dreamlandresort first cut is superseded; a NEW game
+> is required to see the refined laydown.
 
 ---
 
@@ -97,7 +96,7 @@ aggressors are *playing* Hanoi; that's the fiction of the exercise itself.
 
 ---
 
-## 3. Laydown (first cut — refine from the reference `.miz`)
+## 3. Laydown (re-pointed at the Reflected reference, 2026-07-02)
 
 Base `.miz` derived from `exercise_vegas_nerve.miz` (same theater, rebuilt marker set,
 ownership flipped to the classic Red Flag geometry: Blue in the SE corner, Red holding
@@ -105,6 +104,64 @@ the ranges to the NW). **The miz is generated, not hand-edited**:
 `tools/build_red_flag_81_2_miz.py` (any recent release pydcs round-trips it; the
 laydown tables at the top of the script are the single edit point). Re-run it to
 regenerate `resources/campaigns/red_flag_81_2.miz` after a laydown change.
+
+### 3a. What the reference `.miz` set actually showed
+
+Method: pydcs' full object loader rejects the commercial missions (unknown trigger
+ids), so all 15 mission files were raw-Lua parsed (`dcs.lua.loads` on the `mission`
+table, the `campaign_phase_laydown.py --lite` pattern), every red vehicle/static
+group dumped, and positions greedy-clustered (3–4 km) across missions. Findings that
+re-shaped the first cut:
+
+- **The array sits ~45 km further north than the first cut guessed.** All red range
+  activity concentrates in x ∈ [-297k, -219k], y ∈ [-190k, -115k] (the first cut's
+  "Tolicha Peak" complexes at x ≈ -318k were Sarcobatus Flat, too far south).
+- **The threat is flak-first, exactly like the campaign's Vietnam framing wants:**
+  104 KS-19 100 mm guns in belts with 18 SON-9 Fire Can directors, plus 46 ZSU-23-4
+  and 7 ZSU-57-2 — versus exactly **one** full SA-2 site (-270.6k, -182.3k) and one
+  SA-3 (-248.5k, -189.0k). The missile array beyond that is **SA-6** (4 Kub sites,
+  one a full 11-unit site at -219.5k, -164.1k) and **2 lone SA-8s** — the aggressor
+  MUTES emulator set.
+- **A dense "Smokey" belt** (100 SA-18 units named Smokey1–10, ~22 positions) covers
+  the eastern corridor box x ∈ [-273k, -228k], y ∈ [-129k, -115k] — the GTR-18 Smoky
+  SAM field.
+- **Four F-86F-dressed mock airfields** (the ranges' famous target dressing): the
+  24-Sabre main complex (-267.8k, -162.5k), Tolicha south (-275.0k, -178.7k), the NW
+  airfield/EWR complex (-249.5k, -185.8k), and an east complex (-269.4k, -125.9k).
+- **The Tolicha Peak complex is the showpiece target area**: SA-2 + three KS-19
+  belts + T-55 static array + a train marshalling yard (18 freight vans/locomotives)
+  + a 67-truck GAZ-66 park + a 32-tank POL farm (-270.77k, -185.28k).
+- 3 × 1L13 EWR positions: deep SW (-296.7k, -169.9k), central GCI heart
+  (-263.4k, -151.1k), NW complex (-249.1k, -187.5k).
+- T-55/armor target arrays at five spots incl. the 24-unit "RocketTarget" array in
+  the Smoky belt (-247.7k, -121.6k).
+- No routed red convoys — every reference "convoy" is parked static dressing (the
+  campaign's live trail convoys come from §35 `vietnam_convoy_interdiction` instead).
+
+Decisions taken while re-pointing (the loader's marker vocabulary and squadron calls
+constrain a 1:1 copy):
+
+- **SA-6 joins the faction** (`SA-6` preset group; markers are Hawk-type in the ME —
+  MERAD is MERAD to the loader, the faction presets decide the fill). **SON-9 Fire
+  Can + SA-8 Osa join `air_defense_units`** (all vanilla units, all in the
+  reference).
+- **The Smoky belt reads as SHORAD, not manpads:** the squadron's no-manpads call
+  (the Vietnam-faction SA-7 drop) stands, so the belt is represented by SHORAD
+  markers (SA-8 fill) at its two densest clusters plus the two real SA-8 positions.
+- **Trains/POL/truck parks map to ammo-depot markers** (the loader has no
+  train/fuel marker types); the mock airfields map to strike-target markers with
+  the factory (blue-block quirk) at the main complex.
+- **Blue point defense is AAA-only by loader rule:** `MizCampaignLoader` reads
+  MERAD/SHORAD markers from the RED country block only, so the first cut's "Hawk at
+  Creech" never actually loaded (pre-existing, found during this pass). Creech gets
+  a Vulcan marker; the player faction carries the Hawk preset for purchase.
+- **Campaign fabric kept as-is:** CPs, the Mercury↔Tolicha front, FOB positions,
+  convoy spawn hints, the SAC off-map spawn, and point-defense AAA at red fields are
+  Retribution mechanics the reference (a scripted linear campaign) has no analog
+  for.
+- Not modeled (dressing the loader can't express): the parked-Sabre statics
+  themselves, watchtower/container camps, the 2 live locomotives. Nice-to-have if a
+  scenery/dressing mechanism ever lands.
 
 NTTR coordinate convention: **larger x = further north**, **larger (less negative)
 y = further east**.
@@ -140,34 +197,45 @@ Mercury (blue↔blue).
 
 ### Objective markers (per `MizCampaignLoader` conventions)
 
-- **SA-2 rings** (`S_75M_Volhov` MERAD markers): Tolicha Peak complex ×2, TTR ring,
-  Pahute Mesa, Groom box edge — the emulator sites.
-- **SA-3 point defense** (`x_5p73_s_125_ln`): TTR field + the mock airfield complex.
-- **AAA** (`ZSU_23_4_Shilka` markers): gun belts along the two ingress corridors
-  (Student Gap analog N of Creech; the western Beatty corridor) + every red field +
-  the FEBA/strip point defense — feeds the §33 flak gauntlet. **No SHORAD markers**:
-  the 1981 Red Force faction has no SAM-SHORAD unit (guns were the point defense), so
-  a SHORAD preset location could never be filled.
-- **EWR** (`1L13` markers): Tonopah (P-37 Bar Lock from the faction) + an eastern
-  site covering the Groom approach.
-- **Armor arrays** (`M_1_Abrams` markers): Kawich Valley tank array (N ranges),
-  Gold Flat array, FEBA armor at FOB Tolicha.
-- **Strike targets**: mock airfield complex at Tolicha Peak (`Tech_combine` strike
-  target + `Workshop_A` factory + ammo depot markers — **factories must sit in the
-  BLUE country block**, the loader only scans blue statics for factories), industrial
-  complex at TTR, POL/ammo at Tonopah civil and Beatty.
+All positions below are reference cluster centers (§3a) unless tagged
+*campaign fabric*:
+
+- **SA-2** (`S_75M_Volhov` MERAD marker): the one full reference S-75 site at the
+  Tolicha Peak complex.
+- **SA-3** (`x_5p73_s_125_ln`): the NW airfield/EWR complex SW of TTR.
+- **SA-6** (`Hawk ln` MERAD markers ×3 — the loader treats every medium-SAM marker
+  type the same; the Hawk type just keeps them distinct in the ME): main mock
+  airfield south, Tolicha south, and the TTR SE-approach full site. The faction's
+  new `SA-6` preset provides the fill.
+- **SHORAD** (`Strela-1 9P31` markers ×4 → faction SA-8 Osa): the two real
+  reference SA-8 positions + two stand-ins for the Smoky belt (§3a decision).
+- **AAA** (`ZSU_23_4_Shilka` markers ×18 red): eleven reference gun-belt positions
+  (Tolicha ×2, mock airfields, NW complex + satellite, central band, Fire Can site,
+  refueler camp, the two "FuelAAA" camps) + seven *campaign fabric* point-defense
+  sites (red fields, FOB Tolicha, the FEBA corridor) — feeds the §33 flak gauntlet.
+  Faction fills mix KS-19/SON-9/S-60/ZU-23/ZSUs.
+- **EWR** (`1L13` markers ×3): deep SW, central GCI heart, NW complex (P-37 Bar
+  Lock fills when HDS is on).
+- **Armor arrays** (`M_1_Abrams` markers ×5): Tolicha T-55 array, NW complex array,
+  east mock-airfield armor, and the two Smoky-belt target arrays.
+- **Strike targets**: the four mock airfields (`Tech_combine`; `Workshop_A` factory
+  at the main complex — **factories must sit in the BLUE country block**, the
+  loader only scans blue statics for factories) + TTR industrial (*campaign
+  fabric*). **Ammo depots**: Tolicha marshalling yard, Tolicha POL farm, NW truck
+  park + Tonopah/Beatty depots (*campaign fabric*).
 - **Command center** (`_Command_Center` static): Red Force C2 inside the Groom box
-  (hidden until the §15 command-post fog is beaten).
+  (hidden until the §15 command-post fog is beaten). *Campaign fabric.*
 - **Convoy spawn hints** (`M1043_HMMWV_Armament` pairs) near each CP, as Vegas Nerve.
 - Kept from Vegas Nerve: the TTR Invisible-FARP helipad cluster (red helo ground
   spawns), both off-map spawn plane groups (renamed to SAC roles).
 
-### What the reference `.miz` should refine
+### What the reference `.miz` refined (done — see §3a)
 
-Exact coordinates of: the mock airfield target complex, the SA-2/SA-3 emulator sites,
-the convoy route the campaign uses, tank-array placement, any range targets we
-haven't modeled (trains, bridges) — plus anything about the 81-2 mission flow worth
-folding into the phases arc.
+The mock airfields (×4, not 1), the SAM emulator sites (SA-2 ×1 / SA-3 ×1 / SA-6 ×3
+/ SA-8s — not five SA-2 rings), the flak belts (KS-19/Fire Can-first), tank arrays,
+the train marshalling yard + POL farm, and the Smoky belt. The reference has no
+moving convoys (all its columns are parked dressing) and no bridges-as-targets, so
+nothing to fold there; the mission flow already matches the three-week phases arc.
 
 ---
 
@@ -186,8 +254,10 @@ Two new faction files (era-correct, doctrine-wired):
   `vietnam_air_defense`** (red's air force IS its BARCAP + `gci_ambush`). Air: F-5E
   Tiger II (FC) with 64th/65th aggressor liveries, MiG-21bis + MiG-21MF (VWV) +
   MiG-17F (VWV) for the Constant Peg birds, Mi-8 helos, An-26 transport. Ground/AD:
-  SA-2 + SA-3 presets, ZSU-23-4/ZSU-57/S-60/ZU-23 AAA, P-37 Bar Lock EWR,
-  Vietnam-pattern light armor (PT-76/T-55) as the simulated enemy army.
+  SA-2 + SA-3 + **SA-6** presets (SA-6 added on reference evidence, §3a),
+  KS-19 + **SON-9 Fire Can** + ZSU-23-4/ZSU-57/S-60/ZU-23 AAA, **SA-8 Osa** SHORAD,
+  P-37 Bar Lock EWR, Vietnam-pattern light armor (PT-76/T-55) as the simulated
+  enemy army.
 
 Both factions stay **fork-side** (they encode 414th campaign identity; the
 upstreaming carve rule from the community-contribution roadmap applies).
@@ -248,8 +318,12 @@ Mirrors Yankee Station's block except:
 - [x] First-cut `.miz` (script-built from `exercise_vegas_nerve.miz`)
 - [x] Wiki campaign pack (`docs/wiki/Red-Flag-81-2-*.md` ×5: briefing / intel / role cards /
   first-three-turns / required mods — carries the 🟡 unflown + first-cut-laydown flags)
-- [ ] **Re-point laydown at the real 81-2 `.miz`** (user supplying tonight)
-- [ ] Headless validation: campaign loads, front forms, phases parse (CI test run)
+- [x] **Re-point laydown at the real 81-2 `.miz`** (done 2026-07-02 — §3a; faction
+  gains SA-6/SON-9/SA-8; needs a NEW game)
+- [x] Headless validation: campaign loads, factions resolve (no silent roster
+  drops), preset census = tables (5 MERAD / 4 SHORAD / 20 AAA / 3 EWR / 5 armor /
+  5 strike / 5 ammo / factory / C2), Mercury↔Tolicha front forms, 3-phase arc
+  parses (2026-07-02, worktree venv smoke)
 - [ ] Balance pass: red economy vs. the 13-turn arc; will-feed weights
 - [ ] In-game pass (add checklist row; needs the flown flag: gauntlet over the
   corridors, aggressor GCI slash, Box violation will-drain, Mercury gaggle run)

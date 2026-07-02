@@ -698,7 +698,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (regression is authored-only, P2). The active phase reorders **only the offensive middle** of
     `PlanNextAction`'s HTN root methods (BLUE only; the reactive prefix + tail are fixed — the §17 boundary),
     shifting which objectives get first claim on offensive jets. Always explains itself (§3.4 legibility:
-    "Interdiction — enemy IADS 22% · air threat low · front static") on the kneeboard **cover-page band** and
+    "Interdiction — enemy IADS 22% · air threat low · front static") on the kneeboard **cover-page band**
+    (which also **spells the ROE out** — OFF LIMITS zones / LOCKED classes / CLEARED classes via
+    `roe_summary_lines`) and
     a new **client campaign-status ribbon** (`CampaignStatusBar` over the map, fed by `GameJs.campaign_status`
     — which also carries campaign name/turn/date, previously never sent to the client, + the political-will
     meters on Vietnam campaigns). Gated by `campaign_phases` (default **ON** — [DECIDED] Tier-0 inference is

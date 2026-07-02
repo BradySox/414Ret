@@ -770,6 +770,86 @@ def roe_restriction_reason(game: "Game", target: object) -> Optional[str]:
     return None
 
 
+#: Human names for the target_release classes (TGO ``category`` strings plus the
+#: special ``"airfield"``); an unlisted class falls back to its raw name.
+_CLASS_DISPLAY = {
+    "ware": "warehouses",
+    "factory": "factories",
+    "power": "power plants",
+    "oil": "oil facilities",
+    "fuel": "fuel depots",
+    "ammo": "ammo depots",
+    "comms": "comms",
+    "commandcenter": "command centers",
+    "airfield": "airfields (OCA)",
+    "aa": "air defenses",
+    "ship": "ships",
+    "derrick": "derricks",
+}
+
+
+def _class_display(target_class: str) -> str:
+    return _CLASS_DISPLAY.get(target_class, target_class)
+
+
+def _cleared_classes(game: "Game", phase: CampaignPhase) -> list[str]:
+    """Enemy target classes actually present in this theater and NOT locked.
+
+    Derived from the live laydown so the CLEARED list never advertises a class
+    the campaign doesn't field. Villages are never advertised as targets.
+    """
+    present: set[str] = set()
+    for cp in game.theater.controlpoints:
+        if cp.captured.is_blue or cp.captured.is_neutral:
+            continue
+        if getattr(cp, "dcs_airport", None) is not None:
+            present.add("airfield")
+        for tgo in cp.connected_objectives:
+            present.add(tgo.category)
+    present.discard("village")
+    return [
+        _class_display(target_class)
+        for target_class in sorted(present)
+        if target_class not in phase.locked_target_classes
+    ]
+
+
+def roe_summary_lines(game: "Game") -> list[tuple[str, str]]:
+    """The active phase's ROE, spelled out: what is off limits and what is good.
+
+    Returns ``(label, text)`` rows for the kneeboard cover's CAMPAIGN PHASE band
+    -- OFF LIMITS (sanctuary zones with radii), LOCKED (target classes still
+    withheld), CLEARED (classes actually present in-theater and released, plus
+    the never-gated front-line fight). Empty when no phase is active or the
+    phase carries no ROE payload, so non-ROE campaigns see no change.
+    """
+    phase = active_phase(game)
+    if phase is None:
+        return []
+    if not phase.restricted_zones and not phase.locked_target_classes:
+        return []
+    lines: list[tuple[str, str]] = []
+    zone_bits = [
+        f"{name} {radius_m / 1852.0:.0f} nm"
+        for name, _center, radius_m in _resolved_zones(game, phase)
+    ]
+    if zone_bits:
+        lines.append(("OFF LIMITS", " · ".join(zone_bits)))
+    if phase.locked_target_classes:
+        lines.append(
+            (
+                "LOCKED",
+                ", ".join(_class_display(c) for c in phase.locked_target_classes),
+            )
+        )
+    cleared = _cleared_classes(game, phase)
+    # Front-line forces and convoys are never class-gated (flak is always fair
+    # game) -- say so, or a fully locked phase reads as "nothing to fly".
+    cleared.append("front-line forces & convoys")
+    lines.append(("CLEARED", ", ".join(cleared)))
+    return lines
+
+
 def _arc_for_display(game: "Game") -> tuple[CampaignPhase, ...]:
     """The campaign's arc for UI purposes: authored, else the Tier-0 sequence."""
     return authored_arc_for(game) or (ROLLBACK, INTERDICTION, OFFENSIVE)

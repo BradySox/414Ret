@@ -149,10 +149,22 @@ def test_cover_page_renders_to_file(tmp_path: Path) -> None:
         packages=None,
         aircraft=_Aircraft("F/A-18C"),  # type: ignore[arg-type]
         dark_kneeboard=False,
+        phase_line="Rolling Thunder — phase 1 of 4 · ROE restrictions active",
+        phase_narrative="Gradual pressure under Washington's thumb.",
+        roe_lines=[
+            ("OFF LIMITS", "Hanoi sanctuary (RP VI-A) 15 nm"),
+            ("LOCKED", "factories, airfields (OCA)"),
+            ("CLEARED", "air defenses, front-line forces & convoys"),
+        ],
     )
     out = tmp_path / "cover.png"
     page.write(out)
     assert out.exists() and out.stat().st_size > 0
+    text = out.with_suffix(".txt").read_text("utf8")
+    # The ROE band spells out what is withheld and what is released.
+    assert "OFF LIMITS: Hanoi sanctuary (RP VI-A) 15 nm" in text
+    assert "LOCKED: factories, airfields (OCA)" in text
+    assert "CLEARED: air defenses, front-line forces & convoys" in text
 
 
 def test_cover_carries_friendly_packages_in_compact_mode() -> None:

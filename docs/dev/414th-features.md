@@ -2929,7 +2929,12 @@ P2, riding the Vietnam W4 arcs).
 - **Legibility** (spec §3.4): the phase always explains itself — "Interdiction — enemy IADS 22% · air threat
   low · front static" — via `legibility()`, stored as `game.phase_status_line`. Phase *transitions* post an
   Information message once (the campaign-start assignment is silent).
-- **Surfaces**: the kneeboard **cover page** (§30) gains a CAMPAIGN PHASE band (status line + narrative); the
+- **Surfaces**: the kneeboard **cover page** (§30) gains a CAMPAIGN PHASE band (status line + narrative + —
+  per playtest ask on 1968 Yankee Station — the **ROE spelled out**: `roe_summary_lines(game)` in
+  `phases.py` renders OFF LIMITS (sanctuary zones with radii, amber) / LOCKED (withheld target classes,
+  amber) / CLEARED (classes the enemy actually fields and the phase released — derived from the live
+  laydown, villages never advertised — plus the never-gated front-line fight, green), so "ROE restrictions
+  active" isn't a guessing game; empty on phases with no ROE payload); the
   web client gains a **campaign-status ribbon** over the map (`CampaignStatusBar`) fed by a new
   `GameJs.campaign_status` payload (campaign name / turn / date — previously never sent to the client at all —
   + phase + the political-will meters on Vietnam campaigns, each segment self-hiding when absent); and the

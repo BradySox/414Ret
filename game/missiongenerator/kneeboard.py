@@ -3418,6 +3418,7 @@ class CoverPage(KneeboardPage):
         dark_kneeboard: bool,
         phase_line: Optional[str] = None,
         phase_narrative: Optional[str] = None,
+        roe_lines: Optional[List[Tuple[str, str]]] = None,
     ) -> None:
         self.campaign_name = campaign_name
         self.turn = turn
@@ -3429,6 +3430,7 @@ class CoverPage(KneeboardPage):
         self.dark_kneeboard = dark_kneeboard
         self.phase_line = phase_line
         self.phase_narrative = phase_narrative
+        self.roe_lines = roe_lines or []
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -3455,6 +3457,12 @@ class CoverPage(KneeboardPage):
             writer.text(self.phase_line, wrap=True)
             if self.phase_narrative:
                 writer.text(self.phase_narrative, wrap=True)
+            # ROE spelled out (W4): what the phase actually forbids and what is
+            # released, so "ROE restrictions active" isn't a guessing game. Amber
+            # for the withheld rows, green for the cleared one.
+            for label, text in self.roe_lines:
+                color = writer.col_success if label == "CLEARED" else writer.col_caution
+                writer.text(f"{label}: {text}", wrap=True, fill=color)
 
         if self.sitrep is not None:
             writer.vspace(10)
@@ -3632,7 +3640,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                     representative, rows, self.dark_kneeboard
                 )
 
-        from game.fourteenth.phases import active_phase
+        from game.fourteenth.phases import active_phase, roe_summary_lines
 
         phase = active_phase(self.game)
         return CoverPage(
@@ -3646,6 +3654,7 @@ class KneeboardGenerator(MissionInfoGenerator):
             dark_kneeboard=self.dark_kneeboard,
             phase_line=getattr(self.game, "phase_status_line", None),
             phase_narrative=phase.narrative if phase is not None else None,
+            roe_lines=roe_summary_lines(self.game) if phase is not None else None,
         )
 
     def _cover_sitrep(self) -> Optional[Sitrep]:

@@ -2292,6 +2292,29 @@ so the two docs don't drift.
 
 ---
 
+### P1 — COIN Enduring Resolve: the living insurgency in play · COIN C-series · ☐ UNTESTED (built 2026-07-02; the whole stack headless-verified on the real campaign — regen/revival, cache throttle to the 0.25 floor, will profile, 3-phase arc — the played feel needs a campaign)
+- **Headless adjudication:** the campaign loads through the real `GameGenerator` pipeline (probe 2026-07-02):
+  13 insurgent strongholds each carry their authored ammo caches (28 total), `coin_state` anchors all 13
+  (garrison + eligible-cell caps + cache totals), killing cells revives at 2/turn toward the anchor and never
+  past it, killing both of a stronghold's caches drops its regen to the 0.25 floor, `will_profile_for`
+  resolves "The Coalition's mandate"/"the insurgency's momentum" with `red_cache_lost` 4.0, and the
+  Disrupt → Clear and Hold → Break the Momentum arc parses with the coordinate-anchored Lashkar Gah/Herat
+  population-center rings. What CI cannot adjudicate is the **played loop**.
+- **Setup:** NEW campaign "Afghanistan - Operation Enduring Resolve (COIN)" (all COIN toggles preseed on).
+  Play 5+ turns: strike a stronghold's cells one turn WITHOUT touching its caches; recon it two turns later.
+  Then kill both its caches and repeat.
+- **Pass:** the cleared cells come back within ~2 turns while caches stand (and the recon-fog picture shows
+  them dead until re-reconned — "it's shooting again"); after the caches die the same stronghold visibly
+  stops refilling (floor trickle only); the will message reads mandate vs momentum with cache kills as
+  labeled "ammo caches xN destroyed" movers; trail convoys flow (the ratline); FOB standoff fire lands on
+  forward fields; the phase ribbon opens on "Disrupt the Network"; a strike near the Lashkar Gah ring draws
+  the ROE warning in the package dialog and a violation drains the mandate.
+- **Fail signature:** strongholds never refill (regen dead — check `coin_insurgency` survived the preseed and
+  `coin_state` anchors exist / anchor caps are 0); refill continues at full rate with all caches dead
+  (throttle broken); revived units invisible in the next mission (TGO revival not reaching the generated
+  miz); the will message shows Washington/Hanoi (profile lookup failed — name mismatch degrades to defaults);
+  the arc opens on a Tier-0 phase (authored parse failed); zone rings missing from the map (x/y anchor bug).
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

@@ -326,6 +326,16 @@ and selected later upstream fixes.
   Rolling Thunder's restraint finally costs something — plus a **permanent "PRC border" ring at Tbilisi**
   that never releases, even in Linebacker II, exactly like the real war. Existing saves keep the old board;
   the recast needs a **NEW** game.
+- A new **Afghanistan - Operation Enduring Resolve (COIN)** campaign — the first **living
+  counterinsurgency** (a fork of Starfire's Operation Shattered Dagger). The insurgency's strongholds
+  **regenerate**: cleared cells come back toward their original strength each turn — and your last recon
+  picture stands until you re-fly it — throttled by **hidden ammo caches** you recon and strike; kill a
+  stronghold's caches and its regeneration collapses to a trickle. The war is decided at the will meters:
+  **the Coalition's mandate** (airframes, lost bases, strikes near the Lashkar Gah and Herat
+  population-center rings, and plain time) against **the insurgency's momentum** (caches, trail convoys,
+  strongholds — almost never its dead fighters). Disrupt the Network → Clear and Hold → Break the
+  Momentum, with FOB standoff fire and the supply-trail ratline running throughout. Body count alone
+  wins nothing.
 - A new **Nevada - Red Flag 81-2** campaign — the ultimate war game, played as the war it rehearses. An
   F-4E wing detachment deploys to **Nellis, January 1981** (after the Reflected Simulations campaign the
   squadron flies) against the **integrated Red Force of the real 1981 exercise**: 64th/65th **Aggressor

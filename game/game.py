@@ -395,7 +395,7 @@ class Game:
         # track natively; never a phantom spawn.
         from game.fourteenth.coin import regenerate_insurgent_cells
 
-        regenerate_insurgent_cells(self)
+        regenerate_insurgent_cells(self, events)
 
         # Vietnam Ops Super Gaggle (§37): (re)plan the turn's resupply run from real BLUE
         # squadrons (drawing the helos + suppressors from actual airframes, whose losses are

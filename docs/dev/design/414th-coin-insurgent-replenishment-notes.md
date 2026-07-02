@@ -1,6 +1,6 @@
 # 414th — COIN insurgent replenishment — design notes
 
-**Status: C1 LANDED (2026-07-02); C2–C4 design-only.** The regen core of §3 is built
+**Status: C1+C2+C3 LANDED (2026-07-02); C1.5 designed (build slot after tuning); C4 design-only.** The regen core of §3 is built
 (`game/fourteenth/coin.py`, the `coin_insurgency` setting, the `finish_turn` hook,
 `tests/fourteenth/test_coin.py` — including the multi-turn shell-sanity test that is
 the C1.5 trigger bar). This note remains the spec for the rest of the C-series. It is
@@ -17,6 +17,18 @@ excluded the signature insurgent unit; the ceiling is what actually keeps BMPs
 trucks (10) in. Tanks/ATGMs/SAMs/radars stay excluded by class regardless of price.
 Caches bind by **TGO-to-CP ownership** (engine-native) rather than the drafted
 radius.
+
+**C3 surfaced a second deviation — the TGO revival channel.** The Shattered Dagger
+laydown is an air-assault campaign with **no front lines**, so `Base.armor` is unused
+and the §3.1 garrison channel had nothing to refill (every stronghold anchored at
+cap 0 in the engine probe). The insurgent force lives in the **vehicle-group TGOs**
+around each FOB, so `regenerate_insurgent_cells` gained a second channel: **reviving
+the stronghold's own dead, whitelist-eligible TGO cell units** toward the
+eligible-alive count at anchor (`tgo_cap`), same budget/carry/cache throttle, armor
+channel first. Revival is conservation by construction (only what the campaign
+authored can return), and `alive_at_last_recon` is never touched — the player's last
+recon picture stands until re-flown ("we cleared that position last week; it's
+shooting again").
 
 ---
 
@@ -174,11 +186,24 @@ shows it's needed (per the generalization note §6).
   0.0, default-equivalence preserved and test-locked), the destroyed-cache feed
   (`_red_caches_destroyed`, per-TGO dedup + fully-dead gate), tests in
   `test_political_will.py` (inert-by-default + priced counting).
-- **C3 — the campaign**: fork Shattered Dagger (credit Starfire, the Khe Sanh/
-  Yankee Station precedent) — restore a real (small) insurgent income, preseed
-  `coin_insurgency` + harassment (§36) + convoy interdiction (§35) + the `will:`
-  profile, author the cache TGOs per stronghold and a Clear → Hold → Build `phases:`
-  arc with ROE zones around towns.
+- **C3 — the campaign** ✅ **LANDED 2026-07-02**: **"Afghanistan - Operation
+  Enduring Resolve (COIN)"** (`resources/campaigns/coin_enduring_resolve.{yaml,miz}`,
+  credit Starfire). The miz is **generated** by `tools/build_coin_enduring_resolve_miz.py`
+  (never hand-edit): the Shattered Dagger miz + 28 `Warehouse.Ammunition_depot`
+  cache markers ringing the 13 insurgent strongholds (2 per FOB, 3 per airfield;
+  each becomes a real ammo TGO via the miz-loader sentinel →
+  `generate_ammunition_depots`). The YAML restores a small real income (250 / 0.25 —
+  the original zeroed it), preseeds the full stack (`coin_insurgency`,
+  `vietnam_political_will`, `vietnam_convoy_interdiction`,
+  `vietnam_airbase_harassment`), authors the inverted `will:` profile ("The
+  Coalition's mandate" vs "the insurgency's momentum"; `red_cache_lost` 4.0,
+  `red_ground_unit_lost` 0.05, `blue_passive_regen` 0.0) and the
+  **Disrupt → Clear and Hold → Break the Momentum** arc (will-coupled advances,
+  capture objectives on FOB Frontenac/Kamp Hadrian/Tarinkot, permanent
+  coordinate-anchored Lashkar Gah + Herat population-center rings — Bost/Herat are
+  neutral fields that never instantiate as CPs, so `center:` cannot name them).
+  Definition locked in CI (`test_enduring_resolve_campaign_definition`); the whole
+  stack engine-probe-verified; in-game pass = checklist **P1**.
 - **C4 (later) — dispersed harassment cells**: occasional real TGO cells placed near
   contested CPs via the §20 `place_unit_group` machinery (mortar teams in the blue
   rear). Optional texture; not load-bearing.

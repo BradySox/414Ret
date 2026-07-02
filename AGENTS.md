@@ -737,7 +737,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `dcs_retribution.lua` records, so their names land in the debrief killed lists (as untracked ground units,
     since they aren't in the `UnitMap`) and are matched by name. Fully guarded (feature off / no outpost / no
     launch / no helo squadron with airframes ⇒ no commitment ⇒ no node ⇒ plugin no-ops). Blue-only (symmetry
-    deferred). Plugin options now just speed/altitudes (type/count come from the squadrons). (`game/fourteenth/super_gaggle.py`,
+    deferred). Plugin options now just speed/altitudes (type/count come from the squadrons). **Findability pass
+    2026-07-02** (the "half-baked" complaint — "Escort welcome" with no location, so the run played out unseen
+    unless the player was already over the launch field): the plugin now keeps **one live F10 map mark** on the
+    lead helo, refreshed each poll and removed on delivery/loss (`markToCoalition`/`removeMark`), and the spawn
+    cue reads "Marked on the F10 map"; the stale "re-rolling on a cadence" setting copy is corrected to the real
+    single-run-per-turn behavior. Same F10-hook bar as the naval-gunfire feature. (`game/fourteenth/super_gaggle.py`,
     `game/game.py`, `game/sim/missionresultsprocessor.py`, `game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §37, checklist L9 — needs an
     in-game pass.)
@@ -748,8 +753,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     half. Same shape as §33 flak (an on-marker + runtime discovery): Python emits only
     `dcsRetribution.VietnamOps.fac = { enabled }` (`_populate_fac`); the `vietnamops` plugin discovers airborne
     friendly units of the FAC type (default `Bronco-OV-10A`) at runtime and, on a cadence, drops white smoke
-    (`trigger.action.smoke`, willie pete) on the nearest opposing ground unit within range + a "cleared hot"
-    cue. Symmetric (only OV-10 owners have FACs, so blue-effective in practice); needs a friendly OV-10
+    (`trigger.action.smoke`, willie pete) on the target + a "cleared hot" cue. **Findability pass 2026-07-02**
+    (the "half-baked" complaint — a bare unlocated "cleared hot" text, and the smoke was indistinguishable from
+    the Bronco's own WP rockets): it now marks the **largest enemy ground concentration** in range (not whatever
+    lone truck was nearest — `bestEnemyGround`), and lays a **named, live F10 map mark** at it (e.g. "FAC(A):
+    BTR-60 x6 — willie pete, cleared hot", one per FAC unit, refreshed each tick via
+    `markToCoalition`/`removeMark`) so the target is findable from anywhere and unambiguously the FAC (rockets
+    make no F10 mark); the text names the target + points at the F10. Same F10-hook bar as the naval-gunfire
+    feature. Symmetric (only OV-10 owners have FACs, so blue-effective in practice); needs a friendly OV-10
     airborne over the front, or it no-ops. Runtime-cosmetic (a marker, no gameplay-model change). Plugin
     options: FAC type, spot/mark range, mark cadence. (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §38, checklist L10 — needs an

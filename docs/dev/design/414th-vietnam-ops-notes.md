@@ -207,6 +207,13 @@ squadron's airframes (launch → over the outpost on a CAS task → back). The p
 Test-covered (`tests/fourteenth/test_super_gaggle.py`); runtime Lua pending an in-game pass (checklist L9) —
 the suppressor's default loadout / effectiveness is the open tuning item.
 
+**Findability pass (2026-07-02).** The gaggle was hard to actually *escort* — the "Escort welcome" cue gave
+no location, so unless the player was already over the launch field the run played out unseen (the "half-baked"
+complaint). The plugin now keeps **one live F10 map mark** on the lead helo, refreshed every poll (10 s) and
+removed on delivery/loss, so the player can find and join it from anywhere; the spawn cue reads "Marked on the
+F10 map." Same shape as the naval-gunfire feature's F10 hook. Pure `trigger.action.markToCoalition` /
+`removeMark`, pcall-guarded (id base 980000). Still checklist L9.
+
 **Original planner-template design (NOT built — kept for the future increment).** A planner package template:
 when `vietnam_super_gaggle` is on and a friendly outpost is cut off, auto-plan the package (suppress + cargo +
 escort) the way `auto_combat_sar` self-plans. Blocked on the missing auto-plannable CTLD cargo run; revisit if

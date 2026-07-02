@@ -1,0 +1,11 @@
+---
+name: 81st Tactical Fighter Squadron
+nickname: Panthers
+country: USA
+role: Ground Attack
+aircraft: A-10C Thunderbolt II (Suite 3)
+livery: "81st FS Spangdahlem AB, Germany (SP) 1"
+mission_types:
+  - CAS
+  - BAI
+  - Armed Reconnaissance

@@ -1,0 +1,12 @@
+---
+name: 526th Tactical Fighter Squadron
+nickname: Black Knights
+country: USA
+role: Fighter Bomber
+aircraft: F-4E-45MC Phantom II
+livery: "RS68-381_E1_526TFS"
+mission_types:
+  - BAI
+  - CAS
+  - Strike
+  - OCA/Runway

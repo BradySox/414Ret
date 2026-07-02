@@ -1,0 +1,13 @@
+---
+name: 11th Guards Bomber Aviation Regiment
+nickname: 11 GvBAP
+country: Russia
+role: Bomber
+aircraft: Su-24M Fencer-D
+livery: "af standard"
+female_pilot_percentage: 0
+mission_types:
+  - Strike
+  - BAI
+  - SEAD
+  - OCA/Runway

@@ -1,0 +1,12 @@
+---
+name: 336th Independent Combat Helicopter Regiment
+nickname: Krokodil
+country: Russia
+role: Attack Helicopter
+aircraft: Mi-24P Hind-F
+livery: "AF USSR"
+female_pilot_percentage: 0
+mission_types:
+  - CAS
+  - Escort
+  - Armed Reconnaissance

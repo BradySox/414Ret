@@ -1,0 +1,10 @@
+---
+name: 226th Composite Aviation Regiment
+nickname: Curl
+country: Russia
+role: Transport
+aircraft: An-26B
+livery: "RF Air Force"
+female_pilot_percentage: 0
+mission_types:
+  - Transport

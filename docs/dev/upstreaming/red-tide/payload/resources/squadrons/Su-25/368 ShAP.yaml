@@ -1,0 +1,12 @@
+---
+name: 368th Assault Aviation Regiment
+nickname: Grachi
+country: Russia
+role: Ground Attack
+aircraft: Su-25 Frogfoot
+livery: "field camo scheme #1 (native)"
+female_pilot_percentage: 0
+mission_types:
+  - CAS
+  - BAI
+  - Armed Reconnaissance

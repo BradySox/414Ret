@@ -1,0 +1,12 @@
+---
+name: 326th Heavy Bomber Aviation Regiment
+nickname: 326 TBAP
+country: Russia
+role: Bomber
+aircraft: Tu-22M3 Backfire-C
+livery: "af standard"
+female_pilot_percentage: 0
+mission_types:
+  - Strike
+  - OCA/Runway
+  - Anti-ship

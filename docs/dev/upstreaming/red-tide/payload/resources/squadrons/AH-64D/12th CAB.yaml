@@ -1,0 +1,11 @@
+---
+name: 12th Combat Aviation Brigade
+nickname: Griffins
+country: USA
+role: Attack Helicopter
+aircraft: AH-64D Apache Longbow
+livery: "12th Combat Aviation Brigade Griffins"
+mission_types:
+  - CAS
+  - Escort
+  - Armed Reconnaissance

@@ -62,6 +62,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 11 | Era-gate payload-editor options (JHMCS property gating §24 **+** AAQ-33 redo) | 🔵 IN REVIEW | High (era realism, opt-in) — **pushed as PR #843** | I3 ☐ |
 | 12 | Empty `aircraft:` key crashes New Game (`SquadronConfig.from_data` None guard; upstream's own *Northern Guardian* + *WRL Noisy Cricket Redux* ship the pattern) | 🟢 READY | Medium (two shipped campaigns unplayable) | n/a (unit-tested, generation-covered) |
 | 13 | High Digit SAMs **Ultimate Compilation** support (§41 generic core: retarget the toggle, renamed radars, 42 new units/7 presets/SAMP-T layout, `remove_vehicle` id-vs-name strip fix; no 414th faction enrichment) | 🔵 IN REVIEW | High (the original mod is dead; unlocks S-400/V4/SAMP-T for everyone) — **pushed as PR #851**, opened 2026-07-01 | N1 ☐ |
+| 14 | **Germany - Red Tide campaign publication** (content-only: campaign yaml + miz with routes re-baked as M-113/HandyWind groups, new `Russia 1988` faction, 1-line blufor MPRS add, 44 historical squadron defs; 414th identity stripped from the upstream copy) | 🟡 NEAR | High (a full authored GermanyCW scenario campaign for everyone) — **payload READY** in `docs/dev/upstreaming/red-tide/` (`build_payload.py` regenerates; validated vs dev @ `dce851ea`); needs the current-dev headless validation + PR push from the Windows box (this sandbox can't reach the PR fork) | n/a (content; validated at carve) |
 
 ---
 

@@ -1,0 +1,11 @@
+---
+name: 1-17 Cavalry
+nickname: Saber
+country: USA
+role: Armed Scout
+aircraft: OH-58D(R) Kiowa Warrior
+livery: "US 1-17 A 002"
+mission_types:
+  - CAS
+  - Escort
+  - Armed Reconnaissance

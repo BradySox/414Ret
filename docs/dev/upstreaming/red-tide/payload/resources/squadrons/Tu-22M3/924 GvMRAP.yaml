@@ -1,0 +1,11 @@
+---
+name: 924th Guards Naval Missile-Carrier Aviation Regiment
+nickname: Baltic Backfires
+country: Russia
+role: Bomber
+aircraft: Tu-22M3 Backfire-C
+livery: "af standard"
+female_pilot_percentage: 0
+mission_types:
+  - Anti-ship
+  - Strike

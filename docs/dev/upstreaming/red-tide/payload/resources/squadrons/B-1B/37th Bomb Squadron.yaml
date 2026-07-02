@@ -1,0 +1,9 @@
+---
+name: 37th Bomb Squadron
+nickname: Tigers
+country: USA
+role: Strategic Bomber
+aircraft: B-1B Lancer
+mission_types:
+  - Strike
+  - OCA/Runway

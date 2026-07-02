@@ -1,0 +1,9 @@
+---
+name: 910th Airlift Wing
+nickname: Youngstown
+country: USA
+role: Transport
+aircraft: C-130
+livery: "910th AW Youngtown 20-5982"
+mission_types:
+  - Transport

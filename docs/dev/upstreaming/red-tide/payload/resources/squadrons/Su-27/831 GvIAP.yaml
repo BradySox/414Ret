@@ -1,0 +1,13 @@
+---
+name: 831st Guards Fighter Aviation Regiment
+nickname: 831 GvIAP
+country: Russia
+role: Fighter
+aircraft: Su-27 Flanker-B
+livery: "Air Force Standard Early"
+female_pilot_percentage: 0
+mission_types:
+  - BARCAP
+  - TARCAP
+  - Escort
+  - Fighter sweep

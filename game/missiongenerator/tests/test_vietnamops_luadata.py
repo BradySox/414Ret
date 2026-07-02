@@ -65,6 +65,10 @@ def _emit(
             conflicts=lambda: list(fronts or []),
         ),
         coalitions=coalitions or [],
+        # §37: the gaggle spawns under the BLUE faction country (Lua countryId).
+        blue=SimpleNamespace(
+            faction=SimpleNamespace(country=SimpleNamespace(id=2))  # USA
+        ),
         # §37: the emitter reads the planned gaggle off the game, not geography.
         super_gaggle_commitment=super_gaggle_commitment,
     )
@@ -354,6 +358,10 @@ def test_super_gaggle_emits_the_committed_run() -> None:
     assert "superGaggle" in lua
     assert "Hill 861" in lua  # the besieged outpost
     assert "BLUE" in lua  # the friendly resupply coalition
+    # The spawn country: the BLUE faction country id, so the plugin never falls
+    # back to its hardcoded USA default (which spawns NEUTRAL for other factions).
+    assert "countryId" in lua
+    assert '"2"' in lua
     # The exact per-airframe unit names are emitted so a killed name maps back to a squadron.
     assert "SuperGaggle-T3-Helo-1" in lua
     assert "SuperGaggle-T3-Helo-2" in lua

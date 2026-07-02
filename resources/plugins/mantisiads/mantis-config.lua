@@ -437,8 +437,8 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     -- MANTIS classifies a SAM's range/band by scanning the group's unit type
     -- names against its built-in SamData table, breaking on the FIRST match
     -- (MANTIS:_GetSAMRange / _GetSAMDataFromUnits). Retribution SAM sites carry
-    -- MULTIPLE radars (search + track + launchers + a co-located "Dog Ear" EWR in
-    -- many sites), so that scan picks the wrong radar and mis-types medium/long
+    -- MULTIPLE radars (search + track + launchers, and historically a co-located
+    -- "Dog Ear"), so that scan picks the wrong radar and mis-types medium/long
     -- SAMs (SA-6 / SA-10 / SA-11) as POINT. A POINT SAM drops into MANTIS' autono-
     -- mous-SHORAD set instead of the network, never gets EMCON-coordinated, and
     -- only engages at point-blank range -- so nothing emits at standoff and there

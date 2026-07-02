@@ -61,6 +61,17 @@ def test_vietnam_masses_a_deck_load_of_surge_sections() -> None:
     assert _strike_sections(VIETNAM_DOCTRINE) == [False, True, True, True]
 
 
+def test_no_solo_strike_sections() -> None:
+    # The minimum fighting element is a 2-ship section: a 1-unit target must not
+    # produce a single A-4 flying the strike alone (playtest catch), under any
+    # doctrine.
+    for doctrine in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, VIETNAM_DOCTRINE):
+        task = PlanStrike(_target(doctrine, units=1))  # type: ignore[arg-type]
+        task.propose_flights()
+        sizes = [f.num_aircraft for f in task.flights if f.task is FlightType.STRIKE]
+        assert sizes and all(size >= 2 for size in sizes)
+
+
 def test_always_escort_strikes_forces_a2a_escort() -> None:
     # Under a doctrine with always_escort_strikes (Vietnam), a STRIKE-led package marks the
     # A2A escort "needed" even with no detected air threat on the route -- otherwise

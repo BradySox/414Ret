@@ -225,7 +225,9 @@ file. This guide is the map; those are the territory.
     The **"Alpha Strike" label is earned, not flat** (user playtest caught four separate 2-ships each
     wearing the name): `Package.is_massed_strike` (≥2 STRIKE sections totalling ≥4 bombers) gates the era
     rename at all three display sites (`package_description`, `Flight.task_display_name`,
-    `FlightData.task_display_name`) — a lone section (or a pair of single-ships) reads plain "Strike". The
+    `FlightData.task_display_name`) — a lone section (or a pair of single-ships) reads plain "Strike".
+    **No solo strikers**: strike section size is floored at 2 for every doctrine (1-unit targets were
+    producing single A-4s flying strikes alone; a tiny target now draws a real 2-ship section or nothing). The
     **fighter-economy levers** landed after
     the Linebacker naked-B-52 playtest (2026-07-01): `Doctrine.escort_support_aircraft=False` (Vietnam) drops
     the AEWC/tanker fighter escorts that consumed 8 of 10 fighters before any strike planned

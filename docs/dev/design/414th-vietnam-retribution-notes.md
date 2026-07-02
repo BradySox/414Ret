@@ -137,9 +137,13 @@ P2 (shell/preset) + P3 (behaviour taskings) outstanding.
   `FlightData.task_display_name`); a lone section — or a pair of single-ships on a trivial target —
   reads plain "Strike". Replay proof (live turn-11 Linebacker save): `[Alpha Strike] WOLVERINE: STRIKE
   x2 ×4 + ESCORT x2 + TARPS` (11 aircraft, one target) while `NEWT` flies the leftover single section
-  as `[Strike]`. **Gotcha:** the strike target is *enemy*-owned, so `PlanStrike` reads the *planner's*
+  as `[Strike]`. **No solo strikers** (playtest catch): section size is floored at 2 for every
+  doctrine — 1-unit targets were producing single A-4s flying strikes alone; the minimum fighting
+  element is a 2-ship section, so a tiny target now draws a real section or (under inventory
+  pressure) nothing. **Gotcha:** the strike target is *enemy*-owned, so `PlanStrike` reads the *planner's*
   doctrine via `self.target.coalition.opponent.doctrine`. All flags are save-safe class-attr defaults.
-  Tests: `test_strike_planning.py` (1 required + 3 surge sections; stock = single required) +
+  Tests: `test_strike_planning.py` (1 required + 3 surge sections; stock = single required;
+  `test_no_solo_strike_sections`) +
   `test_vietnam_doctrine.py::test_vietnam_strike_is_massed_and_force_escorted` + the massing-gate
   display tests. **Still TODO in P3:**
   Iron Hand = Shrike-vs-live-emitter (**moot** now SEAD is dropped from Vietnam — revisit only if a

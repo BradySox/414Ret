@@ -24,7 +24,10 @@ class PlanStrike(PackagePlanningTask[TheaterGroundObject]):
 
     def propose_flights(self) -> None:
         tgt_count = self.target.alive_unit_count()
-        size = min(4, (tgt_count // 2) + tgt_count % 2)
+        # Never frag a solo striker: the minimum fighting element is a 2-ship
+        # section (mutual support, era- and doctrine-universal). Without the
+        # floor, 1-2 unit targets produced single A-4s flying strikes alone.
+        size = max(2, min(4, (tgt_count // 2) + tgt_count % 2))
         # Alpha Strike: the planning doctrine may fan multiple coordinated strike
         # sections onto one target (Vietnam = 4) instead of a single section. They share
         # a TOT, so the target is hit harder; aircraft scarcity means fewer separate

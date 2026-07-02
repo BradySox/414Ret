@@ -78,7 +78,7 @@ settings:
   su30_flanker_h: false
   su57_felon: false
   frenchpack: false
-  high_digit_sams: false
+  high_digit_sams: true
   ov10a_bronco: true
   swedishmilitaryassetspack: false
   vietnamwarvessels: true

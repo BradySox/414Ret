@@ -21,6 +21,7 @@ Everyone on the server needs all of these.
 | OH-6A Cayuse + Vietnam Asset Pack v1.2 | Tobi & EightBall | The OH-6 scout helo, plus the period jeeps/trucks (`vap_*`) that show up even on turns the OH-6 itself isn't flying | [github.com/tobi-be/DCS-OH-6A](https://github.com/tobi-be/DCS-OH-6A) |
 | OV-10A Bronco v1.24 | Split-Air Team | FAC(A) "Covey" / light CAS, **flyable** | [Forum thread](https://forum.dcs.world/topic/307951-ov-10a-bronco-mod-by-split-air-teamand-more/) |
 | Community A-4E-C Skyhawk v2.3 | Community A-4E Project | Carrier Strike/CAS, **flyable** | [GitHub](https://github.com/Community-A-4E/community-a4e-c) · [releases](https://github.com/heclak/community-a4e-c/releases) |
+| High Digit SAMs — Ultimate Compilation v1.4.3+ | dcs-sams | The NVA's period **P-37 "Bar Lock" EWR** — the deep-rear early-warning radar feeding the SA-2 net (the campaign ships `high_digit_sams: true`) | [GitHub](https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation) |
 
 ---
 

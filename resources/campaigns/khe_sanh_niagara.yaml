@@ -57,6 +57,7 @@ settings:
   aewc_threat_buffer_min_distance: 25
   tanker_threat_buffer_min_distance: 20
   vietnamwarvessels: true
+  high_digit_sams: true
   russianmilitaryassetspack: true
   a4_skyhawk: true
   ov10a_bronco: true

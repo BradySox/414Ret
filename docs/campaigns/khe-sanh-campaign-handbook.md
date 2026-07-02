@@ -22,7 +22,8 @@ scribble on it.*
 > ⚠️ **Mods/modules required.** This campaign won't load or spawn correctly without the period
 > content it's built on. From the campaign + faction files: **Vietnam War Vessels**,
 > **OV-10A Bronco mod**, **Community A-4E**, **OH-6 + Vietnam asset pack**, **Russian Military
-> Assets Pack** (`[CH]` T-54/ASU-85), plus the era modules it slots — **A-1 Skyraider, F-8E, A-6,
+> Assets Pack** (`[CH]` T-54/ASU-85), **High Digit SAMs Ultimate** (the NVA's P-37 EWR), plus the
+> era modules it slots — **A-1 Skyraider, F-8E, A-6,
 > F-100, F-4E, B-52, C-130J**. **See [Khe Sanh — Required Mods](https://github.com/bradyccox/414Ret/wiki/Khe-Sanh-Required-Mods)** for the
 > full install list (what each adds, free vs paid, and download links). Make sure your squadron's
 > install matches before op night.
@@ -297,6 +298,7 @@ air-superiority or SEAD fight; it's about surviving the guns and killing the gro
 | **S-60 57 mm** | Towed radar/optical 57 mm | Reaches ~medium altitude; the classic NVA flak. |
 | **ZU-23** (towed + on Ural) | 23 mm autocannon | Everywhere; deadly low. |
 | **SA-2** | Strategic SAM | **Exactly 4 sites, deep rear only** — a Linebacker-phase problem, never a perimeter one. |
+| **P-37 "Bar Lock" EWR** | Early-warning radar | **One site, the NVA deep rear** — the eyes feeding the SA-2 net and the MiG GCI (HDS ships ON; see [Required Mods](https://github.com/bradyccox/414Ret/wiki/Khe-Sanh-Required-Mods)). Kill it and the net goes blind. |
 
 > The **AAA belt is ~30 emplacement groups** across the siege ring and the approaches, plus the
 > [flak gauntlet](https://github.com/bradyccox/414Ret/wiki/Vietnam-Ops#2--aaa-flak-gauntlet) runtime: predictable, steady flying draws

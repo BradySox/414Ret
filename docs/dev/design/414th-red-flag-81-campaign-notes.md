@@ -231,9 +231,10 @@ Mirrors Yankee Station's block except:
 - `vietnam_political_will: true`, `vietnam_static_front: true` — the requested core.
 - `restrict_weapons_by_date: true` + start date **1981-01-26** → AIM-7F/AIM-9J/L-era
   loadouts fall out of the date gate; JHMCS-era props gated off by §24.
-- Mods: `vietnamwarvessels: true` (MiG-17F/MiG-21MF/RF-101B), `ov10a_bronco: true`.
-  `high_digit_sams: false` (SA-2/SA-3/P-37 degrade gracefully when absent, as
-  Yankee).
+- Mods: `vietnamwarvessels: true` (MiG-17F/MiG-21MF/RF-101B), `ov10a_bronco: true`,
+  `high_digit_sams: true` (the two EWR sites fill with the period **P-37 Bar Lock** —
+  flipped ON across all five Vietnam-era campaigns 2026-07-02, squadron call; HDS
+  Ultimate is on the Required-Mods pages).
 - Compressed-theater support-orbit buffers (`aewc/tanker_threat_buffer_min_distance:
   25/20`) — NTTR is small like the Caucasus recast.
 

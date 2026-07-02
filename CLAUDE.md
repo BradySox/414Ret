@@ -99,11 +99,6 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
-    `414th-vietnam-red-tempo-notes.md` (**W6 — phase-coupled red tempo**: an optional authored
-    `red_tempo:` block per phase — `trail_surge` convoy multiplier during halts, a Tet/Easter
-    `ground_offensive` front-stance pulse still bounded by the W2b clamp, `resolve_regen` so a long
-    Bombing Halt costs BLUE leverage; authored-only, no schema change, the next Vietnam arc after
-    W0–W5 + the red doctrine split),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —
@@ -135,7 +130,16 @@ file. This guide is the map; those are the territory.
     will-coupled `advance_when` escalation; in-game pass = checklist M4); **W5 landed** = the
     GCI-ambush adaptation (`Doctrine.gci_ambush` → late-scramble/close-engage dispatcher tuning
     + the intercept Lua's hit-and-run leash; sanctuary basing falls out of the W4 zones;
-    checklist M5). **The campaign-layer arc W0–W5 is COMPLETE.** The
+    checklist M5); **W6 landed** = phase-coupled red tempo (design note
+    `414th-vietnam-red-tempo-notes.md` — Hanoi *answers* the arc: an authored per-phase `red_tempo:`
+    block (`game/fourteenth/red_tempo.py` + the `phases.py` parse) gives the Bombing Halt a
+    `trail_surge` logistics window (2 concurrent, bigger trail convoys + `resolve_regen` 1.5/turn so
+    waiting out the halt costs Washington leverage) and Linebacker a 3-turn Tet/Easter
+    `ground_offensive` stance pulse (raise-only to AGGRESSIVE, still bounded by the W2b clamp —
+    pressure on the will economy, never sweep-captures; the pulse implies the ≥2.0 trail surge);
+    authored-only so Tier-0/generic campaigns are untouched; hook = `apply_red_tempo` in
+    `initialize_turn` after the coalitions plan; checklist M6). **The campaign-layer arc W0–W6 is
+    COMPLETE.** The
     Vietnam pieces stay default-off (`vietnam_political_will`/`vietnam_static_front` gated); no
     debrief-schema changes anywhere in the arc),
     `414th-campaign-phases-notes.md` (**campaign phases** — a thin doctrine-like *phase*

@@ -1,8 +1,20 @@
-# Vietnam campaign layer W6 — phase-coupled red tempo (DESIGN, not yet built)
+# Vietnam campaign layer W6 — phase-coupled red tempo
 
-**Status: design-only.** Approved direction 2026-07-01 (user picked "both" — the red
-air-defense doctrine split shipped immediately; this note is the second half, the next
-designed arc after W0–W5.)
+**Status: LANDED 2026-07-01** (same session as the approval; the red air-defense
+doctrine split shipped just before it). Built exactly as designed below —
+`game/fourteenth/red_tempo.py` (the three levers), `CampaignPhase.trail_surge/`
+`ground_offensive_turns/resolve_regen` + the `red_tempo:` parse in
+`game/fourteenth/phases.py`, the surge read in `vietnam_convoy.py`, the
+`apply_red_tempo` hook in `Game.initialize_turn` (after the coalitions plan, before
+GroundPlanner reads `cp.stances`), and the authored blocks in all 4 Vietnam arcs
+(Bombing Halt: `trail_surge 2.0` + `resolve_regen 1.5`; Linebacker:
+`ground_offensive 3` — the Easter Offensive pulse, all four arcs rather than two:
+the offensive triggered Linebacker everywhere the arc exists). One deviation from
+the sketch: the ground-offensive "reinforcement pulse" is folded into the trail
+surge (`GROUND_OFFENSIVE_MIN_SURGE = 2.0` — an offensive implies the logistics
+event) instead of separate machinery. Tests: `tests/fourteenth/test_red_tempo.py`
+(parse / window math / raise-only stances / once-per-turn regen guard / the
+end-to-end convoy surge / the 4 arcs' blocks). In-game pass = checklist M6.
 
 ## The gap
 

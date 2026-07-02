@@ -58,8 +58,16 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
     # The opfor of the (BLUE) human -- the side whose trail the player interdicts.
     coalition = game.red
 
-    # Already a real convoy flowing? Let it be the hunt target; add nothing.
-    if any(True for _ in coalition.transfers.convoys):
+    # W6 red tempo: an authored phase's trail_surge widens the flow -- a second
+    # concurrent column is allowed and each carries a bigger (still capped-source)
+    # budget. Baseline (no authored phase / surge 1.0) keeps the one-convoy rule.
+    from game.fourteenth.red_tempo import trail_surge_multiplier
+
+    surge = trail_surge_multiplier(game)
+    max_convoys = 2 if surge >= 2.0 else 1
+
+    # Enough real convoys flowing? Let them be the hunt targets; add nothing.
+    if sum(1 for _ in coalition.transfers.convoys) >= max_convoys:
         return
 
     corridor = _pick_trail_corridor(game, coalition)
@@ -67,7 +75,7 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
         return
     source, destination = corridor
 
-    units = _skim_units(source, MAX_CONVOY_UNITS)
+    units = _skim_units(source, round(MAX_CONVOY_UNITS * surge))
     if not units:
         return
 

@@ -488,6 +488,9 @@ phases:
     advance_when:
       blue_will_below: 75
   - key: bombing_halt
+    red_tempo:
+      trail_surge: 2.0
+      resolve_regen: 1.5
     name: The Bombing Halt
     narrative: >-
       Washington halts the deep war to talk. The whole delta closes; the trail war
@@ -505,6 +508,8 @@ phases:
     advance_when:
       blue_will_below: 65
   - key: linebacker
+    red_tempo:
+      ground_offensive: 3
     name: Linebacker
     narrative: >-
       The talks stalled and the gloves come part-way off: Haiphong, the airfields and

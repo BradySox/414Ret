@@ -91,7 +91,20 @@ class CampaignStatusJs(BaseModel):
         if getattr(game.settings, "vietnam_political_will", False):
             blue_will = getattr(game.blue, "political_will", None)
             red_will = getattr(game.red, "political_will", None)
-            history = list(getattr(game, "will_history", []) or [])[-40:]
+            # The will trend rides game_stats' per-turn series (one record per
+            # turn, deduped across re-inits) -- the same source the Qt Stats
+            # window charts, covering skipped turns as flat segments.
+            history = [
+                (turn, blue, red)
+                for turn, (blue, red) in enumerate(
+                    (
+                        getattr(data.allied_units, "political_will", None),
+                        getattr(data.enemy_units, "political_will", None),
+                    )
+                    for data in game.game_stats.data_per_turn
+                )
+                if blue is not None and red is not None
+            ][-40:]
         # The last two turns' Information messages, newest first: enough for
         # "what just happened" (phase transitions, ROE violations, will moves)
         # without shipping the whole campaign log on every /game pull.

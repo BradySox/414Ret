@@ -432,6 +432,30 @@ class WaypointBuilder:
             flyover=True,
         )
 
+    def armed_recon_point(self, name: str, position: Point) -> FlightWaypoint:
+        """A search point on an armed-recon road sweep (the begin/middle/end of a
+        hunted supply route): the ``armed_recon_area`` profile anchored to a raw
+        road point instead of a MissionTarget's position.
+        """
+        alt = self.get_combat_altitude
+        alt = self._adjust_altitude_for_clouds(alt)
+        alt_type: AltitudeReference = "BARO"
+        if self.is_helo or alt.feet <= AGL_TRANSITION_ALT:
+            alt_type = "RADIO"
+        waypoint = FlightWaypoint(
+            name,
+            FlightWaypointType.TARGET_GROUP_LOC,
+            position,
+            alt,
+            alt_type,
+            description=name,
+            pretty_name=name,
+        )
+        # Fly the road itself: the sweep needs to pass over each search point
+        # (the engage zones anchor there), not lead-turn short of it.
+        waypoint.flyover = True
+        return waypoint
+
     def oca_strike_area(self, target: MissionTarget) -> FlightWaypoint:
         return self._target_area(f"ATTACK {target.name}", target, flyover=True)
 

@@ -2604,6 +2604,21 @@ Qt new-package dialog opens there with the add-flight dialog auto-opened and **A
 friendly (all-blue) route resolves to nothing and 404s. Still an Armed Recon frag — just discoverable on the
 route instead of requiring the player to know where to look.
 
+**Armed Recon sweeps the road, not a point (added per playtest).** The classic Armed Recon plan carried a
+single target waypoint at `package.target.position` — for a convoy target or a supply-route interdiction
+that is effectively the **origin base**, so the flight got "a waypoint at the starting base" and nothing
+to actually search. `ArmedReconFlightPlan`'s builder (`game/ato/flightplans/armedrecon.py`) now detects a
+hunted route and plans a **SEARCH START / SEARCH MID / SEARCH END** track along the real road polyline
+(`cp.convoy_routes`), ordered away from the package ingress: a `Convoy` target sweeps its own
+origin→destination road; a `ControlPoint` target (the right-click flow lands here) sweeps the point's
+**supply corridor** — the longest same-owner road (enemy trucks drive the rear-to-front trail), falling
+back to a contested road; no road network keeps the single-point plan. The runtime
+(`armedreconingress.py`) anchors **one `EngageTargetsInZone` per search point**, chaining the engage
+zones into a corridor over the whole road, and the map's engagement ring (`ui_zone`) draws around every
+search point. Tests: `tests/ato/flightplans/test_armed_recon_track.py` (polyline midpoint math, convoy
+sweep + ingress-aware ordering, corridor preference, fallbacks). The AI's actual hunt behaviour rides the
+L7 in-game re-fly.
+
 ### Files & tests
 
 | Area | Path |

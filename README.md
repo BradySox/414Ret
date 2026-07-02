@@ -251,7 +251,9 @@ and selected later upstream fixes.
   convoy up the road behind the front (the Ho Chi Minh Trail) — carrying actual reinforcements, so hunting it
   down on an Armed Recon genuinely denies the enemy those units, and letting it through means they reach the
   line. It's a live logistics target in the campaign, not a scripted prop. **Right-click an enemy supply route**
-  on the map to frag the interdiction package straight onto that corridor. The fifth
+  on the map to frag the interdiction package straight onto that corridor — and the Armed Recon **plans a real
+  road sweep** (search points at the start, middle, and end of the hunted route, each with its own engagement
+  zone) instead of a single waypoint parked on the origin base. The fifth
   is **airbase harassment**: forward enemy airfields draw sporadic rocket/mortar fire near the ramp — the
   near-constant siege of Bien Hoa, Da Nang, and the Khe Sanh strip — so the rear stops feeling like a safe
   area. *Your* active spawn fields are never targeted, and a startup grace period keeps it off while you're

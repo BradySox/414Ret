@@ -166,8 +166,17 @@ machinery that already exists.
 
 ## 2. What already exists (verified 2026-06-28)
 
-- **Factions:** `USA 1970/1971 Vietnam War`, `USSR 1971 Vietnam War`, `usa_1965/1970`,
-  `vietnam_1965/1970`, `nva_1970`, `vietcong_1965/1970` — all now `doctrine: vietnam` (P1).
+- **Factions:** `USA 1970/1971 Vietnam War`, `USSR 1971 Vietnam War`, `usa_1965/1970` fly
+  `doctrine: vietnam` (P1); **the red split (2026-07-01)** moved Hanoi's factions —
+  `vietnam_1965/1970`, `nva_1970`, `vietcong_1965/1970` — to `doctrine: vietnam_air_defense`
+  (`VIETNAM_AIR_DEFENSE_DOCTRINE`): same era identity (renames/whitelist/knife-fight
+  ranges/`gci_ambush`) minus BLUE's offensive levers — no Alpha Strike fan, no forced strike
+  escorts, **no strike-escort reserve** (it was trimming the defensive BARCAP that IS the NVAF's
+  whole job to bank MiGs for strikes Hanoi never flew). The what-if USSR faction keeps the
+  offensive doctrine (fielding Badgers = wanting massed raids). Tests:
+  `test_air_defense_doctrine_differs_only_in_the_offensive_levers` +
+  `test_faction_loader_resolves_air_defense_doctrine` (the loader elif falls back to MODERN on an
+  unknown string, so the round-trip is test-locked).
 - **Campaigns:** `1968_Yankee_Station`, `khe_sanh_niagara`, `operation_velvet_thunder` (now
   `era: vietnam`). All on Caucasus/Marianas overlays; **no native DCS Vietnam map**.
 - **~18 era mod packs** in `pydcs_extensions/` (a4ec, a6a, a7e, f4, f100/104/105/106, f9f, f111c,

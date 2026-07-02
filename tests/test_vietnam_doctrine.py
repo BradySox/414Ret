@@ -17,6 +17,7 @@ from game.data.doctrine import (
     ALL_DOCTRINES,
     COLDWAR_DOCTRINE,
     MODERN_DOCTRINE,
+    VIETNAM_AIR_DEFENSE_DOCTRINE,
     VIETNAM_DOCTRINE,
     WWII_DOCTRINE,
 )
@@ -26,24 +27,59 @@ from game.utils import knots, nautical_miles
 
 _FACTIONS = Path(__file__).resolve().parents[1] / "resources" / "factions"
 
-# The factions repointed from "coldwar" to "vietnam" doctrine in P1.
+# The factions repointed from "coldwar" to "vietnam" doctrine in P1. BLUE (and the
+# what-if Soviet bomber faction) fly the offensive doctrine; the red air-defense
+# split moved Hanoi's factions to "vietnam_air_defense" below.
 _VIETNAM_DOCTRINE_FACTIONS = [
     "USA 1970 Vietnam War.json",
     "USA 1971 Vietnam War.json",
     "USSR 1971 Vietnam War.json",
+    "usa_1965.json",
+    "usa_1970.json",
+]
+
+# Hanoi's factions: a pure GCI air-defense force (no Alpha Strike fan, no forced
+# strike escorts, no strike-escort reserve trimming the defensive BARCAP).
+_VIETNAM_AIR_DEFENSE_FACTIONS = [
     "nva_1970.json",
     "vietcong_1965.json",
     "vietcong_1970.json",
     "vietnam_1965.json",
     "vietnam_1970.json",
-    "usa_1965.json",
-    "usa_1970.json",
 ]
 
 
 def test_vietnam_doctrine_registered() -> None:
     assert VIETNAM_DOCTRINE in ALL_DOCTRINES
     assert VIETNAM_DOCTRINE.name == "vietnam"
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE in ALL_DOCTRINES
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.name == "vietnam_air_defense"
+
+
+def test_air_defense_doctrine_differs_only_in_the_offensive_levers() -> None:
+    # The red split: Hanoi's air arm keeps the whole Vietnam era identity (renames,
+    # whitelist, knife-fight ranges, gci_ambush, ground OOB) and sheds ONLY BLUE's
+    # offensive levers -- resetting exactly those must recover VIETNAM_DOCTRINE, so
+    # no other geometry silently drifts between the two.
+    rebadged = replace(
+        VIETNAM_AIR_DEFENSE_DOCTRINE,
+        name="vietnam",
+        strike_flight_count=VIETNAM_DOCTRINE.strike_flight_count,
+        always_escort_strikes=True,
+        strike_escort_reserve=VIETNAM_DOCTRINE.strike_escort_reserve,
+        escort_support_aircraft=False,
+    )
+    assert rebadged == VIETNAM_DOCTRINE
+    # The defensive identity survives the split.
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.gci_ambush is True
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.tasking_whitelist is not None
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.display_name_for(FlightType.BARCAP) == "MiGCAP"
+    # ...and the offensive levers are genuinely off: no fan, no BARCAP-trimming
+    # reserve, no forced strike escorts.
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.strike_flight_count == 1
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.strike_escort_reserve == 0
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.always_escort_strikes is False
+    assert VIETNAM_AIR_DEFENSE_DOCTRINE.escort_support_aircraft is True
 
 
 def test_display_name_overrides_iconic_taskings() -> None:
@@ -202,6 +238,24 @@ def test_vietnam_faction_jsons_declare_vietnam_doctrine() -> None:
         assert (
             data.get("doctrine") == "vietnam"
         ), f"{name} must declare 'doctrine: vietnam' (P1 repoint)."
+    for name in _VIETNAM_AIR_DEFENSE_FACTIONS:
+        data = json.loads((_FACTIONS / name).read_text(encoding="utf-8"))
+        assert (
+            data.get("doctrine") == "vietnam_air_defense"
+        ), f"{name} must declare 'doctrine: vietnam_air_defense' (the red split)."
+
+
+def test_faction_loader_resolves_air_defense_doctrine(tmp_path: Path) -> None:
+    # The loader's elif chain silently falls back to MODERN on an unknown doctrine
+    # string, so a typo'd branch would un-Vietnam every red faction without failing
+    # anywhere else -- load a real red faction JSON through Faction.from_dict.
+    from game import persistency
+    from game.factions.faction import Faction
+
+    persistency.setup(str(tmp_path), False, 0)
+    data = json.loads((_FACTIONS / "nva_1970.json").read_text(encoding="utf-8"))
+    faction = Faction.from_dict(data)
+    assert faction.doctrine is VIETNAM_AIR_DEFENSE_DOCTRINE
 
 
 def test_flight_task_display_name_resolves_through_coalition_doctrine() -> None:

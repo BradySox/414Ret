@@ -8,14 +8,15 @@ flies them home. Deliver them to any friendly field and the campaign **spares th
 debrief**: you still lose the jet, but the experienced pilot returns to the squadron instead of
 being killed off.
 
-It is a bespoke flight type (`FlightType.COMBAT_SAR`) built on the **MOOSE CSAR** runtime
-engine, and it is **distinct** from the SCAR SOF-recovery `CSAR` task (see
-[SOF and Commander Capture](SOF-and-Commander-Capture)) — though, as below, a Combat SAR helo
-can also extract a stranded SOF team.
+It is a bespoke flight type (`FlightType.COMBAT_SAR`) driven by the plugin's **survivor
+ledger** runtime, and it is **distinct** from the `CSAR` recovery-raid task, which rescues a
+**captured POW** from the enemy airfield holding them (see [SCAR](SCAR) for the capture → POW
+→ raid loop).
 
-> **In-game-pass status:** the whole feature is built, wired, and passes CI, but it has **not
-> yet had a cockpit pass**. Checklist rows G8–G13 and H2 are all currently UNTESTED. Treat it
-> as flight-ready but unvalidated — everything below describes how it is built to work.
+> **In-game-pass status:** the core loop is **flown and verified** — AI rescues credit the
+> spare-pilot scoring by real identity and AI ejections are capturable → POW (checklist
+> G11/G20, 2026-06-30). Still open: the King TACAN beacon re-fly (G10) and the newest
+> AI-rescue/Sandy retasking fixes (G21–G23).
 
 ---
 
@@ -147,23 +148,10 @@ Airframe scarcity self-limits the alert: no rescue helo available, no orbit plan
 **blue-only** — the engine is built for blue, so a red Combat SAR would just fly an inert orbit
 and is never auto-tasked.
 
-> **v1 limitations (pending the in-game pass):** an AI auto-rescue does **not** yet credit the
-> spare-pilot scoring (it spawns an anonymous clone, losing the original pilot's identity), and a
-> player ejecting from a fixed-wing with no human helo up can be double-handled by both engines (a
-> cosmetic double-spawn).
-
----
-
-## Extracting a stranded SOF team
-
-The rescue substrate can also extract a stranded **SOF team** in-mission (boarding it as a MOOSE
-**CASEVAC** pickup exactly like a downed pilot, distinct from the dedicated `FlightType.CSAR`
-air-assault recovery, routed by a `SOFRESCUE` name prefix so the two channels never double-count).
-
-> **Currently dormant.** This serviced the old SCAR commander-capture loop, which was retired with
-> the SCAR armor hunt on 2026-06-27 — no in-mission trigger strands a SOF team today, so this path
-> doesn't fire in the shipped build. The Python plumbing remains. See
-> [SOF and Commander Capture](SOF-and-Commander-Capture) for the status.
+> **Update (2026-06-30, survivor-ledger rework):** the old v1 limitations are fixed — player
+> and AI rescues are judged by the same ledger, an AI auto-rescue **does** credit the
+> spare-pilot scoring by the pilot's real identity (verified in-game, checklist G11), and one
+> ledger owns every ejection so nothing is double-handled.
 
 ---
 
@@ -188,7 +176,6 @@ air-assault recovery, routed by a `SOFRESCUE` name prefix so the two channels ne
 ## See also
 
 - [SCAR](SCAR)
-- [SOF and Commander Capture](SOF-and-Commander-Capture)
 - [Squadrons and Pilots](Squadrons-and-Pilots)
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War)
 - [Mission planning](Mission-planning)

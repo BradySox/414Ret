@@ -37,9 +37,11 @@ governed by the **`recon_intel_fog`** setting (Campaign Doctrine page, **default
 saves are migrated to fully revealed, so the fog is felt mainly on new campaigns.
 
 A third, related gate (the **`scar_command_post_intel`** setting, **default ON** for new
-campaigns) hides enemy **command posts** entirely from your map until you discover them by
-strike/scout/TARPS — so mapping the enemy command network is itself a recon task. See
-[SOF and Commander Capture](SOF-and-Commander-Capture).
+campaigns) hides enemy **command posts** entirely from your map — no marker, not plannable or
+strikable — until you discover them by strike/scout/TARPS, so mapping the enemy command network
+is itself a recon task. Once discovered, a command post shows fully, with exact coordinates.
+Toggle `SCAR command-post intel` off (Campaign Doctrine settings page) to restore plain enemy
+command-post visibility.
 
 ## Lifting the fog: TARPS photo recon
 
@@ -119,4 +121,3 @@ layer choice the panel deliberately does **not** remember between sessions.
 - [Mission planning](Mission-planning)
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War)
 - [SCAR](SCAR)
-- [SOF and Commander Capture](SOF-and-Commander-Capture)

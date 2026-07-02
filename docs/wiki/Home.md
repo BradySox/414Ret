@@ -46,7 +46,6 @@ adapted to how this fork actually plans and flies a campaign.
 - **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)** — recon intel-fog, BDA lag, approximate targeting.
 - **[TARPS Reconnaissance](TARPS-Reconnaissance)** — fly the F-14 photo recon; the TARS film engine.
 - **[SCAR](SCAR)** — the "Sandy" rescue escort for a downed pilot.
-- **[SOF and Commander Capture](SOF-and-Commander-Capture)** — enemy command-post fog (the SOF capture loop is dormant).
 - **[Combat SAR](Combat-SAR)** — rescue a downed pilot and get them home.
 - **[Electronic Warfare and ISR](Electronic-Warfare-and-ISR)** — the C-130J JAMMING platform.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline battle simulation.

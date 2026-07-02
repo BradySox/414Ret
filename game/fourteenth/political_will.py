@@ -124,12 +124,6 @@ def update_political_will(game: "Game", debriefing: "Debriefing") -> None:
             "had to.",
         )
 
-    # History point for the client sparkline (getattr: duck-typed test games and
-    # pre-feature saves mid-commit may not carry the list; the next load migrates).
-    history = getattr(game, "will_history", None)
-    if history is not None:
-        history.append((game.turn, game.blue.political_will, game.red.political_will))
-
     logging.info(
         "Political will: BLUE %+0.1f -> %.1f, RED %+0.1f -> %.1f",
         blue_delta,

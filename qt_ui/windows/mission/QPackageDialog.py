@@ -148,6 +148,15 @@ class QPackageDialog(QDialog):
         )
         self.layout.addWidget(self.package_context)
 
+        # Pre-flight ROE cue (campaign phases W4): the player is never hard-blocked
+        # from a restricted target, but the will cost should be a knowing choice at
+        # planning, not a surprise at debrief. Hidden when the target is clean.
+        self.roe_warning = QLabel()
+        self.roe_warning.setWordWrap(True)
+        self.roe_warning.setStyleSheet("color: #d9a13c; font-weight: bold;")
+        self.layout.addWidget(self.roe_warning)
+        self.update_roe_warning()
+
         self.package_view = QFlightList(self.game_model, self.package_model)
         self.package_view.selectionModel().selectionChanged.connect(
             self.on_selection_changed
@@ -346,6 +355,40 @@ class QPackageDialog(QDialog):
         if missing_pilots:
             summary.append(f"Missing pilots: {missing_pilots}")
         self.package_context.setText(" | ".join(summary))
+
+    def update_roe_warning(self) -> None:
+        """Shows why the active phase's ROE restricts this package's target.
+
+        BLUE-only (the ROE is Washington's, not Hanoi's); the target is fixed at
+        dialog construction, so one resolve is enough. The reason strings come
+        from the same helper that badges the map (`roe_restriction_reason`).
+        """
+        from game.fourteenth.phases import roe_restriction_reason
+
+        reason = None
+        if self.game_model.is_ownfor:
+            reason = roe_restriction_reason(
+                self.game, self.package_model.mission_target
+            )
+        if reason is None:
+            self.roe_warning.hide()
+            return
+        # Reason shapes: "inside <zone>" reads as a location; "<class> targets are
+        # locked this phase" reads as a sentence of its own.
+        if reason.startswith("inside "):
+            body = f"This target sits {reason}"
+        else:
+            body = reason[0].upper() + reason[1:]
+        will_tail = (
+            " and drain political will"
+            if getattr(self.game.settings, "vietnam_political_will", False)
+            else ""
+        )
+        self.roe_warning.setText(
+            f"⚠ ROE — {body}. Nothing blocks the launch, but kills inside a "
+            f"restricted zone are charged as ROE violations at debrief{will_tail}."
+        )
+        self.roe_warning.show()
 
     def on_reset_radio(self):
         self.package_model.package.frequency = None

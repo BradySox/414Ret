@@ -724,7 +724,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `RestrictedZonesLayer`, Enemy intel group, default ON), and the authored **Rolling Thunder → Bombing
     Halt → Linebacker → Linebacker II arcs in all 4 Vietnam campaigns** (Kutaisi/Sukhumi/Saipan play Hanoi
     per laydown; the Yankee Station/Steel Tiger coastal-ladder recast also keeps a permanent Tbilisi "PRC
-    border" ring in every phase). (`game/fourteenth/phases.py`, `game/game.py`,
+    border" ring in every phase). **The 2026-07-02 legibility pass** made the *dynamics* readable:
+    **transition transparency** (the arc expander spells out how the arc leaves each phase — authored
+    `advance_when` with live values on the current phase, Tier-0 classifier thresholds otherwise), the P2
+    **objectives checklist** (`PhaseObjective` + `done_when` live ticks; Tier-0 built-ins + `objectives:`
+    authored in the 4 Vietnam arcs; `PhaseCondition` gains `red_resolve_below`/`capture_cp`, usable in
+    `advance_when` too), the **will-attribution ledger** (`political_will.py` `WillLedgerEntry` on
+    `Game.will_ledger`, capped 60 — labeled per-feed movers surfaced on the meter hover, the expander
+    notes, the SITREP "Will movers" lines, and the per-turn message; the instrument for the M1 pacing
+    pass), and a **pre-flight ROE warning** in the Qt package dialog (`update_roe_warning` via
+    `roe_restriction_reason` — never blocks, just prices the choice). (`game/fourteenth/phases.py`, `game/game.py`,
     `game/commander/tasks/compound/nextaction.py`, `game/commander/tasks/packageplanningtask.py`,
     `game/fourteenth/political_will.py`, `game/missiongenerator/kneeboard.py`, `game/server/game/models.py`,
     `game/server/tgos/models.py`, `client/src/components/campaignstatus/`,

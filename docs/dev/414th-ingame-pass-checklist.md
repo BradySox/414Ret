@@ -2082,10 +2082,14 @@ so the two docs don't drift.
   adjudicate is **pacing**: whether the design-§7 weights drive either side to zero on a satisfying arc
   (~15–30 turns of a normal Vietnam campaign), or collapse/stall the war absurdly fast/slow.
 - **Setup:** a NEW Vietnam campaign (any of the four — `vietnam_political_will` preseeds on). Play several
-  turns normally; read the per-turn "Political will" message + the SITREP will band.
+  turns normally; read the per-turn "Political will" message + the SITREP will band. The 2026-07-02
+  **attribution ledger** is the instrument for this pass: hover the ribbon WILL/RESOLVE meters (or read the
+  SITREP "Will movers"/"Enemy resolve movers" lines) to see exactly which feed moved the number each turn —
+  tune weights from that, not from guessing.
 - **Pass:** both meters move visibly each flown turn but neither side loses double digits from an ordinary
   turn; a B-52 loss or a POW visibly dents BLUE; convoy kills visibly dent RED; a quiet turn heals slightly;
-  the arc feels like it *would* resolve in 15–30 turns of consistent play.
+  the arc feels like it *would* resolve in 15–30 turns of consistent play; the movers lines name the feeds
+  you'd expect from the turn you just flew.
 - **Fail signature:** will collapses in <5 turns of normal play (weights too hot — halve the loss weights);
   the meters barely move by turn 10 (too cold); the passive regen out-heals ordinary attrition so the meters
   pin at 100 (regen too high vs. weights); the exhaustion banner fires repeatedly every turn at zero
@@ -2130,6 +2134,10 @@ so the two docs don't drift.
   BAI/Armed Recon/OCA, less DEAD-first); with the front advancing and IADS <30 % it enters Offensive (CAS/
   capture-weighted); the phase never regresses; red planning and reactive defense (BARCAP/QRA/DefendBases)
   look unchanged; toggling `campaign_phases` off clears the ribbon band and restores stock planning.
+  **2026-07-02 additions** (need a client rebuild): each expander row shows its **objectives checklist**
+  (the measurable IADS goals tick ✓ as the belt drops — verify a tick actually flips across a played
+  transition) and its **transition line** ("Advances once the enemy IADS falls below 50%…" on Tier-0 rows;
+  "Escalates early if will falls below 65 (now …)" with live values on the current authored phase).
 - **Fail signature:** phase flaps turn-to-turn (dwell broken); a genuine below-floor campaign opens in Air
   Superiority (floor gate miscounting — check `_enemy_sam_sites`, which bands enemy TGOs by `GroupTask`
   LORAD/MERAD, the DEAD planner's own target set, NOT `IadsRole`); the phase never leaves Air
@@ -2153,11 +2161,13 @@ so the two docs don't drift.
   (Bombing Halt ≈ turn 8, Linebacker ≈ 11, Linebacker II ≈ 16 — earlier if your will bleeds).
 - **Pass:** phase 1: the BLUE auto-planner never frags strike/OCA into the zone or against locked classes
   (factories/power/airfields), while the front/trail war runs normally; **you** can still strike the zone —
-  and doing so posts "ROE violation" and visibly dents Political Will next debrief; transitions announce
+  the package dialog shows the amber **pre-flight "⚠ ROE" warning** (2026-07-02) when you frag it, the
+  strike flies anyway, and doing so posts "ROE violation" and visibly dents Political Will next debrief
+  (read the exact −4/kill on the meter-hover attribution ledger); transitions announce
   once, the ribbon/kneeboard track the arc ("phase 2 of 4"), zones shrink at Linebacker and vanish at
   Linebacker II (except the permanent PRC ring on the Yankee Station/Steel Tiger laydown, which must keep
   drawing and keep the AI off Tbilisi forever), after which the planner hits the deep targets; a non-Vietnam
-  campaign shows no zones and plans stock.
+  campaign shows no zones and plans stock, and its package dialog never shows the ROE line.
 - **Fail signature:** the AI strikes into the sanctuary in phase 1 (gate not reached — check
   `roe_blocks_target` wiring in `PackagePlanningTask.fulfill_mission`); the player is hard-blocked from
   striking the zone (enforcement must stay soft); no will penalty after a zone kill (violation counter not

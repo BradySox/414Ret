@@ -2989,8 +2989,8 @@ P2, riding the Vietnam W4 arcs).
   bias and a narrative, not a new commander. Hard whitelist deltas are authored-only (P2).
 - **Client ribbon needs the CI client rebuild** (`_liberationApi.ts` types hand-added; no local npm).
 - **Deferred**: Consolidation phase (spec leaves it optional, v1 ships three), a red-perspective arc,
-  Tier 1/2 YAML authoring + `advance_when` + objectives checklist (P2), authored Vietnam Rolling Thunder →
-  Linebacker II arcs (W4), New Game wizard arc preview, SAM-density-scaled Rollback dwell.
+  New Game wizard arc preview, SAM-density-scaled Rollback dwell. (Tier 1/2 authoring + `advance_when`
+  landed with W4; the objectives checklist + transition transparency landed 2026-07-02 — see below.)
 
 ### W4 — the authored tier (P2) + the ROE escalation layer
 
@@ -3032,9 +3032,48 @@ scheduled escalation date; the current phase's `advance_when` (any-of `min_turn`
   phases only — Tier-0/generic campaigns are complete no-ops. Tests: `tests/fourteenth/test_red_tempo.py`.
   In-game pass: checklist **M6**.
 
-Still open from P2: the objectives checklist (display), per-phase `tasking_whitelist` deltas, and
-`front_line_stance` nudges (the W6 red pulse covers the red half; a blue-side authored stance nudge is
-still open); plus the 3 wiki-campaign arcs (P3).
+### The legibility pass (2026-07-02) — transitions, objectives, will attribution, pre-flight ROE
+
+Four additions that make the *dynamics* readable — the UI showed state well but not why things move or
+when they'll move next:
+
+- **Transition transparency** — the arc expander spells out how the arc LEAVES each phase. Authored
+  phases render their `advance_when` acceleration with **live values on the current phase**
+  ("Escalates early if will falls below 65 (now 100) or enemy IADS falls below 40% (now 78%)");
+  Tier-0 phases spell out the classifier thresholds they advance on (`_TIER0_ADVANCE`), so an inferred
+  arc explains its transitions the same way an authored one does. `_describe_condition` +
+  `_advance_display` in `phases.py` → `arc_overview`'s `advance` string → `PhaseArcEntryJs.advance` →
+  the `.campaign-phase-advance` footnote row.
+- **Objectives checklist** (the P2 "objectives" leftover) — each phase carries a
+  `PhaseObjective` tuple (text + optional `done_when: PhaseCondition`), shown in the expander with live
+  ticks (✓ done / ○ open / • display-only). The three Tier-0 phases ship built-in objectives (measurable
+  IADS goals tick off live state), and all 4 Vietnam arcs author two per phase (`objectives:` YAML —
+  plain string or `{text, done_when}`; Linebacker's "Break the SAM belt" ticks on `enemy_iads_below`,
+  Linebacker II's "Break Hanoi's resolve" on the new `red_resolve_below`). `PhaseCondition` also gains
+  **`capture_cp`** (a named CP falling to BLUE) — both new fields double as `advance_when` triggers.
+  Objectives are display guidance, never a gate — transitions stay owned by min_turn/advance_when.
+- **Will-attribution ledger** (`political_will.py`) — `_blue_moves`/`_red_moves` now return labeled
+  `(label, value)` components ("heavy bombers x1 down −6.0", "POWs held x3 −1.5", "trail convoys x4
+  −6.0"), summed into the same deltas as before (weights untouched). A `WillLedgerEntry` per flown turn
+  persists on `Game.will_ledger` (capped `WILL_LEDGER_CAP` = 60, `__setstate__` default). Surfaced via
+  `ledger_notes()`: the ribbon meter **hover** + an expander notes row (client), the **SITREP band**
+  ("Will movers: …" / "Enemy resolve movers: …" under the will line), and the per-turn "Political will"
+  Information message now names the top movers. This is also the instrument for the **M1** pacing pass —
+  tuning weights from a played campaign no longer means guessing which feed moved the number.
+- **Pre-flight ROE warning** (`QPackageDialog.update_roe_warning`) — creating/editing a package on a
+  restricted target shows an amber "⚠ ROE — …" line (reusing `roe_restriction_reason`, BLUE-only):
+  the player can still frag it, but the will cost is a knowing choice at planning instead of a surprise
+  at debrief. Hidden on clean targets; the "drain political will" clause only renders when
+  `vietnam_political_will` is on.
+
+Tests: `tests/fourteenth/test_phases.py` (advance strings authored+Tier-0, objective ticks, new
+condition fields, parse rejections), `tests/fourteenth/test_political_will.py` (ledger components/cap/
+off-switch, `format_moves` ranking), `tests/test_sitrep.py` (movers lines). The client side needs the
+CI client rebuild; the expander/ROE-warning visuals fold into the existing **M3/M4** in-game passes.
+
+Still open from P2: per-phase `tasking_whitelist` deltas and `front_line_stance` nudges (the W6 red
+pulse covers the red half; a blue-side authored stance nudge is still open); plus the 3 wiki-campaign
+arcs (P3).
 
 ## §41 — High Digit SAMs "Ultimate Compilation" support
 

@@ -474,6 +474,9 @@ phases:
       Gradual pressure under Washington's thumb: interdict the flow south, but the
       deep targets are off the list and the Hanoi-Haiphong heartland is sanctuary.
     emphasis: interdiction
+    objectives:
+      - Interdict the flow south -- kill the trail convoys before they reach the front
+      - Respect the sanctuaries -- zone kills bleed Washington's will
     restricted_zones:
       - center: Kutaisi
         radius_nm: 15
@@ -496,6 +499,9 @@ phases:
       Washington halts the deep war to talk. The whole delta closes; the trail war
       and the front are all that is authorized.
     emphasis: interdiction
+    objectives:
+      - Ride out the halt -- the trail runs double while Washington talks
+      - Keep the front held -- the trail war is all that is authorized
     min_turn: 8
     restricted_zones:
       - center: Kutaisi
@@ -515,6 +521,11 @@ phases:
       The talks stalled and the gloves come part-way off: Haiphong, the airfields and
       the deep target classes release; only the inner Hanoi ring still binds.
     emphasis: rollback
+    objectives:
+      - text: Break the SAM belt to under 40% strength
+        done_when:
+          enemy_iads_below: 0.4
+      - Pour strikes onto the released deep target classes
     min_turn: 11
     restricted_zones:
       - center: Kutaisi
@@ -532,6 +543,11 @@ phases:
       Maximum effort. Hanoi releases -- break the regime's resolve at the negotiating
       table by force. Only the Chinese border still binds; it never releases.
     emphasis: offensive
+    objectives:
+      - text: Break Hanoi's resolve at the negotiating table
+        done_when:
+          red_resolve_below: 25
+      - Hold Washington's will until Hanoi signs
     min_turn: 16
     restricted_zones:
       - center: Tbilisi-Lochini

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import math
 from types import SimpleNamespace
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import pytest
 
@@ -351,6 +351,13 @@ def _authored_arc() -> tuple[CampaignPhase, ...]:
                 ],
                 "locked_targets": ["factory", "airfield"],
                 "advance_when": {"blue_will_below": 75},
+                "objectives": [
+                    "Respect the sanctuaries",
+                    {
+                        "text": "Break the belt",
+                        "done_when": {"enemy_iads_below": 0.5},
+                    },
+                ],
             },
             {
                 "key": "linebacker",
@@ -595,6 +602,93 @@ def test_arc_overview_tier0_and_disarmed() -> None:
     ]
     assert [entry["current"] for entry in overview] == [False, True, False]
     assert arc_overview(_duck_game(on=False)) == []
+
+
+def test_condition_red_resolve_and_capture_cp() -> None:
+    from game.fourteenth.phases import PhaseCondition, _condition_satisfied
+
+    baseline = PhaseBaseline(sam_sites=0, enemy_fighters=0)
+    game = _duck_game()
+    game.red = SimpleNamespace(political_will=20.0)
+    assert _condition_satisfied(game, PhaseCondition(red_resolve_below=25), baseline)
+    assert not _condition_satisfied(
+        game, PhaseCondition(red_resolve_below=15), baseline
+    )
+    hue = SimpleNamespace(name="Hue", captured=SimpleNamespace(is_blue=True))
+    cp_game = _duck_game(controlpoints=[hue])
+    assert _condition_satisfied(cp_game, PhaseCondition(capture_cp="Hue"), baseline)
+    hue.captured = SimpleNamespace(is_blue=False)
+    assert not _condition_satisfied(cp_game, PhaseCondition(capture_cp="Hue"), baseline)
+    # A CP name absent from the theater never satisfies (edited campaign safety).
+    assert not _condition_satisfied(
+        cp_game, PhaseCondition(capture_cp="Khe Sanh"), baseline
+    )
+
+
+def test_arc_overview_transition_transparency(authored_game: Any) -> None:
+    # The expander spells out HOW the arc leaves each phase: the authored
+    # advance_when with live values on the current phase, nothing on a phase
+    # without an early-out or on the terminal phase.
+    from game.fourteenth.phases import arc_overview
+
+    update_campaign_phase(authored_game)
+    overview = arc_overview(authored_game)
+    assert overview[0]["advance"] == (
+        "Escalates early if will falls below 75 (now 100)"
+    )
+    assert overview[1]["advance"] == ""  # schedule-only (min_turn on the next row)
+    assert overview[2]["advance"] == ""  # terminal
+
+
+def test_arc_overview_tier0_spells_out_the_classifier() -> None:
+    # An inferred arc explains its transitions the same way an authored one does.
+    from game.fourteenth.phases import arc_overview
+
+    game = _duck_game(on=True, current="interdiction", entered=0)
+    overview = arc_overview(game)
+    assert "50%" in str(overview[0]["advance"])
+    assert "30%" in str(overview[1]["advance"])
+    assert overview[2]["advance"] == ""
+
+
+def test_arc_overview_objectives_tick_live(authored_game: Any) -> None:
+    from game.fourteenth.phases import arc_overview
+
+    # Baseline of 4 SAM sites, live theater empty: the IADS objective is met.
+    authored_game.phase_baseline = PhaseBaseline(sam_sites=4, enemy_fighters=0)
+    update_campaign_phase(authored_game)
+    overview = arc_overview(authored_game)
+    objectives = overview[0]["objectives"]
+    assert objectives == [
+        {"text": "Respect the sanctuaries", "done": None},  # display-only bullet
+        {"text": "Break the belt", "done": True},
+    ]
+
+
+def test_arc_overview_tier0_objectives() -> None:
+    # The built-in Tier-0 objectives: measurable IADS goals tick from live state;
+    # a belt-less duck theater with a real baseline reads as "belt beaten".
+    from game.fourteenth.phases import arc_overview
+
+    game = _duck_game(
+        on=True,
+        current="interdiction",
+        entered=0,
+        baseline=PhaseBaseline(sam_sites=4, enemy_fighters=0),
+    )
+    overview = arc_overview(game)
+    rollback_objs = cast(Any, overview[0]["objectives"])
+    assert rollback_objs[0]["done"] is True
+    assert rollback_objs[1]["done"] is None
+    interdiction_objs = cast(Any, overview[1]["objectives"])
+    assert interdiction_objs[0]["done"] is True
+
+
+def test_parse_phases_rejects_bad_objectives() -> None:
+    with pytest.raises(ValueError):
+        parse_phases([{"key": "x", "objectives": [{"done_when": {}}]}])
+    with pytest.raises(ValueError):
+        parse_phases([{"key": "x", "advance_when": "not-a-mapping"}])
 
 
 def test_zone_detail_names_locks_and_the_lift(authored_game: Any) -> None:

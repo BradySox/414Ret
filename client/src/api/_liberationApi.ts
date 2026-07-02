@@ -592,6 +592,10 @@ export type RestrictedZone = {
   radius_m: number;
   detail?: string;
 };
+export type PhaseObjective = {
+  text: string;
+  done?: boolean | null;
+};
 export type PhaseArcEntry = {
   key: string;
   name: string;
@@ -600,6 +604,8 @@ export type PhaseArcEntry = {
   locked: string[];
   zones: string[];
   current: boolean;
+  advance: string;
+  objectives: PhaseObjective[];
 };
 export type CampaignEvent = {
   turn: number;
@@ -615,6 +621,8 @@ export type CampaignStatus = {
   phase_narrative?: string | null;
   blue_will?: number | null;
   red_will?: number | null;
+  blue_will_note?: string | null;
+  red_will_note?: string | null;
   phases?: PhaseArcEntry[];
   will_history?: [number, number, number][];
   events?: CampaignEvent[];

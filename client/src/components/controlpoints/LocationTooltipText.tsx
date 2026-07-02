@@ -1,4 +1,5 @@
 import SplitLines from "../splitlines/SplitLines";
+import summarizeUnits from "../unitsummary/summarizeUnits";
 
 interface LocationTooltipTextProps {
   name: string;
@@ -16,7 +17,7 @@ export const LocationTooltipText = (props: LocationTooltipTextProps) => {
       )}
       {props.tacan && <div>TACAN: {props.tacan}</div>}
       {props.units && props.units.length > 0 && (
-        <SplitLines items={props.units} />
+        <SplitLines items={summarizeUnits(props.units)} />
       )}
     </>
   );

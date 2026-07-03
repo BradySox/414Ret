@@ -18,7 +18,9 @@ function zoneStyle(color: string) {
     dashArray: "10 10",
     fill: true,
     fillColor: color,
-    fillOpacity: 0.06,
+    // Shade the area clearly enough to read as a region over satellite imagery --
+    // a faint 6% fill left large box/corridor zones looking like a lone dashed edge.
+    fillOpacity: 0.14,
     interactive: true,
   } as const;
 }

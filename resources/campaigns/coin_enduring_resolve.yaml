@@ -11,9 +11,10 @@ description: >-
   <p>Find the caches (recon them — then strike them) to collapse a stronghold's regeneration,
   interdict the supply trail, and take the strongholds back with air assaults. And check your
   map before you roll in: <strong>the named towns of Helmand — Sangin, Musa Qala, Kajaki,
-  Now Zad, Gereshk, Marjah, Lashkar Gah — are all under positive control</strong>, because the
-  insurgency lives among the people. Half its cells and caches sit inside those rings; every
-  weapon released there prices collateral into the Coalition's mandate, kill by kill. The war
+  Now Zad, Gereshk, Marjah, Lashkar Gah — sit inside big no-strike positive-control
+  valleys</strong>, because the insurgency lives among the people. Much of its cells and caches
+  sit inside those valleys; every weapon released there prices collateral into the Coalition's
+  mandate, kill by kill. The war
   is decided by the <strong>will meters</strong>: the mandate bleeds from airframes, lost
   bases, strikes into the towns, and plain time; the insurgency's momentum bleeds from its
   caches, its convoys, and its strongholds — almost never from its dead fighters. Break their
@@ -145,7 +146,7 @@ phases:
       # Marjah through Sangin/Gereshk/Lashkar Gah -- the heart of the population.
       - shape: corridor
         name: Helmand Green Zone -- positive control
-        width_nm: 14
+        width_nm: 22
         path:
           - {x: -181452, y: -106712}  # Kajaki (the dam)
           - {x: -209658, y: -127043}  # Sangin
@@ -155,7 +156,7 @@ phases:
       # The northern feeder valley (Route 611): Now Zad -- Musa Qala -- Kajaki.
       - shape: corridor
         name: Musa Qala Valley -- positive control
-        width_nm: 10
+        width_nm: 18
         path:
           - {x: -173272, y: -162286}  # Now Zad
           - {x: -168553, y: -136022}  # Musa Qala
@@ -165,15 +166,15 @@ phases:
         name: Tarin Kowt Bowl -- positive control
         x: -146074
         y: -30595
-        width_nm: 20
-        height_nm: 16
+        width_nm: 34
+        height_nm: 28
       # The Delaram / Ring-Road junction in the west.
       - shape: box
         name: Delaram -- positive control
         x: -199964
         y: -259516
-        width_nm: 16
-        height_nm: 14
+        width_nm: 30
+        height_nm: 26
     advance_when:
       capture_cp: FOB Frontenac
   - key: clear_hold

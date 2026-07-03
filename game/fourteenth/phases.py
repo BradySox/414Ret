@@ -45,8 +45,13 @@ baseline, no emphasis, no status line.
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
+
+from shapely.geometry import LineString, Polygon
+from shapely.geometry import Point as ShapelyPoint
+from shapely.geometry.base import BaseGeometry
 
 if TYPE_CHECKING:
     from game import Game
@@ -91,19 +96,51 @@ PHASE_MIN_DWELL_TURNS = 2
 
 
 @dataclass(frozen=True)
-class RestrictedZone:
-    """A circle where offensive tasking is forbidden (authored phases, W4).
+class ZoneAnchor:
+    """A point a zone hangs off: a control point by name, or theater ``x``/``y``.
 
-    ``center_cp`` names a control point (resolved at runtime so the zone follows
-    the campaign's real laydown); explicit ``x``/``y`` theater coordinates are the
-    fallback for a zone anchored off-base. Radius is authored in NM.
+    A CP name resolves at runtime so the zone follows the campaign's real laydown;
+    explicit coordinates are the fallback for a point anchored off-base. Used for a
+    circle/box center and for each vertex of a corridor's ``path``.
     """
 
-    radius_nm: float
+    cp: Optional[str] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
+
+
+@dataclass(frozen=True)
+class RestrictedZone:
+    """A shape where offensive tasking is forbidden (authored phases, W4).
+
+    ``kind`` selects the geometry (all authored in NM, resolved to theater metres):
+
+    * ``circle`` -- ``center_cp`` (or ``x``/``y``) + ``radius_nm``. The original
+      shape; a zone block with only ``radius_nm`` + a center parses to this, so the
+      4 Vietnam campaigns are byte-identical.
+    * ``box`` -- a rotatable rectangle: ``center`` + ``width_nm`` x ``height_nm``,
+      optional ``heading`` degrees (0 = axis-aligned). The Nevada range / a Route
+      Package rectangle.
+    * ``corridor`` -- a lane: a ``path`` of >=2 anchors + ``corridor_width_nm`` (a
+      buffered polyline). An ingress route / the Ho Chi Minh trail.
+
+    Box and corridor require a ``name`` (there is no CP to borrow one from).
+    """
+
+    kind: str = "circle"
+    name: str = ""
+    #: circle / box center anchor
+    radius_nm: float = 0.0
     center_cp: Optional[str] = None
     x: Optional[float] = None
     y: Optional[float] = None
-    name: str = ""
+    #: box extents (NM) + rotation (degrees clockwise from north; 0 = axis-aligned)
+    width_nm: float = 0.0
+    height_nm: float = 0.0
+    heading: float = 0.0
+    #: corridor centerline vertices + full lane width (NM)
+    path: tuple[ZoneAnchor, ...] = ()
+    corridor_width_nm: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -160,7 +197,8 @@ class CampaignPhase:
     min_turn: int = 0
     #: Optional acceleration conditions to LEAVE this phase (authored arcs).
     advance_when: Optional[PhaseCondition] = None
-    #: Circles where offensive tasking is forbidden while this phase is active.
+    #: Shapes (circle/box/corridor) where offensive tasking is forbidden while this
+    #: phase is active.
     restricted_zones: tuple[RestrictedZone, ...] = ()
     #: Strike-target classes still locked in this phase (TGO ``category`` strings,
     #: plus the special ``"airfield"`` for OCA against a control point).
@@ -565,6 +603,83 @@ def active_phase(game: "Game") -> Optional[CampaignPhase]:
 _ARC_CACHE: dict[str, tuple[CampaignPhase, ...]] = {}
 
 
+def _parse_anchor(node: object) -> ZoneAnchor:
+    """A corridor ``path`` node: a CP name string, or an ``{x, y}`` mapping."""
+    if isinstance(node, str):
+        return ZoneAnchor(cp=node)
+    if isinstance(node, dict) and "x" in node and "y" in node:
+        return ZoneAnchor(x=float(node["x"]), y=float(node["y"]))
+    raise ValueError(f"corridor path anchor must be a CP name or {{x, y}}: {node!r}")
+
+
+def _parse_restricted_zone(zone: object) -> RestrictedZone:
+    """Parse one ``restricted_zones`` entry into a shape-typed ``RestrictedZone``.
+
+    ``shape`` defaults to ``circle`` so a legacy ``{center, radius_nm}`` block is
+    unchanged. Raises on structurally invalid data so a bad campaign fails loudly
+    in tests rather than silently losing a zone.
+    """
+    if not isinstance(zone, dict):
+        raise ValueError(f"restricted_zones: entry must be a mapping: {zone!r}")
+    kind = str(zone.get("shape", "circle")).lower()
+    name = str(zone.get("name", ""))
+    has_center = bool(zone.get("center")) or ("x" in zone and "y" in zone)
+    if kind == "circle":
+        if "radius_nm" not in zone or not has_center:
+            raise ValueError(
+                f"restricted_zones circle needs radius_nm and a center "
+                f"(CP name) or x/y: {zone!r}"
+            )
+        return RestrictedZone(
+            kind="circle",
+            name=name,
+            radius_nm=float(zone["radius_nm"]),
+            center_cp=zone.get("center"),
+            x=zone.get("x"),
+            y=zone.get("y"),
+        )
+    if kind == "box":
+        if not name:
+            raise ValueError(f"restricted_zones box needs a name: {zone!r}")
+        if "width_nm" not in zone or "height_nm" not in zone or not has_center:
+            raise ValueError(
+                f"restricted_zones box needs width_nm, height_nm and a center "
+                f"(CP name) or x/y: {zone!r}"
+            )
+        return RestrictedZone(
+            kind="box",
+            name=name,
+            center_cp=zone.get("center"),
+            x=zone.get("x"),
+            y=zone.get("y"),
+            width_nm=float(zone["width_nm"]),
+            height_nm=float(zone["height_nm"]),
+            heading=float(zone.get("heading", 0.0)),
+        )
+    if kind == "corridor":
+        if not name:
+            raise ValueError(f"restricted_zones corridor needs a name: {zone!r}")
+        path_raw = zone.get("path")
+        if (
+            not isinstance(path_raw, list)
+            or len(path_raw) < 2
+            or "width_nm" not in zone
+        ):
+            raise ValueError(
+                f"restricted_zones corridor needs width_nm and a path of >=2 "
+                f"anchors (CP name or {{x, y}}): {zone!r}"
+            )
+        return RestrictedZone(
+            kind="corridor",
+            name=name,
+            path=tuple(_parse_anchor(node) for node in path_raw),
+            corridor_width_nm=float(zone["width_nm"]),
+        )
+    raise ValueError(
+        f"restricted_zones: unknown shape {kind!r} (want circle, box, or corridor)"
+    )
+
+
 def _parse_condition(raw: object) -> Optional[PhaseCondition]:
     """Parse an ``advance_when`` / objective ``done_when`` mapping, or None."""
     if not raw:
@@ -603,24 +718,9 @@ def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
                 f"{sorted(PHASES)})"
             )
         emphasis = PHASES[emphasis_key].emphasis if emphasis_key else ()
-        zones = []
-        for zone in entry.get("restricted_zones") or []:
-            if "radius_nm" not in zone or not (
-                zone.get("center") or ("x" in zone and "y" in zone)
-            ):
-                raise ValueError(
-                    f"restricted_zones: entry needs radius_nm and a center "
-                    f"(CP name) or x/y: {zone!r}"
-                )
-            zones.append(
-                RestrictedZone(
-                    radius_nm=float(zone["radius_nm"]),
-                    center_cp=zone.get("center"),
-                    x=zone.get("x"),
-                    y=zone.get("y"),
-                    name=str(zone.get("name", "")),
-                )
-            )
+        zones = [
+            _parse_restricted_zone(zone) for zone in entry.get("restricted_zones") or []
+        ]
         condition = _parse_condition(entry.get("advance_when"))
         objectives = []
         for objective in entry.get("objectives") or []:
@@ -781,43 +881,136 @@ def _target_class(target: object) -> Optional[str]:
     return None
 
 
-def _resolved_zones(
-    game: "Game", phase: CampaignPhase
-) -> list[tuple[str, "object", float]]:
-    """Resolve a phase's zones to (name, center Point, radius meters).
+@dataclass(frozen=True)
+class ResolvedZone:
+    """A phase zone resolved to concrete theater geometry (metres, x/y floats).
 
-    A zone naming a control point absent from this theater resolves to nothing
-    (logged once per resolution) rather than crashing -- authored data must never
-    brick a campaign.
+    Shape-agnostic for its consumers: :meth:`contains` gates the AI planner and
+    the player will-penalty; ``center_xy``/``radius_m``/``outline_xy`` feed the two
+    painters (the ME F10-map drawing and the web map layer), which build DCS
+    ``Point``/``LatLng`` from these raw coordinates. ``outline_xy`` is the polygon
+    ring for box/corridor and empty for a circle (drawn natively both places).
     """
-    zones: list[tuple[str, object, float]] = []
-    for zone in phase.restricted_zones:
-        center = None
-        if zone.center_cp is not None:
-            for cp in game.theater.controlpoints:
-                if cp.name == zone.center_cp:
-                    center = cp.position
-                    break
-            if center is None:
-                logging.warning(
-                    "Restricted zone %r: no control point named %r in this theater",
-                    zone.name or zone.center_cp,
-                    zone.center_cp,
-                )
-        elif zone.x is not None and zone.y is not None:
-            center = game.point_in_world(zone.x, zone.y)
-        if center is not None:
-            zones.append(
-                (
-                    zone.name or zone.center_cp or "Restricted zone",
-                    center,
-                    zone.radius_nm * 1852.0,
-                )
+
+    name: str
+    kind: str
+    center_xy: tuple[float, float]
+    radius_m: float = 0.0
+    outline_xy: tuple[tuple[float, float], ...] = ()
+    #: shapely polygon for box/corridor containment; None for a circle (distance).
+    geometry: Optional[BaseGeometry] = field(default=None, repr=False, compare=False)
+
+    def contains(self, position: object) -> bool:
+        px = float(getattr(position, "x"))
+        py = float(getattr(position, "y"))
+        if self.kind == "circle":
+            cx, cy = self.center_xy
+            return math.hypot(px - cx, py - cy) <= self.radius_m
+        if self.geometry is None:
+            return False
+        return bool(self.geometry.contains(ShapelyPoint(px, py)))
+
+
+def _anchor_xy(game: "Game", anchor: ZoneAnchor) -> Optional[tuple[float, float]]:
+    """Resolve a :class:`ZoneAnchor` to theater ``(x, y)`` metres, or None.
+
+    A CP name absent from this theater resolves to nothing (logged) rather than
+    crashing -- authored data must never brick a campaign.
+    """
+    if anchor.cp is not None:
+        for cp in game.theater.controlpoints:
+            if cp.name == anchor.cp:
+                return (cp.position.x, cp.position.y)
+        logging.warning(
+            "Restricted zone anchor: no control point named %r in this theater",
+            anchor.cp,
+        )
+        return None
+    if anchor.x is not None and anchor.y is not None:
+        return (float(anchor.x), float(anchor.y))
+    return None
+
+
+def _box_corners(
+    cx: float, cy: float, width_m: float, height_m: float, heading_deg: float
+) -> list[tuple[float, float]]:
+    """The four rotated corners of a box (DCS x=north, y=east; heading clockwise)."""
+    rad = math.radians(heading_deg)
+    cos_h, sin_h = math.cos(rad), math.sin(rad)
+    hw, hh = width_m / 2.0, height_m / 2.0
+    corners = []
+    for along, perp in ((hw, hh), (hw, -hh), (-hw, -hh), (-hw, hh)):
+        corners.append(
+            (cx + along * cos_h - perp * sin_h, cy + along * sin_h + perp * cos_h)
+        )
+    return corners
+
+
+def _resolve_zone(game: "Game", zone: RestrictedZone) -> Optional[ResolvedZone]:
+    """Resolve one authored zone to a :class:`ResolvedZone`, or None if unanchored."""
+    if zone.kind == "box":
+        center = _anchor_xy(game, ZoneAnchor(cp=zone.center_cp, x=zone.x, y=zone.y))
+        if center is None:
+            return None
+        corners = _box_corners(
+            center[0],
+            center[1],
+            zone.width_nm * 1852.0,
+            zone.height_nm * 1852.0,
+            zone.heading,
+        )
+        return ResolvedZone(
+            name=zone.name or "Restricted zone",
+            kind="box",
+            center_xy=center,
+            outline_xy=tuple(corners),
+            geometry=Polygon(corners),
+        )
+    if zone.kind == "corridor":
+        points = [
+            xy for xy in (_anchor_xy(game, a) for a in zone.path) if xy is not None
+        ]
+        if len(points) < 2:
+            logging.warning(
+                "Restricted corridor %r: fewer than 2 anchors resolved", zone.name
             )
-    return zones
+            return None
+        poly = LineString(points).buffer(zone.corridor_width_nm * 1852.0 / 2.0)
+        ring = list(poly.exterior.coords)
+        if len(ring) > 1 and ring[0] == ring[-1]:
+            ring = ring[:-1]
+        cx = sum(p[0] for p in points) / len(points)
+        cy = sum(p[1] for p in points) / len(points)
+        return ResolvedZone(
+            name=zone.name or "Restricted zone",
+            kind="corridor",
+            center_xy=(cx, cy),
+            outline_xy=tuple((float(x), float(y)) for x, y in ring),
+            geometry=poly,
+        )
+    # Default / "circle".
+    center = _anchor_xy(game, ZoneAnchor(cp=zone.center_cp, x=zone.x, y=zone.y))
+    if center is None:
+        return None
+    return ResolvedZone(
+        name=zone.name or zone.center_cp or "Restricted zone",
+        kind="circle",
+        center_xy=center,
+        radius_m=zone.radius_nm * 1852.0,
+    )
 
 
-def active_restricted_zones(game: "Game") -> list[tuple[str, "object", float]]:
+def _resolved_zones(game: "Game", phase: CampaignPhase) -> list[ResolvedZone]:
+    """Resolve a phase's zones to concrete geometry, dropping any that won't anchor."""
+    resolved = []
+    for zone in phase.restricted_zones:
+        result = _resolve_zone(game, zone)
+        if result is not None:
+            resolved.append(result)
+    return resolved
+
+
+def active_restricted_zones(game: "Game") -> list[ResolvedZone]:
     """The active phase's resolved zones -- the map layer / server payload feed."""
     phase = active_phase(game)
     if phase is None:
@@ -857,9 +1050,9 @@ def roe_restriction_reason(game: "Game", target: object) -> Optional[str]:
     position = getattr(target, "position", None)
     if position is None:
         return None
-    for name, center, radius_m in _resolved_zones(game, phase):
-        if center.distance_to_point(position) <= radius_m:  # type: ignore[attr-defined]
-            return f"inside {name}"
+    for zone in _resolved_zones(game, phase):
+        if zone.contains(position):
+            return f"inside {zone.name}"
     return None
 
 
@@ -907,6 +1100,13 @@ def _cleared_classes(game: "Game", phase: CampaignPhase) -> list[str]:
     ]
 
 
+def _zone_label(zone: ResolvedZone) -> str:
+    """A zone's OFF-LIMITS bit: a circle's radius, else the shape name."""
+    if zone.kind == "circle":
+        return f"{zone.name} {zone.radius_m / 1852.0:.0f} nm"
+    return f"{zone.name} ({zone.kind})"
+
+
 def roe_summary_lines(game: "Game") -> list[tuple[str, str]]:
     """The active phase's ROE, spelled out: what is off limits and what is good.
 
@@ -922,10 +1122,7 @@ def roe_summary_lines(game: "Game") -> list[tuple[str, str]]:
     if not phase.restricted_zones and not phase.locked_target_classes:
         return []
     lines: list[tuple[str, str]] = []
-    zone_bits = [
-        f"{name} {radius_m / 1852.0:.0f} nm"
-        for name, _center, radius_m in _resolved_zones(game, phase)
-    ]
+    zone_bits = [_zone_label(zone) for zone in _resolved_zones(game, phase)]
     if zone_bits:
         lines.append(("OFF LIMITS", " · ".join(zone_bits)))
     if phase.locked_target_classes:
@@ -1119,8 +1316,8 @@ def count_roe_violations(game: "Game", debriefing: "Debriefing") -> int:
         position = getattr(mapping.theater_unit, "position", None)
         if position is None:
             continue
-        for _name, center, radius_m in zones:
-            if center.distance_to_point(position) <= radius_m:  # type: ignore[attr-defined]
+        for zone in zones:
+            if zone.contains(position):
                 violations += 1
                 break
     return violations

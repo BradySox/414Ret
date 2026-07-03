@@ -2315,6 +2315,26 @@ so the two docs don't drift.
   campaign surging (only *authored* phases may carry `red_tempo` — check `_active_authored_phase`).
   Knobs: the per-phase `red_tempo:` YAML values; `GROUND_OFFENSIVE_MIN_SURGE` (red_tempo.py).
 
+### M7 — ROE zone shapes painted on the F10/ME map (box + corridor) · §40 · ☐ UNTESTED (built 2026-07-02; parse/resolve/containment/rotation locked in `tests/fourteenth/test_phases.py`, both pydcs painter + latlng seams engine-probed; the drawn shapes need an in-game/`.miz` eyeball)
+- **Headless adjudication:** `_parse_restricted_zone` (circle/box/corridor + the rejects), `_resolve_zone`
+  geometry, `zone.contains` for all three kinds, and box `heading` rotation are locked in
+  `tests/fourteenth/test_phases.py`; a real-pydcs probe confirmed `add_freeform_polygon` (box 4-pt, corridor
+  buffered) and `point_in_world(...).latlng()` serialize cleanly. What CI *cannot* adjudicate: whether DCS
+  actually renders the drawings on the F10 map and whether the box/corridor land where authored.
+- **Setup:** author a `box` and a `corridor` `restricted_zones` entry into an active phase of a Vietnam
+  campaign's `phases:` block (see §40 for the schema), start a NEW game, generate the mission, and open the
+  `.miz` in the Mission Editor (or fly it and check the F10 map).
+- **Pass:** the box (rotated per `heading`) and the corridor lane appear as red dashed shapes on the F10/ME
+  map at the authored location, matching the web map layer; a legacy circle zone is unchanged; the AI planner
+  still avoids targets inside the box/corridor and a player kill inside one drains will.
+- **Fail signature:** a box/corridor drawn in the wrong place or wrong orientation (the `_box_corners`
+  heading convention or the freeform-polygon offset anchoring — the drawing anchor must be `outline[0]` with
+  local offsets, per `generate_routes`); nothing drawn at all (the phase isn't active, or
+  `active_restricted_zones` returned empty); the web map showing a shape the F10 map doesn't (they share
+  `active_restricted_zones`, so a divergence is a rendering bug on one side).
+  Knobs: `ROE_ZONE_LINE`/`ROE_ZONE_FILL` (drawingsgenerator.py); the corridor buffer resolution (phases.py
+  `_resolve_zone`).
+
 ## N. Mod support
 
 ### N1 — High Digit SAMs Ultimate Compilation units in-game · §41 · ☐ UNTESTED (built 2026-07-01; unit data read from the installed mod, factions/presets/layouts headless-verified)

@@ -588,8 +588,10 @@ export type UnculledZone = {
 };
 export type RestrictedZone = {
   name: string;
+  kind: string;
   center: LatLng;
   radius_m: number;
+  outline: LatLng[];
   detail?: string;
 };
 export type PhaseObjective = {

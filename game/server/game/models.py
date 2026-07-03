@@ -168,11 +168,17 @@ class CampaignStatusJs(BaseModel):
 
 
 class RestrictedZoneJs(BaseModel):
-    """An active ROE restricted zone (campaign phases W4) for the map layer."""
+    """An active ROE restricted zone (campaign phases W4) for the map layer.
+
+    ``kind`` selects how the client draws it: ``circle`` uses ``center``/``radius_m``;
+    ``box``/``corridor`` use the ``outline`` polygon ring (empty for a circle).
+    """
 
     name: str
+    kind: str
     center: LeafletPoint
     radius_m: float
+    outline: list[LeafletPoint]
     #: What the ROE locks right now + when it eases (the zone tooltip body).
     detail: str
 
@@ -181,15 +187,24 @@ class RestrictedZoneJs(BaseModel):
         from game.fourteenth.phases import active_restricted_zones, zone_detail
 
         detail = zone_detail(game)
-        return [
-            RestrictedZoneJs(
-                name=name,
-                center=LeafletPoint.from_latlng(center.latlng()),  # type: ignore[attr-defined]
-                radius_m=radius_m,
-                detail=detail,
+        zones = []
+        for zone in active_restricted_zones(game):
+            center = game.point_in_world(*zone.center_xy)
+            outline = [
+                LeafletPoint.from_latlng(game.point_in_world(x, y).latlng())
+                for x, y in zone.outline_xy
+            ]
+            zones.append(
+                RestrictedZoneJs(
+                    name=zone.name,
+                    kind=zone.kind,
+                    center=LeafletPoint.from_latlng(center.latlng()),
+                    radius_m=zone.radius_m,
+                    outline=outline,
+                    detail=detail,
+                )
             )
-            for name, center, radius_m in active_restricted_zones(game)
-        ]
+        return zones
 
 
 class GameJs(BaseModel):

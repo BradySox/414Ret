@@ -3094,17 +3094,35 @@ re-derived at load per spec §5 — never pickled). Authored transitions: the ne
 scheduled escalation date; the current phase's `advance_when` (any-of `min_turn` / `blue_will_below` /
 `enemy_iads_below`) accelerates it — bleeding political will speeds escalation. The ROE payload:
 
-- **`restricted_zones`** — circles (CP-name or x/y centered, radius NM) where offensive tasking is
-  forbidden. The **AI planner gate** sits in `PackagePlanningTask.fulfill_mission` next to the Vietnam
-  `tasking_whitelist` read (`roe_blocks_target`, BLUE-only); sanctuary airfields fall out (a CP inside a
-  zone can't be OCA'd). The **player is never hard-blocked**: kills inside an active zone are counted at
-  debrief (`count_roe_violations`) and drain Political Will sharply (`BLUE_ROE_VIOLATION` in
+- **`restricted_zones`** — shape-typed areas where offensive tasking is forbidden. `RestrictedZone.kind`
+  selects the geometry (all authored in NM, `_parse_restricted_zone` dispatches on `shape:`; a legacy
+  `{center, radius_nm}` block parses to a **circle** byte-identically, so the 4 Vietnam campaigns are
+  unchanged):
+  - `circle` — `center` (CP name) or `x`/`y` + `radius_nm`.
+  - `box` — a rotatable rectangle: `center` (CP or x/y) + `width_nm` × `height_nm` + optional `heading`
+    degrees (the Nevada range / a Route-Package rectangle).
+  - `corridor` — a lane: a `path` of ≥2 anchors (CP names and/or `{x, y}`) + `width_nm`, a shapely
+    buffered polyline (an ingress route / the Ho Chi Minh trail).
+
+  `_resolve_zone` turns each into a `ResolvedZone` carrying a shapely geometry; `zone.contains(pos)` is the
+  one containment primitive both enforcement points use — circles keep the exact distance test, box/corridor
+  use shapely point-in-polygon. The **AI planner gate** sits in `PackagePlanningTask.fulfill_mission` next to
+  the Vietnam `tasking_whitelist` read (`roe_blocks_target`, BLUE-only); sanctuary airfields fall out (a CP
+  inside a zone can't be OCA'd). The **player is never hard-blocked**: kills inside an active zone are counted
+  at debrief (`count_roe_violations`) and drain Political Will sharply (`BLUE_ROE_VIOLATION` in
   `political_will.py`, with an "ROE violation" message).
 - **`locked_targets`** (target_release) — TGO `category` strings (+ special `airfield`) still locked in a
   phase; blocked in the same planner gate, badged **RESTRICTED — ROE** on the TGO tooltip
   (`TgoJs.roe_restricted`) instead of vanishing — the defining Rolling Thunder frustration, on purpose.
-- **Map layer** — `GameJs.restricted_zones` → `RestrictedZonesLayer` (red dashed circles + sticky tooltip),
-  in the layers panel "Enemy intel" group, default ON (renders nothing outside authored ROE campaigns).
+- **Map layer** — `GameJs.restricted_zones` (each carries `kind` + `center`/`radius_m` for circles and an
+  `outline` polygon ring for box/corridor) → `RestrictedZonesLayer` draws a red dashed `<Circle>` or
+  `<Polygon>` by kind (+ sticky tooltip), in the layers panel "Enemy intel" group, default ON (renders
+  nothing outside authored ROE campaigns).
+- **F10 / Mission-Editor drawing** — `DrawingsGenerator.generate_restricted_zones` paints the same resolved
+  zones into every generated `.miz` (dashed red, alongside the always-on frontline/route/CP drawings):
+  `add_circle` for a circle, `add_freeform_polygon` of the outline for a box/corridor. Reuses
+  `active_restricted_zones`, so the cockpit F10 map and the web map show identical geometry. No-op outside an
+  authored ROE phase.
 - **The authored arcs** — all 4 Vietnam campaigns ship **Rolling Thunder → The Bombing Halt → Linebacker →
   Linebacker II** (sanctuary on Kutaisi/Hanoi + Senaki/Haiphong for Yankee Station/Steel Tiger — the 2026-07
   coastal-ladder recast — plus a **permanent Tbilisi-Lochini "PRC border" ring those two keep in every

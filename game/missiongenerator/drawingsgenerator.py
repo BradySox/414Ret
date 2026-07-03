@@ -19,6 +19,10 @@ CP_NEUTRAL = Rgba(128, 128, 128, 80)
 BLUE_PATH_COLOR = Rgba(0, 0, 255, 100)
 RED_PATH_COLOR = Rgba(255, 0, 0, 100)
 ACTIVE_PATH_COLOR = Rgba(255, 80, 80, 100)
+# ROE restricted zones (campaign phases W4): dashed red like the web map layer, so
+# they read as *rules* (off-limits airspace), not radar coverage.
+ROE_ZONE_LINE = Rgba(212, 58, 58, 220)
+ROE_ZONE_FILL = Rgba(212, 58, 58, 40)
 
 
 class DrawingsGenerator:
@@ -104,7 +108,42 @@ class DrawingsGenerator:
             )
             shape.name = front_line.name
 
+    def generate_restricted_zones(self) -> None:
+        """Paint the active phase's ROE zones (circle / box / corridor).
+
+        Reads the same resolved zones the web map layer draws, so the F10 map and
+        the client show the identical geometry. No-op outside an authored ROE phase
+        (the list is empty) -- non-ROE campaigns see nothing new.
+        """
+        from game.fourteenth.phases import active_restricted_zones
+
+        for zone in active_restricted_zones(self.game):
+            if zone.kind == "circle":
+                shape = self.player_layer.add_circle(
+                    self.game.point_in_world(*zone.center_xy),
+                    zone.radius_m,
+                    line_thickness=4,
+                    color=ROE_ZONE_LINE,
+                    fill=ROE_ZONE_FILL,
+                    line_style=LineStyle.Dash,
+                )
+            else:
+                points = [self.game.point_in_world(x, y) for x, y in zone.outline_xy]
+                if len(points) < 3:
+                    continue
+                anchor = points[0]
+                shape = self.player_layer.add_freeform_polygon(
+                    anchor,
+                    [p - anchor for p in points],
+                    line_thickness=4,
+                    color=ROE_ZONE_LINE,
+                    fill=ROE_ZONE_FILL,
+                    line_style=LineStyle.Dash,
+                )
+            shape.name = zone.name
+
     def generate(self) -> None:
         self.generate_frontlines_drawing()
         self.generate_routes()
         self.generate_cps_markers()
+        self.generate_restricted_zones()

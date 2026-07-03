@@ -29,6 +29,9 @@ from game.fourteenth.phases import (
     PhaseMetrics,
     ROLLBACK_SAM_FLOOR,
     _next_phase_key,
+    _parse_restricted_zone,
+    _resolve_zone,
+    _zone_label,
     active_phase,
     active_restricted_zones,
     classify,
@@ -476,6 +479,127 @@ def test_parse_phases_rejects_bad_entries() -> None:
         parse_phases([{"key": "x", "emphasis": "not-a-phase"}])
     with pytest.raises(ValueError):
         parse_phases([{"key": "x", "restricted_zones": [{"radius_nm": 10}]}])
+
+
+_NM = 1852.0
+
+
+def test_box_zone_parses_resolves_and_contains() -> None:
+    # A 20x10 nm axis-aligned box centered at the origin: spans +/-10 nm along x
+    # (width) and +/-5 nm along y (height).
+    zone = _parse_restricted_zone(
+        {
+            "shape": "box",
+            "name": "The Box",
+            "x": 0.0,
+            "y": 0.0,
+            "width_nm": 20,
+            "height_nm": 10,
+        }
+    )
+    assert zone.kind == "box"
+    resolved = _resolve_zone(_duck_game(), zone)
+    assert resolved is not None and resolved.kind == "box"
+    assert len(resolved.outline_xy) == 4
+    assert resolved.contains(_Pt(5 * _NM, 0.0))  # inside the width & height
+    assert not resolved.contains(_Pt(0.0, 8 * _NM))  # past the 5 nm half-height
+    assert not resolved.contains(_Pt(15 * _NM, 0.0))  # past the 10 nm half-width
+
+
+def test_box_heading_rotates_the_footprint() -> None:
+    # A point 8 nm east (0, 8nm) is outside the axis-aligned box but inside once the
+    # box is rotated 90 degrees (width axis now runs east-west).
+    base = {
+        "shape": "box",
+        "name": "b",
+        "x": 0.0,
+        "y": 0.0,
+        "width_nm": 20,
+        "height_nm": 10,
+    }
+    point = _Pt(0.0, 8 * _NM)
+    flat = _resolve_zone(_duck_game(), _parse_restricted_zone(base))
+    turned = _resolve_zone(
+        _duck_game(), _parse_restricted_zone({**base, "heading": 90})
+    )
+    assert flat is not None and turned is not None
+    assert not flat.contains(point)
+    assert turned.contains(point)
+
+
+def test_corridor_zone_parses_resolves_and_contains() -> None:
+    # A 10 nm-wide lane along the x-axis from the origin to 100 km east-of-north.
+    zone = _parse_restricted_zone(
+        {
+            "shape": "corridor",
+            "name": "Trail",
+            "path": [{"x": 0.0, "y": 0.0}, {"x": 100000.0, "y": 0.0}],
+            "width_nm": 10,
+        }
+    )
+    assert zone.kind == "corridor" and len(zone.path) == 2
+    resolved = _resolve_zone(_duck_game(), zone)
+    assert resolved is not None and resolved.kind == "corridor"
+    assert resolved.contains(_Pt(50000.0, 5000.0))  # within the ~9.3 km half-width
+    assert not resolved.contains(_Pt(50000.0, 20000.0))  # well outside the lane
+
+
+def test_corridor_resolves_cp_named_anchors() -> None:
+    a = SimpleNamespace(name="A", position=_Pt(0.0, 0.0))
+    b = SimpleNamespace(name="B", position=_Pt(100000.0, 0.0))
+    game = _duck_game(controlpoints=[a, b])
+    zone = _parse_restricted_zone(
+        {"shape": "corridor", "name": "AB", "path": ["A", "B"], "width_nm": 10}
+    )
+    resolved = _resolve_zone(game, zone)
+    assert resolved is not None and resolved.contains(_Pt(50000.0, 0.0))
+    # A path that names an absent CP drops below 2 anchors and resolves to nothing.
+    missing = _parse_restricted_zone(
+        {"shape": "corridor", "name": "AX", "path": ["A", "X"], "width_nm": 10}
+    )
+    assert _resolve_zone(game, missing) is None
+
+
+def test_zone_labels_by_shape() -> None:
+    circle = _resolve_zone(
+        _duck_game(controlpoints=[SimpleNamespace(name="C", position=_Pt(0.0, 0.0))]),
+        _parse_restricted_zone({"center": "C", "radius_nm": 12, "name": "Ring"}),
+    )
+    box = _resolve_zone(
+        _duck_game(),
+        _parse_restricted_zone(
+            {
+                "shape": "box",
+                "name": "Box",
+                "x": 0.0,
+                "y": 0.0,
+                "width_nm": 4,
+                "height_nm": 4,
+            }
+        ),
+    )
+    assert circle is not None and _zone_label(circle) == "Ring 12 nm"
+    assert box is not None and _zone_label(box) == "Box (box)"
+
+
+def test_parse_restricted_zone_rejects_bad_shapes() -> None:
+    with pytest.raises(ValueError):  # unknown shape
+        _parse_restricted_zone({"shape": "blob", "name": "x"})
+    with pytest.raises(ValueError):  # box needs a name
+        _parse_restricted_zone(
+            {"shape": "box", "x": 0.0, "y": 0.0, "width_nm": 4, "height_nm": 4}
+        )
+    with pytest.raises(ValueError):  # box needs extents
+        _parse_restricted_zone({"shape": "box", "name": "b", "x": 0.0, "y": 0.0})
+    with pytest.raises(ValueError):  # corridor needs >=2 anchors
+        _parse_restricted_zone(
+            {
+                "shape": "corridor",
+                "name": "c",
+                "path": [{"x": 0.0, "y": 0.0}],
+                "width_nm": 4,
+            }
+        )
 
 
 def test_sanctuary_airfield_falls_out_of_the_zone(authored_game: Any) -> None:

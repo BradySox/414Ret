@@ -18,18 +18,21 @@ markers, so this is accurate to well inside a route's width.
 
 Usage: define a terrain + a list of :class:`Route` (endpoints as exact CP/marker XY,
 intermediate corridor points as real ``(lat, lon)``) and run to emit the YAML block.
-The COIN campaign's routes are defined below as the reference application; re-run and
-paste the output into ``resources/campaigns/coin_enduring_resolve.yaml``.
+Each campaign's routes are defined below as its reference application; pick one by name
+and paste the output into that campaign's ``resources/campaigns/*.yaml``.
 
-    python tools/supply_route_geo.py
+    python tools/supply_route_geo.py [coin|red_flag_81_2]   # default: coin
 """
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
 
 from dcs.mapping import LatLng, Point
 from dcs.terrain.afghanistan import Afghanistan
+from dcs.terrain.caucasus import Caucasus
+from dcs.terrain.nevada import Nevada
 
 
 @dataclass
@@ -141,5 +144,129 @@ COIN_ROUTES = [
 ]
 
 
+# --- Red Flag 81-2 (Nevada Test & Training Range): exact FOB/airfield marker XY
+# --- endpoints, the real NTTR road network between them. Roads: US-95 (the SE->NW
+# --- spine: Las Vegas -> Indian Springs -> Mercury -> Beatty -> Goldfield -> Tonopah),
+# --- US-6 east out of Tonopah, and the NTS/range interior roads (the Mercury Highway,
+# --- the Gold Flat/Kawich valley down to Pahute Mesa). The first route -- THE FRONT
+# --- across the NTS -- is the static-front polyline, not a supply road, so it is left
+# --- as authored in the yaml and NOT emitted here.
+NELLIS = (-398195.0, -17233.0)
+CREECH = (-360507.0, -75590.0)  # Indian Springs
+MERCURY = (-352000.0, -103000.0)  # Camp Mercury (NTS main gate)
+TOLICHA = (-322000.0, -148000.0)  # FOB Tolicha (FEBA anchor)
+TONOPAH = (-197282.0, -201302.0)  # Tonopah civil (on US-6)
+TTR = (-226505.0, -174698.0)  # Tonopah Test Range
+PAHUTE = (-303620.0, -132937.0)  # Pahute Mesa
+BEATTY = (-330553.0, -174958.0)
+GROOM = (-288604.0, -86870.0)  # Groom Lake
+
+RED_FLAG_ROUTES = [
+    Route(
+        "Nellis -> Indian Springs (Creech): US-95 north-west out of Las Vegas",
+        NELLIS,
+        [(36.300, -115.260), (36.420, -115.440), (36.520, -115.610)],
+        CREECH,
+    ),
+    Route(
+        "Indian Springs (Creech) -> Camp Mercury: US-95 north-west to the NTS gate",
+        CREECH,
+        [(36.607, -115.755), (36.640, -115.905)],  # Cactus Springs -> Mercury jct
+        MERCURY,
+    ),
+    Route(
+        "Tonopah (civil) -> Tonopah Test Range: US-6 east, then the TTR access road south",
+        TONOPAH,
+        [(38.045, -116.980), (37.920, -116.860)],
+        TTR,
+    ),
+    Route(
+        "Tonopah Test Range -> Pahute Mesa: down the Gold Flat / Kawich Valley corridor",
+        TTR,
+        [(37.600, -116.600), (37.380, -116.450), (37.200, -116.360)],
+        PAHUTE,
+    ),
+    Route(
+        "Pahute Mesa -> FOB Tolicha: the Pahute Mesa road, last leg to the FEBA anchor",
+        PAHUTE,
+        [(37.030, -116.400)],
+        TOLICHA,
+    ),
+    Route(
+        "Beatty -> FOB Tolicha: the western Tolicha Peak corridor into the NTS boundary",
+        BEATTY,
+        [(36.900, -116.630)],
+        TOLICHA,
+    ),
+    Route(
+        "Tonopah Test Range -> Beatty: the real US-95 west corridor -- west to Goldfield, "
+        "then south through Scotty's Junction (NOT straight down the Kawich Range)",
+        TTR,
+        [
+            (37.708, -117.235),
+            (37.283, -117.021),
+            (36.980, -116.820),
+        ],  # Goldfield -> Scotty's Jct -> Springdale
+        BEATTY,
+    ),
+    Route(
+        "Groom Lake -> Pahute Mesa: the Box feeds the FEBA (NTS interior, Yucca Flat)",
+        GROOM,
+        [(37.190, -116.000), (37.130, -116.180)],
+        PAHUTE,
+    ),
+]
+
+
+# --- Caucasus Vietnam trail (1968 Yankee Station + Steel Tiger, shared miz): a
+# --- FICTIONAL overlay -- Hanoi is Kutaisi, the Ho Chi Minh Trail FOBs are placed in
+# --- the Samegrelo highlands. Per the standard these deep-mountain corridors want an
+# --- in-app by-eye pass, NOT headless real-road lat/lon; this entry holds ONLY the
+# --- three corridors whose gross defects are unambiguous to fix in place (a bare
+# --- straight line, an eastward lowland overshoot) -- the Kolkheti coastal plain and
+# --- the western foothill descents are real, driveable, and low-risk. It does NOT
+# --- emit the whole block: splice each route individually. Endpoints are verbatim yaml
+# --- XY (Senaki / Poti-Kulevi / the Ban Laboy hill FOB), so binding is unchanged.
+CT_SENAKI = (-280521.0, 642739.0)  # Haiphong (Senaki), R3 start
+CT_THANHHOA_R3 = (-289768.0, 619547.0)  # FOB Thanh Hoa (Poti/Kulevi coast), R3 end
+CT_THANHHOA_R4 = (-288780.0, 620946.0)  # FOB Thanh Hoa, R4 end (verbatim, distinct XY)
+CT_BANLABOY_R4 = (-266003.0, 623883.0)  # FOB Ban Laboy, R4 start (verbatim)
+CT_BANLABOY_R5 = (-267428.0, 625056.0)  # FOB Ban Laboy, R5 start (verbatim)
+CT_SENAKI_R5 = (-279960.0, 644266.0)  # Haiphong (Senaki), R5 end (verbatim)
+
+CAUCASUS_TRAIL_FIXES = [
+    Route(
+        "Haiphong (Senaki) -> FOB Thanh Hoa: SW across the Kolkheti coastal plain "
+        "toward the Poti/Kulevi coast (was a bare 2-point straight line)",
+        CT_SENAKI,
+        [(42.235, 41.870), (42.205, 41.780)],
+        CT_THANHHOA_R3,
+    ),
+    Route(
+        "FOB Thanh Hoa <-> FOB Ban Laboy: straight down the western foothill edge "
+        "(removed the ~25 km eastward overshoot into the Senaki lowland)",
+        CT_BANLABOY_R4,
+        [(42.345, 41.770), (42.275, 41.745)],
+        CT_THANHHOA_R4,
+    ),
+    Route(
+        "FOB Ban Laboy <-> Haiphong (Senaki): a clean SE descent from the hills to the "
+        "Senaki lowland (was a clustered stub + one long straight jump)",
+        CT_BANLABOY_R5,
+        [(42.350, 41.860), (42.305, 41.930)],
+        CT_SENAKI_R5,
+    ),
+]
+
+
+CAMPAIGNS = {
+    "coin": (Afghanistan, COIN_ROUTES),
+    "red_flag_81_2": (Nevada, RED_FLAG_ROUTES),
+    "caucasus_trail_fixes": (Caucasus, CAUCASUS_TRAIL_FIXES),
+}
+
+
 if __name__ == "__main__":
-    print(render(Afghanistan(), COIN_ROUTES))
+    name = sys.argv[1] if len(sys.argv) > 1 else "coin"
+    terrain_cls, routes = CAMPAIGNS[name]
+    print(render(terrain_cls(), routes))

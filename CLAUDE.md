@@ -1013,9 +1013,14 @@ it from upstream. Settings are LOCKED by design: `plugin.json` has no `specificO
   real-world-coordinate maps (Afghanistan, Syria, Sinai, PG, Kola, Normandy, Caucasus…) author the
   intermediates from the **real road network's lat/lon** via `tools/supply_route_geo.py`
   (`Point.from_latlng` → terrain XY; calibrated to ~1–5 km on Afghanistan). For fictional-overlay
-  campaigns (e.g. Vietnam-on-Caucasus) trace the on-map roads/valleys visually instead. The COIN
-  campaign (`coin_enduring_resolve.yaml`, Highway 1 / Route 611 / the Uruzgan road) is the reference
-  implementation.
+  campaigns (e.g. Vietnam-on-Caucasus) trace the on-map roads/valleys visually instead. The tool is
+  **multi-campaign** (`python tools/supply_route_geo.py [coin|red_flag_81_2|caucasus_trail_fixes]`);
+  the COIN campaign (`coin_enduring_resolve.yaml`, Highway 1 / Route 611 / the Uruzgan road) and Red
+  Flag 81-2 (`red_flag_81_2.yaml`, real US-95 / US-6 / the NTS interior) are the reference
+  implementations. The built campaigns were audited against this standard 2026-07-03 (see the
+  supply-routes design note "Roll-out to the built campaigns"): Nevada re-traced, the worst
+  Caucasus-trail defects fixed, the deep-mountain trail FOBs (Yankee Station / Steel Tiger R6–R13)
+  left for an in-app by-eye pass, Germany already compliant.
 - Match the surrounding code's style; run the three validation commands (in `CLAUDE-ci.md`) before pushing.
 - Keep the doc faces in sync: when a feature lands or changes, update **both**
   [`README.md`](README.md) (player-facing) and the relevant section of

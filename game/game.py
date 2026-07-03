@@ -402,6 +402,11 @@ class Game:
         # C1.5: the insurgency retakes cleared-but-unheld ground (a staged, announced,
         # counterable pipeline). Runs right after regen; gated coin_reinfiltration OFF.
         advance_reinfiltration(self, events)
+        # COIN roadside IEDs: mine the insurgent ratline -- sweep it or the un-cleared
+        # devices detonate on the coalition and drain the mandate. Gated coin_ied OFF.
+        from game.fourteenth.coin_ied import advance_roadside_ieds
+
+        advance_roadside_ieds(self, events)
 
         # Vietnam Ops Super Gaggle (§37): (re)plan the turn's resupply run from real BLUE
         # squadrons (drawing the helos + suppressors from actual airframes, whose losses are

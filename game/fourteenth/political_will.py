@@ -65,6 +65,10 @@ BLUE_ROE_VIOLATION = 4.0
 #: debriefing's ground-object losses by TheaterUnit.is_ship; rare in Vietnam, the
 #: load-bearing feed for naval wars (Falklands re-weights it up).
 BLUE_SHIP_LOST = 4.0
+#: A roadside IED left un-swept detonates on the coalition (COIN §IED). Default 0.0 --
+#: an inert feed off Vietnam; the COIN campaign prices it up. Charged from a coin_state
+#: counter (a finish_turn detonation, never an in-mission debrief event).
+BLUE_IED_DETONATION = 0.0
 
 # --- RED (Regime Resolve) feed weights. Resolve is hard: airframes barely register;
 # the trail is the artery.
@@ -142,6 +146,7 @@ class WillWeights:
     blue_passive_regen: float = BLUE_PASSIVE_REGEN
     blue_roe_violation: float = BLUE_ROE_VIOLATION
     blue_ship_lost: float = BLUE_SHIP_LOST
+    blue_ied_detonation: float = BLUE_IED_DETONATION
     red_convoy_unit_lost: float = RED_CONVOY_UNIT_LOST
     red_ground_unit_lost: float = RED_GROUND_UNIT_LOST
     red_airframe_loss: float = RED_AIRFRAME_LOSS
@@ -517,6 +522,20 @@ def _blue_moves(
                 -reinfiltrated * weights.blue_base_lost,
             )
         )
+
+    # COIN roadside IEDs left un-swept detonate on the coalition (a finish_turn event,
+    # never in the debriefing). Priced only where the campaign weights it up.
+    if weights.blue_ied_detonation:
+        from game.fourteenth.coin_ied import consume_ied_detonations
+
+        ieds = consume_ied_detonations(game)
+        if ieds:
+            moves.append(
+                (
+                    f"IED detonations x{ieds}",
+                    -ieds * weights.blue_ied_detonation,
+                )
+            )
 
     # ROE violations (W4): kills inside an active restricted zone draw a sharp
     # penalty -- the LBJ-era pilot could break the rules, but Washington answered

@@ -592,6 +592,25 @@ def _spawn_red_ground(
     """Generate a red ForceGroup for *task* at a point near *target*, attached to the
     red *source* CP. Returns the TGO or None if the faction has no group for the task.
     """
+    point = _infiltration_point(game, source, target)
+    return spawn_red_ground_at(game, source, point, task, events)
+
+
+def spawn_red_ground_at(
+    game: "Game",
+    red_cp: "ControlPoint",
+    point: Any,
+    task: Any,
+    events: Any,
+    max_units: Optional[int] = None,
+) -> Any:
+    """Generate a red ForceGroup for *task* at *point*, attached to the red *red_cp*
+    (whose ownership gives the TGO its RED allegiance -- a TGO renders as its parent
+    CP's coalition). Optionally trim to *max_units*. Returns the TGO or None.
+
+    Shared by C1.5 re-infiltration (a cell/cache near a target) and the roadside-IED
+    layer (an emplacement on the ratline); the caller supplies the point + red CP.
+    """
     from game.naming import namegen
     from game.theater import PresetLocation
     from game.utils import Heading
@@ -599,12 +618,13 @@ def _spawn_red_ground(
     group = game.red.armed_forces.random_group_for_task(task)
     if group is None:
         return None
-    point = _infiltration_point(game, source, target)
     heading = game.theater.heading_to_conflict_from(point) or Heading.from_degrees(0)
     location = PresetLocation(namegen.random_objective_name(), point, heading)
-    tgo = group.generate(location.original_name, location, source, game, task)
-    source.connected_objectives.append(tgo)
+    tgo = group.generate(location.original_name, location, red_cp, game, task)
+    red_cp.connected_objectives.append(tgo)
     game.db.tgos.add(tgo.id, tgo)
+    if max_units is not None:
+        _trim_to(tgo, max_units)
     if events is not None:
         events.update_tgo(tgo)
     return tgo

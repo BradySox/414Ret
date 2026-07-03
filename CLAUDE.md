@@ -148,7 +148,18 @@ file. This guide is the map; those are the territory.
     lines, so regen revives the strongholds' dead whitelist-eligible TGO cell units
     toward the `tgo_cap` anchor, armor channel first, recon fog untouched; engine-probe
     verified, CI-locked, checklist P1); §7 squadron calls RESOLVED 2026-07-02: 25 %
-    cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment),
+    cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment.
+    **COIN roadside IEDs LANDED 2026-07-03** (`game/fourteenth/coin_ied.py` — the third
+    COIN direction): hidden IED emplacements on the insurgent ratline (the red-to-red
+    `convoy_routes` graph), recon-fogged 1-unit red TGOs the player must TARPS + CAS
+    within `FUSE_TURNS` (3) or they detonate and drain the mandate. `advance_roadside_ieds`
+    from `finish_turn` after C1/C1.5; `MAX_ACTIVE_IEDS` (2) on distinct roads, placed on
+    the road-waypoint nearest the front via the §35 picker pattern, attached to the
+    forward red stronghold (allegiance). New `WillWeights.blue_ied_detonation` (default
+    0.0, campaign-priced 2.5) consumed via `consume_ied_detonations` in
+    `update_political_will`; reuses the shared `coin.spawn_red_ground_at` (refactored out
+    of the C1.5 spawn) + `_tgo_by_id`/`_despawn`. Gated `coin_ied` default OFF, preseeded
+    ON. Tests `tests/fourteenth/test_coin_ied.py`; in-game pass = checklist P4),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

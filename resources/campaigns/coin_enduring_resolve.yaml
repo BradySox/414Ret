@@ -50,6 +50,10 @@ settings:
   # counterable turns (relocate, never grow) -- clearing a stronghold is not enough,
   # you must HOLD it. A completed flip drains the mandate like any lost base.
   coin_reinfiltration: true
+  # Roadside IEDs on the insurgent ratline: hidden, recon-fogged strike targets you
+  # must sweep (TARPS + CAS) -- an un-cleared device detonates and drains the mandate
+  # (weight below). Sweeping the trail is a real job now.
+  coin_ied: true
   vietnam_convoy_interdiction: true
   vietnam_airbase_harassment: true
   vietnam_political_will: true
@@ -86,6 +90,9 @@ will:
     # town fight is survivable once -- a carpet habit bleeds the mandate out.
     blue_roe_violation: 1.0
     blue_base_lost: 5.0
+    # An un-swept IED detonation: a modest, steady mandate bleed -- the political cost
+    # of an un-secured road. Below a base loss; above a single airframe.
+    blue_ied_detonation: 2.5
     blue_passive_regen: 0.0
     red_ground_unit_lost: 0.05
     red_base_lost: 5.0

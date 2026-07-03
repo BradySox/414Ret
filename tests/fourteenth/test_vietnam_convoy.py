@@ -155,6 +155,42 @@ def test_corridor_ignores_opfor_to_friendly_roads() -> None:
     assert corridor is None
 
 
+def test_corridor_skips_an_excluded_source_for_the_next_best() -> None:
+    # Two distinct roads; excluding the closer-to-front source's road should surface
+    # the other one instead of returning None.
+    rear_a = _CP("rear-a", "RED", 200.0, {"tank": 8})
+    front_a = _CP(
+        "front-a", "RED", 10.0, {"tank": 2}
+    )  # closer to the front -> normally picked
+    rear_a.convoy_routes = {front_a: ()}
+    front_a.convoy_routes = {rear_a: ()}
+
+    rear_b = _CP("rear-b", "RED", 200.0, {"tank": 8})
+    front_b = _CP("front-b", "RED", 50.0, {"tank": 2})
+    rear_b.convoy_routes = {front_b: ()}
+    front_b.convoy_routes = {rear_b: ()}
+
+    game = SimpleNamespace(
+        theater=SimpleNamespace(
+            controlpoints=[rear_a, front_a, rear_b, front_b],
+            conflicts=lambda: [_front()],
+        )
+    )
+    coalition = SimpleNamespace(player="RED")
+
+    # Unrestricted: picks the closer-to-front road (rear_a -> front_a).
+    corridor = _pick_trail_corridor(game, coalition)  # type: ignore[arg-type]
+    assert corridor is not None and corridor[0] is rear_a
+
+    # Excluding rear_a surfaces the other distinct road instead of None.
+    corridor = _pick_trail_corridor(
+        game, coalition, exclude_sources=frozenset({rear_a})  # type: ignore[arg-type]
+    )
+    assert corridor is not None
+    assert corridor[0] is rear_b
+    assert corridor[1] is front_b
+
+
 # ---- ensure_enemy_trail_convoy -----------------------------------------------------
 
 
@@ -167,7 +203,7 @@ def test_no_transfer_when_setting_off() -> None:
     assert game.red.transfers.created == []
 
 
-def test_no_transfer_when_a_convoy_already_flows() -> None:
+def test_no_transfer_once_the_concurrent_budget_is_full() -> None:
     rear = _CP("rear", "RED", 200.0, {"tank": 8})
     front_cp = _CP("front", "RED", 10.0, {"tank": 2})
     rear.convoy_routes = {front_cp: ()}
@@ -175,7 +211,70 @@ def test_no_transfer_when_a_convoy_already_flows() -> None:
         on=True,
         control_points=[rear, front_cp],
         fronts=[_front()],
+        # BASE_MAX_CONVOYS is 2 -- already at budget, so no new transfer.
+        convoys=["already-rolling-1", "already-rolling-2"],
+    )
+    ensure_enemy_trail_convoy(game)
+    assert game.red.transfers.created == []
+
+
+def test_tops_up_to_budget_when_under_it() -> None:
+    # One convoy flowing, budget is 2 -- the deficit (1) gets filled.
+    rear = _CP("rear", "RED", 200.0, {"tank": 8})
+    front_cp = _CP("front", "RED", 10.0, {"tank": 2})
+    rear.convoy_routes = {front_cp: ()}
+    front_cp.convoy_routes = {rear: ()}
+    game = _game(
+        on=True,
+        control_points=[rear, front_cp],
+        fronts=[_front()],
         convoys=["already-rolling"],
+    )
+    ensure_enemy_trail_convoy(game)
+    assert len(game.red.transfers.created) == 1
+
+
+def test_concurrent_convoys_spread_across_distinct_corridors() -> None:
+    # Two separate rear-source roads feeding two separate front-adjacent CPs (the
+    # Yankee Station / Steel Tiger trail-network shape). With budget 2 and none yet
+    # flowing, both distinct corridors should be used -- not two convoys stacked on
+    # whichever one is nominally "best."
+    rear_a = _CP("rear-a", "RED", 200.0, {"tank": 8})
+    front_a = _CP("front-a", "RED", 10.0, {"tank": 2})
+    rear_a.convoy_routes = {front_a: ()}
+    front_a.convoy_routes = {rear_a: ()}
+
+    rear_b = _CP("rear-b", "RED", 190.0, {"tank": 8})
+    front_b = _CP("front-b", "RED", 9.0, {"tank": 2})
+    rear_b.convoy_routes = {front_b: ()}
+    front_b.convoy_routes = {rear_b: ()}
+
+    game = _game(
+        on=True,
+        control_points=[rear_a, front_a, rear_b, front_b],
+        fronts=[_front()],
+    )
+    ensure_enemy_trail_convoy(game)
+    created = game.red.transfers.created
+    assert len(created) == 2
+    origins = {order.origin for order in created}
+    assert origins == {rear_a, rear_b}
+
+
+def test_single_corridor_campaigns_stay_capped_at_one_concurrent_convoy() -> None:
+    # Only one opfor-opfor road on the whole map: the budget is 2, but there is no
+    # second DISTINCT corridor to spread onto, so the deficit is left unfilled rather
+    # than stacking a second convoy on the one road already in use -- a single-road
+    # campaign behaves exactly as before the rework.
+    rear = _CP("rear", "RED", 200.0, {"tank": 20})
+    front_cp = _CP("front", "RED", 10.0, {"tank": 2})
+    rear.convoy_routes = {front_cp: ()}
+    front_cp.convoy_routes = {rear: ()}
+    game = _game(
+        on=True,
+        control_points=[rear, front_cp],
+        fronts=[_front()],
+        convoys=[SimpleNamespace(origin=rear)],
     )
     ensure_enemy_trail_convoy(game)
     assert game.red.transfers.created == []
@@ -284,15 +383,44 @@ def test_coin_seeds_an_empty_rear_source_and_ships_a_convoy() -> None:
     created = game.red.transfers.created
     assert len(created) == 1
     order = created[0]
-    assert sum(order.units.values()) == 4  # a full MAX_CONVOY_UNITS load
-    # Seeded to exactly 2x the load: the real new_transfer debits the skimmed 4,
-    # leaving a 4-unit rear buffer (the fake transfer ledger doesn't debit).
-    assert rear.base.total_armor == 8
+    assert sum(order.units.values()) == 10  # a full MAX_CONVOY_UNITS load
+    # Seeded to exactly 2x the load: the real new_transfer debits the skimmed 10,
+    # leaving a 10-unit rear buffer (the fake transfer ledger doesn't debit).
+    assert rear.base.total_armor == 20
 
 
-def test_no_coin_seeding_without_the_toggle() -> None:
-    # Vietnam campaigns (or COIN with the insurgency off) never conjure stock:
-    # an empty rear stays an empty rear and no convoy ships.
+def test_vietnam_seeds_an_empty_rear_source_from_the_faction_roster() -> None:
+    # Outside COIN, an empty rear source is topped up from the coalition's OWN
+    # real ground roster (Faction.frontline_units) -- the Ho Chi Minh Trail's
+    # external-logistics framing (matériel from China/the USSR, not local
+    # production), not the tight insurgent whitelist COIN uses.
+    rear = _CP("rear", "RED", 200.0, {})
+    front_cp = _CP("front", "RED", 10.0, {})
+    rear.convoy_routes = {front_cp: ()}
+    front_cp.convoy_routes = {rear: ()}
+
+    def commission(units: dict[Any, int]) -> None:
+        for unit_type, count in units.items():
+            rear.base.armor[unit_type] = rear.base.armor.get(unit_type, 0) + count
+
+    rear.base.commission_units = commission  # type: ignore[attr-defined]
+    game = _game(on=True, control_points=[rear, front_cp], fronts=[_front()])
+    game.red.faction = SimpleNamespace(
+        frontline_units={_CoinUnit("PT-76"), _CoinUnit("Grad-URAL")}
+    )
+    ensure_enemy_trail_convoy(game)
+    created = game.red.transfers.created
+    assert len(created) == 1
+    order = created[0]
+    assert sum(order.units.values()) == 10  # a full MAX_CONVOY_UNITS load
+    assert rear.base.total_armor == 20  # seeded to 2x the load
+
+
+def test_no_seeding_without_a_unit_pool() -> None:
+    # Real campaigns always carry a Faction.frontline_units roster to seed from;
+    # this exercises the degrade path when none is available at all (COIN off AND
+    # no faction set) -- an empty rear stays an empty rear and no convoy ships,
+    # rather than conjuring units out of nowhere.
     rear = _CP("rear", "RED", 100.0, {})
     forward = _CP("forward", "RED", 10.0, {})
     blue = _CP("kandahar", "BLUE", 0.0, {})

@@ -603,6 +603,11 @@ if dcsRetribution and dcsRetribution.CombatSAR then
 
     local busySandy = {}  -- sandy group name -> survivor id it's committed to
 
+    -- Hold height over the survivor (m above ground) for the diverted Sandy's
+    -- waypoint + orbit anchor: low enough to work the area, high enough to
+    -- clear small arms.
+    local SANDY_HOLD_ALT = 450
+
     -- Nearest alive, idle, AI-crewed Sandy of the right side within range of coord.
     local function findFreeSandy(side, coord)
         local best, bestName, bestD = nil, nil, nil
@@ -641,10 +646,24 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                 speed = UTILS.KnotsToMps(150)
             end
             local point = pc:GetVec2()
-            local orbit = sandy:TaskOrbitCircleAtVec2(point, 1500, speed)
+            -- Route push, NOT SetTask: EngageTargetsInZone is an EN-ROUTE task,
+            -- and the DCS controller silently rejects a main-task ComboTask that
+            -- contains one -- the flown G23 signature was exactly "divert
+            -- message, no movement" (Trail 2, 2026-07-02). En-route tasks are
+            -- valid in a waypoint's task list, and the transit leg physically
+            -- flies the Sandy to the survivor (the stock MOOSE
+            -- transit-then-orbit pattern). Waypoint speeds are km/h in MOOSE.
+            local from = u:GetCoordinate()
+            local hold = COORDINATE:NewFromVec2(point, SANDY_HOLD_ALT)
+            local orbit = sandy:TaskOrbitCircleAtVec2(point, hold.y, speed)
             local engage = sandy:EnRouteTaskEngageTargetsInZone(
                 point, SANDY_ENGAGE_RADIUS, { "Ground Units" }, 0)
-            sandy:SetTask(sandy:TaskCombo({ engage, orbit }))
+            entry.sandyReturn = from:GetVec2()  -- station anchor for the release
+            sandy:Route({
+                from:WaypointAirTurningPoint("BARO", speed * 3.6, {}, "SANDY divert"),
+                hold:WaypointAirTurningPoint(
+                    "BARO", speed * 3.6, { engage, orbit }, "SANDY hold over survivor"),
+            }, 1)
         end)
         if not ok then
             env.warning("combatsar: Sandy dispatch error (continuing): " .. tostring(err))
@@ -657,16 +676,37 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     end
 
     -- Free a committed Sandy once its survivor is resolved (rescued/captured/
-    -- dead) so it can serve a later ejection. ClearTasks() resets the DCS
-    -- controller task, which resumes the group's own planned mission route.
+    -- dead) so it can serve a later ejection. The divert replaced the group's
+    -- tasking with our route, so a bare ClearTasks() would leave it flying a
+    -- straight line -- route it back to the station it was diverted from and
+    -- hold there, available for the next ejection.
     local function releaseSandy(entry)
         if not entry.sandyName then return end
         busySandy[entry.sandyName] = nil
         local g = GROUP:FindByName(entry.sandyName)
         entry.sandyName = nil
         if g and g:IsAlive() then
-            pcall(function() g:ClearTasks() end)
+            pcall(function()
+                g:ClearTasks()
+                local ret = entry.sandyReturn
+                if not ret then return end
+                local u = g:GetUnit(1)
+                if not (u and u:IsAlive()) then return end
+                local speed = u:GetVelocityMPS()
+                if not speed or speed < UTILS.KnotsToMps(80) then
+                    speed = UTILS.KnotsToMps(150)
+                end
+                local from = u:GetCoordinate()
+                local station = COORDINATE:NewFromVec2(ret, SANDY_HOLD_ALT)
+                local orbit = g:TaskOrbitCircleAtVec2(ret, station.y, speed)
+                g:Route({
+                    from:WaypointAirTurningPoint("BARO", speed * 3.6, {}, "SANDY released"),
+                    station:WaypointAirTurningPoint(
+                        "BARO", speed * 3.6, { orbit }, "SANDY back on station"),
+                }, 1)
+            end)
         end
+        entry.sandyReturn = nil
     end
 
     ---------------------------------------------------------------------------

@@ -442,8 +442,13 @@ persisted enum value, add the entry to `_LEGACY_FLIGHT_TYPE_VALUES` only.
 
 **Lua plugin discipline.** Lua 5.1 only, vanilla DCS units only (no HighDigitSAMs etc.),
 define functions before first use. The `lua-lint.yml` CI workflow runs `luac5.1 -p` over
-every `resources/plugins/**/*.lua` as a blocking syntax gate — it catches parse-time errors,
-but runtime behavior still needs an in-game pass (see the in-game-pass checklist).
+every `resources/plugins/**/*.lua` as a blocking syntax gate — it catches parse-time errors.
+On top of that, the **headless Lua plugin harness** (`tests/lua/`, design note
+`414th-lua-plugin-harness-notes.md`) runs the real plugin scripts on Lua 5.1 via `lupa`
+against a faked DCS sandbox inside the normal pytest run — catching the "script errors at
+runtime and the feature silently never starts" class + pinning safety invariants (grace
+periods, exclusion lists, one-shot latches). First coverage: `vietnamops`. It models no DCS
+AI/physics, so real behavior still needs an in-game pass (see the in-game-pass checklist).
 
 ---
 

@@ -113,7 +113,7 @@ local function lotatcExport_threat_circles_for_faction(faction, color, isFriend)
     local drawings = {}
 
     for _,aa in pairs(faction) do
-        logger:info(string.format("DCSRetribution|LotATC Export plugin - exporting threat circle for %s", aa.dcsGroupName or "(unnamed)"))
+        logger:info(string.format("DCSRetribution|LotATC Export plugin - exporting threat circle for %s", aa.name or aa.dcsGroupName or "(unnamed)"))
 
         local convLat, convLon = coord.LOtoLL({x = aa.positionX, y = 0, z = aa.positionY})
 
@@ -157,7 +157,9 @@ local function lotatcExport_symbols_for_faction(faction, color, isFriend)
     local drawings = {}
 
     for _,aa in pairs(faction) do
-        logger:info(string.format("DCSRetribution|LotATC Export plugin - exporting AA symbol for %s", aa.dcsGroupName))
+        -- the generator emits `name` for AA entries, not `dcsGroupName` (luagenerator.py);
+        -- an absent key must not kill the whole export (crashed live 2026-07-02)
+        logger:info(string.format("DCSRetribution|LotATC Export plugin - exporting AA symbol for %s", aa.name or aa.dcsGroupName or "(unnamed)"))
 
         local convLat, convLon = coord.LOtoLL({x = aa.positionX, y = 0, z = aa.positionY})
 
@@ -170,7 +172,7 @@ local function lotatcExport_symbols_for_faction(faction, color, isFriend)
 
         local sub_dimension = "none"
 
-        if string.find(aa.dcsGroupName, "|EWR|", 1, true) then
+        if string.find(aa.dcsGroupName or "", "|EWR|", 1, true) then
             sub_dimension = "ew"
         end
 

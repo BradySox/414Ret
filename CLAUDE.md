@@ -172,7 +172,21 @@ file. This guide is the map; those are the territory.
     the momentum blow *and* a `count_roe_violations` mandate hit — the player chooses a
     dirty shot, a clean one, or a pass. Reuses the shared `coin.spawn_red_ground_at`.
     Gated `coin_hvt` default OFF, preseeded ON. Tests `tests/fourteenth/test_coin_hvt.py`;
-    in-game pass = checklist P5),
+    in-game pass = checklist P5.
+    **COIN dispersed cells LANDED 2026-07-03** (`game/fourteenth/coin_dispersed.py` — the
+    fifth COIN direction, C4): the insurgency in the open countryside between strongholds
+    (not anchored to a CP like C1/C1.5/IED/HVT). Up to `MAX_FIELD_CELLS` (3) recon-fogged
+    2-unit red cells seed on the stronghold→coalition line ≥ `MIN_FIELD_DIST_M` (12 km)
+    off every CP, one per stronghold (spread, not stacked). **Distinct hook, no will
+    weight**: an un-hunted cell that survives `MATURE_TURNS` (3) **coalesces into its home
+    stronghold and revives a dead ammo cache** (re-opening the C1 regen throttle the player
+    worked to shut off) — or, with no dead cache, revives ≤ `COALESCE_REVIVE` (2) dead
+    militia bounded by the C1 `tgo_cap` anchor (never grows past turn 0). Killing a cell is
+    ordinary attrition that denies the resupply — the reward is denial, not a meter.
+    `advance_dispersed_cells` from `finish_turn` after C1/C1.5/IED/HVT; reuses
+    `coin.spawn_red_ground_at` + the C1 revival machinery (`_revive`/`_revivable_units`/
+    `_alive_cell_count`/`_ensure_anchors`). Gated `coin_dispersed_cells` default OFF,
+    preseeded ON. Tests `tests/fourteenth/test_coin_dispersed.py`; in-game pass = checklist P6),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

@@ -58,6 +58,10 @@ settings:
   # limited strike window. Kill him to blow the insurgency's momentum -- but he shelters
   # among his people (the town rings), so a dirty shot pays in mandate too.
   coin_hvt: true
+  # Dispersed cells: the insurgency in the open countryside between the strongholds.
+  # Patrol for them (TARPS + CAS) or an un-hunted cell coalesces into its home stronghold
+  # and brings a destroyed cache back online -- re-opening the regen you shut off.
+  coin_dispersed_cells: true
   vietnam_convoy_interdiction: true
   vietnam_airbase_harassment: true
   vietnam_political_will: true

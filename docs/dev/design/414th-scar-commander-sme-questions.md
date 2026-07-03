@@ -1,5 +1,7 @@
 # SCAR — Commander Capture & Command‑Post Intel (SME input)
 
+> **SUPERSEDED (2026-07-03):** consolidated into [`414th-csar-notes.md`](414th-csar-notes.md) -- the authoritative CSAR doc. This file is historical record only.
+
 Need your rulings on the specifics before I wire the campaign carryover/persistence.
 Background only — the mechanics are built; this is about the *campaign rules*.
 

@@ -61,18 +61,21 @@ and selected later upstream fixes.
   to bring a downed pilot home: hold near the FLOT with the **King** (C-130) and **Jolly Green** (the
   rescue helo), protect the survivor, suppress the threats around them, and walk the helo in. The enemy
   may send a **snatch party** to grab the downed pilot — kill it in time or the pilot is **captured**
-  and held as a **POW at an enemy airfield**. Fly a **CSAR raid** on that field (or recapture it) to
-  bring the aviator home; leave them held too long and they are lost for good. (The old armor-hunt SCAR
-  is retired — SCAR is a rescue role now.)
+  and held as a **POW at an enemy airfield**: recapture that field to free them, and every turn they
+  are held saps your side's political will; leave them held too long and they are lost for good. The
+  capture is the consequence for losing the rescue fight — there is no separate raid mission to plan.
+  (The old armor-hunt SCAR is retired — SCAR is a rescue role now.)
 - **Combat SAR** makes a downed pilot worth flying for. A CH-47 orbits near the front as the
   rescuer while a C-130 holds overhead as the HC-130 "King" — on-scene command with an
   air-tracking TACAN the helo homes on (an AI King lights it automatically; a player King
   sets it from the planned channel in-cockpit) and an F10 survivor-locator readout. When a human pilot
   ejects, they spawn with a beacon; recover them and deliver them to any friendly field and the
   campaign **spares the aviator** (you still lose the jet, but the experienced pilot returns to
-  the squadron instead of being lost). Player-flown, with an optional AI standing alert that now
-  fields a **Sandy (SCAR) escort** too. If the enemy reaches the downed pilot first they are
-  **captured** — held as a POW you can raid back (see SCAR above).
+  the squadron instead of being lost). Rescue is a **normal, standing task**: the AI plans the
+  package (King + rescue helo + a **Sandy** escort) automatically by default — turn `Automatic
+  Combat SAR` off to fly rescues manually only — and any human can fly any seat. AI ejections
+  count too: an AI-flown helo rescue spares the pilot the same way. If the enemy reaches the downed
+  pilot first they are **captured** — held as a POW (see SCAR above).
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform with
   standoff jamming and ELINT gameplay. This is the only 414th scripted EW model;
   the old generic fighter-pod "EW Jammer Script" is retired.

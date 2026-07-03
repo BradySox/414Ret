@@ -1,5 +1,7 @@
 # Combat SAR — bespoke pilot-rescue flight task (spec)
 
+> **SUPERSEDED (2026-07-03):** consolidated into [`414th-csar-notes.md`](414th-csar-notes.md) -- the authoritative CSAR doc. This file is historical record only.
+
 **Status:** built (phases 1–4 + rescue scoring); ADF dropped (TACAN-only); pending in-game pass · **Date:** 2026-06-25
 **Related:** [`414th-moose-longview.md`](414th-moose-longview.md) (Tier-A `Ops.CSAR` candidate),
 CLAUDE.md §15 (SCAR + the *existing* SOF-recovery `CSAR`), `414th-scar-HANDOFF.md`.

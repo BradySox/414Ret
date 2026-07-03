@@ -1,5 +1,7 @@
 # SCAR rework — loiter-and-task under the C-130 "King" on-scene commander (design)
 
+> **SUPERSEDED (2026-07-03):** consolidated into [`414th-csar-notes.md`](414th-csar-notes.md) -- the authoritative CSAR doc. This file is historical record only.
+
 **Status:** **Phase 1 MERGED** (PR #187) — loiter + static + inverted SOF capture on `main` (pending
 in-game pass F7/F8). **Phases 2 + 3 + 3b BUILT** on PR #189 (pending in-game pass F9/F10): the
 script-as-MAGIC controller cues the box on-station (GREEN smoke + mark + call), escalates to a precise

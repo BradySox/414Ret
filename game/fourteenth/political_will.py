@@ -485,8 +485,8 @@ def _blue_moves(
     if ships:
         moves.append((f"warships x{ships} sunk", -ships * weights.blue_ship_lost))
 
-    # Aviators: fresh captures hit now; every POW still held drains a trickle. Runs
-    # after commit_pow_recoveries, so a freed aviator stops draining the same turn.
+    # Aviators: fresh captures hit now; every POW still held drains a trickle
+    # until the holding field falls or the hold clock kills them.
     captures = getattr(debriefing.state_data, "combat_sar_captures", []) or []
     if captures:
         moves.append(

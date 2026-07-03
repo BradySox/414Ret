@@ -69,10 +69,6 @@ class FlightPlanBuilderTypes:
             FlightType.TRANSPORT: AirliftFlightPlan.builder_type(),
             FlightType.FERRY: FerryFlightPlan.builder_type(),
             FlightType.AIR_ASSAULT: AirAssaultFlightPlan.builder_type(),
-            # CSAR = the helo recovery raid for a captured POW. Reuses the
-            # air-assault CTLD delivery to fly to the POW and extract them; the
-            # air-assault builder's helo-only guard keeps this rotary-wing.
-            FlightType.CSAR: AirAssaultFlightPlan.builder_type(),
             # Combat SAR = a standing pilot-rescue hold for a rescue helo. It uses
             # a dedicated forward-hold plan (FLOT-anchored, short threat buffer,
             # helo-sized racetrack) rather than the AEW&C standoff, so the CH-47

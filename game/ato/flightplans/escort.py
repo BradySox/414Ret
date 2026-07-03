@@ -95,7 +95,6 @@ class Builder(FormationAttackBuilder[EscortFlightPlan, FormationAttackLayout]):
         pf = self.package.primary_flight
         if pf and pf.flight_type in [
             FlightType.AIR_ASSAULT,
-            FlightType.CSAR,
             FlightType.TRANSPORT,
         ]:
             layout = pf.flight_plan.layout

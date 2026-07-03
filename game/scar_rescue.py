@@ -13,8 +13,8 @@ things remain here:
 
 The live features that survived the retirement live elsewhere: the command-post
 intel fog (``scar_command_post_intel``, ``theatergroundobject.known_for``) and
-the Combat SAR capture -> POW -> recovery-raid loop (``game/pow_recovery.py`` /
-``game/pow_objectives.py``).
+the Combat SAR capture -> held-POW loop (``game/pow_recovery.py``; the recovery
+*raid* was later shelved in the 2026-07-03 CSAR rescope).
 """
 
 from __future__ import annotations

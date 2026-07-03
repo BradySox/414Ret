@@ -146,9 +146,13 @@ def _capture_debriefing(captures: list[Any], rescues: list[str]) -> Any:
 
 def test_record_pow_captures_routes_to_survivors_coalition() -> None:
     # A captured BLUE pilot -> a blue POW recovery; a captured RED pilot -> a red one.
+    # The holding-airfield resolve runs at record time; with no control points it
+    # degrades to an unresolved holding (the POW just runs the hold clock).
     game = SimpleNamespace(
         blue=SimpleNamespace(pending_pow_recoveries=[]),
         red=SimpleNamespace(pending_pow_recoveries=[]),
+        theater=SimpleNamespace(controlpoints=[]),
+        point_in_world=lambda x, y: SimpleNamespace(x=x, y=y),
     )
     processor = MissionResultsProcessor(cast(Any, game))
     debriefing = _capture_debriefing(

@@ -134,22 +134,6 @@ def test_combat_sar_eligibility(variant_id: str, capable: bool, tmp_path: Path) 
     assert aircraft.capable_of(FlightType.COMBAT_SAR) is capable
 
 
-def test_air_assault_helo_can_fly_csar_recovery(tmp_path: Path) -> None:
-    # CSAR is the helo recovery raid for a captured POW; helicopters that can
-    # already air-assault inherit the lane (see AircraftType.__post_init__).
-    aircraft = _aircraft(tmp_path, "UH-1H Iroquois")
-    assert aircraft.capable_of(FlightType.AIR_ASSAULT)
-    assert aircraft.capable_of(FlightType.CSAR)
-
-
-@pytest.mark.parametrize("variant_id", ["C-130J-30", "F-15C Eagle"])
-def test_csar_excludes_fixed_wing(variant_id: str, tmp_path: Path) -> None:
-    # The recovery raid is rotary-wing: fixed-wing transports and fighters never
-    # get the CSAR lane.
-    aircraft = _aircraft(tmp_path, variant_id)
-    assert not aircraft.capable_of(FlightType.CSAR)
-
-
 @pytest.mark.parametrize(
     ("variant_id", "scar_capable"),
     [

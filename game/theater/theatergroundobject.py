@@ -905,16 +905,15 @@ class DownedSofGroundObject(TheaterGroundObject):
 
 
 class CapturedPilotGroundObject(TheaterGroundObject):
-    """A pilot captured by an enemy snatch party (Combat SAR rescue rework, Phase
-    3), surfaced as a recovery objective held at an enemy airfield.
+    """SAVE-COMPAT TOMBSTONE for the shelved POW recovery raid.
 
-    Created dynamically each turn from the owning coalition's
-    ``pending_pow_recoveries`` (not authored in the .miz), positioned at the
-    nearest enemy control point (the "airfield" holding the POW) and anchored to a
-    friendly control point's ``connected_objectives`` so it renders as a friendly
-    recovery objective. It is *our* captured pilot, so it is friendly to its owner
-    and offers only a CSAR (recovery) mission to that side -- the enemy gets no
-    tasking against it.
+    The raid surface (this dynamic map objective + the ``CSAR`` raid flight type)
+    was shelved in the 2026-07-03 CSAR rescope: a captured pilot is still held as
+    a ``PendingPowRecovery`` (freed if the holding field falls, killed when the
+    abandon clock expires, draining political will meanwhile), but no recovery
+    raid is offered. The class remains only so pre-rescope saves unpickle;
+    ``purge_pow_objectives`` (game/pow_recovery.py) sweeps any pickled leftovers
+    out of the theater at turn initialization. Never created anew.
     """
 
     def __init__(
@@ -932,9 +931,7 @@ class CapturedPilotGroundObject(TheaterGroundObject):
             sea_object=False,
             task=None,
         )
-        # The captured aviator's airframe DCS unit name -- the key that ties a
-        # recovery (a surviving CSAR raid on this objective) back to its
-        # PendingPowRecovery in commit_pow_recoveries.
+        # The captured aviator's airframe DCS unit name (kept for unpickling).
         self.airframe_unit_name = airframe_unit_name
 
     @property
@@ -950,13 +947,8 @@ class CapturedPilotGroundObject(TheaterGroundObject):
         return False
 
     def mission_types(self, for_player: Player) -> Iterator[FlightType]:
-        from game.ato import FlightType
-
-        # Only the owning side can task a recovery raid; offer CSAR (helo
-        # extraction of the POW from the enemy field). No enemy tasking and no
-        # other friendly missions -- this is our captured pilot, not a target.
-        if self.is_friendly(for_player):
-            yield FlightType.CSAR
+        # Tombstone: the recovery raid is shelved -- no tasking either side.
+        return iter(())
 
 
 class EwrGroundObject(IadsGroundObject):

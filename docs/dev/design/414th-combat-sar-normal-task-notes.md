@@ -1,5 +1,7 @@
 # Combat SAR as a normal, two-sided auto-task (design / scoping)
 
+> **SUPERSEDED (2026-07-03):** consolidated into [`414th-csar-notes.md`](414th-csar-notes.md) -- the authoritative CSAR doc. This file is historical record only.
+
 **Status (updated 2026-07-01):** the **Route 1 survivor-ledger core (below) HAS SHIPPED** —
 `resources/plugins/combatsar/combatsar-config.lua` is that ledger. AI rescues now credit by real
 identity (`creditRescue` from `dispatchAIRescue`; verified in-game 2026-06-30, 3 credited rescues in

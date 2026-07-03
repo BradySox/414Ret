@@ -599,6 +599,18 @@ phases:
       - center: Tbilisi-Lochini
         radius_nm: 15
         name: PRC border buffer
+      # The Laos panhandle segment of the trail (Thanh Hoa -> Ban Laboy Ford) is
+      # politically off-limits under early Rolling Thunder ROE -- interdict the flow
+      # elsewhere. Releases in later phases (this corridor is rolling_thunder only).
+      # A shape-typed CORRIDOR (§40 Path A) rather than a circle -- the first authored
+      # box/corridor zone; tune the width / path freely.
+      - shape: corridor
+        name: Laos trail (off limits under Rolling Thunder)
+        width_nm: 12
+        path:
+          - {x: -266003, y: 623883}
+          - {x: -280620, y: 621859}
+          - {x: -288780, y: 620946}
     locked_targets: [factory, power, oil, fuel, ammo, comms, ware, airfield]
     advance_when:
       blue_will_below: 75

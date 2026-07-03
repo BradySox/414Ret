@@ -44,6 +44,16 @@ trend sparkline), a **Political will tab** in the Stats window graphs both sides
 campaign, the turn SITREP calls out big swings, and the Intel box in the Qt UI carries the
 current numbers.
 
+**And you always see *why*.** Every will movement is recorded in a labeled **will ledger** —
+hover a meter for the top movers, and the SITREP lists them ("Will movers: F-4E ×2 lost, trail
+convoy destroyed"). If Washington's patience dropped four points last turn, the ledger says
+exactly what did it.
+
+> The will economy is not Vietnam-only anymore: the Washington/Hanoi framing and every feed
+> weight are just the defaults of a campaign-authorable **will profile** — the
+> [COIN campaign](Enduring-Resolve-Campaign-Briefing) relabels the meters and inverts the
+> weights entirely. See [Campaign Phases and ROE](Campaign-Phases-and-ROE#the-political-will-economy).
+
 ## The static front
 
 *Toggle: **Static front (bounded siege line)** — pre-seeded on.*
@@ -64,11 +74,15 @@ the generic [campaign phases](Vietnam-Campaign-Layer#campaign-phases-generic) fe
 
 Each phase carries the era's **political restrictions**, and the map shows them:
 
-- **Restricted zones** — red dashed circles (sanctuaries: Hanoi's ring, the PRC border buffer).
-  The **AI planner will not task strikes inside them**. *You* are never hard-blocked — the
-  LBJ-era pilot could always break the rules — but kills inside an active zone are **ROE
-  violations** that drain your Political Will at the debrief. The zone layer lives in the map
-  layers panel ("Enemy intel" group), and hovering a zone explains what it is and when it eases.
+- **Restricted zones** — red dashed shapes (sanctuaries: Hanoi's ring, the PRC border buffer,
+  and — new — the **Laos-trail corridor**, off limits under early Rolling Thunder). Zones come
+  in [three shapes](Campaign-Phases-and-ROE#restricted-zones-no-strike) — circles, rotatable
+  boxes, buffered corridors — and are drawn both on the web map (map layers panel, "Enemy intel"
+  group; hover a zone for what it is and when it eases) **and painted into the generated
+  mission's F10 map**, so your wingman's cockpit shows the same lines. The **AI planner will not
+  task strikes inside them**. *You* are never hard-blocked — the LBJ-era pilot could always
+  break the rules — but the package dialog **warns you at planning time**, and kills inside an
+  active zone are **ROE violations** that drain your Political Will at the debrief.
 - **Target release** — early phases keep whole target classes **locked** (factories, power, oil,
   airfields…). Locked targets show a **RESTRICTED — ROE** badge on their tooltip instead of
   vanishing — you can see the target you're not allowed to hit yet, which is the defining
@@ -78,7 +92,9 @@ Each phase carries the era's **political restrictions**, and the map shows them:
   patience drops, restraint gets voted out and escalation comes early. Historically backwards-
   sounding; historically true.
 - **The phase ribbon** over the map names the current phase, explains it, and (click the chip)
-  expands the whole arc with what each phase locked and released.
+  expands the whole arc with what each phase locked and released — plus each phase's
+  **objectives checklist** with live ✓/○ ticks, and **exactly what advances the current phase**
+  (the authored conditions with their live values), so the escalation is never a mystery.
 
 ## Red answers the arc
 
@@ -128,12 +144,11 @@ not just what things are called:
   on the bombers' wing.
 
 <a name="campaign-phases-generic"></a>
-> **Campaign phases in general.** The phase machinery isn't Vietnam-only: *every* campaign
-> tracks an inferred phase (Air Superiority → Interdiction → Offensive) from its live IADS, air
-> threat, and front movement, shows it on the ribbon/kneeboard, and leans the auto-planner's
-> offensive tasking to match (`Campaign phases` toggle, Campaign Management page, default on).
-> The Vietnam campaigns simply *author* their arc instead of inferring it — which is what carries
-> the ROE payload and the red tempo.
+> **Campaign phases in general.** The phase machinery isn't Vietnam-only — *every* campaign
+> tracks a phase, shows it, and leans the planner to match; the Vietnam campaigns simply
+> *author* their arc, which is what carries the ROE payload and the red tempo. The generic
+> machinery (inferred arcs, zone shapes, ME-drawn zones, kill boxes, will profiles) now has its
+> own page: **[Campaign Phases and ROE](Campaign-Phases-and-ROE)**.
 
 ## Practical notes
 
@@ -152,6 +167,8 @@ not just what things are called:
 
 ## See also
 
+- **[Campaign Phases and ROE](Campaign-Phases-and-ROE)** — the generic phase/ROE/will machinery
+  this layer authors.
 - **[Vietnam Ops](Vietnam-Ops)** — the mission-level suite this layer sits on: Arc Light, flak,
   the trail, the gaggle, napalm.
 - **[Air Defense & the Air War](Air-Defense-and-the-Air-War)** — the generic CAP/escort planning

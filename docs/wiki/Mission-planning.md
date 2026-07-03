@@ -33,6 +33,14 @@ A few things worth knowing before you frag:
   order every turn. Reactive threat response stays strictly deterministic — variety never
   delays a real defensive reaction. See
   [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
+- **Rules of engagement can gate targets.** On a campaign with an active
+  [ROE layer](Campaign-Phases-and-ROE#the-roe-layer), locked targets wear a **RESTRICTED — ROE**
+  badge, the **AI planner won't frag into restricted zones at all**, and when *you* frag a
+  restricted target the package dialog shows an **ROE warning** before you commit — it prices
+  the choice (a will penalty at the debrief) but never blocks you.
+- **The campaign phase leans the ATO.** The current
+  [campaign phase](Campaign-Phases-and-ROE) biases which offensive objectives the auto-planner
+  services first — check the status ribbon to see the current phase's emphasis.
 
 ## Mission timing
 
@@ -336,9 +344,9 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 #### BAI (Battlefield Air Interdiction)
 
 - **Purpose:** Eliminate a specific stationary enemy armour group behind the line.
-- **Valid targets:** Ground-vehicle groups at enemy objective areas. **Convoy interdiction** is
-  a subset — from the originating CP's *Departing Convoys* tab, click Attack, then build a
-  package.
+- **Valid targets:** Ground-vehicle groups at enemy objective areas. (For **moving convoys**,
+  the better tool is now **Armed Recon fragged from the supply route** — see below; the old
+  path via the originating CP's *Departing Convoys* tab → Attack still works.)
 - **Package role:** Lead.
 - **TOT meaning:** Weapons on the group at the **package TOT**.
 - **Player technique:** Like CAS but against a known fixed group rather than troops in contact.
@@ -364,12 +372,17 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 
 #### Armed Recon
 
-- **Purpose:** Mop up stragglers / engage targets of opportunity in a small radius.
+- **Purpose:** Mop up stragglers / engage targets of opportunity — and hunt **moving supply
+  convoys** on a road.
 - **Valid targets:** Any objective or enemy target; engages ground targets within a small
-  defined radius.
+  defined radius. **Right-click an enemy supply route on the map** to frag it against the route
+  — the package dialog opens at the route's enemy end with Armed Recon pre-selected.
 - **Package role:** Lead / standalone.
 - **TOT meaning:** Search start. RTBs if no targets found.
-- **Player technique:** Useful after DEAD/BAI to clean up what's left.
+- **Player technique:** Useful after DEAD/BAI to clean up what's left. Against a supply route,
+  the flight plan **sweeps the hunted road start-to-end** (search start / mid / end waypoints)
+  instead of orbiting one point — fly the road and kill what's on it. See
+  [Convoy interdiction](Vietnam-Ops#4--convoy-interdiction-steel-tiger).
 - **AI limitations:** Effectiveness is weather-affected (like CAS); engages what's in the radius
   rather than hunting widely.
 

@@ -32,7 +32,9 @@ adapted to how this fork actually plans and flies a campaign.
 ## Campaign mechanics
 
 - **[Mission Planning](Mission-planning)** — packages, TOT, task types, the auto-planner.
-- **[Air Defense and the Air War](Air-Defense-and-the-Air-War)** — BARCAP, QRA, SEAD, support orbits.
+- **[Campaign Phases and ROE](Campaign-Phases-and-ROE)** — the phase arc every campaign tracks,
+  restricted zones and kill boxes, and the political-will economy.
+- **[Air Defense and the Air War](Air-Defense-and-the-Air-War)** — BARCAP, QRA, SEAD, support orbits, carrier ops.
 - **[IADS Engine: MANTIS](IADS-Engine-MANTIS)** — the runtime air-defense brain.
 - **[Frontline Stances and Movement](Frontline-Stances-and-Movement)** — the ground war.
 - **[Base Capture](Base-Capture)** — taking and losing control points.
@@ -72,12 +74,10 @@ per-feature how-to.
 - **[Snake and Nape](Vietnam-Ops#8--snake-and-nape-napalm-cas)** — a low, fast CAS pass over the enemy lays a burning napalm swath.
 
 On top of the mission-level suite, **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** makes
-the *campaign* play like the era: a **political-will economy** decided at the negotiating table
-(break Hanoi's resolve before Washington's patience runs out), a **static siege-line front**, the
-authored **Rolling Thunder → Linebacker II ROE arc** (sanctuary zones, target release, escalation
-coupled to your bleeding will), **GCI-ambush MiGs** flying Hanoi's actual air-defense doctrine,
-massed escorted **Alpha Strikes**, and a red side whose **tempo answers the arc** — the trail
-surges during bombing halts and the Easter Offensive lands when Linebacker opens.
+the *campaign* play like the era — the political-will economy, the Rolling Thunder → Linebacker II
+ROE arc, ambush MiGs, Alpha Strikes, and a red tempo that answers the arc. (The underlying
+phase/ROE/will machinery is generic and documented on
+**[Campaign Phases and ROE](Campaign-Phases-and-ROE)**.)
 
 ## Campaigns
 
@@ -100,6 +100,13 @@ campaign files (ORBAT, threats, and economy read straight from the campaign + fa
 - **[Khe Sanh — First Three Turns](Khe-Sanh-First-Three-Turns)** — a worked example of the brief template across the opening turns.
 - **[Khe Sanh — Intel Assessment](Khe-Sanh-Intel-Assessment)** — the historical intelligence pack (real OOB, commanders, Niagara/Pegasus) + threat card + read-aloud brief.
 - **[Khe Sanh — Visual Briefing](Khe-Sanh-Visual-Briefing)** — the siege map, AAA threat profile, and target-priority / ORBAT diagrams.
+
+### Operation Enduring Resolve *(Afghanistan, 2006 — the living counter-insurgency)*
+
+- **[Operation Enduring Resolve (COIN) — Campaign Briefing](Enduring-Resolve-Campaign-Briefing)** —
+  the full brief: the regenerating insurgency and its ammo-cache throttle, the ratline, the
+  Disrupt → Clear and Hold → Break the Momentum arc, kill-box ROE over the Helmand towns, the
+  inverted will economy, the carrier's war, and how to fight it. Requires the DCS Afghanistan map.
 
 ### Red Flag 81-2 *(Nevada, 1981 — the exercise played as the war it rehearses)*
 

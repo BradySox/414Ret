@@ -68,6 +68,21 @@ It mounts a reconnaissance camera pod on the Tomcat's belly recon station — fo
 The same `Retribution TARPS` profile is present across the F-14A/F-14B variant files so
 the photo-recon task is available whichever Tomcat a squadron flies.
 
+## Per-aircraft flight defaults (fuel & aircraft options)
+
+The named loadout covers the *pylons* — but the Payload tab's other knobs (**Internal Fuel**,
+Aircraft Condition, Wear & Tear, Spawn Type, and any other property-editor value) used to reset
+to engine defaults on every new flight. The tab now has a **"Save as default"** button (plus
+"Clear default") that remembers the current fuel + properties **per airframe**:
+
+- Every **new** flight of that type opens pre-configured — if your F/A-18Cs always spawn hot at
+  80% fuel, set it once and save.
+- It applies to fresh **blue** flights only (never enemy AI, never an existing flight you're
+  editing), fuel is clamped to the airframe's tank, and it covers blue AI flights of the type
+  too — it's "the default for this aircraft," exactly like the saved payloads.
+- Stored on disk next to your saved payloads (`Saved Games/Retribution/flight_defaults.json`);
+  no setting to enable — saving a default is the switch.
+
 ## CLSID currency — the gotcha that bites
 
 A pylon's `CLSID` is the exact weapon identifier DCS uses internally. These strings change

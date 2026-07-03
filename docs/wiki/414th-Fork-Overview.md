@@ -70,6 +70,32 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 
 ---
 
+## The campaign knows what war it's in — and what month
+
+- Every campaign tracks its **[campaign phase](Campaign-Phases-and-ROE)** (Air Superiority →
+  Rollback → Interdiction → Offensive, inferred live from the IADS, air threat, and front) —
+  shown on a **status ribbon** over the map and the kneeboard cover, always with its reasoning —
+  and the auto-planner leans its offensive tasking to match.
+- Campaigns can author the layer on top: a named **phase arc** with objectives, a **Rules-of-
+  Engagement layer** (no-strike sanctuaries, locked target classes — or inverted, free-fire
+  kill boxes), and a **political-will economy** that ends the war at the negotiating table with
+  campaign-authorable meters and feed weights. The AI planner obeys the ROE; you are only ever
+  *priced*, never blocked.
+- The shipped flavours: the **[Vietnam campaign layer](Vietnam-Campaign-Layer)** (Washington vs
+  Hanoi, the Rolling Thunder → Linebacker II arc, ambush MiGs, Alpha Strikes, a red side whose
+  tempo answers the arc) and the **[COIN campaign](Enduring-Resolve-Campaign-Briefing)** (the
+  inverted model: kill boxes, population rings, an insurgency that regenerates from its ammo
+  caches).
+- The **[Vietnam Ops](Vietnam-Ops)** suite adds the era's mission-level mechanics — Arc Light
+  carpets, the AAA flak gauntlet, naval gunfire, trail-convoy interdiction, airbase harassment,
+  the Super Gaggle, FAC(A) willie-pete marking, snake-and-nape — all opt-in, preseeded by the
+  era campaigns.
+- **Long-range carrier ops** put a standoff carrier in the war: a deterministic daily package
+  (strike + buddy tanker + E-2) off the boat's own squadrons, with every carrier flight routed
+  to tank from the boat's A-6.
+
+---
+
 ## The generated mission feels occupied
 
 - **[Troops In Contact (TIC)](Troops-In-Contact)** produces prolonged, formation-aware
@@ -89,9 +115,15 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 - The **[unified map layers panel](Map-Layers-and-Interface)** replaces both stock Leaflet
   controls with one dark-themed, grouped, collapsible control — with one-click preset views
   (Default / SEAD / Recon / Clean) and remembered choices between sessions.
-- The **[kneeboard deck](Kneeboards)** opens on a single cover page (op/turn header, the previous
-  turn's SITREP, and a flight index) and can fold into a compact 3–4 page deck; you can also import
-  your own kneeboard images per campaign.
+- Planning information is **painted into the generated mission's F10 map**: front lines, the
+  supply-road corridors, control points, active ROE zones, and every blue **tanker/AWACS orbit
+  as a labelled racetrack** (callsign, freq, TACAN) — briefable from the cockpit with no DTC.
+- The **[kneeboard deck](Kneeboards)** opens on a single cover page (op/turn header, the campaign
+  phase + spelled-out ROE, the previous turn's SITREP, and a flight index) and can fold into a
+  compact 3–4 page deck; you can also import your own kneeboard images per campaign.
+- The Payload tab can **save per-aircraft flight defaults** (internal fuel, spawn type, aircraft
+  options) so every new flight of a type opens pre-configured — see
+  [Custom Loadouts](Custom-Loadouts#per-aircraft-flight-defaults-fuel--aircraft-options).
 - Debriefing begins with a **Mission Impact** summary — territorial changes, runway damage, and
   losses — before the full event detail.
 
@@ -103,17 +135,16 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
   place a unit group (gated behind cheat settings).
 - **CurrentHill Iran** integration — Shahed-136 and IRGCN FAC assets plus a `[CH] Iran 2020`
   faction behind a new-game mod toggle (see **[Custom Factions](Custom-Factions)**).
-- **Germany - Red Tide** — a *Red Storm Rising*-flavoured 1988 NATO counteroffensive campaign
-  built for the 414th, with named historical squadrons and liveries.
-- **Khe Sanh: Operation Niagara** — a historical 1968 siege campaign on Caucasus: an encircled
-  blue base kept alive by air, where the threat is **AAA, not MiGs**. Both shipped 414th campaigns
-  have a full player-facing **briefing pack** on the wiki (ORBAT, phase plan, mission-brief
-  template, threat-defeat, role cards) — see the Campaigns section of **[Home](Home)** and
-  **[Custom Campaigns](Custom-Campaigns)**.
-- The **settings dialog** is reorganised into six focused pages with one-click **difficulty
-  presets** (Casual / Normal / Veteran / Ace), and a settings audit removed dead/duplicate options
-  and merged the AI-radio toggles into a single **AI wingman radio behavior** choice. Existing
-  campaigns migrate automatically.
+- **Four built campaigns** — **Germany - Red Tide** (a *Red Storm Rising*-flavoured 1988 NATO
+  counteroffensive), **Khe Sanh: Operation Niagara** (the historical 1968 siege, where the
+  threat is **AAA, not MiGs**), **Red Flag 81-2** (the 1981 Nevada exercise played as the war it
+  rehearses), and **Operation Enduring Resolve** (2006 Helmand COIN on the Afghanistan map, with
+  a living insurgency and kill-box ROE). Each has a player-facing **briefing pack** on the wiki —
+  see the Campaigns section of **[Home](Home)**.
+- The **settings dialog** is reorganised into focused pages (including a dedicated **Vietnam
+  Ops** page) with one-click **difficulty presets** (Casual / Normal / Veteran / Ace), and a
+  settings audit removed dead/duplicate options and merged the AI-radio toggles into a single
+  **AI wingman radio behavior** choice. Existing campaigns migrate automatically.
 - Each squadron can spawn under its **own DCS nation** (nation-specific voiceovers) with
   **nation-aware pilot names** (see **[Squadrons and Pilots](Squadrons-and-Pilots)**).
 
@@ -128,6 +159,7 @@ new campaigns — toggle `SCAR command-post intel` on the Campaign Doctrine page
 
 - [Getting Started](Getting-Started)
 - [Mission Planning](Mission-planning)
+- [Campaign Phases and ROE](Campaign-Phases-and-ROE)
 - [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)
 - [Air Defense and the Air War](Air-Defense-and-the-Air-War)
 - [Home](Home)

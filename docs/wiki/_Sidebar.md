@@ -11,6 +11,7 @@
 
 **Campaign mechanics**
 - [Mission Planning](Mission-planning)
+- [Campaign Phases & ROE](Campaign-Phases-and-ROE)
 - [Air Defense & the Air War](Air-Defense-and-the-Air-War)
 - [IADS Engine: MANTIS](IADS-Engine-MANTIS)
 - [Frontline Stances & Movement](Frontline-Stances-and-Movement)
@@ -59,6 +60,9 @@
 - [Khe Sanh: First Three Turns](Khe-Sanh-First-Three-Turns)
 - [Khe Sanh: Intel Assessment](Khe-Sanh-Intel-Assessment)
 - [Khe Sanh: Visual Briefing](Khe-Sanh-Visual-Briefing)
+
+*Afghanistan — Operation Enduring Resolve (COIN, 2006)*
+- [Enduring Resolve: Briefing](Enduring-Resolve-Campaign-Briefing)
 
 *Red Flag 81-2 (Nevada, 1981)*
 - [Red Flag: Required Mods](Red-Flag-81-2-Required-Mods)

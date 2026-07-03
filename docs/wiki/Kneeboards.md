@@ -15,7 +15,12 @@ type's flight decks stacked together. The fork's layout is built around that fac
 Every flight's deck now opens on a dedicated **cover page** that consolidates, in one sheet:
 
 - **Operation / turn / date header** — every deck tells you what op and which turn it is.
-- **Campaign SITREP** — a "what happened last turn" digest (see below).
+- **Campaign phase & ROE band** — the current [campaign phase](Campaign-Phases-and-ROE) with its
+  reasoning, and the month's rules **spelled out**: OFF LIMITS zones, LOCKED target classes,
+  CLEARED classes (or the WEAPONS FREE kill-box list on an inverted-ROE campaign). Brief the
+  ROE from the cockpit.
+- **Campaign SITREP** — a "what happened last turn" digest (see below), including the labeled
+  **will movers** on a political-will campaign.
 - **Shared-airframe flight index** — when 2+ client flights share the airframe, a callsign / task /
   start-page index so you can find your flight in the stacked deck (a lone flight skips it).
 - **Friendly-package list** — in compact mode the coalition package list rides here.
@@ -44,6 +49,10 @@ old ~10-page deck:
 Turning `compact_kneeboard` **off** restores the full multi-page deck **byte-for-byte** — the map
 image and Notes page come back, and each section gets its own page again. The compact deck is a
 separate assembly path, so nothing is lost by switching.
+
+**Wide tables fit instead of clipping.** Kneeboard tables now measure their rendered width and
+word-wrap the widest column to fit the page — so a 3-channel comms ladder keeps its FREQ column
+and a long cue list wraps instead of running off the right edge.
 
 ### The Brief Sheet
 

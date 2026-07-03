@@ -748,7 +748,7 @@ so the two docs don't drift.
   AI pilot tracking). The **AI-ON** path (helo spawns from FARP, flies the rescue) still needs its
   own run with the setting on.
 
-### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ✗ REGRESSED → fix applied 2026-06-30 (root-caused; needs re-fly)
+### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the 2026-06-30 activation fix WORKED — `dcs.log` shows the mission-start miss falling back cleanly ("not found/alive at mission-start; will retry") and then "activated … via birth (TACAN 37Y, LARS menu attached)" when the player boarded the King C-130; zero combatsar errors. Still owed = a wingman actually tuning 37Y to confirm the beacon radiates + an in-mission LARS menu use)
 - **Regression (2026-06-30, flown session — user: "c130 had no F10 menu for LARS"):** the player-flown
   King's LARS menu, previously cockpit-confirmed 2026-06-27, did **not** appear this session.
   `dcs.log` shows **zero** `Combat SAR King - activated` lines across ~80 minutes and two mission
@@ -1292,7 +1292,7 @@ so the two docs don't drift.
 - **Fail signature:** the `AssertionError` recurs; the flight plans with no real ingress (routes
   straight through threat zones with no IP); the marker still overlaps the airfield icon.
 
-### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ☐ UNTESTED (built 2026-07-01, unflown Lua)
+### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee` — INCONCLUSIVE, leaning fail: an F-4E ejection at t=1118 registered a survivor (2 snatch parties spawned 2 s later ~11 km from Gudauta), the AI A-1H Sandy 4-ship was airborne and closed to **24.2 NM** of the survivor around t≈1400 — inside the 30 NM `sandyMaxRangeNm` dispatch gate — yet Tacview shows no Sandy ever left the racetrack to orbit the point; no "Sandy dispatch error" lines either. Could be the survivor resolving (captured) before a dispatch tick found a free Sandy, or the dispatch not firing. Owed = whether anyone saw the "SANDY … is diverting" coalition message, else a focused re-fly with an ejection near the racetrack)
 - **Context (user request, 2026-06-30):** after G21/G22, the user asked to build the AI Sandy
   retasking that G21's investigation found was designed-but-never-built (the code's own comment
   called it "a combatsar runtime follow-up for the AI"; a 2026-06-30 in-game report — "Sandy's did
@@ -1858,7 +1858,7 @@ so the two docs don't drift.
   (dial `flakBlastPower` / miss / range down); `getVelocity`/`hasAttribute`/`explosion` Lua error in
   `dcs.log`; FPS hit on a dense mission.
 
-### L3 — Naval gunfire support · §34 · ☐ UNTESTED (emitter test-covered; both runtime modes are Lua, need a cockpit pass)
+### L3 — Naval gunfire support · §34 · ☐ UNTESTED (emitter test-covered; both runtime modes are Lua, need a cockpit pass. 2026-07-02 Trail 2 session `wonderful-chatterjee`: armed cleanly — 2 BLUE gun ships, auto on, zero errors — but the carriers' escorts sat 40+ NM offshore, no red ground within the 10 NM gun range and no player F10 fire mission called, so **zero ship gun events**: the coastal-by-construction no-op behaved correctly, the firing legs remain unflown. To exercise it, drop an F10 mark on coastal red within ~10 NM of an escort)
 - **Inconclusive session (2026-06-30, Tacview):** `dcs.log` confirms the emitter armed 2 blue
   gun ships (`Naval gunfire armed (2/0 gun ship(s) blue/red, range 20000m, ...)`) — 2× VWV
   `DE-1052 USS Knox` escorting a carrier strike group. But scanning every `Projectile+Shell` object in
@@ -1925,7 +1925,7 @@ so the two docs don't drift.
   switching back to "included" stays filtered; the "show incompatible" toggle drops the era filter; a crash
   arriving on the Theater page.
 
-### L6 — Convoy interdiction (Steel Tiger) · §35 · ☐ UNTESTED (REWORKED 2026-07-01: phantom runtime spawn → real, tracked force-model convoy; the old VERIFIED runtime pass is obsolete)
+### L6 — Convoy interdiction (Steel Tiger) · §35 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the reworked real-convoy runtime leg PASSED — `Convoy 001` (2× PT-76 + Grad-URAL, real force-model units) drove the trail road, the player Armed Recon Phantoms found it and killed all 3 with Mk-82 Snakeyes (Tacview removals t=3195/3609/3610); still owed = the debrief leg — next-turn processing must record the loss as `enemy_convoy` so the units never arrive. ⚠ blocked on the REAL server-side `state.json` (the mission ran on the dedicated host; the local `Missions\state.json` is a stale Jun-20 file from a different campaign))
 - **What changed:** the convoy is no longer a `vietnamops`-plugin `coalition.addGroup` phantom (a free,
   unrecorded unit). It is now a **real, tracked enemy convoy** created in the force model
   (`game/fourteenth/vietnam_convoy.py` `ensure_enemy_trail_convoy`, run once per turn from `finish_turn`):
@@ -1981,7 +1981,7 @@ so the two docs don't drift.
   `useOpenNewSupplyRoutePackageDialogMutation` hook or the `contextmenu` handler is wrong); a JS error in the
   client console; the dialog opens on the wrong CP. Needs the CI client rebuild (hand-edited generated API).
 
-### L8 — Airbase harassment (rocket/mortar siege) · §36 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: armed for 4 fields, user saw the "Incoming — standoff fire on …" cue in-mission → the barrage loop fires past the grace period; the impacts themselves + the player-spawn-field exclusion not yet visually confirmed)
+### L8 — Airbase harassment (rocket/mortar siege) · §36 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: armed for 4 fields, user saw the "Incoming — standoff fire on …" cue in-mission → the barrage loop fires past the grace period; the impacts themselves + the player-spawn-field exclusion not yet visually confirmed. 2026-07-02 Trail 2 session `wonderful-chatterjee`: armed for 3 red fields (Sukhumi/Gudauta/Senaki) with all 5 blue player fields excluded in the emitted data, zero errors across a 90-min mission — the Python-side exclusion held by construction; the visual impact confirm still owed)
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the emitter — a
   forward, occupied airfield/FARP is emitted; a rear / neutral / carrier / off / no-front field yields no node;
   a **lone client-spawn field yields no node** and a client-spawn field alongside an enemy field is excluded
@@ -1998,7 +1998,7 @@ so the two docs don't drift.
   wildly off the ramp (centroid/dispersion wrong); too lethal to parked jets (dial power/dispersion down, as
   §33 flak needed); a `trigger.action.explosion` / `land.getHeight` / `timer.scheduleFunction` Lua error.
 
-### L9 — Super Gaggle hilltop resupply · §37 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky` — the runtime run PASSED; the key loss-accounting leg unexercised, no gaggle helo died)
+### L9 — Super Gaggle hilltop resupply · §37 · ◐ PARTIAL (2026-07-01 `intelligent-dubinsky` runtime run PASSED; **2026-07-02 Trail 2 session `wonderful-chatterjee`: second clean run — both CH-53Es closed to 140 m of FOB Khe Sanh at t≈306, returned, landed and shut down; BOTH F-4E suppressors (`SuperGaggle-T1-Sandy-1/-2`) were shot down (t=973 — its wreck also killed a friendly soldier — and t=2897), so the loss-accounting leg is finally armed**: after the turn is processed with the real server `state.json`, the next-turn debrief must charge 2 F-4E airframes to the suppressor squadron and 0 CH-53s — that check is what remains)
 - **Partial (2026-07-01, flown session — Tacview + `dcs.log`):** `dcs.log` shows `Super Gaggle armed
   (outpost FOB Khe Sanh, 2x CH-53E, single run)`; `SuperGaggleHelos` (2× CH-53E, the committed real-squadron
   airframes by name) + `SuperGaggleSandy` (2× F-4E suppressors) spawned **once** at t≈73 s. Tacview: the helo
@@ -2037,7 +2037,7 @@ so the two docs don't drift.
   missed); the outpost isn't bolstered on a clean run; a `coalition.addGroup` / `Group.getByName` Lua error in
   `dcs.log`; the squadron owned count goes negative (floor failed).
 
-### L10 — FAC(A) willie-pete target marking · §38 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: user observed the OV-10 putting WP on a target — but the Bronco also carries real WP rockets, so this may have been the AI's own ordnance rather than the plugin's smoke mark; a confirmed white-smoke column + the "FAC: … cleared hot" cue still owed. **Findability pass 2026-07-02** resolves the ambiguity: the plugin now lays a **named F10 map mark** at the target — rockets make no F10 mark, so the mark is unambiguously the FAC; re-fly to confirm the mark appears and names the target cluster)
+### L10 — FAC(A) willie-pete target marking · §38 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: user observed the OV-10 putting WP on a target — but the Bronco also carries real WP rockets, so this may have been the AI's own ordnance rather than the plugin's smoke mark; a confirmed white-smoke column + the "FAC: … cleared hot" cue still owed. **Findability pass 2026-07-02** resolves the ambiguity: the plugin now lays a **named F10 map mark** at the target — rockets make no F10 mark, so the mark is unambiguously the FAC; re-fly to confirm the mark appears and names the target cluster. 2026-07-02 Trail 2 session `wonderful-chatterjee`: FAC marking armed cleanly, the OV-10 CAS flight flew the front for ~23 min before both Broncos were shot down at t=1382; whether the named F10 mark appeared in that window needs the players' word)
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `fac` on-marker
   (emitted when `vietnam_fac_marking` is on, independent of the other suite features; off = no node). The
   runtime OV-10 discovery, the nearest-enemy scan, and `trigger.action.smoke` placement are runtime Lua,
@@ -2055,7 +2055,7 @@ so the two docs don't drift.
   set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;
   the mark cadence is far too frequent (smoke spam) or never fires.
 
-### L11 — Snake and nape (napalm CAS) · §39 · ☐ UNTESTED (REWORKED 2026-07-02: proximity heuristic → detonation-anchored `S_EVENT_SHOT` + weapon tracking; runtime Lua unflown — AI deck-level plans now authored 2026-07-02, AI leg unflown too)
+### L11 — Snake and nape (napalm CAS) · §39 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the detonation-anchored rework got 4 real player Snakeye deliveries with zero plugin errors — Tacview puts Toxic's two passes **inside the gate** (≈119 m and ≈111 m AGL at 153/274 m/s ground speed vs the 152 m / 93 m/s gate) so fires should have bloomed at his impacts, and Bulldog's two passes **above the ceiling** (≈213 m and ≈177 m AGL) so his correctly drew none; owed = the pilots' eyewitness confirm that Toxic saw the fire walls and Bulldog didn't, plus the AI deck-level release leg)
 - **Detonation-anchored (2026-07-02 rework — this row tests the NEW trigger):** fire now keys off a **real
   eligible-bomb release** (weapon type name vs the `napeWeaponPatterns` option, default `SNAKEYE`; Mk-77 cans
   excluded — Splash Damage owns real napalm) made from a low + fast **release profile**, with each weapon
@@ -2201,7 +2201,14 @@ so the two docs don't drift.
   (stale `active_restricted_zones`); the planner deadlocks with nothing to strike in phase 1 (locked-class
   list too broad for that campaign's target set — trim `locked_targets` in the campaign YAML).
 
-### M5 — GCI-ambush MiGs: late scramble, one slash, home (campaign layer W5) · §1 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky` — the slash + leash VERIFIED in Tacview; still owed = measuring the 40 NM late-launch trigger against a known raid)
+### M5 — GCI-ambush MiGs: late scramble, one slash, home (campaign layer W5) · §1 · ☑ VERIFIED (2026-07-02 flown Trail 2 session `wonderful-chatterjee` — the 40 NM late-launch trigger measured in Tacview: Sukhumi 4-ship scrambled with the nearest BLUE at **37.6 NM**, Senaki 4-ship at **31.5 NM**, both inside the 40 NM cap; slash + leash already VERIFIED 2026-07-01 `intelligent-dubinsky`)
+- **Verified (2026-07-02, flown multiplayer session `wonderful-chatterjee` — `Tacview-20260702-171945-…-Trail 2`):**
+  both red GCI scrambles launched **late**, exactly per the W5 design: the Sukhumi ambush 4-ship spawned at
+  t=460 s with the nearest BLUE aircraft (the front-line TARCAP F-4E) **37.6 NM** from the field; the
+  Senaki 4-ship at t=1150 s with the nearest BLUE (HIPPO Escort F-8E) **31.5 NM** out — no launch at the
+  100 NM setting border. All 8 MiG-17Fs fought close (37mm gun events in `dcs.log`, no BVR) and were
+  progressively lost t=1064–3594 — the posture works; MiG survivability is a balance observation, not a
+  mechanism failure. No `intercept-config.lua` errors.
 - **Partial (2026-07-01, flown session — Tacview `Tacview-20260701-225522-…retribution_nextturn` + `dcs.log`):**
   a red `Intercept|Sukhumi-Babushara|…` MiG-17F pair launched at t≈460 s, ran a **close** intercept into the
   Gudauta fight (~25 NM from its base), and **gunned down the player's F-4E** (Flash, Gudauta Armed Recon) at

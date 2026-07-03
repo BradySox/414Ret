@@ -1944,17 +1944,28 @@ so the two docs don't drift.
 
 ### L6 — Convoy interdiction (Steel Tiger) · §35 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the reworked real-convoy runtime leg PASSED — `Convoy 001` (2× PT-76 + Grad-URAL, real force-model units) drove the trail road, the player Armed Recon Phantoms found it and killed all 3 with Mk-82 Snakeyes (Tacview removals t=3195/3609/3610); still owed = the debrief leg — next-turn processing must record the loss as `enemy_convoy` so the units never arrive. ⚠ blocked on the REAL server-side `state.json` — the dedicated host wrote it to its **TEMP fallback**: `dcs.log` says "The state.json file will be created in TEMP : (C:\Users\admin.dcs\AppData\Local\Temp\state.json)" (no `RETRIBUTION_EXPORT_DIR` set on the server + the client installPath doesn't exist there); the local `Missions\state.json` the user first pulled is a stale Jun-20 file from a different campaign. Fetch the TEMP file to process the turn, and set `RETRIBUTION_EXPORT_DIR` on the server for a stable path going forward)
 - **Sizing/variety rework (2026-07-03), re-opens the runtime leg.** Player feedback off the above flight
-  ("only 3 vehicles, only 1 convoy") drove a rework in `game/fourteenth/vietnam_convoy.py`:
-  `MAX_CONVOY_UNITS` 4→6, and a concurrent-convoy **budget** (`BASE_MAX_CONVOYS` 1→2,
-  `SURGE_MAX_CONVOYS` 2→3 under `trail_surge` ≥ 2.0) replaces the old "is one already flowing" check.
-  `_pick_trail_corridor` gained `exclude_sources` so filling the budget **prefers distinct roads** —
-  several campaigns (Yankee Station/Steel Tiger's full trail network, Khe Sanh's two rear feeders, Red
-  Flag 81-2's aggressor corridors) genuinely have more than one opfor-opfor road to spread onto. A
-  single-corridor map still caps at one convoy (no regression). 18 unit tests updated/added
-  (`tests/fourteenth/test_vietnam_convoy.py`, `tests/fourteenth/test_red_tempo.py`), all green.
+  ("only 3 vehicles, only 1 convoy") drove a rework in `game/fourteenth/vietnam_convoy.py`: a
+  concurrent-convoy **budget** (`BASE_MAX_CONVOYS` 1→2, `SURGE_MAX_CONVOYS` 2→3 under `trail_surge` ≥ 2.0)
+  replaces the old "is one already flowing" check, and `_pick_trail_corridor` gained `exclude_sources` so
+  filling the budget **prefers distinct roads** — several campaigns (Yankee Station/Steel Tiger's full
+  trail network, Khe Sanh's two rear feeders, Red Flag 81-2's aggressor corridors) genuinely have more
+  than one opfor-opfor road to spread onto. A single-corridor map still caps at one convoy (no regression).
+- **Root cause found + fixed same day: the real gate was an empty rear economy, not the cap.** A headless
+  engine load found every rear opfor CP's `Base.armor` at **zero at turn 0** across all 4 land Vietnam
+  campaigns — it's the coalition's production/income stock, not a garrison, so turn 1 (when the flown
+  session above found only 3 vehicles) genuinely had almost nothing to skim regardless of
+  `MAX_CONVOY_UNITS`. `_seed_trail_source` now tops a picked source to a standing stock (2× a convoy load,
+  same bound as the pre-existing COIN ratline) before every skim — from the coalition's real
+  `Faction.frontline_units` roster outside COIN, framed as external logistics support (the Ho Chi Minh
+  Trail's actual historical character — matériel from China/the USSR, not local production).
+  `MAX_CONVOY_UNITS` also raised 4→10 now that it's the real constraint. **Verified with a real engine
+  load** (turn 1): Yankee Station spawned 2 convoys of 10 units each on 2 distinct roads (20 vehicles
+  total, vs. the old 3-vehicle single column); Khe Sanh spawned 2 convoys of 10 on its 2 rear feeders. 19
+  unit tests updated/added (`tests/fourteenth/test_vietnam_convoy.py`, `tests/fourteenth/test_red_tempo.py`),
+  all green; mypy/black clean; full suite green (1433 passed).
   **Re-fly pass:** confirm more than one convoy can be on the map at once on a multi-corridor campaign
-  (Yankee Station/Steel Tiger/Khe Sanh/Red Flag 81-2), each on a visibly different road, and that a
-  found convoy carries up to 6 vehicles instead of 3-4.
+  (Yankee Station/Steel Tiger/Khe Sanh/Red Flag 81-2), each on a visibly different road, each carrying up
+  to 10 vehicles — a visibly bigger trail than the original single 3-4 vehicle column.
 - **Known gap, flagged not fixed:** `operation_velvet_thunder.yaml` has **no `supply_routes` block at
   all** — its theater (Marianas islands: Guam/Rota/Tinian/Saipan) has no roads between the separate
   islands for a convoy to drive, so `vietnam_convoy_interdiction: true` is a silent no-op there. Either

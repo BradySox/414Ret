@@ -2597,7 +2597,7 @@ convoy — it **ensures a real one is flowing on the trail**:
   - picks the road **corridor nearest the front** on the real control-point graph — a rear opfor base with
     spare armour (`_pick_trail_corridor`) feeding the road-connected opfor base nearest the FLOT (the end
     nearer the front is the destination; opfor→friendly roads are the contested front and are skipped);
-  - **skims a few real rear units** off the source base (`_skim_units`, capped at `MAX_CONVOY_UNITS` = 6 and
+  - **skims a few real rear units** off the source base (`_skim_units`, capped at `MAX_CONVOY_UNITS` = 10 and
     never more than half the base's armour, so a source is never gutted);
   - creates a real `TransferOrder` via `coalition.transfers.new_transfer`, which **debits the units from the
     source base** (`commit_losses`) and — on a road first-leg — spawns a real, tracked `Convoy`.
@@ -2611,20 +2611,38 @@ convoy — it **ensures a real one is flowing on the trail**:
 
 **More units, more concurrent convoys, spread across distinct roads (2026-07-03 rework).** A flown Trail 2
 session found `MAX_CONVOY_UNITS` = 4 and the one-convoy rule thin — a single 3-vehicle column was the whole
-hunt. `MAX_CONVOY_UNITS` is now **6**, and the driver keeps a **concurrent budget** (`BASE_MAX_CONVOYS` = 2,
-`SURGE_MAX_CONVOYS` = 3 under a W6 `trail_surge` ≥ 2.0 — up from the old 1/2) instead of a single "is one
-already flowing" check. Filling that budget isn't "spawn N more on the same road": `_pick_trail_corridor`
-gained an `exclude_sources` parameter, and `ensure_enemy_trail_convoy` walks it in a loop, excluding each
-corridor's source as it's committed, so **concurrent convoys prefer distinct roads** — several Vietnam
-campaigns actually have more than one opfor-opfor corridor to offer (Yankee Station / Steel Tiger's full
-Ho Chi Minh Trail network of 8 legs, Khe Sanh's two rear feeders — Kobuleti→Senaki and Sukhumi→Senaki, Red
-Flag 81-2's several aggressor-hub corridors). A campaign with only one qualifying road (or no distinct
-second source) simply stays capped at one convoy that call, exactly as before the rework — never stacks a
-second column onto the one road in use. **Velvet Thunder has no `supply_routes` block at all** (its theater
-is the Marianas island chain — Guam/Rota/Tinian/Saipan — with no roads between the separate islands a
-truck convoy could physically drive), so `vietnam_convoy_interdiction: true` there is a documented no-op;
-the toggle should probably come off that campaign's settings, or the feature needs an island-appropriate
-reinterpretation (a naval convoy?) — flagged as a follow-up, not fixed here.
+hunt. The driver now keeps a **concurrent budget** (`BASE_MAX_CONVOYS` = 2, `SURGE_MAX_CONVOYS` = 3 under a
+W6 `trail_surge` ≥ 2.0 — up from the old 1/2) instead of a single "is one already flowing" check. Filling
+that budget isn't "spawn N more on the same road": `_pick_trail_corridor` gained an `exclude_sources`
+parameter, and `ensure_enemy_trail_convoy` walks it in a loop, excluding each corridor's source as it's
+committed, so **concurrent convoys prefer distinct roads** — several Vietnam campaigns actually have more
+than one opfor-opfor corridor to offer (Yankee Station / Steel Tiger's full Ho Chi Minh Trail network of 8
+legs, Khe Sanh's two rear feeders — Kobuleti→Senaki and Sukhumi→Senaki, Red Flag 81-2's several
+aggressor-hub corridors). A campaign with only one qualifying road (or no distinct second source) simply
+stays capped at one convoy that call, exactly as before the rework — never stacks a second column onto the
+one road in use.
+
+**The real gate wasn't the cap — it was an empty rear economy (same-day follow-up).** A headless engine
+probe across the 4 land Vietnam campaigns found every rear opfor CP's `Base.armor` at **zero at turn 0** —
+it's the coalition's turn-by-turn production/income stock, not a static garrison, so a fresh campaign's
+trail was never actually gated by `MAX_CONVOY_UNITS`; it was gated by how little the rear base had
+*accumulated* by turn 1. `_seed_trail_source` now tops a picked source up to a standing stock (2× a convoy
+load, same bound as the pre-existing COIN ratline: "relocate, never grow") before every skim, sourced from
+the coalition's real ground roster (`Faction.frontline_units` — e.g. the PT-76/ZU-23/S-60/MT-LB actually
+seen in the probe below) rather than the tight COIN insurgent whitelist. Framed as **external logistics
+support** (matériel from China/the USSR, not local production) — the historically accurate character of the
+Ho Chi Minh Trail specifically. `MAX_CONVOY_UNITS` was also raised **6 → 10** now that it's the real
+constraint rather than a number the source stock immediately clamped away. **Verified with a real engine
+load** (turn 1, `ensure_enemy_trail_convoy` called directly): Yankee Station spawned 2 convoys of 10 units
+each on 2 distinct roads (FOB Tchepone→Gudauta, FOB Ky Son→Sukhumi-Babushara — 20 vehicles total vs. the old
+3-vehicle single column); Khe Sanh spawned 2 convoys of 10 on its 2 rear feeders
+(Sukhumi-Babushara→Senaki-Kolkhi, Kobuleti→Senaki-Kolkhi).
+
+**Velvet Thunder has no `supply_routes` block at all** (its theater is the Marianas island chain —
+Guam/Rota/Tinian/Saipan — with no roads between the separate islands a truck convoy could physically
+drive), so `vietnam_convoy_interdiction: true` there is a documented no-op regardless of the seeding rework
+(no corridor is ever picked); the toggle should probably come off that campaign's settings, or the feature
+needs an island-appropriate reinterpretation (a naval convoy?) — flagged as a follow-up, not fixed here.
 
 **Right-click planning (added per playtest).** Rather than hunting for the corridor, the player
 **right-clicks an enemy supply route** on the map to frag the interdiction package:
@@ -2659,7 +2677,7 @@ L7 in-game re-fly.
 | Right-click server | `game/server/qt/routes.py` (`POST /qt/create-package/supply-route/{id}`), `game/server/supplyroutes/models.py` (`interdiction_target_for_route_id`, route id encodes both CP ids) |
 | Right-click client | `client/src/components/supplyroute/SupplyRoute.tsx` (`contextmenu` → `useOpenNewSupplyRoutePackageDialogMutation`; hook hand-added to `_liberationApi.ts`) |
 | Setting | `game/settings/settings.py` (`vietnam_convoy_interdiction`) — no plugin options (the plugin has no convoy runtime) |
-| Tests | `tests/fourteenth/test_vietnam_convoy.py` (corridor pick incl. `exclude_sources`; unit skim respects the fraction cap; setting-off / budget-full / turn-0 no-op; tops the budget up to the deficit; concurrent convoys spread across distinct corridors; a single-corridor campaign stays capped at one). `tests/fourteenth/test_red_tempo.py` (the surge-widened budget + doubled skim, still source-fraction-clamped). `game/missiongenerator/tests/test_vietnamops_luadata.py` asserts the emitter **never** emits a `convoy` node. `tests/server/test_supply_route_interdiction.py` (route-id → enemy-end resolution). |
+| Tests | `tests/fourteenth/test_vietnam_convoy.py` (corridor pick incl. `exclude_sources`; unit skim respects the fraction cap; setting-off / budget-full / turn-0 no-op; tops the budget up to the deficit; concurrent convoys spread across distinct corridors; a single-corridor campaign stays capped at one; COIN seeds from the insurgent whitelist; **a non-COIN Vietnam campaign seeds an empty source from `Faction.frontline_units`**; no pool available degrades to a no-op). `tests/fourteenth/test_red_tempo.py` (the surge-widened budget + doubled skim, still source-fraction-clamped). `game/missiongenerator/tests/test_vietnamops_luadata.py` asserts the emitter **never** emits a `convoy` node. `tests/server/test_supply_route_interdiction.py` (route-id → enemy-end resolution). |
 
 ### Gotchas / deferred
 
@@ -2670,10 +2688,21 @@ L7 in-game re-fly.
 - **Convoy leg VERIFIED (checklist L6, 2026-07-02 Trail 2 flown session `wonderful-chatterjee`, on the
   pre-rework sizing).** A real `Convoy 001` (2× PT-76 + a Grad-URAL) drove the trail, was found and fully
   killed by the player's Armed Recon Phantoms. That session's "only 3 vehicles, only 1 convoy" feedback
-  drove the 2026-07-03 sizing rework above; the debit/`enemy_convoy` debrief leg still needs confirming
-  against a real (non-stale) `state.json`. The multi-corridor spread + the bigger 6-unit load are unflown.
-- **Velvet Thunder's missing `supply_routes` is a real gap, not fixed here.** See the sizing-rework note
-  above — its island geography may need a different interdiction concept entirely rather than a road.
+  drove the 2026-07-03 sizing + seeding reworks above; the debit/`enemy_convoy` debrief leg still needs
+  confirming against a real (non-stale) `state.json`. The multi-corridor spread + the external-seeding
+  10-unit convoys are headless-verified against a real engine load (see above) but unflown in the cockpit.
+- **The external-seeding framing is a real design shift, not a bug fix, and it's a deliberate trade.** Before
+  this rework the trail was gated by the coalition's own accumulated economy (a scarcity model: the player
+  taxes what little the enemy has produced); now the trail always has stock to skim from, framed as external
+  logistics support arriving from outside the theater. This is the historically accurate picture for the Ho
+  Chi Minh Trail specifically, and it's what "many more vehicles on the trail" required — the coalition's
+  turn-1 economy genuinely had nothing to skim. It also means the trail's size no longer reflects how the
+  war is actually going for the enemy (it won't visibly shrink as the coalition's economy is strangled some
+  other way) — a possible follow-on would be scaling the seeded stock to the coalition's own resolve/will
+  state instead of a flat 2× load.
+- **Velvet Thunder's missing `supply_routes` is a real gap, not fixed here.** No corridor is ever picked
+  there regardless of the seeding rework (its island geography has no opfor-opfor road at all) — it may need
+  a different interdiction concept entirely rather than a road.
 - **Right-click path (checklist L7) needs an in-app pass + a CI client rebuild.** The server resolution is
   test-covered; the React `contextmenu` → Qt dialog path can't be exercised headless, and the client hook was
   **hand-added** to the generated `_liberationApi.ts` (codegen unavailable locally), so a stale `client/build`

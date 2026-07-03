@@ -383,15 +383,44 @@ def test_coin_seeds_an_empty_rear_source_and_ships_a_convoy() -> None:
     created = game.red.transfers.created
     assert len(created) == 1
     order = created[0]
-    assert sum(order.units.values()) == 6  # a full MAX_CONVOY_UNITS load
-    # Seeded to exactly 2x the load: the real new_transfer debits the skimmed 6,
-    # leaving a 6-unit rear buffer (the fake transfer ledger doesn't debit).
-    assert rear.base.total_armor == 12
+    assert sum(order.units.values()) == 10  # a full MAX_CONVOY_UNITS load
+    # Seeded to exactly 2x the load: the real new_transfer debits the skimmed 10,
+    # leaving a 10-unit rear buffer (the fake transfer ledger doesn't debit).
+    assert rear.base.total_armor == 20
 
 
-def test_no_coin_seeding_without_the_toggle() -> None:
-    # Vietnam campaigns (or COIN with the insurgency off) never conjure stock:
-    # an empty rear stays an empty rear and no convoy ships.
+def test_vietnam_seeds_an_empty_rear_source_from_the_faction_roster() -> None:
+    # Outside COIN, an empty rear source is topped up from the coalition's OWN
+    # real ground roster (Faction.frontline_units) -- the Ho Chi Minh Trail's
+    # external-logistics framing (matériel from China/the USSR, not local
+    # production), not the tight insurgent whitelist COIN uses.
+    rear = _CP("rear", "RED", 200.0, {})
+    front_cp = _CP("front", "RED", 10.0, {})
+    rear.convoy_routes = {front_cp: ()}
+    front_cp.convoy_routes = {rear: ()}
+
+    def commission(units: dict[Any, int]) -> None:
+        for unit_type, count in units.items():
+            rear.base.armor[unit_type] = rear.base.armor.get(unit_type, 0) + count
+
+    rear.base.commission_units = commission  # type: ignore[attr-defined]
+    game = _game(on=True, control_points=[rear, front_cp], fronts=[_front()])
+    game.red.faction = SimpleNamespace(
+        frontline_units={_CoinUnit("PT-76"), _CoinUnit("Grad-URAL")}
+    )
+    ensure_enemy_trail_convoy(game)
+    created = game.red.transfers.created
+    assert len(created) == 1
+    order = created[0]
+    assert sum(order.units.values()) == 10  # a full MAX_CONVOY_UNITS load
+    assert rear.base.total_armor == 20  # seeded to 2x the load
+
+
+def test_no_seeding_without_a_unit_pool() -> None:
+    # Real campaigns always carry a Faction.frontline_units roster to seed from;
+    # this exercises the degrade path when none is available at all (COIN off AND
+    # no faction set) -- an empty rear stays an empty rear and no convoy ships,
+    # rather than conjuring units out of nowhere.
     rear = _CP("rear", "RED", 100.0, {})
     forward = _CP("forward", "RED", 10.0, {})
     blue = _CP("kandahar", "BLUE", 0.0, {})

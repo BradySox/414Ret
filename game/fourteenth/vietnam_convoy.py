@@ -33,8 +33,20 @@ back to re-using a road (via a fresh pick next turn) when it doesn't. A campaign
 opfor-opfor road at all (no ``supply_routes`` linking two enemy control points -- e.g. an
 island chain with no roads between bases) still gets nothing, same as before.
 
-Fully guarded -- if any precondition is missing (no front, no rear units, no road corridor)
-it is a no-op and the engine's organic convoys still serve as targets.
+**The trail is now externally supplied, not economy-gated (same-day follow-up).** A live
+probe across the 4 land Vietnam campaigns found every rear opfor CP's ``Base.armor`` at
+**zero** at turn 0 -- it is the coalition's turn-by-turn production/income stock, not a
+static garrison, so a fresh campaign's trail was never actually gated by
+:data:`MAX_CONVOY_UNITS`; it was gated by how little the rear base had *accumulated* yet.
+Every corridor pick now tops its source up to a standing stock before skimming
+(:func:`_seed_trail_source`, mirroring the pre-existing COIN ratline design), framed as
+external logistics support (matériel from China/the USSR) rather than local production --
+which is the Ho Chi Minh Trail's actual historical character. Bounded exactly like the COIN
+version: topped to 2x a convoy load, never grown past it.
+
+Fully guarded -- if any precondition is missing (no front, no road corridor, no unit pool to
+seed from and nothing already on hand) it is a no-op and the engine's organic convoys still
+serve as targets.
 """
 
 from __future__ import annotations
@@ -47,11 +59,11 @@ if TYPE_CHECKING:
     from game.dcs.groundunittype import GroundUnitType
     from game.theater import ControlPoint
 
-#: Most units a single nudged convoy carries. Small on purpose -- this is a hunt target
-#: and a trickle of reinforcements, not a war-winning column -- but bumped 2026-07-03
-#: (a flown session's Armed Recon found only 3 vehicles worth chasing) so a found convoy
-#: is a meatier kill without approaching a war-winning column.
-MAX_CONVOY_UNITS = 6
+#: Vehicles a single convoy carries. Bumped 2026-07-03 (twice, same day): first
+#: 4 -> 6 off "only 3 vehicles" feedback, then 6 -> 10 once the real gate (an empty
+#: rear Base.armor, not this cap) was found and fixed by seeding -- a proper trail
+#: column now, not a token trickle.
+MAX_CONVOY_UNITS = 10
 
 #: Baseline concurrent convoys the opfor keeps flowing (raised alongside MAX_CONVOY_UNITS,
 #: 2026-07-03 -- with it, a campaign whose laydown offers more than one opfor-opfor road
@@ -64,7 +76,8 @@ BASE_MAX_CONVOYS = 2
 SURGE_MAX_CONVOYS = 3
 
 #: Never strip a source base below this fraction of its armour; the nudge only ever skims
-#: spare rear units, so a source is never gutted to feed the trail.
+#: spare rear units, so a source is never gutted to feed the trail. With the seeding above,
+#: this now clamps a topped-up standing stock rather than the coalition's own thin economy.
 MAX_SOURCE_FRACTION = 0.5
 
 
@@ -98,11 +111,16 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
     if deficit <= 0:
         return
 
-    # COIN (coin_insurgency): the insurgency has no factories or transfers, so the
-    # rear strongholds hold no Base.armor to skim -- the ratline is EXTERNAL
-    # support entering at the rear. Seed the source with a small stock of
-    # whitelisted irregular kit before skimming (bounded: just enough that the
-    # skim fraction yields one convoy load; the remainder is the rear buffer).
+    # The trail runs on EXTERNAL logistics support, not the coalition's own organic
+    # economy (2026-07-03 -- the historically-accurate framing for the Ho Chi Minh
+    # Trail specifically: matériel arriving from China/the USSR, not local Base
+    # production). A fresh rear CP's Base.armor is genuinely empty turn 1 (it only
+    # fills from each turn's production/income), which is why a flown session
+    # found the trail thin -- the constraint was never the convoy-size cap, it was
+    # the coalition's own accumulated stock. So every corridor pick now tops its
+    # source up to a standing stock before skimming, regardless of what the CP's
+    # ledger happens to hold -- bounded exactly like the pre-existing COIN ratline
+    # (topped to 2x a convoy load, never grown past it: relocate, never grow).
     coin = getattr(game.settings, "coin_insurgency", False)
     load = round(MAX_CONVOY_UNITS * surge)
 
@@ -119,7 +137,7 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
         corridor = _pick_trail_corridor(
             game,
             coalition,
-            allow_empty_source=coin,
+            allow_empty_source=True,
             exclude_sources=frozenset(tried_sources),
         )
         if corridor is None:
@@ -129,11 +147,10 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
             source
         )  # never repick the same source this call, hit or miss.
 
-        if coin:
-            _seed_ratline_source(game, coalition, source, load)
+        _seed_trail_source(game, coalition, source, load, coin=coin)
         units = _skim_units(source, load)
         if not units:
-            continue  # this source too thin -- try the next-best distinct corridor.
+            continue  # no unit pool available to seed from -- try the next road.
 
         coalition.transfers.new_transfer(
             TransferOrder(source, destination, units), game.conditions.start_time
@@ -204,21 +221,42 @@ def _pick_trail_corridor(
     return best
 
 
-def _seed_ratline_source(
-    game: "Game", coalition: "Coalition", source: "ControlPoint", load: int
+def _seed_trail_source(
+    game: "Game",
+    coalition: "Coalition",
+    source: "ControlPoint",
+    load: int,
+    coin: bool,
 ) -> None:
-    """Top the rear source up to twice a convoy load with whitelisted units (COIN).
+    """Top the rear source up to twice a convoy load with real units (2026-07-03).
 
     ``_skim_units`` takes at most :data:`MAX_SOURCE_FRACTION` (half) of the source's
     stock, so a 2x-load stock yields exactly one full convoy and leaves the rest as
     the rear buffer -- stable across cycles, never a growing pile. Free by design
-    (the external-support framing, design note §3.3); the units only ever exist to
-    ride the trail, where interdicting them is a real loss and a resolve drain.
-    Uses the C1 regen whitelist, cycled by turn for a mixed column.
-    """
-    from game.fourteenth.coin import regen_unit_pool
+    (the external-support framing: the Ho Chi Minh Trail ran on matériel arriving
+    from China/the USSR, not the rear base's own local production, so its stock
+    isn't gated on the coalition's turn-by-turn economy); the units only ever
+    exist to ride the trail, where interdicting them is a real loss.
 
-    pool = regen_unit_pool(coalition)
+    ``coin`` (COIN's insurgency, design note §3.3) draws from the tight regen
+    whitelist (:func:`game.fourteenth.coin.regen_unit_pool` -- infantry/technicals/
+    AAA under a price ceiling). Every other Vietnam campaign draws from the
+    faction's own real ground roster (``Faction.frontline_units`` -- e.g.
+    PT-76/T-54/Grad-URAL), so the seeded convoy looks like the coalition's actual
+    order of battle rather than insurgent kit. No pool available (a fake/duck-typed
+    coalition in a test, or a faction with an empty roster) is a silent no-op --
+    the caller falls back to whatever the source's ledger already holds.
+    """
+    if coin:
+        from game.fourteenth.coin import regen_unit_pool
+
+        pool = regen_unit_pool(coalition)
+    else:
+        faction = getattr(coalition, "faction", None)
+        pool = sorted(
+            getattr(faction, "frontline_units", None) or (),
+            key=lambda unit: (unit.price, unit.display_name),
+        )
     if not pool:
         return
     deficit = 2 * load - source.base.total_armor

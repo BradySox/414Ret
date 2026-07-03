@@ -261,7 +261,8 @@ def test_trail_surge_allows_a_second_bigger_convoy(arc_cache: Any) -> None:
 
     ensure_enemy_trail_convoy(game)
     (order,) = game.red.transfers.created
-    # Budget = round(MAX_CONVOY_UNITS * 2.0) = 12, clamped to the 50% source cap (10).
+    # Budget = round(MAX_CONVOY_UNITS * 2.0) = 20, clamped to the 50% source cap (10)
+    # -- this fixture's fixed 20-unit rear stock is the binding constraint either way.
     assert sum(order.units.values()) == 10
 
     # Without the surge, the 2 already flowing satisfy the (unrelaxed) budget of 2.

@@ -691,18 +691,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     run once per turn from `finish_turn`) — when `vietnam_convoy_interdiction` is on and the opfor is under its
     concurrent-convoy budget (`BASE_MAX_CONVOYS` 2, `SURGE_MAX_CONVOYS` 3 under a W6 trail surge) — moves a few
     of the opfor's **real** rear-area ground units toward a road corridor nearest the front, debited from the
-    source base (`new_transfer` → `commit_losses`). **Bumped 2026-07-03** off flown-session feedback ("only 3
-    vehicles, only 1 convoy"): `MAX_CONVOY_UNITS` 4→6, baseline concurrent convoys 1→2, and `_pick_trail_corridor`
-    gained `exclude_sources` so filling the budget **prefers distinct roads** rather than stacking extra columns
-    on the single best one — several campaigns (Yankee Station/Steel Tiger's full trail network, Khe Sanh's two
-    rear feeders, Red Flag 81-2's aggressor corridors) genuinely have more than one opfor-opfor road to spread
-    onto; a single-corridor map still caps at one convoy (no regression). `operation_velvet_thunder.yaml` has
+    source base (`new_transfer` → `commit_losses`). **Reworked 2026-07-03 (twice, same day)** off flown-session
+    feedback ("only 3 vehicles, only 1 convoy"): baseline concurrent convoys 1→2 (surge 2→3), and
+    `_pick_trail_corridor` gained `exclude_sources` so filling the budget **prefers distinct roads** rather than
+    stacking extra columns on the single best one — several campaigns (Yankee Station/Steel Tiger's full trail
+    network, Khe Sanh's two rear feeders, Red Flag 81-2's aggressor corridors) genuinely have more than one
+    opfor-opfor road to spread onto; a single-corridor map still caps at one convoy (no regression). **The real
+    gate turned out to be an empty rear economy, not the cap**: a headless engine load found every rear opfor
+    CP's `Base.armor` at zero at turn 0 (it's the coalition's production/income stock, not a garrison), so
+    `_seed_trail_source` now tops a picked source to a standing stock (2× a convoy load, same bound as the
+    pre-existing COIN ratline) from the coalition's own `Faction.frontline_units` roster, framed as **external
+    logistics support** — the Ho Chi Minh Trail's actual historical character (matériel from China/the USSR,
+    not local production). `MAX_CONVOY_UNITS` raised 4→10 accordingly. **Engine-verified**: Yankee Station and
+    Khe Sanh each spawn 2 convoys of 10 units on 2 distinct roads at turn 1 (20 vehicles total, vs. the old
+    single 3-vehicle column). `operation_velvet_thunder.yaml` has
     **no `supply_routes` at all** (its Marianas island geography has no roads between bases), so the toggle is a
-    documented no-op there — flagged, not fixed. So interdicting the trail now denies
-    the enemy real reinforcements (kill it and they never reach the line; let it through and they do), and the
-    kill is recorded natively. Fully guarded (no front / no rear units / no road corridor / budget full ⇒ no-op;
-    the engine's organic convoys still serve). **No `vietnamops` plugin runtime** any longer — the emitter and
-    the Lua convoy section are removed. (`game/fourteenth/vietnam_convoy.py`, `game/game.py`,
+    documented no-op there regardless of the seeding rework — flagged, not fixed. So interdicting the trail now
+    denies the enemy real reinforcements (kill it and they never reach the line; let it through and they do),
+    and the kill is recorded natively. Fully guarded (no front / no road corridor / budget full / no unit pool
+    ⇒ no-op; the engine's organic convoys still serve). **No `vietnamops` plugin runtime** any longer — the
+    emitter and the Lua convoy section are removed. (`game/fourteenth/vietnam_convoy.py`, `game/game.py`,
     `game/settings/settings.py`; features doc §35; checklist L6.)
     **Right-click planning (added per playtest):** the player **right-clicks an enemy supply route** on the
     map to frag the interdiction package — `SupplyRoute.tsx` `contextmenu` → `POST /qt/create-package/supply-route/{route_id}`

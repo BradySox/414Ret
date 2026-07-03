@@ -1,0 +1,16 @@
+---
+name: 322 Squadron
+nickname: Polly Grey
+female_pilot_percentage: 5
+country: The Netherlands
+role: Multirole Fighter
+aircraft: F-16CM Fighting Falcon (Block 50)
+mission_types:
+  - BAI
+  - BARCAP
+  - CAS
+  - Escort
+  - OCA/Aircraft
+  - Strike
+  - TARCAP
+  - Armed Recon

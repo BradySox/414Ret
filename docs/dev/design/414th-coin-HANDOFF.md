@@ -85,6 +85,45 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   external-support framing — so the skim ships a full column and leaves a stable
   rear buffer). Engine-probe verified: turn 1 ships Martello → Frontenac.
 
+- **The OEF air package** (user direction 2026-07-03): fixed wing + air defenses.
+  Two schema traps cost time: (1) campaign-YAML **preset squadrons are requested via
+  the `aircraft:` list** (the WRL `VF-142` pattern) — the `name:` field only *renames*
+  whatever got found, so `name: 322 Squadron` + `aircraft: [F-16CM...]` silently
+  renames a random Viper preset; (2) the squadron-def loader **drops foreign-country
+  presets unless the faction country is a "Combined Joint Task Forces"** — hence the
+  new `OEF Coalition 2006` faction (usa_2005 roster, CJTF Blue country) so the RNLAF
+  322 Squadron / RAF IV (AC) Squadron presets (new files) survive, and hence the
+  US-preset pins on the Kiowa/tanker/Apache slots (CJTF otherwise casts any nation
+  — the Tunisian Kiowa / Israeli Apache incidents). The **off-map air-spawn base was
+  dropped 2026-07-03** (user: "get rid of the air spawn base"): the CENTAF heavies
+  (F-15Es, B-1s, KC-135s) now home-base at **Kandahar** (the long runway takes them)
+  instead of a floating F-15C off-map sentinel. The Hornets fly from a **REAL carrier
+  in the Gulf of Oman** (user-proven positions from two editor mizzes — Retribution's
+  Afghanistan landmap has no sea polys, so `is_in_sea` says no, but the carrier CP
+  comes straight from the miz Stennis sentinel and DCS owns the water; the
+  generator names the boat from the faction pool, e.g. CVN-72). The user also drew
+  the **safe transit corridor** (two lines, recorded in the build tool): carrier
+  cycles run it straight north to the AO (~780 km — the real OEF cycle, bracketed
+  by the CENTAF tankers). Red AD: AAA markers at all 13
+  strongholds + SHORAD at 7, and (user direction) a **light radar-SAM crust** —
+  MERAD markers at Farah/Tarinkot/Frontenac fill from the faction's new SA-2/SA-3/
+  SA-6 presets (probe drew a Kub battery at Farah, an S-125 at Tarinkot), with
+  SA-8/13/15 joining the SHORAD pool. **None inside the town rings** — the SEAD/
+  DEAD game this opens must stay AI-playable (an in-ring radar SAM would be
+  DEAD-blocked forever). Turn-2 ATO confirms SEAD Sweep/Escort tasking. The Navy
+  tanks itself: **VA-165 A-6E buddy tankers** on the boat (the `A-6E Tanker`
+  variant, probe/drogue) cover the Hornets' cycle; CENTAF KC-135s cover the
+  boom receivers.
+- **Adding that AD deadlocked the whole strike planner** (the Vietnam P3 deadlock,
+  re-found empirically: turn-2 census showed **0 AI-legal targets outside red
+  threat, 51 inside**, ATO = helos only): the gun/IR envelopes blanket every
+  objective, no SEAD/DEAD target exists to clear them, and modern doctrine refuses
+  to strike into threat. Fix = the new **`COIN_DOCTRINE`** (faction key `"coin"`,
+  `game/data/doctrine.py`): modern + `strike_through_air_defense_threat` +
+  `plan_strikes_without_full_escort` — realistic vs guns/MANPADS-only enemies, and
+  the OEF faction binds it. Verified: the turn-2 ATO fills with BAI from every
+  fast-air squadron.
+
 ## After P1
 
 - **Tune** from ledger data (levers above), update the P1 row status.

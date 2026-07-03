@@ -555,10 +555,26 @@ VIETNAM_AIR_DEFENSE_DOCTRINE = replace(
     tasking_whitelist=VIETNAM_AIR_DEFENSE_TASKING_WHITELIST,
 )
 
+# COIN (asymmetric, faction key "coin"): modern doctrine against an enemy with NO
+# radar SAMs and NO air force. The stock "suppress the air defense before you
+# strike" rule deadlocks such a campaign completely -- the enemy's gun/IR
+# envelopes blanket every objective, no SEAD/DEAD target exists to clear them, so
+# nothing ever plans (0 legal strike targets in the Enduring Resolve probe).
+# Against guns and MANPADS the real-world answer is to strike through from
+# altitude, and with zero air threat the escort demand is dead weight too.
+# Everything else stays modern.
+COIN_DOCTRINE = replace(
+    MODERN_DOCTRINE,
+    name="coin",
+    strike_through_air_defense_threat=True,
+    plan_strikes_without_full_escort=True,
+)
+
 ALL_DOCTRINES = [
     COLDWAR_DOCTRINE,
     MODERN_DOCTRINE,
     WWII_DOCTRINE,
     VIETNAM_DOCTRINE,
     VIETNAM_AIR_DEFENSE_DOCTRINE,
+    COIN_DOCTRINE,
 ]

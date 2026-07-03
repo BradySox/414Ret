@@ -21,13 +21,57 @@ from pathlib import Path
 
 from dcs.mapping import Point
 from dcs.mission import Mission
+from dcs.ships import Stennis
 from dcs.statics import Warehouse
+from dcs.vehicles import AirDefence
 
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "resources/campaigns/operation_shattered_dagger.miz"
 DST = REPO / "resources/campaigns/coin_enduring_resolve.miz"
 
 RED_COUNTRY = "Combined Joint Task Forces Red"
+BLUE_COUNTRY = "Combined Joint Task Forces Blue"
+
+# NOTE: the off-map spawn (an F-15C sentinel for a "CENTAF Al Udeid" CP) was DROPPED
+# 2026-07-03 -- the user wanted the abstract air-spawn base gone. The CENTAF heavies
+# (F-15E / B-1B / KC-135) now home-base at Kandahar, the coalition airhead with the
+# long runway; only the carrier remains as an "arrives from off the map" element.
+
+#: A REAL carrier in the Gulf of Oman (user-proven position 2026-07-03 -- a Stennis
+#: placed in the DCS editor at this point floats; Retribution's landmap has no sea
+#: polys down here, which is why is_in_sea says no, but carrier CPs come straight
+#: from this miz sentinel and DCS owns the water). ~800 km to the Helmand box --
+#: the real OEF carrier-cycle distance; the CENTAF tanker bridge makes it work.
+#: Position updated 2026-07-03 from the user's second proof miz; the carrier sits
+#: inside the drawn SAFE TRANSIT CORRIDOR (two editor lines): west wall y ~ -246 km
+#: (x -499k..-956k), east wall y ~ +22..+37 km (x -442k..-939k) -- the lane runs
+#: from the stronghold belt straight south to the sea, and carrier cycles fly it.
+CARRIER = ("CVN-74 John C. Stennis", (-1046758.0, -99755.0))
+
+# --- Red air defenses (era-honest 2006: guns and IR SAMs, NO radar SAMs -- no SEAD
+# --- game, the flak/MANPADS envelope is the honesty). Marker types follow
+# --- game/campaignloader/mizcampaignloader.py: ZSU-23 = an AAA site the generator
+# --- fills from the faction's AAA roster (ZU-23s, ERO technicals); Strela-1 = a
+# --- SHORAD site (SA-9). Every stronghold gets guns; the five anchors get SA-9s.
+AAA_OFFSET = (900.0, -700.0)
+SHORAD_OFFSET = (-800.0, 900.0)
+MERAD_OFFSET = (1600.0, 1400.0)
+SHORAD_STRONGHOLDS = {
+    "Farah",
+    "Tarinkot",
+    "FOB Jackson",
+    "FOB Zeebrugge",
+    "FOB Frontenac",
+    "Kamp Hadrian",
+    "FOB Geronimo",
+}
+#: The light radar-SAM crust (user direction 2026-07-03): a MERAD site marker at
+#: the three anchors, filled by the generator from the faction's new SA-2/SA-3/
+#: SA-6 presets; the SHORAD sites can now also draw SA-8/SA-13/SA-15 alongside
+#: the SA-9s. Deliberately NONE inside the town ROE rings -- the SEAD/DEAD game
+#: this opens must stay AI-playable (a radar SAM inside a ring would be
+#: DEAD-blocked forever and only clearable at mandate cost).
+MERAD_STRONGHOLDS = {"Farah", "Tarinkot", "FOB Frontenac"}
 
 # --- The cache laydown. Stronghold centers are the red FOB markers / airfields in
 # --- the source miz (verified 2026-07-02); each gets `count` Ammunition-depot
@@ -97,9 +141,53 @@ def build() -> None:
             )
             placed += 1
 
+    blue = mission.country(BLUE_COUNTRY)
+    if blue is None:
+        raise RuntimeError(f"{SRC} carries no {BLUE_COUNTRY!r} country")
+    carrier_name, (cx, cy) = CARRIER
+    mission.ship_group(
+        country=blue,
+        name=carrier_name,
+        _type=Stennis,
+        position=Point(cx, cy, mission.terrain),
+    )
+
+    aaa = 0
+    shorad = 0
+    merad = 0
+    for stronghold, (x, y), _count in STRONGHOLD_CACHES:
+        mission.vehicle_group(
+            country=red,
+            name=f"AAA {stronghold}",
+            _type=AirDefence.ZSU_23_4_Shilka,
+            position=Point(x + AAA_OFFSET[0], y + AAA_OFFSET[1], mission.terrain),
+        )
+        aaa += 1
+        if stronghold in SHORAD_STRONGHOLDS:
+            mission.vehicle_group(
+                country=red,
+                name=f"SHORAD {stronghold}",
+                _type=AirDefence.Strela_1_9P31,
+                position=Point(
+                    x + SHORAD_OFFSET[0], y + SHORAD_OFFSET[1], mission.terrain
+                ),
+            )
+            shorad += 1
+        if stronghold in MERAD_STRONGHOLDS:
+            mission.vehicle_group(
+                country=red,
+                name=f"MERAD {stronghold}",
+                _type=AirDefence.S_75M_Volhov,
+                position=Point(
+                    x + MERAD_OFFSET[0], y + MERAD_OFFSET[1], mission.terrain
+                ),
+            )
+            merad += 1
+
     mission.save(str(DST))
     print(
-        f"Wrote {DST} ({placed} cache markers across {len(STRONGHOLD_CACHES)} strongholds)"
+        f"Wrote {DST} ({placed} caches, {aaa} AAA + {shorad} SHORAD + {merad} MERAD, "
+        f"1 carrier)"
     )
 
 

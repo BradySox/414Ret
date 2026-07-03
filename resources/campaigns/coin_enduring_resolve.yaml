@@ -9,11 +9,15 @@ description: >-
   quietly refills toward its original strength each turn, fed by hidden <strong>ammo caches</strong>
   and the ratline of trail convoys. Body count alone wins nothing here.</p>
   <p>Find the caches (recon them — then strike them) to collapse a stronghold's regeneration,
-  interdict the supply trail, and take the strongholds back with air assaults. The war is decided
-  by the <strong>will meters</strong>: the Coalition's mandate bleeds from every airframe lost,
-  every base lost, and every strike into a population center; the insurgency's momentum bleeds
-  from its caches, its convoys, and its strongholds — almost never from its dead fighters.
-  Break their momentum before your mandate runs out.</p>
+  interdict the supply trail, and take the strongholds back with air assaults. And check your
+  map before you roll in: <strong>the named towns of Helmand — Sangin, Musa Qala, Kajaki,
+  Now Zad, Gereshk, Marjah, Lashkar Gah — are all under positive control</strong>, because the
+  insurgency lives among the people. Half its cells and caches sit inside those rings; every
+  weapon released there prices collateral into the Coalition's mandate, kill by kill. The war
+  is decided by the <strong>will meters</strong>: the mandate bleeds from airframes, lost
+  bases, strikes into the towns, and plain time; the insurgency's momentum bleeds from its
+  caches, its convoys, and its strongholds — almost never from its dead fighters. Break their
+  momentum before your mandate runs out.</p>
   <p>Laydown by Starfire (Operation Shattered Dagger); the COIN layer — cache-throttled cell
   regeneration, the inverted will economy, and the campaign arc — is the 414th's.</p>
 recommended_player_faction: USA 2005
@@ -60,7 +64,9 @@ will:
       the valleys go quiet.
   weights:
     blue_airframe_loss: 2.0
-    blue_roe_violation: 6.0
+    # 1.0/kill = CDE pressure, not taboo: with rings over every town, a careful
+    # town fight is survivable once -- a carpet habit bleeds the mandate out.
+    blue_roe_violation: 1.0
     blue_base_lost: 5.0
     blue_passive_regen: 0.0
     red_ground_unit_lost: 0.05
@@ -85,14 +91,51 @@ phases:
       - text: Retake FOB Frontenac -- the gate out of Kandahar
         done_when:
           capture_cp: FOB Frontenac
-    restricted_zones:
-      # Coordinate-anchored (Bost never instantiates as a CP, so `center:` cannot
-      # name it). The ring has TEETH: FOB Geronimo's caches hide in the town and
-      # the Geronimo ratline leg transits it -- striking either pays in mandate.
+    restricted_zones: &population_centers
+      # THE COIN LATTICE: the strongholds ARE the towns (the laydown placed FOB
+      # Jackson on Sangin, ANP Hill on Now Zad, Zeebrugge on Kajaki, Delaram II on
+      # Delaram, Tarinkot on Tarin Kowt), so rings over the real named towns cover
+      # the cells and caches that already live there -- everything near people is
+      # under positive control, and every in-ring kill prices CDE into the
+      # mandate (violation weight LOWERED to 1.0: pressure, not taboo).
+      # Coordinate-anchored (towns are not CPs). Real-world town positions
+      # converted onto the DCS Afghanistan terrain.
       - x: -267202.1
         y: -170619.6
         radius_nm: 8
         name: Lashkar Gah -- population center
+      - x: -209658
+        y: -127043
+        radius_nm: 5
+        name: Sangin -- population center
+      - x: -173272
+        y: -162286
+        radius_nm: 5
+        name: Now Zad -- population center
+      - x: -181452
+        y: -106712
+        radius_nm: 5
+        name: Kajaki -- population center
+      - x: -168553
+        y: -136022
+        radius_nm: 5
+        name: Musa Qala -- population center
+      - x: -237656
+        y: -151564
+        radius_nm: 5
+        name: Gereshk -- population center
+      - x: -271880
+        y: -193810
+        radius_nm: 5
+        name: Marjah -- population center
+      - x: -199964
+        y: -259516
+        radius_nm: 5
+        name: Delaram -- population center
+      - x: -146074
+        y: -30595
+        radius_nm: 5
+        name: Tarin Kowt -- population center
     advance_when:
       capture_cp: FOB Frontenac
   - key: clear_hold
@@ -113,14 +156,7 @@ phases:
         done_when:
           red_resolve_below: 50
       - Hold what you clear -- garrisons and patience beat body count
-    restricted_zones:
-      # Coordinate-anchored (Bost never instantiates as a CP, so `center:` cannot
-      # name it). The ring has TEETH: FOB Geronimo's caches hide in the town and
-      # the Geronimo ratline leg transits it -- striking either pays in mandate.
-      - x: -267202.1
-        y: -170619.6
-        radius_nm: 8
-        name: Lashkar Gah -- population center
+    restricted_zones: *population_centers
     advance_when:
       red_resolve_below: 45
   - key: build
@@ -137,14 +173,7 @@ phases:
       - text: Break the insurgency's momentum
         done_when:
           red_resolve_below: 25
-    restricted_zones:
-      # Coordinate-anchored (Bost never instantiates as a CP, so `center:` cannot
-      # name it). The ring has TEETH: FOB Geronimo's caches hide in the town and
-      # the Geronimo ratline leg transits it -- striking either pays in mandate.
-      - x: -267202.1
-        y: -170619.6
-        radius_nm: 8
-        name: Lashkar Gah -- population center
+    restricted_zones: *population_centers
 
 # The ratline: red<->red supply corridors between the strongholds (the original
 # laydown had NO connectivity, so the §35 trail machinery had nothing to run on).
@@ -163,9 +192,10 @@ supply_routes:
       - [-203597, -258944]
       - [-185000, -210000]
       - [-174184, -162657]
-  # ANP Hill -> FOB Jackson
+  # ANP Hill (Now Zad) -> FOB Jackson (Sangin), via Musa Qala -- the 611 corridor
   - waypoints:
       - [-174184, -162657]
+      - [-168553, -136022]
       - [-209298, -127205]
   # FOB Jackson -> FOB Zeebrugge (the Helmand ring)
   - waypoints:
@@ -187,11 +217,13 @@ supply_routes:
   - waypoints:
       - [-189960, -7031]
       - [-231043, -30347]
-  # FOB Geronimo -> FOB Zeebrugge, THROUGH the Lashkar Gah ring -- the insurgency
-  # moves supplies under civilian cover; interdicting this leg in-town costs will.
+  # FOB Geronimo -> FOB Zeebrugge (Kajaki) THROUGH Lashkar Gah and Gereshk -- the
+  # Helmand highway; the insurgency moves supplies under civilian cover, and
+  # interdicting this leg in-town costs will.
   - waypoints:
       - [-285099, -180708]
       - [-267202, -170619]
+      - [-237656, -151564]
       - [-181518, -101421]
 
 squadrons:

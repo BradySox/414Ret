@@ -868,14 +868,24 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     FreeFormPolygon → polygon; Rectangle/Oval/TextBox/unnamed skipped — Rectangle/Oval convention unverified,
     the polygon tool covers box/corridor), `MizCampaignLoader.populate_theater` stashes them on
     `theater.zone_drawings` (pickled, getattr-guarded for old saves), and `_resolve_drawing_zone` builds the
-    same `ResolvedZone`. Real `.miz` write/reload/read probe-verified. (`game/fourteenth/phases.py`,
+    same `ResolvedZone`. Real `.miz` write/reload/read probe-verified. **Free-fire zones (2026-07-03) LANDED —
+    inverted ROE, the COIN kill boxes**: a phase authoring `free_fire_zones` (same shape system) flips the
+    polarity — the whole map goes **weapons-hold for fixed strikes** except inside the pockets (the OIR
+    Blue-Kill-Box model, per the Rampagers reference). Gate adds "outside the weapons-free area" for a
+    class-carrying target outside every pocket (front-line/convoys never gated; a `restricted_zone` still
+    carves a no-strike hole inside a pocket); `count_roe_violations` counts kills outside the pockets;
+    `roe_summary_lines` leads with a WEAPONS FREE row; painted dashed **green** (vs red restricted) on both
+    the F10/ME map and the web layer (`GameJs.free_fire_zones`). Content: `coin_enduring_resolve.yaml`
+    authors progressive kill boxes 4→8→10 ("KB SANGIN" naming; each phase's capture objective sits inside a
+    kill box — KB FRONTENAC/HADRIAN/TARIN KOWT — or the campaign would punish its own assault; Lashkar Gah
+    never gets one), CI-locked in `test_enduring_resolve_campaign_definition`. (`game/fourteenth/phases.py`,
     `game/fourteenth/zone_drawings.py`, `game/theater/conflicttheater.py`,
     `game/campaignloader/mizcampaignloader.py`, `game/game.py`,
     `game/commander/tasks/compound/nextaction.py`, `game/commander/tasks/packageplanningtask.py`,
     `game/fourteenth/political_will.py`, `game/missiongenerator/kneeboard.py`,
     `game/missiongenerator/drawingsgenerator.py`, `game/server/game/models.py`,
     `game/server/tgos/models.py`, `client/src/components/campaignstatus/`,
-    `client/src/components/restrictedzones/`; features doc §40, checklist M3 + M4 + M7 — need an in-game pass +
+    `client/src/components/restrictedzones/`; features doc §40, checklist M3 + M4 + M7 + M8 — need an in-game pass +
     the CI client rebuild.)
 41. **High Digit SAMs "Ultimate Compilation" support** — the HDS mod support retargeted from the abandoned
     original v1.4.0 to the maintained successor (https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation,

@@ -209,6 +209,12 @@ class CampaignPhase:
     #: Strike-target classes still locked in this phase (TGO ``category`` strings,
     #: plus the special ``"airfield"`` for OCA against a control point).
     locked_target_classes: tuple[str, ...] = ()
+    #: Free-fire zones -- inverted ROE (COIN). When non-empty, the polarity flips:
+    #: fixed strike targets are off-limits EVERYWHERE except inside one of these
+    #: cleared pockets (the whole map goes weapons-hold with a few hot pockets).
+    #: Shape-typed like ``restricted_zones``; a ``restricted_zone`` still carves a
+    #: no-strike hole *inside* a pocket, and the front-line fight stays legal.
+    free_fire_zones: tuple[RestrictedZone, ...] = ()
     #: The phase's objectives checklist (P2 'objectives'): what this phase is FOR,
     #: shown with live done-ticks in the arc expander. Display guidance, never a
     #: gate -- transitions stay owned by min_turn/advance_when (or Tier-0
@@ -733,6 +739,9 @@ def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
         zones = [
             _parse_restricted_zone(zone) for zone in entry.get("restricted_zones") or []
         ]
+        free_fire = [
+            _parse_restricted_zone(zone) for zone in entry.get("free_fire_zones") or []
+        ]
         condition = _parse_condition(entry.get("advance_when"))
         objectives = []
         for objective in entry.get("objectives") or []:
@@ -762,6 +771,7 @@ def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
                 min_turn=int(entry.get("min_turn", 0)),
                 advance_when=condition,
                 restricted_zones=tuple(zones),
+                free_fire_zones=tuple(free_fire),
                 locked_target_classes=tuple(entry.get("locked_targets") or ()),
                 objectives=tuple(objectives),
                 authored=True,
@@ -872,7 +882,9 @@ def _update_authored_phase(
         if current is not None:
             game.message(f"Campaign enters {phase.name}", phase.narrative)
     game.phase_status_line = f"{phase.name} — phase {index + 1} of {len(arc)}" + (
-        " · ROE restrictions active" if phase.restricted_zones else ""
+        " · ROE restrictions active"
+        if phase.restricted_zones or phase.free_fire_zones
+        else ""
     )
 
 
@@ -1049,22 +1061,42 @@ def _resolve_zone(game: "Game", zone: RestrictedZone) -> Optional[ResolvedZone]:
     )
 
 
-def _resolved_zones(game: "Game", phase: CampaignPhase) -> list[ResolvedZone]:
-    """Resolve a phase's zones to concrete geometry, dropping any that won't anchor."""
+def _resolve_zone_list(
+    game: "Game", zones: tuple[RestrictedZone, ...]
+) -> list[ResolvedZone]:
+    """Resolve a tuple of authored zones, dropping any that won't anchor."""
     resolved = []
-    for zone in phase.restricted_zones:
+    for zone in zones:
         result = _resolve_zone(game, zone)
         if result is not None:
             resolved.append(result)
     return resolved
 
 
+def _resolved_zones(game: "Game", phase: CampaignPhase) -> list[ResolvedZone]:
+    """Resolve a phase's restricted zones to concrete geometry."""
+    return _resolve_zone_list(game, phase.restricted_zones)
+
+
 def active_restricted_zones(game: "Game") -> list[ResolvedZone]:
-    """The active phase's resolved zones -- the map layer / server payload feed."""
+    """The active phase's restricted (no-strike) zones -- map layer / server feed."""
     phase = active_phase(game)
     if phase is None:
         return []
-    return _resolved_zones(game, phase)
+    return _resolve_zone_list(game, phase.restricted_zones)
+
+
+def active_free_fire_zones(game: "Game") -> list[ResolvedZone]:
+    """The active phase's free-fire (weapons-free) zones -- inverted ROE (COIN).
+
+    Non-empty means the whole map is weapons-hold except these cleared pockets;
+    fed to the green map layer + the F10/ME painter alongside the red restricted
+    zones. Empty for every phase that doesn't author ``free_fire_zones``.
+    """
+    phase = active_phase(game)
+    if phase is None:
+        return []
+    return _resolve_zone_list(game, phase.free_fire_zones)
 
 
 def roe_blocks_target(game: "Game", target: object) -> bool:
@@ -1102,6 +1134,14 @@ def roe_restriction_reason(game: "Game", target: object) -> Optional[str]:
     for zone in _resolved_zones(game, phase):
         if zone.contains(position):
             return f"inside {zone.name}"
+    # Inverted ROE (COIN free-fire): with free-fire zones set, a fixed strike
+    # target is off-limits UNLESS it sits inside a cleared pocket. Front-line
+    # forces / convoys (target_class is None) stay legal -- the ground fight is
+    # never weapons-hold. Fail-open if none of the pockets resolved.
+    if phase.free_fire_zones and target_class is not None:
+        free_fire = _resolve_zone_list(game, phase.free_fire_zones)
+        if free_fire and not any(zone.contains(position) for zone in free_fire):
+            return "outside the weapons-free area"
     return None
 
 
@@ -1168,9 +1208,20 @@ def roe_summary_lines(game: "Game") -> list[tuple[str, str]]:
     phase = active_phase(game)
     if phase is None:
         return []
-    if not phase.restricted_zones and not phase.locked_target_classes:
+    if (
+        not phase.restricted_zones
+        and not phase.locked_target_classes
+        and not phase.free_fire_zones
+    ):
         return []
     lines: list[tuple[str, str]] = []
+    # Inverted ROE (COIN) leads with the dominant rule: weapons-hold everywhere but
+    # the cleared pockets.
+    free_fire_bits = [_zone_label(zone) for zone in active_free_fire_zones(game)]
+    if free_fire_bits:
+        lines.append(
+            ("WEAPONS FREE", " · ".join(free_fire_bits) + " (all else off-limits)")
+        )
     zone_bits = [_zone_label(zone) for zone in _resolved_zones(game, phase)]
     if zone_bits:
         lines.append(("OFF LIMITS", " · ".join(zone_bits)))
@@ -1347,15 +1398,17 @@ def zone_detail(game: "Game") -> str:
 
 
 def count_roe_violations(game: "Game", debriefing: "Debriefing") -> int:
-    """Enemy ground kills inside an active restricted zone this turn.
+    """Enemy ground kills that broke the active phase's ROE this turn.
 
-    The SOFT player enforcement: nothing stops the strike, but each kill inside a
-    zone drains political will sharply (weighted in ``political_will.py``). Reads
-    the debriefing's enemy ground-object losses (the strike-damage ledger; their
-    theater units carry positions).
+    The SOFT player enforcement: nothing stops the strike, but each violating kill
+    drains political will sharply (weighted in ``political_will.py``). A kill
+    violates when it lands **inside a restricted (no-strike) zone**, or -- under
+    inverted ROE (COIN free-fire) -- **outside every free-fire pocket**. Reads the
+    debriefing's enemy ground-object losses (their theater units carry positions).
     """
-    zones = active_restricted_zones(game)
-    if not zones:
+    restricted = active_restricted_zones(game)
+    free_fire = active_free_fire_zones(game)
+    if not restricted and not free_fire:
         return 0
     violations = 0
     ground_losses = getattr(debriefing, "ground_losses", None)
@@ -1365,8 +1418,8 @@ def count_roe_violations(game: "Game", debriefing: "Debriefing") -> int:
         position = getattr(mapping.theater_unit, "position", None)
         if position is None:
             continue
-        for zone in zones:
-            if zone.contains(position):
-                violations += 1
-                break
+        if any(zone.contains(position) for zone in restricted):
+            violations += 1  # inside a no-strike zone (or a pocket's carve-out)
+        elif free_fire and not any(zone.contains(position) for zone in free_fire):
+            violations += 1  # weapons-hold everywhere but the pockets
     return violations

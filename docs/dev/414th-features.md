@@ -3134,12 +3134,33 @@ scheduled escalation date; the current phase's `advance_when` (any-of `min_turn`
 - **`locked_targets`** (target_release) — TGO `category` strings (+ special `airfield`) still locked in a
   phase; blocked in the same planner gate, badged **RESTRICTED — ROE** on the TGO tooltip
   (`TgoJs.roe_restricted`) instead of vanishing — the defining Rolling Thunder frustration, on purpose.
-- **Map layer** — `GameJs.restricted_zones` (each carries `kind` + `center`/`radius_m` for circles and an
-  `outline` polygon ring for box/corridor) → `RestrictedZonesLayer` draws a red dashed `<Circle>` or
-  `<Polygon>` by kind (+ sticky tooltip), in the layers panel "Enemy intel" group, default ON (renders
-  nothing outside authored ROE campaigns).
+- **`free_fire_zones` — inverted ROE (the COIN kill boxes)** — when a phase authors this list, the polarity
+  flips: the whole map is **weapons-hold for fixed strikes**, cleared only inside these pockets (the OIR
+  Blue-Kill-Box model — see the Rampagers reference library). Same shape system (`circle`/`box`/`corridor`/
+  `from_drawing`), resolved by the same `_resolve_zone`. Gate: `roe_restriction_reason` returns "outside the
+  weapons-free area" for a class-carrying target outside every pocket (fail-open if none resolve);
+  **front-line forces / convoys are never gated** (`target_class is None`) — the ground fight stays legal.
+  A `restricted_zone` still carves a no-strike hole *inside* a pocket (checked first), so a kill box over a
+  stronghold clears the annulus around the town, never the town core. `count_roe_violations` adds the
+  inverted count: a kill **outside every pocket** is a violation (restricted-zone hits still count as
+  before). `roe_summary_lines` leads with a **WEAPONS FREE** row ("KB SANGIN 12 nm · … (all else
+  off-limits)") and `phase_status_line` lights "ROE restrictions active" for free-fire-only phases too.
+  **Content:** `coin_enduring_resolve.yaml` authors progressive kill boxes — Disrupt 4 (KB GERESHK, a
+  rotated box up the Route-611 valley + SANGIN/MARJAH circles + **KB FRONTENAC over the phase's capture
+  objective** — an objective must always sit inside a kill box or the campaign punishes its own assault) →
+  Clear & Hold 8 (+ MUSA QALA/NOW ZAD/KAJAKI + KB HADRIAN for its objective) → Break the Momentum 10
+  (+ DELARAM/TARIN KOWT). Lashkar Gah (the provincial capital) never gets a kill box; pockets are 12 nm
+  (verified to cover their strongholds' TGOs — 10 nm missed FOB Geronimo by ~90 m), objectives 8 nm.
+  CI-locked in `test_enduring_resolve_campaign_definition` (counts 4/8/10, monotonic growth, box shape,
+  objective coverage, never-Lashkar).
+- **Map layer** — `GameJs.restricted_zones` + `GameJs.free_fire_zones` (each carries `kind` +
+  `center`/`radius_m` for circles and an `outline` polygon ring for box/corridor) → `RestrictedZonesLayer`
+  draws a dashed `<Circle>` or `<Polygon>` by kind (+ sticky tooltip) — **red for restricted, green for
+  free-fire** (tooltip "WEAPONS FREE (ROE)"); free-fire renders under restricted so a carve-out sits on top.
+  In the layers panel "Enemy intel" group, default ON (renders nothing outside authored ROE campaigns).
 - **F10 / Mission-Editor drawing** — `DrawingsGenerator.generate_restricted_zones` paints the same resolved
-  zones into every generated `.miz` (dashed red, alongside the always-on frontline/route/CP drawings):
+  zones into every generated `.miz` (dashed **red** restricted + dashed **green** free-fire via the shared
+  `_paint_zones`, alongside the always-on frontline/route/CP drawings):
   `add_circle` for a circle, `add_freeform_polygon` of the outline for a box/corridor. Reuses
   `active_restricted_zones`, so the cockpit F10 map and the web map show identical geometry. No-op outside an
   authored ROE phase.

@@ -437,3 +437,26 @@ def test_enduring_resolve_campaign_definition() -> None:
         # a transiting ratline leg (a ROE ring must guard something).
         assert len(phase.restricted_zones) == 9
         assert all(z.x is not None and z.y is not None for z in phase.restricted_zones)
+
+    # Inverted ROE (the COIN kill boxes): every phase carries free-fire pockets, the
+    # authorized area GROWS with the arc (4 -> 8 -> 10), the Gereshk valley pocket is
+    # a rotated box (exercising the box shape), each phase's capture objective sits
+    # inside a kill box (the campaign must never punish its own objective), and the
+    # provincial capital (Lashkar Gah) is NEVER inside a kill box.
+    pocket_counts = [len(phase.free_fire_zones) for phase in arc]
+    assert pocket_counts == [4, 8, 10]
+    # Objective coverage: FOB Frontenac's KB opens in disrupt, Kamp Hadrian's in
+    # clear_hold (the Tarinkot objective rides inside KB TARIN KOWT in build).
+    assert "KB FRONTENAC" in {z.name for z in arc[0].free_fire_zones}
+    assert "KB HADRIAN" in {z.name for z in arc[1].free_fire_zones}
+    assert "KB TARIN KOWT" in {z.name for z in arc[2].free_fire_zones}
+    disrupt_names = {z.name for z in arc[0].free_fire_zones}
+    assert disrupt_names <= {z.name for z in arc[1].free_fire_zones}
+    assert {z.name for z in arc[1].free_fire_zones} <= {
+        z.name for z in arc[2].free_fire_zones
+    }
+    for phase in arc:
+        assert all(z.name.startswith("KB ") for z in phase.free_fire_zones)
+        assert not any("LASHKAR" in z.name.upper() for z in phase.free_fire_zones)
+        gereshk = [z for z in phase.free_fire_zones if z.name == "KB GERESHK"]
+        assert len(gereshk) == 1 and gereshk[0].kind == "box"

@@ -8,10 +8,13 @@ import { createSlice } from "@reduxjs/toolkit";
 // payload; empty outside authored ROE campaigns, which hides the layer.
 interface RestrictedZonesState {
   zones: RestrictedZone[];
+  // Free-fire (weapons-free) pockets -- inverted ROE (COIN); drawn green.
+  freeFire: RestrictedZone[];
 }
 
 const initialState: RestrictedZonesState = {
   zones: [],
+  freeFire: [],
 };
 
 const restrictedZonesSlice = createSlice({
@@ -21,14 +24,19 @@ const restrictedZonesSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(gameLoaded, (state, action) => {
       state.zones = action.payload.restricted_zones ?? [];
+      state.freeFire = action.payload.free_fire_zones ?? [];
     });
     builder.addCase(gameUnloaded, (state) => {
       state.zones = [];
+      state.freeFire = [];
     });
   },
 });
 
 export const selectRestrictedZones = (state: RootState) =>
   state.restrictedZones.zones;
+
+export const selectFreeFireZones = (state: RootState) =>
+  state.restrictedZones.freeFire;
 
 export default restrictedZonesSlice.reducer;

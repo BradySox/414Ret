@@ -647,6 +647,7 @@ export type Game = {
   enable_unit_placement: boolean;
   campaign_status?: CampaignStatus | null;
   restricted_zones?: RestrictedZone[];
+  free_fire_zones?: RestrictedZone[];
 };
 export type MapZones = {
   inclusion: LatLng[][][];

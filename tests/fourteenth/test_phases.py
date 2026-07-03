@@ -644,6 +644,117 @@ def test_resolve_drawing_zone_missing_reference_is_none() -> None:
     assert _resolve_zone(game, zone) is None
 
 
+# --- inverted ROE: COIN free-fire zones --------------------------------------------
+
+
+def _free_fire_game(entry: dict[str, Any], name: str) -> Any:
+    """A game whose active authored phase is ``entry`` (a single-phase arc)."""
+    from game.fourteenth import phases
+
+    game = _duck_game(campaign_name=name, controlpoints=[], blue_will=100.0)
+    phases._ARC_CACHE[name] = parse_phases([{"key": "coin", "name": "COIN", **entry}])
+    update_campaign_phase(game)
+    return game
+
+
+def test_free_fire_zone_inverts_the_gate(monkeypatch: Any) -> None:
+    from game.fourteenth import phases
+
+    game = _free_fire_game(
+        {
+            "free_fire_zones": [
+                {"x": 0.0, "y": 0.0, "radius_nm": 10, "name": "AO Bravo"}
+            ]
+        },
+        "FF gate",
+    )
+    try:
+        # Classify the duck targets by a .category attribute (a real TGO would).
+        monkeypatch.setattr(
+            phases, "_target_class", lambda t: getattr(t, "category", None)
+        )
+        inside = SimpleNamespace(position=_Pt(5 * _NM, 0.0), category="ammo")
+        outside = SimpleNamespace(position=_Pt(50 * _NM, 0.0), category="ammo")
+        frontline = SimpleNamespace(position=_Pt(50 * _NM, 0.0))  # no class
+        assert not roe_blocks_target(game, inside)  # inside the pocket -> cleared
+        assert roe_blocks_target(game, outside)  # outside -> weapons hold
+        assert not roe_blocks_target(game, frontline)  # ground fight always legal
+    finally:
+        del phases._ARC_CACHE["FF gate"]
+
+
+def test_free_fire_restricted_zone_carves_out_a_no_strike_hole(
+    monkeypatch: Any,
+) -> None:
+    from game.fourteenth import phases
+
+    game = _free_fire_game(
+        {
+            "free_fire_zones": [{"x": 0.0, "y": 0.0, "radius_nm": 20, "name": "AO"}],
+            "restricted_zones": [
+                {"x": 0.0, "y": 0.0, "radius_nm": 5, "name": "Village"}
+            ],
+        },
+        "FF carveout",
+    )
+    try:
+        monkeypatch.setattr(
+            phases, "_target_class", lambda t: getattr(t, "category", None)
+        )
+        # Inside the pocket but inside the village no-strike hole -> still blocked.
+        in_village = SimpleNamespace(position=_Pt(2 * _NM, 0.0), category="ammo")
+        in_pocket = SimpleNamespace(position=_Pt(12 * _NM, 0.0), category="ammo")
+        assert roe_blocks_target(game, in_village)
+        assert not roe_blocks_target(game, in_pocket)
+    finally:
+        del phases._ARC_CACHE["FF carveout"]
+
+
+def test_count_roe_violations_counts_kills_outside_the_pocket() -> None:
+    game = _free_fire_game(
+        {"free_fire_zones": [{"x": 0.0, "y": 0.0, "radius_nm": 10, "name": "AO"}]},
+        "FF viol",
+    )
+    try:
+
+        def mapping(x: float) -> Any:
+            return SimpleNamespace(theater_unit=SimpleNamespace(position=_Pt(x, 0.0)))
+
+        debriefing = SimpleNamespace(
+            ground_losses=SimpleNamespace(
+                enemy_ground_objects=[
+                    mapping(5 * _NM),
+                    mapping(50 * _NM),
+                    mapping(60 * _NM),
+                ]
+            )
+        )
+        # 5 nm inside the pocket -> legal; 50 & 60 nm outside -> 2 violations.
+        assert count_roe_violations(game, debriefing) == 2  # type: ignore[arg-type]
+    finally:
+        from game.fourteenth import phases
+
+        del phases._ARC_CACHE["FF viol"]
+
+
+def test_roe_summary_leads_with_weapons_free() -> None:
+    from game.fourteenth.phases import roe_summary_lines
+
+    game = _free_fire_game(
+        {"free_fire_zones": [{"x": 0.0, "y": 0.0, "radius_nm": 8, "name": "AO Bravo"}]},
+        "FF summary",
+    )
+    try:
+        lines = dict(roe_summary_lines(game))
+        assert "WEAPONS FREE" in lines
+        assert "AO Bravo" in lines["WEAPONS FREE"]
+        assert "all else off-limits" in lines["WEAPONS FREE"]
+    finally:
+        from game.fourteenth import phases
+
+        del phases._ARC_CACHE["FF summary"]
+
+
 def test_sanctuary_airfield_falls_out_of_the_zone(authored_game: Any) -> None:
     # W5 sanctuary basing: an enemy airfield inside an active restricted zone
     # cannot be OCA'd (blocked as a zone target AND as the "airfield" class while

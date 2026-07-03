@@ -53,6 +53,11 @@ settings:
   # Ultimate Compilation content — they resolve only with the mod on (and drop
   # silently without it, so a mod-less install still plays).
   high_digit_sams: true
+  # The carrier stands off ~800 km in the Gulf of Oman -- far beyond the stock
+  # planner's range gate. Raise the plane range so the carrier air is assignable,
+  # and frag a deterministic carrier package (Hornets + A-6 tanker + E-2) each turn.
+  max_mission_range_planes: 600
+  long_range_carrier_ops: true
 
 # The inverted COIN will economy (design note §4): the insurgency's dead fighters are
 # nearly free; its caches, convoys, and strongholds are the currency. The Coalition

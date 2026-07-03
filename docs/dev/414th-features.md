@@ -3365,3 +3365,82 @@ fuel + properties **per airframe**, so every new flight of that type starts pre-
   loadout for all members" on (the norm), that's uniform; per-member property divergence isn't saved.
 - **Needs an in-app pass (checklist Q1):** the button + the "new flight opens pre-configured" behaviour is
   Qt UI that CI can't exercise. The store/apply logic itself is unit-tested.
+
+---
+
+## §44 — Long-range carrier ops
+
+A deterministic carrier strike package for campaigns that park the carrier far beyond the auto-planner's
+reach. **Operation Enduring Resolve (COIN)** stands the boat ~800 km off the Helmand AO — the real OEF
+Arabian-Sea carrier cycle — and the stock planner never anticipated that standoff.
+
+### The problem
+
+The auto-planner gates every squadron by a plane range check: `Squadron.capable_of` compares the
+distance-to-target against `max(aircraft.max_mission_range, settings.max_mission_range_planes)`. With the
+carrier 400-500 NM from the Helmand targets and the default range ceiling, **every** carrier squadron is
+rejected, so the Hornets, the A-6 tankers, and the E-2 all sit on the deck while the land-based air fights
+the whole war. Simply raising the range ceiling gets the Hornets *assignable* to the commander's ATO, but the
+theater support planner still won't crew the boat's own tanker/AEWC out there (the tanker orbit sits at the
+nearest land field the probe A-6 can't reach, and the AEWC/tanker support packages prune when the
+fighter-poor COIN wing can't spare their escorts).
+
+### The fix (two parts)
+
+1. **Range ceiling** — the campaign preseeds a wider `max_mission_range_planes` (600 in Enduring Resolve) so
+   the carrier air is *assignable* to the wider war. The commander flies spare Hornets on nearer tasks (SEAD)
+   once the deterministic package below has claimed its section.
+2. **The deterministic package** — `plan_carrier_strike` (`game/fourteenth/carrier_ops.py`) frags **one**
+   carrier package per plan pass from the boat's own squadrons: a Hornet **STRIKE** section
+   (`STRIKE_SECTION_SIZE = 2`) + an A-6E tanker + an E-2 on AEW&C. It pins the carrier airframes via
+   `ProposedFlight.preferred_type` and forces them through the range gate with `ignore_range=True`, building
+   the package through the engine's own `PackageFulfiller` so it gets proper flight plans, waypoints, fuel,
+   and a shared TOT. `coalition.ato.add_package(package)` adds the result.
+
+### Wiring
+
+- **Hook** — `game/coalition.py` `plan_missions`, inside a tracer span, calls `plan_carrier_strike`
+  **before** `TheaterCommander(...).plan_missions(...)`. Ordering matters: run it first so the boat's Hornets
+  are claimed for this package, then the commander flies any spares. Run *after* the commander and it finds no
+  Hornets left (the commander spends them on nearer SEAD).
+- **Support as PRIMARY flights, not escorts** — the tanker and the E-2 are appended as primary
+  `ProposedFlight`s (`FlightType.REFUELING` / `FlightType.AEWC`), never as `EscortType.Refuel` escorts.
+  `EscortType.Refuel` is a dead end: `check_needed_escorts` only ever marks `AirToAir`/`Sead` escorts
+  "needed", so a refuel escort (and an AEWC escort) always prunes. As primaries the A-6 gets a tanker orbit
+  off the boat (launch + recovery gas — ingress/egress/recovery tanking) and the E-2 an AEWC orbit.
+- **Target choice** — `_nearest_legal_strike_target` walks the red control points' alive ground objects,
+  skips anything ROE-blocked (`game.fourteenth.phases.roe_blocks_target` — the same restraint the rest of the
+  BLUE planner honors, so the carrier never gets fragged into a population ring), and returns the nearest,
+  **preferring ammo caches** (the COIN cache throttle — thematically the carrier's job) over other strikeable
+  TGOs.
+- **Selection helpers** — `_friendly_carrier` (the BLUE-owned carrier CP), `_carrier_squadron` (the biggest
+  stocked carrier squadron that `capable_of` a task), `_carrier_aircraft` (its `AircraftType`), and
+  `_already_planned_from` (one carrier STRIKE package per pass — a commander package that used the boat
+  doesn't get doubled).
+
+### Gating
+
+Behind `long_range_carrier_ops` (`Settings`, Campaign Management → Carrier operations, **default OFF**),
+BLUE only, guarded at every step — no carrier, no Hornets, no legal target ⇒ silent no-op. Preseeded ON in
+`resources/campaigns/coin_enduring_resolve.yaml` alongside `max_mission_range_planes: 600`; every other
+campaign is byte-for-byte untouched.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Planner | `game/fourteenth/carrier_ops.py` |
+| Hook | `game/coalition.py` (`plan_missions`, before `TheaterCommander`) |
+| Setting | `game/settings/settings.py` (`long_range_carrier_ops` + `_LAYOUT_SPEC` "Carrier operations") |
+| Preseed | `resources/campaigns/coin_enduring_resolve.yaml` (`settings:` block) |
+| Tests | `tests/fourteenth/test_carrier_ops.py` (off-switch, red no-op, carrier discovery, squadron pick, already-planned guard, ROE-respecting nearest-cache target); `tests/fourteenth/test_coin.py` (the campaign preseed lock) |
+
+### Gotchas / deferred
+
+- **Engine-probe verified, not yet flown (checklist P2).** The full package build (Hornet strike + A-6 tanker
+  + E-2, forced through the range gate) was proven on the real COIN save — `PKG → target = F/A-18C Strike x2 +
+  A-6E Refueling x1 + E-2C AEW&C x1`, all off the boat, valid flight plans + shared TOT, with the commander
+  also flying spare Hornets on SEAD. The unit tests lock the pure guards/selection; the package build itself
+  is not something CI can exercise, so it needs an in-game pass.
+- **One package a turn, by design** — `STRIKE_SECTION_SIZE = 2` and the `_already_planned_from` guard keep
+  this to a single sustainable coordinated package, not the whole air wing surged off the deck.

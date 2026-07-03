@@ -2382,6 +2382,25 @@ so the two docs don't drift.
   miz); the will message shows Washington/Hanoi (profile lookup failed — name mismatch degrades to defaults);
   the arc opens on a Tier-0 phase (authored parse failed); zone rings missing from the map (x/y anchor bug).
 
+### P2 — Long-range carrier ops: the boat joins the war · §44 · ☐ UNTESTED (built 2026-07-03; the deterministic package is engine-probe verified on the real COIN save — Hornet Strike x2 + A-6E Refueling + E-2C AEW&C off the boat, valid flight plans + shared TOT, plus the commander flying spare Hornets on SEAD — the played feel needs a campaign)
+- **Headless probe:** on the user's 2026-07-03 Enduring Resolve save, `plan_carrier_strike` fragged
+  `PKG → target = F/A-18C Strike x2 + A-6E Refueling x1 + E-2C AEW&C x1`, all departing the carrier, with valid
+  flight plans (13/5/7 waypoints) and a shared TOT; the range-gate preseed (`max_mission_range_planes: 600`)
+  made the carrier air assignable so the commander also flew spare Hornets on SEAD. What CI cannot exercise is
+  the **in-mission behaviour** — the A-6 actually giving gas on ingress/egress/recovery and the E-2 holding a
+  useful AEWC orbit at that standoff.
+- **Setup:** NEW campaign "Afghanistan - Operation Enduring Resolve (COIN)" (`long_range_carrier_ops` preseeds
+  on). Generate turn 1 and inspect the ATO / fly the carrier package.
+- **Pass:** exactly one carrier strike package appears each turn — a Hornet strike section off the boat onto an
+  enemy target (a cache when one is legal), with the A-6E tanking the package (launch join + egress/recovery)
+  and the E-2 airborne on station; the land air still fights the rest of the war and spare Hornets show up on
+  SEAD. The Hornets reach the target and RTB to the boat with the A-6's help.
+- **Fail signature:** carrier still idle (range preseed didn't take / `long_range_carrier_ops` off — check the
+  campaign `settings:` block survived); Hornets launch but the A-6/E-2 don't (they pruned — confirm they are
+  primary flights, not refuel escorts); two carrier packages a turn (the `_already_planned_from` guard broke);
+  the package fragged into a population ring (ROE filter bypassed); Hornets can't make it home (TOT/fuel math
+  off at the 400-500 NM standoff — the tanker orbit isn't being used).
+
 ---
 
 ## Q. Planner / payload UI

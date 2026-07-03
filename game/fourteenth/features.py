@@ -226,6 +226,12 @@ FEATURES: tuple[Feature, ...] = (
         "Per-aircraft flight defaults (save fuel + properties)",
         43,
     ),
+    Feature(
+        "long_range_carrier_ops",
+        "Long-range carrier ops",
+        44,
+        settings_fields=("long_range_carrier_ops",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

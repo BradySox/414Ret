@@ -328,6 +328,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "coin_insurgency",
                     "coin_reinfiltration",
                     "coin_ied",
+                    "coin_hvt",
                 ],
             ),
             (
@@ -1281,6 +1282,22 @@ class Settings:
             "insurgency nothing but the device; one you leave un-swept detonates on the "
             "coalition and drains your mandate (priced by the campaign's will profile). "
             "Requires COIN replenishment on; intended for COIN campaigns that preseed it."
+        ),
+    )
+    coin_hvt: bool = boolean_option(
+        "COIN high-value targets (hunt the leadership)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "The war is a manhunt. A named insurgent leader periodically surfaces near "
+            "a stronghold for a limited strike window -- a real recon-fogged target. "
+            "Killing him inside the window is a blow to the insurgency's momentum, but "
+            "he often shelters among his people (a stronghold on a population ring), so "
+            "the strike carries the collateral-damage dilemma the rings price: take the "
+            "shot dirty (a momentum blow AND a mandate-draining ROE violation), wait for "
+            "a clean one, or let the window close. Requires COIN replenishment on; "
+            "intended for COIN campaigns that preseed it."
         ),
     )
     long_range_carrier_ops: bool = boolean_option(

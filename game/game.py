@@ -407,6 +407,11 @@ class Game:
         from game.fourteenth.coin_ied import advance_roadside_ieds
 
         advance_roadside_ieds(self, events)
+        # COIN high-value targets: surface a named insurgent leader for a strike window
+        # -- kill him inside it to blow the insurgency's momentum. Gated coin_hvt OFF.
+        from game.fourteenth.coin_hvt import advance_hvt
+
+        advance_hvt(self, events)
 
         # Vietnam Ops Super Gaggle (§37): (re)plan the turn's resupply run from real BLUE
         # squadrons (drawing the helos + suppressors from actual airframes, whose losses are

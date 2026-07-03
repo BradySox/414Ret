@@ -54,6 +54,10 @@ settings:
   # must sweep (TARPS + CAS) -- an un-cleared device detonates and drains the mandate
   # (weight below). Sweeping the trail is a real job now.
   coin_ied: true
+  # High-value targets: a named insurgent leader surfaces near a stronghold for a
+  # limited strike window. Kill him to blow the insurgency's momentum -- but he shelters
+  # among his people (the town rings), so a dirty shot pays in mandate too.
+  coin_hvt: true
   vietnam_convoy_interdiction: true
   vietnam_airbase_harassment: true
   vietnam_political_will: true
@@ -97,6 +101,9 @@ will:
     red_ground_unit_lost: 0.05
     red_base_lost: 5.0
     red_cache_lost: 4.0
+    # A decapitation: killing a named leader in his window is a real momentum blow --
+    # on the order of a stronghold's caches, worth the hunt (and the CDE risk).
+    red_hvt_killed: 4.0
     red_passive_regen: 1.0
 
 # Clear -> Hold -> Build, will-coupled. The population-center rings are permanent

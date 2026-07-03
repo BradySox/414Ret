@@ -87,6 +87,11 @@ RED_SHIP_LOST = 0.5
 #: generic ground-attrition feed -- this weight is the *strategic* loss on top,
 #: not a reclassification (unlike ships, which move pools).
 RED_CACHE_LOST = 0.0
+#: A named insurgent leader (HVT) killed inside his strike window (COIN §HVT). A
+#: decapitation is a momentum blow the body count never is. Inert by default (0.0);
+#: the COIN campaign prices it. Charged from a coin_state counter (a finish_turn kill
+#: detection, matched by the tracked HVT TGO, never a generic debrief line).
+RED_HVT_KILLED = 0.0
 
 WILL_MAX = 100.0
 WILL_MIN = 0.0
@@ -154,6 +159,7 @@ class WillWeights:
     red_passive_regen: float = RED_PASSIVE_REGEN
     red_ship_lost: float = RED_SHIP_LOST
     red_cache_lost: float = RED_CACHE_LOST
+    red_hvt_killed: float = RED_HVT_KILLED
 
 
 @dataclass(frozen=True)
@@ -614,6 +620,17 @@ def _red_moves(
                 -red_losses.bases_lost * weights.red_base_lost,
             )
         )
+    # COIN HVT: a named leader killed in his window is a decapitation -- a momentum
+    # blow priced separately from the generic kill. A finish_turn detection (matched
+    # by the tracked HVT TGO), consumed here; inert unless the campaign prices it.
+    if weights.red_hvt_killed:
+        from game.fourteenth.coin_hvt import consume_hvt_kills
+
+        hvts = consume_hvt_kills(game)
+        if hvts:
+            moves.append(
+                (f"HVT leaders x{hvts} killed", -hvts * weights.red_hvt_killed)
+            )
 
     return moves
 

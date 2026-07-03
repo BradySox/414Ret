@@ -38,6 +38,9 @@ from game.commander.missionproposals import ProposedFlight, ProposedMission
 if TYPE_CHECKING:
     from datetime import datetime
 
+    from dcs.mapping import Point
+
+    from game.ato.flight import Flight
     from game.coalition import Coalition
     from game.dcs.aircrafttype import AircraftType
     from game.game import Game
@@ -121,6 +124,90 @@ def plan_carrier_strike(
         len(package.flights),
         carrier.name,
         target.name,
+    )
+
+
+def route_carrier_flights_to_buddy_tanker(coalition: "Coalition") -> None:
+    """Point carrier flights at the carrier's held buddy tanker for their gas.
+
+    The carrier strike package flies with a buddy A-6 that holds one orbit on the
+    boat's egress corridor. The commander frags *other* carrier flights (SEAD Sweep,
+    SEAD Escort off the deck) in their own packages; those packages carry no tanker,
+    so the stock planner builds their REFUEL waypoint at the package's far end (up by
+    the target, ~500+ NM from the A-6) where nothing can give them gas. This pins each
+    such carrier flight's refuel point onto the A-6's orbit -- which sits right on
+    their launch/recovery route -- so they tank from the boat's own held tanker.
+
+    Runs after ``TheaterCommander.plan_missions`` (the commander packages must exist).
+    No-op unless ``long_range_carrier_ops`` is on, this is BLUE, and a carrier buddy
+    tanker is actually holding.
+    """
+    game = coalition.game
+    if not coalition.player.is_blue:
+        return
+    if not getattr(game.settings, "long_range_carrier_ops", False):
+        return
+    carrier = _friendly_carrier(coalition)
+    if carrier is None:
+        return
+
+    orbit = _carrier_buddy_tanker_orbit(coalition, carrier)
+    if orbit is None:
+        return
+
+    for package in coalition.ato.packages:
+        # A package with its own tanker already tanks in-package (e.g. the strike
+        # package itself) -- leave those flights alone.
+        if any(f.flight_type is FlightType.REFUELING for f in package.flights):
+            continue
+        for flight in package.flights:
+            if flight.flight_type is FlightType.REFUELING:
+                continue
+            if flight.departure != carrier:
+                continue
+            if not _has_refuel_waypoint(flight):
+                continue
+            flight.refuel_point_override = orbit
+            flight.recreate_flight_plan()
+
+
+def _carrier_buddy_tanker_orbit(
+    coalition: "Coalition", carrier: "ControlPoint"
+) -> Optional["Point"]:
+    """The orbit center of the carrier's buddy tanker (a REFUELING flight off the
+    boat whose package is *not* a dedicated tanker package), or None."""
+    for package in coalition.ato.packages:
+        if package.primary_task is FlightType.REFUELING:
+            continue
+        for flight in package.flights:
+            if (
+                flight.flight_type is FlightType.REFUELING
+                and flight.departure == carrier
+            ):
+                return _orbit_center(flight)
+    return None
+
+
+def _orbit_center(tanker: "Flight") -> Optional["Point"]:
+    """Midpoint of a tanker's racetrack/patrol legs, or None if it has neither."""
+    points = [
+        waypoint.position
+        for waypoint in tanker.flight_plan.waypoints
+        if "RACETRACK" in waypoint.name.upper() or "PATROL" in waypoint.name.upper()
+    ]
+    if not points:
+        return None
+    x = sum(point.x for point in points) / len(points)
+    y = sum(point.y for point in points) / len(points)
+    return points[0].new_in_same_map(x, y)
+
+
+def _has_refuel_waypoint(flight: "Flight") -> bool:
+    from game.ato.flightwaypointtype import FlightWaypointType
+
+    return any(
+        waypoint.waypoint_type is FlightWaypointType.REFUEL
+        for waypoint in flight.flight_plan.waypoints
     )
 
 

@@ -264,7 +264,9 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         refuel = None
         # Separate ifs (not elif): BOTH tanks pre- and post-vul.
         if tasking.refuels_pre_vul:
-            refuel_pre = builder.refuel(self.package.waypoints.refuel)
+            refuel_pre = builder.refuel(
+                self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
+            )
             # Reroute the ingress nav through the tanker (which sits on the home-to-join
             # leg, so this is a detour rather than a backtrack), then on to the join.
             nav_to = builder.nav_path(
@@ -274,7 +276,9 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
                 use_agl_ingress_egress,
             )
         if tasking.refuels_post_vul:
-            refuel = builder.refuel(self.package.waypoints.refuel)
+            refuel = builder.refuel(
+                self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
+            )
             nav_from = builder.nav_path(
                 refuel.position,
                 self.flight.arrival.position,

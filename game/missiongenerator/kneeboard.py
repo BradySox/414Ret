@@ -2496,11 +2496,18 @@ class CombatIntelPage(KneeboardPage):
         threat_page: Optional[ThreatIntelBriefPage],
         target_page: Optional[KneeboardPage],
         dark_kneeboard: bool,
+        fuel_card: Optional["FuelLadderCard"] = None,
     ) -> None:
         self.flight = flight
         self.threat_page = threat_page
         self.target_page = target_page
         self.dark_kneeboard = dark_kneeboard
+        # A Fuel Ladder that lost the page-4 flex slot to the recon photo: drawn into
+        # the space left below the threats (which is roomy when every contact is still
+        # unidentified and each card collapses to one "fly TARPS to ID" line) so the
+        # ladder isn't dropped from the deck and the page isn't half-empty. Only drawn
+        # if it fits, so an identified-threat page that fills up simply omits it.
+        self.fuel_card = fuel_card
 
     def _title(self) -> str:
         custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
@@ -2513,8 +2520,7 @@ class CombatIntelPage(KneeboardPage):
         elif isinstance(page, (SeadTaskPage, StrikeTaskPage, ScarTaskPage)):
             page.render_into(writer, draw_title=False)
 
-    def write(self, path: Path) -> None:
-        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+    def render_body(self, writer: KneeboardPageWriter) -> None:
         writer.title(self._title())
         if self.target_page is not None:
             self._render_target_into(writer)
@@ -2525,6 +2531,17 @@ class CombatIntelPage(KneeboardPage):
             writer.text(self.threat_page._intro(), wrap=True)
             writer.vspace(4)
             self.threat_page.render_cards(writer)
+        if self.fuel_card is not None:
+            fuel_card = self.fuel_card
+            _draw_section_if_fits(
+                writer,
+                self.dark_kneeboard,
+                lambda w: fuel_card.render_into(w, draw_heading=True),
+            )
+
+    def write(self, path: Path) -> None:
+        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
+        self.render_body(writer)
         writer.write(path)
 
 
@@ -3725,18 +3742,6 @@ class KneeboardGenerator(MissionInfoGenerator):
             )
         )
 
-        # Page 2 — Threats & Targets. Skipped entirely when the flight has neither a
-        # target page nor any enemy air defenses to brief (e.g. a BARCAP over friendly
-        # territory), so such flights get a 2-page deck.
-        threat_page = (
-            ThreatIntelBriefPage(flight, threat_cards, unidentified, dark)
-            if threat_cards
-            else None
-        )
-        target_page = self.generate_task_page(flight)
-        if threat_page is not None or target_page is not None:
-            pages.append(CombatIntelPage(flight, threat_page, target_page, dark))
-
         # Page 4. Recon imagery wins the flex slot when enabled; otherwise a text flex
         # page carries the Fuel Ladder. The friendly-package list lives on the always-
         # present cover page in compact mode (see _build_cover_page), so it no longer
@@ -3752,6 +3757,28 @@ class KneeboardGenerator(MissionInfoGenerator):
             page4 = recon_detail
         elif fuel_card is not None:
             page4 = FlexReferencePage(flight, fuel_card, None, dark)
+
+        # When the recon photo took the flex slot, the Fuel Ladder would otherwise be
+        # dropped from the deck entirely. Hand it to the Threats & Targets page to fill
+        # its blank lower half (it only draws there if it fits) so the ladder survives
+        # and the page isn't half-empty when the threats are all still unidentified.
+        spare_fuel_card = fuel_card if page4 is recon_detail else None
+
+        # Page 2 — Threats & Targets. Skipped entirely when the flight has neither a
+        # target page nor any enemy air defenses to brief (e.g. a BARCAP over friendly
+        # territory), so such flights get a 2-page deck.
+        threat_page = (
+            ThreatIntelBriefPage(flight, threat_cards, unidentified, dark)
+            if threat_cards
+            else None
+        )
+        target_page = self.generate_task_page(flight)
+        threats_page: Optional[CombatIntelPage] = None
+        if threat_page is not None or target_page is not None:
+            threats_page = CombatIntelPage(
+                flight, threat_page, target_page, dark, fuel_card=spare_fuel_card
+            )
+            pages.append(threats_page)
 
         # Page 3 — Comms & Coordination.
         support_page = SupportPage(

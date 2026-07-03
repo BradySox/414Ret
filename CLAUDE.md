@@ -566,6 +566,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     over the enemy-AD threat cards, colour-coded to match), **P3 Comms & Coordination** (radios +
     AWACS/tanker/JTAC + colour-coded code words + brevity), and an
     adaptive **P4 Flex** (recon target photo when target-recon imagery is on, else just the Fuel Ladder).
+    When the recon photo takes the flex slot the **Fuel Ladder** would otherwise be dropped from the deck
+    entirely; it is instead handed to **P2 Threats & Targets** and drawn (via `_draw_section_if_fits`) into
+    the space left below the threat cards — which is roomy on any turn where the enemy AD is still
+    unidentified (each fogged card collapses to a one-line "fly TARPS to ID"), so the ladder backfills the
+    otherwise-blank lower half; a fully-populated identified-threat page just omits it (`CombatIntelPage.fuel_card`).
     The **friendly-package list** rides on the always-present **cover page** (§30) in compact mode (recon
     imagery owns the flex slot, so it had nowhere else; built once per shared-airframe deck). The **Fuel
     Ladder** is one glanceable `Fuel` column (planned remaining) per steerpoint with the RTB surplus —
@@ -934,8 +939,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     primaries the A-6 gets a tanker orbit off the boat (launch + recovery gas) and the E-2 an AEWC orbit. The
     hook runs in `Coalition.plan_missions` **before** `TheaterCommander` so the boat's Hornets are claimed for
     this package first; `_nearest_legal_strike_target` picks the nearest alive, non-ROE-blocked enemy TGO
-    (preferring ammo caches — the COIN throttle). Guarded at every step (no carrier / no Hornets / no legal
-    target ⇒ no-op). (`game/fourteenth/carrier_ops.py`, `game/coalition.py`, `game/settings/settings.py`,
+    (preferring ammo caches — the COIN throttle). A **second post-planning pass**
+    (`route_carrier_flights_to_buddy_tanker`, run **after** `TheaterCommander`) fixes the boat's *other* carrier
+    flights: the commander frags SEAD Sweep/Escort Hornets off the deck in their own tanker-less packages, whose
+    stock REFUEL waypoint lands at the package's far end (~500+ NM from the A-6, no tanker there). The pass pins
+    each such carrier flight's refuel point onto the A-6's held orbit (`Flight.refuel_point_override`, honored by
+    the 3 refuel-waypoint builders via `Flight.refuel_waypoint_position`), so they tank from the boat's own held
+    tanker on their launch/recovery route — mirroring `reposition_theater_tankers` but pinning the *receivers* to
+    the pinned buddy tanker instead of moving a theater tanker. Guarded at every step (no carrier / no Hornets /
+    no legal target / no buddy tanker ⇒ no-op). (`game/fourteenth/carrier_ops.py`, `game/coalition.py`,
+    `game/ato/flight.py`, `game/ato/flightplans/{formationattack,tarcap,escort}.py`, `game/settings/settings.py`,
     `resources/campaigns/coin_enduring_resolve.yaml`; features doc §44, checklist P2 — needs an in-game pass.)
 
 ---

@@ -600,6 +600,13 @@ using measured data only and gain no new blast radius. A real `fuel:` block alwa
   new `render_into`) over the enemy-AD **threat cards** (`ThreatIntelBriefPage.render_cards`, which packs
   as many as fit, now **colour-coded** to match the Brief Sheet — amber MEZ/Detect, blue HARM code +
   bullseye cues, emphasised system name). Skipped entirely when a flight has neither (e.g. a BARCAP).
+  When the recon photo takes the flex slot (below), the Fuel Ladder that would otherwise be dropped from
+  the deck is handed to this page (`CombatIntelPage.fuel_card`) and drawn — via `_draw_section_if_fits`, so
+  only when it fits — into the space below the threat cards. That space is roomy on any turn where the
+  enemy AD is still **unidentified** (a fogged card collapses to a single "fly TARPS to ID" line, per §3),
+  which is exactly when the page would otherwise be half-blank; a page full of identified-threat cards just
+  omits the ladder. `CombatIntelPage.render_body` is the composite body (extracted from `write` so the fill
+  logic is unit-testable — `tests/missiongenerator/test_compact_kneeboard.py`).
 - **P3 Comms & Coordination** (`CommsCoordPage`) composes the support sections (comm ladder + AWACS/
   tanker/JTAC, via `SupportPage._render(draw_title=False, fill=False, include_airfield_dir=False)`) with
   the **colour-coded code words** (`BrevityCard.render_code_words` — push words blue, SUCCESS green, ABORT
@@ -3448,6 +3455,36 @@ fighter-poor COIN wing can't spare their escorts).
   `_already_planned_from` (one carrier STRIKE package per pass — a commander package that used the boat
   doesn't get doubled).
 
+### Buddy-tanker routing for the boat's other flights
+
+The strike package's A-6 holds one orbit on the carrier's egress corridor. But the commander separately frags
+the boat's *other* carrier flights — the SEAD Sweep and SEAD Escort Hornets — in their **own** packages, and
+those packages carry no tanker. The stock planner builds their `REFUEL` waypoint from the package geometry
+(`RefuelZoneGeometry`, between origin and join), which for a carrier package lands ~500+ NM up-range near the
+target, where **no tanker exists**. On the real COIN save the carrier SEAD Hornets' refuel points sat ~560 km
+from the A-6 — a dry tank.
+
+`route_carrier_flights_to_buddy_tanker` (run **after** `TheaterCommander.plan_missions`, so the commander
+packages exist) fixes this. It finds the carrier's buddy tanker (a `REFUELING` flight off the boat whose
+package is *not* a dedicated tanker package), takes its orbit center (`_orbit_center` — the midpoint of the
+racetrack/patrol legs), and for every other carrier-departing flight whose package has no tanker of its own
+and that carries a `REFUEL` waypoint, pins that flight's refuel point onto the A-6 orbit and rebuilds its
+flight plan. Since the A-6 sits on the launch/recovery route, the Hornets now tank from the boat's own held
+tanker on ingress top-off and egress recovery.
+
+This mirrors `reposition_theater_tankers` (§tanker demand) but in the other direction: the buddy A-6 is pinned
+to the strike package and can't move, so instead of moving the tanker to the receivers, the pass moves the
+receivers to the tanker.
+
+- **The override** — `Flight.refuel_point_override` (a `Point`, default `None`, `getattr`-guarded for old
+  saves) set by the pass. The three refuel-waypoint builders (`formationattack.py`, `tarcap.py`, `escort.py`)
+  build their `REFUEL` waypoint at `flight.refuel_waypoint_position(package.waypoints.refuel)`, which returns
+  the override when set and the shared package point otherwise — a one-line, behavior-preserving change for
+  every non-carrier flight.
+- **Scope guards** — BLUE only; only flights whose `departure` is the carrier; only packages **without** their
+  own tanker (so the strike package's own Hornets, which tank in-package, are left alone); land-based flights
+  are never touched (verified on the real save — the Kandahar/Bastion flights kept their refuel points).
+
 ### Gating
 
 Behind `long_range_carrier_ops` (`Settings`, Campaign Management → Carrier operations, **default OFF**),
@@ -3459,11 +3496,12 @@ campaign is byte-for-byte untouched.
 
 | Area | Path |
 |---|---|
-| Planner | `game/fourteenth/carrier_ops.py` |
-| Hook | `game/coalition.py` (`plan_missions`, before `TheaterCommander`) |
+| Planner | `game/fourteenth/carrier_ops.py` (`plan_carrier_strike` + `route_carrier_flights_to_buddy_tanker`) |
+| Hook | `game/coalition.py` (`plan_missions`: strike before `TheaterCommander`, buddy-tanker routing after) |
+| Refuel override | `game/ato/flight.py` (`refuel_point_override` + `refuel_waypoint_position`); `game/ato/flightplans/{formationattack,tarcap,escort}.py` (builders honor it) |
 | Setting | `game/settings/settings.py` (`long_range_carrier_ops` + `_LAYOUT_SPEC` "Carrier operations") |
 | Preseed | `resources/campaigns/coin_enduring_resolve.yaml` (`settings:` block) |
-| Tests | `tests/fourteenth/test_carrier_ops.py` (off-switch, red no-op, carrier discovery, squadron pick, already-planned guard, ROE-respecting nearest-cache target); `tests/fourteenth/test_coin.py` (the campaign preseed lock) |
+| Tests | `tests/fourteenth/test_carrier_ops.py` (off-switch, red no-op, carrier discovery, squadron pick, already-planned guard, ROE-respecting nearest-cache target, buddy-tanker routing); `tests/fourteenth/test_coin.py` (the campaign preseed lock) |
 
 ### Gotchas / deferred
 

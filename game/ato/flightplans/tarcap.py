@@ -110,7 +110,9 @@ class Builder(CapBuilder[TarCapFlightPlan, TarCapLayout]):
         nav_from_origin = orbit1p
 
         if self.package.waypoints is not None:
-            refuel = builder.refuel(self.package.waypoints.refuel)
+            refuel = builder.refuel(
+                self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
+            )
             nav_from_origin = refuel.position
 
         return TarCapLayout(

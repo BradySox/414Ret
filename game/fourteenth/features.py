@@ -232,6 +232,15 @@ FEATURES: tuple[Feature, ...] = (
         44,
         settings_fields=("long_range_carrier_ops",),
     ),
+    Feature(
+        # No plugin, no Settings toggle: always-on like the other F10/ME map
+        # drawings (frontlines/routes/CPs/ROE zones). Painted at generation by
+        # game/missiongenerator/drawingsgenerator.py from the MissionData support
+        # info; a toggle is a possible follow-up.
+        "support_orbit_markers",
+        "Support-package F10 orbit markers",
+        45,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

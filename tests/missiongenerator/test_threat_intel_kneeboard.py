@@ -329,6 +329,30 @@ def test_unidentified_card_shows_bearings_without_a_count() -> None:
     assert "fly TARPS to ID" in text.lower() or "Fly TARPS to ID" in text
 
 
+def test_fit_cues_truncates_to_available_width() -> None:
+    from PIL import ImageFont
+
+    font = ImageFont.truetype("courbd.ttf", 19, layout_engine=ImageFont.Layout.BASIC)
+    cues = [f"{i:03d}/50" for i in range(12)]
+
+    # A narrow line fits only a few cues; an unidentified card ends in an ellipsis and
+    # never leaks a count ("+N").
+    narrow = ThreatIntelBriefPage._fit_cues(
+        cues, 8, count_overflow=False, font=font, avail_px=200
+    )
+    assert narrow.endswith("…")
+    assert "+" not in narrow
+    assert narrow.count("/") < 12  # genuinely truncated
+    assert font.getlength(narrow) <= 200
+
+    # With plenty of width the hard cap (8) still applies, and an identified card shows
+    # the remaining count.
+    wide = ThreatIntelBriefPage._fit_cues(
+        cues, 8, count_overflow=True, font=font, avail_px=100000
+    )
+    assert wide.endswith("+4")  # 12 - 8
+
+
 def test_title_includes_custom_name_and_continuation_marker() -> None:
     flight = SimpleNamespace(friendly=object(), callsign="Colt 1", custom_name="Weasel")
     page = ThreatIntelBriefPage(flight, [], 0, False)  # type: ignore[arg-type]

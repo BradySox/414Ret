@@ -856,9 +856,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     planner and the will-penalty; the zones are now **painted into the generated `.miz`'s F10/ME map**
     (`DrawingsGenerator.generate_restricted_zones` — `add_circle` / `add_freeform_polygon` of the outline,
     alongside the always-on frontline/route/CP drawings) and the web layer draws a `<Circle>` or `<Polygon>`
-    by kind (both share `active_restricted_zones`, so cockpit map == web map). **Path B** — read author-drawn
-    ME shapes back as zones (DCS drawings round-trip in the `.miz`, confirmed against
-    `1968_Yankee_Station.miz`) — is the planned next step. (`game/fourteenth/phases.py`, `game/game.py`,
+    by kind (both share `active_restricted_zones`, so cockpit map == web map). **Path B (2026-07-03) LANDED** —
+    a `restricted_zones` entry can be `{from_drawing: "<name>"}`, hanging the zone off a shape the author
+    *drew* in the campaign `.miz`'s Mission Editor instead of typed coordinates: `game/fourteenth/zone_drawings.py`
+    (`read_zone_drawings`) normalizes the loaded mission's drawings into named `DrawnZone`s (v1: Circle → circle,
+    FreeFormPolygon → polygon; Rectangle/Oval/TextBox/unnamed skipped — Rectangle/Oval convention unverified,
+    the polygon tool covers box/corridor), `MizCampaignLoader.populate_theater` stashes them on
+    `theater.zone_drawings` (pickled, getattr-guarded for old saves), and `_resolve_drawing_zone` builds the
+    same `ResolvedZone`. Real `.miz` write/reload/read probe-verified. (`game/fourteenth/phases.py`,
+    `game/fourteenth/zone_drawings.py`, `game/theater/conflicttheater.py`,
+    `game/campaignloader/mizcampaignloader.py`, `game/game.py`,
     `game/commander/tasks/compound/nextaction.py`, `game/commander/tasks/packageplanningtask.py`,
     `game/fourteenth/political_will.py`, `game/missiongenerator/kneeboard.py`,
     `game/missiongenerator/drawingsgenerator.py`, `game/server/game/models.py`,

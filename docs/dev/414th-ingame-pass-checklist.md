@@ -2315,25 +2315,33 @@ so the two docs don't drift.
   campaign surging (only *authored* phases may carry `red_tempo` — check `_active_authored_phase`).
   Knobs: the per-phase `red_tempo:` YAML values; `GROUND_OFFENSIVE_MIN_SURGE` (red_tempo.py).
 
-### M7 — ROE zone shapes painted on the F10/ME map (box + corridor) · §40 · ☐ UNTESTED (built 2026-07-02; parse/resolve/containment/rotation locked in `tests/fourteenth/test_phases.py`, both pydcs painter + latlng seams engine-probed; the drawn shapes need an in-game/`.miz` eyeball)
-- **Headless adjudication:** `_parse_restricted_zone` (circle/box/corridor + the rejects), `_resolve_zone`
-  geometry, `zone.contains` for all three kinds, and box `heading` rotation are locked in
+### M7 — ROE zone shapes: box/corridor painted on the F10/ME map (Path A) + `from_drawing` reader (Path B) · §40 · ☐ UNTESTED (built 2026-07-02/03; parse/resolve/containment/rotation + the drawing reader/resolver locked in `tests/fourteenth/test_phases.py` + `test_zone_drawings.py`, painter/latlng + real `.miz` write/reload seams engine-probed; the drawn shapes + the ME round-trip need an in-game eyeball)
+- **Headless adjudication (Path A):** `_parse_restricted_zone` (circle/box/corridor + the rejects),
+  `_resolve_zone` geometry, `zone.contains` for all kinds, and box `heading` rotation are locked in
   `tests/fourteenth/test_phases.py`; a real-pydcs probe confirmed `add_freeform_polygon` (box 4-pt, corridor
-  buffered) and `point_in_world(...).latlng()` serialize cleanly. What CI *cannot* adjudicate: whether DCS
-  actually renders the drawings on the F10 map and whether the box/corridor land where authored.
-- **Setup:** author a `box` and a `corridor` `restricted_zones` entry into an active phase of a Vietnam
-  campaign's `phases:` block (see §40 for the schema), start a NEW game, generate the mission, and open the
-  `.miz` in the Mission Editor (or fly it and check the F10 map).
+  buffered) and `point_in_world(...).latlng()` serialize cleanly.
+- **Headless adjudication (Path B):** `read_zone_drawings` (Circle → circle, FreeFormPolygon → polygon, skips
+  Rectangle/Oval/TextBox/unnamed) is locked in `tests/fourteenth/test_zone_drawings.py` via a real
+  `dict()`→`load_from_dict` round-trip; `from_drawing` parse + `_resolve_drawing_zone` in
+  `test_phases.py`; a probe wrote a `.miz` with a drawn circle + polygon, reloaded it via `Mission.load_file`
+  (the `MizCampaignLoader` path), and read both back. What CI *cannot* adjudicate: whether DCS renders the
+  painted zones on the F10 map, whether they land where authored, and whether a shape drawn by hand in the ME
+  is read back correctly.
+- **Setup (Path A):** author a `box` and a `corridor` `restricted_zones` entry into an active phase of a
+  Vietnam campaign's `phases:` block (see §40 for the schema), start a NEW game, generate the mission, open the
+  `.miz` in the ME (or fly it and check the F10 map).
+- **Setup (Path B):** draw a FreeFormPolygon and a Circle on the campaign `.miz`'s Author layer, name them,
+  reference them with `{from_drawing: "<name>"}` in an active phase, start a NEW game.
 - **Pass:** the box (rotated per `heading`) and the corridor lane appear as red dashed shapes on the F10/ME
-  map at the authored location, matching the web map layer; a legacy circle zone is unchanged; the AI planner
-  still avoids targets inside the box/corridor and a player kill inside one drains will.
-- **Fail signature:** a box/corridor drawn in the wrong place or wrong orientation (the `_box_corners`
-  heading convention or the freeform-polygon offset anchoring — the drawing anchor must be `outline[0]` with
-  local offsets, per `generate_routes`); nothing drawn at all (the phase isn't active, or
-  `active_restricted_zones` returned empty); the web map showing a shape the F10 map doesn't (they share
-  `active_restricted_zones`, so a divergence is a rendering bug on one side).
-  Knobs: `ROE_ZONE_LINE`/`ROE_ZONE_FILL` (drawingsgenerator.py); the corridor buffer resolution (phases.py
-  `_resolve_zone`).
+  map at the authored location, matching the web map layer; a `from_drawing` zone gates the planner + paints
+  identically to a typed one; a legacy circle zone is unchanged; a player kill inside any zone drains will.
+- **Fail signature:** a box/corridor drawn in the wrong place or orientation (the `_box_corners` heading
+  convention or the freeform-polygon offset anchoring — anchor must be `outline[0]` with local offsets, per
+  `generate_routes`); a `from_drawing` zone resolving to nothing ("references ME drawing … not found" — name
+  mismatch, or the drawing is a Rectangle/Oval which v1 skips, or it's unnamed); the web map showing a shape
+  the F10 map doesn't (they share `active_restricted_zones`, so a divergence is a rendering bug on one side).
+  Knobs: `ROE_ZONE_LINE`/`ROE_ZONE_FILL` (drawingsgenerator.py); the corridor buffer resolution + the
+  supported-drawing-types list (`zone_drawings.py`).
 
 ## N. Mod support
 

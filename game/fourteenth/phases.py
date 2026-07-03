@@ -123,6 +123,10 @@ class RestrictedZone:
       Package rectangle.
     * ``corridor`` -- a lane: a ``path`` of >=2 anchors + ``corridor_width_nm`` (a
       buffered polyline). An ingress route / the Ho Chi Minh trail.
+    * ``drawing`` -- geometry read from a shape *drawn in the campaign .miz's Mission
+      Editor* (Path B): ``from_drawing`` names the drawing, resolved against
+      ``theater.zone_drawings``. A drawn Circle -> circle, a FreeFormPolygon -> a
+      polygon area -- so an author traces the zone instead of typing coordinates.
 
     Box and corridor require a ``name`` (there is no CP to borrow one from).
     """
@@ -141,6 +145,8 @@ class RestrictedZone:
     #: corridor centerline vertices + full lane width (NM)
     path: tuple[ZoneAnchor, ...] = ()
     corridor_width_nm: float = 0.0
+    #: name of the Mission-Editor drawing to read geometry from (kind == "drawing")
+    drawing: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -621,6 +627,12 @@ def _parse_restricted_zone(zone: object) -> RestrictedZone:
     """
     if not isinstance(zone, dict):
         raise ValueError(f"restricted_zones: entry must be a mapping: {zone!r}")
+    if zone.get("from_drawing"):
+        ref = str(zone["from_drawing"])
+        # The drawing name doubles as the display label unless one is given.
+        return RestrictedZone(
+            kind="drawing", name=str(zone.get("name", ref)), drawing=ref
+        )
     kind = str(zone.get("shape", "circle")).lower()
     name = str(zone.get("name", ""))
     has_center = bool(zone.get("center")) or ("x" in zone and "y" in zone)
@@ -946,8 +958,45 @@ def _box_corners(
     return corners
 
 
+def _resolve_drawing_zone(game: "Game", zone: RestrictedZone) -> Optional[ResolvedZone]:
+    """Resolve a ``from_drawing`` zone against ``theater.zone_drawings`` (Path B).
+
+    A drawn Circle becomes a circle ResolvedZone; a FreeFormPolygon becomes a polygon
+    area (shapely-gated, painted as an outline). A reference to a name that isn't in
+    the campaign's drawings resolves to nothing (logged) -- never a crash.
+    """
+    theater = getattr(game, "theater", None)
+    drawings = getattr(theater, "zone_drawings", None) or {}
+    drawn = drawings.get(zone.drawing)
+    if drawn is None:
+        logging.warning(
+            "Restricted zone %r references ME drawing %r not found in this campaign",
+            zone.name,
+            zone.drawing,
+        )
+        return None
+    if drawn.kind == "circle":
+        return ResolvedZone(
+            name=zone.name or drawn.name,
+            kind="circle",
+            center_xy=drawn.center_xy,
+            radius_m=drawn.radius_m,
+        )
+    if len(drawn.outline_xy) < 3:
+        return None
+    return ResolvedZone(
+        name=zone.name or drawn.name,
+        kind="polygon",
+        center_xy=drawn.center_xy,
+        outline_xy=drawn.outline_xy,
+        geometry=Polygon(drawn.outline_xy),
+    )
+
+
 def _resolve_zone(game: "Game", zone: RestrictedZone) -> Optional[ResolvedZone]:
     """Resolve one authored zone to a :class:`ResolvedZone`, or None if unanchored."""
+    if zone.kind == "drawing":
+        return _resolve_drawing_zone(game, zone)
     if zone.kind == "box":
         center = _anchor_xy(game, ZoneAnchor(cp=zone.center_cp, x=zone.x, y=zone.y))
         if center is None:

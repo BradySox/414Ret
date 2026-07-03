@@ -602,6 +602,48 @@ def test_parse_restricted_zone_rejects_bad_shapes() -> None:
         )
 
 
+def test_from_drawing_parses_to_a_drawing_zone() -> None:
+    z = _parse_restricted_zone({"from_drawing": "Hanoi Box"})
+    assert z.kind == "drawing" and z.drawing == "Hanoi Box" and z.name == "Hanoi Box"
+    # An explicit name overrides the drawing name as the display label.
+    z2 = _parse_restricted_zone({"from_drawing": "poly-1", "name": "Sanctuary"})
+    assert z2.drawing == "poly-1" and z2.name == "Sanctuary"
+
+
+def test_resolve_drawing_zone_circle_and_polygon() -> None:
+    from game.fourteenth.zone_drawings import DrawnZone
+
+    game = _duck_game()
+    game.theater.zone_drawings = {
+        "Ring": DrawnZone("Ring", "circle", center_xy=(0.0, 0.0), radius_m=10 * _NM),
+        "Box": DrawnZone(
+            "Box",
+            "polygon",
+            center_xy=(0.0, 0.0),
+            outline_xy=(
+                (-5 * _NM, -5 * _NM),
+                (5 * _NM, -5 * _NM),
+                (5 * _NM, 5 * _NM),
+                (-5 * _NM, 5 * _NM),
+            ),
+        ),
+    }
+    ring = _resolve_zone(game, _parse_restricted_zone({"from_drawing": "Ring"}))
+    assert ring is not None and ring.kind == "circle"
+    assert ring.contains(_Pt(3 * _NM, 0.0)) and not ring.contains(_Pt(20 * _NM, 0.0))
+
+    box = _resolve_zone(game, _parse_restricted_zone({"from_drawing": "Box"}))
+    assert box is not None and box.kind == "polygon"
+    assert box.contains(_Pt(0.0, 0.0)) and not box.contains(_Pt(10 * _NM, 0.0))
+
+
+def test_resolve_drawing_zone_missing_reference_is_none() -> None:
+    game = _duck_game()
+    game.theater.zone_drawings = {}
+    zone = _parse_restricted_zone({"from_drawing": "nope"})
+    assert _resolve_zone(game, zone) is None
+
+
 def test_sanctuary_airfield_falls_out_of_the_zone(authored_game: Any) -> None:
     # W5 sanctuary basing: an enemy airfield inside an active restricted zone
     # cannot be OCA'd (blocked as a zone target AND as the "airfield" class while

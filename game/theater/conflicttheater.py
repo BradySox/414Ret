@@ -20,6 +20,8 @@ from .seasonalconditions import SeasonalConditions
 from ..utils import Heading
 
 if TYPE_CHECKING:
+    from game.fourteenth.zone_drawings import DrawnZone
+
     from .controlpoint import ControlPoint, MissionTarget
     from .theatergroundobject import TheaterGroundObject
 
@@ -46,6 +48,11 @@ class ConflictTheater:
         self.daytime_map = daytime_map
         self.controlpoints: list[ControlPoint] = []
         self.rebel_zones: list[TriggerZone] = []
+        # ROE zone shapes drawn in the campaign .miz's Mission Editor (Path B),
+        # keyed by drawing name; a phase's ``from_drawing`` zone resolves against
+        # this. Empty for blank-canvas theaters and pre-Path-B saves (read via
+        # getattr so old pickles degrade to no drawn zones).
+        self.zone_drawings: dict[str, DrawnZone] = {}
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         if "landmap_path" not in state:

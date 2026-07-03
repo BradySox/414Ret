@@ -1,6 +1,22 @@
 # 414th — COIN re-infiltration (the insurgency retakes ground) — design notes
 
-**Status: DESIGN ONLY (2026-07-02).** This is the **C1.5** pass committed in
+**Status: LANDED (2026-07-03).** Built in `game/fourteenth/coin.py`
+(`advance_reinfiltration` + the staged pipeline + `consume_reinfiltration_flips`),
+hooked from `Game.finish_turn` right after `regenerate_insurgent_cells`, gated
+`coin_reinfiltration` (default OFF, preseeded ON in the campaign), will handoff wired
+into `update_political_will` (charged at the `blue_base_lost` weight). The four §8
+squadron calls were resolved to the proposed defaults (HOLD_THRESHOLD=4, 2+2 timers,
+one attempt theater-wide, neutral+lost scope). Tests: `tests/fourteenth/test_coin_reinfiltration.py`
+(off-switch, eligibility clauses, conservation bound, stage advance/seed/revert/flip,
+abort+cooldown, will consume). **One implementation change vs the sketch, forced by the
+engine:** a TGO's allegiance follows its parent CP's owner (`is_friendly`/`coalition`
+read `control_point.captured`), so a *red* cell cannot attach to a blue/neutral target
+CP — it would render blue. The cell + cache therefore attach to the **source red
+stronghold** (positioned near the target via `_infiltration_point`) and are **reparented
+to the target on flip** (`_reparent`), which is where they become the new stronghold's
+starting militia + first cache. In-game pass owed (checklist P3). Original design below.
+
+This is the **C1.5** pass committed in
 `414th-coin-insurgent-replenishment-notes.md` §7.3 (squadron call: re-infiltration
 deferred from v1 *with a hard follow-up commitment* — this note, written immediately
 after the C1 shell met its headless bar). Read that note first; this one extends its

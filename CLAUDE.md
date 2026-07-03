@@ -122,14 +122,22 @@ file. This guide is the map; those are the territory.
     price ≤ 10 ceiling, because the unit data classes the insurgent technicals as IFV —
     the ceiling, not the class, is what keeps BMPs/Grads out; caches bind by TGO-to-CP
     ownership; state pickles as `game.coin_state`, getattr-guarded) → **C1.5
-    re-infiltration design DONE 2026-07-02** (`414th-coin-reinfiltration-notes.md` —
+    re-infiltration LANDED 2026-07-03** (`414th-coin-reinfiltration-notes.md` —
     a staged, announced, counterable pipeline: real cell TGO → seeded ammo-cache TGO →
     engine-native `ControlPoint.capture` flip + a weak `REINFIL_GARRISON` C1 re-anchor,
     under a **conservation bound** (relocate, never grow — red CP count never exceeds
     turn 0) with the §36 player-field exclusion, projection gated on the source
     stronghold's C1 cache health, will handoff = a labeled `blue_base_lost`-weight
-    move recorded via `coin_state`; gated `coin_reinfiltration` default OFF; BUILD slot
-    after C3, 4 open squadron calls in its §8) → C2 will feed → C3
+    move via `consume_reinfiltration_flips` in `update_political_will`; the 4 §8
+    squadron calls resolved to the proposed defaults (HOLD_THRESHOLD=4, 2+2 timers,
+    one attempt theater-wide, neutral+lost scope). `advance_reinfiltration(game,
+    events)` in `coin.py` runs from `finish_turn` right after regen; gated
+    `coin_reinfiltration` default OFF, preseeded ON in the campaign. **Engine-forced
+    change vs the sketch**: TGO allegiance follows the parent CP's owner, so the red
+    cell/cache attach to the **source red stronghold** (positioned near the target via
+    `_infiltration_point`) and **reparent to the target on flip** (`_reparent`) — they
+    become the new stronghold's militia + first cache. Tests
+    `tests/fourteenth/test_coin_reinfiltration.py`; in-game pass = checklist P3) → C2 will feed → C3
     campaign fork → C4 dispersed cells (C2 LANDED 2026-07-02: `WillWeights.red_cache_lost` default 0.0 + the
     `_red_caches_destroyed` fully-dead per-TGO feed in `political_will.py`; **C3 LANDED
     2026-07-02**: the campaign **"Afghanistan - Operation Enduring Resolve (COIN)"** —
@@ -140,7 +148,18 @@ file. This guide is the map; those are the territory.
     lines, so regen revives the strongholds' dead whitelist-eligible TGO cell units
     toward the `tgo_cap` anchor, armor channel first, recon fog untouched; engine-probe
     verified, CI-locked, checklist P1); §7 squadron calls RESOLVED 2026-07-02: 25 %
-    cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment),
+    cache floor, `ammo`-only caches, re-infiltration deferred-with-commitment.
+    **COIN roadside IEDs LANDED 2026-07-03** (`game/fourteenth/coin_ied.py` — the third
+    COIN direction): hidden IED emplacements on the insurgent ratline (the red-to-red
+    `convoy_routes` graph), recon-fogged 1-unit red TGOs the player must TARPS + CAS
+    within `FUSE_TURNS` (3) or they detonate and drain the mandate. `advance_roadside_ieds`
+    from `finish_turn` after C1/C1.5; `MAX_ACTIVE_IEDS` (2) on distinct roads, placed on
+    the road-waypoint nearest the front via the §35 picker pattern, attached to the
+    forward red stronghold (allegiance). New `WillWeights.blue_ied_detonation` (default
+    0.0, campaign-priced 2.5) consumed via `consume_ied_detonations` in
+    `update_political_will`; reuses the shared `coin.spawn_red_ground_at` (refactored out
+    of the C1.5 spawn) + `_tgo_by_id`/`_despawn`. Gated `coin_ied` default OFF, preseeded
+    ON. Tests `tests/fourteenth/test_coin_ied.py`; in-game pass = checklist P4),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

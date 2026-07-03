@@ -326,6 +326,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Insurgency",
                 [
                     "coin_insurgency",
+                    "coin_reinfiltration",
+                    "coin_ied",
                 ],
             ),
             (
@@ -1248,6 +1250,37 @@ class Settings:
             "caches -- find and destroy them to collapse the trickle to a residual "
             "floor. Body count alone cannot win; caches, the supply trail, and "
             "patience decide. Intended for COIN campaigns that preseed it on."
+        ),
+    )
+    coin_reinfiltration: bool = boolean_option(
+        "COIN re-infiltration (insurgency retakes ground)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "The insurgency can retake ground you cleared but did not hold. Over "
+            "several turns an under-garrisoned base near a healthy stronghold draws "
+            "a staged, announced infiltration -- a cell appears, then a supply cache, "
+            "then the base changes hands -- each stage a real unit on the map you can "
+            "strike to stop it. Garrison it, kill the cell or cache, or strangle the "
+            "source stronghold's caches to break the attempt. Total insurgent bases "
+            "never exceed the campaign start (relocate, never grow); a completed flip "
+            "drains your mandate like any lost base. Requires COIN replenishment on; "
+            "intended for COIN campaigns that preseed it."
+        ),
+    )
+    coin_ied: bool = boolean_option(
+        "COIN roadside IEDs (sweep the trail)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "The insurgent supply roads are mined. Hidden IED emplacements appear on "
+            "the ratline -- ordinary recon-fogged targets you must find (TARPS/ISR) and "
+            "strike (CAS/Armed Recon) within a few turns. An IED you clear costs the "
+            "insurgency nothing but the device; one you leave un-swept detonates on the "
+            "coalition and drains your mandate (priced by the campaign's will profile). "
+            "Requires COIN replenishment on; intended for COIN campaigns that preseed it."
         ),
     )
     long_range_carrier_ops: bool = boolean_option(

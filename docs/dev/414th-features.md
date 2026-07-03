@@ -3512,3 +3512,52 @@ campaign is byte-for-byte untouched.
   is not something CI can exercise, so it needs an in-game pass.
 - **One package a turn, by design** — `STRIKE_SECTION_SIZE = 2` and the `_already_planned_from` guard keep
   this to a single sustainable coordinated package, not the whole air wing surged off the deck.
+
+## §45 — Support-package F10 orbit markers
+
+At generation, each **blue tanker + AEW&C** orbit is painted onto the F10 / Mission-Editor map as a labelled
+racetrack, so a pilot can find their tanker/AWACS in the cockpit. The reliable, **DTC-free** answer to
+"where's my gas?" — an object on the shared F10 map every player sees in flight, no cartridge / pre-load /
+per-airframe device.
+
+### How it works
+
+`DrawingsGenerator.generate_support_orbits` runs in the drawings pass (`missiongenerator.py`, right after
+`generate_air_units`, so `MissionData` is fully populated):
+
+- **Which flights** — `mission_data.flights` filtered to `flight_type in {REFUELING, AEWC}` and
+  `friendly.is_blue`. Enemy + non-support flights are skipped.
+- **The orbit** — the flight's racetrack ends come from its waypoints: `race_track_start` is emitted as a
+  `PATROL_TRACK` waypoint and `race_track_end` as a `PATROL` waypoint (the waypoint builder), so the pair
+  defines the leg. Drawn with `add_oblong(start, end, SUPPORT_ORBIT_RADIUS_M)` — a capsule that reads as a
+  racetrack — or `add_circle` if the ends coincide. Cyan, dashed (`SUPPORT_ORBIT_LINE`).
+- **The label** — `add_text_box` at the racetrack start: `<callsign>  <type>` on line 1, `<freq>  TCN <tacan>`
+  on line 2. Callsign/type come from the `FlightData`; freq/TACAN come from the matching `TankerInfo`/
+  `AwacsInfo` (looked up by `group_name` — `FlightData` doesn't carry the advertised freq/TACAN). AWACS has no
+  TACAN, so that bit drops.
+
+`MissionData` is now threaded into `DrawingsGenerator` (was `mission` + `game` only); a `None` `mission_data`
+makes the pass a no-op (so existing/other callers are unaffected).
+
+### Gating
+
+Always-on, like the other F10/ME map drawings (frontlines, routes, CPs, ROE zones) — no Settings toggle. A
+toggle (default on) is a possible follow-up if the racetrack clutter is unwanted.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Painter | `game/missiongenerator/drawingsgenerator.py` (`generate_support_orbits`, `_racetrack_ends`, `_support_label`) |
+| Wiring | `game/missiongenerator/missiongenerator.py` (`MissionData` passed to `DrawingsGenerator`) |
+| Tests | `tests/missiongenerator/test_support_orbit_drawings.py` (tanker w/ label, AWACS w/o TACAN, non-support/enemy skip, None-data no-op) |
+
+### Gotchas / deferred
+
+- **Emitter-tested + serialize-probed, not yet flown (checklist R1).** The test uses a real pydcs `Mission`
+  (so `add_oblong`/`add_text_box` are exercised) and a probe confirmed the drawings serialize into the `.miz`
+  table; whether DCS renders the racetrack over the actual orbit needs an in-game pass.
+- **Blue-only.** Enemy support isn't marked (it's not intel the player should have for free).
+- **Label freq/TACAN depend on the `group_name` match.** If a support flight's `FlightData.group_name`
+  doesn't match its `TankerInfo`/`AwacsInfo`, the orbit + callsign still draw but the freq/TACAN line is
+  dropped rather than wrong.

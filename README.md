@@ -102,6 +102,10 @@ and selected later upstream fixes.
 - AWACS and tanker racetracks are anchored on the front line and stand off into friendly
   airspace, so support orbits sit centered behind the fighting at a sane distance instead of
   being flung far off-axis or pinned onto a home airfield.
+- **Support orbits are drawn on the F10 map.** Every friendly tanker and AWACS gets a cyan
+  racetrack + a label (callsign, type, radio freq, TACAN) painted right onto the in-cockpit
+  F10 map, so you can find your gas and your controller in flight instead of guessing — no
+  DTC, no cartridge, just an object on the map.
 - Flight plans **budget real time at the tanker**: a flight with a refuel stop launches and
   pushes early enough to cycle the whole flight through the boom and still make its join and
   TOT, and the package tanker is on station for ingress-side (pre-vul) refuels instead of only

@@ -131,7 +131,7 @@ class MissionGenerator:
         VisualsGenerator(self.mission, self.game).generate()
         self.generate_atis()
         LuaGenerator(self.game, self.mission, self.mission_data).generate()
-        DrawingsGenerator(self.mission, self.game).generate()
+        DrawingsGenerator(self.mission, self.game, self.mission_data).generate()
 
         self.setup_combined_arms()
 

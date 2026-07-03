@@ -2457,6 +2457,26 @@ so the two docs don't drift.
   creation (the apply path must be a silent no-op on any error — it is wrapped, so a stack trace means the
   guard was bypassed); RED flights changing (the `coalition.player.is_blue` gate failed).
 
+## R. Mission map / F10 drawings
+
+### R1 — Support-package F10 orbit markers render + labelled · §45 · ☐ UNTESTED (built 2026-07-03; the emitter — racetrack-end pick, blue/support filter, group-name label match, oblong/circle draw — is locked in `tests/missiongenerator/test_support_orbit_drawings.py` and a real `.miz` `drawings.dict()` serialize probe passed; the on-map render needs an in-cockpit eyeball)
+- **Headless adjudication:** `generate_support_orbits` draws a labelled racetrack for a blue `REFUELING`/`AEWC`
+  flight, skips non-support + RED + `mission_data=None`, and the label carries callsign/type/freq/TACAN (AWACS
+  without TACAN drops it) — all in `tests/missiongenerator/test_support_orbit_drawings.py`. A probe confirmed
+  the `add_oblong` capsule + `add_text_box` serialize into the `.miz` drawings table. What CI *cannot*
+  adjudicate: whether DCS renders the racetrack + label on the F10 map and whether it sits over the actual
+  tanker/AWACS orbit.
+- **Setup:** any campaign with a blue tanker and/or AWACS package; generate the mission, then open the `.miz`
+  in the ME (or fly it and open the F10 map).
+- **Pass:** each blue tanker/AWACS shows a cyan dashed **racetrack** at its orbit with a **label** reading
+  `<callsign>  <type>` over `<freq>  TCN <tacan>` (AWACS shows no TCN); the racetrack sits where the flight
+  actually orbits; no marker for enemy or non-support flights.
+- **Fail signature:** no markers at all (the flight-plan has no `PATROL_TRACK`/`PATROL` pair, or `mission_data`
+  wasn't threaded into `DrawingsGenerator` — check `missiongenerator.py`); a marker in the wrong place (the
+  racetrack-end waypoint pick); a blank/partial label (the `group_name` match to `TankerInfo`/`AwacsInfo`
+  failed — freq/TACAN come from there, not `FlightData`); a red tanker marked (the `friendly.is_blue` gate).
+  Knobs: `SUPPORT_ORBIT_LINE`/`SUPPORT_ORBIT_RADIUS_M`/`SUPPORT_LABEL_*` (drawingsgenerator.py).
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

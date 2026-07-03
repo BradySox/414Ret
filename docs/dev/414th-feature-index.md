@@ -56,6 +56,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §42 | Local DCS chart base layers (map tiles) | — | — |
 | §43 | Per-aircraft flight defaults (save fuel + properties) | — | — |
 | §44 | Long-range carrier ops | — | `long_range_carrier_ops` |
+| §45 | Support-package F10 orbit markers | — | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

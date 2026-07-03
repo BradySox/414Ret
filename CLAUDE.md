@@ -950,6 +950,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     no legal target / no buddy tanker ⇒ no-op). (`game/fourteenth/carrier_ops.py`, `game/coalition.py`,
     `game/ato/flight.py`, `game/ato/flightplans/{formationattack,tarcap,escort}.py`, `game/settings/settings.py`,
     `resources/campaigns/coin_enduring_resolve.yaml`; features doc §44, checklist P2 — needs an in-game pass.)
+45. **Support-package F10 orbit markers** — at generation, each **blue tanker + AEW&C** orbit is painted onto
+    the F10 / Mission-Editor map as a **cyan dashed racetrack + a label** (callsign · type · radio freq · TACAN),
+    so a pilot can find their tanker/AWACS in the cockpit — the reliable, **DTC-free** answer to "where's my
+    gas?". `DrawingsGenerator.generate_support_orbits` reads `MissionData` (populated by `generate_air_units`
+    *before* the drawings pass): it matches each `REFUELING`/`AEWC` blue `FlightData` to its `TankerInfo`/
+    `AwacsInfo` (by `group_name`) for the freq/TACAN label, pulls the racetrack ends from the flight's
+    `PATROL_TRACK` (start) + `PATROL` (end) waypoints, and draws an `add_oblong` capsule (or `add_circle` if the
+    ends coincide) + an `add_text_box` label. Always-on like the other map drawings (no toggle — a possible
+    follow-up); no-op when no `mission_data` is passed. `MissionData` is now threaded into `DrawingsGenerator`.
+    (`game/missiongenerator/drawingsgenerator.py`, `game/missiongenerator/missiongenerator.py`; features doc
+    §45, checklist R1 — needs an in-game pass.)
 
 ---
 

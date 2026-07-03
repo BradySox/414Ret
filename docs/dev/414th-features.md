@@ -3145,14 +3145,18 @@ scheduled escalation date; the current phase's `advance_when` (any-of `min_turn`
   inverted count: a kill **outside every pocket** is a violation (restricted-zone hits still count as
   before). `roe_summary_lines` leads with a **WEAPONS FREE** row ("KB SANGIN 12 nm · … (all else
   off-limits)") and `phase_status_line` lights "ROE restrictions active" for free-fire-only phases too.
-  **Content:** `coin_enduring_resolve.yaml` authors progressive kill boxes — Disrupt 4 (KB GERESHK, a
-  rotated box up the Route-611 valley + SANGIN/MARJAH circles + **KB FRONTENAC over the phase's capture
-  objective** — an objective must always sit inside a kill box or the campaign punishes its own assault) →
-  Clear & Hold 8 (+ MUSA QALA/NOW ZAD/KAJAKI + KB HADRIAN for its objective) → Break the Momentum 10
-  (+ DELARAM/TARIN KOWT). Lashkar Gah (the provincial capital) never gets a kill box; pockets are 12 nm
-  (verified to cover their strongholds' TGOs — 10 nm missed FOB Geronimo by ~90 m), objectives 8 nm.
-  CI-locked in `test_enduring_resolve_campaign_definition` (counts 4/8/10, monotonic growth, box shape,
-  objective coverage, never-Lashkar).
+  **The COIN campaign does NOT use free-fire (ROE-shape rework, 2026-07-03).** The capability stays in the
+  engine, but `coin_enduring_resolve.yaml` was reworked from an earlier 9-town-ring restricted + whole-map
+  free-fire inversion to **4 big box/corridor no-strike "positive-control valleys"** over the real populated
+  river valleys, shared by all three phases via the `&population_centers` YAML anchor — no `free_fire_zones`
+  in any phase. The 4: two corridors (**Helmand Green Zone** Kajaki→Sangin→Gereshk→Lashkar Gah→Marjah, 14 nm
+  wide; the **Musa Qala** 611 feeder Now Zad→Musa Qala→Kajaki, 10 nm) + two boxes (the **Tarin Kowt** bowl
+  20×16 nm; the **Delaram** junction 16×14 nm). A fixed strike inside a valley prices CDE into the mandate
+  (violation weight 1.0 — pressure, not taboo); the open desert and the northern gate are simply
+  unrestricted; trail convoys / TIC are never gated and air assaults (captures) are never blocked, so the
+  arc still retakes its objectives. Exercises both the box and corridor shapes. CI-locked in
+  `test_enduring_resolve_campaign_definition` (4 zones/phase — 2 box + 2 corridor, correct names, no
+  free-fire).
 - **Map layer** — `GameJs.restricted_zones` + `GameJs.free_fire_zones` (each carries `kind` +
   `center`/`radius_m` for circles and an `outline` polygon ring for box/corridor) → `RestrictedZonesLayer`
   draws a dashed `<Circle>` or `<Polygon>` by kind (+ sticky tooltip) — **red for restricted, green for

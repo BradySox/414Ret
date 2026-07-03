@@ -110,8 +110,10 @@ will:
     red_hvt_killed: 4.0
     red_passive_regen: 1.0
 
-# Clear -> Hold -> Build, will-coupled. The population-center rings are permanent
-# (every phase) -- collateral near the towns pays in mandate, never a hard block.
+# Clear -> Hold -> Build, will-coupled. The positive-control valleys (big box/corridor
+# no-strike areas over the populated river valleys) are permanent every phase --
+# collateral inside them pays in mandate, never a hard block. No free-fire inversion:
+# the open desert and the northern gate are simply unrestricted.
 # NOTE: never lock the `ammo` class -- the caches must always be legal targets.
 phases:
   - key: disrupt
@@ -124,89 +126,54 @@ phases:
     objectives:
       - Recon and destroy ammo caches -- each one killed slows that stronghold's regeneration
       - Interdict the trail convoys -- the ratline feeds the momentum meter
-      - Fight inside the kill boxes -- strikes outside the weapons-free areas bleed the mandate
+      - Mind the valleys -- fixed strikes inside the positive-control areas bleed the mandate
       - text: Retake FOB Frontenac -- the gate out of Kandahar
         done_when:
           capture_cp: FOB Frontenac
     restricted_zones: &population_centers
-      # THE COIN LATTICE: the strongholds ARE the towns (the laydown placed FOB
-      # Jackson on Sangin, ANP Hill on Now Zad, Zeebrugge on Kajaki, Delaram II on
-      # Delaram, Tarinkot on Tarin Kowt), so rings over the real named towns cover
-      # the cells and caches that already live there -- everything near people is
-      # under positive control, and every in-ring kill prices CDE into the
-      # mandate (violation weight LOWERED to 1.0: pressure, not taboo).
-      # Coordinate-anchored (towns are not CPs). Real-world town positions
-      # converted onto the DCS Afghanistan terrain.
-      - x: -267202.1
-        y: -170619.6
-        radius_nm: 8
-        name: Lashkar Gah -- population center
-      - x: -209658
-        y: -127043
-        radius_nm: 5
-        name: Sangin -- population center
-      - x: -173272
-        y: -162286
-        radius_nm: 5
-        name: Now Zad -- population center
-      - x: -181452
-        y: -106712
-        radius_nm: 5
-        name: Kajaki -- population center
-      - x: -168553
-        y: -136022
-        radius_nm: 5
-        name: Musa Qala -- population center
-      - x: -237656
-        y: -151564
-        radius_nm: 5
-        name: Gereshk -- population center
-      - x: -271880
-        y: -193810
-        radius_nm: 5
-        name: Marjah -- population center
-      - x: -199964
-        y: -259516
-        radius_nm: 5
-        name: Delaram -- population center
-      - x: -146074
-        y: -30595
-        radius_nm: 5
-        name: Tarin Kowt -- population center
-    # INVERTED ROE (the COIN kill boxes): the whole map is weapons-hold for fixed
-    # strikes -- only inside these pockets is air-to-surface cleared without
-    # question (OIR-style Blue Kill Boxes; see the Rampagers reference). The
-    # population rings above still carve no-strike holes INSIDE a pocket, so a
-    # kill box over a stronghold clears the annulus around the town, never the
-    # town core. Trail convoys / troops in contact are never gated. Lashkar Gah
-    # (the provincial capital) never gets a kill box. Boxes open as the campaign
-    # authorizes new AOs -- Disrupt clears the Helmand core only.
-    free_fire_zones:
-      # The Gereshk--Sangin valley corridor (Route 611): a rotated box up the
-      # green zone, the Disrupt phase's main authorized AO.
+      # THE COIN LATTICE (positive-control VALLEYS, not town rings): the populated
+      # river valleys where the strongholds and the people are, drawn as big
+      # box/corridor no-strike areas -- "the horror of COIN: everything near
+      # civilians is under JTAC positive control." A fixed strike inside prices CDE
+      # into the mandate (violation weight 1.0: pressure, not taboo); the open
+      # desert and the northern gate stay free-strike. Trail convoys / troops in
+      # contact are never gated, and air assaults (captures) are never blocked, so
+      # the campaign can still retake its objectives. Permanent every phase -- the
+      # towns are always populated. Coordinate-anchored to the real terrain.
+      #
+      # The Helmand "Green Zone": the irrigated belt up the river, Kajaki down to
+      # Marjah through Sangin/Gereshk/Lashkar Gah -- the heart of the population.
+      - shape: corridor
+        name: Helmand Green Zone -- positive control
+        width_nm: 14
+        path:
+          - {x: -181452, y: -106712}  # Kajaki (the dam)
+          - {x: -209658, y: -127043}  # Sangin
+          - {x: -237656, y: -151564}  # Gereshk
+          - {x: -267202, y: -170619}  # Lashkar Gah (provincial capital)
+          - {x: -271880, y: -193810}  # Marjah
+      # The northern feeder valley (Route 611): Now Zad -- Musa Qala -- Kajaki.
+      - shape: corridor
+        name: Musa Qala Valley -- positive control
+        width_nm: 10
+        path:
+          - {x: -173272, y: -162286}  # Now Zad
+          - {x: -168553, y: -136022}  # Musa Qala
+          - {x: -181452, y: -106712}  # Kajaki
+      # The Tarin Kowt bowl (Uruzgan) -- the northern population center.
       - shape: box
-        name: KB GERESHK
-        x: -237656
-        y: -151564
+        name: Tarin Kowt Bowl -- positive control
+        x: -146074
+        y: -30595
         width_nm: 20
-        height_nm: 10
-        heading: 41
-      - x: -209658
-        y: -127043
-        radius_nm: 12
-        name: KB SANGIN
-      # 12 nm so the pocket also covers FOB Geronimo's stronghold (18.6 km out --
-      # a 10 nm ring misses it by ~90 m).
-      - x: -271880
-        y: -193810
-        radius_nm: 12
-        name: KB MARJAH
-      # The phase objective (capture FOB Frontenac) MUST sit inside a kill box, or
-      # the campaign's own assault bleeds the mandate. Anchored on the CP.
-      - x: -231044
-        y: -30348
-        radius_nm: 8
-        name: KB FRONTENAC
+        height_nm: 16
+      # The Delaram / Ring-Road junction in the west.
+      - shape: box
+        name: Delaram -- positive control
+        x: -199964
+        y: -259516
+        width_nm: 16
+        height_nm: 14
     advance_when:
       capture_cp: FOB Frontenac
   - key: clear_hold
@@ -228,45 +195,6 @@ phases:
           red_resolve_below: 50
       - Hold what you clear -- garrisons and patience beat body count
     restricted_zones: *population_centers
-    # Clear and Hold opens the northern Helmand kill boxes on top of the Disrupt
-    # core -- the air war follows the ground authorization outward.
-    free_fire_zones:
-      - shape: box
-        name: KB GERESHK
-        x: -237656
-        y: -151564
-        width_nm: 20
-        height_nm: 10
-        heading: 41
-      - x: -209658
-        y: -127043
-        radius_nm: 12
-        name: KB SANGIN
-      - x: -271880
-        y: -193810
-        radius_nm: 12
-        name: KB MARJAH
-      - x: -231044
-        y: -30348
-        radius_nm: 8
-        name: KB FRONTENAC
-      - x: -168553
-        y: -136022
-        radius_nm: 12
-        name: KB MUSA QALA
-      - x: -173272
-        y: -162286
-        radius_nm: 12
-        name: KB NOW ZAD
-      - x: -181452
-        y: -106712
-        radius_nm: 12
-        name: KB KAJAKI
-      # This phase's objective (capture Kamp Hadrian) opens its own kill box.
-      - x: -146857
-        y: -66510
-        radius_nm: 8
-        name: KB HADRIAN
     advance_when:
       red_resolve_below: 45
   - key: build
@@ -284,52 +212,6 @@ phases:
         done_when:
           red_resolve_below: 25
     restricted_zones: *population_centers
-    # Break the Momentum authorizes the outer AOs -- Delaram in the west, the
-    # Tarinkot push in the north. The capital still never gets a kill box.
-    free_fire_zones:
-      - shape: box
-        name: KB GERESHK
-        x: -237656
-        y: -151564
-        width_nm: 20
-        height_nm: 10
-        heading: 41
-      - x: -209658
-        y: -127043
-        radius_nm: 12
-        name: KB SANGIN
-      - x: -271880
-        y: -193810
-        radius_nm: 12
-        name: KB MARJAH
-      - x: -231044
-        y: -30348
-        radius_nm: 8
-        name: KB FRONTENAC
-      - x: -168553
-        y: -136022
-        radius_nm: 12
-        name: KB MUSA QALA
-      - x: -173272
-        y: -162286
-        radius_nm: 12
-        name: KB NOW ZAD
-      - x: -181452
-        y: -106712
-        radius_nm: 12
-        name: KB KAJAKI
-      - x: -146857
-        y: -66510
-        radius_nm: 8
-        name: KB HADRIAN
-      - x: -199964
-        y: -259516
-        radius_nm: 12
-        name: KB DELARAM
-      - x: -146074
-        y: -30595
-        radius_nm: 12
-        name: KB TARIN KOWT
 
 # The ratline: red<->red supply corridors between the strongholds. Waypoints trace
 # the REAL driveable corridors (Highway 1, Route 611 up the Helmand valley, the

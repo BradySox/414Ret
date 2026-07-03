@@ -986,6 +986,17 @@ it from upstream. Settings are LOCKED by design: `plugin.json` has no `specificO
   — do NOT build a widget or visualization for this. (The `AskUserQuestion` tool already renders
   prominently and satisfies the convention; otherwise it is for free-text questions in ordinary
   replies.)
+- **Supply lines follow the driveable corridor (STANDARD, 2026-07-03).** Every authored
+  `supply_routes:` / shipping-lane drawing must trace the corridor you would actually *drive*
+  between the two points — the road, the river valley, the pass — never a straight line across a
+  ridgeline. Retribution binds a route to its CPs by the **first and last** waypoint only, so
+  intermediate waypoints are free: use enough of them (3–5) to follow the real corridor. On
+  real-world-coordinate maps (Afghanistan, Syria, Sinai, PG, Kola, Normandy, Caucasus…) author the
+  intermediates from the **real road network's lat/lon** via `tools/supply_route_geo.py`
+  (`Point.from_latlng` → terrain XY; calibrated to ~1–5 km on Afghanistan). For fictional-overlay
+  campaigns (e.g. Vietnam-on-Caucasus) trace the on-map roads/valleys visually instead. The COIN
+  campaign (`coin_enduring_resolve.yaml`, Highway 1 / Route 611 / the Uruzgan road) is the reference
+  implementation.
 - Match the surrounding code's style; run the three validation commands (in `CLAUDE-ci.md`) before pushing.
 - Keep the doc faces in sync: when a feature lands or changes, update **both**
   [`README.md`](README.md) (player-facing) and the relevant section of

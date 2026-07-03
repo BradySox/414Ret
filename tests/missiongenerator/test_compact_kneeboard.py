@@ -204,6 +204,37 @@ def test_combat_intel_page_drops_fuel_ladder_when_the_page_is_full() -> None:
     assert "Fuel Ladder" not in writer.get_text_string()
 
 
+def test_table_wraps_wide_columns_to_fit_the_page_width() -> None:
+    # A package on three radio channels makes a very wide FREQ cell; the table must
+    # wrap it rather than run off the right edge (losing the frequency).
+    writer = KneeboardPageWriter()
+    rows = [
+        [
+            "Raygun 6",
+            "Refueling",
+            "A-6E Tanker",
+            "1",
+            "COMM1 Ch 2 / COMM1 Ch 3 / COMM1 Ch 4\n232.000 MHz AM",
+        ],
+    ]
+    writer.table(rows, headers=["Callsign", "Task", "Type", "#A/C", "FREQ"])
+    content_px = writer.image_size[0] - writer.page_margin - writer.x
+    lines = writer.get_text_string().splitlines()
+    assert lines  # the table drew something
+    for line in lines:
+        assert writer.table_font.getlength(line) <= content_px + 1
+
+
+def test_table_leaves_a_fitting_table_untouched() -> None:
+    # A narrow table already fits, so the fitter returns None and output is unchanged.
+    writer = KneeboardPageWriter()
+    narrow = [["Colt 1", "CAP", "2"]]
+    assert (
+        writer._fit_col_widths(narrow, ["Callsign", "Task", "#A/C"], writer.table_font)
+        is None
+    )
+
+
 def test_combat_intel_page_renders_target_over_threats_single_page(
     tmp_path: Path,
 ) -> None:

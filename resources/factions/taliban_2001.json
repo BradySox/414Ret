@@ -41,10 +41,17 @@
     "AAA ZU-23 Toyota technical",
     "SPAAA LC with ZU-23",
     "SPAAA HL with ZU-23",
-    "ZU-23 on Ural-375 Insurgent"
+    "ZU-23 on Ural-375 Insurgent",
+    "SAM SA-8 Osa \"Gecko\" TEL",
+    "SA-13 Gopher (9K35 Strela-10M3)",
+    "SA-15 Tor",
+    "SAM P19 \"Flat Face\" SR (SA-2/3)"
   ],
   "preset_groups": [
-    "ZU-23 Technicals (ERO)"
+    "ZU-23 Technicals (ERO)",
+    "SA-2/S-75",
+    "SA-3/S-125",
+    "SA-6"
   ],
   "naval_units": []
 }

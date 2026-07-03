@@ -59,13 +59,23 @@ CARRIER = ("CVN-74 John C. Stennis", (-1046758.0, -99755.0))
 # --- SHORAD site (SA-9). Every stronghold gets guns; the five anchors get SA-9s.
 AAA_OFFSET = (900.0, -700.0)
 SHORAD_OFFSET = (-800.0, 900.0)
+MERAD_OFFSET = (1600.0, 1400.0)
 SHORAD_STRONGHOLDS = {
     "Farah",
     "Tarinkot",
     "FOB Jackson",
     "FOB Zeebrugge",
     "FOB Frontenac",
+    "Kamp Hadrian",
+    "FOB Geronimo",
 }
+#: The light radar-SAM crust (user direction 2026-07-03): a MERAD site marker at
+#: the three anchors, filled by the generator from the faction's new SA-2/SA-3/
+#: SA-6 presets; the SHORAD sites can now also draw SA-8/SA-13/SA-15 alongside
+#: the SA-9s. Deliberately NONE inside the town ROE rings -- the SEAD/DEAD game
+#: this opens must stay AI-playable (a radar SAM inside a ring would be
+#: DEAD-blocked forever and only clearable at mandate cost).
+MERAD_STRONGHOLDS = {"Farah", "Tarinkot", "FOB Frontenac"}
 
 # --- The cache laydown. Stronghold centers are the red FOB markers / airfields in
 # --- the source miz (verified 2026-07-02); each gets `count` Ammunition-depot
@@ -156,6 +166,7 @@ def build() -> None:
 
     aaa = 0
     shorad = 0
+    merad = 0
     for stronghold, (x, y), _count in STRONGHOLD_CACHES:
         mission.vehicle_group(
             country=red,
@@ -174,10 +185,20 @@ def build() -> None:
                 ),
             )
             shorad += 1
+        if stronghold in MERAD_STRONGHOLDS:
+            mission.vehicle_group(
+                country=red,
+                name=f"MERAD {stronghold}",
+                _type=AirDefence.S_75M_Volhov,
+                position=Point(
+                    x + MERAD_OFFSET[0], y + MERAD_OFFSET[1], mission.terrain
+                ),
+            )
+            merad += 1
 
     mission.save(str(DST))
     print(
-        f"Wrote {DST} ({placed} caches, {aaa} AAA + {shorad} SHORAD sites, "
+        f"Wrote {DST} ({placed} caches, {aaa} AAA + {shorad} SHORAD + {merad} MERAD, "
         f"{len(OFF_MAP_SPAWNS)} off-map spawns, 1 carrier)"
     )
 

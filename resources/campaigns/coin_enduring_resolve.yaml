@@ -19,12 +19,14 @@ description: >-
   caches, its convoys, and its strongholds — almost never from its dead fighters. Break their
   momentum before your mandate runs out.</p>
   <p>You fly with the real 2006 coalition: <strong>Dutch F-16s and RAF Harriers on the
-  Kandahar ramp</strong> beside the A-10s, Marine Harriers at Bastion, carrier Hornets
-  overhead from the Arabian Sea, and CENTAF Strike Eagles, B-1s, and the tanker bridge
-  on call from the Gulf — each squadron under its own flag. The enemy answers with the
-  era's honest threat: <strong>guns and shoulder-fired SAMs</strong> — ZU-23s and SA-9s at
-  every stronghold, MANPADS in the cells, and no radar SAM anywhere. Nothing stops you at
-  altitude; everything punishes you low — where the war actually is.</p>
+  Kandahar ramp</strong> beside the A-10s, Marine Harriers at Bastion, <strong>a real
+  carrier in the Gulf of Oman</strong> — Hornets, a Hawkeye, and A-6 buddy tankers running
+  the 800 km cycle north — and CENTAF Strike Eagles, B-1s, and the KC-135 bridge from the
+  Gulf, each squadron under its own flag. The enemy answers with guns and shoulder-fired
+  SAMs at every stronghold — and <strong>a thin radar-SAM crust at the anchors</strong>:
+  an SA-6 battery over Farah, an SA-3 site at Tarinkot, a Kub at the Kandahar gate, with
+  SA-8/13/15 in the short-range mix. Enough to make SEAD a real job again; never enough
+  to stop the war. Low is still where it hurts most.</p>
   <p>Laydown by Starfire (Operation Shattered Dagger); the COIN layer — cache-throttled cell
   regeneration, the inverted will economy, and the campaign arc — is the 414th's.</p>
 recommended_player_faction: OEF Coalition 2006
@@ -303,6 +305,12 @@ squadrons:
       aircraft:
         - E-2C Hawkeye
       size: 1
+    - primary: Refueling
+      name: VA-165
+      nickname: Boomers
+      aircraft:
+        - A-6E Tanker #the Navy tanks its own: inbound, outbound, and overhead recovery
+      size: 3
   # Off-map: CENTAF from the Gulf -- Strike Eagles, Bones, and the tanker bridge
   CENTAF Al Udeid:
     - primary: Strike

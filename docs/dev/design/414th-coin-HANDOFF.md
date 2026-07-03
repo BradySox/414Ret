@@ -102,9 +102,16 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   generator names the boat from the faction pool, e.g. CVN-72). The user also drew
   the **safe transit corridor** (two lines, recorded in the build tool): carrier
   cycles run it straight north to the AO (~780 km — the real OEF cycle, bracketed
-  by the CENTAF tankers). Red AD stays era-honest: AAA markers at all 13
-  strongholds + SA-9 at the 5 anchors, **no radar SAM anywhere** — no SEAD game by
-  design; the guns/IR envelope is what keeps fast air honest down low.
+  by the CENTAF tankers). Red AD: AAA markers at all 13
+  strongholds + SHORAD at 7, and (user direction) a **light radar-SAM crust** —
+  MERAD markers at Farah/Tarinkot/Frontenac fill from the faction's new SA-2/SA-3/
+  SA-6 presets (probe drew a Kub battery at Farah, an S-125 at Tarinkot), with
+  SA-8/13/15 joining the SHORAD pool. **None inside the town rings** — the SEAD/
+  DEAD game this opens must stay AI-playable (an in-ring radar SAM would be
+  DEAD-blocked forever). Turn-2 ATO confirms SEAD Sweep/Escort tasking. The Navy
+  tanks itself: **VA-165 A-6E buddy tankers** on the boat (the `A-6E Tanker`
+  variant, probe/drogue) cover the Hornets' cycle; CENTAF KC-135s cover the
+  boom receivers.
 - **Adding that AD deadlocked the whole strike planner** (the Vietnam P3 deadlock,
   re-found empirically: turn-2 census showed **0 AI-legal targets outside red
   threat, 51 inside**, ATO = helos only): the gun/IR envelopes blanket every

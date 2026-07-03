@@ -235,9 +235,39 @@ class LandUnitEntity(Entity):
 
     UNSPECIFIED = 0
 
+    INFANTRY = 121100
     ARMOR_ARMORED_MECHANIZED_SELF_PROPELLED_TRACKED = 120500
     AIR_DEFENSE = 130100
     MISSILE = 130700
+
+
+@unique
+class DismountedIndividualEntity(Entity):
+    """Dismounted Individual Entity/Entity Type/Entity Subtype (symbol set 27).
+
+    Codes verified against milsymbol's own APP-6(D) render table
+    (``src/numbersidc/sidc/dismountedindividual.js``).
+    """
+
+    UNSPECIFIED = 0
+
+    # milsymbol "COMMANDER (CDR)" — the individual-leader glyph used for a named
+    # insurgent high-value target (a person, not a vehicle).
+    LEADER = 110220
+
+
+@unique
+class ActivityEntity(Entity):
+    """Activities/Events Entity/Entity Type/Entity Subtype (symbol set 40).
+
+    Codes verified against milsymbol's own APP-6(D) render table
+    (``src/numbersidc/sidc/activites.js``).
+    """
+
+    UNSPECIFIED = 0
+
+    # milsymbol "IED" — the dedicated improvised-explosive-device activity glyph.
+    IMPROVISED_EXPLOSIVE_DEVICE = 110300
 
 
 @unique

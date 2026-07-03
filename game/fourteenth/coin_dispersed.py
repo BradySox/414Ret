@@ -30,6 +30,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional
 
 from game.fourteenth.coin import (
+    CELL_SIDC,
     _alive_cell_count,
     _despawn,
     _ensure_anchors,
@@ -165,7 +166,13 @@ def _reseed_cells(game: "Game", cells: list[dict[str, Any]], events: Any) -> Non
             return  # no distinct stronghold left to project a cell from
         home, point = site
         tgo = spawn_red_ground_at(
-            game, home, point, GroupTask.FRONT_LINE, events, max_units=FIELD_CELL_UNITS
+            game,
+            home,
+            point,
+            GroupTask.FRONT_LINE,
+            events,
+            max_units=FIELD_CELL_UNITS,
+            sidc_override=CELL_SIDC,
         )
         if tgo is None:
             return

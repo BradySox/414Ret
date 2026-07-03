@@ -356,7 +356,10 @@ and selected later upstream fixes.
   **no-strike "positive-control" areas** where every fixed strike near the people costs you at the mandate
   meter. The open desert and the northern gate are free; trail convoys and troops in contact are always
   fair game, and air assaults are never blocked — so you still retake your objectives, you just pay for
-  the collateral when you fight where the insurgency hides.
+  the collateral when you fight where the insurgency hides. And the map plays the intel game with you:
+  an insurgent contact you haven't reconned shows as an **unconfirmed (suspect) track**, then — once
+  TARPS or a strike confirms it — flips to a real hostile NATO symbol drawn as what it actually is
+  (an infantry cell, a roadside IED, a named leader, a stronghold's militia) instead of anonymous armor.
 - A new **Nevada - Red Flag 81-2** campaign — the ultimate war game, played as the war it rehearses. An
   F-4E wing detachment deploys to **Nellis, January 1981** (after the Reflected Simulations campaign the
   squadron flies) against the **integrated Red Force of the real 1981 exercise**: 64th/65th **Aggressor

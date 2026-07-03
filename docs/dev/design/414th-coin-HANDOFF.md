@@ -142,6 +142,38 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   Engine-probe verified: PKG -> target = Hornet Strike x2 + A-6E Refueling + E-2 AEW&C,
   all off the boat, valid flight plans + shared TOT.
 
+- **Every COIN contact looked like a tank platoon on the planning map** (user 2026-07-03).
+  The four COIN spawn types (C1.5 re-infiltration cells, roadside IEDs, HVT leaders, C4
+  dispersed cells) all go through `spawn_red_ground_at` as `FRONT_LINE` vehicle groups, so
+  once recon reveals them they rendered as the `VehicleGroupGroundObject` default -- hostile
+  ARMOR. The map already draws real NATO APP-6(D) symbols client-side from a server SIDC
+  (`game/sidc.py` -> milsymbol), so the fix is server-only, **no client change**: a new
+  optional `TheaterGroundObject.sidc_entity_override` (a `(SymbolSet, Entity)` pair,
+  `getattr`-guarded for old saves) that `sidc_for` honors ahead of the class default.
+  `spawn_red_ground_at` takes a `sidc_override=` and the callers pass one of three shipped
+  constants in `coin.py` -- `CELL_SIDC` (Land Unit / **Infantry** 121100, used for cells +
+  dispersed cells), `IED_SIDC` (Activity / **IED** 110300), `HVT_SIDC` (Dismounted Individual
+  / **individual-leader** 110220). Entity codes verified against milsymbol's own APP-6(D)
+  render tables (`src/numbersidc/sidc/*.js`). Ammo caches were already correct
+  (`AMMUNITION_CACHE`). Two follow-ons landed the same day:
+  - **The standing garrisons too, not just the discrete spawns.** `symbol_insurgent_garrisons`
+    (`coin.py`, run each turn incl. turn 0 from `regenerate_insurgent_cells`) sets `CELL_SIDC`
+    on every insurgent-held CP's militia TGO -- scoped by *composition* (a non-cache TGO whose
+    units all pass the C1 `_revival_eligible` whitelist), which cleanly leaves the radar-SAM
+    crust + EWRs alone (their launchers/radars fail the whitelist), skips caches, and never
+    re-points a discrete spawn (already has an override). So a whole COIN stronghold reads as
+    an insurgency, not an armor park.
+  - **Suspect until reconned.** A viewer-aware `TheaterGroundObject.standard_identity_for(viewer)`
+    (the fog-layer sibling of `sidc_status_for`) renders an insurgent contact carrying an
+    override that the human hasn't discovered as **SUSPECT** (yellow), flipping to **HOSTILE**
+    once TARPS/strike confirms it. Rides `known_for` (so the recon-fog setting + reveal-overview
+    toggle both collapse it to confirmed), gated on `coin_insurgency` so no other campaign's map
+    changes, and ground truth (`viewer=None`: AI/planner) is never fogged.
+  Guarded by `tests/theater/test_theatergroundobject.py` (the real `sidc_for` serialization
+  path, the suspect-until-reconned identity, the old-save fallback) + `tests/fourteenth/test_coin.py`
+  (the garrison pass: militia symboled, SAM/cache/blue/discrete-spawn left alone). Both
+  render-verified in the pinned milsymbol 3.0.4.
+
 ## After P1
 
 - **Tune** from ledger data (levers above), update the P1 row status.

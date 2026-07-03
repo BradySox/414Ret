@@ -15,10 +15,13 @@ from typing import Any
 from game.data.units import UnitClass
 from game.fourteenth.coin import (
     CACHE_HEALTH_FLOOR,
+    CELL_SIDC,
+    IED_SIDC,
     REGEN_BASE_UNITS_PER_TURN,
     cache_health,
     regen_unit_pool,
     regenerate_insurgent_cells,
+    symbol_insurgent_garrisons,
 )
 from game.theater import Player
 from game.theater.base import Base
@@ -368,11 +371,65 @@ def test_revive_fires_tgo_events_when_provided() -> None:
     cp = _cp(caches=[cells])
     game = _game(turn=0, cps=[cp])
     regenerate_insurgent_cells(game, events)
+    updated.clear()  # drop the turn-0 garrison-symboling event; isolate the revive
     unit.alive = False
     game.turn = 1
     regenerate_insurgent_cells(game, events)
     assert unit.alive is True
     assert updated == [cells]
+
+
+# ---- COIN map symbology (insurgent garrisons read as infantry) --------------------
+
+
+def test_symbol_insurgent_garrisons_marks_only_eligible_red_militia() -> None:
+    militia = _cell_tgo("Militia", [_cell_unit(alive=True), _cell_unit(alive=True)])
+    # A SAM crust TGO: its launcher unit fails the whitelist, so it keeps its symbol.
+    sam = _cell_tgo(
+        "SAM", [_cell_unit(alive=True, unit_class=UnitClass.LAUNCHER, price=9)]
+    )
+    cache = _cache()
+    red = _cp(caches=[militia, sam, cache], cp_id="red")
+    blue_militia = _cell_tgo("Blue militia", [_cell_unit(alive=True)])
+    blue = _cp(owner=Player.BLUE, caches=[blue_militia], cp_id="blue")
+    game = _game(turn=1, cps=[red, blue])
+
+    symbol_insurgent_garrisons(game)
+
+    assert militia.sidc_entity_override == CELL_SIDC  # irregular militia -> infantry
+    assert not hasattr(sam, "sidc_entity_override")  # radar-SAM crust left alone
+    assert not hasattr(cache, "sidc_entity_override")  # cache keeps its own symbol
+    assert not hasattr(blue_militia, "sidc_entity_override")  # blue side untouched
+
+
+def test_symbol_insurgent_garrisons_never_repoints_a_discrete_spawn() -> None:
+    ied = _cell_tgo("IED", [_cell_unit(alive=True)])
+    ied.sidc_entity_override = IED_SIDC  # already a discrete COIN spawn
+    game = _game(turn=1, cps=[_cp(caches=[ied], cp_id="red")])
+
+    symbol_insurgent_garrisons(game)
+
+    assert ied.sidc_entity_override == IED_SIDC  # not overwritten with infantry
+
+
+def test_symbol_insurgent_garrisons_off_switch() -> None:
+    militia = _cell_tgo("Militia", [_cell_unit(alive=True)])
+    game = _game(on=False, turn=1, cps=[_cp(caches=[militia])])
+
+    symbol_insurgent_garrisons(game)
+
+    assert not hasattr(militia, "sidc_entity_override")
+
+
+def test_regen_symbols_garrisons_on_turn_zero() -> None:
+    # The symbol pass rides regenerate_insurgent_cells and runs even on the turn-0
+    # snapshot (before regen begins), so the very first map already reads infantry.
+    militia = _cell_tgo("Militia", [_cell_unit(alive=True)])
+    game = _game(turn=0, cps=[_cp(caches=[militia])])
+
+    regenerate_insurgent_cells(game)
+
+    assert militia.sidc_entity_override == CELL_SIDC
 
 
 # ---- the C3 campaign definition lock ----------------------------------------------

@@ -131,6 +131,12 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         self.respawn_enabled: bool = False
         # If True, the TGO hasn't materialized in-mission yet — queued for next turn.
         self.pending_deploy: bool = False
+        # Optional map-symbol override: (SymbolSet, Entity). When set, the map icon
+        # uses this instead of the class default. The COIN layer uses it so a spawned
+        # insurgent cell / roadside IED / HVT leader — all mechanically vehicle groups
+        # — render as their real NATO symbol (infantry / IED / individual-leader)
+        # rather than a tank platoon. None keeps the class default.
+        self.sidc_entity_override: Optional[tuple[SymbolSet, Entity]] = None
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -149,6 +155,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         state.setdefault("user_placed", False)
         state.setdefault("respawn_enabled", False)
         state.setdefault("pending_deploy", False)
+        # Old saves predate the COIN map-symbol override — no override is correct.
+        state.setdefault("sidc_entity_override", None)
         self.__dict__.update(state)
         # Save migration: heal AAA sites that were generated with a stray search
         # radar (the old `fill: true` radar slot). Newly generated campaigns no
@@ -373,10 +381,40 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         else:
             return Status.PRESENT
 
+    def standard_identity_for(
+        self, viewer: Optional[Player] = None
+    ) -> StandardIdentity:
+        """Viewer-aware affiliation. Ground truth (``viewer=None``, AI/planner) always
+        sees the confirmed identity.
+
+        COIN "suspect until reconned": an insurgent contact carrying a map-symbol
+        override (a cell / IED / HVT / militia group — never the fixed SAM crust or
+        caches) that the human hasn't discovered yet reads as SUSPECT rather than a
+        confirmed HOSTILE, flipping to HOSTILE once TARPS/strike confirms it.
+        ``known_for`` already folds in the recon-fog setting and the reveal-overview
+        toggle, so fog-off / revealed both collapse straight to the confirmed
+        identity. Gated on ``coin_insurgency`` so no other campaign's map is touched.
+        """
+        identity = self.standard_identity
+        if identity is not StandardIdentity.HOSTILE_FAKER:
+            return identity  # only an enemy contact can be "suspect"
+        if viewer is None or getattr(self, "sidc_entity_override", None) is None:
+            return identity
+        settings = self.control_point.coalition.game.settings
+        if not getattr(settings, "coin_insurgency", False):
+            return identity
+        if not self.known_for(viewer):
+            return StandardIdentity.SUSPECT_JOKER
+        return identity
+
     def sidc_for(self, viewer: Optional[Player] = None) -> SymbolIdentificationCode:
-        symbol_set, entity = self.symbol_set_and_entity
+        override = getattr(self, "sidc_entity_override", None)
+        if override is not None:
+            symbol_set, entity = override
+        else:
+            symbol_set, entity = self.symbol_set_and_entity
         return SymbolIdentificationCode(
-            standard_identity=self.standard_identity,
+            standard_identity=self.standard_identity_for(viewer),
             symbol_set=symbol_set,
             status=self.sidc_status_for(viewer),
             entity=entity,

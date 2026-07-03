@@ -269,19 +269,457 @@ def _snapshot(cp: "ControlPoint") -> dict[str, Any]:
     }
 
 
-def _ensure_anchors(game: "Game") -> Optional[dict[str, dict[str, Any]]]:
+def _ensure_anchors(game: "Game") -> Optional[dict[str, Any]]:
     """The pickled per-CP anchor store, creating it (with turn-appropriate
     snapshots of every currently insurgent-held CP) on first use.
 
     Plain ``{str(cp.id): {garrison_cap, cache_total, carry}}`` primitives only, so
     old saves unpickle it as a normal dict; ``getattr`` default means pre-feature
     saves carry nothing until the toggle is enabled.
+
+    Non-CP bookkeeping keys (``_red_cp_turn0``, ``reinfiltration``) live in the same
+    dict; the CP accessors are keyed by ``str(cp.id)`` and never iterate the store,
+    so the extra keys are inert to C1.
     """
-    state: Optional[dict[str, dict[str, Any]]] = getattr(game, "coin_state", None)
+    state: Optional[dict[str, Any]] = getattr(game, "coin_state", None)
     if state is None:
         state = {}
         game.coin_state = state
     for cp in game.theater.controlpoints:
         if cp.captured.is_red and str(cp.id) not in state:
             state[str(cp.id)] = _snapshot(cp)
+    # The conservation baseline: how many CPs the insurgency held when the store was
+    # first built (turn 0 for a preseeded campaign). Set once; re-infiltration may
+    # relocate a stronghold but the red CP count must never exceed this.
+    if "_red_cp_turn0" not in state:
+        state["_red_cp_turn0"] = sum(
+            1 for cp in game.theater.controlpoints if cp.captured.is_red
+        )
     return state
+
+
+# --- C1.5 re-infiltration (the insurgency retakes ungarrisoned ground) ---------
+# Design: docs/dev/design/414th-coin-reinfiltration-notes.md. A staged, announced,
+# counterable pipeline -- cell -> cache -> flip -- over ~4 turns, one attempt active
+# theater-wide, evaluated once per turn from finish_turn right after C1's regen.
+
+#: A BLUE garrison at or below this many ground units is "under-held" -- a token
+#: picket does not count as holding ground (design §3.0 / squadron call §8.1).
+HOLD_THRESHOLD = 4
+
+#: A stronghold can only project into a target within this range (metres, §3.0).
+INFILTRATION_RANGE_M = 60_000.0
+
+#: A stronghold whose C1 cache health is below this cannot project -- strangling the
+#: source suppresses both regeneration AND expansion (design §3.0).
+SOURCE_HEALTH_GATE = 0.5
+
+#: Turns the cell must survive under-held before the cache seeds (§3.2).
+STAGE1_TURNS = 2
+
+#: Turns after the cache before the CP flips (§3.3) -- ~4 turns of warnings total.
+STAGE2_TURNS = 2
+
+#: Turns the pipeline cools down after an aborted attempt before trying anywhere (§3.1).
+COOLDOWN_TURNS = 3
+
+#: Units commissioned into a flipped CP -- a weak re-anchor, well below any original
+#: stronghold, so a retaken CP comes back weak and regrows under the cache throttle.
+REINFIL_GARRISON = 6
+
+#: Cap on the infiltration cell's size so it reads as a cell, not a garrison (§3.1).
+CELL_MAX_UNITS = 3
+
+
+def advance_reinfiltration(game: "Game", events: Any = None) -> None:
+    """Advance the one active re-infiltration attempt (or start one). Call exactly
+    once per turn from ``finish_turn``, right after ``regenerate_insurgent_cells``.
+
+    No-op unless both ``coin_reinfiltration`` and ``coin_insurgency`` are on (it
+    reads C1's anchors + cache health), before turn 1, or off the BLUE plan pass.
+    """
+    if not getattr(game.settings, "coin_reinfiltration", False):
+        return
+    if not getattr(game.settings, "coin_insurgency", False):
+        return
+    if getattr(game, "turn", 0) < 1:
+        return
+
+    state = _ensure_anchors(game)
+    if state is None:
+        return
+    rf = state.setdefault("reinfiltration", {"cooldown": 0, "active": None})
+
+    if rf.get("cooldown", 0) > 0:
+        rf["cooldown"] -= 1
+        return
+
+    if rf.get("active"):
+        _advance_active_attempt(game, state, rf, events)
+    else:
+        _try_start_attempt(game, state, rf, events)
+
+
+def _advance_active_attempt(
+    game: "Game", state: dict[str, Any], rf: dict[str, Any], events: Any
+) -> None:
+    attempt = rf["active"]
+    target = _cp_by_id(game, attempt["cp_id"])
+    source = _cp_by_id(game, attempt["source_id"])
+    cell = _tgo_by_id(game, attempt.get("cell_tgo"))
+
+    # Abort conditions (any stage): the target is now genuinely held, the cell is
+    # dead, or the source/target disappeared. Holding ground works without a shot.
+    if target is None or source is None or target.captured.is_red:
+        # target vanished or already red -- clean up quietly.
+        _abort_attempt(
+            game, rf, events, cell, _tgo_by_id(game, attempt.get("cache_tgo"))
+        )
+        return
+    if _garrison_count(target) > HOLD_THRESHOLD:
+        _announce(
+            game,
+            events,
+            f"Infiltration near {target.name} abandoned — position secured.",
+        )
+        _abort_attempt(
+            game, rf, events, cell, _tgo_by_id(game, attempt.get("cache_tgo"))
+        )
+        return
+    if cell is None or not _tgo_alive(cell):
+        _announce(game, events, f"Infiltration cell near {target.name} eliminated.")
+        _abort_attempt(
+            game, rf, events, None, _tgo_by_id(game, attempt.get("cache_tgo"))
+        )
+        return
+
+    if attempt["stage"] == 1:
+        attempt["turns"] += 1
+        if attempt["turns"] >= STAGE1_TURNS:
+            cache = _spawn_cache(game, source, target, cell, events)
+            if cache is not None:
+                attempt["cache_tgo"] = str(cache.id)
+                attempt["stage"] = 2
+                attempt["turns"] = 0
+                _announce(
+                    game,
+                    events,
+                    f"Infiltrators are established near {target.name} — a supply cache has been located.",
+                )
+        return
+
+    # Stage 2: killing the cache knocks the attempt back to stage 1.
+    cache = _tgo_by_id(game, attempt.get("cache_tgo"))
+    if cache is None or not _tgo_alive(cache):
+        attempt["stage"] = 1
+        attempt["turns"] = 0
+        attempt["cache_tgo"] = None
+        _announce(
+            game,
+            events,
+            f"Insurgent cache near {target.name} destroyed — infiltrators fall back.",
+        )
+        return
+    attempt["turns"] += 1
+    if attempt["turns"] >= STAGE2_TURNS:
+        _flip(game, state, rf, target, source, cell, cache, events)
+
+
+def _try_start_attempt(
+    game: "Game", state: dict[str, Any], rf: dict[str, Any], events: Any
+) -> None:
+    pair = _best_target(game, state)
+    if pair is None:
+        return
+    target, source = pair
+    cell = _spawn_cell(game, source, target, events)
+    if cell is None:
+        return
+    rf["active"] = {
+        "cp_id": str(target.id),
+        "source_id": str(source.id),
+        "stage": 1,
+        "turns": 0,
+        "cell_tgo": str(cell.id),
+        "cache_tgo": None,
+    }
+    _announce(game, events, f"Intel: infiltration reported near {target.name}.")
+
+
+def _best_target(
+    game: "Game", state: dict[str, Any]
+) -> Optional[tuple["ControlPoint", "ControlPoint"]]:
+    """The best (target, source) infiltration pair, or None. Prefers formerly-red
+    CPs (retaking home turf), then the eligible CP nearest a live stronghold."""
+    from game.theater import ControlPoint
+
+    red_now = sum(1 for cp in game.theater.controlpoints if cp.captured.is_red)
+    if red_now >= state.get("_red_cp_turn0", red_now):
+        return None  # conservation: relocate, never grow
+
+    sources = [
+        cp
+        for cp in game.theater.controlpoints
+        if cp.captured.is_red
+        and cache_health(cp, state.get(str(cp.id), {}).get("cache_total", 0))
+        >= SOURCE_HEALTH_GATE
+    ]
+    if not sources:
+        return None
+
+    excluded = _player_field_ids(game)
+    candidates: list[tuple[bool, float, "ControlPoint", "ControlPoint"]] = []
+    for cp in game.theater.controlpoints:
+        if cp.captured.is_red:
+            continue
+        if not (cp.captured.is_blue or cp.captured.is_neutral):
+            continue
+        if getattr(cp, "is_fleet", False) or getattr(cp, "is_carrier", False):
+            continue
+        if str(cp.id) in excluded:
+            continue
+        if _garrison_count(cp) > HOLD_THRESHOLD:
+            continue
+        nearest = min(sources, key=lambda s: cp.position.distance_to_point(s.position))
+        dist = cp.position.distance_to_point(nearest.position)
+        if dist > INFILTRATION_RANGE_M:
+            continue
+        formerly_red = bool(state.get(str(cp.id)))  # had a C1 anchor => was red
+        candidates.append((not formerly_red, dist, cp, nearest))
+
+    if not candidates:
+        return None
+    candidates.sort(key=lambda c: (c[0], c[1]))  # formerly-red first, then nearest
+    _, _, target, source = candidates[0]
+    return target, source
+
+
+def _flip(
+    game: "Game",
+    state: dict[str, Any],
+    rf: dict[str, Any],
+    target: "ControlPoint",
+    source: "ControlPoint",
+    cell: Any,
+    cache: Any,
+    events: Any,
+) -> None:
+    """Flip the target CP to RED: engine-native capture, then re-anchor it weak from
+    the seeded cell + cache (reparented) and a small commissioned garrison."""
+    from game.ato.flighttype import FlightType  # noqa: F401  (import warms game pkg)
+    from game.theater.controlpoint import ControlPoint  # noqa: F401
+
+    player_red = game.red.player
+    if events is not None:
+        target.capture(game, events, player_red)
+    else:  # headless probe path
+        target._coalition = game.red
+
+    # Reparent the infiltration cell + cache so the new stronghold owns them (and they
+    # render RED now the CP is red); commission a weak garrison from the C1 pool.
+    for tgo in (cell, cache):
+        _reparent(source, target, tgo, events)
+    pool = regen_unit_pool(game.red)
+    if pool:
+        for i in range(REINFIL_GARRISON):
+            target.base.commission_units({pool[i % len(pool)]: 1})
+
+    # Fresh weak anchor: C1 now refills this CP toward the small garrison + one cache.
+    state[str(target.id)] = _snapshot(target)
+    rf["active"] = None
+    rf["cooldown"] = COOLDOWN_TURNS
+    rf.setdefault("pending_flips", 0)
+    rf["pending_flips"] += 1  # consumed by the next update_political_will
+    _announce(game, events, f"{target.name} has fallen to the insurgency.")
+
+
+def consume_reinfiltration_flips(game: "Game") -> int:
+    """Number of re-infiltration flips since the last call, cleared to zero.
+
+    The will layer calls this to charge a flip as a lost base -- a ``finish_turn``
+    flip never appears in the debriefing's in-mission ``bases_lost`` count.
+    """
+    state = getattr(game, "coin_state", None)
+    if not isinstance(state, dict):
+        return 0
+    rf = state.get("reinfiltration")
+    if not isinstance(rf, dict):
+        return 0
+    flips = int(rf.get("pending_flips", 0))
+    rf["pending_flips"] = 0
+    return flips
+
+
+def _abort_attempt(
+    game: "Game", rf: dict[str, Any], events: Any, cell: Any, cache: Any
+) -> None:
+    for tgo in (cell, cache):
+        _despawn(game, tgo, events)
+    rf["active"] = None
+    rf["cooldown"] = COOLDOWN_TURNS
+
+
+def _spawn_cell(
+    game: "Game", source: "ControlPoint", target: "ControlPoint", events: Any
+) -> Any:
+    """A small red ground cell near *target*, attached to the red *source* stronghold
+    (so it renders RED -- TGO allegiance follows its parent CP), trimmed to a cell."""
+    from game.data.groups import GroupTask
+
+    tgo = _spawn_red_ground(game, source, target, GroupTask.FRONT_LINE, events)
+    if tgo is None:
+        tgo = _spawn_red_ground(game, source, target, GroupTask.BASE_DEFENSE, events)
+    if tgo is not None:
+        _trim_to(tgo, CELL_MAX_UNITS)
+    return tgo
+
+
+def _spawn_cache(
+    game: "Game", source: "ControlPoint", target: "ControlPoint", near: Any, events: Any
+) -> Any:
+    from game.data.groups import GroupTask
+
+    return _spawn_red_ground(game, source, target, GroupTask.AMMO, events)
+
+
+def _spawn_red_ground(
+    game: "Game",
+    source: "ControlPoint",
+    target: "ControlPoint",
+    task: Any,
+    events: Any,
+) -> Any:
+    """Generate a red ForceGroup for *task* at a point near *target*, attached to the
+    red *source* CP. Returns the TGO or None if the faction has no group for the task.
+    """
+    from game.naming import namegen
+    from game.theater import PresetLocation
+    from game.utils import Heading
+
+    group = game.red.armed_forces.random_group_for_task(task)
+    if group is None:
+        return None
+    point = _infiltration_point(game, source, target)
+    heading = game.theater.heading_to_conflict_from(point) or Heading.from_degrees(0)
+    location = PresetLocation(namegen.random_objective_name(), point, heading)
+    tgo = group.generate(location.original_name, location, source, game, task)
+    source.connected_objectives.append(tgo)
+    game.db.tgos.add(tgo.id, tgo)
+    if events is not None:
+        events.update_tgo(tgo)
+    return tgo
+
+
+def _infiltration_point(
+    game: "Game", source: "ControlPoint", target: "ControlPoint"
+) -> Any:
+    """A land point a few km off the target toward the source (the cell sits between
+    the stronghold and the base it is infiltrating)."""
+    hdg = target.position.heading_between_point(source.position)
+    for dist in (6000.0, 3000.0, 1500.0, 0.0):
+        point = target.position.point_from_heading(hdg, dist)
+        if dist == 0.0 or game.theater.is_on_land(point):
+            return point
+    return target.position
+
+
+def _reparent(
+    source: "ControlPoint", target: "ControlPoint", tgo: Any, events: Any
+) -> None:
+    if tgo is None:
+        return
+    if tgo in source.connected_objectives:
+        source.connected_objectives.remove(tgo)
+    tgo.control_point = target
+    if tgo not in target.connected_objectives:
+        target.connected_objectives.append(tgo)
+    if events is not None:
+        events.update_tgo(tgo)
+
+
+def _despawn(game: "Game", tgo: Any, events: Any) -> None:
+    if tgo is None:
+        return
+    cp = getattr(tgo, "control_point", None)
+    if cp is not None and tgo in cp.connected_objectives:
+        cp.connected_objectives.remove(tgo)
+    try:
+        game.db.tgos.remove(tgo.id)
+    except Exception:  # noqa: BLE001 -- best-effort cleanup, never break the turn
+        pass
+    if events is not None:
+        try:
+            events.delete_tgo(tgo)
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _trim_to(tgo: Any, max_units: int) -> None:
+    """Keep at most *max_units* units across the TGO's groups (a cell, not a garrison)."""
+    kept = 0
+    for group in list(getattr(tgo, "groups", [])):
+        units = list(getattr(group, "units", []))
+        for unit in units:
+            if kept < max_units:
+                kept += 1
+            else:
+                group.units.remove(unit)
+
+
+def _garrison_count(cp: "ControlPoint") -> int:
+    """BLUE (or the CP owner's) ground-unit strength holding the CP: front-line armor
+    plus alive vehicle-TGO units. Neutral CPs have none."""
+    if cp.captured.is_neutral:
+        return 0
+    tgo_units = sum(
+        1
+        for tgo in cp.ground_objects
+        if getattr(tgo, "category", None) != "ammo"
+        for unit in tgo.units
+        if getattr(unit, "alive", False) and getattr(unit, "is_vehicle", False)
+    )
+    return int(getattr(cp.base, "total_armor", 0)) + tgo_units
+
+
+def _player_field_ids(game: "Game") -> set[str]:
+    """CP ids that host a based BLUE squadron -- the §36 anti-grief exclusion applied
+    to ground (never infiltrate a field the human operates from)."""
+    excluded: set[str] = set()
+    for cp in game.theater.controlpoints:
+        if not cp.captured.is_blue:
+            continue
+        if any(True for _ in getattr(cp, "squadrons", [])):
+            excluded.add(str(cp.id))
+    return excluded
+
+
+def _cp_by_id(game: "Game", cp_id: Optional[str]) -> Optional["ControlPoint"]:
+    if cp_id is None:
+        return None
+    for cp in game.theater.controlpoints:
+        if str(cp.id) == cp_id:
+            return cp
+    return None
+
+
+def _tgo_by_id(game: "Game", tgo_id: Optional[str]) -> Any:
+    if tgo_id is None:
+        return None
+    for cp in game.theater.controlpoints:
+        for tgo in cp.ground_objects:
+            if str(tgo.id) == tgo_id:
+                return tgo
+    return None
+
+
+def _tgo_alive(tgo: Any) -> bool:
+    return any(getattr(unit, "alive", False) for unit in getattr(tgo, "units", []))
+
+
+def _announce(game: "Game", events: Any, message: str) -> None:
+    """Push an intel line to the Information feed (client events + SITREP). Best-effort:
+    a fake game in a unit test may not carry the feed."""
+    try:
+        game.message("Re-infiltration", message)
+    except Exception:  # noqa: BLE001 -- messaging is best-effort, never break the turn
+        pass

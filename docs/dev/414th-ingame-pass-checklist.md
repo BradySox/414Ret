@@ -2457,6 +2457,12 @@ so the two docs don't drift.
   the package fragged into a population ring (ROE filter bypassed); Hornets can't make it home (TOT/fuel math
   off at the 400-500 NM standoff — the tanker orbit isn't being used).
 
+### P3 — COIN re-infiltration: the insurgency retakes ground · COIN C1.5 · ☐ UNTESTED (built 2026-07-03; the staged pipeline / eligibility / conservation bound / stage machine / flip + will handoff are fully unit-tested with fakes, and the campaign preseed + module wiring are headless-verified — the real TGO spawn + engine capture flip + the played feel need a campaign)
+- **What CI cannot exercise:** the real `ForceGroup.generate` spawn of a red cell/cache near a blue/neutral target (attached to the source stronghold, per the allegiance constraint), the engine-native `ControlPoint.capture` flip, and the reparent of the seeded cell+cache onto the flipped CP. The design note itself flags this as in-play-only (timers need tuning against real Shattered Dagger geometry).
+- **Setup:** NEW "Afghanistan - Operation Enduring Resolve (COIN)" (`coin_reinfiltration` preseeds on). Clear an insurgent stronghold's approach and take a nearby base, then **leave it ungarrisoned** (≤ 4 ground units) while the source stronghold still has healthy caches. Play ~5+ turns watching the info feed.
+- **Pass:** an intel line "infiltration reported near {base}" appears; a real red cell shows up near that base on the next mission; ~2 turns later "a supply cache has been located" + a cache TGO; ~2 turns after that the base **flips to red** with a small garrison and one cache, and the mandate drops with a labeled "strongholds re-infiltrated x1" will mover. Each stage is strikeable: killing the cell aborts (+cooldown), killing the cache reverts a stage, garrisoning the base above 4 units aborts it, and killing the source stronghold's caches stops new attempts. The total red base count never exceeds turn 0.
+- **Fail signature:** the cell/cache render **blue** (allegiance/reparent bug — they must attach to the red source stronghold); an attempt starts against a garrisoned/player-spawn/out-of-range base (eligibility gate); the red base count grows past turn 0 (conservation broken); a flip fires with no warnings (stage timers skipped); the mandate doesn't move on a flip (`consume_reinfiltration_flips` / will handoff not wired); the flipped CP comes back at full strength instead of the weak re-anchor.
+
 ---
 
 ## Q. Planner / payload UI

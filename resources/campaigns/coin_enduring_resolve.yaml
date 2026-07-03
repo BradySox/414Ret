@@ -46,6 +46,10 @@ settings:
   # cache-throttled cell regeneration + the ratline + FOB standoff fire + the
   # will economy that decides the war.
   coin_insurgency: true
+  # C1.5: the insurgency retakes cleared-but-ungarrisoned bases over ~4 announced,
+  # counterable turns (relocate, never grow) -- clearing a stronghold is not enough,
+  # you must HOLD it. A completed flip drains the mandate like any lost base.
+  coin_reinfiltration: true
   vietnam_convoy_interdiction: true
   vietnam_airbase_harassment: true
   vietnam_political_will: true

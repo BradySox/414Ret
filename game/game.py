@@ -393,9 +393,15 @@ class Game:
         # irregular units toward their anchored garrison cap. No-op unless
         # coin_insurgency is on. Real units via Base.commission_units -- losses
         # track natively; never a phantom spawn.
-        from game.fourteenth.coin import regenerate_insurgent_cells
+        from game.fourteenth.coin import (
+            advance_reinfiltration,
+            regenerate_insurgent_cells,
+        )
 
         regenerate_insurgent_cells(self, events)
+        # C1.5: the insurgency retakes cleared-but-unheld ground (a staged, announced,
+        # counterable pipeline). Runs right after regen; gated coin_reinfiltration OFF.
+        advance_reinfiltration(self, events)
 
         # Vietnam Ops Super Gaggle (§37): (re)plan the turn's resupply run from real BLUE
         # squadrons (drawing the helos + suppressors from actual airframes, whose losses are

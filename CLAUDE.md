@@ -122,14 +122,22 @@ file. This guide is the map; those are the territory.
     price ≤ 10 ceiling, because the unit data classes the insurgent technicals as IFV —
     the ceiling, not the class, is what keeps BMPs/Grads out; caches bind by TGO-to-CP
     ownership; state pickles as `game.coin_state`, getattr-guarded) → **C1.5
-    re-infiltration design DONE 2026-07-02** (`414th-coin-reinfiltration-notes.md` —
+    re-infiltration LANDED 2026-07-03** (`414th-coin-reinfiltration-notes.md` —
     a staged, announced, counterable pipeline: real cell TGO → seeded ammo-cache TGO →
     engine-native `ControlPoint.capture` flip + a weak `REINFIL_GARRISON` C1 re-anchor,
     under a **conservation bound** (relocate, never grow — red CP count never exceeds
     turn 0) with the §36 player-field exclusion, projection gated on the source
     stronghold's C1 cache health, will handoff = a labeled `blue_base_lost`-weight
-    move recorded via `coin_state`; gated `coin_reinfiltration` default OFF; BUILD slot
-    after C3, 4 open squadron calls in its §8) → C2 will feed → C3
+    move via `consume_reinfiltration_flips` in `update_political_will`; the 4 §8
+    squadron calls resolved to the proposed defaults (HOLD_THRESHOLD=4, 2+2 timers,
+    one attempt theater-wide, neutral+lost scope). `advance_reinfiltration(game,
+    events)` in `coin.py` runs from `finish_turn` right after regen; gated
+    `coin_reinfiltration` default OFF, preseeded ON in the campaign. **Engine-forced
+    change vs the sketch**: TGO allegiance follows the parent CP's owner, so the red
+    cell/cache attach to the **source red stronghold** (positioned near the target via
+    `_infiltration_point`) and **reparent to the target on flip** (`_reparent`) — they
+    become the new stronghold's militia + first cache. Tests
+    `tests/fourteenth/test_coin_reinfiltration.py`; in-game pass = checklist P3) → C2 will feed → C3
     campaign fork → C4 dispersed cells (C2 LANDED 2026-07-02: `WillWeights.red_cache_lost` default 0.0 + the
     `_red_caches_destroyed` fully-dead per-TGO feed in `political_will.py`; **C3 LANDED
     2026-07-02**: the campaign **"Afghanistan - Operation Enduring Resolve (COIN)"** —

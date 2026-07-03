@@ -504,6 +504,20 @@ def _blue_moves(
             (f"bases lost x{bases_lost}", -bases_lost * weights.blue_base_lost)
         )
 
+    # C1.5 re-infiltration: a stronghold retaken at the turn boundary never appears in
+    # the debriefing's in-mission bases_lost, so the coin module records the flip and
+    # we charge it here as a lost base -- same currency, an explicit labeled move.
+    from game.fourteenth.coin import consume_reinfiltration_flips
+
+    reinfiltrated = consume_reinfiltration_flips(game)
+    if reinfiltrated:
+        moves.append(
+            (
+                f"strongholds re-infiltrated x{reinfiltrated}",
+                -reinfiltrated * weights.blue_base_lost,
+            )
+        )
+
     # ROE violations (W4): kills inside an active restricted zone draw a sharp
     # penalty -- the LBJ-era pilot could break the rules, but Washington answered
     # for it. Zero whenever no authored phase with zones is active.

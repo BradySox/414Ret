@@ -453,6 +453,19 @@ untouched (still golden-tested). This is a visual change CI can't exercise — s
 row **H1**/**H2**. **H1 (overflow pagination) in-game pass ☑ VERIFIED 2026-06-25**; H2 still
 pending.
 
+**Right-edge clipping fit.** Wide content that used to run off the right edge (and silently lose
+data) is now fitted to the page: `KneeboardPageWriter.table()` measures `tabulate`'s *actual*
+rendered width and, when it overruns, passes `maxcolwidths` (via `_fit_col_widths`, shrinking the
+widest column first to a legibility floor) so the over-wide column **word-wraps** instead of
+clipping — the Comms & Coordination support ladders were losing FREQ / Departure / TOT when a
+package sat on three radio channels. A table that already fits returns `None` (byte-identical
+output, so every narrow table is unchanged). Alongside it: the `SupportPage` package FREQ/TOT
+header line splits FREQ and TOT onto separate lines when the one-line form would overrun, and the
+`ThreatIntelBriefPage` bullseye **cue lists** (drawn with the non-wrapping `text_runs`) truncate to
+the pixels left on the line via `_fit_cues` (unidentified cards keep the count-withholding "…";
+identified keep "+N"). Tests: `tests/missiongenerator/test_compact_kneeboard.py` (table wraps/​leaves-fitting-untouched),
+`tests/missiongenerator/test_threat_intel_kneeboard.py` (cue width truncation).
+
 **Kneeboard de-duplication pass.** With every optional page enabled the deck printed the same
 data several times; a single-home-per-datum pass fixes it, each change conditional on the
 *other* page existing (so a deck with options off is byte-identical to before):

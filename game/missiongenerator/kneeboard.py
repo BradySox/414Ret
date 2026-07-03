@@ -220,8 +220,66 @@ class KneeboardPageWriter:
             headers = []
         if font is None:
             font = self.table_font
-        table = tabulate(cells, headers=headers, numalign="right")
+        maxcolwidths = self._fit_col_widths(cells, headers, font)
+        table = tabulate(
+            cells, headers=headers, numalign="right", maxcolwidths=maxcolwidths
+        )
         self.text(table, font, fill=self.foreground_fill)
+
+    def _fit_col_widths(
+        self,
+        cells: List[List[str]],
+        headers: List[str],
+        font: ImageFont.FreeTypeFont,
+    ) -> Optional[List[int]]:
+        """Per-column character caps that keep a table within the page width.
+
+        Returns ``maxcolwidths`` for ``tabulate`` (which word-wraps any cell past its
+        cap) or ``None`` when the table already fits. Shrinks the widest column first,
+        down to a floor, so a runaway column (e.g. a 3-radio FREQ ladder) wraps instead
+        of running off the right edge and losing data. The fit is measured against
+        ``tabulate``'s *actual* rendered output (its padding is hard to predict), so a
+        table that already fits returns ``None`` and is byte-identical to before.
+        """
+        rows = list(cells) + ([headers] if headers else [])
+        ncols = max((len(r) for r in rows), default=0)
+        if ncols == 0:
+            return None
+
+        max_px = self.image_size[0] - self.page_margin - self.x
+
+        def widest_line_px(maxcolwidths: Optional[List[int]]) -> float:
+            rendered = tabulate(
+                cells, headers=headers, numalign="right", maxcolwidths=maxcolwidths
+            )
+            return max(
+                (font.getlength(line) for line in rendered.splitlines()), default=0.0
+            )
+
+        if widest_line_px(None) <= max_px:
+            return None
+
+        def natural(col: int) -> int:
+            return max(
+                (
+                    len(line)
+                    for r in rows
+                    if col < len(r)
+                    for line in str(r[col]).splitlines()
+                ),
+                default=1,
+            )
+
+        widths = [natural(col) for col in range(ncols)]
+        floor = 8  # never crush a column below a legible minimum
+        # Shrink the widest column one char at a time until the rendered table fits (or
+        # nothing can shrink further -- then we've done all we can without illegibility).
+        while widest_line_px(widths) > max_px:
+            widest = max(range(ncols), key=lambda i: widths[i])
+            if widths[widest] <= floor:
+                break
+            widths[widest] -= 1
+        return widths
 
     def rule(self, thickness: int = 2, gap_above: int = 2, gap_below: int = 8) -> None:
         """Draw a thin horizontal separator across the content width.
@@ -1091,12 +1149,21 @@ class SupportPage(KneeboardPage):
                 custom_name_title = ""
             writer.title(f"{self.flight.callsign} Support Info{custom_name_title}")
 
-        # Package FREQ / TOT line, above the boxed section tables.
+        # Package FREQ / TOT line, above the boxed section tables. A package on three
+        # radio channels makes a long FREQ ladder; when FREQ + TOT would overrun the
+        # page width, split TOT onto its own line (and wrap the FREQ) so the TOT is
+        # never clipped off the right edge.
         package = self.flight.package
         custom = f' "{package.custom_name}"' if package.custom_name else ""
         freq = self.format_frequency(package.frequency).replace("\n", " - ")
         tot = self._format_time(package.time_over_target)
-        writer.text(f"  FREQ: {freq}    TOT: {tot}", font=writer.table_font)
+        one_line = f"  FREQ: {freq}    TOT: {tot}"
+        content_px = writer.image_size[0] - 2 * writer.page_margin
+        if writer.table_font.getlength(one_line) <= content_px:
+            writer.text(one_line, font=writer.table_font)
+        else:
+            writer.text(f"  FREQ: {freq}", font=writer.table_font, wrap=True)
+            writer.text(f"  TOT: {tot}", font=writer.table_font)
 
         # Build each support section as (title, rows, headers); they render as
         # bordered boxes with header bars (the professional-campaign look) and
@@ -2118,25 +2185,34 @@ class ThreatIntelBriefPage(KneeboardPage):
         writer.vspace(4)
 
     @staticmethod
-    def _cues_text(cues: List[str], limit: int) -> str:
-        shown = ", ".join(cues[:limit])
-        if len(cues) > limit:
-            shown += f", +{len(cues) - limit}"
-        return shown
-
-    @staticmethod
-    def _unknown_cues_text(cues: List[str], limit: int) -> str:
-        """Detected-contact bearings for an *unidentified* card.
-
-        Unlike ``_cues_text``, overflow is an ellipsis, never the remaining count
-        ("+N"): the number of unidentified (often mobile) sites is intel we wouldn't
-        realistically have, so the card shows where contacts were detected without
-        publishing a theatre inventory total (design §3).
+    def _fit_cues(
+        cues: List[str],
+        limit: int,
+        *,
+        count_overflow: bool,
+        font: Optional[ImageFont.FreeTypeFont] = None,
+        avail_px: Optional[float] = None,
+    ) -> str:
+        """Bullseye cue list truncated to a hard ``limit`` AND (when a font + width are
+        given) to the pixels available on the line, so the cue string never runs off
+        the right edge. Overflow shows the remaining count ("+N") when ``count_overflow``
+        else an ellipsis ("…") -- an unidentified card withholds its count (design §3).
         """
-        shown = ", ".join(cues[:limit])
-        if len(cues) > limit:
-            shown += ", …"
-        return shown
+        shown: List[str] = []
+        for cue in cues[:limit]:
+            if (
+                shown
+                and font is not None
+                and avail_px is not None
+                and font.getlength(", ".join(shown + [cue])) > avail_px
+            ):
+                break
+            shown.append(cue)
+        text = ", ".join(shown)
+        remaining = len(cues) - len(shown)
+        if remaining > 0:
+            text += f", +{remaining}" if count_overflow else ", …"
+        return text
 
     def _render_card(self, writer: KneeboardPageWriter, card: ThreatCard) -> None:
         body = self._body_font()
@@ -2164,24 +2240,53 @@ class ThreatIntelBriefPage(KneeboardPage):
             sites = f"Sites: {card.live} live"
             if card.dead:
                 sites += f" / {card.dead} dead"
+            prefix = f"{sites}   BE "
             writer.text_runs(
                 [
-                    (f"{sites}   BE ", None),
-                    (self._cues_text(card.cues, 6), writer.col_nav),
+                    (prefix, None),
+                    (
+                        self._fit_cues(
+                            card.cues,
+                            6,
+                            count_overflow=True,
+                            font=body,
+                            avail_px=self._cue_avail_px(writer, body, prefix),
+                        ),
+                        writer.col_nav,
+                    ),
                 ],
                 font=body,
             )
             if card.defeat:
                 writer.text(f"DEFEAT: {card.defeat}", font=body, wrap=True)
         else:
+            prefix = "Fly TARPS to ID.   BE "
             writer.text_runs(
                 [
-                    ("Fly TARPS to ID.   BE ", None),
-                    (self._unknown_cues_text(card.cues, 8), writer.col_nav),
+                    (prefix, None),
+                    (
+                        self._fit_cues(
+                            card.cues,
+                            8,
+                            count_overflow=False,
+                            font=body,
+                            avail_px=self._cue_avail_px(writer, body, prefix),
+                        ),
+                        writer.col_nav,
+                    ),
                 ],
                 font=body,
             )
         writer.vspace(16)
+
+    @staticmethod
+    def _cue_avail_px(
+        writer: KneeboardPageWriter, font: ImageFont.FreeTypeFont, prefix: str
+    ) -> float:
+        """Pixels left on the cue line after the label prefix and a margin reserved
+        for the overflow marker (", +NN" / ", …")."""
+        line_left = writer.image_size[0] - writer.page_margin - writer.x
+        return line_left - font.getlength(prefix) - font.getlength(", +99")
 
     def _card_height(self, card: ThreatCard) -> int:
         probe = KneeboardPageWriter(dark_theme=self.dark_kneeboard)

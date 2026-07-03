@@ -18,9 +18,16 @@ description: >-
   bases, strikes into the towns, and plain time; the insurgency's momentum bleeds from its
   caches, its convoys, and its strongholds — almost never from its dead fighters. Break their
   momentum before your mandate runs out.</p>
+  <p>You fly with the real 2006 coalition: <strong>Dutch F-16s and RAF Harriers on the
+  Kandahar ramp</strong> beside the A-10s, Marine Harriers at Bastion, carrier Hornets
+  overhead from the Arabian Sea, and CENTAF Strike Eagles, B-1s, and the tanker bridge
+  on call from the Gulf — each squadron under its own flag. The enemy answers with the
+  era's honest threat: <strong>guns and shoulder-fired SAMs</strong> — ZU-23s and SA-9s at
+  every stronghold, MANPADS in the cells, and no radar SAM anywhere. Nothing stops you at
+  altitude; everything punishes you low — where the war actually is.</p>
   <p>Laydown by Starfire (Operation Shattered Dagger); the COIN layer — cache-throttled cell
   regeneration, the inverted will economy, and the campaign arc — is the 414th's.</p>
-recommended_player_faction: USA 2005
+recommended_player_faction: OEF Coalition 2006
 recommended_enemy_faction: Toyota Al Gaib 2001
 miz: coin_enduring_resolve.miz
 performance: 1
@@ -227,7 +234,7 @@ supply_routes:
       - [-181518, -101421]
 
 squadrons:
-  #Kandahar
+  #Kandahar -- the 2006 coalition ramp: A-10s, Dutch Vipers, RAF Harriers
   7:
     - primary: Transport
       secondary: any
@@ -239,6 +246,16 @@ squadrons:
       aircraft:
         - A-10C Thunderbolt II (Suite 7)
       size: 4
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - 322 Squadron #RNLAF F-16CM -- Dutch Vipers were at Kandahar in 2006
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - IV (AC) Squadron RAF #AV-8B NA standing in for the Harrier GR7 det
+      size: 4
   # Kandahar Heliport
   15:
     - primary: Air Assault
@@ -249,7 +266,7 @@ squadrons:
     - primary: CAS
       secondary: any
       aircraft:
-        - OH-58D(R) Kiowa Warrior
+        - 1-17 Cavalry #US Kiowa preset (the CJTF faction otherwise casts any nation)
       size: 4
   #Camp Bastion
   10:
@@ -274,3 +291,26 @@ squadrons:
       aircraft:
         - CH-47F Block I
       size: 4
+  # Off-map: carrier air from the Arabian Sea (the OEF reality -- CVW Hornets
+  # overhead Afghanistan on long cycles)
+  CVW-9 Arabian Sea:
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - VFA-113 #F/A-18C Lot 20 off the boat
+      size: 6
+  # Off-map: CENTAF from the Gulf -- Strike Eagles, Bones, and the tanker bridge
+  CENTAF Al Udeid:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - 391st Fighter Squadron #F-15E Suite 4+, OEF 2005-06 real
+      size: 4
+    - primary: Strike
+      aircraft:
+        - B-1B Lancer
+      size: 2
+    - primary: Refueling
+      aircraft:
+        - 18th Air Refueling Squadron #US KC-135 preset (CJTF otherwise casts any nation)
+      size: 2

@@ -405,6 +405,10 @@ def test_enduring_resolve_campaign_definition() -> None:
     assert (path.parent / data["miz"]).exists()
     # The original zeroed the economy; the fork restores a small real income.
     assert data["recommended_enemy_money"] > 0
+    # The multi-nation coalition faction (CJTF Blue country, so the RNLAF/RAF
+    # preset squadrons survive the country filter) ships with the campaign.
+    assert data["recommended_player_faction"] == "OEF Coalition 2006"
+    assert (path.parent.parent / "factions" / "oef_coalition_2006.json").exists()
     # The ratline: authored red<->red supply corridors (the original laydown had
     # zero CP connectivity, so the trail machinery had nothing to run on).
     assert len(data["supply_routes"]) >= 9

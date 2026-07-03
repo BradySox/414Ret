@@ -1,0 +1,16 @@
+---
+name: IV (AC) Squadron RAF
+nickname: Happy Days
+female_pilot_percentage: 5
+country: UK
+role: V/STOL Attack
+aircraft: AV-8B Harrier II Night Attack
+bases:
+    carrier: false
+    shore: true
+    lha: true
+mission_types:
+  - CAS
+  - BAI
+  - Strike
+  - Armed Recon

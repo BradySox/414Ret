@@ -85,6 +85,21 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   external-support framing — so the skim ships a full column and leaves a stable
   rear buffer). Engine-probe verified: turn 1 ships Martello → Frontenac.
 
+- **The OEF air package** (user direction 2026-07-03): fixed wing + air defenses.
+  Two schema traps cost time: (1) campaign-YAML **preset squadrons are requested via
+  the `aircraft:` list** (the WRL `VF-142` pattern) — the `name:` field only *renames*
+  whatever got found, so `name: 322 Squadron` + `aircraft: [F-16CM...]` silently
+  renames a random Viper preset; (2) the squadron-def loader **drops foreign-country
+  presets unless the faction country is a "Combined Joint Task Forces"** — hence the
+  new `OEF Coalition 2006` faction (usa_2005 roster, CJTF Blue country) so the RNLAF
+  322 Squadron / RAF IV (AC) Squadron presets (new files) survive, and hence the
+  US-preset pins on the Kiowa/tanker slots (CJTF otherwise casts any nation — the
+  Tunisian Kiowa incident). Off-map air rides the miz-loader F-15C sentinel
+  (build-tool `OFF_MAP_SPAWNS`): CVW-9 Arabian Sea (Hornets) + CENTAF Al Udeid
+  (F-15Es, B-1s, KC-135s). Red AD stays era-honest: AAA markers at all 13
+  strongholds + SA-9 at the 5 anchors, **no radar SAM anywhere** — no SEAD game by
+  design; the guns/IR envelope is what keeps fast air honest down low.
+
 ## After P1
 
 - **Tune** from ledger data (levers above), update the P1 row status.

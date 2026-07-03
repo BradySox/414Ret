@@ -21,13 +21,40 @@ from pathlib import Path
 
 from dcs.mapping import Point
 from dcs.mission import Mission
+from dcs.planes import F_15C
 from dcs.statics import Warehouse
+from dcs.vehicles import AirDefence
 
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "resources/campaigns/operation_shattered_dagger.miz"
 DST = REPO / "resources/campaigns/coin_enduring_resolve.miz"
 
 RED_COUNTRY = "Combined Joint Task Forces Red"
+BLUE_COUNTRY = "Combined Joint Task Forces Blue"
+
+# --- Off-map blue air (miz-loader sentinel: an F-15C plane group). The 2006 OEF
+# --- reality: carrier Hornets from the Arabian Sea and CENTAF heavies/tankers from
+# --- the Gulf reached the theater from OFF the map. Positions sit outside the
+# --- playbox (south / west of Farah) but on valid terrain.
+OFF_MAP_SPAWNS: list[tuple[str, tuple[float, float]]] = [
+    ("CVW-9 Arabian Sea", (-380000.0, -150000.0)),
+    ("CENTAF Al Udeid", (-170000.0, -440000.0)),
+]
+
+# --- Red air defenses (era-honest 2006: guns and IR SAMs, NO radar SAMs -- no SEAD
+# --- game, the flak/MANPADS envelope is the honesty). Marker types follow
+# --- game/campaignloader/mizcampaignloader.py: ZSU-23 = an AAA site the generator
+# --- fills from the faction's AAA roster (ZU-23s, ERO technicals); Strela-1 = a
+# --- SHORAD site (SA-9). Every stronghold gets guns; the five anchors get SA-9s.
+AAA_OFFSET = (900.0, -700.0)
+SHORAD_OFFSET = (-800.0, 900.0)
+SHORAD_STRONGHOLDS = {
+    "Farah",
+    "Tarinkot",
+    "FOB Jackson",
+    "FOB Zeebrugge",
+    "FOB Frontenac",
+}
 
 # --- The cache laydown. Stronghold centers are the red FOB markers / airfields in
 # --- the source miz (verified 2026-07-02); each gets `count` Ammunition-depot
@@ -97,9 +124,43 @@ def build() -> None:
             )
             placed += 1
 
+    blue = mission.country(BLUE_COUNTRY)
+    if blue is None:
+        raise RuntimeError(f"{SRC} carries no {BLUE_COUNTRY!r} country")
+    for name, (x, y) in OFF_MAP_SPAWNS:
+        mission.flight_group_inflight(
+            country=blue,
+            name=name,
+            aircraft_type=F_15C,
+            position=Point(x, y, mission.terrain),
+            altitude=6096,
+        )
+
+    aaa = 0
+    shorad = 0
+    for stronghold, (x, y), _count in STRONGHOLD_CACHES:
+        mission.vehicle_group(
+            country=red,
+            name=f"AAA {stronghold}",
+            _type=AirDefence.ZSU_23_4_Shilka,
+            position=Point(x + AAA_OFFSET[0], y + AAA_OFFSET[1], mission.terrain),
+        )
+        aaa += 1
+        if stronghold in SHORAD_STRONGHOLDS:
+            mission.vehicle_group(
+                country=red,
+                name=f"SHORAD {stronghold}",
+                _type=AirDefence.Strela_1_9P31,
+                position=Point(
+                    x + SHORAD_OFFSET[0], y + SHORAD_OFFSET[1], mission.terrain
+                ),
+            )
+            shorad += 1
+
     mission.save(str(DST))
     print(
-        f"Wrote {DST} ({placed} cache markers across {len(STRONGHOLD_CACHES)} strongholds)"
+        f"Wrote {DST} ({placed} caches, {aaa} AAA + {shorad} SHORAD sites, "
+        f"{len(OFF_MAP_SPAWNS)} off-map spawns)"
     )
 
 

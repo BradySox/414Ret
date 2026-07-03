@@ -66,8 +66,8 @@ CACHE_OFFSETS = [
 #: and paying mandate -- the hearts-and-minds dilemma the ring exists to price.
 CACHE_POSITION_OVERRIDES: dict[str, list[tuple[float, float]]] = {
     "FOB Geronimo": [
-        (-272000.0, -173000.0),
-        (-269500.0, -167500.0),
+        (-272000.0, -173000.0),  # Lashkar Gah (ring center -267202,-170619)
+        (-271000.0, -192500.0),  # Marjah (ring center -271880,-193810)
     ],
 }
 

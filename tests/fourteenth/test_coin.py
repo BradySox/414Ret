@@ -415,6 +415,7 @@ def test_enduring_resolve_campaign_definition() -> None:
     assert profile.blue.label == "The Coalition's mandate"
     assert profile.red.label == "the insurgency's momentum"
     assert profile.weights.red_cache_lost == 4.0
+    assert profile.weights.blue_roe_violation == 1.0  # CDE pressure, not taboo
     assert profile.weights.red_ground_unit_lost == 0.05  # body count buys nothing
     assert profile.weights.blue_passive_regen == 0.0  # time drains a mandate
 
@@ -423,7 +424,8 @@ def test_enduring_resolve_campaign_definition() -> None:
     for phase in arc:
         # The caches must always be legal targets -- never lock ammo (or anything).
         assert phase.locked_target_classes == ()
-        # The Lashkar Gah ring is permanent and coordinate-anchored (the empty
-        # Herat ring was cut -- a ROE ring must guard something).
-        assert len(phase.restricted_zones) == 1
+        # The COIN lattice: 9 permanent, coordinate-anchored population-center
+        # rings over the real named towns -- every one guards cells, caches, or
+        # a transiting ratline leg (a ROE ring must guard something).
+        assert len(phase.restricted_zones) == 9
         assert all(z.x is not None and z.y is not None for z in phase.restricted_zones)

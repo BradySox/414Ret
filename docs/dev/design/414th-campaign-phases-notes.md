@@ -288,6 +288,15 @@ prove the extraction pipeline + judge draft quality, *then* green-light the full
 - **P3 — authored arcs:** ✅ FIRST FOUR LANDED (Vietnam W4) — Rolling Thunder → Bombing Halt →
   Linebacker → Linebacker II `phases:` blocks in the 4 Vietnam campaigns. Converting the
   squadron's three wiki campaign breakdowns (Red Tide et al.) is still open.
+- **ROE zone shapes (Path A):** ✅ LANDED — `restricted_zones` are shape-typed, not circle-only:
+  `shape: circle | box | corridor` (a rotatable rectangle for the "Nevada box"/Route-Package
+  rectangles; a buffered-polyline lane for ingress routes/the Ho Chi Minh trail). One shapely
+  `ResolvedZone.contains` gates both the AI planner and the will-penalty; the zones are painted
+  into the generated `.miz`'s F10/ME map (`DrawingsGenerator.generate_restricted_zones`), so the
+  cockpit map and the web map show identical geometry. A legacy `{center, radius_nm}` block still
+  parses to a circle byte-identically. **Path B** (read author-drawn ME shapes back as zones —
+  DCS map drawings round-trip cleanly in the `.miz`, confirmed against `1968_Yankee_Station.miz`)
+  is the next step. In-game pass: checklist **M7**.
 - **(parallel) Batch draft:** §7 pilot → full 66 fan-out.
 
 ---

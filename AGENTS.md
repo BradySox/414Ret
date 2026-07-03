@@ -847,11 +847,23 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `Game.will_ledger`, capped 60 — labeled per-feed movers surfaced on the meter hover, the expander
     notes, the SITREP "Will movers" lines, and the per-turn message; the instrument for the M1 pacing
     pass), and a **pre-flight ROE warning** in the Qt package dialog (`update_roe_warning` via
-    `roe_restriction_reason` — never blocks, just prices the choice). (`game/fourteenth/phases.py`, `game/game.py`,
+    `roe_restriction_reason` — never blocks, just prices the choice). **The 2026-07-02 ROE-zone-shape rework
+    (Path A)** generalized restricted zones from circle-only to `RestrictedZone.kind` = `circle | box |
+    corridor` (a rotatable rectangle for the "Nevada box"/Route-Package rectangles; a shapely
+    buffered-polyline lane for ingress routes/the Ho Chi Minh trail), parsed by `_parse_restricted_zone` (a
+    legacy `{center, radius_nm}` block still parses to a circle byte-identically — the 4 Vietnam arcs are
+    unchanged). One `ResolvedZone.contains` (shapely for box/corridor, distance for circle) gates both the
+    planner and the will-penalty; the zones are now **painted into the generated `.miz`'s F10/ME map**
+    (`DrawingsGenerator.generate_restricted_zones` — `add_circle` / `add_freeform_polygon` of the outline,
+    alongside the always-on frontline/route/CP drawings) and the web layer draws a `<Circle>` or `<Polygon>`
+    by kind (both share `active_restricted_zones`, so cockpit map == web map). **Path B** — read author-drawn
+    ME shapes back as zones (DCS drawings round-trip in the `.miz`, confirmed against
+    `1968_Yankee_Station.miz`) — is the planned next step. (`game/fourteenth/phases.py`, `game/game.py`,
     `game/commander/tasks/compound/nextaction.py`, `game/commander/tasks/packageplanningtask.py`,
-    `game/fourteenth/political_will.py`, `game/missiongenerator/kneeboard.py`, `game/server/game/models.py`,
+    `game/fourteenth/political_will.py`, `game/missiongenerator/kneeboard.py`,
+    `game/missiongenerator/drawingsgenerator.py`, `game/server/game/models.py`,
     `game/server/tgos/models.py`, `client/src/components/campaignstatus/`,
-    `client/src/components/restrictedzones/`; features doc §40, checklist M3 + M4 — need an in-game pass +
+    `client/src/components/restrictedzones/`; features doc §40, checklist M3 + M4 + M7 — need an in-game pass +
     the CI client rebuild.)
 41. **High Digit SAMs "Ultimate Compilation" support** — the HDS mod support retargeted from the abandoned
     original v1.4.0 to the maintained successor (https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation,

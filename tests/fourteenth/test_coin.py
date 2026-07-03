@@ -432,31 +432,29 @@ def test_enduring_resolve_campaign_definition() -> None:
     for phase in arc:
         # The caches must always be legal targets -- never lock ammo (or anything).
         assert phase.locked_target_classes == ()
-        # The COIN lattice: 9 permanent, coordinate-anchored population-center
-        # rings over the real named towns -- every one guards cells, caches, or
-        # a transiting ratline leg (a ROE ring must guard something).
-        assert len(phase.restricted_zones) == 9
-        assert all(z.x is not None and z.y is not None for z in phase.restricted_zones)
+        # The COIN ROE: 4 permanent positive-control VALLEYS (not town rings) -- big
+        # box/corridor no-strike areas over the populated river valleys, shared by
+        # every phase via the YAML anchor. Two corridors (Helmand Green Zone, Musa
+        # Qala Valley) + two boxes (Tarin Kowt Bowl, Delaram), exercising both shapes.
+        assert len(phase.restricted_zones) == 4
+        kinds = sorted(z.kind for z in phase.restricted_zones)
+        assert kinds == ["box", "box", "corridor", "corridor"]
+        names = {z.name for z in phase.restricted_zones}
+        assert names == {
+            "Helmand Green Zone -- positive control",
+            "Musa Qala Valley -- positive control",
+            "Tarin Kowt Bowl -- positive control",
+            "Delaram -- positive control",
+        }
+        # Each corridor carries a >=2-anchor centerline + a lane width; each box a
+        # center + extents.
+        for z in phase.restricted_zones:
+            if z.kind == "corridor":
+                assert len(z.path) >= 2 and z.corridor_width_nm > 0.0
+            else:
+                assert z.x is not None and z.y is not None
+                assert z.width_nm > 0.0 and z.height_nm > 0.0
 
-    # Inverted ROE (the COIN kill boxes): every phase carries free-fire pockets, the
-    # authorized area GROWS with the arc (4 -> 8 -> 10), the Gereshk valley pocket is
-    # a rotated box (exercising the box shape), each phase's capture objective sits
-    # inside a kill box (the campaign must never punish its own objective), and the
-    # provincial capital (Lashkar Gah) is NEVER inside a kill box.
-    pocket_counts = [len(phase.free_fire_zones) for phase in arc]
-    assert pocket_counts == [4, 8, 10]
-    # Objective coverage: FOB Frontenac's KB opens in disrupt, Kamp Hadrian's in
-    # clear_hold (the Tarinkot objective rides inside KB TARIN KOWT in build).
-    assert "KB FRONTENAC" in {z.name for z in arc[0].free_fire_zones}
-    assert "KB HADRIAN" in {z.name for z in arc[1].free_fire_zones}
-    assert "KB TARIN KOWT" in {z.name for z in arc[2].free_fire_zones}
-    disrupt_names = {z.name for z in arc[0].free_fire_zones}
-    assert disrupt_names <= {z.name for z in arc[1].free_fire_zones}
-    assert {z.name for z in arc[1].free_fire_zones} <= {
-        z.name for z in arc[2].free_fire_zones
-    }
-    for phase in arc:
-        assert all(z.name.startswith("KB ") for z in phase.free_fire_zones)
-        assert not any("LASHKAR" in z.name.upper() for z in phase.free_fire_zones)
-        gereshk = [z for z in phase.free_fire_zones if z.name == "KB GERESHK"]
-        assert len(gereshk) == 1 and gereshk[0].kind == "box"
+    # No inverted ROE: dropped the whole-map free-fire inversion for explicit no-strike
+    # valleys, so no phase carries free-fire pockets.
+    assert all(phase.free_fire_zones == () for phase in arc)

@@ -926,10 +926,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     class-carrying target outside every pocket (front-line/convoys never gated; a `restricted_zone` still
     carves a no-strike hole inside a pocket); `count_roe_violations` counts kills outside the pockets;
     `roe_summary_lines` leads with a WEAPONS FREE row; painted dashed **green** (vs red restricted) on both
-    the F10/ME map and the web layer (`GameJs.free_fire_zones`). Content: `coin_enduring_resolve.yaml`
-    authors progressive kill boxes 4→8→10 ("KB SANGIN" naming; each phase's capture objective sits inside a
-    kill box — KB FRONTENAC/HADRIAN/TARIN KOWT — or the campaign would punish its own assault; Lashkar Gah
-    never gets one), CI-locked in `test_enduring_resolve_campaign_definition`. (`game/fourteenth/phases.py`,
+    the F10/ME map and the web layer (`GameJs.free_fire_zones`). The free-fire capability stays in the engine,
+    but the **COIN campaign no longer uses it** — see the ROE-shape note below. (`game/fourteenth/phases.py`,
     `game/fourteenth/zone_drawings.py`, `game/theater/conflicttheater.py`,
     `game/campaignloader/mizcampaignloader.py`, `game/game.py`,
     `game/commander/tasks/compound/nextaction.py`, `game/commander/tasks/packageplanningtask.py`,
@@ -938,6 +936,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/server/tgos/models.py`, `client/src/components/campaignstatus/`,
     `client/src/components/restrictedzones/`; features doc §40, checklist M3 + M4 + M7 + M8 — need an in-game pass +
     the CI client rebuild.)
+    **COIN ROE-shape rework (2026-07-03):** replaced the COIN campaign's earlier 9 town-ring restricted
+    circles + whole-map free-fire inversion with **4 big box/corridor no-strike "positive-control valleys"**
+    over the real populated river valleys (2 corridors — the Helmand Green Zone Kajaki→Marjah and the Musa
+    Qala 611 feeder; 2 boxes — the Tarin Kowt bowl and the Delaram junction), shared by all three phases via
+    the `&population_centers` YAML anchor. The invisible free-fire inversion is **dropped entirely** (no
+    `free_fire_zones` in any phase) — the open desert and the northern gate are simply unrestricted, and a
+    fixed strike inside a valley prices CDE into the mandate (violation weight 1.0, pressure not taboo); trail
+    convoys / TIC are never gated and air assaults (captures) are never blocked, so the arc still retakes its
+    objectives. Exercises both the box and corridor `RestrictedZone.kind` shapes; CI-locked in
+    `test_enduring_resolve_campaign_definition` (4 zones/phase, no free-fire).
 41. **High Digit SAMs "Ultimate Compilation" support** — the HDS mod support retargeted from the abandoned
     original v1.4.0 to the maintained successor (https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation,
     v1.4.3+), same `high_digit_sams` toggle (wizard label updated). Unit data read from the **installed mod's

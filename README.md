@@ -348,11 +348,12 @@ and selected later upstream fixes.
   actually costs something — and plain time) against **the insurgency's momentum** (caches, trail convoys,
   strongholds — almost never its dead fighters). Disrupt the Network → Clear and Hold → Break the
   Momentum, with FOB standoff fire and the supply-trail ratline running throughout. Body count alone
-  wins nothing. And the ROE is **inverted, COIN-style**: the whole map is weapons-hold for fixed strikes
-  except inside a handful of **green kill boxes** on the map — the authorized AOs, which open outward as
-  the campaign escalates (4 → 8 → 10 across the arc, each phase's objective always inside one, the
-  provincial capital never). Strike outside the boxes and the mandate pays; trail convoys and troops in
-  contact are always fair game.
+  wins nothing. And the ROE draws the horror of COIN onto the map: the **populated river valleys** — the
+  Helmand green zone, the Musa Qala feeder, the Tarin Kowt bowl, the Delaram junction — are drawn as big
+  **no-strike "positive-control" areas** where every fixed strike near the people costs you at the mandate
+  meter. The open desert and the northern gate are free; trail convoys and troops in contact are always
+  fair game, and air assaults are never blocked — so you still retake your objectives, you just pay for
+  the collateral when you fight where the insurgency hides.
 - A new **Nevada - Red Flag 81-2** campaign — the ultimate war game, played as the war it rehearses. An
   F-4E wing detachment deploys to **Nellis, January 1981** (after the Reflected Simulations campaign the
   squadron flies) against the **integrated Red Force of the real 1981 exercise**: 64th/65th **Aggressor

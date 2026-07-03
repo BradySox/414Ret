@@ -24,7 +24,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from game.fourteenth.coin import _despawn, _tgo_by_id, spawn_red_ground_at
+from game.fourteenth.coin import (
+    HVT_SIDC,
+    _despawn,
+    _tgo_by_id,
+    spawn_red_ground_at,
+)
 
 if TYPE_CHECKING:
     from game import Game
@@ -114,7 +119,13 @@ def _surface_hvt(game: "Game", hvt: dict[str, Any], events: Any) -> None:
     from game.data.groups import GroupTask
 
     tgo = spawn_red_ground_at(
-        game, stronghold, point, GroupTask.FRONT_LINE, events, max_units=HVT_UNITS
+        game,
+        stronghold,
+        point,
+        GroupTask.FRONT_LINE,
+        events,
+        max_units=HVT_UNITS,
+        sidc_override=HVT_SIDC,
     )
     if tgo is None:
         return

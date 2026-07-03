@@ -53,6 +53,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional
 
 from game.data.units import UnitClass
+from game.sidc import (
+    ActivityEntity,
+    DismountedIndividualEntity,
+    Entity,
+    LandUnitEntity,
+    SymbolSet,
+)
 
 if TYPE_CHECKING:
     from game import Game
@@ -86,6 +93,22 @@ REGEN_UNIT_CLASSES = frozenset(
 #: MLRS trucks (10) are in; BMP-1/2 (14/16) and BM-21 (15) are out.
 REGEN_MAX_UNIT_PRICE = 10
 
+#: NATO APP-6(D) map symbols for the COIN-spawned objects. They are all mechanically
+#: red vehicle groups (FRONT_LINE/BASE_DEFENSE force groups), so without an override
+#: each would render as a hostile tank platoon. The map icon is drawn client-side from
+#: the SIDC the server emits (``TheaterGroundObject.sidc_entity_override``), so
+#: re-pointing the symbol here needs no client change. Codes verified against
+#: milsymbol's own APP-6(D) render tables (see ``game/sidc.py``).
+CELL_SIDC: tuple[SymbolSet, Entity] = (SymbolSet.LAND_UNIT, LandUnitEntity.INFANTRY)
+IED_SIDC: tuple[SymbolSet, Entity] = (
+    SymbolSet.ACTIVITY_EVENT,
+    ActivityEntity.IMPROVISED_EXPLOSIVE_DEVICE,
+)
+HVT_SIDC: tuple[SymbolSet, Entity] = (
+    SymbolSet.DISMOUNTED_INDIVIDUAL,
+    DismountedIndividualEntity.LEADER,
+)
+
 
 def regenerate_insurgent_cells(game: "Game", events: Any = None) -> None:
     """Regenerate every insurgent-held CP's garrison toward its anchor. Idempotent
@@ -98,6 +121,9 @@ def regenerate_insurgent_cells(game: "Game", events: Any = None) -> None:
     """
     if not getattr(game.settings, "coin_insurgency", False):
         return
+    # Symbol every insurgent garrison as infantry (idempotent, runs each turn incl.
+    # turn 0) so a COIN stronghold reads as an insurgency, not an armor park.
+    symbol_insurgent_garrisons(game, events)
     if getattr(game, "turn", 0) < 1:
         _ensure_anchors(game)  # snapshot turn 0 so the cap is the true start state
         return
@@ -197,6 +223,36 @@ def _revival_eligible(unit: Any) -> bool:
         unit_type.unit_class in REGEN_UNIT_CLASSES
         and unit_type.price <= REGEN_MAX_UNIT_PRICE
     )
+
+
+def symbol_insurgent_garrisons(game: "Game", events: Any = None) -> None:
+    """Render every insurgent-held CP's militia as **infantry** on the map, so a COIN
+    stronghold reads as an insurgency rather than an armor park (the discrete cell /
+    IED / HVT spawns already carry their own symbol; this covers the standing garrison
+    the campaign authored). Idempotent -- safe to call every turn.
+
+    Scope by *composition*, not class import: only a non-cache TGO whose units are all
+    C1-whitelist-eligible (:func:`_revival_eligible` -- irregular infantry/technicals/
+    AAA) is re-symboled. That cleanly leaves the fixed radar-SAM crust and EWRs alone
+    (their launchers/radars fail the whitelist), skips ammo caches (their own symbol),
+    and never re-points a discrete COIN spawn (it already has an override).
+    """
+    if not getattr(game.settings, "coin_insurgency", False):
+        return
+    for cp in game.theater.controlpoints:
+        if not cp.captured.is_red:
+            continue
+        for tgo in cp.ground_objects:
+            if getattr(tgo, "category", None) == "ammo":
+                continue
+            if getattr(tgo, "sidc_entity_override", None) is not None:
+                continue
+            units = list(tgo.units)
+            if not units or not all(_revival_eligible(u) for u in units):
+                continue
+            tgo.sidc_entity_override = CELL_SIDC
+            if events is not None:
+                events.update_tgo(tgo)
 
 
 def _revive(unit: Any, game: "Game", events: Any) -> None:
@@ -566,9 +622,18 @@ def _spawn_cell(
     (so it renders RED -- TGO allegiance follows its parent CP), trimmed to a cell."""
     from game.data.groups import GroupTask
 
-    tgo = _spawn_red_ground(game, source, target, GroupTask.FRONT_LINE, events)
+    tgo = _spawn_red_ground(
+        game, source, target, GroupTask.FRONT_LINE, events, sidc_override=CELL_SIDC
+    )
     if tgo is None:
-        tgo = _spawn_red_ground(game, source, target, GroupTask.BASE_DEFENSE, events)
+        tgo = _spawn_red_ground(
+            game,
+            source,
+            target,
+            GroupTask.BASE_DEFENSE,
+            events,
+            sidc_override=CELL_SIDC,
+        )
     if tgo is not None:
         _trim_to(tgo, CELL_MAX_UNITS)
     return tgo
@@ -588,12 +653,15 @@ def _spawn_red_ground(
     target: "ControlPoint",
     task: Any,
     events: Any,
+    sidc_override: Optional[tuple[SymbolSet, Entity]] = None,
 ) -> Any:
     """Generate a red ForceGroup for *task* at a point near *target*, attached to the
     red *source* CP. Returns the TGO or None if the faction has no group for the task.
     """
     point = _infiltration_point(game, source, target)
-    return spawn_red_ground_at(game, source, point, task, events)
+    return spawn_red_ground_at(
+        game, source, point, task, events, sidc_override=sidc_override
+    )
 
 
 def spawn_red_ground_at(
@@ -603,6 +671,7 @@ def spawn_red_ground_at(
     task: Any,
     events: Any,
     max_units: Optional[int] = None,
+    sidc_override: Optional[tuple[SymbolSet, Entity]] = None,
 ) -> Any:
     """Generate a red ForceGroup for *task* at *point*, attached to the red *red_cp*
     (whose ownership gives the TGO its RED allegiance -- a TGO renders as its parent
@@ -610,6 +679,11 @@ def spawn_red_ground_at(
 
     Shared by C1.5 re-infiltration (a cell/cache near a target) and the roadside-IED
     layer (an emplacement on the ratline); the caller supplies the point + red CP.
+
+    *sidc_override* re-points the map symbol (a ``(SymbolSet, Entity)`` pair, e.g.
+    :data:`CELL_SIDC` / :data:`IED_SIDC` / :data:`HVT_SIDC`) so the spawned object
+    renders as its real NATO symbol rather than the vehicle-group default of a tank
+    platoon. ``None`` keeps the class default.
     """
     from game.naming import namegen
     from game.theater import PresetLocation
@@ -621,6 +695,8 @@ def spawn_red_ground_at(
     heading = game.theater.heading_to_conflict_from(point) or Heading.from_degrees(0)
     location = PresetLocation(namegen.random_objective_name(), point, heading)
     tgo = group.generate(location.original_name, location, red_cp, game, task)
+    if sidc_override is not None:
+        tgo.sidc_entity_override = sidc_override
     red_cp.connected_objectives.append(tgo)
     game.db.tgos.add(tgo.id, tgo)
     if max_units is not None:

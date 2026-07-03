@@ -24,7 +24,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from game.fourteenth.coin import _despawn, _tgo_by_id, spawn_red_ground_at
+from game.fourteenth.coin import (
+    IED_SIDC,
+    _despawn,
+    _tgo_by_id,
+    spawn_red_ground_at,
+)
 
 if TYPE_CHECKING:
     from game import Game
@@ -101,7 +106,13 @@ def _replenish_ieds(game: "Game", ieds: list[dict[str, Any]], events: Any) -> No
         from game.data.groups import GroupTask
 
         tgo = spawn_red_ground_at(
-            game, red_cp, point, GroupTask.FRONT_LINE, events, max_units=IED_UNITS
+            game,
+            red_cp,
+            point,
+            GroupTask.FRONT_LINE,
+            events,
+            max_units=IED_UNITS,
+            sidc_override=IED_SIDC,
         )
         if tgo is None:
             return

@@ -113,6 +113,11 @@ and selected later upstream fixes.
   pushes early enough to cycle the whole flight through the boom and still make its join and
   TOT, and the package tanker is on station for ingress-side (pre-vul) refuels instead of only
   arriving for the trip home.
+- **Flights add fuel tanks when the route is long.** On far-AO campaigns — like the COIN
+  carrier parked ~800 km off the beach — a jet whose planned route needs more gas than it can
+  carry internally gets extra drop tanks added to its **empty** stations at mission start (so a
+  Hornet strike flies out with its third bag). It never swaps out a targeting pod, ECM, or
+  ordnance to do it, and it does nothing on short-range routes or to loadouts you've customized.
 - An optional **auto-planner unpredictability** doctrine knob (per side, off by default)
   varies which offensive targets the enemy services first, so red stops striking the same
   targets in the same order every turn. Its reactive air defenses stay just as sharp.

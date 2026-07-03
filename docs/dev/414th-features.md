@@ -3609,3 +3609,77 @@ toggle (default on) is a possible follow-up if the racetrack clutter is unwanted
 - **Label freq/TACAN depend on the `group_name` match.** If a support flight's `FlightData.group_name`
   doesn't match its `TankerInfo`/`AwacsInfo`, the orbit + callsign still draw but the freq/TACAN line is
   dropped rather than wrong.
+
+## §46 — Route-aware fuel-tank top-up
+
+Long-AO campaigns strand flights the auto-planner frags with too little fuel for the leg. The motivating case
+is the COIN **Enduring Resolve** carrier, which sits ~800 km off the Helmand AO: a Hornet on internal fuel
+plus its two stock wing tanks still can't make the round trip. This adds drop tanks to a flight at
+**mission-generation time** when — and only when — its planned route needs the range, so the COIN Hornet
+Strike always comes out with its third bag.
+
+### The safety contract (why it only fills empty stations)
+
+The user's guiding constraint: *don't degrade the loadouts we just restored to upstream.* The blocker to a
+"swap a low-value store for a tank" step is that **weapon type can't tell a self-defense missile from primary
+ordnance** — an AIM-9X, an AIM-120, a GBU-31, and an AGM-65 all resolve to `WeaponType.UNKNOWN` in the
+Retribution model, and the pydcs weapon record carries no category flag. So there is no safe, general way to
+identify "the spare Sidewinder" to trade for fuel without risking a TGP, ECM pod, or bomb. The tank-capable
+stations that *are* occupied on the reset loadouts hold exactly those things (the F-16's only free tank
+station is its ALQ-184 ECM; the Hornet BAI's are Mavericks).
+
+**Therefore the feature only fills stations that are already empty.** By construction it can never remove or
+replace a store. That still hits the goal: the reset upstream Hornet **Strike** leaves the centerline empty,
+so a COIN Hornet Strike gains its third tank there with zero swaps. A fully-loaded jet (the F-16, the Hornet
+BAI) is simply left as-is — under-fueled-but-intact beats gutted.
+
+### How it works
+
+`add_range_fuel_tanks(flight, loadout, settings)` (`game/fourteenth/range_fuel.py`) runs in
+`FlightGroupConfigurator.setup_payload`, **after** the date-degrade and **before** the pylons are equipped:
+
+1. **Guards** — no-op unless `settings.auto_range_fuel_tanks`, and always a no-op for a `is_custom` loadout
+   (respect explicit player edits), an empty/clean loadout, or a missing flight plan.
+2. **Required fuel** — `_required_fuel_lbs = taxi + cruise·route_nm + min_safe`, using the airframe's measured
+   `fuel_consumption` or the synthesised `estimated_fuel_consumption` that every airframe has (so it works
+   fleet-wide). `route_nm` is the summed leg length of the flight-plan waypoints. Tankers on the route are
+   **intentionally ignored** — we would rather over-fuel (an unused tank) than under-fuel.
+3. **Available fuel** — internal `max_fuel` (kg→lb) plus the parsed capacity of any tank already on the
+   loadout. If available ≥ required, return the loadout unchanged.
+4. **Fill** — walk the airframe's empty, tank-capable stations in order, adding a tank to each (matching a tank
+   already on the jet for consistency, else the largest compatible tank) until available ≥ required or no
+   stations remain. Returns a **new** `Loadout` — the persisted ATO loadout is never mutated, so it is
+   re-evaluated every turn as routes move and saves are untouched.
+
+**Tank detection** has no `WeaponType` to lean on, so `is_fuel_tank` matches the DCS display name with a
+narrow regex (`fuel tank`, `drop tank`, `external tank`, `gal`/`gallon`, `liter fuel`, `kg fuel`, `PTB-`, …)
+that deliberately excludes a "Color Oil Tank" or a fuel-air bomb, and skips the `(Empty)` ferry shells.
+`tank_capacity_lbs` parses the number + unit from the name (gallons ×6.7, liters ×1.75, kg ×2.205; a 2000-lb
+default when the name gives no number).
+
+### Gating
+
+`auto_range_fuel_tanks` — Mission Generation → Loadouts, **default ON**. It is inert on short-range routes
+(internal + stock tanks already cover the leg), so it only acts where a route genuinely exceeds internal fuel.
+No campaign preseed is needed (default ON already reaches the COIN campaign).
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Core | `game/fourteenth/range_fuel.py` (`add_range_fuel_tanks`, `top_up_for_route`, `is_fuel_tank`, `tank_capacity_lbs`, `route_length_nm`) |
+| Hook | `game/missiongenerator/aircraft/flightgroupconfigurator.py` (`setup_payload`) |
+| Setting | `game/settings/settings.py` (`auto_range_fuel_tanks`) |
+| Tests | `tests/fourteenth/test_range_fuel.py` (fills an empty tank station on a far route; **never removes/replaces a store**; short-route/empty/custom/setting-off no-ops; tank detection + capacity; route length) |
+
+### Gotchas / deferred (checklist S1 — needs an in-game pass)
+
+- **Fill-empties only, by design.** A jet whose tank stations are all occupied gains nothing (the F-16 with 2
+  tanks + ECM, the Hornet BAI with Mavericks on every wing station). Reaching a higher tank count on those
+  would require dropping a store, which can't be made safe generically (see the safety contract) — deferred as
+  an explicit opt-in if ever wanted.
+- **Estimate, not a measurement.** The synthesised fuel model is a planning approximation; the trigger is
+  intentionally generous (ignores tankers) so it errs toward carrying a tank rather than launching short.
+- **Generation-time only.** The added tank shows in the `.miz`, not in the in-app loadout editor (which shows
+  the base ATO loadout). Fine for AI; a player who wants to see/adjust it edits their loadout (which then
+  becomes `is_custom` and is left alone).

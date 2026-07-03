@@ -57,6 +57,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §43 | Per-aircraft flight defaults (save fuel + properties) | — | — |
 | §44 | Long-range carrier ops | — | `long_range_carrier_ops` |
 | §45 | Support-package F10 orbit markers | — | — |
+| §46 | Route-aware fuel-tank top-up | — | `auto_range_fuel_tanks` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

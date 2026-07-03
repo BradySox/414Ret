@@ -18,6 +18,7 @@ from game.dcs.aircraftproperties import (
     HELMET_DEVICE_PROPERTY_IDS,
     period_correct_value,
 )
+from game.fourteenth.range_fuel import add_range_fuel_tanks
 from game.lasercodes.lasercode import LaserCode
 from game.missiongenerator.logisticsgenerator import LogisticsGenerator
 from game.missiongenerator.missiondata import MissionData, AwacsInfo, TankerInfo
@@ -428,6 +429,8 @@ class FlightGroupConfigurator:
                 self.flight.squadron.coalition.faction,
                 target,
             )
+
+        loadout = add_range_fuel_tanks(self.flight, loadout, self.game.settings)
 
         for pylon_number, weapon in loadout.pylons.items():
             if weapon is None:

@@ -600,6 +600,13 @@ using measured data only and gain no new blast radius. A real `fuel:` block alwa
   new `render_into`) over the enemy-AD **threat cards** (`ThreatIntelBriefPage.render_cards`, which packs
   as many as fit, now **colour-coded** to match the Brief Sheet — amber MEZ/Detect, blue HARM code +
   bullseye cues, emphasised system name). Skipped entirely when a flight has neither (e.g. a BARCAP).
+  When the recon photo takes the flex slot (below), the Fuel Ladder that would otherwise be dropped from
+  the deck is handed to this page (`CombatIntelPage.fuel_card`) and drawn — via `_draw_section_if_fits`, so
+  only when it fits — into the space below the threat cards. That space is roomy on any turn where the
+  enemy AD is still **unidentified** (a fogged card collapses to a single "fly TARPS to ID" line, per §3),
+  which is exactly when the page would otherwise be half-blank; a page full of identified-threat cards just
+  omits the ladder. `CombatIntelPage.render_body` is the composite body (extracted from `write` so the fill
+  logic is unit-testable — `tests/missiongenerator/test_compact_kneeboard.py`).
 - **P3 Comms & Coordination** (`CommsCoordPage`) composes the support sections (comm ladder + AWACS/
   tanker/JTAC, via `SupportPage._render(draw_title=False, fill=False, include_airfield_dir=False)`) with
   the **colour-coded code words** (`BrevityCard.render_code_words` — push words blue, SUCCESS green, ABORT

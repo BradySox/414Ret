@@ -566,6 +566,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     over the enemy-AD threat cards, colour-coded to match), **P3 Comms & Coordination** (radios +
     AWACS/tanker/JTAC + colour-coded code words + brevity), and an
     adaptive **P4 Flex** (recon target photo when target-recon imagery is on, else just the Fuel Ladder).
+    When the recon photo takes the flex slot the **Fuel Ladder** would otherwise be dropped from the deck
+    entirely; it is instead handed to **P2 Threats & Targets** and drawn (via `_draw_section_if_fits`) into
+    the space left below the threat cards — which is roomy on any turn where the enemy AD is still
+    unidentified (each fogged card collapses to a one-line "fly TARPS to ID"), so the ladder backfills the
+    otherwise-blank lower half; a fully-populated identified-threat page just omits it (`CombatIntelPage.fuel_card`).
     The **friendly-package list** rides on the always-present **cover page** (§30) in compact mode (recon
     imagery owns the flex slot, so it had nowhere else; built once per shared-airframe deck). The **Fuel
     Ladder** is one glanceable `Fuel` column (planned remaining) per steerpoint with the RTB surplus —

@@ -12,7 +12,11 @@ your datalink so you plan SEAD against the sites that matter. This page explains
 how it changes what you see when you build packages.
 
 For the per-task fragging detail (SEAD vs DEAD, BARCAP timing, escorts), see
-[Mission-planning](Mission-planning).
+[Mission-planning](Mission-planning). Two campaign-level layers also steer the planner's
+*offensive* priorities: the **[campaign phase](Campaign-Phases-and-ROE)** (which objectives get
+first claim on offensive jets this month) and, on ROE campaigns, the restricted-zone gate (the
+AI never strikes into an active sanctuary). Reactive defense — everything on this page — is
+never touched by either.
 
 ## QRA intercept reserve
 
@@ -73,6 +77,11 @@ swung off-axis as the front moved, and could pin a tanker onto its own home runw
   configured buffer.
 - The **player** coalition holds forward (closer behind the FLOT, for coverage); the **AI**
   coalition holds deeper, so red tankers and AWACS don't loiter near the front.
+- **You can find them from the cockpit.** Every blue tanker and AEW&C orbit is painted onto the
+  generated mission's **F10 map** as a cyan dashed racetrack with a label — callsign, type,
+  radio frequency, TACAN — so "where's my gas?" is answered by the F10 map, no DTC and no
+  briefing screenshot needed. See
+  [Map Layers and Interface](Map-Layers-and-Interface#what-the-dcs-f10-map-shows).
 
 ### Theater tanker placed on receiver demand
 
@@ -81,6 +90,31 @@ centre of the flights that actually need fuel (honouring boom vs probe compatibi
 of orbiting wherever the planning anchor happened to land. Same-package buddy tankers are not
 moved; if there is no compatible demand the tanker keeps its front anchor. So the tanker tends
 to sit where your thirsty flights converge.
+
+<a name="long-range-carrier-ops"></a>
+## Long-range carrier ops
+
+*Toggle: **Carrier operations** (`long_range_carrier_ops`, Campaign Management) — default off;
+pre-seeded by campaigns that park the boat far out (Operation Enduring Resolve).*
+
+Some campaigns stand the carrier hundreds of miles offshore — the real OEF Arabian-Sea cycle put
+the boat ~400+ NM from the fight, which is past the stock planner's range gate, so every carrier
+squadron just sat on deck. With this on, the boat joins the war deterministically:
+
+- **One carrier package a turn**, fragged from the boat's own squadrons before the main planner
+  runs: a 2-ship **strike** section (aimed at the nearest legal target, preferring ammo caches),
+  an **A-6E buddy tanker** holding a real orbit off the boat for launch/recovery gas, and an
+  **E-2** on AEW&C station — proper flight plans, shared TOT, forced through the range gate.
+- **Everything from the boat tanks from the boat.** Any other carrier flight the commander frags
+  in a tanker-less package (SEAD Hornets, escorts) has its refuel point pinned onto the buddy
+  A-6's orbit, so the ingress top-off and recovery gas actually exist instead of a phantom
+  refuel waypoint 500 NM from any tanker.
+- Campaigns pair the toggle with a wider `max_mission_range_planes` so the carrier squadrons are
+  assignable to normal tasking at that range at all.
+
+No carrier, no capable jets, or no legal target ⇒ silent no-op. Blue-side only. See the
+**[Enduring Resolve briefing](Enduring-Resolve-Campaign-Briefing#the-carriers-war)** for the
+shipped example. *(Engine-verified; awaiting its first flown campaign — checklist P2.)*
 
 ## DEAD reachability gate
 

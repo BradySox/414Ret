@@ -16,7 +16,7 @@ Because the state persists, a campaign is a series of connected operations rathe
 
 ## What's different in the 414th fork
 
-> 414Ret keeps the upstream Retribution engine and adds a squadron-focused layer on top: incomplete enemy intelligence that makes recon worth flying, new player tasks (SCAR, Combat SAR, C-130J JAMMING, TARPS), reworked air-defense and front-line behavior, a unified dark-themed map layers panel, and the *Germany — Red Tide* campaign. Where this guide notes a difference, it links to the relevant page. For the full tour, see [414th Fork Overview](414th-Fork-Overview).
+> 414Ret keeps the upstream Retribution engine and adds a squadron-focused layer on top: incomplete enemy intelligence that makes recon worth flying, new player tasks (SCAR, Combat SAR, C-130J JAMMING, TARPS), reworked air-defense and front-line behavior, a unified dark-themed map layers panel, campaign phases with rules-of-engagement and political-will layers, and four built campaigns (*Germany — Red Tide*, *Khe Sanh: Operation Niagara*, *Red Flag 81-2*, and the Afghanistan COIN campaign *Operation Enduring Resolve*). Where this guide notes a difference, it links to the relevant page. For the full tour, see [414th Fork Overview](414th-Fork-Overview).
 
 If you have used upstream Retribution before, the core workflow is unchanged — you will recognize the New Game wizard, the map, and the ATO. The differences are additive.
 
@@ -60,7 +60,7 @@ On first run, point Retribution at your DCS World installation and your `Saved G
 Once it knows where DCS lives, start a campaign from the **New Game** wizard. The wizard walks you through:
 
 - **Theater and date** — pick a campaign/map and a start date. Choose a smaller campaign for your first run rather than a high-unit-count one.
-- **Factions** — pick the side you fly (blue) and the opponent (red). 414Ret adds the `[CH] Iran 2020` faction and the *Germany — Red Tide* campaign's historical 1988 NATO/Warsaw Pact factions.
+- **Factions** — pick the side you fly (blue) and the opponent (red). 414Ret adds the `[CH] Iran 2020` faction and the built campaigns' historical factions (1988 NATO/Warsaw Pact, 1968–1972 Vietnam, the 1981 Red Flag aggressors, the 2006 OEF coalition and insurgents).
 - **Generator and difficulty options** — carriers/LHAs, navy presence, economy multipliers, and automation assists.
 - **Air wing** — review and adjust the squadrons you start with.
 

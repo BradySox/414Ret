@@ -43,6 +43,12 @@ is itself a recon task. Once discovered, a command post shows fully, with exact 
 Toggle `SCAR command-post intel` off (Campaign Doctrine settings page) to restore plain enemy
 command-post visibility.
 
+**Intel goes stale, too.** On the [COIN campaign](Enduring-Resolve-Campaign-Briefing), insurgent
+cells **regenerate in place** — and a revived unit does **not** update your last recon snapshot.
+A position you photographed dead last week can be alive and shooting while your map still shows
+the old picture, until you re-fly the recon. Fog isn't just about finding things once; it's about
+how old your photos are.
+
 ## Lifting the fog: TARPS photo recon
 
 The clean way to resolve both rules above is to fly a **TARPS** photo-recon pass: a player F-14

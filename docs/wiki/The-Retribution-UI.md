@@ -18,12 +18,14 @@ The map is the heart of the application. It shows the theater, your bases and th
 
 The fork makes the map easier to read: SAM rings, emitters, routes, and IADS links are clearer, and short-range mobile defenses are kept off player datalinks while deliberate-SEAD-sized sites stay visible.
 
+Two campaign-state overlays ride on the map. The **campaign-status ribbon** across the top shows the campaign name, turn, date, and the current **[campaign phase](Campaign-Phases-and-ROE)** (click it to expand the whole arc and its objectives; on a political-will campaign the will meters live here too). On a campaign with an active ROE layer, the map also draws the **restricted / weapons-free zones** (dashed red / dashed green), and locked targets wear a **RESTRICTED — ROE badge** on their tooltip. You can also **right-click an enemy supply route** to frag an interdiction package against it.
+
 ## The top toolbar and menus
 
 The toolbar across the top is your campaign control strip. From here you:
 
 - **Save and load** the campaign, and start a **New Game** (the wizard described in [Getting Started](Getting-Started)).
-- Open **Settings** — the difficulty, doctrine, plugin, and cheat options. The fork reorganised this screen into six focused pages (Difficulty & Realism · Air Doctrine · Campaign Management · Mission Generation · Kneeboards · Performance) with one-click **difficulty presets** (Casual / Normal / Veteran / Ace) on the Difficulty & Realism page; a settings audit also removed dead/duplicate options and merged the AI-radio toggles into a single **AI wingman radio behavior** choice. Doctrine settings here expose the fork's air-defense, SCAR, and unpredictability knobs.
+- Open **Settings** — the difficulty, doctrine, plugin, and cheat options. The fork reorganised this screen into focused pages (Difficulty & Realism · Air Doctrine · Campaign Management · Mission Generation · Kneeboards · Performance · **Vietnam Ops**) with one-click **difficulty presets** (Casual / Normal / Veteran / Ace) on the Difficulty & Realism page; a settings audit also removed dead/duplicate options and merged the AI-radio toggles into a single **AI wingman radio behavior** choice. Doctrine settings here expose the fork's air-defense, SCAR, and unpredictability knobs.
 - **Generate the mission / take off** — produce the `.miz` for the current turn and hand off to DCS.
 - **Advance the turn / fast-forward** — resolve and move the campaign forward after a mission, or let the AI auto-resolve.
 - Open the **Air Wing** and finance/intel summaries for the current state.

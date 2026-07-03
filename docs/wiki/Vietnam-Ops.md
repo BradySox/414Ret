@@ -81,7 +81,7 @@ unaffected — the heavy-bomber gate means only the big jets carpet.
 
 ## 2 — AAA flak gauntlet
 
-*Toggle: **AAA flak gauntlet** · in-game pass: ◐ partial (softened twice for lethality; re-fly owed)*
+*Toggle: **AAA flak gauntlet** · in-game pass: ✅ verified (after two lethality-softening passes)*
 
 The single biggest **atmosphere** upgrade. The real Vietnam threat was **AAA, not SAMs or MiGs**,
 and the engine's SAM/MEZ threat model barely represents it. With this on, fly within range and
@@ -104,7 +104,9 @@ below the ceiling of an **opposing AAA gun** and you draw **barrage flak** — a
 
 ## 3 — Naval gunfire support
 
-*Toggle: **Naval gunfire support** · in-game pass: ☐ untested · **coastal campaigns only***
+*Toggle: **Naval gunfire support** · in-game pass: ☐ untested (arms cleanly in flown sessions;
+the firing legs themselves are unflown — no red ground has yet been inside a gun ship's range) ·
+**coastal campaigns only***
 
 Offshore **gun ships** — the iconic New Jersey 16″ batteries, plus cruisers/destroyers/frigates —
 deliver shore bombardment, a capability the modern engine never had. Two modes run off the same
@@ -123,19 +125,28 @@ This belongs to Yankee Station / I-Corps coastal operations.
 
 ## 4 — Convoy interdiction (Steel Tiger)
 
-*Toggle: **Truck-convoy interdiction** · in-game pass: ☐ untested (reworked — the old phantom-spawn pass is obsolete)*
+*Toggle: **Truck-convoy interdiction** · in-game pass: ◐ partial (the flown trail leg passed —
+a real convoy hunted and killed by Armed Recon; the debrief leg is the remaining check)*
 
 A moving **enemy supply column** on the road behind the front — the Ho Chi Minh Trail / Operation
 Steel Tiger — surfaced to the player through **Armed Recon**. This is no longer a cosmetic truck
-spawn: **the convoy is real**. Each turn the engine makes sure the enemy has a genuine supply
-column flowing — actual rear-area ground units, debited from their source base, moving up the
-road corridor nearest the front through Retribution's own convoy system.
+spawn: **the convoy is real**. Each turn the engine makes sure the enemy has genuine supply
+columns flowing — actual ground units, debited from a rear base, moving up the road corridors
+nearest the front through Retribution's own convoy system.
 
+- **A real trail, not one lone truck.** The trail runs **two concurrent columns of up to ~10
+  vehicles** (three during a surge), and fills its budget across **distinct roads** where the
+  map has them — Yankee Station's full trail network, Khe Sanh's two rear feeders — rather than
+  stacking everything on one corridor. The columns are framed as **external logistics**: the
+  Ho Chi Minh Trail's matériel came from over the border, so a picked source base is topped up
+  with fresh whitelisted kit for the run rather than draining a dead local economy.
 - **Kill it and it matters.** The trucks carry real reinforcements. Interdict the column and
   those units **never reach the line**; let it through and they do. The kill is recorded natively
   in the debrief — no bespoke scoring.
-- **Where it is.** The corridor is the enemy-held road nearest the fighting, resolved on the real
-  control-point graph, so the target always ties to actual enemy logistics.
+- **Where it is.** The corridors are the enemy-held roads nearest the fighting, resolved on the
+  real control-point graph, so the target always ties to actual enemy logistics. (One documented
+  no-op: **Velvet Thunder** — its Marianas island geography has no roads between enemy bases, so
+  the toggle does nothing there.)
 - **Right-click to frag.** Instead of hunting for the corridor, **right-click an enemy supply
   route** on the map to open the package dialog there with **Armed Recon pre-selected**. (A
   fully-friendly route won't offer it.) The Armed Recon flight plan sweeps the hunted road
@@ -147,7 +158,9 @@ road corridor nearest the front through Retribution's own convoy system.
 
 ## 5 — Airbase harassment (rocket/mortar siege)
 
-*Toggle: **Airbase harassment (rocket/mortar siege)** · in-game pass: ☐ untested*
+*Toggle: **Airbase harassment (rocket/mortar siege)** · in-game pass: ◐ partial (the in-mission
+"Incoming" cue and the player-field exclusion are confirmed in flown sessions; the visual impact
+confirm is still owed)*
 
 The Vietnam air war was fought as much *on the ground at the airbase* as in the air — Bien Hoa,
 Tan Son Nhut, Da Nang, Chu Lai, and the Khe Sanh strip were under near-constant rocket / mortar /
@@ -168,7 +181,9 @@ of "the rear isn't safe" that the flak gauntlet started over the target.
 
 ## 6 — Super Gaggle hilltop resupply
 
-*Toggle: **Super Gaggle hilltop resupply** · in-game pass: ☐ untested (reworked — real squadrons, tracked losses) · blue-side*
+*Toggle: **Super Gaggle hilltop resupply** · in-game pass: ◐ partial (two clean flown runs —
+delivery, return, and shootdowns all behaved; the loss-accounting debrief check is the remaining
+leg) · blue-side*
 
 Models the Khe Sanh **"Super Gaggle"**: a formation of transport helos runs supplies into a
 **cut-off forward friendly outpost** while you can fly escort. This is no longer a phantom spawn
@@ -181,12 +196,16 @@ on a respawn loop: **the gaggle is drawn from your real squadrons and its losses
   squadron at the debrief, exactly like any other flight. Survivors return; a delivered run
   credits the outpost a small ground-strength boost — so the gaggle now has stakes in both
   directions.
-- **Fly escort.** The gaggle is the mission — you can shepherd it in. It needs a friendly forward
-  outpost near the front and a helo squadron with airframes, or it quietly stands down.
+- **Fly escort — you can actually find it now.** The run launches on a **delay (~10 minutes,
+  tunable)** so a cold-starting escort can plausibly be airborne, the spawn cue announces it,
+  and the lead helo carries a **live F10 map mark** refreshed as it flies (removed on
+  delivery/loss). It needs a friendly forward outpost near the front and a helo squadron with
+  airframes, or it quietly stands down.
 
 ## 7 — FAC(A) willie-pete target marking
 
-*Toggle: **FAC(A) willie-pete target marking** · in-game pass: ☐ untested · blue-effective*
+*Toggle: **FAC(A) willie-pete target marking** · in-game pass: ✅ verified (the named F10 mark
+confirmed in a flown session) · blue-effective*
 
 The iconic Vietnam **forward air controller (airborne)**. An **OV-10 Bronco** loitering over the
 battle area marks nearby enemy ground with **white-phosphorus smoke** so the strikers — and you —
@@ -194,29 +213,39 @@ can visually acquire the target and roll in. The engine already has a **ground J
 stationarily *lases* targets; this is the distinct **airborne, smoke-marking** half it doesn't
 cover, and it's the defining Vietnam FAC image (the Bronco putting willie pete on the target).
 
-- **How it works.** With a friendly **OV-10 airborne** over the front, the plugin drops white
-  smoke on the nearest opposing ground unit within ~3 NM of the Bronco on a cadence, plus a
-  "target marked with willie pete — cleared hot" cue. No OV-10 airborne ⇒ nothing marked.
-- **Marking only.** v1 puts smoke on the target; it doesn't auto-assign the target to a CAS
-  package. The visual cue is the point.
+- **How it works.** With a friendly **OV-10 airborne** over the front, the plugin picks the
+  **largest enemy ground concentration** in range (not whatever lone truck is nearest), drops
+  white smoke on it on a cadence, and lays a **named, live F10 map mark** at the target — e.g.
+  *"FAC(A): BTR-60 x6 — willie pete, cleared hot"* — refreshed as the FAC works, so the target
+  is findable from anywhere and unambiguously the FAC's (the Bronco's own WP rockets make no
+  F10 mark). No OV-10 airborne ⇒ nothing marked.
+- **Marking only.** It puts smoke and a mark on the target; it doesn't auto-assign the target to
+  a CAS package. The visual cue is the point.
 
 ## 8 — Snake and nape (napalm CAS)
 
-*Toggle: **Snake and nape (napalm CAS)** · in-game pass: ☐ untested*
+*Toggle: **Snake and nape (napalm CAS)** · in-game pass: ◐ partial (the player leg is verified —
+in-gate passes bloomed the fire walls, above-ceiling passes correctly drew none; the AI-flown leg
+is the remaining check)*
 
 The iconic low-level napalm delivery — "snake" for Snakeye retarded bombs, "nape" for napalm.
 Where the [flak gauntlet](#2--aaa-flak-gauntlet) *punishes* predictable flying, this **rewards
 pressing the CAS run in on the deck**.
 
-- **How it works.** Make a **low** (below the run-in ceiling AGL), **fast** pass **directly over
-  a live enemy ground unit** in an attack aircraft, and the runtime lays a **napalm swath** along
-  your run-in — a line of burning fire effects (auto-extinguished after a burn time) plus a
-  modest real bite per fire node. Once per pass, per-aircraft cooldown.
-- **It only fires on a deliberate pass.** High, slow, or off-target passes do nothing — you have
-  to fly the profile. Discovery is by the DCS *attack aircraft* attribute, so any attack jet on
-  either side can nape; no planning or toggling per-flight.
-- **Tunable** (plugin options): ceiling, minimum speed, drop range, swath length, fire-node
-  count, per-node power.
+- **How it works — anchored to your real bombs.** The runtime watches each **Snakeye-class
+  retarded-bomb release** made from a qualifying profile — **low** (below the release ceiling
+  AGL, ~500 ft) and **fast** — then **tracks the weapons to impact** and blooms **one fire wall
+  + a modest real bite at each actual impact point**. The wall of fire emerges from your real
+  ripple: a dry pass lays nothing, and a miss burns exactly where it missed.
+- **It only fires on a deliberate pass.** High or slow releases do nothing — you have to fly the
+  profile. There's no aircraft gate at all: **the ordnance is the eligibility**, on either side.
+  (Mk-77 real fire bombs are excluded — Splash Damage already renders actual napalm; no
+  double-burn.)
+- **AI flies it too.** Under Vietnam doctrine, AI CAS/BAI/Armed-Recon flights press their combat
+  legs down to ~500 ft, inside the release gate — so the AI can nape its own targets (the flown
+  confirmation of that AI leg is still owed).
+- **Tunable** (plugin options): release ceiling, minimum release speed, the eligible-weapon name
+  patterns, per-impact power.
 
 ---
 
@@ -228,18 +257,18 @@ cockpit pass to confirm feel and behaviour. Current state:
 | Feature | Status |
 |---|---|
 | Arc Light | ✅ Verified in the cockpit |
-| Flak gauntlet | ◐ Partial — softened twice for lethality, re-fly owed |
-| Naval gunfire | ☐ Untested (both runtime modes) |
-| Convoy interdiction | ☐ Untested — **reworked** to real force-model convoys; the old phantom-spawn pass no longer applies |
-| Airbase harassment | ☐ Untested |
-| Super Gaggle | ☐ Untested — **reworked** to real squadron airframes + tracked losses |
-| FAC(A) marking | ☐ Untested |
-| Snake and nape | ☐ Untested |
+| Flak gauntlet | ✅ Verified (after two lethality-softening passes) |
+| Naval gunfire | ☐ Untested — arms cleanly in flown sessions; the firing legs are unflown |
+| Convoy interdiction | ◐ Partial — the flown trail leg passed (a real convoy hunted and killed by Armed Recon); the debrief loss-recording leg is the remaining check |
+| Airbase harassment | ◐ Partial — the barrage cue + player-field exclusion confirmed; visual impact confirm owed |
+| Super Gaggle | ◐ Partial — two clean flown runs; the squadron loss-accounting check (and the new launch delay) still owed |
+| FAC(A) marking | ✅ Verified — the named F10 mark confirmed in a flown session |
+| Snake and nape | ◐ Partial — the player leg verified exactly to the gate; the AI-flown leg owed |
 
-If you fly any of the untested effects, the biggest things to watch: the flak should *pressure you
-to jink*, not hard-kill you; airbase harassment must **never** land on a player-spawn field; naval
-gunfire should do nothing on an inland map; a dead convoy's units should never arrive at the
-front.
+If you fly any of the open legs, the biggest things to watch: airbase harassment must **never**
+land on a player-spawn field; naval gunfire should do nothing on an inland map; a dead convoy's
+units should never arrive at the front; and two lost gaggle suppressors should show up as real
+squadron airframe losses at the next debrief.
 
 ## See also
 

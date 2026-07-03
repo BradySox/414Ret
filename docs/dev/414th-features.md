@@ -1461,20 +1461,27 @@ Sandys (player Sandys are untouched — voice/SRS coordination stays the intende
 buckets `FlightType.SCAR` flights per coalition into `dcsRetribution.CombatSAR(.red).sandys` (group
 names only, alongside the existing `kings`/`rescueHelos`); `combatsar-config.lua` builds a
 `sandyByName` map and, on every tick a survivor is `"down"`, `dispatchSandy` finds the nearest alive,
-idle, **non-player** Sandy within `sandyMaxRangeNm` (default 30 NM) and pushes a combo DCS
-task — `TaskOrbitCircleAtVec2` (hold near the survivor, at the Sandy's own current altitude/speed) plus
-an `EnRouteTaskEngageTargetsInZone` sub-task (actively hunts `"Ground Units"` within
-`sandyEngageRadiusNm`, default 3 NM, around the survivor) — replacing its DCS-assigned
-racetrack task. `configure_scar`'s weapons-free ROE (unchanged) does the actual engaging once
+idle, **non-player** Sandy within `sandyMaxRangeNm` (default 30 NM) and **pushes a route** to the
+survivor — a transit waypoint from the Sandy's current position to a hold waypoint over the survivor
+(450 m above ground) carrying `TaskOrbitCircleAtVec2` (the hold anchor) plus an
+`EnRouteTaskEngageTargetsInZone` waypoint task (actively hunts `"Ground Units"` within
+`sandyEngageRadiusNm`, default 3 NM, around the survivor). **Reworked 2026-07-02** from the original
+`SetTask(TaskCombo{engage, orbit})` after the Trail 2 flown session reproduced the fail signature
+(divert message, no movement): `EngageTargetsInZone` is an *en-route* task, which the DCS controller
+silently rejects inside a main-task ComboTask — en-route tasks only execute from a waypoint task
+list, and the transit leg physically flies the Sandy there (the stock MOOSE transit-then-orbit
+pattern). `configure_scar`'s weapons-free ROE (unchanged) does the actual engaging once
 retasked. Commits at most one Sandy per survivor (`busySandy`), retries every `POLL` (5s) until one
-frees up, and releases it (`ClearTasks()`, which resumes the group's own planned route) once the
-survivor is rescued/captured/dead. Two new plugin options: `sandyMaxRangeNm`, `sandyEngageRadiusNm`
+frees up, and releases it once the survivor is rescued/captured/dead — the release routes the Sandy
+back to the station it was diverted from (`entry.sandyReturn`) and holds it there, since the divert
+replaced the group's planned route and a bare `ClearTasks()` would leave it flying a straight line.
+Two plugin options: `sandyMaxRangeNm`, `sandyEngageRadiusNm`
 (imperial-unit options since 2026-07-01; the whole Combat SAR option set is now ft / NM / kts —
 `pickupRangeFt`/`pickupAGLFt`/`pickupSpeedKts`/`homeRangeNm`/`captureSpawnDistanceNm`/`captureRangeFt`
 — converted to metric at read time in the Lua, defaults equivalent to the old metric values).
 Python bucketing/emission is unit-tested
-(`tests/missiongenerator/test_combat_sar_sandy_luadata.py`); the Lua runtime is **unflown** (no local
-Lua interpreter — read-verified only) and needs a cockpit pass (checklist G23).
+(`tests/missiongenerator/test_combat_sar_sandy_luadata.py`); the routed-divert Lua needs a re-fly
+(checklist G23 — the pre-rework dispatch was flown 2026-07-02 and confirmed not to move the flight).
 
 ### SOF insert generation fixes (2026-06-22)
 
@@ -2836,10 +2843,10 @@ Same shape as §33 flak — an **on-marker + runtime discovery**, no per-mission
 
 ### Gotchas / deferred
 
-- **Runtime is unflown (checklist L10).** The Lua passes the `luac5.1 -p` gate, but the runtime OV-10
-  discovery, the nearest-enemy scan, and `trigger.action.smoke` placement can't be exercised headless. Watch
-  that the smoke lands on real enemy ground near the Bronco (not on friendlies / empty ground) and that
-  `dcs.log` shows "FAC(A) marking armed" with no Lua error.
+- **Runtime VERIFIED (checklist L10, 2026-07-02 Trail 2 flown session `wonderful-chatterjee`).** The
+  named F10 map mark appeared at the target cluster in a flown multiplayer session (user-confirmed),
+  "FAC(A) marking armed" in `dcs.log`, no Lua error — the mark is unambiguously the plugin's (the
+  Bronco's own WP rockets make no F10 mark).
 - **Marking only — no auto-assignment (deferred).** v1 marks the target with smoke; it does **not** assign the
   target to a CAS package or coordinate a strike (that overlaps the ground-JTAC/tasking systems). The
   smoke-mark is the iconic, low-risk core; FAC→CAS coordination is a possible later increment.

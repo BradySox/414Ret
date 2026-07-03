@@ -1292,7 +1292,24 @@ so the two docs don't drift.
 - **Fail signature:** the `AssertionError` recurs; the flight plans with no real ingress (routes
   straight through threat zones with no IP); the marker still overlaps the airfield icon.
 
-### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee` — INCONCLUSIVE, leaning fail: an F-4E ejection at t=1118 registered a survivor (2 snatch parties spawned 2 s later ~11 km from Gudauta), the AI A-1H Sandy 4-ship was airborne and closed to **24.2 NM** of the survivor around t≈1400 — inside the 30 NM `sandyMaxRangeNm` dispatch gate — yet Tacview shows no Sandy ever left the racetrack to orbit the point; no "Sandy dispatch error" lines either. Could be the survivor resolving (captured) before a dispatch tick found a free Sandy, or the dispatch not firing. Owed = whether anyone saw the "SANDY … is diverting" coalition message, else a focused re-fly with an ejection near the racetrack)
+### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ✗ REGRESSED → rework applied 2026-07-02 (root-caused; needs a re-fly)
+- **Fail signature reproduced (2026-07-02 flown Trail 2 session `wonderful-chatterjee`, user-confirmed):**
+  an F-4E ejection at t=1118 registered a survivor (2 snatch parties spawned 2 s later ~11 km from
+  Gudauta), the **"SANDY … is diverting to hold over the downed pilot" message fired** (user saw it),
+  the A-1H Sandys closed to **24.2 NM** — inside the 30 NM `sandyMaxRangeNm` gate — yet Tacview shows
+  **no Sandy ever left the racetrack** toward the survivor. No "Sandy dispatch error" lines: the Lua
+  call succeeded, the sim ignored the task.
+- **Root cause:** `dispatchSandy` used `SetTask(TaskCombo{ EnRouteTaskEngageTargetsInZone, Orbit })` —
+  `EngageTargetsInZone` is an **en-route** task, which the DCS controller silently rejects inside a
+  main-task ComboTask. Message-then-no-movement is exactly that signature.
+- **Rework (2026-07-02, same session):** divert is now a **route push** — transit waypoint → hold
+  waypoint over the survivor (450 m AGL) carrying the orbit + the en-route engage as *waypoint* tasks
+  (the stock MOOSE transit-then-orbit pattern), so the flight physically transits; release routes the
+  Sandy back to its recorded station (`entry.sandyReturn`) instead of a bare `ClearTasks()` (which
+  would leave it flying a straight line, since the divert replaced its planned route).
+- **Re-fly pass:** an AI Sandy visibly leaves the racetrack, flies to the survivor, orbits/engages
+  there, and returns to station once the survivor resolves. **Fail:** message with no transit (again),
+  a `combatsar: Sandy dispatch error` line, or the released Sandy wandering off in a straight line.
 - **Context (user request, 2026-06-30):** after G21/G22, the user asked to build the AI Sandy
   retasking that G21's investigation found was designed-but-never-built (the code's own comment
   called it "a combatsar runtime follow-up for the AI"; a 2026-06-30 in-game report — "Sandy's did
@@ -1925,7 +1942,7 @@ so the two docs don't drift.
   switching back to "included" stays filtered; the "show incompatible" toggle drops the era filter; a crash
   arriving on the Theater page.
 
-### L6 — Convoy interdiction (Steel Tiger) · §35 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the reworked real-convoy runtime leg PASSED — `Convoy 001` (2× PT-76 + Grad-URAL, real force-model units) drove the trail road, the player Armed Recon Phantoms found it and killed all 3 with Mk-82 Snakeyes (Tacview removals t=3195/3609/3610); still owed = the debrief leg — next-turn processing must record the loss as `enemy_convoy` so the units never arrive. ⚠ blocked on the REAL server-side `state.json` (the mission ran on the dedicated host; the local `Missions\state.json` is a stale Jun-20 file from a different campaign))
+### L6 — Convoy interdiction (Steel Tiger) · §35 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the reworked real-convoy runtime leg PASSED — `Convoy 001` (2× PT-76 + Grad-URAL, real force-model units) drove the trail road, the player Armed Recon Phantoms found it and killed all 3 with Mk-82 Snakeyes (Tacview removals t=3195/3609/3610); still owed = the debrief leg — next-turn processing must record the loss as `enemy_convoy` so the units never arrive. ⚠ blocked on the REAL server-side `state.json` — the dedicated host wrote it to its **TEMP fallback**: `dcs.log` says "The state.json file will be created in TEMP : (C:\Users\admin.dcs\AppData\Local\Temp\state.json)" (no `RETRIBUTION_EXPORT_DIR` set on the server + the client installPath doesn't exist there); the local `Missions\state.json` the user first pulled is a stale Jun-20 file from a different campaign. Fetch the TEMP file to process the turn, and set `RETRIBUTION_EXPORT_DIR` on the server for a stable path going forward)
 - **What changed:** the convoy is no longer a `vietnamops`-plugin `coalition.addGroup` phantom (a free,
   unrecorded unit). It is now a **real, tracked enemy convoy** created in the force model
   (`game/fourteenth/vietnam_convoy.py` `ensure_enemy_trail_convoy`, run once per turn from `finish_turn`):
@@ -2037,7 +2054,7 @@ so the two docs don't drift.
   missed); the outpost isn't bolstered on a clean run; a `coalition.addGroup` / `Group.getByName` Lua error in
   `dcs.log`; the squadron owned count goes negative (floor failed).
 
-### L10 — FAC(A) willie-pete target marking · §38 · ◐ PARTIAL (2026-07-01 flown Yankee Station session `intelligent-dubinsky`: user observed the OV-10 putting WP on a target — but the Bronco also carries real WP rockets, so this may have been the AI's own ordnance rather than the plugin's smoke mark; a confirmed white-smoke column + the "FAC: … cleared hot" cue still owed. **Findability pass 2026-07-02** resolves the ambiguity: the plugin now lays a **named F10 map mark** at the target — rockets make no F10 mark, so the mark is unambiguously the FAC; re-fly to confirm the mark appears and names the target cluster. 2026-07-02 Trail 2 session `wonderful-chatterjee`: FAC marking armed cleanly, the OV-10 CAS flight flew the front for ~23 min before both Broncos were shot down at t=1382; whether the named F10 mark appeared in that window needs the players' word)
+### L10 — FAC(A) willie-pete target marking · §38 · ☑ VERIFIED (2026-07-02 flown Trail 2 session `wonderful-chatterjee` — user confirmed the named FAC(A) F10 map mark appeared at the target; the mark is unambiguously the plugin's, since the Bronco's own WP rockets make no F10 mark. Armed cleanly in `dcs.log`, zero Lua errors; the OV-10s worked the front ~23 min before being shot down at t=1382. Earlier ambiguity from `intelligent-dubinsky` — smoke that might have been the AI's own rockets — resolved by the 2026-07-02 findability pass's named mark)
 - **Headless adjudication:** `game/missiongenerator/tests/test_vietnamops_luadata.py` locks the `fac` on-marker
   (emitted when `vietnam_fac_marking` is on, independent of the other suite features; off = no node). The
   runtime OV-10 discovery, the nearest-enemy scan, and `trigger.action.smoke` placement are runtime Lua,
@@ -2055,7 +2072,7 @@ so the two docs don't drift.
   set `facType`); wrong smoke colour; a `trigger.action.smoke` / `land.getHeight` / `getTypeName` Lua error;
   the mark cadence is far too frequent (smoke spam) or never fires.
 
-### L11 — Snake and nape (napalm CAS) · §39 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the detonation-anchored rework got 4 real player Snakeye deliveries with zero plugin errors — Tacview puts Toxic's two passes **inside the gate** (≈119 m and ≈111 m AGL at 153/274 m/s ground speed vs the 152 m / 93 m/s gate) so fires should have bloomed at his impacts, and Bulldog's two passes **above the ceiling** (≈213 m and ≈177 m AGL) so his correctly drew none; owed = the pilots' eyewitness confirm that Toxic saw the fire walls and Bulldog didn't, plus the AI deck-level release leg)
+### L11 — Snake and nape (napalm CAS) · §39 · ◐ PARTIAL (**player leg VERIFIED** 2026-07-02 flown Trail 2 session `wonderful-chatterjee`: 4 real player Snakeye deliveries, zero plugin errors, and the user confirmed the split exactly matched the gate — Toxic's two in-gate passes (≈119 m and ≈111 m AGL at 153/274 m/s vs the 152 m / 93 m/s gate) bloomed the fire walls ("it was awesome"), Bulldog's two above-ceiling passes (≈213 m and ≈177 m AGL) correctly drew none. Still owed = the **AI leg**: an AI CAS/BAI flight pressing to the §P1c 500 ft deck and tripping the release gate itself)
 - **Detonation-anchored (2026-07-02 rework — this row tests the NEW trigger):** fire now keys off a **real
   eligible-bomb release** (weapon type name vs the `napeWeaponPatterns` option, default `SNAKEYE`; Mk-77 cans
   excluded — Splash Damage owns real napalm) made from a low + fast **release profile**, with each weapon

@@ -460,11 +460,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     role of the **Combat SAR package** (`FlightType.SCAR`, A-10C/AH-64D, scoped to the FLOT). The
     standing package = **1 King (C-130) + 1 Jolly Green (helo) + 2–4 Sandy**; Sandy's racetrack is
     planned once at generation, but an **AI-crewed** Sandy is now **dynamically diverted** at runtime
-    (`combatsar` plugin, added 2026-07-01) off that racetrack to hold + actively engage
-    (`EnRouteTaskEngageTargetsInZone`) near a live ejection once one occurs, freeing again once the
+    (`combatsar` plugin, added 2026-07-01; **route-push rework 2026-07-02** — the original
+    `SetTask(TaskCombo)` divert was flown and confirmed a no-op: `EngageTargetsInZone` is an en-route
+    task the DCS controller silently rejects inside a main-task combo. The divert is now a transit
+    waypoint + a hold waypoint over the survivor carrying the orbit + engage as *waypoint* tasks, and
+    the release routes the Sandy back to its recorded station) off that racetrack to hold + actively
+    engage near a live ejection once one occurs, freeing again once the
     survivor is resolved — a player-flown Sandy is untouched (voice/SRS coordination). "Walking the
     rescue helo in" itself is still voice-first only, not scripted, for either. features doc §15,
-    checklist G23 (new — unflown). **Enemy-capture race**
+    checklist G23 (rework needs a re-fly). **Enemy-capture race**
     (`combatsar` plugin): on ejection an enemy snatch party (several small dispersed teams, spawned
     under the opposing faction's country) may race to seize the survivor — kill it
     to save, or the pilot is **CAPTURED** (`combat_sar_captures` state global) and held as a **POW at
@@ -763,8 +767,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     feature. Symmetric (only OV-10 owners have FACs, so blue-effective in practice); needs a friendly OV-10
     airborne over the front, or it no-ops. Runtime-cosmetic (a marker, no gameplay-model change). Plugin
     options: FAC type, spot/mark range, mark cadence. (`game/missiongenerator/vietnamopsluadata.py`,
-    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §38, checklist L10 — needs an
-    in-game pass.)
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §38, checklist L10 —
+    VERIFIED 2026-07-02, the named F10 mark confirmed in a flown session.)
 39. **Snake and nape (napalm CAS)** — the eighth **Vietnam Ops suite** feature: the iconic low-level napalm
     CAS delivery ("snake" = Snakeye retarded bombs, "nape" = napalm). **Detonation-anchored (reworked
     2026-07-02)**: Python still emits only `dcsRetribution.VietnamOps.snakeNape = { enabled }`

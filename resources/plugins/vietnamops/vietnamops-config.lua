@@ -627,11 +627,17 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch
         local SPEED = 110 * KTS_TO_MS      -- m/s (~110 kts loaded-Huey cruise; option in kts)
         local ALT = 500 * FT_TO_M          -- m, radio-altitude air start / transit height (option in ft AGL)
         local SUPPRESS_ALT = 6500 * FT_TO_M  -- m (baro) transit/attack altitude (option in ft MSL)
+        -- Mission-start delay before the gaggle actually launches (2026-07-03: a flown
+        -- session's helos closed on the outpost and delivered by t=306s -- the whole run
+        -- was over before a cold-starting player could realistically be airborne to
+        -- escort it). Default 10 min gives a player time to start, taxi and take off.
+        local DELAY = 600  -- s
         if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
             local o = dcsRetribution.plugins.vietnamops
             SPEED = (tonumber(o.gaggleSpeedKts) or 110) * KTS_TO_MS
             ALT = (tonumber(o.gaggleAltFt) or 500) * FT_TO_M
             SUPPRESS_ALT = (tonumber(o.gaggleSuppressorAltFt) or 6500) * FT_TO_M
+            DELAY = tonumber(o.gaggleDelaySec) or DELAY
         end
 
         local DELIVER_RADIUS = 1500  -- m: within this of the outpost counts as delivered
@@ -720,115 +726,130 @@ if suite.superGaggle and suite.superGaggle.outpost and suite.superGaggle.launch
             return pcall(coalition.addGroup, COUNTRY, Group.Category.AIRPLANE, groupData)
         end
 
-        -- Spawn the committed helo airframes, by name, once.
-        local units = {}
-        for i, nm in ipairs(heloNames) do
-            units[i] = {
-                type = heloType,
-                name = nm,
-                x = launch.x - (i - 1) * 40, -- string the gaggle out over the field
-                y = launch.y,
-                alt = ALT,
-                alt_type = "RADIO",
-                heading = 0,
-                skill = "Average",
-            }
-        end
-        local groupData = {
-            visible = false,
-            hidden = false,
-            name = "SuperGaggleHelos",
-            start_time = 0,
-            task = "Transport",
-            route = {
-                points = {
-                    wp(launch.x, launch.y, ALT, "RADIO", SPEED),
-                    wp(outpost.x, outpost.y, ALT, "RADIO", SPEED),
-                    wp(launch.x, launch.y, ALT, "RADIO", SPEED),
+        -- The actual spawn + run -- scheduled DELAY seconds out (below) rather than
+        -- firing at mission start, so a cold-starting player has time to get airborne
+        -- and actually escort it.
+        local function spawnGaggle()
+            -- Spawn the committed helo airframes, by name, once.
+            local units = {}
+            for i, nm in ipairs(heloNames) do
+                units[i] = {
+                    type = heloType,
+                    name = nm,
+                    x = launch.x - (i - 1) * 40, -- string the gaggle out over the field
+                    y = launch.y,
+                    alt = ALT,
+                    alt_type = "RADIO",
+                    heading = 0,
+                    skill = "Average",
+                }
+            end
+            local groupData = {
+                visible = false,
+                hidden = false,
+                name = "SuperGaggleHelos",
+                start_time = 0,
+                task = "Transport",
+                route = {
+                    points = {
+                        wp(launch.x, launch.y, ALT, "RADIO", SPEED),
+                        wp(outpost.x, outpost.y, ALT, "RADIO", SPEED),
+                        wp(launch.x, launch.y, ALT, "RADIO", SPEED),
+                    },
                 },
-            },
-            units = units,
-        }
-        if not pcall(coalition.addGroup, COUNTRY, Group.Category.HELICOPTER, groupData) then
-            return
-        end
-        local suppressing = spawnSuppressors()
-        trigger.action.outTextForCoalition(
-            SIDE,
-            "SUPER GAGGLE -- resupply helos inbound to " .. outpostName .. "."
-                .. (suppressing and " Fast movers suppressing the guns." or "")
-                .. " Marked on the F10 map -- escort welcome.",
-            20
-        )
+                units = units,
+            }
+            if not pcall(coalition.addGroup, COUNTRY, Group.Category.HELICOPTER, groupData) then
+                return
+            end
+            local suppressing = spawnSuppressors()
+            trigger.action.outTextForCoalition(
+                SIDE,
+                "SUPER GAGGLE -- resupply helos inbound to " .. outpostName .. "."
+                    .. (suppressing and " Fast movers suppressing the guns." or "")
+                    .. " Marked on the F10 map -- escort welcome.",
+                20
+            )
 
-        -- One live F10 map mark on the inbound gaggle, refreshed each tick so the player can
-        -- actually FIND and escort it (the old "escort welcome" cue gave no location at all).
-        -- High id base avoids colliding with other systems; removed on delivery or loss.
-        local gaggleMarkSeq = 980000
-        local gaggleMarkId = nil
-        local function refreshGaggleMark(pos)
-            gaggleMarkSeq = gaggleMarkSeq + 1
-            local newId = gaggleMarkSeq
-            pcall(trigger.action.markToCoalition, newId,
-                "SUPER GAGGLE -- resupply inbound to " .. outpostName,
-                { x = pos.x, y = pos.y, z = pos.z }, SIDE, true)
-            if gaggleMarkId then pcall(trigger.action.removeMark, gaggleMarkId) end
-            gaggleMarkId = newId
-        end
-        local function clearGaggleMark()
-            if gaggleMarkId then pcall(trigger.action.removeMark, gaggleMarkId) end
-            gaggleMarkId = nil
-        end
+            -- One live F10 map mark on the inbound gaggle, refreshed each tick so the player can
+            -- actually FIND and escort it (the old "escort welcome" cue gave no location at all).
+            -- High id base avoids colliding with other systems; removed on delivery or loss.
+            local gaggleMarkSeq = 980000
+            local gaggleMarkId = nil
+            local function refreshGaggleMark(pos)
+                gaggleMarkSeq = gaggleMarkSeq + 1
+                local newId = gaggleMarkSeq
+                pcall(trigger.action.markToCoalition, newId,
+                    "SUPER GAGGLE -- resupply inbound to " .. outpostName,
+                    { x = pos.x, y = pos.y, z = pos.z }, SIDE, true)
+                if gaggleMarkId then pcall(trigger.action.removeMark, gaggleMarkId) end
+                gaggleMarkId = newId
+            end
+            local function clearGaggleMark()
+                if gaggleMarkId then pcall(trigger.action.removeMark, gaggleMarkId) end
+                gaggleMarkId = nil
+            end
 
-        -- Watch the single run to delivery or loss, then stop (no respawn). Airframe losses
-        -- are charged to the squadrons at debrief via the committed unit names, so nothing
-        -- needs writing here -- this is only the player cue.
-        local function tick()
-            local ok, done = pcall(function()
-                local g = Group.getByName("SuperGaggleHelos")
-                local pos = nil
-                if g and g:getSize() > 0 then
-                    local u = g:getUnit(1)
-                    if u and u:isExist() then
-                        pos = u:getPoint()
+            -- Watch the single run to delivery or loss, then stop (no respawn). Airframe losses
+            -- are charged to the squadrons at debrief via the committed unit names, so nothing
+            -- needs writing here -- this is only the player cue.
+            local function tick()
+                local ok, done = pcall(function()
+                    local g = Group.getByName("SuperGaggleHelos")
+                    local pos = nil
+                    if g and g:getSize() > 0 then
+                        local u = g:getUnit(1)
+                        if u and u:isExist() then
+                            pos = u:getPoint()
+                        end
                     end
+                    if pos == nil then
+                        clearGaggleMark()
+                        trigger.action.outTextForCoalition(
+                            SIDE,
+                            "Super Gaggle down -- resupply run lost inbound to " .. outpostName .. ".",
+                            15
+                        )
+                        return true  -- run over
+                    end
+                    refreshGaggleMark(pos)
+                    local dx, dz = pos.x - outpost.x, pos.z - outpost.y
+                    if (dx * dx + dz * dz) <= (DELIVER_RADIUS * DELIVER_RADIUS) then
+                        clearGaggleMark()
+                        trigger.action.outTextForCoalition(
+                            SIDE,
+                            "Super Gaggle delivered -- " .. outpostName .. " resupplied.",
+                            15
+                        )
+                        return true  -- delivered
+                    end
+                    return false
+                end)
+                if not ok then
+                    env.warning("vietnamops: super gaggle tick error (continuing): " .. tostring(done))
+                    return timer.getTime() + POLL
                 end
-                if pos == nil then
-                    clearGaggleMark()
-                    trigger.action.outTextForCoalition(
-                        SIDE,
-                        "Super Gaggle down -- resupply run lost inbound to " .. outpostName .. ".",
-                        15
-                    )
-                    return true  -- run over
+                if done then
+                    return nil  -- stop polling
                 end
-                refreshGaggleMark(pos)
-                local dx, dz = pos.x - outpost.x, pos.z - outpost.y
-                if (dx * dx + dz * dz) <= (DELIVER_RADIUS * DELIVER_RADIUS) then
-                    clearGaggleMark()
-                    trigger.action.outTextForCoalition(
-                        SIDE,
-                        "Super Gaggle delivered -- " .. outpostName .. " resupplied.",
-                        15
-                    )
-                    return true  -- delivered
-                end
-                return false
-            end)
-            if not ok then
-                env.warning("vietnamops: super gaggle tick error (continuing): " .. tostring(done))
                 return timer.getTime() + POLL
             end
-            if done then
-                return nil  -- stop polling
-            end
-            return timer.getTime() + POLL
+
+            timer.scheduleFunction(tick, {}, timer.getTime() + POLL)
         end
 
-        timer.scheduleFunction(tick, {}, timer.getTime() + POLL)
+        timer.scheduleFunction(function()
+            local ok, err = pcall(spawnGaggle)
+            if not ok then
+                env.warning("vietnamops: super gaggle spawn error (continuing): " .. tostring(err))
+            end
+            return nil
+        end, {}, timer.getTime() + DELAY)
+
         env.info(string.format(
-            "DCSRetribution|Vietnam Ops - Super Gaggle armed (outpost %s, %dx %s, single run)",
-            outpostName, #heloNames, heloType))
+            "DCSRetribution|Vietnam Ops - Super Gaggle armed (outpost %s, %dx %s, "
+                .. "launching in %ds, single run)",
+            outpostName, #heloNames, heloType, DELAY))
     end)
 end
 

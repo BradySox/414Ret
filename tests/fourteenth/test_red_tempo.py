@@ -231,8 +231,8 @@ def test_regen_gated_by_the_will_setting_and_the_phase(arc_cache: Any) -> None:
 
 
 def test_trail_surge_allows_a_second_bigger_convoy(arc_cache: Any) -> None:
-    # During a surged phase the one-convoy rule relaxes to two and the skim budget
-    # doubles (still capped by the source-fraction guard).
+    # During a surged phase the baseline concurrent-convoy budget (2) relaxes to 3
+    # and the skim budget doubles (still capped by the source-fraction guard).
     from game.fourteenth.vietnam_convoy import ensure_enemy_trail_convoy
     from tests.fourteenth.test_vietnam_convoy import (
         _CP,
@@ -249,7 +249,9 @@ def test_trail_surge_allows_a_second_bigger_convoy(arc_cache: Any) -> None:
         on=True,
         control_points=[rear, near],
         fronts=[_convoy_front()],
-        convoys=[object()],  # one column already flowing
+        # Already at the (unrelaxed) baseline budget of 2 -- the surge is what
+        # makes room for one more.
+        convoys=[object(), object()],
     )
     # Activate the surged authored phase on the convoy duck.
     game.settings.campaign_phases = True
@@ -259,10 +261,10 @@ def test_trail_surge_allows_a_second_bigger_convoy(arc_cache: Any) -> None:
 
     ensure_enemy_trail_convoy(game)
     (order,) = game.red.transfers.created
-    # Budget = round(MAX_CONVOY_UNITS * 2.0) = 8, and the 50% source cap allows it.
-    assert sum(order.units.values()) == 8
+    # Budget = round(MAX_CONVOY_UNITS * 2.0) = 12, clamped to the 50% source cap (10).
+    assert sum(order.units.values()) == 10
 
-    # Without the surge the existing column would have satisfied the one-convoy rule.
+    # Without the surge, the 2 already flowing satisfy the (unrelaxed) budget of 2.
     game.current_phase_key = "thunder"
     game.red.transfers.created.clear()
     ensure_enemy_trail_convoy(game)

@@ -687,14 +687,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     cost the enemy nothing and no loss was recorded). Retribution already models convoys
     (`coalition.transfers.convoys` carry real ground units, spawn as road-moving groups via `ConvoyGenerator`,
     are Armed-Recon/BAI targets, and their loss is recorded as `enemy_convoy` so the units never arrive), so the
-    feature now just **ensures one is flowing**: `ensure_enemy_trail_convoy` (`game/fourteenth/vietnam_convoy.py`,
-    run once per turn from `finish_turn`) — when `vietnam_convoy_interdiction` is on and the opfor has no convoy
-    travelling — moves a few of the opfor's **real** rear-area ground units toward the road corridor nearest the
-    front, debited from the source base (`new_transfer` → `commit_losses`). So interdicting the trail now denies
+    feature now just **ensures enough are flowing**: `ensure_enemy_trail_convoy` (`game/fourteenth/vietnam_convoy.py`,
+    run once per turn from `finish_turn`) — when `vietnam_convoy_interdiction` is on and the opfor is under its
+    concurrent-convoy budget (`BASE_MAX_CONVOYS` 2, `SURGE_MAX_CONVOYS` 3 under a W6 trail surge) — moves a few
+    of the opfor's **real** rear-area ground units toward a road corridor nearest the front, debited from the
+    source base (`new_transfer` → `commit_losses`). **Bumped 2026-07-03** off flown-session feedback ("only 3
+    vehicles, only 1 convoy"): `MAX_CONVOY_UNITS` 4→6, baseline concurrent convoys 1→2, and `_pick_trail_corridor`
+    gained `exclude_sources` so filling the budget **prefers distinct roads** rather than stacking extra columns
+    on the single best one — several campaigns (Yankee Station/Steel Tiger's full trail network, Khe Sanh's two
+    rear feeders, Red Flag 81-2's aggressor corridors) genuinely have more than one opfor-opfor road to spread
+    onto; a single-corridor map still caps at one convoy (no regression). `operation_velvet_thunder.yaml` has
+    **no `supply_routes` at all** (its Marianas island geography has no roads between bases), so the toggle is a
+    documented no-op there — flagged, not fixed. So interdicting the trail now denies
     the enemy real reinforcements (kill it and they never reach the line; let it through and they do), and the
-    kill is recorded natively. Fully guarded (no front / no rear units / no road corridor ⇒ no-op; the engine's
-    organic convoys still serve). **No `vietnamops` plugin runtime** any longer — the emitter and the Lua convoy
-    section are removed. (`game/fourteenth/vietnam_convoy.py`, `game/game.py`,
+    kill is recorded natively. Fully guarded (no front / no rear units / no road corridor / budget full ⇒ no-op;
+    the engine's organic convoys still serve). **No `vietnamops` plugin runtime** any longer — the emitter and
+    the Lua convoy section are removed. (`game/fourteenth/vietnam_convoy.py`, `game/game.py`,
     `game/settings/settings.py`; features doc §35; checklist L6.)
     **Right-click planning (added per playtest):** the player **right-clicks an enemy supply route** on the
     map to frag the interdiction package — `SupplyRoute.tsx` `contextmenu` → `POST /qt/create-package/supply-route/{route_id}`
@@ -741,15 +749,21 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `dcs_retribution.lua` records, so their names land in the debrief killed lists (as untracked ground units,
     since they aren't in the `UnitMap`) and are matched by name. Fully guarded (feature off / no outpost / no
     launch / no helo squadron with airframes ⇒ no commitment ⇒ no node ⇒ plugin no-ops). Blue-only (symmetry
-    deferred). Plugin options now just speed/altitudes (type/count come from the squadrons). **Findability pass
+    deferred). Plugin options are speed/altitudes/launch-delay (type/count come from the squadrons). **Findability pass
     2026-07-02** (the "half-baked" complaint — "Escort welcome" with no location, so the run played out unseen
     unless the player was already over the launch field): the plugin now keeps **one live F10 map mark** on the
     lead helo, refreshed each poll and removed on delivery/loss (`markToCoalition`/`removeMark`), and the spawn
     cue reads "Marked on the F10 map"; the stale "re-rolling on a cadence" setting copy is corrected to the real
-    single-run-per-turn behavior. Same F10-hook bar as the naval-gunfire feature. (`game/fourteenth/super_gaggle.py`,
+    single-run-per-turn behavior. **Launch-delay rework (2026-07-03):** a flown session found the whole run
+    over by t≈306s — the spawn fired at mission-config load (t=0), before a cold-starting player could
+    plausibly be airborne to escort it. The entire spawn (helos, suppressors, cue, F10-mark tick) is now
+    wrapped in a local `spawnGaggle()` fired via `timer.scheduleFunction(..., timer.getTime() + DELAY)`
+    instead of immediately; `DELAY` defaults to 600s (`gaggleDelaySec` plugin option). The "armed … launching
+    in Ns" log line still fires immediately so ops get config confirmation without waiting. Same F10-hook bar
+    as the naval-gunfire feature. (`game/fourteenth/super_gaggle.py`,
     `game/game.py`, `game/sim/missionresultsprocessor.py`, `game/missiongenerator/vietnamopsluadata.py`,
-    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §37, checklist L9 — needs an
-    in-game pass.)
+    `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §37, checklist L9 — the
+    2026-07-02 flown run passed, the 2026-07-03 launch-delay rework needs a re-fly.)
 38. **FAC(A) willie-pete target marking** — the seventh **Vietnam Ops suite** feature: the iconic Vietnam
     forward air controller. An airborne OV-10 Bronco loitering over the battle area marks nearby enemy ground
     with **white-phosphorus smoke** so the player (and AI strikers) can visually acquire the target and roll in

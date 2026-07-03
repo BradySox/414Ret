@@ -2597,17 +2597,34 @@ convoy — it **ensures a real one is flowing on the trail**:
   - picks the road **corridor nearest the front** on the real control-point graph — a rear opfor base with
     spare armour (`_pick_trail_corridor`) feeding the road-connected opfor base nearest the FLOT (the end
     nearer the front is the destination; opfor→friendly roads are the contested front and are skipped);
-  - **skims a few real rear units** off the source base (`_skim_units`, capped at `MAX_CONVOY_UNITS` = 4 and
+  - **skims a few real rear units** off the source base (`_skim_units`, capped at `MAX_CONVOY_UNITS` = 6 and
     never more than half the base's armour, so a source is never gutted);
   - creates a real `TransferOrder` via `coalition.transfers.new_transfer`, which **debits the units from the
     source base** (`commit_losses`) and — on a road first-leg — spawns a real, tracked `Convoy`.
 - **Result:** interdicting the trail now **denies the enemy real reinforcements** (kill the convoy and those
   units never reach the line; let it through and they do), and the kill is recorded natively as an
   `enemy_convoy` loss. It is genuine force planning, not a cosmetic effect.
-- **Fully guarded / no-op safe:** no front, no rear units, no road corridor, or a convoy already flowing ⇒ it
-  does nothing, and the engine's organic convoys still serve as targets. **The `vietnamops` plugin has no
-  convoy runtime at all** now — the emitter (`_populate_convoy_interdiction`) and the Lua convoy section are
-  deleted, and the convoy `specificOptions` are removed.
+- **Fully guarded / no-op safe:** no front, no rear units, no road corridor, or the concurrent-convoy budget
+  already full ⇒ it does nothing, and the engine's organic convoys still serve as targets. **The `vietnamops`
+  plugin has no convoy runtime at all** now — the emitter (`_populate_convoy_interdiction`) and the Lua convoy
+  section are deleted, and the convoy `specificOptions` are removed.
+
+**More units, more concurrent convoys, spread across distinct roads (2026-07-03 rework).** A flown Trail 2
+session found `MAX_CONVOY_UNITS` = 4 and the one-convoy rule thin — a single 3-vehicle column was the whole
+hunt. `MAX_CONVOY_UNITS` is now **6**, and the driver keeps a **concurrent budget** (`BASE_MAX_CONVOYS` = 2,
+`SURGE_MAX_CONVOYS` = 3 under a W6 `trail_surge` ≥ 2.0 — up from the old 1/2) instead of a single "is one
+already flowing" check. Filling that budget isn't "spawn N more on the same road": `_pick_trail_corridor`
+gained an `exclude_sources` parameter, and `ensure_enemy_trail_convoy` walks it in a loop, excluding each
+corridor's source as it's committed, so **concurrent convoys prefer distinct roads** — several Vietnam
+campaigns actually have more than one opfor-opfor corridor to offer (Yankee Station / Steel Tiger's full
+Ho Chi Minh Trail network of 8 legs, Khe Sanh's two rear feeders — Kobuleti→Senaki and Sukhumi→Senaki, Red
+Flag 81-2's several aggressor-hub corridors). A campaign with only one qualifying road (or no distinct
+second source) simply stays capped at one convoy that call, exactly as before the rework — never stacks a
+second column onto the one road in use. **Velvet Thunder has no `supply_routes` block at all** (its theater
+is the Marianas island chain — Guam/Rota/Tinian/Saipan — with no roads between the separate islands a
+truck convoy could physically drive), so `vietnam_convoy_interdiction: true` there is a documented no-op;
+the toggle should probably come off that campaign's settings, or the feature needs an island-appropriate
+reinterpretation (a naval convoy?) — flagged as a follow-up, not fixed here.
 
 **Right-click planning (added per playtest).** Rather than hunting for the corridor, the player
 **right-clicks an enemy supply route** on the map to frag the interdiction package:
@@ -2642,7 +2659,7 @@ L7 in-game re-fly.
 | Right-click server | `game/server/qt/routes.py` (`POST /qt/create-package/supply-route/{id}`), `game/server/supplyroutes/models.py` (`interdiction_target_for_route_id`, route id encodes both CP ids) |
 | Right-click client | `client/src/components/supplyroute/SupplyRoute.tsx` (`contextmenu` → `useOpenNewSupplyRoutePackageDialogMutation`; hook hand-added to `_liberationApi.ts`) |
 | Setting | `game/settings/settings.py` (`vietnam_convoy_interdiction`) — no plugin options (the plugin has no convoy runtime) |
-| Tests | `tests/fourteenth/test_vietnam_convoy.py` (corridor pick: nearest opfor→opfor road, ignores the opfor→friendly front; unit skim respects the fraction cap; setting-off / convoy-already-flowing / turn-0 no-op; creates a real `TransferOrder` of skimmed rear units). `game/missiongenerator/tests/test_vietnamops_luadata.py` asserts the emitter **never** emits a `convoy` node. `tests/server/test_supply_route_interdiction.py` (route-id → enemy-end resolution). |
+| Tests | `tests/fourteenth/test_vietnam_convoy.py` (corridor pick incl. `exclude_sources`; unit skim respects the fraction cap; setting-off / budget-full / turn-0 no-op; tops the budget up to the deficit; concurrent convoys spread across distinct corridors; a single-corridor campaign stays capped at one). `tests/fourteenth/test_red_tempo.py` (the surge-widened budget + doubled skim, still source-fraction-clamped). `game/missiongenerator/tests/test_vietnamops_luadata.py` asserts the emitter **never** emits a `convoy` node. `tests/server/test_supply_route_interdiction.py` (route-id → enemy-end resolution). |
 
 ### Gotchas / deferred
 
@@ -2650,10 +2667,13 @@ L7 in-game re-fly.
   the front, it slightly *helps* the enemy reinforce — which is the point of interdiction: the player pays
   for *not* flying the Armed Recon. It only runs when `vietnam_convoy_interdiction` is on (Vietnam campaigns),
   so the blast radius is contained.
-- **Needs an in-game pass (checklist L6, re-opened by the rework).** The unit logic is test-covered, but
-  confirm in a flown Vietnam turn that a real red convoy is present on a road behind the front, that it shows
-  as an Armed-Recon / BAI objective, and that killing it registers as an `enemy_convoy` loss (the units don't
-  arrive). The old runtime-spawn verification is obsolete.
+- **Convoy leg VERIFIED (checklist L6, 2026-07-02 Trail 2 flown session `wonderful-chatterjee`, on the
+  pre-rework sizing).** A real `Convoy 001` (2× PT-76 + a Grad-URAL) drove the trail, was found and fully
+  killed by the player's Armed Recon Phantoms. That session's "only 3 vehicles, only 1 convoy" feedback
+  drove the 2026-07-03 sizing rework above; the debit/`enemy_convoy` debrief leg still needs confirming
+  against a real (non-stale) `state.json`. The multi-corridor spread + the bigger 6-unit load are unflown.
+- **Velvet Thunder's missing `supply_routes` is a real gap, not fixed here.** See the sizing-rework note
+  above — its island geography may need a different interdiction concept entirely rather than a road.
 - **Right-click path (checklist L7) needs an in-app pass + a CI client rebuild.** The server resolution is
   test-covered; the React `contextmenu` → Qt dialog path can't be exercised headless, and the client hook was
   **hand-added** to the generated `_liberationApi.ts` (codegen unavailable locally), so a stale `client/build`
@@ -2765,11 +2785,19 @@ No commitment ⇒ no node. `countryId` is the BLUE faction's DCS country (2026-0
 spawns under it because `coalition.addGroup` places units on whatever coalition owns the country — the old
 hardcoded USA fallback (kept only for pre-fix saves) spawned the gaggle NEUTRAL for any non-US blue faction.
 
-**The `vietnamops` plugin spawns exactly the committed airframes, once** (vanilla DCS `coalition.addGroup`,
-`pcall`-guarded): a helo group named with the committed helo unit names (launch → outpost → back), and the
-suppressor attack flight with the committed suppressor names (launch → over the outpost on a CAS task → back).
-**No respawn loop** — the run flies once (airframes are bounded to the commitment), and a single tick fires the
-"delivered" / "down" cue then stops. The "inbound" cue notes the suppressors when they spawned.
+**The `vietnamops` plugin spawns exactly the committed airframes, once, after a delay** (vanilla DCS
+`coalition.addGroup`, `pcall`-guarded): a helo group named with the committed helo unit names (launch →
+outpost → back), and the suppressor attack flight with the committed suppressor names (launch → over the
+outpost on a CAS task → back). **No respawn loop** — the run flies once (airframes are bounded to the
+commitment), and a single tick fires the "delivered" / "down" cue then stops. The "inbound" cue notes the
+suppressors when they spawned. **Launch is delayed, not immediate (2026-07-03 rework):** the whole spawn
+was firing at t=0 (mission-config load), and a flown session's helos delivered by t≈306 s — the run was
+over before a cold-starting player could plausibly be airborne to escort it. The plugin now defers the
+entire spawn (helos, suppressors, cue, F10-mark-refresh tick loop — everything, wrapped in a local
+`spawnGaggle()`) behind `timer.scheduleFunction(..., timer.getTime() + DELAY)`, `DELAY` defaulting to 600 s
+(`gaggleDelaySec` plugin option) — enough for a typical cold start, taxi, and takeoff. The "armed" log line
+still fires immediately (naming the delay), so ops can confirm the config without waiting; only the actual
+spawn is deferred.
 
 **Losses are charged back at debrief (`missionresultsprocessor.commit_super_gaggle` →
 `super_gaggle.reconcile_super_gaggle`).** Because the spawned units aren't in the `UnitMap`, a killed gaggle
@@ -2789,15 +2817,20 @@ commitment is then cleared (charged once). **No base-Lua / debrief-schema change
 | Turn hook / debrief | `game/game.py` (`finish_turn` → `plan_super_gaggle`; `super_gaggle_commitment` persisted), `game/sim/missionresultsprocessor.py` (`commit_super_gaggle`) |
 | Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_super_gaggle`, reads the commitment) |
 | Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (Super Gaggle section — single run, committed names) |
-| Setting / options | `game/settings/settings.py` (`vietnam_super_gaggle`); plugin `specificOptions` (transit speed / altitudes only — type & count come from the squadrons) |
+| Setting / options | `game/settings/settings.py` (`vietnam_super_gaggle`); plugin `specificOptions` (transit speed / altitudes / launch delay `gaggleDelaySec` — type & count come from the squadrons) |
 | Tests | `tests/fourteenth/test_super_gaggle.py` (plan draws real squadron airframes with capped counts, clears when off / no outpost / no helo squadron; reconcile charges only killed names, floors at 0, credits delivery on survival, clears the commitment). `game/missiongenerator/tests/test_vietnamops_luadata.py` (emitter serializes a commitment's outpost/launch/helo+suppressor names; no commitment → no node). |
 
 ### Gotchas / deferred
 
-- **Runtime is unflown (checklist L9, re-opened by the rework).** The Lua passes `luac5.1 -p`, but the spawn +
-  routing + the single-run cue tick can't be exercised headless. Watch that the helos reach the outpost, the
-  delivery/down cue fires **once** (no respawn), `coalition.addGroup` throws no Lua error, and — the key new
-  check — that a shot-down gaggle helo shows up as a **squadron airframe loss** at debrief (owned count drops).
+- **Runtime run VERIFIED (checklist L9, 2026-07-02 Trail 2 flown session `wonderful-chatterjee`, on the
+  pre-rework immediate-launch timing).** Both CH-53Es closed to 140 m of FOB Khe Sanh, delivered, and
+  returned; both F-4E suppressors were shot down en route (one wreck also killed a friendly soldier) — the
+  loss-accounting leg is now armed. The debrief charging exactly 2 F-4E airframes (and 0 CH-53s) to the
+  suppressor squadron still needs confirming against a real (non-stale) `state.json`.
+- **The launch-delay rework (2026-07-03) is itself unflown.** The Lua passes `luac5.1 -p`, but the deferred
+  `timer.scheduleFunction` spawn hasn't been watched in a cockpit: confirm the "armed … launching in Ns" log
+  line fires immediately, nothing spawns before `DELAY` elapses, and the run then proceeds exactly as the
+  2026-07-02 pass already verified (helos reach the outpost, delivery/down cue fires once, losses charge back).
 - **Loss accounting rides on the committed unit names appearing in the debrief.** If DCS ever failed to emit a
   death event for a runtime-spawned unit, that airframe wouldn't be charged (it would read as a survivor). The
   in-game pass should confirm a killed gaggle name lands in the state / debrief.

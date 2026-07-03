@@ -1943,6 +1943,23 @@ so the two docs don't drift.
   arriving on the Theater page.
 
 ### L6 — Convoy interdiction (Steel Tiger) · §35 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the reworked real-convoy runtime leg PASSED — `Convoy 001` (2× PT-76 + Grad-URAL, real force-model units) drove the trail road, the player Armed Recon Phantoms found it and killed all 3 with Mk-82 Snakeyes (Tacview removals t=3195/3609/3610); still owed = the debrief leg — next-turn processing must record the loss as `enemy_convoy` so the units never arrive. ⚠ blocked on the REAL server-side `state.json` — the dedicated host wrote it to its **TEMP fallback**: `dcs.log` says "The state.json file will be created in TEMP : (C:\Users\admin.dcs\AppData\Local\Temp\state.json)" (no `RETRIBUTION_EXPORT_DIR` set on the server + the client installPath doesn't exist there); the local `Missions\state.json` the user first pulled is a stale Jun-20 file from a different campaign. Fetch the TEMP file to process the turn, and set `RETRIBUTION_EXPORT_DIR` on the server for a stable path going forward)
+- **Sizing/variety rework (2026-07-03), re-opens the runtime leg.** Player feedback off the above flight
+  ("only 3 vehicles, only 1 convoy") drove a rework in `game/fourteenth/vietnam_convoy.py`:
+  `MAX_CONVOY_UNITS` 4→6, and a concurrent-convoy **budget** (`BASE_MAX_CONVOYS` 1→2,
+  `SURGE_MAX_CONVOYS` 2→3 under `trail_surge` ≥ 2.0) replaces the old "is one already flowing" check.
+  `_pick_trail_corridor` gained `exclude_sources` so filling the budget **prefers distinct roads** —
+  several campaigns (Yankee Station/Steel Tiger's full trail network, Khe Sanh's two rear feeders, Red
+  Flag 81-2's aggressor corridors) genuinely have more than one opfor-opfor road to spread onto. A
+  single-corridor map still caps at one convoy (no regression). 18 unit tests updated/added
+  (`tests/fourteenth/test_vietnam_convoy.py`, `tests/fourteenth/test_red_tempo.py`), all green.
+  **Re-fly pass:** confirm more than one convoy can be on the map at once on a multi-corridor campaign
+  (Yankee Station/Steel Tiger/Khe Sanh/Red Flag 81-2), each on a visibly different road, and that a
+  found convoy carries up to 6 vehicles instead of 3-4.
+- **Known gap, flagged not fixed:** `operation_velvet_thunder.yaml` has **no `supply_routes` block at
+  all** — its theater (Marianas islands: Guam/Rota/Tinian/Saipan) has no roads between the separate
+  islands for a convoy to drive, so `vietnam_convoy_interdiction: true` is a silent no-op there. Either
+  drop the toggle from that campaign or design an island-appropriate reinterpretation (naval convoy?) —
+  out of scope for this session.
 - **What changed:** the convoy is no longer a `vietnamops`-plugin `coalition.addGroup` phantom (a free,
   unrecorded unit). It is now a **real, tracked enemy convoy** created in the force model
   (`game/fourteenth/vietnam_convoy.py` `ensure_enemy_trail_convoy`, run once per turn from `finish_turn`):
@@ -2016,6 +2033,16 @@ so the two docs don't drift.
   §33 flak needed); a `trigger.action.explosion` / `land.getHeight` / `timer.scheduleFunction` Lua error.
 
 ### L9 — Super Gaggle hilltop resupply · §37 · ◐ PARTIAL (2026-07-01 `intelligent-dubinsky` runtime run PASSED; **2026-07-02 Trail 2 session `wonderful-chatterjee`: second clean run — both CH-53Es closed to 140 m of FOB Khe Sanh at t≈306, returned, landed and shut down; BOTH F-4E suppressors (`SuperGaggle-T1-Sandy-1/-2`) were shot down (t=973 — its wreck also killed a friendly soldier — and t=2897), so the loss-accounting leg is finally armed**: after the turn is processed with the real server `state.json`, the next-turn debrief must charge 2 F-4E airframes to the suppressor squadron and 0 CH-53s — that check is what remains)
+- **Launch-delay rework (2026-07-03), re-opens the runtime leg.** The flown pass above found the whole
+  run over by t≈306 s — the helos spawn at t=0 (mission-config load, before anyone can plausibly be
+  airborne). `resources/plugins/vietnamops/vietnamops-config.lua`'s Super Gaggle block now wraps the
+  entire spawn (helos, suppressors, cue, F10-mark tick) in a local `spawnGaggle()` and fires it via
+  `timer.scheduleFunction(..., timer.getTime() + DELAY)` instead of immediately; `DELAY` defaults to
+  **600 s** (new plugin option `gaggleDelaySec`). The "armed … launching in Ns" log line still fires at
+  config time so ops get immediate confirmation; only the spawn itself is deferred.
+  **Re-fly pass:** confirm nothing spawns before `DELAY` elapses, the delayed run then behaves exactly
+  like the already-verified 2026-07-02 pass (delivery, losses charged), and a `dcs.log` warning appears
+  (not a silent failure) if the deferred `spawnGaggle` call ever errors.
 - **Partial (2026-07-01, flown session — Tacview + `dcs.log`):** `dcs.log` shows `Super Gaggle armed
   (outpost FOB Khe Sanh, 2x CH-53E, single run)`; `SuperGaggleHelos` (2× CH-53E, the committed real-squadron
   airframes by name) + `SuperGaggleSandy` (2× F-4E suppressors) spawned **once** at t≈73 s. Tacview: the helo

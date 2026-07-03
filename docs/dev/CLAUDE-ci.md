@@ -35,6 +35,11 @@ Notes learned the hard way:
 - For test files that fake Retribution objects (duck-typed `Coalition`, `Faction`,
   `AircraftType`), prefer a narrow `# type: ignore[arg-type]` over restructuring, matching
   how the existing fakes are annotated.
-- The Lua plugins can't be run/compiled here — validation is careful reading. The
-  `lua-lint.yml` syntax gate catches parse-time errors; runtime behavior still needs an
-  in-game pass. See `docs/dev/414th-ingame-pass-checklist.md` for the tracker.
+- The Lua plugins CAN now be exercised headlessly: `tests/lua/` runs the real plugin
+  scripts on Lua 5.1 via `lupa` against a faked DCS sandbox (`dcs_stubs.lua`), inside the
+  normal pytest run — see `docs/dev/design/414th-lua-plugin-harness-notes.md` for scope and
+  how to extend it. The `lua-lint.yml` syntax gate still catches parse-time errors; the
+  harness catches "script errors at runtime and the feature silently never starts"; actual
+  DCS behavior (AI, physics, feel) still needs an in-game pass. See
+  `docs/dev/414th-ingame-pass-checklist.md` for the tracker. When touching a plugin that
+  has harness coverage (currently `vietnamops`), run/extend its tests.

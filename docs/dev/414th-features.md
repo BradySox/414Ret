@@ -3149,9 +3149,9 @@ scheduled escalation date; the current phase's `advance_when` (any-of `min_turn`
   engine, but `coin_enduring_resolve.yaml` was reworked from an earlier 9-town-ring restricted + whole-map
   free-fire inversion to **4 big box/corridor no-strike "positive-control valleys"** over the real populated
   river valleys, shared by all three phases via the `&population_centers` YAML anchor — no `free_fire_zones`
-  in any phase. The 4: two corridors (**Helmand Green Zone** Kajaki→Sangin→Gereshk→Lashkar Gah→Marjah, 14 nm
-  wide; the **Musa Qala** 611 feeder Now Zad→Musa Qala→Kajaki, 10 nm) + two boxes (the **Tarin Kowt** bowl
-  20×16 nm; the **Delaram** junction 16×14 nm). A fixed strike inside a valley prices CDE into the mandate
+  in any phase. The 4: two corridors (**Helmand Green Zone** Kajaki→Sangin→Gereshk→Lashkar Gah→Marjah, 22 nm
+  wide; the **Musa Qala** 611 feeder Now Zad→Musa Qala→Kajaki, 18 nm) + two boxes (the **Tarin Kowt** bowl
+  34×28 nm; the **Delaram** junction 30×26 nm). A fixed strike inside a valley prices CDE into the mandate
   (violation weight 1.0 — pressure, not taboo); the open desert and the northern gate are simply
   unrestricted; trail convoys / TIC are never gated and air assaults (captures) are never blocked, so the
   arc still retakes its objectives. Exercises both the box and corridor shapes. CI-locked in

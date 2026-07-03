@@ -2417,12 +2417,17 @@ so the two docs don't drift.
   made the carrier air assignable so the commander also flew spare Hornets on SEAD. What CI cannot exercise is
   the **in-mission behaviour** — the A-6 actually giving gas on ingress/egress/recovery and the E-2 holding a
   useful AEWC orbit at that standoff.
+- **Buddy-tanker routing (added 2026-07-03):** the commander's carrier SEAD Sweep/Escort Hornets used to get a
+  refuel waypoint ~560 km from the A-6 (a dry tank). `route_carrier_flights_to_buddy_tanker` now pins them onto
+  the A-6 orbit — probe-verified on the same save: both carrier SEAD Hornets' REFUEL waypoints moved from ~560 km
+  away to 0 km from the A-6 orbit center, land-based flights untouched. In-mission tanking still needs a fly.
 - **Setup:** NEW campaign "Afghanistan - Operation Enduring Resolve (COIN)" (`long_range_carrier_ops` preseeds
   on). Generate turn 1 and inspect the ATO / fly the carrier package.
 - **Pass:** exactly one carrier strike package appears each turn — a Hornet strike section off the boat onto an
   enemy target (a cache when one is legal), with the A-6E tanking the package (launch join + egress/recovery)
   and the E-2 airborne on station; the land air still fights the rest of the war and spare Hornets show up on
-  SEAD. The Hornets reach the target and RTB to the boat with the A-6's help.
+  SEAD. The Hornets reach the target and RTB to the boat with the A-6's help, **and the carrier SEAD Hornets
+  tank from that same A-6** (their refuel point is on the A-6 orbit, not up-range dry).
 - **Fail signature:** carrier still idle (range preseed didn't take / `long_range_carrier_ops` off — check the
   campaign `settings:` block survived); Hornets launch but the A-6/E-2 don't (they pruned — confirm they are
   primary flights, not refuel escorts); two carrier packages a turn (the `_already_planned_from` guard broke);

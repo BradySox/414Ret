@@ -150,14 +150,18 @@ class Builder(FormationAttackBuilder[EscortFlightPlan, FormationAttackLayout]):
         refuel = None
         # Separate ifs (not elif): BOTH tanks pre- and post-vul.
         if tasking.refuels_pre_vul:
-            refuel_pre = builder.refuel(self.package.waypoints.refuel)
+            refuel_pre = builder.refuel(
+                self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
+            )
             nav_to = builder.nav_path(
                 hold.position if hold else departure.position,
                 refuel_pre.position,
                 builder.get_cruise_altitude,
             )
         if tasking.refuels_post_vul:
-            refuel = builder.refuel(self.package.waypoints.refuel)
+            refuel = builder.refuel(
+                self.flight.refuel_waypoint_position(self.package.waypoints.refuel)
+            )
             nav_from = builder.nav_path(
                 refuel.position,
                 self.flight.arrival.position,

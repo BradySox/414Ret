@@ -307,6 +307,12 @@ class Coalition:
                     plan_carrier_strike(self, now, tracer)
                 with tracer.trace(f"{color} mission identification"):
                     TheaterCommander(self.game, self.player).plan_missions(now, tracer)
+                with tracer.trace(f"{color} carrier buddy-tanker routing"):
+                    from game.fourteenth.carrier_ops import (
+                        route_carrier_flights_to_buddy_tanker,
+                    )
+
+                    route_carrier_flights_to_buddy_tanker(self)
                 with tracer.trace(f"{color} mission scheduling"):
                     MissionScheduler(
                         self, self.game.settings.desired_player_mission_duration

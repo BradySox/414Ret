@@ -934,8 +934,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     primaries the A-6 gets a tanker orbit off the boat (launch + recovery gas) and the E-2 an AEWC orbit. The
     hook runs in `Coalition.plan_missions` **before** `TheaterCommander` so the boat's Hornets are claimed for
     this package first; `_nearest_legal_strike_target` picks the nearest alive, non-ROE-blocked enemy TGO
-    (preferring ammo caches — the COIN throttle). Guarded at every step (no carrier / no Hornets / no legal
-    target ⇒ no-op). (`game/fourteenth/carrier_ops.py`, `game/coalition.py`, `game/settings/settings.py`,
+    (preferring ammo caches — the COIN throttle). A **second post-planning pass**
+    (`route_carrier_flights_to_buddy_tanker`, run **after** `TheaterCommander`) fixes the boat's *other* carrier
+    flights: the commander frags SEAD Sweep/Escort Hornets off the deck in their own tanker-less packages, whose
+    stock REFUEL waypoint lands at the package's far end (~500+ NM from the A-6, no tanker there). The pass pins
+    each such carrier flight's refuel point onto the A-6's held orbit (`Flight.refuel_point_override`, honored by
+    the 3 refuel-waypoint builders via `Flight.refuel_waypoint_position`), so they tank from the boat's own held
+    tanker on their launch/recovery route — mirroring `reposition_theater_tankers` but pinning the *receivers* to
+    the pinned buddy tanker instead of moving a theater tanker. Guarded at every step (no carrier / no Hornets /
+    no legal target / no buddy tanker ⇒ no-op). (`game/fourteenth/carrier_ops.py`, `game/coalition.py`,
+    `game/ato/flight.py`, `game/ato/flightplans/{formationattack,tarcap,escort}.py`, `game/settings/settings.py`,
     `resources/campaigns/coin_enduring_resolve.yaml`; features doc §44, checklist P2 — needs an in-game pass.)
 
 ---

@@ -157,6 +157,15 @@ class Flight(
         # this attribute fall back via getattr in the tanker builder.
         self.refueling_service_point: Optional[Point] = None
 
+        # 414th: an override for this flight's REFUEL waypoint position, set by the
+        # long-range carrier post-planning pass (game/fourteenth/carrier_ops.py). A
+        # carrier flight whose package has no tanker of its own would otherwise route
+        # its refuel point to the far end of the package (no tanker there); this pins
+        # it onto the carrier's held buddy-tanker orbit instead. None for everything
+        # else; the refuel waypoint builders fall back to the package point via
+        # refuel_waypoint_position(). Old saves predating this attribute use getattr.
+        self.refuel_point_override: Optional[Point] = None
+
         # Only used by transport missions.
         self.cargo = cargo
 
@@ -473,6 +482,13 @@ class Flight(
         self.manually_timed = False
         self.manual_takeoff_time = None
         self._flight_plan_builder.regenerate(dump_debug_info)
+
+    def refuel_waypoint_position(self, default: Point) -> Point:
+        """The position to build this flight's REFUEL waypoint at: the 414th
+        carrier buddy-tanker override when set, else the shared package refuel
+        point (the stock behavior). See ``refuel_point_override``."""
+        override = getattr(self, "refuel_point_override", None)
+        return override if override is not None else default
 
     @staticmethod
     def clone_flight(flight: Flight) -> Flight:

@@ -14,6 +14,7 @@ from typing import Any
 
 import game.fourteenth.carrier_ops as co
 from game.ato.flighttype import FlightType
+from game.ato.flightwaypointtype import FlightWaypointType
 
 
 def _sqn(*, location: Any, aircraft: str, owned: int, capable: set[FlightType]) -> Any:
@@ -153,3 +154,91 @@ def test_nearest_legal_target_prefers_caches_and_respects_roe(monkeypatch: Any) 
     assert (
         target is near_cache
     )  # nearest ALIVE, non-blocked cache (not the blocked x=10)
+
+
+class _Pt:
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
+    def new_in_same_map(self, x: float, y: float) -> "_Pt":
+        return _Pt(x, y)
+
+
+def _refuel_wp(x: float, y: float) -> Any:
+    return SimpleNamespace(
+        name="REFUEL", waypoint_type=FlightWaypointType.REFUEL, position=_Pt(x, y)
+    )
+
+
+def _orbit_wp(name: str, x: float, y: float) -> Any:
+    return SimpleNamespace(
+        name=name, waypoint_type=FlightWaypointType.NAV, position=_Pt(x, y)
+    )
+
+
+def _flight(*, ftype: FlightType, departure: Any, waypoints: list[Any]) -> Any:
+    f = SimpleNamespace(
+        flight_type=ftype,
+        departure=departure,
+        flight_plan=SimpleNamespace(waypoints=waypoints),
+        refuel_point_override=None,
+        recreated=0,
+    )
+
+    def recreate(dump: bool = False, _f: Any = f) -> None:
+        _f.recreated += 1
+        # Emulate the builder honoring the override: move the REFUEL waypoint onto it.
+        for wp in _f.flight_plan.waypoints:
+            if wp.waypoint_type is FlightWaypointType.REFUEL:
+                wp.position = _f.refuel_point_override
+
+    f.recreate_flight_plan = recreate
+    return f
+
+
+def test_route_carrier_flights_to_buddy_tanker() -> None:
+    player = SimpleNamespace(is_blue=True)
+    boat = _carrier(player=player)
+    land = SimpleNamespace(is_carrier=False, captured=player, name="Kandahar")
+
+    # The buddy A-6 holds a racetrack centered at (100, 0).
+    tanker = _flight(
+        ftype=FlightType.REFUELING,
+        departure=boat,
+        waypoints=[
+            _orbit_wp("RACETRACK START", 80.0, 0.0),
+            _orbit_wp("RACETRACK END", 120.0, 0.0),
+        ],
+    )
+    strike = _flight(
+        ftype=FlightType.STRIKE, departure=boat, waypoints=[_refuel_wp(90.0, 0.0)]
+    )
+    strike_pkg = SimpleNamespace(
+        primary_task=FlightType.STRIKE, flights=[strike, tanker]
+    )
+
+    # A commander SEAD package off the boat with a dry refuel point far up-range.
+    sead = _flight(
+        ftype=FlightType.SEAD_SWEEP, departure=boat, waypoints=[_refuel_wp(900.0, 0.0)]
+    )
+    # A land-based flight that must be left alone.
+    land_bai = _flight(
+        ftype=FlightType.BAI, departure=land, waypoints=[_refuel_wp(900.0, 0.0)]
+    )
+    sead_pkg = SimpleNamespace(primary_task=FlightType.BAI, flights=[sead, land_bai])
+
+    coal = _coalition(squadrons=[], cps=[boat], packages=[strike_pkg, sead_pkg])
+    coal.player = player
+
+    co.route_carrier_flights_to_buddy_tanker(coal)
+
+    # The SEAD Sweep off the boat is pinned onto the A-6 orbit center (100, 0).
+    assert sead.refuel_point_override is not None
+    assert (sead.refuel_point_override.x, sead.refuel_point_override.y) == (100.0, 0.0)
+    assert sead.recreated == 1
+    assert sead.flight_plan.waypoints[0].position.x == 100.0
+    # The strike flight (in-package tanker) and the land flight are untouched.
+    assert strike.refuel_point_override is None
+    assert land_bai.refuel_point_override is None
+    assert land_bai.recreated == 0

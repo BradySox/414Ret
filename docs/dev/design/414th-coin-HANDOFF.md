@@ -93,10 +93,12 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   presets unless the faction country is a "Combined Joint Task Forces"** — hence the
   new `OEF Coalition 2006` faction (usa_2005 roster, CJTF Blue country) so the RNLAF
   322 Squadron / RAF IV (AC) Squadron presets (new files) survive, and hence the
-  US-preset pins on the Kiowa/tanker slots (CJTF otherwise casts any nation — the
-  Tunisian Kiowa incident). CENTAF Al Udeid (F-15Es, B-1s, KC-135s) rides the
-  miz-loader F-15C off-map sentinel; the Hornets fly from a **REAL carrier in the
-  Gulf of Oman** (user-proven positions from two editor mizzes — Retribution's
+  US-preset pins on the Kiowa/tanker/Apache slots (CJTF otherwise casts any nation
+  — the Tunisian Kiowa / Israeli Apache incidents). The **off-map air-spawn base was
+  dropped 2026-07-03** (user: "get rid of the air spawn base"): the CENTAF heavies
+  (F-15Es, B-1s, KC-135s) now home-base at **Kandahar** (the long runway takes them)
+  instead of a floating F-15C off-map sentinel. The Hornets fly from a **REAL carrier
+  in the Gulf of Oman** (user-proven positions from two editor mizzes — Retribution's
   Afghanistan landmap has no sea polys, so `is_in_sea` says no, but the carrier CP
   comes straight from the miz Stennis sentinel and DCS owns the water; the
   generator names the boat from the faction pool, e.g. CVN-72). The user also drew

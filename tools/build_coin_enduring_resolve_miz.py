@@ -21,7 +21,6 @@ from pathlib import Path
 
 from dcs.mapping import Point
 from dcs.mission import Mission
-from dcs.planes import F_15C
 from dcs.ships import Stennis
 from dcs.statics import Warehouse
 from dcs.vehicles import AirDefence
@@ -33,13 +32,10 @@ DST = REPO / "resources/campaigns/coin_enduring_resolve.miz"
 RED_COUNTRY = "Combined Joint Task Forces Red"
 BLUE_COUNTRY = "Combined Joint Task Forces Blue"
 
-# --- Off-map blue air (miz-loader sentinel: an F-15C plane group). The 2006 OEF
-# --- reality: carrier Hornets from the Arabian Sea and CENTAF heavies/tankers from
-# --- the Gulf reached the theater from OFF the map. Positions sit outside the
-# --- playbox (south / west of Farah) but on valid terrain.
-OFF_MAP_SPAWNS: list[tuple[str, tuple[float, float]]] = [
-    ("CENTAF Al Udeid", (-170000.0, -440000.0)),
-]
+# NOTE: the off-map spawn (an F-15C sentinel for a "CENTAF Al Udeid" CP) was DROPPED
+# 2026-07-03 -- the user wanted the abstract air-spawn base gone. The CENTAF heavies
+# (F-15E / B-1B / KC-135) now home-base at Kandahar, the coalition airhead with the
+# long runway; only the carrier remains as an "arrives from off the map" element.
 
 #: A REAL carrier in the Gulf of Oman (user-proven position 2026-07-03 -- a Stennis
 #: placed in the DCS editor at this point floats; Retribution's landmap has no sea
@@ -148,14 +144,6 @@ def build() -> None:
     blue = mission.country(BLUE_COUNTRY)
     if blue is None:
         raise RuntimeError(f"{SRC} carries no {BLUE_COUNTRY!r} country")
-    for name, (x, y) in OFF_MAP_SPAWNS:
-        mission.flight_group_inflight(
-            country=blue,
-            name=name,
-            aircraft_type=F_15C,
-            position=Point(x, y, mission.terrain),
-            altitude=6096,
-        )
     carrier_name, (cx, cy) = CARRIER
     mission.ship_group(
         country=blue,
@@ -199,7 +187,7 @@ def build() -> None:
     mission.save(str(DST))
     print(
         f"Wrote {DST} ({placed} caches, {aaa} AAA + {shorad} SHORAD + {merad} MERAD, "
-        f"{len(OFF_MAP_SPAWNS)} off-map spawns, 1 carrier)"
+        f"1 carrier)"
     )
 
 

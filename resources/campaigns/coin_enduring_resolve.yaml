@@ -18,11 +18,11 @@ description: >-
   bases, strikes into the towns, and plain time; the insurgency's momentum bleeds from its
   caches, its convoys, and its strongholds — almost never from its dead fighters. Break their
   momentum before your mandate runs out.</p>
-  <p>You fly with the real 2006 coalition: <strong>Dutch F-16s and RAF Harriers on the
-  Kandahar ramp</strong> beside the A-10s, Marine Harriers at Bastion, <strong>a real
-  carrier in the Gulf of Oman</strong> — Hornets, a Hawkeye, and A-6 buddy tankers running
-  the 800 km cycle north — and CENTAF Strike Eagles, B-1s, and the KC-135 bridge from the
-  Gulf, each squadron under its own flag. The enemy answers with guns and shoulder-fired
+  <p>You fly with the real 2006 coalition off the <strong>Kandahar ramp</strong>: A-10s,
+  Dutch F-16s, RAF Harriers, and the CENTAF heavies — Strike Eagles, B-1s, and the KC-135
+  bridge — with Marine Harriers at Bastion and <strong>a real carrier in the Gulf of
+  Oman</strong> (Hornets, a Hawkeye, and A-6 buddy tankers running the 800 km cycle north).
+  Each squadron flies under its own flag. The enemy answers with guns and shoulder-fired
   SAMs at every stronghold — and <strong>a thin radar-SAM crust at the anchors</strong>:
   an SA-6 battery over Farah, an SA-3 site at Tarinkot, a Kub at the Kandahar gate, with
   SA-8/13/15 in the short-range mix. Enough to make SEAD a real job again; never enough
@@ -258,6 +258,21 @@ squadrons:
       aircraft:
         - IV (AC) Squadron RAF #AV-8B NA standing in for the Harrier GR7 det
       size: 4
+    # CENTAF heavies -- home-based at Kandahar (the coalition airhead with the long
+    # runway) instead of an off-map spawn: Strike Eagles, Bones, and the KC-135 bridge
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - 391st Fighter Squadron #F-15E Suite 4+, OEF 2005-06 real
+      size: 4
+    - primary: Strike
+      aircraft:
+        - B-1B Lancer
+      size: 2
+    - primary: Refueling
+      aircraft:
+        - 18th Air Refueling Squadron #US KC-135 preset (CJTF otherwise casts any nation)
+      size: 2
   # Kandahar Heliport
   15:
     - primary: Air Assault
@@ -286,7 +301,7 @@ squadrons:
     - primary: CAS
       secondary: any
       aircraft:
-        - AH-64D Apache Longbow
+        - 12th Combat Aviation Brigade #US AH-64D preset (CJTF otherwise casts any nation)
       size: 4
     - primary: Transport
       secondary: any
@@ -311,18 +326,3 @@ squadrons:
       aircraft:
         - A-6E Tanker #the Navy tanks its own: inbound, outbound, and overhead recovery
       size: 3
-  # Off-map: CENTAF from the Gulf -- Strike Eagles, Bones, and the tanker bridge
-  CENTAF Al Udeid:
-    - primary: Strike
-      secondary: air-to-ground
-      aircraft:
-        - 391st Fighter Squadron #F-15E Suite 4+, OEF 2005-06 real
-      size: 4
-    - primary: Strike
-      aircraft:
-        - B-1B Lancer
-      size: 2
-    - primary: Refueling
-      aircraft:
-        - 18th Air Refueling Squadron #US KC-135 preset (CJTF otherwise casts any nation)
-      size: 2

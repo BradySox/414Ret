@@ -303,45 +303,51 @@ supply_routes:
   # Nellis -> Indian Springs (Creech): US-95 north-west out of Las Vegas
   - waypoints:
       - [-398195, -17233]
-      - [-388000, -40000]
-      - [-375000, -58000]
+      - [-391400, -37764]
+      - [-378363, -54142]
+      - [-367503, -69543]
       - [-360507, -75590]
-  # Indian Springs (Creech) -> Camp Mercury: the NTS gate road
+  # Indian Springs (Creech) -> Camp Mercury: US-95 north-west to the NTS gate
   - waypoints:
       - [-360507, -75590]
-      - [-356000, -88000]
+      - [-358030, -82652]
+      - [-354532, -96109]
       - [-352000, -103000]
-  # Tonopah (civil) -> Tonopah Test Range: red rear depot to the aggressor hub
+  # Tonopah (civil) -> Tonopah Test Range: US-6 east, then the TTR access road south
   - waypoints:
       - [-197282, -201302]
-      - [-210000, -190000]
+      - [-199220, -192242]
+      - [-213080, -181692]
       - [-226505, -174698]
-  # Tonopah Test Range -> Pahute Mesa: down the Kawich/Gold Flat corridor
+  # Tonopah Test Range -> Pahute Mesa: down the Gold Flat / Kawich Valley corridor
   - waypoints:
       - [-226505, -174698]
-      - [-250000, -160000]
-      - [-275000, -145000]
+      - [-248517, -158688]
+      - [-272858, -145304]
+      - [-292777, -137201]
       - [-303620, -132937]
-  # Pahute Mesa -> FOB Tolicha: the last leg to the FEBA anchor
+  # Pahute Mesa -> FOB Tolicha: the Pahute Mesa road, last leg to the FEBA anchor
   - waypoints:
       - [-303620, -132937]
-      - [-313000, -141000]
+      - [-311659, -140632]
       - [-322000, -148000]
-  # Beatty -> FOB Tolicha: the western Tolicha Peak corridor
+  # Beatty -> FOB Tolicha: the western Tolicha Peak corridor into the NTS boundary
   - waypoints:
       - [-330553, -174958]
-      - [-326000, -160000]
+      - [-326185, -161033]
       - [-322000, -148000]
-  # Tonopah Test Range -> Beatty: the US-95 west corridor
+  # Tonopah Test Range -> Beatty: the real US-95 west corridor -- west to Goldfield, then south through Scotty's Junction (NOT straight down the Kawich Range)
   - waypoints:
       - [-226505, -174698]
-      - [-260000, -180000]
-      - [-295000, -180000]
+      - [-236584, -214711]
+      - [-283761, -195858]
+      - [-317359, -177977]
       - [-330553, -174958]
-  # Groom Lake -> Pahute Mesa: the Box feeds the FEBA
+  # Groom Lake -> Pahute Mesa: the Box feeds the FEBA (NTS interior, Yucca Flat)
   - waypoints:
       - [-288604, -86870]
-      - [-295000, -110000]
+      - [-293610, -105241]
+      - [-300420, -121160]
       - [-303620, -132937]
 
 # The authored exercise arc (campaign phases P2, same schema as Yankee Station's

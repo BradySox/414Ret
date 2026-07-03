@@ -377,25 +377,23 @@ supply_routes:
       - [-281111, 656698]
       - [-288973, 669489]
       - [-284210, 682738]
-  # Haiphong -> FOB Thanh Hoa (the Ham Rong bridge complex south of the delta)
+  # Haiphong (Senaki) -> FOB Thanh Hoa: SW across the Kolkheti coastal plain toward the Poti/Kulevi coast (was a bare 2-point straight line)
   - waypoints:
       - [-280521, 642739]
+      - [-283991, 632644]
+      - [-288102, 625556]
       - [-289768, 619547]
-  # FOB Thanh Hoa <-> FOB Ban Laboy
+  # FOB Thanh Hoa <-> FOB Ban Laboy: straight down the western foothill edge (removed the ~25 km eastward overshoot into the Senaki lowland)
   - waypoints:
       - [-266003, 623883]
-      - [-266408, 623908]
-      - [-267183, 624769]
-      - [-267701, 625367]
-      - [-280167, 643119]
+      - [-272626, 623114]
+      - [-280620, 621859]
       - [-288780, 620946]
-  # FOB Ban Laboy <-> Haiphong (Senaki)
+  # FOB Ban Laboy <-> Haiphong (Senaki): a clean SE descent from the hills to the Senaki lowland (was a clustered stub + one long straight jump)
   - waypoints:
       - [-267428, 625056]
-      - [-268527, 626188]
-      - [-269820, 627726]
-      - [-271980, 630331]
-      - [-280062, 643904]
+      - [-271295, 630477]
+      - [-275688, 636778]
       - [-279960, 644266]
   # FOB Ban Karai <-> FOB Ban Laboy
   - waypoints:

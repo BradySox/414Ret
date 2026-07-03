@@ -2343,6 +2343,29 @@ so the two docs don't drift.
   Knobs: `ROE_ZONE_LINE`/`ROE_ZONE_FILL` (drawingsgenerator.py); the corridor buffer resolution + the
   supported-drawing-types list (`zone_drawings.py`).
 
+### M8 — COIN free-fire kill boxes: inverted ROE in play · §40 · ☐ UNTESTED (built 2026-07-03; the inverted gate/violation/summary + the COIN pockets (4→8→10, objective coverage, never-Lashkar) fully CI-locked in `tests/fourteenth/test_phases.py` + `test_coin.py`; the played feel + green rendering need a campaign)
+- **Headless adjudication:** the polarity flip (`roe_restriction_reason` "outside the weapons-free area"),
+  the restricted-carve-out-inside-a-pocket precedence, front-line/convoy exemption, the inverted
+  `count_roe_violations`, the WEAPONS FREE summary row, and the shipped COIN pocket set are all unit-tested.
+  What CI *cannot* adjudicate: the green pockets rendering (web + F10), whether the AI's strike volume
+  concentrates inside the boxes, and whether the mandate economy holds up when most of the map is
+  weapons-hold.
+- **Setup:** a NEW "Afghanistan - Operation Enduring Resolve (COIN)" game. Check the web map on turn 1
+  (Disrupt), then play/fast-forward across the Clear & Hold (~turn 10) and Break the Momentum (~turn 20)
+  transitions.
+- **Pass:** 4 green dashed pockets in Disrupt (the rotated KB GERESHK box + SANGIN/MARJAH/FRONTENAC) with
+  the 9 red rings drawn on top of them where they overlap; the kneeboard CAMPAIGN PHASE band leads with
+  WEAPONS FREE; AI strike/BAI packages target only TGOs inside pockets (Armed Recon vs convoys still flies
+  anywhere); a player kill outside every pocket drains the mandate with an "ROE violation" note; pocket
+  count grows 4→8→10 across the arc; capturing FOB Frontenac (inside its own KB) does NOT drain the mandate.
+- **Fail signature:** AI planner starvation (zero strike packages — the pockets failed to resolve, check the
+  anchor warnings, or the caches all sit inside ring carve-outs); the assault on an objective bleeding the
+  mandate (its KB missing/too small — objective KBs are 8 nm on the CP); green shapes missing while the gate
+  works (a render-only bug — the server payload `free_fire_zones` vs `RestrictedZonesLayer`); violations
+  counted for convoy kills (the `target_class is None` exemption failed).
+  Knobs: the per-phase `free_fire_zones` YAML (radii/shapes); `FREE_FIRE_LINE`/`FREE_FIRE_FILL`
+  (drawingsgenerator.py).
+
 ## N. Mod support
 
 ### N1 — High Digit SAMs Ultimate Compilation units in-game · §41 · ☐ UNTESTED (built 2026-07-01; unit data read from the installed mod, factions/presets/layouts headless-verified)

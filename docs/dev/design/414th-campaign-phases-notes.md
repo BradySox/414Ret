@@ -304,6 +304,17 @@ prove the extraction pipeline + judge draft quality, *then* green-light the full
   drawings round-trip cleanly (confirmed against `1968_Yankee_Station.miz` + a real write/reload
   probe). Rectangle/Oval reading is deferred pending an in-game convention check (the polygon tool
   covers box/corridor). In-game pass folded into checklist **M7**.
+- **Free-fire zones (inverted ROE — the COIN kill boxes):** ✅ LANDED — a phase authoring
+  `free_fire_zones` (same shape system as `restricted_zones`) flips the polarity: the whole map is
+  weapons-hold for fixed strikes, cleared only inside the pockets (the OIR Blue-Kill-Box model —
+  the Rampagers reference library is the doctrine source). Front-line forces/convoys are never
+  gated; a restricted zone still carves a no-strike hole inside a pocket; violations = kills
+  outside every pocket; the summary leads with a WEAPONS FREE row; pockets paint dashed **green**
+  (F10/ME + web). Content: `coin_enduring_resolve.yaml` kill boxes grow 4→8→10 across the arc,
+  every capture objective inside a box (KB FRONTENAC/HADRIAN/TARIN KOWT — an objective outside
+  the boxes would make the campaign punish its own assault), Lashkar Gah never boxed. In-game
+  pass: checklist **M8**. Future (from the Rampagers harvest): Hot/Cold box cycling, CGRS cell
+  overlay, a CAS-stack/ROZ marker.
 - **(parallel) Batch draft:** §7 pilot → full 66 fan-out.
 
 ---

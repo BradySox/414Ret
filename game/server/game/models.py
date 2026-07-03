@@ -20,6 +20,7 @@ from game.server.tgos.models import TgoJs
 
 if TYPE_CHECKING:
     from game import Game
+    from game.fourteenth.phases import ResolvedZone
 
 
 class MapLayersJs(BaseModel):
@@ -183,18 +184,17 @@ class RestrictedZoneJs(BaseModel):
     detail: str
 
     @staticmethod
-    def all_in_game(game: Game) -> list[RestrictedZoneJs]:
-        from game.fourteenth.phases import active_restricted_zones, zone_detail
-
-        detail = zone_detail(game)
-        zones = []
-        for zone in active_restricted_zones(game):
+    def _from_resolved(
+        game: Game, zones: list[ResolvedZone], detail: str
+    ) -> list[RestrictedZoneJs]:
+        out = []
+        for zone in zones:
             center = game.point_in_world(*zone.center_xy)
             outline = [
                 LeafletPoint.from_latlng(game.point_in_world(x, y).latlng())
                 for x, y in zone.outline_xy
             ]
-            zones.append(
+            out.append(
                 RestrictedZoneJs(
                     name=zone.name,
                     kind=zone.kind,
@@ -204,7 +204,26 @@ class RestrictedZoneJs(BaseModel):
                     detail=detail,
                 )
             )
-        return zones
+        return out
+
+    @staticmethod
+    def all_in_game(game: Game) -> list[RestrictedZoneJs]:
+        from game.fourteenth.phases import active_restricted_zones, zone_detail
+
+        return RestrictedZoneJs._from_resolved(
+            game, active_restricted_zones(game), zone_detail(game)
+        )
+
+    @staticmethod
+    def free_fire_in_game(game: Game) -> list[RestrictedZoneJs]:
+        """Active free-fire (weapons-free) pockets -- inverted ROE (COIN)."""
+        from game.fourteenth.phases import active_free_fire_zones
+
+        return RestrictedZoneJs._from_resolved(
+            game,
+            active_free_fire_zones(game),
+            "Weapons free -- cleared to engage here. Everywhere else is off-limits.",
+        )
 
 
 class GameJs(BaseModel):
@@ -231,6 +250,9 @@ class GameJs(BaseModel):
     campaign_status: CampaignStatusJs
     # Active ROE restricted zones (phases W4); empty outside authored ROE phases.
     restricted_zones: list[RestrictedZoneJs]
+    # Active free-fire (weapons-free) pockets -- inverted ROE (COIN); empty unless a
+    # phase authors free_fire_zones. Drawn green, vs the red restricted zones.
+    free_fire_zones: list[RestrictedZoneJs]
 
     class Config:
         title = "Game"
@@ -242,6 +264,7 @@ class GameJs(BaseModel):
             enable_unit_placement=game.settings.enable_unit_placement,
             campaign_status=CampaignStatusJs.from_game(game),
             restricted_zones=RestrictedZoneJs.all_in_game(game),
+            free_fire_zones=RestrictedZoneJs.free_fire_in_game(game),
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             supply_routes=SupplyRouteJs.all_in_game(game),

@@ -412,6 +412,12 @@ class Game:
         from game.fourteenth.coin_hvt import advance_hvt
 
         advance_hvt(self, events)
+        # COIN dispersed cells: the insurgency in the open countryside -- patrol for them
+        # or they coalesce into a stronghold and resupply its caches. Gated coin_dispersed
+        # _cells OFF.
+        from game.fourteenth.coin_dispersed import advance_dispersed_cells
+
+        advance_dispersed_cells(self, events)
 
         # Vietnam Ops Super Gaggle (§37): (re)plan the turn's resupply run from real BLUE
         # squadrons (drawing the helos + suppressors from actual airframes, whose losses are

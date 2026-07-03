@@ -329,6 +329,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "coin_reinfiltration",
                     "coin_ied",
                     "coin_hvt",
+                    "coin_dispersed_cells",
                 ],
             ),
             (
@@ -1298,6 +1299,22 @@ class Settings:
             "shot dirty (a momentum blow AND a mandate-draining ROE violation), wait for "
             "a clean one, or let the window close. Requires COIN replenishment on; "
             "intended for COIN campaigns that preseed it."
+        ),
+    )
+    coin_dispersed_cells: bool = boolean_option(
+        "COIN dispersed cells (patrol the countryside)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "The insurgency operates between the strongholds, not just in them. Small "
+            "recon-fogged cells appear out in the open countryside -- patrol for them "
+            "(TARPS + CAS), don't just hit known positions. A cell you leave alone "
+            "matures and slips into its home stronghold, bringing a destroyed ammo cache "
+            "back into operation (re-opening the regeneration you worked to shut off), "
+            "or reinforcing its garrison. Hunting the field cells is how you keep a "
+            "stronghold starved. Requires COIN replenishment on; intended for COIN "
+            "campaigns that preseed it."
         ),
     )
     long_range_carrier_ops: bool = boolean_option(

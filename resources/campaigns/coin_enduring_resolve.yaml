@@ -184,55 +184,63 @@ phases:
           red_resolve_below: 25
     restricted_zones: *population_centers
 
-# The ratline: red<->red supply corridors between the strongholds (the original
-# laydown had NO connectivity, so the §35 trail machinery had nothing to run on).
-# Endpoints are exact stronghold coordinates so closest-CP binding is unambiguous;
-# red-red only -- a red-blue route would create a front line, and this stays an
-# air-assault campaign. Two chains: the western ratline out of Farah, and the
-# northern one out of Tarinkot toward the Kandahar gate.
+# The ratline: red<->red supply corridors between the strongholds. Waypoints trace
+# the REAL driveable corridors (Highway 1, Route 611 up the Helmand valley, the
+# Uruzgan road) -- authored via tools/supply_route_geo.py from real road lat/lons,
+# the 414th standard for all supply-line drawings. Endpoints are exact stronghold
+# XY (closest-CP binding reads first/last waypoint only); red<->red only -- a
+# red<->blue route would create a front line, and this stays an air-assault campaign.
 supply_routes:
-  # Farah (rear airfield) -> FOB Delaram II
+  # Farah -> FOB Delaram II  (Highway 1 / the Ring Road, ESE)
   - waypoints:
       - [-178644, -378451]
-      - [-195000, -320000]
+      - [-185879, -342516]
+      - [-199269, -300150]
       - [-203597, -258944]
-  # FOB Delaram II -> ANP Hill
+  # FOB Delaram II -> ANP Hill (Now Zad)  (NE track skirting the north edge of the Dasht-e Margo)
   - waypoints:
       - [-203597, -258944]
-      - [-185000, -210000]
+      - [-185651, -220124]
+      - [-172032, -187320]
       - [-174184, -162657]
-  # ANP Hill (Now Zad) -> FOB Jackson (Sangin), via Musa Qala -- the 611 corridor
+  # ANP Hill (Now Zad) -> FOB Jackson (Sangin)  via Musa Qala -- the 611 wadi
   - waypoints:
       - [-174184, -162657]
-      - [-168553, -136022]
+      - [-169101, -135636]
+      - [-190089, -130581]
       - [-209298, -127205]
-  # FOB Jackson -> FOB Zeebrugge (the Helmand ring)
+  # FOB Jackson (Sangin) -> FOB Zeebrugge (Kajaki)  (Route 611, up the Helmand)
   - waypoints:
       - [-209298, -127205]
+      - [-195334, -113519]
       - [-181518, -101421]
-  # Tarinkot (rear airfield) -> Kamp Hadrian
+  # Tarinkot -> Kamp Hadrian  (the Tarin Kowt bowl, W toward Deh Rawud)
   - waypoints:
       - [-148524, -31352]
+      - [-147324, -48689]
       - [-146856, -66510]
-  # Kamp Hadrian -> Firebase Cobra
+  # Kamp Hadrian -> Firebase Cobra  (N up the Uruzgan valley)
   - waypoints:
       - [-146856, -66510]
+      - [-129925, -63191]
       - [-111672, -60214]
-  # Tarinkot -> FOB Martello
+  # Tarinkot -> FOB Martello  (SE down the Uruzgan-Kandahar road)
   - waypoints:
       - [-148524, -31352]
+      - [-165482, -21883]
+      - [-179635, -12066]
       - [-189960, -7031]
-  # FOB Martello -> FOB Frontenac (the Kandahar gate)
+  # FOB Martello -> FOB Frontenac (the Kandahar gate)  (SW, Uruzgan road descent)
   - waypoints:
       - [-189960, -7031]
+      - [-209768, -17825]
       - [-231043, -30347]
-  # FOB Geronimo -> FOB Zeebrugge (Kajaki) THROUGH Lashkar Gah and Gereshk -- the
-  # Helmand highway; the insurgency moves supplies under civilian cover, and
-  # interdicting this leg in-town costs will.
+  # FOB Geronimo -> FOB Zeebrugge (Kajaki)  the Helmand highway the whole way: Lashkar Gah -> Gereshk -> Sangin -> Kajaki (through the town rings)
   - waypoints:
       - [-285099, -180708]
-      - [-267202, -170619]
-      - [-237656, -151564]
+      - [-263851, -170168]
+      - [-238126, -153451]
+      - [-208889, -127434]
       - [-181518, -101421]
 
 squadrons:

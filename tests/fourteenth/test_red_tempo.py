@@ -278,10 +278,8 @@ def test_trail_surge_allows_a_second_bigger_convoy(arc_cache: Any) -> None:
 @pytest.mark.parametrize(
     "campaign",
     [
-        "khe_sanh_niagara.yaml",
         "1968_Yankee_Station.yaml",
         "operation_velvet_thunder.yaml",
-        "steel_tiger.yaml",
     ],
 )
 def test_vietnam_arcs_author_the_red_tempo(campaign: str) -> None:

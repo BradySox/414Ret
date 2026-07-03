@@ -59,8 +59,8 @@ adapted to how this fork actually plans and flies a campaign.
 
 The **[Vietnam Ops](Vietnam-Ops)** suite is a set of opt-in, period-authentic mechanics that
 recreate the missions and threats that defined the Vietnam air war — the things the modern
-SAM-and-MiG engine never modelled. Every toggle defaults off; the Vietnam campaigns (Khe Sanh,
-Yankee Station, Velvet Thunder, Steel Tiger) flip the relevant ones on. See the
+SAM-and-MiG engine never modelled. Every toggle defaults off; the Vietnam campaigns (1968
+Yankee Station, Velvet Thunder, Red Flag 81-2) flip the relevant ones on. See the
 **[Vietnam Ops](Vietnam-Ops)** page for the full suite, the settings-page gating model, and
 per-feature how-to.
 
@@ -91,15 +91,6 @@ campaign files (ORBAT, threats, and economy read straight from the campaign + fa
 - **[Red Tide — First Three Turns](Red-Tide-First-Three-Turns)** — a worked example of the brief template across the opening turns.
 - **[Red Tide — Intel Assessment](Red-Tide-Intel-Assessment)** — in-fiction intel pack: backstory, enemy ORBAT, courses of action, threat card, and the read-aloud spoken brief.
 - **[Red Tide — Visual Briefing](Red-Tide-Visual-Briefing)** — theater map, SAM-ring profile, and target-priority / ORBAT diagrams.
-
-### Khe Sanh: Operation Niagara *(historical, 1968 — rooted in the real siege)*
-
-- **[Khe Sanh — Required Mods](Khe-Sanh-Required-Mods)** — the squadron install list: every required mod/module, what it adds, whether it's free, and where to download it. Read this first.
-- **[Khe Sanh — Campaign Briefing](Khe-Sanh-Campaign-Briefing)** — the brief-builder: friendly/enemy ORBAT, the siege win-geometry, the **political-will / ROE arc playbook** (Rolling Thunder → Linebacker II), the phase plan, op-night runbook, mission-brief template, package recipes, comms/FAC card, and the AAA threat-defeat reference.
-- **[Khe Sanh — Role Cards](Khe-Sanh-Role-Cards)** — print-and-fly kneeboard cards per player role, with period-1968 loadouts.
-- **[Khe Sanh — First Three Turns](Khe-Sanh-First-Three-Turns)** — a worked example of the brief template across the opening turns.
-- **[Khe Sanh — Intel Assessment](Khe-Sanh-Intel-Assessment)** — the historical intelligence pack (real OOB, commanders, Niagara/Pegasus) + threat card + read-aloud brief.
-- **[Khe Sanh — Visual Briefing](Khe-Sanh-Visual-Briefing)** — the siege map, AAA threat profile, and target-priority / ORBAT diagrams.
 
 ### Operation Enduring Resolve *(Afghanistan, 2006 — the living counter-insurgency)*
 

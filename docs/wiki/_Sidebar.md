@@ -53,14 +53,6 @@
 - [Red Tide: Intel Assessment](Red-Tide-Intel-Assessment)
 - [Red Tide: Visual Briefing](Red-Tide-Visual-Briefing)
 
-*Khe Sanh: Operation Niagara (1968)*
-- [Khe Sanh: Required Mods](Khe-Sanh-Required-Mods)
-- [Khe Sanh: Briefing](Khe-Sanh-Campaign-Briefing)
-- [Khe Sanh: Role Cards](Khe-Sanh-Role-Cards)
-- [Khe Sanh: First Three Turns](Khe-Sanh-First-Three-Turns)
-- [Khe Sanh: Intel Assessment](Khe-Sanh-Intel-Assessment)
-- [Khe Sanh: Visual Briefing](Khe-Sanh-Visual-Briefing)
-
 *Afghanistan — Operation Enduring Resolve (COIN, 2006)*
 - [Enduring Resolve: Briefing](Enduring-Resolve-Campaign-Briefing)
 

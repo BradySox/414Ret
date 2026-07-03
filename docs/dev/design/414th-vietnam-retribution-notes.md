@@ -1,5 +1,14 @@
 # 414th — "Vietnam Retribution" mode — design notes
 
+> **Campaign-set consolidation (2026-07-03):** the three standalone Caucasus Vietnam
+> campaigns (`1968_Yankee_Station`, `khe_sanh_niagara`, `steel_tiger`) were merged into the
+> one **`1968_Yankee_Station`** — the Steel Tiger trail-interdiction OOB tilt and the Khe
+> Sanh Operation-Niagara siege are folded into Yankee Station's features/scenario, and the
+> other two campaign files are removed. Wherever this note lists "the 4/5 Vietnam campaigns"
+> below, the live Caucasus set is now **`1968_Yankee_Station` + `operation_velvet_thunder`**
+> (plus `red_flag_81_2` on Nevada) — the historical development counts are left intact as
+> the record of what happened at the time.
+
 **Status:** **P0 + P1 (doctrine model) + P1b (display read-path) + P1c (period planner numbers) landed**;
 P2 (shell/preset) + P3 (behaviour taskings) outstanding.
 **Decided direction:**

@@ -1,5 +1,17 @@
 # Khe Sanh — Operation Niagara (1968) — campaign design notes
 
+> **SUPERSEDED (2026-07-03): the standalone Khe Sanh campaign is dropped.** The three
+> Caucasus Vietnam campaigns (1968 Yankee Station / Khe Sanh: Operation Niagara / Steel
+> Tiger: Trail Interdiction) were consolidated into the one **1968 Yankee Station**
+> campaign — the Niagara *siege* is folded into Yankee Station's scenario as the DMZ front
+> (a depleted Da Nang `Sochi-Adler` starts the line pressed in near the wire via
+> `control_point_strengths`, plus the airbase-harassment + Super-Gaggle preseeds it already
+> carried). `khe_sanh_niagara.yaml`/`.miz` are removed from `resources/campaigns/`. This
+> note is kept for the historical siege-design record + the Operation Niagara frame below;
+> the live source of truth is now `1968_Yankee_Station.yaml`. The Khe-Sanh wiki
+> (`docs/wiki/Khe-Sanh-*.md`) + handbook (`docs/campaigns/khe-sanh-*.md`) player-facing pages
+> were **deleted** in the same consolidation (their references below are stale).
+
 Status: **built + headless-validated** (2026-06-28). `khe_sanh_niagara.yaml` +
 `khe_sanh_niagara.miz` are in `resources/campaigns/` — the `.miz` was scripted by forking
 `1968_Yankee_Station.miz` (pydcs load → re-color airfields → rebuild front edges → save;

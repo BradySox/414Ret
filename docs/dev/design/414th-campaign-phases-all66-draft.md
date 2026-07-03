@@ -5,6 +5,12 @@ to [`414th-campaign-phases-notes.md`](414th-campaign-phases-notes.md) (spec) and
 [`414th-campaign-phases-pilot.md`](414th-campaign-phases-pilot.md) (6-campaign pilot). Generated,
 not hand-authored.
 
+> **Note (2026-07-03):** this is a dated snapshot of the generator output. Since it was produced,
+> the two standalone Caucasus Vietnam campaigns **Khe Sanh: Operation Niagara** and **Steel Tiger:
+> Trail Interdiction** were consolidated into **1968 Yankee Station** and their `.yaml`/`.miz`
+> removed, so their rows below no longer correspond to shipped campaigns. The table is left as the
+> historical snapshot; re-run the generator (below) to regenerate the current 64-campaign set.
+
 ## What this is
 
 A drafted Tier-0 phase arc for **every** base-Retribution campaign, produced by

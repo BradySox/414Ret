@@ -136,8 +136,9 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 - **CurrentHill Iran** integration — Shahed-136 and IRGCN FAC assets plus a `[CH] Iran 2020`
   faction behind a new-game mod toggle (see **[Custom Factions](Custom-Factions)**).
 - **Four built campaigns** — **Germany - Red Tide** (a *Red Storm Rising*-flavoured 1988 NATO
-  counteroffensive), **Khe Sanh: Operation Niagara** (the historical 1968 siege, where the
-  threat is **AAA, not MiGs**), **Red Flag 81-2** (the 1981 Nevada exercise played as the war it
+  counteroffensive), **1968 Yankee Station** (the whole Vietnam air war on one map — the coastal
+  route packages, the Ho Chi Minh Trail interdiction, and the DMZ siege, where the threat is
+  **AAA, not MiGs**), **Red Flag 81-2** (the 1981 Nevada exercise played as the war it
   rehearses), and **Operation Enduring Resolve** (2006 Helmand COIN on the Afghanistan map, with
   a living insurgency and kill-box ROE). Each has a player-facing **briefing pack** on the wiki —
   see the Campaigns section of **[Home](Home)**.

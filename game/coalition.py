@@ -55,9 +55,10 @@ class Coalition:
         # was removed 2026-07-01; the flag is kept (persisted) so old saves keep
         # their reveal, and the command-post fog still reads it.
         self.captured_commander = False
-        # Pilots captured by the Combat SAR enemy snatch party (the rescue rework's
-        # capture race), held as POWs at an enemy field and recoverable for a few
-        # turns. Persisted; surfaced as map objectives and aged each turn.
+        # Pilots captured by the Combat SAR enemy snatch party (the capture
+        # race), held as POWs at an enemy field for a few turns: freed if the
+        # field falls, killed when the clock expires, draining will meanwhile.
+        # Persisted; aged each turn.
         self.pending_pow_recoveries: list[PendingPowRecovery] = []
         # Vietnam campaign layer (W1): this side's political capital for the war --
         # BLUE reads it as Political Will (Washington's patience), RED as Regime
@@ -233,8 +234,7 @@ class Coalition:
         self.transfers.perform_transfers()
 
         # Advance the captured-pilot POW clock: free those whose holding airfield
-        # we recaptured, kill those held past the recovery window, keep the rest.
-        # (An in-mission CSAR raid already cleared any recovered POW in commit.)
+        # we recaptured, kill those held past the hold window, keep the rest.
         # Ungated: the list is only ever non-empty when the Combat SAR capture
         # race produced a capture, so this is a no-op otherwise.
         self.pending_pow_recoveries = surviving_pows(

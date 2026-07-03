@@ -1391,11 +1391,14 @@ A polish pass over the **LUA Plugins Options** page so every plugin explains its
 
 ## 15. SCAR — RESCAP "Sandy" rescue escort (rescue rework)
 
-> **Rework complete (2026-06-27).** SCAR was repurposed from an armor-hunt task into the **RESCAP
-> "Sandy"** rescue escort of the **Combat SAR package** (King + Jolly Green + Sandy). The old
-> moving-HVT armor-hunt scenario *and* its auto-planner were **deleted** (detailed below); the
-> SOF/CSAR recovery plumbing was repurposed for the POW path. Design source of truth:
-> `docs/dev/design/414th-scar-rescue-rework-notes.md`.
+> **Rework complete (2026-06-27) + CSAR rescope (2026-07-03).** SCAR was repurposed from an
+> armor-hunt task into the **RESCAP "Sandy"** rescue escort of the **Combat SAR package** (King +
+> Jolly Green + Sandy). The old moving-HVT armor-hunt scenario *and* its auto-planner were
+> **deleted** (detailed below). The 2026-07-03 rescope then **shelved the POW recovery raid**
+> (capture is a campaign consequence, not a plannable mission — the held-POW model below stays)
+> and **froze the AI-drama layer** (the Sandy auto-divert gets its one owed G23 re-fly,
+> pass-or-delete; no further AI-choreography iteration). Design source of truth:
+> `docs/dev/design/414th-csar-notes.md` (supersedes the eight earlier CSAR/SCAR notes).
 >
 > **Dormant SOF capture economy REMOVED (2026-07-01).** The unreachable remnant of the old loop —
 > `FlightType.SOF` (the C-130 insert), the commander-capture reveal/refund + mis-ID penalty
@@ -1414,10 +1417,9 @@ one among look-alike decoys" chase) and its opt-in auto-planner were **removed o
 `game/missiongenerator/scarluadata.py`, the `scar` Lua plugin (`resources/plugins/scar/`, dropped
 from `plugins.json`), `game/plugins/scar.py` + its `manager.py` registration, `PlanScarHunts` /
 `PlanScar`, the `scar_autoplan*` settings, the `mission_data.scar_taskings` plumbing, and the
-`test_scar_bridge.py` / `test_scar_autoplan.py` suites are all gone. The only symbol that outlived
-the armor hunt is the SOF-team unit-name pair, now `_POW_UNIT_BLUE` / `_POW_UNIT_RED` in
-`game/pow_objectives.py` (the POW body is the sole consumer of the "SOF Team" unit variants; the
-unit YAML variants are kept for it).
+`test_scar_bridge.py` / `test_scar_autoplan.py` suites are all gone. (The "SOF Team" unit YAML
+variants that once stood in for the POW body are kept as save-compat tombstones only — the POW
+map objective that consumed them was shelved with the recovery raid, 2026-07-03.)
 
 **Planner side (Python, CI-tested).** `FlightType.SCAR` (`game/ato/flighttype.py`) stays an
 air-to-ground primary, eligible on the **A-10C / AH-64D** rescue-escort airframes. It is
@@ -1447,17 +1449,20 @@ pilot; let any team dwell on the survivor un-rescued and the pilot is **CAPTURED
 `Debriefing.parse_combat_sar_captures`. Seven plugin tunables
 (`captureEnabled` / `Chance` / `SpawnDistance` / `Range` / `Dwell` / `PartySize` / `Teams`).
 
-**Capture → POW → recovery (Python).** `record_pow_captures` (`game/sim/missionresultsprocessor.py`)
-turns each capture into a `PendingPowRecovery` (`game/pow_recovery.py`) on the blue coalition
-(persisted, save-migrated, 4-turn clock); `commit_air_losses` spares a captured pilot the KIA (a
-POW is not killed). Each turn `game/pow_objectives.py` rebuilds the POW as a
-`CapturedPilotGroundObject` (`game/theater/theatergroundobject.py`) at the nearest **enemy
-airfield**, offering **CSAR** recovery to the owning side. Recovery resolves two ways: a
-**surviving CSAR raid** fragged at the holding field (`commit_pow_recoveries`, matched by airframe
-unit name) frees the aviator; and `surviving_pows` (`game/pow_recovery.py`, run from
-`Coalition.end_turn`) frees a POW whose **holding field is recaptured**, decrements the clock
-otherwise, and **kills** an abandoned POW at zero (permanent loss). v1 fidelity gap: a held pilot
-isn't pulled from the active roster.
+**Capture → held POW (Python; the raid is SHELVED, 2026-07-03).** `record_pow_captures`
+(`game/sim/missionresultsprocessor.py`) turns each capture into a `PendingPowRecovery`
+(`game/pow_recovery.py`) on the survivor's coalition (persisted, save-migrated, 4-turn hold
+clock), resolving the **holding enemy airfield at capture time** (`resolve_holding_airfield`);
+`commit_air_losses` spares a captured pilot the KIA (a POW is not killed). The POW resolves two
+ways only: `surviving_pows` (run from `Coalition.end_turn`) **frees** a POW whose holding field
+is recaptured and **kills** one abandoned past the clock (permanent loss); while held, each POW
+**drains political will per turn** (the Vietnam W1 `blue_pow_held_per_turn` feed). The dedicated
+recovery *raid* — the `CSAR` flight type + the dynamic `CapturedPilotGroundObject` map objective
++ `commit_pow_recoveries` — was **shelved in the 2026-07-03 rescope** (`game/pow_objectives.py`
+deleted; the TGO class remains a save-compat tombstone; `purge_pow_objectives` sweeps
+pre-rescope saves at turn init; a persisted `"CSAR"` flight degrades to TRANSPORT via
+`_LEGACY_FLIGHT_TYPE_VALUES`). v1 fidelity gap unchanged: a held pilot isn't pulled from the
+active roster.
 
 **The Sandy kneeboard** is `ScarTaskPage` (`game/missiongenerator/kneeboard.py`) — role guidance
 for holding with the King/Jolly, suppressing the threats around the survivor, and walking the
@@ -1502,6 +1507,9 @@ Two plugin options: `sandyMaxRangeNm`, `sandyEngageRadiusNm`
 Python bucketing/emission is unit-tested
 (`tests/missiongenerator/test_combat_sar_sandy_luadata.py`); the routed-divert Lua needs a re-fly
 (checklist G23 — the pre-rework dispatch was flown 2026-07-02 and confirmed not to move the flight).
+**Freeze policy (2026-07-03 rescope):** G23's re-fly is pass-or-delete — if the route-push rework
+flies, the divert stays as-is, frozen; if it fails again the divert is removed rather than reworked
+a third time. Either way, no further AI-rescue choreography is added.
 
 ### SOF insert generation fixes (2026-06-22)
 
@@ -1736,17 +1744,18 @@ this faction)" the faction has no units in the matching `unit_classes` for that 
 
 ## §21 — Combat SAR — pilot rescue (flight type + `combatsar` plugin, scoring ON)
 
-**Status:** Built (phases 1–4) + rescue scoring; needs an in-game pass (checklist
-G8–G10, H2, and the G11 scoring row). Python plans + scores; MOOSE CSAR (Lua) executes.
-Design source of truth: [`docs/dev/design/414th-combat-sar-spec.md`](design/414th-combat-sar-spec.md).
+**Status:** Built + rescue scoring verified (G8/G9/G11/G13); G10 partial. **Default ON since the
+2026-07-03 CSAR rescope** (`auto_combat_sar` default True for new campaigns; existing saves keep
+their stored choice) — rescue is a normal, standing task per the locked vision. Python plans +
+scores; the plugin's **survivor ledger** (Lua) executes. Design source of truth:
+[`docs/dev/design/414th-csar-notes.md`](design/414th-csar-notes.md).
 
-A bespoke pilot-rescue flight task, distinct from the POW-recovery `FlightType.CSAR`
-raid in the SCAR loop (§15). A **CH-47** orbits near the FLOT as the rescuer; a **C-130**
-flies the overhead **HC-130 "King"** on-scene-command orbit. When a **human** pilot
-ejects in the area, MOOSE CSAR spawns the downed pilot with a beacon and the CH-47
-flies in, lands, and delivers them to any friendly field/FARP — and the campaign
-**spares that aviator** at debrief (the airframe is still lost; the experienced pilot
-returns to the squadron).
+The bespoke pilot-rescue flight task. A **CH-47** orbits near the FLOT as the rescuer; a
+**C-130** flies the overhead **HC-130 "King"** on-scene-command orbit. When a pilot (human or
+AI) ejects in the area, the ledger spawns the downed pilot with red smoke and a friendly helo —
+player-flown or AI — flies in, lands, and delivers them to any friendly field/FARP; the campaign
+**spares that aviator** at debrief (the airframe is still lost; the experienced pilot returns to
+the squadron).
 
 ### Architecture (Python plans + scores, Lua executes)
 
@@ -1768,7 +1777,8 @@ returns to the squadron).
   geometry differs. Helos clamp to a helo-appropriate AGL via the shared `get_altitude` path.
   (Earlier builds reused the AEW&C builder outright, which parked the CH-47 at AWACS depth — a
   G9 in-game finding, fixed 2026-06-25.)
-- **AI standing alert** — `Settings.auto_combat_sar` (HQ automation, default OFF) auto-plans
+- **AI standing alert** — `Settings.auto_combat_sar` (HQ automation, **default ON** since the
+  2026-07-03 rescope; existing saves keep their stored choice) auto-plans
   one COMBAT_SAR orbit per turn for blue via `PlanCombatSar` / `PlanCombatSarSupport`
   (mirrors AEWC/refuel support). With it on, the generator emits `enableForAI=true` plus a
   `heloTemplate` (the first rescue flight's group, used as the clone-fallback template) and `farp`

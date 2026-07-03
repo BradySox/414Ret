@@ -1,5 +1,7 @@
 # SCAR Phase 2 — SOF airdrop + commander capture (implementation plan)
 
+> **SUPERSEDED (2026-07-03):** consolidated into [`414th-csar-notes.md`](414th-csar-notes.md) -- the authoritative CSAR doc. This file is historical record only.
+
 Status: **2a + 2c-1 BUILT** (scripted capture loop + finite bought inventory asset), gated
 OFF behind `scar_command_post_intel`; **2c-2/2c-3 not started**. Phase 1 (the reveal/intel
 side) is built and merged. This doc plans

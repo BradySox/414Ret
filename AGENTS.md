@@ -73,8 +73,9 @@ file. This guide is the map; those are the territory.
   - `414th-tic-dynamic-fronts-notes.md` — TIC stance/cadence movement design
   - `414th-tars-recon-notes.md` — TARS recon engine
   - `414th-c130-ew-isr-notes.md` — C-130J EW/ISR source of truth + retired `ewrj` warning
-  - `414th-scar-task-spec.md` + `414th-scar-commander-sme-questions.md` — SCAR ground truth
-  - `414th-scar-phase2-sof-plan.md` + `414th-scar-HANDOFF.md` — SCAR commander-capture plan + next-session pickup
+  - `414th-csar-notes.md` — **the one CSAR doc** (vision, shipped survivor-ledger architecture,
+    and the 2026-07-03 rescope: `auto_combat_sar` default ON, the AI-drama layer frozen, the POW
+    recovery raid shelved). Supersedes the eight earlier CSAR/SCAR notes (each is bannered).
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
   - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits
   - `414th-red-tide-supply-routes-notes.md` — YAML supply routes + Kastrup preset patch
@@ -272,18 +273,9 @@ file. This guide is the map; those are the territory.
     `414th-airwar-planner-consolidation-notes.md` (behavior-preserving consolidation of the
     air-war planner's threat-field + standoff geometry onto one `AirspaceGeometry` service;
     keeps the brain in Python, Tier-C/`Ops.Chief` explicitly out of scope),
-    `414th-scar-king-fac-notes.md` (SCAR rework: a player-first loiter/"hold" package tasked by
-    the C-130 "King" on-scene commander onto real static armor TGOs so losses track natively;
-    minimal-F10 designation; thin MOOSE bridge, not `Ops.Chief`; future auto-planned commander),
-    `414th-combat-sar-normal-task-notes.md` (make Combat SAR a normal, default-on auto-task.
-    **Route 1 (the owned survivor ledger) HAS since shipped** — `combatsar-config.lua` credits AI
-    rescues by real identity and makes AI ejections capturable → POW, coalition-generic runtime
-    (verified 2026-06-30, G11/G20); the note's "AI-rescue scoring is cosmetic / AICSAR anonymous
-    clone" diagnosis is now stale. **Symmetric red is REJECTED** (squadron call 2026-07-01: red
-    flies NO CSAR — `combat_sar_targets` seeding is BLUE-gated, the generator never emits the
-    `CombatSAR.red` Lua node, so red ejections register no survivor and no BLUE snatch party
-    spawns; the plugin's red path stays dormant). Still design-only: default-on
-    (`auto_combat_sar` defaults OFF)),
+    `414th-csar-notes.md` (see the design-notes list above — the authoritative CSAR doc since the
+    2026-07-03 rescope; the old `414th-scar-king-fac-notes.md` / `414th-combat-sar-normal-task-notes.md`
+    entries are superseded into it),
     `414th-vietnam-ops-notes.md` (**Vietnam Ops suite** — a `Vietnam Ops` settings page gating five
     opt-in period mechanics: Arc Light as a heavy-bomber Strike *effect*, AAA flak gauntlet, naval
     gunfire support, Armed-Recon truck-convoy interdiction, Super Gaggle resupply; Tier-A runtime only,
@@ -519,19 +511,25 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     engage near a live ejection once one occurs, freeing again once the
     survivor is resolved — a player-flown Sandy is untouched (voice/SRS coordination). "Walking the
     rescue helo in" itself is still voice-first only, not scripted, for either. features doc §15,
-    checklist G23 (rework needs a re-fly). **Enemy-capture race**
+    checklist G23 (**FROZEN, pass-or-delete** per the 2026-07-03 rescope: the re-fly passes and the
+    divert stays as-is, or it fails and the divert is deleted — no third rework). **Enemy-capture race**
     (`combatsar` plugin): on ejection an enemy snatch party (several small dispersed teams, spawned
     under the opposing faction's country) may race to seize the survivor — kill it
-    to save, or the pilot is **CAPTURED** (`combat_sar_captures` state global) and held as a **POW at
-    an enemy airfield** (`PendingPowRecovery` + `CapturedPilotGroundObject`, offering CSAR). A
-    **surviving CSAR raid** or **recapturing the field** frees the aviator; a POW abandoned past the
-    4-turn clock is **killed**. AI safety-net package via `auto_combat_sar` (King + Jolly + 1 Sandy).
+    to save, or the pilot is **CAPTURED** (`combat_sar_captures` state global) and held as a **POW**
+    (`PendingPowRecovery`, holding field resolved at capture). **Recapturing the field** frees the
+    aviator; a POW abandoned past the 4-turn clock is **killed**; each turn held drains political
+    will. **The POW recovery *raid* is SHELVED (2026-07-03 rescope)** — the `CSAR` raid flight type
+    (persisted saves degrade to TRANSPORT), the dynamic `CapturedPilotGroundObject` map objective
+    (tombstoned; `purge_pow_objectives` sweeps old saves), and `commit_pow_recoveries` are removed;
+    capture is a campaign consequence, not a plannable mission.
+    Standing package via `auto_combat_sar` (King + Jolly + 1 Sandy), **default ON** since the rescope.
     The old armor-hunt scenario + its auto-planner are **deleted** (2026-06-27: `scarluadata.py`, the
     `scar` plugin, `PlanScarHunts`/`PlanScar`, `scar_autoplan*`); the CSAR recovery plumbing was
     repurposed for the POW path. The **dormant SOF capture economy was removed 2026-07-01**
     (`FlightType.SOF`, the commander-capture reveal/refund, stranded-team objectives, the plugin's
     SOFRESCUE channel, `scar_misid_penalty` — save-compat tombstones in `game/scar_rescue.py`);
-    the command-post fog (`scar_command_post_intel`) stays live. features doc §15.
+    the command-post fog (`scar_command_post_intel`) stays live. Design source of truth:
+    `414th-csar-notes.md`. features doc §15.
 16. **Settings QOL audit** — dead/duplicate setting cleanup (four fields removed), AI-radio
     booleans consolidated into the `AiRadioBehavior` enum with deterministic save migration,
     plugin wording, and a UI-layer grouping/dependency handoff
@@ -563,17 +561,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `enable_unit_placement` (unlock) + `enable_free_unit_placement` (no cost).
     (`game/theater/unitplacement.py`, `qt_ui/windows/groundobject/QPlaceUnitGroupDialog.py`,
     `client/src/components/liberationmap/MapContextMenu.tsx`; features doc §20.)
-21. **Combat SAR** — bespoke player pilot-rescue flight type (`FlightType.COMBAT_SAR`): a CH-47
+21. **Combat SAR** — bespoke pilot-rescue flight type (`FlightType.COMBAT_SAR`): a CH-47
     orbits the FLOT as the rescuer, a C-130 flies the HC-130 "King" overhead orbit (air-tracking
-    **TACAN-only** beacon — no ADF — + F10 LARS survivor-locator), driven at runtime by the bundled
-    MOOSE `CSAR` engine (`combatsar` plugin). Optional AI standing alert (`auto_combat_sar`, default
-    OFF). **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field spares the
+    **TACAN-only** beacon — no ADF — + F10 LARS survivor-locator), driven at runtime by the plugin's
+    **survivor ledger** (`combatsar` plugin). AI standing alert `auto_combat_sar` — **default ON**
+    since the 2026-07-03 rescope (existing saves keep their stored choice); rescue is a normal,
+    standing task. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field spares the
     aviator at debrief (airframe still lost) — the `combatsar` plugin's `OnAfterBoarded`/`OnAfterRescued`
     hooks append the ejected unit name to the `combat_sar_rescues` state global, and
     `commit_air_losses` skips that pilot's kill (fail-safe: empty list = pre-scoring behaviour).
     Distinct from the POW-recovery `FlightType.CSAR` raid (§15). (`game/ato/flighttype.py`,
     `game/commander/tasks/primitive/combatsar.py`, `game/sim/missionresultsprocessor.py`,
-    `resources/plugins/combatsar/`; features doc §21, spec `414th-combat-sar-spec.md`.)
+    `resources/plugins/combatsar/`; features doc §21, design doc `414th-csar-notes.md`.)
 22. **Kneeboard space-utilisation + custom import** — sparse kneeboard pages (Combat SAR,
     Support, Mission Info) restyled to fill the page with a *light* heading + underline-rule +
     whitespace layout (no boxes), and the Friendly Packages list flows into two columns when

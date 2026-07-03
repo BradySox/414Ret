@@ -1,5 +1,7 @@
 # SCAR Task — Technical Specification
 
+> **SUPERSEDED (2026-07-03):** consolidated into [`414th-csar-notes.md`](414th-csar-notes.md) -- the authoritative CSAR doc. This file is historical record only.
+
 **Target project:** `dcs-retribution/dcs-retribution`
 **Source concept:** SCAR-concept-v2 (SME-approved, two review passes)
 **Status:** Draft spec for implementation review.

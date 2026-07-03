@@ -1254,7 +1254,7 @@ so the two docs don't drift.
   Lua syntax gate green. **Needs a re-fly** to confirm the 11714 error is gone from `dcs.log` and every
   errored survivor now gets rescued (was 9 errored attempts / 3 completed).
 
-### G22 — Captured-pilot POW recovery raid: planning crash + map marker · §15 · ☐ UNTESTED (2 fixes applied 2026-06-30, needs a re-fly)
+### G22 — Captured-pilot POW recovery raid: planning crash + map marker · §15 · ✗ RETIRED (2026-07-03 CSAR rescope — the POW recovery raid is SHELVED: the `CSAR` raid flight type, the `CapturedPilotGroundObject` map objective, and `commit_pow_recoveries` are removed, so there is no raid to plan and nothing to re-fly. The held-POW model — freed by field capture, killed on the 4-turn clock, draining will — stays and is CI-tested in `tests/test_pow_recovery.py`. See `414th-csar-notes.md`.)
 - **Bug (user report, 2026-06-30 — screenshot of "An unexpected error occurred"):** planning a
   recovery flight against a captured-pilot POW objective (F10 "save pilot at airbase") crashed with
   `AssertionError` in `AirAssaultFlightPlan.Builder.layout()` (`assert self.package.waypoints is not
@@ -1292,7 +1292,7 @@ so the two docs don't drift.
 - **Fail signature:** the `AssertionError` recurs; the flight plans with no real ingress (routes
   straight through threat zones with no IP); the marker still overlaps the airfield icon.
 
-### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ✗ REGRESSED → rework applied 2026-07-02 (root-caused; needs a re-fly)
+### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ✗ REGRESSED → rework applied 2026-07-02 (root-caused; needs a re-fly). **FROZEN, pass-or-delete (2026-07-03 CSAR rescope):** this re-fly is the divert's last chance — pass and it stays as-is (frozen, no further iteration); fail and the divert is deleted rather than reworked a third time (a player Sandy is untouched either way).
 - **Fail signature reproduced (2026-07-02 flown Trail 2 session `wonderful-chatterjee`, user-confirmed):**
   an F-4E ejection at t=1118 registered a survivor (2 snatch parties spawned 2 s later ~11 km from
   Gudauta), the **"SANDY … is diverting to hold over the downed pilot" message fired** (user saw it),

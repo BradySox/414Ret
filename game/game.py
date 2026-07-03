@@ -649,12 +649,12 @@ class Game:
 
         purge_legacy_sof_state(self)
 
-        # Surface captured-pilot POWs as recovery objectives held at enemy
-        # airfields (SCAR rescue rework, Phase 3). Rebuilt from each coalition's
-        # pending_pow_recoveries; idempotent like the SOF sync above.
-        from game.pow_objectives import sync_pow_objectives
+        # Sweep any stale captured-pilot POW objectives a pre-rescope save still
+        # carries (the POW recovery raid was shelved 2026-07-03; the objectives
+        # were dynamic and are no longer rebuilt). No-op on current campaigns.
+        from game.pow_recovery import purge_pow_objectives
 
-        sync_pow_objectives(self)
+        purge_pow_objectives(self)
 
         # Materialise any TGOs queued for this turn via drop-spawn.
         from game.theater.unitplacement import (

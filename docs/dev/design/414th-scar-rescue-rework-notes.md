@@ -1,5 +1,7 @@
 # SCAR rework — survivor rescue: the King / Jolly Green / Sandy package (design)
 
+> **SUPERSEDED (2026-07-03):** consolidated into [`414th-csar-notes.md`](414th-csar-notes.md) -- the authoritative CSAR doc. This file is historical record only.
+
 **Status:** **Phases 1–4 MERGED** (PRs #241 / #243 / #245 / #247 — the POW recovery loop: a CSAR raid
 or recapturing the holding airfield **frees** the held aviator; an abandoned POW is **killed**).
 **Phase 5 AI safety net DONE** — `PlanCombatSar.propose_flight(FlightType.SCAR, 1)`

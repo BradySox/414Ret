@@ -9,14 +9,15 @@ debrief**: you still lose the jet, but the experienced pilot returns to the squa
 being killed off.
 
 It is a bespoke flight type (`FlightType.COMBAT_SAR`) driven by the plugin's **survivor
-ledger** runtime, and it is **distinct** from the `CSAR` recovery-raid task, which rescues a
-**captured POW** from the enemy airfield holding them (see [SCAR](SCAR) for the capture → POW
-→ raid loop).
+ledger** runtime. Since the 2026-07-03 rescope it is a **normal, standing task**: the AI plans
+the rescue package automatically by default (see the standing alert below), and a captured
+pilot is a held POW — there is no separate recovery-raid mission (see [SCAR](SCAR) for the
+capture → POW consequence).
 
 > **In-game-pass status:** the core loop is **flown and verified** — AI rescues credit the
 > spare-pilot scoring by real identity and AI ejections are capturable → POW (checklist
 > G11/G20, 2026-06-30). Still open: the King TACAN beacon re-fly (G10) and the newest
-> AI-rescue/Sandy retasking fixes (G21–G23).
+> AI-rescue/Sandy retasking fixes (G21/G23 — G23 is frozen pass-or-delete).
 
 ---
 
@@ -94,18 +95,20 @@ Plugin tunables control the race (`captureEnabled` / `captureChance` / `captureS
 `captureRangeFt` / `captureDwell` / `capturePartySize` / `captureTeams` — distances in NM/ft), so you
 can dial how often and how aggressive the snatch attempts are.
 
-### If captured: the POW recovery loop
+### If captured: the held POW
 
 A captured pilot is **not killed at debrief** — they become a POW held at the **nearest enemy
-airfield**, surfaced next turn as a recoverable objective offering **CSAR**. You get the aviator
-back two ways:
+airfield**. The capture is the campaign consequence for losing the rescue fight:
 
-- **Fly a surviving CSAR raid** at the holding field, **or**
-- **Recapture the holding airfield** with the ground war.
+- **Recapture the holding airfield** with the ground war and the POW walks free (they stay in
+  the squadron).
+- Every turn they are held **drains your side's political will** (on campaigns with the will
+  economy).
+- A POW left too long is on a **4-turn clock** — abandon them past it and the aviator is
+  **killed for good**.
 
-Either frees the pilot (they stay in the squadron). A POW left too long is on a **4-turn clock** —
-abandon them past it and the aviator is **killed for good**. So a capture turns one rescue into a
-multi-turn problem you can still win.
+(The earlier dedicated "CSAR raid" mission against the holding field was shelved in the
+2026-07-03 rescope — win the fight at the survivor, or win the field back.)
 
 ## Rescue scoring — the payoff
 
@@ -129,20 +132,20 @@ over a campaign.
 
 ---
 
-## AI standing alert (optional)
+## AI standing alert (default ON)
 
-By default Combat SAR is something you plan and fly. You can also enable an AI standing alert
-with the **`auto_combat_sar`** setting (HQ automation page, **default OFF**). With it on:
+Rescue is a normal, standing task: the **`auto_combat_sar`** setting (HQ automation page,
+**default ON** since the 2026-07-03 rescope — existing campaigns keep their saved choice; turn
+it OFF to only fly rescues manually). With it on:
 
 - the planner auto-plans the package per turn for blue — **King + Jolly Green + 1 Sandy** — so the
   escorted alert is up before the first losses; and
 - the rescue helo **air-starts on station** near the FLOT (a slow helo spooling up from a rear
   field never reaches a deep ejection in time); and
-- the AI rescue is flown by the MOOSE **AICSAR** engine, which spawns its own rescue helo from the
-  alert's home FARP and delivers there. (The earlier "commandeer an orbiting AI helo" path was
-  dropped after a playtest showed MOOSE CSAR only *tracks* AI ejections and never actually flies an
-  AI helo.) AICSAR **stands itself down** the moment a player crews a rescue helo, so it never
-  competes with the player-flown path.
+- the AI rescue is dispatched by the plugin's own **survivor ledger** — it prefers to
+  **commandeer the on-station rescue helo** (never a player's) and only clones a fresh helo from
+  the alert's home FARP when every planned helo is dead or busy. A player crewing a rescue helo
+  always takes precedence — the AI never competes with the player-flown path.
 
 Airframe scarcity self-limits the alert: no rescue helo available, no orbit planned. Combat SAR is
 **blue-only** — the engine is built for blue, so a red Combat SAR would just fly an inert orbit

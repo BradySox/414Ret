@@ -1,5 +1,7 @@
 # SCAR commander-capture — session handoff
 
+> **SUPERSEDED (2026-07-03):** consolidated into [`414th-csar-notes.md`](414th-csar-notes.md) -- the authoritative CSAR doc. This file is historical record only.
+
 One-screen pickup for the multi-session SCAR commander-capture feature. The territory
 (design rationale, slice plan, de-risking) is in
 [`414th-scar-phase2-sof-plan.md`](414th-scar-phase2-sof-plan.md) (§9/§9b/§9c); the

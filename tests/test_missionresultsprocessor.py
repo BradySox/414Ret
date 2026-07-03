@@ -37,7 +37,6 @@ COMMIT_STEPS = [
     "commit_damaged_runways",
     "commit_captures",
     "commit_front_line_battle_impact",
-    "commit_pow_recoveries",
     "record_carcasses",
     "commit_super_gaggle",
     "record_political_will",

@@ -349,16 +349,6 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 if fixed_wing_afac or self.helicopter:
                     enrich[FlightType.SCAR] = value
 
-        # CSAR is the helo recovery raid for a captured POW, reusing the
-        # air-assault CTLD delivery in reverse. Inherited by helicopters that can
-        # already air-assault.
-        if (
-            FlightType.CSAR not in self.task_priorities
-            and self.helicopter
-            and (value := self.task_priorities.get(FlightType.AIR_ASSAULT))
-        ):
-            enrich[FlightType.CSAR] = value
-
         if FlightType.RECOVERY not in self.task_priorities:
             if (
                 value := self.task_priorities.get(FlightType.REFUELING)

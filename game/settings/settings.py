@@ -1490,13 +1490,14 @@ class Settings:
         "Automatic Combat SAR (pilot-rescue) standing alert",
         CAMPAIGN_MANAGEMENT_PAGE,
         HQ_AUTOMATION_SECTION,
-        default=False,
+        default=True,
         detail=(
-            "Auto-plan a Combat SAR orbit near each active front so a downed pilot "
-            "can be rescued even with no player CSAR flown. Requires a CH-47-capable "
-            "squadron. Also lets the in-mission MOOSE CSAR engine commandeer AI rescue "
-            "helos (so AI ejections become rescuable too). Experimental -- needs an "
-            "in-game pass; default OFF."
+            "Auto-plan a Combat SAR package (King + rescue helo + Sandy) near each "
+            "active front so a downed pilot can be rescued even with no player CSAR "
+            "flown -- rescue is a normal, standing task. Requires a rescue-helo-"
+            "capable squadron; a human can always fly the rescue instead. Turn OFF "
+            "to only fly rescues manually. (Default ON since the 2026-07-03 CSAR "
+            "rescope; existing campaigns keep their saved choice.)"
         ),
     )
     automate_front_line_stance: bool = boolean_option(

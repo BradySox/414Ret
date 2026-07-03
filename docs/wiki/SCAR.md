@@ -12,8 +12,9 @@ trying to reach them.
 > conventional anti-armour task is **BAI**, which is unchanged. If you came here looking for the
 > old "hunt the SCUD/convoy" mission, it no longer exists.
 
-> **In-game-pass status:** the planner side is CI-tested; the in-mission enemy-capture race, King
-> cueing, and POW recovery still owe a cockpit pass (checklist G8–G14).
+> **In-game-pass status:** the planner side is CI-tested; the enemy-capture race is flown-verified
+> (G20). The Sandy AI divert (G23) is frozen pass-or-delete per the 2026-07-03 CSAR rescope; a
+> captured pilot is a held POW (no recovery-raid mission — see [Combat SAR](Combat-SAR)).
 
 ---
 
@@ -58,7 +59,8 @@ around the survivor, and walking the rescue helo in.
 ## AI standing alert
 
 The AI fields SCAR only as part of the combat-SAR standing alert. With the **`auto_combat_sar`**
-setting on (HQ automation, **default OFF**), the planner proposes the package — **1 King + 1 Jolly
+setting on (HQ automation, **default ON** since the 2026-07-03 rescope; existing campaigns keep
+their saved choice), the planner proposes the package — **1 King + 1 Jolly
 Green + 1 Sandy** — so a downed pilot has escort overhead instead of an orbiting helo with no
 protection. A free Sandy degrades gracefully: if no A-10/Apache is available, the alert simply
 skips it. There is no separate SCAR auto-planner, and **BAI is untouched** — retiring the old SCAR
@@ -69,7 +71,7 @@ auto-planner handed every enemy battle position back to BAI.
 | Setting | Default | Effect |
 |---|---|---|
 | `FlightType.SCAR` | player-selectable | Build a Sandy rescue-escort flight (A-10C / AH-64D) |
-| `auto_combat_sar` | OFF | AI standing alert: King + Jolly Green + 1 Sandy when a rescue is needed |
+| `auto_combat_sar` | ON | AI standing alert: King + Jolly Green + 1 Sandy when a rescue is needed |
 
 ## See also
 

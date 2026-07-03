@@ -1,10 +1,10 @@
-"""Tests for the captured-pilot POW recovery model (SCAR rescue rework, Phase 3/4).
+"""Tests for the captured-pilot held-POW model.
 
-A pilot the enemy snatch party seizes becomes a ``PendingPowRecovery``: held alive,
-**freed** by recapturing the holding airfield, or **killed** if the recovery clock
-runs out. These lock the model defaults and the ``surviving_pows`` free/age/kill
-clock. The in-mission CSAR-raid recovery rides
-``MissionResultsProcessor.commit_pow_recoveries`` (and the in-game pass).
+A pilot the enemy snatch party seizes becomes a ``PendingPowRecovery``: held
+alive, **freed** by recapturing the holding airfield, or **killed** if the hold
+clock runs out (draining political will per turn held). These lock the model
+defaults and the ``surviving_pows`` free/age/kill clock. (The dedicated recovery
+raid was shelved in the 2026-07-03 CSAR rescope.)
 """
 
 from __future__ import annotations

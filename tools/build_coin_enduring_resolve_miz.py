@@ -59,6 +59,18 @@ CACHE_OFFSETS = [
     (-1300.0, 1100.0),
 ]
 
+#: Explicit cache positions overriding the offset ring. FOB Geronimo's caches hide
+#: INSIDE the Lashkar Gah population-center ROE ring (the town sits ~20 km NE of
+#: the FOB; both points are ~15-20 km from Geronimo vs ~38 km from Camp Bastion,
+#: so closest-CP binding stays Geronimo): starving Geronimo means striking in-town
+#: and paying mandate -- the hearts-and-minds dilemma the ring exists to price.
+CACHE_POSITION_OVERRIDES: dict[str, list[tuple[float, float]]] = {
+    "FOB Geronimo": [
+        (-272000.0, -173000.0),
+        (-269500.0, -167500.0),
+    ],
+}
+
 
 def build() -> None:
     mission = Mission()
@@ -70,13 +82,18 @@ def build() -> None:
 
     placed = 0
     for stronghold, (x, y), count in STRONGHOLD_CACHES:
+        overrides = CACHE_POSITION_OVERRIDES.get(stronghold)
         for index in range(count):
-            dx, dy = CACHE_OFFSETS[index % len(CACHE_OFFSETS)]
+            if overrides is not None:
+                cx, cy = overrides[index % len(overrides)]
+            else:
+                dx, dy = CACHE_OFFSETS[index % len(CACHE_OFFSETS)]
+                cx, cy = x + dx, y + dy
             mission.static_group(
                 country=red,
                 name=f"CACHE {stronghold} {index + 1}",
                 _type=Warehouse._Ammunition_depot,
-                position=Point(x + dx, y + dy, mission.terrain),
+                position=Point(cx, cy, mission.terrain),
             )
             placed += 1
 

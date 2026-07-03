@@ -407,7 +407,7 @@ def test_enduring_resolve_campaign_definition() -> None:
     assert data["recommended_enemy_money"] > 0
     # The ratline: authored red<->red supply corridors (the original laydown had
     # zero CP connectivity, so the trail machinery had nothing to run on).
-    assert len(data["supply_routes"]) >= 8
+    assert len(data["supply_routes"]) >= 9
     for route in data["supply_routes"]:
         assert len(route["waypoints"]) >= 2
 
@@ -423,6 +423,7 @@ def test_enduring_resolve_campaign_definition() -> None:
     for phase in arc:
         # The caches must always be legal targets -- never lock ammo (or anything).
         assert phase.locked_target_classes == ()
-        # The population-center rings are permanent, coordinate-anchored.
-        assert len(phase.restricted_zones) == 2
+        # The Lashkar Gah ring is permanent and coordinate-anchored (the empty
+        # Herat ring was cut -- a ROE ring must guard something).
+        assert len(phase.restricted_zones) == 1
         assert all(z.x is not None and z.y is not None for z in phase.restricted_zones)

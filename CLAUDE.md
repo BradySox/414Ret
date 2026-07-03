@@ -159,7 +159,20 @@ file. This guide is the map; those are the territory.
     0.0, campaign-priced 2.5) consumed via `consume_ied_detonations` in
     `update_political_will`; reuses the shared `coin.spawn_red_ground_at` (refactored out
     of the C1.5 spawn) + `_tgo_by_id`/`_despawn`. Gated `coin_ied` default OFF, preseeded
-    ON. Tests `tests/fourteenth/test_coin_ied.py`; in-game pass = checklist P4),
+    ON. Tests `tests/fourteenth/test_coin_ied.py`; in-game pass = checklist P4.
+    **COIN high-value targets LANDED 2026-07-03** (`game/fourteenth/coin_hvt.py` — the
+    fourth COIN direction): a rotating named insurgent leader surfaces near the
+    most-contested red stronghold as a recon-fogged 3-unit red TGO, live for
+    `HVT_WINDOW_TURNS` (4); killing him inside the window drops red momentum, letting it
+    close is a free miss. `advance_hvt` from `finish_turn` after C1/C1.5/IED; one HVT at a
+    time + `HVT_COOLDOWN_TURNS` (3); new `WillWeights.red_hvt_killed` (default 0.0,
+    campaign-priced 4.0) consumed via `consume_hvt_kills` in `update_political_will`'s RED
+    feed. **The CDE dilemma is emergent, not special-cased**: a stronghold on a
+    population-center ring puts the HVT inside a §40 restricted zone, so his kill is *both*
+    the momentum blow *and* a `count_roe_violations` mandate hit — the player chooses a
+    dirty shot, a clean one, or a pass. Reuses the shared `coin.spawn_red_ground_at`.
+    Gated `coin_hvt` default OFF, preseeded ON. Tests `tests/fourteenth/test_coin_hvt.py`;
+    in-game pass = checklist P5),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

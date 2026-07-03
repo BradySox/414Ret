@@ -307,9 +307,10 @@ and selected later upstream fixes.
   authored **Rolling Thunder → Bombing Halt → Linebacker → Linebacker II** arc where a red dashed **sanctuary
   zone** on the map (the "Hanoi" hub) is off-limits, deep target classes (factories, power, airfields) show a
   **RESTRICTED** badge you can see but may not hit — the defining Rolling Thunder frustration — and the AI
-  planner obeys. Those no-fly zones aren't just circles: a campaign can draw a **box** (a training range, a
-  Route Package) or a **corridor** (an ingress lane, the Ho Chi Minh trail), and they're **painted onto the
-  in-cockpit F10 map** — not just the planner — so you see the rules where you fly. *You* can always break the rules; the strike goes through, and Political Will pays the bill.
+  planner obeys. Those no-fly zones aren't just circles: a campaign can define a **box** (a training range, a
+  Route Package) or a **corridor** (an ingress lane, the Ho Chi Minh trail) — or **draw the shape directly in
+  the Mission Editor** and reference it by name — and they're **painted onto the in-cockpit F10 map**, not
+  just the planner, so you see the rules where you fly. *You* can always break the rules; the strike goes through, and Political Will pays the bill.
   Escalation arrives on schedule or **faster the more your will bleeds**, until Linebacker II takes the gloves
   off entirely. And the MiGs fight like it's 1968: Vietnam-era interceptors fly **GCI hit-and-run** — they
   scramble late, slash your strike package close to the target, refuse to chase far from their field, and go

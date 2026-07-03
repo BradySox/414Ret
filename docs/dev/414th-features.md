@@ -3123,6 +3123,18 @@ scheduled escalation date; the current phase's `advance_when` (any-of `min_turn`
   `add_circle` for a circle, `add_freeform_polygon` of the outline for a box/corridor. Reuses
   `active_restricted_zones`, so the cockpit F10 map and the web map show identical geometry. No-op outside an
   authored ROE phase.
+- **`from_drawing` — read author-drawn ME shapes back (Path B)** — instead of typing coordinates, an author
+  *draws* the zone in the campaign `.miz`'s Mission Editor and references it by name:
+  `restricted_zones: [{from_drawing: "Hanoi Box"}]`. `game/fourteenth/zone_drawings.py`
+  (`read_zone_drawings`) walks the loaded mission's drawing layers and normalizes each supported shape into a
+  named `DrawnZone` (v1: **Circle** → circle, **FreeFormPolygon** → polygon area; Rectangle/Oval/TextBox and
+  unnamed drawings are skipped — Rectangle/Oval carry a centre-vs-corner/axis convention unverifiable without
+  an in-game pass, and a box/corridor is drawn with the polygon tool). `MizCampaignLoader.populate_theater`
+  reads them once into `theater.zone_drawings` (pickled with the theater; getattr-guarded for pre-Path-B
+  saves); `_parse_restricted_zone` turns `from_drawing` into a `kind="drawing"` `RestrictedZone`, and
+  `_resolve_drawing_zone` looks the name up and builds the same `ResolvedZone`/shapely geometry — so a drawn
+  zone gates the planner, drains will, and paints on both maps identically to a typed one. A reference to a
+  missing drawing resolves to nothing (logged), never a crash.
 - **The authored arcs** — all 4 Vietnam campaigns ship **Rolling Thunder → The Bombing Halt → Linebacker →
   Linebacker II** (sanctuary on Kutaisi/Hanoi + Senaki/Haiphong for Yankee Station/Steel Tiger — the 2026-07
   coastal-ladder recast — plus a **permanent Tbilisi-Lochini "PRC border" ring those two keep in every

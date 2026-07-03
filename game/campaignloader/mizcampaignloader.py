@@ -20,6 +20,7 @@ from dcs.unitgroup import PlaneGroup, ShipGroup, StaticGroup, VehicleGroup
 from dcs.vehicles import AirDefence, Armor, MissilesSS, Unarmed
 
 from game.controlpoint_influenceradius import ControlPointInfluenceRadius, point_in_zone
+from game.fourteenth.zone_drawings import read_zone_drawings
 from game.point_with_heading import PointWithHeading
 from game.positioned import Positioned
 from game.profiling import logged_duration
@@ -780,6 +781,9 @@ class MizCampaignLoader:
         self.add_yaml_shipping_lanes()
         self.apply_control_point_strengths()
         self.add_rebel_zones()
+        # ROE zones Path B: index the campaign .miz's Mission-Editor drawings so a
+        # phase's ``from_drawing`` zone can hang off an author-drawn shape.
+        self.theater.zone_drawings = read_zone_drawings(self.mission)
 
     def get_ctld_zones(self, prefix: str) -> List[Tuple[Point, float]]:
         zones = [t for t in self.mission.triggers.zones() if prefix + " CTLD" in t.name]

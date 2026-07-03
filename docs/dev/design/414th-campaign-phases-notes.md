@@ -294,9 +294,16 @@ prove the extraction pipeline + judge draft quality, *then* green-light the full
   `ResolvedZone.contains` gates both the AI planner and the will-penalty; the zones are painted
   into the generated `.miz`'s F10/ME map (`DrawingsGenerator.generate_restricted_zones`), so the
   cockpit map and the web map show identical geometry. A legacy `{center, radius_nm}` block still
-  parses to a circle byte-identically. **Path B** (read author-drawn ME shapes back as zones —
-  DCS map drawings round-trip cleanly in the `.miz`, confirmed against `1968_Yankee_Station.miz`)
-  is the next step. In-game pass: checklist **M7**.
+  parses to a circle byte-identically. In-game pass: checklist **M7**.
+- **ROE zone shapes (Path B — draw in the ME):** ✅ LANDED — a `restricted_zones` entry can be
+  `{from_drawing: "<name>"}`, hanging the zone off a shape the author *drew* in the campaign
+  `.miz`'s Mission Editor instead of typed coordinates. `game/fourteenth/zone_drawings.py`
+  reads the loaded mission's drawings into named `DrawnZone`s (v1: Circle → circle, FreeFormPolygon
+  → polygon; Rectangle/Oval/TextBox/unnamed skipped), `MizCampaignLoader.populate_theater` stashes
+  them on `theater.zone_drawings`, and `_resolve_drawing_zone` builds the same `ResolvedZone`. DCS
+  drawings round-trip cleanly (confirmed against `1968_Yankee_Station.miz` + a real write/reload
+  probe). Rectangle/Oval reading is deferred pending an in-game convention check (the polygon tool
+  covers box/corridor). In-game pass folded into checklist **M7**.
 - **(parallel) Batch draft:** §7 pilot → full 66 fan-out.
 
 ---

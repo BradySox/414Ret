@@ -4,6 +4,6 @@ nickname: Youngstown
 country: USA
 role: Transport
 aircraft: C-130J-30
-livery: "910th AW Youngtown 20-5982"
+livery: "USAF Air Mobility Command"  # in-game module livery (was the loose Saved-Games-only "910th AW Youngtown 20-5982")
 mission_types:
   - Transport

@@ -259,7 +259,7 @@ and selected later upstream fixes.
   package dialog now warns you **before you fly** — the strike is never blocked, but the political-will
   bill is a knowing choice at planning instead of a surprise at debrief.
 - A new **Vietnam Ops** settings page holds opt-in period mechanics for the Vietnam-era
-  campaigns (off by default; the Khe Sanh / Yankee Station campaigns turn the relevant ones
+  campaigns (off by default; the Vietnam campaigns turn the relevant ones
   on). The first is **Arc Light**: fly a **Strike with a heavy bomber** (B-52) and instead of a
   single aimpoint it walks a *carpet* of bombs across the target on the run-in, the way Operation
   Niagara saturated the hills around Khe Sanh — tactical strikers are unaffected. The second is an
@@ -294,7 +294,7 @@ and selected later upstream fixes.
   deck too** (an authored 500 ft low-level profile — Skyraiders pressing in low instead of level-bombing from
   20,000 ft), so an AI Snakeye pass can lay the same fire — and eats the same AAA. See
   [`docs/dev/design/414th-vietnam-ops-notes.md`](docs/dev/design/414th-vietnam-ops-notes.md). The Vietnam
-  campaigns (Khe Sanh, 1968 Yankee Station, Velvet Thunder, Steel Tiger) turn on the whole battlefield suite by
+  campaigns (1968 Yankee Station, Velvet Thunder, Red Flag 81-2) turn on the whole battlefield suite by
   default — naval gunfire only on the coastal ones, where offshore guns can actually reach the shore.
 - The **Vietnam campaign layer** changes *why* you fly, not just how it feels. **Political will** tracks each
   side's capital for the war: your **Political Will** (Washington's patience — drained by airframe losses, with
@@ -306,11 +306,11 @@ and selected later upstream fixes.
   war fights like the era's: the front line bends with the battle inside a narrow band around where the campaign
   started — pressure reads on the map — but never sweeps onto a base to capture it; deliberate **Air Assault**
   operations remain the one way to take ground, and attrition pays out through political will instead. Both are
-  opt-in (Vietnam Ops → Campaign) and preseeded on in the four Vietnam campaigns; watch the will meters move on
+  opt-in (Vietnam Ops → Campaign) and preseeded on in the Vietnam campaigns; watch the will meters move on
   the SITREP band each turn. The Washington/Hanoi framing is just the default: any campaign can carry its own
   **will profile** (a `will:` block in the campaign YAML) that renames the meters, rewrites the exhaustion
   headlines, and re-weights every feed for its era — including a new **warship-loss feed**, so a naval war
-  (a Falklands, say) bleeds will from sunk ships the way Vietnam bleeds it from downed B-52s. And the four campaigns now fly under **Washington's rules of engagement**: an
+  (a Falklands, say) bleeds will from sunk ships the way Vietnam bleeds it from downed B-52s. And the Vietnam campaigns now fly under **Washington's rules of engagement**: an
   authored **Rolling Thunder → Bombing Halt → Linebacker → Linebacker II** arc where a red dashed **sanctuary
   zone** on the map (the "Hanoi" hub) is off-limits, deep target classes (factories, power, airfields) show a
   **RESTRICTED** badge you can see but may not hit — the defining Rolling Thunder frustration — and the AI
@@ -322,25 +322,26 @@ and selected later upstream fixes.
   off entirely. And the MiGs fight like it's 1968: Vietnam-era interceptors fly **GCI hit-and-run** — they
   scramble late, slash your strike package close to the target, refuse to chase far from their field, and go
   home after one pass — while their sanctuary bases stay untouchable until the escalation lifts.
-- A new **Steel Tiger: Trail Interdiction** campaign — the air war to strangle the **Ho Chi Minh Trail** in
-  1968. An *interdiction*-focused Vietnam scenario on the Yankee Station laydown, with the whole Vietnam Ops
-  suite on and **convoy interdiction as the centrepiece**: the moving trail column behind the enemy line is
-  your signature target. The order of battle is tilted to armed reconnaissance and BAI — Navy Intruders,
-  Skyraiders and Broncos hunting the road, B-52 Arc Light on the staging areas — over a wall-to-wall AAA
-  threat rather than MiGs.
-- The **1968 Yankee Station theater has been recast as a "coastal ladder"** (Steel Tiger shares it). North
-  Vietnam now lives where the terrain says it should: **Hanoi (Kutaisi)** inland up the river delta behind
+- The **three Caucasus Vietnam campaigns are consolidated into one** — **1968 Yankee Station** now carries
+  the whole in-country air war in its features and scenario, and the standalone **Khe Sanh: Operation Niagara**
+  and **Steel Tiger: Trail Interdiction** campaigns are dropped. Nothing is lost: the **Steel Tiger** trail war
+  is folded in as the order-of-battle tilt (Navy Intruders, Skyraiders and Broncos flying BAI/armed recon on
+  the Ho Chi Minh Trail alongside the route-package strikers), and the **Niagara** siege is folded in as the
+  DMZ front — Da Nang starts depleted so the line begins pressed in near the wire, the forward strips draw
+  airbase harassment, and the encircled **FOB Khe Sanh** lives on the Super Gaggle resupply. One map, one
+  campaign, the whole war: the coastal route packages, the trail, and the siege. Needs a **NEW** game.
+- The **1968 Yankee Station theater is a "coastal ladder."** North
+  Vietnam lives where the terrain says it should: **Hanoi (Kutaisi)** inland up the river delta behind
   its SA-2 ring, **Haiphong (Senaki)** on the coast, and the route packages laddering south through **Vinh
   (Sukhumi)** and **Dong Hoi (Gudauta)** to a single **DMZ front at the Psou narrows**, held from **Da Nang
   (Sochi-Adler)** and the **FOB Khe Sanh** hill outpost right under the line. The carriers moved onto a
   proper **Yankee Station off the delta**; the Air Force crosses the mountains from the **"Thailand" fields**
   (Ubon = Maykop, Takhli/Korat = Mineralnye Vody) — the real 1968 Navy/USAF split falls out of the geometry.
-  The **Ho Chi Minh Trail is now a real, cuttable supply web**: the trail FOBs carry their real names (Mu
+  The **Ho Chi Minh Trail is a real, cuttable supply web**: the trail FOBs carry their real names (Mu
   Gia, Ban Karai, Ban Laboy, Tchepone…), every leg crosses a bridge, and the last leg feeds the front. The
-  ROE sanctuary now sits over **Hanoi itself** — where the MiGs, the SAMs and the industry actually are, so
+  ROE sanctuary sits over **Hanoi itself** — where the MiGs, the SAMs and the industry actually are, so
   Rolling Thunder's restraint finally costs something — plus a **permanent "PRC border" ring at Tbilisi**
-  that never releases, even in Linebacker II, exactly like the real war. Existing saves keep the old board;
-  the recast needs a **NEW** game.
+  that never releases, even in Linebacker II, exactly like the real war.
 - A new **Afghanistan - Operation Enduring Resolve (COIN)** campaign — the first **living
   counterinsurgency** (a fork of Starfire's Operation Shattered Dagger). The insurgency's strongholds
   **regenerate**: cleared cells come back toward their original strength each turn — and your last recon

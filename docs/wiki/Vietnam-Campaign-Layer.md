@@ -8,8 +8,8 @@ out, inside an escalating **Rules-of-Engagement arc** that decides what you're e
 hit this month — against an enemy that fights, and escalates, the way the NVAF and NVA actually
 did.
 
-It ships in the **four Vietnam campaigns** (Khe Sanh: Operation Niagara · 1968 Yankee Station ·
-Operation Velvet Thunder · Steel Tiger), which pre-seed the toggles on. Everything is default-off
+It ships in the **three Vietnam campaigns** (1968 Yankee Station · Operation Velvet Thunder ·
+Red Flag 81-2), which pre-seed the toggles on. Everything is default-off
 globally: a modern or Cold-War campaign sees none of it.
 
 > **New game required for the doctrine half.** The political will, front, phases, and ROE arc

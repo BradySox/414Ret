@@ -258,9 +258,9 @@ F-14 — so the Vietnam-era recon birds carry it too (see below).
   clean, weaponless fit — empty pylons, matched by name; the runtime recon task is set by
   `configure_tarps`, so the payload's `tasks` tag is only ME role-menu placement.
   Files: `resources/units/aircraft/vwv_{rf101b,ra-5}.yaml` +
-  `resources/customized_payloads/vwv_{rf101b,ra-5}.lua`. The **Khe Sanh (Niagara)** campaign
-  fields one squadron of each, tasked `primary: TARPS`
-  (`resources/campaigns/khe_sanh_niagara.yaml`).
+  `resources/customized_payloads/vwv_{rf101b,ra-5}.lua`. The **1968 Yankee Station** campaign
+  fields both (RF-101B at Da Nang, RA-5C on the carriers), tasked `primary: TARPS`
+  (`resources/campaigns/1968_Yankee_Station.yaml`).
 - Tests: `tests/test_tarps_recon.py` (Tomcat + Vietnam-recon TARPS-capability gates).
 
 **AI recon BDA capture (`airecon` plugin, 2026-07-01 — closes G19).** The MOOSE TARS film engine

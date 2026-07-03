@@ -276,6 +276,20 @@ file. This guide is the map; those are the territory.
     `414th-csar-notes.md` (see the design-notes list above — the authoritative CSAR doc since the
     2026-07-03 rescope; the old `414th-scar-king-fac-notes.md` / `414th-combat-sar-normal-task-notes.md`
     entries are superseded into it),
+    **Vietnam campaign-set consolidation (2026-07-03):** the three standalone Caucasus Vietnam
+    campaigns (`1968_Yankee_Station`, `khe_sanh_niagara`, `steel_tiger`) were merged into the one
+    **`1968_Yankee_Station`** — the Steel Tiger trail OOB tilt (BAI/armed-recon squadrons on the Ho
+    Chi Minh Trail) and the Khe Sanh Operation-Niagara *siege* (a depleted `Sochi-Adler` starting the
+    DMZ front pressed in via `control_point_strengths`, plus the airbase-harassment + Super-Gaggle
+    preseeds it already had) are folded into Yankee Station's features/scenario; `khe_sanh_niagara`
+    + `steel_tiger` `.yaml`/`.miz` are removed. The live Caucasus Vietnam set is now
+    `1968_Yankee_Station` + `operation_velvet_thunder` (plus `red_flag_81_2` on Nevada); the
+    `414th-khe-sanh-campaign-notes.md` design note is bannered SUPERSEDED and the Khe-Sanh
+    wiki (`docs/wiki/Khe-Sanh-*.md`) + handbook (`docs/campaigns/khe-sanh-*.md`) player pages were
+    deleted. Historical development counts
+    below ("the 4/5 Vietnam campaigns") are left intact as the record of what happened at the time.
+    NEW game required. Guards live in `tests/test_vietnam_content.py` (repointed onto the
+    `yankee_station` fixture) + `tests/fourteenth/test_red_tempo.py`.
     `414th-vietnam-ops-notes.md` (**Vietnam Ops suite** — a `Vietnam Ops` settings page gating five
     opt-in period mechanics: Arc Light as a heavy-bomber Strike *effect*, AAA flak gauntlet, naval
     gunfire support, Armed-Recon truck-convoy interdiction, Super Gaggle resupply; Tier-A runtime only,

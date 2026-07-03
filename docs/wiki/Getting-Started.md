@@ -16,7 +16,7 @@ Because the state persists, a campaign is a series of connected operations rathe
 
 ## What's different in the 414th fork
 
-> 414Ret keeps the upstream Retribution engine and adds a squadron-focused layer on top: incomplete enemy intelligence that makes recon worth flying, new player tasks (SCAR, Combat SAR, C-130J JAMMING, TARPS), reworked air-defense and front-line behavior, a unified dark-themed map layers panel, campaign phases with rules-of-engagement and political-will layers, and four built campaigns (*Germany — Red Tide*, *Khe Sanh: Operation Niagara*, *Red Flag 81-2*, and the Afghanistan COIN campaign *Operation Enduring Resolve*). Where this guide notes a difference, it links to the relevant page. For the full tour, see [414th Fork Overview](414th-Fork-Overview).
+> 414Ret keeps the upstream Retribution engine and adds a squadron-focused layer on top: incomplete enemy intelligence that makes recon worth flying, new player tasks (SCAR, Combat SAR, C-130J JAMMING, TARPS), reworked air-defense and front-line behavior, a unified dark-themed map layers panel, campaign phases with rules-of-engagement and political-will layers, and four built campaigns (*Germany — Red Tide*, *1968 Yankee Station*, *Red Flag 81-2*, and the Afghanistan COIN campaign *Operation Enduring Resolve*). Where this guide notes a difference, it links to the relevant page. For the full tour, see [414th Fork Overview](414th-Fork-Overview).
 
 If you have used upstream Retribution before, the core workflow is unchanged — you will recognize the New Game wizard, the map, and the ATO. The differences are additive.
 

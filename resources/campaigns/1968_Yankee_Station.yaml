@@ -2,10 +2,11 @@
 name: Caucasus - 1968 Yankee Station
 era: vietnam
 theater: Caucasus
-authors: NoGoodNews (coastal-ladder recast by the 414th JFG)
+authors: NoGoodNews (coastal-ladder recast + Niagara/Steel Tiger consolidation by the 414th JFG)
 description:
-    <p><strong>The Gulf of Tonkin, summer 1968.</strong> A fictional recreation of the air war
-    over North Vietnam. The Kolkheti delta plays the Red River delta &mdash; <strong>Hanoi
+    <p><strong>The Gulf of Tonkin, summer 1968.</strong> A fictional recreation of the whole
+    in-country air war &mdash; the route packages, the trail, and the siege &mdash; on one map.
+    The Kolkheti delta plays the Red River delta &mdash; <strong>Hanoi
     (Kutaisi)</strong> inland up the river behind its SA-2 ring, <strong>Haiphong
     (Senaki)</strong> on the coast &mdash; and the route packages ladder south down the
     panhandle through <strong>Vinh (Sukhumi)</strong> and <strong>Dong Hoi (Gudauta)</strong>
@@ -16,24 +17,48 @@ description:
     stand off the delta with Crusaders, Skyhawks and Intruders. The Air Force crosses the
     mountains from "Thailand" &mdash; <strong>Ubon (Maykop)</strong> and <strong>Takhli
     (Mineralnye Vody)</strong> &mdash; the same over-the-ridge run the Thuds flew, with
-    <strong>Arc Light</strong> cells out of Guam and U-Tapao. Enemy supply flows down a real,
-    cuttable <strong>Ho Chi Minh Trail</strong> &mdash; FOB Mu Gia &rarr; Ban Karai &rarr; Tchepone
-    feed the front, and every leg crosses a bridge. MiGs flushed to the <strong>Tbilisi
-    "Chinese border" fields</strong> sit in a sanctuary your ROE never releases &mdash; exactly
-    like the real one.</p>
+    the <strong>Arc Light</strong> B-52 wing out of U-Tapao. MiGs flushed to the
+    <strong>Tbilisi "Chinese border" fields</strong> sit in a sanctuary your ROE never
+    releases &mdash; exactly like the real one.</p>
+    <p><strong>Steel Tiger:</strong> everything the NVA throws at the South moves down a real,
+    cuttable <strong>Ho Chi Minh Trail</strong> &mdash; truck convoys run FOB Mu Gia &rarr;
+    Ban Karai &rarr; Tchepone to the front, night after night under wall-to-wall AAA, and
+    every leg crosses a bridge. Find the column, kill it, and roll the next one back before
+    the cargo ever reaches the line.</p>
+    <p><strong>Operation Niagara:</strong> at the DMZ the NVA has the line pressed in tight.
+    The forward strips draw rocket and mortar fire, the encircled hill outpost at <strong>FOB
+    Khe Sanh</strong> lives on round-the-clock tac air, Arc Light, and the <strong>Super
+    Gaggle</strong> helicopter resupply. Hold the garrison while the deep war runs north.</p>
     <p><strong>Pump up the volume on "Fortunate Son" and enjoy.</strong></p>
 
 recommended_player_faction: USA 1970 Vietnam War
 recommended_enemy_faction: Vietnam 1970
 recommended_start_date: 1968-06-13
 recommended_player_money: 3000
-recommended_enemy_money: 1000
-recommended_player_income_multiplier: 2.0
-recommended_enemy_income_multiplier: 1.0
+# Economy (2026-07-03 balance pass). This is a static-front WILL campaign, so income mostly
+# funds replacements -- and blue's air-to-ground force is uncontested (red flies no fixed-wing
+# strikers by design), so a too-rich blue never feels attrition while it craters Regime Resolve
+# via trail/ground kills. Two throttles: blue income trimmed 2.0 -> 1.6 (still generous, but
+# sustained max-tempo now has a cost), and the enemy given a real war chest (money 1200 -> 1500,
+# income 1.1 -> 1.4) so the Ho Chi Minh Trail keeps flowing under interdiction and Regime Resolve
+# doesn't collapse before the Rolling Thunder -> Linebacker II arc develops. Blue's starting
+# 3000 is a replacement cushion (the fleet starts full via squadron_start_full).
+recommended_enemy_money: 1500
+recommended_player_income_multiplier: 1.6
+recommended_enemy_income_multiplier: 1.4
 miz: 1968_Yankee_Station.miz
 performance: 2
 version: "10.8"
 advanced_iads: true
+
+# Operation Niagara (from Khe Sanh): the DMZ line starts pressed in, not at the route
+# midpoint. The front between two opposing CPs sits at strength_pct * route_length from
+# the blue CP, so a depleted Da Nang garrison pulls the single Sochi<->Gudauta front in
+# toward the wire -- the NVA siege pressure on the forward strips and FOB Khe Sanh.
+# vietnam_static_front then clamps the line near this start anchor for the whole war.
+# Tune 0..1 -- lower = tighter siege.
+control_point_strengths:
+  Sochi-Adler: 0.35
 
 settings:
   # Vietnam Ops period mechanics (era pre-seed). Coastal carrier war -> naval gunfire on.
@@ -113,13 +138,18 @@ settings:
 # Mission Restrictions
   labels: "Dot Only"
 
-# Order of battle. The theater split mirrors 1968: the Navy owns the coastal route
-# packages from Yankee Station, the Air Force crosses the ridge from the Thailand
-# fields, and the in-country wing at Da Nang works the DMZ. No SEAD squadrons --
-# the Vietnam doctrine drops SEAD from the tasking whitelist (Iron Hand rides the
-# strike packages), so a SEAD primary would never fly.
+# Order of battle (2026-07-03 balance pass -- trimmed to ~116 BLUE / ~40 RED, a ~3:1 ratio).
+# The theater split mirrors 1968: the Navy owns the coastal route packages from Yankee Station,
+# the Air Force crosses the ridge from the Thailand fields, and the in-country wing at Da Nang
+# works the DMZ. No SEAD squadrons -- the Vietnam doctrine drops SEAD from the tasking whitelist
+# (Iron Hand rides the strike packages), so a SEAD primary would never fly. Sizes are roughly
+# halved from the original consolidated OOB: blue keeps every base's identity + feature coverage
+# (the Arc Light B-52 cells, one 8-jet Alpha Strike squadron, both carrier wings, TARPS, the
+# Super Gaggle + Combat SAR helos) without the turkey-shoot mass; red keeps a credible GCI-ambush
+# MiG force (~26) plus a light trail/front helo presence. Every base now fits its parking so
+# squadron_start_full fields the whole wing.
 squadrons:
-    # US NAVY -- CV-61 Ranger (Yankee Station)
+    # US NAVY -- CV-61 Ranger (Yankee Station): the BARCAP + interdiction + recon deck
     Naval-1:
         - primary: AEW&C
           aircraft:
@@ -133,17 +163,14 @@ squadrons:
           secondary: air-to-air
           aircraft:
             - F-8E Crusader
-          size: 10
-        - primary: Strike
+          size: 6
+        - primary: BAI
+          # Steel Tiger tilt: Ranger's Skyhawks fly armed recon / BAI on the trail convoys;
+          # Forrestal (Naval-2) carries the A-6E strike arm.
           secondary: air-to-ground
           aircraft:
             - A-4E Skyhawk
-          size: 10
-        - primary: Strike
-          secondary: air-to-ground
-          aircraft:
-            - A-4E Skyhawk
-          size: 8
+          size: 4
         - primary: TARPS
           # Unarmed photo bird, TARPS only -- no secondary (the old air-to-ground
           # alias is what put recon birds on Armed Recon/Strike, G19).
@@ -151,7 +178,7 @@ squadrons:
             - RA-5C Vigilante
           size: 2
 
-    # US NAVY -- CV-59 Forrestal (Yankee Station)
+    # US NAVY -- CV-59 Forrestal (Yankee Station): the strike deck
     Naval-2:
         - primary: AEW&C
           aircraft:
@@ -165,43 +192,21 @@ squadrons:
           secondary: air-to-air
           aircraft:
             - F-8E Crusader
-          size: 8
+          size: 4
         - primary: Strike
           secondary: air-to-ground
           aircraft:
             - A-6E Intruder
-          size: 10
+          size: 6
         - primary: BAI
           secondary: air-to-ground
           aircraft:
             - A-6E Intruder
-          size: 8
+          size: 4
         - primary: CAS
           secondary: air-to-ground
           aircraft:
             - A-4E Skyhawk
-          size: 8
-
-    # USAF -- Guam (Andersen AFB, off-map): the Arc Light cells
-    Guam:
-        - primary: Strike
-          aircraft:
-            - 43d Strategic Wing #B-52H Stratofortress
-          size: 4
-        - primary: Strike
-          aircraft:
-            # Plain aircraft name -- the old "0038 43d Strategic Wing 0038" preset
-            # reference never resolved (silently dropped squadron).
-            - B-52H Stratofortress
-          size: 4
-        - primary: Refueling
-          aircraft:
-            - KC-135 Stratotanker
-          size: 2
-        - primary: Transport
-          secondary: any
-          aircraft:
-            - C-130J-30
           size: 4
 
     # Da Nang (Sochi-Adler): the in-country wing on the DMZ
@@ -210,84 +215,86 @@ squadrons:
           secondary: air-to-air
           aircraft:
             - F-4E-45MC Phantom II
-          size: 10
+          size: 6
         - primary: CAS
           secondary: air-to-ground
           aircraft:
             - A-1H Skyraider
-          size: 10
+          size: 4
+        - primary: BAI
+          # Steel Tiger tilt: Skyraiders working the trail by day, alongside the CAS arm
+          # holding the DMZ.
+          secondary: air-to-ground
+          aircraft:
+            - A-1H Skyraider
+          size: 4
         - primary: CAS
           secondary: air-to-ground
           aircraft:
             - OV-10A Bronco
-          size: 6
+          size: 4
         - primary: TARPS
           # Unarmed photo bird, TARPS only -- no secondary (see RA-5C note).
           aircraft:
             - RF-101B Voodoo
           size: 2
         - primary: Transport
+          # The Combat SAR "King" C-130 + theater lift fly from the DMZ field.
           secondary: any
           aircraft:
             - C-130J-30
-          size: 4
-        - primary: Air Assault
-          secondary: any
-          aircraft:
-            - CH-53E
           size: 2
         - primary: Air Assault
           secondary: any
           aircraft:
             - UH-1H Iroquois
-          size: 4
+          size: 2
 
-    # FOB Khe Sanh: the hill outpost under the DMZ (Super Gaggle destination)
+    # FOB Khe Sanh: the besieged hill outpost under the DMZ (Super Gaggle destination). Sized
+    # to the ~6 helipad spots so start-full fields every squadron (it was over-subscribed 12/6).
     FOB Khe Sanh:
         - primary: CAS
           secondary: air-to-ground
           aircraft:
             - AH-1W SuperCobra
-          size: 4
+          size: 2
         - primary: Air Assault
           secondary: any
           aircraft:
             - UH-1H Iroquois
-          size: 4
-        - primary: Transport
-          secondary: any
-          aircraft:
-            - UH-1H Iroquois
-          size: 4
-
-    # Saigon / Tan Son Nhut (Krymsk): the deep rear
-    Krymsk:
-        - primary: Refueling
-          aircraft:
-            - KC-135 Stratotanker
           size: 2
         - primary: Transport
           secondary: any
           aircraft:
-            - C-130J-30
-          size: 4
+            - UH-1H Iroquois
+          size: 2
+
+    # Saigon / Tan Son Nhut (Krymsk): the deep rear -- base-defense BARCAP + lift + tanker +
+    # College Eye, no strike wing (the RP VI strike run lives at the Thailand fields).
+    Krymsk:
+        - primary: AEW&C
+          # College Eye: the land-based EC-121 radar picture alongside the carriers' E-2s.
+          aircraft:
+            - EC-121D Warning Star
+          size: 2
+        - primary: Refueling
+          aircraft:
+            - KC-135 Stratotanker
+          size: 2
         - primary: BARCAP
           secondary: air-to-air
           aircraft:
             - F-5E Tiger II
-          size: 8
-        - primary: Strike
-          secondary: air-to-ground
-          aircraft:
-            - F-100D Super Sabre
-          size: 10
+          size: 4
         - primary: Transport
           secondary: any
           aircraft:
             - CH-47D
-          size: 4
+          size: 2
 
-    # Ubon RTAFB (Maykop): Phantoms over the ridge + the U-Tapao Arc Light cell
+    # Ubon RTAFB (Maykop): Phantoms over the ridge + BOTH Arc Light B-52 cells. The Guam
+    # (Andersen) off-map spawn was dropped in the 2026-07-03 pass and its 43d SW cell rehomed
+    # here alongside the 307th (U-Tapao), so all 8 Arc Light B-52s now fly from one theater base.
     Maykop-Khanskaya:
         - primary: Refueling
           aircraft:
@@ -297,90 +304,84 @@ squadrons:
           secondary: air-to-air
           aircraft:
             - F-4E-45MC Phantom II
-          size: 10
+          size: 6
         - primary: Strike
           secondary: air-to-ground
           aircraft:
             - F-4E-45MC Phantom II
-          size: 10
+          size: 4
         - primary: Strike
-          secondary: air-to-ground
           aircraft:
             - 307th Strategic Wing #B-52H Stratofortress (U-Tapao)
           size: 4
-        - primary: Transport
-          secondary: any
+        - primary: Strike
           aircraft:
-            - C-130J-30
+            - 43d Strategic Wing #B-52H Stratofortress (ex-Guam Arc Light cell)
           size: 4
 
-    # Takhli / Korat RTAFB (Mineralnye Vody): the Thud run into RP VI from the NW
+    # Takhli / Korat RTAFB (Mineralnye Vody): the Thud run into RP VI from the NW. Keeps the
+    # 8-jet strike squadron the Alpha Strike fan needs.
     Mineralnye Vody:
         - primary: Strike
           secondary: air-to-ground
           aircraft:
             - F-100D Super Sabre
-          size: 12
+          size: 8
         - primary: Escort
           secondary: air-to-air
           aircraft:
             - F-4E-45MC Phantom II
-          size: 10
+          size: 4
         - primary: BAI
           secondary: air-to-ground
           aircraft:
             - F-100D Super Sabre
-          size: 8
+          size: 4
+        - primary: Refueling
+          # Rehomed from the dropped Guam off-map spawn -- organic gas for the Takhli
+          # Thud strike run.
+          aircraft:
+            - KC-135 Stratotanker
+          size: 2
 
-    # --- North Vietnam ---
+    # --- North Vietnam (GCI-ambush air arm: ~26 MiGs, defensive MiGCAP only) ---
 
     # Hanoi (Kutaisi): the MiG hub inside the SA-2 ring
     Kutaisi:
         - primary: BARCAP
           aircraft:
             - MiG-21bis Fishbed-N
-          size: 8
+          size: 6
         - primary: BARCAP
           aircraft:
             - MiG-17F Fresco-C
-          size: 10
+          size: 6
         - primary: Transport
           aircraft:
             - Mi-8MTV2 Hip
-          size: 4
+          size: 2
 
     # Haiphong (Senaki-Kolkhi): the delta port. The MiG-17Fs are DEFENSIVE (MiGCAP) --
-    # Hanoi's air arm flew a pure GCI-ambush war (VIETNAM_AIR_DEFENSE_DOCTRINE), essentially
-    # zero offensive fast-mover strikes. A BAI/air-to-ground primary auto-assigned them to
-    # Interdiction/Strike/Armed Recon, which read as red "aggression" in playtest; BARCAP +
+    # Hanoi flew a pure GCI-ambush war (VIETNAM_AIR_DEFENSE_DOCTRINE); a BAI/air-to-ground
+    # primary auto-assigns MiGs to offense (read as red "aggression" in playtest). BARCAP +
     # air-to-air keeps them intercepting and lets their QRA reserve actually scramble.
     Senaki-Kolkhi:
         - primary: BARCAP
           secondary: air-to-air
           aircraft:
             - MiG-17F Fresco-C
-          size: 8
-        - primary: CAS
-          secondary: air-to-ground
-          aircraft:
-            - Mi-8MTV2 Hip
-          size: 4
+          size: 6
         - primary: Transport
           aircraft:
             - An-26B
-          size: 4
+          size: 2
 
-    # Vinh (Sukhumi-Babushara): panhandle staging. MiG-17Fs defensive (MiGCAP), same as
-    # Senaki -- Hanoi's fast movers ambush, they don't interdict.
+    # Vinh (Sukhumi-Babushara): panhandle staging. MiG-17Fs defensive (MiGCAP).
     Sukhumi-Babushara:
         - primary: BARCAP
           secondary: air-to-air
           aircraft:
             - MiG-17F Fresco-C
-          size: 8
-        - primary: Transport
-          aircraft:
-            - Mi-8MTV2 Hip
           size: 4
 
     # Dong Hoi (Gudauta): the staging field above the DMZ -- no MiGs this far south
@@ -389,33 +390,18 @@ squadrons:
           secondary: air-to-ground
           aircraft:
             - Mi-8MTV2 Hip
-          size: 4
+          size: 2
         - primary: Air Assault
           secondary: any
           aircraft:
             - Mi-8MTV2 Hip
-          size: 4
-        - primary: Transport
-          secondary: any
-          aircraft:
-            - Mi-8MTV2 Hip
-          size: 4
+          size: 2
 
     # "Chinese border" fields (Tbilisi-Lochini): the sanctuary the ROE never releases.
-    # MiG-19s play the Chinese J-6s that fought from across the border.
     Tbilisi-Lochini:
         - primary: BARCAP
           aircraft:
             - MiG-21bis Fishbed-N
-          size: 8
-        - primary: BARCAP
-          aircraft:
-            - MiG-19P Farmer-B
-          size: 8
-        - primary: Transport
-          aircraft:
-            - An-26B
-            - An-30M
           size: 4
 
     # Trail FOBs (Laotian panhandle)
@@ -424,29 +410,19 @@ squadrons:
           secondary: air-to-ground
           aircraft:
             - Mi-8MTV2 Hip
-          size: 4
-        - primary: Air Assault
-          secondary: any
-          aircraft:
-            - Mi-8MTV2 Hip
-          size: 4
+          size: 2
         - primary: Transport
           secondary: any
           aircraft:
             - Mi-8MTV2 Hip
-          size: 4
+          size: 2
 
     FOB Mu Gia:
-        - primary: CAS
-          secondary: air-to-ground
-          aircraft:
-            - Mi-8MTV2 Hip
-          size: 4
         - primary: Transport
           secondary: any
           aircraft:
             - Mi-8MTV2 Hip
-          size: 4
+          size: 2
 
 # --- Ground supply routes / front graph. A front line forms on every blue<->red
 # connection, so the SINGLE Sochi<->Gudauta coastal route below is THE front: the DMZ
@@ -588,6 +564,7 @@ phases:
     emphasis: interdiction
     objectives:
       - Interdict the flow south -- kill the trail convoys before they reach the front
+      - Hold the DMZ -- keep the besieged Khe Sanh outpost alive (Niagara / the Super Gaggle)
       - Respect the sanctuaries -- zone kills bleed Washington's will
     restricted_zones:
       - center: Kutaisi

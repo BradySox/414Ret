@@ -19,7 +19,7 @@ Two modes:
 
 Usage:
     python tools/campaign_phase_laydown.py black_sea slava_ukraini        # lite
-    python tools/campaign_phase_laydown.py --engine khe_sanh_niagara      # full
+    python tools/campaign_phase_laydown.py --engine 1968_Yankee_Station   # full
     python tools/campaign_phase_laydown.py --all                          # every campaign
 
 Run from the repo root. Output is JSON on stdout.

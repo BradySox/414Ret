@@ -75,8 +75,8 @@ it as their **primary** job:
 These are unarmed camera ships with **built-in cameras** rather than the F-14's external
 `{F14-TARPS}` pod, so their TARPS loadout is a clean, weaponless fit (the **Retribution TARPS**
 payload — no external stores). They still keep a low-priority **Armed Recon** fallback so a
-squadron is never stranded with nothing to do, but TARPS is what they are for. The **Khe Sanh
-(Operation Niagara)** campaign fields one squadron of each, tasked TARPS by default.
+squadron is never stranded with nothing to do, but TARPS is what they are for. The **1968 Yankee
+Station** campaign fields both (RF-101B at Da Nang, RA-5C on the carriers), tasked TARPS by default.
 
 The runtime is identical to the F-14's: overfly the target, recover the aircraft, and the
 photographed sites are confirmed at debrief.

@@ -41,8 +41,8 @@ Doctrine, and the rest). The mission-level suite:
 | Campaign | Static front (bounded siege line) | [The Campaign Layer](Vietnam-Campaign-Layer) |
 
 **Gating model.** Every toggle defaults **OFF**, so a modern campaign never sees flak puffs or
-carpet bombing. The Vietnam campaign YAMLs (Khe Sanh, Yankee Station, Velvet Thunder, Steel
-Tiger) flip the relevant ones **ON** through their `settings:` block, so a Vietnam game lights up
+carpet bombing. The Vietnam campaign YAMLs (1968 Yankee Station, Velvet Thunder, Red Flag
+81-2) flip the relevant ones **ON** through their `settings:` block, so a Vietnam game lights up
 out of the box while a Cold-War campaign stays clean. You can flip any of them by hand on the
 settings page at any time.
 
@@ -119,8 +119,8 @@ gun-ship list:
   ground target within gun range on its own.
 
 **Coastal by construction.** Ships sit offshore and the range gate is ~20 km, so this only ever
-reaches **coastal** targets and **no-ops entirely inland** (Khe Sanh) — which is the historicity
-gate: naval gunfire never reached the inland siege. Leave the toggle **off** for inland campaigns.
+reaches **coastal** targets and **no-ops entirely inland** — which is the historicity
+gate: naval gunfire never reached the inland battles. Leave the toggle **off** for inland campaigns.
 This belongs to Yankee Station / I-Corps coastal operations.
 
 ## 4 — Convoy interdiction (Steel Tiger)
@@ -136,8 +136,8 @@ nearest the front through Retribution's own convoy system.
 
 - **A real trail, not one lone truck.** The trail runs **two concurrent columns of up to ~10
   vehicles** (three during a surge), and fills its budget across **distinct roads** where the
-  map has them — Yankee Station's full trail network, Khe Sanh's two rear feeders — rather than
-  stacking everything on one corridor. The columns are framed as **external logistics**: the
+  map has them — Yankee Station's full Ho Chi Minh Trail network, Red Flag 81-2's aggressor
+  corridors — rather than stacking everything on one corridor. The columns are framed as **external logistics**: the
   Ho Chi Minh Trail's matériel came from over the border, so a picked source base is topped up
   with fresh whitelisted kit for the run rather than draining a dead local economy.
 - **Kill it and it matters.** The trucks carry real reinforcements. Interdict the column and
@@ -275,8 +275,6 @@ squadron airframe losses at the next debrief.
 - **[The Vietnam Campaign Layer](Vietnam-Campaign-Layer)** — the war *over* the war: political
   will, the Rolling Thunder → Linebacker II ROE arc, ambush MiGs, Alpha Strikes, and the enemy's
   phase-coupled tempo.
-- **[Khe Sanh — Campaign Briefing](Khe-Sanh-Campaign-Briefing)** — the inland Vietnam campaign
-  that ships several of these toggles on.
 - **[Combat SAR](Combat-SAR)** and **[SCAR](SCAR)** — the Sandy/King rescue package, the other
   half of the Vietnam-era content.
 - **[Troops In Contact](Troops-In-Contact)** — the frontline firefight sim the flak/convoy effects

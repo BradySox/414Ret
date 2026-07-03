@@ -1,4 +1,9 @@
-"""Guards for the Vietnam faction + Khe Sanh campaign content pass (#281).
+"""Guards for the Vietnam faction + campaign content pass (#281).
+
+The three standalone Caucasus Vietnam campaigns (Yankee Station / Khe Sanh: Operation
+Niagara / Steel Tiger) were consolidated 2026-07-03 into the one **1968 Yankee Station**
+campaign (Niagara's siege + Steel Tiger's interdiction folded into its features and
+scenario; the other two dropped), so the campaign-level guards below all point there.
 
 Three invariants that nothing in CI checked before -- each was only hand-validated
 when the content landed, exactly the kind of thing the next cold pass re-derives:
@@ -10,8 +15,8 @@ when the content landed, exactly the kind of thing the next cold pass re-derives
    won't catch it. This walks every roster the loader resolves and fails on the
    first drop.
 
-2. **Every carrier-based Khe Sanh squadron flies a carrier-capable airframe.** The
-   current DCS F-4 module is land-based only, so the campaign deliberately flies
+2. **Every carrier-based Yankee Station squadron flies a carrier-capable airframe.**
+   The current DCS F-4 module is land-based only, so the campaign deliberately flies
    the F-8E Crusader off the carrier. This loads the real ``Campaign.from_file``
    new-game path (``MizCampaignLoader`` builds the theater) and asserts the
    engine's own ``ControlPoint.can_operate`` for each carrier squadron's aircraft.
@@ -73,10 +78,8 @@ _VIETNAM_FACTION_FILES = [
 
 # Campaigns that field ``[CH]`` Russian-pack armor and so must enable the pack.
 _CH_ARMOR_CAMPAIGNS = [
-    "khe_sanh_niagara.yaml",
     "1968_Yankee_Station.yaml",
     "operation_velvet_thunder.yaml",
-    "steel_tiger.yaml",
 ]
 
 
@@ -88,9 +91,10 @@ def _init_persistency(tmp_path_factory: pytest.TempPathFactory) -> None:
 
 
 @pytest.fixture(scope="module")
-def khe_sanh() -> tuple[Campaign, ConflictTheater, CampaignAirWingConfig]:
-    """The Khe Sanh campaign loaded through the real new-game path, once."""
-    campaign = Campaign.from_file(_CAMPAIGNS / "khe_sanh_niagara.yaml")
+def yankee_station() -> tuple[Campaign, ConflictTheater, CampaignAirWingConfig]:
+    """The consolidated 1968 Yankee Station campaign loaded through the real new-game
+    path, once."""
+    campaign = Campaign.from_file(_CAMPAIGNS / "1968_Yankee_Station.yaml")
     theater = campaign.load_theater(campaign.advanced_iads)
     air_wing = campaign.load_air_wing_config(theater)
     return campaign, theater, air_wing
@@ -165,10 +169,10 @@ def test_vietnam_campaigns_tagged_era_vietnam(campaign_file: str) -> None:
 def test_matches_era_drives_the_vietnam_card_filter() -> None:
     # The New Game "Vietnam" card lists only era: vietnam campaigns; the default front
     # door (era=None) lists everything. This predicate is what QCampaignList filters on.
-    khe = Campaign.from_file(_CAMPAIGNS / "khe_sanh_niagara.yaml")
-    assert khe.matches_era("vietnam")  # shown by the Vietnam card
-    assert khe.matches_era(None)  # and by the default (no filter)
-    assert not khe.matches_era("ww2")  # but not by some other era shell
+    yankee = Campaign.from_file(_CAMPAIGNS / "1968_Yankee_Station.yaml")
+    assert yankee.matches_era("vietnam")  # shown by the Vietnam card
+    assert yankee.matches_era(None)  # and by the default (no filter)
+    assert not yankee.matches_era("ww2")  # but not by some other era shell
 
     # A non-Vietnam campaign is hidden by the Vietnam card, shown by the default.
     non_vietnam = next((c for c in Campaign.load_each() if c.era != "vietnam"), None)
@@ -180,21 +184,9 @@ def test_matches_era_drives_the_vietnam_card_filter() -> None:
 # P2 era pre-seed: the campaign settings: block that auto-applies (on campaign-select,
 # via QNewGameSettings._load_campaign_settings -> Settings.deserialize_state_dict) to turn
 # the Vietnam Ops mechanics + era weapon gating on. Per-campaign because they differ
-# (Khe Sanh is inland -> no naval gunfire; Yankee Station is coastal -> yes).
+# (Velvet Thunder's island geography has no naval-gunfire shore war or roads; the coastal
+# Yankee Station runs the full suite).
 _ERA_PRESEED: dict[str, dict[str, bool]] = {
-    "khe_sanh_niagara.yaml": {
-        "vietnam_arc_light": True,
-        "vietnam_flak_gauntlet": True,
-        "vietnam_naval_gunfire": False,  # inland
-        "vietnam_convoy_interdiction": True,
-        "vietnam_airbase_harassment": True,  # the besieged-strip story
-        "vietnam_super_gaggle": True,  # the cut-off-garrison resupply story
-        "vietnam_fac_marking": True,  # the whole battlefield suite is on
-        "vietnam_snake_and_nape": True,
-        "vietnam_political_will": True,
-        "vietnam_static_front": True,
-        "restrict_weapons_by_date": True,
-    },
     "1968_Yankee_Station.yaml": {
         "vietnam_arc_light": True,
         "vietnam_flak_gauntlet": True,
@@ -213,19 +205,6 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": False,
         "vietnam_convoy_interdiction": True,
-        "vietnam_airbase_harassment": True,
-        "vietnam_super_gaggle": True,
-        "vietnam_fac_marking": True,
-        "vietnam_snake_and_nape": True,
-        "vietnam_political_will": True,
-        "vietnam_static_front": True,
-        "restrict_weapons_by_date": True,
-    },
-    "steel_tiger.yaml": {
-        "vietnam_arc_light": True,
-        "vietnam_flak_gauntlet": True,
-        "vietnam_naval_gunfire": True,  # shares the coastal Yankee Station laydown
-        "vietnam_convoy_interdiction": True,  # the campaign's centrepiece
         "vietnam_airbase_harassment": True,
         "vietnam_super_gaggle": True,
         "vietnam_fac_marking": True,
@@ -258,10 +237,8 @@ def test_vietnam_campaign_era_preseed_applies(campaign_file: str) -> None:
 # tighter buffer (orbits ~75-90 km back, still clear of the threat). Per-campaign by
 # design -- large maps keep the wide defaults -- so guard both ends.
 _COMPRESSED_SUPPORT_BUFFERS = [
-    "khe_sanh_niagara.yaml",
     "1968_Yankee_Station.yaml",
     "operation_velvet_thunder.yaml",
-    "steel_tiger.yaml",
 ]
 
 
@@ -296,8 +273,6 @@ def test_vietnam_campaign_tightens_support_orbits(campaign_file: str) -> None:
 # MiG-21 at Saipan + air-to-ground MiG escorts).
 _GCI_AMBUSH_CAMPAIGNS = [
     "1968_Yankee_Station.yaml",
-    "steel_tiger.yaml",
-    "khe_sanh_niagara.yaml",
     "red_flag_81_2.yaml",
     "operation_velvet_thunder.yaml",
 ]
@@ -403,80 +378,36 @@ def test_vietnam_factions_load_vietnam_doctrine(
     assert faction.doctrine is expected
 
 
-def test_khe_sanh_carrier_squadrons_carrier_capable(
-    khe_sanh: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
-) -> None:
-    _campaign, theater, air_wing = khe_sanh
-    carriers = set(theater.find_carriers()) | set(theater.find_lhas())
-
-    checked = 0
-    offenders: list[str] = []
-    for control_point, squadrons in air_wing.by_location.items():
-        if control_point not in carriers:
-            continue
-        for squadron in squadrons:
-            for aircraft_name in squadron.aircraft:
-                aircraft = AircraftType.named(aircraft_name)
-                checked += 1
-                # can_operate is the engine's own rule (carrier_capable, or
-                # lha_capable for an Essex-class deck).
-                if not control_point.can_operate(aircraft):
-                    offenders.append(f"{control_point.name}: {aircraft_name}")
-
-    assert checked, (
-        "No carrier squadrons were checked -- the carrier topology or air-wing "
-        "config regressed (expected a Naval carrier with squadrons)."
-    )
-    assert not offenders, (
-        f"Carrier squadrons fly airframes that cannot operate from the carrier: "
-        f"{offenders}. The current DCS F-4 is land-based only -- use a "
-        "carrier-capable type (e.g. F-8E Crusader)."
-    )
-
-
-@pytest.fixture(scope="module")
-def steel_tiger() -> tuple[Campaign, ConflictTheater, CampaignAirWingConfig]:
-    """The Steel Tiger campaign loaded through the real new-game path, once.
-
-    Steel Tiger reuses the 1968 Yankee Station .miz with an interdiction-tilted OOB, so
-    this is the guard that its hand-authored squadron block actually resolves against that
-    theater (every airframe loads, every control-point key exists).
-    """
-    campaign = Campaign.from_file(_CAMPAIGNS / "steel_tiger.yaml")
-    theater = campaign.load_theater(campaign.advanced_iads)
-    air_wing = campaign.load_air_wing_config(theater)
-    return campaign, theater, air_wing
-
-
-def test_steel_tiger_loads_and_populates_bases(
-    steel_tiger: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
+def test_yankee_station_loads_and_populates_bases(
+    yankee_station: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
 ) -> None:
     # The real regression guard: the campaign loads through the new-game path without
     # raising (a bad .miz reference or an invalid task string in SquadronConfig.from_data
-    # would raise on the fixture's load), and the interdiction OOB lands squadrons across
+    # would raise on the fixture's load), and the consolidated OOB lands squadrons across
     # many bases. Note a campaign squadron's `aircraft` entry may be a *squadron-name* alias
     # (e.g. "VAW-122", "43d Strategic Wing"), resolved by name against the squadron-def DB
     # rather than AircraftType.named -- and an unresolved entry only warns + falls back -- so
     # this asserts breadth of population, not per-string aircraft resolution.
-    _campaign, _theater, air_wing = steel_tiger
+    _campaign, _theater, air_wing = yankee_station
     total = sum(len(sqs) for sqs in air_wing.by_location.values())
-    assert total > 0, "Steel Tiger produced no squadrons -- a CP key regressed."
-    # 19 control-point keys are configured; if the keys wholesale failed to resolve against
+    assert total > 0, "Yankee Station produced no squadrons -- a CP key regressed."
+    # 15 control-point keys are configured; if the keys wholesale failed to resolve against
     # the theater they would be logged-and-skipped and this would collapse. Require most.
     assert (
         len(air_wing.by_location) >= 12
     ), f"Only {len(air_wing.by_location)} bases populated -- control-point keys regressed."
 
 
-def test_steel_tiger_carrier_squadrons_carrier_capable(
-    steel_tiger: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
+def test_yankee_station_carrier_squadrons_carrier_capable(
+    yankee_station: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
 ) -> None:
-    # Same rule as Khe Sanh: the reused Yankee Station carriers must fly carrier-capable
-    # airframes (never the land-based F-4E). Some carrier entries are squadron-name aliases
-    # (VAW-122 E-2, VS-28 (Tanker) S-3) that AircraftType.named can't resolve -- those carrier
-    # types are all deck aircraft anyway -- so skip a name that isn't a bare airframe and
-    # check the ones that are (A-6E/F-8E/CH-53E here), which is where an errant F-4E would show.
-    _campaign, theater, air_wing = steel_tiger
+    # The Yankee Station carriers must fly carrier-capable airframes (never the
+    # land-based F-4E). Some carrier entries are squadron-name aliases (VAW-122 E-2,
+    # VS-28 (Tanker) S-3) that AircraftType.named can't resolve -- those carrier types
+    # are all deck aircraft anyway -- so skip a name that isn't a bare airframe and
+    # check the ones that are (A-4E/A-6E/F-8E/RA-5C here), which is where an errant
+    # F-4E would show.
+    _campaign, theater, air_wing = yankee_station
     carriers = set(theater.find_carriers()) | set(theater.find_lhas())
     checked = 0
     offenders: list[str] = []
@@ -490,38 +421,44 @@ def test_steel_tiger_carrier_squadrons_carrier_capable(
                 except KeyError:
                     continue  # a squadron-name alias, resolved via the squadron-def DB
                 checked += 1
+                # can_operate is the engine's own rule (carrier_capable, or
+                # lha_capable for an Essex-class deck).
                 if not control_point.can_operate(aircraft):
                     offenders.append(f"{control_point.name}: {aircraft_name}")
     assert (
         checked
-    ), "No Steel Tiger carrier airframes were checked -- carrier topology regressed."
+    ), "No Yankee Station carrier airframes were checked -- carrier topology regressed."
     assert not offenders, (
-        f"Steel Tiger carrier squadrons fly airframes that cannot operate from the "
-        f"carrier: {offenders}."
+        f"Carrier squadrons fly airframes that cannot operate from the carrier: "
+        f"{offenders}. The current DCS F-4 is land-based only -- use a "
+        "carrier-capable type (e.g. F-8E Crusader)."
     )
 
 
-def test_khe_sanh_control_point_strengths_applied(
-    khe_sanh: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
+def test_yankee_station_control_point_strengths_applied(
+    yankee_station: tuple[Campaign, ConflictTheater, CampaignAirWingConfig],
 ) -> None:
     """``control_point_strengths`` from the campaign YAML override each named CP's starting
-    ground strength on the new-game path. Khe Sanh sets a depleted Kutaisi so the siege fronts
-    start near the perimeter -- the front between two enemy CPs sits at
-    ``strength_pct * route_length`` from the blue CP, so without this Kutaisi would start at
-    full strength and the fronts would sit at the route midpoint (far out)."""
-    _campaign, theater, _air_wing = khe_sanh
+    ground strength on the new-game path. The consolidated Yankee Station sets a depleted
+    Da Nang (Sochi-Adler) so the DMZ front starts pressed in near the wire (the Operation
+    Niagara siege, folded in from the dropped Khe Sanh campaign) -- the front between two
+    opposing CPs sits at ``strength_pct * route_length`` from the blue CP, so without this
+    the front would sit at the route midpoint (far out)."""
+    _campaign, theater, _air_wing = yankee_station
     data = yaml.safe_load(
-        (_CAMPAIGNS / "khe_sanh_niagara.yaml").read_text(encoding="utf-8")
+        (_CAMPAIGNS / "1968_Yankee_Station.yaml").read_text(encoding="utf-8")
     )
     strengths = data.get("control_point_strengths", {})
-    assert strengths, "Khe Sanh should set control_point_strengths (besieged Kutaisi)."
+    assert (
+        strengths
+    ), "Yankee Station should set control_point_strengths (besieged Da Nang)."
 
     by_name = {cp.name: cp for cp in theater.controlpoints}
     for name, value in strengths.items():
         assert name in by_name, f"control_point_strengths names unknown CP {name!r}"
         assert by_name[name].base.strength == pytest.approx(float(value))
-    # The whole point: Kutaisi is depleted (< full strength) so the fronts pull in close.
-    assert by_name["Kutaisi"].base.strength < 1.0
+    # The whole point: Da Nang is depleted (< full strength) so the front pulls in close.
+    assert by_name["Sochi-Adler"].base.strength < 1.0
 
 
 @pytest.mark.parametrize("campaign_file", _CH_ARMOR_CAMPAIGNS)
@@ -576,9 +513,9 @@ def test_vietnam_campaign_authored_roe_arc(campaign_file: str) -> None:
     assert arc[0].advance_when is not None, campaign_file
     assert arc[0].advance_when.blue_will_below is not None, campaign_file
     # Linebacker II: nothing locked, and no sanctuary except the permanent
-    # "PRC border" ring (the Yankee Station / Steel Tiger coastal-ladder laydown
-    # keeps it in every phase -- MiGs across the border stayed safe in the real
-    # war too; Khe Sanh / Velvet Thunder release everything).
+    # "PRC border" ring (the Yankee Station coastal-ladder laydown keeps it in
+    # every phase -- MiGs across the border stayed safe in the real war too;
+    # Velvet Thunder releases everything).
     assert not arc[3].locked_target_classes, campaign_file
     for zone in arc[3].restricted_zones:
         assert "PRC border" in zone.name, campaign_file

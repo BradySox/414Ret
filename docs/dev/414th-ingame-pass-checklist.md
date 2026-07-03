@@ -1115,10 +1115,11 @@ so the two docs don't drift.
 - **Context:** TARPS was extended off the F-14 onto the two dedicated Vietnam photo-recon ships —
   **RF-101B Voodoo** (`vwv_rf101b`, land-based) and **RA-5C Vigilante** (`vwv_ra-5`, carrier). They
   carry `TARPS: 700` as their primary task and a clean, weaponless **Retribution TARPS** payload
-  (built-in cameras, empty pylons). The Khe Sanh (Niagara) campaign tasks one squadron of each
-  `primary: TARPS`. Headless-verified 2026-06-28: both report `capable_of(TARPS)`, the loadout
-  resolves to `Retribution TARPS`, and `primary: TARPS` parses as a squadron config.
-- **Setup:** Generate **Khe Sanh (Operation Niagara)** with `auto_add_tarps_recon` on; let the
+  (built-in cameras, empty pylons). The **1968 Yankee Station** campaign fields both `primary: TARPS`
+  (RF-101B at Da Nang, RA-5C on the carriers). Headless-verified 2026-06-28: both report
+  `capable_of(TARPS)`, the loadout resolves to `Retribution TARPS`, and `primary: TARPS` parses as a
+  squadron config.
+- **Setup:** Generate **1968 Yankee Station** with `auto_add_tarps_recon` on; let the
   planner frag a Strike/DEAD package the RF-101B or RA-5C squadron is in range for (or hand-frag a
   TARPS package on either type). Generate + run the mission.
 - **Pass:** The recon bird spawns with the clean `Retribution TARPS` loadout (no offensive stores),
@@ -1933,8 +1934,8 @@ so the two docs don't drift.
   clean. The radio/field render + the `vietnamMode`→list-filter path can't be exercised headless (the
   campaign-list item build needs the DCS install dir).
 - **Setup:** Open **New Game**. On the Introduction page, "Campaign type" now has a third option, **Vietnam**.
-- **Pass:** Selecting **Vietnam** → the next (Theater) page is titled "Vietnam" and lists **only** the three
-  Vietnam campaigns (Khe Sanh, Yankee Station, Velvet Thunder); selecting one still pre-loads its settings +
+- **Pass:** Selecting **Vietnam** → the next (Theater) page is titled "Vietnam" and lists **only** the
+  `era: vietnam` campaigns (1968 Yankee Station, Velvet Thunder, Red Flag 81-2); selecting one still pre-loads its settings +
   recommended factions. Going **back** and choosing "Play an included campaign" restores the full list;
   "blank canvas" still shows the terrain picker. The "Show incompatible campaigns" toggle keeps the Vietnam
   filter applied.

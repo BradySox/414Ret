@@ -4,7 +4,7 @@ nickname: Dustoff
 country: USA
 role: Utility Helicopter
 aircraft: UH-1H Iroquois
-livery: "414th Huey Skin"
+livery: "US ARMY 1972"  # base-game livery (was the loose Saved-Games-only "414th Huey Skin")
 mission_types:
   - Air Assault
   - Transport

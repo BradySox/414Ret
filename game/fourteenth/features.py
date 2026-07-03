@@ -241,6 +241,12 @@ FEATURES: tuple[Feature, ...] = (
         "Support-package F10 orbit markers",
         45,
     ),
+    Feature(
+        "auto_range_fuel_tanks",
+        "Route-aware fuel-tank top-up",
+        46,
+        settings_fields=("auto_range_fuel_tanks",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

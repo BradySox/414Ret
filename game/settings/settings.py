@@ -449,6 +449,12 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "base_battle_damage",
                 ],
             ),
+            (
+                "Loadouts",
+                [
+                    "auto_range_fuel_tanks",
+                ],
+            ),
         ],
     ),
     (
@@ -1350,6 +1356,20 @@ class Settings:
         section=GENERAL_SECTION,
         default=False,
         detail=("If checked, Bandit's cloud presets will become available."),
+    )
+    auto_range_fuel_tanks: bool = boolean_option(
+        "Add fuel tanks when the route needs the range",
+        page=MISSION_GENERATION_PAGE,
+        section="Loadouts",
+        default=True,
+        detail=(
+            "At mission generation, add drop tanks to a flight's EMPTY tank-capable "
+            "stations when its planned route needs more fuel than internal (plus any "
+            "tanks already on the loadout) can cover -- so far-AO campaigns (e.g. the "
+            "COIN carrier ~800 km off the beach) fly with enough gas. It never removes "
+            "a store (a TGP, ECM pod, or ordnance is never swapped out) and is inert "
+            "on short routes. Player-customised loadouts are left untouched."
+        ),
     )
 
     # Pilots and Squadrons

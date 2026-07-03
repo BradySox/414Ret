@@ -1029,6 +1029,31 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     follow-up); no-op when no `mission_data` is passed. `MissionData` is now threaded into `DrawingsGenerator`.
     (`game/missiongenerator/drawingsgenerator.py`, `game/missiongenerator/missiongenerator.py`; features doc
     §45, checklist R1 — needs an in-game pass.)
+46. **Route-aware fuel-tank top-up** — at mission generation, adds drop tanks to a flight's **empty,
+    tank-capable stations** when its planned route needs more fuel than internal (plus any tanks already on the
+    loadout) can cover — so far-AO campaigns fly with enough gas (the motivating case: the COIN Enduring Resolve
+    carrier sits ~800 km off the Helmand AO, so a Hornet Strike always comes out with its **third bag** on the
+    empty centerline). **Deliberately conservative — it never removes a store.** Weapon *type* data can't tell a
+    self-defense Sidewinder from a primary JDAM (both resolve to `WeaponType.UNKNOWN`), so a "swap low-value
+    ordnance for a tank" step can't be made safe by default (it would risk stripping a TGP/ECM pod/bomb) — so
+    only **empty** tank stations are filled; a fully-loaded jet (e.g. the F-16, whose only free tank station
+    holds ECM) is left untouched. `add_range_fuel_tanks` (`game/fourteenth/range_fuel.py`) runs in
+    `flightgroupconfigurator.setup_payload` **after** the date-degrade, **before** the pylons are equipped:
+    `_required_fuel_lbs` (taxi + cruise·route-NM + reserve, from the airframe's measured `fuel_consumption` or
+    the synthesised `estimated_fuel_consumption` that every airframe has — tankers on the route are ignored, we
+    over-fuel rather than under-fuel) vs. `_available_fuel_lbs` (internal `max_fuel` + parsed capacity of tanks
+    already carried); short → return unchanged, else fill empty tank stations (matching a tank already on the
+    jet, else the largest compatible) until the requirement clears or no stations remain. Fuel tanks are
+    detected by DCS display-name (no fuel-tank `WeaponType`; a narrow regex so a "Color Oil Tank"/fuel-air bomb
+    is never mistaken for a drop tank) and their capacity parsed from the name (gallons/liters/kg). It returns a
+    new `Loadout` for the `.miz` and **never mutates the persisted ATO loadout** (re-evaluated each turn as
+    routes move; saves untouched), skips **player-customised** loadouts (`is_custom` — explicit edits are
+    honored) and empty/clean loadouts. Gated by `auto_range_fuel_tanks` (Mission Generation → Loadouts,
+    **default ON** — inert on short routes where internal + stock tanks already cover the leg). Tests
+    `tests/fourteenth/test_range_fuel.py` pin the safety contract (never removes/replaces a store) against the
+    real F/A-18C pylon tables. (`game/fourteenth/range_fuel.py`,
+    `game/missiongenerator/aircraft/flightgroupconfigurator.py`, `game/settings/settings.py`; features doc §46,
+    checklist S1 — needs an in-game pass.)
 
 ---
 

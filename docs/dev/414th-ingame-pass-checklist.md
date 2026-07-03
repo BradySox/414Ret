@@ -2525,6 +2525,25 @@ so the two docs don't drift.
   failed — freq/TACAN come from there, not `FlightData`); a red tanker marked (the `friendly.is_blue` gate).
   Knobs: `SUPPORT_ORBIT_LINE`/`SUPPORT_ORBIT_RADIUS_M`/`SUPPORT_LABEL_*` (drawingsgenerator.py).
 
+### S1 — Route-aware fuel-tank top-up adds a bag on a far-AO route · §46 · ☐ UNTESTED (built 2026-07-03; the add-logic + the safety contract "never removes/replaces a store" are locked against the real F/A-18C pylon tables in `tests/fourteenth/test_range_fuel.py`, and a before/after on the reset Hornet Strike/BAI + F-16 loadouts confirmed empties-only; the in-mission fuel/endurance feel needs a flight)
+- **Headless adjudication:** `top_up_for_route` fills an empty tank station on a far route, is a no-op on a
+  short route / empty / custom loadout / setting-off, and **never removes or replaces an existing store**
+  (asserted on the Hornet pylon tables). A before/after script showed the COIN Hornet Strike going 2→3 tanks on
+  the empty centerline with zero swaps, the Hornet BAI staying 1 tank (no empty station, Mavericks untouched),
+  and the short route unchanged. What CI *cannot* adjudicate: whether the added fuel actually gets the AI jet to
+  the target and home in-sim, and whether the trigger threshold feels right across campaigns.
+- **Setup:** the COIN **Enduring Resolve** campaign (carrier ~800 km off the AO), or any campaign with a
+  long-range strike/CAS package; generate the mission and open a Hornet strike flight's loadout in the ME (or
+  fly it) — with `auto_range_fuel_tanks` ON (default).
+- **Pass:** the Hornet Strike flies with **3 tanks** (the centerline bag added); the TGP, AMRAAM, AIM-9, and
+  JDAMs are all still present; a short-range campaign's Hornet is unchanged (2 tanks); a loadout you edited by
+  hand is untouched.
+- **Fail signature:** a store missing from a jet that should be intact (the fill touched an occupied station —
+  a bug, since it should only fill empties); tanks added on a short route (the required-fuel estimate is too
+  hungry — `_required_fuel_lbs`); no tank added on the COIN carrier route (the route length or fuel estimate
+  under-counts, or the airframe has no empty tank-capable station — expected for the F-16/Hornet-BAI). Knob:
+  `auto_range_fuel_tanks` (Mission Generation → Loadouts).
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

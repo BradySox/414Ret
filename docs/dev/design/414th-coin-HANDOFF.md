@@ -124,6 +124,24 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   the OEF faction binds it. Verified: the turn-2 ATO fills with BAI from every
   fast-air squadron.
 
+- **The 800-km carrier was idle** (user save 2026-07-03: "the auto planner never
+  expected these distances"). The stock plane range gate (`Squadron.capable_of` vs
+  `max_mission_range_planes`, default 150-200 NM) hard-rejects every carrier squadron
+  at ~400-500 NM, so Hornets/A-6/E-2 never launched while the land air did the whole
+  war. Two-part fix: (1) preseed `max_mission_range_planes: 600` so the carrier air is
+  *assignable* to the wider war (the commander then flies the spare Hornets on SEAD);
+  (2) `game/fourteenth/carrier_ops.py` + `long_range_carrier_ops` (default OFF,
+  preseeded) frags ONE deterministic carrier package a turn from the boat's own
+  squadrons -- a Hornet **STRIKE** section + an A-6E tanker + an E-2, pinned via
+  `ProposedFlight.preferred_type` and forced through the gate with `ignore_range=True`
+  via the engine's own `PackageFulfiller`. Two traps found: `EscortType.Refuel` is a
+  dead end (`check_needed_escorts` never marks refuel "needed" -> the tanker always
+  prunes), so the A-6 and E-2 ride as **primary** package flights, not escorts; and the
+  hook must run in `Coalition.plan_missions` **before** `TheaterCommander` or the
+  commander spends the Hornets on nearer SEAD first and leaves none for the package.
+  Engine-probe verified: PKG -> target = Hornet Strike x2 + A-6E Refueling + E-2 AEW&C,
+  all off the boat, valid flight plans + shared TOT.
+
 ## After P1
 
 - **Tune** from ledger data (levers above), update the P1 row status.

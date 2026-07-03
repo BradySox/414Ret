@@ -329,6 +329,12 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                "Carrier operations",
+                [
+                    "long_range_carrier_ops",
+                ],
+            ),
+            (
                 "HQ automation",
                 [
                     "automate_runway_repair",
@@ -1242,6 +1248,22 @@ class Settings:
             "caches -- find and destroy them to collapse the trickle to a residual "
             "floor. Body count alone cannot win; caches, the supply trail, and "
             "patience decide. Intended for COIN campaigns that preseed it on."
+        ),
+    )
+    long_range_carrier_ops: bool = boolean_option(
+        "Long-range carrier strike package",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "For campaigns whose carrier stands off far beyond the auto-planner's "
+            "reach (e.g. the Arabian-Sea cycle ~800 km from Afghanistan): frag one "
+            "deterministic carrier strike package each turn from the boat's own "
+            "squadrons -- a Hornet section on the nearest legal target, an A-6 tanker "
+            "escorting the route (ingress/egress), and an E-2 on AEWC -- which the "
+            "stock range-gated planner would otherwise leave on the deck. Also raise "
+            "'Auto-planner maximum mission range for airplanes' so the carrier air is "
+            "assignable to the wider war. Intended for campaigns that preseed it on."
         ),
     )
     apply_target_overrides_to_loadouts: bool = boolean_option(

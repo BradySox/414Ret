@@ -295,6 +295,16 @@ class Coalition:
         color = "Blue" if self.player.is_blue else "Red"
         with MultiEventTracer() as tracer:
             with tracer.trace(f"{color} mission planning"):
+                # 414th long-range carrier ops: the stock range gate leaves an
+                # 800-km-standoff carrier idle, so frag one deterministic carrier
+                # package (Hornet strike + A-6 tanker + E-2) from the boat's own
+                # squadrons. Runs BEFORE the commander so it claims its carrier air
+                # first (else the commander spends the Hornets on nearer SEAD/BAI and
+                # leaves none for the package). No-op unless the setting is on.
+                with tracer.trace(f"{color} long-range carrier strike"):
+                    from game.fourteenth.carrier_ops import plan_carrier_strike
+
+                    plan_carrier_strike(self, now, tracer)
                 with tracer.trace(f"{color} mission identification"):
                     TheaterCommander(self.game, self.player).plan_missions(now, tracer)
                 with tracer.trace(f"{color} mission scheduling"):

@@ -899,6 +899,25 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     this aircraft"). (`game/fourteenth/flight_defaults.py`, `game/persistency.py`, `game/ato/flight.py`,
     `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py`; features doc §43, checklist Q1 — needs an
     in-app pass.)
+44. **Long-range carrier ops** — a deterministic carrier strike package for campaigns that park the boat
+    far beyond the auto-planner's reach. Enduring Resolve stands the carrier ~800 km off the Helmand AO (the
+    real OEF Arabian-Sea cycle); the stock plane range gate (`Squadron.capable_of` vs `max_mission_range_planes`)
+    hard-rejects every carrier squadron at 400-500 NM, so the Hornets, the A-6 tankers, and the E-2 all sat on
+    the deck while the land air fought the whole war. Two-part fix: the campaign preseeds a wider
+    `max_mission_range_planes` so the carrier air is *assignable* (the commander then flies spare Hornets on
+    SEAD), and `plan_carrier_strike` (`game/fourteenth/carrier_ops.py`, gated `long_range_carrier_ops` default
+    OFF, campaign-preseeded, BLUE only) frags **one** package a turn from the boat's own squadrons — a Hornet
+    **STRIKE** section (`STRIKE_SECTION_SIZE`) + an A-6E tanker + an E-2 on AEW&C — pinned via
+    `ProposedFlight.preferred_type` and forced through the range gate with `ignore_range=True` via the engine's
+    own `PackageFulfiller` (proper flight plans, waypoints, fuel, shared TOT). The tanker + E-2 ride as
+    **primary** package flights, not escorts: `EscortType.Refuel` is a dead end (`check_needed_escorts` never
+    marks refuel "needed" so an escort tanker always prunes), and an AEWC escort prunes the same way — as
+    primaries the A-6 gets a tanker orbit off the boat (launch + recovery gas) and the E-2 an AEWC orbit. The
+    hook runs in `Coalition.plan_missions` **before** `TheaterCommander` so the boat's Hornets are claimed for
+    this package first; `_nearest_legal_strike_target` picks the nearest alive, non-ROE-blocked enemy TGO
+    (preferring ammo caches — the COIN throttle). Guarded at every step (no carrier / no Hornets / no legal
+    target ⇒ no-op). (`game/fourteenth/carrier_ops.py`, `game/coalition.py`, `game/settings/settings.py`,
+    `resources/campaigns/coin_enduring_resolve.yaml`; features doc §44, checklist P2 — needs an in-game pass.)
 
 ---
 

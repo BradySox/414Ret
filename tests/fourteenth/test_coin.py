@@ -408,6 +408,10 @@ def test_enduring_resolve_campaign_definition() -> None:
     # The multi-nation coalition faction (CJTF Blue country, so the RNLAF/RAF
     # preset squadrons survive the country filter) ships with the campaign.
     assert data["recommended_player_faction"] == "OEF Coalition 2006"
+    # Long-range carrier ops: the boat stands off ~800 km, so the campaign raises
+    # the plane range gate and preseeds the deterministic carrier-package planner.
+    assert data["settings"]["long_range_carrier_ops"] is True
+    assert data["settings"]["max_mission_range_planes"] >= 500
     assert (path.parent.parent / "factions" / "oef_coalition_2006.json").exists()
     # The ratline: authored red<->red supply corridors (the original laydown had
     # zero CP connectivity, so the trail machinery had nothing to run on).

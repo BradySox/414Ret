@@ -33,6 +33,7 @@ from game.data.building_data import (
     IADS_BUILDINGS,
 )
 from game.data.doctrine import (
+    COIN_DOCTRINE,
     Doctrine,
     MODERN_DOCTRINE,
     COLDWAR_DOCTRINE,
@@ -369,6 +370,8 @@ class Faction:
             faction.doctrine = VIETNAM_DOCTRINE
         elif doctrine == "vietnam_air_defense":
             faction.doctrine = VIETNAM_AIR_DEFENSE_DOCTRINE
+        elif doctrine == "coin":
+            faction.doctrine = COIN_DOCTRINE
         else:
             faction.doctrine = MODERN_DOCTRINE
 

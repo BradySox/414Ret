@@ -134,5 +134,6 @@
       "VMFA-314",
       "VMFA-323"
     ]
-  }
+  },
+  "doctrine": "coin"
 }

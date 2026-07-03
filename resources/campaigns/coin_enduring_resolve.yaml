@@ -291,14 +291,18 @@ squadrons:
       aircraft:
         - CH-47F Block I
       size: 4
-  # Off-map: carrier air from the Arabian Sea (the OEF reality -- CVW Hornets
-  # overhead Afghanistan on long cycles)
-  CVW-9 Arabian Sea:
+  # A REAL carrier in the Gulf of Oman (user-proven water) -- CVW Hornets fly the
+  # actual 800 km OEF cycle north, bracketed by the CENTAF tankers.
+  CVN-74 John C. Stennis:
     - primary: BAI
       secondary: air-to-ground
       aircraft:
         - VFA-113 #F/A-18C Lot 20 off the boat
       size: 6
+    - primary: AEW&C
+      aircraft:
+        - E-2C Hawkeye
+      size: 1
   # Off-map: CENTAF from the Gulf -- Strike Eagles, Bones, and the tanker bridge
   CENTAF Al Udeid:
     - primary: Strike

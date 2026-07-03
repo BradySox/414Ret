@@ -94,11 +94,26 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   new `OEF Coalition 2006` faction (usa_2005 roster, CJTF Blue country) so the RNLAF
   322 Squadron / RAF IV (AC) Squadron presets (new files) survive, and hence the
   US-preset pins on the Kiowa/tanker slots (CJTF otherwise casts any nation — the
-  Tunisian Kiowa incident). Off-map air rides the miz-loader F-15C sentinel
-  (build-tool `OFF_MAP_SPAWNS`): CVW-9 Arabian Sea (Hornets) + CENTAF Al Udeid
-  (F-15Es, B-1s, KC-135s). Red AD stays era-honest: AAA markers at all 13
+  Tunisian Kiowa incident). CENTAF Al Udeid (F-15Es, B-1s, KC-135s) rides the
+  miz-loader F-15C off-map sentinel; the Hornets fly from a **REAL carrier in the
+  Gulf of Oman** (user-proven positions from two editor mizzes — Retribution's
+  Afghanistan landmap has no sea polys, so `is_in_sea` says no, but the carrier CP
+  comes straight from the miz Stennis sentinel and DCS owns the water; the
+  generator names the boat from the faction pool, e.g. CVN-72). The user also drew
+  the **safe transit corridor** (two lines, recorded in the build tool): carrier
+  cycles run it straight north to the AO (~780 km — the real OEF cycle, bracketed
+  by the CENTAF tankers). Red AD stays era-honest: AAA markers at all 13
   strongholds + SA-9 at the 5 anchors, **no radar SAM anywhere** — no SEAD game by
   design; the guns/IR envelope is what keeps fast air honest down low.
+- **Adding that AD deadlocked the whole strike planner** (the Vietnam P3 deadlock,
+  re-found empirically: turn-2 census showed **0 AI-legal targets outside red
+  threat, 51 inside**, ATO = helos only): the gun/IR envelopes blanket every
+  objective, no SEAD/DEAD target exists to clear them, and modern doctrine refuses
+  to strike into threat. Fix = the new **`COIN_DOCTRINE`** (faction key `"coin"`,
+  `game/data/doctrine.py`): modern + `strike_through_air_defense_threat` +
+  `plan_strikes_without_full_escort` — realistic vs guns/MANPADS-only enemies, and
+  the OEF faction binds it. Verified: the turn-2 ATO fills with BAI from every
+  fast-air squadron.
 
 ## After P1
 

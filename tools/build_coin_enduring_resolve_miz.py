@@ -22,6 +22,7 @@ from pathlib import Path
 from dcs.mapping import Point
 from dcs.mission import Mission
 from dcs.planes import F_15C
+from dcs.ships import Stennis
 from dcs.statics import Warehouse
 from dcs.vehicles import AirDefence
 
@@ -37,9 +38,19 @@ BLUE_COUNTRY = "Combined Joint Task Forces Blue"
 # --- the Gulf reached the theater from OFF the map. Positions sit outside the
 # --- playbox (south / west of Farah) but on valid terrain.
 OFF_MAP_SPAWNS: list[tuple[str, tuple[float, float]]] = [
-    ("CVW-9 Arabian Sea", (-380000.0, -150000.0)),
     ("CENTAF Al Udeid", (-170000.0, -440000.0)),
 ]
+
+#: A REAL carrier in the Gulf of Oman (user-proven position 2026-07-03 -- a Stennis
+#: placed in the DCS editor at this point floats; Retribution's landmap has no sea
+#: polys down here, which is why is_in_sea says no, but carrier CPs come straight
+#: from this miz sentinel and DCS owns the water). ~800 km to the Helmand box --
+#: the real OEF carrier-cycle distance; the CENTAF tanker bridge makes it work.
+#: Position updated 2026-07-03 from the user's second proof miz; the carrier sits
+#: inside the drawn SAFE TRANSIT CORRIDOR (two editor lines): west wall y ~ -246 km
+#: (x -499k..-956k), east wall y ~ +22..+37 km (x -442k..-939k) -- the lane runs
+#: from the stronghold belt straight south to the sea, and carrier cycles fly it.
+CARRIER = ("CVN-74 John C. Stennis", (-1046758.0, -99755.0))
 
 # --- Red air defenses (era-honest 2006: guns and IR SAMs, NO radar SAMs -- no SEAD
 # --- game, the flak/MANPADS envelope is the honesty). Marker types follow
@@ -135,6 +146,13 @@ def build() -> None:
             position=Point(x, y, mission.terrain),
             altitude=6096,
         )
+    carrier_name, (cx, cy) = CARRIER
+    mission.ship_group(
+        country=blue,
+        name=carrier_name,
+        _type=Stennis,
+        position=Point(cx, cy, mission.terrain),
+    )
 
     aaa = 0
     shorad = 0
@@ -160,7 +178,7 @@ def build() -> None:
     mission.save(str(DST))
     print(
         f"Wrote {DST} ({placed} caches, {aaa} AAA + {shorad} SHORAD sites, "
-        f"{len(OFF_MAP_SPAWNS)} off-map spawns)"
+        f"{len(OFF_MAP_SPAWNS)} off-map spawns, 1 carrier)"
     )
 
 

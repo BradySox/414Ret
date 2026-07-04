@@ -1,0 +1,312 @@
+---
+name: Iraq - Operation Inherent Resolve (COIN)
+theater: Iraq
+authors: 414th JFG
+description: >-
+  <p><strong>Nineveh, October 2016 &ndash; July 2017 &mdash; the fight to retake Mosul.</strong>
+  The caliphate holds the city and a ring of towns across the Nineveh plain, and it does not
+  fight like an army. Its cells <strong>regenerate</strong>: every insurgent-held stronghold
+  quietly refills toward its original strength each turn, fed by hidden <strong>ammo caches</strong>
+  and the ratline running west toward Tal Afar and Syria. Body count alone wins nothing here.</p>
+  <p>Find the caches (recon them &mdash; then strike them) to collapse a stronghold's regeneration,
+  interdict the trail, hunt the emirs, and grind the ring back with the Iraqi Security Forces up
+  the southern axis out of Qayyarah West while air assaults peel the outer towns. And check your
+  map before you roll in: <strong>Mosul itself sits inside a big no-strike positive-control box</strong>,
+  because the caliphate fights from among the people &mdash; and in the last phase the
+  <strong>Old City</strong> tightens to almost nothing. Every weapon released in the city prices
+  collateral into the Coalition's mandate, kill by kill. The war is decided by the
+  <strong>will meters</strong>: the mandate bleeds from airframes, lost bases, civilian casualties
+  in the city, and plain time; the caliphate's resolve bleeds from its caches, its convoys, its
+  emirs, and its strongholds &mdash; almost never from its dead fighters. Break their resolve
+  before your mandate runs out.</p>
+  <p>You fly with the <strong>CJTF-OIR coalition off Qayyarah West</strong>: A-10s, Hornets and
+  Vipers on the ramp, Marine Harriers, French Mirages and the Iraqi Air Force alongside, the
+  CENTAF heavies &mdash; Strike Eagles, the Bone, and the KC-135 bridge &mdash; out of Balad, and
+  E-3s and Reapers overhead. The enemy has no air force, but answers with guns, shoulder-fired
+  SAMs and the truck bomb at every stronghold &mdash; and <strong>a thin captured-SAM crust</strong>:
+  an SA-6 over Mosul, SA-8/9/13 across the ring. Enough to make SEAD a real job; never enough to
+  stop the war. Low is where the flak lives.</p>
+  <p>The COIN layer &mdash; cache-throttled cell regeneration, the inverted will economy, and the
+  three-phase Mosul arc &mdash; is the 414th's; sibling to Operation Enduring Resolve.</p>
+recommended_player_faction: CJTF-OIR 2016
+recommended_enemy_faction: Islamic State 2016
+miz: iraq_inherent_resolve.miz
+performance: 1
+recommended_start_date: 2016-10-16
+# A small real income (like Enduring Resolve): the C1 regen engine is the caliphate's real
+# supply, and the ratline needs rear units to move. Kept low so procurement stays a trickle.
+recommended_enemy_money: 250
+recommended_enemy_income_multiplier: 0.25
+version: "10.8"
+settings:
+  squadron_start_full: true
+  # The COIN stack (feature docs: 414th-coin-insurgent-replenishment-notes.md):
+  # cache-throttled cell regeneration + the ratline + FOB standoff fire + the
+  # will economy that decides the war.
+  coin_insurgency: true
+  # The caliphate retakes cleared-but-ungarrisoned towns over a few announced,
+  # counterable turns -- clearing a stronghold is not enough, you must HOLD it.
+  coin_reinfiltration: true
+  # Roadside IEDs and mobile VBIEDs on the ratline: hidden, recon-fogged strike targets
+  # you must sweep -- an un-cleared device detonates and drains the mandate.
+  coin_ied: true
+  # High-value targets: a named emir surfaces near a stronghold for a limited strike
+  # window. Kill him to blow the caliphate's momentum -- but he shelters in the city,
+  # so a dirty shot pays in mandate too.
+  coin_hvt: true
+  # Dispersed cells: the insurgency in the open Nineveh countryside between strongholds.
+  # Patrol for them or an un-hunted cell coalesces into its home stronghold and brings a
+  # destroyed cache back online.
+  coin_dispersed_cells: true
+  # The ratline west toward Tal Afar / Syria (real, tracked convoys) and standoff
+  # rocket/mortar fire on the forward field at Qayyarah West.
+  vietnam_convoy_interdiction: true
+  vietnam_airbase_harassment: true
+  # The inverted political-will economy + the campaign-phase arc.
+  vietnam_political_will: true
+  campaign_phases: true
+  # The insurgent faction's ERO ZU-23 technicals are HDS Ultimate Compilation content --
+  # they resolve only with the mod on (and drop silently without it, so a mod-less
+  # install still plays).
+  high_digit_sams: true
+
+# The inverted COIN will economy (mirrors Enduring Resolve): the caliphate's dead fighters
+# are nearly free; its caches, convoys, emirs, and strongholds are the currency. The
+# Coalition pays for airframes, bases, and civilian casualties in the city -- and gets no
+# passive regen, because time itself drains a mandate.
+will:
+  blue:
+    label: The Coalition's mandate
+    exhaustion_title: The Coalition suspends the offensive
+    exhaustion_body: >-
+      Civilian casualties and mounting losses have spent the political mandate -- the
+      capitals halt the Mosul offensive, and the black flag stays over the city.
+  red:
+    label: the caliphate's resolve
+    exhaustion_title: The caliphate breaks
+    exhaustion_body: >-
+      The caches are ash, the emirs are dead, and the fighters melt into the desert --
+      Mosul falls.
+  weights:
+    blue_airframe_loss: 2.0
+    # 1.0/kill = CDE pressure, not taboo: a careful city fight is survivable once -- a
+    # carpet habit over Mosul bleeds the mandate out.
+    blue_roe_violation: 1.0
+    blue_base_lost: 5.0
+    blue_ied_detonation: 2.5
+    blue_passive_regen: 0.0
+    red_ground_unit_lost: 0.05
+    red_base_lost: 5.0
+    red_cache_lost: 4.0
+    # A decapitation: killing a named emir in his window is a real momentum blow, worth
+    # the hunt (and the CDE risk).
+    red_hvt_killed: 4.0
+    red_passive_regen: 1.0
+
+# The three-phase Mosul arc, will-coupled. Mosul city sits inside a permanent no-strike
+# positive-control box (it is always populated); the West Mosul phase adds the tight Old
+# City box on top. Collateral inside them prices CDE into the mandate (violation weight
+# 1.0), never a hard block. No free-fire inversion -- the desert and the plains are simply
+# unrestricted. NOTE: never lock the `ammo` class -- the caches must always be legal targets.
+phases:
+  - key: isolation
+    name: Isolate Mosul
+    narrative: >-
+      Take the ring before you take the city: grind up the southern axis out of Qayyarah
+      West to Hammam al-Alil, peel the outer towns with air assaults, and cut the ratline
+      west. Map the caliphate's caches while you do it -- their supply is the target, not
+      their fighters.
+    emphasis: interdiction
+    objectives:
+      - Recon and destroy ammo caches -- each one killed slows that stronghold's regeneration
+      - Interdict the trail convoys west toward Tal Afar -- the ratline feeds the resolve meter
+      - Mind the box -- fixed strikes inside the Mosul positive-control area bleed the mandate
+      - text: Take the southern gate -- capture Hammam al-Alil
+        done_when:
+          capture_cp: Hammam al-Alil
+    restricted_zones: &mosul_cde
+      # Mosul itself: the whole built-up city, a big no-strike positive-control box.
+      # Coordinate-anchored to the airfield/city center on the real terrain.
+      - shape: box
+        name: Mosul -- positive control
+        x: 339469
+        y: -94071
+        width_nm: 16
+        height_nm: 12
+    advance_when:
+      capture_cp: Hammam al-Alil
+  - key: east_mosul
+    name: East Mosul
+    min_turn: 6
+    red_tempo:
+      trail_surge: 2.0
+    narrative: >-
+      Cross into the city from the east. The caliphate answers penetrations with waves of
+      VBIEDs and a supply surge down the trail; keep the caches dead and hold what you clear
+      as you close on the Tigris.
+    emphasis: offensive
+    objectives:
+      - text: Clear the eastern ring -- retake Bartella
+        done_when:
+          capture_cp: Bartella
+      - text: Bleed the caliphate's resolve below half
+        done_when:
+          red_resolve_below: 50
+      - Hold what you clear -- garrisons and patience beat body count
+    restricted_zones: *mosul_cde
+    advance_when:
+      red_resolve_below: 45
+  - key: west_mosul
+    name: West Mosul & the Old City
+    min_turn: 14
+    narrative: >-
+      The last and hardest phase: cross the Tigris into West Mosul and the Old City, the
+      densest ground of the war. Every release here is under positive control -- take the
+      airport, break the caliphate's resolve, and end it.
+    emphasis: offensive
+    objectives:
+      - text: Take Mosul International Airport
+        done_when:
+          capture_cp: Mosul International Airport
+      - text: Break the caliphate's resolve
+        done_when:
+          red_resolve_below: 25
+    restricted_zones:
+      - shape: box
+        name: Mosul -- positive control
+        x: 339469
+        y: -94071
+        width_nm: 16
+        height_nm: 12
+      # The Old City on the west bank of the Tigris -- the tightest CDE ground of the battle.
+      - shape: box
+        name: The Old City -- positive control (no strike)
+        x: 337000
+        y: -96500
+        width_nm: 5
+        height_nm: 4
+
+# The ratline + the Nineveh ring: red<->red supply corridors. The westward Mosul -> Tal
+# Afar leg is the caliphate's ratline toward Syria (the convoy-interdiction target); the
+# others tie the outer towns to the city. Endpoints are exact CP XY (closest-CP binding
+# reads first/last waypoint only). All red<->red -- the one blue<->red front (Qayyarah
+# West <-> Hammam al-Alil, the southern axis) is authored as a front-line group in the miz.
+# TODO(in-app pass): re-trace intermediate waypoints on the real road network via
+# tools/supply_route_geo.py (the 414th supply-line standard).
+supply_routes:
+  # Mosul -> Hammam al-Alil (Highway 1 / the Tigris, south)
+  - waypoints:
+      - [339469, -94071]
+      - [331000, -88000]
+      - [322805, -81581]
+  # Mosul -> Bartella (east)
+  - waypoints:
+      - [339469, -94071]
+      - [342000, -83000]
+      - [343841, -73022]
+  # Mosul -> Bashiqa (northeast)
+  - waypoints:
+      - [339469, -94071]
+      - [348000, -83000]
+      - [355988, -73419]
+  # Mosul -> Hamdaniya (southeast)
+  - waypoints:
+      - [339469, -94071]
+      - [337000, -83000]
+      - [334903, -73325]
+  # Mosul -> Tal Afar (the ratline west toward Syria)
+  - waypoints:
+      - [339469, -94071]
+      - [343000, -125000]
+      - [348018, -156505]
+
+# The southern front starts partway up the Qayyarah West -> Hammam al-Alil axis, ISF
+# pressing north into the ring.
+control_point_strengths:
+  Hammam al-Alil: 0.5
+
+squadrons:
+  # Qayyarah West -- the coalition ramp, the player fields (F/A-18, A-10, F-16)
+  6:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - A-10C Thunderbolt II (Suite 7)
+      size: 4
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F/A-18C Hornet (Lot 20)
+      size: 6
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - F-16CM Fighting Falcon (Block 50)
+      size: 6
+    - primary: SEAD
+      secondary: air-to-ground
+      aircraft:
+        - F-16CM Fighting Falcon (Block 50)
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - AV-8B Harrier II Night Attack
+      size: 4
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - C-130J-30
+      size: 2
+  # Erbil -- eastern flank: the Iraqi Air Force + French Mirages + the Apaches
+  4:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Su-25 Frogfoot
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Mirage 2000C
+      size: 4
+    - primary: CAS
+      secondary: any
+      aircraft:
+        - AH-64D Apache Longbow
+      size: 4
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - UH-60A
+      size: 4
+  # Balad -- the CENTAF heavies + the tanker/AWACS bridge
+  8:
+    - primary: Strike
+      aircraft:
+        - B-1B Lancer
+      size: 2
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F-15E Strike Eagle (Suite 4+)
+      size: 4
+    - primary: Refueling
+      aircraft:
+        - KC-135 Stratotanker
+      size: 2
+    - primary: AEW&C
+      aircraft:
+        - E-3A
+      size: 1
+  # Baghdad -- support + the Combat SAR Jolly
+  2:
+    - primary: Refueling
+      aircraft:
+        - KC-135 Stratotanker MPRS
+      size: 1
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - CH-47F Block I
+      size: 4

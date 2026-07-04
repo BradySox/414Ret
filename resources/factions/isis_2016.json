@@ -1,0 +1,53 @@
+{
+  "country": "Insurgents",
+  "name": "Islamic State 2016",
+  "authors": "414th JFG (kit based on Starfire's Toyota Al Gaib)",
+  "description": "<p>The self-styled caliphate at its 2016 high-water mark: no air force, but a deep bench of Toyota technicals, DShK/KORD gun trucks, ZU-23 flak, and the signature suicide VBIED (<em>DIM' KAMIKAZE</em>). Around Mosul it fights from among the people, fed by ammo caches and the ratline west toward Tal Afar and Syria. A thin crust of captured air defence — an SA-6 over the city, SA-8/9/13 across the ring — makes SEAD a real job; the constant threat is guns, MANPADS, and the truck bomb. Built for the Iraq COIN campaign.</p>",
+  "aircrafts": [],
+  "frontline_units": [
+    "DIM' TOYOTA GREEN",
+    "DIM' TOYOTA DESERT",
+    "DIM' TOYOTA BLUE",
+    "DIM' KAMIKAZE",
+    "Scout LC with DSHK 12.7mm",
+    "Scout LC with KORD 12.7mm",
+    "Scout HL with DSHK 12.7mm",
+    "Scout HL with KORD 12.7mm",
+    "SPAAA LC with ZU-23",
+    "SPAAA HL with ZU-23"
+  ],
+  "artillery_units": [
+    "BM-21 Grad",
+    "MLRS LC with B8M1 80mm",
+    "MLRS HL with B8M1 80mm"
+  ],
+  "logistics_units": [
+    "LUV UAZ-469 Jeep",
+    "Truck Ural-375"
+  ],
+  "infantry_units": [
+    "Infantry RPG",
+    "Insurgent AK-74",
+    "MANPADS SA-18 Igla \"Grouse\"",
+    "Mortar 2B11 120mm"
+  ],
+  "missiles": [],
+  "air_defense_units": [
+    "SA-9 Strela",
+    "AAA ZU-23 Insurgent Closed Emplacement",
+    "AAA ZU-23 Insurgent Emplacement",
+    "AAA ZU-23 Insurgent (ERO)",
+    "AAA ZU-23 Toyota armored technical",
+    "AAA ZU-23 Toyota technical",
+    "SPAAA LC with ZU-23",
+    "SPAAA HL with ZU-23",
+    "ZU-23 on Ural-375 Insurgent",
+    "SAM SA-8 Osa \"Gecko\" TEL",
+    "SA-13 Gopher (9K35 Strela-10M3)"
+  ],
+  "preset_groups": [
+    "ZU-23 Technicals (ERO)",
+    "SA-6"
+  ],
+  "naval_units": []
+}

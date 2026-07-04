@@ -51,6 +51,18 @@ verified); the opposing side may spawn a dispersed snatch party (G20 verified) a
 holding on the pilot long enough CAPTURES them → `combat_sar_captures` → the held-POW model
 above. AI dispatch prefers commandeering the on-station rescue helo over cloning (G21).
 
+**AI-rescue delivery field (fixed 2026-07-03, flown Yankee Station):** the AI dispatch needs a
+delivery airbase resolved via MOOSE `AIRBASE:FindByName`. Python passes the King's departure
+*control-point display name* (`rescue_flights[0].departure.airfield_name`, `luagenerator.py`),
+which matches a real airfield's DCS name but **not** a generated FARP — whose DCS object is
+`"<CP> FARP 0"` (`tgogenerator.create_helipad`). So a FARP-based King (the Vietnam FOB case)
+logged `combatsar: AI dispatch - FARP '<CP>' not found` on every ejection and never delivered.
+`dispatchAIRescue` now falls back to `nearestFriendlyAirbaseObject` — the closest friendly field
+MOOSE *can* resolve to the survivor — when the configured name misses (airbase-based Kings keep
+their exact field; only the previously-broken FARP path changes). Consistent with the feature's
+"deliver to ANY friendly field" contract. Needs a re-fly to confirm the AI actually completes the
+delivery (G21/G23).
+
 **Python side:** `game/pow_recovery.py` (the held-POW model + the tombstone purge),
 `record_pow_captures` / `commit_air_losses` in `missionresultsprocessor.py` (scoring),
 `game/commander/tasks/primitive/combatsar.py` (the standing package),

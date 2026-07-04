@@ -56,6 +56,31 @@ display name (the §P1b display-layer precedent); the model is symmetric.
 > labels, exhaustion banners, per-feed weights, plus a new warship-loss feed). See
 > `414th-will-generalization-notes.md`; the model below is unchanged.
 
+> **Time-pressure rework 2026-07-03 (Yankee Station):** the shipped Vietnam defaults left
+> **both** meters *rising* passively (blue `+0.5`, red `+0.75`/turn) with no time cost, which
+> hollowed out the whole race — a careful player was never on a clock, effectively couldn't
+> lose by will, and the `advance_when` will-thresholds (75/65/50) almost never fired (blue will
+> never fell that far absent heavy losses, so escalation only ever advanced on `min_turn`). The
+> fix is a per-campaign `will:` block on 1968 Yankee Station: **blue `blue_passive_regen: -0.6`
+> (war weariness — Washington's patience erodes with the war's *duration*, offset by claimed
+> MiG kills, compounded by losses)** and **red `red_passive_regen: 0.4` (Hanoi trimmed below its
+> stubborn default so sustained trail interdiction overcomes the regen)**. Now blue will drifts
+> down through the escalation thresholds (the will-coupled arc actually functions), the negotiation
+> *loss* is reachable, and the bombing-halt `resolve_regen` (+1.5, additive) is a genuine dilemma
+> because waiting costs Washington −0.6/turn. Rough pacing model: elite trail-strangulation folds
+> Hanoi ~turn 9; average play rides the full arc to a Linebacker II negotiated win ~turn 16;
+> floundering loses Washington ~turn 21. **The passive term is now sign-aware** in the ledger
+> (`_blue_moves`/`_red_moves` label it "war weariness"/"resolve erosion" when negative, "passive
+> regen" when positive). Per-campaign — Velvet Thunder / Red Flag 81-2 keep the old defaults;
+> promote to them if wanted. Guard: `test_yankee_station_will_time_pressure`. Needs an in-game
+> pacing pass (the model is passive-drift only; real losses vary).
+>
+> **Red-tempo legibility (same pass):** blue gets a fully-surfaced ROE arc, so red now gets the
+> same courtesy — `red_tempo.announce_red_tempo` fires a one-shot **"Hanoi's response"** message
+> when an authored phase's `red_tempo` block activates (trail surge / Tet-Easter ground offensive
+> / resolve steadying), derived from the levers present. Keyed on the phase (transient
+> `game.red_tempo_announced_phase`), so it survives re-inits.
+
 - **Model:** `Coalition.political_will: float` (0–100, start 100; tunable per campaign via
   the `settings:` block). Persisted; migrated with a `__setstate__` default so old saves
   load (the `last_sitrep`/`super_gaggle_commitment` pattern).

@@ -20,6 +20,7 @@ from game.fourteenth import phases
 from game.fourteenth.phases import CampaignPhase, parse_phases
 from game.fourteenth.red_tempo import (
     GROUND_OFFENSIVE_MIN_SURGE,
+    announce_red_tempo,
     apply_red_tempo,
     ground_offensive_active,
     trail_surge_multiplier,
@@ -83,7 +84,7 @@ def _game(
     red_will: float = 50.0,
     fronts: Optional[list[Any]] = None,
 ) -> Any:
-    return SimpleNamespace(
+    game = SimpleNamespace(
         settings=SimpleNamespace(campaign_phases=True, vietnam_political_will=will_on),
         campaign_name=_ARC_NAME,
         current_phase_key=key,
@@ -93,6 +94,9 @@ def _game(
         theater=SimpleNamespace(conflicts=lambda: list(fronts or [])),
         red_tempo_regen_turn=None,
     )
+    game.messages = []
+    game.message = lambda title, body, _m=game.messages: _m.append((title, body))
+    return game
 
 
 # ---- parse ---------------------------------------------------------------------------
@@ -270,6 +274,36 @@ def test_trail_surge_allows_a_second_bigger_convoy(arc_cache: Any) -> None:
     game.red.transfers.created.clear()
     ensure_enemy_trail_convoy(game)
     assert game.red.transfers.created == []
+
+
+# ---- red-tempo legibility (announce Hanoi's response) -----------------------------------
+
+
+def test_announce_fires_once_per_red_tempo_phase(arc_cache: Any) -> None:
+    # The halt phase authors trail_surge + resolve_regen -> the player is told once.
+    game = _game(key="halt", turn=8, entered=8)
+    announce_red_tempo(game)
+    assert len(game.messages) == 1
+    title, body = game.messages[0]
+    assert title == "Hanoi's response"
+    assert "surge capacity" in body and "resolve steadies" in body
+    # Idempotent: a second call in the same phase does not re-announce.
+    announce_red_tempo(game)
+    assert len(game.messages) == 1
+
+
+def test_announce_describes_the_ground_offensive(arc_cache: Any) -> None:
+    game = _game(key="offensive_pulse", turn=11, entered=11)
+    announce_red_tempo(game)
+    assert len(game.messages) == 1
+    assert "ground offensive" in game.messages[0][1]
+
+
+def test_announce_silent_without_a_red_tempo_block(arc_cache: Any) -> None:
+    # The "thunder" phase carries no red_tempo -> nothing to announce.
+    game = _game(key="thunder", turn=1, entered=1)
+    announce_red_tempo(game)
+    assert game.messages == []
 
 
 # ---- the shipped Vietnam arcs -----------------------------------------------------------

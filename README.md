@@ -303,11 +303,15 @@ and selected later upstream fixes.
   default — naval gunfire only on the coastal ones, where offshore guns can actually reach the shore.
 - The **Vietnam campaign layer** changes *why* you fly, not just how it feels. **Political will** tracks each
   side's capital for the war: your **Political Will** (Washington's patience — drained by airframe losses, with
-  a downed B-52 a national event; by aviators sitting as POWs in Hanoi; by lost ground) against the enemy's
+  a downed B-52 a national event; by aviators sitting as POWs in Hanoi; by lost ground — and, on 1968 Yankee
+  Station, by the **war's sheer duration**: Washington's patience erodes turn over turn, offset when you win
+  the air battle, so time is genuinely against you) against the enemy's
   **Regime Resolve** (Hanoi barely registers airframe losses — it drains from **trail-logistics strangulation**
   and ground attrition). The war can now **end at the negotiating table**: break Hanoi's resolve before your
   will runs out and they agree to terms — you never had to take a base; run dry first and Washington orders the
-  withdrawal, whatever the map says. Territory victory still works. And with the **static front** on, the ground
+  withdrawal, whatever the map says. And when Hanoi answers your escalation — surging the trail during a bombing
+  halt, opening a Tet/Easter ground offensive — you get a **"Hanoi's response"** briefing so the enemy's plan is
+  as legible as your own. Territory victory still works. And with the **static front** on, the ground
   war fights like the era's: the front line bends with the battle inside a narrow band around where the campaign
   started — pressure reads on the map — but never sweeps onto a base to capture it; deliberate **Air Assault**
   operations remain the one way to take ground, and attrition pays out through political will instead. Both are

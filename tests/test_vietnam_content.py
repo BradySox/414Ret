@@ -522,3 +522,30 @@ def test_vietnam_campaign_authored_roe_arc(campaign_file: str) -> None:
     # The scheduled escalation dates are strictly increasing.
     pins = [p.min_turn for p in arc[1:]]
     assert pins == sorted(pins) and all(p > 0 for p in pins), campaign_file
+
+
+def test_yankee_station_will_time_pressure() -> None:
+    """1968 Yankee Station authors a ``will:`` block that gives Washington a real clock.
+
+    The Vietnam defaults leave both meters passively RISING (blue +0.5 / red +0.75), so
+    the negotiation race has no time cost. Yankee Station overrides blue's passive term
+    negative (war weariness) and trims red's regen, so time genuinely pressures Washington
+    and the advance_when will-thresholds actually fire. Guard the intent so a future edit
+    can't silently drop the block back to the toothless defaults."""
+    import yaml
+
+    from game.fourteenth.political_will import parse_will_profile
+
+    data = yaml.safe_load(
+        (_CAMPAIGNS / "1968_Yankee_Station.yaml").read_text(encoding="utf-8")
+    )
+    profile = parse_will_profile(data.get("will"))
+    # Washington's patience erodes with the war's duration (net-negative passive).
+    assert profile.weights.blue_passive_regen < 0.0
+    # Hanoi is trimmed below its stubborn default so the trail strangulation bites.
+    assert profile.weights.red_passive_regen < 0.75
+    # The framing stays the Vietnam Washington/Hanoi copy (weights-only override).
+    assert profile.blue.label == "Washington's patience"
+    assert profile.red.label == "Hanoi's resolve"
+    # Everything else keeps the Vietnam defaults (a downed B-52 is still a national event).
+    assert profile.weights.blue_heavy_bomber_loss == 6.0

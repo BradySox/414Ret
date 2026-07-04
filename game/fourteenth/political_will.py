@@ -454,7 +454,13 @@ def _blue_moves(
     from game.missiongenerator.vietnamopsluadata import HEAVY_BOMBER_DCS_IDS
     from game.theater import Player
 
-    moves: list[tuple[str, float]] = [("passive regen", weights.blue_passive_regen)]
+    # A campaign can price the passive term negative -- war weariness: Washington's
+    # patience erodes with the *duration* of the war, not just its casualty count
+    # (the load-bearing "clock" behind the negotiation race). Label it by sign so
+    # the ledger reads honestly ("war weariness -0.6" not "passive regen -0.6").
+    blue_passive = weights.blue_passive_regen
+    passive_label = "war weariness" if blue_passive < 0 else "passive regen"
+    moves: list[tuple[str, float]] = [(passive_label, blue_passive)]
 
     # Airframe losses, weighted by what fell. by_type keys are AircraftTypes; heavy
     # bombers reuse the §32 Arc Light identification set. getattr+cast sidesteps the
@@ -575,7 +581,11 @@ def _red_moves(
     """RED's labeled feed components this turn, in feed order (sum = the delta)."""
     from game.theater import Player
 
-    moves: list[tuple[str, float]] = [("passive regen", weights.red_passive_regen)]
+    # Symmetric to blue: a profile can price red's passive term negative (resolve
+    # erosion) if the regime is meant to crumble over time. Label by sign.
+    red_passive = weights.red_passive_regen
+    red_passive_label = "resolve erosion" if red_passive < 0 else "passive regen"
+    moves: list[tuple[str, float]] = [(red_passive_label, red_passive)]
 
     red_losses = debriefing.loss_counts(Player.RED)
     # The trail is the artery: convoy kills (the §35 real convoys) bite hardest.

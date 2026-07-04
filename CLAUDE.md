@@ -1068,6 +1068,30 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     real F/A-18C pylon tables. (`game/fourteenth/range_fuel.py`,
     `game/missiongenerator/aircraft/flightgroupconfigurator.py`, `game/settings/settings.py`; features doc §46,
     checklist S1 — needs an in-game pass.)
+47. **Continuous campaign clock & weather** — a stock turn re-rolled time and weather from scratch: the
+    time-of-day rotated through a fixed Dawn→Day→Dusk→Night slot cycle (one slot/turn) with the actual clock a
+    **random hour inside that band** (so consecutive turns teleported ~4–8 h), the date ticked only every 4
+    turns (`start_date + turn // 4`), and weather was an **independent, memoryless draw** each turn (thunderstorm
+    → clear → rain, no fronts). Nothing carried forward, so a campaign never read as one timeline. This ties
+    date, time-of-day, and weather to **one marched clock** anchored to the campaign's start date. Two levers:
+    (1) `Conditions.advance` carries `start_time` forward a jittered **3–7 whole hours** each turn
+    (`MIN/MAX_TURN_ADVANCE_HOURS`; a sortie+turnaround, whole hours keep the "starts on the hour" property),
+    **derives** time-of-day from the marched clock (`daytime_map.best_guess_time_of_day_at`), and rolls the date
+    at midnight — the season (weather table + temp/pressure) updates as the calendar marches; (2)
+    `generate_weather(previous=...)` biases the seasonal draw toward the previous turn's rung on the
+    `_WEATHER_LADDER` (Clear→Cloudy→Rain→Storm) via `_WEATHER_PERSISTENCE_KERNEL` (`{0:3, 1:1, 2:0.3, 3:0.1}`
+    × seasonal chance), so systems move through over several turns while **seasonal climatology still bounds it**
+    (a zero seasonal chance stays zero). `Game.continuous_clock_active` gates it (`continuous_campaign_clock`
+    setting **and** `night_day_missions == DayAndNight` — day-only/night-only opt out of the natural cycle and
+    fall back to the rotation); `current_day`/`current_turn_time_of_day` become authoritative off
+    `self.conditions` when active (getattr-guarded for the turn-0 seed), else the legacy formulas; `finish_turn`
+    calls `advance_conditions()` for `turn > 1`. **Seamless mid-campaign** on load: the last conditions were
+    generated from the `turn // 4` date, so `conditions.start_time.date()` already equals it — the clock reads
+    the same date and marches on (no jump, no migration). Composes with campaign phases (§40), which advance
+    over turns; the calendar now advances in step. Gated `continuous_campaign_clock` (Campaign Management →
+    Campaign clock & weather, **default ON**). Tests `tests/weather/test_continuous_campaign_clock.py`.
+    (`game/weather/conditions.py`, `game/game.py`, `game/settings/settings.py`; features doc §47, checklist T1
+    — needs an in-game pass.)
 
 ---
 

@@ -12,6 +12,25 @@ from game.theater.seasonalconditions import determine_season
 from game.timeofday import TimeOfDay
 from game.weather.weather import Weather, Thunderstorm, Raining, Cloudy, ClearSkies
 
+# Continuous campaign clock (feature §47): how many hours the mission clock
+# marches forward per turn -- a sortie plus turnaround -- jittered around a
+# believable mean so the calendar advances monotonically instead of teleporting
+# between time-of-day bands each turn. Whole hours preserve the "missions start
+# on the hour" gameplay property.
+MIN_TURN_ADVANCE_HOURS = 3
+MAX_TURN_ADVANCE_HOURS = 7
+
+# Weather severity ladder (calm -> violent). Turn-to-turn weather evolution
+# biases the next turn's seasonal draw toward staying near the previous turn's
+# rung, so fronts roll in and clear over several turns instead of a thunderstorm
+# being followed by clear skies. Seasonal climatology still bounds the draw -- a
+# near-zero seasonal chance for a type stays near zero after weighting.
+_WEATHER_LADDER: list[type[Weather]] = [ClearSkies, Cloudy, Raining, Thunderstorm]
+# Multiplier applied to a candidate's seasonal chance by its distance (in ladder
+# rungs) from the previous turn's weather. Strong pull to stay, moderate to step
+# one rung, small to jump further.
+_WEATHER_PERSISTENCE_KERNEL: dict[int, float] = {0: 3.0, 1: 1.0, 2: 0.3, 3: 0.1}
+
 
 @dataclass
 class Conditions:
@@ -40,6 +59,37 @@ class Conditions:
             time_of_day=time_of_day,
             start_time=_start_time,
             weather=cls.generate_weather(theater.seasonal_conditions, day, time_of_day),
+        )
+
+    @classmethod
+    def advance(
+        cls,
+        previous: Conditions,
+        theater: ConflictTheater,
+    ) -> Conditions:
+        """March a continuous campaign clock forward from the previous turn.
+
+        Unlike `generate`, which re-rolls an independent time-of-day slot and a
+        fresh, memoryless weather draw each turn, this advances the *actual*
+        clock forward by a believable interval and evolves the weather from the
+        previous turn's state, so the campaign reads as one continuous timeline
+        (feature §47). Time of day is derived from the marched clock; the date
+        rolls over naturally at midnight.
+        """
+        interval = datetime.timedelta(
+            hours=random.randint(MIN_TURN_ADVANCE_HOURS, MAX_TURN_ADVANCE_HOURS)
+        )
+        start_time = previous.start_time + interval
+        time_of_day = theater.daytime_map.best_guess_time_of_day_at(start_time.time())
+        return cls(
+            time_of_day=time_of_day,
+            start_time=start_time,
+            weather=cls.generate_weather(
+                theater.seasonal_conditions,
+                start_time.date(),
+                time_of_day,
+                previous=previous.weather,
+            ),
         )
 
     @classmethod
@@ -102,6 +152,7 @@ class Conditions:
         seasonal_conditions: SeasonalConditions,
         day: datetime.date,
         time_of_day: TimeOfDay,
+        previous: Weather | None = None,
     ) -> Weather:
         season = determine_season(day)
         logging.debug("Weather: Season {}".format(season))
@@ -115,8 +166,21 @@ class Conditions:
             ClearSkies: weather_chances.clear_skies,
         }
         logging.debug("Weather: Chances {}".format(weather_chances))
+        weights = dict(chances)
+        if previous is not None:
+            # Continuous campaign weather (feature §47): bias the seasonal draw
+            # toward the previous turn's rung on the severity ladder so systems
+            # move through gradually. Seasonal climatology still bounds it.
+            prev_index = _WEATHER_LADDER.index(type(previous))
+            weights = {
+                wtype: chance
+                * _WEATHER_PERSISTENCE_KERNEL[
+                    abs(_WEATHER_LADDER.index(wtype) - prev_index)
+                ]
+                for wtype, chance in chances.items()
+            }
         weather_type = random.choices(
-            list(chances.keys()), weights=list(chances.values())
+            list(weights.keys()), weights=list(weights.values())
         )[0]
         logging.debug("Weather: Type {}".format(weather_type))
         return weather_type(seasonal_conditions, day, time_of_day)

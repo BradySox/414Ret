@@ -34,7 +34,7 @@ from .dcs.countries import country_with_name
 from .infos.information import Information
 from .lasercodes.lasercoderegistry import LaserCodeRegistry
 from .profiling import logged_duration
-from .settings import Settings
+from .settings import NightMissions, Settings
 from .data.groups import GroupTask
 from .theater import ConflictTheater, Player
 from .theater.bullseye import Bullseye
@@ -259,6 +259,25 @@ class Game:
             forced_time=forced_time,
         )
 
+    def advance_conditions(self) -> Conditions:
+        """March the continuous campaign clock forward from this turn (§47)."""
+        return Conditions.advance(self.conditions, self.theater)
+
+    @property
+    def continuous_clock_active(self) -> bool:
+        """Whether the continuous campaign clock/weather model is in effect.
+
+        Gated by the `continuous_campaign_clock` setting, and only while the
+        natural day/night cycle is allowed -- the OnlyDay/OnlyNight mission-time
+        settings explicitly opt out of the natural cycle, so they fall back to
+        the per-turn time-of-day rotation. `getattr` keeps pre-feature saves
+        (no such setting) on the legacy path.
+        """
+        return (
+            getattr(self.settings, "continuous_campaign_clock", False)
+            and self.settings.night_day_missions == NightMissions.DayAndNight
+        )
+
     @staticmethod
     def sanitize_sides(player_faction: Faction, enemy_faction: Faction) -> None:
         """
@@ -451,7 +470,14 @@ class Game:
         # We don't actually advance time or change the conditions between turn 0 and
         # turn 1.
         if self.turn > 1:
-            self.conditions = self.generate_conditions()
+            # Continuous campaign clock (§47): march the actual clock forward
+            # from the previous turn and evolve the weather from its state so
+            # the campaign flows as one timeline. Otherwise fall back to the
+            # legacy per-turn time-of-day rotation + memoryless weather draw.
+            if self.continuous_clock_active:
+                self.conditions = self.advance_conditions()
+            else:
+                self.conditions = self.generate_conditions()
 
     def _reveal_merad_groups(self) -> None:
         for tgo in self.theater.ground_objects:
@@ -701,11 +727,25 @@ class Game:
 
     @property
     def current_turn_time_of_day(self) -> TimeOfDay:
+        # With the continuous clock (§47) the marched clock in `conditions` is
+        # authoritative; time of day is derived from it. `getattr` guards the
+        # init path, where `conditions` is not yet built (it seeds from the
+        # legacy rotation below).
+        if self.continuous_clock_active:
+            conditions = getattr(self, "conditions", None)
+            if conditions is not None:
+                return conditions.time_of_day
         tod_turn = max(0, self.turn - 1) + self.time_of_day_offset_for_start_time
         return list(TimeOfDay)[tod_turn % 4]
 
     @property
     def current_day(self) -> date:
+        # With the continuous clock (§47) the date follows the marched clock and
+        # rolls over at midnight, instead of ticking once every four turns.
+        if self.continuous_clock_active:
+            conditions = getattr(self, "conditions", None)
+            if conditions is not None:
+                return conditions.start_time.date()
         return self.date + timedelta(days=self.turn // 4)
 
     def next_unit_id(self) -> int:

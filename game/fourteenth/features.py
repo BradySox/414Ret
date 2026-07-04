@@ -247,6 +247,12 @@ FEATURES: tuple[Feature, ...] = (
         46,
         settings_fields=("auto_range_fuel_tanks",),
     ),
+    Feature(
+        "continuous_campaign_clock",
+        "Continuous campaign clock & weather",
+        47,
+        settings_fields=("continuous_campaign_clock",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

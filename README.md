@@ -133,6 +133,12 @@ and selected later upstream fixes.
 - **"Player at IP" fast-forward now actually puts you at your IP.** An AI skirmish elsewhere no longer
   stops the fast-forward short and spawns you back on the ramp; only a fight your own flight is in
   still pauses so you can fly it.
+- **The campaign runs on one continuous clock.** Instead of each turn teleporting to a random hour and
+  re-rolling the weather from scratch, the mission clock now marches forward a few hours per turn from
+  the campaign's start date, the date rolls over at midnight, and the weather **evolves** from the
+  turn before — fronts roll in and clear over several turns instead of a thunderstorm one sortie and
+  clear skies the next. It's on by default (with day-and-night missions); turn it off in *Campaign
+  Management → Campaign clock & weather* for the old per-turn behaviour.
 
 ### The generated mission feels occupied
 

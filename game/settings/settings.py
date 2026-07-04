@@ -403,10 +403,17 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
-                "Player slots & start",
+                "Aircraft start types",
                 [
                     "default_start_type",
                     "default_start_type_client",
+                    "opfor_air_start",
+                    "support_air_start",
+                ],
+            ),
+            (
+                "Player slots",
+                [
                     "dynamic_slots",
                     "dynamic_slots_hot",
                     "dynamic_cargo",
@@ -1940,6 +1947,30 @@ class Settings:
         choices={v.value: v for v in StartType},
         default=StartType.COLD,
         detail="Default start type for flights containing Player/Client slots.",
+    )
+    opfor_air_start: bool = boolean_option(
+        "Enemy (OPFOR) aircraft start in the air",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        default=False,
+        detail=(
+            "When enabled, every AI OPFOR (red) flight spawns airborne regardless of "
+            "the AI start type, so the enemy holds the air from mission start and "
+            "can't be caught on the ramp. Player and OWNFOR flights are unaffected. "
+            "A base that forces a specific start type (e.g. a carrier) still wins."
+        ),
+    )
+    support_air_start: bool = boolean_option(
+        "Support aircraft (AWACS/tankers) start in the air",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        default=False,
+        detail=(
+            "When enabled, AWACS and tanker flights spawn airborne and on-station "
+            "from mission start instead of spending the first several minutes taxiing "
+            "and climbing. Applies to both coalitions' AI support flights; "
+            "player-crewed flights keep the player start type."
+        ),
     )
     default_player_laser_code: DefaultPlayerLaserCode = choices_option(
         "Default laser code for Player flights",

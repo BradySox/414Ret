@@ -119,6 +119,68 @@ def test_weather_biases_toward_previous_turn() -> None:
     assert counts[ClearSkies] > counts[Cloudy] > counts[Raining] > counts[Thunderstorm]
 
 
+def _weather_chain(seasonal: SeasonalConditions, n: int) -> list[type[Weather]]:
+    day = datetime.date(2020, 6, 15)
+    previous: Weather = ClearSkies(seasonal, day, TimeOfDay.Day)
+    seq: list[type[Weather]] = []
+    for _ in range(n):
+        previous = Conditions.generate_weather(
+            seasonal, day, TimeOfDay.Day, previous=previous
+        )
+        seq.append(type(previous))
+    return seq
+
+
+def test_weather_preserves_seasonal_climatology_over_a_chain() -> None:
+    # The whole point: persistence must NOT skew the long-run mix. A naive
+    # seasonal*kernel reweight halved the rain frequency (measured); the
+    # Metropolis-Hastings evolution keeps the marginal at the authored season.
+    # Caucasus-summer-like chances (clear-heavy, so the skew bug bit hardest).
+    chances = WeatherTypeChances(
+        thunderstorm=1.0, raining=10.0, cloudy=35.0, clear_skies=55.0
+    )
+    seasonal = _seasonal(chances)
+    total = (
+        chances.thunderstorm + chances.raining + chances.cloudy + chances.clear_skies
+    )
+    target = {
+        ClearSkies: chances.clear_skies / total,
+        Cloudy: chances.cloudy / total,
+        Raining: chances.raining / total,
+        Thunderstorm: chances.thunderstorm / total,
+    }
+
+    n = 40000
+    names = [wtype.__name__ for wtype in _weather_chain(seasonal, n)]
+    for wtype, want in target.items():
+        got = names.count(wtype.__name__) / n
+        # Within ~2.5pp of the authored climatology (sampling noise), NOT the
+        # 5-8pp skew the naive kernel produced. In particular rain stays ~10%.
+        assert abs(got - want) < 0.025, f"{wtype.__name__}: {got:.3f} vs {want:.3f}"
+
+
+def test_weather_persists_across_a_chain() -> None:
+    # Autocorrelation is real: consecutive turns usually hold, and when weather
+    # changes it steps to an adjacent rung far more than it jumps across the
+    # ladder -- fronts roll in and clear rather than teleporting.
+    seasonal = _seasonal()
+    n = 20000
+    seq = _weather_chain(seasonal, n)
+
+    ladder = [ClearSkies, Cloudy, Raining, Thunderstorm]
+    stayed = big_jumps = 0
+    for a, b in zip(seq, seq[1:]):
+        distance = abs(ladder.index(a) - ladder.index(b))
+        if distance == 0:
+            stayed += 1
+        elif distance >= 2:
+            big_jumps += 1
+    transitions = n - 1
+    # Sticky (memoryless would be ~1/4 with equal chances) and rarely a big jump.
+    assert stayed / transitions > 0.5
+    assert big_jumps / transitions < 0.10
+
+
 def test_weather_respects_zero_seasonal_chance() -> None:
     # A season that never storms must not conjure a storm no matter the bias.
     seasonal = _seasonal(

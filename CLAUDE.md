@@ -1078,10 +1078,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`MIN/MAX_TURN_ADVANCE_HOURS`; a sortie+turnaround, whole hours keep the "starts on the hour" property),
     **derives** time-of-day from the marched clock (`daytime_map.best_guess_time_of_day_at`), and rolls the date
     at midnight — the season (weather table + temp/pressure) updates as the calendar marches; (2)
-    `generate_weather(previous=...)` biases the seasonal draw toward the previous turn's rung on the
-    `_WEATHER_LADDER` (Clear→Cloudy→Rain→Storm) via `_WEATHER_PERSISTENCE_KERNEL` (`{0:3, 1:1, 2:0.3, 3:0.1}`
-    × seasonal chance), so systems move through over several turns while **seasonal climatology still bounds it**
-    (a zero seasonal chance stays zero). `Game.continuous_clock_active` gates it (`continuous_campaign_clock`
+    `generate_weather(previous=...)` → `_evolve_weather_type`, a **Metropolis-Hastings** step on the
+    `_WEATHER_LADDER` (Clear→Cloudy→Rain→Storm): a near-rung *proposal* from `_WEATHER_PERSISTENCE_KERNEL`
+    (`{0:3, 1:1, 2:0.3, 3:0.1}`) *accepted* against the seasonal chances, so systems move through gradually
+    **and the long-run marginal stays exactly the seasonal climatology** (a plain seasonal×kernel reweight —
+    the first cut — autocorrelates but skews the mix toward calm, measured halving Caucasus-summer rain 9.9→4.7%;
+    MH keeps the skew ≤~1pp; a zero seasonal chance stays unreachable). `Game.continuous_clock_active` gates it (`continuous_campaign_clock`
     setting **and** `night_day_missions == DayAndNight` — day-only/night-only opt out of the natural cycle and
     fall back to the rotation); `current_day`/`current_turn_time_of_day` become authoritative off
     `self.conditions` when active (getattr-guarded for the turn-0 seed), else the legacy formulas; `finish_turn`

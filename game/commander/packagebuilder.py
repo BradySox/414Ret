@@ -109,6 +109,23 @@ class PackageBuilder:
             # Air-start the AI alert so it holds its forward orbit from t=0; a
             # player-flown Combat SAR keeps the client default handled above.
             flight.start_type = StartType.IN_FLIGHT
+        elif (
+            squadron.location.required_aircraft_start_type is None
+            and squadron.coalition.game.settings.opfor_air_start
+            and squadron.coalition.player.is_red
+        ):
+            # OPFOR-air-start: the enemy holds the air from t=0 instead of being
+            # caught spooling up on the ramp. Applies to every AI red flight.
+            flight.start_type = StartType.IN_FLIGHT
+        elif (
+            squadron.location.required_aircraft_start_type is None
+            and squadron.coalition.game.settings.support_air_start
+            and flight.flight_type
+            in (FlightType.AEWC, FlightType.REFUELING, FlightType.RECOVERY)
+        ):
+            # Air-start AWACS/tankers so they hold station from mission start rather
+            # than burning the first several minutes taxiing and climbing out.
+            flight.start_type = StartType.IN_FLIGHT
         self.package.add_flight(flight)
         return True
 

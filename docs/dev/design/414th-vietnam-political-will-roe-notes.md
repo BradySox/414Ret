@@ -251,3 +251,81 @@ sanctuary basing verified test-side off the W4 zones; checklist M5):
   deferred; v1 keeps will → win/loss only, no second-order economy coupling.
 - Zone/violation detection granularity at debrief (kill positions are already recorded via
   `destroyed_objects_positions`; confirm coverage is enough before W4).
+
+## 8. The morale-ratchet redo (2026-07-04) — the M1 pacing pass, done for real
+
+**Status: LANDED (Yankee Station).** The first Yankee Station `will:` block only overrode the
+two passive-regen terms and left the other 17 feeds on their un-tuned shipped defaults, which
+is exactly the deferred §7 balance pass (checklist M1). A played session read the campaign as
+*static*, and the root cause was the economy, not the content: BLUE was a flat clock (with
+invulnerable player pilots + modest AI losses, will just ticked down passively — the enemy had
+no lever to pressure it) and RED was a one-note convoy-kill step function (fly Armed Recon → red
+craters; skip it → red barely moves). This is the holistic redo, informed by how the real war
+and the canonical political wargames model it.
+
+**Research (the design references).** Real history + the wargame canon converge:
+
+- **Rolling Thunder failed on *restrictions*; Linebacker worked on *release*** (targets off-limits
+  for fear of Chinese intervention; Linebacker I did more in 3 months than Rolling Thunder in 3½
+  years). The early-war *frustration* — rich targets you can see but not hit — **is** the intended
+  feel; the arc (§3) already models it, so the redo preserves it.
+- **Political will is a *ratchet*, not a balance.** In Victory Games' *Vietnam 1965-1975* (the
+  canonical political wargame), **US morale is constantly decreasing** — it drains from losses,
+  troop build-up, *and* "unrestrained bombing" / widening the war; the only thing that raises it
+  (enemy body count / population control) is "minor in comparison to the negatives." **Body count
+  is a trap.**
+- **Every action carries a morale cost** — "bombing the North, sending new troops, high
+  casualties" (designer Nick Karp). Escalation *itself* frays the home front.
+- **Commitment is capped by morale** — "US commitment can never exceed morale"; as morale falls
+  you are forced to draw forces down. The war gets taken away from you.
+- **War-weariness meters work best when the player can *steer* them** (Civ VI's is disliked when it
+  feels arbitrary) — the meter must read as a resource, not an unavoidable tax.
+
+**The redo has three layers (user picked all three — "model 3").**
+
+1. **The morale ratchet (weights, YAML).** BLUE is rebuilt as a near-one-way decline — war
+   weariness (`blue_passive_regen -0.4`) plus a **POW running-sore** (`blue_pow_held_per_turn 0.6`,
+   up from 0.5: every captured aircrew taxes will *each turn* until rescued/recaptured — the one
+   lever the GCI-ambush enemy *does* have to pressure Washington), with restores
+   (`blue_enemy_air_claimed 0.3`) deliberately too small to grind a win. RED is **broadened past
+   the trail**: `red_ground_unit_lost 0.35` (up from 0.25) so CAS/BAI and the **Arc Light B-52
+   carpets** (which flow through ground attrition) bleed resolve, while `red_convoy_unit_lost` is
+   trimmed 1.5 → 1.0 off its campaign-ending default (still the sharpest single lever, no longer
+   the only one). `red_passive_regen 0.3`.
+2. **The escalation tax (`CampaignPhase.blue_will_on_entry`, code + YAML).** Widening the war costs
+   Washington will *even when the strikes are sanctioned*: entering Linebacker charges −3, the
+   Linebacker II "Christmas bombing" −5, once each on entry (a persisted latch,
+   `phases.consume_phase_escalation_cost`, surfaced as a labeled will-ledger move). An elite player
+   who folds Hanoi in Rolling Thunder never pays it — the tax punishes *slow/losing* play that drags
+   the war wide open, which is exactly right. De-escalations (the opening, the Bombing Halt) cost
+   nothing.
+3. **The commitment ceiling (CLAUDE.md §48 / feature, code).** As BLUE will falls below 60, Congress
+   trims the war budget linearly toward a 0.5× floor (`game/fourteenth/commitment_ceiling.py`, hooked
+   in `Coalition.end_turn`) — the will economy gets a *material* bite (a losing war is starved of
+   replacements), not just a negotiating-table one. Gated `vietnam_commitment_ceiling` (default OFF,
+   preseeded ON) **and** `vietnam_political_will`; BLUE-only (the VG asymmetry — no congressional
+   appropriation gates the insurgent regime). Gentle by design (full funding above 60, floor never
+   zeroes procurement) because the in-game feedback (less budget → fewer replacements → more relative
+   losses → less will) compounds what the model can't see.
+
+**The richer opening** rides the same pass: Rolling Thunder authors `red_tempo.trail_surge 1.5`, so
+the two baseline convoys carry ~15 trucks each (30 trail units, not 20) from turn 1 — more Armed-Recon
+targets while the deep war is still locked (below the 2.0 threshold, so it does *not* add a third road;
+the Bombing Halt's 2.0 does that).
+
+**The pacing tool (`tools/will_pacing_model.py`).** Flying 16-20 turns to test one weight is too slow a
+loop, so the numbers were derived offline: the tool marches both meters turn-by-turn from a campaign's
+`will:` weights + `phases:` arc against three play archetypes (elite/average/floundering), modelling the
+same feed arithmetic as `_blue_moves`/`_red_moves` plus the escalation tax + the ceiling's budget
+multiplier. Standalone (pyyaml only, the `campaign_phase_classify.py` precedent); its Vietnam default
+weights are cross-checked against the real `WillWeights` dataclass by
+`tests/fourteenth/test_will_pacing_model.py` so they can't drift. **The shipped numbers give: elite
+trail+ground strangulation folds Hanoi ~turn 8; average rides the full arc to a Linebacker II negotiated
+win ~turn 16 (BLUE surviving with margin, both escalation taxes paid); a floundering war loses Washington
+~turn 11.** Real losses vary, so the final feel still wants the **in-game M1 pacing pass** — the model is
+play-archetype driven, but the *structure* (ratchet, broadened red, escalation tax, ceiling) is what the
+redo is really about, and that is locked. Per-campaign: Velvet Thunder / Red Flag 81-2 keep the shipped
+defaults (promote to them if wanted). Guards: `test_yankee_station_will_time_pressure` +
+`test_yankee_station_escalation_tax_and_commitment_ceiling` + `test_commitment_ceiling.py` + the
+escalation-tax tests in `test_phases.py`/`test_political_will.py`. In-game passes: checklist M1 (pacing)
++ M9 (commitment ceiling).

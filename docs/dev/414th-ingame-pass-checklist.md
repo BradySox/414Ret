@@ -2151,7 +2151,7 @@ so the two docs don't drift.
   altitude or at low speed (the release ceiling/speed gate wrong); the bite far too strong/weak
   (`napeBlastPower`).
 
-### M1 — Political will pacing & feed weights (campaign layer W1+W2) · Vietnam campaign layer · ☑ VERIFIED (2026-07-04, user pass — "M1 good") (was ☐ UNTESTED, built 2026-07-01; model + verdict fully unit-tested, pacing needs a played campaign)
+### M1 — Political will pacing & feed weights (campaign layer W1+W2; 2026-07-04 morale-ratchet redo) · §48 · ☐ UNTESTED (the **pre-redo** 2-line-override economy got a user "M1 good" pass 2026-07-04 — but the **same-day morale-ratchet redo re-tuned the whole economy** (design note §8): BLUE ratchet + POW sore, RED broadened past the trail, the escalation tax + richer opening, so the shipped numbers are new and the earlier pass no longer covers them. Numbers derived with `tools/will_pacing_model.py` (elite folds Hanoi ~turn 8, average → Linebacker II win ~turn 16, flounder → withdrawal ~turn 11); the model is play-archetype driven, so the *played* pacing of the redo is exactly this row. The verified-good pre-redo baseline is the sanity floor: the redo should feel no worse)
 - **Headless adjudication:** the feed model and the negotiation verdict are locked in
   `tests/fourteenth/test_political_will.py` (weighted losses, POW trickle, rescue refund, clamps, off-switch,
   win/loss/precedence, crossing-edge banners) and the SITREP band in the sitrep tests. What CI *cannot*
@@ -2366,6 +2366,25 @@ so the two docs don't drift.
   failed).
   Knobs: the `&population_centers` restricted-zone anchor in `coin_enduring_resolve.yaml` (valley
   extents/widths); `blue_roe_violation` weight (the CDE price).
+
+### M9 — Commitment ceiling: will-coupled war budget draws down (§48) · §48 · ☐ UNTESTED (built 2026-07-04; multiplier shape + gating + message unit-tested in `tests/fourteenth/test_commitment_ceiling.py`; the played draw-down feel + the loss-spiral risk need a campaign)
+- **Headless adjudication:** `will_budget_multiplier` is 1.0 at/above will 60, ramps linearly to 0.5× at
+  will 0; `apply_commitment_ceiling` cuts only BLUE income, only with both `vietnam_commitment_ceiling` +
+  `vietnam_political_will` on, and messages on the cut. What CI *cannot* adjudicate: whether the budget cut
+  feels like meaningful pressure without a death spiral (less budget → fewer replacements → more relative
+  losses → less will), and whether the message reads clearly in a flown campaign.
+- **Setup:** a NEW 1968 Yankee Station game (both toggles preseed on). Play a *losing* line (take losses,
+  ignore the trail) so BLUE will drops below 60; watch the Finances dialog + the "War budget cut" message.
+- **Pass:** while BLUE will ≥ 60 the war budget is untouched; below 60 the per-turn income is visibly trimmed
+  (a "War budget cut" message names the %); at very low will the cut approaches but never exceeds 50%; RED's
+  income is never touched; turning `vietnam_commitment_ceiling` off restores full funding. The pressure feels
+  like a squeeze, not an unrecoverable spiral.
+- **Fail signature:** the cut triggers while will is still healthy (threshold wrong); RED income is cut
+  (BLUE-only gate failed); the budget hits zero (floor failed); the message spams every turn at low will
+  (it should fire only on turns the cut applies); the player is locked into an unrecoverable death spiral
+  (floor too low / ramp too steep — raise `CEILING_FLOOR_MULT` or `CEILING_FULL_WILL`).
+  Knobs: `CEILING_FULL_WILL` (where the cut starts) + `CEILING_FLOOR_MULT` (the floor) in
+  `game/fourteenth/commitment_ceiling.py`.
 
 ## N. Mod support
 

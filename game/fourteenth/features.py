@@ -253,6 +253,15 @@ FEATURES: tuple[Feature, ...] = (
         47,
         settings_fields=("continuous_campaign_clock",),
     ),
+    Feature(
+        # Pure engine feature (no Lua): couples the will economy to the BLUE war
+        # budget in game/fourteenth/commitment_ceiling.py, hooked in
+        # Coalition.end_turn. Needs vietnam_political_will as well.
+        "vietnam_commitment_ceiling",
+        "Commitment ceiling (will-coupled war budget)",
+        48,
+        settings_fields=("vietnam_commitment_ceiling",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

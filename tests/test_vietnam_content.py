@@ -527,11 +527,11 @@ def test_vietnam_campaign_authored_roe_arc(campaign_file: str) -> None:
 def test_yankee_station_will_time_pressure() -> None:
     """1968 Yankee Station authors a ``will:`` block that gives Washington a real clock.
 
-    The Vietnam defaults leave both meters passively RISING (blue +0.5 / red +0.75), so
-    the negotiation race has no time cost. Yankee Station overrides blue's passive term
-    negative (war weariness) and trims red's regen, so time genuinely pressures Washington
-    and the advance_when will-thresholds actually fire. Guard the intent so a future edit
-    can't silently drop the block back to the toothless defaults."""
+    The 2026-07-04 "morale ratchet" redo (docs section 8) rebuilds the whole economy:
+    BLUE is a near-one-way decline (war weariness + a POW running-sore) whose restores
+    can't grind a win, and RED is broadened past the trail (ground attrition matters,
+    the convoy weight trimmed off its campaign-ending default). Guard the intent so a
+    future edit can't silently drop the block back to the toothless shipped defaults."""
     import yaml
 
     from game.fourteenth.political_will import parse_will_profile
@@ -540,12 +540,50 @@ def test_yankee_station_will_time_pressure() -> None:
         (_CAMPAIGNS / "1968_Yankee_Station.yaml").read_text(encoding="utf-8")
     )
     profile = parse_will_profile(data.get("will"))
-    # Washington's patience erodes with the war's duration (net-negative passive).
-    assert profile.weights.blue_passive_regen < 0.0
+    weights = profile.weights
+    # Washington's patience is a ratchet: it erodes with the war's duration.
+    assert weights.blue_passive_regen < 0.0
+    # The POW running-sore is the enemy-pressure lever (up from the 0.5 default).
+    assert weights.blue_pow_held_per_turn > 0.5
     # Hanoi is trimmed below its stubborn default so the trail strangulation bites.
-    assert profile.weights.red_passive_regen < 0.75
+    assert weights.red_passive_regen < 0.75
+    # RED is broadened PAST the trail: the convoy weight is trimmed off its
+    # campaign-ending 1.5 default, and ground attrition is priced up so CAS/BAI/Arc
+    # Light all bleed resolve -- the trail is the sharpest lever, no longer the only one.
+    assert weights.red_convoy_unit_lost < 1.5
+    assert weights.red_ground_unit_lost > 0.25
     # The framing stays the Vietnam Washington/Hanoi copy (weights-only override).
     assert profile.blue.label == "Washington's patience"
     assert profile.red.label == "Hanoi's resolve"
     # Everything else keeps the Vietnam defaults (a downed B-52 is still a national event).
-    assert profile.weights.blue_heavy_bomber_loss == 6.0
+    assert weights.blue_heavy_bomber_loss == 6.0
+
+
+def test_yankee_station_escalation_tax_and_commitment_ceiling() -> None:
+    """The model-3 pieces of the will redo are authored: the escalation tax on the late
+    phases (widening the war costs Washington will even when sanctioned) + the
+    commitment-ceiling preseed (will-coupled war budget)."""
+    import yaml
+
+    from game.fourteenth.phases import parse_phases
+    from game.settings import Settings
+
+    data = yaml.safe_load(
+        (_CAMPAIGNS / "1968_Yankee_Station.yaml").read_text(encoding="utf-8")
+    )
+    arc = {p.key: p for p in parse_phases(data.get("phases"))}
+    # Escalation tax: the two escalations cost will (Linebacker II the steeper), and
+    # the opening/halt de-escalations do not.
+    assert arc["rolling_thunder"].blue_will_on_entry == 0.0
+    assert arc["bombing_halt"].blue_will_on_entry == 0.0
+    assert arc["linebacker"].blue_will_on_entry < 0.0
+    assert (
+        arc["linebacker_ii"].blue_will_on_entry < arc["linebacker"].blue_will_on_entry
+    )
+    # Richer opening: the trail runs thicker under Rolling Thunder.
+    assert arc["rolling_thunder"].trail_surge > 1.0
+    # The commitment ceiling is preseeded on (needs the will economy, also on).
+    settings = Settings()
+    settings.__dict__.update(Settings.deserialize_state_dict(data.get("settings", {})))
+    assert settings.vietnam_commitment_ceiling is True
+    assert settings.vietnam_political_will is True

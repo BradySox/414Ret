@@ -3785,3 +3785,39 @@ off restores the stock per-turn rotation + memoryless weather exactly. Requires 
   continuous clock only runs under day-and-night missions.
 - **Interval is fixed-band, not a setting.** The 3–7 h advance is a module constant; exposing it as a tunable
   is a trivial follow-up if the pacing wants tuning after an in-game pass.
+
+## §48 — Commitment ceiling (will-coupled war budget)
+
+The **model-3 capstone of the 2026-07-04 "morale ratchet" will redo** (design note
+`docs/dev/design/414th-vietnam-political-will-roe-notes.md` §8). The political-will economy (§40 / the
+Vietnam campaign layer) decides the war at the negotiating table, but until a side actually breaks, a
+flagging war had no *material* cost — you kept the same income whether the home front was behind you or
+not. Historically it was the opposite: in Victory Games' *Vietnam 1965-1975*, **US commitment can never
+exceed morale** — as morale falls, forces are drawn down and the war is taken out of your hands.
+
+This couples the will economy to the BLUE war budget. As **Political Will** falls below
+`CEILING_FULL_WILL` (60), `Coalition.end_turn`'s income is scaled down linearly toward
+`CEILING_FLOOR_MULT` (0.5× at will 0) — Congress trims the war budget, so a losing war is starved of
+replacements. Full funding while will stays high; the cut only bites once patience is already low, and
+the floor keeps *some* budget flowing (it pressures, it never hard-locks procurement). BLUE only
+(Washington's appropriation; the insurgent-style regime is not coupled — the VG asymmetry).
+
+**Files.** `game/fourteenth/commitment_ceiling.py` (`will_budget_multiplier` + `apply_commitment_ceiling`),
+hooked at the one BLUE income site (`game/coalition.py` `Coalition.end_turn`). Setting
+`vietnam_commitment_ceiling` (Vietnam Ops page, "Campaign" section, default OFF, preseeded ON in
+`1968_Yankee_Station.yaml`); gated **also** by `vietnam_political_will` (no will economy ⇒ nothing to
+couple to). Off with either toggle ⇒ income is returned untouched, so non-Vietnam campaigns and
+pre-feature saves are unaffected. Messages the player on the turn the budget is cut, so the draw-down is
+legible.
+
+**Companion pieces of the same redo (not §48, documented in the design note §8):** the *escalation tax*
+(`CampaignPhase.blue_will_on_entry` — widening the war costs will even when sanctioned; charged once per
+phase entry via `phases.consume_phase_escalation_cost`, surfaced in the will ledger from
+`political_will._blue_moves`), the ratchet re-weighting of the whole `will:` block, and the offline
+`tools/will_pacing_model.py` projector used to derive the numbers.
+
+**Tests.** `tests/fourteenth/test_commitment_ceiling.py` (multiplier shape + BLUE-only/both-toggle gating +
+message), the escalation-tax tests in `tests/fourteenth/test_phases.py` /
+`tests/fourteenth/test_political_will.py`, the pacing-tool guard `tests/fourteenth/test_will_pacing_model.py`,
+and the campaign guards in `tests/test_vietnam_content.py`. In-game passes: checklist **M1** (will pacing)
++ **M9** (commitment ceiling draw-down). Needs an in-game pass.

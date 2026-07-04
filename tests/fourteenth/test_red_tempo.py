@@ -323,6 +323,9 @@ def test_vietnam_arcs_author_the_red_tempo(campaign: str) -> None:
     assert halt.trail_surge == 2.0
     assert halt.resolve_regen == 1.5
     assert by_key["linebacker"].ground_offensive_turns == 3
-    # Rolling Thunder and Linebacker II stay baseline tempo.
-    assert by_key["rolling_thunder"].trail_surge == 1.0
+    # Rolling Thunder: Yankee Station thickens the opening trail (the "richer opening"
+    # half of the 2026-07-04 will redo -- 15-truck convoys, still one road); Velvet
+    # Thunder keeps the baseline. Linebacker II stays baseline tempo either way.
+    expected_rt_surge = 1.5 if campaign == "1968_Yankee_Station.yaml" else 1.0
+    assert by_key["rolling_thunder"].trail_surge == expected_rt_surge
     assert by_key["linebacker_ii"].ground_offensive_turns == 0

@@ -1122,6 +1122,28 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Campaign clock & weather, **default ON**). Tests `tests/weather/test_continuous_campaign_clock.py`.
     (`game/weather/conditions.py`, `game/game.py`, `game/settings/settings.py`; features doc §47, checklist T1
     — needs an in-game pass.)
+48. **Commitment ceiling (will-coupled war budget)** — the capstone of the **2026-07-04 "morale ratchet"
+    will-economy redo** on 1968 Yankee Station (design note `414th-vietnam-political-will-roe-notes.md` §8),
+    which rebuilt the whole political-will layer around the canonical *Vietnam 1965-1975* wargame model: BLUE
+    Political Will is a near-one-way **ratchet** (war weariness + a per-turn **POW running-sore** — the one lever
+    the GCI-ambush enemy has to pressure Washington — with restores too small to grind a win, so *body count is a
+    trap*); RED Regime Resolve is **broadened past the trail** (`red_ground_unit_lost` up so CAS/BAI/**Arc Light**
+    all bleed it, the campaign-ending convoy weight trimmed 1.5→1.0); an **escalation tax**
+    (`CampaignPhase.blue_will_on_entry`, charged once per phase entry via `phases.consume_phase_escalation_cost`
+    into the will ledger — Linebacker −3, the Linebacker II "Christmas bombing" −5) makes *widening the war* cost
+    Washington will even when sanctioned (an elite player who folds Hanoi early never pays it); and a **richer
+    opening** (`red_tempo.trail_surge 1.5` under Rolling Thunder — 15-truck convoys from turn 1). This feature
+    itself is the **commitment ceiling**: as BLUE will falls below 60, `Coalition.end_turn` scales the BLUE war
+    budget down linearly toward a 0.5× floor (`game/fourteenth/commitment_ceiling.py` `will_budget_multiplier` /
+    `apply_commitment_ceiling`) — a losing war is starved of replacements (the VG "commitment can't exceed
+    morale"), gentle by design (full funding above 60, the floor never zeroes procurement), BLUE-only, gated
+    `vietnam_commitment_ceiling` (default OFF, preseeded ON) **and** `vietnam_political_will`. The numbers were
+    derived offline with `tools/will_pacing_model.py` (a standalone projector marching both meters over the arc
+    from play archetypes; its default weights are drift-guarded against the real `WillWeights`): elite folds
+    Hanoi ~turn 8, average rides to a Linebacker II negotiated win ~turn 16, a floundering war loses Washington
+    ~turn 11. (`game/fourteenth/commitment_ceiling.py`, `game/coalition.py`, `game/fourteenth/phases.py`,
+    `game/fourteenth/political_will.py`, `game/settings/settings.py`, `resources/campaigns/1968_Yankee_Station.yaml`;
+    features doc §48, checklist M1 + M9 — needs an in-game pass.)
 
 ---
 

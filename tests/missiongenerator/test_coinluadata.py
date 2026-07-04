@@ -86,7 +86,9 @@ def test_emits_hvt_convoy_and_mobile_vbied() -> None:
     assert hvt_kv["x"] == "100.0" and hvt_kv["y"] == "200.0"
 
     vbieds = coin.get_item("vbieds")
-    assert vbieds is not None
+    # LuaData (the array collection) carries the emitted objects; get_item is typed
+    # to the LuaItem base, so narrow to reach .objects.
+    assert isinstance(vbieds, LuaData)
     # Exactly one mobile VBIED -- the static IED is not a mover, so it isn't emitted.
     assert len(vbieds.objects) == 1
     v = _kv(vbieds.objects[0])

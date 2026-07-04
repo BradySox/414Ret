@@ -40,8 +40,8 @@ FREE_FIRE_LINE = Rgba(60, 205, 95, 220)
 FREE_FIRE_FILL = Rgba(60, 205, 95, 40)
 # Support-package orbits (tankers + AWACS): a cyan dashed racetrack + a label so a
 # pilot can find their tanker / AEW&C on the F10 map in flight (the anti-DTC).
-SUPPORT_ORBIT_LINE = Rgba(0, 190, 255, 220)
-SUPPORT_ORBIT_FILL = Rgba(0, 190, 255, 25)
+SUPPORT_ORBIT_LINE = Rgba(0, 200, 255, 255)
+SUPPORT_ORBIT_FILL = Rgba(0, 200, 255, 55)
 SUPPORT_LABEL_TEXT = Rgba(0, 190, 255, 255)
 SUPPORT_LABEL_FILL = Rgba(0, 30, 45, 150)
 #: Racetrack half-width drawn for a support orbit (~2 NM) -- purely a visual cue.
@@ -246,7 +246,7 @@ class DrawingsGenerator:
                 shape = self.player_layer.add_circle(
                     start,
                     SUPPORT_ORBIT_RADIUS_M,
-                    line_thickness=3,
+                    line_thickness=6,
                     color=SUPPORT_ORBIT_LINE,
                     fill=SUPPORT_ORBIT_FILL,
                     line_style=LineStyle.Dash,
@@ -256,7 +256,7 @@ class DrawingsGenerator:
                     start,
                     end,
                     SUPPORT_ORBIT_RADIUS_M,
-                    line_thickness=3,
+                    line_thickness=6,
                     color=SUPPORT_ORBIT_LINE,
                     fill=SUPPORT_ORBIT_FILL,
                     line_style=LineStyle.Dash,

@@ -12,6 +12,8 @@ controller stub.
 
 from __future__ import annotations
 
+from typing import Any
+
 from tests.lua.harness import DcsPluginHarness
 
 COIN_PLUGIN = "resources/plugins/coin/coin-config.lua"
@@ -38,7 +40,7 @@ mist = {
 """
 
 
-def _ground_group(name: str) -> dict:
+def _ground_group(name: str) -> dict[str, Any]:
     return {
         "name": name,
         "side": 1,  # RED
@@ -53,7 +55,7 @@ def _harness_with_mist() -> DcsPluginHarness:
     return h
 
 
-def _routes(h: DcsPluginHarness) -> list[dict]:
+def _routes(h: DcsPluginHarness) -> list[dict[str, Any]]:
     return h.to_python(h.lua.globals()._coinRoutes) or []
 
 

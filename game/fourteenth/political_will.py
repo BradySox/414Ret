@@ -565,6 +565,18 @@ def _blue_moves(
             "turn. Washington takes the heat -- political will pays the bill.",
         )
 
+    # Escalation tax (model 3): entering a more-permissive phase -- resuming or
+    # intensifying the bombing (Linebacker, the Linebacker II Christmas bombing) --
+    # costs Washington will even when the strikes are sanctioned, per the VG
+    # *Vietnam 1965-1975* morale model (unrestrained bombing itself erodes morale).
+    # A one-time labeled move; the latch persists so it charges once per entry.
+    from game.fourteenth.phases import consume_phase_escalation_cost
+
+    escalation = consume_phase_escalation_cost(game)
+    if escalation:
+        phase_name, cost = escalation
+        moves.append((f"escalation: {phase_name}", cost))
+
     # Claimed enemy air kills play well at home (claimed, per the recon-fog framing).
     claimed = debriefing.loss_counts(Player.RED).aircraft
     if claimed:

@@ -233,6 +233,15 @@ class CampaignPhase:
     trail_surge: float = 1.0
     ground_offensive_turns: int = 0
     resolve_regen: float = 0.0
+    #: The home-front political cost (BLUE political will) of *entering* this phase,
+    #: charged once on the turn the phase becomes active (authored arcs only). The
+    #: model-3 "escalation tax": widening the war -- resuming/intensifying the
+    #: bombing (Linebacker, the Linebacker II "Christmas bombing") -- costs
+    #: Washington will even when the strikes are sanctioned, per the VG *Vietnam
+    #: 1965-1975* morale model where "unrestrained bombing" itself erodes morale.
+    #: Negative = a cost (the usual authoring); a de-escalation phase leaves it 0.
+    #: Consumed once per entry by :func:`consume_phase_escalation_cost`.
+    blue_will_on_entry: float = 0.0
 
 
 #: PlanNextAction's offensive tail in its stock order. The fixed reactive prefix
@@ -608,6 +617,30 @@ def active_phase(game: "Game") -> Optional[CampaignPhase]:
     return PHASES.get(key)
 
 
+def consume_phase_escalation_cost(game: "Game") -> Optional[tuple[str, float]]:
+    """The one-time BLUE-will cost of the active phase's entry, or None.
+
+    The model-3 escalation tax (``CampaignPhase.blue_will_on_entry``): the first
+    time an authored phase with a nonzero entry cost is active, return its
+    ``(name, cost)`` and latch it so it never charges again while the war stays in
+    that phase. Consumed from ``political_will._blue_moves`` (which already carries
+    the other consume-once feeds -- reinfiltration flips, IED detonations, HVT
+    kills), so the charge lands in the will ledger as a labeled move.
+
+    The latch (``game.will_escalation_charged_phase``) **persists** on the game --
+    unlike the transient ``red_tempo_announced_phase`` message flag, a will charge
+    must survive a reload or it would double-charge. getattr-guarded for pre-feature
+    saves (which resolve to "nothing charged yet").
+    """
+    phase = active_phase(game)
+    if phase is None or not phase.authored or not phase.blue_will_on_entry:
+        return None
+    if getattr(game, "will_escalation_charged_phase", None) == phase.key:
+        return None
+    game.will_escalation_charged_phase = phase.key
+    return phase.name, phase.blue_will_on_entry
+
+
 # --- the authored tier (P2) + the ROE escalation layer (W4) --------------------------
 
 #: Authored-arc cache keyed by campaign name. Definitions live in the campaign
@@ -778,6 +811,7 @@ def parse_phases(raw: object) -> tuple[CampaignPhase, ...]:
                 trail_surge=float(tempo.get("trail_surge", 1.0)),
                 ground_offensive_turns=int(tempo.get("ground_offensive", 0)),
                 resolve_regen=float(tempo.get("resolve_regen", 0.0)),
+                blue_will_on_entry=float(entry.get("blue_will_on_entry", 0.0)),
             )
         )
     return tuple(phases)

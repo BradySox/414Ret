@@ -977,3 +977,67 @@ def test_zone_detail_names_locks_and_the_lift(authored_game: Any) -> None:
     assert "Eases at Linebacker (~turn 6)" in detail
     # Tier-0 phases carry no authored ROE: no zone, no detail.
     assert zone_detail(_duck_game(on=True, current="interdiction", entered=0)) == ""
+
+
+# ---- model-3 escalation tax (blue_will_on_entry) -------------------------------------
+
+
+def test_parse_phases_reads_blue_will_on_entry() -> None:
+    arc = parse_phases(
+        [
+            {"key": "rolling_thunder", "name": "RT"},
+            {"key": "linebacker", "name": "LB", "blue_will_on_entry": -3},
+        ]
+    )
+    assert arc[0].blue_will_on_entry == 0.0  # unset defaults to no cost
+    assert arc[1].blue_will_on_entry == -3.0
+
+
+def _escalation_arc() -> tuple[CampaignPhase, ...]:
+    return parse_phases(
+        [
+            {"key": "rolling_thunder", "name": "Rolling Thunder"},
+            {"key": "linebacker", "name": "Linebacker", "blue_will_on_entry": -3},
+            {"key": "linebacker_ii", "name": "Linebacker II", "blue_will_on_entry": -5},
+        ]
+    )
+
+
+def test_escalation_cost_charges_once_per_phase_entry() -> None:
+    from game.fourteenth import phases
+
+    phases._ARC_CACHE["Escalation Test"] = _escalation_arc()
+    try:
+        game = _duck_game(
+            on=True, current="linebacker", campaign_name="Escalation Test"
+        )
+        # First time Linebacker is active: charge the -3 entry cost...
+        assert phases.consume_phase_escalation_cost(game) == ("Linebacker", -3.0)
+        # ...and never again while the war stays in that phase (the persisted latch).
+        assert phases.consume_phase_escalation_cost(game) is None
+        assert game.will_escalation_charged_phase == "linebacker"
+        # Advancing to Linebacker II charges its own, steeper cost, once.
+        game.current_phase_key = "linebacker_ii"
+        assert phases.consume_phase_escalation_cost(game) == ("Linebacker II", -5.0)
+        assert phases.consume_phase_escalation_cost(game) is None
+    finally:
+        del phases._ARC_CACHE["Escalation Test"]
+
+
+def test_escalation_cost_none_for_start_phase_and_when_off() -> None:
+    from game.fourteenth import phases
+
+    phases._ARC_CACHE["Escalation Test"] = _escalation_arc()
+    try:
+        # The opening phase has no entry cost -> None (no free charge, no latch).
+        game = _duck_game(
+            on=True, current="rolling_thunder", campaign_name="Escalation Test"
+        )
+        assert phases.consume_phase_escalation_cost(game) is None
+        # Feature off -> active_phase is None -> no charge even in a costed phase.
+        off = _duck_game(
+            on=False, current="linebacker", campaign_name="Escalation Test"
+        )
+        assert phases.consume_phase_escalation_cost(off) is None
+    finally:
+        del phases._ARC_CACHE["Escalation Test"]

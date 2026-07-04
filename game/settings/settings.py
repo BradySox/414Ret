@@ -490,6 +490,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "vietnam_political_will",
                     "vietnam_static_front",
+                    "vietnam_commitment_ceiling",
                 ],
             ),
             (
@@ -2212,6 +2213,20 @@ class Settings:
             "attrition in place, not maneuver. Deliberate Air Assault operations "
             "still capture bases (the one territorial lever), and attrition still "
             "pays out through Political Will, where the war is decided."
+        ),
+        default=False,
+    )
+    vietnam_commitment_ceiling: bool = boolean_option(
+        "Commitment ceiling (will-coupled war budget)",
+        VIETNAM_OPS_PAGE,
+        "Campaign",
+        detail=(
+            "As your Political Will falls, Congress trims the war budget -- your "
+            "income is scaled down toward a floor as the home front turns, so a "
+            "flagging war is starved of replacements (the war is taken away from "
+            "you, not just lost at the table). Full funding while will stays high; "
+            "the cut only bites once patience is already low. Needs Political will "
+            "tracking on; affects your coalition only."
         ),
         default=False,
     )

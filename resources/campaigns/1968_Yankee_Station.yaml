@@ -75,6 +75,10 @@ settings:
   vietnam_snake_and_nape: true
   vietnam_political_will: true
   vietnam_static_front: true
+  # As Washington's patience falls, Congress trims the war budget (the will economy
+  # gets a material bite, not just a negotiating-table one -- the "war taken away"
+  # dynamic). Needs vietnam_political_will; BLUE only. See the will: block below.
+  vietnam_commitment_ceiling: true
   restrict_weapons_by_date: true
   # Compressed theater: tuck AEW&C/tanker orbits close to the front. The 80/70 NM
   # defaults stand off ~150 km on a small map, sprawling support to the map edge;
@@ -546,29 +550,36 @@ supply_routes:
       - [-197089, 521599]
       - [-196710, 516452]
 
-# Political-will economy tuning (the "era will & political pressure" pass). The Vietnam
-# defaults left BOTH meters passively RISING (blue +0.5 / red +0.75 per turn) with no
-# time cost, so the narrated race -- "break Hanoi before Washington's patience breaks" --
-# had no clock: a careful player was never on a timer and effectively could not lose by
-# will, and the advance_when will-thresholds (75/65/50) almost never fired. This block
-# gives Washington a real clock and makes the trail strangulation bite through Hanoi's
-# stubbornness:
-#   * blue_passive_regen -0.6 -- WAR WEARINESS. The home front tires with the war's
-#     DURATION, not just its casualty count (the real Vietnam dynamic). A winning air
-#     war offsets it (claimed MiG kills +0.25 each); a floundering one compounds it. It
-#     also drifts blue will down through the advance_when thresholds, so the will-coupled
-#     escalation ("the gloves come off faster the more your will bleeds") actually works.
-#   * red_passive_regen 0.4 -- Hanoi is stubborn but no longer near-unbreakable; sustained
-#     trail interdiction (convoy 1.5/unit) now overcomes the regen. The bombing-halt
-#     resolve_regen (+1.5, additive) still makes "wait it out" a red benefit -- but now it
-#     costs Washington -0.6/turn to wait, so the halt is a genuine dilemma, not free.
-# Everything else keeps the Vietnam defaults (labels stay Washington/Hanoi). Per-campaign
-# so Velvet Thunder / Red Flag 81-2 are untouched. Tune here; verify pacing over ~16-20
-# turns (Linebacker II opens turn 16).
+# Political-will economy -- the holistic "morale ratchet" redo (2026-07-04, model 3).
+# The first pass only overrode the two passive-regen terms and left the other 17 feeds on
+# their un-tuned shipped defaults, which made BLUE a flat clock and RED a one-note
+# convoy-kill step function. This block rebuilds the whole economy around the canonical
+# Vietnam wargame model (Victory Games "Vietnam 1965-1975"): US morale is a near-one-way
+# RATCHET -- it erodes from duration, losses, POWs and escalation, and the only things
+# that push it back up (claimed kills, rescues) are deliberately too small to grind a win.
+# You must break Hanoi, not pad your own meter (body count is a trap). RED resolve is
+# broadened past the trail so the WHOLE air-to-ground campaign (CAS/BAI + the Arc Light
+# B-52 carpets, which flow through ground attrition) bleeds it, not just Armed Recon.
+# Derived with tools/will_pacing_model.py: elite trail+ground strangulation folds Hanoi
+# ~turn 8-10; average rides the full arc to a Linebacker II negotiated win ~turn 16 (BLUE
+# surviving with margin); a floundering war loses Washington ~turn 11-13. Composes with
+# the escalation tax (blue_will_on_entry, below) and the commitment ceiling
+# (vietnam_commitment_ceiling, above). Labels stay Washington/Hanoi. Per-campaign, so
+# Velvet Thunder / Red Flag 81-2 keep the defaults. Needs the in-game M1 pacing pass --
+# the model is play-archetype driven; real losses vary.
 will:
   weights:
-    blue_passive_regen: -0.6
-    red_passive_regen: 0.4
+    # BLUE (Washington's patience) -- the ratchet. Declines steadily; restores stay small.
+    blue_passive_regen: -0.4       # war weariness: patience erodes with the war's duration
+    blue_pow_taken: 2.5            # an aircrew paraded through Hanoi is a headline
+    blue_pow_held_per_turn: 0.6    # the running sore: every held POW taxes will each turn
+    blue_base_lost: 4.0            # the Linebacker ground offensive threatening the DMZ
+    blue_enemy_air_claimed: 0.3    # a winning air war offsets weariness -- but only a little
+    blue_ship_lost: 5.0            # coastal war: a destroyer off the gun line is front-page
+    # RED (Hanoi's resolve) -- broadened past the trail, still hardest to crack on the trail.
+    red_passive_regen: 0.3         # stubborn but crackable (was near-unbreakable)
+    red_convoy_unit_lost: 1.0      # the artery, still the sharpest single lever (was 1.5)
+    red_ground_unit_lost: 0.35     # CAS/BAI/Arc Light attrition now pressures resolve too
 
 # Vietnam campaign layer W4: the authored ROE escalation arc (campaign phases P2,
 # spec docs/dev/design/414th-vietnam-political-will-roe-notes.md section 3). Rolling
@@ -581,6 +592,12 @@ will:
 # flushed across the border stay safe, exactly like the real war.
 phases:
   - key: rolling_thunder
+    # Richer opening: the trail runs busy from turn 1 (a 1.5x surge = the two baseline
+    # convoys carry ~15 units each, not 10 -- more Armed Recon targets while the deep
+    # war is still locked). Below the 2.0 threshold, so it does NOT add a third road
+    # (the Bombing Halt's 2.0 does that); it just thickens the opening flow.
+    red_tempo:
+      trail_surge: 1.5
     name: Rolling Thunder
     narrative: >-
       Gradual pressure under Washington's thumb: interdict the flow south, but the
@@ -641,6 +658,11 @@ phases:
   - key: linebacker
     red_tempo:
       ground_offensive: 3
+    # Escalation tax (model 3): resuming the deep bombing after the halt costs Washington
+    # will up front, even though the strikes are now sanctioned -- widening the war frays
+    # the home front (the VG "unrestrained bombing erodes morale" dynamic). Charged once
+    # on entry. An elite player who has already folded Hanoi never pays it.
+    blue_will_on_entry: -3
     name: Linebacker
     narrative: >-
       The talks stalled and the gloves come part-way off: Haiphong, the airfields and
@@ -663,6 +685,10 @@ phases:
       blue_will_below: 50
       enemy_iads_below: 0.4
   - key: linebacker_ii
+    # The steepest escalation tax: the Linebacker II "Christmas bombing" drew the loudest
+    # domestic and international outcry of the war. Maximum military effort, maximum
+    # political cost at home -- if the war has dragged this far, patience is expensive.
+    blue_will_on_entry: -5
     name: Linebacker II
     narrative: >-
       Maximum effort. Hanoi releases -- break the regime's resolve at the negotiating

@@ -220,7 +220,13 @@ class Coalition:
         `Game.finish_turn`.
         """
         self.air_wing.end_turn()
-        self.budget += Income(self.game, self.player).total
+        # Commitment ceiling: as BLUE Political Will falls, Congress trims the war
+        # budget (a no-op unless vietnam_commitment_ceiling + the will economy are on
+        # and this is BLUE). The war is taken away as the home front turns.
+        from game.fourteenth.commitment_ceiling import apply_commitment_ceiling
+
+        income = Income(self.game, self.player).total
+        self.budget += apply_commitment_ceiling(self.game, self.player, income)
 
         # Need to recompute before transfers and deliveries to account for captures.
         # This happens in in initialize_turn as well, because cheating doesn't advance a

@@ -310,10 +310,17 @@ and selected later upstream fixes.
 - The **Vietnam campaign layer** changes *why* you fly, not just how it feels. **Political will** tracks each
   side's capital for the war: your **Political Will** (Washington's patience — drained by airframe losses, with
   a downed B-52 a national event; by aviators sitting as POWs in Hanoi; by lost ground — and, on 1968 Yankee
-  Station, by the **war's sheer duration**: Washington's patience erodes turn over turn, offset when you win
-  the air battle, so time is genuinely against you) against the enemy's
+  Station, by the **war's sheer duration**: Washington's patience is a one-way **ratchet** that erodes turn
+  over turn, and the wins that push it back up (claimed MiGs, rescued crews) are deliberately too small to
+  offset the drain — so **body count is a trap** and time is genuinely against you) against the enemy's
   **Regime Resolve** (Hanoi barely registers airframe losses — it drains from **trail-logistics strangulation**
-  and ground attrition). The war can now **end at the negotiating table**: break Hanoi's resolve before your
+  and the whole air-to-ground campaign: CAS, armed recon, and the **Arc Light B-52 carpets** all bleed it).
+  Two things sharpen the squeeze on Yankee Station: **escalating the war costs you at home even when the
+  strikes are sanctioned** — resuming the deep bombing at Linebacker, and the Linebacker II "Christmas
+  bombing," each dent Washington's patience up front (an early, decisive campaign never pays it) — and a
+  **commitment ceiling**: as your will falls, Congress **trims the war budget**, starving a losing war of
+  replacements, so the war is quite literally taken out of your hands rather than merely lost at the table.
+  The war can now **end at the negotiating table**: break Hanoi's resolve before your
   will runs out and they agree to terms — you never had to take a base; run dry first and Washington orders the
   withdrawal, whatever the map says. And when Hanoi answers your escalation — surging the trail during a bombing
   halt, opening a Tet/Easter ground offensive — you get a **"Hanoi's response"** briefing so the enemy's plan is

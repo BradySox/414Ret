@@ -18,6 +18,12 @@ groups:
         - 1
       unit_types:
         - p-19 s-125 sr
+    - name: EW Radar
+      optional: true
+      unit_count:
+        - 1
+      unit_types:
+        - P14_SR
     - name: Launcher
       unit_count:
         - 8

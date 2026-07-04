@@ -87,8 +87,51 @@ def apply_red_tempo(game: "Game") -> None:
     here -- ``ensure_enemy_trail_convoy`` reads :func:`trail_surge_multiplier`
     itself at finish_turn.
     """
+    announce_red_tempo(game)
     _apply_ground_offensive(game)
     _apply_resolve_regen(game)
+
+
+def _red_tempo_response_text(phase: "CampaignPhase") -> Optional[str]:
+    """Hanoi's legible counter-move for a phase's ``red_tempo`` block, or None.
+
+    Blue gets a fully-surfaced ROE arc; this gives red the same courtesy -- the
+    player *sees* Hanoi answer the escalation instead of only feeling the levers.
+    Derived from the levers present, so it works for every authored phase with a
+    ``red_tempo:`` block without a separate authored string.
+    """
+    parts: list[str] = []
+    if phase.ground_offensive_turns > 0:
+        parts.append(
+            f"a general ground offensive presses every front for "
+            f"{phase.ground_offensive_turns} turns (Tet/Easter)"
+        )
+    if phase.trail_surge >= 2.0:
+        parts.append("the Ho Chi Minh Trail runs at surge capacity")
+    if phase.resolve_regen > 0:
+        parts.append("the regime's resolve steadies while the bombs are held")
+    if not parts:
+        return None
+    return "Hanoi answers: " + "; ".join(parts) + "."
+
+
+def announce_red_tempo(game: "Game") -> None:
+    """Message the player once when an authored phase's red-tempo response begins.
+
+    Fires on the *first* turn an authored phase with a ``red_tempo`` block is
+    active (keyed on the phase, not the turn, so it survives re-inits and is
+    robust to transition timing). Transient guard, never pickled.
+    """
+    phase = _active_authored_phase(game)
+    if phase is None:
+        return
+    text = _red_tempo_response_text(phase)
+    if text is None:
+        return
+    if getattr(game, "red_tempo_announced_phase", None) == phase.key:
+        return
+    game.red_tempo_announced_phase = phase.key
+    game.message("Hanoi's response", text)
 
 
 def _apply_ground_offensive(game: "Game") -> None:

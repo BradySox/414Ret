@@ -137,6 +137,9 @@ class Game:
         # W6 red tempo: the last turn resolve-regen was applied (idempotence
         # guard for the multiple-init-per-turn cases).
         self.red_tempo_regen_turn: Optional[int] = None
+        # Red-tempo legibility: the last authored phase whose "Hanoi's response"
+        # was announced, so the message fires once per phase (transient guard).
+        self.red_tempo_announced_phase: Optional[str] = None
         # Political-will attribution ledger (W1 legibility): one entry per flown
         # turn saying WHY the will moved (per-feed components), appended by
         # update_political_will and capped there. Empty outside Vietnam campaigns.
@@ -222,6 +225,7 @@ class Game:
         state.setdefault("phase_status_line", None)
         state.setdefault("phase_baseline", None)
         state.setdefault("red_tempo_regen_turn", None)
+        state.setdefault("red_tempo_announced_phase", None)
         state.setdefault("will_ledger", [])
         state.setdefault("coin_state", {})
         # will_history (a briefly-shipped bespoke per-turn series) was folded into

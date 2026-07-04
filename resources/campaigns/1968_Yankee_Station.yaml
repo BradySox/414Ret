@@ -546,6 +546,30 @@ supply_routes:
       - [-197089, 521599]
       - [-196710, 516452]
 
+# Political-will economy tuning (the "era will & political pressure" pass). The Vietnam
+# defaults left BOTH meters passively RISING (blue +0.5 / red +0.75 per turn) with no
+# time cost, so the narrated race -- "break Hanoi before Washington's patience breaks" --
+# had no clock: a careful player was never on a timer and effectively could not lose by
+# will, and the advance_when will-thresholds (75/65/50) almost never fired. This block
+# gives Washington a real clock and makes the trail strangulation bite through Hanoi's
+# stubbornness:
+#   * blue_passive_regen -0.6 -- WAR WEARINESS. The home front tires with the war's
+#     DURATION, not just its casualty count (the real Vietnam dynamic). A winning air
+#     war offsets it (claimed MiG kills +0.25 each); a floundering one compounds it. It
+#     also drifts blue will down through the advance_when thresholds, so the will-coupled
+#     escalation ("the gloves come off faster the more your will bleeds") actually works.
+#   * red_passive_regen 0.4 -- Hanoi is stubborn but no longer near-unbreakable; sustained
+#     trail interdiction (convoy 1.5/unit) now overcomes the regen. The bombing-halt
+#     resolve_regen (+1.5, additive) still makes "wait it out" a red benefit -- but now it
+#     costs Washington -0.6/turn to wait, so the halt is a genuine dilemma, not free.
+# Everything else keeps the Vietnam defaults (labels stay Washington/Hanoi). Per-campaign
+# so Velvet Thunder / Red Flag 81-2 are untouched. Tune here; verify pacing over ~16-20
+# turns (Linebacker II opens turn 16).
+will:
+  weights:
+    blue_passive_regen: -0.6
+    red_passive_regen: 0.4
+
 # Vietnam campaign layer W4: the authored ROE escalation arc (campaign phases P2,
 # spec docs/dev/design/414th-vietnam-political-will-roe-notes.md section 3). Rolling
 # Thunder's restrictions -> the bombing halt -> Linebacker -> Linebacker II. Zones

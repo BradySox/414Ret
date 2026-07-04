@@ -231,6 +231,34 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         return best, bestd
     end
 
+    -- Nearest friendly field to a coordinate, resolved to a MOOSE AIRBASE *object* that
+    -- the AI rescue can home to (SetHomebase / GetZone need the object, not a point).
+    -- Retribution passes the control-point *display* name for the delivery field (e.g.
+    -- "FOB Khe Sanh"); that matches a real airfield's DCS name but NOT a generated FARP,
+    -- whose DCS object is "<CP> FARP 0" -- so a FARP-based King's delivery lookup always
+    -- missed. Fall back to the closest field MOOSE can actually resolve (delivering to ANY
+    -- friendly field is the feature's contract anyway).
+    local function nearestFriendlyAirbaseObject(side, coord)
+        local okc, abs = pcall(coalition.getAirbases, side)
+        if not okc or not abs then return nil end
+        local cv = coord:GetVec3()
+        local best, bestd = nil, nil
+        for _, ab in pairs(abs) do
+            local okn, nm = pcall(function() return ab:getName() end)
+            if okn and nm then
+                local mab = AIRBASE:FindByName(nm)
+                if mab then
+                    local okp, p = pcall(function() return ab:getPoint() end)
+                    if okp and p then
+                        local d = (p.x - cv.x) ^ 2 + (p.z - cv.z) ^ 2
+                        if not bestd or d < bestd then bestd = d; best = mab end
+                    end
+                end
+            end
+        end
+        return best
+    end
+
     -- Spawn a downed-pilot group cloned from the coalition's late-activation template.
     local function spawnSurvivorGroup(cfg, coord, label)
         spawnIndex = spawnIndex + 1
@@ -394,7 +422,14 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             if not (entry.group and entry.group:IsAlive()) then return end
             local farp = AIRBASE:FindByName(cfg.farp)
             if not farp then
-                env.warning("combatsar: AI dispatch - FARP '" .. tostring(cfg.farp) .. "' not found")
+                -- cfg.farp is the CP display name; a generated FARP's DCS object is named
+                -- "<CP> FARP 0", so this misses for a FARP-based King. Deliver to the
+                -- nearest resolvable friendly field to the survivor instead of giving up.
+                farp = nearestFriendlyAirbaseObject(entry.side, entry.group:GetCoordinate())
+            end
+            if not farp then
+                env.warning("combatsar: AI dispatch - no friendly delivery field found (configured '"
+                    .. tostring(cfg.farp) .. "')")
                 return
             end
             local pickupzone = ZONE_GROUP:New(entry.groupName, entry.group, 300)

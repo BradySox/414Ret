@@ -1793,6 +1793,16 @@ the squadron).
   ledger's survivor as cargo and deliver it to the FARP, **crediting the real unit** on unload
   (`OnAfterUnloaded` → `combat_sar_rescues`; no anonymous clone — identity lives in the ledger
   entry, so AI rescues score the spare-pilot credit too).
+- **Delivery-field resolution (2026-07-03, flown Yankee Station).** The delivery airbase is resolved
+  from `cfg.farp` via MOOSE `AIRBASE:FindByName`; Python passes the King's departure *control-point
+  display name* (`rescue_flights[0].departure.airfield_name`), which matches a real airfield's DCS
+  name but **not** a generated FARP — whose DCS object is `"<CP> FARP 0"`
+  (`tgogenerator.create_helipad`). So a **FARP-based King** (the Vietnam FOB case) logged
+  `combatsar: AI dispatch - FARP '<CP>' not found` on every ejection and delivered nothing. Fixed:
+  `dispatchAIRescue` now falls back to `nearestFriendlyAirbaseObject(entry.side, survivorCoord)` —
+  the closest field MOOSE *can* resolve — whenever the configured name misses; airbase-based Kings
+  keep their exact departure field, only the previously-dead FARP path changes. Matches the "deliver
+  to ANY friendly field" contract. Needs a re-fly to confirm delivery completes (G21/G23).
 - **Commandeer-first dispatch (2026-06-29, G21 fix).** `dispatchAIRescue` used to **always** clone a
   fresh helo (`SPAWN:NewWithAlias("CombatSAR Rescue N", …)`) from the FARP, so every AI ejection
   piled a new helo on top of the rescue flight already orbiting the FLOT (Tacview-confirmed: 8+

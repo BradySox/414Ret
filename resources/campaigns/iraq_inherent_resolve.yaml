@@ -219,14 +219,50 @@ supply_routes:
       - [339469, -94071]
       - [343000, -125000]
       - [348018, -156505]
+  # --- The northern belt: the caliphate's held airfields chained red<->red, so the
+  # deep-belt fields (Erbil, Kirkuk, Sulaimaniyah) are reachable/capturable behind the
+  # two fronts. TODO(in-app pass): re-trace on the real road network via supply_route_geo.
+  # Mosul -> Erbil
+  - waypoints:
+      - [339469, -94071]
+      - [335000, -58000]
+      - [330838, -22360]
+  # Erbil -> Bashur (north)
+  - waypoints:
+      - [330838, -22360]
+      - [347000, -4000]
+      - [363380, 13140]
+  # Erbil -> Kirkuk (south down the belt)
+  - waypoints:
+      - [330838, -22360]
+      - [288000, -5000]
+      - [245434, 12825]
+  # Kirkuk -> K1 (adjacent)
+  - waypoints:
+      - [245434, 12825]
+      - [247800, 10100]
+      - [250080, 7392]
+  # Kirkuk -> Sulaimaniyah (east)
+  - waypoints:
+      - [245434, 12825]
+      - [250000, 57000]
+      - [255226, 100814]
+  # Kirkuk -> Al-Sahra (the Tikrit axis, southwest)
+  - waypoints:
+      - [245434, 12825]
+      - [200000, -24000]
+      - [157133, -61805]
 
-# The southern front starts partway up the Qayyarah West -> Hammam al-Alil axis, ISF
-# pressing north into the ring.
+# Two fronts start partway up their axes -- Qayyarah West -> Hammam al-Alil (the Mosul
+# ring) and Balad -> Al-Sahra (the Tikrit axis) -- ISF pressing north on both.
 control_point_strengths:
   Hammam al-Alil: 0.5
+  Al-Sahra Airport: 0.5
 
 squadrons:
-  # Qayyarah West -- the coalition ramp, the player fields (F/A-18, A-10, F-16)
+  # Qayyarah West -- the SOLE forward airhead now the northern belt is red: the player
+  # core (F/A-18, A-10, F-16) plus the Apaches and the air-assault helos working the
+  # Mosul ring.
   6:
     - primary: CAS
       secondary: air-to-ground
@@ -253,23 +289,6 @@ squadrons:
       aircraft:
         - AV-8B Harrier II Night Attack
       size: 4
-    - primary: Transport
-      secondary: any
-      aircraft:
-        - C-130J-30
-      size: 2
-  # Erbil -- eastern flank: the Iraqi Air Force + French Mirages + the Apaches
-  4:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Su-25 Frogfoot
-      size: 4
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mirage 2000C
-      size: 4
     - primary: CAS
       secondary: any
       aircraft:
@@ -280,7 +299,13 @@ squadrons:
       aircraft:
         - UH-60A
       size: 4
-  # Balad -- the CENTAF heavies + the tanker/AWACS bridge
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - C-130J-30
+      size: 2
+  # Balad -- the CENTAF heavies + the tanker/AWACS bridge, plus the Iraqi Air Force and
+  # French Mirages working the nearer Tikrit (Al-Sahra) front.
   8:
     - primary: Strike
       aircraft:
@@ -290,6 +315,16 @@ squadrons:
       secondary: air-to-ground
       aircraft:
         - F-15E Strike Eagle (Suite 4+)
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Su-25 Frogfoot
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Mirage 2000C
       size: 4
     - primary: Refueling
       aircraft:

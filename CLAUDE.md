@@ -81,10 +81,14 @@ file. This guide is the map; those are the territory.
   - `414th-inherent-resolve-campaign-notes.md` — **the Iraq / Mosul COIN campaign** (the Battle
     of Mosul 2016-17 on the DCS Iraq map; the 414th's **second COIN campaign**, sibling of Enduring
     Resolve on the same `coin.py` stack). New factions `CJTF-OIR 2016` (blue coalition) + `Islamic
-    State 2016` (red, cloned from Toyota Al Gaib with the crust trimmed to SA-6/8/9/13); Mosul = the
-    sole red airfield + 5 red Nineveh **FOB** strongholds (Hammam al-Alil / Bartella / Bashiqa /
-    Hamdaniya / Tal Afar); ONE southern front (Q-West → Hammam al-Alil), red-red ring/ratline west to
-    Tal Afar/Syria; the 3-phase Isolate → East Mosul → West Mosul/Old City arc with a permanent Mosul
+    State 2016` (red, cloned from Toyota Al Gaib with the crust trimmed to SA-6/8/9/13). RED holds the
+    **whole northern belt** (7 airfields — Mosul + Erbil + Kirkuk/K1 + Bashur + Sulaimaniyah + Al-Sahra —
+    the 2014 caliphate extent, revised up 2026-07-04 from the "tiny" Mosul-only first cut) + 5 red Nineveh
+    **FOB** strongholds (Hammam al-Alil / Bartella / Bashiqa / Hamdaniya / Tal Afar), each **furnished**
+    (2 garrisons + AAA + SHORAD + strongpoint + caches; Mosul & Kirkuk anchor the SA-6). BLUE holds the
+    south (Q-West the sole forward airhead + Balad/Baghdad rear) and grinds north on **two fronts**
+    (Q-West → Mosul ring, Balad → Al-Sahra/Tikrit); red-red belt + ring/ratline west to Tal Afar/Syria;
+    the 3-phase Isolate → East Mosul → West Mosul/Old City arc with a permanent Mosul
     positive-control box (+ a tight Old City box in the last phase). The `.miz` is GENERATED **from
     scratch** by `tools/build_iraq_inherent_resolve_miz.py` (no pre-authored base to decorate, unlike
     ER on Shattered Dagger) — edit the laydown tables there and re-run, never hand-edit the miz.

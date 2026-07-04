@@ -376,12 +376,24 @@ Two coordinated changes so red fields the recently-added DCS **P-14 "Tall King"*
      Verify with `zipfile.namelist()` having no dupes.
 2. **russia_1980 fields the P-14 as a standalone EWR.** Added `EWR P-14 Tall King` to
    `air_defense_units` (the *same* variant the SA-5 pool uses, so `accessible_units`' `set()`
-   dedupes it → the generic `Early-Warning Radar` draw pool is a balanced `1L13 / P-37 / P-14`,
-   ~⅓ each — no over-weighting). Shared with Crossing the Rubicon; era-correct for 1988.
+   dedupes it). Shared with Crossing the Rubicon; era-correct for 1988.
+
+### EWR net de-modded — P-37 Bar Lock removed (2026-07-04)
+
+The HDS Ultimate Compilation PR (#382) had added `EWR P-37 Bar Lock` to `russia_1980` to close
+the period red EWR gap — but the **P-37 Bar Lock is a High Digit SAMs *mod* unit** (its class
+lives in `pydcs_extensions/highdigitsams/`), so it silently made the flown Red Tide campaign
+depend on the HDS mod being installed by every client. Per the squadron (they fly with HDS
+**disabled**), the Bar Lock was removed from `air_defense_units`, leaving a **fully vanilla EWR
+net: 1L13 "Box Spring" + P-14 "Tall King"** (headless-verified: EWR-class accessible units =
+`1L13 EWR`, `P14_SR`; **zero** HDS-typed units remain in the faction). The generic `Early-Warning
+Radar` draw pool is now a balanced `1L13 / P-14` (~½ each). Shared change — Crossing the Rubicon
+also loses the Bar Lock. The corresponding wiki/handbook + intel-assessment threat pages were
+updated to the 1L13 + P-14 net and the S-200-hosts-a-Tall-King detail.
 
 **Headless-verified (real new-game pipeline, `red_tide.yaml`):** both S-200 sites spawn a Tin
-Shield **and** a Tall King; standalone red EWR sites roll a P-14 ~⅓ of the time; black + mypy +
-full pytest (1540 passed) green.
+Shield **and** a Tall King; standalone red EWR sites roll a P-14; the faction carries no HDS
+units; black + mypy + full pytest green.
 
 ### Aircraft / squadron specifics
 - **German Phantom:** the `GAF JG 74` "Moelders" entry is a *squadron name* in the

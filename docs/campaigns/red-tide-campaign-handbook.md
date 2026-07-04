@@ -201,7 +201,7 @@ Full enemy ORBAT, lore, and courses of action are in
 | System | Type | Play |
 |---|---|---|
 | **S-300PS (SA-10)** | Fixed, long-range (~45 nm) | Established & on. **Route the ring or dedicated SEAD.** |
-| **S-200 (SA-5)** | Fixed, very long range | Reaches AWACS/tankers. Keep enablers back. |
+| **S-200 (SA-5)** | Fixed, very long range | Reaches AWACS/tankers. Keep enablers back. Site now co-hosts a **P-14 "Tall King"** EW radar — a fat ELINT/strike signature. |
 | **SA-11 Buk** | Mobile shoot-&-scoot (~22 nm) | Rides with the spearhead. Catch in transit; fly *today's* recon. |
 | **SA-6 Gainful** | Mobile shoot-&-scoot (~13 nm) | Don't trust yesterday's picture. |
 | **SA-2 / SA-3 + KS-19** | Fixed belt | In depth around fixed assets. |
@@ -213,8 +213,9 @@ buildings). 🟡 **Caveat:** that laydown was designed against the old **Skynet*
 which has since been **replaced by MANTIS** as the fork's sole IADS engine — and the "kill the C2
 and the wired SAMs go dark" effect is **not yet confirmed in-game** on the current build. Treat
 killing C2/power as a *probable* way to degrade a base's net, not a guaranteed one, until it's been
-flown. What *is* solid: the faction fields **dedicated 1L13 EWRs** (markers added 2026-06-28) plus
-the **A-50** — killing the EWR/AWACS picture to make the net reactive is the dependable lever.
+flown. What *is* solid: the faction fields **dedicated early-warning radars — the 1L13 "Box Spring"
+and the P-14 "Tall King" (both vanilla DCS, no mods)** plus the **A-50** — killing the EWR/AWACS
+picture to make the net reactive is the dependable lever.
 
 **Naval:** Tarantul/Grisha SAGs in the W. Baltic and off Copenhagen — **no organic air** beyond the
 Copenhagen fighters. Kill the fighters, then the corvettes are anti-ship fodder and the Straits
@@ -450,8 +451,9 @@ KEY BREVITY
 | **SA-2/SA-3 + KS-19** | Fixed belt in depth. Notch, chaff, terrain; HARM if it's in the way. |
 | **SA-8/9/13 + ZSU** | Mobile low block ~9 nm. **Don't loiter low** near the FLOT; stay above the gun floor or treetop-fast. |
 
-**The IADS levers:** the dependable one is **killing the picture** — drop the **1L13 EWRs** and the
-**A-50** and the net goes reactive instead of cued (the faction fields both; confirmed). 🟡 The
+**The IADS levers:** the dependable one is **killing the picture** — drop the **ground EWRs (1L13
+"Box Spring" + P-14 "Tall King")** and the **A-50** and the net goes reactive instead of cued (the
+faction fields all of them; confirmed). 🟡 The
 **C2/power cells** at each base are placed to let you *unplug* the SAMs wired to them, but that
 networked behaviour was built against the retired Skynet engine and isn't yet confirmed under the
 current MANTIS engine — try it, but don't bet a package on it until it's flown.

@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Type
 from dcs.helicopters import Mi_8MT, SA342M, UH_1H
 from dcs.mapping import Point
 from dcs.mission import StartType
-from dcs.planes import An_26B, An_30M, C_130, Yak_52
+from dcs.planes import An_26B, C_130, Yak_40, Yak_52
 from dcs.task import OptROE, SetInvisibleCommand
 from dcs.unittype import FlyingType, ShipType
 
@@ -80,13 +80,13 @@ AIR_START_MIN_ALT_M = 3_000
 _PROFILE: dict[Type[FlyingType], tuple[int, int, bool]] = {
     C_130: (5_000, 140, False),
     An_26B: (5_000, 120, False),
-    An_30M: (5_000, 120, False),
+    Yak_40: (6_000, 150, False),  # civilian regional trijet; air-start-eligible cruiser
     Yak_52: (400, 50, True),
     Mi_8MT: (200, 50, True),
     UH_1H: (200, 50, True),
     SA342M: (250, 55, True),
 }
-FW_TYPES: tuple[Type[FlyingType], ...] = (C_130, An_26B, An_30M, Yak_52)
+FW_TYPES: tuple[Type[FlyingType], ...] = (C_130, An_26B, Yak_40, Yak_52)
 HELO_TYPES: tuple[Type[FlyingType], ...] = (Mi_8MT, UH_1H, SA342M)
 
 # ── Naval civilian traffic (Sampans/Junks) ──────────────────────────────────────

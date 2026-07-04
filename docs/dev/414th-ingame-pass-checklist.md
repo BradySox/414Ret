@@ -2545,6 +2545,27 @@ so the two docs don't drift.
   under-counts, or the airframe has no empty tank-capable station — expected for the F-16/Hornet-BAI). Knob:
   `auto_range_fuel_tanks` (Mission Generation → Loadouts).
 
+## T. Campaign flow
+
+### T1 — Continuous clock marches + weather evolves across turns · §47 · ☐ UNTESTED (built 2026-07-04; the march-forward-within-3–7 h band, time-of-day-derived-from-clock, midnight date-roll, and previous-turn weather bias are locked in `tests/weather/test_continuous_campaign_clock.py`; the multi-turn *feel* needs a play session)
+- **Headless adjudication:** `Conditions.advance` steps `start_time` forward 3–7 whole hours each turn, derives
+  time-of-day from the marched clock, and rolls the date at midnight; `generate_weather(previous=...)` biases
+  the seasonal draw toward the previous rung on the Clear→Cloudy→Rain→Storm ladder while still honouring a
+  zero seasonal chance — all in `tests/weather/test_continuous_campaign_clock.py`. What CI *cannot* adjudicate:
+  whether several turns in a row *read* as one continuous timeline (believable clock progression, weather that
+  builds and clears rather than flickers) and whether the 3–7 h pacing feels right.
+- **Setup:** any day-and-night campaign with `continuous_campaign_clock` ON (default). Note the mission
+  start date/time on turn 1, then pass ~5–6 turns without flying, checking the mission clock + weather each turn.
+- **Pass:** the clock advances a few hours each turn and never jumps backward; the date increments only when the
+  clock crosses midnight (not every 4 turns); time-of-day (dawn/day/dusk/night) follows the actual clock;
+  weather trends between adjacent states over turns (e.g. clear → cloudy → rain → clearing) rather than
+  teleporting clear↔storm. With the setting OFF, the stock behaviour returns (slot rotation + random weather).
+- **Fail signature:** the clock jumps by a random large amount or goes backward (the advance interval / the
+  `continuous_clock_active` gate — check `night_day_missions` isn't forcing day/night-only, which falls back by
+  design); the date ticks every 4 turns regardless of the clock (`current_day` not reading `conditions`);
+  weather still flickers with no correlation (the `previous=` bias not being passed from `Conditions.advance`).
+  Knobs: `MIN/MAX_TURN_ADVANCE_HOURS`, `_WEATHER_PERSISTENCE_KERNEL` (`game/weather/conditions.py`).
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

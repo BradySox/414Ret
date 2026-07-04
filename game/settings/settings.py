@@ -323,6 +323,12 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                "Campaign clock & weather",
+                [
+                    "continuous_campaign_clock",
+                ],
+            ),
+            (
                 "Insurgency",
                 [
                     "coin_insurgency",
@@ -1454,6 +1460,23 @@ class Settings:
             "front movement. The phase shows on the kneeboard and status band, and "
             "the auto-planner leans its offensive tasking to match. Reactive defense "
             "is never affected. Turn off for the phase-blind stock planner."
+        ),
+        default=True,
+    )
+    continuous_campaign_clock: bool = boolean_option(
+        "Continuous time & weather",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        "Campaign clock & weather",
+        detail=(
+            "Make the campaign flow as one continuous timeline. The mission "
+            "clock marches forward a few hours each turn (a sortie plus "
+            "turnaround) and the date rolls over at midnight, instead of "
+            "teleporting between disjoint dawn/day/dusk/night bands. Weather "
+            "evolves from the previous turn -- fronts roll in and clear over "
+            "several turns -- instead of an independent random draw each turn. "
+            "Requires day-and-night missions (the day-only / night-only mission "
+            "time settings opt out of the natural cycle and fall back to the "
+            "per-turn rotation). Turn off for the stock per-turn behaviour."
         ),
         default=True,
     )

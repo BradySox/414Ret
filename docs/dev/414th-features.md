@@ -3683,3 +3683,95 @@ No campaign preseed is needed (default ON already reaches the COIN campaign).
 - **Generation-time only.** The added tank shows in the `.miz`, not in the in-app loadout editor (which shows
   the base ATO loadout). Fine for AI; a player who wants to see/adjust it edits their loadout (which then
   becomes `is_custom` and is left alone).
+
+---
+
+## §47 — Continuous campaign clock & weather
+
+A stock turn advanced the campaign by re-rolling two things from scratch: the time-of-day rotated through a
+fixed **Dawn → Day → Dusk → Night** slot cycle (one slot per turn) with the *actual* clock picked as a
+**random hour inside that slot's band**, so consecutive turns teleported ~4–8 h with no continuity, and the
+date only ticked once every four turns (`start_date + turn // 4`). Weather was an **independent, memoryless
+draw** each turn from the season's probability table — a thunderstorm could be followed by clear skies followed
+by rain, with no fronts moving through. Neither system carried any state forward, so a campaign never felt like
+one continuous timeline.
+
+This ties date, time-of-day, and weather to **one marched clock** anchored to the campaign's chosen start date,
+so the war flows: the clock steps forward a believable few hours each turn, the date rolls over at midnight, and
+weather systems roll in and clear over several turns. It composes cleanly with the campaign-phases arc (§40),
+which already advances over turns — the calendar now advances in step instead of jumping.
+
+### The two levers
+
+1. **Continuous clock (`Conditions.advance`).** Instead of "slot rotation + random hour," the actual
+   `start_time` is carried forward from the previous turn's conditions and advanced by a jittered interval —
+   `random.randint(MIN_TURN_ADVANCE_HOURS, MAX_TURN_ADVANCE_HOURS)` = **3–7 whole hours** (a sortie plus
+   turnaround; whole hours keep the "missions start on the hour" property). **Time of day is then *derived*
+   from the marched clock** via `daytime_map.best_guess_time_of_day_at`, and the date rolls over naturally as
+   the clock crosses midnight — the season (and thus the weather table + temperature/pressure interpolation)
+   updates on its own as the calendar marches through the months.
+
+2. **Weather with memory (`Conditions._evolve_weather_type`).** The archetypes sit on a severity ladder
+   `_WEATHER_LADDER = [ClearSkies, Cloudy, Raining, Thunderstorm]`. When a `previous` weather is passed, the next
+   turn is a **Metropolis–Hastings** step: a *proposal* drawn from `_WEATHER_PERSISTENCE_KERNEL[distance]`
+   (`{0: 3.0, 1: 1.0, 2: 0.3, 3: 0.1}`, distance = rungs from the previous archetype — a strong pull to stay,
+   moderate to step one rung, small to jump), then *accepted* against the seasonal chances with probability
+   `min(1, (chance_j · Z_i) / (chance_i · Z_j))` (the `Z` terms normalise the per-rung proposal; the kernel
+   cancels). With no `previous` (turn 0 seed, or the legacy path) the draw is the original memoryless behaviour,
+   byte-identical.
+
+   **Why MH and not a plain reweight.** The obvious "multiply each seasonal chance by the kernel and draw"
+   makes weather autocorrelated but **skews the long-run climatology** toward the calm end — a symmetric kernel
+   over asymmetric seasonal weights pools probability in the common states. Measured on real Caucasus-summer
+   chances (`clear 55 / cloudy 35 / rain 10 / storm 1`), the naive reweight **more than halved the rain
+   frequency** (9.9% → 4.7%) and cut storms to a sixth. MH fixes the marginal exactly: the accept step gives
+   the chain a stationary distribution equal to the seasonal chances, so over a long run the authored rain/storm
+   frequencies are preserved (measured skew ≤ ~1pp) **and** a zero seasonal chance is still never reachable —
+   while the near-rung proposal keeps transitions gradual (measured: stay-same ~75–80%, jumps ≥2 rungs ~1–3%,
+   mean dwell ~4–5 turns, vs ~40% / ~14% / ~1.6 turns memoryless). The
+   `tests/weather/test_continuous_campaign_clock.py` chain tests pin both properties.
+
+### Wiring
+
+- `Game.continuous_clock_active` gates the whole feature: `getattr(settings, "continuous_campaign_clock",
+  False)` **and** `settings.night_day_missions == NightMissions.DayAndNight`. The day-only / night-only mission
+  settings explicitly opt out of the natural cycle, so they fall back to the per-turn rotation; the `getattr`
+  keeps pre-feature saves on the legacy path.
+- `Game.current_day` / `Game.current_turn_time_of_day` become authoritative off `self.conditions` when the
+  clock is active (`conditions.start_time.date()` / `conditions.time_of_day`), else the legacy `turn // 4` /
+  slot-rotation formulas. Both `getattr`-guard `conditions` because it isn't built yet during the turn-0 seed
+  (which reads these properties → legacy path → identical seed).
+- `Game.finish_turn` calls `advance_conditions()` (→ `Conditions.advance`) instead of `generate_conditions()`
+  when the clock is active, for `turn > 1` (turn 0 and 1 still share the seed, unchanged).
+
+### Save compatibility
+
+`Settings.__setstate__` builds a fresh `Settings()` and overlays the old state, so an existing save picks up
+`continuous_campaign_clock=True` on load. This is **seamless mid-campaign**: the last conditions were generated
+from `current_day` (the `turn // 4` date), so `conditions.start_time.date()` already equals that date — the
+clock reads the same date and simply begins marching forward from there. No jump, no migration entry needed.
+
+### Gating
+
+`continuous_campaign_clock` — Campaign Management → **Campaign clock & weather**, **default ON**. Turning it
+off restores the stock per-turn rotation + memoryless weather exactly. Requires day-and-night missions (above).
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Clock + weather | `game/weather/conditions.py` (`Conditions.advance`, the `previous=` path in `generate_weather` → `_evolve_weather_type` MH step, `MIN/MAX_TURN_ADVANCE_HOURS`, `_WEATHER_LADDER`, `_WEATHER_PERSISTENCE_KERNEL`) |
+| Game wiring | `game/game.py` (`continuous_clock_active`, `advance_conditions`, `current_day`, `current_turn_time_of_day`, `finish_turn`) |
+| Setting | `game/settings/settings.py` (`continuous_campaign_clock`) |
+| Tests | `tests/weather/test_continuous_campaign_clock.py` (monotonic march within the 3–7 h band; time-of-day derived; date rolls at midnight; weather biased toward the previous rung; zero seasonal chance still honoured; memoryless without `previous`) |
+
+### Gotchas / deferred (checklist T1 — needs an in-game pass)
+
+- **Atmospheric continuity is archetype-level, not fine-grained.** Pressure/temperature/wind are still
+  instantiated fresh per turn (anchored to seasonal + time-of-day averages), so they don't wildly swing while
+  the archetype is stable, but a persistent low-pressure *system* carried numerically across turns is a
+  possible follow-up. Archetype persistence is the dominant visual signal and is what this ships.
+- **Day-only / night-only opt out.** By design — those settings mean "I don't want the natural cycle." The
+  continuous clock only runs under day-and-night missions.
+- **Interval is fixed-band, not a setting.** The 3–7 h advance is a module constant; exposing it as a tunable
+  is a trivial follow-up if the pacing wants tuning after an in-game pass.

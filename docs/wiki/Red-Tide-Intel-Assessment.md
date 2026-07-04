@@ -151,7 +151,8 @@ dedicated SEAD.
 - **SA-6 "Gainful"** — the other genuinely mobile belt SAM; relocates and **shoots-and-scoots** like
   the Buk. Don't trust yesterday's SA-6 picture.
 - **S-200 (SA-5 "Gammon")** — fixed, strategic-altitude denial against our AEW, tankers, and
-  high-flyers.
+  high-flyers. Each site is now co-sited with a **P-14 "Tall King"** VHF early-warning radar — a
+  long-range detection asset and a fat ELINT/strike signature.
 - **Fixed belt** — **SA-2 / SA-3**, with **KS-19** guns, in depth around fixed assets.
 - **SHORAD (shoot-and-scoot, low)** — **SA-8, SA-9, SA-13**, and a wall of guns (**ZSU-23-4
   "Shilka," ZSU-57-2**). Mobile, fleeting, and everywhere over the maneuver force.
@@ -253,7 +254,7 @@ most dangerous one.** Press hard, but read the escalation signs.
 | Il-78 | Midas | Schönefeld (203rd) | Tanker — kill it, shorten his reach |
 | S-300PS | SA-10 Grumble | fixed, long-range | Strategic anchor; sets up & stays — find it, strike it |
 | SA-11 / SA-6 | Gadfly·Buk / Gainful | with the spearhead | Mobile shoot-and-scoot; catch them moving |
-| S-200 | SA-5 Gammon | strategic | Reaches our AWACS / tankers |
+| S-200 | SA-5 Gammon | strategic | Reaches our AWACS / tankers; site now hosts a P-14 "Tall King" EW radar |
 | Tarantul / Grisha | — | W. Baltic, off Copenhagen | Sea-denial SAGs, no organic air |
 
 ---
@@ -277,6 +278,7 @@ AIR — RESPECT THESE
 SAM — RANGE FIGHT, NOT ALTITUDE. ROUTE THE FIXED RINGS; CATCH THE MOVERS.
   SA-10 S-300 .......... FIXED, established, long-range (~45nm). Can't out-climb it - route/SEAD.
   SA-5  S-200 .......... FIXED, very long range; reaches AWACS/tankers. Route / keep them back.
+                         Site hosts a P-14 "Tall King" EW radar (detection + strike target).
   SA-11 Buk ............ MOBILE shoot-&-scoot (~22nm), rides with the spearhead. Catch in transit.
   SA-6 Gainful ......... MOBILE shoot-&-scoot belt SAM (~13nm). Don't trust yesterday's picture.
   SA-2 / SA-3 + KS-19 .. fixed belt in depth.

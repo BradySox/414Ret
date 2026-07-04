@@ -187,7 +187,35 @@ file. This guide is the map; those are the territory.
     `advance_dispersed_cells` from `finish_turn` after C1/C1.5/IED/HVT; reuses
     `coin.spawn_red_ground_at` + the C1 revival machinery (`_revive`/`_revivable_units`/
     `_alive_cell_count`/`_ensure_anchors`). Gated `coin_dispersed_cells` default OFF,
-    preseeded ON. Tests `tests/fourteenth/test_coin_dispersed.py`; in-game pass = checklist P6),
+    preseeded ON. Tests `tests/fourteenth/test_coin_dispersed.py`; in-game pass = checklist P6).
+    **COIN fiction-kit + in-mission movement rework LANDED 2026-07-04** (`game/fourteenth/coin.py`
+    + the new `coin` plugin — the COIN objects stop being re-skinned armor and start moving; only
+    Enduring Resolve is tuned for now): **(1) Fiction-kit retype** — every COIN spawn funneled
+    through `coin.spawn_red_ground_at(GroupTask.FRONT_LINE, sidc_override=…)`, which overrode only
+    the *map symbol* and left the faction's front-line **armor** underneath (a BMP-1 wearing an IED
+    icon). `spawn_red_ground_at` now takes a `unit_types` list; `_retype_units` re-points the trimmed
+    units' DCS *type* (+ name; drops the stale armor threat ring) to kit selected from the **red
+    faction's own resolved roster** (`_pick_faction_unit` + `ied_/hvt_/cell_unit_types` — anti-air
+    excluded, price-capped, name-hint-first, never a hardcoded id): an IED = a lone soft **supply
+    truck**, an HVT = a small **convoy** (leader jeep + armed technical + 2 rifles; `HVT_UNITS` 3→4),
+    a cell (C1.5 + C4) = an armed **technical + infantry**. On Enduring Resolve (Toyota Al Gaib) →
+    Ural-375 / UAZ-469+2×Insurgent-AK / DShK-gun-truck+Insurgent-AK (headless-verified end-to-end on
+    real `TheaterUnit`s); degrades to the generated group if a role can't be filled, so no faction
+    dependency. **(2) IED variety** — each plant deterministically alternates a **static roadside
+    IED** (`FUSE_TURNS` 3) and a **mobile VBIED** (`VBIED_FUSE_TURNS` 2 — a suicide vehicle racing the
+    nearest blue CP, `_nearest_blue_cp`); same fuse→detonation→`ied_detonations`→mandate consequence,
+    distinct "intercept it"/"reached friendly lines" messaging. **(3) In-mission movement** — COIN's
+    **first Lua runtime**: the emitter `game/missiongenerator/coinluadata.py` (`populate_coin_lua`,
+    wired in `luagenerator.py`) emits `dcsRetribution.coin` — the live HVT convoy + each mobile VBIED
+    as a DCS `TheaterGroup.group_name` + centre (+ the VBIED's target base) — **only** when a mover
+    exists, and the new `resources/plugins/coin/` plugin drives them via `mist.goRoute` (alarm-green so
+    they relocate, not fight): the HVT patrols a random loop within `hvtPatrolRadiusM` of its area, each
+    VBIED beelines its target, both after a startup grace. **Movement only** — the kill/window/fuse
+    consequence stays in the turn-boundary force model, so a mover shot down is recorded natively (the
+    §35/§37 no-phantom-spawn lesson; a decapitated HVT / intercepted VBIED just stops being routed).
+    Tests `tests/fourteenth/test_coin_units.py` + `tests/fourteenth/test_coin_ied.py` +
+    `tests/missiongenerator/test_coinluadata.py` + `tests/lua/test_coin_runtime.py`; in-game pass =
+    checklist P4/P5 (the moving convoy/VBIED + the retyped reads are Lua/cockpit-only)),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

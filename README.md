@@ -376,6 +376,11 @@ and selected later upstream fixes.
   an insurgent contact you haven't reconned shows as an **unconfirmed (suspect) track**, then — once
   TARPS or a strike confirms it — flips to a real hostile NATO symbol drawn as what it actually is
   (an infantry cell, a roadside IED, a named leader, a stronghold's militia) instead of anonymous armor.
+  And the insurgency **moves** and comes at you as the right kit: the named leader travels as a small
+  **convoy** you have to find and run down in his home valley (not a parked jeep waiting to be bombed),
+  the cells are technicals and riflemen, and some roadside devices are **suicide VBIEDs** — a lone truck
+  that drives for your nearest forward base, so you intercept it en route or it detonates and costs you
+  at the mandate. (Only Enduring Resolve is tuned for the moving insurgency for now.)
 - A new **Nevada - Red Flag 81-2** campaign — the ultimate war game, played as the war it rehearses. An
   F-4E wing detachment deploys to **Nellis, January 1981** (after the Reflected Simulations campaign the
   squadron flies) against the **integrated Red Force of the real 1981 exercise**: 64th/65th **Aggressor

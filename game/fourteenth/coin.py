@@ -619,11 +619,20 @@ def _spawn_cell(
     game: "Game", source: "ControlPoint", target: "ControlPoint", events: Any
 ) -> Any:
     """A small red ground cell near *target*, attached to the red *source* stronghold
-    (so it renders RED -- TGO allegiance follows its parent CP), trimmed to a cell."""
+    (so it renders RED -- TGO allegiance follows its parent CP), trimmed to a cell and
+    re-typed to insurgent kit (an armed technical + infantry, not the faction armor)."""
     from game.data.groups import GroupTask
 
+    unit_types = cell_unit_types(game)
     tgo = _spawn_red_ground(
-        game, source, target, GroupTask.FRONT_LINE, events, sidc_override=CELL_SIDC
+        game,
+        source,
+        target,
+        GroupTask.FRONT_LINE,
+        events,
+        sidc_override=CELL_SIDC,
+        max_units=CELL_MAX_UNITS,
+        unit_types=unit_types,
     )
     if tgo is None:
         tgo = _spawn_red_ground(
@@ -633,9 +642,9 @@ def _spawn_cell(
             GroupTask.BASE_DEFENSE,
             events,
             sidc_override=CELL_SIDC,
+            max_units=CELL_MAX_UNITS,
+            unit_types=unit_types,
         )
-    if tgo is not None:
-        _trim_to(tgo, CELL_MAX_UNITS)
     return tgo
 
 
@@ -654,13 +663,22 @@ def _spawn_red_ground(
     task: Any,
     events: Any,
     sidc_override: Optional[tuple[SymbolSet, Entity]] = None,
+    max_units: Optional[int] = None,
+    unit_types: Optional[list[Any]] = None,
 ) -> Any:
     """Generate a red ForceGroup for *task* at a point near *target*, attached to the
     red *source* CP. Returns the TGO or None if the faction has no group for the task.
     """
     point = _infiltration_point(game, source, target)
     return spawn_red_ground_at(
-        game, source, point, task, events, sidc_override=sidc_override
+        game,
+        source,
+        point,
+        task,
+        events,
+        max_units=max_units,
+        sidc_override=sidc_override,
+        unit_types=unit_types,
     )
 
 
@@ -672,6 +690,7 @@ def spawn_red_ground_at(
     events: Any,
     max_units: Optional[int] = None,
     sidc_override: Optional[tuple[SymbolSet, Entity]] = None,
+    unit_types: Optional[list[Any]] = None,
 ) -> Any:
     """Generate a red ForceGroup for *task* at *point*, attached to the red *red_cp*
     (whose ownership gives the TGO its RED allegiance -- a TGO renders as its parent
@@ -680,10 +699,16 @@ def spawn_red_ground_at(
     Shared by C1.5 re-infiltration (a cell/cache near a target) and the roadside-IED
     layer (an emplacement on the ratline); the caller supplies the point + red CP.
 
-    *sidc_override* re-points the map symbol (a ``(SymbolSet, Entity)`` pair, e.g.
+    *sidc_override* re-points the map *symbol* (a ``(SymbolSet, Entity)`` pair, e.g.
     :data:`CELL_SIDC` / :data:`IED_SIDC` / :data:`HVT_SIDC`) so the spawned object
     renders as its real NATO symbol rather than the vehicle-group default of a tank
     platoon. ``None`` keeps the class default.
+
+    *unit_types* re-points the actual DCS *unit types* of the trimmed group (see
+    :func:`_retype_units`) so the metal under the symbol matches the fiction -- a lone
+    supply truck for an IED, a leader's jeep + rifles for an HVT -- instead of the
+    faction's default front-line kit. An empty/``None`` list leaves the generated
+    units as-is.
     """
     from game.naming import namegen
     from game.theater import PresetLocation
@@ -701,6 +726,8 @@ def spawn_red_ground_at(
     game.db.tgos.add(tgo.id, tgo)
     if max_units is not None:
         _trim_to(tgo, max_units)
+    if unit_types:
+        _retype_units(tgo, unit_types)
     if events is not None:
         events.update_tgo(tgo)
     return tgo
@@ -760,6 +787,179 @@ def _trim_to(tgo: Any, max_units: int) -> None:
                 kept += 1
             else:
                 group.units.remove(unit)
+
+
+def _retype_units(tgo: Any, dcs_types: list[Any]) -> None:
+    """Re-point the surviving units' DCS *types* (and display names) to *dcs_types*,
+    cycling if the group holds more units than the composition lists.
+
+    The COIN objects are all generated as trimmed FRONT_LINE/BASE_DEFENSE force groups
+    (the faction's armor/technicals) with only the map *symbol* overridden. Everything
+    downstream -- mission generation, threat rings, recon fog, loss accounting, the
+    tooltip -- reads ``TheaterUnit.type``, so swapping the type here fully re-skins the
+    group to the fiction (a device truck, a leader's jeep, an insurgent technical). An
+    empty list is a no-op, so a faction that can't fill the roles keeps its generated
+    group rather than crashing.
+    """
+    if not dcs_types:
+        return
+    index = 0
+    for group in getattr(tgo, "groups", []):
+        for unit in getattr(group, "units", []):
+            new_type = dcs_types[index % len(dcs_types)]
+            unit.type = new_type
+            new_name = getattr(new_type, "name", None) or getattr(new_type, "id", None)
+            if new_name:
+                unit.name = new_name
+            index += 1
+    # The generated group cached a threat polygon from the old (armor) types; drop it so
+    # the soft re-typed kit no longer projects a phantom ring. Best-effort.
+    try:
+        tgo.invalidate_threat_poly()
+    except Exception:  # noqa: BLE001 -- lazy threat cache; never break the turn
+        pass
+
+
+def _pick_faction_unit(
+    rosters: list[Any],
+    *,
+    classes: Optional[frozenset[UnitClass]] = None,
+    name_hints: tuple[str, ...] = (),
+    max_price: Optional[int] = None,
+) -> Any:
+    """The best-matching unit's DCS type from *rosters* (an ordered list of the red
+    faction's unit sets), or ``None`` when nothing fits.
+
+    A ``name_hints`` match wins (so we can prefer, e.g., the DShK gun-truck over a plain
+    pickup); otherwise the cheapest eligible class match, deterministic by (price, name).
+    Anti-air kit is always excluded -- an IED or a leader team is never a SAM/AAA piece.
+    Selecting from the faction's own resolved roster means we only ever return a unit the
+    campaign actually loaded (no hardcoded, possibly-unregistered DCS ids).
+    """
+    from game.data.units import ANTI_AIR_UNIT_CLASSES
+
+    candidates: list[Any] = []
+    for roster in rosters:
+        candidates.extend(sorted(roster, key=lambda u: u.variant_id))
+
+    def eligible(u: Any) -> bool:
+        if u.unit_class in ANTI_AIR_UNIT_CLASSES:
+            return False
+        if max_price is not None and getattr(u, "price", 0) > max_price:
+            return False
+        if classes is not None and u.unit_class not in classes:
+            return False
+        return True
+
+    for hint in name_hints:
+        for u in candidates:
+            if eligible(u) and hint.lower() in u.variant_id.lower():
+                return u.dcs_unit_type
+    matches = sorted(
+        (u for u in candidates if eligible(u)),
+        key=lambda u: (getattr(u, "price", 0), u.variant_id),
+    )
+    return matches[0].dcs_unit_type if matches else None
+
+
+def _red_faction(game: "Game") -> Any:
+    """The red faction, or ``None`` -- so the composition builders degrade to an empty
+    list (keep the generated group) for a headless/fake game with no coalition."""
+    return getattr(getattr(game, "red", None), "faction", None)
+
+
+def _infantry_type(faction: Any) -> Any:
+    """A rifleman -- the insurgent AK, else any non-crew-served infantry."""
+    return _pick_faction_unit(
+        [getattr(faction, "infantry_units", ())],
+        classes=frozenset({UnitClass.INFANTRY}),
+        name_hints=("insurgent", "ak", "rifle"),
+    )
+
+
+def _technical_type(faction: Any) -> Any:
+    """An armed gun-truck for a fighting cell: an MG-mounted technical first, else any
+    cheap IFV/APC-classed technical (price-capped like the C1 whitelist so a real IFV is
+    never picked)."""
+    return _pick_faction_unit(
+        [getattr(faction, "frontline_units", ())],
+        classes=frozenset({UnitClass.IFV, UnitClass.APC}),
+        name_hints=("dshk", "kord", "scout", "technical", "toyota"),
+        max_price=REGEN_MAX_UNIT_PRICE,
+    )
+
+
+def _jeep_type(faction: Any) -> Any:
+    """A leader's light vehicle: a jeep/UAZ, else any soft logistics vehicle."""
+    return _pick_faction_unit(
+        [
+            getattr(faction, "logistics_units", ()),
+            getattr(faction, "frontline_units", ()),
+        ],
+        name_hints=("uaz", "jeep", "luv", "buggy", "pickup"),
+    )
+
+
+def _truck_type(faction: Any) -> Any:
+    """A soft supply truck -- the device vehicle on the road; falls back to a jeep."""
+    return _pick_faction_unit(
+        [getattr(faction, "logistics_units", ())],
+        name_hints=("truck", "ural", "kamaz", "zil", "cargo"),
+    ) or _jeep_type(faction)
+
+
+def ied_unit_types(game: "Game") -> list[Any]:
+    """Fiction kit for a roadside IED: a lone soft vehicle (a supply truck / suspected
+    VBIED), so the device is findable and killable but not a combat platoon. Empty when
+    the faction has no light vehicle at all (the group then keeps its generated units).
+    """
+    faction = _red_faction(game)
+    if faction is None:
+        return []
+    device = _truck_type(faction) or _infantry_type(faction)
+    return [device] if device is not None else []
+
+
+def hvt_unit_types(game: "Game") -> list[Any]:
+    """Fiction kit for a high-value target: a small **convoy** -- the leader's command
+    vehicle, an armed technical escort, and a rifle pair (up to four units, matching
+    ``HVT_UNITS``). The leader moves with a guard detail, so hunting him reads as running
+    down a small column, not a lone jeep."""
+    faction = _red_faction(game)
+    if faction is None:
+        return []
+    leader = _jeep_type(faction) or _truck_type(faction)
+    escort = _technical_type(faction)
+    rifle = _infantry_type(faction)
+    comp: list[Any] = []
+    if leader is not None:
+        comp.append(leader)
+    if escort is not None:
+        comp.append(escort)
+    if rifle is not None:
+        comp.extend([rifle, rifle])
+    return comp
+
+
+def cell_unit_types(game: "Game") -> list[Any]:
+    """Fiction kit for an insurgent cell (C1.5 re-infiltration + C4 dispersed): an armed
+    technical plus infantry; falls back to whatever soft kit exists, else empty (keep the
+    generated group)."""
+    faction = _red_faction(game)
+    if faction is None:
+        return []
+    tech = _technical_type(faction)
+    rifle = _infantry_type(faction)
+    comp: list[Any] = []
+    if tech is not None:
+        comp.append(tech)
+    if rifle is not None:
+        comp.append(rifle)
+    if not comp:
+        fallback = _jeep_type(faction)
+        if fallback is not None:
+            comp.append(fallback)
+    return comp
 
 
 def _garrison_count(cp: "ControlPoint") -> int:

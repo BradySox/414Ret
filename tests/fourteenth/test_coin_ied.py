@@ -172,3 +172,46 @@ def test_replants_after_a_clear(monkeypatch: Any) -> None:
     ied.advance_roadside_ieds(game, events=None)  # clear #1, replant a fresh one
     assert len(game.coin_state["ieds"]) == 1
     assert game.coin_state["ieds"][0]["armed"] == 0
+
+
+def _two_road_ratline(monkeypatch: Any) -> Any:
+    """A blue front base + a forward red stronghold with TWO red-red roads behind it, so
+    both IED slots fill (a static device on one road, a mobile VBIED on the other)."""
+    _fake_spawn(monkeypatch)
+    blue = _CP(1, "blue", _Point(0, 0))
+    fwd = _CP(3, "red", _Point(60_000, 0))
+    rear_a = _CP(2, "red", _Point(300_000, 0))
+    rear_b = _CP(4, "red", _Point(300_000, 60_000))
+    road_a = [_Point(180_000, 0)]
+    road_b = [_Point(180_000, 30_000)]
+    fwd.convoy_routes[rear_a] = list(road_a)
+    rear_a.convoy_routes[fwd] = list(road_a)
+    fwd.convoy_routes[rear_b] = list(road_b)
+    rear_b.convoy_routes[fwd] = list(road_b)
+    return _game([blue, fwd, rear_a, rear_b])
+
+
+def test_alternates_static_ied_and_mobile_vbied(monkeypatch: Any) -> None:
+    game = _two_road_ratline(monkeypatch)
+    ied.advance_roadside_ieds(game, events=None)
+    ieds = game.coin_state["ieds"]
+    assert len(ieds) == 2
+    # Deterministic alternation: the first plant is a static device, the second a VBIED.
+    assert [i["kind"] for i in ieds] == ["ied", "vbied"]
+    vbied = next(i for i in ieds if i["kind"] == "vbied")
+    assert vbied["target"] == "CP1"  # the nearest (only) blue base
+    assert any("VBIED" in m[1] and "intercept" in m[1].lower() for m in game.messages)
+
+
+def test_vbied_has_a_shorter_fuse_than_a_static_ied(monkeypatch: Any) -> None:
+    game = _ratline(monkeypatch)
+    game.coin_state["ied_planted"] = 1  # force the next plant to be a VBIED
+    ied.advance_roadside_ieds(game, events=None)
+    assert game.coin_state["ieds"][0]["kind"] == "vbied"
+    # A VBIED reaches friendly lines after VBIED_FUSE_TURNS (2), a turn sooner than a
+    # buried IED's FUSE_TURNS (3).
+    assert ied.VBIED_FUSE_TURNS < ied.FUSE_TURNS
+    for _ in range(ied.VBIED_FUSE_TURNS):
+        ied.advance_roadside_ieds(game, events=None)
+    assert ied.consume_ied_detonations(game) == 1
+    assert any("VBIED reached" in m[1] for m in game.messages)

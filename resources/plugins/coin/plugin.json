@@ -1,0 +1,45 @@
+{
+    "nameInUI": "COIN in-mission movement",
+    "descriptionInUI": "Runtime for the COIN insurgency layer's moving objects. Inert unless the mission generator emits dcsRetribution.coin (a COIN campaign with a live HVT convoy and/or a mobile VBIED this turn). Movement ONLY -- the consequence (kill the HVT before the strike window closes = a decapitation; intercept the VBIED before it reaches a friendly base = defused; let either live = it resolves against your political mandate) stays in the campaign's turn logic, so a mover you shoot down is recorded natively like any other unit. HVT: the named leader's convoy drives a slow, random patrol around its area (alarm-green, so it relocates rather than stopping to fight) -- you have to find and run it down, not bomb a parked jeep. VBIED: the suicide vehicle bomb drives for the nearest friendly base; kill it en route or it detonates on arrival. Both begin after a short startup grace so nothing lurches the instant the mission loads. All movement is off-road at low ground speed.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "HVT: seconds between patrol legs (re-rolls a new destination)",
+            "mnemonic": "hvtPatrolIntervalS",
+            "defaultValue": 90
+        },
+        {
+            "nameInUI": "HVT: patrol radius around his area (m)",
+            "mnemonic": "hvtPatrolRadiusM",
+            "defaultValue": 4000,
+            "maximumValue": 20000
+        },
+        {
+            "nameInUI": "HVT: convoy ground speed (km/h)",
+            "mnemonic": "hvtSpeedKmph",
+            "defaultValue": 25
+        },
+        {
+            "nameInUI": "VBIED: suicide-vehicle ground speed (km/h)",
+            "mnemonic": "vbiedSpeedKmph",
+            "defaultValue": 45
+        },
+        {
+            "nameInUI": "VBIED: seconds between re-issuing the drive order (anti-stall)",
+            "mnemonic": "vbiedRepathS",
+            "defaultValue": 120
+        },
+        {
+            "nameInUI": "Startup grace before movement begins (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 30
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "coin-config.lua",
+            "mnemonic": "coin-config"
+        }
+    ]
+}

@@ -28,6 +28,7 @@ from game.fourteenth.coin import (
     HVT_SIDC,
     _despawn,
     _tgo_by_id,
+    hvt_unit_types,
     spawn_red_ground_at,
 )
 
@@ -41,8 +42,10 @@ HVT_WINDOW_TURNS = 4
 #: Turns after an HVT resolves (killed or escaped) before the next one surfaces.
 HVT_COOLDOWN_TURNS = 3
 
-#: Leader + a couple of guards -- a small, findable, named strike target.
-HVT_UNITS = 3
+#: Leader + an escort technical + a guard pair -- a small, findable, named convoy that
+#: patrols its ROE zone in-mission (the ``coin`` plugin drives it), so hunting him reads
+#: as running down a moving column rather than bombing a parked jeep.
+HVT_UNITS = 4
 
 #: Noms de guerre for the surfaced leader (flavour; the will effect is name-agnostic).
 #: Turn-indexed (never random -- Math.random is unavailable and saves must be stable).
@@ -126,6 +129,7 @@ def _surface_hvt(game: "Game", hvt: dict[str, Any], events: Any) -> None:
         events,
         max_units=HVT_UNITS,
         sidc_override=HVT_SIDC,
+        unit_types=hvt_unit_types(game),
     )
     if tgo is None:
         return
@@ -137,8 +141,8 @@ def _surface_hvt(game: "Game", hvt: dict[str, Any], events: Any) -> None:
     hvt["active"] = {"tgo_id": str(tgo.id), "name": name, "turns": 0}
     _announce(
         game,
-        f"Intel: HVT {name} located near {stronghold.name} — a window to strike, "
-        "if you can take the shot clean.",
+        f"Intel: HVT {name} is on the move near {stronghold.name} — hunt his convoy "
+        "down while the window is open, and mind the collateral.",
     )
 
 

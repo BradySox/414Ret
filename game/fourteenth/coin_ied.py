@@ -28,6 +28,7 @@ from game.fourteenth.coin import (
     IED_SIDC,
     _despawn,
     _tgo_by_id,
+    ied_unit_types,
     spawn_red_ground_at,
 )
 
@@ -38,11 +39,21 @@ if TYPE_CHECKING:
 #: Concurrent live IEDs on the ratline. Small -- a sweep-able handful, not a minefield.
 MAX_ACTIVE_IEDS = 2
 
-#: Turns an IED sits armed before it detonates (if the player never clears it).
+#: Turns a *static* roadside IED sits armed before it detonates under a passing convoy.
 FUSE_TURNS = 3
 
-#: Units in an emplacement -- a lone device/team, a small recon-fogged strike target.
+#: Turns a *mobile* VBIED (a suicide vehicle bomb) takes to reach friendly lines. Shorter
+#: than the static fuse -- it is actively driving at a base, so the interdiction window is
+#: tighter. (The ``coin`` plugin drives it in-mission; this is the turn-boundary deadline.)
+VBIED_FUSE_TURNS = 2
+
+#: Units in an emplacement -- a lone device/vehicle, a small recon-fogged strike target.
 IED_UNITS = 1
+
+
+def _fuse_for(ied: dict[str, Any]) -> int:
+    """A mobile VBIED reaches friendly lines faster than a buried device goes off."""
+    return VBIED_FUSE_TURNS if ied.get("kind") == "vbied" else FUSE_TURNS
 
 
 def advance_roadside_ieds(game: "Game", events: Any = None) -> None:
@@ -65,7 +76,7 @@ def advance_roadside_ieds(game: "Game", events: Any = None) -> None:
     ieds: list[dict[str, Any]] = state.setdefault("ieds", [])
 
     _age_live_ieds(game, state, ieds, events)
-    _replenish_ieds(game, ieds, events)
+    _replenish_ieds(game, state, ieds, events)
 
 
 def _age_live_ieds(
@@ -76,27 +87,42 @@ def _age_live_ieds(
         tgo = _tgo_by_id(game, ied.get("tgo_id"))
         if tgo is None:
             continue  # already gone (removed elsewhere) -- drop it silently
+        where = ied.get("where", "the trail")
+        is_vbied = ied.get("kind") == "vbied"
         if not _tgo_alive(tgo):
-            # The player found and struck it: cleared, no detonation.
+            # The player found and struck it: cleared/intercepted, no detonation.
             _despawn(game, tgo, events)
-            _announce(
-                game, f"Roadside IED near {ied.get('where', 'the trail')} cleared."
-            )
+            if is_vbied:
+                _announce(
+                    game,
+                    f"VBIED intercepted near {where} before it reached friendly lines.",
+                )
+            else:
+                _announce(game, f"Roadside IED near {where} cleared.")
             continue
         ied["armed"] = int(ied.get("armed", 0)) + 1
-        if ied["armed"] >= FUSE_TURNS:
+        if ied["armed"] >= _fuse_for(ied):
             state["ied_detonations"] = int(state.get("ied_detonations", 0)) + 1
             _despawn(game, tgo, events)
-            _announce(
-                game,
-                f"IED detonation near {ied.get('where', 'the trail')} — coalition casualties reported.",
-            )
+            if is_vbied:
+                dest = ied.get("target", "friendly lines")
+                _announce(
+                    game,
+                    f"VBIED reached {dest} — coalition casualties reported.",
+                )
+            else:
+                _announce(
+                    game,
+                    f"IED detonation near {where} — coalition casualties reported.",
+                )
             continue
         survivors.append(ied)
     ieds[:] = survivors
 
 
-def _replenish_ieds(game: "Game", ieds: list[dict[str, Any]], events: Any) -> None:
+def _replenish_ieds(
+    game: "Game", state: dict[str, Any], ieds: list[dict[str, Any]], events: Any
+) -> None:
     used = {tuple(ied["road"]) for ied in ieds if "road" in ied}
     while len(ieds) < MAX_ACTIVE_IEDS:
         site = _pick_ied_site(game, used)
@@ -113,19 +139,48 @@ def _replenish_ieds(game: "Game", ieds: list[dict[str, Any]], events: Any) -> No
             events,
             max_units=IED_UNITS,
             sidc_override=IED_SIDC,
+            unit_types=ied_unit_types(game),
         )
         if tgo is None:
             return
         used.add(road_key)
-        ieds.append(
-            {
-                "tgo_id": str(tgo.id),
-                "armed": 0,
-                "road": list(road_key),
-                "where": red_cp.name,
-            }
-        )
-        _announce(game, f"Intel: IED activity reported on the road near {red_cp.name}.")
+        # Alternate static device and mobile VBIED (deterministic -- saves must be stable):
+        # every other plant is a suicide vehicle that races for the nearest friendly base.
+        planted = int(state.get("ied_planted", 0))
+        state["ied_planted"] = planted + 1
+        record: dict[str, Any] = {
+            "tgo_id": str(tgo.id),
+            "armed": 0,
+            "road": list(road_key),
+            "where": red_cp.name,
+            "kind": "vbied" if planted % 2 == 1 else "ied",
+        }
+        if record["kind"] == "vbied":
+            target = _nearest_blue_cp(game, point)
+            record["target"] = target.name if target is not None else "friendly lines"
+            ieds.append(record)
+            _announce(
+                game,
+                f"Intel: a VBIED (suicide vehicle) is moving from near {red_cp.name} "
+                f"toward {record['target']} — intercept it before it arrives.",
+            )
+        else:
+            ieds.append(record)
+            _announce(
+                game, f"Intel: IED activity reported on the road near {red_cp.name}."
+            )
+
+
+def _nearest_blue_cp(game: "Game", point: Any) -> Optional["ControlPoint"]:
+    """The friendly (blue) control point nearest *point* -- the VBIED's objective."""
+    best: Optional[tuple[float, "ControlPoint"]] = None
+    for cp in game.theater.controlpoints:
+        if not cp.captured.is_blue:
+            continue
+        dist = point.distance_to_point(cp.position)
+        if best is None or dist < best[0]:
+            best = (dist, cp)
+    return best[1] if best is not None else None
 
 
 def _pick_ied_site(

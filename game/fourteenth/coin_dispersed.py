@@ -37,6 +37,7 @@ from game.fourteenth.coin import (
     _revivable_units,
     _revive,
     _tgo_by_id,
+    cell_unit_types,
     spawn_red_ground_at,
 )
 
@@ -173,6 +174,7 @@ def _reseed_cells(game: "Game", cells: list[dict[str, Any]], events: Any) -> Non
             events,
             max_units=FIELD_CELL_UNITS,
             sidc_override=CELL_SIDC,
+            unit_types=cell_unit_types(game),
         )
         if tgo is None:
             return

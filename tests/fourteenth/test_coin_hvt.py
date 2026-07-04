@@ -140,7 +140,7 @@ def test_surfaces_at_the_stronghold_nearest_the_front(monkeypatch: Any) -> None:
     tgo = game.db.tgos[active["tgo_id"]]
     assert tgo.control_point.id == 2
     assert tgo.name.startswith("HVT ")
-    assert any("located near CP2" in m[1] for m in game.messages)
+    assert any("on the move near CP2" in m[1] for m in game.messages)
 
 
 def test_kill_credits_a_momentum_blow(monkeypatch: Any) -> None:

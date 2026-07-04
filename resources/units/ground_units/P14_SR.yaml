@@ -5,4 +5,5 @@ manufacturer: Nizhny Novgorod Research Institute of Radio Engineering
 origin: USSR/Russia
 price: 25
 variants:
+  EWR P-14 Tall King: null
   "SAM SA-5 S-200 P-14 'Tall king' SR": {}

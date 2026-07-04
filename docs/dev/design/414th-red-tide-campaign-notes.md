@@ -349,6 +349,40 @@ considered and declined.
   def whose airframe isn't in the faction). Also shared, but additive — it only makes the
   airframe available.
 
+### P-14 "Tall King" additions (2026-07-04)
+
+Two coordinated changes so red fields the recently-added DCS **P-14 "Tall King"** radar
+(`AirDefence.P14_SR`, unit class `EarlyWarningRadar`, `resources/units/ground_units/P14_SR.yaml`):
+
+1. **Every S-200 / SA-5 site now carries a Tall King alongside its ST-68U "Tin Shield"**
+   (real-world pairing: the P-14 fed the S-200 long-range EW while the ST-68U acquired). This is
+   **game-wide, shared core content — NOT Red-Tide-local** (every faction/campaign with an S-200
+   gets it) and is a clean **upstream candidate**. Mechanism, three files:
+   - `resources/units/ground_units/P14_SR.yaml` — added a clean standalone `EWR P-14 Tall King`
+     variant (the pre-existing `SAM SA-5 S-200 P-14 'Tall king' SR` variant was unreferenced).
+   - `resources/groups/SA-5.yaml` — added `EWR P-14 Tall King` to the preset group's `units:`
+     pool, so any faction fielding the `SA-5/S-200` preset gains `has_access_to_dcs_type(P14_SR)`.
+   - `resources/layouts/anti_air/SA-5 Legacy Site (Circle).yaml` + `(Semicircle).yaml` — added an
+     **`optional` `EW Radar` slot** (`unit_types: [P14_SR]`, `unit_count: [1]`). Optional so a
+     faction lacking P-14 access degrades gracefully (the site stays valid — `usable_by_faction`
+     only gates non-optional groups); with the pool addition above, all S-200 factions fill it.
+   - Positions come from the two **shared template missions**
+     `8_Launcher_Circle.miz` (8 layouts reference it) + `6_Launcher_Semicircle.miz`: each got a
+     new `EW Radar` vehicle group (1× `P14_SR`) at the site periphery. Only the SA-5 layouts map
+     the `EW Radar` group name, so the other layouts sharing the template **ignore** it
+     (`group_for_name` → `KeyError` → skipped). **Editing gotcha:** pydcs `Mission.save` re-emitted
+     the known **duplicate `theatre` zip member** — stripped afterward by rewriting each `.miz`
+     keeping one copy of every member (both `theatre` entries were byte-identical `Caucasus`).
+     Verify with `zipfile.namelist()` having no dupes.
+2. **russia_1980 fields the P-14 as a standalone EWR.** Added `EWR P-14 Tall King` to
+   `air_defense_units` (the *same* variant the SA-5 pool uses, so `accessible_units`' `set()`
+   dedupes it → the generic `Early-Warning Radar` draw pool is a balanced `1L13 / P-37 / P-14`,
+   ~⅓ each — no over-weighting). Shared with Crossing the Rubicon; era-correct for 1988.
+
+**Headless-verified (real new-game pipeline, `red_tide.yaml`):** both S-200 sites spawn a Tin
+Shield **and** a Tall King; standalone red EWR sites roll a P-14 ~⅓ of the time; black + mypy +
+full pytest (1540 passed) green.
+
 ### Aircraft / squadron specifics
 - **German Phantom:** the `GAF JG 74` "Moelders" entry is a *squadron name* in the
   `aircraft:` list, not an aircraft type. `DefaultSquadronAssigner.find_squadron_by_name`

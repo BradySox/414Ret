@@ -38,30 +38,46 @@ Old City), and every COIN mechanic the fork shipped has a real-world referent he
 Coordinates: **+x = north, +y = east, Baghdad at origin.** Mosul (id 3) is the northwest
 apex; Q-West (6) is ~60 km due south; Erbil (4) ~72 km east.
 
-- 🔴 **RED airfield:** **Mosul International (3)** — the one red airfield, the objective
-  (zeroed air).
-- 🔴 **RED town strongholds** (authored as **FOB** control points; XY from real lat/lon):
-  Hammam al-Alil `(322805, -81581)`, Bartella `(343841, -73022)`, Bashiqa `(355988, -73419)`,
-  Hamdaniya `(334903, -73325)`, **Tal Afar** `(348018, -156505)` — the western gateway toward
-  Syria and the far end of the ratline (a late-arc objective).
-- 🔵 **BLUE forward:** Qayyarah West (6, the player fields) · Erbil (4) · Bashur (5) ·
-  Kirkuk (10) / K1 (11).
-- 🔵 **BLUE rear:** Sulaimaniyah (7) · Al-Sahra (12) · **Balad (8, the heavies)** · Al-Taji (9) ·
+> **Scope revised 2026-07-04 (post-merge playtest):** the first cut gave red only Mosul + a
+> tight FOB cluster — "a tiny red area." Per the user's call, the caliphate now holds the
+> **whole northern belt** (the 2014-era extent), and blue reconquers it from the south. Every
+> red stronghold was also enriched from one lone marker to a real garrison. The single-front /
+> Mosul-only laydown below is superseded by the belt version.
+
+- 🔴 **RED airfields (7):** **Mosul (3)** the anchor, **Erbil (4)**, **Kirkuk (10) / K1 (11)**,
+  **Bashur (5)**, **Sulaimaniyah (7)**, **Al-Sahra (12, Tikrit)** — the northern belt.
+- 🔴 **RED town strongholds (5 FOBs; XY from real lat/lon):** Hammam al-Alil `(322805, -81581)`,
+  Bartella `(343841, -73022)`, Bashiqa `(355988, -73419)`, Hamdaniya `(334903, -73325)`,
+  **Tal Afar** `(348018, -156505)` — the western gateway toward Syria / the far end of the ratline.
+- 🔵 **BLUE forward:** **Qayyarah West (6)** — the **sole** forward airhead (player fields + the
+  air-assault helos), now the belt is red.
+- 🔵 **BLUE rear:** **Balad (8, the heavies + the Tikrit-front base)** · Al-Taji (9) ·
   **Baghdad (2, support/CSAR)** · Al-Salam (14) · Al-Taquddum (13).
-- ⚪ **Excluded** (left unset → not drawn as CPs, to keep the theater on Mosul):
-  Al-Asad (1), Al-Kut (19), the H-2 / H-3 desert fields (15–18).
+- ⚪ **Excluded** (left unset → not drawn as CPs): Al-Asad (1), Al-Kut (19), the H-2 / H-3
+  desert fields (15–18).
 
-**Al-Salam** was confirmed to sit ~25 km from Baghdad International (a deep-rear staging field),
-**not** a Mosul-area strip — so Mosul stands as the sole red airfield near the front.
+So RED holds **12 CPs** (7 airfields + 5 FOBs), BLUE **6**. **Al-Salam** sits ~25 km from
+Baghdad (deep rear), not a Mosul strip.
 
-### Front & connectivity
-- **One southern front:** Qayyarah West (blue) ↔ Hammam al-Alil (red) — the historical
-  Federal Police motorway thrust — authored as an **M-113 front-line group** in the miz
-  (`FRONT Qayyarah-Mosul`), starting partway up the axis via `control_point_strengths`.
-- **Red-red ring/ratline** (yaml `supply_routes`): Mosul → each of the five town strongholds,
-  the western Mosul → Tal Afar leg being the convoy-interdiction ratline. Hammam al-Alil
-  therefore carries **both** the front (to Q-West) and a red route (to Mosul), so the grind
-  advances organically as it's captured.
+### Fronts & connectivity — **two fronts**
+- **Mosul axis:** Qayyarah West (blue) ↔ Hammam al-Alil (red) — the historical Federal Police
+  motorway thrust (`FRONT Qayyarah-Mosul`).
+- **Tikrit axis:** Balad (blue) ↔ Al-Sahra (red) — Highway 1 north out of Baghdad
+  (`FRONT Balad-Tikrit`).
+  Both are M-113 front-line groups, each starting partway up its axis via `control_point_strengths`.
+- **Red-red belt + ring/ratline** (yaml `supply_routes`, 11 routes): Mosul → each of the five
+  towns (incl. the westward Mosul → Tal Afar ratline), plus the belt chaining
+  Mosul/Erbil/Kirkuk/K1/Bashur/Sulaimaniyah/Al-Sahra so the deep-belt fields are
+  reachable/capturable behind the two fronts. The deep-eastern fields (Sulaimaniyah, Bashur)
+  have no blue neighbour and fall to air assault as the noose tightens.
+
+### Ground enrichment (per red stronghold)
+Every one of the 12 red strongholds is furnished by the generator with **two garrison groups**
+(armor markers → filled from the ISIS frontline roster: technicals, gun trucks, the VBIED),
+an **AAA** site (ZU-23), a **SHORAD** site (SA-8/9/13), and a **strongpoint** (`Tech_combine`
+strike target) — so each objective reads as an occupied position, not a lone icon — plus its
+ammo caches. **Mosul and Kirkuk** additionally anchor the **SA-6** (medium/SEAD) radar sites,
+one per front.
 
 ---
 

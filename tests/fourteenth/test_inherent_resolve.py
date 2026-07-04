@@ -49,14 +49,21 @@ def test_inherent_resolve_campaign_definition() -> None:
     assert (factions / "cjtf_oir_2016.json").exists()
     assert (factions / "isis_2016.json").exists()
 
-    # The ratline + the Nineveh ring: authored red<->red supply corridors (Mosul to each
-    # of the five town strongholds, the western leg being the Tal Afar / Syria ratline).
-    assert len(data["supply_routes"]) == 5
+    # The ratline + the Nineveh ring + the northern belt: authored red<->red supply
+    # corridors (Mosul to each of the five towns incl. the Tal Afar / Syria ratline, plus
+    # the belt chaining Mosul/Erbil/Kirkuk/K1/Bashur/Sulaimaniyah/Al-Sahra).
+    assert len(data["supply_routes"]) == 11
     for route in data["supply_routes"]:
         assert len(route["waypoints"]) >= 2
 
-    # The southern front starts partway up the Qayyarah West -> Hammam al-Alil axis.
+    # Two fronts start partway up their axes: Q-West -> Hammam al-Alil (Mosul) and
+    # Balad -> Al-Sahra (Tikrit).
     assert "Hammam al-Alil" in data["control_point_strengths"]
+    assert "Al-Sahra Airport" in data["control_point_strengths"]
+
+    # The caliphate holds the northern belt, so blue bases only from the south: no
+    # squadron is fragged from Erbil (id 4), which is now red.
+    assert 4 not in data["squadrons"]
 
     profile = parse_will_profile(data["will"])
     assert profile.blue.label == "The Coalition's mandate"

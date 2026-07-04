@@ -3,15 +3,20 @@
 The Battle of Mosul, Oct 2016 -> Jul 2017 -- the 414th's second COIN campaign (sibling
 of Operation Enduring Resolve). Unlike the ER build tool (which *decorated* Starfire's
 Shattered Dagger laydown), there is no pre-authored Mosul miz, so this generates the whole
-laydown headlessly via pydcs: a fresh Iraq mission, the CJTF blue/red countries, airfield
-ownership (Mosul red, the ring/rear blue), the red Nineveh town strongholds as FOBs, the
-per-stronghold COIN furniture (a garrison cell, guns, the thin SA-6/8/9/13 crust) and the
-ammo-cache TGOs the C1 regen throttle feeds on, plus the one southern front (Q-West ->
-Hammam al-Alil). The red-red ring/ratline is authored in the campaign yaml's `supply_routes`.
+laydown headlessly via pydcs.
 
-Everything is deterministic (fixed offsets, no randomness). The stronghold XY were derived
-from the towns' real lat/lons through the Iraq terrain projection (the 414th supply-line
-standard); edit the tables below and re-run to rebalance.
+The caliphate holds the **whole northern belt** (Mosul, Erbil, Kirkuk/K1, Bashur,
+Sulaimaniyah, Al-Sahra) plus a cluster of Nineveh town FOBs; blue holds the south (Q-West
+the forward airhead, Balad/Baghdad/Taji/Taqaddum the rear) and grinds north on **two
+fronts** -- Q-West -> the Mosul ring, and Balad -> Al-Sahra (the Tikrit axis). Every red
+stronghold is furnished with a real garrison (armor/technicals filled from the ISIS roster),
+guns, a SHORAD site, a strongpoint, and the ammo caches the C1 regen throttle feeds on;
+Mosul and Kirkuk anchor the thin SA-6 radar crust. The red-red belt/ratline connectivity is
+authored in the campaign yaml's `supply_routes`.
+
+Everything is deterministic (fixed offsets, no randomness). Stronghold XY were derived from
+the towns' real lat/lons through the Iraq terrain projection (the 414th supply-line
+standard); airfield XY are the terrain airport positions. Edit the tables and re-run.
 
 Usage: python tools/build_iraq_inherent_resolve_miz.py
 """
@@ -30,64 +35,87 @@ from dcs.vehicles import AirDefence, Armor, Unarmed
 REPO = Path(__file__).resolve().parent.parent
 DST = REPO / "resources/campaigns/iraq_inherent_resolve.miz"
 
-# --- Airfield ownership (terrain airport ids, from dcs.terrain.iraq.airports).
-#     Mosul is the one red airfield (the objective); the ring + rear are blue; the
-#     far-SW desert fields (H-2/H-3, id 15-18) and the peripheral Al-Asad/Al-Kut are
-#     left unset so they are NOT drawn as control points (keeps the theater on Mosul).
-RED_AIRFIELD_IDS = [3]  # Mosul International
+# --- Airfield ownership (terrain airport ids, from dcs.terrain.iraq.airports). The
+#     caliphate holds the northern belt; blue holds the south. The far-SW desert fields
+#     (H-2/H-3, id 15-18) and the peripheral Al-Asad/Al-Kut are left unset -> not drawn
+#     as control points.
+RED_AIRFIELD_IDS = [
+    3,  # Mosul International -- the anchor
+    4,  # Erbil International
+    5,  # Bashur
+    7,  # Sulaimaniyah
+    10,  # Kirkuk International
+    11,  # K1 Base
+    12,  # Al-Sahra (Tikrit)
+]
 BLUE_AIRFIELD_IDS = [
     6,  # Qayyarah West -- the forward airhead, player fields
-    4,  # Erbil -- eastern flank / coalition
-    5,  # Bashur -- northern Kurdish field
-    10,  # Kirkuk
-    11,  # K1 Base
-    7,  # Sulaimaniyah -- rear
-    12,  # Al-Sahra -- mid rear
-    8,  # Balad -- heavies
+    8,  # Balad -- heavies + the Tikrit-axis front base
     9,  # Al-Taji -- rear
     2,  # Baghdad International -- support
     14,  # Al-Salam -- support / CSAR
     13,  # Al-Taquddum -- Anbar rear
 ]
 
-MOSUL = (339469.0, -94071.0)  # Mosul International airfield (the red anchor)
-
-# --- Red Nineveh town strongholds (FOB CPs): name, (x, y), cache count.
-#     XY from real lat/lon via the Iraq projection (Point.from_latlng). Tal Afar is the
-#     western gateway toward Syria -- the far end of the ratline, a late-arc objective.
-#   name              (x, y)                 caches
-STRONGHOLDS: list[tuple[str, tuple[float, float], int]] = [
-    ("Hammam al-Alil", (322805.0, -81581.0), 2),
-    ("Bartella", (343841.0, -73022.0), 2),
-    ("Bashiqa", (355988.0, -73419.0), 2),
-    ("Hamdaniya", (334903.0, -73325.0), 2),
-    ("Tal Afar", (348018.0, -156505.0), 2),
+# --- Red strongholds to FURNISH: (name, (x, y), is_fob, caches, has_sa6). Airfields are
+#     already red via ownership above; the FOB towns get an SKP-11 marker to become CPs.
+#     Airfield XY are the terrain airport positions; town XY are from real lat/lon.
+#   name              (x, y)                  is_fob caches  SA-6
+RED_STRONGHOLDS: list[tuple[str, tuple[float, float], bool, int, bool]] = [
+    ("Mosul", (339469.0, -94071.0), False, 3, True),
+    ("Erbil", (330838.0, -22360.0), False, 2, False),
+    ("Kirkuk", (245434.0, 12825.0), False, 2, True),
+    ("K1", (250080.0, 7392.0), False, 1, False),
+    ("Bashur", (363380.0, 13140.0), False, 1, False),
+    ("Sulaimaniyah", (255226.0, 100814.0), False, 1, False),
+    ("Al-Sahra", (157133.0, -61805.0), False, 2, False),
+    ("Hammam al-Alil", (322805.0, -81581.0), True, 2, False),
+    ("Bartella", (343841.0, -73022.0), True, 2, False),
+    ("Bashiqa", (355988.0, -73419.0), True, 2, False),
+    ("Hamdaniya", (334903.0, -73325.0), True, 2, False),
+    ("Tal Afar", (348018.0, -156505.0), True, 2, False),
 ]
 
-# --- The southern front (the historical Federal Police motorway thrust): a M-113
-#     front-line group whose first waypoint is at Q-West (blue) and last at Hammam
-#     al-Alil (red). Waypoints trace Highway 1 / the Tigris valley NNW; only the
-#     endpoints bind the front (closest-CP), the middles shape the path.
-QWEST = (279544.0, -97450.0)
-FRONT_PATH = [QWEST, (295500.0, -92000.0), (310000.0, -86000.0), (322805.0, -81581.0)]
+# --- The two fronts (blue M-113 front-line groups; first waypoint at the blue CP, last
+#     at the red CP -- only the endpoints bind the front, the middles shape the path).
+FRONTS: list[tuple[str, list[tuple[float, float]]]] = [
+    # The Mosul axis: Q-West -> Hammam al-Alil (Highway 1 up the Tigris).
+    (
+        "FRONT Qayyarah-Mosul",
+        [
+            (279544.0, -97450.0),
+            (295500.0, -92000.0),
+            (310000.0, -86000.0),
+            (322805.0, -81581.0),
+        ],
+    ),
+    # The Tikrit axis: Balad -> Al-Sahra (Highway 1 north out of Baghdad).
+    (
+        "FRONT Balad-Tikrit",
+        [
+            (75938.0, 13806.0),
+            (105000.0, -15000.0),
+            (135000.0, -45000.0),
+            (157133.0, -61805.0),
+        ],
+    ),
+]
 
 # --- Blue economy: a Workshop_A factory static at two rear airfields so blue has real
-#     production (a from-scratch miz has no inherited economy). Placed a short hop off
-#     the field so it binds to that CP.
+#     production. Placed a short hop off the field so it binds to that CP.
 BLUE_FACTORIES: list[tuple[str, tuple[float, float]]] = [
     ("Baghdad Factory", (2200.0, 1800.0)),  # near Baghdad International (-142, 160)
     ("Balad Factory", (78000.0, 15500.0)),  # near Balad (75938, 13806)
 ]
 
-# --- Per-stronghold COIN furniture. A garrison armor marker (fills the red frontline
-#     roster -> the cell the C1 engine regenerates), an AAA marker (ZU-23 technicals),
-#     and a SHORAD marker (SA-8/9/13). Mosul additionally gets a MEDIUM marker (-> SA-6),
-#     the one SEAD-relevant radar site. Deterministic offsets, well inside each CP's
-#     catchment (strongholds are 15+ km apart).
-GARRISON_OFFSET = (300.0, 300.0)
+# --- Per-stronghold furniture offsets (meters, mission x/y). TWO garrison groups now
+#     (armor/technicals filled from the ISIS roster), guns, a SHORAD site, and a
+#     strongpoint -- so each objective reads as an occupied position, not a lone marker.
+GARRISON_OFFSETS = [(300.0, 300.0), (-650.0, -450.0)]
 AAA_OFFSET = (900.0, -700.0)
 SHORAD_OFFSET = (-800.0, 900.0)
 MERAD_OFFSET = (1600.0, 1400.0)
+STRONGPOINT_OFFSET = (-1300.0, -1000.0)
 
 CACHE_OFFSETS = [
     (1400.0, 300.0),
@@ -114,21 +142,29 @@ def build() -> None:
     for aid in BLUE_AIRFIELD_IDS:
         airports[aid].set_blue()
 
-    # Red town strongholds (FOBs) + their COIN furniture + caches.
     caches = 0
-    for name, xy, count in STRONGHOLDS:
-        x, y = xy
-        mission.vehicle_group(
-            country=red, name=name, _type=Unarmed.SKP_11, position=_pt(mission, xy)
-        )
-        mission.vehicle_group(
-            country=red,
-            name=f"GARRISON {name}",
-            _type=Armor.M_1_Abrams,
-            position=Point(
-                x + GARRISON_OFFSET[0], y + GARRISON_OFFSET[1], mission.terrain
-            ),
-        )
+    garrisons = 0
+    for name, (x, y), is_fob, cache_count, has_sa6 in RED_STRONGHOLDS:
+        # Town strongholds need an SKP-11 marker to become FOB control points; airfields
+        # are already red via ownership.
+        if is_fob:
+            mission.vehicle_group(
+                country=red,
+                name=name,
+                _type=Unarmed.SKP_11,
+                position=_pt(mission, (x, y)),
+            )
+        # Two garrison groups (armor markers -> filled from the red frontline roster:
+        # technicals, gun trucks, the VBIED).
+        for i, (gx, gy) in enumerate(GARRISON_OFFSETS):
+            mission.vehicle_group(
+                country=red,
+                name=f"GARRISON {name} {i + 1}",
+                _type=Armor.M_1_Abrams,
+                position=Point(x + gx, y + gy, mission.terrain),
+            )
+            garrisons += 1
+        # Guns + a SHORAD site.
         mission.vehicle_group(
             country=red,
             name=f"AAA {name}",
@@ -141,7 +177,27 @@ def build() -> None:
             _type=AirDefence.Strela_1_9P31,
             position=Point(x + SHORAD_OFFSET[0], y + SHORAD_OFFSET[1], mission.terrain),
         )
-        for index in range(count):
+        # A strongpoint (strike target) -- an objective to hit, not just a marker.
+        mission.static_group(
+            country=red,
+            name=f"STRONGPOINT {name}",
+            _type=Fortification.Tech_combine,
+            position=Point(
+                x + STRONGPOINT_OFFSET[0], y + STRONGPOINT_OFFSET[1], mission.terrain
+            ),
+        )
+        # The thin SA-6 radar crust anchors (Mosul + Kirkuk) -- the SEAD job.
+        if has_sa6:
+            mission.vehicle_group(
+                country=red,
+                name=f"MERAD {name}",
+                _type=AirDefence.S_75M_Volhov,  # MEDIUM marker -> the faction's SA-6 preset
+                position=Point(
+                    x + MERAD_OFFSET[0], y + MERAD_OFFSET[1], mission.terrain
+                ),
+            )
+        # Ammo caches.
+        for index in range(cache_count):
             dx, dy = CACHE_OFFSETS[index % len(CACHE_OFFSETS)]
             mission.static_group(
                 country=red,
@@ -151,54 +207,16 @@ def build() -> None:
             )
             caches += 1
 
-    # Mosul (the red airfield anchor): garrison, guns, the SA-6 crust site, and the
-    # rear depots (3 caches).
-    mx, my = MOSUL
-    mission.vehicle_group(
-        country=red,
-        name="GARRISON Mosul",
-        _type=Armor.M_1_Abrams,
-        position=Point(
-            mx + GARRISON_OFFSET[0], my + GARRISON_OFFSET[1], mission.terrain
-        ),
-    )
-    mission.vehicle_group(
-        country=red,
-        name="AAA Mosul",
-        _type=AirDefence.ZSU_23_4_Shilka,
-        position=Point(mx + AAA_OFFSET[0], my + AAA_OFFSET[1], mission.terrain),
-    )
-    mission.vehicle_group(
-        country=red,
-        name="SHORAD Mosul",
-        _type=AirDefence.Strela_1_9P31,
-        position=Point(mx + SHORAD_OFFSET[0], my + SHORAD_OFFSET[1], mission.terrain),
-    )
-    mission.vehicle_group(
-        country=red,
-        name="MERAD Mosul",
-        _type=AirDefence.S_75M_Volhov,  # MEDIUM marker -> the faction's SA-6 preset
-        position=Point(mx + MERAD_OFFSET[0], my + MERAD_OFFSET[1], mission.terrain),
-    )
-    for index in range(3):
-        dx, dy = CACHE_OFFSETS[index % len(CACHE_OFFSETS)]
-        mission.static_group(
-            country=red,
-            name=f"CACHE Mosul {index + 1}",
-            _type=Warehouse._Ammunition_depot,
-            position=Point(mx + dx, my + dy, mission.terrain),
+    # The fronts (blue M-113 front-line groups).
+    for front_name, path in FRONTS:
+        front = mission.vehicle_group(
+            country=blue,
+            name=front_name,
+            _type=Armor.M_113,
+            position=_pt(mission, path[0]),
         )
-        caches += 1
-
-    # The southern front (Q-West -> Hammam al-Alil): a blue M-113 front-line group.
-    front = mission.vehicle_group(
-        country=blue,
-        name="FRONT Qayyarah-Mosul",
-        _type=Armor.M_113,
-        position=_pt(mission, FRONT_PATH[0]),
-    )
-    for wp in FRONT_PATH[1:]:
-        front.add_waypoint(_pt(mission, wp))
+        for wp in path[1:]:
+            front.add_waypoint(_pt(mission, wp))
 
     # Blue economy factories.
     for name, xy in BLUE_FACTORIES:
@@ -210,11 +228,13 @@ def build() -> None:
         )
 
     mission.save(str(DST))
+    fobs = sum(1 for s in RED_STRONGHOLDS if s[2])
     print(
         f"Wrote {DST} ("
         f"{len(RED_AIRFIELD_IDS)} red + {len(BLUE_AIRFIELD_IDS)} blue airfields, "
-        f"{len(STRONGHOLDS)} red FOBs, {caches} caches, "
-        f"{len(BLUE_FACTORIES)} factories, 1 southern front)"
+        f"{fobs} red FOBs, {len(RED_STRONGHOLDS)} furnished strongholds, "
+        f"{garrisons} garrisons, {caches} caches, "
+        f"{len(BLUE_FACTORIES)} factories, {len(FRONTS)} fronts)"
     )
 
 

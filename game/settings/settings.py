@@ -295,19 +295,34 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
-                "Threat & engagement distances",
+                "Engagement ranges",
                 [
                     "airbase_threat_range",
                     "max_threat_range",
                     "cas_engagement_range_distance",
                     "armed_recon_engagement_range_distance",
+                ],
+            ),
+            (
+                "SEAD standoff",
+                [
                     "sead_sweep_engagement_range_distance",
                     "sead_threat_buffer_min_distance",
                     "sead_loiter_standoff_factor",
                     "sead_loiter_max_window_seconds",
+                ],
+            ),
+            (
+                "Support-orbit standoff",
+                [
                     "tarcap_threat_buffer_min_distance",
                     "aewc_threat_buffer_min_distance",
                     "tanker_threat_buffer_min_distance",
+                ],
+            ),
+            (
+                "Mission range limits",
+                [
                     "max_mission_range_planes",
                     "max_mission_range_helicopters",
                 ],
@@ -318,15 +333,13 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
         CAMPAIGN_MANAGEMENT_PAGE,
         [
             (
-                "Campaign phases",
+                # The player-facing campaign features, together at the top of the
+                # page (they used to be three one-field orphan sections).
+                "Campaign features",
                 [
                     "campaign_phases",
-                ],
-            ),
-            (
-                "Campaign clock & weather",
-                [
                     "continuous_campaign_clock",
+                    "long_range_carrier_ops",
                 ],
             ),
             (
@@ -338,12 +351,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "coin_hvt",
                     "coin_dispersed_cells",
                     "coin_harassment",
-                ],
-            ),
-            (
-                "Carrier operations",
-                [
-                    "long_range_carrier_ops",
                 ],
             ),
             (
@@ -362,7 +369,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
-                "Economy & reserves",
+                "Commander economy",
                 [
                     "auto_procurement_balance",
                     "frontline_reserves_factor",
@@ -461,6 +468,13 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "max_frontline_width",
                     "use_auto_fog",
+                ],
+            ),
+            (
+                # In-mission life on the ground: cosmetic siege damage, indirect
+                # fire on forward strips, and shoot-and-scoot missile sites.
+                "Battlefield life",
+                [
                     "base_battle_damage",
                     "artillery_base_harassment",
                     "mobile_missile_relocation",

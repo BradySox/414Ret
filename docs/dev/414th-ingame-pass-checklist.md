@@ -1801,6 +1801,20 @@ so the two docs don't drift.
   test-locked); a page/section empty or mis-ordered; the preset bar missing or not refreshing the
   controls; a preset not flipping the expected fields; a blank page icon; a console error opening
   the dialog.
+- **Second IA pass (2026-07-05), re-opens the UI-eyeball leg for the wizard.** The New Game wizard
+  audit moved the world-shaping generator options onto the **Theater** page ("Forces & Budget" group,
+  re-seeded per campaign on select) and made the old Generator page a grouped **Mods** page; plus the
+  legacy sweep (Vietnam card text, "Advanced IADS (MANTIS)", sorted time periods with a named default,
+  `Default.zip` subtitle, `SettingNames.py` deleted, OH-6 relabel) and the section regroup ("Campaign
+  features" + "Commander economy" on Campaign Management, "Battlefield life" on Mission Generation,
+  the Air Doctrine threat wall split into 4 sections). All walk-verified headless (7 pages, 174
+  fields) + the wizard files compile. **In-app re-check:** run the wizard end-to-end — the Theater
+  page shows and re-seeds Forces & Budget when switching campaigns (e.g. Red Tide 800/400), the Mods
+  page reads in its three groups, a generated game honors the checkboxes/budgets exactly as before
+  (`accept()` reads the same field names), the Vietnam card lists the right campaigns, and the time
+  preset defaults to Mid-90s Summer. **Fail:** a wizard field silently unregistered (game generates
+  with defaults — budgets ignored is the tell), the Theater page overflowing at 1080p, campaign
+  switching not re-seeding the group, or the settings dialog missing any of the new sections.
 
 ### K2 — Kneeboard cover page (op/turn header + SITREP + index) · §29 / §30 · ☑ VERIFIED (2026-06-28, audience in-game pass — SITREP numbers across turns OK; render previously confirmed)
 - **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**

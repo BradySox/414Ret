@@ -760,9 +760,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Difficulty & Realism page sets 12 difficulty-defining fields together (Normal == stock defaults);
     every setting stays hand-editable after. The classmethods fall back to a field's own
     `page=`/`section=` metadata for anything absent from FIELD_LAYOUT, so nothing is ever dropped.
+    **Second IA pass 2026-07-05 (the New Game wizard audit)**: the wizard's Generator page's
+    world-shaping options (no-carrier/navy checkboxes, squadrons-start-full, budgets) moved onto the
+    **Theater** page ("Forces & Budget", campaign-reseeded on select; field names unchanged), leaving
+    a dedicated grouped **Mods** page (Aircraft/Asset packs/Air defense — the curated 16 of ~50
+    `ModSettings`); legacy sweep (Vietnam card's deleted-Khe-Sanh text, "Advanced IADS (WIP)" →
+    "(MANTIS)", the stale `Default.zip` subtitle, `TIME_PERIODS` chronologically sorted + named
+    default, dead `SettingNames.py` deleted, OH-6 checkbox relabeled ground-objects-only); and a
+    section regroup (Campaign Management gets a "Campaign features" opener + "Commander economy";
+    Mission Generation splits out "Battlefield life"; Air Doctrine's 13-field threat wall becomes 4
+    focused sections). FIELD_LAYOUT-only — 7 pages, 174 fields, walk-verified.
     (`game/settings/settings.py`, `game/settings/difficultypreset.py`,
-    `qt_ui/windows/settings/QSettingsWindow.py`, `qt_ui/uiconstants.py`; features doc §28,
-    checklist K1.)
+    `qt_ui/windows/settings/QSettingsWindow.py`, `qt_ui/windows/newgame/`, `qt_ui/uiconstants.py`;
+    features doc §28, checklist K1.)
 29. **Campaign SITREP kneeboard band** — a "what happened last turn" digest on the next mission's
     kneeboard cover page (a cockpit intel brief). `MissionResultsProcessor.commit()` gets a final
     `record_sitrep` step that reads the debriefing it already has — per-side losses (`loss_counts`),

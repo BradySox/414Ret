@@ -203,9 +203,10 @@ class IntroPage(QtWidgets.QWizardPage):
         self.vietnam_radio = QtWidgets.QRadioButton("Vietnam")
         self.registerField("vietnamMode", self.vietnam_radio)
         vietnam_desc = QtWidgets.QLabel(
-            "Fly the air war over Vietnam: only Vietnam-era campaigns (Khe Sanh, "
-            "Yankee Station, Velvet Thunder), with Arc Light, AAA flak, period "
-            "weapons, and era taskings (MiGCAP, Alpha Strike, Sandy) pre-loaded."
+            "Fly the air war over Vietnam: only Vietnam-era campaigns (1968 Yankee "
+            "Station, Velvet Thunder, Red Flag 81-2), with Arc Light, AAA flak, "
+            "period weapons, and era taskings (MiGCAP, Alpha Strike, Sandy) "
+            "pre-loaded."
         )
         vietnam_desc.setWordWrap(True)
         vietnam_desc.setIndent(22)

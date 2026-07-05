@@ -13,7 +13,9 @@ class NewGameSettings(QtWidgets.QWizardPage):
 
         self.setTitle("Campaign options")
         self.setSubTitle(
-            "\nAll other options unrelated to campaign generation. Defaults can be changed by overwriting Default.zip"
+            "\nDifficulty, doctrine, and every campaign option (pre-seeded by the "
+            "selected campaign). Use Save Settings to make your choices the default "
+            "for future games."
         )
         self.setPixmap(
             QtWidgets.QWizard.WizardPixmap.LogoPixmap,

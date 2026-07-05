@@ -1352,6 +1352,7 @@ so the two docs don't drift.
   (`combatsar-config.lua` around `dispatchSandy`/`findFreeSandy`/`releaseSandy`).
 
 ### G24 — Concealed enemy field forces: uncertainty circles until scouted · §3 · ☐ UNTESTED (built 2026-07-05; the qualifier + jitter determinism/bounds are unit-tested — the map read + the play feel need an in-app pass + the CI client rebuild)
+- **Blank-map regression FIXED same day (2026-07-05, user report on the `iraq.retribution` save):** with fog on, the whole map (bar the base layer) failed to draw; fog-reveal drew fine. Root cause: the jitter rebuilt the offset point via `pos.__class__(x, y, terrain)`, but a real TGO's position is a **`PresetLocation`** (`(name, position, heading)` constructor), so every concealed TGO raised and one exception 500'd the whole `/game` payload (reveal bypassed the jitter via `known_for`, which is why fog-off worked). Fix: build a plain `dcs.mapping.Point`; a regression test pins the real `PresetLocation` type; headless-verified on the user's save (97/97 TGOs serialize, 60 circles).
 - **What it is:** with `concealed_enemy_forces` on (default ON, new campaigns), an **un-scouted** enemy
   field force — a mobile SAM site (MERAD/SHORAD/AAA), a deployed vehicle group, a missile site — shows
   as a dashed red **"suspected enemy activity" circle** (4 km; 3 km for vehicle groups) whose centre is

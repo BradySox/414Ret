@@ -61,33 +61,6 @@ SAR: KING overhead; eject contract per handbook §11.
 
 ---
 
-## F-4E Phantom II — the multi-role workhorse (Ramstein / Spangdahlem / Hahn)
-
-```
-====================  F-4E-45MC PHANTOM II  ====================
-Four player Phantom squadrons, four jobs. Heatblur module required.
-
-480th TFS (Ramstein) — SEAD SWEEP "the Weasel sweep"
-  Load: AGM-88/AGM-45 ×2 · AIM-7 ×2 + AIM-9 ×4 · jammer · bags
-  Plan: sweep the corridor ahead of the package; hunt/suppress emitters.
-512th TFS (Hahn) — OCA/RUNWAY
-  Load: Mk-82 / cluster / runway craters · AIM-7/9 self-defense · bags
-  Plan: strangle the fields (Haina, later Hamburg) — crater + kill parked jets.
-526th TFS (Spangdahlem) — BAI / interdiction
-  Load: Mk-82 / CBU / Maverick · AIM-7/9 · bags
-  Plan: kill the convoys/echelons feeding the front — this MOVES the line.
-GAF JG 74 "Mölders" (Spangdahlem) — TARCAP (Luftwaffe)
-  Load: AIM-7 ×2 + AIM-9 ×4 (or period AA) · bags
-  Plan: forward CAP, mop up GCI-vectored Floggers/Fishbeds; protect the package.
-ALL PHANTOMS
-  • No turn-fight with Fulcrums (R-73+HMS) — BVR with the Sparrow / extend.
-  • Heavy jet — energy is life; don't bleed it in the merge.
-SAR: KING overhead; eject contract §11.
-================================================================
-```
-
----
-
 ## Escort / CAP — F-14B Tomcat (VMF-29 · Spangdahlem)
 
 ```

@@ -60,7 +60,6 @@ every op night. Print it, fork it, scribble on it.*
 | **Our side** | **Blufor Late Cold War (80s)** — the 414th Joint Fighter Group, multinational NATO wing |
 | **Enemy** | **Russia 1980** — 16th Air Army + Frontal/Naval Aviation + Baltic Fleet |
 | **Posture** | **NATO counteroffensive.** The Soviet thrust has *culminated*; we attack to roll it back |
-| **Required module** | Heatblur **F-4E Phantom II** (campaign assumes it active) |
 | **Economy skew** | Blue favoured — start $800 / income ×1.3 vs red $400 / ×0.7 |
 | **IADS** | `advanced_iads: true` set in the YAML; per-base C2 statics placed in the `.miz`. 🟡 Networked "kill-C2-to-drop-SAMs" behaviour is **unverified in-game** (see §4/§10) |
 | **Auto-planner** | Tuned **human-led**: blue AI flies cautious so *your* sorties are the spearhead |
@@ -106,18 +105,14 @@ the auto-planner flies. Sizes are starting squadron strength.*
 | Squadron | Airframe | Role | Size | |
 |---|---|---|---|---|
 | 81st Tactical Fighter Squadron | **A-10C (Suite 3)** | CAS | 8 | **P** |
-| 480th Tactical Fighter Squadron | **F-4E-45MC** | SEAD Sweep | 6 | **P** |
-| 37th Bomb Squadron | B-1B Lancer | OCA/Runway | 4 | AI |
 | Ala 14 | Mirage-F1EE | Escort | 6 | AI |
-| VA-34 | A-6E Intruder | OCA/Aircraft | 6 | AI |
 
 ### Spangdahlem (162) — fighters + Fulda-Gap helos
 
 | Squadron | Airframe | Role | Size | |
 |---|---|---|---|---|
 | VMF-29 | **F-14B Tomcat** | Escort | 8 | **P** |
-| GAF JG 74 *"Mölders"* | **F-4E-45MC** (Luftwaffe) | TARCAP | 8 | **P** |
-| 526th Tactical Fighter Squadron | **F-4E-45MC** | BAI | 8 | **P** |
+| GAF JG 74 *"Mölders"* | **F-4E-45MC** (Luftwaffe) | TARCAP | 8 | AI |
 | 493rd Fighter Squadron | F-15C Eagle | TARCAP | 6 | AI |
 | 414th Aviation Detachment | UH-1H Iroquois | Air Assault | 4 | **P** |
 | HMLA-167 | AH-1W SuperCobra | Escort | 4 | **P** |
@@ -129,8 +124,6 @@ the auto-planner flies. Sizes are starting squadron strength.*
 | 414th Voodoo Squadron | **F-16CM (Block 50)** | DEAD | 12 | **P** |
 | 414th JFG Hornets | **F/A-18C (Lot 20)** | SEAD | 12 | **P** |
 | 414th Tactical Fighter Squadron | **F-15E Strike Eagle (Suite 4+)** | BAI | 12 | **P** |
-| 512th Tactical Fighter Squadron | **F-4E-45MC** | OCA/Runway | 8 | **P** |
-| Jagdbombergeschwader 31 *Boelcke* | Tornado IDS | SEAD Escort | 8 | AI |
 | 20th Bomb Squadron | B-52H Stratofortress | Strike | 4 | AI |
 
 ### Frankfurt (163) — support, lift & enablers
@@ -158,18 +151,16 @@ the auto-planner flies. Sizes are starting squadron strength.*
 - **Air superiority / escort:** F-14B (VMF-29), F-15C (493rd), GAF JG 74 Phantoms. The Tomcat is
   your long-stick escort; the Eagle is the AI sweep.
 - **SEAD/DEAD (pry the IADS open):** F-16CM Voodoo (DEAD — kills SAMs), F/A-18C Hornet (SEAD —
-  suppresses), F-4E 480th SEAD Sweep, Tornado IDS escort. **This is the deep bench — Hahn is your
-  SEAD airfield.**
-- **Strike / interdiction (move the line):** F-15E (BAI), F-4E 526th (BAI) & 512th (OCA/Runway),
-  A-6E, B-1B, B-52H.
+  suppresses). **Hahn is your SEAD airfield.**
+- **Strike / interdiction (move the line):** F-15E (BAI), B-52H (Strike).
 - **CAS / front:** A-10C (Ramstein), AH-64D (Fulda + Frankfurt), OH-58D, AH-1W. Fulda is your
   forward rotary base — short legs to the Haina front.
 - **Enablers & special:** C-130J (the **King** on-scene commander + EW/ISR jammer), E-3A AWACS,
-  KC-135 boom + KC-135 MPRS drogue (drogue feeds the Hornets/Tomcats/legacy receptacle jets),
+  KC-135 boom + KC-135 MPRS drogue (drogue feeds the Hornets/Tomcats),
   CH-47F + UH-1H lift.
 
-> ⚠️ **Tanker note:** the **boom** KC-135 feeds the F-16/F-15/A-10/B-1/B-52; the **drogue** KC-135
-> MPRS feeds probe jets (F/A-18C, F-14B, A-6E, Tornado). Build packages so each striker has a
+> ⚠️ **Tanker note:** the **boom** KC-135 feeds the F-16/F-15/A-10/B-52 (and the Phantoms); the
+> **drogue** KC-135 MPRS feeds probe jets (F/A-18C, F-14B). Build packages so each striker has a
 > compatible tanker on the route, or plan a hot pit.
 
 ---
@@ -237,7 +228,7 @@ red's reaction will reshuffle priorities, but this is the spine.
 ### Phase 1 — Pry the lid off *(turns 2–4)*
 - **Objective:** punch a SEAD corridor through the western IADS belt; kill mobile Buk/SA-6 in
   transit; suppress or route the fixed S-300 rings.
-- **Fly:** DEAD packages (F-16CM + Hornet, Tornado escort), recon to find the movers, BAI on the
+- **Fly:** DEAD packages (F-16CM + Hornet), recon to find the movers, BAI on the
   convoys feeding the front. Hit red's **C2/power** at Haina to unplug its net.
 - **Win when:** strikers can reach Haina and the western convoys without running a SAM gauntlet.
 
@@ -301,7 +292,7 @@ the SITREP for next week.
 | Role | Typical airframe | Job |
 |---|---|---|
 | Mission Commander | any | Owns the plan & timeline |
-| Strike/OCA lead | F-15E / F-4E / A-6E | Puts bombs on the target |
+| Strike/OCA lead | F-15E | Puts bombs on the target |
 | DEAD lead | F-16CM Voodoo | Kills the SAMs in the way |
 | SEAD escort | F/A-18C Hornet | Suppresses pop-up threats for the package |
 | CAP/Escort lead | F-14B / F-15C | Owns the air picture, protects the package |
@@ -375,13 +366,13 @@ the threat. "+tkr/+AWACS" assumed on every offensive package.
 | Package | Core | Escort | SEAD/DEAD | Notes |
 |---|---|---|---|---|
 | **DEAD (kill the SAM)** | 2× F-16CM Voodoo (HARM/Mav) | 2× F-14B or F-15C | self-escort + 2× F/A-18C SEAD | The lid-opener. Lead with this into a new sector. |
-| **Deliberate strike / OCA** | 2–4× F-15E or F-4E (PGM/dumb) | 2× F-14B TARCAP | 2× F/A-18C SEAD escort | Strike the fixed target after the corridor's open. |
-| **OCA/Runway (airfield)** | F-4E 512th or B-1B | 2× F-15C | 2× Hornet SEAD | Strangle Haina/Hamburg fields. |
-| **BAI / interdiction** | 2–4× F-15E or F-4E 526th | TARCAP as needed | as needed | Hit convoys/echelons feeding the front — moves the line. |
+| **Deliberate strike / OCA** | 2–4× F-15E (PGM/dumb) | 2× F-14B TARCAP | 2× F/A-18C SEAD escort | Strike the fixed target after the corridor's open. |
+| **OCA/Runway (airfield)** | 2–4× F-15E or B-52H | 2× F-15C | 2× Hornet SEAD | Strangle Haina/Hamburg fields. |
+| **BAI / interdiction** | 2–4× F-15E | TARCAP as needed | as needed | Hit convoys/echelons feeding the front — moves the line. |
 | **BARCAP / TARCAP** | 2–4× F-14B / F-15C / JG 74 | — | — | Own the air over the sector before strikers push. |
 | **CAS / front** | A-10C + AH-64D | OH-58D recon/FAC | — | Works the FLOT with the ground commander. Fulda helos are closest. |
 | **Enabler hunt (A-50/Il-78)** | 2× F-14B (long stick) | +2 escort | — | Deliberate, escorted intercept on Schönefeld's high-value enablers. |
-| **Anti-ship (Baltic SAGs)** | F/A-18C or A-6E (Harpoon) | F-14B escort | Hornet SEAD | End-game; kill Copenhagen fighters first. |
+| **Anti-ship (Baltic SAGs)** | F/A-18C (Harpoon) | F-14B escort | Hornet SEAD | End-game; kill Copenhagen fighters first. |
 | **Combat SAR (§11)** | 1× **King** (C-130J) + 1× **Jolly** (CH-47F) | 2–4× **Sandy** (A-10C/AH-64D) | — | Stand it up when a pilot is down; can be a standing alert. |
 
 > Put the **C-130J King** up on any deep/contested push as the EW/ISR + on-scene commander — it
@@ -507,18 +498,17 @@ General pairing guidance — tune to the threat and what the tool offers per tur
 |---|---|---|---|
 | **DEAD** | F-16CM Voodoo | AGM-88 HARM ×2 + AGM-65 Maverick + AIM-120/9 | Kills the SAM. Lead the corridor. |
 | **SEAD escort** | F/A-18C Hornet | HARM ×2 + AIM-120/7/9 | Suppress pop-ups for the package; reactive HARM. |
-| **SEAD Sweep** | F-4E 480th | HARM/Shrike + AIM-7/9 | The Phantom Weasel — corridor sweep. |
 | **Strike (PGM)** | F-15E, F/A-18C | GBU/Maverick + A2A self-defense | Precision on fixed targets after SEAD. |
-| **OCA/Runway** | F-4E 512th, B-1B, A-6E | runway-cratering / cluster + dumb | Strangle the fields. |
-| **BAI / interdiction** | F-15E, F-4E 526th | CBU/Mk-82/Maverick | Convoys & echelons — moves the line. |
+| **OCA/Runway** | F-15E, B-52H | runway-cratering / cluster + dumb | Strangle the fields. |
+| **BAI / interdiction** | F-15E | CBU/Mk-82/Maverick | Convoys & echelons — moves the line. |
 | **Air superiority** | F-14B, F-15C | AIM-54/7/120 + AIM-9 | Long stick. F-14B = your reach. |
 | **CAS** | A-10C, AH-64D | Mav/Hellfire + gun + rockets | Work the FLOT with the ground cdr. |
 | **Sandy (CSAR escort)** | A-10C, AH-64D | gun + rockets + Mav/Hellfire | Suppress around the survivor; walk the helo in. |
 | **King / EW-ISR** | C-130J-30 | EW pods (per the C-130 systems) | Jam, ELINT, on-scene SAR command. |
 
 **Receiver/tanker pairing (don't strand a striker):**
-- **Boom (KC-135):** F-16, F-15C/E, A-10, B-1B, B-52H.
-- **Drogue (KC-135 MPRS):** F/A-18C, F-14B, A-6E, Tornado IDS.
+- **Boom (KC-135):** F-16, F-15C/E, A-10, B-52H (and the JG 74 Phantoms).
+- **Drogue (KC-135 MPRS):** F/A-18C, F-14B.
 
 ---
 

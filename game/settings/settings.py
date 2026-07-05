@@ -918,19 +918,23 @@ class Settings:
             "against the suspected area."
         ),
     )
+    # NB: the field NAME keeps its historical "scar_" prefix (renaming it would
+    # orphan the value in every existing save); only the label is current. The
+    # commander-capture mechanic the old label referenced was removed 2026-07-01 —
+    # what remains is the command-post recon fog itself.
     scar_command_post_intel: bool = boolean_option(
-        "SCAR command-post intel (hide enemy command posts until a commander is captured)",
+        "Hidden enemy command posts (map the command network by recon)",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=True,
         invert=False,
         detail=(
-            "When enabled, enemy command posts stay hidden on the map until you "
-            "discover them the normal way — strike near them, scout them, or "
-            "photograph them on a TARPS pass — so mapping the enemy command "
-            "network is itself a reconnaissance task. On by default for new "
-            "campaigns; existing campaigns keep whatever they were saved with. "
-            "Turn it off to restore plain enemy command-post visibility."
+            "Enemy command posts stay hidden on the map until you discover them — "
+            "strike near them, scout them, or photograph them on a TARPS pass — so "
+            "mapping the enemy command network is itself a reconnaissance task. On "
+            "by default for new campaigns; existing campaigns keep whatever they "
+            "were saved with. Turn it off to restore plain enemy command-post "
+            "visibility."
         ),
     )
     aircraft_per_recovery_tanker: int = bounded_int_option(

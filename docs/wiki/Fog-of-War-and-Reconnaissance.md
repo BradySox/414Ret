@@ -36,11 +36,11 @@ Discovery is sticky: once a site is scouted or attacked, it stays revealed. Both
 governed by the **`recon_intel_fog`** setting (Campaign Doctrine page, **default ON**). Older
 saves are migrated to fully revealed, so the fog is felt mainly on new campaigns.
 
-A third, related gate (the **`scar_command_post_intel`** setting, **default ON** for new
+A third, related gate (the **"Hidden enemy command posts"** setting, **default ON** for new
 campaigns) hides enemy **command posts** entirely from your map — no marker, not plannable or
 strikable — until you discover them by strike/scout/TARPS, so mapping the enemy command network
 is itself a recon task. Once discovered, a command post shows fully, with exact coordinates.
-Toggle `SCAR command-post intel` off (Campaign Doctrine settings page) to restore plain enemy
+Toggle it off (Difficulty & Realism → Realism & restrictions) to restore plain enemy
 command-post visibility.
 
 **Intel goes stale, too.** On the [COIN campaign](Enduring-Resolve-Campaign-Briefing), insurgent

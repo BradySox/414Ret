@@ -102,6 +102,23 @@ The crust is the one deliberate divergence from a purist ISIS laydown (which had
 MANPADS/AAA): a thin radar layer that keeps SEAD/DEAD a real job, per the user's call. SA-6 is
 the medium (SEAD-relevant) site at Mosul; SA-8/9/13 are the SHORAD across the ring.
 
+### The drone wing (2026-07-05, from the installed-inventory audit)
+
+The user spotted the MQ-9/MQ-1 and asked to use them — they are the OIR signature, and they
+close the ISR loop the concealment layer opened. Three coordinated changes:
+
+- **Unit data** (shared, all campaigns): `MQ-9 Reaper.yaml` + `RQ-1A Predator.yaml` gain
+  `TARPS: 700` (drones become plannable recon; the `airecon` plugin banks an AI drone's
+  overflight as confirmed BDA, so **the drones are what localize the concealed IED/HVT/cell
+  circles**) and honest `max_range` (800 / 400 NM — the 150 NM default would have gated them
+  out of Balad→Mosul). The Reaper keeps its background combat tasks (armed ISR); the
+  Predator's Hellfire tasks stay at zero priority (pure ISR bird).
+- **Faction**: `MQ-9 Reaper` + `RQ-1A Predator` added to `cjtf_oir_2016` `aircrafts` (the
+  MQ-9 was previously only the faction's JTAC unit).
+- **Campaign**: Baghdad (the rear support field — the endurance covers the whole map from
+  there) hosts **RQ-1A ×4 `primary: TARPS`** and **MQ-9 ×4 `primary: BAI`**. NEW game
+  required; in-game pass = the P7 drone bullet.
+
 ---
 
 ## The generator — now decorates a hand-authored base (the ER pattern)

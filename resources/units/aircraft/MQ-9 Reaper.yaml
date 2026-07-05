@@ -1,4 +1,7 @@
 price: 10
+# Endurance UAV: the 14+ h on-station Reaper reaches anywhere on a DCS map. Without
+# this the 150 NM default gated it out of exactly the deep armed-ISR work it exists for.
+max_range: 800
 variants:
   MQ-9 Reaper: null
 tasks:
@@ -6,5 +9,9 @@ tasks:
   BAI: 10
   CAS: 10
   OCA/Aircraft: 10
+  # Armed ISR is the Reaper's actual job (OIR flew it as the persistent eye first,
+  # shooter second): TARPS makes drone squadrons plannable recon and lets the
+  # airecon plugin feed AI overflights into the BDA/discovery ledger.
+  TARPS: 700
 secondary_tasks:
   - DEAD

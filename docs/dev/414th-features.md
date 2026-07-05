@@ -249,7 +249,16 @@ on OIR/Red Tide — so a full armed recon package reads **1 drone + 2 SEAD Viper
 checklist G25 — the in-mission composition needs a fly).
 
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
-  `configure_tarps()` — single overflight waypoint ~5 min behind the strikers.
+  `configure_tarps()` — a single flyover of the target area, ReturnFire ROE, no offensive
+  stores. It sets the recon *behavior*; the *timing* lives in the flight plan (below).
+- **Role-aware TOT** (`TarpsFlightPlan.default_tot_offset`): the recon bird does two different
+  jobs and they want opposite timing. On a **Strike/DEAD** package it is a **post-strike BDA**
+  pass — overfly **+2 min** after the shooters to photograph the damage (tight so it stays
+  under the escort window, G19). On an **Armed Recon** package (or a standalone recon mission)
+  there is no strike moment to trail, so it is a **find/overwatch** pass — **0 offset**, on
+  station with the package to scout/localize, not two minutes behind an event that never
+  happens. (This replaced a flat +2 min that was BDA-only reasoning applied to every package —
+  the 2026-07 recon-rework de-jumble.)
 - Flight plan: `game/ato/flightplans/tarps.py` uses `FlightWaypointType.INGRESS_RECON`
   (NOT `INGRESS_STRIKE`) so the weaponless recon bird gets **no Bombing tasks** on its
   ingress — `INGRESS_STRIKE` dumped one Bombing task per target-group unit onto the

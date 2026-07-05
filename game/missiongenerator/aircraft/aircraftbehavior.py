@@ -525,11 +525,13 @@ class AircraftBehavior:
             group.points[0].tasks.append(AWACSTaskAction())
 
     def configure_tarps(self, group: FlyingGroup[Any], flight: Flight) -> None:
-        # Photo-recon overflight (F-14 TARPS). The flight routes over the target
-        # for a post-strike BDA / discovery pass and carries no offensive stores, so
-        # ROE is ReturnFire: it defends itself but never hunts. The F-14 family natively
-        # supports the Reconnaissance task; CAS/GroundAttack are defensive fallbacks
-        # for any future TARPS-capable airframe that lacks it.
+        # Photo-recon overflight (F-14 TARPS / recon drone). The flight routes over the
+        # target area and carries no offensive stores, so ROE is ReturnFire: it defends
+        # itself but never hunts. This sets only the *behavior*; whether the pass is a
+        # post-strike BDA look or a find/overwatch scout is a timing question handled by
+        # TarpsFlightPlan.default_tot_offset (role-aware by package). The F-14 family
+        # natively supports the Reconnaissance task; CAS/GroundAttack are defensive
+        # fallbacks for any other TARPS-capable airframe (e.g. a drone) that lacks it.
         self.configure_task(
             flight, group, Reconnaissance, fallback_tasks=[CAS, GroundAttack]
         )

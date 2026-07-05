@@ -52,16 +52,31 @@ def test_tarps_flight_type_is_recon_support() -> None:
     assert FlightType.TARPS.entity_type.name == "RECONNAISSANCE"
 
 
-def test_tarps_tot_offset_is_post_strike() -> None:
-    # The whole point of the feature: overfly the target a short hop behind the
-    # strikers for a post-strike BDA pass. Kept tight (2 min, not 5) so the
-    # unarmed recon bird ingresses within the package's escort window instead of
-    # trailing in alone where MiGs pick it off (checklist G19). Still strictly
-    # post-strike (positive offset).
+def _tarps_plan_with_primary(primary_type: FlightType) -> TarpsFlightPlan:
     plan = object.__new__(TarpsFlightPlan)
-    offset = plan.default_tot_offset()
-    assert offset == timedelta(minutes=2)
-    assert offset > timedelta(0)
+    # `package` is a read-only property backed by self.flight.package.
+    plan.flight = MagicMock()
+    plan.flight.package.primary_flight = MagicMock(flight_type=primary_type)
+    return plan
+
+
+def test_tarps_tot_offset_is_post_strike_bda_on_a_strike_package() -> None:
+    # On a Strike/DEAD package the recon bird overflies a short hop BEHIND the
+    # strikers for a post-strike BDA pass. Kept tight (2 min, not 5) so the unarmed
+    # bird ingresses within the package escort window instead of trailing in alone
+    # where MiGs pick it off (checklist G19). Strictly post-strike (positive offset).
+    for primary in (FlightType.STRIKE, FlightType.DEAD):
+        offset = _tarps_plan_with_primary(primary).default_tot_offset()
+        assert offset == timedelta(minutes=2)
+        assert offset > timedelta(0)
+
+
+def test_tarps_tot_offset_is_zero_for_a_find_or_overwatch_pass() -> None:
+    # Armed Recon (a swept corridor with no strike moment) and a standalone TARPS
+    # mission are find/overwatch passes: the recon bird arrives ON STATION with the
+    # package, not two minutes behind an event that never happens.
+    for primary in (FlightType.ARMED_RECON, FlightType.TARPS):
+        assert _tarps_plan_with_primary(primary).default_tot_offset() == timedelta(0)
 
 
 def test_tarps_only_package_identifies_tarps_as_primary_task() -> None:

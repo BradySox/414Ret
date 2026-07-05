@@ -608,6 +608,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    fixed 4-ship (`PlanArmedRecon.ARMED_RECON_FLIGHT_SIZE`); with the threat-gated 2-ship SEAD escort
    resolving to the Viper, the package reads 1 drone + 2 SEAD Vipers + 4 recon. Optional/gated (drops
    if no drone free, never scrubs). Tests `tests/test_armed_recon_planning.py`; checklist G25.
+   **Role-aware TOT (2026-07-05 de-jumble)**: `TarpsFlightPlan.default_tot_offset` was a flat +2 min
+   (BDA-only reasoning) applied to every package. It now reads the package primary — **+2 min** behind
+   a Strike/DEAD shooter for a **post-strike BDA** look, but **0** on an Armed Recon package (or a
+   standalone recon), a **find/overwatch** pass on station with the shooters, not two minutes behind a
+   strike moment that never happens. The `configure_tarps` behavior (flyover, ReturnFire) is unchanged;
+   only the timing is now role-split.
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact

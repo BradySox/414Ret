@@ -2,9 +2,10 @@
 -- MIST -> MOOSE compatibility shim for DCS Retribution
 --
 -- Goal: retire the ~5,000-line mist_4_5_126.lua by providing the *exact* subset of
--- the `mist` API that Retribution's plugins actually call (42 distinct symbols), so the
--- consumers (CTLD, SCAR, intercept glue, core dcs_retribution.lua, Skynet) stay
--- byte-for-byte unchanged. See docs/dev/design/414th-mist-moose-shim-notes.md.
+-- the `mist` API that Retribution's plugins actually call (43 distinct symbols), so the
+-- consumers (CTLD, SCAR, intercept glue, core dcs_retribution.lua, Skynet, and the upstream
+-- land_relocate/water_relocate scripts) stay byte-for-byte unchanged.
+-- See docs/dev/design/414th-mist-moose-shim-notes.md.
 --
 -- IMPLEMENTATION: entirely vanilla DCS (coalition, Group, Unit, land, trigger, world, timer, env,
 -- coord, math, string) with MIST behavior replicated verbatim. Despite the "_moose" name it has NO
@@ -24,11 +25,12 @@
 --                terrainHeightDiff, tostringLL, tostringMGRS, getUnitsLOS, random,
 --                utils.getDir, utils.getHeadingPoints, utils.zoneToVec3, utils.tableShow)
 --   [x] Tier 2   object DB (DBs.unitsByName/unitsById/groupsByName/zonesByName/humansByName)
+--                + getGroupData (ME mission-table read for land_relocate/water_relocate)
 --   [x] Tier 3   sched/events/wp + spawn/route (scheduleFunction, removeFunction, addEventHandler,
 --                ground.buildWP, dynAdd, dynAddStatic, goRoute, getGroupRoute, groupToRandomZone,
 --                makeUnitTable)
 --   [x] Tier 4   msg/log (message.add, Logger)
---   ==> ALL 42 consumer symbols implemented. Next: base/plugin.json swap + in-game pass.
+--   ==> ALL 43 consumer symbols implemented. Next: base/plugin.json swap + in-game pass.
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 mist = mist or {}
@@ -583,6 +585,72 @@ end
 _mistBuildZones()
 _mistRefreshDBs()
 timer.scheduleFunction(_mistDBLoop, nil, timer.getTime() + _MIST_DB_REFRESH)
+
+-- Mission-editor group DB for mist.getGroupData (land_relocate/water_relocate). Unlike the live
+-- DBs above, this reads the *mission table* (env.mission) so the returned entry carries the full
+-- spawnable definition (units with type/x/y/heading/skill/name, route, country, category) that
+-- mist.dynAdd can re-add under the same names. Built lazily on first call: env.mission is static,
+-- so one build serves the whole mission. Names go through env.getValueDictByKey, which returns
+-- plain strings unchanged and resolves DictKey_* entries from hand-built .miz files.
+local _mistMEGroups = nil
+
+local function _mistResolveName(s)
+    if type(s) == "string" and env.getValueDictByKey then
+        local ok, v = pcall(env.getValueDictByKey, s)
+        if ok and v ~= nil then
+            return v
+        end
+    end
+    return s
+end
+
+local function _mistBuildMEGroups()
+    _mistMEGroups = {}
+    if not (env and env.mission and env.mission.coalition) then
+        return
+    end
+    for _, coa in pairs(env.mission.coalition) do
+        if type(coa) == "table" and type(coa.country) == "table" then
+            for _, cntry in pairs(coa.country) do
+                for _, catName in pairs({ "vehicle", "ship", "plane", "helicopter" }) do
+                    local cat = cntry[catName]
+                    if type(cat) == "table" and type(cat.group) == "table" then
+                        for _, grp in pairs(cat.group) do
+                            local name = _mistResolveName(grp.name)
+                            if name then
+                                local entry = mist.utils.deepCopy(grp)
+                                entry.name = name
+                                entry.groupName = name
+                                entry.country = cntry.id
+                                entry.countryId = cntry.id
+                                entry.category = catName
+                                if type(entry.units) == "table" then
+                                    for _, u in pairs(entry.units) do
+                                        u.name = _mistResolveName(u.name)
+                                    end
+                                end
+                                _mistMEGroups[name] = entry
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- MIST-shaped group definition by group name, or nil for a name the mission table doesn't
+-- know (e.g. a group spawned at runtime). Returns a fresh deep copy so callers may mutate it.
+function mist.getGroupData(gpName)
+    if _mistMEGroups == nil then
+        _mistBuildMEGroups()
+    end
+    local entry = _mistMEGroups[gpName]
+    if not entry then
+        return nil
+    end
+    return mist.utils.deepCopy(entry)
+end
 
 ---------------------------------------------------------------------------------------------------
 -- Tier 3 (sched/events/wp) + Tier 4 (msg/log). The complex live spawn/route functions

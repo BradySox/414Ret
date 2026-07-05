@@ -46,6 +46,8 @@ def _sample_debriefing() -> Debriefing:
         enemy_ground_objects=_items(2),
         player_scenery=_items(0),
         enemy_scenery=_items(1),
+        player_airfields=_items(1),
+        enemy_airfields=_items(2),
     )
     captures = [
         _capture(Player.BLUE),
@@ -70,6 +72,7 @@ def test_loss_counts_blue_side() -> None:
         ground_objects=5,
         scenery=0,
         bases_lost=1,  # one base captured by RED == one base Blue lost
+        runways_destroyed=1,
     )
 
 
@@ -84,6 +87,7 @@ def test_loss_counts_red_side() -> None:
         ground_objects=2,
         scenery=1,
         bases_lost=2,  # two bases captured by BLUE == two bases Red lost
+        runways_destroyed=2,
     )
 
 
@@ -107,6 +111,9 @@ def test_loss_counts_partition_matches_combined_totals() -> None:
     )
     assert blue.scenery + red.scenery == len(list(debriefing.scenery_object_losses))
     assert blue.bases_lost + red.bases_lost == len(debriefing.base_captures)
+    assert blue.runways_destroyed + red.runways_destroyed == len(
+        list(debriefing.damaged_runways)
+    )
 
 
 def test_state_data_accepts_empty_intercept_survivor_list() -> None:

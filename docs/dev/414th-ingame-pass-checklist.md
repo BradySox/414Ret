@@ -2620,6 +2620,26 @@ so the two docs don't drift.
   weather still flickers with no correlation (the `previous=` bias not being passed from `Conditions.advance`).
   Knobs: `MIN/MAX_TURN_ADVANCE_HOURS`, `_WEATHER_PERSISTENCE_KERNEL` (`game/weather/conditions.py`).
 
+## U. Upstream-sync runtime adoptions
+
+### U1 — Water/land relocate scripts run on the MIST shim · base plugin · ☐ UNTESTED (adopted from upstream 2026-07-05 with the upstream/dev merge; upstream #767/#838 run on full MIST — the fork's shim needed a new `mist.getGroupData` (43rd symbol), contract pinned in `tests/lua/test_mist_shim_getgroupdata.py`)
+- **Headless adjudication:** both scripts parse on Lua 5.1, register after `mist_moose_shim.lua` in the base
+  plugin work orders (`tests/missiongenerator/test_*_relocate_plugin.py`), and the shim's `getGroupData`
+  returns a dynAdd-shaped mission-table entry (units x/y/name, route, country, category) with fresh copies
+  and nil for unknown groups (`tests/lua/test_mist_shim_getgroupdata.py`). What CI *cannot* adjudicate:
+  whether `mist.dynAdd`'s `coalition.addGroup` same-name re-add actually swaps the beached group in live DCS
+  without firing loss events, and whether the relocated positions are sane (ships in open water, ground
+  units on land).
+- **Setup:** any campaign whose generation beaches a naval escort or drops a ground unit in water (island
+  maps are the natural stress; a carrier parked near shore beaches escorts).
+- **Pass:** within the first minute, `dcs.log` shows `land_relocate:` / `water_relocate:` info lines for the
+  moved groups and no script errors; the moved ships sit in open water under their original names; the
+  campaign's kill/loss tracking still works for a relocated unit (kill one, it shows in the debrief).
+- **Fail signature:** `attempt to call field 'getGroupData'` (shim symbol regression) or an error inside
+  `run()` in either script; a relocated group vanishing or duplicating (the same-name addGroup swap not
+  behaving); a relocated unit's kill missing from the debrief (name not preserved). Knobs: constants at the
+  top of `resources/plugins/base/land_relocate.lua` / `water_relocate.lua`.
+
 ## Drain order — batch the queue into ~5 flight sessions
 
 **Policy: new feature work is frozen until this queue drains.** The rows are not

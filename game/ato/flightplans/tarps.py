@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Type
 
-from game.theater import TheaterGroundObject
+from game.theater import ControlPoint, TheaterGroundObject
 from .formationattack import (
     FormationAttackBuilder,
     FormationAttackFlightPlan,
@@ -42,7 +42,12 @@ class Builder(FormationAttackBuilder[TarpsFlightPlan, FormationAttackLayout]):
     def layout(self) -> FormationAttackLayout:
         location = self.package.target
 
-        if not isinstance(location, TheaterGroundObject):
+        # A TGO target is the strike/DEAD BDA case; a ControlPoint target is the
+        # Armed Recon overwatch case (a recon drone fragged into the sweep package
+        # overflies the same area). Both are MissionTargets with a position, so the
+        # base recon-area overflight below handles either -- only the explicit type
+        # gate had to widen.
+        if not isinstance(location, (TheaterGroundObject, ControlPoint)):
             raise InvalidObjectiveLocation(self.flight.flight_type, location)
 
         # A photo-recon pass is a single overflight of the target area, not an

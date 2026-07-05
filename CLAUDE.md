@@ -599,6 +599,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    (`debriefing.py`→`tars_reconned_tgos`) treats an AI recon capture identically. A shot-down /
    aborting recon flight confirms nothing (one-shot). Player-crewed TARPS is never emitted (still
    the F10 film path); blue-only. Emitter-tested; runtime Lua needs an in-game pass (checklist G19).
+   **Recon drone in each Armed Recon package (2026-07-05, 414th call)**: the auto-recon hook
+   (`PackageFulfiller._maybe_plan_tarps_recon`, gated by `auto_add_tarps_recon`) now also frags one
+   optional TARPS flight into **Armed Recon** packages (not just Strike/DEAD); `TarpsFlightPlan` was
+   widened to accept a `ControlPoint` target (armed recon sweeps a CP corridor, not a TGO). On a
+   UAV-fielding faction the TARPS bird IS the drone, so OIR gets a Predator/Reaper in every armed
+   recon package (and the `airecon` loop banks its overflight as BDA). Armed recon primary is now a
+   fixed 4-ship (`PlanArmedRecon.ARMED_RECON_FLIGHT_SIZE`); with the threat-gated 2-ship SEAD escort
+   resolving to the Viper, the package reads 1 drone + 2 SEAD Vipers + 4 recon. Optional/gated (drops
+   if no drone free, never scrubs). Tests `tests/test_armed_recon_planning.py`; checklist G25.
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact

@@ -462,6 +462,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "max_frontline_width",
                     "use_auto_fog",
                     "base_battle_damage",
+                    "artillery_base_harassment",
+                    "mobile_missile_relocation",
                 ],
             ),
             (
@@ -2207,6 +2209,35 @@ class Settings:
             "untouched). Costs some FPS; turn off if a heavily-hit base impacts performance."
         ),
         default=True,
+    )
+    artillery_base_harassment: bool = boolean_option(
+        "Frontline artillery harassment on forward airbases",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Airfields and FARPs within enemy tube/rocket artillery reach of a front "
+            "line (~20 NM) draw sporadic standoff harassment fire during the mission "
+            "-- a FARP sitting on the FLOT is a base under fire, not a safe ramp. "
+            "Symmetric (both sides' forward fields). Mostly noise and smoke with a "
+            "modest bite; never targets a field a player spawns at or recovers to, "
+            "and a startup grace period protects a cold-starting player. (The "
+            "Vietnam Ops siege toggle is this same runtime with theater-wide reach.)"
+        ),
+    )
+    mobile_missile_relocation: bool = boolean_option(
+        "Mobile missile sites relocate (shoot and scoot)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Mobile theater-missile sites (SCUD/SSM groups -- never the radar SAM "
+            "network) drive to a new position every few minutes during the mission "
+            "instead of parking where your last recon photographed them, so the "
+            "SCUD hunt is a hunt for something that moves. Movement only: kills "
+            "record normally, the site stays within a few km of its campaign-map "
+            "position, and nothing changes at turn end. Applies to both sides."
+        ),
     )
 
     # Vietnam Ops (period-ops suite) -- opt-in Vietnam-era runtime mechanics. All

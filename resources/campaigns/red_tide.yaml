@@ -246,6 +246,11 @@ settings:
   # 20; raised so airfield attack becomes a human-chosen objective, not AI busywork
   # (red squadrons are 4-8 jets, so most fields now fall below this threshold).
   oca_target_autoplanner_min_aircraft_count: 40
+  # Frontline artillery: fields within tube/rocket reach (~20 NM) of the Fulda<->Haina
+  # front -- the Fulda forward FARP, and red's Haina spearhead -- draw sporadic
+  # in-mission standoff harassment fire (never a player-spawn field; startup grace).
+  # The Gap is not a safe ramp.
+  artillery_base_harassment: true
 squadrons:
   #Ramstein — rear heavy-iron + the eyes: the B-52s, the 414th Strike Eagles, and the E-3A.
   165:

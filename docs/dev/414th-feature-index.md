@@ -47,7 +47,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §33 | AAA flak gauntlet | `vietnamops` | `vietnam_flak_gauntlet` |
 | §34 | Naval gunfire support | `vietnamops` | `vietnam_naval_gunfire` |
 | §35 | Convoy interdiction (Steel Tiger) | — | `vietnam_convoy_interdiction` |
-| §36 | Airbase harassment (rocket/mortar siege) | `vietnamops` | `vietnam_airbase_harassment` |
+| §36 | Airbase harassment (rocket/mortar siege) | `vietnamops` | `vietnam_airbase_harassment`, `artillery_base_harassment` |
 | §37 | Super Gaggle hilltop resupply | `vietnamops` | `vietnam_super_gaggle` |
 | §38 | FAC(A) willie-pete target marking | `vietnamops` | `vietnam_fac_marking` |
 | §39 | Snake and nape (napalm CAS) | `vietnamops` | `vietnam_snake_and_nape` |
@@ -60,6 +60,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §46 | Route-aware fuel-tank top-up | — | `auto_range_fuel_tanks` |
 | §47 | Continuous campaign clock & weather | — | `continuous_campaign_clock` |
 | §48 | Commitment ceiling (will-coupled war budget) | — | `vietnam_commitment_ceiling` |
+| §49 | Mobile missile relocation (the SCUD hunt) | `mobilemissiles` | `mobile_missile_relocation` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

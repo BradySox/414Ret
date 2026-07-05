@@ -172,11 +172,14 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("vietnam_convoy_interdiction",),
     ),
     Feature(
+        # The generic artillery_base_harassment setting reuses this same
+        # emitter+runtime with a tight FLOT-gun-range reach (conventional
+        # campaigns; Red Tide preseeds it for the Fulda FARP).
         "vietnam_airbase_harassment",
         "Airbase harassment (rocket/mortar siege)",
         36,
         plugin_id="vietnamops",
-        settings_fields=("vietnam_airbase_harassment",),
+        settings_fields=("vietnam_airbase_harassment", "artillery_base_harassment"),
     ),
     Feature(
         "vietnam_super_gaggle",
@@ -265,6 +268,13 @@ FEATURES: tuple[Feature, ...] = (
         "Commitment ceiling (will-coupled war budget)",
         48,
         settings_fields=("vietnam_commitment_ceiling",),
+    ),
+    Feature(
+        "mobile_missile_relocation",
+        "Mobile missile relocation (the SCUD hunt)",
+        49,
+        plugin_id="mobilemissiles",
+        settings_fields=("mobile_missile_relocation",),
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.

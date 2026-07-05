@@ -1,6 +1,6 @@
 {
     "nameInUI": "COIN in-mission liveliness",
-    "descriptionInUI": "Runtime for the COIN insurgency layer's moving objects and ambient pressure. Inert unless the mission generator emits dcsRetribution.coin (a COIN campaign with something alive this turn). Movement and cosmetics ONLY -- the consequences (kill the HVT before the strike window closes = a decapitation; intercept the VBIED = defused; let either live = it resolves against your political mandate) stay in the campaign's turn logic, so a mover you shoot down is recorded natively like any other unit. HVT: the named leader's convoy drives a slow, random patrol around its area (alarm-green, so it relocates rather than stopping to fight). VBIED: the suicide vehicle bomb drives for the nearest friendly base; kill it en route or it detonates on arrival. Field cells: each dispersed cell wanders its patch of countryside, so patrolling means catching something moving. Infiltrators: the re-infiltration cell creeps toward the base it is taking. Indirect fire: friendly bases inside a stronghold's mortar reach draw sporadic small rocket/mortar barrages (never a field a player spawns at or recovers to -- filtered by the generator AND double-guarded here -- and only after a startup grace period). All movement is off-road at low ground speed; movers begin after a short startup grace so nothing lurches the instant the mission loads.",
+    "descriptionInUI": "Runtime for the COIN insurgency layer's moving objects and ambient pressure. Inert unless the mission generator emits dcsRetribution.coin (a COIN campaign with something alive this turn). Movement and cosmetics ONLY -- the consequences (kill the HVT before the strike window closes = a decapitation; intercept the VBIED = defused; let either live = it resolves against your political mandate) stay in the campaign's turn logic, so a mover you shoot down is recorded natively like any other unit. HVT: the named leader's convoy drives a slow, random patrol around its area (alarm-green, so it relocates rather than stopping to fight). VBIED: the suicide vehicle bomb drives for the nearest friendly base; kill it en route or it detonates on arrival. Field cells: each dispersed cell wanders its patch of countryside, so patrolling means catching something moving. Infiltrators: the re-infiltration cell creeps toward the base it is taking. Indirect fire: friendly bases inside a stronghold's mortar reach draw sporadic small rocket/mortar barrages (never a field a player spawns at or recovers to -- filtered by the generator AND double-guarded here -- and only after a startup grace period). All movement is off-road at low ground speed; movers begin after a short startup grace so nothing lurches the instant the mission loads, and the one-way drives (VBIED, infiltrator) are paced so they are still under way at least 90 minutes into the mission -- a cold-starting flight can always still make the intercept.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -33,6 +33,11 @@
             "nameInUI": "Startup grace before movement begins (s)",
             "mnemonic": "startGraceS",
             "defaultValue": 30
+        },
+        {
+            "nameInUI": "One-way movers: earliest arrival after mission start (s) -- VBIED/infiltrator drives are slowed so the intercept window survives a slow player start",
+            "mnemonic": "minJourneyS",
+            "defaultValue": 5400
         },
         {
             "nameInUI": "Field cell: seconds between patrol legs",

@@ -1,7 +1,13 @@
 price: 6
+# Endurance UAV (the MQ-1): 20+ h on station; the 150 NM default range gated it
+# out of the ISR orbits it exists for.
+max_range: 400
 variants:
   RQ-1A Predator: null
 tasks:
+  # The Predator is the pure ISR bird -- recon is its primary; the two Hellfires
+  # (BAI/CAS at zero priority) stay capable-but-never-preferred.
+  TARPS: 700
   BAI: 0
   CAS: 0
   OCA/Aircraft: 0

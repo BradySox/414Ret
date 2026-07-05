@@ -343,8 +343,21 @@ squadrons:
       aircraft:
         - Mirage 2000C
       size: 4
-  # Baghdad -- support: the tanker/AWACS bridge, the Combat SAR Jolly, the lifters.
+  # Baghdad -- support: the tanker/AWACS bridge, the Combat SAR Jolly, the lifters,
+  # and the drone wing (the OIR signature): the Predators fly the persistent ISR
+  # orbits (TARPS -- the airecon plugin banks their overflights as confirmed BDA, so
+  # they are what localize the concealed IED/cell circles) and the armed Reapers work
+  # the ratline. Both carry the endurance to reach the whole map from the rear field.
   2:
+    - primary: TARPS
+      aircraft:
+        - RQ-1A Predator
+      size: 4
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - MQ-9 Reaper
+      size: 4
     - primary: Refueling
       aircraft:
         - KC-135 Stratotanker

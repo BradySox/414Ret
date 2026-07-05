@@ -11,7 +11,7 @@ description:
   <p>Then the offensive ran dry. Outrunning its own fuel and ground down by NATO airpower, the Soviet
   spearhead has culminated -- overextended, exposed, and not yet dug in. The line has held, and now the
   initiative changes hands. NATO is going over to the attack, and the 414th Joint Fighter Group leads it --
-  American Eagles, Tomcats and Phantoms wing-to-wing with the Luftwaffe's own JG 74 'Moelders' -- clawing
+  American Eagles and Tomcats wing-to-wing with the Luftwaffe's own JG 74 'Moelders' Phantoms -- clawing
   back the skies over Central Europe and opening the road to retake Hamburg, liberate Copenhagen, and drive
   the Red Army back east.</p>
   <p>It will not be easy. The enemy is still many, his SAM belts -- S-300 and SA-11 among them -- still
@@ -19,8 +19,6 @@ description:
   advantage, break him before he can consolidate, and do not let him set his feet.</p>
   <p><em>A red storm is rising over Central Europe -- the war the Cold War never had. Inspired by the
   pages of Tom Clancy's Red Storm Rising.</em></p>
-  <p><strong>Note:</strong> This campaign is intended to be played with the Heatblur F-4E Phantom II
-  module active.</p>
 miz: red_tide.miz
 performance: 2
 # Advanced (networked) IADS: red SAM bases carry co-located Command Center + Comms tower M
@@ -237,7 +235,7 @@ settings:
   squadron_start_full: true
   # Human-led offensive: keep the blue auto-planner cautious so the AI fills fewer of
   # the ATO's offensive slots and the human's 414th sorties (F-16CM/F-A-18C/F-15E/
-  # F-14B/A-10C/F-4E) carry the push. Recommended NEW-GAME defaults; the player can
+  # F-14B/A-10C) carry the push. Recommended NEW-GAME defaults; the player can
   # still change them in the wizard.
   #
   # Fraction of OPFOR threat-radius the blue auto-planner ignores. Default 20; lowered
@@ -251,12 +249,6 @@ settings:
 squadrons:
   #Ramstein
   165:
-    - primary: OCA/Runway
-      secondary: air-to-ground
-      aircraft:
-        - 37th Bomb Squadron
-      aircraft_type: B-1B Lancer
-      size: 4
     - primary: CAS
       secondary: any
       aircraft:
@@ -268,18 +260,6 @@ squadrons:
       aircraft:
         - Ala 14
       aircraft_type: Mirage-F1EE
-      size: 6
-    - primary: SEAD Sweep
-      secondary: air-to-ground
-      aircraft:
-        - 480th Tactical Fighter Squadron
-      aircraft_type: F-4E-45MC Phantom II
-      size: 6
-    - primary: OCA/Aircraft
-      secondary: air-to-ground
-      aircraft:
-        - VA-34
-      aircraft_type: A-6E Intruder
       size: 6
   #Spangdahlem
   162:
@@ -299,12 +279,6 @@ squadrons:
       secondary: any
       aircraft:
         - GAF JG 74
-      size: 8
-    - primary: BAI
-      secondary: any
-      aircraft:
-        - 526th Tactical Fighter Squadron
-      aircraft_type: F-4E-45MC Phantom II
       size: 8
     - primary: Air Assault
       secondary: any
@@ -332,18 +306,6 @@ squadrons:
         - 414th Voodoo Squadron
       aircraft_type: F-16CM Fighting Falcon (Block 50)
       size: 12
-    - primary: SEAD Escort
-      secondary: any
-      aircraft:
-        - Jagdbombergeschwader 31 Boelcke
-      aircraft_type: Tornado IDS
-      size: 8
-    - primary: OCA/Runway
-      secondary: any
-      aircraft:
-        - 512th Tactical Fighter Squadron
-      aircraft_type: F-4E-45MC Phantom II
-      size: 8
     - primary: SEAD
       secondary: any
       aircraft:

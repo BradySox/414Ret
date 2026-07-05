@@ -68,9 +68,9 @@ south-west (the real Rhineland NATO cluster), every red base to the north/centre
 ### Blue (NATO) — south-west cluster
 | Base | id | Squadrons |
 |---|---|---|
-| Ramstein | 165 | B-1B (OCA/Runway), **A-10C Suite 3 (CAS)**, Mirage-F1EE (Escort), F-4E-45MC (SEAD Sweep, 480th TFS Weasels — replaced the dropped VMA-231 AV-8B), **A-6E (OCA/Aircraft)** |
-| Spangdahlem | 162 | F-15C (TARCAP), **F-14B (Escort)**, **GAF JG 74 (TARCAP)**, F-4E-45MC (BAI), UH-1H, AH-1W |
-| Hahn | 155 | B-52H (Strike), F-16CM (DEAD), Tornado IDS (SEAD Escort), F-4E-45MC (OCA/Runway), **F/A-18C (SEAD)**, **F-15E (BAI)** |
+| Ramstein | 165 | **A-10C Suite 3 (CAS)**, Mirage-F1EE (Escort) |
+| Spangdahlem | 162 | F-15C (TARCAP), **F-14B (Escort)**, GAF JG 74 (TARCAP, AI), UH-1H, AH-1W |
+| Hahn | 155 | B-52H (Strike), F-16CM (DEAD), **F/A-18C (SEAD)**, **F-15E (BAI)** |
 | Frankfurt | 163 | KC-135, **KC-135MPRS (drogue tanker)**, C-130J, CH-47F, AH-64D, **E-3A (AEW&C)**, **OH-58D Kiowa (Escort)** |
 | **Fulda** | **166** | **Forward FARP (flipped neutral→BLUE).** Forward heli base in the Fulda Gap: AH-64D (CAS, 1-1 ARB), OH-58D (Armed Recon, 1-6 Cav), UH-1H (Air Assault, 159th Avn Det Fwd) |
 
@@ -395,6 +395,31 @@ updated to the 1L13 + P-14 net and the S-200-hosts-a-Tall-King detail.
 Shield **and** a Tall King; standalone red EWR sites roll a P-14; the faction carries no HDS
 units; black + mypy + full pytest green.
 
+### Blue roster slimmed — F-4E wing + heavy/orphan AI squadrons cut (2026-07-05)
+
+Per the user ("too much AI, not enough 414th" + the airframe mix), **six blue squadrons were
+removed** from `red_tide.yaml` (yaml-only; no `.miz` change, no squadron-def deletions):
+
+- **480th TFS** (F-4E, SEAD Sweep, Ramstein ×6), **512th TFS** (F-4E, OCA/Runway, Hahn ×8),
+  **526th TFS** (F-4E, BAI, Spangdahlem ×8) — the whole USAFE Phantom wing. **GAF JG 74
+  stays as the single German AI squadron** (TARCAP, Spangdahlem ×8).
+- **VA-34** (A-6E, OCA/Aircraft, Ramstein ×6) — the last carrier orphan.
+- **JBG 31 Boelcke** (Tornado IDS, SEAD Escort, Hahn ×8).
+- **37th BS** (B-1B, OCA/Runway, Ramstein ×4) — SIOP-only in 1988; the B-52H (20th BS)
+  stays as the lone heavy.
+
+Kept AI: Mirage F1EE (Ala 14 ×6, Escort), F-15C (493rd ×6, TARCAP), B-52H ×4, GAF JG 74 ×8,
+tankers/E-3A/lift. The player core (F-16CM/F-A-18C/F-15E ×12, F-14B ×8, A-10C ×8 + helos) is
+untouched. Offensive fixed-wing tasking now concentrates on the human's 414th jets; the
+remaining AI fast jets are all in supporting roles (TARCAP/Escort) except the B-52H.
+Side effects: the description's Heatblur-F-4E note + "Phantoms" line reworded; the
+`settings:` comment airframe list updated; wiki briefing/role-cards/first-three-turns +
+`docs/campaigns/` mirrors re-synced (F-4E role card deleted, OCA recipes re-pointed at
+F-15E/B-52H, tanker pairing lists trimmed). The squadron defs (`414th 480th TFS.yaml` etc.)
+are kept on disk — they're generic resources, just no longer referenced by this campaign.
+The upstream carve payload (`docs/dev/upstreaming/red-tide/`) is stale until
+`build_payload.py` is re-run. NEW game required to see the slimmed roster.
+
 ### Aircraft / squadron specifics
 - **German Phantom:** the `GAF JG 74` "Moelders" entry is a *squadron name* in the
   `aircraft:` list, not an aircraft type. `DefaultSquadronAssigner.find_squadron_by_name`
@@ -406,7 +431,8 @@ units; black + mypy + full pytest green.
 - **Coverage adds:** F-15E Strike Eagle (Hahn BAI) and the OH-58D Kiowa (Frankfurt) — the
   Kiowa had been lost when Hamburg flipped red.
 - **F-111C removed** entirely (squadron + the `f111c` mod setting + the mod note); the
-  UH-60A is intentionally left out. The campaign now only notes the Heatblur F-4E module.
+  UH-60A is intentionally left out. The Heatblur F-4E module note was dropped from the
+  description with the 2026-07-05 roster slim (the only F-4Es left are the AI JG 74).
 
 ### Squadron naming & liveries (every squadron is now a named, liveried unit)
 

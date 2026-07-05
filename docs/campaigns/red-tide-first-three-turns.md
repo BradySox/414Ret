@@ -43,7 +43,7 @@ MISSION #: 001      MC: AXEMAN (ex.)
         - PUSH 0+00. Marshal: bullseye "ANVIL" (ex.). On-station block 0+15 to Joker.
         - SLAYER 1-2  — F-14B (VMF-29) — high BARCAP, owns BVR over the Gap. AIM-54/7/9.
         - EAGLE 1-2   — F-15C (493rd, AI) — TARCAP, second CAP layer / sweep.
-        - MOELDER 1-2 — GAF JG 74 F-4E — forward TARCAP, low/medium, mops vectored Floggers.
+        - MOELDER 1-2 — GAF JG 74 F-4E (AI) — forward TARCAP, low/medium, mops vectored Floggers.
         - VOODOO 1-2  — F-16CM (414th Voodoo) — DEAD probe, HARM standoff on western SA-6/11.
         - HORNET 1-2  — F/A-18C (414th JFG) — SEAD escort for VOODOO; reactive HARM.
         - HOG 1-2     — A-10C (81st TFS) + WIDOW (1-1 ARB AH-64D, Fulda) — FLOT CAS as tasked.
@@ -105,7 +105,6 @@ MISSION #: 002      MC: AXEMAN (ex.)
         - VOODOO 1-4 — F-16CM (414th Voodoo) — DEAD lead. HARM + Maverick, kill the mobiles,
           hold the lane. Pre-emptive + reactive HARM.
         - HORNET 1-2 — F/A-18C (414th JFG) — SEAD escort, suppress pop-ups along the route.
-        - PANZER 1-2 — Tornado IDS (JBG 31, AI) — SEAD escort backup / loft.
         - BOLT 1-4   — F-15E (414th TFS) — BAI on the convoy column [grid from recon] (ex.).
         - SLAYER 1-2 — F-14B (VMF-29) — TARCAP, shields the package from Haina/ Hamburg fighters.
    c. Game plan vs. threats:
@@ -160,18 +159,18 @@ MISSION #: 003      MC: AXEMAN (ex.)
    a. Main effort: OCA on HAINA. Secondary: CAS exploitation + enabler-hunt setup.
    b. Scheme of maneuver:
         - VOODOO 1-2 + HORNET 1-2 — re-open/hold the corridor (SEAD/DEAD) ahead of the strike.
-        - PHANTOM 1-4 — F-4E (512th TFS) — OCA/Runway on Haina (craters/cluster).
-        - LANCER 1-2  — B-1B (37th BS, AI) — heavy OCA follow-up if tasked.
+        - BOLT 1-4    — F-15E (414th TFS) — OCA/Runway on Haina (craters/cluster).
+        - BUFF 1-2    — B-52H (20th BS, AI) — heavy OCA follow-up if tasked.
         - HOG 1-2 + WIDOW (Fulda AH-64D/OH-58D) — CAS on the FLOT W of Haina, walk the ground in.
         - SLAYER 1-2  — F-14B (VMF-29) — long-stick TARCAP toward the Schönefeld approaches;
           range/ID the A-50; this is the recce for the Phase-2 enabler kill (don't overcommit solo).
    c. Game plan vs. threats:
-        - SAM: corridor must be live before PHANTOM pushes — VOODOO declares "GATEWAY" or the strike
+        - SAM: corridor must be live before BOLT pushes — VOODOO declares "GATEWAY" or the strike
           holds. Route the fixed rings as always.
         - Air: SLAYER screens the OCA from Hamburg/CPH fighters; if the A-50 is reachable under
           escort, flag it for a dedicated enabler-hunt next turn (handbook §8 "Enabler hunt").
         - CAS floor: stay above the ZSU/SHORAD floor; Apaches use terrain.
-   d. Loadout: PHANTOM runway-cratering; CAS Maverick/Hellfire/gun/rockets. Role cards.
+   d. Loadout: BOLT runway-cratering; CAS Maverick/Hellfire/gun/rockets. Role cards.
    e. Success: Haina cratered/strangled and trending blue; FLOT advanced; A-50 located + a kill plan
       built. Abort the OCA if the corridor collapses; keep CAS + CAP working the front.
 
@@ -183,7 +182,7 @@ MISSION #: 003      MC: AXEMAN (ex.)
    KING overhead; SANDY on alert. Deep-ish push — brief the eject/SAR contract hard (§11).
 
 6. CONTINGENCIES
-   - Corridor closed again: PHANTOM holds; VOODOO/HORNET re-open or the OCA slips a turn.
+   - Corridor closed again: BOLT holds; VOODOO/HORNET re-open or the OCA slips a turn.
    - A-50 pulls back deep: don't chase unescorted; build the escorted enabler-hunt for next turn.
    - Hamburg MiGs push during the OCA: SLAYER + AWACS prioritise the strike's protection over the chase.
 ===========================================================================

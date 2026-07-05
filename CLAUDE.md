@@ -904,7 +904,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     route. The client API hook is hand-added to the generated `_liberationApi.ts` (codegen unavailable
     locally). (`game/server/qt/routes.py`, `game/server/supplyroutes/models.py`,
     `client/src/components/supplyroute/SupplyRoute.tsx`; test `tests/server/test_supply_route_interdiction.py`;
-    checklist L7 — needs an in-app pass + the CI client rebuild.)
+    checklist L7 — needs an in-app pass + the CI client rebuild.) **Armed Recon is an AREA search again
+    (2026-07-05):** the earlier "sweep the hunted road" plan (`_search_track` SEARCH START/MID/END down the
+    convoy polyline) was reverted — the runtime engage zone is already ~18.5 km (10 NM
+    `armed_recon_engagement_range_distance`), so a single `armed_recon_area` overflight blankets the corridor
+    ("look in the area and find them"), and marching a specific road wasn't that. The right-click frag still
+    lands an Armed Recon on the road's enemy end; the flight now area-searches that end. Road-follow
+    overrides + `armed_recon_point` + `test_armed_recon_track.py` removed
+    (`game/ato/flightplans/armedrecon.py`).
 36. **Airbase harassment (rocket/mortar siege)** — the fifth **Vietnam Ops suite** feature (design note
     `414th-vietnam-airbase-harassment-notes.md`, §F): forward, opposing-occupied airfields draw sporadic
     standoff rocket/mortar fire near the ramp, recreating the near-constant siege of Bien Hoa/Da Nang/the Khe

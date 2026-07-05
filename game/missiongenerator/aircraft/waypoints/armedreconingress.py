@@ -17,10 +17,10 @@ class ArmedReconIngressBuilder(PydcsWaypointBuilder):
         ecm_option = OptECMUsing(value=OptECMUsing.Values.UseIfDetectedLockByRadar)
         waypoint.tasks.append(ecm_option)
 
-        # One engage zone per search point. A road sweep (convoy / supply-route
-        # hunting) plans SEARCH START/MID/END target points along the hunted
-        # route, so the zones chain into a corridor covering the whole road; a
-        # classic single-point plan degrades to the one zone it always had.
+        # One engage zone per search point. Armed recon plans a single target-area
+        # point, so this is one big "look in the area and find them" hunt zone out to
+        # the engagement range; the loop stays general in case a future plan ever
+        # supplies several search points.
         flight_plan = self.flight.flight_plan
         positions = [
             target.position

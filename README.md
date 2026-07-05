@@ -394,9 +394,14 @@ and selected later upstream fixes.
   (an infantry cell, a roadside IED, a named leader, a stronghold's militia) instead of anonymous armor.
   And the insurgency **moves** and comes at you as the right kit: the named leader travels as a small
   **convoy** you have to find and run down in his home valley (not a parked jeep waiting to be bombed),
-  the cells are technicals and riflemen, and some roadside devices are **suicide VBIEDs** — a lone truck
+  the cells are technicals and riflemen that **wander their patch of countryside** (and the infiltrators
+  taking your ungarrisoned base creep toward it during the mission), a roadside IED is an **emplaced
+  device with a security team dug in around it** — kill the bomb and it's cleared even if the team runs;
+  strafing the guys alone doesn't defuse anything — and some devices are **suicide VBIEDs**, a lone truck
   that drives for your nearest forward base, so you intercept it en route or it detonates and costs you
-  at the mandate. (Only Enduring Resolve is tuned for the moving insurgency for now.)
+  at the mandate. The war also comes to *you*: friendly airfields and FOBs within mortar reach of a
+  living stronghold draw **sporadic insurgent rocket/mortar fire** during the mission (never the field
+  you spawn at) — pushing the strongholds back is what silences it.
 - A new **Nevada - Red Flag 81-2** campaign — the ultimate war game, played as the war it rehearses. An
   F-4E wing detachment deploys to **Nellis, January 1981** (after the Reflected Simulations campaign the
   squadron flies) against the **integrated Red Force of the real 1981 exercise**: 64th/65th **Aggressor

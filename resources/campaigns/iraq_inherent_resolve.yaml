@@ -58,6 +58,11 @@ settings:
   # Patrol for them or an un-hunted cell coalesces into its home stronghold and brings a
   # destroyed cache back online.
   coin_dispersed_cells: true
+  # Insurgent indirect fire: blue airfields/FARPs/FOBs within mortar reach of a live
+  # stronghold draw sporadic in-mission rocket/mortar harassment (never a player-spawn
+  # field). Complements the front-based Vietnam toggle below (which covers Balad near
+  # the Highway-1 front); this one keys off stronghold proximity and covers FOBs.
+  coin_harassment: true
   # The ratline west toward Tal Afar / Syria (real, tracked convoys) and standoff
   # rocket/mortar fire on the forward field at Balad.
   vietnam_convoy_interdiction: true

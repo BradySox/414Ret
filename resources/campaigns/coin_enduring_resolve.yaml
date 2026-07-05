@@ -63,6 +63,12 @@ settings:
   # Patrol for them (TARPS + CAS) or an un-hunted cell coalesces into its home stronghold
   # and brings a destroyed cache back online -- re-opening the regen you shut off.
   coin_dispersed_cells: true
+  # Insurgent indirect fire: blue airfields/FARPs/FOBs within mortar reach of a live
+  # stronghold draw sporadic in-mission rocket/mortar harassment (never a player-spawn
+  # field). Stronghold-proximity based -- unlike the front-based Vietnam §36 toggle
+  # below, this works on the front-less air-assault laydown. Silencing a base's fire
+  # means pushing its stronghold back.
+  coin_harassment: true
   vietnam_convoy_interdiction: true
   vietnam_airbase_harassment: true
   vietnam_political_will: true

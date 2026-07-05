@@ -925,6 +925,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     theater-wide 200 km), so conventional campaigns can put their frontline strips under fire; **Red Tide
     preseeds it** (the Fulda FARP + red's Haina both sit on the front — "the Gap is not a safe ramp").
     All §36 guarantees carry over (player-spawn exclusion, grace, forward-only, symmetric).
+    **Plugin dependency (user-caught 2026-07-05): the runtime is the vietnamops PLUGIN** — a saved
+    default of "Vietnam Ops" unticked silently kills the setting, so Red Tide also preseeds
+    `plugins: {vietnamops: true}` (campaign plugins layer over saved defaults in the wizard), the
+    plugin is renamed "Vietnam Ops & standoff harassment", and both toggles state the coupling;
+    guard `tests/fourteenth/test_campaign_plugin_preseed.py`.
     (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §36, checklist L8 — needs an
     in-game pass; the artillery mode = the L8 artillery bullet.)

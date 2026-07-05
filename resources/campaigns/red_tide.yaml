@@ -251,6 +251,14 @@ settings:
   # in-mission standoff harassment fire (never a player-spawn field; startup grace).
   # The Gap is not a safe ramp.
   artillery_base_harassment: true
+  # The artillery harassment above runs inside the vietnamops PLUGIN's runtime (the
+  # shared standoff-barrage loop). Preseed the plugin ON so a player whose saved
+  # defaults disabled "Vietnam Ops (period mechanics)" -- reasonable on a
+  # conventional-campaign squadron -- doesn't silently lose the feature. Layered
+  # over their defaults like every other recommended setting; still uncheckable
+  # in the wizard.
+  plugins:
+    vietnamops: true
 squadrons:
   #Ramstein — rear heavy-iron + the eyes: the B-52s, the 414th Strike Eagles, and the E-3A.
   165:

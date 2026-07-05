@@ -2885,7 +2885,15 @@ When both toggles are on the wider Vietnam reach wins. **Red Tide preseeds it** 
 FARP (~2.5 km off the Fulda↔Haina front) and red's Haina spearhead now live under sporadic artillery
 harassment, "the Gap is not a safe ramp". Every §36 guarantee carries over unchanged (player-spawn
 exclusion, grace, forward-only, symmetric). The emitted node stays `VietnamOps.airbaseHarassment`
-(the `vietnamops` plugin owns the runtime; its non-harassment sections stay gated off). Tests:
+(the `vietnamops` plugin owns the runtime; its non-harassment sections stay gated off).
+**Plugin dependency (user-caught 2026-07-05):** the setting is dead if the *vietnamops plugin* is
+disabled — and a conventional-campaign player has every reason to have unticked "Vietnam Ops" in
+their saved defaults. **Red Tide therefore preseeds `plugins: {vietnamops: true}`** in its campaign
+`settings:` block (the wizard layers campaign plugins over the player's saved defaults — the same
+recommended-default mechanism as every other preseed; still uncheckable in the wizard); the plugin
+is renamed "Vietnam Ops **& standoff harassment**" and both its description and the setting's
+detail state the coupling. Guard: `tests/fourteenth/test_campaign_plugin_preseed.py` (the preseed
+exists, survives `deserialize_state_dict`, and wins the wizard layering). Tests:
 `tests/missiongenerator/test_vietnamops_harassment.py` (reach + gates). In-game pass: the L8 row's
 artillery bullet.
 

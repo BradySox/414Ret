@@ -437,6 +437,16 @@ Rhineland cluster (100+ km back) stays silent. Player-spawn fields are never tar
 *recommended new-game default* like the other `settings:` entries; NEW game (or flipping the
 setting in an existing save) required. In-game pass: checklist L8's artillery bullet.
 
+**Plugin dependency (user-caught 2026-07-05, same day):** the runtime lives in the
+**vietnamops plugin** — a player whose saved defaults had unticked "Vietnam Ops (period
+mechanics)" (reasonable on this squadron) would silently lose the feature: the emitter emits,
+nothing consumes. `red_tide.yaml` therefore also preseeds **`plugins: {vietnamops: true}`**
+(campaign plugin choices layer over the player's saved defaults in the New Game wizard —
+still uncheckable there). The plugin is renamed "Vietnam Ops **& standoff harassment**" and
+both toggle descriptions state the coupling. Guard:
+`tests/fourteenth/test_campaign_plugin_preseed.py`. An **existing** Red Tide save needs both
+the setting AND the plugin flipped on by hand.
+
 ### Aircraft / squadron specifics
 - **German Phantom:** the `GAF JG 74` "Moelders" entry is a *squadron name* in the
   `aircraft:` list, not an aircraft type. `DefaultSquadronAssigner.find_squadron_by_name`

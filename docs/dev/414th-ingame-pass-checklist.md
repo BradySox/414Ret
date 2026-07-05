@@ -1723,7 +1723,7 @@ so the two docs don't drift.
   measured-data airframe's ladder (the estimate must never override a real `fuel:` block); planner
   suddenly fragging tankers for the King (the fallback must stay out of `unit_type.fuel_consumption`).
 
-### H12 — Back-to-basics kneeboard deck (Brief Sheet + cover on the full deck) · §31 / §30 · ☐ UNTESTED (built 2026-07-05; deck assembly + page renders test-covered, the in-cockpit read is the residual)
+### H12 — Back-to-basics kneeboard deck (Brief Sheet + cover on the full deck) · §31 / §30 · ◐ PARTIAL (2026-07-05, user miz pass, session `happy-sutherland-6113a1`: **renders verified** — a generated Inherent Resolve deck showed the right order (cover with phase/ROE band → colour-coded Brief Sheet fronting the flight's block → Mission Info with BLUF + full steerpoint table → Support Info → threat cards), colours live everywhere, Brief Sheet auto-fill fully populated (route times, QNH/QFE, loadout, laser, SAR, code words), code words in all three homes. **Still owed** = a deck-length re-check with trimmed toggles: the flown deck ran ~12 pages because the campaign carried every optional page ON from the compact-mode days (recon ×3, packages+map ×2, fuel ladder, brevity) — settings-driven, not the fail signature; on defaults the deck should read ~5 pages)
 - **What it is:** the 2026-07-05 back-to-basics rework — the compact 3-4 page folding machinery is
   deleted (H9 retired) and the full multi-page deck is the only assembly path, fronted by the kept
   pieces: page 1 the **cover** (op/turn/date + SITREP + shared-airframe index + phase/ROE band), each
@@ -1732,9 +1732,9 @@ so the two docs don't drift.
   cards page (its `generate_threat_intel_kneeboard` default flipped **ON**).
 - **Headless adjudication (2026-07-05):** deck order + page composition covered by
   `tests/missiongenerator/test_kneeboard_cover.py`, `test_brief_sheet.py`, `test_kneeboard_bluf.py`,
-  `test_threat_intel_kneeboard.py`; full suite green. **Residual (in-sim only):** the deck length and
-  in-cockpit legibility of the restored full deck (the ~10-page sprawl was the original complaint —
-  the optional pages stay default OFF, so the default deck should be ~5-6 pages/flight).
+  `test_threat_intel_kneeboard.py`; full suite green. **Residual (in-sim only):** the deck length
+  on default toggles (a campaign upgraded from compact mode keeps its old option set, where every
+  toggle was cheap — turning off recon/packages/fuel/brevity restores the ~5-page deck).
 - **Setup:** generate a mission with a client Strike/SEAD flight on defaults; open the kneeboard.
 - **Pass:** page 1 cover, page 2 the flight's colour-coded Brief Sheet, then Game Plan (full
   steerpoint table restored) / Support Info / threat cards; no composite "Threats & Targets" or

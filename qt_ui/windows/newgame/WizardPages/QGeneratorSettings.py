@@ -176,8 +176,14 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             ("OH-6 Vietnam Asset Pack (v1.2)", self.oh_6_vietnamassetpack),
             ("OV-10A Bronco", self.ov10a_bronco),
             ("Vietnam War Vessels (v3.2.0 by TeTeT)", self.vietnamwarvessels),
-            ("CJS FA-18E/F/G Super Hornet (v2.4)", self.fa_18efg),
-            ("CJS FA-18E/F Super Hornet Tanker (v2.4)", self.fa18ef_tanker),
+            (
+                "CJS FA-18E/F/G Super Hornet (v2.4.5.260501.RC1)",
+                self.fa_18efg,
+            ),
+            (
+                "CJS FA-18E/F Super Hornet Tanker (v2.4.5.260501.RC1)",
+                self.fa18ef_tanker,
+            ),
         ]
 
         for i in range(len(mod_pairs)):

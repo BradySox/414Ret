@@ -98,6 +98,8 @@
 * **[Kneeboard]** New recon kneeboard pages — target reconnaissance (aimpoints, threat rings, area context), a friendly-packages coordination list, and a package-targets theater map. Basemap tiles are fetched and cached at mission generation (offline coastline fallback); adds the `mgrs` dependency and new Kneeboard settings.
 * **[Mission Generator]** New campaign setting "Default laser code for Player flights" controls whether newly-created player flights are assigned a unique allocated TGP/weapon laser code (the new default, matching existing behavior) or stay on 1688. When a code is allocated it is applied to both the TGP/kneeboard code and the weapon code by default, so LGBs home on the player's own code without extra clicks; both remain independently overridable in the payload tab.
 * **[Engine]** Support for DCS 2.9.27 including F-100D and F-14A (Export).
+* **[Modding]** Update to CJS Super Hornet Mod to v2.4.5.260501.RC1
+* **[Modding]** Update Community A4EC Mod to 2.3.0 (May 2025)
 
 ## Fixes
 * **[Plugins]** CTLD now treats a landed helicopter as on-ground using terrain AGL, so unload/extract works on sloped terrain.
@@ -125,6 +127,9 @@
 * **[Flight Plans]** Stabilized waypoint solver debug GeoJSON coordinate precision to avoid platform-specific floating point drift in debug output.
 * **[Mission Generation]** Assign plane-specific laser codes to LGB weapons when building the mission
 * **[Engine]** Fixed a bug where squadrons could transfer to enemy owned control points
+* **[Mission Generation]** Air assault drop-off zones are kept on land, so coastal objectives no longer drop the troops into the sea.
+* **[Mission Generation]** Relocate ground units that spawn on inland water (ponds, rivers, lakes) to the nearest land at mission start, fixing armor and SAM sites spawning underwater (#59).
+* **[Mission Generation]** Relocate ships that spawn on land (e.g. carrier escorts when the carrier hugs the shore) to the nearest deep water at mission start (#59).
 
 # Retribution v1.5.0
 

@@ -3290,7 +3290,10 @@ Retribution's High Digit SAMs mod support targeted the original **HighDigitSAMs 
 been unmaintained for years. The fork now targets its actively-maintained successor, the
 **[HighDigitSAMs Ultimate Compilation](https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation)**
 (v1.4.3+ — HighDigitSAMs + SAM Pack + SAM Sites Asset Pack + IDF Assets Pack in one install). The same
-`high_digit_sams` New Game toggle gates everything (relabeled in the wizard); no save migration is needed.
+`high_digit_sams` New Game toggle gates everything (relabeled in the wizard, plus a **fork-mismatch
+warning** — an always-visible note under the mod list + a control tooltip naming the exact dcs-sams build
+and explaining that the original Auranis mod / other forks rename units and silently break); no save
+migration is needed.
 All unit data was read from the **installed mod's own Database lua files** (launcher threat = missile
 `distanceMax`, tracker detection = the vehicle-file tracking range), not guessed from specs.
 
@@ -3336,7 +3339,7 @@ All unit data was read from the **installed mod's own Database lua files** (laun
 | Unit YAMLs | `resources/units/ground_units/` (42 new files, filename = DCS type id) |
 | Radar DB | `game/data/radar_db.py` (new TRs/STRs, launcher→tracker pairs, SR/EWR radar labels) |
 | Layouts / presets | `resources/layouts/anti_air/S-300_Site.yaml` (extended), `SAMPT_Battery.yaml` (new), `resources/groups/` |
-| Mod gating | `game/factions/faction.py` (id-correct strip list), `qt_ui/.../QGeneratorSettings.py` (label) |
+| Mod gating | `game/factions/faction.py` (id-correct strip list), `qt_ui/.../QGeneratorSettings.py` (label + fork-mismatch note/tooltip) |
 | Factions | 25+ `resources/factions/*.json` (fixes + era-respecting enrichment) |
 | Tests | suite-wide faction/layout loading; headless smoke: all preset units resolve, all factions load with the toggle both ways |
 

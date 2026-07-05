@@ -194,6 +194,23 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   in-app pass = the P3 checklist concealment bullet (covers P3-P6, needs the CI client
   rebuild).
 
+- **The static IED became a static-object emplacement with a security team** (user
+  2026-07-05, continuing the "systems feel static" thread: "change the IED back to the
+  proposed static object but spawn some guys around it"). The 07-04 fiction kit made the
+  static IED a lone parked supply truck -- which read as a *vehicle*, not a *bomb site*.
+  Now `ied_emplacement_unit_types` (`coin.py`) builds the emplaced **device** -- a vanilla
+  `Fortification.Oil_Barrel` **static object** (faction-independent, so the device never
+  degrades) -- plus a 2-man security team from the faction's own infantry
+  (`IED_EMPLACEMENT_UNITS` 3, sized down to the kit so a rifle-less faction gets one
+  barrel, never `_retype_units`-cycled copies). The mixed static+infantry group needs no
+  generator change (tgogenerator already splits statics from vehicles per unit). Clearing
+  is **device-anchored** (`_ied_intact` in `coin_ied.py`): kill the barrel and the IED is
+  cleared even if the team survives (they melt away); kill only the team and the fuse
+  keeps ticking. The mobile VBIED keeps the lone-truck kit and any-unit-alive clearing,
+  as do pre-rework saves' truck emplacements (no static in the group). Real-roster
+  verified on Toyota Al Gaib (Oil Barrel + 2x Insurgent AK-74 / Ural-375). Tests
+  `test_coin_units.py` + `test_coin_ied.py`; re-fly = checklist P4 third rework bullet.
+
 ## After P1
 
 - **Tune** from ledger data (levers above), update the P1 row status.

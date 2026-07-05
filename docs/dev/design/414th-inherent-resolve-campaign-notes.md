@@ -112,14 +112,17 @@ countries, `Airport.set_red()/set_blue()` ownership, and the typed marker groups
 `Strela-1`, MEDIUM `S-75`→SA-6, cache `Warehouse._Ammunition_depot`, front `M-113`, factory
 `Workshop_A`). Once the user **hand-positioned everything in the ME** to fit the terrain, that
 became the committed base **`iraq_inherent_resolve_base.miz`** — the source of truth for the 6
-airfields' ownership, the 5 authored FOBs, and every unit's map-fitted placement. **Edit the
-base in the ME, not the generator.**
+airfields' ownership, **all 10 authored FOBs** (the 5 originals + the 5 gap-fillers, once
+hand-tuned), and every unit's map-fitted placement. **Edit the base in the ME, not the
+generator.**
 
 `tools/build_iraq_inherent_resolve_miz.py` now **decorates** the base (exactly like ER decorates
 Shattered Dagger): it loads the base and adds only the **`NEW_FOBS`** in-between strongholds
 (each an `SKP-11` FOB + 2 garrisons + AAA + SHORAD + a `Tech_combine` strongpoint + one cache)
 → `iraq_inherent_resolve.miz`. When the user hand-tunes a machine-added FOB in the ME, it
-graduates into the base (re-export) and comes off `NEW_FOBS`.
+graduates into the base (re-export) and comes off `NEW_FOBS`. **`NEW_FOBS` is currently empty:**
+the first batch (Bayji, Qayyarah, Hawija, Makhmur, Gwer) was hand-tuned and has graduated into
+the base, so the decorator is presently a pass-through (output == base) until the next batch.
 
 **Headless verification:** the decorated miz loads through the real `TheaterLoader("iraq") →
 MizCampaignLoader.populate_theater()` to **16 control points** (RED 13 = 3 airfields + 10 FOBs;

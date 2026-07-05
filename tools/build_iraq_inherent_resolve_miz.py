@@ -33,18 +33,12 @@ DST = REPO / "resources/campaigns/iraq_inherent_resolve.miz"
 
 RED_COUNTRY = "Combined Joint Task Forces Red"
 
-# --- Gap-filling FOB strongholds (name, (x, y)), XY from real lat/lon via the Iraq
-#     projection. These fill the long empty stretches between the authored towns:
-#     the Highway-1 corridor (Bayji between Tikrit/Shirqat, Qayyarah between Shirqat/
-#     Hammam) and the eastern belt (Hawija, Makhmur, Gwer tying Kirkuk/Erbil to Mosul
-#     and the corridor). Each gets a light garrison + guns + a strongpoint + one cache.
-NEW_FOBS: list[tuple[str, tuple[float, float]]] = [
-    ("Bayji", (186157.0, -65898.0)),  # Highway 1, Tikrit <-> Shirqat
-    ("Qayyarah", (281688.0, -86316.0)),  # Highway 1, Shirqat <-> Hammam al-Alil
-    ("Hawija", (228949.0, -39789.0)),  # bridges the corridor (Bayji) <-> Kirkuk
-    ("Makhmur", (279420.0, -55884.0)),  # bridges Mosul <-> Kirkuk
-    ("Gwer", (310272.0, -63815.0)),  # the Mosul <-> Erbil approach
-]
+# --- Gap-filling FOB strongholds (name, (x, y)) to add to the base, each getting a light
+#     garrison + guns + a strongpoint + one cache. Currently EMPTY: the first batch (Bayji,
+#     Qayyarah, Hawija, Makhmur, Gwer -- the Highway-1 corridor + eastern belt gap-fillers)
+#     was hand-tuned in the ME and has GRADUATED into `iraq_inherent_resolve_base.miz`. Add
+#     the next batch here (from the Iraq projection) when more gaps need filling, then re-run.
+NEW_FOBS: list[tuple[str, tuple[float, float]]] = []
 
 # --- Furniture offsets (meters, mission x/y), matching the base's per-stronghold pattern:
 #     two garrison groups (armor markers -> filled from the ISIS frontline roster), guns,

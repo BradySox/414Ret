@@ -91,7 +91,12 @@ file. This guide is the map; those are the territory.
     + Al-Taquddum strike + Baghdad support) and grinds north on **one front up Highway 1** (Balad → Tikrit
     → Mosul); a 14-route red supply graph (corridor + ring + NE belt + Makhmur/Hawija bridges + Tal
     Afar/Syria ratline); the 3-phase Isolate → East Mosul → West Mosul/Old City arc with a permanent Mosul
-    positive-control box (+ a tight Old City box in the last phase). **The miz is now the ER
+    positive-control box (+ a tight Old City box in the last phase). **Drone wing added 2026-07-05**
+    (user call off the installed-inventory audit): Baghdad hosts RQ-1A Predator ×4 `primary: TARPS`
+    (persistent ISR — the `airecon` plugin banks AI drone overflights as confirmed BDA, so the drones
+    localize the concealed IED/cell circles) + MQ-9 Reaper ×4 `primary: BAI`; the shared unit yamls
+    gained `TARPS: 700` + honest `max_range` (800/400 NM) and both drones joined the faction
+    `aircrafts` (the MQ-9 was previously only its JTAC unit). **The miz is now the ER
     decorate-a-base pattern**: the user hand-positioned the laydown in the ME → committed as
     `iraq_inherent_resolve_base.miz` (the source of truth — edit it in the ME, NOT the generator);
     `tools/build_iraq_inherent_resolve_miz.py` only ADDS the in-between `NEW_FOBS` to it. Headless-verified

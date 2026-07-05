@@ -186,58 +186,91 @@ phases:
         width_nm: 5
         height_nm: 4
 
-# The red<->red supply graph: the Highway-1 corridor Baghdad -> Mosul (Tikrit -> Shirqat ->
-# Hammam al-Alil -> Mosul) the ISF grinds up, the Nineveh ring off Mosul (incl. the westward
-# Tal Afar ratline toward Syria, the convoy-interdiction target), and the NE belt (Mosul ->
-# Erbil -> Kirkuk) tying the two red airfields back to the corridor. Endpoints are exact CP
-# XY (closest-CP binding reads first/last waypoint only). All red<->red -- the one blue<->red
-# front (Balad -> Tikrit) is authored as a front-line group in the miz.
+# The red<->red supply graph, now routed through the in-between towns so the corridor and the
+# belt are continuous (no 100 km empty gaps). The Highway-1 corridor Tikrit -> Bayji -> Shirqat
+# -> Qayyarah -> Hammam al-Alil -> Mosul the ISF grinds up; the Nineveh ring off Mosul (Bartella
+# + the westward Tal Afar ratline toward Syria, the convoy-interdiction target); the NE belt
+# Mosul -> Gwer -> Erbil -> Kirkuk; and the bridges (Makhmur ties Mosul<->Kirkuk, Hawija ties
+# the corridor<->Kirkuk). Endpoints are exact CP XY (closest-CP binding reads first/last
+# waypoint only); the FOB endpoints use the ME-authored positions. All red<->red -- the one
+# blue<->red front (Balad -> Tikrit) is a front-line group in the base miz.
 # TODO(in-app pass): re-trace intermediate waypoints on the real road network via
 # tools/supply_route_geo.py (the 414th supply-line standard).
 supply_routes:
   # --- The Highway 1 corridor (the advance, south -> north):
-  # Tikrit -> Shirqat
+  # Tikrit -> Bayji
   - waypoints:
-      - [150201, -49014]
-      - [207000, -70000]
-      - [264800, -85078]
-  # Shirqat -> Hammam al-Alil
+      - [149160, -45377]
+      - [167000, -55000]
+      - [189879, -69196]
+  # Bayji -> Shirqat
   - waypoints:
-      - [264800, -85078]
-      - [295000, -83000]
-      - [322805, -81581]
+      - [189879, -69196]
+      - [225000, -75000]
+      - [264644, -84838]
+  # Shirqat -> Qayyarah
+  - waypoints:
+      - [264644, -84838]
+      - [273000, -85500]
+      - [281688, -86316]
+  # Qayyarah -> Hammam al-Alil
+  - waypoints:
+      - [281688, -86316]
+      - [302000, -84000]
+      - [322583, -82452]
   # Hammam al-Alil -> Mosul
   - waypoints:
-      - [322805, -81581]
+      - [322583, -82452]
       - [331000, -88000]
       - [339469, -94071]
   # --- The Nineveh ring off Mosul:
   # Mosul -> Bartella (east)
   - waypoints:
       - [339469, -94071]
-      - [342000, -83000]
-      - [343841, -73022]
+      - [340000, -83000]
+      - [341080, -71487]
   # Mosul -> Tal Afar (the ratline west toward Syria)
   - waypoints:
       - [339469, -94071]
       - [343000, -125000]
-      - [348018, -156505]
-  # --- The NE belt (ties the two red airfields to the corridor):
-  # Mosul -> Erbil
+      - [346375, -157972]
+  # --- The NE belt (Mosul -> Gwer -> Erbil -> Kirkuk):
+  # Mosul -> Gwer
   - waypoints:
       - [339469, -94071]
-      - [335000, -58000]
+      - [325000, -79000]
+      - [310272, -63815]
+  # Gwer -> Erbil
+  - waypoints:
+      - [310272, -63815]
+      - [320000, -43000]
       - [330838, -22360]
   # Erbil -> Kirkuk
   - waypoints:
       - [330838, -22360]
       - [288000, -5000]
       - [245434, 12825]
-  # Kirkuk -> Tikrit (links the eastern belt back to the Highway-1 corridor)
+  # --- The bridges (tie the eastern belt into the corridor):
+  # Mosul -> Makhmur
   - waypoints:
+      - [339469, -94071]
+      - [309000, -75000]
+      - [281354, -57549]
+  # Makhmur -> Kirkuk
+  - waypoints:
+      - [281354, -57549]
+      - [262000, -22000]
       - [245434, 12825]
-      - [200000, -18000]
-      - [150201, -49014]
+  # Bayji -> Hawija
+  - waypoints:
+      - [189879, -69196]
+      - [207000, -53000]
+      - [230892, -39120]
+  # Hawija -> Kirkuk
+  - waypoints:
+      - [230892, -39120]
+      - [237000, -13000]
+      - [245434, 12825]
 
 # The single front starts partway up the Balad -> Tikrit axis (Highway 1), the ISF
 # pressing north out of Baghdad toward Tikrit and, beyond it, Mosul.

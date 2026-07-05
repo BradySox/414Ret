@@ -215,12 +215,21 @@ file. This guide is the map; those are the territory.
     icon). `spawn_red_ground_at` now takes a `unit_types` list; `_retype_units` re-points the trimmed
     units' DCS *type* (+ name; drops the stale armor threat ring) to kit selected from the **red
     faction's own resolved roster** (`_pick_faction_unit` + `ied_/hvt_/cell_unit_types` — anti-air
-    excluded, price-capped, name-hint-first, never a hardcoded id): an IED = a lone soft **supply
+    excluded, price-capped, name-hint-first, never a hardcoded id): a VBIED = a lone soft **supply
     truck**, an HVT = a small **convoy** (leader jeep + armed technical + 2 rifles; `HVT_UNITS` 3→4),
     a cell (C1.5 + C4) = an armed **technical + infantry**. On Enduring Resolve (Toyota Al Gaib) →
     Ural-375 / UAZ-469+2×Insurgent-AK / DShK-gun-truck+Insurgent-AK (headless-verified end-to-end on
     real `TheaterUnit`s); degrades to the generated group if a role can't be filled, so no faction
-    dependency. **(2) IED variety** — each plant deterministically alternates a **static roadside
+    dependency. **The static IED was re-shaped 2026-07-05** (user call: back to the proposed static
+    object, with guys around it): `ied_emplacement_unit_types` = an emplaced **device** — a vanilla
+    `Fortification.Oil_Barrel` **static object**, faction-independent so it never degrades — guarded
+    by a 2-man security team from the faction's own infantry (`IED_EMPLACEMENT_UNITS` 3, sized down
+    to the kit so a rifle-less faction gets one barrel, never cycled copies; the mixed static+infantry
+    group splits correctly in `tgogenerator`). **Clearing is device-anchored** (`_ied_intact`):
+    killing the device clears the bomb even if the team survives (they melt away); killing the team
+    alone leaves the fuse ticking; a VBIED (and pre-rework saves' vehicle emplacements, which carry no
+    static) stays any-unit-alive. Real-roster verified: Oil Barrel + 2×Insurgent-AK / Ural-375.
+    **(2) IED variety** — each plant deterministically alternates that **static roadside
     IED** (`FUSE_TURNS` 3) and a **mobile VBIED** (`VBIED_FUSE_TURNS` 2 — a suicide vehicle racing the
     nearest blue CP, `_nearest_blue_cp`); same fuse→detonation→`ied_detonations`→mandate consequence,
     distinct "intercept it"/"reached friendly lines" messaging. **(3) In-mission movement** — COIN's

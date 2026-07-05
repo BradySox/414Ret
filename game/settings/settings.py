@@ -1297,12 +1297,14 @@ class Settings:
         section=GENERAL_SECTION,
         default=False,
         detail=(
-            "The insurgent supply roads are mined. Hidden IED emplacements appear on "
-            "the ratline -- ordinary recon-fogged targets you must find (TARPS/ISR) and "
-            "strike (CAS/Armed Recon) within a few turns. An IED you clear costs the "
-            "insurgency nothing but the device; one you leave un-swept detonates on the "
-            "coalition and drains your mandate (priced by the campaign's will profile). "
-            "Requires COIN replenishment on; intended for COIN campaigns that preseed it."
+            "The insurgent supply roads are mined. Hidden emplacements appear on the "
+            "ratline -- an emplaced device guarded by a small security team, or a "
+            "mobile VBIED driving for your lines -- recon-fogged targets you must find "
+            "(TARPS/ISR) and strike (CAS/Armed Recon) within a few turns. Destroying "
+            "the device clears the bomb (killing the team alone does not); one you "
+            "leave un-swept detonates on the coalition and drains your mandate (priced "
+            "by the campaign's will profile). Requires COIN replenishment on; intended "
+            "for COIN campaigns that preseed it."
         ),
     )
     coin_hvt: bool = boolean_option(

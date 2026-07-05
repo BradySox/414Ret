@@ -39,9 +39,10 @@ class _Point:
 
 
 class _Unit:
-    def __init__(self, alive: bool = True) -> None:
+    def __init__(self, alive: bool = True, is_static: bool = False) -> None:
         self.alive = alive
-        self.is_vehicle = True
+        self.is_static = is_static
+        self.is_vehicle = not is_static
 
 
 class _TGO:
@@ -105,6 +106,8 @@ def _fake_spawn(monkeypatch: Any) -> None:
         tgo.control_point = red_cp
         red_cp.connected_objectives.append(tgo)
         game.db.add(tgo.id, tgo)
+        game.spawn_kwargs = getattr(game, "spawn_kwargs", [])
+        game.spawn_kwargs.append(kw)
         return tgo
 
     monkeypatch.setattr(ied, "spawn_red_ground_at", _spawn)
@@ -201,6 +204,65 @@ def test_alternates_static_ied_and_mobile_vbied(monkeypatch: Any) -> None:
     vbied = next(i for i in ieds if i["kind"] == "vbied")
     assert vbied["target"] == "CP1"  # the nearest (only) blue base
     assert any("VBIED" in m[1] and "intercept" in m[1].lower() for m in game.messages)
+
+
+def test_static_plant_is_a_manned_emplacement_and_vbied_a_lone_vehicle(
+    monkeypatch: Any,
+) -> None:
+    game = _two_road_ratline(monkeypatch)
+    # A faction that fills the security team (the fake game has none).
+    monkeypatch.setattr(
+        ied, "ied_emplacement_unit_types", lambda g: ["device", "rifle", "rifle"]
+    )
+    ied.advance_roadside_ieds(game, events=None)
+    static_kw, vbied_kw = game.spawn_kwargs
+    # The static device spawns with room for the device + its security team; the
+    # mobile VBIED is a lone vehicle.
+    assert static_kw["max_units"] == ied.IED_EMPLACEMENT_UNITS
+    assert vbied_kw["max_units"] == ied.VBIED_UNITS
+
+
+def test_bare_device_kit_spawns_a_single_unit_not_cycled_copies(
+    monkeypatch: Any,
+) -> None:
+    # A faction with no eligible infantry yields a 1-item kit (just the barrel);
+    # the emplacement must then be sized to 1, or _retype_units would cycle the
+    # device into three clustered copies.
+    game = _ratline(monkeypatch)
+    monkeypatch.setattr(ied, "ied_emplacement_unit_types", lambda g: ["device"])
+    ied.advance_roadside_ieds(game, events=None)
+    assert game.spawn_kwargs[0]["max_units"] == 1
+
+
+def test_killing_the_device_clears_the_ied_even_if_the_team_survives(
+    monkeypatch: Any,
+) -> None:
+    game = _ratline(monkeypatch)
+    ied.advance_roadside_ieds(game, events=None)  # plant (a static device)
+    tgo = game.db.tgos[game.coin_state["ieds"][0]["tgo_id"]]
+    tgo.units = [
+        _Unit(alive=False, is_static=True),  # the device, struck
+        _Unit(alive=True),  # the security team, still there
+        _Unit(alive=True),
+    ]
+    ied.advance_roadside_ieds(game, events=None)
+    assert ied.consume_ied_detonations(game) == 0
+    assert any("cleared" in m[1].lower() for m in game.messages)
+
+
+def test_killing_the_team_alone_does_not_clear_the_device(monkeypatch: Any) -> None:
+    game = _ratline(monkeypatch)
+    ied.advance_roadside_ieds(game, events=None)  # plant (a static device)
+    tgo = game.db.tgos[game.coin_state["ieds"][0]["tgo_id"]]
+    tgo.units = [
+        _Unit(alive=True, is_static=True),  # the device, untouched
+        _Unit(alive=False),  # the team, killed
+        _Unit(alive=False),
+    ]
+    # The bomb is still emplaced: the fuse keeps ticking to detonation.
+    for _ in range(ied.FUSE_TURNS):
+        ied.advance_roadside_ieds(game, events=None)
+    assert ied.consume_ied_detonations(game) == 1
 
 
 def test_vbied_has_a_shorter_fuse_than_a_static_ied(monkeypatch: Any) -> None:

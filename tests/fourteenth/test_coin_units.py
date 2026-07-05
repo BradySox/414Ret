@@ -1,6 +1,7 @@
-"""COIN fiction-kit selection + re-type: the rework that makes a roadside IED a supply
-truck, an HVT a leader's jeep + rifles, and a cell an armed technical + infantry --
-instead of the faction's default armor wearing a re-skinned map icon.
+"""COIN fiction-kit selection + re-type: the rework that makes a static roadside IED an
+emplaced device (a barrel static) with a security team, a VBIED a lone supply truck, an
+HVT a leader's jeep + rifles, and a cell an armed technical + infantry -- instead of the
+faction's default armor wearing a re-skinned map icon.
 
 Locks the faction-roster selection (:func:`_pick_faction_unit` + the composition
 builders) and :func:`_retype_units`, mirroring the Toyota Al Gaib 2001 roster the
@@ -18,6 +19,7 @@ from game.fourteenth.coin import (
     _retype_units,
     cell_unit_types,
     hvt_unit_types,
+    ied_emplacement_unit_types,
     ied_unit_types,
 )
 
@@ -72,8 +74,24 @@ def _ids(types: list[Any]) -> list[str]:
 # --- composition builders -----------------------------------------------------------
 
 
-def test_ied_is_a_lone_supply_truck() -> None:
+def test_vbied_is_a_lone_supply_truck() -> None:
     assert _ids(ied_unit_types(_game())) == ["Ural-375"]
+
+
+def test_static_ied_is_an_emplaced_device_plus_a_security_team() -> None:
+    # The device is a vanilla barrel STATIC (faction-independent), guarded by a rifle
+    # pair from the faction's own infantry.
+    assert _ids(ied_emplacement_unit_types(_game())) == [
+        "Oil Barrel",
+        "Infantry AK Ins",
+        "Infantry AK Ins",
+    ]
+
+
+def test_static_ied_device_never_degrades_even_without_a_faction() -> None:
+    # No red faction (headless/fake game): the emplacement is still the bare device.
+    faceless: Any = SimpleNamespace(red=SimpleNamespace(faction=None))
+    assert _ids(ied_emplacement_unit_types(faceless)) == ["Oil Barrel"]
 
 
 def test_hvt_is_a_small_convoy_jeep_technical_and_two_rifles() -> None:

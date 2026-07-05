@@ -12,10 +12,49 @@ import {
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import MobileTgo from "./MobileTgo";
 import { TgoTooltip, iconForTgo } from "./shared";
-import { Marker } from "react-leaflet";
+import { Circle, Marker, Tooltip } from "react-leaflet";
 
 interface TgoProps {
   tgo: TgoModel;
+}
+
+/* COIN concealment: an un-reconned hidden insurgent object (roadside IED/VBIED,
+   HVT convoy, dispersed/re-infiltration cell) renders as an "in here somewhere"
+   uncertainty circle instead of an exact marker. The centre the server sends is
+   already jittered off the true position (which never reaches the client while
+   concealed). Same click/right-click contract as a marker so the player can frag
+   recon (TARPS) or a strike onto the suspected area; once discovered the TGO
+   snaps to its normal exact symbol. */
+function ConcealedTgo(props: TgoProps) {
+  const [openNewPackageDialog] = useOpenNewTgoPackageDialogMutation();
+  const [openInfoDialog] = useOpenTgoInfoDialogMutation();
+  return (
+    <Circle
+      center={props.tgo.position}
+      radius={props.tgo.uncertainty_radius_m!}
+      pathOptions={{
+        color: "#b32424",
+        weight: 2,
+        dashArray: "6 6",
+        fillColor: "#b32424",
+        fillOpacity: 0.08,
+      }}
+      eventHandlers={{
+        click: () => {
+          openInfoDialog({ tgoId: props.tgo.id });
+        },
+        contextmenu: () => {
+          openNewPackageDialog({ tgoId: props.tgo.id });
+        },
+      }}
+    >
+      <Tooltip>
+        Suspected insurgent activity ({props.tgo.control_point_name})
+        <br />
+        Somewhere in this area — fly recon to localize
+      </Tooltip>
+    </Circle>
+  );
 }
 
 function StaticTgo(props: TgoProps) {
@@ -57,6 +96,9 @@ function StaticTgo(props: TgoProps) {
 }
 
 export default function Tgo(props: TgoProps) {
+  if (props.tgo.uncertainty_radius_m) {
+    return <ConcealedTgo tgo={props.tgo} />;
+  }
   if (props.tgo.mobile) {
     return <MobileTgo tgo={props.tgo} />;
   }

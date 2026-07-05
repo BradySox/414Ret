@@ -137,6 +137,13 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         # — render as their real NATO symbol (infantry / IED / individual-leader)
         # rather than a tank platoon. None keeps the class default.
         self.sidc_entity_override: Optional[tuple[SymbolSet, Entity]] = None
+        # COIN concealment: while un-reconned (known_for False), this site's map
+        # presence is an "in here somewhere" uncertainty area (a jittered circle
+        # built server-side) instead of an exact marker. Set only by the COIN
+        # spawns (roadside IED/VBIED, HVT, dispersed/re-infiltration cells) whose
+        # entire point is that the player must localize them; ordinary recon fog
+        # keeps exact positions and hides only composition.
+        self.concealed: bool = False
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -157,6 +164,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         state.setdefault("pending_deploy", False)
         # Old saves predate the COIN map-symbol override — no override is correct.
         state.setdefault("sidc_entity_override", None)
+        # Old saves predate COIN concealment — exact markers are correct.
+        state.setdefault("concealed", False)
         self.__dict__.update(state)
         # Save migration: heal AAA sites that were generated with a stray search
         # radar (the old `fill: true` radar slot). Newly generated campaigns no

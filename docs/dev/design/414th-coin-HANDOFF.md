@@ -174,6 +174,26 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   (the garrison pass: militia symboled, SAM/cache/blue/discrete-spawn left alone). Both
   render-verified in the pinned milsymbol 3.0.4.
 
+- **The hidden objects' markers sat dead-on their true positions** (user 2026-07-05: "the
+  systems feel static -- obscure them with an 'in here somewhere' circle"). The suspect
+  framing changed the *color* but the diamond still X-marked the exact spot, so "finding"
+  an IED/HVT/cell was fiction. Now they are **concealed**: `spawn_red_ground_at` gains a
+  `concealed=True` flag (set by the IED/VBIED, HVT, dispersed-cell and re-infiltration-cell
+  spawns; caches/garrisons stay exact), stored on `TheaterGroundObject.concealed`
+  (pickle-safe, old saves default False). While `known_for(BLUE)` is False the server TGO
+  model (`game/server/tgos/models.py` `concealed_uncertainty`) replaces the position with a
+  **deterministically jittered centre** (seeded from the TGO id -- a wandering circle would
+  let the player triangulate; offset 15-60% of the radius so the truth is always inside) +
+  `uncertainty_radius_m` (4 km), and the client (`client/src/components/tgos/Tgo.tsx`)
+  draws a dashed red circle with the same click/right-click contract as a marker (so TARPS/
+  CAS can be fragged onto the suspected area). The true coordinates never reach the client
+  while concealed; discovery (TARPS/attack, fog off, reveal-overview) snaps it to the exact
+  symbol. Known leak, accepted: planning a package against the concealed TGO puts its
+  *steerpoint* at the true position (that IS the localization mission; §5 Approximate mode
+  obscures player steerpoints when on). Tests `tests/fourteenth/test_coin_concealment.py`;
+  in-app pass = the P3 checklist concealment bullet (covers P3-P6, needs the CI client
+  rebuild).
+
 ## After P1
 
 - **Tune** from ledger data (levers above), update the P1 row status.

@@ -539,6 +539,9 @@ export type Tgo = {
   user_placed: boolean;
   roe_restricted?: boolean;
   roe_reason?: string | null;
+  /** COIN concealment: set while this TGO renders as an uncertainty circle;
+      `position` is then the jittered circle centre, not the true location. */
+  uncertainty_radius_m?: number | null;
 };
 export type SupplyRoute = {
   id: string;

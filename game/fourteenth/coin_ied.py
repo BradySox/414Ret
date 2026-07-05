@@ -140,6 +140,7 @@ def _replenish_ieds(
             max_units=IED_UNITS,
             sidc_override=IED_SIDC,
             unit_types=ied_unit_types(game),
+            concealed=True,
         )
         if tgo is None:
             return

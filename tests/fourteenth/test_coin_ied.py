@@ -141,6 +141,10 @@ def test_plants_up_to_the_cap_on_the_ratline(monkeypatch: Any) -> None:
     assert len(ieds) == 1
     assert ieds[0]["armed"] == 0
     assert any("IED activity reported" in m[1] for m in game.messages)
+    # Road-pinned concealment: the plant stores its road polyline on the TGO so the
+    # map's suspected-activity circle slides along the highway, not into the fields.
+    tgo = game.db.tgos[ieds[0]["tgo_id"]]
+    assert tgo.concealed_route == [(180_000, 0), (120_000, 0)]
 
 
 def test_detonates_after_the_fuse_and_charges_the_mandate(monkeypatch: Any) -> None:

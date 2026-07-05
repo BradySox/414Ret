@@ -38,6 +38,76 @@ _CONCEALED_MAX_OFFSET = 0.60
 #: S-200/S-300 sites) and EWRs (they emit — passively geolocatable) stay exact.
 _CONCEALABLE_SAM_TASKS = frozenset({GroupTask.MERAD, GroupTask.SHORAD, GroupTask.AAA})
 
+#: Road-pinned concealment (a TGO carrying `concealed_route` — the roadside IEDs):
+#: the suspected-activity centre slides FAR along the route polyline (never off it)
+#: by this much, clamped to the road's extent. Deliberately larger than the circle
+#: radius — the player knows what highway the device is on, not which stretch, so
+#: unlike the radial jitter the truth may sit OUTSIDE the drawn circle; the road
+#: itself is the search domain (user call 2026-07-05).
+_ROUTE_JITTER_MIN_M = 5_000.0
+_ROUTE_JITTER_MAX_M = 25_000.0
+
+
+def _route_cumulative(route: list[tuple[float, float]]) -> list[float]:
+    """Cumulative arc length at each polyline vertex."""
+    cum = [0.0]
+    for (ax, ay), (bx, by) in zip(route, route[1:]):
+        cum.append(cum[-1] + math.hypot(bx - ax, by - ay))
+    return cum
+
+
+def _nearest_arc(
+    route: list[tuple[float, float]], cum: list[float], x: float, y: float
+) -> float:
+    """Arc length of the point on the polyline closest to (x, y)."""
+    best_arc = 0.0
+    best_dist = math.inf
+    for i, ((ax, ay), (bx, by)) in enumerate(zip(route, route[1:])):
+        dx, dy = bx - ax, by - ay
+        seg_sq = dx * dx + dy * dy
+        t = 0.0 if seg_sq == 0.0 else ((x - ax) * dx + (y - ay) * dy) / seg_sq
+        t = min(max(t, 0.0), 1.0)
+        px, py = ax + t * dx, ay + t * dy
+        dist = math.hypot(x - px, y - py)
+        if dist < best_dist:
+            best_dist = dist
+            best_arc = cum[i] + t * (cum[i + 1] - cum[i])
+    return best_arc
+
+
+def _point_at_arc(
+    route: list[tuple[float, float]], cum: list[float], s: float
+) -> tuple[float, float]:
+    """The polyline point at arc length ``s`` (clamped to the route's extent)."""
+    s = min(max(s, 0.0), cum[-1])
+    for i in range(len(route) - 1):
+        if s <= cum[i + 1] or i == len(route) - 2:
+            seg = cum[i + 1] - cum[i]
+            t = 0.0 if seg == 0.0 else (s - cum[i]) / seg
+            (ax, ay), (bx, by) = route[i], route[i + 1]
+            return ax + t * (bx - ax), ay + t * (by - ay)
+    return route[-1]
+
+
+def _route_jitter(tgo: TheaterGroundObject) -> Optional[tuple[float, float]]:
+    """A deterministic point FAR along the TGO's pinned route, or None if the TGO
+    carries no usable route (the caller falls back to the radial jitter)."""
+    route_raw = getattr(tgo, "concealed_route", None)
+    if not route_raw or len(route_raw) < 2:
+        return None
+    route = [(float(x), float(y)) for x, y in route_raw]
+    cum = _route_cumulative(route)
+    if cum[-1] <= 0.0:
+        return None
+    s0 = _nearest_arc(route, cum, tgo.position.x, tgo.position.y)
+    rng = random.Random(tgo.id.int)
+    dist = rng.uniform(_ROUTE_JITTER_MIN_M, _ROUTE_JITTER_MAX_M)
+    direction = 1.0 if rng.random() < 0.5 else -1.0
+    s = s0 + direction * dist
+    if s < 0.0 or s > cum[-1]:
+        s = s0 - direction * dist  # bounce off the road's end, stay on the road
+    return _point_at_arc(route, cum, s)
+
 
 def _concealed_radius(tgo: TheaterGroundObject) -> Optional[float]:
     """The uncertainty radius for this TGO, or None if it shows an exact marker."""
@@ -72,10 +142,14 @@ def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float
     radius = _concealed_radius(tgo)
     if radius is None:
         return None
+    pos = tgo.position
+    # Road-pinned (roadside IEDs): slide far ALONG the route, never off it.
+    on_route = _route_jitter(tgo)
+    if on_route is not None:
+        return Point(on_route[0], on_route[1], pos._terrain), radius
     rng = random.Random(tgo.id.int)
     theta = rng.uniform(0.0, math.tau)
     dist = rng.uniform(_CONCEALED_MIN_OFFSET, _CONCEALED_MAX_OFFSET) * radius
-    pos = tgo.position
     # Build a PLAIN pydcs Point, never pos.__class__: a real TGO's position is a
     # PresetLocation (PointWithHeading), whose constructor signature differs —
     # reusing the subclass here mis-bound the arguments and 500'd the whole /game

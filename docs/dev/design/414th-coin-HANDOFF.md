@@ -192,7 +192,13 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   *steerpoint* at the true position (that IS the localization mission; §5 Approximate mode
   obscures player steerpoints when on). Tests `tests/fourteenth/test_coin_concealment.py`;
   in-app pass = the P3 checklist concealment bullet (covers P3-P6, needs the CI client
-  rebuild).
+  rebuild). **Road-pinned refinement (2026-07-05, user call):** the IED/VBIED circle no
+  longer jitters radially (which could park it in the fields off the road) -- the plant
+  stores its supply-road polyline on `TheaterGroundObject.concealed_route`, and the centre
+  slides **far ALONG the route** (5-25 km, deterministic, clamped to the road; the truth may
+  sit OUTSIDE the circle -- "we know what highway it's on, not which street"; the highway is
+  the search domain). Degenerate/pre-feature routes fall back radial; cells/HVTs keep the
+  radial jitter (no road to pin to).
 
 - **The static IED became a static-object emplacement with a security team** (user
   2026-07-05, continuing the "systems feel static" thread: "change the IED back to the

@@ -1374,6 +1374,12 @@ so the two docs don't drift.
   bases (too many overlapping circles — the tuning lever is `FIELD_FORCE_RADIUS_M`/`CONCEALED_RADIUS_M`
   in `game/server/tgos/models.py`).
 
+### G25 — Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep · §3 · ☐ UNTESTED (built 2026-07-05, 414th call; the proposal-layer composition + the auto-recon extension to armed recon are unit-tested in `tests/test_armed_recon_planning.py` — the in-mission package read + the TARPS-vs-CP flight plan actually flying need a fly)
+- **What it is:** each auto-planned Armed Recon package now composes as **1 recon drone + 2 SEAD Vipers + 4 armed recon** on a UAV-fielding faction (OIR). The primary is a fixed 4-ship; the SEAD escort (`propose_common_escorts`, 2-ship, threat-gated) resolves to the F-16CM; and the auto-recon hook (`auto_add_tarps_recon`, default ON) frags one TARPS flight — which on OIR is a Predator/Reaper, since the drones are the faction's TARPS birds. The drone is optional (drops if none free, never scrubs the package) and the SEAD is pruned when no radar-SAM threat sits on the route.
+- **Setup:** NEW "Iraq - Operation Inherent Resolve (COIN)" (has the drones + the SA-6/8 crust + Viper SEAD). Let the auto-planner build a turn; open an Armed Recon package in the ATO.
+- **Pass:** an Armed Recon package shows a 4-ship recon primary + a 1-ship drone (Predator/Reaper) recon flight; where a radar SAM threatens the route, 2 F-16CM SEAD ride too; the drone overflies the swept corridor (TARPS-against-a-CP flies, no `InvalidObjectiveLocation`) and its overflight confirms BDA on the area next turn; a package with no TARPS bird free still plans (drone just omitted).
+- **Fail signature:** the drone never appears (`auto_add_tarps_recon` off, or no TARPS-capable squadron — the drones need their `TARPS: 700` from the #491 unit data); the package errors on generation with `InvalidObjectiveLocation` (the TARPS-vs-CP widening didn't take); armed recon plans a 2/3-ship instead of 4; the drone flies TARPS but never reaches the corridor (range/TOT — the drone cruise is slow, check the +2 min offset holds it under the escort window).
+
 ---
 
 ## H. Kneeboards

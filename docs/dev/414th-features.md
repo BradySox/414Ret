@@ -229,6 +229,25 @@ TARPS-capable squadron is available. The flight type is **airframe-agnostic** �
 gated purely by the `TARPS` task in the airframe's `tasks:` table, not hard-coded to the
 F-14 — so the Vietnam-era recon birds carry it too (see below).
 
+**Recon drone in each Armed Recon package (2026-07-05, 414th call).** The auto-recon
+hook (`PackageFulfiller._maybe_plan_tarps_recon`) now also frags a recon flight into
+**Armed Recon** packages, not just Strike/DEAD. Two supporting changes: `TarpsFlightPlan`
+was widened to accept a `ControlPoint` target (an armed-recon sweep targets a CP corridor,
+not a TGO — the base `recon_area` overflight already handles any `MissionTarget`), and the
+armed-recon hook skips the `warrants_recon` TGO gate (a swept corridor always warrants an
+overwatch pass). It stays **optional** (drops silently if no TARPS bird is free — never
+scrubs the package) and gated by the same `auto_add_tarps_recon` setting. Because the recon
+bird is whatever is `TARPS`-capable in the faction, on a **UAV-fielding faction (OIR:
+Predator/Reaper carry `TARPS`) this frags a drone into every armed recon package** — and
+the `airecon` plugin banks that AI drone overflight as confirmed BDA, so the drone is what
+localizes the swept area's concealed contacts (§3 concealment loop). Alongside, the Armed
+Recon primary is a fixed **4-ship** (`PlanArmedRecon.ARMED_RECON_FLIGHT_SIZE`) and the
+existing threat-gated SEAD escort (`propose_common_escorts`, 2-ship) resolves to the Viper
+on OIR/Red Tide — so a full armed recon package reads **1 drone + 2 SEAD Vipers + 4 recon**
+(`game/commander/packagefulfiller.py`, `game/ato/flightplans/tarps.py`,
+`game/commander/tasks/primitive/armedrecon.py`; tests `tests/test_armed_recon_planning.py`;
+checklist G25 — the in-mission composition needs a fly).
+
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
   `configure_tarps()` — single overflight waypoint ~5 min behind the strikers.
 - Flight plan: `game/ato/flightplans/tarps.py` uses `FlightWaypointType.INGRESS_RECON`

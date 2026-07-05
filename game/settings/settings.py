@@ -866,20 +866,21 @@ class Settings:
         ),
     )
     auto_add_tarps_recon: bool = boolean_option(
-        "Auto-planner adds TARPS recon flights to Strike/DEAD packages",
+        "Auto-planner adds a recon flight to Strike/DEAD/Armed Recon packages",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=True,
         invert=False,
         detail=(
             "If checked, the auto-planner appends a single photo-recon flight "
-            "(e.g. F-14 TARPS) to Strike and DEAD packages against high-value "
-            "targets (air defenses, factories, command posts, bridges). The recon "
-            "bird overflies the target a couple of minutes behind the strikers "
-            "for a post-strike BDA pass (kept tight so it stays under the package "
-            "escort window). Requires a TARPS-capable squadron in range; if "
-            "none is available the flight is simply skipped (the strike is never "
-            "scrubbed)."
+            "(e.g. F-14 TARPS, or a Predator/Reaper drone on a UAV-fielding "
+            "faction) to Strike and DEAD packages against high-value targets "
+            "(air defenses, factories, command posts, bridges) for a post-strike "
+            "BDA pass, and to Armed Recon packages as a scouting overwatch over "
+            "the swept corridor. The recon bird overflies the target under the "
+            "package's escort window. Requires a TARPS-capable squadron in range; "
+            "if none is available the flight is simply skipped (the package is "
+            "never scrubbed)."
         ),
     )
     recon_intel_fog: bool = boolean_option(

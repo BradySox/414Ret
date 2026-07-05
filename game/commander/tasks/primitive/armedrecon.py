@@ -21,6 +21,12 @@ class PlanArmedRecon(PackagePlanningTask[ControlPoint]):
         state.control_point_priority_queue.remove(self.target)
         super().apply_effects(state)
 
+    #: Armed recon flies as a full 4-ship (414th call): a road/area sweep wants the
+    #: numbers to cover the corridor, and it pairs with the auto-added recon drone +
+    #: the (threat-gated) SEAD escort into a coherent hunter package. Fixed rather
+    #: than the 2-4 flight-size roll so the sweep element is consistently substantial.
+    ARMED_RECON_FLIGHT_SIZE = 4
+
     def propose_flights(self) -> None:
-        self.propose_flight(FlightType.ARMED_RECON, self.get_flight_size())
+        self.propose_flight(FlightType.ARMED_RECON, self.ARMED_RECON_FLIGHT_SIZE)
         self.propose_common_escorts()

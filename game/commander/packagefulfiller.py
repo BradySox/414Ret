@@ -134,14 +134,20 @@ class PackageFulfiller:
     def _maybe_plan_tarps_recon(
         self, mission: ProposedMission, builder: PackageBuilder, ignore_range: bool
     ) -> None:
-        """Append an optional TARPS photo-recon flight to a Strike/DEAD package.
+        """Append an optional TARPS photo-recon flight to a Strike/DEAD/Armed Recon
+        package.
 
-        Gated by the ``auto_add_tarps_recon`` setting, the package's primary task,
-        and whether the target warrants imagery (``warrants_recon``). Crucially this
-        never scrubs the mission: if no TARPS-capable squadron is in range the
-        recon flight is simply omitted. The flight's +2 min TOT offset comes from
-        ``TarpsFlightPlan`` (tight on purpose so it ingresses under the package's
-        escort window rather than trailing in alone — see checklist G19).
+        Gated by the ``auto_add_tarps_recon`` setting and the package's primary task.
+        For Strike/DEAD the target must be a ground objective that warrants imagery
+        (``warrants_recon``); for Armed Recon the target is a control point / road
+        corridor the flight sweeps, which always warrants an overwatch pass, so a
+        recon bird rides along to scout the area (on a drone-fielding faction the
+        auto-assignable TARPS squadron IS the drone, so this frags a drone into each
+        armed recon package — the 414th call). Crucially this never scrubs the
+        mission: if no TARPS-capable squadron is in range the recon flight is simply
+        omitted. The flight's +2 min TOT offset comes from ``TarpsFlightPlan`` (tight
+        on purpose so it ingresses under the package's escort window rather than
+        trailing in alone — see checklist G19).
         """
         if not self.auto_add_tarps_recon:
             logging.debug(
@@ -153,6 +159,7 @@ class PackageFulfiller:
         if primary is None or primary.flight_type not in (
             FlightType.STRIKE,
             FlightType.DEAD,
+            FlightType.ARMED_RECON,
         ):
             if primary is not None:
                 logging.debug(
@@ -162,7 +169,12 @@ class PackageFulfiller:
                 )
             return
         target = mission.location
-        if not isinstance(target, TheaterGroundObject) or not target.warrants_recon:
+        # Strike/DEAD only recon a ground objective that warrants imagery. Armed
+        # Recon sweeps a control-point corridor (not a TGO) and always warrants a
+        # scouting overwatch pass, so it skips the warrants_recon gate.
+        if primary.flight_type in (FlightType.STRIKE, FlightType.DEAD) and (
+            not isinstance(target, TheaterGroundObject) or not target.warrants_recon
+        ):
             logging.debug(
                 "TARPS skipped for %s: target does not warrant recon",
                 mission.location.name,

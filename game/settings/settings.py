@@ -2235,8 +2235,10 @@ class Settings:
             "-- a FARP sitting on the FLOT is a base under fire, not a safe ramp. "
             "Symmetric (both sides' forward fields). Mostly noise and smoke with a "
             "modest bite; never targets a field a player spawns at or recovers to, "
-            "and a startup grace period protects a cold-starting player. (The "
-            "Vietnam Ops siege toggle is this same runtime with theater-wide reach.)"
+            "and a startup grace period protects a cold-starting player. Runs via "
+            "the 'Vietnam Ops & standoff harassment' LUA plugin -- keep that plugin "
+            "enabled or this setting does nothing. (The Vietnam Ops siege toggle is "
+            "this same runtime with theater-wide reach.)"
         ),
     )
     mobile_missile_relocation: bool = boolean_option(

@@ -2067,6 +2067,16 @@ so the two docs don't drift.
   is broken. Also: fire during the grace window; a steady metronome instead of a sporadic cadence; impacts
   wildly off the ramp (centroid/dispersion wrong); too lethal to parked jets (dial power/dispersion down, as
   §33 flak needed); a `trigger.action.explosion` / `land.getHeight` / `timer.scheduleFunction` Lua error.
+- **Generic artillery mode (added 2026-07-05, needs its own pass):** the new `artillery_base_harassment`
+  setting drives this same emitter+runtime with the tight `ARTILLERY_FRONT_REACH_M` (35 km) — **Red Tide
+  preseeds it**, so on a NEW Red Tide game the **Fulda forward FARP** and red's **Haina** (both on the
+  Fulda↔Haina front) should draw sporadic artillery harassment after the grace, while Ramstein/Spangdahlem/
+  Hahn (100+ km back) stay silent. **Pass:** fire only on the frontline fields; a player cold-starting at
+  Fulda is NEVER shelled (the spawn exclusion — cold-start there to prove it); the emitted `fields` list in
+  the mission Lua holds only front-adjacent fields. **Fail:** a rear field shelled (the 35 km reach not
+  applied — check the Vietnam toggle isn't also on, which widens the reach by design); any impact on a
+  player-spawn field; harassment on a campaign with the setting off. Tests:
+  `tests/missiongenerator/test_vietnamops_harassment.py`.
 
 ### L9 — Super Gaggle hilltop resupply · §37 · ◐ PARTIAL (2026-07-01 `intelligent-dubinsky` runtime run PASSED; **2026-07-02 Trail 2 session `wonderful-chatterjee`: second clean run — both CH-53Es closed to 140 m of FOB Khe Sanh at t≈306, returned, landed and shut down; BOTH F-4E suppressors (`SuperGaggle-T1-Sandy-1/-2`) were shot down (t=973 — its wreck also killed a friendly soldier — and t=2897), so the loss-accounting leg is finally armed**: after the turn is processed with the real server `state.json`, the next-turn debrief must charge 2 F-4E airframes to the suppressor squadron and 0 CH-53s — that check is what remains)
 - **Launch-delay rework (2026-07-03), re-opens the runtime leg.** The flown pass above found the whole
@@ -2607,6 +2617,23 @@ so the two docs don't drift.
   hungry — `_required_fuel_lbs`); no tank added on the COIN carrier route (the route length or fuel estimate
   under-counts, or the airframe has no empty tank-capable station — expected for the F-16/Hornet-BAI). Knob:
   `auto_range_fuel_tanks` (Mission Generation → Loadouts).
+
+### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ☐ UNTESTED (built 2026-07-05; the emitter's category/dead/static/setting gates and the Lua's grace + per-group scoot + destroyed-site stop are covered in `tests/missiongenerator/test_mobilemissileluadata.py` + `tests/lua/test_mobilemissiles_runtime.py` — whether the DCS ground AI actually drives the launchers, and the hunt feel, need a mission)
+- **What CI cannot exercise:** real off-road pathing (a site authored in rough terrain may fail to move —
+  status quo ante, but watch for it), whether the wander reads as shoot-and-scoot at the 8-min/4-km defaults,
+  and the interplay with §3 concealment (circle says "in here somewhere", the launcher has moved inside it).
+- **Setup:** any campaign with a mobile missile site (SCUD/SSM group; `mobile_missile_relocation` is default
+  ON). Open the F10 map (or the ME) on the site's area; observe over ~15+ minutes, then kill one launcher and
+  keep watching.
+- **Pass:** after the ~2-min grace the site's vehicles pick up and drive to a new spot within a few km, and
+  again on the cadence; they hold fire while moving (alarm-green); the site never wanders far from its
+  campaign position; killing all its vehicles stops the movement with no dcs.log errors; the SAM network
+  (SA-2/6/10 sites etc.) never moves; `dcs.log` shows "MOBILEMISSILES|: shoot-and-scoot armed on N site(s)".
+- **Fail signature:** a **SAM site moves** (category filter broken — MANTIS/IADS depends on emitter positions);
+  a site migrates kilometers beyond its scoot radius (anchor not applied — the wander must re-anchor on the
+  campaign centre, not the last waypoint); launchers stop dead mid-road en masse with repeated `goRoute`
+  errors (pathing — consider the off-road action or a smaller radius); movement before the grace; a
+  `MOBILEMISSILES|: setup error` in dcs.log; sites still moving with the setting off (gate broken).
 
 ## T. Campaign flow
 

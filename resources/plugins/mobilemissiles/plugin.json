@@ -1,0 +1,35 @@
+{
+    "nameInUI": "Mobile missile relocation (shoot and scoot)",
+    "descriptionInUI": "Runtime for the SCUD hunt. Inert unless the mission generator emits dcsRetribution.mobileMissiles (the 'Mobile missile sites relocate' setting is on and a live theater-missile site exists). Each mobile missile site's vehicles drive to a fresh position within the scoot radius of their campaign-map location every few minutes (alarm-green, weapons hold -- they relocate, they don't stop to fight), so the launcher is never quite where your last recon photo froze it. Movement ONLY: kills are recorded natively like any other unit, the site never migrates beyond the scoot radius, and a dead site simply stops being routed. The radar SAM network is never touched (different object class entirely). Movement begins after a short startup grace.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Seconds between relocations (re-rolls a new position)",
+            "mnemonic": "scootIntervalS",
+            "defaultValue": 480
+        },
+        {
+            "nameInUI": "Scoot radius around the site's campaign position (m)",
+            "mnemonic": "scootRadiusM",
+            "defaultValue": 4000,
+            "maximumValue": 15000
+        },
+        {
+            "nameInUI": "Ground speed while relocating (km/h)",
+            "mnemonic": "scootSpeedKmph",
+            "defaultValue": 30
+        },
+        {
+            "nameInUI": "Startup grace before the first relocation (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 120
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "mobilemissiles-config.lua",
+            "mnemonic": "mobilemissiles-config"
+        }
+    ]
+}

@@ -425,6 +425,18 @@ are kept on disk — they're generic resources, just no longer referenced by thi
 The upstream carve payload (`docs/dev/upstreaming/red-tide/`) is stale until
 `build_payload.py` is re-run. NEW game required to see the slimmed roster.
 
+### Frontline artillery harassment preseeded (2026-07-05)
+
+`red_tide.yaml` now preseeds **`artillery_base_harassment: true`** — the generic mode of the
+§36 airbase-harassment runtime (features doc §36, "generic artillery mode"): fields within
+tube/rocket reach (`ARTILLERY_FRONT_REACH_M` ≈ 35 km) of a front draw sporadic in-mission
+standoff harassment fire. On this laydown that is the **Fulda forward FARP** (~2.5 km off the
+Fulda↔Haina front) and red's **Haina** spearhead — the Gap is not a safe ramp — while the
+Rhineland cluster (100+ km back) stays silent. Player-spawn fields are never targeted
+(emitter-filtered + Lua double-guard) and a 5-min startup grace protects a cold start. A
+*recommended new-game default* like the other `settings:` entries; NEW game (or flipping the
+setting in an existing save) required. In-game pass: checklist L8's artillery bullet.
+
 ### Aircraft / squadron specifics
 - **German Phantom:** the `GAF JG 74` "Moelders" entry is a *squadron name* in the
   `aircraft:` list, not an aircraft type. `DefaultSquadronAssigner.find_squadron_by_name`

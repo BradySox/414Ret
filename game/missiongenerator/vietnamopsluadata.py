@@ -88,6 +88,12 @@ HARASSABLE_CP_TYPES = frozenset(
 #: (design rule 4: forward-only by construction, like NGFS's gun-range gate). ~200 km.
 HARASSMENT_FRONT_REACH_M = 200_000.0
 
+#: The generic (non-Vietnam) artillery mode's much tighter reach: real tube/rocket
+#: artillery range off the FLOT (~20 NM), so only a field genuinely on the front -- a
+#: forward FARP like Red Tide's Fulda, or a captured strip the line just passed -- sits
+#: under fire. Everything deeper is out of gun range and safe.
+ARTILLERY_FRONT_REACH_M = 35_000.0
+
 
 def populate_vietnam_ops_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
@@ -95,9 +101,14 @@ def populate_vietnam_ops_lua(
     """Build the ``dcsRetribution.VietnamOps`` subtree from the enabled features.
 
     Emits nothing when no Vietnam Ops feature is on, so non-Vietnam missions carry no
-    ``VietnamOps`` node and the plugin no-ops.
+    ``VietnamOps`` node and the plugin no-ops. (One generic exception: the
+    ``artillery_base_harassment`` setting reuses the §36 airbase-harassment
+    emitter+runtime with the tight :data:`ARTILLERY_FRONT_REACH_M`, so a conventional
+    campaign can put its frontline FARPs under artillery fire -- the node name stays
+    ``VietnamOps`` because that is the plugin that owns the runtime.)
     """
     settings = game.settings
+    artillery = getattr(settings, "artillery_base_harassment", False)
 
     # Extend this guard as each suite feature lands. NB: vietnam_convoy_interdiction is
     # deliberately absent -- it no longer emits a Lua node. Convoy interdiction is now a
@@ -111,6 +122,7 @@ def populate_vietnam_ops_lua(
         or settings.vietnam_super_gaggle
         or settings.vietnam_fac_marking
         or settings.vietnam_snake_and_nape
+        or artillery
     ):
         return
 
@@ -122,8 +134,15 @@ def populate_vietnam_ops_lua(
         _populate_flak(vietnam)
     if settings.vietnam_naval_gunfire:
         _populate_naval_gunfire(vietnam, game)
-    if settings.vietnam_airbase_harassment:
-        _populate_airbase_harassment(vietnam, game)
+    if settings.vietnam_airbase_harassment or artillery:
+        # The Vietnam-period siege reaches theater-deep; the generic artillery mode
+        # only real gun range off the FLOT. When both are on the wider reach wins.
+        reach = (
+            HARASSMENT_FRONT_REACH_M
+            if settings.vietnam_airbase_harassment
+            else ARTILLERY_FRONT_REACH_M
+        )
+        _populate_airbase_harassment(vietnam, game, reach)
     if settings.vietnam_super_gaggle:
         _populate_super_gaggle(vietnam, game)
     if settings.vietnam_fac_marking:
@@ -252,16 +271,20 @@ def _client_spawn_control_points(game: "Game") -> set["ControlPoint"]:
     return excluded
 
 
-def _populate_airbase_harassment(vietnam: "LuaItem", game: "Game") -> None:
+def _populate_airbase_harassment(
+    vietnam: "LuaItem", game: "Game", reach_m: float = HARASSMENT_FRONT_REACH_M
+) -> None:
     """Emit each forward, occupied airfield/FARP for standoff harassment fire.
 
     Recreates the near-constant rocket/mortar siege of the Vietnam-era airfields (Bien Hoa,
-    Da Nang, the Khe Sanh strip). For every occupied land airfield/FARP that is *forward*
-    (within :data:`HARASSMENT_FRONT_REACH_M` of a front) and is **not** a player-spawn field
-    this mission, emit its name + parking centroid + coalition; the runtime periodically
-    lands a small, dispersed impact cluster near the ramp. Client-spawn fields are filtered
-    out here (never emitted -- the authoritative anti-grief guarantee) and are additionally
-    surfaced under ``excludedFields`` for the Lua to log/double-guard.
+    Da Nang, the Khe Sanh strip) -- or, with the tight :data:`ARTILLERY_FRONT_REACH_M`, the
+    generic frontline-artillery mode for conventional campaigns. For every occupied land
+    airfield/FARP that is *forward* (within *reach_m* of a front) and is **not** a
+    player-spawn field this mission, emit its name + parking centroid + coalition; the
+    runtime periodically lands a small, dispersed impact cluster near the ramp.
+    Client-spawn fields are filtered out here (never emitted -- the authoritative
+    anti-grief guarantee) and are additionally surfaced under ``excludedFields`` for the
+    Lua to log/double-guard.
 
     Forward-only by construction (design rule 4): a campaign with no front, or no field near
     one, yields no ``fields`` node and the plugin no-ops -- so a deep-rear or peacetime
@@ -284,7 +307,7 @@ def _populate_airbase_harassment(vietnam: "LuaItem", game: "Game") -> None:
         distance = min(
             front.position.distance_to_point(cp.position) for front in fronts
         )
-        if distance > HARASSMENT_FRONT_REACH_M:
+        if distance > reach_m:
             continue
         color = "BLUE" if cp.captured.is_blue else "RED"
         fields.append((cp.full_name, cp.position.x, cp.position.y, color))

@@ -23,6 +23,7 @@ from .aireconluadata import populate_ai_recon_lua
 from .coinluadata import populate_coin_lua
 from .interceptluadata import populate_intercept_lua
 from .missiondata import MissionData
+from .mobilemissileluadata import populate_mobile_missiles_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
 
 if TYPE_CHECKING:
@@ -369,6 +370,11 @@ class LuaGenerator:
         # convoy and/or mobile VBIED exists; the coin plugin drives them at runtime
         # (the kill/fuse consequence stays in the turn-boundary force model).
         populate_coin_lua(lua_data, self.game, self.mission_data)
+
+        # Mobile missile sites (the SCUD hunt) -- emits dcsRetribution.mobileMissiles
+        # only when the setting is on and a live vehicle-carrying missile site exists;
+        # the mobilemissiles plugin wanders them shoot-and-scoot at runtime.
+        populate_mobile_missiles_lua(lua_data, self.game, self.mission_data)
 
         trigger = TriggerStart(comment="Set DCS Retribution data")
         trigger.add_action(DoScript(String(lua_data.create_operations_lua())))

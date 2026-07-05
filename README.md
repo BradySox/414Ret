@@ -34,6 +34,11 @@ and selected later upstream fixes.
   stays exact (airfields, buildings, the big strategic SAM sites, EWRs, ships), the circle
   is clickable so you can still plan recon or a strike against the suspected area, and the
   whole behaviour is a Difficulty & Realism toggle (**on** by default for new campaigns).
+- And once you get there, **mobile missile sites shoot and scoot**: SCUD/SSM launchers drive
+  to a new position every few minutes during the mission (holding fire while they move), so
+  the launcher is never quite where the last recon photo froze it. The site stays within a
+  few km of its campaign position, kills count normally, and the radar SAM network never
+  moves. On by default (Mission Generation → "Mobile missile sites relocate").
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as
@@ -422,7 +427,10 @@ and selected later upstream fixes.
   matching livery — real GSFG/VVS regiments on the red side, 414th Joint Fighter Group
   identities (VMF-29, Voodoo, the 414th TFS, JFG Hornets) on the blue — so the air war no
   longer spawns mismatched paint schemes. **Fulda** is now a blue forward helicopter FARP in
-  the Gap (Apaches, Kiowas, Hueys) with the front line routed through it, and Frankfurt adds a
+  the Gap (Apaches, Kiowas, Hueys) with the front line routed through it — and it lives like a
+  frontline FARP: fields within artillery reach of the front (Fulda, and red's Haina spearhead)
+  draw **sporadic enemy artillery harassment** during the mission (never the field you spawn at;
+  the "Frontline artillery harassment" setting, preseeded here). Frankfurt adds a
   KC-135MPRS drogue tanker. The *Crossing the Rubicon* campaign it forks from
   is left untouched. See
   [`docs/dev/design/414th-red-tide-campaign-notes.md`](docs/dev/design/414th-red-tide-campaign-notes.md).

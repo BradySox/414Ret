@@ -886,9 +886,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (default 300 s, so nobody is shelled mid-alignment), lands a small dispersed `trigger.action.explosion`
     barrage near the parking centroid on a randomized cadence — mostly noise/smoke with a modest, tunable bite,
     not precision counter-air. Symmetric (whichever side's forward fields qualify). Plugin options: interval,
-    rounds/event, dispersion, per-blast power, grace. (`game/missiongenerator/vietnamopsluadata.py`,
+    rounds/event, dispersion, per-blast power, grace. **Generic artillery mode added 2026-07-05**: the new
+    `artillery_base_harassment` setting (Mission Generation, default OFF) drives the same emitter+runtime
+    with a tight `ARTILLERY_FRONT_REACH_M` (35 km — real gun range off the FLOT, vs the Vietnam siege's
+    theater-wide 200 km), so conventional campaigns can put their frontline strips under fire; **Red Tide
+    preseeds it** (the Fulda FARP + red's Haina both sit on the front — "the Gap is not a safe ramp").
+    All §36 guarantees carry over (player-spawn exclusion, grace, forward-only, symmetric).
+    (`game/missiongenerator/vietnamopsluadata.py`,
     `resources/plugins/vietnamops/`, `game/settings/settings.py`; features doc §36, checklist L8 — needs an
-    in-game pass.)
+    in-game pass; the artillery mode = the L8 artillery bullet.)
 37. **Super Gaggle hilltop resupply** — the sixth **Vietnam Ops suite** feature (design note
     `414th-vietnam-ops-notes.md`, §E): a formation of transport helos (+ a fast-mover AAA-suppression flight)
     runs supplies into a cut-off forward friendly outpost while the player can fly escort — the Khe Sanh "Super
@@ -1198,6 +1204,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     ~turn 11. (`game/fourteenth/commitment_ceiling.py`, `game/coalition.py`, `game/fourteenth/phases.py`,
     `game/fourteenth/political_will.py`, `game/settings/settings.py`, `resources/campaigns/1968_Yankee_Station.yaml`;
     features doc §48, checklist M1 + M9 — needs an in-game pass.)
+49. **Mobile missile relocation (the SCUD hunt)** — mobile theater-missile sites (SCUD/SSM TGOs,
+    `category == "missile"` — **never** the MANTIS-run SAM network, coastal sites, or buildings) drive
+    **shoot-and-scoot** during the mission: the new emitter `game/missiongenerator/mobilemissileluadata.py`
+    lists each side's live vehicle-carrying missile sites (`dcsRetribution.mobileMissiles`), and the new
+    `resources/plugins/mobilemissiles/` plugin relocates every alive group to a fresh point within the
+    scoot radius (4 km) of the site's **campaign-map centre** every ~8 min (alarm-green + weapons-hold,
+    startup grace 120 s) — so the launcher is never quite where the last recon photo froze it, and with §3
+    concealment on, the SCUD hunt is finally a hunt. **Movement only** (the Combat-SAR/COIN mover
+    discipline): kills record natively, the site never migrates past its scoot radius (threat rings + the
+    turn model stay honest), a dead site stops being routed. Symmetric. Gated `mobile_missile_relocation`
+    (Mission Generation → World & systems, default **ON** — the toggle is the kill switch, the §40
+    precedent). Tests `tests/missiongenerator/test_mobilemissileluadata.py` +
+    `tests/lua/test_mobilemissiles_runtime.py`; features doc §49, checklist S2 — needs an in-game pass.
 
 ---
 

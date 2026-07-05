@@ -2815,6 +2815,20 @@ It emits `dcsRetribution.VietnamOps.airbaseHarassment = { fields = { {name,x,y,c
 - **Runtime-cosmetic only.** Destroyed parking statics are runtime damage (like §33/§34); there is no BDA
   feedback into the campaign model.
 
+### The generic artillery mode (`artillery_base_harassment`, added 2026-07-05)
+
+The same emitter + runtime, opened to conventional campaigns: a new **`artillery_base_harassment`**
+setting (Mission Generation → World & systems, default OFF) drives `_populate_airbase_harassment`
+with the tight **`ARTILLERY_FRONT_REACH_M`** (≈ 35 km — real tube/rocket range off the FLOT) instead
+of the Vietnam siege's theater-wide 200 km, so only a field genuinely *on* the front sits under fire.
+When both toggles are on the wider Vietnam reach wins. **Red Tide preseeds it** — the Fulda forward
+FARP (~2.5 km off the Fulda↔Haina front) and red's Haina spearhead now live under sporadic artillery
+harassment, "the Gap is not a safe ramp". Every §36 guarantee carries over unchanged (player-spawn
+exclusion, grace, forward-only, symmetric). The emitted node stays `VietnamOps.airbaseHarassment`
+(the `vietnamops` plugin owns the runtime; its non-harassment sections stay gated off). Tests:
+`tests/missiongenerator/test_vietnamops_harassment.py` (reach + gates). In-game pass: the L8 row's
+artillery bullet.
+
 ## §37 — Super Gaggle hilltop resupply (Vietnam Ops suite)
 
 The sixth **Vietnam Ops suite** feature (design note `414th-vietnam-ops-notes.md`, §E). Models the Khe Sanh
@@ -3822,3 +3836,57 @@ message), the escalation-tax tests in `tests/fourteenth/test_phases.py` /
 `tests/fourteenth/test_political_will.py`, the pacing-tool guard `tests/fourteenth/test_will_pacing_model.py`,
 and the campaign guards in `tests/test_vietnam_content.py`. In-game passes: checklist **M1** (will pacing)
 + **M9** (commitment ceiling draw-down). Needs an in-game pass.
+
+## §49 — Mobile missile relocation (the SCUD hunt)
+
+A mobile theater-missile site — a SCUD/SSM group, `TheaterGroundObject.category == "missile"` — has
+always spawned parked exactly where the campaign map says it is, every mission, forever. "Hunting" it
+was flying to a coordinate. Real shoot-and-scoot launchers were the archetypal Desert Storm needle in a
+haystack: the Weasel/SCUD hunt is a hunt precisely because the target *moves*. With the concealment
+layer (§3 `concealed_enemy_forces`) already denying the exact map position until recon localizes it,
+the last missing half was the launcher itself sitting still once you got there.
+
+### How it works
+
+**Emitter (`game/missiongenerator/mobilemissileluadata.py` `populate_mobile_missiles_lua`).** When the
+`mobile_missile_relocation` setting is on, every `category == "missile"` TGO (both sides) with at least
+one **alive vehicle** emits its drivable `TheaterGroup.group_name`s + the TGO's campaign position as
+`dcsRetribution.mobileMissiles = { sites = { {groups, x, y}, … } }`. Statics-only or fully-dead sites
+are skipped; anti-air (the MANTIS-run SAM network), coastal anti-ship sites, and buildings are other
+categories entirely and are **never** emitted — the IADS never moves. No sites (or setting off) ⇒ no
+node ⇒ the plugin no-ops.
+
+**Runtime (`resources/plugins/mobilemissiles/`).** One scheduled loop per site: after a startup grace
+(default 120 s), every alive group of the site drives (alarm-green + weapons-hold — they relocate, they
+don't stop to fight) to a fresh `mist.getRandPointInCircle` point within the **scoot radius** (default
+4 km) of the site's **campaign-map centre**, re-rolled every `scootIntervalS` (default 480 s). Anchoring
+the wander on the campaign position (not the last waypoint) means the site works its area but never
+migrates — threat rings and the turn-boundary model stay honest. A destroyed site stops being routed.
+Options: interval, radius, speed, grace.
+
+**Movement only** (the Combat-SAR / COIN mover discipline): the routed DCS groups are the force model's
+own spawned units, so kills record natively; nothing changes at turn end; there is no Lua-owned scoring
+or spawning. Composes with §3 concealment (the map shows "in here somewhere", and when you get there the
+launcher has moved within its patch) and §5 Approximate mode (fuzzed steerpoints against mobile SAMs —
+same philosophy, different object class).
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Emitter | `game/missiongenerator/mobilemissileluadata.py` (wired in `luagenerator.py` after the COIN emitter) |
+| Runtime | `resources/plugins/mobilemissiles/` (`plugin.json` + `mobilemissiles-config.lua`) |
+| Setting | `game/settings/settings.py` (`mobile_missile_relocation`, Mission Generation → World & systems, default **ON** — the toggle is the kill switch) |
+| Tests | `tests/missiongenerator/test_mobilemissileluadata.py` (emit shape, category/dead/static gates, setting gate); `tests/lua/test_mobilemissiles_runtime.py` (grace, per-group scoot around the anchor, destroyed-site stop, no-node no-op) |
+
+### Gotchas / deferred
+
+- **Default ON.** Movement-only, pcall-guarded, and node-gated, so the blast radius of a failure is "the
+  launchers don't move" — but it does change every campaign with missile sites; the setting is the kill
+  switch (the §40 `campaign_phases` precedent). In-game pass: checklist **S2**.
+- **The SAM network is out by construction.** Only `category == "missile"` is emitted. Do not extend this
+  to SAM TGOs without solving the MANTIS-emitter-position question first.
+- **DCS pathing risk.** A site authored in rough terrain may fail to path off-road; worst case the group
+  sits (status quo ante). Watch dcs.log for repeated goRoute failures on the pass.
+- **Deferred:** per-side gating (currently symmetric), and coupling the *fired* missile events to a
+  scoot-away reaction (real shoot-THEN-scoot needs an S_EVENT_SHOT hook — v2 if the wander plays well).

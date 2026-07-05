@@ -1,7 +1,9 @@
-"""COIN concealment: un-reconned hidden insurgent TGOs render as uncertainty areas.
+"""Concealment: un-reconned hidden TGOs render as uncertainty areas.
 
 Locks the server-side jitter contract (deterministic, bounded, true position inside
-the circle, never applied once discovered) and the spawn-side flag plumbing.
+the circle, never applied once discovered), the COIN spawn-side flag plumbing, and
+the generalized `concealed_enemy_forces` qualifier (mobile SAMs / vehicle groups /
+missile sites conceal; LORAD / EWRs / buildings / user-placed stay exact).
 """
 
 from __future__ import annotations
@@ -12,8 +14,10 @@ from types import SimpleNamespace
 from typing import Any, Optional
 
 import game.fourteenth.coin as coin
+from game.data.groups import GroupTask
 from game.server.tgos.models import (
     CONCEALED_RADIUS_M,
+    FIELD_FORCE_RADIUS_M,
     _CONCEALED_MAX_OFFSET,
     _CONCEALED_MIN_OFFSET,
     concealed_uncertainty,
@@ -28,11 +32,29 @@ class _Point:
 
 
 class _Tgo:
-    def __init__(self, concealed: bool, known: bool) -> None:
+    def __init__(
+        self,
+        concealed: bool = False,
+        known: bool = False,
+        category: str = "armor",
+        task: Optional[GroupTask] = None,
+        setting_on: bool = False,
+        user_placed: bool = False,
+    ) -> None:
         self.id = uuid.UUID(int=0x414)
         self.concealed = concealed
         self._known = known
+        self.category = category
+        self.task = task
+        self.user_placed = user_placed
         self.position = _Point(100_000.0, -50_000.0)
+        self.control_point = SimpleNamespace(
+            coalition=SimpleNamespace(
+                game=SimpleNamespace(
+                    settings=SimpleNamespace(concealed_enemy_forces=setting_on)
+                )
+            )
+        )
 
     def known_for(self, viewer: Optional[Any] = None) -> bool:
         return self._known
@@ -69,6 +91,52 @@ def test_different_tgos_jitter_differently() -> None:
     rb = concealed_uncertainty(b)  # type: ignore[arg-type]
     assert ra is not None and rb is not None
     assert (ra[0].x, ra[0].y) != (rb[0].x, rb[0].y)
+
+
+def _radius_for(tgo: _Tgo) -> Optional[float]:
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    return None if result is None else result[1]
+
+
+def test_field_forces_conceal_when_the_setting_is_on() -> None:
+    # Deployed vehicle groups: the tighter field-force circle.
+    assert _radius_for(_Tgo(category="armor", setting_on=True)) == FIELD_FORCE_RADIUS_M
+    # Missile sites (the SCUD hunt) and the mobile SAM belt: the full circle.
+    assert _radius_for(_Tgo(category="missile", setting_on=True)) == CONCEALED_RADIUS_M
+    for task in (GroupTask.MERAD, GroupTask.SHORAD, GroupTask.AAA):
+        assert (
+            _radius_for(_Tgo(category="aa", task=task, setting_on=True))
+            == CONCEALED_RADIUS_M
+        )
+
+
+def test_fixed_sites_and_infrastructure_stay_exact() -> None:
+    # LORAD strategic sites and EWRs (they emit) keep exact markers.
+    assert (
+        _radius_for(_Tgo(category="aa", task=GroupTask.LORAD, setting_on=True)) is None
+    )
+    assert (
+        _radius_for(
+            _Tgo(category="ewr", task=GroupTask.EARLY_WARNING_RADAR, setting_on=True)
+        )
+        is None
+    )
+    # Buildings/ships/etc. never qualify.
+    assert _radius_for(_Tgo(category="factory", setting_on=True)) is None
+    assert _radius_for(_Tgo(category="ship", setting_on=True)) is None
+    # The player placed it — they know where it is.
+    assert (
+        _radius_for(_Tgo(category="armor", setting_on=True, user_placed=True)) is None
+    )
+
+
+def test_setting_off_leaves_field_forces_exact_but_coin_concealed() -> None:
+    assert _radius_for(_Tgo(category="armor", setting_on=False)) is None
+    # The COIN intrinsic flag conceals regardless of the setting.
+    assert (
+        _radius_for(_Tgo(concealed=True, category="armor", setting_on=False))
+        == CONCEALED_RADIUS_M
+    )
 
 
 def _spawn_game() -> Any:

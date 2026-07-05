@@ -27,6 +27,13 @@ and selected later upstream fixes.
 - Enemy sites can be known without their exact composition, strength, damage state, or
   threat rings being known. Attacking or scouting a site reveals it; confirmed battle
   damage can require a surviving recon pass.
+- Enemy **field forces you haven't scouted don't even show an exact position**: a mobile SAM
+  site, a deployed vehicle group, or a missile site appears only as a dashed **"suspected
+  activity" circle** offset from the truth ("in here somewhere") until recon or an attack
+  localizes it — so the Weasel hunt and the SCUD hunt are real hunts. Fixed infrastructure
+  stays exact (airfields, buildings, the big strategic SAM sites, EWRs, ships), the circle
+  is clickable so you can still plan recon or a strike against the suspected area, and the
+  whole behaviour is a Difficulty & Realism toggle (**on** by default for new campaigns).
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as

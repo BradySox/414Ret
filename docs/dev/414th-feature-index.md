@@ -14,7 +14,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | --- | --- | --- | --- |
 | §1 | QRA intercept reserve | `intercept` | — |
 | §2 | JAMMING flight type | `c130j` | — |
-| §3 | TARPS recon + BDA fog-of-war | — | — |
+| §3 | TARPS recon + BDA fog-of-war | — | `recon_intel_fog`, `concealed_enemy_forces` |
 | §4 | UI transparency | — | — |
 | §5 | Player target location precision | — | — |
 | §6 | Air-defense planning rework | — | — |

@@ -1351,6 +1351,27 @@ so the two docs don't drift.
   survivors fight over the same Sandy (`busySandy` bookkeeping broken); a Lua error in `dcs.log`
   (`combatsar-config.lua` around `dispatchSandy`/`findFreeSandy`/`releaseSandy`).
 
+### G24 — Concealed enemy field forces: uncertainty circles until scouted · §3 · ☐ UNTESTED (built 2026-07-05; the qualifier + jitter determinism/bounds are unit-tested — the map read + the play feel need an in-app pass + the CI client rebuild)
+- **What it is:** with `concealed_enemy_forces` on (default ON, new campaigns), an **un-scouted** enemy
+  field force — a mobile SAM site (MERAD/SHORAD/AAA), a deployed vehicle group, a missile site — shows
+  as a dashed red **"suspected enemy activity" circle** (4 km; 3 km for vehicle groups) whose centre is
+  **jittered off the true position** (deterministic per TGO — it must not wander between refreshes)
+  instead of an exact marker. Fixed infrastructure stays exact: LORAD strategic sites, EWRs, buildings,
+  ships, airfields, user-placed TGOs. The COIN insurgent spawns conceal intrinsically regardless of the
+  setting (the P3 concealment bullet).
+- **Setup:** NEW campaign (any theater — e.g. Red Tide), `recon_intel_fog` + `concealed_enemy_forces`
+  on. Look at the turn-0 map, then fly/plan TARPS over a circled area and re-check.
+- **Pass:** enemy MERAD/SHORAD/AAA sites, armor groups, and missile sites appear only as circles (no
+  diamond at the true spot); LORAD/EWR/buildings/ships keep exact markers; the object is NOT at the
+  circle centre; circles hold position across refreshes and turns; right-clicking a circle opens the
+  package dialog (recon plannable); a TARPS pass / strike snaps the site to its exact symbol; the
+  fog-overview reveal shows everything exact; turning the setting off restores all exact markers.
+- **Fail signature:** a circle centred dead-on the site (jitter broken); marker AND circle both drawn;
+  circles jumping between refreshes (seed broken); LORAD/EWR/buildings circled (qualifier too broad);
+  a discovered/killed site still circled (`known_for` not consulted); the map unreadable around big
+  bases (too many overlapping circles — the tuning lever is `FIELD_FORCE_RADIUS_M`/`CONCEALED_RADIUS_M`
+  in `game/server/tgos/models.py`).
+
 ---
 
 ## H. Kneeboards

@@ -543,9 +543,10 @@ data several times; a single-home-per-datum pass fixes it, each change condition
 - **Weather** (temp / QNH / QFE / winds / clouds / sunrise-sunset) is dropped from the always-on
   **Mission Info** (`BriefingPage`, `omit_weather`) when the recon **Departure** page is generated
   for the flight (`_should_emit_departure`), which already carries the field-weather grid.
-- The flight-plan **Min-fuel** column is dropped from Mission Info (`FlightPlanBuilder`,
-  `include_min_fuel`) when the **Fuel Ladder** page is enabled — the ladder carries Min + Plan +
-  Margin, so the bingo-at-waypoint figure isn't printed twice.
+- The flight-plan fuel column: originally a Min-fuel column that was dropped when the Fuel Ladder
+  page was enabled; since 2026-07-05 the ladder is **folded into the flight plan** (see the fuel
+  ladder block below), so there is one home by construction — a `Fuel` column + a one-line RTB
+  margin call-out on Mission Info, and no separate page.
 - The **Friendly Packages** list moved out of the bottom of Mission Info to its own
   `FriendlyPackagesPage` (still two-column + paginating), so the list isn't split across Mission
   Info and a near-empty spill page; the package targets **map** stays as the spatial complement.
@@ -623,25 +624,27 @@ toggle, `enable_package_code_words` (default OFF), gates the panel, tooltip, way
 kneeboard page together. Covered by `tests/ato/test_codewords.py` +
 `tests/data/test_brevity_reference.py`; in-game / planner-UI pass ☑ VERIFIED 2026-06-26 (H6).
 
-**Fuel ladder kneeboard card.** The flight-plan page already shows the *minimum* fuel required at
-each waypoint (`FlightWaypoint.min_fuel`, the bingo-at-waypoint value the waypoint generator
-computes by walking the plan backward over the per-leg burn model). The **Fuel Ladder** card
-(`FuelLadderCard`) adds the missing half — the **planned fuel remaining** at each steerpoint
-(`FlightWaypoint.fuel_planned`, a new forward pass `WaypointGenerator._estimate_planned_fuel_for`
+**Fuel ladder — folded into the flight plan (2026-07-05).** The flight-plan table on Mission Info
+carries a **`Fuel` column**: the **planned fuel remaining** at each RTB steerpoint
+(`FlightWaypoint.fuel_planned`, the forward pass `WaypointGenerator._estimate_planned_fuel_for`
 that subtracts each leg's burn from the starting load `flight.fuel × KG_TO_LBS − taxi`, topping
-back up at a tanker `REFUEL` waypoint). The card shows **one glanceable `Fuel` column** (planned
-remaining) per RTB steerpoint. It deliberately does **not** print the old Plan/Min/Margin three
-columns: the per-waypoint margin (Plan − Min) is **constant across the whole route by construction**
+back up at a tanker `REFUEL` waypoint). It deliberately does **not** print the old Plan/Min/Margin
+trio: the per-waypoint margin (Plan − Min) is **constant across the whole route by construction**
 (start fuel − total burn − reserve, since the two figures are walked from opposite ends with the same
 per-leg burn), and Min is just Plan minus that constant — so both repeated the same number on every
-row. They collapse to a single **RTB margin** call-out above the ladder (`+N` spare, or a `−N` "tank or
-divert" warning), computed as the worst-case `min(fuel_planned − min_fuel)` so a tanker leg's reset is
-still caught. Post-landing reference points (e.g. the bullseye, which carry a forward-burn `fuel` but no
-min-to-RTB) are filtered off the ladder. The burn model is approximate (it's the same estimate that
-drives `min_fuel`), so the card is labelled as planning figures. Gated by `generate_fuel_ladder_kneeboard`
-(default OFF); the model is covered by `tests/missiongenerator/test_fuel_ladder.py` and the card render by
-`tests/missiongenerator/test_fuel_ladder_card.py`. In-game pass ☑ VERIFIED 2026-06-26 (H7). The last of the
-three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc-ideas-harvest.md`).
+row. They collapse to a single **RTB margin** call-out under the table (`+N` spare, or an
+amber `−N` "tank or divert" warning), computed as the worst-case `min(fuel_planned − min_fuel)` so a
+tanker leg's reset is still caught (`FlightPlanBuilder._format_fuel` / `fuel_margin_line`).
+Post-landing reference points (e.g. the bullseye, which carry a forward-burn `fuel` but no
+min-to-RTB) get a blank cell. The burn model is approximate (it's the same estimate that drives
+`min_fuel`), so treat the figures as planning numbers. **History:** this began as a standalone
+`FuelLadderCard` page (gated `generate_fuel_ladder_kneeboard`, in-game ☑ VERIFIED 2026-06-26, H7 —
+one of the three kneeboard ideas harvested from the campaign-doc study,
+`414th-campaign-doc-ideas-harvest.md`); the back-to-basics pass exposed it as a near-empty page, so
+per the user's call ("why can you not build the fuel table into the flight plan?") the page + the
+setting were deleted and the column always rides in the flight plan. Model covered by
+`tests/missiongenerator/test_fuel_ladder.py`; the column + margin semantics by
+`tests/missiongenerator/test_flightplan_fuel_column.py`.
 
 *Estimated-fuel fallback for dataless airframes.* The ladder originally only rendered for the ~22
 airframes that ship a hand-measured `fuel:` block (`AircraftType.fuel_consumption`); everything else —

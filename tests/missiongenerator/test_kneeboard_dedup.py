@@ -27,24 +27,15 @@ def _waypoint() -> Any:
         alt=SimpleNamespace(feet=20000),
         tot=None,
         departure_time=None,
+        fuel_planned=7500.0,
         min_fuel=5000.0,
         waypoint_type=FlightWaypointType.NAV,
     )
 
 
-def _row_len(include_min_fuel: bool) -> int:
-    builder = FlightPlanBuilder(
-        datetime.datetime(2026, 1, 1), _units(), include_min_fuel=include_min_fuel
-    )
+def test_flight_plan_always_carries_the_fuel_column() -> None:
+    # 8 columns: #, Action, Alt, Dist, GSPD, Time, Departure, Fuel. The standalone
+    # Fuel Ladder page is retired; the ladder rides in the flight plan.
+    builder = FlightPlanBuilder(datetime.datetime(2026, 1, 1), _units())
     builder.add_waypoint(0, _waypoint())
-    return len(builder.rows[0])
-
-
-def test_flight_plan_keeps_min_fuel_column_by_default() -> None:
-    # 8 columns: #, Action, Alt, Dist, GSPD, Time, Departure, Min fuel.
-    assert _row_len(include_min_fuel=True) == 8
-
-
-def test_flight_plan_drops_min_fuel_column_when_fuel_ladder_owns_it() -> None:
-    # The Fuel Ladder page owns the fuel ladder, so Mission Info drops the column.
-    assert _row_len(include_min_fuel=False) == 7
+    assert len(builder.rows[0]) == 8

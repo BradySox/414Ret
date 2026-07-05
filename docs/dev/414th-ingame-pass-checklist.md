@@ -1525,7 +1525,7 @@ so the two docs don't drift.
   leaking onto a target/DTC steerpoint (should only ever be on JOIN); STOP JAM showing without an
   EW flight; brevity crib not matching the task; the feature appearing with the toggle off.
 
-### H7 — Fuel ladder kneeboard card · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
+### H7 — Fuel ladder kneeboard card · §4 · ☑ VERIFIED (2026-06-26, user in-game pass) — **surface superseded 2026-07-05**: the standalone page + `generate_fuel_ladder_kneeboard` are deleted; the ladder rides in the flight plan as a `Fuel` column + RTB-margin line (re-check under H12)
 - **Setup:** Enable **Generate fuel ladder kneeboard page** (Mission Generator → Kneeboard).
   Generate a mission for a player flight — ideally one with a tanker (REFUEL) leg — and open the
   kneeboards in DCS. Cross-check the Fuel Ladder against the flight-plan page's Min-fuel column and
@@ -1541,7 +1541,7 @@ so the two docs don't drift.
   the flight-plan page's Min-fuel column; Margin sign wrong; the page appearing with the toggle off
   or absent for an aircraft that has fuel-consumption data.
 
-### H8 — Kneeboard de-duplication · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
+### H8 — Kneeboard de-duplication · §4 · ☑ VERIFIED (2026-06-26, user in-game pass) — the Min-fuel-column half is obsolete since 2026-07-05 (the flight plan always carries the folded `Fuel` column; there is no Fuel Ladder page to de-dup against)
 - **Setup:** Two passes. **(a)** Generate with the recon, fuel-ladder, and all-packages kneeboards
   **all ON** for a ground-start SEAD/Strike flight in EXACT intel. **(b)** Generate the same flight
   with those three **OFF**.
@@ -1704,24 +1704,25 @@ so the two docs don't drift.
 - **Fail signature:** no index when 2+ share a type; wrong start pages; an index wrongly added for a
   lone flight; flights out of the listed order.
 
-### H11 — Estimated fuel ladder for dataless airframes · §4 · ☐ UNTESTED (estimate sanity-banded in `tests/dcs/test_estimated_fuel_consumption.py`, 2026-06-27; deferred behind a kneeboard update per user 2026-06-28)
+### H11 — Estimated fuel figures for dataless airframes · §4 · ☐ UNTESTED (estimate sanity-banded in `tests/dcs/test_estimated_fuel_consumption.py`, 2026-06-27; the surface moved 2026-07-05 — the figures now render in the flight plan's `Fuel` column on Mission Info, not a Fuel Ladder page)
 - **Deferred (2026-06-28, user: "update after kneeboard update"):** revisit once the pending kneeboard changes land — re-check the C-130J King / helo Fuel Ladder against the current deck so the estimate is validated against the updated kneeboard rather than the old one.
 - **What it is:** `AircraftType.estimated_fuel_consumption` synthesises a rough `FuelConsumption` from
   the airframe's `fuel_max` (bucketed helicopter / heavy-transport / combat) so the Fuel Ladder card
   renders for airframes with **no** hand-measured `fuel:` block — the **C-130J "King"**, helicopters,
   warbirds, etc. Kneeboard-scoped: planner tanker tasking + in-flight sim are untouched.
-- **Setup:** Enable **Generate fuel ladder kneeboard page**. Frag a player flight in an airframe with
-  no measured fuel data — ideally the **C-130J King** (the reported case) and a helicopter — and open
-  the kneeboard. Cross-check against H7 for an airframe that *does* have measured data (e.g. F/A-18C).
-- **Pass:** the King / helo Fuel Ladder page **renders a descending ladder** with an RTB margin call-out
-  and Bingo/Joker instead of *"No fuel estimate available for this aircraft."* Numbers are plausible
-  planning figures (the King cruises ~16 lb/NM, full ~43k lb, so it should *not* read negative-margin
-  on a normal sortie). Measured-data airframes are unchanged from H7.
-- **Fail signature:** the placeholder text still showing for the King/helo; a ladder that's all `-`
-  (no planned column — `flight.fuel` missing); wildly implausible numbers (e.g. the King reading
-  ~80 lb/NM, a sign the heavy bucket isn't being picked — check `_is_heavy_airframe`); any change to a
-  measured-data airframe's ladder (the estimate must never override a real `fuel:` block); planner
-  suddenly fragging tankers for the King (the fallback must stay out of `unit_type.fuel_consumption`).
+- **Setup:** frag a player flight in an airframe with no measured fuel data — ideally the
+  **C-130J King** (the reported case) and a helicopter — and open the Mission Info kneeboard page.
+  Cross-check against an airframe that *does* have measured data (e.g. F/A-18C).
+- **Pass:** the King / helo flight plan's **`Fuel` column renders a descending ladder** with the RTB
+  margin call-out under the table, instead of all-blank cells. Numbers are plausible planning
+  figures (the King cruises ~16 lb/NM, full ~43k lb, so it should *not* read negative-margin on a
+  normal sortie). Measured-data airframes are unchanged.
+- **Fail signature:** an all-`-`/blank Fuel column for the King/helo (no planned figures —
+  `flight.fuel` missing or the estimate not engaging); wildly implausible numbers (e.g. the King
+  reading ~80 lb/NM, a sign the heavy bucket isn't being picked — check `_is_heavy_airframe`); any
+  change to a measured-data airframe's figures (the estimate must never override a real `fuel:`
+  block); planner suddenly fragging tankers for the King (the fallback must stay out of
+  `unit_type.fuel_consumption`).
 
 ### H12 — Back-to-basics kneeboard deck (Brief Sheet + cover on the full deck) · §31 / §30 · ◐ PARTIAL (2026-07-05, user miz pass, session `happy-sutherland-6113a1`: **renders verified** — a generated Inherent Resolve deck showed the right order (cover with phase/ROE band → colour-coded Brief Sheet fronting the flight's block → Mission Info with BLUF + full steerpoint table → Support Info → threat cards), colours live everywhere, Brief Sheet auto-fill fully populated (route times, QNH/QFE, loadout, laser, SAR, code words), code words in all three homes. **Still owed** = a deck-length re-check with trimmed toggles: the flown deck ran ~12 pages because the campaign carried every optional page ON from the compact-mode days (recon ×3, packages+map ×2, fuel ladder, brevity) — settings-driven, not the fail signature; on defaults the deck should read ~5 pages)
 - **What it is:** the 2026-07-05 back-to-basics rework — the compact 3-4 page folding machinery is

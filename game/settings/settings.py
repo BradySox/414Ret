@@ -337,6 +337,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "coin_ied",
                     "coin_hvt",
                     "coin_dispersed_cells",
+                    "coin_harassment",
                 ],
             ),
             (
@@ -1316,12 +1317,14 @@ class Settings:
         section=GENERAL_SECTION,
         default=False,
         detail=(
-            "The insurgent supply roads are mined. Hidden IED emplacements appear on "
-            "the ratline -- ordinary recon-fogged targets you must find (TARPS/ISR) and "
-            "strike (CAS/Armed Recon) within a few turns. An IED you clear costs the "
-            "insurgency nothing but the device; one you leave un-swept detonates on the "
-            "coalition and drains your mandate (priced by the campaign's will profile). "
-            "Requires COIN replenishment on; intended for COIN campaigns that preseed it."
+            "The insurgent supply roads are mined. Hidden emplacements appear on the "
+            "ratline -- an emplaced device guarded by a small security team, or a "
+            "mobile VBIED driving for your lines -- recon-fogged targets you must find "
+            "(TARPS/ISR) and strike (CAS/Armed Recon) within a few turns. Destroying "
+            "the device clears the bomb (killing the team alone does not); one you "
+            "leave un-swept detonates on the coalition and drains your mandate (priced "
+            "by the campaign's will profile). Requires COIN replenishment on; intended "
+            "for COIN campaigns that preseed it."
         ),
     )
     coin_hvt: bool = boolean_option(
@@ -1354,6 +1357,22 @@ class Settings:
             "or reinforcing its garrison. Hunting the field cells is how you keep a "
             "stronghold starved. Requires COIN replenishment on; intended for COIN "
             "campaigns that preseed it."
+        ),
+    )
+    coin_harassment: bool = boolean_option(
+        "COIN indirect fire on forward bases (the FOB war)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "The rear is not a safe area. Friendly airfields, FARPs and FOBs within "
+            "mortar reach of an insurgent stronghold draw sporadic rocket/mortar "
+            "harassment fire during the mission -- mostly noise and smoke with a "
+            "modest bite, pressure rather than precision. Pushing the strongholds "
+            "back (or clearing them) is what silences the fire. Never targets a "
+            "field a player spawns at or recovers to this mission, and a startup "
+            "grace period holds all fire while flights align. Requires COIN "
+            "replenishment on; intended for COIN campaigns that preseed it."
         ),
     )
     long_range_carrier_ops: bool = boolean_option(

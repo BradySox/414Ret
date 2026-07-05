@@ -93,6 +93,27 @@ def test_different_tgos_jitter_differently() -> None:
     assert (ra[0].x, ra[0].y) != (rb[0].x, rb[0].y)
 
 
+def test_jitter_works_on_a_real_preset_location_position() -> None:
+    """Regression (2026-07-05 blank-map bug): a real TGO's position is a
+    PresetLocation (PointWithHeading subclass) whose constructor is
+    (name, position, heading) — the jitter must never rebuild the point via
+    pos.__class__, or every concealed TGO 500s the /game payload with fog on."""
+    from game.theater import PresetLocation
+    from game.utils import Heading
+
+    tgo = _Tgo(concealed=True, known=False)
+    tgo.position = PresetLocation(  # type: ignore[assignment]
+        "REGRESSION",
+        _Point(100_000.0, -50_000.0),  # type: ignore[arg-type]
+        Heading.from_degrees(90),
+    )
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre, radius = result
+    offset = math.hypot(centre.x - tgo.position.x, centre.y - tgo.position.y)
+    assert _CONCEALED_MIN_OFFSET * radius <= offset <= _CONCEALED_MAX_OFFSET * radius
+
+
 def _radius_for(tgo: _Tgo) -> Optional[float]:
     result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
     return None if result is None else result[1]

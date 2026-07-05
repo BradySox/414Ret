@@ -921,8 +921,8 @@ def _truck_type(faction: Any) -> Any:
 
 
 def ied_unit_types(game: "Game") -> list[Any]:
-    """Fiction kit for a roadside IED: a lone soft vehicle (a supply truck / suspected
-    VBIED), so the device is findable and killable but not a combat platoon. Empty when
+    """Fiction kit for a *mobile* VBIED: a lone soft vehicle (a suspected suicide
+    truck), so the device is findable and killable but not a combat platoon. Empty when
     the faction has no light vehicle at all (the group then keeps its generated units).
     """
     faction = _red_faction(game)
@@ -930,6 +930,23 @@ def ied_unit_types(game: "Game") -> list[Any]:
         return []
     device = _truck_type(faction) or _infantry_type(faction)
     return [device] if device is not None else []
+
+
+def ied_emplacement_unit_types(game: "Game") -> list[Any]:
+    """Fiction kit for a *static* roadside IED: the emplaced device itself -- a roadside
+    barrel **static object** (vanilla DCS, faction-independent, so this never degrades)
+    -- plus a two-man security team dug in around it from the faction's own infantry.
+    Killing the device clears the bomb; the team is texture and local defense, not the
+    objective (see ``coin_ied._ied_intact``)."""
+    from dcs.statics import Fortification
+
+    comp: list[Any] = [Fortification.Oil_Barrel]
+    faction = _red_faction(game)
+    if faction is not None:
+        rifle = _infantry_type(faction)
+        if rifle is not None:
+            comp.extend([rifle, rifle])
+    return comp
 
 
 def hvt_unit_types(game: "Game") -> list[Any]:

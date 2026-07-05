@@ -215,12 +215,21 @@ file. This guide is the map; those are the territory.
     icon). `spawn_red_ground_at` now takes a `unit_types` list; `_retype_units` re-points the trimmed
     units' DCS *type* (+ name; drops the stale armor threat ring) to kit selected from the **red
     faction's own resolved roster** (`_pick_faction_unit` + `ied_/hvt_/cell_unit_types` — anti-air
-    excluded, price-capped, name-hint-first, never a hardcoded id): an IED = a lone soft **supply
+    excluded, price-capped, name-hint-first, never a hardcoded id): a VBIED = a lone soft **supply
     truck**, an HVT = a small **convoy** (leader jeep + armed technical + 2 rifles; `HVT_UNITS` 3→4),
     a cell (C1.5 + C4) = an armed **technical + infantry**. On Enduring Resolve (Toyota Al Gaib) →
     Ural-375 / UAZ-469+2×Insurgent-AK / DShK-gun-truck+Insurgent-AK (headless-verified end-to-end on
     real `TheaterUnit`s); degrades to the generated group if a role can't be filled, so no faction
-    dependency. **(2) IED variety** — each plant deterministically alternates a **static roadside
+    dependency. **The static IED was re-shaped 2026-07-05** (user call: back to the proposed static
+    object, with guys around it): `ied_emplacement_unit_types` = an emplaced **device** — a vanilla
+    `Fortification.Oil_Barrel` **static object**, faction-independent so it never degrades — guarded
+    by a 2-man security team from the faction's own infantry (`IED_EMPLACEMENT_UNITS` 3, sized down
+    to the kit so a rifle-less faction gets one barrel, never cycled copies; the mixed static+infantry
+    group splits correctly in `tgogenerator`). **Clearing is device-anchored** (`_ied_intact`):
+    killing the device clears the bomb even if the team survives (they melt away); killing the team
+    alone leaves the fuse ticking; a VBIED (and pre-rework saves' vehicle emplacements, which carry no
+    static) stays any-unit-alive. Real-roster verified: Oil Barrel + 2×Insurgent-AK / Ural-375.
+    **(2) IED variety** — each plant deterministically alternates that **static roadside
     IED** (`FUSE_TURNS` 3) and a **mobile VBIED** (`VBIED_FUSE_TURNS` 2 — a suicide vehicle racing the
     nearest blue CP, `_nearest_blue_cp`); same fuse→detonation→`ied_detonations`→mandate consequence,
     distinct "intercept it"/"reached friendly lines" messaging. **(3) In-mission movement** — COIN's
@@ -245,7 +254,27 @@ file. This guide is the map; those are the territory.
     activity" circle with the marker's click/right-click contract (frag TARPS/CAS onto it);
     TARPS/attack discovery (or fog-off/reveal) snaps it to the exact symbol via `known_for`.
     Tests `tests/fourteenth/test_coin_concealment.py`; in-app pass = the P3 checklist concealment
-    bullet (covers P3–P6, needs the CI client rebuild)),
+    bullet (covers P3–P6, needs the CI client rebuild).
+    **COIN in-mission liveliness pass LANDED 2026-07-05** (the "systems feel static" thread,
+    part 3 — after the concealment fix + the static-IED emplacement): **(1) the insurgency
+    shoots back** — new `coin_harassment` (Campaign Management → Insurgency, default OFF,
+    preseeded ON in both COIN campaigns): blue airfields/FARPs/FOBs within
+    `HARASS_STRONGHOLD_REACH_M` (40 km) of a red stronghold draw sporadic in-mission
+    rocket/mortar barrages — the §36 airbase-harassment shape (emitter filters every
+    player-spawn field, the hard anti-grief guarantee, + an `excludedBases` Lua double-guard;
+    startup grace; small dispersed `trigger.action.explosion`s), but **stronghold-proximity
+    based**, so it works on the front-less Enduring Resolve laydown where the preseeded
+    front-based §36 toggle silently no-ops (kept on Inherent Resolve, where the two
+    complement). Cosmetic pressure only — no force-model change; clearing the strongholds is
+    what silences the fire. **(2) the cells move** — C4 dispersed field cells wander a small
+    loop of their patch (`cells` movers) and the live C1.5 re-infiltration cell creeps toward
+    the base it is taking (`infiltrators` movers), both through the coin plugin's existing
+    `mist.goRoute` machinery (alarm-green, movement only — the coalesce/flip consequences stay
+    in the turn model; a killed cell just stops being routed). `populate_coin_lua` extended
+    (a `coin` node now also emits with harassment alone); plugin options cover the cell/infil
+    speeds + cadences and the harass interval/rounds/dispersion/power/grace. Tests
+    `tests/missiongenerator/test_coinluadata.py` + `tests/lua/test_coin_runtime.py`; in-game
+    pass = checklist P8),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —
@@ -455,7 +484,7 @@ file. This guide is the map; those are the territory.
 | Campaign engine | Python 3.11 (`game/`). Python library catalog (bookmark, reference-only — nothing to adopt now; browse if a new library is ever needed): https://github.com/vinta/awesome-python |
 | UI | PyQt (`qt_ui/`) + React/Leaflet client (`client/`) — client NOT type-checked in CI |
 | Mission scripting | **Lua 5.1** sandbox plugins (`resources/plugins/`) — no `os`/`io`, no `goto`, definition order matters |
-| In-mission framework | **MOOSE** (bundled `Moose.lua`; some plugins vendor classes verbatim) — the standard. **MIST is RETIRED** (MIST → MOOSE consolidation complete, 2026-06-25): `base/plugin.json`'s `"mist"` work-order now loads `resources/plugins/base/mist_moose_shim.lua` — a vanilla-DCS shim implementing the 42 `mist.*` symbols the consumers (CTLD, SCAR, intercept glue, core `dcs_retribution.lua`, Skynet) actually call, so `mist_4_5_126.lua` no longer loads. The old `mist_4_5_126.lua` file is **kept in the repo as a one-line rollback** (revert `plugin.json`) until the shim has been flown across more campaigns; delete it as the final cleanup. Do NOT re-point the work-order back without reason. See `414th-mist-moose-shim-notes.md`. MOOSE API docs (bookmark): https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html |
+| In-mission framework | **MOOSE** (bundled `Moose.lua`; some plugins vendor classes verbatim) — the standard. **MIST is RETIRED** (MIST → MOOSE consolidation complete, 2026-06-25): `base/plugin.json`'s `"mist"` work-order now loads `resources/plugins/base/mist_moose_shim.lua` — a vanilla-DCS shim implementing the 43 `mist.*` symbols the consumers (CTLD, SCAR, intercept glue, core `dcs_retribution.lua`, and the upstream land/water relocate scripts) actually call, so `mist_4_5_126.lua` no longer loads. **When merging upstream Lua, grep it for `mist.` — a symbol the shim lacks dies at runtime, not in CI** (the 2026-07-05 upstream sync needed a new `mist.getGroupData` for `land_relocate.lua`/`water_relocate.lua`; checklist U1). The old `mist_4_5_126.lua` file is **kept in the repo as a one-line rollback** (revert `plugin.json`) until the shim has been flown across more campaigns; delete it as the final cleanup. Do NOT re-point the work-order back without reason. See `414th-mist-moose-shim-notes.md`. MOOSE API docs (bookmark): https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/index.html |
 | Units / mission format | pydcs; CurrentHill mod packs in `pydcs_extensions/` |
 | CI gates | Black + mypy + pytest + **Lua syntax gate** (`lua-lint.yml`, blocking) + advisory luacheck |
 | Release | PyInstaller → rolling `latest` pre-release on GitHub |
@@ -1190,17 +1219,15 @@ Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored
   - [#847](https://github.com/dcs-retribution/dcs-retribution/pull/847) F-4E-45MC (Heatblur) loadout rebuild **+** Maverick date-fallback fix — all 13 F-4E presets re-sourced from the module's built-in loadouts (period AIM-7E2/9L A2A baseline vs the old all-modern AIM-7M), **and** the AGM-65 family's date-fallback rerouted AGM-62 Walleye → Mk-20 Rockeye (Mavericks were degrading to Walleyes on pre-1972 campaigns). Data-only (2 files), validated headless against upstream (CLSID-resolve + station-legal + task-resolution + weapon-DB load) — opened 2026-06-28; **consolidates the former #845 + #846**. Landed on the fork as [414Ret#322](https://github.com/bradyccox/414Ret/pull/322) + [#325](https://github.com/bradyccox/414Ret/pull/325).
   - [#843](https://github.com/dcs-retribution/dcs-retribution/pull/843) era-gate payload-editor options: JHMCS property gating (§24) + targeting-pod era data (re-does withdrawn #786) (carve queue item 11) — opened 2026-06-27. **Druss99 CHANGES_REQUESTED addressed 2026-06-29**: helmet-cueing dates moved to `resources/aircraftproperties/helmets/*.yaml` (mirroring the weapons era model, per his ask) + extended to Soviet HMS/SURA Visor & A-10C HMCS; CI green. ⚠️ **Owes a reviewer re-request** — Druss99 is NOT in the re-request list, so the PR sits blocked with no signal for him to re-review.
   - [#842](https://github.com/dcs-retribution/dcs-retribution/pull/842) landmap prepared-index perf (carve queue item 1) — opened 2026-06-27.
-  - [#841](https://github.com/dcs-retribution/dcs-retribution/pull/841) plugin `descriptionInUI` field (§14, carve queue item 10) — opened 2026-06-27.
   - [#828](https://github.com/dcs-retribution/dcs-retribution/pull/828) recon fog-of-war (§3) — the flagship carve, mergeable.
   - [#806](https://github.com/dcs-retribution/dcs-retribution/pull/806) configurable cruise/patrol altitude.
   - [#805](https://github.com/dcs-retribution/dcs-retribution/pull/805) bulk waypoint altitude UI — Druss99's CHANGES_REQUESTED **addressed** (verified 2026-06-29): `DIVERT`/`TARGET_POINT` + `REFUEL`/`RECOVERY_TANKER` (and target-group/ship, pickup/dropoff, cargo-stop, bullseye) now in the `BULK_ALTITUDE_SKIP_TYPES` skip-list. Druss99 **re-requested** — awaiting his re-review; no further action owed.
   - [#794](https://github.com/dcs-retribution/dcs-retribution/pull/794) hide mobile SAM in combined groups (§7).
-  - [#793](https://github.com/dcs-retribution/dcs-retribution/pull/793) building-card placeholder (§4).
   - [#792](https://github.com/dcs-retribution/dcs-retribution/pull/792) wind override UI.
   - [#791](https://github.com/dcs-retribution/dcs-retribution/pull/791) SAM site layouts + EWR pool.
   - [#788](https://github.com/dcs-retribution/dcs-retribution/pull/788) inflight final-waypoint crash (§8).
   - Several created mid-June show `mergeable: UNKNOWN` — **likely need a rebase on current `dev`**.
-- **Merged:** [#826](https://github.com/dcs-retribution/dcs-retribution/pull/826) weapons coverage/repairs · [#789](https://github.com/dcs-retribution/dcs-retribution/pull/789) inverted OPFOR aggressiveness fix.
+- **Merged:** [#841](https://github.com/dcs-retribution/dcs-retribution/pull/841) plugin `descriptionInUI` field (§14) · [#793](https://github.com/dcs-retribution/dcs-retribution/pull/793) building-card placeholder (§4) — both came back with the 2026-07-05 upstream/dev sync merge · [#826](https://github.com/dcs-retribution/dcs-retribution/pull/826) weapons coverage/repairs · [#789](https://github.com/dcs-retribution/dcs-retribution/pull/789) inverted OPFOR aggressiveness fix.
 - **Self-withdrawn (NOT rejected, NOT upstream):** [#784](https://github.com/dcs-retribution/dcs-retribution/pull/784) Iran pack · [#786](https://github.com/dcs-retribution/dcs-retribution/pull/786) AAQ-33 era restriction · [#790](https://github.com/dcs-retribution/dcs-retribution/pull/790) orbit deconfliction. The Iran pack and AAQ-33 fix are therefore **still fork-only** — re-carve if wanted.
 - **Era-gate payload options — DONE (opened 2026-06-27 as #843):** the combined **"era-gate payload-editor options"** PR = JHMCS property gating (§24) **+** a redo of the withdrawn #786 AAQ-33 pod fix. Self-contained, no 414th deps, builds on the upstream `restrict_weapons_by_date` toggle; Black/mypy/pytest validated locally before push. See upstreaming-inventory item 11.
 

@@ -1,6 +1,6 @@
 {
-    "nameInUI": "COIN in-mission movement",
-    "descriptionInUI": "Runtime for the COIN insurgency layer's moving objects. Inert unless the mission generator emits dcsRetribution.coin (a COIN campaign with a live HVT convoy and/or a mobile VBIED this turn). Movement ONLY -- the consequence (kill the HVT before the strike window closes = a decapitation; intercept the VBIED before it reaches a friendly base = defused; let either live = it resolves against your political mandate) stays in the campaign's turn logic, so a mover you shoot down is recorded natively like any other unit. HVT: the named leader's convoy drives a slow, random patrol around its area (alarm-green, so it relocates rather than stopping to fight) -- you have to find and run it down, not bomb a parked jeep. VBIED: the suicide vehicle bomb drives for the nearest friendly base; kill it en route or it detonates on arrival. Both begin after a short startup grace so nothing lurches the instant the mission loads. All movement is off-road at low ground speed.",
+    "nameInUI": "COIN in-mission liveliness",
+    "descriptionInUI": "Runtime for the COIN insurgency layer's moving objects and ambient pressure. Inert unless the mission generator emits dcsRetribution.coin (a COIN campaign with something alive this turn). Movement and cosmetics ONLY -- the consequences (kill the HVT before the strike window closes = a decapitation; intercept the VBIED = defused; let either live = it resolves against your political mandate) stay in the campaign's turn logic, so a mover you shoot down is recorded natively like any other unit. HVT: the named leader's convoy drives a slow, random patrol around its area (alarm-green, so it relocates rather than stopping to fight). VBIED: the suicide vehicle bomb drives for the nearest friendly base; kill it en route or it detonates on arrival. Field cells: each dispersed cell wanders its patch of countryside, so patrolling means catching something moving. Infiltrators: the re-infiltration cell creeps toward the base it is taking. Indirect fire: friendly bases inside a stronghold's mortar reach draw sporadic small rocket/mortar barrages (never a field a player spawns at or recovers to -- filtered by the generator AND double-guarded here -- and only after a startup grace period). All movement is off-road at low ground speed; movers begin after a short startup grace so nothing lurches the instant the mission loads.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -33,6 +33,58 @@
             "nameInUI": "Startup grace before movement begins (s)",
             "mnemonic": "startGraceS",
             "defaultValue": 30
+        },
+        {
+            "nameInUI": "Field cell: seconds between patrol legs",
+            "mnemonic": "cellPatrolIntervalS",
+            "defaultValue": 150
+        },
+        {
+            "nameInUI": "Field cell: patrol radius around its patch (m)",
+            "mnemonic": "cellPatrolRadiusM",
+            "defaultValue": 2000,
+            "maximumValue": 20000
+        },
+        {
+            "nameInUI": "Field cell: ground speed (km/h)",
+            "mnemonic": "cellSpeedKmph",
+            "defaultValue": 20
+        },
+        {
+            "nameInUI": "Infiltrator: creep speed toward the target base (km/h)",
+            "mnemonic": "infilSpeedKmph",
+            "defaultValue": 15
+        },
+        {
+            "nameInUI": "Infiltrator: seconds between re-issuing the creep order",
+            "mnemonic": "infilRepathS",
+            "defaultValue": 180
+        },
+        {
+            "nameInUI": "Indirect fire: mean seconds between barrages on a base",
+            "mnemonic": "harassIntervalS",
+            "defaultValue": 300
+        },
+        {
+            "nameInUI": "Indirect fire: impacts per barrage",
+            "mnemonic": "harassRoundsPerEvent",
+            "defaultValue": 4
+        },
+        {
+            "nameInUI": "Indirect fire: impact dispersion around the base (m)",
+            "mnemonic": "harassDispersionM",
+            "defaultValue": 250,
+            "maximumValue": 2000
+        },
+        {
+            "nameInUI": "Indirect fire: per-impact blast power",
+            "mnemonic": "harassBlastPower",
+            "defaultValue": 6
+        },
+        {
+            "nameInUI": "Indirect fire: no-fire grace at mission start (s)",
+            "mnemonic": "harassGraceS",
+            "defaultValue": 300
         }
     ],
     "scriptsWorkOrders": [],

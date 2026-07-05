@@ -28,6 +28,7 @@ from game.fourteenth.coin import (
     IED_SIDC,
     _despawn,
     _tgo_by_id,
+    ied_emplacement_unit_types,
     ied_unit_types,
     spawn_red_ground_at,
 )
@@ -47,8 +48,13 @@ FUSE_TURNS = 3
 #: tighter. (The ``coin`` plugin drives it in-mission; this is the turn-boundary deadline.)
 VBIED_FUSE_TURNS = 2
 
-#: Units in an emplacement -- a lone device/vehicle, a small recon-fogged strike target.
-IED_UNITS = 1
+#: Units in a mobile VBIED -- a lone suicide vehicle, a small recon-fogged intercept.
+VBIED_UNITS = 1
+
+#: Units in a static emplacement -- the device (a barrel static) + a two-man security
+#: team around it, so finding the bomb reads as finding *people digging it in*, not a
+#: lone parked truck.
+IED_EMPLACEMENT_UNITS = 3
 
 
 def _fuse_for(ied: dict[str, Any]) -> int:
@@ -89,7 +95,7 @@ def _age_live_ieds(
             continue  # already gone (removed elsewhere) -- drop it silently
         where = ied.get("where", "the trail")
         is_vbied = ied.get("kind") == "vbied"
-        if not _tgo_alive(tgo):
+        if not _ied_intact(tgo, is_vbied):
             # The player found and struck it: cleared/intercepted, no detonation.
             _despawn(game, tgo, events)
             if is_vbied:
@@ -131,30 +137,41 @@ def _replenish_ieds(
         red_cp, point, road_key = site
         from game.data.groups import GroupTask
 
+        # Alternate static device and mobile VBIED (deterministic -- saves must be stable):
+        # every other plant is a suicide vehicle that races for the nearest friendly base.
+        # The kind decides the metal: a static plant is the emplaced device (a barrel
+        # static) with a small security team around it; a VBIED is a lone soft vehicle.
+        planted = int(state.get("ied_planted", 0))
+        kind = "vbied" if planted % 2 == 1 else "ied"
+        if kind == "vbied":
+            max_units, fiction_kit = VBIED_UNITS, ied_unit_types(game)
+        else:
+            # Size the emplacement to the kit: normally the device + its security
+            # team, but a faction with no eligible infantry gets the bare device --
+            # never three cycled copies of it (_retype_units repeats a short kit).
+            fiction_kit = ied_emplacement_unit_types(game)
+            max_units = min(IED_EMPLACEMENT_UNITS, max(1, len(fiction_kit)))
         tgo = spawn_red_ground_at(
             game,
             red_cp,
             point,
             GroupTask.FRONT_LINE,
             events,
-            max_units=IED_UNITS,
+            max_units=max_units,
             sidc_override=IED_SIDC,
-            unit_types=ied_unit_types(game),
+            unit_types=fiction_kit,
             concealed=True,
         )
         if tgo is None:
             return
         used.add(road_key)
-        # Alternate static device and mobile VBIED (deterministic -- saves must be stable):
-        # every other plant is a suicide vehicle that races for the nearest friendly base.
-        planted = int(state.get("ied_planted", 0))
         state["ied_planted"] = planted + 1
         record: dict[str, Any] = {
             "tgo_id": str(tgo.id),
             "armed": 0,
             "road": list(road_key),
             "where": red_cp.name,
-            "kind": "vbied" if planted % 2 == 1 else "ied",
+            "kind": kind,
         }
         if record["kind"] == "vbied":
             target = _nearest_blue_cp(game, point)
@@ -245,8 +262,21 @@ def _mid_waypoint(waypoints: Any, forward: "ControlPoint") -> Any:
     return getattr(forward, "position", None)
 
 
-def _tgo_alive(tgo: Any) -> bool:
-    return any(getattr(unit, "alive", False) for unit in getattr(tgo, "units", []))
+def _ied_intact(tgo: Any, is_vbied: bool) -> bool:
+    """Whether the emplacement is still a live threat.
+
+    A *static* emplacement is anchored on its **device** (the static object): killing
+    the security team alone does not clear the bomb, and a dead device clears it even
+    if the team survives (they melt away with the despawn). A VBIED -- and any
+    pre-rework save whose emplacement is a lone vehicle with no static -- is live
+    while any unit is.
+    """
+    units = list(getattr(tgo, "units", []))
+    if not is_vbied:
+        statics = [u for u in units if getattr(u, "is_static", False)]
+        if statics:
+            return any(getattr(u, "alive", False) for u in statics)
+    return any(getattr(unit, "alive", False) for unit in units)
 
 
 def consume_ied_detonations(game: "Game") -> int:

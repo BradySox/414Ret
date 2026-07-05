@@ -194,6 +194,42 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   in-app pass = the P3 checklist concealment bullet (covers P3-P6, needs the CI client
   rebuild).
 
+- **The static IED became a static-object emplacement with a security team** (user
+  2026-07-05, continuing the "systems feel static" thread: "change the IED back to the
+  proposed static object but spawn some guys around it"). The 07-04 fiction kit made the
+  static IED a lone parked supply truck -- which read as a *vehicle*, not a *bomb site*.
+  Now `ied_emplacement_unit_types` (`coin.py`) builds the emplaced **device** -- a vanilla
+  `Fortification.Oil_Barrel` **static object** (faction-independent, so the device never
+  degrades) -- plus a 2-man security team from the faction's own infantry
+  (`IED_EMPLACEMENT_UNITS` 3, sized down to the kit so a rifle-less faction gets one
+  barrel, never `_retype_units`-cycled copies). The mixed static+infantry group needs no
+  generator change (tgogenerator already splits statics from vehicles per unit). Clearing
+  is **device-anchored** (`_ied_intact` in `coin_ied.py`): kill the barrel and the IED is
+  cleared even if the team survives (they melt away); kill only the team and the fuse
+  keeps ticking. The mobile VBIED keeps the lone-truck kit and any-unit-alive clearing,
+  as do pre-rework saves' truck emplacements (no static in the group). Real-roster
+  verified on Toyota Al Gaib (Oil Barrel + 2x Insurgent AK-74 / Ural-375). Tests
+  `test_coin_units.py` + `test_coin_ied.py`; re-fly = checklist P4 third rework bullet.
+
+- **The liveliness pass: cells move + the insurgency shoots back** (user 2026-07-05,
+  same thread -- "1 2 Yes yes a million times yes"). Two additions, both through the
+  `coin` plugin (Lua) so the force model is untouched: **(1) insurgent indirect fire**
+  (`coin_harassment`, default OFF, preseeded ON in both COIN campaigns) -- blue
+  airfields/FARPs/FOBs within `HARASS_STRONGHOLD_REACH_M` (40 km,
+  `coinluadata.py`) of a red stronghold draw sporadic small rocket/mortar barrages
+  after a startup grace, the vietnamops §36 shape with the same hard
+  never-a-player-spawn-field guarantee (emitter filter + `excludedBases` Lua
+  double-guard). Stronghold-proximity based, NOT front based -- so it works on the
+  front-less Enduring Resolve laydown where the preseeded `vietnam_airbase_harassment`
+  silently no-ops (kept on Inherent Resolve, where the two complement). Cosmetic
+  pressure only; clearing strongholds silences the fire. **(2) cell movers** -- C4
+  dispersed cells wander a small loop of their patch (`cells`), the live C1.5
+  re-infiltration cell creeps toward the base it is taking (`infiltrators`), through
+  the plugin's existing alarm-green `mist.goRoute` machinery; movement only, a killed
+  mover just stops being routed. New plugin options (cell/infil speed + cadence,
+  harass interval/rounds/dispersion/power/grace). Tests `test_coinluadata.py` +
+  `tests/lua/test_coin_runtime.py`; in-game pass = checklist P8.
+
 ## After P1
 
 - **Tune** from ledger data (levers above), update the P1 row status.

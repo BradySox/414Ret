@@ -254,7 +254,27 @@ file. This guide is the map; those are the territory.
     activity" circle with the marker's click/right-click contract (frag TARPS/CAS onto it);
     TARPS/attack discovery (or fog-off/reveal) snaps it to the exact symbol via `known_for`.
     Tests `tests/fourteenth/test_coin_concealment.py`; in-app pass = the P3 checklist concealment
-    bullet (covers P3–P6, needs the CI client rebuild)),
+    bullet (covers P3–P6, needs the CI client rebuild).
+    **COIN in-mission liveliness pass LANDED 2026-07-05** (the "systems feel static" thread,
+    part 3 — after the concealment fix + the static-IED emplacement): **(1) the insurgency
+    shoots back** — new `coin_harassment` (Campaign Management → Insurgency, default OFF,
+    preseeded ON in both COIN campaigns): blue airfields/FARPs/FOBs within
+    `HARASS_STRONGHOLD_REACH_M` (40 km) of a red stronghold draw sporadic in-mission
+    rocket/mortar barrages — the §36 airbase-harassment shape (emitter filters every
+    player-spawn field, the hard anti-grief guarantee, + an `excludedBases` Lua double-guard;
+    startup grace; small dispersed `trigger.action.explosion`s), but **stronghold-proximity
+    based**, so it works on the front-less Enduring Resolve laydown where the preseeded
+    front-based §36 toggle silently no-ops (kept on Inherent Resolve, where the two
+    complement). Cosmetic pressure only — no force-model change; clearing the strongholds is
+    what silences the fire. **(2) the cells move** — C4 dispersed field cells wander a small
+    loop of their patch (`cells` movers) and the live C1.5 re-infiltration cell creeps toward
+    the base it is taking (`infiltrators` movers), both through the coin plugin's existing
+    `mist.goRoute` machinery (alarm-green, movement only — the coalesce/flip consequences stay
+    in the turn model; a killed cell just stops being routed). `populate_coin_lua` extended
+    (a `coin` node now also emits with harassment alone); plugin options cover the cell/infil
+    speeds + cadences and the harass interval/rounds/dispersion/power/grace. Tests
+    `tests/missiongenerator/test_coinluadata.py` + `tests/lua/test_coin_runtime.py`; in-game
+    pass = checklist P8),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

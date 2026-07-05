@@ -12,6 +12,7 @@ controller stub.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from tests.lua.harness import DcsPluginHarness
@@ -105,6 +106,82 @@ def test_no_coin_node_is_a_clean_noop() -> None:
     h.load_plugin_script(COIN_PLUGIN)
     h.advance_to(120)
     assert _routes(h) == []
+    h.assert_no_lua_errors()
+
+
+def test_cell_wander_and_infiltrator_creep_are_routed_after_grace() -> None:
+    h = _harness_with_mist()
+    h.add_group(_ground_group("Cell-1"))
+    h.add_group(_ground_group("Infil-1"))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"coin": {"startGraceS": 5, "cellPatrolRadiusM": 2000}},
+            "coin": {
+                "cells": [{"groups": ["Cell-1"], "x": "1000.0", "y": "0.0"}],
+                "infiltrators": [
+                    {
+                        "groups": ["Infil-1"],
+                        "x": "5000.0",
+                        "y": "5000.0",
+                        "targetX": "0.0",
+                        "targetY": "0.0",
+                    }
+                ],
+            },
+        }
+    )
+    h.load_plugin_script(COIN_PLUGIN)
+
+    h.advance_to(4)
+    assert _routes(h) == []
+
+    h.advance_to(6)
+    by_group = {r["group"]: r for r in _routes(h)}
+    assert set(by_group) == {"Cell-1", "Infil-1"}
+    # The cell wanders around its patch (fake getRandPointInCircle = centre.x + radius).
+    assert by_group["Cell-1"]["x"] == 3000.0
+    # The infiltrator creeps straight at the base it is taking (the origin).
+    assert by_group["Infil-1"]["x"] == 0.0 and by_group["Infil-1"]["y"] == 0.0
+    h.assert_no_lua_errors()
+
+
+def test_harassment_grace_then_barrage_with_the_player_field_double_guard() -> None:
+    h = _harness_with_mist()
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"coin": {"harassGraceS": 10, "harassIntervalS": 30}},
+            "coin": {
+                "harassment": {
+                    "bases": [
+                        {"name": "FOB Rhino", "x": "0.0", "y": "0.0"},
+                        # A player field Python should never have emitted -- the
+                        # Lua-side double-guard must keep it safe anyway.
+                        {"name": "Player Field", "x": "100000.0", "y": "100000.0"},
+                    ],
+                    "excludedBases": ["Player Field"],
+                }
+            },
+        }
+    )
+    h.load_plugin_script(COIN_PLUGIN)
+
+    # Hard no-fire window at mission start.
+    h.advance_to(9)
+    assert h.records("explosions") == []
+
+    # A generous run of cadences: the watched base draws fire, the excluded never does.
+    h.advance_to(600)
+    barrage = h.records("explosions")
+    assert barrage, "a base in mortar reach must draw fire once the grace expires"
+    for impact in barrage:
+        assert impact["t"] >= 10
+        # Impacts scatter around the base within the dispersion radius (default 250 m).
+        assert math.hypot(impact["x"], impact["z"]) <= 250 + 1
+        distance_from_player_field = math.hypot(
+            impact["x"] - 100000, impact["z"] - 100000
+        )
+        assert distance_from_player_field > 10000, "the excluded base drew fire"
+    assert any("Incoming" in t["text"] for t in h.records("texts"))
     h.assert_no_lua_errors()
 
 

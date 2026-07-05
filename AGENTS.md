@@ -614,6 +614,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    standalone recon), a **find/overwatch** pass on station with the shooters, not two minutes behind a
    strike moment that never happens. The `configure_tarps` behavior (flyover, ReturnFire) is unchanged;
    only the timing is now role-split.
+   **Packaged drone is a lasing JTAC (2026-07-05, 414th call)**: the old FLOT auto-JTAC (a `jtac_unit`
+   MQ-9 glued to the front line) was ripped out — `JtacInfo` went unproduced, `jtac_unit` dormant — but
+   the CTLD autolase runtime + kneeboard/radio consumers stayed live. `AircraftGenerator._maybe_configure_jtac`
+   revives it on the **packaged drone**: an AI flight of the faction's `jtac_unit` in an A/G package
+   (`_JTAC_PACKAGE_PRIMARIES` = Armed Recon/CAS/BAI/Strike — option 1, may narrow to {Armed Recon, CAS})
+   is emitted as a `JtacInfo` → `dcsRetribution.JTACs` → `ctld.JTACAutoLase` (autolase + smoke default ON),
+   so it lazes/marks for the shooters + shows on the kneeboard/radio. No DCS task added (CTLD does the
+   designation); blue + AI only; a real (killable) asset, not invisible/immortal. Laser code allocated per
+   JTAC (or 1113 on `ctld.fc3LaserCode`). Tests `tests/missiongenerator/test_drone_jtac.py`; checklist G26
+   (the loiter-vs-overfly runtime question is the open in-game item).
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact

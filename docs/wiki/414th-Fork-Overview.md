@@ -151,7 +151,8 @@ Full detail: **[Air Defense and the Air War](Air-Defense-and-the-Air-War)**.
 
 Most campaign-facing systems have their own setting or plugin toggle. The **command-post intel
 fog** (enemy command posts hidden until you find them by strike/scout/TARPS) is on by default for
-new campaigns — toggle `SCAR command-post intel` on the Campaign Doctrine page to turn it off
+new campaigns — toggle `Hidden enemy command posts` (Difficulty & Realism → Realism &
+restrictions) to turn it off
 (details on **[Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)**).
 
 ---

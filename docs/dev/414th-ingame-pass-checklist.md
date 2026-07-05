@@ -388,8 +388,8 @@ so the two docs don't drift.
   across turns (the residual the 2026-06-23 partial was waiting on).
 - **Setup:** New campaign (default `scar_command_post_intel` ON).
 - **Pass:** Enemy command posts are **entirely hidden** from the player map
-  (no marker, not in target list) until a commander is captured or normally
-  discovered; then they reveal with exact coords, permanently. AI/planner are
+  (no marker, not in target list) until normally discovered (strike/scout/
+  TARPS); then they reveal with exact coords, permanently. AI/planner are
   unaffected (ground truth).
 - **Fail signature:** Command posts visible on the player map before reveal, or
   a reveal that doesn't persist across turns.

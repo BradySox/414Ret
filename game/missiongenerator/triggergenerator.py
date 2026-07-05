@@ -141,8 +141,8 @@ class TriggerGenerator:
                         continue
 
                     seen.add(ground_object.obj_name)
-                    # SCAR: don't F10-mark an unrevealed enemy command post — it
-                    # stays off the map until a commander is captured or it's found.
+                    # Command-post intel fog: don't F10-mark an unrevealed enemy
+                    # command post — it stays off the map until it's discovered.
                     if ground_object.hidden_on_player_map(Player.BLUE):
                         continue
                     for location in ground_object.mark_locations:

@@ -16,39 +16,70 @@ if TYPE_CHECKING:
     from game import Game
     from game.theater import TheaterGroundObject
 
-# COIN concealment: an un-reconned concealed TGO (roadside IED/VBIED, HVT convoy,
-# dispersed/re-infiltration cell) is shown as an "in here somewhere" circle of this
-# radius, centred on a point jittered off the true position. The jitter is seeded
-# from the TGO id so it is stable across refreshes/reloads (a wandering circle
-# would let the player triangulate), and bounded so the true position always sits
-# inside the circle. The exact coordinates never reach the client while concealed.
+# Concealment: an un-reconned hidden TGO is shown as an "in here somewhere" circle,
+# centred on a point jittered off the true position. Two ways in: the COIN spawns
+# (roadside IED/VBIED, HVT convoy, dispersed/re-infiltration cells) carry an
+# intrinsic `concealed` flag, and — with the `concealed_enemy_forces` setting on —
+# enemy FIELD forces qualify by kind (mobile SAMs, deployed vehicle groups, missile
+# sites; fixed infrastructure / LORAD / EWRs / ships stay exact). The jitter is
+# seeded from the TGO id so it is stable across refreshes/reloads (a wandering
+# circle would let the player triangulate), and bounded so the true position always
+# sits inside the circle. The exact coordinates never reach the client while
+# concealed.
 CONCEALED_RADIUS_M = 4000.0
+#: Deployed vehicle groups get a tighter circle than a SAM/missile site — they are
+#: smaller and there are many of them, so this keeps base clusters readable.
+FIELD_FORCE_RADIUS_M = 3000.0
 _CONCEALED_MIN_OFFSET = 0.15  # fraction of the radius
 _CONCEALED_MAX_OFFSET = 0.60
+
+#: SAM tasks that conceal: the mobile/relocatable belt. LORAD (fixed strategic
+#: S-200/S-300 sites) and EWRs (they emit — passively geolocatable) stay exact.
+_CONCEALABLE_SAM_TASKS = frozenset({GroupTask.MERAD, GroupTask.SHORAD, GroupTask.AAA})
+
+
+def _concealed_radius(tgo: TheaterGroundObject) -> Optional[float]:
+    """The uncertainty radius for this TGO, or None if it shows an exact marker."""
+    if getattr(tgo, "concealed", False):
+        # COIN hidden objects: intrinsic, independent of the setting.
+        return CONCEALED_RADIUS_M
+    if tgo.user_placed:
+        # The player placed it (drop-spawn) — they know exactly where it is.
+        return None
+    settings = tgo.control_point.coalition.game.settings
+    if not getattr(settings, "concealed_enemy_forces", False):
+        return None
+    if tgo.category == "armor":
+        return FIELD_FORCE_RADIUS_M
+    if tgo.category == "missile":
+        return CONCEALED_RADIUS_M
+    if tgo.category == "aa" and tgo.task in _CONCEALABLE_SAM_TASKS:
+        return CONCEALED_RADIUS_M
+    return None
 
 
 def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float]]:
     """(jittered centre point, radius m) for a concealed, un-reconned enemy TGO.
 
-    None when the TGO is not concealed or the BLUE viewer already knows it
-    (TARPS/attack discovery, fog off, or the fog-overview reveal) -- the caller
-    then uses the exact position as usual.
+    None when the TGO shows an exact marker: nothing conceals it, or the BLUE
+    viewer already knows it (TARPS/attack discovery, recon fog off, or the
+    fog-overview reveal — all via ``known_for``, which also short-circuits
+    friendly/neutral sites).
     """
-    if not getattr(tgo, "concealed", False):
-        return None
     if tgo.known_for(Player.BLUE):
+        return None
+    radius = _concealed_radius(tgo)
+    if radius is None:
         return None
     rng = random.Random(tgo.id.int)
     theta = rng.uniform(0.0, math.tau)
-    dist = (
-        rng.uniform(_CONCEALED_MIN_OFFSET, _CONCEALED_MAX_OFFSET) * CONCEALED_RADIUS_M
-    )
+    dist = rng.uniform(_CONCEALED_MIN_OFFSET, _CONCEALED_MAX_OFFSET) * radius
     pos = tgo.position
     # pydcs Point keeps its terrain private; PresetLocation reads it the same way.
     jittered = pos.__class__(
         pos.x + dist * math.cos(theta), pos.y + dist * math.sin(theta), pos._terrain
     )
-    return jittered, CONCEALED_RADIUS_M
+    return jittered, radius
 
 
 class TgoJs(BaseModel):

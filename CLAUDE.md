@@ -539,7 +539,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +
-   recon intel-fog) makes recon worth flying. **AI recon BDA capture** (`airecon` plugin, added
+   recon intel-fog) makes recon worth flying. **Concealed field forces (2026-07-05)**: with
+   `concealed_enemy_forces` (Difficulty & Realism, default ON), an un-scouted enemy *field* force —
+   mobile SAM (MERAD/SHORAD/AAA), deployed vehicle group, missile site — draws a dashed
+   "suspected activity" **uncertainty circle** (centre deterministically jittered off the truth,
+   exact coords never sent to the client) instead of an exact marker; LORAD/EWR/buildings/ships
+   stay exact, discovery snaps it to the real symbol, and the COIN insurgent spawns conceal
+   intrinsically via `TheaterGroundObject.concealed` (`concealed_uncertainty` in
+   `game/server/tgos/models.py`; checklist G24). **AI recon BDA capture** (`airecon` plugin, added
    2026-07-01) closes the G19 gap that the MOOSE TARS film path is **player-only** (its birth
    handler drops any non-player unit), so auto-paired *AI* recon flights confirmed nothing:
    `populate_ai_recon_lua` (`aireconluadata.py`) emits each AI-flown, player-coalition (BLUE)

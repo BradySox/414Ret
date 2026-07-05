@@ -210,6 +210,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "restrict_weapons_by_date",
                     "target_intel_precision",
                     "recon_intel_fog",
+                    "concealed_enemy_forces",
                     "scar_command_post_intel",
                     "ai_unlimited_fuel",
                 ],
@@ -879,6 +880,25 @@ class Settings:
             "planner and threat math always use full truth, so auto-planning is "
             "unaffected. Existing campaigns keep everything revealed; the fog "
             "applies to new campaigns."
+        ),
+    )
+    concealed_enemy_forces: bool = boolean_option(
+        "Concealed enemy field forces (uncertainty areas until scouted)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        invert=False,
+        detail=(
+            "When enabled (and recon intel fog is on), un-scouted enemy FIELD "
+            "forces — mobile SAM sites (medium/short-range and AAA), deployed "
+            "vehicle groups, and missile sites — do not show an exact map marker "
+            "at all: the map draws a dashed 'suspected activity' circle offset "
+            "from the true position until recon (TARPS) or an attack localizes "
+            "the site. Fixed infrastructure stays exact: airfields, buildings, "
+            "long-range strategic SAMs, EWRs (they emit), and ships. The AI "
+            "planner and threat math always use full truth. The circle is "
+            "clickable like a marker, so you can still plan recon or a strike "
+            "against the suspected area."
         ),
     )
     scar_command_post_intel: bool = boolean_option(

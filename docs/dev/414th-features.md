@@ -329,6 +329,39 @@ fully hides enemy command posts for the SCAR commander-capture feature (gated by
 `scar_command_post_intel`, default ON for new campaigns) — see
 [§15](#15-scar--strike-coordination-and-reconnaissance-flight-type--scenario-plugin).
 
+**Concealed field forces — "in here somewhere" uncertainty areas (2026-07-05).** The recon
+intel-fog above hides *composition* but the marker still X-marks the exact spot, so "finding"
+a hidden site was fiction. A fourth rule fixes the *position* half: while `known_for(BLUE)`
+is False, a qualifying TGO's map presence is a dashed red **uncertainty circle** instead of
+an exact marker — centred on a **deterministically jittered** point (seeded from the TGO id
+so it never wanders between refreshes; offset 15–60 % of the radius so the truth always sits
+inside) with the true coordinates **never sent to the client** while concealed. Two ways in:
+- **COIN intrinsic** — the hidden insurgent spawns (roadside IED/VBIED, HVT convoy,
+  dispersed/re-infiltration cells) carry `TheaterGroundObject.concealed = True` from
+  `spawn_red_ground_at(concealed=True)`, independent of any setting (it's their identity);
+  caches + stronghold garrisons stay exact.
+- **`concealed_enemy_forces` setting** (Difficulty & Realism, default **ON**; only meaningful
+  while `recon_intel_fog` is on since discovery funnels through `known_for`) — enemy **field**
+  forces qualify by kind: mobile SAM sites (`category == "aa"` with task MERAD/SHORAD/AAA —
+  the Weasel hunt), deployed vehicle groups (`"armor"`, tighter 3 km circle), and missile
+  sites (`"missile"` — the SCUD hunt). **Fixed infrastructure stays exact**: LORAD strategic
+  sites, EWRs (they emit — passively geolocatable), buildings, ships, airfields, and
+  user-placed (drop-spawn) TGOs.
+
+The circle keeps the marker's click/right-click contract (plan TARPS/strike against the
+suspected area); discovery (attacked/scouted/TARPS — the same `discovered_by_player` gate),
+recon fog off, or the overview reveal snaps it to the exact symbol. Two consequences by
+design: a killed-but-not-reconned concealed site keeps its circle until BDA confirms it (the
+recon loop), and auto-planned routes still bend around SAMs the map claims are un-located
+(threat math is ground truth — the standing §3 rule, just more visible now). Known accepted
+leak: a package planned against a concealed TGO puts its steerpoint at the true position
+(that IS the localization mission; §5 Approximate precision covers player steerpoints).
+Implementation: `concealed_uncertainty`/`_concealed_radius` in `game/server/tgos/models.py`
+(both the `/game` pull and the SSE `updated_tgos` path go through it),
+`client/src/components/tgos/Tgo.tsx` (`ConcealedTgo`), `Tgo.uncertainty_radius_m` in the API
+model. Tests: `tests/fourteenth/test_coin_concealment.py`. Checklist **G24** + the COIN P3
+concealment bullet — needs an in-app pass + the CI client rebuild.
+
 **Overview reveal toggle ("show the real picture").** A single runtime switch that forces
 every player-facing fog rule above to resolve to ground truth, for whoever is looking. It
 exploits the fact that all three player-facing fog rules funnel through exactly three leaf

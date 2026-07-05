@@ -56,7 +56,12 @@ class Feature:
 FEATURES: tuple[Feature, ...] = (
     Feature("qra_intercept_reserve", "QRA intercept reserve", 1, plugin_id="intercept"),
     Feature("jamming_c130j", "JAMMING flight type", 2, plugin_id="c130j"),
-    Feature("tarps_recon_fog", "TARPS recon + BDA fog-of-war", 3),
+    Feature(
+        "tarps_recon_fog",
+        "TARPS recon + BDA fog-of-war",
+        3,
+        settings_fields=("recon_intel_fog", "concealed_enemy_forces"),
+    ),
     Feature("ui_transparency", "UI transparency", 4),
     Feature("target_location_precision", "Player target location precision", 5),
     Feature("air_defense_planning", "Air-defense planning rework", 6),

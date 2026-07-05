@@ -175,6 +175,7 @@ def _reseed_cells(game: "Game", cells: list[dict[str, Any]], events: Any) -> Non
             max_units=FIELD_CELL_UNITS,
             sidc_override=CELL_SIDC,
             unit_types=cell_unit_types(game),
+            concealed=True,
         )
         if tgo is None:
             return

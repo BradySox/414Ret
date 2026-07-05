@@ -234,7 +234,18 @@ file. This guide is the map; those are the territory.
     §35/§37 no-phantom-spawn lesson; a decapitated HVT / intercepted VBIED just stops being routed).
     Tests `tests/fourteenth/test_coin_units.py` + `tests/fourteenth/test_coin_ied.py` +
     `tests/missiongenerator/test_coinluadata.py` + `tests/lua/test_coin_runtime.py`; in-game pass =
-    checklist P4/P5 (the moving convoy/VBIED + the retyped reads are Lua/cockpit-only)),
+    checklist P4/P5 (the moving convoy/VBIED + the retyped reads are Lua/cockpit-only).
+    **COIN concealed map presence LANDED 2026-07-05** (the "markers dead on top of them" fix): an
+    un-reconned hidden insurgent object (IED/VBIED, HVT, dispersed/re-infiltration cell — caches/
+    garrisons stay exact) no longer draws an exact marker; `spawn_red_ground_at(concealed=True)` →
+    `TheaterGroundObject.concealed` (pickle-safe) → the server TGO model (`concealed_uncertainty`
+    in `game/server/tgos/models.py`) sends a **deterministically jittered centre** (seeded from the
+    TGO id, offset 15–60% of the radius so the truth stays inside; exact coords never reach the
+    client) + `uncertainty_radius_m` (4 km), and the web map draws a dashed red "suspected
+    activity" circle with the marker's click/right-click contract (frag TARPS/CAS onto it);
+    TARPS/attack discovery (or fog-off/reveal) snaps it to the exact symbol via `known_for`.
+    Tests `tests/fourteenth/test_coin_concealment.py`; in-app pass = the P3 checklist concealment
+    bullet (covers P3–P6, needs the CI client rebuild)),
     `414th-vietnam-political-will-roe-notes.md` (**the Vietnam campaign layer** — the approved
     month-scale rework, spec of record: (1) a symmetric **political-will economy** (BLUE
     Political Will / RED Regime Resolve on `Coalition`, fed from the existing `Debriefing` —

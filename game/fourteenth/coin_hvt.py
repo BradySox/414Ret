@@ -130,6 +130,7 @@ def _surface_hvt(game: "Game", hvt: dict[str, Any], events: Any) -> None:
         max_units=HVT_UNITS,
         sidc_override=HVT_SIDC,
         unit_types=hvt_unit_types(game),
+        concealed=True,
     )
     if tgo is None:
         return

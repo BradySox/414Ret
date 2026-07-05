@@ -633,6 +633,7 @@ def _spawn_cell(
         sidc_override=CELL_SIDC,
         max_units=CELL_MAX_UNITS,
         unit_types=unit_types,
+        concealed=True,
     )
     if tgo is None:
         tgo = _spawn_red_ground(
@@ -644,6 +645,7 @@ def _spawn_cell(
             sidc_override=CELL_SIDC,
             max_units=CELL_MAX_UNITS,
             unit_types=unit_types,
+            concealed=True,
         )
     return tgo
 
@@ -665,6 +667,7 @@ def _spawn_red_ground(
     sidc_override: Optional[tuple[SymbolSet, Entity]] = None,
     max_units: Optional[int] = None,
     unit_types: Optional[list[Any]] = None,
+    concealed: bool = False,
 ) -> Any:
     """Generate a red ForceGroup for *task* at a point near *target*, attached to the
     red *source* CP. Returns the TGO or None if the faction has no group for the task.
@@ -679,6 +682,7 @@ def _spawn_red_ground(
         max_units=max_units,
         sidc_override=sidc_override,
         unit_types=unit_types,
+        concealed=concealed,
     )
 
 
@@ -691,6 +695,7 @@ def spawn_red_ground_at(
     max_units: Optional[int] = None,
     sidc_override: Optional[tuple[SymbolSet, Entity]] = None,
     unit_types: Optional[list[Any]] = None,
+    concealed: bool = False,
 ) -> Any:
     """Generate a red ForceGroup for *task* at *point*, attached to the red *red_cp*
     (whose ownership gives the TGO its RED allegiance -- a TGO renders as its parent
@@ -709,6 +714,12 @@ def spawn_red_ground_at(
     supply truck for an IED, a leader's jeep + rifles for an HVT -- instead of the
     faction's default front-line kit. An empty/``None`` list leaves the generated
     units as-is.
+
+    *concealed* marks the TGO so that, while un-reconned, the player map shows a
+    jittered "in here somewhere" uncertainty circle instead of an exact marker
+    (built in the server TGO model); recon/attack discovery snaps it to the real
+    position. Used by the hidden COIN objects (IED/VBIED, HVT, cells) -- a cache
+    is infrastructure and stays exact.
     """
     from game.naming import namegen
     from game.theater import PresetLocation
@@ -722,6 +733,7 @@ def spawn_red_ground_at(
     tgo = group.generate(location.original_name, location, red_cp, game, task)
     if sidc_override is not None:
         tgo.sidc_entity_override = sidc_override
+    tgo.concealed = concealed
     red_cp.connected_objectives.append(tgo)
     game.db.tgos.add(tgo.id, tgo)
     if max_units is not None:

@@ -380,8 +380,10 @@ and selected later upstream fixes.
   meter. The open desert and the northern gate are free; trail convoys and troops in contact are always
   fair game, and air assaults are never blocked — so you still retake your objectives, you just pay for
   the collateral when you fight where the insurgency hides. And the map plays the intel game with you:
-  an insurgent contact you haven't reconned shows as an **unconfirmed (suspect) track**, then — once
-  TARPS or a strike confirms it — flips to a real hostile NATO symbol drawn as what it actually is
+  a hidden insurgent object you haven't found yet — an IED, a leader's convoy, a cell in the countryside —
+  doesn't sit on the map as a marker at its exact position at all; it shows as a dashed **"suspected
+  activity" circle** offset from the truth ("in here somewhere"), and only flying recon (or hitting it)
+  pins it to a real hostile NATO symbol drawn as what it actually is
   (an infantry cell, a roadside IED, a named leader, a stronghold's militia) instead of anonymous armor.
   And the insurgency **moves** and comes at you as the right kit: the named leader travels as a small
   **convoy** you have to find and run down in his home valley (not a parked jeep waiting to be bombed),

@@ -5,6 +5,7 @@ import random
 from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
+from dcs.mapping import Point
 from pydantic import BaseModel
 
 from game.data.groups import GroupTask
@@ -75,8 +76,12 @@ def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float
     theta = rng.uniform(0.0, math.tau)
     dist = rng.uniform(_CONCEALED_MIN_OFFSET, _CONCEALED_MAX_OFFSET) * radius
     pos = tgo.position
-    # pydcs Point keeps its terrain private; PresetLocation reads it the same way.
-    jittered = pos.__class__(
+    # Build a PLAIN pydcs Point, never pos.__class__: a real TGO's position is a
+    # PresetLocation (PointWithHeading), whose constructor signature differs —
+    # reusing the subclass here mis-bound the arguments and 500'd the whole /game
+    # payload (the 2026-07-05 "fog on = blank map" regression). pydcs keeps the
+    # terrain private; PresetLocation reads it the same way.
+    jittered = Point(
         pos.x + dist * math.cos(theta), pos.y + dist * math.sin(theta), pos._terrain
     )
     return jittered, radius

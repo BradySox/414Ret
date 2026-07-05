@@ -1,7 +1,7 @@
 # MIST retirement via a MOOSE-backed `mist` compatibility shim
 
 **Status:** ✅ **DONE — MIST retired (2026-06-25).** The shim is live in `base/plugin.json` (the
-`"mist"` work-order loads `mist_moose_shim.lua`); `mist_4_5_126.lua` no longer loads. All 42 symbols,
+`"mist"` work-order loads `mist_moose_shim.lua`); `mist_4_5_126.lua` no longer loads. All 43 symbols,
 100% vanilla DCS (no MOOSE dep), in mist's existing slot (no reorder). Flight-validated on GermanyCW
 (shim logged zero errors; the two crashes seen during testing were pre-existing bugs — civ-helo RAT
 crash and a CTLD smoke-zone format bug — fixed separately in #166). The **first** go-live attempt was
@@ -18,6 +18,16 @@ category was the only mismatch (the others — `dynAddStatic`, `goRoute`, `sched
 skynet's `rep`-recurring form, `buildWP`, `makeUnitTable`, `groupToRandomZone` — all matched). Old
 `mist_4_5_126.lua` kept for one-line rollback. **This time: fly the branch first, merge only on a
 clean pass.** After the pass: delete MIST.
+**43rd symbol (2026-07-05):** the upstream/dev merge brought in `land_relocate.lua` /
+`water_relocate.lua` (upstream #767/#838, part of the base plugin), which call
+`mist.getGroupData(name)` and feed the result to `mist.dynAdd`. Upstream runs full MIST; the shim
+had no `getGroupData`, so the relocate pass would have died at runtime ("attempt to call field
+'getGroupData'"). Added to the shim's Tier 2: a lazily-built mission-editor group DB read from
+`env.mission` (names via `env.getValueDictByKey`, deep-copied entries carrying units/route/
+country/category — the dynAdd shape). Contract pinned in `tests/lua/test_mist_shim_getgroupdata.py`;
+the relocate behavior itself still needs an in-game pass (checklist U1). **When merging future
+upstream Lua, grep it for `mist.` and check every symbol against the shim.**
+
 **Supersedes:** the per-consumer MOOSE-native port plan (esp. the `Ops.CTLD` port in
 [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md), now shelved).
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md).

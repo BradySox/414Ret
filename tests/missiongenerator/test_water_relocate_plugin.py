@@ -24,15 +24,18 @@ def test_water_relocate_registered_in_base_plugin() -> None:
 
 
 def test_water_relocate_loaded_after_mist() -> None:
+    # The fork loads the MIST compat shim (mist_moose_shim.lua) in place of the
+    # retired mist_4_5_126.lua; the relocate script must still come after it.
     files = _base_work_order_files()
-    assert files.index("water_relocate.lua") > files.index("mist_4_5_126.lua")
+    assert files.index("water_relocate.lua") > files.index("mist_moose_shim.lua")
 
 
 def test_water_relocate_injected_as_doscriptfile() -> None:
     mission = Mission()
-    # inject_plugins only touches self.mission and self.plugin_scripts, so the
-    # game and mission_data arguments are unused here.
-    generator = LuaGenerator(cast(Game, None), mission, cast(MissionData, None))
+    # inject_plugins only touches self.mission, self.plugin_scripts and (in the
+    # fork's late-init pass) self.mission_data, so the game argument is unused
+    # and an empty MissionData suffices.
+    generator = LuaGenerator(cast(Game, None), mission, MissionData())
 
     generator.inject_plugins()
 

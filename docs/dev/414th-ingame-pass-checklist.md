@@ -1550,30 +1550,12 @@ so the two docs don't drift.
   when all three options are off (a default-path regression — the omit flags must default to keep);
   Mission Info's flight-plan column count wrong (uom row mismatched with headers).
 
-### H9 — Compact 3-4 page kneeboard deck · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
-- **What it is:** `compact_kneeboard` (default **ON**) folds the optional kneeboard content into at
-  most four pages — **P1 Game Plan** (BLUF: task/target/TOT, push+event code words, top live threat
-  + defeat, bullseye; then airfields, route with Min fuel, weather, bingo/joker, laser), **P2 Threats
-  & Targets** (target ALIC/coords over the enemy-AD threat cards), **P3 Comms & Coordination** (comm
-  ladder + AWACS/tanker/JTAC + code words + brevity + packages), and an adaptive **P4 Flex** (recon
-  target photo when recon imagery is on, else Fuel Ladder + the full friendly-package list, which then
-  drops off P3). The theater/package map + Notes page are not generated in this mode.
-- **Headless adjudication (2026-06-26):** `tests/missiongenerator/test_compact_kneeboard.py` covers the
-  BLUF line composition (task/push gated on code words/always-on top threat) and a single-page render of
-  the composite Threats & Targets page; the page-selection logic caps at four by construction (P1 always,
-  P2 iff threats/target, P3 always, P4 iff recon-detail or fuel/packages). Sample renders of all four
-  pages reviewed. **Residual (in-sim only):** in-cockpit legibility of the denser pages and that the P4
-  recon photo renders against live satellite tiles.
-- **Setup:** Generate a ground-start SEAD/Strike flight with the deck **default** (compact ON). Then a
-  second pass with `compact_kneeboard` **OFF** to confirm the full multi-page deck (with recon imagery)
-  is unchanged. Try a BARCAP (no target/threats) to confirm the 2-page degenerate deck.
-- **Pass:** Compact ON → **≤4 pages**, titled Game Plan / Threats & Targets / Comms & Coordination /
-  (Fuel & Packages or recon photo); BLUF band tops P1; no page spills to a 5th; a BARCAP over friendly
-  ground gets 2 pages (P2 absent, P4 absent). Compact OFF → the prior multi-page deck is byte-for-byte
-  unchanged (Mission Info, Support, separate Threat/Brevity/Fuel/Recon/Packages pages).
-- **Fail signature:** a 5th page appearing (cap breached); a section printed on two pages (e.g. packages
-  on both P3 and P4); the full-deck (OFF) path changed; the P4 recon photo missing when recon is on; the
-  BLUF top-threat absent when a live enemy SAM exists.
+### H9 — Compact 3-4 page kneeboard deck · §4 · ⊘ RETIRED (2026-07-05, back-to-basics rework; was ☑ VERIFIED 2026-06-26)
+- **What happened:** the compact folding machinery (`compact_kneeboard`, the composite
+  P2/P3/flex pages, `_draw_section_if_fits`) was deleted in the kneeboard back-to-basics rework.
+  The kept pieces — the Brief Sheet (§31) leading every flight's block, the cover page (§30), the
+  colour palette, and the threat-intel cards (now default ON) — ride on the stock full deck, which
+  is the only assembly path again. The new deck shape is checked under **H12**.
 
 ---
 
@@ -1733,6 +1715,26 @@ so the two docs don't drift.
   ~80 lb/NM, a sign the heavy bucket isn't being picked — check `_is_heavy_airframe`); any change to a
   measured-data airframe's ladder (the estimate must never override a real `fuel:` block); planner
   suddenly fragging tankers for the King (the fallback must stay out of `unit_type.fuel_consumption`).
+
+### H12 — Back-to-basics kneeboard deck (Brief Sheet + cover on the full deck) · §31 / §30 · ☐ UNTESTED (built 2026-07-05; deck assembly + page renders test-covered, the in-cockpit read is the residual)
+- **What it is:** the 2026-07-05 back-to-basics rework — the compact 3-4 page folding machinery is
+  deleted (H9 retired) and the full multi-page deck is the only assembly path, fronted by the kept
+  pieces: page 1 the **cover** (op/turn/date + SITREP + shared-airframe index + phase/ROE band), each
+  flight's block then opening on its **Brief Sheet** (the colour-coded Appendix-A one-pager) followed
+  by the stock Game Plan (BLUF + steerpoint table), Support Info, and the **Threat Intel Brief**
+  cards page (its `generate_threat_intel_kneeboard` default flipped **ON**).
+- **Headless adjudication (2026-07-05):** deck order + page composition covered by
+  `tests/missiongenerator/test_kneeboard_cover.py`, `test_brief_sheet.py`, `test_kneeboard_bluf.py`,
+  `test_threat_intel_kneeboard.py`; full suite green. **Residual (in-sim only):** the deck length and
+  in-cockpit legibility of the restored full deck (the ~10-page sprawl was the original complaint —
+  the optional pages stay default OFF, so the default deck should be ~5-6 pages/flight).
+- **Setup:** generate a mission with a client Strike/SEAD flight on defaults; open the kneeboard.
+- **Pass:** page 1 cover, page 2 the flight's colour-coded Brief Sheet, then Game Plan (full
+  steerpoint table restored) / Support Info / threat cards; no composite "Threats & Targets" or
+  "Comms & Coordination" pages; deck length acceptable in the cockpit.
+- **Fail signature:** a missing Brief Sheet or one wearing another flight's data (the per-flight
+  block order broke); threat cards absent on defaults (the default flip regressed); the deck ballooning
+  past ~7 pages on defaults (an optional page's default drifted ON).
 
 ### J1 — Capability-weighted off-mission combat · §26 · ☑ VERIFIED (2026-06-28, audience in-game pass — user "good, I think"; off-mission auto-resolve looked right, not deeply scrutinized)
 - **Headless adjudication (2026-06-26):** `tests/test_combat_resolution_capability.py` covers the

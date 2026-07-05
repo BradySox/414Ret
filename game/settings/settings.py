@@ -478,7 +478,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
             (
                 "Kneeboards",
                 [
-                    "compact_kneeboard",
                     "generate_dark_kneeboard",
                     "generate_target_recon_kneeboard",
                     "generate_all_packages_kneeboard",
@@ -1835,24 +1834,6 @@ class Settings:
             "the pilot leg unreadable."
         ),
     )
-    compact_kneeboard: bool = boolean_option(
-        "Compact kneeboard (3-4 pages)",
-        MISSION_GENERATOR_PAGE,
-        KNEEBOARD_SECTION,
-        default=True,
-        detail=(
-            "Consolidate the player kneeboard into at most four pages — Game Plan "
-            "(BLUF + route + fuel + fields + weather), Threats & Targets (enemy "
-            "air-defense cards + target ALIC), Comms & Coordination (radios + "
-            "AWACS/tanker/JTAC + code words + brevity + friendly packages), and an "
-            "adaptive flex page: the recon target photo when target-recon imagery is "
-            "enabled, otherwise the Fuel Ladder + the full friendly-package list. The "
-            "optional kneeboard sections below fold into these pages instead of adding "
-            "their own, and the flex page only appears when it has content. The "
-            "theater/package-targets map is not generated in this mode. Turn off for "
-            "the full multi-page deck."
-        ),
-    )
     generate_target_recon_kneeboard: bool = boolean_option(
         "Generate target recon kneeboard pages",
         MISSION_GENERATOR_PAGE,
@@ -1882,14 +1863,14 @@ class Settings:
         "Generate threat intel brief kneeboard page",
         MISSION_GENERATOR_PAGE,
         KNEEBOARD_SECTION,
-        default=False,
+        default=True,
         detail=(
             "Append a Threat Intel Brief page: the enemy air-defense laydown "
             "(SAM/EWR system, engagement range, HARM ALIC code, bullseye cue and "
             "live/degraded/dead status), modelled on the per-system threat cards in "
             "professional campaign intelligence briefings. Recon-fog aware — an "
             "undiscovered site shows only its intel-tier band ('Unidentified MERAD') "
-            "until a TARPS overflight identifies it. Off by default."
+            "until a TARPS overflight identifies it. On by default."
         ),
     )
     enable_package_code_words: bool = boolean_option(

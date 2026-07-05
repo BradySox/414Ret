@@ -36,13 +36,13 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §22 | Kneeboard space-utilisation + custom import | — | — |
 | §23 | Per-squadron DCS country | — | — |
 | §24 | Date-gated aircraft properties | — | `restrict_weapons_by_date` |
-| §25 | Compact 3-4 page kneeboard deck | — | `compact_kneeboard` |
+| §25 | Compact 3-4 page kneeboard deck _(retired)_ | — | — |
 | §26 | Off-mission combat fidelity + PLAYER_AT_IP fix | — | — |
 | §27 | Shared-airframe kneeboard index | — | — |
 | §28 | Settings IA reorg + difficulty presets | — | — |
 | §29 | Campaign SITREP kneeboard band | — | `generate_sitrep_kneeboard` |
 | §30 | Dedicated kneeboard cover page | — | — |
-| §31 | One-page Brief Sheet + deck-wide colour scheme | — | `compact_kneeboard` |
+| §31 | One-page Brief Sheet + deck-wide colour scheme | — | — |
 | §32 | Arc Light heavy-bomber Strike carpet | `vietnamops` | `vietnam_arc_light` |
 | §33 | AAA flak gauntlet | `vietnamops` | `vietnam_flak_gauntlet` |
 | §34 | Naval gunfire support | `vietnamops` | `vietnam_naval_gunfire` |

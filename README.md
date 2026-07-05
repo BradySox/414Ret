@@ -180,7 +180,7 @@ and selected later upstream fixes.
   code has a campaign setting; this covers the rest of that box. Applies to your side only.
 - Debriefing begins with mission impact — territorial changes, runway damage, and losses —
   before the full event detail.
-- The player kneeboard is a **compact 3-4 page deck** (on by default), led by a **one-page Brief Sheet** —
+- Every flight's kneeboard leads with a **one-page Brief Sheet** —
   a single scannable, **colour-coded** brief modelled on the squadron's printed brief sheet: header,
   mission, the full route with **steerpoint numbers and times** (`HOLD 1 12:32 → TKR 2 12:38 →
   JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10` — every waypoint listed; multiple strike points collapse
@@ -190,15 +190,14 @@ and selected later upstream fixes.
   filled in from the mission. Colour does the work: **blue** for
   nav and freqs, **amber** for threats and fuel, **green** for the success word, **red** for abort, so you
   find what you need at a glance. Empty fields keep a `______` fill-in blank, like a real brief sheet, so
-  you can write the rest in. Behind it: **Threats & Targets** (your aimpoints over the enemy air-defense
-  cards) and **Comms & Coordination** (radios, AWACS/tanker/JTAC, code words, brevity), both colour-coded
-  to match, plus an adaptive 4th page (recon target photo when target recon is on, otherwise the fuel
-  ladder). A simple CAP gets two pages. Turn off *Compact kneeboard* for the full multi-page deck.
+  you can write the rest in. The standard pages (Game Plan with the full steerpoint table, Support Info,
+  the threat cards) follow it. (The former experimental "compact deck" folding was retired — the deck is
+  the classic multi-page layout again, fronted by the pieces that earned their keep.)
 - Every flight's kneeboard opens on a **cover page**: the operation name, turn, and date up top; a
   **"last turn" SITREP** (both sides' losses — the enemy's as *claimed* — bases captured or lost, and
-  downed pilots recovered); when several flights share an airframe (DCS stacks them into one kneeboard),
-  a **flight index** — each callsign, task, and start page — so you flip straight to your own deck; and
-  the **friendly-package list** (who's hitting what, and when) in its otherwise-empty lower half. The
+  downed pilots recovered); and, when several flights share an airframe (DCS stacks them into one
+  kneeboard), a **flight index** — each callsign, task, and start page — so you flip straight to your
+  own deck. The
   SITREP appears from your second mission on and hides after a quiet turn (*Campaign SITREP band*,
   Kneeboards page, on by default).
 - Kneeboards are restyled to use the page: clean headings with underline rules and spacing
@@ -210,7 +209,7 @@ and selected later upstream fixes.
   per system — guidance, engagement ceiling, MEZ, HARM code, bullseye cues, live/dead counts, and
   a **how-to-defeat** note — like a campaign intelligence briefing. It respects recon fog: sites
   you haven't identified show only their threat tier ("Unidentified MERAD") until you fly a TARPS
-  overflight. Off by default.
+  overflight. On by default.
 - Optional **mission code words** (Red Flag style) — the whole side shares one randomised,
   themed table: a **push word per task** (STRIKE / SEAD / OCA / CAS / …) plus SUCCESS / ABORT, so
   one call ("Red Kite") tells everyone SEAD is pushing. Planners see the full table *before*

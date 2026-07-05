@@ -38,26 +38,30 @@ Old City), and every COIN mechanic the fork shipped has a real-world referent he
 Coordinates: **+x = north, +y = east, Baghdad at origin.** Mosul (id 3) is the northwest
 apex; Q-West (6) is ~60 km due south; Erbil (4) ~72 km east.
 
-> **Scope revised twice (post-merge playtest, 2026-07-04 → 07-05):** the first cut gave red
-> only Mosul + a tight FOB cluster ("a tiny red area"). It then briefly swung to the **whole
-> northern belt** (7 red + 6 blue airfields), which read as **too many airfields** ("this is a
-> ton"). The **shipped laydown** is the middle ground below: **6 airfields total** (3 red, 3
-> blue — Q-West dropped), with red *presence* carried by **FOBs** down Highway 1, not by owning
-> every airstrip. Every red stronghold stays enriched (a real garrison, not a lone marker).
+> **Scope revised three times (post-merge playtest, 2026-07-04 → 07-05):** the first cut gave
+> red only Mosul + a tight FOB cluster ("a tiny red area"); it briefly swung to the **whole
+> northern belt** (7 red + 6 blue airfields — "this is a ton"); then settled on **6 airfields
+> total** (3 red, 3 blue — Q-West dropped), red presence carried by **FOBs**. Finally, the user
+> **hand-positioned the whole laydown in the ME** to fit the terrain (that miz is now the
+> committed **base**, `iraq_inherent_resolve_base.miz`) and asked for **more strongholds in the
+> gaps** — so the generator now *decorates* the base with **5 in-between FOBs** (see "The
+> generator" below). Current shipped laydown:
 
 - 🔴 **RED airfields (3):** **Mosul (3)** the anchor + SA-6, **Erbil (4)** NE, **Kirkuk (10)**
   central + SA-6.
-- 🔴 **RED FOB strongholds (5; XY from real lat/lon):** the Highway-1 steps **Tikrit**
-  `(150201, -49014)` and **Shirqat** `(264800, -85078)`, plus the Nineveh ring **Hammam al-Alil**
-  `(322805, -81581)`, **Bartella** `(343841, -73022)`, and **Tal Afar** `(348018, -156505)`
-  (the Syria ratline gateway).
+- 🔴 **RED FOB strongholds (10):** the **authored** towns (ME-positioned in the base) — the
+  Highway-1 steps **Tikrit** + **Shirqat**, and the Nineveh ring **Hammam al-Alil**, **Bartella**,
+  **Tal Afar** (Syria ratline gateway) — plus the **in-between** gap-fillers (generator-added):
+  **Bayji** (Tikrit↔Shirqat), **Qayyarah** (Shirqat↔Hammam), **Hawija** and **Makhmur** and
+  **Gwer** (the eastern belt, tying Kirkuk/Erbil to Mosul and the corridor).
 - 🔵 **BLUE airfields (3):** **Balad (8)** — the forward field + the player's fast air/helos —
   **Al-Taquddum (13)** — the strike / coalition-CAS field — **Baghdad (2)** — support
   (tankers / AWACS / CSAR).
-- ⚪ **Dropped / unset** (not drawn as CPs): **Qayyarah West (6)**, Al-Taji (9), Al-Salam (14),
-  Bashur (5), Sulaimaniyah (7), K1 (11), Al-Sahra (12), Al-Asad (1), Al-Kut (19), H-2/H-3 (15–18).
+- ⚪ **Dropped / unset** (not drawn as CPs): **Qayyarah West airfield (6)**, Al-Taji (9),
+  Al-Salam (14), Bashur (5), Sulaimaniyah (7), K1 (11), Al-Sahra (12), Al-Asad (1), Al-Kut (19),
+  H-2/H-3 (15–18). (Qayyarah returns as a red *town* FOB, not an airfield.)
 
-So RED holds **8 CPs** (3 airfields + 5 FOBs), BLUE **3** — **6 airfields total** (down from 13).
+So RED holds **13 CPs** (3 airfields + 10 FOBs), BLUE **3** — **6 airfields total**.
 Dropping Q-West means blue's forward-most field is **Balad** (~270 km from Mosul, ~110 km from
 the Tikrit front): a Highway-1 grind, with captured red airfields (Kirkuk, then Mosul) becoming
 the forward bases for the final push.
@@ -65,10 +69,12 @@ the forward bases for the final push.
 ### Front & connectivity — **one front, up Highway 1**
 - **The front:** Balad (blue) ↔ Tikrit (red FOB) — the historical Baghdad → Mosul advance
   (`FRONT Balad-Tikrit`), starting partway up the axis via `control_point_strengths`.
-- **Red-red supply graph** (yaml `supply_routes`, 8 routes): the corridor Tikrit → Shirqat →
-  Hammam al-Alil → Mosul the ISF grinds up; the Nineveh ring off Mosul (Bartella + the Tal Afar
-  ratline); and the NE belt Mosul → Erbil → Kirkuk → back to Tikrit, tying the two red airfields
-  to the corridor. Erbil and Kirkuk have no blue neighbour and fall to air assault as the line
+- **Red-red supply graph** (yaml `supply_routes`, 14 routes) now runs *through* the in-between
+  towns so there are no 100 km empty gaps: the corridor Tikrit → **Bayji** → Shirqat →
+  **Qayyarah** → Hammam al-Alil → Mosul the ISF grinds up; the Nineveh ring off Mosul (Bartella +
+  the Tal Afar ratline); the NE belt Mosul → **Gwer** → Erbil → Kirkuk; and the bridges
+  (**Makhmur** ties Mosul↔Kirkuk, **Hawija** ties the corridor↔Kirkuk). Erbil and Kirkuk have no
+  blue neighbour and fall to air assault as the line
   comes up.
 
 ### Ground enrichment (per red stronghold)
@@ -98,25 +104,29 @@ the medium (SEAD-relevant) site at Mosul; SA-8/9/13 are the SHORAD across the ri
 
 ---
 
-## The generator
+## The generator — now decorates a hand-authored base (the ER pattern)
 
-`tools/build_iraq_inherent_resolve_miz.py` builds `iraq_inherent_resolve.miz` **from scratch**
-(there was no pre-authored Mosul miz to decorate, unlike ER decorating Shattered Dagger). It
-creates a fresh Iraq mission, adds the CJTF blue/red countries, sets airfield ownership
-(`Airport.set_red()/set_blue()`), and places the typed marker groups the `MizCampaignLoader`
-reads: FOB (`SKP-11`) strongholds, garrison cells (`M-1 Abrams` armor marker → fills from the
-red frontline roster), AAA (`ZSU-23`), SHORAD (`Strela-1`) and — at Mosul only — a MEDIUM
-(`S-75` marker → the faction's SA-6 preset) site, the ammo-cache statics
-(`Warehouse._Ammunition_depot`), the southern front (`M-113`), and two blue economy factories
-(`Workshop_A`). Everything is deterministic (fixed offsets, no randomness).
+The first three cuts were built **from scratch** by the generator (fresh Iraq mission, CJTF
+countries, `Airport.set_red()/set_blue()` ownership, and the typed marker groups the
+`MizCampaignLoader` reads — FOB `SKP-11`, garrison `M-1 Abrams`, AAA `ZSU-23`, SHORAD
+`Strela-1`, MEDIUM `S-75`→SA-6, cache `Warehouse._Ammunition_depot`, front `M-113`, factory
+`Workshop_A`). Once the user **hand-positioned everything in the ME** to fit the terrain, that
+became the committed base **`iraq_inherent_resolve_base.miz`** — the source of truth for the 6
+airfields' ownership, the 5 authored FOBs, and every unit's map-fitted placement. **Edit the
+base in the ME, not the generator.**
 
-**Headless verification** (the pipeline was proven end-to-end before landing): the generated
-miz loads through the real `TheaterLoader("iraq") → MizCampaignLoader.populate_theater()` to
-**18 control points** (13 airfields incl. red Mosul + 5 town FOBs), with caches bound to the
-right CP (Mosul 3, each town 2), the garrison + AAA + SHORAD (+ SA-6 medium at Mosul) as
-preset locations, and the Q-West ↔ Hammam al-Alil front + the full red ring/ratline as convoy
-routes. `Campaign.from_file` + `parse_will_profile` + `parse_phases` all parse the authored
-blocks. CI-locked in `tests/fourteenth/test_inherent_resolve.py`.
+`tools/build_iraq_inherent_resolve_miz.py` now **decorates** the base (exactly like ER decorates
+Shattered Dagger): it loads the base and adds only the **`NEW_FOBS`** in-between strongholds
+(each an `SKP-11` FOB + 2 garrisons + AAA + SHORAD + a `Tech_combine` strongpoint + one cache)
+→ `iraq_inherent_resolve.miz`. When the user hand-tunes a machine-added FOB in the ME, it
+graduates into the base (re-export) and comes off `NEW_FOBS`.
+
+**Headless verification:** the decorated miz loads through the real `TheaterLoader("iraq") →
+MizCampaignLoader.populate_theater()` to **16 control points** (RED 13 = 3 airfields + 10 FOBs;
+BLUE 3), every stronghold furnished (garrison + AAA + SHORAD + strongpoint + caches; SA-6 at
+Mosul & Kirkuk), and the Balad↔Tikrit front + the 14-route red supply graph (corridor + ring +
+belt + bridges) all forming as convoy routes. `Campaign.from_file` + `parse_will_profile` +
+`parse_phases` parse the authored blocks. CI-locked in `tests/fourteenth/test_inherent_resolve.py`.
 
 ---
 

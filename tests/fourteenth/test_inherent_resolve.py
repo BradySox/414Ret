@@ -38,8 +38,9 @@ def test_inherent_resolve_campaign_definition() -> None:
     # Unlike Enduring Resolve, this is a land campaign -- no off-shore carrier.
     assert not data["settings"].get("long_range_carrier_ops", False)
 
-    # The miz the generator builds ships next to the yaml.
+    # The generator decorates a hand-authored base miz; both ship next to the yaml.
     assert (CAMPAIGN.parent / data["miz"]).exists()
+    assert (CAMPAIGN.parent / "iraq_inherent_resolve_base.miz").exists()
     # Small real income (the C1 regen engine is the real supply; procurement is a trickle).
     assert data["recommended_enemy_money"] > 0
     # The authored coalition + insurgent factions ship with the campaign.
@@ -49,10 +50,11 @@ def test_inherent_resolve_campaign_definition() -> None:
     assert (factions / "cjtf_oir_2016.json").exists()
     assert (factions / "isis_2016.json").exists()
 
-    # The red<->red supply graph (kept lean): the Highway-1 corridor Tikrit -> Shirqat ->
-    # Hammam al-Alil -> Mosul, the Nineveh ring (Bartella + the Tal Afar ratline), and the
-    # NE belt (Mosul -> Erbil -> Kirkuk -> back to Tikrit).
-    assert len(data["supply_routes"]) == 8
+    # The red<->red supply graph, routed through the in-between towns: the Highway-1 corridor
+    # (Tikrit -> Bayji -> Shirqat -> Qayyarah -> Hammam al-Alil -> Mosul), the Nineveh ring
+    # (Bartella + the Tal Afar ratline), the NE belt (Mosul -> Gwer -> Erbil -> Kirkuk), and
+    # the bridges (Makhmur, Hawija) tying the eastern belt into the corridor.
+    assert len(data["supply_routes"]) == 14
     for route in data["supply_routes"]:
         assert len(route["waypoints"]) >= 2
 

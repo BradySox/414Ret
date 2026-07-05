@@ -112,6 +112,7 @@ def test_sead_area_view_lists_only_emitters_and_dedupes() -> None:
     # page no longer reveals the whole site composition + exact counts.
     flight = _flight(FlightType.SEAD, TargetIntelPrecision.APPROXIMATE)
     flight.friendly = object()
+    flight.callsign = "Pontiac 1"
     flight.custom_name = None
     flight.waypoints = []
     target = MagicMock(spec=SamGroundObject)
@@ -129,7 +130,7 @@ def test_sead_area_view_lists_only_emitters_and_dedupes() -> None:
     assert page._use_target_area_cues is True
 
     writer = KneeboardPageWriter()
-    page.render_into(writer, draw_title=False)
+    page.render_into(writer)
     text = writer.get_text_string()
 
     assert "Straight Flush" in text  # emitter shown

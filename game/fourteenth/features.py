@@ -124,7 +124,7 @@ FEATURES: tuple[Feature, ...] = (
         "compact_kneeboard",
         "Compact 3-4 page kneeboard deck",
         25,
-        settings_fields=("compact_kneeboard",),
+        retired=True,
     ),
     Feature("off_mission_combat", "Off-mission combat fidelity + PLAYER_AT_IP fix", 26),
     Feature("shared_airframe_kneeboard", "Shared-airframe kneeboard index", 27),
@@ -140,7 +140,6 @@ FEATURES: tuple[Feature, ...] = (
         "brief_sheet_kneeboard",
         "One-page Brief Sheet + deck-wide colour scheme",
         31,
-        settings_fields=("compact_kneeboard",),
     ),
     Feature(
         "vietnam_arc_light",

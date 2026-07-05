@@ -3,11 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any, List, Optional
 
-from game.missiongenerator.kneeboard import (
-    FriendlyPackagesPage,
-    FuelLadderCard,
-    KneeboardPageWriter,
-)
+from game.missiongenerator.kneeboard import FuelLadderCard, KneeboardPageWriter
 
 
 def _units() -> Any:
@@ -87,27 +83,3 @@ def test_fuel_ladder_keeps_bingo_joker() -> None:
     txt = _render_fuel(_flight(_LADDER))
     assert "Bingo" in txt and "Joker" in txt
     assert "5100" in txt and "6100" in txt
-
-
-def _packages(rows: int) -> FriendlyPackagesPage:
-    flight = SimpleNamespace(callsign="Sting 2", custom_name=None)
-    data = [["SEAD", f"Target {i}", "20:30"] for i in range(rows)]
-    return FriendlyPackagesPage(flight, data, dark_kneeboard=False)  # type: ignore[arg-type]
-
-
-def test_packages_section_draws_when_there_is_room() -> None:
-    writer = KneeboardPageWriter()
-    _packages(4).render_section(writer)
-    txt = writer.get_text_string()
-    assert "Friendly Packages" in txt
-    assert "Target 0" in txt
-
-
-def test_packages_section_draws_nothing_when_no_room_for_a_row() -> None:
-    # Cursor parked near the page bottom: the self-limiting table would fit zero rows,
-    # so the section must draw nothing rather than strand a lonely heading (the bug the
-    # unpacked .miz showed on the Comms & Coordination page).
-    writer = KneeboardPageWriter()
-    writer.y = writer.image_size[1] - writer.page_margin - 5
-    _packages(4).render_section(writer)
-    assert "Friendly Packages" not in writer.get_text_string()

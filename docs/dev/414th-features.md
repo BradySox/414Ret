@@ -496,7 +496,7 @@ output, so every narrow table is unchanged). Alongside it: the `SupportPage` pac
 header line splits FREQ and TOT onto separate lines when the one-line form would overrun, and the
 `ThreatIntelBriefPage` bullseye **cue lists** (drawn with the non-wrapping `text_runs`) truncate to
 the pixels left on the line via `_fit_cues` (unidentified cards keep the count-withholding "…";
-identified keep "+N"). Tests: `tests/missiongenerator/test_compact_kneeboard.py` (table wraps/​leaves-fitting-untouched),
+identified keep "+N"). Tests: `tests/missiongenerator/test_kneeboard_bluf.py` (table wraps/​leaves-fitting-untouched),
 `tests/missiongenerator/test_threat_intel_kneeboard.py` (cue width truncation).
 
 **Kneeboard de-duplication pass.** With every optional page enabled the deck printed the same
@@ -622,63 +622,27 @@ the flight planner's tanker tasking (`formationattack`) and the in-flight fuel s
 using measured data only and gain no new blast radius. A real `fuel:` block always wins. Covered by
 `tests/dcs/test_estimated_fuel_consumption.py`.
 
-**Compact 3-4 page kneeboard deck + BLUF.** With every optional page enabled the deck ran to
-~10 pages, and players usually only read the first. `compact_kneeboard` (default **ON**,
-`game/settings/settings.py`) consolidates the deck into **at most four pages**, folding the optional
-*sections* into fixed pages instead of appending their own:
+**Compact 3-4 page kneeboard deck — RETIRED (2026-07-05, the back-to-basics rework).** The compact
+folding machinery (`compact_kneeboard`, `_compact_kneeboard_pages`, the `CombatIntelPage`/
+`CommsCoordPage`/`FlexReferencePage` composites, `_draw_section_if_fits`, the adaptive flex page and
+the fuel-ladder backfill) was the fork's biggest source of `kneeboard.py` churn against upstream and
+the most fragile part of the deck. It is **deleted**; the pieces the squadron actually liked survive
+on the stock full deck, which is now the only assembly path:
 
-- **P1 Brief Sheet** (`BriefSheetPage`, replacing the old `BriefingPage` "Game Plan" — see §31) is the
-  consolidated, scannable one-pager modelled on the squadron's printed Appendix A brief sheet: header,
-  mission, the **full labelled route — every steerpoint with its number and planned time**
-  (`T/O 0 12:14 → HOLD 1 12:32 → TKR 2 12:38 → JOIN 3 12:49 → IP 4 → TGT 5-8 13:01 → …`; a run of
-  consecutive strike points collapses to one `TGT` range, bullseye/divert are skipped as they have their
-  own fields, and the block wraps at entry boundaries — large packages routinely take 2-3 lines),
-  admin (bingo/joker/divert), threats (air + SAM), game plan, comms, code words, bullseye, fields
-  (RWY/ATC/TCN), WX (departure-field **QNH/QFE** — the same temperature-corrected altimeter the ATIS
-  reports, via the shared `_airfield_elevation_m` lookup — + surface wind), loadout, laser codes and
-  Combat SAR — all **auto-filled** by
-  `KneeboardGenerator._build_brief_sheet_data` and **colour-coded** (blue nav/comms, amber threats/fuel,
-  green success, red abort). The detailed steerpoint table + weather *page* drop off the kneeboard (the route
-  block is compact mode's per-waypoint nav+timing surface; times are HH:MM — the header TOT and the
-  jet's locked ETAs carry the seconds). The `BriefingPage` "Game Plan" + BLUF survive for the
-  **full (non-compact) deck** only.
-- **P2 Threats & Targets** (`CombatIntelPage`) draws the flight's target ALIC/coords (the per-task page's
-  new `render_into`) over the enemy-AD **threat cards** (`ThreatIntelBriefPage.render_cards`, which packs
-  as many as fit, now **colour-coded** to match the Brief Sheet — amber MEZ/Detect, blue HARM code +
-  bullseye cues, emphasised system name). Skipped entirely when a flight has neither (e.g. a BARCAP).
-  When the recon photo takes the flex slot (below), the Fuel Ladder that would otherwise be dropped from
-  the deck is handed to this page (`CombatIntelPage.fuel_card`) and drawn — via `_draw_section_if_fits`, so
-  only when it fits — into the space below the threat cards. That space is roomy on any turn where the
-  enemy AD is still **unidentified** (a fogged card collapses to a single "fly TARPS to ID" line, per §3),
-  which is exactly when the page would otherwise be half-blank; a page full of identified-threat cards just
-  omits the ladder. `CombatIntelPage.render_body` is the composite body (extracted from `write` so the fill
-  logic is unit-testable — `tests/missiongenerator/test_compact_kneeboard.py`).
-- **P3 Comms & Coordination** (`CommsCoordPage`) composes the support sections (comm ladder + AWACS/
-  tanker/JTAC, via `SupportPage._render(draw_title=False, fill=False, include_airfield_dir=False)`) with
-  the **colour-coded code words** (`BrevityCard.render_code_words` — push words blue, SUCCESS green, ABORT
-  red, STOP JAM amber, matching the Brief Sheet) + brevity crib. Lower-priority sections draw only if they
-  fit (`_draw_section_if_fits`), never spilling to a 5th. (The friendly-package list used to ride here /
-  on the flex page and got squeezed out when the page was full; it now lives on the **cover page** — see
-  below — so P3 has room for the brevity crib.)
-- **P4 Flex** is adaptive: the **recon target photo** (`_recon_detail_page`, the `DetailReconPage`/
-  `AirbaseReconPage`/`FrontLineDetailPage` only — not the Departure/Overview pages) when
-  `generate_target_recon_kneeboard` is on, otherwise a text `FlexReferencePage` with just the **Fuel
-  Ladder** (`FuelLadderCard.render_into`).
+- Every deck opens on the **cover page** (§30 — op/turn/date, SITREP, shared-airframe index, phase/ROE
+  band).
+- Every flight's block leads with the **Brief Sheet** (§31 — the colour-coded one-pager), followed by
+  the stock `BriefingPage` "Game Plan" (which keeps the **BLUF lines** — task/TOT, push words when code
+  words are on, top threat) and the rest of the standard pages.
+- The **Threat Intel Brief** page (`generate_threat_intel_kneeboard`) flipped its default to **ON** —
+  the colour-coded per-system threat cards were a kept piece and no longer have a composite page to
+  ride on.
+- The other optional pages (target recon imagery, friendly packages + map, code words/brevity, fuel
+  ladder) are unchanged and stay default OFF.
 
-The **friendly-package coordination list** rides on the always-present **cover page** in compact mode
-(`_build_cover_page`): with recon imagery owning the flex slot it had nowhere else to go, and the cover's
-lower half is otherwise empty. It's coalition-wide, so it's built **once** for the whole shared-airframe
-deck from a representative flight. `FriendlyPackagesPage.render_section` self-guards — its table is
-**self-limiting** (drops overflow rather than paginating), so a host fit-check can't tell when zero rows
-survive; the section probes its own post-heading capacity and draws **nothing** (no stranded "Friendly
-Packages" heading) when not even one row fits.
-
-The theater/package-targets **map** image and the **Notes** page are not generated in compact mode.
-Turning `compact_kneeboard` **off** restores the full multi-page deck (every optional page standalone,
-recon imagery included) byte-for-byte — the old page classes are unchanged; the compact deck is a
-separate assembly path (`KneeboardGenerator._compact_kneeboard_pages`). Covered by
-`tests/missiongenerator/test_compact_kneeboard.py` (BLUF composition + the page-2 composite render);
-in-game pass ☑ VERIFIED 2026-06-26 (H9).
+BLUF composition is covered by `tests/missiongenerator/test_kneeboard_bluf.py` (renamed from
+`test_compact_kneeboard.py`, which also lost the composite-page tests). The old H9 checklist row is
+superseded by this retirement.
 
 ---
 
@@ -2380,13 +2344,10 @@ prepended** in `generate()` (replacing the conditional `KneeboardIndexPage`). It
 - **Flight index (when 2+ client flights share the airframe):** the §27 callsign → start-page table,
   folded in as a section. The cover is **page 1**, so the first flight's block starts on **page 2** (the
   start-page cursor is unchanged from §27; a lone flight simply gets a cover with no index section).
-- **Friendly-package list (compact mode):** the coalition-wide package coordination list
-  (`build_all_packages_rows` → `FriendlyPackagesPage.render_section`), built **once** for the shared deck
-  from a representative flight. In the compact deck the recon photo owns the flex page, leaving the package
-  list nowhere to go; the cover's otherwise-empty lower half is its home. Gated by
-  `generate_all_packages_kneeboard` **and** `compact_kneeboard` (the full multi-page deck keeps its own
-  standalone `FriendlyPackagesPage`, so the cover would duplicate it). `render_section` self-guards against
-  a stranded heading when the cover is full.
+
+(The cover briefly also hosted the friendly-package list in the retired compact mode; with the
+2026-07-05 back-to-basics rework the list lives only on its standalone `FriendlyPackagesPage`, gated by
+`generate_all_packages_kneeboard`.)
 
 ### Why consolidate
 
@@ -2417,17 +2378,18 @@ happened / who's flying" sheet up front. Page numbering generalises cleanly (cov
 
 ## §31 — One-page Brief Sheet + deck-wide colour scheme
 
-The compact deck's lead page is the **Brief Sheet** (`BriefSheetPage`), a single scannable page modelled
-on the squadron's printed **Appendix A** one-pager (the Red Tide briefing handbook, `docs/wiki/`). It
-replaces the dense `BriefingPage` "Game Plan" (BLUF band over a full steerpoint table + weather) — the
-page you open to first is now a *summary*, with the Threats/Comms detail pages behind it.
+Every flight's block leads with the **Brief Sheet** (`BriefSheetPage`), a single scannable page modelled
+on the squadron's printed **Appendix A** one-pager (the Red Tide briefing handbook, `docs/wiki/`). Since
+the 2026-07-05 back-to-basics rework it fronts the **full deck**: the page you open to first is a
+*summary*, with the stock `BriefingPage` "Game Plan" (steerpoint table + BLUF) and the detail pages
+behind it.
 
 **Auto-fill (`KneeboardGenerator._build_brief_sheet_data`).** The page is a pure renderer of a
 `BriefSheetData`; the generator pulls each field from data it already holds (the BLUF pattern):
 
 - **Route** — `_brief_route` walks `flight.waypoints`, mapping types to `HOLD/JOIN/IP/TGT/EGRESS` and
-  carrying each point's **steerpoint number** (the waypoint index, matching the old flight-plan `#`
-  column) so the pilot can dial it up; the detailed steerpoint table is gone in compact mode.
+  carrying each point's **steerpoint number** (the waypoint index, matching the flight-plan `#`
+  column) so the pilot can dial it up; the full steerpoint table follows on the `BriefingPage`.
 - **Loadout** — `_brief_loadout` summarises the lead jet's generated pylons (`units[0].pylons` → `Weapon`)
   to the *ordnance*: counts by type, strips rack multipliers (`2xGBU-12` → `GBU-12`), collapses the TGP
   and HTS pods to `TGP`/`HTS`, and drops ECM / clean / unresolved stations.
@@ -2451,8 +2413,10 @@ primitive that draws a line of coloured segments: **blue** = nav/comms (route, f
 SAR callsigns, push), **amber** = caution (threats, bingo/joker), **green** = SUCCESS, **red** = ABORT +
 the "if down" line. The same scheme is applied to **P2** (threat cards — amber MEZ/Detect, blue HARM
 code + cues, emphasised system name) and **P3** (code words — push blue, SUCCESS green, ABORT red, STOP
-JAM amber), so the whole deck reads as one product. The multi-column comm-ladder/AWACS/tanker tables stay
-as plain `tabulate` reference tables (colouring cells is disproportionate).
+JAM amber), so the whole deck reads as one product — the threat cards now live on the standalone
+Threat Intel Brief page (default ON) and the code words on the optional Comms & Brevity card. The
+multi-column comm-ladder/AWACS/tanker tables stay as plain `tabulate` reference tables (colouring
+cells is disproportionate).
 
 ### Files & tests
 
@@ -2463,8 +2427,9 @@ as plain `tabulate` reference tables (colouring cells is disproportionate).
 
 ### Gotchas / deferred
 
-- **Replaces the compact `BriefingPage`/BLUF.** The full (non-compact) deck still uses `BriefingPage` +
-  `_bluf_lines`; only the compact P1 changed.
+- **Complements, no longer replaces, the `BriefingPage`.** Since the compact deck's retirement the
+  Brief Sheet is an *additional* lead page; the stock `BriefingPage` + `_bluf_lines` follow it in
+  every deck.
 - **Weather (`WX`) is left as a blank** for now — populating it from the `Weather` object is deferred; the
   blank lets a pilot write it. **Validated against a real `.miz`** (loadout cleanup + laser codes were
   caught that way); the residual is an **in-game pass** — generate a mission and eyeball the colours +

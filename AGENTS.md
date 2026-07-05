@@ -689,28 +689,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     defaulted-JHMCS case is caught. (`game/dcs/aircraftproperties.py`,
     `game/missiongenerator/aircraft/flightgroupconfigurator.py`,
     `qt_ui/windows/mission/flight/payload/propertycombobox.py`; features doc §24, checklist I3.)
-25. **Compact 3-4 page kneeboard deck** — `compact_kneeboard` (default ON) folds the optional kneeboard
-    content into at most four pages instead of the ~10-page sprawl: **P1 Brief Sheet** (the consolidated
-    colour-coded one-pager — §31 — replacing the old Game Plan/BLUF), **P2 Threats & Targets** (target ALIC
-    over the enemy-AD threat cards, colour-coded to match), **P3 Comms & Coordination** (radios +
-    AWACS/tanker/JTAC + colour-coded code words + brevity), and an
-    adaptive **P4 Flex** (recon target photo when target-recon imagery is on, else just the Fuel Ladder).
-    When the recon photo takes the flex slot the **Fuel Ladder** would otherwise be dropped from the deck
-    entirely; it is instead handed to **P2 Threats & Targets** and drawn (via `_draw_section_if_fits`) into
-    the space left below the threat cards — which is roomy on any turn where the enemy AD is still
-    unidentified (each fogged card collapses to a one-line "fly TARPS to ID"), so the ladder backfills the
-    otherwise-blank lower half; a fully-populated identified-threat page just omits it (`CombatIntelPage.fuel_card`).
-    The **friendly-package list** rides on the always-present **cover page** (§30) in compact mode (recon
-    imagery owns the flex slot, so it had nowhere else; built once per shared-airframe deck). The **Fuel
-    Ladder** is one glanceable `Fuel` column (planned remaining) per steerpoint with the RTB surplus —
-    constant across the route by construction — surfaced once, replacing the redundant Plan/Min/Margin trio.
-    The composite pages reuse the existing page classes via new `render_into`/`render_*` section methods +
-    `_draw_section_if_fits` (lower-priority sections drop rather than spill past 4; `render_section`
-    self-guards so a dropped package list never strands a lonely heading); the BLUF strings come from
-    `_bluf_lines` (top-threat is always-on). The map image + Notes page aren't generated in this mode;
-    turning it **off** restores the full multi-page deck byte-for-byte (separate assembly path
-    `_compact_kneeboard_pages`). (`game/missiongenerator/kneeboard.py`, `game/settings/settings.py`;
-    features doc §4, checklist H9.)
+25. **Compact 3-4 page kneeboard deck** — RETIRED (2026-07-05, the kneeboard back-to-basics rework):
+    the compact folding machinery (`compact_kneeboard`, `_compact_kneeboard_pages`, the
+    `CombatIntelPage`/`CommsCoordPage`/`FlexReferencePage` composites, `_draw_section_if_fits`, the
+    adaptive flex page) was the fork's biggest `kneeboard.py` churn vs upstream and is deleted. The
+    squadron-picked keepers survive on the stock **full deck**, now the only assembly path: the cover
+    page (§30) + the Brief Sheet (§31) leading each flight's block + the colour palette + the threat
+    cards (`generate_threat_intel_kneeboard` default flipped ON). One glanceable-`Fuel`-column ladder
+    survives in the optional Fuel Ladder page. Do not restore the folding machinery. (features doc §4,
+    checklist H9 retired → H12.)
 26. **Off-mission combat fidelity + PLAYER_AT_IP fix** — the sim auto-resolves engagements the player
     doesn't fly. Abstract combat was numbers-only coin flips (more flights win; survivors die 50/50; SAMs a
     flat 50%), so obsolete jets beat modern ones and SEAD meant nothing. `game/sim/combat/capability.py`
@@ -755,18 +742,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`; features doc §29,
     checklist K2.)
 30. **Dedicated kneeboard cover page** — a single front sheet that **always** leads a flight's deck,
-    consolidating four things: the **operation/turn/date header** (new — every deck opens telling you
+    consolidating three things: the **operation/turn/date header** (new — every deck opens telling you
     what op + turn), the previous turn's **SITREP** (§29, moved off the briefing-page band so it stops
-    crowding the flight plan), the shared-airframe **flight index** (§27, was a separate conditional
-    page), and — in compact mode — the coalition-wide **friendly-package list** (moved here because the
-    recon photo owns the flex page, and the cover's lower half was empty; §25). `CoverPage`
+    crowding the flight plan), and the shared-airframe **flight index** (§27, was a separate conditional
+    page). `CoverPage`
     (`_build_cover_page`) is always prepended in `KneeboardGenerator.generate`, replacing the conditional
     `KneeboardIndexPage` and the `BriefingPage` SITREP band. The cover is page 1 so decks start on page 2
     (the §27 start-page math is preserved); the index section appears only for 2+ shared-airframe flights,
-    the SITREP section only when there's something to report, and the packages section only in compact mode
-    (the full deck keeps its standalone `FriendlyPackagesPage`).
+    the SITREP section only when there's something to report. (The retired compact mode briefly parked
+    the friendly-package list here; the list lives only on its standalone `FriendlyPackagesPage` now.)
     (`game/missiongenerator/kneeboard.py`, `game/sitrep.py`; features doc §30, checklist K2/H10.)
-31. **One-page Brief Sheet + deck-wide colour scheme** — the compact deck's lead page is now a single
+31. **One-page Brief Sheet + deck-wide colour scheme** — every flight's block leads with a single
     scannable **Brief Sheet** (`BriefSheetPage`) modelled on the squadron's printed Appendix A one-pager
     (Red Tide handbook): header, mission, the **full labelled route — every steerpoint with number +
     planned time** (`HOLD 1 12:32 → TKR 2 12:38 → JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10`; consecutive
@@ -774,14 +760,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     bullseye, fields (RWY/ATC/TCN), WX (departure-field QNH/QFE + surface wind), loadout, laser,
     Combat SAR — **auto-filled** by
     `_build_brief_sheet_data` (route from waypoints, loadout from the jet's pylons cleaned to ordnance, air
-    threats from the enemy faction's fighters, the rest re-surfaced). It replaces the dense Game Plan/BLUF
-    (which survives for the full non-compact deck). Empty fields render a `______` **fill-in blank**
+    threats from the enemy faction's fighters, the rest re-surfaced). Since the back-to-basics rework it
+    *fronts* the stock deck — the Game Plan/BLUF + steerpoint table follow it. Empty fields render a
+    `______` **fill-in blank**
     (`_blank_line`) like the printed template — the layout never collapses — plus a `NOTES` blank. A new
     **theme-aware four-colour semantic palette** on `KneeboardPageWriter` (+ a `text_runs` inline-colour
-    primitive) — blue nav/comms, amber threats/fuel, green success, red abort — is applied across **P1**,
-    the **P2 threat cards** (amber MEZ/Detect, blue HARM/cues) and the **P3 code words** (push blue, SUCCESS
+    primitive) — blue nav/comms, amber threats/fuel, green success, red abort — is applied across the
+    Brief Sheet, the **threat cards** (amber MEZ/Detect, blue HARM/cues; their Threat Intel Brief page is
+    default ON) and the **code words card** (push blue, SUCCESS
     green, ABORT red) so the whole deck reads as one product. Loadout/laser validated against a real `.miz`.
-    (`game/missiongenerator/kneeboard.py`; features doc §31, checklist needs an in-game pass.)
+    (`game/missiongenerator/kneeboard.py`; features doc §31, checklist H12.)
 32. **Arc Light heavy-bomber Strike carpet** — the first **Vietnam Ops suite** feature (design note
     `414th-vietnam-ops-notes.md`; settings page §28 "Vietnam Ops"). Reframes Arc Light as an *effect of the
     Strike task*, **not** a new `FlightType`: when a heavy bomber (B-52H/B-1B/Tu-95MS/Tu-142/Tu-160/Tu-22M3)

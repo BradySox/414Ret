@@ -38,46 +38,45 @@ Old City), and every COIN mechanic the fork shipped has a real-world referent he
 Coordinates: **+x = north, +y = east, Baghdad at origin.** Mosul (id 3) is the northwest
 apex; Q-West (6) is ~60 km due south; Erbil (4) ~72 km east.
 
-> **Scope revised 2026-07-04 (post-merge playtest):** the first cut gave red only Mosul + a
-> tight FOB cluster — "a tiny red area." Per the user's call, the caliphate now holds the
-> **whole northern belt** (the 2014-era extent), and blue reconquers it from the south. Every
-> red stronghold was also enriched from one lone marker to a real garrison. The single-front /
-> Mosul-only laydown below is superseded by the belt version.
+> **Scope revised twice (post-merge playtest, 2026-07-04 → 07-05):** the first cut gave red
+> only Mosul + a tight FOB cluster ("a tiny red area"). It then briefly swung to the **whole
+> northern belt** (7 red + 6 blue airfields), which read as **too many airfields** ("this is a
+> ton"). The **shipped laydown** is the middle ground below: **6 airfields total** (3 red, 3
+> blue — Q-West dropped), with red *presence* carried by **FOBs** down Highway 1, not by owning
+> every airstrip. Every red stronghold stays enriched (a real garrison, not a lone marker).
 
-- 🔴 **RED airfields (7):** **Mosul (3)** the anchor, **Erbil (4)**, **Kirkuk (10) / K1 (11)**,
-  **Bashur (5)**, **Sulaimaniyah (7)**, **Al-Sahra (12, Tikrit)** — the northern belt.
-- 🔴 **RED town strongholds (5 FOBs; XY from real lat/lon):** Hammam al-Alil `(322805, -81581)`,
-  Bartella `(343841, -73022)`, Bashiqa `(355988, -73419)`, Hamdaniya `(334903, -73325)`,
-  **Tal Afar** `(348018, -156505)` — the western gateway toward Syria / the far end of the ratline.
-- 🔵 **BLUE forward:** **Qayyarah West (6)** — the **sole** forward airhead (player fields + the
-  air-assault helos), now the belt is red.
-- 🔵 **BLUE rear:** **Balad (8, the heavies + the Tikrit-front base)** · Al-Taji (9) ·
-  **Baghdad (2, support/CSAR)** · Al-Salam (14) · Al-Taquddum (13).
-- ⚪ **Excluded** (left unset → not drawn as CPs): Al-Asad (1), Al-Kut (19), the H-2 / H-3
-  desert fields (15–18).
+- 🔴 **RED airfields (3):** **Mosul (3)** the anchor + SA-6, **Erbil (4)** NE, **Kirkuk (10)**
+  central + SA-6.
+- 🔴 **RED FOB strongholds (5; XY from real lat/lon):** the Highway-1 steps **Tikrit**
+  `(150201, -49014)` and **Shirqat** `(264800, -85078)`, plus the Nineveh ring **Hammam al-Alil**
+  `(322805, -81581)`, **Bartella** `(343841, -73022)`, and **Tal Afar** `(348018, -156505)`
+  (the Syria ratline gateway).
+- 🔵 **BLUE airfields (3):** **Balad (8)** — the forward field + the player's fast air/helos —
+  **Al-Taquddum (13)** — the strike / coalition-CAS field — **Baghdad (2)** — support
+  (tankers / AWACS / CSAR).
+- ⚪ **Dropped / unset** (not drawn as CPs): **Qayyarah West (6)**, Al-Taji (9), Al-Salam (14),
+  Bashur (5), Sulaimaniyah (7), K1 (11), Al-Sahra (12), Al-Asad (1), Al-Kut (19), H-2/H-3 (15–18).
 
-So RED holds **12 CPs** (7 airfields + 5 FOBs), BLUE **6**. **Al-Salam** sits ~25 km from
-Baghdad (deep rear), not a Mosul strip.
+So RED holds **8 CPs** (3 airfields + 5 FOBs), BLUE **3** — **6 airfields total** (down from 13).
+Dropping Q-West means blue's forward-most field is **Balad** (~270 km from Mosul, ~110 km from
+the Tikrit front): a Highway-1 grind, with captured red airfields (Kirkuk, then Mosul) becoming
+the forward bases for the final push.
 
-### Fronts & connectivity — **two fronts**
-- **Mosul axis:** Qayyarah West (blue) ↔ Hammam al-Alil (red) — the historical Federal Police
-  motorway thrust (`FRONT Qayyarah-Mosul`).
-- **Tikrit axis:** Balad (blue) ↔ Al-Sahra (red) — Highway 1 north out of Baghdad
-  (`FRONT Balad-Tikrit`).
-  Both are M-113 front-line groups, each starting partway up its axis via `control_point_strengths`.
-- **Red-red belt + ring/ratline** (yaml `supply_routes`, 11 routes): Mosul → each of the five
-  towns (incl. the westward Mosul → Tal Afar ratline), plus the belt chaining
-  Mosul/Erbil/Kirkuk/K1/Bashur/Sulaimaniyah/Al-Sahra so the deep-belt fields are
-  reachable/capturable behind the two fronts. The deep-eastern fields (Sulaimaniyah, Bashur)
-  have no blue neighbour and fall to air assault as the noose tightens.
+### Front & connectivity — **one front, up Highway 1**
+- **The front:** Balad (blue) ↔ Tikrit (red FOB) — the historical Baghdad → Mosul advance
+  (`FRONT Balad-Tikrit`), starting partway up the axis via `control_point_strengths`.
+- **Red-red supply graph** (yaml `supply_routes`, 8 routes): the corridor Tikrit → Shirqat →
+  Hammam al-Alil → Mosul the ISF grinds up; the Nineveh ring off Mosul (Bartella + the Tal Afar
+  ratline); and the NE belt Mosul → Erbil → Kirkuk → back to Tikrit, tying the two red airfields
+  to the corridor. Erbil and Kirkuk have no blue neighbour and fall to air assault as the line
+  comes up.
 
 ### Ground enrichment (per red stronghold)
-Every one of the 12 red strongholds is furnished by the generator with **two garrison groups**
+Every one of the 8 red strongholds is furnished by the generator with **two garrison groups**
 (armor markers → filled from the ISIS frontline roster: technicals, gun trucks, the VBIED),
 an **AAA** site (ZU-23), a **SHORAD** site (SA-8/9/13), and a **strongpoint** (`Tech_combine`
 strike target) — so each objective reads as an occupied position, not a lone icon — plus its
-ammo caches. **Mosul and Kirkuk** additionally anchor the **SA-6** (medium/SEAD) radar sites,
-one per front.
+ammo caches. **Mosul and Kirkuk** additionally anchor the **SA-6** (medium/SEAD) radar sites.
 
 ---
 

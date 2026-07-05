@@ -35,68 +35,50 @@ from dcs.vehicles import AirDefence, Armor, Unarmed
 REPO = Path(__file__).resolve().parent.parent
 DST = REPO / "resources/campaigns/iraq_inherent_resolve.miz"
 
-# --- Airfield ownership (terrain airport ids, from dcs.terrain.iraq.airports). The
-#     caliphate holds the northern belt; blue holds the south. The far-SW desert fields
-#     (H-2/H-3, id 15-18) and the peripheral Al-Asad/Al-Kut are left unset -> not drawn
-#     as control points.
+# --- Airfield ownership (terrain airport ids). Kept deliberately SPARSE -- only 6
+#     airfields are drawn as control points (every other terrain airport is left unset).
+#     The caliphate holds three anchors down the belt; blue holds three southern fields
+#     and grinds north up Highway 1. Red *presence* between the anchors is carried by
+#     FOBs, not by owning every airstrip.
 RED_AIRFIELD_IDS = [
-    3,  # Mosul International -- the anchor
-    4,  # Erbil International
-    5,  # Bashur
-    7,  # Sulaimaniyah
-    10,  # Kirkuk International
-    11,  # K1 Base
-    12,  # Al-Sahra (Tikrit)
+    3,  # Mosul International -- the anchor + SA-6
+    4,  # Erbil International -- the NE anchor
+    10,  # Kirkuk International -- the central anchor + SA-6
 ]
 BLUE_AIRFIELD_IDS = [
-    6,  # Qayyarah West -- the forward airhead, player fields
-    8,  # Balad -- heavies + the Tikrit-axis front base
-    9,  # Al-Taji -- rear
-    2,  # Baghdad International -- support
-    14,  # Al-Salam -- support / CSAR
-    13,  # Al-Taquddum -- Anbar rear
+    8,  # Balad -- the forward field + the player's fast air
+    13,  # Al-Taquddum -- the strike / coalition-CAS field
+    2,  # Baghdad International -- support (tankers / AWACS / CSAR)
 ]
 
-# --- Red strongholds to FURNISH: (name, (x, y), is_fob, caches, has_sa6). Airfields are
-#     already red via ownership above; the FOB towns get an SKP-11 marker to become CPs.
-#     Airfield XY are the terrain airport positions; town XY are from real lat/lon.
+# --- Red strongholds to FURNISH: (name, (x, y), is_fob, caches, has_sa6). The 3 airfields
+#     are already red via ownership above; the FOB towns get an SKP-11 marker to become CPs.
+#     Airfield XY are terrain airport positions; town XY are from real lat/lon. FOBs (not
+#     more airfields) carry red presence: two Highway-1 steps (Tikrit, Shirqat) up from the
+#     Balad front, plus the tight Nineveh ring around Mosul.
 #   name              (x, y)                  is_fob caches  SA-6
 RED_STRONGHOLDS: list[tuple[str, tuple[float, float], bool, int, bool]] = [
     ("Mosul", (339469.0, -94071.0), False, 3, True),
     ("Erbil", (330838.0, -22360.0), False, 2, False),
     ("Kirkuk", (245434.0, 12825.0), False, 2, True),
-    ("K1", (250080.0, 7392.0), False, 1, False),
-    ("Bashur", (363380.0, 13140.0), False, 1, False),
-    ("Sulaimaniyah", (255226.0, 100814.0), False, 1, False),
-    ("Al-Sahra", (157133.0, -61805.0), False, 2, False),
+    ("Tikrit", (150201.0, -49014.0), True, 2, False),
+    ("Shirqat", (264800.0, -85078.0), True, 2, False),
     ("Hammam al-Alil", (322805.0, -81581.0), True, 2, False),
     ("Bartella", (343841.0, -73022.0), True, 2, False),
-    ("Bashiqa", (355988.0, -73419.0), True, 2, False),
-    ("Hamdaniya", (334903.0, -73325.0), True, 2, False),
     ("Tal Afar", (348018.0, -156505.0), True, 2, False),
 ]
 
-# --- The two fronts (blue M-113 front-line groups; first waypoint at the blue CP, last
-#     at the red CP -- only the endpoints bind the front, the middles shape the path).
+# --- The front (a blue M-113 front-line group; first waypoint at the blue CP, last at the
+#     red CP -- only the endpoints bind the front, the middles shape the path). One axis:
+#     Balad north up Highway 1 to the Tikrit FOB, the historical Baghdad -> Mosul advance.
 FRONTS: list[tuple[str, list[tuple[float, float]]]] = [
-    # The Mosul axis: Q-West -> Hammam al-Alil (Highway 1 up the Tigris).
-    (
-        "FRONT Qayyarah-Mosul",
-        [
-            (279544.0, -97450.0),
-            (295500.0, -92000.0),
-            (310000.0, -86000.0),
-            (322805.0, -81581.0),
-        ],
-    ),
-    # The Tikrit axis: Balad -> Al-Sahra (Highway 1 north out of Baghdad).
     (
         "FRONT Balad-Tikrit",
         [
             (75938.0, 13806.0),
-            (105000.0, -15000.0),
-            (135000.0, -45000.0),
-            (157133.0, -61805.0),
+            (100000.0, -12000.0),
+            (128000.0, -33000.0),
+            (150201.0, -49014.0),
         ],
     ),
 ]

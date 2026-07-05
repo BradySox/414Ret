@@ -49,20 +49,19 @@ def test_inherent_resolve_campaign_definition() -> None:
     assert (factions / "cjtf_oir_2016.json").exists()
     assert (factions / "isis_2016.json").exists()
 
-    # The ratline + the Nineveh ring + the northern belt: authored red<->red supply
-    # corridors (Mosul to each of the five towns incl. the Tal Afar / Syria ratline, plus
-    # the belt chaining Mosul/Erbil/Kirkuk/K1/Bashur/Sulaimaniyah/Al-Sahra).
-    assert len(data["supply_routes"]) == 11
+    # The red<->red supply graph (kept lean): the Highway-1 corridor Tikrit -> Shirqat ->
+    # Hammam al-Alil -> Mosul, the Nineveh ring (Bartella + the Tal Afar ratline), and the
+    # NE belt (Mosul -> Erbil -> Kirkuk -> back to Tikrit).
+    assert len(data["supply_routes"]) == 8
     for route in data["supply_routes"]:
         assert len(route["waypoints"]) >= 2
 
-    # Two fronts start partway up their axes: Q-West -> Hammam al-Alil (Mosul) and
-    # Balad -> Al-Sahra (Tikrit).
-    assert "Hammam al-Alil" in data["control_point_strengths"]
-    assert "Al-Sahra Airport" in data["control_point_strengths"]
+    # One front, up Highway 1: Balad -> Tikrit.
+    assert "Tikrit" in data["control_point_strengths"]
 
-    # The caliphate holds the northern belt, so blue bases only from the south: no
-    # squadron is fragged from Erbil (id 4), which is now red.
+    # Airfields are kept sparse and blue bases only from the south: no squadron is fragged
+    # from Qayyarah West (id 6, dropped) or the now-red Erbil (id 4).
+    assert 6 not in data["squadrons"]
     assert 4 not in data["squadrons"]
 
     profile = parse_will_profile(data["will"])

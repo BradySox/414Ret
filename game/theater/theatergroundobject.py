@@ -144,6 +144,11 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         # entire point is that the player must localize them; ordinary recon fog
         # keeps exact positions and hides only composition.
         self.concealed: bool = False
+        # Road-pinned concealment: when set (a polyline of (x, y) map coordinates —
+        # the roadside-IED layer stores its supply road here), the uncertainty
+        # centre slides FAR along this route instead of a small radial offset:
+        # the player knows what highway the device is on, not which stretch.
+        self.concealed_route: Optional[list[tuple[float, float]]] = None
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -166,6 +171,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         state.setdefault("sidc_entity_override", None)
         # Old saves predate COIN concealment — exact markers are correct.
         state.setdefault("concealed", False)
+        # Old saves predate road-pinned concealment — radial jitter is correct.
+        state.setdefault("concealed_route", None)
         self.__dict__.update(state)
         # Save migration: heal AAA sites that were generated with a stray search
         # radar (the old `fill: true` radar slot). Newly generated campaigns no

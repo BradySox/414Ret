@@ -348,6 +348,16 @@ inside) with the true coordinates **never sent to the client** while concealed. 
   sites, EWRs (they emit — passively geolocatable), buildings, ships, airfields, and
   user-placed (drop-spawn) TGOs.
 
+**Road-pinned variant (2026-07-05, user call):** a TGO carrying
+`TheaterGroundObject.concealed_route` (a polyline of `(x, y)` map coordinates — the roadside-IED
+layer stores its supply road at plant time) slides its suspected-activity centre **far ALONG that
+route** (5–25 km, deterministic, clamped/bounced at the road's ends — `_route_jitter` in
+`game/server/tgos/models.py`) instead of the radial offset: "we know what highway it's on, not
+which street." Deliberately, the truth may sit **outside** the drawn circle here — the road itself
+is the search domain (sweep the highway), and the radial invariant (truth always inside) applies
+only to non-route concealment. A degenerate route (< 2 points / zero length, or a pre-feature
+save) falls back to the radial jitter.
+
 The circle keeps the marker's click/right-click contract (plan TARPS/strike against the
 suspected area); discovery (attacked/scouted/TARPS — the same `discovered_by_player` gate),
 recon fog off, or the overview reveal snaps it to the exact symbol. Two consequences by

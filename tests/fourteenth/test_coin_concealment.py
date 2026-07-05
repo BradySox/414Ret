@@ -20,6 +20,8 @@ from game.server.tgos.models import (
     FIELD_FORCE_RADIUS_M,
     _CONCEALED_MAX_OFFSET,
     _CONCEALED_MIN_OFFSET,
+    _ROUTE_JITTER_MAX_M,
+    _ROUTE_JITTER_MIN_M,
     concealed_uncertainty,
 )
 
@@ -47,6 +49,7 @@ class _Tgo:
         self.category = category
         self.task = task
         self.user_placed = user_placed
+        self.concealed_route: Optional[list[tuple[float, float]]] = None
         self.position = _Point(100_000.0, -50_000.0)
         self.control_point = SimpleNamespace(
             coalition=SimpleNamespace(
@@ -107,6 +110,48 @@ def test_jitter_works_on_a_real_preset_location_position() -> None:
         _Point(100_000.0, -50_000.0),  # type: ignore[arg-type]
         Heading.from_degrees(90),
     )
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre, radius = result
+    offset = math.hypot(centre.x - tgo.position.x, centre.y - tgo.position.y)
+    assert _CONCEALED_MIN_OFFSET * radius <= offset <= _CONCEALED_MAX_OFFSET * radius
+
+
+def test_route_pinned_tgo_slides_far_along_the_road_only() -> None:
+    """A roadside IED carrying `concealed_route` jitters ALONG its road (the player
+    knows what highway it's on, not which stretch) — far, on the polyline, never a
+    radial offset into the fields."""
+    tgo = _Tgo(concealed=True, known=False)
+    tgo.concealed_route = [(0.0, 0.0), (200_000.0, 0.0)]  # a straight E-W highway
+    tgo.position = _Point(100_000.0, 250.0)  # the device, just off the centreline
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre, radius = result
+    assert radius == CONCEALED_RADIUS_M
+    # On the road, not beside it.
+    assert abs(centre.y) < 1.0
+    # FAR along it — well past the radial bound, but inside the slide range.
+    slide = abs(centre.x - 100_000.0)
+    assert _ROUTE_JITTER_MIN_M <= slide <= _ROUTE_JITTER_MAX_M
+    # Deterministic (a wandering circle would let the player triangulate).
+    again = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert again is not None
+    assert (again[0].x, again[0].y) == (centre.x, centre.y)
+
+
+def test_route_pinned_slide_stays_on_a_short_road() -> None:
+    tgo = _Tgo(concealed=True, known=False)
+    tgo.concealed_route = [(0.0, 0.0), (8_000.0, 0.0)]
+    tgo.position = _Point(4_000.0, 0.0)
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre = result[0]
+    assert 0.0 <= centre.x <= 8_000.0 and abs(centre.y) < 1.0
+
+
+def test_degenerate_route_falls_back_to_the_radial_jitter() -> None:
+    tgo = _Tgo(concealed=True, known=False)
+    tgo.concealed_route = [(100_000.0, -50_000.0)]  # one point — not a road
     result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
     assert result is not None
     centre, radius = result

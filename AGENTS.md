@@ -253,6 +253,11 @@ file. This guide is the map; those are the territory.
     client) + `uncertainty_radius_m` (4 km), and the web map draws a dashed red "suspected
     activity" circle with the marker's click/right-click contract (frag TARPS/CAS onto it);
     TARPS/attack discovery (or fog-off/reveal) snaps it to the exact symbol via `known_for`.
+    **Road-pinned IEDs (2026-07-05, user call — "we know what highway it's on but not which
+    street"):** an IED/VBIED's circle centre slides **far ALONG its supply road** (5–25 km on the
+    polyline via `TheaterGroundObject.concealed_route`, set at plant; deterministic, clamped to
+    the road) instead of the radial offset — the truth may sit OUTSIDE the circle, the highway is
+    the search domain; degenerate/pre-feature routes fall back radial.
     Tests `tests/fourteenth/test_coin_concealment.py`; in-app pass = the P3 checklist concealment
     bullet (covers P3–P6, needs the CI client rebuild).
     **COIN in-mission liveliness pass LANDED 2026-07-05** (the "systems feel static" thread,

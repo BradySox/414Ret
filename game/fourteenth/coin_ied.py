@@ -134,7 +134,7 @@ def _replenish_ieds(
         site = _pick_ied_site(game, used)
         if site is None:
             return
-        red_cp, point, road_key = site
+        red_cp, point, road_key, road = site
         from game.data.groups import GroupTask
 
         # Alternate static device and mobile VBIED (deterministic -- saves must be stable):
@@ -164,6 +164,12 @@ def _replenish_ieds(
         )
         if tgo is None:
             return
+        # Pin the concealment to the road: the map's "suspected activity" circle
+        # slides FAR along this polyline instead of a small radial offset (user
+        # call 2026-07-05 -- "we know what highway it's on but not which street").
+        # A short/absent authored path (< 2 points) falls back to the radial jitter.
+        if len(road) >= 2:
+            tgo.concealed_route = [(p.x, p.y) for p in road]
         used.add(road_key)
         state["ied_planted"] = planted + 1
         record: dict[str, Any] = {
@@ -203,13 +209,16 @@ def _nearest_blue_cp(game: "Game", point: Any) -> Optional["ControlPoint"]:
 
 def _pick_ied_site(
     game: "Game", used: set[tuple[Any, Any]]
-) -> Optional[tuple["ControlPoint", Any, tuple[Any, Any]]]:
-    """A (red CP, road point, road key) to mine: the red-to-red supply road nearest the
-    fighting whose road isn't already mined. Returns None if none is available.
+) -> Optional[tuple["ControlPoint", Any, tuple[Any, Any], list[Any]]]:
+    """A (red CP, road point, road key, road waypoints) to mine: the red-to-red supply
+    road nearest the fighting whose road isn't already mined. Returns None if none is
+    available.
 
     Mirrors the §35 trail picker's "enemy road nearest the front" selection on the same
     ``convoy_routes`` graph; the IED attaches to the red endpoint nearer the front (so it
     renders RED -- a TGO's allegiance is its parent CP's) and sits on a mid-road waypoint.
+    The waypoints are returned so the plant can pin the TGO's concealment to the road
+    (the suspected-activity circle slides ALONG the route, never off into the fields).
     """
     reference = _front_reference(game)
     if not reference:
@@ -218,7 +227,7 @@ def _pick_ied_site(
     def dist_to_front(cp: "ControlPoint") -> float:
         return min(p.distance_to_point(cp.position) for p in reference)
 
-    best: Optional[tuple[float, "ControlPoint", Any, tuple[Any, Any]]] = None
+    best: Optional[tuple[float, "ControlPoint", Any, tuple[Any, Any], list[Any]]] = None
     for cp in game.theater.controlpoints:
         if not cp.captured.is_red:
             continue
@@ -234,11 +243,11 @@ def _pick_ied_site(
                 continue
             score = dist_to_front(forward)
             if best is None or score < best[0]:
-                best = (score, forward, point, key)
+                best = (score, forward, point, key, list(waypoints or []))
     if best is None:
         return None
-    _, red_cp, point, road_key = best
-    return red_cp, point, road_key
+    _, red_cp, point, road_key, road = best
+    return red_cp, point, road_key, road
 
 
 def _front_reference(game: "Game") -> list[Any]:

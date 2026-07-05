@@ -438,16 +438,15 @@ class FlightPlanBuilder:
         self,
         start_time: datetime.datetime,
         units: UnitSystem,
-        include_min_fuel: bool = True,
     ) -> None:
         self.start_time = start_time
         self.rows: List[List[str]] = []
         self.target_points: List[NumberedWaypoint] = []
         self.last_waypoint: Optional[FlightWaypoint] = None
         self.units = units
-        # Drop the Min-fuel column when the dedicated Fuel Ladder page owns the fuel
-        # ladder (avoids printing the bingo-at-waypoint figure on two pages).
-        self.include_min_fuel = include_min_fuel
+        # Per-waypoint (planned - min) fuel margins; constant across the route by
+        # construction, so the page reports min() once as the RTB margin call-out.
+        self.fuel_margins: List[float] = []
 
     def add_waypoint(self, waypoint_num: int, waypoint: FlightWaypoint) -> None:
         if waypoint.waypoint_type == FlightWaypointType.TARGET_POINT:
@@ -480,9 +479,8 @@ class FlightPlanBuilder:
             self._ground_speed(self.target_points[0].waypoint),
             self._format_time(self.target_points[0].waypoint.tot),
             self._format_time(self.target_points[0].waypoint.departure_time),
+            self._format_fuel(self.target_points[0].waypoint),
         ]
-        if self.include_min_fuel:
-            row.append(self._format_min_fuel(self.target_points[0].waypoint.min_fuel))
         self.rows.append(row)
         self.last_waypoint = self.target_points[-1].waypoint
 
@@ -498,9 +496,8 @@ class FlightPlanBuilder:
             self._ground_speed(waypoint.waypoint),
             self._format_time(waypoint.waypoint.tot),
             self._format_time(waypoint.waypoint.departure_time),
+            self._format_fuel(waypoint.waypoint),
         ]
-        if self.include_min_fuel:
-            row.append(self._format_min_fuel(waypoint.waypoint.min_fuel))
         self.rows.append(row)
 
     @staticmethod
@@ -546,12 +543,43 @@ class FlightPlanBuilder:
 
         return f"{self.units.speed(speed):.0f}"
 
-    def _format_min_fuel(self, min_fuel: Optional[float]) -> str:
-        if min_fuel is None:
-            return ""
+    def _format_fuel(self, waypoint: FlightWaypoint) -> str:
+        """The fuel ladder folded into the flight plan: planned fuel remaining.
 
-        mass = pounds(min_fuel)
-        return f"{math.ceil(self.units.mass(mass) / 100) * 100:.0f}"
+        Only genuine RTB checkpoints (those with a min-to-RTB figure) get a fuel
+        entry; post-landing reference points like the bullseye carry a forward-burn
+        "fuel" that isn't a real arrival state, so their cell stays blank. The
+        constant (planned - min) margin is collected once per row for the one-line
+        RTB call-out under the table instead of repeating a Min/Margin pair per row.
+        """
+        if waypoint.min_fuel is None:
+            return ""
+        if waypoint.fuel_planned is None:
+            return "-"
+        self.fuel_margins.append(waypoint.fuel_planned - waypoint.min_fuel)
+        return f"{self.units.mass(pounds(waypoint.fuel_planned)):.0f}"
+
+    def fuel_margin_line(self) -> Optional[str]:
+        """The one-line RTB margin call-out for the flight plan, or None.
+
+        (Planned - min) is constant across the route by construction (start fuel -
+        total burn - reserve), so the worst case is reported once instead of
+        printing Min and Margin columns that repeat the same number every row.
+        """
+        if not self.fuel_margins:
+            return None
+        surplus = min(self.fuel_margins)
+        uom = self.units.mass_uom
+        amount = f"{self.units.mass(pounds(abs(surplus))):.0f}"
+        if surplus >= 0:
+            return (
+                f"RTB margin +{amount} {uom} — spare over the minimum to get home "
+                "with reserves."
+            )
+        return (
+            f"RTB margin -{amount} {uom} — short of getting home as planned; "
+            "tank or divert."
+        )
 
     def build(self) -> List[List[str]]:
         if self.target_points:
@@ -666,7 +694,6 @@ class BriefingPage(KneeboardPage):
         atis_by_name: Optional[dict[str, RadioFrequency]] = None,
         theater: Optional["ConflictTheater"] = None,
         omit_weather: bool = False,
-        omit_min_fuel: bool = False,
         task_line: Optional[str] = None,
         push_line: Optional[str] = None,
         threat_line: Optional[str] = None,
@@ -690,10 +717,8 @@ class BriefingPage(KneeboardPage):
         self.push_line = push_line
         self.threat_line = threat_line
         # De-duplication (design §4): drop the weather block when the recon Departure
-        # page already carries it, and the Min-fuel column when the Fuel Ladder page
-        # owns the fuel ladder. The Friendly Packages list moved to its own page.
+        # page already carries it. The Friendly Packages list moved to its own page.
         self.omit_weather = omit_weather
-        self.omit_min_fuel = omit_min_fuel
         self.flight_plan_font = ImageFont.truetype(
             "courbd.ttf",
             16,
@@ -759,13 +784,14 @@ class BriefingPage(KneeboardPage):
 
         units = self.flight.aircraft_type.kneeboard_units
 
-        flight_plan_builder = FlightPlanBuilder(
-            self.start_time, units, include_min_fuel=not self.omit_min_fuel
-        )
+        flight_plan_builder = FlightPlanBuilder(self.start_time, units)
         for num, waypoint in enumerate(self.flight.waypoints):
             flight_plan_builder.add_waypoint(num, waypoint)
 
-        headers = ["#", "Action", "Alt", "Dist", "GSPD", "Time", "Departure"]
+        # The fuel ladder rides in the flight plan: a Fuel column (planned remaining
+        # at each RTB steerpoint) + a one-line RTB margin call-out, instead of a
+        # separate near-empty Fuel Ladder page.
+        headers = ["#", "Action", "Alt", "Dist", "GSPD", "Time", "Departure", "Fuel"]
         uom_row = [
             "",
             "",
@@ -774,16 +800,24 @@ class BriefingPage(KneeboardPage):
             units.speed_uom,
             "",
             "",
+            units.mass_uom,
         ]
-        if not self.omit_min_fuel:
-            headers.append("Min fuel")
-            uom_row.append(units.mass_uom)
 
         writer.table(
             flight_plan_builder.build() + [uom_row],
             headers=headers,
             font=self.flight_plan_font,
         )
+
+        margin_line = flight_plan_builder.fuel_margin_line()
+        if margin_line is not None:
+            # Amber when short — the same caution colour the Brief Sheet uses for fuel.
+            surplus = margin_line.startswith("RTB margin +")
+            writer.text(
+                margin_line,
+                wrap=True,
+                fill=None if surplus else writer.col_caution,
+            )
 
         fl = self.flight
 
@@ -2385,108 +2419,6 @@ class BrevityCard(KneeboardPage):
         writer.write(path)
 
 
-class FuelLadderCard(KneeboardPage):
-    """Fuel ladder: planned fuel remaining at each steerpoint (one glanceable column).
-
-    Shows the **planned remaining** fuel (estimated forward from the starting load over
-    the per-leg burn model, `FlightWaypoint.fuel_planned`) at each RTB steerpoint — the
-    Red Flag-style fuel ladder. The earlier Plan/Min/Margin three-column form was noise:
-    the per-waypoint *margin* (Plan − Min) is **constant across the whole route by
-    construction** (start fuel − total burn − reserve), and *Min* is just Plan minus that
-    constant, so both repeated the same number every row. They collapse to a single
-    **RTB margin** call-out over a one-number-per-row ladder. The burn model is
-    approximate, so treat the figures as planning numbers.
-    """
-
-    DESC_MAX_LEN = 24
-
-    def __init__(self, flight: FlightData, dark_kneeboard: bool) -> None:
-        self.flight = flight
-        self.dark_kneeboard = dark_kneeboard
-
-    @staticmethod
-    def _fmt(units: UnitSystem, lbs: Optional[float]) -> str:
-        return "-" if lbs is None else f"{units.mass(pounds(lbs)):.0f}"
-
-    def write(self, path: Path) -> None:
-        writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
-        custom = f' ("{self.flight.custom_name}")' if self.flight.custom_name else ""
-        writer.title(f"{self.flight.callsign} Fuel Ladder{custom}")
-        self.render_into(writer)
-        writer.write(path)
-
-    def render_into(self, writer: KneeboardPageWriter) -> None:
-        """Draw the fuel ladder + Bingo/Joker below the page title."""
-        units = self.flight.aircraft_type.kneeboard_units
-        # Larger-than-default table font: the ladder is short, so a bigger type fills
-        # the page and is easier to read in the cockpit.
-        ladder_font = ImageFont.truetype(
-            "courbd.ttf", 22, layout_engine=ImageFont.Layout.BASIC
-        )
-        bingo_font = ImageFont.truetype(
-            "courbd.ttf", 24, layout_engine=ImageFont.Layout.BASIC
-        )
-        rows: List[List[str]] = []
-        margins: List[float] = []
-        for number, waypoint in enumerate(self.flight.waypoints):
-            # Only genuine RTB checkpoints (those with a min-to-RTB figure) belong on
-            # the ladder; post-landing reference points like the bullseye carry a
-            # forward-burn "fuel" that isn't a real arrival state.
-            if waypoint.min_fuel is None:
-                continue
-            rows.append(
-                [
-                    str(number),
-                    KneeboardPageWriter.wrap_line(
-                        waypoint.display_name, self.DESC_MAX_LEN
-                    ),
-                    self._fmt(units, waypoint.fuel_planned),
-                ]
-            )
-            if waypoint.fuel_planned is not None:
-                margins.append(waypoint.fuel_planned - waypoint.min_fuel)
-
-        if not rows:
-            writer.text("No fuel estimate available for this aircraft.")
-            return
-
-        uom = units.mass_uom
-        lead = f"Planned fuel remaining at each steerpoint, in {uom}."
-        if margins:
-            # Constant across the route, so report the worst case as one number.
-            surplus = min(margins)
-            amount = self._fmt(units, abs(surplus))
-            if surplus >= 0:
-                writer.text(
-                    f"{lead} RTB margin +{amount} {uom} — spare over the minimum to "
-                    "get home with reserves.",
-                    wrap=True,
-                )
-            else:
-                writer.text(
-                    f"{lead} RTB margin -{amount} {uom} — short of getting home as "
-                    "planned; tank or divert.",
-                    wrap=True,
-                )
-        else:
-            writer.text(lead, wrap=True)
-
-        writer.table(rows, headers=["#", "Action", "Fuel"], font=ladder_font)
-
-        if self.flight.bingo_fuel and self.flight.joker_fuel:
-            writer.vspace(10)
-            writer.table(
-                [
-                    [
-                        self._fmt(units, self.flight.bingo_fuel),
-                        self._fmt(units, self.flight.joker_fuel),
-                    ]
-                ],
-                headers=["Bingo", "Joker"],
-                font=bingo_font,
-            )
-
-
 #: Flight-plan waypoint types mapped to the Brief Sheet's route labels.
 _ROUTE_LABELS: Dict[FlightWaypointType, str] = {
     FlightWaypointType.TAKEOFF: "T/O",
@@ -3554,8 +3486,6 @@ class KneeboardGenerator(MissionInfoGenerator):
         recon_on = self.game.settings.generate_target_recon_kneeboard
         # The recon Departure page carries the field weather + winds + sunrise/sunset.
         omit_weather = recon_on and _should_emit_departure(flight, self.game)
-        # The Fuel Ladder page carries the per-waypoint bingo (Min) fuel + planned + margin.
-        omit_min_fuel = self.game.settings.generate_fuel_ladder_kneeboard
 
         # Threat cards are computed once and feed the Brief Sheet's threat block, the
         # always-on BLUF top-threat line on the Mission Info page, and (when enabled)
@@ -3584,7 +3514,6 @@ class KneeboardGenerator(MissionInfoGenerator):
                 atis_by_name=self.atis_by_name,
                 theater=self.game.theater,
                 omit_weather=omit_weather,
-                omit_min_fuel=omit_min_fuel,
                 task_line=task_line,
                 push_line=push_line,
                 threat_line=threat_line,
@@ -3645,10 +3574,6 @@ class KneeboardGenerator(MissionInfoGenerator):
         # tooltip + join-waypoint echo); this is the in-cockpit copy.
         if self.game.settings.enable_package_code_words:
             pages.append(BrevityCard(flight, self.dark_kneeboard))
-
-        # Fuel ladder: planned remaining vs. minimum required per steerpoint (gated).
-        if self.game.settings.generate_fuel_ladder_kneeboard:
-            pages.append(FuelLadderCard(flight, self.dark_kneeboard))
 
         # Recon overview + detail + airfield-departure pages (gated by settings).
         if self.game.settings.generate_target_recon_kneeboard:

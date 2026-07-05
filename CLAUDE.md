@@ -747,9 +747,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     adaptive flex page) was the fork's biggest `kneeboard.py` churn vs upstream and is deleted. The
     squadron-picked keepers survive on the stock **full deck**, now the only assembly path: the cover
     page (§30) + the Brief Sheet (§31) leading each flight's block + the colour palette + the threat
-    cards (`generate_threat_intel_kneeboard` default flipped ON). One glanceable-`Fuel`-column ladder
-    survives in the optional Fuel Ladder page. Do not restore the folding machinery. (features doc §4,
-    checklist H9 retired → H12.)
+    cards (`generate_threat_intel_kneeboard` default flipped ON). The fuel ladder is **folded into the
+    flight plan** (2026-07-05, user call): a `Fuel` column + a one-line RTB margin call-out on Mission
+    Info — the standalone Fuel Ladder page + `generate_fuel_ladder_kneeboard` are deleted. Do not
+    restore the folding machinery. (features doc §4, checklist H9 retired → H12.)
 26. **Off-mission combat fidelity + PLAYER_AT_IP fix** — the sim auto-resolves engagements the player
     doesn't fly. Abstract combat was numbers-only coin flips (more flights win; survivors die 50/50; SAMs a
     flat 50%), so obsolete jets beat modern ones and SEAD meant nothing. `game/sim/combat/capability.py`

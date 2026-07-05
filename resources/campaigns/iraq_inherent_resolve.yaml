@@ -10,7 +10,7 @@ description: >-
   and the ratline running west toward Tal Afar and Syria. Body count alone wins nothing here.</p>
   <p>Find the caches (recon them &mdash; then strike them) to collapse a stronghold's regeneration,
   interdict the trail, hunt the emirs, and grind the ring back with the Iraqi Security Forces up
-  the southern axis out of Qayyarah West while air assaults peel the outer towns. And check your
+  Highway 1 out of Balad &mdash; Tikrit, then Mosul &mdash; while air assaults peel the outer towns. And check your
   map before you roll in: <strong>Mosul itself sits inside a big no-strike positive-control box</strong>,
   because the caliphate fights from among the people &mdash; and in the last phase the
   <strong>Old City</strong> tightens to almost nothing. Every weapon released in the city prices
@@ -19,9 +19,9 @@ description: >-
   in the city, and plain time; the caliphate's resolve bleeds from its caches, its convoys, its
   emirs, and its strongholds &mdash; almost never from its dead fighters. Break their resolve
   before your mandate runs out.</p>
-  <p>You fly with the <strong>CJTF-OIR coalition off Qayyarah West</strong>: A-10s, Hornets and
-  Vipers on the ramp, Marine Harriers, French Mirages and the Iraqi Air Force alongside, the
-  CENTAF heavies &mdash; Strike Eagles, the Bone, and the KC-135 bridge &mdash; out of Balad, and
+  <p>You fly with the <strong>CJTF-OIR coalition out of Balad</strong>: A-10s, Hornets and
+  Vipers on the ramp, Marine Harriers, French Mirages and the Iraqi Air Force at Al-Taqaddum, the
+  CENTAF heavies &mdash; Strike Eagles, the Bone, and the KC-135 bridge &mdash; alongside, and
   E-3s and Reapers overhead. The enemy has no air force, but answers with guns, shoulder-fired
   SAMs and the truck bomb at every stronghold &mdash; and <strong>a thin captured-SAM crust</strong>:
   an SA-6 over Mosul, SA-8/9/13 across the ring. Enough to make SEAD a real job; never enough to
@@ -59,7 +59,7 @@ settings:
   # destroyed cache back online.
   coin_dispersed_cells: true
   # The ratline west toward Tal Afar / Syria (real, tracked convoys) and standoff
-  # rocket/mortar fire on the forward field at Qayyarah West.
+  # rocket/mortar fire on the forward field at Balad.
   vietnam_convoy_interdiction: true
   vietnam_airbase_harassment: true
   # The inverted political-will economy + the campaign-phase arc.
@@ -112,10 +112,10 @@ phases:
   - key: isolation
     name: Isolate Mosul
     narrative: >-
-      Take the ring before you take the city: grind up the southern axis out of Qayyarah
-      West to Hammam al-Alil, peel the outer towns with air assaults, and cut the ratline
-      west. Map the caliphate's caches while you do it -- their supply is the target, not
-      their fighters.
+      Take the ring before you take the city: grind up Highway 1 out of Balad -- Tikrit,
+      Shirqat, then Hammam al-Alil -- peel the eastern belt (Erbil, Kirkuk) with air
+      assaults, and cut the ratline west. Map the caliphate's caches while you do it --
+      their supply is the target, not their fighters.
     emphasis: interdiction
     objectives:
       - Recon and destroy ammo caches -- each one killed slows that stronghold's regeneration
@@ -186,84 +186,68 @@ phases:
         width_nm: 5
         height_nm: 4
 
-# The ratline + the Nineveh ring: red<->red supply corridors. The westward Mosul -> Tal
-# Afar leg is the caliphate's ratline toward Syria (the convoy-interdiction target); the
-# others tie the outer towns to the city. Endpoints are exact CP XY (closest-CP binding
-# reads first/last waypoint only). All red<->red -- the one blue<->red front (Qayyarah
-# West <-> Hammam al-Alil, the southern axis) is authored as a front-line group in the miz.
+# The red<->red supply graph: the Highway-1 corridor Baghdad -> Mosul (Tikrit -> Shirqat ->
+# Hammam al-Alil -> Mosul) the ISF grinds up, the Nineveh ring off Mosul (incl. the westward
+# Tal Afar ratline toward Syria, the convoy-interdiction target), and the NE belt (Mosul ->
+# Erbil -> Kirkuk) tying the two red airfields back to the corridor. Endpoints are exact CP
+# XY (closest-CP binding reads first/last waypoint only). All red<->red -- the one blue<->red
+# front (Balad -> Tikrit) is authored as a front-line group in the miz.
 # TODO(in-app pass): re-trace intermediate waypoints on the real road network via
 # tools/supply_route_geo.py (the 414th supply-line standard).
 supply_routes:
-  # Mosul -> Hammam al-Alil (Highway 1 / the Tigris, south)
+  # --- The Highway 1 corridor (the advance, south -> north):
+  # Tikrit -> Shirqat
   - waypoints:
-      - [339469, -94071]
-      - [331000, -88000]
+      - [150201, -49014]
+      - [207000, -70000]
+      - [264800, -85078]
+  # Shirqat -> Hammam al-Alil
+  - waypoints:
+      - [264800, -85078]
+      - [295000, -83000]
       - [322805, -81581]
+  # Hammam al-Alil -> Mosul
+  - waypoints:
+      - [322805, -81581]
+      - [331000, -88000]
+      - [339469, -94071]
+  # --- The Nineveh ring off Mosul:
   # Mosul -> Bartella (east)
   - waypoints:
       - [339469, -94071]
       - [342000, -83000]
       - [343841, -73022]
-  # Mosul -> Bashiqa (northeast)
-  - waypoints:
-      - [339469, -94071]
-      - [348000, -83000]
-      - [355988, -73419]
-  # Mosul -> Hamdaniya (southeast)
-  - waypoints:
-      - [339469, -94071]
-      - [337000, -83000]
-      - [334903, -73325]
   # Mosul -> Tal Afar (the ratline west toward Syria)
   - waypoints:
       - [339469, -94071]
       - [343000, -125000]
       - [348018, -156505]
-  # --- The northern belt: the caliphate's held airfields chained red<->red, so the
-  # deep-belt fields (Erbil, Kirkuk, Sulaimaniyah) are reachable/capturable behind the
-  # two fronts. TODO(in-app pass): re-trace on the real road network via supply_route_geo.
+  # --- The NE belt (ties the two red airfields to the corridor):
   # Mosul -> Erbil
   - waypoints:
       - [339469, -94071]
       - [335000, -58000]
       - [330838, -22360]
-  # Erbil -> Bashur (north)
-  - waypoints:
-      - [330838, -22360]
-      - [347000, -4000]
-      - [363380, 13140]
-  # Erbil -> Kirkuk (south down the belt)
+  # Erbil -> Kirkuk
   - waypoints:
       - [330838, -22360]
       - [288000, -5000]
       - [245434, 12825]
-  # Kirkuk -> K1 (adjacent)
+  # Kirkuk -> Tikrit (links the eastern belt back to the Highway-1 corridor)
   - waypoints:
       - [245434, 12825]
-      - [247800, 10100]
-      - [250080, 7392]
-  # Kirkuk -> Sulaimaniyah (east)
-  - waypoints:
-      - [245434, 12825]
-      - [250000, 57000]
-      - [255226, 100814]
-  # Kirkuk -> Al-Sahra (the Tikrit axis, southwest)
-  - waypoints:
-      - [245434, 12825]
-      - [200000, -24000]
-      - [157133, -61805]
+      - [200000, -18000]
+      - [150201, -49014]
 
-# Two fronts start partway up their axes -- Qayyarah West -> Hammam al-Alil (the Mosul
-# ring) and Balad -> Al-Sahra (the Tikrit axis) -- ISF pressing north on both.
+# The single front starts partway up the Balad -> Tikrit axis (Highway 1), the ISF
+# pressing north out of Baghdad toward Tikrit and, beyond it, Mosul.
 control_point_strengths:
-  Hammam al-Alil: 0.5
-  Al-Sahra Airport: 0.5
+  Tikrit: 0.5
 
 squadrons:
-  # Qayyarah West -- the SOLE forward airhead now the northern belt is red: the player
-  # core (F/A-18, A-10, F-16) plus the Apaches and the air-assault helos working the
-  # Mosul ring.
-  6:
+  # Balad -- the forward field (Q-West dropped): the player's fast air + the Apaches and
+  # the air-assault helos working the Tikrit front and, as red fields fall, the Mosul ring.
+  8:
     - primary: CAS
       secondary: air-to-ground
       aircraft:
@@ -285,11 +269,6 @@ squadrons:
         - F-16CM Fighting Falcon (Block 50)
       size: 4
     - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - AV-8B Harrier II Night Attack
-      size: 4
-    - primary: CAS
       secondary: any
       aircraft:
         - AH-64D Apache Longbow
@@ -299,14 +278,9 @@ squadrons:
       aircraft:
         - UH-60A
       size: 4
-    - primary: Transport
-      secondary: any
-      aircraft:
-        - C-130J-30
-      size: 2
-  # Balad -- the CENTAF heavies + the tanker/AWACS bridge, plus the Iraqi Air Force and
-  # French Mirages working the nearer Tikrit (Al-Sahra) front.
-  8:
+  # Al-Taquddum -- the strike field: the CENTAF heavies + the Marine Harriers + the Iraqi
+  # Air Force and French Mirages.
+  13:
     - primary: Strike
       aircraft:
         - B-1B Lancer
@@ -319,6 +293,11 @@ squadrons:
     - primary: CAS
       secondary: air-to-ground
       aircraft:
+        - AV-8B Harrier II Night Attack
+      size: 4
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
         - Su-25 Frogfoot
       size: 4
     - primary: CAS
@@ -326,6 +305,8 @@ squadrons:
       aircraft:
         - Mirage 2000C
       size: 4
+  # Baghdad -- support: the tanker/AWACS bridge, the Combat SAR Jolly, the lifters.
+  2:
     - primary: Refueling
       aircraft:
         - KC-135 Stratotanker
@@ -334,8 +315,6 @@ squadrons:
       aircraft:
         - E-3A
       size: 1
-  # Baghdad -- support + the Combat SAR Jolly
-  2:
     - primary: Refueling
       aircraft:
         - KC-135 Stratotanker MPRS
@@ -345,3 +324,8 @@ squadrons:
       aircraft:
         - CH-47F Block I
       size: 4
+    - primary: Transport
+      secondary: any
+      aircraft:
+        - C-130J-30
+      size: 2

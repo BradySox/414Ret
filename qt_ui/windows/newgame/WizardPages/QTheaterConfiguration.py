@@ -16,8 +16,10 @@ from PySide6.QtWidgets import (
 )
 
 from game.campaignloader import Campaign
+from game.campaignloader.campaign import DEFAULT_BUDGET
 from qt_ui.liberation_install import get_dcs_install_directory
 from qt_ui.widgets.QLiberationCalendar import QLiberationCalendar
+from qt_ui.widgets.spinsliders import CurrencySpinner
 from qt_ui.windows.newgame.WizardPages.QFactionSelection import FactionSelection
 from qt_ui.windows.newgame.jinja_env import jinja_env
 
@@ -30,18 +32,23 @@ Possible time periods for new games
 The object is a python datetime object
 """
 TIME_PERIODS = {
+    # Chronological, era seasons and historical scenarios interleaved.
     "WW2 - Winter [1944]": datetime(1944, 1, 1),
     "WW2 - Spring [1944]": datetime(1944, 4, 1),
     "WW2 - Summer [1944]": datetime(1944, 6, 1),
     "WW2 - Fall [1944]": datetime(1944, 10, 1),
+    "Arab-Israeli War [1948]": datetime(1948, 5, 15),
     "Early Cold War - Winter [1952]": datetime(1952, 1, 1),
     "Early Cold War - Spring [1952]": datetime(1952, 4, 1),
     "Early Cold War - Summer [1952]": datetime(1952, 6, 1),
     "Early Cold War - Fall [1952]": datetime(1952, 10, 1),
+    "6 days war [1967]": datetime(1967, 6, 5),
     "Cold War - Winter [1970]": datetime(1970, 1, 1),
     "Cold War - Spring [1970]": datetime(1970, 4, 1),
     "Cold War - Summer [1970]": datetime(1970, 6, 1),
     "Cold War - Fall [1970]": datetime(1970, 10, 1),
+    "Yom Kippour War [1973]": datetime(1973, 10, 6),
+    "First Lebanon War [1982]": datetime(1982, 6, 6),
     "Late Cold War - Winter [1985]": datetime(1985, 1, 1),
     "Late Cold War - Spring [1985]": datetime(1985, 4, 1),
     "Late Cold War - Summer [1985]": datetime(1985, 6, 1),
@@ -49,22 +56,44 @@ TIME_PERIODS = {
     "Gulf War - Winter [1990]": datetime(1990, 1, 1),
     "Gulf War - Spring [1990]": datetime(1990, 4, 1),
     "Gulf War - Summer [1990]": datetime(1990, 6, 1),
+    "Gulf War - Fall [1990]": datetime(1990, 10, 1),
     "Mid-90s - Winter [1995]": datetime(1995, 1, 1),
     "Mid-90s - Spring [1995]": datetime(1995, 4, 1),
     "Mid-90s - Summer [1995]": datetime(1995, 6, 1),
     "Mid-90s - Fall [1995]": datetime(1995, 10, 1),
-    "Gulf War - Fall [1990]": datetime(1990, 10, 1),
+    "Georgian War [2008]": datetime(2008, 8, 7),
     "Modern - Winter [2010]": datetime(2010, 1, 1),
     "Modern - Spring [2010]": datetime(2010, 4, 1),
     "Modern - Summer [2010]": datetime(2010, 6, 1),
     "Modern - Fall [2010]": datetime(2010, 10, 1),
-    "Georgian War [2008]": datetime(2008, 8, 7),
     "Syrian War [2011]": datetime(2011, 3, 15),
-    "6 days war [1967]": datetime(1967, 6, 5),
-    "Yom Kippour War [1973]": datetime(1973, 10, 6),
-    "First Lebanon War [1982]": datetime(1982, 6, 6),
-    "Arab-Israeli War [1948]": datetime(1948, 5, 15),
 }
+
+#: The preset selected when no campaign recommends a date. By name, not a brittle
+#: positional index into the (now chronologically sorted) table.
+DEFAULT_TIME_PERIOD = "Mid-90s - Summer [1995]"
+
+
+class BudgetInputs(QtWidgets.QGridLayout):
+    """A labelled slider + spinner pair for a starting budget."""
+
+    def __init__(self, label: str, value: int) -> None:
+        super().__init__()
+        self.addWidget(QtWidgets.QLabel(label), 0, 0)
+
+        minimum = 0
+        maximum = 5000
+
+        slider = QtWidgets.QSlider(Qt.Orientation.Horizontal)
+        slider.setMinimum(minimum)
+        slider.setMaximum(maximum)
+        slider.setValue(value)
+        self.starting_money = CurrencySpinner(minimum, maximum, value)
+        slider.valueChanged.connect(lambda x: self.starting_money.setValue(x))
+        self.starting_money.valueChanged.connect(lambda x: slider.setValue(x))
+
+        self.addWidget(slider, 1, 0)
+        self.addWidget(self.starting_money, 1, 1)
 
 
 class TheaterConfiguration(QtWidgets.QWizardPage):
@@ -132,10 +161,51 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         mapSettingsLayout.addWidget(self.invertMap, 0, 1)
         self.advanced_iads = QtWidgets.QCheckBox()
         self.registerField("advanced_iads", self.advanced_iads)
-        self.iads_label = QtWidgets.QLabel("Advanced IADS (WIP)")
+        self.iads_label = QtWidgets.QLabel("Advanced IADS (MANTIS)")
         mapSettingsLayout.addWidget(self.iads_label, 1, 0)
         mapSettingsLayout.addWidget(self.advanced_iads, 1, 1)
         mapSettingsGroup.setLayout(mapSettingsLayout)
+
+        # Forces & budget (moved here from the old Generator page: everything that
+        # shapes the world being built belongs on the page where you pick it. The
+        # values re-seed from each campaign's settings/recommendations on select.)
+        forcesGroup = QtWidgets.QGroupBox("Forces && Budget")
+        forcesLayout = QtWidgets.QGridLayout()
+        self.no_carrier = QtWidgets.QCheckBox()
+        self.registerField("no_carrier", self.no_carrier)
+        self.no_lha = QtWidgets.QCheckBox()
+        self.registerField("no_lha", self.no_lha)
+        self.no_player_navy = QtWidgets.QCheckBox()
+        self.registerField("no_player_navy", self.no_player_navy)
+        self.no_enemy_navy = QtWidgets.QCheckBox()
+        self.registerField("no_enemy_navy", self.no_enemy_navy)
+        self.squadrons_start_full = QtWidgets.QCheckBox()
+        self.registerField("squadrons_start_full", self.squadrons_start_full)
+
+        forcesLayout.addWidget(QtWidgets.QLabel("No Aircraft Carriers"), 0, 0)
+        forcesLayout.addWidget(self.no_carrier, 0, 1)
+        forcesLayout.addWidget(QtWidgets.QLabel("No LHA"), 1, 0)
+        forcesLayout.addWidget(self.no_lha, 1, 1)
+        forcesLayout.addWidget(QtWidgets.QLabel("No Player Navy"), 0, 2)
+        forcesLayout.addWidget(self.no_player_navy, 0, 3)
+        forcesLayout.addWidget(QtWidgets.QLabel("No Enemy Navy"), 1, 2)
+        forcesLayout.addWidget(self.no_enemy_navy, 1, 3)
+        squadrons_label = QtWidgets.QLabel("Squadrons start at full capacity")
+        squadrons_label.setToolTip(
+            "Campaign will start with all squadrons at full strength "
+            "given enough room at the airfield in question.\n"
+            "Each squadron's capacity can be defined during Air Wing Configuration."
+        )
+        forcesLayout.addWidget(squadrons_label, 2, 0)
+        forcesLayout.addWidget(self.squadrons_start_full, 2, 1)
+
+        self.player_budget = BudgetInputs("Player starting budget", DEFAULT_BUDGET)
+        self.registerField("starting_money", self.player_budget.starting_money)
+        forcesLayout.addLayout(self.player_budget, 3, 0, 1, 2)
+        self.enemy_budget = BudgetInputs("Enemy starting budget", DEFAULT_BUDGET)
+        self.registerField("enemy_starting_money", self.enemy_budget.starting_money)
+        forcesLayout.addLayout(self.enemy_budget, 3, 2, 1, 2)
+        forcesGroup.setLayout(forcesLayout)
 
         # Time Period
         timeGroup = QtWidgets.QGroupBox("Time Period")
@@ -158,7 +228,7 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         for r in TIME_PERIODS:
             timePeriodSelect.addItem(r)
         timePeriod.setBuddy(timePeriodSelect)
-        timePeriodSelect.setCurrentIndex(21)
+        timePeriodSelect.setCurrentText(DEFAULT_TIME_PERIOD)
 
         def onTimePeriodCheckboxChanged():
             if timePeriodPreset.isChecked():
@@ -192,6 +262,18 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
                 template_perf.render({"performance": campaign.performance})
             )
 
+            # Re-seed the forces/budget group from the selected campaign.
+            s = campaign.settings
+            self.no_carrier.setChecked(s.get("no_carrier", False))
+            self.no_lha.setChecked(s.get("no_lha", False))
+            self.no_player_navy.setChecked(s.get("no_player_navy", False))
+            self.no_enemy_navy.setChecked(s.get("no_enemy_navy", False))
+            self.squadrons_start_full.setChecked(s.get("squadron_start_full", False))
+            self.player_budget.starting_money.setValue(
+                campaign.recommended_player_money
+            )
+            self.enemy_budget.starting_money.setValue(campaign.recommended_enemy_money)
+
             if (start_date := campaign.recommended_start_date) is not None:
                 self.calendar.setSelectedDate(
                     QDate(start_date.year, start_date.month, start_date.day)
@@ -207,7 +289,11 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
                     "Advanced IADS is not supported by this campaign"
                 )
             else:
-                self.advanced_iads.setToolTip("Enable Advanced IADS")
+                self.advanced_iads.setToolTip(
+                    "Networked air defenses driven by the MANTIS IADS engine: SAM "
+                    "sites hold dark until cued by EWR/AWACS, and killing a base's "
+                    "C2/comms/power degrades its net."
+                )
 
             self.campaign_selected.emit(campaign)
 
@@ -222,9 +308,10 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         on_campaign_selected()
 
         docsText = QtWidgets.QLabel(
-            "<p>Want more campaigns? You can "
-            '<a href="https://github.com/dcs-retribution/dcs-retribution/wiki/Campaign-maintenance"><span style="color:#FFFFFF;">offer to help</span></a>, '
-            '<a href="https://github.com/dcs-retribution/dcs-retribution/wiki/Community-campaigns"><span style="color:#FFFFFF;">play a community campaign</span></a>, '
+            "<p>Campaign briefings and handbooks live on the "
+            '<a href="https://github.com/bradyccox/414Ret/wiki"><span style="color:#FFFFFF;">414th wiki</span></a>. '
+            "Want more? "
+            '<a href="https://github.com/dcs-retribution/dcs-retribution/wiki/Community-campaigns"><span style="color:#FFFFFF;">Play a community campaign</span></a> '
             'or <a href="https://github.com/dcs-retribution/dcs-retribution/wiki/Custom-Campaigns"><span style="color:#FFFFFF;">create your own</span></a>.'
             "</p>"
         )
@@ -251,7 +338,8 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
         layout.addWidget(self.campaignMapDescription, 0, 1, 1, 1)
         layout.addWidget(self.performanceText, 1, 1, 1, 1)
         layout.addWidget(mapSettingsGroup, 2, 1, 1, 1)
-        layout.addWidget(timeGroup, 3, 1, 3, 1)
+        layout.addWidget(forcesGroup, 3, 1, 1, 1)
+        layout.addWidget(timeGroup, 4, 1, 3, 1)
         self.setLayout(layout)
 
     def initializePage(self) -> None:

@@ -1,95 +1,64 @@
-from __future__ import unicode_literals
+"""The New Game wizard's Mods page.
 
-from datetime import timedelta
+Historically this page mixed the world-shaping generator options (carriers, navies,
+budgets) with the installed-mods checklist; the generator options now live on the
+Theater page (everything that shapes the world being built sits where you pick it),
+leaving this page a single job: declare which mods this group's DCS installs carry.
+
+Only mods the fork's factions actually consume are listed (ModSettings knows ~50;
+the rest are deliberately retired/scrubbed content and stay permanently off).
+Field names are unchanged, so the wizard's accept() reads the same fields.
+"""
+
+from __future__ import unicode_literals
 
 from PySide6 import QtWidgets, QtGui
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QVBoxLayout
 
 from game.campaignloader import Campaign
-from game.campaignloader.campaign import DEFAULT_BUDGET
-from qt_ui.widgets.spinsliders import CurrencySpinner
-
-DEFAULT_MISSION_LENGTH: timedelta = timedelta(minutes=60)
-
-
-class BudgetInputs(QtWidgets.QGridLayout):
-    def __init__(self, label: str, value: int) -> None:
-        super().__init__()
-        self.addWidget(QtWidgets.QLabel(label), 0, 0)
-
-        minimum = 0
-        maximum = 5000
-
-        slider = QtWidgets.QSlider(Qt.Orientation.Horizontal)
-        slider.setMinimum(minimum)
-        slider.setMaximum(maximum)
-        slider.setValue(value)
-        self.starting_money = CurrencySpinner(minimum, maximum, value)
-        slider.valueChanged.connect(lambda x: self.starting_money.setValue(x))
-        self.starting_money.valueChanged.connect(lambda x: slider.setValue(x))
-
-        self.addWidget(slider, 1, 0)
-        self.addWidget(self.starting_money, 1, 1)
 
 
 class GeneratorOptions(QtWidgets.QWizardPage):
     def __init__(self, campaign: Campaign, parent=None):
         super().__init__(parent)
 
-        self.setTitle("Generator settings")
-        self.setSubTitle("\nOptions affecting the generation of the game.")
+        self.setTitle("Mods")
+        self.setSubTitle(
+            "\nSelect the mods installed in your group's DCS. If your chosen "
+            "factions carry their units, they'll appear in the campaign."
+        )
         self.setPixmap(
             QtWidgets.QWizard.WizardPixmap.LogoPixmap,
             QtGui.QPixmap("./resources/ui/wizard/logo1.png"),
         )
 
-        # Campaign settings
-        generatorSettingsGroup = QtWidgets.QGroupBox("Generator Settings")
-        self.no_carrier = QtWidgets.QCheckBox()
-        self.registerField("no_carrier", self.no_carrier)
-        self.no_lha = QtWidgets.QCheckBox()
-        self.registerField("no_lha", self.no_lha)
-        self.no_player_navy = QtWidgets.QCheckBox()
-        self.registerField("no_player_navy", self.no_player_navy)
-        self.no_enemy_navy = QtWidgets.QCheckBox()
-        self.registerField("no_enemy_navy", self.no_enemy_navy)
-        self.squadrons_start_full = QtWidgets.QCheckBox()
-        self.registerField("squadrons_start_full", self.squadrons_start_full)
-
-        generatorLayout = QtWidgets.QGridLayout()
-        generatorLayout.addWidget(QtWidgets.QLabel("No Aircraft Carriers"), 1, 0)
-        generatorLayout.addWidget(self.no_carrier, 1, 1)
-        generatorLayout.addWidget(QtWidgets.QLabel("No LHA"), 2, 0)
-        generatorLayout.addWidget(self.no_lha, 2, 1)
-        generatorLayout.addWidget(QtWidgets.QLabel("No Player Navy"), 3, 0)
-        generatorLayout.addWidget(self.no_player_navy, 3, 1)
-        generatorLayout.addWidget(QtWidgets.QLabel("No Enemy Navy"), 4, 0)
-        generatorLayout.addWidget(self.no_enemy_navy, 4, 1)
-
-        label = QtWidgets.QLabel("Squadrons start at full capacity")
-        label.setToolTip(
-            "Campaign will start with all squadrons at full strength "
-            "given enough room at the airfield in question.\n"
-            "Each squadron's capacity can be defined during Air Wing Configuration."
-        )
-        generatorLayout.addWidget(label, 5, 0)
-        generatorLayout.addWidget(self.squadrons_start_full, 5, 1)
-        generatorLayout.addWidget(QtWidgets.QWidget(), 6, 0)
-
-        self.player_budget = BudgetInputs("Player starting budget", DEFAULT_BUDGET)
-        self.registerField("starting_money", self.player_budget.starting_money)
-        generatorLayout.addLayout(self.player_budget, 7, 0)
-
-        self.enemy_budget = BudgetInputs("Enemy starting budget", DEFAULT_BUDGET)
-        self.registerField("enemy_starting_money", self.enemy_budget.starting_money)
-        generatorLayout.addLayout(self.enemy_budget, 8, 0)
-
-        generatorSettingsGroup.setLayout(generatorLayout)
-
-        modSettingsGroup = QtWidgets.QGroupBox("Mod Settings")
+        # --- Aircraft modules -----------------------------------------------------
         self.a4_skyhawk = QtWidgets.QCheckBox()
         self.registerField("a4_skyhawk", self.a4_skyhawk)
+        self.fa_18efg = QtWidgets.QCheckBox()
+        self.registerField("fa_18efg", self.fa_18efg)
+        self.fa18ef_tanker = QtWidgets.QCheckBox()
+        self.registerField("fa18ef_tanker", self.fa18ef_tanker)
+        self.f22_raptor = QtWidgets.QCheckBox()
+        self.registerField("f22_raptor", self.f22_raptor)
+        self.f111c = QtWidgets.QCheckBox()
+        self.registerField("f111c", self.f111c)
+        self.ov10a_bronco = QtWidgets.QCheckBox()
+        self.registerField("ov10a_bronco", self.ov10a_bronco)
+
+        aircraft_pairs = [
+            ("A-4E-C Skyhawk (v2.3.0)", self.a4_skyhawk),
+            ("CJS FA-18E/F/G Super Hornet (v2.4.5.260501.RC1)", self.fa_18efg),
+            (
+                "CJS FA-18E/F Super Hornet Tanker (v2.4.5.260501.RC1)",
+                self.fa18ef_tanker,
+            ),
+            ("F-22A Raptor (v2.0.0)", self.f22_raptor),
+            ("F-111C Aardvark (Warpig Production v2.260208)", self.f111c),
+            ("OV-10A Bronco", self.ov10a_bronco),
+        ]
+
+        # --- Asset packs ----------------------------------------------------------
         self.chinesemilitaryassetspack = QtWidgets.QCheckBox()
         self.registerField("chinesemilitaryassetspack", self.chinesemilitaryassetspack)
         self.iranmilitaryassetspack = QtWidgets.QCheckBox()
@@ -104,10 +73,44 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.registerField("ukmilitaryassetspack", self.ukmilitaryassetspack)
         self.ukrainemilitaryassetspack = QtWidgets.QCheckBox()
         self.registerField("ukrainemilitaryassetspack", self.ukrainemilitaryassetspack)
-        self.f22_raptor = QtWidgets.QCheckBox()
-        self.registerField("f22_raptor", self.f22_raptor)
-        self.f111c = QtWidgets.QCheckBox()
-        self.registerField("f111c", self.f111c)
+        self.oh_6_vietnamassetpack = QtWidgets.QCheckBox()
+        self.oh_6_vietnamassetpack.setToolTip(
+            "Ground objects only (hooches, watchtowers, VC bunkers, bicycle "
+            "logistics, gun trucks). The OH-6A helicopter itself is no longer "
+            "carried by any faction."
+        )
+        self.registerField("oh_6_vietnamassetpack", self.oh_6_vietnamassetpack)
+        self.vietnamwarvessels = QtWidgets.QCheckBox()
+        self.registerField("vietnamwarvessels", self.vietnamwarvessels)
+
+        pack_pairs = [
+            (
+                "CurrentHill Chinese Military Assets (1.1.4)",
+                self.chinesemilitaryassetspack,
+            ),
+            ("CurrentHill Iran Military Assets (2.0.0)", self.iranmilitaryassetspack),
+            (
+                "CurrentHill Russian Military Assets (2.0.1)",
+                self.russianmilitaryassetspack,
+            ),
+            (
+                "CurrentHill Swedish Military Assets (1.10)",
+                self.swedishmilitaryassetspack,
+            ),
+            ("CurrentHill UK Military Assets (1.1.2)", self.ukmilitaryassetspack),
+            (
+                "CurrentHill Ukraine Military Assets (1.1.1)",
+                self.ukrainemilitaryassetspack,
+            ),
+            ("CurrentHill USA Military Assets (1.1.5)", self.usamilitaryassetspack),
+            (
+                "OH-6 Vietnam Asset Pack — ground objects (v1.2)",
+                self.oh_6_vietnamassetpack,
+            ),
+            ("Vietnam War Vessels (v3.2.0 by TeTeT)", self.vietnamwarvessels),
+        ]
+
+        # --- Air defense ----------------------------------------------------------
         self.high_digit_sams = QtWidgets.QCheckBox()
         self.high_digit_sams.setToolTip(
             "Requires the High Digit SAMs — Ultimate Compilation (dcs-sams), "
@@ -118,93 +121,23 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             "https://github.com/dcs-sams/HighDigitSAMs-Ultimate-Compilation"
         )
         self.registerField("high_digit_sams", self.high_digit_sams)
-        self.oh_6_vietnamassetpack = QtWidgets.QCheckBox()
-        self.registerField("oh_6_vietnamassetpack", self.oh_6_vietnamassetpack)
-        self.ov10a_bronco = QtWidgets.QCheckBox()
-        self.registerField("ov10a_bronco", self.ov10a_bronco)
-        self.vietnamwarvessels = QtWidgets.QCheckBox()
-        self.registerField("vietnamwarvessels", self.vietnamwarvessels)
-        self.fa_18efg = QtWidgets.QCheckBox()
-        self.registerField("fa_18efg", self.fa_18efg)
-        self.fa18ef_tanker = QtWidgets.QCheckBox()
-        self.registerField("fa18ef_tanker", self.fa18ef_tanker)
 
-        modHelpText = QtWidgets.QLabel(
-            "<p>Select the mods you have installed. If your chosen factions support them, you'll be able to use these mods in your campaign.</p>"
-        )
-        modHelpText.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        modLayout = QtWidgets.QGridLayout()
-        modLayout_row = 1
-
-        mod_pairs = [
-            ("A-4E Skyhawk (v2.3.0)", self.a4_skyhawk),
-            (
-                "CurrentHill Chinese Military Assets pack (1.1.4)",
-                self.chinesemilitaryassetspack,
-            ),
-            (
-                "CurrentHill Iran Military Assets pack (2.0.0)",
-                self.iranmilitaryassetspack,
-            ),
-            (
-                "CurrentHill Russian Military Assets pack (2.0.1)",
-                self.russianmilitaryassetspack,
-            ),
-            (
-                "CurrentHill Swedish Military Assets pack (1.10)",
-                self.swedishmilitaryassetspack,
-            ),
-            (
-                "CurrentHill USA Military Assets pack (1.1.5)",
-                self.usamilitaryassetspack,
-            ),
-            (
-                "CurrentHill UK Military Assets pack (1.1.2)",
-                self.ukmilitaryassetspack,
-            ),
-            (
-                "CurrentHill Ukraine Military Assets pack (1.1.1)",
-                self.ukrainemilitaryassetspack,
-            ),
-            ("F-22A Raptor (v2.0.0 released May 2025)", self.f22_raptor),
-            ("F-111C Aardvark (Warpig Production v2.260208)", self.f111c),
-            (
-                "High Digit SAMs - Ultimate Compilation (v1.4.3+)",
-                self.high_digit_sams,
-            ),
-            ("OH-6 Vietnam Asset Pack (v1.2)", self.oh_6_vietnamassetpack),
-            ("OV-10A Bronco", self.ov10a_bronco),
-            ("Vietnam War Vessels (v3.2.0 by TeTeT)", self.vietnamwarvessels),
-            (
-                "CJS FA-18E/F/G Super Hornet (v2.4.5.260501.RC1)",
-                self.fa_18efg,
-            ),
-            (
-                "CJS FA-18E/F Super Hornet Tanker (v2.4.5.260501.RC1)",
-                self.fa18ef_tanker,
-            ),
+        ad_pairs = [
+            ("High Digit SAMs — Ultimate Compilation (v1.4.3+)", self.high_digit_sams),
         ]
 
-        for i in range(len(mod_pairs)):
-            if i % 15 == 0:
-                modLayout_row = 1
-            col = 2 * (i // 15)
-            if i % 5 == 0:
-                # Section break here for readability
-                modLayout.addWidget(QtWidgets.QWidget(), modLayout_row, col)
-                modLayout_row += 1
-            label, cb = mod_pairs[i]
-            label_widget = QLabel(label)
-            # Carry any per-mod tooltip (e.g. the HDS fork warning) onto its label
-            # too, so hovering the text — not just the checkbox — shows the note.
-            if cb.toolTip():
-                label_widget.setToolTip(cb.toolTip())
-            modLayout.addWidget(label_widget, modLayout_row, col)
-            modLayout.addWidget(cb, modLayout_row, col + 1)
-            modLayout_row += 1
-
-        modSettingsGroup.setLayout(modLayout)
+        def group(title: str, pairs) -> QtWidgets.QGroupBox:
+            box = QtWidgets.QGroupBox(title)
+            grid = QtWidgets.QGridLayout()
+            for row, (label, cb) in enumerate(pairs):
+                label_widget = QtWidgets.QLabel(label)
+                if cb.toolTip():
+                    label_widget.setToolTip(cb.toolTip())
+                grid.addWidget(label_widget, row, 0)
+                grid.addWidget(cb, row, 1)
+            grid.setColumnStretch(0, 1)
+            box.setLayout(grid)
+            return box
 
         hdsNote = QtWidgets.QLabel(
             "<p><b>High Digit SAMs</b> must be the dcs-sams "
@@ -215,26 +148,27 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         hdsNote.setWordWrap(True)
         hdsNote.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        mlayout = QVBoxLayout()
-        mlayout.addWidget(generatorSettingsGroup)
-        mlayout.addWidget(modSettingsGroup)
-        mlayout.addWidget(modHelpText)
-        mlayout.addWidget(hdsNote)
-        self.setLayout(mlayout)
+        left = QtWidgets.QVBoxLayout()
+        left.addWidget(group("Aircraft modules", aircraft_pairs))
+        left.addWidget(group("Air defense", ad_pairs))
+        left.addStretch(1)
+        right = QtWidgets.QVBoxLayout()
+        right.addWidget(group("Asset packs", pack_pairs))
+        right.addStretch(1)
+        columns = QtWidgets.QHBoxLayout()
+        columns.addLayout(left, 1)
+        columns.addLayout(right, 1)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(columns)
+        layout.addWidget(hdsNote)
+        layout.addStretch(1)
+        self.setLayout(layout)
         self.update_settings(campaign)
 
     def update_settings(self, campaign: Campaign) -> None:
+        """Re-seed the mod checkboxes from the selected campaign's settings block."""
         s = campaign.settings
-
-        self.player_budget.starting_money.setValue(campaign.recommended_player_money)
-        self.enemy_budget.starting_money.setValue(campaign.recommended_enemy_money)
-
-        self.no_carrier.setChecked(s.get("no_carrier", False))
-        self.no_lha.setChecked(s.get("no_lha", False))
-        self.no_player_navy.setChecked(s.get("no_player_navy", False))
-        self.no_enemy_navy.setChecked(s.get("no_enemy_navy", False))
-        self.squadrons_start_full.setChecked(s.get("squadron_start_full", False))
-
         self.a4_skyhawk.setChecked(s.get("a4_skyhawk", False))
         self.chinesemilitaryassetspack.setChecked(
             s.get("chinesemilitaryassetspack", False)

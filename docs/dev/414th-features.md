@@ -2273,6 +2273,37 @@ wingman quality, not a difficulty lever) is deliberately left alone by every pre
   expected controls, and "Current:" tracks. The build + apply flow is offscreen-smoke-verified and
   the logic is unit-tested; only the visual feel is unexercised by CI.
 
+### The 2026-07-05 New Game wizard + section pass
+
+A full audit of every New Game page and setting (user call: "complete reorder — there is legacy
+we are overlooking") landed a second IA pass on both surfaces:
+
+- **Wizard flow**: the old *Generator settings* page's world-shaping options — the four no-carrier/
+  no-navy checkboxes, "Squadrons start at full capacity", and both budget sliders — moved onto the
+  **Theater** page as a "Forces & Budget" group (re-seeded from each campaign on select, exactly as
+  before; field names unchanged so `accept()` is untouched), and the remainder became a dedicated
+  **Mods** page: three groups (Aircraft modules / Asset packs / Air defense), alphabetized, in two
+  columns. The wizard is now Intro → Theater (world) → Factions → Mods → Campaign options → Finish.
+- **Legacy sweep**: the Intro "Vietnam" card no longer advertises the deleted Khe Sanh campaign
+  (now 1968 Yankee Station / Velvet Thunder / Red Flag 81-2); "Advanced IADS **(WIP)**" is relabeled
+  **(MANTIS)** with a real tooltip (it has been the flown default engine since June); the
+  Campaign-options subtitle no longer tells players to overwrite `Default.zip` (the save path writes
+  `Default.json`); `TIME_PERIODS` is chronologically sorted (the stranded "Gulf War – Fall [1990]"
+  and the unsorted scenario tail fixed) with the default selected **by name** instead of positional
+  index 21; the dead `SettingNames.py` (zero imports) is deleted; the OH-6 pack checkbox is
+  relabeled "ground objects" (the OH-6A helicopter left every faction 2026-06-30 — the toggle now
+  gates only the pack's `vap_*` ground objects); the Theater page's docs links lead with the 414th
+  wiki. The mod list stays the curated 16-of-~50 `ModSettings` (the hidden rest are deliberately
+  retired/scrubbed content) — now stated in the Mods page docstring so the subset is a decision,
+  not an accident.
+- **Section regroup** (FIELD_LAYOUT-only, no field moved, no save impact): Campaign Management's
+  three one-field orphan sections merged into a **"Campaign features"** opener
+  (phases/clock/carrier-ops) and "Economy & reserves" renamed **"Commander economy"**; Mission
+  Generation's "World & systems" split out a **"Battlefield life"** section (base battle damage,
+  artillery harassment, mobile missile relocation); Air Doctrine's 13-field "Threat & engagement
+  distances" wall split into **Engagement ranges / SEAD standoff / Support-orbit standoff / Mission
+  range limits**. Still 7 pages, all 174 fields accounted for (walk-verified).
+
 ## §29 — Campaign SITREP kneeboard band
 
 A "what happened last turn" digest on the player's next kneeboard — a morning intel brief in the

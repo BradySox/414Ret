@@ -37,6 +37,11 @@ local CELL_SPEED = 20 -- km/h field-cell ground speed
 local INFIL_SPEED = 15 -- km/h the infiltration cell creeps (dismounted pace)
 local INFIL_INTERVAL = 180 -- s between re-issuing the infiltrator's creep order
 local GRACE = 30 -- s before any movement begins
+-- One-way movers (the VBIED drive, the infiltrator creep) are paced so their arrival
+-- lands no earlier than this deep into the mission: players can take a long time to
+-- get airborne, and an intercept that is over in 20 minutes is content nobody sees.
+local MIN_JOURNEY = 5400 -- s (90 min) earliest one-way arrival after mission start
+local PACE_FLOOR_KMPH = 5 -- but never slower than a crawl (a close target still creeps in)
 local HARASS_INTERVAL = 300 -- s, mean seconds between barrages on a base (randomized)
 local HARASS_ROUNDS = 4 -- impacts per barrage
 local HARASS_DISPERSION = 250 -- m radius the impacts scatter around the base
@@ -56,6 +61,7 @@ if dcsRetribution.plugins and dcsRetribution.plugins.coin then
     INFIL_SPEED = tonumber(o.infilSpeedKmph) or INFIL_SPEED
     INFIL_INTERVAL = tonumber(o.infilRepathS) or INFIL_INTERVAL
     GRACE = tonumber(o.startGraceS) or GRACE
+    MIN_JOURNEY = tonumber(o.minJourneyS) or MIN_JOURNEY
     HARASS_INTERVAL = tonumber(o.harassIntervalS) or HARASS_INTERVAL
     HARASS_ROUNDS = tonumber(o.harassRoundsPerEvent) or HARASS_ROUNDS
     HARASS_DISPERSION = tonumber(o.harassDispersionM) or HARASS_DISPERSION
@@ -102,6 +108,33 @@ local function driveTo(group, x, y, speedKmph)
     return mist.goRoute(group, { wp })
 end
 
+-- The speed that stretches a one-way drive so arrival lands no earlier than MIN_JOURNEY
+-- after mission start. Recomputed on every repath from the CURRENT position and the time
+-- left, so the pace self-corrects (a stall or detour just speeds the remainder up, capped
+-- at the configured speed); once the window has passed, the configured speed applies
+-- unchanged. Deliberately continuous pacing, not a proximity trigger -- the mover should
+-- be visibly under way the whole time, wherever the player is.
+local function pacedSpeed(group, tx, ty, maxKmph)
+    local remaining = MIN_JOURNEY - timer.getTime()
+    if remaining <= 0 then
+        return maxKmph
+    end
+    local px, pz
+    pcall(function()
+        local units = group:getUnits()
+        local p = units and units[1] and units[1]:getPoint()
+        if p then
+            px, pz = p.x, p.z
+        end
+    end)
+    if not px then
+        return maxKmph
+    end
+    local distKm = math.sqrt((tx - px) ^ 2 + (ty - pz) ^ 2) / 1000
+    local kmph = distKm / (remaining / 3600)
+    return math.min(maxKmph, math.max(PACE_FLOOR_KMPH, kmph))
+end
+
 -- The HVT convoy: on a cadence, wander to a fresh random point within HVT_RADIUS of its centre.
 local function startHvt(hvt)
     local cx, cy = num(hvt.x), num(hvt.y)
@@ -118,6 +151,8 @@ local function startHvt(hvt)
 end
 
 -- A mobile VBIED: keep driving for the target base until it is intercepted or arrives.
+-- Paced so the drive is still under way MIN_JOURNEY into the mission (the intercept
+-- window must survive a slow player start).
 local function startVbied(v)
     local tx, ty = num(v.targetX), num(v.targetY)
     local function tick()
@@ -125,7 +160,7 @@ local function startVbied(v)
         if not g then
             return nil -- intercepted -> stop scheduling
         end
-        driveTo(g, tx, ty, VBIED_SPEED)
+        driveTo(g, tx, ty, pacedSpeed(g, tx, ty, VBIED_SPEED))
         return timer.getTime() + VBIED_INTERVAL
     end
     timer.scheduleFunction(tick, {}, timer.getTime() + GRACE)
@@ -148,7 +183,8 @@ local function startCell(cell)
 end
 
 -- The re-infiltration cell: creep slowly toward the base it is infiltrating. Movement
--- only -- arriving changes nothing here; the staged flip lives in the turn model.
+-- only -- arriving changes nothing here; the staged flip lives in the turn model. Paced
+-- like the VBIED so the creep is still visibly under way MIN_JOURNEY into the mission.
 local function startInfiltrator(rec)
     local tx, ty = num(rec.targetX), num(rec.targetY)
     local function tick()
@@ -156,7 +192,7 @@ local function startInfiltrator(rec)
         if not g then
             return nil -- killed -> stop scheduling
         end
-        driveTo(g, tx, ty, INFIL_SPEED)
+        driveTo(g, tx, ty, pacedSpeed(g, tx, ty, INFIL_SPEED))
         return timer.getTime() + INFIL_INTERVAL
     end
     timer.scheduleFunction(tick, {}, timer.getTime() + GRACE)

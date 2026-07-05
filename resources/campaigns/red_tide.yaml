@@ -247,22 +247,67 @@ settings:
   # (red squadrons are 4-8 jets, so most fields now fall below this threshold).
   oca_target_autoplanner_min_aircraft_count: 40
 squadrons:
-  #Ramstein
+  #Ramstein — rear heavy-iron + the eyes: the B-52s, the 414th Strike Eagles, and the E-3A.
   165:
+    - primary: Strike
+      secondary: any
+      aircraft:
+        - 20th Bomb Squadron
+      aircraft_type: B-52H Stratofortress
+      size: 4
+    - primary: BAI
+      secondary: air-to-ground
+      aircraft:
+        - 414th Tactical Fighter Squadron
+      aircraft_type: F-15E Strike Eagle (Suite 4+)
+      size: 12
+    - primary: AEW&C
+      aircraft:
+        - NATO E-3A Component
+      aircraft_type: E-3A
+      size: 2
+  #Spangdahlem — the CAS/rotary field: Hogs plus the Huey/Cobra detachment.
+  162:
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - 414th Aviation Detachment
+      aircraft_type: UH-1H Iroquois
+      size: 4
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - HMLA-167
+      aircraft_type: AH-1W SuperCobra
+      size: 4
     - primary: CAS
       secondary: any
       aircraft:
         - 81st Tactical Fighter Squadron
       aircraft_type: A-10C Thunderbolt II (Suite 3)
       size: 8
+  #Hahn
+  155:
     - primary: Escort
       secondary: air-to-air
       aircraft:
         - Ala 14
       aircraft_type: Mirage-F1EE
       size: 6
-  #Spangdahlem
-  162:
+  #Frankfurt — the main fighter base: the 414th Vipers/Hornets, the fighter cover, and the support wing.
+  163:
+    - primary: DEAD
+      secondary: any
+      aircraft:
+        - 414th Voodoo Squadron
+      aircraft_type: F-16CM Fighting Falcon (Block 50)
+      size: 12
+    - primary: SEAD
+      secondary: any
+      aircraft:
+        - 414th JFG Hornets
+      aircraft_type: F/A-18C Hornet (Lot 20)
+      size: 12
     - primary: TARCAP
       secondary: air-to-air
       aircraft:
@@ -280,46 +325,6 @@ squadrons:
       aircraft:
         - GAF JG 74
       size: 8
-    - primary: Air Assault
-      secondary: any
-      aircraft:
-        - 414th Aviation Detachment
-      aircraft_type: UH-1H Iroquois
-      size: 4
-    - primary: Escort
-      secondary: any
-      aircraft:
-        - HMLA-167
-      aircraft_type: AH-1W SuperCobra
-      size: 4
-  #Hahn
-  155:
-    - primary: Strike
-      secondary: any
-      aircraft:
-        - 20th Bomb Squadron
-      aircraft_type: B-52H Stratofortress
-      size: 4
-    - primary: DEAD
-      secondary: any
-      aircraft:
-        - 414th Voodoo Squadron
-      aircraft_type: F-16CM Fighting Falcon (Block 50)
-      size: 12
-    - primary: SEAD
-      secondary: any
-      aircraft:
-        - 414th JFG Hornets
-      aircraft_type: F/A-18C Hornet (Lot 20)
-      size: 12
-    - primary: BAI
-      secondary: air-to-ground
-      aircraft:
-        - 414th Tactical Fighter Squadron
-      aircraft_type: F-15E Strike Eagle (Suite 4+)
-      size: 12
-  #Frankfurt
-  163:
     - primary: Refueling
       aircraft:
         - 126th Air Refueling Squadron
@@ -348,11 +353,6 @@ squadrons:
         - 12th Combat Aviation Brigade
       aircraft_type: AH-64D Apache Longbow
       size: 4
-    - primary: AEW&C
-      aircraft:
-        - NATO E-3A Component
-      aircraft_type: E-3A
-      size: 2
     - primary: Escort
       secondary: any
       aircraft:

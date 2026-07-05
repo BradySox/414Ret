@@ -238,7 +238,11 @@ file. This guide is the map; those are the territory.
     as a DCS `TheaterGroup.group_name` + centre (+ the VBIED's target base) — **only** when a mover
     exists, and the new `resources/plugins/coin/` plugin drives them via `mist.goRoute` (alarm-green so
     they relocate, not fight): the HVT patrols a random loop within `hvtPatrolRadiusM` of its area, each
-    VBIED beelines its target, both after a startup grace. **Movement only** — the kill/window/fuse
+    VBIED beelines its target, both after a startup grace; **one-way drives (VBIED, infiltrator) are
+    PACED to the 90-minute rule** (user call 2026-07-05 — an intercept must survive a slow player
+    start: each repath sets speed = remaining distance / time left to `minJourneyS` (5,400 s), capped
+    at the configured speed, floored at a 5 km/h crawl; loop movers never end so they already comply;
+    continuous pacing, never a range trigger). **Movement only** — the kill/window/fuse
     consequence stays in the turn-boundary force model, so a mover shot down is recorded natively (the
     §35/§37 no-phantom-spawn lesson; a decapitated HVT / intercepted VBIED just stops being routed).
     Tests `tests/fourteenth/test_coin_units.py` + `tests/fourteenth/test_coin_ied.py` +

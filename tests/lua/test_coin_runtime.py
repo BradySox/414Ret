@@ -34,19 +34,20 @@ mist = {
     end,
     goRoute = function(group, path)
         local wp = path[1]
-        _coinRoutes[#_coinRoutes + 1] = { group = group:getName(), x = wp.x, y = wp.y }
+        _coinRoutes[#_coinRoutes + 1] =
+            { group = group:getName(), x = wp.x, y = wp.y, speed = wp.speed }
         return true
     end,
 }
 """
 
 
-def _ground_group(name: str) -> dict[str, Any]:
+def _ground_group(name: str, x: float = 0.0, z: float = 0.0) -> dict[str, Any]:
     return {
         "name": name,
         "side": 1,  # RED
         "category": 2,  # GROUND
-        "units": [{"name": name + "-u1", "type": "UAZ-469"}],
+        "units": [{"name": name + "-u1", "type": "UAZ-469", "x": x, "z": z}],
     }
 
 
@@ -182,6 +183,99 @@ def test_harassment_grace_then_barrage_with_the_player_field_double_guard() -> N
         )
         assert distance_from_player_field > 10000, "the excluded base drew fire"
     assert any("Incoming" in t["text"] for t in h.records("texts"))
+    h.assert_no_lua_errors()
+
+
+def _vbied(name: str, tx: float = 0.0, ty: float = 0.0) -> dict[str, Any]:
+    return {
+        "groups": [name],
+        "x": "0.0",
+        "y": "0.0",
+        "targetX": str(tx),
+        "targetY": str(ty),
+    }
+
+
+def test_one_way_movers_are_paced_to_the_min_journey_window() -> None:
+    """The 90-minute rule (user call 2026-07-05): a VBIED/infiltrator drive must still
+    be under way at least minJourneyS into the mission, so a cold-starting player can
+    always make the intercept. The ordered speed = remaining distance / remaining time,
+    capped at the configured speed and floored at a crawl."""
+    h = _harness_with_mist()
+    # 50 km out: paced well below the 45 km/h max so arrival lands at ~90 min.
+    h.add_group(_ground_group("VBIED-Paced", x=30_000.0, z=40_000.0))
+    # 500 km out: pacing would need 333 km/h -- capped at the configured speed.
+    h.add_group(_ground_group("VBIED-Far", x=300_000.0, z=400_000.0))
+    # 1 km out: pacing would be 0.7 km/h -- floored at the 5 km/h crawl.
+    h.add_group(_ground_group("VBIED-Near", x=1_000.0, z=0.0))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"coin": {"startGraceS": 5}},
+            "coin": {
+                "vbieds": [
+                    _vbied("VBIED-Paced"),
+                    _vbied("VBIED-Far"),
+                    _vbied("VBIED-Near"),
+                ]
+            },
+        }
+    )
+    h.load_plugin_script(COIN_PLUGIN)
+    h.advance_to(6)
+    speeds = {r["group"]: r["speed"] for r in _routes(h)}
+
+    # Paced: ~50,000 m over the ~5,395 s left in the default 5,400 s window.
+    assert 9.0 <= speeds["VBIED-Paced"] <= 9.6
+    # Capped at the configured 45 km/h (12.5 m/s) -- pacing never speeds a mover UP.
+    assert abs(speeds["VBIED-Far"] - 12.5) < 0.01
+    # Floored at the 5 km/h crawl (1.39 m/s) -- a close target still creeps in.
+    assert abs(speeds["VBIED-Near"] - 5.0 * 1000 / 3600) < 0.01
+    h.assert_no_lua_errors()
+
+
+def test_min_journey_window_passed_restores_full_speed() -> None:
+    h = _harness_with_mist()
+    h.add_group(_ground_group("VBIED-1", x=30_000.0, z=40_000.0))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            # A 1 s window is already over when the grace expires -> configured speed.
+            "plugins": {"coin": {"startGraceS": 5, "minJourneyS": 1}},
+            "coin": {"vbieds": [_vbied("VBIED-1")]},
+        }
+    )
+    h.load_plugin_script(COIN_PLUGIN)
+    h.advance_to(6)
+    speeds = {r["group"]: r["speed"] for r in _routes(h)}
+    assert abs(speeds["VBIED-1"] - 12.5) < 0.01
+    h.assert_no_lua_errors()
+
+
+def test_infiltrator_creep_is_paced_too() -> None:
+    h = _harness_with_mist()
+    # 20 km out at a 15 km/h configured creep (arrival ~80 min): paced down so the
+    # walk is still in progress at the 90-minute mark.
+    h.add_group(_ground_group("Infil-1", x=12_000.0, z=16_000.0))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"coin": {"startGraceS": 5}},
+            "coin": {
+                "infiltrators": [
+                    {
+                        "groups": ["Infil-1"],
+                        "x": "0.0",
+                        "y": "0.0",
+                        "targetX": "0.0",
+                        "targetY": "0.0",
+                    }
+                ]
+            },
+        }
+    )
+    h.load_plugin_script(COIN_PLUGIN)
+    h.advance_to(6)
+    speeds = {r["group"]: r["speed"] for r in _routes(h)}
+    # ~20,000 m over ~5,395 s = ~3.7 m/s; below the configured 15 km/h (4.17 m/s).
+    assert 3.5 <= speeds["Infil-1"] <= 3.9
     h.assert_no_lua_errors()
 
 

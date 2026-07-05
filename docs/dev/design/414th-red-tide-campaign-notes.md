@@ -68,10 +68,15 @@ south-west (the real Rhineland NATO cluster), every red base to the north/centre
 ### Blue (NATO) — south-west cluster
 | Base | id | Squadrons |
 |---|---|---|
-| Ramstein | 165 | **A-10C Suite 3 (CAS)**, Mirage-F1EE (Escort) |
-| Spangdahlem | 162 | F-15C (TARCAP), **F-14B (Escort)**, GAF JG 74 (TARCAP, AI), UH-1H, AH-1W |
-| Hahn | 155 | B-52H (Strike), F-16CM (DEAD), **F/A-18C (SEAD)**, **F-15E (BAI)** |
-| Frankfurt | 163 | KC-135, **KC-135MPRS (drogue tanker)**, C-130J, CH-47F, AH-64D, **E-3A (AEW&C)**, **OH-58D Kiowa (Escort)** |
+| Ramstein | 165 | B-52H (Strike), **F-15E (BAI)**, **E-3A (AEW&C)** |
+| Spangdahlem | 162 | UH-1H, AH-1W, **A-10C Suite 3 (CAS)** |
+| Hahn | 155 | Mirage-F1EE (Escort) |
+| Frankfurt | 163 | F-16CM (DEAD), **F/A-18C (SEAD)**, F-15C (TARCAP), **F-14B (Escort)**, GAF JG 74 (TARCAP, AI), KC-135, **KC-135MPRS (drogue tanker)**, C-130J, CH-47F, AH-64D, **OH-58D Kiowa (Escort)** |
+
+*(Blue basing re-laid 2026-07-05 from the user's in-app air-wing pass — the `414th red tide.retribution`
+save is the source: Frankfurt becomes the main fighter base (414th Vipers/Hornets + the fighter cover +
+the support wing), Ramstein the rear heavy-iron/AEW&C field, Spangdahlem the CAS/rotary field, Hahn a
+Mirage outpost. Squadrons/types/sizes/tasks unchanged from the #479 slim roster.)*
 | **Fulda** | **166** | **Forward FARP (flipped neutral→BLUE).** Forward heli base in the Fulda Gap: AH-64D (CAS, 1-1 ARB), OH-58D (Armed Recon, 1-6 Cav), UH-1H (Air Assault, 159th Avn Det Fwd) |
 
 ### Red (Soviet/WP) — north, centre, east

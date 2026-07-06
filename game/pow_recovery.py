@@ -10,10 +10,14 @@ if TYPE_CHECKING:
     from game.squadrons.pilot import Pilot
     from game.theater import Player
 
-# How many turns a captured pilot is held as a POW before they are written off.
-# Captured pilots come from the Combat SAR enemy-capture race
-# (resources/plugins/combatsar): a snatch party that reaches a downed pilot
-# before rescue seizes them.
+# How many turns a captured pilot is held as a POW before they are written off,
+# on a campaign WITHOUT the political-will economy. Captured pilots come from the
+# Combat SAR enemy-capture race (resources/plugins/combatsar): a snatch party that
+# reaches a downed pilot before rescue seizes them. On a will-economy campaign
+# (vietnam_political_will) the hold is INDEFINITE instead -- the POW drains will
+# every turn until freed or the war ends (the §48 "running sore"), and is only
+# resolved by recapturing the holding field, a negotiated win (Homecoming), or a
+# withdrawal loss (written off). See ``surviving_pows`` / ``resolve_pows_at_game_end``.
 DEFAULT_POW_HOLD_TURNS = 4
 
 
@@ -47,6 +51,11 @@ class PendingPowRecovery:
     turns_remaining: int = DEFAULT_POW_HOLD_TURNS
     holding_cp_id: Optional[UUID] = None
     pilot: Optional[Pilot] = None
+    #: Campaign turn the capture happened, stamped at record time. Drives the §51
+    #: comms-compromise expiry (the enemy's exploitation of the captured comms plan
+    #: is time-limited even when the POW hold is indefinite). Optional for
+    #: save-migration safety (older pickled entries predate it).
+    captured_turn: Optional[int] = None
 
 
 def resolve_holding_airfield(
@@ -77,21 +86,44 @@ def resolve_holding_airfield(
     entry.holding_cp_id = nearest.id
 
 
+def _write_off(entry: PendingPowRecovery, invulnerable_player_pilots: bool) -> None:
+    """Resolve a POW held too long / abandoned at war's end.
+
+    Respects the built-in ``invulnerable_player_pilots`` setting exactly like every
+    other kill path: the **player's own** aviator is returned to the squadron
+    (repatriated) rather than killed; an AI aviator is a permanent loss.
+    """
+    pilot = entry.pilot
+    if pilot is None:
+        return
+    if pilot.player and invulnerable_player_pilots:
+        pilot.repatriate()
+    elif pilot.alive:
+        pilot.kill()
+
+
 def surviving_pows(
     game: Game, player: Player, pows: list[PendingPowRecovery]
 ) -> list[PendingPowRecovery]:
-    """Advance the POW hold clock one turn and apply the free / loss outcomes.
+    """Advance the POW hold one turn and apply the free / loss outcomes.
 
     For each held POW, in order:
 
     1. *Freed* -- if the enemy airfield holding the POW is now friendly (the side
-       captured it), the POW walks free: dropped, the aviator survives.
-    2. *Abandoned* -- otherwise the hold clock decrements; at zero the POW was
-       held too long and the **aviator is killed** (a permanent loss). Dropped.
-    3. Otherwise the POW is kept for another turn.
+       recaptured it), the POW walks free: the aviator is repatriated (back to the
+       active roster) and dropped.
+    2. *Indefinite hold* -- on a political-will campaign the POW is **never** auto-
+       written-off: they are held (draining will every turn -- the §48 running sore)
+       until freed or the war ends (``resolve_pows_at_game_end``). Kept.
+    3. *Abandoned* -- otherwise the hold clock decrements; at zero the POW is written
+       off (killed, or repatriated for an invulnerable player pilot). Dropped.
+    4. Otherwise the POW is kept for another turn.
 
     Returns the survivors; the caller reassigns its ``pending_pow_recoveries``.
     """
+    settings = game.settings
+    will_economy = bool(getattr(settings, "vietnam_political_will", False))
+    invulnerable = bool(getattr(settings, "invulnerable_player_pilots", False))
     survivors = []
     for entry in pows:
         if entry.holding_cp_id is not None:
@@ -100,15 +132,36 @@ def surviving_pows(
             except KeyError:
                 holding = None
             if holding is not None and holding.captured is player:
-                continue  # the holding field fell -> the POW is freed, pilot lives
+                if entry.pilot is not None:
+                    entry.pilot.repatriate()  # holding field fell -> POW freed
+                continue
+        if will_economy:
+            survivors.append(entry)  # indefinite: resolved only by free / war's end
+            continue
         entry.turns_remaining -= 1
         if entry.turns_remaining > 0:
             survivors.append(entry)
             continue
-        # Held past the hold window -> the aviator is lost for good.
-        if entry.pilot is not None and entry.pilot.alive:
-            entry.pilot.kill()
+        _write_off(entry, invulnerable)  # held past the window -> written off
     return survivors
+
+
+def resolve_pows_at_game_end(game: Game, coalition: Coalition, won: bool) -> None:
+    """Settle a coalition's held POWs when the campaign ends.
+
+    A **negotiated win** brings everyone home (the Homecoming -- every POW is
+    repatriated to the active roster); a **withdrawal loss** writes them off
+    (killed, or repatriated for an invulnerable player pilot). Either way the
+    recovery list is cleared. No-op when the side holds no POWs.
+    """
+    invulnerable = bool(getattr(game.settings, "invulnerable_player_pilots", False))
+    for entry in coalition.pending_pow_recoveries:
+        if won:
+            if entry.pilot is not None:
+                entry.pilot.repatriate()
+        else:
+            _write_off(entry, invulnerable)
+    coalition.pending_pow_recoveries = []
 
 
 def purge_pow_objectives(game: Game) -> None:

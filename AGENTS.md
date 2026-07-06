@@ -680,9 +680,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`combatsar` plugin): on ejection an enemy snatch party (several small dispersed teams, spawned
     under the opposing faction's country) may race to seize the survivor — kill it
     to save, or the pilot is **CAPTURED** (`combat_sar_captures` state global) and held as a **POW**
-    (`PendingPowRecovery`, holding field resolved at capture). **Recapturing the field** frees the
-    aviator; a POW abandoned past the 4-turn clock is **killed**; each turn held drains political
-    will. **The POW recovery *raid* is SHELVED (2026-07-03 rescope)** — the `CSAR` raid flight type
+    (`PendingPowRecovery`, holding field resolved at capture). **POW mechanics reworked 2026-07-06**
+    (design note `414th-csar-notes.md` "POW mechanics rework"): a capture flips the aviator to the new
+    **`PilotStatus.POW`** (`pilot.capture()`) so the squadron stops scheduling them while captive (they
+    leave `active_pilots`); **recapturing the holding field** frees them (`repatriate()` → Active); the
+    hold is the **4-turn clock on a normal campaign but INDEFINITE when `vietnam_political_will` is on**
+    (the §48 running sore drains until freed or the war ends), with a **Homecoming**
+    (`resolve_pows_at_game_end` from `process_win_loss`) that repatriates all held blue POWs on a
+    negotiated win and writes them off on a withdrawal loss. Every write-off routes through `_write_off`,
+    which **respects the built-in `invulnerable_player_pilots` setting** (a player POW is repatriated, not
+    killed — also fixing a latent bug where the old clock killed invulnerable players). A POW is surfaced
+    on the **SITREP band** (name @ holding field + clock/"held") and the **squadron roster** status. **The
+    POW recovery *raid* is SHELVED (2026-07-03 rescope)** — the `CSAR` raid flight type
     (persisted saves degrade to TRANSPORT), the dynamic `CapturedPilotGroundObject` map objective
     (tombstoned; `purge_pow_objectives` sweeps old saves), and `commit_pow_recoveries` are removed;
     capture is a campaign consequence, not a plannable mission.
@@ -1344,8 +1353,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     default ON — squadron call 2026-07-06): red can only jam channels it *knows*, learned from a **captured
     aircrew's comms plan** via the §15/§21 Combat SAR capture race — the plugin stays dormant until either a
     live capture (`combat_sar_captures` poll → "AIRCREW CAPTURED" cue → bursts after a `captureReactionS`
-    exploitation delay) or a POW already held (`pending_pow_recoveries` → `activeFromStart`, the "COMMS
-    COMPROMISED" story; freeing the POW or the 4-turn clock expiring ends the compromise). Win the SAR race and
+    exploitation delay) or a POW held whose comms plan is still exploitable (`pending_pow_recoveries`
+    captured within `COMMS_COMPROMISE_TURNS` → `activeFromStart`, the "COMMS COMPROMISED" story; freeing the
+    POW or the compromise window lapsing ends it — time-boxed off the POW's `captured_turn` so an
+    indefinitely-held POW doesn't jam forever). Win the SAR race and
     the net stays clean; gate off = ambient always-on-while-node-alive. **Audio pressure only** — no
     force-model change, the plugin owns
     no kills: silencing the jamming is an ordinary IADS strike with its MANTIS C2 consequence untouched. Gated

@@ -115,7 +115,36 @@ class MissionResultsProcessor:
             red_will=self.game.red.political_will if will_on else None,
             blue_will_note=blue_note,
             red_will_note=red_note,
+            pows_held=self._pow_sitrep_lines(),
         )
+
+    def _pow_sitrep_lines(self) -> list[str]:
+        """One player-facing line per BLUE aviator currently held POW.
+
+        Named by pilot, located at the holding enemy field, with the lever spelled
+        out: a turn countdown on a normal campaign, "(held)" on a will campaign
+        where the hold is indefinite (freed only by recapture or the war's end).
+        """
+        will_economy = bool(
+            getattr(self.game.settings, "vietnam_political_will", False)
+        )
+        lines: list[str] = []
+        for entry in self.game.blue.pending_pow_recoveries:
+            name = entry.pilot.name if entry.pilot is not None else "Downed aviator"
+            where = "an unknown location"
+            if entry.holding_cp_id is not None:
+                try:
+                    cp = self.game.theater.find_control_point_by_id(entry.holding_cp_id)
+                    where = cp.name
+                except KeyError:
+                    pass
+            if will_economy:
+                clock = "held"
+            else:
+                turns = max(entry.turns_remaining, 0)
+                clock = f"{turns} turn{'s' if turns != 1 else ''} left"
+            lines.append(f"{name} — held at {where} ({clock})")
+        return lines
 
     @staticmethod
     def _combat_sar_rescued_unit_ids(debriefing: Debriefing) -> set[int]:
@@ -178,8 +207,17 @@ class MissionResultsProcessor:
                 continue
             pilot = flying.pilot if flying is not None else None
             coalition = self.game.red if color == "red" else self.game.blue
+            if pilot is not None:
+                # Flip the aviator to POW so the squadron stops scheduling them
+                # while captive (active_pilots excludes POWs) -- they were still
+                # Active after the mission otherwise, and could fly next turn.
+                pilot.capture()
             entry = PendingPowRecovery(
-                airframe_unit_name=unit_name, x=x, y=y, pilot=pilot
+                airframe_unit_name=unit_name,
+                x=x,
+                y=y,
+                pilot=pilot,
+                captured_turn=self.game.turn,
             )
             resolve_holding_airfield(self.game, coalition, entry)
             coalition.pending_pow_recoveries.append(entry)

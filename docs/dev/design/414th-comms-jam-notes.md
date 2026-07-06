@@ -70,10 +70,11 @@ exists. Both halves of the loop were already built:
 - **Cross-turn**: a POW currently held (`Coalition.pending_pow_recoveries`) means red took
   the comms plan on an earlier turn — `plan_comms_jam` emits `activeFromStart` and the
   jamming runs from the grace with a distinct "COMMS COMPROMISED: enemy interrogation of
-  captured aircrew…" story. Freeing the POW (recapture the holding field) or the 4-turn
-  hold clock expiring (the loss is written off and the squadron *rotates the comms plan*)
-  ends the compromise — both fall out of the existing POW machinery for free, and both are
-  exactly the "rotate compromised channels" lesson.
+  captured aircrew…" story. The compromise is **time-boxed to `COMMS_COMPROMISE_TURNS` (4)**
+  off the POW's `captured_turn`: freeing the POW ends it, and so does the window lapsing (the
+  squadron *rotates the comms plan*) — so an indefinitely-held POW on a will campaign (the
+  2026-07-06 POW rework, §48) doesn't jam the net forever. Both are exactly the "rotate
+  compromised channels" lesson, and both fall out of the existing POW machinery.
 
 Dependency worth knowing: live captures require the Combat SAR capture race to be running
 (a blue rescue helo emitted — `auto_combat_sar` default ON makes this the norm). A mission
@@ -109,11 +110,12 @@ plugin constant (`CAPTURE_POLL` 30 s).
 - **Datalink/GCI degradation while jammed** — a force-model coupling (e.g. AWACS picture
   quality) was deliberately left out of v1: audio-only keeps the §36/§49 "cosmetic
   pressure, native kills" discipline.
-- **A real comms-plan rotation after a compromise** — the "rotated after the POW is written
-  off" story is fiction riding the hold clock: squadrons with authored `radio_presets` keep
-  the same intra-flight channel across turns, so red "forgetting" the freqs at clock expiry
-  is a gameplay mercy, not simulation. Actually re-rolling the compromised presets on the
-  turn after a capture would make the lesson literal; deferred.
+- **A real comms-plan rotation after a compromise** — the "rotated after `COMMS_COMPROMISE_TURNS`"
+  story is fiction riding the compromise window: squadrons with authored `radio_presets` keep
+  the same intra-flight channel across turns, so red "losing" the freqs when the window lapses
+  is a gameplay abstraction, not simulation. Actually re-rolling the compromised presets on the
+  turn after a capture would make the lesson literal; deferred. (The POW-side rework — status,
+  visibility, indefinite hold, Homecoming — landed 2026-07-06; see `414th-csar-notes.md`.)
 
 Everything else (files, tests, the emit contract) lives in `docs/dev/414th-features.md`
 §51.

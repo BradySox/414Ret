@@ -22,13 +22,15 @@ kneeboard comms ladder so comms discipline -- push to the backup, kill the node
 **The intel gate** (``comms_jam_requires_capture``, default ON): red can only
 jam channels it *knows*, and it learns them from a **captured aircrew's comms
 plan** -- the §15/§21 Combat SAR enemy-capture race. In this mode the plugin
-stays dormant until either a POW is already held at planning (the compromise
-carries across turns until the POW is freed or written off) or a pilot is
-captured live mid-mission (``combat_sar_captures``), at which point the
-jamming starts after a short exploitation delay. Save the pilot and the net
-stays clean -- another reason Combat SAR matters, and a periodic lesson in
-rotating compromised channels. Turning the gate off restores the ambient
-"jam whenever a C2 node lives" behavior.
+stays dormant until either a POW is held whose comms plan is still exploitable
+(captured within ``COMMS_COMPROMISE_TURNS``) or a pilot is captured live
+mid-mission (``combat_sar_captures``), at which point the jamming starts after a
+short exploitation delay. Save the pilot and the net stays clean -- another
+reason Combat SAR matters, and a periodic lesson in rotating compromised
+channels. The compromise is time-boxed independently of the POW hold, so an
+indefinitely-held POW (a will campaign, §48) does not jam the net forever: the
+squadron rotates its comms plan after a few turns. Turning the gate off restores
+the ambient "jam whenever a C2 node lives" behavior.
 
 Audio pressure ONLY, the §36/§49 discipline: no force-model change, no kills
 owned by Lua. Killing the node is an ordinary strike on an ordinary IADS TGO
@@ -66,6 +68,13 @@ GUARD_MHZ = (243.0, 121.5)
 #: Hard cap on the emitted jam list. The plugin duty-cycles a small subset per
 #: burst anyway; this bounds the Lua config for a huge ATO.
 MAX_JAMMED_FREQUENCIES = 10
+
+#: How many turns a captured comms plan stays exploitable. A POW held past this
+#: no longer compromises the net from mission start -- the squadron has rotated
+#: its comms plan (the "rotate compromised channels" lesson made literal), even
+#: though the POW itself may be held indefinitely on a will campaign. Keeps the
+#: §51 comms compromise time-boxed rather than riding the POW hold forever.
+COMMS_COMPROMISE_TURNS = 4
 
 
 @dataclass
@@ -127,19 +136,34 @@ def plan_comms_jam(
             "Comms jam: could not allocate an un-jammed JAM BACKUP frequency"
         )
     capture_only = bool(getattr(game.settings, "comms_jam_requires_capture", True))
-    # A POW currently held means red already took a comms plan off a captured
-    # aircrew on an earlier turn: the channels are compromised from mission
-    # start. Freeing the POW (recapture the holding field) or the hold clock
-    # expiring (the squadron rotates its comms plan after the loss is written
-    # off) ends the compromise -- both fall out of pending_pow_recoveries.
-    pow_held = bool(getattr(game.blue, "pending_pow_recoveries", []))
+    # A POW captured RECENTLY means red is still exploiting the comms plan it took
+    # off them: the channels are compromised from mission start. The compromise is
+    # time-boxed to COMMS_COMPROMISE_TURNS -- freeing the POW ends it (they leave
+    # pending_pow_recoveries), and so does the squadron rotating its comms plan
+    # after a few turns, so an indefinitely-held POW (a will campaign) does not
+    # jam the net forever. Old saves' entries carry no captured_turn -> treated as
+    # still-fresh (compromised) rather than silently clean.
+    pow_compromised = _has_recent_pow(game)
     return CommsJamInfo(
         jammers,
         frequencies,
         backup,
         capture_only=capture_only,
-        active_from_start=(not capture_only) or pow_held,
+        active_from_start=(not capture_only) or pow_compromised,
     )
+
+
+def _has_recent_pow(game: "Game") -> bool:
+    """True if BLUE holds a POW captured within COMMS_COMPROMISE_TURNS -- the comms
+    plan is still exploitable."""
+    turn = getattr(game, "turn", 0)
+    for entry in getattr(game.blue, "pending_pow_recoveries", []):
+        captured_turn = getattr(entry, "captured_turn", None)
+        if captured_turn is None:
+            return True  # pre-migration entry: assume still compromised
+        if turn - captured_turn < COMMS_COMPROMISE_TURNS:
+            return True
+    return False
 
 
 def populate_comms_jam_lua(

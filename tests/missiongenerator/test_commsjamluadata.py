@@ -61,16 +61,25 @@ def _game(
     blue_owned: bool = False,
     capture_gate: bool = False,
     pows: int = 0,
+    turn: int = 0,
+    pow_captured_turns: list[int] | None = None,
 ) -> Any:
     cp = SimpleNamespace(
         captured=SimpleNamespace(is_blue=blue_owned), ground_objects=tgos
     )
+    # pow_captured_turns overrides the simple `pows` count with explicit
+    # captured_turn stamps (to exercise the compromise-expiry window).
+    if pow_captured_turns is not None:
+        recoveries = [SimpleNamespace(captured_turn=t) for t in pow_captured_turns]
+    else:
+        recoveries = [SimpleNamespace(captured_turn=turn) for _ in range(pows)]
     return SimpleNamespace(
         settings=SimpleNamespace(
             enemy_comms_jamming=on, comms_jam_requires_capture=capture_gate
         ),
         theater=SimpleNamespace(controlpoints=[cp]),
-        blue=SimpleNamespace(pending_pow_recoveries=[object()] * pows),
+        blue=SimpleNamespace(pending_pow_recoveries=recoveries),
+        turn=turn,
     )
 
 
@@ -188,6 +197,28 @@ def test_intel_gate_flags() -> None:
     )
     assert plan is not None
     assert plan.capture_only is True and plan.active_from_start is True
+
+
+def test_comms_compromise_expires_before_an_indefinite_pow_hold() -> None:
+    from game.missiongenerator.commsjamluadata import COMMS_COMPROMISE_TURNS
+
+    mission_data = _mission_data([_flight(MHz(252))])
+    tgos = [_tgo("comms", ["u1"])]
+
+    # A POW captured within the window still compromises the net.
+    fresh = _game(
+        tgos, capture_gate=True, turn=COMMS_COMPROMISE_TURNS - 1, pow_captured_turns=[0]
+    )
+    plan = plan_comms_jam(fresh, mission_data, _Registry([MHz(271)]))  # type: ignore[arg-type]
+    assert plan is not None and plan.active_from_start is True
+
+    # Held past the window (indefinite hold on a will campaign): the squadron has
+    # rotated its comms plan, so the net is clean at mission start again.
+    stale = _game(
+        tgos, capture_gate=True, turn=COMMS_COMPROMISE_TURNS, pow_captured_turns=[0]
+    )
+    plan = plan_comms_jam(stale, mission_data, _Registry([MHz(271)]))  # type: ignore[arg-type]
+    assert plan is not None and plan.active_from_start is False
 
 
 def test_no_plan_without_any_blue_channel() -> None:

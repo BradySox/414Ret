@@ -27,11 +27,56 @@ the vision asked for (default ON) never shipped. The call:
    mission. Removed: the `CSAR` raid flight type (persisted saves degrade it to TRANSPORT via
    `_LEGACY_FLIGHT_TYPE_VALUES`), the dynamic `CapturedPilotGroundObject` map objective (class
    kept as a save-compat tombstone; `purge_pow_objectives` sweeps old saves), and
-   `commit_pow_recoveries`. **Kept — the held-POW model**: a captured pilot becomes a
-   `PendingPowRecovery` held at the nearest enemy field (resolved at capture time), **freed if
-   that field falls**, **killed when the 4-turn hold clock expires**, and **draining political
-   will every turn held** (the Vietnam W1 feed — this is why the ledger stays).
+   `commit_pow_recoveries`. **Kept — the held-POW model** (expanded 2026-07-06, see below): a
+   captured pilot becomes a `PendingPowRecovery` held at the nearest enemy field (resolved at
+   capture time), **freed if that field falls**, and **draining political will every turn held**
+   (the Vietnam W1 feed — this is why the ledger stays).
 4. **One doc.** This file. The old eight are historical record only.
+
+## POW mechanics rework (2026-07-06)
+
+Follow-up on the §51 comms-jamming intel gate (which made "a held POW compromises your comms"
+a real consequence): a survey of the POW path found three gaps, all now fixed.
+
+1. **A captured pilot was still flyable.** `PilotStatus` had only Active/OnLeave/Dead, and the
+   squadron rebuilds its available pool from *Active* pilots — so the aviator in Hanoi could be
+   fragged next turn while also draining will and compromising comms. New **`PilotStatus.POW`**:
+   `record_pow_captures` calls `pilot.capture()` (Active → POW; `alive` stays True), which drops
+   them from `active_pilots` (scheduling + the available-pool rebuild) until recovered. Freeing
+   sets them back Active (`repatriate()`).
+2. **POWs were invisible.** Nothing surfaced a held POW after the capture message. Now a
+   **SITREP band line** per POW — `"Capt Mitchell — held at Mozdok (2 turns left)"`, or
+   `"(held)"` on an indefinite-hold will campaign — and the **squadron roster** shows the POW
+   status. The two levers (recapture the field / the clock) are finally legible, on every
+   campaign (the SITREP works without the will meter).
+3. **The 4-turn death clock was era-wrong on will campaigns and self-cauterized the running
+   sore.** §48 made the per-turn POW drain "the one lever the GCI-ambush enemy has to pressure
+   Washington" — but the pilot was killed after 4 turns, stopping the bleed. Now
+   **`surviving_pows` holds indefinitely when `vietnam_political_will` is on** (the drain
+   continues until freed or the war ends); non-will campaigns keep the 4-turn clock. The
+   **Homecoming**: `resolve_pows_at_game_end` (from `process_win_loss`) repatriates every held
+   blue POW on a negotiated **win** (a felt payoff) and writes them off on a withdrawal **loss**.
+
+**Built on the existing pilot-mortality setting.** Every POW write-off (clock expiry *and* the
+loss-ending) routes through `_write_off`, which respects `invulnerable_player_pilots` exactly
+like the other kill paths: the player's own POW is **repatriated** rather than killed; an AI POW
+is a permanent loss. This also fixed a latent bug — the old `surviving_pows` killed a player's
+captured pilot at clock expiry even with invulnerable pilots set.
+
+**§51 coupling stays honest.** "POW held = comms compromised" is time-boxed to
+`COMMS_COMPROMISE_TURNS` (4) via a `captured_turn` stamp, so an indefinitely-held POW does not
+jam the net forever — the squadron rotates its comms plan after a few turns even while the pilot
+is still captive.
+
+Files: `game/squadrons/pilot.py` (the POW status/`capture`/`repatriate`), `game/pow_recovery.py`
+(`surviving_pows` will-awareness + `_write_off` + `resolve_pows_at_game_end`),
+`game/sim/missionresultsprocessor.py` (capture flips status + stamps turn; the SITREP POW
+lines), `game/game.py` (`process_win_loss` Homecoming), `game/sitrep.py` (`pows_held`),
+`qt_ui/windows/SquadronDialog.py` (roster status), `game/missiongenerator/commsjamluadata.py`
+(the compromise expiry). Tests: `tests/test_pow_recovery.py`,
+`tests/squadrons/test_squadron_pilots.py`, `tests/test_sitrep.py`,
+`tests/missiongenerator/test_commsjamluadata.py`. In-game pass: checklist G28. **Not shipped**
+(unchanged from the rescope): the POW recovery raid stays shelved, red-side POWs stay out.
 
 ## What ships (the architecture that survived)
 

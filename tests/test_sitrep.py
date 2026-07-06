@@ -82,6 +82,36 @@ def test_kneeboard_lines_formatting_and_plurals() -> None:
     assert not any(line.startswith("Lost:") for line in lines)
 
 
+def test_kneeboard_lines_render_held_pows() -> None:
+    sitrep = Sitrep(
+        turn=7,
+        day=date(1968, 6, 6),
+        friendly=SideLosses(1, 0, 0),
+        enemy=SideLosses(0, 0, 0),
+        captured=[],
+        lost=[],
+        pilots_recovered=0,
+        pows_held=["Capt Mitchell — held at Mozdok (held)"],
+    )
+    lines = sitrep.kneeboard_lines()
+    assert "POW: Capt Mitchell — held at Mozdok (held)" in lines
+    assert not sitrep.is_empty  # a held POW is news even with no losses
+
+
+def test_a_held_pow_alone_is_not_a_quiet_turn() -> None:
+    sitrep = Sitrep(
+        turn=2,
+        day=date(1968, 1, 1),
+        friendly=SideLosses(0, 0, 0),
+        enemy=SideLosses(0, 0, 0),
+        captured=[],
+        lost=[],
+        pilots_recovered=0,
+        pows_held=["A — held at B (2 turns left)"],
+    )
+    assert not sitrep.is_empty
+
+
 def test_loss_phrase_handles_none_and_site_plural() -> None:
     none_side = Sitrep(
         1, date(2000, 1, 1), SideLosses(0, 0, 0), SideLosses(0, 0, 2), [], [], 0

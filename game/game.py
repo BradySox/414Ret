@@ -926,6 +926,14 @@ class Game:
         return self.__culling_zones
 
     def process_win_loss(self, turn_state: TurnState) -> None:
+        # Settle any held blue POWs against the outcome: a win brings them home
+        # (the Homecoming), a loss writes them off. Blue-only -- red flies no CSAR,
+        # so red never holds blue-captured aviators (§15 squadron call). No-op when
+        # none are held, so this is safe on every campaign.
+        from game.pow_recovery import resolve_pows_at_game_end
+
+        if turn_state in (TurnState.WIN, TurnState.LOSS):
+            resolve_pows_at_game_end(self, self.blue, won=turn_state is TurnState.WIN)
         if turn_state is TurnState.WIN:
             self.message(
                 "Congratulations, you are victorious! Start a new campaign to continue."

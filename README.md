@@ -95,10 +95,15 @@ and selected later upstream fixes.
   to bring a downed pilot home: hold near the FLOT with the **King** (C-130) and **Jolly Green** (the
   rescue helo), protect the survivor, suppress the threats around them, and walk the helo in. The enemy
   may send a **snatch party** to grab the downed pilot — kill it in time or the pilot is **captured**
-  and held as a **POW at an enemy airfield**: recapture that field to free them, and every turn they
-  are held saps your side's political will; leave them held too long and they are lost for good. The
-  capture is the consequence for losing the rescue fight — there is no separate raid mission to plan.
-  (The old armor-hunt SCAR is retired — SCAR is a rescue role now.)
+  and held as a **POW at an enemy airfield**. A captured pilot is pulled from the flying roster (they
+  show as **POW** in the squadron and can't be fragged while captive), named on your kneeboard SITREP
+  each turn with where they're held, and **recapturing that field brings them back**. Every turn they're
+  held saps your side's political will. On a **political-will (Vietnam) campaign** the hold is
+  indefinite — the drain is a real running sore Hanoi holds over Washington — and a **negotiated victory
+  brings your POWs home** (a defeat writes them off); on other campaigns they're lost for good after a
+  few turns. If you fly with **invulnerable player pilots** on, your own captured pilots are returned
+  rather than killed. The capture is the consequence for losing the rescue fight — there is no separate
+  raid mission to plan. (The old armor-hunt SCAR is retired — SCAR is a rescue role now.)
 - **Combat SAR** makes a downed pilot worth flying for. A CH-47 orbits near the front as the
   rescuer while a C-130 holds overhead as the HC-130 "King" — on-scene command with an
   air-tracking TACAN the helo homes on (an AI King lights it automatically; a player King

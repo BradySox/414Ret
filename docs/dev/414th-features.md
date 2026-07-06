@@ -1532,14 +1532,24 @@ pilot; let any team dwell on the survivor un-rescued and the pilot is **CAPTURED
 `Debriefing.parse_combat_sar_captures`. Seven plugin tunables
 (`captureEnabled` / `Chance` / `SpawnDistance` / `Range` / `Dwell` / `PartySize` / `Teams`).
 
-**Capture → held POW (Python; the raid is SHELVED, 2026-07-03).** `record_pow_captures`
-(`game/sim/missionresultsprocessor.py`) turns each capture into a `PendingPowRecovery`
-(`game/pow_recovery.py`) on the survivor's coalition (persisted, save-migrated, 4-turn hold
-clock), resolving the **holding enemy airfield at capture time** (`resolve_holding_airfield`);
-`commit_air_losses` spares a captured pilot the KIA (a POW is not killed). The POW resolves two
-ways only: `surviving_pows` (run from `Coalition.end_turn`) **frees** a POW whose holding field
-is recaptured and **kills** one abandoned past the clock (permanent loss); while held, each POW
-**drains political will per turn** (the Vietnam W1 `blue_pow_held_per_turn` feed). The dedicated
+**Capture → held POW (Python; the raid is SHELVED, 2026-07-03; the model reworked 2026-07-06).**
+`record_pow_captures` (`game/sim/missionresultsprocessor.py`) turns each capture into a
+`PendingPowRecovery` (`game/pow_recovery.py`) on the survivor's coalition (persisted,
+save-migrated), resolving the **holding enemy airfield at capture time**
+(`resolve_holding_airfield`) and stamping the `captured_turn`. `commit_air_losses` spares a
+captured pilot the KIA, and the capture now flips the aviator to **`PilotStatus.POW`**
+(`pilot.capture()`) so the squadron stops scheduling them while captive (they leave
+`active_pilots`). The POW resolves by: `surviving_pows` (from `Coalition.end_turn`) **frees**
+(`repatriate()` → Active) a POW whose holding field is recaptured; otherwise the hold is a
+**4-turn clock on a normal campaign but INDEFINITE when `vietnam_political_will` is on** (the §48
+running sore drains until freed or the war ends). The **Homecoming** (`resolve_pows_at_game_end`,
+from `process_win_loss`) repatriates all held blue POWs on a negotiated **win** and writes them
+off on a withdrawal **loss**. Every write-off routes through `_write_off`, which **respects
+`invulnerable_player_pilots`** (a player POW is repatriated, not killed). A held POW is surfaced
+on the **SITREP band** (`Sitrep.pows_held` — name @ holding field + clock/"held") and the
+**squadron roster status** (`SquadronDialog`); while held it **drains political will per turn**
+(the Vietnam W1 `blue_pow_held_per_turn` feed). The §51 comms compromise it triggers is time-boxed
+to `COMMS_COMPROMISE_TURNS` off `captured_turn`, so an indefinitely-held POW doesn't jam forever. The dedicated
 recovery *raid* — the `CSAR` flight type + the dynamic `CapturedPilotGroundObject` map objective
 + `commit_pow_recoveries` — was **shelved in the 2026-07-03 rescope** (`game/pow_objectives.py`
 deleted; the TGO class remains a save-compat tombstone; `purge_pow_objectives` sweeps

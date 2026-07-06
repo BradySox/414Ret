@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from typing import List, Optional, TYPE_CHECKING, cast
 
@@ -52,6 +52,11 @@ class Sitrep:
     captured: List[str]  # control points the player took this turn
     lost: List[str]  # control points the player lost this turn
     pilots_recovered: int  # Combat SAR deliveries home
+    #: One line per BLUE aviator held POW, e.g. "Capt Mitchell — held at Mozdok
+    #: (2 turns left)" or "… (held)" on an indefinite-hold will campaign. The one
+    #: player-facing surface for the "recapture the field / rescue matters" levers.
+    #: Absent on pre-POW-visibility pickled sitreps (read via getattr).
+    pows_held: List[str] = field(default_factory=list)
     #: Vietnam campaign layer (W1): post-turn Political Will / Regime Resolve
     #: percentages, set only when vietnam_political_will is on. None (and absent on
     #: pre-W1 pickled sitreps -- read via getattr) hides the band line entirely.
@@ -73,6 +78,7 @@ class Sitrep:
             or self.captured
             or self.lost
             or self.pilots_recovered
+            or getattr(self, "pows_held", None)
         )
 
     @classmethod
@@ -85,6 +91,7 @@ class Sitrep:
         red_will: Optional[float] = None,
         blue_will_note: Optional[str] = None,
         red_will_note: Optional[str] = None,
+        pows_held: Optional[List[str]] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
         red = debriefing.loss_counts(Player.RED)
@@ -115,6 +122,7 @@ class Sitrep:
             red_will=red_will,
             blue_will_note=blue_will_note,
             red_will_note=red_will_note,
+            pows_held=list(pows_held or []),
         )
 
     def kneeboard_lines(self) -> List[str]:
@@ -130,6 +138,9 @@ class Sitrep:
         if self.pilots_recovered:
             plural = "s" if self.pilots_recovered != 1 else ""
             lines.append(f"Recovered {self.pilots_recovered} downed pilot{plural}")
+        # POWs held (getattr: pre-POW-visibility pickled sitreps lack the field).
+        for pow_line in getattr(self, "pows_held", None) or []:
+            lines.append(f"POW: {pow_line}")
         # getattr: pre-W1 pickled sitreps lack the will fields entirely.
         blue_will = getattr(self, "blue_will", None)
         red_will = getattr(self, "red_will", None)

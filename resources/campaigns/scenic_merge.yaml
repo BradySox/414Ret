@@ -423,3 +423,13 @@ squadrons:
       aircraft:
         - Mi-24P Hind-F
       size: 2
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Al Dhafra AFB -> Al Minhad AFB  (E11 north along the coast past Ghantoot, then inland at Jebel Ali to the E611 -- the UAE BLUE rear spine)
+  - waypoints:
+      - [-211028, -173240]
+      - [-191025, -165551]
+      - [-143805, -139457]
+      - [-127534, -115980]
+      - [-126014, -89133]

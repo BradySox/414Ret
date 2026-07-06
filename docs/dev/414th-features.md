@@ -4156,11 +4156,26 @@ springs stops scheduling.
   exist. Both COIN campaigns originally shipped exactly that way; their blue rear corridors are
   geo-authored (`tools/supply_route_geo.py`: ER Kandahar↔Camp Bastion up Highway 1 — the literal
   ambush alley; IR Baghdad↔Balad + Baghdad↔Al-Taquddum). The **2026-07-06 standardization survey** loaded
-  all 67 shipping campaigns: **27 bind a blue→blue road** (feature live), **40 don't** (documented no-op —
-  some genuinely can't, e.g. the island maps; the rest await the corridor-authoring content pass, the
-  Tier-2 follow-up). The 27 are CI-locked as `ROAD_BEARING_CAMPAIGNS`
-  (`test_road_bearing_campaign_keeps_its_blue_road` loads each theater), so a laydown edit can't silently
-  drop a road; when a new corridor is authored, ADD the campaign to the inventory.
+  all 67 shipping campaigns: **27 bound a blue→blue road** natively, and the **same-day batch-1
+  corridor-authoring pass** (`BATCH1_BLUE_REAR` in `tools/supply_route_geo.py` — every route a real
+  highway traced by lat/lon per the driveable-corridor standard, spliced into the campaign yamls and
+  headless-verified to bind its intended blue pair) **added 21 more** across ten maps: the Tbilisi
+  Kakheti-Highway hop (TblisiGap, Vectron's Claw), west Georgia's E60/S2 (Battle4Georgia,
+  Kutaisi2Vaziani), Anapa↔Novorossiysk (Slava Ukraini), the Turkish O-52/E91 rear (Long Road to H3,
+  Syria full map, Aleppo Insurgency, Battle4SyriaNorth), the H4↔H3 pipeline highway (Task Force
+  Thunder), US-95 (Battle4area51), the UAE E11 (Noisy Cricket ×2, Scenic Merge), Israel's route 40
+  (Gazelle) + the Egyptian Delta (Red Sea Rising), the Baghdad ring (Desert Aladeen), Highway 1
+  Kandahar↔Bastion (Shattered Dagger), Guam's Marine Corps Drive (Velvet Thunder — the red-side §35
+  no-op there is unchanged), the New Forest A-roads (Final Countdown 2), and the Swedish/Norwegian
+  E10/E45/E6 chain (Anvil of War). **48 of 67 campaigns** now field the feature; the remaining **19 are
+  genuine no-ops** (0–1 blue land control points, or a blue pair separated by sea/strait — the Falklands
+  set, Peace Spring's Cyprus rear, Abu Dhabi/PG-Wargames' Hormuz split, Caen-to-Evreux's Channel — plus
+  Caucasus_Multi_Russia and Syrian Shield, whose only blue pairs would need a corridor through the red
+  heartland, deferred as a judgment call). All 48 are CI-locked as `ROAD_BEARING_CAMPAIGNS`
+  (`test_road_bearing_campaign_keeps_its_blue_road` loads each theater;
+  `test_batch1_corridor_campaigns_are_in_the_inventory` keeps the tool and the inventory in lockstep),
+  so a laydown edit can't silently drop a road; when a new corridor is authored, ADD the campaign to
+  the inventory.
 - **Ambush is BLUE-only; ambience is symmetric.** The ambush teams target the player's convoys (red's
   ambient columns are instead the player's Armed Recon/BAI targets — §35 from the other side). A symmetric
   red-convoy ambush (AI escorting its own columns against player-hunts) stays deferred.
@@ -4173,8 +4188,12 @@ springs stops scheduling.
 - **Deferred:** an off-road (beside-the-road) ambush position is a follow-up (teams currently dig in on
   the road polyline itself). Convoy size/team strength/`AMBUSH_CHANCE`/the ambient 1..3 band are fixed
   constants — tune from the S3/S5 passes. (The multi-team gauntlet landed with the 2026-07-06 chance
-  rework.) The Tier-2 content pass — authoring blue rear corridors for the road-less 40 — is the open
-  standardization follow-up.
+  rework; the Tier-2 corridor-authoring pass landed the same day as batch 1 — every road-less campaign
+  with a viable blue pair now has its corridor, and the 19 left out are genuine geography no-ops.) The
+  batch-1 corridors are headless-verified to bind; their on-map read (does the drawn line hug the
+  road?) rides the normal by-eye pass whenever each campaign is next flown, like the Vietnam trail
+  FOB roads before them. Syrian Shield / Caucasus_Multi_Russia could still gain a corridor if a
+  through-red supply line is ever wanted.
 
 ## §51 — Enemy comms jamming (IADS comms nodes)
 

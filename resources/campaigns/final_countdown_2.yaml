@@ -156,3 +156,25 @@ squadrons:
       aircraft:
         - Fw 190 A-8 Anton
       size: 20
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Lymington -> Needs Oar Point  (the B3054 through East End)
+  - waypoints:
+      - [139651, -90746]
+      - [139425, -88321]
+      - [140789, -85142]
+  # Stoney Cross -> Lymington  (A337 south through Lyndhurst and Brockenhurst)
+  - waypoints:
+      - [156400, -100851]
+      - [151631, -95400]
+      - [145744, -95005]
+      - [139651, -90746]
+  # Northolt -> Stoney Cross  (A30/M3 via Staines -> Basingstoke -> Winchester, then the A31 into the New Forest)
+  - waypoints:
+      - [229644, -16612]
+      - [215773, -22436]
+      - [195658, -62258]
+      - [173027, -77797]
+      - [160453, -93673]
+      - [156400, -100851]

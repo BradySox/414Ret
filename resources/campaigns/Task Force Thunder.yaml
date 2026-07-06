@@ -161,3 +161,12 @@ squadrons:
     - primary: CAS
       aircraft:
       - SA 342M Gazelle
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # H4 -> H3  (the old Haifa-pipeline highway across the western desert -- the road the pumping stations exist to guard)
+  - waypoints:
+      - [-279367, 207219]
+      - [-266216, 249981]
+      - [-247385, 310879]
+      - [-235406, 352523]

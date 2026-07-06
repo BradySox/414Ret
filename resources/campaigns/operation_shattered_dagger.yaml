@@ -72,3 +72,14 @@ squadrons:
       aircraft:
         - CH-47F Block I
       size: 4
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Kandahar Airfield -> Camp Bastion  (Highway 1 west through Zhari/Howz-e Madad -> Maiwand -> Gereshk, then the Bastion access road)
+  - waypoints:
+      - [-270486, -29690]
+      - [-261488, -71869]
+      - [-254647, -106269]
+      - [-237771, -151847]
+      - [-232270, -171511]
+      - [-235178, -184377]

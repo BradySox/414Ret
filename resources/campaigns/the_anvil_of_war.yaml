@@ -258,3 +258,39 @@ squadrons:
       aircraft:
         - KJ-2000
       size: 2
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Kiruna -> Kalixfors  (the E10/870 south -- the short garrison hop)
+  - waypoints:
+      - [-20456, -90639]
+      - [-23997, -93073]
+      - [-26773, -94330]
+  # Kalixfors -> Jokkmokk  (E10 south to Gallivare, then the E45 through Porjus)
+  - waypoints:
+      - [-26773, -94330]
+      - [-97712, -77448]
+      - [-116224, -113798]
+      - [-168130, -100661]
+  # Jokkmokk -> Vidsel  (road 97 down the Lule valley via Vuollerim, then 356 at Harads west to the Vidsel range road)
+  - waypoints:
+      - [-168130, -100661]
+      - [-175727, -80550]
+      - [-215912, -64965]
+      - [-224739, -85404]
+      - [-237356, -101474]
+  # Vidsel -> Kallax  (road 94 to Alvsbyn, E4 at Pitea, north to Lulea)
+  - waypoints:
+      - [-237356, -101474]
+      - [-260497, -62702]
+      - [-298303, -39881]
+      - [-279134, -20132]
+      - [-274102, -10879]
+  # Bardufoss -> Kiruna  (E6 south through Setermoen to Bjerkvik, then the E10 east over Bjornfjell/Riksgransen and past Abisko)
+  - waypoints:
+      - [118871, -160678]
+      - [97427, -169332]
+      - [64507, -203436]
+      - [49982, -181646]
+      - [39849, -152442]
+      - [-20456, -90639]

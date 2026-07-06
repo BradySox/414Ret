@@ -219,3 +219,12 @@ squadrons:
       aircraft:
         - Su-33 Flanker-D
       size: 12
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Tbilisi-Lochini -> Vaziani  (the Kakheti Highway / S5 east past the airport interchange -- the short BLUE rear hop; feeds the #50 convoys)
+  - waypoints:
+      - [-315671, 896630]
+      - [-316398, 898750]
+      - [-317573, 900874]
+      - [-319065, 903149]

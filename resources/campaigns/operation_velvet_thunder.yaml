@@ -241,3 +241,12 @@ phases:
           red_resolve_below: 25
       - Hold Washington's will until Hanoi signs
     min_turn: 16
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Won Pat Intl -> Andersen AFB  (Route 16 to Route 1 / Marine Corps Drive north through Dededo and Yigo)
+  - waypoints:
+      - [-24, -78]
+      - [2948, 4516]
+      - [5666, 10062]
+      - [10575, 14549]

@@ -295,3 +295,13 @@ squadrons:
       secondary: air-to-ground
       aircraft:
         - AV-8B Harrier II Night Attack
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Gaziantep -> Incirlik  (the O-52/E90 motorway: Nurdagi -> Bahce -> Toprakkale -> Ceyhan -- the Turkish BLUE rear spine)
+  - waypoints:
+      - [210334, 147314]
+      - [238782, 69774]
+      - [225462, 29390]
+      - [223065, -72]
+      - [221208, -35240]

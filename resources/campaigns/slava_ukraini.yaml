@@ -117,3 +117,12 @@ squadrons:
       aircraft:
         - Tu-95MS Bear-H
       size: 12
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Anapa-Vityazevo -> Novorossiysk  (the A290 through Raevskaya and the Verkhnebakansky pass)
+  - waypoints:
+      - [-5412, 243129]
+      - [-23170, 260506]
+      - [-30005, 271606]
+      - [-40918, 279256]

@@ -935,8 +935,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     not local production). `MAX_CONVOY_UNITS` raised 4→10 accordingly. **Engine-verified**: Yankee Station and
     Khe Sanh each spawn 2 convoys of 10 units on 2 distinct roads at turn 1 (20 vehicles total, vs. the old
     single 3-vehicle column). `operation_velvet_thunder.yaml` has
-    **no `supply_routes` at all** (its Marianas island geography has no roads between bases), so the toggle is a
-    documented no-op there regardless of the seeding rework — flagged, not fixed. So interdicting the trail now
+    **no red→red `supply_routes`** (its red bases are spread across roadless islands), so the toggle is a
+    documented no-op there regardless of the seeding rework — flagged, not fixed (the §50 batch-1 pass later
+    gave it a BLUE Guam road, which doesn't change red's). So interdicting the trail now
     denies the enemy real reinforcements (kill it and they never reach the line; let it through and they do),
     and the kill is recorded natively. Fully guarded (no front / no road corridor / budget full / no unit pool
     ⇒ no-op; the engine's organic convoys still serve). **No `vietnamops` plugin runtime** any longer — the
@@ -1357,10 +1358,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     geo-authored per the driveable-corridor standard (`tools/supply_route_geo.py`: ER Kandahar↔Camp Bastion
     up Highway 1, the literal ambush alley; IR Baghdad↔Balad + Baghdad↔Al-Taquddum; the tool gained the
     `iraq_inherent_resolve` mode). The **2026-07-06 survey** found **27 of the 67 campaigns** bind a
-    blue→blue road (the rest are documented no-ops until a corridor is authored — the follow-up content
-    pass); the full set is CI-locked as `ROAD_BEARING_CAMPAIGNS` in
-    `test_road_bearing_campaign_keeps_its_blue_road`, which loads each theater so a laydown edit can't
-    silently drop a road. Tests `tests/fourteenth/test_convoy_ambush.py` +
+    blue→blue road natively, and the **same-day batch-1 corridor pass** (`BATCH1_BLUE_REAR` in the tool —
+    real highways traced by lat/lon, spliced into the campaign yamls, headless-verified to bind their
+    intended blue pairs) **authored 21 more** across ten maps (Tbilisi/west-Georgia/Anapa on Caucasus, the
+    Turkish O-52/E91 + the H4↔H3 pipeline highway on Syria, US-95 on Nevada, the UAE E11 on PG, Israel
+    route 40 + the Egyptian Delta on Sinai, the Baghdad ring, Kandahar↔Bastion on Shattered Dagger, Guam's
+    Marine Corps Drive on Velvet Thunder, the New Forest A-roads on Normandy, the Swedish/Norwegian
+    E10/E45/E6 chain on Kola) — **48 of 67 now field the feature**; the 19 left are genuine geography
+    no-ops (0–1 blue land CPs, or a blue pair split by sea/strait; Syrian Shield / Caucasus_Multi_Russia
+    deferred — their only corridor would cross the red heartland). The full set is CI-locked as
+    `ROAD_BEARING_CAMPAIGNS` in `test_road_bearing_campaign_keeps_its_blue_road`, which loads each theater
+    so a laydown edit can't silently drop a road (+ `test_batch1_corridor_campaigns_are_in_the_inventory`
+    keeps the tool and the inventory in lockstep). Tests `tests/fourteenth/test_convoy_ambush.py` +
     `tests/fourteenth/test_ambient_convoys.py` + `tests/missiongenerator/test_convoyambushluadata.py` +
     `tests/lua/test_convoyambush_runtime.py`; features doc §50, checklist S3 + S5 — needs an in-game pass.
 51. **Enemy comms jamming (IADS comms nodes)** — the IADS comms nodes, given a voice: with

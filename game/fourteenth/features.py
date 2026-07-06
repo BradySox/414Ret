@@ -283,6 +283,13 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="convoyambush",
         settings_fields=("convoy_ambush",),
     ),
+    Feature(
+        "enemy_comms_jamming",
+        "Enemy comms jamming (IADS comms nodes)",
+        51,
+        plugin_id="commsjam",
+        settings_fields=("enemy_comms_jamming", "comms_jam_requires_capture"),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

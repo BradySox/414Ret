@@ -16,6 +16,12 @@ class PilotStatus(Enum):
     Active = "Active"
     OnLeave = "On leave"
     Dead = "Dead"
+    #: Captured by an enemy snatch party after ejecting (the §15/§21 Combat SAR
+    #: capture race). Held alive as a POW (``PendingPowRecovery`` on the losing
+    #: coalition): repatriated if the holding field is retaken or the war is won,
+    #: written off (killed) if the hold clock runs out or the war is lost. A POW
+    #: is NOT Active, so the squadron never schedules them while captive.
+    POW = "POW"
 
 
 @dataclass
@@ -32,6 +38,22 @@ class Pilot:
     @property
     def on_leave(self) -> bool:
         return self.status is PilotStatus.OnLeave
+
+    @property
+    def captured(self) -> bool:
+        return self.status is PilotStatus.POW
+
+    def capture(self) -> None:
+        """Take this pilot prisoner (Active -> POW). Idempotent for a pilot
+        already held; a dead pilot cannot be captured."""
+        if self.status is PilotStatus.Dead:
+            return
+        self.status = PilotStatus.POW
+
+    def repatriate(self) -> None:
+        """Return a POW to the active roster (POW -> Active). No-op otherwise."""
+        if self.status is PilotStatus.POW:
+            self.status = PilotStatus.Active
 
     def send_on_leave(self) -> None:
         if self.status is not PilotStatus.Active:

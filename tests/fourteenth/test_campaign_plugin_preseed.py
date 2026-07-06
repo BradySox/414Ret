@@ -33,6 +33,14 @@ def test_red_tide_preseeds_the_vietnamops_plugin_for_artillery_harassment() -> N
     assert settings["plugins"]["vietnamops"] is True
 
 
+def test_red_tide_preseeds_the_commsjam_plugin_for_enemy_comms_jamming() -> None:
+    settings = _campaign_settings()
+    assert settings["enemy_comms_jamming"] is True
+    # §51's runtime lives in the commsjam plugin -- same saved-default-off trap
+    # as the vietnamops harassment above.
+    assert settings["plugins"]["commsjam"] is True
+
+
 def test_the_plugin_preseed_survives_deserialization_and_wins_the_layering() -> None:
     deserialized = Settings.deserialize_state_dict(dict(_campaign_settings()))
     campaign_plugins = deserialized.get("plugins", {})

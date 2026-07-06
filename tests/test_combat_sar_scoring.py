@@ -153,6 +153,7 @@ def test_record_pow_captures_routes_to_survivors_coalition() -> None:
         red=SimpleNamespace(pending_pow_recoveries=[]),
         theater=SimpleNamespace(controlpoints=[]),
         point_in_world=lambda x, y: SimpleNamespace(x=x, y=y),
+        turn=1,  # stamped onto each PendingPowRecovery.captured_turn
     )
     processor = MissionResultsProcessor(cast(Any, game))
     debriefing = _capture_debriefing(

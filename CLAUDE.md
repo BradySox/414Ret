@@ -629,6 +629,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    designation); blue + AI only; a real (killable) asset, not invisible/immortal. Laser code allocated per
    JTAC (or 1113 on `ctld.fc3LaserCode`). Tests `tests/missiongenerator/test_drone_jtac.py`; checklist G26
    (the loiter-vs-overfly runtime question is the open in-game item).
+   **Auto-fielding the JTAC drone squadron (2026-07-05)**: the packaged JTAC only fires if a drone
+   squadron exists, but squadrons come only from a campaign's `squadrons:` block — so the ~55 campaigns
+   without a drone would show no JTAC. `ensure_jtac_drone_squadron` (`game/fourteenth/jtac_drone.py`,
+   hooked in `Coalition.configure_default_air_wing` after the campaign's own assignment) auto-fields one
+   small (2-ship) TARPS-tasked drone squadron at the **rear-most** blue airfield for any blue side whose
+   faction declares a **drone** `jtac_unit` (`UAV_DCS_IDS`, TARPS-capable) and doesn't **already field a
+   drone** (so OIR and other hand-placed-drone campaigns are untouched). The auto-recon hook frags it
+   forward → drone-JTAC + always-films. Gated `auto_jtac_drone` (default ON, kill switch). Tests
+   `tests/fourteenth/test_jtac_drone.py`; checklist G27.
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact

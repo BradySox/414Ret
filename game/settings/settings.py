@@ -274,6 +274,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Recon & SCAR planning",
                 [
                     "auto_add_tarps_recon",
+                    "auto_jtac_drone",
                 ],
             ),
             (
@@ -881,6 +882,23 @@ class Settings:
             "package's escort window. Requires a TARPS-capable squadron in range; "
             "if none is available the flight is simply skipped (the package is "
             "never scrubbed)."
+        ),
+    )
+    auto_jtac_drone: bool = boolean_option(
+        "Auto-field a JTAC drone squadron for the player's side",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        invert=False,
+        detail=(
+            "At New Game, if your faction declares a drone JTAC platform "
+            "(MQ-9 Reaper / Predator) and the campaign does not already field one, "
+            "adds a small ISR drone squadron at your rear-most airfield. The auto-"
+            "planner then frags it forward into air-to-ground packages, where it "
+            "lazes and marks targets for the shooters (and, being a drone, films "
+            "the whole time). Replaces the old front-line auto-JTAC. A campaign that "
+            "hand-places its drones is left untouched; turn this off to keep an "
+            "air wing exactly as the campaign authored it."
         ),
     )
     recon_intel_fog: bool = boolean_option(

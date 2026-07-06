@@ -191,6 +191,12 @@ class Coalition:
         self, air_wing_config: CampaignAirWingConfig
     ) -> None:
         DefaultSquadronAssigner(air_wing_config, self.game, self).assign()
+        # 414th: auto-field a rear ISR/JTAC drone squadron (the packaged replacement
+        # for the retired FLOT auto-JTAC) for any blue side that declares a drone JTAC
+        # and doesn't already field one. No-op unless applicable; gated by the setting.
+        from game.fourteenth.jtac_drone import ensure_jtac_drone_squadron
+
+        ensure_jtac_drone_squadron(self)
 
     def adjust_budget(self, amount: float) -> None:
         self.budget += amount

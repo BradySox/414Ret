@@ -267,6 +267,23 @@ receivers). (`game/missiongenerator/aircraft/aircraftgenerator.py`; tests
 `tests/missiongenerator/test_drone_jtac.py`; checklist G26 — needs an in-game pass, including
 whether a moving/overflying drone sustains a useful lase or wants a loiter profile.)
 
+**Auto-fielding the JTAC drone squadron (2026-07-05, 414th call).** The packaged drone-JTAC
+only fires if a drone squadron *exists and gets fragged* — but squadrons are created only from
+a campaign's `squadrons:` block, so the 55+ campaigns that never list a drone would show no
+JTAC (the old FLOT auto-JTAC was always spawned by a special code path — that's gone). This
+restores "every JTAC-capable side has a JTAC" as a real squadron: at New Game
+(`Coalition.configure_default_air_wing` → `ensure_jtac_drone_squadron`,
+`game/fourteenth/jtac_drone.py`), each **blue** side whose faction declares a **drone**
+`jtac_unit` (in `UAV_DCS_IDS`, TARPS-capable) and doesn't **already field a drone** gets one
+small (2-ship) **TARPS-tasked** drone squadron auto-fielded at the **rear-most airfield** (the
+blue field farthest from the nearest enemy base that `can_operate` it). The auto-recon hook
+then frags it forward into A/G packages, where it becomes the JTAC and films the whole time.
+Deliberately conservative: **skips a campaign that already hand-places drones** (e.g. Operation
+Inherent Resolve — untouched), blue-only, and gated by `auto_jtac_drone` (default **ON**) as a
+kill switch for balance-sensitive campaigns. Verified: the gate qualifies real modern factions
+(bluefor_modern / usa_2005 / israel_2017 → MQ-9, drone + TARPS-capable). Tests
+`tests/fourteenth/test_jtac_drone.py`; checklist G27 — the fielded-and-fragged loop needs a fly.
+
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
   `configure_tarps()` — a single flyover of the target area, ReturnFire ROE, no offensive
   stores. It sets the recon *behavior*; the *timing* lives in the flight plan (below).

@@ -63,6 +63,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §49 | Mobile missile relocation (the SCUD hunt) | `mobilemissiles` | `mobile_missile_relocation` |
 | §50 | Convoy escort / ambush | `convoyambush` | `convoy_ambush` |
 | §51 | Enemy comms jamming (IADS comms nodes) | `commsjam` | `enemy_comms_jamming`, `comms_jam_requires_capture` |
+| §52 | Command-center decapitation degrades enemy planning | — | `c2_decapitation_effects` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

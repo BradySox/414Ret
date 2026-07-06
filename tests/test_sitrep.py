@@ -112,6 +112,36 @@ def test_a_held_pow_alone_is_not_a_quiet_turn() -> None:
     assert not sitrep.is_empty
 
 
+def test_c2_status_renders_but_rides_along_with_real_news() -> None:
+    # A degraded enemy C2 shows on the band...
+    sitrep = Sitrep(
+        turn=5,
+        day=date(1988, 6, 6),
+        friendly=SideLosses(1, 0, 0),
+        enemy=SideLosses(0, 0, 1),
+        captured=[],
+        lost=[],
+        pilots_recovered=0,
+        red_c2_status="1/3 command posts operational",
+    )
+    assert (
+        "Enemy C2 degraded (claimed): 1/3 command posts operational"
+        in sitrep.kneeboard_lines()
+    )
+    # ...but like the will band, it never forces a SITREP on an otherwise-quiet turn.
+    quiet = Sitrep(
+        turn=5,
+        day=date(1988, 6, 6),
+        friendly=SideLosses(0, 0, 0),
+        enemy=SideLosses(0, 0, 0),
+        captured=[],
+        lost=[],
+        pilots_recovered=0,
+        red_c2_status="1/3 command posts operational",
+    )
+    assert quiet.is_empty
+
+
 def test_loss_phrase_handles_none_and_site_plural() -> None:
     none_side = Sitrep(
         1, date(2000, 1, 1), SideLosses(0, 0, 0), SideLosses(0, 0, 2), [], [], 0

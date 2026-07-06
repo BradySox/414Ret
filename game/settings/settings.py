@@ -268,6 +268,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "opfor_autoplanner_aggressiveness",
                     "ownfor_planner_unpredictability",
                     "opfor_planner_unpredictability",
+                    "c2_decapitation_effects",
                 ],
             ),
             (
@@ -1036,6 +1037,23 @@ class Settings:
             "it sometimes service a lower-priority target first so red's offensive "
             "target selection is less repetitive turn to turn. Reactive defensive "
             "tasking is unaffected."
+        ),
+    )
+    c2_decapitation_effects: bool = boolean_option(
+        "Command-center kills degrade enemy planning",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Destroying a side's IADS command centers makes its auto-planner "
+            "sloppier: as the command network is decapitated, its offensive target "
+            "selection gets progressively more unpredictable (the same lever as the "
+            "unpredictability sliders above, scaled by how many command posts are "
+            "down), so bombing the enemy HQ is a strategic move, not just a strike "
+            "checkbox. Reactive defensive tasking is never affected -- a headless "
+            "enemy still defends itself, it just plans worse offense. Applies to "
+            "whichever side loses its command posts; a campaign with no command "
+            "centers is unaffected."
         ),
     )
     heli_combat_alt_agl: int = bounded_int_option(

@@ -1,6 +1,9 @@
 # 414th — IADS C2 family: felt consequences for command-center & power nodes (design notes)
 
-**Status: PROPOSAL (2026-07-06).** Follow-on to §51 (enemy comms jamming). §51 gave the IADS
+**Status: Feature A LANDED 2026-07-06 (§52); Feature B deferred.** Follow-on to §51 (enemy comms
+jamming). Feature A phase A1 (command-center → planner unpredictability + SITREP legibility) shipped
+as feature §52 — the shape below is what landed; the A2 package-count throttle and all of Feature B
+remain as scoped here. §51 gave the IADS
 **comms** node a player-felt consequence; this note scopes the same treatment for its two
 data-model siblings — **command centers** and **power sources** — which today have gameplay only
 inside MANTIS's runtime SAM-autonomy graph and nothing the player can *see* or feel.

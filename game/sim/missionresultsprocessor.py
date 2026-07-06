@@ -5,6 +5,7 @@ from typing import Optional, TYPE_CHECKING
 
 from game.debriefing import Debriefing
 from game.data.units import FRONTLINE_UNIT_CLASSES
+from game.fourteenth.c2_decapitation import c2_status_line
 from game.ground_forces.combat_stance import CombatStance
 from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
@@ -116,6 +117,7 @@ class MissionResultsProcessor:
             blue_will_note=blue_note,
             red_will_note=red_note,
             pows_held=self._pow_sitrep_lines(),
+            red_c2_status=c2_status_line(self.game, Player.RED),
         )
 
     def _pow_sitrep_lines(self) -> list[str]:

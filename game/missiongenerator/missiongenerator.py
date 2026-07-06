@@ -29,6 +29,7 @@ from game.unitmap import UnitMap
 from .atisgenerator import AtisGenerator
 from .briefinggenerator import BriefingGenerator, MissionInfoGenerator
 from .cargoshipgenerator import CargoShipGenerator
+from .commsjamluadata import plan_comms_jam
 from .convoygenerator import ConvoyGenerator
 from .drawingsgenerator import DrawingsGenerator
 from .environmentgenerator import EnvironmentGenerator
@@ -123,6 +124,13 @@ class MissionGenerator:
         self.generate_ground_conflicts()
         logging.info("MIZ generation: air units")
         self.generate_air_units(tgo_generator)
+
+        # Enemy comms jamming (§51): plan which IADS C2 nodes flood which briefed
+        # blue channels + allocate the JAM BACKUP freq, before the Lua pass emits
+        # it and the kneeboard prints the backup.
+        self.mission_data.comms_jam = plan_comms_jam(
+            self.game, self.mission_data, self.radio_registry
+        )
 
         logging.info("MIZ generation: scripts, triggers, visuals, and drawings")
         RebellionGenerator(self.mission, self.game).generate()
@@ -373,6 +381,15 @@ class MissionGenerator:
                 gen.add_flight(flight)
             for atis in mission_data.atis_frequencies:
                 gen.add_atis(atis)
+
+            # Enemy comms jamming (§51): publish the guaranteed-clean fallback
+            # channel on the comms ladder so pushing to it is a briefed play.
+            if (
+                mission_data.comms_jam is not None
+                and mission_data.comms_jam.backup is not None
+            ):
+                gen.add_comm("JAM BACKUP", mission_data.comms_jam.backup)
+
             gen.generate()
 
     def setup_combined_arms(self) -> None:

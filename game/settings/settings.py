@@ -480,6 +480,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "artillery_base_harassment",
                     "mobile_missile_relocation",
                     "convoy_ambush",
+                    "enemy_comms_jamming",
                 ],
             ),
             (
@@ -2280,6 +2281,24 @@ class Settings:
             "convoy and the ambushers are real, tracked units -- both sides' losses "
             "count. Runs via the 'Convoy ambush' LUA plugin -- keep that plugin enabled "
             "or this setting does nothing."
+        ),
+    )
+    enemy_comms_jamming: bool = boolean_option(
+        "Enemy comms jamming (IADS C2 nodes step on your radios)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Alive enemy IADS communications and command-center nodes flood your "
+            "briefed radio channels with duty-cycled barrage noise during the "
+            "mission (intra-flight and AWACS channels only -- never GUARD, never "
+            "ATC), transmitted from the node's map position with real power/"
+            "distance falloff, so SRS users hear it through their cockpit-tuned "
+            "radios. The kneeboard comms ladder gains a JAM BACKUP channel the "
+            "jammer never touches; destroying the C2 node (an ordinary IADS "
+            "strike target) silences it for good. Audio pressure only -- no "
+            "force-model change. Runs via the 'Comms jamming' LUA plugin -- keep "
+            "that plugin enabled or this setting does nothing."
         ),
     )
 

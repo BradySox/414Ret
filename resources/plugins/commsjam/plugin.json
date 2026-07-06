@@ -1,0 +1,46 @@
+{
+    "nameInUI": "Comms jamming",
+    "descriptionInUI": "Runtime for the enemy comms-jamming feature. Inert unless the mission generator emits dcsRetribution.commsJam (the 'Enemy comms jamming' setting is on, an enemy IADS comms/command-center node is alive, and blue has briefed channels). While at least one emitted C2 node is alive, the plugin transmits duty-cycled barrage noise (trigger.action.radioTransmission) on a rotating subset of the briefed blue channels from the node's map position -- real power/distance falloff, so the interference is worst deep in enemy territory and SRS users hear it through their cockpit-tuned radios. GUARD and ATC are never on the target list (filtered in Python by construction), and the kneeboard carries a JAM BACKUP channel the jammer never touches. Audio pressure ONLY: no force-model change, the plugin owns no kills -- destroying the C2 node (an ordinary IADS strike target, recorded natively) is what silences the jamming. Bursts begin only after a startup grace so nobody is jammed mid-alignment.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Burst length: noise transmission per jammed channel (s)",
+            "mnemonic": "burstSec",
+            "defaultValue": 25,
+            "maximumValue": 300
+        },
+        {
+            "nameInUI": "Mean pause between burst cycles (s)",
+            "mnemonic": "intervalSec",
+            "defaultValue": 90,
+            "maximumValue": 3600
+        },
+        {
+            "nameInUI": "Channels stepped on per burst cycle",
+            "mnemonic": "maxFreqsPerBurst",
+            "defaultValue": 3,
+            "maximumValue": 10
+        },
+        {
+            "nameInUI": "Transmitter power (W) -- range/strength of the interference",
+            "mnemonic": "powerW",
+            "defaultValue": 100,
+            "maximumValue": 1000
+        },
+        {
+            "nameInUI": "Startup grace before the first burst (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 240
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "commsjam-config.lua",
+            "mnemonic": "commsjam-config"
+        }
+    ],
+    "otherResourceFiles": [
+        "commsjam-noise.wav"
+    ]
+}

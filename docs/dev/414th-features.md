@@ -4113,3 +4113,85 @@ BLUE, one F10 mark on the position, then latches. A team wiped before it springs
 - **Deferred:** the ambush point is a single mid-route waypoint; a multi-team gauntlet down a long road and
   an off-road (beside-the-road) ambush position are follow-ups. Convoy size/ambush strength are fixed
   constants — tune from the S3 pass.
+
+## §51 — Enemy comms jamming (IADS comms nodes)
+
+**The IADS comms nodes, given a voice.** The IADS data model has always carried communications nodes
+(`IadsRole.CONNECTION_NODE`, TGO category `comms` — the masts and bunkers MANTIS's C2-degradation graph
+watches), but their only gameplay was as silent connection glue. With `enemy_comms_jamming` on, every alive
+enemy comms / command-center node becomes a **standoff comms jammer**: duty-cycled barrage noise transmitted
+on a rotating subset of the BLUE side's *briefed* radio channels, so the interference arrives in the
+player's headset and the strike that silences it is the same strike that degrades the IADS.
+
+### No SRS dependency — the transmission is DCS-native
+
+The delivery mechanism is `trigger.action.radioTransmission` from the node's campaign-map position:
+
+- **Real power/distance falloff.** DCS models transmitter power and range natively — the jamming is worst
+  deep in enemy territory near the C2 belt and fades toward friendly airspace. No line drawn in Lua.
+- **SRS users hear it anyway.** SRS tunes off the cockpit radios, so a player sitting on 251.0 in SRS is
+  tuned to 251.0 in the jet — the looping static on that frequency plays through DCS's own radio path.
+  Injecting audio into the actual SRS network (SRS-ExternalAudio.exe, MOOSE MSRS) was considered and
+  **dropped**: it needs a server-side install, spawns a process per transmission, and buys nothing the
+  in-game path doesn't already deliver.
+- The noise file is `commsjam-noise.wav` (synthesized shaped static, committed in the plugin dir), injected
+  into the miz via the plugin's `otherResourceFiles` and referenced as `l10n/DEFAULT/commsjam-noise.wav`.
+
+### What gets jammed (positive list, never GUARD/ATC)
+
+Python owns the target list (`_blue_briefed_frequencies`): the blue flights' **intra-flight channels**
+(human-crewed flights first, then AI) plus the blue **AWACS/GCI** freqs, deduped, GUARD (243.0 / 121.5)
+defensively filtered, capped at `MAX_JAMMED_FREQUENCIES` (10). ATC, ATIS and tanker channels are never
+listed **by construction** — ground ops and emergencies stay clean (the §36 anti-grief bar, applied to
+audio). The plugin then steps on only `maxFreqsPerBurst` (3) channels per burst cycle, rotating the window,
+so coordination is pressured but never fully denied — and switching to a channel the jammer isn't currently
+on is real, dynamic comms discipline.
+
+**The JAM BACKUP channel closes the loop:** the planner allocates one fresh UHF frequency from the same
+`RadioRegistry` every briefed channel came out of (so nothing else uses it and it can never be jammed),
+re-rolling past the freak allocator-reuse collision, and publishes it as a `JAM BACKUP` line on the
+kneeboard comms ladder (+ echoed in the first-burst cue). Pushing the package to the backup is a briefed
+play, not a mystery.
+
+### Who jams, and how it dies
+
+`_enemy_jammer_nodes` lists every alive enemy TGO of category `comms` / `commandcenter` (the same objects
+the MANTIS C2 graph watches — never SAMs, never EWRs, never generic buildings), emitting the **unit names**
+per the MANTIS naming convention. The plugin's death detection is the MANTIS `node_dead` pattern verbatim:
+a node counts as dead only on *positive evidence* — a placed static (`<name> object`) that existed and no
+longer `:isExist()`, or its name in the global `dead_events` ledger (bare-name matched). A culled /
+never-spawned node reads ALIVE, which is correct: it can't be killed this mission, and the standing
+pressure is what motivates fragging a strike at it next turn (which un-culls it). Each burst cycle rotates
+the transmitting node across the alive jammers; once every emitted node is positively dead the plugin stops
+scheduling and (if jamming had been announced) cues "comms jamming has ceased."
+
+**Audio pressure ONLY** — the §36/§49 discipline: no force-model change, the plugin owns no kills. Killing
+the node is an ordinary strike on an ordinary IADS TGO, recorded natively, with its existing IADS
+consequence (MANTIS C2 degradation) untouched.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Planner + emitter | `game/missiongenerator/commsjamluadata.py` (`plan_comms_jam` → `MissionData.comms_jam`, `populate_comms_jam_lua`); planned in `missiongenerator.py` before the Lua pass, emitted in `luagenerator.py` after the convoy-ambush emitter |
+| Kneeboard | `missiongenerator.py` `notify_info_generators` appends the `JAM BACKUP` comm line when a plan with a backup exists |
+| Runtime | `resources/plugins/commsjam/` (`plugin.json` + `commsjam-config.lua` + `commsjam-noise.wav`; registered in `plugins.json`) |
+| Setting | `game/settings/settings.py` (`enemy_comms_jamming`, Mission Generation → Battlefield life, default **OFF**) |
+| Tests | `tests/missiongenerator/test_commsjamluadata.py` (plan ordering, GUARD filter, cap, backup collision re-roll, emit shape, gates); `tests/lua/test_commsjam_runtime.py` (grace, burst/stop/rotation, dead-jammer silence via both death paths, ceased cue, no-node no-op) |
+
+### Gotchas / deferred
+
+- **Plugin dependency (the §36 lesson).** The runtime is the `commsjam` plugin; a saved default of it
+  unticked silently kills the setting. Red Tide preseeds `enemy_comms_jamming: true` **and**
+  `plugins: {commsjam: true}` (guarded in `tests/fourteenth/test_campaign_plugin_preseed.py`).
+- **Needs comms/command-center TGOs to exist.** A campaign whose laydown fields no `comms`/`commandcenter`
+  category objects emits nothing and the feature silently no-ops — correct (no C2, no jammer), but worth
+  knowing when preseeding it elsewhere. Red Tide's `advanced_iads` range mode wires them per base.
+- **Burst timing is wall-clock, not tactical.** The jammer doesn't react to what the player is doing —
+  bursts are a jittered cadence. A reactive jammer (step on a channel *when it's in use*) needs a radio
+  event DCS doesn't expose; out of scope.
+- **BLUE-victim only.** The target list is blue's briefed channels; red AI doesn't care about audio.
+  A symmetric blue jammer already exists as the §2 C-130J EW platform's radar side — extending it to
+  comms is a possible follow-up.
+- **NEW game not required** (no persisted state; the plan is rebuilt every generation), but the Red Tide
+  preseed only applies to a NEW campaign.

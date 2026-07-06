@@ -21,6 +21,7 @@ from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua
 from .aireconluadata import populate_ai_recon_lua
 from .coinluadata import populate_coin_lua
+from .commsjamluadata import populate_comms_jam_lua
 from .convoyambushluadata import populate_convoy_ambush_lua
 from .interceptluadata import populate_intercept_lua
 from .missiondata import MissionData
@@ -382,6 +383,12 @@ class LuaGenerator:
         # plugin springs the dug-in team when the convoy closes (movement/ROE only, the
         # loss accounting stays in the turn-boundary force model).
         populate_convoy_ambush_lua(lua_data, self.game, self.mission_data)
+
+        # Enemy comms jamming (§51) -- emits dcsRetribution.commsJam only when the
+        # plan computed before this pass exists (setting on + alive enemy C2 node +
+        # briefed blue channels); the commsjam plugin transmits the barrage noise
+        # (audio pressure only, kills record natively on the ordinary C2 TGO).
+        populate_comms_jam_lua(lua_data, self.game, self.mission_data)
 
         trigger = TriggerStart(comment="Set DCS Retribution data")
         trigger.add_action(DoScript(String(lua_data.create_operations_lua())))

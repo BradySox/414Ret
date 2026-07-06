@@ -29,6 +29,9 @@ local Harness = {
         removedMarks = {},
         menus = {}, -- { side, path }
         firedTasks = {}, -- { group, x, y, radius, rounds, t }
+        radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
+        stoppedTransmissions = {}, -- transmission names
+
         infos = {},
         warnings = {},
         errors = {}, -- env.error + errors escaping scheduled functions
@@ -377,8 +380,46 @@ trigger = {
         removeMark = function(id)
             table.insert(Harness.records.removedMarks, id)
         end,
+        radioTransmission = function(file, point, modulation, loop, frequency, power, name)
+            table.insert(Harness.records.radioTransmissions, {
+                file = tostring(file),
+                x = point.x,
+                y = point.y,
+                z = point.z,
+                mod = modulation,
+                loop = loop,
+                hz = frequency,
+                power = power,
+                name = name and tostring(name) or nil,
+                t = Harness.now,
+            })
+        end,
+        stopRadioTransmission = function(name)
+            table.insert(Harness.records.stoppedTransmissions, tostring(name))
+        end,
     },
 }
+
+-------------------------------------------------------------------------------
+-- StaticObject: placed statics by name. Tests register them via
+-- Harness.addStatic{ name = ..., exists = true|false }; getByName returns nil
+-- for anything unregistered (a culled / never-spawned / scenery object).
+-------------------------------------------------------------------------------
+local staticsByName = {}
+
+StaticObject = {
+    getByName = function(name)
+        return staticsByName[name]
+    end,
+}
+
+function Harness.addStatic(spec)
+    staticsByName[spec.name] = {
+        isExist = function(_)
+            return spec.exists ~= false
+        end,
+    }
+end
 
 missionCommands = {
     addSubMenuForCoalition = function(side, name, parent)

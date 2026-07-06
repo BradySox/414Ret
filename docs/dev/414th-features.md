@@ -4245,3 +4245,69 @@ consequence (MANTIS C2 degradation) untouched.
   (deferred, see the design note).
 - **NEW game not required** (no persisted state; the plan is rebuilt every generation), but the Red Tide
   preseed only applies to a NEW campaign.
+
+## §52 — Command-center decapitation degrades enemy planning
+
+**The campaign-layer complement to §51.** §51 gave the IADS **comms** node a runtime voice; this gives
+its **command center** sibling a *turn-model* consequence. A command center
+(`category == "commandcenter"`, `IadsRole.COMMAND_CENTER`) had gameplay only inside MANTIS's runtime
+SAM-autonomy graph — killing it made SAMs go autonomous, but red's **planning** was untouched, so
+"bomb the enemy HQ" was a strike checkbox, not a strategic move. Now a side's auto-planner quality is
+coupled to its own command-network health.
+
+### How it works
+
+`game/fourteenth/c2_decapitation.py`:
+
+- `_command_centers(coalition, theater)` → `(alive, total)` command-center TGOs on the coalition's own
+  bases (a CC is alive while any of its units is alive — the same test the IADS emitter uses).
+- `c2_health` → the alive fraction (1.0 when the side fields no command centers — a C2-less campaign is
+  unaffected).
+- `unpredictability_bonus(coalition, theater, settings)` → `round((1 − health) × MAX_DECAP_UNPREDICTABILITY)`
+  (60 pts at full decapitation), or **0** when the feature is off or the network is intact.
+
+The bonus is read at plan time in `game/commander/tasks/targetorder.py` `_unpredictability_for`, added
+on top of the side's base `*_planner_unpredictability` (§17) and clamped to the shuffler's 0–100 domain.
+So as a side's HQs die, `shuffled_by_priority` progressively loosens its **opportunistic offensive**
+target order — it services lower-priority strikes/OCA/BAI/anti-ship it wouldn't have before, and hits
+the same things less reliably turn to turn.
+
+### The §17 boundary (inviolable)
+
+Only the offensive/opportunistic tiers pass through `shuffled_by_priority`; **reactive defensive tasking
+stays strictly deterministic**. A decapitated enemy still defends itself — it just plans worse *offense*.
+This is the same boundary §17 (auto-planner unpredictability) established; §52 rides the exact same lever,
+just sourced from C2 health instead of a static slider.
+
+### Legibility
+
+The effect lands on the *enemy's* next turn, so the player is told the strike worked: a SITREP band line
+(`Sitrep.red_c2_status` → "Enemy C2 degraded (claimed): 1/3 command posts operational", built by
+`c2_status_line`). Framed as **claimed** (the player's own BDA) to respect the recon-fog model, and it
+**rides along with real news** — like the will band, it never forces a SITREP onto an otherwise-quiet turn
+(`is_empty` ignores it).
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Core | `game/fourteenth/c2_decapitation.py` (`c2_health`, `unpredictability_bonus`, `c2_status_line`) |
+| Planner hook | `game/commander/tasks/targetorder.py` `_unpredictability_for` (adds the bonus, clamps to 100) |
+| Legibility | `game/sitrep.py` (`red_c2_status`), `game/sim/missionresultsprocessor.py` `record_sitrep` |
+| Setting | `game/settings/settings.py` (`c2_decapitation_effects`, Air Doctrine, default **OFF**) |
+| Tests | `tests/fourteenth/test_c2_decapitation.py` (health/bonus/status/gates); `tests/test_planner_unpredictability.py` (the shuffler coupling + intact/off determinism); `tests/test_sitrep.py` (the band line, rides-along) |
+
+### Gotchas / deferred
+
+- **Pure turn-model.** No `.miz`, no Lua, no DCS integration — zero runtime risk. It reuses the §17
+  shuffler wholesale, so at full C2 health (or feature off) the planner is byte-identical to today and all
+  existing determinism tests hold.
+- **Symmetric in code, red in practice.** Each side reads its own C2 health, but only a side with an HTN
+  auto-planner (red, in a normal player-vs-AI game) is affected by the player's strikes. Blue's own
+  auto-planned (AI-filled) slots would loosen too if the player let blue HQs die — intended and fair.
+- **Phase A2 deferred — the offensive package-count throttle.** The design note's second lever (cap red's
+  *number* of offensive packages when decapitated, floored so red is never zeroed out) is not built; A1 is
+  the unpredictability coupling only. Unpredictability alone never reduces red's package count, so there is
+  no starvation risk in A1.
+- **Not preseeded yet.** Default OFF everywhere; a Red Tide preseed waits on the B6 in-game pass.
+- **NEW game not required** (no persisted state; C2 health is measured live each turn).

@@ -61,6 +61,14 @@ and selected later upstream fixes.
   rotate compromised channels. Opt-in (Mission Generation → "Enemy comms jamming"; the
   captured-pilot intel gate is on by default, or disable it for ambient jamming) and preseeded
   on in Red Tide, where the radio isn't clean either.
+- **Bombing the enemy HQ actually matters now.** Destroy a side's IADS command posts and its
+  auto-planner gets *sloppier* — the more of its command network you knock out, the more
+  unpredictable and less effective its offensive target selection becomes turn to turn, so
+  decapitating the enemy's command-and-control is a real strategic play instead of a strike
+  checkbox. Its reactive defenses are never affected (a headless enemy still defends itself), and
+  your kneeboard SITREP reports the enemy's command status so you can see the strike land. Opt-in
+  (Air Doctrine → "Command-center kills degrade enemy planning"); a campaign with no command posts
+  is unaffected.
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as

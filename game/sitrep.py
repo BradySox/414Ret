@@ -57,6 +57,11 @@ class Sitrep:
     #: player-facing surface for the "recapture the field / rescue matters" levers.
     #: Absent on pre-POW-visibility pickled sitreps (read via getattr).
     pows_held: List[str] = field(default_factory=list)
+    #: §52 Feature A: the enemy command-network status ("1/3 command posts
+    #: operational") when it is degraded and the feature is on -- the legibility
+    #: for "bombing the HQ made red plan worse". None hides the line. Rides along
+    #: with real news (never forces a SITREP on a quiet turn). getattr-guarded.
+    red_c2_status: Optional[str] = None
     #: Vietnam campaign layer (W1): post-turn Political Will / Regime Resolve
     #: percentages, set only when vietnam_political_will is on. None (and absent on
     #: pre-W1 pickled sitreps -- read via getattr) hides the band line entirely.
@@ -92,6 +97,7 @@ class Sitrep:
         blue_will_note: Optional[str] = None,
         red_will_note: Optional[str] = None,
         pows_held: Optional[List[str]] = None,
+        red_c2_status: Optional[str] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
         red = debriefing.loss_counts(Player.RED)
@@ -123,6 +129,7 @@ class Sitrep:
             blue_will_note=blue_will_note,
             red_will_note=red_will_note,
             pows_held=list(pows_held or []),
+            red_c2_status=red_c2_status,
         )
 
     def kneeboard_lines(self) -> List[str]:
@@ -141,6 +148,10 @@ class Sitrep:
         # POWs held (getattr: pre-POW-visibility pickled sitreps lack the field).
         for pow_line in getattr(self, "pows_held", None) or []:
             lines.append(f"POW: {pow_line}")
+        # §52: enemy command-network status when degraded (getattr for old saves).
+        red_c2 = getattr(self, "red_c2_status", None)
+        if red_c2:
+            lines.append(f"Enemy C2 degraded (claimed): {red_c2}")
         # getattr: pre-W1 pickled sitreps lack the will fields entirely.
         blue_will = getattr(self, "blue_will", None)
         red_will = getattr(self, "red_will", None)

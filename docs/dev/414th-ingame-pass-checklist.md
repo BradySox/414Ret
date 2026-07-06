@@ -157,6 +157,12 @@ so the two docs don't drift.
   Check `TheaterState.from_game` (`forward_barcaps_needed`) and
   `game/ato/flightplans/supportorbit.py` `forward_cap_front_anchor` if seen.
 
+### B6 — Command-center decapitation degrades enemy planning · §52 · ☐ UNTESTED (built 2026-07-06; the health fraction, the linear unpredictability bonus, the off/intact/C2-less no-ops, the shuffler coupling, and the SITREP line are unit-tested in `tests/fourteenth/test_c2_decapitation.py` + `tests/test_planner_unpredictability.py` + `tests/test_sitrep.py` — whether red's *played* target selection visibly loosens after its HQs are bombed needs a multi-turn campaign)
+- **What CI cannot exercise:** whether a red side that has lost its command centers actually plans a visibly different/less-repetitive set of opportunistic offensive targets turn-over-turn (the shuffle is proven; the *felt* effect on a real ATO is not), and whether the SITREP band reads the enemy C2 status correctly across turns.
+- **Setup:** an IADS campaign where red fields command centers (`commandcenter` TGOs — e.g. Red Tide's advanced_iads laydown) with `c2_decapitation_effects` **on** (Air Doctrine; default off, so tick it or preseed it). Play a few turns noting red's offensive targets, then bomb red's command center(s) and play a few more.
+- **Pass:** with red's HQs intact, red's offensive target selection is its usual (near-)deterministic set; after the command centers are destroyed, red's opportunistic offensive targets visibly loosen (it services lower-priority strikes/OCA/BAI it wouldn't have before), while its **reactive defense is unchanged** (BARCAP/DEAD-response still deterministic); the next kneeboard SITREP shows "Enemy C2 degraded (claimed): N/M command posts operational". Turning the setting off restores the stock deterministic planner exactly.
+- **Fail signature:** red plans identically before and after the HQ kill (the bonus isn't reaching the shuffler — check `_unpredictability_for` and that the campaign actually has `commandcenter` TGOs); red's *defensive* tasking changes too (the §17 boundary broke — only opportunistic tiers pass through `shuffled_by_priority`); the SITREP line never appears or shows wrong counts (`c2_status_line` / `red_c2_status` wiring); any change at all with the setting off (the gate broke).
+
 ---
 
 ## C. Support flights

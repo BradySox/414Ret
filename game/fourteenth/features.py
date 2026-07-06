@@ -290,6 +290,15 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="commsjam",
         settings_fields=("enemy_comms_jamming", "comms_jam_requires_capture"),
     ),
+    Feature(
+        # Pure turn-model (no plugin): couples a side's command-network health to
+        # its auto-planner unpredictability in game/fourteenth/c2_decapitation.py,
+        # read at plan time through targetorder._unpredictability_for.
+        "c2_decapitation",
+        "Command-center decapitation degrades enemy planning",
+        52,
+        settings_fields=("c2_decapitation_effects",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

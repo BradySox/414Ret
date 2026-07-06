@@ -18,6 +18,8 @@ from __future__ import annotations
 import random
 from typing import Iterable, TYPE_CHECKING, TypeVar
 
+from game.fourteenth.c2_decapitation import unpredictability_bonus
+
 if TYPE_CHECKING:
     from game.commander.theaterstate import TheaterState
 
@@ -26,9 +28,17 @@ T = TypeVar("T")
 
 def _unpredictability_for(state: TheaterState) -> int:
     settings = state.context.settings
-    if state.context.coalition.player.is_blue:
-        return settings.ownfor_planner_unpredictability
-    return settings.opfor_planner_unpredictability
+    coalition = state.context.coalition
+    if coalition.player.is_blue:
+        base = settings.ownfor_planner_unpredictability
+    else:
+        base = settings.opfor_planner_unpredictability
+    # §52 Feature A: a decapitated command network plans sloppier -- add
+    # unpredictability in proportion to this side's dead command centers. 0 when
+    # the feature is off or the network is intact, so the base setting is
+    # preserved byte-identically. Clamped to the shuffler's 0-100 domain.
+    bonus = unpredictability_bonus(coalition, state.context.theater, settings)
+    return min(100, base + bonus)
 
 
 def shuffled_by_priority(

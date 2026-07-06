@@ -320,9 +320,13 @@ captures no matter that it survived and overflew — the checklist G19 "capture-
 - **Emitter** (`game/missiongenerator/aireconluadata.py` `populate_ai_recon_lua`, dispatched from
   `luagenerator.py`): emits `dcsRetribution.AIRecon = { flights = { {group,x,y}, … } }` for each
   **AI-flown** (`not flight.client_units`), **player-coalition** (`flight.friendly is Player.BLUE`)
-  `TARPS` flight + its package target. A player-crewed TARPS flight is never emitted (it still films
-  via the F10 menu); a red recon flight is never emitted (only the human's recon feeds the player's
-  BDA). No such flights ⇒ no node ⇒ the plugin no-ops.
+  **recon-capable** flight + its package target. Recon-capable (`_feeds_ai_recon`) = a **TARPS-tasked**
+  flight (any airframe — the auto-paired recon bird) **OR a drone** (`UAV_DCS_IDS`) **regardless of its
+  tasked mission** — the 414th "**a drone is always filming**" rule: a UAV is a sensor first, so whether
+  it is off on a solo recon, riding a strike as the JTAC (§3 drone-JTAC), or working CAS, it still banks
+  BDA on whatever it overflies (a *manned* combat jet only feeds it when actually tasked TARPS). A
+  player-crewed flight is never emitted (it still films via the F10 menu); a red flight is never emitted
+  (only the human's recon feeds the player's BDA). No such flights ⇒ no node ⇒ the plugin no-ops.
 - **Runtime** (`resources/plugins/airecon/airecon-config.lua`): watches each emitted flight and, when
   its lead unit survives to close within the trigger range (default 5 NM) of the target, records the
   enemy (RED) ground units within the capture radius (default 4 km) of the target into the **same**
@@ -331,9 +335,9 @@ captures no matter that it survived and overflew — the checklist G19 "capture-
   confirms nothing. So the Retribution debrief (`game/debriefing.py` `parse_tars_captures` →
   `MissionResultsProcessor.tars_reconned_tgos`) lifts the fog on what an AI recon flight photographed
   exactly as it does for a player. Plugin options: trigger range, capture radius, per-flight cap, poll.
-- Emitter-tested (`game/missiongenerator/tests/test_airecon_luadata.py`: AI-blue emitted;
-  player-crewed / red / non-TARPS / no-target skipped; empty → no node). Runtime Lua needs an in-game
-  pass (checklist G19). Blue-only + player-only-exclusion by design.
+- Emitter-tested (`game/missiongenerator/tests/test_airecon_luadata.py`: AI-blue TARPS emitted; a drone
+  emitted on any task; manned-non-TARPS / player-crewed / red / no-target skipped; empty → no node).
+  Runtime Lua needs an in-game pass (checklist G19). Blue-only + player-only-exclusion by design.
 
 **Visibility / recon fog** — one viewer-aware layer drives two player-facing fog rules.
 AI planning and threat math always use ground truth (`viewer=None`); only the human

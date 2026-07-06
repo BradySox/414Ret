@@ -593,12 +593,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    2026-07-01) closes the G19 gap that the MOOSE TARS film path is **player-only** (its birth
    handler drops any non-player unit), so auto-paired *AI* recon flights confirmed nothing:
    `populate_ai_recon_lua` (`aireconluadata.py`) emits each AI-flown, player-coalition (BLUE)
-   `TARPS` flight + its target; the `airecon` plugin watches each and, when it survives to overfly
-   (within a trigger range of the target), records the enemy ground units there into the same
+   **recon-capable** flight + its target; the `airecon` plugin watches each and, when it survives to
+   overfly (within a trigger range of the target), records the enemy ground units there into the same
    `tars_recon_captures` ledger the player film menu feeds — so the debrief
    (`debriefing.py`→`tars_reconned_tgos`) treats an AI recon capture identically. A shot-down /
-   aborting recon flight confirms nothing (one-shot). Player-crewed TARPS is never emitted (still
+   aborting recon flight confirms nothing (one-shot). Player-crewed flights are never emitted (still
    the F10 film path); blue-only. Emitter-tested; runtime Lua needs an in-game pass (checklist G19).
+   **A drone is always filming (2026-07-05, 414th rule)**: `_feeds_ai_recon` counts a flight as recon
+   if it is TARPS-tasked (any airframe) **OR a drone** (`UAV_DCS_IDS` in `game/data/units.py` — a
+   curated set; DCS has no UAV flag, `category` buckets drones as generic "Air") **regardless of the
+   drone's tasked mission**. A UAV is a sensor first — solo recon, JTAC overwatch on a strike, or CAS,
+   it still banks BDA on what it overflies; a manned combat jet only feeds it when actually tasked TARPS.
    **Recon drone in each Armed Recon package (2026-07-05, 414th call)**: the auto-recon hook
    (`PackageFulfiller._maybe_plan_tarps_recon`, gated by `auto_add_tarps_recon`) now also frags one
    optional TARPS flight into **Armed Recon** packages (not just Strike/DEAD); `TarpsFlightPlan` was

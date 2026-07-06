@@ -2,10 +2,11 @@
 
 The MOOSE TARS film path is player-only, so AI recon flights never confirmed BDA
 (checklist G19). This emitter feeds the `airecon` plugin the AI-flown, player-coalition
-TARPS flights + their targets. The invariants that must hold: a *player*-crewed TARPS
-flight is never emitted (it films via F10), a *red* recon flight is never emitted (only
-the human coalition's recon feeds the BDA ledger), a non-TARPS flight is ignored, and an
-absent-target or empty flight list yields no node (the plugin then no-ops).
+recon flights + their targets. The invariants that must hold: a *player*-crewed flight is
+never emitted (it films via F10), a *red* recon flight is never emitted (only the human
+coalition's recon feeds the BDA ledger), a non-recon MANNED flight is ignored, a **drone
+is emitted regardless of task** (a drone is always filming), and an absent-target or empty
+flight list yields no node (the plugin then no-ops).
 """
 
 from __future__ import annotations
@@ -18,6 +19,9 @@ from game.missiongenerator.aireconluadata import populate_ai_recon_lua
 from game.missiongenerator.luagenerator import LuaData
 from game.theater import Player
 
+REAPER = "MQ-9 Reaper"
+VIPER = "F-16C_50"  # a manned combat jet -- never a sensor unless tasked TARPS
+
 
 def _flight(
     flight_type: FlightType,
@@ -26,6 +30,7 @@ def _flight(
     ai: bool = True,
     friendly: Player = Player.BLUE,
     has_target: bool = True,
+    aircraft_id: str = VIPER,
 ) -> Any:
     target = (
         SimpleNamespace(position=SimpleNamespace(x=1000.0, y=2000.0))
@@ -37,6 +42,7 @@ def _flight(
         group_name=group_name,
         client_units=[] if ai else [object()],  # non-empty = a human is aboard
         friendly=friendly,
+        aircraft_type=SimpleNamespace(dcs_unit_type=SimpleNamespace(id=aircraft_id)),
         package=SimpleNamespace(target=target),
     )
 
@@ -67,8 +73,37 @@ def test_red_recon_flight_is_not_emitted() -> None:
     assert "AIRecon" not in lua
 
 
-def test_non_tarps_flight_is_ignored() -> None:
+def test_non_recon_manned_flight_is_ignored() -> None:
+    # A manned combat jet is not a sensor unless tasked TARPS.
     lua = _emit([_flight(FlightType.STRIKE, "STRIKE FLIGHT")])
+    assert "AIRecon" not in lua
+
+
+def test_a_drone_films_regardless_of_task() -> None:
+    # A drone is always a sensor: it feeds BDA home whether it is on CAS, riding a
+    # strike as the JTAC, or off on its own -- not only when tasked TARPS.
+    for task in (
+        FlightType.CAS,
+        FlightType.BAI,
+        FlightType.STRIKE,
+        FlightType.DEAD,
+        FlightType.ARMED_RECON,
+    ):
+        lua = _emit([_flight(task, "REAPER OVERWATCH", aircraft_id=REAPER)])
+        assert "AIRecon" in lua and "REAPER OVERWATCH" in lua, task
+
+
+def test_a_player_crewed_drone_is_not_auto_captured() -> None:
+    lua = _emit(
+        [_flight(FlightType.CAS, "PLAYER REAPER", ai=False, aircraft_id=REAPER)]
+    )
+    assert "AIRecon" not in lua
+
+
+def test_a_red_drone_is_not_emitted() -> None:
+    lua = _emit(
+        [_flight(FlightType.CAS, "RED REAPER", friendly=Player.RED, aircraft_id=REAPER)]
+    )
     assert "AIRecon" not in lua
 
 

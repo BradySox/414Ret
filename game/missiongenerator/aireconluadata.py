@@ -7,13 +7,20 @@ So the campaign's auto-paired *AI* recon flights fly the recon path but never co
 single BDA capture, no matter that they overfly and survive (checklist G19).
 
 This closes that gap without touching the player TARS path: Python emits each **AI-flown,
-player-coalition TARPS flight** + its target point, and the ``airecon`` plugin records the
-enemy ground units at the target into the same ``tars_recon_captures`` ledger the player
-path writes when such a flight survives to overfly. The debrief side
+player-coalition recon-capable flight** + its target point, and the ``airecon`` plugin
+records the enemy ground units at the target into the same ``tars_recon_captures`` ledger
+the player path writes when such a flight survives to overfly. The debrief side
 (``game/debriefing.py`` ``parse_tars_captures`` -> ``tars_reconned_tgos``) then treats an
 AI recon capture exactly like a player one.
 
-Player-crewed TARPS flights are **never** emitted here -- they still use the F10 film menu.
+**A drone is always filming (414th rule).** A UAV (``UAV_DCS_IDS``) is a sensor first --
+it feeds recon/BDA home *regardless of its tasked mission*: off on a solo recon, riding
+shotgun on a strike as the JTAC, or working CAS, it is still photographing what it
+overflies. So the capture is emitted for **any AI-flown blue drone**, not only the
+TARPS-tasked flights (a manned bird only feeds it when actually tasked TARPS). The plugin
+is unchanged -- it just banks BDA for whatever groups are emitted.
+
+Player-crewed flights are **never** emitted here -- they still use the F10 film menu.
 """
 
 from __future__ import annotations
@@ -21,28 +28,43 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from game.ato import FlightType
+from game.data.units import UAV_DCS_IDS
 from game.theater import Player
 
 if TYPE_CHECKING:
     from game import Game
 
+    from .aircraft.flightdata import FlightData
     from .luagenerator import LuaData
     from .missiondata import MissionData
+
+
+def _feeds_ai_recon(flight: "FlightData") -> bool:
+    """Whether this AI blue flight banks BDA when it overflies its target.
+
+    A TARPS-tasked flight (any airframe -- the auto-paired recon bird) always does; and
+    a drone always does regardless of task (a drone is always filming). Manned combat
+    flights do not -- they are not sensors.
+    """
+    if flight.flight_type is FlightType.TARPS:
+        return True
+    return flight.aircraft_type.dcs_unit_type.id in UAV_DCS_IDS
 
 
 def populate_ai_recon_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
 ) -> None:
-    """Emit one record per AI-flown, player-coalition TARPS flight + its target.
+    """Emit one record per AI-flown, player-coalition recon flight + its target.
 
-    Emits nothing (no ``AIRecon`` node) when there are no such flights, so the plugin
-    no-ops. A TARPS flight carrying any human is skipped -- that pilot films via the F10
-    TARS menu. Only the player coalition's (BLUE) recon feeds the player's BDA fog-of-war;
-    the AI opponent plans on ground truth and needs no recon ledger.
+    Covers TARPS-tasked flights *and* every AI drone (a drone always films). Emits
+    nothing (no ``AIRecon`` node) when there are no such flights, so the plugin no-ops. A
+    flight carrying any human is skipped -- that pilot films via the F10 TARS menu. Only
+    the player coalition's (BLUE) recon feeds the player's BDA fog-of-war; the AI opponent
+    plans on ground truth and needs no recon ledger.
     """
     flights: list[tuple[str, float, float]] = []
     for flight in mission_data.flights:
-        if flight.flight_type is not FlightType.TARPS:
+        if not _feeds_ai_recon(flight):
             continue
         if flight.client_units:
             continue  # a human is aboard -> the F10 TARS film path handles it

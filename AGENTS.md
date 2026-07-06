@@ -636,8 +636,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    small (2-ship) TARPS-tasked drone squadron at the **rear-most** blue airfield for any blue side whose
    faction declares a **drone** `jtac_unit` (`UAV_DCS_IDS`, TARPS-capable) and doesn't **already field a
    drone** (so OIR and other hand-placed-drone campaigns are untouched). The auto-recon hook frags it
-   forward → drone-JTAC + always-films. Gated `auto_jtac_drone` (default ON, kill switch). Tests
-   `tests/fourteenth/test_jtac_drone.py`; checklist G27.
+   forward → drone-JTAC + always-films. Gated `auto_jtac_drone` (default ON, kill switch) + **era-gated**
+   (`_UAV_SERVICE_YEAR` — 12 Cold-War factions carry a lazy default MQ-9 jtac_unit; a 1988 campaign like
+   Red Tide never auto-fields a 2007 Reaper). Tests `tests/fourteenth/test_jtac_drone.py`; checklist G27.
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact

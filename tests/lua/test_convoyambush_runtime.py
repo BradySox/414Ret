@@ -2,8 +2,10 @@
 
 Pins the "script errors and the feature silently never starts" invariant and the spring
 logic: an ambush springs (a BLUE cue + an F10 mark) when its convoy closes inside the
-trigger radius; a convoy that never closes still springs after the max hold; a team wiped
-before it springs never fires; and a mission with no convoyAmbush node is a clean no-op.
+trigger radius; a team whose convoy never closes (or that has no convoy at all) stays dug
+in and SILENT -- the ambush must remain a surprise, never a telegraphed fight; a team
+wiped before it springs never fires; and a mission with no convoyAmbush node is a clean
+no-op.
 
 ROE calls are pcall-swallowed by design (the harness stubs no controller/AI), so the
 observable spring is the recorded text cue + mark, not the ROE change.
@@ -61,7 +63,6 @@ def test_springs_when_the_convoy_closes() -> None:
             startGraceS=5,
             pollIntervalS=5,
             triggerRadiusM=6000,
-            maxHoldS=1800,
         )
     )
     h.load_plugin_script(PLUGIN)
@@ -100,42 +101,50 @@ def test_does_not_spring_while_the_convoy_is_far() -> None:
             startGraceS=5,
             pollIntervalS=5,
             triggerRadiusM=6000,
-            maxHoldS=1000,  # long enough that the max-hold fallback hasn't fired yet
         )
     )
     h.load_plugin_script(PLUGIN)
-    h.advance_to(200)
-    assert h.records("texts") == []  # convoy never closed, max hold not reached
+    h.advance_to(3600)
+    # An hour on: the convoy never closed, so the team is still dug in and silent --
+    # there is no time-based fallback that would telegraph an ambush nobody drove into.
+    assert h.records("texts") == []
+    assert h.records("marks") == []
     h.assert_no_lua_errors()
 
 
-def test_springs_after_max_hold_even_without_a_convoy() -> None:
+def test_stays_silent_without_a_convoy() -> None:
     h = DcsPluginHarness()
     h.add_group(_team("Ambush-1"))
+    # No convoy group exists at all (e.g. it was destroyed before it ever spawned).
     h.lua.globals().dcsRetribution = h.to_lua(
         _config(
             ambushes=[{"groups": ["Ambush-1"], "x": "1000.0", "y": "2000.0"}],
             startGraceS=5,
             pollIntervalS=5,
-            maxHoldS=20,  # deadline = grace(5) + maxHold(20) = t=25
         )
     )
     h.load_plugin_script(PLUGIN)
-    h.advance_to(24)
+    h.advance_to(3600)
     assert h.records("texts") == []
-    h.advance_to(30)
-    assert len(h.records("texts")) == 1  # sprang at the deadline
+    assert h.records("marks") == []
     h.assert_no_lua_errors()
 
 
 def test_dead_team_never_springs() -> None:
     h = DcsPluginHarness()
     # The ambush group is never added -> aliveGroups() finds nothing.
+    h.add_group(_convoy("Convoy-1", 1000.0, 2000.0))
     h.lua.globals().dcsRetribution = h.to_lua(
         _config(
-            ambushes=[{"groups": ["Ghost-Ambush"], "x": "0.0", "y": "0.0"}],
+            ambushes=[
+                {
+                    "groups": ["Ghost-Ambush"],
+                    "x": "1000.0",
+                    "y": "2000.0",
+                    "convoyGroups": ["Convoy-1"],
+                }
+            ],
             startGraceS=5,
-            maxHoldS=10,
         )
     )
     h.load_plugin_script(PLUGIN)

@@ -480,6 +480,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "base_battle_damage",
                     "artillery_base_harassment",
                     "mobile_missile_relocation",
+                    "ambient_supply_convoys",
                     "convoy_ambush",
                     "enemy_comms_jamming",
                     "comms_jam_requires_capture",
@@ -2286,20 +2287,39 @@ class Settings:
             "position, and nothing changes at turn end. Applies to both sides."
         ),
     )
-    convoy_ambush: bool = boolean_option(
-        "Friendly convoy ambushes (fly escort)",
+    ambient_supply_convoys: bool = boolean_option(
+        "Ambient supply convoys (both sides' roads have traffic)",
         page=MISSION_GENERATION_PAGE,
         section=GENERAL_SECTION,
-        default=False,
+        default=True,
         detail=(
-            "Your own supply convoys run the roads behind the lines, and concealed "
-            "enemy ambush teams dig in along their route. Left un-escorted, the ambush "
-            "wears a convoy down and the supplies never arrive; fly CAS/Armed Recon to "
-            "find and clear the ambushers and the convoy gets through. An escort package "
-            "is auto-fragged into the ATO each turn (the AI flies it if you don't). The "
-            "convoy and the ambushers are real, tracked units -- both sides' losses "
-            "count. Runs via the 'Convoy ambush' LUA plugin -- keep that plugin enabled "
-            "or this setting does nothing."
+            "Every turn, each side's supply-convoy flow is topped up to a small "
+            "randomized number of real columns on its own road network -- some "
+            "sharing a road, some on different ones -- so there is always traffic "
+            "to protect, hunt, and see. The columns are real, tracked units riding "
+            "the engine's own convoy system: enemy ones are ordinary Armed Recon/"
+            "BAI targets, friendly ones are subject to the convoy-ambush roll, and "
+            "every loss counts at debrief. A side with no road between two of its "
+            "own bases (island maps) simply gets none."
+        ),
+    )
+    convoy_ambush: bool = boolean_option(
+        "Friendly convoy ambushes (support your convoys)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Your own supply convoys run the roads behind the lines, and sometimes -- "
+            "it is a chance, never a certainty -- hidden enemy ambush teams dig in "
+            "along the route: one contact, or a gauntlet of five or six down the same "
+            "road. Nothing is telegraphed: the convoy looks like any other friendly "
+            "convoy and no objective or escort package appears in the UI -- the first "
+            "sign is the TROOPS IN CONTACT call when an ambush springs, and supporting "
+            "the column (or not) is your call. Left unsupported, an ambushed convoy is "
+            "ground down and the supplies never arrive. The convoy and the ambushers "
+            "are real, tracked units -- both sides' losses count. Runs via the 'Convoy "
+            "ambush' LUA plugin -- keep that plugin enabled or this setting does "
+            "nothing."
         ),
     )
     enemy_comms_jamming: bool = boolean_option(

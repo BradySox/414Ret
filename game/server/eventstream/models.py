@@ -123,7 +123,15 @@ class GameUpdateEventsJs(BaseModel):
             deselected_flight=events.deselected_flight,
             updated_front_lines=updated_front_lines,
             deleted_front_lines=events.deleted_front_lines,
-            updated_tgos=[TgoJs.for_tgo(tgo) for tgo in events.updated_tgos],
+            # Map-hidden sites (unrevealed SCAR command posts, §50 convoy-ambush
+            # teams) must never reach the client — the initial /game pull already
+            # skips them in TgoJs.all_in_game, and an update event (e.g. a unit
+            # kill reconciled at debrief) must not leak them either.
+            updated_tgos=[
+                TgoJs.for_tgo(tgo)
+                for tgo in events.updated_tgos
+                if not tgo.hidden_on_player_map(Player.BLUE)
+            ],
             deleted_tgos=list(events.deleted_tgos),
             updated_control_points=[
                 ControlPointJs.for_control_point(cp)

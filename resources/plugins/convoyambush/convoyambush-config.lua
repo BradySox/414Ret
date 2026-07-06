@@ -1,11 +1,14 @@
 ---------------------------------------------------------------------------------------------------
--- Convoy ambush runtime (spring the dug-in team).
+-- Convoy ambush runtime (spring the dug-in teams).
 --
 -- Each emitted ambush team holds fire (alarm-green + weapons hold) until the friendly convoy it is
 -- set against closes inside the trigger radius, then SPRINGS: goes weapons-free (alarm-red) with a
--- "troops in contact" cue + an F10 map mark. A team no convoy ever reaches opens up anyway after a
--- maximum hold, so a passing player always finds a fight. Springing begins only after a startup
--- grace so nothing opens up the instant the mission loads.
+-- "troops in contact" cue + an F10 map mark. A route can carry several teams, so one column may be
+-- hit once -- or run a gauntlet of five or six separate contacts down the same road. A team whose
+-- convoy never reaches it stays dug in and silent: the ambush is a surprise the convoy drives into,
+-- never an announced objective (the campaign UI shows nothing about it -- supporting the column is
+-- the player's in-mission decision). Springing begins only after a startup grace so nothing opens
+-- up the instant the mission loads.
 --
 -- ROE / cue ONLY -- the plugin owns no kills. The convoy and the ambushers are real, tracked units,
 -- so the firefight is reconciled natively at debrief (dead convoy units never arrive; dead
@@ -25,14 +28,12 @@ local data = dcsRetribution.convoyAmbush
 local TRIGGER_RADIUS = 6000 -- m: convoy within this of the ambush centre springs it
 local GRACE = 120 -- s before an ambush can spring
 local POLL = 15 -- s between convoy-proximity checks
-local MAX_HOLD = 1800 -- s: spring anyway after this even if no convoy closes
 
 if dcsRetribution.plugins and dcsRetribution.plugins.convoyambush then
     local o = dcsRetribution.plugins.convoyambush
     TRIGGER_RADIUS = tonumber(o.triggerRadiusM) or TRIGGER_RADIUS
     GRACE = tonumber(o.startGraceS) or GRACE
     POLL = tonumber(o.pollIntervalS) or POLL
-    MAX_HOLD = tonumber(o.maxHoldS) or MAX_HOLD
 end
 
 local markSeq = 73100 -- F10 mark id base (bumped per ambush; high to avoid collisions)
@@ -112,7 +113,7 @@ local function spring(ambush)
     pcall(
         trigger.action.outTextForCoalition,
         coalition.side.BLUE,
-        "TROOPS IN CONTACT -- a friendly convoy is under ambush. Escort needed.",
+        "TROOPS IN CONTACT -- a friendly convoy is under ambush. Support welcome.",
         20
     )
     pcall(function()
@@ -129,8 +130,9 @@ local function spring(ambush)
     end)
 end
 
--- One ambush team: dig in holding fire after the grace, then poll for the convoy closing (or the
--- max hold elapsing) and spring once. A team wiped before it springs just stops scheduling.
+-- One ambush team: dig in holding fire after the grace, then poll for the convoy closing and
+-- spring once. A team the convoy never reaches stays dug in and silent (the ambush must remain a
+-- surprise, never a telegraphed fight); a team wiped before it springs just stops scheduling.
 local function startAmbush(ambush)
     markSeq = markSeq + 1
     ambush._markId = markSeq
@@ -139,7 +141,6 @@ local function startAmbush(ambush)
     end
 
     local sprung = false
-    local deadline = timer.getTime() + GRACE + MAX_HOLD
     local function tick()
         if sprung then
             return nil
@@ -147,8 +148,11 @@ local function startAmbush(ambush)
         if #aliveGroups(ambush.groups) == 0 then
             return nil -- team destroyed before it sprang -> stop scheduling
         end
+        if #aliveGroups(ambush.convoyGroups) == 0 then
+            return nil -- convoy gone (delivered or destroyed) -> the ambush never happens
+        end
         local dist = nearestConvoyDist(ambush)
-        if (dist and dist <= TRIGGER_RADIUS) or timer.getTime() >= deadline then
+        if dist and dist <= TRIGGER_RADIUS then
             sprung = true
             spring(ambush)
             return nil

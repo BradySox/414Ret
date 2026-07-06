@@ -1,19 +1,20 @@
 """Convoy ambush -> Lua config bridge (``dcsRetribution.convoyAmbush``).
 
-The runtime half of the convoy escort / ambush feature (§50). The turn-boundary force
-model (``game/fourteenth/convoy_ambush.py``) has already seeded, for each active blue
-supply convoy, a real concealed red ambush team on a mid-route waypoint and recorded the
-pairing on ``game.convoy_ambush_state``. This emitter lists, for each pairing, the ambush
-team's DCS group names + position and the escorted convoy's group name, and the
-``convoyambush`` plugin *springs* the ambush at runtime: the team digs in holding fire
-(alarm-green / weapons-hold) until the convoy closes inside a trigger radius, then goes
-weapons-free with a "troops in contact" cue + an F10 mark.
+The runtime half of the convoy ambush feature (§50). The turn-boundary force model
+(``game/fourteenth/convoy_ambush.py``) has already rolled each active blue supply convoy
+for an ambush and, where the roll hit, seeded 1..6 real, map-hidden red ambush teams along
+its road, recording each pairing on ``game.convoy_ambush_state``. This emitter lists, for
+each pairing, the ambush team's DCS group names + position and the targeted convoy's group
+name, and the ``convoyambush`` plugin *springs* the ambush at runtime: the team digs in
+holding fire (alarm-green / weapons-hold) until the convoy closes inside a trigger radius,
+then goes weapons-free with a "troops in contact" cue + an F10 mark. Nothing about the
+ambush shows in the campaign UI beforehand -- the in-mission call is the first sign, and
+supporting the column is the player's decision.
 
 **Cosmetics / ROE only** -- the plugin owns no kills. The convoy and the ambushers are
 real, tracked units, so whatever the firefight resolves is reconciled natively at debrief
 (dead convoy units never arrive; dead ambushers are a real red ground loss). The plugin
-just decides *when* the dug-in team opens up, so a passing player who never escorts still
-finds the convoy shot up and the team where the recon photo hinted.
+just decides *when* a dug-in team opens up; a team the convoy never reaches stays silent.
 
 Emits nothing unless ``convoy_ambush`` is on and at least one live ambush pairing exists,
 so a normal mission carries no ``convoyAmbush`` node and the plugin no-ops.

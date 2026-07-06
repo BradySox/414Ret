@@ -4025,14 +4025,34 @@ same philosophy, different object class).
 - **Deferred:** per-side gating (currently symmetric), and coupling the *fired* missile events to a
   scoot-away reaction (real shoot-THEN-scoot needs an S_EVENT_SHOT hook — v2 if the wander plays well).
 
-## §50 — Convoy escort / ambush
+## §50 — Convoy ambush (a chance, never telegraphed) + ambient supply convoys
 
 The **mirror of the §35 Vietnam-Ops convoy interdiction.** Interdiction gives the player *enemy* convoys
 to hunt (fly Armed Recon, kill the trucks, deny the enemy reinforcements). This gives the player *friendly*
-convoys to **protect**: real BLUE supply columns run the roads behind the front, and concealed RED ambush
-teams dig in along their route. Left un-escorted, the ambush wears the column down and the supplies never
-arrive; fly CAS/BAI to find and clear the ambushers and the convoy gets through. It is a reason to fly
-close air support for friendly ground movement — the escort mission the auto-planner never produced.
+convoys that might need protecting: real BLUE supply columns run the roads behind the front, and —
+**sometimes; it is a chance roll, never a certainty** — hidden RED ambush teams dig in along their route:
+one contact, or a gauntlet of five or six down the same road. **Nothing is telegraphed in the Retribution
+UI** (reworked 2026-07-06 from the original always-one-ambush + auto-fragged-escort design, per the
+squadron call): the convoy looks like any other friendly convoy, the ambush teams have **no map presence
+at all** (no marker, no §3 uncertainty circle, nothing to right-click or plan against), and **no escort
+package is auto-fragged into the ATO**. The first sign of trouble is the in-mission "TROOPS IN CONTACT"
+call when an ambush springs — and supporting the column (or not) is the player's decision.
+
+**Standardized to every campaign the same day (the ambient-convoy layer).** The squadron call: convoys
+present in every miz, both sides, "a few convoys per side, some on the same route, some on different
+routes, randomized — don't force numbers." `game/fourteenth/ambient_convoys.py` `ensure_ambient_convoys`
+tops **each side's** convoy flow up to a `randint(MIN_AMBIENT_CONVOYS, MAX_AMBIENT_CONVOYS)` (1..3) target
+every turn on **randomly chosen** same-side corridors — a uniform pick *with repeats*, so columns
+sometimes share a road and sometimes spread out; organic transfers and the §35 trail convoys count toward
+the target, so nothing stacks on top of existing traffic. Corridors are enumerated once per road and
+oriented rear→front off the §35 `_reference_points` (fronts, or the opposing CPs on a front-less laydown);
+sources are topped up by the same `_seed_trail_source` external-logistics rule (a red insurgency convoys
+its irregular kit — the COIN flag). This **replaces the old blue-only `ensure_blue_escort_convoy`**: the
+ambush roll below covers every blue convoy whatever created it, and red's ambient columns are ordinary
+Armed Recon / BAI targets. Gated `ambient_supply_convoys` (Mission Generation → Battlefield life, default
+**ON**); a side with no same-side road (island maps, all-red graphs) is a silent no-op. Both `convoy_ambush`
+and `ambient_supply_convoys` default **ON** (the §49 kill-switch precedent; existing saves keep stored
+values, and the new field arrives ON via the `Settings.__setstate__` default merge).
 
 ### No phantom spawns (the §35/§37 lesson)
 
@@ -4043,94 +4063,118 @@ discipline the interdiction and Super Gaggle reworks established:
   `MissionResultsProcessor.commit_convoy_losses` already iterates *both* coalitions' convoys and calls
   `convoy.kill_unit`, and the debrief recognizes `convoy.player_owned.is_blue`. So a blue convoy shot up in
   an ambush costs the player real reinforcements — no new loss plumbing.
-- **Each ambush team is a real, concealed red TGO** placed by `game.fourteenth.coin.spawn_red_ground_at`
+- **Each ambush team is a real, map-hidden red TGO** placed by `game.fourteenth.coin.spawn_red_ground_at`
   (the same reusable spawn the COIN dispersed cells / IEDs / HVTs use) at an arbitrary land point, anchored
-  to a red CP for allegiance. Killing it is a real red ground loss in the debrief. `concealed=True` (§3)
-  hides it behind an "in here somewhere" uncertainty circle until recon/escort localizes it — so finding
-  the ambush is part of the job.
+  to a red CP for allegiance. Killing it is a real red ground loss in the debrief.
 
-The Lua plugin therefore owns **no** kills. It only decides *when* the dug-in team opens up.
+The Lua plugin therefore owns **no** kills. It only decides *when* a dug-in team opens up.
+
+### The `map_hidden` visibility flag
+
+The §3 `concealed` circle would still advertise "something is on this road", so the ambush teams introduced
+a stronger leaf on the viewer-aware visibility layer: `TheaterGroundObject.map_hidden` (pickle-safe,
+`setdefault` in `__setstate__`). While set, `hidden_on_player_map(viewer)` returns True for any enemy
+viewer **unconditionally** — no reveal key, unlike the SCAR command posts — so the site never reaches the
+client (`TgoJs.all_in_game` skips it, and `GameUpdateEventsJs.from_events` now filters `updated_tgos` the
+same way, closing the SSE leak where a debrief-time unit kill would have pushed the hidden TGO to the map),
+never gets an F10 mark (`triggergenerator._gen_markers` already gates on the same leaf), and is skipped by
+`BattlePositions.for_control_point` so **neither side's HTN planner frags a package against it** (a blue
+AI BAI package in the ATO would have revealed it). `viewer=None` (AI/threat math) and the §18 fog-reveal
+debug toggle still see ground truth.
 
 ### How it works
 
-**Force model (`game/fourteenth/convoy_ambush.py`, from `Game.finish_turn` after the enemy-trail top-up):**
+**Force model (from `Game.finish_turn`, in order: the §35 trail top-up → ambient convoys → ambush seeding):**
 
-- `ensure_blue_escort_convoy` — the symmetric analog of `ensure_enemy_trail_convoy`. It **reuses that
-  module's coalition-generic helpers** (`_pick_trail_corridor` / `_seed_trail_source` / `_skim_units`) on
-  `game.blue`: pick a blue→blue road corridor toward the front, top the rear source up from the coalition's
-  own `Faction.frontline_units` (external logistics, so a turn-1 empty rear base still fields a column),
-  skim a real `CONVOY_UNITS` (8) load, and `new_transfer` it. Kept to `BLUE_CONVOY_BUDGET` (2) concurrent,
-  spread across distinct roads. This is the "spawn more blue convoys" half — an escortable convoy reliably
-  exists each turn.
-- `seed_convoy_ambushes` — despawns last turn's ambush teams first (an ambush is a one-mission event —
-  cleared or run-past, it does not persist; reuses `coin._despawn`/`_tgo_by_id`), then for up to
-  `MAX_AMBUSHED_CONVOYS` (2) of the active blue convoys drops a small `AMBUSH_TEAM_SIZE` (4) concealed red
-  `GroupTask.FRONT_LINE` TGO on a **mid-route waypoint** (`route[len//2]` of `convoy_route_to`, never an
-  endpoint where the CP's own defenses would swamp it). Records `{tgo_id, convoy}` pairings on
+- `ensure_ambient_convoys` (`game/fourteenth/ambient_convoys.py`) — both sides, the randomized top-up
+  described above. Reuses the §35 coalition-generic helpers (`_reference_points` / `_seed_trail_source` /
+  `_skim_units`) with its own `_same_side_corridors` enumeration; `AMBIENT_CONVOY_UNITS` (8) per column.
+  The dice live in a module-level `_RNG` so tests script them.
+- `seed_convoy_ambushes` (`game/fourteenth/convoy_ambush.py`) — despawns last turn's ambush teams first
+  (an ambush is a one-mission event —
+  cleared or run-past, it does not persist; reuses `coin._despawn`/`_tgo_by_id`), then **rolls each active
+  blue convoy against `AMBUSH_CHANCE` (0.5)**. A convoy that misses the roll drives a quiet road. A convoy
+  that hits gets `randint(MIN_AMBUSHES_PER_ROUTE, MAX_AMBUSHES_PER_ROUTE)` (1..6) teams of
+  `AMBUSH_TEAM_SIZE` (4) — each a `map_hidden` red `GroupTask.FRONT_LINE` TGO placed by `_ambush_points`:
+  stratified-random slots along the route polyline inside `ROUTE_END_MARGIN` (15 %) of either endpoint,
+  **interpolated along the road's segments** (`heading_between_point`/`point_from_heading` — the authored
+  corridors carry only 3–5 waypoints, far fewer than the teams they can host), so a six-team roll reads as
+  a spread gauntlet of separate contacts, never a stack. Records `{tgo_id, convoy}` pairings on
   `game.convoy_ambush_state` (declared in `Game.__init__`, `setdefault` in `__setstate__` for old saves).
+  The dice live in a module-level `_RNG` so tests script them.
 
-**Auto-frag (`plan_convoy_escort`, from `Coalition.plan_missions` before the commander):** mirrors
-`plan_carrier_strike`. For each live ambush pairing (TGO alive, not ROE-blocked, not already fragged) it
-builds a real package through the engine's own `PackageFulfiller.plan_mission` — a `ProposedFlight(BAI,
-ESCORT_FLIGHT_SIZE=2)` onto the ambush TGO. **BAI is the tasking the commander itself uses against a
-vehicle group** (`PlanBai`, `PlanConvoyInterdiction`), so a two-ship "go clear this ground threat" is the
-escort. Running before `TheaterCommander` claims the jets first; the AI flies it if the player doesn't.
-`purchase_multiplier=0` — never buys jets for the escort.
+**No auto-frag.** The old `plan_convoy_escort` hook (a BAI package auto-fragged from
+`Coalition.plan_missions`) is **deleted** — an ATO package pointing at the ambush would both telegraph it
+and take the decision away from the player. If the player wants air over the column, they frag it
+themselves (or divert something already airborne when the TIC call comes).
 
 **Emitter (`game/missiongenerator/convoyambushluadata.py` `populate_convoy_ambush_lua`, wired in
 `luagenerator.py` after the mobile-missile emitter).** For each live pairing it emits the ambush team's
-alive `group_name`s + centre and the escorted convoy's group name (the generated `VehicleGroup` name =
+alive `group_name`s + centre and the targeted convoy's group name (the generated `VehicleGroup` name =
 `convoy.name`) as `dcsRetribution.convoyAmbush = { ambushes = { {groups, x, y, convoyGroups}, … } }`. A
 pairing whose TGO is gone or fully dead is dropped; setting off ⇒ no node ⇒ plugin no-ops.
 
-**Runtime (`resources/plugins/convoyambush/`).** One scheduled loop per ambush. The team starts dug in —
-alarm-green + weapons-hold (all ROE calls `pcall`-wrapped). After a startup grace (default 120 s) it polls
-every `pollIntervalS` (15 s): when any convoy unit closes inside `triggerRadiusM` (6 km) of the ambush
-centre — **or** a max hold (default 1800 s) elapses so a team no convoy ever reaches still opens up for a
-passing player — it **springs**: weapons-free + alarm-red, one "TROOPS IN CONTACT — escort needed" cue to
-BLUE, one F10 mark on the position, then latches. A team wiped before it springs stops scheduling.
+**Runtime (`resources/plugins/convoyambush/`).** One scheduled loop per ambush team. The team starts dug
+in — alarm-green + weapons-hold (all ROE calls `pcall`-wrapped). After a startup grace (default 120 s) it
+polls every `pollIntervalS` (15 s): when any convoy unit closes inside `triggerRadiusM` (6 km) of the
+ambush centre it **springs** — weapons-free + alarm-red, one "TROOPS IN CONTACT — support welcome" cue to
+BLUE, one F10 mark on the position, then latches. A team the convoy never reaches (or whose convoy is
+already gone) **stays dug in and silent** — the old max-hold "spring anyway" fallback is removed, because
+a TIC call with no convoy under fire would telegraph a fight nobody drove into. A team wiped before it
+springs stops scheduling.
 
 ### Files & tests
 
 | Area | Path |
 |---|---|
-| Force model | `game/fourteenth/convoy_ambush.py` (`ensure_blue_escort_convoy`, `seed_convoy_ambushes`, `plan_convoy_escort`), hooked in `game/game.py` `finish_turn` + `game/coalition.py` `plan_missions` |
+| Force model | `game/fourteenth/ambient_convoys.py` (`ensure_ambient_convoys`, both sides) + `game/fourteenth/convoy_ambush.py` (`seed_convoy_ambushes`), hooked in order in `game/game.py` `finish_turn` |
+| Visibility | `game/theater/theatergroundobject.py` (`map_hidden` + the `hidden_on_player_map` leaf), `game/server/eventstream/models.py` (SSE filter), `game/commander/battlepositions.py` (planner skip) |
 | State | `game.convoy_ambush_state` (declared in `Game.__init__`, `setdefault` in `__setstate__`) |
 | Emitter | `game/missiongenerator/convoyambushluadata.py` (wired in `luagenerator.py` after the mobile-missile emitter) |
 | Runtime | `resources/plugins/convoyambush/` (`plugin.json` + `convoyambush-config.lua`; registered in `plugins.json`) |
-| Setting | `game/settings/settings.py` (`convoy_ambush`, Mission Generation → Battlefield life, default **OFF**) |
-| Tests | `tests/fourteenth/test_convoy_ambush.py` (blue top-up + ambush seeding + auto-frag + every guard); `tests/missiongenerator/test_convoyambushluadata.py` (emit shape/gates); `tests/lua/test_convoyambush_runtime.py` (grace, spring-on-close, max-hold fallback, dead-team, no-node) |
+| Settings | `game/settings/settings.py` (`ambient_supply_convoys` + `convoy_ambush`, Mission Generation → Battlefield life, both default **ON**) |
+| Tests | `tests/fourteenth/test_ambient_convoys.py` (the randomized both-sides top-up, same-road stacking, corridor orientation, COIN kit, every guard); `tests/fourteenth/test_convoy_ambush.py` (the chance roll + gauntlet placement + the map_hidden contract + the `ROAD_BEARING_CAMPAIGNS` inventory guard); `tests/missiongenerator/test_convoyambushluadata.py` (emit shape/gates); `tests/lua/test_convoyambush_runtime.py` (grace, spring-on-close, silent-without-convoy, dead-team, no-node) |
 
 ### Gotchas / deferred
 
-- **The escort is an emergent job, not a computed one.** There is no "is escorted" flag — the ambushers
-  engage the convoy whenever the DCS AI can, and clearing them is whatever air happens to be there (the
-  auto-fragged BAI, a player who mans it, or a player who frags their own CAS). Losing the convoy is a
-  campaign consequence surfaced in the SITREP, not a modal event.
-- **Plugin dependency (the §36 lesson).** The runtime is the `convoyambush` plugin; a saved default of it
-  unticked silently kills the setting. The campaigns that preseed `convoy_ambush: true` also preseed
-  `plugins: {convoyambush: true}`.
-- **Preseeded ON** in COIN Enduring/Inherent Resolve (peak "ambush alley" — a supply convoy on Highway 1),
-  1968 Yankee Station (Steel Tiger's sibling), and Red Tide (Fulda rear-area convoys); default OFF
-  everywhere else. NEW game required to pick up the preseeds.
-- **A blue→blue supply road is the hard prerequisite** (found by the 2026-07-05 flown test): with an
-  all-red supply graph the escort convoy — and with it the entire ambush/escort loop — silently never
-  exists. Both COIN campaigns originally shipped exactly that way; their blue rear corridors are now
+- **Support is an emergent job, not a computed one.** There is no "is escorted" flag — the ambushers
+  engage the convoy whenever the DCS AI can, and clearing them is whatever air the player brings (a
+  pre-fragged CAS of their own, or a diversion when the TIC call comes). Losing the convoy is a campaign
+  consequence surfaced in the SITREP, not a modal event.
+- **The chance is rolled at the turn boundary, not in-mission.** `seed_convoy_ambushes` rolls the dice
+  when the turn is finalized, because the teams must be real units in the force model and the `.miz`.
+  From the cockpit it is indistinguishable from an in-mission roll — nothing about the outcome is
+  visible anywhere until an ambush springs.
+- **Plugin dependency (the §36 lesson).** The ambush runtime is the `convoyambush` plugin; a saved default
+  of it unticked silently kills the `convoy_ambush` setting (the ambient convoys themselves are pure engine
+  and need no plugin). The four flagship campaigns still preseed `plugins: {convoyambush: true}` (and the
+  setting, now redundantly — kept as explicit intent that forces it ON over a user's saved-off default).
+- **Standard since 2026-07-06:** both settings default **ON** for new games (existing saves keep their
+  stored `convoy_ambush` choice; `ambient_supply_convoys` arrives ON via the `__setstate__` default merge).
+- **A blue→blue supply road is the hard prerequisite for the blue half** (found by the 2026-07-05 flown
+  test): with an all-red supply graph no blue convoy — and with it the entire ambush loop — can ever
+  exist. Both COIN campaigns originally shipped exactly that way; their blue rear corridors are
   geo-authored (`tools/supply_route_geo.py`: ER Kandahar↔Camp Bastion up Highway 1 — the literal
-  ambush alley; IR Baghdad↔Balad + Baghdad↔Al-Taquddum), and
-  `test_preseeded_campaigns_have_a_blue_to_blue_road` loads every preseeding campaign's theater in CI
-  so a laydown edit can't silently drop the road again. A player enabling the setting on a custom
-  campaign without a blue→blue road gets the documented no-op.
-- **BLUE-only.** The player protects; the ambushers are red. Symmetric red-convoy escort is deferred (and
-  is largely what §35 already covers from the other side).
-- **In-game pass: checklist S3.** The Python force model + emitter + plugin runtime are unit/harness
-  tested, but the actual firefight (ambushers engaging the column, the spring feel, the auto-fragged BAI
-  actually clearing them) needs a flown pass. Watch: the convoy actually drives its road; the ambush
-  springs near it, not at max range; the BAI escort reaches and kills the team; convoy/ambush losses both
-  show in the debrief.
-- **Deferred:** the ambush point is a single mid-route waypoint; a multi-team gauntlet down a long road and
-  an off-road (beside-the-road) ambush position are follow-ups. Convoy size/ambush strength are fixed
-  constants — tune from the S3 pass.
+  ambush alley; IR Baghdad↔Balad + Baghdad↔Al-Taquddum). The **2026-07-06 standardization survey** loaded
+  all 67 shipping campaigns: **27 bind a blue→blue road** (feature live), **40 don't** (documented no-op —
+  some genuinely can't, e.g. the island maps; the rest await the corridor-authoring content pass, the
+  Tier-2 follow-up). The 27 are CI-locked as `ROAD_BEARING_CAMPAIGNS`
+  (`test_road_bearing_campaign_keeps_its_blue_road` loads each theater), so a laydown edit can't silently
+  drop a road; when a new corridor is authored, ADD the campaign to the inventory.
+- **Ambush is BLUE-only; ambience is symmetric.** The ambush teams target the player's convoys (red's
+  ambient columns are instead the player's Armed Recon/BAI targets — §35 from the other side). A symmetric
+  red-convoy ambush (AI escorting its own columns against player-hunts) stays deferred.
+- **In-game pass: checklist S3 + S5.** The Python force model + emitter + plugin runtime are unit/harness
+  tested, but the actual firefight (ambushers engaging the column, the spring feel, whether flying to the
+  TIC call and clearing the team saves the convoy) needs a flown pass — plus the ambient layer's read
+  (columns on both sides' roads, counts varying turn to turn, stacking vs spreading). Watch: the convoy
+  actually drives its road; nothing about the ambush shows on any map before it springs; the springs come
+  near the column, not at max range; convoy/ambush losses both show in the debrief.
+- **Deferred:** an off-road (beside-the-road) ambush position is a follow-up (teams currently dig in on
+  the road polyline itself). Convoy size/team strength/`AMBUSH_CHANCE`/the ambient 1..3 band are fixed
+  constants — tune from the S3/S5 passes. (The multi-team gauntlet landed with the 2026-07-06 chance
+  rework.) The Tier-2 content pass — authoring blue rear corridors for the road-less 40 — is the open
+  standardization follow-up.
 
 ## §51 — Enemy comms jamming (IADS comms nodes)
 

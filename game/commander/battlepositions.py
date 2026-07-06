@@ -39,6 +39,10 @@ class BattlePositions:
             tgo
             for tgo in control_point.ground_objects
             if isinstance(tgo, VehicleGroupGroundObject) and not tgo.is_dead()
+            # Map-hidden sites (the §50 convoy-ambush teams) are an in-mission
+            # event, not a campaign objective: neither side's planner may frag
+            # against them, or the package would reveal them in the ATO.
+            and not getattr(tgo, "map_hidden", False)
         ]
         for battle_position in battle_positions:
             if (

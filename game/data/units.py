@@ -97,6 +97,21 @@ HEAVY_BOMBER_DCS_IDS = frozenset(
     }
 )
 
+# Unmanned ISR/strike aircraft (UAVs). DCS carries no reliable "is a drone" flag --
+# `category` buckets them as generic "Air" alongside the B-52/C-130 -- so this is a
+# curated id set (the vanilla drones; extend if a mod drone is ever added). A drone is
+# always a sensor: it feeds recon/BDA home regardless of its tasked mission (the 414th
+# "a drone is always filming" rule), so the AI-recon capture emits every AI-flown drone
+# flight, not only the TARPS-tasked ones (game/missiongenerator/aireconluadata.py). Also
+# the JTAC-drone platform for a faction (game/factions/faction.py `jtac_unit`).
+UAV_DCS_IDS = frozenset(
+    {
+        "MQ-9 Reaper",
+        "RQ-1A Predator",
+        "WingLoong-I",
+    }
+)
+
 # Unit classes the strategic ground-war planner can actually deploy at a front.
 # Other inventory-backed assets (notably the SCAR SOF teams, which are INFANTRY)
 # may live in Base.armor, but must not dilute deployment ratios or count as

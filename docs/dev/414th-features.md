@@ -248,6 +248,25 @@ on OIR/Red Tide — so a full armed recon package reads **1 drone + 2 SEAD Viper
 `game/commander/tasks/primitive/armedrecon.py`; tests `tests/test_armed_recon_planning.py`;
 checklist G25 — the in-mission composition needs a fly).
 
+**That drone is a lasing JTAC (2026-07-05, 414th call).** The 414th ripped out the old FLOT
+auto-JTAC (a `jtac_unit` MQ-9 glued to the front line); `JtacInfo` went unproduced and
+`jtac_unit` dormant, but the CTLD JTAC-autolase runtime + the kneeboard/radio consumers stayed
+live. `AircraftGenerator._maybe_configure_jtac` revives it, hung on the **packaged drone**
+instead of a FLOT unit: an AI-flown flight of the faction's `jtac_unit` (the MQ-9/Predator) in
+an **air-to-ground package** (`_JTAC_PACKAGE_PRIMARIES` = Armed Recon / CAS / BAI / Strike —
+option 1; may narrow to {Armed Recon, CAS} later) is emitted as a `JtacInfo` (group name +
+allocated laser code + UHF freq + callsign + the target as its region). That flows to
+`dcsRetribution.JTACs` → `ctld-config.lua` `ctld.JTACAutoLase` (**autolase + smoke both default
+ON**), so the drone lazes and smoke-marks ground targets for the shooters and shows on the
+kneeboard/radio like any JTAC. **No DCS task is added** — the drone flies its own package
+mission (recon overwatch / attack) and lases what it overflies; CTLD does the designation.
+**Blue + AI only** (a player drone is not an autolase JTAC), **not** invisible/immortal (unlike
+the old FLOT JTAC — the packaged drone is a real asset that can be shot down). The laser code is
+allocated per JTAC (or forced to 1113 when the `ctld.fc3LaserCode` option is on, for FC3
+receivers). (`game/missiongenerator/aircraft/aircraftgenerator.py`; tests
+`tests/missiongenerator/test_drone_jtac.py`; checklist G26 — needs an in-game pass, including
+whether a moving/overflying drone sustains a useful lase or wants a loiter profile.)
+
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
   `configure_tarps()` — a single flyover of the target area, ReturnFire ROE, no offensive
   stores. It sets the recon *behavior*; the *timing* lives in the flight plan (below).
@@ -301,9 +320,13 @@ captures no matter that it survived and overflew — the checklist G19 "capture-
 - **Emitter** (`game/missiongenerator/aireconluadata.py` `populate_ai_recon_lua`, dispatched from
   `luagenerator.py`): emits `dcsRetribution.AIRecon = { flights = { {group,x,y}, … } }` for each
   **AI-flown** (`not flight.client_units`), **player-coalition** (`flight.friendly is Player.BLUE`)
-  `TARPS` flight + its package target. A player-crewed TARPS flight is never emitted (it still films
-  via the F10 menu); a red recon flight is never emitted (only the human's recon feeds the player's
-  BDA). No such flights ⇒ no node ⇒ the plugin no-ops.
+  **recon-capable** flight + its package target. Recon-capable (`_feeds_ai_recon`) = a **TARPS-tasked**
+  flight (any airframe — the auto-paired recon bird) **OR a drone** (`UAV_DCS_IDS`) **regardless of its
+  tasked mission** — the 414th "**a drone is always filming**" rule: a UAV is a sensor first, so whether
+  it is off on a solo recon, riding a strike as the JTAC (§3 drone-JTAC), or working CAS, it still banks
+  BDA on whatever it overflies (a *manned* combat jet only feeds it when actually tasked TARPS). A
+  player-crewed flight is never emitted (it still films via the F10 menu); a red flight is never emitted
+  (only the human's recon feeds the player's BDA). No such flights ⇒ no node ⇒ the plugin no-ops.
 - **Runtime** (`resources/plugins/airecon/airecon-config.lua`): watches each emitted flight and, when
   its lead unit survives to close within the trigger range (default 5 NM) of the target, records the
   enemy (RED) ground units within the capture radius (default 4 km) of the target into the **same**
@@ -312,9 +335,9 @@ captures no matter that it survived and overflew — the checklist G19 "capture-
   confirms nothing. So the Retribution debrief (`game/debriefing.py` `parse_tars_captures` →
   `MissionResultsProcessor.tars_reconned_tgos`) lifts the fog on what an AI recon flight photographed
   exactly as it does for a player. Plugin options: trigger range, capture radius, per-flight cap, poll.
-- Emitter-tested (`game/missiongenerator/tests/test_airecon_luadata.py`: AI-blue emitted;
-  player-crewed / red / non-TARPS / no-target skipped; empty → no node). Runtime Lua needs an in-game
-  pass (checklist G19). Blue-only + player-only-exclusion by design.
+- Emitter-tested (`game/missiongenerator/tests/test_airecon_luadata.py`: AI-blue TARPS emitted; a drone
+  emitted on any task; manned-non-TARPS / player-crewed / red / no-target skipped; empty → no node).
+  Runtime Lua needs an in-game pass (checklist G19). Blue-only + player-only-exclusion by design.
 
 **Visibility / recon fog** — one viewer-aware layer drives two player-facing fog rules.
 AI planning and threat math always use ground truth (`viewer=None`); only the human
@@ -543,9 +566,10 @@ data several times; a single-home-per-datum pass fixes it, each change condition
 - **Weather** (temp / QNH / QFE / winds / clouds / sunrise-sunset) is dropped from the always-on
   **Mission Info** (`BriefingPage`, `omit_weather`) when the recon **Departure** page is generated
   for the flight (`_should_emit_departure`), which already carries the field-weather grid.
-- The flight-plan **Min-fuel** column is dropped from Mission Info (`FlightPlanBuilder`,
-  `include_min_fuel`) when the **Fuel Ladder** page is enabled — the ladder carries Min + Plan +
-  Margin, so the bingo-at-waypoint figure isn't printed twice.
+- The flight-plan fuel column: originally a Min-fuel column that was dropped when the Fuel Ladder
+  page was enabled; since 2026-07-05 the ladder is **folded into the flight plan** (see the fuel
+  ladder block below), so there is one home by construction — a `Fuel` column + a one-line RTB
+  margin call-out on Mission Info, and no separate page.
 - The **Friendly Packages** list moved out of the bottom of Mission Info to its own
   `FriendlyPackagesPage` (still two-column + paginating), so the list isn't split across Mission
   Info and a near-empty spill page; the package targets **map** stays as the spatial complement.
@@ -623,25 +647,27 @@ toggle, `enable_package_code_words` (default OFF), gates the panel, tooltip, way
 kneeboard page together. Covered by `tests/ato/test_codewords.py` +
 `tests/data/test_brevity_reference.py`; in-game / planner-UI pass ☑ VERIFIED 2026-06-26 (H6).
 
-**Fuel ladder kneeboard card.** The flight-plan page already shows the *minimum* fuel required at
-each waypoint (`FlightWaypoint.min_fuel`, the bingo-at-waypoint value the waypoint generator
-computes by walking the plan backward over the per-leg burn model). The **Fuel Ladder** card
-(`FuelLadderCard`) adds the missing half — the **planned fuel remaining** at each steerpoint
-(`FlightWaypoint.fuel_planned`, a new forward pass `WaypointGenerator._estimate_planned_fuel_for`
+**Fuel ladder — folded into the flight plan (2026-07-05).** The flight-plan table on Mission Info
+carries a **`Fuel` column**: the **planned fuel remaining** at each RTB steerpoint
+(`FlightWaypoint.fuel_planned`, the forward pass `WaypointGenerator._estimate_planned_fuel_for`
 that subtracts each leg's burn from the starting load `flight.fuel × KG_TO_LBS − taxi`, topping
-back up at a tanker `REFUEL` waypoint). The card shows **one glanceable `Fuel` column** (planned
-remaining) per RTB steerpoint. It deliberately does **not** print the old Plan/Min/Margin three
-columns: the per-waypoint margin (Plan − Min) is **constant across the whole route by construction**
+back up at a tanker `REFUEL` waypoint). It deliberately does **not** print the old Plan/Min/Margin
+trio: the per-waypoint margin (Plan − Min) is **constant across the whole route by construction**
 (start fuel − total burn − reserve, since the two figures are walked from opposite ends with the same
 per-leg burn), and Min is just Plan minus that constant — so both repeated the same number on every
-row. They collapse to a single **RTB margin** call-out above the ladder (`+N` spare, or a `−N` "tank or
-divert" warning), computed as the worst-case `min(fuel_planned − min_fuel)` so a tanker leg's reset is
-still caught. Post-landing reference points (e.g. the bullseye, which carry a forward-burn `fuel` but no
-min-to-RTB) are filtered off the ladder. The burn model is approximate (it's the same estimate that
-drives `min_fuel`), so the card is labelled as planning figures. Gated by `generate_fuel_ladder_kneeboard`
-(default OFF); the model is covered by `tests/missiongenerator/test_fuel_ladder.py` and the card render by
-`tests/missiongenerator/test_fuel_ladder_card.py`. In-game pass ☑ VERIFIED 2026-06-26 (H7). The last of the
-three kneeboard ideas harvested from the campaign-doc study (`414th-campaign-doc-ideas-harvest.md`).
+row. They collapse to a single **RTB margin** call-out under the table (`+N` spare, or an
+amber `−N` "tank or divert" warning), computed as the worst-case `min(fuel_planned − min_fuel)` so a
+tanker leg's reset is still caught (`FlightPlanBuilder._format_fuel` / `fuel_margin_line`).
+Post-landing reference points (e.g. the bullseye, which carry a forward-burn `fuel` but no
+min-to-RTB) get a blank cell. The burn model is approximate (it's the same estimate that drives
+`min_fuel`), so treat the figures as planning numbers. **History:** this began as a standalone
+`FuelLadderCard` page (gated `generate_fuel_ladder_kneeboard`, in-game ☑ VERIFIED 2026-06-26, H7 —
+one of the three kneeboard ideas harvested from the campaign-doc study,
+`414th-campaign-doc-ideas-harvest.md`); the back-to-basics pass exposed it as a near-empty page, so
+per the user's call ("why can you not build the fuel table into the flight plan?") the page + the
+setting were deleted and the column always rides in the flight plan. Model covered by
+`tests/missiongenerator/test_fuel_ladder.py`; the column + margin semantics by
+`tests/missiongenerator/test_flightplan_fuel_column.py`.
 
 *Estimated-fuel fallback for dataless airframes.* The ladder originally only rendered for the ~22
 airframes that ship a hand-measured `fuel:` block (`AircraftType.fuel_consumption`); everything else —

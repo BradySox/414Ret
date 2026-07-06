@@ -593,12 +593,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    2026-07-01) closes the G19 gap that the MOOSE TARS film path is **player-only** (its birth
    handler drops any non-player unit), so auto-paired *AI* recon flights confirmed nothing:
    `populate_ai_recon_lua` (`aireconluadata.py`) emits each AI-flown, player-coalition (BLUE)
-   `TARPS` flight + its target; the `airecon` plugin watches each and, when it survives to overfly
-   (within a trigger range of the target), records the enemy ground units there into the same
+   **recon-capable** flight + its target; the `airecon` plugin watches each and, when it survives to
+   overfly (within a trigger range of the target), records the enemy ground units there into the same
    `tars_recon_captures` ledger the player film menu feeds — so the debrief
    (`debriefing.py`→`tars_reconned_tgos`) treats an AI recon capture identically. A shot-down /
-   aborting recon flight confirms nothing (one-shot). Player-crewed TARPS is never emitted (still
+   aborting recon flight confirms nothing (one-shot). Player-crewed flights are never emitted (still
    the F10 film path); blue-only. Emitter-tested; runtime Lua needs an in-game pass (checklist G19).
+   **A drone is always filming (2026-07-05, 414th rule)**: `_feeds_ai_recon` counts a flight as recon
+   if it is TARPS-tasked (any airframe) **OR a drone** (`UAV_DCS_IDS` in `game/data/units.py` — a
+   curated set; DCS has no UAV flag, `category` buckets drones as generic "Air") **regardless of the
+   drone's tasked mission**. A UAV is a sensor first — solo recon, JTAC overwatch on a strike, or CAS,
+   it still banks BDA on what it overflies; a manned combat jet only feeds it when actually tasked TARPS.
    **Recon drone in each Armed Recon package (2026-07-05, 414th call)**: the auto-recon hook
    (`PackageFulfiller._maybe_plan_tarps_recon`, gated by `auto_add_tarps_recon`) now also frags one
    optional TARPS flight into **Armed Recon** packages (not just Strike/DEAD); `TarpsFlightPlan` was
@@ -614,6 +619,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    standalone recon), a **find/overwatch** pass on station with the shooters, not two minutes behind a
    strike moment that never happens. The `configure_tarps` behavior (flyover, ReturnFire) is unchanged;
    only the timing is now role-split.
+   **Packaged drone is a lasing JTAC (2026-07-05, 414th call)**: the old FLOT auto-JTAC (a `jtac_unit`
+   MQ-9 glued to the front line) was ripped out — `JtacInfo` went unproduced, `jtac_unit` dormant — but
+   the CTLD autolase runtime + kneeboard/radio consumers stayed live. `AircraftGenerator._maybe_configure_jtac`
+   revives it on the **packaged drone**: an AI flight of the faction's `jtac_unit` in an A/G package
+   (`_JTAC_PACKAGE_PRIMARIES` = Armed Recon/CAS/BAI/Strike — option 1, may narrow to {Armed Recon, CAS})
+   is emitted as a `JtacInfo` → `dcsRetribution.JTACs` → `ctld.JTACAutoLase` (autolase + smoke default ON),
+   so it lazes/marks for the shooters + shows on the kneeboard/radio. No DCS task added (CTLD does the
+   designation); blue + AI only; a real (killable) asset, not invisible/immortal. Laser code allocated per
+   JTAC (or 1113 on `ctld.fc3LaserCode`). Tests `tests/missiongenerator/test_drone_jtac.py`; checklist G26
+   (the loiter-vs-overfly runtime question is the open in-game item).
 4. **UI transparency** — Target Intel panel, Mission Impact debrief summary, package context
    bar, flight-creation context, building-card cleanup.
 5. **Player target location precision** — `Approximate` mode offsets steerpoints + hides exact
@@ -753,9 +768,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     adaptive flex page) was the fork's biggest `kneeboard.py` churn vs upstream and is deleted. The
     squadron-picked keepers survive on the stock **full deck**, now the only assembly path: the cover
     page (§30) + the Brief Sheet (§31) leading each flight's block + the colour palette + the threat
-    cards (`generate_threat_intel_kneeboard` default flipped ON). One glanceable-`Fuel`-column ladder
-    survives in the optional Fuel Ladder page. Do not restore the folding machinery. (features doc §4,
-    checklist H9 retired → H12.)
+    cards (`generate_threat_intel_kneeboard` default flipped ON). The fuel ladder is **folded into the
+    flight plan** (2026-07-05, user call): a `Fuel` column + a one-line RTB margin call-out on Mission
+    Info — the standalone Fuel Ladder page + `generate_fuel_ladder_kneeboard` are deleted. Do not
+    restore the folding machinery. (features doc §4, checklist H9 retired → H12.)
 26. **Off-mission combat fidelity + PLAYER_AT_IP fix** — the sim auto-resolves engagements the player
     doesn't fly. Abstract combat was numbers-only coin flips (more flights win; survivors die 50/50; SAMs a
     flat 50%), so obsolete jets beat modern ones and SEAD meant nothing. `game/sim/combat/capability.py`

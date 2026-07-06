@@ -500,7 +500,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "generate_all_packages_kneeboard",
                     "generate_threat_intel_kneeboard",
                     "enable_package_code_words",
-                    "generate_fuel_ladder_kneeboard",
                     "generate_sitrep_kneeboard",
                     "target_recon_extra_threat_search_nmi",
                 ],
@@ -1906,18 +1905,6 @@ class Settings:
             "ATO list and a 'PUSH <word>' tag on the join waypoint, plus a Comms & "
             "Brevity kneeboard page (the code words + a task-filtered brevity crib). "
             "Human comms aids only — nothing scripts off them. Off by default."
-        ),
-    )
-    generate_fuel_ladder_kneeboard: bool = boolean_option(
-        "Generate fuel ladder kneeboard page",
-        MISSION_GENERATOR_PAGE,
-        KNEEBOARD_SECTION,
-        default=False,
-        detail=(
-            "Append a Fuel Ladder page: the planned fuel remaining vs. the minimum to "
-            "RTB at each steerpoint, plus the margin between them and Bingo/Joker. The "
-            "burn model is an estimate, so treat the numbers as planning figures. Off "
-            "by default."
         ),
     )
     generate_sitrep_kneeboard: bool = boolean_option(

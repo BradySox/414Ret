@@ -480,6 +480,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "base_battle_damage",
                     "artillery_base_harassment",
                     "mobile_missile_relocation",
+                    "ambient_supply_convoys",
                     "convoy_ambush",
                     "enemy_comms_jamming",
                     "comms_jam_requires_capture",
@@ -2286,11 +2287,27 @@ class Settings:
             "position, and nothing changes at turn end. Applies to both sides."
         ),
     )
+    ambient_supply_convoys: bool = boolean_option(
+        "Ambient supply convoys (both sides' roads have traffic)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Every turn, each side's supply-convoy flow is topped up to a small "
+            "randomized number of real columns on its own road network -- some "
+            "sharing a road, some on different ones -- so there is always traffic "
+            "to protect, hunt, and see. The columns are real, tracked units riding "
+            "the engine's own convoy system: enemy ones are ordinary Armed Recon/"
+            "BAI targets, friendly ones are subject to the convoy-ambush roll, and "
+            "every loss counts at debrief. A side with no road between two of its "
+            "own bases (island maps) simply gets none."
+        ),
+    )
     convoy_ambush: bool = boolean_option(
         "Friendly convoy ambushes (support your convoys)",
         page=MISSION_GENERATION_PAGE,
         section=GENERAL_SECTION,
-        default=False,
+        default=True,
         detail=(
             "Your own supply convoys run the roads behind the lines, and sometimes -- "
             "it is a chance, never a certainty -- hidden enemy ambush teams dig in "

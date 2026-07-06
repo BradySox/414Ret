@@ -1,48 +1,34 @@
-"""§50 convoy ambush -> real blue convoys + a CHANCE of real, hidden red ambush teams.
+"""§50 convoy ambush -> a CHANCE of real, hidden red ambush teams on blue's convoys.
 
-Locks the force-model half of the feature: the blue convoy top-up (the symmetric analog of
-``ensure_enemy_trail_convoy``) and the chance-rolled ambush seeding -- 1..6 real,
+Locks the force-model half of the feature: the chance-rolled ambush seeding -- 1..6 real,
 ``map_hidden`` red TGOs spread along an ambushed convoy's road, with last turn's despawned
 first and NOTHING telegraphed to the UI (no marker, no uncertainty circle, no auto-fragged
 escort package) -- plus every guard, so the feature no-ops rather than inventing free units
-when a precondition is missing.
+when a precondition is missing. (The convoys themselves come from the ambient-convoy layer
+-- ``tests/fourteenth/test_ambient_convoys.py`` -- or any organic transfer; the roll covers
+them all.)
 """
 
 from __future__ import annotations
 
-from datetime import datetime
 from types import SimpleNamespace
 from typing import Any
+
+import pytest
 
 import game.fourteenth.coin as coin_module
 import game.fourteenth.convoy_ambush as convoy_ambush_module
 from game.fourteenth.convoy_ambush import (
     AMBUSH_TEAM_SIZE,
-    BLUE_CONVOY_BUDGET,
-    CONVOY_UNITS,
     MAX_AMBUSHES_PER_ROUTE,
     MIN_AMBUSHES_PER_ROUTE,
     ROUTE_END_MARGIN,
     _ambush_points,
     _nearest_cp,
-    ensure_blue_escort_convoy,
     seed_convoy_ambushes,
 )
 
 # ---- fakes -------------------------------------------------------------------------
-
-
-class _Base:
-    def __init__(self, armor: dict[Any, int]) -> None:
-        self.armor = dict(armor)
-
-    @property
-    def total_armor(self) -> int:
-        return sum(self.armor.values())
-
-    def commission_units(self, units: dict[Any, int]) -> None:
-        for unit_type, count in units.items():
-            self.armor[unit_type] = self.armor.get(unit_type, 0) + count
 
 
 class _Owner:
@@ -71,31 +57,10 @@ class _Pos:
 
 
 class _CP:
-    def __init__(
-        self, name: str, blue: bool, dist: float, armor: dict[Any, int] | None = None
-    ) -> None:
+    def __init__(self, name: str, blue: bool, dist: float) -> None:
         self.name = name
-        # For the corridor helpers, "captured" is compared to coalition.player; blue CPs
-        # use the shared BLUE_PLAYER sentinel so ``cp.captured == coalition.player`` holds.
         self.captured = _Owner(blue)
         self.position = _Pos(dist)
-        self.base = _Base(armor or {})
-        self.convoy_routes: dict[Any, Any] = {}
-
-
-class _Unit:
-    def __init__(self, name: str) -> None:
-        self.display_name = name
-        self.price = 2
-
-
-class _Transfers:
-    def __init__(self, convoys: list[Any] | None = None) -> None:
-        self.convoys = convoys or []
-        self.created: list[Any] = []
-
-    def new_transfer(self, order: Any, now: Any) -> None:
-        self.created.append(order)
 
 
 class _Rng:
@@ -114,89 +79,6 @@ class _Rng:
         value = self.ints.pop(0) if self.ints else a
         assert a <= value <= b, f"scripted randint {value} outside [{a}, {b}]"
         return value
-
-
-def _front() -> Any:
-    return SimpleNamespace(position=_Pos(0.0))
-
-
-BLUE_PLAYER = _Owner(True)
-
-
-def _blue_coalition(convoys: list[Any] | None = None) -> Any:
-    coalition = SimpleNamespace(
-        player=BLUE_PLAYER,
-        transfers=_Transfers(convoys),
-        faction=SimpleNamespace(frontline_units={_Unit("M113"), _Unit("Humvee")}),
-    )
-    return coalition
-
-
-def _corridor_game(
-    *, on: bool, cps: list[_CP], fronts: list[Any], turn: int = 3
-) -> Any:
-    # Make blue CPs' captured compare equal to the coalition player sentinel.
-    for cp in cps:
-        if cp.captured.is_blue:
-            cp.captured = BLUE_PLAYER
-    return SimpleNamespace(
-        settings=SimpleNamespace(convoy_ambush=on),
-        turn=turn,
-        blue=_blue_coalition(),
-        theater=SimpleNamespace(controlpoints=cps, conflicts=lambda: list(fronts)),
-        conditions=SimpleNamespace(start_time=datetime(2000, 1, 1)),
-    )
-
-
-# ---- ensure_blue_escort_convoy -----------------------------------------------------
-
-
-def test_no_convoy_when_setting_off() -> None:
-    rear = _CP("rear", True, 200.0, {"tank": 8})
-    fwd = _CP("fwd", True, 10.0, {"tank": 2})
-    rear.convoy_routes = {fwd: ()}
-    fwd.convoy_routes = {rear: ()}
-    game = _corridor_game(on=False, cps=[rear, fwd], fronts=[_front()])
-    ensure_blue_escort_convoy(game)
-    assert game.blue.transfers.created == []
-
-
-def test_no_convoy_on_turn_zero() -> None:
-    rear = _CP("rear", True, 200.0, {"tank": 8})
-    fwd = _CP("fwd", True, 10.0, {"tank": 2})
-    rear.convoy_routes = {fwd: ()}
-    fwd.convoy_routes = {rear: ()}
-    game = _corridor_game(on=True, cps=[rear, fwd], fronts=[_front()], turn=0)
-    ensure_blue_escort_convoy(game)
-    assert game.blue.transfers.created == []
-
-
-def test_tops_blue_convoys_up_to_budget() -> None:
-    rear = _CP("rear", True, 200.0, {"tank": 40})
-    fwd = _CP("fwd", True, 10.0, {"tank": 2})
-    rear.convoy_routes = {fwd: ()}
-    fwd.convoy_routes = {rear: ()}
-    game = _corridor_game(on=True, cps=[rear, fwd], fronts=[_front()])
-    ensure_blue_escort_convoy(game)
-    # A single blue road can only field one distinct corridor, so a fresh map gets one
-    # convoy (the second budget slot has no distinct road to spread onto).
-    created = game.blue.transfers.created
-    assert len(created) == 1
-    order = created[0]
-    assert order.origin is rear
-    assert order.destination is fwd
-    assert sum(order.units.values()) == CONVOY_UNITS
-
-
-def test_blue_budget_full_is_a_noop() -> None:
-    rear = _CP("rear", True, 200.0, {"tank": 8})
-    fwd = _CP("fwd", True, 10.0, {"tank": 2})
-    rear.convoy_routes = {fwd: ()}
-    fwd.convoy_routes = {rear: ()}
-    game = _corridor_game(on=True, cps=[rear, fwd], fronts=[_front()])
-    game.blue.transfers.convoys = ["a", "b"][:BLUE_CONVOY_BUDGET]
-    ensure_blue_escort_convoy(game)
-    assert game.blue.transfers.created == []
 
 
 # ---- _ambush_points / _nearest_cp ---------------------------------------------------
@@ -489,16 +371,52 @@ def test_no_escort_auto_frag_hook_remains() -> None:
     assert not hasattr(convoy_ambush_module, "plan_convoy_escort")
 
 
-# ---- preseeded campaigns must be able to field the feature ---------------------------
+# ---- the road inventory: campaigns known to field the feature must keep the road ----
 #
-# The hard prerequisite the 2026-07-05 flown test exposed: ensure_blue_escort_convoy
-# needs a blue->blue road corridor (a supply_routes entry linking two BLUE control
-# points) or the whole feature silently no-ops -- no convoy, no ambush. The two COIN
-# campaigns shipped preseeding convoy_ambush: true with an all-red supply graph, so the
-# flagship "ambush alley" campaigns could never field a convoy. This guard loads every
-# campaign that preseeds the setting through the real new-game theater path and asserts
-# the corridor exists, so a future laydown edit that drops the blue road fails CI
-# instead of silently killing the feature.
+# The hard prerequisite the 2026-07-05 flown test exposed: the convoy layer needs a
+# blue->blue road corridor (a supply_routes entry linking two BLUE control points) or
+# the whole blue side silently no-ops -- no convoy, no ambush. The two COIN campaigns
+# shipped preseeding convoy_ambush: true with an all-red supply graph, so the flagship
+# "ambush alley" campaigns could never field a convoy. With the 2026-07-06
+# standardization (ambient convoys + the ambush default ON everywhere), the guard grew
+# from the 4 preseeds into the full ROAD-BEARING INVENTORY: every campaign that had a
+# blue->blue road at the standardization survey must keep one, so a laydown edit can't
+# silently kill the feature on that campaign. A campaign NOT listed simply doesn't
+# field a blue convoy (documented no-op -- island maps and all-red graphs); when a
+# blue rear corridor is authored for one (see tools/supply_route_geo.py and the
+# driveable-corridor standard), ADD it here.
+
+#: The 2026-07-06 survey: every shipping campaign whose theater binds at least one
+#: blue->blue supply road (and can therefore field ambient blue convoys + ambushes).
+ROAD_BEARING_CAMPAIGNS = [
+    "1968_Yankee_Station",
+    "Caucasus_Multi_Full",
+    "IntotheHornetsNest",
+    "Invasion_of_Canary_Islands",
+    "Northern Guardian",
+    "Operation-Desert-Sabre",
+    "WRL_AssaultonDamascus",
+    "black_sea",
+    "clash_of_the_titans",
+    "coin_enduring_resolve",
+    "crossing_the_rubicon",
+    "exercise_able_archer",
+    "exercise_bright_star",
+    "exercise_quasar",
+    "exercise_vegas_nerve",
+    "golan_heights_lite",
+    "graveyard_of_empires",
+    "iraq_inherent_resolve",
+    "marianas_guam_barrigada",
+    "mozdok_to_maykop",
+    "operation_allied_sword",
+    "operation_dynamo",
+    "operation_frostbite",
+    "red_flag_81_2",
+    "red_tide",
+    "scenic_inland",
+    "tripoint_hostility",
+]
 
 
 def _blue_blue_road_count(theater: Any) -> int:
@@ -512,37 +430,36 @@ def _blue_blue_road_count(theater: Any) -> int:
     return len(roads)
 
 
-def test_preseeded_campaigns_have_a_blue_to_blue_road(tmp_path: Any) -> None:
-    from pathlib import Path
-
-    import yaml
-
-    from game import persistency
-    from game.campaignloader.campaign import Campaign
-
-    persistency.setup(str(tmp_path), False, 0)
-    campaigns_dir = Path("resources/campaigns")
-    preseeded = [
-        path
-        for path in sorted(campaigns_dir.glob("*.yaml"))
-        if yaml.safe_load(path.read_text(encoding="utf-8"))
-        .get("settings", {})
-        .get("convoy_ambush")
-        is True
-    ]
-    # The four campaigns that ship the feature ON must stay preseeded.
-    assert {path.stem for path in preseeded} >= {
+def test_flagship_ambush_campaigns_stay_in_the_inventory() -> None:
+    # The four campaigns that pioneered the feature (and still preseed the plugin) must
+    # never drop out of the road-bearing set.
+    assert set(ROAD_BEARING_CAMPAIGNS) >= {
         "coin_enduring_resolve",
         "iraq_inherent_resolve",
         "1968_Yankee_Station",
         "red_tide",
     }
-    for path in preseeded:
-        campaign = Campaign.from_file(path)
-        theater = campaign.load_theater(campaign.advanced_iads)
-        assert _blue_blue_road_count(theater) >= 1, (
-            f"{path.stem} preseeds convoy_ambush but has no blue->blue supply road -- "
-            "the blue convoy (and with it the whole ambush loop) will "
-            "silently never exist. Author the blue rear corridor (see "
-            "tools/supply_route_geo.py) or drop the preseed."
-        )
+
+
+@pytest.mark.parametrize("stem", ROAD_BEARING_CAMPAIGNS)
+def test_road_bearing_campaign_keeps_its_blue_road(stem: str, tmp_path: Any) -> None:
+    from pathlib import Path
+
+    from game import persistency
+    from game.campaignloader.campaign import Campaign
+
+    persistency.setup(str(tmp_path), False, 0)
+    path = Path("resources/campaigns") / f"{stem}.yaml"
+    assert path.exists(), (
+        f"{stem} is in ROAD_BEARING_CAMPAIGNS but the campaign file is gone -- "
+        "remove it from the inventory (or restore the campaign)."
+    )
+    campaign = Campaign.from_file(path)
+    theater = campaign.load_theater(campaign.advanced_iads)
+    assert _blue_blue_road_count(theater) >= 1, (
+        f"{stem} is in the §50 road-bearing inventory but no longer binds a "
+        "blue->blue supply road -- ambient blue convoys (and with them the whole "
+        "ambush loop) will silently never exist there. Restore the blue rear "
+        "corridor (see tools/supply_route_geo.py) or remove the campaign from "
+        "ROAD_BEARING_CAMPAIGNS."
+    )

@@ -278,10 +278,10 @@ FEATURES: tuple[Feature, ...] = (
     ),
     Feature(
         "convoy_ambush",
-        "Convoy ambush (a chance, never telegraphed)",
+        "Convoy ambush (a chance, never telegraphed) + ambient supply convoys",
         50,
         plugin_id="convoyambush",
-        settings_fields=("convoy_ambush",),
+        settings_fields=("convoy_ambush", "ambient_supply_convoys"),
     ),
     Feature(
         "enemy_comms_jamming",

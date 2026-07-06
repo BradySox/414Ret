@@ -421,19 +421,24 @@ class Game:
 
         ensure_enemy_trail_convoy(self)
 
-        # Convoy escort / ambush (§50): the mirror of interdiction. Top the player's own
-        # convoy flow up so an ambushable convoy reliably exists, then roll each blue
-        # convoy for a CHANCE of an ambush -- 1..6 hidden red teams spread along its road
-        # (despawning last turn's first). Nothing is telegraphed in the UI (map_hidden
-        # TGOs, no auto-fragged escort); the player decides in-mission whether to support
-        # the column. No-op unless convoy_ambush is on. Real units both sides -- losses
-        # track natively. See game/fourteenth/convoy_ambush.py.
-        from game.fourteenth.convoy_ambush import (
-            ensure_blue_escort_convoy,
-            seed_convoy_ambushes,
-        )
+        # Ambient supply convoys (§50 standardization): keep a few randomized, real
+        # columns flowing on BOTH sides' roads every mission -- some sharing a road,
+        # some spread out -- so the theater has traffic to protect, hunt, and simply
+        # see. Counts the §35 trail convoys above toward its target, so Vietnam's
+        # trail war is unchanged. No-op unless ambient_supply_convoys is on, or for
+        # a side with no same-side road. See game/fourteenth/ambient_convoys.py.
+        from game.fourteenth.ambient_convoys import ensure_ambient_convoys
 
-        ensure_blue_escort_convoy(self)
+        ensure_ambient_convoys(self)
+
+        # Convoy ambush (§50): roll each blue convoy for a CHANCE of an ambush --
+        # 1..6 hidden red teams spread along its road (despawning last turn's first).
+        # Nothing is telegraphed in the UI (map_hidden TGOs, no auto-fragged escort);
+        # the player decides in-mission whether to support the column. No-op unless
+        # convoy_ambush is on. Real units both sides -- losses track natively. See
+        # game/fourteenth/convoy_ambush.py.
+        from game.fourteenth.convoy_ambush import seed_convoy_ambushes
+
         seed_convoy_ambushes(self, events)
 
         # COIN C1 (design note 414th-coin-insurgent-replenishment-notes.md §3):

@@ -26,19 +26,20 @@ The Lua ``convoyambush`` plugin only *springs* the ambushes (each team holds fir
 the convoy closes, then goes weapons-free with a cue) -- movement / cosmetics only, never
 a kill it owns. That keeps the loss accounting entirely in the turn-boundary force model.
 
-Two turn-boundary steps run from ``Game.finish_turn`` (after the enemy-trail convoy top-up):
+One turn-boundary step runs from ``Game.finish_turn`` (after the §35 enemy-trail top-up
+and the ambient-convoy layer -- ``game/fourteenth/ambient_convoys.py``, which keeps a few
+randomized real columns flowing on both sides' roads so an ambushable blue convoy
+routinely exists):
 
-* :func:`ensure_blue_escort_convoy` -- top the player's own convoy flow up to a small
-  budget so an ambushable convoy reliably exists (the symmetric analog of
-  ``ensure_enemy_trail_convoy``; it reuses that module's coalition-generic corridor / seed
-  / skim helpers).
 * :func:`seed_convoy_ambushes` -- despawn last turn's ambush teams, then roll each active
   blue convoy against :data:`AMBUSH_CHANCE`; a convoy that loses the roll drives an
   ambushed road -- :data:`MIN_AMBUSHES_PER_ROUTE`..:data:`MAX_AMBUSHES_PER_ROUTE` hidden
   teams spread along it, recorded in ``game.convoy_ambush_state`` for the emitter.
 
-All gated by ``convoy_ambush`` (default OFF, campaign-preseeded). Fully guarded: no blue
-convoy, no red control point to source the ambushers from, no blue road corridor => no-op.
+The roll covers every blue convoy whatever created it (ambient, §35-style top-ups, the
+player's own transfers). Gated by ``convoy_ambush`` (default ON -- the §49 kill-switch
+precedent). Fully guarded: no blue convoy, or no red control point to source the ambushers
+from => no-op.
 """
 
 from __future__ import annotations
@@ -49,15 +50,6 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from game import Game
     from game.theater import ControlPoint
-
-#: Concurrent blue supply convoys the layer keeps flowing (a small, sustainable number,
-#: not a parade).
-BLUE_CONVOY_BUDGET = 2
-
-#: Real ground units a single supply convoy carries. Big enough to read as a column and to
-#: survive a glancing ambush if the player clears it in time, small enough that an
-#: unsupported run through a gauntlet is genuinely ground down.
-CONVOY_UNITS = 8
 
 #: Chance, per active blue convoy per turn, that its route is ambushed at all. Never a
 #: certainty -- most of the time the road is quiet, so a sprung ambush stays a surprise.
@@ -78,65 +70,6 @@ AMBUSH_TEAM_SIZE = 4
 
 #: The dice. Module-level so tests can substitute a deterministic stand-in.
 _RNG = random.Random()
-
-
-def ensure_blue_escort_convoy(game: "Game") -> None:
-    """Top the player's blue convoy flow up to :data:`BLUE_CONVOY_BUDGET`.
-
-    The symmetric analog of ``ensure_enemy_trail_convoy`` -- it reuses that module's
-    coalition-generic corridor pick / source seed / unit skim so a blue rear base feeds a
-    real convoy toward the forward blue control point. No-op unless ``convoy_ambush`` is on.
-    Idempotent per turn: it creates at most (budget - currently flowing) convoys, so an
-    organic blue transfer this turn just leaves fewer for it to add.
-    """
-    if not game.settings.convoy_ambush:
-        return
-    if game.turn < 1:
-        return
-
-    coalition = game.blue
-    active = list(coalition.transfers.convoys)
-    deficit = BLUE_CONVOY_BUDGET - len(active)
-    if deficit <= 0:
-        return
-
-    from game.fourteenth.vietnam_convoy import (
-        _pick_trail_corridor,
-        _seed_trail_source,
-        _skim_units,
-    )
-    from game.transfers import TransferOrder
-
-    # Spread concurrent convoys across distinct roads (the §35 exclude-sources pattern).
-    tried_sources: set["ControlPoint"] = {
-        origin for convoy in active if (origin := getattr(convoy, "origin", None))
-    }
-
-    created = 0
-    while created < deficit:
-        corridor = _pick_trail_corridor(
-            game,
-            coalition,
-            allow_empty_source=True,
-            exclude_sources=frozenset(tried_sources),
-        )
-        if corridor is None:
-            return
-        source, destination = corridor
-        tried_sources.add(source)
-
-        # Blue draws its column from its own front-line roster (never the COIN insurgent
-        # whitelist -- that is a red-insurgency pool), topped up as external logistics so a
-        # turn-1 empty rear base still fields a convoy.
-        _seed_trail_source(game, coalition, source, CONVOY_UNITS, coin=False)
-        units = _skim_units(source, CONVOY_UNITS)
-        if not units:
-            continue
-
-        coalition.transfers.new_transfer(
-            TransferOrder(source, destination, units), game.conditions.start_time
-        )
-        created += 1
 
 
 def seed_convoy_ambushes(game: "Game", events: Any) -> None:

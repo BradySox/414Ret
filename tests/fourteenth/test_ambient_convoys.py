@@ -1,0 +1,278 @@
+"""§50 ambient supply convoys -> a few randomized real columns on BOTH sides' roads.
+
+Locks the standardization layer: each side's convoy flow is topped up to a randomized
+target on randomly chosen same-side corridors (repeats allowed -- some columns share a
+road, some spread out), existing convoys count toward the target, the corridors orient
+rear -> front, a red insurgency convoys its irregular kit, and every guard (setting off,
+turn 0, no same-side road, no war to supply toward) no-ops instead of inventing units.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from types import SimpleNamespace
+from typing import Any
+
+import game.fourteenth.ambient_convoys as ambient_module
+import game.fourteenth.vietnam_convoy as vietnam_convoy_module
+from game.fourteenth.ambient_convoys import (
+    AMBIENT_CONVOY_UNITS,
+    MAX_AMBIENT_CONVOYS,
+    MIN_AMBIENT_CONVOYS,
+    _same_side_corridors,
+    ensure_ambient_convoys,
+)
+
+# ---- fakes -------------------------------------------------------------------------
+
+
+class _Base:
+    def __init__(self, armor: dict[Any, int]) -> None:
+        self.armor = dict(armor)
+
+    @property
+    def total_armor(self) -> int:
+        return sum(self.armor.values())
+
+    def commission_units(self, units: dict[Any, int]) -> None:
+        for unit_type, count in units.items():
+            self.armor[unit_type] = self.armor.get(unit_type, 0) + count
+
+
+class _Owner:
+    def __init__(self, blue: bool) -> None:
+        self.is_blue = blue
+        self.is_red = not blue
+
+
+class _Pos:
+    """A 1-D coordinate; ``distance_to_point`` is |Δx| (the fakes put the front at x=0,
+    so a CP's distance-to-front is its own coordinate)."""
+
+    def __init__(self, x: float) -> None:
+        self.x = x
+
+    def distance_to_point(self, other: "_Pos") -> float:
+        return abs(self.x - other.x)
+
+
+BLUE_PLAYER = _Owner(True)
+RED_PLAYER = _Owner(False)
+
+
+class _CP:
+    def __init__(
+        self, name: str, owner: _Owner, dist: float, armor: dict[Any, int] | None = None
+    ) -> None:
+        self.name = name
+        self.captured = owner  # identity-compared to coalition.player
+        self.position = _Pos(dist)
+        self.base = _Base(armor or {})
+        self.convoy_routes: dict[Any, Any] = {}
+
+
+def _road(a: _CP, b: _CP) -> None:
+    a.convoy_routes[b] = ()
+    b.convoy_routes[a] = ()
+
+
+class _Unit:
+    def __init__(self, name: str) -> None:
+        self.display_name = name
+        self.price = 2
+
+
+class _Transfers:
+    def __init__(self, convoys: list[Any] | None = None) -> None:
+        self.convoys = convoys or []
+        self.created: list[Any] = []
+
+    def new_transfer(self, order: Any, now: Any) -> None:
+        self.created.append(order)
+
+
+def _coalition(player: _Owner, convoys: list[Any] | None = None) -> Any:
+    return SimpleNamespace(
+        player=player,
+        transfers=_Transfers(convoys),
+        faction=SimpleNamespace(frontline_units={_Unit("M113"), _Unit("Ural")}),
+    )
+
+
+class _Rng:
+    """Scripted stand-in for the module RNG: pops ``ints`` for randint (the per-side
+    target) and ``picks`` (indices into the corridor list) for choice."""
+
+    def __init__(self, ints: list[int], picks: list[int] | None = None) -> None:
+        self.ints = list(ints)
+        self.picks = list(picks or [])
+
+    def randint(self, a: int, b: int) -> int:
+        value = self.ints.pop(0) if self.ints else a
+        assert a <= value <= b, f"scripted randint {value} outside [{a}, {b}]"
+        return value
+
+    def choice(self, seq: list[Any]) -> Any:
+        index = self.picks.pop(0) if self.picks else 0
+        return seq[index % len(seq)]
+
+
+def _game(
+    *,
+    on: bool,
+    cps: list[_CP],
+    turn: int = 3,
+    fronts: list[Any] | None = None,
+    coin: bool = False,
+) -> Any:
+    front_list = fronts if fronts is not None else [SimpleNamespace(position=_Pos(0.0))]
+    return SimpleNamespace(
+        settings=SimpleNamespace(ambient_supply_convoys=on, coin_insurgency=coin),
+        turn=turn,
+        blue=_coalition(BLUE_PLAYER),
+        red=_coalition(RED_PLAYER),
+        theater=SimpleNamespace(controlpoints=cps, conflicts=lambda: list(front_list)),
+        conditions=SimpleNamespace(start_time=datetime(2000, 1, 1)),
+    )
+
+
+def _two_sided_map() -> list[_CP]:
+    """A rear + forward base per side, one road each side, front at x=0."""
+    blue_rear = _CP("blue-rear", BLUE_PLAYER, 200.0, {"tank": 40})
+    blue_fwd = _CP("blue-fwd", BLUE_PLAYER, 10.0, {"tank": 2})
+    red_rear = _CP("red-rear", RED_PLAYER, 220.0, {"btr": 40})
+    red_fwd = _CP("red-fwd", RED_PLAYER, 12.0, {"btr": 2})
+    _road(blue_rear, blue_fwd)
+    _road(red_rear, red_fwd)
+    return [blue_rear, blue_fwd, red_rear, red_fwd]
+
+
+# ---- guards ------------------------------------------------------------------------
+
+
+def test_off_is_a_noop() -> None:
+    game = _game(on=False, cps=_two_sided_map())
+    ensure_ambient_convoys(game)
+    assert game.blue.transfers.created == []
+    assert game.red.transfers.created == []
+
+
+def test_turn_zero_is_a_noop() -> None:
+    game = _game(on=True, cps=_two_sided_map(), turn=0)
+    ensure_ambient_convoys(game)
+    assert game.blue.transfers.created == []
+    assert game.red.transfers.created == []
+
+
+def test_side_without_a_same_side_road_gets_nothing(monkeypatch: Any) -> None:
+    # Only blue has a road; red's silence must not block blue's traffic.
+    blue_rear = _CP("blue-rear", BLUE_PLAYER, 200.0, {"tank": 40})
+    blue_fwd = _CP("blue-fwd", BLUE_PLAYER, 10.0, {"tank": 2})
+    red_lone = _CP("red-lone", RED_PLAYER, 15.0, {"btr": 10})
+    _road(blue_rear, blue_fwd)
+    game = _game(on=True, cps=[blue_rear, blue_fwd, red_lone])
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[1, 1]))
+    ensure_ambient_convoys(game)
+    assert len(game.blue.transfers.created) == 1
+    assert game.red.transfers.created == []
+
+
+# ---- the randomized top-up ----------------------------------------------------------
+
+
+def test_both_sides_topped_to_the_rolled_target(monkeypatch: Any) -> None:
+    game = _game(on=True, cps=_two_sided_map())
+    # Blue rolls 2, red rolls 1; the single corridor per side is picked each time.
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[2, 1]))
+    ensure_ambient_convoys(game)
+
+    blue_orders = game.blue.transfers.created
+    red_orders = game.red.transfers.created
+    assert len(blue_orders) == 2
+    assert len(red_orders) == 1
+    for order in blue_orders:
+        assert order.origin.name == "blue-rear"  # rear -> front orientation
+        assert order.destination.name == "blue-fwd"
+        assert sum(order.units.values()) == AMBIENT_CONVOY_UNITS
+    assert red_orders[0].origin.name == "red-rear"
+    assert red_orders[0].destination.name == "red-fwd"
+
+
+def test_existing_convoys_count_toward_the_target(monkeypatch: Any) -> None:
+    # Blue already runs 2 organic/trail convoys and rolls a target of 2 -> nothing
+    # added (the ambience never forces numbers on top of existing traffic).
+    game = _game(on=True, cps=_two_sided_map())
+    game.blue.transfers.convoys = ["organic-1", "organic-2"]
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[2, 1]))
+    ensure_ambient_convoys(game)
+    assert game.blue.transfers.created == []
+    assert len(game.red.transfers.created) == 1
+
+
+def test_columns_spread_or_stack_by_the_dice(monkeypatch: Any) -> None:
+    # Two blue roads; the scripted picks send column 1 and 2 down DIFFERENT roads,
+    # column 3 back down the first -- same-route stacking is allowed, not forced.
+    blue_rear = _CP("blue-rear", BLUE_PLAYER, 200.0, {"tank": 60})
+    blue_fwd = _CP("blue-fwd", BLUE_PLAYER, 10.0, {"tank": 2})
+    blue_alt = _CP("blue-alt", BLUE_PLAYER, 180.0, {"tank": 60})
+    red_lone = _CP("red-lone", RED_PLAYER, 15.0, {"btr": 10})
+    _road(blue_rear, blue_fwd)
+    _road(blue_alt, blue_fwd)
+    game = _game(on=True, cps=[blue_rear, blue_fwd, blue_alt, red_lone])
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[3, 1], picks=[0, 1, 0]))
+    ensure_ambient_convoys(game)
+    origins = [order.origin.name for order in game.blue.transfers.created]
+    assert len(origins) == 3
+    assert len(set(origins)) == 2  # two roads used...
+    assert origins[0] == origins[2]  # ...and one of them carries two columns
+
+
+def test_red_insurgency_convoys_irregular_kit(monkeypatch: Any) -> None:
+    # On a COIN campaign the red side's source seeding uses the insurgent pool
+    # (coin=True); blue always uses its own frontline roster (coin=False).
+    game = _game(on=True, cps=_two_sided_map(), coin=True)
+    seeded: list[tuple[str, bool]] = []
+
+    def fake_seed(g: Any, coalition: Any, source: Any, load: int, coin: bool) -> None:
+        seeded.append((source.name, coin))
+
+    monkeypatch.setattr(vietnam_convoy_module, "_seed_trail_source", fake_seed)
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[1, 1]))
+    ensure_ambient_convoys(game)
+    assert ("blue-rear", False) in seeded
+    assert ("red-rear", True) in seeded
+
+
+def test_target_band_is_a_few_not_a_parade() -> None:
+    assert 1 <= MIN_AMBIENT_CONVOYS <= MAX_AMBIENT_CONVOYS <= 4
+
+
+# ---- corridor enumeration -----------------------------------------------------------
+
+
+def test_corridors_enumerate_each_road_once_oriented_rear_to_front() -> None:
+    cps = _two_sided_map()
+    game = _game(on=True, cps=cps)
+    blue = _same_side_corridors(game, game.blue)
+    red = _same_side_corridors(game, game.red)
+    assert [(s.name, d.name) for s, d in blue] == [("blue-rear", "blue-fwd")]
+    assert [(s.name, d.name) for s, d in red] == [("red-rear", "red-fwd")]
+
+
+def test_corridors_fall_back_to_enemy_cps_on_a_frontless_laydown() -> None:
+    # No conflicts (the COIN air-assault geometry): orientation references the
+    # opposing CPs instead, so the flow still runs toward the enemy.
+    cps = _two_sided_map()
+    game = _game(on=True, cps=cps, fronts=[])
+    blue = _same_side_corridors(game, game.blue)
+    # Red's CPs sit at x=220/12; blue-fwd (x=10) is nearer them than blue-rear (x=200).
+    assert [(s.name, d.name) for s, d in blue] == [("blue-rear", "blue-fwd")]
+
+
+def test_no_war_to_supply_means_no_corridors() -> None:
+    # No fronts AND no enemy CPs: nothing to orient toward, so no corridors at all.
+    blue_rear = _CP("blue-rear", BLUE_PLAYER, 200.0, {"tank": 40})
+    blue_fwd = _CP("blue-fwd", BLUE_PLAYER, 10.0, {"tank": 2})
+    _road(blue_rear, blue_fwd)
+    game = _game(on=True, cps=[blue_rear, blue_fwd], fronts=[])
+    assert _same_side_corridors(game, game.blue) == []

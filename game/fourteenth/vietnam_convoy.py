@@ -51,7 +51,7 @@ serve as targets.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from game import Game
@@ -158,6 +158,26 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
         created += 1
 
 
+def _reference_points(game: "Game", coalition: "Coalition") -> list[Any]:
+    """Where "the fighting" is for *coalition*'s supply flow to orient toward.
+
+    Front lines when the campaign has them; on a front-less laydown (the COIN
+    air-assault geometry -- no CP adjacency, no conflicts) fall back to the opposing
+    coalition's control points, so the flow still runs toward where the enemy actually
+    is. Empty means there is genuinely no war to supply. Shared by the trail picker
+    below and the §50 ambient-convoy layer (``game/fourteenth/ambient_convoys.py``).
+    """
+    fronts = list(game.theater.conflicts())
+    if fronts:
+        return [front.position for front in fronts]
+    return [
+        cp.position
+        for cp in game.theater.controlpoints
+        if cp.captured != coalition.player
+        and not getattr(cp.captured, "is_neutral", False)
+    ]
+
+
 def _pick_trail_corridor(
     game: "Game",
     coalition: "Coalition",
@@ -174,21 +194,7 @@ def _pick_trail_corridor(
     picking the single best one. Returns None if no (non-excluded) opfor-to-opfor road
     corridor with a stocked rear source exists.
     """
-    # "Toward the fighting": front lines when the campaign has them; on a
-    # front-less laydown (the COIN air-assault geometry -- no CP adjacency, no
-    # conflicts) fall back to the opposing coalition's control points, so the
-    # trail still flows toward where the enemy actually is. No fronts AND no
-    # opposing CPs means there is genuinely no war to supply -- no corridor.
-    fronts = list(game.theater.conflicts())
-    if fronts:
-        reference = [front.position for front in fronts]
-    else:
-        reference = [
-            cp.position
-            for cp in game.theater.controlpoints
-            if cp.captured != coalition.player
-            and not getattr(cp.captured, "is_neutral", False)
-        ]
+    reference = _reference_points(game, coalition)
     if not reference:
         return None
 

@@ -39,17 +39,19 @@ and selected later upstream fixes.
   the launcher is never quite where the last recon photo froze it. The site stays within a
   few km of its campaign position, kills count normally, and the radar SAM network never
   moves. On by default (Mission Generation → "Mobile missile sites relocate").
-- **Your own convoys might get ambushed — support them, or don't. Your call.** The flip
-  side of convoy interdiction: friendly supply columns run the roads behind the front, and
-  sometimes — it's a chance, never a certainty — hidden enemy ambush teams dig in along the
-  route: one contact, or a gauntlet of five or six down the same road. Nothing is
-  telegraphed: the convoy looks like any other friendly convoy, no objective or escort
-  package shows in the UI, and the first sign of trouble is the TROOPS IN CONTACT call when
-  an ambush springs mid-mission. Fly to the column's aid and clear the ambushers, or let it
-  fight through alone. Both the convoy and the ambushers are real, tracked units — losing
-  the column costs you real reinforcements, and the debrief counts both sides' losses.
-  Opt-in (Mission Generation → "Friendly convoy ambushes") and preseeded on in the COIN and
-  Vietnam campaigns and Red Tide, where the rear road is anything but safe.
+- **The roads have traffic now — and your convoys might get ambushed.** Every turn, a few
+  real supply columns run each side's road network (a randomized number, sometimes sharing
+  a road, sometimes spread out): the enemy's are ordinary Armed Recon/BAI prey, and yours
+  are yours to worry about. Because sometimes — it's a chance, never a certainty — hidden
+  enemy ambush teams dig in along a friendly convoy's route: one contact, or a gauntlet of
+  five or six down the same road. Nothing is telegraphed: the convoy looks like any other
+  friendly convoy, no objective or escort package shows in the UI, and the first sign of
+  trouble is the TROOPS IN CONTACT call when an ambush springs mid-mission. Fly to the
+  column's aid and clear the ambushers, or let it fight through alone — your call. Both the
+  convoys and the ambushers are real, tracked units — losing a column costs you real
+  reinforcements, and the debrief counts both sides' losses. Both behaviours are **on by
+  default** for new campaigns (Mission Generation → "Ambient supply convoys" / "Friendly
+  convoy ambushes") on any campaign whose map has roads between friendly bases.
 - **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
   learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
   within minutes your briefed channels take sporadic bursts of barrage static — transmitted

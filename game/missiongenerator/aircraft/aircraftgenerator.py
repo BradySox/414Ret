@@ -24,6 +24,7 @@ from game.ato.flightstate import Completed, WaitingForStart
 from game.ato.flighttype import FlightType
 from game.ato.package import Package
 from game.ato.starttype import StartType
+from game.callsigns import callsign_for_support_unit
 from game.missiongenerator.countryassigner import CountryAssigner
 from game.missiongenerator.interceptluadata import (
     DEFAULT_BACKSTOP_EWR_TYPE,
@@ -31,7 +32,7 @@ from game.missiongenerator.interceptluadata import (
     PlayerAlertEntry,
     dispatcher_tuning,
 )
-from game.missiongenerator.missiondata import MissionData
+from game.missiongenerator.missiondata import JtacInfo, MissionData
 from game.squadrons.intercept_reserve import (
     ai_qra_resource_count,
     qra_player_manned_count,
@@ -56,6 +57,20 @@ from ...radio.datalink import DataLinkRegistry
 if TYPE_CHECKING:
     from game import Game
     from game.squadrons import Squadron
+
+
+#: A/G package primaries whose AI JTAC-drone flies overwatch and lases for the
+#: shooters (2026-07-05, 414th call). Option 1 -- any air-to-ground package with
+#: ground targets to designate. We may narrow this to {ARMED_RECON, CAS} (option 2)
+#: after an in-game pass, so it lives in one place.
+_JTAC_PACKAGE_PRIMARIES = frozenset(
+    {
+        FlightType.ARMED_RECON,
+        FlightType.CAS,
+        FlightType.BAI,
+        FlightType.STRIKE,
+    }
+)
 
 
 class AircraftGenerator:
@@ -168,6 +183,7 @@ class AircraftGenerator:
                         flight, country, dynamic_runways
                     )
                     self.unit_map.add_aircraft(group, flight)
+                    self._maybe_configure_jtac(flight, group)
                     spawned_flights.append(flight)
             if (
                 package.primary_flight is not None
@@ -191,6 +207,48 @@ class AircraftGenerator:
 
         # at this point all flights were generated, so now start setting up datalink...
         self._link_datalink_on_package_level_and_awacs()
+
+    def _maybe_configure_jtac(self, flight: Flight, group: FlyingGroup[Any]) -> None:
+        """Set an AI drone flight up as a lasing JTAC when it rides an A/G package.
+
+        The faction's designated UAV (``faction.jtac_unit`` -- the MQ-9/Predator on
+        modern factions), flown by the AI in an air-to-ground package, becomes the
+        package's forward air controller: the emitted ``JtacInfo`` flows to
+        ``dcsRetribution.JTACs``, which the CTLD plugin ("JTAC autolase", default on)
+        turns into runtime target **lasing + smoke marking** for the shooters, and
+        which the kneeboard/radio surface like any JTAC. No DCS task is added -- the
+        drone flies its own package mission (recon overwatch / attack) and lases what
+        it overflies; CTLD does the designation. Blue + AI only (a player-flown drone
+        is not an autolase JTAC). Replaces the retired FLOT auto-JTAC (a drone glued
+        to the front line) with a JTAC that actually rides the fight.
+        """
+        coalition = flight.coalition
+        if not coalition.player.is_blue or flight.client_count:
+            return
+        jtac_unit = coalition.faction.jtac_unit
+        if jtac_unit is None:
+            return
+        if flight.unit_type.dcs_unit_type.id != jtac_unit.dcs_unit_type.id:
+            return
+        primary = flight.package.primary_flight
+        if primary is None or primary.flight_type not in _JTAC_PACKAGE_PRIMARIES:
+            return
+
+        if self.game.settings.plugins.get("ctld.fc3LaserCode"):
+            code = self.game.laser_code_registry.fc3_code
+        else:
+            code = self.game.laser_code_registry.alloc_laser_code()
+        self.mission_data.jtacs.append(
+            JtacInfo(
+                group_name=group.name,
+                unit_name=group.units[0].name,
+                callsign=callsign_for_support_unit(group),
+                region=flight.package.target.name,
+                code=str(code.code),
+                blue=coalition.player,
+                freq=self.radio_registry.alloc_uhf(),
+            )
+        )
 
     def _link_datalink_on_package_level_and_awacs(self) -> None:
         for _, flights in self.mission_data.packages.items():

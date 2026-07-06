@@ -248,6 +248,25 @@ on OIR/Red Tide — so a full armed recon package reads **1 drone + 2 SEAD Viper
 `game/commander/tasks/primitive/armedrecon.py`; tests `tests/test_armed_recon_planning.py`;
 checklist G25 — the in-mission composition needs a fly).
 
+**That drone is a lasing JTAC (2026-07-05, 414th call).** The 414th ripped out the old FLOT
+auto-JTAC (a `jtac_unit` MQ-9 glued to the front line); `JtacInfo` went unproduced and
+`jtac_unit` dormant, but the CTLD JTAC-autolase runtime + the kneeboard/radio consumers stayed
+live. `AircraftGenerator._maybe_configure_jtac` revives it, hung on the **packaged drone**
+instead of a FLOT unit: an AI-flown flight of the faction's `jtac_unit` (the MQ-9/Predator) in
+an **air-to-ground package** (`_JTAC_PACKAGE_PRIMARIES` = Armed Recon / CAS / BAI / Strike —
+option 1; may narrow to {Armed Recon, CAS} later) is emitted as a `JtacInfo` (group name +
+allocated laser code + UHF freq + callsign + the target as its region). That flows to
+`dcsRetribution.JTACs` → `ctld-config.lua` `ctld.JTACAutoLase` (**autolase + smoke both default
+ON**), so the drone lazes and smoke-marks ground targets for the shooters and shows on the
+kneeboard/radio like any JTAC. **No DCS task is added** — the drone flies its own package
+mission (recon overwatch / attack) and lases what it overflies; CTLD does the designation.
+**Blue + AI only** (a player drone is not an autolase JTAC), **not** invisible/immortal (unlike
+the old FLOT JTAC — the packaged drone is a real asset that can be shot down). The laser code is
+allocated per JTAC (or forced to 1113 when the `ctld.fc3LaserCode` option is on, for FC3
+receivers). (`game/missiongenerator/aircraft/aircraftgenerator.py`; tests
+`tests/missiongenerator/test_drone_jtac.py`; checklist G26 — needs an in-game pass, including
+whether a moving/overflying drone sustains a useful lase or wants a loiter profile.)
+
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`
   `configure_tarps()` — a single flyover of the target area, ReturnFire ROE, no offensive
   stores. It sets the recon *behavior*; the *timing* lives in the flight plan (below).

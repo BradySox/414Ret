@@ -4123,6 +4123,10 @@ enemy comms / command-center node becomes a **standoff comms jammer**: duty-cycl
 on a rotating subset of the BLUE side's *briefed* radio channels, so the interference arrives in the
 player's headset and the strike that silences it is the same strike that degrades the IADS.
 
+**By default the jamming is intel-driven** (`comms_jam_requires_capture`, default ON): red can only jam
+channels it *knows*, and it learns them from a **captured aircrew's comms plan** — see "The intel gate"
+below. Turn that second toggle off for ambient jamming whenever a C2 node is alive.
+
 ### No SRS dependency — the transmission is DCS-native
 
 The delivery mechanism is `trigger.action.radioTransmission` from the node's campaign-map position:
@@ -4153,6 +4157,30 @@ re-rolling past the freak allocator-reuse collision, and publishes it as a `JAM 
 kneeboard comms ladder (+ echoed in the first-burst cue). Pushing the package to the backup is a briefed
 play, not a mystery.
 
+### The intel gate: capture-gated jamming (default)
+
+With `comms_jam_requires_capture` on (the default), the jammer holds its fire until red actually holds a
+captured pilot's comms plan — coupling §51 to the **§15/§21 Combat SAR enemy-capture race** and giving SAR a
+second campaign-level stake:
+
+- **Live capture, mid-mission**: the dormant plugin polls the `combatsar` plugin's `combat_sar_captures`
+  state global (`CAPTURE_POLL` 30 s, blue entries only). On the first capture it cues **"AIRCREW CAPTURED —
+  assume the comms plan is compromised… rotate off them now"** (naming the JAM BACKUP) and starts the burst
+  loop after an **exploitation delay** (`captureReactionS`, default 120 s; never before the startup grace).
+  Winning the SAR race keeps the net clean; losing it has an immediate, felt cost.
+- **POW held, cross-turn**: `plan_comms_jam` checks `Coalition.pending_pow_recoveries` — a POW currently
+  held means red took the comms plan on an earlier turn, so the mission opens with `activeFromStart` and the
+  jamming runs from the grace under a distinct **"COMMS COMPROMISED: enemy interrogation of captured
+  aircrew…"** story. **Freeing the POW** (recapture the holding field) or the **4-turn hold clock expiring**
+  (the loss is written off and the squadron rotates its comms plan) ends the compromise — both fall out of
+  the existing POW machinery with zero new state.
+- The C2 node stays the *transmitter* in every mode: no alive comms/command-center node ⇒ no jamming (the
+  capture watch bails once the net is dead), and killing it still silences the mission regardless of what
+  red knows.
+- Dependency: live captures require the Combat SAR capture race to be running (a blue rescue helo emitted —
+  `auto_combat_sar` default ON makes that the norm); a mission without it can still be jammed via the POW
+  path.
+
 ### Who jams, and how it dies
 
 `_enemy_jammer_nodes` lists every alive enemy TGO of category `comms` / `commandcenter` (the same objects
@@ -4176,8 +4204,8 @@ consequence (MANTIS C2 degradation) untouched.
 | Planner + emitter | `game/missiongenerator/commsjamluadata.py` (`plan_comms_jam` → `MissionData.comms_jam`, `populate_comms_jam_lua`); planned in `missiongenerator.py` before the Lua pass, emitted in `luagenerator.py` after the convoy-ambush emitter |
 | Kneeboard | `missiongenerator.py` `notify_info_generators` appends the `JAM BACKUP` comm line when a plan with a backup exists |
 | Runtime | `resources/plugins/commsjam/` (`plugin.json` + `commsjam-config.lua` + `commsjam-noise.wav`; registered in `plugins.json`) |
-| Setting | `game/settings/settings.py` (`enemy_comms_jamming`, Mission Generation → Battlefield life, default **OFF**) |
-| Tests | `tests/missiongenerator/test_commsjamluadata.py` (plan ordering, GUARD filter, cap, backup collision re-roll, emit shape, gates); `tests/lua/test_commsjam_runtime.py` (grace, burst/stop/rotation, dead-jammer silence via both death paths, ceased cue, no-node no-op) |
+| Settings | `game/settings/settings.py` (`enemy_comms_jamming`, default **OFF**; `comms_jam_requires_capture` — the intel gate, default **ON** — both Mission Generation → Battlefield life) |
+| Tests | `tests/missiongenerator/test_commsjamluadata.py` (plan ordering, GUARD filter, cap, backup collision re-roll, intel-gate flags, emit shape, gates); `tests/lua/test_commsjam_runtime.py` (grace, burst/stop/rotation, dead-jammer silence via both death paths, ceased cue, intel-gate dormancy/live-capture/POW-story/red-capture-ignored/watch-bail, no-node no-op) |
 
 ### Gotchas / deferred
 
@@ -4193,5 +4221,9 @@ consequence (MANTIS C2 degradation) untouched.
 - **BLUE-victim only.** The target list is blue's briefed channels; red AI doesn't care about audio.
   A symmetric blue jammer already exists as the §2 C-130J EW platform's radar side — extending it to
   comms is a possible follow-up.
+- **The "rotation" at POW-clock expiry is a gameplay mercy.** Squadrons with authored `radio_presets` keep
+  the same intra-flight channel across turns, so red "forgetting" the plan when the POW is written off is
+  fiction; actually re-rolling compromised presets the turn after a capture is the honest follow-up
+  (deferred, see the design note).
 - **NEW game not required** (no persisted state; the plan is rebuilt every generation), but the Red Tide
   preseed only applies to a NEW campaign.

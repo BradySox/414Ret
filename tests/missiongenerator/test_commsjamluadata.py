@@ -54,13 +54,23 @@ def _tgo(
     )
 
 
-def _game(tgos: list[Any], *, on: bool = True, blue_owned: bool = False) -> Any:
+def _game(
+    tgos: list[Any],
+    *,
+    on: bool = True,
+    blue_owned: bool = False,
+    capture_gate: bool = False,
+    pows: int = 0,
+) -> Any:
     cp = SimpleNamespace(
         captured=SimpleNamespace(is_blue=blue_owned), ground_objects=tgos
     )
     return SimpleNamespace(
-        settings=SimpleNamespace(enemy_comms_jamming=on),
+        settings=SimpleNamespace(
+            enemy_comms_jamming=on, comms_jam_requires_capture=capture_gate
+        ),
         theater=SimpleNamespace(controlpoints=[cp]),
+        blue=SimpleNamespace(pending_pow_recoveries=[object()] * pows),
     )
 
 
@@ -154,6 +164,32 @@ def test_backup_reallocates_past_a_jammed_channel() -> None:
     assert plan.backup is not None and plan.backup.mhz == 271.0
 
 
+def test_intel_gate_flags() -> None:
+    mission_data = _mission_data([_flight(MHz(252))])
+    tgos = [_tgo("comms", ["u1"])]
+
+    # Gate off: ambient jamming, active whenever a node lives.
+    plan = plan_comms_jam(_game(tgos), mission_data, _Registry([MHz(271)]))  # type: ignore[arg-type]
+    assert plan is not None
+    assert plan.capture_only is False and plan.active_from_start is True
+
+    # Gate on, no POW held: dormant until an in-mission capture.
+    plan = plan_comms_jam(
+        _game(tgos, capture_gate=True), mission_data, _Registry([MHz(271)])  # type: ignore[arg-type]
+    )
+    assert plan is not None
+    assert plan.capture_only is True and plan.active_from_start is False
+
+    # Gate on, a POW held from an earlier turn: compromised from mission start.
+    plan = plan_comms_jam(
+        _game(tgos, capture_gate=True, pows=1),
+        mission_data,
+        _Registry([MHz(271)]),  # type: ignore[arg-type]
+    )
+    assert plan is not None
+    assert plan.capture_only is True and plan.active_from_start is True
+
+
 def test_no_plan_without_any_blue_channel() -> None:
     game = _game([_tgo("comms", ["u1"])])
     mission_data = _mission_data([_flight(MHz(305), blue=False)])
@@ -183,6 +219,12 @@ def test_populate_emits_the_stored_plan() -> None:
     backup = node.get_item("backupMhz")
     assert backup is not None and isinstance(backup.value, LuaValue)
     assert backup.value.value == "271.0"
+    capture_only = node.get_item("captureOnly")
+    assert capture_only is not None and isinstance(capture_only.value, LuaValue)
+    assert capture_only.value.value == "false"
+    active = node.get_item("activeFromStart")
+    assert active is not None and isinstance(active.value, LuaValue)
+    assert active.value.value == "true"
 
 
 def test_populate_without_a_plan_emits_nothing() -> None:

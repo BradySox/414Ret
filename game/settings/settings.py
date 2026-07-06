@@ -481,6 +481,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "mobile_missile_relocation",
                     "convoy_ambush",
                     "enemy_comms_jamming",
+                    "comms_jam_requires_capture",
                 ],
             ),
             (
@@ -2299,6 +2300,23 @@ class Settings:
             "strike target) silences it for good. Audio pressure only -- no "
             "force-model change. Runs via the 'Comms jamming' LUA plugin -- keep "
             "that plugin enabled or this setting does nothing."
+        ),
+    )
+    comms_jam_requires_capture: bool = boolean_option(
+        "Comms jamming needs captured aircrew (the intel gate)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "The enemy can only jam channels it knows -- and it learns them from "
+            "a captured pilot's comms plan. With this on (the default), comms "
+            "jamming stays silent until the Combat SAR capture race is lost: a "
+            "pilot captured mid-mission compromises the net within minutes, and "
+            "a POW held from an earlier turn means the channels are compromised "
+            "from mission start until they are freed or written off (the comms "
+            "plan is then rotated). Rescuing your people keeps the net clean. "
+            "Turn this off for ambient jamming whenever an enemy C2 node is "
+            "alive. No effect unless 'Enemy comms jamming' is on."
         ),
     )
 

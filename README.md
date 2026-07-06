@@ -48,15 +48,19 @@ and selected later upstream fixes.
   reinforcements, and the debrief counts both sides' losses. Opt-in (Mission Generation →
   "Friendly convoy ambushes") and preseeded on in the COIN and Vietnam campaigns and Red Tide,
   where the rear road is anything but safe.
-- **The enemy's IADS jams your radios.** While an enemy communications mast or command bunker
-  is alive, your briefed channels take sporadic bursts of barrage static — transmitted from the
-  node's real map position with real power falloff, so it's worst deep over the C2 belt, and SRS
-  hears it too (SRS tunes off your cockpit radios). GUARD, ATC and a briefed **JAM BACKUP**
-  channel (printed on the kneeboard comms ladder) always stay clean, and the noise comes in
-  duty-cycled bursts, never a wall — hop channels, push to the backup, or kill the node: one
-  strike on the C2 site silences the jamming *and* degrades the IADS. Opt-in (Mission
-  Generation → "Enemy comms jamming") and preseeded on in Red Tide, where the radio isn't
-  clean either.
+- **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
+  learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
+  within minutes your briefed channels take sporadic bursts of barrage static — transmitted
+  from a real enemy comms mast or command bunker with real power falloff (worst deep over the
+  C2 belt), and SRS hears it too (SRS tunes off your cockpit radios). While a POW is held, the
+  next missions launch already compromised — until you free them (retake the holding field) or
+  the comms plan is rotated. GUARD, ATC and a briefed **JAM BACKUP** channel (printed on the
+  kneeboard comms ladder) always stay clean, and the noise comes in duty-cycled bursts, never a
+  wall — hop channels, push to the backup, or kill the node: one strike on the C2 site silences
+  the jamming *and* degrades the IADS. So SAR matters twice over, and the squadron learns to
+  rotate compromised channels. Opt-in (Mission Generation → "Enemy comms jamming"; the
+  captured-pilot intel gate is on by default, or disable it for ambient jamming) and preseeded
+  on in Red Tide, where the radio isn't clean either.
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as

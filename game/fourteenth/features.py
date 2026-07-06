@@ -288,7 +288,7 @@ FEATURES: tuple[Feature, ...] = (
         "Enemy comms jamming (IADS comms nodes)",
         51,
         plugin_id="commsjam",
-        settings_fields=("enemy_comms_jamming",),
+        settings_fields=("enemy_comms_jamming", "comms_jam_requires_capture"),
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.

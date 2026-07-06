@@ -258,8 +258,10 @@ settings:
   convoy_ambush: true
   # §51 enemy comms jamming -- red's IADS comms masts / command bunkers (wired here by
   # advanced_iads range mode) step on the briefed NATO channels with duty-cycled
-  # barrage noise until struck; the kneeboard carries the JAM BACKUP channel. The ramp
-  # isn't safe, the road isn't safe, and the radio isn't clean either.
+  # barrage noise until struck; the kneeboard carries the JAM BACKUP channel. The
+  # default intel gate applies: red only jams once it takes a NATO comms plan off a
+  # captured aircrew (lose the Combat SAR race / hold a POW), so SAR keeps the net
+  # clean and a loss teaches the squadron to rotate compromised channels.
   enemy_comms_jamming: true
   # The artillery harassment above runs inside the vietnamops PLUGIN's runtime (the
   # shared standoff-barrage loop). Preseed the plugin ON so a player whose saved

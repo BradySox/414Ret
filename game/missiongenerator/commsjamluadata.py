@@ -19,6 +19,17 @@ came out of, so it is unused by anything). The backup is surfaced on the
 kneeboard comms ladder so comms discipline -- push to the backup, kill the node
 -- is a play, not a mystery.
 
+**The intel gate** (``comms_jam_requires_capture``, default ON): red can only
+jam channels it *knows*, and it learns them from a **captured aircrew's comms
+plan** -- the §15/§21 Combat SAR enemy-capture race. In this mode the plugin
+stays dormant until either a POW is already held at planning (the compromise
+carries across turns until the POW is freed or written off) or a pilot is
+captured live mid-mission (``combat_sar_captures``), at which point the
+jamming starts after a short exploitation delay. Save the pilot and the net
+stays clean -- another reason Combat SAR matters, and a periodic lesson in
+rotating compromised channels. Turning the gate off restores the ambient
+"jam whenever a C2 node lives" behavior.
+
 Audio pressure ONLY, the §36/§49 discipline: no force-model change, no kills
 owned by Lua. Killing the node is an ordinary strike on an ordinary IADS TGO
 (recorded natively); the plugin merely stops transmitting when the node dies.
@@ -80,6 +91,14 @@ class CommsJamInfo:
     #: The one frequency guaranteed un-jammed (freshly allocated, so no flight
     #: uses it either). None only if the registry is exhausted.
     backup: Optional[RadioFrequency]
+    #: Intel-driven mode (``comms_jam_requires_capture``): red only jams once it
+    #: holds a captured aircrew's comms plan. False = jam whenever a node lives.
+    capture_only: bool = False
+    #: With ``capture_only``, whether the channels are compromised from mission
+    #: start: a POW is currently held (``pending_pow_recoveries``), so red took
+    #: the comms plan on an earlier turn and it hasn't been rotated out yet.
+    #: Otherwise the plugin stays dormant until an in-mission capture.
+    active_from_start: bool = True
 
 
 def plan_comms_jam(
@@ -107,7 +126,20 @@ def plan_comms_jam(
         logging.warning(
             "Comms jam: could not allocate an un-jammed JAM BACKUP frequency"
         )
-    return CommsJamInfo(jammers, frequencies, backup)
+    capture_only = bool(getattr(game.settings, "comms_jam_requires_capture", True))
+    # A POW currently held means red already took a comms plan off a captured
+    # aircrew on an earlier turn: the channels are compromised from mission
+    # start. Freeing the POW (recapture the holding field) or the hold clock
+    # expiring (the squadron rotates its comms plan after the loss is written
+    # off) ends the compromise -- both fall out of pending_pow_recoveries.
+    pow_held = bool(getattr(game.blue, "pending_pow_recoveries", []))
+    return CommsJamInfo(
+        jammers,
+        frequencies,
+        backup,
+        capture_only=capture_only,
+        active_from_start=(not capture_only) or pow_held,
+    )
 
 
 def populate_comms_jam_lua(
@@ -138,9 +170,13 @@ def populate_comms_jam_lua(
         rec.add_key_value("mod", freq.modulation.name)
 
     if info.backup is not None:
-        # Nested single-value item, not add_key_value: the LuaData serializer
+        # Nested single-value items, not add_key_value: the LuaData serializer
         # drops scalar key-values on an object that also carries nested items.
         node.add_item("backupMhz").set_value(str(info.backup.mhz))
+    node.add_item("captureOnly").set_value("true" if info.capture_only else "false")
+    node.add_item("activeFromStart").set_value(
+        "true" if info.active_from_start else "false"
+    )
 
 
 def _enemy_jammer_nodes(game: "Game") -> list[CommsJamJammer]:

@@ -1340,7 +1340,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     only ~3 channels per jittered burst cycle (rotating window — switching channels is real comms discipline),
     rotates the transmitting node across alive jammers, and uses the MANTIS `node_dead` positive-evidence
     convention (destroyed static / `dead_events`) so a culled node stays "alive" (unkillable this mission =
-    standing pressure to frag it next turn). **Audio pressure only** — no force-model change, the plugin owns
+    standing pressure to frag it next turn). **The intel gate is the default mode** (`comms_jam_requires_capture`,
+    default ON — squadron call 2026-07-06): red can only jam channels it *knows*, learned from a **captured
+    aircrew's comms plan** via the §15/§21 Combat SAR capture race — the plugin stays dormant until either a
+    live capture (`combat_sar_captures` poll → "AIRCREW CAPTURED" cue → bursts after a `captureReactionS`
+    exploitation delay) or a POW already held (`pending_pow_recoveries` → `activeFromStart`, the "COMMS
+    COMPROMISED" story; freeing the POW or the 4-turn clock expiring ends the compromise). Win the SAR race and
+    the net stays clean; gate off = ambient always-on-while-node-alive. **Audio pressure only** — no
+    force-model change, the plugin owns
     no kills: silencing the jamming is an ordinary IADS strike with its MANTIS C2 consequence untouched. Gated
     `enemy_comms_jamming` (Mission Generation → Battlefield life, default **OFF**), preseeded ON + the plugin
     preseeded ON (the §36 saved-default-off lesson) in Red Tide. Tests

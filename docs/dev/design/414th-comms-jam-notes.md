@@ -49,6 +49,38 @@ grief, not gameplay:
   points at enemy C2 ("destroy them to silence it"); comms TGOs are visible map objects,
   so the hunt is plannable; a "ceased" cue confirms the kill paid off.
 
+## The intel gate (2026-07-06, squadron call — same day as v1)
+
+*"What if red only jams communications after a blue pilot is shot down and captured? Adds
+another reason for search and rescue to be important and it teaches the squadron to rotate
+compromised channels."* — adopted as the **default mode** (`comms_jam_requires_capture`,
+default ON; turn it off for the v1 ambient always-on-while-node-alive behavior).
+
+The fiction closes perfectly: red can only jam channels it *knows*, and it learns them from
+a **captured aircrew's comms plan** — the §15/§21 Combat SAR enemy-capture race that already
+exists. Both halves of the loop were already built:
+
+- **In-mission**: the `combatsar` plugin appends every lost capture race to the
+  `combat_sar_captures` state global (same mission Lua env). The commsjam plugin, dormant,
+  polls it (30 s); on the first blue capture it cues "AIRCREW CAPTURED — assume the comms
+  plan is compromised… rotate off them now" and starts the burst loop after an
+  **exploitation delay** (`captureReactionS`, 120 s; never before the startup grace).
+  **Losing the SAR race now has an immediate, felt cost — and winning it keeps the net
+  clean.**
+- **Cross-turn**: a POW currently held (`Coalition.pending_pow_recoveries`) means red took
+  the comms plan on an earlier turn — `plan_comms_jam` emits `activeFromStart` and the
+  jamming runs from the grace with a distinct "COMMS COMPROMISED: enemy interrogation of
+  captured aircrew…" story. Freeing the POW (recapture the holding field) or the 4-turn
+  hold clock expiring (the loss is written off and the squadron *rotates the comms plan*)
+  ends the compromise — both fall out of the existing POW machinery for free, and both are
+  exactly the "rotate compromised channels" lesson.
+
+Dependency worth knowing: live captures require the Combat SAR capture race to be running
+(a blue rescue helo emitted — `auto_combat_sar` default ON makes this the norm). A mission
+with no CombatSAR node can still be jammed via the POW path. The C2 node is still the
+*transmitter* in every mode: no alive comms/command-center node ⇒ no jamming, and killing
+it still silences the net regardless of what red knows.
+
 ## Death detection = the MANTIS convention, on purpose
 
 Comms/CC nodes are placed statics (`<name> object`) or destructible scenery —
@@ -63,8 +95,10 @@ is what motivates fragging a strike at it next turn (which un-culls it).
 
 All plugin options (`dcsRetribution.plugins.commsjam`): `burstSec` 25 · `intervalSec` 90
 (jittered 0.6–1.4×) · `maxFreqsPerBurst` 3 · `powerW` 100 (the falloff lever — raise if
-inaudible at the front, lower if it reaches home plate) · `startGraceS` 240. Python-side:
-`MAX_JAMMED_FREQUENCIES` 10 (`commsjamluadata.py`).
+inaudible at the front, lower if it reaches home plate) · `startGraceS` 240 ·
+`captureReactionS` 120 (live capture → first burst). Python-side:
+`MAX_JAMMED_FREQUENCIES` 10 (`commsjamluadata.py`); the capture-watch poll cadence is a
+plugin constant (`CAPTURE_POLL` 30 s).
 
 ## Deferred
 
@@ -75,6 +109,11 @@ inaudible at the front, lower if it reaches home plate) · `startGraceS` 240. Py
 - **Datalink/GCI degradation while jammed** — a force-model coupling (e.g. AWACS picture
   quality) was deliberately left out of v1: audio-only keeps the §36/§49 "cosmetic
   pressure, native kills" discipline.
+- **A real comms-plan rotation after a compromise** — the "rotated after the POW is written
+  off" story is fiction riding the hold clock: squadrons with authored `radio_presets` keep
+  the same intra-flight channel across turns, so red "forgetting" the freqs at clock expiry
+  is a gameplay mercy, not simulation. Actually re-rolling the compromised presets on the
+  turn after a capture would make the lesson literal; deferred.
 
 Everything else (files, tests, the emit contract) lives in `docs/dev/414th-features.md`
 §51.

@@ -70,6 +70,14 @@ settings:
   # means pushing its stronghold back.
   coin_harassment: true
   vietnam_convoy_interdiction: true
+  # §50 convoy escort/ambush -- the mirror of interdiction: your OWN supply convoys run
+  # the Helmand roads and concealed insurgent ambush teams dig in along the route (peak
+  # "ambush alley"); fly CAS/BAI escort or the column is ground down. Preseed the
+  # convoyambush PLUGIN ON too (the §36 lesson) so a saved default with it off doesn't
+  # silently kill the feature.
+  convoy_ambush: true
+  plugins:
+    convoyambush: true
   vietnam_airbase_harassment: true
   vietnam_political_will: true
   # The insurgent faction's ERO ZU-23 technicals/emplacements are §41 HDS

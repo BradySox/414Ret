@@ -311,6 +311,14 @@ class Coalition:
                     from game.fourteenth.carrier_ops import plan_carrier_strike
 
                     plan_carrier_strike(self, now, tracer)
+                # Convoy escort / ambush (§50): frag a BAI escort onto each ambushed blue
+                # convoy so the mission exists in the ATO (the AI flies it if the player
+                # doesn't). Before the commander so the escort claims its jets first; a
+                # no-op unless convoy_ambush is on and this is BLUE.
+                with tracer.trace(f"{color} convoy escort"):
+                    from game.fourteenth.convoy_ambush import plan_convoy_escort
+
+                    plan_convoy_escort(self, now, tracer)
                 with tracer.trace(f"{color} mission identification"):
                     TheaterCommander(self.game, self.player).plan_missions(now, tracer)
                 with tracer.trace(f"{color} carrier buddy-tanker routing"):

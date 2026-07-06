@@ -61,6 +61,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §47 | Continuous campaign clock & weather | — | `continuous_campaign_clock` |
 | §48 | Commitment ceiling (will-coupled war budget) | — | `vietnam_commitment_ceiling` |
 | §49 | Mobile missile relocation (the SCUD hunt) | `mobilemissiles` | `mobile_missile_relocation` |
+| §50 | Convoy escort / ambush | `convoyambush` | `convoy_ambush` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

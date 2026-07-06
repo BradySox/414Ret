@@ -478,6 +478,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "base_battle_damage",
                     "artillery_base_harassment",
                     "mobile_missile_relocation",
+                    "convoy_ambush",
                 ],
             ),
             (
@@ -2245,6 +2246,22 @@ class Settings:
             "SCUD hunt is a hunt for something that moves. Movement only: kills "
             "record normally, the site stays within a few km of its campaign-map "
             "position, and nothing changes at turn end. Applies to both sides."
+        ),
+    )
+    convoy_ambush: bool = boolean_option(
+        "Friendly convoy ambushes (fly escort)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Your own supply convoys run the roads behind the lines, and concealed "
+            "enemy ambush teams dig in along their route. Left un-escorted, the ambush "
+            "wears a convoy down and the supplies never arrive; fly CAS/Armed Recon to "
+            "find and clear the ambushers and the convoy gets through. An escort package "
+            "is auto-fragged into the ATO each turn (the AI flies it if you don't). The "
+            "convoy and the ambushers are real, tracked units -- both sides' losses "
+            "count. Runs via the 'Convoy ambush' LUA plugin -- keep that plugin enabled "
+            "or this setting does nothing."
         ),
     )
 

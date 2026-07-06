@@ -39,6 +39,15 @@ and selected later upstream fixes.
   the launcher is never quite where the last recon photo froze it. The site stays within a
   few km of its campaign position, kills count normally, and the radar SAM network never
   moves. On by default (Mission Generation → "Mobile missile sites relocate").
+- **Your own convoys get ambushed — so fly escort.** The flip side of convoy interdiction:
+  friendly supply columns run the roads behind the front, and concealed enemy ambush teams
+  dig in along the route. Leave a convoy un-escorted and the ambush grinds it down before it
+  arrives; fly CAS (an escort package is auto-fragged into the ATO each turn, and the AI flies
+  it if you don't) to find and clear the ambushers and the supplies get through. Both the
+  convoy and the ambushers are real, tracked units — losing the column costs you real
+  reinforcements, and the debrief counts both sides' losses. Opt-in (Mission Generation →
+  "Friendly convoy ambushes") and preseeded on in the COIN and Vietnam campaigns and Red Tide,
+  where the rear road is anything but safe.
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as

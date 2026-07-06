@@ -4098,6 +4098,14 @@ BLUE, one F10 mark on the position, then latches. A team wiped before it springs
 - **Preseeded ON** in COIN Enduring/Inherent Resolve (peak "ambush alley" — a supply convoy on Highway 1),
   1968 Yankee Station (Steel Tiger's sibling), and Red Tide (Fulda rear-area convoys); default OFF
   everywhere else. NEW game required to pick up the preseeds.
+- **A blue→blue supply road is the hard prerequisite** (found by the 2026-07-05 flown test): with an
+  all-red supply graph the escort convoy — and with it the entire ambush/escort loop — silently never
+  exists. Both COIN campaigns originally shipped exactly that way; their blue rear corridors are now
+  geo-authored (`tools/supply_route_geo.py`: ER Kandahar↔Camp Bastion up Highway 1 — the literal
+  ambush alley; IR Baghdad↔Balad + Baghdad↔Al-Taquddum), and
+  `test_preseeded_campaigns_have_a_blue_to_blue_road` loads every preseeding campaign's theater in CI
+  so a laydown edit can't silently drop the road again. A player enabling the setting on a custom
+  campaign without a blue→blue road gets the documented no-op.
 - **BLUE-only.** The player protects; the ambushers are red. Symmetric red-convoy escort is deferred (and
   is largely what §35 already covers from the other side).
 - **In-game pass: checklist S3.** The Python force model + emitter + plugin runtime are unit/harness

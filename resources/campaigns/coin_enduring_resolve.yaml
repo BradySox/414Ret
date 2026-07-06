@@ -286,6 +286,17 @@ supply_routes:
       - [-238126, -153451]
       - [-208889, -127434]
       - [-181518, -101421]
+  # Kandahar Airfield -> Camp Bastion  (the BLUE rear corridor: Highway 1 west through
+  # Zhari/Howz-e Madad -> Maiwand -> Gereshk, then the Bastion access road -- THE
+  # ambush-alley convoy run; feeds the §50 escort convoys, which no-op without a
+  # blue->blue road). Geo-authored via tools/supply_route_geo.py coin.
+  - waypoints:
+      - [-270486, -29690]
+      - [-261488, -71869]
+      - [-254647, -106269]
+      - [-237771, -151847]
+      - [-232270, -171511]
+      - [-235178, -184377]
 
 squadrons:
   #Kandahar -- the 2006 coalition ramp: A-10s, Dutch Vipers, RAF Harriers

@@ -284,6 +284,24 @@ supply_routes:
       - [230892, -39120]
       - [237000, -13000]
       - [245434, 12825]
+  # --- The BLUE rear corridor (the §50 escort convoys, which no-op without a
+  # --- blue->blue road; the red graph above is untouched). Geo-authored via
+  # --- tools/supply_route_geo.py iraq_inherent_resolve.
+  # Baghdad International -> Balad Airbase  (Highway 1 north through Taji and the Dujayl junction)
+  - waypoints:
+      - [-142, 160]
+      - [18065, -228]
+      - [29131, 2641]
+      - [51300, 3728]
+      - [66809, 5690]
+      - [75938, 13806]
+  # Baghdad International -> Al-Taquddum  (Highway 10 west through Abu Ghraib -> Fallujah -> Habbaniyah)
+  - waypoints:
+      - [-142, 160]
+      - [4891, -16155]
+      - [10686, -40298]
+      - [13039, -51436]
+      - [9717, -58133]
 
 # The single front starts partway up the Balad -> Tikrit axis (Highway 1), the ISF
 # pressing north out of Baghdad toward Tikrit and, beyond it, Mosul.

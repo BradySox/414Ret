@@ -69,6 +69,13 @@ class DcsPluginHarness:
     def add_group(self, spec: dict[str, Any]) -> None:
         self.harness.addGroup(self.to_lua(spec))
 
+    def add_static(self, spec: dict[str, Any]) -> None:
+        """Register a placed static for StaticObject.getByName.
+
+        ``{"name": ..., "exists": False}`` models an existed-and-destroyed
+        static; anything unregistered returns nil (culled / scenery)."""
+        self.harness.addStatic(self.to_lua(spec))
+
     def fire_event(self, event: dict[str, Any]) -> None:
         self.harness.fireEvent(self.to_lua(event))
 

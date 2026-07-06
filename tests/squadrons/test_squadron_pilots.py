@@ -69,3 +69,37 @@ def test_lose_pilots_caps_at_available_pilots() -> None:
     pilots = [Pilot("AI 1"), Pilot("AI 2")]
     _squadron(list(pilots)).lose_pilots(5)
     assert _dead(pilots) == 2
+
+
+def test_capture_takes_a_pilot_prisoner_but_keeps_them_alive() -> None:
+    pilot = Pilot("Colt 1-1")
+    pilot.capture()
+    assert pilot.status is PilotStatus.POW
+    assert pilot.captured
+    assert pilot.alive  # a POW is alive, just off the active roster
+    assert not pilot.on_leave
+
+
+def test_captured_pilot_is_not_active_so_never_scheduled() -> None:
+    active, pow_pilot = Pilot("Active"), Pilot("Captured")
+    pow_pilot.capture()
+    squadron = Squadron.__new__(Squadron)
+    squadron.current_roster = [active, pow_pilot]
+    # active_pilots (what the auto-planner and available-pool rebuild read) skips
+    # the POW, so a captured pilot can never be fragged while captive.
+    assert squadron.active_pilots == [active]
+
+
+def test_repatriate_returns_a_pow_to_active() -> None:
+    pilot = Pilot("Colt 1-1")
+    pilot.capture()
+    pilot.repatriate()
+    assert pilot.status is PilotStatus.Active
+    assert not pilot.captured
+
+
+def test_a_dead_pilot_cannot_be_captured() -> None:
+    pilot = Pilot("KIA")
+    pilot.kill()
+    pilot.capture()
+    assert pilot.status is PilotStatus.Dead

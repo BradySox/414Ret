@@ -10,6 +10,7 @@ from dcs.unitgroup import ShipGroup
 from game.dcs.aircrafttype import AircraftType
 from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
+from game.missiongenerator.commsjamluadata import CommsJamInfo
 from game.missiongenerator.interceptluadata import InterceptEntry, PlayerAlertEntry
 from game.runways import RunwayData
 
@@ -150,3 +151,7 @@ class MissionData:
     # script (TIC plugin). Non-empty means TIC_v1.1.lua must be injected.
     tic_groups: list[str] = field(default_factory=list)
     atis_frequencies: list[AtisInfo] = field(default_factory=list)
+    # The enemy comms-jamming plan (§51), computed once before the Lua pass so
+    # the emitter and the kneeboard (JAM BACKUP line) read the same plan. None
+    # when the feature is off or has nothing to do this mission.
+    comms_jam: Optional[CommsJamInfo] = None

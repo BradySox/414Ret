@@ -48,6 +48,19 @@ and selected later upstream fixes.
   reinforcements, and the debrief counts both sides' losses. Opt-in (Mission Generation →
   "Friendly convoy ambushes") and preseeded on in the COIN and Vietnam campaigns and Red Tide,
   where the rear road is anything but safe.
+- **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
+  learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
+  within minutes your briefed channels take sporadic bursts of barrage static — transmitted
+  from a real enemy comms mast or command bunker with real power falloff (worst deep over the
+  C2 belt), and SRS hears it too (SRS tunes off your cockpit radios). While a POW is held, the
+  next missions launch already compromised — until you free them (retake the holding field) or
+  the comms plan is rotated. GUARD, ATC and a briefed **JAM BACKUP** channel (printed on the
+  kneeboard comms ladder) always stay clean, and the noise comes in duty-cycled bursts, never a
+  wall — hop channels, push to the backup, or kill the node: one strike on the C2 site silences
+  the jamming *and* degrades the IADS. So SAR matters twice over, and the squadron learns to
+  rotate compromised channels. Opt-in (Mission Generation → "Enemy comms jamming"; the
+  captured-pilot intel gate is on by default, or disable it for ambient jamming) and preseeded
+  on in Red Tide, where the radio isn't clean either.
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as
@@ -82,10 +95,15 @@ and selected later upstream fixes.
   to bring a downed pilot home: hold near the FLOT with the **King** (C-130) and **Jolly Green** (the
   rescue helo), protect the survivor, suppress the threats around them, and walk the helo in. The enemy
   may send a **snatch party** to grab the downed pilot — kill it in time or the pilot is **captured**
-  and held as a **POW at an enemy airfield**: recapture that field to free them, and every turn they
-  are held saps your side's political will; leave them held too long and they are lost for good. The
-  capture is the consequence for losing the rescue fight — there is no separate raid mission to plan.
-  (The old armor-hunt SCAR is retired — SCAR is a rescue role now.)
+  and held as a **POW at an enemy airfield**. A captured pilot is pulled from the flying roster (they
+  show as **POW** in the squadron and can't be fragged while captive), named on your kneeboard SITREP
+  each turn with where they're held, and **recapturing that field brings them back**. Every turn they're
+  held saps your side's political will. On a **political-will (Vietnam) campaign** the hold is
+  indefinite — the drain is a real running sore Hanoi holds over Washington — and a **negotiated victory
+  brings your POWs home** (a defeat writes them off); on other campaigns they're lost for good after a
+  few turns. If you fly with **invulnerable player pilots** on, your own captured pilots are returned
+  rather than killed. The capture is the consequence for losing the rescue fight — there is no separate
+  raid mission to plan. (The old armor-hunt SCAR is retired — SCAR is a rescue role now.)
 - **Combat SAR** makes a downed pilot worth flying for. A CH-47 orbits near the front as the
   rescuer while a C-130 holds overhead as the HC-130 "King" — on-scene command with an
   air-tracking TACAN the helo homes on (an AI King lights it automatically; a player King

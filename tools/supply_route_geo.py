@@ -32,6 +32,7 @@ from dataclasses import dataclass, field
 from dcs.mapping import LatLng, Point
 from dcs.terrain.afghanistan import Afghanistan
 from dcs.terrain.caucasus import Caucasus
+from dcs.terrain.iraq import Iraq
 from dcs.terrain.nevada import Nevada
 
 
@@ -83,6 +84,8 @@ FRONTENAC = (-231043.0, -30347.0)
 MARTELLO = (-189960.0, -7031.0)
 GERONIMO = (-285099.0, -180708.0)
 TARINKOT = (-148524.0, -31352.0)
+KANDAHAR = (-270486.0, -29690.0)  # Kandahar Airfield (BLUE)
+BASTION = (-235178.0, -184377.0)  # Camp Bastion (BLUE)
 
 COIN_ROUTES = [
     Route(
@@ -140,6 +143,14 @@ COIN_ROUTES = [
         GERONIMO,
         [(31.59, 64.37), (31.82, 64.55), (32.08, 64.83)],
         KAJAKI,
+    ),
+    Route(
+        "Kandahar Airfield -> Camp Bastion  (the BLUE rear corridor: Highway 1 west "
+        "through Zhari/Howz-e Madad -> Maiwand -> Gereshk, then the Bastion access "
+        "road -- THE ambush-alley convoy run; feeds the #50 escort convoys)",
+        KANDAHAR,
+        [(31.596, 65.406), (31.664, 65.045), (31.823, 64.567), (31.875, 64.360)],
+        BASTION,
     ),
 ]
 
@@ -259,10 +270,39 @@ CAUCASUS_TRAIL_FIXES = [
 ]
 
 
+# --- Inherent Resolve (Iraq map): the BLUE rear corridor only -- the red 14-route
+# --- graph was hand-authored against the base miz and stays as-is. These two routes
+# --- link the three blue southern airfields along the real highways so the #50 escort
+# --- convoys have roads to run (and ambush alley has an alley): Highway 1 north out
+# --- of Baghdad through Taji/Dujayl to Balad, and Highway 10 west through Abu
+# --- Ghraib/Fallujah/Habbaniyah to Al-Taquddum. Endpoints are the exact CP XY.
+IR_BAGHDAD = (-142.0, 160.0)  # Baghdad International Airport (BLUE)
+IR_BALAD = (75938.0, 13806.0)  # Balad Airbase (BLUE, the forward player field)
+IR_TAQADDUM = (9717.0, -58133.0)  # Al-Taquddum Airport (BLUE, the strike field)
+
+IRAQ_IR_ROUTES = [
+    Route(
+        "Baghdad International -> Balad Airbase  (the BLUE rear corridor: Highway 1 "
+        "north through Taji and the Dujayl junction; feeds the #50 escort convoys)",
+        IR_BAGHDAD,
+        [(33.42, 44.22), (33.52, 44.25), (33.72, 44.26), (33.86, 44.28)],
+        IR_BALAD,
+    ),
+    Route(
+        "Baghdad International -> Al-Taquddum  (the BLUE western corridor: Highway 10 "
+        "through Abu Ghraib -> Fallujah -> Habbaniyah; feeds the #50 escort convoys)",
+        IR_BAGHDAD,
+        [(33.30, 44.05), (33.35, 43.79), (33.37, 43.67)],
+        IR_TAQADDUM,
+    ),
+]
+
+
 CAMPAIGNS = {
     "coin": (Afghanistan, COIN_ROUTES),
     "red_flag_81_2": (Nevada, RED_FLAG_ROUTES),
     "caucasus_trail_fixes": (Caucasus, CAUCASUS_TRAIL_FIXES),
+    "iraq_inherent_resolve": (Iraq, IRAQ_IR_ROUTES),
 }
 
 

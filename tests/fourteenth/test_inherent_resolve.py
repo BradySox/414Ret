@@ -53,8 +53,11 @@ def test_inherent_resolve_campaign_definition() -> None:
     # The red<->red supply graph, routed through the in-between towns: the Highway-1 corridor
     # (Tikrit -> Bayji -> Shirqat -> Qayyarah -> Hammam al-Alil -> Mosul), the Nineveh ring
     # (Bartella + the Tal Afar ratline), the NE belt (Mosul -> Gwer -> Erbil -> Kirkuk), and
-    # the bridges (Makhmur, Hawija) tying the eastern belt into the corridor.
-    assert len(data["supply_routes"]) == 14
+    # the bridges (Makhmur, Hawija) tying the eastern belt into the corridor — plus the two
+    # BLUE rear-corridor roads (Baghdad -> Balad up Highway 1, Baghdad -> Al-Taquddum out
+    # Highway 10) that the §50 escort convoys run (a blue->blue road is the feature's
+    # hard prerequisite; without one it silently no-ops).
+    assert len(data["supply_routes"]) == 16
     for route in data["supply_routes"]:
         assert len(route["waypoints"]) >= 2
 

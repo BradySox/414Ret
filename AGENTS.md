@@ -1333,7 +1333,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the turn-boundary force model, so a mover shot down is recorded natively (the §35/§37/§49 discipline).
     Gated `convoy_ambush` (Mission Generation → Battlefield life, default **OFF**), preseeded ON + the plugin
     preseeded ON (the §36 saved-default-off lesson) in COIN Enduring/Inherent Resolve, 1968 Yankee Station,
-    and Red Tide. Tests `tests/fourteenth/test_convoy_ambush.py` +
+    and Red Tide. **A blue→blue supply road is the hard prerequisite** (2026-07-05 flown-test finding: both
+    COIN campaigns shipped all-red graphs, so the escort convoy silently never existed) — the blue rear
+    corridors are now geo-authored per the driveable-corridor standard (`tools/supply_route_geo.py`: ER
+    Kandahar↔Camp Bastion up Highway 1, the literal ambush alley; IR Baghdad↔Balad + Baghdad↔Al-Taquddum;
+    the tool gained the `iraq_inherent_resolve` mode) and CI-locked by
+    `test_preseeded_campaigns_have_a_blue_to_blue_road`, which loads every preseeding campaign's theater.
+    Tests `tests/fourteenth/test_convoy_ambush.py` +
     `tests/missiongenerator/test_convoyambushluadata.py` + `tests/lua/test_convoyambush_runtime.py`; features
     doc §50, checklist S3 — needs an in-game pass.
 51. **Enemy comms jamming (IADS comms nodes)** — the IADS comms nodes, given a voice: with

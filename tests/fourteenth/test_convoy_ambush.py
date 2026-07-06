@@ -402,3 +402,62 @@ def test_escort_skips_a_dead_ambush(monkeypatch: Any) -> None:
     monkeypatch.setattr(packagefulfiller_module, "PackageFulfiller", _Fulfiller)
     plan_convoy_escort(coalition, datetime(2000, 1, 1), _Tracer())  # type: ignore[arg-type]
     assert coalition.ato.packages == []
+
+
+# ---- preseeded campaigns must be able to field the feature ---------------------------
+#
+# The hard prerequisite the 2026-07-05 flown test exposed: ensure_blue_escort_convoy
+# needs a blue->blue road corridor (a supply_routes entry linking two BLUE control
+# points) or the whole feature silently no-ops -- no convoy, no ambush, no escort. The
+# two COIN campaigns shipped preseeding convoy_ambush: true with an all-red supply
+# graph, so the flagship "ambush alley" campaigns could never field an escort convoy.
+# This guard loads every campaign that preseeds the setting through the real new-game
+# theater path and asserts the corridor exists, so a future laydown edit that drops the
+# blue road fails CI instead of silently killing the feature.
+
+
+def _blue_blue_road_count(theater: Any) -> int:
+    roads = set()
+    for cp in theater.controlpoints:
+        if not cp.starting_coalition.is_blue:
+            continue
+        for other in cp.convoy_routes.keys():
+            if other.starting_coalition.is_blue:
+                roads.add(tuple(sorted((cp.name, other.name))))
+    return len(roads)
+
+
+def test_preseeded_campaigns_have_a_blue_to_blue_road(tmp_path: Any) -> None:
+    from pathlib import Path
+
+    import yaml
+
+    from game import persistency
+    from game.campaignloader.campaign import Campaign
+
+    persistency.setup(str(tmp_path), False, 0)
+    campaigns_dir = Path("resources/campaigns")
+    preseeded = [
+        path
+        for path in sorted(campaigns_dir.glob("*.yaml"))
+        if yaml.safe_load(path.read_text(encoding="utf-8"))
+        .get("settings", {})
+        .get("convoy_ambush")
+        is True
+    ]
+    # The four campaigns that ship the feature ON must stay preseeded.
+    assert {path.stem for path in preseeded} >= {
+        "coin_enduring_resolve",
+        "iraq_inherent_resolve",
+        "1968_Yankee_Station",
+        "red_tide",
+    }
+    for path in preseeded:
+        campaign = Campaign.from_file(path)
+        theater = campaign.load_theater(campaign.advanced_iads)
+        assert _blue_blue_road_count(theater) >= 1, (
+            f"{path.stem} preseeds convoy_ambush but has no blue->blue supply road -- "
+            "the escort convoy (and with it the whole ambush/escort loop) will "
+            "silently never exist. Author the blue rear corridor (see "
+            "tools/supply_route_geo.py) or drop the preseed."
+        )

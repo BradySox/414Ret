@@ -152,6 +152,10 @@ class Game:
         # carry), keyed by str(cp.id). Plain primitives so saves stay simple;
         # populated lazily by game.fourteenth.coin when coin_insurgency is on.
         self.coin_state: dict[str, dict[str, Any]] = {}
+        # §50 convoy escort / ambush: this turn's ambush pairings ({"ambushes": [{tgo_id,
+        # convoy}]}), seeded at finish_turn, read by the emitter + the escort auto-frag.
+        # Plain primitives; populated lazily by game.fourteenth.convoy_ambush when on.
+        self.convoy_ambush_state: dict[str, Any] = {}
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -233,6 +237,7 @@ class Game:
         state.setdefault("will_ledger", [])
         state.setdefault("will_escalation_charged_phase", None)
         state.setdefault("coin_state", {})
+        state.setdefault("convoy_ambush_state", {})
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.
@@ -415,6 +420,20 @@ class Game:
         from game.fourteenth.vietnam_convoy import ensure_enemy_trail_convoy
 
         ensure_enemy_trail_convoy(self)
+
+        # Convoy escort / ambush (§50): the mirror of interdiction. Top the player's own
+        # convoy flow up so an escortable convoy reliably exists, then seed a fresh,
+        # concealed red ambush team on each blue convoy's route (despawning last turn's).
+        # No-op unless convoy_ambush is on. Real units both sides -- losses track natively;
+        # the escort package itself is auto-fragged later in Coalition.plan_missions. See
+        # game/fourteenth/convoy_ambush.py.
+        from game.fourteenth.convoy_ambush import (
+            ensure_blue_escort_convoy,
+            seed_convoy_ambushes,
+        )
+
+        ensure_blue_escort_convoy(self)
+        seed_convoy_ambushes(self, events)
 
         # COIN C1 (design note 414th-coin-insurgent-replenishment-notes.md §3):
         # insurgent-held strongholds regenerate a free, cache-throttled trickle of

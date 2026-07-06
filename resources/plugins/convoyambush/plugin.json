@@ -1,0 +1,35 @@
+{
+    "nameInUI": "Convoy ambush",
+    "descriptionInUI": "Runtime for the friendly-convoy ambush / escort feature. Inert unless the mission generator emits dcsRetribution.convoyAmbush (the 'Friendly convoy ambushes' setting is on and a live blue-convoy / red-ambush pairing exists). Each concealed ambush team digs in holding fire (alarm-green, weapons hold) until the friendly convoy it is set against closes inside the trigger radius, then springs -- goes weapons-free with a 'troops in contact' cue and an F10 map mark -- so an unescorted column gets ground down while an escorted one is saved by clearing the ambushers. ROE / cue ONLY: the convoy and the ambushers are real, tracked units, so every kill is recorded natively at debrief (dead convoy units never arrive; dead ambushers are a real enemy ground loss) -- the plugin only decides WHEN the dug-in team opens up. A team never sprung by a passing convoy still opens up after a maximum hold so a passing player always finds a fight; springing begins only after a startup grace so nothing fires the instant the mission loads.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Trigger radius: convoy within this of the ambush springs it (m)",
+            "mnemonic": "triggerRadiusM",
+            "defaultValue": 6000,
+            "maximumValue": 30000
+        },
+        {
+            "nameInUI": "Startup grace before an ambush can spring (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 120
+        },
+        {
+            "nameInUI": "Seconds between convoy-proximity checks",
+            "mnemonic": "pollIntervalS",
+            "defaultValue": 15
+        },
+        {
+            "nameInUI": "Maximum hold: spring anyway after this even if no convoy closes (s)",
+            "mnemonic": "maxHoldS",
+            "defaultValue": 1800
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "convoyambush-config.lua",
+            "mnemonic": "convoyambush-config"
+        }
+    ]
+}

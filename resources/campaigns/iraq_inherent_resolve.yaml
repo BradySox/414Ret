@@ -66,6 +66,14 @@ settings:
   # The ratline west toward Tal Afar / Syria (real, tracked convoys) and standoff
   # rocket/mortar fire on the forward field at Balad.
   vietnam_convoy_interdiction: true
+  # §50 convoy escort/ambush -- the mirror of interdiction: your OWN supply convoys run
+  # Highway 1 and concealed IS ambush teams dig in along the route (peak "ambush alley");
+  # fly CAS/BAI escort or the column is ground down before it arrives. Preseed the
+  # convoyambush PLUGIN ON too (the §36 lesson) so a saved default with it off doesn't
+  # silently kill the feature.
+  convoy_ambush: true
+  plugins:
+    convoyambush: true
   vietnam_airbase_harassment: true
   # The inverted political-will economy + the campaign-phase arc.
   vietnam_political_will: true

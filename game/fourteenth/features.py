@@ -276,6 +276,13 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="mobilemissiles",
         settings_fields=("mobile_missile_relocation",),
     ),
+    Feature(
+        "convoy_ambush",
+        "Convoy escort / ambush",
+        50,
+        plugin_id="convoyambush",
+        settings_fields=("convoy_ambush",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

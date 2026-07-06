@@ -251,14 +251,20 @@ settings:
   # in-mission standoff harassment fire (never a player-spawn field; startup grace).
   # The Gap is not a safe ramp.
   artillery_base_harassment: true
+  # §50 convoy escort/ambush -- friendly NATO supply convoys run the rear roads up to the
+  # Fulda front and concealed Spetsnaz/recon-team ambushes dig in along the route; fly
+  # CAS/BAI escort or the column is ground down. The rear isn't a safe road, same as the
+  # ramp isn't a safe ramp (artillery harassment above).
+  convoy_ambush: true
   # The artillery harassment above runs inside the vietnamops PLUGIN's runtime (the
   # shared standoff-barrage loop). Preseed the plugin ON so a player whose saved
   # defaults disabled "Vietnam Ops (period mechanics)" -- reasonable on a
   # conventional-campaign squadron -- doesn't silently lose the feature. Layered
   # over their defaults like every other recommended setting; still uncheckable
-  # in the wizard.
+  # in the wizard. Same reasoning preseeds the convoyambush plugin for §50.
   plugins:
     vietnamops: true
+    convoyambush: true
 squadrons:
   #Ramstein — rear heavy-iron + the eyes: the B-52s, the 414th Strike Eagles, and the E-3A.
   165:

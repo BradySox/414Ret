@@ -51,15 +51,15 @@ def _group() -> Any:
 
 def _generator(*, fc3: bool = False) -> AircraftGenerator:
     gen = AircraftGenerator.__new__(AircraftGenerator)
-    gen.game = SimpleNamespace(  # type: ignore[attr-defined]
+    gen.game = SimpleNamespace(  # type: ignore[assignment]
         settings=SimpleNamespace(plugins={"ctld.fc3LaserCode": fc3}),
         laser_code_registry=SimpleNamespace(
             alloc_laser_code=lambda: SimpleNamespace(code=1688),
             fc3_code=SimpleNamespace(code=1113),
         ),
     )
-    gen.radio_registry = SimpleNamespace(alloc_uhf=lambda: "UHF")  # type: ignore[attr-defined]
-    gen.mission_data = SimpleNamespace(jtacs=[])  # type: ignore[attr-defined]
+    gen.radio_registry = SimpleNamespace(alloc_uhf=lambda: "UHF")  # type: ignore[assignment]
+    gen.mission_data = SimpleNamespace(jtacs=[])  # type: ignore[assignment]
     return gen
 
 

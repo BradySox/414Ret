@@ -422,11 +422,12 @@ class Game:
         ensure_enemy_trail_convoy(self)
 
         # Convoy escort / ambush (§50): the mirror of interdiction. Top the player's own
-        # convoy flow up so an escortable convoy reliably exists, then seed a fresh,
-        # concealed red ambush team on each blue convoy's route (despawning last turn's).
-        # No-op unless convoy_ambush is on. Real units both sides -- losses track natively;
-        # the escort package itself is auto-fragged later in Coalition.plan_missions. See
-        # game/fourteenth/convoy_ambush.py.
+        # convoy flow up so an ambushable convoy reliably exists, then roll each blue
+        # convoy for a CHANCE of an ambush -- 1..6 hidden red teams spread along its road
+        # (despawning last turn's first). Nothing is telegraphed in the UI (map_hidden
+        # TGOs, no auto-fragged escort); the player decides in-mission whether to support
+        # the column. No-op unless convoy_ambush is on. Real units both sides -- losses
+        # track natively. See game/fourteenth/convoy_ambush.py.
         from game.fourteenth.convoy_ambush import (
             ensure_blue_escort_convoy,
             seed_convoy_ambushes,

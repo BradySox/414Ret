@@ -2287,19 +2287,22 @@ class Settings:
         ),
     )
     convoy_ambush: bool = boolean_option(
-        "Friendly convoy ambushes (fly escort)",
+        "Friendly convoy ambushes (support your convoys)",
         page=MISSION_GENERATION_PAGE,
         section=GENERAL_SECTION,
         default=False,
         detail=(
-            "Your own supply convoys run the roads behind the lines, and concealed "
-            "enemy ambush teams dig in along their route. Left un-escorted, the ambush "
-            "wears a convoy down and the supplies never arrive; fly CAS/Armed Recon to "
-            "find and clear the ambushers and the convoy gets through. An escort package "
-            "is auto-fragged into the ATO each turn (the AI flies it if you don't). The "
-            "convoy and the ambushers are real, tracked units -- both sides' losses "
-            "count. Runs via the 'Convoy ambush' LUA plugin -- keep that plugin enabled "
-            "or this setting does nothing."
+            "Your own supply convoys run the roads behind the lines, and sometimes -- "
+            "it is a chance, never a certainty -- hidden enemy ambush teams dig in "
+            "along the route: one contact, or a gauntlet of five or six down the same "
+            "road. Nothing is telegraphed: the convoy looks like any other friendly "
+            "convoy and no objective or escort package appears in the UI -- the first "
+            "sign is the TROOPS IN CONTACT call when an ambush springs, and supporting "
+            "the column (or not) is your call. Left unsupported, an ambushed convoy is "
+            "ground down and the supplies never arrive. The convoy and the ambushers "
+            "are real, tracked units -- both sides' losses count. Runs via the 'Convoy "
+            "ambush' LUA plugin -- keep that plugin enabled or this setting does "
+            "nothing."
         ),
     )
     enemy_comms_jamming: bool = boolean_option(

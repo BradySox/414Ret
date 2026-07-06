@@ -278,7 +278,7 @@ FEATURES: tuple[Feature, ...] = (
     ),
     Feature(
         "convoy_ambush",
-        "Convoy escort / ambush",
+        "Convoy ambush (a chance, never telegraphed)",
         50,
         plugin_id="convoyambush",
         settings_fields=("convoy_ambush",),

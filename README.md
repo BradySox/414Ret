@@ -39,15 +39,17 @@ and selected later upstream fixes.
   the launcher is never quite where the last recon photo froze it. The site stays within a
   few km of its campaign position, kills count normally, and the radar SAM network never
   moves. On by default (Mission Generation → "Mobile missile sites relocate").
-- **Your own convoys get ambushed — so fly escort.** The flip side of convoy interdiction:
-  friendly supply columns run the roads behind the front, and concealed enemy ambush teams
-  dig in along the route. Leave a convoy un-escorted and the ambush grinds it down before it
-  arrives; fly CAS (an escort package is auto-fragged into the ATO each turn, and the AI flies
-  it if you don't) to find and clear the ambushers and the supplies get through. Both the
-  convoy and the ambushers are real, tracked units — losing the column costs you real
-  reinforcements, and the debrief counts both sides' losses. Opt-in (Mission Generation →
-  "Friendly convoy ambushes") and preseeded on in the COIN and Vietnam campaigns and Red Tide,
-  where the rear road is anything but safe.
+- **Your own convoys might get ambushed — support them, or don't. Your call.** The flip
+  side of convoy interdiction: friendly supply columns run the roads behind the front, and
+  sometimes — it's a chance, never a certainty — hidden enemy ambush teams dig in along the
+  route: one contact, or a gauntlet of five or six down the same road. Nothing is
+  telegraphed: the convoy looks like any other friendly convoy, no objective or escort
+  package shows in the UI, and the first sign of trouble is the TROOPS IN CONTACT call when
+  an ambush springs mid-mission. Fly to the column's aid and clear the ambushers, or let it
+  fight through alone. Both the convoy and the ambushers are real, tracked units — losing
+  the column costs you real reinforcements, and the debrief counts both sides' losses.
+  Opt-in (Mission Generation → "Friendly convoy ambushes") and preseeded on in the COIN and
+  Vietnam campaigns and Red Tide, where the rear road is anything but safe.
 - **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
   learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
   within minutes your briefed channels take sporadic bursts of barrage static — transmitted

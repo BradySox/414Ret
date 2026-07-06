@@ -149,6 +149,13 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         # centre slides FAR along this route instead of a small radial offset:
         # the player knows what highway the device is on, not which stretch.
         self.concealed_route: Optional[list[tuple[float, float]]] = None
+        # Total map hiding: while True, this site never appears on an enemy
+        # viewer's map/UI AT ALL — no marker, no uncertainty circle, nothing to
+        # right-click or plan against — and the AI planners skip it too. Set by
+        # the convoy-ambush teams (§50), whose whole point is that the first
+        # sign of them is the in-mission TROOPS IN CONTACT call. Stronger than
+        # `concealed` (which still draws a suspected-activity circle).
+        self.map_hidden: bool = False
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -173,6 +180,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         state.setdefault("concealed", False)
         # Old saves predate road-pinned concealment — radial jitter is correct.
         state.setdefault("concealed_route", None)
+        # Old saves predate total map hiding — visible is correct.
+        state.setdefault("map_hidden", False)
         self.__dict__.update(state)
         # Save migration: heal AAA sites that were generated with a stray search
         # radar (the old `fill: true` radar slot). Newly generated campaigns no
@@ -233,9 +242,15 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         planner / threat math) and friendly viewers see everything, so AI planning
         is never fogged. The ``fog_revealed()`` overview likewise un-hides every
         site for any viewer.
+
+        A site flagged ``map_hidden`` (the §50 convoy-ambush teams) is hidden
+        unconditionally for an enemy viewer — no reveal key, no uncertainty
+        circle; its existence is an in-mission discovery only.
         """
         if viewer is None or fog_revealed() or self.is_friendly(viewer):
             return False
+        if self.map_hidden:
+            return True
         settings = self.control_point.coalition.game.settings
         if self.category == "commandcenter" and settings.scar_command_post_intel:
             return not self._command_post_revealed()

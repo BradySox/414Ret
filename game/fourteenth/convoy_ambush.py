@@ -1,40 +1,41 @@
 """Friendly convoy ambush / escort (§50).
 
 The mirror of the Vietnam-Ops convoy interdiction (§35). Where interdiction gives the
-player *enemy* convoys to hunt, this gives the player *friendly* convoys to protect: real,
-tracked BLUE supply convoys run the roads behind the front, and concealed, real RED ambush
-teams dig in along their route. Left un-escorted, the ambush wears the convoy down and the
-supplies never arrive; fly CAS/Armed Recon to clear the ambush and it gets through. An
-escort package is auto-fragged into the ATO so the mission exists whether or not the player
-mans it (the AI flies it otherwise).
+player *enemy* convoys to hunt, this gives the player *friendly* convoys that might need
+protecting: real, tracked BLUE supply convoys run the roads behind the front, and --
+sometimes, it is a chance, never a certainty -- hidden, real RED ambush teams dig in along
+their route: one contact, or a gauntlet of several down the same road.
+
+Nothing is telegraphed in the Retribution UI. The convoy looks like any other friendly
+convoy, the ambush teams are ``map_hidden`` (no marker, no uncertainty circle, nothing to
+right-click or plan against -- see ``TheaterGroundObject.hidden_on_player_map``), and no
+escort package is auto-fragged into the ATO. The first sign of trouble is the in-mission
+"TROOPS IN CONTACT" call when an ambush springs -- and supporting the column (or not) is
+the player's decision.
 
 No phantom spawns (the §35/§37 lesson):
 
 * the convoy is a real ``coalition.transfers`` transfer -- its loss is units that never
   arrive, reconciled in ``MissionResultsProcessor.commit_convoy_losses`` (which iterates
   *both* coalitions' convoys), and
-* each ambush team is a real, concealed red TGO placed by
+* each ambush team is a real, hidden red TGO placed by
   :func:`game.fourteenth.coin.spawn_red_ground_at` -- killing it is a real red ground loss
   recorded natively at debrief.
 
-The Lua ``convoyambush`` plugin only *springs* the ambush (holds fire until the convoy
-closes, then goes weapons-free with a cue) -- movement / cosmetics only, never a kill it
-owns. That keeps the loss accounting entirely in the turn-boundary force model.
+The Lua ``convoyambush`` plugin only *springs* the ambushes (each team holds fire until
+the convoy closes, then goes weapons-free with a cue) -- movement / cosmetics only, never
+a kill it owns. That keeps the loss accounting entirely in the turn-boundary force model.
 
 Two turn-boundary steps run from ``Game.finish_turn`` (after the enemy-trail convoy top-up):
 
 * :func:`ensure_blue_escort_convoy` -- top the player's own convoy flow up to a small
-  budget so an escortable convoy reliably exists (the symmetric analog of
+  budget so an ambushable convoy reliably exists (the symmetric analog of
   ``ensure_enemy_trail_convoy``; it reuses that module's coalition-generic corridor / seed
   / skim helpers).
-* :func:`seed_convoy_ambushes` -- despawn last turn's surviving ambush teams, then seed a
-  fresh concealed red ambush team on the route of each active blue convoy, recording the
-  pairing in ``game.convoy_ambush_state`` for the emitter and the auto-frag.
-
-Plus one plan-pass step from ``Coalition.plan_missions``:
-
-* :func:`plan_convoy_escort` -- frag one BAI escort package per ambushed convoy onto the
-  ambush team via the engine's own ``PackageFulfiller``.
+* :func:`seed_convoy_ambushes` -- despawn last turn's ambush teams, then roll each active
+  blue convoy against :data:`AMBUSH_CHANCE`; a convoy that loses the roll drives an
+  ambushed road -- :data:`MIN_AMBUSHES_PER_ROUTE`..:data:`MAX_AMBUSHES_PER_ROUTE` hidden
+  teams spread along it, recorded in ``game.convoy_ambush_state`` for the emitter.
 
 All gated by ``convoy_ambush`` (default OFF, campaign-preseeded). Fully guarded: no blue
 convoy, no red control point to source the ambushers from, no blue road corridor => no-op.
@@ -42,35 +43,41 @@ convoy, no red control point to source the ambushers from, no blue road corridor
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+import random
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from datetime import datetime
-
     from game import Game
-    from game.coalition import Coalition
-    from game.profiling import MultiEventTracer
     from game.theater import ControlPoint
 
-#: Concurrent blue supply convoys the escort layer keeps flowing (the player can only
-#: shepherd so many at once -- a small, sustainable number, not a parade).
+#: Concurrent blue supply convoys the layer keeps flowing (a small, sustainable number,
+#: not a parade).
 BLUE_CONVOY_BUDGET = 2
 
-#: Real ground units a single escort convoy carries. Big enough to read as a column and to
-#: survive a glancing ambush if the escort clears it in time, small enough that an unescorted
-#: run is genuinely ground down.
+#: Real ground units a single supply convoy carries. Big enough to read as a column and to
+#: survive a glancing ambush if the player clears it in time, small enough that an
+#: unsupported run through a gauntlet is genuinely ground down.
 CONVOY_UNITS = 8
 
-#: At most this many of the active blue convoys get an ambush seeded per turn (matches the
-#: convoy budget -- one escort mission per convoy, no more).
-MAX_AMBUSHED_CONVOYS = 2
+#: Chance, per active blue convoy per turn, that its route is ambushed at all. Never a
+#: certainty -- most of the time the road is quiet, so a sprung ambush stays a surprise.
+AMBUSH_CHANCE = 0.5
 
-#: Real red units per dug-in ambush team. A handful -- a threat to a passing column, cleared
-#: by the auto-fragged two-ship, never a garrison.
+#: When a route IS ambushed, this many teams dig in along it (rolled uniformly). One
+#: contact at the low end; a five-or-six-fight gauntlet down the road at the top.
+MIN_AMBUSHES_PER_ROUTE = 1
+MAX_AMBUSHES_PER_ROUTE = 6
+
+#: Teams are placed along the middle of the road: never within this fraction of either
+#: endpoint, where the control point's own defenses would swamp them.
+ROUTE_END_MARGIN = 0.15
+
+#: Real red units per dug-in ambush team. A handful -- a threat to a passing column,
+#: cleared by a flight of CAS, never a garrison.
 AMBUSH_TEAM_SIZE = 4
 
-#: Aircraft in each auto-fragged escort (BAI) package.
-ESCORT_FLIGHT_SIZE = 2
+#: The dice. Module-level so tests can substitute a deterministic stand-in.
+_RNG = random.Random()
 
 
 def ensure_blue_escort_convoy(game: "Game") -> None:
@@ -133,16 +140,18 @@ def ensure_blue_escort_convoy(game: "Game") -> None:
 
 
 def seed_convoy_ambushes(game: "Game", events: Any) -> None:
-    """Seed a fresh concealed red ambush team on each active blue convoy's route.
+    """Roll each active blue convoy for an ambush and seed the teams along its road.
 
     Despawns last turn's surviving ambush teams first (an ambush is a one-mission event --
-    cleared or run-past, it does not persist), then, for up to :data:`MAX_AMBUSHED_CONVOYS`
-    of the currently-flowing blue convoys, drops a small real red TGO on a mid-route
-    waypoint. The pairing (ambush TGO id + convoy name) is recorded on
-    ``game.convoy_ambush_state`` for the emitter and :func:`plan_convoy_escort`.
+    cleared or run-past, it does not persist), then rolls each currently-flowing blue
+    convoy against :data:`AMBUSH_CHANCE`. An ambushed convoy gets 1..6 real red teams
+    spread along the middle of its route, each a ``map_hidden`` TGO -- invisible on the
+    campaign map and to both planners, so nothing about the coming fight is telegraphed.
+    The pairings (ambush TGO id + convoy name) are recorded on ``game.convoy_ambush_state``
+    for the emitter.
 
     No-op unless ``convoy_ambush`` is on. Guarded: no red control point to give the ambush
-    its allegiance, or no blue convoy with a long-enough road, and nothing is seeded.
+    its allegiance, or no blue convoy with a usable road, and nothing is seeded.
     """
     if not game.settings.convoy_ambush:
         return
@@ -161,84 +170,28 @@ def seed_convoy_ambushes(game: "Game", events: Any) -> None:
     from game.fourteenth.coin import spawn_red_ground_at
 
     ambushes: list[dict[str, Any]] = []
-    for convoy in convoys[:MAX_AMBUSHED_CONVOYS]:
-        point = _ambush_point(convoy)
-        if point is None:
-            continue
-        red_cp = _nearest_cp(red_cps, point)
-        tgo = spawn_red_ground_at(
-            game,
-            red_cp,
-            point,
-            GroupTask.FRONT_LINE,
-            events,
-            max_units=AMBUSH_TEAM_SIZE,
-            concealed=True,
-        )
-        if tgo is None:
-            continue
-        ambushes.append({"tgo_id": str(tgo.id), "convoy": str(convoy.name)})
+    for convoy in convoys:
+        if _RNG.random() >= AMBUSH_CHANCE:
+            continue  # this road is quiet this turn
+        count = _RNG.randint(MIN_AMBUSHES_PER_ROUTE, MAX_AMBUSHES_PER_ROUTE)
+        for point in _ambush_points(convoy, count):
+            red_cp = _nearest_cp(red_cps, point)
+            # events=None: a map-hidden TGO must never be pushed to the client,
+            # and there is nothing for the UI to update.
+            tgo = spawn_red_ground_at(
+                game,
+                red_cp,
+                point,
+                GroupTask.FRONT_LINE,
+                events=None,
+                max_units=AMBUSH_TEAM_SIZE,
+            )
+            if tgo is None:
+                continue
+            tgo.map_hidden = True
+            ambushes.append({"tgo_id": str(tgo.id), "convoy": str(convoy.name)})
 
     state["ambushes"] = ambushes
-
-
-def plan_convoy_escort(
-    coalition: "Coalition", now: "datetime", tracer: "MultiEventTracer"
-) -> None:
-    """Frag one BAI escort package per ambushed convoy onto its ambush team.
-
-    Mirrors ``plan_carrier_strike``: it builds a real package through the engine's own
-    ``PackageFulfiller`` (proper flight plan, waypoints, fuel, TOT) so the AI flies it if
-    the player does not. BAI is the tasking the commander itself uses against a vehicle
-    group (``PlanBai`` / ``PlanConvoyInterdiction``), so a two-ship onto the ambush TGO is
-    "go clear this ground threat" -- exactly the escort's job.
-
-    No-op unless ``convoy_ambush`` is on and this is the BLUE coalition. Idempotent per plan
-    pass: ``_already_planned_against`` skips an ambush that already has its escort package.
-    """
-    game = coalition.game
-    if not coalition.player.is_blue:
-        return
-    if not getattr(game.settings, "convoy_ambush", False):
-        return
-    state = getattr(game, "convoy_ambush_state", None)
-    if not isinstance(state, dict):
-        return
-
-    from game.ato.flighttype import FlightType
-    from game.commander.missionproposals import ProposedFlight, ProposedMission
-    from game.commander.packagefulfiller import PackageFulfiller
-    from game.fourteenth.coin import _tgo_by_id
-    from game.fourteenth.phases import roe_blocks_target
-
-    fulfiller = PackageFulfiller(
-        coalition, game.theater, game.db.flights, game.settings
-    )
-    planned = 0
-    for record in state.get("ambushes", []):
-        if planned >= MAX_AMBUSHED_CONVOYS:
-            break
-        tgo = _tgo_by_id(game, record.get("tgo_id"))
-        if tgo is None:
-            continue
-        if not any(unit.alive for unit in tgo.units):
-            continue
-        if roe_blocks_target(game, tgo):
-            continue
-        if _already_planned_against(coalition, tgo):
-            continue
-        flights = [ProposedFlight(FlightType.BAI, ESCORT_FLIGHT_SIZE)]
-        with tracer.trace("Blue convoy escort"):
-            package = fulfiller.plan_mission(
-                ProposedMission(tgo, flights, asap=False),
-                0,  # purchase_multiplier: never buy jets for the escort, use what's home
-                now,
-                tracer,
-            )
-        if package is None:
-            continue
-        coalition.ato.add_package(package)
-        planned += 1
 
 
 # --------------------------------------------------------------------------------------
@@ -267,34 +220,47 @@ def _despawn_prior_ambushes(game: "Game", state: dict[str, Any], events: Any) ->
     state["ambushes"] = []
 
 
-def _ambush_point(convoy: Any) -> Any:
-    """A mid-route waypoint on the convoy's road, or None if the road is too short to hold
-    an ambush between the origin and the destination.
+def _ambush_points(convoy: Any, count: int) -> list[Any]:
+    """Up to *count* dig-in points spread along the middle of the convoy's road.
 
-    The route from ``convoy_route_to`` includes both control-point endpoints; the ambush
-    digs in on a waypoint in the middle so the column drives into it (never on top of either
-    base, where the CP's own defenses would swamp it)."""
+    The route polyline from ``convoy_route_to`` is walked by length; each team gets one
+    stratified-random slot inside the [:data:`ROUTE_END_MARGIN`, 1 - margin] span --
+    evenly spread down the road with jitter, so a six-team roll reads as a gauntlet of
+    separate contacts, never a stack. Interpolates along the road's segments (the
+    §35-standard authored corridors have only a handful of waypoints, far fewer than the
+    teams they can host). Returns [] for a missing/degenerate road."""
     try:
         route = convoy.origin.convoy_route_to(convoy.destination)
     except Exception:  # noqa: BLE001 -- a duck-typed / broken convoy is just skipped
-        return None
-    if not route or len(route) < 3:
-        return None
-    return route[len(route) // 2]
+        return []
+    if not route or len(route) < 2:
+        return []
+
+    # (segment start, segment end, cumulative distance at start, segment length)
+    legs: list[tuple[Any, Any, float, float]] = []
+    total = 0.0
+    for a, b in zip(route, route[1:]):
+        length = a.distance_to_point(b)
+        if length <= 0:
+            continue
+        legs.append((a, b, total, length))
+        total += length
+    if not legs or total <= 0:
+        return []
+
+    points: list[Any] = []
+    span = 1.0 - 2 * ROUTE_END_MARGIN
+    for i in range(count):
+        frac = ROUTE_END_MARGIN + (i + _RNG.random()) * span / count
+        distance = frac * total
+        for a, b, start, length in legs:
+            if distance <= start + length:
+                heading = a.heading_between_point(b)
+                points.append(a.point_from_heading(heading, distance - start))
+                break
+    return points
 
 
 def _nearest_cp(cps: list["ControlPoint"], point: Any) -> "ControlPoint":
     """The control point in *cps* nearest *point* (cps is non-empty by construction)."""
     return min(cps, key=lambda cp: cp.position.distance_to_point(point))
-
-
-def _already_planned_against(coalition: "Coalition", tgo: Any) -> bool:
-    """True if the ATO already holds a BAI package aimed at this ambush TGO."""
-    from game.ato.flighttype import FlightType
-
-    for package in coalition.ato.packages:
-        if package.target is tgo and any(
-            flight.flight_type is FlightType.BAI for flight in package.flights
-        ):
-            return True
-    return False

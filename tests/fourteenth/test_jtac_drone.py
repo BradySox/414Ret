@@ -7,6 +7,7 @@ no existing drone squadron) and the rear-most-airfield pick, monkeypatching the 
 
 from __future__ import annotations
 
+from datetime import date
 from types import SimpleNamespace
 from typing import Any, Optional, cast
 
@@ -67,6 +68,7 @@ def _coalition(
     jtac_unit: Optional[_AC] = None,
     existing_drone: bool = False,
     cps: Optional[list[_CP]] = None,
+    year: int = 2016,
 ) -> Any:
     if jtac_unit is None:
         jtac_unit = _AC(REAPER)
@@ -83,6 +85,7 @@ def _coalition(
         game=SimpleNamespace(
             settings=SimpleNamespace(auto_jtac_drone=setting),
             theater=SimpleNamespace(controlpoints=cps),
+            date=date(year, 1, 1),
         ),
         faction=SimpleNamespace(
             has_jtac=has_jtac, jtac_unit=jtac_unit, name="Testland"
@@ -169,3 +172,14 @@ def test_skips_when_faction_has_no_jtac(monkeypatch: Any) -> None:
     _patch(monkeypatch)
     jd.ensure_jtac_drone_squadron(cast(Any, _coalition(has_jtac=False)))
     assert added == []
+
+
+def test_era_gate_skips_a_pre_drone_campaign(monkeypatch: Any) -> None:
+    # Red Tide is 1988 and its faction carries a lazy default MQ-9 jtac_unit -- the
+    # Reaper (2007) never existed, so the auto-field must skip it. A modern campaign
+    # of the same faction still fields it.
+    _patch(monkeypatch)
+    jd.ensure_jtac_drone_squadron(cast(Any, _coalition(year=1988)))
+    assert added == []
+    jd.ensure_jtac_drone_squadron(cast(Any, _coalition(year=2010)))
+    assert len(added) == 1

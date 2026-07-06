@@ -39,6 +39,17 @@ if TYPE_CHECKING:
 #: auto-field never distorts a campaign's air balance.
 JTAC_DRONE_SQUADRON_SIZE = 2
 
+#: Real-world in-service year of each drone. Many factions carry a lazy default
+#: ``jtac_unit: MQ-9 Reaper`` even in the 1980s/90s, so the auto-field is era-gated:
+#: it never drops a drone that didn't exist yet onto a period campaign (Red Tide is
+#: 1988 -- no Reaper). This is only a *floor* for the AUTO-field; a campaign that
+#: deliberately fields a drone is its own author's call and is never removed here.
+_UAV_SERVICE_YEAR = {
+    "RQ-1A Predator": 1995,
+    "MQ-9 Reaper": 2007,
+    "WingLoong-I": 2014,
+}
+
 
 def ensure_jtac_drone_squadron(coalition: "Coalition") -> None:
     """Auto-field a JTAC drone squadron for *coalition* if it should have one.
@@ -61,6 +72,8 @@ def ensure_jtac_drone_squadron(coalition: "Coalition") -> None:
         return  # a crewed FAC (OV-10, Yak-52, ...) is not auto-fielded here
     if not drone.capable_of(FlightType.TARPS):
         return  # can't self-frag into A/G packages as a recon/JTAC overwatch
+    if game.date.year < _UAV_SERVICE_YEAR.get(drone.dcs_unit_type.id, 0):
+        return  # era gate: the drone didn't exist yet (a 1980s campaign's lazy MQ-9)
 
     air_wing = coalition.air_wing
     for squadron in air_wing.iter_squadrons():

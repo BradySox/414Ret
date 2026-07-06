@@ -280,8 +280,13 @@ blue field farthest from the nearest enemy base that `can_operate` it). The auto
 then frags it forward into A/G packages, where it becomes the JTAC and films the whole time.
 Deliberately conservative: **skips a campaign that already hand-places drones** (e.g. Operation
 Inherent Resolve — untouched), blue-only, and gated by `auto_jtac_drone` (default **ON**) as a
-kill switch for balance-sensitive campaigns. Verified: the gate qualifies real modern factions
-(bluefor_modern / usa_2005 / israel_2017 → MQ-9, drone + TARPS-capable). Tests
+kill switch for balance-sensitive campaigns. **Era-gated** (`_UAV_SERVICE_YEAR`): many factions
+carry a lazy default `jtac_unit: MQ-9` even in the 1980s/90s, so the auto-field never drops a
+drone that didn't exist yet — Red Tide is **1988**, and the Reaper (2007) / Predator (1995) /
+WingLoong (2014) are all skipped there (12 Cold-War factions carry the default MQ-9). The floor
+applies only to the AUTO-field; a campaign that deliberately fields a drone is its author's call.
+Verified: the gate qualifies real modern factions (bluefor_modern / usa_2005 / israel_2017 →
+MQ-9, drone + TARPS-capable) and the era floor skips a 1988 start. Tests
 `tests/fourteenth/test_jtac_drone.py`; checklist G27 — the fielded-and-fragged loop needs a fly.
 
 - Enum + behavior: `game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftbehavior.py`

@@ -38,10 +38,22 @@ class FrozenCombatJs(BaseModel):
                 footprint=None,
             )
         if isinstance(combat, DefendingSam):
+            # Recon fog: an un-scouted (or concealed) SAM engaging an AI-only
+            # flight must not broadcast its exact position to the map -- the
+            # TGO layer is still showing only its uncertainty circle. A combat
+            # involving the player's own flight shows every engaging site
+            # (they'd have it on RWR).
+            from game.theater import Player
+
+            player_involved = combat.flight.client_count > 0
             return FrozenCombatJs(
                 id=combat.id,
                 flight_position=combat.flight.position().latlng(),
-                target_positions=[sam.position.latlng() for sam in combat.air_defenses],
+                target_positions=[
+                    sam.position.latlng()
+                    for sam in combat.air_defenses
+                    if player_involved or sam.known_for(Player.BLUE)
+                ],
                 footprint=None,
             )
         raise NotImplementedError(f"Unhandled FrozenCombat type: {combat.__class__}")

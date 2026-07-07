@@ -236,3 +236,35 @@ def test_spawn_sets_the_concealed_flag() -> None:
         game, cp, point, task=None, events=None, concealed=True  # type: ignore[arg-type]
     )
     assert hidden.concealed is True
+
+
+def test_jitter_seed_is_salted_and_not_recomputable_from_the_public_id() -> None:
+    """The TGO id ships to the client, so an id-only seed made the offset
+    reversible. The seed is now id XOR a per-campaign server-held salt --
+    stable within a campaign, different across campaigns, never the raw id."""
+    import random as _random
+
+    from game.server.tgos.models import _concealment_seed
+
+    tgo = _Tgo(concealed=True)
+    seed_a = _concealment_seed(tgo)
+    assert seed_a == _concealment_seed(tgo)  # stable within the campaign
+    assert seed_a != tgo.id.int  # not the public id alone
+
+    # A different campaign (a different game object) draws a different salt, so
+    # the same TGO id jitters differently there.
+    other = _Tgo(concealed=True)
+    assert other.id == tgo.id
+    seed_b = _concealment_seed(other)
+    assert seed_b != seed_a
+
+    # The salt persists on the game (it must survive save/load so the circle
+    # doesn't wander between sessions).
+    game = tgo.control_point.coalition.game
+    assert isinstance(game.concealment_salt, int)
+
+    # And the jitter itself stays deterministic per campaign.
+    a1 = concealed_uncertainty(tgo)
+    a2 = concealed_uncertainty(tgo)
+    assert a1 is not None and a2 is not None
+    assert (a1[0].x, a1[0].y) == (a2[0].x, a2[0].y)

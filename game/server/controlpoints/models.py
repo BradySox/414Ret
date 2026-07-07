@@ -54,17 +54,24 @@ class ControlPointJs(BaseModel):
         units: list[str] = []
         threat_ranges: list[float] = []
         detection_ranges: list[float] = []
+        from game.theater import Player
+
         for tgo in control_point.ground_objects:
             if not tgo.is_control_point:
                 continue
-            # Show every unit (display_name already tags dead ones with
-            # " [DEAD]"), matching how ordinary naval groups list their losses.
-            units.extend(unit.display_name for unit in tgo.units)
+            # Recon intel-fog applies here exactly as it does to standalone
+            # TGOs (TgoJs.for_tgo): an un-scouted enemy carrier group keeps its
+            # composition, BDA state and threat rings hidden. Friendly groups
+            # (and scouted enemy ones) list every unit with viewer-aware
+            # " [DEAD]" tags, matching ordinary naval groups.
+            if not tgo.known_for(Player.BLUE):
+                continue
+            units.extend(unit.display_name_for(Player.BLUE) for unit in tgo.units)
             for group in tgo.groups:
-                threat = group.max_threat_range().meters
+                threat = group.max_threat_range(Player.BLUE).meters
                 if threat:
                     threat_ranges.append(threat)
-                detection = group.max_detection_range().meters
+                detection = group.max_detection_range(Player.BLUE).meters
                 if detection:
                     detection_ranges.append(detection)
 

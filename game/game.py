@@ -522,6 +522,12 @@ class Game:
         """Initialization for the first turn of the game."""
         from .sim import GameUpdateEvents
 
+        # A new campaign starts with the fog intact: the overview reveal is a
+        # process global and must not carry over from a previous game.
+        from .theater.fogofwar import set_fog_revealed
+
+        set_fog_revealed(False)
+
         # Build the IADS Network
         with logged_duration("Generate IADS Network"):
             self.theater.iads_network.initialize_network(self.theater.ground_objects)

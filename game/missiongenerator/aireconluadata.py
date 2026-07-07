@@ -62,7 +62,7 @@ def populate_ai_recon_lua(
     the player coalition's (BLUE) recon feeds the player's BDA fog-of-war; the AI opponent
     plans on ground truth and needs no recon ledger.
     """
-    flights: list[tuple[str, float, float]] = []
+    flights: list[tuple[str, str, str, float, float]] = []
     for flight in mission_data.flights:
         if not _feeds_ai_recon(flight):
             continue
@@ -74,16 +74,22 @@ def populate_ai_recon_lua(
         position = getattr(target, "position", None)
         if position is None:
             continue
-        flights.append((flight.group_name, position.x, position.y))
+        # Human-readable identity for the coalition BDA cue: two identical
+        # "recon flight confirmed BDA" popups minutes apart are indistinguishable
+        # without naming the flight and where it was looking.
+        label = f"{flight.callsign} ({flight.aircraft_type.display_name})"
+        flights.append((flight.group_name, label, target.name, position.x, position.y))
 
     if not flights:
         return
 
     recon = root.add_item("AIRecon")
     flights_item = recon.add_item("flights")
-    for group_name, x, y in flights:
+    for group_name, label, target_name, x, y in flights:
         record = flights_item.add_item()
         record.add_key_value("group", group_name)
+        record.add_key_value("label", label)
+        record.add_key_value("target", target_name)
         # pydcs Point: x = north, y = east. The Lua maps these onto the DCS world.
         record.add_key_value("x", str(x))
         record.add_key_value("y", str(y))

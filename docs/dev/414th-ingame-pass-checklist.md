@@ -755,6 +755,11 @@ so the two docs don't drift.
   own run with the setting on.
 
 ### G10 — Combat SAR King TACAN beacon + LARS · Combat SAR Phase 4 · ◐ PARTIAL (2026-07-02 flown Trail 2 session `wonderful-chatterjee`: the 2026-06-30 activation fix WORKED — `dcs.log` shows the mission-start miss falling back cleanly ("not found/alive at mission-start; will retry") and then "activated … via birth (TACAN 37Y, LARS menu attached)" when the player boarded the King C-130; zero combatsar errors. Still owed = a wingman actually tuning 37Y to confirm the beacon radiates + an in-mission LARS menu use)
+- **2026-07-06 (Inherent Resolve session `jovial-gates-574c9c`): the OTHER activation path re-verified** —
+  an AI-flown King alive at t=0 activated directly via mission-start ("Combat SAR King - activated
+  'Front line Balad Airbase/Tikrit Combat SAR|2|21|C-130J-30|' via mission-start (TACAN 37Y, LARS menu
+  attached)"), zero errors. Both activation paths (mission-start and birth-on-player-board) have now each
+  passed in a flown session; the tune-37Y + LARS-use items are still the open half of this row.
 - **Regression (2026-06-30, flown session — user: "c130 had no F10 menu for LARS"):** the player-flown
   King's LARS menu, previously cockpit-confirmed 2026-06-27, did **not** appear this session.
   `dcs.log` shows **zero** `Combat SAR King - activated` lines across ~80 minutes and two mission
@@ -1188,7 +1193,24 @@ so the two docs don't drift.
   capture never fires because `advanceCapture` lost track of the multi-group party (all teams reported
   dead while alive).
 
-### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ◐ PARTIAL (dispatch-error fix VERIFIED 2026-07-01 re-fly — 0 errors across 5 dispatches; the commandeer-vs-clone preference itself still unproven)
+### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ◐ PARTIAL (the commandeer-vs-clone PREFERENCE proven 2026-07-06 — but the commandeered helo never flew the pickup: it RTB'd to its SetHomebase and loitered, so the commandeer path's OPSTRANSPORT execution is the open bug)
+- **2026-07-06 flown Inherent Resolve session (`jovial-gates-574c9c`, dcs.log + Tacview trace):** two
+  ejections (CROW Su-25 t≈1096, JELLYFISH M-2000C t≈3009), zero `combatsar:` errors. **The preference
+  finally showed itself:** ejection #1 produced **no clone** (the planned
+  `Front line Balad Airbase/Tikrit Combat SAR|2|20|UH-60A|` was alive and idle → commandeered), and only
+  ejection #2 — with the planned helo now committed — spawned `CombatSAR Rescue 3#001` (which air-spawned
+  at the planned helo's FLOT-station template anchor). That is exactly the designed commandeer-first /
+  clone-on-busy order. **But the commandeered helo never executed the rescue:** it kept its planned
+  racetrack for ~11 min after dispatch, then transited to **Balad** (its `SetHomebase`) and loitered there
+  to file end — distance to its survivor 97→140 km, never closing. Best read of
+  `dispatchAIRescue`: `FLIGHTGROUP:New` over an **airborne, already-routed** group + `AddOpsTransport`
+  doesn't preempt the group's current route — it finishes/abandons the racetrack and goes to the homebase
+  instead of the pickup zone (the fresh-clone path, AICSAR's proven shape, activates into the transport
+  mission directly, which is why clones historically worked). **Next step is a code decision, not a
+  re-fly:** either cancel/clear the commandeered group's current mission-queue before `AddOpsTransport`
+  (MOOSE-risky, needs a fly), or drop the commandeer and always clone (reverses this row's design intent
+  but uses the only proven path). The survivor stand-in rendering as a **2B11 mortar** (the INFANTRY-class
+  pick on OIR) was also caught here and fixed same day (`LuaGenerator.survivor_unit_type`).
 - **Re-fly (2026-07-01, flown Yankee Station session `intelligent-dubinsky` — `dcs.log` + Tacview):** the
   "table index is nil" dispatch error did **not** reproduce — zero `combatsar: AI dispatch error` lines across
   **5** AI rescue dispatches (`CombatSAR Rescue 4/5/9/11/13`, Mi-8s red + CH-53Es blue — the ledger ran
@@ -2701,7 +2723,16 @@ so the two docs don't drift.
   errors (pathing — consider the off-road action or a smaller radius); movement before the grace; a
   `MOBILEMISSILES|: setup error` in dcs.log; sites still moving with the setting off (gate broken).
 
-### S3 — Friendly convoy ambush (a chance, never telegraphed) · §50 · ☐ UNTESTED (built 2026-07-05, REWORKED 2026-07-06 — the ambush is now a per-convoy chance roll seeding 1..6 fully map-hidden teams along the route, the escort auto-frag is DELETED, and a team its convoy never reaches stays silent; the blue convoy top-up, the chance roll + gauntlet placement, the `map_hidden` contract (client/SSE/planner) + every guard are in `tests/fourteenth/test_convoy_ambush.py`, the emit shape/gates in `tests/missiongenerator/test_convoyambushluadata.py`, and the plugin's grace/spring-on-close/silent-without-convoy/dead-team/no-node in `tests/lua/test_convoyambush_runtime.py` — the actual firefight and the spring feel need a mission. **2026-07-05 flown attempt (session `practical-germain`, pre-merge Shattered Dagger COIN save): NOT a pass of the mechanic** — the save predated the preseeds so the feature was correctly gated off (adjudicated from dcs.log + the flown miz + a headless save load: no node, no plugin line, clean no-op) — but it EXPOSED the blue→blue-road prerequisite gap: both COIN campaigns shipped all-red supply graphs, so even a new game could never field the escort convoy. Fixed same day: geo-authored blue rear corridors (ER Kandahar↔Bastion; IR Baghdad↔Balad + Baghdad↔Al-Taquddum) + the `test_preseeded_campaigns_have_a_blue_to_blue_road` CI guard. The S3 fly is still owed, on a NEW post-rework game)
+### S3 — Friendly convoy ambush (a chance, never telegraphed) · §50 · ◐ PARTIAL (2026-07-06 flown Inherent Resolve session `jovial-gates-574c9c`: the whole chain up to the spring VERIFIED — but the spring itself was blocked by the S5 parked-blue-convoy bug)
+- **2026-07-06 flown evidence (dcs.log + miz + Tacview):** `CONVOYAMBUSH|: armed 2 ambush(es)`, and the miz
+  carries the exact pairing — hidden teams `0104 | OKAPI` (4× tt_KORD, 17.7 km up the Baghdad→Balad corridor)
+  and `0105 | WALRUS` (4× tt_DSHK, 46 km up) both keyed to blue `Convoy 003`, a genuine 2-contact gauntlet on
+  the real highway. **The hiding contract held in the flown mission:** both teams sat alive, silent, and
+  never fired for 52 minutes (alarm-green dug-in, nothing telegraphed — the player flew the whole session
+  unaware, which is the design). **The spring never fired because the convoy never drove** (see S5 — blue
+  `Convoy 003` sat parked at its Baghdad spawn all mission, so nothing ever entered the 6 km trigger). The
+  S3 fly re-runs for free once S5's parked-column bug is fixed.
+- **Build/rework history (2026-07-05/06):** the ambush is a per-convoy chance roll seeding 1..6 fully map-hidden teams along the route, the escort auto-frag is DELETED, and a team its convoy never reaches stays silent; the blue convoy top-up, the chance roll + gauntlet placement, the `map_hidden` contract (client/SSE/planner) + every guard are in `tests/fourteenth/test_convoy_ambush.py`, the emit shape/gates in `tests/missiongenerator/test_convoyambushluadata.py`, and the plugin's grace/spring-on-close/silent-without-convoy/dead-team/no-node in `tests/lua/test_convoyambush_runtime.py` — the actual firefight and the spring feel need a mission. **2026-07-05 flown attempt (session `practical-germain`, pre-merge Shattered Dagger COIN save): NOT a pass of the mechanic** — the save predated the preseeds so the feature was correctly gated off (adjudicated from dcs.log + the flown miz + a headless save load: no node, no plugin line, clean no-op) — but it EXPOSED the blue→blue-road prerequisite gap: both COIN campaigns shipped all-red supply graphs, so even a new game could never field the escort convoy. Fixed same day: geo-authored blue rear corridors (ER Kandahar↔Bastion; IR Baghdad↔Balad + Baghdad↔Al-Taquddum) + the `test_preseeded_campaigns_have_a_blue_to_blue_road` CI guard.
 - **What CI cannot exercise:** whether the DCS ground AI ambush actually engages the passing convoy and grinds it down; whether the spring reads as an ambush (fires when the column is close, not at max range); whether a multi-team roll reads as a gauntlet of separate contacts down the road; whether flying to the TIC call and clearing a team actually saves the rest of the column; and whether convoy losses + ambush losses both land in the debrief.
 - **Setup:** any road-bearing campaign (the `ROAD_BEARING_CAMPAIGNS` inventory in `tests/fourteenth/test_convoy_ambush.py` — since the 2026-07-06 standardization both `convoy_ambush` and `ambient_supply_convoys` default ON for a **NEW game**; the flagship four — COIN Enduring/Inherent Resolve, 1968 Yankee Station, Red Tide — additionally preseed the `convoyambush` plugin ON over any saved-off default). Advance a turn; on the F10 map find a friendly convoy moving between two blue bases (it looks like any other convoy — there is deliberately NO ambush marker and NO escort package in the ATO). Fly anything, and decide on the TIC call whether to divert. May take a few turns to catch a hit roll (~50 % per convoy; `dcs.log` "CONVOYAMBUSH|: armed N ambush(es)" > 0 confirms a live one without spoiling positions).
 - **Pass:** the convoy drives its road; NOTHING about the ambush shows anywhere beforehand (no map marker, no uncertainty circle, no ATO package, no F10 mark); when the column closes on a hidden team, it springs (a "TROOPS IN CONTACT" cue + an F10 mark at the fight) and engages; on a multi-team roll the column is hit again further down the road; diverting air onto the mark and killing the team lets the convoy drive on, ignoring the call grinds it down (fewer/no units delivered); the debrief records the dead convoy units (never arrive) AND the dead ambushers (real red ground loss); some turns the road is simply quiet ("armed 0 ambush(es)" / no node).
@@ -2713,7 +2744,23 @@ so the two docs don't drift.
 - **Pass:** radios stay clean while no capture has happened (dormant, `dcs.log` "COMMSJAM|: intel gate armed … dormant until an aircrew capture"); on a capture, an "AIRCREW CAPTURED — assume the comms plan is compromised" cue fires and static bursts begin ~2 min later (the exploitation delay) on the briefed intra-flight/AWACS channels (worse closer to red's C2 belt); with a POW held, the NEXT mission opens with the "COMMS COMPROMISED: enemy interrogation of captured aircrew" cue and jams from the grace; freeing the POW (or the 4-turn clock expiring) returns clean missions; GUARD 243.0, ATC and the JAM BACKUP channel always stay clean; switching to the backup escapes the noise; striking the emitting comms mast/command bunker stops the bursts and (once all emitted nodes are dead) cues "comms jamming has ceased".
 - **Fail signature:** jamming before any capture with the intel gate on (`captureOnly` flag not emitted/read); no jamming ever after a confirmed capture (the `combat_sar_captures` global name/shape drifted between the combatsar and commsjam plugins — check both, and that a CombatSAR node was emitted at all: no blue rescue helo = no capture race); the POW leg opens clean (`pending_pow_recoveries` not read — check `plan_comms_jam`); no static ever plays on a jammed channel (sound file missing from the miz — check `commsjam-noise.wav` landed in `l10n/DEFAULT`, or radioTransmission Hz/modulation wrong); static on GUARD/ATC/the backup (the Python positive-list broken); continuous unbroken noise on every channel at once (duty cycle/rotation broken — check `burstSec`/`intervalSec`/`maxFreqsPerBurst` plugin options); jamming continues after the node is confirmed destroyed (death detection — the static `" object"` suffix or the `dead_events` ledger path); a `COMMSJAM|: setup error` in dcs.log; bursts before the startup grace.
 
-### S5 — Ambient supply convoys: both sides' roads have randomized traffic · §50 · ☐ UNTESTED (built 2026-07-06 with the standardization pass; the randomized both-sides top-up, existing-convoys-count-toward-target, same-road stacking vs spreading, rear→front orientation, COIN irregular kit, and every guard are in `tests/fourteenth/test_ambient_convoys.py` — whether the roads *read* as alive across a few turns needs a play session)
+### S5 — Ambient supply convoys: both sides' roads have randomized traffic · §50 · ✗ REGRESSED (2026-07-06 flown Inherent Resolve session `jovial-gates-574c9c`: red's ambient columns drove their roads, but the BLUE column sat PARKED at its Baghdad spawn for the entire 52-minute mission — the "columns don't drive" fail signature, blue-side)
+- **2026-07-06 flown evidence (Tacview + miz):** red ambient convoys worked — `Convoy 001` (Tikrit, drove
+  21.6 km), `Convoy 002` (Shirqat FOB, drove 13.4 km down the corridor until the player killed it), `Convoy
+  004` (NE belt, drove 18.8 km). **Blue `Convoy 003` — 24 mixed vehicles (MRAPs, Strykers, LAVs, Bradleys,
+  Abrams) — spawned at the Baghdad corridor start (x=-142, y=160) and never moved an inch** (one ACMI
+  position sample at t=0, max movement 0.0 km over 52 min), despite a well-formed On-Road route in the miz
+  (waypoints marching up the corridor at 40 km/h, same shape as the red convoys that drove). Two leads:
+  **(1) the merge** — the ambient top-up rolled ≥3 blue columns onto the same Baghdad→Balad corridor and the
+  transfer system merged them into ONE 24-vehicle column (3×`AMBIENT_CONVOY_UNITS`=24 ✓); a 24-unit mixed
+  tracked/wheeled group line-spawned into unauthored positions (no `convoy_spawns` at Baghdad — the
+  ConvoyGenerator "convoy may experience issues at mission start" path) is exactly the form-up-deadlock
+  shape. **(2) the spawn terrain** — Baghdad's corridor start may leave part of the line off-road/in scenery
+  where the lead can't path. Red's columns were 8–10 light trucks at open-desert FOBs. **Next step:** cap or
+  split same-corridor ambient transfers (distinct-road preference like the §35 `exclude_sources`, or one
+  transfer per corridor per turn) so no mega-column forms, and/or verify the Baghdad route start sits on the
+  highway; then re-fly (which also unblocks S3's spring). NOTE: this also blocked the S3 ambush spring this
+  session — the teams were in place but nothing ever drove into them.
 - **What CI cannot exercise:** whether the columns actually drive their roads in-mission on both sides (the engine's own `ConvoyGenerator` path, but now exercised on ~27 campaigns instead of a handful); whether the turn-to-turn variation (1–3 per side, sometimes two columns on one road) reads as ambient life rather than a scripted parade; and whether red's ambient columns surface naturally as Armed Recon/BAI targets.
 - **Setup:** any road-bearing campaign (`ROAD_BEARING_CAMPAIGNS`), **NEW game**, `ambient_supply_convoys` ON (default). Advance 2–3 turns without flying, checking the map each turn; then fly a mission and find the columns on the F10 map.
 - **Pass:** blue AND red convoys appear on their own roads most turns (counts varying, occasionally two columns sharing a road, occasionally a quiet side); columns drive rear→front; red's columns can be right-clicked/fragged as ordinary Armed Recon/BAI targets and their kills count at debrief; a side with no same-side road (e.g. an island map) simply shows none, with no errors.

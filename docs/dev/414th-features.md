@@ -340,9 +340,13 @@ auto-paired recon birds, or a whole squadron of them) flew the recon path but re
 captures no matter that it survived and overflew — the checklist G19 "capture-side gap." The
 `airecon` plugin closes it without touching the player path:
 - **Emitter** (`game/missiongenerator/aireconluadata.py` `populate_ai_recon_lua`, dispatched from
-  `luagenerator.py`): emits `dcsRetribution.AIRecon = { flights = { {group,x,y}, … } }` for each
-  **AI-flown** (`not flight.client_units`), **player-coalition** (`flight.friendly is Player.BLUE`)
-  **recon-capable** flight + its package target. Recon-capable (`_feeds_ai_recon`) = a **TARPS-tasked**
+  `luagenerator.py`): emits `dcsRetribution.AIRecon = { flights = { {group,label,target,x,y}, … } }` for
+  each **AI-flown** (`not flight.client_units`), **player-coalition** (`flight.friendly is Player.BLUE`)
+  **recon-capable** flight + its package target. `label` (callsign + airframe, e.g. "Chevy 9 (MQ-9
+  Reaper)") and `target` (the package target's name) exist purely for the coalition cue — the 2026-07-06
+  flown session had two identical "recon flight confirmed BDA" popups minutes apart with no way to tell
+  which drone or where, so the cue now reads "TARPS: Chevy 9 (MQ-9 Reaper) confirmed BDA on 23 target(s)
+  at Shirqat." (the plugin falls back to the raw group name / no location for records without the fields). Recon-capable (`_feeds_ai_recon`) = a **TARPS-tasked**
   flight (any airframe — the auto-paired recon bird) **OR a drone** (`UAV_DCS_IDS`) **regardless of its
   tasked mission** — the 414th "**a drone is always filming**" rule: a UAV is a sensor first, so whether
   it is off on a solo recon, riding a strike as the JTAC (§3 drone-JTAC), or working CAS, it still banks
@@ -1986,7 +1990,7 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Planning | `game/commander/tasks/primitive/combatsar.py`, `…/compound/combatsarsupport.py`, `theaterstate.py` (`combat_sar_targets`) |
 | Setting | `game/settings/settings.py` — `auto_combat_sar` |
 | King beacon | `game/missiongenerator/aircraft/flightdata.py` (`CombatSarKingBeacon`, TACAN-only), `flightgroupconfigurator.py` (`register_combat_sar_king`) |
-| Emit data | `game/missiongenerator/luagenerator.py` — `_generate_combat_sar` (rescueHelos / kings / pilotTemplate / enableForAI) |
+| Emit data | `game/missiongenerator/luagenerator.py` — `_generate_combat_sar` (rescueHelos / kings / pilotTemplate / enableForAI). The pilot template uses `survivor_unit_type` — the first faction INFANTRY-class unit whose id names a *person* (soldier/infantry/paratrooper/insurgent), vanilla `Soldier M4` fallback — because the INFANTRY class also carries crew-served weapons and OIR's first pick was the 2B11, rendering every downed pilot as a mortar tube (2026-07-06 flown finding; tests in `tests/missiongenerator/test_combat_sar_sandy_luadata.py`) |
 | Kneeboard | `game/missiongenerator/kneeboard.py` — `CombatSarTaskPage` |
 | Scoring (Lua) | `resources/plugins/base/dcs_retribution.lua` (`combat_sar_rescues` global + `write_state`), `resources/plugins/combatsar/combatsar-config.lua` (CSAR bridge + `OnAfterBoarded`/`OnAfterRescued`) |
 | Scoring (Py) | `game/debriefing.py` (`StateData.combat_sar_rescues`), `game/sim/missionresultsprocessor.py` (`commit_air_losses` spares rescued pilots) |

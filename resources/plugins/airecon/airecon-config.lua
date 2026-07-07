@@ -88,6 +88,11 @@ local function watch(entry)
     if not gname or not tx or not tz then
         return
     end
+    -- Display identity for the coalition cue: the flight's callsign+type and the
+    -- target it photographed. Falls back to the raw group name / a generic area so
+    -- a record emitted by an older generator still reads sanely.
+    local label = entry.label or tostring(gname)
+    local targetName = entry.target
     local done = false
 
     local function tick()
@@ -110,14 +115,22 @@ local function watch(entry)
                 done = true  -- one-shot: the flight has reached (overflown) its target
                 local n = captureAt(tx, tz)
                 if n > 0 then
+                    local where = ""
+                    if targetName and targetName ~= "" then
+                        where = " at " .. tostring(targetName)
+                    end
                     pcall(
                         trigger.action.outTextForCoalition,
                         coalition.side.BLUE,
-                        string.format("TARPS: recon flight confirmed BDA on %d target(s).", n),
+                        string.format(
+                            "TARPS: %s confirmed BDA on %d target(s)%s.",
+                            label, n, where
+                        ),
                         20
                     )
                     env.info("DCSRetribution|AI Recon - '" .. tostring(gname)
-                        .. "' captured " .. n .. " unit(s)")
+                        .. "' captured " .. n .. " unit(s)"
+                        .. (targetName and (" at " .. tostring(targetName)) or ""))
                 end
             end
         end)

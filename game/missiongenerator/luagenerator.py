@@ -4,7 +4,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Type
 
 from dcs import Mission
 from dcs.action import DoScript, DoScriptFile
@@ -29,8 +29,11 @@ from .mobilemissileluadata import populate_mobile_missiles_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
 
 if TYPE_CHECKING:
+    from dcs.unittype import VehicleType
+
     from game import Game
     from game.coalition import Coalition
+    from game.factions.faction import Faction
     from .aircraft.flightdata import FlightData
 
 
@@ -498,6 +501,26 @@ class LuaGenerator:
         # (dynamic AI retasking -- player Sandys stay on voice/SRS coordination).
         node.add_item("sandys").set_data_array([flight.group_name for flight in sandys])
 
+    #: A survivor stand-in must read as a PERSON on the ground. The INFANTRY unit
+    #: class also carries crew-served weapons (mortars, tripod guns) -- on OIR the
+    #: first INFANTRY-class pick was the 2B11, so every downed pilot rendered as a
+    #: mortar tube (caught in the 2026-07-06 flown-session Tacview). Only ids that
+    #: name a human qualify; anything else falls through to the vanilla soldier.
+    _SURVIVOR_ID_WORDS = ("soldier", "infantry", "paratrooper", "insurgent")
+
+    @classmethod
+    def survivor_unit_type(cls, faction: "Faction") -> Type["VehicleType"]:
+        """The unit the Combat SAR runtime clones as a downed pilot on the ground."""
+        for infantry in faction.infantry_with_class(UnitClass.INFANTRY):
+            ident = infantry.dcs_unit_type.id.lower()
+            if any(word in ident for word in cls._SURVIVOR_ID_WORDS):
+                return infantry.dcs_unit_type
+        # Vanilla fallback so the template exists (and looks human) even for a
+        # faction with no rifle infantry.
+        from dcs.vehicles import Infantry
+
+        return Infantry.Soldier_M4
+
     def _generate_combat_sar_pilot_template(
         self, coalition: "Coalition"
     ) -> Optional[str]:
@@ -505,14 +528,7 @@ class LuaGenerator:
         downed pilot for this coalition. Returns its group name, or None if the side
         holds no base. Blue and red get distinct group names so both can coexist."""
         faction = coalition.faction
-        infantry = next(faction.infantry_with_class(UnitClass.INFANTRY), None)
-        if infantry is not None:
-            dcs_unit_type = infantry.dcs_unit_type
-        else:
-            # Vanilla fallback so the template exists even for an infantry-less faction.
-            from dcs.vehicles import Infantry
-
-            dcs_unit_type = Infantry.Soldier_M4
+        dcs_unit_type = self.survivor_unit_type(faction)
 
         anchor = next(
             (

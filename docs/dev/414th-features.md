@@ -3585,6 +3585,16 @@ fuel + properties **per airframe**, so every new flight of that type starts pre-
 - **UI** — `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py`: a row under the fuel slider with
   **Save as default** (captures the selected member's `properties` + `flight.fuel`) and **Clear default**
   (enabled only when a default exists, via `has_defaults_for`). Both confirm with a `QMessageBox`.
+- **Payload-tab layout cleanup (2026-07-06)** — the whole tab was regrouped into labeled sections:
+  a **Flight members** group (member spinner + the two "same for all" checkboxes; the bold AI-loadout
+  warning now only shows while the loadout checkbox is *unchecked*), an **Aircraft settings** group
+  (laser codes + property editor in the scroll area — content now top-aligned, the "pre-configured at
+  mission start" explainer moved to a tooltip — with the fuel slider + this defaults row pinned below),
+  and a labeled **Loadout:** preset row above the custom-loadout editor. `QLoadoutEditor` got its own
+  scroll area for the pylon list with the Save Payload / Create Backup buttons pinned directly beneath
+  it, killing the dead-space gap between the last pylon and the buttons on tall windows. Pure layout —
+  no signal/logic changes; verified by an offscreen headless instantiation across 7/10/11-pylon
+  airframes (member rebind, warning visibility, custom-loadout round-trip).
 - **Display point** — the property widgets already read `member.properties.get(id, default)` (see
   `propertyspinbox.py` / `propertycombobox.py`), so a seeded value shows immediately when the tab opens for
   a new flight — the whole point of the feature.

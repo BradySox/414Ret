@@ -3,11 +3,14 @@ from dataclasses import dataclass
 from shutil import copyfile
 from typing import Dict, Union, Any
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QFrame,
     QGridLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
+    QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QPushButton,
@@ -38,31 +41,45 @@ class QLoadoutEditor(QGroupBox):
         self.setChecked(flight_member.loadout.is_custom)
 
         vbox = QVBoxLayout(self)
-        layout = QGridLayout(self)
 
+        pylon_grid = QGridLayout()
         for i, pylon in enumerate(Pylon.iter_pylons(self.flight.unit_type)):
             label = QLabel(f"<b>{pylon.number}</b>")
             label.setSizePolicy(
                 QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             )
-            layout.addWidget(label, i, 0)
-            layout.addWidget(QPylonEditor(game, flight, flight_member, pylon), i, 1)
+            pylon_grid.addWidget(label, i, 0)
+            pylon_grid.addWidget(QPylonEditor(game, flight, flight_member, pylon), i, 1)
 
-        vbox.addLayout(layout)
+        # The pylon list scrolls on its own so a long list never squeezes the
+        # rest of the tab, and a short one leaves the slack here instead of
+        # opening a gap between the pylons and the buttons below.
+        pylon_content = QWidget()
+        pylon_layout = QVBoxLayout(pylon_content)
+        pylon_layout.setContentsMargins(0, 0, 0, 0)
+        pylon_layout.addLayout(pylon_grid)
+        pylon_layout.addStretch(1)
 
-        layout = QGridLayout(self)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(pylon_content)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        vbox.addWidget(scroll, stretch=1)
+
+        buttons = QHBoxLayout()
         save_btn = QPushButton("Save Payload")
         save_btn.setProperty("style", "btn-danger")
         save_btn.setMaximumWidth(250)
         save_btn.clicked.connect(self._save_payload)
-        layout.addWidget(save_btn, 0, 0)
+        buttons.addWidget(save_btn)
 
         purge_btn = QPushButton("Create Backup")
         purge_btn.setProperty("style", "btn-success")
         purge_btn.setMaximumWidth(250)
         purge_btn.clicked.connect(self._backup_payloads)
-        layout.addWidget(purge_btn, 0, 1)
-        vbox.addLayout(layout)
+        buttons.addWidget(purge_btn)
+        vbox.addLayout(buttons)
 
         self.setLayout(vbox)
 

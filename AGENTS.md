@@ -959,7 +959,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     ("look in the area and find them"), and marching a specific road wasn't that. The right-click frag still
     lands an Armed Recon on the road's enemy end; the flight now area-searches that end. Road-follow
     overrides + `armed_recon_point` + `test_armed_recon_track.py` removed
-    (`game/ato/flightplans/armedrecon.py`).
+    (`game/ato/flightplans/armedrecon.py`). **The search point stands off the target FOB (2026-07-06,
+    flown-test finding):** the fly-over waypoint sat dead-centre on the Shirqat FOB's SA-13/ZU-23 garrison;
+    `Builder._stand_off_search_point` now pulls it back along the target→ingress bearing — the target CP's
+    longest TGO threat ring + 2 NM, floored at 5 NM, capped at the engage-zone radius (the target area stays
+    inside the hunt zone, which centres on this waypoint) and the ingress distance. Standoff tests in
+    `tests/test_armed_recon_planning.py`.
 36. **Airbase harassment (rocket/mortar siege)** — the fifth **Vietnam Ops suite** feature (design note
     `414th-vietnam-airbase-harassment-notes.md`, §F): forward, opposing-occupied airfields draw sporadic
     standoff rocket/mortar fire near the ramp, recreating the near-constant siege of Bien Hoa/Da Nang/the Khe

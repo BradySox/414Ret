@@ -33,16 +33,20 @@ def _flight(
     aircraft_id: str = VIPER,
 ) -> Any:
     target = (
-        SimpleNamespace(position=SimpleNamespace(x=1000.0, y=2000.0))
+        SimpleNamespace(position=SimpleNamespace(x=1000.0, y=2000.0), name="Shirqat")
         if has_target
-        else SimpleNamespace(position=None)
+        else SimpleNamespace(position=None, name="Shirqat")
     )
     return SimpleNamespace(
         flight_type=flight_type,
         group_name=group_name,
+        callsign="Myna11",
         client_units=[] if ai else [object()],  # non-empty = a human is aboard
         friendly=friendly,
-        aircraft_type=SimpleNamespace(dcs_unit_type=SimpleNamespace(id=aircraft_id)),
+        aircraft_type=SimpleNamespace(
+            dcs_unit_type=SimpleNamespace(id=aircraft_id),
+            display_name=aircraft_id,
+        ),
         package=SimpleNamespace(target=target),
     )
 
@@ -59,6 +63,14 @@ def test_ai_blue_tarps_flight_is_emitted() -> None:
     lua = _emit([_flight(FlightType.TARPS, "BLOODHOUND TARPS")])
     assert "AIRecon" in lua
     assert "BLOODHOUND TARPS" in lua
+
+
+def test_emitted_record_carries_a_display_label_and_target_name() -> None:
+    # The coalition BDA cue names the flight and where it looked -- two identical
+    # "recon flight confirmed BDA" popups are otherwise indistinguishable.
+    lua = _emit([_flight(FlightType.TARPS, "BLOODHOUND TARPS", aircraft_id=REAPER)])
+    assert "Myna11 (MQ-9 Reaper)" in lua
+    assert "Shirqat" in lua
 
 
 def test_player_crewed_tarps_flight_is_not_emitted() -> None:

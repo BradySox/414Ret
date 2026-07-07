@@ -137,3 +137,23 @@ def test_red_only_flights_emit_no_combat_sar_at_all() -> None:
     gen._generate_combat_sar(lua_data)
 
     assert lua_data.get_item("CombatSAR") is None
+
+
+def _faction_with_infantry(ids: list[str]) -> Any:
+    units = [SimpleNamespace(dcs_unit_type=SimpleNamespace(id=ident)) for ident in ids]
+    return SimpleNamespace(infantry_with_class=lambda unit_class: iter(units))
+
+
+def test_survivor_template_skips_crew_served_weapons() -> None:
+    # The INFANTRY unit class also carries mortars/tripod guns; on OIR the first
+    # pick was the 2B11, so every downed pilot rendered as a mortar tube (2026-07-06
+    # flown-session Tacview). The survivor must be a unit that reads as a person.
+    faction = _faction_with_infantry(["2B11 mortar", "Soldier M249"])
+    assert LuaGenerator.survivor_unit_type(faction).id == "Soldier M249"
+
+
+def test_survivor_template_falls_back_to_the_vanilla_soldier() -> None:
+    from dcs.vehicles import Infantry
+
+    faction = _faction_with_infantry(["2B11 mortar"])  # no human-shaped infantry
+    assert LuaGenerator.survivor_unit_type(faction) is Infantry.Soldier_M4

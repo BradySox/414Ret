@@ -4176,6 +4176,20 @@ springs stops scheduling.
   `test_batch1_corridor_campaigns_are_in_the_inventory` keeps the tool and the inventory in lockstep),
   so a laydown edit can't silently drop a road; when a new corridor is authored, ADD the campaign to
   the inventory.
+- **A red→red road is the same prerequisite for the red half** — no red road, no red ambient convoys, and
+  no columns for the player to interdict. The **batch-2 pass (2026-07-07, `BATCH2_RED_REAR` in the tool)**
+  authored red rear corridors for the **nine campaigns** whose red side had none: the Aleppo belt
+  (Aleppo↔Kuweires↔Jirah + the M5/Azaz legs) for WRL Aleppo Insurgency and Battle4SyriaNorth (which also
+  gets its Turkish FOB line E91/O-52 chain), the Iranian mainland highways (Bandar Abbas↔Kerman via
+  Sirjan, Bandar Abbas↔Shiraz via Lar/Jahrom, Shiraz↔Bushehr via Kazerun) for both Noisy Crickets,
+  Cyprus's A1/A2/A5 motorways for Aegean Aegis, the Calais N43/E40 for Operation Dynamo (the tool's first
+  TheChannel terrain), the **Enduring Resolve ratline reused verbatim** for Shattered Dagger (same
+  laydown — ER is its fork; minus the blue Kandahar↔Bastion entry batch 1 already gave it), Saipan's
+  Middle Road + Tinian's Broadway for Velvet Thunder (island-internal — so the §35 "no red trail" note
+  there softens: red convoys now exist per island), and the Guam road — red-owned there — for Pacific
+  Repartee. All headless-verified to bind; guarded by `test_batch2_campaign_keeps_its_red_road`
+  (parametrized straight off the tool table). After both batches, **every campaign fields at least one
+  side's convoys** except the few with no two same-side land bases anywhere.
 - **Ambush is BLUE-only; ambience is symmetric.** The ambush teams target the player's convoys (red's
   ambient columns are instead the player's Armed Recon/BAI targets — §35 from the other side). A symmetric
   red-convoy ambush (AI escorting its own columns against player-hunts) stays deferred.

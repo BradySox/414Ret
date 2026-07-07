@@ -104,3 +104,17 @@ squadrons:
       aircraft:
         - OH-58D(R) Kiowa Warrior
       size: 4
+
+supply_routes:
+  # #50 red rear corridor (batch 2)
+  # Akrotiri -> Larnaca  (the A1/A5 motorway via Limassol and Kofinou)
+  - waypoints:
+      - [-35779, -268906]
+      - [-26161, -262599]
+      - [-12407, -230526]
+      - [-7675, -208844]
+  # Larnaca -> Ercan  (the A2 toward Nicosia, then north-east across the Mesaoria plain)
+  - waypoints:
+      - [-7675, -208844]
+      - [13090, -228176]
+      - [23584, -217287]

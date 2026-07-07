@@ -934,10 +934,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     logistics support** — the Ho Chi Minh Trail's actual historical character (matériel from China/the USSR,
     not local production). `MAX_CONVOY_UNITS` raised 4→10 accordingly. **Engine-verified**: Yankee Station and
     Khe Sanh each spawn 2 convoys of 10 units on 2 distinct roads at turn 1 (20 vehicles total, vs. the old
-    single 3-vehicle column). `operation_velvet_thunder.yaml` has
-    **no red→red `supply_routes`** (its red bases are spread across roadless islands), so the toggle is a
-    documented no-op there regardless of the seeding rework — flagged, not fixed (the §50 batch-1 pass later
-    gave it a BLUE Guam road, which doesn't change red's). So interdicting the trail now
+    single 3-vehicle column). `operation_velvet_thunder.yaml` shipped with
+    **no red→red `supply_routes`** (its red bases are spread across islands), so the toggle was a documented
+    no-op there — until the §50 batch passes gave it a BLUE Guam road (batch 1) and red **island-internal**
+    roads (batch 2: Saipan's Middle Road + Tinian's Broadway), so red convoys now exist to interdict, per
+    island. So interdicting the trail now
     denies the enemy real reinforcements (kill it and they never reach the line; let it through and they do),
     and the kill is recorded natively. Fully guarded (no front / no road corridor / budget full / no unit pool
     ⇒ no-op; the engine's organic convoys still serve). **No `vietnamops` plugin runtime** any longer — the
@@ -1369,7 +1370,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     deferred — their only corridor would cross the red heartland). The full set is CI-locked as
     `ROAD_BEARING_CAMPAIGNS` in `test_road_bearing_campaign_keeps_its_blue_road`, which loads each theater
     so a laydown edit can't silently drop a road (+ `test_batch1_corridor_campaigns_are_in_the_inventory`
-    keeps the tool and the inventory in lockstep). Tests `tests/fourteenth/test_convoy_ambush.py` +
+    keeps the tool and the inventory in lockstep). **Batch 2 (2026-07-07) did the same for RED**: the nine
+    campaigns with no red→red road (so red's ambient convoys — the player's interdiction targets — silently
+    never existed) got real-road red rear corridors via `BATCH2_RED_REAR` (the Aleppo belt + the Turkish
+    FOB line on the two WRL Syria campaigns, the Iranian Bandar-Abbas/Kerman/Shiraz/Bushehr mainland
+    highways for both Noisy Crickets, Cyprus's A1/A2/A5 for Aegean Aegis, the Calais N43/E40 for Dynamo on
+    TheChannel, the ER ratline reused verbatim for Shattered Dagger, Saipan's Middle Road + Tinian's
+    Broadway for Velvet Thunder, and the Guam road — red-owned there — for Pacific Repartee); guarded by
+    `test_batch2_campaign_keeps_its_red_road`. Every campaign now fields at least one side's convoys except
+    the handful with no two same-side land bases at all. Tests `tests/fourteenth/test_convoy_ambush.py` +
     `tests/fourteenth/test_ambient_convoys.py` + `tests/missiongenerator/test_convoyambushluadata.py` +
     `tests/lua/test_convoyambush_runtime.py`; features doc §50, checklist S3 + S5 — needs an in-game pass.
 51. **Enemy comms jamming (IADS comms nodes)** — the IADS comms nodes, given a voice: with

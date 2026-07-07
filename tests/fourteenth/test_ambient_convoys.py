@@ -13,6 +13,8 @@ from datetime import datetime
 from types import SimpleNamespace
 from typing import Any
 
+import pytest
+
 import game.fourteenth.ambient_convoys as ambient_module
 import game.fourteenth.vietnam_convoy as vietnam_convoy_module
 from game.fourteenth.ambient_convoys import (
@@ -276,3 +278,44 @@ def test_no_war_to_supply_means_no_corridors() -> None:
     _road(blue_rear, blue_fwd)
     game = _game(on=True, cps=[blue_rear, blue_fwd], fronts=[])
     assert _same_side_corridors(game, game.blue) == []
+
+
+# ---- batch-2 red corridors: the authored campaigns must keep their red road ----------
+#
+# The §50 batch-2 pass (2026-07-07) authored red->red rear corridors for the nine
+# campaigns whose red side had no road at all -- without one, red's ambient convoys
+# (and the player's §35-style interdiction targets) silently never exist. The tool
+# table (tools/supply_route_geo.py BATCH2_RED_REAR) is the source of truth; loading
+# each theater here means a laydown edit can't silently drop a red road.
+
+
+def _batch2_stems() -> list[str]:
+    from tools.supply_route_geo import BATCH2_RED_REAR
+
+    return sorted(BATCH2_RED_REAR)
+
+
+@pytest.mark.parametrize("stem", _batch2_stems())
+def test_batch2_campaign_keeps_its_red_road(stem: str, tmp_path: Any) -> None:
+    from pathlib import Path
+
+    from game import persistency
+    from game.campaignloader.campaign import Campaign
+
+    persistency.setup(str(tmp_path), False, 0)
+    campaign = Campaign.from_file(Path("resources/campaigns") / f"{stem}.yaml")
+    theater = campaign.load_theater(campaign.advanced_iads)
+    red_roads = set()
+    for cp in theater.controlpoints:
+        if not cp.starting_coalition.is_red:
+            continue
+        for other in cp.convoy_routes.keys():
+            if other.starting_coalition.is_red:
+                red_roads.add(tuple(sorted((cp.name, other.name))))
+    assert len(red_roads) >= 1, (
+        f"{stem} is in the §50 batch-2 red-corridor set but no longer binds a "
+        "red->red supply road -- red's ambient convoys (and the interdiction "
+        "targets they provide) will silently never exist there. Restore the red "
+        "corridor (tools/supply_route_geo.py BATCH2_RED_REAR) or remove the "
+        "campaign from that table."
+    )

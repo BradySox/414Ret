@@ -183,3 +183,19 @@ supply_routes:
       - [200891, 34011]
       - [165408, 32081]
       - [147687, 39419]
+  # #50 red rear corridor (batch 2)
+  # Aleppo -> Kuweires  (the Dayr Hafir road east out of the city)
+  - waypoints:
+      - [125577, 123125]
+      - [128561, 138974]
+      - [125811, 155254]
+  # Kuweires -> Jirah  (the Aleppo-Raqqa road south-east toward Maskanah)
+  - waypoints:
+      - [125811, 155254]
+      - [121444, 170352]
+      - [115350, 187069]
+  # Aleppo -> FOB X-RAY  (the M5 south toward Saraqib)
+  - waypoints:
+      - [125577, 123125]
+      - [116758, 116267]
+      - [108419, 110193]

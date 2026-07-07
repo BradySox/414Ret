@@ -250,3 +250,15 @@ supply_routes:
       - [2948, 4516]
       - [5666, 10062]
       - [10575, 14549]
+  # #50 red rear corridor (batch 2)
+  # Saipan Intl -> FOB KITE  (Middle Road / Route 30 north through Garapan and Tanapag)
+  - waypoints:
+      - [180035, 101856]
+      - [187903, 100921]
+      - [193410, 105250]
+      - [198363, 110807]
+  # Tinian Intl -> FOB BOAT  (Broadway north up the island)
+  - waypoints:
+      - [166860, 89957]
+      - [170261, 91141]
+      - [172799, 91771]

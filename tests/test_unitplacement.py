@@ -155,7 +155,7 @@ def test_discarded_pending_placement_refunds_its_cost() -> None:
     game.pending_unit_placements = [pending]
     # The CP is lost before the placement materialises.
     game.theater.control_points_for = lambda player: []
-    process_pending_placements(game, coalition)
+    process_pending_placements(game, coalition)  # type: ignore[arg-type]
     assert game.pending_unit_placements == []  # discarded
     assert coalition.budget == 125.0  # refunded
 
@@ -172,5 +172,5 @@ def test_free_pending_placement_is_not_refunded() -> None:
     )
     game.pending_unit_placements = [pending]
     game.theater.control_points_for = lambda player: []
-    process_pending_placements(game, coalition)
+    process_pending_placements(game, coalition)  # type: ignore[arg-type]
     assert coalition.budget == 100.0  # nothing charged, nothing refunded

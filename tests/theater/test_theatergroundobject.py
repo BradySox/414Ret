@@ -423,7 +423,7 @@ def test_faction_color_follows_the_owning_player() -> None:
     """captured is the Player enum -- truthiness made every TGO read BLUE."""
     from game.theater.theatergroundobject import TheaterGroundObject
 
-    fget = TheaterGroundObject.faction_color.fget
+    fget = TheaterGroundObject.faction_color.fget  # type: ignore[attr-defined]
     assert fget is not None
     red = SimpleNamespace(control_point=SimpleNamespace(captured=Player.RED))
     blue = SimpleNamespace(control_point=SimpleNamespace(captured=Player.BLUE))

@@ -158,6 +158,10 @@ class Game:
         # convoy}]}), seeded at finish_turn, read by the emitter + the escort auto-frag.
         # Plain primitives; populated lazily by game.fourteenth.convoy_ambush when on.
         self.convoy_ambush_state: dict[str, Any] = {}
+        # Per-campaign secret salt for the §3 concealment jitter seed (id XOR salt),
+        # so the jittered "suspected activity" centre is deterministic but not
+        # recomputable from the public TGO id. Lazily set on first use; persisted.
+        self.concealment_salt: Optional[int] = None
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -241,6 +245,7 @@ class Game:
         state.setdefault("will_escalation_charged_phases", set())
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
+        state.setdefault("concealment_salt", None)
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.

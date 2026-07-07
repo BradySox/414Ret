@@ -73,11 +73,11 @@ def advance_hvt(game: "Game", events: Any = None) -> None:
     ):
         # Mid-campaign toggle-off: an active HVT convoy must not sit live (and
         # concealed) forever with nothing left to resolve it.
-        state = getattr(game, "coin_state", None)
-        hvt = state.get("hvt") if isinstance(state, dict) else None
-        if isinstance(hvt, dict) and hvt.get("active"):
-            _despawn(game, _tgo_by_id(game, hvt["active"].get("tgo_id")), events)
-            hvt["active"] = None
+        off_state = getattr(game, "coin_state", None)
+        off_hvt = off_state.get("hvt") if isinstance(off_state, dict) else None
+        if isinstance(off_hvt, dict) and off_hvt.get("active"):
+            _despawn(game, _tgo_by_id(game, off_hvt["active"].get("tgo_id")), events)
+            off_hvt["active"] = None
         return
     if getattr(game, "turn", 0) < 1:
         return

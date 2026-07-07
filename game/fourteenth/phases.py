@@ -56,6 +56,7 @@ from shapely.geometry.base import BaseGeometry
 if TYPE_CHECKING:
     from game import Game
     from game.debriefing import Debriefing
+    from game.theater import Player
 
 # --- S3.2 thresholds (v1; refined by the 6-campaign pilot) --------------------------
 
@@ -939,6 +940,27 @@ def _target_class(target: object) -> Optional[str]:
     return None
 
 
+def _target_owner(target: object) -> Optional["Player"]:
+    """Which side owns a mission target, or None for ownerless targets.
+
+    Control points own themselves; ground objects belong to their parent CP.
+    Front lines, convoys and other ownerless targets return None.
+    """
+    from game.theater import ControlPoint
+    from game.theater.theatergroundobject import TheaterGroundObject
+
+    try:
+        if isinstance(target, ControlPoint):
+            return target.captured
+        if isinstance(target, TheaterGroundObject):
+            return target.control_point.captured
+    except AttributeError:
+        # A partially-built target (or a test double) with no resolvable owner:
+        # treat as unowned and let the class/zone gates decide.
+        return None
+    return None
+
+
 @dataclass(frozen=True)
 class ResolvedZone:
     """A phase zone resolved to concrete theater geometry (metres, x/y floats).
@@ -1137,11 +1159,15 @@ def roe_blocks_target(game: "Game", target: object) -> bool:
     """True when the active phase's ROE forbids offensive tasking at ``target``.
 
     The AI planner gate (read in ``PackagePlanningTask.fulfill_mission`` next to
-    the Vietnam ``tasking_whitelist``): a locked target class is blocked anywhere;
-    any target inside an active restricted zone is blocked regardless of class
-    (sanctuary airfields fall out of this). BLUE-only by the caller (the ROE is
-    Washington's, not Hanoi's). The *player* is never hard-blocked -- their
-    enforcement is the will penalty (:func:`count_roe_violations`).
+    the Vietnam ``tasking_whitelist``): an *enemy* target of a locked class is
+    blocked anywhere; an enemy CP/ground object inside an active restricted zone
+    is blocked regardless of class (sanctuary airfields fall out of this).
+    Friendly-owned targets are never blocked (defensive/support tasking --
+    BARCAP, AEW&C, tankers -- targets friendly CPs), and ownerless targets
+    (front lines, convoys) are never zone-gated: TIC and the trail fight stay
+    legal. BLUE-only by the caller (the ROE is Washington's, not Hanoi's). The
+    *player* is never hard-blocked -- their enforcement is the will penalty
+    (:func:`count_roe_violations`).
     """
     return roe_restriction_reason(game, target) is not None
 
@@ -1159,9 +1185,24 @@ def roe_restriction_reason(game: "Game", target: object) -> Optional[str]:
     phase = active_phase(game)
     if phase is None:
         return None
+    # The ROE restricts strikes INTO enemy ground; a friendly-owned target is
+    # never restricted. Without this, the authored "airfield" lock (Rolling
+    # Thunder / Bombing Halt) scrubbed BLUE's own BARCAP/AEW&C/tanker packages
+    # (their targets are friendly CPs), and a permanent positive-control box
+    # kept blocking a base after BLUE captured it.
+    from game.theater import Player
+
+    owner = _target_owner(target)
+    if owner is Player.BLUE:
+        return None
     target_class = _target_class(target)
     if target_class is not None and target_class in phase.locked_target_classes:
         return f"{target_class} targets are locked this phase"
+    # Only class-carrying targets (CPs / ground objects) are zone-gated: front
+    # lines and convoys are never weapons-hold (the documented TIC/trail-convoy
+    # exemption), matching the free-fire inversion below.
+    if target_class is None:
+        return None
     position = getattr(target, "position", None)
     if position is None:
         return None

@@ -340,7 +340,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
 
     @property
     def faction_color(self) -> str:
-        return "BLUE" if self.control_point.captured else "RED"
+        # captured is the Player enum (every member is truthy), not a bool.
+        return "BLUE" if self.control_point.captured.is_blue else "RED"
 
     def is_friendly(self, to_player: Player) -> bool:
         if self.control_point.captured.is_neutral:

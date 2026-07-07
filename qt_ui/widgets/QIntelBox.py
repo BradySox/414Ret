@@ -26,7 +26,10 @@ class QIntelBox(QGroupBox):
 
         summary = QGridLayout()
         summary.setContentsMargins(5, 5, 5, 5)
+        # A gutter column separating the two label/value column groups below.
+        summary.setColumnMinimumWidth(2, 12)
 
+        # Left column group: the force & economy balance (upstream rows).
         air_superiority = QLabel("Air superiority:")
         summary.addWidget(air_superiority, 0, 0)
         self.air_strength = QLabel()
@@ -42,18 +45,21 @@ class QIntelBox(QGroupBox):
         self.economic_strength = QLabel()
         summary.addWidget(self.economic_strength, 2, 1)
 
-        # Campaign phase (§40) + political will (Vietnam campaign layer). Both
-        # rows hide entirely when their feature is off, so a stock campaign's
-        # intel box is unchanged.
+        # Right column group: campaign phase (§40) + political will (Vietnam /
+        # COIN campaign layer). Placed *beside* the force rows, not stacked
+        # beneath them, so the box stays three rows tall and fits the 70px
+        # top-panel cap even when both are active -- five stacked rows overflowed
+        # the cap and painted over each other. Each row still hides entirely
+        # when its feature is off, so a stock campaign's box is unchanged.
         self._phase_title = QLabel("Campaign phase:")
-        summary.addWidget(self._phase_title, 3, 0)
+        summary.addWidget(self._phase_title, 0, 3)
         self.campaign_phase = QLabel()
-        summary.addWidget(self.campaign_phase, 3, 1)
+        summary.addWidget(self.campaign_phase, 0, 4)
 
         self._will_title = QLabel("Political will:")
-        summary.addWidget(self._will_title, 4, 0)
+        summary.addWidget(self._will_title, 1, 3)
         self.political_will = QLabel()
-        summary.addWidget(self.political_will, 4, 1)
+        summary.addWidget(self.political_will, 1, 4)
 
         self.details = QPushButton()
         self.details.setMinimumHeight(50)

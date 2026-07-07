@@ -158,3 +158,29 @@ def test_scar_excludes_strategic_bombers(
     # Excluding SCAR is not excluding CAS -- the bombers still drop on called
     # coordinates; they just don't run the find-and-control hunt.
     assert aircraft.capable_of(FlightType.CAS)
+
+
+@pytest.mark.parametrize(
+    ("variant_id", "armed_recon_capable"),
+    [
+        # Armed Recon is the roam-and-self-acquire (find-then-attack) role -- the same
+        # self-acquisition the SCAR exclusion keeps strategic bombers out of. A bomber
+        # holds a CAS/BAI priority only for dropping on *called* coordinates, so it must
+        # not inherit Armed Recon: neither auto-assigned nor manually selectable. Attack
+        # jets keep it (derived from CAS/BAI). See AircraftType.__post_init__.
+        ("A-10C Thunderbolt II (Suite 7)", True),
+        ("F-16CM Fighting Falcon (Block 50)", True),
+        ("F/A-18C Hornet (Lot 20)", True),
+        ("B-1B Lancer", False),
+        ("B-52H Stratofortress", False),
+        ("Tu-160 Blackjack", False),
+    ],
+)
+def test_armed_recon_excludes_strategic_bombers(
+    variant_id: str, armed_recon_capable: bool, tmp_path: Path
+) -> None:
+    aircraft = _aircraft(tmp_path, variant_id)
+    assert aircraft.capable_of(FlightType.ARMED_RECON) is armed_recon_capable
+    # Removing the self-hunt lane leaves the bomber's called-coordinate lanes intact.
+    if not armed_recon_capable:
+        assert aircraft.capable_of(FlightType.STRIKE)

@@ -18,7 +18,7 @@ from dcs.unittype import FlyingType
 from dcs.weapons_data import weapon_ids
 
 from game.ato import FlightType
-from game.data.units import UnitClass
+from game.data.units import HEAVY_BOMBER_DCS_IDS, UnitClass
 from game.dcs.lasercodeconfig import LaserCodeConfig
 from game.dcs.unittype import UnitType
 from game.persistency import user_custom_weapon_injections_dir
@@ -327,7 +327,14 @@ class AircraftType(UnitType[Type[FlyingType]]):
             ):
                 enrich[FlightType.SEAD_SWEEP] = value
 
-        if FlightType.ARMED_RECON not in self.task_priorities:
+        # Strategic bombers (B-1/B-52/Tu-160/...) hold a CAS/BAI priority only for
+        # dropping on *called* coordinates (see the SCAR note below). They must not
+        # inherit the roam-and-self-acquire Armed Recon role -- neither auto-assigned
+        # nor manually selectable -- so skip the CAS->Armed Recon derivation for them
+        # (and strip any value get_task_priorities() already derived, below). They never
+        # author Armed Recon in `tasks:`, so dropping it is safe. Mirrors the SCAR guard.
+        is_heavy_bomber = self.dcs_unit_type.id in HEAVY_BOMBER_DCS_IDS
+        if FlightType.ARMED_RECON not in self.task_priorities and not is_heavy_bomber:
             if (value := self.task_priorities.get(FlightType.CAS)) or (
                 value := self.task_priorities.get(FlightType.BAI)
             ):
@@ -356,6 +363,12 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 enrich[FlightType.RECOVERY] = value
 
         self.task_priorities.update(enrich)
+
+        if is_heavy_bomber:
+            # get_task_priorities() runs before this hook and may have already derived
+            # Armed Recon from the bomber's CAS/BAI priority; strip it so a strategic
+            # bomber carries no Armed Recon capability at all.
+            self.task_priorities.pop(FlightType.ARMED_RECON, None)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, AircraftType) and self.variant_id == other.variant_id

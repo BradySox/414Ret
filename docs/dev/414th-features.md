@@ -3595,6 +3595,14 @@ fuel + properties **per airframe**, so every new flight of that type starts pre-
   it, killing the dead-space gap between the last pylon and the buttons on tall windows. Pure layout —
   no signal/logic changes; verified by an offscreen headless instantiation across 7/10/11-pylon
   airframes (member rebind, warning visibility, custom-loadout round-trip).
+  **Follow-up (same day):** the *Aircraft settings* scroll now sizes to its content
+  (`AdjustToContents` + `Maximum` size policy, capped at 400px, no layout stretch) instead of taking a
+  fixed share of the tab. On an **AI-crewed** flight every F-4-style aircraft property is `player_only`,
+  so the property editor renders empty and the box was ballooning into a large blank gap between the
+  laser rows and the fuel slider; it's now compact (scroll `sizeHint` ~66px, just the two laser rows).
+  A **player** F-4E still grows to fit its 23 controls, bounded at the 400px cap so the full list scrolls
+  rather than pushing the loadout off the bottom (verified headlessly: AI F-4E box h=66 vs player F-4E
+  h=288, both under the cap; other airframes scale with their property count).
 - **Display point** — the property widgets already read `member.properties.get(id, default)` (see
   `propertyspinbox.py` / `propertycombobox.py`), so a seeded value shows immediately when the tab opens for
   a new flight — the whole point of the feature.

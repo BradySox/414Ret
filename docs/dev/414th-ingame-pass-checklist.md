@@ -2622,8 +2622,11 @@ so the two docs don't drift.
   *Loadout:* row + the pylon editor. The property list should no longer cut off mid-row on a normal window,
   and there should be no dead gap between the last pylon and the Save Payload / Create Backup buttons (the
   pylon list scrolls instead). The bold AI-loadout warning appears only while "Use same loadout for all
-  flight members" is unchecked. Offscreen-instantiation smoke passed headlessly; the visual proportions are
-  the in-app question.
+  flight members" is unchecked. On an **AI-crewed** flight (e.g. an AI F-4E escort) the *Aircraft settings*
+  box should be **compact** — its aircraft-property list is player-only so it renders empty, and the box no
+  longer leaves a big blank gap between the laser rows and the fuel slider (2026-07-06 follow-up fix).
+  Offscreen-instantiation smoke passed headlessly (AI F-4E settings-box h=66 vs player F-4E h=288); the
+  visual proportions are the in-app question.
 - **Pass:** the new flight's Payload tab already shows the saved fuel + property values (no re-entry); **Clear
   default** is enabled once a default exists and, after clicking it, a further new flight of that airframe is
   back to stock values; the store lives at `Saved Games\Retribution\flight_defaults.json` and survives an app

@@ -527,7 +527,9 @@ def test_despawn_emits_the_tgo_id_not_the_object() -> None:
 
     tgo_id = uuid.uuid4()
     tgo = SimpleNamespace(id=tgo_id, control_point=None)
-    game = SimpleNamespace(db=SimpleNamespace(tgos=SimpleNamespace(remove=lambda i: None)))
+    game = SimpleNamespace(
+        db=SimpleNamespace(tgos=SimpleNamespace(remove=lambda i: None))
+    )
     events = GameUpdateEvents()
     _despawn(game, tgo, events)  # type: ignore[arg-type]
     assert events.deleted_tgos == {tgo_id}

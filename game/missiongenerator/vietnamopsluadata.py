@@ -97,6 +97,7 @@ def _harassable_cp(cp: Any) -> bool:
         return True
     return cp.cptype is ControlPointType.FOB and getattr(cp, "has_helipads", False)
 
+
 #: How near a front line a field must be to count as "forward / contested" and so eligible
 #: for harassment. A field deeper in the rear than this is a safe area and is never shelled
 #: (design rule 4: forward-only by construction, like NGFS's gun-range gate). ~200 km.

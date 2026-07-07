@@ -115,8 +115,6 @@ def test_ground_only_fob_is_not_shelled_but_an_airbase_is() -> None:
     """Eligibility follows the ramp: a FOB with no helipads stays excluded; a
     real airfield qualifies regardless (the FARP claim is the helipad case)."""
     ground_fob = _CP("Trench", _Point(20_000.0, 0.0), has_helipads=False)
-    airbase = _CP(
-        "DaNang", _Point(25_000.0, 0.0), cptype=ControlPointType.AIRBASE
-    )
+    airbase = _CP("DaNang", _Point(25_000.0, 0.0), cptype=ControlPointType.AIRBASE)
     game = _game(_settings(artillery=True), [ground_fob, airbase])
     assert _harassed_names(game) == ["DaNang"]

@@ -42,7 +42,7 @@ recorded natively. See §35.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from game.ato import FlightType
 from game.data.units import HEAVY_BOMBER_DCS_IDS, UnitClass
@@ -74,14 +74,28 @@ NAVAL_GUN_SHIP_CLASSES = frozenset(
 )
 
 #: Control-point types that host aircraft and so can be harassed on the ramp. Carriers /
-#: LHAs (their own ControlPointType) and FOBs (ground-only, no parking) are excluded -- the
+#: LHAs (their own ControlPointType) and ground-only FOBs (no parking) are excluded -- the
 #: siege modelled here is 122 mm rockets / 82 mm mortars walking a land field's ramp.
+#: NOTE: nothing in the engine constructs ControlPointType.FARP -- real FARPs load as
+#: FOB-type CPs *with helipads*, so eligibility is decided by :func:`_harassable_cp`.
 HARASSABLE_CP_TYPES = frozenset(
     {
         ControlPointType.AIRBASE,
         ControlPointType.FARP,
     }
 )
+
+
+def _harassable_cp(cp: Any) -> bool:
+    """Whether a control point hosts a ramp worth shelling.
+
+    Airfields always; a FOB-type CP only when it actually parks aircraft (its
+    helipads make it a FARP -- e.g. Red Tide's Fulda FARP). A ground-only FOB
+    stays excluded per the design rule above.
+    """
+    if cp.cptype in HARASSABLE_CP_TYPES:
+        return True
+    return cp.cptype is ControlPointType.FOB and getattr(cp, "has_helipads", False)
 
 #: How near a front line a field must be to count as "forward / contested" and so eligible
 #: for harassment. A field deeper in the rear than this is a safe area and is never shelled
@@ -298,7 +312,7 @@ def _populate_airbase_harassment(
 
     fields: list[tuple[str, float, float, str]] = []
     for cp in game.theater.controlpoints:
-        if cp.cptype not in HARASSABLE_CP_TYPES:
+        if not _harassable_cp(cp):
             continue
         if cp.captured.is_neutral:
             continue

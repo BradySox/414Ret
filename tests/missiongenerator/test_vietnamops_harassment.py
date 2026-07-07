@@ -27,12 +27,24 @@ class _Point:
 
 
 class _CP:
-    """Hashable fake (the exclusion walk collects CPs into a set)."""
+    """Hashable fake (the exclusion walk collects CPs into a set).
 
-    def __init__(self, name: str, pos: _Point, blue: bool = True) -> None:
+    Modelled on the engine's reality: nothing constructs ControlPointType.FARP;
+    a real FARP loads as a FOB-type CP with helipads.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        pos: _Point,
+        blue: bool = True,
+        cptype: ControlPointType = ControlPointType.FOB,
+        has_helipads: bool = True,
+    ) -> None:
         self.full_name = name
         self.position = pos
-        self.cptype = ControlPointType.FARP
+        self.cptype = cptype
+        self.has_helipads = has_helipads
         self.captured = SimpleNamespace(is_blue=blue, is_red=not blue, is_neutral=False)
 
 
@@ -97,3 +109,14 @@ def test_vietnam_mode_keeps_the_theater_wide_siege_reach() -> None:
 def test_both_modes_off_emits_nothing() -> None:
     game = _game(_settings(), [_FARP_ON_THE_FLOT])
     assert _harassed_names(game) == []
+
+
+def test_ground_only_fob_is_not_shelled_but_an_airbase_is() -> None:
+    """Eligibility follows the ramp: a FOB with no helipads stays excluded; a
+    real airfield qualifies regardless (the FARP claim is the helipad case)."""
+    ground_fob = _CP("Trench", _Point(20_000.0, 0.0), has_helipads=False)
+    airbase = _CP(
+        "DaNang", _Point(25_000.0, 0.0), cptype=ControlPointType.AIRBASE
+    )
+    game = _game(_settings(artillery=True), [ground_fob, airbase])
+    assert _harassed_names(game) == ["DaNang"]

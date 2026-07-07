@@ -299,17 +299,13 @@ class TheaterState(WorldState["TheaterState"]):
         aewc_targets = [cp for cp in finder.friendly_control_points() if cp.is_carrier]
         aewc_targets.append(finder.farthest_friendly_control_point())
 
-        # 414th Combat SAR standing alert: one pilot-rescue orbit per active front,
-        # BLUE only (squadron call 2026-07-01: red flies no CSAR at all -- red rescue
-        # packages burned airframes, and every red ejection spawned a BLUE snatch
-        # party racing across the map, which was pure noise). The survivor-ledger
-        # runtime stays coalition-generic; only red's planning + the Lua red node
-        # are withheld. Off -> empty, nothing planned.
-        combat_sar_targets: list[MissionTarget] = (
-            list(finder.front_lines())
-            if game.settings.auto_combat_sar and player.is_blue
-            else []
-        )
+        # 414th Combat SAR is no longer an auto-fragged standing orbit (2026-07-06
+        # rework -- the orbiting helo never reliably flew the pickup, checklist
+        # G21). ``auto_combat_sar`` now drives an on-demand AI rescue the combatsar
+        # runtime spawns when a pilot goes down and no player package is up; the
+        # player plans their own CSAR package off the FLOT. Nothing is planned here,
+        # so this stays empty (the field is kept for TheaterState shape stability).
+        combat_sar_targets: list[MissionTarget] = []
 
         enemy_air_defenses = list(finder.enemy_air_defenses())
         enemy_ships = list(finder.enemy_ships())

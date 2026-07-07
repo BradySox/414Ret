@@ -24,7 +24,7 @@ from .coinluadata import populate_coin_lua
 from .commsjamluadata import populate_comms_jam_lua
 from .convoyambushluadata import populate_convoy_ambush_lua
 from .interceptluadata import populate_intercept_lua
-from .missiondata import MissionData
+from .missiondata import CombatSarTemplates, MissionData
 from .mobilemissileluadata import populate_mobile_missiles_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
 
@@ -404,10 +404,12 @@ class LuaGenerator:
 
         Combat SAR (FlightType.COMBAT_SAR) is executed at runtime by the survivor-
         ledger plugin (resources/plugins/combatsar). Python's job is to (1) tell the
-        Lua bridge which generated groups are the rescue helos (and which C-130s fly
-        the "King" orbit, with their nav beacons), and (2) drop one late-activation
-        infantry group that the runtime clones at each crash site as the downed
-        pilot. ``enableForAI`` carries the standing-alert setting (auto_combat_sar).
+        Lua bridge which generated groups are the player's rescue helos / "King"
+        C-130s (with their nav beacons), (2) drop one late-activation infantry group
+        that the runtime clones at each crash site as the downed pilot, and (3) hand
+        over the cold rescue-helo template + an ``autoSpawn`` flag so the runtime
+        clones an on-demand AI rescue when a pilot goes down and no player CSAR
+        package is fragged (§21 rework -- replaces the retired standing orbit).
 
         BLUE ONLY (squadron call 2026-07-01): the plugin's survivor ledger is
         coalition-generic and would run red the day a ``red`` node is emitted, but
@@ -430,9 +432,21 @@ class LuaGenerator:
             bucket = blue_rescue if flight.aircraft_type.helicopter else blue_kings
             bucket.append(flight)
 
-        # No rescue helo -> the CSAR service is simply absent this mission. Skip
-        # the template too so we never leave an orphan group.
-        if not blue_rescue:
+        # With the standing orbit removed (§21 rework, 2026-07-06), any CSAR/SCAR
+        # flight here is PLAYER-planned. A player package suppresses the AI
+        # on-demand spawn (the user's scenarios A/B -- "we've got it covered, don't
+        # spawn more"); with no player package the runtime clones the cold rescue
+        # template on demand (scenario C). BLUE only.
+        player_package = bool(blue_rescue or blue_kings or blue_sandys)
+        templates = self.mission_data.combat_sar_templates
+        auto_spawn = (
+            self.game.settings.auto_combat_sar
+            and not player_package
+            and templates is not None
+        )
+        # No rescue capability this mission: no player package to run the ledger for,
+        # and nothing to auto-spawn. Skip the node (and the pilot template) entirely.
+        if not player_package and not auto_spawn:
             return
 
         template = self._generate_combat_sar_pilot_template(self.game.blue)
@@ -445,7 +459,8 @@ class LuaGenerator:
             blue_kings,
             blue_sandys,
             self.game.blue,
-            self.game.settings.auto_combat_sar,
+            auto_spawn,
+            templates if auto_spawn else None,
         )
 
     def _emit_combat_sar_side(
@@ -456,14 +471,19 @@ class LuaGenerator:
         kings: list["FlightData"],
         sandys: list["FlightData"],
         coalition: "Coalition",
-        enable_for_ai: bool,
+        auto_spawn: bool,
+        templates: Optional["CombatSarTemplates"],
     ) -> None:
         """Populate the (blue) Combat SAR node. Scalars are emitted as single-value
         child items so the LuaData serializer keeps them alongside the nested
         kings/sandys lists.
+
+        ``auto_spawn`` (no player CSAR package) hands the runtime the cold rescue
+        template to clone on demand; otherwise the player's own package flies the
+        rescue and no AI clone is armed.
         """
         node.add_item("pilotTemplate").set_value(template_name)
-        node.add_item("enableForAI").set_value("true" if enable_for_ai else "false")
+        node.add_item("autoSpawn").set_value("true" if auto_spawn else "false")
         # The enemy snatch party must spawn on the OPPOSING coalition. Emit that side's
         # faction country (always registered on the enemy coalition in this .miz) so the
         # plugin spawns it on the right side -- the old hardcoded CJTF_* constant is not
@@ -476,11 +496,16 @@ class LuaGenerator:
             [flight.group_name for flight in rescue_flights]
         )
 
-        # AI auto-rescue needs a helo group to clone + a home airbase to launch from
-        # and deliver to. Reuse the first rescue flight's group + its departure field.
-        if enable_for_ai and rescue_flights:
-            node.add_item("heloTemplate").set_value(rescue_flights[0].group_name)
-            node.add_item("farp").set_value(rescue_flights[0].departure.airfield_name)
+        # On-demand AI rescue sources, preference order: a real parked ramp helo
+        # (tracked) then the cold clone template (fallback). Delivered to the field
+        # (nearest resolvable for a FARP). Only emitted with no player package -- a
+        # fragged package flies its own rescue.
+        if auto_spawn and templates is not None:
+            if templates.parked_helos:
+                node.add_item("parkedHelos").set_data_array(templates.parked_helos)
+            if templates.helo_group is not None:
+                node.add_item("heloTemplate").set_value(templates.helo_group)
+            node.add_item("farp").set_value(templates.delivery_field)
 
         # Each King (C-130) lights the TACAN the rescue helo homes on.
         kings_item = node.add_item("kings")

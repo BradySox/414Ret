@@ -23,6 +23,34 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class CombatSarTemplates:
+    """On-demand AI rescue sources (§21). Two, in preference order:
+
+    1. ``parked_helos`` -- **real** untasked rescue helos already sitting cold on
+       the ramp (`AircraftGenerator._spawn_unused_for`, in the UnitMap). The
+       runtime starts one and flies the OPSTRANSPORT pickup: a **tracked** airframe
+       whose loss is recorded, launched from a *parked* aircraft (not the retired
+       commandeer of an *airborne* orbit helo -- that airborne re-task is what
+       failed, G21). Empty when the ramp is bare (perf toggle / fully-tasked wing).
+    2. ``helo_group`` -- a cold late-activation **clone template** as the fallback
+       when no parked helo is free. The runtime SPAWN-clones it (the proven
+       clone-into-mission path); the clone is untracked, like the pre-rework
+       rescue clones. None if no parking was available to place the template.
+
+    The Sandy (arming needs the configurator pass) + King (needs the TACAN beacon
+    setup) on-demand clones stay §21 v2.
+    """
+
+    #: Friendly field the rescue delivers the survivor to (CP display name; the
+    #: runtime falls back to the nearest resolvable field for a FARP).
+    delivery_field: str
+    #: Real untasked rescue helos parked on the ramp -- preferred (tracked).
+    parked_helos: list[str] = field(default_factory=list)
+    #: The cold clone-template helo group; fallback when no parked helo is free.
+    helo_group: Optional[str] = None
+
+
+@dataclass
 class GroupInfo:
     group_name: str
     callsign: str
@@ -155,3 +183,15 @@ class MissionData:
     # the emitter and the kneeboard (JAM BACKUP line) read the same plan. None
     # when the feature is off or has nothing to do this mission.
     comms_jam: Optional[CommsJamInfo] = None
+    # Cold late-activation template group(s) the combatsar runtime clones for an
+    # on-demand AI rescue (§21). Populated by
+    # AircraftGenerator.spawn_combat_sar_templates when auto_combat_sar is on and
+    # BLUE owns a CSAR-capable helo; None otherwise. Whether the runtime actually
+    # auto-spawns is a separate gate (no player CSAR package this mission), decided
+    # in luagenerator so the template can exist unused.
+    combat_sar_templates: Optional[CombatSarTemplates] = None
+    # Group names of BLUE untasked rescue helos parked cold on the ramp
+    # (`_spawn_unused_for`) — the preferred, **tracked** on-demand rescue source
+    # (§21). Collected during flight generation; folded into
+    # ``combat_sar_templates`` by ``spawn_combat_sar_templates``.
+    parked_rescue_helos: list[str] = field(default_factory=list)

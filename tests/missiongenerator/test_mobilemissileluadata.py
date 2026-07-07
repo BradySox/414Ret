@@ -1,10 +1,11 @@
 """Mobile-missile emitter (dcsRetribution.mobileMissiles) -- the SCUD hunt's config.
 
-Locks the shape the ``mobilemissiles`` plugin consumes: each ``category == "missile"``
-TGO with at least one alive *vehicle* emits its drivable group names + campaign centre;
-anti-air / coastal / building TGOs are never emitted (the SAM network must never move);
-statics-only and fully-dead sites are skipped; and the whole node is gated on the
-``mobile_missile_relocation`` setting.
+Locks the shape the ``mobilemissiles`` plugin consumes: each moved TGO with at least one
+alive *vehicle* emits its drivable group names + campaign centre. ``missile`` sites move
+under ``mobile_missile_relocation``; ``coastal`` sites move only when
+``coastal_missile_relocation`` is also on (default off, a naval-campaign opt-in). Anti-air
+and building TGOs are never emitted (the SAM network must never move); statics-only and
+fully-dead sites are skipped.
 """
 
 from __future__ import annotations
@@ -41,10 +42,13 @@ def _tgo(category: str, group_name: str, units: list[Any], pos: _Point) -> Any:
     )
 
 
-def _game(tgos: list[Any], *, on: bool = True) -> Any:
+def _game(tgos: list[Any], *, on: bool = True, coastal: bool = False) -> Any:
     cp = SimpleNamespace(ground_objects=tgos)
     return SimpleNamespace(
-        settings=SimpleNamespace(mobile_missile_relocation=on),
+        settings=SimpleNamespace(
+            mobile_missile_relocation=on,
+            coastal_missile_relocation=coastal,
+        ),
         theater=SimpleNamespace(controlpoints=[cp]),
     )
 
@@ -86,3 +90,24 @@ def test_skips_dead_and_statics_only_sites() -> None:
 def test_gated_off_by_the_setting() -> None:
     scud = _tgo("missile", "0076 | SCUD", [_unit()], _Point(0.0, 0.0))
     assert _sites(_game([scud], on=False)) == []
+
+
+def test_emits_coastal_sites_only_when_opted_in() -> None:
+    silkworm = _tgo("coastal", "0080 | Silkworm", [_unit()], _Point(5.0, 6.0))
+    # Default: coastal_missile_relocation off -> a coastal site never moves.
+    assert _sites(_game([silkworm])) == []
+    # Opted in -> the coastal battery joins the shoot-and-scoot set.
+    sites = _sites(_game([silkworm], coastal=True))
+    assert len(sites) == 1
+    assert sites[0]["groups"] == ["0080 | Silkworm"]
+
+
+def test_coastal_opt_in_composes_with_the_missile_setting() -> None:
+    scud = _tgo("missile", "0081 | SCUD", [_unit()], _Point(1.0, 2.0))
+    silkworm = _tgo("coastal", "0082 | Silkworm", [_unit()], _Point(3.0, 4.0))
+    # Both on -> both categories move.
+    both = _sites(_game([scud, silkworm], on=True, coastal=True))
+    assert {s["groups"][0] for s in both} == {"0081 | SCUD", "0082 | Silkworm"}
+    # Only coastal on -> only the silkworm (the SCUD stays put).
+    coastal_only = _sites(_game([scud, silkworm], on=False, coastal=True))
+    assert [s["groups"][0] for s in coastal_only] == ["0082 | Silkworm"]

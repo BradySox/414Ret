@@ -4044,10 +4044,13 @@ the last missing half was the launcher itself sitting still once you got there.
 **Emitter (`game/missiongenerator/mobilemissileluadata.py` `populate_mobile_missiles_lua`).** When the
 `mobile_missile_relocation` setting is on, every `category == "missile"` TGO (both sides) with at least
 one **alive vehicle** emits its drivable `TheaterGroup.group_name`s + the TGO's campaign position as
-`dcsRetribution.mobileMissiles = { sites = { {groups, x, y}, … } }`. Statics-only or fully-dead sites
-are skipped; anti-air (the MANTIS-run SAM network), coastal anti-ship sites, and buildings are other
-categories entirely and are **never** emitted — the IADS never moves. No sites (or setting off) ⇒ no
-node ⇒ the plugin no-ops.
+`dcsRetribution.mobileMissiles = { sites = { {groups, x, y}, … } }`. **The `coastal_missile_relocation`
+setting (default OFF) opts `category == "coastal"` sites — Silkworm-style anti-ship batteries — into the
+same set**, a naval-campaign lever (the Tanker War turns it on) so a shore battery is never quite where
+the last recon photo froze it either; the two categories compose (either, both, or neither), feeding the
+same category-agnostic plugin. Statics-only or fully-dead sites are skipped; anti-air (the MANTIS-run SAM
+network) and buildings are other categories entirely and are **never** emitted — the IADS never moves. No
+sites (or both settings off) ⇒ no node ⇒ the plugin no-ops.
 
 **Runtime (`resources/plugins/mobilemissiles/`).** One scheduled loop per site: after a startup grace
 (default 120 s), every alive group of the site drives (alarm-green + weapons-hold — they relocate, they
@@ -4070,6 +4073,7 @@ same philosophy, different object class).
 | Emitter | `game/missiongenerator/mobilemissileluadata.py` (wired in `luagenerator.py` after the COIN emitter) |
 | Runtime | `resources/plugins/mobilemissiles/` (`plugin.json` + `mobilemissiles-config.lua`) |
 | Setting | `game/settings/settings.py` (`mobile_missile_relocation`, Mission Generation → World & systems, default **ON** — the toggle is the kill switch) |
+| Coastal opt-in | `coastal_missile_relocation` (Mission Generation → Battlefield life, default **OFF**) — adds `category == "coastal"` (Silkworm) sites to the scoot; the naval-campaign lever, preseeded ON in the Tanker War (§Persian Gulf — The Tanker War) |
 | Tests | `tests/missiongenerator/test_mobilemissileluadata.py` (emit shape, category/dead/static gates, setting gate); `tests/lua/test_mobilemissiles_runtime.py` (grace, per-group scoot around the anchor, destroyed-site stop, no-node no-op) |
 
 ### Gotchas / deferred

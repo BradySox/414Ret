@@ -10,6 +10,7 @@
     "AH-1W SuperCobra",
     "A-4E Skyhawk",
     "A-6A Intruder",
+    "A-6E Intruder",
     "EA-6B Prowler",
     "A-7E Corsair II",
     "F-14A Tomcat (AI)",
@@ -26,7 +27,8 @@
     "E-2C Hawkeye"
   ],
   "tankers": [
-    "S-3B Tanker"
+    "S-3B Tanker",
+    "KC-130"
   ],
   "frontline_units": [
     "M1043 HMMWV (M2 HMG)",

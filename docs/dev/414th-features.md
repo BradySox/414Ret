@@ -4110,11 +4110,18 @@ call when an ambush springs — and supporting the column (or not) is the player
 present in every miz, both sides, "a few convoys per side, some on the same route, some on different
 routes, randomized — don't force numbers." `game/fourteenth/ambient_convoys.py` `ensure_ambient_convoys`
 tops **each side's** convoy flow up to a `randint(MIN_AMBIENT_CONVOYS, MAX_AMBIENT_CONVOYS)` (1..3) target
-every turn on **randomly chosen** same-side corridors — a uniform pick *with repeats*, so columns
-sometimes share a road and sometimes spread out; organic transfers and the §35 trail convoys count toward
-the target, so nothing stacks on top of existing traffic. Corridors are enumerated once per road and
-oriented rear→front off the §35 `_reference_points` (fronts, or the opposing CPs on a front-less laydown);
-each column carries the real units already in its rear base's roster. **Skim-only — no free unit seeding
+every turn on **randomly chosen DISTINCT** same-side corridors (`_RNG.sample` — one column per road, the
+count capped at the road count); organic transfers and the §35 trail convoys count toward the target, so
+nothing stacks on top of existing traffic. **Distinct roads, one transfer per corridor (2026-07-07 S5 fix).**
+The convoy map keys transports by `(origin, destination)` (`TransportMap.add` in `game/transfers.py`), so two
+transfers on the SAME corridor **coalesce into one oversized group** that line-spawns into unauthored
+positions and **deadlocks** at mission start — the flown S5 regression (a 24-vehicle blue column parked at
+Baghdad the whole mission, which also blocked the §50 ambush spring). Sampling *distinct* corridors keeps
+every column a separate, driveable group; it trades away the originally-sketched "some columns share a road"
+texture, which the merge made unachievable anyway (a shared road was never two columns — it was one parked
+blob). Corridors are enumerated once per road and oriented rear→front off the §35 `_reference_points`
+(fronts, or the opposing CPs on a front-less laydown); each column carries the real units already in its rear
+base's roster. **Skim-only — no free unit seeding
 (2026-07-07 design call).** Ambient columns **relocate** existing rear units (`_skim_units`) and never call
 `commission_units` to invent free ones. The §35 Vietnam trail's `_seed_trail_source` external-logistics
 free-seed is *right for that feature* — red-only, Vietnam-gated, the Ho Chi Minh Trail's documented

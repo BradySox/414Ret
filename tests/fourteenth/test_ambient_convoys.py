@@ -1,12 +1,13 @@
 """§50 ambient supply convoys -> a few randomized real columns on BOTH sides' roads.
 
 Locks the standardization layer: each side's convoy flow is topped up to a randomized
-target on randomly chosen same-side corridors (repeats allowed -- some columns share a
-road, some spread out), existing convoys count toward the target, the corridors orient
-rear -> front, and every guard (setting off, turn 0, no same-side road, no war to supply
-toward) no-ops. Skim-only (2026-07-07 design call): columns relocate units that already
-exist in a rear base and never commission free ones, so a base too thin to skim yields no
-column instead of inventing reinforcements.
+target on randomly chosen **distinct** same-side corridors (one column per road, capped at
+the road count -- the S5 fix, since same-corridor transfers coalesce into one deadlocking
+column), existing convoys count toward the target, the corridors orient rear -> front, and
+every guard (setting off, turn 0, no same-side road, no war to supply toward) no-ops.
+Skim-only (2026-07-07 design call): columns relocate units that already exist in a rear
+base and never commission free ones, so a base too thin to skim yields no column instead
+of inventing reinforcements.
 """
 
 from __future__ import annotations
@@ -105,20 +106,20 @@ def _coalition(player: _Owner, convoys: list[Any] | None = None) -> Any:
 
 class _Rng:
     """Scripted stand-in for the module RNG: pops ``ints`` for randint (the per-side
-    target) and ``picks`` (indices into the corridor list) for choice."""
+    target). ``sample`` returns the first ``k`` corridors -- deterministic and distinct,
+    which is all these tests need (they assert on counts / distinctness, not order)."""
 
-    def __init__(self, ints: list[int], picks: list[int] | None = None) -> None:
+    def __init__(self, ints: list[int]) -> None:
         self.ints = list(ints)
-        self.picks = list(picks or [])
 
     def randint(self, a: int, b: int) -> int:
         value = self.ints.pop(0) if self.ints else a
         assert a <= value <= b, f"scripted randint {value} outside [{a}, {b}]"
         return value
 
-    def choice(self, seq: list[Any]) -> Any:
-        index = self.picks.pop(0) if self.picks else 0
-        return seq[index % len(seq)]
+    def sample(self, seq: list[Any], k: int) -> list[Any]:
+        assert k <= len(seq), f"scripted sample k={k} > len={len(seq)}"
+        return list(seq)[:k]
 
 
 def _game(
@@ -184,22 +185,33 @@ def test_side_without_a_same_side_road_gets_nothing(monkeypatch: Any) -> None:
 # ---- the randomized top-up ----------------------------------------------------------
 
 
-def test_both_sides_topped_to_the_rolled_target(monkeypatch: Any) -> None:
+def test_both_sides_get_a_column_on_their_road(monkeypatch: Any) -> None:
+    # One road per side; each rolls 1 -> one column each, oriented rear -> front and
+    # carrying skimmed rear units.
     game = _game(on=True, cps=_two_sided_map())
-    # Blue rolls 2, red rolls 1; the single corridor per side is picked each time.
-    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[2, 1]))
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[1, 1]))
     ensure_ambient_convoys(game)
 
     blue_orders = game.blue.transfers.created
     red_orders = game.red.transfers.created
-    assert len(blue_orders) == 2
+    assert len(blue_orders) == 1
     assert len(red_orders) == 1
-    for order in blue_orders:
-        assert order.origin.name == "blue-rear"  # rear -> front orientation
-        assert order.destination.name == "blue-fwd"
-        assert sum(order.units.values()) == AMBIENT_CONVOY_UNITS
+    assert blue_orders[0].origin.name == "blue-rear"  # rear -> front orientation
+    assert blue_orders[0].destination.name == "blue-fwd"
+    assert sum(blue_orders[0].units.values()) == AMBIENT_CONVOY_UNITS
     assert red_orders[0].origin.name == "red-rear"
     assert red_orders[0].destination.name == "red-fwd"
+
+
+def test_target_is_capped_at_the_road_count(monkeypatch: Any) -> None:
+    # One road, but a rolled target of 3: the distinct-corridor cap (S5 fix) means one
+    # column, never three transfers stacked onto the same road (which would coalesce into
+    # a single deadlocking mega-column).
+    game = _game(on=True, cps=_two_sided_map())
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[3, 1]))
+    ensure_ambient_convoys(game)
+    assert len(game.blue.transfers.created) == 1  # capped at the one blue road
+    assert len(game.red.transfers.created) == 1
 
 
 def test_existing_convoys_count_toward_the_target(monkeypatch: Any) -> None:
@@ -213,9 +225,11 @@ def test_existing_convoys_count_toward_the_target(monkeypatch: Any) -> None:
     assert len(game.red.transfers.created) == 1
 
 
-def test_columns_spread_or_stack_by_the_dice(monkeypatch: Any) -> None:
-    # Two blue roads; the scripted picks send column 1 and 2 down DIFFERENT roads,
-    # column 3 back down the first -- same-route stacking is allowed, not forced.
+def test_columns_ride_distinct_roads(monkeypatch: Any) -> None:
+    # Two blue roads to the front; a roll of 3 is capped at the 2 distinct corridors and
+    # the columns ride DIFFERENT roads -- never two transfers on one road (the S5 fix:
+    # the convoy map keys by (origin, destination), so same-road transfers would merge
+    # into one oversized, deadlocking column).
     blue_rear = _CP("blue-rear", BLUE_PLAYER, 200.0, {"tank": 60})
     blue_fwd = _CP("blue-fwd", BLUE_PLAYER, 10.0, {"tank": 2})
     blue_alt = _CP("blue-alt", BLUE_PLAYER, 180.0, {"tank": 60})
@@ -223,12 +237,11 @@ def test_columns_spread_or_stack_by_the_dice(monkeypatch: Any) -> None:
     _road(blue_rear, blue_fwd)
     _road(blue_alt, blue_fwd)
     game = _game(on=True, cps=[blue_rear, blue_fwd, blue_alt, red_lone])
-    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[3, 1], picks=[0, 1, 0]))
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[3, 1]))
     ensure_ambient_convoys(game)
     origins = [order.origin.name for order in game.blue.transfers.created]
-    assert len(origins) == 3
-    assert len(set(origins)) == 2  # two roads used...
-    assert origins[0] == origins[2]  # ...and one of them carries two columns
+    assert len(origins) == 2  # rolled 3, capped at the 2 blue roads
+    assert len(set(origins)) == 2  # ... and the two columns ride DISTINCT roads
 
 
 def test_skim_only_never_commissions_free_units(monkeypatch: Any) -> None:

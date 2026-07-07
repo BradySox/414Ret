@@ -3607,12 +3607,10 @@ fuel + properties **per airframe**, so every new flight of that type starts pre-
   warning now only shows while the loadout checkbox is *unchecked*), an **Aircraft settings** group
   (laser codes + property editor in the scroll area — content now top-aligned, the "pre-configured at
   mission start" explainer moved to a tooltip — with the fuel slider + this defaults row pinned below),
-  and a labeled **Loadout:** preset row above the custom-loadout editor. `QLoadoutEditor` got its own
-  scroll area for the pylon list with the Save Payload / Create Backup buttons pinned directly beneath
-  it, killing the dead-space gap between the last pylon and the buttons on tall windows. Pure layout —
-  no signal/logic changes; verified by an offscreen headless instantiation across 7/10/11-pylon
-  airframes (member rebind, warning visibility, custom-loadout round-trip).
-  **Follow-up (same day):** the *Aircraft settings* scroll now sizes to its content
+  and a labeled **Loadout:** preset row above the custom-loadout editor. Pure layout — no signal/logic
+  changes; verified by an offscreen headless instantiation across 7/10/11/12/14-pylon airframes (member
+  rebind, warning visibility, custom-loadout round-trip).
+  **Follow-up 1 (same day):** the *Aircraft settings* scroll now sizes to its content
   (`AdjustToContents` + `Maximum` size policy, capped at 400px, no layout stretch) instead of taking a
   fixed share of the tab. On an **AI-crewed** flight every F-4-style aircraft property is `player_only`,
   so the property editor renders empty and the box was ballooning into a large blank gap between the
@@ -3620,6 +3618,14 @@ fuel + properties **per airframe**, so every new flight of that type starts pre-
   A **player** F-4E still grows to fit its 23 controls, bounded at the 400px cap so the full list scrolls
   rather than pushing the loadout off the bottom (verified headlessly: AI F-4E box h=66 vs player F-4E
   h=288, both under the cap; other airframes scale with their property count).
+  **Follow-up 2 (same day) — pylon-scroll reverted:** the initial cleanup had wrapped `QLoadoutEditor`'s
+  pylon list in its own `QScrollArea` (to kill a hypothetical dead-gap below the last pylon). That
+  **collapsed the loadout's size hint**, so the `QEditFlightDialog` (which has no fixed size — it opens at
+  its content `sizeHint`) opened shorter *and* trapped the pylons in a mini-scroll — a player F-16
+  (12 stations) showed only ~5-6. The pylon grid is now laid out at its **natural full height again** (as
+  before the rework), so its size hint drives a tall dialog that shows every pylon at once; the aircraft
+  scroll (which *can* shrink) absorbs the squeeze on a short screen. Net: the loadout is the dominant
+  element and is never crushed.
 - **Display point** — the property widgets already read `member.properties.get(id, default)` (see
   `propertyspinbox.py` / `propertycombobox.py`), so a seeded value shows immediately when the tab opens for
   a new flight — the whole point of the feature.

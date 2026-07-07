@@ -144,10 +144,12 @@ class Game:
         # turn saying WHY the will moved (per-feed components), appended by
         # update_political_will and capped there. Empty outside Vietnam campaigns.
         self.will_ledger: list["WillLedgerEntry"] = []
-        # Model-3 escalation tax: the last authored phase whose blue_will_on_entry
-        # cost was charged, so it charges once per phase entry (persisted -- a will
-        # charge must survive a reload, unlike the transient announce flag above).
+        # Model-3 escalation tax: the authored phases whose blue_will_on_entry
+        # cost has been charged, so each charges once per phase entry (persisted --
+        # a will charge must survive a reload, unlike the transient announce flag
+        # above). The legacy scalar (last-charged key) is folded in on read.
         self.will_escalation_charged_phase: Optional[str] = None
+        self.will_escalation_charged_phases: set[str] = set()
         # COIN C1 per-CP regen anchors (garrison cap / cache total / fractional
         # carry), keyed by str(cp.id). Plain primitives so saves stay simple;
         # populated lazily by game.fourteenth.coin when coin_insurgency is on.
@@ -156,6 +158,10 @@ class Game:
         # convoy}]}), seeded at finish_turn, read by the emitter + the escort auto-frag.
         # Plain primitives; populated lazily by game.fourteenth.convoy_ambush when on.
         self.convoy_ambush_state: dict[str, Any] = {}
+        # Per-campaign secret salt for the §3 concealment jitter seed (id XOR salt),
+        # so the jittered "suspected activity" centre is deterministic but not
+        # recomputable from the public TGO id. Lazily set on first use; persisted.
+        self.concealment_salt: Optional[int] = None
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -236,8 +242,10 @@ class Game:
         state.setdefault("red_tempo_announced_phase", None)
         state.setdefault("will_ledger", [])
         state.setdefault("will_escalation_charged_phase", None)
+        state.setdefault("will_escalation_charged_phases", set())
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
+        state.setdefault("concealment_salt", None)
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.
@@ -522,6 +530,12 @@ class Game:
         """Initialization for the first turn of the game."""
         from .sim import GameUpdateEvents
 
+        # A new campaign starts with the fog intact: the overview reveal is a
+        # process global and must not carry over from a previous game.
+        from .theater.fogofwar import set_fog_revealed
+
+        set_fog_revealed(False)
+
         # Build the IADS Network
         with logged_duration("Generate IADS Network"):
             self.theater.iads_network.initialize_network(self.theater.ground_objects)
@@ -695,6 +709,13 @@ class Game:
         from game.fourteenth.phases import update_campaign_phase
 
         update_campaign_phase(self)
+
+        # Pin the COIN conservation anchors at the true campaign start (turn 0,
+        # before any mission flies). The finish_turn regen hook runs after the
+        # turn counter has advanced, so it can never take this snapshot itself.
+        from game.fourteenth.coin import snapshot_campaign_start_anchors
+
+        snapshot_campaign_start_anchors(self)
 
         # Plan Coalition specific turn
         if for_blue:

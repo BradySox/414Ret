@@ -89,6 +89,27 @@ def _point_at_arc(
     return route[-1]
 
 
+def _concealment_seed(tgo: TheaterGroundObject) -> int:
+    """The jitter RNG seed: the TGO id XOR a server-held per-campaign salt.
+
+    The TGO id is public (it ships to the client on every marker), so seeding
+    from it alone made the offset recomputable client-side -- subtracting the
+    jitter recovered the exact concealed position. The salt is generated once
+    per campaign, lives only in the save, and never reaches the client, so the
+    centre stays deterministic (anti-triangulation across re-renders and
+    reloads) but is no longer reversible.
+    """
+    try:
+        game = tgo.control_point.coalition.game
+    except AttributeError:
+        return tgo.id.int
+    salt = getattr(game, "concealment_salt", None)
+    if salt is None:
+        salt = random.SystemRandom().getrandbits(63)
+        game.concealment_salt = salt
+    return tgo.id.int ^ salt
+
+
 def _route_jitter(tgo: TheaterGroundObject) -> Optional[tuple[float, float]]:
     """A deterministic point FAR along the TGO's pinned route, or None if the TGO
     carries no usable route (the caller falls back to the radial jitter)."""
@@ -100,7 +121,7 @@ def _route_jitter(tgo: TheaterGroundObject) -> Optional[tuple[float, float]]:
     if cum[-1] <= 0.0:
         return None
     s0 = _nearest_arc(route, cum, tgo.position.x, tgo.position.y)
-    rng = random.Random(tgo.id.int)
+    rng = random.Random(_concealment_seed(tgo))
     dist = rng.uniform(_ROUTE_JITTER_MIN_M, _ROUTE_JITTER_MAX_M)
     direction = 1.0 if rng.random() < 0.5 else -1.0
     s = s0 + direction * dist
@@ -147,7 +168,7 @@ def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float
     on_route = _route_jitter(tgo)
     if on_route is not None:
         return Point(on_route[0], on_route[1], pos._terrain), radius
-    rng = random.Random(tgo.id.int)
+    rng = random.Random(_concealment_seed(tgo))
     theta = rng.uniform(0.0, math.tau)
     dist = rng.uniform(_CONCEALED_MIN_OFFSET, _CONCEALED_MAX_OFFSET) * radius
     # Build a PLAIN pydcs Point, never pos.__class__: a real TGO's position is a

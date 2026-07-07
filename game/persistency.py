@@ -496,6 +496,13 @@ def mission_path_for(name: str) -> Path:
 
 
 def load_game(path: str) -> Optional[Game]:
+    # The fog-overview reveal is a process global: without this, loading a
+    # different campaign in the same session would inherit a previous game's
+    # god-view (the client checkbox re-syncs later, but the server must not
+    # serve ground truth in the meantime).
+    from game.theater.fogofwar import set_fog_revealed
+
+    set_fog_revealed(False)
     with open(path, "rb") as f:
         try:
             save = MigrationUnpickler(f).load()

@@ -417,3 +417,15 @@ def test_sof_insert_is_never_offered(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     mission_types = list(building.mission_types(for_player=Player.RED))
     assert "SOF Insert" not in [task.value for task in mission_types]
+
+
+def test_faction_color_follows_the_owning_player() -> None:
+    """captured is the Player enum -- truthiness made every TGO read BLUE."""
+    from game.theater.theatergroundobject import TheaterGroundObject
+
+    fget = TheaterGroundObject.faction_color.fget  # type: ignore[attr-defined]
+    assert fget is not None
+    red = SimpleNamespace(control_point=SimpleNamespace(captured=Player.RED))
+    blue = SimpleNamespace(control_point=SimpleNamespace(captured=Player.BLUE))
+    assert fget(red) == "RED"
+    assert fget(blue) == "BLUE"

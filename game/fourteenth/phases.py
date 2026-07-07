@@ -56,6 +56,7 @@ from shapely.geometry.base import BaseGeometry
 if TYPE_CHECKING:
     from game import Game
     from game.debriefing import Debriefing
+    from game.theater import Player
 
 # --- S3.2 thresholds (v1; refined by the 6-campaign pilot) --------------------------
 
@@ -631,14 +632,33 @@ def consume_phase_escalation_cost(game: "Game") -> Optional[tuple[str, float]]:
     unlike the transient ``red_tempo_announced_phase`` message flag, a will charge
     must survive a reload or it would double-charge. getattr-guarded for pre-feature
     saves (which resolve to "nothing charged yet").
+
+    A chained same-turn advance (a late-adopting save reaching several
+    ``min_turn``s at once, or stacked ``advance_when``s) may skip THROUGH a
+    costed phase: every phase up to and including the current one owes its
+    entry tax, charged one per call (one per turn) until caught up, so the
+    skipped Linebacker -3 still lands on the way to Linebacker II.
     """
     phase = active_phase(game)
-    if phase is None or not phase.authored or not phase.blue_will_on_entry:
+    if phase is None or not phase.authored:
         return None
-    if getattr(game, "will_escalation_charged_phase", None) == phase.key:
+    arc = authored_arc_for(game)
+    keys = [p.key for p in arc]
+    if phase.key not in keys:
         return None
-    game.will_escalation_charged_phase = phase.key
-    return phase.name, phase.blue_will_on_entry
+    charged: set[str] = set(getattr(game, "will_escalation_charged_phases", set()))
+    # Legacy scalar latch (pre chained-advance fix): fold it in.
+    legacy = getattr(game, "will_escalation_charged_phase", None)
+    if legacy is not None:
+        charged.add(legacy)
+    for candidate in arc[: keys.index(phase.key) + 1]:
+        if not candidate.blue_will_on_entry or candidate.key in charged:
+            continue
+        charged.add(candidate.key)
+        game.will_escalation_charged_phases = charged
+        return candidate.name, candidate.blue_will_on_entry
+    game.will_escalation_charged_phases = charged
+    return None
 
 
 # --- the authored tier (P2) + the ROE escalation layer (W4) --------------------------
@@ -939,6 +959,27 @@ def _target_class(target: object) -> Optional[str]:
     return None
 
 
+def _target_owner(target: object) -> Optional["Player"]:
+    """Which side owns a mission target, or None for ownerless targets.
+
+    Control points own themselves; ground objects belong to their parent CP.
+    Front lines, convoys and other ownerless targets return None.
+    """
+    from game.theater import ControlPoint
+    from game.theater.theatergroundobject import TheaterGroundObject
+
+    try:
+        if isinstance(target, ControlPoint):
+            return target.captured
+        if isinstance(target, TheaterGroundObject):
+            return target.control_point.captured
+    except AttributeError:
+        # A partially-built target (or a test double) with no resolvable owner:
+        # treat as unowned and let the class/zone gates decide.
+        return None
+    return None
+
+
 @dataclass(frozen=True)
 class ResolvedZone:
     """A phase zone resolved to concrete theater geometry (metres, x/y floats).
@@ -1137,11 +1178,15 @@ def roe_blocks_target(game: "Game", target: object) -> bool:
     """True when the active phase's ROE forbids offensive tasking at ``target``.
 
     The AI planner gate (read in ``PackagePlanningTask.fulfill_mission`` next to
-    the Vietnam ``tasking_whitelist``): a locked target class is blocked anywhere;
-    any target inside an active restricted zone is blocked regardless of class
-    (sanctuary airfields fall out of this). BLUE-only by the caller (the ROE is
-    Washington's, not Hanoi's). The *player* is never hard-blocked -- their
-    enforcement is the will penalty (:func:`count_roe_violations`).
+    the Vietnam ``tasking_whitelist``): an *enemy* target of a locked class is
+    blocked anywhere; an enemy CP/ground object inside an active restricted zone
+    is blocked regardless of class (sanctuary airfields fall out of this).
+    Friendly-owned targets are never blocked (defensive/support tasking --
+    BARCAP, AEW&C, tankers -- targets friendly CPs), and ownerless targets
+    (front lines, convoys) are never zone-gated: TIC and the trail fight stay
+    legal. BLUE-only by the caller (the ROE is Washington's, not Hanoi's). The
+    *player* is never hard-blocked -- their enforcement is the will penalty
+    (:func:`count_roe_violations`).
     """
     return roe_restriction_reason(game, target) is not None
 
@@ -1159,9 +1204,24 @@ def roe_restriction_reason(game: "Game", target: object) -> Optional[str]:
     phase = active_phase(game)
     if phase is None:
         return None
+    # The ROE restricts strikes INTO enemy ground; a friendly-owned target is
+    # never restricted. Without this, the authored "airfield" lock (Rolling
+    # Thunder / Bombing Halt) scrubbed BLUE's own BARCAP/AEW&C/tanker packages
+    # (their targets are friendly CPs), and a permanent positive-control box
+    # kept blocking a base after BLUE captured it.
+    from game.theater import Player
+
+    owner = _target_owner(target)
+    if owner is Player.BLUE:
+        return None
     target_class = _target_class(target)
     if target_class is not None and target_class in phase.locked_target_classes:
         return f"{target_class} targets are locked this phase"
+    # Only class-carrying targets (CPs / ground objects) are zone-gated: front
+    # lines and convoys are never weapons-hold (the documented TIC/trail-convoy
+    # exemption), matching the free-fire inversion below.
+    if target_class is None:
+        return None
     position = getattr(target, "position", None)
     if position is None:
         return None

@@ -180,3 +180,33 @@ def test_cooldown_gates_the_next_hvt(monkeypatch: Any) -> None:
         assert game.coin_state["hvt"]["active"] is None
     hvt.advance_hvt(game, events=None)  # cooldown spent -> a new HVT surfaces
     assert game.coin_state["hvt"]["active"] is not None
+
+
+def test_stronghold_capture_is_not_a_decapitation(monkeypatch: Any) -> None:
+    """A blue capture of the host stronghold clears the HVT TGO -- that is a
+    base-fall consequence (already priced via red_base_lost), never a kill."""
+    game = _theater(monkeypatch)
+    hvt.advance_hvt(game, events=None)  # surface at CP2
+    active = game.coin_state["hvt"]["active"]
+    host = next(cp for cp in game.theater.controlpoints if cp.id == 2)
+    host._kind = "blue"  # the stronghold fell
+    # The capture also cleared the convoy TGO (depopulate_uncapturable_tgos).
+    game.db.remove(active["tgo_id"])
+    host.connected_objectives.clear()
+    hvt.advance_hvt(game, events=None)
+    assert hvt.consume_hvt_kills(game) == 0  # no momentum blow
+    assert game.coin_state["hvt"]["active"] is None
+    assert any("slipped away" in m[1].lower() for m in game.messages)
+
+
+def test_toggle_off_despawns_the_active_hvt(monkeypatch: Any) -> None:
+    game = _theater(monkeypatch)
+    hvt.advance_hvt(game, events=None)  # surface
+    active = game.coin_state["hvt"]["active"]
+    assert active is not None
+    game.settings.coin_hvt = False
+    hvt.advance_hvt(game, events=None)
+    assert game.coin_state["hvt"]["active"] is None
+    # Despawned, not stranded: no CP still carries the convoy TGO.
+    host = next(cp for cp in game.theater.controlpoints if cp.id == 2)
+    assert all(t.id != active["tgo_id"] for t in host.connected_objectives)

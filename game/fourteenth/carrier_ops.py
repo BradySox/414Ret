@@ -275,6 +275,11 @@ def _nearest_legal_strike_target(
                 continue
             if getattr(tgo, "is_control_point", False):
                 continue
+            # A map_hidden TGO (a §50 convoy-ambush team) must never be planned
+            # against -- naming it in the ATO would reveal it (the same skip
+            # BattlePositions applies).
+            if getattr(tgo, "map_hidden", False):
+                continue
             if roe_blocks_target(game, tgo):
                 continue
             dist = carrier.position.distance_to_point(tgo.position)

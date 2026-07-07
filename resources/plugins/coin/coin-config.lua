@@ -135,6 +135,21 @@ local function pacedSpeed(group, tx, ty, maxKmph)
     return math.min(maxKmph, math.max(PACE_FLOOR_KMPH, kmph))
 end
 
+-- pcall-guard a mover tick: a runtime error in a scheduled function otherwise kills
+-- that mover's loop silently for the rest of the mission. Errors log and retry on
+-- the mover's own cadence; a nil return (dead mover) still stops the schedule.
+local function guardedTick(label, interval, body)
+    return function()
+        local ok, result = pcall(body)
+        if not ok then
+            env.warning("coin: " .. label .. " mover tick error (retrying): "
+                .. tostring(result))
+            return timer.getTime() + interval
+        end
+        return result
+    end
+end
+
 -- The HVT convoy: on a cadence, wander to a fresh random point within HVT_RADIUS of its centre.
 local function startHvt(hvt)
     local cx, cy = num(hvt.x), num(hvt.y)
@@ -147,7 +162,8 @@ local function startHvt(hvt)
         driveTo(g, dest.x, dest.y, HVT_SPEED)
         return timer.getTime() + HVT_INTERVAL
     end
-    timer.scheduleFunction(tick, {}, timer.getTime() + GRACE)
+    timer.scheduleFunction(guardedTick("HVT", HVT_INTERVAL, tick), {},
+        timer.getTime() + GRACE)
 end
 
 -- A mobile VBIED: keep driving for the target base until it is intercepted or arrives.
@@ -163,7 +179,8 @@ local function startVbied(v)
         driveTo(g, tx, ty, pacedSpeed(g, tx, ty, VBIED_SPEED))
         return timer.getTime() + VBIED_INTERVAL
     end
-    timer.scheduleFunction(tick, {}, timer.getTime() + GRACE)
+    timer.scheduleFunction(guardedTick("VBIED", VBIED_INTERVAL, tick), {},
+        timer.getTime() + GRACE)
 end
 
 -- A dispersed field cell: wander to a fresh random point within CELL_RADIUS of its patch
@@ -179,7 +196,8 @@ local function startCell(cell)
         driveTo(g, dest.x, dest.y, CELL_SPEED)
         return timer.getTime() + CELL_INTERVAL
     end
-    timer.scheduleFunction(tick, {}, timer.getTime() + GRACE)
+    timer.scheduleFunction(guardedTick("cell", CELL_INTERVAL, tick), {},
+        timer.getTime() + GRACE)
 end
 
 -- The re-infiltration cell: creep slowly toward the base it is infiltrating. Movement
@@ -195,7 +213,8 @@ local function startInfiltrator(rec)
         driveTo(g, tx, ty, pacedSpeed(g, tx, ty, INFIL_SPEED))
         return timer.getTime() + INFIL_INTERVAL
     end
-    timer.scheduleFunction(tick, {}, timer.getTime() + GRACE)
+    timer.scheduleFunction(guardedTick("infiltrator", INFIL_INTERVAL, tick), {},
+        timer.getTime() + GRACE)
 end
 
 ---------------------------------------------------------------------------------------------------

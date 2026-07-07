@@ -101,7 +101,16 @@ class Weapon:
         updated = Weapon.with_clsid(state["clsid"])
         if updated is not None:
             state.update(updated.__dict__)
-            self.__dict__.update(state)
+        else:
+            # The clsid is unknown to this build (a mod pack was disabled, or
+            # the weapon data was removed without a migrator entry). Keep the
+            # pickled state rather than leaving an EMPTY object whose first
+            # attribute access blows up far from the cause.
+            logging.warning(
+                "Unknown weapon clsid %r in save; keeping pickled data",
+                state.get("clsid"),
+            )
+        self.__dict__.update(state)
 
     @classmethod
     def register(cls, weapon: Weapon) -> None:
@@ -257,7 +266,17 @@ class WeaponGroup:
         # Update any existing models with new data on load.
         name = weapons_migrator(state["name"])
         name = weapons_migrator_lib(name)
-        updated = WeaponGroup.named(name)
+        try:
+            updated = WeaponGroup.named(name)
+        except KeyError:
+            # The group was removed/renamed without a migrator entry. Keep the
+            # pickled state instead of aborting the entire load ("Invalid Save
+            # game") -- the same unknown-value tolerance FlightType has.
+            logging.warning(
+                "Unknown weapon group %r in save; keeping pickled data", name
+            )
+            self.__dict__.update(state)
+            return
         state.update(updated.__dict__)
         self.__dict__.update(state)
 

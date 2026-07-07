@@ -465,13 +465,24 @@ class AircraftGenerator:
     def _create_combat_sar_template(
         self, squadron: Squadron, group_name: str
     ) -> Optional[str]:
-        """Build one cold late-activation CSAR template group; return its name."""
+        """Build one cold late-activation CSAR template group; return its name.
+
+        The synthetic flight is a **BARCAP**, not a COMBAT_SAR -- exactly like the
+        `_spawn_unused_for` / `create_intercept_template` templates it mirrors. Its
+        FlightType only drives callsign/loadout metadata (the runtime clones the
+        GROUP + drives the pickup, so the task is irrelevant), and a COMBAT_SAR
+        flight carries the 'Jolly' callsign, which pydcs cannot resolve on the
+        airfield-spawn path a helo falls through to when its helipads are full
+        (`_assign_callsign` -> ValueError 'Jolly' is not in list -- an in-game
+        crash). BARCAP's callsign is airfield-valid, the same reason the untasked
+        helos generate cleanly.
+        """
         country = self.country_assigner.for_squadron(squadron)
         flight = Flight(
             Package(squadron.location, self.game.db.flights),
             squadron,
             1,
-            FlightType.COMBAT_SAR,
+            FlightType.BARCAP,
             StartType.COLD,
             divert=None,
             claim_inv=False,
@@ -488,10 +499,15 @@ class AircraftGenerator:
                 self.ground_spawns,
                 self.mission_data,
             ).create_combat_sar_template(group_name)
-        except NoParkingSlotError:
+        except Exception:
+            # An optional rescue template must NEVER break mission generation --
+            # degrade to the parked-helo pool (or no on-demand rescue this mission).
             logging.warning(
-                f"No parking slots for the Combat SAR template at "
-                f"{squadron.location} ({squadron}); on-demand rescue disabled."
+                "Could not create the Combat SAR template at %s (%s); "
+                "on-demand rescue falls back to the parked ramp helos.",
+                squadron.location,
+                squadron,
+                exc_info=True,
             )
             return None
         finally:

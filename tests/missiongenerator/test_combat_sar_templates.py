@@ -11,9 +11,12 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import patch
 
 from game.ato.flighttype import FlightType
 from game.missiongenerator.aircraft.aircraftgenerator import AircraftGenerator
+
+_AG = "game.missiongenerator.aircraft.aircraftgenerator"
 
 
 def _generator(settings: Any, blue: Any = None) -> AircraftGenerator:
@@ -56,3 +59,74 @@ def test_noop_when_no_csar_capable_helo_owned() -> None:
     gen = _generator(SimpleNamespace(auto_combat_sar=True), _blue(squadrons))
     gen.spawn_combat_sar_templates()
     assert gen.mission_data.combat_sar_templates is None
+
+
+def _template_generator() -> AircraftGenerator:
+    gen = AircraftGenerator.__new__(AircraftGenerator)
+    gen.country_assigner = SimpleNamespace(  # type: ignore[assignment]
+        for_squadron=lambda squadron: SimpleNamespace(id=1)
+    )
+    gen.game = SimpleNamespace(  # type: ignore[assignment]
+        db=SimpleNamespace(flights=object()), settings=SimpleNamespace()
+    )
+    gen.mission = object()  # type: ignore[assignment]
+    gen.helipads = {}
+    gen.ground_spawns_roadbase = {}
+    gen.ground_spawns_large = {}
+    gen.ground_spawns = {}
+    gen.mission_data = SimpleNamespace(  # type: ignore[assignment]
+        combat_sar_templates=None, parked_rescue_helos=[]
+    )
+    return gen
+
+
+def _fake_flight(*_args: Any, **_kwargs: Any) -> Any:
+    return SimpleNamespace(state=None, roster=SimpleNamespace(clear=lambda: None))
+
+
+def test_template_flight_is_barcap_not_the_jolly_callsign_type() -> None:
+    # A COMBAT_SAR flight carries the 'Jolly' callsign, which pydcs cannot resolve on
+    # the airfield-spawn fallback a helo hits when its helipads are full -> an in-game
+    # ValueError. The template flight must be BARCAP (airfield-valid callsign), exactly
+    # like the untasked-aircraft / QRA templates it mirrors.
+    captured: dict[str, Any] = {}
+
+    def capturing_flight(*args: Any, **_kwargs: Any) -> Any:
+        captured["flight_type"] = args[3]
+        return _fake_flight()
+
+    spawner = SimpleNamespace(create_combat_sar_template=lambda name: SimpleNamespace())
+    with patch(f"{_AG}.Flight", capturing_flight), patch(
+        f"{_AG}.Package", lambda *a, **k: object()
+    ), patch(f"{_AG}.Completed", lambda *a, **k: object()), patch(
+        f"{_AG}.FlightGroupSpawner", lambda *a, **k: spawner
+    ):
+        gen = _template_generator()
+        squadron = SimpleNamespace(location=SimpleNamespace(name="Balad"))
+        result = gen._create_combat_sar_template(
+            squadron, "CombatSAR On-Demand Rescue"  # type: ignore[arg-type]
+        )
+
+    assert result == "CombatSAR On-Demand Rescue"
+    assert captured["flight_type"] is FlightType.BARCAP
+
+
+def test_template_creation_failure_degrades_to_none_not_a_crash() -> None:
+    # The exact in-game failure: helipads full -> airfield fallback -> pydcs
+    # `_assign_callsign` raises "'Jolly' is not in list". An optional rescue template
+    # must NEVER break mission generation -- it degrades to None (the parked ramp helos
+    # still cover the rescue).
+    def raise_jolly(name: str) -> Any:
+        raise ValueError("'Jolly' is not in list")
+
+    spawner = SimpleNamespace(create_combat_sar_template=raise_jolly)
+    with patch(f"{_AG}.Flight", _fake_flight), patch(
+        f"{_AG}.Package", lambda *a, **k: object()
+    ), patch(f"{_AG}.Completed", lambda *a, **k: object()), patch(
+        f"{_AG}.FlightGroupSpawner", lambda *a, **k: spawner
+    ):
+        gen = _template_generator()
+        squadron = SimpleNamespace(location=SimpleNamespace(name="Balad"))
+        result = gen._create_combat_sar_template(squadron, "X")  # type: ignore[arg-type]
+
+    assert result is None

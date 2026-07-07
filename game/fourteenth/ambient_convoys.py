@@ -18,6 +18,16 @@ columns are the player's interdiction targets. The §35 Vietnam trail top-up com
 runs first and counts toward the ambient target, so a Vietnam campaign's trail war is
 unchanged and ambience only adds columns where the budget still has room.
 
+**Skim-only -- no free unit seeding (2026-07-07 design call).** Ambient columns
+**relocate units that already exist** in a rear base; they do *not* commission free ones.
+The §35 Vietnam trail keeps its documented external-supply seeding (matériel from
+China/the USSR -- red-only, Vietnam-gated, its historical character), but generalizing
+that free-seed to every campaign on both sides would inject un-budgeted reinforcements
+into both armies every turn -- a firehose the squadron asked for *traffic*, not for. So a
+rear base too thin to skim simply yields no column this turn: the roads carry traffic
+wherever the economy supports it and stay quiet where it doesn't, and the engine's organic
+convoys still serve.
+
 Runs once per turn from ``Game.finish_turn`` (after the §35 top-up, before the §50 ambush
 seeding). Gated by ``ambient_supply_convoys`` (default ON -- the §49 kill-switch
 precedent). Fully guarded: a side with no same-side road corridor (island maps, all-red
@@ -63,7 +73,7 @@ def ensure_ambient_convoys(game: "Game") -> None:
 
 
 def _top_up_side(game: "Game", coalition: "Coalition") -> None:
-    from game.fourteenth.vietnam_convoy import _seed_trail_source, _skim_units
+    from game.fourteenth.vietnam_convoy import _skim_units
     from game.transfers import TransferOrder
 
     corridors = _same_side_corridors(game, coalition)
@@ -75,14 +85,16 @@ def _top_up_side(game: "Game", coalition: "Coalition") -> None:
     if deficit <= 0:
         return
 
-    # A red insurgency convoys its irregular kit, not phantom armor (the §35 COIN rule).
-    coin = coalition.player.is_red and getattr(game.settings, "coin_insurgency", False)
-
     for _ in range(deficit):
         # Uniform pick WITH repeats: some columns share a road, some spread out --
         # exactly the randomized texture asked for, no distinct-road forcing here.
         source, destination = _RNG.choice(corridors)
-        _seed_trail_source(game, coalition, source, AMBIENT_CONVOY_UNITS, coin=coin)
+        # Skim-only (2026-07-07 design call): relocate units that ALREADY EXIST in the
+        # rear base -- no free commissioning. ``new_transfer`` debits the source
+        # immediately, so re-picking a source in this loop reads its live (reduced)
+        # stock; a source too thin to skim (< 2 armor) yields no column this turn. The
+        # generic ambient layer must not inflate both armies for free; the §35 Vietnam
+        # trail keeps its own documented external-supply seeding, which this never calls.
         units = _skim_units(source, AMBIENT_CONVOY_UNITS)
         if not units:
             continue

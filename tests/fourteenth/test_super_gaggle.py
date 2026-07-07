@@ -3,8 +3,10 @@
 Locks the accounting rework that replaced the phantom, unbounded-respawn helo spawn: the
 gaggle draws its helos + suppressors from real BLUE squadrons (``plan_super_gaggle``) and a
 shot-down committed airframe is charged back to its squadron at debrief
-(``reconcile_super_gaggle``). Survivors cost nothing (a returning detachment); a clean run
-credits the besieged outpost.
+(``reconcile_super_gaggle``). Survivors cost nothing (a returning detachment). Losses-only
+(2026-07-07 design call): a run is never credited with a garrison-strength boost -- an
+airframe's absence from the kill list can't be told apart from "never spawned", so a clean
+run is simply free rather than earning an unverifiable delivery bonus.
 """
 
 from __future__ import annotations
@@ -15,7 +17,6 @@ from uuid import uuid4
 
 from game.ato import FlightType
 from game.fourteenth.super_gaggle import (
-    DELIVERY_STRENGTH_BONUS,
     SuperGaggleCommitment,
     plan_super_gaggle,
     reconcile_super_gaggle,
@@ -253,13 +254,13 @@ def test_reconcile_charges_only_the_killed_airframes() -> None:
     assert helo_sqn.destroyed_aircraft == 2
     assert supp_sqn.owned_aircraft == 3  # 4 - 1 lost
     assert supp_sqn.destroyed_aircraft == 1
-    # A helo survived -> delivery credited to the outpost.
-    assert outpost.base.strength_delta == DELIVERY_STRENGTH_BONUS
+    # Losses-only: the run never credits a garrison-strength boost.
+    assert outpost.base.strength_delta == 0.0
     # Reconciled once: the commitment is cleared.
     assert game.super_gaggle_commitment is None
 
 
-def test_reconcile_no_losses_full_survival_credits_delivery() -> None:
+def test_reconcile_full_survival_costs_nothing_and_credits_nothing() -> None:
     helo_sqn = _Squadron(helicopter=True, owned=5, coord=0.0)
     supp_sqn = _Squadron(helicopter=False, owned=4, coord=0.0)
     outpost = _CP("Hill 861", Player.BLUE, ControlPointType.FOB, 0.0, 0.0)
@@ -267,10 +268,12 @@ def test_reconcile_no_losses_full_survival_credits_delivery() -> None:
     reconcile_super_gaggle(game, _debrief([], []))
     assert helo_sqn.owned_aircraft == 5  # nothing lost -> nothing debited
     assert helo_sqn.destroyed_aircraft == 0
-    assert outpost.base.strength_delta == DELIVERY_STRENGTH_BONUS
+    # A fully-surviving run (delivered OR never spawned -- indistinguishable) gets
+    # no strength credit under losses-only accounting.
+    assert outpost.base.strength_delta == 0.0
 
 
-def test_reconcile_all_helos_lost_no_delivery_credit() -> None:
+def test_reconcile_all_helos_lost_charges_every_airframe() -> None:
     helo_sqn = _Squadron(helicopter=True, owned=5, coord=0.0)
     supp_sqn = _Squadron(helicopter=False, owned=4, coord=0.0)
     outpost = _CP("Hill 861", Player.BLUE, ControlPointType.FOB, 0.0, 0.0)
@@ -278,7 +281,7 @@ def test_reconcile_all_helos_lost_no_delivery_credit() -> None:
     reconcile_super_gaggle(game, _debrief([], ["G-Helo-1", "G-Helo-2", "G-Helo-3"]))
     assert helo_sqn.owned_aircraft == 2
     assert helo_sqn.destroyed_aircraft == 3
-    # No helo survived -> the run failed -> no delivery credit.
+    # No credit either way.
     assert outpost.base.strength_delta == 0.0
 
 

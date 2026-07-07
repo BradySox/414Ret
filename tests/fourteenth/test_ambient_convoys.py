@@ -3,8 +3,10 @@
 Locks the standardization layer: each side's convoy flow is topped up to a randomized
 target on randomly chosen same-side corridors (repeats allowed -- some columns share a
 road, some spread out), existing convoys count toward the target, the corridors orient
-rear -> front, a red insurgency convoys its irregular kit, and every guard (setting off,
-turn 0, no same-side road, no war to supply toward) no-ops instead of inventing units.
+rear -> front, and every guard (setting off, turn 0, no same-side road, no war to supply
+toward) no-ops. Skim-only (2026-07-07 design call): columns relocate units that already
+exist in a rear base and never commission free ones, so a base too thin to skim yields no
+column instead of inventing reinforcements.
 """
 
 from __future__ import annotations
@@ -229,20 +231,33 @@ def test_columns_spread_or_stack_by_the_dice(monkeypatch: Any) -> None:
     assert origins[0] == origins[2]  # ...and one of them carries two columns
 
 
-def test_red_insurgency_convoys_irregular_kit(monkeypatch: Any) -> None:
-    # On a COIN campaign the red side's source seeding uses the insurgent pool
-    # (coin=True); blue always uses its own frontline roster (coin=False).
-    game = _game(on=True, cps=_two_sided_map(), coin=True)
-    seeded: list[tuple[str, bool]] = []
+def test_skim_only_never_commissions_free_units(monkeypatch: Any) -> None:
+    # 2026-07-07 design call: ambient columns RELOCATE existing rear units only -- they
+    # must never seed/commission free ones. A rear base too thin to skim (blue's empty
+    # rear here) yields no column instead of inventing phantom reinforcements, and the
+    # §35 seeding path is never taken for either side.
+    blue_rear = _CP(
+        "blue-rear", BLUE_PLAYER, 200.0, {}
+    )  # empty rear -> nothing to skim
+    blue_fwd = _CP("blue-fwd", BLUE_PLAYER, 10.0, {"tank": 2})
+    red_rear = _CP("red-rear", RED_PLAYER, 220.0, {"btr": 40})
+    red_fwd = _CP("red-fwd", RED_PLAYER, 12.0, {"btr": 2})
+    _road(blue_rear, blue_fwd)
+    _road(red_rear, red_fwd)
+    game = _game(on=True, cps=[blue_rear, blue_fwd, red_rear, red_fwd])
 
-    def fake_seed(g: Any, coalition: Any, source: Any, load: int, coin: bool) -> None:
-        seeded.append((source.name, coin))
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("ambient convoys must not seed/commission free units")
 
-    monkeypatch.setattr(vietnam_convoy_module, "_seed_trail_source", fake_seed)
-    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[1, 1]))
+    monkeypatch.setattr(vietnam_convoy_module, "_seed_trail_source", boom)
+    monkeypatch.setattr(_Base, "commission_units", boom)
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng(ints=[3, 1]))
     ensure_ambient_convoys(game)
-    assert ("blue-rear", False) in seeded
-    assert ("red-rear", True) in seeded
+
+    # Blue's empty rear yields no column; red's stocked rear still runs its one convoy.
+    assert game.blue.transfers.created == []
+    assert len(game.red.transfers.created) == 1
+    assert sum(game.red.transfers.created[0].units.values()) == AMBIENT_CONVOY_UNITS
 
 
 def test_target_band_is_a_few_not_a_parade() -> None:

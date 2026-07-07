@@ -1079,7 +1079,13 @@ so the two docs don't drift.
   Tide red still shows 0 EWR groups (faction EWR date-gated out at 1988, or markers not placed); a
   `mantis-config.lua` Lua error; or `1L13` EWRs spawn in blue/contested territory (placement off).
 
-### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL (capture-side gap ROOT-CAUSED + fixed 2026-07-01 via the `airecon` plugin; needs a re-fly)
+### G19 — TARPS on Vietnam-era recon birds (RF-101B / RA-5C) · §3 · ◐ PARTIAL (capture-side gap ROOT-CAUSED + fixed 2026-07-01 via the `airecon` plugin; the airecon runtime itself VERIFIED 2026-07-06 on the drone path — the Vietnam-bird re-fly is what's left)
+- **airecon runtime VERIFIED in a flown session (2026-07-06, Inherent Resolve, session `jovial-gates-574c9c`):**
+  `dcs.log` shows "AI Recon armed for 3 AI recon flight(s)" at config and then
+  "AI Recon - 'Shirqat Armed Recon|80|6|MQ-9 Reaper|' captured 22 unit(s)" + "'MYNA BAI|80|2|MQ-9 Reaper|'
+  captured 23 unit(s)" — zero Lua errors; the Tacview confirms the Shirqat package drone physically overflew
+  the target CP at 0.4 km. The G19 capture machinery works in-game; what remains owed for this row is only
+  the Vietnam-campaign fly with the RF-101B/RA-5C airframes specifically.
 - **Root cause of the "0 captures for AI survivors" gap + fix (2026-07-01).** Traced it to the MOOSE
   TARS film engine being **player-only**: `TARS.lua`'s birth handler does
   `if not unit or not unit:GetPlayerName() then return end`, so an AI-flown recon flight is dropped
@@ -1380,7 +1386,19 @@ so the two docs don't drift.
   bases (too many overlapping circles — the tuning lever is `FIELD_FORCE_RADIUS_M`/`CONCEALED_RADIUS_M`
   in `game/server/tgos/models.py`).
 
-### G25 — Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep · §3 · ☐ UNTESTED (built 2026-07-05, 414th call; the proposal-layer composition + the auto-recon extension to armed recon are unit-tested in `tests/test_armed_recon_planning.py` — the in-mission package read + the TARPS-vs-CP flight plan actually flying need a fly)
+### G25 — Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep · §3 · ◐ PARTIAL (drone-in-package + TARPS-vs-CP + the convoy hunt VERIFIED in a 2026-07-06 flown session; the auto-planner 4-ship + SEAD-escort composition and the post-standoff AI hunt still owed)
+- **Flown evidence (2026-07-06, Inherent Resolve turn 1, session `jovial-gates-574c9c`, Tacview + dcs.log):**
+  the player's "Shirqat Armed Recon" package (player F/A-18C 2-ship + MQ-9 Reaper) worked end-to-end — the
+  TARPS-vs-CP drone flew, overflew the target CP at 0.4 km, and banked a 22-unit `airecon` capture (G19); the
+  §50 red convoy (10 gun trucks) departed the FOB down the corridor and the flight found and destroyed all 10
+  (Mavericks + a gun pass); no generation errors. NOT yet shown: the auto-planner's fixed 4-ship primary + the
+  threat-gated 2-ship SEAD Viper escort composition in a planned (non-player-built) package.
+- **Same session's finding → fix to re-verify:** the ARMED RECON fly-over waypoint sat **dead-centre on the
+  Shirqat FOB** (SA-13/ZU-23 garrison) — the player had to improvise a ~4 km offset and standoff Mavericks.
+  Fixed 2026-07-06: `Builder._stand_off_search_point` pulls the point back along the ingress bearing (target's
+  longest threat ring + 2 NM, floor 5 NM, capped at the engage-zone radius / ingress distance); the hunt zone
+  re-centres on the moved point. **Next fly:** confirm the steerpoint sits off the FOB and the AI flight still
+  finds/engages the corridor traffic from the offset point.
 - **What it is:** each auto-planned Armed Recon package now composes as **1 recon drone + 2 SEAD Vipers + 4 armed recon** on a UAV-fielding faction (OIR). The primary is a fixed 4-ship; the SEAD escort (`propose_common_escorts`, 2-ship, threat-gated) resolves to the F-16CM; and the auto-recon hook (`auto_add_tarps_recon`, default ON) frags one TARPS flight — which on OIR is a Predator/Reaper, since the drones are the faction's TARPS birds. The drone is optional (drops if none free, never scrubs the package) and the SEAD is pruned when no radar-SAM threat sits on the route.
 - **Setup:** NEW "Iraq - Operation Inherent Resolve (COIN)" (has the drones + the SA-6/8 crust + Viper SEAD). Let the auto-planner build a turn; open an Armed Recon package in the ATO.
 - **Pass:** an Armed Recon package shows a 4-ship recon primary + a 1-ship drone (Predator/Reaper) recon flight; where a radar SAM threatens the route, 2 F-16CM SEAD ride too; the drone overflies the swept corridor (TARPS-against-a-CP flies, no `InvalidObjectiveLocation`) and its overflight confirms BDA on the area next turn; a package with no TARPS bird free still plans (drone just omitted).

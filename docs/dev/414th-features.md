@@ -2832,6 +2832,19 @@ end instead of following the exact polyline. The road-follow overrides (`_search
 `_interdiction_route_for`) and the `armed_recon_point` waypoint helper were removed with their test file.
 The AI's actual hunt behaviour rides the L7 in-game re-fly.
 
+**The search point stands off the target area (2026-07-06).** A flown Inherent Resolve test caught the
+fly-over waypoint sitting **dead-centre on the Shirqat FOB** — the armed-recon anchor is usually an enemy
+control point, and `armed_recon_area` placed the steerpoint (`flyover=True`) on the CP position, i.e. on
+top of the garrison's SA-13/ZU-23 (the player had to improvise a ~4 km offset and standoff Mavericks; the
+plan should not route anyone over the FOB). `Builder._stand_off_search_point` (`armedrecon.py`) now pulls
+the ARMED RECON point back along the target→ingress bearing after the layout builds: standoff = the
+target CP's own longest TGO threat ring (`max_threat_range`, ground truth) + a 2 NM buffer, floored at
+**5 NM** for an undefended area, and capped at both the engage-zone radius (so the target area always
+stays inside the hunt zone, which `armedreconingress.py` centres on this waypoint — the zone shifts
+toward the corridor where the convoys actually drive) and the distance to the ingress point. TOT/package
+sync math is untouched (`travel_time_to_target` already measures to the package target, not the fly-over
+point). Tests: the standoff cases in `tests/test_armed_recon_planning.py`.
+
 ### Files & tests
 
 | Area | Path |

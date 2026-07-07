@@ -712,7 +712,10 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             -- transit-then-orbit pattern). Waypoint speeds are km/h in MOOSE.
             local from = u:GetCoordinate()
             local hold = COORDINATE:NewFromVec2(point, SANDY_HOLD_ALT)
-            local orbit = sandy:TaskOrbitCircleAtVec2(point, hold.y, speed)
+            -- TaskOrbitCircleAtVec2 adds land.getHeight itself: pass the AGL
+            -- offset, never hold.y (terrain+alt), or the orbit ends up at
+            -- 2x terrain + alt MSL over high ground.
+            local orbit = sandy:TaskOrbitCircleAtVec2(point, SANDY_HOLD_ALT, speed)
             local engage = sandy:EnRouteTaskEngageTargetsInZone(
                 point, SANDY_ENGAGE_RADIUS, { "Ground Units" }, 0)
             entry.sandyReturn = from:GetVec2()  -- station anchor for the release
@@ -755,7 +758,8 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                 end
                 local from = u:GetCoordinate()
                 local station = COORDINATE:NewFromVec2(ret, SANDY_HOLD_ALT)
-                local orbit = g:TaskOrbitCircleAtVec2(ret, station.y, speed)
+                -- AGL offset, not station.y: see the divert orbit above.
+                local orbit = g:TaskOrbitCircleAtVec2(ret, SANDY_HOLD_ALT, speed)
                 g:Route({
                     from:WaypointAirTurningPoint("BARO", speed * 3.6, {}, "SANDY released"),
                     station:WaypointAirTurningPoint(

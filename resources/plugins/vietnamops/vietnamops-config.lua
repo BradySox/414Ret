@@ -91,6 +91,12 @@ if suite.arcLight and suite.arcLight.strikes then
             return
         end
 
+        -- Latched once the bomber has been seen alive: a shot-down bomber then
+        -- stops the poll loop instead of polling every cycle for the rest of
+        -- the mission. Never-seen groups keep polling (delayed activation).
+        local seen = false
+        local gone = false
+
         local function tick()
             local ok, err = pcall(function()
                 if armed[gname] then
@@ -98,8 +104,12 @@ if suite.arcLight and suite.arcLight.strikes then
                 end
                 local grp = GROUP:FindByName(gname)
                 if not (grp and grp:IsAlive()) then
-                    return  -- bomber gone before the run-in: no carpet (native loss).
+                    if seen then
+                        gone = true  -- bomber lost before the run-in: no carpet (native loss).
+                    end
+                    return
                 end
+                seen = true
                 local unit = grp:GetUnit(1)
                 if not (unit and unit:IsAlive()) then
                     return
@@ -131,8 +141,8 @@ if suite.arcLight and suite.arcLight.strikes then
             if not ok then
                 env.warning("vietnamops: Arc Light tick error (continuing): " .. tostring(err))
             end
-            if armed[gname] then
-                return nil  -- stop polling once the carpet has fired.
+            if armed[gname] or gone then
+                return nil  -- stop polling: carpet fired, or the bomber is lost.
             end
             return timer.getTime() + POLL
         end
@@ -918,6 +928,7 @@ if suite.fac and suite.fac.enabled then
 
     local function facTick()
         local ok, err = pcall(function()
+            local markedThisTick = {}
             for _, side in pairs({ coalition.side.RED, coalition.side.BLUE }) do
                 local enemySide = facOpposite(side)
                 for _, grp in pairs(coalition.getGroups(side, Group.Category.AIRPLANE) or {}) do
@@ -943,6 +954,7 @@ if suite.fac and suite.fac.enabled then
                                     pcall(trigger.action.removeMark, facMarks[nm])
                                 end
                                 facMarks[nm] = newId
+                                markedThisTick[nm] = true
                                 pcall(
                                     trigger.action.outTextForCoalition,
                                     side,
@@ -952,6 +964,15 @@ if suite.fac and suite.fac.enabled then
                             end
                         end
                     end
+                end
+            end
+            -- Sweep marks whose FAC didn't re-mark this tick: a dead Bronco (or
+            -- one whose target is destroyed/out of range) must not leave a
+            -- "cleared hot" mark pointing at nothing for the rest of the mission.
+            for nm, id in pairs(facMarks) do
+                if not markedThisTick[nm] then
+                    pcall(trigger.action.removeMark, id)
+                    facMarks[nm] = nil
                 end
             end
         end)

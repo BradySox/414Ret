@@ -186,7 +186,10 @@ end
 
 function mist.utils.getHeadingPoints(point1, point2, north)
     if north then
-        local p1 = mist.utils.get3DDist(point1)
+        -- MIST's original passes makeVec3(point1) here; get3DDist takes two
+        -- points and would index nil (a latent runtime death for the first
+        -- upstream Lua merge that passes the north flag).
+        local p1 = mist.utils.makeVec3(point1)
         return mist.utils.getDir(mist.vec.sub(mist.utils.makeVec3(point2), p1), p1)
     else
         return mist.utils.getDir(mist.vec.sub(mist.utils.makeVec3(point2), mist.utils.makeVec3(point1)))
@@ -677,7 +680,12 @@ function mist.scheduleFunction(f, vars, t, rep, st)
             _mistTasks[myId] = nil
             return nil
         end
-        pcall(f, unpack(vars))
+        local ok, err = pcall(f, unpack(vars))
+        if not ok then
+            -- Real MIST surfaces scheduled-function errors in dcs.log; a silent
+            -- swallow here is the "feature never starts, zero log signal" class.
+            env.warning("mist shim: scheduled function error: " .. tostring(err))
+        end
         if rep then
             return now + rep
         end

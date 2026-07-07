@@ -3,14 +3,12 @@ from dataclasses import dataclass
 from shutil import copyfile
 from typing import Dict, Union, Any
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QPushButton,
@@ -42,6 +40,10 @@ class QLoadoutEditor(QGroupBox):
 
         vbox = QVBoxLayout(self)
 
+        # The pylon list is laid out at its natural full height (no inner scroll):
+        # its size hint drives the Edit-flight dialog's height, so the dialog opens
+        # tall enough to show every pylon at once. (An inner scroll here collapsed
+        # that size hint and crushed the loadout into a few visible rows.)
         pylon_grid = QGridLayout()
         for i, pylon in enumerate(Pylon.iter_pylons(self.flight.unit_type)):
             label = QLabel(f"<b>{pylon.number}</b>")
@@ -50,22 +52,7 @@ class QLoadoutEditor(QGroupBox):
             )
             pylon_grid.addWidget(label, i, 0)
             pylon_grid.addWidget(QPylonEditor(game, flight, flight_member, pylon), i, 1)
-
-        # The pylon list scrolls on its own so a long list never squeezes the
-        # rest of the tab, and a short one leaves the slack here instead of
-        # opening a gap between the pylons and the buttons below.
-        pylon_content = QWidget()
-        pylon_layout = QVBoxLayout(pylon_content)
-        pylon_layout.setContentsMargins(0, 0, 0, 0)
-        pylon_layout.addLayout(pylon_grid)
-        pylon_layout.addStretch(1)
-
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(pylon_content)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setFrameShape(QFrame.Shape.NoFrame)
-        vbox.addWidget(scroll, stretch=1)
+        vbox.addLayout(pylon_grid)
 
         buttons = QHBoxLayout()
         save_btn = QPushButton("Save Payload")

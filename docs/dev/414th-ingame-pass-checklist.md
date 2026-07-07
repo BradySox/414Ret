@@ -2619,14 +2619,16 @@ so the two docs don't drift.
   with a flight of the **same airframe** and open its Payload tab.
 - **Also eyeball (2026-07-06 layout cleanup):** the tab now reads as grouped sections — *Flight members* /
   *Aircraft settings* (laser codes + properties scrolling, fuel + defaults pinned below) / a labeled
-  *Loadout:* row + the pylon editor. The property list should no longer cut off mid-row on a normal window,
-  and there should be no dead gap between the last pylon and the Save Payload / Create Backup buttons (the
-  pylon list scrolls instead). The bold AI-loadout warning appears only while "Use same loadout for all
-  flight members" is unchecked. On an **AI-crewed** flight (e.g. an AI F-4E escort) the *Aircraft settings*
-  box should be **compact** — its aircraft-property list is player-only so it renders empty, and the box no
-  longer leaves a big blank gap between the laser rows and the fuel slider (2026-07-06 follow-up fix).
-  Offscreen-instantiation smoke passed headlessly (AI F-4E settings-box h=66 vs player F-4E h=288); the
-  visual proportions are the in-app question.
+  *Loadout:* row + the pylon editor. The property list should no longer cut off mid-row on a normal window.
+  The bold AI-loadout warning appears only while "Use same loadout for all flight members" is unchecked. On
+  an **AI-crewed** flight (e.g. an AI F-4E escort) the *Aircraft settings* box should be **compact** — its
+  aircraft-property list is player-only so it renders empty, and the box no longer leaves a big blank gap
+  between the laser rows and the fuel slider (2026-07-06 follow-up 1). The **weapons loadout at the bottom
+  must show all/most pylons, not be crushed into a few** — the pylon list is a natural full-height grid (no
+  inner scroll), so the dialog opens tall enough to show every station (2026-07-06 follow-up 2, after a
+  player F-16 came up showing only ~5 of 12). Offscreen-instantiation smoke passed headlessly (AI F-4E
+  settings-box h=66 vs player F-4E h=288; F-16 lays out all 12 pylons); the visual proportions are the
+  in-app question.
 - **Pass:** the new flight's Payload tab already shows the saved fuel + property values (no re-entry); **Clear
   default** is enabled once a default exists and, after clicking it, a further new flight of that airframe is
   back to stock values; the store lives at `Saved Games\Retribution\flight_defaults.json` and survives an app

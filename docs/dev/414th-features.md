@@ -3088,9 +3088,14 @@ commitment is then cleared (charged once). **No base-Lua / debrief-schema change
   loadout (no explicit `payload`), so its effectiveness against the AAA is unverified — it may strafe or be a
   visual presence. A spawn failure stays harmless (guarded; the helo run proceeds).
 - **Blue-only (symmetry deferred).** The plan hard-picks the BLUE outpost; a red-player mirror is a follow-on.
-- **Delivery credit is modest + survival-gated.** A clean run nudges the outpost's ground strength; a wiped run
-  credits nothing. Tuning `DELIVERY_STRENGTH_BONUS` (or making delivery signal explicit rather than
-  "any-helo-survived") is a possible refinement.
+- **Losses-only — no delivery credit (2026-07-07 design call).** The earlier survival-gated
+  `DELIVERY_STRENGTH_BONUS` (a clean run nudged the outpost's ground strength) is **removed**. The only signal
+  the debrief carries is which committed airframes died, and an airframe's *absence* from the kill list is
+  "survived and delivered" OR "never spawned at all" (e.g. the player ended the mission before the launch
+  delay) — indistinguishable without a runtime "delivered" signal the plugin does not emit, and emitting one
+  would need exactly the Lua/debrief-schema change this module avoids. So the gaggle costs the wing only the
+  airframes it actually loses; a clean run is free. Re-introducing the credit is deferred behind a real
+  delivery signal (the plugin writing a "reached the outpost" marker the debrief can read).
 
 ## §38 — FAC(A) willie-pete target marking (Vietnam Ops suite)
 
@@ -4109,8 +4114,16 @@ every turn on **randomly chosen** same-side corridors — a uniform pick *with r
 sometimes share a road and sometimes spread out; organic transfers and the §35 trail convoys count toward
 the target, so nothing stacks on top of existing traffic. Corridors are enumerated once per road and
 oriented rear→front off the §35 `_reference_points` (fronts, or the opposing CPs on a front-less laydown);
-sources are topped up by the same `_seed_trail_source` external-logistics rule (a red insurgency convoys
-its irregular kit — the COIN flag). This **replaces the old blue-only `ensure_blue_escort_convoy`**: the
+each column carries the real units already in its rear base's roster. **Skim-only — no free unit seeding
+(2026-07-07 design call).** Ambient columns **relocate** existing rear units (`_skim_units`) and never call
+`commission_units` to invent free ones. The §35 Vietnam trail's `_seed_trail_source` external-logistics
+free-seed is *right for that feature* — red-only, Vietnam-gated, the Ho Chi Minh Trail's documented
+character — but generalizing it here would top up **both** sides' rear bases with un-budgeted units every
+turn on **every** campaign (up to ~48 net-new free ground units/turn game-wide, permanently reinforcing
+front-ward bases), which the squadron never asked for: they asked for *traffic to hunt and protect*, not a
+free-reinforcement firehose. So a rear base too thin to skim (< 2 armor) simply yields no column that turn
+(`new_transfer` debits the source immediately, so re-picking a source in the loop reads its live stock).
+This **replaces the old blue-only `ensure_blue_escort_convoy`**: the
 ambush roll below covers every blue convoy whatever created it, and red's ambient columns are ordinary
 Armed Recon / BAI targets. Gated `ambient_supply_convoys` (Mission Generation → Battlefield life, default
 **ON**); a side with no same-side road (island maps, all-red graphs) is a silent no-op. Both `convoy_ambush`
@@ -4150,9 +4163,10 @@ debug toggle still see ground truth.
 **Force model (from `Game.finish_turn`, in order: the §35 trail top-up → ambient convoys → ambush seeding):**
 
 - `ensure_ambient_convoys` (`game/fourteenth/ambient_convoys.py`) — both sides, the randomized top-up
-  described above. Reuses the §35 coalition-generic helpers (`_reference_points` / `_seed_trail_source` /
-  `_skim_units`) with its own `_same_side_corridors` enumeration; `AMBIENT_CONVOY_UNITS` (8) per column.
-  The dice live in a module-level `_RNG` so tests script them.
+  described above. Reuses the §35 coalition-generic helpers `_reference_points` + `_skim_units` (skim-only —
+  it does **not** call `_seed_trail_source`, so no free units are commissioned) with its own
+  `_same_side_corridors` enumeration; `AMBIENT_CONVOY_UNITS` (8) per column. The dice live in a module-level
+  `_RNG` so tests script them.
 - `seed_convoy_ambushes` (`game/fourteenth/convoy_ambush.py`) — despawns last turn's ambush teams first
   (an ambush is a one-mission event —
   cleared or run-past, it does not persist; reuses `coin._despawn`/`_tgo_by_id`), then **rolls each active
@@ -4517,3 +4531,26 @@ none change a feature's intended shape.
   while `scheduleFunction` swallowed consumer errors silently.
 - **§20 drop-spawn (`game/theater/unitplacement.py`)** — a Deploy-Next-Turn placement charged
   at queue time is now refunded when it can't be materialised (CP lost / terrain changed).
+
+### Deferred design calls — resolved 2026-07-07
+
+The audit deliberately left three items untouched because they needed a *design* decision, not a
+code fix. Resolved (with the user) as a follow-up:
+
+- **§50 ambient-convoy free seeding → skim-only.** `ensure_ambient_convoys` was calling the §35
+  `_seed_trail_source`, `commission_units`-ing free (un-budgeted) units into **both** sides' rear
+  bases every turn on **every** campaign — a firehose of ~48 net-new free ground units/turn
+  game-wide, permanently reinforcing front-ward bases. That external-supply free-seed is right for
+  the §35 Vietnam trail (red-only, Vietnam-gated, its documented character) but wrong to generalize:
+  the squadron asked for *traffic*, not free reinforcement. Ambient columns now **skim only** —
+  relocate units that already exist (`_skim_units`), never commission free ones — so a rear base too
+  thin to skim yields no column that turn. §35 is untouched.
+- **§37 Super Gaggle "never-spawned delivery credit" → losses-only.** `reconcile_super_gaggle`
+  credited a garrison strength boost whenever a committed helo was *absent* from the debrief kill
+  list — but "absent" is "survived and delivered" OR "never spawned" (mission ended before the launch
+  delay), indistinguishable without a runtime "delivered" signal the plugin does not emit. Dropped the
+  `DELIVERY_STRENGTH_BONUS` credit (and `_credit_delivery`); the gaggle is now losses-only. Real
+  delivery credit is deferred behind a real signal (Lua/debrief-schema change this module avoids).
+- **§15 combatsar Sandy divert (G23) → kept frozen, awaiting the re-fly.** The 2026-07-02 route-push
+  rework is the correct MOOSE transit-then-orbit pattern and reads sound; "pass-or-delete" is decided
+  by an in-game re-fly, not a code review. Kept as-is (no change) — the checklist re-fly is the arbiter.

@@ -22,7 +22,16 @@ CTLD cargo run. The approach ("debit a squadron + track losses"):
   in the debrief's killed units is a **real loss** -- the squadron's ``owned_aircraft`` is
   debited and ``destroyed_aircraft`` incremented, exactly like any other airframe lost that
   mission. Survivors cost nothing (a resupply detachment that returns), so no pre-debit/return
-  bookkeeping is needed. On delivery a small ground-strength boost is credited to the outpost.
+  bookkeeping is needed.
+
+**Losses-only accounting -- no delivery credit (2026-07-07 design call).** There is
+deliberately *no* garrison-strength boost for a "delivered" run. The only thing the debrief
+carries is which committed airframes died, and an airframe's *absence* from the kill list means
+"survived and delivered" OR "never spawned at all" (e.g. the player ended the mission before the
+plugin's launch delay elapsed) -- indistinguishable without a runtime "delivered" signal the
+plugin does not emit, and emitting one would need exactly the Lua/debrief-schema change this
+module set out to avoid. So a clean run is simply free: the gaggle costs the wing only the
+airframes it actually loses.
 
 No base-Lua / debrief-schema changes: the plugin's spawned units already fire the DCS death
 events ``dcs_retribution.lua`` records, so their names land in the debrief killed lists (as
@@ -49,9 +58,6 @@ OUTPOST_FRONT_REACH_M = 150_000.0
 #: Airframes the gaggle / suppression flight commit (capped by what the chosen squadron owns).
 DESIRED_HELOS = 3
 DESIRED_SUPPRESSORS = 2
-
-#: Ground-strength boost credited to the besieged outpost when the gaggle delivers.
-DELIVERY_STRENGTH_BONUS = 0.1
 
 
 @dataclass
@@ -195,16 +201,17 @@ def _pick_squadron(
 
 
 def reconcile_super_gaggle(game: "Game", debriefing: "Debriefing") -> None:
-    """Charge Super Gaggle airframe losses back to their squadrons + credit delivery.
+    """Charge Super Gaggle airframe losses back to their squadrons.
 
     A committed airframe whose unit name appears in the debrief's killed units (aircraft *or*
     ground -- runtime-spawned units aren't in the ``UnitMap`` so they land in the ground list)
     is a real loss: debit ``owned_aircraft`` and bump ``destroyed_aircraft``, exactly like any
     other airframe lost that mission. Clears the commitment so it is charged only once.
 
-    Delivery credit: if any gaggle helo survived, treat the run as delivered and give the
-    besieged outpost a small ground-strength boost (the resupply landed). Losses-only accounting
-    means survivors cost nothing, so a clean run is free -- as a returning detachment should be.
+    Losses-only (2026-07-07 design call): there is no delivery strength credit. An airframe's
+    absence from the kill list can't be distinguished from "never spawned" without a runtime
+    "delivered" signal the plugin does not emit, so a clean run simply costs nothing rather than
+    handing out a garrison boost the gaggle may never have earned.
     """
     commitment = getattr(game, "super_gaggle_commitment", None)
     if commitment is None:
@@ -214,16 +221,12 @@ def reconcile_super_gaggle(game: "Game", debriefing: "Debriefing") -> None:
         debriefing.state_data.killed_ground_units
     )
 
-    helo_lost = _charge_losses(
+    _charge_losses(
         game, commitment.helo_squadron_id, commitment.helo_unit_names, killed
     )
     _charge_losses(
         game, commitment.supp_squadron_id, commitment.supp_unit_names, killed
     )
-
-    helos_survived = len(commitment.helo_unit_names) - helo_lost
-    if helos_survived > 0:
-        _credit_delivery(game, commitment)
 
     game.super_gaggle_commitment = None
 
@@ -250,19 +253,6 @@ def _charge_losses(
         f"{lost} {squadron.aircraft} lost from {squadron} on the resupply run.",
     )
     return lost
-
-
-def _credit_delivery(game: "Game", commitment: SuperGaggleCommitment) -> None:
-    if commitment.outpost_cp_id is None:
-        return
-    for cp in game.theater.controlpoints:
-        if cp.id == commitment.outpost_cp_id:
-            cp.base.affect_strength(DELIVERY_STRENGTH_BONUS)
-            game.message(
-                "Super Gaggle delivered",
-                f"Resupply reached {commitment.outpost_name}; the garrison is bolstered.",
-            )
-            return
 
 
 def _squadron_by_id(game: "Game", squadron_id: UUID) -> Optional["Squadron"]:

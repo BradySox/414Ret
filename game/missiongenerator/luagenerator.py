@@ -496,11 +496,15 @@ class LuaGenerator:
             [flight.group_name for flight in rescue_flights]
         )
 
-        # On-demand AI rescue: the runtime SPAWN-clones this cold template helo when a
-        # pilot goes down, delivering to the field (nearest resolvable for a FARP). Only
-        # emitted with no player package -- a fragged package flies its own rescue.
+        # On-demand AI rescue sources, preference order: a real parked ramp helo
+        # (tracked) then the cold clone template (fallback). Delivered to the field
+        # (nearest resolvable for a FARP). Only emitted with no player package -- a
+        # fragged package flies its own rescue.
         if auto_spawn and templates is not None:
-            node.add_item("heloTemplate").set_value(templates.helo_group)
+            if templates.parked_helos:
+                node.add_item("parkedHelos").set_data_array(templates.parked_helos)
+            if templates.helo_group is not None:
+                node.add_item("heloTemplate").set_value(templates.helo_group)
             node.add_item("farp").set_value(templates.delivery_field)
 
         # Each King (C-130) lights the TACAN the rescue helo homes on.

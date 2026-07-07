@@ -24,23 +24,30 @@ if TYPE_CHECKING:
 
 @dataclass
 class CombatSarTemplates:
-    """Cold late-activation template groups for the on-demand AI rescue (§21).
+    """On-demand AI rescue sources (§21). Two, in preference order:
 
-    The combatsar runtime SPAWN-clones fresh copies of these when a pilot goes
-    down and no player CSAR package is up -- the proven clone-into-mission path,
-    not the retired commandeer-an-orbiting-helo dispatch (checklist G21). The
-    template groups themselves never launch (late_activation); only their clones
-    fly the rescue.
+    1. ``parked_helos`` -- **real** untasked rescue helos already sitting cold on
+       the ramp (`AircraftGenerator._spawn_unused_for`, in the UnitMap). The
+       runtime starts one and flies the OPSTRANSPORT pickup: a **tracked** airframe
+       whose loss is recorded, launched from a *parked* aircraft (not the retired
+       commandeer of an *airborne* orbit helo -- that airborne re-task is what
+       failed, G21). Empty when the ramp is bare (perf toggle / fully-tasked wing).
+    2. ``helo_group`` -- a cold late-activation **clone template** as the fallback
+       when no parked helo is free. The runtime SPAWN-clones it (the proven
+       clone-into-mission path); the clone is untracked, like the pre-rework
+       rescue clones. None if no parking was available to place the template.
+
+    The Sandy (arming needs the configurator pass) + King (needs the TACAN beacon
+    setup) on-demand clones stay §21 v2.
     """
 
-    #: The rescue helo template (does the OPSTRANSPORT pickup).
-    helo_group: str
-    #: Friendly field the cloned rescue delivers the survivor to (CP display
-    #: name; the runtime falls back to the nearest resolvable field for a FARP).
+    #: Friendly field the rescue delivers the survivor to (CP display name; the
+    #: runtime falls back to the nearest resolvable field for a FARP).
     delivery_field: str
-    #: The Sandy (A-10/Apache) template that suppresses the snatch party, if the
-    #: coalition owns a SCAR-capable airframe. None -> helo-only rescue.
-    sandy_group: Optional[str] = None
+    #: Real untasked rescue helos parked on the ramp -- preferred (tracked).
+    parked_helos: list[str] = field(default_factory=list)
+    #: The cold clone-template helo group; fallback when no parked helo is free.
+    helo_group: Optional[str] = None
 
 
 @dataclass
@@ -183,3 +190,8 @@ class MissionData:
     # auto-spawns is a separate gate (no player CSAR package this mission), decided
     # in luagenerator so the template can exist unused.
     combat_sar_templates: Optional[CombatSarTemplates] = None
+    # Group names of BLUE untasked rescue helos parked cold on the ramp
+    # (`_spawn_unused_for`) — the preferred, **tracked** on-demand rescue source
+    # (§21). Collected during flight generation; folded into
+    # ``combat_sar_templates`` by ``spawn_combat_sar_templates``.
+    parked_rescue_helos: list[str] = field(default_factory=list)

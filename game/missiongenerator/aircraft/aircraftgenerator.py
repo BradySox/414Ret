@@ -415,20 +415,22 @@ class AircraftGenerator:
                     flight.roster.clear()
 
     def spawn_combat_sar_templates(self) -> None:
-        """Cold late-activation rescue template for the on-demand AI CSAR (§21).
+        """Wire the on-demand AI CSAR rescue sources (§21).
 
-        When ``auto_combat_sar`` is on, drop a hidden rescue-helo template that the
-        combatsar runtime SPAWN-clones when a pilot goes down and no player CSAR
-        package is up -- the proven clone-into-mission path, replacing the retired
-        standing orbit (checklist G21). BLUE only (red flies no CSAR, squadron call
-        2026-07-01). No CSAR-capable helo owned -> no template -> the runtime has
-        nothing to auto-spawn (it still runs the survivor ledger for a player
-        package). The template group never launches; only its clones fly.
+        When ``auto_combat_sar`` is on, the combatsar runtime rescues a downed pilot
+        (with no player package up) from, in preference order: (1) a **real** untasked
+        rescue helo parked cold on the ramp -- a *tracked* airframe the runtime starts
+        and flies (collected in ``_spawn_unused_for``); (2) a cold late-activation
+        **clone template** placed here, the fallback when the ramp is bare (perf toggle
+        / fully-tasked wing). This replaces the retired standing orbit + its
+        commandeer-an-*airborne*-helo dispatch (the airborne re-task is what failed,
+        G21 -- a *parked* start is the fix). BLUE only (red flies no CSAR, squadron
+        call 2026-07-01).
 
-        The Sandy/King on-demand clones (an armed escort + overhead King) are a
-        v2 follow-on: arming a clone template correctly needs the configurator pass
-        (which templates skip) plus an in-game pass, so v1 fields the essential
-        rescuer -- the helo does the OPSTRANSPORT pickup and needs no loadout.
+        The Sandy/King on-demand launches are §21 v2: arming a Sandy needs the payload
+        configurator pass, and a King needs its TACAN beacon setup -- neither a parked
+        untasked airframe nor a cold template carries those, so v1 fields the essential
+        rescuer (the helo needs no loadout -- it does the OPSTRANSPORT pickup).
         """
         if not self.game.settings.auto_combat_sar:
             return
@@ -440,18 +442,24 @@ class AircraftGenerator:
             ):
                 helo_squadron = squadron
                 break
+        # No CSAR-capable blue helo squadron at all -> no rescue airframe of any kind
+        # (the parked pool is drawn from the same squadrons), so nothing to spawn.
         if helo_squadron is None:
             return
 
+        # The clone-template fallback (may be None if no parking was free); the parked
+        # ramp helos are the preferred, tracked source.
         helo_group = self._create_combat_sar_template(
             helo_squadron, "CombatSAR On-Demand Rescue"
         )
-        if helo_group is None:
-            return
+        parked = list(self.mission_data.parked_rescue_helos)
+        if helo_group is None and not parked:
+            return  # no rescue source this mission
 
         self.mission_data.combat_sar_templates = CombatSarTemplates(
-            helo_group=helo_group,
             delivery_field=helo_squadron.location.name,
+            parked_helos=parked,
+            helo_group=helo_group,
         )
 
     def _create_combat_sar_template(
@@ -544,6 +552,16 @@ class AircraftGenerator:
                     group.units[0].skill = Skill.Client
                 AircraftPainter(flight, group).apply_livery()
                 self.unit_map.add_aircraft(group, flight)
+                # A blue CSAR-capable helo parked cold on the ramp is the preferred
+                # (tracked) on-demand rescue source (§21) -- record it for the
+                # combatsar runtime to start when a pilot goes down with no player
+                # package up.
+                if (
+                    squadron.coalition.player.is_blue
+                    and squadron.aircraft.helicopter
+                    and squadron.aircraft.capable_of(FlightType.COMBAT_SAR)
+                ):
+                    self.mission_data.parked_rescue_helos.append(str(group.name))
 
     def create_and_configure_flight(
         self, flight: Flight, country: Country, dynamic_runways: Dict[str, RunwayData]

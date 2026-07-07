@@ -98,37 +98,57 @@ rescue to go get the downed pilot.
   `combat_sar_targets` are gone; `auto_combat_sar` no longer auto-frags an orbiting package.
 - **Player-plannable package** already existed and stays — `FrontLine.mission_types` offers
   `COMBAT_SAR` + `SCAR`, so a player builds a C-130 + helo(s) + A-10 Sandys off the FLOT.
-- **On-demand AI rescue.** `AircraftGenerator.spawn_combat_sar_templates` (the proven QRA
-  cold-template pattern) drops a hidden **late-activation rescue-helo template**; the combatsar
-  runtime **SPAWN-clones** it into the OPSTRANSPORT pickup when a pilot goes down — the working
-  clone-into-mission path, not the retired commandeer. BLUE only.
+- **On-demand AI rescue — parked-first, clone-fallback.** When a pilot goes down with no player
+  package up, the runtime rescues from, in preference order:
+  1. a **real untasked rescue helo parked cold on the ramp** — Retribution already spawns each
+     squadron's spare airframes via `_spawn_unused_for` → `create_idle_aircraft` (uncontrolled,
+     **and added to the `UnitMap`**). `spawn_combat_sar_templates` collects the BLUE CSAR-capable
+     ones (`mission_data.parked_rescue_helos`); the plugin starts one in place
+     (`StartUncontrolled`) and flies the OPSTRANSPORT pickup. Because it's a real `UnitMap`
+     airframe, **its loss is recorded** — the tracked source. This is the user's insight (the
+     armed C-130s/A-10s/helos already on the ramp) applied to the helo.
+  2. a **cold late-activation clone template** (the QRA `spawn_intercept_templates` pattern) as the
+     fallback when the ramp is bare (`perf_disable_untasked_blufor_aircraft`, or a fully-tasked
+     wing) — SPAWN-cloned; the clone is **untracked**, like the pre-rework rescue clones.
+
+  Both go straight into the pickup (the clone-into-mission path that works). **Why parked and not
+  the old commandeer:** the retired dispatch commandeered an *airborne, already-routed* orbit helo,
+  which RTB'd instead of rescuing (G21). A *parked* start is much closer to "fresh into mission" —
+  the thing that works. BLUE only.
 - **The gate:** a player CSAR/SCAR flight in the ATO ⟺ a player package ⟹ `autoSpawn=false`
-  (no AI clone; the package + ledger handle it). Nothing fragged ⟹ `autoSpawn=true`. Emitted as
-  `dcsRetribution.CombatSAR.autoSpawn` + `heloTemplate`/`farp`.
-- The spawned rescue clones are **not tracked in the loss books** (same as the pre-existing
-  rescue-helo clones) — the deliberate trade-off for reusing the one path that actually flies
-  (the user's explicit call over the tracked-but-riskier dormant-ATO-package alternative).
+  (no AI spawn; the package + ledger handle it). Nothing fragged ⟹ `autoSpawn=true`. Emitted as
+  `dcsRetribution.CombatSAR.autoSpawn` + `parkedHelos` (preferred) + `heloTemplate`/`farp` (fallback).
 
 **Deferred (v2, clearly marked so nobody assumes it shipped):**
-- On-demand **Sandy + King** clones. The helo needs no loadout (it does OPSTRANSPORT); arming a
-  Sandy clone correctly needs the configurator pass (which cold templates skip) + an in-game
-  pass, so v1 fields the essential rescuer only.
+- On-demand **Sandy + King** launches. The helo needs no loadout (it does OPSTRANSPORT), but a
+  Sandy needs an armed payload (the configurator pass — neither a parked untasked airframe nor a
+  cold template carries weapons: both are generated `maintask=None` / clean-wing) and a King needs
+  its TACAN-beacon setup (`register_combat_sar_king`, only run for tasked King flights). So v1
+  fields the essential rescuer only.
 - **Multi-survivor chaining** ("grab the other guy on the way") — OPSTRANSPORT multi-cargo, once
   the core is flown.
 - **Packaged-AI-helo auto-pickup** (scenario A's AI helo auto-flying the rescue) — that is the
   commandeer-an-airborne-helo problem; for now a player package coordinates the pickup
   (LARS/F10/voice), which scenario B does anyway.
 
+**The fly-critical unknown:** the parked-helo *start-in-place* path (`GROUP:StartUncontrolled()` +
+`FLIGHTGROUP:AddOpsTransport`) is a runtime path I can't verify headlessly — likely fine, but
+unproven. It degrades safely: if a parked helo is commandeered but never launches, that survivor
+isn't rescued that dispatch; the clone fallback covers the no-parked case. If the fly shows the
+start-in-place doesn't work, make the clone primary.
+
 Files: `game/commander/tasks/compound/theatersupport.py` (orbit removed),
-`game/missiongenerator/aircraft/aircraftgenerator.py` (`spawn_combat_sar_templates`),
+`game/missiongenerator/aircraft/aircraftgenerator.py` (`spawn_combat_sar_templates` +
+`_spawn_unused_for` collecting the parked pool),
 `game/missiongenerator/aircraft/flightgroupspawner.py` (`create_combat_sar_template`),
-`game/missiongenerator/missiondata.py` (`CombatSarTemplates`),
-`game/missiongenerator/luagenerator.py` (`autoSpawn` gate + template emit),
-`resources/plugins/combatsar/combatsar-config.lua` (`autoSpawn` rename + the empty-`rescueHelos`
-guard fix). Tests: `tests/missiongenerator/test_combat_sar_sandy_luadata.py` (the gating),
+`game/missiongenerator/missiondata.py` (`CombatSarTemplates` + `parked_rescue_helos`),
+`game/missiongenerator/luagenerator.py` (`autoSpawn` gate + `parkedHelos`/template emit),
+`resources/plugins/combatsar/combatsar-config.lua` (`autoSpawn` rename, the empty-`rescueHelos`
+guard fix, `commandeerParkedHelo` + `StartUncontrolled`). Tests:
+`tests/missiongenerator/test_combat_sar_sandy_luadata.py` (the gating + parked/clone emit),
 `tests/missiongenerator/test_combat_sar_templates.py` (the template-spawn guards). In-game pass:
-checklist G9/G21 (the on-demand spawn actually flying the rescue). NEW game required (the orbit
-task is gone + the cold template is generated).
+checklist G9 (the on-demand rescue actually flying + delivering). NEW game required (the orbit
+task is gone + the parked pool / cold template is generated at start).
 
 ## What ships (the architecture that survived)
 

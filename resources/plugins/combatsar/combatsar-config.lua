@@ -102,13 +102,17 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         if not c or not c.pilotTemplate then return end
         local helos = c.rescueHelos or {}
         -- autoSpawn (§21 on-demand rework): with no player CSAR package fragged, the
-        -- runtime clones a rescue from the cold heloTemplate when a pilot goes down.
-        -- The plugin needs SOME way to rescue -- either a player-crewed helo on the
-        -- ledger (rescueHelos, for player pickup geometry) or the on-demand clone
-        -- template. Neither -> nothing to do. (Was: bail whenever rescueHelos empty,
+        -- runtime rescues from, in order, a real PARKED ramp helo (parkedHelos --
+        -- tracked, started in place) then a cold clone template (heloTemplate). The
+        -- plugin needs SOME way to rescue -- a player-crewed helo on the ledger
+        -- (rescueHelos, for player pickup geometry), a parked helo, or the clone
+        -- template. None -> nothing to do. (Was: bail whenever rescueHelos empty,
         -- which killed the whole ledger in the no-player-package case.)
         local autoSpawn = readBool(c.autoSpawn, false)
-        if #helos == 0 and not (autoSpawn and c.heloTemplate) then return end
+        local parked = c.parkedHelos or {}
+        if #helos == 0 and not (autoSpawn and (#parked > 0 or c.heloTemplate)) then
+            return
+        end
         local cfg = {
             color = color,
             side = side,
@@ -120,6 +124,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             enemyCountry = tonumber(c.enemyCountry) or enemyCountry,
             pilotTemplate = c.pilotTemplate,
             rescueHelos = helos,
+            parkedHelos = parked,
             heloTemplate = c.heloTemplate,
             farp = c.farp,
             kings = c.kings or {},
@@ -398,11 +403,14 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         return false
     end
 
-    -- Find the nearest alive, idle, AI rescue helo ALREADY in the mission (the planned Combat SAR
-    -- flight orbiting the FLOT) to commandeer for this pickup, rather than spawning a fresh clone.
-    local function commandeerRescueHelo(cfg, survivorCoord)
+    -- Find the nearest alive, idle, AI rescue helo PARKED cold on the ramp (a real,
+    -- tracked untasked airframe -- §21) to commandeer for this pickup, preferred over
+    -- cloning a fresh template. Nearest to the survivor first. These sit uncontrolled
+    -- until started (see the dispatch below); commandeering a *parked* helo is the fix
+    -- for the retired commandeer of an *airborne*, already-routed orbit helo (G21).
+    local function commandeerParkedHelo(cfg, survivorCoord)
         local best, bestName, bestD = nil, nil, nil
-        for _, name in ipairs(cfg.rescueHelos or {}) do
+        for _, name in ipairs(cfg.parkedHelos or {}) do
             if not busyHelos[name] then
                 local g = GROUP:FindByName(name)
                 if g and g:IsAlive() and not groupHasPlayer(g) then
@@ -419,9 +427,10 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     end
 
     -- AI auto-rescue: send a helo to board the LEDGER's survivor as cargo (MOOSE OPSTRANSPORT, the
-    -- proven AICSAR routing) and deliver it to the FARP, crediting the real unit on unload. PREFER to
-    -- commandeer a rescue helo already flying the Combat SAR orbit; only clone a fresh one from the
-    -- FARP when every planned rescue helo is dead or already committed. Identity lives in the ledger.
+    -- proven AICSAR routing) and deliver it to the FARP, crediting the real unit on unload. PREFER a
+    -- real PARKED ramp helo (tracked -- started in place, so its loss is recorded); only clone a
+    -- fresh template when every parked helo is dead/committed or the ramp is bare. Identity lives in
+    -- the ledger.
     local function dispatchAIRescue(entry)
         local ok, err = pcall(function()
             local cfg = entry.cfg
@@ -442,11 +451,17 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             local pickupzone = ZONE_GROUP:New(entry.groupName, entry.group, 300)
             local opstransport = OPSTRANSPORT:New(entry.group, pickupzone, farp:GetZone())
 
-            local helo, heloName = commandeerRescueHelo(cfg, entry.group:GetCoordinate())
+            local helo, heloName = commandeerParkedHelo(cfg, entry.group:GetCoordinate())
             local fg
             local commandeered = false
             if helo then
                 fg = FLIGHTGROUP:New(helo)
+                -- The parked ramp helo sits cold + uncontrolled; start it so it launches
+                -- into the transport (a *parked* start, not the retired airborne re-task).
+                -- pcall so a missing MOOSE method never aborts the dispatch -- OPSGROUP also
+                -- starts an uncontrolled group when it runs the transport, so this is belt +
+                -- suspenders.
+                pcall(function() helo:StartUncontrolled() end)
                 -- NB: mark busy only on the success path below, so a mid-dispatch error
                 -- never strands a commandeered helo as permanently busy (it stays available
                 -- for the retry).
@@ -484,9 +499,9 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             end
             if commandeered then
                 msgToCoalition(entry.side,
-                    "RESCUE: a Combat SAR helo on station is diverting to the downed pilot.")
+                    "RESCUE: a rescue helo is launching from the ramp for the downed pilot.")
             else
-                msgToCoalition(entry.side, "RESCUE: an AI helo has launched for the downed pilot.")
+                msgToCoalition(entry.side, "RESCUE: an AI rescue helo has launched for the downed pilot.")
             end
             return true  -- dispatch fully set up
         end)

@@ -746,22 +746,29 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     plugin). **Two ways rescue happens (on-demand rework 2026-07-06):** (1) the player **plans their
     own package** off the FLOT (`FrontLine.mission_types` offers COMBAT_SAR + SCAR — a C-130 + helo(s)
     + A-10 Sandys, human or AI-crewed seats), or (2) with **no player package fragged**, the runtime
-    **spawns an on-demand AI rescue** when a pilot goes down — it SPAWN-clones a **cold late-activation
-    helo template** (`AircraftGenerator.spawn_combat_sar_templates`, the QRA-reserve pattern) and flies
-    it straight into the OPSTRANSPORT pickup (the proven clone-into-mission path). **The retired
-    standing orbit** (auto-fragged `PlanCombatSar` + the commandeer-an-airborne-helo dispatch) is
-    **removed** — the orbiting helo never reliably flew the pickup (checklist G21). The gate: a player
-    CSAR/SCAR flight in the ATO ⟺ player package ⟹ **no AI spawn** (the user's "we've got it covered"
-    scenarios); nothing fragged ⟹ AI spawns. `auto_combat_sar` (**default ON**) now drives the
-    on-demand spawn, not an orbit. **Emit contract:** `dcsRetribution.CombatSAR` carries `autoSpawn`
-    (bool) + `heloTemplate`/`farp` (only when auto-spawning) alongside `pilotTemplate`/`rescueHelos`/
+    **spawns an on-demand AI rescue** when a pilot goes down — sourced, in preference order, from
+    (a) a **real untasked rescue helo already parked cold on the ramp** (`_spawn_unused_for`, in the
+    `UnitMap`) — started in place and flown into the OPSTRANSPORT pickup, so it's a **tracked**
+    airframe whose loss is recorded — else (b) a **cold late-activation clone template**
+    (`AircraftGenerator.spawn_combat_sar_templates`, the QRA-reserve pattern) SPAWN-cloned as the
+    fallback when the ramp is bare (perf toggle / fully-tasked wing; the clone is untracked). Both go
+    straight into the pickup (the clone-into-mission path that works). **The retired standing orbit**
+    (auto-fragged `PlanCombatSar` + the commandeer-an-**airborne**-helo dispatch) is **removed** — the
+    orbiting helo never reliably flew the pickup (checklist G21); commandeering a *parked* helo instead
+    of an *airborne, already-routed* one is the fix. The gate: a player CSAR/SCAR flight in the ATO ⟺
+    player package ⟹ **no AI spawn** (the user's "we've got it covered" scenarios); nothing fragged ⟹
+    AI spawns. `auto_combat_sar` (**default ON**) drives the on-demand spawn, not an orbit. **Emit
+    contract:** `dcsRetribution.CombatSAR` carries `autoSpawn` (bool) + `parkedHelos` (preferred) +
+    `heloTemplate`/`farp` (fallback) when auto-spawning, alongside `pilotTemplate`/`rescueHelos`/
     `kings`/`sandys`. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field
     spares the aviator at debrief (airframe still lost) — the plugin's `OnAfterBoarded`/`OnAfterRescued`
     hooks append the ejected unit name to `combat_sar_rescues`, and `commit_air_losses` skips that
     pilot's kill (fail-safe: empty list = pre-scoring behaviour). **v2 (deferred):** on-demand Sandy +
-    King clones (arming a clone template needs the configurator pass + a fly) and multi-survivor
-    chained pickup ("grab the other guy on the way"). Distinct from the shelved POW-recovery raid
-    (§15). (`game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftgenerator.py`,
+    King launches (a Sandy needs the payload configurator pass, a King its TACAN-beacon setup — neither
+    a parked untasked airframe nor a cold template carries those) and multi-survivor chained pickup
+    ("grab the other guy on the way"). The parked-helo *start-in-place* runtime path (`StartUncontrolled`
+    + OPSTRANSPORT) is the fly-critical unknown; it degrades to the proven clone if it misbehaves.
+    Distinct from the shelved POW-recovery raid (§15). (`game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftgenerator.py`,
     `game/missiongenerator/luagenerator.py`, `game/sim/missionresultsprocessor.py`,
     `resources/plugins/combatsar/`; features doc §21, design doc `414th-csar-notes.md`.)
 22. **Kneeboard space-utilisation + custom import** — sparse kneeboard pages (Combat SAR,

@@ -447,6 +447,51 @@ both toggle descriptions state the coupling. Guard:
 `tests/fourteenth/test_campaign_plugin_preseed.py`. An **existing** Red Tide save needs both
 the setting AND the plugin flipped on by hand.
 
+### Feature-audit adds — C2 decapitation + the SCUD hunt (2026-07-07)
+
+A feature audit against the full §1–§52 catalog found Red Tide covered on the default-ON
+battlefield-life set (§3 concealment, §15 hidden CPs, §21 Combat SAR, §40 phases, §46 fuel,
+§47 clock, §50 convoys/ambush) and the three preseeded standoff features (§36/§50/§51), but
+missing two things the laydown was practically built for. Both were added (yaml + one `.miz`
+edit); guard `tests/fourteenth/test_campaign_plugin_preseed.py`.
+
+1. **§52 command-center decapitation — `c2_decapitation_effects: true` (default OFF).** Red
+   Tide is one of the very few campaigns with a real, per-base, **destroyable command-center
+   network** — the advanced-IADS build stood up **9 red Command Center cells** (the scenery
+   real-building nodes at Wittstock/Templin/Hamburg/Peenemünde/Schönefeld/Kastrup/Sperenberg/
+   Haina, headless-confirmed via `preset_locations.scenery` category `commandcenter`; Fulda
+   carries the blue pair). §52 keys off exactly those `category == "commandcenter"` TGOs and
+   scales red's §17 planner unpredictability up in proportion to the dead fraction, so bombing
+   Hanoi's — er, the GSFG's — HQs makes red *plan* worse, not just lose SAM autonomy. Pure
+   turn-model, no plugin, no `.miz` change; the campaign premise ("break him before he can
+   consolidate") made mechanical. Reactive defense is untouched (the §17 boundary). A SITREP
+   band line reports "N/M command posts operational (claimed)".
+
+2. **§49 mobile-missile relocation — two SS-1C Scud-B batteries added to the `.miz`.**
+   `mobile_missile_relocation` is default ON but had **nothing to relocate** — the laydown
+   placed no missile-category TGO, so the SCUD hunt was inert. Added **two red `Scud_B`
+   vehicle markers** to the CJTF Red country block (a forward battery off **Haina**, a
+   rear/mid one near **Wittstock**), so `MizCampaignLoader.missile_sites` builds two
+   `MissileSiteGroundObject`s (`category == "missile"`). With §49 on they shoot-and-scoot
+   within the 4 km scoot radius each ~8 min, and with `concealed_enemy_forces` (default ON)
+   they surface only as a dashed "suspected activity" circle until a recon bird finds them —
+   the launcher is never quite where the last photo froze it. `mobile_missile_relocation:
+   true` and the **`mobilemissiles` plugin** are both preseeded (same saved-default-off
+   reasoning as the vietnamops/convoyambush/commsjam plugins).
+
+   **`.miz` edit method / verification.** pydcs `m.vehicle_group(red, …, MissilesSS.Scud_B,
+   …)` for both markers (auto-assigned `groupId` 413/414, `unitId` 813/814, past the mission
+   max 412/812), then `Mission.save`, then a **theatre-member dedup** on the resulting zip
+   (this `.miz` already ships a duplicate `theatre` member and pydcs save adds a third — keep
+   one). Headless-verified through the **real loader**: the only preset-location delta is
+   `missile_sites 0 → 2` (anchored to Haina + Wittstock, both red), every other preset total
+   (armor 27, medium SAM 16, scenery 71 incl. the 9 command centers, ships 3, EWR 4, factory
+   2) **byte-for-count identical**, the **`warehouses` member byte-identical** (Kastrup red /
+   Fulda blue / Hamburg red base ownership intact), and the blue side untouched (27 veh / 2
+   static). Placements co-locate near the design-validated red SAM markers (open farmland,
+   real standoff), so terrain confidence is inherited; the SCUD spots are still an in-game-pass
+   watch item (checklist S2 / B6) like every blind GermanyCW placement. NEW game required.
+
 ### Aircraft / squadron specifics
 - **German Phantom:** the `GAF JG 74` "Moelders" entry is a *squadron name* in the
   `aircraft:` list, not an aircraft type. `DefaultSquadronAssigner.find_squadron_by_name`

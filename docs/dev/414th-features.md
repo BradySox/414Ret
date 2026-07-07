@@ -4079,6 +4079,10 @@ same philosophy, different object class).
   switch (the §40 `campaign_phases` precedent). In-game pass: checklist **S2**.
 - **The SAM network is out by construction.** Only `category == "missile"` is emitted. Do not extend this
   to SAM TGOs without solving the MANTIS-emitter-position question first.
+- **A campaign must actually place a missile TGO** or this is inert. **Germany — Red Tide** is the first
+  414th campaign to do so on purpose: its laydown carries **two red SS-1C Scud-B batteries** (a forward
+  one off Haina, a rear/mid one near Wittstock) and preseeds `mobile_missile_relocation: true` + the
+  `mobilemissiles` plugin, so the SCUD hunt is live there (see the Red Tide design note).
 - **DCS pathing risk.** A site authored in rough terrain may fail to path off-road; worst case the group
   sits (status quo ante). Watch dcs.log for repeated goRoute failures on the pass.
 - **Deferred:** per-side gating (currently symmetric), and coupling the *fired* missile events to a
@@ -4445,5 +4449,8 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
   *number* of offensive packages when decapitated, floored so red is never zeroed out) is not built; A1 is
   the unpredictability coupling only. Unpredictability alone never reduces red's package count, so there is
   no starvation risk in A1.
-- **Not preseeded yet.** Default OFF everywhere; a Red Tide preseed waits on the B6 in-game pass.
+- **Preseeded on Red Tide (2026-07-07).** Default OFF everywhere; **Germany — Red Tide** flips it ON
+  (`c2_decapitation_effects: true`) because its advanced-IADS build is one of the very few laydowns with a
+  real, per-base **destroyable command-center network** (9 red Command Center cells) for §52 to key on —
+  see the Red Tide design note. The B6 in-game pass now rides on that campaign.
 - **NEW game not required** (no persisted state; C2 health is measured live each turn).

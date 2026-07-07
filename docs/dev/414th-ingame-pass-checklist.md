@@ -159,7 +159,7 @@ so the two docs don't drift.
 
 ### B6 — Command-center decapitation degrades enemy planning · §52 · ☐ UNTESTED (built 2026-07-06; the health fraction, the linear unpredictability bonus, the off/intact/C2-less no-ops, the shuffler coupling, and the SITREP line are unit-tested in `tests/fourteenth/test_c2_decapitation.py` + `tests/test_planner_unpredictability.py` + `tests/test_sitrep.py` — whether red's *played* target selection visibly loosens after its HQs are bombed needs a multi-turn campaign)
 - **What CI cannot exercise:** whether a red side that has lost its command centers actually plans a visibly different/less-repetitive set of opportunistic offensive targets turn-over-turn (the shuffle is proven; the *felt* effect on a real ATO is not), and whether the SITREP band reads the enemy C2 status correctly across turns.
-- **Setup:** an IADS campaign where red fields command centers (`commandcenter` TGOs — e.g. Red Tide's advanced_iads laydown) with `c2_decapitation_effects` **on** (Air Doctrine; default off, so tick it or preseed it). Play a few turns noting red's offensive targets, then bomb red's command center(s) and play a few more.
+- **Setup:** **Germany — Red Tide** is now the reference case — its advanced_iads laydown fields a 9-node red command-center network and **preseeds `c2_decapitation_effects: true`** (2026-07-07), so a NEW Red Tide game exercises this directly. Play a few turns noting red's offensive targets, then bomb red's command center(s) and play a few more.
 - **Pass:** with red's HQs intact, red's offensive target selection is its usual (near-)deterministic set; after the command centers are destroyed, red's opportunistic offensive targets visibly loosen (it services lower-priority strikes/OCA/BAI it wouldn't have before), while its **reactive defense is unchanged** (BARCAP/DEAD-response still deterministic); the next kneeboard SITREP shows "Enemy C2 degraded (claimed): N/M command posts operational". Turning the setting off restores the stock deterministic planner exactly.
 - **Fail signature:** red plans identically before and after the HQ kill (the bonus isn't reaching the shuffler — check `_unpredictability_for` and that the campaign actually has `commandcenter` TGOs); red's *defensive* tasking changes too (the §17 boundary broke — only opportunistic tiers pass through `shuffled_by_priority`); the SITREP line never appears or shows wrong counts (`c2_status_line` / `red_c2_status` wiring); any change at all with the setting off (the gate broke).
 
@@ -2723,9 +2723,11 @@ so the two docs don't drift.
 - **What CI cannot exercise:** real off-road pathing (a site authored in rough terrain may fail to move —
   status quo ante, but watch for it), whether the wander reads as shoot-and-scoot at the 8-min/4-km defaults,
   and the interplay with §3 concealment (circle says "in here somewhere", the launcher has moved inside it).
-- **Setup:** any campaign with a mobile missile site (SCUD/SSM group; `mobile_missile_relocation` is default
-  ON). Open the F10 map (or the ME) on the site's area; observe over ~15+ minutes, then kill one launcher and
-  keep watching.
+- **Setup:** **Germany — Red Tide** now fields two red SS-1C Scud-B batteries (off Haina, near Wittstock) and
+  preseeds the setting + `mobilemissiles` plugin (2026-07-07), so a NEW Red Tide game is the reference case;
+  any other campaign with a mobile missile site works too (`mobile_missile_relocation` is default ON). Open the
+  F10 map (or the ME) on the site's area; observe over ~15+ minutes, then kill one launcher and keep watching.
+  Watch the two GermanyCW SCUD spots aren't in forest/water (blind-placed like every GCW object).
 - **Pass:** after the ~2-min grace the site's vehicles pick up and drive to a new spot within a few km, and
   again on the cadence; they hold fire while moving (alarm-green); the site never wanders far from its
   campaign position; killing all its vehicles stops the movement with no dcs.log errors; the SAM network

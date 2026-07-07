@@ -11,10 +11,12 @@ defaults (see ``QNewGameSettings._load_campaign_settings``).
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import yaml
 
+from game.campaignloader.campaign import Campaign
 from game.settings import Settings
 
 RED_TIDE = "resources/campaigns/red_tide.yaml"
@@ -39,6 +41,35 @@ def test_red_tide_preseeds_the_commsjam_plugin_for_enemy_comms_jamming() -> None
     # §51's runtime lives in the commsjam plugin -- same saved-default-off trap
     # as the vietnamops harassment above.
     assert settings["plugins"]["commsjam"] is True
+
+
+def test_red_tide_preseeds_the_mobilemissiles_plugin_for_the_scud_hunt() -> None:
+    settings = _campaign_settings()
+    # §49 relocates the red SS-1C Scud-B batteries in-mission; the runtime lives in
+    # the mobilemissiles plugin -- same saved-default-off trap as the others.
+    assert settings["mobile_missile_relocation"] is True
+    assert settings["plugins"]["mobilemissiles"] is True
+
+
+def test_red_tide_preseeds_c2_decapitation_effects() -> None:
+    settings = _campaign_settings()
+    # §52 is default OFF; Red Tide's per-base command-center network is the fit, so
+    # the campaign flips it ON (pure turn-model, no plugin dependency).
+    assert settings["c2_decapitation_effects"] is True
+
+
+def test_red_tide_fields_the_two_scud_batteries_for_the_hunt() -> None:
+    # §49 only has something to relocate if the .miz actually places missile-category
+    # TGOs. Red Tide's laydown carries two SS-1C Scud-B batteries; a future miz edit
+    # must not silently drop them (the preseed above would then be a dead toggle).
+    campaign = Campaign.from_file(Path(RED_TIDE))
+    theater = campaign.load_theater(advanced_iads=True)
+    missile_cps = sorted(
+        cp.name
+        for cp in theater.controlpoints
+        for _ in cp.preset_locations.missile_sites
+    )
+    assert missile_cps == ["Haina", "Wittstock"]
 
 
 def test_the_plugin_preseed_survives_deserialization_and_wins_the_layering() -> None:

@@ -1366,10 +1366,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **Standardized to all campaigns 2026-07-06 with the ambient-convoy layer**
     (`game/fourteenth/ambient_convoys.py` `ensure_ambient_convoys`, from `finish_turn` after the §35 trail
     top-up): every turn EACH side's convoy flow is topped up to a **randomized** `randint(1, 3)` real
-    columns on **randomly chosen** same-side road corridors (uniform pick WITH repeats — some columns share
-    a road, some spread out; never forced, organic/§35 convoys count toward the target), oriented rear→front
+    columns on **randomly chosen DISTINCT** same-side road corridors (`_RNG.sample`, one column per road,
+    capped at the road count; never forced, organic/§35 convoys count toward the target), oriented rear→front
     off the shared `_reference_points` (fronts, or opposing CPs on a front-less laydown); each column carries
-    the units actually in its rear base's roster. **Skim-only, no free unit seeding (2026-07-07 design call):**
+    the units actually in its rear base's roster. **Distinct roads, one transfer per corridor (2026-07-07 S5
+    fix):** the convoy map keys transports by `(origin, destination)` (`TransportMap.add`), so two transfers
+    on the SAME corridor **coalesce into one oversized group** that line-spawns into unauthored positions and
+    **deadlocks** at mission start (the flown S5 regression — a 24-vehicle blue column parked at Baghdad, which
+    also blocked the §50 ambush spring); sampling distinct corridors keeps every column a separate driveable
+    group (trading away the never-achievable "some share a road" texture — a shared road was one parked blob).
+    **Skim-only, no free unit seeding (2026-07-07 design call):**
     ambient columns **relocate units that already exist** (`_skim_units`) and never `commission_units` free ones
     — generalizing the §35 trail's external-supply free-seed to every campaign on both sides would inject
     un-budgeted reinforcements into both armies every turn, which the squadron never asked for (it asked for

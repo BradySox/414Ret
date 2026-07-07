@@ -2779,14 +2779,17 @@ so the two docs don't drift.
   transfer per corridor per turn) so no mega-column forms, and/or verify the Baghdad route start sits on the
   highway; then re-fly (which also unblocks S3's spring). NOTE: this also blocked the S3 ambush spring this
   session — the teams were in place but nothing ever drove into them.
-- **2026-07-07 (skim-only design call, PR follow-up):** ambient columns now **skim existing rear units
-  only** (no free `commission_units` seeding — the economy-honesty design call), which does NOT by itself
-  fix this parked-mega-column regression: a rich blue rear (Baghdad) still yields ~24 skimmed units, and 3
-  same-corridor transfers still merge into one deadlocking column. The agreed fix (cap/split same-corridor
-  ambient transfers — distinct-road preference) is a **separate** open item because it also trades away the
-  "repeats allowed / some share a road" texture the squadron asked for; it needs its own call before the
-  re-fly.
-- **What CI cannot exercise:** whether the columns actually drive their roads in-mission on both sides (the engine's own `ConvoyGenerator` path, but now exercised on ~27 campaigns instead of a handful); whether the turn-to-turn variation (1–3 per side, sometimes two columns on one road) reads as ambient life rather than a scripted parade; and whether red's ambient columns surface naturally as Armed Recon/BAI targets.
+- **2026-07-07 (PR follow-up — root cause fixed, needs a re-fly):** two changes landed. **(1) Skim-only**
+  (the economy-honesty design call): ambient columns now skim existing rear units instead of
+  `commission_units`-ing free ones. **(2) Distinct-road (the S5 fix itself):** the convoy map keys transports
+  by `(origin, destination)` (`TransportMap.add`), so the 3 same-corridor blue transfers were coalescing into
+  ONE 24-vehicle column that line-spawned into unauthored positions and deadlocked. `_top_up_side` now samples
+  **distinct** corridors (`_RNG.sample`, one column per road, capped at the road count), so no mega-column can
+  form — the exact lead this row identified. This **trades away** the sketched "some columns share a road"
+  texture, which the merge made unachievable anyway (a shared road was one parked blob, not two columns). The
+  parked-column root cause is addressed in code; **the re-fly is what promotes this off REGRESSED** (confirm
+  both sides' columns drive, and the S3 ambush spring unblocks).
+- **What CI cannot exercise:** whether the columns actually drive their roads in-mission on both sides (the engine's own `ConvoyGenerator` path, but now exercised on ~27 campaigns instead of a handful); whether the turn-to-turn variation (1–3 per side, on distinct roads) reads as ambient life rather than a scripted parade; and whether red's ambient columns surface naturally as Armed Recon/BAI targets.
 - **Setup:** any road-bearing campaign (`ROAD_BEARING_CAMPAIGNS`), **NEW game**, `ambient_supply_convoys` ON (default). Advance 2–3 turns without flying, checking the map each turn; then fly a mission and find the columns on the F10 map.
 - **Pass:** blue AND red convoys appear on their own roads most turns (counts varying, occasionally two columns sharing a road, occasionally a quiet side); columns drive rear→front; red's columns can be right-clicked/fragged as ordinary Armed Recon/BAI targets and their kills count at debrief; a side with no same-side road (e.g. an island map) simply shows none, with no errors.
 - **Fail signature:** no convoys ever on a campaign listed in `ROAD_BEARING_CAMPAIGNS` (corridor enumeration or the setting gate broken); the exact same number of convoys on the exact same roads every turn (the RNG not driving); convoys stacking unboundedly (existing convoys not counted toward the target); columns driving front→rear (orientation inverted); convoy units appearing from nowhere at debrief or kills not recorded (a phantom-spawn regression — every column must be a real `coalition.transfers` transfer).

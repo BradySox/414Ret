@@ -144,10 +144,12 @@ class Game:
         # turn saying WHY the will moved (per-feed components), appended by
         # update_political_will and capped there. Empty outside Vietnam campaigns.
         self.will_ledger: list["WillLedgerEntry"] = []
-        # Model-3 escalation tax: the last authored phase whose blue_will_on_entry
-        # cost was charged, so it charges once per phase entry (persisted -- a will
-        # charge must survive a reload, unlike the transient announce flag above).
+        # Model-3 escalation tax: the authored phases whose blue_will_on_entry
+        # cost has been charged, so each charges once per phase entry (persisted --
+        # a will charge must survive a reload, unlike the transient announce flag
+        # above). The legacy scalar (last-charged key) is folded in on read.
         self.will_escalation_charged_phase: Optional[str] = None
+        self.will_escalation_charged_phases: set[str] = set()
         # COIN C1 per-CP regen anchors (garrison cap / cache total / fractional
         # carry), keyed by str(cp.id). Plain primitives so saves stay simple;
         # populated lazily by game.fourteenth.coin when coin_insurgency is on.
@@ -236,6 +238,7 @@ class Game:
         state.setdefault("red_tempo_announced_phase", None)
         state.setdefault("will_ledger", [])
         state.setdefault("will_escalation_charged_phase", None)
+        state.setdefault("will_escalation_charged_phases", set())
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
         # will_history (a briefly-shipped bespoke per-turn series) was folded into

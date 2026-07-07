@@ -632,14 +632,33 @@ def consume_phase_escalation_cost(game: "Game") -> Optional[tuple[str, float]]:
     unlike the transient ``red_tempo_announced_phase`` message flag, a will charge
     must survive a reload or it would double-charge. getattr-guarded for pre-feature
     saves (which resolve to "nothing charged yet").
+
+    A chained same-turn advance (a late-adopting save reaching several
+    ``min_turn``s at once, or stacked ``advance_when``s) may skip THROUGH a
+    costed phase: every phase up to and including the current one owes its
+    entry tax, charged one per call (one per turn) until caught up, so the
+    skipped Linebacker -3 still lands on the way to Linebacker II.
     """
     phase = active_phase(game)
-    if phase is None or not phase.authored or not phase.blue_will_on_entry:
+    if phase is None or not phase.authored:
         return None
-    if getattr(game, "will_escalation_charged_phase", None) == phase.key:
+    arc = authored_arc_for(game)
+    keys = [p.key for p in arc]
+    if phase.key not in keys:
         return None
-    game.will_escalation_charged_phase = phase.key
-    return phase.name, phase.blue_will_on_entry
+    charged: set[str] = set(getattr(game, "will_escalation_charged_phases", set()))
+    # Legacy scalar latch (pre chained-advance fix): fold it in.
+    legacy = getattr(game, "will_escalation_charged_phase", None)
+    if legacy is not None:
+        charged.add(legacy)
+    for candidate in arc[: keys.index(phase.key) + 1]:
+        if not candidate.blue_will_on_entry or candidate.key in charged:
+            continue
+        charged.add(candidate.key)
+        game.will_escalation_charged_phases = charged
+        return candidate.name, candidate.blue_will_on_entry
+    game.will_escalation_charged_phases = charged
+    return None
 
 
 # --- the authored tier (P2) + the ROE escalation layer (W4) --------------------------

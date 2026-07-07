@@ -22,6 +22,7 @@ from game.theater.unitplacement import (
     PendingUnitPlacement,
     _is_sea_layout,
     place_unit_group,
+    process_pending_placements,
 )
 
 
@@ -136,3 +137,40 @@ def test_deploy_next_turn_queues_in_range() -> None:
     assert isinstance(result, PendingUnitPlacement)
     assert result.respawn is True
     assert game.pending_unit_placements == [result]
+
+
+def test_discarded_pending_placement_refunds_its_cost() -> None:
+    """A deploy-next-turn placement charged at queue time must refund if it can
+    no longer be satisfied (here: the CP is gone by materialisation time)."""
+    game = _game(has_cp=True)
+    coalition = SimpleNamespace(player=Player.BLUE, budget=100.0)
+    pending = PendingUnitPlacement(
+        lat=0.0,
+        lng=0.0,
+        coalition_player_is_blue=True,
+        force_group=_force_group(),
+        layout=_layout(sea=False),
+        cost=25.0,
+    )
+    game.pending_unit_placements = [pending]
+    # The CP is lost before the placement materialises.
+    game.theater.control_points_for = lambda player: []
+    process_pending_placements(game, coalition)
+    assert game.pending_unit_placements == []  # discarded
+    assert coalition.budget == 125.0  # refunded
+
+
+def test_free_pending_placement_is_not_refunded() -> None:
+    game = _game(has_cp=True)
+    coalition = SimpleNamespace(player=Player.BLUE, budget=100.0)
+    pending = PendingUnitPlacement(
+        coalition_player_is_blue=True,
+        force_group=_force_group(),
+        layout=_layout(sea=False),
+        free=True,
+        cost=0.0,
+    )
+    game.pending_unit_placements = [pending]
+    game.theater.control_points_for = lambda player: []
+    process_pending_placements(game, coalition)
+    assert coalition.budget == 100.0  # nothing charged, nothing refunded

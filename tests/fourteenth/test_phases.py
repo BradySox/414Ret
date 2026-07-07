@@ -1055,10 +1055,44 @@ def test_escalation_cost_charges_once_per_phase_entry() -> None:
         assert phases.consume_phase_escalation_cost(game) == ("Linebacker", -3.0)
         # ...and never again while the war stays in that phase (the persisted latch).
         assert phases.consume_phase_escalation_cost(game) is None
-        assert game.will_escalation_charged_phase == "linebacker"
+        assert game.will_escalation_charged_phases == {"linebacker"}
         # Advancing to Linebacker II charges its own, steeper cost, once.
         game.current_phase_key = "linebacker_ii"
         assert phases.consume_phase_escalation_cost(game) == ("Linebacker II", -5.0)
+        assert phases.consume_phase_escalation_cost(game) is None
+    finally:
+        del phases._ARC_CACHE["Escalation Test"]
+
+
+def test_escalation_cost_catches_up_over_a_chained_skip() -> None:
+    """A same-turn chained advance (late-adopting save) that skips THROUGH
+    Linebacker straight to Linebacker II still owes Linebacker's tax -- charged
+    one per turn until caught up."""
+    from game.fourteenth import phases
+
+    phases._ARC_CACHE["Escalation Test"] = _escalation_arc()
+    try:
+        game = _duck_game(
+            on=True, current="linebacker_ii", campaign_name="Escalation Test"
+        )
+        assert phases.consume_phase_escalation_cost(game) == ("Linebacker", -3.0)
+        assert phases.consume_phase_escalation_cost(game) == ("Linebacker II", -5.0)
+        assert phases.consume_phase_escalation_cost(game) is None
+    finally:
+        del phases._ARC_CACHE["Escalation Test"]
+
+
+def test_escalation_cost_respects_the_legacy_scalar_latch() -> None:
+    """A pre-fix save carries the scalar last-charged key; it must not be
+    double-charged when the set-based latch takes over."""
+    from game.fourteenth import phases
+
+    phases._ARC_CACHE["Escalation Test"] = _escalation_arc()
+    try:
+        game = _duck_game(
+            on=True, current="linebacker", campaign_name="Escalation Test"
+        )
+        game.will_escalation_charged_phase = "linebacker"  # the old latch
         assert phases.consume_phase_escalation_cost(game) is None
     finally:
         del phases._ARC_CACHE["Escalation Test"]

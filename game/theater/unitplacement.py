@@ -51,6 +51,10 @@ class PendingUnitPlacement:
     selections: list[PlacementSelection] = field(default_factory=list)
     free: bool = False
     respawn: bool = False
+    #: Budget charged at queue time (0.0 for a free/cheat placement). Refunded if
+    #: the placement is later discarded (CP lost, terrain changed) so the player
+    #: isn't billed for a TGO that never appeared.
+    cost: float = 0.0
 
 
 def _nearest_coalition_cp(
@@ -89,6 +93,7 @@ def place_unit_group(
     free: bool = False,
     deploy_next_turn: bool = False,
     respawn: bool = False,
+    cost: float = 0.0,
 ) -> TheaterGroundObject | PendingUnitPlacement:
     """Create a user-placed TGO at (lat, lng) belonging to *coalition*.
 
@@ -138,6 +143,7 @@ def place_unit_group(
             selections=selections,
             free=free,
             respawn=respawn,
+            cost=cost,
         )
         game.pending_unit_placements.append(pending)
         return pending
@@ -195,6 +201,13 @@ def process_pending_placements(game: Game, coalition: Coalition) -> None:
     Placements that can no longer be satisfied (CP lost, no valid terrain) are
     discarded with a warning.
     """
+
+    def _refund(pending: PendingUnitPlacement) -> None:
+        # The cost was charged at queue time; a placement that can't be
+        # satisfied never delivered a TGO, so give the money back.
+        if pending.cost and not pending.free:
+            coalition.budget += pending.cost
+
     remaining: list[PendingUnitPlacement] = []
     for pending in game.pending_unit_placements:
         if pending.coalition_player_is_blue != coalition.player.is_blue:
@@ -203,6 +216,7 @@ def process_pending_placements(game: Game, coalition: Coalition) -> None:
 
         if pending.force_group is None or pending.layout is None:
             logger.warning("Pending placement has no force_group/layout — discarded.")
+            _refund(pending)
             continue
 
         point = Point.from_latlng(
@@ -215,14 +229,17 @@ def process_pending_placements(game: Game, coalition: Coalition) -> None:
                 "Pending placement: no CP available for %s — discarded.",
                 coalition.player,
             )
+            _refund(pending)
             continue
 
         # Terrain check again in case conditions changed since queueing.
         if sea and not game.theater.is_in_sea(point):
             logger.warning("Pending placement terrain mismatch (sea) — discarded.")
+            _refund(pending)
             continue
         if not sea and not game.theater.is_on_land(point):
             logger.warning("Pending placement terrain mismatch (land) — discarded.")
+            _refund(pending)
             continue
 
         try:
@@ -241,6 +258,7 @@ def process_pending_placements(game: Game, coalition: Coalition) -> None:
             logger.warning(
                 "Pending placement materialisation failed: %s — discarded.", exc
             )
+            _refund(pending)
 
     game.pending_unit_placements = remaining
 

@@ -31,23 +31,33 @@ if TYPE_CHECKING:
     from .luagenerator import LuaData
     from .missiondata import MissionData
 
-#: The TGO category this feature moves. Deliberately ONLY the theater-missile sites --
-#: never anti-air (IADS/MANTIS owns those) and never the coastal anti-ship sites (their
-#: geometry is authored against the water they cover).
+#: The default category this feature moves: theater-missile sites (SCUD/SSM). Never
+#: anti-air -- IADS/MANTIS owns those.
 MOBILE_MISSILE_CATEGORY = "missile"
+#: Coastal anti-ship sites (e.g. Silkworm batteries) -- opted in per-campaign by the
+#: ``coastal_missile_relocation`` setting (default off). Excluded by default because a
+#: shore battery's geometry is usually authored against the water it covers; a naval
+#: campaign (the Tanker War) turns it on so the coastal-missile hunt is a hunt for
+#: something that moves.
+COASTAL_DEFENSE_CATEGORY = "coastal"
 
 
 def populate_mobile_missiles_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
 ) -> None:
     """Build the ``dcsRetribution.mobileMissiles`` subtree (shoot-and-scoot sites)."""
-    if not getattr(game.settings, "mobile_missile_relocation", False):
+    categories: set[str] = set()
+    if getattr(game.settings, "mobile_missile_relocation", False):
+        categories.add(MOBILE_MISSILE_CATEGORY)
+    if getattr(game.settings, "coastal_missile_relocation", False):
+        categories.add(COASTAL_DEFENSE_CATEGORY)
+    if not categories:
         return
 
     sites: list[dict[str, Any]] = []
     for cp in game.theater.controlpoints:
         for tgo in cp.ground_objects:
-            if getattr(tgo, "category", None) != MOBILE_MISSILE_CATEGORY:
+            if getattr(tgo, "category", None) not in categories:
                 continue
             groups = _mobile_group_names(tgo)
             pos = getattr(tgo, "position", None)

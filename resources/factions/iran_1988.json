@@ -14,7 +14,8 @@
     "F-4E Phantom II",
     "F-4E-45MC Phantom II",
     "F-5E Tiger II",
-    "MiG-21bis Fishbed-N"
+    "MiG-21bis Fishbed-N",
+    "Mirage-F1EQ"
   ],
   "awacs": [
     "A-50"
@@ -62,12 +63,14 @@
   ],
   "air_defense_units": [
     "EWR P-37 Bar Lock",
+    "EWR 1L13",
     "SAM P19 \"Flat Face\" SR (SA-2/3)",
     "SAM Hawk SR (AN/MPQ-50)",
     "ZSU-57-2 'Sparka'",
     "ZU-23 on Ural-375",
     "AAA ZU-23 Insurgent Closed Emplacement",
-    "ZSU-23-4 Shilka"
+    "ZSU-23-4 Shilka",
+    "Rapier"
   ],
   "helicopter_carrier_names": [],
   "requirements": {},

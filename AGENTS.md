@@ -1335,8 +1335,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     discipline): kills record natively, the site never migrates past its scoot radius (threat rings + the
     turn model stay honest), a dead site stops being routed. Symmetric. Gated `mobile_missile_relocation`
     (Mission Generation → World & systems, default **ON** — the toggle is the kill switch, the §40
-    precedent). Tests `tests/missiongenerator/test_mobilemissileluadata.py` +
-    `tests/lua/test_mobilemissiles_runtime.py`; features doc §49, checklist S2 — needs an in-game pass.
+    precedent). Inert unless a campaign actually places a missile TGO: **Red Tide** is the first to on
+    purpose (2 red SS-1C Scud-B batteries off Haina + near Wittstock, added to the `.miz`; preseeds the
+    setting + the `mobilemissiles` plugin). Tests `tests/missiongenerator/test_mobilemissileluadata.py` +
+    `tests/lua/test_mobilemissiles_runtime.py` + `tests/fourteenth/test_campaign_plugin_preseed.py`;
+    features doc §49, checklist S2 — needs an in-game pass.
 50. **Convoy ambush (a chance, never telegraphed) + ambient supply convoys** — the **mirror of the §35
     interdiction**: where
     interdiction gives the player *enemy* convoys to hunt, this gives the player *friendly* convoys that
@@ -1449,10 +1452,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     → "Enemy C2 degraded (claimed): 1/3 command posts operational", `c2_status_line`, rides along with real
     news like the will band). **Pure turn-model** — no `.miz`/Lua/DCS, symmetric in code (each side reads its
     own C2 health) but only a side with an HTN auto-planner is affected. Gated `c2_decapitation_effects`
-    (Air Doctrine, default **OFF**); intact network / C2-less campaign = byte-identical no-op (the deterministic
-    planner + its tests preserved). **Phase A2 (a floored red offensive package-count throttle) is deferred.**
-    Tests `tests/fourteenth/test_c2_decapitation.py` + `tests/test_planner_unpredictability.py`; features doc
-    §52, checklist B6 — needs an in-game pass.
+    (Air Doctrine, default **OFF**, **preseeded ON in Red Tide** 2026-07-07 — its advanced-IADS build has a
+    real 9-node destroyable red command network for §52 to key on); intact network / C2-less campaign =
+    byte-identical no-op (the deterministic planner + its tests preserved). **Phase A2 (a floored red
+    offensive package-count throttle) is deferred.** Tests `tests/fourteenth/test_c2_decapitation.py` +
+    `tests/test_planner_unpredictability.py` + `tests/fourteenth/test_campaign_plugin_preseed.py`; features
+    doc §52, checklist B6 — needs an in-game pass.
 
 ---
 

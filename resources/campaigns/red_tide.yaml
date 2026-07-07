@@ -263,17 +263,33 @@ settings:
   # captured aircrew (lose the Combat SAR race / hold a POW), so SAR keeps the net
   # clean and a loss teaches the squadron to rotate compromised channels.
   enemy_comms_jamming: true
+  # §52 command-center decapitation -- red's advanced-IADS command network (the 9 co-located
+  # Command Center cells wired here by advanced_iads range mode) now feeds red's *planning*,
+  # not just its SAM autonomy: as the player bombs those HQs, red's offensive target selection
+  # gets sloppier (the §17 planner unpredictability is scaled up in proportion to the dead
+  # fraction). "Break him before he can consolidate" made mechanical. Reactive defense is
+  # untouched -- a decapitated red still defends. Default OFF; preseeded ON here because this
+  # laydown is one of the very few with a real, per-base, destroyable command network to key on.
+  c2_decapitation_effects: true
+  # §49 mobile-missile relocation (the SCUD hunt) -- red fields two SS-1C Scud-B batteries in
+  # the rear (near Wittstock and forward off Haina). With this on they shoot-and-scoot during
+  # the mission, and with concealed_enemy_forces (default ON) they show only as a dashed
+  # "suspected activity" circle until a recon bird finds them -- so the launcher is never quite
+  # where the last photo froze it. Default ON; runtime lives in the mobilemissiles plugin
+  # (preseeded below, same saved-default-off reasoning as the others).
+  mobile_missile_relocation: true
   # The artillery harassment above runs inside the vietnamops PLUGIN's runtime (the
   # shared standoff-barrage loop). Preseed the plugin ON so a player whose saved
   # defaults disabled "Vietnam Ops (period mechanics)" -- reasonable on a
   # conventional-campaign squadron -- doesn't silently lose the feature. Layered
   # over their defaults like every other recommended setting; still uncheckable
-  # in the wizard. Same reasoning preseeds the convoyambush plugin for §50 and
-  # the commsjam plugin for §51.
+  # in the wizard. Same reasoning preseeds the convoyambush plugin for §50,
+  # the commsjam plugin for §51, and the mobilemissiles plugin for the §49 SCUD hunt.
   plugins:
     vietnamops: true
     convoyambush: true
     commsjam: true
+    mobilemissiles: true
 squadrons:
   #Ramstein — rear heavy-iron + the eyes: the B-52s, the 414th Strike Eagles, and the E-3A.
   165:

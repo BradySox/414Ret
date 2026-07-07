@@ -2617,6 +2617,13 @@ so the two docs don't drift.
 - **Setup:** any campaign; open a flight's **Edit flight → Payload** tab. Change Internal Fuel (e.g. to 80%),
   Aircraft Condition, Wear & Tear, and/or Spawn Type; click **Save as default**. Then create a *new* package
   with a flight of the **same airframe** and open its Payload tab.
+- **Also eyeball (2026-07-06 layout cleanup):** the tab now reads as grouped sections — *Flight members* /
+  *Aircraft settings* (laser codes + properties scrolling, fuel + defaults pinned below) / a labeled
+  *Loadout:* row + the pylon editor. The property list should no longer cut off mid-row on a normal window,
+  and there should be no dead gap between the last pylon and the Save Payload / Create Backup buttons (the
+  pylon list scrolls instead). The bold AI-loadout warning appears only while "Use same loadout for all
+  flight members" is unchecked. Offscreen-instantiation smoke passed headlessly; the visual proportions are
+  the in-app question.
 - **Pass:** the new flight's Payload tab already shows the saved fuel + property values (no re-entry); **Clear
   default** is enabled once a default exists and, after clicking it, a further new flight of that airframe is
   back to stock values; the store lives at `Saved Games\Retribution\flight_defaults.json` and survives an app

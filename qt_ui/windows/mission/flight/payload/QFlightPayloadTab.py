@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
+    QGroupBox,
     QLabel,
     QHBoxLayout,
     QMessageBox,
@@ -127,9 +128,12 @@ class QFlightPayloadTab(QFrame):
 
         layout = QVBoxLayout()
 
+        members_box = QGroupBox("Flight members")
+        members_layout = QVBoxLayout(members_box)
+
         self.member_selector = FlightMemberSelector(self.flight, self)
         self.member_selector.valueChanged.connect(self.rebind_to_selected_member)
-        layout.addLayout(QLabeledWidget("Flight member:", self.member_selector))
+        members_layout.addLayout(QLabeledWidget("Flight member:", self.member_selector))
         self.same_loadout_for_all_checkbox = QCheckBox(
             "Use same loadout for all flight members"
         )
@@ -137,12 +141,15 @@ class QFlightPayloadTab(QFrame):
             self.flight.use_same_loadout_for_all_members
         )
         self.same_loadout_for_all_checkbox.toggled.connect(self.on_same_loadout_toggled)
-        layout.addWidget(self.same_loadout_for_all_checkbox)
-        layout.addWidget(
-            QLabel(
-                "<strong>Warning: AI flights should use the same loadout for all members.</strong>"
-            )
+        members_layout.addWidget(self.same_loadout_for_all_checkbox)
+        self.ai_loadout_warning = QLabel(
+            "<strong>Warning: AI flights should use the same loadout for all "
+            "members.</strong>"
         )
+        self.ai_loadout_warning.setVisible(
+            not self.flight.use_same_loadout_for_all_members
+        )
+        members_layout.addWidget(self.ai_loadout_warning)
 
         hbox = QHBoxLayout()
         self.same_livery_for_all_checkbox = QCheckBox(
@@ -157,8 +164,13 @@ class QFlightPayloadTab(QFrame):
             self.flight.squadron, update_squadron=False
         )
         self.livery_selector.currentIndexChanged.connect(self.on_livery_change)
-        hbox.addWidget(self.livery_selector)
-        layout.addLayout(hbox)
+        hbox.addWidget(self.livery_selector, stretch=1)
+        members_layout.addLayout(hbox)
+
+        layout.addWidget(members_box)
+
+        aircraft_box = QGroupBox("Aircraft settings")
+        aircraft_layout = QVBoxLayout(aircraft_box)
 
         scroll_content = QWidget()
         scrolling_layout = QVBoxLayout()
@@ -168,7 +180,8 @@ class QFlightPayloadTab(QFrame):
         scroll.setWidgetResizable(True)
         scroll.setWidget(scroll_content)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        layout.addWidget(scroll, stretch=1)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        aircraft_layout.addWidget(scroll, stretch=1)
 
         self.own_laser_code_info = OwnLaserCodeInfo(
             game, self.member_selector.selected_member
@@ -183,13 +196,12 @@ class QFlightPayloadTab(QFrame):
         )
         scrolling_layout.addLayout(
             QLabeledWidget(
-                "Preset laser code for weapons:", self.weapon_laser_code_selector
-            )
-        )
-        scrolling_layout.addWidget(
-            QLabel(
-                "Equipped weapons will be pre-configured to the selected laser code at "
-                "mission start."
+                "Preset laser code for weapons:",
+                self.weapon_laser_code_selector,
+                tooltip=(
+                    "Equipped weapons will be pre-configured to the selected laser "
+                    "code at mission start."
+                ),
             )
         )
 
@@ -197,28 +209,35 @@ class QFlightPayloadTab(QFrame):
             self.flight, self.member_selector.selected_member, game
         )
         scrolling_layout.addLayout(self.property_editor)
+        # Keep the property list packed at the top of the scroll viewport instead
+        # of spreading rows out when the viewport is taller than the content.
+        scrolling_layout.addStretch(1)
 
-        # Docs Link
+        self.fuel_selector = DcsFuelSelector(flight)
+        aircraft_layout.addLayout(self.fuel_selector)
+
+        # 414th (§43): remember the fuel + aircraft properties above as this
+        # airframe's default so every new flight of the type starts pre-configured.
+        # (Loadout has its own "Save Payload"; laser code has a global setting.)
+        aircraft_layout.addLayout(self._build_flight_defaults_row())
+
+        layout.addWidget(aircraft_box, stretch=2)
+
+        loadout_row = QHBoxLayout()
+        loadout_row.addWidget(QLabel("Loadout:"))
+        self.loadout_selector = DcsLoadoutSelector(
+            flight, self.member_selector.selected_member
+        )
+        self.loadout_selector.currentIndexChanged.connect(self.on_new_loadout)
+        loadout_row.addWidget(self.loadout_selector, stretch=1)
+        layout.addLayout(loadout_row)
+        layout.addWidget(self.payload_editor, stretch=3)
+
         docsText = QLabel(
             '<a href="https://github.com/dcs-retribution/dcs-retribution/wiki/Custom-Loadouts"><span style="color:#FFFFFF;">How to create your own default loadout</span></a>'
         )
         docsText.setAlignment(Qt.AlignmentFlag.AlignCenter)
         docsText.setOpenExternalLinks(True)
-
-        self.fuel_selector = DcsFuelSelector(flight)
-        layout.addLayout(self.fuel_selector)
-
-        # 414th (§43): remember the fuel + aircraft properties above as this
-        # airframe's default so every new flight of the type starts pre-configured.
-        # (Loadout has its own "Save Payload"; laser code has a global setting.)
-        layout.addLayout(self._build_flight_defaults_row())
-
-        self.loadout_selector = DcsLoadoutSelector(
-            flight, self.member_selector.selected_member
-        )
-        self.loadout_selector.currentIndexChanged.connect(self.on_new_loadout)
-        layout.addWidget(self.loadout_selector)
-        layout.addWidget(self.payload_editor, stretch=3)
         layout.addWidget(docsText)
 
         self.setLayout(layout)
@@ -295,6 +314,7 @@ class QFlightPayloadTab(QFrame):
 
     def on_same_loadout_toggled(self, checked: bool) -> None:
         self.flight.use_same_loadout_for_all_members = checked
+        self.ai_loadout_warning.setVisible(not checked)
         if self.member_selector.value():
             self.loadout_selector.setDisabled(checked)
             self.payload_editor.setDisabled(checked)

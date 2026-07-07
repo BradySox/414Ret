@@ -696,6 +696,13 @@ class Game:
 
         update_campaign_phase(self)
 
+        # Pin the COIN conservation anchors at the true campaign start (turn 0,
+        # before any mission flies). The finish_turn regen hook runs after the
+        # turn counter has advanced, so it can never take this snapshot itself.
+        from game.fourteenth.coin import snapshot_campaign_start_anchors
+
+        snapshot_campaign_start_anchors(self)
+
         # Plan Coalition specific turn
         if for_blue:
             self.blue.initialize_turn(self.turn == 0 and squadrons_start_full)

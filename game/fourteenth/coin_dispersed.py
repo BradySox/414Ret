@@ -75,9 +75,16 @@ def advance_dispersed_cells(game: "Game", events: Any = None) -> None:
     No-op unless both ``coin_dispersed_cells`` and ``coin_insurgency`` are on, or before
     turn 1.
     """
-    if not getattr(game.settings, "coin_dispersed_cells", False):
-        return
-    if not getattr(game.settings, "coin_insurgency", False):
+    if not getattr(game.settings, "coin_dispersed_cells", False) or not getattr(
+        game.settings, "coin_insurgency", False
+    ):
+        # Mid-campaign toggle-off: live field cells must not be stranded in the
+        # countryside (real, concealed red units) forever.
+        state = getattr(game, "coin_state", None)
+        if isinstance(state, dict) and state.get("field_cells"):
+            for cell in state["field_cells"]:
+                _despawn(game, _tgo_by_id(game, cell.get("tgo_id")), events)
+            state["field_cells"] = []
         return
     if getattr(game, "turn", 0) < 1:
         return
@@ -118,6 +125,11 @@ def _coalesce(game: "Game", cell: dict[str, Any], tgo: Any, events: Any) -> None
     home = _cp_by_id(game, cell.get("home_id"))
     _despawn(game, tgo, events)
     if home is None:
+        return
+    if not home.captured.is_red:
+        # The stronghold fell while the cell was in the field: nothing to
+        # coalesce into -- reviving a cache/militia at a now-BLUE base would
+        # be a wrong-side resurrection. The cell just disperses.
         return
     if _revive_dead_cache(game, home, events):
         _announce(

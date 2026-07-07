@@ -68,9 +68,10 @@ def advance_roadside_ieds(game: "Game", events: Any = None) -> None:
 
     No-op unless both ``coin_ied`` and ``coin_insurgency`` are on, or before turn 1.
     """
-    if not getattr(game.settings, "coin_ied", False):
-        return
-    if not getattr(game.settings, "coin_insurgency", False):
+    if not getattr(game.settings, "coin_ied", False) or not getattr(
+        game.settings, "coin_insurgency", False
+    ):
+        _sweep_disabled(game, events)
         return
     if getattr(game, "turn", 0) < 1:
         return
@@ -83,6 +84,17 @@ def advance_roadside_ieds(game: "Game", events: Any = None) -> None:
 
     _age_live_ieds(game, state, ieds, events)
     _replenish_ieds(game, state, ieds, events)
+
+
+def _sweep_disabled(game: "Game", events: Any) -> None:
+    """Mid-campaign toggle-off: despawn any live IED/VBIED TGOs so they don't sit
+    frozen mid-fuse (with their 'suspected activity' circles) forever."""
+    state = getattr(game, "coin_state", None)
+    if not isinstance(state, dict) or not state.get("ieds"):
+        return
+    for ied in state["ieds"]:
+        _despawn(game, _tgo_by_id(game, ied.get("tgo_id")), events)
+    state["ieds"] = []
 
 
 def _age_live_ieds(

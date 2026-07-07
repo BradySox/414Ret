@@ -494,3 +494,22 @@ def test_road_bearing_campaign_keeps_its_blue_road(stem: str, tmp_path: Any) -> 
         "corridor (see tools/supply_route_geo.py) or remove the campaign from "
         "ROAD_BEARING_CAMPAIGNS."
     )
+
+
+def test_toggle_off_still_sweeps_last_turns_ambushes(monkeypatch: Any) -> None:
+    """Disabling convoy_ambush mid-campaign must not strand last turn's
+    map_hidden teams in the theater as invisible, real red units forever."""
+    game = _ambush_game(on=False, red_cps=[], convoys=[])
+    game.convoy_ambush_state = {"ambushes": [{"tgo_id": "old-1", "convoy": "prev"}]}
+
+    despawned: list[str] = []
+    monkeypatch.setattr(
+        coin_module, "_tgo_by_id", lambda g, tid: SimpleNamespace(id=tid)
+    )
+    monkeypatch.setattr(
+        coin_module, "_despawn", lambda g, tgo, ev: despawned.append(tgo.id)
+    )
+    seed_convoy_ambushes(game, events=None)
+
+    assert despawned == ["old-1"]
+    assert game.convoy_ambush_state["ambushes"] == []

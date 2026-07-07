@@ -87,6 +87,11 @@ def seed_convoy_ambushes(game: "Game", events: Any) -> None:
     its allegiance, or no blue convoy with a usable road, and nothing is seeded.
     """
     if not game.settings.convoy_ambush:
+        # Mid-campaign toggle-off: last turn's map_hidden teams must not be
+        # stranded in the theater as invisible, real red units forever.
+        prior = getattr(game, "convoy_ambush_state", None)
+        if isinstance(prior, dict) and prior.get("ambushes"):
+            _despawn_prior_ambushes(game, prior, events)
         return
 
     state = _state(game)

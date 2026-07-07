@@ -110,6 +110,23 @@ HVT_SIDC: tuple[SymbolSet, Entity] = (
 )
 
 
+def snapshot_campaign_start_anchors(game: "Game") -> None:
+    """Pin the C1 conservation anchors to the true campaign start.
+
+    Called from ``Game.initialize_turn`` at turn 0 (before any mission flies).
+    The ``finish_turn`` regen hook only ever runs *after* the turn counter has
+    advanced (``self.turn += 1`` precedes it), so it never sees turn 0 -- without
+    this snapshot the anchors would first be taken after the first mission's
+    losses committed, permanently shrinking the caps and zeroing the
+    cache-health suppression for first-mission cache kills.
+    """
+    if getattr(game, "turn", 0) != 0:
+        return
+    if not getattr(game.settings, "coin_insurgency", False):
+        return
+    _ensure_anchors(game)
+
+
 def regenerate_insurgent_cells(game: "Game", events: Any = None) -> None:
     """Regenerate every insurgent-held CP's garrison toward its anchor. Idempotent
     per turn by construction only when called once -- call it exactly once from
@@ -185,6 +202,7 @@ def _alive_cell_count(cp: "ControlPoint") -> int:
         1
         for tgo in cp.ground_objects
         if getattr(tgo, "category", None) != "ammo"
+        and not getattr(tgo, "coin_spawned", False)
         for unit in tgo.units
         if unit.alive and _revival_eligible(unit)
     )
@@ -198,6 +216,8 @@ def _revivable_units(cp: "ControlPoint") -> list[Any]:
     ):
         if getattr(tgo, "category", None) == "ammo":
             continue  # caches are the throttle, never the militia
+        if getattr(tgo, "coin_spawned", False):
+            continue  # transient spawns have their own lifecycle -- never revived
         for unit in tgo.units:
             if not unit.alive and _revival_eligible(unit):
                 dead.append(unit)
@@ -394,9 +414,22 @@ def advance_reinfiltration(game: "Game", events: Any = None) -> None:
     No-op unless both ``coin_reinfiltration`` and ``coin_insurgency`` are on (it
     reads C1's anchors + cache health), before turn 1, or off the BLUE plan pass.
     """
-    if not getattr(game.settings, "coin_reinfiltration", False):
-        return
-    if not getattr(game.settings, "coin_insurgency", False):
+    if not getattr(game.settings, "coin_reinfiltration", False) or not getattr(
+        game.settings, "coin_insurgency", False
+    ):
+        # Mid-campaign toggle-off: abort the live attempt so its cell/cache TGOs
+        # aren't stranded near the target forever.
+        state = getattr(game, "coin_state", None)
+        rf = state.get("reinfiltration") if isinstance(state, dict) else None
+        if isinstance(rf, dict) and rf.get("active"):
+            attempt = rf["active"]
+            _abort_attempt(
+                game,
+                rf,
+                events,
+                _tgo_by_id(game, attempt.get("cell_tgo")),
+                _tgo_by_id(game, attempt.get("cache_tgo")),
+            )
         return
     if getattr(game, "turn", 0) < 1:
         return
@@ -478,6 +511,22 @@ def _advance_active_attempt(
         return
     attempt["turns"] += 1
     if attempt["turns"] >= STAGE2_TURNS:
+        # Re-validate the start-time invariants at flip time: the theater may
+        # have changed over the ~4-turn pipeline. The conservation bound (red
+        # CP count never exceeds turn 0) can be re-reached by an in-mission red
+        # capture, and the player may have since based a squadron at the target
+        # (the §36 player-field exclusion).
+        red_now = sum(1 for cp in game.theater.controlpoints if cp.captured.is_red)
+        if red_now >= state.get("_red_cp_turn0", red_now) or str(
+            target.id
+        ) in _player_field_ids(game):
+            _announce(
+                game,
+                events,
+                f"Infiltration near {target.name} abandoned — the cells disperse.",
+            )
+            _abort_attempt(game, rf, events, cell, cache)
+            return
         _flip(game, state, rf, target, source, cell, cache, events)
 
 
@@ -532,6 +581,12 @@ def _best_target(
             continue
         if getattr(cp, "is_fleet", False) or getattr(cp, "is_carrier", False):
             continue
+        # Off-map spawns can never be captured (their capture() raises), so an
+        # attempt against one would crash finish_turn at flip time.
+        from game.theater.controlpoint import OffMapSpawn
+
+        if isinstance(cp, OffMapSpawn):
+            continue
         if str(cp.id) in excluded:
             continue
         if _garrison_count(cp) > HOLD_THRESHOLD:
@@ -572,9 +627,13 @@ def _flip(
         target._coalition = game.red
 
     # Reparent the infiltration cell + cache so the new stronghold owns them (and they
-    # render RED now the CP is red); commission a weak garrison from the C1 pool.
+    # render RED now the CP is red); commission a weak garrison from the C1 pool. They
+    # stop being transient spawns here -- the cell IS the new stronghold's militia and
+    # the cache its first cache, so the fresh anchor below must count them.
     for tgo in (cell, cache):
         _reparent(source, target, tgo, events)
+        if tgo is not None:
+            tgo.coin_spawned = False
     pool = regen_unit_pool(game.red)
     if pool:
         for i in range(REINFIL_GARRISON):
@@ -734,6 +793,12 @@ def spawn_red_ground_at(
     if sidc_override is not None:
         tgo.sidc_entity_override = sidc_override
     tgo.concealed = concealed
+    # Transient COIN spawns (HVT convoy, IED security team, infiltration/field
+    # cells) have their own lifecycle; they never count toward -- nor are revived
+    # by -- the C1 anchor machinery (_alive_cell_count/_revivable_units). A
+    # reinfiltration flip clears the flag when the cell becomes the new
+    # stronghold's militia.
+    tgo.coin_spawned = True
     red_cp.connected_objectives.append(tgo)
     game.db.tgos.add(tgo.id, tgo)
     if max_units is not None:

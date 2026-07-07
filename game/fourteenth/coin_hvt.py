@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from game.fourteenth.coin import (
     HVT_SIDC,
+    _cp_by_id,
     _despawn,
     _tgo_by_id,
     hvt_unit_types,
@@ -67,9 +68,16 @@ def advance_hvt(game: "Game", events: Any = None) -> None:
 
     No-op unless both ``coin_hvt`` and ``coin_insurgency`` are on, or before turn 1.
     """
-    if not getattr(game.settings, "coin_hvt", False):
-        return
-    if not getattr(game.settings, "coin_insurgency", False):
+    if not getattr(game.settings, "coin_hvt", False) or not getattr(
+        game.settings, "coin_insurgency", False
+    ):
+        # Mid-campaign toggle-off: an active HVT convoy must not sit live (and
+        # concealed) forever with nothing left to resolve it.
+        state = getattr(game, "coin_state", None)
+        hvt = state.get("hvt") if isinstance(state, dict) else None
+        if isinstance(hvt, dict) and hvt.get("active"):
+            _despawn(game, _tgo_by_id(game, hvt["active"].get("tgo_id")), events)
+            hvt["active"] = None
         return
     if getattr(game, "turn", 0) < 1:
         return
@@ -96,6 +104,22 @@ def _resolve_active_hvt(
     active = hvt["active"]
     tgo = _tgo_by_id(game, active.get("tgo_id"))
     name = active.get("name", "the HVT")
+    # A blue capture of the host stronghold clears its uncapturable TGOs -- the
+    # convoy vanishing that way is NOT a decapitation (the base fall is already
+    # charged via red_base_lost; crediting the HVT too double-dips the will feed).
+    host_id = active.get("cp_id")
+    if host_id is not None:
+        host = _cp_by_id(game, host_id)
+        if host is None or not host.captured.is_red:
+            if tgo is not None:
+                _despawn(game, tgo, events)
+            _announce(
+                game,
+                f"HVT {name} slipped away in the fall of the stronghold.",
+            )
+            hvt["active"] = None
+            hvt["cooldown"] = HVT_COOLDOWN_TURNS
+            return
     if tgo is None or not _tgo_alive(tgo):
         # Struck: a decapitation. Credit the momentum blow (consumed by the will layer).
         state["hvt_kills"] = int(state.get("hvt_kills", 0)) + 1
@@ -139,7 +163,12 @@ def _surface_hvt(game: "Game", hvt: dict[str, Any], events: Any) -> None:
         tgo.name = f"HVT {name}"
     except Exception:  # noqa: BLE001 -- name is cosmetic; never break the turn
         pass
-    hvt["active"] = {"tgo_id": str(tgo.id), "name": name, "turns": 0}
+    hvt["active"] = {
+        "tgo_id": str(tgo.id),
+        "cp_id": str(stronghold.id),
+        "name": name,
+        "turns": 0,
+    }
     _announce(
         game,
         f"Intel: HVT {name} is on the move near {stronghold.name} — hunt his convoy "

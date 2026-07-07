@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
     QComboBox,
     QFrame,
     QGroupBox,
@@ -7,6 +8,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
     QSpinBox,
@@ -181,7 +183,17 @@ class QFlightPayloadTab(QFrame):
         scroll.setWidget(scroll_content)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
-        aircraft_layout.addWidget(scroll, stretch=1)
+        # Size the settings area to its content -- so an AI flight (all F-4-style
+        # properties are player-only, so the editor is empty) stays compact instead
+        # of leaving a big gap -- but cap it so a full player property list scrolls
+        # rather than shoving the loadout off the bottom.
+        scroll.setSizeAdjustPolicy(
+            QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+        )
+        scroll.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        scroll.setMaximumHeight(400)
+        self.aircraft_scroll = scroll
+        aircraft_layout.addWidget(scroll)
 
         self.own_laser_code_info = OwnLaserCodeInfo(
             game, self.member_selector.selected_member
@@ -221,7 +233,9 @@ class QFlightPayloadTab(QFrame):
         # (Loadout has its own "Save Payload"; laser code has a global setting.)
         aircraft_layout.addLayout(self._build_flight_defaults_row())
 
-        layout.addWidget(aircraft_box, stretch=2)
+        # No stretch: the box sizes to its (content-bounded, capped) height, so the
+        # pylon editor below gets the rest of the tab.
+        layout.addWidget(aircraft_box)
 
         loadout_row = QHBoxLayout()
         loadout_row.addWidget(QLabel("Loadout:"))

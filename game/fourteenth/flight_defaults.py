@@ -68,10 +68,17 @@ def _load() -> dict[str, Any]:
 
 def _write(data: dict[str, Any]) -> None:
     global _cache
-    path = flight_defaults_path()
-    path.write_text(
-        json.dumps(data, indent=2, sort_keys=True), encoding="utf-8", newline="\n"
-    )
+    try:
+        path = flight_defaults_path()
+        path.write_text(
+            json.dumps(data, indent=2, sort_keys=True), encoding="utf-8", newline="\n"
+        )
+    except OSError:
+        # A locked/read-only store (OneDrive-synced Saved Games is a real case)
+        # must not blow up the Qt click handler -- the default just isn't
+        # persisted this session. Keep the in-memory cache so the button still
+        # "works" until restart.
+        logging.warning("Could not write flight defaults store", exc_info=True)
     _cache = data
 
 

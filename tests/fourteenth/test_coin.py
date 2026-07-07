@@ -515,3 +515,50 @@ def test_enduring_resolve_campaign_definition() -> None:
     # No inverted ROE: dropped the whole-map free-fire inversion for explicit no-strike
     # valleys, so no phase carries free-fire pockets.
     assert all(phase.free_fire_zones == () for phase in arc)
+
+
+def test_despawn_emits_the_tgo_id_not_the_object() -> None:
+    """The SSE model requires UUIDs in deleted_tgos; a TGO object poisons the
+    GameUpdateEventsJs serialization and drops the whole event stream."""
+    import uuid
+
+    from game.fourteenth.coin import _despawn
+    from game.sim.gameupdateevents import GameUpdateEvents
+
+    tgo_id = uuid.uuid4()
+    tgo = SimpleNamespace(id=tgo_id, control_point=None)
+    game = SimpleNamespace(
+        db=SimpleNamespace(tgos=SimpleNamespace(remove=lambda i: None))
+    )
+    events = GameUpdateEvents()
+    _despawn(game, tgo, events)  # type: ignore[arg-type]
+    assert events.deleted_tgos == {tgo_id}
+
+
+def test_campaign_start_snapshot_pins_the_pre_loss_anchor() -> None:
+    """finish_turn's regen hook only ever runs after the turn counter advanced,
+    so the turn-0 anchor snapshot must come from initialize_turn (via
+    snapshot_campaign_start_anchors) BEFORE the first mission's losses commit."""
+    from game.fourteenth.coin import snapshot_campaign_start_anchors
+
+    cp = _cp(garrison={TECHNICAL: 10})
+    game = _game(turn=0, cps=[cp])
+    snapshot_campaign_start_anchors(game)  # the initialize_turn(turn 0) hook
+    # Mission 1 losses commit, then finish_turn increments to 1 and regens.
+    cp.base.commit_losses({TECHNICAL: 4})
+    _run_turns(game, 1, 2)
+    # The anchor is the TRUE start state (10), not the post-loss 6.
+    assert game.coin_state[str(cp.id)]["garrison_cap"] == 10
+    assert cp.base.total_armor == 10
+
+
+def test_campaign_start_snapshot_only_fires_at_turn_zero() -> None:
+    from game.fourteenth.coin import snapshot_campaign_start_anchors
+
+    cp = _cp(garrison={TECHNICAL: 10})
+    game = _game(turn=3, cps=[cp])
+    snapshot_campaign_start_anchors(game)
+    assert getattr(game, "coin_state", None) is None
+    game_off = _game(on=False, turn=0, cps=[cp])
+    snapshot_campaign_start_anchors(game_off)
+    assert getattr(game_off, "coin_state", None) is None

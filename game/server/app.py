@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from . import (
     controlpoints,
@@ -21,6 +22,16 @@ from . import (
 from .settings import ServerSettings
 
 app = FastAPI()
+
+
+@app.exception_handler(KeyError)
+async def _key_error_as_404(request: Request, exc: KeyError) -> JSONResponse:
+    """Unknown-id lookups raise KeyError, not None (Database.get,
+    find_control_point_by_id), so the routes' `is None` guards never fire and a
+    stale client id produced a 500 + traceback. Map them to a clean 404."""
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
 app.include_router(controlpoints.router)
 app.include_router(debuggeometries.router)
 app.include_router(eventstream.router)

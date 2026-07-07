@@ -348,6 +348,8 @@ class QPlaceUnitGroupDialog(QDialog):
                 free=free,
                 deploy_next_turn=deploy_next,
                 respawn=respawn,
+                # So a discarded deploy-next-turn placement can be refunded.
+                cost=0.0 if (free or self.game.turn == 0) else cost,
             )
         except ValueError as exc:
             if not free and self.game.turn > 0:

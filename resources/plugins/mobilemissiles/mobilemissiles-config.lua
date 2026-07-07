@@ -89,7 +89,18 @@ local function startSite(site)
         end
         return timer.getTime() + INTERVAL
     end
-    timer.scheduleFunction(tick, {}, timer.getTime() + GRACE)
+    -- pcall-guarded: an error in a scheduled tick otherwise kills this site's
+    -- scoot loop silently for the rest of the mission (log + retry instead).
+    local function guarded()
+        local ok, result = pcall(tick)
+        if not ok then
+            env.warning("mobilemissiles: scoot tick error (retrying): "
+                .. tostring(result))
+            return timer.getTime() + INTERVAL
+        end
+        return result
+    end
+    timer.scheduleFunction(guarded, {}, timer.getTime() + GRACE)
 end
 
 local ok, err = pcall(function()

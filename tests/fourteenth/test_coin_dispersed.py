@@ -186,3 +186,27 @@ def test_coalesce_without_a_dead_cache_reinforces_or_melts(monkeypatch: Any) -> 
     for _ in range(fc.MATURE_TURNS):
         fc.advance_dispersed_cells(game, events=None)
     assert any("melted into CP2" in m[1] for m in game.messages)
+
+
+def test_coalesce_into_a_fallen_stronghold_revives_nothing(monkeypatch: Any) -> None:
+    """If the home stronghold fell while the cell was in the field, coalescing
+    must not resurrect a cache/militia at the now-BLUE base."""
+    game, red = _theater(monkeypatch)
+    cache = _TGO(category="ammo", alive=False)
+    red.connected_objectives.append(cache)
+    fc.advance_dispersed_cells(game, events=None)  # seed
+    red._kind = "blue"  # the stronghold fell mid-window
+    for _ in range(fc.MATURE_TURNS):
+        fc.advance_dispersed_cells(game, events=None)
+    assert not any(u.alive for u in cache.units)  # no wrong-side resurrection
+    assert not any("back in operation" in m[1].lower() for m in game.messages)
+
+
+def test_toggle_off_despawns_live_field_cells(monkeypatch: Any) -> None:
+    game, red = _theater(monkeypatch)
+    fc.advance_dispersed_cells(game, events=None)  # seed
+    cell_id = game.coin_state["field_cells"][0]["tgo_id"]
+    game.settings.coin_dispersed_cells = False
+    fc.advance_dispersed_cells(game, events=None)
+    assert game.coin_state["field_cells"] == []
+    assert all(t.id != cell_id for t in red.connected_objectives)

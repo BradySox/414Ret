@@ -2192,8 +2192,8 @@ so the two docs don't drift.
   accounting, not the spawn.
 - **Headless adjudication:** `tests/fourteenth/test_super_gaggle.py` locks the plan (draws real squadron
   airframes, counts capped by `owned_aircraft`, clears when off / no outpost / no helo squadron) and the
-  reconcile (charges only killed committed names, floors at 0, credits delivery on any-helo-survival, clears the
-  commitment). `test_vietnamops_luadata.py` locks the emitter (serializes the commitment; no commitment → no
+  reconcile (charges only killed committed names, floors at 0, **losses-only — no delivery strength credit**
+  (2026-07-07 design call), clears the commitment). `test_vietnamops_luadata.py` locks the emitter (serializes the commitment; no commitment → no
   node). The runtime helo spawn + routing + the single-run cue are Lua, exercisable only live.
 - **Setup:** A Vietnam campaign with **Vietnam Ops → Super Gaggle** on and a **friendly forward FOB/FARP** near
   the front plus a friendly rear airfield/FARP to launch from (Khe Sanh laydown qualifies), and a BLUE
@@ -2203,8 +2203,10 @@ so the two docs don't drift.
   arrival — **once, no re-roll**. A **live F10 map mark** tracks the gaggle the whole way (moves with the lead
   helo, disappears on delivery/loss) so it's findable and escortable from anywhere on the map. `dcs.log` shows
   "Super Gaggle armed (outpost …, Nx …, single run)". **Critically:** a shot-down gaggle helo shows up at
-  debrief as a **real airframe loss to that squadron** (its `owned_aircraft` drops); a clean delivery bolsters
-  the outpost's ground strength.
+  debrief as a **real airframe loss to that squadron** (its `owned_aircraft` drops). **Losses-only
+  (2026-07-07 design call):** a clean run gives **no** garrison-strength boost — there is no runtime
+  "delivered" signal, so "survived" can't be told from "never spawned"; the gaggle costs only the airframes
+  it actually loses.
 - **Choreography:** a fast-mover suppression flight (the committed attack squadron's airframes) spawns with the
   gaggle, flies over the outpost, and its losses are likewise charged back. The suppressors spawn with their
   squadron aircraft's default loadout — confirm whether they actually attack the AAA or are visual-only. A
@@ -2777,7 +2779,17 @@ so the two docs don't drift.
   transfer per corridor per turn) so no mega-column forms, and/or verify the Baghdad route start sits on the
   highway; then re-fly (which also unblocks S3's spring). NOTE: this also blocked the S3 ambush spring this
   session — the teams were in place but nothing ever drove into them.
-- **What CI cannot exercise:** whether the columns actually drive their roads in-mission on both sides (the engine's own `ConvoyGenerator` path, but now exercised on ~27 campaigns instead of a handful); whether the turn-to-turn variation (1–3 per side, sometimes two columns on one road) reads as ambient life rather than a scripted parade; and whether red's ambient columns surface naturally as Armed Recon/BAI targets.
+- **2026-07-07 (PR follow-up — root cause fixed, needs a re-fly):** two changes landed. **(1) Skim-only**
+  (the economy-honesty design call): ambient columns now skim existing rear units instead of
+  `commission_units`-ing free ones. **(2) Distinct-road (the S5 fix itself):** the convoy map keys transports
+  by `(origin, destination)` (`TransportMap.add`), so the 3 same-corridor blue transfers were coalescing into
+  ONE 24-vehicle column that line-spawned into unauthored positions and deadlocked. `_top_up_side` now samples
+  **distinct** corridors (`_RNG.sample`, one column per road, capped at the road count), so no mega-column can
+  form — the exact lead this row identified. This **trades away** the sketched "some columns share a road"
+  texture, which the merge made unachievable anyway (a shared road was one parked blob, not two columns). The
+  parked-column root cause is addressed in code; **the re-fly is what promotes this off REGRESSED** (confirm
+  both sides' columns drive, and the S3 ambush spring unblocks).
+- **What CI cannot exercise:** whether the columns actually drive their roads in-mission on both sides (the engine's own `ConvoyGenerator` path, but now exercised on ~27 campaigns instead of a handful); whether the turn-to-turn variation (1–3 per side, on distinct roads) reads as ambient life rather than a scripted parade; and whether red's ambient columns surface naturally as Armed Recon/BAI targets.
 - **Setup:** any road-bearing campaign (`ROAD_BEARING_CAMPAIGNS`), **NEW game**, `ambient_supply_convoys` ON (default). Advance 2–3 turns without flying, checking the map each turn; then fly a mission and find the columns on the F10 map.
 - **Pass:** blue AND red convoys appear on their own roads most turns (counts varying, occasionally two columns sharing a road, occasionally a quiet side); columns drive rear→front; red's columns can be right-clicked/fragged as ordinary Armed Recon/BAI targets and their kills count at debrief; a side with no same-side road (e.g. an island map) simply shows none, with no errors.
 - **Fail signature:** no convoys ever on a campaign listed in `ROAD_BEARING_CAMPAIGNS` (corridor enumeration or the setting gate broken); the exact same number of convoys on the exact same roads every turn (the RNG not driving); convoys stacking unboundedly (existing convoys not counted toward the target); columns driving front→rear (orientation inverted); convoy units appearing from nowhere at debrief or kills not recorded (a phantom-spawn regression — every column must be a real `coalition.transfers` transfer).

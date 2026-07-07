@@ -430,11 +430,25 @@ def test_authored_arc_skips_ahead_for_a_late_adopting_save(authored_game: Any) -
     assert authored_game.current_phase_key == "linebacker_ii"
 
 
+def _tgo_target(x: float, category: str = "aa", owner: Any = None) -> Any:
+    """A real-isinstance TGO double so _target_class/_target_owner run."""
+    from game.theater import Player
+    from game.theater.theatergroundobject import BuildingGroundObject
+
+    tgo = BuildingGroundObject.__new__(BuildingGroundObject)
+    tgo.category = category
+    tgo.position = _Pt(x, 0.0)  # type: ignore[assignment]
+    tgo.control_point = SimpleNamespace(  # type: ignore[assignment]
+        captured=owner if owner is not None else Player.RED
+    )
+    return tgo
+
+
 def test_roe_blocks_zone_and_locked_class(authored_game: Any) -> None:
     update_campaign_phase(authored_game)
     nm = 1852.0
-    inside = SimpleNamespace(position=_Pt(5 * nm, 0.0))
-    outside = SimpleNamespace(position=_Pt(50 * nm, 0.0))
+    inside = _tgo_target(5 * nm)
+    outside = _tgo_target(50 * nm)
     assert roe_blocks_target(authored_game, inside)
     assert not roe_blocks_target(authored_game, outside)
     # Advance to Linebacker II: no zones, nothing locked.
@@ -442,6 +456,32 @@ def test_roe_blocks_zone_and_locked_class(authored_game: Any) -> None:
     update_campaign_phase(authored_game)
     assert authored_game.current_phase_key == "linebacker_ii"
     assert not roe_blocks_target(authored_game, inside)
+
+
+def test_roe_never_blocks_friendly_targets(authored_game: Any) -> None:
+    """Defensive/support tasking (BARCAP/AEW&C/tanker) targets FRIENDLY CPs;
+    the authored 'airfield' lock and the sanctuary circle must not scrub it."""
+    from game.theater import Player
+    from game.theater.controlpoint import Airfield
+
+    update_campaign_phase(authored_game)
+    nm = 1852.0
+    blue_field = Airfield.__new__(Airfield)
+    blue_field.position = _Pt(5 * nm, 0.0)  # type: ignore[assignment]
+    blue_field._coalition = SimpleNamespace(player=Player.BLUE)  # type: ignore[assignment]
+    # Inside the sanctuary AND of a locked class -- still never blocked.
+    assert not roe_blocks_target(authored_game, blue_field)
+    blue_tgo = _tgo_target(5 * nm, category="factory", owner=Player.BLUE)
+    assert not roe_blocks_target(authored_game, blue_tgo)
+
+
+def test_roe_never_zone_gates_classless_targets(authored_game: Any) -> None:
+    """Front lines / convoys carry no target class and are never weapons-hold,
+    even inside a restricted zone (the documented TIC/trail exemption)."""
+    update_campaign_phase(authored_game)
+    nm = 1852.0
+    frontline = SimpleNamespace(position=_Pt(5 * nm, 0.0))
+    assert not roe_blocks_target(authored_game, frontline)
 
 
 def test_roe_ignores_everything_without_an_authored_phase() -> None:
@@ -844,10 +884,10 @@ def test_roe_restriction_reason_names_the_class_or_the_zone(
         "airfield targets are locked this phase"
     )
     # An unlocked-class target inside the circle: the reason is the sanctuary.
-    inside = SimpleNamespace(position=_Pt(5 * nm, 0.0))
+    inside = _tgo_target(5 * nm)
     assert roe_restriction_reason(authored_game, inside) == "inside Hanoi sanctuary"
     # An unlocked-class target outside: no reason, no badge -- AAA is fair game.
-    outside = SimpleNamespace(position=_Pt(50 * nm, 0.0))
+    outside = _tgo_target(50 * nm)
     assert roe_restriction_reason(authored_game, outside) is None
 
 
@@ -1015,10 +1055,44 @@ def test_escalation_cost_charges_once_per_phase_entry() -> None:
         assert phases.consume_phase_escalation_cost(game) == ("Linebacker", -3.0)
         # ...and never again while the war stays in that phase (the persisted latch).
         assert phases.consume_phase_escalation_cost(game) is None
-        assert game.will_escalation_charged_phase == "linebacker"
+        assert game.will_escalation_charged_phases == {"linebacker"}
         # Advancing to Linebacker II charges its own, steeper cost, once.
         game.current_phase_key = "linebacker_ii"
         assert phases.consume_phase_escalation_cost(game) == ("Linebacker II", -5.0)
+        assert phases.consume_phase_escalation_cost(game) is None
+    finally:
+        del phases._ARC_CACHE["Escalation Test"]
+
+
+def test_escalation_cost_catches_up_over_a_chained_skip() -> None:
+    """A same-turn chained advance (late-adopting save) that skips THROUGH
+    Linebacker straight to Linebacker II still owes Linebacker's tax -- charged
+    one per turn until caught up."""
+    from game.fourteenth import phases
+
+    phases._ARC_CACHE["Escalation Test"] = _escalation_arc()
+    try:
+        game = _duck_game(
+            on=True, current="linebacker_ii", campaign_name="Escalation Test"
+        )
+        assert phases.consume_phase_escalation_cost(game) == ("Linebacker", -3.0)
+        assert phases.consume_phase_escalation_cost(game) == ("Linebacker II", -5.0)
+        assert phases.consume_phase_escalation_cost(game) is None
+    finally:
+        del phases._ARC_CACHE["Escalation Test"]
+
+
+def test_escalation_cost_respects_the_legacy_scalar_latch() -> None:
+    """A pre-fix save carries the scalar last-charged key; it must not be
+    double-charged when the set-based latch takes over."""
+    from game.fourteenth import phases
+
+    phases._ARC_CACHE["Escalation Test"] = _escalation_arc()
+    try:
+        game = _duck_game(
+            on=True, current="linebacker", campaign_name="Escalation Test"
+        )
+        game.will_escalation_charged_phase = "linebacker"  # the old latch
         assert phases.consume_phase_escalation_cost(game) is None
     finally:
         del phases._ARC_CACHE["Escalation Test"]

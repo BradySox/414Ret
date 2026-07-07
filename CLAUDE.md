@@ -1029,8 +1029,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     to the commitment). At debrief, `reconcile_super_gaggle` (`missionresultsprocessor.commit_super_gaggle`) charges
     each committed unit name found in the debrief's killed units back to its squadron (`owned_aircraft -= lost`,
     `destroyed_aircraft += lost`) — a **real airframe loss**, exactly like any other; survivors cost nothing (a
-    returning detachment, so no pre-debit/return), and a delivered run credits the outpost a small ground-strength
-    boost. No base-Lua / debrief-schema change: the spawned units already fire the DCS death events
+    returning detachment, so no pre-debit/return). **Losses-only, no delivery credit (2026-07-07 design call):**
+    the earlier "delivered run credits the outpost a small ground-strength boost" is dropped — an airframe's
+    *absence* from the kill list means "survived and delivered" OR "never spawned at all" (player ended the
+    mission before the launch delay), indistinguishable without a runtime "delivered" signal the plugin does not
+    emit (adding one would need exactly the Lua/debrief-schema change this module set out to avoid), so a clean
+    run is simply free. No base-Lua / debrief-schema change: the spawned units already fire the DCS death events
     `dcs_retribution.lua` records, so their names land in the debrief killed lists (as untracked ground units,
     since they aren't in the `UnitMap`) and are matched by name. Fully guarded (feature off / no outpost / no
     launch / no helo squadron with airframes ⇒ no commitment ⇒ no node ⇒ plugin no-ops). Blue-only (symmetry
@@ -1362,10 +1366,21 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **Standardized to all campaigns 2026-07-06 with the ambient-convoy layer**
     (`game/fourteenth/ambient_convoys.py` `ensure_ambient_convoys`, from `finish_turn` after the §35 trail
     top-up): every turn EACH side's convoy flow is topped up to a **randomized** `randint(1, 3)` real
-    columns on **randomly chosen** same-side road corridors (uniform pick WITH repeats — some columns share
-    a road, some spread out; never forced, organic/§35 convoys count toward the target), oriented rear→front
-    off the shared `_reference_points` (fronts, or opposing CPs on a front-less laydown); red on a COIN
-    campaign convoys its irregular kit. This **replaces the old blue-only `ensure_blue_escort_convoy`** —
+    columns on **randomly chosen DISTINCT** same-side road corridors (`_RNG.sample`, one column per road,
+    capped at the road count; never forced, organic/§35 convoys count toward the target), oriented rear→front
+    off the shared `_reference_points` (fronts, or opposing CPs on a front-less laydown); each column carries
+    the units actually in its rear base's roster. **Distinct roads, one transfer per corridor (2026-07-07 S5
+    fix):** the convoy map keys transports by `(origin, destination)` (`TransportMap.add`), so two transfers
+    on the SAME corridor **coalesce into one oversized group** that line-spawns into unauthored positions and
+    **deadlocks** at mission start (the flown S5 regression — a 24-vehicle blue column parked at Baghdad, which
+    also blocked the §50 ambush spring); sampling distinct corridors keeps every column a separate driveable
+    group (trading away the never-achievable "some share a road" texture — a shared road was one parked blob).
+    **Skim-only, no free unit seeding (2026-07-07 design call):**
+    ambient columns **relocate units that already exist** (`_skim_units`) and never `commission_units` free ones
+    — generalizing the §35 trail's external-supply free-seed to every campaign on both sides would inject
+    un-budgeted reinforcements into both armies every turn, which the squadron never asked for (it asked for
+    *traffic*). A rear base too thin to skim (< 2 armor) yields no column that turn (the §35 Vietnam trail keeps
+    its own documented, red-only, Vietnam-gated seeding). This **replaces the old blue-only `ensure_blue_escort_convoy`** —
     the ambush chance rolls over every blue convoy whatever created it. Gated `ambient_supply_convoys`
     (Mission Generation → Battlefield life, default **ON**); a side with no same-side road (island maps,
     all-red graphs) is a silent no-op. `seed_convoy_ambushes` (from `finish_turn` right after) despawns

@@ -156,6 +156,11 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         # sign of them is the in-mission TROOPS IN CONTACT call. Stronger than
         # `concealed` (which still draws a suspected-activity circle).
         self.map_hidden: bool = False
+        # Transient COIN spawn marker (HVT convoy, IED security team,
+        # infiltration/field cells): these have their own lifecycle and never
+        # count toward -- nor are revived by -- the C1 anchor machinery. A
+        # reinfiltration flip clears it when the cell becomes real militia.
+        self.coin_spawned: bool = False
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -182,6 +187,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
         state.setdefault("concealed_route", None)
         # Old saves predate total map hiding — visible is correct.
         state.setdefault("map_hidden", False)
+        # Old saves predate the COIN transient-spawn marker — not a spawn.
+        state.setdefault("coin_spawned", False)
         self.__dict__.update(state)
         # Save migration: heal AAA sites that were generated with a stray search
         # radar (the old `fill: true` radar slot). Newly generated campaigns no
@@ -340,7 +347,8 @@ class TheaterGroundObject(MissionTarget, SidcDescribable, ABC):
 
     @property
     def faction_color(self) -> str:
-        return "BLUE" if self.control_point.captured else "RED"
+        # captured is the Player enum (every member is truthy), not a bool.
+        return "BLUE" if self.control_point.captured.is_blue else "RED"
 
     def is_friendly(self, to_player: Player) -> bool:
         if self.control_point.captured.is_neutral:

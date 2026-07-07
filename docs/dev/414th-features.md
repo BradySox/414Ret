@@ -4454,3 +4454,66 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
   real, per-base **destroyable command-center network** (9 red Command Center cells) for §52 to key on —
   see the Red Tide design note. The B6 in-game pass now rides on that campaign.
 - **NEW game not required** (no persisted state; C2 health is measured live each turn).
+
+---
+
+## Code audit fixes — 2026-07-07
+
+A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,
+Lua runtimes, server/API + fog, save-compat, planner/sim) produced this batch of
+correctness fixes. Each brings the code to what its feature section already documents;
+none change a feature's intended shape.
+
+- **§ COIN `_despawn` (`game/fourteenth/coin.py`)** — `events.delete_tgo` takes a `UUID`,
+  not the TGO object; passing the object poisoned `GameUpdateEventsJs` serialization and
+  dropped the whole `/eventstream` turn-end batch on any turn that despawned a COIN
+  IED/HVT/dispersed cell or a §50 convoy-ambush team (default ON). Fixed to `tgo.id`.
+- **§34 `faction_color` (`game/theater/theatergroundobject.py`)** — `control_point.captured`
+  is the `Player` enum (always truthy), so `"BLUE" if captured else "RED"` labeled every
+  TGO BLUE; the naval-gunfire emitter put red gun ships on the blue side. Now reads
+  `captured.is_blue`.
+- **§21 Combat SAR templates (`game/missiongenerator/missiongenerator.py`)** —
+  `spawn_combat_sar_templates()` ran *before* `spawn_unused_aircraft()` populated
+  `parked_rescue_helos`, so the preferred tracked parked-helo source was always empty and
+  the runtime always fell back to the untracked clone. Reordered.
+- **§40 ROE gate (`game/fourteenth/phases.py`)** — the authored `airfield` target lock had
+  no ownership check, so during Rolling Thunder/Bombing Halt the BLUE auto-planner was
+  scrubbed from planning its own BARCAP/AEW&C/tankers (friendly CPs classify as
+  `airfield`), and a permanent positive-control box kept blocking a base after BLUE
+  captured it. `roe_restriction_reason` now exempts friendly-owned targets and only
+  zone-gates class-carrying (CP/ground-object) targets. Also: the escalation tax now
+  charges each phase skipped in a same-turn chained advance (a set-based latch), not just
+  the final one.
+- **§1 COIN anchors (`game/fourteenth/coin.py`, `game/game.py`)** — the "turn 0" anchor
+  snapshot never ran at turn 0 (`finish_turn` increments the turn before its hooks), so the
+  caps were baselined *after* mission 1's losses. `snapshot_campaign_start_anchors` runs
+  from `initialize_turn` at turn 0. Transient COIN spawns are tagged `coin_spawned` so they
+  no longer count toward / get revived by the C1 anchor machinery; a stronghold capture is
+  no longer double-charged as an HVT kill; a matured dispersed cell no longer revives a
+  cache at a now-BLUE base; the reinfiltration flip re-validates the conservation bound and
+  player-field exclusion at flip time and skips `OffMapSpawn` targets; and mid-campaign
+  toggle-off of the COIN/ambush layers now sweeps their hidden TGOs instead of stranding
+  them. The carrier strike picker skips `map_hidden` teams.
+- **§36 airbase harassment (`game/missiongenerator/vietnamopsluadata.py`)** — nothing in
+  the engine constructs `ControlPointType.FARP` (FARPs load as FOB-type CPs with helipads),
+  so the documented airfield/FARP siege never shelled a FARP. Eligibility now goes through
+  `_harassable_cp` (airfields always; FOB-type CPs with helipads).
+- **§3 / server fog (`game/server/`)** — enemy carrier/LHA groups (CP-attached TGOs) shipped
+  ground-truth composition/BDA/rings with no `known_for` gate; the concealment jitter was
+  seeded from the public TGO id alone (recomputable client-side — now id XOR a per-campaign
+  server-held `concealment_salt`); `DefendingSam` combat events broadcast exact positions of
+  concealed SAMs engaging AI-only flights; unknown-id route lookups 500'd instead of 404'd
+  (a `KeyError` handler now maps them); and the fog-overview reveal is reset on save load /
+  new-campaign start.
+- **Persistence (`game/data/weapons.py`, `game/fourteenth/flight_defaults.py`)** — an unknown
+  weapon clsid left an empty `Weapon` object (deferred `AttributeError`) and an unknown weapon
+  group name hard-aborted the whole load; both now keep the pickled state (FlightType-style
+  tolerance). The flight-defaults write is now guarded (a locked store no longer throws
+  through the Qt click handler).
+- **Lua runtimes** — the Sandy divert/release orbits passed terrain+alt to
+  `TaskOrbitCircleAtVec2` (which adds terrain again → 2× height over high ground); the
+  coin/mobilemissiles mover ticks and the Arc Light watcher leaked/polled forever; a dead
+  FAC left its F10 mark; and the mist shim's `getHeadingPoints(north=true)` would throw
+  while `scheduleFunction` swallowed consumer errors silently.
+- **§20 drop-spawn (`game/theater/unitplacement.py`)** — a Deploy-Next-Turn placement charged
+  at queue time is now refunded when it can't be materialised (CP lost / terrain changed).

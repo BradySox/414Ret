@@ -130,3 +130,17 @@ def test_template_creation_failure_degrades_to_none_not_a_crash() -> None:
         result = gen._create_combat_sar_template(squadron, "X")  # type: ignore[arg-type]
 
     assert result is None
+
+
+def test_generation_order_populates_the_parked_pool_before_templating() -> None:
+    """spawn_combat_sar_templates snapshots mission_data.parked_rescue_helos,
+    which is only filled by spawn_unused_aircraft -- templating first would
+    always see an empty pool and defeat the tracked-airframe preference."""
+    import inspect
+
+    from game.missiongenerator import missiongenerator
+
+    source = inspect.getsource(missiongenerator.MissionGenerator.generate_air_units)
+    unused = source.index("spawn_unused_aircraft()")
+    templates = source.index("spawn_combat_sar_templates()")
+    assert unused < templates

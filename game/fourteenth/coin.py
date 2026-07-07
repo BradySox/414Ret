@@ -784,7 +784,9 @@ def _despawn(game: "Game", tgo: Any, events: Any) -> None:
         pass
     if events is not None:
         try:
-            events.delete_tgo(tgo)
+            # delete_tgo takes the TGO's id, not the object -- passing the object
+            # poisons GameUpdateEventsJs serialization and drops the SSE stream.
+            events.delete_tgo(tgo.id)
         except Exception:  # noqa: BLE001
             pass
 

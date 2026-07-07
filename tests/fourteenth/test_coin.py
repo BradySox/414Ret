@@ -515,3 +515,19 @@ def test_enduring_resolve_campaign_definition() -> None:
     # No inverted ROE: dropped the whole-map free-fire inversion for explicit no-strike
     # valleys, so no phase carries free-fire pockets.
     assert all(phase.free_fire_zones == () for phase in arc)
+
+
+def test_despawn_emits_the_tgo_id_not_the_object() -> None:
+    """The SSE model requires UUIDs in deleted_tgos; a TGO object poisons the
+    GameUpdateEventsJs serialization and drops the whole event stream."""
+    import uuid
+
+    from game.fourteenth.coin import _despawn
+    from game.sim.gameupdateevents import GameUpdateEvents
+
+    tgo_id = uuid.uuid4()
+    tgo = SimpleNamespace(id=tgo_id, control_point=None)
+    game = SimpleNamespace(db=SimpleNamespace(tgos=SimpleNamespace(remove=lambda i: None)))
+    events = GameUpdateEvents()
+    _despawn(game, tgo, events)  # type: ignore[arg-type]
+    assert events.deleted_tgos == {tgo_id}

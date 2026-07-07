@@ -320,3 +320,51 @@ def test_customized_payload_clsids_resolve_or_are_known_stragglers() -> None:
         "_KNOWN_MOD_STRAGGLER_CLSIDS if it is a mod weapon):\n"
         + "\n".join(sorted(unresolved))
     )
+
+
+# Deliberately-kept preset names in the fork namespace that intentionally match no loader
+# lookup. See docs/dev/design/414th-loadout-integrity-audit-notes.md ("2026-07-06
+# upstream-baseline reset").
+#   - "Retribution CEAD": no CEAD FlightType exists; dead weight on A6E / CH_Su-27P1M /
+#     MiG-29MU2, deliberately left in place.
+#   - "Retribution Strike - Toilet": the A-1 Skyraider's joke toilet-bomb loadout. The A-1
+#     already carries a real "Retribution Strike" preset, so this is an intentional cosmetic
+#     ME-only extra, not a silent-fallback primary (and the file is upstream-identical).
+_KNOWN_ORPHAN_PRESET_NAMES = frozenset(
+    {"Retribution CEAD", "Retribution Strike - Toilet"}
+)
+
+
+def test_customized_payload_retribution_names_resolve_to_a_task() -> None:
+    """Every fork-namespaced preset name must be one the loader actually looks up.
+
+    The mission generator matches a flight's FlightType to a custom preset by *exact name*
+    (``Loadout.default_loadout_names_for`` -> ``"Retribution {value}"`` / ``"Liberation
+    {value}"`` + legacy aliases). A preset in the ``Retribution ``/``Liberation `` namespace
+    whose name matches none of those lookups is dead weight: the jet silently falls back to a
+    worse loadout (anti-ship, which has no fallback preset chain to a dedicated fit, degrades
+    to iron bombs or empty). This is the bug the 2026-06 name-standardization pass fixed --
+    and upstream still ships offenders (e.g. ``"Retribution Fighter Sweep"`` vs the enum's
+    lowercase ``"Fighter sweep"``), so a byte-for-byte reset to upstream can silently
+    reintroduce it. This guard fails loudly if one creeps back.
+    """
+    valid_names: set[str] = set()
+    for task in FlightType:
+        valid_names.update(Loadout.default_loadout_names_for(task))
+
+    dead: dict[str, set[str]] = {}
+    for path in Path("resources/customized_payloads").glob("*.lua"):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for name in re.findall(r'\["name"\]\s*=\s*"([^"]+)"', text):
+            if not (name.startswith("Retribution ") or name.startswith("Liberation ")):
+                continue
+            if name in valid_names or name in _KNOWN_ORPHAN_PRESET_NAMES:
+                continue
+            dead.setdefault(name, set()).add(path.stem)
+
+    assert not dead, (
+        "Customized-payload preset(s) in the 'Retribution '/'Liberation ' namespace use a "
+        "name the loader never looks up, so the jet silently flies a fallback loadout. Match "
+        "FlightType.value casing exactly (e.g. 'Retribution Fighter sweep', not '...Sweep'):\n"
+        + "\n".join(f"  {n} -> {sorted(files)}" for n, files in sorted(dead.items()))
+    )

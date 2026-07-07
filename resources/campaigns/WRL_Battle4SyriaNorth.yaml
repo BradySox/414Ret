@@ -383,3 +383,47 @@ supply_routes:
       - [214863, -19965]
       - [205549, -7798]
       - [200062, -1069]
+  # #50 red rear corridor (batch 2)
+  # Aleppo -> Minakh  (the Azaz road north through Hreitan)
+  - waypoints:
+      - [125577, 123125]
+      - [144580, 112309]
+      - [155763, 108046]
+      - [163698, 107431]
+  # Aleppo -> Kuweires  (the Dayr Hafir road east out of the city)
+  - waypoints:
+      - [125577, 123125]
+      - [128561, 138974]
+      - [125811, 155254]
+  # Kuweires -> Jirah  (the Aleppo-Raqqa road south-east toward Maskanah)
+  - waypoints:
+      - [125811, 155254]
+      - [121444, 170352]
+      - [115350, 187069]
+  # Taftanaz -> Abu al-Duhur  (via Saraqib, then the Abu-Duhur plain road)
+  - waypoints:
+      - [103486, 82767]
+      - [90769, 85058]
+      - [82636, 102057]
+      - [76049, 111345]
+  # Hatay -> ERZIN FOB  (E91 north over the Belen pass through Iskenderun/Dortyol)
+  - waypoints:
+      - [147687, 39419]
+      - [162053, 32881]
+      - [200891, 34011]
+      - [212868, 32130]
+  # ERZIN FOB -> OSMANIYE FOB  (the E91/O-53 short leg north)
+  - waypoints:
+      - [212868, 32130]
+      - [218646, 34530]
+      - [225514, 35599]
+  # OSMANIYE FOB -> CEYHAN FOB  (O-52/D400 west through Toprakkale)
+  - waypoints:
+      - [225514, 35599]
+      - [225516, 27611]
+      - [224062, 6871]
+  # OSMANIYE FOB -> BB90 FOB  (the O-52 east toward Bahce)
+  - waypoints:
+      - [225514, 35599]
+      - [227044, 51684]
+      - [225900, 72474]

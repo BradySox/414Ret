@@ -52,3 +52,17 @@ squadrons:
       secondary: any
       aircraft:
         - Ju 88 A-4
+
+supply_routes:
+  # #50 red rear corridor (batch 2)
+  # Calais -> Saint Omer  (the N43 through Ardres)
+  - waypoints:
+      - [6776, 22547]
+      - [-2175, 30404]
+      - [-16952, 45168]
+  # Calais -> Ostende  (the coastal E40 road through Dunkirk and Veurne)
+  - waypoints:
+      - [6776, 22547]
+      - [16473, 53795]
+      - [20775, 75554]
+      - [32605, 98407]

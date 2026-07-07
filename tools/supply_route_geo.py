@@ -42,6 +42,7 @@ from dcs.terrain.normandy import Normandy
 from dcs.terrain.persiangulf import PersianGulf
 from dcs.terrain.sinai import Sinai
 from dcs.terrain.syria import Syria
+from dcs.terrain.thechannel import TheChannel
 
 
 @dataclass
@@ -597,17 +598,228 @@ BATCH1_BLUE_REAR: dict[str, tuple[type, list[Route]]] = {
 }
 
 
+# =====================================================================================
+# --- The §50 standardization BATCH 2 (2026-07-07): RED rear corridors for the nine
+# --- campaigns with no red->red road, so red's ambient supply convoys flow (and the
+# --- player has columns to interdict -- the §35 loop). Same standard: exact red CP XY
+# --- endpoints, real roads by lat/lon. Blue's ambush layer is untouched by these.
+# =====================================================================================
+
+# --- Syria: the Aleppo belt (WRL_AleppoInsurgency; Battle4SyriaNorth shares the
+# --- Aleppo legs and adds its Turkish-held FOB line).
+SY_ALEPPO = (125577.0, 123125.0)  # Aleppo Intl (RED)
+SY_KUWEIRES = (125811.0, 155254.0)  # Kuweires (RED)
+SY_JIRAH = (115350.0, 187069.0)  # Jirah (RED)
+SY_FOB_XRAY = (108419.0, 110193.0)  # FOB X-RAY (RED, M5 south of Aleppo)
+SY_MINAKH = (163698.0, 107431.0)  # Minakh (RED, the Azaz pocket)
+SY_TAFTANAZ = (103486.0, 82767.0)  # Taftanaz (RED in Battle4SyriaNorth)
+SY_ABU_ALDUHUR = (76049.0, 111345.0)  # Abu al-Duhur (RED in Battle4SyriaNorth)
+SY_ERZIN_FOB = (212868.0, 32130.0)  # ERZIN FOB (RED in Battle4SyriaNorth)
+SY_OSMANIYE_FOB = (225514.0, 35599.0)  # OSMANIYE FOB (RED in Battle4SyriaNorth)
+SY_CEYHAN_FOB = (224062.0, 6871.0)  # CEYHAN FOB (RED in Battle4SyriaNorth)
+SY_BB90_FOB = (225900.0, 72474.0)  # BB90 FOB (RED, the Bahce/O-52 corridor)
+
+SYRIA_ALEPPO_KUWEIRES = Route(
+    "Aleppo -> Kuweires  (the Dayr Hafir road east out of the city)",
+    SY_ALEPPO,
+    [(36.210, 37.400)],
+    SY_KUWEIRES,
+)
+SYRIA_KUWEIRES_JIRAH = Route(
+    "Kuweires -> Jirah  (the Aleppo-Raqqa road south-east toward Maskanah)",
+    SY_KUWEIRES,
+    [(36.150, 37.750)],
+    SY_JIRAH,
+)
+SYRIA_ALEPPO_XRAY = Route(
+    "Aleppo -> FOB X-RAY  (the M5 south toward Saraqib)",
+    SY_ALEPPO,
+    [(36.100, 37.150)],
+    SY_FOB_XRAY,
+)
+SYRIA_ALEPPO_MINAKH = Route(
+    "Aleppo -> Minakh  (the Azaz road north through Hreitan)",
+    SY_ALEPPO,
+    [(36.350, 37.100), (36.450, 37.050)],
+    SY_MINAKH,
+)
+SYRIA_TAFTANAZ_ABUALDUHUR = Route(
+    "Taftanaz -> Abu al-Duhur  (via Saraqib, then the Abu-Duhur plain road)",
+    SY_TAFTANAZ,
+    [(35.860, 36.810), (35.790, 37.000)],
+    SY_ABU_ALDUHUR,
+)
+SYRIA_HATAY_ERZIN = Route(
+    "Hatay -> ERZIN FOB  (E91 north over the Belen pass through Iskenderun/Dortyol)",
+    SY_HATAY,
+    [(36.490, 36.210), (36.840, 36.210)],
+    SY_ERZIN_FOB,
+)
+SYRIA_ERZIN_OSMANIYE = Route(
+    "ERZIN FOB -> OSMANIYE FOB  (the E91/O-53 short leg north)",
+    SY_ERZIN_FOB,
+    [(37.000, 36.210)],
+    SY_OSMANIYE_FOB,
+)
+SYRIA_OSMANIYE_CEYHAN = Route(
+    "OSMANIYE FOB -> CEYHAN FOB  (O-52/D400 west through Toprakkale)",
+    SY_OSMANIYE_FOB,
+    [(37.060, 36.130)],
+    SY_CEYHAN_FOB,
+)
+SYRIA_OSMANIYE_BB90 = Route(
+    "OSMANIYE FOB -> BB90 FOB  (the O-52 east toward Bahce)",
+    SY_OSMANIYE_FOB,
+    [(37.080, 36.400)],
+    SY_BB90_FOB,
+)
+
+# --- Persian Gulf: the Iranian mainland highways (both Noisy Crickets share the
+# --- red laydown; the island fields -- Kish/Qeshm/Abu Musa -- stay roadless).
+PG_BANDARABBAS = (115766.0, 14258.0)  # Bandar Abbas Intl (RED)
+PG_KERMAN = (454117.0, 71096.0)  # Kerman (RED)
+PG_SHIRAZ = (381101.0, -351637.0)  # Shiraz Intl (RED)
+PG_BUSHEHR = (313020.0, -505678.0)  # Bushehr NPP (RED)
+
+IRAN_MAINLAND_ROUTES = [
+    Route(
+        "Bandar Abbas -> Kerman  (the truck route north: Hajiabad -> Sirjan -> "
+        "the Kerman highway)",
+        PG_BANDARABBAS,
+        [(28.310, 55.900), (29.450, 55.680), (29.900, 56.300)],
+        PG_KERMAN,
+    ),
+    Route(
+        "Bandar Abbas -> Shiraz  (Highway 86/96 west through Lar and Jahrom)",
+        PG_BANDARABBAS,
+        [(27.680, 54.340), (28.500, 53.560)],
+        PG_SHIRAZ,
+    ),
+    Route(
+        "Shiraz -> Bushehr  (Highway 86 down through Kazerun and Borazjan)",
+        PG_SHIRAZ,
+        [(29.620, 51.650), (29.270, 51.210)],
+        PG_BUSHEHR,
+    ),
+]
+
+# --- Syria map as Cyprus (operation_aegean_aegis): the island's A-road motorways.
+CY_AKROTIRI = (-35779.0, -268906.0)  # Akrotiri (RED here)
+CY_LARNACA = (-7675.0, -208844.0)  # Larnaca (RED)
+CY_ERCAN = (23584.0, -217287.0)  # Ercan (RED)
+
+CYPRUS_ROUTES = [
+    Route(
+        "Akrotiri -> Larnaca  (the A1/A5 motorway via Limassol and Kofinou)",
+        CY_AKROTIRI,
+        [(34.680, 33.050), (34.820, 33.390)],
+        CY_LARNACA,
+    ),
+    Route(
+        "Larnaca -> Ercan  (the A2 toward Nicosia, then north-east across the "
+        "Mesaoria plain)",
+        CY_LARNACA,
+        [(35.050, 33.400)],
+        CY_ERCAN,
+    ),
+]
+
+# --- The Channel (operation_dynamo): red's 1940 coastal roads.
+CH_CALAIS = (6776.0, 22547.0)  # Calais-Marck (RED)
+CH_STOMER = (-16952.0, 45168.0)  # Saint Omer Longuenesse (RED)
+CH_OSTENDE = (32605.0, 98407.0)  # Ostende (RED)
+
+CHANNEL_ROUTES = [
+    Route(
+        "Calais -> Saint Omer  (the N43 through Ardres)",
+        CH_CALAIS,
+        [(50.860, 2.020)],
+        CH_STOMER,
+    ),
+    Route(
+        "Calais -> Ostende  (the coastal E40 road through Dunkirk and Veurne)",
+        CH_CALAIS,
+        [(51.030, 2.350), (51.070, 2.660)],
+        CH_OSTENDE,
+    ),
+]
+
+# --- Marianas (operation_velvet_thunder): red's island-INTERNAL roads -- Saipan's
+# --- Middle Road north and Tinian's Broadway. (Island-to-island stays roadless, so
+# --- the §35 no-red-trail note only softens: red convoys now exist, per island.)
+MI_SAIPAN = (180035.0, 101856.0)  # Saipan Intl (RED)
+MI_KITE = (198363.0, 110807.0)  # FOB KITE (RED, north Saipan)
+MI_TINIAN = (166860.0, 89957.0)  # Tinian Intl (RED)
+MI_BOAT = (172799.0, 91771.0)  # FOB BOAT (RED, north Tinian)
+
+MARIANAS_RED_ROUTES = [
+    Route(
+        "Saipan Intl -> FOB KITE  (Middle Road / Route 30 north through Garapan "
+        "and Tanapag)",
+        MI_SAIPAN,
+        [(15.190, 145.720), (15.240, 145.760)],
+        MI_KITE,
+    ),
+    Route(
+        "Tinian Intl -> FOB BOAT  (Broadway north up the island)",
+        MI_TINIAN,
+        [(15.030, 145.630)],
+        MI_BOAT,
+    ),
+]
+
+#: §50 batch 2 -- campaign stem -> (terrain, RED routes to splice into its yaml).
+#: operation_shattered_dagger reuses the Enduring Resolve ratline verbatim (same
+#: laydown -- ER is its fork); pacific_repartee reuses the Guam road (red-owned there).
+BATCH2_RED_REAR: dict[str, tuple[type, list[Route]]] = {
+    "WRL_AleppoInsurgency": (
+        Syria,
+        [SYRIA_ALEPPO_KUWEIRES, SYRIA_KUWEIRES_JIRAH, SYRIA_ALEPPO_XRAY],
+    ),
+    "WRL_Battle4SyriaNorth": (
+        Syria,
+        [
+            SYRIA_ALEPPO_MINAKH,
+            SYRIA_ALEPPO_KUWEIRES,
+            SYRIA_KUWEIRES_JIRAH,
+            SYRIA_TAFTANAZ_ABUALDUHUR,
+            SYRIA_HATAY_ERZIN,
+            SYRIA_ERZIN_OSMANIYE,
+            SYRIA_OSMANIYE_CEYHAN,
+            SYRIA_OSMANIYE_BB90,
+        ],
+    ),
+    "operation_noisy_cricket": (PersianGulf, IRAN_MAINLAND_ROUTES),
+    "WRL_Operation_Noisy_Cricket_Redux": (PersianGulf, IRAN_MAINLAND_ROUTES),
+    "operation_aegean_aegis": (Syria, CYPRUS_ROUTES),
+    "operation_dynamo": (TheChannel, CHANNEL_ROUTES),
+    # The ER ratline minus its final entry (the Kandahar<->Bastion BLUE corridor,
+    # which batch 1 already gave this campaign).
+    "operation_shattered_dagger": (Afghanistan, COIN_ROUTES[:-1]),
+    "operation_velvet_thunder": (MarianaIslands, MARIANAS_RED_ROUTES),
+    "pacific_repartee": (MarianaIslands, GUAM_ROUTES),
+}
+
+
 CAMPAIGNS = {
     "coin": (Afghanistan, COIN_ROUTES),
     "red_flag_81_2": (Nevada, RED_FLAG_ROUTES),
     "caucasus_trail_fixes": (Caucasus, CAUCASUS_TRAIL_FIXES),
     "iraq_inherent_resolve": (Iraq, IRAQ_IR_ROUTES),
 }
-# Every batch-1 campaign is directly addressable too (spaces -> underscores).
+# Every batch-1/batch-2 campaign is directly addressable too (spaces -> underscores;
+# a campaign in both batches resolves to its batch-2 red routes -- regenerate batch-1
+# blue blocks via the shared route constants if ever needed).
 CAMPAIGNS.update(
     {
         stem.replace(" ", "_"): (terrain, routes)
         for stem, (terrain, routes) in BATCH1_BLUE_REAR.items()
+    }
+)
+CAMPAIGNS.update(
+    {
+        stem.replace(" ", "_") + "_red": (terrain, routes)
+        for stem, (terrain, routes) in BATCH2_RED_REAR.items()
     }
 )
 

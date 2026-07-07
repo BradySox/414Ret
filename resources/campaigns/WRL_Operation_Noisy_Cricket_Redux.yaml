@@ -423,3 +423,23 @@ supply_routes:
       - [-143805, -139457]
       - [-127534, -115980]
       - [-126014, -89133]
+  # #50 red rear corridor (batch 2)
+  # Bandar Abbas -> Kerman  (the truck route north: Hajiabad -> Sirjan -> the Kerman highway)
+  - waypoints:
+      - [115766, 14258]
+      - [237101, -32091]
+      - [363636, -52257]
+      - [412977, 8174]
+      - [454117, 71096]
+  # Bandar Abbas -> Shiraz  (Highway 86/96 west through Lar and Jahrom)
+  - waypoints:
+      - [115766, 14258]
+      - [169653, -186604]
+      - [262487, -261010]
+      - [381101, -351637]
+  # Shiraz -> Bushehr  (Highway 86 down through Kazerun and Borazjan)
+  - waypoints:
+      - [381101, -351637]
+      - [393729, -442581]
+      - [356905, -487221]
+      - [313020, -505678]

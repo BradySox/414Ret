@@ -83,3 +83,55 @@ supply_routes:
       - [-237771, -151847]
       - [-232270, -171511]
       - [-235178, -184377]
+  # #50 red rear corridor (batch 2)
+  # Farah -> FOB Delaram II  (Highway 1 / the Ring Road, ESE)
+  - waypoints:
+      - [-178644, -378451]
+      - [-185879, -342516]
+      - [-199269, -300150]
+      - [-203597, -258944]
+  # FOB Delaram II -> ANP Hill (Now Zad)  (NE track skirting the north edge of the Dasht-e Margo)
+  - waypoints:
+      - [-203597, -258944]
+      - [-185651, -220124]
+      - [-172032, -187320]
+      - [-174184, -162657]
+  # ANP Hill (Now Zad) -> FOB Jackson (Sangin)  via Musa Qala -- the 611 wadi
+  - waypoints:
+      - [-174184, -162657]
+      - [-169101, -135636]
+      - [-190089, -130581]
+      - [-209298, -127205]
+  # FOB Jackson (Sangin) -> FOB Zeebrugge (Kajaki)  (Route 611, up the Helmand)
+  - waypoints:
+      - [-209298, -127205]
+      - [-195334, -113519]
+      - [-181518, -101421]
+  # Tarinkot -> Kamp Hadrian  (the Tarin Kowt bowl, W toward Deh Rawud)
+  - waypoints:
+      - [-148524, -31352]
+      - [-147324, -48689]
+      - [-146856, -66510]
+  # Kamp Hadrian -> Firebase Cobra  (N up the Uruzgan valley)
+  - waypoints:
+      - [-146856, -66510]
+      - [-129925, -63191]
+      - [-111672, -60214]
+  # Tarinkot -> FOB Martello  (SE down the Uruzgan-Kandahar road)
+  - waypoints:
+      - [-148524, -31352]
+      - [-165482, -21883]
+      - [-179635, -12066]
+      - [-189960, -7031]
+  # FOB Martello -> FOB Frontenac (the Kandahar gate)  (SW, Uruzgan road descent)
+  - waypoints:
+      - [-189960, -7031]
+      - [-209768, -17825]
+      - [-231043, -30347]
+  # FOB Geronimo -> FOB Zeebrugge (Kajaki)  the Helmand highway the whole way: Lashkar Gah -> Gereshk -> Sangin -> Kajaki (through the town rings)
+  - waypoints:
+      - [-285099, -180708]
+      - [-263851, -170168]
+      - [-238126, -153451]
+      - [-208889, -127434]
+      - [-181518, -101421]

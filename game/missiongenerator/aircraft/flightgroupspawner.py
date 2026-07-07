@@ -188,6 +188,26 @@ class FlightGroupSpawner:
         group.late_activation = True
         return group
 
+    def create_combat_sar_template(self, group_name: str) -> Optional[FlyingGroup[Any]]:
+        """A cold late-activation template the combatsar runtime clones on demand.
+
+        Like ``create_intercept_template`` but works for a rescue helo at a FARP/FOB
+        (not just an airfield): places the group at the squadron's field the same way
+        ``create_idle_aircraft`` does, then marks it late-activation so the template
+        itself never launches -- only the runtime's SPAWN clones fly (§21).
+        """
+        cp = self.flight.squadron.location
+        group: Optional[FlyingGroup[Any]] = None
+        if self.flight.is_helo or (self.flight.is_lha and isinstance(cp, Fob)):
+            group = self._generate_at_cp_helipad(name=group_name, cp=cp)
+        elif isinstance(cp, Fob):
+            group = self._generate_at_cp_ground_spawn(name=group_name, cp=cp)
+        elif isinstance(cp, Airfield):
+            group = self._generate_at_airfield(name=group_name, airfield=cp)
+        if group is not None:
+            group.late_activation = True
+        return group
+
     @property
     def start_type(self) -> StartType:
         return self.flight.state.spawn_type

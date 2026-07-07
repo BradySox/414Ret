@@ -16,6 +16,7 @@ from typing import Any
 
 from game.ato.flighttype import FlightType
 from game.missiongenerator.luagenerator import LuaData, LuaItem, LuaValue, LuaGenerator
+from game.missiongenerator.missiondata import CombatSarTemplates
 
 
 def _string_list(item: LuaItem | None) -> list[str]:
@@ -30,6 +31,19 @@ def _key_values(item: LuaItem) -> list[LuaValue]:
     value = item.value
     assert isinstance(value, list)
     return value
+
+
+def _scalar(item: LuaItem | None) -> Any:
+    assert item is not None
+    value = item.value
+    assert isinstance(value, LuaValue)
+    return value.value
+
+
+def _templates() -> CombatSarTemplates:
+    return CombatSarTemplates(
+        helo_group="CombatSAR On-Demand Rescue", delivery_field="Balad"
+    )
 
 
 def _fd(
@@ -54,9 +68,16 @@ def _coalition(country_id: int) -> Any:
     )
 
 
-def _generator(flights: list[Any], *, auto_combat_sar: bool = False) -> LuaGenerator:
+def _generator(
+    flights: list[Any],
+    *,
+    auto_combat_sar: bool = False,
+    combat_sar_templates: Any = None,
+) -> LuaGenerator:
     gen = LuaGenerator.__new__(LuaGenerator)
-    gen.mission_data = SimpleNamespace(flights=flights)  # type: ignore[assignment]
+    gen.mission_data = SimpleNamespace(  # type: ignore[assignment]
+        flights=flights, combat_sar_templates=combat_sar_templates
+    )
     gen.game = SimpleNamespace(  # type: ignore[assignment]
         settings=SimpleNamespace(
             auto_combat_sar=auto_combat_sar, scar_command_post_intel=False
@@ -132,6 +153,58 @@ def test_red_flights_are_ignored_and_no_red_node_is_emitted() -> None:
 def test_red_only_flights_emit_no_combat_sar_at_all() -> None:
     flights = [_fd("RedJolly-1", FlightType.COMBAT_SAR, is_blue=False, helo=True)]
     gen = _generator(flights)
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    assert lua_data.get_item("CombatSAR") is None
+
+
+def test_autospawn_arms_the_cold_template_with_no_player_package() -> None:
+    # Scenario C: no player CSAR package, auto_combat_sar on, a cold helo template
+    # exists -> the runtime is told to clone it on demand.
+    gen = _generator([], auto_combat_sar=True, combat_sar_templates=_templates())
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _scalar(node.get_item("autoSpawn")) == "true"
+    assert _scalar(node.get_item("heloTemplate")) == "CombatSAR On-Demand Rescue"
+    assert _scalar(node.get_item("farp")) == "Balad"
+    assert _string_list(node.get_item("rescueHelos")) == []  # no player helos
+
+
+def test_player_package_suppresses_autospawn_and_arms_no_clone() -> None:
+    # Scenarios A/B: the player fragged a package -> no AI clone is armed, and the
+    # ledger runs off the player's own helo.
+    flights = [_fd("Jolly-1", FlightType.COMBAT_SAR, is_blue=True, helo=True)]
+    gen = _generator(flights, auto_combat_sar=True, combat_sar_templates=_templates())
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _scalar(node.get_item("autoSpawn")) == "false"
+    assert node.get_item("heloTemplate") is None  # no on-demand clone with a package
+    assert _string_list(node.get_item("rescueHelos")) == ["Jolly-1"]
+
+
+def test_no_node_when_auto_off_and_no_player_package() -> None:
+    gen = _generator([], auto_combat_sar=False, combat_sar_templates=_templates())
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    assert lua_data.get_item("CombatSAR") is None  # no rescue capability -> no node
+
+
+def test_no_node_when_auto_on_but_no_template_and_no_player_package() -> None:
+    # auto_combat_sar on but the coalition owns no CSAR-capable helo (no template)
+    # and nothing was fragged -> nothing to do.
+    gen = _generator([], auto_combat_sar=True, combat_sar_templates=None)
     lua_data = LuaData("dcsRetribution")
 
     gen._generate_combat_sar(lua_data)

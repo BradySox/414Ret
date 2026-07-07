@@ -23,6 +23,27 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class CombatSarTemplates:
+    """Cold late-activation template groups for the on-demand AI rescue (§21).
+
+    The combatsar runtime SPAWN-clones fresh copies of these when a pilot goes
+    down and no player CSAR package is up -- the proven clone-into-mission path,
+    not the retired commandeer-an-orbiting-helo dispatch (checklist G21). The
+    template groups themselves never launch (late_activation); only their clones
+    fly the rescue.
+    """
+
+    #: The rescue helo template (does the OPSTRANSPORT pickup).
+    helo_group: str
+    #: Friendly field the cloned rescue delivers the survivor to (CP display
+    #: name; the runtime falls back to the nearest resolvable field for a FARP).
+    delivery_field: str
+    #: The Sandy (A-10/Apache) template that suppresses the snatch party, if the
+    #: coalition owns a SCAR-capable airframe. None -> helo-only rescue.
+    sandy_group: Optional[str] = None
+
+
+@dataclass
 class GroupInfo:
     group_name: str
     callsign: str
@@ -155,3 +176,10 @@ class MissionData:
     # the emitter and the kneeboard (JAM BACKUP line) read the same plan. None
     # when the feature is off or has nothing to do this mission.
     comms_jam: Optional[CommsJamInfo] = None
+    # Cold late-activation template group(s) the combatsar runtime clones for an
+    # on-demand AI rescue (§21). Populated by
+    # AircraftGenerator.spawn_combat_sar_templates when auto_combat_sar is on and
+    # BLUE owns a CSAR-capable helo; None otherwise. Whether the runtime actually
+    # auto-spawns is a separate gate (no player CSAR package this mission), decided
+    # in luagenerator so the template can exist unused.
+    combat_sar_templates: Optional[CombatSarTemplates] = None

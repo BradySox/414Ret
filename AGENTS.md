@@ -668,8 +668,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 15. **SCAR — RESCAP "Sandy" rescue escort** — repurposed (rescue rework, design note
     `414th-scar-rescue-rework-notes.md`) from the **retired** armor-hunt task into the rescue-escort
     role of the **Combat SAR package** (`FlightType.SCAR`, A-10C/AH-64D, scoped to the FLOT). The
-    standing package = **1 King (C-130) + 1 Jolly Green (helo) + 2–4 Sandy**; Sandy's racetrack is
-    planned once at generation, but an **AI-crewed** Sandy is now **dynamically diverted** at runtime
+    rescue package (**1 King (C-130) + helo(s) + 2–4 Sandy**) is now **player-planned** off the FLOT —
+    the auto-fragged standing orbit is retired (§21 on-demand rework 2026-07-06), so the AI-spawn path
+    fields the helo only (an on-demand Sandy clone is the §21 v2). A **player-package AI-crewed** Sandy
+    is still **dynamically diverted** at runtime
     (`combatsar` plugin, added 2026-07-01; **route-push rework 2026-07-02** — the original
     `SetTask(TaskCombo)` divert was flown and confirmed a no-op: `EngageTargetsInZone` is an en-route
     task the DCS controller silently rejects inside a main-task combo. The divert is now a transit
@@ -698,7 +700,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (persisted saves degrade to TRANSPORT), the dynamic `CapturedPilotGroundObject` map objective
     (tombstoned; `purge_pow_objectives` sweeps old saves), and `commit_pow_recoveries` are removed;
     capture is a campaign consequence, not a plannable mission.
-    Standing package via `auto_combat_sar` (King + Jolly + 1 Sandy), **default ON** since the rescope.
+    Rescue is **player-plannable** (King + helo + Sandy off the FLOT) or an **on-demand AI helo**
+    (`auto_combat_sar`, **default ON**) — no more standing orbit (§21 on-demand rework).
     The old armor-hunt scenario + its auto-planner are **deleted** (2026-06-27: `scarluadata.py`, the
     `scar` plugin, `PlanScarHunts`/`PlanScar`, `scar_autoplan*`); the CSAR recovery plumbing was
     repurposed for the POW path. The **dormant SOF capture economy was removed 2026-07-01**
@@ -737,17 +740,29 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `enable_unit_placement` (unlock) + `enable_free_unit_placement` (no cost).
     (`game/theater/unitplacement.py`, `qt_ui/windows/groundobject/QPlaceUnitGroupDialog.py`,
     `client/src/components/liberationmap/MapContextMenu.tsx`; features doc §20.)
-21. **Combat SAR** — bespoke pilot-rescue flight type (`FlightType.COMBAT_SAR`): a CH-47
-    orbits the FLOT as the rescuer, a C-130 flies the HC-130 "King" overhead orbit (air-tracking
-    **TACAN-only** beacon — no ADF — + F10 LARS survivor-locator), driven at runtime by the plugin's
-    **survivor ledger** (`combatsar` plugin). AI standing alert `auto_combat_sar` — **default ON**
-    since the 2026-07-03 rescope (existing saves keep their stored choice); rescue is a normal,
-    standing task. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field spares the
-    aviator at debrief (airframe still lost) — the `combatsar` plugin's `OnAfterBoarded`/`OnAfterRescued`
-    hooks append the ejected unit name to the `combat_sar_rescues` state global, and
-    `commit_air_losses` skips that pilot's kill (fail-safe: empty list = pre-scoring behaviour).
-    Distinct from the POW-recovery `FlightType.CSAR` raid (§15). (`game/ato/flighttype.py`,
-    `game/commander/tasks/primitive/combatsar.py`, `game/sim/missionresultsprocessor.py`,
+21. **Combat SAR** — pilot-rescue flight type (`FlightType.COMBAT_SAR`): a rescue helo (CH-47/UH-1)
+    + a C-130 "King" (air-tracking **TACAN-only** beacon — no ADF — + F10 LARS survivor-locator) +
+    a Sandy (SCAR, §15) escort, driven at runtime by the plugin's **survivor ledger** (`combatsar`
+    plugin). **Two ways rescue happens (on-demand rework 2026-07-06):** (1) the player **plans their
+    own package** off the FLOT (`FrontLine.mission_types` offers COMBAT_SAR + SCAR — a C-130 + helo(s)
+    + A-10 Sandys, human or AI-crewed seats), or (2) with **no player package fragged**, the runtime
+    **spawns an on-demand AI rescue** when a pilot goes down — it SPAWN-clones a **cold late-activation
+    helo template** (`AircraftGenerator.spawn_combat_sar_templates`, the QRA-reserve pattern) and flies
+    it straight into the OPSTRANSPORT pickup (the proven clone-into-mission path). **The retired
+    standing orbit** (auto-fragged `PlanCombatSar` + the commandeer-an-airborne-helo dispatch) is
+    **removed** — the orbiting helo never reliably flew the pickup (checklist G21). The gate: a player
+    CSAR/SCAR flight in the ATO ⟺ player package ⟹ **no AI spawn** (the user's "we've got it covered"
+    scenarios); nothing fragged ⟹ AI spawns. `auto_combat_sar` (**default ON**) now drives the
+    on-demand spawn, not an orbit. **Emit contract:** `dcsRetribution.CombatSAR` carries `autoSpawn`
+    (bool) + `heloTemplate`/`farp` (only when auto-spawning) alongside `pilotTemplate`/`rescueHelos`/
+    `kings`/`sandys`. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field
+    spares the aviator at debrief (airframe still lost) — the plugin's `OnAfterBoarded`/`OnAfterRescued`
+    hooks append the ejected unit name to `combat_sar_rescues`, and `commit_air_losses` skips that
+    pilot's kill (fail-safe: empty list = pre-scoring behaviour). **v2 (deferred):** on-demand Sandy +
+    King clones (arming a clone template needs the configurator pass + a fly) and multi-survivor
+    chained pickup ("grab the other guy on the way"). Distinct from the shelved POW-recovery raid
+    (§15). (`game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftgenerator.py`,
+    `game/missiongenerator/luagenerator.py`, `game/sim/missionresultsprocessor.py`,
     `resources/plugins/combatsar/`; features doc §21, design doc `414th-csar-notes.md`.)
 22. **Kneeboard space-utilisation + custom import** — sparse kneeboard pages (Combat SAR,
     Support, Mission Info) restyled to fill the page with a *light* heading + underline-rule +

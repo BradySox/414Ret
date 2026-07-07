@@ -101,7 +101,14 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     local function addConfig(color, side, enemySide, enemyCountry, c)
         if not c or not c.pilotTemplate then return end
         local helos = c.rescueHelos or {}
-        if #helos == 0 then return end
+        -- autoSpawn (§21 on-demand rework): with no player CSAR package fragged, the
+        -- runtime clones a rescue from the cold heloTemplate when a pilot goes down.
+        -- The plugin needs SOME way to rescue -- either a player-crewed helo on the
+        -- ledger (rescueHelos, for player pickup geometry) or the on-demand clone
+        -- template. Neither -> nothing to do. (Was: bail whenever rescueHelos empty,
+        -- which killed the whole ledger in the no-player-package case.)
+        local autoSpawn = readBool(c.autoSpawn, false)
+        if #helos == 0 and not (autoSpawn and c.heloTemplate) then return end
         local cfg = {
             color = color,
             side = side,
@@ -117,7 +124,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             farp = c.farp,
             kings = c.kings or {},
             sandys = c.sandys or {},
-            enableForAI = readBool(c.enableForAI, false),
+            autoSpawn = autoSpawn,
         }
         configs[#configs + 1] = cfg
         cfgBySide[side] = cfg
@@ -780,7 +787,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                     -- react). Retry a FAILED dispatch (a MOOSE template error, etc.) a few times
                     -- with backoff rather than abandoning the survivor on the first error --
                     -- `e.dispatched` is only latched once the dispatch actually succeeds.
-                    if e.state == "down" and e.cfg.enableForAI and not e.dispatched
+                    if e.state == "down" and e.cfg.autoSpawn and not e.dispatched
                         and (timer.getTime() - e.t0) >= AI_DISPATCH_DELAY
                         and (not e.nextDispatchAt or timer.getTime() >= e.nextDispatchAt) then
                         if dispatchAIRescue(e) then
@@ -1006,7 +1013,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             .. "%d Sandy(s), capture %s, AI-rescue %s)",
         #configs, kingCount, sandyCount,
         capture.enabled and "on" or "off",
-        cfgBySide[coalition.side.BLUE] and cfgBySide[coalition.side.BLUE].enableForAI and "on" or "off"))
+        cfgBySide[coalition.side.BLUE] and cfgBySide[coalition.side.BLUE].autoSpawn and "on" or "off"))
 
 else
     env.info("DCSRetribution|Combat SAR plugin - dcsRetribution.CombatSAR not present; skipping")

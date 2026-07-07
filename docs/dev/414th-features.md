@@ -1874,12 +1874,18 @@ the squadron).
   geometry differs. Helos clamp to a helo-appropriate AGL via the shared `get_altitude` path.
   (Earlier builds reused the AEW&C builder outright, which parked the CH-47 at AWACS depth — a
   G9 in-game finding, fixed 2026-06-25.)
-- **AI standing alert** — `Settings.auto_combat_sar` (HQ automation, **default ON** since the
-  2026-07-03 rescope; existing saves keep their stored choice) auto-plans
-  one COMBAT_SAR orbit per turn for blue via `PlanCombatSar` / `PlanCombatSarSupport`
-  (mirrors AEWC/refuel support). With it on, the generator emits `enableForAI=true` plus a
-  `heloTemplate` (the first rescue flight's group, used as the clone-fallback template) and `farp`
-  (that flight's departure field). **The AI rescue runs in the plugin's own survivor ledger, not
+- **On-demand AI rescue (2026-07-06 rework — replaced the standing orbit).** The auto-fragged
+  COMBAT_SAR orbit (`PlanCombatSar` / `PlanCombatSarSupport`) is **removed** — the orbiting helo
+  never reliably flew the pickup (the runtime commandeered an airborne, already-routed group, which
+  RTB'd instead of rescuing; checklist G21, a flown finding). Now `Settings.auto_combat_sar` (HQ
+  automation, **default ON**) drives an **on-demand spawn**: `AircraftGenerator.spawn_combat_sar_templates`
+  drops a cold **late-activation rescue-helo template** (the proven QRA `spawn_intercept_templates`
+  pattern), and the generator emits `autoSpawn=true` + `heloTemplate` (that cold template) + `farp`
+  (its field) **only when no player CSAR/SCAR package is fragged**. When a pilot then goes down the
+  runtime **SPAWN-clones the template into the OPSTRANSPORT pickup** — the clone-into-mission path
+  that works. A player-fragged package ⟹ `autoSpawn=false`, no AI clone (the package + ledger handle
+  it). The rescue helo needs no loadout (it does OPSTRANSPORT); an on-demand **Sandy/King** clone +
+  multi-survivor chaining are the §21 **v2**. **The AI rescue runs in the plugin's own survivor ledger, not
   MOOSE `AICSAR`/`CSAR`** (the 2026-06-26 playtest confirmed MOOSE CSAR's `enableForAI` only
   *tracks* AI ejections and never flies a helo — "Jolly Green flew a racetrack and did nothing").
   `combatsar-config.lua` registers every AI/player ejection through an **ejection bridge**
@@ -1986,11 +1992,12 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 |---|---|
 | Flight type | `game/ato/flighttype.py` — `COMBAT_SAR` |
 | Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) plus utility-helo rescuers **UH-60A/L, UH-1H, CH-53E, Mi-8** (so non-Chinook factions still field CSAR), and King **C-130J-30** (the only C-130) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`). EW de-conflict: `luagenerator._ew_excluded_c130j_groups` (per-group deny-list) |
-| Flight plan | reuses `game/ato/flightplans/aewc.py` (FLOT support orbit) |
-| Planning | `game/commander/tasks/primitive/combatsar.py`, `…/compound/combatsarsupport.py`, `theaterstate.py` (`combat_sar_targets`) |
-| Setting | `game/settings/settings.py` — `auto_combat_sar` |
+| Flight plan | `game/ato/flightplans/combatsar.py` (forward FLOT hold) — a **player-planned** COMBAT_SAR flight only; the auto-fragged orbit is retired |
+| Planning | **Player-plannable** off the FLOT (`game/theater/frontline.py` `mission_types` → COMBAT_SAR/SCAR). The standing-orbit auto-frag (`PlanCombatSar`/`PlanCombatSarSupport`/`combat_sar_targets`) was **deleted** in the 2026-07-06 on-demand rework |
+| On-demand rescue | `game/missiongenerator/aircraft/aircraftgenerator.py` (`spawn_combat_sar_templates`) + `flightgroupspawner.py` (`create_combat_sar_template`, the cold late-activation clone template) + `missiondata.py` (`CombatSarTemplates`). Tests: `tests/missiongenerator/test_combat_sar_templates.py` |
+| Setting | `game/settings/settings.py` — `auto_combat_sar` (now drives the on-demand spawn, not an orbit) |
 | King beacon | `game/missiongenerator/aircraft/flightdata.py` (`CombatSarKingBeacon`, TACAN-only), `flightgroupconfigurator.py` (`register_combat_sar_king`) |
-| Emit data | `game/missiongenerator/luagenerator.py` — `_generate_combat_sar` (rescueHelos / kings / pilotTemplate / enableForAI). The pilot template uses `survivor_unit_type` — the first faction INFANTRY-class unit whose id names a *person* (soldier/infantry/paratrooper/insurgent), vanilla `Soldier M4` fallback — because the INFANTRY class also carries crew-served weapons and OIR's first pick was the 2B11, rendering every downed pilot as a mortar tube (2026-07-06 flown finding; tests in `tests/missiongenerator/test_combat_sar_sandy_luadata.py`) |
+| Emit data | `game/missiongenerator/luagenerator.py` — `_generate_combat_sar` (rescueHelos / kings / pilotTemplate / **`autoSpawn`** + `heloTemplate`/`farp` when auto-spawning). The pilot template uses `survivor_unit_type` — the first faction INFANTRY-class unit whose id names a *person* (soldier/infantry/paratrooper/insurgent), vanilla `Soldier M4` fallback — because the INFANTRY class also carries crew-served weapons and OIR's first pick was the 2B11, rendering every downed pilot as a mortar tube (2026-07-06 flown finding). Tests: `tests/missiongenerator/test_combat_sar_sandy_luadata.py` (gating + template + survivor) |
 | Kneeboard | `game/missiongenerator/kneeboard.py` — `CombatSarTaskPage` |
 | Scoring (Lua) | `resources/plugins/base/dcs_retribution.lua` (`combat_sar_rescues` global + `write_state`), `resources/plugins/combatsar/combatsar-config.lua` (CSAR bridge + `OnAfterBoarded`/`OnAfterRescued`) |
 | Scoring (Py) | `game/debriefing.py` (`StateData.combat_sar_rescues`), `game/sim/missionresultsprocessor.py` (`commit_air_losses` spares rescued pilots) |

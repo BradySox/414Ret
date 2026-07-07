@@ -22,7 +22,6 @@ tasks:
   Strike: 715
 secondary_tasks:
   - DEAD
-  - Armed Recon
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

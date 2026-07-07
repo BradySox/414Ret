@@ -212,3 +212,13 @@ squadrons:
       aircraft:
         - Mi-8MTV2 Hip
       size: 4
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Nellis -> Indian Springs (Creech): US-95 north-west out of Las Vegas
+  - waypoints:
+      - [-398195, -17233]
+      - [-391400, -37764]
+      - [-378363, -54142]
+      - [-367503, -69543]
+      - [-360507, -75590]

@@ -183,3 +183,12 @@ squadrons:
       aircraft:
         - MiG-21bis Fishbed-N
       size: 8
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Baghdad International -> Al-Salam Airbase  (the Airport Road east, then the Army Canal expressway across the city)
+  - waypoints:
+      - [-142, 160]
+      - [266, 8022]
+      - [2976, 18283]
+      - [2263, 25199]

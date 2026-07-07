@@ -229,3 +229,19 @@ ground_forces:
   Sochi2: SA-11
   Sochi3: SA-11
   Sochi4: SA-11
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Kutaisi -> Senaki-Kolkhi  (E60/S1 west through Samtredia and Abasha)
+  - waypoints:
+      - [-284887, 683859]
+      - [-287858, 671941]
+      - [-284124, 659818]
+      - [-281782, 647279]
+  # Senaki-Kolkhi -> Kobuleti  (S1 to the Khobi junction, then the S2 coastal road south through Grigoleti/Ureki)
+  - waypoints:
+      - [-281782, 647279]
+      - [-288559, 637302]
+      - [-308922, 625199]
+      - [-312556, 628088]
+      - [-317962, 635633]

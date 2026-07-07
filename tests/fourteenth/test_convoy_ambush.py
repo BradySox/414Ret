@@ -386,8 +386,10 @@ def test_no_escort_auto_frag_hook_remains() -> None:
 # blue rear corridor is authored for one (see tools/supply_route_geo.py and the
 # driveable-corridor standard), ADD it here.
 
-#: The 2026-07-06 survey: every shipping campaign whose theater binds at least one
-#: blue->blue supply road (and can therefore field ambient blue convoys + ambushes).
+#: The 2026-07-06 survey (27 campaigns) + the same-day batch-1 corridor authoring
+#: (21 more -- tools/supply_route_geo.py BATCH1_BLUE_REAR): every shipping campaign
+#: whose theater binds at least one blue->blue supply road (and can therefore field
+#: ambient blue convoys + ambushes).
 ROAD_BEARING_CAMPAIGNS = [
     "1968_Yankee_Station",
     "Caucasus_Multi_Full",
@@ -395,7 +397,15 @@ ROAD_BEARING_CAMPAIGNS = [
     "Invasion_of_Canary_Islands",
     "Northern Guardian",
     "Operation-Desert-Sabre",
+    "Task Force Thunder",
+    "TblisiGap",
+    "WRL_AleppoInsurgency",
     "WRL_AssaultonDamascus",
+    "WRL_Battle4Georgia",
+    "WRL_Battle4SyriaNorth",
+    "WRL_Battle4area51",
+    "WRL_Kutaisi2Vaziani",
+    "WRL_Operation_Noisy_Cricket_Redux",
     "black_sea",
     "clash_of_the_titans",
     "coin_enduring_resolve",
@@ -404,17 +414,30 @@ ROAD_BEARING_CAMPAIGNS = [
     "exercise_bright_star",
     "exercise_quasar",
     "exercise_vegas_nerve",
+    "final_countdown_2",
     "golan_heights_lite",
     "graveyard_of_empires",
     "iraq_inherent_resolve",
     "marianas_guam_barrigada",
     "mozdok_to_maykop",
     "operation_allied_sword",
+    "operation_desert_aladeen",
     "operation_dynamo",
     "operation_frostbite",
+    "operation_gazelle",
+    "operation_noisy_cricket",
+    "operation_shattered_dagger",
+    "operation_vectrons_claw",
+    "operation_velvet_thunder",
     "red_flag_81_2",
+    "red_sea_rising",
     "red_tide",
     "scenic_inland",
+    "scenic_merge",
+    "slava_ukraini",
+    "syria_TheLongRoadToH3",
+    "syria_full_map",
+    "the_anvil_of_war",
     "tripoint_hostility",
 ]
 
@@ -439,6 +462,14 @@ def test_flagship_ambush_campaigns_stay_in_the_inventory() -> None:
         "1968_Yankee_Station",
         "red_tide",
     }
+
+
+def test_batch1_corridor_campaigns_are_in_the_inventory() -> None:
+    # Every campaign the batch-1 authoring pass gave a blue rear corridor must be
+    # tracked by the inventory guard -- the tool and the test stay in lockstep.
+    from tools.supply_route_geo import BATCH1_BLUE_REAR
+
+    assert set(ROAD_BEARING_CAMPAIGNS) >= set(BATCH1_BLUE_REAR)
 
 
 @pytest.mark.parametrize("stem", ROAD_BEARING_CAMPAIGNS)

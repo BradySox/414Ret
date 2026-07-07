@@ -241,3 +241,18 @@ squadrons:
       aircraft:
         - J-15 Flanker X-2
       size: 12
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Tel Nof -> Ben-Gurion  (route 40 north through Ramla)
+  - waypoints:
+      - [198387, 341243]
+      - [207765, 345075]
+      - [217468, 348036]
+  # As Salihiyah -> Borg El Arab  (the Delta highways: Zagazig -> Tanta -> Damanhur -- the Egyptian BLUE rear corridor)
+  - waypoints:
+      - [81974, 77621]
+      - [59797, 26365]
+      - [82726, -22146]
+      - [111472, -72243]
+      - [99767, -146756]

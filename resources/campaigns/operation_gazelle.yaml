@@ -128,3 +128,16 @@ squadrons:
       aircraft:
         - Mi-8MTV2 Hip
       size: 4
+
+supply_routes:
+  # #50 blue rear corridor (batch 1)
+  # Hatzor -> Tel Nof  (route 40/411 through the Gedera junction)
+  - waypoints:
+      - [189869, 332622]
+      - [195443, 337710]
+      - [198387, 341243]
+  # Tel Nof -> Ben-Gurion  (route 40 north through Ramla)
+  - waypoints:
+      - [198387, 341243]
+      - [207765, 345075]
+      - [217468, 348036]

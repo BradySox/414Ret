@@ -248,8 +248,19 @@ out of** (PGM/GPS bombs, standoff, ARM, long-range A2A). Everything untagged is 
   every mission *re*-generation. **M1 is accounting only** (no gate yet), so it's inert to the
   player until M2. Off = no-op (483-test regression). Tuning (capacity/rearm) deferred to M2 +
   the in-game pass.
-- **M2** — the gate: UI grey-out ([QPylonEditor.py:34](../../../qt_ui/windows/mission/flight/payload/QPylonEditor.py))
-  + generator `degrade_for_stock` ([setup_payload](../../../game/missiongenerator/aircraft/flightgroupconfigurator.py:415)).
+- **M2** — the gate. ✅ **LANDED 2026-07-08.** The player-facing bite. **Generator
+  enforcement (authoritative):** `Loadout.degrade_for_stock(munitions, …)` in
+  [loadouts.py](../../../game/ato/loadouts.py) swaps a scarce store the base is out of down to
+  the first non-scarce/stocked fallback in `weapon.fallbacks` (`_stocked_fallback_for`), or
+  clears the pylon; wired into `setup_payload` after the date-degrade, gated on
+  `restrict_weapons_by_stock` **and** `munitions_seeded` (so pre-seed turns aren't falsely
+  starved). Debit consistency: the M1 turn-boundary debit floors at 0, so the binary
+  stock>0-allows-this-turn gate + debit net out (documented limitation: a base crossing zero
+  mid-turn can over-issue once). **UI grey-out (guidance):** `QPylonEditor` disables + labels
+  "(out of stock)" any scarce store the departure base is out of (the current selection stays
+  selectable). Tests `tests/fourteenth/test_munitions_gate.py` (against the real F/A-18C):
+  in-stock kept, out-of-stock swapped/dropped, non-scarce untouched, unseeded no-op. The qt
+  grey-out needs an in-app pass (not CI-covered).
 - **M3** — legibility: base-card stock readout, *"Kandahar is Winchester on PGMs"* on the
   kneeboard/SITREP.
 - Setting `restrict_weapons_by_stock` (mirrors `restrict_weapons_by_date`), default OFF.

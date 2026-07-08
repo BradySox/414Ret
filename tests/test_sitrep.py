@@ -234,3 +234,40 @@ def test_will_band_does_not_make_a_quiet_turn_reportable() -> None:
         red_will=95.0,
     )
     assert quiet.is_empty  # the will line rides along with news; it isn't news.
+
+
+def test_supply_band_renders_only_when_economy_on() -> None:
+    # §53 P4: both supply values set -> one "Front supply" line; None (the default,
+    # economy off, or a pre-feature pickle) -> no line at all.
+    tracked = Sitrep(
+        7,
+        date(1988, 6, 6),
+        SideLosses(1, 0, 0),
+        SideLosses(0, 0, 0),
+        [],
+        [],
+        0,
+        blue_supply=0.42,
+        red_supply=0.88,
+    )
+    assert "Front supply 42% -- enemy 88% (claimed)" in tracked.kneeboard_lines()
+
+    untracked = Sitrep(
+        7, date(1988, 6, 6), SideLosses(1, 0, 0), SideLosses(0, 0, 0), [], [], 0
+    )
+    assert not any("Front supply" in line for line in untracked.kneeboard_lines())
+
+
+def test_supply_band_does_not_make_a_quiet_turn_reportable() -> None:
+    quiet = Sitrep(
+        3,
+        date(1988, 6, 6),
+        SideLosses(0, 0, 0),
+        SideLosses(0, 0, 0),
+        [],
+        [],
+        0,
+        blue_supply=0.5,
+        red_supply=0.5,
+    )
+    assert quiet.is_empty  # supply rides along with news; it isn't news by itself.

@@ -166,8 +166,13 @@ deployed frontline unit count so a bigger front needs more supply to stay "full"
   display doesn't yet show the supply factor (a P4 legibility item).
 - **P3 — Fuel/readiness axis (optional).** Wire the dead `active_fuel_depots_count` to sortie
   generation — bomb fuel → enemy flies fewer packages.
-- **P4 — Full legibility.** Client map supply-flow overlay, base-card stock readout, the full
-  "why" chain in the debrief.
+- **P4 — Legibility.** ◐ **SITREP band LANDED 2026-07-08** — `Sitrep` gained `blue_supply`/
+  `red_supply`, fed from `coalition_supply_health` in `record_sitrep` when `war_economy` is on,
+  rendering "Front supply X% -- enemy Y% (claimed)" on the kneeboard cover (rides along with
+  real news like the will band; getattr-guarded for old saves). So the player can read *why* a
+  front stalled. **Deferred (P4b):** the client map supply-flow overlay, the base-card stock
+  readout, and reconciling the QBaseMenu2 "deployable limit" formula with the P2 cap bite — all
+  need the client/Qt surfaces (client rebuild).
 
 ### Gating + testbed
 - Setting `war_economy` (Campaign Management), **default OFF**, kill-switch pattern.

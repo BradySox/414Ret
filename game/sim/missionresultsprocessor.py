@@ -109,6 +109,15 @@ class MissionResultsProcessor:
             from game.fourteenth.political_will import ledger_notes
 
             blue_note, red_note = ledger_notes(self.game)
+        # War economy (§53 P4): the front-supply band rides along when the economy is
+        # on, so the player can read why a front stalled (the P2 bite). Enemy claimed.
+        blue_supply: Optional[float] = None
+        red_supply: Optional[float] = None
+        if getattr(self.game.settings, "war_economy", False):
+            from game.fourteenth.war_economy import coalition_supply_health
+
+            blue_supply = coalition_supply_health(self.game, self.game.blue)
+            red_supply = coalition_supply_health(self.game, self.game.red)
         self.game.last_sitrep = Sitrep.from_debriefing(
             debriefing,
             self.game.turn,
@@ -119,6 +128,8 @@ class MissionResultsProcessor:
             red_will_note=red_note,
             pows_held=self._pow_sitrep_lines(),
             red_c2_status=c2_status_line(self.game, Player.RED),
+            blue_supply=blue_supply,
+            red_supply=red_supply,
         )
 
     def _pow_sitrep_lines(self) -> list[str]:

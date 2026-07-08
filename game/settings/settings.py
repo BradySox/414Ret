@@ -346,6 +346,13 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                "War economy",
+                [
+                    "war_economy",
+                    "fuel_air_readiness",
+                ],
+            ),
+            (
                 "Insurgency",
                 [
                     "coin_insurgency",
@@ -492,6 +499,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Loadouts",
                 [
                     "auto_range_fuel_tanks",
+                    "restrict_weapons_by_stock",
                 ],
             ),
         ],
@@ -1356,6 +1364,35 @@ class Settings:
             "extremely incomplete so does not affect all weapons."
         ),
     )
+    war_economy: bool = boolean_option(
+        "War economy (supply logistics)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section="War economy",
+        default=False,
+        detail=(
+            "Adds a per-base materiel supply stockpile on top of the money economy: "
+            "factories and oil/derricks produce supply, it flows to the front and is "
+            "consumed there, and a starved front recovers less, deploys fewer units, "
+            "and gains less ground -- so bombing the enemy's production and cutting "
+            "their supply routes visibly thins their front over several turns. "
+            "Symmetric (the enemy interdicts yours too); the SITREP shows each side's "
+            "front supply. Intended for campaigns with a real economy laydown "
+            "(factories + depots) that preseed it on."
+        ),
+    )
+    fuel_air_readiness: bool = boolean_option(
+        "Fuel depots gate air readiness",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section="War economy",
+        default=False,
+        detail=(
+            "An airfield's alive fuel depots gate how many of its aircraft can sortie "
+            "each turn: destroy an enemy base's fuel infrastructure and it flies fewer "
+            "packages (down to a floor; a base with no fuel depots is never penalised). "
+            "Symmetric -- your own grounded bases fly less too. Independent of the "
+            "supply economy above; intended for campaigns with fuel-depot laydowns."
+        ),
+    )
     coin_insurgency: bool = boolean_option(
         "COIN insurgent replenishment",
         page=CAMPAIGN_MANAGEMENT_PAGE,
@@ -1485,6 +1522,20 @@ class Settings:
         section=GENERAL_SECTION,
         default=False,
         detail=("If checked, Bandit's cloud presets will become available."),
+    )
+    restrict_weapons_by_stock: bool = boolean_option(
+        "Restrict munitions to airfield stock (war economy)",
+        page=MISSION_GENERATION_PAGE,
+        section="Loadouts",
+        default=False,
+        detail=(
+            "Track a per-airfield stock of scarce munitions (PGMs, GPS bombs, "
+            "standoff/cruise, anti-radiation, medium/long-range A2A) and rearm it each "
+            "turn -- scaled by the base's supply when the war economy is on, so cutting "
+            "a base off starves its magazines. Currently accounting only: loadouts are "
+            "not yet blocked when a store runs out (that gate is a later phase). "
+            "Intended for campaigns with a real economy/logistics laydown."
+        ),
     )
     auto_range_fuel_tanks: bool = boolean_option(
         "Add fuel tanks when the route needs the range",

@@ -223,6 +223,200 @@ class WeaponType(Enum):
     UNKNOWN = "unknown"
 
 
+# §54 munitions availability -- the curated "scarce" taxonomy (M0). Only the
+# munitions worth *running out of* are tracked; everything else (dumb bombs, IR
+# dogfight missiles, rockets, guns, tanks) is effectively infinite. Keyed by exact
+# ``WeaponGroup.name`` (every rack/quantity variant listed) so the set is explicit
+# and auditable rather than an opaque runtime classifier -- hand-audited 2026-07-08,
+# and ``tests/fourteenth/test_scarce_munitions.py`` fails CI if any name here stops
+# resolving to a real weapon group (the dead-name guard). Families are coarse on
+# purpose (M1 tracks stock per family). Expand as new scarce weapons ship.
+_SCARCE_MUNITIONS: dict[str, tuple[str, ...]] = {
+    # Radar / medium-to-long-range A2A (IR dogfight missiles stay infinite).
+    "a2a_medium": (
+        "2xAIM-120B",
+        "2xAIM-120C",
+        "AIM-120B",
+        "AIM-120C",
+        "AIM-54A-MK47",
+        "AIM-54A-MK60",
+        "AIM-54C-MK47",
+        "AIM-54C-MK60",
+        "AIM-7E",
+        "AIM-7E-2",
+        "AIM-7F",
+        "AIM-7M",
+        "AIM-7MH",
+        "AIM-7P",
+        "R-24R",
+        "R-27ER",
+        "R-27ET",
+        "R-27R",
+        "R-27T",
+        "R-37 (AA-13 Axehead)",
+        "R-37M (AA-13 Axehead)",
+        "R-40R",
+        "R-77",
+        "R530F EM",
+        "R530F IR",
+        "S530D",
+        "S530F",
+    ),
+    # Anti-radiation (authoritative: DB type ARM), plus the anti-radar Kh-25MP.
+    "arm": (
+        "2 x ALARM",
+        "AGM-122A",
+        "AGM-45A Shrike ARM",
+        "AGM-45B Shrike ARM (Imp)",
+        "AGM-78A Standard ARM",
+        "AGM-78B Standard ARM",
+        "AGM-88C HARM",
+        "ALARM",
+        "KSR-2P (passive)",
+        "KSR-5P (passive)",
+        "Kh-22P",
+        "Kh-25MP",
+        "Kh-25MPU",
+        "Kh-31P",
+        "Kh-58U",
+        "LD-10",
+        "LD-10 x 2",
+        "MAR-1 High Speed Anti-Radiation Missile",
+    ),
+    # Guided bombs (laser / GPS / EO).
+    "pgm_bomb": (
+        "16xGBU-38",
+        "2xCBU-103",
+        "2xCBU-105",
+        "2xGBU-10",
+        "2xGBU-12",
+        "2xGBU-16",
+        "2xGBU-38",
+        "2xGBU-54B",
+        "3xGBU-12",
+        "3xGBU-38",
+        "3xGBU-54B",
+        "8xGBU-31(V)1/B",
+        "8xGBU-31(V)3/B",
+        "CBU-103",
+        "CBU-105",
+        "GBU-10",
+        "GBU-12",
+        "GBU-15",
+        "GBU-16",
+        "GBU-24",
+        "GBU-27",
+        "GBU-31(V)1/B",
+        "GBU-31(V)2/B",
+        "GBU-31(V)3/B",
+        "GBU-31(V)4/B",
+        "GBU-32(V)2/B",
+        "GBU-38",
+        "GBU-39 SDB",
+        "GBU-54B",
+        "GBU-8/B HOBOS",
+        "JDAM-ER",
+        "KAB-1500KR",
+        "KAB-1500L",
+        "KAB-1500LG-Pr",
+        "KAB-500Kr",
+        "KAB-500LG",
+        "KAB-500S",
+    ),
+    # Cruise / long-range & anti-ship / glide standoff.
+    "standoff": (
+        "20xAGM-86C",
+        "20xAGM-86D",
+        "2xAGM-154A JSOW",
+        "2xAGM-154B JSOW",
+        "2xAGM-154C JSOW",
+        "4xAGM-154C",
+        "6xAGM-86C",
+        "6xAGM-86D",
+        "8xAGM-84A",
+        "8xAGM-86C",
+        "8xAGM-86D",
+        "AGM-130",
+        "AGM-142 Popeye",
+        "AGM-154A JSOW",
+        "AGM-154B JSOW",
+        "AGM-154C JSOW",
+        "AGM-158B JASSM-ER",
+        "AGM-158C LRASM",
+        "AGM-62 Walleye I",
+        "AGM-62 Walleye II",
+        "AGM-84A",
+        "AGM-84D",
+        "AGM-84E SLAM",
+        "AGM-84H SLAM-ER",
+        "AGM-86C",
+        "AGM-86D",
+        "Kh-101",
+        "Kh-20 (AS-3 Kangaroo)",
+        "Kh-22 (AS-4 Kitchen)",
+        "Kh-22MA",
+        "Kh-28",
+        "Kh-31A",
+        "Kh-35",
+        "Kh-36 Grom-E1",
+        "Kh-41 Moskit (Sunburn)",
+        "Kh-555",
+        "Kh-59M",
+        "Kh-59MK2 (AS-22 Kazoo)",
+        "Kh-65",
+        "Kh-66 Grohm",
+        "Storm Shadow",
+    ),
+    # Tactical precision air-to-ground (Maverick / Hellfire / short guided ASM).
+    "guided_asm": (
+        "2xAGM-65A",
+        "2xAGM-65B",
+        "2xAGM-65D",
+        "2xAGM-65E",
+        "2xAGM-65H",
+        "2xAGM-65K",
+        "3xAGM-65A",
+        "3xAGM-65B",
+        "3xAGM-65D",
+        "3xAGM-65E",
+        "3xAGM-65H",
+        "3xAGM-65K",
+        "AGM-114K * 1",
+        "AGM-114K * 2",
+        "AGM-114K * 3",
+        "AGM-114K * 4",
+        "AGM-114L * 1",
+        "AGM-114L * 2",
+        "AGM-114L * 3",
+        "AGM-12A",
+        "AGM-12B",
+        "AGM-12C",
+        "AGM-65A",
+        "AGM-65B",
+        "AGM-65D",
+        "AGM-65E",
+        "AGM-65E2/L",
+        "AGM-65F",
+        "AGM-65G",
+        "AGM-65H",
+        "AGM-65K",
+        "Kh-25ML",
+        "Kh-25MR",
+        "Kh-29L",
+        "Kh-29T",
+    ),
+}
+
+#: Reverse lookup name -> family, built once at import from :data:`_SCARCE_MUNITIONS`.
+_SCARCE_FAMILY_BY_NAME: dict[str, str] = {
+    name: family for family, names in _SCARCE_MUNITIONS.items() for name in names
+}
+
+#: The scarce-munition family keys (§54 M1 consumers iterate this to seed per-base
+#: stock). Declaration order.
+SCARCE_FAMILIES: tuple[str, ...] = tuple(_SCARCE_MUNITIONS.keys())
+
+
 @dataclass(frozen=True)
 class WeaponGroup:
     """Group of "identical" weapons loaded from resources/weapons.
@@ -261,6 +455,14 @@ class WeaponGroup:
         if self.fallback_name is None:
             return None
         return WeaponGroup.named(self.fallback_name)
+
+    @property
+    def scarce_family(self) -> Optional[str]:
+        """§54: the curated scarce-munitions family, or None if this group is not
+        stock-tracked (dumb bombs, IR dogfight missiles, rockets, guns, tanks -- all
+        effectively infinite). See :data:`_SCARCE_MUNITIONS`. Pure lookup, no state.
+        """
+        return _SCARCE_FAMILY_BY_NAME.get(self.name)
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         # Update any existing models with new data on load.

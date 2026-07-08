@@ -135,6 +135,14 @@ class Game:
         self.phase_entered_on_turn: Optional[int] = None
         self.phase_status_line: Optional[str] = None
         self.phase_baseline: Optional["PhaseBaseline"] = None
+        # War economy (§53): latched once the per-base supply stockpiles have been
+        # seeded to capacity, so the seed happens exactly once. Re-derived state
+        # (production, supply factors) is never pickled -- only this flag + the
+        # per-base Base.supply amounts persist.
+        self.war_economy_seeded: bool = False
+        # §54 munitions: latched once per-base munition stocks have been seeded, so
+        # the seed happens once. Gated by restrict_weapons_by_stock.
+        self.munitions_seeded: bool = False
         # Red Intent (§55, observe-only P0; docs/dev/design/414th-red-intent-notes.md):
         # RED's per-turn posture (consolidate/attrition/surge) + the turn-0 front
         # baseline its territorial memory measures against. Only these pointers persist;
@@ -261,6 +269,8 @@ class Game:
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
         state.setdefault("concealment_salt", None)
+        state.setdefault("war_economy_seeded", False)
+        state.setdefault("munitions_seeded", False)
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.
@@ -514,6 +524,22 @@ class Game:
 
         plan_super_gaggle(self)
 
+        # War economy (§53): the produce -> transport -> store -> consume supply
+        # loop. P0 is observe-only -- seed per-base stockpiles, accrue production,
+        # report the per-side numbers; no combat bite yet. No-op unless the
+        # war_economy setting is on. See game/fourteenth/war_economy.py.
+        from game.fourteenth.war_economy import (
+            advance_munitions,
+            advance_war_economy,
+            supply_effectiveness,
+        )
+
+        advance_war_economy(self)
+        # §54 M1: debit the scarce munitions the ATO loaded from each base and rearm
+        # (supply-scaled). No-op unless restrict_weapons_by_stock is on. Runs after the
+        # supply step so rearm sees this turn's supply.
+        advance_munitions(self)
+
         # Movable ship TGOs snap to their destination and re-parent to the
         # nearest friendly CP. Runs after captures are committed (process_results
         # precedes pass_turn -> finish_turn), so re-parenting sees post-capture
@@ -527,7 +553,12 @@ class Game:
                 for front_line in cp.front_lines.values():
                     front_line.update_position()
                     events.update_front_line(front_line)
-                cp.base.affect_strength(+PLAYER_BASE_STRENGTH_RECOVERY)
+                # War economy (§53 P2): a starved front recovers less between fights
+                # (x1.0 no-op unless war_economy is on and seeded). BLUE only, because
+                # only player_points() get the per-turn recovery bonus in the engine.
+                cp.base.affect_strength(
+                    +PLAYER_BASE_STRENGTH_RECOVERY * supply_effectiveness(cp)
+                )
 
         # After the first mission, reveal surviving MERAD groups. They start hidden
         # so players don't know enemy SA-6/11/17 positions before flying; the first

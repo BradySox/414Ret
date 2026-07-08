@@ -6,6 +6,7 @@ from typing import Optional, TYPE_CHECKING
 from game.debriefing import Debriefing
 from game.data.units import FRONTLINE_UNIT_CLASSES
 from game.fourteenth.c2_decapitation import c2_status_line
+from game.fourteenth.war_economy import supply_effectiveness
 from game.ground_forces.combat_stance import CombatStance
 from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
@@ -108,6 +109,16 @@ class MissionResultsProcessor:
             from game.fourteenth.political_will import ledger_notes
 
             blue_note, red_note = ledger_notes(self.game)
+        # War economy (§53 P4): the front-supply band rides along when the economy is
+        # on, so the player can read why a front stalled (the P2 bite). Enemy claimed.
+        blue_supply: Optional[float] = None
+        red_supply: Optional[float] = None
+        if getattr(self.game.settings, "war_economy", False):
+            from game.fourteenth.war_economy import coalition_supply_health
+
+            blue_supply = coalition_supply_health(self.game, self.game.blue)
+            red_supply = coalition_supply_health(self.game, self.game.red)
+        # §55: red's posture line (None unless red_intent is on).
         from game.fourteenth.red_intent import sitrep_posture_line
 
         self.game.last_sitrep = Sitrep.from_debriefing(
@@ -120,6 +131,8 @@ class MissionResultsProcessor:
             red_will_note=red_note,
             pows_held=self._pow_sitrep_lines(),
             red_c2_status=c2_status_line(self.game, Player.RED),
+            blue_supply=blue_supply,
+            red_supply=red_supply,
             red_posture=sitrep_posture_line(self.game),
         )
 
@@ -647,16 +660,23 @@ class MissionResultsProcessor:
                 else:
                     if player_won:
                         print(status_msg)
-                        cp.base.affect_strength(delta)
-                        enemy_cp.base.affect_strength(-delta)
+                        # War economy (§53 P2): a starved winner converts a win into
+                        # less ground -- scale the shift by the *winner's* supply so
+                        # interdiction slows an advance. x1.0 no-op unless on+seeded;
+                        # symmetric (whichever side wins). Scales both the winner's
+                        # gain and the loser's loss equally.
+                        won = delta * supply_effectiveness(cp)
+                        cp.base.affect_strength(won)
+                        enemy_cp.base.affect_strength(-won)
                         self.game.message(
                             "Frontline Report",
                             f"Our ground forces from {cp.name} are making progress toward {enemy_cp.name}. {status_msg}",
                         )
                     else:
                         print(status_msg)
-                        enemy_cp.base.affect_strength(delta)
-                        cp.base.affect_strength(-delta)
+                        won = delta * supply_effectiveness(enemy_cp)
+                        enemy_cp.base.affect_strength(won)
+                        cp.base.affect_strength(-won)
                         self.game.message(
                             "Frontline Report",
                             f"Our ground forces from {cp.name} are losing ground against the enemy forces from "

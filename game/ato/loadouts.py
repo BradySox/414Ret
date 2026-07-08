@@ -197,6 +197,77 @@ class Loadout:
 
         return loadout
 
+    @staticmethod
+    def _stocked_fallback_for(
+        weapon: Weapon,
+        pylon: Pylon,
+        unit_type: AircraftType,
+        date: datetime.date,
+        faction: Faction,
+        munitions: dict[str, int],
+    ) -> Optional[Weapon]:
+        """The first equippable, date-legal fallback that the base can actually stock.
+
+        Steps down ``weapon.fallbacks`` (e.g. JDAM -> laser bomb -> iron bomb) to the
+        first store that is either not scarce or a scarce family the base still has --
+        so an out-of-JDAMs jet drops to dumb bombs rather than nothing.
+        """
+        for fallback in weapon.fallbacks:
+            if not pylon.can_equip(fallback):
+                continue
+            if not fallback.available_on(date, faction):
+                continue
+            if not Loadout._weapon_available_for_aircraft(fallback, unit_type, date):
+                continue
+            family = fallback.weapon_group.scarce_family
+            if family is not None and munitions.get(family, 0) <= 0:
+                continue  # the fallback is itself an out-of-stock scarce store
+            return fallback
+        return None
+
+    def degrade_for_stock(
+        self,
+        munitions: dict[str, int],
+        unit_type: AircraftType,
+        date: datetime.date,
+        faction: Faction,
+    ) -> Loadout:
+        """§54 M2: swap scarce stores the base is out of down to a stocked fallback.
+
+        Enforces the munitions economy at generation (the authoritative half; the
+        payload-editor grey-out is only guidance). A scarce store whose family is
+        depleted at this base is replaced by :meth:`_stocked_fallback_for` -- or the
+        pylon is cleared if nothing in the chain is stocked. In-stock and non-scarce
+        stores are untouched. ``munitions`` empty ⇒ unseeded ⇒ no-op (caller also gates
+        on ``munitions_seeded``), so pre-seed turns are never falsely starved.
+        """
+        if not munitions:
+            return self
+        new_pylons = dict(self.pylons)
+        new_settings = self.pylon_settings.copy()
+        for pylon_number, weapon in self.pylons.items():
+            if weapon is None:
+                continue
+            family = weapon.weapon_group.scarce_family
+            if family is None or munitions.get(family, 0) > 0:
+                continue  # not tracked, or the base still stocks it -> keep
+            pylon = Pylon.for_aircraft(unit_type, pylon_number)
+            fallback = self._stocked_fallback_for(
+                weapon, pylon, unit_type, date, faction, munitions
+            )
+            new_settings.pop(pylon_number, None)
+            if fallback is None:
+                del new_pylons[pylon_number]
+            else:
+                new_pylons[pylon_number] = fallback
+        return Loadout(
+            self.name,
+            new_pylons,
+            self.date,
+            self.is_custom,
+            pylon_settings=new_settings,
+        )
+
     def replace_lgbs_if_no_tgp(
         self, unit_type: AircraftType, date: datetime.date, faction: Faction
     ) -> None:

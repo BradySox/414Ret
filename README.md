@@ -76,6 +76,13 @@ and selected later upstream fixes.
   your kneeboard SITREP reports the enemy's command status so you can see the strike land. Opt-in
   (Air Doctrine → "Command-center kills degrade enemy planning"); a campaign with no command posts
   is unaffected.
+- **The enemy commander plays with intent.** With **Red Intent** on (Air Doctrine), the AI reads the
+  war each turn — the ground balance, its air strength, how the last turn went — and adopts a
+  *posture* that carries across turns instead of planning the same way every time: it **surges** when
+  it holds the advantage (pressing to take ground, committing its reserves, striking with focus),
+  **consolidates** when it's been hit (defending, husbanding), or grinds it out in between. Your
+  kneeboard SITREP names the enemy's posture so you can read its mood. Opt-in and enemy-only (your
+  side's "intent" is the campaign phase), and it never touches the enemy's reactive defenses.
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as

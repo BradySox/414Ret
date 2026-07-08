@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
     from .fourteenth.phases import PhaseBaseline
+    from .fourteenth.red_intent import RedIntentBaseline
     from .fourteenth.political_will import WillLedgerEntry
     from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .navmesh import NavMesh
@@ -142,6 +143,15 @@ class Game:
         # §54 munitions: latched once per-base munition stocks have been seeded, so
         # the seed happens once. Gated by restrict_weapons_by_stock.
         self.munitions_seeded: bool = False
+        # Red Intent (§55, observe-only P0; docs/dev/design/414th-red-intent-notes.md):
+        # RED's per-turn posture (consolidate/attrition/surge) + the turn-0 front
+        # baseline its territorial memory measures against. Only these pointers persist;
+        # posture definitions are code, re-derived. Resolved each turn in initialize_turn
+        # by game.fourteenth.red_intent.update_red_intent.
+        self.red_intent_key: Optional[str] = None
+        self.red_intent_entered_on_turn: Optional[int] = None
+        self.red_intent_status_line: Optional[str] = None
+        self.red_intent_baseline: Optional["RedIntentBaseline"] = None
         # W6 red tempo: the last turn resolve-regen was applied (idempotence
         # guard for the multiple-init-per-turn cases).
         self.red_tempo_regen_turn: Optional[int] = None
@@ -246,6 +256,11 @@ class Game:
         state.setdefault("phase_entered_on_turn", None)
         state.setdefault("phase_status_line", None)
         state.setdefault("phase_baseline", None)
+        # Red Intent (§55): pre-feature saves reclassify on the next initialize_turn.
+        state.setdefault("red_intent_key", None)
+        state.setdefault("red_intent_entered_on_turn", None)
+        state.setdefault("red_intent_status_line", None)
+        state.setdefault("red_intent_baseline", None)
         state.setdefault("red_tempo_regen_turn", None)
         state.setdefault("red_tempo_announced_phase", None)
         state.setdefault("will_ledger", [])
@@ -751,6 +766,14 @@ class Game:
         from game.fourteenth.phases import update_campaign_phase
 
         update_campaign_phase(self)
+
+        # Red Intent (§55): resolve RED's posture for the turn (observe-only in P0 --
+        # latches + surfaces it; no planner seam reads it yet). After the phase so a
+        # later phase can inform it, before the coalitions plan. Idempotent; a no-op
+        # when the red_intent setting is off.
+        from game.fourteenth.red_intent import update_red_intent
+
+        update_red_intent(self)
 
         # Pin the COIN conservation anchors at the true campaign start (turn 0,
         # before any mission flies). The finish_turn regen hook runs after the

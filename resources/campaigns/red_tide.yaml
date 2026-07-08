@@ -310,20 +310,8 @@ squadrons:
         - NATO E-3A Component
       aircraft_type: E-3A
       size: 2
-  #Spangdahlem — the CAS/rotary field: Hogs plus the Huey/Cobra detachment.
+  #Spangdahlem — the CAS field: Hogs. (Huey/Cobra rotary detachment forward-based at Fulda.)
   162:
-    - primary: Air Assault
-      secondary: any
-      aircraft:
-        - 414th Aviation Detachment
-      aircraft_type: UH-1H Iroquois
-      size: 4
-    - primary: Escort
-      secondary: any
-      aircraft:
-        - HMLA-167
-      aircraft_type: AH-1W SuperCobra
-      size: 4
     - primary: CAS
       secondary: any
       aircraft:
@@ -385,25 +373,9 @@ squadrons:
         - 910th Airlift Wing
       aircraft_type: C-130J-30
       size: 2
-    - primary: Air Assault
-      secondary: any
-      aircraft:
-        - 5th Battalion 159th Aviation
-      aircraft_type: CH-47F Block I
-      size: 4
-    - primary: Escort
-      secondary: any
-      aircraft:
-        - 12th Combat Aviation Brigade
-      aircraft_type: AH-64D Apache Longbow
-      size: 4
-    - primary: Escort
-      secondary: any
-      aircraft:
-        - 1-17 Cavalry
-      aircraft_type: OH-58D(R) Kiowa Warrior
-      size: 4
-  #Fulda — neutral Gap airfield flipped BLUE; a forward FARP holding the Fulda Gap, facing Haina.
+  #Fulda — neutral Gap airfield flipped BLUE; the forward rotary hub holding the Fulda Gap,
+  #  facing Haina. Now bases ALL of NATO's helicopters (Apache/Kiowa/Huey/Cobra/Chinook) —
+  #  the rear-field rotary detachments (Spangdahlem, Frankfurt) were pushed forward here.
   166:
     - primary: CAS
       secondary: air-to-ground
@@ -422,6 +394,38 @@ squadrons:
       aircraft:
         - 159th Aviation Detachment (Forward)
       aircraft_type: UH-1H Iroquois
+      size: 4
+    # Rotary detachments pushed forward from Frankfurt (163):
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - 5th Battalion 159th Aviation
+      aircraft_type: CH-47F Block I
+      size: 4
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - 12th Combat Aviation Brigade
+      aircraft_type: AH-64D Apache Longbow
+      size: 4
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - 1-17 Cavalry
+      aircraft_type: OH-58D(R) Kiowa Warrior
+      size: 4
+    # Rotary detachment pushed forward from Spangdahlem (162):
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - 414th Aviation Detachment
+      aircraft_type: UH-1H Iroquois
+      size: 4
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - HMLA-167
+      aircraft_type: AH-1W SuperCobra
       size: 4
   #Hamburg — captured NATO field, now a GSFG forward airhead flown in to hold the northern shoulder.
   17:

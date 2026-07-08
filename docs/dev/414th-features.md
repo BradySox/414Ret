@@ -2086,13 +2086,25 @@ exactly the intent.
 | Resolver | `game/missiongenerator/countryassigner.py` |
 | Coalition registration | `game/missiongenerator/missiongenerator.py` (`setup_mission_coalitions`, `generate_air_units`) |
 | Per-squadron spawn | `game/missiongenerator/aircraft/aircraftgenerator.py` |
-| Tests | `tests/missiongenerator/test_country_assigner.py` (no-op, mixed-nation, cross-side collision, belligerent ids, instance identity) |
+| Tests | `tests/missiongenerator/test_country_assigner.py` (no-op, mixed-nation, cross-side collision, mirror-match distinct primaries, unknown-id skip, belligerent ids, instance identity) |
 
 ### Gotchas / deferred
 
 - **Ground units stay on the faction country.** TGOs, statics, convoys, and the player helo group
   still spawn under `p_country`/`e_country` (`tgogenerator.py`, etc.) — harmless, since ground
   units have no nation voice comms. Only air units carry the per-squadron nation today.
+- **Review hardening (upstream PR #854 feedback).** Four edge-case fixes carried back from the
+  upstream carve review: (1) **mirror match** — when both factions share a country id, `primary_red`
+  gets its *own* instance (not the interned blue one), so each side registers a distinct object under
+  the shared id instead of adding one object to both coalitions (an unloadable `.miz`); (2)
+  **unknown country id** — a squadron country pydcs doesn't know (version drop / uninstalled mod) is
+  skipped with a debug log and falls back to the faction country, never a `KeyError` that aborts
+  generation; (3) **`Game.neutral_country`** now excludes belligerents **by country id** (pydcs
+  `Country` has identity equality, so the old instance-set membership never matched) and spans every
+  squadron's country, so a CJTF side fielding a Swiss/UN squadron can't also hand that nation to the
+  neutral coalition; (4) `for_squadron`'s faction-primary fallback logs at debug like every other
+  skip. Plus perf: the squadron `faker` is resolved once per recruit batch, not once per pilot, and
+  the pilot-name locale table is cross-checked against pydcs in a test so a stale key fails CI.
 - **In-game pass ☑ VERIFIED 2026-06-26 (I1).** Confirmed in flight — a mixed-nation CJTF side plays
   the per-nation voiceovers; the headless `CountryAssigner` adjudication held up live.
 

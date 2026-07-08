@@ -74,9 +74,13 @@ def test_tanker_war_phase_arc_and_target_release() -> None:
     assert "oil" in arc[0].locked_target_classes
     assert arc[1].locked_target_classes == ("oil",)
     assert arc[2].locked_target_classes == ()
-    # The neutral shipping-lane corridor rides in every phase (via the YAML anchor).
+    # The neutral shipping-lane zone (a hand-drawn .miz polygon, read via from_drawing) rides
+    # in every phase via the YAML anchor.
     for phase in arc:
-        assert any(zone.kind == "corridor" for zone in phase.restricted_zones)
+        assert any(
+            zone.kind == "drawing" and zone.drawing == "Strait of Hormuz shipping lane"
+            for zone in phase.restricted_zones
+        )
 
 
 def test_tanker_war_air_oob_is_mod_free_and_period() -> None:

@@ -353,12 +353,14 @@ halts the attacks (WIN); Washington's resolve breaks first → escort mission wi
 3. **Operation Praying Mantis** (`emphasis: offensive`, `min_turn: 6`) — everything released; the
    oil-platform gun forts and the navy are targets.
 
-**ROE — the neutral shipping lane** — a `corridor` `restricted_zone` (16 NM wide, a 4-point path
-down the Strait, SE Gulf-of-Oman → chokepoint → lower Gulf) present in **all three** phases via a
-YAML anchor (`&shipping_lane` / `*shipping_lane`): releasing a weapon against shipping there prices
-the mandate (`count_roe_violations` → `blue_roe_violation`), the signature Tanker War dilemma.
-**⚠ The corridor coordinates are a first pass** (derived from CP positions; frame is +x=N/+y=E) —
-needs a by-eye check on the F10 map, or convert to a `from_drawing` zone drawn in the `.miz`.
+**ROE — the neutral shipping lane** — a no-strike zone present in **all three** phases via a YAML
+anchor (`&shipping_lane` / `*shipping_lane`): releasing a weapon against shipping there prices the
+mandate (`count_roe_violations` → `blue_roe_violation`), the signature Tanker War dilemma. **The
+zone is a hand-drawn `.miz` polygon** (Path B): the user traced a named free-form polygon
+(`Strait of Hormuz shipping lane`, 218 pts) on the campaign miz's F10 map, and the phases read it
+via `from_drawing: "Strait of Hormuz shipping lane"` (resolved through `theater.zone_drawings` →
+`active_restricted_zones`, verified: 1 polygon zone with usable geometry). The earlier typed
+4-point corridor is retired. **Edit the shape in the Mission Editor, not the YAML.**
 
 **Category basis** (from the generated game): red TGO categories are `aa/ewr/oil/coastal/armor/
 commandcenter/comms/power/missile/ship/fob` — so `oil` (11) = the platforms, `coastal` (7) = the

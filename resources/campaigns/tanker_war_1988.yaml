@@ -459,8 +459,9 @@ will:
 # SAM threats) -- Iran's oil platforms, C2 and power grid are OFF LIMITS until the mining
 # authorizes retaliation. The neutral Strait shipping lane is a no-strike corridor in every
 # phase (releasing weapons there risks a neutral tanker -> a will penalty).
-# NOTE: the shipping-lane corridor coordinates are a first pass -- verify/refine by eye on the
-# F10 map (or convert to a from_drawing zone drawn in the .miz) during the in-app pass.
+# The shipping-lane zone is a named free-form polygon ("Strait of Hormuz shipping lane")
+# hand-drawn on the campaign .miz's F10 map and read via from_drawing -- edit the shape in the
+# Mission Editor, not here.
 phases:
   - key: tanker_war
     name: Tanker War
@@ -471,14 +472,7 @@ phases:
     emphasis: interdiction
     min_turn: 0
     restricted_zones: &shipping_lane
-      - shape: corridor
-        name: Strait of Hormuz shipping lane (neutral)
-        width_nm: 16
-        path:
-          - {x: -100000, y: 85000}
-          - {x: -10000, y: 30000}
-          - {x: 45000, y: -20000}
-          - {x: 25000, y: -160000}
+      - from_drawing: "Strait of Hormuz shipping lane"
     locked_targets: [oil, power, commandcenter, comms]
     objectives:
       - Keep the Strait of Hormuz open to neutral shipping

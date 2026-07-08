@@ -1,12 +1,14 @@
-"""§55 Red Intent P0 -- observe-only resolver.
+"""§55 Red Intent -- posture classifier, the four planner seams, and the §53 join.
 
 Covers the pure decision logic (classifier, asymmetric hysteresis, key round-trip,
-economy-independent supply term) and the end-to-end resolve/latch/surface path through
-a minimal duck-typed fake game. No planner seam is wired in P0, so nothing here touches
-the commander -- that lands with P1's tests.
+economy-coupled supply term) and the end-to-end resolve/latch/surface path through a
+minimal duck-typed fake game (P0), plus the four planner seams (P1 offensive emphasis,
+P2 unpredictability + aggressiveness, P3 ground husbanding), and the P4 war-economy join
+exercised against a stubbed war_economy module (the real §53 producer lands separately).
 """
 
-from types import SimpleNamespace
+import sys
+from types import ModuleType, SimpleNamespace
 from typing import Optional
 
 import pytest
@@ -469,3 +471,46 @@ def test_blue_attack_stance_balance_is_unscaled() -> None:
     game = _commit_game(RedPosture.SURGE.value)
     # A blue stance task must never pick up red's posture.
     assert _stance_balance(AggressiveAttack, 10, 10, game, is_blue=True) == 1.0
+
+
+# --- P4: the §53 war-economy join (stubbed, to prove it wires end-to-end) ------------
+
+
+def _stub_war_economy(monkeypatch: pytest.MonkeyPatch, health: float) -> None:
+    """Inject a fake `game.fourteenth.war_economy` exposing coalition_supply_health so
+    the dynamic-import join in `_red_supply_health` resolves without the real §53."""
+    fake = ModuleType("game.fourteenth.war_economy")
+    setattr(fake, "coalition_supply_health", lambda game, coalition: health)
+    monkeypatch.setitem(sys.modules, "game.fourteenth.war_economy", fake)
+
+
+def test_supply_health_reads_a_stubbed_war_economy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _stub_war_economy(monkeypatch, 0.42)
+    game = _FakeGame(red_intent=True)
+    game.settings = SimpleNamespace(red_intent=True, war_economy=True)
+    assert _red_supply_health(game) == 0.42  # type: ignore[arg-type]
+
+
+def test_starved_economy_forces_a_winning_red_to_consolidate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Ground-dominant red (4:1) would SURGE on its own; a starved war economy overrides
+    # that to CONSOLIDATE -- the §53->§55 join lit up: bomb the supply, red digs in.
+    _stub_war_economy(monkeypatch, 0.1)
+    game = _FakeGame(red_intent=True, fronts=(_FakeFront(red_units=20, blue_units=5),))
+    game.settings = SimpleNamespace(red_intent=True, war_economy=True)
+    update_red_intent(game)  # type: ignore[arg-type]
+    assert game.red_intent_key == RedPosture.CONSOLIDATE.value
+
+
+def test_supplied_economy_lets_a_winning_red_surge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The same winning red, but well supplied -> the economy doesn't hold it back.
+    _stub_war_economy(monkeypatch, 0.9)
+    game = _FakeGame(red_intent=True, fronts=(_FakeFront(red_units=20, blue_units=5),))
+    game.settings = SimpleNamespace(red_intent=True, war_economy=True)
+    update_red_intent(game)  # type: ignore[arg-type]
+    assert game.red_intent_key == RedPosture.SURGE.value

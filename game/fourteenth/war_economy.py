@@ -60,11 +60,15 @@ def _clamp01(value: float) -> float:
 def frontline_demand(cp: "ControlPoint") -> float:
     """Supply this CP's front consumes per turn to stay fully effective.
 
-    Zero for a CP with no active front -- there is nothing to starve.
+    Zero for a CP with no active front -- there is nothing to starve. Sized by the
+    raw force present (``base.total_frontline_units``), **deliberately not** the
+    deployable count: ``supply_factor`` must never depend on anything the P2 bite
+    scales, or the deployable-cap bite (``front_line_capacity_with`` ->
+    ``deployable_front_line_units`` -> ``supply_factor`` -> here) would recurse.
     """
     if not cp.has_active_frontline:
         return 0.0
-    return SUPPLY_PER_FRONTLINE_UNIT * cp.deployable_front_line_units
+    return SUPPLY_PER_FRONTLINE_UNIT * cp.base.total_frontline_units
 
 
 def stockpile_capacity(cp: "ControlPoint") -> float:
@@ -119,6 +123,34 @@ def coalition_supply_health(game: "Game", coalition: "Coalition") -> float:
         total += supply_factor(cp)
         count += 1
     return 1.0 if count == 0 else total / count
+
+
+#: The P2 bite never drops effectiveness below this floor, even at zero supply -- a
+#: starved front fights and recovers at reduced but non-zero effectiveness (gentle by
+#: design; the primary tuning lever for the P2 in-game pass).
+_BITE_FLOOR = 0.5
+
+
+def supply_effectiveness(cp: "ControlPoint") -> float:
+    """Combat/recovery effectiveness multiplier from supply, in ``[_BITE_FLOOR, 1.0]``.
+
+    The §53 P2 "bite": the free strength recovery, the deployable-unit cap, and the
+    ground-combat delta are each multiplied by this, so interdicting a side's supply
+    visibly slows both its advance and its recovery -- symmetric (whichever side is
+    starved is the one penalised).
+
+    Returns ``1.0`` (no effect) when the feature is off **or** the stockpiles have not
+    been seeded yet, so combat before the first ``advance_war_economy`` (e.g. turn 1)
+    is never penalised. Robust to duck-typed test control points: any missing
+    coalition/game/settings link reads as full effectiveness rather than raising.
+    """
+    game = getattr(getattr(cp, "coalition", None), "game", None)
+    settings = getattr(game, "settings", None)
+    if settings is None or not getattr(settings, "war_economy", False):
+        return 1.0
+    if not getattr(game, "war_economy_seeded", False):
+        return 1.0
+    return _BITE_FLOOR + (1.0 - _BITE_FLOOR) * supply_factor(cp)
 
 
 def _seed_supply(game: "Game") -> None:

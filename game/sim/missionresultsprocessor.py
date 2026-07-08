@@ -6,6 +6,7 @@ from typing import Optional, TYPE_CHECKING
 from game.debriefing import Debriefing
 from game.data.units import FRONTLINE_UNIT_CLASSES
 from game.fourteenth.c2_decapitation import c2_status_line
+from game.fourteenth.war_economy import supply_effectiveness
 from game.ground_forces.combat_stance import CombatStance
 from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
@@ -644,16 +645,23 @@ class MissionResultsProcessor:
                 else:
                     if player_won:
                         print(status_msg)
-                        cp.base.affect_strength(delta)
-                        enemy_cp.base.affect_strength(-delta)
+                        # War economy (§53 P2): a starved winner converts a win into
+                        # less ground -- scale the shift by the *winner's* supply so
+                        # interdiction slows an advance. x1.0 no-op unless on+seeded;
+                        # symmetric (whichever side wins). Scales both the winner's
+                        # gain and the loser's loss equally.
+                        won = delta * supply_effectiveness(cp)
+                        cp.base.affect_strength(won)
+                        enemy_cp.base.affect_strength(-won)
                         self.game.message(
                             "Frontline Report",
                             f"Our ground forces from {cp.name} are making progress toward {enemy_cp.name}. {status_msg}",
                         )
                     else:
                         print(status_msg)
-                        enemy_cp.base.affect_strength(delta)
-                        cp.base.affect_strength(-delta)
+                        won = delta * supply_effectiveness(enemy_cp)
+                        enemy_cp.base.affect_strength(won)
+                        cp.base.affect_strength(-won)
                         self.game.message(
                             "Frontline Report",
                             f"Our ground forces from {cp.name} are losing ground against the enemy forces from "

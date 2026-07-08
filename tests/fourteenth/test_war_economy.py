@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from game.fourteenth.war_economy import (
+    _BITE_FLOOR,
     MIN_DEMAND,
     STOCKPILE_TURNS,
     SUPPLY_PER_FRONTLINE_UNIT,
@@ -20,6 +21,7 @@ from game.fourteenth.war_economy import (
     frontline_demand,
     production_rate,
     stockpile_capacity,
+    supply_effectiveness,
     supply_factor,
 )
 from game.theater import Player
@@ -46,7 +48,7 @@ def _cp(
         has_active_frontline=front,
         deployable_front_line_units=units,
         ground_objects=list(tgos or []),
-        base=SimpleNamespace(supply=supply),
+        base=SimpleNamespace(supply=supply, total_frontline_units=units),
     )
     links = list(connected or [])
     cp.transitive_connected_friendly_destinations = lambda: links
@@ -173,6 +175,63 @@ def test_isolated_front_cannot_refill_and_drains() -> None:
     game = _game([front], on=True)
     advance_war_economy(game)
     assert front.base.supply == stockpile_capacity(front) - frontline_demand(front)
+
+
+# --- §53 P2: the bite (supply_effectiveness) ---
+
+
+def _bite_cp(*, on: bool, seeded: bool, front: bool, units: int, supply: float) -> Any:
+    game = SimpleNamespace(
+        settings=SimpleNamespace(war_economy=on),
+        war_economy_seeded=seeded,
+    )
+    return SimpleNamespace(
+        coalition=SimpleNamespace(game=game),
+        has_active_frontline=front,
+        base=SimpleNamespace(supply=supply, total_frontline_units=units),
+    )
+
+
+def test_effectiveness_is_full_when_off_or_unseeded() -> None:
+    # Off -> no bite; on-but-not-yet-seeded -> no bite (protects turn-1 combat).
+    assert (
+        supply_effectiveness(
+            _bite_cp(on=False, seeded=True, front=True, units=5, supply=0.0)
+        )
+        == 1.0
+    )
+    assert (
+        supply_effectiveness(
+            _bite_cp(on=True, seeded=False, front=True, units=5, supply=0.0)
+        )
+        == 1.0
+    )
+
+
+def test_effectiveness_scales_from_floor_to_one() -> None:
+    demand = SUPPLY_PER_FRONTLINE_UNIT * 5  # 10
+    full = _bite_cp(on=True, seeded=True, front=True, units=5, supply=demand)
+    starved = _bite_cp(on=True, seeded=True, front=True, units=5, supply=0.0)
+    half = _bite_cp(on=True, seeded=True, front=True, units=5, supply=demand / 2)
+    assert supply_effectiveness(full) == 1.0
+    assert supply_effectiveness(starved) == _BITE_FLOOR
+    assert supply_effectiveness(half) == _BITE_FLOOR + (1.0 - _BITE_FLOOR) * 0.5
+
+
+def test_effectiveness_full_without_a_front() -> None:
+    # No active front -> nothing to starve -> full effectiveness.
+    assert (
+        supply_effectiveness(
+            _bite_cp(on=True, seeded=True, front=False, units=5, supply=0.0)
+        )
+        == 1.0
+    )
+
+
+def test_effectiveness_survives_ducktyped_control_point() -> None:
+    # A bare fake with no coalition/game link must read as full, never raise.
+    bare: Any = SimpleNamespace()
+    assert supply_effectiveness(bare) == 1.0
 
 
 def test_base_supply_defaults_for_pre_feature_saves() -> None:

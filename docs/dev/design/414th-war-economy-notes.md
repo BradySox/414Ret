@@ -150,7 +150,20 @@ deployed frontline unit count so a bigger front needs more supply to stay "full"
   extended (transport refills a connected front and drains its producer; an isolated front
   drains). *Deferred refinements:* hop-distance decay on delivery, and coupling the throttle to
   actual §35/§50 convoy kills on the route (P1 uses territorial connectivity as the throttle).
-- **P2 — The bite** (a)+(b)+(c). The FLOT responds to logistics. Symmetric.
+- **P2 — The bite** (a)+(b)+(c). ✅ **LANDED 2026-07-08.** One `supply_effectiveness(cp)`
+  multiplier in `[_BITE_FLOOR=0.5, 1.0]` (1.0 when off/unseeded, so turn-1 combat is never
+  penalised) is applied at all three sites: **(a)** the `+0.2` recovery at [game.py](../../../game/game.py)
+  (BLUE only — the engine gives only `player_points()` a per-turn recovery bonus); **(b)**
+  `front_line_capacity_with` at [controlpoint.py](../../../game/theater/controlpoint.py) so a
+  starved front deploys fewer units; **(c)** the ground-combat `delta` at
+  [missionresultsprocessor.py](../../../game/sim/missionresultsprocessor.py), scaled by the
+  **winner's** supply so interdiction slows an advance — symmetric (b)+(c). **The decoupling
+  trap is solved**: `frontline_demand` was re-based on `base.total_frontline_units` (raw force,
+  never the supply-scaled cap) so `supply_factor` can feed the cap bite without recursing.
+  Gentle by design (floor 0.5, the main tuning lever). Off = exact no-op (488-test regression
+  proves it). Needs an in-game pass: does bombing production/cutting routes visibly slow the
+  enemy's front over several turns. *Deferred:* the QBaseMenu2 "deployable limit" formula
+  display doesn't yet show the supply factor (a P4 legibility item).
 - **P3 — Fuel/readiness axis (optional).** Wire the dead `active_fuel_depots_count` to sortie
   generation — bomb fuel → enemy flies fewer packages.
 - **P4 — Full legibility.** Client map supply-flow overlay, base-card stock readout, the full

@@ -13,6 +13,7 @@ from typing import Any
 
 from game.fourteenth.war_economy import (
     _BITE_FLOOR,
+    _FUEL_READINESS_FLOOR,
     MIN_DEMAND,
     MUNITIONS_CAPACITY,
     STOCKPILE_TURNS,
@@ -22,6 +23,7 @@ from game.fourteenth.war_economy import (
     advance_war_economy,
     coalition_supply_health,
     frontline_demand,
+    fuel_readiness,
     munitions_stock,
     production_rate,
     stockpile_capacity,
@@ -315,3 +317,34 @@ def test_base_supply_defaults_for_pre_feature_saves() -> None:
     base.__setstate__({"armor": {}, "strength": 1.0})
     assert base.supply == 0.0
     assert base.strength == 1.0
+
+
+# --- §53 P3: fuel depots gate air readiness (fuel_readiness) ---
+
+
+def _fuel_cp(*, on: bool, total: int, active: int) -> Any:
+    game = SimpleNamespace(settings=SimpleNamespace(fuel_air_readiness=on))
+    return SimpleNamespace(
+        coalition=SimpleNamespace(game=game),
+        total_fuel_depots_count=total,
+        active_fuel_depots_count=active,
+    )
+
+
+def test_fuel_readiness_full_when_off_or_no_depots() -> None:
+    assert fuel_readiness(_fuel_cp(on=False, total=4, active=0)) == 1.0
+    # A base with no fuel infrastructure is never grounded.
+    assert fuel_readiness(_fuel_cp(on=True, total=0, active=0)) == 1.0
+
+
+def test_fuel_readiness_scales_with_alive_depots() -> None:
+    assert fuel_readiness(_fuel_cp(on=True, total=4, active=4)) == 1.0
+    assert fuel_readiness(_fuel_cp(on=True, total=4, active=0)) == _FUEL_READINESS_FLOOR
+    assert fuel_readiness(_fuel_cp(on=True, total=4, active=2)) == (
+        _FUEL_READINESS_FLOOR + (1.0 - _FUEL_READINESS_FLOOR) * 0.5
+    )
+
+
+def test_fuel_readiness_survives_ducktyped_control_point() -> None:
+    bare: Any = SimpleNamespace()
+    assert fuel_readiness(bare) == 1.0

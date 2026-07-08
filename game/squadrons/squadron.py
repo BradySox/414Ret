@@ -309,7 +309,14 @@ class Squadron:
         self.available_pilots = list(self.active_pilots)
         # QRA-reserved airframes are held on alert by the intercept dispatcher,
         # so they are not available to the auto-planner or spawned as filler.
-        self.untasked_aircraft = max(0, self.owned_aircraft - self.intercept_reserve)
+        available = self.owned_aircraft - self.intercept_reserve
+        # §53 P3: a fuel-starved base can sortie fewer of its jets (x1.0 no-op unless
+        # fuel_air_readiness is on and the base has lost fuel depots). Both the planner
+        # and the player read untasked_aircraft, so this grounds air for both.
+        from game.fourteenth.war_economy import fuel_readiness
+
+        available = int(available * fuel_readiness(getattr(self, "location", None)))
+        self.untasked_aircraft = max(0, available)
 
     @staticmethod
     def send_on_leave(pilot: Pilot) -> None:

@@ -349,6 +349,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "War economy",
                 [
                     "war_economy",
+                    "fuel_air_readiness",
                 ],
             ),
             (
@@ -1370,14 +1371,26 @@ class Settings:
         default=False,
         detail=(
             "Adds a per-base materiel supply stockpile on top of the money economy: "
-            "factories and oil/derricks produce supply, it accumulates toward a "
-            "reserve buffer, and (once the combat bite lands) a starved front stops "
-            "recovering and fields fewer units -- so bombing the enemy's production "
-            "and cutting their supply routes visibly thins their front over several "
-            "turns. Symmetric (the enemy interdicts yours too). Currently observe-"
-            "only: the per-side production and supply numbers are reported each turn "
-            "so they can be read before the effect is enabled. Intended for campaigns "
-            "with a real economy laydown (factories + depots) that preseed it on."
+            "factories and oil/derricks produce supply, it flows to the front and is "
+            "consumed there, and a starved front recovers less, deploys fewer units, "
+            "and gains less ground -- so bombing the enemy's production and cutting "
+            "their supply routes visibly thins their front over several turns. "
+            "Symmetric (the enemy interdicts yours too); the SITREP shows each side's "
+            "front supply. Intended for campaigns with a real economy laydown "
+            "(factories + depots) that preseed it on."
+        ),
+    )
+    fuel_air_readiness: bool = boolean_option(
+        "Fuel depots gate air readiness",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section="War economy",
+        default=False,
+        detail=(
+            "An airfield's alive fuel depots gate how many of its aircraft can sortie "
+            "each turn: destroy an enemy base's fuel infrastructure and it flies fewer "
+            "packages (down to a floor; a base with no fuel depots is never penalised). "
+            "Symmetric -- your own grounded bases fly less too. Independent of the "
+            "supply economy above; intended for campaigns with fuel-depot laydowns."
         ),
     )
     coin_insurgency: bool = boolean_option(

@@ -25,7 +25,7 @@ fully supplied (1.0).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from game.data.weapons import SCARCE_FAMILIES
 
@@ -154,6 +154,35 @@ def supply_effectiveness(cp: "ControlPoint") -> float:
     if not getattr(game, "war_economy_seeded", False):
         return 1.0
     return _BITE_FLOOR + (1.0 - _BITE_FLOOR) * supply_factor(cp)
+
+
+#: Air-readiness floor: even with every fuel depot destroyed a base still sorties this
+#: fraction of its fleet (grounding is a heavy blow, not a total shutdown). Tuning lever.
+_FUEL_READINESS_FLOOR = 0.5
+
+
+def fuel_readiness(cp: Optional["ControlPoint"]) -> float:
+    """§53 P3: fraction of a base's fleet that can sortie, in ``[floor, 1.0]``.
+
+    Scales with the base's *alive fuel-depot fraction*, so bombing an airfield's fuel
+    infrastructure grounds part of its air -- for the AI planner and the human alike
+    (both read ``Squadron.untasked_aircraft``, which this multiplies once per turn).
+
+    Returns ``1.0`` (no effect) when ``fuel_air_readiness`` is off, when the base has no
+    fuel depots at all (nothing to knock out), or on a duck-typed test control point.
+    Reads the live alive/dead depot count -- no stockpile, no seeding.
+    """
+    if cp is None:
+        return 1.0
+    game = getattr(getattr(cp, "coalition", None), "game", None)
+    settings = getattr(game, "settings", None)
+    if settings is None or not getattr(settings, "fuel_air_readiness", False):
+        return 1.0
+    total = cp.total_fuel_depots_count
+    if total <= 0:
+        return 1.0
+    frac = cp.active_fuel_depots_count / total
+    return _FUEL_READINESS_FLOOR + (1.0 - _FUEL_READINESS_FLOOR) * frac
 
 
 def _seed_supply(game: "Game") -> None:

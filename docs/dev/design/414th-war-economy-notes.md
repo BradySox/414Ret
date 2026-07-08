@@ -164,8 +164,18 @@ deployed frontline unit count so a bigger front needs more supply to stay "full"
   proves it). Needs an in-game pass: does bombing production/cutting routes visibly slow the
   enemy's front over several turns. *Deferred:* the QBaseMenu2 "deployable limit" formula
   display doesn't yet show the supply factor (a P4 legibility item).
-- **P3 — Fuel/readiness axis (optional).** Wire the dead `active_fuel_depots_count` to sortie
-  generation — bomb fuel → enemy flies fewer packages.
+- **P3 — Fuel → air readiness. ✅ LANDED 2026-07-08.** Wires the dead
+  `active_fuel_depots_count`: `fuel_readiness(cp)` (in `war_economy.py`, floor 0.5) scales a
+  base's alive fuel-depot fraction into a sortie multiplier, applied at the **single per-turn
+  chokepoint** `Squadron.return_all_pilots_and_aircraft` (`untasked_aircraft = int((owned −
+  reserve) × fuel_readiness(location))`) — the same line the QRA reserve already benches at.
+  Because both the AI planner and the player's flight-creation UI read `untasked_aircraft`, one
+  line grounds air for both; bases still *own* their jets (parking/filler/economy untouched),
+  they just sortie fewer. Live alive/dead count, so **no stockpile/seed** (simpler than P2).
+  1.0 no-op when off / a base has no fuel depots / a duck-typed test CP / a location-less
+  squadron. Own setting `fuel_air_readiness` (Campaign Management → War economy, default OFF),
+  Red Tide preseeds it. Tests in `test_war_economy.py` (off/no-depots/scaling/duck-typed). The
+  in-game pass = does bombing an enemy field's fuel visibly cut its sorties next turn.
 - **P4 — Legibility.** ◐ **SITREP band LANDED 2026-07-08** — `Sitrep` gained `blue_supply`/
   `red_supply`, fed from `coalition_supply_health` in `record_sitrep` when `war_economy` is on,
   rendering "Front supply X% -- enemy Y% (claimed)" on the kneeboard cover (rides along with

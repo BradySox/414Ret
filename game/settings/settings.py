@@ -269,6 +269,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "ownfor_planner_unpredictability",
                     "opfor_planner_unpredictability",
                     "c2_decapitation_effects",
+                    "red_intent",
                 ],
             ),
             (
@@ -1056,6 +1057,21 @@ class Settings:
             "enemy still defends itself, it just plans worse offense. Applies to "
             "whichever side loses its command posts; a campaign with no command "
             "centers is unaffected."
+        ),
+    )
+    red_intent: bool = boolean_option(
+        "Red plays with intent (adaptive posture)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "The enemy commander reads the war each turn -- ground balance, air "
+            "strength, resolve, and how the last turn went -- and adopts a posture "
+            "(consolidate / attrition / surge) that carries across turns, instead of "
+            "planning the same way every turn. Observe-only for now: the posture is "
+            "shown on the SITREP and the turn report but does not yet change how red "
+            "tasks its aircraft (that lands in later updates). Red-only; a campaign "
+            "with no enemy auto-planner is unaffected."
         ),
     )
     heli_combat_alt_agl: int = bounded_int_option(

@@ -108,6 +108,8 @@ class MissionResultsProcessor:
             from game.fourteenth.political_will import ledger_notes
 
             blue_note, red_note = ledger_notes(self.game)
+        from game.fourteenth.red_intent import sitrep_posture_line
+
         self.game.last_sitrep = Sitrep.from_debriefing(
             debriefing,
             self.game.turn,
@@ -118,6 +120,7 @@ class MissionResultsProcessor:
             red_will_note=red_note,
             pows_held=self._pow_sitrep_lines(),
             red_c2_status=c2_status_line(self.game, Player.RED),
+            red_posture=sitrep_posture_line(self.game),
         )
 
     def _pow_sitrep_lines(self) -> list[str]:

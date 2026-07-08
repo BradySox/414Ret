@@ -158,6 +158,12 @@ class ObjectiveFinder:
         rear income points, not just bases that happen to sit near an enemy
         airfield.
         """
+        # §55 P2 (seam 3): RED's posture biases opfor_autoplanner_aggressiveness --
+        # SURGE commits more bases to offense, CONSOLIDATE defends everything. Equal to
+        # the raw setting for blue and for a stock red (see effective_aggressiveness).
+        from game.fourteenth.red_intent import effective_aggressiveness
+
+        aggressiveness = effective_aggressiveness(self.game)
         for cp in self.friendly_control_points():
             if isinstance(cp, OffMapSpawn):
                 # Off-map spawn locations don't need protection.
@@ -172,9 +178,7 @@ class ObjectiveFinder:
             # PackagePlanningTask._get_weighted_threat_range. So a higher value
             # makes OPFOR *more* likely to abandon a base/front for offense.
             plan_offensively = (
-                self.is_player.is_red
-                and self._offensive_roll(cp)
-                <= self.game.settings.opfor_autoplanner_aggressiveness
+                self.is_player.is_red and self._offensive_roll(cp) <= aggressiveness
             )
             if plan_offensively:
                 # Treat the airfield threat range as zero so this CP isn't

@@ -4494,6 +4494,94 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 
 ---
 
+## §55 — Red Intent — adaptive enemy posture
+
+**The "thinking red opponent."** Stock Retribution runs the *same* HTN commander for both sides,
+rebuilt from scratch every turn (`TheaterCommander` / `TheaterState.from_game`) — no memory, no
+reserve concept, no intent, so red plays the same reactive defense + default offensive ordering
+every turn. This is the mirror of the BLUE campaign-phases arc (§40) for RED, and unlike the blue
+arc it carries **memory** across turns. It is the deferred "red arc" the `nextaction._offensive_order`
+docstring called out.
+
+### The posture
+
+`game/fourteenth/red_intent.py` resolves one of three RED postures each turn, latched on `Game`
+(`red_intent_key` + `red_intent_entered_on_turn` + a turn-0 `RedIntentBaseline`; getattr-guarded,
+recompute-not-pickle exactly like the phase pointer, resolved in `Game.initialize_turn` right after
+`update_campaign_phase`):
+
+- **`CONSOLIDATE`** — under pressure (outnumbered on the ground, low resolve, a base lost last turn,
+  or ground given up vs the baseline): defend, husband reserves.
+- **`ATTRITION`** — the neutral default: stock priorities with a modest unpredictability floor.
+- **`SURGE`** — a clear ground advantage + air not suppressed: commit and take ground.
+
+`classify_red_intent` reads live state (ground-force ratio across active fronts, red vs blue
+air-superiority strength, `red.political_will`) **plus last-turn deltas** (mean blue front-progress
+vs the turn-0 baseline, `last_sitrep.captured` = a red base lost last turn). `_next_posture` applies
+**asymmetric hysteresis**: escalating (→ATTRITION/→SURGE) waits out a min-dwell; de-escalating toward
+CONSOLIDATE is immediate (a command reacts to a setback at once).
+
+### The four planner seams
+
+All four are **no-ops for blue, a stock red, or when `red_intent` is off** — the planner is
+byte-identical to before until red is actively consolidating or surging.
+
+1. **Offensive emphasis** (`game/commander/tasks/compound/nextaction.py` `_offensive_order`) — the RED
+   branch (previously an early `return stock`) now returns the posture's emphasis ordering over the
+   offensive methods, resolved through the same name-keyed `_OFFENSIVE_FACTORIES` indirection the BLUE
+   campaign phases use. Surge fronts `CaptureBases`/`PlanFrontLineCas`; consolidate leans
+   `InterdictReinforcements`/`AttackBattlePositions`/`DegradeIads`.
+2. **Unpredictability** (`game/commander/tasks/targetorder.py` `_unpredictability_for`) —
+   `unpredictability_modifier` adds to `opfor_planner_unpredictability` (ATTRITION +15 — the folded-in
+   "feint", SURGE 0, CONSOLIDATE +5), **stacking with the §52 C2-decap bonus** on the same clamp. Red
+   only; blue never picks up red's posture.
+3. **Aggressiveness** (`game/commander/objectivefinder.py` `vulnerable_control_points`) —
+   `effective_aggressiveness` biases `opfor_autoplanner_aggressiveness` (SURGE +30 → abandon more bases
+   to attack, CONSOLIDATE −30 → defend everything), clamped 0–100.
+4. **Ground husbanding** (`game/commander/tasks/frontlinestancetask.py` `_posture_commit_factor`) —
+   `stance_commit_factor` scales the **perceived** `ground_force_balance` the *attack* stance thresholds
+   test (SURGE ×1.35 commits reserves sooner, CONSOLIDATE ×0.7 husbands). Only the attacking stances
+   (AGGRESSIVE/ELIMINATION/BREAKTHROUGH) are biased — DEFENSIVE/RETREAT keep the raw balance, so
+   consolidate tempers the attack **without ever forcing a retreat**. **Yields** (factor 1.0) while an
+   authored `red_tempo` ground-offensive pulse is active, so a campaign author's Tet/Easter offensive is
+   never double-driven.
+
+### Legibility
+
+A per-turn transition message ("Enemy posture: Surging") + a SITREP band line (`Sitrep.red_posture` via
+`sitrep_posture_line`), rides-along like the will/C2 bands (never forces a SITREP onto a quiet turn).
+
+### The §53 coupling (P4, read-only, deferred)
+
+`_red_supply_health` reads the sibling war-economy's `coalition_supply_health(game, red)` via a dynamic
+`importlib` import (so it neither errors where §53 is absent nor becomes an unused ignore once it lands),
+and degrades to `None` when the economy is off/absent — so P0–P3 are fully economy-independent. When §53
+lands, starved supply forces `CONSOLIDATE` even on a paper advantage (closing the interdiction→behaviour
+loop). The contract is LOCKED in the design note.
+
+### Files & tests
+
+| Area | Path |
+|---|---|
+| Core | `game/fourteenth/red_intent.py` (postures, classifier, hysteresis, the four seam helpers) |
+| Seams | `nextaction.py` `_offensive_order`; `targetorder.py` `_unpredictability_for`; `objectivefinder.py` `vulnerable_control_points`; `frontlinestancetask.py` `_posture_commit_factor` |
+| Hook / state | `game/game.py` (`update_red_intent` in `initialize_turn`; latched `red_intent_*` fields, `__setstate__` defaults) |
+| Legibility | `game/sitrep.py` (`red_posture`), `game/sim/missionresultsprocessor.py` `record_sitrep` |
+| Setting | `game/settings/settings.py` (`red_intent`, Air Doctrine, default **OFF**) |
+| Tests | `tests/fourteenth/test_red_intent.py`; `tests/test_planner_unpredictability.py` (stacked red-intent + C2 clamp) |
+
+### Gotchas / deferred
+
+- **Pure turn-model.** No `.miz`, no Lua, no DCS — zero runtime risk. Every seam returns the
+  neutral/raw value for blue, a stock red, or feature-off, so the full suite is unchanged.
+- **Red-only by design.** Blue's "intent" is the campaign-phase arc (§40); a blue-AI mirror (for
+  red-playing humans) is a possible later follow-up, out of scope.
+- **P4 (§53 supply coupling) is not wired yet** — it drops in read-only once the war economy lands.
+- **NEW game not required** (only a small latched pointer + baseline persist; posture re-derives each
+  turn). Design note: `docs/dev/design/414th-red-intent-notes.md`.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

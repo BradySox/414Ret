@@ -21,16 +21,19 @@ def _state(
     opfor: int = 0,
     c2_effects: bool = False,
     ccs: tuple[bool, ...] = (),
+    red_intent: bool = False,
+    red_posture: str | None = None,
 ) -> object:
     """A fake TheaterState. ``ccs`` is the aliveness of the planning side's own
-    command centers (empty = none), and ``c2_effects`` toggles §52."""
+    command centers (empty = none), ``c2_effects`` toggles §52, and
+    ``red_intent``/``red_posture`` drive the §55 red-posture unpredibility modifier."""
     settings = SimpleNamespace(
         ownfor_planner_unpredictability=ownfor,
         opfor_planner_unpredictability=opfor,
         c2_decapitation_effects=c2_effects,
+        red_intent=red_intent,
     )
     player = SimpleNamespace(is_blue=is_blue)
-    coalition = SimpleNamespace(player=player)
     tgos = [
         SimpleNamespace(
             category="commandcenter",
@@ -40,6 +43,8 @@ def _state(
     ]
     cp = SimpleNamespace(captured=player, ground_objects=tgos)
     theater = SimpleNamespace(controlpoints=[cp])
+    game = SimpleNamespace(settings=settings, red_intent_key=red_posture)
+    coalition = SimpleNamespace(player=player, game=game)
     return SimpleNamespace(
         context=SimpleNamespace(settings=settings, coalition=coalition, theater=theater)
     )
@@ -123,4 +128,34 @@ def test_c2_bonus_is_gated_by_the_setting() -> None:
     items = list(range(10))
     # Dead command centers but the feature is OFF -> still deterministic.
     state = _state(is_blue=False, opfor=0, c2_effects=False, ccs=(False, False))
+    assert shuffled_by_priority(items, state, rng=random.Random(0)) == items  # type: ignore[arg-type]
+
+
+# --- §55: the red-intent posture feeds the shuffler -------------------------
+
+
+def test_red_posture_reaches_the_shuffler() -> None:
+    items = list(range(20))
+    # opfor knob 0 and C2 off, but ATTRITION contributes a modest +15 -> a nonzero
+    # unpredictability. It's deliberately gentle, so any single seed may still land on
+    # the identity; across seeds it must sometimes move (proving the modifier is live).
+    state = _state(is_blue=False, opfor=0, red_intent=True, red_posture="attrition")
+    moved = any(
+        shuffled_by_priority(items, state, rng=random.Random(s)) != items  # type: ignore[arg-type]
+        for s in range(50)
+    )
+    assert moved
+
+
+def test_red_surge_posture_stays_focused() -> None:
+    items = list(range(10))
+    # SURGE contributes 0 -> with no base knob and C2 off, red stays deterministic.
+    state = _state(is_blue=False, opfor=0, red_intent=True, red_posture="surge")
+    assert shuffled_by_priority(items, state, rng=random.Random(0)) == items  # type: ignore[arg-type]
+
+
+def test_blue_ignores_the_red_posture_modifier() -> None:
+    items = list(range(10))
+    # A blue planner's unpredictability must never pick up red's posture.
+    state = _state(is_blue=True, ownfor=0, red_intent=True, red_posture="attrition")
     assert shuffled_by_priority(items, state, rng=random.Random(0)) == items  # type: ignore[arg-type]

@@ -1473,6 +1473,36 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     offensive package-count throttle) is deferred.** Tests `tests/fourteenth/test_c2_decapitation.py` +
     `tests/test_planner_unpredictability.py` + `tests/fourteenth/test_campaign_plugin_preseed.py`; features
     doc §52, checklist B6 — needs an in-game pass.
+55. **Red Intent — adaptive enemy posture** — the "thinking red opponent": the mirror of the
+    BLUE campaign-phases arc (§40) for RED, and unlike the blue arc it carries *memory* across
+    turns. Each turn `game/fourteenth/red_intent.py` resolves a RED **posture** —
+    `CONSOLIDATE` / `ATTRITION` / `SURGE` — from live state (ground-force balance, air strength,
+    resolve) **plus last-turn deltas** (territorial movement vs a lazily-snapshotted turn-0
+    baseline + a base lost last turn) with **asymmetric hysteresis** (dwell to escalate,
+    immediate to consolidate), latches it on `Game` (getattr-guarded, recompute-not-pickle like
+    the phase pointer), announces transitions, and surfaces it on the SITREP band. The posture
+    then biases the RED commander across **four planner seams** — all no-ops for blue, a stock
+    red, or when the toggle is off, so the planner is byte-identical to before until red is
+    actively consolidating or surging: (1) **offensive emphasis** — reorders `PlanNextAction`'s
+    offensive methods (surge takes ground first, consolidate leans defensive) through the same
+    name-keyed indirection the blue phases use (`nextaction._offensive_order`, which resolved
+    its "a red arc is deferred" TODO); (2) **unpredictability** — adds to
+    `opfor_planner_unpredictability` (attrition keeps red a little erratic, surge focuses it),
+    stacking with the §52 C2-decap bonus on the same clamp (`targetorder._unpredictability_for`);
+    (3) **aggressiveness** — biases `opfor_autoplanner_aggressiveness` so surge abandons more
+    bases to attack and consolidate defends everything (`objectivefinder.effective_aggressiveness`);
+    (4) **ground husbanding** — scales the *perceived* ground-force balance the ATTACK stance
+    thresholds test (surge commits reserves sooner, consolidate husbands; the defensive/retreat
+    stances are untouched, so consolidate never forces a retreat), and **yields** to an active
+    authored `red_tempo` pulse so a campaign author's Tet/Easter offensive is never double-driven
+    (`frontlinestancetask._posture_commit_factor`). Gated `red_intent` (Air Doctrine, default
+    **OFF**); red-only by design (blue's "intent" is the phase arc). **P4 (the §53 war-economy
+    supply coupling)** is a read-only drop-in via the locked `coalition_supply_health` contract —
+    starved supply will force `CONSOLIDATE` even on a paper advantage — and stays a graceful
+    no-op until the sibling §53/§54 economy lands (design note `414th-red-intent-notes.md`).
+    Tests `tests/fourteenth/test_red_intent.py` + `tests/test_planner_unpredictability.py`;
+    features doc §55, checklist B7 — needs an in-game pass (does red visibly surge when ahead /
+    consolidate when hit, across a multi-turn campaign).
 
 ---
 

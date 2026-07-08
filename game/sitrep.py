@@ -71,6 +71,10 @@ class Sitrep:
     #: per side, e.g. '-4.0: heavy bombers x1 down -6.0 · …'. None hides the lines.
     blue_will_note: Optional[str] = None
     red_will_note: Optional[str] = None
+    #: §55 Red Intent: the enemy's current posture ("Surging" / "Consolidating" /
+    #: "Attrition") when red_intent is on. None (and absent on pre-feature pickled
+    #: sitreps -- read via getattr) hides the line. Rides along with real news.
+    red_posture: Optional[str] = None
 
     @property
     def is_empty(self) -> bool:
@@ -98,6 +102,7 @@ class Sitrep:
         red_will_note: Optional[str] = None,
         pows_held: Optional[List[str]] = None,
         red_c2_status: Optional[str] = None,
+        red_posture: Optional[str] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
         red = debriefing.loss_counts(Player.RED)
@@ -130,6 +135,7 @@ class Sitrep:
             red_will_note=red_will_note,
             pows_held=list(pows_held or []),
             red_c2_status=red_c2_status,
+            red_posture=red_posture,
         )
 
     def kneeboard_lines(self) -> List[str]:
@@ -152,6 +158,10 @@ class Sitrep:
         red_c2 = getattr(self, "red_c2_status", None)
         if red_c2:
             lines.append(f"Enemy C2 degraded (claimed): {red_c2}")
+        # §55: red's current posture (getattr for pre-feature pickled sitreps).
+        red_posture = getattr(self, "red_posture", None)
+        if red_posture:
+            lines.append(f"Enemy posture: {red_posture}")
         # getattr: pre-W1 pickled sitreps lack the will fields entirely.
         blue_will = getattr(self, "blue_will", None)
         red_will = getattr(self, "red_will", None)

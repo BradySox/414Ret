@@ -314,7 +314,7 @@ wanted in Phase 3 only, to add AAA/SAM to the oil platforms as "gun forts".)
 
 **Verified (headless `GameGenerator` → `begin_turn_0`):** generates clean; CP ownership RED 7 /
 BLUE 5; blue CVW = A-6E/F-14A/S-3B Viking/E-2C/S-3B Tanker (A-6E flies Strike + carrier SEAD) +
-F-14A/F-4E ashore + AH-1W/UH-1H off the LHA/Khasab — **all stock/free, `mods enabled: []`**; red =
+F-14A/F-4E-45MC ashore + AH-1W/UH-1H off the LHA/Khasab — **all stock/free, `mods enabled: []`**; red =
 F-14A/F-4E/F-5E/AH-1J/A-50 + Mirage F1; IADS = HAWK belt +
 Rapier + AAA, oil platforms ×60 + Silkworm ×35, **0 empty AA sites**. `pytest tests/fourteenth
 tests/armedforces tests/test_newgame_settings.py tests/test_campaignairwingconfig_empty.py` → 398

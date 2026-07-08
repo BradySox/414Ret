@@ -86,6 +86,8 @@ def test_tanker_war_air_oob_is_mod_free_and_period() -> None:
     assert "EA-6B Prowler" not in squadrons
     assert "A-7E Corsair II" not in squadrons
     assert "Mirage-F1EQ" in squadrons  # the Iraqi Exocet-raider flavor
+    # Blue's land Phantoms are the player-flyable Heatblur F-4E-45MC.
+    assert "F-4E-45MC Phantom II" in squadrons
 
 
 def test_tanker_war_faction_additions() -> None:

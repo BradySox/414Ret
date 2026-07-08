@@ -123,53 +123,56 @@ def test_helper_noop_on_empty_file_list() -> None:
 # deferred and bundled into one trigger.
 
 
-def _bundling_gen() -> LuaGenerator:
+def _bundling_gen() -> tuple[LuaGenerator, MagicMock]:
+    """Return a real LuaGenerator with a mock mission (returned separately so the
+    mock's assert_* helpers stay visible to mypy)."""
     gen = LuaGenerator.__new__(LuaGenerator)
-    gen.mission = MagicMock()
+    mission = MagicMock()
+    gen.mission = mission
     gen.plugin_scripts = []
     gen._deferred_plugin_loads = []
-    return gen
+    return gen, mission
 
 
 def test_deferred_config_load_queues_without_its_own_trigger() -> None:
-    gen = _bundling_gen()
+    gen, mission = _bundling_gen()
     gen.inject_plugin_script(
         "vietnamops", "vietnamops-config.lua", "vietnamops-config", defer=True
     )
     # Resource is registered (map ordering stays stable) but NO trigger yet.
-    gen.mission.map_resource.add_resource_file.assert_called_once()
-    gen.mission.triggerrules.triggers.append.assert_not_called()
+    mission.map_resource.add_resource_file.assert_called_once()
+    mission.triggerrules.triggers.append.assert_not_called()
     assert len(gen._deferred_plugin_loads) == 1
 
 
 def test_non_deferred_load_still_emits_its_own_trigger() -> None:
-    gen = _bundling_gen()
+    gen, mission = _bundling_gen()
     gen.inject_plugin_script("vietnamops", "vietnamops-config.lua", "vietnamops-config")
-    gen.mission.triggerrules.triggers.append.assert_called_once()
+    mission.triggerrules.triggers.append.assert_called_once()
     assert gen._deferred_plugin_loads == []
 
 
 def test_flush_bundles_all_deferred_loads_into_one_trigger() -> None:
-    gen = _bundling_gen()
+    gen, mission = _bundling_gen()
     for ident, script, mnem in (
         ("vietnamops", "vietnamops-config.lua", "vietnamops-config"),
         ("mobilemissiles", "mobilemissiles-config.lua", "mobilemissiles-config"),
         ("commsjam", "commsjam-config.lua", "commsjam-config"),
     ):
         gen.inject_plugin_script(ident, script, mnem, defer=True)
-    gen.mission.triggerrules.triggers.append.assert_not_called()
+    mission.triggerrules.triggers.append.assert_not_called()
     gen.flush_deferred_plugin_scripts()
     # Exactly one trigger carrying all three loads, in queue order.
-    gen.mission.triggerrules.triggers.append.assert_called_once()
-    trigger = gen.mission.triggerrules.triggers.append.call_args.args[0]
+    mission.triggerrules.triggers.append.assert_called_once()
+    trigger = mission.triggerrules.triggers.append.call_args.args[0]
     assert len(trigger.actions) == 3
     assert gen._deferred_plugin_loads == []
 
 
 def test_flush_is_a_noop_when_nothing_deferred() -> None:
-    gen = _bundling_gen()
+    gen, mission = _bundling_gen()
     gen.flush_deferred_plugin_scripts()
-    gen.mission.triggerrules.triggers.append.assert_not_called()
+    mission.triggerrules.triggers.append.assert_not_called()
 
 
 def test_inject_configuration_defers_the_config_script() -> None:

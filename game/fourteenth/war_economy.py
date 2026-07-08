@@ -27,8 +27,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from game.data.weapons import SCARCE_FAMILIES
+
 if TYPE_CHECKING:
     from game import Game
+    from game.ato.flight import Flight
     from game.coalition import Coalition
     from game.theater.controlpoint import ControlPoint
 
@@ -192,6 +195,69 @@ def _draw_supply(sources: list["ControlPoint"], amount: float) -> float:
         source.base.supply -= take
         remaining -= take
     return amount - remaining
+
+
+# --- §54 munitions availability (M1: per-base stock + turn-boundary debit) ---
+
+#: A base holds up to this many "loads" of each scarce family and rearms toward it
+#: each turn. Generous by design -- M1 is the accounting; the player-facing scarcity
+#: bites at M2 (the loadout gate), where these numbers get tuned + balanced.
+MUNITIONS_CAPACITY = 24
+
+#: Loads rearmed per family per turn, scaled by the base's supply health when the §53
+#: economy is on (a supply-cut base can't fully rearm -- the ledger coupling), flat
+#: otherwise.
+MUNITIONS_REARM_PER_TURN = 8
+
+
+def munitions_stock(cp: "ControlPoint", family: str) -> int:
+    """Loads of ``family`` currently held at ``cp`` (0 if none / pre-feature)."""
+    return getattr(cp.base, "munitions", {}).get(family, 0)
+
+
+def _flight_scarce_loads(flight: "Flight") -> dict[str, int]:
+    """Per-family count of scarce stores across every member's loadout on ``flight``."""
+    counts: dict[str, int] = {}
+    for member in flight.iter_members():
+        for weapon in member.loadout.pylons.values():
+            if weapon is None:
+                continue
+            family = weapon.weapon_group.scarce_family
+            if family is not None:
+                counts[family] = counts.get(family, 0) + 1
+    return counts
+
+
+def advance_munitions(game: "Game") -> None:
+    """Per-turn munitions step (§54 M1): debit what the ATO loaded, then rearm.
+
+    No-op unless ``restrict_weapons_by_stock`` is on. Seeds each base to capacity on
+    the first run, debits the scarce stores every flight carried from its departure
+    base (turn-boundary + once per turn, so mission *re*-generation never double-
+    counts), then rearms toward capacity -- scaled by supply health when the §53
+    economy is on, so a supply-cut base cannot fully re-arm. **M1 is accounting only**;
+    the loadout gate that makes empty stock bite is M2.
+    """
+    if not game.settings.restrict_weapons_by_stock:
+        return
+    if not getattr(game, "munitions_seeded", False):
+        for cp in game.theater.controlpoints:
+            cp.base.munitions = {fam: MUNITIONS_CAPACITY for fam in SCARCE_FAMILIES}
+        game.munitions_seeded = True
+    # Debit what flew this turn (the just-flown ATO -- replanning is next turn's init).
+    for coalition in (game.blue, game.red):
+        for package in coalition.ato.packages:
+            for flight in package.flights:
+                base = flight.departure.base
+                for family, count in _flight_scarce_loads(flight).items():
+                    have = base.munitions.get(family, 0)
+                    base.munitions[family] = max(0, have - count)
+    # Rearm toward capacity (supply-coupled when the economy is on).
+    for cp in game.theater.controlpoints:
+        rearm = int(round(MUNITIONS_REARM_PER_TURN * supply_effectiveness(cp)))
+        for family in SCARCE_FAMILIES:
+            have = cp.base.munitions.get(family, 0)
+            cp.base.munitions[family] = min(MUNITIONS_CAPACITY, have + rearm)
 
 
 def advance_war_economy(game: "Game") -> None:

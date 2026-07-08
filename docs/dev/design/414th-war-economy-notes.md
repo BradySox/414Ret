@@ -236,7 +236,18 @@ out of** (PGM/GPS bombs, standoff, ARM, long-range A2A). Everything untagged is 
   CALCM, Kh-101/555) and mis-swept `Kh-25MP` (anti-radar → moved to `arm`). Guard test
   [tests/fourteenth/test_scarce_munitions.py](../../../tests/fourteenth/test_scarce_munitions.py)
   fails CI if any mapped name stops resolving (the dead-name lesson) + spot-checks + negatives.
-- **M1** — `Base.munitions` stock, fed by the §53 ledger, debited at loadout.
+- **M1** — `Base.munitions` stock + debit. ✅ **LANDED 2026-07-08.** `Base.munitions`
+  (family→loads, `__setstate__` `{}`), `SCARCE_FAMILIES` exported from `weapons.py`, the
+  `restrict_weapons_by_stock` setting (Mission Generation → Loadouts, default OFF), and
+  `advance_munitions` in `finish_turn`: seed each base to `MUNITIONS_CAPACITY`, **debit what
+  the ATO loaded** (iterate `coalition.ato.packages → flights`, sum `weapon.weapon_group.
+  scarce_family` per flight, decrement `flight.departure.base`), then **rearm** toward capacity
+  scaled by `supply_effectiveness` (a supply-cut base can't fully re-arm — the §53 coupling;
+  flat when the economy is off). **Key correctness call: the debit is a once-per-turn
+  turn-boundary step, NOT in `setup_payload`** — a per-generation debit would double-count on
+  every mission *re*-generation. **M1 is accounting only** (no gate yet), so it's inert to the
+  player until M2. Off = no-op (483-test regression). Tuning (capacity/rearm) deferred to M2 +
+  the in-game pass.
 - **M2** — the gate: UI grey-out ([QPylonEditor.py:34](../../../qt_ui/windows/mission/flight/payload/QPylonEditor.py))
   + generator `degrade_for_stock` ([setup_payload](../../../game/missiongenerator/aircraft/flightgroupconfigurator.py:415)).
 - **M3** — legibility: base-card stock readout, *"Kandahar is Winchester on PGMs"* on the

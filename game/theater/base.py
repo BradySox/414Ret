@@ -15,11 +15,18 @@ class Base:
         #: combat effectiveness. See game/fourteenth/war_economy.py. Defaulted for
         #: pre-feature saves in __setstate__.
         self.supply: float = 0.0
+        #: War economy (§54) per-scarce-family munition stock ("loads"), keyed by
+        #: family name (see game/data/weapons.py SCARCE_FAMILIES). Empty until seeded
+        #: when restrict_weapons_by_stock is on; debited at the turn boundary by what
+        #: the ATO loaded, rearmed each turn (scaled by supply when the economy is on).
+        self.munitions: dict[str, int] = {}
 
     def __setstate__(self, state: dict[str, object]) -> None:
-        # War economy (§53) added Base.supply; default it for pre-feature saves.
+        # War economy added Base.supply (§53) and Base.munitions (§54); default them
+        # for pre-feature saves.
         self.__dict__.update(state)
         self.__dict__.setdefault("supply", 0.0)
+        self.__dict__.setdefault("munitions", {})
 
     @property
     def total_armor(self) -> int:

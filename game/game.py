@@ -139,6 +139,9 @@ class Game:
         # (production, supply factors) is never pickled -- only this flag + the
         # per-base Base.supply amounts persist.
         self.war_economy_seeded: bool = False
+        # §54 munitions: latched once per-base munition stocks have been seeded, so
+        # the seed happens once. Gated by restrict_weapons_by_stock.
+        self.munitions_seeded: bool = False
         # W6 red tempo: the last turn resolve-regen was applied (idempotence
         # guard for the multiple-init-per-turn cases).
         self.red_tempo_regen_turn: Optional[int] = None
@@ -252,6 +255,7 @@ class Game:
         state.setdefault("convoy_ambush_state", {})
         state.setdefault("concealment_salt", None)
         state.setdefault("war_economy_seeded", False)
+        state.setdefault("munitions_seeded", False)
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.
@@ -510,11 +514,16 @@ class Game:
         # report the per-side numbers; no combat bite yet. No-op unless the
         # war_economy setting is on. See game/fourteenth/war_economy.py.
         from game.fourteenth.war_economy import (
+            advance_munitions,
             advance_war_economy,
             supply_effectiveness,
         )
 
         advance_war_economy(self)
+        # §54 M1: debit the scarce munitions the ATO loaded from each base and rearm
+        # (supply-scaled). No-op unless restrict_weapons_by_stock is on. Runs after the
+        # supply step so rearm sees this turn's supply.
+        advance_munitions(self)
 
         # Movable ship TGOs snap to their destination and re-parent to the
         # nearest friendly CP. Runs after captures are committed (process_results

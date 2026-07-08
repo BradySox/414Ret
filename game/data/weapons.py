@@ -412,6 +412,10 @@ _SCARCE_FAMILY_BY_NAME: dict[str, str] = {
     name: family for family, names in _SCARCE_MUNITIONS.items() for name in names
 }
 
+#: The scarce-munition family keys (§54 M1 consumers iterate this to seed per-base
+#: stock). Declaration order.
+SCARCE_FAMILIES: tuple[str, ...] = tuple(_SCARCE_MUNITIONS.keys())
+
 
 @dataclass(frozen=True)
 class WeaponGroup:

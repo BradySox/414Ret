@@ -14,11 +14,15 @@ from typing import Any
 from game.fourteenth.war_economy import (
     _BITE_FLOOR,
     MIN_DEMAND,
+    MUNITIONS_CAPACITY,
     STOCKPILE_TURNS,
     SUPPLY_PER_FRONTLINE_UNIT,
+    _flight_scarce_loads,
+    advance_munitions,
     advance_war_economy,
     coalition_supply_health,
     frontline_demand,
+    munitions_stock,
     production_rate,
     stockpile_capacity,
     supply_effectiveness,
@@ -232,6 +236,77 @@ def test_effectiveness_survives_ducktyped_control_point() -> None:
     # A bare fake with no coalition/game link must read as full, never raise.
     bare: Any = SimpleNamespace()
     assert supply_effectiveness(bare) == 1.0
+
+
+# --- §54 M1: per-base munitions stock + turn-boundary debit ---
+
+
+def _weapon(family: str | None) -> Any:
+    return SimpleNamespace(weapon_group=SimpleNamespace(scarce_family=family))
+
+
+def _member(*families: str | None) -> Any:
+    pylons = {i: (_weapon(f) if f else None) for i, f in enumerate(families)}
+    return SimpleNamespace(loadout=SimpleNamespace(pylons=pylons))
+
+
+def _flight(base: Any, members: list[Any]) -> Any:
+    return SimpleNamespace(
+        iter_members=lambda: members,
+        departure=SimpleNamespace(base=base),
+    )
+
+
+def _muni_game(*, on: bool, seeded: bool, base: Any, flights: list[Any]) -> Any:
+    return SimpleNamespace(
+        settings=SimpleNamespace(restrict_weapons_by_stock=on, war_economy=False),
+        munitions_seeded=seeded,
+        theater=SimpleNamespace(controlpoints=[SimpleNamespace(base=base)]),
+        blue=SimpleNamespace(
+            ato=SimpleNamespace(packages=[SimpleNamespace(flights=flights)])
+        ),
+        red=SimpleNamespace(ato=SimpleNamespace(packages=[])),
+    )
+
+
+def test_munitions_stock_reads_base() -> None:
+    cp: Any = SimpleNamespace(base=SimpleNamespace(munitions={"arm": 5}))
+    assert munitions_stock(cp, "arm") == 5
+    assert munitions_stock(cp, "pgm_bomb") == 0
+
+
+def test_flight_scarce_loads_counts_by_family() -> None:
+    flight = _flight(
+        SimpleNamespace(munitions={}),
+        [_member("pgm_bomb", None, "arm"), _member("pgm_bomb")],
+    )
+    assert _flight_scarce_loads(flight) == {"pgm_bomb": 2, "arm": 1}
+
+
+def test_advance_munitions_is_a_noop_when_off() -> None:
+    base = SimpleNamespace(munitions={})
+    game = _muni_game(
+        on=False,
+        seeded=False,
+        base=base,
+        flights=[_flight(base, [_member("pgm_bomb")])],
+    )
+    advance_munitions(game)
+    assert base.munitions == {}
+    assert game.munitions_seeded is False
+
+
+def test_advance_munitions_seeds_debits_then_rearms() -> None:
+    base = SimpleNamespace(munitions={})
+    # One flight loads 12 pgm_bomb stores; nothing else scarce.
+    flight = _flight(base, [_member(*(["pgm_bomb"] * 12))])
+    game = _muni_game(on=True, seeded=False, base=base, flights=[flight])
+    advance_munitions(game)
+    assert game.munitions_seeded is True
+    # pgm_bomb: seeded 24, -12 loaded = 12, +8 rearm = 20 (net drop is visible).
+    assert base.munitions["pgm_bomb"] == 20
+    # An unused family: seeded 24, no debit, rearm caps back at capacity.
+    assert base.munitions["arm"] == MUNITIONS_CAPACITY
 
 
 def test_base_supply_defaults_for_pre_feature_saves() -> None:

@@ -497,6 +497,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Loadouts",
                 [
                     "auto_range_fuel_tanks",
+                    "restrict_weapons_by_stock",
                 ],
             ),
         ],
@@ -1492,6 +1493,20 @@ class Settings:
         section=GENERAL_SECTION,
         default=False,
         detail=("If checked, Bandit's cloud presets will become available."),
+    )
+    restrict_weapons_by_stock: bool = boolean_option(
+        "Restrict munitions to airfield stock (war economy)",
+        page=MISSION_GENERATION_PAGE,
+        section="Loadouts",
+        default=False,
+        detail=(
+            "Track a per-airfield stock of scarce munitions (PGMs, GPS bombs, "
+            "standoff/cruise, anti-radiation, medium/long-range A2A) and rearm it each "
+            "turn -- scaled by the base's supply when the war economy is on, so cutting "
+            "a base off starves its magazines. Currently accounting only: loadouts are "
+            "not yet blocked when a store runs out (that gate is a later phase). "
+            "Intended for campaigns with a real economy/logistics laydown."
+        ),
     )
     auto_range_fuel_tanks: bool = boolean_option(
         "Add fuel tanks when the route needs the range",

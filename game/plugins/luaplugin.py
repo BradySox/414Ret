@@ -22,12 +22,12 @@ class LuaPluginWorkOrder:
         self.mnemonic = mnemonic
         self.disable = disable
 
-    def work(self, lua_generator: LuaGenerator) -> None:
+    def work(self, lua_generator: LuaGenerator, defer: bool = False) -> None:
         if self.disable:
             lua_generator.bypass_plugin_script(self.mnemonic)
         else:
             lua_generator.inject_plugin_script(
-                self.parent_mnemonic, self.filename, self.mnemonic
+                self.parent_mnemonic, self.filename, self.mnemonic, defer=defer
             )
 
 
@@ -221,8 +221,11 @@ class LuaPlugin(PluginSettings):
                 lua, f"{self.identifier} plugin configuration"
             )
 
+        # Config scripts are deferred so LuaGenerator can bundle every plugin's
+        # config load into a single mission-start trigger -- DCS silently drops
+        # some of many separate DoScriptFile triggers on a heavy mission.
         for work_order in self.definition.config_work_orders:
-            work_order.work(lua_generator)
+            work_order.work(lua_generator, defer=True)
 
     def inject_other_resource_files(self, lua_generator: LuaGenerator) -> None:
         for resource_file in self.definition.other_resource_files:

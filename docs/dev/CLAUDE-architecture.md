@@ -16,6 +16,18 @@ missing/renamed init file is now caught by a test (`game/plugins/tests/test_late
 instead of the feature silently never starting. (Replaces the old hand-injected
 `_inject_*_script()` "scramble pattern".)
 
+Every plugin's **config-script load is deferred and bundled** into a single mission-start
+`TriggerStart` (`LuaGenerator._deferred_plugin_loads` → `flush_deferred_plugin_scripts()`, called
+in `inject_plugins()` before the late-init pass) — the same one-trigger shape the late-init pass
+already uses. **Why:** DCS silently drops some mission-start `DoScriptFile` triggers on a heavy
+mission — a flown Red Tide turn had the `vietnamops`/`mobilemissiles`/`commsjam` config loads never
+execute (`§36`/`§49`/`§51` dead) while adjacent, byte-identically-wired loads fired; the `.miz` was
+provably correct (funcStartup wired, conditions `return(true)`, resource map + packaged files all
+right), so the drop is DCS-side. Bundling into one trigger keeps any one config from being dropped.
+Only the **config** loads defer (`config_work_orders`, `defer=True`); each plugin's options table is
+still injected inline first, and main-script (`scriptsWorkOrders`) loads are unchanged, so the
+load-order invariant (options → config) holds.
+
 **Viewer-aware visibility layer (recon fog).** One layer drives two player-facing fog rules.
 AI planning and threat math always use ground truth (`viewer=None`); only the human (BLUE)
 map/UI are fogged. `TheaterUnit.alive_for(viewer)` handles BDA damage lag;

@@ -48,6 +48,15 @@ class LuaGenerator:
         self.mission = mission
         self.mission_data = mission_data
         self.plugin_scripts: list[str] = []
+        # Plugin CONFIG-script loads are collected here and emitted together in
+        # one bundled TriggerStart (flush_deferred_plugin_scripts). DCS silently
+        # drops some mission-start DoScriptFile triggers when a heavy mission
+        # fields many separate ones -- observed on Red Tide, where the
+        # vietnamops/mobilemissiles/commsjam config loads never executed while
+        # adjacent, byte-identically-wired plugin loads did. Bundling into a
+        # single trigger (the same shape the reliable late-init pass uses) keeps
+        # any one config from being dropped.
+        self._deferred_plugin_loads: list[DoScriptFile] = []
 
     def generate(self) -> None:
         self.generate_plugin_data()
@@ -619,8 +628,19 @@ class LuaGenerator:
         self.plugin_scripts.append(mnemonic)
 
     def inject_plugin_script(
-        self, plugin_mnemonic: str, script: str, script_mnemonic: str
+        self,
+        plugin_mnemonic: str,
+        script: str,
+        script_mnemonic: str,
+        defer: bool = False,
     ) -> None:
+        """Load a plugin script at mission start via a DoScriptFile trigger.
+
+        When ``defer`` is set the load is not emitted as its own trigger but
+        queued for ``flush_deferred_plugin_scripts`` to bundle into one trigger
+        (used for plugin *config* scripts -- see ``_deferred_plugin_loads``).
+        The resource is still registered here so map-resource ordering is stable.
+        """
         if script_mnemonic in self.plugin_scripts:
             logging.debug(f"Skipping already loaded {script} for {plugin_mnemonic}")
             return
@@ -634,11 +654,33 @@ class LuaGenerator:
             logging.error(f"Cannot find {script_path} for plugin {plugin_mnemonic}")
             return
 
-        trigger = TriggerStart(comment=f"Load {script_mnemonic}")
         filename = script_path.resolve()
         fileref = self.mission.map_resource.add_resource_file(filename)
-        trigger.add_action(DoScriptFile(fileref))
+        action = DoScriptFile(fileref)
+        if defer:
+            self._deferred_plugin_loads.append(action)
+            return
+
+        trigger = TriggerStart(comment=f"Load {script_mnemonic}")
+        trigger.add_action(action)
         self.mission.triggerrules.triggers.append(trigger)
+
+    def flush_deferred_plugin_scripts(self) -> None:
+        """Emit every deferred plugin-config load in a single TriggerStart.
+
+        Collapsing the per-plugin config loads into one trigger -- the shape the
+        reliable late-init pass already uses -- stops DCS from silently dropping
+        any one of them at a heavy mission start (see ``_deferred_plugin_loads``).
+        Order is preserved: actions run in the order they were queued, which is
+        the plugins' registration order.
+        """
+        if not self._deferred_plugin_loads:
+            return
+        trigger = TriggerStart(comment="Load plugin configurations")
+        for action in self._deferred_plugin_loads:
+            trigger.add_action(action)
+        self.mission.triggerrules.triggers.append(trigger)
+        self._deferred_plugin_loads = []
 
     def inject_other_plugin_resources(self, plugin_mnemonic: str, file: str) -> None:
         plugin_path = Path("./resources/plugins", plugin_mnemonic)
@@ -718,6 +760,11 @@ class LuaGenerator:
                 plugin.inject_scripts(self)
                 plugin.inject_configuration(self)
                 plugin.inject_other_resource_files(self)
+        # Emit every plugin's config-script load in one bundled trigger (their
+        # options are already set inline above, so this preserves the load
+        # invariant) -- guards against DCS dropping individual mission-start
+        # DoScriptFile triggers. Runs before the late-init pass.
+        self.flush_deferred_plugin_scripts()
         # Second pass: late-init scripts (TIC/TARS/SCAR) that must load AFTER
         # every plugin's config table exists. Ordering within this pass follows
         # plugins.json; the features share no Lua globals so relative order is

@@ -191,8 +191,10 @@ loading bombs, the "bite" is the greyed-out dropdown.
 ([game/data/weapons.py:215](../../../game/data/weapons.py)) — the §46 gap. Rather than
 backfill all 301 YAMLs, add a `scarce_family` tag to only the **~40–60 weapons worth running
 out of** (PGM/GPS bombs, standoff, ARM, long-range A2A). Everything untagged is infinite.
-- Store the tag in `resources/weapons/*.yaml` (a new optional field, read in
-  `WeaponGroup._each_weapon_group`), exposed as `WeaponGroup.scarce_family`.
+- **Shipped as a central hand-audited map, not per-YAML tags** (M0): a `_SCARCE_MUNITIONS`
+  dict in `weapons.py` keyed by exact `WeaponGroup.name`, exposed via `WeaponGroup.scarce_family`.
+  Central + explicit so the whole tracked set is reviewable in one place and CI-guarded against
+  dead names — the auditability the burn-history demanded.
 - Stock is keyed by family, not by CLSID (one weapon = many CLSIDs) and not by `WeaponGroup`
   (301 SKUs is too granular).
 - **Expandable:** more tags later; if we ever want full coverage it becomes the §46 fix too.
@@ -206,7 +208,16 @@ out of** (PGM/GPS bombs, standoff, ARM, long-range A2A). Everything untagged is 
   out the item. Guide, don't block.
 
 ### Phasing
-- **M0** — the taxonomy: tag the ~40–60 scarce weapons; expose `WeaponGroup.scarce_family`.
+- **M0** — the taxonomy. ✅ **LANDED 2026-07-08.** Implemented as an **explicit,
+  hand-audited** `_SCARCE_MUNITIONS` map in [game/data/weapons.py](../../../game/data/weapons.py)
+  (keyed by exact `WeaponGroup.name`, every rack variant listed — *not* an opaque runtime
+  classifier and *not* per-YAML tags, so the tracked set is exactly what was signed off) +
+  `WeaponGroup.scarce_family` property. **5 families** — `a2a_medium` / `arm` / `pgm_bomb` /
+  `standoff` / `guided_asm` — **158 entries** (~65 base weapons + rack variants). The user
+  audited every pick; the auto-heuristic had missed whole premium families (Maverick, Hellfire,
+  CALCM, Kh-101/555) and mis-swept `Kh-25MP` (anti-radar → moved to `arm`). Guard test
+  [tests/fourteenth/test_scarce_munitions.py](../../../tests/fourteenth/test_scarce_munitions.py)
+  fails CI if any mapped name stops resolving (the dead-name lesson) + spot-checks + negatives.
 - **M1** — `Base.munitions` stock, fed by the §53 ledger, debited at loadout.
 - **M2** — the gate: UI grey-out ([QPylonEditor.py:34](../../../qt_ui/windows/mission/flight/payload/QPylonEditor.py))
   + generator `degrade_for_stock` ([setup_payload](../../../game/missiongenerator/aircraft/flightgroupconfigurator.py:415)).

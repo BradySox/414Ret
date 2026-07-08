@@ -9,6 +9,17 @@ class Base:
     def __init__(self) -> None:
         self.armor: dict[GroundUnitType, int] = {}
         self.strength = 1.0
+        #: War economy (§53) materiel stockpile -- an absolute amount, 0.0 until the
+        #: feature seeds it to capacity on its first turn. Produced at factories,
+        #: transported over the supply graph, and (from §53 P2) gating frontline
+        #: combat effectiveness. See game/fourteenth/war_economy.py. Defaulted for
+        #: pre-feature saves in __setstate__.
+        self.supply: float = 0.0
+
+    def __setstate__(self, state: dict[str, object]) -> None:
+        # War economy (§53) added Base.supply; default it for pre-feature saves.
+        self.__dict__.update(state)
+        self.__dict__.setdefault("supply", 0.0)
 
     @property
     def total_armor(self) -> int:

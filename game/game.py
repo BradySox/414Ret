@@ -134,6 +134,11 @@ class Game:
         self.phase_entered_on_turn: Optional[int] = None
         self.phase_status_line: Optional[str] = None
         self.phase_baseline: Optional["PhaseBaseline"] = None
+        # War economy (§53): latched once the per-base supply stockpiles have been
+        # seeded to capacity, so the seed happens exactly once. Re-derived state
+        # (production, supply factors) is never pickled -- only this flag + the
+        # per-base Base.supply amounts persist.
+        self.war_economy_seeded: bool = False
         # W6 red tempo: the last turn resolve-regen was applied (idempotence
         # guard for the multiple-init-per-turn cases).
         self.red_tempo_regen_turn: Optional[int] = None
@@ -246,6 +251,7 @@ class Game:
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
         state.setdefault("concealment_salt", None)
+        state.setdefault("war_economy_seeded", False)
         # will_history (a briefly-shipped bespoke per-turn series) was folded into
         # game_stats' FactionTurnMetadata.political_will; drop it from any save
         # written in the interim so it doesn't linger as dead state.
@@ -498,6 +504,14 @@ class Game:
         from game.fourteenth.super_gaggle import plan_super_gaggle
 
         plan_super_gaggle(self)
+
+        # War economy (§53): the produce -> transport -> store -> consume supply
+        # loop. P0 is observe-only -- seed per-base stockpiles, accrue production,
+        # report the per-side numbers; no combat bite yet. No-op unless the
+        # war_economy setting is on. See game/fourteenth/war_economy.py.
+        from game.fourteenth.war_economy import advance_war_economy
+
+        advance_war_economy(self)
 
         # Movable ship TGOs snap to their destination and re-parent to the
         # nearest friendly CP. Runs after captures are committed (process_results

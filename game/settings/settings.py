@@ -345,6 +345,12 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                "War economy",
+                [
+                    "war_economy",
+                ],
+            ),
+            (
                 "Insurgency",
                 [
                     "coin_insurgency",
@@ -1338,6 +1344,23 @@ class Settings:
         detail=(
             "Restricts weapon availability based on the campaign date. Data is "
             "extremely incomplete so does not affect all weapons."
+        ),
+    )
+    war_economy: bool = boolean_option(
+        "War economy (supply logistics)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section="War economy",
+        default=False,
+        detail=(
+            "Adds a per-base materiel supply stockpile on top of the money economy: "
+            "factories and oil/derricks produce supply, it accumulates toward a "
+            "reserve buffer, and (once the combat bite lands) a starved front stops "
+            "recovering and fields fewer units -- so bombing the enemy's production "
+            "and cutting their supply routes visibly thins their front over several "
+            "turns. Symmetric (the enemy interdicts yours too). Currently observe-"
+            "only: the per-side production and supply numbers are reported each turn "
+            "so they can be read before the effect is enabled. Intended for campaigns "
+            "with a real economy laydown (factories + depots) that preseed it on."
         ),
     )
     coin_insurgency: bool = boolean_option(

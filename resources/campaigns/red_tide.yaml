@@ -271,6 +271,13 @@ settings:
   # untouched -- a decapitated red still defends. Default OFF; preseeded ON here because this
   # laydown is one of the very few with a real, per-base, destroyable command network to key on.
   c2_decapitation_effects: true
+  # §53 war economy -- a per-base materiel supply stockpile on top of the money
+  # economy. Red Tide is the testbed: it already ships a real economy laydown (3
+  # factories + 3 ammo depots) plus a destroyable red logistics/C2 network, so
+  # production and interdiction have something concrete to key on. Currently
+  # observe-only (P0) -- the per-side supply numbers are reported each turn; the
+  # combat bite lands in a later phase. See game/fourteenth/war_economy.py.
+  war_economy: true
   # §49 mobile-missile relocation (the SCUD hunt) -- red fields two SS-1C Scud-B batteries in
   # the rear (near Wittstock and forward off Haina). With this on they shoot-and-scoot during
   # the mission, and with concealed_enemy_forces (default ON) they show only as a dashed

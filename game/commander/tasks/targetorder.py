@@ -38,6 +38,14 @@ def _unpredictability_for(state: TheaterState) -> int:
     # the feature is off or the network is intact, so the base setting is
     # preserved byte-identically. Clamped to the shuffler's 0-100 domain.
     bonus = unpredictability_bonus(coalition, state.context.theater, settings)
+    # §55 P2 (seam 2): RED's posture adds its own unpredictability on top -- ATTRITION
+    # keeps red slightly unpredictable (the folded-in feint), SURGE focuses it, CONSOLIDATE
+    # stays low. Red-only, and 0 when red_intent is off, so the base + C2 behaviour is
+    # preserved byte-identically for blue and for a stock red.
+    if not coalition.player.is_blue:
+        from game.fourteenth.red_intent import unpredictability_modifier
+
+        bonus += unpredictability_modifier(coalition.game)
     return min(100, base + bonus)
 
 

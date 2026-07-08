@@ -299,6 +299,18 @@ FEATURES: tuple[Feature, ...] = (
         52,
         settings_fields=("c2_decapitation_effects",),
     ),
+    Feature(
+        # Pure engine feature (no Lua): a per-turn RED posture (consolidate/attrition/
+        # surge) in game/fourteenth/red_intent.py that biases the offensive HTN
+        # ordering, the target-shuffle unpredictability, the offensive-commit roll, and
+        # the ground-stance thresholds. Red-only; observe-only until enabled. §53/§54
+        # are the sibling war-economy pair (a separate branch); the §53 supply coupling
+        # (P4) is a read-only drop-in.
+        "red_intent",
+        "Red Intent — adaptive enemy posture",
+        55,
+        settings_fields=("red_intent",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

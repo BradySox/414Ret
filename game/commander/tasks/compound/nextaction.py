@@ -66,22 +66,29 @@ class PlanNextAction(CompoundTask[TheaterState]):
     def _offensive_order(self, state: TheaterState) -> list[str]:
         """The offensive method order for this planning run.
 
-        The phase is the *campaign's* (BLUE-perspective) arc — "roll back the enemy
-        IADS" describes blue's intent — so only the blue commander is emphasized;
-        red keeps the stock order (a red arc is deferred).
+        BLUE follows the *campaign's* arc (§40 campaign phases — "roll back the enemy
+        IADS" describes blue's intent); RED follows its adaptive posture (§55 red
+        intent — consolidate/attrition/surge). Each side yields an emphasis ordering
+        over the offensive methods; absent one (feature off, no phase/posture, or the
+        neutral default) the stock order stands, so the planner is byte-identical to
+        pre-feature behaviour until a side's layer is active.
         """
         stock = list(self._OFFENSIVE_FACTORIES)
         coalition = state.context.coalition
-        if not coalition.player.is_blue:
-            return stock
-        from game.fourteenth.phases import active_phase
+        if coalition.player.is_blue:
+            from game.fourteenth.phases import active_phase
 
-        phase = active_phase(coalition.game)
-        if phase is None or not phase.emphasis:
+            phase = active_phase(coalition.game)
+            emphasis = phase.emphasis if phase is not None else None
+        else:
+            from game.fourteenth.red_intent import offensive_emphasis
+
+            emphasis = offensive_emphasis(coalition.game)
+        if not emphasis:
             return stock
         # Guard against a stale/authored emphasis naming an unknown method, and
         # against one omitting a method: unknown names are dropped, missing ones
         # keep their stock relative order at the tail.
-        order = [name for name in phase.emphasis if name in self._OFFENSIVE_FACTORIES]
+        order = [name for name in emphasis if name in self._OFFENSIVE_FACTORIES]
         order.extend(name for name in stock if name not in order)
         return order

@@ -1,0 +1,512 @@
+---
+name: Persian Gulf - The Tanker War (1988)
+theater: Persian Gulf
+authors: 414th JFG (fork of Deadhead's Operation Noisy Cricket Redux, orig. Starfire)
+recommended_player_faction: US Navy 1985
+recommended_enemy_faction: Iran 1988
+description: >
+  <p><strong>The Strait of Hormuz, April 1988.</strong> Eight years of the Iran-Iraq War have
+  spilled into the Gulf's shipping lanes. Iranian fast boats, mines and coastal Silkworm
+  batteries prey on neutral tankers; on 14 April the frigate USS <em>Samuel B. Roberts</em>
+  struck an Iranian mine. Washington's answer is <strong>Operation Praying Mantis</strong>.</p>
+  <p>Flying from the carrier and the Gulf airfields, your task force must protect Gulf shipping
+  and grind down Iranian naval and air power &mdash; the F-14 Tomcat squadrons at Kerman and
+  Shiraz, the missile boats and frigates, the Silkworm sites and the oil-platform gun forts among
+  the islands. Belligerent Exocet raiders (Mirage F1) hunt the sea lanes from Kish. This is a war
+  decided at sea &mdash; <strong>ships, not territory</strong>.</p>
+miz: tanker_war_1988.miz
+performance: 1
+recommended_start_date: 1988-04-18
+recommended_player_money: 1000
+recommended_enemy_money: 800
+recommended_player_income_multiplier: 1.0
+recommended_enemy_income_multiplier: 0.6
+version: "10.8"
+settings:
+  uh_60l: false
+  # Mod-free by design: the whole air OOB uses stock/free airframes (Heatblur A-6E Intruder
+  # is a free AI aircraft, not the A-6A mod), so no ModSettings preseeds are needed.
+  # 414th naval-war identity layer (Phase 2): the political-will economy (US Resolve vs
+  # Tehran's regime resolve, ship losses as the decisive currency) + the authored Tanker
+  # War -> Praying Mantis phase arc + the neutral shipping-lane ROE zone.
+  vietnam_political_will: true
+  campaign_phases: true
+  # Phase 3: the coastal Silkworm batteries shoot-and-scoot (the coastal-missile hunt),
+  # alongside the SCUD sites. The shore/island batteries relocate; the platform gun-fort
+  # AAA (added to the .miz) does not.
+  mobile_missile_relocation: true
+  coastal_missile_relocation: true
+squadrons:
+  # BLUFOR carrier air wing (all stock/free airframes: Tomcats, A-6E Intruders, Viking, Hawkeye)
+  Blue CV-1:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-14A Tomcat (Block 135-GR Late)
+      size: 12
+    - primary: SEAD
+      secondary: any
+      aircraft:
+        - A-6E Intruder
+      size: 6
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - A-6E Intruder
+      size: 8
+    - primary: Anti-ship
+      secondary: air-to-ground
+      aircraft:
+        - S-3B Viking
+      size: 6
+    - primary: AEW&C
+      aircraft:
+        - E-2C Hawkeye
+      size: 3
+    - primary: Refueling
+      aircraft:
+        - S-3B Tanker
+      size: 4
+  # BLUFOR amphibious group (Marine helos off the LHA)
+  Blue LHA-1:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - AH-1W SuperCobra
+      size: 6
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - UH-1H Iroquois
+      size: 8
+  # Khasab (10) -- Musandam FARP, mouth of the Strait
+  10:
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - UH-1H Iroquois
+      size: 8
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - AH-1W SuperCobra
+      size: 6
+  # Al Minhad AFB (12) -- Navy/Marine land fighter detachment (land-based F-4E Phantoms)
+  12:
+    - primary: Escort
+      secondary: air-to-air
+      aircraft:
+        - F-14A Tomcat (Block 135-GR Late)
+      size: 12
+    - primary: SEAD
+      secondary: any
+      aircraft:
+        - F-4E Phantom II
+      size: 6
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - F-4E Phantom II
+      size: 10
+  # Al Dhafra AFB (4) -- heavy/support
+  4:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - A-6E Intruder
+      size: 10
+    - primary: OCA/Runway
+      secondary: any
+      aircraft:
+        - A-6E Intruder
+      size: 8
+    - primary: Refueling
+      aircraft:
+        - KC-130
+      size: 2
+  # Bandar Abbas Intl (2) -- Iranian main naval-air base
+  2:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F-4E Phantom II
+      size: 16
+    - primary: TARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-5E Tiger II
+      size: 14
+  # Qeshm Island (13)
+  13:
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - AH-1J SeaCobra
+      size: 8
+  # Abu Musa Island (1) -- forward IRGC island strip
+  1:
+    - primary: TARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-5E Tiger II
+      size: 6
+  # Kish Intl (24) -- Exocet raider base (Iraqi Mirage F1 flavor). The Mirage-F1EQ has no
+  # ANTISHIP task in-engine, so it flies Strike (the "raider hitting the sea lanes/ports" is
+  # briefing flavor); red's true anti-ship threat is the Silkworm coastal sites + boats.
+  24:
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - Mirage-F1EQ
+      size: 12
+    - primary: TARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-4E Phantom II
+      size: 12
+  # Shiraz Intl (19)
+  19:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-14A Tomcat (Block 135-GR Late)
+      size: 12
+  # Kerman (18) -- Iran's last combat-worthy Tomcats
+  18:
+    - primary: AEW&C
+      aircraft:
+        - A-50
+      size: 1
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-14A Tomcat (Block 135-GR Late)
+      size: 10
+advanced_iads: true
+iads_config:
+  # Command And Control
+  - RED COMMAND 1:
+      - RED POWER 1
+      - RED POWER 2
+      - RED COMMS 1
+      - RED COMMS 2
+  - RED COMMAND 2:
+      - RED COMMS 3
+      - RED COMMS 4
+      - RED POWER 2
+      - RED POWER 3
+  # Nuclear Zone
+  - RED EWR 8:
+      - RED POWER 1
+      - RED COMMS 1
+  - RED EWR 9:
+      - RED POWER 1
+      - RED COMMS 1
+  - RED EWR 10:
+      - RED POWER 1
+      - RED COMMS 1
+  - RED L-SHORT POWER1:
+      - RED POWER 1
+      - RED COMMS 1
+  - RED L-SHORT SHIRAZ 1:
+      - RED POWER 1
+      - RED COMMS 1
+  - RED L-MED 1:
+      - RED POWER 1
+      - RED COMMS 1
+  - RED L-MED 9:
+      - RED POWER 1
+      - RED COMMS 1
+  - RED L-LONG 2:
+      - RED POWER 1
+      - RED COMMS 1
+  - RED L-LONG 3:
+      - RED POWER 1
+      - RED COMMS 1
+  # Northern Region
+  - RED EWR 4:
+      - RED POWER 2
+      - RED COMMS 2
+  - RED EWR 5:
+      - RED POWER 2
+      - RED COMMS 2
+  - RED L-LONG 1:
+      - RED POWER 2
+      - RED COMMS 2
+  - RED L-LONG 4:
+      - RED POWER 2
+      - RED COMMS 2
+  - RED L-MED 11:
+      - RED POWER 2
+      - RED COMMS 2
+  - RED L-SHORT KERMAN 1:
+      - RED POWER 2
+      - RED COMMS 2
+  # Bandar Abbas Region
+  - RED EWR 1:
+      - RED POWER 1
+      - RED COMMS 3
+  - RED EWR 2:
+      - RED POWER 3
+      - RED COMMS 3
+  - RED EWR 3:
+      - RED POWER 3
+      - RED COMMS 4
+  - RED L-MED 2:
+      - RED POWER 1
+      - RED COMMS 2
+      - RED COMMS 4
+  - RED L-MED 7:
+      - RED COMMS 3
+      - RED COMMS 4
+      - RED POWER 3
+  - RED L-MED 8:
+      - RED COMMS 3
+      - RED COMMS 4
+      - RED POWER 3
+  - RED L-MED 10:
+      - RED COMMS 3
+      - RED COMMS 4
+      - RED POWER 3
+  - RED L-SHORT BANDAR 1:
+      - RED POWER 3
+      - RED COMMS 4
+  - RED L-SHORT BANDAR 2:
+      - RED POWER 3
+      - RED COMMS 4
+  - RED L-SHORT KISH 1:
+      - RED POWER 3
+      - RED COMMS 3
+  - RED L-SHORT KISH 2:
+      - RED POWER 3
+      - RED COMMS 3
+  - RED L-SHORT QESHM 1:
+      - RED POWER 3
+      - RED COMMS 3
+  - RED L-SHORT TUNB 1:
+      - RED POWER 3
+      - RED COMMS 3
+  # Peninsula
+  - BLUE EWR 1:
+      - BLUE POWER
+      - BLUE COMMS 1
+      - BLUE COMMS 5
+  - BLUE EWR 2:
+      - BLUE POWER
+      - BLUE COMMS 2
+      - BLUE COMMS 3
+  - BLUE EWR 3:
+      - BLUE POWER
+      - BLUE COMMS 3
+      - BLUE COMMS 4
+  - BLUE EWR 4:
+      - BLUE POWER
+      - BLUE COMMS 2
+      - BLUE COMMS 4
+  - BLUE EWR 5:
+      - BLUE POWER
+      - BLUE COMMS 1
+      - BLUE COMMS 4
+  - BLUE L-SHORT KHASAB 1:
+      - BLUE POWER
+      - BLUE COMMS 5
+  - BLUE L-SHORT KHASAB 2:
+      - BLUE POWER
+      - BLUE COMMS 5
+  - BLUE L-SHORT MINHAD 1:
+      - BLUE POWER
+      - BLUE COMMS 1
+      - BLUE COMMS 2
+  - BLUE L-SHORT MINHAD 2:
+      - BLUE POWER
+      - BLUE COMMS 1
+      - BLUE COMMS 2
+  - BLUE L-SHORT DHAFRA 1:
+      - BLUE POWER
+      - BLUE COMMS 2
+      - BLUE COMMS 3
+  - BLUE L-SHORT DHAFRA 2:
+      - BLUE POWER
+      - BLUE COMMS 2
+      - BLUE COMMS 3
+  - BLUE L-MED 1:
+      - BLUE POWER
+      - BLUE COMMS 5
+  - BLUE L-MED 2:
+      - BLUE POWER
+      - BLUE COMMS 5
+      - BLUE COMMS 1
+  - BLUE L-MED 3:
+      - BLUE POWER
+      - BLUE COMMS 1
+      - BLUE COMMS 2
+  - BLUE L-MED 4:
+      - BLUE POWER
+      - BLUE COMMS 2
+      - BLUE COMMS 3
+  - BLUE L-MED 5:
+      - BLUE POWER
+      - BLUE COMMS 2
+      - BLUE COMMS 3
+  - BLUE L-LONG 1:
+      - BLUE POWER
+      - BLUE COMMS 1
+      - BLUE COMMS 2
+  - BLUE L-LONG 2:
+      - BLUE POWER
+      - BLUE COMMS 2
+      - BLUE COMMS 3
+  - BLUE L-LONG 3:
+      - BLUE POWER
+      - BLUE COMMS 1
+      - BLUE COMMS 4
+  - BLUE L-LONG 4:
+      - BLUE POWER
+      - BLUE COMMS 5
+# Period Iranian IADS: an I-HAWK belt (long+medium markers) + Rapier point defense (short),
+# per decision 2.2. The named C2 groups + iads_config are unchanged, so the destroyable
+# command network (and §51/§52) stays wired. Iran fielded no long-range SAM in 1988, so the
+# "long" markers become HAWK batteries.
+ground_forces:
+  RED L-LONG 1: Hawk
+  RED L-LONG 2: Hawk
+  RED L-LONG 3: Hawk
+  RED L-LONG 4: Hawk
+  RED L-MED 1: Hawk
+  RED L-MED 2: Hawk
+  RED L-MED 3: Hawk
+  RED L-MED 4: Hawk
+  RED L-MED 5: Hawk
+  RED L-MED 6: Hawk
+  RED L-MED 7: Hawk
+  RED L-MED 8: Hawk
+  RED L-MED 9: Hawk
+  RED L-MED 10: Hawk
+  RED L-MED 11: Hawk
+  RED L-SHORT TUNB 1: Rapier
+  RED L-SHORT QESHM 1: Rapier
+  RED L-SHORT KISH 1: Rapier
+  RED L-SHORT KISH 2: Rapier
+  RED L-SHORT BANDAR 1: Rapier
+  RED L-SHORT BANDAR 2: Rapier
+  RED L-SHORT KERMAN 1: Rapier
+  RED L-SHORT SHIRAZ 1: Rapier
+  RED L-SHORT POWER1: Rapier
+  BLUE L-LONG 1: Patriot
+  BLUE L-LONG 2: Patriot
+  BLUE L-LONG 3: Patriot
+  BLUE L-LONG 4: Patriot
+supply_routes:
+  # blue rear corridor: Al Dhafra AFB -> Al Minhad AFB (E11 coast road -> E611)
+  - waypoints:
+      - [-211028, -173240]
+      - [-191025, -165551]
+      - [-143805, -139457]
+      - [-127534, -115980]
+      - [-126014, -89133]
+  # red rear corridor: Bandar Abbas -> Kerman
+  - waypoints:
+      - [115766, 14258]
+      - [237101, -32091]
+      - [363636, -52257]
+      - [412977, 8174]
+      - [454117, 71096]
+  # red rear corridor: Bandar Abbas -> Shiraz
+  - waypoints:
+      - [115766, 14258]
+      - [169653, -186604]
+      - [262487, -261010]
+      - [381101, -351637]
+  # red rear corridor: Shiraz -> Bushehr
+  - waypoints:
+      - [381101, -351637]
+      - [393729, -442581]
+      - [356905, -487221]
+      - [313020, -505678]
+
+# --- Political will economy (gated by vietnam_political_will) --------------------------------
+# Ships are the decisive currency: a US warship sunk is a strategic blow to Washington's
+# resolve (the USS Stark echo); sinking Iran's navy + its oil-platform gun forts breaks
+# Tehran (as Praying Mantis historically did). Grind red resolve to zero -> Iran halts the
+# attacks on shipping (negotiated WIN); Washington's resolve breaks first -> the escort
+# mission is withdrawn (LOSS). Territory victory stays as a fallback.
+will:
+  blue:
+    label: Washington's resolve
+    exhaustion_title: Washington ends the escort mission
+    exhaustion_body: >-
+      The cost of keeping the Strait open has outrun the will to pay it. The escorts
+      stand down and the Gulf is left to Tehran's guns -- whatever the map says.
+  red:
+    label: Tehran's regime resolve
+    exhaustion_title: Tehran halts the attacks on shipping
+    exhaustion_body: >-
+      The navy is wreckage and the platforms burn. Tehran passes quiet word that the
+      sea lanes will be left alone. The pressure at sea did what no army ashore had to.
+  weights:
+    blue_ship_lost: 10.0      # a US frigate/escort lost is front-page news
+    red_ship_lost: 6.0        # sinking Iran's navy/boats is the load-bearing pressure
+    blue_airframe_loss: 1.5
+    red_airframe_loss: 0.5
+    blue_roe_violation: 4.0   # a weapon released against neutral shipping in the lane
+    red_ground_unit_lost: 0.4 # the oil-platform gun forts + coastal sites bleed Tehran
+    blue_passive_regen: 0.5
+    red_passive_regen: 0.5
+
+# --- Authored phase arc (gated by campaign_phases): Tanker War -> Praying Mantis ------------
+# Target-release escalation: early on you may only defend shipping (engage boats/coastal/
+# SAM threats) -- Iran's oil platforms, C2 and power grid are OFF LIMITS until the mining
+# authorizes retaliation. The neutral Strait shipping lane is a no-strike corridor in every
+# phase (releasing weapons there risks a neutral tanker -> a will penalty).
+# NOTE: the shipping-lane corridor coordinates are a first pass -- verify/refine by eye on the
+# F10 map (or convert to a from_drawing zone drawn in the .miz) during the in-app pass.
+phases:
+  - key: tanker_war
+    name: Tanker War
+    narrative: >-
+      Iranian boats, mines and coastal Silkworm batteries prey on Gulf shipping. Escort the
+      tankers and hunt the raiders -- but the neutral sea lanes are watched by the world, and
+      the war ashore is not yet yours to wage.
+    emphasis: interdiction
+    min_turn: 0
+    restricted_zones: &shipping_lane
+      - shape: corridor
+        name: Strait of Hormuz shipping lane (neutral)
+        width_nm: 16
+        path:
+          - {x: -100000, y: 85000}
+          - {x: -10000, y: 30000}
+          - {x: 45000, y: -20000}
+          - {x: 25000, y: -160000}
+    locked_targets: [oil, power, commandcenter, comms]
+    objectives:
+      - Keep the Strait of Hormuz open to neutral shipping
+      - Hunt the missile boats and coastal Silkworm sites
+    advance_when:
+      blue_will_below: 80
+  - key: samuel_b_roberts
+    name: USS Samuel B. Roberts
+    narrative: >-
+      14 April 1988: the frigate USS Samuel B. Roberts strikes an Iranian mine and barely
+      limps home. Washington authorizes a proportionate response -- the gloves come off
+      against Iran's air defenses and command network.
+    emphasis: rollback
+    min_turn: 3
+    restricted_zones: *shipping_lane
+    locked_targets: [oil]
+    objectives:
+      - Roll back the coastal SAM belt and the IADS command net
+    advance_when:
+      red_resolve_below: 70
+  - key: praying_mantis
+    name: Operation Praying Mantis
+    narrative: >-
+      18 April 1988: retaliation in full. The Sassan and Sirri oil-platform gun forts, the
+      missile boats, the frigates -- all are targets now. Break the Iranian navy and Tehran's
+      nerve breaks with it.
+    emphasis: offensive
+    min_turn: 6
+    restricted_zones: *shipping_lane
+    objectives:
+      - Destroy the oil-platform gun forts
+      - Break the Iranian navy at sea

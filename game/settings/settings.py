@@ -480,6 +480,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "base_battle_damage",
                     "artillery_base_harassment",
                     "mobile_missile_relocation",
+                    "coastal_missile_relocation",
                     "ambient_supply_convoys",
                     "convoy_ambush",
                     "enemy_comms_jamming",
@@ -2285,6 +2286,20 @@ class Settings:
             "SCUD hunt is a hunt for something that moves. Movement only: kills "
             "record normally, the site stays within a few km of its campaign-map "
             "position, and nothing changes at turn end. Applies to both sides."
+        ),
+    )
+    coastal_missile_relocation: bool = boolean_option(
+        "Coastal anti-ship sites relocate too (shoot and scoot)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Extends the shoot-and-scoot behaviour above to coastal anti-ship "
+            "missile sites (e.g. Silkworm batteries), so a shore battery is never "
+            "quite where your last recon photographed it -- the coastal-missile "
+            "hunt. Off by default because most campaigns want their coastal guns "
+            "fixed where they cover the water; a naval campaign (the Tanker War) "
+            "turns it on. Movement only, both sides, same guarantees as above."
         ),
     )
     ambient_supply_convoys: bool = boolean_option(

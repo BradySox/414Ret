@@ -38,7 +38,10 @@ and selected later upstream fixes.
   to a new position every few minutes during the mission (holding fire while they move), so
   the launcher is never quite where the last recon photo froze it. The site stays within a
   few km of its campaign position, kills count normally, and the radar SAM network never
-  moves. On by default (Mission Generation → "Mobile missile sites relocate").
+  moves. On by default (Mission Generation → "Mobile missile sites relocate"); a naval
+  campaign can also opt its coastal anti-ship batteries (Silkworms) into the scoot
+  (**"Coastal anti-ship sites relocate too"**, off by default), so the coastal-missile
+  hunt is a hunt too.
 - **The roads have traffic now — and your convoys might get ambushed.** Every turn, a few
   real supply columns run each side's road network (a randomized number, sometimes sharing
   a road, sometimes spread out): the enemy's are ordinary Armed Recon/BAI prey, and yours

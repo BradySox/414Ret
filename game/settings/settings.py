@@ -343,6 +343,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "campaign_phases",
                     "continuous_campaign_clock",
                     "long_range_carrier_ops",
+                    "motorpool_enabled",
+                    "motorpool_spawn_cap",
                 ],
             ),
             (
@@ -1503,6 +1505,30 @@ class Settings:
             "stock range-gated planner would otherwise leave on the deck. Also raise "
             "'Auto-planner maximum mission range for airplanes' so the carrier air is "
             "assignable to the wider war. Intended for campaigns that preseed it on."
+        ),
+    )
+    motorpool_enabled: bool = boolean_option(
+        "Spawn strikeable motorpool reserves",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Render each control point's not-yet-deployed reserve armor as a "
+            "strikeable motorpool (only where the campaign authored one). "
+            "Destroying reserves forces the owner to repurchase."
+        ),
+    )
+    motorpool_spawn_cap: int = bounded_int_option(
+        "Maximum motorpool vehicles per turn",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=10,
+        min=0,
+        max=50,
+        detail=(
+            "Caps how many reserve vehicles a control point renders across its "
+            "motorpool(s) per turn. Lower this if motorpools hurt mission "
+            "performance."
         ),
     )
     apply_target_overrides_to_loadouts: bool = boolean_option(

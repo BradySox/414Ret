@@ -1503,6 +1503,29 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Tests `tests/fourteenth/test_red_intent.py` + `tests/test_planner_unpredictability.py`;
     features doc §55, checklist B7 — needs an in-game pass (does red visibly surge when ahead /
     consolidate when hit, across a multi-turn campaign).
+56. **Strikeable motorpool depots** — **adopted from upstream PR
+    [dcs-retribution#859](https://github.com/dcs-retribution/dcs-retribution/pull/859)**
+    (geofffranks; cherry-picked verbatim + fork-adapted, the Pretense hunk dropped since the fork
+    has no Pretense). A control point's **not-yet-deployed reserve armor** (the slice `plan_groundwar`
+    holds back from the front) is projected each turn as a **strikeable depot** the player can bomb —
+    attriting the enemy's armor reserve at the motor pool instead of only meeting it at the FLOT. A new
+    `MotorpoolGroundObject` (`game/theater/theatergroundobject.py`, category `motorpool`, a
+    maintenance-facility map symbol distinct from armor groups, always rendered *present* — an empty
+    depot is its resting state, never "destroyed") is placed where a campaign authored a
+    `Fortification.Garage_A` (`start_generator.generate_motorpools` / the `migrator` save-inject);
+    `MotorpoolPopulator` rebuilds its vehicle groups **ephemerally each mission** from the CP's current
+    reserve (`ai_ground_planner.reserve_armor_for`, a `plan_groundwar`-exact split), capped by
+    `motorpool_spawn_cap` (10). The vehicles spawn **parked, weapon-hold, unmanned, no datalink**
+    (`MotorpoolGenerator`) — present and strikeable but inert. **1:1 grind, no economy**: each killed
+    reserve vehicle decrements `base.armor` by one via a **distinct loss category**
+    (`UnitMap.motorpool_units` → `Debriefing` → `missionresultsprocessor.commit_motorpool_losses`), so
+    a depot strike forces a repurchase next turn but — unlike a front-line casualty — **never shifts the
+    front line**; losses show on the debrief ("Motorpool units lost" + "`<type>` from motorpool"). Gated
+    `motorpool_enabled` (Campaign Management, default **ON**) + `motorpool_spawn_cap`; **inert until a
+    campaign authors a `Garage_A`** (no fork campaign does yet, so existing campaigns are unchanged), and
+    the §3 recon fog leaves it an **exact** depot marker (category `motorpool` isn't concealable). Not
+    supported in Pretense. Tests `tests/**/test_motorpool_*.py` + `tests/ground_forces/test_reserve_armor.py`;
+    features doc §56, checklist B8 — needs an in-game pass (a campaign with an authored depot).
 
 ---
 

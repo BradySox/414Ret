@@ -4582,6 +4582,88 @@ loop). The contract is LOCKED in the design note.
 
 ---
 
+## §56 — Strikeable motorpool depots
+
+**Adopted from upstream PR [dcs-retribution#859](https://github.com/dcs-retribution/dcs-retribution/pull/859)**
+(geofffranks, "Strikeable motorpool depots", closes upstream #655). Cherry-picked onto the fork
+verbatim (4 commits, Geoff retained as author) plus one fork-adaptation commit; the Pretense hunk was
+dropped because the fork has no Pretense. This is an *upstream-authored* capability given a 414th §N
+so it rides the same registry/checklist discipline as the fork's own features — not a 414th-original.
+
+### What it does
+
+Retribution's ground war holds a **reserve**: `GroundPlanner.plan_groundwar` sends only a slice of a
+control point's `base.armor` to the front (proportional to `frontline_unit_count_limit`, and *nothing*
+from a CP with no connected enemy). The rest sat purely as an economy number — you could only attrit it
+by meeting it at the FLOT after it deployed. This projects that **not-yet-deployed reserve** as a
+**strikeable motor pool** at the CP, so a player can bomb the depot and thin the enemy's armor reserve
+directly.
+
+### Shape (Python-only; no Lua plugin)
+
+- **`MotorpoolGroundObject`** (`game/theater/theatergroundobject.py`, category `"motorpool"`) — a
+  maintenance-facility map symbol (`LandInstallationEntity.MAINTENANCE_FACILITY`), visually distinct
+  from an armor group. `sidc_status` is pinned **`PRESENT`** — an empty depot is its normal resting
+  state (vehicles populate ephemerally at mission-gen), never rendered damaged/destroyed; `is_dead` is
+  left intact so AI target-selection/capture/IADS logic is unaffected. `capturable`/`purchasable`/
+  `should_head_to_conflict` are all `False`; `mission_types` offers **BAI** to the opponent.
+- **Placement** — gated on an authored `Fortification.Garage_A` static (`MizCampaignLoader.motorpools`
+  → `PresetLocations.motorpools`), materialised by `start_generator.generate_motorpools` (new games)
+  and injected on load by `migrator._ensure_motorpool_tgos` (existing saves). **No fork campaign
+  authors a `Garage_A` yet, so this is inert on every current campaign** — it changes nothing until a
+  depot is placed.
+- **Population** — `MotorpoolPopulator` (`game/missiongenerator/motorpoolpopulator.py`), run once per
+  mission-gen before the TGO generator, rebuilds each motorpool's vehicle groups from the CP's current
+  reserve slice. `ai_ground_planner.reserve_armor_for` computes the reserve as *exactly*
+  `base.armor − deployable_armor` (a `plan_groundwar`-faithful duplicate — deliberately not refactored
+  to share, since `plan_groundwar` has no tests on this base), capped by `motorpool_spawn_cap`
+  (largest-remainder proportional trim). Multiple motorpools on one CP round-robin the **single** shared
+  reserve pool (never each render it in full, which would double-decrement `base.armor` on a strike). The
+  populated groups are **ephemeral** — never persisted; rebuilt every mission.
+- **Rendering** — `MotorpoolGenerator` (`game/missiongenerator/motorpoolgenerator.py`, a
+  `GroundObjectGenerator` subclass) lays the vehicles in a grid (so DCS doesn't drop overlapping spawns),
+  **weapon-hold + alarm-green + `player_can_drive=False` + no EPLRS** (parked, unmanned, no datalink),
+  plus an inert `Garage_A` depot static offset clear of the grid. Vehicles register into
+  `UnitMap.motorpool_units` (a distinct registry), **not** as theater objects — so a theater-object
+  death never touches `base.armor`.
+
+### 1:1 grind, no economy, no front shift
+
+A killed reserve vehicle is a **distinct loss category** end-to-end: `Debriefing.dead_ground_units`
+buckets it into `player_/enemy_motorpool` (via `unit_map.motorpool_unit`), and
+`missionresultsprocessor.commit_motorpool_losses` decrements `base.armor[unit_type]` by one. Because it
+is *not* a front-line loss, it feeds neither `casualty_count` nor `commit_front_line_battle_impact` —
+**a depot strike forces a repurchase next turn but never moves the front line**. Losses surface on the
+debrief (the "Motorpool units lost" faction row + per-type "`<type>` from motorpool" rows).
+
+### Settings & fork interactions
+
+- Gated `motorpool_enabled` (**Campaign Management → Campaign features**, default **ON**) +
+  `motorpool_spawn_cap` (default 10, 0–50 — a perf lever). Both registered in the §28 `FIELD_LAYOUT`.
+- **§3 recon fog** leaves a motorpool an **exact** marker — category `motorpool` isn't in the
+  concealable set (`game/server/tgos/models.py` conceals only armor/missile/concealable-SAM), so the
+  depot reads like an ammo depot/building, not a dashed "suspected activity" circle. Sensible: you see
+  the depot and strike it.
+- **Not supported in Pretense** (no loss reconciliation there) — the fork has no Pretense, so this is
+  moot here; the upstream skip hunk was dropped.
+
+### Fork-adaptation notes (vs the upstream PR)
+
+Two fork-only changes on top of the verbatim cherry-picks: the two new settings were registered in the
+fork's `FIELD_LAYOUT` (§28 requires every user setting listed exactly once), and the loss-separation
+test's fake front-line group gained a `.name` (the fork's `add_front_line_units` also records the group
+by name for TIC clones, §9). All conflicts were keep-both adjacent insertions (settings block, unitmap
+registries, `ai_ground_planner` helpers, the two save-compat tombstones + `MotorpoolGroundObject`,
+`test_debriefing`).
+
+Tests: the PR's suite (`tests/**/test_motorpool_*.py`, `tests/ground_forces/test_reserve_armor.py`,
+`tests/campaignloader/test_motorpool_recognition.py`) rides along. **In-game pass** = checklist B8 —
+needs a campaign with an authored `Garage_A` depot to exercise the map icon, in-mission depot +
+parked vehicles, the strike→decrement→repurchase grind, the no-front-shift guarantee, and the debrief
+rows.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

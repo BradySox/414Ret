@@ -269,6 +269,49 @@ class RestrictedZoneJs(BaseModel):
         )
 
 
+class SupplyNodeJs(BaseModel):
+    """§53 P4b: one BLUE (player) control point on the supply-flow overlay.
+
+    Either a *front* consumer -- coloured by its materiel readiness -- or a
+    *producer* source (factory/oil). Emitted only when ``war_economy`` is on; empty
+    otherwise, which hides the layer (the restricted-zones pattern). BLUE-only:
+    enemy logistics stay fogged.
+    """
+
+    name: str
+    position: LeafletPoint
+    #: Materiel readiness in ``[0, 1]`` (``supply_factor``). ``1.0`` for a producer or
+    #: a quiet CP with no front to starve.
+    supply: float
+    #: Supply produced per turn here (``0`` for a pure consumer).
+    production: float
+    #: True when this CP has an active front consuming supply.
+    is_front: bool
+
+    @staticmethod
+    def all_in_game(game: Game) -> list[SupplyNodeJs]:
+        if not game.settings.war_economy:
+            return []
+        from game.fourteenth.war_economy import production_rate, supply_factor
+
+        nodes: list[SupplyNodeJs] = []
+        for cp in game.theater.control_points_for(game.blue.player):
+            prod = production_rate(cp)
+            is_front = cp.has_active_frontline
+            if prod <= 0.0 and not is_front:
+                continue
+            nodes.append(
+                SupplyNodeJs(
+                    name=cp.name,
+                    position=cp.position.latlng(),
+                    supply=supply_factor(cp),
+                    production=prod,
+                    is_front=is_front,
+                )
+            )
+        return nodes
+
+
 class GameJs(BaseModel):
     control_points: list[ControlPointJs]
     tgos: list[TgoJs]
@@ -296,6 +339,9 @@ class GameJs(BaseModel):
     # Active free-fire (weapons-free) pockets -- inverted ROE (COIN); empty unless a
     # phase authors free_fire_zones. Drawn green, vs the red restricted zones.
     free_fire_zones: list[RestrictedZoneJs]
+    # War-economy supply-flow overlay (§53 P4b): BLUE fronts + producers with their
+    # materiel readiness. Empty unless war_economy is on, which hides the layer.
+    supply_nodes: list[SupplyNodeJs]
 
     class Config:
         title = "Game"
@@ -308,6 +354,7 @@ class GameJs(BaseModel):
             campaign_status=CampaignStatusJs.from_game(game),
             restricted_zones=RestrictedZoneJs.all_in_game(game),
             free_fire_zones=RestrictedZoneJs.free_fire_in_game(game),
+            supply_nodes=SupplyNodeJs.all_in_game(game),
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             supply_routes=SupplyRouteJs.all_in_game(game),

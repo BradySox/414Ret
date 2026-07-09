@@ -76,6 +76,17 @@ and selected later upstream fixes.
   your kneeboard SITREP reports the enemy's command status so you can see the strike land. Opt-in
   (Air Doctrine → "Command-center kills degrade enemy planning"); a campaign with no command posts
   is unaffected.
+- **Bomb the enemy's fuel, factories, and supply lines and watch their war effort wither.** With the
+  **War economy** on (Campaign Management), each base runs a real materiel supply chain — factories
+  produce it, it flows over the roads to the front, and it's spent holding the line. Interdict it —
+  strike the factories, cut the routes — and a starved enemy front stops recovering, fields fewer units,
+  and gives ground, with the kneeboard SITREP showing you why. Bomb an airfield's **fuel depots** and it
+  flies fewer sorties next turn. And with **Munitions availability** on (Mission Generation → Loadouts),
+  airfields hold a stock of the scarce precision munitions — run a field dry of JDAMs (or knock out its
+  ammo dumps) and its jets fall back to dumb bombs, greyed out in the loadout screen. A **Supply status**
+  map layer colours each of your fronts by how well-supplied it is (with the producers feeding it), and
+  each base card reads out its front supply and munitions on hand. All symmetric — protect your own
+  supply too — and off by default.
 - **The enemy commander plays with intent.** With **Red Intent** on (Air Doctrine), the AI reads the
   war each turn — the ground balance, its air strength, how the last turn went — and adopts a
   *posture* that carries across turns instead of planning the same way every time: it **surges** when
@@ -89,8 +100,9 @@ and selected later upstream fixes.
   armor reserve now shows up as a **strikeable depot** on the map — hit the parked vehicles at the
   motor pool and the owner has to repurchase them next turn, so you can attrit the reserve directly
   instead of only meeting it at the front line. Depot strikes don't move the front (they're tracked
-  separately from front-line casualties), and the parked reserves hold fire. On by default, but only
-  appears on campaigns that place a motor-pool depot. *(Adopted from upstream Retribution PR #859.)*
+  separately from front-line casualties), and the parked reserves hold fire. On by default; **Germany —
+  Red Tide** stages one at Haina by the Fulda Gap (its parked tanks fill in as the Soviets buy armor),
+  and any campaign can place its own. *(Adopted from upstream Retribution PR #859.)*
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as
@@ -187,6 +199,11 @@ and selected later upstream fixes.
   carry internally gets extra drop tanks added to its **empty** stations at mission start (so a
   Hornet strike flies out with its third bag). It never swaps out a targeting pod, ECM, or
   ordnance to do it, and it does nothing on short-range routes or to loadouts you've customized.
+- **The planner frags a pre- or post-strike tanker when a sortie can't make it home.** If the
+  route burns more than the jet can carry, it's sent to a tanker on the way in (or out) instead
+  of launching short — and this now works for mod jets that ship no measured fuel data (e.g. the
+  F-4E), which used to fly the whole leg untanked while the kneeboard warned "short of getting
+  home." No tanker in the campaign? Then the RTB-margin warning stands and you plan a divert.
 - An optional **auto-planner unpredictability** doctrine knob (per side, off by default)
   varies which offensive targets the enemy services first, so red stops striking the same
   targets in the same order every turn. Its reactive air defenses stay just as sharp.

@@ -20,6 +20,7 @@ import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
 import RestrictedZonesLayer from "../restrictedzones";
+import SupplyLayer from "../supply";
 import SupplyRoutesLayer from "../supplyrouteslayer";
 import {
   ExclusionZonesLayer,
@@ -42,6 +43,7 @@ type LayerId =
   | "aircraft"
   | "combat"
   | "supplyRoutes"
+  | "supply"
   | "frontLines"
   | "factories"
   | "ships"
@@ -98,6 +100,9 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   aircraft: { label: "Aircraft", node: <AircraftLayer /> },
   combat: { label: "Active combat", node: <CombatLayer /> },
   supplyRoutes: { label: "Supply routes", node: <SupplyRoutesLayer /> },
+  // War-economy supply-flow overlay (§53 P4b). Empty unless war_economy is on, so
+  // the layer is a no-op everywhere else even while toggled on.
+  supply: { label: "Supply status", node: <SupplyLayer /> },
   frontLines: { label: "Front lines", node: <FrontLinesLayer /> },
   factories: { label: "Factories", node: <TgosLayer categories={["factory"]} /> },
   ships: { label: "Ships", node: <TgosLayer categories={["ship"]} /> },
@@ -209,6 +214,7 @@ const GROUPS: GroupDef[] = [
       { id: "aircraft" },
       { id: "combat" },
       { id: "supplyRoutes" },
+      { id: "supply" },
       { id: "frontLines" },
       { id: "factories" },
       { id: "ships" },
@@ -293,6 +299,7 @@ const DEFAULT_ON: LayerId[] = [
   "ships",
   "otherGround",
   "supplyRoutes",
+  "supply",
   "frontLines",
   "enemySamThreat",
   "emitterHighlight",

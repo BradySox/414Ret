@@ -1089,6 +1089,42 @@ time, push time with/without a pre-vul stop, tanker window post-vul-only vs earl
 in-game sanity pass only in the sense that AI tanking pace varies; the schedule now budgets the
 same time the tanker always reserved.
 
+### Tanker tasking falls back to the fuel estimate (2026-07-08)
+
+**Symptom (player report, F-4E-45MC kneeboard).** An F-4E OCA/Runway strike on Hamburg was
+fragged with **no tanker** and a kneeboard RTB margin of **−4259 lb** ("short of getting home as
+planned; tank or divert"). The theater could crew a tanker; the planner just never considered
+one for this sortie.
+
+**Root cause — the deficit and the tanker decision read different fuel sources.** The
+kneeboard fuel ladder / RTB margin (§46, `waypointgenerator._estimate_planned_fuel_for`) falls
+back to `AircraftType.estimated_fuel_consumption` when an airframe ships no hand-measured `fuel:`
+block, so it *computes and prints* the deficit. But `FormationAttackBuilder._refuel_tasking`
+(`game/ato/flightplans/formationattack.py`) read **only** the measured `unit_type.fuel_consumption`
+and returned `RefuelTasking.NONE` the moment it was absent — so the whole strike family
+(OCA/Runway, OCA/Aircraft, Strike, BAI, DEAD, SEAD/SEAD Sweep, Anti-ship, Armed Recon, Escort,
+TARPS, Air Assault) never fragged a pre- or post-vul tanker for a no-`fuel:`-block airframe,
+however long the leg. The `F-4E-45MC.yaml` (a Heatblur mod jet) has no `fuel:` block, so its
+tanker decision was permanently blind while its ladder screamed.
+
+**Fix — one source for both.** `_refuel_tasking` now reads
+`fuel_consumption or estimated_fuel_consumption`, mirroring the ladder/bingo fallback: if we
+trust the estimate enough to warn the player "you won't make it home," we trust it enough to
+frag the tanker the theater can already crew. Deliberately narrow — `fuel_consumption` itself is
+unchanged, so the in-flight fuel sim keeps using measured data only (no new blast radius, per
+the `estimated_fuel_consumption` docstring's contract). The decision stays gated by
+`can_auto_plan(FlightType.REFUELING)`, so it is a no-op when the campaign fields no tanker
+(the −N lb margin is then a genuine "divert" situation), and helos / airframes with no fuel
+capacity at all are still skipped. Short hops are unaffected — the estimate over a short route
+resolves to `NONE`, exactly as measured data would. A hand-measured `fuel:` block for the
+F-4E-45MC (needs in-game measurement) would give tighter numbers still, but is a separate
+follow-up; this closes the *inconsistency* for every mod airframe at once.
+
+Tests: `tests/ato/flightplans/test_refuel_tasking_estimate_fallback.py` (no-measured-fuel tanks
+from the estimate; measured data still wins; no tanker squadron / helo / no-fuel-data stay
+hands-off). Shares the pure decision coverage in `tests/ato/test_refuel_tasking.py`. Needs an
+in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negative RTB margin).
+
 ### CAS decoupled from the ground-stance decision (2026-06-28)
 
 **Symptom (headless adjudication of a Caucasus Vietnam save).** A side **winning** the ground war
@@ -4494,6 +4530,101 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 
 ---
 
+## §53 — War economy
+
+**A per-base materiel supply economy on top of the money budget** (design note
+`docs/dev/design/414th-war-economy-notes.md`). Closes the standing gap that nothing you bomb
+traceably changes what the enemy can field: `game/fourteenth/war_economy.py` runs a
+produce → transport → consume → **bite** loop from `Game.finish_turn`, gated `war_economy`
+(default OFF; Red Tide preseeds).
+
+**The loop.** `Base.supply` is a per-base stockpile (seeded to capacity once via
+`war_economy_seeded`, `__setstate__`-defaulted). Each turn `advance_war_economy`: producers
+(factory/oil/derrick) accrue `production_rate`; every active-front CP consumes a turn's
+`frontline_demand` and refills from its connected producers over the transit graph
+(`_external_supply_sources` via `ControlPoint.transitive_connected_friendly_destinations`),
+neediest first — a front cut off from production can't refill and drains (the interdiction loop).
+`stockpile_capacity` scales with production so a rear factory can hold what it ships.
+
+**The bite (P2).** One `supply_effectiveness(cp) → [_BITE_FLOOR=0.5, 1.0]` multiplier (1.0 when off
+or before the first seed, so turn-1 combat is never penalised) is applied at three sites: the `+0.2`
+per-turn strength recovery (`game.py`, BLUE — only `player_points()` recover), the deployable-unit
+cap (`ControlPoint.front_line_capacity_with`), and the ground-combat `delta`
+(`missionresultsprocessor.py`, scaled by the *winner's* supply). A starved side recovers less,
+deploys fewer units, and gains less ground. **The decoupling trap is solved:** `frontline_demand`
+keys off `base.total_frontline_units` (raw force), never the supply-scaled cap, so `supply_factor`
+can drive the cap bite without recursion.
+
+**Fuel → air readiness (P3).** `fuel_readiness(cp)` scales a base's alive fuel-depot fraction into a
+sortie multiplier `[0.5, 1.0]`, applied at the single per-turn chokepoint
+`Squadron.return_all_pilots_and_aircraft` (`untasked_aircraft = int((owned − reserve) ×
+fuel_readiness(location))`). Both the AI planner and the player's flight-creation UI read
+`untasked_aircraft`, so bombing a base's fuel grounds part of its air for both; bases still *own*
+their jets. Own setting `fuel_air_readiness` (default OFF; Red Tide preseeds). Wires the
+previously-dead `active_fuel_depots_count`.
+
+**Legibility (P4a).** The SITREP gains `blue_supply`/`red_supply`, fed from `coalition_supply_health`
+in `record_sitrep`, rendering "Front supply X% -- enemy Y% (claimed)" on the kneeboard cover so the
+player reads *why* a front stalled.
+
+**Map + base-card legibility (P4b, landed 2026-07-08 post-merge).** Two surfaces:
+- **Base card** (`QBaseMenu2.update_intel_summary`): a **Front supply: X%** line (friendly, active-front
+  CPs only), and `generate_intel_tooltip` now spells out the supply multiplier when it is biting so the
+  displayed deployable-limit reconciles with the P2 cap bite (`int(base × supply_effectiveness)`).
+- **Map overlay** (`SupplyLayer`, wired into the §19 layers panel as "Supply status", default ON):
+  `SupplyNodeJs.all_in_game` emits each BLUE front (coloured green→amber→red by `supply_factor`) + each
+  producer (a blue dashed source ring), fed through `supplySlice`. Empty (layer hidden) unless
+  `war_economy` is on; BLUE-only so enemy logistics stay fogged. `tests/server/test_supply_nodes.py`
+  guards the off→empty / fronts+producers-only / enemy-excluded selection contract.
+
+**Interface for §55.** `coalition_supply_health(game, coalition)` + `supply_factor(cp)` are
+module-level pure reads; §55 red intent consumes the former (a starved red consolidates).
+
+Symmetric; OFF is a proven exact no-op (regression across the combat/controlpoint/frontline/
+ground-planner suites). Tests `tests/fourteenth/test_war_economy.py`. Landed via #531 (merged
+2026-07-08, alongside §55). **Needs an in-game pass:** the multi-turn FLOT response + fuel grounding.
+
+---
+
+## §54 — Munitions availability
+
+**The air axis of the war economy (§53): an airfield out of a scarce munition can't load it.**
+
+**Taxonomy (M0).** A curated, hand-audited `_SCARCE_MUNITIONS` map in `game/data/weapons.py` — 5
+families (`a2a_medium` / `arm` / `pgm_bomb` / `standoff` / `guided_asm`), keyed by exact
+`WeaponGroup.name` (every rack variant listed) — drives the `WeaponGroup.scarce_family` property.
+Explicit-and-central by design so the tracked set is exactly what was signed off; a guard test
+(`tests/fourteenth/test_scarce_munitions.py`) fails CI if any mapped name stops resolving to a real
+weapon group (the §46 dead-CLSID lesson). Only munitions worth running out of are tracked;
+everything else is infinite.
+
+**Stock + debit (M1).** Each base holds `Base.munitions` (family → loads, `__setstate__` `{}`).
+`advance_munitions` (from `finish_turn`, gated `restrict_weapons_by_stock`): seeds each base to
+`MUNITIONS_CAPACITY`, **debits what the ATO loaded** — iterate `coalition.ato.packages → flights`,
+sum `weapon.weapon_group.scarce_family` per flight, decrement `flight.departure.base` — then
+**rearms** toward capacity scaled by `supply_effectiveness` (a supply-cut base can't fully re-arm).
+The debit is a **once-per-turn turn-boundary step, not a per-generation debit**, so mission
+re-generation never double-counts.
+
+**The gate (M2).** `Loadout.degrade_for_stock(munitions, …)` in `setup_payload` swaps a scarce store
+the base is out of down to the first stocked/non-scarce fallback in `weapon.fallbacks`
+(`_stocked_fallback_for` — JDAM → dumb bomb) or clears the pylon; gated on the setting **and**
+`munitions_seeded` (pre-seed turns aren't falsely starved). This is the authoritative enforcement.
+The payload editor (`QPylonEditor`) additionally greys out + labels "(out of stock)" the depleted
+scarce stores as guidance (the current selection stays selectable).
+
+**Base-card readout (M3, landed 2026-07-08 post-merge).** `QBaseMenu2.update_intel_summary` adds a
+**Munitions** section listing each family's `N/24` stock (with a "(low)" tag at zero), labelled from
+the shared `SCARCE_FAMILY_LABELS` map (`game/data/weapons.py`, a test guards label↔family coverage),
+friendly bases only. Gated on `restrict_weapons_by_stock`.
+
+Gated `restrict_weapons_by_stock` (Mission Generation → Loadouts, default OFF); OFF is an exact
+no-op. Tests `tests/fourteenth/test_munitions_gate.py` (against the real F/A-18C) +
+`test_scarce_munitions.py` + `test_war_economy.py`. Landed via #531 (merged 2026-07-08). **Needs an
+in-app pass:** the loadout grey-out.
+
+---
+
 ## §55 — Red Intent — adaptive enemy posture
 
 **The "thinking red opponent."** Stock Retribution runs the *same* HTN commander for both sides,
@@ -4619,9 +4750,13 @@ directly.
   `should_head_to_conflict` are all `False`; `mission_types` offers **BAI** to the opponent.
 - **Placement** — gated on an authored `Fortification.Garage_A` static (`MizCampaignLoader.motorpools`
   → `PresetLocations.motorpools`), materialised by `start_generator.generate_motorpools` (new games)
-  and injected on load by `migrator._ensure_motorpool_tgos` (existing saves). **No fork campaign
-  authors a `Garage_A` yet, so this is inert on every current campaign** — it changes nothing until a
-  depot is placed.
+  and injected on load by `migrator._ensure_motorpool_tgos` (existing saves). **Red Tide authors one**
+  (2026-07-08) — a `Garage_A` ~4 km NE of **Haina**, the forward Soviet base at the Fulda Gap, so the
+  feature is exercised on the fork's flagship armor campaign ("bomb the motor pool before its armor
+  reaches the front"). Headless-verified through the real `GameGenerator` pipeline: the static binds to
+  Haina (RED) and materialises exactly one `MotorpoolGroundObject` (CI-locked in
+  `tests/fourteenth/test_red_tide_motorpool.py`). Every other campaign is **inert until it places a
+  `Garage_A`** — it changes nothing until a depot is authored.
 - **Population** — `MotorpoolPopulator` (`game/missiongenerator/motorpoolpopulator.py`), run once per
   mission-gen before the TGO generator, rebuilds each motorpool's vehicle groups from the CP's current
   reserve slice. `ai_ground_planner.reserve_armor_for` computes the reserve as *exactly*
@@ -4667,10 +4802,12 @@ registries, `ai_ground_planner` helpers, the two save-compat tombstones + `Motor
 `test_debriefing`).
 
 Tests: the PR's suite (`tests/**/test_motorpool_*.py`, `tests/ground_forces/test_reserve_armor.py`,
-`tests/campaignloader/test_motorpool_recognition.py`) rides along. **In-game pass** = checklist B8 —
-needs a campaign with an authored `Garage_A` depot to exercise the map icon, in-mission depot +
-parked vehicles, the strike→decrement→repurchase grind, the no-front-shift guarantee, and the debrief
-rows.
+`tests/campaignloader/test_motorpool_recognition.py`) rides along, plus
+`tests/fourteenth/test_red_tide_motorpool.py` locking the authored Haina depot. **In-game pass** =
+checklist B8 — fly **Red Tide** (the depot renders at Haina immediately; its parked vehicles appear
+once red has procured armor, a couple of turns in, since `base.armor` is empty at turn 0 by design)
+to exercise the map icon, in-mission depot + parked vehicles, the strike→decrement→repurchase grind,
+the no-front-shift guarantee, and the debrief rows.
 
 ---
 

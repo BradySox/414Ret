@@ -416,6 +416,16 @@ _SCARCE_FAMILY_BY_NAME: dict[str, str] = {
 #: stock). Declaration order.
 SCARCE_FAMILIES: tuple[str, ...] = tuple(_SCARCE_MUNITIONS.keys())
 
+#: Human-readable family labels for the §54 M3 base-card stock readout. Every key in
+#: :data:`SCARCE_FAMILIES` must have a label (guarded by test_scarce_munitions).
+SCARCE_FAMILY_LABELS: dict[str, str] = {
+    "a2a_medium": "A2A (radar)",
+    "arm": "Anti-radiation",
+    "pgm_bomb": "PGM bombs",
+    "standoff": "Standoff / cruise",
+    "guided_asm": "Guided air-to-surface",
+}
+
 
 @dataclass(frozen=True)
 class WeaponGroup:

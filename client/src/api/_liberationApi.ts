@@ -626,6 +626,9 @@ export type CampaignStatus = {
   phase_narrative?: string | null;
   red_posture?: string | null;
   red_posture_detail?: string | null;
+  blue_supply?: number | null;
+  red_supply?: number | null;
+  red_c2?: string | null;
   blue_will?: number | null;
   red_will?: number | null;
   blue_will_label?: string | null;

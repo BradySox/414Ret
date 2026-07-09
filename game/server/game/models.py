@@ -96,6 +96,15 @@ class CampaignStatusJs(BaseModel):
     #: off, so the client hides the chip -- same rule as the phase fields.
     red_posture: str | None
     red_posture_detail: str | None
+    #: §53 war economy: front supply health per side, 0-100 (blue = your logistics,
+    #: red = the enemy's -- bomb it and a starved red digs in, §55). None when
+    #: war_economy is off; the client hides the chips.
+    blue_supply: float | None
+    red_supply: float | None
+    #: §52: the enemy command-network status ("1/3 command posts operational") when it
+    #: is degraded and c2_decapitation_effects is on -- the ribbon twin of the SITREP
+    #: line. None hides the chip.
+    red_c2: str | None
     blue_will: float | None
     red_will: float | None
     #: The campaign's authored will framing (the will-profile labels; Vietnam
@@ -126,6 +135,22 @@ class CampaignStatusJs(BaseModel):
             if posture is not None
             else None
         )
+        blue_supply: float | None = None
+        red_supply: float | None = None
+        if getattr(game.settings, "war_economy", False):
+            try:
+                from game.fourteenth.war_economy import coalition_supply_health
+
+                blue_supply = coalition_supply_health(game, game.blue) * 100
+                red_supply = coalition_supply_health(game, game.red) * 100
+            except Exception:
+                blue_supply = red_supply = None
+        red_c2: str | None = None
+        if getattr(game.settings, "c2_decapitation_effects", False):
+            from game.fourteenth.c2_decapitation import c2_status_line
+            from game.theater.player import Player
+
+            red_c2 = c2_status_line(game, Player.RED)
         blue_will: float | None = None
         red_will: float | None = None
         blue_will_label: str | None = None
@@ -171,6 +196,9 @@ class CampaignStatusJs(BaseModel):
             phase_narrative=phase.narrative if phase is not None else None,
             red_posture=red_posture,
             red_posture_detail=red_posture_detail,
+            blue_supply=blue_supply,
+            red_supply=red_supply,
+            red_c2=red_c2,
             blue_will=blue_will,
             red_will=red_will,
             blue_will_label=blue_will_label,

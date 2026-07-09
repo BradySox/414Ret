@@ -41,6 +41,15 @@ function WillSparkline(props: { history: [number, number, number][] }) {
   );
 }
 
+// Supply chips colour by level, not side: low (red) / mid (amber) / ok (teal). The
+// thresholds track red intent's STARVED (35) and SURGE_MIN (50), so a low red-supply
+// chip visibly explains a consolidating enemy.
+function supplyLevel(pct: number): string {
+  if (pct < 35) return "supply-low";
+  if (pct < 50) return "supply-mid";
+  return "supply-ok";
+}
+
 export default function CampaignStatusBar() {
   const status = useAppSelector(selectCampaignStatus);
   const [expanded, setExpanded] = useState(false);
@@ -102,6 +111,30 @@ export default function CampaignStatusBar() {
             }
           >
             ENEMY {status.red_posture}
+          </span>
+        )}
+        {status.blue_supply != null && (
+          <span
+            className={"campaign-status-supply " + supplyLevel(status.blue_supply)}
+            title="Your front supply (materiel) — a starved front recovers and deploys less"
+          >
+            SUPPLY {Math.round(status.blue_supply)}%
+          </span>
+        )}
+        {status.red_supply != null && (
+          <span
+            className={"campaign-status-supply " + supplyLevel(status.red_supply)}
+            title="The enemy's front supply — bomb it and a starved enemy digs in (consolidates)"
+          >
+            ENEMY SUPPLY {Math.round(status.red_supply)}%
+          </span>
+        )}
+        {status.red_c2 != null && (
+          <span
+            className="campaign-status-c2"
+            title="Enemy command-network status (claimed) — bombing HQs makes its planning sloppier"
+          >
+            C2 {status.red_c2}
           </span>
         )}
         {status.blue_will != null && (

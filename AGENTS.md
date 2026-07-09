@@ -684,7 +684,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     divert stays as-is, or it fails and the divert is deleted — no third rework). **Enemy-capture race**
     (`combatsar` plugin): on ejection an enemy snatch party (several small dispersed teams, spawned
     under the opposing faction's country) may race to seize the survivor — kill it
-    to save, or the pilot is **CAPTURED** (`combat_sar_captures` state global) and held as a **POW**
+    to save, or the pilot is **CAPTURED** (`combat_sar_captures` state global) and held as a **POW**.
+    **Hardened 2026-07-09** (diagnosed from a user hang): the snatch party is REAL infantry on
+    DCS's single scripting/sim thread, so `capturePartySize`/`captureTeams` are **hard-clamped at
+    load** (≤ 12 infantry / ≤ 4 teams) — a saved 40/4 override had spawned 80 soldiers across two
+    ejections on a heavy Red Tide map and hung the sim (log stopped mid-`GetVec3` flood, no crash
+    dump) — and the survivor ledger now **drops dead references** (`advanceCapture` prunes killed
+    teams + reads via a first-alive-unit helper; `tick` reaps a ground-killed pilot via the
+    designed-but-unused `dead` state) to kill the MOOSE dead-object poll flood. Test
+    `tests/lua/test_combatsar_capture_cap.py`; no save/`.miz`/New-Game requirement. A capture holds the pilot as a **POW**
     (`PendingPowRecovery`, holding field resolved at capture). **POW mechanics reworked 2026-07-06**
     (design note `414th-csar-notes.md` "POW mechanics rework"): a capture flips the aviator to the new
     **`PilotStatus.POW`** (`pilot.capture()`) so the squadron stops scheduling them while captive (they

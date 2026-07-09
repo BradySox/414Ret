@@ -69,6 +69,13 @@ GUARD_MHZ = (243.0, 121.5)
 #: burst anyway; this bounds the Lua config for a huge ATO.
 MAX_JAMMED_FREQUENCIES = 10
 
+#: Comm-ladder label for the guaranteed-un-jammed fallback channel. The single
+#: source of truth shared by the producer (``missiongenerator.add_comm``) and the
+#: kneeboard consumers (the Mission Info BLUF line + the Support Info filter that
+#: keeps this channel out of the package table), so the label can't drift between
+#: them and silently resurrect the phantom-flight row.
+JAM_BACKUP_COMM_NAME = "JAM BACKUP"
+
 #: How many turns a captured comms plan stays exploitable. A POW held past this
 #: no longer compromises the net from mission start -- the squadron has rotated
 #: its comms plan (the "rotate compromised channels" lesson made literal), even

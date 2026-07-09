@@ -1435,7 +1435,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `MissionData.comms_jam`, computed before the Lua pass): a positive-list of targets — intra-flight channels
     (human-crewed first) + blue AWACS, GUARD defensively filtered, capped at 10 — **never ATC/ATIS/tankers by
     construction**, plus a freshly-allocated **JAM BACKUP** UHF channel (unjammable because nothing else uses
-    it) printed on the kneeboard comms ladder and echoed in the first-burst cue. The `commsjam` plugin steps on
+    it) printed on the kneeboard **Mission Info BLUF** — next to the `PUSH / SUCCESS / ABORT` code words
+    (comms-plan data), moved off the Support Info comms ladder where the table borrowed the viewing flight's
+    Type/#A/C columns and it read as a phantom 4-ship (the shared `JAM_BACKUP_COMM_NAME` constant keeps the
+    `add_comm` producer and the BLUF-line + Support-filter consumers from drifting) — and echoed in the
+    first-burst cue. The `commsjam` plugin steps on
     only ~3 channels per jittered burst cycle (rotating window — switching channels is real comms discipline),
     rotates the transmitting node across alive jammers, and uses the MANTIS `node_dead` positive-evidence
     convention (destroyed static / `dead_events`) so a culled node stays "alive" (unkillable this mission =

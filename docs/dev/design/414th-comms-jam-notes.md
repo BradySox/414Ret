@@ -42,8 +42,13 @@ grief, not gameplay:
   channel the jammer isn't currently on is genuine, dynamic comms discipline.
 - **The JAM BACKUP channel**: one fresh `RadioRegistry.alloc_uhf()` freq (nothing else
   uses it ⇒ it can never be on the jam list; the planner re-rolls past the freak
-  allocator-reuse collision) printed as a `JAM BACKUP` line on the kneeboard comms ladder
-  and echoed in the first-burst cue. Pushing to the backup is a briefed play.
+  allocator-reuse collision) printed as a `JAM BACKUP` line in the kneeboard **Mission Info
+  BLUF**, next to the `PUSH / SUCCESS / ABORT` code words (comms-plan data), and echoed in
+  the first-burst cue. Pushing to the backup is a briefed play. *(It formerly rendered in the
+  Support Info comms ladder, where the table borrowed the viewing flight's Type/#A/C columns
+  and it read as a phantom 4-ship; moved to the BLUF and filtered out of the ladder. The label
+  is the shared `JAM_BACKUP_COMM_NAME` constant so the producer `add_comm` and the two kneeboard
+  consumers — the BLUF line + the Support-ladder filter — can't drift.)*
 - **Startup grace** (240 s): nobody is jammed mid-INS-alignment.
 - **Announced, attributable, counterable**: one first-burst cue names the interference and
   points at enemy C2 ("destroy them to silence it"); comms TGOs are visible map objects,

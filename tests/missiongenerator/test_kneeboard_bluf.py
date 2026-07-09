@@ -6,11 +6,13 @@ from typing import Any
 
 from game.ato.codewords import MissionCodeWords
 from game.ato.flighttype import FlightType
+from game.missiongenerator.commsjamluadata import JAM_BACKUP_COMM_NAME
 from game.missiongenerator.kneeboard import (
     KneeboardGenerator,
     KneeboardPageWriter,
     ThreatCard,
 )
+from game.radio.radios import RadioFrequency
 
 
 def _generator(*, code_words_on: bool) -> KneeboardGenerator:
@@ -77,7 +79,7 @@ def _unknown_card() -> ThreatCard:
 
 def test_bluf_lines_carry_task_push_and_top_threat() -> None:
     gen = _generator(code_words_on=True)
-    task, push, threat = gen._bluf_lines(_flight(), [_live_card()])
+    task, push, _jam, threat = gen._bluf_lines(_flight(), [_live_card()])
 
     assert task is not None and task.startswith("TASK")
     assert "Bunker complex" in task
@@ -95,7 +97,7 @@ def test_bluf_lines_carry_task_push_and_top_threat() -> None:
 
 def test_bluf_push_line_omitted_without_code_words() -> None:
     gen = _generator(code_words_on=False)
-    _task, push, _threat = gen._bluf_lines(_flight(), [_live_card()])
+    _task, push, _jam, _threat = gen._bluf_lines(_flight(), [_live_card()])
     assert push is None
 
 
@@ -103,14 +105,34 @@ def test_bluf_top_threat_is_always_on_independent_of_brief_setting() -> None:
     # The top-threat line comes straight off the cards, so it is present whenever a
     # live, identified system exists -- even with the dedicated brief page disabled.
     gen = _generator(code_words_on=False)
-    _task, _push, threat = gen._bluf_lines(_flight(), [_live_card()])
+    _task, _push, _jam, threat = gen._bluf_lines(_flight(), [_live_card()])
     assert threat is not None
 
 
 def test_bluf_threat_line_none_when_only_unidentified() -> None:
     gen = _generator(code_words_on=False)
-    _task, _push, threat = gen._bluf_lines(_flight(), [_unknown_card()])
+    _task, _push, _jam, threat = gen._bluf_lines(_flight(), [_unknown_card()])
     assert threat is None
+
+
+def test_bluf_jam_backup_line_none_without_a_registered_backup() -> None:
+    # No enemy comms jamming this mission -> no JAM BACKUP comm registered -> the
+    # BLUF carries no jam-backup line (§51).
+    gen = _generator(code_words_on=False)
+    _task, _push, jam, _threat = gen._bluf_lines(_flight(), [_live_card()])
+    assert jam is None
+
+
+def test_bluf_jam_backup_line_present_when_backup_registered() -> None:
+    # §51: when the comms-jam planner allocated a fallback channel it is registered
+    # on the generator's comm ladder; the BLUF surfaces it next to the code words
+    # (moved off the Support Info package table, where it read as a phantom flight).
+    gen = _generator(code_words_on=True)
+    gen.add_comm(JAM_BACKUP_COMM_NAME, RadioFrequency(hertz=280_000_000))
+    _task, _push, jam, _threat = gen._bluf_lines(_flight(), [_live_card()])
+    assert jam is not None
+    assert jam.startswith(JAM_BACKUP_COMM_NAME)
+    assert "280.000 MHz AM" in jam
 
 
 def test_table_wraps_wide_columns_to_fit_the_page_width() -> None:

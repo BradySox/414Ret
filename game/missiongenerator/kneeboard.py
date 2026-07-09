@@ -60,6 +60,7 @@ from game.utils import Distance, UnitSystem, inches_hg, meters, mps, pounds
 from game.weather.weather import Weather
 from .aircraft.flightdata import CombatSarKingBeacon, FlightData
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
+from .commsjamluadata import JAM_BACKUP_COMM_NAME
 from .kneeboard_page import KneeboardPage
 from .kneeboard_recon import airport_imagery as _airport_imagery
 from .kneeboard_recon import generate_recon_pages
@@ -697,6 +698,7 @@ class BriefingPage(KneeboardPage):
         task_line: Optional[str] = None,
         push_line: Optional[str] = None,
         threat_line: Optional[str] = None,
+        jam_backup_line: Optional[str] = None,
         page_title: str = "Mission Info",
     ) -> None:
         self.flight = flight
@@ -716,6 +718,11 @@ class BriefingPage(KneeboardPage):
         self.task_line = task_line
         self.push_line = push_line
         self.threat_line = threat_line
+        # JAM BACKUP fallback channel (§51). Sits in the BLUF next to the code
+        # words (comms-plan data) rather than the Support Info package table,
+        # where it read as a phantom flight. None unless enemy comms jamming
+        # allocated a backup channel this mission.
+        self.jam_backup_line = jam_backup_line
         # De-duplication (design §4): drop the weather block when the recon Departure
         # page already carries it. The Friendly Packages list moved to its own page.
         self.omit_weather = omit_weather
@@ -743,7 +750,14 @@ class BriefingPage(KneeboardPage):
         # open to first (design §4). Kept tight so the flight-plan table still fits
         # on this same page. Each line is optional; bullseye is always present.
         bluf = [
-            line for line in (self.task_line, self.push_line, self.threat_line) if line
+            line
+            for line in (
+                self.task_line,
+                self.push_line,
+                self.jam_backup_line,
+                self.threat_line,
+            )
+            if line
         ]
         bluf.append(f"BULLSEYE {self.bullseye.position.latlng().format_dms()}")
         writer.heading("BLUF")
@@ -3492,7 +3506,14 @@ class KneeboardGenerator(MissionInfoGenerator):
         # the dedicated Threat Intel Brief. Computed unconditionally so the BLUF can
         # warn about the single most lethal system even when the full brief page is off.
         threat_cards, unidentified = build_threat_intel_cards(self.game, flight)
-        task_line, push_line, threat_line = self._bluf_lines(flight, threat_cards)
+        task_line, push_line, jam_backup_line, threat_line = self._bluf_lines(
+            flight, threat_cards
+        )
+
+        # The JAM BACKUP fallback channel now lives in the Mission Info BLUF (above),
+        # so keep it out of the Support Info comms ladder -- there it borrowed the
+        # viewing flight's Type/#A/C columns and read as a phantom flight (§51).
+        support_comms = [c for c in self.comms if c.name != JAM_BACKUP_COMM_NAME]
 
         pages: List[KneeboardPage] = [
             # Brief Sheet (§31): the flight's consolidated, colour-coded one-page
@@ -3517,11 +3538,12 @@ class KneeboardGenerator(MissionInfoGenerator):
                 task_line=task_line,
                 push_line=push_line,
                 threat_line=threat_line,
+                jam_backup_line=jam_backup_line,
             ),
             SupportPage(
                 flight,
                 package_flights,
-                self.comms,
+                support_comms,
                 self.awacs,
                 self.tankers,
                 self.jtacs,
@@ -3604,13 +3626,15 @@ class KneeboardGenerator(MissionInfoGenerator):
 
     def _bluf_lines(
         self, flight: FlightData, threat_cards: List[ThreatCard]
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    ) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         """Compute the BLUF lines for the Mission Info page (priority on page one).
 
-        Returns ``(task_line, push_line, threat_line)``; any may be None. The task
-        line is always present (task, plus target/TOT when applicable); the push line
-        is gated on the code-words feature; the threat line is the single most lethal
-        live, identified system from the already-built threat cards.
+        Returns ``(task_line, push_line, jam_backup_line, threat_line)``; any but the
+        task line may be None. The task line is always present (task, plus target/TOT
+        when applicable); the push line is gated on the code-words feature; the JAM
+        BACKUP line appears only when enemy comms jamming (§51) allocated a fallback
+        channel; the threat line is the single most lethal live, identified system
+        from the already-built threat cards.
         """
         # Task / target / TOT.
         parts = [flight.task_display_name]
@@ -3638,6 +3662,18 @@ class KneeboardGenerator(MissionInfoGenerator):
             bits.append(f"ABORT {code_words.abort}")
             push_line = "   ".join(bits)
 
+        # JAM BACKUP fallback channel (§51). The frequency is already registered on
+        # the generator's comm ladder (missiongenerator.add_comm); surface it in the
+        # BLUF next to the code words instead of the Support Info package table,
+        # where the borrowed Type/#A/C columns made it read as a phantom flight. The
+        # channel is freshly allocated (used by nothing), so it maps to no briefed
+        # channel name -- str(freq) is exactly what the ladder would have shown.
+        jam_backup_line: Optional[str] = None
+        for comm in self.comms:
+            if comm.name == JAM_BACKUP_COMM_NAME:
+                jam_backup_line = f"{JAM_BACKUP_COMM_NAME}  {comm.freq}"
+                break
+
         # Single most lethal live, identified threat (cards are sorted lethal-first).
         threat_line: Optional[str] = None
         for card in threat_cards:
@@ -3648,7 +3684,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                     threat_line += f" — {defeat}"
                 break
 
-        return task_line, push_line, threat_line
+        return task_line, push_line, jam_backup_line, threat_line
 
     def _build_brief_sheet_data(
         self, flight: FlightData, threat_cards: List[ThreatCard]

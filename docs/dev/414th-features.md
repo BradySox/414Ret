@@ -4740,9 +4740,13 @@ directly.
   `should_head_to_conflict` are all `False`; `mission_types` offers **BAI** to the opponent.
 - **Placement** — gated on an authored `Fortification.Garage_A` static (`MizCampaignLoader.motorpools`
   → `PresetLocations.motorpools`), materialised by `start_generator.generate_motorpools` (new games)
-  and injected on load by `migrator._ensure_motorpool_tgos` (existing saves). **No fork campaign
-  authors a `Garage_A` yet, so this is inert on every current campaign** — it changes nothing until a
-  depot is placed.
+  and injected on load by `migrator._ensure_motorpool_tgos` (existing saves). **Red Tide authors one**
+  (2026-07-08) — a `Garage_A` ~4 km NE of **Haina**, the forward Soviet base at the Fulda Gap, so the
+  feature is exercised on the fork's flagship armor campaign ("bomb the motor pool before its armor
+  reaches the front"). Headless-verified through the real `GameGenerator` pipeline: the static binds to
+  Haina (RED) and materialises exactly one `MotorpoolGroundObject` (CI-locked in
+  `tests/fourteenth/test_red_tide_motorpool.py`). Every other campaign is **inert until it places a
+  `Garage_A`** — it changes nothing until a depot is authored.
 - **Population** — `MotorpoolPopulator` (`game/missiongenerator/motorpoolpopulator.py`), run once per
   mission-gen before the TGO generator, rebuilds each motorpool's vehicle groups from the CP's current
   reserve slice. `ai_ground_planner.reserve_armor_for` computes the reserve as *exactly*
@@ -4788,10 +4792,12 @@ registries, `ai_ground_planner` helpers, the two save-compat tombstones + `Motor
 `test_debriefing`).
 
 Tests: the PR's suite (`tests/**/test_motorpool_*.py`, `tests/ground_forces/test_reserve_armor.py`,
-`tests/campaignloader/test_motorpool_recognition.py`) rides along. **In-game pass** = checklist B8 —
-needs a campaign with an authored `Garage_A` depot to exercise the map icon, in-mission depot +
-parked vehicles, the strike→decrement→repurchase grind, the no-front-shift guarantee, and the debrief
-rows.
+`tests/campaignloader/test_motorpool_recognition.py`) rides along, plus
+`tests/fourteenth/test_red_tide_motorpool.py` locking the authored Haina depot. **In-game pass** =
+checklist B8 — fly **Red Tide** (the depot renders at Haina immediately; its parked vehicles appear
+once red has procured armor, a couple of turns in, since `base.armor` is empty at turn 0 by design)
+to exercise the map icon, in-mission depot + parked vehicles, the strike→decrement→repurchase grind,
+the no-front-shift guarantee, and the debrief rows.
 
 ---
 

@@ -4529,8 +4529,17 @@ previously-dead `active_fuel_depots_count`.
 
 **Legibility (P4a).** The SITREP gains `blue_supply`/`red_supply`, fed from `coalition_supply_health`
 in `record_sitrep`, rendering "Front supply X% -- enemy Y% (claimed)" on the kneeboard cover so the
-player reads *why* a front stalled. Deferred (P4b): a client map supply-flow overlay + reconciling
-the QBaseMenu2 deployable-limit formula with the P2 cap bite.
+player reads *why* a front stalled.
+
+**Map + base-card legibility (P4b, landed 2026-07-08 post-merge).** Two surfaces:
+- **Base card** (`QBaseMenu2.update_intel_summary`): a **Front supply: X%** line (friendly, active-front
+  CPs only), and `generate_intel_tooltip` now spells out the supply multiplier when it is biting so the
+  displayed deployable-limit reconciles with the P2 cap bite (`int(base × supply_effectiveness)`).
+- **Map overlay** (`SupplyLayer`, wired into the §19 layers panel as "Supply status", default ON):
+  `SupplyNodeJs.all_in_game` emits each BLUE front (coloured green→amber→red by `supply_factor`) + each
+  producer (a blue dashed source ring), fed through `supplySlice`. Empty (layer hidden) unless
+  `war_economy` is on; BLUE-only so enemy logistics stay fogged. `tests/server/test_supply_nodes.py`
+  guards the off→empty / fronts+producers-only / enemy-excluded selection contract.
 
 **Interface for §55.** `coalition_supply_health(game, coalition)` + `supply_factor(cp)` are
 module-level pure reads; §55 red intent consumes the former (a starved red consolidates).
@@ -4566,8 +4575,12 @@ the base is out of down to the first stocked/non-scarce fallback in `weapon.fall
 (`_stocked_fallback_for` — JDAM → dumb bomb) or clears the pylon; gated on the setting **and**
 `munitions_seeded` (pre-seed turns aren't falsely starved). This is the authoritative enforcement.
 The payload editor (`QPylonEditor`) additionally greys out + labels "(out of stock)" the depleted
-scarce stores as guidance (the current selection stays selectable). Deferred (M3): a base-card stock
-readout.
+scarce stores as guidance (the current selection stays selectable).
+
+**Base-card readout (M3, landed 2026-07-08 post-merge).** `QBaseMenu2.update_intel_summary` adds a
+**Munitions** section listing each family's `N/24` stock (with a "(low)" tag at zero), labelled from
+the shared `SCARCE_FAMILY_LABELS` map (`game/data/weapons.py`, a test guards label↔family coverage),
+friendly bases only. Gated on `restrict_weapons_by_stock`.
 
 Gated `restrict_weapons_by_stock` (Mission Generation → Loadouts, default OFF); OFF is an exact
 no-op. Tests `tests/fourteenth/test_munitions_gate.py` (against the real F/A-18C) +

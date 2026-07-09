@@ -634,6 +634,13 @@ export type CampaignStatus = {
   will_history?: [number, number, number][];
   events?: CampaignEvent[];
 };
+export type SupplyNode = {
+  name: string;
+  position: LatLng;
+  supply: number;
+  production: number;
+  is_front: boolean;
+};
 export type Game = {
   control_points: ControlPoint[];
   tgos: Tgo[];
@@ -651,6 +658,7 @@ export type Game = {
   campaign_status?: CampaignStatus | null;
   restricted_zones?: RestrictedZone[];
   free_fire_zones?: RestrictedZone[];
+  supply_nodes?: SupplyNode[];
 };
 export type MapZones = {
   inclusion: LatLng[][][];

@@ -1490,10 +1490,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `coalition_supply_health`/`supply_factor`, consumed read-only by §55 red intent. Symmetric; gated
     `war_economy` + `fuel_air_readiness` (Campaign Management → War economy, both default **OFF**, preseeded
     ON in Red Tide); OFF is a proven exact no-op (regression across the combat/controlpoint/frontline/
-    ground-planner suites). Deferred (P4b): a client map supply-flow overlay + the QBaseMenu2 deployable-
-    limit formula. Landed via #531 (merged 2026-07-08, alongside §55). Tests
-    `tests/fourteenth/test_war_economy.py`; features doc §53 — needs an in-game pass (multi-turn FLOT
-    response + fuel grounding).
+    ground-planner suites). **P4b** (landed 2026-07-08, post-merge polish): the base-card (`QBaseMenu2`)
+    shows a **Front supply %** line + reconciles the deployable-limit tooltip with the supply multiplier,
+    and a client **Supply status** map overlay (`SupplyLayer` + `SupplyNodeJs` on `GameJs`, default-ON in
+    the §19 layers panel) draws each BLUE front coloured by materiel readiness + each producer as a blue
+    source ring — empty (layer hidden) unless `war_economy` is on, BLUE-only so enemy logistics stay
+    fogged. P0–P4a landed via #531 (merged 2026-07-08, alongside §55). Tests
+    `tests/fourteenth/test_war_economy.py` + `tests/server/test_supply_nodes.py`; features doc §53 — needs
+    an in-game pass (multi-turn FLOT response + fuel grounding) + the CI client rebuild for the overlay.
 54. **Munitions availability** — the **air axis** of the war economy (§53): an airfield out of a scarce
     munition can't load it. A curated, **hand-audited** scarce-munitions taxonomy (`_SCARCE_MUNITIONS` in
     `game/data/weapons.py` — 5 families `a2a_medium`/`arm`/`pgm_bomb`/`standoff`/`guided_asm`, keyed by
@@ -1504,10 +1508,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     in `setup_payload` swaps a depleted scarce store down to the first stocked/non-scarce fallback (JDAM →
     dumb bomb) or clears the pylon (authoritative), and the payload editor greys out + labels
     "(out of stock)" the depleted stores (guidance). Gated `restrict_weapons_by_stock` (Mission Generation →
-    Loadouts, default **OFF**); OFF is an exact no-op. Deferred (M3): a base-card stock readout. Landed via
-    #531 (merged 2026-07-08). Tests `tests/fourteenth/test_munitions_gate.py` +
-    `tests/fourteenth/test_scarce_munitions.py` + `tests/fourteenth/test_war_economy.py`; features doc §54 —
-    the loadout grey-out needs an in-app pass.
+    Loadouts, default **OFF**); OFF is an exact no-op. **M3** (landed 2026-07-08, post-merge polish): the
+    base-card (`QBaseMenu2`) shows a per-family **Munitions** stock readout (`N/24`, "(low)" at zero), driven
+    by the shared `SCARCE_FAMILY_LABELS` map, friendly bases only. M0–M2 landed via #531 (merged 2026-07-08).
+    Tests `tests/fourteenth/test_munitions_gate.py` + `tests/fourteenth/test_scarce_munitions.py` +
+    `tests/fourteenth/test_war_economy.py`; features doc §54 — the loadout grey-out + base-card readout need
+    an in-app pass.
 55. **Red Intent — adaptive enemy posture** — the "thinking red opponent": the mirror of the
     BLUE campaign-phases arc (§40) for RED, and unlike the blue arc it carries *memory* across
     turns. Each turn `game/fourteenth/red_intent.py` resolves a RED **posture** —

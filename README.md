@@ -83,8 +83,10 @@ and selected later upstream fixes.
   and gives ground, with the kneeboard SITREP showing you why. Bomb an airfield's **fuel depots** and it
   flies fewer sorties next turn. And with **Munitions availability** on (Mission Generation → Loadouts),
   airfields hold a stock of the scarce precision munitions — run a field dry of JDAMs (or knock out its
-  ammo dumps) and its jets fall back to dumb bombs, greyed out in the loadout screen. All symmetric —
-  protect your own supply too — and off by default.
+  ammo dumps) and its jets fall back to dumb bombs, greyed out in the loadout screen. A **Supply status**
+  map layer colours each of your fronts by how well-supplied it is (with the producers feeding it), and
+  each base card reads out its front supply and munitions on hand. All symmetric — protect your own
+  supply too — and off by default.
 - **The enemy commander plays with intent.** With **Red Intent** on (Air Doctrine), the AI reads the
   war each turn — the ground balance, its air strength, how the last turn went — and adopts a
   *posture* that carries across turns instead of planning the same way every time: it **surges** when

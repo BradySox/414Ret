@@ -162,8 +162,8 @@ deployed frontline unit count so a bigger front needs more supply to stay "full"
   never the supply-scaled cap) so `supply_factor` can feed the cap bite without recursing.
   Gentle by design (floor 0.5, the main tuning lever). Off = exact no-op (488-test regression
   proves it). Needs an in-game pass: does bombing production/cutting routes visibly slow the
-  enemy's front over several turns. *Deferred:* the QBaseMenu2 "deployable limit" formula
-  display doesn't yet show the supply factor (a P4 legibility item).
+  enemy's front over several turns. *(The QBaseMenu2 "deployable limit" tooltip now shows the
+  supply factor — landed in P4b below.)*
 - **P3 — Fuel → air readiness. ✅ LANDED 2026-07-08.** Wires the dead
   `active_fuel_depots_count`: `fuel_readiness(cp)` (in `war_economy.py`, floor 0.5) scales a
   base's alive fuel-depot fraction into a sortie multiplier, applied at the **single per-turn
@@ -180,9 +180,14 @@ deployed frontline unit count so a bigger front needs more supply to stay "full"
   `red_supply`, fed from `coalition_supply_health` in `record_sitrep` when `war_economy` is on,
   rendering "Front supply X% -- enemy Y% (claimed)" on the kneeboard cover (rides along with
   real news like the will band; getattr-guarded for old saves). So the player can read *why* a
-  front stalled. **Deferred (P4b):** the client map supply-flow overlay, the base-card stock
-  readout, and reconciling the QBaseMenu2 "deployable limit" formula with the P2 cap bite — all
-  need the client/Qt surfaces (client rebuild).
+  front stalled. **P4b LANDED 2026-07-08 (post-merge polish):** the base card
+  (`QBaseMenu2.update_intel_summary`) shows a **Front supply: X%** line (friendly, active-front
+  only), and `generate_intel_tooltip` spells out the supply multiplier when it bites so the
+  displayed deployable limit reconciles with the P2 cap; the client **Supply status** overlay
+  (`SupplyNodeJs` on `GameJs` → `supplySlice` → `SupplyLayer`, wired into the §19 layers panel,
+  default ON) draws each BLUE front coloured by `supply_factor` + each producer as a blue source
+  ring, empty (hidden) unless `war_economy` is on, BLUE-only. Guarded by
+  `tests/server/test_supply_nodes.py`; needs the CI client rebuild + an in-app pass.
 
 ### Gating + testbed
 - Setting `war_economy` (Campaign Management), **default OFF**, kill-switch pattern.
@@ -271,8 +276,11 @@ out of** (PGM/GPS bombs, standoff, ARM, long-range A2A). Everything untagged is 
   selectable). Tests `tests/fourteenth/test_munitions_gate.py` (against the real F/A-18C):
   in-stock kept, out-of-stock swapped/dropped, non-scarce untouched, unseeded no-op. The qt
   grey-out needs an in-app pass (not CI-covered).
-- **M3** — legibility: base-card stock readout, *"Kandahar is Winchester on PGMs"* on the
-  kneeboard/SITREP.
+- **M3 — LANDED 2026-07-08 (post-merge polish):** the base card
+  (`QBaseMenu2.update_intel_summary`) shows a **Munitions** section — each family's `N/24` stock
+  with a "(low)" tag at zero — labelled from the shared `SCARCE_FAMILY_LABELS` map (guarded by a
+  label↔family coverage test), friendly bases only, gated on `restrict_weapons_by_stock`. Needs an
+  in-app pass (not CI-covered).
 - Setting `restrict_weapons_by_stock` (mirrors `restrict_weapons_by_date`), default OFF.
 
 ### Gotchas (from the investigation)
@@ -336,7 +344,7 @@ Registry + docs are CI-coupled to real settings, so they land *with the code*, n
   the §46 test style), fuel-tank exemption, custom-loadout behavior.
 
 ## Deferred / open
-- P3 fuel/readiness axis and P4 client overlay are optional follow-ons.
+- P3 fuel/readiness axis LANDED; P4 legibility (SITREP band + base card + client overlay) LANDED.
 - Full weapon-family backfill (the §46 `UNKNOWN` fix) is a superset of M0's curated tags —
   revisit if we want it for its own sake.
 - Whether ammo depots should become a *stockpile* (consumed) rather than the current *cap*

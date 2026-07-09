@@ -17,7 +17,14 @@ from dcs.planes import B_1B
 from game import Game
 from game.ato.flighttype import FlightType
 from game.config import RUNWAY_REPAIR_COST
+from game.data.weapons import SCARCE_FAMILIES, SCARCE_FAMILY_LABELS
 from game.dcs.aircrafttype import AircraftType
+from game.fourteenth.war_economy import (
+    MUNITIONS_CAPACITY,
+    munitions_stock,
+    supply_effectiveness,
+    supply_factor,
+)
 from game.radio.ICLSContainer import ICLSContainer
 from game.radio.RadioFrequencyContainer import RadioFrequencyContainer
 from game.radio.TacanContainer import TacanContainer
@@ -516,7 +523,33 @@ class QBaseMenu2(QDialog):
                 else "No factory"
             ),
         ]
-        self.intel_summary.setText("<br>".join(air_lines + ground_lines + status_lines))
+
+        settings = self.game_model.game.settings
+        friendly = self.cp.is_friendly(self.viewer)
+        # War economy (§53 P4b): a front's supply readiness scales its recovery,
+        # deployable cap, and combat delta -- surface it so the player can read *why*
+        # a front is thin. Friendly + active-front only (enemy logistics stay fogged).
+        if settings.war_economy and friendly and self.cp.has_active_frontline:
+            status_lines.append(
+                f"{i1}Front supply: {supply_factor(self.cp) * 100:.0f}%"
+            )
+
+        # Munitions availability (§54 M3): per-family scarce-store stock, friendly
+        # bases only (an enemy base's magazine is not the player's to see).
+        munitions_lines: list[str] = []
+        if settings.restrict_weapons_by_stock and friendly:
+            munitions_lines.append("<b>Munitions</b>")
+            for family in SCARCE_FAMILIES:
+                stock = munitions_stock(self.cp, family)
+                label = SCARCE_FAMILY_LABELS.get(family, family)
+                low = "&nbsp;<i>(low)</i>" if stock == 0 else ""
+                munitions_lines.append(
+                    f"{i1}{label}: {stock}/{MUNITIONS_CAPACITY}{low}"
+                )
+
+        self.intel_summary.setText(
+            "<br>".join(air_lines + ground_lines + status_lines + munitions_lines)
+        )
 
     def generate_intel_tooltip(self) -> str:
         tooltip = (
@@ -524,6 +557,16 @@ class QBaseMenu2(QDialog):
             f" {AMMO_DEPOT_FRONTLINE_UNIT_CONTRIBUTION} (per connected ammo depot) * {self.cp.total_ammo_depots_count} "
             f"(depots)"
         )
+
+        # War economy (§53 P4b): the cap is scaled by supply readiness, so the
+        # displayed limit is below the depot arithmetic when the front is starved.
+        # Spell out the multiplier so the number reconciles.
+        effectiveness = supply_effectiveness(self.cp)
+        if self.game_model.game.settings.war_economy and effectiveness < 1.0:
+            tooltip += (
+                f", scaled by {effectiveness * 100:.0f}% supply effectiveness "
+                f"(a starved front deploys fewer units -- restore supply to lift it)"
+            )
 
         if self.cp.has_active_frontline:
             unit_overage = max(

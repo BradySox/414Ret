@@ -1089,6 +1089,42 @@ time, push time with/without a pre-vul stop, tanker window post-vul-only vs earl
 in-game sanity pass only in the sense that AI tanking pace varies; the schedule now budgets the
 same time the tanker always reserved.
 
+### Tanker tasking falls back to the fuel estimate (2026-07-08)
+
+**Symptom (player report, F-4E-45MC kneeboard).** An F-4E OCA/Runway strike on Hamburg was
+fragged with **no tanker** and a kneeboard RTB margin of **−4259 lb** ("short of getting home as
+planned; tank or divert"). The theater could crew a tanker; the planner just never considered
+one for this sortie.
+
+**Root cause — the deficit and the tanker decision read different fuel sources.** The
+kneeboard fuel ladder / RTB margin (§46, `waypointgenerator._estimate_planned_fuel_for`) falls
+back to `AircraftType.estimated_fuel_consumption` when an airframe ships no hand-measured `fuel:`
+block, so it *computes and prints* the deficit. But `FormationAttackBuilder._refuel_tasking`
+(`game/ato/flightplans/formationattack.py`) read **only** the measured `unit_type.fuel_consumption`
+and returned `RefuelTasking.NONE` the moment it was absent — so the whole strike family
+(OCA/Runway, OCA/Aircraft, Strike, BAI, DEAD, SEAD/SEAD Sweep, Anti-ship, Armed Recon, Escort,
+TARPS, Air Assault) never fragged a pre- or post-vul tanker for a no-`fuel:`-block airframe,
+however long the leg. The `F-4E-45MC.yaml` (a Heatblur mod jet) has no `fuel:` block, so its
+tanker decision was permanently blind while its ladder screamed.
+
+**Fix — one source for both.** `_refuel_tasking` now reads
+`fuel_consumption or estimated_fuel_consumption`, mirroring the ladder/bingo fallback: if we
+trust the estimate enough to warn the player "you won't make it home," we trust it enough to
+frag the tanker the theater can already crew. Deliberately narrow — `fuel_consumption` itself is
+unchanged, so the in-flight fuel sim keeps using measured data only (no new blast radius, per
+the `estimated_fuel_consumption` docstring's contract). The decision stays gated by
+`can_auto_plan(FlightType.REFUELING)`, so it is a no-op when the campaign fields no tanker
+(the −N lb margin is then a genuine "divert" situation), and helos / airframes with no fuel
+capacity at all are still skipped. Short hops are unaffected — the estimate over a short route
+resolves to `NONE`, exactly as measured data would. A hand-measured `fuel:` block for the
+F-4E-45MC (needs in-game measurement) would give tighter numbers still, but is a separate
+follow-up; this closes the *inconsistency* for every mod airframe at once.
+
+Tests: `tests/ato/flightplans/test_refuel_tasking_estimate_fallback.py` (no-measured-fuel tanks
+from the estimate; measured data still wins; no tanker squadron / helo / no-fuel-data stay
+hands-off). Shares the pure decision coverage in `tests/ato/test_refuel_tasking.py`. Needs an
+in-game pass (the F-4E OCA case now shows a pre/post-strike tanker + a non-negative RTB margin).
+
 ### CAS decoupled from the ground-stance decision (2026-06-28)
 
 **Symptom (headless adjudication of a Caucasus Vietnam save).** A side **winning** the ground war

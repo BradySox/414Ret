@@ -33,9 +33,12 @@ mist = {
         return { x = p.x + (tonumber(r) or 0), y = p.y }
     end,
     goRoute = function(group, path)
-        local wp = path[1]
+        -- Route runs current position -> destination (two waypoints); the destination is the
+        -- LAST point. A destination-only (1-waypoint) route leaves a DCS ground group with no
+        -- leg to drive, so the mover never moves -- assert the count stays 2.
+        local dest = path[#path]
         _coinRoutes[#_coinRoutes + 1] =
-            { group = group:getName(), x = wp.x, y = wp.y, speed = wp.speed }
+            { group = group:getName(), x = dest.x, y = dest.y, speed = dest.speed, points = #path }
         return true
     end,
 }

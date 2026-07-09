@@ -1058,6 +1058,27 @@ def cell_unit_types(game: "Game") -> list[Any]:
     return comp
 
 
+def ambush_unit_types(game: "Game") -> list[Any]:
+    """Fiction kit for a §50 backline convoy ambush: a LIGHT raider team -- an armed
+    gun-truck (technical) plus infantry -- rather than the front-line MBTs a FRONT_LINE
+    force group otherwise spawns. An ambush 25 km behind the line is an infiltration / raid
+    (light trucks, riflemen), never a tank platoon. Degrades to a soft truck/jeep + infantry;
+    empty (keep the generated group) only for a faction with no soft vehicle or infantry at
+    all (a headless/fake game). Cycled by :func:`_retype_units` across the team, so a 4-unit
+    team reads as a pair of gun-trucks and a pair of riflemen."""
+    faction = _red_faction(game)
+    if faction is None:
+        return []
+    vehicle = _technical_type(faction) or _truck_type(faction) or _jeep_type(faction)
+    rifle = _infantry_type(faction)
+    comp: list[Any] = []
+    if vehicle is not None:
+        comp.append(vehicle)
+    if rifle is not None:
+        comp.extend([rifle, rifle])
+    return comp
+
+
 def _garrison_count(cp: "ControlPoint") -> int:
     """BLUE (or the CP owner's) ground-unit strength holding the CP: front-line armor
     plus alive vehicle-TGO units. Neutral CPs have none."""

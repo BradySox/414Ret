@@ -4161,6 +4161,16 @@ same philosophy, different object class).
   `mobilemissiles` plugin, so the SCUD hunt is live there (see the Red Tide design note).
 - **DCS pathing risk.** A site authored in rough terrain may fail to path off-road; worst case the group
   sits (status quo ante). Watch dcs.log for repeated goRoute failures on the pass.
+- **Movement bug fixed 2026-07-09.** The first flown Red Tide test found the launchers **never moved**
+  (Tacview: a single position record for all 6 `Scud_B`) despite `shoot-and-scoot armed` and **no**
+  error. Root cause: `driveTo` built a **1-waypoint** `mist.goRoute` (destination only), and a DCS ground
+  group needs its route to START at its current position or it reads as "already there" and never drives
+  — MIST's own `groupToRandomZone` prepends the lead position (2 WPs). Fixed to a 2-WP route
+  `{ buildWP(lead:getPoint()), buildWP(dest) }`. **The identical `driveTo` in `coin-config.lua` had the
+  same bug** (copy-paste) so every COIN mover was silently affected too (§P4/P8, all "untested"). The
+  fix is strictly more correct (start=current is always valid, so it can't regress a working mover);
+  the harness tests assert `points == 2`. Needs an in-game re-fly (the harness fakes goRoute). See the
+  memory note `dcs-ground-movers-need-2wp-route`.
 - **Deferred:** per-side gating (currently symmetric), and coupling the *fired* missile events to a
   scoot-away reaction (real shoot-THEN-scoot needs an S_EVENT_SHOT hook — v2 if the wander plays well).
 
@@ -4348,6 +4358,16 @@ springs stops scheduling.
 - **Ambush is BLUE-only; ambience is symmetric.** The ambush teams target the player's convoys (red's
   ambient columns are instead the player's Armed Recon/BAI targets — §35 from the other side). A symmetric
   red-convoy ambush (AI escorting its own columns against player-hunts) stays deferred.
+- **Light raiders, capped (2026-07-09).** A flown Red Tide test flagged the ambush as "excessive, and the
+  enemy should be light — trucks, infantry, rockets — not MBTs in our backline." Two fixes: (1) the teams
+  were `GroupTask.FRONT_LINE` **armor** (MBT groups); they now re-type to a **light raider kit**
+  (`coin.ambush_unit_types` — an armed gun-truck + riflemen from the red faction's own roster, price-capped
+  so no real IFV/MBT slips in, with the `CELL_SIDC` infantry map symbol), via the `unit_types` /
+  `sidc_override` path the COIN fiction-kit already uses; a faction with no soft vehicle falls to a supply
+  truck + infantry. (2) The count is bounded — `MAX_AMBUSHES_PER_ROUTE` 6→3 **plus** a theater-wide
+  `MAX_TOTAL_AMBUSHES` (4), so several convoys losing the roll on one turn can never pile a swarm of hidden
+  teams (the 12-team pile-up the test saw) into the backline. Tests in `test_convoy_ambush.py`
+  (cap + light-kit passthrough) + `test_coin_units.py` (the kit composition).
 - **In-game pass: checklist S3 + S5.** The Python force model + emitter + plugin runtime are unit/harness
   tested, but the actual firefight (ambushers engaging the column, the spring feel, whether flying to the
   TIC call and clearing the team saves the convoy) needs a flown pass — plus the ambient layer's read

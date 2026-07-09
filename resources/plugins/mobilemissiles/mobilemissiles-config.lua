@@ -70,8 +70,19 @@ local function driveTo(group, x, y, speedKmph)
             con:setOption(AI.Option.Ground.id.ROE, AI.Option.Ground.val.ROE.WEAPON_HOLD)
         end
     end)
-    local wp = mist.ground.buildWP({ x = x, y = y }, "off road", mist.utils.kmphToMps(speedKmph))
-    return mist.goRoute(group, { wp })
+    -- A DCS ground group needs its route to START at its current position; a route with a
+    -- single destination waypoint reads as "you are already there" and the group never drives
+    -- (the launchers sat still the whole mission until this was found). Mirror MIST's own
+    -- shoot-and-scoot helper mist.groupToRandomZone: current lead position -> destination.
+    local speedMps = mist.utils.kmphToMps(speedKmph)
+    local route = {}
+    local lead = group:getUnit(1)
+    local here = lead and lead:isExist() and lead:getPoint()
+    if here then
+        route[#route + 1] = mist.ground.buildWP(here, "off road", speedMps)
+    end
+    route[#route + 1] = mist.ground.buildWP({ x = x, y = y }, "off road", speedMps)
+    return mist.goRoute(group, route)
 end
 
 -- One site: on a cadence, scoot every alive group to a fresh point around the site's

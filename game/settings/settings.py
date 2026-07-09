@@ -343,6 +343,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "campaign_phases",
                     "continuous_campaign_clock",
                     "long_range_carrier_ops",
+                    "motorpool_enabled",
+                    "motorpool_spawn_cap",
                 ],
             ),
             (

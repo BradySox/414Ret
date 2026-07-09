@@ -45,7 +45,10 @@ def test_unitmap_motorpool_and_front_line_are_distinct_registries() -> None:
 
     unit_map = UnitMap()
     mp_group = SimpleNamespace(units=[SimpleNamespace(name="mp-001")])
-    fl_group = SimpleNamespace(units=[SimpleNamespace(name="fl-001")])
+    # The fork's add_front_line_units also records the group by name (TIC-clone
+    # tracking), so the fake front-line group needs a ``name`` the motorpool
+    # group does not.
+    fl_group = SimpleNamespace(name="fl-grp", units=[SimpleNamespace(name="fl-001")])
 
     unit_map.add_motorpool_units(mp_group, cp, gut)  # type: ignore[arg-type]
     unit_map.add_front_line_units(fl_group, cp, gut)  # type: ignore[arg-type]

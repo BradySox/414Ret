@@ -1521,11 +1521,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`UnitMap.motorpool_units` → `Debriefing` → `missionresultsprocessor.commit_motorpool_losses`), so
     a depot strike forces a repurchase next turn but — unlike a front-line casualty — **never shifts the
     front line**; losses show on the debrief ("Motorpool units lost" + "`<type>` from motorpool"). Gated
-    `motorpool_enabled` (Campaign Management, default **ON**) + `motorpool_spawn_cap`; **inert until a
-    campaign authors a `Garage_A`** (no fork campaign does yet, so existing campaigns are unchanged), and
-    the §3 recon fog leaves it an **exact** depot marker (category `motorpool` isn't concealable). Not
-    supported in Pretense. Tests `tests/**/test_motorpool_*.py` + `tests/ground_forces/test_reserve_armor.py`;
-    features doc §56, checklist B8 — needs an in-game pass (a campaign with an authored depot).
+    `motorpool_enabled` (Campaign Management, default **ON**) + `motorpool_spawn_cap`. **Red Tide authors
+    one** near **Haina** (the forward Soviet base at the Fulda Gap — "bomb the motor pool before its armor
+    reaches the front"; headless-verified: the `Garage_A` binds to Haina/RED and materialises one
+    `MotorpoolGroundObject`, its parked vehicles filling as red procures armor since `base.armor` is the
+    purchase stock, empty at turn 0); every other campaign is **inert until it places a `Garage_A`**. The
+    §3 recon fog leaves the depot an **exact** marker (category `motorpool` isn't concealable). Not
+    supported in Pretense. Tests `tests/**/test_motorpool_*.py` + `tests/ground_forces/test_reserve_armor.py`
+    + `tests/fourteenth/test_red_tide_motorpool.py`; features doc §56, checklist B8 — needs an in-game
+    pass (Red Tide, a couple of turns in for red to stock reserve).
 
 ---
 

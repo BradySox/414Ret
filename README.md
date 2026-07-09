@@ -87,8 +87,9 @@ and selected later upstream fixes.
   armor reserve now shows up as a **strikeable depot** on the map — hit the parked vehicles at the
   motor pool and the owner has to repurchase them next turn, so you can attrit the reserve directly
   instead of only meeting it at the front line. Depot strikes don't move the front (they're tracked
-  separately from front-line casualties), and the parked reserves hold fire. On by default, but only
-  appears on campaigns that place a motor-pool depot. *(Adopted from upstream Retribution PR #859.)*
+  separately from front-line casualties), and the parked reserves hold fire. On by default; **Germany —
+  Red Tide** stages one at Haina by the Fulda Gap (its parked tanks fill in as the Soviets buy armor),
+  and any campaign can place its own. *(Adopted from upstream Retribution PR #859.)*
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as

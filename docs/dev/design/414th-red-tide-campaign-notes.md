@@ -600,3 +600,26 @@ The Lua plugins/terrain can't be exercised here; pydcs/DCS aren't runnable in CI
   The two pre-existing refs (`GAF JG 74`, `185th GvIAP Fighter Regiment`) and the existing
   `340th EARS` MPRS def are reused, not duplicated.
 - `resources/factions/blufor_late_coldwar.json` — `KC-135 Stratotanker MPRS` added to tankers.
+
+## Strikeable motorpool depot (§56, 2026-07-08)
+
+Red Tide is the first fork campaign to author a **motorpool depot** (feature §56, adopted from
+upstream PR dcs-retribution#859). A single `Fortification.Garage_A` static sits ~4 km NE of **Haina**
+(the forward Soviet base at the Fulda Gap) in the RED country's `static_group`. The §56 loader
+(`MizCampaignLoader.motorpools` → `PresetLocations.motorpools` → `start_generator.generate_motorpools`)
+turns it into a `MotorpoolGroundObject` bound to Haina, projecting Haina's not-yet-deployed armor
+**reserve** (`base.armor` − front deployment) as strikeable parked vehicles — "bomb the motor pool
+before its armor reaches the front."
+
+- **Added via pydcs** (`m.static_group(country=red, _type=Fortification.Garage_A, position=Haina+3km)`),
+  not a text-edit: red_tide.miz is all-vanilla units, so pydcs round-trips it losslessly (108→108
+  groups, verified) — the "pydcs save breaks the miz" caveat only bit the earlier mod-unit era.
+- **Empty at turn 0:** `base.armor` is the coalition's *purchase* stock (zero at game start), so the
+  depot renders immediately but its parked tanks only appear once red has procured armor a couple of
+  turns in. This is the feature's designed "empty depot resting state" (`sidc_status` pinned PRESENT),
+  not a bug.
+- **Headless-verified** through the real `GameGenerator` pipeline: the static binds to Haina (RED) and
+  materialises exactly one `MotorpoolGroundObject`; CP count unchanged (17). CI-locked in
+  `tests/fourteenth/test_red_tide_motorpool.py`. In-game pass = checklist B8.
+- **NEW game required** (the depot is read from the miz at theater load / injected by the migrator on
+  old saves).

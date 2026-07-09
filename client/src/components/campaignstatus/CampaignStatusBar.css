@@ -123,6 +123,19 @@
   border-radius: 4px;
 }
 
+/* Group the enemy-state chips (posture / supply / C2 / resolve) behind a thin divider
+   so "yours" and "the enemy's" read as two clusters, not a flat wall of chips. */
+.campaign-status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.campaign-status-group-enemy {
+  border-left: 1px solid #2d4157;
+  padding-left: 14px;
+}
+
 .campaign-status-phase.expandable {
   cursor: pointer;
 }

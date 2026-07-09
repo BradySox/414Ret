@@ -17,6 +17,7 @@ from game.data.units import UnitClass
 from game.fourteenth.coin import (
     _pick_faction_unit,
     _retype_units,
+    ambush_unit_types,
     cell_unit_types,
     hvt_unit_types,
     ied_emplacement_unit_types,
@@ -110,11 +111,23 @@ def test_cell_is_an_armed_technical_plus_infantry() -> None:
     assert _ids(cell_unit_types(_game())) == ["HL_DSHK", "Infantry AK Ins"]
 
 
+def test_ambush_is_a_light_raider_team_not_armor() -> None:
+    # A §50 backline convoy ambush is a light raid: an armed gun-truck + a rifle pair --
+    # never the front-line MBTs the FRONT_LINE task would otherwise spawn (the price cap
+    # keeps the BMP-1 out; a conventional faction with no cheap technical falls to a truck).
+    assert _ids(ambush_unit_types(_game())) == [
+        "HL_DSHK",
+        "Infantry AK Ins",
+        "Infantry AK Ins",
+    ]
+
+
 def test_builders_noop_without_a_red_faction() -> None:
     faceless: Any = SimpleNamespace(red=SimpleNamespace(faction=None))
     assert ied_unit_types(faceless) == []
     assert hvt_unit_types(faceless) == []
     assert cell_unit_types(faceless) == []
+    assert ambush_unit_types(faceless) == []
     no_red: Any = SimpleNamespace()  # no .red at all
     assert cell_unit_types(no_red) == []
 

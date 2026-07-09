@@ -1351,7 +1351,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     purpose (2 red SS-1C Scud-B batteries off Haina + near Wittstock, added to the `.miz`; preseeds the
     setting + the `mobilemissiles` plugin). Tests `tests/missiongenerator/test_mobilemissileluadata.py` +
     `tests/lua/test_mobilemissiles_runtime.py` + `tests/fourteenth/test_campaign_plugin_preseed.py`;
-    features doc §49, checklist S2 — needs an in-game pass.
+    features doc §49, checklist S2 — needs an in-game pass. **Movement bug fixed 2026-07-09** (flown
+    Red Tide test: launchers never moved, Tacview-confirmed stationary, no error): `driveTo` issued a
+    **1-waypoint** `mist.goRoute`, but a DCS ground group needs its route to START at its current
+    position or there's no leg to drive (MIST's own `groupToRandomZone` uses 2 WPs) — now a 2-WP route
+    `{current, dest}`. **The identical bug + fix apply to the COIN mover** `coin-config.lua` (§P4/P8).
+    See the memory note; **re-fly owed** (the harness fakes goRoute, so DCS AI movement is unverified).
 50. **Convoy ambush (a chance, never telegraphed) + ambient supply convoys** — the **mirror of the §35
     interdiction**: where
     interdiction gives the player *enemy* convoys to hunt, this gives the player *friendly* convoys that
@@ -1434,6 +1439,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the handful with no two same-side land bases at all. Tests `tests/fourteenth/test_convoy_ambush.py` +
     `tests/fourteenth/test_ambient_convoys.py` + `tests/missiongenerator/test_convoyambushluadata.py` +
     `tests/lua/test_convoyambush_runtime.py`; features doc §50, checklist S3 + S5 — needs an in-game pass.
+    **Tuned 2026-07-09** (flown Red Tide: "excessive, and should be light not MBTs"): the ambush teams
+    spawned as `GroupTask.FRONT_LINE` **armor** (MBT groups) and could pile up (a 2-convoy turn maxed
+    to 12). Now the teams use a **light raider kit** (`coin.ambush_unit_types` — a gun-truck + riflemen
+    from the faction's own roster, `CELL_SIDC` infantry symbol) via the `unit_types`/`sidc_override`
+    path, and the count is bounded: `MAX_AMBUSHES_PER_ROUTE` 6→3 **plus** a theater-wide
+    `MAX_TOTAL_AMBUSHES` (4) so several convoys can't swarm the backline.
 51. **Enemy comms jamming (IADS comms nodes)** — the IADS comms nodes, given a voice: with
     `enemy_comms_jamming` on, every alive enemy `comms`/`commandcenter` TGO (the same C2 objects the MANTIS
     degradation graph watches) floods the BLUE side's **briefed** channels with duty-cycled barrage noise via

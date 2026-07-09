@@ -21,6 +21,7 @@ import game.fourteenth.convoy_ambush as convoy_ambush_module
 from game.fourteenth.convoy_ambush import (
     AMBUSH_TEAM_SIZE,
     MAX_AMBUSHES_PER_ROUTE,
+    MAX_TOTAL_AMBUSHES,
     MIN_AMBUSHES_PER_ROUTE,
     ROUTE_END_MARGIN,
     _ambush_points,
@@ -171,6 +172,8 @@ def _capture_spawns(monkeypatch: Any) -> list[dict[str, Any]]:
                 "events": events,
                 "max_units": kw.get("max_units"),
                 "concealed": kw.get("concealed"),
+                "unit_types": kw.get("unit_types"),
+                "sidc_override": kw.get("sidc_override"),
                 "tgo": tgo,
             }
         )
@@ -255,8 +258,47 @@ def test_seed_rolls_each_convoy_independently(monkeypatch: Any) -> None:
 
 def test_seed_count_stays_inside_the_authored_band() -> None:
     assert 1 <= MIN_AMBUSHES_PER_ROUTE <= MAX_AMBUSHES_PER_ROUTE
-    # The user-facing promise: "sometimes once, sometimes five or six times per route".
-    assert MAX_AMBUSHES_PER_ROUTE == 6
+    # A convoy ambush is a light raid, not a battle: at most a small gauntlet per road...
+    assert MAX_AMBUSHES_PER_ROUTE == 3
+    # ...and a theater-wide ceiling bounds a multi-convoy turn so nothing swarms the backline.
+    assert MAX_TOTAL_AMBUSHES == 4
+    assert MAX_AMBUSHES_PER_ROUTE <= MAX_TOTAL_AMBUSHES
+
+
+def test_theater_cap_bounds_a_many_convoy_turn(monkeypatch: Any) -> None:
+    """Several convoys all losing the roll on one turn never pile more than
+    ``MAX_TOTAL_AMBUSHES`` hidden teams into the backline (the excessive-pile-up fix).
+    """
+    red = _CP("stronghold", False, 0.0)
+    convoys = [_route_convoy(f"Convoy-{i}", _ROAD) for i in range(5)]
+    game = _ambush_game(on=True, red_cps=[red], convoys=convoys)
+    spawned = _capture_spawns(monkeypatch)
+    # Every convoy hits (roll 0.0) and rolls the max team count (3) -> 5*3 = 15 requested,
+    # but the theater cap holds it to 4.
+    monkeypatch.setattr(
+        convoy_ambush_module,
+        "_RNG",
+        _Rng(rolls=[0.0] * 20, ints=[MAX_AMBUSHES_PER_ROUTE] * 20),
+    )
+    seed_convoy_ambushes(game, events=None)
+    assert len(spawned) == MAX_TOTAL_AMBUSHES
+    assert len(game.convoy_ambush_state["ambushes"]) == MAX_TOTAL_AMBUSHES
+
+
+def test_ambush_teams_are_light_raiders_not_armor(monkeypatch: Any) -> None:
+    """Each ambush team spawns as a light-infantry map symbol (``CELL_SIDC``) with a
+    light ``unit_types`` kit passed, not the FRONT_LINE armor default -- the 'MBTs in our
+    backline' fix. (The kit itself is [] here because the fake game has no faction; the
+    faction-driven composition is covered in test_coin_units.)"""
+    red = _CP("stronghold", False, 0.0)
+    convoy = _route_convoy("Convoy-1", _ROAD)
+    game = _ambush_game(on=True, red_cps=[red], convoys=[convoy])
+    spawned = _capture_spawns(monkeypatch)
+    monkeypatch.setattr(convoy_ambush_module, "_RNG", _Rng(rolls=[0.0, 0.5], ints=[1]))
+    seed_convoy_ambushes(game, events=None)
+    assert len(spawned) == 1
+    assert spawned[0]["sidc_override"] == coin_module.CELL_SIDC
+    assert "unit_types" in spawned[0]  # the light kit is always passed through
 
 
 def test_seed_despawns_last_turns_ambushes_first(monkeypatch: Any) -> None:

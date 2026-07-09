@@ -29,8 +29,12 @@ mist = {
         return { x = p.x + (tonumber(r) or 0), y = p.y }
     end,
     goRoute = function(group, path)
-        local wp = path[1]
-        _scootRoutes[#_scootRoutes + 1] = { group = group:getName(), x = wp.x, y = wp.y }
+        -- The route must START at the group's current position and END at the scoot point;
+        -- a destination-only (1-waypoint) route leaves a DCS ground group with no leg to
+        -- drive (the launchers-never-move bug). Capture the waypoint count + the last (dest).
+        local dest = path[#path]
+        _scootRoutes[#_scootRoutes + 1] =
+            { group = group:getName(), x = dest.x, y = dest.y, points = #path }
         return true
     end,
 }
@@ -82,7 +86,11 @@ def test_scoots_each_site_group_after_the_grace() -> None:
     h.advance_to(6)
     routes = _routes(h)
     assert {r["group"] for r in routes} == {"SCUD-A", "SCUD-B"}
+    # Destination = the scoot point (centre.x 1000 + radius 4000).
     assert all(r["x"] == 5000.0 for r in routes)
+    # ...reached via a TWO-waypoint route (current position -> destination); a 1-waypoint
+    # route is the launchers-never-move bug this fix closes.
+    assert all(r["points"] == 2 for r in routes)
     h.assert_no_lua_errors()
 
 

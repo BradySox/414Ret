@@ -56,9 +56,16 @@ if TYPE_CHECKING:
 AMBUSH_CHANCE = 0.5
 
 #: When a route IS ambushed, this many teams dig in along it (rolled uniformly). One
-#: contact at the low end; a five-or-six-fight gauntlet down the road at the top.
+#: contact at the low end; a small gauntlet down the road at the top. Deliberately modest --
+#: a convoy ambush is a light raid, not a battle, so a stack of teams reads as "excessive"
+#: and drags the ground sim.
 MIN_AMBUSHES_PER_ROUTE = 1
-MAX_AMBUSHES_PER_ROUTE = 6
+MAX_AMBUSHES_PER_ROUTE = 3
+
+#: Theater-wide ceiling on ambush teams placed per turn, across *every* ambushed convoy, so
+#: several convoys losing the roll on the same turn can never pile a swarm of hidden red
+#: teams into the backline (the 12-team pile-up a playtest flagged as excessive).
+MAX_TOTAL_AMBUSHES = 4
 
 #: Teams are placed along the middle of the road: never within this fraction of either
 #: endpoint, where the control point's own defenses would swamp them.
@@ -105,13 +112,21 @@ def seed_convoy_ambushes(game: "Game", events: Any) -> None:
         return
 
     from game.data.groups import GroupTask
-    from game.fourteenth.coin import spawn_red_ground_at
+    from game.fourteenth.coin import CELL_SIDC, ambush_unit_types, spawn_red_ground_at
+
+    # A backline ambush is a light infiltration/raid -- gun-trucks and riflemen -- not the
+    # front-line MBTs a FRONT_LINE force group spawns; re-type the units (and the revealed
+    # map symbol) to light kit. Resolved once from the red faction's own roster.
+    light_kit = ambush_unit_types(game)
 
     ambushes: list[dict[str, Any]] = []
     for convoy in convoys:
+        if len(ambushes) >= MAX_TOTAL_AMBUSHES:
+            break  # theater-wide cap reached -- later convoys go un-ambushed this turn
         if _RNG.random() >= AMBUSH_CHANCE:
             continue  # this road is quiet this turn
         count = _RNG.randint(MIN_AMBUSHES_PER_ROUTE, MAX_AMBUSHES_PER_ROUTE)
+        count = min(count, MAX_TOTAL_AMBUSHES - len(ambushes))
         for point in _ambush_points(convoy, count):
             red_cp = _nearest_cp(red_cps, point)
             # events=None: a map-hidden TGO must never be pushed to the client,
@@ -123,6 +138,8 @@ def seed_convoy_ambushes(game: "Game", events: Any) -> None:
                 GroupTask.FRONT_LINE,
                 events=None,
                 max_units=AMBUSH_TEAM_SIZE,
+                sidc_override=CELL_SIDC,
+                unit_types=light_kit,
             )
             if tgo is None:
                 continue

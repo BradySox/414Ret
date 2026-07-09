@@ -57,3 +57,10 @@ dump parser is `game/atmosprobe/model.py`; tests live under `tests/atmosprobe/`.
   feature.
 - **`gen_recon_kneeboards.py`** — renders the recon kneeboard pages (basemap tiles
   + overlays). Part of the kneeboard recon feature.
+- **`build-client.ps1`** (PowerShell) — rebuilds the web-map client bundle
+  (`client/build`) that the desktop app serves. Run it after pulling client/UI changes
+  into a **source** checkout, then restart Retribution — otherwise React changes (the map
+  ribbon, layers panel, etc.) stay invisible because `client/build` is a prebuilt bundle.
+  Runs `npm ci` automatically on a fresh checkout (or force it with `-Install`). The
+  rolling `latest` release ZIP is already built this way by CI (`.github/actions/build-app`),
+  so this is only for running from source.

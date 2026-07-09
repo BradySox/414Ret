@@ -62,7 +62,7 @@ and selected later upstream fixes.
   C2 belt), and SRS hears it too (SRS tunes off your cockpit radios). While a POW is held, the
   next missions launch already compromised — until you free them (retake the holding field) or
   the comms plan is rotated. GUARD, ATC and a briefed **JAM BACKUP** channel (printed on the
-  kneeboard comms ladder) always stay clean, and the noise comes in duty-cycled bursts, never a
+  kneeboard Mission Info page, next to the code words) always stay clean, and the noise comes in duty-cycled bursts, never a
   wall — hop channels, push to the backup, or kill the node: one strike on the C2 site silences
   the jamming *and* degrades the IADS. So SAR matters twice over, and the squadron learns to
   rotate compromised channels. Opt-in (Mission Generation → "Enemy comms jamming"; the

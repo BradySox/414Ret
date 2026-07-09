@@ -29,7 +29,7 @@ from game.unitmap import UnitMap
 from .atisgenerator import AtisGenerator
 from .briefinggenerator import BriefingGenerator, MissionInfoGenerator
 from .cargoshipgenerator import CargoShipGenerator
-from .commsjamluadata import plan_comms_jam
+from .commsjamluadata import JAM_BACKUP_COMM_NAME, plan_comms_jam
 from .convoygenerator import ConvoyGenerator
 from .drawingsgenerator import DrawingsGenerator
 from .environmentgenerator import EnvironmentGenerator
@@ -388,13 +388,16 @@ class MissionGenerator:
             for atis in mission_data.atis_frequencies:
                 gen.add_atis(atis)
 
-            # Enemy comms jamming (§51): publish the guaranteed-clean fallback
-            # channel on the comms ladder so pushing to it is a briefed play.
+            # Enemy comms jamming (§51): register the guaranteed-clean fallback
+            # channel on the generator so the kneeboard can surface it. The
+            # Mission Info BLUF prints it next to the code words (comms-plan data);
+            # the Support Info page filters it out of the package table so it never
+            # reads as a phantom flight.
             if (
                 mission_data.comms_jam is not None
                 and mission_data.comms_jam.backup is not None
             ):
-                gen.add_comm("JAM BACKUP", mission_data.comms_jam.backup)
+                gen.add_comm(JAM_BACKUP_COMM_NAME, mission_data.comms_jam.backup)
 
             gen.generate()
 

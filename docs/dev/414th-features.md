@@ -4403,9 +4403,11 @@ on is real, dynamic comms discipline.
 
 **The JAM BACKUP channel closes the loop:** the planner allocates one fresh UHF frequency from the same
 `RadioRegistry` every briefed channel came out of (so nothing else uses it and it can never be jammed),
-re-rolling past the freak allocator-reuse collision, and publishes it as a `JAM BACKUP` line on the
-kneeboard comms ladder (+ echoed in the first-burst cue). Pushing the package to the backup is a briefed
-play, not a mystery.
+re-rolling past the freak allocator-reuse collision, and publishes it as a `JAM BACKUP` line in the
+kneeboard **Mission Info BLUF** — next to the `PUSH / SUCCESS / ABORT` code words (comms-plan data), not
+the Support Info package table where it borrowed the viewing flight's Type/#A/C columns and read as a
+phantom flight (+ echoed in the first-burst cue). Pushing the package to the backup is a briefed play,
+not a mystery.
 
 ### The intel gate: capture-gated jamming (default)
 
@@ -4452,10 +4454,10 @@ consequence (MANTIS C2 degradation) untouched.
 | Area | Path |
 |---|---|
 | Planner + emitter | `game/missiongenerator/commsjamluadata.py` (`plan_comms_jam` → `MissionData.comms_jam`, `populate_comms_jam_lua`); planned in `missiongenerator.py` before the Lua pass, emitted in `luagenerator.py` after the convoy-ambush emitter |
-| Kneeboard | `missiongenerator.py` `notify_info_generators` appends the `JAM BACKUP` comm line when a plan with a backup exists |
+| Kneeboard | `missiongenerator.py` registers the `JAM BACKUP` channel on the generator (`add_comm(JAM_BACKUP_COMM_NAME, …)`) when a plan with a backup exists; `kneeboard.py` `_bluf_lines` surfaces it as a **Mission Info BLUF** line and filters it out of the **Support Info** comms ladder (so it never reads as a phantom flight). `JAM_BACKUP_COMM_NAME` (in `commsjamluadata.py`) is the shared label so producer and consumers can't drift |
 | Runtime | `resources/plugins/commsjam/` (`plugin.json` + `commsjam-config.lua` + `commsjam-noise.wav`; registered in `plugins.json`) |
 | Settings | `game/settings/settings.py` (`enemy_comms_jamming`, default **OFF**; `comms_jam_requires_capture` — the intel gate, default **ON** — both Mission Generation → Battlefield life) |
-| Tests | `tests/missiongenerator/test_commsjamluadata.py` (plan ordering, GUARD filter, cap, backup collision re-roll, intel-gate flags, emit shape, gates); `tests/lua/test_commsjam_runtime.py` (grace, burst/stop/rotation, dead-jammer silence via both death paths, ceased cue, intel-gate dormancy/live-capture/POW-story/red-capture-ignored/watch-bail, no-node no-op) |
+| Tests | `tests/missiongenerator/test_commsjamluadata.py` (plan ordering, GUARD filter, cap, backup collision re-roll, intel-gate flags, emit shape, gates); `tests/missiongenerator/test_kneeboard_bluf.py` (the JAM BACKUP BLUF line present-with-backup / absent-without); `tests/lua/test_commsjam_runtime.py` (grace, burst/stop/rotation, dead-jammer silence via both death paths, ceased cue, intel-gate dormancy/live-capture/POW-story/red-capture-ignored/watch-bail, no-node no-op) |
 
 ### Gotchas / deferred
 

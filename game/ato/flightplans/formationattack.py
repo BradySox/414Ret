@@ -334,8 +334,18 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         burn to the end of the vul and home, then compares it against usable internal
         fuel. Returns NONE when no tanker can be planned, the flight is a helo, fuel
         data is missing, or internal fuel covers the sortie.
+
+        Falls back to the synthesised ``estimated_fuel_consumption`` for airframes with
+        no hand-measured ``fuel:`` block (many mod jets, e.g. the F-4E) so a sortie the
+        kneeboard fuel ladder flags as short of home actually gets a tanker. The
+        estimate already drives that ladder / the bingo display; using the same source
+        here keeps the tanker decision consistent with the deficit we show the player,
+        instead of silently refusing a tanker the theater can crew.
         """
-        fuel = self.flight.unit_type.fuel_consumption
+        fuel = (
+            self.flight.unit_type.fuel_consumption
+            or self.flight.unit_type.estimated_fuel_consumption
+        )
         if fuel is None or self.flight.is_helo:
             return RefuelTasking.NONE
         if not self.flight.coalition.air_wing.can_auto_plan(FlightType.REFUELING):

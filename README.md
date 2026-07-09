@@ -185,6 +185,11 @@ and selected later upstream fixes.
   carry internally gets extra drop tanks added to its **empty** stations at mission start (so a
   Hornet strike flies out with its third bag). It never swaps out a targeting pod, ECM, or
   ordnance to do it, and it does nothing on short-range routes or to loadouts you've customized.
+- **The planner frags a pre- or post-strike tanker when a sortie can't make it home.** If the
+  route burns more than the jet can carry, it's sent to a tanker on the way in (or out) instead
+  of launching short — and this now works for mod jets that ship no measured fuel data (e.g. the
+  F-4E), which used to fly the whole leg untanked while the kneeboard warned "short of getting
+  home." No tanker in the campaign? Then the RTB-margin warning stands and you plan a divert.
 - An optional **auto-planner unpredictability** doctrine knob (per side, off by default)
   varies which offensive targets the enemy services first, so red stops striking the same
   targets in the same order every turn. Its reactive air defenses stay just as sharp.

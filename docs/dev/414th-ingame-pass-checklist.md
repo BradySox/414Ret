@@ -1207,6 +1207,27 @@ so the two docs don't drift.
   capture never fires because `advanceCapture` lost track of the multi-group party (all teams reported
   dead while alive).
 
+### G20b — Combat SAR snatch-party safety cap + ledger dead-reference cleanup · §15 · ☐ UNTESTED (fix 2026-07-09, root-caused from a user `dcs.log` hang)
+- **Root cause:** a heavy Red Tide (Germany Cold War) mission **hung** ~13 min in — the log stopped
+  mid-flood of MOOSE `UNIT.GetVec3` / `GROUP.GetCoordinate` errors with **no crash dump** (a
+  scripting/sim-thread hang, not a CTD; the 20-core/130 GB rig was never the limit). The capture race
+  had spawned **80 infantry** (8 parties × 10) across two ejections because a **saved plugin-option
+  override** (~40/4) was in force vs the 5/3 default — the dominant dynamic spawn on top of
+  MANTIS-over-62-groups + TIC/GLSCO + SplashDamage + airbase harassment + TARS.
+- **Fix (CI-tested):** `capturePartySize`/`captureTeams` **hard-clamped at load** (≤ 12 / ≤ 4, warned
+  once) so no config can pile enough units on to freeze the sim; the survivor ledger **prunes dead
+  teams** out of `entry.party` each cycle + reads positions via `firstAliveCoord` (never
+  `GetCoordinate` on a dead lead unit) + **reaps a ground-killed pilot** via the designed-but-unused
+  `dead` state — together ending the dead-object poll flood. Behavioral cap test:
+  `tests/lua/test_combatsar_capture_cap.py` (runs the real plugin under Lua 5.1).
+- **Pass:** on a heavy Red Tide game with the capture race on, several ejections over a long mission do
+  **not** bog/hang; `dcs.log` shows a one-time `combatsar: capture party clamped …` line if a saved
+  override exceeds the cap, and **no** sustained `GetVec3`/`GetCoordinate` flood after snatch
+  teams/survivors die.
+- **Fail signature:** the `GetVec3`/`GetCoordinate` flood returns (a poll path still reads a dead
+  object), or the mission still hangs with the capture race on (another unbounded spawn/scheduler —
+  count dynamic units in `dcs.log`).
+
 ### G21 — Combat SAR AI rescue commandeers an on-station helo (no duplicate spawn) · §21 · ✗ SUPERSEDED by the 2026-07-06 on-demand rework — the commandeer path (and the standing orbit it commandeered from) is RETIRED. The bug this row tracked (a commandeered airborne helo RTBs instead of rescuing) is designed out: the runtime now clones a cold template *into* the mission (the path that always worked). Re-verify as G9. Kept for history.
 - **2026-07-06 flown Inherent Resolve session (`jovial-gates-574c9c`, dcs.log + Tacview trace):** two
   ejections (CROW Su-25 t≈1096, JELLYFISH M-2000C t≈3009), zero `combatsar:` errors. **The preference

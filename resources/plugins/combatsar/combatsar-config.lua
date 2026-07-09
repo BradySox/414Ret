@@ -86,6 +86,27 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         if o.sandyEngageRadiusNm ~= nil then SANDY_ENGAGE_RADIUS = (tonumber(o.sandyEngageRadiusNm) or 3) * NM_TO_M end
     end
 
+    -- Safety cap on the snatch party (2026-07-08). The capture party is REAL infantry spawned
+    -- onto DCS's single scripting/sim thread, so a cranked capturePartySize / captureTeams -- or a
+    -- stale saved override -- piles on dozens of units per ejection and, over a few ejections, can
+    -- bog a heavy mission into a hang (observed: a saved 40-strong / 4-team value spawned 80
+    -- soldiers across two ejections on a full Red Tide map -> sim lock-up, no crash dump). Clamp to
+    -- a sane ceiling regardless of the option, so the capture race can never be the thing that
+    -- freezes the sim. The shipped defaults (5 / 3) sit well inside this; the cap only bites an
+    -- over-tuned value, warning once so the player knows it was reined in.
+    local MAX_PARTY_SIZE = 12
+    local MAX_TEAMS = 4
+    local reqParty = math.floor(tonumber(capture.partySize) or 5)
+    local reqTeams = math.floor(tonumber(capture.teams) or 3)
+    capture.partySize = math.max(1, math.min(reqParty, MAX_PARTY_SIZE))
+    capture.teams = math.max(1, math.min(reqTeams, MAX_TEAMS))
+    if reqParty > MAX_PARTY_SIZE or reqTeams > MAX_TEAMS then
+        env.warning(string.format(
+            "combatsar: capture party clamped to %d infantry / %d teams (requested %d/%d) -- guards "
+            .. "against a scripting overload that can hang the sim.",
+            capture.partySize, capture.teams, reqParty, reqTeams))
+    end
+
     ---------------------------------------------------------------------------
     -- Coalition configs (blue from the existing top-level fields for back-compat;
     -- red from data.red when the generator emits it -- the only thing red needs).
@@ -403,6 +424,25 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         return false
     end
 
+    -- Coordinate of a group's first ALIVE unit, pcall-guarded (nil if none alive). MOOSE's
+    -- GROUP/UNIT:GetCoordinate() logs an error the moment the underlying DCS object is gone, so a
+    -- group that still reports alive while its LEAD unit is dead spams the log on every poll (the
+    -- GetVec3 / GetCoordinate flood seen on a bogged sim). Reading the first LIVING unit avoids the
+    -- dead-object call entirely, so an attrited party stops generating error traffic.
+    local function firstAliveCoord(g)
+        if not g then return nil end
+        local ok, units = pcall(function() return g:GetUnits() end)
+        if not ok or not units then return nil end
+        for _, u in ipairs(units) do
+            local oka, alive = pcall(function() return u:IsAlive() end)
+            if oka and alive then
+                local okc, c = pcall(function() return u:GetCoordinate() end)
+                if okc and c then return c end
+            end
+        end
+        return nil
+    end
+
     -- Find the nearest alive, idle, AI rescue helo PARKED cold on the ramp (a real,
     -- tracked untasked airframe -- §21) to commandeer for this pickup, preferred over
     -- cloning a fresh template. Nearest to the survivor first. These sit uncontrolled
@@ -548,8 +588,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     -- Find a friendly helo deliberately picking up this survivor (landed/low+slow within range).
     -- Excludes the AI-managed transport helo (that path credits via OPSTRANSPORT, not geometry).
     local function findBoardingHelo(entry)
-        local u0 = entry.group and entry.group:GetUnit(1)
-        local sc = u0 and u0:GetCoordinate()
+        local sc = firstAliveCoord(entry.group)
         if not sc then return nil end
         local found = nil
         entry.cfg.heloSet:ForEachGroupAlive(function(g)
@@ -572,11 +611,19 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     -- team is dead, and any one surviving team holding on the pilot runs the capture clock.
     local function advanceCapture(entry)
         local alive = {}
+        local aliveNames = {}
         if entry.party then
             for _, gname in ipairs(entry.party) do
                 local g = GROUP:FindByName(gname)
-                if g and g:IsAlive() then alive[#alive + 1] = g end
+                if g and g:IsAlive() then
+                    alive[#alive + 1] = g
+                    aliveNames[#aliveNames + 1] = gname
+                end
             end
+            -- Drop dead teams from the ledger so a killed snatch group is never FindByName-polled
+            -- again -- the per-cycle work shrinks as the party is attrited, instead of re-scanning
+            -- the full original list every poll for the life of the survivor.
+            entry.party = aliveNames
         end
         if #alive == 0 then
             if entry.party then
@@ -587,13 +634,11 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             entry.dwell = 0
             return
         end
-        local pu = entry.group and entry.group:GetUnit(1)
-        local pc = pu and pu:GetCoordinate()
+        local pc = firstAliveCoord(entry.group)
         local inRange = false
         if pc then
             for _, g in ipairs(alive) do
-                local gu = g:GetUnit(1)
-                local gc = gu and gu:GetCoordinate()
+                local gc = firstAliveCoord(g)
                 if gc and gc:Get2DDistance(pc) <= capture.captureRange then
                     inRange = true
                     break
@@ -776,6 +821,15 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     local function tick()
         local ok, err = pcall(function()
             for id, e in pairs(survivors) do
+                -- Retire a downed pilot KILLED on the ground before rescue/capture. The reap below
+                -- only fires on rescued/captured/dead, but nothing ever set "dead" -- so a pilot
+                -- killed while down lingered in the ledger forever, and every tick polled its dead
+                -- group (the UNIT GetVec3 flood seen on a bogged sim). A live pickup/capture flips
+                -- the state first, so this only catches an unresolved death (group had spawned and
+                -- is now gone); a never-spawned group (e.group nil) is left untouched.
+                if e.state == "down" and e.group and not e.group:IsAlive() then
+                    e.state = "dead"
+                end
                 if e.state == "down" then
                     -- Capture race: roll a snatch party once per survivor (on land).
                     if capture.enabled and not e.captureRolled then

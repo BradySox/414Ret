@@ -1572,6 +1572,25 @@ pilot; let any team dwell on the survivor un-rescued and the pilot is **CAPTURED
 `Debriefing.parse_combat_sar_captures`. Seven plugin tunables
 (`captureEnabled` / `Chance` / `SpawnDistance` / `Range` / `Dwell` / `PartySize` / `Teams`).
 
+**Safety cap + dead-reference cleanup (2026-07-09).** The snatch party is REAL infantry on
+DCS's single scripting/sim thread, so `capturePartySize` / `captureTeams` are **hard-clamped at
+load** (≤ `MAX_PARTY_SIZE` 12 infantry across ≤ `MAX_TEAMS` 4 teams, `env.warning` once when a
+value is reined in). A cranked or stale-saved override can no longer pile enough units on to
+freeze the mission — the motivating incident (2026-07-08) was a saved 40-strong / 4-team value
+that spawned **80 soldiers across two ejections** on a heavy Red Tide (Germany Cold War) map and
+hung the sim (the log stopped mid-`GetVec3`/`GetCoordinate` flood with **no crash dump** — the
+signature of a scripting/sim-thread hang, not a CTD). Separately, the survivor ledger now **drops
+dead references** so an attrited rescue stops generating MOOSE error traffic: `advanceCapture`
+prunes killed teams out of `entry.party` each cycle (bounding the per-poll work as the party
+dies) and reads every position through `firstAliveCoord` (a first-living-unit helper that never
+calls `GetCoordinate` on a dead DCS object — a group that reports alive while its lead unit is
+gone otherwise spammed the log every poll), and the main `tick` **reaps a downed pilot killed on
+the ground** by finally assigning the designed-but-unused `dead` state (a pilot killed while
+`down` used to linger in the ledger forever, polled every 5 s). The cap is exercised end-to-end
+against the real plugin under Lua 5.1 in `tests/lua/test_combatsar_capture_cap.py` (combatsar is
+MOOSE-heavy and not in the `DcsPluginHarness`, but the cap runs at file scope before any MOOSE
+wiring, so a tiny sandbox drives it). The plugin.json labels now state both caps.
+
 **Capture → held POW (Python; the raid is SHELVED, 2026-07-03; the model reworked 2026-07-06).**
 `record_pow_captures` (`game/sim/missionresultsprocessor.py`) turns each capture into a
 `PendingPowRecovery` (`game/pow_recovery.py`) on the survivor's coalition (persisted,

@@ -59,12 +59,12 @@
             "defaultValue": 30
         },
         {
-            "nameInUI": "Capture race: total infantry in the enemy snatch party (split across the teams below)",
+            "nameInUI": "Capture race: total infantry in the enemy snatch party, split across the teams below (capped at 12 -- these are real units on the sim thread)",
             "mnemonic": "capturePartySize",
             "defaultValue": 5
         },
         {
-            "nameInUI": "Capture race: number of dispersed snatch teams (small groups converging from different bearings)",
+            "nameInUI": "Capture race: number of dispersed snatch teams -- small groups converging from different bearings (capped at 4)",
             "mnemonic": "captureTeams",
             "defaultValue": 3
         },

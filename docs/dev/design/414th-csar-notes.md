@@ -150,6 +150,40 @@ guard fix, `commandeerParkedHelo` + `StartUncontrolled`). Tests:
 checklist G9 (the on-demand rescue actually flying + delivering). NEW game required (the orbit
 task is gone + the parked pool / cold template is generated at start).
 
+## Runtime hardening — snatch-party safety cap + ledger cleanup (2026-07-09)
+
+Diagnosed from a user `dcs.log`: a heavy Red Tide (Germany Cold War) mission **hung** ~13 min in
+— the log stopped mid-flood of MOOSE `UNIT.GetVec3` / `GROUP.GetCoordinate` errors with **no
+crash dump** (a scripting/sim-thread hang, not a CTD; the 20-core / 130 GB rig was never the
+limit — DCS runs scripting + the sim on one thread). Root cause: the enemy **capture race** had
+spawned **8 snatch parties of 10 = 80 infantry** across two ejections. The plugin default is
+5 infantry / 3 teams, but a **saved plugin-option override** (~40 / 4) was in force, so every
+ejection dumped 40 real ground units — the dominant dynamic-spawn source — onto an already-heavy
+plugin stack (MANTIS over 62 AD groups + TIC/GLSCO + SplashDamage + airbase harassment + TARS),
+and the single-threaded sim bogged until it locked. Two fixes:
+
+1. **Hard safety cap.** After the option parse, `capturePartySize` / `captureTeams` are clamped to
+   `MAX_PARTY_SIZE` 12 / `MAX_TEAMS` 4 (floored at 1), warning once when a value is reined in. The
+   capture race can no longer be the thing that freezes the sim regardless of a cranked or
+   stale-saved value; the shipped defaults sit well inside the cap. plugin.json labels state both
+   caps.
+2. **Dead-reference cleanup** (the `GetVec3`/`GetCoordinate` flood was MOOSE polling dead DCS
+   objects): `advanceCapture` now **prunes killed teams** out of `entry.party` each cycle (the
+   per-poll scan shrinks as the party is attrited instead of re-scanning the full original list
+   forever) and reads positions via a new `firstAliveCoord` helper (first *living* unit's
+   coordinate, pcall-guarded — never calls `GetCoordinate` on a group whose lead unit is dead,
+   which otherwise logged every poll). The main `tick` also **reaps a downed pilot killed on the
+   ground** by finally assigning the designed-but-unused `dead` state — previously a pilot killed
+   while `down` (never rescued, never captured) lingered in the ledger forever and had its dead
+   group polled every 5 s.
+
+`firstAliveCoord` also backs `findBoardingHelo`'s survivor read. Behavioral test:
+`tests/lua/test_combatsar_capture_cap.py` runs the **real** plugin under Lua 5.1 with a cranked
+config and asserts the clamp fires with the right numbers (combatsar is MOOSE-heavy and not in
+the `DcsPluginHarness`, but the cap runs at file scope before any MOOSE wiring, so a tiny sandbox
+drives it end to end). No `.miz` / save / New-Game requirement — it's a plugin-runtime fix that
+takes effect on the next mission generation.
+
 ## What ships (the architecture that survived)
 
 **Two flight types:**

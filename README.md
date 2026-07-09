@@ -76,6 +76,15 @@ and selected later upstream fixes.
   your kneeboard SITREP reports the enemy's command status so you can see the strike land. Opt-in
   (Air Doctrine → "Command-center kills degrade enemy planning"); a campaign with no command posts
   is unaffected.
+- **Bomb the enemy's fuel, factories, and supply lines and watch their war effort wither.** With the
+  **War economy** on (Campaign Management), each base runs a real materiel supply chain — factories
+  produce it, it flows over the roads to the front, and it's spent holding the line. Interdict it —
+  strike the factories, cut the routes — and a starved enemy front stops recovering, fields fewer units,
+  and gives ground, with the kneeboard SITREP showing you why. Bomb an airfield's **fuel depots** and it
+  flies fewer sorties next turn. And with **Munitions availability** on (Mission Generation → Loadouts),
+  airfields hold a stock of the scarce precision munitions — run a field dry of JDAMs (or knock out its
+  ammo dumps) and its jets fall back to dumb bombs, greyed out in the loadout screen. All symmetric —
+  protect your own supply too — and off by default.
 - **The enemy commander plays with intent.** With **Red Intent** on (Air Doctrine), the AI reads the
   war each turn — the ground balance, its air strength, how the last turn went — and adopts a
   *posture* that carries across turns instead of planning the same way every time: it **surges** when

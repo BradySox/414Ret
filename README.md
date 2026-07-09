@@ -83,6 +83,12 @@ and selected later upstream fixes.
   **consolidates** when it's been hit (defending, husbanding), or grinds it out in between. Your
   kneeboard SITREP names the enemy's posture so you can read its mood. Opt-in and enemy-only (your
   side's "intent" is the campaign phase), and it never touches the enemy's reactive defenses.
+- **Bomb the enemy's motor pool before its armor reaches the front.** A base's not-yet-deployed
+  armor reserve now shows up as a **strikeable depot** on the map — hit the parked vehicles at the
+  motor pool and the owner has to repurchase them next turn, so you can attrit the reserve directly
+  instead of only meeting it at the front line. Depot strikes don't move the front (they're tracked
+  separately from front-line casualties), and the parked reserves hold fire. On by default, but only
+  appears on campaigns that place a motor-pool depot. *(Adopted from upstream Retribution PR #859.)*
 - **TARPS** is a real player task — flown by F-14s, and by the Vietnam-era photo-recon birds
   (**RF-101B Voodoo**, **RA-5C Vigilante**) in period campaigns — supported by the **TARS**
   film-and-debrief system. What the aircraft photographs is carried back into the campaign as

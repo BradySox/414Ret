@@ -311,6 +311,19 @@ FEATURES: tuple[Feature, ...] = (
         55,
         settings_fields=("red_intent",),
     ),
+    Feature(
+        # Adopted from upstream PR dcs-retribution#859 (geofffranks). No plugin,
+        # no Lua: a control point's not-deployed reserve armor is rendered as a
+        # strikeable depot by MotorpoolPopulator + MotorpoolGenerator at mission
+        # generation; each kill decrements base.armor 1:1
+        # (game/sim/missionresultsprocessor.py commit_motorpool_losses), tracked
+        # separately from front-line losses so a depot strike never shifts the
+        # front. Inert until a campaign authors a Fortification.Garage_A depot.
+        "motorpool_depots",
+        "Strikeable motorpool depots",
+        56,
+        settings_fields=("motorpool_enabled", "motorpool_spawn_cap"),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

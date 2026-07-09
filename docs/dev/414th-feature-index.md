@@ -64,6 +64,8 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §50 | Convoy ambush (a chance, never telegraphed) + ambient supply convoys | `convoyambush` | `convoy_ambush`, `ambient_supply_convoys` |
 | §51 | Enemy comms jamming (IADS comms nodes) | `commsjam` | `enemy_comms_jamming`, `comms_jam_requires_capture` |
 | §52 | Command-center decapitation degrades enemy planning | — | `c2_decapitation_effects` |
+| §53 | War economy | — | `war_economy`, `fuel_air_readiness` |
+| §54 | Munitions availability | — | `restrict_weapons_by_stock` |
 | §55 | Red Intent — adaptive enemy posture | — | `red_intent` |
 | §56 | Strikeable motorpool depots | — | `motorpool_enabled`, `motorpool_spawn_cap` |
 | — | MANTIS IADS engine | `mantisiads` | — |

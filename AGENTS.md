@@ -1473,6 +1473,47 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     offensive package-count throttle) is deferred.** Tests `tests/fourteenth/test_c2_decapitation.py` +
     `tests/test_planner_unpredictability.py` + `tests/fourteenth/test_campaign_plugin_preseed.py`; features
     doc §52, checklist B6 — needs an in-game pass.
+53. **War economy** — a per-base **materiel supply** economy on top of the money budget, closing the
+    "nothing you bomb changes what the enemy fields" gap (design note `414th-war-economy-notes.md`).
+    `game/fourteenth/war_economy.py` runs a produce → transport → consume loop from `finish_turn`:
+    factories/oil **produce** supply banked in `Base.supply`; it **transports** producer→front over the
+    transit graph (`_external_supply_sources` via `transitive_connected_friendly_destinations`) and is
+    **consumed** at the front — a front cut off from production drains (the interdiction loop). The **bite**
+    (P2) is one `supply_effectiveness(cp)` multiplier `[0.5, 1.0]` applied at three sites: the `+0.2`
+    per-turn strength recovery (`game.py`), the deployable-unit cap (`front_line_capacity_with`), and the
+    ground-combat `delta` (scaled by the *winner's* supply) — so interdiction visibly slows the enemy's
+    advance and recovery. Recursion-safe: `frontline_demand` keys off `base.total_frontline_units` (raw
+    force), never the supply-scaled cap. **P3** wires the previously-dead `active_fuel_depots_count`:
+    `fuel_readiness(cp)` scales `Squadron.untasked_aircraft` at the turn boundary, so bombing a base's fuel
+    grounds part of its air for the AI planner and the human alike. **P4a** surfaces a SITREP front-supply
+    band ("Front supply X% -- enemy Y%") so the player reads *why* a front stalled. Exposes
+    `coalition_supply_health`/`supply_factor`, consumed read-only by §55 red intent. Symmetric; gated
+    `war_economy` + `fuel_air_readiness` (Campaign Management → War economy, both default **OFF**, preseeded
+    ON in Red Tide); OFF is a proven exact no-op (regression across the combat/controlpoint/frontline/
+    ground-planner suites). **P4b** (landed 2026-07-08, post-merge polish): the base-card (`QBaseMenu2`)
+    shows a **Front supply %** line + reconciles the deployable-limit tooltip with the supply multiplier,
+    and a client **Supply status** map overlay (`SupplyLayer` + `SupplyNodeJs` on `GameJs`, default-ON in
+    the §19 layers panel) draws each BLUE front coloured by materiel readiness + each producer as a blue
+    source ring — empty (layer hidden) unless `war_economy` is on, BLUE-only so enemy logistics stay
+    fogged. P0–P4a landed via #531 (merged 2026-07-08, alongside §55). Tests
+    `tests/fourteenth/test_war_economy.py` + `tests/server/test_supply_nodes.py`; features doc §53 — needs
+    an in-game pass (multi-turn FLOT response + fuel grounding) + the CI client rebuild for the overlay.
+54. **Munitions availability** — the **air axis** of the war economy (§53): an airfield out of a scarce
+    munition can't load it. A curated, **hand-audited** scarce-munitions taxonomy (`_SCARCE_MUNITIONS` in
+    `game/data/weapons.py` — 5 families `a2a_medium`/`arm`/`pgm_bomb`/`standoff`/`guided_asm`, keyed by
+    exact `WeaponGroup.name` with a dead-name guard test) drives `WeaponGroup.scarce_family` (M0). Each base
+    holds a per-family stock (`Base.munitions`) **debited by what the ATO loaded** — a once-per-turn
+    turn-boundary step, NOT a per-generation debit, so mission re-generation never double-counts — and
+    **rearmed** toward capacity scaled by supply health (M1). The **gate** (M2): `Loadout.degrade_for_stock`
+    in `setup_payload` swaps a depleted scarce store down to the first stocked/non-scarce fallback (JDAM →
+    dumb bomb) or clears the pylon (authoritative), and the payload editor greys out + labels
+    "(out of stock)" the depleted stores (guidance). Gated `restrict_weapons_by_stock` (Mission Generation →
+    Loadouts, default **OFF**); OFF is an exact no-op. **M3** (landed 2026-07-08, post-merge polish): the
+    base-card (`QBaseMenu2`) shows a per-family **Munitions** stock readout (`N/24`, "(low)" at zero), driven
+    by the shared `SCARCE_FAMILY_LABELS` map, friendly bases only. M0–M2 landed via #531 (merged 2026-07-08).
+    Tests `tests/fourteenth/test_munitions_gate.py` + `tests/fourteenth/test_scarce_munitions.py` +
+    `tests/fourteenth/test_war_economy.py`; features doc §54 — the loadout grey-out + base-card readout need
+    an in-app pass.
 55. **Red Intent — adaptive enemy posture** — the "thinking red opponent": the mirror of the
     BLUE campaign-phases arc (§40) for RED, and unlike the blue arc it carries *memory* across
     turns. Each turn `game/fourteenth/red_intent.py` resolves a RED **posture** —

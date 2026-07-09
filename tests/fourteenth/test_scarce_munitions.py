@@ -13,6 +13,8 @@ import pytest
 from game.data.weapons import (
     _SCARCE_FAMILY_BY_NAME,
     _SCARCE_MUNITIONS,
+    SCARCE_FAMILIES,
+    SCARCE_FAMILY_LABELS,
     WeaponGroup,
 )
 
@@ -25,6 +27,12 @@ def _loaded() -> None:
 def test_every_scarce_name_resolves() -> None:
     missing = sorted(n for n in _SCARCE_FAMILY_BY_NAME if n not in WeaponGroup._by_name)
     assert missing == [], f"scarce-munitions map has dead names: {missing}"
+
+
+def test_every_family_has_a_label() -> None:
+    # The §54 M3 base-card readout labels each family; a new family without a label
+    # would render its raw key. Guard both directions.
+    assert set(SCARCE_FAMILY_LABELS) == set(SCARCE_FAMILIES)
 
 
 def test_no_name_appears_in_two_families() -> None:

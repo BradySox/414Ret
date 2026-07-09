@@ -58,6 +58,14 @@ def test_red_tide_preseeds_c2_decapitation_effects() -> None:
     assert settings["c2_decapitation_effects"] is True
 
 
+def test_red_tide_preseeds_red_intent() -> None:
+    settings = _campaign_settings()
+    # §55 is default OFF; Red Tide is a peer fight where red has real offensive agency,
+    # and with war_economy also ON the supply->posture loop closes (a starved red digs
+    # in), so the campaign flips it ON (pure turn-model, no plugin dependency).
+    assert settings["red_intent"] is True
+
+
 def test_red_tide_fields_the_two_scud_batteries_for_the_hunt() -> None:
     # §49 only has something to relocate if the .miz actually places missile-category
     # TGOs. Red Tide's laydown carries two SS-1C Scud-B batteries; a future miz edit

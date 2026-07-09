@@ -283,6 +283,15 @@ settings:
   # §53 P3 -- fuel depots gate air readiness: bomb a base's fuel and it sorties fewer
   # jets next turn (down to a floor). No-op on bases without fuel depots. Symmetric.
   fuel_air_readiness: true
+  # §55 red intent -- the enemy commander now plays with intent: each turn it reads the war
+  # (ground balance, air strength, resolve, how last turn went) and adopts a posture
+  # (consolidate / attrition / surge) that carries across turns, biasing which targets it
+  # services, how erratic its picks are, whether it commits or defends, and how it husbands
+  # ground reserves. Red-only; reactive defense is never touched. Preseeded ON because Red
+  # Tide is a peer fight where red has real offensive agency -- and with §53 war economy also
+  # ON here, the loop closes: bomb red's supply and a starved red DIGS IN (consolidates) even
+  # when it's winning on the ground. Default OFF; see game/fourteenth/red_intent.py.
+  red_intent: true
   # §49 mobile-missile relocation (the SCUD hunt) -- red fields two SS-1C Scud-B batteries in
   # the rear (near Wittstock and forward off Haina). With this on they shoot-and-scoot during
   # the mission, and with concealed_enemy_forces (default ON) they show only as a dashed

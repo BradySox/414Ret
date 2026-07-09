@@ -1521,7 +1521,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     resolve) **plus last-turn deltas** (territorial movement vs a lazily-snapshotted turn-0
     baseline + a base lost last turn) with **asymmetric hysteresis** (dwell to escalate,
     immediate to consolidate), latches it on `Game` (getattr-guarded, recompute-not-pickle like
-    the phase pointer), announces transitions, and surfaces it on the SITREP band. The posture
+    the phase pointer), announces transitions, and surfaces it on the SITREP band + a colour-coded
+    chip on the campaign-status map ribbon (`CampaignStatusJs.red_posture`). The posture
     then biases the RED commander across **four planner seams** — all no-ops for blue, a stock
     red, or when the toggle is off, so the planner is byte-identical to before until red is
     actively consolidating or surging: (1) **offensive emphasis** — reorders `PlanNextAction`'s

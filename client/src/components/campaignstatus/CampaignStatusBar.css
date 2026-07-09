@@ -64,6 +64,78 @@
   background: #5f1d1d;
 }
 
+/* §55 Red Intent: the enemy commander's posture chip, coloured by mood --
+   surging (pressing, dangerous) red, consolidating (husbanding) amber, attrition
+   (grinding) neutral. Hidden when red_intent is off. */
+.campaign-status-posture {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: default;
+}
+
+.campaign-status-posture.posture-surging {
+  color: #f3d0c8;
+  background: #6b2417;
+}
+
+.campaign-status-posture.posture-consolidating {
+  color: #f0dcae;
+  background: #5a4413;
+}
+
+.campaign-status-posture.posture-attrition {
+  color: #c3ccd8;
+  background: #2c3a4d;
+}
+
+/* §53 war-economy supply chips, coloured by level (low red / mid amber / ok teal) so
+   the enemy's supply reads at a glance; §52 enemy-C2 chip in a distinct command slate. */
+.campaign-status-supply {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.campaign-status-supply.supply-ok {
+  color: #c8ece0;
+  background: #12463a;
+}
+
+.campaign-status-supply.supply-mid {
+  color: #f0dcae;
+  background: #5a4413;
+}
+
+.campaign-status-supply.supply-low {
+  color: #f3d0c8;
+  background: #6b2417;
+}
+
+.campaign-status-c2 {
+  color: #cdd6e2;
+  background: #33415a;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Group the enemy-state chips (posture / supply / C2 / resolve) behind a thin divider
+   so "yours" and "the enemy's" read as two clusters, not a flat wall of chips. */
+.campaign-status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.campaign-status-group-enemy {
+  border-left: 1px solid #2d4157;
+  padding-left: 14px;
+}
+
 .campaign-status-phase.expandable {
   cursor: pointer;
 }

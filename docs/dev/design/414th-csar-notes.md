@@ -223,6 +223,31 @@ on-demand rescue). `game/ato/flightplans/combatsar.py` (the forward hold) is now
 **player-planned** COMBAT_SAR flight — the standing-orbit auto-frag (`PlanCombatSar`) is deleted.
 Save-compat tombstones for the retired SOF economy live in `game/scar_rescue.py`.
 
+## Testing aids — thumb on the scale (2026-07-09)
+
+A flown session left **both** downed pilots unresolved (no pickup, no capture), so G10/G23/G28
+and the capture-gated §51 comms jamming (S4) all went unexercised end-to-end. Two problems: the
+AI rescue is the flaky path, and a capture essentially never completes — the snatch party spawned
+**2 NM** out and walked in at ~5.5 m/s (~11-min march, easily killed or simply out of the mission
+window). Fixes:
+
+- **Real tuning:** the snatch-party spawn default drops **2 NM → 0.75 NM** (`captureSpawnDistanceNm`
+  in `plugin.json` + the Lua `capture.spawnDistance` fallback). ~4-min approach, still killable by a
+  Sandy — a capture is now a real, occasional outcome in normal play instead of ~never. NEW game (or
+  set the option) to take effect.
+- **Two test toggles** (Settings → Campaign Management → HQ Automation, both **default OFF**), emitted
+  as scalar flags on `dcsRetribution.CombatSAR` and honored by the plugin (applied *after* the normal
+  options; force-capture wins if both set):
+  - `combat_sar_test_force_capture` → `testForceCapture`: capture on, chance 100%, spawn 0.2 NM, seize
+    radius 1000 ft, dwell 5 s. Every ejection → a fast, guaranteed **capture → POW**, which unlocks the
+    capture-gated comms jam. The reliable way to exercise **G28 + S4**.
+  - `combat_sar_test_easy_rescue` → `testEasyRescue`: capture off, pickup range 2000 ft / AGL 300 ft /
+    speed 80 kt / delivery 3 NM, AI dispatch 30 s. A rough landing near the smoke boards the survivor —
+    the reliable way to exercise **G10 King + G23 Sandy + the rescue/delivery loop**.
+
+  Both are test aids, not gameplay — leave OFF for normal play. Emitter test:
+  `tests/missiongenerator/test_combat_sar_sandy_luadata.py`.
+
 ## What is deliberately NOT here
 
 - **No POW recovery raid** (2026-07-03, above). If a future squadron call wants it back, it

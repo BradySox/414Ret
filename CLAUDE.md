@@ -768,7 +768,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     AI spawns. `auto_combat_sar` (**default ON**) drives the on-demand spawn, not an orbit. **Emit
     contract:** `dcsRetribution.CombatSAR` carries `autoSpawn` (bool) + `parkedHelos` (preferred) +
     `heloTemplate`/`farp` (fallback) when auto-spawning, alongside `pilotTemplate`/`rescueHelos`/
-    `kings`/`sandys`. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field
+    `kings`/`sandys`. **Testing aids (2026-07-09):** the enemy snatch-party spawn default dropped **2 NM
+    → 0.75 NM** so a capture can complete in a mission window (the 2 NM march ⇒ captures ~never fired),
+    plus two **default-OFF** test toggles (Campaign Management → HQ Automation) emitted as scalar flags on
+    the node — `combat_sar_test_force_capture` (`testForceCapture`: every ejection → a fast guaranteed
+    **capture → POW**, unlocking the §51 capture-gated comms jam; the reliable way to exercise G28 + S4)
+    and `combat_sar_test_easy_rescue` (`testEasyRescue`: capture off + forgiving pickup/delivery; exercises
+    G10 King / G23 Sandy / the pickup loop). The plugin applies them after the normal options (force-capture
+    wins if both set); OFF ⇒ node unchanged. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field
     spares the aviator at debrief (airframe still lost) — the plugin's `OnAfterBoarded`/`OnAfterRescued`
     hooks append the ejected unit name to `combat_sar_rescues`, and `commit_air_losses` skips that
     pilot's kill (fail-safe: empty list = pre-scoring behaviour). **v2 (deferred):** on-demand Sandy +

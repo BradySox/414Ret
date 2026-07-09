@@ -493,6 +493,14 @@ class LuaGenerator:
         """
         node.add_item("pilotTemplate").set_value(template_name)
         node.add_item("autoSpawn").set_value("true" if auto_spawn else "false")
+        # [TEST] thumb-on-the-scale flags (both default OFF): let the plugin rig the
+        # capture/pickup so a test reliably fires the POW -> comms-jam chain or the
+        # rescue loop without fighting the RNG. Emitted only when set, so the node is
+        # unchanged for normal play. See settings.combat_sar_test_* + the plugin.
+        if self.game.settings.combat_sar_test_force_capture:
+            node.add_item("testForceCapture").set_value("true")
+        if self.game.settings.combat_sar_test_easy_rescue:
+            node.add_item("testEasyRescue").set_value("true")
         # The enemy snatch party must spawn on the OPPOSING coalition. Emit that side's
         # faction country (always registered on the enemy coalition in this .miz) so the
         # plugin spawns it on the right side -- the old hardcoded CJTF_* constant is not

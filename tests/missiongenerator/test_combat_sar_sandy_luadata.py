@@ -79,6 +79,8 @@ def _generator(
     *,
     auto_combat_sar: bool = False,
     combat_sar_templates: Any = None,
+    force_capture: bool = False,
+    easy_rescue: bool = False,
 ) -> LuaGenerator:
     gen = LuaGenerator.__new__(LuaGenerator)
     gen.mission_data = SimpleNamespace(  # type: ignore[assignment]
@@ -86,7 +88,10 @@ def _generator(
     )
     gen.game = SimpleNamespace(  # type: ignore[assignment]
         settings=SimpleNamespace(
-            auto_combat_sar=auto_combat_sar, scar_command_post_intel=False
+            auto_combat_sar=auto_combat_sar,
+            scar_command_post_intel=False,
+            combat_sar_test_force_capture=force_capture,
+            combat_sar_test_easy_rescue=easy_rescue,
         ),
         blue=_coalition(49),
         red=_coalition(2),
@@ -257,6 +262,47 @@ def test_no_node_when_auto_on_but_no_template_and_no_player_package() -> None:
     gen._generate_combat_sar(lua_data)
 
     assert lua_data.get_item("CombatSAR") is None
+
+
+def test_test_flags_absent_by_default() -> None:
+    # Both thumb-on-the-scale toggles OFF -> the node carries neither flag, so normal
+    # play is unchanged (the plugin's own defaults/options drive the capture race).
+    flights = [_fd("Jolly-1", FlightType.COMBAT_SAR, is_blue=True, helo=True)]
+    gen = _generator(flights)
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert node.get_item("testForceCapture") is None
+    assert node.get_item("testEasyRescue") is None
+
+
+def test_force_capture_flag_emitted_when_on() -> None:
+    flights = [_fd("Jolly-1", FlightType.COMBAT_SAR, is_blue=True, helo=True)]
+    gen = _generator(flights, force_capture=True)
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _scalar(node.get_item("testForceCapture")) == "true"
+    assert node.get_item("testEasyRescue") is None
+
+
+def test_easy_rescue_flag_emitted_when_on() -> None:
+    flights = [_fd("Jolly-1", FlightType.COMBAT_SAR, is_blue=True, helo=True)]
+    gen = _generator(flights, easy_rescue=True)
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _scalar(node.get_item("testEasyRescue")) == "true"
+    assert node.get_item("testForceCapture") is None
 
 
 def _faction_with_infantry(ids: list[str]) -> Any:

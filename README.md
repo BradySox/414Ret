@@ -80,9 +80,11 @@ and selected later upstream fixes.
   war each turn — the ground balance, its air strength, how the last turn went — and adopts a
   *posture* that carries across turns instead of planning the same way every time: it **surges** when
   it holds the advantage (pressing to take ground, committing its reserves, striking with focus),
-  **consolidates** when it's been hit (defending, husbanding), or grinds it out in between. Your
-  kneeboard SITREP names the enemy's posture so you can read its mood. Opt-in and enemy-only (your
-  side's "intent" is the campaign phase), and it never touches the enemy's reactive defenses.
+  **consolidates** when it's been hit (defending, husbanding), or grinds it out in between. A
+  colour-coded **"ENEMY" chip on the map ribbon** (and your kneeboard SITREP) names the enemy's
+  posture so you can read its mood — and with the war economy on, **bomb its supply and a
+  winning enemy digs in**. Opt-in and enemy-only (your side's "intent" is the campaign phase), and
+  it never touches the enemy's reactive defenses. **Germany — Red Tide** ships with it on.
 - **Bomb the enemy's motor pool before its armor reaches the front.** A base's not-yet-deployed
   armor reserve now shows up as a **strikeable depot** on the map — hit the parked vehicles at the
   motor pool and the owner has to repurchase them next turn, so you can attrit the reserve directly

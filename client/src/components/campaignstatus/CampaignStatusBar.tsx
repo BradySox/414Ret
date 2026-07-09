@@ -90,6 +90,20 @@ export default function CampaignStatusBar() {
             )}
           </span>
         )}
+        {status.red_posture != null && (
+          <span
+            className={
+              "campaign-status-posture posture-" +
+              status.red_posture.toLowerCase()
+            }
+            title={
+              status.red_posture_detail ??
+              "The enemy commander's current posture"
+            }
+          >
+            ENEMY {status.red_posture}
+          </span>
+        )}
         {status.blue_will != null && (
           <span
             className="campaign-status-will campaign-status-will-blue"

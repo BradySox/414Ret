@@ -64,6 +64,32 @@
   background: #5f1d1d;
 }
 
+/* §55 Red Intent: the enemy commander's posture chip, coloured by mood --
+   surging (pressing, dangerous) red, consolidating (husbanding) amber, attrition
+   (grinding) neutral. Hidden when red_intent is off. */
+.campaign-status-posture {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: default;
+}
+
+.campaign-status-posture.posture-surging {
+  color: #f3d0c8;
+  background: #6b2417;
+}
+
+.campaign-status-posture.posture-consolidating {
+  color: #f0dcae;
+  background: #5a4413;
+}
+
+.campaign-status-posture.posture-attrition {
+  color: #c3ccd8;
+  background: #2c3a4d;
+}
+
 .campaign-status-phase.expandable {
   cursor: pointer;
 }

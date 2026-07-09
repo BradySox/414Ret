@@ -91,6 +91,11 @@ class CampaignStatusJs(BaseModel):
     phase_name: str | None
     phase_status: str | None
     phase_narrative: str | None
+    #: §55 Red Intent: the enemy commander's current posture ("Surging" /
+    #: "Consolidating" / "Attrition") + its legibility line. None when red_intent is
+    #: off, so the client hides the chip -- same rule as the phase fields.
+    red_posture: str | None
+    red_posture_detail: str | None
     blue_will: float | None
     red_will: float | None
     #: The campaign's authored will framing (the will-profile labels; Vietnam
@@ -111,8 +116,16 @@ class CampaignStatusJs(BaseModel):
     def from_game(game: Game) -> CampaignStatusJs:
         from game.fourteenth.phases import active_phase, arc_overview
         from game.fourteenth.political_will import ledger_notes, will_profile_for
+        from game.fourteenth.red_intent import active_red_intent
 
         phase = active_phase(game)
+        posture = active_red_intent(game)
+        red_posture = posture.display if posture is not None else None
+        red_posture_detail = (
+            getattr(game, "red_intent_status_line", None)
+            if posture is not None
+            else None
+        )
         blue_will: float | None = None
         red_will: float | None = None
         blue_will_label: str | None = None
@@ -156,6 +169,8 @@ class CampaignStatusJs(BaseModel):
             phase_name=phase.name if phase is not None else None,
             phase_status=getattr(game, "phase_status_line", None),
             phase_narrative=phase.narrative if phase is not None else None,
+            red_posture=red_posture,
+            red_posture_detail=red_posture_detail,
             blue_will=blue_will,
             red_will=red_will,
             blue_will_label=blue_will_label,

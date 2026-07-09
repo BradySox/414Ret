@@ -4548,16 +4548,22 @@ byte-identical to before until red is actively consolidating or surging.
 
 ### Legibility
 
-A per-turn transition message ("Enemy posture: Surging") + a SITREP band line (`Sitrep.red_posture` via
-`sitrep_posture_line`), rides-along like the will/C2 bands (never forces a SITREP onto a quiet turn).
+Three surfaces: a per-turn transition message ("Enemy posture: Surging"); a SITREP band line
+(`Sitrep.red_posture` via `sitrep_posture_line`, rides-along like the will/C2 bands, never forcing a SITREP
+onto a quiet turn); and a **campaign-status ribbon chip** on the web map (`CampaignStatusJs.red_posture` /
+`red_posture_detail` → `CampaignStatusBar`, coloured by mood — surging red, consolidating amber, attrition
+neutral — hidden when the feature is off, exactly like the phase chip). So the enemy's stance reads on the
+planning map, not only the kneeboard.
 
-### The §53 coupling (P4, read-only, deferred)
+### The §53 coupling (P4 — LIVE)
 
-`_red_supply_health` reads the sibling war-economy's `coalition_supply_health(game, red)` via a dynamic
-`importlib` import (so it neither errors where §53 is absent nor becomes an unused ignore once it lands),
-and degrades to `None` when the economy is off/absent — so P0–P3 are fully economy-independent. When §53
-lands, starved supply forces `CONSOLIDATE` even on a paper advantage (closing the interdiction→behaviour
-loop). The contract is LOCKED in the design note.
+`_red_supply_health` reads the war-economy's `coalition_supply_health(game, red)` (§53,
+`game/fourteenth/war_economy.py`) via a dynamic `importlib` import (so it neither errored where §53 was
+absent nor became an unused ignore once it landed), degrading to `None` when the economy is off/absent — so
+P0–P3 stayed economy-independent. **§53 has landed, so the coupling is live:** starved supply forces
+`CONSOLIDATE` even on a paper advantage, closing the interdiction→behaviour loop (bomb red's supply and a
+winning red digs in). **Red Tide preseeds both `war_economy` and `red_intent` ON**, so the full loop runs
+there out of the box; verified end-to-end against a stubbed economy in `test_red_intent.py`.
 
 ### Files & tests
 
@@ -4566,7 +4572,7 @@ loop). The contract is LOCKED in the design note.
 | Core | `game/fourteenth/red_intent.py` (postures, classifier, hysteresis, the four seam helpers) |
 | Seams | `nextaction.py` `_offensive_order`; `targetorder.py` `_unpredictability_for`; `objectivefinder.py` `vulnerable_control_points`; `frontlinestancetask.py` `_posture_commit_factor` |
 | Hook / state | `game/game.py` (`update_red_intent` in `initialize_turn`; latched `red_intent_*` fields, `__setstate__` defaults) |
-| Legibility | `game/sitrep.py` (`red_posture`), `game/sim/missionresultsprocessor.py` `record_sitrep` |
+| Legibility | `game/sitrep.py` (`red_posture`) + `record_sitrep`; `game/server/game/models.py` (`CampaignStatusJs.red_posture`) + `client/src/components/campaignstatus/CampaignStatusBar` (the ribbon chip + CSS) |
 | Setting | `game/settings/settings.py` (`red_intent`, Air Doctrine, default **OFF**) |
 | Tests | `tests/fourteenth/test_red_intent.py`; `tests/test_planner_unpredictability.py` (stacked red-intent + C2 clamp) |
 
@@ -4576,7 +4582,11 @@ loop). The contract is LOCKED in the design note.
   neutral/raw value for blue, a stock red, or feature-off, so the full suite is unchanged.
 - **Red-only by design.** Blue's "intent" is the campaign-phase arc (§40); a blue-AI mirror (for
   red-playing humans) is a possible later follow-up, out of scope.
-- **P4 (§53 supply coupling) is not wired yet** — it drops in read-only once the war economy lands.
+- **P4 (§53 supply coupling) is LIVE** — §53 shipped `coalition_supply_health`, so a starved red
+  consolidates; Red Tide preseeds both features ON. It stays a graceful no-op on campaigns without the war
+  economy.
+- **The web ribbon needs the CI client rebuild** to appear (the Python payload + hand-added generated type
+  ship in this repo; the built bundle is produced by CI). The kneeboard/SITREP surfaces need no rebuild.
 - **NEW game not required** (only a small latched pointer + baseline persist; posture re-derives each
   turn). Design note: `docs/dev/design/414th-red-intent-notes.md`.
 

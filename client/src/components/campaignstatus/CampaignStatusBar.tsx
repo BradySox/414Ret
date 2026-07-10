@@ -136,6 +136,12 @@ export default function CampaignStatusBar() {
                 }
               >
                 ENEMY {status.red_posture}
+                {status.red_posture_intensity != null && (
+                  <span className="campaign-status-posture-intensity">
+                    {" · "}
+                    {status.red_posture_intensity}
+                  </span>
+                )}
               </span>
             )}
             {status.red_supply != null && (
@@ -243,6 +249,37 @@ export default function CampaignStatusBar() {
               </div>
             </div>
           ))}
+          {status.red_posture_detail != null && (
+            <div
+              className={
+                "campaign-status-panel-intent intent-" +
+                (status.red_posture ?? "").toLowerCase()
+              }
+            >
+              <span className="campaign-status-panel-intent-label">
+                Enemy intent
+              </span>
+              <span className="campaign-status-panel-intent-text">
+                {status.red_posture_detail}
+              </span>
+              {(status.front_postures ?? []).length > 1 && (
+                <ul className="campaign-status-panel-fronts">
+                  {(status.front_postures ?? []).map((front) => (
+                    <li
+                      key={front.name}
+                      className={"front-posture posture-" + front.posture.toLowerCase()}
+                    >
+                      <span className="front-posture-name">{front.name}</span>
+                      <span className="front-posture-state">
+                        {front.posture}
+                        {front.intensity != null ? " · " + front.intensity : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
           {history.length >= 2 && (
             <div className="campaign-status-panel-will">
               <span className="campaign-status-panel-will-label">

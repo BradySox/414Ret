@@ -73,6 +73,16 @@ class CampaignEventJs(BaseModel):
     text: str
 
 
+class FrontPostureJs(BaseModel):
+    """§55 (D): one active front's RED posture, for the ribbon expander -- so a
+    multi-front war shows red committing on the front it is winning and husbanding on
+    the one it is losing, not just a single theater-wide stance."""
+
+    name: str
+    posture: str
+    intensity: str | None
+
+
 class CampaignStatusJs(BaseModel):
     """The campaign-status ribbon payload (campaign phases W3).
 
@@ -96,6 +106,13 @@ class CampaignStatusJs(BaseModel):
     #: off, so the client hides the chip -- same rule as the phase fields.
     red_posture: str | None
     red_posture_detail: str | None
+    #: §55 (2026-07-10): the graduated-intensity "how committed" word ("all-in" /
+    #: "pressing" / "dug in" ...) shown inline on the ribbon chip. None when off,
+    #: unresolved, or ATTRITION (the neutral middle carries no descriptor).
+    red_posture_intensity: str | None
+    #: §55 (D): per-front RED postures for the expander (empty unless per-front is on
+    #: and there are 2+ active fronts -- otherwise redundant with the theater posture).
+    front_postures: list[FrontPostureJs]
     #: §53 war economy: front supply health per side, 0-100 (blue = your logistics,
     #: red = the enemy's -- bomb it and a starved red digs in, §55). None when
     #: war_economy is off; the client hides the chips.
@@ -125,7 +142,11 @@ class CampaignStatusJs(BaseModel):
     def from_game(game: Game) -> CampaignStatusJs:
         from game.fourteenth.phases import active_phase, arc_overview
         from game.fourteenth.political_will import ledger_notes, will_profile_for
-        from game.fourteenth.red_intent import active_red_intent
+        from game.fourteenth.red_intent import (
+            active_red_intent,
+            front_postures,
+            intensity_word,
+        )
 
         phase = active_phase(game)
         posture = active_red_intent(game)
@@ -135,6 +156,15 @@ class CampaignStatusJs(BaseModel):
             if posture is not None
             else None
         )
+        red_posture_intensity = intensity_word(game) if posture is not None else None
+        front_posture_list = [
+            FrontPostureJs(
+                name=str(fp["name"]),
+                posture=str(fp["posture"]),
+                intensity=fp["intensity"],
+            )
+            for fp in front_postures(game)
+        ]
         blue_supply: float | None = None
         red_supply: float | None = None
         if getattr(game.settings, "war_economy", False):
@@ -196,6 +226,8 @@ class CampaignStatusJs(BaseModel):
             phase_narrative=phase.narrative if phase is not None else None,
             red_posture=red_posture,
             red_posture_detail=red_posture_detail,
+            red_posture_intensity=red_posture_intensity,
+            front_postures=front_posture_list,
             blue_supply=blue_supply,
             red_supply=red_supply,
             red_c2=red_c2,

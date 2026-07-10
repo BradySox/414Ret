@@ -51,7 +51,11 @@ if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
     from .fourteenth.phases import PhaseBaseline
-    from .fourteenth.red_intent import RedIntentBaseline
+    from .fourteenth.red_intent import (
+        FrontPosture,
+        RedIntentBaseline,
+        RedIntentSample,
+    )
     from .fourteenth.political_will import WillLedgerEntry
     from .fourteenth.super_gaggle import SuperGaggleCommitment
     from .navmesh import NavMesh
@@ -152,6 +156,17 @@ class Game:
         self.red_intent_entered_on_turn: Optional[int] = None
         self.red_intent_status_line: Optional[str] = None
         self.red_intent_baseline: Optional["RedIntentBaseline"] = None
+        # Red Intent rolling memory (2026-07-10): a bounded per-turn history of
+        # turn-stable levels the classifier differences for trends (IADS being
+        # dismantled, resolve collapsing, bases bleeding), and the latched intensity
+        # (0-1) the graduated aggressiveness/commit seams read. Both re-derived each
+        # turn; only banked here so trends survive a reload.
+        self.red_intent_history: list["RedIntentSample"] = []
+        self.red_intent_intensity: Optional[float] = None
+        # Per-front postures (§55 D): front key -> FrontPosture, so red commits on the
+        # front it is winning and husbands on the one it is losing. Recompute-not-pickle;
+        # cleared when red_intent_per_front is off.
+        self.red_intent_fronts: dict[str, "FrontPosture"] = {}
         # W6 red tempo: the last turn resolve-regen was applied (idempotence
         # guard for the multiple-init-per-turn cases).
         self.red_tempo_regen_turn: Optional[int] = None
@@ -261,6 +276,9 @@ class Game:
         state.setdefault("red_intent_entered_on_turn", None)
         state.setdefault("red_intent_status_line", None)
         state.setdefault("red_intent_baseline", None)
+        state.setdefault("red_intent_history", [])
+        state.setdefault("red_intent_intensity", None)
+        state.setdefault("red_intent_fronts", {})
         state.setdefault("red_tempo_regen_turn", None)
         state.setdefault("red_tempo_announced_phase", None)
         state.setdefault("will_ledger", [])

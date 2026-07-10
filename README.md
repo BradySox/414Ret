@@ -87,15 +87,24 @@ and selected later upstream fixes.
   map layer colours each of your fronts by how well-supplied it is (with the producers feeding it), and
   each base card reads out its front supply and munitions on hand. All symmetric — protect your own
   supply too — and off by default.
-- **The enemy commander plays with intent.** With **Red Intent** on (Air Doctrine), the AI reads the
-  war each turn — the ground balance, its air strength, how the last turn went — and adopts a
-  *posture* that carries across turns instead of planning the same way every time: it **surges** when
-  it holds the advantage (pressing to take ground, committing its reserves, striking with focus),
-  **consolidates** when it's been hit (defending, husbanding), or grinds it out in between. A
-  colour-coded **"ENEMY" chip on the map ribbon** (and your kneeboard SITREP) names the enemy's
-  posture so you can read its mood — and with the war economy on, **bomb its supply and a
-  winning enemy digs in**. Opt-in and enemy-only (your side's "intent" is the campaign phase), and
-  it never touches the enemy's reactive defenses. **Germany — Red Tide** ships with it on.
+- **The enemy commander plays with intent — and remembers the war.** With **Red Intent** on (Air
+  Doctrine), the AI reads the war each turn — the ground balance, its air strength, how the last turn
+  went — and, crucially, the **trend across turns**: it notices when you've been dismantling its SAM
+  belt, when its resolve is cracking, when it's bleeding bases. It adopts a *posture* that carries
+  across turns instead of planning the same way every time: it **surges** when it holds the advantage
+  (pressing to take ground, committing its reserves, striking with focus), **consolidates** when it's
+  under pressure (defending, husbanding), or grinds it out in between — and it reacts to the *shape* of
+  your campaign, so a winning enemy that watches its air defenses come apart will **dig in even while
+  it still outnumbers you**, and one that catches your fighters spent will **lunge through the gap**. It
+  even presses *harder* the further ahead it is and turtles *harder* the deeper the trouble. A
+  colour-coded **"ENEMY" chip on the map ribbon** (and your kneeboard SITREP) names the enemy's posture
+  and *why* ("Surging (all-in)", "Consolidating — IADS falling") so you can read its mood — and with the
+  war economy on, **bomb its supply and a winning enemy digs in**. On a **multi-front** war it now holds a
+  *separate* posture per front — pressing on the front it's winning while it digs in on the one it's
+  losing — and a single **boldness** dial lets you tune its whole temperament from cautious to reckless
+  (plus how sticky its posture is and how far back it reads the war's trend). Opt-in and enemy-only (your
+  side's "intent" is the campaign phase), and it never touches the enemy's reactive defenses. **Germany —
+  Red Tide** ships with it on.
 - **Bomb the enemy's motor pool before its armor reaches the front.** A base's not-yet-deployed
   armor reserve now shows up as a **strikeable depot** on the map — hit the parked vehicles at the
   motor pool and the owner has to repurchase them next turn, so you can attrit the reserve directly

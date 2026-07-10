@@ -86,7 +86,10 @@ class FrontLineStanceTask(TheaterCommanderTask, ABC):
             return 1.0
         from game.fourteenth.red_intent import stance_commit_factor
 
-        return stance_commit_factor(coalition.game)
+        # Pass this task's front so red uses its PER-FRONT posture (D) -- committing on
+        # the front it is winning, husbanding on the one it is losing. Falls back to the
+        # theater-wide posture when per-front is off or the front doesn't resolve.
+        return stance_commit_factor(coalition.game, self.front_line)
 
     def preconditions_met(self, state: TheaterState) -> bool:
         if not self.management_allowed(state):

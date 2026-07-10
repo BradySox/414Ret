@@ -15,6 +15,83 @@ Phase status: **P0** observe-only resolver + SITREP · **P1** offensive emphasis
 (`_red_supply_health` reads `war_economy.coalition_supply_health`; returns None whenever `war_economy`
 is off, so a non-economy campaign is unaffected) — all landed. In-game pass: checklist B7.
 
+**Refinement — "make red smarter" (2026-07-10).** The P0–P4 build shipped the four seams but its
+"memory" was thinner than this note always described: it snapshotted turn 0 (a straight copy of
+`PhaseBaseline`) and never rolled, so the promised *"blue has hit my IADS two turns running → stay
+defensive"* trend reading did not actually exist. This pass builds it, on three axes — all pure
+turn-model, all no-ops until real trend/margin data appears (the v1 constants are reproduced exactly
+at the default intensity, so every prior test held byte-for-byte):
+
+- **A — Rolling trend memory.** A bounded per-turn `red_intent_history` of turn-stable *levels*
+  (`RedIntentSample`: resolve, cumulative front advance, red SAM-site count, both sides' fighter
+  counts, red base count, supply) lives on the `Game` (getattr-guarded + `__setstate__` default,
+  trimmed to `MEMORY_LENGTH` = 6). Each turn the classifier differences the current sample against a
+  **lookback sample** (`_trend_lookback`, ~`TREND_LOOKBACK_TURNS` = 2 back, oldest-available early in
+  the game, `None` on turn 1) to read *trends*: the IADS being dismantled (`iads_trend`), resolve
+  collapsing (`resolve_trend`, the derivative the instantaneous floor misses), bases bleeding
+  (`base_trend`), the front eroding again after a plateau (`front_trend`). Recording is idempotent
+  (a same-turn re-init replaces, never appends; the lookback excludes the current turn).
+- **C — Richer battle-reading.** Those trends bias a *ground-dominant* red toward `CONSOLIDATE` even
+  at a paper edge (the design's central "closing the interdiction→behaviour loop" promise, now driven
+  by red's own IADS/resolve/base attrition, not only the §53 supply meter). And a **blue-air-collapse
+  opportunity window** (`blue_air_collapsing`: blue lost ≥ `BLUE_AIR_COLLAPSE_FRAC` = 35 % of its
+  air-superiority force over the window while red's air holds) lets red `SURGE` at a **reduced ground
+  bar** (`SURGE_OPPORTUNITY_GROUND_RATIO` = 1.2 vs the normal 1.5) — red pounces on a transient gap.
+- **B — Graduated intensity.** The classifier also yields an **`intensity`** ∈ [0, 1] (how strongly
+  the posture is held — a runaway 4:1 surge vs a marginal one; a mild hold vs a collapsing regime),
+  latched as `game.red_intent_intensity` and read by the **aggressiveness** and **ground-commit**
+  seams so their magnitude scales instead of a flat per-posture constant. The graduated formulas are
+  anchored at `DEFAULT_INTENSITY` (0.5) to the v1 midpoints (+/−30 aggressiveness, ×1.35 / ×0.7
+  commit), so a *typical* posture is unchanged and only the extremes move. Unpredictability + emphasis
+  stay posture-only (bounded blast radius; unpredictability already stacks with §52 C2 decap). The
+  intensity also surfaces a "how committed" word on the status detail ("Surging (all-in)",
+  "Consolidating (dug in)") via `_intensity_word`, and `_legibility` names the trend driver ("IADS
+  falling" / "resolve collapsing" / "losing bases" / "enemy air spent") so a memory-based decision
+  explains itself rather than looking like it fired on a healthy snapshot.
+
+  **Made visible (not hover-only), 2026-07-10.** The smart read is surfaced on both player UIs, not
+  just the ribbon-chip tooltip: the **kneeboard SITREP** "Enemy posture" line renders the full detail
+  (`Sitrep.red_posture_detail` via `sitrep_posture_detail`, recorded in `record_sitrep`) — Python-only,
+  so it shows in-game with no client rebuild; and the **web ribbon chip** shows the intensity word
+  inline ("ENEMY Surging · all-in", `CampaignStatusJs.red_posture_intensity` via `intensity_word`) with
+  an "Enemy intent" block in the expander carrying the full "why" (`red_posture_detail`). Guarded in
+  `tests/test_sitrep.py` + the `sitrep_posture_detail`/`intensity_word` tests in `test_red_intent.py`.
+
+  New/extended tests in `tests/fourteenth/test_red_intent.py` cover the trend classifier, the
+  opportunity window, the lookback selector, idempotent history recording, the intensity endpoints,
+  and the graduated seams (all anchored so the v1 seam tests are unchanged).
+
+**Per-front posture + tuning settings (2026-07-10, follow-on).** The two pieces deferred above:
+
+- **Per-front posture (D).** A theater-wide posture treated a two-front war as one stance — on a map
+  where red is 4:1 on one front and 1:4 on another, the aggregate reads ~even and red neither commits
+  nor husbands anywhere. Now `_update_front_postures` classifies **each active front** from *its own*
+  ground balance (`_front_ground_ratio`) plus the shared theater air/resolve/supply/**trend** read,
+  with per-front hysteresis, latching a `FrontPosture` per front on `game.red_intent_fronts` (keyed by
+  the cp-id pair; getattr-guarded + `__setstate__` `{}`). The **ground-husbanding seam (4)** is the one
+  that goes per-front: `FrontLineStanceTask._posture_commit_factor` passes `self.front_line`, and
+  `stance_commit_factor(game, front)` reads that front's posture/intensity via
+  `_front_posture_and_intensity` — so red commits reserves on the front it is winning and husbands on
+  the one it is losing. The **global seams (emphasis / unpredictability / aggressiveness) stay
+  theater-wide** (they are whole-planning-run decisions), as does the UI headline; the per-front
+  breakdown surfaces in the ribbon **expander** (`front_postures` → `CampaignStatusJs.front_postures`
+  → a list under the "Enemy intent" block, shown only for 2+ divergent fronts). `_front_key` is
+  defensive (a duck-typed front → theater fallback), so the seam never raises. Gated
+  `red_intent_per_front` (default ON); off clears the dict and every front uses the theater posture.
+  Verified end-to-end: on a Berlin-4:1 / Fulda-1:4 board red surges (commit ×1.4–1.7) on Berlin while
+  digging in (×0.5–0.7) on Fulda under a theater-"Attrition" aggregate.
+- **Tuning settings (the temperament dials).** A `RedIntentTuning` object (default = the base
+  constants, so `DEFAULT_TUNING` and a positional `classify_red_intent(m)` are byte-identical) threads
+  the settings-derived knobs through the classifier + seams via `tuning_for(game)`:
+  **`red_intent_boldness`** (0–100, 50 = neutral) is the master dial — higher lowers the
+  surge/opportunity/consolidate ground bars (surges at a smaller edge, turtles only when badly
+  outnumbered) and raises `seam_scale` (presses harder once committed: bigger aggressiveness delta +
+  commit deviation); **`red_intent_dwell_turns`** tunes the escalation hysteresis; **`red_intent_trend_window`**
+  tunes the trend-lookback. All on the Air Doctrine page under Red Intent, all no-ops at their defaults.
+  The seam formulas are re-anchored so `seam_scale`=1 + intensity=0.5 reproduce the v1 numbers exactly.
+  Tests cover `tuning_for`, the boldness-widened surge zone, the scaled seams, the dwell/window
+  overrides, the per-front helpers, and the full per-front divergence + fallback.
+
 Decided calls (session 2026-07-08):
 
 - **[DECIDED] Three postures** — `CONSOLIDATE / ATTRITION / SURGE`. The earlier fourth

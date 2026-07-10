@@ -617,6 +617,11 @@ export type CampaignEvent = {
   title: string;
   text: string;
 };
+export type FrontPosture = {
+  name: string;
+  posture: string;
+  intensity?: string | null;
+};
 export type CampaignStatus = {
   campaign_name?: string | null;
   turn: number;
@@ -626,6 +631,8 @@ export type CampaignStatus = {
   phase_narrative?: string | null;
   red_posture?: string | null;
   red_posture_detail?: string | null;
+  red_posture_intensity?: string | null;
+  front_postures?: FrontPosture[];
   blue_supply?: number | null;
   red_supply?: number | null;
   red_c2?: string | null;

@@ -19,16 +19,28 @@ from game.commander.tasks.primitive.defensivestance import DefensiveStance
 from game.commander.tasks.targetorder import _unpredictability_for
 from game.fourteenth.red_intent import (
     CONSOLIDATE_GROUND_RATIO,
+    DEFAULT_INTENSITY,
+    IADS_COLLAPSE_TREND,
     INTENT_MIN_DWELL_TURNS,
+    MEMORY_LENGTH,
+    RESOLVE_COLLAPSE_TREND,
     RedIntentMetrics,
+    RedIntentSample,
     RedPosture,
     SURGE_GROUND_RATIO,
+    SURGE_OPPORTUNITY_GROUND_RATIO,
+    SURGE_STRONG_RATIO,
     _POSTURE_EMPHASIS,
+    _intensity,
     _next_posture,
     _posture_from_key,
+    _record_sample,
     _red_supply_health,
+    _trend_lookback,
+    active_red_intensity,
     active_red_intent,
     classify_red_intent,
+    collect_metrics,
     effective_aggressiveness,
     offensive_emphasis,
     sitrep_posture_line,
@@ -45,6 +57,11 @@ def _metrics(
     front_advance: float = 0.0,
     lost_base: bool = False,
     supply_health: Optional[float] = None,
+    iads_trend: float = 0.0,
+    resolve_trend: float = 0.0,
+    base_trend: int = 0,
+    front_trend: float = 0.0,
+    blue_air_collapsing: bool = False,
 ) -> RedIntentMetrics:
     return RedIntentMetrics(
         ground_ratio=ground_ratio,
@@ -53,6 +70,11 @@ def _metrics(
         front_advance=front_advance,
         lost_base=lost_base,
         supply_health=supply_health,
+        iads_trend=iads_trend,
+        resolve_trend=resolve_trend,
+        base_trend=base_trend,
+        front_trend=front_trend,
+        blue_air_collapsing=blue_air_collapsing,
     )
 
 
@@ -179,16 +201,36 @@ class _FakeAirWing:
 
 
 class _FakeFront:
-    def __init__(self, red_units: int, blue_units: int) -> None:
-        self.blue_cp = SimpleNamespace(id=1, deployable_front_line_units=blue_units)
-        self.red_cp = SimpleNamespace(id=2, deployable_front_line_units=red_units)
+    def __init__(
+        self,
+        red_units: int,
+        blue_units: int,
+        blue_id: int = 1,
+        red_id: int = 2,
+        name: Optional[str] = None,
+    ) -> None:
+        self.blue_cp = SimpleNamespace(
+            id=blue_id, name=f"blue{blue_id}", deployable_front_line_units=blue_units
+        )
+        self.red_cp = SimpleNamespace(
+            id=red_id, name=f"red{red_id}", deployable_front_line_units=red_units
+        )
         self.route_length = 100.0
         self._blue_route_progress = 50.0
+        if name is not None:
+            self.name = name
 
 
 class _FakeTheater:
-    def __init__(self, fronts: tuple[object, ...]) -> None:
+    def __init__(
+        self,
+        fronts: tuple[object, ...],
+        ground_objects: tuple[object, ...] = (),
+        controlpoints: tuple[object, ...] = (),
+    ) -> None:
         self._fronts = fronts
+        self.ground_objects = list(ground_objects)
+        self.controlpoints = list(controlpoints)
 
     def conflicts(self) -> list[object]:
         return list(self._fronts)
@@ -208,6 +250,9 @@ class _FakeGame:
         self.red_intent_entered_on_turn: Optional[int] = None
         self.red_intent_status_line: Optional[str] = None
         self.red_intent_baseline: object = None
+        self.red_intent_history: list[RedIntentSample] = []
+        self.red_intent_intensity: Optional[float] = None
+        self.red_intent_fronts: dict[str, object] = {}
 
     def air_wing_for(self, player: object) -> _FakeAirWing:
         return _FakeAirWing()
@@ -514,3 +559,441 @@ def test_supplied_economy_lets_a_winning_red_surge(
     game.settings = SimpleNamespace(red_intent=True, war_economy=True)
     update_red_intent(game)  # type: ignore[arg-type]
     assert game.red_intent_key == RedPosture.SURGE.value
+
+
+# =====================================================================================
+# Smarter red (2026-07-10): rolling trend memory (A) + battle-reading (C) + intensity (B)
+# =====================================================================================
+
+
+def _sample(
+    turn: int,
+    resolve: float = 100.0,
+    front_advance: float = 0.0,
+    sam_alive: int = 8,
+    red_fighters: int = 10,
+    blue_fighters: int = 10,
+    red_bases: int = 5,
+    supply_health: Optional[float] = None,
+) -> RedIntentSample:
+    return RedIntentSample(
+        turn=turn,
+        resolve=resolve,
+        front_advance=front_advance,
+        sam_alive=sam_alive,
+        red_fighters=red_fighters,
+        blue_fighters=blue_fighters,
+        red_bases=red_bases,
+        supply_health=supply_health,
+    )
+
+
+def _fake_sam() -> SimpleNamespace:
+    """A minimal live RED long-range SAM TGO for the theater ground-object accessor."""
+    from game.data.groups import GroupTask
+
+    return SimpleNamespace(
+        task=GroupTask.LORAD,
+        is_friendly=lambda player: False,  # not friendly to blue => red-owned
+        groups=[SimpleNamespace(units=[SimpleNamespace(alive=True)])],
+    )
+
+
+# --- C: trend signals bias a ground-dominant red toward CONSOLIDATE ------------------
+
+
+def test_iads_being_dismantled_forces_consolidate() -> None:
+    # Red outnumbers on the ground (would SURGE) but its SAM belt is falling -> dig in.
+    m = _metrics(ground_ratio=2.0, iads_trend=IADS_COLLAPSE_TREND + 0.1)
+    assert classify_red_intent(m) is RedPosture.CONSOLIDATE
+
+
+def test_collapsing_resolve_trend_forces_consolidate() -> None:
+    # Resolve is still above the absolute floor, but falling fast -> the derivative bites.
+    m = _metrics(
+        ground_ratio=2.0, resolve=80.0, resolve_trend=RESOLVE_COLLAPSE_TREND - 1
+    )
+    assert classify_red_intent(m) is RedPosture.CONSOLIDATE
+
+
+def test_bleeding_bases_over_the_window_forces_consolidate() -> None:
+    m = _metrics(ground_ratio=2.0, base_trend=-1)
+    assert classify_red_intent(m) is RedPosture.CONSOLIDATE
+
+
+def test_front_eroding_again_forces_consolidate() -> None:
+    # The cumulative front_advance is still shallow, but it moved against red over the
+    # window -> the trend catches renewed erosion after a plateau.
+    m = _metrics(ground_ratio=2.0, front_advance=0.0, front_trend=0.1)
+    assert classify_red_intent(m) is RedPosture.CONSOLIDATE
+
+
+# --- C: the blue-air-collapse opportunity window ------------------------------------
+
+
+def test_blue_air_collapse_opens_a_surge_at_a_lower_ground_bar() -> None:
+    # Rough ground parity (below the normal SURGE bar) but blue's air just cratered ->
+    # red pounces through the transient gap.
+    m = _metrics(ground_ratio=SURGE_OPPORTUNITY_GROUND_RATIO, blue_air_collapsing=True)
+    assert m.ground_ratio < SURGE_GROUND_RATIO  # would be ATTRITION without the window
+    assert classify_red_intent(m) is RedPosture.SURGE
+
+
+def test_opportunity_window_still_needs_a_modest_edge() -> None:
+    # Blue air collapsed but red has no ground edge at all -> no reckless surge.
+    m = _metrics(ground_ratio=1.0, blue_air_collapsing=True)
+    assert classify_red_intent(m) is RedPosture.ATTRITION
+
+
+def test_opportunity_window_does_not_override_pressure() -> None:
+    # A collapsing blue air force does not make red surge while red itself is bleeding.
+    m = _metrics(
+        ground_ratio=SURGE_OPPORTUNITY_GROUND_RATIO,
+        blue_air_collapsing=True,
+        lost_base=True,
+    )
+    assert classify_red_intent(m) is RedPosture.CONSOLIDATE
+
+
+# --- trend derivation in collect_metrics --------------------------------------------
+
+
+def test_collect_metrics_derives_trends_from_the_lookback_sample() -> None:
+    game = _FakeGame(red_intent=True)  # no fronts -> ground_ratio 1.0, last_sitrep None
+    prior = _sample(turn=1, resolve=90.0, sam_alive=8, red_bases=5, blue_fighters=20)
+    now = _sample(turn=3, resolve=78.0, sam_alive=4, red_bases=4, blue_fighters=10)
+    m = collect_metrics(game, now, prior)  # type: ignore[arg-type]
+    assert m.iads_trend == 0.5  # (8-4)/8
+    assert m.resolve_trend == -12.0  # 78 - 90
+    assert m.base_trend == -1  # 4 - 5
+    assert m.blue_air_collapsing  # blue fighters halved, red air not suppressed
+
+
+def test_collect_metrics_has_neutral_trends_without_history() -> None:
+    game = _FakeGame(red_intent=True)
+    m = collect_metrics(game, _sample(turn=1), None)  # type: ignore[arg-type]
+    assert m.iads_trend == 0.0
+    assert m.resolve_trend == 0.0
+    assert m.base_trend == 0
+    assert not m.blue_air_collapsing
+
+
+def test_blue_air_collapse_ignored_when_reds_own_air_is_suppressed() -> None:
+    game = _FakeGame(red_intent=True)
+    # Blue lost most of its fighters, but red has far fewer -> red can't exploit it.
+    prior = _sample(turn=1, blue_fighters=20, red_fighters=2)
+    now = _sample(turn=3, blue_fighters=8, red_fighters=2)
+    m = collect_metrics(game, now, prior)  # type: ignore[arg-type]
+    assert not m.blue_air_collapsing
+
+
+# --- the lookback selector -----------------------------------------------------------
+
+
+def test_trend_lookback_is_none_without_prior_history() -> None:
+    assert _trend_lookback([], 1) is None
+    assert _trend_lookback([_sample(turn=5)], 5) is None  # current turn excluded
+
+
+def test_trend_lookback_prefers_about_two_turns_back() -> None:
+    history = [_sample(turn=t) for t in (1, 2, 3, 4)]
+    # From turn 5, target is turn 3; the newest sample at/before it is turn 3.
+    got = _trend_lookback(history, 5)
+    assert got is not None and got.turn == 3
+
+
+def test_trend_lookback_falls_back_to_the_oldest_when_young() -> None:
+    history = [_sample(turn=4)]
+    # From turn 5, target is turn 3 -- none that old, so the oldest earlier stands in.
+    got = _trend_lookback(history, 5)
+    assert got is not None and got.turn == 4
+
+
+# --- rolling history recording -------------------------------------------------------
+
+
+def test_record_sample_replaces_a_same_turn_entry() -> None:
+    game = _FakeGame(red_intent=True)
+    _record_sample(game, _sample(turn=2, sam_alive=8))  # type: ignore[arg-type]
+    _record_sample(game, _sample(turn=2, sam_alive=3))  # type: ignore[arg-type]
+    assert len(game.red_intent_history) == 1
+    assert game.red_intent_history[0].sam_alive == 3
+
+
+def test_record_sample_trims_to_memory_length() -> None:
+    game = _FakeGame(red_intent=True)
+    for t in range(1, MEMORY_LENGTH + 4):
+        _record_sample(game, _sample(turn=t))  # type: ignore[arg-type]
+    assert len(game.red_intent_history) == MEMORY_LENGTH
+    # The oldest turns are dropped; the most recent are kept.
+    assert game.red_intent_history[-1].turn == MEMORY_LENGTH + 3
+
+
+def test_update_banks_a_sample_each_turn() -> None:
+    game = _FakeGame(red_intent=True, fronts=(_FakeFront(red_units=20, blue_units=5),))
+    update_red_intent(game)  # type: ignore[arg-type]
+    assert len(game.red_intent_history) == 1
+    assert game.red_intent_history[0].turn == 1
+
+
+def test_rolling_memory_consolidates_when_iads_is_dismantled() -> None:
+    # End-to-end: a ground-dominant red surges turn 1, then digs in once its SAM belt is
+    # visibly dismantled over the following turns -- the memory the design always wanted.
+    game = _FakeGame(red_intent=True, fronts=(_FakeFront(red_units=20, blue_units=5),))
+    game.turn = 1
+    game.theater.ground_objects = [_fake_sam() for _ in range(8)]
+    update_red_intent(game)  # type: ignore[arg-type]
+    assert game.red_intent_key == RedPosture.SURGE.value
+    game.turn = 3
+    game.theater.ground_objects = [_fake_sam() for _ in range(4)]  # half the belt gone
+    update_red_intent(game)  # type: ignore[arg-type]
+    assert game.red_intent_key == RedPosture.CONSOLIDATE.value
+    assert "IADS falling" in (game.red_intent_status_line or "")
+
+
+# --- B: intensity -------------------------------------------------------------------
+
+
+def test_surge_intensity_ramps_with_the_margin() -> None:
+    floor = _intensity(_metrics(ground_ratio=SURGE_GROUND_RATIO), RedPosture.SURGE)
+    runaway = _intensity(_metrics(ground_ratio=SURGE_STRONG_RATIO), RedPosture.SURGE)
+    assert runaway == 1.0
+    assert 0.0 < floor < runaway
+
+
+def test_consolidate_intensity_deepens_with_pressure() -> None:
+    mild = _intensity(
+        _metrics(ground_ratio=CONSOLIDATE_GROUND_RATIO - 0.05), RedPosture.CONSOLIDATE
+    )
+    # A fully collapsed regime (resolve 0) maxes the resolve severity axis.
+    deep = _intensity(
+        _metrics(ground_ratio=0.0, resolve=0.0, lost_base=True), RedPosture.CONSOLIDATE
+    )
+    assert deep == 1.0
+    assert mild < deep
+
+
+def test_attrition_intensity_is_the_neutral_midpoint() -> None:
+    assert _intensity(_metrics(), RedPosture.ATTRITION) == DEFAULT_INTENSITY
+
+
+# --- B: the graduated seams read intensity ------------------------------------------
+
+
+def _intensity_game(posture: str, intensity: float, aggr: int = 50) -> "_FakeGame":
+    game = _FakeGame(red_intent=True)
+    game.settings = SimpleNamespace(
+        red_intent=True, opfor_autoplanner_aggressiveness=aggr, campaign_phases=False
+    )
+    game.red_intent_key = posture
+    game.red_intent_intensity = intensity
+    return game
+
+
+def test_active_red_intensity_defaults_and_reads() -> None:
+    off = _FakeGame(red_intent=False)
+    off.red_intent_intensity = 0.9
+    assert active_red_intensity(off) == DEFAULT_INTENSITY  # type: ignore[arg-type]
+    unset = _FakeGame(red_intent=True)
+    assert active_red_intensity(unset) == DEFAULT_INTENSITY  # type: ignore[arg-type]
+    set_game = _FakeGame(red_intent=True)
+    set_game.red_intent_intensity = 0.8
+    assert active_red_intensity(set_game) == 0.8  # type: ignore[arg-type]
+
+
+def test_aggressiveness_scales_with_surge_intensity() -> None:
+    weak = _intensity_game(RedPosture.SURGE.value, 0.0)
+    strong = _intensity_game(RedPosture.SURGE.value, 1.0)
+    mid = _intensity_game(RedPosture.SURGE.value, DEFAULT_INTENSITY)
+    assert effective_aggressiveness(mid) == 80  # type: ignore[arg-type]  # v1 anchor
+    assert effective_aggressiveness(weak) == 65  # type: ignore[arg-type]  # 50 + 15
+    assert effective_aggressiveness(strong) == 95  # type: ignore[arg-type]  # 50 + 45
+
+
+def test_commit_factor_scales_with_intensity() -> None:
+    surge_strong = _intensity_game(RedPosture.SURGE.value, 1.0)
+    surge_weak = _intensity_game(RedPosture.SURGE.value, 0.0)
+    consolidate_deep = _intensity_game(RedPosture.CONSOLIDATE.value, 1.0)
+    assert stance_commit_factor(surge_strong) == 1.55  # type: ignore[arg-type]
+    assert stance_commit_factor(surge_weak) == 1.15  # type: ignore[arg-type]
+    assert stance_commit_factor(consolidate_deep) == 0.5  # type: ignore[arg-type]
+
+
+def test_status_line_carries_the_intensity_word() -> None:
+    # A runaway surge reads "Surging (all-in)"; the enriched detail still flows.
+    game = _FakeGame(red_intent=True, fronts=(_FakeFront(red_units=40, blue_units=5),))
+    update_red_intent(game)  # type: ignore[arg-type]
+    assert game.red_intent_key == RedPosture.SURGE.value
+    assert "Surging (all-in)" in (game.red_intent_status_line or "")
+
+
+def test_sitrep_posture_detail_surfaces_the_status_line() -> None:
+    game = _FakeGame(red_intent=True)
+    game.red_intent_key = RedPosture.SURGE.value
+    game.red_intent_status_line = "Surging (all-in) — ground 4.0x · IADS falling"
+    from game.fourteenth.red_intent import sitrep_posture_detail
+
+    assert sitrep_posture_detail(game) == (  # type: ignore[arg-type]
+        "Surging (all-in) — ground 4.0x · IADS falling"
+    )
+    off = _FakeGame(red_intent=False)
+    off.red_intent_status_line = "stale"
+    assert sitrep_posture_detail(off) is None  # type: ignore[arg-type]
+
+
+def test_intensity_word_helper() -> None:
+    from game.fourteenth.red_intent import intensity_word
+
+    surge = _FakeGame(red_intent=True)
+    surge.red_intent_key = RedPosture.SURGE.value
+    surge.red_intent_intensity = 1.0
+    assert intensity_word(surge) == "all-in"  # type: ignore[arg-type]
+    consolidate = _FakeGame(red_intent=True)
+    consolidate.red_intent_key = RedPosture.CONSOLIDATE.value
+    consolidate.red_intent_intensity = 1.0
+    assert intensity_word(consolidate) == "dug in"  # type: ignore[arg-type]
+    # ATTRITION (neutral middle) and feature-off carry no descriptor.
+    attrition = _FakeGame(red_intent=True)
+    attrition.red_intent_key = RedPosture.ATTRITION.value
+    assert intensity_word(attrition) is None  # type: ignore[arg-type]
+    off = _FakeGame(red_intent=False)
+    off.red_intent_key = RedPosture.SURGE.value
+    assert intensity_word(off) is None  # type: ignore[arg-type]
+
+
+# =====================================================================================
+# Tuning (settings-driven temperament) + per-front posture (D)
+# =====================================================================================
+
+from game.fourteenth.red_intent import (  # noqa: E402
+    DEFAULT_TUNING,
+    RedIntentTuning,
+    _front_ground_ratio,
+    _front_key,
+    front_postures,
+    tuning_for,
+)
+
+
+def test_tuning_for_defaults_to_the_base_thresholds() -> None:
+    game = _FakeGame(red_intent=True)  # settings carry no red_intent_* tuning
+    t = tuning_for(game)  # type: ignore[arg-type]
+    assert t == DEFAULT_TUNING
+
+
+def test_boldness_lowers_the_surge_bar_and_raises_the_seam_scale() -> None:
+    game = _FakeGame(red_intent=True)
+    game.settings = SimpleNamespace(red_intent=True, red_intent_boldness=100)
+    bold = tuning_for(game)  # type: ignore[arg-type]
+    assert bold.surge_ground_ratio < SURGE_GROUND_RATIO  # surges at a smaller edge
+    assert bold.consolidate_ground_ratio < CONSOLIDATE_GROUND_RATIO  # turtles later
+    assert bold.seam_scale > 1.0  # presses harder
+    game.settings = SimpleNamespace(red_intent=True, red_intent_boldness=0)
+    timid = tuning_for(game)  # type: ignore[arg-type]
+    assert timid.surge_ground_ratio > SURGE_GROUND_RATIO  # needs a clear advantage
+    assert timid.seam_scale < 1.0
+
+
+def test_boldness_widens_the_surge_zone_in_the_classifier() -> None:
+    # A ground edge below the base surge bar is only a surge for a bold red.
+    m = _metrics(ground_ratio=1.2)
+    assert classify_red_intent(m) is RedPosture.ATTRITION  # base
+    bold = RedIntentTuning(surge_ground_ratio=1.05)
+    assert classify_red_intent(m, bold) is RedPosture.SURGE
+
+
+def test_boldness_scales_the_aggressiveness_and_commit_seams() -> None:
+    bold = _intensity_game(RedPosture.SURGE.value, DEFAULT_INTENSITY, aggr=50)
+    bold.settings.red_intent_boldness = 100
+    neutral = _intensity_game(RedPosture.SURGE.value, DEFAULT_INTENSITY, aggr=50)
+    # Neutral reproduces the v1 anchors; bold presses harder on both seams.
+    assert effective_aggressiveness(neutral) == 80  # type: ignore[arg-type]
+    assert effective_aggressiveness(bold) > 80  # type: ignore[arg-type]
+    assert stance_commit_factor(neutral) == 1.35  # type: ignore[arg-type]
+    assert stance_commit_factor(bold) > 1.35  # type: ignore[arg-type]
+
+
+def test_dwell_setting_lengthens_escalation_hold() -> None:
+    game = _FakeGame(red_intent=True)
+    game.settings = SimpleNamespace(red_intent=True, red_intent_dwell_turns=4)
+    assert tuning_for(game).dwell_turns == 4  # type: ignore[arg-type]
+    # A 4-turn dwell holds an escalation that the default 2-turn one would allow.
+    assert (
+        _next_posture(RedPosture.ATTRITION, 5, 5 + 2, RedPosture.SURGE, dwell=4)
+        is RedPosture.ATTRITION
+    )
+    assert (
+        _next_posture(RedPosture.ATTRITION, 5, 5 + 4, RedPosture.SURGE, dwell=4)
+        is RedPosture.SURGE
+    )
+
+
+def test_trend_window_setting_moves_the_lookback() -> None:
+    history = [_sample(turn=t) for t in (1, 2, 3, 4)]
+    # A window of 3 from turn 5 targets turn 2 (vs turn 3 at the default window of 2).
+    got = _trend_lookback(history, 5, 3)
+    assert got is not None and got.turn == 2
+
+
+# --- per-front helpers ---------------------------------------------------------------
+
+
+def test_front_key_and_ground_ratio() -> None:
+    front = _FakeFront(red_units=20, blue_units=5, blue_id=3, red_id=7)
+    assert _front_key(front) == "3:7"
+    assert _front_ground_ratio(front) == 4.0
+    assert _front_key(SimpleNamespace()) is None  # duck-typed front -> no key
+
+
+# --- per-front posture end-to-end ----------------------------------------------------
+
+
+def _two_front_game() -> "_FakeGame":
+    # Front A: red 4:1 (winning). Front B: red 1:4 (losing). Distinct cp ids.
+    front_a = _FakeFront(red_units=20, blue_units=5, blue_id=1, red_id=2, name="A")
+    front_b = _FakeFront(red_units=5, blue_units=20, blue_id=3, red_id=4, name="B")
+    game = _FakeGame(red_intent=True, fronts=(front_a, front_b))
+    game.settings = SimpleNamespace(red_intent=True, red_intent_per_front=True)
+    game._front_a = front_a  # type: ignore[attr-defined]
+    game._front_b = front_b  # type: ignore[attr-defined]
+    return game
+
+
+def test_per_front_posture_diverges_by_front() -> None:
+    game = _two_front_game()
+    update_red_intent(game)  # type: ignore[arg-type]
+    # The winning front surges (commit factor > 1), the losing front consolidates (< 1).
+    commit_a = stance_commit_factor(game, game._front_a)  # type: ignore[arg-type,attr-defined]
+    commit_b = stance_commit_factor(game, game._front_b)  # type: ignore[arg-type,attr-defined]
+    assert commit_a > 1.0  # red commits reserves on the front it is winning
+    assert commit_b < 1.0  # red husbands on the front it is losing
+
+
+def test_front_postures_surface_lists_both_fronts() -> None:
+    game = _two_front_game()
+    update_red_intent(game)  # type: ignore[arg-type]
+    fronts = front_postures(game)  # type: ignore[arg-type]
+    assert len(fronts) == 2
+    by_name = {f["name"]: f["posture"] for f in fronts}
+    assert by_name["A"] == "Surging"
+    assert by_name["B"] == "Consolidating"
+
+
+def test_per_front_off_falls_back_to_the_theater_posture() -> None:
+    game = _two_front_game()
+    game.settings = SimpleNamespace(red_intent=True, red_intent_per_front=False)
+    update_red_intent(game)  # type: ignore[arg-type]
+    assert game.red_intent_fronts == {}  # cleared
+    assert front_postures(game) == []  # type: ignore[arg-type]
+    # Both fronts now use the SAME theater-wide commit factor.
+    theater = stance_commit_factor(game)  # type: ignore[arg-type]
+    assert stance_commit_factor(game, game._front_a) == theater  # type: ignore[arg-type,attr-defined]
+    assert stance_commit_factor(game, game._front_b) == theater  # type: ignore[arg-type,attr-defined]
+
+
+def test_single_front_hides_the_per_front_breakdown() -> None:
+    game = _FakeGame(red_intent=True, fronts=(_FakeFront(red_units=20, blue_units=5),))
+    game.settings = SimpleNamespace(red_intent=True, red_intent_per_front=True)
+    update_red_intent(game)  # type: ignore[arg-type]
+    # 1 front -> redundant with the theater posture
+    assert front_postures(game) == []  # type: ignore[arg-type]

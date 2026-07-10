@@ -1597,9 +1597,45 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     supply coupling)** is a read-only drop-in via the locked `coalition_supply_health` contract —
     starved supply will force `CONSOLIDATE` even on a paper advantage — and stays a graceful
     no-op until the sibling §53/§54 economy lands (design note `414th-red-intent-notes.md`).
-    Tests `tests/fourteenth/test_red_intent.py` + `tests/test_planner_unpredictability.py`;
-    features doc §55, checklist B7 — needs an in-game pass (does red visibly surge when ahead /
-    consolidate when hit, across a multi-turn campaign).
+    **Made smarter 2026-07-10** (the memory the design always described but v1 only stubbed as a
+    turn-0 snapshot): (A) **rolling trend memory** — a bounded per-turn `red_intent_history` of
+    turn-stable levels (`RedIntentSample`: resolve, front advance, red SAM-site count, both sides'
+    fighters, red base count, supply) on `Game` (getattr-guarded + `__setstate__` default, trimmed
+    to `MEMORY_LENGTH` 6); the classifier differences the current sample against a `_trend_lookback`
+    sample (~2 turns back, None on turn 1, idempotent same-turn record) for `iads_trend` /
+    `resolve_trend` / `base_trend` / `front_trend`. (C) **richer battle-reading** — those trends bias
+    a *ground-dominant* red to `CONSOLIDATE` (its own IADS/resolve/base attrition digs a winning red
+    in, not only the §53 supply meter), and a **blue-air-collapse opportunity window**
+    (`blue_air_collapsing`, ≥35 % of blue's air-sup force lost over the window) lets red `SURGE` at a
+    lower ground bar (1.2× vs 1.5×). (B) **graduated intensity** — the classifier also yields an
+    `intensity` ∈ [0,1] latched as `red_intent_intensity`; the aggressiveness + ground-commit seams
+    scale their magnitude by it (a runaway 4:1 surge presses harder / a collapsing regime husbands
+    harder), anchored at `DEFAULT_INTENSITY` 0.5 to the v1 midpoints so a typical posture is
+    byte-identical and only the extremes move (unpredictability + emphasis stay posture-only). All
+    no-ops until real trend/margin data exists, so every prior test held byte-for-byte. **Per-front
+    posture + tuning added same day (D + settings):** (D) `_update_front_postures` classifies EACH active
+    front from its own ground balance + the shared theater air/resolve/trend read (per-front hysteresis,
+    latched `FrontPosture` on `game.red_intent_fronts` keyed by cp-id pair), and the **ground-husbanding
+    seam** goes per-front (`stance_commit_factor(game, front)` via `_front_posture_and_intensity`, wired
+    from `frontlinestancetask._posture_commit_factor` passing `self.front_line`) — so red commits on the
+    front it is winning and husbands on the one it is losing; the other three seams + the UI headline stay
+    theater-wide, the per-front breakdown surfaces in the ribbon expander (`front_postures` →
+    `CampaignStatusJs.front_postures`, 2+ divergent fronts). Gated `red_intent_per_front` default ON
+    (off ⇒ theater fallback). Tuning: a `RedIntentTuning`/`tuning_for` object (default = base constants,
+    byte-identical) threads three new Air-Doctrine settings — `red_intent_boldness` (0-100, 50 neutral;
+    the master dial: lowers the surge/opportunity/consolidate ground bars + raises the seam magnitude),
+    `red_intent_dwell_turns` (escalation stickiness), `red_intent_trend_window` (trend lookback) — through
+    the classifier + seams; re-anchored so seam_scale=1 + intensity=0.5 reproduce the v1 numbers. **Surfaced
+    visibly (not hover-only):** the
+    **kneeboard SITREP** "Enemy posture" line now renders the *detail* — intensity word + trend driver
+    ("Surging (all-in) — ground 4.0x · air holding · IADS falling") via `sitrep_posture_detail` +
+    `Sitrep.red_posture_detail` (Python-only, no client rebuild); the **web ribbon chip** shows the
+    intensity word inline ("ENEMY Surging · all-in", `CampaignStatusJs.red_posture_intensity` via
+    `intensity_word`) and the expander gained an "Enemy intent" block with the full `red_posture_detail`
+    "why". Tests `tests/fourteenth/test_red_intent.py` + `tests/test_sitrep.py` +
+    `tests/test_planner_unpredictability.py`; features doc §55, checklist B7 — needs an in-game pass (does
+    red visibly surge when ahead / consolidate when hit / dig in as its IADS is bombed, across a
+    multi-turn campaign; the SITREP posture-detail line + the ribbon intensity read correctly).
 56. **Strikeable motorpool depots** — **adopted from upstream PR
     [dcs-retribution#859](https://github.com/dcs-retribution/dcs-retribution/pull/859)**
     (geofffranks; cherry-picked verbatim + fork-adapted, the Pretense hunk dropped since the fork

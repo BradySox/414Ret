@@ -15,6 +15,46 @@ Phase status: **P0** observe-only resolver + SITREP · **P1** offensive emphasis
 (`_red_supply_health` reads `war_economy.coalition_supply_health`; returns None whenever `war_economy`
 is off, so a non-economy campaign is unaffected) — all landed. In-game pass: checklist B7.
 
+**Refinement — "make red smarter" (2026-07-10).** The P0–P4 build shipped the four seams but its
+"memory" was thinner than this note always described: it snapshotted turn 0 (a straight copy of
+`PhaseBaseline`) and never rolled, so the promised *"blue has hit my IADS two turns running → stay
+defensive"* trend reading did not actually exist. This pass builds it, on three axes — all pure
+turn-model, all no-ops until real trend/margin data appears (the v1 constants are reproduced exactly
+at the default intensity, so every prior test held byte-for-byte):
+
+- **A — Rolling trend memory.** A bounded per-turn `red_intent_history` of turn-stable *levels*
+  (`RedIntentSample`: resolve, cumulative front advance, red SAM-site count, both sides' fighter
+  counts, red base count, supply) lives on the `Game` (getattr-guarded + `__setstate__` default,
+  trimmed to `MEMORY_LENGTH` = 6). Each turn the classifier differences the current sample against a
+  **lookback sample** (`_trend_lookback`, ~`TREND_LOOKBACK_TURNS` = 2 back, oldest-available early in
+  the game, `None` on turn 1) to read *trends*: the IADS being dismantled (`iads_trend`), resolve
+  collapsing (`resolve_trend`, the derivative the instantaneous floor misses), bases bleeding
+  (`base_trend`), the front eroding again after a plateau (`front_trend`). Recording is idempotent
+  (a same-turn re-init replaces, never appends; the lookback excludes the current turn).
+- **C — Richer battle-reading.** Those trends bias a *ground-dominant* red toward `CONSOLIDATE` even
+  at a paper edge (the design's central "closing the interdiction→behaviour loop" promise, now driven
+  by red's own IADS/resolve/base attrition, not only the §53 supply meter). And a **blue-air-collapse
+  opportunity window** (`blue_air_collapsing`: blue lost ≥ `BLUE_AIR_COLLAPSE_FRAC` = 35 % of its
+  air-superiority force over the window while red's air holds) lets red `SURGE` at a **reduced ground
+  bar** (`SURGE_OPPORTUNITY_GROUND_RATIO` = 1.2 vs the normal 1.5) — red pounces on a transient gap.
+- **B — Graduated intensity.** The classifier also yields an **`intensity`** ∈ [0, 1] (how strongly
+  the posture is held — a runaway 4:1 surge vs a marginal one; a mild hold vs a collapsing regime),
+  latched as `game.red_intent_intensity` and read by the **aggressiveness** and **ground-commit**
+  seams so their magnitude scales instead of a flat per-posture constant. The graduated formulas are
+  anchored at `DEFAULT_INTENSITY` (0.5) to the v1 midpoints (+/−30 aggressiveness, ×1.35 / ×0.7
+  commit), so a *typical* posture is unchanged and only the extremes move. Unpredictability + emphasis
+  stay posture-only (bounded blast radius; unpredictability already stacks with §52 C2 decap). The
+  intensity also surfaces a "how committed" word on the status detail ("Surging (all-in)",
+  "Consolidating (dug in)") via `_intensity_word`, and `_legibility` names the trend driver ("IADS
+  falling" / "resolve collapsing" / "losing bases" / "enemy air spent") so a memory-based decision
+  explains itself rather than looking like it fired on a healthy snapshot.
+
+  Not built this pass: **per-front posture** (one theater-wide posture still stands; a distinct intent
+  per front is the architectural stretch, deferred). New/extended tests in
+  `tests/fourteenth/test_red_intent.py` cover the trend classifier, the opportunity window, the
+  lookback selector, idempotent history recording, the intensity endpoints, and the graduated seams
+  (all anchored so the v1 seam tests are unchanged).
+
 Decided calls (session 2026-07-08):
 
 - **[DECIDED] Three postures** — `CONSOLIDATE / ATTRITION / SURGE`. The earlier fourth

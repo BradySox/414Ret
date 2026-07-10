@@ -20,6 +20,24 @@ concern -- P0 touches no stances). Structure mirrors ``phases.py`` so the two re
 same way: a lazily-snapshotted turn-0 baseline the memory measures against, a pure
 ``classify_red_intent``, asymmetric hysteresis, and an ``update`` entry point called from
 ``Game.initialize_turn`` that is idempotent under the multiple-init-per-turn cases.
+
+Refinement (2026-07-10, "make red smarter"): the design note always called for *rolling*
+trend memory ("blue has hit my IADS two turns running -> stay defensive"), but v1 only
+snapshotted turn 0. This build adds:
+
+* **Rolling memory (A)** -- a bounded per-turn ``red_intent_history`` of turn-stable levels
+  on the ``Game``; the classifier reads *trends* against a lookback sample (~2 turns back),
+  so red reacts to the ARC of the war, not just this turn's snapshot.
+* **Richer battle-reading (C)** -- new trend signals: the IADS being dismantled over turns,
+  resolve collapsing, bases bleeding, the front steadily eroding all bias toward
+  CONSOLIDATE even at a paper ground edge; a collapsing BLUE air force opens an *opportunity
+  window* letting red SURGE at a lower ground bar.
+* **Graduated intensity (B)** -- the classifier also yields an ``intensity`` in [0, 1] (how
+  strongly the posture is held), latched on the ``Game`` and read by the aggressiveness +
+  ground-commit seams so a runaway red presses harder and a red on the ropes turtles harder,
+  instead of flat per-posture constants. The graduated formulas are anchored so intensity
+  ``DEFAULT_INTENSITY`` reproduces the v1 constants exactly (no behaviour change until the
+  classifier produces a real margin).
 """
 
 from __future__ import annotations
@@ -83,6 +101,63 @@ FRONT_LOSS_EPSILON = 0.05
 #: once. Asymmetric hysteresis; mirrors the phase dwell but one-way.
 INTENT_MIN_DWELL_TURNS = 2
 
+# --- rolling-memory trend thresholds (A + C, the "two turns running" signals) ---------
+
+#: How many turns of per-turn samples the memory keeps on the ``Game``.
+MEMORY_LENGTH = 6
+#: How far back the classifier measures trends against (the lookback sample). The most
+#: recent sample strictly older than this many turns is preferred; earlier in the game
+#: the oldest available sample stands in, and turn 1 has no trend at all.
+TREND_LOOKBACK_TURNS = 2
+#: Fraction of red's long+medium SAM sites lost over the lookback window that reads as
+#: "the IADS is being dismantled" -> bias to CONSOLIDATE (dig in, defend what's left).
+IADS_COLLAPSE_TREND = 0.25
+#: Drop in red resolve over the window that reads as "the regime is cracking" -> the
+#: derivative signal the instantaneous ``CONSOLIDATE_RESOLVE`` level misses.
+RESOLVE_COLLAPSE_TREND = -8.0
+#: Rise in blue front progress over the window (distinct from the turn-0 cumulative) that
+#: reads as the front actively eroding again after a plateau.
+FRONT_EROSION_TREND = 0.05
+#: Fraction of blue's air-superiority force lost over the window that opens an
+#: *opportunity window*: red may SURGE at the reduced ground bar below, exploiting a
+#: transient gap even without its own clear ground advantage.
+BLUE_AIR_COLLAPSE_FRAC = 0.35
+#: The reduced ground ratio red will SURGE at when a blue-air-collapse opportunity is live.
+SURGE_OPPORTUNITY_GROUND_RATIO = 1.2
+
+# --- intensity (B) -------------------------------------------------------------------
+
+#: Neutral intensity: what the seams assume when intensity is unresolved (feature just
+#: latched a key with no intensity, a pre-feature save, a bare test). The graduated seam
+#: formulas are anchored here so this value reproduces the v1 flat constants exactly.
+DEFAULT_INTENSITY = 0.5
+#: Intensity floors: even a marginal surge/consolidate carries some conviction.
+SURGE_INTENSITY_FLOOR = 0.35
+CONSOLIDATE_INTENSITY_FLOOR = 0.35
+#: Ground ratio at which a SURGE is "runaway" (intensity 1.0); the floor is at the SURGE
+#: threshold and it ramps to 1.0 here.
+SURGE_STRONG_RATIO = 3.0
+#: Resolve drop over the window that maps to full CONSOLIDATE severity from the resolve
+#: axis (a steeper collapse than the trigger threshold).
+RESOLVE_COLLAPSE_SPAN = 20.0
+#: A lost base (last turn or over the window) is inherently serious -- a fixed severity
+#: floor feeding CONSOLIDATE intensity even when the other axes look mild.
+BASE_LOSS_SEVERITY = 0.6
+
+# --- seam graduation (B): deltas scale about the v1 midpoint by intensity -------------
+
+#: Aggressiveness (seam 3): the SURGE/CONSOLIDATE delta is ``AGGRESSION_MID`` at
+#: ``DEFAULT_INTENSITY`` (the v1 +/-30) and spans +/-``AGGRESSION_SPAN`` across the
+#: intensity range -- a marginal surge nudges, a runaway one commits hard.
+AGGRESSION_MID = 30
+AGGRESSION_SPAN = 30
+#: Ground-commit factor (seam 4): SURGE inflates the perceived balance about
+#: ``SURGE_COMMIT_MID`` (v1 1.35), CONSOLIDATE deflates about ``CONSOLIDATE_COMMIT_MID``
+#: (v1 0.7), each spanning +/-``COMMIT_SPAN`` by intensity.
+SURGE_COMMIT_MID = 1.35
+CONSOLIDATE_COMMIT_MID = 0.7
+COMMIT_SPAN = 0.4
+
 _POSTURE_RANK = {
     RedPosture.CONSOLIDATE: 0,
     RedPosture.ATTRITION: 1,
@@ -118,6 +193,21 @@ _POSTURE_EMPHASIS: dict[RedPosture, tuple[str, ...]] = {
     ),
 }
 
+#: RED posture -> additive planner unpredictability (seam 2). ATTRITION carries a modest
+#: floor (the folded-in 'feint' -- red is never perfectly deterministic); SURGE is 0
+#: (focused on the priority target); CONSOLIDATE stays low (mostly defense-supporting
+#: targets). Flat per posture (unlike the graduated aggressiveness/commit seams) -- it
+#: already stacks with the §52 C2-decap bonus.
+_POSTURE_UNPREDICTABILITY: dict[RedPosture, int] = {
+    RedPosture.CONSOLIDATE: 5,
+    RedPosture.ATTRITION: 15,
+    RedPosture.SURGE: 0,
+}
+
+
+def _clamp01(value: float) -> float:
+    return max(0.0, min(1.0, value))
+
 
 # --- state -----------------------------------------------------------------------------
 
@@ -135,8 +225,34 @@ class RedIntentBaseline:
 
 
 @dataclass(frozen=True)
+class RedIntentSample:
+    """One turn's turn-stable *levels*, banked in the rolling ``red_intent_history``.
+
+    Trends are derived by differencing the current sample against a lookback sample
+    (~``TREND_LOOKBACK_TURNS`` back), so red reads the ARC of the war. Levels (not
+    per-turn deltas) are stored because they are turn-stable -> recording is idempotent
+    under the multiple-init-per-turn cases (re-recording the same turn is a no-op).
+    """
+
+    turn: int
+    resolve: float
+    front_advance: float  # cumulative mean blue progress vs the turn-0 baseline
+    sam_alive: int  # red long+medium SAM sites still alive
+    red_fighters: int  # red air-superiority owned airframes
+    blue_fighters: int  # blue air-superiority owned airframes
+    red_bases: int  # red-held control points
+    supply_health: Optional[float]  # §53 coupling; None when the economy is off/absent
+
+
+@dataclass(frozen=True)
 class RedIntentMetrics:
-    """One turn's classifier inputs -- current state + memory + resolve."""
+    """One turn's classifier inputs -- current state + memory + resolve.
+
+    The trend fields (``iads_trend`` .. ``blue_air_collapsing``) all default to a
+    *neutral* value, so a metrics with no rolling history classifies exactly as v1 did
+    (and the direct-construction classifier tests are unchanged). They only bite once
+    there is prior history to difference against.
+    """
 
     ground_ratio: float  # red deployable / blue deployable, active fronts
     air_ratio: float  # red air-sup airframes / blue's (current)
@@ -144,6 +260,16 @@ class RedIntentMetrics:
     front_advance: float  # mean rise in blue progress vs turn-0 (>0 = red pushed back)
     lost_base: bool  # red lost >=1 base last turn (from last_sitrep)
     supply_health: Optional[float]  # §53 coupling (P4); None in P0 / economy off
+    #: Fraction of red SAM sites lost over the lookback window (>0 = IADS dismantled).
+    iads_trend: float = 0.0
+    #: Change in red resolve over the window (<0 = the regime is cracking).
+    resolve_trend: float = 0.0
+    #: Change in red-held base count over the window (<0 = bleeding bases).
+    base_trend: int = 0
+    #: Change in cumulative front advance over the window (>0 = front eroding again).
+    front_trend: float = 0.0
+    #: True when blue's air-superiority force collapsed over the window (opportunity).
+    blue_air_collapsing: bool = False
 
 
 # --- live-state collection (all stable within a turn -> idempotent) --------------------
@@ -159,6 +285,16 @@ def _front_fractions(game: "Game") -> dict[str, float]:
                 front._blue_route_progress / length
             )
     return fractions
+
+
+def _front_advance(game: "Game", baseline: RedIntentBaseline) -> float:
+    """Mean signed blue front movement vs the turn-0 anchor, over fronts in both snaps."""
+    deltas = []
+    for key, fraction in _front_fractions(game).items():
+        anchor = baseline.front_fractions.get(key)
+        if anchor is not None:
+            deltas.append(fraction - anchor)
+    return sum(deltas) / len(deltas) if deltas else 0.0
 
 
 def _ground_ratio(game: "Game") -> float:
@@ -194,15 +330,50 @@ def _fighters(game: "Game", player: "Player") -> int:
     )
 
 
-def _air_ratio(game: "Game") -> float:
-    """Red air-superiority airframes / blue's (current). 2.0 if blue fields none."""
-    from game.theater.player import Player
-
-    red = _fighters(game, Player.RED)
-    blue = _fighters(game, Player.BLUE)
+def _fighter_ratio(red: int, blue: int) -> float:
+    """Red air-superiority airframes / blue's. 2.0 if blue fields none, 1.0 if neither."""
     if blue <= 0:
         return 2.0 if red > 0 else 1.0
     return red / blue
+
+
+def _air_ratio(game: "Game") -> float:
+    """Red air-superiority airframes / blue's (current, live)."""
+    from game.theater.player import Player
+
+    return _fighter_ratio(_fighters(game, Player.RED), _fighters(game, Player.BLUE))
+
+
+def _red_sam_sites(game: "Game") -> int:
+    """Alive red long+medium SAM sites: TGOs tasked LORAD / MERAD (the DEAD target set).
+
+    Bands by the TGO's ``GroupTask`` exactly like ``phases._enemy_sam_sites`` (the #379
+    correction: ``IadsRole`` cannot band this). getattr-guarded on ``ground_objects`` so
+    a minimal duck-typed test theater with no TGOs reads 0 rather than raising.
+    """
+    from game.data.groups import GroupTask
+    from game.theater.player import Player
+
+    count = 0
+    for tgo in getattr(game.theater, "ground_objects", []):
+        if getattr(tgo, "task", None) not in (GroupTask.LORAD, GroupTask.MERAD):
+            continue
+        if tgo.is_friendly(Player.BLUE):
+            continue
+        if any(unit.alive for group in tgo.groups for unit in group.units):
+            count += 1
+    return count
+
+
+def _red_base_count(game: "Game") -> int:
+    """Red-held control points. getattr-guarded for minimal test theaters."""
+    from game.theater.player import Player
+
+    return sum(
+        1
+        for cp in getattr(game.theater, "controlpoints", [])
+        if getattr(cp, "captured", None) is Player.RED
+    )
 
 
 def _red_resolve(game: "Game") -> float:
@@ -245,13 +416,84 @@ def snapshot_baseline(game: "Game") -> RedIntentBaseline:
     return RedIntentBaseline(front_fractions=_front_fractions(game))
 
 
-def collect_metrics(game: "Game", baseline: RedIntentBaseline) -> RedIntentMetrics:
-    deltas = []
-    for key, fraction in _front_fractions(game).items():
-        anchor = baseline.front_fractions.get(key)
-        if anchor is not None:
-            deltas.append(fraction - anchor)
-    front_advance = sum(deltas) / len(deltas) if deltas else 0.0
+def _current_sample(game: "Game", baseline: RedIntentBaseline) -> RedIntentSample:
+    """This turn's turn-stable levels (banked in history + differenced for trends)."""
+    from game.theater.player import Player
+
+    return RedIntentSample(
+        turn=game.turn,
+        resolve=_red_resolve(game),
+        front_advance=_front_advance(game, baseline),
+        sam_alive=_red_sam_sites(game),
+        red_fighters=_fighters(game, Player.RED),
+        blue_fighters=_fighters(game, Player.BLUE),
+        red_bases=_red_base_count(game),
+        supply_health=_red_supply_health(game),
+    )
+
+
+def _trend_lookback(
+    history: list[RedIntentSample], turn: int
+) -> Optional[RedIntentSample]:
+    """The sample this turn's trends are measured against, or None until history exists.
+
+    Prefers the most recent sample at or before ``turn - TREND_LOOKBACK_TURNS``; earlier
+    in the campaign the oldest strictly-earlier sample stands in. Samples for ``turn``
+    itself are excluded so a same-turn re-init (which may already have banked this turn)
+    never differences against itself -- trends stay idempotent.
+    """
+    earlier = [s for s in history if s.turn < turn]
+    if not earlier:
+        return None
+    target = turn - TREND_LOOKBACK_TURNS
+    at_or_before = [s for s in earlier if s.turn <= target]
+    if at_or_before:
+        return max(at_or_before, key=lambda s: s.turn)
+    return min(earlier, key=lambda s: s.turn)
+
+
+def _record_sample(game: "Game", sample: RedIntentSample) -> None:
+    """Bank ``sample`` in the rolling history, replacing any same-turn entry (idempotent)
+    and trimming to ``MEMORY_LENGTH``."""
+    history = [
+        s
+        for s in (getattr(game, "red_intent_history", None) or [])
+        if s.turn != sample.turn
+    ]
+    history.append(sample)
+    history.sort(key=lambda s: s.turn)
+    game.red_intent_history = history[-MEMORY_LENGTH:]
+
+
+def collect_metrics(
+    game: "Game", sample: RedIntentSample, prior: Optional[RedIntentSample]
+) -> RedIntentMetrics:
+    """Build this turn's classifier inputs from the current sample + the lookback sample.
+
+    Trends are neutral (0 / False) whenever ``prior`` is None (turn 1 / no history yet),
+    so the classifier degrades to the instantaneous v1 read with no rolling memory.
+    """
+    air_ratio = _fighter_ratio(sample.red_fighters, sample.blue_fighters)
+
+    iads_trend = 0.0
+    resolve_trend = 0.0
+    base_trend = 0
+    front_trend = 0.0
+    blue_air_collapsing = False
+    if prior is not None:
+        if prior.sam_alive > 0:
+            iads_trend = (prior.sam_alive - sample.sam_alive) / prior.sam_alive
+        resolve_trend = sample.resolve - prior.resolve
+        base_trend = sample.red_bases - prior.red_bases
+        front_trend = sample.front_advance - prior.front_advance
+        if prior.blue_fighters > 0:
+            blue_lost = (
+                prior.blue_fighters - sample.blue_fighters
+            ) / prior.blue_fighters
+            # An opportunity only if red's own air can exploit it (not itself suppressed).
+            blue_air_collapsing = (
+                blue_lost >= BLUE_AIR_COLLAPSE_FRAC and air_ratio >= SURGE_MIN_AIR_RATIO
+            )
 
     # last_sitrep.captured = CPs BLUE took last turn = RED's base losses (a committed,
     # turn-stable fact, so this stays idempotent under re-init).
@@ -260,11 +502,16 @@ def collect_metrics(game: "Game", baseline: RedIntentBaseline) -> RedIntentMetri
 
     return RedIntentMetrics(
         ground_ratio=_ground_ratio(game),
-        air_ratio=_air_ratio(game),
-        resolve=_red_resolve(game),
-        front_advance=front_advance,
+        air_ratio=air_ratio,
+        resolve=sample.resolve,
+        front_advance=sample.front_advance,
         lost_base=lost_base,
-        supply_health=_red_supply_health(game),
+        supply_health=sample.supply_health,
+        iads_trend=iads_trend,
+        resolve_trend=resolve_trend,
+        base_trend=base_trend,
+        front_trend=front_trend,
+        blue_air_collapsing=blue_air_collapsing,
     )
 
 
@@ -272,13 +519,15 @@ def collect_metrics(game: "Game", baseline: RedIntentBaseline) -> RedIntentMetri
 
 
 def classify_red_intent(m: RedIntentMetrics) -> RedPosture:
-    """Pick RED's posture (caller applies hysteresis).
+    """Pick RED's posture (caller applies hysteresis + derives intensity).
 
-    CONSOLIDATE when red is under pressure -- outnumbered on the ground, low resolve,
-    a base lost last turn, ground given up since the start, or (P4) starved of supply.
-    SURGE when red holds a clear ground advantage AND its air isn't suppressed AND (P4)
-    it can sustain the push. ATTRITION otherwise -- the default, which also absorbs the
-    dropped 'Feint' as a moderate-unpredictability middle once P2 wires seam 2.
+    CONSOLIDATE when red is under pressure -- outnumbered on the ground, low resolve, a
+    base lost, ground given up since the start, (P4) starved of supply, OR -- the rolling
+    memory (A/C) -- its IADS being dismantled, resolve collapsing, bases bleeding, or the
+    front eroding again over the lookback window. SURGE when red holds a clear ground
+    advantage (or a blue-air-collapse *opportunity* at a lower bar) AND its air isn't
+    suppressed AND (P4) it can sustain the push. ATTRITION otherwise -- the default, which
+    also absorbs the dropped 'Feint' as a moderate-unpredictability middle.
     """
     starved = m.supply_health is not None and m.supply_health < STARVED_SUPPLY
     under_pressure = (
@@ -286,19 +535,63 @@ def classify_red_intent(m: RedIntentMetrics) -> RedPosture:
         or m.resolve < CONSOLIDATE_RESOLVE
         or m.lost_base
         or m.front_advance >= FRONT_LOSS_EPSILON
+        # --- rolling-memory pressure (A + C): sustained damage over the window ---
+        or m.iads_trend >= IADS_COLLAPSE_TREND
+        or m.resolve_trend <= RESOLVE_COLLAPSE_TREND
+        or m.base_trend < 0
+        or m.front_trend >= FRONT_EROSION_TREND
     )
     if starved or under_pressure:
         return RedPosture.CONSOLIDATE
 
     supplied = m.supply_health is None or m.supply_health >= SURGE_MIN_SUPPLY
-    if (
-        m.ground_ratio >= SURGE_GROUND_RATIO
-        and m.air_ratio >= SURGE_MIN_AIR_RATIO
-        and supplied
-    ):
+    air_ok = m.air_ratio >= SURGE_MIN_AIR_RATIO
+    if not (air_ok and supplied):
+        return RedPosture.ATTRITION
+    # Own clear advantage, or a transient blue-air-collapse opportunity at a lower bar.
+    if m.ground_ratio >= SURGE_GROUND_RATIO:
+        return RedPosture.SURGE
+    if m.blue_air_collapsing and m.ground_ratio >= SURGE_OPPORTUNITY_GROUND_RATIO:
         return RedPosture.SURGE
 
     return RedPosture.ATTRITION
+
+
+def _intensity(m: RedIntentMetrics, posture: RedPosture) -> float:
+    """How strongly ``posture`` is held, in [0, 1] (seam graduation, B).
+
+    SURGE ramps from the floor at the surge threshold to 1.0 at a runaway advantage.
+    CONSOLIDATE takes the worst of its pressure axes (how outnumbered / how low or
+    fast-collapsing resolve / how much IADS lost / how starved / a lost base). ATTRITION
+    is the neutral midpoint (its graduated seams are no-ops anyway). Anchored so a
+    *typical* posture sits near ``DEFAULT_INTENSITY``.
+    """
+    if posture is RedPosture.SURGE:
+        span = SURGE_STRONG_RATIO - SURGE_GROUND_RATIO
+        ramp = (
+            _clamp01((m.ground_ratio - SURGE_GROUND_RATIO) / span) if span > 0 else 0.0
+        )
+        return _clamp01(SURGE_INTENSITY_FLOOR + (1.0 - SURGE_INTENSITY_FLOOR) * ramp)
+    if posture is RedPosture.CONSOLIDATE:
+        severities = [
+            _clamp01(
+                (CONSOLIDATE_GROUND_RATIO - m.ground_ratio) / CONSOLIDATE_GROUND_RATIO
+            ),
+            _clamp01((CONSOLIDATE_RESOLVE - m.resolve) / CONSOLIDATE_RESOLVE),
+            _clamp01(m.iads_trend),
+            _clamp01(-m.resolve_trend / RESOLVE_COLLAPSE_SPAN),
+        ]
+        if m.supply_health is not None:
+            severities.append(
+                _clamp01((STARVED_SUPPLY - m.supply_health) / STARVED_SUPPLY)
+            )
+        if m.lost_base or m.base_trend < 0:
+            severities.append(BASE_LOSS_SEVERITY)
+        worst = max(severities) if severities else 0.0
+        return _clamp01(
+            CONSOLIDATE_INTENSITY_FLOOR + (1.0 - CONSOLIDATE_INTENSITY_FLOOR) * worst
+        )
+    return DEFAULT_INTENSITY
 
 
 def _next_posture(
@@ -319,7 +612,12 @@ def _next_posture(
 
 
 def _legibility(m: RedIntentMetrics) -> str:
-    """The 'why' string -- the posture explains itself (the §40 legibility rule)."""
+    """The 'why' string -- the posture explains itself (the §40 legibility rule).
+
+    Leads with the instantaneous read (ground/air/front) and then names whichever rolling
+    trend drove the decision, so a memory-based consolidate reads its reason ("IADS
+    falling", "losing bases") rather than looking like it fired on a healthy snapshot.
+    """
     air = "air holding" if m.air_ratio >= SURGE_MIN_AIR_RATIO else "air suppressed"
     if m.front_advance >= FRONT_LOSS_EPSILON:
         front = "giving ground"
@@ -330,9 +628,36 @@ def _legibility(m: RedIntentMetrics) -> str:
     parts = [f"ground {m.ground_ratio:.1f}x", air, front]
     if m.resolve < CONSOLIDATE_RESOLVE:
         parts.append("resolve low")
+    if m.iads_trend >= IADS_COLLAPSE_TREND:
+        parts.append("IADS falling")
+    if m.resolve_trend <= RESOLVE_COLLAPSE_TREND:
+        parts.append("resolve collapsing")
+    if m.base_trend < 0:
+        parts.append("losing bases")
+    if m.blue_air_collapsing:
+        parts.append("enemy air spent")
     if m.supply_health is not None:
         parts.append(f"supply {round(m.supply_health * 100)}%")
     return " · ".join(parts)
+
+
+def _intensity_word(posture: RedPosture, intensity: float) -> str:
+    """A short 'how committed' word for the status detail (B legibility), or "".
+
+    Surfaces the graduated intensity the aggressiveness/commit seams act on so the
+    ribbon detail reads not just *what* red is doing but *how hard* -- a probing surge
+    vs an all-in one, a cautious hold vs a dug-in one. ATTRITION carries no descriptor
+    (its seams are neutral).
+    """
+    if posture is RedPosture.SURGE:
+        if intensity >= 0.8:
+            return "all-in"
+        return "pressing" if intensity >= 0.55 else "probing"
+    if posture is RedPosture.CONSOLIDATE:
+        if intensity >= 0.8:
+            return "dug in"
+        return "defensive" if intensity >= 0.55 else "cautious"
+    return ""
 
 
 def _posture_from_key(key: Optional[str]) -> Optional[RedPosture]:
@@ -351,16 +676,18 @@ def update_red_intent(game: "Game") -> None:
     """Resolve this turn's RED posture. Called from ``Game.initialize_turn`` after
     ``update_campaign_phase`` and before the coalitions plan. Idempotent under the
     multiple-init-per-turn cases (all inputs are turn-stable; the baseline is snapshotted
-    once and never overwritten).
+    once and never overwritten; the history bank replaces any same-turn sample).
 
-    Latches ``game.red_intent_key`` + a status line and announces transitions; the four
-    planner seams read the result through ``active_red_intent``. Setting off => state
+    Latches ``game.red_intent_key`` + ``game.red_intent_intensity`` + a status line,
+    announces transitions, and banks this turn's sample; the four planner seams read the
+    result through ``active_red_intent`` / ``active_red_intensity``. Setting off => state
     cleared, so consumers see 'no posture' and behave stock.
     """
     if not getattr(game.settings, "red_intent", False):
         game.red_intent_key = None
         game.red_intent_entered_on_turn = None
         game.red_intent_status_line = None
+        game.red_intent_intensity = None
         return
 
     baseline = getattr(game, "red_intent_baseline", None)
@@ -368,12 +695,16 @@ def update_red_intent(game: "Game") -> None:
         baseline = snapshot_baseline(game)
         game.red_intent_baseline = baseline
 
-    metrics = collect_metrics(game, baseline)
+    history = list(getattr(game, "red_intent_history", None) or [])
+    prior = _trend_lookback(history, game.turn)
+    sample = _current_sample(game, baseline)
+    metrics = collect_metrics(game, sample, prior)
     target = classify_red_intent(metrics)
     current = _posture_from_key(getattr(game, "red_intent_key", None))
     new = _next_posture(
         current, getattr(game, "red_intent_entered_on_turn", None), game.turn, target
     )
+    intensity = _intensity(metrics, new)
 
     if new is not current:
         game.red_intent_key = new.value
@@ -386,7 +717,11 @@ def update_red_intent(game: "Game") -> None:
                 f"Enemy posture: {new.display}",
                 f"Red is {new.narrative} ({_legibility(metrics)}).",
             )
-    game.red_intent_status_line = f"{new.display} — {_legibility(metrics)}"
+    game.red_intent_intensity = intensity
+    word = _intensity_word(new, intensity)
+    label = f"{new.display} ({word})" if word else new.display
+    game.red_intent_status_line = f"{label} — {_legibility(metrics)}"
+    _record_sample(game, sample)
 
 
 def active_red_intent(game: "Game") -> Optional[RedPosture]:
@@ -394,6 +729,19 @@ def active_red_intent(game: "Game") -> Optional[RedPosture]:
     if not getattr(game.settings, "red_intent", False):
         return None
     return _posture_from_key(getattr(game, "red_intent_key", None))
+
+
+def active_red_intensity(game: "Game") -> float:
+    """The latched intensity the graduated seams read, or ``DEFAULT_INTENSITY``.
+
+    Falls back to the neutral midpoint whenever the feature is off or intensity hasn't
+    been latched (a pre-feature save, a bare test that set only a key) -- and the seam
+    formulas are anchored so that midpoint reproduces the v1 flat constants.
+    """
+    if not getattr(game.settings, "red_intent", False):
+        return DEFAULT_INTENSITY
+    value = getattr(game, "red_intent_intensity", None)
+    return DEFAULT_INTENSITY if value is None else float(value)
 
 
 def sitrep_posture_line(game: "Game") -> Optional[str]:
@@ -416,36 +764,7 @@ def offensive_emphasis(game: "Game") -> Optional[tuple[str, ...]]:
     return _POSTURE_EMPHASIS.get(posture)
 
 
-# --- P2 (seams 2 + 3): unpredictability + aggressiveness ------------------------------
-
-#: RED posture -> additive planner unpredictability. ATTRITION carries a modest floor
-#: (the folded-in 'feint' -- red is never perfectly deterministic); SURGE is 0 (focused
-#: on the priority target); CONSOLIDATE stays low (mostly defense-supporting targets).
-_POSTURE_UNPREDICTABILITY: dict[RedPosture, int] = {
-    RedPosture.CONSOLIDATE: 5,
-    RedPosture.ATTRITION: 15,
-    RedPosture.SURGE: 0,
-}
-
-#: RED posture -> delta on ``opfor_autoplanner_aggressiveness`` (0-100; higher = red
-#: abandons more bases to commit fighters offensively). SURGE commits, CONSOLIDATE
-#: defends, ATTRITION leaves the setting alone.
-_POSTURE_AGGRESSION_DELTA: dict[RedPosture, int] = {
-    RedPosture.CONSOLIDATE: -30,
-    RedPosture.ATTRITION: 0,
-    RedPosture.SURGE: 30,
-}
-
-#: RED posture -> multiplier on the *perceived* ground-force balance the ATTACK stance
-#: thresholds test (seam 4). SURGE inflates it (commit reserves sooner -- reach an
-#: attacking stance at a lower real advantage); CONSOLIDATE deflates it (husband --
-#: harder to escalate to attacking, while defending is left untouched, so consolidate
-#: never forces a retreat). ATTRITION is neutral.
-_POSTURE_COMMIT_FACTOR: dict[RedPosture, float] = {
-    RedPosture.CONSOLIDATE: 0.7,
-    RedPosture.ATTRITION: 1.0,
-    RedPosture.SURGE: 1.35,
-}
+# --- P2 (seams 2 + 3) + B graduation: unpredictability + aggressiveness ----------------
 
 
 def unpredictability_modifier(game: "Game") -> int:
@@ -454,6 +773,7 @@ def unpredictability_modifier(game: "Game") -> int:
     Added to ``opfor_planner_unpredictability`` + the C2-decap bonus in
     ``targetorder._unpredictability_for`` (RED only), then clamped there. 0 when
     red_intent is off/unresolved, so the base setting is preserved byte-identically.
+    Flat per posture (not intensity-graduated) -- it already stacks with C2 decap.
     """
     posture = active_red_intent(game)
     if posture is None:
@@ -462,17 +782,23 @@ def unpredictability_modifier(game: "Game") -> int:
 
 
 def effective_aggressiveness(game: "Game") -> int:
-    """``opfor_autoplanner_aggressiveness`` biased by RED's posture, clamped 0-100 (seam 3).
+    """``opfor_autoplanner_aggressiveness`` biased by RED's posture + intensity (seam 3).
 
     Returns the raw setting when red_intent is off/unresolved or the posture is
-    ATTRITION (neutral) -- byte-identical to today. SURGE raises it (red commits more
-    bases to offense), CONSOLIDATE lowers it (red defends everything).
+    ATTRITION (neutral) -- byte-identical to v1. SURGE raises it (red commits more bases
+    to offense), CONSOLIDATE lowers it (red defends everything); the magnitude scales
+    with intensity about the v1 midpoint (``AGGRESSION_MID`` at ``DEFAULT_INTENSITY``), so
+    a runaway red strips more and a marginal one only nudges.
     """
     base = int(getattr(game.settings, "opfor_autoplanner_aggressiveness", 0))
     posture = active_red_intent(game)
-    if posture is None:
+    if posture is None or posture is RedPosture.ATTRITION:
         return base
-    return max(0, min(100, base + _POSTURE_AGGRESSION_DELTA.get(posture, 0)))
+    magnitude = AGGRESSION_MID + round(
+        AGGRESSION_SPAN * (active_red_intensity(game) - DEFAULT_INTENSITY)
+    )
+    delta = magnitude if posture is RedPosture.SURGE else -magnitude
+    return max(0, min(100, base + delta))
 
 
 def stance_commit_factor(game: "Game") -> float:
@@ -480,15 +806,20 @@ def stance_commit_factor(game: "Game") -> float:
 
     >1 commits reserves sooner (SURGE reaches aggressive/elimination/breakthrough at a
     lower real advantage); <1 husbands them (CONSOLIDATE needs more advantage to attack,
-    while still defending normally). 1.0 for a stock/observing red -- and, per the
-    [DECIDED] 'authored windows win' rule, 1.0 while an authored ``red_tempo``
-    ground-offensive pulse owns red's stances, so the two never double-drive the front.
+    while still defending normally). The factor scales with intensity about the v1
+    midpoints (SURGE 1.35 / CONSOLIDATE 0.7 at ``DEFAULT_INTENSITY``). 1.0 for a
+    stock/observing red -- and, per the [DECIDED] 'authored windows win' rule, 1.0 while
+    an authored ``red_tempo`` ground-offensive pulse owns red's stances, so the two never
+    double-drive the front.
     """
     from game.fourteenth.red_tempo import ground_offensive_active
 
     if ground_offensive_active(game):
         return 1.0
     posture = active_red_intent(game)
-    if posture is None:
+    if posture is None or posture is RedPosture.ATTRITION:
         return 1.0
-    return _POSTURE_COMMIT_FACTOR.get(posture, 1.0)
+    swing = COMMIT_SPAN * (active_red_intensity(game) - DEFAULT_INTENSITY)
+    if posture is RedPosture.SURGE:
+        return round(SURGE_COMMIT_MID + swing, 3)
+    return round(CONSOLIDATE_COMMIT_MID - swing, 3)

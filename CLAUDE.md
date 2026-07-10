@@ -1597,9 +1597,28 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     supply coupling)** is a read-only drop-in via the locked `coalition_supply_health` contract —
     starved supply will force `CONSOLIDATE` even on a paper advantage — and stays a graceful
     no-op until the sibling §53/§54 economy lands (design note `414th-red-intent-notes.md`).
-    Tests `tests/fourteenth/test_red_intent.py` + `tests/test_planner_unpredictability.py`;
+    **Made smarter 2026-07-10** (the memory the design always described but v1 only stubbed as a
+    turn-0 snapshot): (A) **rolling trend memory** — a bounded per-turn `red_intent_history` of
+    turn-stable levels (`RedIntentSample`: resolve, front advance, red SAM-site count, both sides'
+    fighters, red base count, supply) on `Game` (getattr-guarded + `__setstate__` default, trimmed
+    to `MEMORY_LENGTH` 6); the classifier differences the current sample against a `_trend_lookback`
+    sample (~2 turns back, None on turn 1, idempotent same-turn record) for `iads_trend` /
+    `resolve_trend` / `base_trend` / `front_trend`. (C) **richer battle-reading** — those trends bias
+    a *ground-dominant* red to `CONSOLIDATE` (its own IADS/resolve/base attrition digs a winning red
+    in, not only the §53 supply meter), and a **blue-air-collapse opportunity window**
+    (`blue_air_collapsing`, ≥35 % of blue's air-sup force lost over the window) lets red `SURGE` at a
+    lower ground bar (1.2× vs 1.5×). (B) **graduated intensity** — the classifier also yields an
+    `intensity` ∈ [0,1] latched as `red_intent_intensity`; the aggressiveness + ground-commit seams
+    scale their magnitude by it (a runaway 4:1 surge presses harder / a collapsing regime husbands
+    harder), anchored at `DEFAULT_INTENSITY` 0.5 to the v1 midpoints so a typical posture is
+    byte-identical and only the extremes move (unpredictability + emphasis stay posture-only). Surfaced
+    as a "how committed" word on the status detail ("Surging (all-in)" / "Consolidating (dug in)") +
+    the `_legibility` trend driver ("IADS falling" / "resolve collapsing" / "losing bases" / "enemy air
+    spent"). All no-ops until real trend/margin data exists, so every prior test held byte-for-byte;
+    **per-front posture deferred** (one theater-wide posture stands). Tests
+    `tests/fourteenth/test_red_intent.py` + `tests/test_planner_unpredictability.py`;
     features doc §55, checklist B7 — needs an in-game pass (does red visibly surge when ahead /
-    consolidate when hit, across a multi-turn campaign).
+    consolidate when hit / dig in as its IADS is bombed, across a multi-turn campaign).
 56. **Strikeable motorpool depots** — **adopted from upstream PR
     [dcs-retribution#859](https://github.com/dcs-retribution/dcs-retribution/pull/859)**
     (geofffranks; cherry-picked verbatim + fork-adapted, the Pretense hunk dropped since the fork

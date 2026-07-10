@@ -536,8 +536,8 @@ class QLiberationWindow(QMainWindow):
 
         self.top_panel.setControls(False)
 
-        title = "Victory!" if TurnState.WIN else "Defeat!"
-        msgvar = "won" if TurnState.WIN else "lost"
+        title = "Victory!" if state == TurnState.WIN else "Defeat!"
+        msgvar = "won" if state == TurnState.WIN else "lost"
         msg = f"You have {msgvar} the campaign, do you wish to start a new one?"
         result = QMessageBox.information(
             QApplication.focusWidget(),
@@ -641,8 +641,8 @@ class QLiberationWindow(QMainWindow):
         ]
         text = (
             "<h3>DCS Retribution " + VERSION + "</h3>" + "<b>Source code : </b>"
-            "<a href='https://github.com/dcs-retribution/dcs-retribution' style='color:white'>"
-            "https://github.com/dcs-retribution/dcs-retribution </a>"
+            "<a href='https://github.com/bradyccox/414Ret' style='color:white'>"
+            "https://github.com/bradyccox/414Ret </a>"
             + "<h4>Authors</h4>"
             + "<p>DCS Retribution is an (independent) fork of DCS Liberation, "
             "which was originally developed by <b>shdwp</b>. "
@@ -677,27 +677,30 @@ class QLiberationWindow(QMainWindow):
         self.subwindow.show()
 
     def showSettingsDialog(self) -> None:
-        self.dialog = QSettingsWindow(self.game)
-        self.dialog.show()
+        # Each auxiliary window keeps its own reference: sharing one `self.dialog`
+        # let opening a second window drop the only reference to the first, so Qt
+        # could garbage-collect and close it out from under the user.
+        self.settings_dialog = QSettingsWindow(self.game)
+        self.settings_dialog.show()
 
     def showStatsDialog(self):
-        self.dialog = QStatsWindow(self.game)
-        self.dialog.show()
+        self.stats_dialog = QStatsWindow(self.game)
+        self.stats_dialog.show()
 
     def showNotesDialog(self):
-        self.dialog = QNotesWindow(self.game)
-        self.dialog.show()
+        self.notes_dialog = QNotesWindow(self.game)
+        self.notes_dialog.show()
 
     def showCustomKneeboardsDialog(self):
-        self.dialog = QCustomKneeboardsWindow(self.game)
-        self.dialog.show()
+        self.kneeboards_dialog = QCustomKneeboardsWindow(self.game)
+        self.kneeboards_dialog.show()
 
     def import_templates(self):
         LAYOUTS.import_templates()
 
     def showLogsDialog(self):
-        self.dialog = QLogsWindow(self)
-        self.dialog.show()
+        self.logs_dialog = QLogsWindow(self)
+        self.logs_dialog.show()
 
     def onDebriefing(self, debrief: Debriefing):
         logging.info("On Debriefing")

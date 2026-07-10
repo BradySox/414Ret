@@ -898,7 +898,31 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     focused sections). FIELD_LAYOUT-only — 7 pages, 174 fields, walk-verified.
     (`game/settings/settings.py`, `game/settings/difficultypreset.py`,
     `qt_ui/windows/settings/QSettingsWindow.py`, `qt_ui/windows/newgame/`, `qt_ui/uiconstants.py`;
-    features doc §28, checklist K1.)
+    features doc §28, checklist K1.) **Dependency greying + detail summarisation (2026-07-10, UI
+    audit follow-up):** `OptionDescription` gained a keyword-only `enabled_when=(master, value)` (bare
+    `"master"` ⇒ `(master, True)`; normalized by `normalize_enabled_when`, threaded through every
+    `*_option` factory) — keyword-only so the frozen subclasses' positional fields are undisturbed.
+    `AutoSettingsLayout` stores each field's label + greys a child's **control + label** whenever
+    `settings.<master> != value` (live per-section wiring + initial state + post-preset refresh); ~21
+    pairs wired (the `red_intent_*`/`coin_*`/qra/motorpool/squadron/etc. dependents, incl. the **inverse**
+    `default_front_line_stance` ← `("automate_front_line_stance", False)`). A `detail` over
+    `INLINE_DETAIL_MAX` (150) now shows its first sentence inline + the full text on hover (the dead
+    `tooltip` field), so dense pages stop being walls of text. Guard + offscreen-Qt greying tests in
+    `tests/test_settings_dependencies.py`. Shipped with the **UI-audit bug fixes**: the defeat-shows-
+    "Victory!" `onEndGame` enum-truthiness bug, the inverted Air-Wing player-slots caption, the shared
+    `self.dialog` window-GC bug, the `QGroundObjectMenu` repair list-mutation, the web `TgosLayer`
+    key-by-name → `tgo.id`, the upstream→fork Help/About/Releases links, and dead-component/duplicate-CSS
+    cleanup. **Web-map tracks 3+4 (2026-07-10):** a shared semantic palette
+    (`client/src/theme/mapColors.ts` — named `friendly`/`enemy`/`flot`/`suspected`/`offLimits`/
+    `weaponsFree`/`supply*`/`route*` tokens the overlays import instead of inline hexes), reconciling the
+    two look-alike dashed circles (the concealed "suspected activity" circle moved **red→amber** so it no
+    longer reads as the red ROE off-limits circle) and lifting the near-invisible navy friendly supply
+    route to a legible blue; a collapsible **map legend** (`components/legend/MapLegend`); and **right-click
+    discoverability** — a `.map-interactive` `cursor:pointer` + hover hints on the front line / supply route
+    / suspected-activity circle so the hidden fragging right-clicks are findable. Client-only (not CI
+    type-checked; validated via `tsc` + the `FrontLine` test mock). The four tracks came off the
+    56-finding UI audit; deferred: a full right-click context menu + Leaflet-tooltip theming + the deeper
+    flow reworks.
 29. **Campaign SITREP kneeboard band** — a "what happened last turn" digest on the next mission's
     kneeboard cover page (a cockpit intel brief). `MissionResultsProcessor.commit()` gets a final
     `record_sitrep` step that reads the debriefing it already has — per-side losses (`loss_counts`),

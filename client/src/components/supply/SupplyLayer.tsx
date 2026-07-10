@@ -1,19 +1,20 @@
 import { SupplyNode } from "../../api/liberationApi";
 import { selectSupplyNodes } from "../../api/supplySlice";
 import { useAppSelector } from "../../app/hooks";
+import { mapColors } from "../../theme/mapColors";
 import { CircleMarker, LayerGroup, Tooltip } from "react-leaflet";
 
 // Front supply readiness -> colour (green healthy, amber strained, red starved).
 // Keyed off the raw supply_factor [0,1] the server emits.
 function supplyColor(supply: number): string {
-  if (supply >= 0.85) return "#3ccd5f";
-  if (supply >= 0.6) return "#e0b13a";
-  if (supply >= 0.5) return "#e07a2f";
-  return "#d43a3a";
+  if (supply >= 0.85) return mapColors.supplyOk;
+  if (supply >= 0.6) return mapColors.supplyMid;
+  if (supply >= 0.5) return mapColors.supplyLow;
+  return mapColors.supplyCritical;
 }
 
 // A blue "source" ring drawn under a producer node.
-const PRODUCER_COLOR = "#4a90d9";
+const PRODUCER_COLOR = mapColors.supplyProducer;
 
 function NodeTooltip(props: { node: SupplyNode }) {
   const { node } = props;

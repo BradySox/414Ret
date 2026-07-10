@@ -4,12 +4,15 @@ import {
   selectRestrictedZones,
 } from "../../api/restrictedZonesSlice";
 import { useAppSelector } from "../../app/hooks";
+import { mapColors } from "../../theme/mapColors";
 import { Circle, LayerGroup, Polygon, Tooltip } from "react-leaflet";
 
 // Restricted (no-strike) zones are red; free-fire (weapons-free) pockets are green —
-// the opposite reading of the same shape system (inverted ROE, COIN).
-const RESTRICTED_COLOR = "#d43a3a";
-const FREE_FIRE_COLOR = "#3ccd5f";
+// the opposite reading of the same shape system (inverted ROE, COIN). The suspected-
+// enemy (concealed) circle is deliberately amber, not red, so it can't be confused
+// with an off-limits circle here.
+const RESTRICTED_COLOR = mapColors.offLimits;
+const FREE_FIRE_COLOR = mapColors.weaponsFree;
 
 function zoneStyle(color: string) {
   return {

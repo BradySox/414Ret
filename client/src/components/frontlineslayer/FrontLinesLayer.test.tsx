@@ -12,6 +12,9 @@ jest.mock("react-leaflet", () => ({
   Polyline: (props: any) => {
     mockPolyline(props);
   },
+  // FrontLine's interactive hit-line renders a <Tooltip> child (right-click hint);
+  // stub it so the mocked react-leaflet module still resolves the import.
+  Tooltip: () => null,
 }));
 
 // The waypoints in test data below should all use `should_make: false`. Markers

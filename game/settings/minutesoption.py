@@ -1,8 +1,13 @@
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
-from .optiondescription import OptionDescription, SETTING_DESCRIPTION_KEY
+from .optiondescription import (
+    EnabledWhen,
+    OptionDescription,
+    SETTING_DESCRIPTION_KEY,
+    normalize_enabled_when,
+)
 
 
 @dataclass(frozen=True)
@@ -20,6 +25,7 @@ def minutes_option(
     max: int,
     detail: Optional[str] = None,
     tooltip: Optional[str] = None,
+    enabled_when: Optional[Union[str, EnabledWhen]] = None,
     **kwargs: Any,
 ) -> timedelta:
     return field(
@@ -33,6 +39,7 @@ def minutes_option(
                 causes_expensive_game_update=False,
                 min=min,
                 max=max,
+                enabled_when=normalize_enabled_when(enabled_when),
             )
         },
         default=default,

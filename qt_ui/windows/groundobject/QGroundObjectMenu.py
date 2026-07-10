@@ -393,9 +393,11 @@ class QGroundObjectMenu(QDialog):
             unit.alive = True
             GameUpdateSignal.get_instance().updateGame(self.game)
 
-            # Remove destroyed units in the vicinity
+            # Remove destroyed units in the vicinity. Iterate a COPY: removing from
+            # the list being iterated skips the element after each removal, so nearby
+            # wrecks were left behind.
             destroyed_units = self.game.get_destroyed_units()
-            for d in destroyed_units:
+            for d in list(destroyed_units):
                 p = Point(d["x"], d["z"], self.game.theater.terrain)
                 if p.distance_to_point(unit.position) < 15:
                     destroyed_units.remove(d)

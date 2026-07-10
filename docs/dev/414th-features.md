@@ -2547,6 +2547,68 @@ we are overlooking") landed a second IA pass on both surfaces:
   distances" wall split into **Engagement ranges / SEAD standoff / Support-orbit standoff / Mission
   range limits**. Still 7 pages, all 174 fields accounted for (walk-verified).
 
+### Dependency greying + detail summarisation (2026-07-10, the settings UI audit follow-up)
+
+The metadata-driven renderer gained the **dependent-setting greying** the §16 QOL audit deferred, plus
+a declutter pass:
+
+- **`enabled_when` dependency greying.** `OptionDescription` gained a keyword-only
+  `enabled_when: (master_field, enabled_value)` (a bare `"master"` is shorthand for
+  `("master", True)`; normalized by `normalize_enabled_when`). Keyword-only so adding it to the frozen
+  base never disturbed the subclasses' positional fields (`invert`, `min`/`max`, `choices`). Every
+  `*_option` factory threads it. `AutoSettingsLayout` now stores each field's **label** (not just its
+  control) and, after building a section, wires every master's change signal to `refresh_enabled_states`
+  — which greys a child's **control + label** whenever `settings.<master> != enabled_value`. All ~21
+  wired pairs are same-section, so greying is live; the initial pass sets state on open, and
+  `update_from_settings` re-applies it after a difficulty preset. Wired: the five `red_intent_*` ←
+  `red_intent`, the `coin_*` family ← `coin_insurgency`, `qra_defense_depth_nm` ← `qra_forward_defense`,
+  `motorpool_spawn_cap` ← `motorpool_enabled`, `comms_jam_requires_capture` ← `enemy_comms_jamming`,
+  `concealed_enemy_forces` ← `recon_intel_fog`, `perf_culling_distance` ← `perf_culling`,
+  `perf_smoke_spacing` ← `perf_smoke_gen`, `dynamic_slots_hot` ← `dynamic_slots`,
+  `supercarrier_deck_crew` ← `supercarrier`, the two squadron-limit knobs ← `enable_squadron_pilot_limits`,
+  `vietnam_commitment_ceiling` ← `vietnam_political_will`, and the **inverse**
+  `default_front_line_stance` ← `("automate_front_line_stance", False)` (editable only when automation
+  is off). A guard test (`tests/test_settings_dependencies.py`) fails CI if any `enabled_when` master
+  isn't a real setting, plus offscreen-Qt tests prove a child greys/ungreys live with its master.
+- **Detail summarisation.** A `detail` longer than `INLINE_DETAIL_MAX` (150) now renders only its first
+  sentence inline (`_summary_line`) with the **full text on hover** (the previously near-dead `tooltip`
+  field), so the dense pages stop reading as walls of text; short details are unchanged.
+
+### UI audit bug fixes (2026-07-10)
+
+The same audit surfaced correctness defects across the Qt UI + web client, fixed alongside: the
+end-of-campaign dialog branched on the enum member `TurnState.WIN` (always truthy) so a **defeat showed
+"Victory!"** (`QLiberationWindow.onEndGame`); the Air Wing **player-slots caption was inverted** for a
+valid blue+flyable squadron (`AirWingConfigurationDialog`); every auxiliary window shared one
+`self.dialog` reference so opening a second could **garbage-collect the first** (distinct attributes
+now); the repair routine **mutated the list it iterated** and skipped nearby wrecks (`QGroundObjectMenu`,
+iterate a copy); the web **TGO markers keyed by `tgo.name`** (not unique) → key by `tgo.id`
+(`TgosLayer`); Help/About/repo/**Releases links pointed at upstream** instead of the 414th fork
+(`uiconstants` + About); and a dead `EmitterHighlightToggle` component + duplicate `.air-defense-ring-hit`
+/ unused `.ml-collapse` CSS were removed. The full 56-finding audit is tracked separately.
+
+### Web map: discoverability + a shared palette (2026-07-10, audit tracks 3+4)
+
+The web client's overlays each hardcoded their own colours (so "red" meant six things and two dashed
+circles read alike), and the map's core planning actions were invisible right-clicks with no affordance.
+
+- **Shared semantic palette.** `client/src/theme/mapColors.ts` is the single source of truth — named
+  tokens (`friendly`/`enemy`/`flot`, `suspected`/`offLimits`/`weaponsFree`, `supplyOk`…`supplyCritical`,
+  `route*`). The overlays (threat zones, front line, supply layer + routes, restricted zones, the
+  concealed TGO + the ROE tooltip) import from it instead of inline hexes. Two deliberate reconciliations:
+  the **concealed "suspected activity" circle moved off red onto amber** so it no longer looks like the
+  red ROE off-limits circle (finding #2), and the near-invisible navy **friendly supply route was lifted
+  to a legible blue** (finding #10).
+- **A map legend.** `components/legend/MapLegend` — a compact, collapsible bottom-right key decoding the
+  allegiance / ROE / supply / suspected-activity colours + shapes (dark-panel styled, clears the other
+  corners).
+- **Right-click discoverability.** The interactive vectors (front line, supply route) and the suspected-
+  activity circle now carry a **`cursor: pointer`** (via a `.map-interactive` Leaflet class) and a **hover
+  hint** ("Right-click: plan a mission here" / "frag interdiction"; TGO/tooltip gets "Left-click: intel ·
+  Right-click: plan a package") so the otherwise-hidden fragging actions are findable. Client-only;
+  type-checked (`tsc`) + the `FrontLine` test mock extended; the full `react-scripts` build/test runs in
+  CI. Deferred: a full right-click *context menu* and theming the light Leaflet tooltips.
+
 ## §29 — Campaign SITREP kneeboard band
 
 A "what happened last turn" digest on the player's next kneeboard — a morning intel brief in the

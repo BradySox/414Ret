@@ -5,12 +5,15 @@ from PySide6.QtGui import QPixmap
 
 from .liberation_theme import get_theme_icons
 
+# Repository / Issues / Releases point at the 414th fork (the build the squadron
+# runs and files issues against); the Manual/Forum stay on upstream, whose wiki this
+# fork still relies on for setup docs.
 URLS: Dict[str, str] = {
     "Manual": "https://github.com/dcs-retribution/dcs-retribution/wiki",
-    "Repository": "https://github.com/dcs-retribution/dcs-retribution",
+    "Repository": "https://github.com/bradyccox/414Ret",
     "ForumThread": "https://forums.eagle.ru/showthread.php?t=214834",
-    "Issues": "https://github.com/dcs-retribution/dcs-retribution/issues",
-    "Releases": "https://github.com/dcs-retribution/dcs-retribution/releases",
+    "Issues": "https://github.com/bradyccox/414Ret/issues",
+    "Releases": "https://github.com/bradyccox/414Ret/releases",
 }
 
 LABELS_OPTIONS = ["Full", "Abbreviated", "Dot Only", "Neutral Dot", "Off"]

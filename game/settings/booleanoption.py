@@ -1,7 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
-from .optiondescription import OptionDescription, SETTING_DESCRIPTION_KEY
+from .optiondescription import (
+    EnabledWhen,
+    OptionDescription,
+    SETTING_DESCRIPTION_KEY,
+    normalize_enabled_when,
+)
 
 
 @dataclass(frozen=True)
@@ -18,6 +23,7 @@ def boolean_option(
     detail: Optional[str] = None,
     tooltip: Optional[str] = None,
     causes_expensive_game_update: bool = False,
+    enabled_when: Optional[Union[str, EnabledWhen]] = None,
     **kwargs: Any,
 ) -> bool:
     return field(
@@ -30,6 +36,7 @@ def boolean_option(
                 tooltip,
                 causes_expensive_game_update,
                 invert,
+                enabled_when=normalize_enabled_when(enabled_when),
             )
         },
         default=default,

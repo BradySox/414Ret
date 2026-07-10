@@ -2,6 +2,7 @@ import {
   SupplyRoute as SupplyRouteModel,
   useOpenNewSupplyRoutePackageDialogMutation,
 } from "../../api/liberationApi";
+import { mapColors } from "../../theme/mapColors";
 import SplitLines from "../splitlines/SplitLines";
 import { Polyline as LPolyline } from "leaflet";
 import { useEffect, useRef } from "react";
@@ -11,14 +12,34 @@ interface SupplyRouteProps {
   route: SupplyRouteModel;
 }
 
+// The right-click frag only lands on an ENEMY route (a friendly route 404s server-side),
+// so the interdiction hint shows only there.
+function InterdictionHint(props: SupplyRouteProps) {
+  if (props.route.blue) {
+    return null;
+  }
+  return (
+    <>
+      <br />
+      <i>Right-click: frag interdiction</i>
+    </>
+  );
+}
+
 function SupplyRouteTooltip(props: SupplyRouteProps) {
   if (!props.route.active_transports.length) {
-    return <Tooltip>This supply route is inactive.</Tooltip>;
+    return (
+      <Tooltip>
+        This supply route is inactive.
+        <InterdictionHint {...props} />
+      </Tooltip>
+    );
   }
 
   return (
     <Tooltip>
       <SplitLines items={props.route.active_transports} />
+      <InterdictionHint {...props} />
     </Tooltip>
   );
 }
@@ -29,18 +50,22 @@ function ActiveSupplyRouteHighlight(props: SupplyRouteProps) {
   }
 
   return (
-    <Polyline positions={props.route.points} color={"#ffffff"} weight={2} />
+    <Polyline
+      positions={props.route.points}
+      color={mapColors.routeActive}
+      weight={2}
+    />
   );
 }
 
 function colorFor(route: SupplyRouteModel) {
   if (route.front_active) {
-    return "#c85050";
+    return mapColors.routeContested;
   }
   if (route.blue) {
-    return "#2d3e50";
+    return mapColors.routeFriendly;
   }
-  return "#8c1414";
+  return mapColors.routeEnemy;
 }
 
 export default function SupplyRoute(props: SupplyRouteProps) {
@@ -74,7 +99,7 @@ export default function SupplyRoute(props: SupplyRouteProps) {
           wide hit line does not swallow their clicks. */}
       <Polyline
         positions={props.route.points}
-        pathOptions={{ opacity: 0, weight: 16 }}
+        pathOptions={{ opacity: 0, weight: 16, className: "map-interactive" }}
         eventHandlers={{
           // Right-click an enemy supply route to frag an Armed Recon interdiction
           // package against its enemy end. The server no-ops (404) for a friendly route.

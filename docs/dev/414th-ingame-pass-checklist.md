@@ -1976,6 +1976,29 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   numbers not matching the debrief; enemy losses not "claimed"; index start pages off by the cover; an
   index shown for a lone flight; a stale SITREP from two turns ago (capture not running each `commit`).
 
+### K3 — UI audit follow-up: settings greying + web map discoverability/legend · §28 audit · ☐ UNTESTED (built 2026-07-10)
+- **Headless adjudication (2026-07-10):** `tests/test_settings_dependencies.py` locks the greying
+  engine — every `enabled_when` master is a real setting, all ~21 pairs verified same-page/same-section
+  (so the live refresh fires), and offscreen-Qt tests prove a child control + label grey on open and
+  un-grey live when the master toggles, including the inverse `default_front_line_stance ←
+  (automate_front_line_stance, False)` pair. The web half (palette tokens, legend, right-click hints)
+  is jest-covered for render (all 12 suites green) but its look/interaction is client-runtime only.
+  **Residual (UI eyeball only):** the in-app feel of both halves.
+- **Setup:** Open **Settings** in a campaign (Qt), then the web map on a campaign with enemy TGOs, a
+  front line, and enemy supply routes (Red Tide works).
+- **Pass:** *Qt:* children grey with their masters (e.g. the four `red_intent_*` knobs grey until
+  **Red intent** is ticked; **Default front stance** greys while automation is ON) and come back live;
+  long setting details read as one summary line with the full text on hover. *Web:* the bottom-right
+  **Legend** button expands to the colour key and doesn't block map clicks under it; the concealed
+  "suspected activity" circle reads **amber** (dashed red = ROE only); front lines / enemy supply
+  routes show a pointer cursor + a hover hint naming the right-click action, and right-click still
+  frags the package (front line) / interdiction (enemy route); a friendly route offers no
+  interdiction hint; a user-placed TGO's tooltip says right-click **removes** it (and it does).
+- **Fail signature:** a child stuck greyed after its master is enabled (or greyed on the wrong
+  master); a truncated detail with no hover full-text; the legend swatches disagreeing with the
+  drawn overlay colours (token drift); the invisible front-line/route hit-band swallowing
+  left-clicks meant for markers under it; a right-click hint shown where the action 404s.
+
 ---
 
 ## L. Vietnam Ops

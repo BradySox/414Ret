@@ -39,7 +39,13 @@ export function TgoTooltip(props: { tgo: TgoModel }) {
           out, so a FOB's hundred statics don't fill the screen on hover. */}
       <SplitLines items={summarizeUnits(props.tgo.units)} />
       <br />
-      <i>Left-click: intel · Right-click: plan a package</i>
+      {/* Right-click DELETES a user-placed group (the drop-spawn contract) --
+          advertising "plan a package" there would mislead into removing it. */}
+      <i>
+        {props.tgo.user_placed
+          ? "Left-click: intel · Right-click: remove this placed group"
+          : "Left-click: intel · Right-click: plan a package"}
+      </i>
     </Tooltip>
   );
 }

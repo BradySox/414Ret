@@ -80,6 +80,33 @@ def test_summary_line_shortens_long_detail() -> None:
     assert summary == "This is the first sentence and it explains the gist. …"
 
 
+def test_summary_line_skips_abbreviations() -> None:
+    # The period inside "e.g. " is not a sentence break -- naive splitting rendered
+    # several real settings as a dangling "... (e.g. …" (auto_add_tarps_recon et al.).
+    from qt_ui.windows.settings.QSettingsWindow import _summary_line
+
+    detail = (
+        "Appends a photo-recon flight (e.g. F-14 TARPS or a drone) to strikes. "
+        "A second sentence with enough words to push the whole detail well past "
+        "the inline limit so the summariser genuinely fires on this input."
+    )
+    summary = _summary_line(detail)
+    assert summary == (
+        "Appends a photo-recon flight (e.g. F-14 TARPS or a drone) to strikes. …"
+    )
+
+
+def test_summary_line_fallback_never_cuts_mid_word() -> None:
+    # No sentence break at all: the fallback must cut at a word boundary, not at a
+    # raw 150-char slice (target_intel_precision rendered "...target coor …").
+    from qt_ui.windows.settings.QSettingsWindow import INLINE_DETAIL_MAX, _summary_line
+
+    detail = "word " * 60  # 300 chars, no ". " anywhere
+    summary = _summary_line(detail.strip())
+    assert summary.endswith("word …")
+    assert len(summary) <= INLINE_DETAIL_MAX + 2  # the appended " …"
+
+
 # --- Qt: the greying actually fires --------------------------------------------------
 
 

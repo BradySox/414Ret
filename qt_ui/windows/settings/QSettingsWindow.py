@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import textwrap
 import zipfile
 from typing import Callable, Optional, Dict
@@ -178,15 +179,35 @@ class CheatSettingsBox(QGroupBox):
 INLINE_DETAIL_MAX = 150
 
 
+# Periods inside these do not end a sentence -- naive ". " splitting cut several
+# settings labels at "(e.g. …" (dangling paren, mid-abbreviation).
+_NON_SENTENCE_ENDINGS = ("e.g", "i.e", "etc", "vs", "cf")
+
+
+def _word_cut(detail: str) -> str:
+    """Truncate at the last word boundary under the limit -- never mid-word."""
+    cut = detail[:INLINE_DETAIL_MAX]
+    if " " in cut:
+        cut = cut[: cut.rfind(" ")]
+    return cut.rstrip() + " …"
+
+
 def _summary_line(detail: str) -> str:
     """The one-line inline hint for a long detail; the full text goes to the tooltip."""
-    for sep in (". ", " -- "):
-        idx = detail.find(sep)
-        if idx != -1:
-            first = detail[: idx + (1 if sep == ". " else 0)].strip()
-            if first:
-                return first + " …"
-    return detail[:INLINE_DETAIL_MAX].rstrip() + " …"
+    for match in re.finditer(r"\. ", detail):
+        prefix = detail[: match.start()]
+        if prefix.lower().endswith(_NON_SENTENCE_ENDINGS):
+            continue
+        first = prefix.strip() + "."
+        # A first "sentence" longer than the limit defeats the summary -- fall
+        # back to the word-boundary cut instead of rendering it whole.
+        if len(first) > INLINE_DETAIL_MAX:
+            break
+        return first + " …"
+    idx = detail.find(" -- ")
+    if idx != -1 and 0 < idx <= INLINE_DETAIL_MAX:
+        return detail[:idx].strip() + " …"
+    return _word_cut(detail)
 
 
 class AutoSettingsLayout(QGridLayout):

@@ -272,6 +272,10 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "opfor_planner_unpredictability",
                     "c2_decapitation_effects",
                     "red_intent",
+                    "red_intent_per_front",
+                    "red_intent_boldness",
+                    "red_intent_dwell_turns",
+                    "red_intent_trend_window",
                 ],
             ),
             (
@@ -1117,6 +1121,65 @@ class Settings:
             "picks targets, how many bases it strips for offense, and how readily it "
             "commits ground reserves. Shown on the SITREP and the campaign status bar. "
             "Red-only; a campaign with no enemy auto-planner is unaffected."
+        ),
+    )
+    red_intent_per_front: bool = boolean_option(
+        "Red intent adapts per front",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "With Red Intent on, resolve a separate posture for EACH active front from "
+            "that front's own ground balance (the shared air/resolve/supply/trend read "
+            "still applies), so on a multi-front war red commits its reserves on the "
+            "front it is winning and husbands them on the front it is losing, instead "
+            "of one theater-wide stance. Off falls back to a single theater-wide "
+            "posture. No effect on single-front campaigns or when Red Intent is off."
+        ),
+    )
+    red_intent_boldness: int = bounded_int_option(
+        "Red intent boldness",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=50,
+        min=0,
+        max=100,
+        detail=(
+            "Red's temperament dial (50 = the neutral default). Higher makes red bolder "
+            "-- it surges at a smaller ground edge, seizes opportunity windows more "
+            "readily, digs in only when badly outnumbered, and presses harder once "
+            "committed (bigger aggressiveness/reserve-commitment swing). Lower makes it "
+            "cautious -- it needs a clear advantage to surge and turtles sooner. Only "
+            "affects red when Red Intent is on."
+        ),
+    )
+    red_intent_dwell_turns: int = bounded_int_option(
+        "Red intent posture stickiness (turns)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=2,
+        min=1,
+        max=6,
+        detail=(
+            "How many turns red must hold a posture before it may ESCALATE to a more "
+            "aggressive one (attrition -> surge). De-escalation to consolidate is always "
+            "immediate -- a command reacts to a setback at once. Higher = a steadier, "
+            "less twitchy enemy; lower = quicker to seize a fleeting advantage. Only "
+            "affects red when Red Intent is on."
+        ),
+    )
+    red_intent_trend_window: int = bounded_int_option(
+        "Red intent trend memory (turns)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=2,
+        min=1,
+        max=5,
+        detail=(
+            "How many turns back red compares against when reading trends (its IADS "
+            "being dismantled, resolve collapsing, bases bleeding, the enemy air force "
+            "spent). A longer window makes red react to slower, sustained pressure; a "
+            "shorter one to abrupt swings. Only affects red when Red Intent is on."
         ),
     )
     heli_combat_alt_agl: int = bounded_int_option(

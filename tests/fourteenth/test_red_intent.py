@@ -201,11 +201,24 @@ class _FakeAirWing:
 
 
 class _FakeFront:
-    def __init__(self, red_units: int, blue_units: int) -> None:
-        self.blue_cp = SimpleNamespace(id=1, deployable_front_line_units=blue_units)
-        self.red_cp = SimpleNamespace(id=2, deployable_front_line_units=red_units)
+    def __init__(
+        self,
+        red_units: int,
+        blue_units: int,
+        blue_id: int = 1,
+        red_id: int = 2,
+        name: Optional[str] = None,
+    ) -> None:
+        self.blue_cp = SimpleNamespace(
+            id=blue_id, name=f"blue{blue_id}", deployable_front_line_units=blue_units
+        )
+        self.red_cp = SimpleNamespace(
+            id=red_id, name=f"red{red_id}", deployable_front_line_units=red_units
+        )
         self.route_length = 100.0
         self._blue_route_progress = 50.0
+        if name is not None:
+            self.name = name
 
 
 class _FakeTheater:
@@ -239,6 +252,7 @@ class _FakeGame:
         self.red_intent_baseline: object = None
         self.red_intent_history: list[RedIntentSample] = []
         self.red_intent_intensity: Optional[float] = None
+        self.red_intent_fronts: dict[str, object] = {}
 
     def air_wing_for(self, player: object) -> _FakeAirWing:
         return _FakeAirWing()
@@ -845,3 +859,141 @@ def test_intensity_word_helper() -> None:
     off = _FakeGame(red_intent=False)
     off.red_intent_key = RedPosture.SURGE.value
     assert intensity_word(off) is None  # type: ignore[arg-type]
+
+
+# =====================================================================================
+# Tuning (settings-driven temperament) + per-front posture (D)
+# =====================================================================================
+
+from game.fourteenth.red_intent import (  # noqa: E402
+    DEFAULT_TUNING,
+    RedIntentTuning,
+    _front_ground_ratio,
+    _front_key,
+    front_postures,
+    tuning_for,
+)
+
+
+def test_tuning_for_defaults_to_the_base_thresholds() -> None:
+    game = _FakeGame(red_intent=True)  # settings carry no red_intent_* tuning
+    t = tuning_for(game)  # type: ignore[arg-type]
+    assert t == DEFAULT_TUNING
+
+
+def test_boldness_lowers_the_surge_bar_and_raises_the_seam_scale() -> None:
+    game = _FakeGame(red_intent=True)
+    game.settings = SimpleNamespace(red_intent=True, red_intent_boldness=100)
+    bold = tuning_for(game)  # type: ignore[arg-type]
+    assert bold.surge_ground_ratio < SURGE_GROUND_RATIO  # surges at a smaller edge
+    assert bold.consolidate_ground_ratio < CONSOLIDATE_GROUND_RATIO  # turtles later
+    assert bold.seam_scale > 1.0  # presses harder
+    game.settings = SimpleNamespace(red_intent=True, red_intent_boldness=0)
+    timid = tuning_for(game)  # type: ignore[arg-type]
+    assert timid.surge_ground_ratio > SURGE_GROUND_RATIO  # needs a clear advantage
+    assert timid.seam_scale < 1.0
+
+
+def test_boldness_widens_the_surge_zone_in_the_classifier() -> None:
+    # A ground edge below the base surge bar is only a surge for a bold red.
+    m = _metrics(ground_ratio=1.2)
+    assert classify_red_intent(m) is RedPosture.ATTRITION  # base
+    bold = RedIntentTuning(surge_ground_ratio=1.05)
+    assert classify_red_intent(m, bold) is RedPosture.SURGE
+
+
+def test_boldness_scales_the_aggressiveness_and_commit_seams() -> None:
+    bold = _intensity_game(RedPosture.SURGE.value, DEFAULT_INTENSITY, aggr=50)
+    bold.settings.red_intent_boldness = 100
+    neutral = _intensity_game(RedPosture.SURGE.value, DEFAULT_INTENSITY, aggr=50)
+    # Neutral reproduces the v1 anchors; bold presses harder on both seams.
+    assert effective_aggressiveness(neutral) == 80  # type: ignore[arg-type]
+    assert effective_aggressiveness(bold) > 80  # type: ignore[arg-type]
+    assert stance_commit_factor(neutral) == 1.35  # type: ignore[arg-type]
+    assert stance_commit_factor(bold) > 1.35  # type: ignore[arg-type]
+
+
+def test_dwell_setting_lengthens_escalation_hold() -> None:
+    game = _FakeGame(red_intent=True)
+    game.settings = SimpleNamespace(red_intent=True, red_intent_dwell_turns=4)
+    assert tuning_for(game).dwell_turns == 4  # type: ignore[arg-type]
+    # A 4-turn dwell holds an escalation that the default 2-turn one would allow.
+    assert (
+        _next_posture(RedPosture.ATTRITION, 5, 5 + 2, RedPosture.SURGE, dwell=4)
+        is RedPosture.ATTRITION
+    )
+    assert (
+        _next_posture(RedPosture.ATTRITION, 5, 5 + 4, RedPosture.SURGE, dwell=4)
+        is RedPosture.SURGE
+    )
+
+
+def test_trend_window_setting_moves_the_lookback() -> None:
+    history = [_sample(turn=t) for t in (1, 2, 3, 4)]
+    # A window of 3 from turn 5 targets turn 2 (vs turn 3 at the default window of 2).
+    got = _trend_lookback(history, 5, 3)
+    assert got is not None and got.turn == 2
+
+
+# --- per-front helpers ---------------------------------------------------------------
+
+
+def test_front_key_and_ground_ratio() -> None:
+    front = _FakeFront(red_units=20, blue_units=5, blue_id=3, red_id=7)
+    assert _front_key(front) == "3:7"
+    assert _front_ground_ratio(front) == 4.0
+    assert _front_key(SimpleNamespace()) is None  # duck-typed front -> no key
+
+
+# --- per-front posture end-to-end ----------------------------------------------------
+
+
+def _two_front_game() -> "_FakeGame":
+    # Front A: red 4:1 (winning). Front B: red 1:4 (losing). Distinct cp ids.
+    front_a = _FakeFront(red_units=20, blue_units=5, blue_id=1, red_id=2, name="A")
+    front_b = _FakeFront(red_units=5, blue_units=20, blue_id=3, red_id=4, name="B")
+    game = _FakeGame(red_intent=True, fronts=(front_a, front_b))
+    game.settings = SimpleNamespace(red_intent=True, red_intent_per_front=True)
+    game._front_a = front_a  # type: ignore[attr-defined]
+    game._front_b = front_b  # type: ignore[attr-defined]
+    return game
+
+
+def test_per_front_posture_diverges_by_front() -> None:
+    game = _two_front_game()
+    update_red_intent(game)  # type: ignore[arg-type]
+    # The winning front surges (commit factor > 1), the losing front consolidates (< 1).
+    commit_a = stance_commit_factor(game, game._front_a)  # type: ignore[arg-type,attr-defined]
+    commit_b = stance_commit_factor(game, game._front_b)  # type: ignore[arg-type,attr-defined]
+    assert commit_a > 1.0  # red commits reserves on the front it is winning
+    assert commit_b < 1.0  # red husbands on the front it is losing
+
+
+def test_front_postures_surface_lists_both_fronts() -> None:
+    game = _two_front_game()
+    update_red_intent(game)  # type: ignore[arg-type]
+    fronts = front_postures(game)  # type: ignore[arg-type]
+    assert len(fronts) == 2
+    by_name = {f["name"]: f["posture"] for f in fronts}
+    assert by_name["A"] == "Surging"
+    assert by_name["B"] == "Consolidating"
+
+
+def test_per_front_off_falls_back_to_the_theater_posture() -> None:
+    game = _two_front_game()
+    game.settings = SimpleNamespace(red_intent=True, red_intent_per_front=False)
+    update_red_intent(game)  # type: ignore[arg-type]
+    assert game.red_intent_fronts == {}  # cleared
+    assert front_postures(game) == []  # type: ignore[arg-type]
+    # Both fronts now use the SAME theater-wide commit factor.
+    theater = stance_commit_factor(game)  # type: ignore[arg-type]
+    assert stance_commit_factor(game, game._front_a) == theater  # type: ignore[arg-type,attr-defined]
+    assert stance_commit_factor(game, game._front_b) == theater  # type: ignore[arg-type,attr-defined]
+
+
+def test_single_front_hides_the_per_front_breakdown() -> None:
+    game = _FakeGame(red_intent=True, fronts=(_FakeFront(red_units=20, blue_units=5),))
+    game.settings = SimpleNamespace(red_intent=True, red_intent_per_front=True)
+    update_red_intent(game)  # type: ignore[arg-type]
+    # 1 front -> redundant with the theater posture
+    assert front_postures(game) == []  # type: ignore[arg-type]

@@ -57,11 +57,40 @@ at the default intensity, so every prior test held byte-for-byte):
   an "Enemy intent" block in the expander carrying the full "why" (`red_posture_detail`). Guarded in
   `tests/test_sitrep.py` + the `sitrep_posture_detail`/`intensity_word` tests in `test_red_intent.py`.
 
-  Not built this pass: **per-front posture** (one theater-wide posture still stands; a distinct intent
-  per front is the architectural stretch, deferred). New/extended tests in
-  `tests/fourteenth/test_red_intent.py` cover the trend classifier, the opportunity window, the
-  lookback selector, idempotent history recording, the intensity endpoints, and the graduated seams
-  (all anchored so the v1 seam tests are unchanged).
+  New/extended tests in `tests/fourteenth/test_red_intent.py` cover the trend classifier, the
+  opportunity window, the lookback selector, idempotent history recording, the intensity endpoints,
+  and the graduated seams (all anchored so the v1 seam tests are unchanged).
+
+**Per-front posture + tuning settings (2026-07-10, follow-on).** The two pieces deferred above:
+
+- **Per-front posture (D).** A theater-wide posture treated a two-front war as one stance — on a map
+  where red is 4:1 on one front and 1:4 on another, the aggregate reads ~even and red neither commits
+  nor husbands anywhere. Now `_update_front_postures` classifies **each active front** from *its own*
+  ground balance (`_front_ground_ratio`) plus the shared theater air/resolve/supply/**trend** read,
+  with per-front hysteresis, latching a `FrontPosture` per front on `game.red_intent_fronts` (keyed by
+  the cp-id pair; getattr-guarded + `__setstate__` `{}`). The **ground-husbanding seam (4)** is the one
+  that goes per-front: `FrontLineStanceTask._posture_commit_factor` passes `self.front_line`, and
+  `stance_commit_factor(game, front)` reads that front's posture/intensity via
+  `_front_posture_and_intensity` — so red commits reserves on the front it is winning and husbands on
+  the one it is losing. The **global seams (emphasis / unpredictability / aggressiveness) stay
+  theater-wide** (they are whole-planning-run decisions), as does the UI headline; the per-front
+  breakdown surfaces in the ribbon **expander** (`front_postures` → `CampaignStatusJs.front_postures`
+  → a list under the "Enemy intent" block, shown only for 2+ divergent fronts). `_front_key` is
+  defensive (a duck-typed front → theater fallback), so the seam never raises. Gated
+  `red_intent_per_front` (default ON); off clears the dict and every front uses the theater posture.
+  Verified end-to-end: on a Berlin-4:1 / Fulda-1:4 board red surges (commit ×1.4–1.7) on Berlin while
+  digging in (×0.5–0.7) on Fulda under a theater-"Attrition" aggregate.
+- **Tuning settings (the temperament dials).** A `RedIntentTuning` object (default = the base
+  constants, so `DEFAULT_TUNING` and a positional `classify_red_intent(m)` are byte-identical) threads
+  the settings-derived knobs through the classifier + seams via `tuning_for(game)`:
+  **`red_intent_boldness`** (0–100, 50 = neutral) is the master dial — higher lowers the
+  surge/opportunity/consolidate ground bars (surges at a smaller edge, turtles only when badly
+  outnumbered) and raises `seam_scale` (presses harder once committed: bigger aggressiveness delta +
+  commit deviation); **`red_intent_dwell_turns`** tunes the escalation hysteresis; **`red_intent_trend_window`**
+  tunes the trend-lookback. All on the Air Doctrine page under Red Intent, all no-ops at their defaults.
+  The seam formulas are re-anchored so `seam_scale`=1 + intensity=0.5 reproduce the v1 numbers exactly.
+  Tests cover `tuning_for`, the boldness-widened surge zone, the scaled seams, the dwell/window
+  overrides, the per-front helpers, and the full per-front divergence + fallback.
 
 Decided calls (session 2026-07-08):
 

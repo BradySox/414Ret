@@ -42,7 +42,7 @@ snapshotted turn 0. This build adds:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum, unique
 from importlib import import_module
 from typing import Optional, TYPE_CHECKING
@@ -209,6 +209,65 @@ def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
 
 
+# --- tuning (settings-driven temperament) --------------------------------------------
+
+
+@dataclass(frozen=True)
+class RedIntentTuning:
+    """The settings-derived knobs the classifier + seams read (the 'temperament').
+
+    All default to the module constants, so ``DEFAULT_TUNING`` reproduces the base
+    behaviour exactly -- a game with no red-intent tuning settings (or a bare test that
+    calls ``classify_red_intent(m)`` positionally) classifies byte-identically to before.
+    ``tuning_for(game)`` derives real values from the ``red_intent_boldness`` /
+    ``red_intent_dwell_turns`` / ``red_intent_trend_window`` settings.
+    """
+
+    surge_ground_ratio: float = SURGE_GROUND_RATIO
+    consolidate_ground_ratio: float = CONSOLIDATE_GROUND_RATIO
+    surge_opportunity_ground_ratio: float = SURGE_OPPORTUNITY_GROUND_RATIO
+    dwell_turns: int = INTENT_MIN_DWELL_TURNS
+    trend_lookback_turns: int = TREND_LOOKBACK_TURNS
+    #: Scales the aggressiveness delta + the commit-factor deviation from neutral, so a
+    #: bold red presses harder once committed. 1.0 = the base swing.
+    seam_scale: float = 1.0
+
+
+DEFAULT_TUNING = RedIntentTuning()
+
+#: How far the boldness dial swings the surge/consolidate/opportunity ground bars
+#: (fraction of the base threshold at the extremes) and the seam magnitude.
+_BOLDNESS_THRESHOLD_SWING = 0.30
+_BOLDNESS_SEAM_SWING = 0.40
+
+
+def tuning_for(game: "Game") -> RedIntentTuning:
+    """Derive this game's red-intent tuning from its settings (default = the base values).
+
+    ``red_intent_boldness`` (0-100, 50 = neutral) is the master dial: higher lowers the
+    surge/opportunity bars and the consolidate bar (bolder -- surges at a smaller edge,
+    turtles only when badly outnumbered) and raises the seam magnitude (presses harder).
+    ``red_intent_dwell_turns`` / ``red_intent_trend_window`` tune the hysteresis dwell and
+    the trend-lookback window. All getattr-defaulted so a pre-feature save/settings blob
+    yields ``DEFAULT_TUNING``.
+    """
+    boldness = float(getattr(game.settings, "red_intent_boldness", 50))
+    b = (boldness - 50.0) / 50.0  # [-1, 1], 0 at the neutral default
+    scale = 1.0 - _BOLDNESS_THRESHOLD_SWING * b
+    return RedIntentTuning(
+        surge_ground_ratio=SURGE_GROUND_RATIO * scale,
+        consolidate_ground_ratio=CONSOLIDATE_GROUND_RATIO * scale,
+        surge_opportunity_ground_ratio=SURGE_OPPORTUNITY_GROUND_RATIO * scale,
+        dwell_turns=int(
+            getattr(game.settings, "red_intent_dwell_turns", INTENT_MIN_DWELL_TURNS)
+        ),
+        trend_lookback_turns=int(
+            getattr(game.settings, "red_intent_trend_window", TREND_LOOKBACK_TURNS)
+        ),
+        seam_scale=1.0 + _BOLDNESS_SEAM_SWING * b,
+    )
+
+
 # --- state -----------------------------------------------------------------------------
 
 
@@ -242,6 +301,21 @@ class RedIntentSample:
     blue_fighters: int  # blue air-superiority owned airframes
     red_bases: int  # red-held control points
     supply_health: Optional[float]  # §53 coupling; None when the economy is off/absent
+
+
+@dataclass(frozen=True)
+class FrontPosture:
+    """A per-front RED posture (D): resolved from that front's own ground balance +
+    the shared theater air/resolve/supply/trend read, so red commits its reserves on
+    the front it is winning and husbands on the one it is losing. Latched per front on
+    ``game.red_intent_fronts`` (keyed by the front's cp-id pair), recompute-not-pickle
+    like the theater pointer; carries its own dwell entry-turn for per-front hysteresis.
+    """
+
+    name: str  # display name for the front (the ribbon expander)
+    posture: str  # RedPosture value
+    entered_on_turn: int
+    intensity: float
 
 
 @dataclass(frozen=True)
@@ -311,6 +385,41 @@ def _ground_ratio(game: "Game") -> float:
     if blue <= 0:
         return 3.0 if red > 0 else 1.0
     return red / blue
+
+
+def _front_key(front: object) -> Optional[str]:
+    """A front's stable key (cp-id pair), or None if the object lacks cp ids.
+
+    Defensive on the cp attrs so a duck-typed test front (which drives the stance task
+    via ``control_point_friendly_to`` only, with no ``blue_cp``/``red_cp``) resolves to
+    None and the seam falls back to the theater-wide posture rather than raising.
+    """
+    blue = getattr(getattr(front, "blue_cp", None), "id", None)
+    red = getattr(getattr(front, "red_cp", None), "id", None)
+    if blue is None or red is None:
+        return None
+    return f"{blue}:{red}"
+
+
+def _front_ground_ratio(front: object) -> float:
+    """Red deployable / blue deployable for a SINGLE front (the per-front D signal)."""
+    red = getattr(getattr(front, "red_cp", None), "deployable_front_line_units", 0)
+    blue = getattr(getattr(front, "blue_cp", None), "deployable_front_line_units", 0)
+    if blue <= 0:
+        return 3.0 if red > 0 else 1.0
+    return red / blue
+
+
+def _front_name(front: object) -> str:
+    """A short display name for a front (the ribbon expander)."""
+    name = getattr(front, "name", None)
+    if name:
+        return str(name)
+    blue = getattr(getattr(front, "blue_cp", None), "name", None)
+    red = getattr(getattr(front, "red_cp", None), "name", None)
+    if blue and red:
+        return f"{blue}–{red}"
+    return "front"
 
 
 def _fighters(game: "Game", player: "Player") -> int:
@@ -433,19 +542,22 @@ def _current_sample(game: "Game", baseline: RedIntentBaseline) -> RedIntentSampl
 
 
 def _trend_lookback(
-    history: list[RedIntentSample], turn: int
+    history: list[RedIntentSample],
+    turn: int,
+    lookback: int = TREND_LOOKBACK_TURNS,
 ) -> Optional[RedIntentSample]:
     """The sample this turn's trends are measured against, or None until history exists.
 
-    Prefers the most recent sample at or before ``turn - TREND_LOOKBACK_TURNS``; earlier
-    in the campaign the oldest strictly-earlier sample stands in. Samples for ``turn``
-    itself are excluded so a same-turn re-init (which may already have banked this turn)
-    never differences against itself -- trends stay idempotent.
+    Prefers the most recent sample at or before ``turn - lookback``; earlier in the
+    campaign the oldest strictly-earlier sample stands in. Samples for ``turn`` itself
+    are excluded so a same-turn re-init (which may already have banked this turn) never
+    differences against itself -- trends stay idempotent. ``lookback`` defaults to the
+    base ``TREND_LOOKBACK_TURNS`` (the ``red_intent_trend_window`` setting overrides it).
     """
     earlier = [s for s in history if s.turn < turn]
     if not earlier:
         return None
-    target = turn - TREND_LOOKBACK_TURNS
+    target = turn - lookback
     at_or_before = [s for s in earlier if s.turn <= target]
     if at_or_before:
         return max(at_or_before, key=lambda s: s.turn)
@@ -518,7 +630,9 @@ def collect_metrics(
 # --- the decision ----------------------------------------------------------------------
 
 
-def classify_red_intent(m: RedIntentMetrics) -> RedPosture:
+def classify_red_intent(
+    m: RedIntentMetrics, tuning: RedIntentTuning = DEFAULT_TUNING
+) -> RedPosture:
     """Pick RED's posture (caller applies hysteresis + derives intensity).
 
     CONSOLIDATE when red is under pressure -- outnumbered on the ground, low resolve, a
@@ -528,10 +642,13 @@ def classify_red_intent(m: RedIntentMetrics) -> RedPosture:
     advantage (or a blue-air-collapse *opportunity* at a lower bar) AND its air isn't
     suppressed AND (P4) it can sustain the push. ATTRITION otherwise -- the default, which
     also absorbs the dropped 'Feint' as a moderate-unpredictability middle.
+
+    ``tuning`` shifts the ground bars by the boldness dial (``DEFAULT_TUNING`` = the base
+    thresholds, so a positional ``classify_red_intent(m)`` is byte-identical to before).
     """
     starved = m.supply_health is not None and m.supply_health < STARVED_SUPPLY
     under_pressure = (
-        m.ground_ratio <= CONSOLIDATE_GROUND_RATIO
+        m.ground_ratio <= tuning.consolidate_ground_ratio
         or m.resolve < CONSOLIDATE_RESOLVE
         or m.lost_base
         or m.front_advance >= FRONT_LOSS_EPSILON
@@ -549,34 +666,41 @@ def classify_red_intent(m: RedIntentMetrics) -> RedPosture:
     if not (air_ok and supplied):
         return RedPosture.ATTRITION
     # Own clear advantage, or a transient blue-air-collapse opportunity at a lower bar.
-    if m.ground_ratio >= SURGE_GROUND_RATIO:
+    if m.ground_ratio >= tuning.surge_ground_ratio:
         return RedPosture.SURGE
-    if m.blue_air_collapsing and m.ground_ratio >= SURGE_OPPORTUNITY_GROUND_RATIO:
+    if (
+        m.blue_air_collapsing
+        and m.ground_ratio >= tuning.surge_opportunity_ground_ratio
+    ):
         return RedPosture.SURGE
 
     return RedPosture.ATTRITION
 
 
-def _intensity(m: RedIntentMetrics, posture: RedPosture) -> float:
+def _intensity(
+    m: RedIntentMetrics, posture: RedPosture, tuning: RedIntentTuning = DEFAULT_TUNING
+) -> float:
     """How strongly ``posture`` is held, in [0, 1] (seam graduation, B).
 
     SURGE ramps from the floor at the surge threshold to 1.0 at a runaway advantage.
     CONSOLIDATE takes the worst of its pressure axes (how outnumbered / how low or
     fast-collapsing resolve / how much IADS lost / how starved / a lost base). ATTRITION
     is the neutral midpoint (its graduated seams are no-ops anyway). Anchored so a
-    *typical* posture sits near ``DEFAULT_INTENSITY``.
+    *typical* posture sits near ``DEFAULT_INTENSITY``. ``tuning`` moves the surge/
+    consolidate ground anchors with the boldness dial (``DEFAULT_TUNING`` = the base).
     """
     if posture is RedPosture.SURGE:
-        span = SURGE_STRONG_RATIO - SURGE_GROUND_RATIO
+        span = SURGE_STRONG_RATIO - tuning.surge_ground_ratio
         ramp = (
-            _clamp01((m.ground_ratio - SURGE_GROUND_RATIO) / span) if span > 0 else 0.0
+            _clamp01((m.ground_ratio - tuning.surge_ground_ratio) / span)
+            if span > 0
+            else 0.0
         )
         return _clamp01(SURGE_INTENSITY_FLOOR + (1.0 - SURGE_INTENSITY_FLOOR) * ramp)
     if posture is RedPosture.CONSOLIDATE:
+        ground_floor = tuning.consolidate_ground_ratio or CONSOLIDATE_GROUND_RATIO
         severities = [
-            _clamp01(
-                (CONSOLIDATE_GROUND_RATIO - m.ground_ratio) / CONSOLIDATE_GROUND_RATIO
-            ),
+            _clamp01((ground_floor - m.ground_ratio) / ground_floor),
             _clamp01((CONSOLIDATE_RESOLVE - m.resolve) / CONSOLIDATE_RESOLVE),
             _clamp01(m.iads_trend),
             _clamp01(-m.resolve_trend / RESOLVE_COLLAPSE_SPAN),
@@ -599,14 +723,17 @@ def _next_posture(
     entered_on_turn: Optional[int],
     turn: int,
     target: RedPosture,
+    dwell: int = INTENT_MIN_DWELL_TURNS,
 ) -> RedPosture:
-    """Asymmetric dwell: escalating needs the target to hold ``INTENT_MIN_DWELL_TURNS``;
-    de-escalating (toward the lower-ranked, more defensive posture) applies at once."""
+    """Asymmetric dwell: escalating needs the target to hold ``dwell`` turns;
+    de-escalating (toward the lower-ranked, more defensive posture) applies at once.
+    ``dwell`` defaults to the base ``INTENT_MIN_DWELL_TURNS`` (the ``red_intent_dwell_turns``
+    setting overrides it via ``tuning_for``)."""
     if current is None or target is current:
         return target
     if _POSTURE_RANK[target] < _POSTURE_RANK[current]:
         return target  # de-escalation is immediate
-    if turn - (entered_on_turn or 0) < INTENT_MIN_DWELL_TURNS:
+    if turn - (entered_on_turn or 0) < dwell:
         return current  # escalation waits out the dwell
     return target
 
@@ -688,6 +815,7 @@ def update_red_intent(game: "Game") -> None:
         game.red_intent_entered_on_turn = None
         game.red_intent_status_line = None
         game.red_intent_intensity = None
+        game.red_intent_fronts = {}
         return
 
     baseline = getattr(game, "red_intent_baseline", None)
@@ -695,16 +823,21 @@ def update_red_intent(game: "Game") -> None:
         baseline = snapshot_baseline(game)
         game.red_intent_baseline = baseline
 
+    tuning = tuning_for(game)
     history = list(getattr(game, "red_intent_history", None) or [])
-    prior = _trend_lookback(history, game.turn)
+    prior = _trend_lookback(history, game.turn, tuning.trend_lookback_turns)
     sample = _current_sample(game, baseline)
     metrics = collect_metrics(game, sample, prior)
-    target = classify_red_intent(metrics)
+    target = classify_red_intent(metrics, tuning)
     current = _posture_from_key(getattr(game, "red_intent_key", None))
     new = _next_posture(
-        current, getattr(game, "red_intent_entered_on_turn", None), game.turn, target
+        current,
+        getattr(game, "red_intent_entered_on_turn", None),
+        game.turn,
+        target,
+        tuning.dwell_turns,
     )
-    intensity = _intensity(metrics, new)
+    intensity = _intensity(metrics, new, tuning)
 
     if new is not current:
         game.red_intent_key = new.value
@@ -721,7 +854,51 @@ def update_red_intent(game: "Game") -> None:
     word = _intensity_word(new, intensity)
     label = f"{new.display} ({word})" if word else new.display
     game.red_intent_status_line = f"{label} — {_legibility(metrics)}"
+    _update_front_postures(game, metrics, tuning)
     _record_sample(game, sample)
+
+
+def _update_front_postures(
+    game: "Game", metrics: RedIntentMetrics, tuning: RedIntentTuning
+) -> None:
+    """Per-front posture resolution (D): classify each active front from its own ground
+    balance + the shared theater signals, with per-front hysteresis. Latches
+    ``game.red_intent_fronts`` (front key -> :class:`FrontPosture`); cleared to ``{}``
+    when ``red_intent_per_front`` is off so the seam falls back to the theater posture.
+    Idempotent under re-init (turn-stable inputs; a same-turn re-run keeps entry turns).
+    """
+    if not getattr(game.settings, "red_intent_per_front", True):
+        game.red_intent_fronts = {}
+        return
+    prior = getattr(game, "red_intent_fronts", None) or {}
+    updated: dict[str, FrontPosture] = {}
+    for front in game.theater.conflicts():
+        key = _front_key(front)
+        if key is None:
+            continue
+        front_metrics = replace(metrics, ground_ratio=_front_ground_ratio(front))
+        front_target = classify_red_intent(front_metrics, tuning)
+        state = prior.get(key)
+        front_current = _posture_from_key(state.posture) if state else None
+        front_new = _next_posture(
+            front_current,
+            state.entered_on_turn if state else None,
+            game.turn,
+            front_target,
+            tuning.dwell_turns,
+        )
+        entered = (
+            state.entered_on_turn
+            if (state is not None and front_new is front_current)
+            else game.turn
+        )
+        updated[key] = FrontPosture(
+            name=_front_name(front),
+            posture=front_new.value,
+            entered_on_turn=entered,
+            intensity=_intensity(front_metrics, front_new, tuning),
+        )
+    game.red_intent_fronts = updated
 
 
 def active_red_intent(game: "Game") -> Optional[RedPosture]:
@@ -816,20 +993,49 @@ def effective_aggressiveness(game: "Game") -> int:
     posture = active_red_intent(game)
     if posture is None or posture is RedPosture.ATTRITION:
         return base
-    magnitude = AGGRESSION_MID + round(
-        AGGRESSION_SPAN * (active_red_intensity(game) - DEFAULT_INTENSITY)
+    magnitude = round(
+        (
+            AGGRESSION_MID
+            + AGGRESSION_SPAN * (active_red_intensity(game) - DEFAULT_INTENSITY)
+        )
+        * tuning_for(game).seam_scale
     )
     delta = magnitude if posture is RedPosture.SURGE else -magnitude
     return max(0, min(100, base + delta))
 
 
-def stance_commit_factor(game: "Game") -> float:
+def _front_posture_and_intensity(
+    game: "Game", front: object
+) -> tuple[Optional[RedPosture], float]:
+    """The (posture, intensity) the ground-commit seam uses for ``front``.
+
+    Prefers the per-front posture (D) when ``red_intent_per_front`` is on and the front
+    resolves to a latched state; otherwise falls back to the theater-wide posture (a
+    single-posture red, the setting off, or a duck-typed front with no cp ids)."""
+    posture = active_red_intent(game)
+    if posture is None:
+        return None, DEFAULT_INTENSITY
+    if front is not None and getattr(game.settings, "red_intent_per_front", True):
+        key = _front_key(front)
+        if key is not None:
+            state = (getattr(game, "red_intent_fronts", None) or {}).get(key)
+            if state is not None:
+                front_posture = _posture_from_key(state.posture)
+                if front_posture is not None:
+                    return front_posture, state.intensity
+    return posture, active_red_intensity(game)
+
+
+def stance_commit_factor(game: "Game", front: object = None) -> float:
     """RED's ground-commitment bias for the ATTACK-stance thresholds (seam 4).
 
     >1 commits reserves sooner (SURGE reaches aggressive/elimination/breakthrough at a
     lower real advantage); <1 husbands them (CONSOLIDATE needs more advantage to attack,
-    while still defending normally). The factor scales with intensity about the v1
-    midpoints (SURGE 1.35 / CONSOLIDATE 0.7 at ``DEFAULT_INTENSITY``). 1.0 for a
+    while still defending normally). Uses the **per-front** posture/intensity (D) for
+    ``front`` when available -- so on a multi-front war red commits on the front it is
+    winning and husbands on the one it is losing -- else the theater-wide read. The factor
+    scales with intensity about the v1 midpoints (SURGE 1.35 / CONSOLIDATE 0.7 at
+    ``DEFAULT_INTENSITY``) and with the boldness dial (``seam_scale``). 1.0 for a
     stock/observing red -- and, per the [DECIDED] 'authored windows win' rule, 1.0 while
     an authored ``red_tempo`` ground-offensive pulse owns red's stances, so the two never
     double-drive the front.
@@ -838,10 +1044,45 @@ def stance_commit_factor(game: "Game") -> float:
 
     if ground_offensive_active(game):
         return 1.0
-    posture = active_red_intent(game)
+    posture, intensity = _front_posture_and_intensity(game, front)
     if posture is None or posture is RedPosture.ATTRITION:
         return 1.0
-    swing = COMMIT_SPAN * (active_red_intensity(game) - DEFAULT_INTENSITY)
+    scale = tuning_for(game).seam_scale
     if posture is RedPosture.SURGE:
-        return round(SURGE_COMMIT_MID + swing, 3)
-    return round(CONSOLIDATE_COMMIT_MID - swing, 3)
+        deviation = (SURGE_COMMIT_MID - 1.0) + COMMIT_SPAN * (
+            intensity - DEFAULT_INTENSITY
+        )
+    else:
+        deviation = (CONSOLIDATE_COMMIT_MID - 1.0) - COMMIT_SPAN * (
+            intensity - DEFAULT_INTENSITY
+        )
+    return round(1.0 + deviation * scale, 3)
+
+
+def front_postures(game: "Game") -> list[dict[str, Optional[str]]]:
+    """Per-front postures for the ribbon expander (D legibility), or [] to hide the block.
+
+    Empty when red_intent is off, per-front is off, or there is only one active front
+    (redundant with the theater posture). Each entry carries the front's display name,
+    posture word, and intensity word -- so a divergent multi-front war reads at a glance.
+    """
+    if active_red_intent(game) is None or not getattr(
+        game.settings, "red_intent_per_front", True
+    ):
+        return []
+    fronts = getattr(game, "red_intent_fronts", None) or {}
+    if len(fronts) < 2:
+        return []
+    result: list[dict[str, Optional[str]]] = []
+    for state in fronts.values():
+        posture = _posture_from_key(state.posture)
+        if posture is None:
+            continue
+        result.append(
+            {
+                "name": state.name,
+                "posture": posture.display,
+                "intensity": _intensity_word(posture, state.intensity) or None,
+            }
+        )
+    return result

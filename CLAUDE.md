@@ -1612,8 +1612,21 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     scale their magnitude by it (a runaway 4:1 surge presses harder / a collapsing regime husbands
     harder), anchored at `DEFAULT_INTENSITY` 0.5 to the v1 midpoints so a typical posture is
     byte-identical and only the extremes move (unpredictability + emphasis stay posture-only). All
-    no-ops until real trend/margin data exists, so every prior test held byte-for-byte; **per-front
-    posture deferred** (one theater-wide posture stands). **Surfaced visibly (not hover-only):** the
+    no-ops until real trend/margin data exists, so every prior test held byte-for-byte. **Per-front
+    posture + tuning added same day (D + settings):** (D) `_update_front_postures` classifies EACH active
+    front from its own ground balance + the shared theater air/resolve/trend read (per-front hysteresis,
+    latched `FrontPosture` on `game.red_intent_fronts` keyed by cp-id pair), and the **ground-husbanding
+    seam** goes per-front (`stance_commit_factor(game, front)` via `_front_posture_and_intensity`, wired
+    from `frontlinestancetask._posture_commit_factor` passing `self.front_line`) — so red commits on the
+    front it is winning and husbands on the one it is losing; the other three seams + the UI headline stay
+    theater-wide, the per-front breakdown surfaces in the ribbon expander (`front_postures` →
+    `CampaignStatusJs.front_postures`, 2+ divergent fronts). Gated `red_intent_per_front` default ON
+    (off ⇒ theater fallback). Tuning: a `RedIntentTuning`/`tuning_for` object (default = base constants,
+    byte-identical) threads three new Air-Doctrine settings — `red_intent_boldness` (0-100, 50 neutral;
+    the master dial: lowers the surge/opportunity/consolidate ground bars + raises the seam magnitude),
+    `red_intent_dwell_turns` (escalation stickiness), `red_intent_trend_window` (trend lookback) — through
+    the classifier + seams; re-anchored so seam_scale=1 + intensity=0.5 reproduce the v1 numbers. **Surfaced
+    visibly (not hover-only):** the
     **kneeboard SITREP** "Enemy posture" line now renders the *detail* — intensity word + trend driver
     ("Surging (all-in) — ground 4.0x · air holding · IADS falling") via `sitrep_posture_detail` +
     `Sitrep.red_posture_detail` (Python-only, no client rebuild); the **web ribbon chip** shows the

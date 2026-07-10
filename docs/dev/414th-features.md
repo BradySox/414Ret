@@ -4817,7 +4817,33 @@ byte-identical to before until red is actively consolidating or surging.
    (AGGRESSIVE/ELIMINATION/BREAKTHROUGH) are biased — DEFENSIVE/RETREAT keep the raw balance, so
    consolidate tempers the attack **without ever forcing a retreat**. **Yields** (factor 1.0) while an
    authored `red_tempo` ground-offensive pulse is active, so a campaign author's Tet/Easter offensive is
-   never double-driven.
+   never double-driven. **This seam goes per-front (D, below); the other three stay theater-wide.**
+
+### Per-front posture + tuning (2026-07-10)
+
+- **Per-front posture (D)** (`red_intent_per_front`, default **ON**). A theater-wide posture treated a
+  two-front war as one stance. Now `_update_front_postures` classifies **each active front** from *its
+  own* ground balance (`_front_ground_ratio`) plus the shared theater air/resolve/supply/**trend** read,
+  with per-front hysteresis, latching a `FrontPosture` per front on `game.red_intent_fronts` (keyed by
+  the cp-id pair, getattr-guarded + `__setstate__` `{}`). The **ground-husbanding seam (4)** reads it:
+  `stance_commit_factor(game, front)` uses that front's posture/intensity, so red **commits reserves on
+  the front it is winning and husbands on the one it is losing**. The global seams (emphasis /
+  unpredictability / aggressiveness) + the UI headline stay theater-wide; the per-front breakdown shows
+  in the ribbon expander (`front_postures` → `CampaignStatusJs.front_postures`, 2+ divergent fronts
+  only). Off clears the dict and every front uses the theater posture; `_front_key` is defensive so the
+  seam never raises. Verified: Berlin-4:1 / Fulda-1:4 → red surges (commit ×1.4–1.7) on Berlin, digs in
+  (×0.5–0.7) on Fulda, under a theater-"Attrition" aggregate.
+- **Tuning — the temperament dials** (Air Doctrine → Auto-planner behavior). A `RedIntentTuning` object
+  (default = the base constants, so `DEFAULT_TUNING`/positional `classify_red_intent(m)` are
+  byte-identical) threads settings-derived knobs through the classifier + seams via `tuning_for(game)`:
+  - **`red_intent_boldness`** (0–100, 50 = neutral) — the master dial. Higher lowers the surge / opportunity
+    / consolidate ground bars (red surges at a smaller edge, turtles only when badly outnumbered) and
+    raises `seam_scale` (presses harder once committed — bigger aggressiveness delta + commit deviation).
+  - **`red_intent_dwell_turns`** (1–6, default 2) — the escalation hysteresis (how sticky the posture is).
+  - **`red_intent_trend_window`** (1–5, default 2) — how many turns back the trend read compares over.
+
+  All getattr-defaulted (a pre-feature save = `DEFAULT_TUNING`) and re-anchored so `seam_scale`=1 +
+  intensity=0.5 reproduce the v1 numbers exactly.
 
 ### Legibility
 
@@ -4832,8 +4858,9 @@ Three surfaces, all **surfacing the smart trend/intensity read visibly** (not on
 - **Campaign-status ribbon chip** (web map, `CampaignStatusBar`) — the chip shows `ENEMY Surging` plus the
   **intensity word inline** (`CampaignStatusJs.red_posture_intensity` via `intensity_word` → *"ENEMY Surging
   · all-in"*), coloured by mood (surging red, consolidating amber, attrition neutral). The expander (click
-  the phase chip) now carries an **"Enemy intent" block** showing the full `red_posture_detail` "why" line —
-  so the trend reasons are one visible click away, not hover-only. Hidden when the feature is off.
+  the phase chip) carries an **"Enemy intent" block** showing the full `red_posture_detail` "why" line —
+  plus, on a divergent multi-front war, a **per-front breakdown** (`front_postures` → `CampaignStatusJs.front_postures`,
+  one row per front: *"Berlin — Surging · all-in / Fulda — Consolidating · dug in"*). Hidden when off.
 - **Per-turn transition message** ("Enemy posture: Surging" + the narrative + legibility) in the info log.
 
 So the enemy's stance *and the reason for it* read on both the kneeboard and the planning map.
@@ -4852,12 +4879,12 @@ there out of the box; verified end-to-end against a stubbed economy in `test_red
 
 | Area | Path |
 |---|---|
-| Core | `game/fourteenth/red_intent.py` (postures, classifier, rolling-trend memory + `RedIntentSample`, intensity, hysteresis, the four seam helpers) |
-| Seams | `nextaction.py` `_offensive_order`; `targetorder.py` `_unpredictability_for`; `objectivefinder.py` `vulnerable_control_points`; `frontlinestancetask.py` `_posture_commit_factor` (aggressiveness + commit are intensity-scaled) |
-| Hook / state | `game/game.py` (`update_red_intent` in `initialize_turn`; latched `red_intent_*` fields incl. `red_intent_history` + `red_intent_intensity`, `__setstate__` defaults) |
-| Legibility | `game/sitrep.py` (`red_posture` + `red_posture_detail`) + `record_sitrep` (`sitrep_posture_detail`); `game/server/game/models.py` (`CampaignStatusJs.red_posture` / `red_posture_detail` / `red_posture_intensity` via `intensity_word`) + `client/src/components/campaignstatus/CampaignStatusBar` (chip intensity word + expander "Enemy intent" block + CSS) |
-| Setting | `game/settings/settings.py` (`red_intent`, Air Doctrine, default **OFF**) |
-| Tests | `tests/fourteenth/test_red_intent.py`; `tests/test_planner_unpredictability.py` (stacked red-intent + C2 clamp) |
+| Core | `game/fourteenth/red_intent.py` (postures, classifier, rolling-trend memory + `RedIntentSample`, intensity, hysteresis, `RedIntentTuning`/`tuning_for`, per-front `FrontPosture`/`_update_front_postures`, the four seam helpers) |
+| Seams | `nextaction.py` `_offensive_order`; `targetorder.py` `_unpredictability_for`; `objectivefinder.py` `vulnerable_control_points`; `frontlinestancetask.py` `_posture_commit_factor` (aggressiveness + commit are intensity- + boldness-scaled; commit is per-front) |
+| Hook / state | `game/game.py` (`update_red_intent` in `initialize_turn`; latched `red_intent_*` fields incl. `red_intent_history` + `red_intent_intensity` + `red_intent_fronts`, `__setstate__` defaults) |
+| Legibility | `game/sitrep.py` (`red_posture` + `red_posture_detail`) + `record_sitrep` (`sitrep_posture_detail`); `game/server/game/models.py` (`CampaignStatusJs.red_posture` / `red_posture_detail` / `red_posture_intensity` / `front_postures`) + `client/src/components/campaignstatus/CampaignStatusBar` (chip intensity word + expander "Enemy intent" + per-front breakdown + CSS) |
+| Setting | `game/settings/settings.py` (`red_intent` default **OFF**; `red_intent_per_front` default **ON**, `red_intent_boldness`/`red_intent_dwell_turns`/`red_intent_trend_window` — all Air Doctrine → Auto-planner behavior) |
+| Tests | `tests/fourteenth/test_red_intent.py` (classifier/trends/intensity/tuning/per-front); `tests/test_sitrep.py`; `tests/test_planner_unpredictability.py` (stacked red-intent + C2 clamp) |
 
 ### Gotchas / deferred
 

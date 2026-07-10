@@ -262,6 +262,22 @@ export default function CampaignStatusBar() {
               <span className="campaign-status-panel-intent-text">
                 {status.red_posture_detail}
               </span>
+              {(status.front_postures ?? []).length > 1 && (
+                <ul className="campaign-status-panel-fronts">
+                  {(status.front_postures ?? []).map((front) => (
+                    <li
+                      key={front.name}
+                      className={"front-posture posture-" + front.posture.toLowerCase()}
+                    >
+                      <span className="front-posture-name">{front.name}</span>
+                      <span className="front-posture-state">
+                        {front.posture}
+                        {front.intensity != null ? " · " + front.intensity : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           {history.length >= 2 && (

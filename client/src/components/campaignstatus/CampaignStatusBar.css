@@ -319,6 +319,40 @@
   border-left-color: #5a4413;
 }
 
+/* §55 (D): the per-front posture breakdown -- one row per active front, so a
+   multi-front war shows red committing on one front and husbanding on another. */
+.campaign-status-panel-fronts {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0 0 0 8px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.campaign-status-panel-fronts .front-posture {
+  display: flex;
+  gap: 8px;
+}
+
+.campaign-status-panel-fronts .front-posture-name {
+  color: #9aa6b6;
+  min-width: 120px;
+}
+
+.campaign-status-panel-fronts .front-posture.posture-surging .front-posture-state {
+  color: #e79a86;
+}
+
+.campaign-status-panel-fronts .front-posture.posture-consolidating .front-posture-state {
+  color: #dcc07a;
+}
+
+.campaign-status-panel-fronts .front-posture.posture-attrition .front-posture-state {
+  color: #aeb9c8;
+}
+
 /* The will-attribution notes (why the meters moved last turn). */
 .campaign-status-panel-notes {
   border-top: 1px solid #23344a;

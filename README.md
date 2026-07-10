@@ -99,9 +99,12 @@ and selected later upstream fixes.
   even presses *harder* the further ahead it is and turtles *harder* the deeper the trouble. A
   colour-coded **"ENEMY" chip on the map ribbon** (and your kneeboard SITREP) names the enemy's posture
   and *why* ("Surging (all-in)", "Consolidating — IADS falling") so you can read its mood — and with the
-  war economy on, **bomb its supply and a winning enemy digs in**. Opt-in and enemy-only (your side's
-  "intent" is the campaign phase), and it never touches the enemy's reactive defenses. **Germany — Red
-  Tide** ships with it on.
+  war economy on, **bomb its supply and a winning enemy digs in**. On a **multi-front** war it now holds a
+  *separate* posture per front — pressing on the front it's winning while it digs in on the one it's
+  losing — and a single **boldness** dial lets you tune its whole temperament from cautious to reckless
+  (plus how sticky its posture is and how far back it reads the war's trend). Opt-in and enemy-only (your
+  side's "intent" is the campaign phase), and it never touches the enemy's reactive defenses. **Germany —
+  Red Tide** ships with it on.
 - **Bomb the enemy's motor pool before its armor reaches the front.** A base's not-yet-deployed
   armor reserve now shows up as a **strikeable depot** on the map — hit the parked vehicles at the
   motor pool and the owner has to repurchase them next turn, so you can attrit the reserve directly

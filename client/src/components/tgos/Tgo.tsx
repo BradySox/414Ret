@@ -41,7 +41,9 @@ function ConcealedTgo(props: TgoProps) {
         weight: 2,
         dashArray: "6 6",
         fillColor: mapColors.suspected,
-        fillOpacity: 0.08,
+        // Deep enough to read as an area at a glance over satellite imagery
+        // (0.08 washed out); still translucent enough to read the terrain under it.
+        fillOpacity: 0.18,
         className: "map-interactive",
       }}
       eventHandlers={{

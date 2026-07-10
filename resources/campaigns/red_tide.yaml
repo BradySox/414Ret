@@ -472,7 +472,7 @@ squadrons:
       aircraft:
         - 85th Guards Fighter Aviation Regiment
       aircraft_type: MiG-29A Fulcrum-A
-      size: 6
+      size: 12
     - primary: Armed Recon
       secondary: air-to-ground
       aircraft:
@@ -504,7 +504,7 @@ squadrons:
       aircraft:
         - Baltic Fleet Fighter Aviation
       aircraft_type: MiG-29A Fulcrum-A
-      size: 8
+      size: 12
     - primary: Anti-ship
       secondary: any
       aircraft:
@@ -554,7 +554,7 @@ squadrons:
       aircraft:
         - 33rd Fighter Aviation Regiment
       aircraft_type: MiG-23MLD Flogger-K
-      size: 8
+      size: 12
     - primary: SEAD Escort
       secondary: any
       aircraft:
@@ -580,7 +580,7 @@ squadrons:
       aircraft:
         - 831st Guards Fighter Aviation Regiment
       aircraft_type: Su-27 Flanker-B
-      size: 6
+      size: 12
   #Schonefeld — the eyes and the gas: Mainstay AWACS, Midas tankers, and a courier flight.
   26:
     - primary: AEW&C
@@ -628,4 +628,4 @@ squadrons:
       aircraft:
         - 1st Guards Air Defence Fighter Regiment
       aircraft_type: MIG-29-FULCRUM
-      size: 4
+      size: 8

@@ -297,15 +297,14 @@ class SquadronConfigurationBox(QGroupBox):
         self.parking_tracker.allocation_changed.connect(self.update_parking_label)
         left_column.addWidget(self.parking_label)
 
-        if not squadron.player.is_blue and squadron.aircraft.flyable:
-            player_label = QLabel("Player slots not available for opfor")
-        elif not squadron.aircraft.flyable:
+        if not squadron.aircraft.flyable:
             player_label = QLabel("Player slots not available for non-flyable aircraft")
+        elif not squadron.player.is_blue:
+            player_label = QLabel("Player slots not available for opfor")
         else:
-            msg1 = "Player slots not available for opfor"
-            msg2 = "Player slots not available for non-flyable aircraft"
-            text = msg2 if squadron.player.is_blue else msg1
-            player_label = QLabel(text)
+            # Blue + flyable: the one case that DOES have player slots (the editable
+            # list below is enabled). The old else-branch mislabeled it "non-flyable".
+            player_label = QLabel("Player slots")
         left_column.addWidget(player_label)
 
         self.player_list = QTextEdit(

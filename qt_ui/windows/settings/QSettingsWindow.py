@@ -173,6 +173,22 @@ class CheatSettingsBox(QGroupBox):
         return self.free_placement_checkbox.isChecked()
 
 
+# A detail longer than this is summarised to its first sentence inline and shown in
+# full on hover, so the dense pages stop reading as walls of text.
+INLINE_DETAIL_MAX = 150
+
+
+def _summary_line(detail: str) -> str:
+    """The one-line inline hint for a long detail; the full text goes to the tooltip."""
+    for sep in (". ", " -- "):
+        idx = detail.find(sep)
+        if idx != -1:
+            first = detail[: idx + (1 if sep == ". " else 0)].strip()
+            if first:
+                return first + " …"
+    return detail[:INLINE_DETAIL_MAX].rstrip() + " …"
+
+
 class AutoSettingsLayout(QGridLayout):
     def __init__(
         self,
@@ -187,6 +203,10 @@ class AutoSettingsLayout(QGridLayout):
         self.sc = sc
         self.write_full_settings = write_full_settings
         self.settings_map: Dict[str, QWidget] = {}
+        # For the dependency-greying (enabled_when): the label per field, and each
+        # child field's (master, enabled_value) spec.
+        self.labels_map: Dict[str, QLabel] = {}
+        self.enabled_specs: Dict[str, tuple[str, bool]] = {}
 
         self.init_ui()
 
@@ -194,7 +214,7 @@ class AutoSettingsLayout(QGridLayout):
         for row, (name, description) in enumerate(
             Settings.fields(self.page, self.section)
         ):
-            self.add_label(row, description)
+            self.add_label(row, name, description)
             if isinstance(description, BooleanOption):
                 self.add_checkbox_for(row, name, description)
             elif isinstance(description, ChoicesOption):
@@ -207,18 +227,77 @@ class AutoSettingsLayout(QGridLayout):
                 self.add_duration_controls_for(row, name, description)
             else:
                 raise TypeError(f"Unhandled option type: {description}")
+        self._wire_dependency_greying()
 
-    def add_label(self, row: int, description: OptionDescription) -> None:
+    def add_label(self, row: int, name: str, description: OptionDescription) -> None:
         wrapped_title = "<br />".join(textwrap.wrap(description.text, width=55))
         text = f"<strong>{wrapped_title}</strong>"
-        if description.detail is not None:
-            wrapped = "<br />".join(textwrap.wrap(description.detail, width=55))
+        tooltip = description.tooltip
+        detail = description.detail
+        if detail is not None:
+            if len(detail) <= INLINE_DETAIL_MAX:
+                inline = detail
+            else:
+                # Summarise long help to one line; keep the full text on hover so the
+                # dense pages stop drowning their controls in paragraphs.
+                inline = _summary_line(detail)
+                if tooltip is None:
+                    tooltip = detail
+            wrapped = "<br />".join(textwrap.wrap(inline, width=55))
             text += f"<br />{wrapped}"
         label = QLabel(text)
-        if description.tooltip is not None:
-            label.setToolTip(description.tooltip)
+        if tooltip is not None:
+            label.setToolTip(tooltip)
         label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.addWidget(label, row, 0)
+        self.labels_map[name] = label
+        if description.enabled_when is not None:
+            self.enabled_specs[name] = description.enabled_when
+
+    # --- dependency greying (enabled_when) -------------------------------------------
+
+    def _wire_dependency_greying(self) -> None:
+        """Grey a child field's control + label whenever its master's value doesn't
+        match. Masters and children share a section here, so the master's own change
+        signal drives the refresh live; the initial pass sets the state on open."""
+        for master in {master for master, _ in self.enabled_specs.values()}:
+            widget = self.settings_map.get(master)
+            if widget is not None:
+                self._connect_change(widget, self.refresh_enabled_states)
+        self.refresh_enabled_states()
+
+    def refresh_enabled_states(self) -> None:
+        for name, (master, expected) in self.enabled_specs.items():
+            enabled = bool(self.sc.settings.__dict__.get(master, False)) == expected
+            control = self.settings_map.get(name)
+            if control is not None:
+                self._set_control_enabled(control, enabled)
+            label = self.labels_map.get(name)
+            if label is not None:
+                label.setEnabled(enabled)
+
+    @staticmethod
+    def _connect_change(widget: QWidget, slot: Callable[[], None]) -> None:
+        if isinstance(widget, QCheckBox):
+            widget.toggled.connect(lambda _checked=False: slot())
+        elif isinstance(widget, QComboBox):
+            widget.currentIndexChanged.connect(lambda _index=0: slot())
+        elif isinstance(widget, QSpinBox):
+            widget.valueChanged.connect(lambda _value=0: slot())
+        elif isinstance(widget, (FloatSpinSlider, TimeInputs)):
+            widget.spinner.valueChanged.connect(lambda _value=0: slot())
+
+    @staticmethod
+    def _set_control_enabled(widget: QWidget, enabled: bool) -> None:
+        if isinstance(widget, QWidget):
+            widget.setEnabled(enabled)
+        else:
+            # FloatSpinSlider / TimeInputs are QHBoxLayouts of a slider + spinner.
+            for i in range(widget.count()):
+                item = widget.itemAt(i)
+                child = item.widget() if item is not None else None
+                if child is not None:
+                    child.setEnabled(enabled)
 
     def add_checkbox_for(self, row: int, name: str, description: BooleanOption) -> None:
         def on_toggle(value: bool) -> None:
@@ -321,6 +400,9 @@ class AutoSettingsLayout(QGridLayout):
                 widget.setValue(value)
             elif isinstance(widget, TimeInputs):
                 widget.spinner.setValue(value.seconds // 60)
+        # Re-apply dependency greying after the values change (e.g. a difficulty
+        # preset flipped a master toggle).
+        self.refresh_enabled_states()
 
 
 class AutoSettingsGroup(QGroupBox):

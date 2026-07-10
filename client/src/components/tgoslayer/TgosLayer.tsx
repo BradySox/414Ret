@@ -24,7 +24,7 @@ export default function TgosLayer(props: TgosLayerProps) {
   return (
     <LayerGroup>
       {tgos.map((tgo) => {
-        return <Tgo key={tgo.name} tgo={tgo} />;
+        return <Tgo key={tgo.id} tgo={tgo} />;
       })}
     </LayerGroup>
   );

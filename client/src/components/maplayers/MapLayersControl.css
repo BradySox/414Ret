@@ -142,18 +142,6 @@
   padding: 1px 5px;
 }
 
-.ml-collapse {
-  margin-left: auto;
-  background: transparent;
-  border: none;
-  color: #7d8b9d;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 0 4px;
-  display: flex;
-  align-items: center;
-}
-
 .ml-foot {
   padding: 7px 12px;
   border-top: 1px solid #2b3647;

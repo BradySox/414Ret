@@ -803,6 +803,7 @@ class Settings:
     )
     qra_defense_depth_nm: int = bounded_int_option(
         "QRA defended airspace radius (NM)",
+        enabled_when="qra_forward_defense",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=60,
@@ -973,6 +974,7 @@ class Settings:
     )
     concealed_enemy_forces: bool = boolean_option(
         "Concealed enemy field forces (uncertainty areas until scouted)",
+        enabled_when="recon_intel_fog",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=True,
@@ -1125,6 +1127,7 @@ class Settings:
     )
     red_intent_per_front: bool = boolean_option(
         "Red intent adapts per front",
+        enabled_when="red_intent",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=True,
@@ -1139,6 +1142,7 @@ class Settings:
     )
     red_intent_boldness: int = bounded_int_option(
         "Red intent boldness",
+        enabled_when="red_intent",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=50,
@@ -1155,6 +1159,7 @@ class Settings:
     )
     red_intent_dwell_turns: int = bounded_int_option(
         "Red intent posture stickiness (turns)",
+        enabled_when="red_intent",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=2,
@@ -1170,6 +1175,7 @@ class Settings:
     )
     red_intent_trend_window: int = bounded_int_option(
         "Red intent trend memory (turns)",
+        enabled_when="red_intent",
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         default=2,
@@ -1510,6 +1516,7 @@ class Settings:
     )
     coin_reinfiltration: bool = boolean_option(
         "COIN re-infiltration (insurgency retakes ground)",
+        enabled_when="coin_insurgency",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=False,
@@ -1527,6 +1534,7 @@ class Settings:
     )
     coin_ied: bool = boolean_option(
         "COIN roadside IEDs (sweep the trail)",
+        enabled_when="coin_insurgency",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=False,
@@ -1543,6 +1551,7 @@ class Settings:
     )
     coin_hvt: bool = boolean_option(
         "COIN high-value targets (hunt the leadership)",
+        enabled_when="coin_insurgency",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=False,
@@ -1559,6 +1568,7 @@ class Settings:
     )
     coin_dispersed_cells: bool = boolean_option(
         "COIN dispersed cells (patrol the countryside)",
+        enabled_when="coin_insurgency",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=False,
@@ -1575,6 +1585,7 @@ class Settings:
     )
     coin_harassment: bool = boolean_option(
         "COIN indirect fire on forward bases (the FOB war)",
+        enabled_when="coin_insurgency",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=False,
@@ -1618,6 +1629,7 @@ class Settings:
     )
     motorpool_spawn_cap: int = bounded_int_option(
         "Maximum motorpool vehicles per turn",
+        enabled_when="motorpool_enabled",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=10,
@@ -1656,9 +1668,10 @@ class Settings:
             "Track a per-airfield stock of scarce munitions (PGMs, GPS bombs, "
             "standoff/cruise, anti-radiation, medium/long-range A2A) and rearm it each "
             "turn -- scaled by the base's supply when the war economy is on, so cutting "
-            "a base off starves its magazines. Currently accounting only: loadouts are "
-            "not yet blocked when a store runs out (that gate is a later phase). "
-            "Intended for campaigns with a real economy/logistics laydown."
+            "a base off starves its magazines. When a store runs dry the loadout is "
+            "swapped down to the first stocked/non-scarce fallback (JDAM -> dumb bomb) "
+            "or the pylon is cleared, and the payload editor greys the depleted store "
+            "out. Intended for campaigns with a real economy/logistics laydown."
         ),
     )
     auto_range_fuel_tanks: bool = boolean_option(
@@ -1709,6 +1722,7 @@ class Settings:
         "Maximum number of pilots per squadron",
         CAMPAIGN_MANAGEMENT_PAGE,
         PILOTS_AND_SQUADRONS_SECTION,
+        enabled_when="enable_squadron_pilot_limits",
         default=16,
         min=6,
         max=72,
@@ -1723,6 +1737,7 @@ class Settings:
         "Squadron pilot replenishment rate",
         CAMPAIGN_MANAGEMENT_PAGE,
         PILOTS_AND_SQUADRONS_SECTION,
+        enabled_when="enable_squadron_pilot_limits",
         default=4,
         min=1,
         max=20,
@@ -1881,6 +1896,7 @@ class Settings:
         "Default front line stance",
         CAMPAIGN_MANAGEMENT_PAGE,
         HQ_AUTOMATION_SECTION,
+        enabled_when=("automate_front_line_stance", False),
         # RETREAT is intentionally omitted -- never a sensible standing default.
         choices={
             "Aggressive": CombatStance.AGGRESSIVE,
@@ -2066,6 +2082,7 @@ class Settings:
         "Use supercarrier deck-crew",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
+        enabled_when="supercarrier",
         default=True,
     )
     generate_portable_tacans: bool = boolean_option(
@@ -2443,6 +2460,7 @@ class Settings:
         "Allow hot starts in dynamic slots",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
+        enabled_when="dynamic_slots",
         default=True,
         detail=("Enables hot start for dynamic slots."),
     )
@@ -2579,6 +2597,7 @@ class Settings:
     )
     comms_jam_requires_capture: bool = boolean_option(
         "Comms jamming needs captured aircrew (the intel gate)",
+        enabled_when="enemy_comms_jamming",
         page=MISSION_GENERATION_PAGE,
         section=GENERAL_SECTION,
         default=True,
@@ -2657,6 +2676,7 @@ class Settings:
         "Commitment ceiling (will-coupled war budget)",
         VIETNAM_OPS_PAGE,
         "Campaign",
+        enabled_when="vietnam_political_will",
         detail=(
             "As your Political Will falls, Congress trims the war budget -- your "
             "income is scaled down toward a floor as the home front turns, so a "
@@ -2751,6 +2771,7 @@ class Settings:
     )
     perf_smoke_spacing: int = bounded_int_option(
         "Smoke generator spacing (higher means less smoke)",
+        enabled_when="perf_smoke_gen",
         page=MISSION_GENERATOR_PAGE,
         section=PERFORMANCE_SECTION,
         default=1600,
@@ -2845,6 +2866,7 @@ class Settings:
     )
     perf_culling_distance: int = bounded_int_option(
         "Culling distance (km)",
+        enabled_when="perf_culling",
         page=MISSION_GENERATOR_PAGE,
         section=PERFORMANCE_SECTION,
         default=100,

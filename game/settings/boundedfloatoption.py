@@ -1,7 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
-from .optiondescription import OptionDescription, SETTING_DESCRIPTION_KEY
+from .optiondescription import (
+    EnabledWhen,
+    OptionDescription,
+    SETTING_DESCRIPTION_KEY,
+    normalize_enabled_when,
+)
 
 
 @dataclass(frozen=True)
@@ -21,6 +26,7 @@ def bounded_float_option(
     divisor: int,
     detail: Optional[str] = None,
     tooltip: Optional[str] = None,
+    enabled_when: Optional[Union[str, EnabledWhen]] = None,
     **kwargs: Any,
 ) -> float:
     return field(
@@ -35,6 +41,7 @@ def bounded_float_option(
                 min=min,
                 max=max,
                 divisor=divisor,
+                enabled_when=normalize_enabled_when(enabled_when),
             )
         },
         default=default,

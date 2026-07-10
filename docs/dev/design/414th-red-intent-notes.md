@@ -1,9 +1,9 @@
 # Red Intent — a thinking red opponent (the deferred red arc)
 
-**Status: P0–P3 BUILT 2026-07-08** (feature **§55**, registered; on branch `claude/red-intent-p0`,
-PR open — the four planner seams below are all wired and unit-tested, gated `red_intent` default
-OFF; **P4 (the §53 supply coupling) is deferred**, a read-only drop-in once the sibling war economy
-lands). The sibling of the campaign-phases arc (§40) for RED: a per-turn-resolved **posture** that
+**Status: P0–P4 LANDED** (feature **§55**, registered — the four planner seams below are all wired
+and unit-tested, gated `red_intent` default OFF; **P4 (the §53 supply coupling) went live when the
+sibling war economy landed**, exactly as the read-only drop-in predicted). The sibling of the
+campaign-phases arc (§40) for RED: a per-turn-resolved **posture** that
 biases red's planning and, unlike the blue arc, carries *memory* across turns. §55 sits beside the
 war-economy pair **§53** (War Economy) / **§54** (Munitions Availability) the other agent scoped in
 `414th-war-economy-notes.md` (that branch owns §53/§54; §55 is on this one). Mirrors
@@ -11,8 +11,9 @@ war-economy pair **§53** (War Economy) / **§54** (Munitions Availability) the 
 existed and were previously either blue-gated or driven by a static setting.
 
 Phase status: **P0** observe-only resolver + SITREP · **P1** offensive emphasis · **P2** unpredictability
-+ aggressiveness · **P3** ground husbanding (yields to authored `red_tempo`) — all landed. **P4** economy
-coupling — deferred (blocked on §53). In-game pass: checklist B7.
++ aggressiveness · **P3** ground husbanding (yields to authored `red_tempo`) · **P4** economy coupling
+(`_red_supply_health` reads `war_economy.coalition_supply_health`; returns None whenever `war_economy`
+is off, so a non-economy campaign is unaffected) — all landed. In-game pass: checklist B7.
 
 Decided calls (session 2026-07-08):
 

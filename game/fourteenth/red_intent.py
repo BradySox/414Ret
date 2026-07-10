@@ -5,11 +5,14 @@ carries *memory* across turns. Each turn resolves a RED **posture**
 (``CONSOLIDATE`` / ``ATTRITION`` / ``SURGE``) from live state + territorial memory +
 resolve, latches it on the ``Game``, and exposes it to consumers.
 
-This is **P0 -- observe-only**: the posture is classified, latched, and surfaced (SITREP
-line + a per-turn message), but **no planner seam is wired yet**. The four consumption
-points (offensive emphasis, unpredictability, aggressiveness, ground husbanding) land in
-P1--P3, and the §53 war-economy supply coupling in P4. See
-``docs/dev/design/414th-red-intent-notes.md``.
+The posture is classified, latched, surfaced (SITREP line + a per-turn message), and
+consumed by four planner seams: offensive emphasis (``offensive_emphasis``), target-shuffle
+unpredictability (``unpredictability_modifier``), offensive-commit aggressiveness
+(``effective_aggressiveness``), and ground husbanding (``stance_commit_factor``). The §53
+war-economy supply coupling feeds the classifier via ``_red_supply_health``. Every helper
+returns a neutral value when the feature is off, the side is blue, or the posture is
+ATTRITION, so the planner stays byte-identical to stock until red actively consolidates or
+surges. See ``docs/dev/design/414th-red-intent-notes.md``.
 
 Design decisions (2026-07-08): three postures (Feint folded into Attrition); full memory
 from v1 (state + last-turn setback + resolve); authored ``red_tempo`` windows win (a P3
@@ -214,10 +217,10 @@ def _red_resolve(game: "Game") -> float:
 def _red_supply_health(game: "Game") -> Optional[float]:
     """Red materiel readiness in [0, 1], or None when §53 (war_economy) is absent/off.
 
-    P0: returns None (the war-economy feature/module does not exist yet), so the
-    classifier's supply terms drop out. The locked interface (see the design note) is
-    ``war_economy.coalition_supply_health(game, coalition)``; this reads it lazily and
-    degrades to None on any absence so P0--P3 stay economy-independent.
+    Reads the locked interface ``war_economy.coalition_supply_health(game, coalition)``
+    lazily, and degrades to None on any absence -- setting off, module missing, or a raise
+    -- so red intent never depends on the economy being present. None makes the
+    classifier's supply terms drop out entirely.
     """
     if not getattr(game.settings, "war_economy", False):
         return None
@@ -350,9 +353,9 @@ def update_red_intent(game: "Game") -> None:
     multiple-init-per-turn cases (all inputs are turn-stable; the baseline is snapshotted
     once and never overwritten).
 
-    P0 is OBSERVE-ONLY: it latches ``game.red_intent_key`` + a status line and announces
-    transitions; no planner seam reads it yet. Setting off => state cleared, so future
-    consumers see 'no posture' and behave stock.
+    Latches ``game.red_intent_key`` + a status line and announces transitions; the four
+    planner seams read the result through ``active_red_intent``. Setting off => state
+    cleared, so consumers see 'no posture' and behave stock.
     """
     if not getattr(game.settings, "red_intent", False):
         game.red_intent_key = None
@@ -387,7 +390,7 @@ def update_red_intent(game: "Game") -> None:
 
 
 def active_red_intent(game: "Game") -> Optional[RedPosture]:
-    """The posture consumers read (P1+: planner seams; P0: SITREP/status only)."""
+    """The posture consumers read (the four planner seams + the SITREP/status surfaces)."""
     if not getattr(game.settings, "red_intent", False):
         return None
     return _posture_from_key(getattr(game, "red_intent_key", None))

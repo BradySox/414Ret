@@ -671,7 +671,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 6. **Air-defense planning rework** — overlapping/jittered BARCAP waves, forward CAP line,
    threat-weighted BARCAP volume, a map-scaled **red forward-middle BARCAP layer** (added,
    not relocated; via a `ForwardBarcapZone` target), front-line navmesh routing hazard,
-   unstacked FLOT units.
+   unstacked FLOT units. **A front anchor is never abandoned** (2026-07-09):
+   `ObjectiveFinder._offensive_roll` still lets OPFOR abandon a *rear* CP to free fighters
+   for offense, but never a CP holding the FLOT — on a single-front theater the roll deleted
+   the only CAP over the front (Red Tide: Haina, the sole anchor and the theater's densest
+   orbit at 2 threat-weighted rounds, abandoned ~1 turn in 5, leaving red's whole BARCAP
+   layer 126–188 NM behind the FLOT around Berlin).
 7. **Auto-hide mobile SAMs on MFD** — SHORAD/AAA/MANPAD hidden from datalink, including
    escorts inside armor/missile groups; standalone MERAD/LORAD stay visible for SEAD.
 8. **Robustness / crash fixes** — flight-exit IndexError, AWACS/tanker orbit, malformed mod

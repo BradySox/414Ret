@@ -852,6 +852,14 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
   `barcap_overlap_time == 0` this reproduces the old back-to-back schedule exactly.
 - Forward CAP line: `game/commander/objectivefinder.py` `vulnerable_control_points()`
   (checks `cp.has_active_frontline`; also fixes an inverted aggressiveness comparison).
+  **A front anchor is never abandoned** (2026-07-09): `_offensive_roll` still lets OPFOR
+  abandon a *rear* CP to free its fighters for offense, but a CP holding the FLOT is exempt
+  — stripping the front in order to push forward is incoherent, and on a single-front
+  theater the roll deleted the *only* CAP over the front. On Red Tide, Haina is the sole
+  front anchor, carries the theater's highest threat-weighted round count (2 vs the rear
+  fields' 1), and was abandoned on ~1 turn in 5 (turns 2, 8 and 9 of the first ten), leaving
+  red's entire BARCAP layer 126–188 NM behind the FLOT around Berlin. Tests:
+  `tests/test_objectivefinder_barcap.py`.
 - Threat-weighted BARCAP volume (the `barcap-threat-weighting` branch's headline):
   contested sectors get more BARCAP waves, **additive only** so coverage never regresses
   (an earlier up-and-down rework collapsed quiet bases to one wave and was reverted —

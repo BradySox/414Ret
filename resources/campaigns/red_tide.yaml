@@ -245,6 +245,11 @@ settings:
   # period jets don't spawn with modern kit. Preseeded because Red Tide is date-specific
   # and no other campaign setting covers it (standard default is off).
   restrict_weapons_by_date: true
+  # §54 munitions scarcity: an airfield out of a scarce PGM/ARM/A2A store can't load it
+  # (the loadout degrades to a stocked/dumb fallback). Pairs with war_economy below --
+  # bomb a base's supply and its jets run dry. Default off and covered by no other
+  # campaign setting, so it's preseeded here to survive a reset to standard defaults.
+  restrict_weapons_by_stock: true
   # Human-led offensive: keep the blue auto-planner cautious so the AI fills fewer of
   # the ATO's offensive slots and the human's 414th sorties (F-16CM/F-A-18C/F-15E/
   # F-14B/A-10C) carry the push. Recommended NEW-GAME defaults; the player can
@@ -289,8 +294,8 @@ settings:
   # production and interdiction have something concrete to key on. Supply is produced,
   # transported to the front and consumed; a starved front recovers less / deploys
   # fewer / gains less ground (P2 bite); the SITREP shows front supply (P4a). See
-  # game/fourteenth/war_economy.py. Also §54 munitions (restrict_weapons_by_stock) --
-  # not preseeded here; enable per taste.
+  # game/fourteenth/war_economy.py. Its air axis, §54 munitions
+  # (restrict_weapons_by_stock), is preseeded above.
   war_economy: true
   # §53 P3 -- fuel depots gate air readiness: bomb a base's fuel and it sorties fewer
   # jets next turn (down to a floor). No-op on bases without fuel depots. Symmetric.

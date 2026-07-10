@@ -83,6 +83,14 @@ def test_red_tide_preseeds_the_era_weapon_gate() -> None:
     assert settings["restrict_weapons_by_date"] is True
 
 
+def test_red_tide_preseeds_munitions_scarcity() -> None:
+    settings = _campaign_settings()
+    # §54 is the air axis of the war economy (also preseeded): out-of-stock scarce
+    # munitions degrade at load. Default off and covered by no other campaign setting.
+    assert settings["restrict_weapons_by_stock"] is True
+    assert settings["war_economy"] is True
+
+
 def test_red_tide_fields_the_two_scud_batteries_for_the_hunt() -> None:
     # §49 only has something to relocate if the .miz actually places missile-category
     # TGOs. Red Tide's laydown carries two SS-1C Scud-B batteries; a future miz edit

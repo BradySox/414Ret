@@ -233,6 +233,18 @@ shipping_lanes:
       - [-37265, -436134]    # Peenemunde airport (54.15N 13.77E) — CP anchor
 settings:
   squadron_start_full: true
+  # §1 QRA reserve: hold this many hot-alert interceptors per BARCAP-capable red
+  # squadron. Preseeded here (not left to saved defaults) so Red Tide always plays its
+  # Cold-War Soviet posture -- ~24 of red's 40 fighters stand alert, which is what makes
+  # red fly a dense DEFENSIVE screen and (deliberately) no offensive packages. It also
+  # feeds the QRA forward-defense layer so rear fields scramble to the Fulda/Haina front.
+  # Standard default is 0; without this preseed a reset to standard would leave red both
+  # quiet and passive.
+  opfor_default_qra_reserve: 4
+  # 1988 era gate: hide post-era weapons from the payload editor / generator so the
+  # period jets don't spawn with modern kit. Preseeded because Red Tide is date-specific
+  # and no other campaign setting covers it (standard default is off).
+  restrict_weapons_by_date: true
   # Human-led offensive: keep the blue auto-planner cautious so the AI fills fewer of
   # the ATO's offensive slots and the human's 414th sorties (F-16CM/F-A-18C/F-15E/
   # F-14B/A-10C) carry the push. Recommended NEW-GAME defaults; the player can

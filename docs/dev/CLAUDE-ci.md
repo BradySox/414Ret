@@ -3,7 +3,9 @@
 Every push to `main` runs these workflows:
 
 1. **`lint.yml`** — Black (`--check .` whole tree) + mypy (`game tests` only).
-2. **`test.yml`** — pytest.
+2. **`test.yml`** — pytest over `tests` **plus the three out-of-tree test dirs under
+   `game/`** (`game/missiongenerator/tests`, `game/missiongenerator/kneeboard_recon/tests`,
+   `game/plugins/tests`) — added 2026-07-10; before that those ~245 tests never ran in CI.
 3. **`lua-lint.yml`** — Lua syntax gate (blocking): `luac5.1 -p` over every
    `resources/plugins/**/*.lua`. Advisory luacheck (scoped to 414th-authored scripts via
    `.luacheckrc`) runs continue-on-error and reports counts to Step Summary. Decoupled from
@@ -23,7 +25,7 @@ time (not in the repo).
 ```powershell
 .venv\Scripts\python.exe -m black --check .      # 0 files to reformat
 .venv\Scripts\python.exe -m mypy game tests       # 0 new errors
-.venv\Scripts\python.exe -m pytest tests -q       # all green
+.venv\Scripts\python.exe -m pytest tests game/missiongenerator/tests game/missiongenerator/kneeboard_recon/tests game/plugins/tests -q  # all green
 ```
 
 Notes learned the hard way:

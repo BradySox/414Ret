@@ -82,6 +82,30 @@ so the two docs don't drift.
   `AIRBASE:FindByName` wrong); message spam (debounce broken); wildly wrong BRA (north/east
   axis or `atan2` argument order wrong); a Lua error in `dcs.log` from the scan.
 
+### A5 — QRA forward defense (rear bases answer the front) · §1 · ☐ UNTESTED (built 2026-07-09)
+The emitter geometry, the reach/disengage arithmetic, the ambush-wins rule and the narrow player cue
+are unit-tested (`tests/missiongenerator/test_qra_defense_zones.py`,
+`tests/missiongenerator/test_interceptluadata.py`, `tests/test_vietnam_doctrine.py`), and the plugin
+parses on Lua 5.1. What no test can cover: whether Moose's accept-zone filter actually *releases* an
+already-engaged defender when its target leaves the zone, and whether a 150 NM transit really flies.
+- **Setup:** Red Tide, `qra_forward_defense` ON (default), red QRA reserve ≥ 2/squadron. Fly a blue
+  package to the Fulda/Haina front. Confirm at load: `dcs.log` has
+  `DCSRetribution|Intercept: RED defends 8 zone(s); scramble radius 200 NM`.
+- **Pass:** red interceptors launch from **rear** fields (Sperenberg / Schonefeld / Wittstock /
+  Hamburg / Templin — 127–168 NM back) and transit to fight over Haina, *after* Haina's own MiG-23s
+  answer first. Peenemunde (226 NM) and Kastrup (290 NM) never launch for this raid. Then egress
+  west: red **breaks off** rather than following you to Frankfurt/Hahn/Ramstein (outside red's zones).
+  Fulda (42 NM from Haina) is inside red's airspace, so a fight there is expected and correct.
+- **Fail signature:** *(a)* rear fields launch and then turn around ~162 NM out ⇒
+  `SetDisengageRadius` not applied (check `disengageRadiusNm` on the Intercept records); *(b)* red
+  chases deep into blue ⇒ `SetBorderZone` never called (no "defends N zone(s)" log line) or the
+  Vec2 axes are swapped in `defense_zones_for`; *(c)* red QRA never launches at all ⇒ zones too
+  small / wrong coalition bucket, i.e. the accept-zone filter is eating its own airspace; *(d)*
+  every base launches at once ⇒ Moose is not picking the closest squadron (would contradict the
+  read of its GCI loop); *(e)* a `ZONE_RADIUS`/`SetBorderZone` Lua error in `dcs.log`.
+- **Vietnam regression check:** on 1968 Yankee Station, red MiGs must still scramble **late** (40 NM)
+  and break off at 50 NM from home — the ambush leash must not have been widened.
+
 ---
 
 ## B. Planner placement / target logic (Lua-free Python)

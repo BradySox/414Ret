@@ -18,12 +18,16 @@ from game.dcs.aircrafttype import AircraftType
 from game.plugins import LuaPluginManager
 from game.theater import TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
-from game.utils import escape_string_for_lua
+from game.utils import escape_string_for_lua, nautical_miles
 from .aireconluadata import populate_ai_recon_lua
 from .coinluadata import populate_coin_lua
 from .commsjamluadata import populate_comms_jam_lua
 from .convoyambushluadata import populate_convoy_ambush_lua
-from .interceptluadata import populate_intercept_lua
+from .interceptluadata import (
+    DefenseZoneEntry,
+    defense_zone_entries,
+    populate_intercept_lua,
+)
 from .missiondata import CombatSarTemplates, MissionData
 from .mobilemissileluadata import populate_mobile_missiles_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
@@ -291,10 +295,26 @@ class LuaGenerator:
                     side,
                 )
 
+        # 414th QRA forward defense: bound each dispatcher to the airspace over its own
+        # bases + its own side of the front, so a widened scramble radius lets rear
+        # fields answer raids at the front without anyone chasing deep into enemy
+        # territory. Emitted only when a dispatcher exists; an empty list means the Lua
+        # skips SetBorderZone and behaves exactly as it did before the feature.
+        defense_zones: list[DefenseZoneEntry] = []
+        if (
+            self.game.settings.qra_forward_defense
+            and self.mission_data.intercept_entries
+        ):
+            defense_zones = defense_zone_entries(
+                self.game.theater,
+                nautical_miles(self.game.settings.qra_defense_depth_nm),
+            )
+
         populate_intercept_lua(
             lua_data,
             self.mission_data.intercept_entries,
             self.mission_data.player_alert_entries,
+            defense_zones,
         )
 
         # Add artillery and support units info

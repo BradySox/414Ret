@@ -372,23 +372,45 @@ def test_dispatcher_tuning_shrinks_radii_for_ambush_doctrine() -> None:
         dispatcher_tuning,
     )
 
-    engage, scramble, ambush = dispatcher_tuning(VIETNAM_DOCTRINE, 60, 100)
-    assert ambush is True
+    tuning = dispatcher_tuning(VIETNAM_DOCTRINE, 60, 100)
+    assert tuning.ambush is True
     # Engage radius collapses to the P1c close-fight number...
-    assert engage == round(VIETNAM_DOCTRINE.cap_engagement_range.nautical_miles)
+    assert tuning.engage_nm == round(
+        VIETNAM_DOCTRINE.cap_engagement_range.nautical_miles
+    )
     # ...and the scramble radius caps at the late-launch ambush distance.
-    assert scramble == AMBUSH_GCI_RADIUS_NM
+    assert tuning.scramble_nm == AMBUSH_GCI_RADIUS_NM
+    # The Lua applies its own tight hit-and-run leash for an ambush posture.
+    assert tuning.disengage_nm == 0
     # A tighter user setting still wins (min, never max).
-    engage_tight, scramble_tight, _ = dispatcher_tuning(VIETNAM_DOCTRINE, 15, 30)
-    assert engage_tight == 15
-    assert scramble_tight == 30
+    tight = dispatcher_tuning(VIETNAM_DOCTRINE, 15, 30)
+    assert tight.engage_nm == 15
+    assert tight.scramble_nm == 30
+
+
+def test_dispatcher_tuning_ambush_ignores_forward_defense() -> None:
+    """Forward defense must never widen the era's late, close GCI slash."""
+    from game.missiongenerator.interceptluadata import (
+        AMBUSH_GCI_RADIUS_NM,
+        dispatcher_tuning,
+    )
+
+    tuning = dispatcher_tuning(VIETNAM_DOCTRINE, 60, 100, forward_defense=True)
+    assert tuning.ambush is True
+    assert tuning.scramble_nm == AMBUSH_GCI_RADIUS_NM
+    assert tuning.disengage_nm == 0
 
 
 def test_dispatcher_tuning_passes_settings_through_for_other_doctrines() -> None:
-    from game.missiongenerator.interceptluadata import dispatcher_tuning
+    from game.missiongenerator.interceptluadata import (
+        DispatcherTuning,
+        dispatcher_tuning,
+    )
 
     for d in (MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE):
-        assert dispatcher_tuning(d, 60, 100) == (60, 100, False)
+        assert dispatcher_tuning(d, 60, 100) == DispatcherTuning(
+            engage_nm=60, scramble_nm=100, disengage_nm=0, ambush=False
+        )
 
 
 def test_vietnam_reserves_fighters_for_strike_escort() -> None:

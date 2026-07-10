@@ -688,9 +688,10 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   troops, sling+unpack a crate, build a FOB), SCAR capture + CSAR, intercept/QRA, and core
   state-write/messages all behave as on MIST.
 - **Fail signature:** any `mist_moose_shim.lua` Lua error (a consumer hit an unimplemented/
-  wrong-shaped symbol). `mist_4_5_126.lua` is kept in the repo → rollback is a one-line
-  `base/plugin.json` revert. **Remaining:** fly across more campaigns/maps, then delete
-  `mist_4_5_126.lua` as the final cleanup.
+  wrong-shaped symbol). **Final cleanup DONE (2026-07-10):** `mist_4_5_126.lua` deleted after
+  weeks of clean flights across campaigns — rollback is now `git checkout <pre-deletion-sha> --
+  resources/plugins/base/mist_4_5_126.lua` + re-pointing `base/plugin.json`'s `"mist"`
+  work-order back at it.
 
 ### G8 — Combat SAR pilot rescue (`combatsar` / MOOSE CSAR) · Combat SAR Phase 2 · ☑ VERIFIED (2026-06-28, audience in-game pass — user: "pilot rescue attempted looks good")
 - **In-game (2026-06-28, audience pass — user verdict "looks good"):** a Combat SAR pilot rescue was flown/attempted and behaved correctly — the SAR ran as designed with no Lua error. As with J1/J2 this is the user's eyes-on "looks good," not a deeply-isolated audit of the pickup→deliver→`combat_sar_rescues`-increment loop (that precise count is the G11 scoring row). Don't re-mark UNTESTED without flying it.

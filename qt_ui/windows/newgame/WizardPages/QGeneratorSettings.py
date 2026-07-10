@@ -102,7 +102,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
                 "CurrentHill Ukraine Military Assets (1.1.1)",
                 self.ukrainemilitaryassetspack,
             ),
-            ("CurrentHill USA Military Assets (1.1.5)", self.usamilitaryassetspack),
+            ("CurrentHill USA Military Assets (1.5.0)", self.usamilitaryassetspack),
             (
                 "OH-6 Vietnam Asset Pack — ground objects (v1.2)",
                 self.oh_6_vietnamassetpack,

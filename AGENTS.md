@@ -584,6 +584,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    launch, slash the strike package near its target), and a Lua-side leash (disengage 50 NM
    from home + RTB at 35 % fuel) so MiGs hit once and recover; other doctrines pass the QRA
    settings through unchanged (`dispatcher_tuning` in `interceptluadata.py`; checklist M5).
+   **QRA forward defense** (2026-07-09, `qra_forward_defense` default ON + `qra_defense_depth_nm`):
+   `SetGciRadius` is ONE radius measured from EVERY base, so widening it to let rear fields answer a
+   raid at the front equally lets the front field chase deep into enemy airspace. The two are split by
+   giving each dispatcher a **border zone** — `SetBorderZone(zones)` → `Detection:SetAcceptZones`, which
+   makes Moose **drop any detected object outside the zones**, so a side literally cannot see (scramble
+   against, or keep engaging) a target beyond its own airspace. Geography then bounds *where* a side
+   fights, and `SetGciRadius` bounds only *how far a base launches* (opened to `QRA_FORWARD_REACH_NM`
+   = 200 NM). **`SetDisengageRadius` must open with it** (Moose aborts a defender past
+   `DistanceFromHomeBase > DisengageRadius`, default 300 km ≈ 162 NM) or the far fields launch and turn
+   around — the non-obvious half. A wide reach does NOT mass-launch: Moose's GCI loop picks the
+   **closest** eligible squadron and only reaches back when its alert is spent (front field answers,
+   rear fields backfill). Zones = one circle per non-neutral, non-`OffMapSpawn` CP at
+   `qra_defense_depth_nm` (60), a front anchor's grown to `dist(cp, front) + 25 NM` — the only place a
+   side's airspace crosses the line. `depth == qra_gci_max_radius_nm` makes it **non-regressive** (the
+   union of circles == the old per-base GCI set). An **ambush doctrine wins outright** (Vietnam's late
+   40 NM slash is never widened), and the **player scramble cue keeps the narrow radius**
+   (`min(reach, setting)`) so a human alert flight isn't cued for bandits 200 NM out. Emitter
+   `defense_zone_entries` → `dcsRetribution.Intercept.ZONES`; empty ⇒ Lua skips `SetBorderZone` ⇒
+   pre-feature behaviour. Checklist A5 — needs an in-game pass (the accept-zone release of an
+   already-engaged defender, and whether the 150 NM transit really flies, are DCS-only unknowns).
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +

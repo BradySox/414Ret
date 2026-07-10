@@ -235,6 +235,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "ownfor_default_qra_reserve",
                     "opfor_default_qra_reserve",
+                    "qra_forward_defense",
+                    "qra_defense_depth_nm",
                     "qra_gci_max_radius_nm",
                     "qra_engagement_range_nm",
                     "qra_comms_enabled",
@@ -776,7 +778,37 @@ class Settings:
         max=400,
         detail=(
             "Caps how close a detected raid must be to a defended base before that "
-            "base scrambles its QRA interceptors."
+            "base scrambles its QRA interceptors. Opened up automatically while "
+            "'QRA defends the front' is on."
+        ),
+    )
+    qra_forward_defense: bool = boolean_option(
+        "QRA defends the front (rear bases answer forward raids)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Alert fighters at rear bases scramble to fight over the front line "
+            "instead of only answering raids near their own runway. Each side is "
+            "confined to the airspace over its own bases and its own side of the "
+            "front, so defenders never chase deep into enemy territory. The closest "
+            "base still answers first; a rear base only launches once the closer "
+            "one's alert aircraft are spent. Turn this off for the legacy behaviour, "
+            "where a base only ever defends itself."
+        ),
+    )
+    qra_defense_depth_nm: int = bounded_int_option(
+        "QRA defended airspace radius (NM)",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=60,
+        min=10,
+        max=200,
+        detail=(
+            "How far around each of its own bases a side will fight, while 'QRA "
+            "defends the front' is on. A base that holds the front line always "
+            "defends its stretch of the line too, reaching a little way past it. "
+            "Larger values let interceptors push further from home."
         ),
     )
     qra_engagement_range_nm: int = bounded_int_option(

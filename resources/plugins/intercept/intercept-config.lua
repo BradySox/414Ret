@@ -21,6 +21,32 @@
 -- the real detection range; GciRadius just prevents scrambling against very
 -- distant threats heading elsewhere.
 --
+-- FORWARD DEFENSE (414th, qra_forward_defense). GciRadius alone cannot express
+-- "rear bases answer raids at the front, but the front base does not chase deep
+-- into enemy territory": it is one radius measured from EVERY base, so widening
+-- it to bring rear fields forward simultaneously lets the forward field chase
+-- just as far the other way. The two are separated by giving the dispatcher a
+-- BORDER ZONE:
+--
+--   * SetBorderZone(zones) -> Detection:SetAcceptZones(zones). Moose drops any
+--     detected object outside every accept zone, so the dispatcher cannot see --
+--     cannot scramble against, cannot keep engaging -- a target beyond the
+--     defended airspace. This decides WHERE a side may fight (geography).
+--   * SetGciRadius decides HOW FAR a base will launch to get there (reach). It is
+--     safe to open up once geography is bounded.
+--   * SetDisengageRadius must open with it: Moose aborts a defender once
+--     DistanceFromHomeBase > DisengageRadius (default 300 km ~= 162 NM), so a base
+--     at the far edge of its reach would otherwise launch and turn around.
+--
+-- Widening the reach does NOT mass-launch every base. Moose's GCI loop keeps the
+-- squadron with the shortest intercept distance among those inside GciRadius, and
+-- only reaches back to a farther one once the closer squadron's alert is spent --
+-- an echelon: the front field answers, the rear fields backfill.
+--
+-- The zones are emitted per coalition by the mission generator (one circle per
+-- control point; a front-line CP's circle is grown to reach a little past its own
+-- FLOT). No zones emitted => SetBorderZone is skipped => legacy behaviour.
+--
 -- The backstop EWR DCS type is supplied per record by the mission generator
 -- (rec.backstopEwrType) rather than hardcoded here. If the type is unknown to
 -- the running DCS build, mist.dynAdd silently spawns nothing; we therefore
@@ -168,6 +194,28 @@ do
     end
 end
 
+-- Build this coalition's defended-airspace zones (414th forward defense). Returns
+-- an empty list when the generator emitted none (feature off, or no dispatcher),
+-- in which case build_dispatcher skips SetBorderZone entirely.
+--
+-- DoNotRegisterZone=true: these are internal filter zones, not mission zones, so
+-- they must not fire MOOSE's new-zone event for every control point on the map.
+local function defense_zones_for(coalition_name)
+    local zones = {}
+    local all = dcsRetribution.Intercept and dcsRetribution.Intercept.ZONES
+    local records = all and all[coalition_name]
+    if not records then return zones end
+    for _, rec in pairs(records) do
+        local x = tonumber(rec.x)
+        local y = tonumber(rec.y)
+        local radius = tonumber(rec.radiusM)
+        if x and y and radius and radius > 0 then
+            zones[#zones + 1] = ZONE_RADIUS:New(rec.name, { x = x, y = y }, radius, true)
+        end
+    end
+    return zones
+end
+
 -- Collect the EWR / SAM-as-EWR group names the IADS generator published for a
 -- coalition. SamAsEwr entries already carry the DCS GROUP name, but standalone
 -- Ewr entries carry the UNIT name (Skynet convention: dcs_name_for_group
@@ -253,6 +301,9 @@ local function build_dispatcher(coalition_name, records)
     local comms_enabled = records[1].commsEnabled ~= "false"
     local scramble_radius_nm = tonumber(records[1].gciMaxRadiusNm) or 60
     local engagement_range_nm = tonumber(records[1].engagementRangeNm) or 38
+    -- Home-base disengage leash in NM (414th forward defense). 0/absent leaves
+    -- Moose's own 300 km default alone, which is what pre-feature saves emit.
+    local disengage_radius_nm = tonumber(records[1].disengageRadiusNm) or 0
     -- GCI-ambush posture (Vietnam campaign layer W5). The generator already
     -- shrank this side's engage/scramble radii for a late, close GCI slash; the
     -- Lua half is the hit-and-run leash below (disengage radius + fuel threshold).
@@ -325,6 +376,16 @@ local function build_dispatcher(coalition_name, records)
         dispatcher:SetEngageRadius(engagement_range_nm * NM)
         dispatcher:SetTacticalDisplay(false)  -- debug F10 overview; off in normal play
         dispatcher:SetGciRadius(scramble_radius_nm * NM)
+        -- Forward defense: confine this side to the airspace over its own bases and
+        -- its own side of the front. Must be set BEFORE the first detection cycle
+        -- resolves, which the BUILD_DELAY schedule already guarantees.
+        local defense_zones = defense_zones_for(coalition_name)
+        if #defense_zones > 0 then
+            dispatcher:SetBorderZone(defense_zones)
+            env.info("DCSRetribution|Intercept: " .. coalition_name .. " defends "
+                     .. #defense_zones .. " zone(s); scramble radius "
+                     .. scramble_radius_nm .. " NM")
+        end
         if ambush_posture then
             -- Vietnam W5 hit-and-run: leash the defenders close to home
             -- (DistanceFromHomeBase > DisengageRadius aborts the engagement in
@@ -333,6 +394,12 @@ local function build_dispatcher(coalition_name, records)
             -- Moose's defaults are 300 km / 0.15.
             dispatcher:SetDisengageRadius(AMBUSH_DISENGAGE_NM * NM)
             dispatcher:SetDefaultFuelThreshold(AMBUSH_FUEL_THRESHOLD, 0)
+        elseif disengage_radius_nm > 0 then
+            -- Forward defense: a rear base transiting to the front would otherwise
+            -- hit Moose's 300 km default and abort mid-intercept. The border zone
+            -- above -- not this radius -- is what keeps defenders out of enemy
+            -- airspace.
+            dispatcher:SetDisengageRadius(disengage_radius_nm * NM)
         end
         if comms_enabled then
             dispatcher:SetSendMessages(true)

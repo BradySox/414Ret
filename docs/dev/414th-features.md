@@ -131,6 +131,58 @@ the unpickler (`persistency.py` `_handle_flight_type`) routes legacy values thro
 `FlightType.INTERCEPTION` is the only remaining legacy A2A type and is kept for upstream save
 compatibility.
 
+### QRA forward defense — rear bases answer raids at the front (2026-07-09)
+
+`qra_forward_defense` (Air Doctrine → Air defense & QRA, **default ON**; the kill switch) +
+`qra_defense_depth_nm` (default 60). Checklist **A5**.
+
+The problem: `SetGciRadius` is **one radius per coalition, measured from every base**
+(`AirbaseDistance <= self.GciRadius`, Moose's GCI loop). At the stock 60 NM a rear field never
+scrambles for a raid at the front — on Red Tide, five of red's six fighter squadrons sit 126–290 NM
+from Haina, so 20 of red's 24 alert airframes only ever defended Berlin. But simply widening the
+radius so Sperenberg reaches Haina *also* lets Haina's own alert chase 200 NM the other way, deep
+into blue.
+
+The two are separated by giving each dispatcher a **border zone**:
+
+- **`SetBorderZone(zones)` → `Detection:SetAcceptZones(zones)`.** Moose drops any detected object
+  outside every accept zone, so the dispatcher cannot see — cannot scramble against, cannot keep
+  engaging — a target beyond the defended airspace. This decides **where** a side may fight.
+- **`SetGciRadius`** then decides only **how far a base will launch** to get there, and opens to
+  `QRA_FORWARD_REACH_NM` (200). Safe, because geography is now bounded independently.
+- **`SetDisengageRadius`** must open with it (`reach + engage + DISENGAGE_MARGIN_NM`): Moose aborts a
+  defender once `DistanceFromHomeBase > DisengageRadius` (default 300 km ≈ 162 NM), so a base at the
+  far edge of its reach would otherwise launch and turn around mid-transit. This is the non-obvious
+  half — without it the feature silently does nothing for the farther fields.
+
+**A wide reach does not mass-launch.** Moose's GCI loop keeps the squadron with the shortest
+*intercept* distance among those inside `GciRadius`, and only reaches back to a farther one once the
+closer squadron's alert is spent — an echelon: the front field answers, the rear fields backfill.
+
+Zones are built by `defense_zone_entries` (`interceptluadata.py`): one circle per non-neutral,
+non-`OffMapSpawn` control point, radius `qra_defense_depth_nm`; a CP anchoring an active front is
+**grown to `distance(cp, front) + FRONT_FORWARD_MARGIN_NM` (25 NM)** so the contested airspace is
+always defended however far back the anchor sits. That margin is the *only* place a side's airspace
+crosses the line. Emitted per coalition under `dcsRetribution.Intercept.ZONES`; an empty bucket ⇒ the
+Lua skips `SetBorderZone` ⇒ pre-feature behaviour.
+
+Non-regressive by construction: with `depth == qra_gci_max_radius_nm` (both default 60), the set of
+raids that used to trigger a GCI (within that radius of *some* base) is exactly the union of the
+circles.
+
+Interactions: **an ambush doctrine wins outright** — `dispatcher_tuning` returns the Vietnam W5 radii
+unchanged and `disengage_nm = 0`, because the late, close GCI slash is the whole point of that
+posture and forward defense must not widen it. The **player scramble cue** keeps the narrow radius
+(`min(tuning.scramble_nm, setting)`), since the human's alert flight defends its own field — cueing
+it for a raid 200 NM away would be constant false alarms, and `min` also preserves the ambush
+doctrine's *shrunk* cue.
+
+Red Tide, verified against a live save: red's airspace covers Haina, the FLOT and Fulda (42 NM, the
+blue front base) but excludes Frankfurt (94 NM), Hahn, Spangdahlem and Ramstein; the 200 NM reach
+brings Sperenberg/Schonefeld/Wittstock/Hamburg/Templin while Peenemunde (226) and Kastrup (290) stay
+home. Tests: `tests/missiongenerator/test_qra_defense_zones.py`,
+`tests/missiongenerator/test_interceptluadata.py`, `tests/test_vietnam_doctrine.py`.
+
 ### GCI-ambush posture (Vietnam campaign layer W5)
 
 The Vietnam adaptation of the QRA dispatcher (will-note §6; checklist **M5**). `Doctrine.gci_ambush`

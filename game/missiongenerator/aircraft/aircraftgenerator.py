@@ -303,6 +303,7 @@ class AircraftGenerator:
         setting_engagement_nm = self.game.settings.qra_engagement_range_nm
         setting_gci_nm = self.game.settings.qra_gci_max_radius_nm
         comms_enabled = self.game.settings.qra_comms_enabled
+        forward_defense = self.game.settings.qra_forward_defense
 
         for control_point in self.game.theater.controlpoints:
             if not isinstance(control_point, Airfield):
@@ -311,11 +312,13 @@ class AircraftGenerator:
             base_is_blue = control_point.captured.is_blue
             # GCI-ambush posture (Vietnam W5): a gci_ambush doctrine shrinks this
             # side's engage/scramble radii to the era's late, close GCI slash and
-            # flags the Lua-side hit-and-run leash. Other doctrines pass the
-            # settings through unchanged.
+            # flags the Lua-side hit-and-run leash. Forward defense (when on, and
+            # never for an ambush doctrine) instead opens the scramble radius so rear
+            # fields answer raids at the front. Other doctrines with forward defense
+            # off pass the settings through unchanged.
             doctrine = self.game.coalition_for(control_point.captured).doctrine
-            engagement_range_nm, gci_max_radius_nm, ambush = dispatcher_tuning(
-                doctrine, setting_engagement_nm, setting_gci_nm
+            tuning = dispatcher_tuning(
+                doctrine, setting_engagement_nm, setting_gci_nm, forward_defense
             )
 
             for squadron in control_point.squadrons:
@@ -343,7 +346,12 @@ class AircraftGenerator:
                         PlayerAlertEntry(
                             airbase_name=control_point.name,
                             coalition="BLUE",
-                            scramble_radius_nm=gci_max_radius_nm,
+                            # Never widen the human's cue. The player's alert flight
+                            # defends its own field (a HomeBaseDefenseZone CAP), so a
+                            # cue at the forward-defense reach would be constant false
+                            # alarms for raids 200 NM away. min() also preserves the
+                            # ambush doctrine's *shrunk* radius (Vietnam scrambles late).
+                            scramble_radius_nm=min(tuning.scramble_nm, setting_gci_nm),
                         )
                     )
                 # Player-manned QRA airframes (§1) are fragged as a cold-start
@@ -401,14 +409,15 @@ class AircraftGenerator:
                             coalition="BLUE" if base_is_blue else "RED",
                             resource_count=resource_count,
                             grouping=qra_scramble_grouping(),
-                            engagement_range_nm=engagement_range_nm,
-                            gci_max_radius_nm=gci_max_radius_nm,
+                            engagement_range_nm=tuning.engage_nm,
+                            gci_max_radius_nm=tuning.scramble_nm,
                             comms_enabled=comms_enabled,
                             country_id=country.id,
                             backstop_ewr_type=DEFAULT_BACKSTOP_EWR_TYPE[
                                 "BLUE" if base_is_blue else "RED"
                             ],
-                            ambush=ambush,
+                            ambush=tuning.ambush,
+                            disengage_radius_nm=tuning.disengage_nm,
                         )
                     )
                 finally:

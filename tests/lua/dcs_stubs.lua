@@ -178,6 +178,10 @@ function GroupFake:getName()
     return self.name
 end
 
+function GroupFake:getID()
+    return self.id
+end
+
 function GroupFake:getUnits()
     return self.units
 end
@@ -203,6 +207,7 @@ end
 function Harness.addGroup(spec)
     local grp = setmetatable({
         name = spec.name,
+        id = spec.id,
         side = spec.side,
         category = spec.category,
         exists = spec.exists,

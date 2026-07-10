@@ -108,8 +108,10 @@ once at load + scheduled.
    ⚠️ **This is the go-live change** — merging it to `main` ships to the whole squadron via the rolling
    release. Fly it from this branch FIRST. In-game pass: CTLD troop/crate/FOB sling-load cycle, SCAR
    capture + CSAR, intercept/QRA, Skynet IADS (if selected), core glue (state-write/messages).
-3. **Cleanup (after the pass):** delete `mist_4_5_126.lua`; update Tech-Stack docs (MIST row → retired).
-   Definition of done for the whole MIST→MOOSE consolidation.
+3. **Cleanup (✅ DONE 2026-07-10):** `mist_4_5_126.lua` deleted after weeks of clean flights
+   (checklist G7 VERIFIED 2026-06-25 and no shim errors since); Tech-Stack docs updated.
+   Rollback is no longer one line: restore the file from git history AND re-point
+   `base/plugin.json`'s `"mist"` work-order at it. The MIST→MOOSE consolidation is done.
 
 ## Risks / watch-items
 

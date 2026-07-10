@@ -1,10 +1,12 @@
 /* Bottom-right floating legend, styled to match the dark map-layers / campaign-status
-   panels. Sits above Leaflet panes (max pane z-index 700) but below dialogs. */
+   panels. Sits above Leaflet panes AND the Leaflet control corners (z-index 1000, which
+   hold the map-layers panel): on short windows a fully-expanded layers panel reaches the
+   legend zone, and an opened legend must win that overlap -- the user just asked for it. */
 .map-legend {
   position: absolute;
   bottom: 14px;
   right: 14px;
-  z-index: 1000;
+  z-index: 1100;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -72,7 +74,8 @@
   height: 10px;
   border: 1.5px dashed var(--legend-swatch);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--legend-swatch) 12%, transparent);
+  /* Mirrors the on-map circle fill (fillOpacity 0.18 in Tgo.tsx). */
+  background: color-mix(in srgb, var(--legend-swatch) 18%, transparent);
 }
 
 .map-legend-hint {

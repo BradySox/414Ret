@@ -1,6 +1,8 @@
 .ml-panel {
   width: 250px;
-  max-height: calc(100vh - 120px);
+  /* Reserve ~50px past the old margin so the collapsed Legend button (bottom-right)
+     stays clear of a fully-expanded panel; the panel scrolls internally instead. */
+  max-height: calc(100vh - 170px);
   overflow-y: auto;
   background: #161e2b;
   color: #d7dde6;

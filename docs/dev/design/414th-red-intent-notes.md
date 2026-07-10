@@ -49,6 +49,14 @@ at the default intensity, so every prior test held byte-for-byte):
   falling" / "resolve collapsing" / "losing bases" / "enemy air spent") so a memory-based decision
   explains itself rather than looking like it fired on a healthy snapshot.
 
+  **Made visible (not hover-only), 2026-07-10.** The smart read is surfaced on both player UIs, not
+  just the ribbon-chip tooltip: the **kneeboard SITREP** "Enemy posture" line renders the full detail
+  (`Sitrep.red_posture_detail` via `sitrep_posture_detail`, recorded in `record_sitrep`) — Python-only,
+  so it shows in-game with no client rebuild; and the **web ribbon chip** shows the intensity word
+  inline ("ENEMY Surging · all-in", `CampaignStatusJs.red_posture_intensity` via `intensity_word`) with
+  an "Enemy intent" block in the expander carrying the full "why" (`red_posture_detail`). Guarded in
+  `tests/test_sitrep.py` + the `sitrep_posture_detail`/`intensity_word` tests in `test_red_intent.py`.
+
   Not built this pass: **per-front posture** (one theater-wide posture still stands; a distinct intent
   per front is the architectural stretch, deferred). New/extended tests in
   `tests/fourteenth/test_red_intent.py` cover the trend classifier, the opportunity window, the

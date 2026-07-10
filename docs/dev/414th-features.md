@@ -4821,12 +4821,22 @@ byte-identical to before until red is actively consolidating or surging.
 
 ### Legibility
 
-Three surfaces: a per-turn transition message ("Enemy posture: Surging"); a SITREP band line
-(`Sitrep.red_posture` via `sitrep_posture_line`, rides-along like the will/C2 bands, never forcing a SITREP
-onto a quiet turn); and a **campaign-status ribbon chip** on the web map (`CampaignStatusJs.red_posture` /
-`red_posture_detail` → `CampaignStatusBar`, coloured by mood — surging red, consolidating amber, attrition
-neutral — hidden when the feature is off, exactly like the phase chip). So the enemy's stance reads on the
-planning map, not only the kneeboard.
+Three surfaces, all **surfacing the smart trend/intensity read visibly** (not only as a hover tooltip):
+
+- **Kneeboard SITREP band** — the "Enemy posture" line renders the **detail** (`Sitrep.red_posture_detail`
+  via `sitrep_posture_detail`, recorded next to `red_posture` in `record_sitrep`): the intensity word + the
+  trend drivers — *"Enemy posture: Surging (all-in) — ground 4.0x · air holding · IADS falling"* — so the
+  cockpit reads *why*, not just *what*. Falls back to the bare word for pre-refinement pickled sitreps.
+  Rides-along like the will/C2 bands (never forces a SITREP onto a quiet turn). **Python-only — visible
+  in-game with no client rebuild.**
+- **Campaign-status ribbon chip** (web map, `CampaignStatusBar`) — the chip shows `ENEMY Surging` plus the
+  **intensity word inline** (`CampaignStatusJs.red_posture_intensity` via `intensity_word` → *"ENEMY Surging
+  · all-in"*), coloured by mood (surging red, consolidating amber, attrition neutral). The expander (click
+  the phase chip) now carries an **"Enemy intent" block** showing the full `red_posture_detail` "why" line —
+  so the trend reasons are one visible click away, not hover-only. Hidden when the feature is off.
+- **Per-turn transition message** ("Enemy posture: Surging" + the narrative + legibility) in the info log.
+
+So the enemy's stance *and the reason for it* read on both the kneeboard and the planning map.
 
 ### The §53 coupling (P4 — LIVE)
 
@@ -4845,7 +4855,7 @@ there out of the box; verified end-to-end against a stubbed economy in `test_red
 | Core | `game/fourteenth/red_intent.py` (postures, classifier, rolling-trend memory + `RedIntentSample`, intensity, hysteresis, the four seam helpers) |
 | Seams | `nextaction.py` `_offensive_order`; `targetorder.py` `_unpredictability_for`; `objectivefinder.py` `vulnerable_control_points`; `frontlinestancetask.py` `_posture_commit_factor` (aggressiveness + commit are intensity-scaled) |
 | Hook / state | `game/game.py` (`update_red_intent` in `initialize_turn`; latched `red_intent_*` fields incl. `red_intent_history` + `red_intent_intensity`, `__setstate__` defaults) |
-| Legibility | `game/sitrep.py` (`red_posture`) + `record_sitrep`; `game/server/game/models.py` (`CampaignStatusJs.red_posture`) + `client/src/components/campaignstatus/CampaignStatusBar` (the ribbon chip + CSS) |
+| Legibility | `game/sitrep.py` (`red_posture` + `red_posture_detail`) + `record_sitrep` (`sitrep_posture_detail`); `game/server/game/models.py` (`CampaignStatusJs.red_posture` / `red_posture_detail` / `red_posture_intensity` via `intensity_word`) + `client/src/components/campaignstatus/CampaignStatusBar` (chip intensity word + expander "Enemy intent" block + CSS) |
 | Setting | `game/settings/settings.py` (`red_intent`, Air Doctrine, default **OFF**) |
 | Tests | `tests/fourteenth/test_red_intent.py`; `tests/test_planner_unpredictability.py` (stacked red-intent + C2 clamp) |
 

@@ -1611,14 +1611,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `intensity` ∈ [0,1] latched as `red_intent_intensity`; the aggressiveness + ground-commit seams
     scale their magnitude by it (a runaway 4:1 surge presses harder / a collapsing regime husbands
     harder), anchored at `DEFAULT_INTENSITY` 0.5 to the v1 midpoints so a typical posture is
-    byte-identical and only the extremes move (unpredictability + emphasis stay posture-only). Surfaced
-    as a "how committed" word on the status detail ("Surging (all-in)" / "Consolidating (dug in)") +
-    the `_legibility` trend driver ("IADS falling" / "resolve collapsing" / "losing bases" / "enemy air
-    spent"). All no-ops until real trend/margin data exists, so every prior test held byte-for-byte;
-    **per-front posture deferred** (one theater-wide posture stands). Tests
-    `tests/fourteenth/test_red_intent.py` + `tests/test_planner_unpredictability.py`;
-    features doc §55, checklist B7 — needs an in-game pass (does red visibly surge when ahead /
-    consolidate when hit / dig in as its IADS is bombed, across a multi-turn campaign).
+    byte-identical and only the extremes move (unpredictability + emphasis stay posture-only). All
+    no-ops until real trend/margin data exists, so every prior test held byte-for-byte; **per-front
+    posture deferred** (one theater-wide posture stands). **Surfaced visibly (not hover-only):** the
+    **kneeboard SITREP** "Enemy posture" line now renders the *detail* — intensity word + trend driver
+    ("Surging (all-in) — ground 4.0x · air holding · IADS falling") via `sitrep_posture_detail` +
+    `Sitrep.red_posture_detail` (Python-only, no client rebuild); the **web ribbon chip** shows the
+    intensity word inline ("ENEMY Surging · all-in", `CampaignStatusJs.red_posture_intensity` via
+    `intensity_word`) and the expander gained an "Enemy intent" block with the full `red_posture_detail`
+    "why". Tests `tests/fourteenth/test_red_intent.py` + `tests/test_sitrep.py` +
+    `tests/test_planner_unpredictability.py`; features doc §55, checklist B7 — needs an in-game pass (does
+    red visibly surge when ahead / consolidate when hit / dig in as its IADS is bombed, across a
+    multi-turn campaign; the SITREP posture-detail line + the ribbon intensity read correctly).
 56. **Strikeable motorpool depots** — **adopted from upstream PR
     [dcs-retribution#859](https://github.com/dcs-retribution/dcs-retribution/pull/859)**
     (geofffranks; cherry-picked verbatim + fork-adapted, the Pretense hunk dropped since the fork

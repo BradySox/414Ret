@@ -136,6 +136,12 @@ export default function CampaignStatusBar() {
                 }
               >
                 ENEMY {status.red_posture}
+                {status.red_posture_intensity != null && (
+                  <span className="campaign-status-posture-intensity">
+                    {" · "}
+                    {status.red_posture_intensity}
+                  </span>
+                )}
               </span>
             )}
             {status.red_supply != null && (
@@ -243,6 +249,21 @@ export default function CampaignStatusBar() {
               </div>
             </div>
           ))}
+          {status.red_posture_detail != null && (
+            <div
+              className={
+                "campaign-status-panel-intent intent-" +
+                (status.red_posture ?? "").toLowerCase()
+              }
+            >
+              <span className="campaign-status-panel-intent-label">
+                Enemy intent
+              </span>
+              <span className="campaign-status-panel-intent-text">
+                {status.red_posture_detail}
+              </span>
+            </div>
+          )}
           {history.length >= 2 && (
             <div className="campaign-status-panel-will">
               <span className="campaign-status-panel-will-label">

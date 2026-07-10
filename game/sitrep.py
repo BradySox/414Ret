@@ -81,6 +81,11 @@ class Sitrep:
     #: "Attrition") when red_intent is on. None (and absent on pre-feature pickled
     #: sitreps -- read via getattr) hides the line. Rides along with real news.
     red_posture: Optional[str] = None
+    #: §55 Red Intent (2026-07-10): the posture *detail* line -- the intensity word +
+    #: the trend drivers ("Surging (all-in) — ground 4.0x · air holding · IADS falling")
+    #: -- so the smart trend/intensity read is surfaced on the kneeboard, not only as a
+    #: web-ribbon hover tooltip. None falls back to the bare posture word.
+    red_posture_detail: Optional[str] = None
 
     @property
     def is_empty(self) -> bool:
@@ -111,6 +116,7 @@ class Sitrep:
         blue_supply: Optional[float] = None,
         red_supply: Optional[float] = None,
         red_posture: Optional[str] = None,
+        red_posture_detail: Optional[str] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
         red = debriefing.loss_counts(Player.RED)
@@ -146,6 +152,7 @@ class Sitrep:
             blue_supply=blue_supply,
             red_supply=red_supply,
             red_posture=red_posture,
+            red_posture_detail=red_posture_detail,
         )
 
     def kneeboard_lines(self) -> List[str]:
@@ -178,9 +185,15 @@ class Sitrep:
                 f"Front supply {blue_supply * 100:.0f}% -- enemy "
                 f"{red_supply * 100:.0f}% (claimed)"
             )
-        # §55: red's current posture (getattr for pre-feature pickled sitreps).
+        # §55: red's current posture (getattr for pre-feature pickled sitreps). Prefer
+        # the detail line (intensity word + trend drivers -- "Surging (all-in) — ... ·
+        # IADS falling") so the smart read is visible in the cockpit; fall back to the
+        # bare word for pre-2026-07-10 pickled sitreps that carry no detail.
+        red_posture_detail = getattr(self, "red_posture_detail", None)
         red_posture = getattr(self, "red_posture", None)
-        if red_posture:
+        if red_posture_detail:
+            lines.append(f"Enemy posture: {red_posture_detail}")
+        elif red_posture:
             lines.append(f"Enemy posture: {red_posture}")
         # getattr: pre-W1 pickled sitreps lack the will fields entirely.
         blue_will = getattr(self, "blue_will", None)

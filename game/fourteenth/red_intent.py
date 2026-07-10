@@ -750,6 +750,28 @@ def sitrep_posture_line(game: "Game") -> Optional[str]:
     return posture.display if posture else None
 
 
+def intensity_word(game: "Game") -> Optional[str]:
+    """The "how committed" word ("all-in" / "pressing" / "dug in" ...) for the ribbon
+    chip, or None when off/unresolved/ATTRITION. Surfaces the graduated intensity the
+    seams act on so the map ribbon reads *how hard* red is pushing, not just *what*."""
+    posture = active_red_intent(game)
+    if posture is None:
+        return None
+    word = _intensity_word(posture, active_red_intensity(game))
+    return word or None
+
+
+def sitrep_posture_detail(game: "Game") -> Optional[str]:
+    """The RED-posture detail line (intensity word + trend drivers) for the SITREP band,
+    or None when off/unresolved. Surfaces the *why* behind the posture word -- the
+    "Surging (all-in) — ground 4.0x · air holding · IADS falling" legibility string --
+    so the smart trend/intensity read is visible on the kneeboard, not just hover text.
+    """
+    if active_red_intent(game) is None:
+        return None
+    return getattr(game, "red_intent_status_line", None)
+
+
 def offensive_emphasis(game: "Game") -> Optional[tuple[str, ...]]:
     """RED's posture-driven offensive-method ordering, or None to use the stock order.
 

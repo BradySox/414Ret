@@ -811,3 +811,37 @@ def test_status_line_carries_the_intensity_word() -> None:
     update_red_intent(game)  # type: ignore[arg-type]
     assert game.red_intent_key == RedPosture.SURGE.value
     assert "Surging (all-in)" in (game.red_intent_status_line or "")
+
+
+def test_sitrep_posture_detail_surfaces_the_status_line() -> None:
+    game = _FakeGame(red_intent=True)
+    game.red_intent_key = RedPosture.SURGE.value
+    game.red_intent_status_line = "Surging (all-in) — ground 4.0x · IADS falling"
+    from game.fourteenth.red_intent import sitrep_posture_detail
+
+    assert sitrep_posture_detail(game) == (  # type: ignore[arg-type]
+        "Surging (all-in) — ground 4.0x · IADS falling"
+    )
+    off = _FakeGame(red_intent=False)
+    off.red_intent_status_line = "stale"
+    assert sitrep_posture_detail(off) is None  # type: ignore[arg-type]
+
+
+def test_intensity_word_helper() -> None:
+    from game.fourteenth.red_intent import intensity_word
+
+    surge = _FakeGame(red_intent=True)
+    surge.red_intent_key = RedPosture.SURGE.value
+    surge.red_intent_intensity = 1.0
+    assert intensity_word(surge) == "all-in"  # type: ignore[arg-type]
+    consolidate = _FakeGame(red_intent=True)
+    consolidate.red_intent_key = RedPosture.CONSOLIDATE.value
+    consolidate.red_intent_intensity = 1.0
+    assert intensity_word(consolidate) == "dug in"  # type: ignore[arg-type]
+    # ATTRITION (neutral middle) and feature-off carry no descriptor.
+    attrition = _FakeGame(red_intent=True)
+    attrition.red_intent_key = RedPosture.ATTRITION.value
+    assert intensity_word(attrition) is None  # type: ignore[arg-type]
+    off = _FakeGame(red_intent=False)
+    off.red_intent_key = RedPosture.SURGE.value
+    assert intensity_word(off) is None  # type: ignore[arg-type]

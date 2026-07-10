@@ -90,6 +90,14 @@
   background: #2c3a4d;
 }
 
+/* The graduated-intensity qualifier on the posture chip ("· all-in", "· dug in"):
+   a lighter, less-bold suffix so it reads as "how hard" without competing with the
+   posture word itself. */
+.campaign-status-posture-intensity {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
 /* §53 war-economy supply chips, coloured by level (low red / mid amber / ok teal) so
    the enemy's supply reads at a glance; §52 enemy-C2 chip in a distinct command slate. */
 .campaign-status-supply {
@@ -279,6 +287,36 @@
   stroke: #23344a;
   stroke-width: 1;
   stroke-dasharray: 4 4;
+}
+
+/* §55 (2026-07-10): the enemy-intent block in the expander -- the posture's full "why"
+   (intensity + trend drivers: "Surging (all-in) — ... · IADS falling") made visible on
+   click, not just as a chip hover. A posture-coloured left border ties it to the chip. */
+.campaign-status-panel-intent {
+  border-top: 1px solid #23344a;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.campaign-status-panel-intent-label {
+  color: #9aa6b6;
+  font-size: 11px;
+}
+
+.campaign-status-panel-intent-text {
+  color: #cdd6e2;
+  border-left: 3px solid #2c3a4d;
+  padding-left: 8px;
+}
+
+.campaign-status-panel-intent.intent-surging .campaign-status-panel-intent-text {
+  border-left-color: #6b2417;
+}
+
+.campaign-status-panel-intent.intent-consolidating .campaign-status-panel-intent-text {
+  border-left-color: #5a4413;
 }
 
 /* The will-attribution notes (why the meters moved last turn). */

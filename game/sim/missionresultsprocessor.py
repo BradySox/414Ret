@@ -120,8 +120,12 @@ class MissionResultsProcessor:
 
             blue_supply = coalition_supply_health(self.game, self.game.blue)
             red_supply = coalition_supply_health(self.game, self.game.red)
-        # §55: red's posture line (None unless red_intent is on).
-        from game.fourteenth.red_intent import sitrep_posture_line
+        # §55: red's posture line + the detail (intensity + trend drivers, so the smart
+        # read shows on the kneeboard). Both None unless red_intent is on.
+        from game.fourteenth.red_intent import (
+            sitrep_posture_detail,
+            sitrep_posture_line,
+        )
 
         self.game.last_sitrep = Sitrep.from_debriefing(
             debriefing,
@@ -136,6 +140,7 @@ class MissionResultsProcessor:
             blue_supply=blue_supply,
             red_supply=red_supply,
             red_posture=sitrep_posture_line(self.game),
+            red_posture_detail=sitrep_posture_detail(self.game),
         )
 
     def _pow_sitrep_lines(self) -> list[str]:

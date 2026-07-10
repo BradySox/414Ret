@@ -96,6 +96,10 @@ class CampaignStatusJs(BaseModel):
     #: off, so the client hides the chip -- same rule as the phase fields.
     red_posture: str | None
     red_posture_detail: str | None
+    #: §55 (2026-07-10): the graduated-intensity "how committed" word ("all-in" /
+    #: "pressing" / "dug in" ...) shown inline on the ribbon chip. None when off,
+    #: unresolved, or ATTRITION (the neutral middle carries no descriptor).
+    red_posture_intensity: str | None
     #: §53 war economy: front supply health per side, 0-100 (blue = your logistics,
     #: red = the enemy's -- bomb it and a starved red digs in, §55). None when
     #: war_economy is off; the client hides the chips.
@@ -125,7 +129,7 @@ class CampaignStatusJs(BaseModel):
     def from_game(game: Game) -> CampaignStatusJs:
         from game.fourteenth.phases import active_phase, arc_overview
         from game.fourteenth.political_will import ledger_notes, will_profile_for
-        from game.fourteenth.red_intent import active_red_intent
+        from game.fourteenth.red_intent import active_red_intent, intensity_word
 
         phase = active_phase(game)
         posture = active_red_intent(game)
@@ -135,6 +139,7 @@ class CampaignStatusJs(BaseModel):
             if posture is not None
             else None
         )
+        red_posture_intensity = intensity_word(game) if posture is not None else None
         blue_supply: float | None = None
         red_supply: float | None = None
         if getattr(game.settings, "war_economy", False):
@@ -196,6 +201,7 @@ class CampaignStatusJs(BaseModel):
             phase_narrative=phase.narrative if phase is not None else None,
             red_posture=red_posture,
             red_posture_detail=red_posture_detail,
+            red_posture_intensity=red_posture_intensity,
             blue_supply=blue_supply,
             red_supply=red_supply,
             red_c2=red_c2,

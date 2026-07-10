@@ -461,7 +461,8 @@ fully hides enemy command posts for the SCAR commander-capture feature (gated by
 **Concealed field forces — "in here somewhere" uncertainty areas (2026-07-05).** The recon
 intel-fog above hides *composition* but the marker still X-marks the exact spot, so "finding"
 a hidden site was fiction. A fourth rule fixes the *position* half: while `known_for(BLUE)`
-is False, a qualifying TGO's map presence is a dashed red **uncertainty circle** instead of
+is False, a qualifying TGO's map presence is a dashed amber **uncertainty circle** (amber
+since the §28 UI audit — dashed red now exclusively means an ROE off-limits zone) instead of
 an exact marker — centred on a **deterministically jittered** point (seeded from the TGO id
 so it never wanders between refreshes; offset 15–60 % of the radius so the truth always sits
 inside) with the true coordinates **never sent to the client** while concealed. Two ways in:
@@ -2560,7 +2561,7 @@ a declutter pass:
   control) and, after building a section, wires every master's change signal to `refresh_enabled_states`
   — which greys a child's **control + label** whenever `settings.<master> != enabled_value`. All ~21
   wired pairs are same-section, so greying is live; the initial pass sets state on open, and
-  `update_from_settings` re-applies it after a difficulty preset. Wired: the five `red_intent_*` ←
+  `update_from_settings` re-applies it after a difficulty preset. Wired: the four `red_intent_*` ←
   `red_intent`, the `coin_*` family ← `coin_insurgency`, `qra_defense_depth_nm` ← `qra_forward_defense`,
   `motorpool_spawn_cap` ← `motorpool_enabled`, `comms_jam_requires_capture` ← `enemy_comms_jamming`,
   `concealed_enemy_forces` ← `recon_intel_fog`, `perf_culling_distance` ← `perf_culling`,

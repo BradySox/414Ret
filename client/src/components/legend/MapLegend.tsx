@@ -31,6 +31,7 @@ const ROWS: Row[] = [
   { color: mapColors.weaponsFree, kind: "dashed", label: "Weapons-free pocket" },
   { color: mapColors.supplyOk, kind: "fill", label: "Supply: healthy" },
   { color: mapColors.supplyMid, kind: "fill", label: "Supply: strained" },
+  { color: mapColors.supplyLow, kind: "fill", label: "Supply: low" },
   { color: mapColors.supplyCritical, kind: "fill", label: "Supply: starved" },
 ];
 

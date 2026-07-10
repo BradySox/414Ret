@@ -264,8 +264,9 @@ file. This guide is the map; those are the territory.
     `TheaterGroundObject.concealed` (pickle-safe) → the server TGO model (`concealed_uncertainty`
     in `game/server/tgos/models.py`) sends a **deterministically jittered centre** (seeded from the
     TGO id, offset 15–60% of the radius so the truth stays inside; exact coords never reach the
-    client) + `uncertainty_radius_m` (4 km), and the web map draws a dashed red "suspected
-    activity" circle with the marker's click/right-click contract (frag TARPS/CAS onto it);
+    client) + `uncertainty_radius_m` (4 km), and the web map draws a dashed amber "suspected
+    activity" circle (amber since the §28 UI audit — dashed red is ROE-only) with the marker's
+    click/right-click contract (frag TARPS/CAS onto it);
     TARPS/attack discovery (or fog-off/reveal) snaps it to the exact symbol via `known_for`.
     **Road-pinned IEDs (2026-07-05, user call — "we know what highway it's on but not which
     street"):** an IED/VBIED's circle centre slides **far ALONG its supply road** (5–25 km on the

@@ -28,9 +28,9 @@ and selected later upstream fixes.
   threat rings being known. Attacking or scouting a site reveals it; confirmed battle
   damage can require a surviving recon pass.
 - Enemy **field forces you haven't scouted don't even show an exact position**: a mobile SAM
-  site, a deployed vehicle group, or a missile site appears only as a dashed **"suspected
+  site, a deployed vehicle group, or a missile site appears only as a dashed **amber "suspected
   activity" circle** offset from the truth ("in here somewhere") until recon or an attack
-  localizes it — so the Weasel hunt and the SCUD hunt are real hunts. Fixed infrastructure
+  localizes it — amber, so it can't be mistaken for the dashed red ROE off-limits circle — so the Weasel hunt and the SCUD hunt are real hunts. Fixed infrastructure
   stays exact (airfields, buildings, the big strategic SAM sites, EWRs, ships), the circle
   is clickable so you can still plan recon or a strike against the suspected area, and the
   whole behaviour is a Difficulty & Realism toggle (**on** by default for new campaigns).
@@ -124,6 +124,12 @@ and selected later upstream fixes.
 - The **map layer panel** is a single grouped, collapsible control (dark-themed to match the
   app) with one-click **preset views** — Default, SEAD, Recon, Clean — and it remembers your
   layer choices between sessions.
+- The map **explains itself**: a collapsible **Legend** button (bottom-right) decodes the
+  overlay colours — friendly/enemy/front line, the amber "suspected activity" vs red "ROE
+  off-limits" dashed circles, weapons-free pockets, supply health — and the things you can
+  right-click to plan a mission (front lines, enemy supply routes, target markers,
+  suspected-activity circles) show a pointer cursor plus a hover hint naming the action, so
+  fragging a package straight off the map is discoverable instead of a hidden gesture.
 - The campaign map can use a **chart of the DCS terrain itself** as its base map instead of
   real-world satellite imagery (which doesn't match what you'll see in the sim): slice any
   Web-Mercator GeoTIFF — e.g. Flappie's community "accurate DCS Caucasus map" — with
@@ -475,8 +481,8 @@ and selected later upstream fixes.
   fair game, and air assaults are never blocked — so you still retake your objectives, you just pay for
   the collateral when you fight where the insurgency hides. And the map plays the intel game with you:
   a hidden insurgent object you haven't found yet — an IED, a leader's convoy, a cell in the countryside —
-  doesn't sit on the map as a marker at its exact position at all; it shows as a dashed **"suspected
-  activity" circle** offset from the truth ("in here somewhere"), and only flying recon (or hitting it)
+  doesn't sit on the map as a marker at its exact position at all; it shows as a dashed **amber
+  "suspected activity" circle** offset from the truth ("in here somewhere"), and only flying recon (or hitting it)
   pins it to a real hostile NATO symbol drawn as what it actually is
   (an infantry cell, a roadside IED, a named leader, a stronghold's militia) instead of anonymous armor.
   And the insurgency **moves** and comes at you as the right kit: the named leader travels as a small

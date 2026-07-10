@@ -177,15 +177,25 @@ class ObjectiveFinder:
             # threats / commit fully offensive), matching the label and
             # PackagePlanningTask._get_weighted_threat_range. So a higher value
             # makes OPFOR *more* likely to abandon a base/front for offense.
+            #
+            # A CP that anchors an active front is NEVER abandoned. Aggressiveness
+            # means "strip the rear to push forward"; stripping the *front* to push
+            # forward is incoherent, and it used to leave the FLOT completely
+            # uncovered -- on a single-front theater the roll deleted the only CAP
+            # over the front (Red Tide: Haina, the sole front anchor, abandoned on
+            # ~1 turn in 5, and it is the theater's most threat-weighted orbit).
+            # Rear CPs still roll, so the lever keeps its intended meaning.
             plan_offensively = (
-                self.is_player.is_red and self._offensive_roll(cp) <= aggressiveness
+                self.is_player.is_red
+                and not cp.has_active_frontline
+                and self._offensive_roll(cp) <= aggressiveness
             )
             if plan_offensively:
                 # Treat the airfield threat range as zero so this CP isn't
                 # considered vulnerable; OPFOR commits its fighters offensively
-                # instead of defending here (front-line CAP is skipped too).
+                # instead of defending here.
                 airbase_threat_range = 0
-            if cp.has_active_frontline and not plan_offensively:
+            if cp.has_active_frontline:
                 # Forward defensive CAP line: this CP borders enemy territory.
                 yield cp
                 continue

@@ -504,6 +504,9 @@ end
 mist.DBs.unitsByName = mist.DBs.unitsByName or {}
 mist.DBs.unitsById = mist.DBs.unitsById or {}
 mist.DBs.groupsByName = mist.DBs.groupsByName or {}
+-- groupsById[id]: only .groupName is read (the escort leash's id->name fallback,
+-- upstream #850 -- merged 2026-07-10; the U1 "grep upstream Lua for mist." rule).
+mist.DBs.groupsById = mist.DBs.groupsById or {}
 mist.DBs.humansByName = mist.DBs.humansByName or {}
 mist.DBs.zonesByName = mist.DBs.zonesByName or {}
 
@@ -528,6 +531,7 @@ end
 
 local function _mistRefreshDBs()
     local unitsByName, unitsById, groupsByName, humansByName = {}, {}, {}, {}
+    local groupsById = {}
     local sides = { coalition.side.NEUTRAL, coalition.side.RED, coalition.side.BLUE }
     local cats = {
         Group.Category.AIRPLANE,
@@ -544,6 +548,10 @@ local function _mistRefreshDBs()
                         local gname = grp:getName()
                         local gid = grp:getID()
                         groupsByName[gname] = { groupName = gname, groupId = gid }
+                        local ngid = tonumber(gid)
+                        if ngid then
+                            groupsById[ngid] = groupsByName[gname]
+                        end
                         for _, u in pairs(grp:getUnits()) do
                             if u and u:isExist() then
                                 local uname = u:getName()
@@ -575,6 +583,7 @@ local function _mistRefreshDBs()
     mist.DBs.unitsByName = unitsByName
     mist.DBs.unitsById = unitsById
     mist.DBs.groupsByName = groupsByName
+    mist.DBs.groupsById = groupsById
     mist.DBs.humansByName = humansByName
 end
 

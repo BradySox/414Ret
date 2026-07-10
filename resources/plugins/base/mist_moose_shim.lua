@@ -2,7 +2,7 @@
 -- MIST -> MOOSE compatibility shim for DCS Retribution
 --
 -- Goal: retire the ~5,000-line mist_4_5_126.lua by providing the *exact* subset of
--- the `mist` API that Retribution's plugins actually call (43 distinct symbols), so the
+-- the `mist` API that Retribution's plugins actually call (44 distinct symbols), so the
 -- consumers (CTLD, SCAR, intercept glue, core dcs_retribution.lua, Skynet, and the upstream
 -- land_relocate/water_relocate scripts) stay byte-for-byte unchanged.
 -- See docs/dev/design/414th-mist-moose-shim-notes.md.
@@ -24,13 +24,14 @@
 --   [x] Tier 1b  geo/coord (getHeading, getAvgPos, getLeadPos, getRandPointInCircle,
 --                terrainHeightDiff, tostringLL, tostringMGRS, getUnitsLOS, random,
 --                utils.getDir, utils.getHeadingPoints, utils.zoneToVec3, utils.tableShow)
---   [x] Tier 2   object DB (DBs.unitsByName/unitsById/groupsByName/zonesByName/humansByName)
---                + getGroupData (ME mission-table read for land_relocate/water_relocate)
+--   [x] Tier 2   object DB (DBs.unitsByName/unitsById/groupsByName/groupsById/zonesByName/
+--                humansByName) + getGroupData (ME mission-table read for land/water_relocate)
 --   [x] Tier 3   sched/events/wp + spawn/route (scheduleFunction, removeFunction, addEventHandler,
 --                ground.buildWP, dynAdd, dynAddStatic, goRoute, getGroupRoute, groupToRandomZone,
 --                makeUnitTable)
 --   [x] Tier 4   msg/log (message.add, Logger)
---   ==> ALL 43 consumer symbols implemented. Next: base/plugin.json swap + in-game pass.
+--   ==> ALL 44 consumer symbols implemented (getGroupData was the 43rd, 2026-07-05; DBs.groupsById
+--       the 44th, 2026-07-10). Live in base/plugin.json since 2026-06-25; in-game pass G7 PASSED.
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 mist = mist or {}
@@ -1002,7 +1003,7 @@ function mist.groupToRandomZone(gpData, zone, form, heading, speed, disableRoads
     return mist.goRoute(gpData, { startWP, endWP })
 end
 
--- ==> All 42 consumer symbols are now implemented. The load-order swap in base/plugin.json
+-- ==> All 44 consumer symbols are now implemented. The load-order swap in base/plugin.json
 -- (mist_4_5_126.lua -> mist_moose_shim.lua) shipped 2026-06-25 and the in-game pass (CTLD
 -- sling-load, SCAR capture/CSAR, intercept/QRA, core glue) PASSED (checklist G7), so
 -- mist_4_5_126.lua was deleted 2026-07-10. Rollback = restore the file from git history and

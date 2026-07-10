@@ -10,6 +10,7 @@ import {
   setHoveredEmitter,
 } from "../../api/mapSlice";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { mapColors } from "../../theme/mapColors";
 import MobileTgo from "./MobileTgo";
 import { TgoTooltip, iconForTgo } from "./shared";
 import { Circle, Marker, Tooltip } from "react-leaflet";
@@ -33,12 +34,15 @@ function ConcealedTgo(props: TgoProps) {
     <Circle
       center={props.tgo.position}
       radius={props.tgo.uncertainty_radius_m!}
+      // Amber "suspected", not red: red is reserved for the ROE off-limits circle,
+      // which is nearly identical in shape. Amber reads as "unknown — investigate".
       pathOptions={{
-        color: "#b32424",
+        color: mapColors.suspected,
         weight: 2,
         dashArray: "6 6",
-        fillColor: "#b32424",
+        fillColor: mapColors.suspected,
         fillOpacity: 0.08,
+        className: "map-interactive",
       }}
       eventHandlers={{
         click: () => {
@@ -53,6 +57,8 @@ function ConcealedTgo(props: TgoProps) {
         Suspected enemy activity ({props.tgo.control_point_name})
         <br />
         Somewhere in this area — fly recon to localize
+        <br />
+        <i>Left-click: intel · Right-click: plan a package</i>
       </Tooltip>
     </Circle>
   );

@@ -7,6 +7,9 @@ jest.mock("react-leaflet", () => ({
   Polyline: (props: PolylineProps) => {
     mockPolyline(props);
   },
+  // The interactive hit-line renders a <Tooltip> child (right-click hint); stub it so
+  // the mocked react-leaflet module still resolves the import.
+  Tooltip: () => null,
 }));
 
 describe("FrontLine", () => {

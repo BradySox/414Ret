@@ -1,5 +1,6 @@
 import CampaignStatusBar from "./components/campaignstatus";
 import EventsFeed from "./components/eventsfeed";
+import MapLegend from "./components/legend/MapLegend";
 import LiberationMap from "./components/liberationmap";
 import useEventStream from "./hooks/useEventSteam";
 import useInitialGameState from "./hooks/useInitialGameState";
@@ -12,6 +13,7 @@ function App() {
     <div className="App">
       <CampaignStatusBar />
       <EventsFeed />
+      <MapLegend />
       <LiberationMap />
     </div>
   );

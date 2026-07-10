@@ -1,4 +1,5 @@
 import { Tgo as TgoModel } from "../../api/liberationApi";
+import { mapColors } from "../../theme/mapColors";
 import SplitLines from "../splitlines/SplitLines";
 import summarizeUnits from "../unitsummary/summarizeUnits";
 import { Icon, Point } from "leaflet";
@@ -24,7 +25,7 @@ export function TgoTooltip(props: { tgo: TgoModel }) {
       {props.tgo.roe_restricted && (
         <>
           <br />
-          <b style={{ color: "#d43a3a" }}>RESTRICTED — ROE</b>
+          <b style={{ color: mapColors.offLimits }}>RESTRICTED — ROE</b>
           {props.tgo.roe_reason && (
             <>
               <br />
@@ -37,6 +38,8 @@ export function TgoTooltip(props: { tgo: TgoModel }) {
       {/* Condensed: an objective's units collapse to per-type counts and cap
           out, so a FOB's hundred statics don't fill the screen on hover. */}
       <SplitLines items={summarizeUnits(props.tgo.units)} />
+      <br />
+      <i>Left-click: intel · Right-click: plan a package</i>
     </Tooltip>
   );
 }

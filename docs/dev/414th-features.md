@@ -2587,6 +2587,28 @@ iterate a copy); the web **TGO markers keyed by `tgo.name`** (not unique) → ke
 (`uiconstants` + About); and a dead `EmitterHighlightToggle` component + duplicate `.air-defense-ring-hit`
 / unused `.ml-collapse` CSS were removed. The full 56-finding audit is tracked separately.
 
+### Web map: discoverability + a shared palette (2026-07-10, audit tracks 3+4)
+
+The web client's overlays each hardcoded their own colours (so "red" meant six things and two dashed
+circles read alike), and the map's core planning actions were invisible right-clicks with no affordance.
+
+- **Shared semantic palette.** `client/src/theme/mapColors.ts` is the single source of truth — named
+  tokens (`friendly`/`enemy`/`flot`, `suspected`/`offLimits`/`weaponsFree`, `supplyOk`…`supplyCritical`,
+  `route*`). The overlays (threat zones, front line, supply layer + routes, restricted zones, the
+  concealed TGO + the ROE tooltip) import from it instead of inline hexes. Two deliberate reconciliations:
+  the **concealed "suspected activity" circle moved off red onto amber** so it no longer looks like the
+  red ROE off-limits circle (finding #2), and the near-invisible navy **friendly supply route was lifted
+  to a legible blue** (finding #10).
+- **A map legend.** `components/legend/MapLegend` — a compact, collapsible bottom-right key decoding the
+  allegiance / ROE / supply / suspected-activity colours + shapes (dark-panel styled, clears the other
+  corners).
+- **Right-click discoverability.** The interactive vectors (front line, supply route) and the suspected-
+  activity circle now carry a **`cursor: pointer`** (via a `.map-interactive` Leaflet class) and a **hover
+  hint** ("Right-click: plan a mission here" / "frag interdiction"; TGO/tooltip gets "Left-click: intel ·
+  Right-click: plan a package") so the otherwise-hidden fragging actions are findable. Client-only;
+  type-checked (`tsc`) + the `FrontLine` test mock extended; the full `react-scripts` build/test runs in
+  CI. Deferred: a full right-click *context menu* and theming the light Leaflet tooltips.
+
 ## §29 — Campaign SITREP kneeboard band
 
 A "what happened last turn" digest on the player's next kneeboard — a morning intel brief in the

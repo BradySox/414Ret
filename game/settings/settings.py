@@ -376,6 +376,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "auto_ato_behavior_tankers",
                     "auto_ato_player_missions_asap",
                     "auto_combat_sar",
+                    "combat_sar_test_force_capture",
+                    "combat_sar_test_easy_rescue",
                     "automate_front_line_stance",
                     "default_front_line_stance",
                 ],
@@ -1741,6 +1743,36 @@ class Settings:
             "capable squadron; a human can always fly the rescue instead. Turn OFF "
             "to only fly rescues manually. (Default ON since the 2026-07-03 CSAR "
             "rescope; existing campaigns keep their saved choice.)"
+        ),
+    )
+    combat_sar_test_force_capture: bool = boolean_option(
+        "[TEST] Combat SAR: force every downed pilot to be captured",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        HQ_AUTOMATION_SECTION,
+        default=False,
+        detail=(
+            "Testing aid (thumb on the scale, default OFF). Rigs the Combat SAR "
+            "capture race so every ejection is seized fast: the enemy snatch party "
+            "spawns 100% of the time, right on top of the survivor, and captures "
+            "within a few seconds -- so you can reliably exercise the POW path and "
+            "the capture-gated enemy comms jamming without fighting the RNG (fly, "
+            "get a blue pilot down near the front, advance the turn). Overrides the "
+            "Combat SAR plugin's capture options. If '[TEST] ... trivially easy' is "
+            "also on, capture wins. Leave OFF for normal play."
+        ),
+    )
+    combat_sar_test_easy_rescue: bool = boolean_option(
+        "[TEST] Combat SAR: make pilot pickup trivially easy",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        HQ_AUTOMATION_SECTION,
+        default=False,
+        detail=(
+            "Testing aid (thumb on the scale, default OFF). Disables the enemy "
+            "capture race and widens the pickup tolerances (range/height/speed/"
+            "delivery) so a rough landing near the red smoke boards the survivor -- "
+            "so you can reliably exercise the King TACAN beacon, the Sandy divert, "
+            "and the rescue/delivery loop. Overrides the Combat SAR plugin's pickup "
+            "+ capture options. Leave OFF for normal play."
         ),
     )
     automate_front_line_stance: bool = boolean_option(

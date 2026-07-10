@@ -1902,6 +1902,14 @@ their stored choice) — rescue is a normal, standing task per the locked vision
 scores; the plugin's **survivor ledger** (Lua) executes. Design source of truth:
 [`docs/dev/design/414th-csar-notes.md`](design/414th-csar-notes.md).
 
+**Testing aids (2026-07-09):** the enemy snatch-party spawn default dropped **2 NM → 0.75 NM** so a
+capture can actually complete in a mission window (the old 2 NM was an ~11-min march ⇒ captures
+~never fired). Plus two **default-OFF** test toggles (Campaign Management → HQ Automation) that emit
+scalar flags on `dcsRetribution.CombatSAR` for the plugin to honor: `combat_sar_test_force_capture`
+(every ejection → a fast guaranteed **capture → POW**, unlocking the §51 capture-gated comms jam —
+the reliable way to exercise **G28 + S4**) and `combat_sar_test_easy_rescue` (capture off + forgiving
+pickup/delivery — exercises **G10 King / G23 Sandy / the pickup loop**). Leave OFF for normal play.
+
 The bespoke pilot-rescue flight task. A **CH-47** orbits near the FLOT as the rescuer; a
 **C-130** flies the overhead **HC-130 "King"** on-scene-command orbit. When a pilot (human or
 AI) ejects in the area, the ledger spawns the downed pilot with red smoke and a friendly helo —

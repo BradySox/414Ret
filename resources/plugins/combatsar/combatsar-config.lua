@@ -60,7 +60,11 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     local capture = {
         enabled = true,
         chance = 50,
-        spawnDistance = 2 * NM_TO_M,    -- m (option in NM)
+        -- Party spawns this far from the survivor and walks in at ~5.5 m/s. At the old
+        -- 2 NM this was an ~11-min march, so a capture essentially never completed in a
+        -- mission window; 0.75 NM (~4-min approach, still killable by a Sandy) makes a
+        -- capture a real, occasional outcome. Overridable per-mission via the option.
+        spawnDistance = 0.75 * NM_TO_M, -- m (option in NM)
         captureRange = 500 * FT_TO_M,   -- m (option in ft)
         captureDwell = 30,
         partySize = 5,    -- total infantry, split across `teams` small groups
@@ -105,6 +109,34 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             "combatsar: capture party clamped to %d infantry / %d teams (requested %d/%d) -- guards "
             .. "against a scripting overload that can hang the sim.",
             capture.partySize, capture.teams, reqParty, reqTeams))
+    end
+
+    ---------------------------------------------------------------------------
+    -- [TEST] thumb-on-the-scale overrides (emitted on dcsRetribution.CombatSAR
+    -- only when the matching Settings toggle is on -- both default OFF). Rig the
+    -- capture/pickup so a Saturday test reliably fires one path without fighting
+    -- the RNG. Applied AFTER the normal options so they win; force-capture is
+    -- applied last so it beats easy-rescue if both are somehow set. The scalar is
+    -- emitted with set_value("true"), which can arrive as bool true or string
+    -- "true" -- accept both (the readBool convention, inlined since readBool is
+    -- defined later).
+    local function testFlag(v) return v == true or v == "true" end
+    if testFlag(data.testEasyRescue) then
+        capture.enabled = false
+        PICKUP_RANGE = 2000 * FT_TO_M
+        PICKUP_AGL = 300 * FT_TO_M
+        PICKUP_SPEED = 80 * KTS_TO_KMH
+        HOME_RANGE = 3 * NM_TO_M
+        AI_DISPATCH_DELAY = 30
+        env.info("DCSRetribution|Combat SAR: [TEST] easy-rescue overrides applied")
+    end
+    if testFlag(data.testForceCapture) then
+        capture.enabled = true
+        capture.chance = 100
+        capture.spawnDistance = 0.2 * NM_TO_M
+        capture.captureRange = 1000 * FT_TO_M
+        capture.captureDwell = 5
+        env.info("DCSRetribution|Combat SAR: [TEST] force-capture overrides applied")
     end
 
     ---------------------------------------------------------------------------

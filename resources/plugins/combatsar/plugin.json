@@ -46,7 +46,7 @@
         {
             "nameInUI": "Capture race: how far from the survivor the snatch party appears (NM)",
             "mnemonic": "captureSpawnDistanceNm",
-            "defaultValue": 2
+            "defaultValue": 0.75
         },
         {
             "nameInUI": "Capture race: how close the party must reach the survivor to seize them (ft)",

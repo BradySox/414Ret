@@ -28,6 +28,14 @@ country/category — the dynAdd shape). Contract pinned in `tests/lua/test_mist_
 the relocate behavior itself still needs an in-game pass (checklist U1). **When merging future
 upstream Lua, grep it for `mist.` and check every symbol against the shim.**
 
+**44th symbol (2026-07-10):** the upstream/dev sync brought the escort-leash fix (upstream #850),
+which resolves a mission group id to a name via `mist.DBs.groupsById[id].groupName` — a DB table
+the shim didn't build (the read is nil-guarded upstream, so under the shim the leash's id fallback
+would have silently resolved nothing rather than died). `_mistRefreshDBs` now also populates
+`groupsById` (same entry object as `groupsByName`, keyed by the numeric group id). Contract pinned
+in `tests/lua/test_mist_shim_groupsbyid.py`. The U1 grep rule caught it — keep running it on every
+upstream Lua merge.
+
 **Supersedes:** the per-consumer MOOSE-native port plan (esp. the `Ops.CTLD` port in
 [`414th-ctld-mantis-style-port-scope.md`](414th-ctld-mantis-style-port-scope.md), now shelved).
 **Parent:** [`414th-framework-consolidation-notes.md`](414th-framework-consolidation-notes.md).

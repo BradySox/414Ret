@@ -1110,12 +1110,13 @@ class Settings:
         default=False,
         detail=(
             "The enemy commander reads the war each turn -- ground balance, air "
-            "strength, resolve, and how the last turn went -- and adopts a posture "
-            "(consolidate / attrition / surge) that carries across turns, instead of "
-            "planning the same way every turn. Observe-only for now: the posture is "
-            "shown on the SITREP and the turn report but does not yet change how red "
-            "tasks its aircraft (that lands in later updates). Red-only; a campaign "
-            "with no enemy auto-planner is unaffected."
+            "strength, resolve, supply, and how the last turn went -- and adopts a "
+            "posture (consolidate / attrition / surge) that carries across turns, "
+            "instead of planning the same way every turn. The posture then shapes how "
+            "red plans: which offensive missions it prioritises, how predictably it "
+            "picks targets, how many bases it strips for offense, and how readily it "
+            "commits ground reserves. Shown on the SITREP and the campaign status bar. "
+            "Red-only; a campaign with no enemy auto-planner is unaffected."
         ),
     )
     heli_combat_alt_agl: int = bounded_int_option(

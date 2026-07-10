@@ -66,6 +66,31 @@ def test_red_tide_preseeds_red_intent() -> None:
     assert settings["red_intent"] is True
 
 
+def test_red_tide_preseeds_the_opfor_qra_reserve() -> None:
+    settings = _campaign_settings()
+    # The Cold-War Soviet defensive posture depends on red holding a QRA alert reserve.
+    # The standard default is 0; preseed it here so it survives a player resetting their
+    # saved defaults toward standard (without it, red goes quiet AND passive, and the §1
+    # QRA forward-defense layer has nothing to scramble to the front).
+    assert settings["opfor_default_qra_reserve"] == 4
+
+
+def test_red_tide_preseeds_the_era_weapon_gate() -> None:
+    settings = _campaign_settings()
+    # Red Tide is 1988; the era gate keeps the period jets off post-era weapons. Default
+    # off and covered by no other campaign setting, so it must be preseeded to survive a
+    # reset to standard defaults.
+    assert settings["restrict_weapons_by_date"] is True
+
+
+def test_red_tide_preseeds_munitions_scarcity() -> None:
+    settings = _campaign_settings()
+    # §54 is the air axis of the war economy (also preseeded): out-of-stock scarce
+    # munitions degrade at load. Default off and covered by no other campaign setting.
+    assert settings["restrict_weapons_by_stock"] is True
+    assert settings["war_economy"] is True
+
+
 def test_red_tide_fields_the_two_scud_batteries_for_the_hunt() -> None:
     # §49 only has something to relocate if the .miz actually places missile-category
     # TGOs. Red Tide's laydown carries two SS-1C Scud-B batteries; a future miz edit

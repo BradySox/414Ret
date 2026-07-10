@@ -1003,7 +1003,8 @@ function mist.groupToRandomZone(gpData, zone, form, heading, speed, disableRoads
 end
 
 -- ==> All 42 consumer symbols are now implemented. The load-order swap in base/plugin.json
--- (mist_4_5_126.lua -> mist_moose_shim.lua, loading AFTER Moose.lua and BEFORE consumers) plus an
--- in-game pass (CTLD sling-load, SCAR capture/CSAR, intercept/QRA, Skynet, core glue) are the
--- remaining steps before mist_4_5_126.lua can be deleted.
+-- (mist_4_5_126.lua -> mist_moose_shim.lua) shipped 2026-06-25 and the in-game pass (CTLD
+-- sling-load, SCAR capture/CSAR, intercept/QRA, core glue) PASSED (checklist G7), so
+-- mist_4_5_126.lua was deleted 2026-07-10. Rollback = restore the file from git history and
+-- re-point base/plugin.json's "mist" work-order back at it.
 

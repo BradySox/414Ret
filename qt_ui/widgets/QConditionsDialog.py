@@ -1,8 +1,18 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
+from typing import Optional, Tuple
 
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton
+from PySide6.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
 from dcs.weather import Wind
+
+from game import Game
+from qt_ui.simcontroller import SimController
 
 from game.sim import GameUpdateEvents
 from game.weather.clouds import Clouds
@@ -36,15 +46,37 @@ class QConditionsDialog(QDialog):
         reject_btn.setProperty("style", "btn-danger")
         reject_btn.clicked.connect(self.close)
         hbox.addWidget(reject_btn)
+        # Re-roll is the explicit, opt-in destructive path: it discards both
+        # ATOs and re-plans for the new conditions. Kept separate from ACCEPT so
+        # simply changing the clock/weather never wipes a hand-built frag.
+        reroll_btn = QPushButton("RE-ROLL TURN")
+        reroll_btn.setToolTip(
+            "Apply the new conditions and generate a fresh plan for both sides. "
+            "Discards the current flight plans."
+        )
+        reroll_btn.clicked.connect(self.reroll_turn)
+        hbox.addWidget(reroll_btn)
         accept_btn = QPushButton("ACCEPT")
         accept_btn.setProperty("style", "btn-success")
-        accept_btn.clicked.connect(self.apply_conditions)
+        accept_btn.setToolTip(
+            "Apply the new conditions and keep the current flight plans "
+            "(re-timed to the new mission start)."
+        )
+        accept_btn.clicked.connect(self.accept_conditions)
         hbox.addWidget(accept_btn)
         vbox.addLayout(hbox, 1)
 
         self.setLayout(vbox)
 
-    def apply_conditions(self) -> None:
+    def _apply_clock_and_weather(
+        self,
+    ) -> Tuple[Game, SimController, datetime, Optional[datetime]]:
+        """Push the dialog's date/time/weather onto the game and sim.
+
+        Shared by both ACCEPT and RE-ROLL; leaves the ATO untouched. Returns the
+        game, sim controller, the new mission start, and the previous mission
+        start (so the caller can decide how to treat the planned flights).
+        """
         qdt: datetime = self.time_adjuster.datetime_edit.dateTime().toPython()
 
         sim = self.time_turn.sim_controller
@@ -97,9 +129,44 @@ class QConditionsDialog(QDialog):
         )
 
         self.weather.conditions.weather = new_weather
-
         self.weather.update_forecast()
-        if game.turn > 0 and current_time != qdt:
+
+        return game, sim, qdt, current_time
+
+    def accept_conditions(self) -> None:
+        """Apply the new conditions and PRESERVE the planned frag.
+
+        A change of mission start would leave every package's absolute TOT stale,
+        so the existing plans are re-timed onto the new start (composition,
+        rosters, loadouts, and routing are untouched) rather than discarded.
+        """
+        game, sim, qdt, current_time = self._apply_clock_and_weather()
+        if game.turn > 0 and current_time is not None and current_time != qdt:
+            delta = qdt - current_time
+            game.blue.ato.shift_time(delta)
+            game.red.ato.shift_time(delta)
+            sim.sim_update.emit(GameUpdateEvents())
+        self.accept()
+
+    def reroll_turn(self) -> None:
+        """Apply the new conditions and RE-PLAN both sides from scratch."""
+        confirm = QMessageBox.question(
+            self,
+            "Re-roll this turn?",
+            (
+                "This discards the current flight plans for both sides and "
+                "generates a fresh plan for the new conditions.<br />"
+                "<br />"
+                "Any hand-built frag for this turn will be lost. Continue?"
+            ),
+            QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        game, sim, _qdt, _current_time = self._apply_clock_and_weather()
+        if game.turn > 0:
             events = GameUpdateEvents()
             game.initialize_turn(events, for_blue=True, for_red=True)
             sim.sim_update.emit(events)

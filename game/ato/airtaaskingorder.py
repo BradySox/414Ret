@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from typing import List
 
 from game.ato import FlightType
@@ -38,3 +39,21 @@ class AirTaskingOrder:
         # Remove all packages individually so the database gets updated.
         for package in list(self.packages):
             self.remove_package(package)
+
+    def shift_time(self, delta: timedelta) -> None:
+        """Re-time every scheduled package by ``delta``.
+
+        Flight timing (TOT, takeoff, startup, waypoint ETAs) is derived from the
+        package TOT at read time (``FlightPlan.tot`` is ``package.time_over_target
+        + tot_offset``), so shifting each package's TOT moves the whole ATO onto a
+        new mission start without touching package/flight composition, rosters,
+        loadouts, or routing. This lets the conditions dialog change the clock
+        while preserving a hand-built frag, instead of wiping and re-planning it.
+
+        Unscheduled packages (TOT still at the ``datetime.min`` sentinel) are left
+        alone.
+        """
+        for package in self.packages:
+            if package.time_over_target == datetime.min:
+                continue
+            package.time_over_target += delta

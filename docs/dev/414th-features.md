@@ -5159,16 +5159,19 @@ the drop lays the field on the convoy's road (the plugin), and following traffic
 premise that only an air-drop lays a mine; the AI (or the player, if they fly the fragged sortie)
 just flies one. Tests `tests/fourteenth/test_convoy_mining.py`.
 
-**Web overlay — server model (LANDED).** `MinefieldJs` on `GameJs` (`game/server/game/models.py`)
-emits each live BLUE field's position/radius/charges, empty unless `air_droppable_minefields` is on
-(the supply-nodes/restricted-zones pattern; BLUE-only — the enemy never sees where you mined). Tested
-`tests/server/test_minefields.py`. **Still open (client follow-up):** the web-map layer that consumes
-it — a `minefieldSlice` + `MinefieldsLayer` + a map-panel toggle, following the §53 `SupplyLayer`
-pattern + the generated-TS hand-add (`Minefield` type + `GameJs.minefields`) + the layer-count jest
-update. The `.miz` F10/ME drawing is **intentionally skipped**: the plugin's *live* runtime F10 marks
-track fields as they deplete/clear during the mission, which a static generated drawing can't. Needs
-an in-game pass: the `CBU_99` runtime type string, the convoy kill, the undisturbed-field re-lay
-across a turn, and the auto-planned drop (checklist B9).
+**Web overlay (LANDED).** `MinefieldJs` on `GameJs` (`game/server/game/models.py`) emits each live
+BLUE field's position/radius/charges, empty unless `air_droppable_minefields` is on (the
+supply-nodes/restricted-zones pattern; BLUE-only — the enemy never sees where you mined). The client
+`minefieldSlice` + `MinefieldsLayer` draws a gold dashed marker per live field (with its mine count +
+radius in a tooltip) in the map-layers panel (a **"Minefields"** toggle in the Friendly group,
+default on). Generated-TS hand-added (`Minefield` type + `GameJs.minefields`, since codegen can't run
+locally); validated with `tsc --noEmit` + the client jest suite (12 suites / 36 tests) via the
+scratchpad-copy + `node_modules`-junction workaround (jest can't run under a `.claude` worktree path).
+The `.miz` F10/ME drawing is **intentionally skipped**: the plugin's *live* runtime F10 marks track
+fields as they deplete/clear during the mission, which a static generated drawing can't. Tests
+`tests/server/test_minefields.py`. **All that remains is the in-game pass** (checklist B9): the
+`CBU_99` runtime type string, the convoy kill, the undisturbed-field re-lay across a turn, and the
+auto-planned drop. Needs the CI client rebuild for the overlay to appear.
 
 ---
 

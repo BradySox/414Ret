@@ -1749,11 +1749,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     before the commander) frags one BAI sortie a turn **at an enemy convoy**, flown by a blue
     A-7E/Hornet/Harrier with the `"Aerial Minefield"` dispenser loadout **forced by name** onto the
     flight's members — the AI (or player) drops the CBU-99 and the plugin lays the field on the
-    convoy's road. **Web overlay:** the server model (`MinefieldJs` on `GameJs`, BLUE-only, empty
-    when off) is landed + tested; still open is the client web-map *layer* that consumes it (a
-    `minefieldSlice` + `MinefieldsLayer` + a map-panel toggle + the generated-TS hand-add — the §53
-    `SupplyLayer` pattern). The `.miz` drawing is intentionally skipped (the plugin's live F10 marks
-    track fields as they deplete, which a static drawing can't).
+    convoy's road. **Web overlay (LANDED):** `MinefieldJs` on `GameJs` (BLUE-only, empty when off) +
+    the client `minefieldSlice`/`MinefieldsLayer` (a gold dashed marker per live field in the
+    map-layers panel — a "Minefields" toggle, default on, Friendly group); generated-TS hand-added,
+    validated with `tsc` + the client jest suite (scratchpad-copy + node_modules-junction workaround,
+    the §53 `SupplyLayer` pattern). The `.miz` drawing is intentionally skipped (the plugin's live F10
+    marks track fields as they deplete, which a static drawing can't). Needs the CI client rebuild.
     (`resources/plugins/minefields/`, `game/fourteenth/minefields.py`,
     `game/fourteenth/convoy_mining.py`, `game/missiongenerator/minefieldluadata.py`,
     `game/missiongenerator/luagenerator.py`, `game/debriefing.py`, `game/coalition.py`,

@@ -4554,7 +4554,10 @@ on is real, dynamic comms discipline. **`maxChannels`** (plugin option, default 
 channels are jammed *at all* — the Lua keeps the first N of the priority-ordered emit, so a low N pins the
 jamming to the top high-priority nets and leaves the rest of the briefed net clean. Paired with a long
 `burstSec` + short `intervalSec` it turns the duty-cycled sweep into near-continuous pressure on a few
-channels; Red Tide preseeds `burstSec 120 / intervalSec 10 / maxChannels 3 / powerW 10000` (100x the 100 W default -- much stronger and longer-ranged).
+channels; Red Tide preseeds `burstSec 120 / intervalSec 10 / maxChannels 3 / powerW 10000` (`powerW` is
+**reach**, not volume — DCS models the RF falloff, so it sets how far from the node the interference is
+receivable, not how loud it is; loudness is the audio clip, limited to ~-4 dBFS RMS so it's a dense wall of
+static in the cockpit).
 
 **The JAM BACKUP channel closes the loop:** the planner allocates one fresh UHF frequency from the same
 `RadioRegistry` every briefed channel came out of (so nothing else uses it and it can never be jammed),

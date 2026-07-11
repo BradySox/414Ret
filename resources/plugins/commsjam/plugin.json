@@ -29,7 +29,7 @@
             "maximumValue": 10
         },
         {
-            "nameInUI": "Transmitter power (W) -- range AND strength of the interference (DCS models the falloff; higher = louder and reaches further from the node)",
+            "nameInUI": "Transmitter power (W) -- RANGE only: how far from the node the interference is receivable (DCS models the falloff). It does NOT change how loud the static is once received -- that's the audio file. Raise if inaudible at the front, lower if it reaches home plate.",
             "mnemonic": "powerW",
             "defaultValue": 100,
             "maximumValue": 100000

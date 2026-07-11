@@ -46,11 +46,13 @@ def populate_briefing_lua(
 
     # Shared header -- the same for every flight, emitted once. Sourced to match the
     # kneeboard cover page (§30): the campaign date is game.current_day, the mission
-    # clock is conditions.start_time. Mission number is turn + 1 (game.turn is
-    # 0-indexed) so the first sortie reads "Mission 1".
+    # clock is conditions.start_time. Mission number is the RAW turn (game.turn), so it
+    # reads the same number the kneeboard cover shows ("Turn N") -- turn+1 was confusing
+    # (card "Mission 2" next to the kneeboard's "Turn 1"). game.turn is 0-indexed, so a
+    # brand-new campaign's first sortie reads "Mission 0", matching the kneeboard's "Turn 0".
     header = node.add_item("header")
     header.add_key_value("campaign", game.campaign_name or "")
-    header.add_key_value("mission", str(game.turn + 1))
+    header.add_key_value("mission", str(game.turn))
     header.add_key_value("date", game.current_day.strftime("%A %d %B %Y"))
     header.add_key_value("time", game.conditions.start_time.strftime("%H:%M") + "L")
 

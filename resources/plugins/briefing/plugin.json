@@ -1,10 +1,10 @@
 {
     "nameInUI": "Mission-start briefing popup",
-    "descriptionInUI": "Shows each pilot a short on-screen card -- campaign, mission number, date, mission time, callsign, aircraft, task, and departure field -- when they slot into an aircraft (S_EVENT_BIRTH), the way the professional DCS campaigns greet you at mission start. Fires at mission start in single-player and whenever a pilot slots in / rejoins on a server. Inert unless the mission generator emits dcsRetribution.briefing (the 'Mission-start briefing popup' setting is on and the mission has a player-crewed flight). Display only -- no gameplay change. Card duration and the startup grace are options below.",
+    "descriptionInUI": "Shows each pilot a short on-screen card -- campaign, mission number, date, mission time, callsign, aircraft, task, and departure field -- when they slot into an aircraft (S_EVENT_BIRTH), the way the professional DCS campaigns greet you at mission start, then flashes a SECOND card with the startup/taxi instruction (e.g. 'Contact ground @ 249.50 when ready to taxi'). Fires at mission start in single-player and whenever a pilot slots in / rejoins on a server. Inert unless the mission generator emits dcsRetribution.briefing (the 'Mission-start briefing popup' setting is on and the mission has a player-crewed flight). Display only -- no gameplay change. Card duration, startup grace, and the ground frequency are options below.",
     "defaultValue": true,
     "specificOptions": [
         {
-            "nameInUI": "Seconds the briefing card stays on screen",
+            "nameInUI": "Seconds each card stays on screen",
             "mnemonic": "durationS",
             "defaultValue": 12,
             "maximumValue": 60
@@ -13,6 +13,11 @@
             "nameInUI": "Startup grace before the mission-start sweep (s)",
             "mnemonic": "startGraceS",
             "defaultValue": 2
+        },
+        {
+            "nameInUI": "Ground frequency shown on the taxi card",
+            "mnemonic": "groundFreq",
+            "defaultValue": "249.50"
         }
     ],
     "scriptsWorkOrders": [],

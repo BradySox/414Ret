@@ -72,7 +72,7 @@ def test_emits_header_and_one_record_per_player_flight() -> None:
     assert isinstance(header, LuaData)
     hk = _kv(header)
     assert hk["campaign"] == "Red Tide"
-    assert hk["mission"] == "3"  # turn 2 (0-indexed) -> "Mission 3"
+    assert hk["mission"] == "2"  # raw game.turn (matches the kneeboard's "Turn N")
     assert hk["date"] == "Wednesday 12 June 1968"
     assert hk["time"] == "14:30L"
 

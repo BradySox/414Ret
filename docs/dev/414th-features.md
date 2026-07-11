@@ -5179,16 +5179,31 @@ auto-planned drop. Needs the CI client rebuild for the overlay to appear.
 
 The professional DCS campaigns greet a pilot who slots in with a short on-screen card — campaign,
 mission, time, date, callsign, field — so you always know what you are flying before you have opened
-a kneeboard. This brings that to the dynamic campaign. **Display only:** no gameplay-model change,
-no `.miz` object, nothing persisted; the plugin owns nothing but the text.
+a kneeboard. This brings that to the dynamic campaign, then flashes a **second card** right after
+(held the same duration): the startup/taxi instruction, `<callsign> — Get started up, Contact ground
+@ 249.50 when ready to taxi` (249.50 is a fixed squadron freq — a plugin option). **Display only:**
+no gameplay-model change, no `.miz` object, nothing persisted; the plugin owns nothing but the text.
+
+**Why it is TEXT, not a styled image (a hard DCS limit).** The DCS Lua scripting API has
+`outTextForGroup`/`outTextForUnit` (target one flight) but **no `outPictureForGroup`/
+`outPictureForUnit`** — pictures can only be shown to *all* players or a *whole coalition*
+([ED wishlist thread](https://forum.dcs.world/topic/371036-outpicturefor-lua-mission-scripting-functions/);
+there are 0 `outPicture*` calls in MOOSE or any 414th plugin, vs 31 `outTextForGroup`). So a
+*per-pilot styled image card* is impossible in multiplayer — the info (callsign/task/field) differs
+per flight, and only the text functions can address one flight. The pro campaigns get the image look
+only because they are hand-built **single-flight** missions, where `outPicture`-to-all is that one
+pilot's card (and even Rampagers' nice PNGs are *briefing-screen* images; its in-game title is plain
+`outText`). Retribution missions are multi-flight, so the per-pilot card stays text.
 
 **The Python/Lua split.** The emitter `game/missiongenerator/briefingluadata.py`
 (`populate_briefing_lua`, wired into `luagenerator.py`'s `generate_plugin_data` next to the other
 `populate_*` bridges) emits `dcsRetribution.briefing`:
 
 - a shared **`header`** (the same for every flight, emitted once): `campaign` (`game.campaign_name`),
-  `mission` (`game.turn + 1` — `game.turn` is 0-indexed, so the first sortie reads "Mission 1"),
-  `date` (`game.current_day`, formatted `%A %d %B %Y`), and `time`
+  `mission` (the **raw `game.turn`** — it reads the same number the §30 kneeboard cover shows
+  ("Turn N"); `turn+1` was confusing, the card's "Mission 2" next to the kneeboard's "Turn 1". Since
+  `game.turn` is 0-indexed, a brand-new campaign's first sortie reads "Mission 0" — matching the
+  kneeboard's "Turn 0"), `date` (`game.current_day`, formatted `%A %d %B %Y`), and `time`
   (`game.conditions.start_time`, `%H:%M` + `L`). Date + clock are sourced to match the §30 kneeboard
   cover page, so the popup and the kneeboard agree.
 - a **`flights`** list — one record per **player-crewed** flight (a `FlightData` with a non-empty
@@ -5217,18 +5232,23 @@ The two are deduped by a small per-unit debounce (`GRACE + 5` s, comfortably abo
 catch the same slotting exactly once) that is still short enough that a genuine later re-slot
 re-shows the card. `trigger.action.outTextForGroup(groupId, card, DURATION, false)` shows the card to
 the pilot's group; `groupId` is read live from `unit:getGroup():getID()`, so only names need
-emitting. Symmetric in code, but effectively BLUE-only (players are blue). pcall-guarded throughout.
+emitting. The **taxi card** (`buildTaxiCard` — the callsign + `Get started up, Contact ground @
+<groundFreq> when ready to taxi`) is scheduled **`DURATION` s later** via `timer.scheduleFunction`,
+re-fetching the group by name at fire time so a pilot who left their seat is skipped. Symmetric in
+code, but effectively BLUE-only (players are blue). pcall-guarded throughout.
 
 **Harness.** The headless Lua harness gained `trigger.action.outTextForGroup`,
 `UnitFake:getGroup()` / `getPlayerName()` (a per-unit `playerName` spec models a human slot), and a
 `Harness.fireBirth(groupName)` helper (Python `fire_birth`). Tests
-`tests/lua/test_briefing_runtime.py` (birth shows one card with every field, the sweep catches a
-seated player, an AI birth / unknown group / absent node show nothing) +
-`tests/missiongenerator/test_briefingluadata.py` (header + one record per player flight, AI-only
-flights excluded, gated off).
+`tests/lua/test_briefing_runtime.py` (birth shows the briefing card with every field, the **taxi
+card flashes `DURATION` s later** with the callsign + `groundFreq`, the freq option overrides it, the
+sweep catches a seated player, an AI birth / unknown group / absent node show nothing) +
+`tests/missiongenerator/test_briefingluadata.py` (header with the raw-turn mission number + one record
+per player flight, AI-only flights excluded, gated off).
 
 Gated `mission_briefing_popup` (Mission Generation → Battlefield life, default **ON**; the plugin's
-own `defaultValue` is also ON). Card duration and the startup grace are plugin options. **Needs an
+own `defaultValue` is also ON). Card duration, the startup grace, and the taxi **ground frequency**
+(`groundFreq`, default "249.50") are plugin options. **Needs an
 in-game pass** (checklist B10): that the card actually appears on slot-in (SP + a server rejoin),
 reads correctly, and clears after its duration.
 

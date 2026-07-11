@@ -61,7 +61,8 @@ def test_birth_shows_one_card_with_all_fields() -> None:
 
     h.fire_birth("Enfield 1-1")
     # Run past the grace so the mission-start sweep also runs; the debounce must keep
-    # it from double-showing the same slotting.
+    # it from double-showing the same slotting. t=5 is before the taxi card (which
+    # flashes at t=DURATION=12), so only the briefing card is up.
     h.advance_to(5)
 
     texts = h.records("texts")
@@ -78,6 +79,49 @@ def test_birth_shows_one_card_with_all_fields() -> None:
         "Kutaisi",
     ):
         assert expected in card["text"], (expected, card["text"])
+    h.assert_no_lua_errors()
+
+
+def test_taxi_card_flashes_after_the_briefing_card() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_player_group("Enfield 1-1", 42))
+    # Short duration so the taxi card (scheduled at t=DURATION) fires quickly.
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=3, startGraceS=99)
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Enfield 1-1")
+    h.advance_to(2)  # only the briefing card so far
+    assert len(h.records("texts")) == 1
+    h.advance_to(4)  # past DURATION=3 -> the taxi card has flashed
+
+    texts = h.records("texts")
+    assert len(texts) == 2
+    briefing, taxi = texts[0], texts[1]
+    assert "Callsign:" in briefing["text"]  # first card is the briefing
+    # The second card: addressed to the callsign, the taxi instruction + the freq.
+    assert taxi["groupId"] == 42
+    assert taxi["duration"] == 3
+    assert "Enfield11" in taxi["text"]
+    assert "Contact ground @ 249.50 when ready to taxi" in taxi["text"]
+    assert "Callsign:" not in taxi["text"]  # it's the taxi card, not the briefing
+    h.assert_no_lua_errors()
+
+
+def test_ground_freq_option_overrides_the_taxi_freq() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_player_group("Enfield 1-1", 42))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=3, startGraceS=99, groundFreq="305.00")
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Enfield 1-1")
+    h.advance_to(4)
+    taxi = h.records("texts")[1]
+    assert "Contact ground @ 305.00 when ready to taxi" in taxi["text"]
+    assert "249.50" not in taxi["text"]
     h.assert_no_lua_errors()
 
 

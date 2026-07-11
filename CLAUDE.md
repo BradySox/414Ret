@@ -1542,7 +1542,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     distinct channels jammed — the Lua keeps the first N of the priority-ordered emit, so a low N pins the
     jamming to the top nets (human flights, then AWACS); paired with a long `burstSec` + short `intervalSec`
     it turns the duty-cycled sweep into near-continuous pressure on a few channels (Red Tide preseeds
-    `burstSec 120 / intervalSec 10 / maxChannels 3 / powerW 10000`). **The intel gate is the default mode** (`comms_jam_requires_capture`,
+    `burstSec 120 / intervalSec 10 / maxChannels 3 / powerW 10000`). **`powerW` is RANGE, not loudness**
+    (2026-07-11): DCS models the RF falloff, so wattage sets how far from the node the interference is
+    *receivable*, not how loud the static is once received — loudness is the audio clip amplitude
+    (`commsjam-noise.wav`, limited to ~-4 dBFS RMS after a played-test "too quiet"; do not chase volume with
+    `powerW`). **The intel gate is the default mode** (`comms_jam_requires_capture`,
     default ON — squadron call 2026-07-06): red can only jam channels it *knows*, learned from a **captured
     aircrew's comms plan** via the §15/§21 Combat SAR capture race — the plugin stays dormant until either a
     live capture (`combat_sar_captures` poll → "AIRCREW CAPTURED" cue → bursts after a `captureReactionS`

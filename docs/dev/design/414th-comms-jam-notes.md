@@ -106,13 +106,25 @@ lever — raise if inaudible at the front, lower if it reaches home plate) · `s
 `MAX_JAMMED_FREQUENCIES` 10 (`commsjamluadata.py`, the *emit* ceiling); the capture-watch
 poll cadence is a plugin constant (`CAPTURE_POLL` 30 s).
 
+**Power is RANGE, not loudness (2026-07-11).** `powerW` is DCS's transmitter wattage — it
+sets *how far from the node* the transmission is receivable (RF falloff), **not** how loud
+the static is once you're receiving it. Cranking it to 10000 W made the jamming reach the
+front but it was still quiet, because loudness comes entirely from the **audio file
+amplitude**. The clip (`commsjam-noise.wav`) was peaky and quiet on average (peak −0.2 dBFS
+but RMS only −12 dBFS); it was **limited to −4 dBFS RMS (~+8 dB / ~2.5× perceived loudness)**
+so it reads as a dense wall of static in the cockpit. So the two levers are orthogonal:
+`powerW` = reach, the `.wav` RMS = loudness. (If it ever needs to be louder still, raise the
+clip's RMS further — do NOT chase it with `powerW`.)
+
 **Continuous-vs-scattered feel.** Two independent axes: *how much* is jammed (`maxChannels`
 caps the total distinct channels — the Lua keeps the first N of the priority-ordered emit,
 so N=3 pins the top three high-priority nets and leaves the rest clean) and *how continuous*
 (`burstSec` up + `intervalSec` down → less duty-cycling; `burstSec` 120 / `intervalSec` 10 ≈
 90 % on-air). `maxFreqsPerBurst` should be ≥ `maxChannels` so every capped channel is stepped
 on each burst rather than round-robined. Red Tide preseeds `burstSec 120 / intervalSec 10 /
-maxChannels 3 / powerW 10000` (100x the 100 W default) — near-continuous, strong, long-ranged pressure on the human flights' + AWACS channels.
+maxChannels 3 / powerW 10000` (`powerW` here buys *reach* to the front, not volume — see the
+power-is-range note above) — near-continuous, long-ranged pressure on the human flights' +
+AWACS channels, at the louder clip's level.
 
 ## Deferred
 

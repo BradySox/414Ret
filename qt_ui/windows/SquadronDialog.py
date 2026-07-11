@@ -64,9 +64,10 @@ class PilotDelegate(TwoColumnRowDelegate):
             return f"{who} - Level: {skill.value}"
         elif (row, column) == (1, 1):
             # Dead pilots have their own list and living pilots are active by
-            # default, so only the "on leave" and captured (POW) states are worth
-            # surfacing here -- a POW is alive but off the roster until recovered.
-            if pilot.on_leave or pilot.captured:
+            # default, so only the "on leave", captured (POW), and evading (MIA)
+            # states are worth surfacing here -- both POW and MIA are alive but
+            # off the roster until recovered.
+            if pilot.on_leave or pilot.captured or pilot.missing:
                 return pilot.status.value
             return ""
         return ""

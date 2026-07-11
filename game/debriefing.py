@@ -155,6 +155,14 @@ class StateData:
     #: that coalition. Empty when the capture race is off or no one was captured.
     combat_sar_captures: list[tuple[str, float, float, str]]
 
+    #: ``(airframe_unit_name, x, y)`` per downed pilot still UN-resolved at mission
+    #: end (down or mid-boarding -- the ``combatsar`` plugin mirrors its live ledger
+    #: into ``combat_sar_survivors``). With ``combat_sar_persistent_pilots`` on,
+    #: ``commit_air_losses`` spares the kill and ``record_downed_pilots`` marks the
+    #: aviator MIA on ``game.downed_pilots`` (they re-spawn next mission and roll
+    #: the depth-weighted turn capture). Empty on pre-feature state files.
+    combat_sar_survivors: list[tuple[str, float, float]]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -262,6 +270,33 @@ class StateData:
             data.get("combat_sar_captures", [])
         )
 
+        def parse_combat_sar_survivors(raw: Any) -> list[tuple[str, float, float]]:
+            # The combatsar ledger mirror carries {unit=<airframe name>, x=, y=,
+            # coalition=} per still-unresolved survivor (or the Lua JSON encoder
+            # yields [] when none, and pre-feature state files omit the key). Pull
+            # (unit, x, y) defensively, skipping malformed entries.
+            if not isinstance(raw, list):
+                return []
+            survivors: list[tuple[str, float, float]] = []
+            for entry in raw:
+                if not isinstance(entry, dict):
+                    continue
+                unit = entry.get("unit")
+                x = entry.get("x")
+                y = entry.get("y")
+                if (
+                    isinstance(unit, str)
+                    and unit
+                    and isinstance(x, (int, float))
+                    and isinstance(y, (int, float))
+                ):
+                    survivors.append((str(unit), float(x), float(y)))
+            return survivors
+
+        combat_sar_survivors = parse_combat_sar_survivors(
+            data.get("combat_sar_survivors", [])
+        )
+
         return cls(
             mission_ended=data.get("mission_ended", False),
             killed_aircraft=killed_aircraft,
@@ -272,6 +307,7 @@ class StateData:
             tars_recon_captures=tars_recon_captures,
             combat_sar_rescues=combat_sar_rescues,
             combat_sar_captures=combat_sar_captures,
+            combat_sar_survivors=combat_sar_survivors,
         )
 
 

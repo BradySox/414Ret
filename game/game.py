@@ -50,6 +50,7 @@ from .weather.conditions import Conditions
 if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
+    from .fourteenth.downed_pilots import DownedPilot
     from .fourteenth.phases import PhaseBaseline
     from .fourteenth.red_intent import (
         FrontPosture,
@@ -191,6 +192,11 @@ class Game:
         # convoy}]}), seeded at finish_turn, read by the emitter + the escort auto-frag.
         # Plain primitives; populated lazily by game.fourteenth.convoy_ambush when on.
         self.convoy_ambush_state: dict[str, Any] = {}
+        # Persistent downed pilots (§21, 2026-07-10): blue aviators still EVADING at
+        # mission end (MIA -- neither rescued nor captured). Each re-spawns at its
+        # position next mission and rolls the depth-weighted capture at every turn
+        # boundary. See game/fourteenth/downed_pilots.py.
+        self.downed_pilots: list["DownedPilot"] = []
         # Per-campaign secret salt for the §3 concealment jitter seed (id XOR salt),
         # so the jittered "suspected activity" centre is deterministic but not
         # recomputable from the public TGO id. Lazily set on first use; persisted.
@@ -286,6 +292,7 @@ class Game:
         state.setdefault("will_escalation_charged_phases", set())
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
+        state.setdefault("downed_pilots", [])
         state.setdefault("concealment_salt", None)
         state.setdefault("war_economy_seeded", False)
         state.setdefault("munitions_seeded", False)
@@ -474,6 +481,15 @@ class Game:
 
         for control_point in self.theater.controlpoints:
             control_point.process_turn(self)
+
+        # Persistent downed pilots (§21, 2026-07-10): an evader on friendly ground
+        # walks home; one behind the lines rolls the depth-weighted capture (deep =
+        # almost certainly found -- the don't-fly-deep incentive). The roll IS the
+        # clock (no expiry); a capture joins the normal held-POW model. Runs after
+        # the coalition end_turns so a fresh POW's hold clock starts next turn.
+        from game.fourteenth.downed_pilots import resolve_downed_pilots
+
+        resolve_downed_pilots(self)
 
         # Vietnam Ops convoy interdiction (§35): ensure the opfor has a *real*, tracked
         # convoy flowing on the trail corridor to interdict (replacing the old phantom

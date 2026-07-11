@@ -435,10 +435,12 @@ class LuaGenerator:
         ledger plugin (resources/plugins/combatsar). Python's job is to (1) tell the
         Lua bridge which generated groups are the player's rescue helos / "King"
         C-130s (with their nav beacons), (2) drop one late-activation infantry group
-        that the runtime clones at each crash site as the downed pilot, and (3) hand
+        that the runtime clones at each crash site as the downed pilot, (3) hand
         over the cold rescue-helo template + an ``autoSpawn`` flag so the runtime
         clones an on-demand AI rescue when a pilot goes down and no player CSAR
-        package is fragged (§21 rework -- replaces the retired standing orbit).
+        package is fragged (§21 rework -- replaces the retired standing orbit), and
+        (4) hand back the persistent-evader ledger (``game.downed_pilots``) so a
+        pilot still MIA from an earlier mission re-spawns at his last position.
 
         BLUE ONLY (squadron call 2026-07-01): the plugin's survivor ledger is
         coalition-generic and would run red the day a ``red`` node is emitted, but
@@ -473,11 +475,12 @@ class LuaGenerator:
             and not player_package
             and templates is not None
         )
-        # No rescue capability this mission: no player package to run the ledger for,
-        # and nothing to auto-spawn. Skip the node (and the pilot template) entirely.
-        if not player_package and not auto_spawn:
-            return
-
+        # The node is ALWAYS emitted (2026-07-10 squadron call), even with no rescue
+        # capability at all: the survivor ledger + the enemy snatch race run off the
+        # downed pilot, not off a helo -- a pilot nobody can come for is MORE
+        # capturable, not immune (the old early-return here silently killed the
+        # capture race, the POW/comms-jam chain, and the persistent-evader ledger
+        # whenever auto-CSAR was off and no rescue helo was fragged).
         template = self._generate_combat_sar_pilot_template(self.game.blue)
         if template is None:
             return
@@ -532,6 +535,21 @@ class LuaGenerator:
         node.add_item("rescueHelos").set_data_array(
             [flight.group_name for flight in rescue_flights]
         )
+
+        # Persistent evaders (2026-07-10): pilots downed on an earlier mission and
+        # still MIA (game.downed_pilots) re-spawn at their last known position --
+        # fresh red smoke, a fresh snatch race, and the normal rescue paths. The
+        # ledger only fills while combat_sar_persistent_pilots is on, but an
+        # existing entry is always emitted (an evader is never stranded by a
+        # mid-campaign toggle). getattr: pre-feature saves lack the field.
+        downed = list(getattr(self.game, "downed_pilots", None) or [])
+        if downed:
+            evaders = node.add_item("persistentSurvivors")
+            for dp in downed:
+                item = evaders.add_item()
+                item.add_key_value("name", dp.unit_name)
+                item.add_key_value("x", str(dp.x))
+                item.add_key_value("y", str(dp.y))
 
         # On-demand AI rescue sources, preference order: a real parked ramp helo
         # (tracked) then the cold clone template (fallback). Delivered to the field

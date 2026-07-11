@@ -161,14 +161,21 @@ def test_red_flights_are_ignored_and_no_red_node_is_emitted() -> None:
     assert combat_sar.get_item("red") is None
 
 
-def test_red_only_flights_emit_no_combat_sar_at_all() -> None:
+def test_red_only_flights_still_emit_the_blue_node() -> None:
+    # Red flights are ignored, but the BLUE node is emitted regardless (2026-07-10:
+    # the ledger runs off the downed pilot, not off a rescue asset) -- with empty
+    # buckets and no autoSpawn, so the plugin runs the capture race only.
     flights = [_fd("RedJolly-1", FlightType.COMBAT_SAR, is_blue=False, helo=True)]
     gen = _generator(flights)
     lua_data = LuaData("dcsRetribution")
 
     gen._generate_combat_sar(lua_data)
 
-    assert lua_data.get_item("CombatSAR") is None
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _string_list(node.get_item("rescueHelos")) == []
+    assert _scalar(node.get_item("autoSpawn")) == "false"
+    assert node.get_item("red") is None
 
 
 def test_autospawn_arms_the_cold_template_with_no_player_package() -> None:
@@ -244,24 +251,35 @@ def test_player_package_suppresses_autospawn_and_arms_no_clone() -> None:
     assert _string_list(node.get_item("rescueHelos")) == ["Jolly-1"]
 
 
-def test_no_node_when_auto_off_and_no_player_package() -> None:
+def test_node_emitted_even_with_auto_off_and_no_player_package() -> None:
+    # 2026-07-10 squadron call: no rescue capability does NOT skip the node -- the
+    # snatch race must still run (a pilot nobody can come for is MORE capturable).
+    # The flown 2026-07-10 test caught exactly this: auto-CSAR off + a Sandy-only
+    # package -> no snatch AI, no capture, the comms-jam gate never armed.
     gen = _generator([], auto_combat_sar=False, combat_sar_templates=_templates())
     lua_data = LuaData("dcsRetribution")
 
     gen._generate_combat_sar(lua_data)
 
-    assert lua_data.get_item("CombatSAR") is None  # no rescue capability -> no node
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _scalar(node.get_item("autoSpawn")) == "false"
+    assert node.get_item("heloTemplate") is None  # auto off -> no clone armed
+    assert _string_list(node.get_item("rescueHelos")) == []
 
 
-def test_no_node_when_auto_on_but_no_template_and_no_player_package() -> None:
+def test_node_emitted_when_auto_on_but_no_template_and_no_player_package() -> None:
     # auto_combat_sar on but the coalition owns no CSAR-capable helo (no template)
-    # and nothing was fragged -> nothing to do.
+    # and nothing was fragged -> no auto-spawn, but the ledger/capture race still runs.
     gen = _generator([], auto_combat_sar=True, combat_sar_templates=None)
     lua_data = LuaData("dcsRetribution")
 
     gen._generate_combat_sar(lua_data)
 
-    assert lua_data.get_item("CombatSAR") is None
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _scalar(node.get_item("autoSpawn")) == "false"
+    assert node.get_item("heloTemplate") is None
 
 
 def test_test_flags_absent_by_default() -> None:
@@ -303,6 +321,39 @@ def test_easy_rescue_flag_emitted_when_on() -> None:
     assert node is not None
     assert _scalar(node.get_item("testEasyRescue")) == "true"
     assert node.get_item("testForceCapture") is None
+
+
+def test_persistent_survivors_emitted_from_the_downed_pilot_ledger() -> None:
+    # Persistent evaders (2026-07-10): game.downed_pilots entries reach the node as
+    # persistentSurvivors {name, x, y} so the plugin re-spawns them at mission start.
+    from game.fourteenth.downed_pilots import DownedPilot
+
+    gen = _generator([])
+    gen.game.downed_pilots = [
+        DownedPilot(unit_name="Enfield 1-1 | F-14B", x=1000.0, y=-2000.0),
+    ]
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    evaders = node.get_item("persistentSurvivors")
+    assert isinstance(evaders, LuaData)
+    assert len(evaders.objects) == 1
+    values = {v.key: v.value for v in _key_values(evaders.objects[0])}
+    assert values == {"name": "Enfield 1-1 | F-14B", "x": "1000.0", "y": "-2000.0"}
+
+
+def test_no_persistent_survivors_item_with_an_empty_ledger() -> None:
+    gen = _generator([])  # fake game has no downed_pilots attr at all (old save)
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert node.get_item("persistentSurvivors") is None
 
 
 def _faction_with_infantry(ids: list[str]) -> Any:

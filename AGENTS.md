@@ -801,7 +801,25 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **capture → POW**, unlocking the §51 capture-gated comms jam; the reliable way to exercise G28 + S4)
     and `combat_sar_test_easy_rescue` (`testEasyRescue`: capture off + forgiving pickup/delivery; exercises
     G10 King / G23 Sandy / the pickup loop). The plugin applies them after the normal options (force-capture
-    wins if both set); OFF ⇒ node unchanged. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field
+    wins if both set); OFF ⇒ node unchanged. **Persistent evaders + the always-run snatch (2026-07-10,
+    squadron call — the flown jamming test found "no rescue asset ⇒ the plugin skips entirely", which
+    silently killed the snatch race + the capture→POW→§51 chain + even the emitted force-capture flag):**
+    the blue node is now **always emitted** (the player-package/auto-spawn early-return is gone) and the
+    plugin's ledger runs with **zero rescue capability** (`canRescue` only shapes the MAYDAY — "no rescue
+    assets available. Protect the survivor!"); a pilot nobody can come for is MORE capturable, not immune.
+    An un-rescued, un-captured survivor goes **MIA** instead of dying (`combat_sar_persistent_pilots`,
+    default ON): the plugin mirrors unresolved survivors into the new `combat_sar_survivors` state global
+    → `record_downed_pilots` (`game/fourteenth/downed_pilots.py`) flips the aviator to the new
+    `PilotStatus.MIA` + banks them on `game.downed_pilots` → next mission the emitter hands the ledger
+    back (`persistentSurvivors`) and the plugin re-spawns each evader at his last position (fresh smoke,
+    "EVADER" cue, fresh 50% snatch race, normal rescue paths). At every turn boundary
+    (`resolve_downed_pilots` from `finish_turn`) an evader on friendly ground **walks home**; behind the
+    lines he rolls a **depth-weighted capture** — 10% within 5 NM of the front, linearly to **90% at
+    40 NM+** (the *don't-fly-deep* incentive; a hit is the normal POW chain, with the ledger resolving
+    the pilot in `record_pow_captures`). **Deliberately no death clock** — the roll is the clock.
+    Surfaced on the SITREP band ("MIA: … — evading near … (N turns down)") + the squadron roster; the
+    gate covers only *creation* of MIA entries so a mid-campaign toggle never strands an evader.
+    Checklist G29. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field
     spares the aviator at debrief (airframe still lost) — the plugin's `OnAfterBoarded`/`OnAfterRescued`
     hooks append the ejected unit name to `combat_sar_rescues`, and `commit_air_losses` skips that
     pilot's kill (fail-safe: empty list = pre-scoring behaviour). **v2 (deferred):** on-demand Sandy +
@@ -811,6 +829,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     + OPSTRANSPORT) is the fly-critical unknown; it degrades to the proven clone if it misbehaves.
     Distinct from the shelved POW-recovery raid (§15). (`game/ato/flighttype.py`, `game/missiongenerator/aircraft/aircraftgenerator.py`,
     `game/missiongenerator/luagenerator.py`, `game/sim/missionresultsprocessor.py`,
+    `game/fourteenth/downed_pilots.py`, `game/squadrons/pilot.py`,
     `resources/plugins/combatsar/`; features doc §21, design doc `414th-csar-notes.md`.)
 22. **Kneeboard space-utilisation + custom import** — sparse kneeboard pages (Combat SAR,
     Support, Mission Info) restyled to fill the page with a *light* heading + underline-rule +

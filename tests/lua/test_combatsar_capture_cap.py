@@ -68,7 +68,9 @@ def _run_plugin(
         rt,
         {
             # No pilotTemplate -> addConfig early-returns, #configs == 0, chunk returns
-            # before any MOOSE wiring. The cap has already run by then.
+            # before any MOOSE wiring. The cap has already run by then. (Since the
+            # 2026-07-10 always-run rework, the pilot template is the ONLY config
+            # precondition -- rescue capability no longer gates the ledger.)
             "CombatSAR": {},
             "plugins": {"combatsar": combatsar},
         },
@@ -86,8 +88,8 @@ def test_cranked_capture_party_is_clamped() -> None:
     # MAX_PARTY_SIZE = 12, MAX_TEAMS = 4; the message echoes the requested values.
     assert "12 infantry" in msg and "4 teams" in msg, msg
     assert "requested 40/4" in msg, msg
-    # The chunk ran through to the no-rescue-helos early return (the cap sits before it).
-    assert any("no rescue helos" in i for i in infos), infos
+    # The chunk ran through to the no-config early return (the cap sits before it).
+    assert any("no coalition config" in i for i in infos), infos
 
 
 def test_default_capture_party_is_not_clamped() -> None:

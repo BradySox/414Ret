@@ -261,7 +261,9 @@ class TestAirbaseHarassment:
         # Impacts scatter over the ramp: within the 850 ft dispersion radius.
         for impact in barrage:
             assert math.hypot(impact["x"], impact["z"]) <= 850 * FT_TO_M + 1
-        assert any("Incoming" in t["text"] for t in harness.records("texts"))
+        # The per-barrage text popup is opt-in (harassAnnounce); the default is quiet --
+        # the barrage explosions ARE the cue, so no "Incoming" spam by default.
+        assert not any("Incoming" in t["text"] for t in harness.records("texts"))
         harness.assert_no_lua_errors()
 
     def test_excluded_player_field_is_never_shelled(

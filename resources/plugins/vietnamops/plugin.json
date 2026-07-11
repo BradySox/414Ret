@@ -101,6 +101,11 @@
             "defaultValue": 300
         },
         {
+            "nameInUI": "Airbase harassment: announce each barrage with a text popup (off by default -- the explosions are the cue)",
+            "mnemonic": "harassAnnounce",
+            "defaultValue": false
+        },
+        {
             "nameInUI": "Super Gaggle: transit speed (kts)",
             "mnemonic": "gaggleSpeedKts",
             "defaultValue": 110

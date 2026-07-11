@@ -535,13 +535,8 @@ squadrons:
       aircraft_type: Mi-8MTV2 Hip
       size: 4
   #Kastrup / Copenhagen — Soviet airborne + naval seizure; a Backfire base parked across the Straits.
+  #  (Its MiG-29 regiment moved up to Haina on the Fulda front -- see 161 below.)
   41:
-    - primary: BARCAP
-      secondary: any
-      aircraft:
-        - Baltic Fleet Fighter Aviation
-      aircraft_type: MiG-29A Fulcrum-A
-      size: 12
     - primary: Anti-ship
       # No `secondary: any` (2026-07-10): confine the Backfires to their own primary so
       # the auto-planner stops fragging them for STRIKE-as-secondary + BARCAP filler --
@@ -563,14 +558,10 @@ squadrons:
         - 339th Military Transport Aviation Regiment
       aircraft_type: An-26B
       size: 4
-  #H FRG 20
-  #143:
-  #H FRG 09
-  #61:
-  #H FRG 12
-  #64:
-  #Haina — the western spearhead, the closest red field to the Fulda front.
-  161:
+  #H FRG 20 — forward red rotary FOB behind the Haina spearhead. Flipped RED in the .miz
+  #  (airport dynamicSpawn off, coalition RED) so it can base the Mi-24/Mi-8 detachments pushed
+  #  off Haina -- which frees Haina's ramp for a modern MiG-29 regiment right on the Fulda front.
+  143:
     - primary: Escort
       secondary: any
       aircraft:
@@ -583,6 +574,21 @@ squadrons:
         - 239th Independent Helicopter Regiment
       aircraft_type: Mi-8MTV2 Hip
       size: 4
+  #H FRG 09
+  #61:
+  #H FRG 12
+  #64:
+  #Haina — the western spearhead, the closest red field to the Fulda front. A modern MiG-29
+  #  regiment (moved up from Kastrup) now sits on the front alongside the MiG-23/MiG-27 -- flown
+  #  BARCAP/air-to-air (defensive) so it contests the Fulda/Haina front instead of dying on an
+  #  offensive escort. The Mi-24/Mi-8 helo detachments moved back to H FRG 20 for ramp room.
+  161:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - Baltic Fleet Fighter Aviation
+      aircraft_type: MiG-29A Fulcrum-A
+      size: 12
     - primary: Armed Recon
       secondary: air-to-ground
       aircraft:

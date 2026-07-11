@@ -77,12 +77,28 @@ class QTopPanel(QFrame):
         self.transfers.setProperty("style", "btn-primary")
         self.transfers.clicked.connect(self.open_transfers)
 
+        # Re-plan ONLY the enemy (RED) air tasking for the current turn, keeping the
+        # player's (BLUE) hand-built frag untouched -- the coalition-selective form of
+        # initialize_turn (the same path the engine uses on a red TGO buy/sell). Handy
+        # after editing the enemy laydown so RED retasks onto it without discarding
+        # your packages (unlike the conditions dialog's "Re-roll turn", which wipes
+        # both sides).
+        self.reroll_red_button = QPushButton("Re-roll RED")
+        self.reroll_red_button.setDisabled(True)
+        self.reroll_red_button.setProperty("style", "btn-primary")
+        self.reroll_red_button.setToolTip(
+            "Discard and re-plan the RED (enemy) air tasking for this turn while "
+            "keeping your BLUE frag untouched. Does not change the clock or weather."
+        )
+        self.reroll_red_button.clicked.connect(self.reroll_red)
+
         self.intel_box = QIntelBox(self.game)
 
         self.buttonBox = QGroupBox("Misc")
         self.buttonBoxLayout = QHBoxLayout()
         self.buttonBoxLayout.addWidget(self.air_wing)
         self.buttonBoxLayout.addWidget(self.transfers)
+        self.buttonBoxLayout.addWidget(self.reroll_red_button)
         self.buttonBox.setLayout(self.buttonBoxLayout)
 
         self.simSpeedControls = SimSpeedControls(sim_controller)
@@ -99,6 +115,7 @@ class QTopPanel(QFrame):
         self.controls = [
             self.air_wing,
             self.transfers,
+            self.reroll_red_button,
             self.simSpeedControls,
             self.passTurnButton,
             self.proceedButton,
@@ -153,6 +170,8 @@ class QTopPanel(QFrame):
             self.passTurnButton.setText("Begin Campaign")
             self.proceedButton.setEnabled(False)
             self.simSpeedControls.setEnabled(False)
+            # No turn to re-plan before the campaign starts.
+            self.reroll_red_button.setEnabled(False)
             # In a blank-canvas setup game the turn-0 button doubles as the
             # prominent Finalize trigger: passTurn() routes to the window's
             # finalizeCampaign instead of advancing the turn (which would run a
@@ -169,6 +188,44 @@ class QTopPanel(QFrame):
     def open_transfers(self):
         self.dialog = PendingTransfersDialog(self.game_model)
         self.dialog.show()
+
+    def reroll_red(self):
+        """Re-plan RED's ATO for the current turn, keeping BLUE's frag untouched.
+
+        Uses the coalition-selective ``Game.initialize_turn(for_red=True,
+        for_blue=False)`` -- the same path the engine takes on a red TGO buy/sell -- so
+        the player's hand-built BLUE packages, rosters, loadouts and TOTs are left
+        exactly as they were while RED replans against the current laydown. The clock
+        and weather are not touched.
+        """
+        from game.server import EventStream
+        from game.sim.gameupdateevents import GameUpdateEvents
+
+        game = self.game
+        if game is None or game.blank_canvas_setup or game.turn <= 0:
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            "Re-roll RED plan?",
+            (
+                "This discards RED's current flight plans and re-plans them for the "
+                "current laydown.<br /><br />"
+                "Your BLUE frag is kept untouched. Continue?"
+            ),
+            QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        with logged_duration("Re-rolling RED plan"):
+            events = GameUpdateEvents()
+            game.initialize_turn(events, for_red=True, for_blue=False)
+            EventStream.put_nowait(events)
+            GameUpdateSignal.get_instance().updateGame(game)
+            state = game.check_win_loss()
+            GameUpdateSignal.get_instance().gameStateChanged(state)
 
     def passTurn(self):
         # In blank-canvas setup mode this button is the Finalize trigger, not a

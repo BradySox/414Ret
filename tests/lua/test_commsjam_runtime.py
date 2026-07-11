@@ -109,6 +109,27 @@ def test_bursts_after_grace_then_stops_and_rotates_channels() -> None:
     h.assert_no_lua_errors()
 
 
+def test_max_channels_caps_to_the_top_priority_channels() -> None:
+    # maxChannels concentrates the jamming: with a cap of 1, only the FIRST
+    # (highest-priority) briefed channel is ever stepped on -- the window can't
+    # rotate onto the others because they're truncated away. The generator emits
+    # the list human-flights-then-AWACS-first, so "first" == "most important".
+    import copy
+
+    h = DcsPluginHarness()
+    cfg = _config([_jammer()])
+    cfg["plugins"] = copy.deepcopy(cfg["plugins"])
+    cfg["plugins"]["commsjam"]["maxChannels"] = 1
+    h.lua.globals().dcsRetribution = h.to_lua(cfg)
+    h.load_plugin_script(PLUGIN)
+
+    # Run well past several rotation cycles (grace 10, burst 5, interval ~20).
+    h.advance_to(400)
+    jammed = {t["hz"] for t in _tx(h)}
+    assert jammed == {251.0e6}, jammed  # 254.5 and 30.0 stay clean
+    h.assert_no_lua_errors()
+
+
 def test_dead_jammer_never_transmits() -> None:
     h = DcsPluginHarness()
     h.lua.globals().dcsRetribution = h.to_lua(_config([_jammer()]))

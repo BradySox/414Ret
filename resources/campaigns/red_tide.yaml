@@ -328,6 +328,14 @@ settings:
     convoyambush: true
     commsjam: true
     mobilemissiles: true
+    # §51 comms-jam feel: near-continuous pressure on a few high-priority channels
+    # rather than short duty-cycled bursts scattered across many. 120 s of static with
+    # a ~10 s gap (~90% on-air); maxChannels 3 caps it to the top-priority nets (the
+    # human flights' intra-flight channels, then AWACS -- picked in that order by the
+    # generator). Tunable per-mission in the Comms jamming plugin options.
+    commsjam.burstSec: 120
+    commsjam.intervalSec: 10
+    commsjam.maxChannels: 3
 squadrons:
   #Ramstein — rear heavy-iron + the eyes: the B-52s, the 414th Strike Eagles, and the E-3A.
   165:

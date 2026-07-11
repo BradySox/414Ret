@@ -38,6 +38,7 @@ local data = dcsRetribution.commsJam
 local BURST_SEC = 25 -- s: noise transmission length per jammed channel
 local INTERVAL_SEC = 90 -- s: mean pause between burst cycles (jittered)
 local MAX_FREQS = 3 -- channels stepped on per burst cycle
+local MAX_CHANNELS = 10 -- cap on the total distinct channels jammed at all (top-priority first)
 local POWER_W = 100 -- transmitter power (DCS models the falloff)
 local GRACE = 240 -- s before the first burst
 local CAPTURE_REACTION = 120 -- s from a live capture to the first burst (exploitation delay)
@@ -48,6 +49,7 @@ if dcsRetribution.plugins and dcsRetribution.plugins.commsjam then
     BURST_SEC = tonumber(o.burstSec) or BURST_SEC
     INTERVAL_SEC = tonumber(o.intervalSec) or INTERVAL_SEC
     MAX_FREQS = tonumber(o.maxFreqsPerBurst) or MAX_FREQS
+    MAX_CHANNELS = tonumber(o.maxChannels) or MAX_CHANNELS
     POWER_W = tonumber(o.powerW) or POWER_W
     GRACE = tonumber(o.startGraceS) or GRACE
     CAPTURE_REACTION = tonumber(o.captureReactionS) or CAPTURE_REACTION
@@ -114,6 +116,17 @@ if type(data.freqs) == "table" then
         if mhz > 0 then
             freqs[#freqs + 1] = { hz = mhz * 1000000, mod = (f.mod == "FM") and 1 or 0, mhz = mhz }
         end
+    end
+end
+
+-- Concentrate on the top-priority channels. The generator emits them priority-ordered
+-- (human-crewed flights first, then AWACS, then AI flights), so keeping the FIRST
+-- MAX_CHANNELS jams the ones that matter and leaves the rest of the net clean. A lower
+-- MAX_CHANNELS + a longer burst / shorter pause = continuous pressure on a few channels
+-- instead of duty-cycled coverage of many.
+if MAX_CHANNELS >= 1 then
+    while #freqs > MAX_CHANNELS do
+        freqs[#freqs] = nil
     end
 end
 

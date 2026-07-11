@@ -16,6 +16,13 @@
             "maximumValue": 3600
         },
         {
+            "nameInUI": "Max channels jammed at all: caps the total distinct briefed freqs stepped on, highest-priority first (human flights, then AWACS). 10 = every briefed channel.",
+            "mnemonic": "maxChannels",
+            "defaultValue": 10,
+            "minimumValue": 1,
+            "maximumValue": 10
+        },
+        {
             "nameInUI": "Channels stepped on per burst cycle",
             "mnemonic": "maxFreqsPerBurst",
             "defaultValue": 3,

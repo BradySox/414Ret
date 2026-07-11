@@ -537,7 +537,20 @@ class QSettingsWindow(QDialog):
         self.setModal(True)
         self.setWindowTitle("Settings")
         self.setWindowIcon(CONST.ICONS["Settings"])
-        self.setMinimumSize(840, 480)
+        # Open large by default. The stock 840x480 minimum left the settings pages -- the
+        # LUA Plugins Options page especially -- clipped behind a horizontal scrollbar, with
+        # the option labels' input controls pushed off the right edge. Give it room, but
+        # clamp the initial size to the available screen so it never opens off-display.
+        self.setMinimumSize(1000, 620)
+        screen = self.screen()
+        if screen is not None:
+            available = screen.availableGeometry()
+            self.resize(
+                min(1440, available.width() - 60),
+                min(900, available.height() - 60),
+            )
+        else:
+            self.resize(1440, 900)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self._propagate_qra_reserve_changes()

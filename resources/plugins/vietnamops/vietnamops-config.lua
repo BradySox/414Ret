@@ -533,6 +533,9 @@ if suite.airbaseHarassment and suite.airbaseHarassment.fields then
     local DISPERSION = 850 * FT_TO_M  -- m, radius the impacts scatter over the ramp (option in ft)
     local BLAST = 8             -- per-impact power (small -- mostly noise/smoke)
     local GRACE = 300           -- s, hard no-fire window at mission start (alignment)
+    -- Default QUIET: the barrage explosions ARE the cue. A text popup on every tick is
+    -- spam, so the per-barrage announcement is opt-in (harassAnnounce = true).
+    local ANNOUNCE = false
     if dcsRetribution.plugins and dcsRetribution.plugins.vietnamops then
         local o = dcsRetribution.plugins.vietnamops
         INTERVAL = tonumber(o.harassIntervalS) or INTERVAL
@@ -540,6 +543,7 @@ if suite.airbaseHarassment and suite.airbaseHarassment.fields then
         DISPERSION = (tonumber(o.harassDispersionFt) or 850) * FT_TO_M
         BLAST = tonumber(o.harassBlastPower) or BLAST
         GRACE = tonumber(o.harassGraceS) or GRACE
+        ANNOUNCE = (o.harassAnnounce == true or o.harassAnnounce == "true")
     end
 
     local STEP_TIME = 0.4       -- s between the impacts of one barrage (walking effect)
@@ -589,12 +593,14 @@ if suite.airbaseHarassment and suite.airbaseHarassment.fields then
         local function tick()
             local ok, err = pcall(function()
                 dropBarrage(cx, cz)
-                pcall(
-                    trigger.action.outTextForCoalition,
-                    side,
-                    "Incoming -- standoff fire on " .. (name or "the field") .. ".",
-                    15
-                )
+                if ANNOUNCE then
+                    pcall(
+                        trigger.action.outTextForCoalition,
+                        side,
+                        "Incoming -- standoff fire on " .. (name or "the field") .. ".",
+                        15
+                    )
+                end
             end)
             if not ok then
                 env.warning("vietnamops: harassment tick error (continuing): " .. tostring(err))

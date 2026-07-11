@@ -362,38 +362,26 @@ squadrons:
         - 20th Bomb Squadron
       aircraft_type: B-52H Stratofortress
       size: 4
-    - primary: BAI
-      secondary: air-to-ground
-      aircraft:
-        - 414th Tactical Fighter Squadron
-      aircraft_type: F-15E Strike Eagle (Suite 4+)
-      callsign: Phantom
-      size: 12
     - primary: AEW&C
       aircraft:
         - NATO E-3A Component
       aircraft_type: E-3A
       callsign: Magic
       size: 2
-  #Spangdahlem — the CAS field: Hogs. (Huey/Cobra rotary detachment forward-based at Fulda.)
-  162:
-    - primary: CAS
-      secondary: any
+    - primary: Refueling
       aircraft:
-        - 81st Tactical Fighter Squadron
-      aircraft_type: A-10C Thunderbolt II (Suite 3)
-      callsign: Bulldog
-      size: 8
-  #Hahn
-  155:
-    - primary: Escort
-      secondary: air-to-air
+        - 126th Air Refueling Squadron
+      aircraft_type: KC-135 Stratotanker
+      size: 2
+    - primary: Refueling
       aircraft:
-        - Ala 14
-      aircraft_type: Mirage-F1EE
-      callsign: Dagger
-      size: 6
-  #Frankfurt — the main fighter base: the 414th Vipers/Hornets, the fighter cover, and the support wing.
+        - 340th Expeditionary Air Refueling Squadron
+      aircraft_type: KC-135 Stratotanker MPRS
+      size: 2
+  #Frankfurt — the wing: ALL player fixed-wing operate from here (Vipers/Hornets/Eagles/Tomcats/
+  #  Phantoms + the A-10 Hogs + the Strike Eagles + the Mirage + the C-130). Heavies (B-52 / KC-135
+  #  tankers / E-3A) sit back at Ramstein; the helos are forward at Fulda. Spangdahlem + Hahn are
+  #  now quiet rear fields (no home squadron).
   163:
     - primary: DEAD
       secondary: any
@@ -428,16 +416,27 @@ squadrons:
       aircraft:
         - GAF JG 74
       size: 8
-    - primary: Refueling
+    - primary: CAS
+      secondary: any
       aircraft:
-        - 126th Air Refueling Squadron
-      aircraft_type: KC-135 Stratotanker
-      size: 2
-    - primary: Refueling
+        - 81st Tactical Fighter Squadron
+      aircraft_type: A-10C Thunderbolt II (Suite 3)
+      callsign: Bulldog
+      size: 8
+    - primary: BAI
+      secondary: air-to-ground
       aircraft:
-        - 340th Expeditionary Air Refueling Squadron
-      aircraft_type: KC-135 Stratotanker MPRS
-      size: 2
+        - 414th Tactical Fighter Squadron
+      aircraft_type: F-15E Strike Eagle (Suite 4+)
+      callsign: Phantom
+      size: 12
+    - primary: Escort
+      secondary: air-to-air
+      aircraft:
+        - Ala 14
+      aircraft_type: Mirage-F1EE
+      callsign: Dagger
+      size: 6
     - primary: Transport
       secondary: any
       aircraft:

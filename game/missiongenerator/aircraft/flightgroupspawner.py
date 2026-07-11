@@ -29,7 +29,6 @@ from dcs.unitgroup import (
 )
 
 from game.ato import Flight
-from game.ato.flight import ROLE_CALLSIGNS
 from game.ato.flightstate import InFlight
 from game.ato.starttype import StartType
 from game.ato.traveltime import GroundSpeed
@@ -121,37 +120,47 @@ class FlightGroupSpawner:
         return grp
 
     def _register_custom_callsign(self) -> None:
-        """A 414th role callsign (King/Jolly/Sandy/Toxic) is not a stock DCS
-        callsign, so register the flight's chosen name into the spawn country's
-        callsign pool before pydcs assigns it -- pydcs ValueErrors on a callsign
-        not in that pool (dcs ``mission._assign_callsign``). Idempotent; a no-op
-        for stock callsigns and for a category with no callsign pool."""
+        """Register a non-stock callsign into the spawn country's pool before pydcs
+        assigns it -- pydcs ValueErrors on a callsign not in that pool (dcs
+        ``mission._assign_callsign``). Covers both the 414th role callsigns
+        (King/Jolly/Sandy/Toxic) and a squadron's custom event callsign (e.g.
+        "Voodoo"); a stock pool callsign is already present, so this no-ops for it.
+        Records that WE injected the name so :meth:`_deregister_custom_callsign`
+        only ever pulls back a name we added, never a stock one. Idempotent; a
+        no-op for a category with no callsign pool."""
         callsign = self.flight.callsign
-        if callsign is None or callsign.name not in ROLE_CALLSIGNS:
+        if callsign is None or callsign.name is None:
             return
+        name = callsign.name
         category = self.flight.unit_type.dcs_unit_type.category
         category = "Air" if category == "Interceptor" else category
         pool = self.country.callsign.get(category)
-        if pool is not None and callsign.name not in pool:
-            pool.append(callsign.name)
+        if pool is not None and name not in pool:
+            pool.append(name)
+            self._injected_custom_callsign = True
 
     def _deregister_custom_callsign(self) -> None:
-        """Undo :meth:`_register_custom_callsign`: remove the 414th role callsign
-        from the spawn country's shared pool once pydcs has assigned it to this
-        group. The group's own callsign is already written into each unit's
-        ``callsign_dict`` by ``_assign_callsign``, so pulling the name out of the
-        pool afterward leaves this flight untouched -- it only stops pydcs's
+        """Undo :meth:`_register_custom_callsign`: pull the injected callsign back
+        out of the country's shared pool once pydcs has stamped it onto this group.
+        The group's own callsign is already written into each unit's
+        ``callsign_dict`` by ``_assign_callsign``, so removing the name afterward
+        leaves this flight untouched -- it only stops pydcs's
         ``next_callsign_category`` (a ``random.choice`` over the pool) from handing
-        the role name to other auto-named flights of the same country/category.
-        Idempotent; a no-op for stock callsigns and for a category with no pool."""
-        callsign = self.flight.callsign
-        if callsign is None or callsign.name not in ROLE_CALLSIGNS:
+        the name to other auto-named flights of the same country/category (the
+        reported "callsign applied to all aircraft" bug). Only removes a name we
+        injected, so a stock callsign is never touched."""
+        if not getattr(self, "_injected_custom_callsign", False):
             return
+        callsign = self.flight.callsign
+        if callsign is None or callsign.name is None:
+            return
+        name = callsign.name
         category = self.flight.unit_type.dcs_unit_type.category
         category = "Air" if category == "Interceptor" else category
         pool = self.country.callsign.get(category)
-        if pool is not None and callsign.name in pool:
-            pool.remove(callsign.name)
+        if pool is not None and name in pool:
+            pool.remove(name)
+        self._injected_custom_callsign = False
 
     def create_idle_aircraft(self) -> Optional[FlyingGroup[Any]]:
         group = None

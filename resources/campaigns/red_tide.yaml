@@ -360,11 +360,13 @@ squadrons:
       aircraft:
         - 414th Tactical Fighter Squadron
       aircraft_type: F-15E Strike Eagle (Suite 4+)
+      callsign: Phantom
       size: 12
     - primary: AEW&C
       aircraft:
         - NATO E-3A Component
       aircraft_type: E-3A
+      callsign: Magic
       size: 2
   #Spangdahlem — the CAS field: Hogs. (Huey/Cobra rotary detachment forward-based at Fulda.)
   162:
@@ -373,6 +375,7 @@ squadrons:
       aircraft:
         - 81st Tactical Fighter Squadron
       aircraft_type: A-10C Thunderbolt II (Suite 3)
+      callsign: Bulldog
       size: 8
   #Hahn
   155:
@@ -381,6 +384,7 @@ squadrons:
       aircraft:
         - Ala 14
       aircraft_type: Mirage-F1EE
+      callsign: Dagger
       size: 6
   #Frankfurt — the main fighter base: the 414th Vipers/Hornets, the fighter cover, and the support wing.
   163:
@@ -389,24 +393,28 @@ squadrons:
       aircraft:
         - 414th Voodoo Squadron
       aircraft_type: F-16CM Fighting Falcon (Block 50)
+      callsign: Voodoo
       size: 12
     - primary: SEAD
       secondary: any
       aircraft:
         - 414th JFG Hornets
       aircraft_type: F/A-18C Hornet (Lot 20)
+      callsign: Wizards
       size: 12
     - primary: TARCAP
       secondary: air-to-air
       aircraft:
         - 493rd Fighter Squadron
       aircraft_type: F-15C Eagle
+      callsign: Phantom
       size: 6
     - primary: Escort
       secondary: air-to-air
       aircraft:
         - VMF-29
       aircraft_type: F-14B Tomcat
+      callsign: Demon Dogs
       size: 8
     - primary: TARCAP
       secondary: any
@@ -428,6 +436,7 @@ squadrons:
       aircraft:
         - 910th Airlift Wing
       aircraft_type: C-130J-30
+      callsign: Toxic
       size: 2
   #Fulda — neutral Gap airfield flipped BLUE; the forward rotary hub holding the Fulda Gap,
   #  facing Haina. Now bases ALL of NATO's helicopters (Apache/Kiowa/Huey/Cobra/Chinook) —
@@ -438,12 +447,14 @@ squadrons:
       aircraft:
         - 1-1 Attack Reconnaissance Battalion
       aircraft_type: AH-64D Apache Longbow
+      callsign: HONCO
       size: 4
     - primary: Armed Recon
       secondary: air-to-ground
       aircraft:
         - 1-6 Cavalry
       aircraft_type: OH-58D(R) Kiowa Warrior
+      callsign: HONCO
       size: 4
     - primary: Air Assault
       secondary: any
@@ -463,12 +474,14 @@ squadrons:
       aircraft:
         - 12th Combat Aviation Brigade
       aircraft_type: AH-64D Apache Longbow
+      callsign: HONCO
       size: 4
     - primary: Escort
       secondary: any
       aircraft:
         - 1-17 Cavalry
       aircraft_type: OH-58D(R) Kiowa Warrior
+      callsign: HONCO
       size: 4
     # Rotary detachment pushed forward from Spangdahlem (162):
     - primary: Air Assault

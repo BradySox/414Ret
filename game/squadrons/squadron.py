@@ -99,9 +99,16 @@ class Squadron:
     #: game/squadrons/intercept_reserve.py:qra_player_client_slots.
     qra_player_ai_wingman: bool = False
 
+    #: Optional custom radio callsign (e.g. "Voodoo") inherited from the squadron
+    #: definition. When set, this squadron's flights default to it (see
+    #: Flight.__init__) instead of a random DCS-pool callsign.
+    callsign: Optional[str] = None
+
     def __setstate__(self, state: dict[str, Any]) -> None:
         if "id" not in state:
             state["id"] = uuid4()
+        if "callsign" not in state:
+            state["callsign"] = None
         if "use_livery_set" not in state:
             state["use_livery_set"] = len(state.get("livery_set", [])) > 0
         if "initial_aircraft" not in state:
@@ -668,4 +675,5 @@ class Squadron:
             intercept_reserve=clamp_intercept_reserve(
                 squadron_def.intercept_reserve, max_size
             ),
+            callsign=squadron_def.callsign,
         )

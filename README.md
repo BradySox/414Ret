@@ -63,7 +63,10 @@ and selected later upstream fixes.
   never arrive), only your side sees the field on the F10 map, and — with cross-turn persistence
   on — a field left undisturbed is still there next mission, wearing down over turns until it's
   spent. Opt-in (enable the "Air-droppable minefields" plugin in Plugin Options; the matching
-  "Air-droppable minefields" setting adds the persistence across turns). Blue-only.
+  "Air-droppable minefields" setting adds the persistence across turns). You can also let the
+  **auto-planner frag mining sorties for you** ("Auto-plan mining sorties ahead of enemy convoys"):
+  it puts a mining strike against an enemy convoy in the ATO each turn — fly it yourself or let the
+  AI take it. Blue-only.
 - **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
   learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
   within minutes your briefed channels take sporadic bursts of barrage static — transmitted

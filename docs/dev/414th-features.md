@@ -5149,10 +5149,21 @@ mining still works with just the plugin on and this setting off. Tests
 `tests/fourteenth/test_minefields.py` + `tests/missiongenerator/test_minefieldluadata.py` +
 the Phase-2 cases in `tests/lua/test_minefields_runtime.py`.
 
+**Phase 3 — auto-plannable toggle (LANDED).** With `auto_plan_minefields` on (Mission Generation →
+Battlefield life, `enabled_when="air_droppable_minefields"`, default OFF, preseeded ON in Red Tide),
+`game/fourteenth/convoy_mining.py` `plan_convoy_mining` (hooked in `Coalition.plan_missions` before
+the commander, the §44 carrier pattern) frags one BAI sortie a turn **at an enemy convoy**, flown by
+a blue squadron that can fly BAI *and* carries the `"Aerial Minefield"` preset (A-7E/Hornet/Harrier),
+with that dispenser loadout **forced by name** onto the flight's members so the CBU-99 is dropped —
+the drop lays the field on the convoy's road (the plugin), and following traffic hits it. Honors the
+premise that only an air-drop lays a mine; the AI (or the player, if they fly the fragged sortie)
+just flies one. Tests `tests/fourteenth/test_convoy_mining.py`.
+
 **Still open:** the web campaign-map overlay (a friendly-only dashed circle per field) + the
-generated `.miz` F10/ME drawing, and Phase 3 (the settings-gated `plan_convoy_mining` frag ahead
-of a convoy). Needs an in-game pass: the `CBU_99` runtime type string, the convoy kill, and the
-undisturbed-field re-lay across a turn (checklist B9).
+generated `.miz` F10/ME drawing (the plugin's runtime F10 marks already show fields in-cockpit; the
+overlay is the strategic between-missions view). Needs an in-game pass: the `CBU_99` runtime type
+string, the convoy kill, the undisturbed-field re-lay across a turn, and the auto-planned drop
+(checklist B9).
 
 ---
 

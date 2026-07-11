@@ -1744,11 +1744,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     survivors as `dcsRetribution.minefields` so the plugin re-arms them next mission, exactly where
     they were. Same-turn mining works with just the plugin enabled; the setting adds the persistence.
     The Lua harness gained a `WeaponFake` + `fire_shot` (the snake-and-nape SHOT path had none).
-    Still open: the web/`.miz` friendly map overlay + Phase 3 (a settings-gated `plan_convoy_mining`
-    frag ahead of a convoy). (`resources/plugins/minefields/`, `game/fourteenth/minefields.py`,
-    `game/missiongenerator/minefieldluadata.py`, `game/missiongenerator/luagenerator.py`,
-    `game/debriefing.py`, `game/sim/missionresultsprocessor.py`, `game/game.py`,
-    `game/settings/settings.py`; features doc §57, checklist B9 — needs an in-game pass.)
+    **Auto-plan** (`auto_plan_minefields`, default **OFF**, preseeded ON in Red Tide, which fields
+    the Hornet): `game/fourteenth/convoy_mining.py` `plan_convoy_mining` (hooked in `plan_missions`
+    before the commander) frags one BAI sortie a turn **at an enemy convoy**, flown by a blue
+    A-7E/Hornet/Harrier with the `"Aerial Minefield"` dispenser loadout **forced by name** onto the
+    flight's members — the AI (or player) drops the CBU-99 and the plugin lays the field on the
+    convoy's road. Still open: the web/`.miz` friendly map overlay (the plugin's runtime F10 marks
+    already show fields in-cockpit; the overlay is the strategic between-missions view).
+    (`resources/plugins/minefields/`, `game/fourteenth/minefields.py`,
+    `game/fourteenth/convoy_mining.py`, `game/missiongenerator/minefieldluadata.py`,
+    `game/missiongenerator/luagenerator.py`, `game/debriefing.py`, `game/coalition.py`,
+    `game/sim/missionresultsprocessor.py`, `game/game.py`, `game/settings/settings.py`; features doc
+    §57, checklist B9 — needs an in-game pass.)
 
 ---
 

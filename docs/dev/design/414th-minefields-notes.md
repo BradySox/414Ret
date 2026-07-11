@@ -368,7 +368,18 @@ to match).
 Deliverable: a field left undisturbed is re-laid next turn; it depletes as convoys hit it and
 vanishes when exhausted. Needs the CI client rebuild for the overlay.
 
-### Phase 3 — auto-plannable toggle
+### Phase 3 — auto-plannable toggle — ✅ LANDED 2026-07-11
+
+**As-built:** `game/fourteenth/convoy_mining.py` `plan_convoy_mining` hooked in
+`Coalition.plan_missions` (before the commander). It targets the **convoy directly** with BAI
+(no decoy aim-point — simpler and robust; the drop lays the field on the convoy's road and any
+following traffic hits it), restricting to a blue squadron that (a) can fly BAI and (b) carries
+the `"Aerial Minefield"` preset (A-7E/Hornet/Harrier), then **forces that loadout by name** onto
+the fragged flight's members (`FlightMember.loadout` + `use_custom_loadout`) so the CBU-99 is
+actually dropped — dropping the package if the loadout can't be armed. Gated `auto_plan_minefields`
+(default OFF, `enabled_when="air_droppable_minefields"`), preseeded ON in Red Tide (which fields the
+Hornet). Tests `tests/fourteenth/test_convoy_mining.py`; the AI actually dropping the CBU-99 on the
+convoy is the checklist-B9 in-game item.
 
 | File | Change |
 |---|---|

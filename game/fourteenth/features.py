@@ -355,7 +355,7 @@ FEATURES: tuple[Feature, ...] = (
         "Air-droppable minefields",
         57,
         plugin_id="minefields",
-        settings_fields=("air_droppable_minefields",),
+        settings_fields=("air_droppable_minefields", "auto_plan_minefields"),
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.

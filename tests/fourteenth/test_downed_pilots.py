@@ -93,6 +93,7 @@ def _debriefing(
                 combat_sar_rescues=list(rescues or []),
                 combat_sar_captures=list(captures or []),
                 combat_sar_survivors=list(survivors or []),
+                minefields_state=[],
             ),
             unit_map=SimpleNamespace(flight=lambda name: fm.get(name)),
         ),

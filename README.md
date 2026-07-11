@@ -55,6 +55,15 @@ and selected later upstream fixes.
   reinforcements, and the debrief counts both sides' losses. Both behaviours are **on by
   default** for new campaigns (Mission Generation → "Ambient supply convoys" / "Friendly
   convoy ambushes") on any campaign whose map has roads between friendly bases.
+- **You can mine the roads yourself.** DCS has no mines, so we fake them: load the **"Aerial
+  Minefield"** loadout (a CBU-99 dispenser — on the A-7E, Hornet, or Harrier) and drop it on a
+  road, and the impact area becomes a live minefield. An enemy supply convoy that drives across it
+  takes real losses **the same mission** you laid it — mine the road just ahead of an inbound
+  column to stop it cold. The mines kill real, tracked vehicles (the debrief counts them; they
+  never arrive), only your side sees the field on the F10 map, and — with cross-turn persistence
+  on — a field left undisturbed is still there next mission, wearing down over turns until it's
+  spent. Opt-in (enable the "Air-droppable minefields" plugin in Plugin Options; the matching
+  "Air-droppable minefields" setting adds the persistence across turns). Blue-only.
 - **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
   learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
   within minutes your briefed channels take sporadic bursts of barrage static — transmitted

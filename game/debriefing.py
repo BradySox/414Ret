@@ -163,6 +163,13 @@ class StateData:
     #: the depth-weighted turn capture). Empty on pre-feature state files.
     combat_sar_survivors: list[tuple[str, float, float]]
 
+    #: ``(id, x, z, radius_m, charges)`` per air-dropped minefield the §57 plugin managed
+    #: this mission -- persisted fields (by their Python id) + newly-laid fields (id 0), each
+    #: with its remaining charges. ``reconcile_minefields`` carries the undisturbed fields
+    #: across the turn boundary. ``x`` = north / ``z`` = east (the DCS getPoint frame the
+    #: plugin works in). Empty on pre-feature state files / when the feature is off.
+    minefields_state: list[tuple[int, float, float, float, int]]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -297,6 +304,36 @@ class StateData:
             data.get("combat_sar_survivors", [])
         )
 
+        def parse_minefields_state(
+            raw: Any,
+        ) -> list[tuple[int, float, float, float, int]]:
+            # The §57 minefields plugin writes {id=, x=, z=, radius=, charges=} per field it
+            # managed (or the Lua JSON encoder yields [] when none, and pre-feature state files
+            # omit the key). Pull the tuple defensively, skipping malformed entries.
+            if not isinstance(raw, list):
+                return []
+            out: list[tuple[int, float, float, float, int]] = []
+            for entry in raw:
+                if not isinstance(entry, dict):
+                    continue
+                x = entry.get("x")
+                z = entry.get("z")
+                charges = entry.get("charges")
+                if not (
+                    isinstance(x, (int, float))
+                    and isinstance(z, (int, float))
+                    and isinstance(charges, (int, float))
+                ):
+                    continue
+                fid = entry.get("id")
+                fid = int(fid) if isinstance(fid, (int, float)) else 0
+                radius = entry.get("radius")
+                radius = float(radius) if isinstance(radius, (int, float)) else 0.0
+                out.append((fid, float(x), float(z), radius, int(charges)))
+            return out
+
+        minefields_state = parse_minefields_state(data.get("minefields_state", []))
+
         return cls(
             mission_ended=data.get("mission_ended", False),
             killed_aircraft=killed_aircraft,
@@ -308,6 +345,7 @@ class StateData:
             combat_sar_rescues=combat_sar_rescues,
             combat_sar_captures=combat_sar_captures,
             combat_sar_survivors=combat_sar_survivors,
+            minefields_state=minefields_state,
         )
 
 

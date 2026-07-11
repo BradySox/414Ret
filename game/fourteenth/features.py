@@ -345,6 +345,18 @@ FEATURES: tuple[Feature, ...] = (
         56,
         settings_fields=("motorpool_enabled", "motorpool_spawn_cap"),
     ),
+    Feature(
+        # §57 air-droppable minefields. Same-turn tactical mining is the `minefields`
+        # Lua plugin (detect a blue CBU-99 drop -> scripted proximity field -> detonate
+        # real convoy units, recorded natively); air_droppable_minefields adds cross-turn
+        # persistence (game/fourteenth/minefields.py reconciles the minefields_state
+        # debrief channel; minefieldluadata re-arms the survivors next mission). Blue-only.
+        "air_droppable_minefields",
+        "Air-droppable minefields",
+        57,
+        plugin_id="minefields",
+        settings_fields=("air_droppable_minefields",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

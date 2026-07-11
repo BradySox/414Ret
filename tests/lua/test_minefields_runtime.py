@@ -192,3 +192,52 @@ def test_no_drop_is_a_clean_noop() -> None:
     h.advance_to(600)
     assert h.records("explosions") == []
     h.assert_no_lua_errors()
+
+
+# -- Phase 2: the minefields_state write-back channel (Python reconciles this at debrief) -----
+
+
+def _state(h: DcsPluginHarness) -> list[dict[str, Any]]:
+    return h.to_python(h.lua.globals().minefields_state) or []
+
+
+def test_writes_state_for_a_laid_field() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_shooter())
+    _load(h)
+    _drop(h, 1000.0, 0.0)
+    h.advance_to(3)  # the weapon tracks + the field is laid (~t=1)
+    state = _state(h)
+    assert len(state) == 1
+    assert state[0]["id"] == 0  # newly laid -> Python assigns the id
+    assert state[0]["x"] == 1000.0 and state[0]["z"] == 0.0 and state[0]["charges"] == 6
+    h.assert_no_lua_errors()
+
+
+def test_state_charges_deplete_on_detonation() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_shooter())
+    h.add_group(_red_ground("Convoy-1", 1000.0, 0.0, count=2))
+    _load(h, chargesPerField=3)
+    _drop(h, 1000.0, 0.0)
+    h.advance_to(120)
+    state = _state(h)
+    assert len(state) == 1
+    # 3 charges, 2 vehicles cross -> 2 detonations -> 1 charge reported remaining.
+    assert state[0]["charges"] == 1
+    h.assert_no_lua_errors()
+
+
+def test_seeded_field_reports_its_persisted_id() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_red_ground("Convoy-1", 1000.0, 0.0))
+    _load(
+        h,
+        startGraceS=300,
+        fields=[{"id": 7, "x": 1000.0, "z": 0.0, "radius": 200, "charges": 4}],
+    )
+    h.advance_to(10)  # inside the grace -> undisturbed
+    state = _state(h)
+    assert len(state) == 1
+    assert state[0]["id"] == 7 and state[0]["charges"] == 4
+    h.assert_no_lua_errors()

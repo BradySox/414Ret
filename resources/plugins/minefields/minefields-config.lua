@@ -78,7 +78,17 @@ local function isDispenser(typeName)
     return false
 end
 
-local fields = {} -- active minefields: { x, z, radius, charges, tripped = {}, lastBoom, markId }
+-- Mirror-back channel (Phase 2): the base script serializes `minefields_state` into the debrief
+-- and Python reconciles it to carry undisturbed fields across turns. We keep it in step with the
+-- live fields and flag the state dirty so write_state actually flushes. Each field holds a
+-- reference (f.state) into this list, so a detonation / exhaustion updates the reported charges in
+-- place. A persisted field that exhausts keeps its entry (charges 0) so Python removes it.
+minefields_state = minefields_state or {}
+local function markDirty()
+    dirty_state = true
+end
+
+local fields = {} -- active minefields: { id, x, z, radius, charges, tripped, lastBoom, markId, state }
 local markSeq = 74200 -- F10 mark id base (high to avoid collisions)
 local scanArmed = false
 
@@ -140,6 +150,10 @@ local function detonate(f, unit)
     pcall(trigger.action.explosion, p, POWER)
     f.tripped[unit:getName()] = true
     f.charges = f.charges - 1
+    if f.state then
+        f.state.charges = f.charges
+    end
+    markDirty()
     f.lastBoom = timer.getTime()
     pcall(
         trigger.action.outTextForCoalition,
@@ -200,8 +214,9 @@ local function ensureScan()
     end, {}, first)
 end
 
-local function addField(x, z, radius, charges, laid)
+local function addField(id, x, z, radius, charges, laid)
     local f = {
+        id = id,
         x = x,
         z = z,
         radius = radius,
@@ -209,9 +224,13 @@ local function addField(x, z, radius, charges, laid)
         tripped = {},
         lastBoom = nil,
     }
+    -- Shared reference into the mirror-back channel; detonations update f.state.charges in place.
+    f.state = { id = id, x = x, z = z, radius = radius, charges = charges }
+    minefields_state[#minefields_state + 1] = f.state
     fields[#fields + 1] = f
     addMark(f, laid)
     ensureScan()
+    markDirty()
     return f
 end
 
@@ -268,7 +287,7 @@ local function mineTrack()
         else
             local pt = resolveImpact(track)
             if pt then
-                addField(pt.x, pt.z, RADIUS, CHARGES, true)
+                addField(0, pt.x, pt.z, RADIUS, CHARGES, true)
                 pcall(
                     trigger.action.outTextForCoalition,
                     coalition.side.BLUE,
@@ -346,7 +365,7 @@ then
             if radius <= 0 then
                 radius = RADIUS
             end
-            addField(num(pf.x), num(pf.z), radius, charges, false)
+            addField(num(pf.id), num(pf.x), num(pf.z), radius, charges, false)
         end
     end
 end

@@ -503,6 +503,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "coastal_missile_relocation",
                     "ambient_supply_convoys",
                     "convoy_ambush",
+                    "air_droppable_minefields",
                     "enemy_comms_jamming",
                     "comms_jam_requires_capture",
                 ],
@@ -2611,6 +2612,25 @@ class Settings:
             "are real, tracked units -- both sides' losses count. Runs via the 'Convoy "
             "ambush' LUA plugin -- keep that plugin enabled or this setting does "
             "nothing."
+        ),
+    )
+    air_droppable_minefields: bool = boolean_option(
+        "Air-droppable minefields (mines persist across turns)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "A blue jet can air-drop a CBU-99 cluster dispenser (the 'Aerial "
+            "Minefield' loadout) and the impact area becomes a scripted proximity "
+            "minefield that detonates on enemy convoys crossing it -- the same "
+            "mission you drop it. With this on, a field left undisturbed at mission "
+            "end is tracked and re-laid into the next mission, depleting as convoys "
+            "hit it and clearing once spent; it shows on the F10 map for your side "
+            "only. The mines kill real, tracked convoy units, so losses count at "
+            "debrief (no phantom spawns); blue-only. Runs via the 'Air-droppable "
+            "minefields' LUA plugin -- keep that plugin enabled. The same-turn "
+            "mining works with just the plugin on; this setting adds the cross-turn "
+            "persistence."
         ),
     )
     enemy_comms_jamming: bool = boolean_option(

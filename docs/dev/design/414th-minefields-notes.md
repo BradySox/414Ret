@@ -338,7 +338,18 @@ Deliverable: player loads the dispenser, drops it, the impact area mines, an inb
 crosses it takes real (recorded) losses **this mission**. No persistence, no auto-plan. Fly to
 confirm the `CBU_99` detection + the kill.
 
-### Phase 2 — persistence (carries across turns)
+### Phase 2 — persistence (carries across turns) — ✅ LANDED 2026-07-11 (engine core)
+
+**As-built:** everything in the table below LANDED except the two map surfaces
+(`drawingsgenerator.py` F10/ME circles + the `MinefieldJs`/`MinefieldsLayer` web overlay), which
+are **deferred to a follow-up** — the plugin's runtime F10 marks already give in-cockpit
+visibility of every active field (laid + re-armed), so the deferred bits are the strategic
+campaign-map view only. The `minefields_state` mirror-back is a shared-reference design (each Lua
+field holds a ref into the reported list, so a detonation updates its charges in place; a persisted
+field that exhausts keeps its entry at charges 0 so Python removes it). Reconcile takes the plugin's
+charge count as authoritative; an un-reported field is left untouched. `StateData` gained a required
+`minefields_state` field (two combat-SAR test constructors + the `COMMIT_STEPS` order list updated
+to match).
 
 | File | Change |
 |---|---|

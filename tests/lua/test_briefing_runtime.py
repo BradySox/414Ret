@@ -1,10 +1,11 @@
 """Headless runtime check for the briefing plugin (briefing-config.lua).
 
 Pins the "script errors and the feature silently never starts" invariant plus the
-behaviour contract: a pilot who slots in gets exactly one card (birth handler and
-the mission-start sweep dedupe), the card carries the shared header + that flight's
-own details and the group's id/duration, an AI birth or an unknown group is
-ignored, and a mission with no briefing node is a clean no-op.
+behaviour contract: a pilot who slots in gets a briefing card after the slot-in
+delay, then a taxi card DURATION s later, each with a beep (mutable), keyed to the
+group id; the birth handler and the mission-start sweep dedupe to one sequence; an
+AI birth or an unknown group is ignored; and a mission with no briefing node is a
+clean no-op.
 """
 
 from __future__ import annotations
@@ -53,17 +54,19 @@ def _briefing_config(**plugin_opts: Any) -> dict[str, Any]:
     }
 
 
-def test_birth_shows_one_card_with_all_fields() -> None:
+def test_briefing_card_shows_after_the_slot_in_delay() -> None:
     h = DcsPluginHarness()
     h.add_group(_player_group("Enfield 1-1", 42))
-    h.lua.globals().dcsRetribution = h.to_lua(_briefing_config())
+    # startGraceS high so only the birth path fires; startDelayS=5 is the delay under test.
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=12, startGraceS=99, startDelayS=5)
+    )
     h.load_plugin_script(PLUGIN)
 
     h.fire_birth("Enfield 1-1")
-    # Run past the grace so the mission-start sweep also runs; the debounce must keep
-    # it from double-showing the same slotting. t=5 is before the taxi card (which
-    # flashes at t=DURATION=12), so only the briefing card is up.
-    h.advance_to(5)
+    h.advance_to(4)  # still inside the 5 s slot-in delay -> nothing yet
+    assert h.records("texts") == []
+    h.advance_to(6)  # past the delay -> the briefing card is up
 
     texts = h.records("texts")
     assert len(texts) == 1
@@ -82,19 +85,35 @@ def test_birth_shows_one_card_with_all_fields() -> None:
     h.assert_no_lua_errors()
 
 
-def test_taxi_card_flashes_after_the_briefing_card() -> None:
+def test_birth_and_sweep_do_not_double_show() -> None:
+    # Birth (t=0) and the mission-start sweep (t=grace) both target the same slotting;
+    # the debounce must keep it to a single card sequence, not two.
     h = DcsPluginHarness()
     h.add_group(_player_group("Enfield 1-1", 42))
-    # Short duration so the taxi card (scheduled at t=DURATION) fires quickly.
     h.lua.globals().dcsRetribution = h.to_lua(
-        _briefing_config(durationS=3, startGraceS=99)
+        _briefing_config(durationS=12, startGraceS=2, startDelayS=1)
     )
     h.load_plugin_script(PLUGIN)
 
     h.fire_birth("Enfield 1-1")
-    h.advance_to(2)  # only the briefing card so far
+    h.advance_to(5)  # birth's card at t=1; the sweep at t=2 is debounced
+    assert len(h.records("texts")) == 1  # exactly one briefing card
+    h.assert_no_lua_errors()
+
+
+def test_taxi_card_flashes_after_the_briefing_card() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_player_group("Enfield 1-1", 42))
+    # Short delay + duration so the sequence (card at t=1, taxi at t=1+3=4) runs quickly.
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=3, startGraceS=99, startDelayS=1)
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Enfield 1-1")
+    h.advance_to(2)  # only the briefing card so far (t=1)
     assert len(h.records("texts")) == 1
-    h.advance_to(4)  # past DURATION=3 -> the taxi card has flashed
+    h.advance_to(5)  # taxi card (t=4) has flashed
 
     texts = h.records("texts")
     assert len(texts) == 2
@@ -113,14 +132,14 @@ def test_beep_plays_with_each_card() -> None:
     h = DcsPluginHarness()
     h.add_group(_player_group("Enfield 1-1", 42))
     h.lua.globals().dcsRetribution = h.to_lua(
-        _briefing_config(durationS=3, startGraceS=99)
+        _briefing_config(durationS=3, startGraceS=99, startDelayS=1)
     )
     h.load_plugin_script(PLUGIN)
 
     h.fire_birth("Enfield 1-1")
-    h.advance_to(1)  # briefing card + its beep
+    h.advance_to(2)  # briefing card + its beep (t=1)
     assert len(h.records("sounds")) == 1
-    h.advance_to(4)  # taxi card + its beep
+    h.advance_to(5)  # taxi card + its beep (t=4)
 
     sounds = h.records("sounds")
     assert len(sounds) == 2  # one beep per card
@@ -133,12 +152,12 @@ def test_beep_can_be_disabled() -> None:
     h = DcsPluginHarness()
     h.add_group(_player_group("Enfield 1-1", 42))
     h.lua.globals().dcsRetribution = h.to_lua(
-        _briefing_config(durationS=3, startGraceS=99, playSound=False)
+        _briefing_config(durationS=3, startGraceS=99, startDelayS=1, playSound=False)
     )
     h.load_plugin_script(PLUGIN)
 
     h.fire_birth("Enfield 1-1")
-    h.advance_to(4)
+    h.advance_to(5)
     assert len(h.records("texts")) == 2  # both cards still show
     assert h.records("sounds") == []  # but no beep
     h.assert_no_lua_errors()
@@ -148,12 +167,14 @@ def test_ground_freq_option_overrides_the_taxi_freq() -> None:
     h = DcsPluginHarness()
     h.add_group(_player_group("Enfield 1-1", 42))
     h.lua.globals().dcsRetribution = h.to_lua(
-        _briefing_config(durationS=3, startGraceS=99, groundFreq="305.00")
+        _briefing_config(
+            durationS=3, startGraceS=99, startDelayS=1, groundFreq="305.00"
+        )
     )
     h.load_plugin_script(PLUGIN)
 
     h.fire_birth("Enfield 1-1")
-    h.advance_to(4)
+    h.advance_to(5)
     taxi = h.records("texts")[1]
     assert "Contact ground @ 305.00 when ready to taxi" in taxi["text"]
     assert "249.50" not in taxi["text"]
@@ -162,15 +183,17 @@ def test_ground_freq_option_overrides_the_taxi_freq() -> None:
 
 def test_mission_start_sweep_catches_seated_player_without_a_birth() -> None:
     # Models single-player: the pilot's birth fired before the handler registered, so
-    # only the post-grace sweep can catch them.
+    # only the post-grace sweep can catch them. The card = grace (t=2) + slot-in delay (1).
     h = DcsPluginHarness()
     h.add_group(_player_group("Enfield 1-1", 42))
-    h.lua.globals().dcsRetribution = h.to_lua(_briefing_config())
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=12, startGraceS=2, startDelayS=1)
+    )
     h.load_plugin_script(PLUGIN)
 
-    h.advance_to(1)
-    assert h.records("texts") == []  # nothing during the grace
-    h.advance_to(5)
+    h.advance_to(1)  # before the sweep grace (t=2)
+    assert h.records("texts") == []
+    h.advance_to(4)  # sweep at t=2 -> card at t=3
     assert len(h.records("texts")) == 1
     h.assert_no_lua_errors()
 

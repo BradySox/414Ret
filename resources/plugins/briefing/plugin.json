@@ -15,6 +15,11 @@
             "defaultValue": 2
         },
         {
+            "nameInUI": "Delay after slot-in before the first card + beep (s)",
+            "mnemonic": "startDelayS",
+            "defaultValue": 5
+        },
+        {
             "nameInUI": "Ground frequency shown on the taxi card",
             "mnemonic": "groundFreq",
             "defaultValue": "249.50"

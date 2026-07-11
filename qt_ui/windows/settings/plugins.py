@@ -91,14 +91,22 @@ class PluginOptionsBox(QGroupBox):
             layout.addWidget(label, row, 0)
 
             val = option.get_value
-            if type(val) == bool:
+            # Pick the widget from the option's *declared default* type, not the
+            # currently-stored value's type. A decimal option (default 0.75) whose
+            # value was ever written as an int (e.g. 1, from an older build or a
+            # round-trip) would otherwise get an integer QSpinBox and silently round
+            # 0.75 -> 1, making the fractional value unreachable from the UI. Keying
+            # on the default keeps a float option a QDoubleSpinBox regardless of what
+            # value happens to be stored.
+            default = option.value
+            if type(default) == bool:
                 checkbox = QCheckBox()
                 checkbox.setChecked(val)
                 checkbox.toggled.connect(option.set_value)
                 layout.addWidget(checkbox, row, 1)
                 self.widgets[option.identifier] = checkbox
-            elif type(val) == float or type(val) == int:
-                if type(val) == float:
+            elif type(default) == float or type(default) == int:
+                if type(default) == float:
                     spinbox = QDoubleSpinBox()
                     spinbox.setSingleStep(0.01)
                     spinbox.setLocale(QLocale.Language.English)
@@ -106,7 +114,10 @@ class PluginOptionsBox(QGroupBox):
                     spinbox = QSpinBox()
                 spinbox.setMinimum(option.min)
                 spinbox.setMaximum(option.max)
-                spinbox.setValue(val)
+                # Coerce the stored value to the field's type: a QSpinBox rejects a
+                # float in PySide6, and a mistyped stored value must not break the
+                # whole options page.
+                spinbox.setValue(float(val) if type(default) == float else int(val))
                 spinbox.valueChanged.connect(option.set_value)
                 layout.addWidget(spinbox, row, 1)
                 self.widgets[option.identifier] = spinbox
@@ -119,8 +130,10 @@ class PluginOptionsBox(QGroupBox):
             w = self.widgets[identifier]
             if isinstance(w, QCheckBox):
                 w.setChecked(value)
-            elif isinstance(w, QDoubleSpinBox) or isinstance(w, QSpinBox):
-                w.setValue(value)
+            elif isinstance(w, QDoubleSpinBox):
+                w.setValue(float(value))
+            elif isinstance(w, QSpinBox):
+                w.setValue(int(value))
 
 
 class PluginOptionsPage(QWidget):

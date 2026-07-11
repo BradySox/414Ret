@@ -447,6 +447,40 @@ both toggle descriptions state the coupling. Guard:
 `tests/fourteenth/test_campaign_plugin_preseed.py`. An **existing** Red Tide save needs both
 the setting AND the plugin flipped on by hand.
 
+**Reach bumped 35 → 42 km (2026-07-10, flown-test finding).** The 2026-07-10 turn-1 fly
+(session `gallant-panini-5485e7`) found the miz emitted **`VietnamOps = {}`** — nothing shelled
+— because the ~2.5 km "off the front" figure above is the *route-anchor* distance, not the
+distance to the **FLOT**: at turn 0 the front sits at the route midpoint, so Fulda is **~39.3 km**
+and Haina **~39.6 km** from the line, both ~4 km past the old 35 km reach. The reach is now a
+campaign-tunable setting **`artillery_harassment_reach_km`** (default 35; `enabled_when=
+artillery_base_harassment`), and `red_tide.yaml` preseeds **42 km** so both fields fall inside
+from turn 1 (WP BM-27 Uragan MRLs reach ~35 km, so ~42 km is period-honest). Guard:
+`test_artillery_reach_is_campaign_tunable`; in-game re-fly = checklist L8's artillery bullet.
+
+### Fewer red bomber *missions* — the `secondary: any` confinement (2026-07-10)
+
+Flown-test tuning (same session): the user wanted red to keep flying *some* offensive but was
+hand-deleting a couple of strategic-bomber flights before each mission — and, when asked,
+specifically **did not want the bomber fleet trimmed off the ramp** (the big parked Soviet bomber
+force is immersion), only **fewer bomber missions flown**. So this is a *tasking* change, not a
+`size` change: every bomber `size` stays 8 (24 heavy bombers still parked).
+
+The driver was **`secondary: any`** on the three heavy-bomber squadrons (Sperenberg Tu-95MS `Strike`,
+Sperenberg Tu-22M3 `OCA/Runway`, Kastrup Tu-22M3 `Anti-ship`). `SquadronConfig.auto_assignable` is
+`{primary} | set(secondary) | {TARPS}`, so `secondary: any` made each bomber auto-assignable for
+**all 26 capable mission types** — including **STRIKE-as-secondary and BARCAP** (that is why the
+flown OOB showed 16 Tu-22M3s parked as "Kastrup/Sperenberg BARCAP" filler and extra Backfire strikes
+the player was skimming). Dropping the `secondary: any` line confines each bomber to **just its own
+primary + TARPS** (2 types): the Tu-22M3s are no longer STRIKE- or BARCAP-eligible and fall back to
+their own **target-gated** primaries — OCA/Runway (gated by `oca_target_autoplanner_min_aircraft_count:
+40`) and Anti-ship (few reachable blue ships) — so they rarely auto-frag. The **Tu-95MS keeps
+`primary: Strike`**, so red still flies the occasional prestige Bear raid (the GRYPHON strike the
+user said "didn't feel bad"); it just stops being BARCAP filler too. Net: same airframes on the
+ramp, markedly fewer AI bomber sorties, tactical **Su-25 BAI / Su-24 SEAD / CAS** offensive
+untouched. Verified headless (auto-assignable set 26 → 2 types, STRIKE/BARCAP dropped for the
+Tu-22M3s). Reversible; NEW game required; a fly should confirm the bomber-package count actually
+drops (and that red still flies its one Bear strike + its tactical offensive).
+
 ### Feature-audit adds — C2 decapitation + the SCUD hunt (2026-07-07)
 
 A feature audit against the full §1–§52 catalog found Red Tide covered on the default-ON

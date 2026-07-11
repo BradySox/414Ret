@@ -48,7 +48,9 @@ class _CP:
         self.captured = SimpleNamespace(is_blue=blue, is_red=not blue, is_neutral=False)
 
 
-def _settings(*, vietnam: bool = False, artillery: bool = False) -> Any:
+def _settings(
+    *, vietnam: bool = False, artillery: bool = False, reach_km: int = 35
+) -> Any:
     return SimpleNamespace(
         vietnam_arc_light=False,
         vietnam_flak_gauntlet=False,
@@ -58,6 +60,7 @@ def _settings(*, vietnam: bool = False, artillery: bool = False) -> Any:
         vietnam_fac_marking=False,
         vietnam_snake_and_nape=False,
         artillery_base_harassment=artillery,
+        artillery_harassment_reach_km=reach_km,
     )
 
 
@@ -98,6 +101,15 @@ _REAR_FIELD = _CP("Ramstein", _Point(120_000.0, 0.0))
 def test_artillery_mode_reaches_only_real_gun_range() -> None:
     game = _game(_settings(artillery=True), [_FARP_ON_THE_FLOT, _REAR_FIELD])
     # The FARP on the FLOT is shelled; the field 120 km back is out of gun range.
+    assert _harassed_names(game) == ["Fulda"]
+
+
+def test_artillery_reach_is_campaign_tunable() -> None:
+    # A field just past the 35 km default is out of range at the default...
+    field = _CP("Fulda", _Point(39_000.0, 0.0))
+    assert _harassed_names(_game(_settings(artillery=True), [field])) == []
+    # ...but a raised reach (the Red Tide 42 km preseed) brings it under fire.
+    game = _game(_settings(artillery=True, reach_km=42), [field])
     assert _harassed_names(game) == ["Fulda"]
 
 

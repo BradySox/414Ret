@@ -3178,11 +3178,16 @@ It emits `dcsRetribution.VietnamOps.airbaseHarassment = { fields = { {name,x,y,c
 
 The same emitter + runtime, opened to conventional campaigns: a new **`artillery_base_harassment`**
 setting (Mission Generation → World & systems, default OFF) drives `_populate_airbase_harassment`
-with the tight **`ARTILLERY_FRONT_REACH_M`** (≈ 35 km — real tube/rocket range off the FLOT) instead
-of the Vietnam siege's theater-wide 200 km, so only a field genuinely *on* the front sits under fire.
-When both toggles are on the wider Vietnam reach wins. **Red Tide preseeds it** — the Fulda forward
-FARP (~2.5 km off the Fulda↔Haina front) and red's Haina spearhead now live under sporadic artillery
-harassment, "the Gap is not a safe ramp". Every §36 guarantee carries over unchanged (player-spawn
+with a reach defaulting to **`ARTILLERY_FRONT_REACH_M`** (≈ 35 km — real tube/rocket range off the
+FLOT) instead of the Vietnam siege's theater-wide 200 km, so only a field genuinely *on* the front
+sits under fire. When both toggles are on the wider Vietnam reach wins. **The reach is campaign-tunable**
+(2026-07-10) via the **`artillery_harassment_reach_km`** setting (Mission Generation → Battlefield life,
+default 35, `enabled_when=artillery_base_harassment`); the emitter reads `settings.artillery_harassment_reach_km
+* 1000` for the generic mode. **Red Tide preseeds it at 42 km** — the flown 2026-07-10 turn-1 test found the
+default 35 km left **both** the Fulda forward FARP (~39.3 km off the turn-0 Fulda↔Haina front) and red's
+Haina spearhead (~39.6 km) just *outside* reach, so nothing was shelled on a fresh game (`VietnamOps = {}`);
+42 km (WP BM-27 Uragan MRLs reach ~35 km, so period-honest) brings both under sporadic artillery harassment
+from turn 1 — "the Gap is not a safe ramp". Every §36 guarantee carries over unchanged (player-spawn
 exclusion, grace, forward-only, symmetric). The emitted node stays `VietnamOps.airbaseHarassment`
 (the `vietnamops` plugin owns the runtime; its non-harassment sections stay gated off).
 **Plugin dependency (user-caught 2026-07-05):** the setting is dead if the *vietnamops plugin* is
@@ -4300,8 +4305,11 @@ same philosophy, different object class).
   `{ buildWP(lead:getPoint()), buildWP(dest) }`. **The identical `driveTo` in `coin-config.lua` had the
   same bug** (copy-paste) so every COIN mover was silently affected too (§P4/P8, all "untested"). The
   fix is strictly more correct (start=current is always valid, so it can't regress a working mover);
-  the harness tests assert `points == 2`. Needs an in-game re-fly (the harness fakes goRoute). See the
-  memory note `dcs-ground-movers-need-2wp-route`.
+  the harness tests assert `points == 2`. See the memory note `dcs-ground-movers-need-2wp-route`.
+  **Re-fly PASSED 2026-07-10** (flown Red Tide turn 1, Tacview `Tacview-20260710-195823`): all 6 launchers
+  in both batteries relocated ~1.5 km net (inside the 4 km scoot anchor), escorts moved with them, no SAM
+  site moved, alarm-green held — checklist S2 is VERIFIED. The COIN mover (`coin-config.lua`, same fix)
+  still owes its own fly on a COIN campaign (§P4/P8).
 - **Deferred:** per-side gating (currently symmetric), and coupling the *fired* missile events to a
   scoot-away reaction (real shoot-THEN-scoot needs an S_EVENT_SHOT hook — v2 if the wander plays well).
 

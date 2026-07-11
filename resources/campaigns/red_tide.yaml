@@ -268,6 +268,11 @@ settings:
   # in-mission standoff harassment fire (never a player-spawn field; startup grace).
   # The Gap is not a safe ramp.
   artillery_base_harassment: true
+  # Reach bumped 35 -> 42 km: at turn 0 the Fulda<->Haina front sits ~39 km from BOTH
+  # Fulda (the forward FARP) and Haina (red's spearhead), just past the 35 km default,
+  # so neither field was shelled on a fresh game. 42 km puts both under fire from turn 1
+  # (WP BM-27 Uragan MRLs reach ~35 km, so a ~42 km harassment envelope is period-honest).
+  artillery_harassment_reach_km: 42
   # §50 convoy escort/ambush -- friendly NATO supply convoys run the rear roads up to the
   # Fulda front and concealed Spetsnaz/recon-team ambushes dig in along the route; fly
   # CAS/BAI escort or the column is ground down. The rear isn't a safe road, same as the
@@ -506,7 +511,10 @@ squadrons:
       aircraft_type: MiG-29A Fulcrum-A
       size: 12
     - primary: Anti-ship
-      secondary: any
+      # No `secondary: any` (2026-07-10): confine the Backfires to their own primary so
+      # the auto-planner stops fragging them for STRIKE-as-secondary + BARCAP filler --
+      # fewer bomber MISSIONS, every airframe still parked on the ramp. Anti-ship is
+      # target-gated (few reachable blue ships), so this squadron rarely auto-flies.
       aircraft:
         - 924th Guards Naval Missile-Carrier Aviation Regiment
       aircraft_type: Tu-22M3 Backfire-C
@@ -564,13 +572,18 @@ squadrons:
   #Sperenberg — deep-rear heavy iron: Bears, Backfires, and the Flanker barrier CAP.
   101:
     - primary: Strike
-      secondary: any
+      # No `secondary: any` (2026-07-10): the marquee Bear stays on STRIKE (so red still
+      # flies the occasional prestige bomber raid the player was fine with), but dropping
+      # the "any" secondary stops the auto-planner also using it as BARCAP/escort filler.
+      # Fewer bomber MISSIONS; the full squadron stays parked on the ramp.
       aircraft:
         - 1023rd Heavy Bomber Aviation Regiment
       aircraft_type: Tu-95MS Bear-H
       size: 8
     - primary: OCA/Runway
-      secondary: any
+      # No `secondary: any` (2026-07-10): confine the Backfires to OCA (which is itself
+      # gated by oca_target_autoplanner_min_aircraft_count: 40, so it rarely auto-frags)
+      # instead of letting them fly STRIKE-as-secondary + BARCAP filler. Airframes stay.
       aircraft:
         - 326th Heavy Bomber Aviation Regiment
       aircraft_type: Tu-22M3 Backfire-C

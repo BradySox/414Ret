@@ -2247,6 +2247,18 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   applied — check the Vietnam toggle isn't also on, which widens the reach by design); any impact on a
   player-spawn field; harassment on a campaign with the setting off. Tests:
   `tests/missiongenerator/test_vietnamops_harassment.py`.
+  **2026-07-10 flown Red Tide turn 1 (session `gallant-panini-5485e7`): found silent no-op BY GEOMETRY →
+  FIXED, needs a re-fly.** The generated miz carried `VietnamOps = {}` — nothing emitted — because the
+  turn-1 Fulda↔Haina front sits at the route midpoint, putting **Fulda ~39.3 km and Haina ~39.6 km from the
+  FLOT, both ~4 km past the old 35 km `ARTILLERY_FRONT_REACH_M`** (distances read off the emitted QRA-zone
+  radii: grown radius − 25 NM). Fix (user call: make it tunable + bump Red Tide): the reach is now a
+  campaign-tunable setting **`artillery_harassment_reach_km`** (default 35, unchanged for every other
+  campaign; `enabled_when=artillery_base_harassment`), and **Red Tide preseeds 42 km** so both fields fall
+  inside from turn 1 (WP BM-27 Uragan MRLs reach ~35 km, so ~42 km is period-honest). Emitter reads
+  `settings.artillery_harassment_reach_km * 1000` for the generic mode; the Vietnam siege keeps its
+  theater-wide reach. Guard `test_artillery_reach_is_campaign_tunable`. **Re-fly pass:** on a NEW Red Tide
+  game, Fulda + Haina both draw harassment after the grace; a player cold-starting at Fulda is still never
+  shelled (spawn exclusion); Ramstein/Spangdahlem/Hahn (100+ km back) stay silent.
 
 ### L9 — Super Gaggle hilltop resupply · §37 · ◐ PARTIAL (2026-07-01 `intelligent-dubinsky` runtime run PASSED; **2026-07-02 Trail 2 session `wonderful-chatterjee`: second clean run — both CH-53Es closed to 140 m of FOB Khe Sanh at t≈306, returned, landed and shut down; BOTH F-4E suppressors (`SuperGaggle-T1-Sandy-1/-2`) were shot down (t=973 — its wreck also killed a friendly soldier — and t=2897), so the loss-accounting leg is finally armed**: after the turn is processed with the real server `state.json`, the next-turn debrief must charge 2 F-4E airframes to the suppressor squadron and 0 CH-53s — that check is what remains)
 - **Launch-delay rework (2026-07-03), re-opens the runtime leg.** The flown pass above found the whole
@@ -2804,7 +2816,16 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   under-counts, or the airframe has no empty tank-capable station — expected for the F-16/Hornet-BAI). Knob:
   `auto_range_fuel_tanks` (Mission Generation → Loadouts).
 
-### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ☐ UNTESTED — bug ROOT-CAUSED + fixed 2026-07-09 (needs a re-fly)
+### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ✓ VERIFIED (2026-07-10 flown Red Tide re-fly, session `gallant-panini-5485e7` — the 2-WP `driveTo` fix works in DCS)
+- **2026-07-10 re-fly evidence (Tacview `Tacview-20260710-195823`, 49-min Red Tide turn 1; dcs.log lost):**
+  ALL 6 `Scud_B` launchers moved — both batteries (`0015 | ROACH` near Wittstock and `0137 | TOUCAN` off
+  Haina), net displacement ~1.5 km each over the mission (inside the 4 km scoot radius — the anchor held),
+  escorts moving with them (ROACH's Ural-375 + ZSU-57-2; TOUCAN's Ural + Osa until they were killed by the
+  player package's Mavericks at t≈2166–2191). No Scud ballistic launch (alarm-green held), and **no SAM site
+  moved** (GULL/TURTLE/SNAKE/BUMBLEBEE all static — category filter intact). Killing TOUCAN's escorts did
+  not stop the surviving launchers relocating. Still unobserved: the §3 concealment interplay and the
+  per-cadence hop pattern (Tacview gives net displacement; the ~6 expected cycles weren't decoded
+  individually), and the dcs.log "armed on N site(s)" line (log lost) — none of these block the pass.
 - **2026-07-09 flown Red Tide test (`dcs.log` + Tacview `Tacview-20260709-175837`):** `MOBILEMISSILES|: shoot-and-scoot armed on 2 site(s)` armed cleanly, zero runtime error — but **all 6 `Scud_B` launchers stayed put the whole 53-min mission** (Tacview: a single position record each = never moved). Root cause: `driveTo` issued a **1-waypoint** `mist.goRoute` (destination only); a DCS ground group needs its route to START at its current position or it has no leg to drive (see the memory note / MIST's own `groupToRandomZone` uses 2 WPs). **The identical bug was in the COIN mover `coin-config.lua`** (copy-paste) → also affected §P4/P8. Fixed both to a 2-WP route (`{current, dest}`); harness tests assert `points == 2`.
 - **Pass:** on a mission a couple of relocation intervals long (~8 min each), the SCUD launchers visibly move to fresh spots within the scoot radius; with recon fog on, they're not where the last photo froze them.
 - **Fail signature:** launchers still stationary in Tacview (a single position record) despite the armed line — the 2-WP route didn't take, or the `Scud_B` refuses to path off-road from its spot.

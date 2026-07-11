@@ -28,6 +28,9 @@ local data = dcsRetribution.briefing
 local DURATION = 12 -- s each card stays on screen
 local GRACE = 2 -- s before the mission-start sweep
 local GROUND_FREQ = "249.50" -- the ground/startup freq on the taxi card (a fixed squadron freq)
+local PLAY_SOUND = true -- play the beep as each card flashes
+-- An ORIGINAL beep bundled with the plugin (otherResourceFiles), NOT copied from any campaign.
+local SOUND_FILE = "briefing-beep.wav"
 
 if dcsRetribution.plugins and dcsRetribution.plugins.briefing then
     local o = dcsRetribution.plugins.briefing
@@ -36,6 +39,19 @@ if dcsRetribution.plugins and dcsRetribution.plugins.briefing then
     if o.groundFreq ~= nil and tostring(o.groundFreq) ~= "" then
         GROUND_FREQ = tostring(o.groundFreq)
     end
+    if o.playSound ~= nil then
+        PLAY_SOUND = o.playSound == true or o.playSound == "true"
+    end
+end
+
+-- Play the notification beep to one group (the card just flashed for them). outSoundForGroup DOES
+-- exist (unlike outPictureForGroup), so the beep is per-pilot, on their slot-in. If a bundled sound
+-- ever fails to resolve by basename, the l10n path ("l10n/DEFAULT/" .. SOUND_FILE) is the fallback.
+local function beep(groupId)
+    if not PLAY_SOUND then
+        return
+    end
+    pcall(trigger.action.outSoundForGroup, groupId, SOUND_FILE)
 end
 
 -- Dedupe window for the birth-handler + mission-start-sweep double fire; comfortably above the
@@ -124,7 +140,9 @@ local function showFor(unit)
         return
     end
     shownAt[uname] = timer.getTime()
-    trigger.action.outTextForGroup(grp:getID(), buildCard(rec), DURATION, false)
+    local gid = grp:getID()
+    trigger.action.outTextForGroup(gid, buildCard(rec), DURATION, false)
+    beep(gid)
     -- Flash the taxi card right after the first expires, holding the same duration.
     -- Re-fetch the group by name at fire time so a pilot who left their seat is skipped.
     local gname = grp:getName()
@@ -133,6 +151,7 @@ local function showFor(unit)
         local g = Group.getByName(gname)
         if g and g:isExist() then
             trigger.action.outTextForGroup(g:getID(), taxi, DURATION, false)
+            beep(g:getID())
         end
         return nil
     end, {}, timer.getTime() + DURATION)

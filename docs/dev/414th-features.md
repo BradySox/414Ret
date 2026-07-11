@@ -5181,8 +5181,12 @@ The professional DCS campaigns greet a pilot who slots in with a short on-screen
 mission, time, date, callsign, field — so you always know what you are flying before you have opened
 a kneeboard. This brings that to the dynamic campaign, then flashes a **second card** right after
 (held the same duration): the startup/taxi instruction, `<callsign> — Get started up, Contact ground
-@ 249.50 when ready to taxi` (249.50 is a fixed squadron freq — a plugin option). **Display only:**
-no gameplay-model change, no `.miz` object, nothing persisted; the plugin owns nothing but the text.
+@ 249.50 when ready to taxi` (249.50 is a fixed squadron freq — a plugin option). A **short beep
+plays as each card flashes** (`outSoundForGroup` — which, unlike `outPicture*`, DOES have a per-group
+variant, so the beep is per-pilot on the slot-in), from an **original** `briefing-beep.wav` bundled
+with the plugin via `otherResourceFiles` — a synthesized two-blip chirp, NOT lifted from any paid
+campaign (a `playSound` option mutes it). **Display only:** no gameplay-model change, no `.miz`
+object, nothing persisted; the plugin owns nothing but the text (+ the one bundled sound).
 
 **Why it is TEXT, not a styled image (a hard DCS limit).** The DCS Lua scripting API has
 `outTextForGroup`/`outTextForUnit` (target one flight) but **no `outPictureForGroup`/
@@ -5247,8 +5251,9 @@ sweep catches a seated player, an AI birth / unknown group / absent node show no
 per player flight, AI-only flights excluded, gated off).
 
 Gated `mission_briefing_popup` (Mission Generation → Battlefield life, default **ON**; the plugin's
-own `defaultValue` is also ON). Card duration, the startup grace, and the taxi **ground frequency**
-(`groundFreq`, default "249.50") are plugin options. **Needs an
+own `defaultValue` is also ON). Card duration, the startup grace, the taxi **ground frequency**
+(`groundFreq`, default "249.50"), and the **beep toggle** (`playSound`, default true) are plugin
+options. The headless harness gained an `outSoundForGroup` stub (a `sounds` records list). **Needs an
 in-game pass** (checklist B10): that the card actually appears on slot-in (SP + a server rejoin),
 reads correctly, and clears after its duration.
 

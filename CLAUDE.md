@@ -1766,8 +1766,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **callsign · aircraft · task · departure field** — so you always know what you're flying before
     opening a kneeboard — and a **second card is flashed right after it** (held the same duration):
     the startup/taxi instruction, `<callsign> — Get started up, Contact ground @ 249.50 when ready
-    to taxi` (249.50 is a fixed squadron freq, a plugin option). **Display only** — no
-    gameplay-model change, no `.miz` object, nothing persisted; the plugin owns nothing but the text.
+    to taxi` (249.50 is a fixed squadron freq, a plugin option). A **short beep plays as each card
+    flashes** (`outSoundForGroup` — which, unlike `outPicture*`, DOES have a per-group variant, so
+    the beep is per-pilot on their slot-in), from an **original** `briefing-beep.wav` bundled with
+    the plugin (`otherResourceFiles`) — NOT lifted from any paid campaign; a `playSound` option mutes
+    it. **Display only** — no gameplay-model change, no `.miz` object, nothing persisted; the plugin
+    owns nothing but the text (+ the one bundled sound).
     **It is TEXT, not a styled image, by DCS constraint:** the Lua API has `outTextForGroup` (per
     flight) but **no `outPictureForGroup`/`outPictureForUnit`** — pictures only go to *all* players
     or a *whole coalition* ([ED wishlist](https://forum.dcs.world/topic/371036-outpicturefor-lua-mission-scripting-functions/);
@@ -1794,9 +1798,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     in code but effectively BLUE-only (players are blue). The Lua harness gained `outTextForGroup` +
     `UnitFake:getGroup()` / `getPlayerName()` + a `fireBirth` helper. Gated `mission_briefing_popup`
     (Mission Generation → Battlefield life, default **ON**; the plugin's own `defaultValue` is also
-    ON). Card duration, startup grace, and the taxi **ground frequency** (`groundFreq`, default
-    "249.50") are plugin options. Tests `tests/missiongenerator/test_briefingluadata.py` +
-    `tests/lua/test_briefing_runtime.py`. (`game/missiongenerator/briefingluadata.py`,
+    ON). Card duration, startup grace, the taxi **ground frequency** (`groundFreq`, default "249.50"),
+    and the **beep toggle** (`playSound`, default true) are plugin options. Tests
+    `tests/missiongenerator/test_briefingluadata.py` + `tests/lua/test_briefing_runtime.py` (the
+    harness gained an `outSoundForGroup` stub). (`game/missiongenerator/briefingluadata.py`,
     `game/missiongenerator/luagenerator.py`, `resources/plugins/briefing/`,
     `game/settings/settings.py`; features doc §58, checklist B10 — needs an in-game pass.)
 

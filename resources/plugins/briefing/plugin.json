@@ -1,6 +1,6 @@
 {
     "nameInUI": "Mission-start briefing popup",
-    "descriptionInUI": "Shows each pilot a short on-screen card -- campaign, mission number, date, mission time, callsign, aircraft, task, and departure field -- when they slot into an aircraft (S_EVENT_BIRTH), the way the professional DCS campaigns greet you at mission start, then flashes a SECOND card with the startup/taxi instruction (e.g. 'Contact ground @ 249.50 when ready to taxi'). Fires at mission start in single-player and whenever a pilot slots in / rejoins on a server. Inert unless the mission generator emits dcsRetribution.briefing (the 'Mission-start briefing popup' setting is on and the mission has a player-crewed flight). Display only -- no gameplay change. Card duration, startup grace, and the ground frequency are options below.",
+    "descriptionInUI": "Shows each pilot a short on-screen card -- campaign, mission number, date, mission time, callsign, aircraft, task, and departure field -- when they slot into an aircraft (S_EVENT_BIRTH), the way the professional DCS campaigns greet you at mission start, then flashes a SECOND card with the startup/taxi instruction (e.g. 'Contact ground @ 249.50 when ready to taxi'). A short beep plays as each card flashes (toggle below). Fires at mission start in single-player and whenever a pilot slots in / rejoins on a server. Inert unless the mission generator emits dcsRetribution.briefing (the 'Mission-start briefing popup' setting is on and the mission has a player-crewed flight). Display only -- no gameplay change. Card duration, startup grace, the ground frequency, and the beep toggle are options below.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -18,6 +18,11 @@
             "nameInUI": "Ground frequency shown on the taxi card",
             "mnemonic": "groundFreq",
             "defaultValue": "249.50"
+        },
+        {
+            "nameInUI": "Play a beep as each card flashes",
+            "mnemonic": "playSound",
+            "defaultValue": true
         }
     ],
     "scriptsWorkOrders": [],
@@ -26,5 +31,8 @@
             "file": "briefing-config.lua",
             "mnemonic": "briefing-config"
         }
+    ],
+    "otherResourceFiles": [
+        "briefing-beep.wav"
     ]
 }

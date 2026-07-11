@@ -109,6 +109,41 @@ def test_taxi_card_flashes_after_the_briefing_card() -> None:
     h.assert_no_lua_errors()
 
 
+def test_beep_plays_with_each_card() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_player_group("Enfield 1-1", 42))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=3, startGraceS=99)
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Enfield 1-1")
+    h.advance_to(1)  # briefing card + its beep
+    assert len(h.records("sounds")) == 1
+    h.advance_to(4)  # taxi card + its beep
+
+    sounds = h.records("sounds")
+    assert len(sounds) == 2  # one beep per card
+    assert all(s["groupId"] == 42 for s in sounds)
+    assert all(s["file"] == "briefing-beep.wav" for s in sounds)
+    h.assert_no_lua_errors()
+
+
+def test_beep_can_be_disabled() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_player_group("Enfield 1-1", 42))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=3, startGraceS=99, playSound=False)
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Enfield 1-1")
+    h.advance_to(4)
+    assert len(h.records("texts")) == 2  # both cards still show
+    assert h.records("sounds") == []  # but no beep
+    h.assert_no_lua_errors()
+
+
 def test_ground_freq_option_overrides_the_taxi_freq() -> None:
     h = DcsPluginHarness()
     h.add_group(_player_group("Enfield 1-1", 42))

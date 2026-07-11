@@ -85,10 +85,11 @@ and selected later upstream fixes.
   **mission number**, **date and time**, then your own **callsign, aircraft, task, and departure
   field** — so you always know what you're flying before opening a kneeboard. A **second card**
   follows it with the startup call — *"Get started up, Contact ground @ 249.50 when ready to
-  taxi"* (that ground frequency is a plugin option). Both fire at mission start in single-player and
-  whenever anyone slots in or rejoins on a server, showing each pilot their own flight's details.
-  Purely informational (nothing changes in the mission). On by default (Mission Generation →
-  "Mission-start briefing popup"); the card duration and the ground frequency are plugin options.
+  taxi"* (that ground frequency is a plugin option), and a **short beep** plays as each card flashes.
+  Both fire at mission start in single-player and whenever anyone slots in or rejoins on a server,
+  showing each pilot their own flight's details. Purely informational (nothing changes in the
+  mission). On by default (Mission Generation → "Mission-start briefing popup"); the card duration,
+  the ground frequency, and the beep are plugin options.
 - **Bombing the enemy HQ actually matters now.** Destroy a side's IADS command posts and its
   auto-planner gets *sloppier* — the more of its command network you knock out, the more
   unpredictable and less effective its offensive target selection becomes turn to turn, so

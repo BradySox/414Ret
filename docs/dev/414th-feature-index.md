@@ -69,6 +69,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §55 | Red Intent — adaptive enemy posture | — | `red_intent` |
 | §56 | Strikeable motorpool depots | — | `motorpool_enabled`, `motorpool_spawn_cap` |
 | §57 | Air-droppable minefields | `minefields` | `air_droppable_minefields`, `auto_plan_minefields` |
+| §58 | Mission-start briefing popup | `briefing` | `mission_briefing_popup` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

@@ -87,6 +87,10 @@ class DcsPluginHarness:
         """
         self.harness.fireShot(self.to_lua(spec))
 
+    def fire_birth(self, group_name: str) -> None:
+        """Fire an S_EVENT_BIRTH for a group's first unit (a pilot slotting in)."""
+        self.harness.fireBirth(group_name)
+
     def pending_scheduled(self) -> int:
         return int(self.harness.pendingCount())
 

@@ -507,6 +507,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "auto_plan_minefields",
                     "enemy_comms_jamming",
                     "comms_jam_requires_capture",
+                    "mission_briefing_popup",
                 ],
             ),
             (
@@ -2578,6 +2579,21 @@ class Settings:
             "hunt. Off by default because most campaigns want their coastal guns "
             "fixed where they cover the water; a naval campaign (the Tanker War) "
             "turns it on. Movement only, both sides, same guarantees as above."
+        ),
+    )
+    mission_briefing_popup: bool = boolean_option(
+        "Mission-start briefing popup",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "When a pilot slots into an aircraft, show a short on-screen card -- "
+            "campaign, mission number, date, mission time, callsign, aircraft, task, "
+            "and departure field -- the way the professional DCS campaigns greet you "
+            "at mission start. Fires at mission start in single-player and whenever a "
+            "pilot slots in or rejoins on a server. Display only: no gameplay change. "
+            "Card duration and the startup grace are options on the 'Mission-start "
+            "briefing popup' plugin."
         ),
     )
     ambient_supply_convoys: bool = boolean_option(

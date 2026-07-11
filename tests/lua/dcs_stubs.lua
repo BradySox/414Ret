@@ -167,6 +167,15 @@ function UnitFake:getCoalition()
     return self.side
 end
 
+function UnitFake:getGroup()
+    return self.group
+end
+
+-- nil for AI; a per-unit spec {playerName = ...} models a human-crewed slot.
+function UnitFake:getPlayerName()
+    return self.playerName
+end
+
 local GroupFake = {}
 GroupFake.__index = GroupFake
 
@@ -225,6 +234,7 @@ function Harness.addGroup(spec)
             airborne = u.airborne,
             attributes = u.attributes,
             velocity = u.velocity,
+            playerName = u.playerName,
             side = spec.side,
             group = grp,
         }, UnitFake)
@@ -371,6 +381,16 @@ function Harness.fireShot(spec)
     })
 end
 
+-- Fire an S_EVENT_BIRTH for a group's first unit (the slotting pilot). The unit
+-- object is the real UnitFake, so getGroup()/getPlayerName()/getID() work.
+function Harness.fireBirth(groupName)
+    local g = Harness.groupsByName[groupName]
+    Harness.fireEvent({
+        id = world.event.S_EVENT_BIRTH,
+        initiator = g and g:getUnit(1) or nil,
+    })
+end
+
 trigger = {
     smokeColor = { Green = 0, Red = 1, White = 2, Orange = 3, Blue = 4 },
     action = {
@@ -422,6 +442,15 @@ trigger = {
                 side = -1,
                 text = tostring(text),
                 duration = duration,
+                t = Harness.now,
+            })
+        end,
+        outTextForGroup = function(groupId, text, duration, clearview)
+            table.insert(Harness.records.texts, {
+                groupId = groupId,
+                text = tostring(text),
+                duration = duration,
+                clearview = clearview,
                 t = Harness.now,
             })
         end,

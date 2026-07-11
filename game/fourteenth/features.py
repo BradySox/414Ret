@@ -357,6 +357,17 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="minefields",
         settings_fields=("air_droppable_minefields", "auto_plan_minefields"),
     ),
+    Feature(
+        # §58 mission-start briefing popup. Pure display: briefingluadata emits a
+        # shared header (campaign/mission/date/time) + one record per player-crewed
+        # flight (callsign/aircraft/task/field); the `briefing` plugin shows each
+        # pilot their own card on S_EVENT_BIRTH (slot-in). No gameplay-model change.
+        "mission_briefing_popup",
+        "Mission-start briefing popup",
+        58,
+        plugin_id="briefing",
+        settings_fields=("mission_briefing_popup",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

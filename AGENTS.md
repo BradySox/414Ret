@@ -1760,6 +1760,33 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/missiongenerator/luagenerator.py`, `game/debriefing.py`, `game/coalition.py`,
     `game/sim/missionresultsprocessor.py`, `game/game.py`, `game/settings/settings.py`; features doc
     §57, checklist B9 — needs an in-game pass.)
+58. **Mission-start briefing popup** — the on-screen greeting the professional DCS campaigns show
+    when you slot in, brought to the dynamic campaign. When a pilot enters an aircraft, a short card
+    appears for ~12 s: **campaign name · Mission N · date · mission time**, then that pilot's own
+    **callsign · aircraft · task · departure field** — so you always know what you're flying before
+    opening a kneeboard. **Display only** — no gameplay-model change, no `.miz` object, nothing
+    persisted; the plugin owns nothing but the text. The emitter
+    (`game/missiongenerator/briefingluadata.py`, `populate_briefing_lua`, wired in `luagenerator.py`)
+    emits `dcsRetribution.briefing` — a shared **header** (campaign / mission = `game.turn + 1` /
+    date = `game.current_day` / clock = `game.conditions.start_time`, sourced to match the §30
+    kneeboard cover) + one **record per player-crewed flight** (`client_units` non-empty), keyed by
+    `FlightData.group_name` — only when `mission_briefing_popup` is on and the mission has a
+    player-crewed flight (else no node ⇒ the plugin no-ops). All fields are single-line strings; the
+    Lua composes the multi-line card with real newlines (`escape_string_for_lua` doesn't escape
+    `\n`, and a literal newline inside a Lua 5.1 `"..."` is a parse error — the reason it is NOT
+    pre-formatted in Python). The new `resources/plugins/briefing/` plugin shows each pilot their own
+    card: an **`S_EVENT_BIRTH` handler** (fires whenever a pilot slots in — mission start in SP, any
+    slot-in / rejoin on a server; **players only**, `getPlayerName() ~= nil`, so AI births are
+    ignored) plus a **one-shot mission-start sweep** after a short grace (catches a pilot already
+    seated whose birth fired before the handler registered), the two deduped by a small per-unit
+    debounce (> grace, so a genuine re-slot still re-shows). Symmetric in code but effectively
+    BLUE-only (players are blue). The Lua harness gained `outTextForGroup` + `UnitFake:getGroup()` /
+    `getPlayerName()` + a `fireBirth` helper. Gated `mission_briefing_popup` (Mission Generation →
+    Battlefield life, default **ON**; the plugin's own `defaultValue` is also ON). Card duration +
+    startup grace are plugin options. Tests `tests/missiongenerator/test_briefingluadata.py` +
+    `tests/lua/test_briefing_runtime.py`. (`game/missiongenerator/briefingluadata.py`,
+    `game/missiongenerator/luagenerator.py`, `resources/plugins/briefing/`,
+    `game/settings/settings.py`; features doc §58, checklist B10 — needs an in-game pass.)
 
 ---
 

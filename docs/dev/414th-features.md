@@ -5175,6 +5175,65 @@ auto-planned drop. Needs the CI client rebuild for the overlay to appear.
 
 ---
 
+## §58 — Mission-start briefing popup
+
+The professional DCS campaigns greet a pilot who slots in with a short on-screen card — campaign,
+mission, time, date, callsign, field — so you always know what you are flying before you have opened
+a kneeboard. This brings that to the dynamic campaign. **Display only:** no gameplay-model change,
+no `.miz` object, nothing persisted; the plugin owns nothing but the text.
+
+**The Python/Lua split.** The emitter `game/missiongenerator/briefingluadata.py`
+(`populate_briefing_lua`, wired into `luagenerator.py`'s `generate_plugin_data` next to the other
+`populate_*` bridges) emits `dcsRetribution.briefing`:
+
+- a shared **`header`** (the same for every flight, emitted once): `campaign` (`game.campaign_name`),
+  `mission` (`game.turn + 1` — `game.turn` is 0-indexed, so the first sortie reads "Mission 1"),
+  `date` (`game.current_day`, formatted `%A %d %B %Y`), and `time`
+  (`game.conditions.start_time`, `%H:%M` + `L`). Date + clock are sourced to match the §30 kneeboard
+  cover page, so the popup and the kneeboard agree.
+- a **`flights`** list — one record per **player-crewed** flight (a `FlightData` with a non-empty
+  `client_units`): `group` (the `FlightData.group_name` the runtime matches on), `callsign`,
+  `aircraft` (`aircraft_type.display_name`), `task` (`task_display_name`, so the Vietnam rename layer
+  etc. carry through), and `airfield` (`departure.airfield_name`).
+
+The node is emitted **only** when `mission_briefing_popup` is on **and** the mission has at least one
+player-crewed flight; otherwise there is no `briefing` node and the plugin no-ops. Every field is a
+**single-line string** — the Lua composes the multi-line card with real newlines, because
+`escape_string_for_lua` does not escape `\n` and a literal newline inside a Lua 5.1 `"..."` literal is
+a parse error. (This is why the card is *not* pre-formatted in Python.)
+
+**The runtime (`resources/plugins/briefing/`).** `briefing-config.lua` (registered in
+`plugins.json`, `defaultValue` true) builds a `group name → record` lookup and the shared header
+string, then shows each pilot their own card two ways so every path to a seat is covered:
+
+- an **`S_EVENT_BIRTH` handler** — fires whenever a pilot enters a slot (mission start in
+  single-player, and any slot-in / rejoin on a server). **Players only:** `getPlayerName()` is `nil`
+  for AI, so an AI birth is ignored and no AI flight is ever shown a card.
+- a **one-shot mission-start sweep** after a short grace — iterates the known briefing groups and
+  shows any player already seated, covering the single-player case where the player's birth fired
+  *before* this script registered its handler.
+
+The two are deduped by a small per-unit debounce (`GRACE + 5` s, comfortably above the grace so both
+catch the same slotting exactly once) that is still short enough that a genuine later re-slot
+re-shows the card. `trigger.action.outTextForGroup(groupId, card, DURATION, false)` shows the card to
+the pilot's group; `groupId` is read live from `unit:getGroup():getID()`, so only names need
+emitting. Symmetric in code, but effectively BLUE-only (players are blue). pcall-guarded throughout.
+
+**Harness.** The headless Lua harness gained `trigger.action.outTextForGroup`,
+`UnitFake:getGroup()` / `getPlayerName()` (a per-unit `playerName` spec models a human slot), and a
+`Harness.fireBirth(groupName)` helper (Python `fire_birth`). Tests
+`tests/lua/test_briefing_runtime.py` (birth shows one card with every field, the sweep catches a
+seated player, an AI birth / unknown group / absent node show nothing) +
+`tests/missiongenerator/test_briefingluadata.py` (header + one record per player flight, AI-only
+flights excluded, gated off).
+
+Gated `mission_briefing_popup` (Mission Generation → Battlefield life, default **ON**; the plugin's
+own `defaultValue` is also ON). Card duration and the startup grace are plugin options. **Needs an
+in-game pass** (checklist B10): that the card actually appears on slot-in (SP + a server rejoin),
+reads correctly, and clears after its duration.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

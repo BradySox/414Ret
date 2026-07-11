@@ -18,7 +18,7 @@ from game.campaignloader.campaign import Campaign
 YAML = Path("resources/campaigns/red_tide.yaml")
 
 
-def test_h_frg_20_loads_red(tmp_path):
+def test_h_frg_20_loads_red(tmp_path: Path) -> None:
     persistency.setup(str(tmp_path), False, 0)
     campaign = Campaign.from_file(YAML)
     theater = campaign.load_theater(campaign.advanced_iads)
@@ -30,15 +30,15 @@ def test_h_frg_20_loads_red(tmp_path):
     )
 
 
-def _squadrons_by_cp():
+def _squadrons_by_cp() -> dict[int, list[str]]:
     data = yaml.safe_load(YAML.read_text())
-    out = {}
+    out: dict[int, list[str]] = {}
     for cp_id, sqns in data["squadrons"].items():
         out[int(cp_id)] = [s.get("aircraft_type", "") for s in sqns]
     return out
 
 
-def test_forward_basing_squadron_placement():
+def test_forward_basing_squadron_placement() -> None:
     by_cp = _squadrons_by_cp()
     # H FRG 20 (143): the forward helo FOB.
     assert 143 in by_cp, "H FRG 20 (143) squadron block missing -- helos have no home."

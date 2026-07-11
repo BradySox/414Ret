@@ -1087,9 +1087,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     not precision counter-air. Symmetric (whichever side's forward fields qualify). Plugin options: interval,
     rounds/event, dispersion, per-blast power, grace. **Generic artillery mode added 2026-07-05**: the new
     `artillery_base_harassment` setting (Mission Generation, default OFF) drives the same emitter+runtime
-    with a tight `ARTILLERY_FRONT_REACH_M` (35 km — real gun range off the FLOT, vs the Vietnam siege's
-    theater-wide 200 km), so conventional campaigns can put their frontline strips under fire; **Red Tide
-    preseeds it** (the Fulda FARP + red's Haina both sit on the front — "the Gap is not a safe ramp").
+    with a reach defaulting to `ARTILLERY_FRONT_REACH_M` (35 km — real gun range off the FLOT, vs the
+    Vietnam siege's theater-wide 200 km), so conventional campaigns can put their frontline strips under
+    fire; **Red Tide preseeds it** (the Fulda FARP + red's Haina both sit on the front — "the Gap is not a
+    safe ramp"). **The reach is campaign-tunable (2026-07-10)** via `artillery_harassment_reach_km` (default
+    35, `enabled_when=artillery_base_harassment`) — the flown 2026-07-10 turn-1 test found the turn-0
+    Fulda↔Haina front sits ~39 km from BOTH Fulda and Haina, ~4 km past the 35 km default, so neither was
+    shelled on a fresh game; **Red Tide preseeds 42 km** (BM-27 Uragan reach ~35 km) so both fire from turn 1.
     All §36 guarantees carry over (player-spawn exclusion, grace, forward-only, symmetric).
     **Plugin dependency (user-caught 2026-07-05): the runtime is the vietnamops PLUGIN** — a saved
     default of "Vietnam Ops" unticked silently kills the setting, so Red Tide also preseeds
@@ -1427,12 +1431,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     purpose (2 red SS-1C Scud-B batteries off Haina + near Wittstock, added to the `.miz`; preseeds the
     setting + the `mobilemissiles` plugin). Tests `tests/missiongenerator/test_mobilemissileluadata.py` +
     `tests/lua/test_mobilemissiles_runtime.py` + `tests/fourteenth/test_campaign_plugin_preseed.py`;
-    features doc §49, checklist S2 — needs an in-game pass. **Movement bug fixed 2026-07-09** (flown
-    Red Tide test: launchers never moved, Tacview-confirmed stationary, no error): `driveTo` issued a
-    **1-waypoint** `mist.goRoute`, but a DCS ground group needs its route to START at its current
-    position or there's no leg to drive (MIST's own `groupToRandomZone` uses 2 WPs) — now a 2-WP route
-    `{current, dest}`. **The identical bug + fix apply to the COIN mover** `coin-config.lua` (§P4/P8).
-    See the memory note; **re-fly owed** (the harness fakes goRoute, so DCS AI movement is unverified).
+    features doc §49, checklist S2 — **VERIFIED 2026-07-10** (flown Red Tide re-fly: all 6 launchers in
+    both batteries relocated ~1.5 km net inside the scoot anchor, escorts with them, no SAM site moved,
+    alarm-green held). **Movement bug fixed 2026-07-09** (the first flown test: launchers never moved,
+    Tacview-confirmed stationary, no error): `driveTo` issued a **1-waypoint** `mist.goRoute`, but a DCS
+    ground group needs its route to START at its current position or there's no leg to drive (MIST's own
+    `groupToRandomZone` uses 2 WPs) — now a 2-WP route `{current, dest}`. **The identical bug + fix apply
+    to the COIN mover** `coin-config.lua` (§P4/P8), which still owes its own COIN-campaign fly.
 50. **Convoy ambush (a chance, never telegraphed) + ambient supply convoys** — the **mirror of the §35
     interdiction**: where
     interdiction gives the player *enemy* convoys to hunt, this gives the player *friendly* convoys that

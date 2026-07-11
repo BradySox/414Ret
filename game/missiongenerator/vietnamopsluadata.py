@@ -151,11 +151,12 @@ def populate_vietnam_ops_lua(
         _populate_naval_gunfire(vietnam, game)
     if settings.vietnam_airbase_harassment or artillery:
         # The Vietnam-period siege reaches theater-deep; the generic artillery mode
-        # only real gun range off the FLOT. When both are on the wider reach wins.
+        # only real gun range off the FLOT (campaign-tunable via the setting, default
+        # ARTILLERY_FRONT_REACH_M). When both are on the wider reach wins.
         reach = (
             HARASSMENT_FRONT_REACH_M
             if settings.vietnam_airbase_harassment
-            else ARTILLERY_FRONT_REACH_M
+            else settings.artillery_harassment_reach_km * 1000.0
         )
         _populate_airbase_harassment(vietnam, game, reach)
     if settings.vietnam_super_gaggle:

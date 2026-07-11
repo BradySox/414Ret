@@ -498,6 +498,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "base_battle_damage",
                     "artillery_base_harassment",
+                    "artillery_harassment_reach_km",
                     "mobile_missile_relocation",
                     "coastal_missile_relocation",
                     "ambient_supply_convoys",
@@ -2530,6 +2531,23 @@ class Settings:
             "the 'Vietnam Ops & standoff harassment' LUA plugin -- keep that plugin "
             "enabled or this setting does nothing. (The Vietnam Ops siege toggle is "
             "this same runtime with theater-wide reach.)"
+        ),
+    )
+    artillery_harassment_reach_km: int = bounded_int_option(
+        "Frontline artillery harassment reach (km)",
+        enabled_when="artillery_base_harassment",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=35,
+        min=10,
+        max=120,
+        detail=(
+            "How near a front line an occupied airfield or FARP must be to draw "
+            "frontline artillery harassment. The default 35 km is real tube/rocket "
+            "reach off the FLOT; raise it for long-range MRLs (or a laydown whose "
+            "forward fields sit a little farther back). Only used when 'Frontline "
+            "artillery harassment on forward airbases' is on; the Vietnam Ops siege "
+            "toggle keeps its own theater-wide reach."
         ),
     )
     mobile_missile_relocation: bool = boolean_option(

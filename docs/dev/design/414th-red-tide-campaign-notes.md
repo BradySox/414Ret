@@ -1,5 +1,27 @@
 # 414th Red Tide Campaign Notes
 
+> ## 🔒 FEATURE LOCK — Red Tide (2026-07-11, user decision)
+>
+> **Red Tide is FEATURE-LOCKED. Do NOT add new features, mechanics, content, or laydown
+> scope to this campaign.** It is a shipped, balanced build and the goal now is to keep it
+> stable, not to keep bolting things on. If a future session (or a future you) is tempted to
+> "force" one more system into Red Tide — a new plugin toggle, another laydown object, a
+> balance re-skew, a new economy knob — **stop and don't.** That is exactly the "force
+> bullshit in later and break it" the lock exists to prevent.
+>
+> **Still allowed** (a lock is not a freeze on correctness):
+> - **Bug / crash fixes** to already-shipped Red Tide behavior (e.g. the custom-callsign
+>   spawn crash, the SCUD/COIN 2-WP mover fix, the artillery-reach tune — these are repairs,
+>   not features).
+> - **In-game-pass verification** of features already built into Red Tide and closing out its
+>   checklist rows.
+> - **Tuning an already-shipped Red Tide mechanic** to its intended behavior when an in-game
+>   pass shows it misfiring (e.g. the 42 km artillery reach, the ambush light-kit re-scope).
+>
+> **NOT allowed without an explicit new user go-ahead that overrides this lock:** adding a
+> brand-new feature/plugin/setting to Red Tide, expanding the laydown, or re-opening the
+> balance pass. If in doubt, ask the user before touching it.
+
 Design and build notes for **Germany - Red Tide** (`resources/campaigns/red_tide.yaml`
 + `red_tide.miz`), the 414th's reworked GermanyCW scenario. Read this before editing the
 campaign or re-touching its `.miz`; it records *what* was changed, *where* in the binary,

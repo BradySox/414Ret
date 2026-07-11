@@ -119,6 +119,16 @@ class Flight(
             role = role_callsign(flight_type, is_heli)
             if role is not None:
                 self.callsign = Callsign(role, self._next_role_callsign_nr(role))
+            else:
+                # 414th: else fall back to the squadron's custom event callsign
+                # (e.g. "Voodoo") when it declares one. Role callsigns win because
+                # they are mission-specific (a rescue C-130 is "King" regardless).
+                squadron_callsign = getattr(squadron, "callsign", None)
+                if squadron_callsign:
+                    self.callsign = Callsign(
+                        squadron_callsign,
+                        self._next_role_callsign_nr(squadron_callsign),
+                    )
         if claim_inv:
             self.squadron.claim_inventory(count)
         if roster is None:
@@ -232,6 +242,11 @@ class Flight(
         role = role_callsign(self.flight_type, self.squadron.aircraft.helicopter)
         if role is not None:
             callsigns.add(role)
+        # 414th: and the squadron's custom event callsign (e.g. "Voodoo"), so it
+        # stays selectable in the picker like the role callsigns.
+        squadron_callsign = getattr(self.squadron, "callsign", None)
+        if squadron_callsign:
+            callsigns.add(squadron_callsign)
         return sorted(callsigns)
 
     def _next_role_callsign_nr(self, role: str) -> int:

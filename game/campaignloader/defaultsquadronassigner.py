@@ -190,5 +190,7 @@ class DefaultSquadronAssigner:
             squadron_def.nickname = config.nickname
         if config.female_pilot_percentage is not None:
             squadron_def.female_pilot_percentage = config.female_pilot_percentage
+        if config.callsign is not None:
+            squadron_def.callsign = config.callsign
 
         return squadron_def

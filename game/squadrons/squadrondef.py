@@ -36,6 +36,12 @@ class SquadronDef:
     claimed: bool = False
     #: Number of airframes held on QRA (hot-alert intercept). 0 = none.
     intercept_reserve: int = 0
+    #: Optional custom radio callsign (e.g. "Voodoo"). When set, the squadron's
+    #: flights default to it instead of a random DCS-pool callsign, and it is
+    #: registered into the spawn country's pool so it shows on the F10 map,
+    #: labels, kneeboard and briefing. The AI cannot voice a non-stock name (a
+    #: DCS engine limit), the same as the 414th role callsigns (King/Sandy/...).
+    callsign: Optional[str] = None
 
     def __str__(self) -> str:
         if self.nickname is None:
@@ -114,4 +120,5 @@ class SquadronDef:
             female_pilot_percentage=female_pilot_percentage,
             pilot_pool=pilots,
             intercept_reserve=data.get("intercept_reserve", 0),
+            callsign=data.get("callsign"),
         )

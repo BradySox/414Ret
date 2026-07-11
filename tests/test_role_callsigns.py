@@ -86,3 +86,41 @@ def test_deregister_is_idempotent_and_skips_stock_callsigns() -> None:
     # A stock callsign: never removed even if it happens to be in the pool.
     _spawner("Enfield", "Plane", pool)._deregister_custom_callsign()
     assert pool == ["Enfield"]
+
+
+# --- squadron custom event callsigns (e.g. "Voodoo") ---------------------------
+# The same injection machinery now also carries a squadron's own custom callsign,
+# not just the four role callsigns.
+
+
+def test_squadron_custom_callsign_is_injected_then_pulled_back() -> None:
+    pool = ["Enfield", "Springfield"]
+    spawner = _spawner("Voodoo", "Plane", pool)
+    spawner._register_custom_callsign()
+    assert "Voodoo" in pool  # present while the group is being spawned
+    spawner._deregister_custom_callsign()
+    assert pool == ["Enfield", "Springfield"]  # no leak to other flights
+
+
+def test_squadron_config_parses_callsign() -> None:
+    from game.campaignloader.campaignairwingconfig import SquadronConfig
+
+    assert SquadronConfig.from_data(
+        {"primary": "CAS", "callsign": "Voodoo"}
+    ).callsign == ("Voodoo")
+    assert SquadronConfig.from_data({"primary": "CAS"}).callsign is None
+
+
+def test_override_squadron_defaults_applies_callsign() -> None:
+    from game.campaignloader.campaignairwingconfig import SquadronConfig
+    from game.campaignloader.defaultsquadronassigner import DefaultSquadronAssigner
+
+    squadron_def = cast(
+        Any,
+        SimpleNamespace(
+            name="X", nickname=None, female_pilot_percentage=None, callsign=None
+        ),
+    )
+    config = SquadronConfig.from_data({"primary": "CAS", "callsign": "Voodoo"})
+    DefaultSquadronAssigner.override_squadron_defaults(squadron_def, config)
+    assert squadron_def.callsign == "Voodoo"

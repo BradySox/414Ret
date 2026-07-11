@@ -1793,13 +1793,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     server; **players only**, `getPlayerName() ~= nil`, so AI births are ignored) plus a **one-shot
     mission-start sweep** after a short grace (catches a pilot already seated whose birth fired before
     the handler registered), the two deduped by a small per-unit debounce (> grace, so a genuine
-    re-slot still re-shows); the **taxi card is scheduled `DURATION` s after the briefing card** (via
-    `timer.scheduleFunction`, re-fetching the group by name so a pilot who left is skipped). Symmetric
-    in code but effectively BLUE-only (players are blue). The Lua harness gained `outTextForGroup` +
-    `UnitFake:getGroup()` / `getPlayerName()` + a `fireBirth` helper. Gated `mission_briefing_popup`
-    (Mission Generation → Battlefield life, default **ON**; the plugin's own `defaultValue` is also
-    ON). Card duration, startup grace, the taxi **ground frequency** (`groundFreq`, default "249.50"),
-    and the **beep toggle** (`playSound`, default true) are plugin options. Tests
+    re-slot still re-shows); the whole sequence waits a **`startDelayS` (default 5 s) delay after
+    slot-in** before the first card + beep (so it doesn't slam up the instant the pilot takes the
+    seat), and the **taxi card is scheduled `DURATION` s after the briefing card** (nested
+    `timer.scheduleFunction`, each re-fetching the group by name so a pilot who left is skipped).
+    Symmetric in code but effectively BLUE-only (players are blue). The Lua harness gained
+    `outTextForGroup` + `UnitFake:getGroup()` / `getPlayerName()` + a `fireBirth` helper. Gated
+    `mission_briefing_popup` (Mission Generation → Battlefield life, default **ON**; the plugin's own
+    `defaultValue` is also ON). Card duration, startup grace, the **slot-in delay** (`startDelayS`,
+    default 5), the taxi **ground frequency** (`groundFreq`, default "249.50"), and the **beep toggle**
+    (`playSound`, default true) are plugin options. Tests
     `tests/missiongenerator/test_briefingluadata.py` + `tests/lua/test_briefing_runtime.py` (the
     harness gained an `outSoundForGroup` stub). (`game/missiongenerator/briefingluadata.py`,
     `game/missiongenerator/luagenerator.py`, `resources/plugins/briefing/`,

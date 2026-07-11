@@ -5236,9 +5236,11 @@ The two are deduped by a small per-unit debounce (`GRACE + 5` s, comfortably abo
 catch the same slotting exactly once) that is still short enough that a genuine later re-slot
 re-shows the card. `trigger.action.outTextForGroup(groupId, card, DURATION, false)` shows the card to
 the pilot's group; `groupId` is read live from `unit:getGroup():getID()`, so only names need
-emitting. The **taxi card** (`buildTaxiCard` — the callsign + `Get started up, Contact ground @
-<groundFreq> when ready to taxi`) is scheduled **`DURATION` s later** via `timer.scheduleFunction`,
-re-fetching the group by name at fire time so a pilot who left their seat is skipped. Symmetric in
+emitting. The whole sequence is delayed **`startDelayS` s (default 5) after slot-in** (a nested
+`timer.scheduleFunction`) so it doesn't slam up the instant the pilot takes the seat; then the **taxi
+card** (`buildTaxiCard` — the callsign + `Get started up, Contact ground @ <groundFreq> when ready to
+taxi`) follows **`DURATION` s after the briefing card**, each re-fetching the group by name at fire
+time so a pilot who left their seat is skipped. Symmetric in
 code, but effectively BLUE-only (players are blue). pcall-guarded throughout.
 
 **Harness.** The headless Lua harness gained `trigger.action.outTextForGroup`,
@@ -5251,9 +5253,10 @@ sweep catches a seated player, an AI birth / unknown group / absent node show no
 per player flight, AI-only flights excluded, gated off).
 
 Gated `mission_briefing_popup` (Mission Generation → Battlefield life, default **ON**; the plugin's
-own `defaultValue` is also ON). Card duration, the startup grace, the taxi **ground frequency**
-(`groundFreq`, default "249.50"), and the **beep toggle** (`playSound`, default true) are plugin
-options. The headless harness gained an `outSoundForGroup` stub (a `sounds` records list). **Needs an
+own `defaultValue` is also ON). Card duration, the startup grace, the **slot-in delay** (`startDelayS`,
+default 5), the taxi **ground frequency** (`groundFreq`, default "249.50"), and the **beep toggle**
+(`playSound`, default true) are plugin options. The headless harness gained an `outSoundForGroup` stub
+(a `sounds` records list). **Needs an
 in-game pass** (checklist B10): that the card actually appears on slot-in (SP + a server rejoin),
 reads correctly, and clears after its duration.
 

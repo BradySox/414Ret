@@ -27,6 +27,7 @@ local data = dcsRetribution.briefing
 -- Defaults. Overridable via the plugin options (dcsRetribution.plugins.briefing).
 local DURATION = 12 -- s each card stays on screen
 local GRACE = 2 -- s before the mission-start sweep
+local START_DELAY = 5 -- s after slot-in before the first card + beep (don't slam it up instantly)
 local GROUND_FREQ = "249.50" -- the ground/startup freq on the taxi card (a fixed squadron freq)
 local PLAY_SOUND = true -- play the beep as each card flashes
 -- An ORIGINAL beep bundled with the plugin (otherResourceFiles), NOT copied from any campaign.
@@ -36,6 +37,9 @@ if dcsRetribution.plugins and dcsRetribution.plugins.briefing then
     local o = dcsRetribution.plugins.briefing
     DURATION = tonumber(o.durationS) or DURATION
     GRACE = tonumber(o.startGraceS) or GRACE
+    if tonumber(o.startDelayS) ~= nil then
+        START_DELAY = tonumber(o.startDelayS)
+    end
     if o.groundFreq ~= nil and tostring(o.groundFreq) ~= "" then
         GROUND_FREQ = tostring(o.groundFreq)
     end
@@ -140,21 +144,29 @@ local function showFor(unit)
         return
     end
     shownAt[uname] = timer.getTime()
-    local gid = grp:getID()
-    trigger.action.outTextForGroup(gid, buildCard(rec), DURATION, false)
-    beep(gid)
-    -- Flash the taxi card right after the first expires, holding the same duration.
-    -- Re-fetch the group by name at fire time so a pilot who left their seat is skipped.
     local gname = grp:getName()
+    local card = buildCard(rec)
     local taxi = buildTaxiCard(rec)
+    -- Wait START_DELAY s after slot-in before the first card + beep (don't slam it up the instant
+    -- the pilot takes the seat); the taxi card follows DURATION s after that. Both re-fetch the
+    -- group by name at fire time so a pilot who left their seat is skipped.
     timer.scheduleFunction(function()
         local g = Group.getByName(gname)
         if g and g:isExist() then
-            trigger.action.outTextForGroup(g:getID(), taxi, DURATION, false)
-            beep(g:getID())
+            local gid = g:getID()
+            trigger.action.outTextForGroup(gid, card, DURATION, false)
+            beep(gid)
+            timer.scheduleFunction(function()
+                local g2 = Group.getByName(gname)
+                if g2 and g2:isExist() then
+                    trigger.action.outTextForGroup(g2:getID(), taxi, DURATION, false)
+                    beep(g2:getID())
+                end
+                return nil
+            end, {}, timer.getTime() + DURATION)
         end
         return nil
-    end, {}, timer.getTime() + DURATION)
+    end, {}, timer.getTime() + START_DELAY)
 end
 
 -- Ongoing path: whenever a pilot enters a slot.

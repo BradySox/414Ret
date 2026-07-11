@@ -16,16 +16,23 @@
             "maximumValue": 3600
         },
         {
+            "nameInUI": "Max channels jammed at all: caps the total distinct briefed freqs stepped on, highest-priority first (human flights, then AWACS). 10 = every briefed channel.",
+            "mnemonic": "maxChannels",
+            "defaultValue": 10,
+            "minimumValue": 1,
+            "maximumValue": 10
+        },
+        {
             "nameInUI": "Channels stepped on per burst cycle",
             "mnemonic": "maxFreqsPerBurst",
             "defaultValue": 3,
             "maximumValue": 10
         },
         {
-            "nameInUI": "Transmitter power (W) -- range/strength of the interference",
+            "nameInUI": "Transmitter power (W) -- range AND strength of the interference (DCS models the falloff; higher = louder and reaches further from the node)",
             "mnemonic": "powerW",
             "defaultValue": 100,
-            "maximumValue": 1000
+            "maximumValue": 100000
         },
         {
             "nameInUI": "Startup grace before the first burst (s)",

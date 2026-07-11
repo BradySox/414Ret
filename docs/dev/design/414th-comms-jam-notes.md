@@ -100,11 +100,19 @@ is what motivates fragging a strike at it next turn (which un-culls it).
 ## Tuning levers (for the S4 pass)
 
 All plugin options (`dcsRetribution.plugins.commsjam`): `burstSec` 25 · `intervalSec` 90
-(jittered 0.6–1.4×) · `maxFreqsPerBurst` 3 · `powerW` 100 (the falloff lever — raise if
-inaudible at the front, lower if it reaches home plate) · `startGraceS` 240 ·
-`captureReactionS` 120 (live capture → first burst). Python-side:
-`MAX_JAMMED_FREQUENCIES` 10 (`commsjamluadata.py`); the capture-watch poll cadence is a
-plugin constant (`CAPTURE_POLL` 30 s).
+(jittered 0.6–1.4×) · `maxFreqsPerBurst` 3 · `maxChannels` 10 · `powerW` 100 (the falloff
+lever — raise if inaudible at the front, lower if it reaches home plate) · `startGraceS`
+240 · `captureReactionS` 120 (live capture → first burst). Python-side:
+`MAX_JAMMED_FREQUENCIES` 10 (`commsjamluadata.py`, the *emit* ceiling); the capture-watch
+poll cadence is a plugin constant (`CAPTURE_POLL` 30 s).
+
+**Continuous-vs-scattered feel.** Two independent axes: *how much* is jammed (`maxChannels`
+caps the total distinct channels — the Lua keeps the first N of the priority-ordered emit,
+so N=3 pins the top three high-priority nets and leaves the rest clean) and *how continuous*
+(`burstSec` up + `intervalSec` down → less duty-cycling; `burstSec` 120 / `intervalSec` 10 ≈
+90 % on-air). `maxFreqsPerBurst` should be ≥ `maxChannels` so every capped channel is stepped
+on each burst rather than round-robined. Red Tide preseeds `burstSec 120 / intervalSec 10 /
+maxChannels 3 / powerW 10000` (100x the 100 W default) — near-continuous, strong, long-ranged pressure on the human flights' + AWACS channels.
 
 ## Deferred
 

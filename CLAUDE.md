@@ -1519,7 +1519,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     only ~3 channels per jittered burst cycle (rotating window — switching channels is real comms discipline),
     rotates the transmitting node across alive jammers, and uses the MANTIS `node_dead` positive-evidence
     convention (destroyed static / `dead_events`) so a culled node stays "alive" (unkillable this mission =
-    standing pressure to frag it next turn). **The intel gate is the default mode** (`comms_jam_requires_capture`,
+    standing pressure to frag it next turn). **`maxChannels`** (plugin option, default 10) caps the total
+    distinct channels jammed — the Lua keeps the first N of the priority-ordered emit, so a low N pins the
+    jamming to the top nets (human flights, then AWACS); paired with a long `burstSec` + short `intervalSec`
+    it turns the duty-cycled sweep into near-continuous pressure on a few channels (Red Tide preseeds
+    `burstSec 120 / intervalSec 10 / maxChannels 3 / powerW 10000`). **The intel gate is the default mode** (`comms_jam_requires_capture`,
     default ON — squadron call 2026-07-06): red can only jam channels it *knows*, learned from a **captured
     aircrew's comms plan** via the §15/§21 Combat SAR capture race — the plugin stays dormant until either a
     live capture (`combat_sar_captures` poll → "AIRCREW CAPTURED" cue → bursts after a `captureReactionS`

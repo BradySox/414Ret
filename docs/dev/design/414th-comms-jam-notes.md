@@ -112,7 +112,7 @@ so N=3 pins the top three high-priority nets and leaves the rest clean) and *how
 (`burstSec` up + `intervalSec` down → less duty-cycling; `burstSec` 120 / `intervalSec` 10 ≈
 90 % on-air). `maxFreqsPerBurst` should be ≥ `maxChannels` so every capped channel is stepped
 on each burst rather than round-robined. Red Tide preseeds `burstSec 120 / intervalSec 10 /
-maxChannels 3` — near-continuous pressure on the human flights' + AWACS channels.
+maxChannels 3 / powerW 10000` (100x the 100 W default) — near-continuous, strong, long-ranged pressure on the human flights' + AWACS channels.
 
 ## Deferred
 

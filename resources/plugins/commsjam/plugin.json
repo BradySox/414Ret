@@ -29,10 +29,10 @@
             "maximumValue": 10
         },
         {
-            "nameInUI": "Transmitter power (W) -- range/strength of the interference",
+            "nameInUI": "Transmitter power (W) -- range AND strength of the interference (DCS models the falloff; higher = louder and reaches further from the node)",
             "mnemonic": "powerW",
             "defaultValue": 100,
-            "maximumValue": 1000
+            "maximumValue": 100000
         },
         {
             "nameInUI": "Startup grace before the first burst (s)",

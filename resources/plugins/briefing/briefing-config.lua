@@ -3,9 +3,10 @@
 --
 -- When a pilot slots into an aircraft, show them a short on-screen card -- campaign, mission,
 -- date, time, callsign, aircraft, task, departure field -- the way the professional DCS campaigns
--- greet you at mission start. Reads dcsRetribution.briefing (emitted by
--- game/missiongenerator/briefingluadata.py: a shared header + one record per player-crewed flight,
--- keyed by DCS group name); inert when that node is absent.
+-- greet you at mission start. A SECOND card (the startup/taxi instruction, e.g. "Contact ground @
+-- 249.50 when ready to taxi") is flashed right after the first and held the same duration. Reads
+-- dcsRetribution.briefing (emitted by game/missiongenerator/briefingluadata.py: a shared header +
+-- one record per player-crewed flight, keyed by DCS group name); inert when that node is absent.
 --
 -- Two paths cover every way a pilot reaches a seat: an S_EVENT_BIRTH handler (fires whenever a
 -- pilot enters a slot -- mission start in SP, and any slot-in / rejoin on a server) plus a one-shot
@@ -24,13 +25,33 @@ end
 local data = dcsRetribution.briefing
 
 -- Defaults. Overridable via the plugin options (dcsRetribution.plugins.briefing).
-local DURATION = 12 -- s the card stays on screen
+local DURATION = 12 -- s each card stays on screen
 local GRACE = 2 -- s before the mission-start sweep
+local GROUND_FREQ = "249.50" -- the ground/startup freq on the taxi card (a fixed squadron freq)
+local PLAY_SOUND = true -- play the beep as each card flashes
+-- An ORIGINAL beep bundled with the plugin (otherResourceFiles), NOT copied from any campaign.
+local SOUND_FILE = "briefing-beep.wav"
 
 if dcsRetribution.plugins and dcsRetribution.plugins.briefing then
     local o = dcsRetribution.plugins.briefing
     DURATION = tonumber(o.durationS) or DURATION
     GRACE = tonumber(o.startGraceS) or GRACE
+    if o.groundFreq ~= nil and tostring(o.groundFreq) ~= "" then
+        GROUND_FREQ = tostring(o.groundFreq)
+    end
+    if o.playSound ~= nil then
+        PLAY_SOUND = o.playSound == true or o.playSound == "true"
+    end
+end
+
+-- Play the notification beep to one group (the card just flashed for them). outSoundForGroup DOES
+-- exist (unlike outPictureForGroup), so the beep is per-pilot, on their slot-in. If a bundled sound
+-- ever fails to resolve by basename, the l10n path ("l10n/DEFAULT/" .. SOUND_FILE) is the fallback.
+local function beep(groupId)
+    if not PLAY_SOUND then
+        return
+    end
+    pcall(trigger.action.outSoundForGroup, groupId, SOUND_FILE)
 end
 
 -- Dedupe window for the birth-handler + mission-start-sweep double fire; comfortably above the
@@ -83,6 +104,16 @@ local function buildCard(rec)
     return table.concat(lines, "\n")
 end
 
+-- The second card: the startup/taxi instruction, addressed to the pilot's callsign.
+local function buildTaxiCard(rec)
+    local lines = {
+        str(rec.callsign, "-"),
+        "",
+        "Get started up, Contact ground @ " .. GROUND_FREQ .. " when ready to taxi.",
+    }
+    return table.concat(lines, "\n")
+end
+
 local shownAt = {} -- unit name -> last mission time the card was shown
 
 -- Show the card to the group of a player unit, unless we just showed it (debounce).
@@ -109,7 +140,21 @@ local function showFor(unit)
         return
     end
     shownAt[uname] = timer.getTime()
-    trigger.action.outTextForGroup(grp:getID(), buildCard(rec), DURATION, false)
+    local gid = grp:getID()
+    trigger.action.outTextForGroup(gid, buildCard(rec), DURATION, false)
+    beep(gid)
+    -- Flash the taxi card right after the first expires, holding the same duration.
+    -- Re-fetch the group by name at fire time so a pilot who left their seat is skipped.
+    local gname = grp:getName()
+    local taxi = buildTaxiCard(rec)
+    timer.scheduleFunction(function()
+        local g = Group.getByName(gname)
+        if g and g:isExist() then
+            trigger.action.outTextForGroup(g:getID(), taxi, DURATION, false)
+            beep(g:getID())
+        end
+        return nil
+    end, {}, timer.getTime() + DURATION)
 end
 
 -- Ongoing path: whenever a pilot enters a slot.

@@ -1764,27 +1764,44 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     when you slot in, brought to the dynamic campaign. When a pilot enters an aircraft, a short card
     appears for ~12 s: **campaign name · Mission N · date · mission time**, then that pilot's own
     **callsign · aircraft · task · departure field** — so you always know what you're flying before
-    opening a kneeboard. **Display only** — no gameplay-model change, no `.miz` object, nothing
-    persisted; the plugin owns nothing but the text. The emitter
+    opening a kneeboard — and a **second card is flashed right after it** (held the same duration):
+    the startup/taxi instruction, `<callsign> — Get started up, Contact ground @ 249.50 when ready
+    to taxi` (249.50 is a fixed squadron freq, a plugin option). A **short beep plays as each card
+    flashes** (`outSoundForGroup` — which, unlike `outPicture*`, DOES have a per-group variant, so
+    the beep is per-pilot on their slot-in), from an **original** `briefing-beep.wav` bundled with
+    the plugin (`otherResourceFiles`) — NOT lifted from any paid campaign; a `playSound` option mutes
+    it. **Display only** — no gameplay-model change, no `.miz` object, nothing persisted; the plugin
+    owns nothing but the text (+ the one bundled sound).
+    **It is TEXT, not a styled image, by DCS constraint:** the Lua API has `outTextForGroup` (per
+    flight) but **no `outPictureForGroup`/`outPictureForUnit`** — pictures only go to *all* players
+    or a *whole coalition* ([ED wishlist](https://forum.dcs.world/topic/371036-outpicturefor-lua-mission-scripting-functions/);
+    0 `outPicture*` calls in MOOSE/plugins vs 31 `outTextForGroup`). A per-pilot styled card is
+    therefore impossible in MP (the pro campaigns get the image look only because they are hand-built
+    *single-flight* missions where `outPicture`-to-all == the one pilot). The emitter
     (`game/missiongenerator/briefingluadata.py`, `populate_briefing_lua`, wired in `luagenerator.py`)
-    emits `dcsRetribution.briefing` — a shared **header** (campaign / mission = `game.turn + 1` /
-    date = `game.current_day` / clock = `game.conditions.start_time`, sourced to match the §30
-    kneeboard cover) + one **record per player-crewed flight** (`client_units` non-empty), keyed by
-    `FlightData.group_name` — only when `mission_briefing_popup` is on and the mission has a
-    player-crewed flight (else no node ⇒ the plugin no-ops). All fields are single-line strings; the
-    Lua composes the multi-line card with real newlines (`escape_string_for_lua` doesn't escape
-    `\n`, and a literal newline inside a Lua 5.1 `"..."` is a parse error — the reason it is NOT
-    pre-formatted in Python). The new `resources/plugins/briefing/` plugin shows each pilot their own
-    card: an **`S_EVENT_BIRTH` handler** (fires whenever a pilot slots in — mission start in SP, any
-    slot-in / rejoin on a server; **players only**, `getPlayerName() ~= nil`, so AI births are
-    ignored) plus a **one-shot mission-start sweep** after a short grace (catches a pilot already
-    seated whose birth fired before the handler registered), the two deduped by a small per-unit
-    debounce (> grace, so a genuine re-slot still re-shows). Symmetric in code but effectively
-    BLUE-only (players are blue). The Lua harness gained `outTextForGroup` + `UnitFake:getGroup()` /
-    `getPlayerName()` + a `fireBirth` helper. Gated `mission_briefing_popup` (Mission Generation →
-    Battlefield life, default **ON**; the plugin's own `defaultValue` is also ON). Card duration +
-    startup grace are plugin options. Tests `tests/missiongenerator/test_briefingluadata.py` +
-    `tests/lua/test_briefing_runtime.py`. (`game/missiongenerator/briefingluadata.py`,
+    emits `dcsRetribution.briefing` — a shared **header** (campaign / mission = **raw `game.turn`**,
+    so the number matches the §30 kneeboard cover's "Turn N" — `turn+1` was confusing, card "Mission
+    2" next to the kneeboard's "Turn 1"; 0-indexed, so a fresh campaign reads "Mission 0" / "Turn 0"
+    alike / date = `game.current_day` / clock = `game.conditions.start_time`) + one **record per
+    player-crewed flight** (`client_units` non-empty), keyed by `FlightData.group_name` — only when
+    `mission_briefing_popup` is on and the mission has a player-crewed flight (else no node ⇒ the
+    plugin no-ops). All fields are single-line strings; the Lua composes the multi-line card with
+    real newlines (`escape_string_for_lua` doesn't escape `\n`, and a literal newline inside a Lua
+    5.1 `"..."` is a parse error — the reason it is NOT pre-formatted in Python). The new
+    `resources/plugins/briefing/` plugin shows each pilot their own cards: an **`S_EVENT_BIRTH`
+    handler** (fires whenever a pilot slots in — mission start in SP, any slot-in / rejoin on a
+    server; **players only**, `getPlayerName() ~= nil`, so AI births are ignored) plus a **one-shot
+    mission-start sweep** after a short grace (catches a pilot already seated whose birth fired before
+    the handler registered), the two deduped by a small per-unit debounce (> grace, so a genuine
+    re-slot still re-shows); the **taxi card is scheduled `DURATION` s after the briefing card** (via
+    `timer.scheduleFunction`, re-fetching the group by name so a pilot who left is skipped). Symmetric
+    in code but effectively BLUE-only (players are blue). The Lua harness gained `outTextForGroup` +
+    `UnitFake:getGroup()` / `getPlayerName()` + a `fireBirth` helper. Gated `mission_briefing_popup`
+    (Mission Generation → Battlefield life, default **ON**; the plugin's own `defaultValue` is also
+    ON). Card duration, startup grace, the taxi **ground frequency** (`groundFreq`, default "249.50"),
+    and the **beep toggle** (`playSound`, default true) are plugin options. Tests
+    `tests/missiongenerator/test_briefingluadata.py` + `tests/lua/test_briefing_runtime.py` (the
+    harness gained an `outSoundForGroup` stub). (`game/missiongenerator/briefingluadata.py`,
     `game/missiongenerator/luagenerator.py`, `resources/plugins/briefing/`,
     `game/settings/settings.py`; features doc §58, checklist B10 — needs an in-game pass.)
 

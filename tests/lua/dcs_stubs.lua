@@ -31,6 +31,7 @@ local Harness = {
         firedTasks = {}, -- { group, x, y, radius, rounds, t }
         radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
         stoppedTransmissions = {}, -- transmission names
+        sounds = {}, -- { groupId, file, t } from outSound*
 
         infos = {},
         warnings = {},
@@ -451,6 +452,13 @@ trigger = {
                 text = tostring(text),
                 duration = duration,
                 clearview = clearview,
+                t = Harness.now,
+            })
+        end,
+        outSoundForGroup = function(groupId, file)
+            table.insert(Harness.records.sounds, {
+                groupId = groupId,
+                file = tostring(file),
                 t = Harness.now,
             })
         end,

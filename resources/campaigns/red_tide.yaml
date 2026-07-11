@@ -590,8 +590,14 @@ squadrons:
         - 368th Assault Aviation Regiment
       aircraft_type: Su-25 Frogfoot
       size: 8
-    - primary: Escort
-      secondary: any
+    - primary: TARCAP
+      # Was `primary: Escort` / `secondary: any` (2026-07-11): the forward fighter
+      # regiment flew offensive escort deep into blue airspace and was slaughtered by
+      # the NATO F-15/F-14/AWACS wall (the WOODPECKER/BULLSHARK Escort losses in the
+      # 07-11 Tacview). As TARCAP + air-to-air it contests the Fulda/Haina front
+      # reactively (Haina is the spearhead field) instead of being glued to a doomed
+      # strike package -- a lasting air threat that survives to fight again.
+      secondary: air-to-air
       aircraft:
         - 33rd Fighter Aviation Regiment
       aircraft_type: MiG-23MLD Flogger-K
@@ -621,7 +627,13 @@ squadrons:
         - 326th Heavy Bomber Aviation Regiment
       aircraft_type: Tu-22M3 Backfire-C
       size: 8
-    - primary: Escort
+    - primary: BARCAP
+      # Was `primary: Escort` (2026-07-11): red's best fighter was being fragged
+      # forward to escort strikes into the NATO air-superiority wall and dying instead
+      # of defending. As BARCAP it stands as red's premier reactive barrier interceptor
+      # -- survives, scrambles on the player (§1 QRA forward-defense pushes it to the
+      # Fulda/Haina front), and stays a lasting air threat across the campaign rather
+      # than self-destructing on offense turn after turn.
       secondary: air-to-air
       aircraft:
         - 831st Guards Fighter Aviation Regiment

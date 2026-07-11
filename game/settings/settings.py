@@ -382,6 +382,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "auto_ato_behavior_tankers",
                     "auto_ato_player_missions_asap",
                     "auto_combat_sar",
+                    "combat_sar_persistent_pilots",
                     "combat_sar_test_force_capture",
                     "combat_sar_test_easy_rescue",
                     "automate_front_line_stance",
@@ -1854,6 +1855,24 @@ class Settings:
             "capable squadron; a human can always fly the rescue instead. Turn OFF "
             "to only fly rescues manually. (Default ON since the 2026-07-03 CSAR "
             "rescope; existing campaigns keep their saved choice.)"
+        ),
+    )
+    combat_sar_persistent_pilots: bool = boolean_option(
+        "Downed pilots persist until rescued or captured (MIA)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        HQ_AUTOMATION_SECTION,
+        default=True,
+        detail=(
+            "A pilot who ejects and is neither rescued nor captured by mission end "
+            "goes MIA instead of dying: they re-spawn at their last known position "
+            "next mission (fresh red smoke, a fresh enemy snatch race, rescuable by "
+            "a player package or the automatic rescue), and at every turn boundary "
+            "an evader on friendly ground walks home while one behind the lines "
+            "rolls a DEPTH-weighted capture -- near the front they usually keep "
+            "evading; deep behind the lines enemy search parties almost certainly "
+            "find them (-> POW, which can compromise your comms). There is no "
+            "death clock; the depth roll is the clock. Turn OFF to return to the "
+            "old behaviour (an un-rescued pilot is lost at debrief)."
         ),
     )
     combat_sar_test_force_capture: bool = boolean_option(

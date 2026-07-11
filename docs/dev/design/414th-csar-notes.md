@@ -248,6 +248,66 @@ window). Fixes:
   Both are test aids, not gameplay — leave OFF for normal play. Emitter test:
   `tests/missiongenerator/test_combat_sar_sandy_luadata.py`.
 
+## Persistent evaders + the always-run snatch (2026-07-10 squadron call)
+
+A flown jamming test (auto-CSAR **off**, force-capture **on**, a Sandy-only package) found the
+snatch race silently dead: the plugin bailed at "no rescue helos/template; skipping" whenever no
+rescue asset existed, taking the whole ledger — and the capture → POW → §51 comms-jam chain —
+with it. The squadron call reframed the model around the **pilot**, not the rescue asset:
+
+> "When pilots go down they are permanent — they stay until picked up, red races to snatch them,
+> and if they survive the turn somebody comes back for them. It incentivizes our blue players not
+> to fly deep, because then we can't save them."
+
+Three pieces (calls resolved: capture chance stays 50% / spawn 0.75 NM — the 2026-07-09 tuning,
+not a test value; red's follow-up = the **depth-weighted turn-boundary roll**, not a literal red
+pickup package (that would be exactly the frozen AI-choreography class, and G21 showed even blue's
+own airborne choreography fails); **no death clock** — the roll is the clock):
+
+1. **The ledger always runs.** The emitter always emits the blue `CombatSAR` node (the old
+   player-package/auto-spawn early-return is gone) and `addConfig` no longer bails without rescue
+   capability — `canRescue` only shapes the MAYDAY ("no rescue assets available. Protect the
+   survivor!"). A pilot nobody can come for is MORE capturable, not immune.
+2. **Un-resolved survivors persist (MIA).** The plugin mirrors its live ledger into a new state
+   global `combat_sar_survivors` ({unit, x, y} per down/boarding survivor); at commit,
+   `record_downed_pilots` (`game/fourteenth/downed_pilots.py`) retires rescued/captured entries
+   and records the rest on `game.downed_pilots` with the aviator flipped to the new
+   **`PilotStatus.MIA`** (off the schedule, like a POW; `repatriate()` returns both). The kill is
+   spared in `commit_air_losses` (same pattern as rescue/capture). Next mission the emitter hands
+   the ledger back as `persistentSurvivors`; the plugin re-spawns each evader at its position
+   (fresh red smoke, an "EVADER" cue, a fresh 50% snatch race, the normal rescue paths — including
+   the on-demand AI helo, so "somebody comes back for him" happens by construction). Surfaced on
+   the SITREP band ("MIA: Capt Mitchell — evading near Haina (2 turns down)") and the squadron
+   roster.
+3. **The depth-weighted turn roll.** At every turn boundary (`resolve_downed_pilots` from
+   `finish_turn`): an evader whose nearest control point is friendly **walks home** (recovered →
+   Active); otherwise capture odds scale with depth behind the lines — 10% within 5 NM of the
+   front, linearly to **90% at 40 NM+** (front-less laydowns measure to the nearest friendly CP).
+   A capture is the normal POW consequence (`PendingPowRecovery`, holding field resolved, the §51
+   comms window, the will drain). **Deliberately no expiry** — a near-front evader can evade for
+   many turns; that is the standing rescue mission.
+
+Gated `combat_sar_persistent_pilots` (Campaign Management → HQ Automation, **default ON**). The
+gate covers only *creation* of new MIA entries — an existing entry is always emitted/resolved, so
+a mid-campaign toggle never strands an evader. **On the rescope:** "capture is a campaign
+consequence, not a plannable mission" still stands — the POW raid stays shelved; the evader is a
+*survivor* objective the existing player-plannable CSAR package (or the on-demand AI rescue)
+already serves, not a new flight type, and red's pressure lives in the turn model, not in new AI
+choreography.
+
+Files: `resources/plugins/combatsar/combatsar-config.lua` (always-run + `syncSurvivorState` +
+`persistentSurvivors` respawn), `resources/plugins/base/dcs_retribution.lua` (the state global),
+`game/missiongenerator/luagenerator.py` (always-emit + the evader hand-back),
+`game/fourteenth/downed_pilots.py` (ledger/record/roll/SITREP), `game/squadrons/pilot.py` (MIA),
+`game/debriefing.py` (`combat_sar_survivors` parse), `game/sim/missionresultsprocessor.py`
+(MIA sparing + the ledger pilot-fallback in `record_pow_captures` + `record_downed_pilots` +
+SITREP), `game/sitrep.py` (`pilots_mia`), `game/game.py` (state + the finish_turn hook),
+`game/settings/settings.py`. Tests: `tests/fourteenth/test_downed_pilots.py`,
+`tests/lua/test_combatsar_ledger.py` (the real plugin under a MOOSE-stub sandbox: no-rescue
+config runs, eject → sync → snatch, evader respawn), `tests/test_combat_sar_scoring.py`,
+`tests/missiongenerator/test_combat_sar_sandy_luadata.py`. In-game pass: checklist **G29**.
+No NEW game required (plugin/emitter/turn-model only; old saves get `downed_pilots` on load).
+
 ## What is deliberately NOT here
 
 - **No POW recovery raid** (2026-07-03, above). If a future squadron call wants it back, it
@@ -263,8 +323,9 @@ window). Fixes:
 
 Verified: G8 (rescue), G9 (standing alert), G11 (scoring), G13 (airframes), G20 (snatch
 party). Open: G10 (King TACAN radiating + LARS use — partial), G21 (commandeer preference —
-partial), G23 (Sandy divert — the ONE re-fly, pass-or-delete). G22 (POW raid) is RETIRED with
-the raid. Default-ON behavior rides G9's verified verdict.
+partial), G23 (Sandy divert — the ONE re-fly, pass-or-delete), G29 (persistent evaders +
+always-run snatch). G22 (POW raid) is RETIRED with the raid. Default-ON behavior rides G9's
+verified verdict.
 
 ## Superseded documents (historical record only)
 

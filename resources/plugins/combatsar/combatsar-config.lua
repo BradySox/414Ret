@@ -25,8 +25,14 @@
 -- The King (C-130) still lights an air-tracking TACAN and carries the LARS F10 locator, which
 -- now reads the ledger. Vanilla DCS only; pcall-guarded throughout so a bad record degrades to
 -- a logged warning, never a CTD. Writes the dcs_retribution core globals combat_sar_rescues /
--- combat_sar_captures (persisted to state.json), setting dirty_state.
--- see docs/dev/design/414th-combat-sar-spec.md
+-- combat_sar_captures / combat_sar_survivors (persisted to state.json), setting dirty_state.
+--
+-- 2026-07-10 (squadron call): the ledger runs whenever the node exists, even with NO rescue
+-- capability -- a pilot nobody can come for is still capturable (the old "no helos -> skip"
+-- bail silently killed the snatch race). Un-resolved survivors persist: combat_sar_survivors
+-- carries them to the campaign (-> MIA + the depth-weighted turn capture roll), and
+-- persistentSurvivors re-spawns them at their last position next mission.
+-- see docs/dev/design/414th-csar-notes.md
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 env.info("DCSRetribution|Combat SAR plugin - configuration (survivor ledger)")
@@ -156,16 +162,18 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         local helos = c.rescueHelos or {}
         -- autoSpawn (§21 on-demand rework): with no player CSAR package fragged, the
         -- runtime rescues from, in order, a real PARKED ramp helo (parkedHelos --
-        -- tracked, started in place) then a cold clone template (heloTemplate). The
-        -- plugin needs SOME way to rescue -- a player-crewed helo on the ledger
-        -- (rescueHelos, for player pickup geometry), a parked helo, or the clone
-        -- template. None -> nothing to do. (Was: bail whenever rescueHelos empty,
-        -- which killed the whole ledger in the no-player-package case.)
+        -- tracked, started in place) then a cold clone template (heloTemplate).
         local autoSpawn = readBool(c.autoSpawn, false)
         local parked = c.parkedHelos or {}
-        if #helos == 0 and not (autoSpawn and (#parked > 0 or c.heloTemplate)) then
-            return
-        end
+        -- The ledger runs even with NO rescue capability (2026-07-10 squadron call):
+        -- a downed pilot nobody can come for is MORE capturable, not immune -- the
+        -- snatch race, the POW/comms-jam consequence, and the persistent-evader
+        -- state all key off the survivor, not off a helo. canRescue only shapes the
+        -- MAYDAY messaging; the rescue paths already guard themselves. (Was: bail
+        -- whenever no rescue asset existed, which silently killed the capture race
+        -- for a Sandy-only/King-only package or auto-CSAR off -- flown 2026-07-10.)
+        local canRescue = (#helos > 0)
+            or (autoSpawn and (#parked > 0 or c.heloTemplate ~= nil))
         local cfg = {
             color = color,
             side = side,
@@ -183,7 +191,15 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             kings = c.kings or {},
             sandys = c.sandys or {},
             autoSpawn = autoSpawn,
+            canRescue = canRescue,
+            -- Survivors un-resolved at the end of an EARLIER mission, handed back by
+            -- the campaign (persistent-evader ledger) to re-spawn at mission start.
+            persistentSurvivors = c.persistentSurvivors or {},
         }
+        if not canRescue then
+            env.info("DCSRetribution|Combat SAR - " .. color
+                .. " has no rescue asset this mission; capture race only")
+        end
         configs[#configs + 1] = cfg
         cfgBySide[side] = cfg
     end
@@ -194,7 +210,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     end
 
     if #configs == 0 then
-        env.info("DCSRetribution|Combat SAR plugin - no rescue helos/template; skipping")
+        env.info("DCSRetribution|Combat SAR plugin - no coalition config (pilot template missing); skipping")
         return
     end
 
@@ -254,8 +270,31 @@ if dcsRetribution and dcsRetribution.CombatSAR then
     local survivors = {}
     combat_sar_rescues = combat_sar_rescues or {}
     combat_sar_captures = combat_sar_captures or {}
+    combat_sar_survivors = combat_sar_survivors or {}
     local spawnIndex = 0
     local snatchCounter = 0
+
+    -- Mirror the UNRESOLVED ledger into the persisted state (persistent evaders,
+    -- 2026-07-10): every survivor still down/boarding at mission end reaches the
+    -- campaign as {unit, x, y}, so an un-rescued, un-captured pilot goes MIA and
+    -- respawns next mission instead of dying at debrief. Rebuilt on every ledger
+    -- transition (register / rescue / capture / death), position = the registration
+    -- point (a survivor aboard a helo that never delivered is back on the ground
+    -- there next mission).
+    local function syncSurvivorState()
+        local list = {}
+        for _, e in pairs(survivors) do
+            if (e.state == "down" or e.state == "boarding")
+                and e.unit and e.unit ~= "" and e.coord then
+                local okv, v = pcall(function() return e.coord:GetVec2() end)
+                if okv and v then
+                    list[#list + 1] = { unit = e.unit, x = v.x, y = v.y, coalition = e.color }
+                end
+            end
+        end
+        combat_sar_survivors = list
+        dirty_state = true
+    end
 
     ---------------------------------------------------------------------------
     -- Helpers (defined before first use -- definition order matters in DCS Lua)
@@ -350,7 +389,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         end
         env.info("DCSRetribution|Combat SAR - pilot of " .. tostring(entry.unit)
             .. " delivered home; campaign will spare them")
-        dirty_state = true
+        syncSurvivorState()
         msgToCoalition(entry.side, "RESCUE COMPLETE: survivor delivered to a friendly field.")
     end
 
@@ -367,8 +406,8 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             y = v.y,
             coalition = entry.color,
         })
-        dirty_state = true
         entry.state = "captured"
+        syncSurvivorState()
         msgToCoalition(entry.side, "Downed pilot CAPTURED by enemy forces -- now a POW. "
             .. "A recovery may be possible on a later turn.")
     end
@@ -584,15 +623,18 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         return true  -- success or a clean give-up (no FARP/template) -> settled, no retry
     end
 
-    -- Register a new survivor + spawn its group. Deduped by id (caller guarantees uniqueness).
-    local function registerSurvivor(cfg, unitName, coord)
+    -- Register a new survivor + spawn its group. Deduped by id (caller guarantees
+    -- uniqueness). `evader` marks a persistent survivor carried over from an earlier
+    -- mission (message only -- the ledger treats them like any fresh ejection: fresh
+    -- capture race, normal rescue paths).
+    local function registerSurvivor(cfg, unitName, coord, evader)
         local id = unitName
         if not id or id == "" then
             spawnIndex = spawnIndex + 1
             id = "survivor_" .. spawnIndex
         end
         if survivors[id] then return end
-        local grp = spawnSurvivorGroup(cfg, coord, "Survivor")
+        local grp = spawnSurvivorGroup(cfg, coord, evader and "Evader" or "Survivor")
         if not grp then return end
         survivors[id] = {
             id = id,
@@ -613,8 +655,19 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             captureRolled = false,
             t0 = timer.getTime(),
         }
+        syncSurvivorState()
         pcall(trigger.action.smoke, coord:GetVec3(), trigger.smokeColor.Red)
-        msgToCoalition(cfg.side, "MAYDAY: pilot down (red smoke) -- Combat SAR is on it.")
+        local msg
+        if evader then
+            msg = "EVADER: a pilot downed on an earlier mission is still evading "
+                .. "(red smoke) -- recovery is still possible."
+        elseif cfg.canRescue then
+            msg = "MAYDAY: pilot down (red smoke) -- Combat SAR is on it."
+        else
+            msg = "MAYDAY: pilot down (red smoke) -- no rescue assets available. "
+                .. "Protect the survivor!"
+        end
+        msgToCoalition(cfg.side, msg)
     end
 
     -- Find a friendly helo deliberately picking up this survivor (landed/low+slow within range).
@@ -718,6 +771,38 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         end
     end
     world.addEventHandler(ejectBridge)
+
+    ---------------------------------------------------------------------------
+    -- Persistent evaders (2026-07-10): survivors left un-resolved at the end of
+    -- an earlier mission, handed back by the campaign on
+    -- dcsRetribution.CombatSAR.persistentSurvivors. Re-register each at its last
+    -- known position after a short settle delay -- fresh red smoke, a fresh
+    -- capture race, and the normal rescue paths (player pickup or auto-dispatch).
+    ---------------------------------------------------------------------------
+    local PERSIST_SPAWN_DELAY = 30
+    for _, cfg in ipairs(configs) do
+        local list = cfg.persistentSurvivors or {}
+        if #list > 0 then
+            timer.scheduleFunction(function()
+                for _, s in ipairs(list) do
+                    local x = tonumber(s.x)
+                    local y = tonumber(s.y)
+                    if s.name and x and y then
+                        local ok, err = pcall(function()
+                            registerSurvivor(
+                                cfg, s.name, COORDINATE:NewFromVec2({ x = x, y = y }), true)
+                        end)
+                        if not ok then
+                            env.warning("combatsar: evader respawn failed: " .. tostring(err))
+                        end
+                    end
+                end
+            end, {}, timer.getTime() + PERSIST_SPAWN_DELAY)
+            env.info(string.format(
+                "DCSRetribution|Combat SAR - %d persistent evader(s) will re-spawn in %ds",
+                #list, PERSIST_SPAWN_DELAY))
+        end
+    end
 
     ---------------------------------------------------------------------------
     -- Sandy (SCAR) AI retasking: divert a free AI-crewed Sandy off its planned
@@ -861,6 +946,7 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                 -- is now gone); a never-spawned group (e.group nil) is left untouched.
                 if e.state == "down" and e.group and not e.group:IsAlive() then
                     e.state = "dead"
+                    syncSurvivorState()
                 end
                 if e.state == "down" then
                     -- Capture race: roll a snatch party once per survivor (on land).

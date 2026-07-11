@@ -57,6 +57,12 @@ class Sitrep:
     #: player-facing surface for the "recapture the field / rescue matters" levers.
     #: Absent on pre-POW-visibility pickled sitreps (read via getattr).
     pows_held: List[str] = field(default_factory=list)
+    #: One line per BLUE aviator down and still EVADING (the §21 persistent-evader
+    #: ledger, 2026-07-10), e.g. "Capt Mitchell — evading near Fulda (2 turns
+    #: down)". Deep evaders get found by the turn capture roll -- this line is the
+    #: standing prompt to fly the rescue. Absent on pre-feature pickled sitreps
+    #: (read via getattr).
+    pilots_mia: List[str] = field(default_factory=list)
     #: §52 Feature A: the enemy command-network status ("1/3 command posts
     #: operational") when it is degraded and the feature is on -- the legibility
     #: for "bombing the HQ made red plan worse". None hides the line. Rides along
@@ -99,6 +105,7 @@ class Sitrep:
             or self.lost
             or self.pilots_recovered
             or getattr(self, "pows_held", None)
+            or getattr(self, "pilots_mia", None)
         )
 
     @classmethod
@@ -112,6 +119,7 @@ class Sitrep:
         blue_will_note: Optional[str] = None,
         red_will_note: Optional[str] = None,
         pows_held: Optional[List[str]] = None,
+        pilots_mia: Optional[List[str]] = None,
         red_c2_status: Optional[str] = None,
         blue_supply: Optional[float] = None,
         red_supply: Optional[float] = None,
@@ -148,6 +156,7 @@ class Sitrep:
             blue_will_note=blue_will_note,
             red_will_note=red_will_note,
             pows_held=list(pows_held or []),
+            pilots_mia=list(pilots_mia or []),
             red_c2_status=red_c2_status,
             blue_supply=blue_supply,
             red_supply=red_supply,
@@ -171,6 +180,9 @@ class Sitrep:
         # POWs held (getattr: pre-POW-visibility pickled sitreps lack the field).
         for pow_line in getattr(self, "pows_held", None) or []:
             lines.append(f"POW: {pow_line}")
+        # Evaders still down (getattr: pre-feature pickled sitreps lack the field).
+        for mia_line in getattr(self, "pilots_mia", None) or []:
+            lines.append(f"MIA: {mia_line}")
         # §52: enemy command-network status when degraded (getattr for old saves).
         red_c2 = getattr(self, "red_c2_status", None)
         if red_c2:

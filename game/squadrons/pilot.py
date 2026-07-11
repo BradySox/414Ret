@@ -22,6 +22,13 @@ class PilotStatus(Enum):
     #: written off (killed) if the hold clock runs out or the war is lost. A POW
     #: is NOT Active, so the squadron never schedules them while captive.
     POW = "POW"
+    #: Downed behind the lines and still EVADING at mission end (the §21
+    #: persistent-evader ledger, ``game.downed_pilots``, 2026-07-10): they respawn
+    #: at their last known position next mission and either get rescued
+    #: (-> Active), get captured in-mission or by the depth-weighted turn roll
+    #: (-> POW), or walk home off friendly ground (-> Active). Deliberately no
+    #: death clock. MIA is NOT Active, so the squadron never schedules them.
+    MIA = "MIA"
 
 
 @dataclass
@@ -43,16 +50,28 @@ class Pilot:
     def captured(self) -> bool:
         return self.status is PilotStatus.POW
 
+    @property
+    def missing(self) -> bool:
+        return self.status is PilotStatus.MIA
+
     def capture(self) -> None:
-        """Take this pilot prisoner (Active -> POW). Idempotent for a pilot
+        """Take this pilot prisoner (Active/MIA -> POW). Idempotent for a pilot
         already held; a dead pilot cannot be captured."""
         if self.status is PilotStatus.Dead:
             return
         self.status = PilotStatus.POW
 
+    def go_missing(self) -> None:
+        """Mark this pilot down behind the lines, still evading (Active -> MIA).
+        A dead pilot cannot go missing; a POW stays a POW."""
+        if self.status in (PilotStatus.Dead, PilotStatus.POW):
+            return
+        self.status = PilotStatus.MIA
+
     def repatriate(self) -> None:
-        """Return a POW to the active roster (POW -> Active). No-op otherwise."""
-        if self.status is PilotStatus.POW:
+        """Return a POW or a recovered evader to the active roster. No-op
+        otherwise."""
+        if self.status in (PilotStatus.POW, PilotStatus.MIA):
             self.status = PilotStatus.Active
 
     def send_on_leave(self) -> None:

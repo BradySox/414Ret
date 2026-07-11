@@ -1971,6 +1971,31 @@ scalar flags on `dcsRetribution.CombatSAR` for the plugin to honor: `combat_sar_
 the reliable way to exercise **G28 + S4**) and `combat_sar_test_easy_rescue` (capture off + forgiving
 pickup/delivery — exercises **G10 King / G23 Sandy / the pickup loop**). Leave OFF for normal play.
 
+**Persistent evaders + the always-run snatch (2026-07-10, squadron call).** A flown jamming test
+(auto-CSAR off + a Sandy-only package) found the plugin bailing whenever **no rescue asset**
+existed — which silently killed the snatch race, the capture → POW → §51 comms-jam chain, and even
+the emitted `testForceCapture`. Reframed around the pilot: **(1) the ledger always runs** — the
+emitter always emits the blue node (the player-package/auto-spawn early-return is gone) and the
+plugin's `addConfig` no longer bails without rescue capability (`canRescue` only shapes the MAYDAY:
+"no rescue assets available. Protect the survivor!"); **(2) un-resolved survivors persist** — the
+plugin mirrors its live ledger into the new state global `combat_sar_survivors`; at commit,
+`record_downed_pilots` (`game/fourteenth/downed_pilots.py`) flips the aviator to the new
+**`PilotStatus.MIA`** (off the schedule; kill spared in `commit_air_losses`) and banks them on
+`game.downed_pilots`; next mission the emitter hands the ledger back (`persistentSurvivors`) and
+the plugin re-spawns each evader at his last position — fresh red smoke, an "EVADER" cue, a fresh
+50 % snatch race, the normal rescue paths. Surfaced on the SITREP band ("MIA: Capt Mitchell —
+evading near Haina (2 turns down)") + the squadron roster; **(3) the depth-weighted turn roll**
+(`resolve_downed_pilots` from `finish_turn`) — an evader on friendly ground **walks home**;
+behind the lines the capture odds scale with depth (10 % within 5 NM of the front → 90 % at
+40 NM+; front-less laydowns measure to the nearest friendly CP), and a hit is the normal POW
+consequence (ledger pilot-fallback in `record_pow_captures`). **No death clock** (squadron call)
+— the roll is the clock, and *don't fly deep* is the incentive. Gated
+`combat_sar_persistent_pilots` (default ON; gates only the *creation* of MIA entries — an
+existing evader is always emitted/resolved so a mid-campaign toggle never strands one). Tests:
+`tests/fourteenth/test_downed_pilots.py`, `tests/lua/test_combatsar_ledger.py` (the real plugin
+under a MOOSE-stub sandbox), `tests/test_combat_sar_scoring.py`,
+`tests/missiongenerator/test_combat_sar_sandy_luadata.py`. Checklist **G29**.
+
 The bespoke pilot-rescue flight task. A **CH-47** orbits near the FLOT as the rescuer; a
 **C-130** flies the overhead **HC-130 "King"** on-scene-command orbit. When a pilot (human or
 AI) ejects in the area, the ledger spawns the downed pilot with red smoke and a friendly helo —
@@ -2130,12 +2155,13 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Flight plan | `game/ato/flightplans/combatsar.py` (forward FLOT hold) — a **player-planned** COMBAT_SAR flight only; the auto-fragged orbit is retired |
 | Planning | **Player-plannable** off the FLOT (`game/theater/frontline.py` `mission_types` → COMBAT_SAR/SCAR). The standing-orbit auto-frag (`PlanCombatSar`/`PlanCombatSarSupport`/`combat_sar_targets`) was **deleted** in the 2026-07-06 on-demand rework |
 | On-demand rescue | **Parked-first, clone-fallback.** `aircraftgenerator.py` — `_spawn_unused_for` collects BLUE CSAR-capable **parked untasked helos** (`mission_data.parked_rescue_helos`, real + in the `UnitMap` → tracked); `spawn_combat_sar_templates` folds them into `CombatSarTemplates` alongside a cold clone template (`create_combat_sar_template` in `flightgroupspawner.py`, the fallback). Plugin `commandeerParkedHelo` + `StartUncontrolled` launches a parked helo; falls back to SPAWN-cloning `heloTemplate`. Tests: `tests/missiongenerator/test_combat_sar_templates.py` |
-| Setting | `game/settings/settings.py` — `auto_combat_sar` (now drives the on-demand spawn, not an orbit) |
+| Setting | `game/settings/settings.py` — `auto_combat_sar` (now drives the on-demand spawn, not an orbit) + `combat_sar_persistent_pilots` (MIA persistence, default ON) |
+| Persistent evaders | `game/fourteenth/downed_pilots.py` (`DownedPilot` ledger + `record_downed_pilots` + the depth-weighted `resolve_downed_pilots` + SITREP lines), `game/squadrons/pilot.py` (`PilotStatus.MIA`), `game/game.py` (`downed_pilots` + the `finish_turn` hook), `game/sitrep.py` (`pilots_mia`); plugin `syncSurvivorState` + `persistentSurvivors` respawn. Tests: `tests/fourteenth/test_downed_pilots.py`, `tests/lua/test_combatsar_ledger.py` |
 | King beacon | `game/missiongenerator/aircraft/flightdata.py` (`CombatSarKingBeacon`, TACAN-only), `flightgroupconfigurator.py` (`register_combat_sar_king`) |
 | Emit data | `game/missiongenerator/luagenerator.py` — `_generate_combat_sar` (rescueHelos / kings / pilotTemplate / **`autoSpawn`** + **`parkedHelos`** (preferred) + `heloTemplate`/`farp` (fallback) when auto-spawning). The pilot template uses `survivor_unit_type` — the first faction INFANTRY-class unit whose id names a *person* (soldier/infantry/paratrooper/insurgent), vanilla `Soldier M4` fallback — because the INFANTRY class also carries crew-served weapons and OIR's first pick was the 2B11, rendering every downed pilot as a mortar tube (2026-07-06 flown finding). Tests: `tests/missiongenerator/test_combat_sar_sandy_luadata.py` (gating + parked/clone emit + survivor) |
 | Kneeboard | `game/missiongenerator/kneeboard.py` — `CombatSarTaskPage` |
-| Scoring (Lua) | `resources/plugins/base/dcs_retribution.lua` (`combat_sar_rescues` global + `write_state`), `resources/plugins/combatsar/combatsar-config.lua` (CSAR bridge + `OnAfterBoarded`/`OnAfterRescued`) |
-| Scoring (Py) | `game/debriefing.py` (`StateData.combat_sar_rescues`), `game/sim/missionresultsprocessor.py` (`commit_air_losses` spares rescued pilots) |
+| Scoring (Lua) | `resources/plugins/base/dcs_retribution.lua` (`combat_sar_rescues`/`combat_sar_captures`/`combat_sar_survivors` globals + `write_state`), `resources/plugins/combatsar/combatsar-config.lua` (CSAR bridge + `OnAfterBoarded`/`OnAfterRescued`) |
+| Scoring (Py) | `game/debriefing.py` (`StateData.combat_sar_rescues`/`_captures`/`_survivors`), `game/sim/missionresultsprocessor.py` (`commit_air_losses` spares rescued/captured/MIA pilots) |
 | Tests | `tests/test_combat_sar_scoring.py` |
 
 ### Gotchas

@@ -174,6 +174,124 @@ def test_record_pow_captures_routes_to_survivors_coalition() -> None:
     ]
 
 
+# --- Persistent evaders: unresolved survivors go MIA instead of dying (2026-07-10) --
+
+
+def test_parse_survivors_pulls_unit_and_position() -> None:
+    state = StateData.from_json(
+        {
+            "combat_sar_survivors": [
+                {
+                    "unit": "Enfield 1-1 | F-14B",
+                    "x": 1.0,
+                    "y": 2.0,
+                    "coalition": "blue",
+                },
+                {"unit": "bad-no-coords"},
+                {"x": 3.0, "y": 4.0},
+                "junk",
+            ]
+        },
+        _no_flight_unit_map(),
+    )
+    assert state.combat_sar_survivors == [("Enfield 1-1 | F-14B", 1.0, 2.0)]
+
+
+def test_parse_survivors_tolerates_missing_key() -> None:
+    # Pre-feature state files omit the key entirely.
+    assert StateData.from_json({}, _no_flight_unit_map()).combat_sar_survivors == []
+
+
+def _mia_debriefing(
+    losses: list[Any], survivors: list[Any], flight_map: dict[str, Any]
+) -> Any:
+    return cast(
+        Any,
+        SimpleNamespace(
+            air_losses=SimpleNamespace(losses=losses),
+            state_data=SimpleNamespace(
+                combat_sar_rescues=[],
+                combat_sar_captures=[],
+                combat_sar_survivors=survivors,
+            ),
+            unit_map=SimpleNamespace(flight=lambda name: flight_map.get(name)),
+        ),
+    )
+
+
+def test_evading_pilot_is_spared_when_persistence_is_on() -> None:
+    evading = _loss(player=False)
+    killed = _loss(player=False)
+    debriefing = _mia_debriefing(
+        losses=[evading, killed],
+        survivors=[("evading_unit", 1.0, 2.0)],
+        flight_map={"evading_unit": evading},
+    )
+    game = SimpleNamespace(
+        settings=SimpleNamespace(
+            invulnerable_player_pilots=False, combat_sar_persistent_pilots=True
+        )
+    )
+
+    MissionResultsProcessor(cast(Any, game)).commit_air_losses(debriefing)
+
+    # The evader is spared the kill (record_downed_pilots marks them MIA after);
+    # the airframe is still attrited. The un-listed pilot dies as normal.
+    evading.pilot.kill.assert_not_called()
+    killed.pilot.kill.assert_called_once()
+    assert evading.flight.squadron.owned_aircraft == 3
+
+
+def test_evading_pilot_dies_when_persistence_is_off() -> None:
+    # The pre-feature behaviour is the toggle-off contract: an un-rescued,
+    # un-captured pilot is lost at debrief.
+    evading = _loss(player=False)
+    debriefing = _mia_debriefing(
+        losses=[evading],
+        survivors=[("evading_unit", 1.0, 2.0)],
+        flight_map={"evading_unit": evading},
+    )
+    game = SimpleNamespace(
+        settings=SimpleNamespace(
+            invulnerable_player_pilots=False, combat_sar_persistent_pilots=False
+        )
+    )
+
+    MissionResultsProcessor(cast(Any, game)).commit_air_losses(debriefing)
+
+    evading.pilot.kill.assert_called_once()
+
+
+def test_captured_evader_pilot_resolves_from_the_downed_ledger() -> None:
+    # A persistent evader captured on a LATER mission: the airframe died turns ago,
+    # so the unit map knows nothing -- record_pow_captures falls back to the
+    # downed-pilot ledger for the aviator (who then flips MIA -> POW).
+    from game.fourteenth.downed_pilots import DownedPilot
+    from game.squadrons.pilot import Pilot, PilotStatus
+
+    pilot = Pilot("Capt Mitchell")
+    pilot.go_missing()
+    game = SimpleNamespace(
+        blue=SimpleNamespace(pending_pow_recoveries=[]),
+        red=SimpleNamespace(pending_pow_recoveries=[]),
+        theater=SimpleNamespace(controlpoints=[]),
+        point_in_world=lambda x, y: SimpleNamespace(x=x, y=y),
+        turn=3,
+        downed_pilots=[
+            DownedPilot("Enfield 1-1 | F-14B", 1.0, 2.0, pilot=pilot, turn_downed=1)
+        ],
+    )
+    debriefing = _capture_debriefing(
+        captures=[("Enfield 1-1 | F-14B", 1.0, 2.0, "blue")], rescues=[]
+    )
+
+    MissionResultsProcessor(cast(Any, game)).record_pow_captures(debriefing)
+
+    assert len(game.blue.pending_pow_recoveries) == 1
+    assert game.blue.pending_pow_recoveries[0].pilot is pilot
+    assert pilot.status is PilotStatus.POW
+
+
 def test_king_beacon_is_tacan_only_no_adf_freq() -> None:
     # The ADF radio beacon was dropped: the King homes the rescue helo on TACAN
     # alone, so the beacon dataclass carries no reserved frequency field.

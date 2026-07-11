@@ -171,7 +171,15 @@ and selected later upstream fixes.
   package (King + rescue helo + a **Sandy** escort) automatically by default — turn `Automatic
   Combat SAR` off to fly rescues manually only — and any human can fly any seat. AI ejections
   count too: an AI-flown helo rescue spares the pilot the same way. If the enemy reaches the downed
-  pilot first they are **captured** — held as a POW (see SCAR above).
+  pilot first they are **captured** — held as a POW (see SCAR above). **The snatch race runs even
+  when nobody can come for them** — turning auto-CSAR off or flying without a rescue helo doesn't
+  make your pilots un-capturable; it makes them *more* exposed. And a pilot who is neither rescued
+  nor captured by mission end is **not lost — they go MIA and keep evading**: they show on the
+  SITREP and roster, re-appear at their last known position next mission (red smoke, a fresh enemy
+  snatch race), and can still be rescued. Each turn they're out, a pilot near the front usually
+  keeps evading while one **deep behind the lines almost certainly gets found** and becomes a POW —
+  so think twice before pressing deep with no rescue plan. There's no timer: they evade until
+  rescued, recovered, or caught (`Downed pilots persist` setting, on by default).
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform with
   standoff jamming and ELINT gameplay. This is the only 414th scripted EW model;
   the old generic fighter-pod "EW Jammer Script" is retired.

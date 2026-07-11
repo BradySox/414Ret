@@ -77,7 +77,10 @@ file. This guide is the map; those are the territory.
     and the 2026-07-03 rescope: `auto_combat_sar` default ON, the AI-drama layer frozen, the POW
     recovery raid shelved). Supersedes the eight earlier CSAR/SCAR notes (each is bannered).
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
-  - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits
+  - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits.
+    **🔒 FEATURE-LOCKED 2026-07-11** — no new features/laydown/balance into Red Tide (bug
+    fixes + in-game-pass verification + tuning-to-intended still OK); the banner atop that
+    note is the source of truth.
   - `414th-inherent-resolve-campaign-notes.md` — **the Iraq / Mosul COIN campaign** (the Battle
     of Mosul 2016-17 on the DCS Iraq map; the 414th's **second COIN campaign**, sibling of Enduring
     Resolve on the same `coin.py` stack). New factions `CJTF-OIR 2016` (blue coalition) + `Islamic

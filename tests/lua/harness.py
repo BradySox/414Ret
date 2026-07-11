@@ -79,6 +79,14 @@ class DcsPluginHarness:
     def fire_event(self, event: dict[str, Any]) -> None:
         self.harness.fireEvent(self.to_lua(event))
 
+    def fire_shot(self, spec: dict[str, Any]) -> None:
+        """Fire an S_EVENT_SHOT with a tracked weapon fake.
+
+        spec = {"weapon": {"typeName", "x", "z", "alt", "velocity", "vanishAt"},
+                "initiator": "<group name>"} -- the group's first unit is the shooter.
+        """
+        self.harness.fireShot(self.to_lua(spec))
+
     def pending_scheduled(self) -> int:
         return int(self.harness.pendingCount())
 

@@ -498,6 +498,51 @@ local unitPayloads = {
 				},
 			},
         },
+		[11] = {
+			["displayName"] = "Aerial Minefield",
+			["name"] = "Aerial Minefield",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{5CE2FF2A-645A-4197-B48D-8720AC69394F}",
+					["num"] = 1,
+				},
+				[2] = {
+					["CLSID"] = "{CBU_99}",
+					["num"] = 2,
+				},
+				[3] = {
+					["CLSID"] = "{CBU_99}",
+					["num"] = 3,
+				},
+				[4] = {
+					["CLSID"] = "{AN_ASQ_228}",
+					["num"] = 4,
+				},
+				[5] = {
+					["CLSID"] = "{FPU_8A_FUEL_TANK}",
+					["num"] = 5,
+				},
+				[6] = {
+					["CLSID"] = "{40EF17B7-F508-45de-8566-6FFECC0C1AB8}",
+					["num"] = 6,
+				},
+				[7] = {
+					["CLSID"] = "{CBU_99}",
+					["num"] = 7,
+				},
+				[8] = {
+					["CLSID"] = "{CBU_99}",
+					["num"] = 8,
+				},
+				[9] = {
+					["CLSID"] = "{5CE2FF2A-645A-4197-B48D-8720AC69394F}",
+					["num"] = 9,
+				},
+			},
+			["tasks"] = {
+				[1] = 31,
+			},
+		},
 	},
 	["unitType"] = "FA-18C_hornet",
 }

@@ -18,6 +18,7 @@ import {
 import FlightPlansLayer from "../flightplanslayer";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
+import MinefieldsLayer from "../minefields";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
 import RestrictedZonesLayer from "../restrictedzones";
 import SupplyLayer from "../supply";
@@ -44,6 +45,7 @@ type LayerId =
   | "combat"
   | "supplyRoutes"
   | "supply"
+  | "minefields"
   | "frontLines"
   | "factories"
   | "ships"
@@ -103,6 +105,9 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   // War-economy supply-flow overlay (§53 P4b). Empty unless war_economy is on, so
   // the layer is a no-op everywhere else even while toggled on.
   supply: { label: "Supply status", node: <SupplyLayer /> },
+  // §57 air-dropped minefields (BLUE-only). Empty unless air_droppable_minefields is
+  // on, so the layer is a no-op everywhere else even while toggled on.
+  minefields: { label: "Minefields", node: <MinefieldsLayer /> },
   frontLines: { label: "Front lines", node: <FrontLinesLayer /> },
   factories: { label: "Factories", node: <TgosLayer categories={["factory"]} /> },
   ships: { label: "Ships", node: <TgosLayer categories={["ship"]} /> },
@@ -215,6 +220,7 @@ const GROUPS: GroupDef[] = [
       { id: "combat" },
       { id: "supplyRoutes" },
       { id: "supply" },
+      { id: "minefields" },
       { id: "frontLines" },
       { id: "factories" },
       { id: "ships" },
@@ -300,6 +306,7 @@ const DEFAULT_ON: LayerId[] = [
   "otherGround",
   "supplyRoutes",
   "supply",
+  "minefields",
   "frontLines",
   "enemySamThreat",
   "emitterHighlight",

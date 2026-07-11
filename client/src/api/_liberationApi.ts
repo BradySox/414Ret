@@ -653,6 +653,11 @@ export type SupplyNode = {
   production: number;
   is_front: boolean;
 };
+export type Minefield = {
+  position: LatLng;
+  radius_m: number;
+  charges: number;
+};
 export type Game = {
   control_points: ControlPoint[];
   tgos: Tgo[];
@@ -671,6 +676,7 @@ export type Game = {
   restricted_zones?: RestrictedZone[];
   free_fire_zones?: RestrictedZone[];
   supply_nodes?: SupplyNode[];
+  minefields?: Minefield[];
 };
 export type MapZones = {
   inclusion: LatLng[][][];

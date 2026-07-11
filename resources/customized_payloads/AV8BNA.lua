@@ -363,6 +363,39 @@ local unitPayloads = {
 				[1] = 31,
 			},
 		},
+		[11] = {
+			["displayName"] = "Aerial Minefield",
+			["name"] = "Aerial Minefield",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{AGM_122_SIDEARM}",
+					["num"] = 1,
+				},
+				[2] = {
+					["CLSID"] = "{CBU_99}",
+					["num"] = 2,
+				},
+				[3] = {
+					["CLSID"] = "{CBU_99}",
+					["num"] = 3,
+				},
+				[4] = {
+					["CLSID"] = "{CBU_99}",
+					["num"] = 6,
+				},
+				[5] = {
+					["CLSID"] = "{CBU_99}",
+					["num"] = 7,
+				},
+				[6] = {
+					["CLSID"] = "{AGM_122_SIDEARM}",
+					["num"] = 8,
+				},
+			},
+			["tasks"] = {
+				[1] = 31,
+			},
+		},
 	},
 	["tasks"] = {
 	},

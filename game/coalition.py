@@ -317,6 +317,14 @@ class Coalition:
                     from game.fourteenth.carrier_ops import plan_carrier_strike
 
                     plan_carrier_strike(self, now, tracer)
+                # 414th auto-planned convoy mining (§57 P3): frag one air-drop mining
+                # sortie a turn at an enemy convoy, before the commander so the mining
+                # jet is claimed first. No-op unless auto_plan_minefields is on (BLUE only,
+                # a wing with a CBU-99 aircraft, an enemy convoy to mine).
+                with tracer.trace(f"{color} convoy mining"):
+                    from game.fourteenth.convoy_mining import plan_convoy_mining
+
+                    plan_convoy_mining(self, now, tracer)
                 with tracer.trace(f"{color} mission identification"):
                     TheaterCommander(self.game, self.player).plan_missions(now, tracer)
                 with tracer.trace(f"{color} carrier buddy-tanker routing"):

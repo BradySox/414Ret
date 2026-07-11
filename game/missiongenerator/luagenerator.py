@@ -23,6 +23,7 @@ from .aireconluadata import populate_ai_recon_lua
 from .coinluadata import populate_coin_lua
 from .commsjamluadata import populate_comms_jam_lua
 from .convoyambushluadata import populate_convoy_ambush_lua
+from .minefieldluadata import populate_minefields_lua
 from .interceptluadata import (
     DefenseZoneEntry,
     defense_zone_entries,
@@ -415,6 +416,12 @@ class LuaGenerator:
         # plugin springs the dug-in team when the convoy closes (movement/ROE only, the
         # loss accounting stays in the turn-boundary force model).
         populate_convoy_ambush_lua(lua_data, self.game, self.mission_data)
+
+        # Air-dropped minefields (§57 Phase 2) -- emits dcsRetribution.minefields only when
+        # air_droppable_minefields is on and a live persisted field exists, so the plugin
+        # re-arms fields left undisturbed last turn. Fresh drops are the plugin's own
+        # S_EVENT_SHOT detection; kills stay in the turn-boundary force model.
+        populate_minefields_lua(lua_data, self.game, self.mission_data)
 
         # Enemy comms jamming (§51) -- emits dcsRetribution.commsJam only when the
         # plan computed before this pass exists (setting on + alive enemy C2 node +

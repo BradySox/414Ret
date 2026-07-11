@@ -6,6 +6,7 @@ import flightsReducer from "../api/flightsSlice";
 import frontLinesReducer from "../api/frontLinesSlice";
 import iadsNetworkReducer from "../api/iadsNetworkSlice";
 import mapReducer from "../api/mapSlice";
+import minefieldReducer from "../api/minefieldSlice";
 import navMeshReducer from "../api/navMeshSlice";
 import restrictedZonesReducer from "../api/restrictedZonesSlice";
 import supplyReducer from "../api/supplySlice";
@@ -29,6 +30,7 @@ const rootReducer = combineReducers({
   flights: flightsReducer,
   frontLines: frontLinesReducer,
   map: mapReducer,
+  minefields: minefieldReducer,
   navmeshes: navMeshReducer,
   restrictedZones: restrictedZonesReducer,
   supply: supplyReducer,

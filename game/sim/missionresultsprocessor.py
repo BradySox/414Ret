@@ -74,6 +74,8 @@ class MissionResultsProcessor:
                 self.record_carcasses(debriefing)
             with logged_duration("commit_super_gaggle"):
                 self.commit_super_gaggle(debriefing)
+            with logged_duration("commit_minefields"):
+                self.commit_minefields(debriefing)
             # Political will feeds AFTER the loss/POW/capture steps (so the held-POW
             # trickle reads post-recovery state) and BEFORE the SITREP (so the band
             # shows this turn's fresh values).
@@ -96,6 +98,14 @@ class MissionResultsProcessor:
         from game.fourteenth.super_gaggle import reconcile_super_gaggle
 
         reconcile_super_gaggle(self.game, debriefing)
+
+    def commit_minefields(self, debriefing: Debriefing) -> None:
+        # §57 Phase 2: fold the minefields plugin's end-of-mission field report into
+        # game.minefields, carrying undisturbed air-dropped fields across the turn. No-op
+        # when air_droppable_minefields is off or the plugin reported nothing.
+        from game.fourteenth.minefields import reconcile_minefields
+
+        reconcile_minefields(self.game, debriefing)
 
     def record_sitrep(self, debriefing: Debriefing) -> None:
         # Capture a one-turn campaign summary for the next turn's kneeboard cover

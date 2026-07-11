@@ -213,6 +213,7 @@ def _mia_debriefing(
                 combat_sar_rescues=[],
                 combat_sar_captures=[],
                 combat_sar_survivors=survivors,
+                minefields_state=[],
             ),
             unit_map=SimpleNamespace(flight=lambda name: flight_map.get(name)),
         ),

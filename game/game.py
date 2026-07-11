@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
     from .fourteenth.downed_pilots import DownedPilot
+    from .fourteenth.minefields import Minefield
     from .fourteenth.phases import PhaseBaseline
     from .fourteenth.red_intent import (
         FrontPosture,
@@ -197,6 +198,10 @@ class Game:
         # position next mission and rolls the depth-weighted capture at every turn
         # boundary. See game/fourteenth/downed_pilots.py.
         self.downed_pilots: list["DownedPilot"] = []
+        # §57 air-droppable minefields: fields left undisturbed at mission end, carried
+        # across turns and re-emitted into the next mission for the plugin to re-arm.
+        # Populated lazily by game.fourteenth.minefields when air_droppable_minefields is on.
+        self.minefields: list["Minefield"] = []
         # Per-campaign secret salt for the §3 concealment jitter seed (id XOR salt),
         # so the jittered "suspected activity" centre is deterministic but not
         # recomputable from the public TGO id. Lazily set on first use; persisted.
@@ -293,6 +298,7 @@ class Game:
         state.setdefault("coin_state", {})
         state.setdefault("convoy_ambush_state", {})
         state.setdefault("downed_pilots", [])
+        state.setdefault("minefields", [])
         state.setdefault("concealment_salt", None)
         state.setdefault("war_economy_seeded", False)
         state.setdefault("munitions_seeded", False)

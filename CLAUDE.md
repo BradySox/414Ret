@@ -1720,6 +1720,46 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     supported in Pretense. Tests `tests/**/test_motorpool_*.py` + `tests/ground_forces/test_reserve_armor.py`
     + `tests/fourteenth/test_red_tide_motorpool.py`; features doc §56, checklist B8 — needs an in-game
     pass (Red Tide, a couple of turns in for red to stock reserve).
+57. **Air-droppable minefields (convoy interdiction)** — DCS has no mine object, so the 414th
+    **fakes** area mining: a blue jet air-drops a **CBU-99** cluster dispenser (the **"Aerial
+    Minefield"** loadout on the A-7E / F/A-18C / AV-8B — every dispenser pylon verified pydcs-legal;
+    CBU-99 was freed from the A-7E CAS loadout so it is the *exclusive* dispenser) and the impact
+    area becomes a **scripted proximity minefield** — a periodic scan for enemy (RED) ground within
+    a radius → `trigger.action.explosion` at the tripping unit. Mines work **the same mission** they
+    are laid (mine the road just ahead of an inbound convoy to stop it now); each crossing vehicle
+    trips at most one mine, a field clears when its charges are spent, and every active field carries
+    a friendly-only F10 mark. **No phantom spawns**: the explosion kills a real, tracked convoy unit,
+    so the loss is recorded natively at debrief (units that never arrive) — the plugin
+    (`resources/plugins/minefields/`, opt-in `defaultValue` false) owns no kills beyond the
+    explosion. Blue-only v1. **Cross-turn persistence** (`air_droppable_minefields`, Mission
+    Generation → Battlefield life, default **OFF**): a field left undisturbed at mission end is
+    carried across the turn — the plugin mirrors every managed field's `{id, x, z, radius, charges}`
+    into the new `minefields_state` Lua→Python channel (declared in `dcs_retribution.lua` + the
+    serialized `game_state`, `dirty_state`-flagged), `game/debriefing.py` parses it,
+    `MissionResultsProcessor.commit_minefields` → `game/fourteenth/minefields.py`
+    `reconcile_minefields` folds it into `game.minefields` (a known field takes the plugin's
+    authoritative charge count / is removed when exhausted; a surviving newly-laid field is promoted
+    to a fresh-id record; an un-reported field is left untouched — a field nobody drove over does not
+    decay), and `game/missiongenerator/minefieldluadata.py` (`populate_minefields_lua`) re-emits the
+    survivors as `dcsRetribution.minefields` so the plugin re-arms them next mission, exactly where
+    they were. Same-turn mining works with just the plugin enabled; the setting adds the persistence.
+    The Lua harness gained a `WeaponFake` + `fire_shot` (the snake-and-nape SHOT path had none).
+    **Auto-plan** (`auto_plan_minefields`, default **OFF**, preseeded ON in Red Tide, which fields
+    the Hornet): `game/fourteenth/convoy_mining.py` `plan_convoy_mining` (hooked in `plan_missions`
+    before the commander) frags one BAI sortie a turn **at an enemy convoy**, flown by a blue
+    A-7E/Hornet/Harrier with the `"Aerial Minefield"` dispenser loadout **forced by name** onto the
+    flight's members — the AI (or player) drops the CBU-99 and the plugin lays the field on the
+    convoy's road. **Web overlay (LANDED):** `MinefieldJs` on `GameJs` (BLUE-only, empty when off) +
+    the client `minefieldSlice`/`MinefieldsLayer` (a gold dashed marker per live field in the
+    map-layers panel — a "Minefields" toggle, default on, Friendly group); generated-TS hand-added,
+    validated with `tsc` + the client jest suite (scratchpad-copy + node_modules-junction workaround,
+    the §53 `SupplyLayer` pattern). The `.miz` drawing is intentionally skipped (the plugin's live F10
+    marks track fields as they deplete, which a static drawing can't). Needs the CI client rebuild.
+    (`resources/plugins/minefields/`, `game/fourteenth/minefields.py`,
+    `game/fourteenth/convoy_mining.py`, `game/missiongenerator/minefieldluadata.py`,
+    `game/missiongenerator/luagenerator.py`, `game/debriefing.py`, `game/coalition.py`,
+    `game/sim/missionresultsprocessor.py`, `game/game.py`, `game/settings/settings.py`; features doc
+    §57, checklist B9 — needs an in-game pass.)
 
 ---
 

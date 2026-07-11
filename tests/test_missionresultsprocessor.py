@@ -41,6 +41,7 @@ COMMIT_STEPS = [
     "commit_front_line_battle_impact",
     "record_carcasses",
     "commit_super_gaggle",
+    "commit_minefields",
     "record_political_will",
     "record_sitrep",
 ]

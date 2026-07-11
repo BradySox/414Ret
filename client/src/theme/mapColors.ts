@@ -24,6 +24,7 @@ export const mapColors = {
   suspected: "#dd9a3a", // amber dashed: un-reconned "suspected activity"
   offLimits: "#d43a3a", // red dashed: ROE restricted (no-strike) zone
   weaponsFree: "#3ccd5f", // green dashed: free-fire (weapons-free) pocket
+  mine: "#c9a227", // gold dashed: your own air-dropped minefield (friendly hazard)
 
   // --- supply readiness (by level, not side) ---
   supplyOk: "#3ccd5f",

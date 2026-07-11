@@ -317,6 +317,60 @@ function Harness.fireEvent(event)
     end
 end
 
+-------------------------------------------------------------------------------
+-- Weapon fake for S_EVENT_SHOT tests. A released weapon that a plugin tracks to
+-- impact: it exists until vanishAt (relative to the virtual clock), then the
+-- tracker resolves its last sampled position as the impact point.
+-------------------------------------------------------------------------------
+local WeaponFake = {}
+WeaponFake.__index = WeaponFake
+
+function WeaponFake:isExist()
+    if self.vanishAt and Harness.now >= self.vanishAt then
+        return false
+    end
+    return self.exists ~= false
+end
+
+function WeaponFake:getTypeName()
+    return self.typeName or "FAKE_WPN"
+end
+
+function WeaponFake:getPoint()
+    return { x = self.x or 0, y = self.alt or 0, z = self.z or 0 }
+end
+
+function WeaponFake:getVelocity()
+    return self.velocity or { x = 0, y = 0, z = 0 }
+end
+
+function Harness.makeWeapon(spec)
+    return setmetatable({
+        typeName = spec.typeName,
+        x = spec.x,
+        z = spec.z,
+        alt = spec.alt,
+        velocity = spec.velocity,
+        exists = spec.exists,
+        vanishAt = spec.vanishAt,
+    }, WeaponFake)
+end
+
+-- Fire an S_EVENT_SHOT. spec = { weapon = { typeName, x, z, alt, velocity, vanishAt },
+-- initiator = "<group name>" } -- the group's first unit is the shooter.
+function Harness.fireShot(spec)
+    local initiator = nil
+    local g = spec.initiator and Harness.groupsByName[spec.initiator] or nil
+    if g then
+        initiator = g:getUnit(1)
+    end
+    Harness.fireEvent({
+        id = world.event.S_EVENT_SHOT,
+        weapon = Harness.makeWeapon(spec.weapon or {}),
+        initiator = initiator,
+    })
+end
+
 trigger = {
     smokeColor = { Green = 0, Red = 1, White = 2, Orange = 3, Blue = 4 },
     action = {

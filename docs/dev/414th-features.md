@@ -5096,6 +5096,85 @@ the no-front-shift guarantee, and the debrief rows.
 
 ---
 
+## §57 — Air-droppable minefields (convoy interdiction)
+
+DCS has no mine object, so the 414th **fakes** area mining. A blue jet air-drops a **CBU-99**
+cluster dispenser (carried only by the **"Aerial Minefield"** loadout) and the impact area
+becomes a **scripted proximity minefield** that detonates on any enemy (RED) ground unit — a
+supply convoy — that drives across it. Design note:
+[`docs/dev/design/414th-minefields-notes.md`](design/414th-minefields-notes.md). Blue-only v1.
+Delivered in phases; §57 covers P1 (same-turn) + P2 (persistence). P3 (auto-plannable frag) is
+still to come.
+
+**The core insight — almost no Python at runtime.** A minefield is a scripted zone (periodic
+scan for enemy ground within a radius → `trigger.action.explosion` at the tripping unit), so
+same-turn mining is pure Lua and the explosion kills *real, tracked* convoy units — the loss is
+recorded natively at debrief (units that never arrive), no phantom spawns (the §35/§50/§49
+discipline). Persistence is a thin turn-boundary reconciliation, not a physical-object model, so
+the heavy half of the §56 motorpool recipe (per-mine statics, a generator/populator, a `UnitMap`
+bucket) is skipped entirely.
+
+**Phase 1 — same-turn mining (the `minefields` plugin).** `resources/plugins/minefields/`
+(`minefields-config.lua` + `plugin.json`, registered in `plugins.json`, `defaultValue` false =
+opt-in) watches `S_EVENT_SHOT`; a blue CBU-99 drop is tracked to its ground impact (a structural
+clone of the snake-and-nape `land.getIP` tracker) and lays a proximity field there — radius,
+charges, trip-chance (density), explosion power, scan interval, detonation cooldown, and startup
+grace all plugin options. Each crossing RED ground unit trips at most one mine (one explosion,
+one charge), a field clears when its charges are spent, and every active field carries a live F10
+map mark for the **friendly** coalition only. The dispenser is made **exclusive** by freeing
+CBU-99 from the one stock loadout that used it (A-7E CAS → Rockeye); the "Aerial Minefield"
+loadout (named outside the guarded `Retribution <X>` namespace — there is no Minefield
+`FlightType`, mining reuses BAI) is on the **A-7E, F/A-18C Hornet, and AV-8B Harrier**, every
+dispenser pylon verified pydcs-legal. (The A-6E Intruder cannot mount CBU-99 in this pydcs, and
+the F-14 has no ground-attack preset in-fork.) The Lua harness gained a `WeaponFake` +
+`fire_shot` (the snake-nape SHOT path had none); tests `tests/lua/test_minefields_runtime.py`.
+
+**Phase 2 — cross-turn persistence.** A field left undisturbed at mission end is carried across
+the turn. The plugin mirrors the current state of every field it managed — persisted fields (by
+their Python `id`) and newly-laid ones (`id` 0), each with remaining `charges` — into the new
+`minefields_state` **named-global channel** (declared in `dcs_retribution.lua`, added to the
+serialized `game_state`; `dirty_state` flagged so `write_state` flushes). `game/debriefing.py`
+parses it into `StateData.minefields_state`; `MissionResultsProcessor.commit_minefields` →
+`game/fourteenth/minefields.py` `reconcile_minefields` folds it into `game.minefields` (a persisted
+`list[Minefield]`, `__setstate__`-defaulted): a known field takes the plugin's authoritative charge
+count (removed once exhausted), a surviving newly-laid field is promoted to a fresh-id record, and a
+field the plugin did **not** report is left untouched (a field nobody drove over does not decay).
+The emitter `game/missiongenerator/minefieldluadata.py` (`populate_minefields_lua`, wired in
+`luagenerator.py`) re-emits the live survivors as `dcsRetribution.minefields.fields` so the plugin
+re-arms each next mission, exactly where it was. Coordinates round-trip as `x` = north (`Point.x`) /
+`z` = east (`Point.y`) — the DCS `getPoint` frame the plugin works in. Gated by the
+`air_droppable_minefields` setting (Mission Generation → Battlefield life, default **OFF**);
+the runtime plugin is separately gated by its Plugin Options toggle, so the same-turn tactical
+mining still works with just the plugin on and this setting off. Tests
+`tests/fourteenth/test_minefields.py` + `tests/missiongenerator/test_minefieldluadata.py` +
+the Phase-2 cases in `tests/lua/test_minefields_runtime.py`.
+
+**Phase 3 — auto-plannable toggle (LANDED).** With `auto_plan_minefields` on (Mission Generation →
+Battlefield life, `enabled_when="air_droppable_minefields"`, default OFF, preseeded ON in Red Tide),
+`game/fourteenth/convoy_mining.py` `plan_convoy_mining` (hooked in `Coalition.plan_missions` before
+the commander, the §44 carrier pattern) frags one BAI sortie a turn **at an enemy convoy**, flown by
+a blue squadron that can fly BAI *and* carries the `"Aerial Minefield"` preset (A-7E/Hornet/Harrier),
+with that dispenser loadout **forced by name** onto the flight's members so the CBU-99 is dropped —
+the drop lays the field on the convoy's road (the plugin), and following traffic hits it. Honors the
+premise that only an air-drop lays a mine; the AI (or the player, if they fly the fragged sortie)
+just flies one. Tests `tests/fourteenth/test_convoy_mining.py`.
+
+**Web overlay (LANDED).** `MinefieldJs` on `GameJs` (`game/server/game/models.py`) emits each live
+BLUE field's position/radius/charges, empty unless `air_droppable_minefields` is on (the
+supply-nodes/restricted-zones pattern; BLUE-only — the enemy never sees where you mined). The client
+`minefieldSlice` + `MinefieldsLayer` draws a gold dashed marker per live field (with its mine count +
+radius in a tooltip) in the map-layers panel (a **"Minefields"** toggle in the Friendly group,
+default on). Generated-TS hand-added (`Minefield` type + `GameJs.minefields`, since codegen can't run
+locally); validated with `tsc --noEmit` + the client jest suite (12 suites / 36 tests) via the
+scratchpad-copy + `node_modules`-junction workaround (jest can't run under a `.claude` worktree path).
+The `.miz` F10/ME drawing is **intentionally skipped**: the plugin's *live* runtime F10 marks track
+fields as they deplete/clear during the mission, which a static generated drawing can't. Tests
+`tests/server/test_minefields.py`. **All that remains is the in-game pass** (checklist B9): the
+`CBU_99` runtime type string, the convoy kill, the undisturbed-field re-lay across a turn, and the
+auto-planned drop. Needs the CI client rebuild for the overlay to appear.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

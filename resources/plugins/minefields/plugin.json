@@ -1,0 +1,58 @@
+{
+    "nameInUI": "Air-droppable minefields",
+    "descriptionInUI": "Runtime for faked area mining. DCS has no mine object, so this scripts it: when a blue aircraft air-drops the designated cluster dispenser (CBU-99, carried only by the 'Retribution Minefield' loadout), the impact area becomes a proximity minefield. Any enemy ground unit -- a supply convoy -- that drives inside the field's radius trips a mine (one explosion at the vehicle, one charge spent); each unit trips at most once, and a field clears when its charges are exhausted. Fields are marked on the F10 map for your side only -- the enemy never sees them. Mines work the SAME mission they are laid: mine the road just ahead of an inbound convoy to stop it now. No phantom spawns: a mine kills a real, tracked convoy unit, so the loss is recorded natively at debrief (dead convoy units never arrive) -- this script owns no kills beyond producing the explosion. Blue-only: red does not lay mines and blue ground never trips them. (Cross-turn persistence and the auto-planned mining strike are added in later phases; this build is the same-turn tactical core.) All distances are metric.",
+    "defaultValue": false,
+    "specificOptions": [
+        {
+            "nameInUI": "Minefield radius from the drop point (m)",
+            "mnemonic": "fieldRadiusM",
+            "defaultValue": 200,
+            "maximumValue": 2000
+        },
+        {
+            "nameInUI": "Mines (charges) per air-dropped field",
+            "mnemonic": "chargesPerField",
+            "defaultValue": 6,
+            "maximumValue": 50
+        },
+        {
+            "nameInUI": "Mine density: chance a crossing vehicle trips a mine (%)",
+            "mnemonic": "tripChancePct",
+            "defaultValue": 60,
+            "maximumValue": 100
+        },
+        {
+            "nameInUI": "Per-mine explosion power (kg TNT eq)",
+            "mnemonic": "detonationPower",
+            "defaultValue": 100,
+            "maximumValue": 1000
+        },
+        {
+            "nameInUI": "Seconds between proximity scans",
+            "mnemonic": "scanIntervalS",
+            "defaultValue": 3
+        },
+        {
+            "nameInUI": "Minimum seconds between two detonations in one field",
+            "mnemonic": "detonationCooldownS",
+            "defaultValue": 4
+        },
+        {
+            "nameInUI": "Startup grace before a field can detonate (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 60
+        },
+        {
+            "nameInUI": "Dispenser: weapon-name matches that lay a field (comma-separated)",
+            "mnemonic": "weaponPatterns",
+            "defaultValue": "CBU_99"
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "minefields-config.lua",
+            "mnemonic": "minefields-config"
+        }
+    ]
+}

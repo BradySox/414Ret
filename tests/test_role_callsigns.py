@@ -11,11 +11,16 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any, cast
+from unittest.mock import Mock
+
+import pytest
 
 from game.ato.flight import ROLE_CALLSIGNS, role_callsign
 from game.ato.flighttype import FlightType
+from game.missiongenerator.aircraft import flightgroupspawner as fgs
 from game.missiongenerator.aircraft.flightgroupspawner import FlightGroupSpawner
 from game.radio.CallsignContainer import Callsign
+from game.theater import Airfield
 
 
 def test_role_callsign_by_type_and_airframe() -> None:
@@ -109,6 +114,36 @@ def test_squadron_config_parses_callsign() -> None:
         {"primary": "CAS", "callsign": "Voodoo"}
     ).callsign == ("Voodoo")
     assert SquadronConfig.from_data({"primary": "CAS"}).callsign is None
+
+
+def test_idle_aircraft_registers_custom_callsign_during_spawn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Regression (the "'Voodoo' is not in list" crash): create_idle_aircraft spawns a
+    # squadron's untasked aircraft via pydcs's flight_group_from_airport, which
+    # ValueErrors on a callsign not in the country pool. The custom callsign must be
+    # registered *before* that pydcs call and pulled back after -- like the main spawn
+    # path. Before the fix the idle path skipped registration, so a custom-callsign
+    # squadron (e.g. Red Tide's "Voodoo") crashed mission generation.
+    pool = ["Enfield", "Springfield"]
+    spawner = _spawner("Voodoo", "Plane", pool)
+    spawner.flight.is_helo = False
+    spawner.flight.is_lha = False
+    spawner.flight.squadron = SimpleNamespace(location=Mock(spec=Airfield))
+    monkeypatch.setattr(fgs.namegen, "next_aircraft_name", lambda c, f: "Idle 1")
+
+    present_at_spawn: list[bool] = []
+
+    def fake_airfield(name: str, airfield: Any) -> Any:
+        # This stands in for the pydcs call that looks the callsign up in the pool.
+        present_at_spawn.append("Voodoo" in pool)
+        return SimpleNamespace(uncontrolled=False)
+
+    spawner._generate_at_airfield = fake_airfield
+    spawner.create_idle_aircraft()
+
+    assert present_at_spawn == [True]  # registered before pydcs sees it
+    assert pool == ["Enfield", "Springfield"]  # pulled back after -> no leak
 
 
 def test_override_squadron_defaults_applies_callsign() -> None:

@@ -163,23 +163,31 @@ class FlightGroupSpawner:
         self._injected_custom_callsign = False
 
     def create_idle_aircraft(self) -> Optional[FlyingGroup[Any]]:
-        group = None
-        cp = self.flight.squadron.location
-        if self.flight.is_helo or self.flight.is_lha and isinstance(cp, Fob):
-            group = self._generate_at_cp_helipad(
-                name=namegen.next_aircraft_name(self.country, self.flight),
-                cp=self.flight.squadron.location,
-            )
-        elif isinstance(cp, Fob):
-            group = self._generate_at_cp_ground_spawn(
-                name=namegen.next_aircraft_name(self.country, self.flight),
-                cp=self.flight.squadron.location,
-            )
-        elif isinstance(cp, Airfield):
-            group = self._generate_at_airfield(
-                name=namegen.next_aircraft_name(self.country, self.flight),
-                airfield=cp,
-            )
+        # Register a custom/role callsign into the country pool before pydcs assigns
+        # it, exactly as the main spawn path does -- otherwise a squadron with a
+        # non-stock callsign (e.g. "Voodoo") ValueErrors in pydcs _assign_callsign
+        # when its untasked aircraft are parked here.
+        self._register_custom_callsign()
+        try:
+            group = None
+            cp = self.flight.squadron.location
+            if self.flight.is_helo or self.flight.is_lha and isinstance(cp, Fob):
+                group = self._generate_at_cp_helipad(
+                    name=namegen.next_aircraft_name(self.country, self.flight),
+                    cp=self.flight.squadron.location,
+                )
+            elif isinstance(cp, Fob):
+                group = self._generate_at_cp_ground_spawn(
+                    name=namegen.next_aircraft_name(self.country, self.flight),
+                    cp=self.flight.squadron.location,
+                )
+            elif isinstance(cp, Airfield):
+                group = self._generate_at_airfield(
+                    name=namegen.next_aircraft_name(self.country, self.flight),
+                    airfield=cp,
+                )
+        finally:
+            self._deregister_custom_callsign()
         if group:
             group.uncontrolled = True
         return group
@@ -188,10 +196,16 @@ class FlightGroupSpawner:
         cp = self.flight.squadron.location
         if not isinstance(cp, Airfield):
             return None
-        group = self._generate_at_airfield(
-            name=group_name,
-            airfield=cp,
-        )
+        # A QRA squadron may carry a custom/role callsign; register it around the
+        # spawn so pydcs can resolve it (see create_idle_aircraft).
+        self._register_custom_callsign()
+        try:
+            group = self._generate_at_airfield(
+                name=group_name,
+                airfield=cp,
+            )
+        finally:
+            self._deregister_custom_callsign()
         for point in group.points:
             point.speed = QRA_AIRSTART_SPEED_MS
         group.late_activation = True
@@ -207,12 +221,18 @@ class FlightGroupSpawner:
         """
         cp = self.flight.squadron.location
         group: Optional[FlyingGroup[Any]] = None
-        if self.flight.is_helo or (self.flight.is_lha and isinstance(cp, Fob)):
-            group = self._generate_at_cp_helipad(name=group_name, cp=cp)
-        elif isinstance(cp, Fob):
-            group = self._generate_at_cp_ground_spawn(name=group_name, cp=cp)
-        elif isinstance(cp, Airfield):
-            group = self._generate_at_airfield(name=group_name, airfield=cp)
+        # The rescue helo carries the "Jolly" role callsign (and its squadron may
+        # carry a custom one); register it around the spawn so pydcs can resolve it.
+        self._register_custom_callsign()
+        try:
+            if self.flight.is_helo or (self.flight.is_lha and isinstance(cp, Fob)):
+                group = self._generate_at_cp_helipad(name=group_name, cp=cp)
+            elif isinstance(cp, Fob):
+                group = self._generate_at_cp_ground_spawn(name=group_name, cp=cp)
+            elif isinstance(cp, Airfield):
+                group = self._generate_at_airfield(name=group_name, airfield=cp)
+        finally:
+            self._deregister_custom_callsign()
         if group is not None:
             group.late_activation = True
         return group

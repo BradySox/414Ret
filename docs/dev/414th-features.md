@@ -5260,6 +5260,23 @@ default 5), the taxi **ground frequency** (`groundFreq`, default "249.50"), and 
 in-game pass** (checklist B10): that the card actually appears on slot-in (SP + a server rejoin),
 reads correctly, and clears after its duration.
 
+**Flown 2026-07-11 (Red Tide M1, MP dedicated server) — FAILED, root-caused, reworked (checklist
+B10).** No pilot noticed a card or beep despite `armed for 12 player flight(s)` and zero errors.
+Two compounding causes: **(1) paused-server time compression** — the server sat paused at frozen
+sim t=0 while everyone slotted in, so every card (scheduled at `timer.getTime() + 5`) fired in one
+window ~5 s after UNPAUSE, minutes after each pilot sat down (intended-by-physics: the sandbox has
+no wall clock and nothing fires during a pause — per-group text means each pilot still only sees
+their own card; the plugin header now documents this contract); **(2) the beep was silently dead**
+— `outSoundForGroup` got the bare basename `briefing-beep.wav`, but an in-miz sound resolves ONLY
+via its `l10n/DEFAULT/` archive path, and a wrong path fails with no error, so the one attention
+cue that would make heads-down pilots look up never sounded. Fixes (same session): the beep path
+prefixed; **per-card logging** (`BRIEFING|: card -> <group> gid=<id> t=<t>`, + `taxi ->` /
+`card skipped (group gone)`) so dcs.log now discriminates "sent but unseen" from "never sent" —
+the hunt's blocking blind spot; a skipped fire clears the debounce so the pilot's next slot-in
+still shows; and a nil `getPlayerName` at the BIRTH instant in a briefing-listed group gets one
++2 s re-check before being treated as AI (the documented MOOSE #806 event-timing race). All four
+pinned in `tests/lua/test_briefing_runtime.py`. Re-fly criteria in the B10 row.
+
 ---
 
 ## Code audit fixes — 2026-07-07

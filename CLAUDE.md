@@ -1807,9 +1807,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     default 5), the taxi **ground frequency** (`groundFreq`, default "249.50"), and the **beep toggle**
     (`playSound`, default true) are plugin options. Tests
     `tests/missiongenerator/test_briefingluadata.py` + `tests/lua/test_briefing_runtime.py` (the
-    harness gained an `outSoundForGroup` stub). (`game/missiongenerator/briefingluadata.py`,
+    harness gained an `outSoundForGroup` stub). **First MP fly FAILED (2026-07-11 Red Tide M1) —
+    root-caused + reworked same session:** on a paused dedicated server every pre-start slot-in
+    shares frozen sim t=0, so all cards fire ~5 s after UNPAUSE (intended-by-physics — the sandbox
+    has no wall clock; documented in the plugin header), and the beep that should make pilots look
+    up was silently dead — an in-miz sound resolves ONLY via its `l10n/DEFAULT/` archive path, and
+    the plugin passed the bare basename (fails with no error). Fixed: beep path prefixed, every
+    card/taxi fire now logs `BRIEFING|: card -> <group> gid=<id>` (the "sent but unseen" vs "never
+    sent" discriminator), a skipped fire clears the debounce, and a nil `getPlayerName` at BIRTH
+    gets one +2 s re-check (the MOOSE #806 timing race). (`game/missiongenerator/briefingluadata.py`,
     `game/missiongenerator/luagenerator.py`, `resources/plugins/briefing/`,
-    `game/settings/settings.py`; features doc §58, checklist B10 — needs an in-game pass.)
+    `game/settings/settings.py`; features doc §58, checklist B10 — reworked, needs a re-fly.)
 
 ---
 

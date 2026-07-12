@@ -442,6 +442,20 @@ class Game:
         # in case mods like CJS F/A-18E/F/G or IDF F-16I are selected by the player
         self.blue.faction.apply_mod_settings()
         self.red.faction.apply_mod_settings()
+        # The pickled ArmedForces would keep serving a mod preset group the
+        # faction strip above removed (the buy menu and AI ground procurement
+        # read it), so heal saves made before the strip caught the group.
+        from game.factions.faction import disabled_mod_packages
+
+        for coalition in (self.blue, self.red):
+            faction_mod_settings = coalition.faction.mod_settings
+            if faction_mod_settings is None:
+                continue
+            coalition.armed_forces.forces = [
+                group
+                for group in coalition.armed_forces.forces
+                if not disabled_mod_packages(group, faction_mod_settings)
+            ]
         if not game_still_initializing:
             # We don't need to push events that happen during load. The UI will fully
             # reset when we're done.

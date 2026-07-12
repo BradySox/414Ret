@@ -317,7 +317,7 @@ considered and declined.
    S-300/SA-5 only** — scoped so every other campaign's lone S-300 keeps its §60 redundancy. Because
    the enemy is the shared, player-selected `Russia 1980`, the scoping boundary is a **faction fork**
    `Russia 1980 (Red Tide)` (`resources/factions/russia_1980_red_tide.json`, set as
-   `recommended_enemy_faction`) whose three LORAD presets — SA-10/S-300PS, SA-10A/S-300PT, SA-5/S-200
+   `recommended_enemy_faction`) whose LORAD presets — SA-10/S-300PS, SA-5/S-200
    — point at **single-radar layout variants** (`S-300 Site (Single Radar)` / `SA-5 Legacy Site
    (Single Radar Circle|Semicircle)`: the same `.miz` templates, guidance slot `unit_count: 1`). The
    fork is byte-identical to `Russia 1980` otherwise (no aircraft/OOB change) and only takes effect
@@ -330,6 +330,21 @@ considered and declined.
    pydcs can't surface-check GCW), that MANTIS nets the three single-radar battalions + EWR into one
    regiment that degrades gracefully instead of dying in one pass, and that the recommended fork
    faction is selected. NEW game required.
+
+   **Mod-unit leak fixed (2026-07-12, user catch from the buy menu).** The fork originally shipped a
+   *third* single-radar preset, `SA-10A/S-300PT (Single Radar)` — every unit in it a **High Digit
+   SAMs** mod unit (S-300PT 5P85-1 LNs, 76N6E/64H6E-truck SRs, mast 30N6 TR). Red Tide is a
+   vanilla-only campaign, and worse, the preset survived a no-mod game: `Faction.apply_mod_settings`
+   strips mod presets by an **exact-name list**, and nobody added the new name, so the group showed
+   in the buy menu (and sat in red's AI procurement pool — a purchase would have baked mod units
+   into the generated `.miz`, which then fails to load for clients without the mod). Fixed
+   three ways: the preset is removed from the fork faction (and its yaml deleted — S-300PS +
+   SA-5 remain the regiment presets), `apply_mod_settings` gained a **provenance backstop** that
+   strips any preset group carrying units from a disabled `pydcs_extensions` package regardless of
+   name (also fixed three modern-Russia factions leaking the `[CH] Russian Navy` preset), and
+   `Game.on_load` sweeps the pickled `ArmedForces` so **existing saves self-heal on load**.
+   CI-locked in `tests/fourteenth/test_faction_mod_presets.py` (every shipped faction, all mods
+   off ⇒ zero mod preset groups; the fork faction ⇒ pure-vanilla accessible roster).
 
    **Lock-override #2, same day — SA-15 Tor + SA-19 Tunguska added to the fork (user call).**
    The user's roster question ("Red Tide has no 15s or 19s — can SA-9/13/8 engage ARMs the same

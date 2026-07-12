@@ -85,6 +85,11 @@ file. This guide is the map; those are the territory.
     shared EWR** (the reference implementation of the SAM-belt STANDARD) — single-radar battalions
     via the `Russia 1980 (Red Tide)` faction fork (§60 reverted for RT's S-300/SA-5 only; front
     legacy SAMs keep §60 doubling). NEW game required; tests in `test_red_tide_sam_regiments.py`.
+    **Lock-override #2 same day (user call off the roster era-audit):** the fork faction gained the
+    **SA-15 Tor + SA-19 Tunguska** (era-correct '86/'82) so the regiments' point defense can actually
+    intercept ARMs under the MANTIS SHORAD link (G30) — red's roster was otherwise IR-only SA-9/13 +
+    the Osa, none of which DCS tasks against missiles. Roster otherwise audited era-clean vs July
+    1988; guards in `tests/fourteenth/test_red_tide_faction_era.py`. NEW game required.
   - `414th-inherent-resolve-campaign-notes.md` — **the Iraq / Mosul COIN campaign** (the Battle
     of Mosul 2016-17 on the DCS Iraq map; the 414th's **second COIN campaign**, sibling of Enduring
     Resolve on the same `coin.py` stack). New factions `CJTF-OIR 2016` (blue coalition) + `Islamic

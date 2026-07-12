@@ -324,6 +324,20 @@ considered and declined.
    pydcs can't surface-check GCW), that MANTIS nets the three single-radar battalions + EWR into one
    regiment that degrades gracefully instead of dying in one pass, and that the recommended fork
    faction is selected. NEW game required.
+
+   **Lock-override #2, same day — SA-15 Tor + SA-19 Tunguska added to the fork (user call).**
+   The user's roster question ("Red Tide has no 15s or 19s — can SA-9/13/8 engage ARMs the same
+   way?") exposed that the MANTIS SHORAD link (checklist G30) was a red no-op here: the fork's
+   SHORAD roster was SA-8/SA-9/SA-13 only, and DCS tasks none of them against missiles (the IR
+   seekers can't, and the Osa isn't given the capability) — so the "PD ambushes the HARM" mechanic
+   had no red shooter. Both systems are era-correct for a first-line July-1988 force (Tor IOC 1986,
+   Tunguska 1982 — the same army fielding S-300PS), so they were added to the fork's
+   `air_defense_units` (base `Russia 1980` untouched). Gen-probed: the S-300 regiment battalions
+   now draw Tor point defense (18 Tors on the generated map, 11 in PD groups); the S-300 Site
+   layout's explicit `Tor 9A331` SHORAD2 slot finally fills. The full roster was audited against
+   the campaign date in the same pass — **no other era violations** (newest units: BTR-80 '86,
+   IL-78M '87). Guards: `tests/fourteenth/test_red_tide_faction_era.py` (era ceiling + the Tor
+   presence). NEW game required.
 9. **Placement moved onto airfield aprons** (2026-06-23). Items 6–8 used blind base-center
    offsets, which dropped several structures into forest/built-up terrain (in-game screenshot).
    pydcs exposes no surface-type query and the GCW reference missions

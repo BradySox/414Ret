@@ -72,6 +72,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §58 | Mission-start briefing popup | `briefing` | `mission_briefing_popup` |
 | §59 | Ground AI sleep (graduated culling) | `aisleep` | `perf_ground_ai_sleep` |
 | §60 | SAM guidance-radar redundancy (two track radars per site) | — | — |
+| §61 | Host red-interceptor scramble (F10 bandit spawner) | `redscramble` | `host_red_scramble` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

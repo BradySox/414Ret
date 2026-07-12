@@ -78,9 +78,12 @@ file. This guide is the map; those are the territory.
     recovery raid shelved). Supersedes the eight earlier CSAR/SCAR notes (each is bannered).
   - `414th-aircraft-task-rebalance-rubric.md` — aircraft task-priority rebalance rubric
   - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits.
-    **🔒 FEATURE-LOCKED 2026-07-11** — no new features/laydown/balance into Red Tide (bug
-    fixes + in-game-pass verification + tuning-to-intended still OK); the banner atop that
-    note is the source of truth.
+    **🔒 FEATURE LOCK effective FRIDAY NIGHT 2026-07-17** (user correction 2026-07-12 — the
+    earlier "locked 2026-07-11" was the intent, not the date): until the Friday-night
+    regeneration (new build + a turn 1 processed from the M1 session JSON), new features and
+    Red Tide preseeds MAY land; from then on, no new features/laydown/balance (bug fixes +
+    in-game-pass verification + tuning-to-intended still OK); the banner atop that note is
+    the source of truth.
   - `414th-inherent-resolve-campaign-notes.md` — **the Iraq / Mosul COIN campaign** (the Battle
     of Mosul 2016-17 on the DCS Iraq map; the 414th's **second COIN campaign**, sibling of Enduring
     Resolve on the same `coin.py` stack). New factions `CJTF-OIR 2016` (blue coalition) + `Islamic
@@ -1873,6 +1876,32 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     with verdicts in `docs/dev/design/414th-sam-site-realism-notes.md` (which also records the
     don't-stack-them tension: never run §60 doubling AND a regiment model on the same system).
     (`resources/layouts/anti_air/`; features doc §60, checklist B12 — needs an in-game pass.)
+61. **Host red-interceptor scramble (F10 bandit spawner)** — the game master's "give the boys
+    something to shoot" button (the M1 "quiet after the first wave" debrief): with
+    `host_red_scramble` on, the mission carries cold late-activation **clone templates of the
+    red faction's fighters** (one 2-ship per distinct type, best BARCAP airframe first, capped
+    at 4 — built by `AircraftGenerator.spawn_red_scramble_templates`, the QRA pattern,
+    `claim_inv=False`) and an F10 **"HOST: Red Scramble"** menu that SPAWN-clones a **2/4-ship
+    at any red airfield** (menu lists up to 9, nearest-front first) or — one **EMERGENCY**
+    press — at the base nearest the airborne blue players. Spawn default = the QRA **air-spawn
+    scramble profile** (field elev + 760 m AGL, 300 kt; ground spawns die on packed ramps —
+    the intercept-plugin history; `takeoff` hot/runway are options), weapons-free at spawn,
+    then a GCI loop **re-vectors every live bandit onto the nearest airborne BLUE fighter**
+    (players outrank nearer AI) via a hard `AttackGroup` task until dead. **Menu visibility is
+    the plugin's `hostPlayers` option** (comma-separated DCS names, case-insensitive →
+    per-group menu on slot-in/sweep, the §58 pattern; empty = all-BLUE coalition menu, and the
+    `REDSCRAMBLE|` log line says which mode armed). **Spawns are untracked event content by
+    design** (the §20 drop-spawn cheat precedent, NOT a §35/§37 violation — deliberate host
+    action, default-OFF setting): red pays nothing, a dead clone changes nothing at the turn
+    boundary; bandit kills of players record natively. Gated `host_red_scramble` (Mission
+    Generation → Battlefield life, default **OFF**), preseeded ON + the `redscramble` plugin
+    preseeded ON in **Red Tide** (the §36 lesson) ahead of the Friday 2026-07-17 regeneration.
+    Tests `tests/missiongenerator/test_redscrambleluadata.py` +
+    `tests/lua/test_redscramble_runtime.py` (the harness gained group F10 menus,
+    `coalition.getPlayers`, `Controller:setTask` recording, and AIRBASE/SPAWN fakes).
+    (`game/missiongenerator/redscrambleluadata.py`,
+    `game/missiongenerator/aircraft/aircraftgenerator.py`, `resources/plugins/redscramble/`,
+    `game/settings/settings.py`; features doc §61, checklist B13 — needs an in-game pass.)
 
 ---
 

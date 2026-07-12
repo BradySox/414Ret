@@ -284,6 +284,10 @@ class MissionGenerator:
             tgo_generator.runways,
         )
         aircraft_generator.spawn_intercept_templates()
+        # Host red-scramble clone templates (§61). Placed before spawn_unused_aircraft
+        # for the same reason as the QRA templates: they need parking before the
+        # idle aircraft fill the ramps.
+        aircraft_generator.spawn_red_scramble_templates()
         from game.missiongenerator.civiliantraffic import (
             CivilianTrafficGenerator,
             NavalCivilianTrafficGenerator,

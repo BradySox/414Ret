@@ -393,6 +393,23 @@ FEATURES: tuple[Feature, ...] = (
         "SAM guidance-radar redundancy (two track radars per site)",
         60,
     ),
+    Feature(
+        # §61 host red-interceptor scramble -- the game master's "give the boys
+        # something to shoot" button (the M1 "it felt quiet after the first wave"
+        # debrief). redscrambleluadata.py emits cold late-activation red fighter
+        # clone templates (the QRA pattern, built in
+        # AircraftGenerator.spawn_red_scramble_templates) + the red airfields
+        # nearest-front first; the `redscramble` plugin builds a host-only F10
+        # menu (per-player-name, or all-BLUE when unconfigured) that SPAWN-clones
+        # a 2/4-ship at any listed base and GCI-vectors it onto the nearest
+        # airborne blue fighters. Spawns are untracked event content by design
+        # (the §20 drop-spawn cheat precedent).
+        "host_red_scramble",
+        "Host red-interceptor scramble (F10 bandit spawner)",
+        61,
+        plugin_id="redscramble",
+        settings_fields=("host_red_scramble",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

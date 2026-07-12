@@ -1968,6 +1968,23 @@ it from upstream. Settings are LOCKED by design: `plugin.json` has no `specificO
   supply-routes design note "Roll-out to the built campaigns"): Nevada re-traced, the worst
   Caucasus-trail defects fixed, the deep-mountain trail FOBs (Yankee Station / Steel Tiger R6–R13)
   left for an in-app by-eye pass, Germany already compliant.
+- **SAM belts: legacy → §60 doubling, strategic → regiment-by-authoring (STANDARD, 2026-07-12).**
+  When you lay out a **new campaign's** air defenses, choose the redundancy model by system class —
+  don't just drop fat single-site batteries:
+  - **Legacy / mobile systems** (SA-2, SA-3, SA-6, Hawk, and the generic launcher sites) — a lone
+    site is realistic and the §60 two-guidance-radar doubling already baked into their layouts is the
+    right fix (defeats the single-HARM kill). Place them as normal; nothing extra to do.
+  - **Strategic belts** (S-300 / S-400 / SA-10/20/21, Patriot, the long-range LORAD systems) — prefer
+    the **regiment-by-authoring** pattern: place **several single-radar fire units + a shared EWR/
+    acquisition site** on the CP and let MANTIS net them into one IADS, rather than one doubled fat
+    site. That is the historically faithful survivability model (kill one battalion's radar, the
+    regiment fights on) and it's what the engine + MANTIS already represent when you place multiple
+    sites.
+  - **Guardrail — never double-count radars.** §60 doubling and a regiment layout both add engagement
+    radars. If a future engine "regiment" construct ever lands for a strategic system, revert §60's
+    doubling for that system, and **record which systems are regiment-modeled vs §60-doubled** the day
+    that starts. Rationale + the deferred directions (geometry, acquisition separation, decoys) live in
+    [docs/dev/design/414th-sam-site-realism-notes.md](docs/dev/design/414th-sam-site-realism-notes.md).
 - Match the surrounding code's style; run the three validation commands (in `CLAUDE-ci.md`) before pushing.
 - Keep the doc faces in sync: when a feature lands or changes, update **both**
   [`README.md`](README.md) (player-facing) and the relevant section of

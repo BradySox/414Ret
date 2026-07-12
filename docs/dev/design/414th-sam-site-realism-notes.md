@@ -72,6 +72,10 @@ prefer the **regiment-by-authoring** pattern in new campaigns. **Guardrail:** if
 regiment construct for a strategic system, revert §60's doubling for that system so radars aren't
 double-counted. Record which systems are "regiment-modeled" vs "§60-doubled" the day that starts.
 
+> **This verdict is now a campaign-authoring STANDARD** (CLAUDE.md → Conventions, "SAM belts: legacy →
+> §60 doubling, strategic → regiment-by-authoring", 2026-07-12) so every new campaign's air-defense
+> laydown applies it by default. Edit both together if the policy changes.
+
 ---
 
 ## Direction C — acquisition-radar separation + radar decoys  ·  verdict: separation MAYBE (small), decoys PARK (DCS blocks it)

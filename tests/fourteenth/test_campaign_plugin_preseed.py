@@ -115,3 +115,54 @@ def test_the_plugin_preseed_survives_deserialization_and_wins_the_layering() -> 
     merged = {**saved_defaults, **campaign_plugins}
     assert merged["vietnamops"] is True
     assert merged["vietnamops.harassGraceS"] == 300  # options untouched
+
+
+def test_red_tide_preseeds_the_m1_tuning_batch() -> None:
+    """The flown M1 (2026-07-11) tuning findings, preseeded so a NEW game gets them.
+
+    - civilian_air_traffic OFF: the ~40 NM front keep-out is no protection for a
+      campaign whose air war runs 100+ NM behind the lines (a neutral IL-76 at
+      FL230 died to a player's deep Phoenix shot); Red Tide runs a sterile picture.
+    - aewc/tanker buffers 30/25 NM: the AI depth push (2.5x) at the 80/70 defaults
+      parked the red A-50/IL-78 200/175 NM back over Berlin, leaving the P-14 line
+      as red's whole detection net.
+    - BARCAP 45 min: a Schonefeld MiG-29 flamed out dry at ~75 min airborne; 60 min
+      on-station is a whole Fulcrum+tank fuel load at the AI's patrol speed.
+    """
+    settings = _campaign_settings()
+    assert settings["civilian_air_traffic"] is False
+    assert settings["aewc_threat_buffer_min_distance"] == 30
+    assert settings["tanker_threat_buffer_min_distance"] == 25
+    assert settings["desired_barcap_mission_duration"] == 45
+
+
+def test_barcap_duration_preseed_deserializes_to_a_timedelta() -> None:
+    # Campaign yaml carries minutes as an int; deserialize_state_dict must coerce
+    # the timedelta-typed field or every patrol_duration consumer breaks.
+    from datetime import timedelta
+
+    deserialized = Settings.deserialize_state_dict(dict(_campaign_settings()))
+    assert deserialized["desired_barcap_mission_duration"] == timedelta(minutes=45)
+
+
+def test_civilian_traffic_gate_defaults_on_and_gates_generate() -> None:
+    # The generic gate: default ON (every other campaign byte-identical), and
+    # CivilianTrafficGenerator.generate() early-returns when off.
+    from types import SimpleNamespace
+
+    from game.missiongenerator.civiliantraffic import CivilianTrafficGenerator
+
+    assert Settings().civilian_air_traffic is True
+
+    gen: CivilianTrafficGenerator = CivilianTrafficGenerator.__new__(
+        CivilianTrafficGenerator
+    )
+    calls: list[str] = []
+    gen.game = SimpleNamespace(  # type: ignore[assignment]
+        settings=SimpleNamespace(civilian_air_traffic=False)
+    )
+    gen.mission = SimpleNamespace(  # type: ignore[assignment]
+        country=lambda name: calls.append(name)
+    )
+    gen.generate()
+    assert calls == []  # early-returned before touching the mission

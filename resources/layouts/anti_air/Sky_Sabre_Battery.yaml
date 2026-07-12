@@ -5,7 +5,9 @@ groups:
   - SkySabre:
     - name: Search Radar
       unit_count:
-        - 1
+        # 414th: the Giraffe is this site's engagement radar (CAMM needs it)
+        # - guidance-radar redundancy, one HARM must not blind the site
+        - 2
       unit_types:
         - CH_SkySabreGiraffe
       unit_classes:

@@ -1,6 +1,6 @@
 {
     "nameInUI": "MANTIS IADS",
-    "descriptionInUI": "MOOSE MANTIS IADS engine — the default IADS engine for new campaigns (Skynet is the alternative). Only takes effect when the campaign's IADS engine is set to MANTIS; otherwise it is inert and Skynet runs instead. Provides SAM/EWR networking, emissions control, engagement tuning, EWR shoot-and-scoot, and comms/power/command-center degradation (advanced IADS).",
+    "descriptionInUI": "MOOSE MANTIS IADS engine — the sole IADS engine (Skynet removed). Provides SAM/EWR networking, emissions control, engagement tuning, EWR shoot-and-scoot, comms/power/command-center degradation (advanced IADS), and the SEAD-triggered point-defense link (a site's co-located SHORAD sleeps until a HARM/Maverick is fired at the SAM it guards, then wakes to intercept the shot).",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -57,6 +57,26 @@
             "nameInUI": "EWR shoot-and-scoot: periodically relocate mobile EWRs",
             "mnemonic": "autoRelocateEwr",
             "defaultValue": false
+        },
+        {
+            "nameInUI": "SEAD-triggered point defense (PD sleeps until a HARM/Maverick is fired at its SAM, then wakes to intercept; OFF = PD always alert)",
+            "mnemonic": "shoradLink",
+            "defaultValue": true
+        },
+        {
+            "nameInUI": "Point-defense wake duration after a trigger (s)",
+            "mnemonic": "shoradTime",
+            "defaultValue": 600
+        },
+        {
+            "nameInUI": "Point-defense defense radius around the guarded SAMs (NM)",
+            "mnemonic": "shoradRadiusNm",
+            "defaultValue": 10.8
+        },
+        {
+            "nameInUI": "SEAD-suppression wake reach (PD wakes when a SAM within this range is suppressed, NM)",
+            "mnemonic": "shoradActDistanceNm",
+            "defaultValue": 13.5
         },
         {
             "nameInUI": "Advanced C2: degrade SAMs when their comms/power/command centers die",

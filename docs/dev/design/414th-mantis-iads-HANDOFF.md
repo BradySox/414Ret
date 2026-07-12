@@ -9,6 +9,11 @@ and the in-game-pass checklist row **G6**.
 This is the next-session pickup point for the work that started as "is MANTIS a more modern IADS than
 Skynet?" and grew into a MIST → MOOSE consolidation program.
 
+> **2026-07-12 addendum:** the deferred **point-defense pairing landed** — the SEAD-triggered
+> SHORAD link (`MANTIS:AddShorad`; PD sleeps until a HARM/Maverick launch or a SEAD suppression
+> wakes it). See migration note §12 + checklist **G30**. Still deferred: proactive scoot zones,
+> per-unit tuning.
+
 ## ✅ Merged to `main` this session (PRs #141–#144)
 
 - **#141** — MANTIS vs Skynet parity matrix + migration plan (engine-level scope).

@@ -442,3 +442,41 @@ by-name EWR fold is the whole fix.
 RED still relies on dedicated EWR coverage, since SAM-as-EWRs stay dark — if a future campaign proves
 blind without an AWACS, the next lever is keeping SAM-as-EWR units always-on (trades the EMCON ghost
 for those sites). Not done yet; flagged in the G15 checklist row.
+
+---
+
+## 12. SEAD-triggered point-defense link (`AddShorad`) — LANDED 2026-07-12
+
+The "explicit point-defense pairing" deferred since the migration is in (came out of the "which
+MANTIS features aren't we using?" audit after the §60/regiment work). The co-located PD escorts
+(the `"... (PD)"` Tor/Tunguska/Avenger groups every SAM layout carries) were invisible to MANTIS —
+emitted per-SAM as the IADS table's `PD` connection arrays but consumed by nothing, so they ran
+vanilla DCS AI: always alert, radiating, plinking whatever wandered by, and contributing nothing
+when a HARM actually arrived.
+
+**Now:** `mantis-config.lua` collects and dedupes each coalition's `PD` names (Python emitter
+unchanged — the arrays were already there), wraps them in a MOOSE `SHORAD` object
+(`SHORAD:New(name.."-PD", escaped_prefixes, mantis.SAM_Group, radius, wake, coalition, emonoff)`),
+and links it via `MANTIS:AddShorad`. The PD **sleeps** (alarm green / emissions off +
+`DisperseOnAttack`) until a **HARM/Maverick launch** against a defended SAM (SHORAD's own
+`S_EVENT_SHOT` watch, `DefendHarms`/`DefendMavs` on) or a **MANTIS SEAD suppression** within
+`ShoradActDistance` wakes it for `shoradTime` seconds — the point defense ambushes the SEAD shot
+while the big radar hides, then goes back to sleep.
+
+**Two MOOSE ordering gotchas (harness-pinned, do not reorder):**
+1. `mantis.autoshorad = false` must be set **before `Start()`** — `onafterStart` otherwise builds
+   MANTIS' own auto-SHORAD (prefix `"SHORAD"`, matching none of our names) and **overwrites** the
+   linked object; `_RefreshSAMTable` would also re-point its `Groupset` every cycle. Side effect of
+   `autoshorad=false`: point-BANDED main SAM sites join MANTIS' SEAD ARM-evasion set instead — the
+   right behavior for a standalone Rapier/Avenger site.
+2. The SHORAD `SET_GROUP` filters by prefix with the same un-flagged Lua-pattern `string.find` as
+   MANTIS, so the PD names take the same `escape_prefixes` treatment or `"(PD)"` never matches.
+
+**Behavioral trade (deliberate, optioned):** PD no longer plinks strikers all mission — it holds
+dark until poked, which is the ambush posture the escort exists for. `shoradLink=false` (plugin
+option) restores the old always-alert behavior; `shoradTime` / `shoradRadiusNm` /
+`shoradActDistanceNm` tune the wake. No PD groups in a coalition ⇒ everything untouched.
+
+Tests: `tests/lua/test_mantis_shorad_link.py` (recording MANTIS/SHORAD fakes — collection/dedupe/
+escaping, the autoshorad-before-Start ordering, option threading, the off/no-PD no-ops). Runtime
+behavior (does the woken Tor actually splash the HARM) is DCS-only: **checklist G30**.

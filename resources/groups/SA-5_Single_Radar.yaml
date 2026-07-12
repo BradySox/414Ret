@@ -1,0 +1,12 @@
+name: SA-5/S-200 (Single Radar)
+tasks:
+  - LORAD
+units:
+  - SAM P19 "Flat Face" SR (SA-2/3)
+  - SAM SA-5 S-200 ST-68U "Tin Shield" SR
+  - EWR P-14 Tall King
+  - SAM SA-5 S-200 "Square Pair" TR"
+  - SAM SA-5 S-200 "Gammon" LN"
+layouts:
+  - SA-5 Legacy Site (Single Radar Circle)
+  - SA-5 Legacy Site (Single Radar Semicircle)

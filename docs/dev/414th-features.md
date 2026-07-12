@@ -5504,7 +5504,7 @@ spawn/ROE/announce, the AttackGroup vector onto the airborne player, no re-task 
 holds, unique repeat clones, the 9-base cap, clean no-op without the node). The harness models no
 DCS AI — whether the bandits actually press the intercept is the in-game item.
 
-**Needs an in-game pass** (checklist B13): the air-spawn clone flies off cleanly (not stalled),
+**Needs an in-game pass** (checklist B14): the air-spawn clone flies off cleanly (not stalled),
 the `AttackGroup` push makes the AI commit (fallback if `setTask` is rejected: a Mission-route
 task, the §15 combatsar divert lesson), the per-group menu really is host-only in MP, and the
 cloned jets carry their A2A loadout.

@@ -8,7 +8,7 @@ the picked base (air spawn, QRA profile: field elevation + AGL, scramble speed),
 sets it weapons free, announces to the presser, and the GCI loop then vectors the
 bandits onto the nearest airborne BLUE player via a hard AttackGroup task; a
 mission with no redScramble node is a clean no-op. The DCS AI's actual behaviour
-on the AttackGroup task is in-game-only (checklist B13).
+on the AttackGroup task is in-game-only (checklist B14).
 """
 
 from __future__ import annotations

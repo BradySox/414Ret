@@ -213,6 +213,17 @@ Vietnam campaigns preseed the [Vietnam Ops](Vietnam-Ops) suite, and Enduring Res
 1. Build the theater in the DCS Mission Editor: place airbases/carriers as warehouses,
    add objective groups (SAMs, factories, depots, ships) and front markers, then save the
    `.miz`.
+
+   **Which country block a marker goes in matters.** Markers under the **Combined Joint
+   Task Forces Red** country are the coalition-agnostic default: each binds to the
+   *nearest* control point of either side, which is how blue air defenses are usually
+   authored (a red-block SAM marker next to a blue field becomes that field's SAM site).
+   Watch the placement, though — a marker meant for one side that happens to sit nearest
+   the *other* side's control point binds there instead. Markers under **Combined Joint
+   Task Forces Blue** are an explicit blue-ownership declaration: they bind to the
+   nearest **blue** control point even if an enemy field is closer (before 2026-07-12
+   most blue-block marker classes were silently ignored — if an old campaign of yours
+   has blue-block ships/SAMs/EWRs that never appeared, they will now).
 2. Write the matching `<name>.yaml` next to it.
 3. Drop both files in `resources/campaigns/` (or your Saved Games override directory) and
    restart Retribution — campaigns are scanned at startup, so changes need a restart.

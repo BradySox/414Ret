@@ -265,6 +265,11 @@ and selected later upstream fixes.
   priorities have received a conservative role-based rebalance.
 - Soviet/Russian air defenses use improved legacy SAM layouts and radar composition.
   Campaign-map SAM rings, emitters, routes, and IADS links are easier to inspect and read.
+- **One HARM no longer kills a whole SAM site.** Every SAM battery now fields **two**
+  guidance radars (track radars, or the combined search/track unit on systems like the SA-6),
+  spaced far enough apart that a single missile can't take both — a site keeps shooting after
+  the first radar dies, and real SEAD takes a follow-up shot or a strike. Applies to new
+  campaigns; purchased sites default to the pair but can be trimmed in the buy menu.
 - **Off-mission engagements are weighted, not coin flips.** The AI-vs-AI fights resolved while you
   fast-forward now account for aircraft capability and numbers (a modern fighter beats an obsolete
   one more often than not, but a pair can still overwhelm a lone jet), and SEAD/SEAD-capable flights

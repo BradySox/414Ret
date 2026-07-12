@@ -5347,6 +5347,70 @@ wakes seamlessly on approach, and that MANTIS/TIC/convoys/movers are visibly unt
 
 ---
 
+## §60 — SAM guidance-radar redundancy (two track radars per site)
+
+The answer to the 2026-07-12 Red Tide finding: **a single HARM killed an entire SAM site**,
+because every site layout fielded exactly one engagement radar. In DCS a SAM group whose track
+radar (or combined search/track radar) dies cannot engage at all — the launchers are alive but
+blind — so one anti-radiation missile on the one guidance radar was a functional site kill, and
+SEAD collapsed into "shoot one HARM per site." Every SAM layout now fields **two** guidance
+radars, so decapitating a site takes a deliberate multi-shot SEAD effort (or a follow-up strike),
+not one lucky shot.
+
+**What counts as the guidance radar.** The slot that stops the site from shooting when it dies:
+
+- the **Track Radar** slot — the generic 2/4/6-launcher sites (Hawk, HQ-2, the HDS SA-2/SA-3,
+  compact SA-10, David's Sling/Iron Dome sector radar, Rapier Blindfire…) and the named SA-2 ×4 /
+  SA-3 ×2 / SA-5 ×2 / S-350 / NASAMS-3 battery layouts;
+- the **S-300 Site TR** slot — the S-300 family site and the HQ-22 battery;
+- **both channels of the SA-2/SA-3 mixed site** — its SNR-75 Fan Song is mapped onto the
+  "S-300 Site CP" slot and its SNR-125 Low Blow onto "S-300 Site TR"; both doubled;
+- the SA-6's combined **1S91 Straight Flush** (the "Search Radar" slot of the SA-6 Reinforced
+  layouts — the 2P25 TELs carry no radar, so the STR is the whole fire channel);
+- the **NASAMS Sentinel** and **Sky Sabre Giraffe** ("Search Radar" slot of their dedicated
+  layouts — AMRAAM/CAMM engagement stops without them);
+- the Patriot family (Patriot / MIM-104 / SAMP/T / LvS-103 ×4) **already fielded 2** STRs
+  ("Patriot Battery 0") — unchanged, now CI-locked.
+
+**How it is wired (pure layout data — no setting, no plugin, no engine change).** Each layout's
+guidance-radar unit group in `resources/layouts/anti_air/*.yaml` asks for `unit_count: 2`, and the
+shared `.miz` templates gained a second radar **position** for the slot — `generate_units` raises
+`LayoutException` past the template's position count, so both halves must move together. Template
+edits (pydcs round-trip, all positions ≥ 25 m clear of every other unit, 45–121 m from the primary
+radar so one HARM blast can't take both): `8_Launcher_Circle.miz` / `6_Launcher_Circle.miz` /
+`6_Launcher_Semicircle.miz` (+1 Track Radar, +1 Search Radar), `2_Launcher.miz` (+1 Track Radar),
+`S-300_Site.miz` (+1 S-300 Site TR, +1 S-300 Site CP). Extra template positions are inert for any
+layout that keeps a lower `unit_count` (the S-300's own 54K6 CP stays 1; only the mixed site uses
+the second CP position for its second Fan Song).
+
+**What falls out for free.** The buy-menu (`QGroundObjectBuyMenu`) maxes each slot at the
+template's position count, so a purchased site defaults to 2 guidance radars and can be trimmed
+back to 1 by hand; campaign-authored sites (`MizCampaignLoader` MERAD/SHORAD markers) and
+generated laydowns flow through the same `ForceGroup.create_ground_object_for_layout` path. Site
+price rises by exactly one radar's price — reinforcement isn't free. The optional generic Track
+Radar slots stay optional (`fill: false`): a faction with no track-radar unit skips the slot
+entirely, same as before, so `usable_by_faction` is unchanged.
+
+**Known limitation (deliberate).** Presets that route a lone search-track radar through a
+*generic* layout's "Search Radar" slot — NASAMS-B/C, IRIS-T SLM, THAAD — keep a single engagement
+radar: doubling that shared slot would also double the pure search radars (P-19, Snow Drift…) of
+every generic site, which is a different (bigger) composition change than the track-radar ask.
+Extend per-system dedicated layouts if those ever need the same treatment. Systems whose TELARs
+carry their own engagement radar (SA-11/SA-17/BUK-M3, Roland, SA-8/15/19 SHORAD) never had the
+single-point-of-failure and are untouched.
+
+**Tests.** `tests/armedforces/test_sam_radar_redundancy.py` pins the contract for all 31
+layout/slot pairs: `unit_count == [2]` **and** template positions ≥ 2, so a YAML or `.miz` edit
+that reopens the one-HARM kill fails CI. Generation was probe-verified end-to-end (every SAM
+preset spawns 2 guidance radars of the right type; the mixed site spawns 2+2).
+
+**Needs an in-game pass** (checklist B12): that a site with one dead track radar actually keeps
+engaging in DCS (the second TR picks up guidance), that MANTIS treats the site as alive/degraded
+correctly, and that AI SEAD flights re-target the second radar. NEW game required (layouts are
+baked into the campaign at generation).
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

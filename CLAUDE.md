@@ -1842,6 +1842,24 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`game/missiongenerator/aisleepluadata.py`, `game/missiongenerator/luagenerator.py`,
     `resources/plugins/aisleep/`, `game/settings/settings.py`; features doc §59, checklist B11 —
     needs an in-game pass.)
+60. **SAM guidance-radar redundancy (two track radars per site)** — the 2026-07-12 Red Tide
+    finding: every SAM layout fielded exactly ONE engagement radar, so a single HARM on it was a
+    functional site kill (launchers alive but blind). Every SAM layout now fields **two** guidance
+    radars — the Track Radar slots (generic 2/4/6-launcher + SA-2 ×4 / SA-3 ×2 / SA-5 ×2 / S-350 /
+    NASAMS-3), the S-300/HQ-22 `S-300 Site TR`, **both channels** of the SA-2/SA-3 mixed site
+    (its Fan Song rides the `S-300 Site CP` slot), the SA-6's combined 1S91 STR, and the NASAMS
+    Sentinel / Sky Sabre Giraffe (their engagement radar lives in the "Search Radar" slot); the
+    Patriot family already fielded 2 STRs, now CI-locked. Pure layout data — `unit_count: 2` in
+    `resources/layouts/anti_air/*.yaml` + a second radar **position** added to the shared `.miz`
+    templates (8/6-launcher circles + semicircle, 2_Launcher, S-300 site; 45–121 m from the
+    primary, ≥25 m from everything — one HARM blast can't take both), because `generate_units`
+    hard-caps at the template's position count. Buy menu maxes/defaults follow automatically;
+    site price rises by one radar. Deliberate limitation: presets routing a lone STR through a
+    *generic* layout's Search Radar slot (NASAMS-B/C, IRIS-T SLM, THAAD) keep a single engagement
+    radar — doubling that shared slot would double every generic site's pure search radars too.
+    TELAR systems (SA-11/17, Roland, SHORAD) never had the single point of failure. No setting,
+    no plugin; NEW game required. Tests `tests/armedforces/test_sam_radar_redundancy.py`.
+    (`resources/layouts/anti_air/`; features doc §60, checklist B12 — needs an in-game pass.)
 
 ---
 

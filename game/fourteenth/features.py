@@ -382,6 +382,17 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="aisleep",
         settings_fields=("perf_ground_ai_sleep",),
     ),
+    Feature(
+        # §60 SAM guidance-radar redundancy -- every SAM site layout fields TWO
+        # engagement radars (track radar / combined STR) so a single HARM cannot
+        # blind the whole site (Red Tide finding 2026-07-12). Pure layout data:
+        # unit_count 2 in resources/layouts/anti_air/*.yaml + a second radar
+        # position in the shared .miz templates. No setting, no plugin -- the
+        # contract is CI-locked in tests/armedforces/test_sam_radar_redundancy.py.
+        "sam_radar_redundancy",
+        "SAM guidance-radar redundancy (two track radars per site)",
+        60,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

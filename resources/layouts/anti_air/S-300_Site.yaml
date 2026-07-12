@@ -42,7 +42,7 @@ groups:
         - S-400 55K6 cp # SA-21
     - name: S-300 Site TR
       unit_count:
-        - 1
+        - 2 # 414th: guidance-radar redundancy - one HARM must not blind the site
       unit_types:
         - S-300PS 40B6M tr # SA-10 Flap Lid-A TR
         - S-300PS 30N6 TRAILER tr # SA-10B

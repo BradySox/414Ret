@@ -14,7 +14,7 @@ groups:
       optional: true # Allow groups without TR
       fill: false # Do not fill with faction possible units
       unit_count:
-        - 1
+        - 2 # 414th: guidance-radar redundancy - one HARM must not blind the site
       unit_classes:
         - TrackRadar
     - name: Command Post

@@ -278,6 +278,31 @@ settings:
   # CAS/BAI escort or the column is ground down. The rear isn't a safe road, same as the
   # ramp isn't a safe ramp (artillery harassment above).
   convoy_ambush: true
+  # M1 finding: neutral CIV_* milk runs (IL-76/Yak-40/An-26...) transited the deep BVR
+  # corridor NE of the Fulda front and a player Phoenix-killed one at FL230 -- on an
+  # AWG-9 an airliner profile is indistinguishable from a Soviet transport. The civilian
+  # layer's keep-out is only ~40 NM around the FLOT, far too shallow for a campaign whose
+  # air war is fought 100+ NM behind the lines, so Red Tide runs a sterile picture: every
+  # contact past the FLOT is a combatant. (Standard default is ON.)
+  civilian_air_traffic: false
+  # Support-orbit standoff (M1 finding): the red A-50/IL-78 anchored on the Fulda front
+  # but the AI depth push (2.5x the buffer, supportorbit.AI_SUPPORT_DEPTH_FACTOR) at the
+  # 80/70 NM defaults parked them 200/175 NM back over Berlin all mission -- too far to
+  # cue low targets at Fulda, leaving the P-14 line as red's whole detection net (and
+  # its death so decisive). 30/25 NM puts the A-50 ~75 NM (~140 km) behind the FLOT
+  # (Halle/Leipzig) -- its ~230 km radar then covers the whole Fulda corridor -- while
+  # the threat-zone floor still keeps every orbit >=1x buffer clear of the enemy threat
+  # boundary (blue's E-3/KC-135 move up on the same numbers, bounded by red's SAM belt).
+  aewc_threat_buffer_min_distance: 30
+  tanker_threat_buffer_min_distance: 25
+  # BARCAP endurance (M1 finding): a Schonefeld MiG-29 flew the default 60-min
+  # on-station racetrack -- the one real-fuel-burn window under AI unlimited fuel --
+  # and flamed out dry at ~75 min airborne with no combat: 60 min at the AI's patrol
+  # speed is right at a Fulcrum+centerline-tank's whole load, and the racetrack-end
+  # waypoint that restores unlimited fuel for RTB never fires on a dead jet. 45 min
+  # leaves the short-legged Soviet fighters a real reserve; at the default 60-min
+  # mission the wave count is unchanged (ceil(60/30) == ceil(60/45) == 2).
+  desired_barcap_mission_duration: 45
   # §51 enemy comms jamming -- red's IADS comms masts / command bunkers (wired here by
   # advanced_iads range mode) step on the briefed NATO channels with duty-cycled
   # barrage noise until struck; the kneeboard carries the JAM BACKUP channel. The

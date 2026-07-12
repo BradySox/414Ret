@@ -501,6 +501,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "artillery_harassment_reach_km",
                     "mobile_missile_relocation",
                     "coastal_missile_relocation",
+                    "civilian_air_traffic",
                     "ambient_supply_convoys",
                     "convoy_ambush",
                     "air_droppable_minefields",
@@ -2595,6 +2596,21 @@ class Settings:
             "pilot slots in or rejoins on a server. Display only: no gameplay change. "
             "Card duration and the startup grace are options on the 'Mission-start "
             "briefing popup' plugin."
+        ),
+    )
+    civilian_air_traffic: bool = boolean_option(
+        "Civilian background air traffic",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Neutral civilian aircraft (airliners, freighters, light props and "
+            "helicopters) fly multi-leg milk runs between uncontrolled rear-area "
+            "airfields for ambient life. They keep ~40 NM clear of the front line "
+            "but NOT of deep BVR/intercept corridors, so a campaign whose air war "
+            "reaches far behind the lines may want this off: an IL-76 at altitude "
+            "is indistinguishable from a military transport on radar (the flown "
+            "Red Tide M1 lost a neutral airliner to a long-range Phoenix shot)."
         ),
     )
     ambient_supply_convoys: bool = boolean_option(

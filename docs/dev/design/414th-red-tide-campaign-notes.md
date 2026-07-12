@@ -679,3 +679,29 @@ before its armor reaches the front."
   `tests/fourteenth/test_red_tide_motorpool.py`. In-game pass = checklist B8.
 - **NEW game required** (the depot is read from the miz at theater load / injected by the migrator on
   old saves).
+
+## M1 flown-session tuning batch (2026-07-12 — tuning-to-intended, inside the lock)
+
+The 2026-07-11 squadron M1 ("Red Tide M1 with Mags happy", ~125 min MP) Tacview deep-dive
+produced three tuning findings, preseeded into the campaign yaml (NEW game required; on the
+live save set the same values by hand in Settings):
+
+- **`civilian_air_traffic: false`** (new generic gate, default ON everywhere else): a neutral
+  IL-76 at FL230 transited the deep BVR corridor NE of the front and died to a player's
+  double Phoenix — the civ layer's ~40 NM front keep-out is no protection on a campaign whose
+  air war runs 100+ NM behind the lines. Red Tide flies a sterile picture: past the FLOT,
+  every contact is a combatant.
+- **`aewc/tanker_threat_buffer_min_distance: 30/25`** (defaults 80/70): the AI support-orbit
+  depth push (2.5× the buffer) parked the red A-50/IL-78 200/175 NM back over Berlin all
+  mission — too far to cue low targets at Fulda, which made the P-14 line red's entire
+  detection net and its death so decisive. 30 NM puts the A-50 ~75 NM behind the FLOT
+  (Halle/Leipzig), covering the whole Fulda corridor, still threat-zone-floored.
+- **`desired_barcap_mission_duration: 45`** (default 60 min): a Schonefeld BARCAP MiG-29
+  flamed out dry at ~75 min airborne with no combat — the on-station racetrack is the one
+  real-fuel-burn window under AI unlimited fuel, and 60 min at the AI's patrol speed is a
+  whole Fulcrum+centerline-tank load. Wave count unchanged at the default mission length.
+
+Guards: `test_red_tide_preseeds_the_m1_tuning_batch` +
+`test_barcap_duration_preseed_deserializes_to_a_timedelta` in
+`tests/fourteenth/test_campaign_plugin_preseed.py`. The full M1 debrief lives in the local
+`missions/red-tide/` folder (m1-debrief-2026-07-11.md).

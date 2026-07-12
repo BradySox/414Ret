@@ -331,6 +331,9 @@ class CivilianTrafficGenerator:
         return _neutral_country(self.mission)
 
     def generate(self) -> None:
+        if not self.game.settings.civilian_air_traffic:
+            logging.info("Civilian air traffic disabled by settings")
+            return
         country = self._neutral_country()
         if country is None:
             logging.warning("No neutral country available — skipping civilian traffic")

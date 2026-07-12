@@ -144,7 +144,9 @@ def test_beep_plays_with_each_card() -> None:
     sounds = h.records("sounds")
     assert len(sounds) == 2  # one beep per card
     assert all(s["groupId"] == 42 for s in sounds)
-    assert all(s["file"] == "briefing-beep.wav" for s in sounds)
+    # The archive path matters: DCS resolves an in-miz sound ONLY via its l10n/DEFAULT/
+    # path -- the bare basename fails silently (the flown Red Tide M1 dead-beep bug).
+    assert all(s["file"] == "l10n/DEFAULT/briefing-beep.wav" for s in sounds)
     h.assert_no_lua_errors()
 
 
@@ -205,8 +207,71 @@ def test_ai_birth_shows_nothing() -> None:
     h.load_plugin_script(PLUGIN)
 
     h.fire_birth("Enfield 1-1")
-    h.advance_to(5)
+    h.advance_to(15)  # past the nil-player re-check (+2 s) and any card delay
     assert h.records("texts") == []
+    h.assert_no_lua_errors()
+
+
+def test_card_and_taxi_fires_are_logged() -> None:
+    # The M1 no-show hunt found zero per-card logging -- dcs.log could not tell "card
+    # sent but unseen" from "card never sent". Each fire must now leave a log line.
+    h = DcsPluginHarness()
+    h.add_group(_player_group("Enfield 1-1", 42))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=3, startGraceS=99, startDelayS=1)
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Enfield 1-1")
+    h.advance_to(5)  # card at t=1, taxi at t=4
+    infos = h.records("infos")
+    assert any("BRIEFING|: card -> Enfield 1-1 gid=42" in i for i in infos), infos
+    assert any("BRIEFING|: taxi -> Enfield 1-1 gid=42" in i for i in infos), infos
+    h.assert_no_lua_errors()
+
+
+def test_skipped_fire_clears_the_debounce() -> None:
+    # A pilot who leaves the seat before the card fires never saw it: the skipped fire
+    # must clear the debounce stamp so their next slot-in still gets the card.
+    h = DcsPluginHarness()
+    h.add_group(_player_group("Enfield 1-1", 42))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=12, startGraceS=99, startDelayS=1)
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Enfield 1-1")  # card scheduled for t=1
+    h.lua.execute('DcsHarness.groupsByName["Enfield 1-1"] = nil')  # pilot leaves
+    h.advance_to(2)  # fire skipped (group gone), stamp cleared
+    assert h.records("texts") == []
+
+    h.add_group(_player_group("Enfield 1-1", 42))  # re-slot, well inside DEBOUNCE
+    h.fire_birth("Enfield 1-1")
+    h.advance_to(4)  # the re-slot's card (t=3) must not be debounced away
+    assert len(h.records("texts")) == 1
+    h.assert_no_lua_errors()
+
+
+def test_nil_player_at_birth_is_rechecked() -> None:
+    # Documented DCS event-timing race (MOOSE #806): getPlayerName can be nil at the
+    # BIRTH instant for a genuine human slot-in. A nil in a briefing-listed group gets
+    # one +2 s re-check instead of being written off as AI.
+    h = DcsPluginHarness()
+    h.add_group(_player_group("Enfield 1-1", 42, player=False))  # name not yet bound
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _briefing_config(durationS=12, startGraceS=99, startDelayS=1)
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Enfield 1-1")
+    # The player name binds moments after the event (the race resolving).
+    h.lua.execute(
+        'DcsHarness.groupsByName["Enfield 1-1"]:getUnit(1).playerName = "Maverick"'
+    )
+    h.advance_to(1.5)  # before the +2 s re-check -> nothing yet
+    assert h.records("texts") == []
+    h.advance_to(4)  # re-check at t=2 -> card at t=3
+    assert len(h.records("texts")) == 1
     h.assert_no_lua_errors()
 
 

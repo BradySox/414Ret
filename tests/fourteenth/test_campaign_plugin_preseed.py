@@ -120,9 +120,6 @@ def test_the_plugin_preseed_survives_deserialization_and_wins_the_layering() -> 
 def test_red_tide_preseeds_the_m1_tuning_batch() -> None:
     """The flown M1 (2026-07-11) tuning findings, preseeded so a NEW game gets them.
 
-    - civilian_air_traffic OFF: the ~40 NM front keep-out is no protection for a
-      campaign whose air war runs 100+ NM behind the lines (a neutral IL-76 at
-      FL230 died to a player's deep Phoenix shot); Red Tide runs a sterile picture.
     - aewc/tanker buffers 30/25 NM: the AI depth push (2.5x) at the 80/70 defaults
       parked the red A-50/IL-78 200/175 NM back over Berlin, leaving the P-14 line
       as red's whole detection net.
@@ -130,10 +127,18 @@ def test_red_tide_preseeds_the_m1_tuning_batch() -> None:
       on-station is a whole Fulcrum+tank fuel load at the AI's patrol speed.
     """
     settings = _campaign_settings()
-    assert settings["civilian_air_traffic"] is False
     assert settings["aewc_threat_buffer_min_distance"] == 30
     assert settings["tanker_threat_buffer_min_distance"] == 25
     assert settings["desired_barcap_mission_duration"] == 45
+
+
+def test_red_tide_keeps_civilian_air_traffic() -> None:
+    # Squadron call 2026-07-12, reversing the first M1 tuning cut: Red Tide KEEPS
+    # the civilian layer (the ambient life is worth the occasional Aeroflot
+    # incident; BVR discrimination past the FLOT is on the shooter). The campaign
+    # must NOT preseed the gate at all -- the generic default (ON) applies.
+    settings = _campaign_settings()
+    assert "civilian_air_traffic" not in settings
 
 
 def test_barcap_duration_preseed_deserializes_to_a_timedelta() -> None:

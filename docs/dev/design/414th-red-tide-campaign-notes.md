@@ -686,11 +686,16 @@ The 2026-07-11 squadron M1 ("Red Tide M1 with Mags happy", ~125 min MP) Tacview 
 produced three tuning findings, preseeded into the campaign yaml (NEW game required; on the
 live save set the same values by hand in Settings):
 
-- **`civilian_air_traffic: false`** (new generic gate, default ON everywhere else): a neutral
-  IL-76 at FL230 transited the deep BVR corridor NE of the front and died to a player's
-  double Phoenix — the civ layer's ~40 NM front keep-out is no protection on a campaign whose
-  air war runs 100+ NM behind the lines. Red Tide flies a sterile picture: past the FLOT,
-  every contact is a combatant.
+- **`civilian_air_traffic` — preseed REVERSED same-day (squadron call 2026-07-12): Red Tide
+  KEEPS its civilians.** #580 briefly preseeded the new generic gate OFF (a neutral IL-76 at
+  FL230 transited the deep BVR corridor and died to a player's double Phoenix — the civ
+  layer's ~40 NM front keep-out is no protection on a campaign whose air war runs 100+ NM
+  behind the lines), but the user kept civ air ON for the live TURN 2 save and then for the
+  campaign: the ambient life is worth the occasional Aeroflot incident, and BVR target
+  discrimination past the FLOT is on the shooter. The campaign now carries NO
+  `civilian_air_traffic` preseed (generic default ON applies); guard
+  `test_red_tide_keeps_civilian_air_traffic`. The gate itself remains available for any
+  campaign that wants a sterile picture.
 - **`aewc/tanker_threat_buffer_min_distance: 30/25`** (defaults 80/70): the AI support-orbit
   depth push (2.5× the buffer) parked the red A-50/IL-78 200/175 NM back over Berlin all
   mission — too far to cue low targets at Fulda, which made the P-14 line red's entire

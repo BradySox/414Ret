@@ -1859,6 +1859,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     radar — doubling that shared slot would double every generic site's pure search radars too.
     TELAR systems (SA-11/17, Roland, SHORAD) never had the single point of failure. No setting,
     no plugin; NEW game required. Tests `tests/armedforces/test_sam_radar_redundancy.py`.
+    **Balance abstraction, not TO&E**: a real legacy fire unit fields ONE engagement radar, so the
+    doubling is a deliberate anti-single-HARM-kill call, closest to reality on the strategic systems
+    (S-300/S-400, Patriot); the faithful regiment-of-single-radar-fire-units alternative + two other
+    realism directions (revetment geometry, acquisition-radar separation + decoys) are worked out
+    with verdicts in `docs/dev/design/414th-sam-site-realism-notes.md` (which also records the
+    don't-stack-them tension: never run §60 doubling AND a regiment model on the same system).
     (`resources/layouts/anti_air/`; features doc §60, checklist B12 — needs an in-game pass.)
 
 ---

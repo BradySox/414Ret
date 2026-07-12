@@ -5404,6 +5404,19 @@ layout/slot pairs: `unit_count == [2]` **and** template positions ≥ 2, so a YA
 that reopens the one-HARM kill fails CI. Generation was probe-verified end-to-end (every SAM
 preset spawns 2 guidance radars of the right type; the mixed site spawns 2+2).
 
+**This is a balance abstraction, not a TO&E correction.** At the **battalion / fire-unit** level a
+real legacy system fields exactly **one** engagement radar — one Fan Song, one Low Blow, one 1S91
+Straight Flush, one Flap Lid — so "two guidance radars per site" is a deliberate gameplay call to
+defeat the trivial single-HARM kill, **not** a claim about real order of battle. It reads closest to
+reality on the **strategic systems** (S-300/S-400, Patriot), where redundancy and multiple radars
+genuinely exist at the battalion-group/regiment level. The more historically faithful model of
+survivability — a *regiment* of single-radar fire units netted to a shared acquisition radar + C2 —
+and two other realism directions (revetment-geometry authenticity, acquisition-radar separation +
+decoys) are worked through, with verdicts, in
+[`docs/dev/design/414th-sam-site-realism-notes.md`](design/414th-sam-site-realism-notes.md). Note the
+tension recorded there: §60 and a future regiment model both add radars, so **don't stack them** —
+if the regiment model ever lands for a strategic system, revert §60's doubling for it.
+
 **Needs an in-game pass** (checklist B12): that a site with one dead track radar actually keeps
 engaging in DCS (the second TR picks up guidance), that MANTIS treats the site as alive/degraded
 correctly, and that AI SEAD flights re-target the second radar. NEW game required (layouts are

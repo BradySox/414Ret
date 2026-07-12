@@ -155,6 +155,12 @@ constrain a 1:1 copy):
   MERAD/SHORAD markers from the RED country block only, so the first cut's "Hawk at
   Creech" never actually loaded (pre-existing, found during this pass). Creech gets
   a Vulcan marker; the player faction carries the Hawk preset for purchase.
+  **FIXED 2026-07-12:** the loader now walks the BLUE country block for every marker
+  class (ships/offshore/missile/coastal/LORAD/MERAD/SHORAD/EWR), and a blue-block
+  marker binds to the nearest BLUE control point when one exists (red-block markers
+  keep the coalition-agnostic nearest-any convention, which is how blue defenses are
+  conventionally authored). A "Hawk at Creech" in the blue block would load today;
+  this campaign keeps its Vulcan-marker layout as tuned.
 - **Campaign fabric kept as-is:** CPs, the Mercury↔Tolicha front, FOB positions,
   convoy spawn hints, the SAC off-map spawn, and point-defense AAA at red fields are
   Retribution mechanics the reference (a scripted linear campaign) has no analog

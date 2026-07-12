@@ -129,8 +129,14 @@ file. This guide is the map; those are the territory.
     — edit the laydown tables there and re-run, never hand-edit the miz; laydown RE-POINTED 2026-07-02
     at the commercial 81-2 reference miz set (note §3a: raw-Lua cross-mission clustering — SA-6/SON-9/
     SA-8 joined the red faction, KS-19/Fire Can flak belts, 4 mock airfields, the Smoky belt as SHORAD;
-    NEW game required); loader gotcha found in passing: `MizCampaignLoader` reads MERAD/SHORAD markers
-    from the RED country block only, so a blue SAM marker silently drops)
+    NEW game required); loader gotcha found in passing, **FIXED 2026-07-12**: `MizCampaignLoader` read
+    ships/SAM/EWR/missile/coastal markers from the RED country block only (a blue-block marker silently
+    dropped — 22 authored markers across 7 campaigns never generated) and bound markers to the nearest
+    CP coalition-blind (Red Tide's "414th Red EWR 1" landed on blue Frankfurt and never spawned). The
+    loader now walks the BLUE block for every marker class and binds blue-block markers to the nearest
+    BLUE CP; red-block markers keep nearest-any proximity — the convention by which blue defenses are
+    authored as red-block markers near blue fields. Tests `tests/test_miz_marker_binding.py`;
+    upstream-carve candidate)
   - `414th-campaign-maker-notes.md` — blank-start campaign maker (policy core landed; glue/wizard in progress)
   - `414th-weapon-dates-proposal.md` — weapon-coverage completion plan + the modern-weapon date-gating rule
   - **MIST → MOOSE consolidation & IADS engine** (✅ COMPLETE 2026-06-25 — MIST retired; read before

@@ -3,7 +3,7 @@ name: Germany - Red Tide
 theater: GermanyCW
 authors: Starfire, 414th JFG
 recommended_player_faction: Blufor Late Cold War (80s)
-recommended_enemy_faction: Russia 1980
+recommended_enemy_faction: Russia 1980 (Red Tide)
 description:
   <p>The storm broke before dawn on 13 July 1988. Soviet and Warsaw Pact armies tore across the inner
   German border and drove for the Rhine, and in the first shock Hamburg fell and the red banner went up
@@ -22,10 +22,14 @@ description:
 miz: red_tide.miz
 performance: 2
 # Advanced (networked) IADS: red SAM bases carry co-located Command Center + Comms tower M
-# + GeneratorF statics (in the .miz). With no iads_config, Skynet wires each base's SAMs to
+# + GeneratorF statics (in the .miz). With no iads_config, MANTIS wires each base's SAMs to
 # its nearby comms (<15nm) / power (<35nm) / command center by range -> destroyable per-base
-# C2 cells. (Procedurally-spawned red SAMs have random names, so Falcon-style by-name
-# iads_config can't be used here; range mode is the correct fit.)
+# C2 cells. Range mode is the deliberate fit here (per-base auto-wiring scales with the
+# laydown). By-name iads_config IS possible in principle -- a marker-spawned site's
+# original_name is its marker group name, which iads_config keys on -- but range mode needs
+# no per-site bookkeeping, so it stays. The three rear S-300 hubs (Sperenberg/Kastrup/
+# Schoenefeld) are clustered into 3-battalion regiments + a shared EWR (2026-07-12), netted
+# by this range mode; see the campaign design note.
 advanced_iads: true
 recommended_start_date: 1988-07-13
 # Blue-offensive tuning: NATO out-produces and out-buys the culminated Soviet salient.

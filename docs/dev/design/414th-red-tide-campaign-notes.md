@@ -163,9 +163,17 @@ considered and declined.
      before, so a `["static"]` block was created inside CJTF Blue country `[1]` (after `["id"]=80`).
    - **3 ammo depots** (`.Ammunition depot`, red): Sperenberg, Schönefeld (+ existing Kastrup);
      +12 deployable ground units each over the 15 baseline.
-   - **Advanced IADS (range mode):** `advanced_iads: true` in the yaml (**no** `iads_config` — red
-     SAMs are procedurally spawned with random names, so Falcon-style by-name wiring is impossible;
-     range mode auto-wires SAMs to comms <15nm / power <35nm / command center). Each red SAM base
+   - **Advanced IADS (range mode):** `advanced_iads: true` in the yaml (**no** `iads_config`;
+     range mode auto-wires SAMs to comms <15nm / power <35nm / command center). **Correction
+     (2026-07-12): the earlier claim that Falcon-style by-name `iads_config` is "impossible" here
+     because the SAMs spawn with random names is WRONG.** A marker-spawned site's *display* name is
+     random (`start_generator.generate_ground_object_from_group` → `random_objective_name()`), but
+     its **`original_name` is the marker group's name** (`theatergroundobject.py` sets
+     `original_name = location.original_name`; `PresetLocation.from_group` copies `group.name`), and
+     `iads_config` matches on exactly that (`iadsnetwork.py` `self.ground_objects[tgo.original_name]`).
+     So by-name wiring *is* feasible — give the markers unique stable names and wire them like The
+     Falcon. Range mode simply stays because it needs no per-site bookkeeping and scales with the
+     laydown; the choice is convenience, not a constraint. Each red SAM base
      (Sperenberg, Schönefeld, Hamburg, Haina, Templin, Wittstock, Peenemünde, Kastrup) got a
      co-located **Command Center + Comms tower M + GeneratorF** cell. The dead "Kastrup Factory"
      was **repurposed in place** into "Kastrup Command Center" (same spot, no renumber needed).
@@ -281,6 +289,41 @@ considered and declined.
    2 LORAD markers before, now 4). Both hubs are now layered LORAD + MERAD + (existing short/AAA),
    inside their IADS comms range so they network. Same text-edit/anchor method as item 7; IDs
    auto-allocated above the current max.
+
+   **Rear S-300 hubs → 3-battalion regiments (2026-07-12, user feature-lock OVERRIDE).** The
+   single-site LORAD hubs died to one HARM / one turn (a played turn-1 debrief showed the whole
+   forward IADS — SA-6 STR, SA-2 Fan Song, SA-3 Low Blow, a P-14 EWR — gone in the opening sortie).
+   Per the CLAUDE.md "SAM belts: strategic → regiment-by-authoring" STANDARD, the three **rear**
+   S-300 hubs (**Sperenberg, Kastrup, Schönefeld**) are clustered into **3-battalion regiments +
+   a shared EWR**: two extra `S-300PS 5P85C ln` LORAD markers per hub (cloned from the existing
+   validated marker via pydcs, positioned on the segment between the hub's existing LORAD and MERAD
+   spots so they stay on the already-cleared open ground; 0.9–2.7 km apart — dispersed enough to
+   survive one strike, well inside the 15 nm comms range so range mode nets them), plus a `1L13 EWR`
+   marker at Kastrup + Schönefeld (Sperenberg already had one). The front stays a mobile MERAD/
+   SHORAD screen by design (the hard kill is the S-300 belt in depth). Faction-agnostic (markers,
+   not hand-placed groups); added by `build_regiments.py` (pydcs clone-and-reposition — the miz
+   round-trips losslessly, all 504 failures / economy statics / IADS cells preserved). Headless-
+   verified through `Campaign.load_theater`: each hub CP resolves **3 `long_range_sams` + an EWR**.
+   CI-locked in `tests/fourteenth/test_red_tide_sam_regiments.py`.
+
+   **Single-radar battalions via a Red-Tide faction fork (§60 guardrail).** Redundancy comes from
+   *three* fire units, not doubled radars, so §60's second track radar is reverted **for Red Tide's
+   S-300/SA-5 only** — scoped so every other campaign's lone S-300 keeps its §60 redundancy. Because
+   the enemy is the shared, player-selected `Russia 1980`, the scoping boundary is a **faction fork**
+   `Russia 1980 (Red Tide)` (`resources/factions/russia_1980_red_tide.json`, set as
+   `recommended_enemy_faction`) whose three LORAD presets — SA-10/S-300PS, SA-10A/S-300PT, SA-5/S-200
+   — point at **single-radar layout variants** (`S-300 Site (Single Radar)` / `SA-5 Legacy Site
+   (Single Radar Circle|Semicircle)`: the same `.miz` templates, guidance slot `unit_count: 1`). The
+   fork is byte-identical to `Russia 1980` otherwise (no aircraft/OOB change) and only takes effect
+   if the player keeps the recommended faction (the New-Game default). The **front + legacy screen
+   keeps §60 doubling** (a lone SA-6/SA-2 MERAD site *should* have its anti-single-HARM second radar)
+   — so the campaign now cleanly expresses both halves of the STANDARD: legacy→§60-doubled,
+   strategic→single-radar regiment. Headless-verified: the fork's SA-10 (Single Radar) preset spawns
+   an S-300 site with exactly one track radar, and the shared `S-300 Site` layout is unchanged
+   (`[2]`). **In-game pass:** confirm the new battalion spots are open ground (not forest/water —
+   pydcs can't surface-check GCW), that MANTIS nets the three single-radar battalions + EWR into one
+   regiment that degrades gracefully instead of dying in one pass, and that the recommended fork
+   faction is selected. NEW game required.
 9. **Placement moved onto airfield aprons** (2026-06-23). Items 6–8 used blind base-center
    offsets, which dropped several structures into forest/built-up terrain (in-game screenshot).
    pydcs exposes no surface-type query and the GCW reference missions

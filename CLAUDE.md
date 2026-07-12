@@ -80,7 +80,11 @@ file. This guide is the map; those are the territory.
   - `414th-red-tide-campaign-notes.md` — Red Tide campaign laydown + `.miz`/faction edits.
     **🔒 FEATURE-LOCKED 2026-07-11** — no new features/laydown/balance into Red Tide (bug
     fixes + in-game-pass verification + tuning-to-intended still OK); the banner atop that
-    note is the source of truth.
+    note is the source of truth. **Lock-override 2026-07-12 (user go-ahead):** the three rear
+    S-300 hubs (Sperenberg/Kastrup/Schönefeld) were restructured into **3-battalion regiments +
+    shared EWR** (the reference implementation of the SAM-belt STANDARD) — single-radar battalions
+    via the `Russia 1980 (Red Tide)` faction fork (§60 reverted for RT's S-300/SA-5 only; front
+    legacy SAMs keep §60 doubling). NEW game required; tests in `test_red_tide_sam_regiments.py`.
   - `414th-inherent-resolve-campaign-notes.md` — **the Iraq / Mosul COIN campaign** (the Battle
     of Mosul 2016-17 on the DCS Iraq map; the 414th's **second COIN campaign**, sibling of Enduring
     Resolve on the same `coin.py` stack). New factions `CJTF-OIR 2016` (blue coalition) + `Islamic
@@ -1992,6 +1996,10 @@ it from upstream. Settings are LOCKED by design: `plugin.json` has no `specificO
     doubling for that system, and **record which systems are regiment-modeled vs §60-doubled** the day
     that starts. Rationale + the deferred directions (geometry, acquisition separation, decoys) live in
     [docs/dev/design/414th-sam-site-realism-notes.md](docs/dev/design/414th-sam-site-realism-notes.md).
+  - **Reference implementation:** Red Tide's three rear S-300 hubs (2026-07-12) — 3 clustered
+    single-radar S-300 battalions + a shared EWR per hub, netted by range-mode advanced IADS, with §60
+    reverted only for that campaign's S-300/SA-5 via the `Russia 1980 (Red Tide)` faction fork (the
+    front's legacy MERAD screen keeps §60 doubling). See `414th-red-tide-campaign-notes.md`.
 - Match the surrounding code's style; run the three validation commands (in `CLAUDE-ci.md`) before pushing.
 - Keep the doc faces in sync: when a feature lands or changes, update **both**
   [`README.md`](README.md) (player-facing) and the relevant section of

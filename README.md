@@ -90,6 +90,15 @@ and selected later upstream fixes.
   showing each pilot their own flight's details. Purely informational (nothing changes in the
   mission). On by default (Mission Generation → "Mission-start briefing popup"); the card duration,
   the ground frequency, and the beep are plugin options.
+- **Big missions run smoother — without deleting the battlefield.** The old culling option was all
+  or nothing: a distant unit either fully existed or was never spawned at all. The new **"Distant
+  ground AI sleeps until aircraft approach"** (Mission Generation → Performance) is the middle
+  ground: rear-area garrisons keep existing — visible, strikeable, kills count exactly as before —
+  but their AI is switched off while nobody is near, cutting the sim cost of hundreds of thinking
+  ground units on a dense multiplayer mission. Any aircraft (yours, a wingman's, or an AI strike's)
+  closing within ~15 NM wakes them seamlessly, and getting shot wakes them instantly. SAM sites,
+  the front-line battle, convoys and every scripted mover are never touched, so nothing about the
+  war changes — only the frame rate. Off by default; works alongside (or instead of) culling.
 - **Bombing the enemy HQ actually matters now.** Destroy a side's IADS command posts and its
   auto-planner gets *sloppier* — the more of its command network you knock out, the more
   unpredictable and less effective its offensive target selection becomes turn to turn, so

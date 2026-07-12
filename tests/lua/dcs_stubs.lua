@@ -29,6 +29,7 @@ local Harness = {
         removedMarks = {},
         menus = {}, -- { side, path }
         firedTasks = {}, -- { group, x, y, radius, rounds, t }
+        aiOnOff = {}, -- { group, on, t } from Controller:setOnOff
         radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
         stoppedTransmissions = {}, -- transmission names
         sounds = {}, -- { groupId, file, t } from outSound*
@@ -177,11 +178,29 @@ function UnitFake:getPlayerName()
     return self.playerName
 end
 
+-- Group-level controller: records setOnOff (the ground AI sleep lever). Extend with
+-- setOption/setTask recording if a plugin under test needs them.
+local ControllerFake = {}
+ControllerFake.__index = ControllerFake
+
+function ControllerFake:setOnOff(on)
+    table.insert(Harness.records.aiOnOff, {
+        group = self.group:getName(),
+        on = on == true,
+        t = Harness.now,
+    })
+end
+
 local GroupFake = {}
 GroupFake.__index = GroupFake
 
 function GroupFake:isExist()
     return self.exists ~= false
+end
+
+function GroupFake:getController()
+    self.controller = self.controller or setmetatable({ group = self }, ControllerFake)
+    return self.controller
 end
 
 function GroupFake:getName()
@@ -389,6 +408,16 @@ function Harness.fireBirth(groupName)
     Harness.fireEvent({
         id = world.event.S_EVENT_BIRTH,
         initiator = g and g:getUnit(1) or nil,
+    })
+end
+
+-- Fire an S_EVENT_HIT on a group's first unit (the victim). The target is the
+-- real UnitFake, so getGroup()/getName() work in the handler.
+function Harness.fireHit(groupName)
+    local g = Harness.groupsByName[groupName]
+    Harness.fireEvent({
+        id = world.event.S_EVENT_HIT,
+        target = g and g:getUnit(1) or nil,
     })
 end
 

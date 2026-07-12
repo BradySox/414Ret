@@ -41,9 +41,18 @@ game state.
 
 Large campaigns can stress CPU and GPU. These options trade detail for framerate:
 
+- **Ground AI sleep** *(fork feature)*. **"Distant ground AI sleeps until aircraft approach"**
+  (Mission Generation → Performance) is the middle ground culling never had: rear-area
+  garrisons keep existing — visible, strikeable, kills count normally — but their AI is
+  switched off while no aircraft is within ~15 NM, cutting the cost of hundreds of thinking
+  ground units without deleting anything. SAM sites, the front line, convoys and every
+  scripted mover are never touched. Off by default until it has an in-game pass.
 - **Distant unit culling.** Removes ground units and buildings beyond a set distance from
   exclusion zones (front lines, airfields, mission targets). Air units are never culled. Set
-  it too large and culling does little; too small and the experience suffers.
+  it too large and culling does little; too small and the experience suffers. Note the
+  exclusion zones include **every mission target from both sides' ATOs**, so on a busy turn
+  most of the map is exempt — if enabling it seems to change nothing, that is why. Prefer
+  Ground AI sleep first; keep culling for what you never want to exist at all.
 - **Budget / aircraft counts.** Lower budgets and income reduce how many aircraft can be
   bought. Keeping the maximum under roughly **150 aircraft per side** helps performance.
 - **Smoke on frontline.** Frontline smoke can hurt GPU framerate, especially during CAS.
@@ -62,6 +71,33 @@ Upstream's performance IADS is Skynet. This fork runs the **MANTIS** IADS engine
 Skynet was removed, and older saves migrate automatically. Functionally it serves the same role
 — managing SAM activation and networking — so the performance guidance above still applies. See
 [IADS Engine: MANTIS](IADS-Engine-MANTIS) for detail.
+
+## Squadron MP event loadout (host checklist)
+
+For a big multiplayer event night on a dense campaign (Red Tide deep into a war, a heavy COIN
+turn), set these **in the campaign save before generating the mission**. Where the frames
+actually go: **server stutter** comes from thinking ground units (each armed unit runs sensors
+and targeting every frame), **client FPS** comes from particle effects (smoke, fires) and unit
+draw, and in multiplayer every scripted explosion or shot is also a network event for every
+client. So the levers, in order of payoff:
+
+| Setting | Where | Event night | What it buys |
+|---|---|---|---|
+| Maximum ground units deployed per frontline | Mission Generation → Performance | **60 → 30** | The single biggest lever — halves the FLOT vehicles, their infantry escorts, and the TIC battle script's workload (which scales super-linearly with combatants) |
+| Distant ground AI sleeps until aircraft approach | Mission Generation → Performance | **On** | Rear garrisons stop running AI until someone actually flies there; nothing is deleted |
+| Generate infantry squads alongside vehicles | Mission Generation → Performance | Off | Removes ~5 infantry per armor group (MANPAD coverage partially remains) |
+| Ambient suppressive fire | Plugin Options → Troops In Contact | Off | Stops the constant scripted tracer fire on the FLOT — every burst is a network event in MP |
+| Front-line smoke effects | Mission Generation → Performance | Off (or spacing 6000+) | Smoke columns are pure client-side GPU cost, worst exactly where CAS flies |
+| Battle damage at depleted bases (fires, smoke, wreckage) | Mission Generation | Off | Burning bases look great and cost real FPS for everyone nearby |
+| Generate carcasses for units destroyed in previous turns | Mission Generation → Performance | Off | Wrecks accumulate every turn; a campaign 10+ turns in carries hundreds |
+| Disable untasked OPFOR (and OWNFOR) aircraft at airfields | Mission Generation → Performance | On | Deletes decorative parked jets nobody will fight |
+| Culling of distant units | Mission Generation → Performance | Optional, ~70 km | Modest gains (see the caveat above); try it after the rest |
+| Moving ground units | Mission Generation → Performance | Last resort: Off | The FLOT stands and fights in place — kills the battle's movement, keeps the shooting |
+
+**Not worth disabling:** the feature plugins that sound heavy mostly aren't. Combat SAR, comms
+jamming, the briefing cards, minefields, mobile-missile scoot, convoy ambushes and TARS are
+event-driven and near-idle until their moment comes — turning them off buys nothing measurable.
+The battlefield's *density* and the *effects* are the cost, not the feature scripts.
 
 ## Auto-purchase options
 

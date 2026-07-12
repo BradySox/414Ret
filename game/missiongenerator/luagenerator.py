@@ -20,6 +20,7 @@ from game.theater import TheaterGroundObject
 from game.theater.iadsnetwork.iadsrole import IadsRole
 from game.utils import escape_string_for_lua, nautical_miles
 from .aireconluadata import populate_ai_recon_lua
+from .aisleepluadata import populate_ai_sleep_lua
 from .briefingluadata import populate_briefing_lua
 from .coinluadata import populate_coin_lua
 from .commsjamluadata import populate_comms_jam_lua
@@ -411,6 +412,12 @@ class LuaGenerator:
         # only when the setting is on and a live vehicle-carrying missile site exists;
         # the mobilemissiles plugin wanders them shoot-and-scoot at runtime.
         populate_mobile_missiles_lua(lua_data, self.game, self.mission_data)
+
+        # Ground AI sleep (§59) -- emits dcsRetribution.aiSleep only when
+        # perf_ground_ai_sleep is on and an eligible garrison group exists; the
+        # aisleep plugin sleeps each group's controller until an aircraft closes
+        # inside the wake radius (performance only -- no gameplay-model change).
+        populate_ai_sleep_lua(lua_data, self.game, self.mission_data)
 
         # Convoy escort / ambush (§50) -- emits dcsRetribution.convoyAmbush only when the
         # setting is on and a live blue-convoy/red-ambush pairing exists; the convoyambush

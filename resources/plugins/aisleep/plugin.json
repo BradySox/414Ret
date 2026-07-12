@@ -1,0 +1,33 @@
+{
+    "nameInUI": "Ground AI sleep (performance)",
+    "descriptionInUI": "Runtime for the 'Distant ground AI sleeps' performance setting. Inert unless the mission generator emits dcsRetribution.aiSleep (the setting is on and an eligible garrison group exists). Each emitted rear-area garrison vehicle group has its AI switched off at mission start -- it keeps existing (visible, strikeable, kills record normally), it just stops running sensors and targeting -- and is woken whenever any aircraft, either side's, closes inside the wake radius, then put back to sleep once the sky above it is clear. Air defenses, the front line, convoys and every scripted mover are excluded by the generator, never by this plugin. The wake radius is floored at 10 NM so a garrison's embedded short-range escorts are always awake long before anything enters their envelope.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Wake radius: aircraft within this range wake a group (NM)",
+            "mnemonic": "wakeRadiusNm",
+            "defaultValue": 15,
+            "minimumValue": 10,
+            "maximumValue": 50
+        },
+        {
+            "nameInUI": "Seconds between sleep/wake checks",
+            "mnemonic": "pollIntervalS",
+            "defaultValue": 30,
+            "minimumValue": 10,
+            "maximumValue": 300
+        },
+        {
+            "nameInUI": "Startup grace before the first sleep pass (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 60
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "aisleep-config.lua",
+            "mnemonic": "aisleep-config"
+        }
+    ]
+}

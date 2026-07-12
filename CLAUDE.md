@@ -1818,6 +1818,30 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     gets one +2 s re-check (the MOOSE #806 timing race). (`game/missiongenerator/briefingluadata.py`,
     `game/missiongenerator/luagenerator.py`, `resources/plugins/briefing/`,
     `game/settings/settings.py`; features doc §58, checklist B10 — reworked, needs a re-fly.)
+59. **Ground AI sleep (graduated culling)** — the middle tier the binary cull model lacks (the
+    2026-07-12 "cull settings feel all or nothing" MP-performance complaint): with
+    `perf_ground_ai_sleep` on, rear-area **garrison** vehicle groups keep existing (visible,
+    strikeable, kills record natively — the map and debrief can't tell) but their DCS controller is
+    switched **off** (`setOnOff(false)`, the primitive under MOOSE `GROUP:SetAIOnOff`) while no
+    aircraft is near, and **woken** whenever any aircraft — either side's, human or AI — closes
+    inside the wake radius (15 NM, floored at 10 NM so a garrison's embedded SHORAD escorts are
+    awake long before their envelope), with 1.25× sleep hysteresis and an `S_EVENT_HIT` immediate
+    wake so a standoff shot never lands on a group that can't react. **Safety is decided in Python
+    as a positive list** (`game/missiongenerator/aisleepluadata.py` → `dcsRetribution.aiSleep`):
+    only `armor`-category TGO groups with alive vehicles, minus `concealed`/`map_hidden` TGOs —
+    exactly the COIN/ambush scripted movers whose routes a sleeping controller would kill; air
+    defense (`aa`/`ewr` — MANTIS's, plus the runtime-SAM-toggle crash history), `missile`/`coastal`
+    (§49 movers), ships, motorpool (already inert) and buildings are never emitted, and
+    FLOT/convoys/Combat-SAR spawns aren't TGOs so the walk can't touch them. The `aisleep` plugin
+    polls every 30 s after a 60 s grace (radius/cadence/grace are plugin options; plugin
+    `defaultValue` ON so the setting is the only gate, the §36 lesson). Composes with culling
+    (untouched, the far tier): sleep what you keep, cull what should never exist. Default **OFF**
+    until flown; NOT preseeded in Red Tide (feature-locked) — flip it for the next MP event. Tests
+    `tests/missiongenerator/test_aisleepluadata.py` + `tests/lua/test_aisleep_runtime.py` (the
+    harness gained a `ControllerFake` + `aiOnOff` records + `fire_hit`).
+    (`game/missiongenerator/aisleepluadata.py`, `game/missiongenerator/luagenerator.py`,
+    `resources/plugins/aisleep/`, `game/settings/settings.py`; features doc §59, checklist B11 —
+    needs an in-game pass.)
 
 ---
 

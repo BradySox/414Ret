@@ -592,6 +592,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "perf_disable_untasked_blufor_aircraft",
                     "perf_disable_untasked_opfor_aircraft",
+                    "perf_ground_ai_sleep",
                     "perf_culling",
                     "perf_culling_distance",
                     "perf_do_not_cull_threatening_iads",
@@ -2948,6 +2949,23 @@ class Settings:
         default=False,
     )
     # Performance culling
+    perf_ground_ai_sleep: bool = boolean_option(
+        "Distant ground AI sleeps until aircraft approach",
+        page=MISSION_GENERATOR_PAGE,
+        section=PERFORMANCE_SECTION,
+        default=False,
+        detail=(
+            "The graduated alternative to culling: rear-area garrison vehicle groups "
+            "keep existing (visible, strikeable, recon/BDA and threat rings stay "
+            "honest, kills record normally) but their AI is switched off at mission "
+            "start and woken only while an aircraft -- either side's -- is within the "
+            "wake radius, cutting the sim cost of hundreds of thinking ground units. "
+            "Air defenses, the front line, convoys and every scripted mover are never "
+            "touched. Composes with culling: sleep what you keep, cull only what you "
+            "never want to exist. Runtime lives in the 'Ground AI sleep' LUA plugin "
+            "(wake radius and cadence tunable there)."
+        ),
+    )
     perf_culling: bool = boolean_option(
         "Culling of distant units enabled",
         page=MISSION_GENERATOR_PAGE,

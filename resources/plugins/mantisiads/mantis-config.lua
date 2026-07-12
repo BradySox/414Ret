@@ -12,11 +12,17 @@
 -- data and the bundled MOOSE MANTIS class is present -- see the gate at line ~23.
 --
 -- Implemented: core networking (SAM/EWR detection coordination + emissions
--- control) AND the Phase-5 C2 layer (command-center / comms / power degradation,
--- below -- in-game-verified, checklist G6). Still deferred: PROACTIVE SHORAD
--- shoot-and-scoot between zones (AddScootZones, needs Python-generated zones --
--- note reactive SAM scoot is already automatic via MANTIS' integrated SEAD),
--- explicit point-defense pairing, per-unit tuning.
+-- control), the Phase-5 C2 layer (command-center / comms / power degradation,
+-- below -- in-game-verified, checklist G6), AND the SEAD-triggered point-defense
+-- link (2026-07-12, checklist G30): each coalition's co-located PD groups (the
+-- "... (PD)" Tor/Tunguska/Avenger escorts, emitted per-SAM as the IADS table's
+-- PD connection arrays) are wrapped in a MOOSE SHORAD object and linked via
+-- MANTIS:AddShorad -- the PD sits dark until a HARM/Maverick launch (SHORAD's
+-- own S_EVENT_SHOT watch) or a MANTIS SEAD suppression wakes it, then it
+-- engages the incoming shot while the big radar hides, and goes back to sleep
+-- after the wake window. Still deferred: PROACTIVE SHORAD shoot-and-scoot
+-- between zones (AddScootZones, needs Python-generated zones -- note reactive
+-- SAM scoot is already automatic via MANTIS' integrated SEAD), per-unit tuning.
 -- see docs/dev/design/414th-mantis-migration-notes.md
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -59,6 +65,17 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
     local maxActiveLong = 0
     local maxActivePoint = 6
     local autoRelocateEwr = false
+    -- SEAD-triggered point defense: wrap each coalition's per-SAM PD groups in a
+    -- MOOSE SHORAD object linked to MANTIS. The PD is held dark (alarm green /
+    -- emissions off) and WAKES for shoradTime seconds when a HARM/Maverick is
+    -- fired at a defended SAM (SHORAD's own shot watch) or when MANTIS SEAD-
+    -- suppresses a site within shoradActDistanceNm -- so the point defense
+    -- ambushes the SEAD shot instead of plinking strikers all mission. OFF
+    -- restores the old behavior (PD runs vanilla DCS AI, always alert).
+    local shoradLink = true
+    local shoradTime = 600
+    local shoradRadiusNm = 10.8 -- SHORAD defense radius (MOOSE default 20 km)
+    local shoradActDistanceNm = 13.5 -- MANTIS suppression-wake reach (25 km)
     local enableC2Degradation = true
     local commsLossGoesDark = false
     local c2PollInterval = 20
@@ -78,6 +95,10 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         if opts.maxActiveLong ~= nil then maxActiveLong = opts.maxActiveLong end
         if opts.maxActivePoint ~= nil then maxActivePoint = opts.maxActivePoint end
         if opts.autoRelocateEwr ~= nil then autoRelocateEwr = opts.autoRelocateEwr end
+        if opts.shoradLink ~= nil then shoradLink = opts.shoradLink end
+        if opts.shoradTime ~= nil then shoradTime = opts.shoradTime end
+        if opts.shoradRadiusNm ~= nil then shoradRadiusNm = opts.shoradRadiusNm end
+        if opts.shoradActDistanceNm ~= nil then shoradActDistanceNm = opts.shoradActDistanceNm end
         if opts.enableC2Degradation ~= nil then enableC2Degradation = opts.enableC2Degradation end
         if opts.commsLossGoesDark ~= nil then commsLossGoesDark = opts.commsLossGoesDark end
         if opts.c2PollInterval ~= nil then c2PollInterval = opts.c2PollInterval end
@@ -139,6 +160,32 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
             end
         end
         return sam_names, ewr_names
+    end
+
+    -- Collect the coalition's point-defense group names. Python emits each
+    -- SAM node's co-located PD escorts as a per-SAM "PD" connection array
+    -- (IadsRole.POINT_DEFENSE -> skynet_value "PD" in luagenerator.py), so the
+    -- names are already in the IADS table -- no emitter change needed. A PD
+    -- group can appear under several SAMs; dedupe so the SHORAD SET gets each
+    -- prefix once.
+    local function collect_pd(coalition_iads)
+        local pd_names, seen = {}, {}
+        local function scan(list)
+            if not list then return end
+            for _, sam in pairs(list) do
+                if sam.PD then
+                    for _, pd in pairs(sam.PD) do
+                        if not seen[pd] then
+                            seen[pd] = true
+                            table.insert(pd_names, pd)
+                        end
+                    end
+                end
+            end
+        end
+        scan(coalition_iads.Sam)
+        scan(coalition_iads.SamAsEwr)
+        return pd_names
     end
 
     -- Fold any AWACS for this coalition into the EWR set, BY NAME.
@@ -404,6 +451,48 @@ if dcsRetribution and dcsRetribution.IADS and MANTIS then
         -- Proactive SHORAD scoot between zones (AddScootZones) needs Python-generated
         -- zones and is deferred. Advanced mode (SetAdvancedMode) is deferred to the
         -- C2 phase: it requires an HQ/command center and otherwise nags every player.
+
+        -- SEAD-triggered point defense (2026-07-12, checklist G30). Wrap the
+        -- coalition's PD group names in a MOOSE SHORAD object and link it via
+        -- MANTIS:AddShorad. SHORAD's _InitState holds every PD group dark (alarm
+        -- green, or emissions off in EmOnOff mode) + DisperseOnAttack; it wakes
+        -- them for shoradTime seconds on a detected HARM/Maverick launch against
+        -- a defended SAM (SHORAD's own S_EVENT_SHOT handler, DefendHarms/
+        -- DefendMavs default ON) or when MANTIS SEAD-suppresses a site within
+        -- ShoradActDistance, then puts them back to sleep. Two ordering rules
+        -- learned from the MOOSE source, do not reorder:
+        --   (1) mantis.autoshorad must go FALSE before Start(): onafterStart
+        --       otherwise builds MANTIS' own SHORAD (prefix "SHORAD", matching
+        --       nothing of ours) and OVERWRITES the one we pass in AddShorad;
+        --       _RefreshSAMTable would also re-point its Groupset every cycle.
+        --       With autoshorad false, point-BANDED main SAM sites (standalone
+        --       Rapier/Avenger-class AA emitted as Sam nodes) join MANTIS' SEAD
+        --       ARM-evasion set instead -- the right behavior for a lone site.
+        --   (2) AddShorad before Start() is safe (it only sets fields).
+        -- The SHORAD SET filters by prefix with the same Lua-pattern string.find
+        -- as MANTIS, so the names need the same escape_prefixes treatment. No PD
+        -- groups => skip entirely (autoshorad keeps MANTIS' default behavior).
+        local pd_names = collect_pd(coalition_iads)
+        if shoradLink and SHORAD and #pd_names > 0 then
+            mantis.autoshorad = false
+            local shorad = SHORAD:New(
+                name .. "-PD",
+                escape_prefixes(pd_names),
+                mantis.SAM_Group,
+                (tonumber(shoradRadiusNm) or 10.8) * 1852,
+                shoradTime,
+                coalition_str,
+                useEmOnOff
+            )
+            mantis.ShoradActDistance = (tonumber(shoradActDistanceNm) or 13.5) * 1852
+            mantis:AddShorad(shorad, shoradTime)
+            env.info(string.format(
+                "DCSRetribution|MANTIS-IADS plugin - %s SHORAD link armed: %d point-"
+                    .. "defense group(s) held dark, waking %ds on HARM/Maverick launch "
+                    .. "or SEAD suppression",
+                name, #pd_names, shoradTime
+            ))
+        end
 
         if debug then
             mantis:Debug(true)

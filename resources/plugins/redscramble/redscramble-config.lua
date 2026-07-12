@@ -67,16 +67,19 @@ if template_count == 0 or base_count == 0 then
     return
 end
 
--- Parse the host allow-list (trimmed, case-insensitive). Empty table = coalition-wide menu.
-local host_names = {}
-local host_count = 0
+-- Parse the host allow-list (trimmed, case-insensitive). Each entry matches as a plain
+-- SUBSTRING of the player name, so a squadron whose names carry a changing flight prefix
+-- ("Viper 1-1 | Flash" today, "Hawg 2-3 | Flash" next event) can gate on the static tag
+-- ("Flash") alone; a full exact name still matches (it contains itself). Empty list =
+-- coalition-wide menu.
+local host_tokens = {}
 for name in string.gmatch(HOST_NAMES, "[^,]+") do
     local trimmed = name:gsub("^%s+", ""):gsub("%s+$", "")
     if trimmed ~= "" then
-        host_names[string.lower(trimmed)] = true
-        host_count = host_count + 1
+        host_tokens[#host_tokens + 1] = string.lower(trimmed)
     end
 end
+local host_count = #host_tokens
 
 -- Feedback to whoever pressed the button: the host's group when known, else the BLUE coalition
 -- (the coalition-wide menu has no requester group).
@@ -405,10 +408,19 @@ local function unit_gid_if_host(u)
             return
         end
         local player_name = u:getPlayerName()
-        if player_name and host_names[string.lower(player_name)] then
-            local grp = u:getGroup()
-            if grp then
-                gid = grp:getID()
+        if not player_name then
+            return
+        end
+        local lower_name = string.lower(player_name)
+        for _, token in ipairs(host_tokens) do
+            -- Plain find (no patterns): player names carry pattern-magic
+            -- characters ("Viper 1-1 | Flash").
+            if string.find(lower_name, token, 1, true) then
+                local grp = u:getGroup()
+                if grp then
+                    gid = grp:getID()
+                end
+                return
             end
         end
     end)

@@ -58,6 +58,10 @@ def test_red_tide_preseeds_the_redscramble_plugin_for_the_host_menu() -> None:
     # host's "give the boys something to shoot" button is armed for MP events.
     assert settings["host_red_scramble"] is True
     assert settings["plugins"]["redscramble"] is True
+    # The menu is gated to the host's static name tag: 414th names run
+    # "<flight> 1-x | Flash" with a changing prefix, and hostPlayers is a
+    # substring match, so the tag alone covers every event's prefix.
+    assert settings["plugins"]["redscramble.hostPlayers"] == "Flash"
 
 
 def test_red_tide_preseeds_c2_decapitation_effects() -> None:

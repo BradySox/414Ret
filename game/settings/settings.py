@@ -2617,8 +2617,10 @@ class Settings:
             "menu can launch a 2/4-ship from any red airfield and vector it straight "
             "onto the nearest friendly fighters -- the emergency 'give the flight "
             "something to shoot' button for a session gone quiet. Restrict who sees "
-            "the menu with the redscramble plugin's 'Host player names' option "
-            "(comma-separated DCS names; empty shows it to every BLUE client). "
+            "the menu with the redscramble plugin's 'Host player names' option: "
+            "comma-separated DCS names or name fragments (substring match, so a "
+            "static tag like 'Flash' covers 'Viper 1-1 | Flash' whatever the flight "
+            "prefix); empty shows it to every BLUE client. "
             "Spawned bandits are free and untracked by design -- killing them "
             "changes nothing at the turn boundary; they are event content only."
         ),

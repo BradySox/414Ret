@@ -105,6 +105,25 @@ def test_host_name_gates_the_menu_to_that_players_group() -> None:
     h.assert_no_lua_errors()
 
 
+def test_fragment_matches_the_changing_prefix_name_convention() -> None:
+    # The 414th convention: "<flight> 1-x | Flash" -- the prefix changes every
+    # event, the tag is static. hostPlayers is a plain substring match, so
+    # configuring the tag alone gates the menu whatever the prefix (and the
+    # pattern-magic "|"/"-" in the name must not break the match).
+    h = DcsPluginHarness()
+    h.add_airbase({"name": "Wittstock", "x": 10000, "z": 5000, "side": 1})
+    h.add_group(_blue_player_group("Viper 1-1", 42, player="Viper 1-1 | Flash"))
+    h.add_group(_blue_player_group("Hawg 2-1", 43, player="Hawg 2-1 | Dagger"))
+    h.lua.globals().dcsRetribution = h.to_lua(_config(host_players="Flash"))
+    h.load_plugin_script(PLUGIN)
+
+    h.fire_birth("Viper 1-1")
+    h.fire_birth("Hawg 2-1")
+
+    assert {r.get("gid") for r in _menu_records(h)} == {42}
+    h.assert_no_lua_errors()
+
+
 def test_the_sweep_catches_a_host_seated_before_load() -> None:
     h = DcsPluginHarness()
     h.add_airbase({"name": "Wittstock", "x": 10000, "z": 5000, "side": 1})

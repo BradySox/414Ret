@@ -1,10 +1,10 @@
 {
     "nameInUI": "Host red scramble (F10 bandit spawner)",
-    "descriptionInUI": "Runtime for the 'Host tool: F10 red-interceptor scramble menu' setting. Inert unless the mission generator emits dcsRetribution.redScramble (the setting is on and red fighter templates + red airfields exist). Adds an F10 'HOST: Red Scramble' menu that clones a 2/4-ship red interceptor flight at any listed red airfield and continuously vectors it onto the nearest airborne BLUE fighters (players preferred) until it dies -- the game master's 'give the flight something to shoot' button. 'Host player names' restricts the menu to those DCS player names (comma-separated, case-insensitive); left empty, every BLUE client sees it. Spawned bandits are free, untracked event content: killing them changes nothing at the campaign turn boundary.",
+    "descriptionInUI": "Runtime for the 'Host tool: F10 red-interceptor scramble menu' setting. Inert unless the mission generator emits dcsRetribution.redScramble (the setting is on and red fighter templates + red airfields exist). Adds an F10 'HOST: Red Scramble' menu that clones a 2/4-ship red interceptor flight at any listed red airfield and continuously vectors it onto the nearest airborne BLUE fighters (players preferred) until it dies -- the game master's 'give the flight something to shoot' button. 'Host player names' restricts the menu to DCS player names containing any of the comma-separated entries (case-insensitive substring match, so a static tag like 'Flash' covers 'Viper 1-1 | Flash' whatever the flight prefix); left empty, every BLUE client sees it. Spawned bandits are free, untracked event content: killing them changes nothing at the campaign turn boundary.",
     "defaultValue": true,
     "specificOptions": [
         {
-            "nameInUI": "Host player names (comma-separated; empty = all BLUE see the menu)",
+            "nameInUI": "Host player names or name fragments (comma-separated; empty = all BLUE see the menu)",
             "mnemonic": "hostPlayers",
             "defaultValue": ""
         },

@@ -104,10 +104,11 @@ and selected later upstream fixes.
   launches a fresh 2- or 4-ship of the enemy's own fighters from any red airfield — or, with one
   **EMERGENCY** press, from the base nearest your airborne flights — and vectors it straight onto
   the nearest friendly fighters. The "give the boys something to shoot" button for a session that
-  goes quiet after the first wave. Set your DCS player name in the plugin's *Host player names*
-  option so only you see the menu (empty shows it to every BLUE client). The bandits are free
-  event content: killing them changes nothing in the campaign. Off by default; preseeded on in
-  Red Tide.
+  goes quiet after the first wave. Set your DCS player name — or just its static part
+  ("Flash" matches "Viper 1-1 | Flash" whatever the flight prefix) — in the plugin's *Host
+  player names* option so only you see the menu (empty shows it to every BLUE client). The
+  bandits are free event content: killing them changes nothing in the campaign. Off by
+  default; preseeded on in Red Tide, already gated to the host's name tag.
 - **Bombing the enemy HQ actually matters now.** Destroy a side's IADS command posts and its
   auto-planner gets *sloppier* — the more of its command network you knock out, the more
   unpredictable and less effective its offensive target selection becomes turn to turn, so

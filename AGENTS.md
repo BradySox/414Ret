@@ -1888,14 +1888,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the intercept-plugin history; `takeoff` hot/runway are options), weapons-free at spawn,
     then a GCI loop **re-vectors every live bandit onto the nearest airborne BLUE fighter**
     (players outrank nearer AI) via a hard `AttackGroup` task until dead. **Menu visibility is
-    the plugin's `hostPlayers` option** (comma-separated DCS names, case-insensitive →
-    per-group menu on slot-in/sweep, the §58 pattern; empty = all-BLUE coalition menu, and the
-    `REDSCRAMBLE|` log line says which mode armed). **Spawns are untracked event content by
-    design** (the §20 drop-spawn cheat precedent, NOT a §35/§37 violation — deliberate host
-    action, default-OFF setting): red pays nothing, a dead clone changes nothing at the turn
-    boundary; bandit kills of players record natively. Gated `host_red_scramble` (Mission
-    Generation → Battlefield life, default **OFF**), preseeded ON + the `redscramble` plugin
-    preseeded ON in **Red Tide** (the §36 lesson) ahead of the Friday 2026-07-17 regeneration.
+    the plugin's `hostPlayers` option** — comma-separated names or **fragments**, a
+    case-insensitive plain-substring match (no Lua patterns — names carry magic chars), so the
+    414th's changing-prefix convention `"<flight> 1-x | Flash"` gates on the static `Flash`
+    tag alone → per-group menu on slot-in/sweep, the §58 pattern; empty = all-BLUE coalition
+    menu, and the `REDSCRAMBLE|` log line says which mode armed. **Spawns are untracked event
+    content by design** (the §20 drop-spawn cheat precedent, NOT a §35/§37 violation —
+    deliberate host action, default-OFF setting): red pays nothing, a dead clone changes
+    nothing at the turn boundary; bandit kills of players record natively. Gated
+    `host_red_scramble` (Mission Generation → "Host & event tools", default **OFF**),
+    preseeded ON + the `redscramble` plugin preseeded ON + `redscramble.hostPlayers: Flash`
+    in **Red Tide** (the §36 lesson) ahead of the Friday 2026-07-17 regeneration.
     Tests `tests/missiongenerator/test_redscrambleluadata.py` +
     `tests/lua/test_redscramble_runtime.py` (the harness gained group F10 menus,
     `coalition.getPlayers`, `Controller:setTask` recording, and AIRBASE/SPAWN fakes).

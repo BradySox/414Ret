@@ -5466,13 +5466,17 @@ GCI loop then **re-vectors every live bandit group onto the nearest airborne BLU
 changes, until the bandits are dead. Repeat presses spawn fresh uniquely-named clones.
 
 **Who sees the menu.** Retribution cannot know DCS multiplayer names at generation, so the gate
-is the plugin's **`hostPlayers`** option (comma-separated, case-insensitive, whitespace-trimmed):
-matching players get a **per-group** menu on slot-in (`S_EVENT_BIRTH` + a periodic sweep — the
-§58 pattern, which also covers the nil-`getPlayerName` birth race and a host seated before the
-script loads). Left empty, the menu is **coalition-wide for BLUE** (functional out of the box; a
-typo'd name failing silent would be worse — the log's `REDSCRAMBLE|` arm line says which mode is
-live). A DCS group menu is visible to everyone in that group, so the host should fly their own
-flight or trust their wingman.
+is the plugin's **`hostPlayers`** option — comma-separated names **or name fragments**, matched
+as a case-insensitive plain **substring** of the player name (plain `string.find`, no Lua
+patterns — names carry magic characters). The 414th convention is `"<flight> 1-x | Flash"` with
+a changing prefix, so configuring the static tag (`Flash`) gates the menu whatever the event's
+flight name; a full exact name still matches (it contains itself). Matching players get a
+**per-group** menu on slot-in (`S_EVENT_BIRTH` + a periodic sweep — the §58 pattern, which also
+covers the nil-`getPlayerName` birth race and a host seated before the script loads). Left
+empty, the menu is **coalition-wide for BLUE** (functional out of the box; a typo'd name failing
+silent would be worse — the log's `REDSCRAMBLE|` arm line says which mode is live). A DCS group
+menu is visible to everyone in that group, so the host should fly their own flight or trust
+their wingman.
 
 **Untracked by design.** The clone templates are built by
 `AircraftGenerator.spawn_red_scramble_templates` (`claim_inv=False`, no `UnitMap` entry — the
@@ -5489,9 +5493,9 @@ setting. Bandit kills *of* players record natively (players are real tracked uni
 (name, nearest-front first) — only when the setting is on and both lists are non-empty;
 `resources/plugins/redscramble/` runs the menu/spawn/vector runtime (options: `hostPlayers`,
 `takeoff` air/hot/runway, `vectorIntervalS`). Gated `host_red_scramble` (Mission Generation →
-Battlefield life, default **OFF**), **preseeded ON in Red Tide** (with the `redscramble` plugin —
-the §36 saved-default-off lesson) ahead of the Friday 2026-07-17 regeneration; the host sets
-their DCS name in Settings → Plugins before generating.
+the new "Host & event tools" section, default **OFF**), **preseeded ON in Red Tide** (with the
+`redscramble` plugin — the §36 saved-default-off lesson — and `redscramble.hostPlayers: Flash`,
+the host's static name tag) ahead of the Friday 2026-07-17 regeneration.
 
 **Tests.** `tests/missiongenerator/test_redscrambleluadata.py` (emit contract: gating, red-only
 airfields, front-first ordering, no-node cases) + `tests/lua/test_redscramble_runtime.py` (the

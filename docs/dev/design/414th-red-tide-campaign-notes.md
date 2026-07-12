@@ -33,12 +33,18 @@
 > `state.json` to ANY regenerated Red Tide save: it translates every kill event from the
 > flown save's namespace (TGO unit ids, ATO flight names, front-line units, QRA squadron
 > UUIDs) into the fresh game's, then runs the real debrief → commit → `pass_turn` pipeline
-> headlessly and writes a processed turn-2 save. Friday-night usage:
+> headlessly and writes a processed turn-2 save. **The canonical M1 event bundle is
+> archived in `C:\Users\brady\Saved Games\DCS\Retribution\Saves\Claude needs these\`**
+> (the flown source save, the `state.json`, the actual flown
+> `Red Tide M1 with Mags happy.miz`, the old-campaign TURN 2 SAVE, and the event-night
+> `dcs.log`); bundle cross-verified 2026-07-12 — 116/121 state.json kill names bind to the
+> flown miz, the 5 misses being runtime spawns (a dynamic-slot jet + QRA clones) that never
+> appear in a miz. Friday-night usage:
 >
 > ```powershell
 > .venv\Scripts\python.exe tools/apply_state_json.py `
->   --source-save "C:\Users\brady\Saved Games\DCS\Retribution\Saves\414th red tide v5 6pm lock.retribution" `
->   --state "C:\Users\brady\Saved Games\DCS\Missions\state.json" `
+>   --source-save "C:\Users\brady\Saved Games\DCS\Retribution\Saves\Claude needs these\414th red tide v5 6pm lock.retribution" `
+>   --state "C:\Users\brady\Saved Games\DCS\Retribution\Saves\Claude needs these\state.json" `
 >   --target-save "<the fresh Friday-night save>" `
 >   --out-save "<new save name for turn 2>"
 > ```
@@ -47,8 +53,8 @@
 > against the new-build "turn 0" save (RED −35 airframes matched the real turn-2 processing
 > exactly; the Haina IADS layer, comms building, runway hit, and front-line rout all
 > carried). Do not fly the throwaway miz it generates. `pass_turn` rewrites
-> `autosave.retribution`, same as the app. Keep the flown source save + state.json around
-> until the Friday regeneration is done.
+> `autosave.retribution`, same as the app. Keep the archive folder intact through the
+> Friday regeneration (and after — it is the season's historical record of M1).
 
 Design and build notes for **Germany - Red Tide** (`resources/campaigns/red_tide.yaml`
 + `red_tide.miz`), the 414th's reworked GermanyCW scenario. Read this before editing the

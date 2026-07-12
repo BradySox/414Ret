@@ -1296,10 +1296,19 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   (2) a RADIO (AGL) waypoint anchors the commanded altitude to terrain only AT the
   waypoint and DCS interpolates straight between waypoints, so 40–110 km low legs were
   commanded through ridge lines — `WaypointGenerator._insert_helo_terrain_anchors()` now
-  subdivides every long RADIO leg of an AI helo route with plain unlocked "TERRAIN"
+  subdivides every long RADIO leg of an AI helo route with **speed-locked** "TERRAIN"
   Turning Points every ≤5 NM (`MAX_HELO_ANCHOR_SPACING`), giving piecewise
   terrain-following without Python needing elevation data (none exists at generation);
-  racetrack orbit legs and human-crewed flights are never touched; (3) both air-start
+  racetrack orbit legs and human-crewed flights are never touched. **Lock-flag fix
+  2026-07-12 (the first generated Red Tide M2 tripped it):** the anchors originally
+  inserted with BOTH speed and ETA unlocked, which DCS rejects at mission start on any
+  leg not bracketed by TOT-locked waypoints ("has both unlocked speed and time and not
+  surrounded by waypoints with locked time" on every subdivided helo RTB leg — AH-64D
+  CAS + both Mi-24P BAI/Escort flights); they now insert speed-locked (the state DCS
+  accepts everywhere else) and `_resolve_locked_speed_time_conflicts`, which runs right
+  after in `build()`, unlocks any anchor that lands between TOT-locked waypoints (the
+  inverse rejection). Verified by a full-route lock-flag sweep of a regenerated M2 miz
+  (0 violations; the errored miz showed exactly the three flagged flights); (3) both air-start
   spawner paths set only `points[0].alt_type = "RADIO"` while pydcs leaves every
   *unit's* `alt_type` at "BARO" — and DCS places an in-air spawn from the unit record,
   so a 500 m-AGL intent spawned as 500 m MSL (below the ~600 m Harz FARP terrain); the

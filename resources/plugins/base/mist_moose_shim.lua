@@ -511,7 +511,15 @@ mist.DBs.groupsById = mist.DBs.groupsById or {}
 mist.DBs.humansByName = mist.DBs.humansByName or {}
 mist.DBs.zonesByName = mist.DBs.zonesByName or {}
 
-local _MIST_DB_REFRESH = 5 -- seconds between unit/group DB refreshes
+-- Refresh cadence. The DBs used to rebuild on a flat 5 s whole-mission scan -- the single
+-- heaviest standing poll in the plugin stack on a dense mission (every group of every side and
+-- category, every 5 s, all mission long). New groups now trigger their own rebuild via
+-- S_EVENT_BIRTH (debounced, below), so the periodic pass only bounds staleness for *removals*
+-- (dead/despawned entries linger up to one period) -- and every consumer re-fetches by name via
+-- Group.getByName/Unit.getByName anyway (see the shim notes: only the key set matters), so a
+-- stale entry is skipped, never acted on.
+local _MIST_DB_REFRESH = 30 -- seconds between fallback unit/group DB refreshes
+local _MIST_DB_BIRTH_DEBOUNCE = 2 -- seconds to coalesce a burst of births into one rebuild
 
 local function _mistBuildZones()
     local zones = {}
@@ -593,10 +601,37 @@ local function _mistDBLoop()
     return timer.getTime() + _MIST_DB_REFRESH
 end
 
--- Initial population + periodic refresh. Safe at load: coalition.getGroups, env.mission and
--- timer.* are all available at mission start; the shim loads before any consumer reads mist.DBs.
+-- Birth-driven refresh: a late-spawned group (QRA intercept clones, Combat SAR, CTLD, Super
+-- Gaggle, a player slotting in) fires S_EVENT_BIRTH per unit; one debounced rebuild picks the
+-- whole burst up within _MIST_DB_BIRTH_DEBOUNCE seconds -- faster than the old flat 5 s scan
+-- ever guaranteed, at a fraction of the standing cost.
+local _mistDBRefreshPending = false
+
+local _mistBirthHandler = {}
+function _mistBirthHandler:onEvent(event)
+    if not event or event.id ~= world.event.S_EVENT_BIRTH then
+        return
+    end
+    if _mistDBRefreshPending then
+        return
+    end
+    _mistDBRefreshPending = true
+    timer.scheduleFunction(function()
+        _mistDBRefreshPending = false
+        local ok, err = pcall(_mistRefreshDBs)
+        if not ok then
+            env.warning("mist shim: birth-triggered DB refresh error: " .. tostring(err))
+        end
+        return nil
+    end, nil, timer.getTime() + _MIST_DB_BIRTH_DEBOUNCE)
+end
+
+-- Initial population + birth-driven refresh + periodic fallback. Safe at load:
+-- coalition.getGroups, world.addEventHandler, env.mission and timer.* are all available at
+-- mission start; the shim loads before any consumer reads mist.DBs.
 _mistBuildZones()
 _mistRefreshDBs()
+world.addEventHandler(_mistBirthHandler)
 timer.scheduleFunction(_mistDBLoop, nil, timer.getTime() + _MIST_DB_REFRESH)
 
 -- Mission-editor group DB for mist.getGroupData (land_relocate/water_relocate). Unlike the live

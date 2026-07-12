@@ -98,9 +98,22 @@ event-driven tracking; the shim only reshapes.
   mutable `.losMarkIds` (JTAC autolase, disabled — preserved across refresh defensively).
 
 **Implementation (✅ done):** `_mistRefreshDBs()` scans `coalition.getGroups(side, cat)` over all
-sides/categories every 5 s and rebuilds `unitsByName`/`unitsById`/`groupsByName`/`humansByName` as real
+sides/categories and rebuilds `unitsByName`/`unitsById`/`groupsByName`/`humansByName` as real
 tables; `_mistBuildZones()` builds `zonesByName` once from `env.mission.triggers.zones` (static). Run
 once at load + scheduled.
+
+**Refresh cadence reworked (2026-07-12, the MP-performance pass):** the original flat **5 s**
+whole-mission rescan was the heaviest standing poll in the plugin stack on a dense mission (every
+group of every side/category, every 5 s, all mission long — the 2026-07-12 plugin-load survey's one
+"always-on baseline" finding). It is now **birth-driven + a 30 s fallback**: an `S_EVENT_BIRTH`
+(QRA clones, Combat SAR, CTLD, Super Gaggle, a player slotting in) schedules one **debounced**
+rebuild (2 s, a burst of births coalesces into one), so a late spawn reaches the DBs *faster* than
+the old scan guaranteed; the periodic pass — slowed to 30 s — only bounds staleness for
+**removals** (a dead group's entry lingers up to one period). That staleness is safe by the
+consumer contract above: every consumer uses the key set and re-fetches via
+`Group.getByName`/`Unit.getByName`, so a stale entry resolves nil and is skipped, never acted on.
+Pinned by `tests/lua/test_mist_shim_db_refresh.py` (birth-triggered refresh, burst coalescing, the
+birthless-spawn fallback, dead-entry drop).
 
 ## Rollout plan (each step keeps `main` safe)
 

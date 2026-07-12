@@ -439,6 +439,12 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Note:** receiver `REFUEL`-waypoint *retargeting* onto the moved tanker is a
   deferred follow-up; this row covers orbit placement only.
 
+### C8 — AI helicopter terrain clearance (cruise AGL + terrain anchors + AGL air starts) · §8 · ☐ UNTESTED (built 2026-07-12 from the flown Red Tide M1 CFIT pattern; the cruise-setting return, the ≤5 NM leg subdivision with unlocked RADIO "TERRAIN" points, the racetrack/BARO/short-leg/human exclusions, and the unit-record alt_type stamp in both air-start paths are unit-tested in `tests/ato/flightplans/test_helo_cruise_altitude.py` + `tests/missiongenerator/test_helo_terrain_anchors.py` + `tests/missiongenerator/test_airstart_unit_alt_type.py` — whether the DCS helo AI actually clears the ridges on the anchored profile is DCS-only)
+- **What CI cannot exercise:** whether an AI Mi-8/Mi-24 flying the anchored route actually clears the Harz/Sauerland ridge lines (DCS's RADIO-altitude interpolation between the 5 NM anchors), whether the extra Turning Points upset formation/escort behavior or ETA timing, and whether an air-started helo now spawns at a sane height over high-terrain FARPs.
+- **Setup:** Red Tide (GermanyCW), NEW mission generation with red Air Assault fragged (Bienenfarm-class targets across the Harz are the stress case — the flown M1 killed 3 Mi-8s + 1 Mi-24 to terrain in exactly this geometry). Optionally bump `heli_combat_alt_agl` back to the 200 ft default (the flown save ran 100).
+- **Pass:** the generated miz shows helo transit waypoints at the *cruise* AGL (500 ft default, not 100-200) with "TERRAIN" points every ≤5 NM on long legs, and air-start helo units carry `alt_type=RADIO`; in-game, the assault Mi-8s cross the Harz and deliver their troops (the H FRG 12-style clean run becomes the norm), no helo CFITs into ridge lines, racetrack orbits fly normally, human helo flights see no extra waypoints.
+- **Fail signature:** a helo still flies a straight low line into a ridge between anchors (DCS not honoring the RADIO re-anchoring — would need tighter spacing); formation escorts breaking at the inserted points; DCS rejecting the route at start (a locked-speed/time conflict from the inserted points — they are emitted unlocked, so this would be an engine surprise); an air-started helo spawning at 500 m MSL below terrain (the unit stamp not honored).
+
 ---
 
 ## D. Loss accounting (upstream-core)

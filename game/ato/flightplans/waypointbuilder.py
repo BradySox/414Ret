@@ -100,6 +100,13 @@ class WaypointBuilder:
 
     @property
     def get_cruise_altitude(self) -> Distance:
+        if self.is_helo:
+            # Transit legs use the dedicated helo *cruise* AGL setting (the same
+            # pattern ferry.py/rtb.py already use). get_altitude() returns the
+            # *combat* AGL for helos, which pressed every cruise waypoint
+            # (JOIN/HOLD/REFUEL/NAV) to treetop height -- 100-200 ft AGL through
+            # the Harz/Sauerland was the Red Tide M1 helo CFIT pattern.
+            return feet(self.settings.heli_cruise_alt_agl)
         return self.get_altitude(self.flight.unit_type.preferred_cruise_altitude)
 
     @property

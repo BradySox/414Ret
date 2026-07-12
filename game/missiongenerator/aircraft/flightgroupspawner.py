@@ -428,6 +428,15 @@ class FlightGroupSpawner:
         )
 
         group.points[0].alt_type = alt_type
+        # pydcs leaves every spawned unit's alt_type at its "BARO" default and
+        # DCS places an in-air spawn from the unit record, so a "RADIO" (AGL)
+        # air start was actually written as a raw MSL altitude -- tens of meters
+        # AGL (or below ground) over high terrain (Red Tide M1: the escort
+        # Mi-24s were written alt=500/BARO over a ~600 m Harz FARP). Mirror the
+        # point's altitude reference onto the units so an AGL air start is
+        # really AGL.
+        for unit in group.units:
+            unit.alt_type = alt_type
         return group
 
     def _generate_at_airfield(
@@ -493,6 +502,15 @@ class FlightGroupSpawner:
         )
 
         group.points[0].alt_type = alt_type
+        # pydcs leaves every spawned unit's alt_type at its "BARO" default and
+        # DCS places an in-air spawn from the unit record, so a "RADIO" (AGL)
+        # air start was actually written as a raw MSL altitude -- tens of meters
+        # AGL (or below ground) over high terrain (Red Tide M1: the escort
+        # Mi-24s were written alt=500/BARO over a ~600 m Harz FARP). Mirror the
+        # point's altitude reference onto the units so an AGL air start is
+        # really AGL.
+        for unit in group.units:
+            unit.alt_type = alt_type
         return group
 
     def _generate_at_group(

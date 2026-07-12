@@ -684,7 +684,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 7. **Auto-hide mobile SAMs on MFD** — SHORAD/AAA/MANPAD hidden from datalink, including
    escorts inside armor/missile groups; standalone MERAD/LORAD stay visible for SEAD.
 8. **Robustness / crash fixes** — flight-exit IndexError, AWACS/tanker orbit, malformed mod
-   payload Lua.
+   payload Lua. **AI helo terrain CFIT trio (2026-07-12, the flown Red Tide M1 finding):** helo
+   cruise waypoints now use the previously-dead `heli_cruise_alt_agl` (not the combat AGL), long
+   AI-helo RADIO legs are subdivided with ≤5 NM "TERRAIN" re-anchor points
+   (`MAX_HELO_ANCHOR_SPACING` in `waypointgenerator.py` — DCS interpolates straight between AGL
+   waypoints, so 40–110 km treetop legs were commanded through the Harz ridge lines), and both
+   air-start spawner paths stamp `unit.alt_type` (pydcs leaves units "BARO", and DCS spawns from
+   the unit record — a 500 m-AGL intent spawned 500 m MSL below a 600 m FARP). Upstream-shared;
+   checklist C8.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement +
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.

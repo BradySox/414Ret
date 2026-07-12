@@ -1285,6 +1285,29 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
 
 - Flight-combat-exit `IndexError`: `game/ato/flightstate/inflight.py` guards in
   `__init__` and `next_waypoint_state()`.
+- **AI helicopter terrain CFIT (the flown Red Tide M1 Harz/Sauerland pattern, fixed
+  2026-07-12).** Three compounding upstream-shared defects put AI helos on collision
+  courses with high terrain (two Mi-8s dead within 46 s of unpause, a Mi-24 escort into
+  the Sauerland — while the flat-ground H FRG 12 pair flew the identical plan cleanly):
+  (1) `WaypointBuilder.get_cruise_altitude` short-circuited every helo altitude to the
+  *combat* AGL setting (`heli_combat_alt_agl`, 100 ft in the flown save), so all transit
+  waypoints (JOIN/HOLD/REFUEL/NAV) were planned at treetop height — now returns the
+  dedicated `heli_cruise_alt_agl` (500 ft default; the pattern ferry/rtb already used);
+  (2) a RADIO (AGL) waypoint anchors the commanded altitude to terrain only AT the
+  waypoint and DCS interpolates straight between waypoints, so 40–110 km low legs were
+  commanded through ridge lines — `WaypointGenerator._insert_helo_terrain_anchors()` now
+  subdivides every long RADIO leg of an AI helo route with plain unlocked "TERRAIN"
+  Turning Points every ≤5 NM (`MAX_HELO_ANCHOR_SPACING`), giving piecewise
+  terrain-following without Python needing elevation data (none exists at generation);
+  racetrack orbit legs and human-crewed flights are never touched; (3) both air-start
+  spawner paths set only `points[0].alt_type = "RADIO"` while pydcs leaves every
+  *unit's* `alt_type` at "BARO" — and DCS places an in-air spawn from the unit record,
+  so a 500 m-AGL intent spawned as 500 m MSL (below the ~600 m Harz FARP terrain); the
+  spawner now mirrors the point's altitude reference onto every unit. Tests:
+  `tests/ato/flightplans/test_helo_cruise_altitude.py`,
+  `tests/missiongenerator/test_helo_terrain_anchors.py`,
+  `tests/missiongenerator/test_airstart_unit_alt_type.py`. All three are upstream-shared
+  (carve candidates). Checklist **C8** — needs an in-game pass.
 - AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
 - Tanker orbit placement/deconfliction: `game/ato/flightplans/theaterrefueling.py`.
 - Malformed mod payload Lua (CJS Super Hornet v2.4 uses local-var table indices that the

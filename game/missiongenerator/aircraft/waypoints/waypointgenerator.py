@@ -1,5 +1,6 @@
 import itertools
 import logging
+import math
 import random
 from collections.abc import Iterator
 from datetime import datetime, timedelta
@@ -9,6 +10,7 @@ from dcs import Mission
 from dcs.action import AITaskPush, ActivateGroup
 from dcs.condition import CoalitionHasAirdrome, TimeAfter
 from dcs.planes import AJS37
+from dcs.point import MovingPoint, PointProperties
 from dcs.task import StartCommand
 from dcs.triggers import Event, TriggerOnce, TriggerRule
 from dcs.unitgroup import FlyingGroup
@@ -20,7 +22,7 @@ from game.ato.starttype import StartType
 from game.missiongenerator.aircraft.waypoints.cargostop import CargoStopBuilder
 from game.missiongenerator.missiondata import MissionData
 from game.settings import Settings
-from game.utils import KG_TO_LBS, pairwise
+from game.utils import KG_TO_LBS, feet, nautical_miles, pairwise
 from .airassaultingress import AirAssaultIngressBuilder
 from .antishipingress import AntiShipIngressBuilder
 from .armedreconingress import ArmedReconIngressBuilder
@@ -46,6 +48,14 @@ from .splitpoint import SplitPointBuilder
 from .strikeingress import StrikeIngressBuilder
 from .sweepingress import SweepIngressBuilder
 from .target import TargetBuilder
+
+# Max spacing between commanded-altitude anchors on an AI helicopter route leg. A
+# RADIO (AGL) waypoint only anchors the commanded altitude to the terrain at the
+# waypoint itself; DCS interpolates straight between waypoints, so a long low leg
+# across rising terrain is commanded into the ridge line (the Red Tide M1
+# Harz/Sauerland Mi-8/Mi-24 CFITs flew 40-110 km transit legs with no anchor in
+# between).
+MAX_HELO_ANCHOR_SPACING = nautical_miles(5)
 
 
 class WaypointGenerator:
@@ -126,6 +136,14 @@ class WaypointGenerator:
         for idx, point in enumerate(filtered_points):
             self.builder_for_waypoint(point).build()
 
+        # AI helicopters get terrain re-anchoring waypoints on long low legs; a
+        # human-crewed flight flies its own terrain clearance and does not want
+        # the route clutter. Runs before the locked-speed conflict resolver so
+        # inserted points can never trip the DCS locked-speed-between-locked-time
+        # rejection.
+        if self.flight.is_helo and not self.flight.client_count:
+            self._insert_helo_terrain_anchors()
+
         self.ensure_in_flight_route_has_locked_time()
         self._resolve_locked_speed_time_conflicts()
 
@@ -196,6 +214,52 @@ class WaypointGenerator:
                 )
             if getattr(points[i], "ETA_locked", False):
                 eta_locked_after = True
+
+    def _insert_helo_terrain_anchors(self) -> None:
+        """Subdivide long AGL helo route legs with terrain re-anchoring points.
+
+        A RADIO (AGL) waypoint anchors the commanded altitude to the terrain at
+        the waypoint only, and the helo AI does not reliably terrain-follow
+        between waypoints. Each inserted point is a plain unlocked Turning Point
+        at the leg's altitude (floored at the helo cruise AGL setting),
+        alt_type RADIO, so the commanded profile re-anchors to local terrain at
+        most MAX_HELO_ANCHOR_SPACING apart instead of being interpolated
+        straight across a ridge line. Only legs whose both ends are already
+        RADIO are touched, and never the racetrack orbit leg (its start->end
+        adjacency IS the orbit definition). Tasks, TOTs, CTLD landing zones and
+        the kneeboard (built from the flight plan, not these pydcs points) are
+        untouched.
+        """
+        spacing = MAX_HELO_ANCHOR_SPACING.meters
+        cruise_agl_m = feet(self.settings.heli_cruise_alt_agl).meters
+        points = self.group.points
+        i = 0
+        while i < len(points) - 1:
+            a, b = points[i], points[i + 1]
+            if (
+                a.alt_type != "RADIO"
+                or b.alt_type != "RADIO"
+                or a.name == "RACETRACK START"
+            ):
+                i += 1
+                continue
+            leg = a.position.distance_to_point(b.position)
+            if leg <= spacing:
+                i += 1
+                continue
+            segments = math.ceil(leg / spacing)
+            alt = int(round(max(a.alt, b.alt, cruise_agl_m)))
+            for n in range(1, segments):
+                anchor = MovingPoint(a.position.lerp(b.position, n / segments))
+                anchor.name = "TERRAIN"
+                anchor.alt = alt
+                anchor.alt_type = "RADIO"
+                anchor.speed = b.speed
+                anchor.ETA_locked = False
+                anchor.speed_locked = False
+                anchor.properties = PointProperties()
+                points.insert(i + n, anchor)
+            i += segments
 
     def builder_for_waypoint(self, waypoint: FlightWaypoint) -> PydcsWaypointBuilder:
         builders = {

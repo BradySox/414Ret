@@ -5,10 +5,13 @@ groups:
   - S-300:
     - name: S-300 Site SR1
       unit_count:
+        # 414th: ONE search radar per battalion -- acquisition serves the
+        # regiment (the hub's shared EWR), not each fire unit
         - 1
       unit_types:
         - S-300PS 40B6MD sr # SA-10 Clam Shell SR
         - S-300PS 40B6MD sr_19J6 # SA-10 Tin Shield SR
+        - S-300PS 64H6E sr # SA-10 Big Bird SR (truck)
         - S-300PS SA-10B 76N6E sr # SA-10B (Ultimate Compilation Clam Shell)
         - S-300V 9S15 sr # SA-12
         - S-300PMU1 40B6MD sr # SA-20 + B, is the 5N66E
@@ -16,18 +19,6 @@ groups:
         - S-300V4 9S15MDE sr # SA-23 S-300V4
         - S-400 96L6E sr # SA-21 Cheese Board (truck)
         - S-400 96L6E mast sr # SA-21 Cheese Board (mast)
-    - name: S-300 Site SR2
-      unit_count:
-        - 1
-      unit_types:
-        - S-300PS 64H6E sr # SA-10 Flap Lid-A TR
-        - S-300PS 40B6MD sr_19J6 # SA-10 Tin Shield SR
-        - S-300PS 64H6E MOD sr # SA-10B (Ultimate Compilation Big Bird truck)
-        - S-300V 9S19 sr # SA-12
-        - S-300PMU1 64N6E sr # SA-20 + B
-        - S-300VM 9S19M2 sr # SA-23
-        - S-300V4 9S19M-1E sr # SA-23 S-300V4
-        - S-400 91N6E sr # SA-21 Big Bird
     - name: S-300 Site CP
       unit_count:
         - 1
@@ -58,7 +49,8 @@ groups:
         - S-400 92N6E mast tr # SA-21 Grave Stone (mast)
     - name: S-300 Site LN1
       unit_count:
-        - 3
+        # 414th: 4 TELs per battalion (the real S-300PS battery), not a full site
+        - 2
       unit_types:
         - S-300PS 5P85C ln # SA-10
         - S-300PS 5P85SE_mod ln # SA-10B
@@ -73,7 +65,8 @@ groups:
         - S-400 51P6A (40N6E) ln # SA-21 (40N6E)
     - name: S-300 Site LN2
       unit_count:
-        - 3
+        # 414th: see LN1 -- 4 TELs total per battalion
+        - 2
       unit_types:
         - S-300PS 5P85D ln # SA-10
         - S-300PS 5P85SU_mod ln # SA-10B

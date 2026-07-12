@@ -319,7 +319,19 @@ considered and declined.
    `Russia 1980 (Red Tide)` (`resources/factions/russia_1980_red_tide.json`, set as
    `recommended_enemy_faction`) whose LORAD presets — SA-10/S-300PS, SA-5/S-200
    — point at **single-radar layout variants** (`S-300 Site (Single Radar)` / `SA-5 Legacy Site
-   (Single Radar Circle|Semicircle)`: the same `.miz` templates, guidance slot `unit_count: 1`). The
+   (Single Radar Circle|Semicircle)`: the same `.miz` templates, guidance slot `unit_count: 1`).
+   **Battalions are lean fire units (2026-07-12 second pass, user catch from the generated save —
+   "all long range sams still generated full sites"):** v1 only trimmed the *guidance* radar and left
+   each battalion its whole acquisition suite (2 SRs + C2 on the S-300; Tin Shield + P-19 + its own
+   P-14 + 8 LN on the SA-5), so a hub read as three stacked full sites. The single-radar variants now
+   field what the realism note prescribes — acquisition serves the *regiment*, not each fire unit:
+   the S-300 battalion is **1 search radar (Clam Shell/Tin Shield/Big Bird roll) + C2 + 1 TR + 4
+   TELs** (DCS needs SR+CP+TR in-group or the site won't engage, so it can't go leaner), the SA-5
+   battalion is **Tin Shield + Square Pair + 6 launchers** with the battalion-level P-19/P-14 slots
+   deleted (the hub's shared EWR *is* the early warning; the full-suite base layouts are untouched
+   for every other campaign). PD escorts (the #586 Tor slot) stay. Known behavior, not a bug: the
+   loader fills each LORAD marker with a **random** faction LORAD preset (`random_group_for_task`),
+   so a hub can mix S-300 and SA-5 battalions — a layered rather than pure-S-300 regiment. The
    fork is byte-identical to `Russia 1980` otherwise (no aircraft/OOB change) and only takes effect
    if the player keeps the recommended faction (the New-Game default). The **front + legacy screen
    keeps §60 doubling** (a lone SA-6/SA-2 MERAD site *should* have its anti-single-HARM second radar)

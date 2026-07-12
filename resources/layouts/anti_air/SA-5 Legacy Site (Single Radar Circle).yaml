@@ -13,20 +13,13 @@ groups:
         - 1 # 414th: single-radar battalion (regiment-modeled, §60 reverted per SAM-belt STANDARD)
       unit_types:
         - RPC_5N62V
-    - name: Command Post
-      unit_count:
-        - 1
-      unit_types:
-        - p-19 s-125 sr
-    - name: EW Radar
-      optional: true
-      unit_count:
-        - 1
-      unit_types:
-        - P14_SR
+    # 414th: no battalion-level P-19/P-14 -- acquisition/early warning serve the
+    # regiment (the hub's shared EWR site), not each fire unit
     - name: Launcher
       unit_count:
-        - 8
+        # 414th: 6 launchers per battalion (the real S-200 battalion), not the
+        # full 8-position site
+        - 6
       unit_types:
         - S-200_Launcher
     - name: Logistics

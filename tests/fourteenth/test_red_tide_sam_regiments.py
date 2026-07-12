@@ -111,6 +111,33 @@ def test_single_radar_variants_field_one_guidance_radar() -> None:
         )
 
 
+def test_single_radar_battalions_are_lean_fire_units() -> None:
+    # A regiment battalion is a *fire unit*, not a stacked full site (the flown
+    # 2026-07-12 finding: "all long range sams still generated full sites"):
+    # ONE search radar and 4 TELs for the S-300; Tin Shield + Square Pair + 6
+    # launchers for the SA-5, with no battalion-level P-19/P-14 — acquisition
+    # and early warning serve the regiment via the hub's shared EWR site.
+    s300 = LAYOUTS.by_name("S-300 Site (Single Radar)")
+    slot_names = {ug.name for ug in s300.all_unit_groups}
+    assert "S-300 Site SR2" not in slot_names, "battalion regained a second SR"
+    (sr1,) = [ug for ug in s300.all_unit_groups if ug.name == "S-300 Site SR1"]
+    assert sr1.unit_count == [1]
+    for ln_slot in ("S-300 Site LN1", "S-300 Site LN2"):
+        (ln,) = [ug for ug in s300.all_unit_groups if ug.name == ln_slot]
+        assert ln.unit_count == [2], f"battalion fields 4 TELs, {ln_slot} grew"
+
+    for variant in (
+        "SA-5 Legacy Site (Single Radar Circle)",
+        "SA-5 Legacy Site (Single Radar Semicircle)",
+    ):
+        sa5 = LAYOUTS.by_name(variant)
+        sa5_slots = {ug.name for ug in sa5.all_unit_groups}
+        assert "Command Post" not in sa5_slots, f"{variant} regained the P-19"
+        assert "EW Radar" not in sa5_slots, f"{variant} regained a battalion P-14"
+        (ln,) = [ug for ug in sa5.all_unit_groups if ug.name == "Launcher"]
+        assert ln.unit_count == [6], f"{variant} launcher count drifted"
+
+
 def test_base_s300_layout_keeps_its_60_doubling() -> None:
     # The scoping guardrail: reverting §60 for Red Tide must NOT touch the shared
     # S-300 Site layout, or every other campaign's lone S-300 loses its redundancy.

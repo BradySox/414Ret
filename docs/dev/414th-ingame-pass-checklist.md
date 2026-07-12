@@ -1812,11 +1812,14 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   chaining, density, air/ground split) is unit-tested (`tests/test_civilian_traffic.py`); only the
   in-sim appearance/behaviour needs eyeballing.
 - **Gated 2026-07-12 (`civilian_air_traffic`, Mission Generation → Battlefield life, default ON —
-  every campaign byte-identical; Red Tide preseeds OFF):** the flown M1 found the ~40 NM front
-  keep-out is no protection for a campaign whose air war runs 100+ NM behind the lines — a neutral
-  IL-76 at FL230 transited the deep BVR corridor and died to a player's double Phoenix (an airliner
-  profile is indistinguishable from a military transport on an AWG-9), and 5 more civs self-crashed
-  into the session logs. Campaigns with deep BVR/intercept play should preseed it off.
+  every campaign byte-identical):** the flown M1 found the ~40 NM front keep-out is no protection
+  for a campaign whose air war runs 100+ NM behind the lines — a neutral IL-76 at FL230 transited
+  the deep BVR corridor and died to a player's double Phoenix (an airliner profile is
+  indistinguishable from a military transport on an AWG-9), and 5 more civs self-crashed into the
+  session logs. A campaign wanting a sterile picture can preseed it off. **Red Tide briefly
+  preseeded OFF (#580) then reversed same-day by squadron call — Red Tide KEEPS its civilians**
+  (the ambient life is worth the occasional Aeroflot incident; BVR discrimination past the FLOT is
+  on the shooter); guard `test_red_tide_keeps_civilian_air_traffic`.
 - **Setup:** Generate any campaign mission (civilian traffic defaults on) and fly/observe the rear
   area for the full sortie (≥ ~90 min to confirm it sustains).
 - **Pass:** A light, **ongoing** mix of civilian **fixed-wing AND helicopters** through the whole

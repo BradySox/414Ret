@@ -278,13 +278,13 @@ settings:
   # CAS/BAI escort or the column is ground down. The rear isn't a safe road, same as the
   # ramp isn't a safe ramp (artillery harassment above).
   convoy_ambush: true
-  # M1 finding: neutral CIV_* milk runs (IL-76/Yak-40/An-26...) transited the deep BVR
-  # corridor NE of the Fulda front and a player Phoenix-killed one at FL230 -- on an
-  # AWG-9 an airliner profile is indistinguishable from a Soviet transport. The civilian
-  # layer's keep-out is only ~40 NM around the FLOT, far too shallow for a campaign whose
-  # air war is fought 100+ NM behind the lines, so Red Tide runs a sterile picture: every
-  # contact past the FLOT is a combatant. (Standard default is ON.)
-  civilian_air_traffic: false
+  # Civilian air traffic stays ON (squadron call 2026-07-12, reversing the first M1
+  # tuning cut): a neutral IL-76 at FL230 DID die to a deep player Phoenix shot in M1
+  # (an airliner profile is indistinguishable from a Soviet transport on an AWG-9),
+  # but the squadron keeps the civilians -- the ambient life is worth the occasional
+  # Aeroflot incident, and BVR target discrimination past the FLOT is on the shooter.
+  # Deliberately NOT preseeded (the generic default is ON); do not re-add
+  # `civilian_air_traffic: false` here without a new squadron call.
   # Support-orbit standoff (M1 finding): the red A-50/IL-78 anchored on the Fulda front
   # but the AI depth push (2.5x the buffer, supportorbit.AI_SUPPORT_DEPTH_FACTOR) at the
   # 80/70 NM defaults parked them 200/175 NM back over Berlin all mission -- too far to

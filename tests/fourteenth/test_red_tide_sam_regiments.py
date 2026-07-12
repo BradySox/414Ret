@@ -149,3 +149,41 @@ def test_base_s300_layout_keeps_its_60_doubling() -> None:
 def test_red_tide_recommends_the_single_radar_fork_faction() -> None:
     data = yaml.safe_load(YAML.read_text(encoding="utf-8"))
     assert data["recommended_enemy_faction"] == "Russia 1980 (Red Tide)"
+
+
+# Red airfields the EWR-net markers must anchor to (nearest-CP binding).
+RED_EWR_ANCHOR_FIELDS = ("Wittstock", "Haina", "Schonefeld", "Kastrup", "Sperenberg")
+
+
+def test_red_ewr_net_markers_sit_in_red_territory() -> None:
+    # "414th Red EWR 1" shipped planted 28 km from BLUE Frankfurt (200 km from
+    # the nearest red field). The campaign loader binds a marker to the NEAREST
+    # CP coalition-blind, so blue swallowed red's radar -- and since the blue
+    # faction fields no EWR ForceGroup it silently never generated (the
+    # repeated retribution.log "Blufor ... has no ForceGroup for EWR").
+    # Relocated to Wittstock 2026-07-12; lock every red EWR marker within
+    # 25 km of a red airfield so a miz edit can't strand one across the FLOT.
+    mission = Mission()
+    mission.load_file(str(MIZ))
+    anchors = {
+        a.name: a.position
+        for a in mission.terrain.airport_list()
+        if a.name in RED_EWR_ANCHOR_FIELDS
+    }
+    assert len(anchors) == len(RED_EWR_ANCHOR_FIELDS)
+    for coalition in mission.coalition.values():
+        for country in coalition.countries.values():
+            for group in country.vehicle_group:
+                if not group.name.startswith("414th Red EWR"):
+                    continue
+                dist_km = (
+                    min(
+                        group.units[0].position.distance_to_point(p)
+                        for p in anchors.values()
+                    )
+                    / 1000
+                )
+                assert dist_km <= 25, (
+                    f"{group.name} is {dist_km:.0f} km from the nearest red EWR "
+                    "anchor field -- it will bind to the wrong (blue) CP"
+                )

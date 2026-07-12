@@ -433,6 +433,19 @@ considered and declined.
     58 red vehicles, 12 red statics (incl. the advanced-IADS command-center/comms/power cells), and
     the blue side byte-for-count, so the usual hand-edit-Lua caution didn't apply here. Headless
     validated: loader now sees 4 red EWR markers; the IADS-detection scan flips Red Tide AMBER→OK.
+    **EWR 1 relocation (2026-07-12, log-review catch):** `414th Red EWR 1` actually sat **28 km from
+    blue Frankfurt** (200 km from the nearest red field — the "~3 km NE of a red SAM site" placement
+    missed for this one). The campaign loader binds a marker to the nearest CP **coalition-blind**,
+    so Frankfurt swallowed it, and since Blufor fields no EWR ForceGroup it errored
+    (`Blufor Late Cold War (80s) has no ForceGroup for EWR` on every generation) and silently never
+    spawned — the net ran 3-of-4 from day one. Relocated to the **Wittstock heath** (~3.5 km from the
+    CP, ~1 km off the validated SCUD/SA-2 cluster), which also fills the northern-sector coverage
+    hole (Hamburg/Wittstock/Templin/Peenemünde had no EWR). CI-locked: every `414th Red EWR *` marker
+    must sit ≤25 km from a red anchor field (`test_red_ewr_net_markers_sit_in_red_territory`). The
+    coalition-blind nearest-CP binding remains a generic loader foot-gun (sibling of the Red-Flag-81
+    "blue SAM marker silently drops" note) — upstream-carve candidate. Unrelated but diagnosed from
+    the same log: the `need United Nations Peacekeepers` squadron-matching spam is the **neutral
+    civilian-traffic coalition** loading its (empty) squadron list — harmless DEBUG noise.
 
 ### Fulda forward heli base + supply re-route
 

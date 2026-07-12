@@ -3768,6 +3768,14 @@ All unit data was read from the **installed mod's own Database lua files** (laun
 - **Bug fixed in passing**: `Faction.remove_vehicle` matches the DCS unit type **id**, but the pre-existing
   HDS strips passed display *names* — so `SAM SA-14 Strela-3 manpad`/`SA-24`/`Polyana-D4M1` were silently
   never stripped when the mod was off. All strips now use ids (upstream-carve candidate).
+- **Preset-group strip is provenance-backstopped (2026-07-12)**: the mod-off preset strips are an
+  exact-name list, so a renamed/new preset silently leaked mod units into a no-mod game's buy menu and
+  AI procurement pool (found via Red Tide's since-removed `SA-10A/S-300PT (Single Radar)`; the same
+  hole leaked the `[CH] Russian Navy` preset in three modern-Russia factions).
+  `Faction.apply_mod_settings` now also strips any preset group whose units come from a disabled
+  `pydcs_extensions` package (`disabled_mod_packages`, name-independent), and `Game.on_load` sweeps
+  the pickled `ArmedForces` with the same predicate so existing saves self-heal. CI-locked across all
+  shipped factions in `tests/fourteenth/test_faction_mod_presets.py` (upstream-carve candidate).
 
 ### Files & tests
 

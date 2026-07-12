@@ -54,6 +54,26 @@ from pydcs_extensions.f16i_idf.f16i_idf import inject_F16I, eject_F16I
 if TYPE_CHECKING:
     from game.theater.start_generator import ModSettings
 
+# pydcs_extensions package name -> ModSettings flag name, for the packages whose
+# flag differs from the package name (getattr falls back to the package name).
+_MOD_PACKAGE_SETTING_NAMES = {"highdigitsams": "high_digit_sams"}
+
+
+def disabled_mod_packages(group: ForceGroup, mod_settings: ModSettings) -> set[str]:
+    """The disabled pydcs_extensions packages this force group's units come from."""
+    packages = {
+        unit.dcs_unit_type.__module__.split(".")[1]
+        for unit in group.units
+        if unit.dcs_unit_type.__module__.startswith("pydcs_extensions.")
+    }
+    return {
+        package
+        for package in packages
+        if not getattr(
+            mod_settings, _MOD_PACKAGE_SETTING_NAMES.get(package, package), True
+        )
+    }
+
 
 _NamedT = TypeVar("_NamedT")
 
@@ -1093,6 +1113,24 @@ class Faction:
         # Warpig Productions F-111C v2.260103
         if not mod_settings.f111c:
             self.remove_aircraft("F111C")
+
+        # Provenance backstop: strip any preset group that still carries a unit
+        # from a disabled mod package, whatever the preset is named. The
+        # per-mod remove_preset() lists above match exact names only, so a
+        # renamed or new preset otherwise leaks mod units into a no-mod game's
+        # buy menu and AI procurement pool (found via the HDS-only
+        # "SA-10A/S-300PT (Single Radar)" surviving with High Digit SAMs off).
+        for preset_group in list(self.preset_groups):
+            disabled = disabled_mod_packages(preset_group, mod_settings)
+            if disabled:
+                logging.info(
+                    "Removing preset group '%s' from faction '%s': mod package(s)"
+                    " %s disabled",
+                    preset_group.name,
+                    self.name,
+                    ", ".join(sorted(disabled)),
+                )
+                self.preset_groups.remove(preset_group)
 
     def remove_aircraft(self, name: str) -> None:
         for aircraft_set in [self.aircraft, self.awacs, self.tankers]:

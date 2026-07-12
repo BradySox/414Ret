@@ -368,6 +368,20 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="briefing",
         settings_fields=("mission_briefing_popup",),
     ),
+    Feature(
+        # §59 ground AI sleep -- the graduated alternative to binary culling.
+        # aisleepluadata.py emits a positive list of rear-area garrison ("armor")
+        # vehicle groups (never air defense / missiles / ships / the concealed
+        # scripted movers); the `aisleep` plugin sleeps each group's controller
+        # (setOnOff false) while no aircraft is inside the wake radius and wakes
+        # it on approach or on a hit. Performance only -- units keep existing,
+        # kills record natively, no gameplay-model change.
+        "ground_ai_sleep",
+        "Ground AI sleep (graduated culling)",
+        59,
+        plugin_id="aisleep",
+        settings_fields=("perf_ground_ai_sleep",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

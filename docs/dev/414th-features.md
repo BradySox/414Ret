@@ -5262,6 +5262,74 @@ reads correctly, and clears after its duration.
 
 ---
 
+## §59 — Ground AI sleep (graduated culling)
+
+The answer to "the cull settings feel all or nothing" (2026-07-12 squadron performance complaint).
+Stock culling is **binary per unit** — inside any exclusion zone a unit fully exists with full AI,
+outside all zones it is never generated — and the zone list (front line + front CPs + carriers +
+**every offensive package target from both ATOs**, each with the full cull radius) unions to most of
+the map on a busy turn, so the toggle does nearly nothing until the distance is shrunk, at which
+point whole rear areas blink out of existence. This adds the missing middle tier: **the unit keeps
+existing, it just stops thinking while nobody is near.**
+
+**The mechanism.** A ground group's DCS controller can be switched off at runtime
+(`Controller:setOnOff(false)` — the primitive under MOOSE's `GROUP:SetAIOnOff`): the units still
+render, still occupy the battlefield, can still be found and killed (death events fire normally →
+the debrief/UnitMap kill accounting is untouched), but they run no sensors and no targeting — which
+is where the sim cost of hundreds of rear-area garrison units actually goes. Sleep is fully
+reversible, so unlike culling it can follow the fight around the map for the whole mission.
+
+**The Python/Lua split (safety is decided in Python).** The emitter
+`game/missiongenerator/aisleepluadata.py` (`populate_ai_sleep_lua`, wired into `luagenerator.py`
+next to the other bridges) emits `dcsRetribution.aiSleep = { groups = { ... } }` — a **positive
+list** of sleepable group names; the plugin never guesses eligibility. Eligible = `armor`-category
+TGO groups (`VehicleGroupGroundObject` — base garrisons, FOB garrisons, deployed vehicle groups)
+holding at least one alive vehicle, minus any `concealed` / `map_hidden` TGO — that set is exactly
+the COIN / convoy-ambush **scripted movers** (cells, HVT convoys, VBIEDs, ambush teams), whose
+`mist.goRoute` routes a sleeping controller would silently kill. Excluded by construction: the
+air-defense network (`aa`/`ewr` — MANTIS owns it, and toggling SAM state at runtime has crash
+history), theater/coastal `missile` sites (the §49 movers), ships, `motorpool` (already inert), and
+building TGOs. FLOT units, convoys and Combat-SAR spawns are not TGOs, so the TGO walk can never
+touch them. No node is emitted when the setting is off or nothing is eligible, so such missions
+no-op the plugin.
+
+**The runtime** (`resources/plugins/aisleep/aisleep-config.lua`): after a startup grace (60 s),
+every poll (30 s) it collects **all airborne aircraft positions — either side, human or AI** (a
+sleeping garrison must wake for an inbound AI strike exactly as for a player) and, per managed
+group: an aircraft inside the **wake radius** (15 NM, floored at 10 NM) wakes it; nearest aircraft
+beyond **1.25× the radius** puts it back to sleep (hysteresis, so an orbit riding the boundary
+doesn't flap the controller). Everything starts awake (the DCS default) and the first pass sleeps
+whatever has an empty sky. An `S_EVENT_HIT` on a managed group **wakes it immediately** whatever
+the range, so a standoff shot never lands on a group that cannot react. Dead groups drop out of the
+managed set; when all are dead the poll stops. pcall-guarded throughout.
+
+**Why the wake radius floors at 10 NM:** an armor garrison may carry **embedded SHORAD/MANPAD
+escorts** (the §7 auto-hide feature exists precisely because they do). Their reach is ≤ ~8 NM, so a
+≥ 10 NM wake (15 default) has the group thinking again well before anything enters its envelope —
+the sleep is invisible to gameplay.
+
+**Composes with culling**, which stays untouched as the far tier: sleep what you keep, cull only
+what you never want to exist. Recon/BDA, threat rings, concealment circles and the turn-boundary
+force model are all unaffected — the map and the debrief cannot tell a sleeping group from an awake
+one.
+
+**Harness.** The headless Lua harness gained a group-level `ControllerFake` recording `setOnOff`
+(`aiOnOff` records) and a `Harness.fireHit(groupName)` helper (Python `fire_hit`). Tests
+`tests/lua/test_aisleep_runtime.py` (sleeps after the grace, wakes on approach, a parked aircraft
+never wakes anything, the hysteresis band never flaps, a hit wakes a sleeper immediately, dead
+groups stop the poll, no node = clean no-op) + `tests/missiongenerator/test_aisleepluadata.py` (the
+positive list: garrisons in, AD/missiles/ships/buildings/concealed movers/dead groups out, gated
+off).
+
+Gated `perf_ground_ai_sleep` (Mission Generation → Performance, default **OFF** until flown; the
+`aisleep` plugin's own `defaultValue` is ON so the setting is the only gate — the §36
+saved-default-off lesson). Wake radius, poll cadence and grace are plugin options. **Not preseeded
+in Red Tide** (feature-locked); flip the setting for the next MP event. **Needs an in-game pass**
+(checklist B11): that a slept garrison actually costs less (server frame/CPU on a dense mission),
+wakes seamlessly on approach, and that MANTIS/TIC/convoys/movers are visibly untouched.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

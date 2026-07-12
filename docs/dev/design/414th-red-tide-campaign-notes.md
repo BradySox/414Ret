@@ -27,6 +27,28 @@
 > **NOT allowed without an explicit new user go-ahead that overrides this lock:** adding a
 > brand-new feature/plugin/setting to Red Tide, expanding the laydown, or re-opening the
 > balance pass. If in doubt, ask the user before touching it.
+>
+> **The "process turn 1 from the M1 session JSON" step is tooled** —
+> `tools/apply_state_json.py` (built + validated 2026-07-12) re-binds the flown 2026-07-11
+> `state.json` to ANY regenerated Red Tide save: it translates every kill event from the
+> flown save's namespace (TGO unit ids, ATO flight names, front-line units, QRA squadron
+> UUIDs) into the fresh game's, then runs the real debrief → commit → `pass_turn` pipeline
+> headlessly and writes a processed turn-2 save. Friday-night usage:
+>
+> ```powershell
+> .venv\Scripts\python.exe tools/apply_state_json.py `
+>   --source-save "C:\Users\brady\Saved Games\DCS\Retribution\Saves\414th red tide v5 6pm lock.retribution" `
+>   --state "C:\Users\brady\Saved Games\DCS\Missions\state.json" `
+>   --target-save "<the fresh Friday-night save>" `
+>   --out-save "<new save name for turn 2>"
+> ```
+>
+> The printed translation report lists every mapping/fallback/drop; validated 2026-07-12
+> against the new-build "turn 0" save (RED −35 airframes matched the real turn-2 processing
+> exactly; the Haina IADS layer, comms building, runway hit, and front-line rout all
+> carried). Do not fly the throwaway miz it generates. `pass_turn` rewrites
+> `autosave.retribution`, same as the app. Keep the flown source save + state.json around
+> until the Friday regeneration is done.
 
 Design and build notes for **Germany - Red Tide** (`resources/campaigns/red_tide.yaml`
 + `red_tide.miz`), the 414th's reworked GermanyCW scenario. Read this before editing the

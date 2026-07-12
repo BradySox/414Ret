@@ -69,6 +69,12 @@ class DcsPluginHarness:
     def add_group(self, spec: dict[str, Any]) -> None:
         self.harness.addGroup(self.to_lua(spec))
 
+    def add_airbase(self, spec: dict[str, Any]) -> None:
+        """Register an airbase for AIRBASE:FindByName.
+
+        ``{"name": ..., "x": ..., "z": ..., "elev": ..., "side": ...}``."""
+        self.harness.addAirbase(self.to_lua(spec))
+
     def add_static(self, spec: dict[str, Any]) -> None:
         """Register a placed static for StaticObject.getByName.
 

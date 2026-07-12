@@ -30,6 +30,9 @@ local Harness = {
         menus = {}, -- { side, path }
         firedTasks = {}, -- { group, x, y, radius, rounds, t }
         aiOnOff = {}, -- { group, on, t } from Controller:setOnOff
+        controllerTasks = {}, -- { group, taskId, targetGroupId, t } from Controller:setTask
+        spawns = {}, -- { template, alias, base, takeoff, altitude, grouping, speedKt, t }
+        roe = {}, -- { group, option, t } from MOOSE Option* calls
         radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
         stoppedTransmissions = {}, -- transmission names
         sounds = {}, -- { groupId, file, t } from outSound*
@@ -40,6 +43,7 @@ local Harness = {
     },
     groupsByName = {},
     groupsBySideCat = {}, -- [side][category] -> list
+    airbases = {}, -- name -> AirbaseFake (Harness.addAirbase)
     markPanels = {},
     terrainHeight = 0,
 }
@@ -191,6 +195,15 @@ function ControllerFake:setOnOff(on)
     })
 end
 
+function ControllerFake:setTask(task)
+    table.insert(Harness.records.controllerTasks, {
+        group = self.group:getName(),
+        taskId = task and task.id,
+        targetGroupId = task and task.params and task.params.groupId,
+        t = Harness.now,
+    })
+end
+
 local GroupFake = {}
 GroupFake.__index = GroupFake
 
@@ -283,6 +296,24 @@ coalition.getGroups = function(side, category)
         return all
     end
     return byCat[category] or {}
+end
+
+-- Units currently crewed by a human (playerName set), DCS coalition.getPlayers shape.
+coalition.getPlayers = function(side)
+    local players = {}
+    local byCat = Harness.groupsBySideCat[side]
+    if byCat then
+        for _, groups in pairs(byCat) do
+            for _, g in ipairs(groups) do
+                for _, u in ipairs(g:getUnits()) do
+                    if u.playerName and u:isExist() then
+                        table.insert(players, u)
+                    end
+                end
+            end
+        end
+    end
+    return players
 end
 
 coalition.addGroup = function(countryId, category, data)
@@ -556,6 +587,15 @@ missionCommands = {
         return { name }
     end,
     removeItemForCoalition = function(_, _) end,
+    addSubMenuForGroup = function(gid, name, parent)
+        table.insert(Harness.records.menus, { gid = gid, path = tostring(name) })
+        return { name }
+    end,
+    addCommandForGroup = function(gid, name, parent, fn, arg)
+        table.insert(Harness.records.menus, { gid = gid, path = tostring(name), fn = fn, arg = arg })
+        return { name }
+    end,
+    removeItemForGroup = function(_, _) end,
 }
 
 -------------------------------------------------------------------------------
@@ -567,6 +607,10 @@ MooseCoord.__index = MooseCoord
 
 function MooseCoord:GetVec2()
     return { x = self.x, y = self.z } -- MOOSE Vec2: x = north, y = east
+end
+
+function MooseCoord:GetLandHeight()
+    return Harness.terrainHeight
 end
 
 local MooseUnit = {}
@@ -646,6 +690,26 @@ function GROUP.FindByName(_, name)
     return setmetatable({ group = g }, MooseGroup)
 end
 
+function MooseGroup:GetName()
+    return self.group:getName()
+end
+
+function MooseGroup:OptionROEWeaponFree()
+    table.insert(Harness.records.roe, {
+        group = self.group:getName(),
+        option = "WeaponFree",
+        t = Harness.now,
+    })
+end
+
+function MooseGroup:OptionROTEvadeFire()
+    table.insert(Harness.records.roe, {
+        group = self.group:getName(),
+        option = "EvadeFire",
+        t = Harness.now,
+    })
+end
+
 UNIT = {}
 
 function UNIT.FindByName(_, name)
@@ -657,4 +721,104 @@ function UNIT.FindByName(_, name)
         end
     end
     return nil
+end
+
+-------------------------------------------------------------------------------
+-- AIRBASE / SPAWN fakes (MOOSE surface for the redscramble plugin). Airbases
+-- are registered by tests via Harness.addAirbase{ name, x, z, elev, side };
+-- SPAWN:SpawnAtAirbase records the spawn and synthesizes a real harness group
+-- (units at the airbase, airborne when Takeoff.Air) so the plugin's own vector
+-- loop can find and task it.
+-------------------------------------------------------------------------------
+local AirbaseFake = {}
+AirbaseFake.__index = AirbaseFake
+
+function AirbaseFake:GetVec2()
+    return { x = self.x, y = self.z } -- MOOSE Vec2: x = north, y = east
+end
+
+function AirbaseFake:GetCoordinate()
+    return setmetatable({ x = self.x, y = self.elev or 0, z = self.z }, MooseCoord)
+end
+
+function AirbaseFake:GetCoalition()
+    return self.side
+end
+
+AIRBASE = {}
+
+function AIRBASE.FindByName(_, name)
+    return Harness.airbases[name]
+end
+
+function Harness.addAirbase(spec)
+    Harness.airbases[spec.name] = setmetatable({
+        name = spec.name,
+        x = spec.x or 0,
+        z = spec.z or 0,
+        elev = spec.elev or 0,
+        side = spec.side,
+    }, AirbaseFake)
+end
+
+SPAWN = { Takeoff = { Air = 1, Runway = 2, Hot = 3, Cold = 4 } }
+
+local SpawnFake = {}
+SpawnFake.__index = SpawnFake
+
+function SPAWN.NewWithAlias(_, template, alias)
+    return setmetatable({
+        template = template,
+        alias = alias,
+        counter = 0,
+        grouping = 2,
+        speedKt = nil,
+    }, SpawnFake)
+end
+
+function SpawnFake:InitGrouping(n)
+    self.grouping = n
+    return self
+end
+
+function SpawnFake:InitSpeedKnots(kt)
+    self.speedKt = kt
+    return self
+end
+
+local nextSpawnGroupId = 9000
+
+function SpawnFake:SpawnAtAirbase(airbase, takeoff, altitude)
+    self.counter = self.counter + 1
+    local name = self.alias .. "#" .. string.format("%03d", self.counter)
+    table.insert(Harness.records.spawns, {
+        template = self.template,
+        alias = self.alias,
+        base = airbase and airbase.name or "?",
+        takeoff = takeoff,
+        altitude = altitude,
+        grouping = self.grouping,
+        speedKt = self.speedKt,
+        t = Harness.now,
+    })
+    nextSpawnGroupId = nextSpawnGroupId + 1
+    local units = {}
+    for i = 1, self.grouping do
+        units[#units + 1] = {
+            name = name .. "-" .. i,
+            type = "FAKE_FIGHTER",
+            x = airbase and airbase.x or 0,
+            z = airbase and airbase.z or 0,
+            alt = altitude or 0,
+            airborne = takeoff == SPAWN.Takeoff.Air,
+        }
+    end
+    local grp = Harness.addGroup({
+        name = name,
+        id = nextSpawnGroupId,
+        side = coalition.side.RED,
+        category = Group.Category.AIRPLANE,
+        units = units,
+    })
+    return setmetatable({ group = grp }, MooseGroup)
 end

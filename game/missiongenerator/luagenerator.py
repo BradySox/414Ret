@@ -33,6 +33,7 @@ from .interceptluadata import (
 )
 from .missiondata import CombatSarTemplates, MissionData
 from .mobilemissileluadata import populate_mobile_missiles_lua
+from .redscrambleluadata import populate_red_scramble_lua
 from .vietnamopsluadata import populate_vietnam_ops_lua
 
 if TYPE_CHECKING:
@@ -442,6 +443,12 @@ class LuaGenerator:
         # briefing plugin shows each pilot a short campaign/mission/callsign/field card
         # when they slot in. Display only, no gameplay-model change.
         populate_briefing_lua(lua_data, self.game, self.mission_data)
+
+        # Host red-interceptor scramble (§61) -- emits dcsRetribution.redScramble only
+        # when host_red_scramble is on and red fighter templates + red airfields exist;
+        # the redscramble plugin builds the host's F10 menu and force-vectors the
+        # cloned bandits onto blue fighters (a GM event tool -- untracked by design).
+        populate_red_scramble_lua(lua_data, self.game, self.mission_data)
 
         trigger = TriggerStart(comment="Set DCS Retribution data")
         trigger.add_action(DoScript(String(lua_data.create_operations_lua())))

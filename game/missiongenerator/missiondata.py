@@ -12,6 +12,7 @@ from game.dcs.groundunittype import GroundUnitType
 from game.missiongenerator.aircraft.flightdata import FlightData
 from game.missiongenerator.commsjamluadata import CommsJamInfo
 from game.missiongenerator.interceptluadata import InterceptEntry, PlayerAlertEntry
+from game.missiongenerator.redscrambleluadata import RedScrambleTemplate
 from game.runways import RunwayData
 
 if TYPE_CHECKING:
@@ -195,3 +196,7 @@ class MissionData:
     # (§21). Collected during flight generation; folded into
     # ``combat_sar_templates`` by ``spawn_combat_sar_templates``.
     parked_rescue_helos: list[str] = field(default_factory=list)
+    # Cold late-activation red interceptor templates for the host F10 scramble
+    # menu (§61). Populated by AircraftGenerator.spawn_red_scramble_templates
+    # when host_red_scramble is on; the redscramble plugin clones them on demand.
+    red_scramble_templates: list[RedScrambleTemplate] = field(default_factory=list)

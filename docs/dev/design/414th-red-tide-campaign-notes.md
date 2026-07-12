@@ -1,15 +1,21 @@
 # 414th Red Tide Campaign Notes
 
-> ## 🔒 FEATURE LOCK — Red Tide (2026-07-11, user decision)
+> ## 🔒 FEATURE LOCK — Red Tide (effective FRIDAY NIGHT 2026-07-17; user correction 2026-07-12)
 >
-> **Red Tide is FEATURE-LOCKED. Do NOT add new features, mechanics, content, or laydown
-> scope to this campaign.** It is a shipped, balanced build and the goal now is to keep it
-> stable, not to keep bolting things on. If a future session (or a future you) is tempted to
-> "force" one more system into Red Tide — a new plugin toggle, another laydown object, a
-> balance re-skew, a new economy knob — **stop and don't.** That is exactly the "force
-> bullshit in later and break it" the lock exists to prevent.
+> **The lock takes effect Friday night 2026-07-17**, when the user regenerates the campaign
+> with every feature landed by then and processes a turn 1 for the squadron from the
+> 2026-07-11 M1 session JSON. **Until that regeneration, new features and Red Tide preseeds
+> MAY land** — anything merged before Friday ships in the fresh build (no save-compat risk).
 >
-> **Still allowed** (a lock is not a freeze on correctness):
+> **From the Friday-night regeneration onward, Red Tide is FEATURE-LOCKED. Do NOT add new
+> features, mechanics, content, or laydown scope to this campaign.** It is a shipped,
+> balanced build and the goal then is to keep it stable, not to keep bolting things on. If a
+> future session (or a future you) is tempted to "force" one more system into Red Tide — a
+> new plugin toggle, another laydown object, a balance re-skew, a new economy knob — **stop
+> and don't.** That is exactly the "force bullshit in later and break it" the lock exists to
+> prevent.
+>
+> **Still allowed under the lock** (a lock is not a freeze on correctness):
 > - **Bug / crash fixes** to already-shipped Red Tide behavior (e.g. the custom-callsign
 >   spawn crash, the SCUD/COIN 2-WP mover fix, the artillery-reach tune — these are repairs,
 >   not features).

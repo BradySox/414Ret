@@ -356,6 +356,14 @@ settings:
   # where the last photo froze it. Default ON; runtime lives in the mobilemissiles plugin
   # (preseeded below, same saved-default-off reasoning as the others).
   mobile_missile_relocation: true
+  # §61 host red-interceptor scramble -- the game master's "give the boys something to
+  # shoot" button, built off the M1 debrief ("once the first wave was over it felt
+  # quiet"). An F10 "HOST: Red Scramble" menu clones a 2/4-ship red fighter flight at
+  # any red airfield and vectors it onto the nearest blue fighters. Default OFF
+  # globally; preseeded here for the squadron's MP events, with the menu gated to the
+  # host's static "Flash" name tag via the plugin option below. Spawns are
+  # free/untracked event content.
+  host_red_scramble: true
   # The artillery harassment above runs inside the vietnamops PLUGIN's runtime (the
   # shared standoff-barrage loop). Preseed the plugin ON so a player whose saved
   # defaults disabled "Vietnam Ops (period mechanics)" -- reasonable on a
@@ -369,6 +377,13 @@ settings:
     commsjam: true
     mobilemissiles: true
     minefields: true
+    # ... and the redscramble plugin for the §61 host scramble menu preseeded above.
+    redscramble: true
+    # §61 host-menu gate: the host's DCS name runs "<flight> 1-x | Flash" with a
+    # changing prefix, so gate on the static tag -- hostPlayers is a substring
+    # match, and "Flash" covers every event's prefix. Only names containing it
+    # see the HOST: Red Scramble menu.
+    redscramble.hostPlayers: Flash
     # §51 comms-jam feel: near-continuous pressure on a few high-priority channels
     # rather than short duty-cycled bursts scattered across many. 120 s of static with
     # a ~10 s gap (~90% on-air); maxChannels 3 caps it to the top-priority nets (the

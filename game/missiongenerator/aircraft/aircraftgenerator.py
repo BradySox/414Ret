@@ -37,6 +37,10 @@ from game.missiongenerator.missiondata import (
     JtacInfo,
     MissionData,
 )
+from game.missiongenerator.redscrambleluadata import (
+    MAX_RED_SCRAMBLE_TYPES,
+    RedScrambleTemplate,
+)
 from game.squadrons.intercept_reserve import (
     ai_qra_resource_count,
     qra_player_manned_count,
@@ -422,6 +426,86 @@ class AircraftGenerator:
                     )
                 finally:
                     flight.roster.clear()
+
+    def spawn_red_scramble_templates(self) -> None:
+        """Cold late-activation red interceptor templates for the host F10 menu (§61).
+
+        With ``host_red_scramble`` on, one 2-ship template per distinct red fighter
+        type (best BARCAP airframe first, capped at ``MAX_RED_SCRAMBLE_TYPES``) is
+        parked late-activation at its squadron's home field -- the QRA clone pattern.
+        The ``redscramble`` plugin SPAWN-clones a template at whichever red base the
+        host picks (MOOSE ``SpawnAtAirbase`` re-bases the clone, so the template's
+        own parking spot is irrelevant to where it launches).
+
+        ``claim_inv=False`` and no UnitMap entry: these are **untracked event-tool
+        freebies by design** (the §20 drop-spawn cheat precedent) -- red is never
+        debited an airframe and a dead clone changes nothing at the turn boundary.
+        A template that cannot be built (no parking, spawn error) is skipped; this
+        cheat must never break mission generation.
+        """
+        if not self.game.settings.host_red_scramble:
+            return
+
+        candidates: dict[Any, Squadron] = {}
+        for control_point in self.game.theater.controlpoints:
+            if not isinstance(control_point, Airfield):
+                continue
+            if control_point.captured.is_blue or control_point.captured.is_neutral:
+                continue
+            for squadron in control_point.squadrons:
+                aircraft = squadron.aircraft
+                if aircraft.helicopter or not aircraft.capable_of(FlightType.BARCAP):
+                    continue
+                if aircraft not in candidates:
+                    candidates[aircraft] = squadron
+
+        ordered = sorted(
+            candidates.items(),
+            key=lambda item: (
+                -item[0].task_priority(FlightType.BARCAP),
+                item[0].variant_id,
+            ),
+        )
+        for aircraft, squadron in ordered[:MAX_RED_SCRAMBLE_TYPES]:
+            group_name = f"RedScramble|{aircraft.variant_id}"
+            country = self.country_assigner.for_squadron(squadron)
+            flight = Flight(
+                Package(squadron.location, self.game.db.flights),
+                squadron,
+                2,
+                FlightType.BARCAP,
+                StartType.COLD,
+                divert=None,
+                claim_inv=False,
+            )
+            flight.state = Completed(flight, self.game.settings)
+            try:
+                group = FlightGroupSpawner(
+                    flight,
+                    country,
+                    self.mission,
+                    self.helipads,
+                    self.ground_spawns_roadbase,
+                    self.ground_spawns_large,
+                    self.ground_spawns,
+                    self.mission_data,
+                ).create_intercept_template(group_name)
+            except Exception:
+                logging.warning(
+                    "Could not create the red-scramble template for %s at %s; "
+                    "the host menu skips this type.",
+                    aircraft,
+                    squadron.location,
+                    exc_info=True,
+                )
+                continue
+            finally:
+                flight.roster.clear()
+            if group is None:
+                continue
+            self.mission_data.red_scramble_templates.append(
+                RedScrambleTemplate(group_name=group_name, label=aircraft.variant_id)
+            )
 
     def spawn_combat_sar_templates(self) -> None:
         """Wire the on-demand AI CSAR rescue sources (§21).

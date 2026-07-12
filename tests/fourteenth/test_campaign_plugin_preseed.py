@@ -51,6 +51,19 @@ def test_red_tide_preseeds_the_mobilemissiles_plugin_for_the_scud_hunt() -> None
     assert settings["plugins"]["mobilemissiles"] is True
 
 
+def test_red_tide_preseeds_the_redscramble_plugin_for_the_host_menu() -> None:
+    settings = _campaign_settings()
+    # §61's runtime lives in the redscramble plugin -- same saved-default-off trap
+    # as the others. Preseeded ahead of the Friday 2026-07-17 regeneration so the
+    # host's "give the boys something to shoot" button is armed for MP events.
+    assert settings["host_red_scramble"] is True
+    assert settings["plugins"]["redscramble"] is True
+    # The menu is gated to the host's static name tag: 414th names run
+    # "<flight> 1-x | Flash" with a changing prefix, and hostPlayers is a
+    # substring match, so the tag alone covers every event's prefix.
+    assert settings["plugins"]["redscramble.hostPlayers"] == "Flash"
+
+
 def test_red_tide_preseeds_c2_decapitation_effects() -> None:
     settings = _campaign_settings()
     # §52 is default OFF; Red Tide's per-base command-center network is the fit, so

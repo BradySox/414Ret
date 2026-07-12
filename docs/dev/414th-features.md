@@ -5447,6 +5447,70 @@ baked into the campaign at generation).
 
 ---
 
+## §61 — Host red-interceptor scramble (F10 bandit spawner)
+
+The game master's **"give the boys something to shoot" button**, built off the Red Tide M1
+debrief: once the first wave was fought off, the session went quiet. Timing tunes helped, but the
+host wanted an *emergency lever* — a way to summon a red interceptor flight from a real red base
+and force it onto the blue fighters, live, mid-mission, visible only to the host.
+
+**How it plays.** With `host_red_scramble` on, the F10 → Other menu carries **HOST: Red
+Scramble**: a one-click **EMERGENCY** command (2-ship of the best red interceptor from the listed
+base nearest the airborne blue players) plus a per-base submenu (up to 9 red airfields,
+nearest-front first) offering each red fighter type as a `x2` / `x4` launch. A press clones the
+flight at that base — by default an **air spawn low over the field at scramble speed** (the QRA
+profile: field elevation + 760 m AGL, 300 kt `InitSpeedKnots`; ground spawns die on congested
+ramps, the intercept-plugin history) — sets it **weapons free**, confirms to the presser, and a
+GCI loop then **re-vectors every live bandit group onto the nearest airborne BLUE fighter**
+(players always outrank a nearer AI flight) with a hard `AttackGroup` task each time the target
+changes, until the bandits are dead. Repeat presses spawn fresh uniquely-named clones.
+
+**Who sees the menu.** Retribution cannot know DCS multiplayer names at generation, so the gate
+is the plugin's **`hostPlayers`** option — comma-separated names **or name fragments**, matched
+as a case-insensitive plain **substring** of the player name (plain `string.find`, no Lua
+patterns — names carry magic characters). The 414th convention is `"<flight> 1-x | Flash"` with
+a changing prefix, so configuring the static tag (`Flash`) gates the menu whatever the event's
+flight name; a full exact name still matches (it contains itself). Matching players get a
+**per-group** menu on slot-in (`S_EVENT_BIRTH` + a periodic sweep — the §58 pattern, which also
+covers the nil-`getPlayerName` birth race and a host seated before the script loads). Left
+empty, the menu is **coalition-wide for BLUE** (functional out of the box; a typo'd name failing
+silent would be worse — the log's `REDSCRAMBLE|` arm line says which mode is live). A DCS group
+menu is visible to everyone in that group, so the host should fly their own flight or trust
+their wingman.
+
+**Untracked by design.** The clone templates are built by
+`AircraftGenerator.spawn_red_scramble_templates` (`claim_inv=False`, no `UnitMap` entry — the
+QRA/CSAR clone pattern, run before `spawn_unused_aircraft` so they get parking): one 2-ship cold
+late-activation template per distinct red fighter type (airframe `capable_of(BARCAP)`, best
+`task_priority` first, capped at 4), armed by the pydcs default-task payload path exactly like
+the QRA templates. This is the **§20 drop-spawn cheat precedent, not a §35/§37 violation**: a
+host-summoned bandit is deliberate event content — red pays nothing, killing it changes nothing
+at the turn boundary — which is exactly why it stays behind a host action and a default-OFF
+setting. Bandit kills *of* players record natively (players are real tracked units).
+
+**Wiring.** `game/missiongenerator/redscrambleluadata.py` (`populate_red_scramble_lua`, in
+`luagenerator.py`) emits `dcsRetribution.redScramble` — `templates` (group + label) and `bases`
+(name, nearest-front first) — only when the setting is on and both lists are non-empty;
+`resources/plugins/redscramble/` runs the menu/spawn/vector runtime (options: `hostPlayers`,
+`takeoff` air/hot/runway, `vectorIntervalS`). Gated `host_red_scramble` (Mission Generation →
+the new "Host & event tools" section, default **OFF**), **preseeded ON in Red Tide** (with the
+`redscramble` plugin — the §36 saved-default-off lesson — and `redscramble.hostPlayers: Flash`,
+the host's static name tag) ahead of the Friday 2026-07-17 regeneration.
+
+**Tests.** `tests/missiongenerator/test_redscrambleluadata.py` (emit contract: gating, red-only
+airfields, front-first ordering, no-node cases) + `tests/lua/test_redscramble_runtime.py` (the
+real plugin under the harness: host-name gating incl. the pre-seated sweep, coalition fallback,
+spawn/ROE/announce, the AttackGroup vector onto the airborne player, no re-task while the target
+holds, unique repeat clones, the 9-base cap, clean no-op without the node). The harness models no
+DCS AI — whether the bandits actually press the intercept is the in-game item.
+
+**Needs an in-game pass** (checklist B14): the air-spawn clone flies off cleanly (not stalled),
+the `AttackGroup` push makes the AI commit (fallback if `setTask` is rejected: a Mission-route
+task, the §15 combatsar divert lesson), the per-group menu really is host-only in MP, and the
+cloned jets carry their A2A loadout.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

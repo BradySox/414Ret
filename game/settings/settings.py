@@ -512,6 +512,14 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                # Game-master levers for hosted multiplayer events -- deliberate
+                # host actions, never automatic systems.
+                "Host & event tools",
+                [
+                    "host_red_scramble",
+                ],
+            ),
+            (
                 "Loadouts",
                 [
                     "auto_range_fuel_tanks",
@@ -2596,6 +2604,25 @@ class Settings:
             "pilot slots in or rejoins on a server. Display only: no gameplay change. "
             "Card duration and the startup grace are options on the 'Mission-start "
             "briefing popup' plugin."
+        ),
+    )
+    host_red_scramble: bool = boolean_option(
+        "Host tool: F10 red-interceptor scramble menu",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "A game-master lever for multiplayer events: the mission carries cold "
+            "clone templates of the enemy's fighters, and an F10 'HOST: Red Scramble' "
+            "menu can launch a 2/4-ship from any red airfield and vector it straight "
+            "onto the nearest friendly fighters -- the emergency 'give the flight "
+            "something to shoot' button for a session gone quiet. Restrict who sees "
+            "the menu with the redscramble plugin's 'Host player names' option: "
+            "comma-separated DCS names or name fragments (substring match, so a "
+            "static tag like 'Flash' covers 'Viper 1-1 | Flash' whatever the flight "
+            "prefix); empty shows it to every BLUE client. "
+            "Spawned bandits are free and untracked by design -- killing them "
+            "changes nothing at the turn boundary; they are event content only."
         ),
     )
     civilian_air_traffic: bool = boolean_option(

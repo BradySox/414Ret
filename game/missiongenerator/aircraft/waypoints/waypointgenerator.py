@@ -220,7 +220,7 @@ class WaypointGenerator:
 
         A RADIO (AGL) waypoint anchors the commanded altitude to the terrain at
         the waypoint only, and the helo AI does not reliably terrain-follow
-        between waypoints. Each inserted point is a plain unlocked Turning Point
+        between waypoints. Each inserted point is a speed-locked Turning Point
         at the leg's altitude (floored at the helo cruise AGL setting),
         alt_type RADIO, so the commanded profile re-anchors to local terrain at
         most MAX_HELO_ANCHOR_SPACING apart instead of being interpolated
@@ -229,6 +229,16 @@ class WaypointGenerator:
         adjacency IS the orbit definition). Tasks, TOTs, CTLD landing zones and
         the kneeboard (built from the flight plan, not these pydcs points) are
         untouched.
+
+        The lock flags matter: DCS rejects a route at mission start when a
+        waypoint has BOTH speed and ETA unlocked without being bracketed by
+        ETA-locked waypoints ("has both unlocked speed and time and not
+        surrounded by waypoints with locked time" -- the first generated Red
+        Tide M2 tripped this on every subdivided helo RTB leg), and also
+        rejects the inverse (a locked speed BETWEEN ETA-locked waypoints). So
+        anchors insert speed-locked -- the legal state everywhere else -- and
+        _resolve_locked_speed_time_conflicts, which runs right after, unlocks
+        any anchor that landed between TOT-locked waypoints.
         """
         spacing = MAX_HELO_ANCHOR_SPACING.meters
         cruise_agl_m = feet(self.settings.heli_cruise_alt_agl).meters
@@ -256,7 +266,7 @@ class WaypointGenerator:
                 anchor.alt_type = "RADIO"
                 anchor.speed = b.speed
                 anchor.ETA_locked = False
-                anchor.speed_locked = False
+                anchor.speed_locked = True
                 anchor.properties = PointProperties()
                 points.insert(i + n, anchor)
             i += segments

@@ -269,7 +269,10 @@ and selected later upstream fixes.
   sorties their real load covers, and the kneeboard fuel ladder agrees. Nothing else is ever
   swapped (never a targeting pod, decoy, or ordnance), it does nothing on short routes, and
   loadouts you've customized are always left alone (both toggles live in Mission Generation →
-  Loadouts).
+  Loadouts). **The fuel plan shows in the flight editor**: the Payload tab has a live line under
+  the fuel slider — burn vs. carried (internal + bags), tanker passes planned, and the RTB
+  margin — that recomputes as you drag the fuel slider or edit pylons, and turns amber with a
+  "short of getting home" warning if your edits leave the jet dry.
 - **The planner frags a pre- or post-strike tanker when a sortie can't make it home.** If the
   route burns more than the jet can carry, it's sent to a tanker on the way in (or out) instead
   of launching short — and this now works for mod jets that ship no measured fuel data (e.g. the

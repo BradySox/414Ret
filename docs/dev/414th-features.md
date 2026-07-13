@@ -4153,6 +4153,19 @@ safety net for everything planned outside the formation-attack family (ferries, 
 pre-feature saves). Its original contract is unchanged: fills **empty** stations only, never removes or
 replaces a store, returns a new `Loadout` and never mutates the persisted one.
 
+**The in-app fuel-plan readout** (added same day) — the numbers were invisible in the planning UI (only the
+kneeboard showed them, at generation). `game/fourteenth/fuel_brief.py` (`FuelBrief`/`fuel_brief_for`/
+`fuel_brief_text`) recomputes the same picture on demand — same per-leg walk via the flight plan's own
+`fuel_consumption_between_points`, tanker top-off at each REFUEL waypoint, walk ends at the landing point so
+the trailing divert/bullseye reference waypoints don't burn phantom fuel, external fuel from the loadout
+being shown (defaults to the driest member, matching the tanker decision) — and the Edit-flight **Payload
+tab** renders it as a live one-liner under the fuel slider: `Fuel plan: burns ~14,900 lb · carries 15,200 lb
+(10,800 internal + 2 tanks 4,400) · 1 tanker pass · RTB margin +300 lb`, amber + a "short of getting home —
+tank, divert, or lighten" tail when the margin goes negative, "(estimated)" when the synthesised fuel model
+is the source. It refreshes on the fuel slider, loadout dropdown, custom toggle, member switch, and **every
+pylon edit** (new `QPylonEditor.pylon_changed` signal), plus on tab `showEvent` (waypoint edits happen on
+other tabs) — so a player who strips the planner's bags watches the margin go negative in place.
+
 ### Why the trade is JAMMER-only
 
 The old blocker stands for everything else: **weapon type can't tell a self-defense missile from primary
@@ -4185,8 +4198,9 @@ flight actually carries. No campaign preseed is needed.
 | Tanker decision | `game/ato/flightplans/formationattack.py` (`_refuel_tasking` — runs the pass, counts external fuel) |
 | Fuel ladder | `game/missiongenerator/aircraft/waypoints/waypointgenerator.py` (`_estimate_planned_fuel_for`) |
 | Generation hook | `game/missiongenerator/aircraft/flightgroupconfigurator.py` (`setup_payload`) |
+| UI readout | `game/fourteenth/fuel_brief.py` (`FuelBrief`, `fuel_brief_for`, `fuel_brief_text`) · `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py` (`refresh_fuel_brief`) · `qt_ui/windows/mission/flight/payload/QPylonEditor.py` (`pylon_changed`) |
 | Settings | `game/settings/settings.py` (`auto_range_fuel_tanks`, `fuel_tanks_over_jammers`) |
-| Tests | `tests/fourteenth/test_range_fuel.py` (the jammer trade on the real F-16C pylon tables: saves-a-pass / no-benefit / already-covered / disabled / no-tanker / idempotence / shared-vs-custom members; the gen-time never-removes contract on the real F/A-18C) · `tests/ato/flightplans/test_fuel_first_tanking.py` (the Viper case end-to-end through `_refuel_tasking`: BOTH → POST_VUL with the pod traded; bags counted; toggle off keeps the pod) · `tests/ato/flightplans/test_refuel_tasking_estimate_fallback.py` · `tests/missiongenerator/test_fuel_ladder.py` |
+| Tests | `tests/fourteenth/test_range_fuel.py` (the jammer trade on the real F-16C pylon tables: saves-a-pass / no-benefit / already-covered / disabled / no-tanker / idempotence / shared-vs-custom members; the gen-time never-removes contract on the real F/A-18C) · `tests/ato/flightplans/test_fuel_first_tanking.py` (the Viper case end-to-end through `_refuel_tasking`: BOTH → POST_VUL with the pod traded; bags counted; toggle off keeps the pod) · `tests/fourteenth/test_fuel_brief.py` (the readout walk: burn/reserve/margin, REFUEL top-off + pass count, stops at landing, tanks counted, driest-member default, estimate flag, text rendering) · `tests/ato/flightplans/test_refuel_tasking_estimate_fallback.py` · `tests/missiongenerator/test_fuel_ladder.py` |
 
 ### Gotchas / deferred (checklist S1 — needs an in-game pass)
 

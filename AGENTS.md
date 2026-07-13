@@ -1400,11 +1400,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     kill switch); the tank-aware decision itself is unconditional (it just reads the real loadout). Tests
     `tests/fourteenth/test_range_fuel.py` (the trade's gates on the real F-16C tables + the gen-time
     never-removes contract on the real F/A-18C) + `tests/ato/flightplans/test_fuel_first_tanking.py` (the
-    Viper case end-to-end: BOTH → POST_VUL with the pod traded). (`game/fourteenth/range_fuel.py`,
+    Viper case end-to-end: BOTH → POST_VUL with the pod traded). **The in-app fuel-plan readout** (same day):
+    `game/fourteenth/fuel_brief.py` (`fuel_brief_for` — the same per-leg walk via the flight plan's
+    `fuel_consumption_between_points`, REFUEL top-offs, stops at the landing point, driest-member external
+    default) renders live on the Edit-flight **Payload tab** under the fuel slider ("burns ~X · carries Y
+    (internal + N tanks) · N tanker passes · RTB margin ±Z", amber + "short of getting home" when negative,
+    "(estimated)" on the synthesised model), refreshed on fuel-slider/loadout/custom/member changes + every
+    pylon edit (new `QPylonEditor.pylon_changed` signal) + tab `showEvent`; tests
+    `tests/fourteenth/test_fuel_brief.py`. (`game/fourteenth/range_fuel.py`, `game/fourteenth/fuel_brief.py`,
     `game/ato/flightplans/formationattack.py`,
     `game/missiongenerator/aircraft/waypoints/waypointgenerator.py`,
-    `game/missiongenerator/aircraft/flightgroupconfigurator.py`, `game/settings/settings.py`; features doc §46,
-    checklist S1 — needs an in-game pass.)
+    `game/missiongenerator/aircraft/flightgroupconfigurator.py`,
+    `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py`, `game/settings/settings.py`; features doc §46,
+    checklist S1 — needs an in-game pass + an in-app pass for the readout.)
 47. **Continuous campaign clock & weather** — a stock turn re-rolled time and weather from scratch: the
     time-of-day rotated through a fixed Dawn→Day→Dusk→Night slot cycle (one slot/turn) with the actual clock a
     **random hour inside that band** (so consecutive turns teleported ~4–8 h), the date ticked only every 4

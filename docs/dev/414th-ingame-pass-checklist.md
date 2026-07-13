@@ -2946,6 +2946,14 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   the kneeboard Brief Sheet fuel column/RTB margin reads consistent with the bags (no "-short, tank or
   divert" on a sortie the bags cover); a jet whose extra bag would NOT save a pass keeps its jammer; a
   hand-edited (custom) loadout is never touched.
+- **In-APP pass (the §46 fuel-plan readout, no DCS needed):** open Edit flight → Payload on any planned
+  jet — a "Fuel plan: burns ~X · carries Y (… internal + N tanks …) · N tanker pass(es) · RTB margin ±Z"
+  line sits under the fuel slider; drag the fuel slider down / clear a bag pylon and watch the margin fall
+  (amber + "short of getting home" when negative); switch members and loadouts and it follows; "(estimated)"
+  shows on airframes with no measured fuel block. Fail signature: the line contradicting the kneeboard
+  ladder for the same flight (they share the walk — a divergence means the loadout/fuel inputs differ), a
+  frozen line after a pylon edit (the `pylon_changed` hook), or a huge phantom burn (the walk failed to stop
+  at the landing point and priced the bullseye leg).
 - **Fail signature:** a pod traded with no pass saved (the pass-count gate broken); ordnance/TGP/decoy missing
   (the JAMMER-type filter broken — only `type: JAMMER` yaml pods may ever be displaced); a jet with bags still
   planned through two refuel passes (`flight_external_fuel_lbs` not reaching the decision); the fuel ladder

@@ -57,7 +57,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §43 | Per-aircraft flight defaults (save fuel + properties) | — | — |
 | §44 | Long-range carrier ops | — | `long_range_carrier_ops` |
 | §45 | Support-package F10 orbit markers | — | — |
-| §46 | Route-aware fuel-tank top-up | — | `auto_range_fuel_tanks` |
+| §46 | Route-aware fuel-tank planning (fuel-first) | — | `auto_range_fuel_tanks`, `fuel_tanks_over_jammers` |
 | §47 | Continuous campaign clock & weather | — | `continuous_campaign_clock` |
 | §48 | Commitment ceiling (will-coupled war budget) | — | `vietnam_commitment_ceiling` |
 | §49 | Mobile missile relocation (the SCUD hunt) | `mobilemissiles` | `mobile_missile_relocation`, `coastal_missile_relocation` |

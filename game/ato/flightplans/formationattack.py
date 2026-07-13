@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, TypeVar
 from dcs import Point
 
 from game.flightplan import HoldZoneGeometry
+from game.fourteenth.range_fuel import flight_external_fuel_lbs, plan_sortie_fuel
 from game.theater import MissionTarget, TheaterGroundObject
 from game.theater.theatergroup import SceneryUnit
 from game.utils import nautical_miles, Speed, feet, KG_TO_LBS
@@ -331,9 +332,16 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
 
         Walks the actual sortie route with the real per-leg fuel rates (climb off the
         takeoff, combat into the formation waypoints, cruise elsewhere) to estimate the
-        burn to the end of the vul and home, then compares it against usable internal
-        fuel. Returns NONE when no tanker can be planned, the flight is a helo, fuel
-        data is missing, or internal fuel covers the sortie.
+        burn to the end of the vul and home, then compares it against usable fuel.
+        Returns NONE when no tanker can be planned, the flight is a helo, fuel data is
+        missing, or fuel covers the sortie.
+
+        Fuel-first (414th, §46): before deciding, ``plan_sortie_fuel`` gives the
+        flight the sortie's tanks (filling empty tank-capable stations, then trading
+        jammer pods for bags when the extra tank saves a tanker pass), and the
+        decision counts the external fuel the jet actually carries -- internal-only
+        math sent a two-bag jet to the tanker before AND after the vul when its real
+        load needed a single pass.
 
         Falls back to the synthesised ``estimated_fuel_consumption`` for airframes with
         no hand-measured ``fuel:`` block (many mod jets, e.g. the F-4E) so a sortie the
@@ -348,13 +356,31 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         )
         if fuel is None or self.flight.is_helo:
             return RefuelTasking.NONE
-        if not self.flight.coalition.air_wing.can_auto_plan(FlightType.REFUELING):
-            return RefuelTasking.NONE
 
         fuel_to_end_of_vul, fuel_vul_to_home = sortie_fuel_split(
             route, fuel, combat_speed_waypoints, split
         )
-        full_fuel = self.flight.unit_type.max_fuel * KG_TO_LBS
+        tanker_available = self.flight.coalition.air_wing.can_auto_plan(
+            FlightType.REFUELING
+        )
+        # The tank pass runs even when no tanker exists -- the bags are then the
+        # only gas there is -- so it must precede the tanker-availability return.
+        plan_sortie_fuel(
+            self.flight,
+            fuel,
+            fuel_to_end_of_vul,
+            fuel_vul_to_home,
+            tanker_available,
+            self.flight.coalition.game.settings,
+        )
+        if not tanker_available:
+            return RefuelTasking.NONE
+
+        # A tanker top-off refills the externals too, so both the starting load and
+        # the post-refuel load count the bags.
+        full_fuel = self.flight.unit_type.max_fuel * KG_TO_LBS + (
+            flight_external_fuel_lbs(self.flight)
+        )
         usable_fuel = full_fuel - fuel.taxi
         return decide_refuel_tasking(
             usable_fuel,

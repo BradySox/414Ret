@@ -2923,24 +2923,35 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   failed — freq/TACAN come from there, not `FlightData`); a red tanker marked (the `friendly.is_blue` gate).
   Knobs: `SUPPORT_ORBIT_LINE`/`SUPPORT_ORBIT_RADIUS_M`/`SUPPORT_LABEL_*` (drawingsgenerator.py).
 
-### S1 — Route-aware fuel-tank top-up adds a bag on a far-AO route · §46 · ☑ VERIFIED (2026-07-04, user pass — "S1 good I think", tentative) (was ☐ UNTESTED, built 2026-07-03; the add-logic + the safety contract "never removes/replaces a store" are locked against the real F/A-18C pylon tables in `tests/fourteenth/test_range_fuel.py`, and a before/after on the reset Hornet Strike/BAI + F-16 loadouts confirmed empties-only; the in-mission fuel/endurance feel needs a flight)
-- **Headless adjudication:** `top_up_for_route` fills an empty tank station on a far route, is a no-op on a
-  short route / empty / custom loadout / setting-off, and **never removes or replaces an existing store**
-  (asserted on the Hornet pylon tables). A before/after script showed the COIN Hornet Strike going 2→3 tanks on
-  the empty centerline with zero swaps, the Hornet BAI staying 1 tank (no empty station, Mavericks untouched),
-  and the short route unchanged. What CI *cannot* adjudicate: whether the added fuel actually gets the AI jet to
-  the target and home in-sim, and whether the trigger threshold feels right across campaigns.
-- **Setup:** the COIN **Enduring Resolve** campaign (carrier ~800 km off the AO), or any campaign with a
-  long-range strike/CAS package; generate the mission and open a Hornet strike flight's loadout in the ME (or
-  fly it) — with `auto_range_fuel_tanks` ON (default).
-- **Pass:** the Hornet Strike flies with **3 tanks** (the centerline bag added); the TGP, AMRAAM, AIM-9, and
-  JDAMs are all still present; a short-range campaign's Hornet is unchanged (2 tanks); a loadout you edited by
-  hand is untouched.
-- **Fail signature:** a store missing from a jet that should be intact (the fill touched an occupied station —
-  a bug, since it should only fill empties); tanks added on a short route (the required-fuel estimate is too
-  hungry — `_required_fuel_lbs`); no tank added on the COIN carrier route (the route length or fuel estimate
-  under-counts, or the airframe has no empty tank-capable station — expected for the F-16/Hornet-BAI). Knob:
-  `auto_range_fuel_tanks` (Mission Generation → Loadouts).
+### S1 — Route-aware fuel-tank planning (fuel-first) · §46 · ◐ PARTIAL (original gen-time top-up ☑ VERIFIED 2026-07-04, user pass — "S1 good I think", tentative; the **2026-07-12 fuel-first rework** — tank-aware tanker decision + the plan-time jammer-pod trade — is ☐ UNTESTED and needs its own pass)
+- **Headless adjudication (original top-up):** `top_up_for_route` fills an empty tank station on a far route,
+  is a no-op on a short route / empty / custom loadout / setting-off, and **never removes or replaces an
+  existing store** (asserted on the Hornet pylon tables). A before/after script showed the COIN Hornet Strike
+  going 2→3 tanks on the empty centerline with zero swaps, the Hornet BAI staying 1 tank (no empty station,
+  Mavericks untouched), and the short route unchanged.
+- **Headless adjudication (2026-07-12 fuel-first rework):** the pre/post-vul tanker decision now counts
+  external-tank fuel, `plan_sortie_fuel` fits tanks at plan time (empties first, then the JAMMER-typed pod on
+  a tank-capable station when the extra bag strictly saves a tanker pass — or on any shortfall when no tanker
+  exists), custom loadouts/shared-object members/idempotence all pinned in
+  `tests/fourteenth/test_range_fuel.py` + the Viper BOTH→POST_VUL end-to-end in
+  `tests/ato/flightplans/test_fuel_first_tanking.py`. What CI *cannot* adjudicate: whether the AI actually
+  flies the single planned pass sensibly in-sim, whether the drag-free burn model leaves enough margin on a
+  three-bag jet, and how often the pod trade fires across real campaigns (it should be the exception, not the
+  norm).
+- **Setup:** a campaign whose strike/SEAD legs outrun internal fuel with a tanker in theater (Red Tide or the
+  COIN campaigns); plan a turn, open a SEAD/Strike F-16 package with `auto_range_fuel_tanks` +
+  `fuel_tanks_over_jammers` ON (defaults).
+- **Pass:** a Viper that used to plan pre+post-vul refueling now shows **3 bags** (centerline tank in the
+  payload editor, ALQ-184 gone) and only **one** REFUEL waypoint (or none); its HARMs/AMRAAMs are untouched;
+  the kneeboard Brief Sheet fuel column/RTB margin reads consistent with the bags (no "-short, tank or
+  divert" on a sortie the bags cover); a jet whose extra bag would NOT save a pass keeps its jammer; a
+  hand-edited (custom) loadout is never touched.
+- **Fail signature:** a pod traded with no pass saved (the pass-count gate broken); ordnance/TGP/decoy missing
+  (the JAMMER-type filter broken — only `type: JAMMER` yaml pods may ever be displaced); a jet with bags still
+  planned through two refuel passes (`flight_external_fuel_lbs` not reaching the decision); the fuel ladder
+  contradicting the tanker plan (waypointgenerator's external-fuel term); tanks piling up across plan rebuilds
+  (idempotence broken). Knobs: `auto_range_fuel_tanks`, `fuel_tanks_over_jammers` (Mission Generation →
+  Loadouts).
 
 ### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ✓ VERIFIED (2026-07-10 flown Red Tide re-fly, session `gallant-panini-5485e7` — the 2-WP `driveTo` fix works in DCS)
 - **2026-07-11 re-confirm (Red Tide M1 "with Mags happy" `csar-snatch-toggle-question-dfdb7a`, Tacview

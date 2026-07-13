@@ -523,6 +523,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 "Loadouts",
                 [
                     "auto_range_fuel_tanks",
+                    "fuel_tanks_over_jammers",
                     "restrict_weapons_by_stock",
                 ],
             ),
@@ -1695,12 +1696,34 @@ class Settings:
         section="Loadouts",
         default=True,
         detail=(
-            "At mission generation, add drop tanks to a flight's EMPTY tank-capable "
-            "stations when its planned route needs more fuel than internal (plus any "
-            "tanks already on the loadout) can cover -- so far-AO campaigns (e.g. the "
-            "COIN carrier ~800 km off the beach) fly with enough gas. It never removes "
-            "a store (a TGP, ECM pod, or ordnance is never swapped out) and is inert "
-            "on short routes. Player-customised loadouts are left untouched."
+            "Fuel-first planning: once a package is built, drop tanks are fitted to "
+            "a flight's EMPTY tank-capable stations when the sortie needs more fuel "
+            "than internal (plus any tanks already on the loadout) can cover, BEFORE "
+            "the pre/post-vul tanker decision -- which also counts the fuel in the "
+            "bags, so a jet carrying tanks stops being sent to the tanker twice when "
+            "one pass (or none) covers it. Far-AO campaigns (e.g. the COIN carrier "
+            "~800 km off the beach) fly with enough gas; inert on short routes. This "
+            "toggle on its own never removes a store (a TGP, ECM pod, or ordnance is "
+            "never swapped out; see the jammer-pod trade below). Player-customised "
+            "loadouts are left untouched."
+        ),
+    )
+    fuel_tanks_over_jammers: bool = boolean_option(
+        "Trade jammer pods for fuel tanks when it saves a tanker pass",
+        page=MISSION_GENERATION_PAGE,
+        section="Loadouts",
+        default=True,
+        enabled_when="auto_range_fuel_tanks",
+        detail=(
+            "When filling empty stations still leaves a sortie needing more tanker "
+            "passes, a self-protection JAMMER pod on a tank-capable station gives up "
+            "its seat to a drop tank -- but only when the extra bag strictly reduces "
+            "the pass count (pre+post-vul refueling becomes one pass, or one pass "
+            "becomes none), or when no tanker exists at all and the bags are the only "
+            "gas there is. The motivating case: a SEAD Viper with two wing bags and a "
+            "centerline ALQ-184 planned through two refuel passes -- three bags and "
+            "one pass beat the pod. Only jammer pods are ever traded (never a TGP, "
+            "decoy, or ordnance); player-customised loadouts are left untouched."
         ),
     )
 

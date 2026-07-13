@@ -19,6 +19,7 @@ from game.ato import Flight, FlightWaypoint, FlightType
 from game.ato.flightstate import InFlight, WaitingForStart
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.ato.starttype import StartType
+from game.fourteenth.range_fuel import flight_external_fuel_lbs
 from game.missiongenerator.aircraft.waypoints.cargostop import CargoStopBuilder
 from game.missiongenerator.missiondata import MissionData
 from game.settings import Settings
@@ -367,7 +368,12 @@ class WaypointGenerator:
         if consumption is None or start_fuel_kg is None:
             return
 
-        full_load_lbs = start_fuel_kg * KG_TO_LBS
+        # Count the external tanks (§46 fuel-first planning fits them at plan
+        # time), or the ladder contradicts the tanker decision -- a three-bag jet
+        # would read "short of home" on a sortie its real load covers.
+        full_load_lbs = start_fuel_kg * KG_TO_LBS + flight_external_fuel_lbs(
+            self.flight
+        )
         remaining = full_load_lbs - consumption.taxi
         previous: FlightWaypoint | None = None
         for waypoint in waypoints:

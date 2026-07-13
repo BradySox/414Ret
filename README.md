@@ -258,11 +258,18 @@ and selected later upstream fixes.
   pushes early enough to cycle the whole flight through the boom and still make its join and
   TOT, and the package tanker is on station for ingress-side (pre-vul) refuels instead of only
   arriving for the trip home.
-- **Flights add fuel tanks when the route is long.** On far-AO campaigns — like the COIN
-  carrier parked ~800 km off the beach — a jet whose planned route needs more gas than it can
-  carry internally gets extra drop tanks added to its **empty** stations at mission start (so a
-  Hornet strike flies out with its third bag). It never swaps out a targeting pod, ECM, or
-  ordnance to do it, and it does nothing on short-range routes or to loadouts you've customized.
+- **Fuel-first planning: tanks are fitted for the sortie, then the tanker passes are
+  decided.** Once a package is built and the route is known, a jet short of gas gets drop
+  tanks on its **empty** tank-capable stations (on far-AO campaigns — like the COIN carrier
+  parked ~800 km off the beach — a Hornet strike flies out with its third bag), and — when
+  filling empties still isn't enough — a self-protection **jammer pod gives up its seat to a
+  bag, but only when that saves a whole tanker pass** (a SEAD Viper that used to plan pre-
+  AND post-vul refueling now flies three bags and one pass). The tanker decision **counts
+  the fuel in the bags** instead of internal fuel alone, so jets stop double-tanking on
+  sorties their real load covers, and the kneeboard fuel ladder agrees. Nothing else is ever
+  swapped (never a targeting pod, decoy, or ordnance), it does nothing on short routes, and
+  loadouts you've customized are always left alone (both toggles live in Mission Generation →
+  Loadouts).
 - **The planner frags a pre- or post-strike tanker when a sortie can't make it home.** If the
   route burns more than the jet can carry, it's sent to a tanker on the way in (or out) instead
   of launching short — and this now works for mod jets that ship no measured fuel data (e.g. the

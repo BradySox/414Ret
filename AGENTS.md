@@ -1372,29 +1372,37 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     follow-up); no-op when no `mission_data` is passed. `MissionData` is now threaded into `DrawingsGenerator`.
     (`game/missiongenerator/drawingsgenerator.py`, `game/missiongenerator/missiongenerator.py`; features doc
     §45, checklist R1 — needs an in-game pass.)
-46. **Route-aware fuel-tank top-up** — at mission generation, adds drop tanks to a flight's **empty,
-    tank-capable stations** when its planned route needs more fuel than internal (plus any tanks already on the
-    loadout) can cover — so far-AO campaigns fly with enough gas (the motivating case: the COIN Enduring Resolve
-    carrier sits ~800 km off the Helmand AO, so a Hornet Strike always comes out with its **third bag** on the
-    empty centerline). **Deliberately conservative — it never removes a store.** Weapon *type* data can't tell a
-    self-defense Sidewinder from a primary JDAM (both resolve to `WeaponType.UNKNOWN`), so a "swap low-value
-    ordnance for a tank" step can't be made safe by default (it would risk stripping a TGP/ECM pod/bomb) — so
-    only **empty** tank stations are filled; a fully-loaded jet (e.g. the F-16, whose only free tank station
-    holds ECM) is left untouched. `add_range_fuel_tanks` (`game/fourteenth/range_fuel.py`) runs in
-    `flightgroupconfigurator.setup_payload` **after** the date-degrade, **before** the pylons are equipped:
-    `_required_fuel_lbs` (taxi + cruise·route-NM + reserve, from the airframe's measured `fuel_consumption` or
-    the synthesised `estimated_fuel_consumption` that every airframe has — tankers on the route are ignored, we
-    over-fuel rather than under-fuel) vs. `_available_fuel_lbs` (internal `max_fuel` + parsed capacity of tanks
-    already carried); short → return unchanged, else fill empty tank stations (matching a tank already on the
-    jet, else the largest compatible) until the requirement clears or no stations remain. Fuel tanks are
-    detected by DCS display-name (no fuel-tank `WeaponType`; a narrow regex so a "Color Oil Tank"/fuel-air bomb
-    is never mistaken for a drop tank) and their capacity parsed from the name (gallons/liters/kg). It returns a
-    new `Loadout` for the `.miz` and **never mutates the persisted ATO loadout** (re-evaluated each turn as
-    routes move; saves untouched), skips **player-customised** loadouts (`is_custom` — explicit edits are
-    honored) and empty/clean loadouts. Gated by `auto_range_fuel_tanks` (Mission Generation → Loadouts,
-    **default ON** — inert on short routes where internal + stock tanks already cover the leg). Tests
-    `tests/fourteenth/test_range_fuel.py` pin the safety contract (never removes/replaces a store) against the
-    real F/A-18C pylon tables. (`game/fourteenth/range_fuel.py`,
+46. **Route-aware fuel-tank planning (fuel-first)** — fuel is a first-class planning input: build the package
+    normally, then — once the sortie route is known — fit the tanks the sortie needs, and only then decide the
+    tanker passes ("if the plane can't make it to the objective it doesn't matter how many missiles they
+    carry"). **Fuel-first rework 2026-07-12** (user call off a flown SEAD Viper carrying two wing bags + a
+    centerline ALQ-184 that was planned pre- AND post-vul refueling): the pre/post-vul tanker decision
+    (`FormationAttackBuilder._refuel_tasking`) ran on *internal fuel only* — the bags were invisible — and the
+    generation-time top-up could never fit a third bag on the occupied centerline. Now (1) **the decision
+    counts the bags**: `full_fuel = internal + external` (a top-off refills externals too), external read from
+    the **driest member's** loadout (`flight_external_fuel_lbs`), and the kneeboard **fuel ladder** starts from
+    internal + external for the same reason; (2) `plan_sortie_fuel` (`game/fourteenth/range_fuel.py`) runs
+    inside `_refuel_tasking` before `decide_refuel_tasking`, **mutating the members' persisted loadouts in
+    place** (shared objects mutated once, `is_custom` never touched, idempotent across rebuilds, both
+    coalitions) — **tier 1** fills empty tank-capable stations while the sortie's burn (real per-leg
+    climb/combat/cruise rates via `sortie_fuel_split`) outruns the fuel carried (§46's original fill, moved
+    ahead of the decision), **tier 2** trades a **`WeaponType.JAMMER`-typed pod** on a tank-capable station for
+    a tank — ONLY when the extra bag strictly reduces the tanker-pass count (BOTH → one pass → NONE), or on a
+    plain shortfall when no tanker exists at all (the bags are then the only gas). The Viper case: ALQ-184 off,
+    300 gal bag on, one post-vul pass. The trade is JAMMER-only because everything else is untypeable
+    (`WeaponType.UNKNOWN` — a Sidewinder and a JDAM look identical), and OFFENSIVE_JAMMER/DECOY/TGP stay
+    protected; tanks are detected by DCS display-name (narrow regex; capacity parsed from gallons/liters/kg).
+    The **generation-time top-up** `add_range_fuel_tanks` (in `flightgroupconfigurator.setup_payload`) stays as
+    the safety net for non-formation flights (ferries, CAPs, old saves) with its original contract: fills
+    empties only, never removes a store, never mutates the persisted loadout. TARCAP's doctrinal refuel
+    waypoint is untouched. Gated `auto_range_fuel_tanks` (Mission Generation → Loadouts, **default ON**) +
+    `fuel_tanks_over_jammers` (same section, **default ON**, `enabled_when=auto_range_fuel_tanks` — the tier-2
+    kill switch); the tank-aware decision itself is unconditional (it just reads the real loadout). Tests
+    `tests/fourteenth/test_range_fuel.py` (the trade's gates on the real F-16C tables + the gen-time
+    never-removes contract on the real F/A-18C) + `tests/ato/flightplans/test_fuel_first_tanking.py` (the
+    Viper case end-to-end: BOTH → POST_VUL with the pod traded). (`game/fourteenth/range_fuel.py`,
+    `game/ato/flightplans/formationattack.py`,
+    `game/missiongenerator/aircraft/waypoints/waypointgenerator.py`,
     `game/missiongenerator/aircraft/flightgroupconfigurator.py`, `game/settings/settings.py`; features doc §46,
     checklist S1 — needs an in-game pass.)
 47. **Continuous campaign clock & weather** — a stock turn re-rolled time and weather from scratch: the

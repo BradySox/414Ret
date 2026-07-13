@@ -4102,46 +4102,66 @@ toggle (default on) is a possible follow-up if the racetrack clutter is unwanted
   doesn't match its `TankerInfo`/`AwacsInfo`, the orbit + callsign still draw but the freq/TACAN line is
   dropped rather than wrong.
 
-## §46 — Route-aware fuel-tank top-up
+## §46 — Route-aware fuel-tank planning (fuel-first)
 
-Long-AO campaigns strand flights the auto-planner frags with too little fuel for the leg. The motivating case
-is the COIN **Enduring Resolve** carrier, which sits ~800 km off the Helmand AO: a Hornet on internal fuel
-plus its two stock wing tanks still can't make the round trip. This adds drop tanks to a flight at
-**mission-generation time** when — and only when — its planned route needs the range, so the COIN Hornet
-Strike always comes out with its third bag.
+Long-AO campaigns strand flights the auto-planner frags with too little fuel for the leg. The original
+motivating case was the COIN **Enduring Resolve** carrier ~800 km off the Helmand AO (a Hornet on internal
+fuel plus its two stock wing tanks can't make the round trip); the **2026-07-12 fuel-first rework** was
+motivated by a flown observation from the other end of the problem: a SEAD Viper carrying two wing bags and a
+centerline ALQ-184 was planned through **pre- AND post-vul refueling**, because the pre/post-vul tanker
+decision ran on *internal fuel only* — the bags it already carried were invisible, and nothing could ever
+give it the third bag (the centerline was occupied and the top-up never touches an occupied station).
 
-### The safety contract (why it only fills empty stations)
+The rework makes fuel a **first-class planning input**: build the package normally, then — once the sortie
+route is known — figure out how much fuel the sortie needs, fit the tanks for it, and only then decide the
+tanker passes. "If the plane can't make it to the objective it doesn't matter how many missiles they carry."
 
-The user's guiding constraint: *don't degrade the loadouts we just restored to upstream.* The blocker to a
-"swap a low-value store for a tank" step is that **weapon type can't tell a self-defense missile from primary
-ordnance** — an AIM-9X, an AIM-120, a GBU-31, and an AGM-65 all resolve to `WeaponType.UNKNOWN` in the
-Retribution model, and the pydcs weapon record carries no category flag. So there is no safe, general way to
-identify "the spare Sidewinder" to trade for fuel without risking a TGP, ECM pod, or bomb. The tank-capable
-stations that *are* occupied on the reset loadouts hold exactly those things (the F-16's only free tank
-station is its ALQ-184 ECM; the Hornet BAI's are Mavericks).
+### The two halves
 
-**Therefore the feature only fills stations that are already empty.** By construction it can never remove or
-replace a store. That still hits the goal: the reset upstream Hornet **Strike** leaves the centerline empty,
-so a COIN Hornet Strike gains its third tank there with zero swaps. A fully-loaded jet (the F-16, the Hornet
-BAI) is simply left as-is — under-fueled-but-intact beats gutted.
+**Plan-time fuel-first pass** — `plan_sortie_fuel` (`game/fourteenth/range_fuel.py`), called from
+`FormationAttackBuilder._refuel_tasking` (so every formation-attack-family plan: Strike/SEAD/DEAD/BAI/OCA/
+anti-ship/escort/sweep) after the sortie's base route is walked for its fuel split but **before**
+`decide_refuel_tasking` runs:
 
-### How it works
+1. **Tier 1 — fill empty stations** (gated `auto_range_fuel_tanks`): while the sortie's burn (takeoff →
+   vul-end → home + reserve, from `sortie_fuel_split`'s per-leg climb/combat/cruise rates) exceeds internal +
+   carried external fuel, fill empty tank-capable stations — a tank matching one already on the jet, else the
+   largest compatible. The original §46 behavior, moved ahead of the tanker decision so the decision sees it.
+2. **Tier 2 — the jammer-pod trade** (gated `fuel_tanks_over_jammers`, `enabled_when=auto_range_fuel_tanks`):
+   if the flight still needs tanker passes, a **`WeaponType.JAMMER`-typed** store on a tank-capable station
+   gives its seat to a tank — but **only when the extra bag strictly reduces the tanker-pass count**
+   (BOTH → one pass, or one pass → NONE; computed by re-running `decide_refuel_tasking` with the candidate
+   fuel). With **no tanker in theater** the pass-count gate is moot — the bags are the only gas there is — so
+   the trade happens on a plain shortfall. The Viper case: ALQ-184 off, 300 gal centerline bag on, one pass.
 
-`add_range_fuel_tanks(flight, loadout, settings)` (`game/fourteenth/range_fuel.py`) runs in
-`FlightGroupConfigurator.setup_payload`, **after** the date-degrade and **before** the pylons are equipped:
+The pass **mutates the members' persisted loadouts in place** — deliberately, so the payload editor, the
+kneeboard loadout column, the fuel ladder, the tanker decision, and the generated `.miz` all agree on what
+the jet carries. Shared member `Loadout` objects are mutated once and stay shared (the `id()`-seen set);
+`is_custom` loadouts are never touched; the pass is idempotent across plan rebuilds (the tanks are already
+there, the fuel now suffices). It runs for both coalitions (the settings are global) and skips helos (the
+tasking path already excludes them; the generation-time hook still covers their empties).
 
-1. **Guards** — no-op unless `settings.auto_range_fuel_tanks`, and always a no-op for a `is_custom` loadout
-   (respect explicit player edits), an empty/clean loadout, or a missing flight plan.
-2. **Required fuel** — `_required_fuel_lbs = taxi + cruise·route_nm + min_safe`, using the airframe's measured
-   `fuel_consumption` or the synthesised `estimated_fuel_consumption` that every airframe has (so it works
-   fleet-wide). `route_nm` is the summed leg length of the flight-plan waypoints. Tankers on the route are
-   **intentionally ignored** — we would rather over-fuel (an unused tank) than under-fuel.
-3. **Available fuel** — internal `max_fuel` (kg→lb) plus the parsed capacity of any tank already on the
-   loadout. If available ≥ required, return the loadout unchanged.
-4. **Fill** — walk the airframe's empty, tank-capable stations in order, adding a tank to each (matching a tank
-   already on the jet for consistency, else the largest compatible tank) until available ≥ required or no
-   stations remain. Returns a **new** `Loadout` — the persisted ATO loadout is never mutated, so it is
-   re-evaluated every turn as routes move and saves are untouched.
+**The decision counts the bags** — `_refuel_tasking` now computes `full_fuel = internal + external` (a DCS
+top-off refills the externals too) and `usable_fuel = full_fuel − taxi` from the **driest member's** loadout
+(`flight_external_fuel_lbs` takes the min across members), so a jet carrying tanks stops being sent to the
+tanker twice when one pass — or none — covers the sortie. The kneeboard **fuel ladder** starts from
+internal + external for the same reason (`_estimate_planned_fuel_for` in `waypointgenerator.py`), or the
+Brief Sheet would call a three-bag jet "short of home" on a sortie its real load covers.
+
+**Generation-time top-up** — `add_range_fuel_tanks` in `FlightGroupConfigurator.setup_payload` stays as the
+safety net for everything planned outside the formation-attack family (ferries, CAPs, transports,
+pre-feature saves). Its original contract is unchanged: fills **empty** stations only, never removes or
+replaces a store, returns a new `Loadout` and never mutates the persisted one.
+
+### Why the trade is JAMMER-only
+
+The old blocker stands for everything else: **weapon type can't tell a self-defense missile from primary
+ordnance** — an AIM-9X, a GBU-31, and an AGM-65 all resolve to `WeaponType.UNKNOWN`, so a generic "swap a
+low-value store" step would risk stripping a TGP or a bomb. But the self-protection jammer pod *is* reliably
+typed (`type: JAMMER` in `resources/weapons/pods/*.yaml` — ALQ-131/184, Barax, SPS-141, Sky Shadow, L005,
+L175V, MPS-410, RKL609…), and it is exactly the store whose seat is worth a bag when the bag decides whether
+the jet gets there at all. `OFFENSIVE_JAMMER` (EW mission stores) and `DECOY` (TALDs — SEAD tactics
+ordnance) stay protected, as does everything UNKNOWN.
 
 **Tank detection** has no `WeaponType` to lean on, so `is_fuel_tank` matches the DCS display name with a
 narrow regex (`fuel tank`, `drop tank`, `external tank`, `gal`/`gallon`, `liter fuel`, `kg fuel`, `PTB-`, …)
@@ -4151,30 +4171,36 @@ default when the name gives no number).
 
 ### Gating
 
-`auto_range_fuel_tanks` — Mission Generation → Loadouts, **default ON**. It is inert on short-range routes
-(internal + stock tanks already cover the leg), so it only acts where a route genuinely exceeds internal fuel.
-No campaign preseed is needed (default ON already reaches the COIN campaign).
+`auto_range_fuel_tanks` — Mission Generation → Loadouts, **default ON** (inert on short routes). It now
+gates both the generation-time top-up and the plan-time tier 1, and is the master for
+`fuel_tanks_over_jammers` — Mission Generation → Loadouts, **default ON**, the tier-2 kill switch. The
+tank-aware *decision* (counting bags already on the jet) is unconditional — it just reads the loadout the
+flight actually carries. No campaign preseed is needed.
 
 ### Files & tests
 
 | Area | Path |
 |---|---|
-| Core | `game/fourteenth/range_fuel.py` (`add_range_fuel_tanks`, `top_up_for_route`, `is_fuel_tank`, `tank_capacity_lbs`, `route_length_nm`) |
-| Hook | `game/missiongenerator/aircraft/flightgroupconfigurator.py` (`setup_payload`) |
-| Setting | `game/settings/settings.py` (`auto_range_fuel_tanks`) |
-| Tests | `tests/fourteenth/test_range_fuel.py` (fills an empty tank station on a far route; **never removes/replaces a store**; short-route/empty/custom/setting-off no-ops; tank detection + capacity; route length) |
+| Core | `game/fourteenth/range_fuel.py` (`plan_sortie_fuel`, `_plan_loadout_fuel`, `flight_external_fuel_lbs`, `external_fuel_lbs`, `add_range_fuel_tanks`, `top_up_for_route`, `is_fuel_tank`, `tank_capacity_lbs`) |
+| Tanker decision | `game/ato/flightplans/formationattack.py` (`_refuel_tasking` — runs the pass, counts external fuel) |
+| Fuel ladder | `game/missiongenerator/aircraft/waypoints/waypointgenerator.py` (`_estimate_planned_fuel_for`) |
+| Generation hook | `game/missiongenerator/aircraft/flightgroupconfigurator.py` (`setup_payload`) |
+| Settings | `game/settings/settings.py` (`auto_range_fuel_tanks`, `fuel_tanks_over_jammers`) |
+| Tests | `tests/fourteenth/test_range_fuel.py` (the jammer trade on the real F-16C pylon tables: saves-a-pass / no-benefit / already-covered / disabled / no-tanker / idempotence / shared-vs-custom members; the gen-time never-removes contract on the real F/A-18C) · `tests/ato/flightplans/test_fuel_first_tanking.py` (the Viper case end-to-end through `_refuel_tasking`: BOTH → POST_VUL with the pod traded; bags counted; toggle off keeps the pod) · `tests/ato/flightplans/test_refuel_tasking_estimate_fallback.py` · `tests/missiongenerator/test_fuel_ladder.py` |
 
 ### Gotchas / deferred (checklist S1 — needs an in-game pass)
 
-- **Fill-empties only, by design.** A jet whose tank stations are all occupied gains nothing (the F-16 with 2
-  tanks + ECM, the Hornet BAI with Mavericks on every wing station). Reaching a higher tank count on those
-  would require dropping a store, which can't be made safe generically (see the safety contract) — deferred as
-  an explicit opt-in if ever wanted.
+- **The plan-time pass persists its edits.** Unlike the generation-time top-up, the fitted tanks land on the
+  member loadouts and show in the payload editor (under the original preset name). A player who strips them
+  by hand leaves the already-decided refuel plan slightly optimistic until the plan is rebuilt — the same
+  staleness class as any loadout edit after planning; the generation-time top-up still refills empties.
+- **Drag is not modeled.** The per-NM burn rates are per-airframe constants, so a three-bag jet burns the
+  same as a clean one in the math (true before the rework too). The trigger errs toward carrying a tank.
+- **TARCAP's refuel waypoint is untouched** — it is doctrinal (top off coming off station), not fuel-driven,
+  and the CAP families don't run the formation-attack tasking. Their empties are still topped up at
+  generation.
 - **Estimate, not a measurement.** The synthesised fuel model is a planning approximation; the trigger is
-  intentionally generous (ignores tankers) so it errs toward carrying a tank rather than launching short.
-- **Generation-time only.** The added tank shows in the `.miz`, not in the in-app loadout editor (which shows
-  the base ATO loadout). Fine for AI; a player who wants to see/adjust it edits their loadout (which then
-  becomes `is_custom` and is left alone).
+  intentionally generous so it errs toward carrying a tank rather than launching short.
 
 ---
 

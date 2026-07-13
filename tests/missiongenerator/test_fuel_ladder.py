@@ -13,12 +13,14 @@ def _wp(wptype: FlightWaypointType = FlightWaypointType.NAV) -> Any:
 
 
 def _generator(*, taxi: float, fuel_kg: float, per_leg: float | None) -> Any:
+    # No members -> no external tanks; the ladder starts from internal fuel alone.
     flight = SimpleNamespace(
         unit_type=SimpleNamespace(
             fuel_consumption=SimpleNamespace(taxi=taxi),
             estimated_fuel_consumption=None,
         ),
         fuel=fuel_kg,
+        iter_members=lambda: iter(()),
         flight_plan=SimpleNamespace(
             fuel_consumption_between_points=lambda a, b, consumption=None: per_leg
         ),

@@ -69,6 +69,8 @@ def _flight(
     can_plan_tanker: bool = True,
     is_helo: bool = False,
 ) -> SimpleNamespace:
+    # No members -> the fuel-first tank pass sees no loadouts and no external fuel,
+    # so these tests exercise the internal-fuel decision in isolation.
     return SimpleNamespace(
         is_helo=is_helo,
         unit_type=SimpleNamespace(
@@ -76,8 +78,15 @@ def _flight(
             estimated_fuel_consumption=estimated,
             max_fuel=_MAX_FUEL_KG,
         ),
+        iter_members=lambda: iter(()),
         coalition=SimpleNamespace(
-            air_wing=SimpleNamespace(can_auto_plan=lambda task: can_plan_tanker)
+            air_wing=SimpleNamespace(can_auto_plan=lambda task: can_plan_tanker),
+            game=SimpleNamespace(
+                settings=SimpleNamespace(
+                    auto_range_fuel_tanks=True,
+                    fuel_tanks_over_jammers=True,
+                )
+            ),
         ),
     )
 

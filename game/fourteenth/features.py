@@ -250,9 +250,9 @@ FEATURES: tuple[Feature, ...] = (
     ),
     Feature(
         "auto_range_fuel_tanks",
-        "Route-aware fuel-tank top-up",
+        "Route-aware fuel-tank planning (fuel-first)",
         46,
-        settings_fields=("auto_range_fuel_tanks",),
+        settings_fields=("auto_range_fuel_tanks", "fuel_tanks_over_jammers"),
     ),
     Feature(
         "continuous_campaign_clock",

@@ -60,6 +60,7 @@ from .aircraftpainter import AircraftPainter
 from .flightdata import FlightData
 from .flightgroupconfigurator import FlightGroupConfigurator
 from .flightgroupspawner import FlightGroupSpawner
+from .modex import ModexAllocator
 from ...radio.datalink import DataLinkRegistry
 
 if TYPE_CHECKING:
@@ -114,6 +115,7 @@ class AircraftGenerator:
         self.ground_spawns_large = ground_spawns_large
         self.ground_spawns = ground_spawns
         self.country_assigner = country_assigner
+        self.modex_allocator = ModexAllocator(game)
 
     @cached_property
     def use_client(self) -> bool:
@@ -404,6 +406,9 @@ class AircraftGenerator:
                     if group is None:
                         continue
 
+                    # The QRA reserve is the squadron's own jets -- they wear
+                    # the squadron modex sequence too (§62; clones copy it).
+                    self.modex_allocator.assign(squadron, group, country)
                     self.mission_data.intercept_entries.append(
                         InterceptEntry(
                             squadron_id=str(squadron.id),
@@ -503,6 +508,7 @@ class AircraftGenerator:
                 flight.roster.clear()
             if group is None:
                 continue
+            self.modex_allocator.assign(squadron, group, country)
             self.mission_data.red_scramble_templates.append(
                 RedScrambleTemplate(group_name=group_name, label=aircraft.variant_id)
             )
@@ -660,6 +666,7 @@ class AircraftGenerator:
                     group.uncontrolled = False
                     group.units[0].skill = Skill.Client
                 AircraftPainter(flight, group).apply_livery()
+                self.modex_allocator.assign(squadron, group, country)
                 self.unit_map.add_aircraft(group, flight)
                 # A blue CSAR-capable helo parked cold on the ramp is the preferred
                 # (tracked) on-demand rescue source (§21) -- record it for the
@@ -686,6 +693,10 @@ class AircraftGenerator:
             self.ground_spawns,
             self.mission_data,
         ).create_flight_group()
+
+        # Hornet/Tomcat squadrons wear sequenced board numbers (§62); tasked
+        # flights are generated first, so they take the low modexes (X00 up).
+        self.modex_allocator.assign(flight.squadron, group, country)
 
         flight_data = FlightGroupConfigurator(
             flight,

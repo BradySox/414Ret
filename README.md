@@ -322,6 +322,12 @@ and selected later upstream fixes.
   one shared faction voice. Single-nation factions are unaffected. **Pilot rosters match the
   nation, too** — a Greek squadron fills with Greek names, an Iranian one with Persian names,
   and so on, instead of everyone sharing one set of names.
+- **Navy jets wear real squadron modexes.** Hornet and F-14 board numbers used to be random
+  three-digit noise; now each Hornet/Tomcat squadron gets its own modex block (100, 200,
+  300, … — Tomcats take the traditional 100/200 fighter blocks) and its jets are numbered in
+  sequence within it: the first jet 100, the second 101, and so on across the whole mission.
+  Two squadrons never share a block, and every other airframe keeps its normal number.
+  Always on — nothing to configure.
 
 ### Planning and debriefing expose the information crews need
 

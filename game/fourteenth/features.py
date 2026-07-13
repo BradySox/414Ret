@@ -410,6 +410,16 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="redscramble",
         settings_fields=("host_red_scramble",),
     ),
+    Feature(
+        # pydcs deals random three-digit board numbers (an unordered set.pop);
+        # ModexAllocator (game/missiongenerator/aircraft/modex.py) gives each
+        # Hornet/Tomcat squadron a 100/200/300 block (Tomcats first, the CVW
+        # convention) and numbers its jets sequentially X00, X01, ... in
+        # generation order. Pure generation behavior — no setting, no plugin.
+        "squadron_modex",
+        "Squadron-sequenced Hornet/Tomcat board numbers",
+        62,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

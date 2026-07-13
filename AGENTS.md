@@ -1937,6 +1937,20 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`game/missiongenerator/redscrambleluadata.py`,
     `game/missiongenerator/aircraft/aircraftgenerator.py`, `resources/plugins/redscramble/`,
     `game/settings/settings.py`; features doc §61, checklist B14 — needs an in-game pass.)
+62. **Squadron-sequenced Hornet/Tomcat board numbers (modex)** — pydcs deals every aircraft a
+    **random** three-digit `onboard_num` (an unordered `set.pop()`), so Navy jets wore nonsense
+    modexes. `ModexAllocator` (`game/missiongenerator/aircraft/modex.py`, held by
+    `AircraftGenerator`) gives each **Hornet/Tomcat** squadron a modex block (100, 200, 300, …;
+    per coalition, air-wing order, **Tomcats first** — the CVW fighter-block convention; wraps
+    after nine squadrons) and numbers the squadron's jets **sequentially** within it — first jet
+    X00, second X01 — in generation order (tasked flights take the low numbers, then the QRA/§61
+    templates, then the ramp queens). The squadron's whole block is reserved with its pydcs
+    `Country` on first use so a later same-country random draw can't collide. Curated
+    `MODEX_AIRCRAFT_IDS` (FA-18C module + AI F/A-18A/C, the Heatblur F-14 variants + AI F-14A —
+    Iranian Tomcats sequence too); everything else keeps the stock number. Per-mission numbering
+    (the campaign has no per-airframe identity); pure generation behavior — no setting, no
+    plugin, no save change. Tests `tests/missiongenerator/test_modex.py`; features doc §62,
+    checklist B15 — needs an in-game pass.
 
 ---
 

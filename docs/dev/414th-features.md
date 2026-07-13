@@ -5568,6 +5568,47 @@ cloned jets carry their A2A loadout.
 
 ---
 
+## §62 — Squadron-sequenced Hornet/Tomcat board numbers (modex)
+
+The answer to the 2026-07-12 finding: **Hornet and F-14 board numbers were completely random.**
+pydcs assigns every aircraft's `onboard_num` by popping from an *unordered* Python set
+(`Country.next_onboard_num` → `set.pop()` over the free 010–999 pool), so Navy jets spawned
+wearing arbitrary three-digit modexes. Real Navy squadrons don't: the air wing assigns each
+squadron a **modex block** (100, 200, 300, …) and numbers the squadron's jets sequentially
+inside it — the first jet X00, the second X01, the third X02.
+
+**How it works.** `ModexAllocator` (`game/missiongenerator/aircraft/modex.py`, held by
+`AircraftGenerator`) pre-assigns one block per Hornet/Tomcat squadron at construction — per
+coalition, in air-wing iteration order (stable per save), **Tomcats sorted ahead of Hornets**
+so the F-14 squadrons take the traditional CVW 100/200 fighter blocks. Blocks run 100–900 and
+wrap after nine squadrons (board numbers are three digits). `assign(squadron, group, country)`
+then re-stamps every generated unit of a modex squadron with the squadron's next number, in
+generation order: **tasked flights first** (they take X00 up), then the §1 QRA intercept
+templates (the reserve is the squadron's own jets; MOOSE clones copy the template numbers),
+then the §61 red-scramble templates, then the untasked ramp aircraft (`_spawn_unused_for`).
+On first use the squadron's whole block is reserved with its pydcs `Country`
+(`reserve_onboard_num`) so the random allocator can't hand a later same-country aircraft a
+number inside it. Every other airframe keeps the stock pydcs number.
+
+**Scope.** Curated to the Hornet + Tomcat families (`MODEX_AIRCRAFT_IDS`): `FA-18C_hornet`,
+the AI `F/A-18A`/`F/A-18C`, the four Heatblur F-14 variants, and the AI `F-14A` (so Iranian
+Tomcat squadrons sequence too — blocks are per coalition, each starting at 100). The campaign
+does not model individual airframes, so numbering is **per-mission generation order** —
+deterministic within a mission, not sticky to a pilot across turns. Pure generation behavior:
+no setting, no plugin, no save-format change; applies to the next generated mission of any
+existing campaign.
+
+**Tests.** `tests/missiongenerator/test_modex.py`: the cross-flight X00/X01/… sequence,
+distinct per-squadron blocks, Tomcats-before-Hornets block order, per-coalition blocks both
+starting at 100, the non-modex no-op, the once-only whole-block country reservation, the
+nine-squadron wrap, and a pydcs guard that every curated id resolves to a real plane type.
+
+**Needs an in-game pass** (checklist B15): that DCS renders the assigned board number on the
+airframe (and the kneeboard/F2 view reads it) for both the Hornet and the Tomcat — the F-14's
+BORT number is livery-driven, so verify the Heatblur module honors the mission's `onboardNum`.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

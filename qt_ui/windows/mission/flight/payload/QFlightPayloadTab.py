@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
     QComboBox,
@@ -21,6 +22,7 @@ from game import Game
 from game.ato.flight import Flight
 from game.ato.flightmember import FlightMember
 from game.ato.loadouts import Loadout
+from game.fourteenth.fuel_brief import fuel_brief_for, fuel_brief_text
 from qt_ui.widgets.QLabeledWidget import QLabeledWidget
 from qt_ui.widgets.combos.QSquadronLiverySelector import SquadronLiverySelector
 from .QLoadoutEditor import QLoadoutEditor
@@ -228,6 +230,14 @@ class QFlightPayloadTab(QFrame):
         self.fuel_selector = DcsFuelSelector(flight)
         aircraft_layout.addLayout(self.fuel_selector)
 
+        # 414th (§46): the live fuel-plan readout -- the planner's own sortie
+        # numbers (burn vs carried, tanker passes, RTB margin) recomputed as the
+        # fuel slider, loadout, or pylons change, so the payload screen shows why
+        # the jet carries its bags and whether the sortie gets home.
+        self.fuel_brief_label = QLabel()
+        self.fuel_brief_label.setWordWrap(True)
+        aircraft_layout.addWidget(self.fuel_brief_label)
+
         # 414th (§43): remember the fuel + aircraft properties above as this
         # airframe's default so every new flight of the type starts pre-configured.
         # (Loadout has its own "Save Payload"; laser code has a global setting.)
@@ -256,6 +266,28 @@ class QFlightPayloadTab(QFrame):
 
         self.setLayout(layout)
 
+        # §46 fuel-plan refresh triggers: the fuel slider, a loadout swap (wired
+        # in on_new_loadout/on_custom_toggled), and every pylon edit.
+        self.fuel_selector.fuel.valueChanged.connect(self.refresh_fuel_brief)
+        for pylon_editor in self.payload_editor.iter_pylon_editors():
+            pylon_editor.pylon_changed.connect(self.refresh_fuel_brief)
+        self.refresh_fuel_brief()
+
+    def refresh_fuel_brief(self) -> None:
+        brief = fuel_brief_for(
+            self.flight, self.member_selector.selected_member.loadout
+        )
+        self.fuel_brief_label.setText(fuel_brief_text(brief))
+        if brief is not None and brief.is_short:
+            self.fuel_brief_label.setStyleSheet("color: #E8A33D;")
+        else:
+            self.fuel_brief_label.setStyleSheet("")
+
+    def showEvent(self, event: QShowEvent) -> None:
+        # Waypoint edits happen on other tabs; recompute whenever this tab shows.
+        super().showEvent(event)
+        self.refresh_fuel_brief()
+
     def resize_for_flight(self) -> None:
         self.member_selector.setMaximum(self.flight.count - 1)
 
@@ -263,6 +295,7 @@ class QFlightPayloadTab(QFrame):
         self.loadout_selector.setCurrentText(
             self.member_selector.selected_member.loadout.name
         )
+        self.refresh_fuel_brief()
 
     def rebind_to_selected_member(self) -> None:
         member = self.member_selector.selected_member
@@ -275,6 +308,7 @@ class QFlightPayloadTab(QFrame):
         self.payload_editor.set_flight_member(member)
         self.weapon_laser_code_selector.set_flight_member(member)
         self.own_laser_code_info.set_flight_member(member)
+        self.refresh_fuel_brief()
         if self.member_selector.value() != 1:
             self.loadout_selector.setDisabled(
                 self.flight.use_same_loadout_for_all_members
@@ -308,6 +342,7 @@ class QFlightPayloadTab(QFrame):
         if self.flight.use_same_loadout_for_all_members:
             self.flight.roster.use_same_loadout_for_all_members()
         self.payload_editor.reset_pylons()
+        self.refresh_fuel_brief()
 
     def on_custom_toggled(self, use_custom: bool) -> None:
         self.loadout_selector.setDisabled(use_custom)
@@ -320,6 +355,7 @@ class QFlightPayloadTab(QFrame):
             self.payload_editor.reset_pylons()
         if self.flight.use_same_loadout_for_all_members:
             self.flight.roster.use_same_loadout_for_all_members()
+        self.refresh_fuel_brief()
 
     def on_saved_payload(self, payload_name: str) -> None:
         loadout = self.member_selector.selected_member.loadout

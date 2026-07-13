@@ -4,7 +4,7 @@ from typing import Optional
 
 from PySide6.QtWidgets import QComboBox, QWidget, QHBoxLayout, QPushButton
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
 from game import Game
 from game.ato.flight import Flight
@@ -15,6 +15,10 @@ from .QWeaponSettingsDialog import QWeaponSettingsDialog
 
 
 class QPylonEditor(QWidget):
+    #: Emitted after this pylon's store changed (the loadout is already updated).
+    #: Lets the payload tab refresh derived readouts (the §46 fuel-plan line).
+    pylon_changed = Signal()
+
     def __init__(
         self, game: Game, flight: Flight, flight_member: FlightMember, pylon: Pylon
     ) -> None:
@@ -121,6 +125,7 @@ class QPylonEditor(QWidget):
             logging.debug(f"Pylon {self.pylon.number} emptied")
         else:
             logging.debug(f"Pylon {self.pylon.number} changed to {selected.name}")
+        self.pylon_changed.emit()
 
     def weapon_from_loadout(self, loadout: Loadout) -> Optional[Weapon]:
         weapon = loadout.pylons.get(self.pylon.number)

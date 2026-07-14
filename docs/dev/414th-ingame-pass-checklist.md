@@ -1742,8 +1742,8 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   appearing for the **enemy** side's same-airframe flight with BLUE air defenses (known
   per-airframe DCS limitation — note, not a bug).
 
-### H6 — Mission code words + Comms & Brevity card · §4 · ☑ VERIFIED (2026-06-26, user in-game pass)
-- **Setup:** Enable **Package code words & comms/brevity card** (Mission Generator → Kneeboard) on
+### H6 — Mission code words + Comms & Brevity card · §4 · ☑ VERIFIED (2026-06-26, user in-game pass) — **surface superseded 2026-07-13**: the Comms & Brevity card + brevity crib are deleted in the back-to-upstream rework; the code words live in the Mission Info BLUF + a Support Info block (re-check under H12). The planner panel/tooltip/JOIN-tag checks below remain valid.
+- **Setup:** Enable **Package code words** (Mission Generator → Kneeboard) on
   an ATO with a mix of tasks (e.g. a SEAD, a STRIKE, and a CAP package). In the planner, read the
   **persistent code-word panel** under the package list, **hover a package** (tooltip), and **open
   a flight's plan** (find the JOIN waypoint). Note the table. Regenerate the mission a couple of
@@ -1798,9 +1798,9 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 ### H9 — Compact 3-4 page kneeboard deck · §4 · ⊘ RETIRED (2026-07-05, back-to-basics rework; was ☑ VERIFIED 2026-06-26)
 - **What happened:** the compact folding machinery (`compact_kneeboard`, the composite
   P2/P3/flex pages, `_draw_section_if_fits`) was deleted in the kneeboard back-to-basics rework.
-  The kept pieces — the Brief Sheet (§31) leading every flight's block, the cover page (§30), the
-  colour palette, and the threat-intel cards (now default ON) — ride on the stock full deck, which
-  is the only assembly path again. The new deck shape is checked under **H12**.
+  The 2026-07-13 back-to-upstream rework then retired the Brief Sheet + cover page too (§30/§31);
+  the colour palette and the threat-intel cards (default ON) survive on the upstream-shaped deck.
+  The current deck shape is checked under **H12**.
 
 ---
 
@@ -1935,12 +1935,13 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `Squadron.faker` wiring didn't take); blank/garbled names; or a recruitment crash on a locale
   with no gendered names (guarded + test-locked — should be impossible).
 
-### H10 — Shared-airframe kneeboard index · §27 / §30 · ☐ UNTESTED (folded into the cover page — verify under K2; condition not met in the 2026-06-28 pass)
-- **Not exercised (2026-06-28, audience pass — user confirmed the condition wasn't set up):** the mission did **not** have 2+ client flights of the same airframe, so the index section had nothing to render — no observation either way, **not** a fail. Re-check target: frag **2+ client flights of the same airframe** and confirm the cover page (page 1) carries the callsign / task / start-page index block, and that a lone flight of a type shows none. If the index never appears with 2+ shared, that is the K2 cover-page fail signature.
-- **Folded into the cover page (§30).** The standalone index page is gone; the index is now a section
-  on the always-present cover, so its in-game check is covered by **K2**. (Page-math + lone-flight
-  no-index regression now in `tests/missiongenerator/test_kneeboard_cover.py`.)
-- **Headless adjudication (2026-06-26):** *(historical — was `tests/missiongenerator/test_kneeboard_index.py`)* covers the
+### H10 — Shared-airframe kneeboard index · §27 · ☐ UNTESTED (standalone page again since the 2026-07-13 back-to-upstream rework; condition not met in the 2026-06-28 pass)
+- **Not exercised (2026-06-28, audience pass — user confirmed the condition wasn't set up):** the mission did **not** have 2+ client flights of the same airframe, so the index had nothing to render — no observation either way, **not** a fail.
+- **Surface history:** briefly a section on the §30 cover page; the 2026-07-13 back-to-upstream
+  rework retired the cover and the index is a **standalone conditional page** again
+  (`KneeboardIndexPage`, only when 2+ client flights share the airframe). Page-math + lone-flight
+  no-index regression in `tests/missiongenerator/test_kneeboard_index.py`.
+- **Headless adjudication (2026-06-26, re-valid 2026-07-13):** the tests cover the
   start-page math (index is page 1, blocks start at 2 and advance by block size), callsign grouping +
   sort, and the index page render. **Residual (in-sim only):** the index actually appears in-cockpit
   and its page numbers line up with the stacked deck DCS builds.
@@ -1971,25 +1972,30 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   block); planner suddenly fragging tankers for the King (the fallback must stay out of
   `unit_type.fuel_consumption`).
 
-### H12 — Back-to-basics kneeboard deck (Brief Sheet + cover on the full deck) · §31 / §30 · ◐ PARTIAL (2026-07-05, user miz pass, session `happy-sutherland-6113a1`: **renders verified** — a generated Inherent Resolve deck showed the right order (cover with phase/ROE band → colour-coded Brief Sheet fronting the flight's block → Mission Info with BLUF + full steerpoint table → Support Info → threat cards), colours live everywhere, Brief Sheet auto-fill fully populated (route times, QNH/QFE, loadout, laser, SAR, code words), code words in all three homes. **Still owed** = a deck-length re-check with trimmed toggles: the flown deck ran ~12 pages because the campaign carried every optional page ON from the compact-mode days (recon ×3, packages+map ×2, fuel ladder, brevity) — settings-driven, not the fail signature; on defaults the deck should read ~5 pages)
-- **What it is:** the 2026-07-05 back-to-basics rework — the compact 3-4 page folding machinery is
-  deleted (H9 retired) and the full multi-page deck is the only assembly path, fronted by the kept
-  pieces: page 1 the **cover** (op/turn/date + SITREP + shared-airframe index + phase/ROE band), each
-  flight's block then opening on its **Brief Sheet** (the colour-coded Appendix-A one-pager) followed
-  by the stock Game Plan (BLUF + steerpoint table), Support Info, and the **Threat Intel Brief**
-  cards page (its `generate_threat_intel_kneeboard` default flipped **ON**).
-- **Headless adjudication (2026-07-05):** deck order + page composition covered by
-  `tests/missiongenerator/test_kneeboard_cover.py`, `test_brief_sheet.py`, `test_kneeboard_bluf.py`,
-  `test_threat_intel_kneeboard.py`; full suite green. **Residual (in-sim only):** the deck length
-  on default toggles (a campaign upgraded from compact mode keeps its old option set, where every
-  toggle was cheap — turning off recon/packages/fuel/brevity restores the ~5-page deck).
-- **Setup:** generate a mission with a client Strike/SEAD flight on defaults; open the kneeboard.
-- **Pass:** page 1 cover, page 2 the flight's colour-coded Brief Sheet, then Game Plan (full
-  steerpoint table restored) / Support Info / threat cards; no composite "Threats & Targets" or
-  "Comms & Coordination" pages; deck length acceptable in the cockpit.
-- **Fail signature:** a missing Brief Sheet or one wearing another flight's data (the per-flight
-  block order broke); threat cards absent on defaults (the default flip regressed); the deck ballooning
-  past ~7 pages on defaults (an optional page's default drifted ON).
+### H12 — Back-to-upstream kneeboard deck (upstream pages + folded 414th info) · §31 / §30 · ☐ UNTESTED (reworked 2026-07-13; the 2026-07-05 back-to-basics render pass covered the now-retired cover/Brief-Sheet deck)
+- **What it is:** the 2026-07-13 back-to-upstream rework (user markup pass on a flown Noisy Cricket
+  deck) — the cover page, Brief Sheet and Comms & Brevity card are **deleted**; the deck is
+  upstream's page set with the kept 414th info folded in. Per flight: **Mission Info** (BLUF —
+  task/TOT, push words, JAM BACKUP, compact THREATS AIR/SAM, LOADOUT, SAR if-down — then airfield
+  table, flight plan with Fuel column + RTB margin, upstream's `Bullseye:` line, weather,
+  bingo/joker, laser, and the SITREP section at the bottom) → **Support Info** (comm ladder /
+  AEW&C / tankers / JTAC / airfield directory + the colour-keyed **Code Words block** when
+  `enable_package_code_words` is on) → Notes/task page → the setting-gated extras (threat cards
+  default ON). A **flight index** page fronts the airframe deck only when 2+ client flights share
+  the type (H10).
+- **Headless adjudication (2026-07-13):** deck composition + BLUF lines + code-words block covered by
+  `tests/missiongenerator/test_kneeboard_bluf.py`, `test_kneeboard_index.py`,
+  `test_threat_intel_kneeboard.py`, `test_flightplan_fuel_column.py`; full suite green.
+  **Residual (in-sim only):** the in-cockpit read of the reworked Mission Info page (BLUF density,
+  SITREP fitting under the flight plan) and the Support page's code-words block.
+- **Setup:** generate a mission with a client Strike/SEAD flight on defaults (code words ON for the
+  Support block); open the kneeboard on turn 2+ so a SITREP exists.
+- **Pass:** the flight's deck opens on Mission Info (no cover, no Brief Sheet); BLUF shows task,
+  threats, loadout, SAR; the Bullseye line sits under the flight plan; the SITREP section renders at
+  the bottom without clipping; Support Info shows the code-words block; no Comms & Brevity page.
+- **Fail signature:** a cover/Brief-Sheet page still generated (stale build); the SITREP clipped off
+  the page bottom on a long flight plan; TOP THREAT prose back in the BLUF; the code-words block
+  missing with the toggle ON; threat cards absent on defaults.
 
 ### J1 — Capability-weighted off-mission combat · §26 · ☑ VERIFIED (2026-06-28, audience in-game pass — user "good, I think"; off-mission auto-resolve looked right, not deeply scrutinized)
 - **Headless adjudication (2026-06-26):** `tests/test_combat_resolution_capability.py` covers the
@@ -2070,35 +2076,26 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   with defaults — budgets ignored is the tell), the Theater page overflowing at 1080p, campaign
   switching not re-seeding the group, or the settings dialog missing any of the new sections.
 
-### K2 — Kneeboard cover page (op/turn header + SITREP + index) · §29 / §30 · ☑ VERIFIED (2026-06-28, audience in-game pass — SITREP numbers across turns OK; render previously confirmed)
-- **Cockpit-confirmed (2026-06-27, user in-game pass — session `suspicious-goldberg`/`1ca51fbf`):**
-  the kneeboard deck (cover page + compact deck) renders cleanly in the cockpit — **"Kneeboards look
-  fantastic."** That clears the render/legibility half of this row (corroborating H2/H9, already
-  VERIFIED). Residual is only **SITREP-number accuracy from turn 2 on** (losses/captures/recoveries
-  matching the prior turn's debrief) and the index start-page math on a live multi-flight deck.
-  *(This confirmation was given in-game and dropped — PR #226 recorded only the headless evidence;
-  recovered here.)*
-- **Now hosts the SITREP (§29) AND the shared-airframe index (§27/H10)** on one always-present cover
-  page. This row supersedes the standalone SITREP-band and index-page checks.
-- **Headless adjudication (2026-06-27):** `tests/test_sitrep.py` covers the SITREP model + formatting
-  (side split, captured/lost by side, Combat SAR count, "claimed" enemy phrasing, singular/plural) and
-  `sitrep_for_kneeboard` gating (off / no prior turn / quiet turn). `tests/missiongenerator/test_kneeboard_cover.py`
-  covers the cover assembly: index start-page math (cover = page 1, blocks at 2/5/9), a lone flight gets
-  a cover with **no** index section, SITREP gating, and a full render. `record_sitrep` is wired into
-  `commit()` (and added to the asserted `COMMIT_STEPS`). A **render smoke** drew the whole cover (op/turn
-  header + SITREP + index table) through the real `KneeboardPageWriter` (41 KB PNG, correct text).
-  **Residual (in-cockpit only):** the cover's look on a live kneeboard and that the numbers + page
-  numbers match.
-- **Setup:** Generate a mission (and fly a turn so turn 2 has a prior-turn SITREP). Open the kneeboard;
-  for the index, frag **2+ client flights of one airframe**.
-- **Pass:** **Page 1 is the cover** — `"<Operation> — Turn N"` + date always; a **"SITREP — Turn N-1"**
-  section from turn 2 on (friendly + enemy-claimed losses, bases captured/lost, pilots recovered,
-  matching the previous turn); and a **flight index** (callsign / task / start page) when 2+ share the
-  airframe, whose start pages land on the right decks. **Turn 1 / a quiet turn / toggle off** → no SITREP
-  section. A lone flight → cover with no index section.
-- **Fail signature:** no cover page; SITREP present on turn 1 or after a quiet turn (gating wrong);
-  numbers not matching the debrief; enemy losses not "claimed"; index start pages off by the cover; an
-  index shown for a lone flight; a stale SITREP from two turns ago (capture not running each `commit`).
+### K2 — Campaign SITREP band on the Mission Info page · §29 · ☐ UNTESTED (surface moved 2026-07-13; the cover-page host it was ☑ VERIFIED on 2026-06-28 is retired)
+- **History:** the SITREP band shipped on the briefing page, moved to the §30 cover page (where this
+  row was VERIFIED 2026-06-28 — numbers across turns OK, "Kneeboards look fantastic"), and returned
+  to the **bottom of the Mission Info page** when the 2026-07-13 back-to-upstream rework retired the
+  cover. The model/capture/gating are unchanged; only the render surface moved, so the residual is
+  the new placement's in-cockpit read.
+- **Headless adjudication (2026-06-27, re-valid 2026-07-13):** `tests/test_sitrep.py` covers the
+  SITREP model + formatting (side split, captured/lost by side, Combat SAR count, "claimed" enemy
+  phrasing, singular/plural) and `sitrep_for_kneeboard` gating (off / no prior turn / quiet turn);
+  `tests/missiongenerator/test_kneeboard_index.py` covers the generator's `_briefing_sitrep` gate.
+  `record_sitrep` is wired into `commit()` (asserted in `COMMIT_STEPS`).
+- **Setup:** Generate a mission (and fly a turn so turn 2 has a prior-turn SITREP); open the Mission
+  Info kneeboard page.
+- **Pass:** a **"SITREP — Turn N-1"** section renders at the bottom of Mission Info from turn 2 on
+  (friendly + enemy-claimed losses, bases captured/lost, pilots recovered, matching the previous
+  turn), fitting under the laser-code table. **Turn 1 / a quiet turn / toggle off** → no SITREP
+  section.
+- **Fail signature:** SITREP present on turn 1 or after a quiet turn (gating wrong); numbers not
+  matching the debrief; enemy losses not "claimed"; the section clipped off the page bottom on a
+  long flight plan; a stale SITREP from two turns ago (capture not running each `commit`).
 
 ### K3 — UI audit follow-up: settings greying + web map discoverability/legend · §28 audit · ☐ UNTESTED (built 2026-07-10)
 - **Headless adjudication (2026-07-10):** `tests/test_settings_dependencies.py` locks the greying
@@ -2704,7 +2701,8 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   map on turn 1 (Disrupt); the 4 valleys are permanent, so they look the same across the arc.
 - **Pass:** 4 red dashed no-strike areas on the map — the two corridor lanes (Helmand green zone
   Kajaki→Marjah; the Musa Qala 611 feeder) + two boxes (Tarin Kowt bowl, Delaram junction) — matching
-  between the web map and the F10/ME map; the kneeboard CAMPAIGN PHASE band lists them as OFF LIMITS; a
+  between the web map and the F10/ME map (the kneeboard CAMPAIGN PHASE band that also listed them as
+  OFF LIMITS retired with the §30 cover, 2026-07-13); a
   player fixed strike *inside* a valley drains the mandate with an "ROE violation" note; a strike in the open
   desert does not; Armed Recon vs trail convoys flies anywhere and never counts; retaking a stronghold (air
   assault) never drains the mandate even when the CP sits in a valley.
@@ -2949,7 +2947,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `fuel_tanks_over_jammers` ON (defaults).
 - **Pass:** a Viper that used to plan pre+post-vul refueling now shows **3 bags** (centerline tank in the
   payload editor, ALQ-184 gone) and only **one** REFUEL waypoint (or none); its HARMs/AMRAAMs are untouched;
-  the kneeboard Brief Sheet fuel column/RTB margin reads consistent with the bags (no "-short, tank or
+  the kneeboard flight plan's fuel column/RTB margin reads consistent with the bags (no "-short, tank or
   divert" on a sortie the bags cover); a jet whose extra bag would NOT save a pass keeps its jammer; a
   hand-edited (custom) loadout is never touched.
 - **In-APP pass (the §46 fuel-plan readout, no DCS needed):** open Edit flight → Payload on any planned

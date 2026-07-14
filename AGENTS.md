@@ -901,9 +901,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the compact folding machinery (`compact_kneeboard`, `_compact_kneeboard_pages`, the
     `CombatIntelPage`/`CommsCoordPage`/`FlexReferencePage` composites, `_draw_section_if_fits`, the
     adaptive flex page) was the fork's biggest `kneeboard.py` churn vs upstream and is deleted. The
-    squadron-picked keepers survive on the stock **full deck**, now the only assembly path: the cover
-    page (§30) + the Brief Sheet (§31) leading each flight's block + the colour palette + the threat
-    cards (`generate_threat_intel_kneeboard` default flipped ON). The fuel ladder is **folded into the
+    **2026-07-13 back-to-upstream rework** (§30/§31 retirements) finished the arc: the deck is now
+    upstream's page set (Mission Info → Support Info → Notes → task page + the setting-gated extras)
+    with the kept 414th info folded into those pages; the colour palette + the threat cards survive
+    (`generate_threat_intel_kneeboard` default ON). The fuel ladder is **folded into the
     flight plan** (2026-07-05, user call): a `Fuel` column + a one-line RTB margin call-out on Mission
     Info — the standalone Fuel Ladder page + `generate_fuel_ladder_kneeboard` are deleted. Do not
     restore the folding machinery. (features doc §4, checklist H9 retired → H12.)
@@ -921,7 +922,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     sees all that type's flight decks stacked. `KneeboardGenerator.generate` keeps each flight's pages a
     contiguous, callsign-sorted block and prepends a one-page **index** (callsign / task / start page) only
     when 2+ client flights share the airframe (a lone flight is unchanged). `pages_by_airframe` →
-    `client_flights_by_airframe` + `_build_kneeboard_index` + `KneeboardIndexPage`.
+    `client_flights_by_airframe` + `_build_index_page` + `KneeboardIndexPage`. (Was briefly a section on
+    the §30 cover page; standalone again since the 2026-07-13 back-to-upstream rework.)
     (`game/missiongenerator/kneeboard.py`; features doc §27, checklist H10.)
 28. **Settings IA reorg + difficulty presets** — the settings dialog + New Game wizard are
     100% metadata-driven (they walk `Settings.pages()/sections()/fields()`), so a single ordered
@@ -973,45 +975,38 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     56-finding UI audit; deferred: a full right-click context menu + Leaflet-tooltip theming + the deeper
     flow reworks.
 29. **Campaign SITREP kneeboard band** — a "what happened last turn" digest on the next mission's
-    kneeboard cover page (a cockpit intel brief). `MissionResultsProcessor.commit()` gets a final
+    kneeboard (a cockpit intel brief). `MissionResultsProcessor.commit()` gets a final
     `record_sitrep` step that reads the debriefing it already has — per-side losses (`loss_counts`),
     base captures (the cached pre-commit snapshot), Combat SAR rescues — into a `Sitrep`
     (`game/sitrep.py`) stored as `game.last_sitrep` (pickled, `__setstate__` default None). Enemy
-    losses are framed as **"claimed"** to respect the recon-fog model. The SITREP renders on the
-    always-present **cover page (§30)** as a "SITREP — Turn N" section, gated by `sitrep_for_kneeboard`;
+    losses are framed as **"claimed"** to respect the recon-fog model. The SITREP renders as a
+    "SITREP — Turn N" section at the **bottom of the Mission Info page** (back where the band first
+    shipped — the §30 cover page that hosted it 2026-06→07 is retired), gated by `sitrep_for_kneeboard`;
     hidden on turn 1 / a quiet turn / when the `generate_sitrep_kneeboard` toggle (Kneeboards page,
     default ON) is off. v1 covers losses/captures/rescues; front movement + SCAR commander capture are
     deferred. (`game/sitrep.py`, `game/sim/missionresultsprocessor.py`, `game/game.py`,
     `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`; features doc §29,
     checklist K2.)
-30. **Dedicated kneeboard cover page** — a single front sheet that **always** leads a flight's deck,
-    consolidating three things: the **operation/turn/date header** (new — every deck opens telling you
-    what op + turn), the previous turn's **SITREP** (§29, moved off the briefing-page band so it stops
-    crowding the flight plan), and the shared-airframe **flight index** (§27, was a separate conditional
-    page). `CoverPage`
-    (`_build_cover_page`) is always prepended in `KneeboardGenerator.generate`, replacing the conditional
-    `KneeboardIndexPage` and the `BriefingPage` SITREP band. The cover is page 1 so decks start on page 2
-    (the §27 start-page math is preserved); the index section appears only for 2+ shared-airframe flights,
-    the SITREP section only when there's something to report. (The retired compact mode briefly parked
-    the friendly-package list here; the list lives only on its standalone `FriendlyPackagesPage` now.)
-    (`game/missiongenerator/kneeboard.py`, `game/sitrep.py`; features doc §30, checklist K2/H10.)
-31. **One-page Brief Sheet + deck-wide colour scheme** — every flight's block leads with a single
-    scannable **Brief Sheet** (`BriefSheetPage`) modelled on the squadron's printed Appendix A one-pager
-    (Red Tide handbook): header, mission, the **full labelled route — every steerpoint with number +
-    planned time** (`HOLD 1 12:32 → TKR 2 12:38 → JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10`; consecutive
-    strike points collapse to a range), admin, threats (air + SAM), game plan, comms, code words,
-    bullseye, fields (RWY/ATC/TCN), WX (departure-field QNH/QFE + surface wind), loadout, laser,
-    Combat SAR — **auto-filled** by
-    `_build_brief_sheet_data` (route from waypoints, loadout from the jet's pylons cleaned to ordnance, air
-    threats from the enemy faction's fighters, the rest re-surfaced). Since the back-to-basics rework it
-    *fronts* the stock deck — the Game Plan/BLUF + steerpoint table follow it. Empty fields render a
-    `______` **fill-in blank**
-    (`_blank_line`) like the printed template — the layout never collapses — plus a `NOTES` blank. A new
-    **theme-aware four-colour semantic palette** on `KneeboardPageWriter` (+ a `text_runs` inline-colour
-    primitive) — blue nav/comms, amber threats/fuel, green success, red abort — is applied across the
-    Brief Sheet, the **threat cards** (amber MEZ/Detect, blue HARM/cues; their Threat Intel Brief page is
-    default ON) and the **code words card** (push blue, SUCCESS
-    green, ABORT red) so the whole deck reads as one product. Loadout/laser validated against a real `.miz`.
+30. **Dedicated kneeboard cover page** — RETIRED (2026-07-13, the kneeboard back-to-upstream rework;
+    user markup pass on a flown Noisy Cricket deck struck the whole page). `CoverPage`,
+    `_build_cover_page` and the CAMPAIGN PHASE/ROE band it carried are deleted; the deck opens straight
+    on the stock Mission Info page. The SITREP (§29) moved back to the Mission Info page bottom; the
+    flight index (§27) is a standalone conditional page again; the phase/ROE keep their non-kneeboard
+    surfaces (client ribbon, map zone drawings, Qt ROE warning — §40, with `roe_summary_lines` kept in
+    `phases.py` for any future surface). Do not restore the cover — new kneeboard info folds into an
+    existing stock page. (features doc §30.)
+31. **One-page Brief Sheet + deck-wide colour scheme** — RETIRED (2026-07-13, the kneeboard
+    back-to-upstream rework): the user's markup struck the Brief Sheet's MISSION/ROUTE/GAME PLAN/
+    BULLSEYE/FIELDS/WX/LASER rows (each duplicated a stock page) and the Comms & Brevity card except
+    its code words; `BriefSheetPage`/`BriefSheetData`/`BrevityCard` + the route/mission/game-plan/
+    laser/freq/weather/fields helpers + `game/data/brevity_reference.py` are deleted. **Survivors,
+    folded into upstream's pages:** the Mission Info **BLUF** gained the compact THREATS AIR/SAM lines,
+    a one-line LOADOUT summary and the SAR if-down drill (`_brief_air_threats`/`_brief_sam_threats`/
+    `_brief_loadout`/`_brief_sar`; the verbose TOP THREAT line and the BLUF's duplicate BULLSEYE line
+    are gone — upstream's post-flight-plan `Bullseye:` line returns), and the **Support Info page**
+    gained the colour-keyed **Code Words block** (`CodeWordsBlock`/`_render_code_words`, gated by
+    `enable_package_code_words`). The theme-aware four-colour palette + `text_runs` primitive stay on
+    `KneeboardPageWriter` (threat cards + code words + the amber RTB margin still use them).
     (`game/missiongenerator/kneeboard.py`; features doc §31, checklist H12.)
 32. **Arc Light heavy-bomber Strike carpet** — the first **Vietnam Ops suite** feature (design note
     `414th-vietnam-ops-notes.md`; settings page §28 "Vietnam Ops"). Reframes Arc Light as an *effect of the
@@ -1219,10 +1214,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (regression is authored-only, P2). The active phase reorders **only the offensive middle** of
     `PlanNextAction`'s HTN root methods (BLUE only; the reactive prefix + tail are fixed — the §17 boundary),
     shifting which objectives get first claim on offensive jets. Always explains itself (§3.4 legibility:
-    "Interdiction — enemy IADS 22% · air threat low · front static") on the kneeboard **cover-page band**
-    (which also **spells the ROE out** — OFF LIMITS zones / LOCKED classes / CLEARED classes via
-    `roe_summary_lines`) and
-    a new **client campaign-status ribbon** (`CampaignStatusBar` over the map, fed by `GameJs.campaign_status`
+    "Interdiction — enemy IADS 22% · air threat low · front static") on
+    a **client campaign-status ribbon** (`CampaignStatusBar` over the map, fed by `GameJs.campaign_status`
     — which also carries campaign name/turn/date, previously never sent to the client, + the political-will
     meters on Vietnam campaigns). Gated by `campaign_phases` (default **ON** — [DECIDED] Tier-0 inference is
     the default; the toggle is the kill switch). **W4 added the authored tier (P2) + the ROE escalation
@@ -1825,9 +1818,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     *single-flight* missions where `outPicture`-to-all == the one pilot). The emitter
     (`game/missiongenerator/briefingluadata.py`, `populate_briefing_lua`, wired in `luagenerator.py`)
     emits `dcsRetribution.briefing` — a shared **header** (campaign / mission = **raw `game.turn`**,
-    so the number matches the §30 kneeboard cover's "Turn N" — `turn+1` was confusing, card "Mission
+    so the number matches the kneeboard's turn numbering — `turn+1` was confusing, card "Mission
     2" next to the kneeboard's "Turn 1"; 0-indexed, so a fresh campaign reads "Mission 0" / "Turn 0"
-    alike / date = `game.current_day` / clock = `game.conditions.start_time`) + one **record per
+    alike; since the §30 cover retired 2026-07-13 this popup is the deck's only op/turn/date banner
+    / date = `game.current_day` / clock = `game.conditions.start_time`) + one **record per
     player-crewed flight** (`client_units` non-empty), keyed by `FlightData.group_name` — only when
     `mission_briefing_popup` is on and the mission has a player-crewed flight (else no node ⇒ the
     plugin no-ops). All fields are single-line strings; the Lua composes the multi-line card with

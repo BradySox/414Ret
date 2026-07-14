@@ -41,8 +41,8 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §27 | Shared-airframe kneeboard index | — | — |
 | §28 | Settings IA reorg + difficulty presets | — | — |
 | §29 | Campaign SITREP kneeboard band | — | `generate_sitrep_kneeboard` |
-| §30 | Dedicated kneeboard cover page | — | — |
-| §31 | One-page Brief Sheet + deck-wide colour scheme | — | — |
+| §30 | Dedicated kneeboard cover page _(retired)_ | — | — |
+| §31 | One-page Brief Sheet + deck-wide colour scheme _(retired)_ | — | — |
 | §32 | Arc Light heavy-bomber Strike carpet | `vietnamops` | `vietnam_arc_light` |
 | §33 | AAA flak gauntlet | `vietnamops` | `vietnam_flak_gauntlet` |
 | §34 | Naval gunfire support | `vietnamops` | `vietnam_naval_gunfire` |

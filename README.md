@@ -344,28 +344,19 @@ and selected later upstream fixes.
   code has a campaign setting; this covers the rest of that box. Applies to your side only.
 - Debriefing begins with mission impact — territorial changes, runway damage, and losses —
   before the full event detail.
-- Every flight's kneeboard leads with a **one-page Brief Sheet** —
-  a single scannable, **colour-coded** brief modelled on the squadron's printed brief sheet: header,
-  mission, the full route with **steerpoint numbers and times** (`HOLD 1 12:32 → TKR 2 12:38 →
-  JOIN 3 12:49 → TGT 5-8 13:01 → LAND 10` — every waypoint listed; multiple strike points collapse
-  to one range),
-  bingo/joker/divert, air + SAM threats, game plan, comms, code words, bullseye, fields (RWY/ATC/TCN),
-  weather (departure-field **QNH/QFE** + surface wind), loadout, laser codes, and Combat SAR — all
-  filled in from the mission. Colour does the work: **blue** for
-  nav and freqs, **amber** for threats and fuel, **green** for the success word, **red** for abort, so you
-  find what you need at a glance. Empty fields keep a `______` fill-in blank, like a real brief sheet, so
-  you can write the rest in. The standard pages (Game Plan with the full steerpoint table, Support Info,
-  the threat cards) follow it. (The former experimental "compact deck" folding was retired — the deck is
-  the classic multi-page layout again, fronted by the pieces that earned their keep.)
-- Every flight's kneeboard opens on a **cover page**: the operation name, turn, and date up top; a
-  **"last turn" SITREP** (both sides' losses — the enemy's as *claimed* — bases captured or lost, and
-  downed pilots recovered); and, when several flights share an airframe (DCS stacks them into one
-  kneeboard), a **flight index** — each callsign, task, and start page — so you flip straight to your
-  own deck. The
-  SITREP appears from your second mission on and hides after a quiet turn (*Campaign SITREP band*,
-  Kneeboards page, on by default).
-- Kneeboards are restyled to use the page: clean headings with underline rules and spacing
-  (no wasted bottom-half), and the Friendly Packages list flows into two columns when long.
+- The kneeboard is the **classic Retribution deck** (Mission Info → Support Info → task pages),
+  with the 414th's additions folded into those pages instead of extra ones. The **Mission Info
+  page opens on a BLUF block**: your task, target and TOT; the push/success/abort code words; the
+  JAM BACKUP channel when the enemy is jamming; a compact **air + SAM threat picture**
+  (`SA-5 S-200 138nm · SA-11 Buk 27nm`); your **loadout** in one line; and the **SAR** assets +
+  if-down drill. Below it, the standard airfield table, the flight plan, bullseye, weather,
+  bingo/joker and laser codes.
+- A **"last turn" SITREP** (both sides' losses — the enemy's as *claimed* — bases captured or
+  lost, and downed pilots recovered) closes the Mission Info page from your second mission on,
+  hiding after a quiet turn (*Campaign SITREP band*, Kneeboards page, on by default).
+- When several flights share an airframe (DCS stacks them into one kneeboard), a **flight
+  index** page — each callsign, task, and start page — fronts the deck so you flip straight to
+  your own block.
 - **Custom kneeboards** can be imported from the *Kneeboards* toolbar button — add an image
   once and it's injected into every flight's kneeboard (or scoped to one airframe), stored in
   the campaign save, instead of hand-editing each mission.
@@ -378,9 +369,9 @@ and selected later upstream fixes.
   themed table: a **push word per task** (STRIKE / SEAD / OCA / CAS / …) plus SUCCESS / ABORT, so
   one call ("Red Kite") tells everyone SEAD is pushing. Planners see the full table *before*
   generating the mission — a **persistent panel** in the package list, a tooltip, and a
-  `PUSH <word>` tag on the join waypoint — to build a briefing. A **Comms & Brevity** kneeboard
-  page carries the table (your task marked) plus a brevity crib filtered to your task. Fresh words
-  every turn, stable while you plan. Off by default.
+  `PUSH <word>` tag on the join waypoint — to build a briefing. In the cockpit, your own words
+  ride the Mission Info BLUF and the full colour-keyed table (your task marked) sits on the
+  Support Info page. Fresh words every turn, stable while you plan. Off by default.
 - The **fuel ladder rides in the flight plan**: the Mission Info steerpoint table has a `Fuel`
   column — planned fuel remaining at each steerpoint — with the RTB margin (how much you have to
   spare over what you need to get home — negative means tank or divert) called out once under the

@@ -2229,16 +2229,17 @@ class Settings:
         ),
     )
     enable_package_code_words: bool = boolean_option(
-        "Package code words & comms/brevity card",
+        "Package code words",
         MISSION_GENERATOR_PAGE,
         KNEEBOARD_SECTION,
         default=False,
         detail=(
             "Give each package three SRS code words (push / success / abort) and surface "
             "them so a briefing can be built before generation: a package tooltip in the "
-            "ATO list and a 'PUSH <word>' tag on the join waypoint, plus a Comms & "
-            "Brevity kneeboard page (the code words + a task-filtered brevity crib). "
-            "Human comms aids only — nothing scripts off them. Off by default."
+            "ATO list and a 'PUSH <word>' tag on the join waypoint, plus the code words "
+            "on the kneeboard (the flight's own words in the Mission Info BLUF and the "
+            "side-wide table on the Support Info page). Human comms aids only — nothing "
+            "scripts off them. Off by default."
         ),
     )
     generate_sitrep_kneeboard: bool = boolean_option(
@@ -2247,10 +2248,10 @@ class Settings:
         KNEEBOARD_SECTION,
         default=True,
         detail=(
-            "Add a short 'what happened last turn' band to the briefing/Game Plan "
+            "Add a short 'what happened last turn' band to the Mission Info "
             "kneeboard page: both sides' losses (enemy as claimed), bases captured or "
             "lost, and downed pilots recovered. Hidden on turn 1 and after a quiet "
-            "turn, and only drawn when it fits under the flight plan. On by default."
+            "turn. On by default."
         ),
     )
     target_recon_extra_threat_search_nmi: int = bounded_int_option(

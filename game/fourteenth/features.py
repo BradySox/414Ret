@@ -135,11 +135,17 @@ FEATURES: tuple[Feature, ...] = (
         29,
         settings_fields=("generate_sitrep_kneeboard",),
     ),
-    Feature("kneeboard_cover_page", "Dedicated kneeboard cover page", 30),
+    Feature(
+        "kneeboard_cover_page",
+        "Dedicated kneeboard cover page",
+        30,
+        retired=True,
+    ),
     Feature(
         "brief_sheet_kneeboard",
         "One-page Brief Sheet + deck-wide colour scheme",
         31,
+        retired=True,
     ),
     Feature(
         "vietnam_arc_light",

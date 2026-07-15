@@ -70,7 +70,8 @@ and selected later upstream fixes.
 - **Warships fire real cruise missile raids.** A Burke's Tomahawks (or the enemy's Kalibr
   ships, with the CurrentHill packs) finally do their job: put an F10 map marker on a shore
   target and call **F10 → Cruise Missile Strike** to ripple a salvo from the nearest capable
-  ship — or turn on auto raids and each side commits one salvo a turn at its best reachable
+  ship (want a specific weight of fire? type just a number in the marker's text — `6` or
+  `#6` — and exactly that many fly) — or turn on auto raids and each side commits one salvo a turn at its best reachable
   target (command bunkers and comms first, then war industry), announced to the defender only
   as a bare **"LAUNCH WARNING — enemy cruise missile launch detected"**. The missiles are real
   weapons from real, sinkable ships: kills count at debrief, point-defense SAMs (Tor, Pantsir,

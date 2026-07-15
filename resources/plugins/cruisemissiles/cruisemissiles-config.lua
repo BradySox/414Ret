@@ -11,6 +11,8 @@
 --     mechanism, pushed by script).
 --   * PLAYER call-for-fire: an F10 "Cruise Missile Strike" menu fires a salvo from the nearest
 --     capable friendly ship onto the coalition's last F10 map marker (the §34 NGFS pattern).
+--     The marker's own text sizes the salvo: just a number ("6" or "#6") fires exactly that
+--     many (magazine-capped); any other text fires the default.
 --
 -- The emitted `remaining` is this mission's HARD expenditure cap per ship group (the campaign
 -- magazine -- DCS would happily reload every mission, Python would not). Everything actually
@@ -156,6 +158,21 @@ local function nearestCapableShip(side, target)
     return bestName
 end
 
+-- Salvo size for a call-for-fire: the marker itself can order the count. A marker
+-- whose text is just a number -- "6", or "#6" ("a # and nothing else") -- fires
+-- exactly that many; any other text (or none) fires the default salvo. The
+-- magazine still caps whatever is asked, so a big number just empties the tubes.
+local function salvoFromMarkText(text)
+    if type(text) ~= "string" then
+        return PLAYER_SALVO
+    end
+    local n = tonumber(text:match("^%s*#?%s*(%d+)%s*$"))
+    if n and n >= 1 then
+        return n
+    end
+    return PLAYER_SALVO
+end
+
 -- Fire on the coalition's most recent F10 map marker (the §34 NGFS pattern).
 local function fireOnLastMark(side)
     local ok, err = pcall(function()
@@ -169,7 +186,8 @@ local function fireOnLastMark(side)
             end
         end
         if not best then
-            cmMsg(side, "Cruise missile strike: place an F10 map marker on the target first.")
+            cmMsg(side, "Cruise missile strike: place an F10 map marker on the target "
+                .. "first (marker text '#N' sets the salvo size).")
             return
         end
         -- mark pos is a DCS vec3 { x = north, y = alt, z = east }.
@@ -179,7 +197,8 @@ local function fireOnLastMark(side)
             cmMsg(side, "Cruise missile strike: no ship with missiles in range of that marker.")
             return
         end
-        if fireCruise(ship, tgt.x, tgt.y, PLAYER_SALVO, "your F10 marker") == 0 then
+        local salvo = salvoFromMarkText(best.text)
+        if fireCruise(ship, tgt.x, tgt.y, salvo, "your F10 marker") == 0 then
             cmMsg(side, "Cruise missile strike: launch failed -- magazine dry.")
         end
     end)
@@ -219,7 +238,10 @@ local ok, err = pcall(function()
                 local root = missionCommands.addSubMenuForCoalition(side, "Cruise Missile Strike")
                 missionCommands.addCommandForCoalition(
                     side,
-                    string.format("Fire %d at last F10 map marker", PLAYER_SALVO),
+                    string.format(
+                        "Fire at last F10 map marker (%d, or marker text #N)",
+                        PLAYER_SALVO
+                    ),
                     root, fireOnLastMark, side
                 )
                 missionCommands.addCommandForCoalition(

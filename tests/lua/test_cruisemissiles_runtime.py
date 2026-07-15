@@ -193,7 +193,7 @@ def test_player_call_for_fire_hits_the_last_marker_and_spends_the_budget() -> No
     assert [r["side"] for r in roots] == [int(h.side.BLUE)]
 
     # No marker yet -> a nag, no launch.
-    fire, side = _command(h, "Fire 4 at last F10 map marker")
+    fire, side = _command(h, "Fire at last F10 map marker")
     fire(side)
     assert h.records("firedTasks") == []
     assert any("place an F10 map marker" in t["text"] for t in h.records("texts"))
@@ -232,6 +232,54 @@ def test_player_call_for_fire_hits_the_last_marker_and_spends_the_budget() -> No
     assert any(
         "no ship with missiles in range" in t["text"] for t in h.records("texts")
     )
+    h.assert_no_lua_errors()
+
+
+def test_marker_text_number_sizes_the_salvo() -> None:
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("CVBG | Burke", int(h.side.BLUE)))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _config(
+            ships=[{"group": "CVBG | Burke", "coalition": "blue", "remaining": "24"}],
+            options={"playerSalvoSize": 4},
+        )
+    )
+    h.load_plugin_script(PLUGIN)
+    fire, side = _command(h, "Fire at last F10 map marker")
+
+    def mark(text: Any) -> None:
+        h.harness.markPanels = h.to_lua(
+            [
+                {
+                    "idx": 1,
+                    "coalition": int(h.side.BLUE),
+                    "pos": {"x": 100.0, "y": 0, "z": 200.0},
+                    "text": text,
+                }
+            ]
+        )
+
+    # A bare number in the marker text orders exactly that salvo...
+    mark("6")
+    fire(side)
+    # ...and the user's literal "#N and nothing else" form works too.
+    mark(" #2 ")
+    fire(side)
+    # Any other text (a normal target label) falls back to the default salvo,
+    # as do a bare "#", a zero, and a mixed label containing digits.
+    mark("TGT Alpha bunker 3")
+    fire(side)
+    mark("#")
+    fire(side)
+    mark("0")
+    fire(side)
+
+    assert [t["rounds"] for t in h.records("firedTasks")] == [6, 2, 4, 4, 4]
+    # A big ask never exceeds the magazine: 24 - (6+2+4+4+4) = 4 left.
+    mark("#99")
+    fire(side)
+    assert [t["rounds"] for t in h.records("firedTasks")][-1] == 4
+    assert _state(h) == [{"group": "CVBG | Burke", "fired": 24}]
     h.assert_no_lua_errors()
 
 

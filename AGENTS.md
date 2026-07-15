@@ -1967,7 +1967,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     BLUE ROE-gated via §40 `roe_blocks_target`, never ships/`map_hidden`; the plugin fires
     after a launch delay with a vague "LAUNCH WARNING" cue to the defender) and a **player F10
     "Cruise Missile Strike" menu** per owning coalition (salvo onto the last F10 map marker
-    from the nearest capable ship, the §34 marker pattern, + a "Magazine status" readout).
+    from the nearest capable ship, the §34 marker pattern; **marker text `#N`/`N` sizes the
+    salvo**, magazine-capped; + a "Magazine status" readout).
     Symmetric — `redfor_current`/`redfor_russia_2020` field Kalibr hulls today. Gated
     `cruise_missile_strikes` (master) + `cruise_missile_auto_raids` (Mission Generation →
     Naval strike, both default **OFF**). Tests `tests/fourteenth/test_cruise_raids.py` +

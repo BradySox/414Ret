@@ -5642,7 +5642,12 @@ mission is free; there is no rearm — the magazine is the war stock.
 * **Player call-for-fire**: an F10 "Cruise Missile Strike" menu per coalition that owns
   a capable ship — a salvo (default 4) onto the coalition's last F10 map marker from the
   nearest ship with stock in range (the §34 NGFS marker pattern), plus a "Magazine
-  status" readout so the stock is visible before spending it.
+  status" readout so the stock is visible before spending it. **The marker's own text
+  sizes the salvo**: a marker whose text is just a number — `6`, or `#6` — fires exactly
+  that many (`salvoFromMarkText`; magazine-capped, so `#99` just empties the tubes),
+  while any normal target label (or a bare `#`, or `0`) falls back to the default. The
+  mark panels from `world.getMarkPanels()` carry their `text` field, so no extra channel
+  is needed.
 
 **Wiring**: `game/missiongenerator/cruisemissileluadata.py` (`populate_cruise_missiles_lua`,
 in `luagenerator.py` after the minefields emitter) emits `dcsRetribution.cruiseMissiles`

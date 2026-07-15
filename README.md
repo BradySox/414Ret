@@ -67,6 +67,17 @@ and selected later upstream fixes.
   **auto-planner frag mining sorties for you** ("Auto-plan mining sorties ahead of enemy convoys"):
   it puts a mining strike against an enemy convoy in the ATO each turn — fly it yourself or let the
   AI take it. Blue-only.
+- **Warships fire real cruise missile raids.** A Burke's Tomahawks (or the enemy's Kalibr
+  ships, with the CurrentHill packs) finally do their job: put an F10 map marker on a shore
+  target and call **F10 → Cruise Missile Strike** to ripple a salvo from the nearest capable
+  ship — or turn on auto raids and each side commits one salvo a turn at its best reachable
+  target (command bunkers and comms first, then war industry), announced to the defender only
+  as a bare **"LAUNCH WARNING — enemy cruise missile launch detected"**. The missiles are real
+  weapons from real, sinkable ships: kills count at debrief, point-defense SAMs (Tor, Pantsir,
+  your Patriots) get to intercept them, and every ship carries a **finite campaign magazine
+  with no rearm** ("Magazine status" on the same F10 menu shows what's left) — so a salvo
+  spent on a truck park is a salvo you won't have for the command bunker. Opt-in (Mission
+  Generation → "Ship-launched cruise missile strikes" + "Auto-plan cruise missile raids").
 - **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
   learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
   within minutes your briefed channels take sporadic bursts of barrage static — transmitted

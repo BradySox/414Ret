@@ -74,6 +74,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §60 | SAM guidance-radar redundancy (two track radars per site) | — | — |
 | §61 | Host red-interceptor scramble (F10 bandit spawner) | `redscramble` | `host_red_scramble` |
 | §62 | Squadron-sequenced Hornet/Tomcat board numbers | — | — |
+| §63 | Ship-launched cruise missile raids | `cruisemissiles` | `cruise_missile_strikes`, `cruise_missile_auto_raids` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

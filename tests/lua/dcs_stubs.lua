@@ -665,8 +665,8 @@ function MooseGroup:GetCoalition()
     return self.group:getCoalition()
 end
 
-function MooseGroup:TaskFireAtPoint(vec2, radius, rounds)
-    return { point = vec2, radius = radius, rounds = rounds }
+function MooseGroup:TaskFireAtPoint(vec2, radius, rounds, weaponType)
+    return { point = vec2, radius = radius, rounds = rounds, weaponType = weaponType }
 end
 
 function MooseGroup:PushTask(task, _)
@@ -676,6 +676,7 @@ function MooseGroup:PushTask(task, _)
         y = task.point.y,
         radius = task.radius,
         rounds = task.rounds,
+        weaponType = task.weaponType,
         t = Harness.now,
     })
 end

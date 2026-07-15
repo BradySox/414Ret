@@ -31,6 +31,7 @@ from .interceptluadata import (
     defense_zone_entries,
     populate_intercept_lua,
 )
+from .cruisemissileluadata import populate_cruise_missiles_lua
 from .missiondata import CombatSarTemplates, MissionData
 from .mobilemissileluadata import populate_mobile_missiles_lua
 from .redscrambleluadata import populate_red_scramble_lua
@@ -431,6 +432,14 @@ class LuaGenerator:
         # re-arms fields left undisturbed last turn. Fresh drops are the plugin's own
         # S_EVENT_SHOT detection; kills stay in the turn-boundary force model.
         populate_minefields_lua(lua_data, self.game, self.mission_data)
+
+        # Ship cruise missile strikes (§63) -- emits dcsRetribution.cruiseMissiles only
+        # when cruise_missile_strikes is on and a live land-attack-capable ship group
+        # has missiles left; the cruisemissiles plugin fires the auto raids + the F10
+        # call-for-fire and mirrors expenditure back for the turn-boundary magazine
+        # debit. The missiles are real weapons from a tracked ship -- kills record
+        # natively.
+        populate_cruise_missiles_lua(lua_data, self.game, self.mission_data)
 
         # Enemy comms jamming (§51) -- emits dcsRetribution.commsJam only when the
         # plan computed before this pass exists (setting on + alive enemy C2 node +

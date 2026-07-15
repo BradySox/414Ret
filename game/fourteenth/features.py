@@ -426,6 +426,23 @@ FEATURES: tuple[Feature, ...] = (
         "Squadron-sequenced Hornet/Tomcat board numbers",
         62,
     ),
+    Feature(
+        # §63 ship-launched cruise missile raids: LACM warships (the Burke's
+        # Tomahawks, the CurrentHill Kalibr hulls -- the curated LACM_SHIP_DCS_IDS
+        # set) strike shore targets via a FireAtPoint task with the cruise-missile
+        # weapon flag. game/fourteenth/cruise_raids.py owns the persisted per-group
+        # magazines (debited only from the plugin's cruise_missiles_state debrief
+        # report) + the one-raid-per-side-per-turn auto planner (C2-first target
+        # pick, ROE-gated for BLUE); cruisemissileluadata.py emits ships + raids;
+        # the `cruisemissiles` plugin fires the raids after a delay and serves the
+        # per-coalition F10 call-for-fire menu. Real weapons from tracked ships --
+        # kills record natively, point defense intercepts, no phantom spawns.
+        "cruise_missile_raids",
+        "Ship-launched cruise missile raids",
+        63,
+        plugin_id="cruisemissiles",
+        settings_fields=("cruise_missile_strikes", "cruise_missile_auto_raids"),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

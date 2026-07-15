@@ -2294,6 +2294,19 @@ exactly the intent.
   neutral coalition; (4) `for_squadron`'s faction-primary fallback logs at debug like every other
   skip. Plus perf: the squadron `faker` is resolved once per recruit batch, not once per pilot, and
   the pilot-name locale table is cross-checked against pydcs in a test so a stale key fails CI.
+- **Review hardening round 2 (2026-07-15, upstream #854 feedback).** Two more carried back: (1)
+  **`Game.neutral_country`'s final fallback was the bug it guarded against** — with USAF Aggressors
+  as the red faction and a blue CJTF fielding UN and Swiss squadrons, all three preferred neutrals
+  are claimed, and the old tail `return USAFAggressors()` handed a claimed country to the neutral
+  coalition anyway (one country on two coalitions, an unloadable `.miz`). It now scans the full
+  pydcs country list for any unclaimed nation; `tests/test_game_neutral_country.py` covers the
+  preferred pick, the squadron-claimed fall-through, and the all-claimed scan. (2) **Faker
+  construction consolidated** — `Coalition.faker` and `Game.faker_for` (zero callers) are deleted;
+  `Squadron.faker`'s fallback now builds from the faction's own locale list through the cached
+  `faker_for_locales` in `pilotnames.py` (right next to `faker_for_locale` — exactly one
+  construction path), which also stripped the faker plumbing out of `Coalition.__init__`/
+  `__getstate__` and deleted `Coalition.on_load` entirely (the faker was its whole job). No save
+  impact — the faker was never persisted.
 - **In-game pass ☑ VERIFIED 2026-06-26 (I1).** Confirmed in flight — a mixed-nation CJTF side plays
   the per-nation voiceovers; the headless `CountryAssigner` adjudication held up live.
 
@@ -2306,7 +2319,9 @@ the faction locale, not the squadron's nation.
 
 `game/squadrons/pilotnames.py` adds a curated **DCS country → Faker locale** table
 (`COUNTRY_FAKER_LOCALES`, keyed by the exact pydcs `Country.name`) and `faker_for_country()`;
-`Squadron.faker` now returns the squadron's own-country Faker instead of the coalition's. So a
+`Squadron.faker` now returns the squadron's own-country Faker, falling back to a faker built from
+the faction's locale list (the cached `faker_for_locales` — since the 2026-07-15 consolidation the
+one construction path; the old per-`Coalition` Faker instance is gone). So a
 Greek squadron rosters with Greek names, an Iranian one with Persian names, a Russian one with
 surname-first patronymics, etc. — the same nation the §23 country/voiceover already targets.
 
@@ -2321,9 +2336,9 @@ Design notes:
   locale can't do it, so a bad map entry degrades gracefully instead of crashing recruitment. The
   parametrised test asserts **every** mapped locale is usable, so a typo'd/non-gendered locale
   fails CI rather than shipping.
-- **Pickle-safe.** The per-locale Fakers live in a module-level `lru_cache`, not on the pickled
-  `Squadron`/`Coalition`, so saves are unaffected (the coalition already drops its Faker in
-  `__getstate__`). No save migration needed.
+- **Pickle-safe.** Every Faker — per-locale and per-faction-locale-list alike — lives in a
+  module-level `lru_cache`, not on the pickled `Squadron`/`Coalition` (which since 2026-07-15
+  carries no Faker at all; it was never persisted). No save migration needed.
 - **Non-Latin names are intended** and consistent with the pre-existing Russian-locale behaviour
   (Qt + DCS are UTF-8). Faker's `name_male()` can occasionally include a title ("Herr …", "Dr.
   …") — that's a pre-existing quirk of the same call the old code used, not new.
@@ -2341,41 +2356,53 @@ In-game pass row I5 (UI/roster eyeball only — the logic is fully unit-tested).
 Extends campaign date-gating from *weapons* to the per-airframe **properties** shown in the
 payload editor (the "mission options" block: helmet device, datalink, etc.). Weapons already
 disappear from the loadout when they postdate the campaign (`restrict_weapons_by_date` +
-`Weapon.available_on`); the same toggle now also restricts era-defining property options. The
-first curated gate is **JHMCS** (Joint Helmet-Mounted Cueing System, fielded ~2003): a pre-2003
-campaign no longer offers — or silently ships — JHMCS.
+`Weapon.available_on`); a sibling toggle — **`restrict_props_by_date`**, independent so users can
+enforce either or both — restricts the era-defining property options. The curated gates cover
+**JHMCS** (F/A-18C + F-16C, fielded ~2003), the **Scorpion HMCS** (A-10C II, ~2012), and the
+**Shchel-3UM HMS** (MiG-29, 1983): a pre-2003 campaign no longer offers — or silently ships —
+JHMCS.
 
-This is the "curated start" of a deliberately small layer. Properties carry **no** introduction
-date in pydcs (unlike weapons, which carry `WeaponGroup.introduction_year`), so the gate is a hand-
-authored table, not bulk data. Only genuinely period-bound cueing systems are gated; everything
+This is a deliberately small, curated layer. Properties carry **no** introduction date in pydcs
+(unlike weapons, which carry `WeaponGroup.introduction_year`), so each aircraft's own data file
+supplies the years, not bulk data. Only genuinely period-bound cueing systems are gated; everything
 else (rate-of-fire, laser codes, fuel, NVG, the baseline visor) is left untouched.
 
-### The data layer
+### The data layer (per-aircraft, reworked 2026-07-15 off the upstream #843 review)
 
-`game/dcs/aircraftproperties.py` holds the table and four pure helpers
-(`property_value_available_on`, `available_value_ids`, `period_correct_value`, and the private
-`_introduction_year`). Two design choices matter:
+The era data lives in each aircraft's own file — a `date_gated_properties` block in
+`resources/units/aircraft/<type>.yaml` mapping a property identifier to `{value label:
+introduction year}` — and loads into **`AircraftType.property_date_gate`**, a frozen
+**`PropertyDateGate`** (`game/dcs/aircraftproperties.py`, now one class with zero globals:
+`from_data`, `value_available_on`, `available_value_ids`, `period_correct_value`, `gated_props`).
+Lookup is a direct attribute access on the airframe being configured — no shared module table, no
+cross-airframe iteration (Druss's review suggestion, which also kills the old id-collision worry
+by construction: data scoped to one airframe cannot leak onto another's same-numbered value).
+Exactly four airframes carry the block — the four pydcs confirms expose `HelmetMountedDevice`:
+`FA-18C_hornet`, `F-16C_50` (JHMCS 2003), `A-10C_2` (HMCS + "HMCS + NVG" 2012), `MiG-29 Fulcrum`
+(HMS 1983). Two design choices matter:
 
-- **Keyed by the value *label*, not the numeric id.** Across airframes the same id means different
-  things — `HelmetMountedDevice` id `1` is `"JHMCS"` on the F/A-18 and F-16 but `"SURA Visor"` (a
-  1980s Soviet helmet sight) on the Su-30/Su-35. An id-based gate would wrongly restrict the Soviet
-  sight; a label key (`{"JHMCS": 2003}`) only catches the real JHMCS.
-- **Scoped to the helmet-device identifiers** (`HelmetMountedDevice`, `HelmetMountedDeviceWSO`) so
-  the gate can never touch an unrelated property that happens to share a gated label.
+- **Keyed by the value *label*, not the numeric id.** The label pins the gate to what the option
+  actually *is*: if a DCS/pydcs update renumbers or renames a value, a label key degrades to "not
+  gated" instead of gating the wrong option — and the label-pin test fails CI on the rename so the
+  degradation is caught rather than shipped.
+- **Scoped by property identifier inside one airframe's data**, so the gate can never touch an
+  unrelated property that happens to share a gated label.
 
 The period-correct fallback is the first still-available value, which on every affected airframe is
 the baseline "no modern cueing" option (`Not installed` / `Visor Only`, id `0`).
 
 ### Two enforcement points (mirrors weapons)
 
-- **UI (`qt_ui/.../payload/propertycombobox.py`).** When `restrict_weapons_by_date` is on, the
-  dropdown lists only `available_value_ids(...)`, and a gated stored/default selection displays its
-  `period_correct_value(...)` instead. Like the weapon editor, **storage is not mutated** — the
-  player's choice is preserved and only the display + generated mission are clamped. `game` is
-  threaded down via `PropertyEditor` (built with `game` in `QFlightPayloadTab`).
+- **UI (`qt_ui/.../payload/propertycombobox.py`).** When `restrict_props_by_date` is on, the
+  dropdown lists only `gate.available_value_ids(...)`, and a gated stored/default selection
+  displays its `gate.period_correct_value(...)` instead. Like the weapon editor, **storage is not
+  mutated** — the player's choice is preserved and only the display + generated mission are
+  clamped. `PropertyComboBox` now takes the `AircraftType` (handed down by `PropertyEditor` from
+  `flight.unit_type`) so it reads the airframe's own gate.
 - **Generation (authoritative — `flightgroupconfigurator.py::degrade_props_for_date`).** Called from
-  `setup_props` when the setting is on. Crucially it resolves each helmet prop against the unit
-  type's **default**, because an unset helmet device still defaults to JHMCS in the `.miz` — so only
+  `setup_props` when the setting is on; iterates only `gate.gated_props(...)` — the curated
+  identifiers, not every property. Crucially it resolves each gated prop against the unit type's
+  **default**, because an unset helmet device still defaults to JHMCS in the `.miz` — so only
   inspecting `member.properties` would miss the (common) defaulted case. Force-sets the fallback
   when the effective value is too modern.
 
@@ -2383,20 +2410,29 @@ the baseline "no modern cueing" option (`Not installed` / `Visor Only`, id `0`).
 
 | Area | Path |
 |---|---|
-| Data + helpers | `game/dcs/aircraftproperties.py` |
+| Gate class | `game/dcs/aircraftproperties.py` (`PropertyDateGate`) |
+| Per-aircraft data | `resources/units/aircraft/{FA-18C_hornet,F-16C_50,A-10C_2,MiG-29 Fulcrum}.yaml` (`date_gated_properties`) |
+| Registry wiring | `game/dcs/aircrafttype.py` (`AircraftType.property_date_gate`) |
+| Setting | `game/settings/settings.py` (`restrict_props_by_date`, Difficulty & Realism → Realism & restrictions) |
 | Generation clamp | `game/missiongenerator/aircraft/flightgroupconfigurator.py` (`degrade_props_for_date`) |
 | UI filter | `qt_ui/windows/mission/flight/payload/propertycombobox.py`, `propertyeditor.py`, `QFlightPayloadTab.py` |
-| Tests | `tests/dcs/test_aircraftproperties.py` (JHMCS gated pre-2003, baseline/NVG always available, clamp-to-baseline, Soviet SURA Visor untouched, non-helmet property untouched) |
+| Tests | `tests/dcs/test_aircraftproperties.py` (registry gates exactly the four airframes, pydcs label pin, JHMCS gated pre-2003, baseline/NVG always available, clamp-to-baseline, empty gate on ungated airframes, per-airframe HMS/HMCS years, non-gated property untouched) |
 
 ### Gotchas / deferred
 
-- **Only JHMCS so far.** Add datalink/IFF-mode or other helmet systems (e.g. Scorpion) by
-  extending `HELMET_CUEING_INTRODUCTION_YEARS` / `HELMET_DEVICE_PROPERTY_IDS` — the plumbing is
-  generic. No new setting: it rides the existing `restrict_weapons_by_date` toggle.
+- **Extend by data, not code.** Add another era-bound option by giving that aircraft's yaml a
+  `date_gated_properties` block — the plumbing is generic. Claim only what the module has: **SURA
+  Visor was deliberately dropped** in the 2026-07-15 rework because no pydcs airframe exposes that
+  label (the Su-30 is a mod); it returns as a two-line data edit to the Su-30 files if the mod's
+  label is confirmed.
+- **Own setting since 2026-07-15.** `restrict_props_by_date` (default OFF) is independent of
+  `restrict_weapons_by_date` — a save that relied on the weapons toggle also gating the helmet
+  must flip the new toggle once.
 - **No faction override.** Unlike weapons (`weapons_introduction_year_overrides`), the property gate
   uses a single global year. Add per-faction overrides only if a campaign needs them.
 - **In-game pass ☑ VERIFIED 2026-06-26 (I3).** Confirmed in flight — a pre-2003 generated mission
-  shows the baseline helmet option (not JHMCS) on an F/A-18/F-16; NVG and the Soviet SURA Visor untouched.
+  shows the baseline helmet option (not JHMCS) on an F/A-18/F-16; NVG untouched. The 2026-07-15
+  rework moved the data model + toggle only; the clamp path is unchanged, no re-fly needed.
 
 ### Sibling gate — date-gated ground-support vehicles (FARP / airfield)
 

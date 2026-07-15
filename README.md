@@ -379,11 +379,12 @@ and selected later upstream fixes.
   hand-measured fuel data (the C-130J "King", the helicopters, warbirds, ...) get a rough estimate
   derived from their fuel capacity.
 - Plugin settings explain what each system does and use squadron-readable labels and units.
-- When *Restrict weapons by campaign date* is on, era-defining **cockpit options** are now gated
-  alongside the weapons: a pre-2003 campaign no longer offers (or quietly spawns) a **JHMCS**
-  helmet-mounted sight, falling back to the period-correct visor. NVG and other era-appropriate
-  options stay available.
-- The same toggle now also makes the **support trucks** at airbase and FARP ground-starts
+- A new *Restrict aircraft options by campaign date* setting (sibling of the weapons toggle —
+  enforce either or both) gates era-defining **cockpit options**: a pre-2003 campaign no longer
+  offers (or quietly spawns) a **JHMCS** helmet-mounted sight, falling back to the period-correct
+  visor — likewise the A-10C II's Scorpion HMCS (2012) and the MiG-29's HMS. NVG and other
+  era-appropriate options stay available.
+- The weapons toggle also makes the **support trucks** at airbase and FARP ground-starts
   period-correct: a Vietnam-era mission parks GAZ-66 / Ural-375 logistics trucks on the ramp
   instead of modern HEMTTs, falling back to the oldest available vehicle when nothing earlier
   exists in DCS.

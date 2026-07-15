@@ -887,15 +887,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     unit-tested (`tests/squadrons/test_pilotnames.py`). (`game/missiongenerator/missiongenerator.py`,
     `game/missiongenerator/aircraft/aircraftgenerator.py`, `game/squadrons/pilotnames.py`;
     features doc §23, checklist I1/I5.)
-24. **Date-gated aircraft properties** — extends the existing `restrict_weapons_by_date` toggle from
-    weapons to era-defining payload-editor *properties*. First curated gate: **JHMCS** helmet cueing
-    (fielded ~2003) is hidden from the dropdown and clamped to the baseline visor when generating a
-    pre-2003 mission. A small hand-authored table (pydcs carries no property dates) keyed by value
-    *label* — so the F/A-18/F-16 "JHMCS" is gated but the Su-30/Su-35 "SURA Visor" (same id) is not —
-    scoped to the helmet-device identifiers. UI filters the dropdown; the generator
-    (`degrade_props_for_date`) is authoritative and resolves against the unit-type default so the
-    defaulted-JHMCS case is caught. (`game/dcs/aircraftproperties.py`,
-    `game/missiongenerator/aircraft/flightgroupconfigurator.py`,
+24. **Date-gated aircraft properties** — era-defining payload-editor *properties* gated by campaign
+    date, under their **own `restrict_props_by_date` toggle** (2026-07-15, split from
+    `restrict_weapons_by_date` off the upstream #843 review — enforce either or both). Curated
+    gates: **JHMCS** (F/A-18C + F-16C, ~2003), **Scorpion HMCS** (A-10C II, ~2012), **HMS**
+    (MiG-29, 1983) — hidden from the dropdown and clamped to the baseline visor at generation.
+    The era data lives **in each aircraft's own data file** (a `date_gated_properties` block in
+    `resources/units/aircraft/<type>.yaml` — pydcs carries no property dates) and loads into
+    `AircraftType.property_date_gate`, one frozen `PropertyDateGate` (zero globals); keyed by value
+    *label* so a pydcs rename degrades to "not gated" (a label-pin test catches it) — SURA Visor
+    dropped, no pydcs airframe exposes it (the Su-30 is a mod). UI filters the dropdown; the
+    generator (`degrade_props_for_date`) is authoritative and resolves against the unit-type
+    default so the defaulted-JHMCS case is caught. (`game/dcs/aircraftproperties.py`,
+    `game/dcs/aircrafttype.py`, `game/missiongenerator/aircraft/flightgroupconfigurator.py`,
     `qt_ui/windows/mission/flight/payload/propertycombobox.py`; features doc §24, checklist I3.)
 25. **Compact 3-4 page kneeboard deck** — RETIRED (2026-07-05, the kneeboard back-to-basics rework):
     the compact folding machinery (`compact_kneeboard`, `_compact_kneeboard_pages`, the

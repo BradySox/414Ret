@@ -208,6 +208,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "manpads",
                     "night_day_missions",
                     "restrict_weapons_by_date",
+                    "restrict_props_by_date",
                     "target_intel_precision",
                     "recon_intel_fog",
                     "concealed_enemy_forces",
@@ -1484,6 +1485,19 @@ class Settings:
         detail=(
             "Restricts weapon availability based on the campaign date. Data is "
             "extremely incomplete so does not affect all weapons."
+        ),
+    )
+    restrict_props_by_date: bool = boolean_option(
+        "Restrict aircraft options by campaign date (incomplete data)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Restricts era-defining aircraft mission options (e.g. the JHMCS helmet "
+            "cueing selection) based on the campaign date: gated options are hidden "
+            "from the payload editor and clamped to a period-correct value at "
+            "mission generation. Independent of the weapons restriction so either "
+            "can be enforced alone. Data is curated per airframe and incomplete."
         ),
     )
     war_economy: bool = boolean_option(

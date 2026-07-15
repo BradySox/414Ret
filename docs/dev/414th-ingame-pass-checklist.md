@@ -1867,6 +1867,12 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   one field (too many ground-starts per field — lower the `density()` bands); too dense/sparse overall
   (tune `density()`).
 ### I3 — Date-gated helmet cueing (JHMCS) · §24 · ☑ VERIFIED (2026-06-26, user in-game pass)
+- **Reworked 2026-07-15 (no re-fly needed):** the data moved into each aircraft's own yaml
+  (`date_gated_properties` → `AircraftType.property_date_gate`) and the gate now rides its **own
+  `restrict_props_by_date` toggle** instead of the weapons one; the clamp path is unchanged and
+  fully re-unit-tested (registry gates exactly the four `HelmetMountedDevice` airframes + a pydcs
+  label pin). SURA Visor was dropped (mod-only airframe); the A-10C II HMCS (2012) and MiG-29 HMS
+  (1983) gates are new data. When re-flying anything here, use the NEW setting.
 - **Headless adjudication (2026-06-26):** The gate is pure, table-driven logic covered by
   `tests/dcs/test_aircraftproperties.py` against real pydcs `FA_18C_hornet`/`F_16C_50` props —
   JHMCS (id 1) gated before 2003, baseline (0) and NVG (2) always available, `period_correct_value`

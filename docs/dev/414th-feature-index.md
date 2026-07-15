@@ -35,7 +35,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §21 | Combat SAR | `combatsar` | `auto_combat_sar`, `combat_sar_persistent_pilots` |
 | §22 | Kneeboard space-utilisation + custom import | — | — |
 | §23 | Per-squadron DCS country | — | — |
-| §24 | Date-gated aircraft properties | — | `restrict_weapons_by_date` |
+| §24 | Date-gated aircraft properties | — | `restrict_props_by_date` |
 | §25 | Compact 3-4 page kneeboard deck _(retired)_ | — | — |
 | §26 | Off-mission combat fidelity + PLAYER_AT_IP fix | — | — |
 | §27 | Shared-airframe kneeboard index | — | — |

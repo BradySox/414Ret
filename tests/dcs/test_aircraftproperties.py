@@ -82,9 +82,7 @@ def test_baseline_and_nvg_options_are_always_available() -> None:
 
 
 def test_available_value_ids_drops_jhmcs_pre_introduction() -> None:
-    aircraft = next(
-        a for a in AircraftType.iter_all() if a.dcs_unit_type is F_16C_50
-    )
+    aircraft = next(a for a in AircraftType.iter_all() if a.dcs_unit_type is F_16C_50)
     gate = aircraft.property_date_gate
     prop = F_16C_50.properties["HelmetMountedDevice"]
     assert prop.values is not None
@@ -143,29 +141,28 @@ def test_gated_props_iterates_exactly_the_curated_identifiers() -> None:
 def test_soviet_hms_and_a10_hmcs_gate_by_their_own_years() -> None:
     # Per-aircraft data: the MiG-29's HMS (1983) and the A-10C II's Scorpion HMCS
     # (2012) carry their own years, independent of JHMCS.
-    mig = next(
-        a for a in AircraftType.iter_all() if a.dcs_id == "MiG-29 Fulcrum"
-    )
+    mig = next(a for a in AircraftType.iter_all() if a.dcs_id == "MiG-29 Fulcrum")
     mig_prop = mig.dcs_unit_type.properties["HelmetMountedDevice"]
-    assert mig.property_date_gate.value_available_on(
-        mig_prop, 1, date(1982, 1, 1)
-    ) is False
-    assert mig.property_date_gate.value_available_on(
-        mig_prop, 1, date(1983, 1, 1)
-    ) is True
+    assert (
+        mig.property_date_gate.value_available_on(mig_prop, 1, date(1982, 1, 1))
+        is False
+    )
+    assert (
+        mig.property_date_gate.value_available_on(mig_prop, 1, date(1983, 1, 1)) is True
+    )
 
     a10 = next(a for a in AircraftType.iter_all() if a.dcs_id == "A-10C_2")
     a10_prop = a10.dcs_unit_type.properties["HelmetMountedDevice"]
     # Both the HMCS and the HMCS + NVG combination are gated to 2012.
-    assert a10.property_date_gate.available_value_ids(
-        a10_prop, date(2010, 1, 1)
-    ) == [0]
-    assert a10.property_date_gate.period_correct_value(
-        a10_prop, 1, date(2010, 1, 1)
-    ) == 0
-    assert a10.property_date_gate.available_value_ids(
-        a10_prop, date(2012, 1, 1)
-    ) == [0, 1, 2]
+    assert a10.property_date_gate.available_value_ids(a10_prop, date(2010, 1, 1)) == [0]
+    assert (
+        a10.property_date_gate.period_correct_value(a10_prop, 1, date(2010, 1, 1)) == 0
+    )
+    assert a10.property_date_gate.available_value_ids(a10_prop, date(2012, 1, 1)) == [
+        0,
+        1,
+        2,
+    ]
 
 
 def test_from_data_tolerates_absence() -> None:

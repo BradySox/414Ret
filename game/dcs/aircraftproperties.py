@@ -78,7 +78,10 @@ class PropertyDateGate:
         return labels.get(label)
 
     def value_available_on(
-        self, prop: UnitPropertyDescription, value_id: PropertyValueId, date: datetime.date
+        self,
+        prop: UnitPropertyDescription,
+        value_id: PropertyValueId,
+        date: datetime.date,
     ) -> bool:
         """Whether a single property value is available at the campaign ``date``.
 

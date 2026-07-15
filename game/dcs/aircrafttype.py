@@ -19,6 +19,7 @@ from dcs.weapons_data import weapon_ids
 
 from game.ato import FlightType
 from game.data.units import HEAVY_BOMBER_DCS_IDS, UnitClass
+from game.dcs.aircraftproperties import PropertyDateGate
 from game.dcs.lasercodeconfig import LaserCodeConfig
 from game.dcs.unittype import UnitType
 from game.persistency import user_custom_weapon_injections_dir
@@ -304,6 +305,12 @@ class AircraftType(UnitType[Type[FlyingType]]):
     #: Whether this tanker can refuel helicopters / slow receivers (e.g. the KC-130's
     #: low-and-slow drogue). Only consulted when both sides are tagged.
     tanker_refuels_helicopters: bool = False
+
+    #: Date gate for era-specific payload-editor properties (e.g. the helmet-mounted
+    #: cueing selection), built from the aircraft data file's
+    #: ``date_gated_properties`` block. Empty (gates nothing) for the many airframes
+    #: that declare no block.
+    property_date_gate: PropertyDateGate = PropertyDateGate()
 
     _by_name: ClassVar[dict[str, AircraftType]] = {}
     _by_unit_type: ClassVar[dict[type[FlyingType], list[AircraftType]]] = defaultdict(
@@ -798,6 +805,9 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 AirRefuelType(v) for v in data.get("tanker_refuel_types", [])
             ),
             tanker_refuels_helicopters=data.get("tanker_refuels_helicopters", False),
+            property_date_gate=PropertyDateGate.from_data(
+                data.get("date_gated_properties")
+            ),
         )
 
     @classmethod

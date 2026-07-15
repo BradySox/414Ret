@@ -118,7 +118,7 @@ FEATURES: tuple[Feature, ...] = (
         "date_gated_aircraft_properties",
         "Date-gated aircraft properties",
         24,
-        settings_fields=("restrict_weapons_by_date",),
+        settings_fields=("restrict_props_by_date",),
     ),
     Feature(
         "compact_kneeboard",

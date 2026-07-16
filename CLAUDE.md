@@ -2007,6 +2007,52 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     shoot; the wake gives ground PD the same chance (link-dark is alarm-GREEN in this fork's
     bridge, so the alarm-RED override reaches it). Still unflown: `#N` marker salvo sizing,
     CH Kalibr hulls, red-side raids.)
+64. **Carrier deck spawn policy (six-pack last resort + MP slot timing)** — the 2026-07-16
+    supercarrier finding: AI taxiing to the cats jam against the player, because the old
+    `player_flights_sixpack` boolean (ON) parked the **slowest** thing on deck (a human,
+    10-minute cold start) on the **six-pack** — the first-filled spots, squarely in the taxi
+    lane to the bow catapults — while the AI spawned in the far spots and squeezed past. DCS's
+    only deck-parking lever is **spawn timing** (the mission-start wave fills the six-pack;
+    anything activated ≥1 s later is placed elsewhere — the dcs_liberation#1309 trick that
+    already kept AI off it), so the boolean became the **`CarrierDeckPolicy` enum** (§16
+    boolean→enum migration pattern; ON→`SIXPACK_FIRST`, OFF→`LAST_RESORT`): under the new
+    **`LAST_RESORT` default**, player carrier ground starts take the same 1 s placement
+    activation as AI — parked clear of the taxi flow, the six-pack left as overflow capacity —
+    and `SIXPACK_FIRST` keeps the legacy behavior. **The MP slot-timing fix rides along** (both
+    modes): a TOT-delayed client carrier COLD flight was late-activated its FULL delay, so its
+    slots didn't exist in the MP slot list until push time ("your flight is delayed to start");
+    it now spawns **uncontrolled** like its airfield counterpart (slots live from ~mission
+    start, `StartCommand` holds only the AI members to the push, + the 1 s placement activation
+    under last-resort). WARM/RUNWAY delayed clients keep full-delay late activation (a hot jet
+    can't wait), AI keep late activation (deck crowding). Taxi *routing* itself is engine AI —
+    no mission-level control (the AI F-14A's forced cat starts are the precedent) — and
+    same-group wingmen tailgating the player is unfixable at mission level. No plugin/Lua.
+    Tests `tests/missiongenerator/test_carrier_deck_policy.py` +
+    `tests/settings/test_carrier_deck_policy.py`.
+    (`game/missiongenerator/aircraft/waypoints/waypointgenerator.py`,
+    `game/settings/settings.py`; features doc §64, checklist B17 — needs an in-game pass:
+    does DCS overflow delayed spawns INTO the six-pack once the deck is full, and deck
+    behavior with several client flights parked uncontrolled from mission start.)
+65. **Curated carrier comms (CV Operations Data cleanup)** — DCS auto-renders the yellow "CV
+    Operations Data" kneeboard page straight from the miz (it cannot be restyled, only fed better
+    data), and the generator fed it allocator junk: the boat "named" `0796 | CVN-71 …` on the
+    Callsign line, TACAN **1X** with a `random.choice` ident re-rolled every mission, Link 4 on a
+    random inter-flight UHF (255.0), a fresh random ATC every turn. Now every vanilla hull carries
+    a curated **boat card** (`game/data/carrier_comms.py`, keyed by pydcs ship id — the pro-campaign
+    "Mother card" convention off the cataloged Raven One kneeboards): TACAN = **hull number** where
+    T/R-legal (CVN-71→71X `TRO` … CVN-75→75X `HST`; Forrestal 59→64X `FID`, Tarawa→41X `TAR`,
+    Kuznetsov 35X/36X `KUZ`), hull-keyed ICLS (11–15, Forrestal 9, Tarawa 1), Link 4 in the real
+    ACLS **336 MHz band**, stable per-hull ATC (304–312). Resolved in
+    `GenericCarrierGenerator._resolve_*` with stored-values-win precedence (base-dialog/persisted
+    values untouched); a map-owned channel degrades via `TacanRegistry.alloc_near` to the **nearest
+    valid free neighbor** (Bagram owns 74X on Afghanistan ⇒ the ER Stennis gets 73X), never to 1X;
+    ICLS moved to a shared-pool `IclsAllocator`; **every value persists to the control point** so
+    the card is stable across turns (ATC/Link4/ICLS used to re-roll). The flagship unit is named by
+    its hull name (named before `_register_theater_unit` so kill-tracking keys the same string;
+    duplicate-class boats keep the unique prefixed name). Mod carriers keep the legacy path. Pure
+    generation behavior — no setting, no plugin, no save change; headless-verified end-to-end on
+    Enduring Resolve. Tests `tests/test_carrier_comms.py`; features doc §65, checklist B18 — needs
+    an in-game pass (the CV page renders the card; the beacons radiate for a recovery).
 
 ---
 
@@ -2023,6 +2069,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `bradyccox`):
 
 - **Open (awaiting review):**
+  - [#874](https://github.com/dcs-retribution/dcs-retribution/pull/874) curated carrier comms (**draft**) — §65 verbatim (per-hull boat cards feeding the DCS-rendered CV Operations Data page: hull-number TACAN + boat ident with `alloc_near` nearest-neighbor degrade, hull-keyed ICLS via a shared `IclsAllocator`, 336-band Link 4, stable persisted ATC, flagship named by hull name). NO fork couplings; the port adds only the Pretense allocator-type adaptation (behavior untouched). On dev @ `ef576acc`; pytest/Black/mypy green — opened 2026-07-16. Fork side = [414Ret#611](https://github.com/bradyccox/414Ret/pull/611). See upstreaming-inventory item 19.
   - [#872](https://github.com/dcs-retribution/dcs-retribution/pull/872) ship-launched cruise missile strikes (**draft**) — generic core of fork [414Ret#599](https://github.com/bradyccox/414Ret/pull/599) (Tomahawk/Kalibr shore attack: F10 call-for-fire with marker-text salvo sizing, optional auto raids, persisted no-rearm magazine debited via the `cruise_missiles_state` debrief channel). NO fork couplings (no ROE-zone gate/`map_hidden`/`enabled_when`). Rebased onto dev @ `ef576acc`; pytest/Black/mypy green — opened 2026-07-15. See upstreaming-inventory item 18.
   - [#854](https://github.com/dcs-retribution/dcs-retribution/pull/854) per-squadron DCS country for nation-specific voiceovers + nation-aware pilot names (§23) — resolves upstream issue [#627](https://github.com/dcs-retribution/dcs-retribution/issues/627). Ports `CountryAssigner` + `pilotnames.py` + both test files verbatim; the §23 wiring hunks re-applied to upstream `missiongenerator.py`/`aircraftgenerator.py`/`squadron.py` (the fork's QRA `spawn_intercept_templates` is NOT upstream, so only `generate_flights`+`spawn_unused_aircraft` take the assigner). Pretense is standalone/overrides the touched methods → unaffected. NO 414th content (Iran faction wiring stays fork-side). §23 was NOT previously in the carve queue. Black/mypy/pytest/ts all green — opened 2026-07-03.
   - [#851](https://github.com/dcs-retribution/dcs-retribution/pull/851) High Digit SAMs **Ultimate Compilation** support (§41's generic core) — retargets the HDS toggle to the maintained mod: renamed-radar re-points, retired-unit tombstones, the 42 new units + 7 presets + SAMP/T layout, and the `remove_vehicle` id-vs-name strip fix. NO 414th faction enrichment (P-37/SA-7/S-400 wiring stays fork-side). Validated headless against upstream dev — opened 2026-07-01. Landed on the fork as [414Ret#382](https://github.com/bradyccox/414Ret/pull/382).

@@ -5714,6 +5714,136 @@ salvo sizing, the CH Kalibr hulls, red-side raids, full-magazine exhaustion.
 
 ---
 
+## §64 — Carrier deck spawn policy (six-pack last resort + MP slot timing)
+
+The 2026-07-16 supercarrier finding: AI taxiing to the catapults jam against the player
+— "they get stuck between me and the catapult" — because the player is parked **on the
+six-pack**, the first-filled deck spots that sit squarely in the taxi lane to the bow
+cats, with a ten-minute cold start while the AI (who crank promptly and move) spawn in
+the far spots and have to squeeze past. The arrangement was exactly backwards, and the
+old `player_flights_sixpack` boolean (default ON) is what put the player there.
+
+**The one placement lever DCS gives us is spawn timing.** The mission format cannot
+pick deck spots (a carrier flight is just "group linked to the ship + start type");
+DCS fills the six-pack from the mission-start spawn wave, and a group whose spawn is
+delayed even one second is placed elsewhere on deck — the dcs_liberation#1309 trick the
+generator has always used to keep **AI** off the six-pack (AI parked there deadlock the
+deck). Taxi *routing* itself — deck pathfinding, taxi spacing at airfields, wingmen
+tailgating the player — is engine AI with zero mission-level control (deck crew is
+player-guidance only; AI never use it); the AI F-14A's forced catapult starts
+(`_start_type_at_group`, upstream #1927) are the precedent for how immutable it is.
+
+**`CarrierDeckPolicy`** (Mission Generation → Player slots; replaces the boolean, §16
+enum-migration pattern — ON → `SIXPACK_FIRST`, OFF → `LAST_RESORT`, old key dropped):
+
+* **`LAST_RESORT` (new default)** — player carrier ground starts take the same
+  one-second late activation the AI always take, so DCS parks them clear of the
+  six-pack; the six-pack then only fills as overflow once the rest of the deck is
+  full. Nobody with a ten-minute startup sits in the AI taxi flow.
+* **`SIXPACK_FIRST`** — the legacy behavior: player flights spawn with the
+  mission-start wave and take the six-pack.
+
+**The MP slot-timing fix rides along** (both modes): a TOT-delayed client carrier
+flight was late-activated for its **full** delay because `should_activate_late`
+force-carrier'd every cold carrier start — so in multiplayer the flight's slots did not
+exist in the slot list until the push time (the "your flight is delayed to start"
+complaint; airfield flights never had this, they use the uncontrolled path). Client
+carrier COLD flights now spawn **uncontrolled** like their airfield counterparts —
+slots live from ~mission start, jet cold on deck — with the `StartCommand` trigger
+holding only the AI members to the planned push, plus the one-second placement
+activation under `LAST_RESORT`. WARM/RUNWAY delayed client flights keep the full-delay
+late activation (a hot jet can't wait without burning gas — same as airfields); AI
+flights keep late activation entirely (deck crowding). One latent AI fix rode along:
+a `WaitingForStart(0)` AI carrier flight previously got a `TimeAfter(0)` activation
+(joining the mission-start fill wave); the placement delay now floors it at 1 s.
+
+**Wiring**: `waypointgenerator.set_takeoff_time` split into the hold delay (the
+WaitingForStart remaining) and `needs_deck_placement_delay()` (carrier COLD/WARM ground
+starts; AI always, clients per policy); `should_activate_late` exempts client carrier
+COLD flights. No plugin, no Lua, no miz-format change; `game/settings/settings.py`
+carries the enum + `_migrate_legacy_settings` migration.
+
+**Tests**: `tests/missiongenerator/test_carrier_deck_policy.py` (the trigger matrix:
+AI placement/push-time activation + the zero-hold floor, client placement under both
+policies, the delayed-client uncontrolled+StartCommand+placement combo, warm
+late-activation parity, airfield/runway no-ops) and
+`tests/settings/test_carrier_deck_policy.py` (default, boolean→enum migration both
+ways, never-stomp, UI visibility).
+
+**Needs an in-game pass** (checklist B17): whether DCS overflows delayed spawns *into*
+the six-pack once the rest of the deck is full (the literal "last resort" — the 1 s
+trick is only proven to move spawns off it; fallback is exempting overflow flights at
+generation, the deck count is known), deck behavior with several client flights parked
+uncontrolled from mission start, and the payoff itself — AI reaching the cats without
+jamming on the player. What no mission-level change can fix: same-group AI wingmen
+taxiing on the player's tail (engine formation taxi), and AI recovery taxi after
+landing.
+
+---
+
+## §65 — Curated carrier comms (CV Operations Data cleanup)
+
+The answer to the 2026-07-16 complaint: **the DCS-generated "CV Operations Data" kneeboard
+page read like allocator junk.** DCS auto-renders that yellow-notepad page (and the matching
+briefing screen data) straight from the mission file — it cannot be restyled, only fed better
+data — and the generator fed it whatever fell out of the allocators: the boat "named"
+`0796 | CVN-71 Theodore Roosevelt` (the theater-unit id prefix leaking onto the Callsign
+line), TACAN channel **1X** with a `random.choice` ident that re-rolled every mission, ICLS
+channel 1, Link 4 parked on a random inter-flight UHF like 255.0, and a fresh random ATC
+frequency every single turn. The pro campaigns the 414th catalogs (Raven One's HOMEPLATE
+"Mother" card is the model) treat the boat's numbers as its identity: stable, hull-flavored,
+memorable.
+
+**The curated boat card.** `game/data/carrier_comms.py` (`CARRIER_COMMS_PLANS`, keyed by
+pydcs ship type id) gives every vanilla hull a signature data set — TACAN **channel = hull
+number** where that's legal for a surface transmit/receive beacon (channels 2–30 and 47–63 X
+are excluded by DCS datalink constraints, so Forrestal 59 → 64X and Tarawa hull 1 → 41X) with
+a **boat-name ident** (TRO/ABE/GWN/STN/HST/FID/TAR/KUZ), **hull-keyed ICLS** (CVN-71 → 11 …
+CVN-75 → 15, Forrestal 9, Tarawa 1), **Link 4 in the real ACLS 336 MHz band** (336.1–336.9,
+one per hull), and a **stable ATC UHF** (304–312, one per hull). Mod carriers without an
+entry keep the legacy allocator path end to end.
+
+**Precedence.** Values from the table are defaults, not mandates, resolved in
+`GenericCarrierGenerator._resolve_{atc,tacan,link4,icls}` (`tgogenerator.py`): a value
+stored on the control point — user-set from the base dialog or persisted from an earlier
+turn — always wins; a curated channel some other emitter already owns falls back gracefully.
+For TACAN the fallback is `TacanRegistry.alloc_near`: the map's real beacons own many
+hull-number channels (Bagram is 74X on Afghanistan, Kandahar 75X), so a taken channel walks
+outward to the **nearest valid free neighbor** (Stennis off Afghanistan gets 73X) instead of
+falling to the bottom of the band; `alloc_for_band` now also marks what it issues so the two
+allocators can't double-book. ICLS moved from a bare `iter(range(1, 21))` to an
+`IclsAllocator` (claim/reserve/alloc over a shared used-set) so a curated channel and the
+sequential fallback can't collide when two boats sail the same theater. **Every resolved
+value is persisted back to the control point** (`frequency`, `tacan`, `tcn_name`, `link4`,
+`icls_channel`) so the whole card is stable across turns — ATC, Link 4, and ICLS previously
+re-rolled or re-allocated every mission.
+
+**Flagship naming.** The page's Callsign line prints the flagship's *unit name*, so
+`_flagship_name` names the carrier unit by its hull name ("CVN-74 John C. Stennis") instead
+of the `NNNN | `-prefixed theater-unit name. The name is set before
+`_register_theater_unit` records it, so debrief kill-tracking keys off the same string; a
+second boat of the same class keeps the unique id-prefixed name (UnitMap collision guard).
+Escorts and every other ship keep the standard prefixed names.
+
+**Headless-verified end-to-end** (2026-07-16, Enduring Resolve through the real
+`GameGenerator` → `begin_turn_0` → `MissionGenerator` pipeline): the generated miz carries
+unit name `CVN-74 John C. Stennis`, TACAN 73X `STN` (74X correctly ceded to Bagram), ICLS 14,
+Link 4 336.4, group ATC 308.000 — exactly what the DCS page renders. Pure generation
+behavior: no setting, no plugin, no save-format change; applies to the next generated
+mission of any existing campaign (already-persisted channels on an old save win by design,
+so an in-progress campaign keeps its known numbers).
+
+**Tests.** `tests/test_carrier_comms.py`: table invariants (unique TACAN/ATC/ICLS/Link 4,
+T/R-legal channels, 336-band Link 4, 3-letter idents, ACLS-capable hulls carry full deck
+data), the `IclsAllocator`, the curated → stored → fallback precedence for all four
+resolvers, the nearest-neighbor TACAN degrade, and the flagship-name collision guard.
+
+**Needs an in-game pass** (checklist B18): that the CV Operations Data page renders the
+curated card (clean Callsign line, 7XX TACAN, 336-band Link 4), and that the boat's TACAN /
+ICLS / Link 4 actually radiate on those channels for a Hornet/Tomcat recovery.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

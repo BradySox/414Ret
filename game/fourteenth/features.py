@@ -443,6 +443,42 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="cruisemissiles",
         settings_fields=("cruise_missile_strikes", "cruise_missile_auto_raids"),
     ),
+    Feature(
+        # §64 carrier deck spawn policy + MP slot timing: DCS's only deck-parking
+        # lever is spawn timing -- the mission-start wave fills the six-pack (the
+        # taxi lane to the bow catapults) first, and a group activated even one
+        # second later is placed elsewhere on deck (dcs_liberation#1309). The
+        # CarrierDeckPolicy enum (replacing the player_flights_sixpack boolean,
+        # save-migrated) defaults to LAST_RESORT: player carrier flights take the
+        # same one-second placement activation AI always take, so nobody with a
+        # ten-minute cold start parks in the AI taxi flow and the six-pack only
+        # fills as overflow once the rest of the deck is full. TOT-delayed client
+        # carrier flights also stop being late-activated for their full delay
+        # (which removed their slots from the MP slot list until the push time):
+        # they spawn uncontrolled like their airfield counterparts, with the
+        # StartCommand holding only the AI members to the planned push.
+        # waypointgenerator.set_takeoff_time / needs_deck_placement_delay.
+        "carrier_deck_policy",
+        "Carrier deck spawn policy (six-pack last resort + MP slot timing)",
+        64,
+        settings_fields=("carrier_deck_policy",),
+    ),
+    Feature(
+        # §65 curated carrier comms: DCS auto-renders a "CV Operations Data"
+        # kneeboard page straight from the miz, and the generator used to feed
+        # it allocator junk (TACAN 1X + a random ident re-rolled every turn,
+        # Link 4 on a random UHF, a fresh random ATC each mission, the boat
+        # named "0796 | ..."). game/data/carrier_comms.py curates a per-hull
+        # boat card (hull-number TACAN + boat ident, hull-keyed ICLS, Link 4
+        # in the ACLS 336 MHz band, a stable ATC) applied with
+        # stored-values-win / taken-channel-degrades-to-neighbor precedence in
+        # GenericCarrierGenerator, which also names the flagship unit by its
+        # hull name and persists every value so the card is stable across
+        # turns. Pure generation behavior -- no setting, no plugin.
+        "carrier_comms",
+        "Curated carrier comms (CV Operations Data cleanup)",
+        65,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

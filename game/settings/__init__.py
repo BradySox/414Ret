@@ -8,6 +8,7 @@ from .optiondescription import OptionDescription
 from .settings import (
     AiRadioBehavior,
     AutoAtoBehavior,
+    CarrierDeckPolicy,
     DIFFICULTY_REALISM_PAGE,
     IadsEngine,
     NightMissions,

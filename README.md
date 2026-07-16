@@ -81,6 +81,15 @@ and selected later upstream fixes.
   what's left) — so a salvo
   spent on a truck park is a salvo you won't have for the command bunker. Opt-in (Mission
   Generation → "Ship-launched cruise missile strikes" + "Auto-plan cruise missile raids").
+- **The carrier six-pack stops being an AI trap.** DCS parks the first-spawned jets on the
+  six-pack — dead center in the taxi lane to the bow catapults — and that used to be *you*,
+  sitting through a ten-minute cold start while every AI jet taxiing to launch jammed up
+  against your parked Hornet. By default your flight now spawns clear of that lane (the
+  six-pack is only used once the rest of the deck fills up), and in multiplayer a flight with
+  a later push time **keeps its slots in the list from mission start** — the jet waits cold on
+  deck instead of not existing until its TOT ("your flight is delayed to start" is gone; your
+  AI wingmen still hold startup to the plan). Prefer the classic six-pack spawn? Flip Mission
+  Generation → "Carrier six-pack usage".
 - **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
   learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
   within minutes your briefed channels take sporadic bursts of barrage static — transmitted
@@ -342,6 +351,16 @@ and selected later upstream fixes.
   sequence within it: the first jet 100, the second 101, and so on across the whole mission.
   Two squadrons never share a block, and every other airframe keeps its normal number.
   Always on — nothing to configure.
+- **The carrier reads like a real boat.** DCS's auto-generated "CV Operations Data" kneeboard
+  page used to show allocator junk — the boat named `0796 | CVN-71 …`, TACAN 1X with an ident
+  that changed every mission, Link 4 on a random frequency, a new ATC channel every turn. Every
+  vanilla carrier now sails with its signature card: TACAN matches the hull number with a
+  boat-name ident (Roosevelt 71X TRO, Stennis 74X STN, Truman 75X HST…), ICLS and Link 4 live
+  on hull-keyed channels in the proper bands, the ATC frequency is stable and memorable, and
+  the Callsign line reads the ship's actual name. The numbers persist for the whole campaign —
+  learn Mother's card once. If a map's real airfield owns the hull channel (Bagram is 74X on
+  Afghanistan) the boat takes the nearest free neighbor instead. Always on — nothing to
+  configure.
 
 ### Planning and debriefing expose the information crews need
 

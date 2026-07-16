@@ -349,6 +349,16 @@ and selected later upstream fixes.
   sequence within it: the first jet 100, the second 101, and so on across the whole mission.
   Two squadrons never share a block, and every other airframe keeps its normal number.
   Always on — nothing to configure.
+- **The carrier reads like a real boat.** DCS's auto-generated "CV Operations Data" kneeboard
+  page used to show allocator junk — the boat named `0796 | CVN-71 …`, TACAN 1X with an ident
+  that changed every mission, Link 4 on a random frequency, a new ATC channel every turn. Every
+  vanilla carrier now sails with its signature card: TACAN matches the hull number with a
+  boat-name ident (Roosevelt 71X TRO, Stennis 74X STN, Truman 75X HST…), ICLS and Link 4 live
+  on hull-keyed channels in the proper bands, the ATC frequency is stable and memorable, and
+  the Callsign line reads the ship's actual name. The numbers persist for the whole campaign —
+  learn Mother's card once. If a map's real airfield owns the hull channel (Bagram is 74X on
+  Afghanistan) the boat takes the nearest free neighbor instead. Always on — nothing to
+  configure.
 
 ### Planning and debriefing expose the information crews need
 

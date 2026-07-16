@@ -5752,6 +5752,69 @@ landing.
 
 ---
 
+## §65 — Curated carrier comms (CV Operations Data cleanup)
+
+The answer to the 2026-07-16 complaint: **the DCS-generated "CV Operations Data" kneeboard
+page read like allocator junk.** DCS auto-renders that yellow-notepad page (and the matching
+briefing screen data) straight from the mission file — it cannot be restyled, only fed better
+data — and the generator fed it whatever fell out of the allocators: the boat "named"
+`0796 | CVN-71 Theodore Roosevelt` (the theater-unit id prefix leaking onto the Callsign
+line), TACAN channel **1X** with a `random.choice` ident that re-rolled every mission, ICLS
+channel 1, Link 4 parked on a random inter-flight UHF like 255.0, and a fresh random ATC
+frequency every single turn. The pro campaigns the 414th catalogs (Raven One's HOMEPLATE
+"Mother" card is the model) treat the boat's numbers as its identity: stable, hull-flavored,
+memorable.
+
+**The curated boat card.** `game/data/carrier_comms.py` (`CARRIER_COMMS_PLANS`, keyed by
+pydcs ship type id) gives every vanilla hull a signature data set — TACAN **channel = hull
+number** where that's legal for a surface transmit/receive beacon (channels 2–30 and 47–63 X
+are excluded by DCS datalink constraints, so Forrestal 59 → 64X and Tarawa hull 1 → 41X) with
+a **boat-name ident** (TRO/ABE/GWN/STN/HST/FID/TAR/KUZ), **hull-keyed ICLS** (CVN-71 → 11 …
+CVN-75 → 15, Forrestal 9, Tarawa 1), **Link 4 in the real ACLS 336 MHz band** (336.1–336.9,
+one per hull), and a **stable ATC UHF** (304–312, one per hull). Mod carriers without an
+entry keep the legacy allocator path end to end.
+
+**Precedence.** Values from the table are defaults, not mandates, resolved in
+`GenericCarrierGenerator._resolve_{atc,tacan,link4,icls}` (`tgogenerator.py`): a value
+stored on the control point — user-set from the base dialog or persisted from an earlier
+turn — always wins; a curated channel some other emitter already owns falls back gracefully.
+For TACAN the fallback is `TacanRegistry.alloc_near`: the map's real beacons own many
+hull-number channels (Bagram is 74X on Afghanistan, Kandahar 75X), so a taken channel walks
+outward to the **nearest valid free neighbor** (Stennis off Afghanistan gets 73X) instead of
+falling to the bottom of the band; `alloc_for_band` now also marks what it issues so the two
+allocators can't double-book. ICLS moved from a bare `iter(range(1, 21))` to an
+`IclsAllocator` (claim/reserve/alloc over a shared used-set) so a curated channel and the
+sequential fallback can't collide when two boats sail the same theater. **Every resolved
+value is persisted back to the control point** (`frequency`, `tacan`, `tcn_name`, `link4`,
+`icls_channel`) so the whole card is stable across turns — ATC, Link 4, and ICLS previously
+re-rolled or re-allocated every mission.
+
+**Flagship naming.** The page's Callsign line prints the flagship's *unit name*, so
+`_flagship_name` names the carrier unit by its hull name ("CVN-74 John C. Stennis") instead
+of the `NNNN | `-prefixed theater-unit name. The name is set before
+`_register_theater_unit` records it, so debrief kill-tracking keys off the same string; a
+second boat of the same class keeps the unique id-prefixed name (UnitMap collision guard).
+Escorts and every other ship keep the standard prefixed names.
+
+**Headless-verified end-to-end** (2026-07-16, Enduring Resolve through the real
+`GameGenerator` → `begin_turn_0` → `MissionGenerator` pipeline): the generated miz carries
+unit name `CVN-74 John C. Stennis`, TACAN 73X `STN` (74X correctly ceded to Bagram), ICLS 14,
+Link 4 336.4, group ATC 308.000 — exactly what the DCS page renders. Pure generation
+behavior: no setting, no plugin, no save-format change; applies to the next generated
+mission of any existing campaign (already-persisted channels on an old save win by design,
+so an in-progress campaign keeps its known numbers).
+
+**Tests.** `tests/test_carrier_comms.py`: table invariants (unique TACAN/ATC/ICLS/Link 4,
+T/R-legal channels, 336-band Link 4, 3-letter idents, ACLS-capable hulls carry full deck
+data), the `IclsAllocator`, the curated → stored → fallback precedence for all four
+resolvers, the nearest-neighbor TACAN degrade, and the flagship-name collision guard.
+
+**Needs an in-game pass** (checklist B18): that the CV Operations Data page renders the
+curated card (clean Callsign line, 7XX TACAN, 336-band Link 4), and that the boat's TACAN /
+ICLS / Link 4 actually radiate on those channels for a Hornet/Tomcat recovery.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

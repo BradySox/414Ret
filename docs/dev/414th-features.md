@@ -5616,9 +5616,12 @@ campaign real cruise missile raids, both directions.
 **The force-model contract first**: the missiles are real DCS weapons fired by a real,
 tracked ship TGO. Kills record natively through the ordinary death events (no
 debrief-schema change for the strikes themselves, no phantom spawns — the §35/§37
-discipline), enemy point defense gets to intercept the missiles (the §60/MANTIS SHORAD
-game: a raid against a Tor-defended C2 node is a saturation problem), and sinking the
-shooter ends the raids. The plugin owns no kills and no spawns.
+discipline), and sinking the shooter ends the raids. The plugin owns no kills and no
+spawns. The intended "enemy point defense gets to intercept" half (the §60/MANTIS SHORAD
+game: a raid against a Tor-defended C2 node as a saturation problem) is **NOT live** —
+the 2026-07-16 flown test showed no defender in the stack ever wakes for a cruise raid
+(see the B16 observed gap below); until the wake fix lands, only a defender already hot
+for another reason can engage.
 
 **Eligibility** is the curated `LACM_SHIP_DCS_IDS` set in `game/fourteenth/cruise_raids.py`
 (the §41 curated-data pattern — DCS/pydcs expose no per-ship weapon taxonomy): the vanilla
@@ -5685,10 +5688,15 @@ the F10 call-for-fire + a raid in a sibling mission). The missiles cruised to th
 C2 target and killed it (hits + a kill recorded natively), the launch cues fired, the raid
 launched inside the [240, 900] s stagger window, and the magazine loop closed end-to-end:
 debrief row "6 fired, 10 remaining" → the save's `cruise_missile_magazines` debited 16→10
-→ next turn's raid re-planned onto the *next* command center. Still unobserved (minor):
-SHORAD engaging the inbounds (the target's Tor never fired — likely already dead), the
-`#N` marker-text salvo sizing, the CH Kalibr hulls, red-side raids, and full-magazine
-exhaustion.
+→ next turn's raid re-planned onto the *next* command center. **Observed gap (the
+SHORAD-intercept half FAILED):** the target's point defense — 2 alive SA-15s 250 m from
+the impact — sat idle through the whole salvo (user-watched). Code-confirmed root cause:
+the group ran vanilla on DCS's default ALARM STATE AUTO, which never goes weapons-hot
+for a *weapon* object; the managed paths are equally blind (MANTIS EMCON wakes off MOOSE
+`Detection`, which scans units, never weapons; the SHORAD link's `SHORAD.Harms`/`Mavs`
+wake lists carry no BGM_109/Kalibr). Fix direction in
+`docs/dev/design/414th-cruise-missile-raids-notes.md`. Still untested (minor): the `#N`
+marker-text salvo sizing, the CH Kalibr hulls, red-side raids, full-magazine exhaustion.
 
 ---
 

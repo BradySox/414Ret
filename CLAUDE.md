@@ -1966,8 +1966,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Tomahawk shooters + the CurrentHill Kalibr `*_LACM`/`_CMP` hulls, curated in
     `LACM_SHIP_DCS_IDS`) strike shore targets via a scripted `FireAtPoint` push with the
     cruise-missile weapon flag. **Real weapons from real, tracked ships** — kills record
-    natively, MANTIS/SHORAD point defense gets to intercept the missiles, sinking the shooter
-    ends the raids, the plugin owns no kills/spawns (the §35/§37 discipline). Each launching
+    natively, sinking the shooter ends the raids, the plugin owns no kills/spawns (the §35/§37
+    discipline). Each launching
     group carries a **persisted campaign magazine** (`game.cruise_missile_magazines`, per-hull
     table: Burke 24 / Kalibr corvette 8, **no rearm**) debited ONLY from what the plugin
     reports fired via the new `cruise_missiles_state` Lua→Python channel (the §57 pattern —
@@ -1987,13 +1987,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`game/fourteenth/cruise_raids.py`, `game/missiongenerator/cruisemissileluadata.py`,
     `resources/plugins/cruisemissiles/`, `game/debriefing.py`,
     `game/sim/missionresultsprocessor.py`, `game/settings/settings.py`; features doc §63,
-    checklist B16 — **VERIFIED 2026-07-16** (flown Persian Gulf "Scenic Route" test): the
-    scripted FireAtPoint+cruise-flag push fires the exact commanded quantity on BOTH vanilla
+    checklist B16 — **core loop VERIFIED 2026-07-16** (flown Persian Gulf "Scenic Route" test):
+    the scripted FireAtPoint+cruise-flag push fires the exact commanded quantity on BOTH vanilla
     hulls (the "least certain" Ticonderoga flew the raid — 6 BGM-109C shots, C2 target killed
     natively; a Burke group flew the F10 call-for-fire), the raid launched inside the [240,900] s
     stagger window, and the magazine loop closed end-to-end (debrief "6 fired, 10 remaining" →
-    save debited 16→10 → next turn re-targets the next command center). Still unobserved:
-    SHORAD intercept, `#N` marker salvo sizing, CH Kalibr hulls, red-side raids.)
+    save debited 16→10 → next turn re-targets the next command center). **OBSERVED GAP, open:
+    no defender ever wakes for a cruise raid** — 2 alive SA-15s 250 m from the impact sat idle
+    through the salvo (vanilla groups run ALARM AUTO, which never goes hot for a *weapon*
+    object; MANTIS EMCON detection scans units, never weapons; the MOOSE SHORAD wake lists
+    carry no BGM_109/Kalibr) — so the intended saturation-vs-point-defense game is NOT live;
+    fix direction in `414th-cruise-missile-raids-notes.md` "The intercept gap". Still unflown:
+    `#N` marker salvo sizing, CH Kalibr hulls, red-side raids.)
 
 ---
 

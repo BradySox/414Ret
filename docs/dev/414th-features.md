@@ -5595,6 +5595,87 @@ BORT number is livery-driven, so verify the Heatblur module honors the mission's
 
 ---
 
+## §63 — Ship-launched cruise missile raids
+
+DCS warships with land-attack cruise missiles — the vanilla Burke's Tomahawks, the
+CurrentHill pack's explicit Kalibr hulls — can strike shore targets via a `FireAtPoint`
+task carrying the cruise-missile weapon flag (`2097152`, the ME "fire Tomahawks at a
+point" mechanism), but nothing in Retribution ever tasked them: ships were ANTISHIP
+targets, carrier decks, and the §34 gun line, never shooters inland. §63 gives the
+campaign real cruise missile raids, both directions.
+
+**The force-model contract first**: the missiles are real DCS weapons fired by a real,
+tracked ship TGO. Kills record natively through the ordinary death events (no
+debrief-schema change for the strikes themselves, no phantom spawns — the §35/§37
+discipline), enemy point defense gets to intercept the missiles (the §60/MANTIS SHORAD
+game: a raid against a Tor-defended C2 node is a saturation problem), and sinking the
+shooter ends the raids. The plugin owns no kills and no spawns.
+
+**Eligibility** is the curated `LACM_SHIP_DCS_IDS` set in `game/fourteenth/cruise_raids.py`
+(the §41 curated-data pattern — DCS/pydcs expose no per-ship weapon taxonomy): the vanilla
+`USS_Arleigh_Burke_IIa` + `TICONDEROG`, the CH Burkes/Ticonderogas, and the CH
+`*_LACM`/`_CMP` Kalibr variants (`redfor_current`/`redfor_russia_2020`/`CH_russia_2020`
+field them, so red raids exist today). The AShM-only sister hulls are deliberately absent.
+
+**Magazines (the anti-exploit)**: DCS silently rearms every mission, so unmanaged ships
+would fire a free full salvo every turn. Each launching *group* carries a persisted
+campaign magazine (`game.cruise_missile_magazines`, keyed by the stable
+`TheaterGroup.group_name`, seeded from the per-hull `LACM_MAGAZINE_BY_TYPE` table — Burke
+24, the 8-cell Kalibr corvettes 8) that is debited **only** from what the plugin reports
+actually fired, through the new `cruise_missiles_state` Lua→Python channel (the §57
+minefields pattern: declared in `dcs_retribution.lua`'s `game_state`, parsed in
+`game/debriefing.py`, committed by `MissionResultsProcessor.commit_cruise_missiles` →
+`reconcile_cruise_missiles`). Planning/generation never debits, so re-generating a
+mission is free; there is no rearm — the magazine is the war stock.
+
+**Two fire paths share one budget** (`resources/plugins/cruisemissiles/`):
+
+* **Auto raids** (`cruise_missile_auto_raids`): `plan_cruise_raids` — a pure function of
+  game state, called by the emitter — picks at most one raid per side per turn: the ship
+  whose best reachable (≤ 250 NM) enemy ground object has the highest category priority
+  (commandcenter/comms first — composing with §52 decapitation — then the §53 war-economy
+  power/factory/oil/fuel/ware/ammo buildings, then anything else strikeable; never ships,
+  never `map_hidden` ambush teams), ROE-gated for BLUE via the §40 `roe_blocks_target`.
+  The plugin fires the salvo (`RAID_SALVO` 6, capped by the magazine) after a launch
+  delay (default 240 s), cueing the launching side with the target and the defender with
+  a deliberately vague "LAUNCH WARNING — enemy cruise missile launch detected".
+* **Player call-for-fire**: an F10 "Cruise Missile Strike" menu per coalition that owns
+  a capable ship — a salvo (default 4) onto the coalition's last F10 map marker from the
+  nearest ship with stock in range (the §34 NGFS marker pattern), plus a "Magazine
+  status" readout so the stock is visible before spending it. **The marker's own text
+  sizes the salvo**: a marker whose text is just a number — `6`, or `#6` — fires exactly
+  that many (`salvoFromMarkText`; magazine-capped, so `#99` just empties the tubes),
+  while any normal target label (or a bare `#`, or `0`) falls back to the default. The
+  mark panels from `world.getMarkPanels()` carry their `text` field, so no extra channel
+  is needed.
+
+**Wiring**: `game/missiongenerator/cruisemissileluadata.py` (`populate_cruise_missiles_lua`,
+in `luagenerator.py` after the minefields emitter) emits `dcsRetribution.cruiseMissiles`
+— `ships` ({group, coalition, remaining}: the mission's hard per-group expenditure cap)
++ `raids` ({group, coalition, target, x, y, count}) — only when `cruise_missile_strikes`
+is on and a live launching group exists, so a normal mission carries no node and the
+plugin no-ops. Plugin options: raid launch delay, player salvo size, player range,
+impact dispersion, menu toggle. Settings (Mission Generation → Naval strike, both
+default **OFF**): `cruise_missile_strikes` (master) + `cruise_missile_auto_raids`
+(`enabled_when` the master).
+
+**Tests**: `tests/fourteenth/test_cruise_raids.py` (magazine seed/persist/debit-floor,
+the C2-over-closer target pick, the range gate, ship/hidden/dead target skips, the
+toggle gates, symmetric red raids, pre-feature state tolerance),
+`tests/missiongenerator/test_cruisemissileluadata.py` (node shape + absence), and
+`tests/lua/test_cruisemissiles_runtime.py` (the delay, the cruise weapon flag on the
+pushed task, the magazine as a hard cap shared across raid + call-for-fire, the state
+mirror + dirty flag, dead-ship no-op, marker targeting, clean no-node no-op — the
+harness `TaskFireAtPoint`/`PushTask` fakes gained the `weaponType` argument).
+
+**Needs an in-game pass** (checklist B16): whether the DCS ship AI actually ripples the
+commanded quantity via a scripted `FireAtPoint` push with `weaponType = CruiseMissile`
+(the ME task is proven; the scripted push is the same table), which of the curated hulls
+honor it (the vanilla Ticonderoga's Tomahawk fit is the least certain), TLAM flight
+behavior over terrain, and whether SHORAD actually engages the missiles in anger.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

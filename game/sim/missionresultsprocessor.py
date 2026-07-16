@@ -76,6 +76,8 @@ class MissionResultsProcessor:
                 self.commit_super_gaggle(debriefing)
             with logged_duration("commit_minefields"):
                 self.commit_minefields(debriefing)
+            with logged_duration("commit_cruise_missiles"):
+                self.commit_cruise_missiles(debriefing)
             # Political will feeds AFTER the loss/POW/capture steps (so the held-POW
             # trickle reads post-recovery state) and BEFORE the SITREP (so the band
             # shows this turn's fresh values).
@@ -106,6 +108,14 @@ class MissionResultsProcessor:
         from game.fourteenth.minefields import reconcile_minefields
 
         reconcile_minefields(self.game, debriefing)
+
+    def commit_cruise_missiles(self, debriefing: Debriefing) -> None:
+        # §63: debit each launching ship group's persisted campaign magazine by what
+        # the cruisemissiles plugin reported fired -- the only debit site, so mission
+        # re-generation never double-counts. No-op when nothing was reported.
+        from game.fourteenth.cruise_raids import reconcile_cruise_missiles
+
+        reconcile_cruise_missiles(self.game, debriefing)
 
     def record_sitrep(self, debriefing: Debriefing) -> None:
         # Capture a one-turn campaign summary for the next turn's kneeboard cover

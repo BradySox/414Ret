@@ -170,6 +170,13 @@ class StateData:
     #: plugin works in). Empty on pre-feature state files / when the feature is off.
     minefields_state: list[tuple[int, float, float, float, int]]
 
+    #: ``(ship_group_name, fired)`` per ship group that launched cruise missiles this
+    #: mission (the §63 ``cruisemissiles`` plugin mirrors its expenditure).
+    #: ``reconcile_cruise_missiles`` debits the persisted campaign magazine by ``fired``
+    #: at the turn boundary -- the only debit site, so re-generating a mission never
+    #: double-counts. Empty on pre-feature state files / when the feature is off.
+    cruise_missiles_state: list[tuple[str, int]]
+
     @classmethod
     def from_json(cls, data: Dict[str, Any], unit_map: UnitMap) -> StateData:
         def clean_unit_list(unit_list: List[Any]) -> List[str]:
@@ -334,6 +341,27 @@ class StateData:
 
         minefields_state = parse_minefields_state(data.get("minefields_state", []))
 
+        def parse_cruise_missiles_state(raw: Any) -> list[tuple[str, int]]:
+            # The §63 cruisemissiles plugin writes {group=, fired=} per ship group that
+            # launched (or the Lua JSON encoder yields [] when none, and pre-feature
+            # state files omit the key). Pull the tuple defensively, skipping
+            # malformed / unnamed entries.
+            if not isinstance(raw, list):
+                return []
+            out: list[tuple[str, int]] = []
+            for entry in raw:
+                if not isinstance(entry, dict):
+                    continue
+                group = entry.get("group")
+                fired = entry.get("fired")
+                if isinstance(group, str) and group and isinstance(fired, (int, float)):
+                    out.append((group, int(fired)))
+            return out
+
+        cruise_missiles_state = parse_cruise_missiles_state(
+            data.get("cruise_missiles_state", [])
+        )
+
         return cls(
             mission_ended=data.get("mission_ended", False),
             killed_aircraft=killed_aircraft,
@@ -346,6 +374,7 @@ class StateData:
             combat_sar_captures=combat_sar_captures,
             combat_sar_survivors=combat_sar_survivors,
             minefields_state=minefields_state,
+            cruise_missiles_state=cruise_missiles_state,
         )
 
 

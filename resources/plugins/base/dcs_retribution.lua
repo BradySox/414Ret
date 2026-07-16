@@ -15,6 +15,7 @@ combat_sar_rescues = {} -- Combat SAR plugin appends the original aircraft unit 
 combat_sar_captures = {} -- Combat SAR plugin appends {unit=<original airframe unit name>, x=, y=} per downed pilot CAPTURED by an enemy snatch party before rescue (held as a recoverable POW)
 combat_sar_survivors = {} -- Combat SAR plugin mirrors {unit=, x=, y=} per downed pilot still UN-resolved (down/boarding); at mission end these go MIA and persist to the next mission (persistent evaders, 2026-07-10)
 minefields_state = {} -- §57 minefields plugin appends/updates {id=, x=, z=, radius=, charges=} per field it managed this mission (persisted + newly laid); Python reconciles at debrief to carry undisturbed fields across turns
+cruise_missiles_state = {} -- §63 cruisemissiles plugin appends/updates {group=, fired=} per ship group that launched cruise missiles this mission; Python debits the persisted campaign magazine at debrief
 mission_ended = false
 dirty_state = false -- Track if state has changed and needs writing
 
@@ -71,6 +72,7 @@ function write_state()
         ["combat_sar_captures"] = combat_sar_captures or {},
         ["combat_sar_survivors"] = combat_sar_survivors or {},
         ["minefields_state"] = minefields_state or {},
+        ["cruise_missiles_state"] = cruise_missiles_state or {},
     }
     local ok, write_error = pcall(function()
         fp:write(json:encode(game_state))

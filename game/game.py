@@ -206,6 +206,12 @@ class Game:
         # across turns and re-emitted into the next mission for the plugin to re-arm.
         # Populated lazily by game.fourteenth.minefields when air_droppable_minefields is on.
         self.minefields: list["Minefield"] = []
+        # §63 cruise missile raids: each LACM ship group's remaining missile stock,
+        # keyed by the stable TheaterGroup.group_name — seeded on first sight, debited
+        # at the turn boundary from what the plugin reports fired (never at
+        # generation). Lazily populated by game.fourteenth.cruise_raids when
+        # cruise_missile_strikes is on. There is no rearm.
+        self.cruise_missile_magazines: dict[str, int] = {}
         # Per-campaign secret salt for the §3 concealment jitter seed (id XOR salt),
         # so the jittered "suspected activity" centre is deterministic but not
         # recomputable from the public TGO id. Lazily set on first use; persisted.
@@ -303,6 +309,7 @@ class Game:
         state.setdefault("convoy_ambush_state", {})
         state.setdefault("downed_pilots", [])
         state.setdefault("minefields", [])
+        state.setdefault("cruise_missile_magazines", {})
         state.setdefault("concealment_salt", None)
         state.setdefault("war_economy_seeded", False)
         state.setdefault("munitions_seeded", False)

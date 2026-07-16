@@ -513,6 +513,16 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                # Ship-launched land-attack fires (§63) -- the finite-magazine
+                # cruise missile game, kept out of the (full) Battlefield life
+                # grab of in-mission texture toggles.
+                "Naval strike",
+                [
+                    "cruise_missile_strikes",
+                    "cruise_missile_auto_raids",
+                ],
+            ),
+            (
                 # Game-master levers for hosted multiplayer events -- deliberate
                 # host actions, never automatic systems.
                 "Host & event tools",
@@ -2746,6 +2756,39 @@ class Settings:
             "take it. Off = only you lay mines, by hand. Needs the 'Air-droppable "
             "minefields' setting on and a blue squadron that can carry the CBU-99 "
             "dispenser (A-7E / Hornet / Harrier)."
+        ),
+    )
+    cruise_missile_strikes: bool = boolean_option(
+        "Ship-launched cruise missile strikes",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Warships that carry land-attack cruise missiles (the Burke's "
+            "Tomahawks, the CurrentHill Kalibr ships) can fire them at shore "
+            "targets: an F10 'Cruise Missile Strike' menu calls a salvo onto your "
+            "last map marker from the nearest ship with missiles left. Each ship "
+            "group carries a finite campaign magazine -- there is no rearm, so "
+            "every salvo spends stock you never get back. The missiles are real "
+            "weapons from a real, tracked ship: kills count at debrief, enemy "
+            "point defense can intercept them, and sinking the shooter ends the "
+            "raids. Symmetric. Runs via the 'Cruise missile strikes' LUA plugin "
+            "-- keep that plugin enabled or this setting does nothing."
+        ),
+    )
+    cruise_missile_auto_raids: bool = boolean_option(
+        "Auto-plan cruise missile raids",
+        enabled_when="cruise_missile_strikes",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Each turn, a side with a cruise-missile ship in range commits one "
+            "raid: a salvo fired early in the mission at its highest-value "
+            "reachable enemy ground object -- command centers and comms first, "
+            "then war-industry buildings, then anything strikeable. Your own "
+            "raids respect the campaign ROE zones. Watch for the LAUNCH WARNING: "
+            "an enemy raid is your point-defense SAMs' problem -- or yours."
         ),
     )
     enemy_comms_jamming: bool = boolean_option(

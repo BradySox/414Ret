@@ -18,11 +18,14 @@ from game.fourteenth.cruise_raids import (
     LACM_MAGAZINE_BY_TYPE,
     MAX_RAID_RANGE_M,
     RAID_SALVO,
+    debrief_expenditures,
     ensure_magazines,
     lacm_ships,
     magazines,
     plan_cruise_raids,
+    player_briefing_info,
     reconcile_cruise_missiles,
+    tgo_magazines,
 )
 from game.theater import Player
 
@@ -316,6 +319,90 @@ def test_carrier_escort_burkes_are_launching_groups() -> None:
     assert [(r.group_name, r.target_name) for r in raids] == [
         ("CVN-73 Washington Group", "Division HQ")
     ]
+
+
+def test_player_briefing_info_is_blue_side_and_gated() -> None:
+    blue_cp, _ = _blue_burke()
+    red_cp = _cp(Player.RED)
+    red_cp.ground_objects.append(
+        _ship_tgo("Karakurt", red_cp, _Pos(0.0, 0.0), [_unit(KARAKURT)], "Red Corvette")
+    )
+    red_cp.ground_objects.append(
+        _target_tgo("HQ", "commandcenter", _Pos(10_000.0, 0.0))
+    )
+
+    ships, raids = player_briefing_info(cast(Any, _game([blue_cp, red_cp])))
+    assert [s.group_name for s in ships] == ["CVBG | Burke"]  # red ship excluded
+    assert [(r.group_name, r.target_name) for r in raids] == [("CVBG | Burke", "HQ")]
+
+    # Auto-raids off: the magazine status still briefs, the raid doesn't.
+    ships, raids = player_briefing_info(cast(Any, _game([blue_cp, red_cp], auto=False)))
+    assert ships and raids == []
+
+    # Master off: the briefing section renders nothing at all.
+    assert player_briefing_info(cast(Any, _game([blue_cp, red_cp], master=False))) == (
+        [],
+        [],
+    )
+
+
+def test_tgo_magazines_rows_for_the_ground_object_dialog() -> None:
+    blue_cp, tgo = _blue_burke()
+    game = _game([blue_cp])
+    assert tgo_magazines(cast(Any, game), cast(Any, tgo)) == [
+        ("CVBG | Burke", LACM_MAGAZINE_BY_TYPE[BURKE])
+    ]
+
+    # Expenditure shows through; the dialog reads the live campaign magazine.
+    magazines(cast(Any, game))["CVBG | Burke"] = 3
+    assert tgo_magazines(cast(Any, game), cast(Any, tgo)) == [("CVBG | Burke", 3)]
+
+    # A carrier task force reads the same way (its escorts' magazine).
+    cvbg_cp = _cp(Player.BLUE)
+    cvbg = _carrier_tgo(
+        "CVN-73", cvbg_cp, _Pos(0.0, 0.0), [_unit("CVN_73"), _unit(BURKE)], "CVBG-73"
+    )
+    cvbg_cp.ground_objects.append(cvbg)
+    game2 = _game([cvbg_cp])
+    assert tgo_magazines(cast(Any, game2), cast(Any, cvbg)) == [
+        ("CVBG-73", LACM_MAGAZINE_BY_TYPE[BURKE])
+    ]
+
+    # A non-ship TGO, or the feature off, contributes no rows.
+    target = _target_tgo("HQ", "commandcenter", _Pos(0.0, 0.0))
+    assert tgo_magazines(cast(Any, game), cast(Any, target)) == []
+    assert (
+        tgo_magazines(cast(Any, _game([blue_cp], master=False)), cast(Any, tgo)) == []
+    )
+
+
+def test_debrief_expenditures_hides_enemy_remainders() -> None:
+    blue_cp, _ = _blue_burke()
+    red_cp = _cp(Player.RED)
+    red_cp.ground_objects.append(
+        _ship_tgo("Karakurt", red_cp, _Pos(0.0, 0.0), [_unit(KARAKURT)], "Red Corvette")
+    )
+    game = _game([blue_cp, red_cp])
+    ensure_magazines(cast(Any, game))
+    debriefing = SimpleNamespace(
+        state_data=SimpleNamespace(
+            cruise_missiles_state=[
+                ("CVBG | Burke", 6),
+                ("Red Corvette", 4),
+                ("Silent ship", 0),  # never fired: not a debrief row
+            ]
+        )
+    )
+    # The debrief window opens after the turn-boundary debit.
+    reconcile_cruise_missiles(cast(Any, game), cast(Any, debriefing))
+    assert debrief_expenditures(cast(Any, game), cast(Any, debriefing)) == [
+        ("CVBG | Burke", 6, LACM_MAGAZINE_BY_TYPE[BURKE] - 6),
+        ("Red Corvette", 4, None),  # enemy residual stock stays hidden
+    ]
+
+    # Pre-feature state shape: no rows, no crash.
+    empty = SimpleNamespace(state_data=SimpleNamespace())
+    assert debrief_expenditures(cast(Any, game), cast(Any, empty)) == []
 
 
 def test_carrier_task_forces_are_never_raid_targets() -> None:

@@ -12,6 +12,11 @@ from dcs.mission import Mission
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from game.ato.flightwaypoint import FlightWaypoint
+from game.fourteenth.cruise_raids import (
+    CruiseRaid,
+    LacmShip,
+    player_briefing_info,
+)
 from game.ground_forces.combat_stance import CombatStance
 from game.radio.radios import RadioFrequency
 from game.runways import RunwayData
@@ -165,6 +170,8 @@ class BriefingGenerator(MissionInfoGenerator):
     def __init__(self, mission: Mission, game: Game):
         super().__init__(mission, game)
         self.allied_flights_by_departure: Dict[str, List[FlightData]] = {}
+        self.cruise_missile_ships: List[LacmShip] = []
+        self.cruise_missile_raids: List[CruiseRaid] = []
         env = Environment(
             loader=FileSystemLoader("resources/briefing/templates"),
             autoescape=select_autoescape(
@@ -182,6 +189,7 @@ class BriefingGenerator(MissionInfoGenerator):
     def generate(self) -> None:
         """Generate the mission briefing"""
         self._generate_frontline_info()
+        self._generate_cruise_missile_info()
         self.generate_allied_flights_by_departure()
         self.owned_airbases = self._collect_owned_airbases()
         self.mission.set_description_text(self.template.render(vars(self)))
@@ -230,6 +238,13 @@ class BriefingGenerator(MissionInfoGenerator):
         """Build FrontLineInfo objects from FrontLine type and append to briefing."""
         for front_line in self.game.theater.conflicts():
             self.add_frontline(FrontLineInfo(front_line))
+
+    def _generate_cruise_missile_info(self) -> None:
+        """Friendly cruise-missile ships (with magazines) and this turn's
+        planned auto raid, so the tasking is visible before the LAUNCH message."""
+        self.cruise_missile_ships, self.cruise_missile_raids = player_briefing_info(
+            self.game
+        )
 
     # TODO: This should determine if runway is friendly through a method more robust than the existing string match
     def generate_allied_flights_by_departure(self) -> None:

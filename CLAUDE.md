@@ -1983,7 +1983,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Iranian Tomcats sequence too); everything else keeps the stock number. Per-mission numbering
     (the campaign has no per-airframe identity); pure generation behavior — no setting, no
     plugin, no save change. Tests `tests/missiongenerator/test_modex.py`; features doc §62,
-    checklist B15 — needs an in-game pass.
+    checklist B15 — **VERIFIED 2026-07-16** (user visual confirmation on the flown Scenic Route
+    turn-3 test: DCS paints the mission's `onboard_num`, incl. the Heatblur F-14 whose
+    livery-driven BORT rendering was the row's specific doubt).
 63. **Ship-launched cruise missile raids** — LACM warships (the vanilla Burke/Ticonderoga
     Tomahawk shooters + the CurrentHill Kalibr `*_LACM`/`_CMP` hulls, curated in
     `LACM_SHIP_DCS_IDS`) strike shore targets via a scripted `FireAtPoint` push with the

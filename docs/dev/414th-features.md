@@ -5670,9 +5670,17 @@ distinct per-squadron blocks, Tomcats-before-Hornets block order, per-coalition 
 starting at 100, the non-modex no-op, the once-only whole-block country reservation, the
 nine-squadron wrap, and a pydcs guard that every curated id resolves to a real plane type.
 
-**Needs an in-game pass** (checklist B15): that DCS renders the assigned board number on the
-airframe (and the kneeboard/F2 view reads it) for both the Hornet and the Tomcat — the F-14's
-BORT number is livery-driven, so verify the Heatblur module honors the mission's `onboardNum`.
+**In-game pass: ✅ VERIFIED 2026-07-16** (checklist B15). The open question was whether DCS
+renders the assigned board number on the airframe at all — with the Heatblur F-14 the specific
+doubt, since its BORT number is livery-driven and might have ignored the mission's `onboardNum`.
+User visual confirmation on the flown Scenic Route turn-3 test (a US Navy 2005 carrier campaign
+fielding both Hornets and Tomcats, 8 Tomcats airborne): *"The Modex on our fork is 100% working
+… Everyone's modex looked accurate."* **DCS honors `onboard_num`, F-14 included.**
+
+That mechanism is what any per-pilot modex work rests on — see upstream issue
+[#863](https://github.com/dcs-retribution/dcs-retribution/issues/863) (per-pilot modex pins in
+the squadron YAML), which §62 does **not** close: §62 numbers *slots* per mission, not *pilots*
+across missions, and its curated `MODEX_AIRCRAFT_IDS` doesn't cover the filer's A-4E-C.
 
 ---
 

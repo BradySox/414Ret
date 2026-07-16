@@ -67,6 +67,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 16 | **AI helicopter terrain CFIT trio** (helo cruise waypoints at the dead `heli_cruise_alt_agl` setting; ≤5 NM RADIO terrain-anchor subdivision of long AI helo legs; air-start unit records mirroring the point `alt_type` — all three verified verbatim in upstream `dev`) | 🟡 NEAR | High (AI helos CFIT on every hilly map; the flown Red Tide M1 lost 3 Mi-8 + 1 Mi-24 to it) | C8 ☐ |
 | 17 | **Blue-block miz markers load + bind blue** (`MizCampaignLoader`: every marker class also walks the BLUE country block — blue-block ships/SAM/EWR/missile/coastal/offshore markers were silently dropped, 22 authored markers across 7 upstream campaigns never generated (Dynamo's evacuation flotilla, Allied Sword's oil platforms, Falklands task-force ships…) — and a blue-block marker binds the nearest BLUE CP instead of nearest-any; red-block markers keep the coalition-agnostic proximity convention, plus an actionable `generate_ewrs` no-ForceGroup error naming the stranded marker/CP) | 🟢 READY | High (restores authored content in 7 shipped campaigns; kills a silent authoring foot-gun) | n/a (tests/test_miz_marker_binding.py + the 7 campaigns headless-verified) |
 | 18 | **Ship-launched cruise missile strikes** (generic core of fork [414Ret#599](https://github.com/bradyccox/414Ret/pull/599): `game/cruisemissiles.py` LACM hull set + persisted no-rearm magazine + auto-raid planner, `cruisemissileluadata` emitter, `cruisemissiles` plugin — F10 call-for-fire with marker-text salvo sizing + magazine status — and the `cruise_missiles_state` debrief channel; fork couplings stripped: no ROE-zone gate, no `map_hidden`, no `enabled_when`) | 🔵 IN REVIEW | High (naval land-attack for every campaign; both settings default off) — **pushed as draft PR #872**, opened 2026-07-15 | n/a (unit-tested both sides; validated on dev @ `ef576acc`: pytest/Black/mypy clean) |
+| 19 | **Curated carrier comms** (§65 verbatim: `game/data/carrier_comms.py` per-hull boat cards, `TacanRegistry.alloc_near` nearest-neighbor degrade + `alloc_for_band` marking, `IclsAllocator`, the four `_resolve_*` precedence helpers + flagship hull-naming; NO fork couplings — the port only adds the Pretense allocator-type adaptation the fork doesn't need) | 🔵 IN REVIEW | High (every carrier campaign's CV Ops Data page reads real, stable boat data) — **pushed as draft PR #874**, opened 2026-07-16 | B18 ☐ |
 
 ---
 
@@ -270,6 +271,34 @@ unvalidated "fix" is not something to ask upstream to take.
   tasked raid + magazines in the mission briefing, a magazine box in the
   naval TGO dialog (friendly side only), and per-group expenditure in the
   debrief window — all driven by tested helpers in `game/cruisemissiles.py`.
+
+### 19. Curated carrier comms — 🔵 IN REVIEW (pushed as draft PR #874, 2026-07-16)
+- **What:** the fork's §65 verbatim — DCS renders the "CV Operations Data"
+  kneeboard page straight from the miz, and the generator fed it allocator
+  junk (the boat "named" `0796 | CVN-71 …`, TACAN 1X + a random ident
+  re-rolled every mission, Link 4 on a random UHF, a fresh random ATC every
+  turn). A curated per-hull boat card (`game/data/carrier_comms.py`:
+  hull-number TACAN + boat ident, hull-keyed ICLS, Link 4 in the ACLS
+  336 MHz band, stable ATC) resolved with stored-values-win precedence;
+  `TacanRegistry.alloc_near` degrades a map-owned hull channel to the
+  nearest valid free neighbor (Bagram owns 74X on Afghanistan); a shared
+  `IclsAllocator`; every value persists to the control point; the flagship
+  unit named by its hull name (before UnitMap registration).
+- **Why upstream cares:** every carrier campaign's kneeboard/briefing carrier
+  data becomes stable and realistic; the `alloc_for_band` marking also fixes a
+  latent cross-usage TACAN double-issue (the X-band T/R and A/A pools overlap
+  at 37–46 and 100–126 and neither iterator marked its picks). No settings, no
+  save-format change.
+- **Carve note:** zero fork couplings — the port is the fork code verbatim
+  minus §-number comments, plus adapting upstream's Pretense generators
+  (`Iterator[int]` → `IclsAllocator`; `alloc()` keeps the same sequential
+  walk, Pretense behavior untouched — the fork has no Pretense).
+- **Files:** `game/data/carrier_comms.py`, `game/radio/tacan.py`,
+  `game/missiongenerator/tgogenerator.py`, `game/pretense/pretensetgogenerator.py`.
+- **Tests:** `tests/test_carrier_comms.py` (24 tests, ported verbatim).
+- **Status:** opened 2026-07-16 as **draft [PR #874](https://github.com/dcs-retribution/dcs-retribution/pull/874)**
+  on dev @ `ef576acc`; validated on that base: pytest 256 passed, Black clean,
+  mypy clean (the fork side landed as [414Ret#611](https://github.com/bradyccox/414Ret/pull/611)).
 
 ---
 

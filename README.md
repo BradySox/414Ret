@@ -262,7 +262,7 @@ and selected later upstream fixes.
   (`germany_1980_red_tide_turn03_20260716-193205.miz`). That folder is one DCS's own mission browser
   lists, so a past turn re-opens straight from the game when you want to see what actually spawned,
   and hosts stop hand-copying the miz to a named file before every event. Re-planning and generating
-  a turn again keeps *both* copies rather than overwriting the flown one. The newest 40 are kept;
+  a turn again keeps *both* copies rather than overwriting the flown one. The newest 20 are kept;
   anything you put in that folder yourself is never touched.
 
 ### The air war behaves like a campaign, not a queue of isolated sorties

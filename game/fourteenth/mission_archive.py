@@ -24,10 +24,10 @@ Two properties this module is built around:
   :data:`_ARCHIVED_MISSION` inside the archive directory, so a hand-named miz that
   ends up in there is never deleted.
 
-There is no ``Settings`` toggle: the archive is a bounded ring buffer of ~2 MB
-files in an obvious folder, and a toggle you can forget to switch on defeats the
-one thing this is for. Same precedent as §42 map tiles and §43 flight defaults --
-on-disk content is the switch.
+There is no ``Settings`` toggle: the archive is a bounded ring buffer in an
+obvious folder, and a toggle you can forget to switch on defeats the one thing
+this is for. Same precedent as §42 map tiles and §43 flight defaults -- on-disk
+content is the switch.
 """
 
 from __future__ import annotations
@@ -44,10 +44,12 @@ from game.persistency import mission_archive_dir
 if TYPE_CHECKING:
     from game import Game
 
-#: How many archived missions to keep. A generated mission is ~2 MB, so this is a
-#: bounded ring buffer worth tens of MB -- generous enough to hold a campaign's
-#: turns even when a heavily re-planned one is generated several times.
-KEEP_ARCHIVED_MISSIONS = 40
+#: How many archived missions to keep. Mission size scales with the number of
+#: player-crewed airframes -- almost entirely kneeboard PNGs, which are ~90% of a
+#: generated miz -- so a solo turn is ~2 MB while a fully-crewed MP event mission
+#: is ~20 MB. Sized off the MP case (the one that matters for a squadron), this is
+#: a few hundred MB at worst and still covers a campaign's worth of turns.
+KEEP_ARCHIVED_MISSIONS = 20
 
 #: Matches only what :func:`archive_name_for` produces. The prune is scoped to this
 #: so nothing else in the archive directory can ever be deleted.

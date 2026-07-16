@@ -5929,9 +5929,14 @@ Two properties it is built around, both tested:
   it runs, the generated mission is already written and flyable; a failed *copy* must not cost
   the user the *original*.
 - **It only ever prunes its own output.** Retention keeps the newest `KEEP_ARCHIVED_MISSIONS`
-  (40, ~2 MB each — a bounded ring buffer worth tens of MB) and is scoped by a regex matching
-  only the names it generates, so a hand-named miz that ends up in the archive folder is never
-  deleted. Each prune is logged.
+  (20) and is scoped by a regex matching only the names it generates, so a hand-named miz that
+  ends up in the archive folder is never deleted. Each prune is logged.
+
+Sizing note: a generated mission is **~90% kneeboard PNGs**, so it scales with the number of
+player-crewed airframes — a solo turn is ~2 MB, a fully-crewed Red Tide MP event mission is
+~22 MB (of which 16.5 MB is the §3 recon pages' Esri satellite basemap imagery). The keep count
+is sized off the MP case, so the ring buffer is a few hundred MB at worst. `KEEP_ARCHIVED_MISSIONS`
+is the dial.
 
 **No `Settings` toggle** — the same call as §42 map tiles and §43 flight defaults (on-disk
 content is the switch). A toggle you can forget to switch on defeats the one thing this is

@@ -41,20 +41,46 @@
 > flown miz, the 5 misses being runtime spawns (a dynamic-slot jet + QRA clones) that never
 > appear in a miz. Friday-night usage:
 >
+> ⚠️ **The target must be a TURN-1 save, not a literally fresh new game.** The source
+> `state.json` carries 29 front-line kills, and the front-line pool is matched against the
+> *target's* live ground forces. A brand-new game is **turn 0 with zero armor at every CP**
+> (`Haina armor=0, Fulda armor=0` — verified headlessly through the real `GameGenerator` →
+> `begin_turn_0` pipeline), so every front kill drops on the floor and
+> `missionresultsprocessor` tests `ally_units_alive == 0` FIRST — handing blue a **fabricated
+> strong defeat** and then `pass_turn`-ing it into the season save. The invariant is simply
+> **the target's turn must match the source's turn** (the source is turn 1). So: New Game →
+> **pass one turn** → save → target THAT. No manual purchasing needed; automatic procurement
+> reaches ≈11/11 armor on its own. Same JSON, same build, measured both ways:
+>
+> | target | FRONT translation | verdict |
+> |---|---|---|
+> | genuine fresh turn 0 (0/0 armor) | `0 mapped, 0 side-fallback, 29 DROPPED` | ❌ "Allied ground forces suffer a strong defeat" |
+> | turn 1 (11/11 armor) | `10 mapped, 5 side-fallback, 14 dropped` | ✅ "Allied ground forces win a strong victory" |
+>
+> The drop is **not** loudly flagged: `report.print()` runs *after* the commit and words it
+> as the benign "dropped (front thinner than kill count)". Read the FRONT line yourself.
+>
 > ```powershell
 > .venv\Scripts\python.exe tools/apply_state_json.py `
 >   --source-save "C:\Users\brady\Saved Games\DCS\Retribution\Saves\Claude needs these\414th red tide v5 6pm lock.retribution" `
 >   --state "C:\Users\brady\Saved Games\DCS\Retribution\Saves\Claude needs these\state.json" `
->   --target-save "<the fresh Friday-night save>" `
+>   --target-save "<the Friday-night save AFTER passing one turn — turn 1>" `
 >   --out-save "<new save name for turn 2>"
 > ```
 >
-> The printed translation report lists every mapping/fallback/drop; validated 2026-07-12
-> against the new-build "turn 0" save (RED −35 airframes matched the real turn-2 processing
-> exactly; the Haina IADS layer, comms building, runway hit, and front-line rout all
-> carried). Do not fly the throwaway miz it generates. `pass_turn` rewrites
-> `autosave.retribution`, same as the app. Keep the archive folder intact through the
-> Friday regeneration (and after — it is the season's historical record of M1).
+> The printed translation report lists every mapping/fallback/drop, and its header prints
+> `Target: <name> (turn N)` — **confirm it reads `(turn 1)` before trusting the run.**
+> Validated 2026-07-12 against `Saves\turn 0.retribution`, and **that filename is a trap**:
+> it does NOT contain a turn-0 game. It loads as **turn = 1** with Haina 11 / Fulda 11 armor
+> (re-verified headlessly 2026-07-16), which is exactly why the validation passed — RED −35
+> airframes matched the real turn-2 processing, and the Haina IADS layer, comms building,
+> runway hit, and front-line result all carried. Rename it if you get the chance; as it
+> stands the name teaches the wrong lesson to whoever runs this next.
+>
+> Do not fly the throwaway miz it generates. `pass_turn` rewrites `autosave.retribution`,
+> same as the app. A bad run is fully re-runnable — `--out-save` writes a new file and
+> nothing is consumed until M2. Keep the archive folder intact through the Friday
+> regeneration (and after — it is the season's historical record of M1).
 
 Design and build notes for **Germany - Red Tide** (`resources/campaigns/red_tide.yaml`
 + `red_tide.miz`), the 414th's reworked GermanyCW scenario. Read this before editing the

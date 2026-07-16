@@ -249,6 +249,13 @@ settings:
   # period jets don't spawn with modern kit. Preseeded because Red Tide is date-specific
   # and no other campaign setting covers it (standard default is off).
   restrict_weapons_by_date: true
+  # ... and the same gate for era-defining cockpit *properties* (§24). Until #598 this
+  # rode on restrict_weapons_by_date above -- which is what clamped the M1-flown Vipers
+  # and Hornets -- but that PR split it onto its own toggle that defaults OFF, so without
+  # this line the 1988 gate silently stops clamping. It bites the DEFAULTED case, not just
+  # a deliberate pick: an unset helmet device still writes JHMCS into the .miz, so the
+  # Block 50s and Lot 20s would spawn with a 2003 helmet in a July 1988 campaign.
+  restrict_props_by_date: true
   # §54 munitions scarcity: an airfield out of a scarce PGM/ARM/A2A store can't load it
   # (the loadout degrades to a stocked/dumb fallback). Pairs with war_economy below --
   # bomb a base's supply and its jets run dry. Default off and covered by no other
@@ -377,6 +384,19 @@ settings:
     commsjam: true
     mobilemissiles: true
     minefields: true
+    # §51's intel gate (comms_jam_requires_capture, default ON) arms only off a captured
+    # aircrew, and combat_sar_captures has exactly ONE writer in the tree: the combatsar
+    # plugin. Disabled, it injects nothing, the global stays {} , the jam loop's type check
+    # still passes, and red simply never jams -- silent, no error. Pinning it also protects
+    # all rescue and the POW->will feed. Every other plugin pinned here also defaults true,
+    # so pinning a default-ON plugin IS this campaign's convention; combatsar was the one
+    # load-bearing omission.
+    combatsar: true
+    # advanced_iads (line 33) is this laydown's centerpiece, and mantisiads owns its entire
+    # runtime -- MANTIS ships inside the bundled MOOSE, so this plugin is the only consumer
+    # of the emitted IADS table. Off, the IADS command unit is skipped at generation AND the
+    # auto-planner drops IADS buildings as strike targets outright.
+    mantisiads: true
     # ... and the redscramble plugin for the §61 host scramble menu preseeded above.
     redscramble: true
     # §61 host-menu gate: the host's DCS name runs "<flight> 1-x | Flash" with a

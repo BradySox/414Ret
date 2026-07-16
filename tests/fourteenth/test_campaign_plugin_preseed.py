@@ -64,6 +64,66 @@ def test_red_tide_preseeds_the_redscramble_plugin_for_the_host_menu() -> None:
     assert settings["plugins"]["redscramble.hostPlayers"] == "Flash"
 
 
+def test_red_tide_preseeds_the_combatsar_plugin_for_the_jam_intel_gate() -> None:
+    settings = _campaign_settings()
+    # §51 rides the DEFAULT intel gate (comms_jam_requires_capture, default ON), which
+    # arms only off a captured aircrew -- and combat_sar_captures has exactly one writer
+    # in the tree: the combatsar plugin. Disabled, it injects nothing, the Lua global
+    # stays {}, the jam loop's type check still passes, and red never jams: silent, no
+    # error. The pin also protects all rescue and the POW->will feed.
+    assert settings["enemy_comms_jamming"] is True
+    assert "comms_jam_requires_capture" not in settings  # rides the default-ON gate
+    assert settings["plugins"]["combatsar"] is True
+
+
+def test_red_tide_preseeds_the_mantisiads_plugin_for_advanced_iads() -> None:
+    # advanced_iads is a campaign-level key, NOT a setting -- so it is read from the
+    # document root while the plugin pin lives under settings.plugins.
+    with open(RED_TIDE, encoding="utf-8") as f:
+        campaign = yaml.safe_load(f)
+    assert campaign["advanced_iads"] is True
+    # mantisiads owns that whole runtime -- MANTIS ships inside the bundled MOOSE, so
+    # the plugin is the only consumer of the emitted IADS table. Off, generation skips
+    # the IADS command unit AND the auto-planner drops IADS buildings as strike targets.
+    assert campaign["settings"]["plugins"]["mantisiads"] is True
+
+
+def test_red_tide_preseeds_the_convoyambush_plugin() -> None:
+    settings = _campaign_settings()
+    # §50's spring/cue runtime lives in the convoyambush plugin -- same trap as the rest.
+    assert settings["convoy_ambush"] is True
+    assert settings["plugins"]["convoyambush"] is True
+
+
+def test_red_tide_preseeds_the_minefields_plugin() -> None:
+    settings = _campaign_settings()
+    # §57 is the ONLY preseeded plugin whose own defaultValue is false, so this pin is
+    # load-bearing for every host regardless of their saved defaults -- not insurance.
+    assert settings["air_droppable_minefields"] is True
+    assert settings["auto_plan_minefields"] is True
+    assert settings["plugins"]["minefields"] is True
+
+
+def test_red_tide_preseeded_plugin_option_keys_are_declared() -> None:
+    """Every ``<plugin>.<option>`` preseed must name a real declared option.
+
+    A typo'd option key is silently ignored -- the plugin just runs its default. This
+    walks each dotted preseed back to the owning plugin.json's specificOptions.
+    """
+    import json
+
+    settings = _campaign_settings()
+    for key, value in settings["plugins"].items():
+        if "." not in key:
+            continue
+        plugin_name, option = key.split(".", 1)
+        manifest = Path(f"resources/plugins/{plugin_name}/plugin.json")
+        assert manifest.exists(), f"{key} names a plugin with no manifest"
+        with manifest.open(encoding="utf-8") as f:
+            declared = {o["mnemonic"] for o in json.load(f).get("specificOptions", [])}
+        assert option in declared, f"{key} is not a declared option of {plugin_name}"
+
+
 def test_red_tide_preseeds_c2_decapitation_effects() -> None:
     settings = _campaign_settings()
     # §52 is default OFF; Red Tide's per-base command-center network is the fit, so
@@ -94,6 +154,16 @@ def test_red_tide_preseeds_the_era_weapon_gate() -> None:
     # off and covered by no other campaign setting, so it must be preseeded to survive a
     # reset to standard defaults.
     assert settings["restrict_weapons_by_date"] is True
+
+
+def test_red_tide_preseeds_the_era_property_gate() -> None:
+    settings = _campaign_settings()
+    # §24's property gate rode on restrict_weapons_by_date until #598 split it onto its
+    # own default-off toggle, which silently dropped Red Tide's clamp (the M1-flown build
+    # still had it). Both gates are preseeded here deliberately; #598 split them so either
+    # can be enforced alone, so this asserts Red Tide's choice -- it is NOT a general rule
+    # that the two must move together.
+    assert settings["restrict_props_by_date"] is True
 
 
 def test_red_tide_preseeds_munitions_scarcity() -> None:

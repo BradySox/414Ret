@@ -116,6 +116,16 @@ Riding the event organically (all preseeded/armed in Red Tide):
 Not riding Aug 1: **B16 cruise raids** — not preseeded and era-wrong for 1988 (no LACM hulls);
 needs a modern-faction scratch campaign (§5).
 
+*Headless de-risk ran 2026-07-15* (a 15-turn AI-vs-AI Red Tide self-play through the real
+GameGenerator build): the campaign is **multi-turn stable** with the whole preseeded stack live;
+the **§55 posture classifier transitioned on real state** (Attrition → "Surging (all-in)" with the
+"enemy air spent" opportunity window, then 13 turns of hysteresis-stable latch), **§56 reserve armor
+actually stocks** (Haina 0 → 59 by turn 14 — the depot has vehicles to bomb from turn ~2), and the
+**§47 clock/weather march held its contract** (3–7 h steps, midnight rolls, adjacent-rung weather
+systems). Details + caveats on the **B7 / B8 / T1 rows**. One standing caution from both probes:
+the §26 abstract resolver's war diverges wildly from flown DCS results (it inverted M1's 34:0 air
+war) — **never adjudicate balance or pacing off fast-forwarded turns**, on any campaign.
+
 ---
 
 ## 5. Mid-window private session card (DM solo / one buddy, before Aug 1 — high value)

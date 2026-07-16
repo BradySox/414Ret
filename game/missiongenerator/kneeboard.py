@@ -60,7 +60,7 @@ from game.weather.weather import Weather
 from .aircraft.flightdata import CombatSarKingBeacon, FlightData
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
 from .commsjamluadata import JAM_BACKUP_COMM_NAME
-from .kneeboard_page import KneeboardPage
+from .kneeboard_page import KneeboardPage, save_kneeboard_image
 from .kneeboard_recon import airport_imagery as _airport_imagery
 from .kneeboard_recon import generate_recon_pages
 from .kneeboard_recon.pages import (
@@ -386,7 +386,7 @@ class KneeboardPageWriter:
         return overflow
 
     def write(self, path: Path) -> None:
-        self.image.save(path)
+        save_kneeboard_image(self.image, path)
         path.with_suffix(".txt").write_text(self.get_text_string(), "utf8")
 
     @staticmethod
@@ -2743,7 +2743,9 @@ class KneeboardGenerator(MissionInfoGenerator):
                 ordered_pages.extend(concrete)
 
             for idx, page in enumerate(ordered_pages):
-                page_path = aircraft_dir / f"page{idx:02}.png"
+                # The suffix picks the encoder: photographic recon basemaps go
+                # out as JPEG, line-art pages stay PNG (see KneeboardPage).
+                page_path = aircraft_dir / f"page{idx:02}{page.image_suffix}"
                 page.write(page_path)
                 self.mission.add_aircraft_kneeboard(aircraft.dcs_unit_type, page_path)
         for type in kneeboards_dir().iterdir():

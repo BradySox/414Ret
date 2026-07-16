@@ -263,9 +263,13 @@ unvalidated "fix" is not something to ask upstream to take.
 - **Tests:** `tests/test_cruisemissiles.py`,
   `tests/missiongenerator/test_cruisemissileluadata.py`.
 - **Status:** opened 2026-07-15 as **draft [PR #872](https://github.com/dcs-retribution/dcs-retribution/pull/872)**
-  (15 files, +1151, single commit). Rebased onto dev @ `ef576acc` at push time
-  (one trivial changelog conflict); re-validated on that base: pytest 246
-  passed/0 failed, Black clean, mypy `game`+`tests` clean.
+  (19 files, +1364, two commits: core + UI surfacing). Rebased onto dev @
+  `ef576acc` at push time (one trivial changelog conflict); re-validated on
+  that base: pytest 249 passed/0 failed, Black clean, mypy `game`+`tests`
+  clean. The second commit pre-empts the obvious review ask: the player's
+  tasked raid + magazines in the mission briefing, a magazine box in the
+  naval TGO dialog (friendly side only), and per-group expenditure in the
+  debrief window — all driven by tested helpers in `game/cruisemissiles.py`.
 
 ---
 

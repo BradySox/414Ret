@@ -1989,6 +1989,32 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/sim/missionresultsprocessor.py`, `game/settings/settings.py`; features doc §63,
     checklist B16 — needs an in-game pass: the scripted FireAtPoint+cruise-flag ripple, which
     curated hulls honor it (the vanilla Ticonderoga is least certain), and SHORAD intercept.)
+64. **Carrier deck spawn policy (six-pack last resort + MP slot timing)** — the 2026-07-16
+    supercarrier finding: AI taxiing to the cats jam against the player, because the old
+    `player_flights_sixpack` boolean (ON) parked the **slowest** thing on deck (a human,
+    10-minute cold start) on the **six-pack** — the first-filled spots, squarely in the taxi
+    lane to the bow catapults — while the AI spawned in the far spots and squeezed past. DCS's
+    only deck-parking lever is **spawn timing** (the mission-start wave fills the six-pack;
+    anything activated ≥1 s later is placed elsewhere — the dcs_liberation#1309 trick that
+    already kept AI off it), so the boolean became the **`CarrierDeckPolicy` enum** (§16
+    boolean→enum migration pattern; ON→`SIXPACK_FIRST`, OFF→`LAST_RESORT`): under the new
+    **`LAST_RESORT` default**, player carrier ground starts take the same 1 s placement
+    activation as AI — parked clear of the taxi flow, the six-pack left as overflow capacity —
+    and `SIXPACK_FIRST` keeps the legacy behavior. **The MP slot-timing fix rides along** (both
+    modes): a TOT-delayed client carrier COLD flight was late-activated its FULL delay, so its
+    slots didn't exist in the MP slot list until push time ("your flight is delayed to start");
+    it now spawns **uncontrolled** like its airfield counterpart (slots live from ~mission
+    start, `StartCommand` holds only the AI members to the push, + the 1 s placement activation
+    under last-resort). WARM/RUNWAY delayed clients keep full-delay late activation (a hot jet
+    can't wait), AI keep late activation (deck crowding). Taxi *routing* itself is engine AI —
+    no mission-level control (the AI F-14A's forced cat starts are the precedent) — and
+    same-group wingmen tailgating the player is unfixable at mission level. No plugin/Lua.
+    Tests `tests/missiongenerator/test_carrier_deck_policy.py` +
+    `tests/settings/test_carrier_deck_policy.py`.
+    (`game/missiongenerator/aircraft/waypoints/waypointgenerator.py`,
+    `game/settings/settings.py`; features doc §64, checklist B17 — needs an in-game pass:
+    does DCS overflow delayed spawns INTO the six-pack once the deck is full, and deck
+    behavior with several client flights parked uncontrolled from mission start.)
 65. **Curated carrier comms (CV Operations Data cleanup)** — DCS auto-renders the yellow "CV
     Operations Data" kneeboard page straight from the miz (it cannot be restyled, only fed better
     data), and the generator fed it allocator junk: the boat "named" `0796 | CVN-71 …` on the

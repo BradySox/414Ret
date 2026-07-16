@@ -79,6 +79,15 @@ and selected later upstream fixes.
   with no rearm** ("Magazine status" on the same F10 menu shows what's left) — so a salvo
   spent on a truck park is a salvo you won't have for the command bunker. Opt-in (Mission
   Generation → "Ship-launched cruise missile strikes" + "Auto-plan cruise missile raids").
+- **The carrier six-pack stops being an AI trap.** DCS parks the first-spawned jets on the
+  six-pack — dead center in the taxi lane to the bow catapults — and that used to be *you*,
+  sitting through a ten-minute cold start while every AI jet taxiing to launch jammed up
+  against your parked Hornet. By default your flight now spawns clear of that lane (the
+  six-pack is only used once the rest of the deck fills up), and in multiplayer a flight with
+  a later push time **keeps its slots in the list from mission start** — the jet waits cold on
+  deck instead of not existing until its TOT ("your flight is delayed to start" is gone; your
+  AI wingmen still hold startup to the plan). Prefer the classic six-pack spawn? Flip Mission
+  Generation → "Carrier six-pack usage".
 - **The enemy's IADS jams your radios — once it knows your channels.** By default the enemy
   learns your comms plan the hard way: **off a captured pilot**. Lose the Combat SAR race and
   within minutes your briefed channels take sporadic bursts of barrage static — transmitted

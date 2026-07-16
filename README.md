@@ -256,6 +256,14 @@ and selected later upstream fixes.
   if a planned DEAD can't actually reach a SAM shielded behind another live radar threat, the
   strike that depends on it is held back until the belt is genuinely down, instead of bombers
   being tasked into defenses that are still alive.
+- **Every generated mission is archived**, so the one you flew is still there next week. Retribution
+  writes each turn to the same `retribution_nextturn.miz` and you load it exactly as you always have —
+  but the fork now *also* drops a named, dated copy into `Missions/Retribution Archive/`
+  (`germany_1980_red_tide_turn03_20260716-193205.miz`). That folder is one DCS's own mission browser
+  lists, so a past turn re-opens straight from the game when you want to see what actually spawned,
+  and hosts stop hand-copying the miz to a named file before every event. Re-planning and generating
+  a turn again keeps *both* copies rather than overwriting the flown one. The newest 40 are kept;
+  anything you put in that folder yourself is never touched.
 
 ### The air war behaves like a campaign, not a queue of isolated sorties
 

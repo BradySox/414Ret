@@ -1989,6 +1989,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/sim/missionresultsprocessor.py`, `game/settings/settings.py`; features doc §63,
     checklist B16 — needs an in-game pass: the scripted FireAtPoint+cruise-flag ripple, which
     curated hulls honor it (the vanilla Ticonderoga is least certain), and SHORAD intercept.)
+65. **Curated carrier comms (CV Operations Data cleanup)** — DCS auto-renders the yellow "CV
+    Operations Data" kneeboard page straight from the miz (it cannot be restyled, only fed better
+    data), and the generator fed it allocator junk: the boat "named" `0796 | CVN-71 …` on the
+    Callsign line, TACAN **1X** with a `random.choice` ident re-rolled every mission, Link 4 on a
+    random inter-flight UHF (255.0), a fresh random ATC every turn. Now every vanilla hull carries
+    a curated **boat card** (`game/data/carrier_comms.py`, keyed by pydcs ship id — the pro-campaign
+    "Mother card" convention off the cataloged Raven One kneeboards): TACAN = **hull number** where
+    T/R-legal (CVN-71→71X `TRO` … CVN-75→75X `HST`; Forrestal 59→64X `FID`, Tarawa→41X `TAR`,
+    Kuznetsov 35X/36X `KUZ`), hull-keyed ICLS (11–15, Forrestal 9, Tarawa 1), Link 4 in the real
+    ACLS **336 MHz band**, stable per-hull ATC (304–312). Resolved in
+    `GenericCarrierGenerator._resolve_*` with stored-values-win precedence (base-dialog/persisted
+    values untouched); a map-owned channel degrades via `TacanRegistry.alloc_near` to the **nearest
+    valid free neighbor** (Bagram owns 74X on Afghanistan ⇒ the ER Stennis gets 73X), never to 1X;
+    ICLS moved to a shared-pool `IclsAllocator`; **every value persists to the control point** so
+    the card is stable across turns (ATC/Link4/ICLS used to re-roll). The flagship unit is named by
+    its hull name (named before `_register_theater_unit` so kill-tracking keys the same string;
+    duplicate-class boats keep the unique prefixed name). Mod carriers keep the legacy path. Pure
+    generation behavior — no setting, no plugin, no save change; headless-verified end-to-end on
+    Enduring Resolve. Tests `tests/test_carrier_comms.py`; features doc §65, checklist B18 — needs
+    an in-game pass (the CV page renders the card; the beacons radiate for a recovery).
 
 ---
 

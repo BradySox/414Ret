@@ -1989,6 +1989,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/sim/missionresultsprocessor.py`, `game/settings/settings.py`; features doc §63,
     checklist B16 — needs an in-game pass: the scripted FireAtPoint+cruise-flag ripple, which
     curated hulls honor it (the vanilla Ticonderoga is least certain), and SHORAD intercept.)
+65. **Curated carrier comms (CV Operations Data cleanup)** — DCS auto-renders the yellow "CV
+    Operations Data" kneeboard page straight from the miz (it cannot be restyled, only fed better
+    data), and the generator fed it allocator junk: the boat "named" `0796 | CVN-71 …` on the
+    Callsign line, TACAN **1X** with a `random.choice` ident re-rolled every mission, Link 4 on a
+    random inter-flight UHF (255.0), a fresh random ATC every turn. Now every vanilla hull carries
+    a curated **boat card** (`game/data/carrier_comms.py`, keyed by pydcs ship id — the pro-campaign
+    "Mother card" convention off the cataloged Raven One kneeboards): TACAN = **hull number** where
+    T/R-legal (CVN-71→71X `TRO` … CVN-75→75X `HST`; Forrestal 59→64X `FID`, Tarawa→41X `TAR`,
+    Kuznetsov 35X/36X `KUZ`), hull-keyed ICLS (11–15, Forrestal 9, Tarawa 1), Link 4 in the real
+    ACLS **336 MHz band**, stable per-hull ATC (304–312). Resolved in
+    `GenericCarrierGenerator._resolve_*` with stored-values-win precedence (base-dialog/persisted
+    values untouched); a map-owned channel degrades via `TacanRegistry.alloc_near` to the **nearest
+    valid free neighbor** (Bagram owns 74X on Afghanistan ⇒ the ER Stennis gets 73X), never to 1X;
+    ICLS moved to a shared-pool `IclsAllocator`; **every value persists to the control point** so
+    the card is stable across turns (ATC/Link4/ICLS used to re-roll). The flagship unit is named by
+    its hull name (named before `_register_theater_unit` so kill-tracking keys the same string;
+    duplicate-class boats keep the unique prefixed name). Mod carriers keep the legacy path. Pure
+    generation behavior — no setting, no plugin, no save change; headless-verified end-to-end on
+    Enduring Resolve. Tests `tests/test_carrier_comms.py`; features doc §65, checklist B18 — needs
+    an in-game pass (the CV page renders the card; the beacons radiate for a recovery).
 
 ---
 
@@ -2000,11 +2020,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 - The 414th's primary "all features" working branch in the dev checkout is
   `414th-all-features`; `main` here = that + the Iran pack + a Black/mypy lint pass.
 
-### Upstream PR ledger (snapshot 2026-06-27 — re-verify with `gh pr list`, don't trust this stale)
+### Upstream PR ledger (snapshot 2026-06-27, #872 added 2026-07-15 — re-verify with `gh pr list`, don't trust this stale)
 
 Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `bradyccox`):
 
 - **Open (awaiting review):**
+  - [#872](https://github.com/dcs-retribution/dcs-retribution/pull/872) ship-launched cruise missile strikes (**draft**) — generic core of fork [414Ret#599](https://github.com/bradyccox/414Ret/pull/599) (Tomahawk/Kalibr shore attack: F10 call-for-fire with marker-text salvo sizing, optional auto raids, persisted no-rearm magazine debited via the `cruise_missiles_state` debrief channel). NO fork couplings (no ROE-zone gate/`map_hidden`/`enabled_when`). Rebased onto dev @ `ef576acc`; pytest/Black/mypy green — opened 2026-07-15. See upstreaming-inventory item 18.
   - [#854](https://github.com/dcs-retribution/dcs-retribution/pull/854) per-squadron DCS country for nation-specific voiceovers + nation-aware pilot names (§23) — resolves upstream issue [#627](https://github.com/dcs-retribution/dcs-retribution/issues/627). Ports `CountryAssigner` + `pilotnames.py` + both test files verbatim; the §23 wiring hunks re-applied to upstream `missiongenerator.py`/`aircraftgenerator.py`/`squadron.py` (the fork's QRA `spawn_intercept_templates` is NOT upstream, so only `generate_flights`+`spawn_unused_aircraft` take the assigner). Pretense is standalone/overrides the touched methods → unaffected. NO 414th content (Iran faction wiring stays fork-side). §23 was NOT previously in the carve queue. Black/mypy/pytest/ts all green — opened 2026-07-03.
   - [#851](https://github.com/dcs-retribution/dcs-retribution/pull/851) High Digit SAMs **Ultimate Compilation** support (§41's generic core) — retargets the HDS toggle to the maintained mod: renamed-radar re-points, retired-unit tombstones, the 42 new units + 7 presets + SAMP/T layout, and the `remove_vehicle` id-vs-name strip fix. NO 414th faction enrichment (P-37/SA-7/S-400 wiring stays fork-side). Validated headless against upstream dev — opened 2026-07-01. Landed on the fork as [414Ret#382](https://github.com/bradyccox/414Ret/pull/382).
   - [#847](https://github.com/dcs-retribution/dcs-retribution/pull/847) F-4E-45MC (Heatblur) loadout rebuild **+** Maverick date-fallback fix — all 13 F-4E presets re-sourced from the module's built-in loadouts (period AIM-7E2/9L A2A baseline vs the old all-modern AIM-7M), **and** the AGM-65 family's date-fallback rerouted AGM-62 Walleye → Mk-20 Rockeye (Mavericks were degrading to Walleyes on pre-1972 campaigns). Data-only (2 files), validated headless against upstream (CLSID-resolve + station-legal + task-resolution + weapon-DB load) — opened 2026-06-28; **consolidates the former #845 + #846**. Landed on the fork as [414Ret#322](https://github.com/bradyccox/414Ret/pull/322) + [#325](https://github.com/bradyccox/414Ret/pull/325).

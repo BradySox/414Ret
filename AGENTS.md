@@ -1860,7 +1860,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     sent" discriminator), a skipped fire clears the debounce, and a nil `getPlayerName` at BIRTH
     gets one +2 s re-check (the MOOSE #806 timing race). (`game/missiongenerator/briefingluadata.py`,
     `game/missiongenerator/luagenerator.py`, `resources/plugins/briefing/`,
-    `game/settings/settings.py`; features doc §58, checklist B10 — reworked, needs a re-fly.)
+    `game/settings/settings.py`; features doc §58, checklist B10 — **VERIFIED 2026-07-15**, the
+    reworked cards + beep confirmed working by user report; a dynamic-slot pilot gets no card, by
+    design — dynamic-slot jets aren't player-crewed ATO flights.)
 59. **Ground AI sleep (graduated culling)** — the middle tier the binary cull model lacks (the
     2026-07-12 "cull settings feel all or nothing" MP-performance complaint): with
     `perf_ground_ai_sleep` on, rear-area **garrison** vehicle groups keep existing (visible,

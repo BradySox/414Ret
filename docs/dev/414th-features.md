@@ -5322,9 +5322,10 @@ Gated `mission_briefing_popup` (Mission Generation → Battlefield life, default
 own `defaultValue` is also ON). Card duration, the startup grace, the **slot-in delay** (`startDelayS`,
 default 5), the taxi **ground frequency** (`groundFreq`, default "249.50"), and the **beep toggle**
 (`playSound`, default true) are plugin options. The headless harness gained an `outSoundForGroup` stub
-(a `sounds` records list). **Needs an
-in-game pass** (checklist B10): that the card actually appears on slot-in (SP + a server rejoin),
-reads correctly, and clears after its duration.
+(a `sounds` records list). **In-game pass ☑ VERIFIED 2026-07-15 (checklist B10)** — the reworked
+cards + beep confirmed working by user report ("just fine, no issues"). One by-design limitation from
+the same report: a pilot in a DCS **dynamic slot** gets no card — dynamic-slot jets aren't
+player-crewed ATO flights, so the emitter carries no record for them.
 
 **Flown 2026-07-11 (Red Tide M1, MP dedicated server) — FAILED, root-caused, reworked (checklist
 B10).** No pilot noticed a card or beep despite `armed for 12 player flight(s)` and zero errors.
@@ -5341,7 +5342,8 @@ prefixed; **per-card logging** (`BRIEFING|: card -> <group> gid=<id> t=<t>`, + `
 the hunt's blocking blind spot; a skipped fire clears the debounce so the pilot's next slot-in
 still shows; and a nil `getPlayerName` at the BIRTH instant in a briefing-listed group gets one
 +2 s re-check before being treated as AI (the documented MOOSE #806 event-timing race). All four
-pinned in `tests/lua/test_briefing_runtime.py`. Re-fly criteria in the B10 row.
+pinned in `tests/lua/test_briefing_runtime.py`. **The re-fly passed 2026-07-15** (user report) — the
+B10 row records the verdict.
 
 ---
 

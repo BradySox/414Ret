@@ -74,7 +74,9 @@ and selected later upstream fixes.
   `#6` — and exactly that many fly) — or turn on auto raids and each side commits one salvo a turn at its best reachable
   target (command bunkers and comms first, then war industry), announced to the defender only
   as a bare **"LAUNCH WARNING — enemy cruise missile launch detected"**. The missiles are real
-  weapons from real, sinkable ships: kills count at debrief, and every ship carries a
+  weapons from real, sinkable ships: kills count at debrief, a launch puts the defender's
+  air defenses around the aimpoint on alert (so point-defense SAMs — a Tor, a Pantsir, your
+  Patriots — get their intercept shot), and every ship carries a
   **finite campaign magazine with no rearm** ("Magazine status" on the same F10 menu shows
   what's left) — so a salvo
   spent on a truck park is a salvo you won't have for the command bunker. Opt-in (Mission

@@ -26,9 +26,11 @@ Every §63 building block already existed:
   debrief through the ordinary death events — zero debrief-schema change for the strikes,
   no phantom spawns (the §35/§37 discipline). ~~and **MANTIS point defense engages the
   missiles** (the same reason Red Tide fielded the SA-15/SA-19 for ARM defense)~~ —
-  **WRONG, disproven by the 2026-07-16 flown test** (see "The intercept gap" below): no
-  defender in the current stack ever wakes for a cruise raid, so the intended
-  saturation-vs-point-defense game is not live until a wake path is built.
+  **WRONG as assumed, disproven by the 2026-07-16 flown test** (see "The intercept gap"
+  below): no defender in the stack ever woke for a cruise raid on its own. The plugin's
+  **defender launch wake** (built same day) now brings the AD around the aimpoint to
+  alarm-RED for the flight window, so the saturation-vs-point-defense game can happen;
+  the re-fly is owed.
 
 ## Design calls
 
@@ -95,7 +97,7 @@ and persisted; next turn re-targeted the next command center. Still unflown (min
 The harness pins everything up to the DCS boundary
 (`tests/lua/test_cruisemissiles_runtime.py`).
 
-## The intercept gap (observed 2026-07-16 — open)
+## The intercept gap (observed 2026-07-16 — fix built same day, re-fly owed)
 
 **No defender engages a cruise raid.** The user watched the target's point defense —
 `0011 | SLUG (SHORAD)`, 2× alive SA-15 Tor + Dog Ear SR, ~250 m from the impact point —
@@ -114,14 +116,27 @@ structural, not a fluke:
    **zero** linked PD groups here: the bridge wraps only `IadsRole.POINT_DEFENSE`
    escorts of SAM nodes, and SLUG is a standalone SHORAD TGO guarding a C2 site.)
 
-**Fix direction (not yet built — needs a squadron call):** the natural fix is
-plugin-side, in `cruisemissiles-config.lua`: on any launch (raid or call-for-fire),
-sweep opposing AD groups within N km of the *impact point* and set them **alarm state
-RED** for the missile flight window (+ a few minutes), then restore. Alarm state via
-`setOption` is the same mechanism MANTIS itself uses (the crash-history constraint was
-`enableEmission`, which stays untouched); it wakes vanilla AND managed defenders, both
-sides, and it is thematically the LAUNCH WARNING doing its job. A narrower alternative
-— adding cruise weapons to the SHORAD link's wake set in the MANTIS bridge — only
-covers *linked PD escorts of SAM nodes* (zero groups on red in the flown test), so it
-cannot fix the common case alone. Whether an *awake* SA-15 then actually kills
-Tomahawks is the follow-up in-game check once the wake lands.
+**Fix BUILT (2026-07-16, same session — squadron call: option 1, the plugin-side
+wake):** `fireCruise` now ends every launch (raid and call-for-fire share it) with
+`wakeDefenders`: sweep the opposing side's ground groups, keep those with an alive
+`"Air Defence"`-attributed unit within `defenderWakeRadiusNm` (default 8 NM) of the
+**aimpoint**, and set each **alarm state RED** via `Controller:setOption` — alarm
+state ONLY, `enableEmission` stays untouched (the crash-history constraint). The hold
+lasts an estimated flight time (`dist/200 m/s`, a low speed estimate so the window is
+generous) + `defenderWakeExtraS` (default 300 s); `standDownDefender` then restores
+ALARM AUTO, with per-group `wakeUntil` bookkeeping so overlapping launches extend
+rather than clobber the hold. A MANTIS-managed site keeps its own EMCON loop (MANTIS
+may re-dark it — that is MANTIS's call to make); it is thematically the LAUNCH WARNING
+doing its job. Options: `defenderWake` (default true) / `defenderWakeRadiusNm` /
+`defenderWakeExtraS`. Harness-pinned (wake + stand-down + far/friendly/non-AD
+selectivity + the kill switch) in `tests/lua/test_cruisemissiles_runtime.py`; the
+harness gained `Controller:setOption` recording + the vanilla `AI.Option` enums.
+The rejected narrower alternative — adding cruise weapons to the SHORAD link's wake
+set in the MANTIS bridge — only covers *linked PD escorts of SAM nodes* (zero groups
+on red in the flown test), so it cannot fix the common case alone. **Needs a re-fly
+(B16):** pass = the wake log (`CRUISEMISSILES|: defender wake -- N AD group(s) near
+the aimpoint held RED`) fires on launch and the SA-15 visibly engages the inbounds
+(Tacview: 9M331 launches at BGM-109s); fail signature = the wake log fires but the
+Tor still never shoots (then the residual gap is DCS's own Tor-vs-TLAM engagement
+logic, not alarm state), or defenders stuck RED long after the raid (stand-down
+broke).

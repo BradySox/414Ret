@@ -1992,13 +1992,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     hulls (the "least certain" Ticonderoga flew the raid — 6 BGM-109C shots, C2 target killed
     natively; a Burke group flew the F10 call-for-fire), the raid launched inside the [240,900] s
     stagger window, and the magazine loop closed end-to-end (debrief "6 fired, 10 remaining" →
-    save debited 16→10 → next turn re-targets the next command center). **OBSERVED GAP, open:
-    no defender ever wakes for a cruise raid** — 2 alive SA-15s 250 m from the impact sat idle
+    save debited 16→10 → next turn re-targets the next command center). **OBSERVED GAP: no
+    defender ever woke for a cruise raid** — 2 alive SA-15s 250 m from the impact sat idle
     through the salvo (vanilla groups run ALARM AUTO, which never goes hot for a *weapon*
     object; MANTIS EMCON detection scans units, never weapons; the MOOSE SHORAD wake lists
-    carry no BGM_109/Kalibr) — so the intended saturation-vs-point-defense game is NOT live;
-    fix direction in `414th-cruise-missile-raids-notes.md` "The intercept gap". Still unflown:
-    `#N` marker salvo sizing, CH Kalibr hulls, red-side raids.)
+    carry no BGM_109/Kalibr). **Closed same day by the plugin's defender launch wake**: every
+    launch sets opposing ground AD groups within 8 NM of the aimpoint alarm-RED (alarm state
+    only, never `enableEmission`) for ~flight time + 300 s, then restores AUTO; options
+    `defenderWake`/`defenderWakeRadiusNm`/`defenderWakeExtraS`; harness-pinned. The wake is
+    unflown — re-fly criteria in `414th-cruise-missile-raids-notes.md` "The intercept gap".
+    Still unflown: `#N` marker salvo sizing, CH Kalibr hulls, red-side raids.)
 
 ---
 

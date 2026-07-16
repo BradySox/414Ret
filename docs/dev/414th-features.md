@@ -943,8 +943,12 @@ Design notes: `docs/dev/design/414th-air-defense-planning-notes.md` (read this f
     `max_combat_altitude`; flights already higher are untouched, helos exempt. Pure helper
     `apply_patrol_altitude_floor()` called from `WaypointBuilder.get_patrol_altitude`
     (`game/ato/flightplans/waypointbuilder.py`).
-  - New fields auto-default on old saves via `Settings.__setstate__` and render on the
-    Campaign Doctrine page (no UI wiring). Tests: `tests/test_flight_altitude_settings.py`.
+  - On old saves, `_migrate_legacy_settings` mirrors the legacy symmetric
+    `max_plane_altitude_offset` into the new minimum (`min = -max`), so every existing
+    save keeps its exact band — including `max = 0` (scatter deliberately off) and
+    widened bands like `max = 5` (a flat `-2` default would have re-enabled or reshaped
+    those). Fields render on the Campaign Doctrine page (no UI wiring). Tests:
+    `tests/test_flight_altitude_settings.py`. Mirrored on upstream PR #806.
 - Route around the front line: `game/threatzones.py` adds the **active front** as a
   navmesh routing hazard. `ThreatZones._front_line_threat_zone(left, right)` buffers a
   capsule along each active FrontLine — built from the **land-clipped FLOT endpoints**

@@ -24,10 +24,13 @@ Every §63 building block already existed:
 * **The force model is already right**: the launching ship is a real, tracked TGO unit;
   the missiles are real DCS weapons killing real tracked units/statics, so BDA lands at
   debrief through the ordinary death events — zero debrief-schema change for the strikes,
-  no phantom spawns (the §35/§37 discipline), and **MANTIS point defense engages the
-  missiles** (the same reason Red Tide fielded the SA-15/SA-19 for ARM defense). A raid
-  against a Tor-defended C2 node is a genuine saturation-vs-point-defense game, both
-  directions.
+  no phantom spawns (the §35/§37 discipline). ~~and **MANTIS point defense engages the
+  missiles** (the same reason Red Tide fielded the SA-15/SA-19 for ARM defense)~~ —
+  **WRONG as assumed, disproven by the 2026-07-16 flown test** (see "The intercept gap"
+  below): no defender in the stack ever woke for a cruise raid on its own. The plugin's
+  **defender launch wake** (built same day) now brings the AD around the aimpoint to
+  alarm-RED for the flight window, so the saturation-vs-point-defense game can happen;
+  the re-fly is owed.
 
 ## Design calls
 
@@ -83,10 +86,83 @@ Every §63 building block already existed:
 * **Targeting moving ships** — rejected outright; that's ANTISHIP.
 * **Runtime `getAmmo` eligibility scan** — rejected for v1 (call 3 above).
 
-## The in-game unknowns (B16)
+## The in-game unknowns (B16) — RESOLVED 2026-07-16 (flown PG "Scenic Route" test)
 
-Whether the ship AI ripples the commanded `expendQty` on a *scripted* FireAtPoint push
-(the ME-authored task is community-proven; the pushed table is identical but unflown),
-which curated hulls honor the cruise flag, Tomahawk/Kalibr terrain behavior at range,
-and whether SHORAD actually engages the inbounds in anger. The harness pins everything
-up to the DCS boundary (`tests/lua/test_cruisemissiles_runtime.py`).
+The core loop passed: the scripted FireAtPoint push fires the exact commanded quantity
+(6 commanded → 6 BGM-109C shot events) on both vanilla hulls (the "least certain"
+`TICONDEROG` flew the raid; a Burke group flew the F10 call-for-fire + a raid); the
+missiles cruised to the C2 target and killed it natively; the magazine debited 16→10
+and persisted; next turn re-targeted the next command center. Still unflown (minor):
+`#N` marker salvo sizing, the CH Kalibr hulls, red-side raids, magazine exhaustion.
+The harness pins everything up to the DCS boundary
+(`tests/lua/test_cruisemissiles_runtime.py`).
+
+## The intercept gap (observed 2026-07-16 — fix built same day, re-fly owed)
+
+**No defender engages a cruise raid.** The user watched the target's point defense —
+`0011 | SLUG (SHORAD)`, 2× alive SA-15 Tor + Dog Ear SR, ~250 m from the impact point —
+sit idle through the whole 6-missile salvo. Root cause, code-confirmed, and it is
+structural, not a fluke:
+
+1. **Vanilla groups (SLUG's case)** carry no alarm-state option, so they run DCS's
+   default **ALARM STATE AUTO — which never goes weapons-hot for a *weapon* object**.
+   Only aircraft trip the auto-wake; the site's radars stay cold as missiles fly past.
+2. **MANTIS-managed SAMs** are EMCON-dark and wake off MOOSE `Detection`, which scans
+   **units** — a weapon object is invisible to it, so a managed site is equally blind.
+3. **The SHORAD link's** wake watch (`SHORAD.Harms`/`SHORAD.Mavs` in MOOSE) lists ARMs
+   and Mavericks — **no `BGM_109`, no Kalibr** (MOOSE's `SEAD.HarmData` *does* carry
+   BGM_109, but that's the evasion class, not the SHORAD wake list) — and the other
+   trigger is MANTIS SEAD suppression. A cruise launch trips neither. (Red also had
+   **zero** linked PD groups here: the bridge wraps only `IadsRole.POINT_DEFENSE`
+   escorts of SAM nodes, and SLUG is a standalone SHORAD TGO guarding a C2 site.)
+
+**Fix BUILT (2026-07-16, same session — squadron call: option 1, the plugin-side
+wake):** `fireCruise` now ends every launch (raid and call-for-fire share it) with
+`wakeDefenders`: sweep the opposing side's ground groups, keep those with an alive
+`"Air Defence"`-attributed unit within `defenderWakeRadiusNm` (default 8 NM) of the
+**aimpoint**, and set each **alarm state RED** via `Controller:setOption` — alarm
+state ONLY, `enableEmission` stays untouched (the crash-history constraint). The hold
+lasts an estimated flight time (`dist/200 m/s`, a low speed estimate so the window is
+generous) + `defenderWakeExtraS` (default 300 s); `standDownDefender` then restores
+ALARM AUTO, with per-group `wakeUntil` bookkeeping so overlapping launches extend
+rather than clobber the hold. A MANTIS-managed site keeps its own EMCON loop (MANTIS
+may re-dark it — that is MANTIS's call to make); it is thematically the LAUNCH WARNING
+doing its job. Options: `defenderWake` (default true) / `defenderWakeRadiusNm` /
+`defenderWakeExtraS`. Harness-pinned (wake + stand-down + far/friendly/non-AD
+selectivity + the kill switch) in `tests/lua/test_cruisemissiles_runtime.py`; the
+harness gained `Controller:setOption` recording + the vanilla `AI.Option` enums.
+The rejected narrower alternative — adding cruise weapons to the SHORAD link's wake
+set in the MANTIS bridge — only covers *linked PD escorts of SAM nodes* (zero groups
+on red in the flown test), so it cannot fix the common case alone. **Needs a re-fly
+(B16):** pass = the wake log (`CRUISEMISSILES|: defender wake -- N AD group(s) near
+the aimpoint held RED`) fires on launch and the SA-15 visibly engages the inbounds
+(Tacview: 9M331 launches at BGM-109s); fail signature = the wake log fires but the
+Tor still never shoots (then the residual gap is DCS's own Tor-vs-TLAM engagement
+logic, not alarm state), or defenders stuck RED long after the raid (stand-down
+broke).
+
+**Second flown test, same day (turn 3, pre-wake build — Tacview
+`Tacview-20260716-014958`):** the raid onto INSECT sharpened the picture on both
+sides of the claim.
+
+* **The gap's linked-PD variant is now flown, not just code-derived**: this laydown
+  armed red's SHORAD link (3 PD groups held dark, `0122 | DINGO (PD)` — a Tor pair —
+  5 km from INSECT), and DINGO fired nothing as the salvo arrived. Both dark states
+  are now observed in the air: vanilla ALARM AUTO (turn 2's SLUG) and link-dark
+  (turn 3's DINGO).
+* **A defender that CAN shoot, kills**: a red Krivak pair (`0115 | NAUTILUS`) sitting
+  in the flight path fired 13 SA-N-4s and **killed 2 of the 6 Tomahawks** (removal
+  timestamps match the missile terminals to the second). Ship AD has no alarm-state
+  model — it is always hot — which is exactly the "already hot for another reason"
+  caveat, and it proves the saturation-vs-point-defense game works the moment a
+  defender is awake. The wake fix's job is precisely to give ground PD what ships
+  already have.
+* **Fix-coverage confirmation**: the bridge builds its SHORAD with `useEmOnOff =
+  false`, so linked PD is darkened via **alarm GREEN** (MOOSE `_InitState`'s else
+  branch) — the wake's alarm-RED `setOption` overrides that directly. No emission
+  toggling is needed to reach any of the three ground management states (vanilla,
+  MANTIS-EMCON, link-dark): all of them are alarm-state-based in this fork.
+* Incidentals: one Tomahawk flew into the interior mountains at ~1250 m (FireAtPoint
+  gives no terrain-following route — a known DCS behavior, acceptable losses); the
+  three survivors impacted within 60–257 m of the aimpoint; the same-turn re-fly
+  logged the identical `4 left`, flown proof of the turn-boundary-only debit.

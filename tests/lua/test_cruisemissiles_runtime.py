@@ -7,6 +7,12 @@ with the cruise-missile weapon flag; the emitted magazine is a hard per-group ca
 shared by raids and the F10 call-for-fire; expenditure mirrors into
 ``cruise_missiles_state`` (dirty-flagged) for the turn-boundary debit; a dead ship
 fires nothing; a mission with no cruiseMissiles node is a clean no-op.
+
+The defender launch wake (the 2026-07-16 flown intercept-gap fix — nothing in DCS
+wakes a defender for a weapon object on its own) is pinned too: a launch sets
+opposing ground AD groups near the aimpoint to alarm-state RED, stands them back
+down to AUTO after the flight window, never touches far/friendly/non-AD groups,
+and honors its kill switch.
 """
 
 from __future__ import annotations
@@ -352,6 +358,113 @@ def test_magazine_status_reads_the_stock() -> None:
         for t in h.records("texts")
     )
     h.assert_no_lua_errors()
+
+
+ALARM_STATE = 9
+ALARM_AUTO = 0
+ALARM_RED = 2
+
+
+def _ad_group(
+    name: str, side: int, x: float, z: float, ad: bool = True
+) -> dict[str, Any]:
+    return {
+        "name": name,
+        "side": side,
+        "category": 2,  # GROUND
+        "units": [
+            {
+                "name": name + "-1",
+                "type": "Tor 9A331" if ad else "Ural-375",
+                "x": x,
+                "z": z,
+                "attributes": {"Air Defence": True} if ad else {},
+            }
+        ],
+    }
+
+
+def _alarm_records(h: DcsPluginHarness) -> list[dict[str, Any]]:
+    return [r for r in h.records("options") if r.get("option") == ALARM_STATE]
+
+
+def test_launch_wakes_opposing_ad_near_the_aimpoint_then_stands_it_down() -> None:
+    h = DcsPluginHarness()
+    # Shooter at the origin; aimpoint 60 km north -> ~300 s flight at the assumed
+    # 200 m/s, so the RED hold should lapse around 30 + 300 + 300 = 630 s.
+    h.add_group(_ship_group("CVBG | Burke", int(h.side.BLUE)))
+    # Red AD sitting on the target (the flown SLUG case), red AD far beyond the
+    # wake radius, a red non-AD group on the target, and a BLUE AD near it —
+    # only the first may wake.
+    h.add_group(_ad_group("SLUG (SHORAD)", int(h.side.RED), 60500.0, 1200.0))
+    h.add_group(_ad_group("FAR (SHORAD)", int(h.side.RED), 160000.0, 1000.0))
+    h.add_group(_ad_group("ARMOR", int(h.side.RED), 60200.0, 900.0, ad=False))
+    h.add_group(_ad_group("OWN (SHORAD)", int(h.side.BLUE), 60300.0, 800.0))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _config(
+            ships=[{"group": "CVBG | Burke", "coalition": "blue", "remaining": "24"}],
+            raids=[
+                {
+                    "group": "CVBG | Burke",
+                    "coalition": "blue",
+                    "target": "Division HQ",
+                    "x": "60000.0",
+                    "y": "1000.0",
+                    "count": "6",
+                }
+            ],
+            options={"raidDelayMinS": 30, "raidDelayMaxS": 30},
+        )
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.advance_to(31)
+    assert len(h.records("firedTasks")) == 1
+    # Only the near, opposing, AD-attributed group went RED.
+    records = _alarm_records(h)
+    assert [(r["group"], r["value"]) for r in records] == [("SLUG (SHORAD)", ALARM_RED)]
+
+    # Long after the salvo has arrived, the group stands back down to AUTO.
+    h.advance_to(700)
+    records = _alarm_records(h)
+    assert [(r["group"], r["value"]) for r in records] == [
+        ("SLUG (SHORAD)", ALARM_RED),
+        ("SLUG (SHORAD)", ALARM_AUTO),
+    ]
+    h.assert_no_lua_errors()
+
+
+def test_call_for_fire_wakes_defenders_too_and_the_kill_switch_holds() -> None:
+    # The wake hangs off the shared fire path, so the F10 marker call wakes the
+    # defense identically — and defenderWake=false disables the whole sweep.
+    for wake_enabled in (True, False):
+        h = DcsPluginHarness()
+        h.add_group(_ship_group("CVBG | Burke", int(h.side.BLUE)))
+        h.add_group(_ad_group("PD (SHORAD)", int(h.side.RED), 70200.0, 8100.0))
+        h.lua.globals().dcsRetribution = h.to_lua(
+            _config(
+                ships=[
+                    {"group": "CVBG | Burke", "coalition": "blue", "remaining": "24"}
+                ],
+                options={"defenderWake": wake_enabled},
+            )
+        )
+        h.load_plugin_script(PLUGIN)
+        h.harness.markPanels = h.to_lua(
+            [
+                {
+                    "idx": 1,
+                    "coalition": int(h.side.BLUE),
+                    "pos": {"x": 70000.0, "y": 0, "z": 8000.0},
+                }
+            ]
+        )
+        fire, side = _command(h, "Fire at last F10 map marker")
+        fire(side)
+        assert len(h.records("firedTasks")) == 1
+        expected = [("PD (SHORAD)", ALARM_RED)] if wake_enabled else []
+        assert [(r["group"], r["value"]) for r in _alarm_records(h)] == expected
+        h.assert_no_lua_errors()
 
 
 def test_no_node_is_a_clean_noop() -> None:

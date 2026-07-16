@@ -5616,9 +5616,15 @@ campaign real cruise missile raids, both directions.
 **The force-model contract first**: the missiles are real DCS weapons fired by a real,
 tracked ship TGO. Kills record natively through the ordinary death events (no
 debrief-schema change for the strikes themselves, no phantom spawns — the §35/§37
-discipline), enemy point defense gets to intercept the missiles (the §60/MANTIS SHORAD
-game: a raid against a Tor-defended C2 node is a saturation problem), and sinking the
-shooter ends the raids. The plugin owns no kills and no spawns.
+discipline), and sinking the shooter ends the raids. The plugin owns no kills and no
+spawns. The "enemy point defense gets to intercept" half is carried by the **defender
+launch wake** (built 2026-07-16 after the flown test showed no defender in the stack
+ever wakes for a cruise raid on its own — see the B16 observed gap below): every launch
+sets the opposing side's ground AD groups within `defenderWakeRadiusNm` (8 NM) of the
+aimpoint to alarm-state RED (alarm state only — `enableEmission` untouched, the
+crash-history constraint) for ~the missile flight time + `defenderWakeExtraS` (300 s),
+then restores AUTO; a MANTIS-managed site keeps its own EMCON loop. Unflown — the B16
+re-fly is the arbiter of whether an awake SA-15 then actually kills Tomahawks.
 
 **Eligibility** is the curated `LACM_SHIP_DCS_IDS` set in `game/fourteenth/cruise_raids.py`
 (the §41 curated-data pattern — DCS/pydcs expose no per-ship weapon taxonomy): the vanilla
@@ -5664,9 +5670,9 @@ in `luagenerator.py` after the minefields emitter) emits `dcsRetribution.cruiseM
 + `raids` ({group, coalition, target, x, y, count}) — only when `cruise_missile_strikes`
 is on and a live launching group exists, so a normal mission carries no node and the
 plugin no-ops. Plugin options: raid launch delay, player salvo size, player range,
-impact dispersion, menu toggle. Settings (Mission Generation → Naval strike, both
-default **OFF**): `cruise_missile_strikes` (master) + `cruise_missile_auto_raids`
-(`enabled_when` the master).
+impact dispersion, menu toggle, defender wake (on/off, radius, extra hold). Settings
+(Mission Generation → Naval strike, both default **OFF**): `cruise_missile_strikes`
+(master) + `cruise_missile_auto_raids` (`enabled_when` the master).
 
 **Tests**: `tests/fourteenth/test_cruise_raids.py` (magazine seed/persist/debit-floor,
 the C2-over-closer target pick, the range gate, ship/hidden/dead target skips, the
@@ -5677,11 +5683,34 @@ pushed task, the magazine as a hard cap shared across raid + call-for-fire, the 
 mirror + dirty flag, dead-ship no-op, marker targeting, clean no-node no-op — the
 harness `TaskFireAtPoint`/`PushTask` fakes gained the `weaponType` argument).
 
-**Needs an in-game pass** (checklist B16): whether the DCS ship AI actually ripples the
-commanded quantity via a scripted `FireAtPoint` push with `weaponType = CruiseMissile`
-(the ME task is proven; the scripted push is the same table), which of the curated hulls
-honor it (the vanilla Ticonderoga's Tomahawk fit is the least certain), TLAM flight
-behavior over terrain, and whether SHORAD actually engages the missiles in anger.
+**In-game pass — VERIFIED 2026-07-16** (checklist B16, flown Persian Gulf "Scenic Route"
+test): the scripted `FireAtPoint` push with `weaponType = CruiseMissile` fires the exact
+commanded quantity — 6 commanded, 6 `BGM-109C Tomahawk` shot events — and **both vanilla
+hulls honor it** (the "least certain" `TICONDEROG` flew the raid; a Burke escort group flew
+the F10 call-for-fire + a raid in a sibling mission). The missiles cruised to the planned
+C2 target and killed it (hits + a kill recorded natively), the launch cues fired, the raid
+launched inside the [240, 900] s stagger window, and the magazine loop closed end-to-end:
+debrief row "6 fired, 10 remaining" → the save's `cruise_missile_magazines` debited 16→10
+→ next turn's raid re-planned onto the *next* command center. **Observed gap (the
+SHORAD-intercept half FAILED):** the target's point defense — 2 alive SA-15s 250 m from
+the impact — sat idle through the whole salvo (user-watched). Code-confirmed root cause:
+the group ran vanilla on DCS's default ALARM STATE AUTO, which never goes weapons-hot
+for a *weapon* object; the managed paths are equally blind (MANTIS EMCON wakes off MOOSE
+`Detection`, which scans units, never weapons; the SHORAD link's `SHORAD.Harms`/`Mavs`
+wake lists carry no BGM_109/Kalibr). **Closed same day by the defender launch wake**
+(see the contract paragraph above; details + re-fly criteria in
+`docs/dev/design/414th-cruise-missile-raids-notes.md` "The intercept gap") — the wake
+itself is unflown. A **second flown test the same day** (turn 3, pre-wake build,
+Tacview `Tacview-20260716-014958`) confirmed the linked-PD variant in the air (a
+SHORAD-linked `DINGO (PD)` Tor pair held dark at the target, zero launches), proved
+**naval AD intercepts natively** (a red Krivak pair killed 2 of 6 Tomahawks with
+SA-N-4s — ships are always hot, exactly the "already hot" caveat, so the saturation
+game is real wherever a defender can shoot), flew the C2 re-target (INSECT, as the
+save predicted) from the debited magazine with a same-turn re-fly logging the
+identical remainder (turn-boundary-only debit, flown), and confirmed the bridge's
+`useEmOnOff = false` means link-dark is alarm-GREEN — the wake's alarm-RED override
+reaches every ground management state. Still untested (minor): the `#N` marker-text
+salvo sizing, the CH Kalibr hulls, red-side raids, full-magazine exhaustion.
 
 ---
 

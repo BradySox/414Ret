@@ -1966,8 +1966,8 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     Tomahawk shooters + the CurrentHill Kalibr `*_LACM`/`_CMP` hulls, curated in
     `LACM_SHIP_DCS_IDS`) strike shore targets via a scripted `FireAtPoint` push with the
     cruise-missile weapon flag. **Real weapons from real, tracked ships** — kills record
-    natively, MANTIS/SHORAD point defense gets to intercept the missiles, sinking the shooter
-    ends the raids, the plugin owns no kills/spawns (the §35/§37 discipline). Each launching
+    natively, sinking the shooter ends the raids, the plugin owns no kills/spawns (the §35/§37
+    discipline). Each launching
     group carries a **persisted campaign magazine** (`game.cruise_missile_magazines`, per-hull
     table: Burke 24 / Kalibr corvette 8, **no rearm**) debited ONLY from what the plugin
     reports fired via the new `cruise_missiles_state` Lua→Python channel (the §57 pattern —
@@ -1987,8 +1987,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`game/fourteenth/cruise_raids.py`, `game/missiongenerator/cruisemissileluadata.py`,
     `resources/plugins/cruisemissiles/`, `game/debriefing.py`,
     `game/sim/missionresultsprocessor.py`, `game/settings/settings.py`; features doc §63,
-    checklist B16 — needs an in-game pass: the scripted FireAtPoint+cruise-flag ripple, which
-    curated hulls honor it (the vanilla Ticonderoga is least certain), and SHORAD intercept.)
+    checklist B16 — **core loop VERIFIED 2026-07-16** (flown Persian Gulf "Scenic Route" test):
+    the scripted FireAtPoint+cruise-flag push fires the exact commanded quantity on BOTH vanilla
+    hulls (the "least certain" Ticonderoga flew the raid — 6 BGM-109C shots, C2 target killed
+    natively; a Burke group flew the F10 call-for-fire), the raid launched inside the [240,900] s
+    stagger window, and the magazine loop closed end-to-end (debrief "6 fired, 10 remaining" →
+    save debited 16→10 → next turn re-targets the next command center). **OBSERVED GAP: no
+    defender ever woke for a cruise raid** — 2 alive SA-15s 250 m from the impact sat idle
+    through the salvo (vanilla groups run ALARM AUTO, which never goes hot for a *weapon*
+    object; MANTIS EMCON detection scans units, never weapons; the MOOSE SHORAD wake lists
+    carry no BGM_109/Kalibr). **Closed same day by the plugin's defender launch wake**: every
+    launch sets opposing ground AD groups within 8 NM of the aimpoint alarm-RED (alarm state
+    only, never `enableEmission`) for ~flight time + 300 s, then restores AUTO; options
+    `defenderWake`/`defenderWakeRadiusNm`/`defenderWakeExtraS`; harness-pinned. The wake is
+    unflown — re-fly criteria in `414th-cruise-missile-raids-notes.md` "The intercept gap".
+    A second flown test (turn 3, pre-wake build) confirmed the linked-PD variant in the air
+    AND that **naval AD intercepts natively** — a red Krivak pair killed 2/6 Tomahawks with
+    SA-N-4s (ships are always hot), so the saturation game works wherever a defender can
+    shoot; the wake gives ground PD the same chance (link-dark is alarm-GREEN in this fork's
+    bridge, so the alarm-RED override reaches it). Still unflown: `#N` marker salvo sizing,
+    CH Kalibr hulls, red-side raids.)
 64. **Carrier deck spawn policy (six-pack last resort + MP slot timing)** — the 2026-07-16
     supercarrier finding: AI taxiing to the cats jam against the player, because the old
     `player_flights_sixpack` boolean (ON) parked the **slowest** thing on deck (a human,

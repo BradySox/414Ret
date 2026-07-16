@@ -31,6 +31,7 @@ local Harness = {
         firedTasks = {}, -- { group, x, y, radius, rounds, t }
         aiOnOff = {}, -- { group, on, t } from Controller:setOnOff
         controllerTasks = {}, -- { group, taskId, targetGroupId, t } from Controller:setTask
+        options = {}, -- { group, option, value, t } from Controller:setOption
         spawns = {}, -- { template, alias, base, takeoff, altitude, grouping, speedKt, t }
         roe = {}, -- { group, option, t } from MOOSE Option* calls
         radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
@@ -130,6 +131,19 @@ Group = {
     Category = { AIRPLANE = 0, HELICOPTER = 1, GROUND = 2, SHIP = 3, TRAIN = 4 },
 }
 
+-- The vanilla AI option enums a plugin needs to set alarm states / ROE via
+-- Controller:setOption (values match the DCS mission scripting environment).
+AI = {
+    Option = {
+        Ground = {
+            id = { ROE = 0, ALARM_STATE = 9 },
+            val = {
+                ALARM_STATE = { AUTO = 0, GREEN = 1, RED = 2 },
+            },
+        },
+    },
+}
+
 country = {
     id = { RUSSIA = 0, USA = 2 },
 }
@@ -200,6 +214,15 @@ function ControllerFake:setTask(task)
         group = self.group:getName(),
         taskId = task and task.id,
         targetGroupId = task and task.params and task.params.groupId,
+        t = Harness.now,
+    })
+end
+
+function ControllerFake:setOption(optionId, value)
+    table.insert(Harness.records.options, {
+        group = self.group:getName(),
+        option = optionId,
+        value = value,
         t = Harness.now,
     })
 end

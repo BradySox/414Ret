@@ -74,9 +74,11 @@ and selected later upstream fixes.
   `#6` — and exactly that many fly) — or turn on auto raids and each side commits one salvo a turn at its best reachable
   target (command bunkers and comms first, then war industry), announced to the defender only
   as a bare **"LAUNCH WARNING — enemy cruise missile launch detected"**. The missiles are real
-  weapons from real, sinkable ships: kills count at debrief, point-defense SAMs (Tor, Pantsir,
-  your Patriots) get to intercept them, and every ship carries a **finite campaign magazine
-  with no rearm** ("Magazine status" on the same F10 menu shows what's left) — so a salvo
+  weapons from real, sinkable ships: kills count at debrief, a launch puts the defender's
+  air defenses around the aimpoint on alert (so point-defense SAMs — a Tor, a Pantsir, your
+  Patriots — get their intercept shot), and every ship carries a
+  **finite campaign magazine with no rearm** ("Magazine status" on the same F10 menu shows
+  what's left) — so a salvo
   spent on a truck park is a salvo you won't have for the command bunker. Opt-in (Mission
   Generation → "Ship-launched cruise missile strikes" + "Auto-plan cruise missile raids").
 - **The carrier six-pack stops being an AI trap.** DCS parks the first-spawned jets on the

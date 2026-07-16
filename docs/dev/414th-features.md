@@ -5889,6 +5889,62 @@ ICLS / Link 4 actually radiate on those channels for a Hornet/Tomcat recovery.
 
 ---
 
+## §66 — Generated-mission archive
+
+Every turn generates to one fixed path — `Saved Games/DCS/Missions/retribution_nextturn.miz`,
+hardcoded at [`QTopPanel.launch_mission`](../../qt_ui/widgets/QTopPanel.py) — so each **Take
+off** silently overwrites the mission that was just flown. That is fine for flying and lossy
+for everything after it. This fork routinely root-causes its in-game findings *from the flown
+mission* alongside its Tacview (the escort pre-join ROE bug, the carrier-recovery midair, the
+SCUD no-scoot), and the DM's own `Missions` folder had already grown the manual workaround:
+`Red Tide M1.miz`, `Red Tide M1 with Mags happy.miz`, `Red Tide Backup.miz` — hand-copies made
+before hosting each event.
+
+**The fixed output does not move.** Nothing downstream ever depended on that name, which is
+what makes this cheap: DCS writes `state.json` to a fixed path of its own, and
+`PollDebriefingFileThread` decides "is this result mine?" by comparing the file's mtime
+against `MissionSimulation.miz_generated_at` — never by filename. The wiki (Dedicated Server
+Guide, Your First Operation), the bug-report template and every server workflow keep naming
+`retribution_nextturn.miz`, and it keeps being exactly what they say it is.
+
+**The archive.** `game/fourteenth/mission_archive.py` `archive_mission` additionally copies
+each generated mission to
+`Missions/Retribution Archive/<campaign>_turn<NN>_<YYYYmmdd-HHMMSS>.miz` — e.g.
+`germany_1980_red_tide_turn03_20260716-193205.miz`. Notes on the shape:
+
+- **The directory is under `Missions/`**, not the `Retribution/` tree the other 414th stores
+  use (`persistency.mission_archive_dir`), because DCS's own mission browser lists `Missions`
+  subfolders — so an archived turn opens straight from the game with no file shuffling.
+- **The turn is the raw `game.turn`** — the same 0-indexed number the kneeboard and the §58
+  briefing card show, so the filename and the deck inside it agree on which mission this is.
+- **The timestamp is what stops the clobber.** Re-generating a turn while re-planning writes a
+  *new* archive rather than overwriting the copy of the one that was flown.
+- **Hooked in `MissionSimulation.generate_miz`** (not the Qt button) so it is engine-side,
+  unit-testable, and covers any future caller.
+
+Two properties it is built around, both tested:
+
+- **It never breaks Take off.** Archiving is best-effort — every failure (unwritable disk,
+  `persistency.setup()` never called in a headless test) is logged and swallowed. By the time
+  it runs, the generated mission is already written and flyable; a failed *copy* must not cost
+  the user the *original*.
+- **It only ever prunes its own output.** Retention keeps the newest `KEEP_ARCHIVED_MISSIONS`
+  (40, ~2 MB each — a bounded ring buffer worth tens of MB) and is scoped by a regex matching
+  only the names it generates, so a hand-named miz that ends up in the archive folder is never
+  deleted. Each prune is logged.
+
+**No `Settings` toggle** — the same call as §42 map tiles and §43 flight defaults (on-disk
+content is the switch). A toggle you can forget to switch on defeats the one thing this is
+for, and the cost is bounded. If the pile is ever unwelcome, `KEEP_ARCHIVED_MISSIONS` is the
+dial.
+
+Tests: `tests/fourteenth/test_mission_archive.py` (naming/slugging, the copy, the
+no-clobber-on-regenerate property, the prune's keep-newest + never-touch-foreign-files
+safety, and both non-fatal failure paths). No in-game pass needed — there is no DCS runtime
+here, only a file copy.
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

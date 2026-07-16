@@ -77,6 +77,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §63 | Ship-launched cruise missile raids | `cruisemissiles` | `cruise_missile_strikes`, `cruise_missile_auto_raids` |
 | §64 | Carrier deck spawn policy (six-pack last resort + MP slot timing) | — | `carrier_deck_policy` |
 | §65 | Curated carrier comms (CV Operations Data cleanup) | — | — |
+| §66 | Generated-mission archive | — | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

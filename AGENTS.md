@@ -2075,6 +2075,28 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     generation behavior — no setting, no plugin, no save change; headless-verified end-to-end on
     Enduring Resolve. Tests `tests/test_carrier_comms.py`; features doc §65, checklist B18 — needs
     an in-game pass (the CV page renders the card; the beacons radiate for a recovery).
+66. **Generated-mission archive** — every turn generates to one fixed path
+    (`Missions/retribution_nextturn.miz`, hardcoded in `QTopPanel.launch_mission`), so each
+    **Take off** overwrote the mission just flown — lossy for a fork that root-causes its
+    in-game findings *from the flown miz* + its Tacview, and the DM's `Missions` folder had
+    already grown the workaround by hand (`Red Tide M1.miz`, `… Backup.miz`). **The fixed
+    output does not move** (the wiki/bug template/server workflow all name it, and nothing
+    downstream ever depended on the name: DCS writes `state.json` to a fixed path of its own
+    and the debrief poll matches by **mtime vs `miz_generated_at`**, never by filename).
+    `game/fourteenth/mission_archive.py` `archive_mission` **additionally** copies each
+    generation to `Missions/Retribution Archive/<campaign>_turn<NN>_<stamp>.miz` — under
+    `Missions/` (not the `Retribution/` tree) because DCS's mission browser lists those
+    subfolders, so an archived turn opens straight from the game; the turn is the raw
+    `game.turn` (the §58 briefing card's numbering) and **the timestamp is what stops the
+    clobber** — re-generating a turn writes a new archive instead of overwriting the flown
+    copy. Hooked in `MissionSimulation.generate_miz` (engine-side, not the Qt button).
+    **Never breaks Take off** (best-effort; an unwritable disk or a headless
+    `persistency.setup()`-less run is logged and swallowed — the original is already written)
+    and **only ever prunes its own output** (keeps the newest `KEEP_ARCHIVED_MISSIONS` = 40,
+    scoped by a regex matching only generated names, so a hand-named miz in the folder is
+    never deleted). No setting — a bounded ring buffer, and a toggle you can forget defeats
+    the point (§42/§43 precedent). Tests `tests/fourteenth/test_mission_archive.py`; features
+    doc §66 — no in-game pass needed (a file copy, no DCS runtime).
 
 ---
 

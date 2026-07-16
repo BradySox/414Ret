@@ -529,6 +529,16 @@ def mission_path_for(name: str) -> Path:
     return base_path() / "Missions" / name
 
 
+def mission_archive_dir() -> Path:
+    """Directory holding the archived copy of each generated mission.
+
+    A subfolder of ``Missions`` (rather than the Retribution tree) so DCS's own
+    mission browser lists it and an archived turn can be opened straight from the
+    game. See ``game/fourteenth/mission_archive.py``.
+    """
+    return _create_dir_if_needed(base_path() / "Missions" / "Retribution Archive")
+
+
 def load_game(path: str) -> Optional[Game]:
     # The fog-overview reveal is a process global: without this, loading a
     # different campaign in the same session would inherit a previous game's

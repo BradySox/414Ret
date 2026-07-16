@@ -479,6 +479,21 @@ FEATURES: tuple[Feature, ...] = (
         "Curated carrier comms (CV Operations Data cleanup)",
         65,
     ),
+    Feature(
+        # §66 generated-mission archive: every turn generates to the one fixed
+        # path retribution_nextturn.miz (the name the wiki/bug template/server
+        # workflow all use), so each Take off overwrote the mission just flown --
+        # and this fork root-causes its in-game findings from the flown miz.
+        # game/fourteenth/mission_archive.py leaves that output alone and also
+        # copies each generation to Missions/Retribution Archive/ under a
+        # campaign_turnNN_stamp name (a folder DCS's mission browser lists).
+        # Best-effort (never breaks Take off) and prunes only its own output.
+        # Hooked in MissionSimulation.generate_miz. No setting -- a bounded ring
+        # buffer, and a toggle would defeat the point (§42/§43 precedent).
+        "mission_archive",
+        "Generated-mission archive",
+        66,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

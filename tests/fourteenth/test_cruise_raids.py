@@ -338,3 +338,43 @@ def test_carrier_task_forces_are_never_raid_targets() -> None:
     # both sides' groups still listed as launchers.
     assert plan_cruise_raids(cast(Any, game)) == []
     assert {s.coalition for s in lacm_ships(cast(Any, game))} == {"blue", "red"}
+
+
+def test_raid_targets_and_shooters_get_culling_exclusions() -> None:
+    # Regression: the auto raid usually hits a rear-area TGO no package is
+    # fragged against; with perf culling on, the target was never generated —
+    # the salvo visibly demolished bare map scenery while the campaign
+    # recorded nothing (flown and confirmed vs a culled refinery). The zone
+    # pass must un-cull raid targets and LACM shooters.
+    from game.game import Game
+
+    blue_cp, ship_tgo = _blue_burke()
+    red_cp = _cp(Player.RED)
+    red_cp.ground_objects.append(
+        _target_tgo("Refinery", "factory", _Pos(100_000.0, 0.0))
+    )
+    game = _game([blue_cp, red_cp])
+    game.theater.conflicts = lambda: []
+    game.theater.player_points = lambda: []
+    game.theater.enemy_points = lambda: []
+    game.theater.terrain = None
+    game.settings.perf_do_not_cull_carrier = False
+    game.blue = SimpleNamespace(ato=SimpleNamespace(packages=[]))
+    game.red = SimpleNamespace(ato=SimpleNamespace(packages=[]))
+    captured: list[Any] = []
+    events = SimpleNamespace(update_unculled_zones=captured.append)
+
+    Game.compute_unculled_zones(cast(Any, game), cast(Any, events))
+
+    zones = captured[0]
+    assert any(
+        getattr(z, "x", None) == 100_000.0 and getattr(z, "y", None) == 0.0
+        for z in zones
+    ), "the planned raid target must be un-culled"
+    assert ship_tgo.position in zones, "the launching ship must be un-culled"
+
+    # Feature off: the zone pass contributes nothing.
+    game.settings.cruise_missile_strikes = False
+    captured.clear()
+    Game.compute_unculled_zones(cast(Any, game), cast(Any, events))
+    assert captured[0] == []

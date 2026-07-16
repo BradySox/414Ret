@@ -911,27 +911,49 @@ class GenericCarrierGenerator(GroundObjectGenerator):
     def _resolve_tacan(
         self, comms: Optional[CarrierCommsPlan]
     ) -> Tuple[TacanChannel, str]:
-        """Carrier TACAN: stored channel/ident, else the hull's curated pair,
-        else the legacy allocator + random ident."""
-        tacan = self.control_point.tacan
-        if tacan is None:
-            if comms is not None:
-                tacan = self.tacan_registry.alloc_near(
-                    comms.tacan, TacanUsage.TransmitReceive
+        """Carrier TACAN.
+
+        A channel the user chose in the base dialog (``tacan_is_auto`` False)
+        always wins. An *auto*-assigned channel is re-derived so the curated
+        card can supersede a value an earlier (pre-curation) turn persisted --
+        an in-progress campaign whose carrier already carried the old
+        first-free ``1X`` + random ident would otherwise keep that junk forever,
+        since the pre-curation generator persisted the TACAN (but not the ATC /
+        ICLS / Link 4, which is why only TACAN stuck). Falls back to the legacy
+        allocator + random ident when the hull has no curated plan. ``True`` is
+        the getattr default so a legacy pickle without the flag is treated as
+        auto (re-derivable), not as a user choice.
+        """
+        stored = self.control_point.tacan
+        user_chosen = stored is not None and not getattr(
+            self.control_point, "tacan_is_auto", True
+        )
+        if stored is not None and user_chosen:
+            tacan = stored
+            tacan_callsign = self.control_point.tcn_name
+            if tacan_callsign is None:
+                tacan_callsign = (
+                    comms.tacan_ident if comms is not None else self.tacan_callsign()
                 )
-            else:
-                tacan = self.tacan_registry.alloc_for_band(
-                    TacanBand.X, TacanUsage.TransmitReceive
-                )
-            # Persist back so subsequent turns reuse the same channel and the
-            # UI (base dialog, tooltip) reflects the value instead of "AUTO".
-            self.control_point.tacan = tacan
-        tacan_callsign = self.control_point.tcn_name
-        if tacan_callsign is None:
-            tacan_callsign = (
-                comms.tacan_ident if comms is not None else self.tacan_callsign()
+                self.control_point.tcn_name = tacan_callsign
+            return tacan, tacan_callsign
+
+        if comms is not None:
+            tacan = self.tacan_registry.alloc_near(
+                comms.tacan, TacanUsage.TransmitReceive
             )
-            self.control_point.tcn_name = tacan_callsign
+            tacan_callsign = comms.tacan_ident
+        else:
+            tacan = self.tacan_registry.alloc_for_band(
+                TacanBand.X, TacanUsage.TransmitReceive
+            )
+            tacan_callsign = self.tacan_callsign()
+        # Persist back so the base dialog/tooltip reflect the value, but keep it
+        # flagged auto so a later curated-table change (or a freed map beacon)
+        # can still supersede it next turn.
+        self.control_point.tacan = tacan
+        self.control_point.tcn_name = tacan_callsign
+        self.control_point.tacan_is_auto = True
         return tacan, tacan_callsign
 
     def _resolve_link4(

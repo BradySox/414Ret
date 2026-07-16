@@ -120,6 +120,7 @@ def _make_generator() -> GenericCarrierGenerator:
     gen.control_point.frequency = None
     gen.control_point.tacan = None
     gen.control_point.tcn_name = None
+    gen.control_point.tacan_is_auto = True
     gen.control_point.link4 = None
     gen.control_point.icls_channel = None
     gen.radio_registry = RadioRegistry()
@@ -154,14 +155,40 @@ class TestCommsResolution:
         )
         assert ident == "TRO"
 
-    def test_stored_tacan_wins(self) -> None:
+    def test_user_chosen_tacan_wins(self) -> None:
+        """A channel set in the base dialog (tacan_is_auto False) is kept."""
         gen = _make_generator()
         stored = TacanChannel(42, TacanBand.X)
         gen.control_point.tacan = stored
         gen.control_point.tcn_name = "OLD"
+        gen.control_point.tacan_is_auto = False
         tacan, ident = gen._resolve_tacan(CARRIER_COMMS_PLANS[CVN_71.id])
         assert tacan == stored
         assert ident == "OLD"
+
+    def test_auto_tacan_rederives_to_curated(self) -> None:
+        """A persisted *auto* TACAN (an in-progress campaign carried the old
+        first-free 1X + random ident) is superseded by the curated card."""
+        gen = _make_generator()
+        gen.control_point.tacan = TacanChannel(1, TacanBand.X)
+        gen.control_point.tcn_name = "TRU"
+        gen.control_point.tacan_is_auto = True
+        tacan, ident = gen._resolve_tacan(CARRIER_COMMS_PLANS[CVN_71.id])
+        assert tacan == TacanChannel(71, TacanBand.X)
+        assert ident == "TRO"
+        assert gen.control_point.tacan == tacan
+        assert gen.control_point.tcn_name == "TRO"
+
+    def test_legacy_pickle_without_flag_rederives(self) -> None:
+        """A save predating tacan_is_auto (attr absent) is treated as auto."""
+        gen = _make_generator()
+        # Simulate a control point whose class/instance lacks the attribute.
+        del gen.control_point.tacan_is_auto
+        gen.control_point.tacan = TacanChannel(1, TacanBand.X)
+        gen.control_point.tcn_name = "TRU"
+        tacan, ident = gen._resolve_tacan(CARRIER_COMMS_PLANS[CVN_71.id])
+        assert tacan == TacanChannel(71, TacanBand.X)
+        assert ident == "TRO"
 
     def test_no_plan_uses_legacy_allocator(self) -> None:
         gen = _make_generator()

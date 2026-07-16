@@ -66,6 +66,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 15 | Per-squadron DCS country for nation-specific voiceovers + nation-aware pilot names (§23, generic core: `CountryAssigner` + `pilotnames.py`; no 414th faction content) | 🔵 IN REVIEW | Medium/High (mixed-nation CJTF sides get per-nation voices/comms/rosters) — resolves upstream issue #627; **pushed as PR #854**, opened 2026-07-03 | I1 ☑, I5 ☑ |
 | 16 | **AI helicopter terrain CFIT trio** (helo cruise waypoints at the dead `heli_cruise_alt_agl` setting; ≤5 NM RADIO terrain-anchor subdivision of long AI helo legs; air-start unit records mirroring the point `alt_type` — all three verified verbatim in upstream `dev`) | 🟡 NEAR | High (AI helos CFIT on every hilly map; the flown Red Tide M1 lost 3 Mi-8 + 1 Mi-24 to it) | C8 ☐ |
 | 17 | **Blue-block miz markers load + bind blue** (`MizCampaignLoader`: every marker class also walks the BLUE country block — blue-block ships/SAM/EWR/missile/coastal/offshore markers were silently dropped, 22 authored markers across 7 upstream campaigns never generated (Dynamo's evacuation flotilla, Allied Sword's oil platforms, Falklands task-force ships…) — and a blue-block marker binds the nearest BLUE CP instead of nearest-any; red-block markers keep the coalition-agnostic proximity convention, plus an actionable `generate_ewrs` no-ForceGroup error naming the stranded marker/CP) | 🟢 READY | High (restores authored content in 7 shipped campaigns; kills a silent authoring foot-gun) | n/a (tests/test_miz_marker_binding.py + the 7 campaigns headless-verified) |
+| 18 | **Ship-launched cruise missile strikes** (generic core of fork [414Ret#599](https://github.com/bradyccox/414Ret/pull/599): `game/cruisemissiles.py` LACM hull set + persisted no-rearm magazine + auto-raid planner, `cruisemissileluadata` emitter, `cruisemissiles` plugin — F10 call-for-fire with marker-text salvo sizing + magazine status — and the `cruise_missiles_state` debrief channel; fork couplings stripped: no ROE-zone gate, no `map_hidden`, no `enabled_when`) | 🔵 IN REVIEW | High (naval land-attack for every campaign; both settings default off) — **pushed as draft PR #872**, opened 2026-07-15 | n/a (unit-tested both sides; validated on dev @ `ef576acc`: pytest/Black/mypy clean) |
 
 ---
 
@@ -235,6 +236,36 @@ unvalidated "fix" is not something to ask upstream to take.
   JHMCS anywhere upstream). Cleaner than the weapon-date *balance* rule (which overlaps the
   already-merged #826 and is opinion-based — keep that on `main`).
 - **Status:** opened 2026-06-27 as **[PR #843](https://github.com/dcs-retribution/dcs-retribution/pull/843)** (15 files: new `aircraftproperties.py` + generator gate + payload-editor UI chain + 6 pod yamls + 2 tests). Black/mypy/pytest validated locally (28 tests pass). The #786 patch re-applied cleanly on current `dev` and the custom-payload coverage test still passes. **In-game pass I3 ☐** still pending a flight.
+
+### 18. Ship-launched cruise missile strikes — 🔵 IN REVIEW (pushed as draft PR #872, 2026-07-15)
+- **What:** warships with land-attack cruise missiles (vanilla Burke/Ticonderoga,
+  CurrentHill Kalibr LACM/CMP hulls) strike shore targets via a scripted
+  `FireAtPoint` push carrying the cruise-missile weapon flag (2097152) — the
+  mission-editor mechanism. F10 "Cruise Missile Strike" call-for-fire on the
+  coalition's last map marker (marker text `6`/`#6` sizes the salvo), optional
+  one-raid-per-side-per-turn auto planner (command/comms first, then war
+  industry), and a persisted per-ship-group campaign magazine with **no rearm**,
+  debited only from what the plugin reports fired via the new
+  `cruise_missiles_state` debrief channel at the turn boundary — generation
+  never debits, so re-generating a mission cannot double-count.
+- **Why upstream cares:** a naval land-attack capability the engine never
+  modelled, fully symmetric; the missiles are real weapons from real, sinkable
+  ships (kills record natively, point defense can intercept, a sunk shooter
+  fires nothing); both settings default off.
+- **Carve note:** generic core of fork [414Ret#599](https://github.com/bradyccox/414Ret/pull/599);
+  carved clean of the fork's `game/fourteenth/` namespace, ROE-zone gate,
+  `map_hidden` coupling, `enabled_when`, Lua-harness tests, and §-number references.
+- **Files:** `game/cruisemissiles.py`, `game/missiongenerator/cruisemissileluadata.py`
+  (+ `luagenerator.py` wiring), `resources/plugins/cruisemissiles/`,
+  `game/debriefing.py` + `game/sim/missionresultsprocessor.py` +
+  `resources/plugins/base/dcs_retribution.lua` (the debrief channel),
+  `game/settings/settings.py` (`cruise_missile_strikes` + `cruise_missile_auto_raids`).
+- **Tests:** `tests/test_cruisemissiles.py`,
+  `tests/missiongenerator/test_cruisemissileluadata.py`.
+- **Status:** opened 2026-07-15 as **draft [PR #872](https://github.com/dcs-retribution/dcs-retribution/pull/872)**
+  (15 files, +1151, single commit). Rebased onto dev @ `ef576acc` at push time
+  (one trivial changelog conflict); re-validated on that base: pytest 246
+  passed/0 failed, Black clean, mypy `game`+`tests` clean.
 
 ---
 

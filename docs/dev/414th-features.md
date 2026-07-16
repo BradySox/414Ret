@@ -5700,8 +5700,17 @@ for a *weapon* object; the managed paths are equally blind (MANTIS EMCON wakes o
 wake lists carry no BGM_109/Kalibr). **Closed same day by the defender launch wake**
 (see the contract paragraph above; details + re-fly criteria in
 `docs/dev/design/414th-cruise-missile-raids-notes.md` "The intercept gap") — the wake
-itself is unflown. Still untested (minor): the `#N` marker-text salvo sizing, the CH
-Kalibr hulls, red-side raids, full-magazine exhaustion.
+itself is unflown. A **second flown test the same day** (turn 3, pre-wake build,
+Tacview `Tacview-20260716-014958`) confirmed the linked-PD variant in the air (a
+SHORAD-linked `DINGO (PD)` Tor pair held dark at the target, zero launches), proved
+**naval AD intercepts natively** (a red Krivak pair killed 2 of 6 Tomahawks with
+SA-N-4s — ships are always hot, exactly the "already hot" caveat, so the saturation
+game is real wherever a defender can shoot), flew the C2 re-target (INSECT, as the
+save predicted) from the debited magazine with a same-turn re-fly logging the
+identical remainder (turn-boundary-only debit, flown), and confirmed the bridge's
+`useEmOnOff = false` means link-dark is alarm-GREEN — the wake's alarm-RED override
+reaches every ground management state. Still untested (minor): the `#N` marker-text
+salvo sizing, the CH Kalibr hulls, red-side raids, full-magazine exhaustion.
 
 ---
 

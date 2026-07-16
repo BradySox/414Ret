@@ -140,3 +140,29 @@ the aimpoint held RED`) fires on launch and the SA-15 visibly engages the inboun
 Tor still never shoots (then the residual gap is DCS's own Tor-vs-TLAM engagement
 logic, not alarm state), or defenders stuck RED long after the raid (stand-down
 broke).
+
+**Second flown test, same day (turn 3, pre-wake build — Tacview
+`Tacview-20260716-014958`):** the raid onto INSECT sharpened the picture on both
+sides of the claim.
+
+* **The gap's linked-PD variant is now flown, not just code-derived**: this laydown
+  armed red's SHORAD link (3 PD groups held dark, `0122 | DINGO (PD)` — a Tor pair —
+  5 km from INSECT), and DINGO fired nothing as the salvo arrived. Both dark states
+  are now observed in the air: vanilla ALARM AUTO (turn 2's SLUG) and link-dark
+  (turn 3's DINGO).
+* **A defender that CAN shoot, kills**: a red Krivak pair (`0115 | NAUTILUS`) sitting
+  in the flight path fired 13 SA-N-4s and **killed 2 of the 6 Tomahawks** (removal
+  timestamps match the missile terminals to the second). Ship AD has no alarm-state
+  model — it is always hot — which is exactly the "already hot for another reason"
+  caveat, and it proves the saturation-vs-point-defense game works the moment a
+  defender is awake. The wake fix's job is precisely to give ground PD what ships
+  already have.
+* **Fix-coverage confirmation**: the bridge builds its SHORAD with `useEmOnOff =
+  false`, so linked PD is darkened via **alarm GREEN** (MOOSE `_InitState`'s else
+  branch) — the wake's alarm-RED `setOption` overrides that directly. No emission
+  toggling is needed to reach any of the three ground management states (vanilla,
+  MANTIS-EMCON, link-dark): all of them are alarm-state-based in this fork.
+* Incidentals: one Tomahawk flew into the interior mountains at ~1250 m (FireAtPoint
+  gives no terrain-following route — a known DCS behavior, acceptable losses); the
+  three survivors impacted within 60–257 m of the aimpoint; the same-turn re-fly
+  logged the identical `4 left`, flown proof of the turn-boundary-only debit.

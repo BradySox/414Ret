@@ -2001,7 +2001,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     only, never `enableEmission`) for ~flight time + 300 s, then restores AUTO; options
     `defenderWake`/`defenderWakeRadiusNm`/`defenderWakeExtraS`; harness-pinned. The wake is
     unflown — re-fly criteria in `414th-cruise-missile-raids-notes.md` "The intercept gap".
-    Still unflown: `#N` marker salvo sizing, CH Kalibr hulls, red-side raids.)
+    A second flown test (turn 3, pre-wake build) confirmed the linked-PD variant in the air
+    AND that **naval AD intercepts natively** — a red Krivak pair killed 2/6 Tomahawks with
+    SA-N-4s (ships are always hot), so the saturation game works wherever a defender can
+    shoot; the wake gives ground PD the same chance (link-dark is alarm-GREEN in this fork's
+    bridge, so the alarm-RED override reaches it). Still unflown: `#N` marker salvo sizing,
+    CH Kalibr hulls, red-side raids.)
 
 ---
 

@@ -719,7 +719,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    waypoints, so 40–110 km treetop legs were commanded through the Harz ridge lines), and both
    air-start spawner paths stamp `unit.alt_type` (pydcs leaves units "BARO", and DCS spawns from
    the unit record — a 500 m-AGL intent spawned 500 m MSL below a 600 m FARP). Upstream-shared;
-   checklist C8.
+   checklist C8. **Carrier-recovery stagger (2026-07-16, the flown Scenic Route midair):** DCS
+   flies the whole carrier pattern itself (no mission-authored approach leg exists — the last
+   waypoint is a `Land` task ON the boat), so two AI packages sent into the same recovery window
+   converged co-altitude in the DCS overhead and collided 2.7 NM from CVN-71 (blue's only losses
+   of the mission). `MissionScheduler._deconflict_carrier_recoveries` now spaces same-boat
+   package landings ≥ `CARRIER_RECOVERY_INTERVAL` (5 min) apart by delaying TOTs — only "spread"
+   AI packages move; player/CAP/AEW&C/SCAR/ASAP packages claim their recovery slots as FIXED
+   entries the movable ones space around (the human's recovery is never rescheduled), and the
+   recovery-tanker ETAs are collected after the stagger so tankers time against the real
+   landings. Always-on (no setting — arrival-time-only, like the §62 modex). Upstream-shared;
+   checklist C9.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement +
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.

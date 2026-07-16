@@ -1342,6 +1342,27 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   (carve candidates). Checklist **C8** — needs an in-game pass.
 - AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
 - Tanker orbit placement/deconfliction: `game/ato/flightplans/theaterrefueling.py`.
+- **Carrier-recovery stagger (the flown Scenic Route midair, fixed 2026-07-16).** Two AI
+  packages (an OX S-3B and a CATERPILLAR Hornet) recovering to CVN-71 in the same window
+  converged co-altitude at ~1,000 ft and collided 2.7 NM from the boat — blue's only losses
+  of the mission. Root cause is structural: Retribution authors **no approach leg at all**
+  (the last waypoint is a nav point at cruise altitude, then a `Land` task ON the boat), so
+  DCS's own carrier-pattern AI flies the whole descent and two flights sent into the same
+  window inevitably converge in the DCS overhead; the per-flight `plane_altitude_offset`
+  scatter never touches the pattern, and no recovery-time deconfliction existed. Arrival
+  TIME is therefore the only lever: `MissionScheduler._deconflict_carrier_recoveries`
+  (`game/commander/missionscheduler.py`, run after TOT assignment and BEFORE the
+  recovery-tanker ETA collection, so tankers time against the staggered landings) spaces
+  each boat's package landings ≥ `CARRIER_RECOVERY_INTERVAL` (5 min) apart by delaying
+  TOTs. Only "spread" AI packages are movable; CAP waves (coverage schedule wins), AEW&C
+  (handoff-chained), SCAR (on-station ASAP), ASAP taskings, and **any package with a player
+  flight** are FIXED entries — they claim their slot as-is and the movable packages space
+  around them, so a human's recovery is never rescheduled but AI traffic clears their
+  window. The slotting core is the pure `staggered_recovery_deltas` (single sorted pass;
+  delaying never breaks an earlier bound). Always-on — no setting, no plugin, no save
+  change (the §62 modex precedent). Helo and shore recoveries are ignored. Tests:
+  `tests/test_carrier_recovery_stagger.py`. Upstream-shared (carve candidate). Checklist
+  **C9** — needs an in-game pass.
 - Malformed mod payload Lua (CJS Super Hornet v2.4 uses local-var table indices that the
   pydcs Lua parser rejects with `ValueError`): patched loader in `qt_ui/main.py`
   (`_patch_pydcs_payload_loader()`), plus the offending files are skipped with a warning.

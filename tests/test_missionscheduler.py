@@ -32,6 +32,8 @@ class _FakeFlight:
     def __init__(self, patrol_duration: timedelta) -> None:
         self.flight_plan = _FakeFlightPlan(patrol_duration)
         self.departure = _FakeDeparture()
+        # Land recovery: the carrier-recovery stagger pass skips this flight.
+        self.arrival = _FakeDeparture()
         self.is_helo = False
 
 

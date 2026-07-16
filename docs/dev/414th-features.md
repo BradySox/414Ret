@@ -5677,11 +5677,18 @@ pushed task, the magazine as a hard cap shared across raid + call-for-fire, the 
 mirror + dirty flag, dead-ship no-op, marker targeting, clean no-node no-op — the
 harness `TaskFireAtPoint`/`PushTask` fakes gained the `weaponType` argument).
 
-**Needs an in-game pass** (checklist B16): whether the DCS ship AI actually ripples the
-commanded quantity via a scripted `FireAtPoint` push with `weaponType = CruiseMissile`
-(the ME task is proven; the scripted push is the same table), which of the curated hulls
-honor it (the vanilla Ticonderoga's Tomahawk fit is the least certain), TLAM flight
-behavior over terrain, and whether SHORAD actually engages the missiles in anger.
+**In-game pass — VERIFIED 2026-07-16** (checklist B16, flown Persian Gulf "Scenic Route"
+test): the scripted `FireAtPoint` push with `weaponType = CruiseMissile` fires the exact
+commanded quantity — 6 commanded, 6 `BGM-109C Tomahawk` shot events — and **both vanilla
+hulls honor it** (the "least certain" `TICONDEROG` flew the raid; a Burke escort group flew
+the F10 call-for-fire + a raid in a sibling mission). The missiles cruised to the planned
+C2 target and killed it (hits + a kill recorded natively), the launch cues fired, the raid
+launched inside the [240, 900] s stagger window, and the magazine loop closed end-to-end:
+debrief row "6 fired, 10 remaining" → the save's `cruise_missile_magazines` debited 16→10
+→ next turn's raid re-planned onto the *next* command center. Still unobserved (minor):
+SHORAD engaging the inbounds (the target's Tor never fired — likely already dead), the
+`#N` marker-text salvo sizing, the CH Kalibr hulls, red-side raids, and full-magazine
+exhaustion.
 
 ---
 

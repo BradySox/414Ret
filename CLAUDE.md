@@ -1987,8 +1987,13 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (`game/fourteenth/cruise_raids.py`, `game/missiongenerator/cruisemissileluadata.py`,
     `resources/plugins/cruisemissiles/`, `game/debriefing.py`,
     `game/sim/missionresultsprocessor.py`, `game/settings/settings.py`; features doc §63,
-    checklist B16 — needs an in-game pass: the scripted FireAtPoint+cruise-flag ripple, which
-    curated hulls honor it (the vanilla Ticonderoga is least certain), and SHORAD intercept.)
+    checklist B16 — **VERIFIED 2026-07-16** (flown Persian Gulf "Scenic Route" test): the
+    scripted FireAtPoint+cruise-flag push fires the exact commanded quantity on BOTH vanilla
+    hulls (the "least certain" Ticonderoga flew the raid — 6 BGM-109C shots, C2 target killed
+    natively; a Burke group flew the F10 call-for-fire), the raid launched inside the [240,900] s
+    stagger window, and the magazine loop closed end-to-end (debrief "6 fired, 10 remaining" →
+    save debited 16→10 → next turn re-targets the next command center). Still unobserved:
+    SHORAD intercept, `#N` marker salvo sizing, CH Kalibr hulls, red-side raids.)
 
 ---
 

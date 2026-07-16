@@ -1,7 +1,8 @@
 """Headless runtime check for the cruise-missile plugin (cruisemissiles-config.lua).
 
 Pins the "script errors and the feature silently never starts" invariant plus the
-§63 safety contract: an auto raid fires after the launch delay as a FireAtPoint
+§63 safety contract: an auto raid fires inside its launch window (pinned to a
+degenerate min==max window here for determinism) as a FireAtPoint
 with the cruise-missile weapon flag; the emitted magazine is a hard per-group cap
 shared by raids and the F10 call-for-fire; expenditure mirrors into
 ``cruise_missiles_state`` (dirty-flagged) for the turn-boundary debit; a dead ship
@@ -76,12 +77,13 @@ def test_auto_raid_fires_after_the_delay_with_the_cruise_flag() -> None:
                     "count": "4",
                 }
             ],
-            options={"raidDelayS": 30},
+            # A degenerate window (min == max) pins the launch moment.
+            options={"raidDelayMinS": 30, "raidDelayMaxS": 30},
         )
     )
     h.load_plugin_script(PLUGIN)
 
-    # Nothing launches before the delay.
+    # Nothing launches before the window opens.
     h.advance_to(29)
     assert h.records("firedTasks") == []
 
@@ -108,6 +110,57 @@ def test_auto_raid_fires_after_the_delay_with_the_cruise_flag() -> None:
     # Expenditure mirrors into the debrief channel for the magazine debit.
     assert _state(h) == [{"group": "CVBG | Burke", "fired": 4}]
     assert h.lua.globals().dirty_state == True  # noqa: E712
+    h.assert_no_lua_errors()
+
+
+def test_raid_launches_stay_inside_the_window_and_legacy_option_opens_it() -> None:
+    # Each raid schedules at its own random moment inside the launch window
+    # (the SCUD-style stagger, so several groups never ripple simultaneously).
+    # Randomness is bounded, not pinned: assert window compliance only.
+    h = DcsPluginHarness()
+    h.add_group(_ship_group("A Burke", int(h.side.BLUE)))
+    h.add_group(_ship_group("B Burke", int(h.side.BLUE), x=5000.0))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        _config(
+            ships=[
+                {"group": "A Burke", "coalition": "blue", "remaining": "24"},
+                {"group": "B Burke", "coalition": "blue", "remaining": "24"},
+            ],
+            raids=[
+                {
+                    "group": "A Burke",
+                    "coalition": "blue",
+                    "target": "A",
+                    "x": "1.0",
+                    "y": "2.0",
+                    "count": "2",
+                },
+                {
+                    "group": "B Burke",
+                    "coalition": "blue",
+                    "target": "B",
+                    "x": "3.0",
+                    "y": "4.0",
+                    "count": "2",
+                },
+            ],
+            # The legacy raidDelayS option still opens the window;
+            # raidDelayMaxS closes it.
+            options={"raidDelayS": 20, "raidDelayMaxS": 40},
+        )
+    )
+    h.load_plugin_script(PLUGIN)
+
+    # Nothing may launch before the window opens...
+    h.advance_to(19)
+    assert h.records("firedTasks") == []
+
+    # ...and every raid must have launched by the time it closes.
+    h.advance_to(41)
+    assert sorted(t["group"] for t in h.records("firedTasks")) == [
+        "A Burke",
+        "B Burke",
+    ]
     h.assert_no_lua_errors()
 
 
@@ -139,7 +192,7 @@ def test_the_magazine_caps_the_salvo_and_a_dry_ship_never_fires() -> None:
                     "count": "6",
                 },
             ],
-            options={"raidDelayS": 10},
+            options={"raidDelayMinS": 10, "raidDelayMaxS": 10},
         )
     )
     h.load_plugin_script(PLUGIN)
@@ -167,7 +220,7 @@ def test_a_dead_ship_fires_nothing() -> None:
                     "count": "4",
                 }
             ],
-            options={"raidDelayS": 10},
+            options={"raidDelayMinS": 10, "raidDelayMaxS": 10},
         )
     )
     h.load_plugin_script(PLUGIN)

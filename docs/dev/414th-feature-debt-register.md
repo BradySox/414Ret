@@ -57,17 +57,18 @@ queue ages forever (G23 sat 12 days waiting for an MP event that could never exe
 
 Items that shape the new game and therefore must be handled **before** regeneration:
 
-- [x] **`auto_combat_sar` "AI-rescue off" — RESOLVED 2026-07-15 (root-caused; a design call now
-  pends).** NOT the saved-defaults layer: the emitter's designed **player-package suppression
+- [x] **`auto_combat_sar` "AI-rescue off" — RESOLVED + FIXED 2026-07-15.** NOT the saved-defaults layer: the emitter's designed **player-package suppression
   gate** did it (`luagenerator.py` `player_package = bool(blue_rescue or blue_kings or
   blue_sandys)` — the recorded §21 squadron call, "a player CSAR/SCAR flight in the ATO ⟹ we've
   got it covered, no AI spawn"). M1's ATO carried a **bare player Sandy** (`0 King(s), 1
   Sandy(s)` in the ledger log) — a SCAR escort with no rescue helo — which suppressed the AI
   helo even though a Sandy can't pick anyone up, leaving M1 with **zero rescue capability**
-  (capture race only). Open design question (squadron call): narrow the gate so only a
-  **rescue-capable** flight (a player CSAR *helo*) suppresses the AI spawn — a bare Sandy/King
-  would then draw the AI helo and escort/track it. Until decided, the Aug-1 practice rule:
-  **don't frag a Sandy without also fragging the rescue helo** (or accept capture-race-only).
+  (capture race only). **DECIDED + IMPLEMENTED same day (squadron call, option 1):** the gate is
+  narrowed to **rescue-capable flights only** — a player CSAR *helo* suppresses the AI spawn; a
+  bare Sandy/King now **draws** the AI helo and escorts/tracks it (`luagenerator.py`
+  `player_rescue_helo`; tests `test_bare_sandy_does_not_suppress_autospawn` +
+  `test_bare_king_does_not_suppress_autospawn`). Lands before the Friday lock, so the
+  regenerated campaign carries it — G9 stays exercisable at Aug 1 even if someone frags a Sandy.
 - [ ] **§59 ground AI sleep — decide.** Default OFF, deliberately not preseeded. Options: leave
   OFF for Aug 1 (safe), or trial it in the mid-window private session (§5) and preseed only if
   clean. Do **not** first-fly it on the squadron.

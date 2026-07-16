@@ -236,7 +236,7 @@ def test_autospawn_with_parked_helos_and_no_template() -> None:
 
 
 def test_player_package_suppresses_autospawn_and_arms_no_clone() -> None:
-    # Scenarios A/B: the player fragged a package -> no AI clone is armed, and the
+    # The player fragged a RESCUE HELO -> no AI clone is armed, and the
     # ledger runs off the player's own helo.
     flights = [_fd("Jolly-1", FlightType.COMBAT_SAR, is_blue=True, helo=True)]
     gen = _generator(flights, auto_combat_sar=True, combat_sar_templates=_templates())
@@ -249,6 +249,48 @@ def test_player_package_suppresses_autospawn_and_arms_no_clone() -> None:
     assert _scalar(node.get_item("autoSpawn")) == "false"
     assert node.get_item("heloTemplate") is None  # no on-demand clone with a package
     assert _string_list(node.get_item("rescueHelos")) == ["Jolly-1"]
+
+
+def test_bare_sandy_does_not_suppress_autospawn() -> None:
+    # Squadron call 2026-07-15 (from the flown Red Tide M1, where one player Sandy
+    # escort with no helo behind it silently disabled ALL rescue): only a
+    # rescue-CAPABLE flight suppresses the AI spawn. A bare SCAR Sandy can't pick
+    # anyone up -> the AI helo still arms, and the Sandy escorts it.
+    flights = [_fd("Sandy-1", FlightType.SCAR, is_blue=True, helo=False)]
+    gen = _generator(flights, auto_combat_sar=True, combat_sar_templates=_templates())
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _scalar(node.get_item("autoSpawn")) == "true"
+    assert _scalar(node.get_item("heloTemplate")) == "CombatSAR On-Demand Rescue"
+    assert _string_list(node.get_item("sandys")) == ["Sandy-1"]
+    assert _string_list(node.get_item("rescueHelos")) == []
+
+
+def test_bare_king_does_not_suppress_autospawn() -> None:
+    # Same call for a King-only plan: the C-130 tracks the survivor but can't land
+    # for him -> the AI helo still arms alongside it.
+    flights = [_fd("King-1", FlightType.COMBAT_SAR, is_blue=True, helo=False)]
+    gen = _generator(flights, auto_combat_sar=True, combat_sar_templates=_templates())
+    lua_data = LuaData("dcsRetribution")
+
+    gen._generate_combat_sar(lua_data)
+
+    node = lua_data.get_item("CombatSAR")
+    assert node is not None
+    assert _scalar(node.get_item("autoSpawn")) == "true"
+    assert _scalar(node.get_item("heloTemplate")) == "CombatSAR On-Demand Rescue"
+    kings_item = node.get_item("kings")
+    assert isinstance(kings_item, LuaData)
+    assert len(kings_item.objects) == 1
+    assert any(
+        v.key == "group" and v.value == "King-1"
+        for v in _key_values(kings_item.objects[0])
+    )
+    assert _string_list(node.get_item("rescueHelos")) == []
 
 
 def test_node_emitted_even_with_auto_off_and_no_player_package() -> None:

@@ -827,9 +827,11 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     straight into the pickup (the clone-into-mission path that works). **The retired standing orbit**
     (auto-fragged `PlanCombatSar` + the commandeer-an-**airborne**-helo dispatch) is **removed** — the
     orbiting helo never reliably flew the pickup (checklist G21); commandeering a *parked* helo instead
-    of an *airborne, already-routed* one is the fix. The gate: a player CSAR/SCAR flight in the ATO ⟺
-    player package ⟹ **no AI spawn** (the user's "we've got it covered" scenarios); nothing fragged ⟹
-    AI spawns. `auto_combat_sar` (**default ON**) drives the on-demand spawn, not an orbit. **Emit
+    of an *airborne, already-routed* one is the fix. The gate (**narrowed 2026-07-15**, squadron call off the flown
+    Red Tide M1 where one bare player Sandy escort silently disabled ALL rescue): only a
+    **rescue-capable** player flight — a CSAR **helo** — suppresses the AI spawn ("we've got it
+    covered"); a bare Sandy or King can't pick anyone up, so it **draws** the AI helo and
+    escorts/tracks it; nothing fragged ⟹ AI spawns. `auto_combat_sar` (**default ON**) drives the on-demand spawn, not an orbit. **Emit
     contract:** `dcsRetribution.CombatSAR` carries `autoSpawn` (bool) + `parkedHelos` (preferred) +
     `heloTemplate`/`farp` (fallback) when auto-spawning, alongside `pilotTemplate`/`rescueHelos`/
     `kings`/`sandys`. **Testing aids (2026-07-09):** the enemy snatch-party spawn default dropped **2 NM

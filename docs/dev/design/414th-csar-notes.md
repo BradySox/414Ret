@@ -115,9 +115,15 @@ rescue to go get the downed pilot.
   the old commandeer:** the retired dispatch commandeered an *airborne, already-routed* orbit helo,
   which RTB'd instead of rescuing (G21). A *parked* start is much closer to "fresh into mission" —
   the thing that works. BLUE only.
-- **The gate:** a player CSAR/SCAR flight in the ATO ⟺ a player package ⟹ `autoSpawn=false`
-  (no AI spawn; the package + ledger handle it). Nothing fragged ⟹ `autoSpawn=true`. Emitted as
+- **The gate (narrowed 2026-07-15):** only a **rescue-capable** player flight — a CSAR **helo**
+  in the ATO — ⟹ `autoSpawn=false` (no AI spawn; the player's helo + ledger handle it). A bare
+  Sandy (SCAR) or King (fixed-wing CSAR) does NOT suppress: neither can pick anyone up, so it
+  **draws** the AI helo and escorts/tracks it. Nothing fragged ⟹ `autoSpawn=true`. Emitted as
   `dcsRetribution.CombatSAR.autoSpawn` + `parkedHelos` (preferred) + `heloTemplate`/`farp` (fallback).
+  *History:* the original 2026-07-06 gate counted ANY CSAR/SCAR flight as "we've got it covered" —
+  the flown Red Tide M1 (2026-07-11) then showed one bare player Sandy silently disabling ALL
+  rescue for the mission (`0 King(s), 1 Sandy(s), … AI-rescue off` in the ledger log), which is
+  what the narrowing fixes (squadron call 2026-07-15).
 
 **Deferred (v2, clearly marked so nobody assumes it shipped):**
 - On-demand **Sandy + King** launches. The helo needs no loadout (it does OPSTRANSPORT), but a

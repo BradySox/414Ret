@@ -1,6 +1,6 @@
 {
     "nameInUI": "Mobile missile relocation (shoot and scoot)",
-    "descriptionInUI": "Runtime for the SCUD hunt. Inert unless the mission generator emits dcsRetribution.mobileMissiles (the 'Mobile missile sites relocate' setting is on and a live theater-missile site exists). Each mobile missile site's vehicles drive to a fresh position within the scoot radius of their campaign-map location every few minutes (alarm-green, weapons hold -- they relocate, they don't stop to fight), so the launcher is never quite where your last recon photo froze it. Movement ONLY: kills are recorded natively like any other unit, the site never migrates beyond the scoot radius, and a dead site simply stops being routed. The radar SAM network is never touched (different object class entirely). Movement begins after a short startup grace.",
+    "descriptionInUI": "Runtime for the SCUD hunt. Inert unless the mission generator emits dcsRetribution.mobileMissiles (the 'Mobile missile sites relocate' setting is on and a live theater-missile site exists). Each mobile missile site's vehicles drive to a fresh position within the scoot radius of their campaign-map location every few minutes (alarm-green, weapons hold -- they relocate, they don't stop to fight), so the launcher is never quite where your last recon photo froze it. Movement ONLY: kills are recorded natively like any other unit, the site never migrates beyond the scoot radius, and a dead site simply stops being routed. The radar SAM network is never touched (different object class entirely). Movement begins after a short startup grace. Fire first, THEN scoot: a group carrying a scripted fire mission (the missile-site fire task) holds still until its launch window plus the margin has passed -- routing it earlier would silently cancel the launch.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -23,6 +23,11 @@
             "nameInUI": "Startup grace before the first relocation (s)",
             "mnemonic": "startGraceS",
             "defaultValue": 120
+        },
+        {
+            "nameInUI": "Fire-then-scoot margin past a site's launch window (s)",
+            "mnemonic": "fireMarginS",
+            "defaultValue": 300
         }
     ],
     "scriptsWorkOrders": [],

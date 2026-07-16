@@ -1491,6 +1491,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     ground group needs its route to START at its current position or there's no leg to drive (MIST's own
     `groupToRandomZone` uses 2 WPs) — now a 2-WP route `{current, dest}`. **The identical bug + fix apply
     to the COIN mover** `coin-config.lua` (§P4/P8), which still owes its own COIN-campaign fly.
+    **Fire-vs-scoot clobber fixed 2026-07-16** (flown Scenic Route finding): the upstream missile-site
+    fire task (`Hold → FireAtPoint` on waypoint 0) and the scoot were mutually destructive —
+    `mist.goRoute`'s `setTask` replaced a pending fire mission (12/13 batteries silently never fired) and
+    a battery that fired first sat pinned on the spent task, never scooting. Now **fire first, THEN
+    scoot**: `MissileSiteGenerator` records each fire-tasked group's hold deadline on
+    `MissionData.missile_fire_missions`, the emitter forwards them (`fireHoldGroups`/`fireHoldS`), and
+    the plugin holds those groups until deadline + `fireMarginS` (300 s), then routes with a
+    `resetTask()` first. Re-fly owed (checklist S2 back to PARTIAL). The same flown test drove the
+    **no-front support-orbit fix** (a front-less naval map marched red's A-50 200 NM AWAY from the
+    fleet — `support_orbit_anchor` now skips the AI depth march with no FLOT; features doc §8-adjacent
+    support-orbit section) and the **S-3B DEAD cleanup** (no ARM on the airframe; the SLAM "DEAD"
+    preset + the yaml `DEAD: 280` the loadout-integrity sweep missed are removed).
 50. **Convoy ambush (a chance, never telegraphed) + ambient supply convoys** — the **mirror of the §35
     interdiction**: where
     interdiction gives the player *enemy* convoys to hunt, this gives the player *friendly* convoys that

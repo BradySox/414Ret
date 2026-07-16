@@ -606,6 +606,23 @@ class GroundObjectGenerator:
 
 
 class MissileSiteGenerator(GroundObjectGenerator):
+    def __init__(
+        self,
+        ground_object: TheaterGroundObject,
+        country: Country,
+        game: Game,
+        mission: Mission,
+        unit_map: UnitMap,
+        mission_data: Optional[MissionData] = None,
+    ) -> None:
+        super().__init__(ground_object, country, game, mission, unit_map)
+        # §49 fire-then-scoot: the fire-mission hold deadlines this generator
+        # rolls are recorded on the mission data so the mobile-missile scoot
+        # emitter can tell the plugin to hold each firing group still until
+        # its FireAtPoint has run. Optional so callers without mission data
+        # (tests) keep working.
+        self.mission_data = mission_data
+
     @property
     def culled(self) -> bool:
         # Don't cull missile sites - their range is long enough to make them easily
@@ -651,17 +668,23 @@ class MissileSiteGenerator(GroundObjectGenerator):
                     real_target = target.point_from_heading(
                         Heading.random().degrees, random.randint(0, 2500)
                     )
-                    hold = ControlledTask(Hold())
-                    hold.stop_after_duration(
-                        random.randint(
-                            60,
-                            int(
-                                self.game.settings.desired_player_mission_duration.total_seconds()
-                            ),
-                        )
+                    hold_seconds = random.randint(
+                        60,
+                        int(
+                            self.game.settings.desired_player_mission_duration.total_seconds()
+                        ),
                     )
+                    hold = ControlledTask(Hold())
+                    hold.stop_after_duration(hold_seconds)
                     vg.points[0].add_task(hold)
                     vg.points[0].add_task(FireAtPoint(real_target))
+                    if self.mission_data is not None:
+                        # §49 fire-then-scoot: let the scoot plugin hold this
+                        # group still until the fire mission has run (a route
+                        # push would setTask-replace the pending task).
+                        self.mission_data.missile_fire_missions[group.group_name] = (
+                            hold_seconds
+                        )
                     logging.info("Set up fire task for missile group.")
                 else:
                     logging.info(
@@ -1921,7 +1944,12 @@ class TgoGenerator:
                     )
                 elif isinstance(ground_object, MissileSiteGroundObject):
                     generator = MissileSiteGenerator(
-                        ground_object, country, self.game, self.m, self.unit_map
+                        ground_object,
+                        country,
+                        self.game,
+                        self.m,
+                        self.unit_map,
+                        self.mission_data,
                     )
                 elif isinstance(ground_object, MotorpoolGroundObject):
                     generator = MotorpoolGenerator(

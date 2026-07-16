@@ -20,6 +20,14 @@ The one exception is a support orbit tasked to a **carrier/fleet** target: it
 holds with its task force (anchored on the carrier, only nudged clear of the
 threat zone) instead of marching up to the land FLOT, so a carrier E-2C/tanker
 covers the boat rather than flying ~200 NM forward to cover the front.
+
+With **no front line at all** (a pure naval map, or fully disconnected
+theaters) the orbit likewise holds at its anchor and is only nudged clear of
+the threat zone. The depth march exists to hold support *behind the FLOT*;
+with no FLOT there is no "behind", and marching away from the nearest threat
+boundary just flees the map (observed: a red A-50 on a carriers-only enemy
+anchored on the friendly field farthest from the fleet, then marched another
+2.5 x 80 NM = 200 NM straight away from it — 233-322 NM from the fight).
 """
 
 from __future__ import annotations
@@ -88,6 +96,11 @@ def support_orbit_anchor(
         anchor = target.position
         boundary = threat_zones.closest_boundary(anchor)
         toward_enemy = Heading.from_degrees(anchor.heading_between_point(boundary))
+        if threat_zones.threatened(anchor):
+            # From INSIDE the zone the closest boundary is the way OUT, not
+            # the way toward the enemy -- flip, or the clearance push below
+            # would march the orbit deeper into the threat.
+            toward_enemy = toward_enemy.opposite
         center = anchor
     else:
         anchor = front.position
@@ -105,8 +118,11 @@ def support_orbit_anchor(
     # for coverage; the AI holds deep (AI_SUPPORT_DEPTH_FACTOR x) so red
     # tankers/AWACS don't loiter near the FLOT. A carrier orbit skips this march
     # entirely -- it stays on the fleet and is only pushed clear of the threat
-    # zone below.
-    if not carrier_target:
+    # zone below. A no-front theater skips it too: the march is a depth *behind
+    # the FLOT*, and with no FLOT it just drags the orbit away from the only
+    # enemy on the map (the naval-map red-A-50-in-Qatar bug) -- the threat
+    # floor below is the whole standoff.
+    if not carrier_target and front is not None:
         factor = 1.0 if player.is_blue else AI_SUPPORT_DEPTH_FACTOR
         base_push = threat_buffer * factor
         if base_push > meters(0):

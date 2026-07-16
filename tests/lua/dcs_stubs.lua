@@ -31,6 +31,7 @@ local Harness = {
         firedTasks = {}, -- { group, x, y, radius, rounds, t }
         aiOnOff = {}, -- { group, on, t } from Controller:setOnOff
         controllerTasks = {}, -- { group, taskId, targetGroupId, t } from Controller:setTask
+        controllerResets = {}, -- { group, t } from Controller:resetTask
         options = {}, -- { group, option, value, t } from Controller:setOption
         spawns = {}, -- { template, alias, base, takeoff, altitude, grouping, speedKt, t }
         roe = {}, -- { group, option, t } from MOOSE Option* calls
@@ -214,6 +215,13 @@ function ControllerFake:setTask(task)
         group = self.group:getName(),
         taskId = task and task.id,
         targetGroupId = task and task.params and task.params.groupId,
+        t = Harness.now,
+    })
+end
+
+function ControllerFake:resetTask()
+    table.insert(Harness.records.controllerResets, {
+        group = self.group:getName(),
         t = Harness.now,
     })
 end

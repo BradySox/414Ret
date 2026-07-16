@@ -3048,7 +3048,23 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   (idempotence broken). Knobs: `auto_range_fuel_tanks`, `fuel_tanks_over_jammers` (Mission Generation →
   Loadouts).
 
-### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ✓ VERIFIED (2026-07-10 flown Red Tide re-fly, session `gallant-panini-5485e7` — the 2-WP `driveTo` fix works in DCS)
+### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ◐ PARTIAL (scoot VERIFIED 2026-07-10/11/16; the 2026-07-16 fire-then-scoot fix needs a re-fly)
+- **2026-07-16 fire-vs-scoot clobber found + fixed (flown PG Scenic Route turn 3, Tacview
+  `Tacview-20260716-014958`; unflown fix):** the scoot itself re-verified on a third campaign —
+  12 of 13 missile groups (4 Scud + 9 Shahed batteries) relocated 1.9–4.0 km inside the anchor —
+  but the upstream missile-site **fire task and the scoot clobber each other**: `mist.goRoute`
+  pushes routes via `Controller:setTask`, which replaces the waypoint-0 `Hold → FireAtPoint`, so
+  every battery that scooted before its Hold expired silently lost its fire mission, and the ONE
+  battery that fired (BAT, hold ≈117 s — under the 120 s grace) then sat pinned on the spent task
+  and never scooted. Fixed (fire first, THEN scoot): fire-hold deadlines forwarded per-site
+  (`fireHoldGroups`/`fireHoldS` via `MissionData.missile_fire_missions`), the plugin holds such
+  groups until deadline + `fireMarginS` (300 s), then routes with a `resetTask()` first. Harness
+  tests pin the hold/release/reset; **the re-fly is the arbiter**.
+  - **Pass:** a fire-tasked battery launches at its hold time AND relocates afterward; the other
+    batteries scoot as before.
+  - **Fail signature:** a fired battery still frozen after deadline + margin (the resetTask didn't
+    un-pin it in DCS — acceptable, it's out of missiles, note and move on), or held batteries
+    never scooting at all (holds mis-forwarded).
 - **2026-07-11 re-confirm (Red Tide M1 "with Mags happy" `csar-snatch-toggle-question-dfdb7a`, Tacview
   `Tacview-20260711-171935`, ~125 min MP):** both batteries scooted again on the real event save —
   `0015 | CROW` launchers net 107–341 m, `0138 | TETRA` launchers net 1.1–1.2 km, escorts (Ural /

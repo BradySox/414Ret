@@ -101,7 +101,11 @@ inside the **414th Joint Fighter Group** (a multinational NATO wing that happene
 forward-based when it kicked off) now leads the **NATO counteroffensive** — clawing back the
 skies and rolling the front east to retake Hamburg, liberate Copenhagen, and drive the Red
 Army back. Setting stays 1988-07-13; player faction `Blufor Late Cold War (80s)`, enemy
-`Russia 1980`. The red-heavy laydown (red still holds the north, centre, and east) is *why*
+**`Russia 1980 (Red Tide)`** — the *fork*, not the shared base `Russia 1980`
+(`resources/factions/russia_1980_red_tide.json`; `recommended_enemy_faction` at
+`red_tide.yaml:6`). The distinction matters at New Game: the base faction silently loses both
+the single-radar S-300 regiments and the SA-15 Tor / SA-19 Tunguska point defense.
+The red-heavy laydown (red still holds the north, centre, and east) is *why*
 the offensive framing works — that captured ground is the objective set the 414th attacks.
 
 > **Posture note.** The reframe is narrative; the **blue-offensive tuning below has now been
@@ -121,11 +125,20 @@ the offensive framing works — that captured ground is the objective set the 41
 >    F-15E 12, F-14B 8, A-10C 8, all F-4E 8); the **AI-only support/bomber** squadrons were
 >    trimmed (A-6E 12→6, B-1B 6→4, Mirage-F1 8→6, AV-8B 8→6, F-15C 8→6, Tornado 10→8). Red
 >    fighter trims unchanged: Peenemünde MIG-29 8→4, Hamburg MiG-29A 8→6, Sperenberg Su-27 8→6.
+>    > ⚠️ **The red-trim line above never matched the yaml and is kept only as the record of
+>    > what was *planned* on 2026-06-23.** Engine-dumped 2026-07-16, the live sizes are
+>    > **Peenemünde 8 · Hamburg 12 · Sperenberg 12** — plus Haina's 24 (MiG-29A ×12 + MiG-23MLD
+>    > ×12), which this plan never mentioned. Red fields **56 fixed-wing fighters**, not the 16
+>    > implied here. Trust the generated Force-laydown tables below, not this line.
 > 3. **Red posture / AI — no knob needed.** Red's QRA reserve (`opfor_default_qra_reserve`) and
 >    planner unpredictability are already at the defaults that favor a blue offensive (reserve 0,
 >    deterministic). *Raising* red's QRA would make red defend better (backfire); it can't go
 >    lower than 0. The intended "red stays reactive" effect instead falls out of (1)+(2) — cutting
 >    red's economy and fighter mass naturally shrinks red's offensive air. Left at defaults.
+>    > ⚠️ **Superseded.** The campaign now deliberately preseeds `opfor_default_qra_reserve: 4`
+>    > (see the settings block) — the reasoning inverted once red went defensive-only: a hot-alert
+>    > reserve is what makes red fly a dense defensive screen, and the M1 Tacview showed the QRA
+>    > path is red's *only proven-firing* planned fighter path. Do not "restore" this to 0.
 >
 > 4. **Auto-planner restraint (human-led ATO) — APPLIED (2026-06-23).** A campaign `settings:`
 >    block recommends two new-game defaults that make the **blue** auto-planner fill fewer
@@ -147,31 +160,45 @@ GermanyCW coordinate convention: **larger x = further north**, **larger (less ne
 y = further east**. The blue/red split is intentionally clean — every blue base sits in the
 south-west (the real Rhineland NATO cluster), every red base to the north/centre/east.
 
-### Blue (NATO) — south-west cluster
-| Base | id | Squadrons |
+> **These tables are generated from the yaml, not hand-maintained.** They drifted badly once
+> (documenting 16 red fighters against an actual 32) and the fighter count is the number that
+> drives the whole air balance — so re-dump rather than hand-patch. Last regenerated
+> **2026-07-16** by binding `squadrons:` through the engine's own resolver
+> (`CampaignAirWingConfig.from_campaign_data` + `find_control_point_by_airport_id`), i.e. what
+> the game actually loads. **Totals: BLUE 116 airframes / 40 fighter-role · RED 171 / 64
+> fighter-role** (red's 64 includes 8 Mi-24P Escort helos ⇒ **56 fixed-wing fighters**).
+
+### Blue (NATO) — south-west cluster · 116 airframes
+| Base | id | Squadrons (type × size, primary) |
 |---|---|---|
-| Ramstein | 165 | B-52H (Strike), **F-15E (BAI)**, **E-3A (AEW&C)** |
-| Spangdahlem | 162 | UH-1H, AH-1W, **A-10C Suite 3 (CAS)** |
-| Hahn | 155 | Mirage-F1EE (Escort) |
-| Frankfurt | 163 | F-16CM (DEAD), **F/A-18C (SEAD)**, F-15C (TARCAP), **F-14B (Escort)**, GAF JG 74 (TARCAP, AI), KC-135, **KC-135MPRS (drogue tanker)**, C-130J, CH-47F, AH-64D, **OH-58D Kiowa (Escort)** |
+| Ramstein | 165 | B-52H ×4 Strike · E-3A ×2 AEW&C · KC-135 ×2 Refueling · KC-135MPRS ×2 Refueling (drogue) |
+| Frankfurt | 163 | **F-16CM Block 50 ×12 DEAD** (414th Voodoo) · **F/A-18C Lot 20 ×12 SEAD** (414th JFG Hornets) · F-15C ×6 TARCAP · F-14B ×8 Escort · GAF JG 74 ×8 TARCAP (AI, faction default) · A-10C Suite 3 ×8 CAS · F-15E Suite 4+ ×12 BAI · Mirage-F1EE ×6 Escort · C-130J-30 ×2 Transport |
+| **Fulda** | **166** | **Forward FARP (flipped neutral→BLUE).** AH-64D ×4 CAS · OH-58D ×4 Armed Recon · UH-1H ×4 Air Assault · CH-47F ×4 Air Assault · AH-64D ×4 Escort · OH-58D ×4 Escort · UH-1H ×4 Air Assault · AH-1W ×4 Escort |
+| Spangdahlem | 162 | *(no squadron block — quiet rear field)* |
+| Hahn | 155 | *(no squadron block — quiet rear field)* |
 
 *(Blue basing re-laid 2026-07-05 from the user's in-app air-wing pass — the `414th red tide.retribution`
-save is the source: Frankfurt becomes the main fighter base (414th Vipers/Hornets + the fighter cover +
-the support wing), Ramstein the rear heavy-iron/AEW&C field, Spangdahlem the CAS/rotary field, Hahn a
-Mirage outpost. Squadrons/types/sizes/tasks unchanged from the #479 slim roster.)*
-| **Fulda** | **166** | **Forward FARP (flipped neutral→BLUE).** Forward heli base in the Fulda Gap: AH-64D (CAS, 1-1 ARB), OH-58D (Armed Recon, 1-6 Cav), UH-1H (Air Assault, 159th Avn Det Fwd) |
+save is the source: Frankfurt is the main fighter base (414th Vipers/Hornets + the fighter cover +
+the support wing) AND now hosts the F-15Es, the A-10s, the Mirage and the C-130; Ramstein is the rear
+heavy-iron/AEW&C/tanker field; ALL rotary sits forward at Fulda. Spangdahlem and Hahn kept their
+`id`s but no longer carry a squadron block at all.)*
 
-### Red (Soviet/WP) — north, centre, east
-| Base | id | Notes |
+### Red (Soviet/WP) — north, centre, east · 171 airframes, 56 fixed-wing fighters
+| Base | id | Squadrons (type × size, primary) |
 |---|---|---|
-| Hamburg | 17 | **Captured** (flipped BLUE→RED). Forward airhead: MiG-29A, Su-25, Su-24M, Mi-24P, Mi-8MTV2 |
-| Kastrup / Copenhagen | 41 | **Soviet-seized far-north enclave.** Maritime-strike base: MiG-29A (BARCAP), Tu-22M3 (Anti-ship), Su-24M (SEAD), An-26B |
-| Haina | 161 | Western Soviet spearhead (Mi-24P, Mi-8MTV2, Su-25, MiG-23MLD, MiG-27K) |
-| Sperenberg | 101 | Tu-95MS, Tu-22M3, Su-27 |
-| Schönefeld | 26 | A-50, IL-78M, An-26B |
-| Templin | 15 | Su-24M, MiG-21bis |
-| Wittstock | 1 | Su-17M4 |
-| Peenemünde | 25 | MiG-29 (Baltic coast) |
+| Hamburg | 17 | **Captured** (flipped BLUE→RED). Forward airhead: **MiG-29A ×12 BARCAP** · Su-25 ×8 Armed Recon · Su-24M ×8 SEAD · Mi-24P ×4 Escort · Mi-8MTV2 ×4 Air Assault |
+| Kastrup / Copenhagen | 41 | **Soviet-seized far-north enclave.** Maritime strike: Tu-22M3 ×8 Anti-ship · Su-24M ×8 SEAD · An-26B ×4 Transport |
+| **Haina** | **161** | **Western Soviet spearhead — the theatre's fighter concentration: MiG-29A ×12 BARCAP + MiG-23MLD ×12 TARCAP (24 fighters)** · Su-25 ×8 Armed Recon · MiG-27K ×8 SEAD Escort |
+| H FRG 20 | 143 | **Flipped NEUTRAL→RED** (see the `.miz` edits ledger). Mi-24P ×4 Escort · Mi-8MTV2 ×4 Air Assault |
+| Sperenberg | 101 | Tu-95MS ×8 Strike · Tu-22M3 ×8 OCA/Runway · **Su-27 ×12 BARCAP** |
+| Schönefeld | 26 | A-50 ×1 AEW&C · IL-78M ×2 Refueling · An-26B ×4 Transport |
+| Templin | 15 | Su-24M ×8 SEAD · 185th GvIAP ×8 BAI (faction default) |
+| Wittstock | 1 | Su-17M4 ×8 DEAD |
+| Peenemünde | 25 | **MiG-29 ×8 BARCAP** (Baltic coast) |
+
+*(The rotary that older revisions of this note placed at Haina now lives at **H FRG 20**; Kastrup's
+MiG-29 moved to Haina. Red's fighter force is **56 fixed-wing across 5 regiments** — Hamburg 12,
+Haina 24, Sperenberg 12, Peenemünde 8 — all BARCAP/TARCAP-primary per the settled defensive posture.)*
 
 The north is deliberately **all-red and uncontested** (no blue base north of Frankfurt) —
 a chosen design point emphasising a desperate NATO defence, not an oversight. Adding a blue
@@ -208,6 +235,18 @@ considered and declined.
    (The `.miz` was repackaged with `zipfile`, preserving every other member byte-for-byte —
    `zip` isn't available in the shell here.)
 
+5b. **H FRG 20 flipped RED (forward helo FOB).** *(Ledger entry added 2026-07-16 — the edit
+   itself landed with the forward-basing pass; it was made but never recorded here.)* Airport
+   `[143]` (H FRG 20) was NEUTRAL with `["dynamicSpawn"] = true`. **Exactly the same two-field
+   edit as Fulda 166 above**, for the same loader reason (`control_point_from_airport` forces a
+   `dynamic_spawn` airport NEUTRAL *before* checking coalition): `dynamicSpawn true → false`
+   **and** `coalition "NEUTRAL" → "RED"`. This is what gives Haina's displaced Mi-24P/Mi-8
+   detachments a red field to base from — without it they are stranded at a neutral field.
+   **Guarded** by `tests/fourteenth/test_red_tide_forward_basing.py::test_h_frg_20_loads_red`,
+   whose assertion message carries the recovery instruction, so a silent revert fails CI rather
+   than the event. Recorded here anyway: this ledger is what survives a re-save of a `.miz` that
+   gets hand-edited as often as this one.
+
 6. **Economy buildings + advanced-IADS laydown added** (2026-06-23). Red Tide originally had
    **no working factory** (the lone `Workshop A` "Kastrup Factory" was placed in the **CJTF Red**
    country block, but the loader's factory scan is **blue-only** — `MizCampaignLoader.factories`
@@ -237,12 +276,14 @@ considered and declined.
      (Sperenberg, Schönefeld, Hamburg, Haina, Templin, Wittstock, Peenemünde, Kastrup) got a
      co-located **Command Center + Comms tower M + GeneratorF** cell. The dead "Kastrup Factory"
      was **repurposed in place** into "Kastrup Command Center" (same spot, no renumber needed).
-     - **FOLLOW-UP (2026-06-24):** these placed C2 statics land on some airfield aprons and
-       block aircraft spawns (seen at Haina). Plan to replace them with **real map buildings**
-       (destroyable IADS scenery targets) and remove the statics is fully scoped in
+     - **FOLLOW-UP (2026-06-24) — ✅ RESOLVED, the statics are gone.** These placed C2 statics
+       landed on some airfield aprons and blocked aircraft spawns (seen at Haina); the plan to
+       replace them with **real map buildings** was scoped in
        [`414th-red-tide-c2-real-buildings-HANDOFF.md`](414th-red-tide-c2-real-buildings-HANDOFF.md)
-       — incl. per-field coords, the scanner-dump feasibility (only Haina + Templin are scanned;
-       the other 3 fields need a re-scan), and the emitter/pipeline details.
+       — **and then landed.** Re-verified 2026-07-16: the campaign now loads **11 `commandcenter`
+       + 9 `comms` + 11 `power`** scenery zones (real destroyable buildings), and `ComCenter` /
+       `Comms tower M` / `GeneratorF` each return **0 hits** in `red_tide.miz`. That HANDOFF is
+       bannered SUPERSEDED and is an investigation record only — do not re-open it as work.
    - **IDs:** new groups start at `groupId 300` / `unitId 700` (max existing was 281/631). Appended
      to the red `["static"]["group"]` table with fresh keys `[13]+` to dodge a **pre-existing**
      key-collision (the hand-added Kastrup `[1]/[2]` clobbered Invisible-FARP `[1]/[2]` — 10 of 12
@@ -386,8 +427,10 @@ considered and declined.
    for every other campaign). PD escorts (the #586 Tor slot) stay. Known behavior, not a bug: the
    loader fills each LORAD marker with a **random** faction LORAD preset (`random_group_for_task`),
    so a hub can mix S-300 and SA-5 battalions — a layered rather than pure-S-300 regiment. The
-   fork is byte-identical to `Russia 1980` otherwise (no aircraft/OOB change) and only takes effect
-   if the player keeps the recommended faction (the New-Game default). The **front + legacy screen
+   fork carries **no aircraft/OOB change** and only takes effect if the player keeps the
+   recommended faction (the New-Game default). (It is *not* byte-identical otherwise — the same
+   fork also adds the **SA-15 Tor + SA-19 Tunguska** point defense and drops the HDS
+   `SA-10A/S-300PT` leak; see the era-audit section below.) The **front + legacy screen
    keeps §60 doubling** (a lone SA-6/SA-2 MERAD site *should* have its anti-single-HARM second radar)
    — so the campaign now cleanly expresses both halves of the STANDARD: legacy→§60-doubled,
    strategic→single-radar regiment. Headless-verified: the fork's SA-10 (Single Radar) preset spawns

@@ -1,7 +1,8 @@
 # Red Tide — Supply Routes & Kastrup Preset Patch
 
-**Branch:** `feature/red-tide-kastrup-supply-routes`
-**Status:** Implemented, tested (658 tests pass, Black + mypy clean). Ready for Brady review.
+**Status:** Landed. This is the historical record of the original patch; where later passes
+moved things, the drift is annotated inline (audited 2026-07-16). The live laydown record is
+[`414th-red-tide-campaign-notes.md`](414th-red-tide-campaign-notes.md).
 
 ---
 
@@ -150,7 +151,7 @@ inserts new groups into the red coalition section, and rewrites the archive.
 | Ground-Kastrup-AAA | ZSU-23-4 Shilka | x=131000, y=-494500 | **Fixed** — was in water at x=136000, y=-486800 |
 | Ground-Kastrup-LORAD | S-300PS 5P85C ln | x=128500, y=-494000 | **New** — long-range SAM preset |
 | Ground-Kastrup-MRAD | S_75M_Volhov | x=131200, y=-491500 | **New** — medium-range SAM preset |
-| Kastrup Factory | Workshop A | x=130000, y=-493500 | **New** — factory static group |
+| ~~Kastrup Factory~~ | ~~Workshop A~~ | ~~x=130000, y=-493500~~ | **New** — factory static group. ⚠️ **GONE (2026-07-16 audit).** Later repurposed in place into "Kastrup Command Center" (campaign-notes item 6), and then that static was itself replaced by a real map building in the C2 rework. `Kastrup Factory`, `Kastrup Command Center` → **0 hits** in `red_tide.miz`. Live `Workshop A` factories are **Frankfurt + Ramstein** (2), both blue. |
 | Kastrup Ammo Depot | .Ammunition depot | x=129500, y=-491000 | **New** — ammo depot static group |
 
 Sentinel unit types drive Retribution's preset system:
@@ -234,9 +235,13 @@ front-line path groups or HandyWind shipping groups. What changed:
    This is a first geometric pass, not a survey-accurate trace; nudge any leg in the mission
    editor if it clips terrain when the front reaches it.
 
-**Net:** 11 `supply_routes` + 1 `shipping_lanes`, all endpoints verified to snap to the intended
-control points. The whole network is connected, so blue can capture every red base by ground.
-Still needs an in-game load to confirm the lines render and the front advances correctly.
+**Net (as authored by this patch):** 11 `supply_routes` + 1 `shipping_lanes`, all endpoints
+verified to snap to the intended control points. The whole network is connected, so blue can
+capture every red base by ground.
+
+> ⚠️ **Live count is 12 + 1** (yaml-dumped 2026-07-16) — a later pass split the Fulda leg. The
+> "11" above is the count this patch authored, not what ships. Re-dump rather than trust it:
+> `yaml.safe_load(open("resources/campaigns/red_tide.yaml"))["supply_routes"]`.
 
 ---
 

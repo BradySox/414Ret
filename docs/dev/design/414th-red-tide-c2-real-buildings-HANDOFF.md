@@ -1,6 +1,23 @@
 # Red Tide — replace placed IADS C2 statics with real buildings — HANDOFF
 
-**Status:** investigation done, no code written yet. Handed off 2026-06-24.
+> ## ✅ SUPERSEDED — THIS WORK IS DONE (bannered 2026-07-16)
+>
+> **Do not act on the "no code written yet" status below.** The rework fully landed; this file
+> is kept only as the investigation record of how it was approached. Verified against the shipped
+> campaign 2026-07-16:
+>
+> - **The real buildings are registered.** Engine-loading `red_tide.yaml` yields **11
+>   `commandcenter` + 9 `comms` + 11 `power`** scenery zones (of 71 scenery objects total) —
+>   destroyable map buildings the MANTIS C2 graph wires, and the network §52's
+>   `c2_decapitation_effects` preseed keys on.
+> - **The placed statics are gone.** Every original static name AND its underlying shape returns
+>   **0 hits** in `red_tide.miz`: `ComCenter`, `Comms tower M`, `GeneratorF`. The apron-blocking
+>   problem that motivated the handoff no longer exists.
+>
+> The live design record is [`414th-red-tide-campaign-notes.md`](414th-red-tide-campaign-notes.md).
+
+**Status:** ~~investigation done, no code written yet. Handed off 2026-06-24.~~ **DONE — see the
+banner above.** (Original status preserved for the record.)
 **Goal (user request):** the advanced-IADS command/comms/power nodes at red airfields
 are hand-placed `.miz` statics that landed **on airfield aprons** — they block aircraft
 spawns and look bad (seen at Haina). Replace them with **real existing map buildings**

@@ -608,6 +608,33 @@ busy theaters); the Airfield Directory still folds in whenever ATIS is present. 
 The satellite-imagery recon pages remain gated OFF by `generate_target_recon_kneeboard`
 (marker overlays don't reliably line up with the tiles — a known, separate geometry bug).
 
+**Recon pages are JPEG; everything else stays PNG (2026-07-16).** A kneeboard page is written
+by `KneeboardPage.write` and lands in the miz under its own filename (pydcs writes `page.name`
+verbatim), so the *suffix* is the whole of the format decision. Every page used to be `.png` —
+correct for the line-art pages (text, tables, rules: 20–100 KB each, and JPEG would ring on the
+glyphs) and badly wrong for the recon pages, which render a **photographic** Esri satellite
+basemap. PNG is lossless, so one 768×1024 recon page cost ~1.2 MB, and with the setting on the
+recon pages became **~90% of the whole mission**: 16.5 MB of a fully-crewed 22 MB Red Tide MP
+event mission, re-downloaded by every pilot and re-loaded by the server every turn.
+
+`KneeboardPage.image_suffix` (a `ClassVar`, defaulting to `.png`) now names the format and
+`_RecordingPage` — the base of every recon page — overrides it to `.jpg`; the write loop names
+the file `page{idx:02}{page.image_suffix}`. All seven save sites funnel through one
+`save_kneeboard_image` helper (`kneeboard_page.py`) that applies the encoder rules JPEG needs
+and PNG doesn't: convert to RGB (JPEG has no alpha) and set `JPEG_QUALITY`. **Quality 85 is
+measured, not guessed** — on a real recon page it is 1212 KB → 206 KB with a ~1.4% mean pixel
+difference and no visible ringing even on the title bar's white-on-black text; q92 costs ~40%
+more bytes for no visible gain at kneeboard size. A fully-crewed mission drops **22.4 MB → 9.0
+MB (60%) with no page removed**. DCS has taken JPEG kneeboards all along — a scan of 2,945
+shipped campaign missions found **7,971 `.jpg` pages vs 2,542 `.png`** (Raven One ships
+`.jpeg`), so this is the format the rest of the ecosystem already uses.
+
+Byte-identical no-op when `generate_target_recon_kneeboard` is off (its default) — no recon
+pages, no JPEG pages. Tests: `game/missiongenerator/tests/test_kneeboard_image_format.py`
+(format split, suffix-picks-encoder, the alpha case, the size win, the quality pin) +
+`game/missiongenerator/kneeboard_recon/tests/test_page_image_format.py` (a *real* rendered
+recon page through the generator's own naming path).
+
 **Space-utilisation pass (light headings + two-column lists).** Sparse pages used to leave
 the bottom (and right) two-thirds of the image blank. The fix uses a deliberately *light*
 style (no heavy boxes): a bold heading, a thin underline `rule()`, then the content, with
@@ -5929,9 +5956,15 @@ Two properties it is built around, both tested:
   it runs, the generated mission is already written and flyable; a failed *copy* must not cost
   the user the *original*.
 - **It only ever prunes its own output.** Retention keeps the newest `KEEP_ARCHIVED_MISSIONS`
-  (40, ~2 MB each — a bounded ring buffer worth tens of MB) and is scoped by a regex matching
-  only the names it generates, so a hand-named miz that ends up in the archive folder is never
-  deleted. Each prune is logged.
+  (20) and is scoped by a regex matching only the names it generates, so a hand-named miz that
+  ends up in the archive folder is never deleted. Each prune is logged.
+
+Sizing note: a generated mission is dominated by kneeboard images, so it scales with the number
+of player-crewed airframes — a solo turn is ~1 MB, a fully-crewed MP event mission ~9 MB. The
+keep count is sized off the MP case, so the ring buffer stays under ~200 MB.
+`KEEP_ARCHIVED_MISSIONS` is the dial. (The original 40 was sized on a 2 MB solo turn while real
+event missions were 22 MB — a ~900 MB buffer. The recon-page JPEG change above cut the 22 MB to
+9 MB; the keep count was corrected alongside it.)
 
 **No `Settings` toggle** — the same call as §42 map tiles and §43 flight defaults (on-disk
 content is the switch). A toggle you can forget to switch on defeats the one thing this is

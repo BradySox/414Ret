@@ -2092,7 +2092,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     copy. Hooked in `MissionSimulation.generate_miz` (engine-side, not the Qt button).
     **Never breaks Take off** (best-effort; an unwritable disk or a headless
     `persistency.setup()`-less run is logged and swallowed — the original is already written)
-    and **only ever prunes its own output** (keeps the newest `KEEP_ARCHIVED_MISSIONS` = 40,
+    and **only ever prunes its own output** (keeps the newest `KEEP_ARCHIVED_MISSIONS` = 20,
     scoped by a regex matching only generated names, so a hand-named miz in the folder is
     never deleted). No setting — a bounded ring buffer, and a toggle you can forget defeats
     the point (§42/§43 precedent). Tests `tests/fourteenth/test_mission_archive.py`; features

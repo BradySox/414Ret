@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import (
     Any,
+    ClassVar,
     Dict,
     Optional,
     Sequence,
@@ -25,7 +26,7 @@ from dcs.mapping import LatLng, Point as DcsPoint
 from dcs.terrain.terrain import Airport, Terrain
 from suntime import Sun, SunTimeException  # type: ignore
 
-from game.missiongenerator.kneeboard_page import KneeboardPage
+from game.missiongenerator.kneeboard_page import KneeboardPage, save_kneeboard_image
 
 from ._fonts import load_font, PilFont
 from .airfield_diagram import (
@@ -474,6 +475,14 @@ class _RecordingPage(KneeboardPage):
     page render shows exactly which strings were emitted and in what order.
     """
 
+    #: Every recon page renders a *photographic* Esri satellite basemap under
+    #: its symbology, and PNG is the wrong container for a photo: it stores one
+    #: 768x1024 page in ~1.2 MB losslessly, which made the recon pages ~90% of a
+    #: generated miz (16.5 MB of a fully-crewed 22 MB MP mission). JPEG carries
+    #: the same page in ~206 KB. The base class's PNG default still covers every
+    #: line-art page, where JPEG would ring on text and save nothing.
+    image_suffix: ClassVar[str] = ".jpg"
+
     last_text_log: List[str]
 
     def __init__(self) -> None:
@@ -674,7 +683,7 @@ class AirfieldDeparturePage(_RecordingPage):
             font=load_font(13),
         )
 
-        img.save(path)
+        save_kneeboard_image(img, path)
 
     def _format_freq(self, freq: Any) -> str:
         if freq is None:
@@ -986,7 +995,7 @@ class OverviewReconPage(_RecordingPage):
             page_width=PAGE_W,
             palette=p,
         )
-        img.save(path)
+        save_kneeboard_image(img, path)
 
     def _nearby_threats(
         self,
@@ -1138,7 +1147,7 @@ class DetailReconPage(_RecordingPage):
             fill=p.muted,
             font=load_font(13),
         )
-        img.save(path)
+        save_kneeboard_image(img, path)
 
     CLUSTER_THRESHOLD_M = 75.0
     CLUSTER_CAP = 12
@@ -1729,7 +1738,7 @@ class FrontLineDetailPage(_RecordingPage):
             page_width=PAGE_W,
             palette=p,
         )
-        img.save(path)
+        save_kneeboard_image(img, path)
 
 
 class AirbaseReconPage(_RecordingPage):
@@ -1785,7 +1794,7 @@ class AirbaseReconPage(_RecordingPage):
             # Dispatcher gates this page on dcs_airport being non-None, but
             # a stale target ref or future refactor would otherwise crash
             # mid-render. Emit the title-only page and bail.
-            img.save(path)
+            save_kneeboard_image(img, path)
             return
 
         # Map area: tight box around airport (3 km radius).
@@ -1895,7 +1904,7 @@ class AirbaseReconPage(_RecordingPage):
             fill=p.muted,
             font=load_font(13),
         )
-        img.save(path)
+        save_kneeboard_image(img, path)
 
     def _select_parking_slots(self, slots: Any, airport_pos: Any) -> List[Any]:
         """Pick the PARKING_MARKER_LIMIT slots nearest the airport center.

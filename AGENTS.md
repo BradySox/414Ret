@@ -1989,6 +1989,32 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/sim/missionresultsprocessor.py`, `game/settings/settings.py`; features doc §63,
     checklist B16 — needs an in-game pass: the scripted FireAtPoint+cruise-flag ripple, which
     curated hulls honor it (the vanilla Ticonderoga is least certain), and SHORAD intercept.)
+64. **Carrier deck spawn policy (six-pack last resort + MP slot timing)** — the 2026-07-16
+    supercarrier finding: AI taxiing to the cats jam against the player, because the old
+    `player_flights_sixpack` boolean (ON) parked the **slowest** thing on deck (a human,
+    10-minute cold start) on the **six-pack** — the first-filled spots, squarely in the taxi
+    lane to the bow catapults — while the AI spawned in the far spots and squeezed past. DCS's
+    only deck-parking lever is **spawn timing** (the mission-start wave fills the six-pack;
+    anything activated ≥1 s later is placed elsewhere — the dcs_liberation#1309 trick that
+    already kept AI off it), so the boolean became the **`CarrierDeckPolicy` enum** (§16
+    boolean→enum migration pattern; ON→`SIXPACK_FIRST`, OFF→`LAST_RESORT`): under the new
+    **`LAST_RESORT` default**, player carrier ground starts take the same 1 s placement
+    activation as AI — parked clear of the taxi flow, the six-pack left as overflow capacity —
+    and `SIXPACK_FIRST` keeps the legacy behavior. **The MP slot-timing fix rides along** (both
+    modes): a TOT-delayed client carrier COLD flight was late-activated its FULL delay, so its
+    slots didn't exist in the MP slot list until push time ("your flight is delayed to start");
+    it now spawns **uncontrolled** like its airfield counterpart (slots live from ~mission
+    start, `StartCommand` holds only the AI members to the push, + the 1 s placement activation
+    under last-resort). WARM/RUNWAY delayed clients keep full-delay late activation (a hot jet
+    can't wait), AI keep late activation (deck crowding). Taxi *routing* itself is engine AI —
+    no mission-level control (the AI F-14A's forced cat starts are the precedent) — and
+    same-group wingmen tailgating the player is unfixable at mission level. No plugin/Lua.
+    Tests `tests/missiongenerator/test_carrier_deck_policy.py` +
+    `tests/settings/test_carrier_deck_policy.py`.
+    (`game/missiongenerator/aircraft/waypoints/waypointgenerator.py`,
+    `game/settings/settings.py`; features doc §64, checklist B17 — needs an in-game pass:
+    does DCS overflow delayed spawns INTO the six-pack once the deck is full, and deck
+    behavior with several client flights parked uncontrolled from mission start.)
 
 ---
 
@@ -2000,11 +2026,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
 - The 414th's primary "all features" working branch in the dev checkout is
   `414th-all-features`; `main` here = that + the Iran pack + a Black/mypy lint pass.
 
-### Upstream PR ledger (snapshot 2026-06-27 — re-verify with `gh pr list`, don't trust this stale)
+### Upstream PR ledger (snapshot 2026-06-27, #872 added 2026-07-15 — re-verify with `gh pr list`, don't trust this stale)
 
 Carved out of this work, against `dcs-retribution/dcs-retribution` (all authored by `bradyccox`):
 
 - **Open (awaiting review):**
+  - [#872](https://github.com/dcs-retribution/dcs-retribution/pull/872) ship-launched cruise missile strikes (**draft**) — generic core of fork [414Ret#599](https://github.com/bradyccox/414Ret/pull/599) (Tomahawk/Kalibr shore attack: F10 call-for-fire with marker-text salvo sizing, optional auto raids, persisted no-rearm magazine debited via the `cruise_missiles_state` debrief channel). NO fork couplings (no ROE-zone gate/`map_hidden`/`enabled_when`). Rebased onto dev @ `ef576acc`; pytest/Black/mypy green — opened 2026-07-15. See upstreaming-inventory item 18.
   - [#854](https://github.com/dcs-retribution/dcs-retribution/pull/854) per-squadron DCS country for nation-specific voiceovers + nation-aware pilot names (§23) — resolves upstream issue [#627](https://github.com/dcs-retribution/dcs-retribution/issues/627). Ports `CountryAssigner` + `pilotnames.py` + both test files verbatim; the §23 wiring hunks re-applied to upstream `missiongenerator.py`/`aircraftgenerator.py`/`squadron.py` (the fork's QRA `spawn_intercept_templates` is NOT upstream, so only `generate_flights`+`spawn_unused_aircraft` take the assigner). Pretense is standalone/overrides the touched methods → unaffected. NO 414th content (Iran faction wiring stays fork-side). §23 was NOT previously in the carve queue. Black/mypy/pytest/ts all green — opened 2026-07-03.
   - [#851](https://github.com/dcs-retribution/dcs-retribution/pull/851) High Digit SAMs **Ultimate Compilation** support (§41's generic core) — retargets the HDS toggle to the maintained mod: renamed-radar re-points, retired-unit tombstones, the 42 new units + 7 presets + SAMP/T layout, and the `remove_vehicle` id-vs-name strip fix. NO 414th faction enrichment (P-37/SA-7/S-400 wiring stays fork-side). Validated headless against upstream dev — opened 2026-07-01. Landed on the fork as [414Ret#382](https://github.com/bradyccox/414Ret/pull/382).
   - [#847](https://github.com/dcs-retribution/dcs-retribution/pull/847) F-4E-45MC (Heatblur) loadout rebuild **+** Maverick date-fallback fix — all 13 F-4E presets re-sourced from the module's built-in loadouts (period AIM-7E2/9L A2A baseline vs the old all-modern AIM-7M), **and** the AGM-65 family's date-fallback rerouted AGM-62 Walleye → Mk-20 Rockeye (Mavericks were degrading to Walleyes on pre-1972 campaigns). Data-only (2 files), validated headless against upstream (CLSID-resolve + station-legal + task-resolution + weapon-DB load) — opened 2026-06-28; **consolidates the former #845 + #846**. Landed on the fork as [414Ret#322](https://github.com/bradyccox/414Ret/pull/322) + [#325](https://github.com/bradyccox/414Ret/pull/325).

@@ -85,6 +85,22 @@ class AiRadioBehavior(Enum):
 
 
 @unique
+class CarrierDeckPolicy(Enum):
+    """How the carrier six-pack (the first-filled deck spots) is used.
+
+    DCS offers no mission-level control over deck parking beyond spawn timing:
+    groups spawning at mission start fill the six-pack first, and anything that
+    spawns even one second later is placed elsewhere on deck (the
+    dcs_liberation#1309 placement trick the generator already uses to keep AI
+    off the six-pack). The six-pack sits in the taxi lane to the bow catapults,
+    so a slow-starting player parked there jams every AI jet taxiing to launch.
+    """
+
+    SIXPACK_FIRST = "Players spawn on the six-pack"
+    LAST_RESORT = "Six-pack is overflow parking (last resort)"
+
+
+@unique
 class DefaultPlayerLaserCode(Enum):
     DEFAULT_1688 = "Default (1688)"
     ALLOCATE_OWN = "Allocate own (unique per flight)"
@@ -108,6 +124,7 @@ SERIALIZABLE_ENUM_TYPES = (
     CombatResolutionMethod,
     TargetIntelPrecision,
     AiRadioBehavior,
+    CarrierDeckPolicy,
     DefaultPlayerLaserCode,
     IadsEngine,
     CombatStance,
@@ -448,7 +465,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "dynamic_slots",
                     "dynamic_slots_hot",
                     "dynamic_cargo",
-                    "player_flights_sixpack",
+                    "carrier_deck_policy",
                     "untasked_opfor_client_slots",
                     "game_masters_count",
                     "tactical_commander_count",
@@ -2552,11 +2569,20 @@ class Settings:
         default=True,
         detail=("Enables dynamic cargo for airfields, ships, FARPs & warehouses."),
     )
-    player_flights_sixpack: bool = boolean_option(
-        "Player flights can spawn on the sixpack",
-        MISSION_GENERATOR_PAGE,
-        GAMEPLAY_SECTION,
-        default=True,
+    carrier_deck_policy: CarrierDeckPolicy = choices_option(
+        "Carrier six-pack usage",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        choices={v.value: v for v in CarrierDeckPolicy},
+        default=CarrierDeckPolicy.LAST_RESORT,
+        detail=(
+            "The six-pack (the first-filled carrier deck spots) sits in the taxi "
+            "lane to the bow catapults, so AI taxiing to launch jam against a "
+            "slow-starting player parked there. Last resort spawns player flights "
+            "one second after mission start, which makes DCS park them clear of "
+            "the six-pack; the six-pack then only fills once the rest of the deck "
+            "is full. AI carrier flights always spawn clear of the six-pack."
+        ),
     )
     use_auto_fog: bool = boolean_option(
         "Use DCS' automatic fog setting",
@@ -3249,6 +3275,21 @@ class Settings:
                 or migrated.get("ground_start_ground_power_trucks_roadbase", True)
             )
 
+        # The carrier six-pack boolean became the CarrierDeckPolicy enum (§64).
+        # ON exempted player flights from the off-six-pack placement delay (so
+        # they filled the six-pack); OFF already behaved like the last-resort
+        # policy. Preserve whichever the save had; the old key is dropped in the
+        # obsolete-key sweep below.
+        if (
+            "carrier_deck_policy" not in migrated
+            and "player_flights_sixpack" in migrated
+        ):
+            migrated["carrier_deck_policy"] = (
+                CarrierDeckPolicy.SIXPACK_FIRST
+                if migrated["player_flights_sixpack"]
+                else CarrierDeckPolicy.LAST_RESORT
+            )
+
         if "ai_radio_behavior" not in migrated:
             silence_ai_radios = migrated.get("silence_ai_radios", False)
             limit_ai_radios = migrated.get("limit_ai_radios", True)
@@ -3298,6 +3339,9 @@ class Settings:
             # (dead code removed 2026-07-01; nothing wrote scar_misid since the
             # armor-hunt plugin was deleted).
             "scar_misid_penalty",
+            # Consolidated into the CarrierDeckPolicy enum (value already
+            # migrated above).
+            "player_flights_sixpack",
         ):
             migrated.pop(obsolete_key, None)
 

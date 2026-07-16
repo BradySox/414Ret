@@ -57,22 +57,39 @@ queue ages forever (G23 sat 12 days waiting for an MP event that could never exe
 
 Items that shape the new game and therefore must be handled **before** regeneration:
 
-- [ ] **`auto_combat_sar` — find out why M1 read "AI-rescue off".** The global default is ON and
-  Red Tide blue fields UH-1H + CH-47F (both §21 rescue-capable types), yet the flown M1 ledger
-  logged `AI-rescue off`. Most likely the generating save's **saved-defaults layer** had it off
-  under the campaign (the §36 saved-default-off class — Red Tide doesn't preseed it because the
-  global default is ON). Either confirm it ON in the wizard at regen or preseed it in
-  `red_tide.yaml` while the landing window is open. Without this, **G9 silently sits out another
-  event**.
+- [x] **`auto_combat_sar` "AI-rescue off" — RESOLVED + FIXED 2026-07-15.** NOT the saved-defaults layer: the emitter's designed **player-package suppression
+  gate** did it (`luagenerator.py` `player_package = bool(blue_rescue or blue_kings or
+  blue_sandys)` — the recorded §21 squadron call, "a player CSAR/SCAR flight in the ATO ⟹ we've
+  got it covered, no AI spawn"). M1's ATO carried a **bare player Sandy** (`0 King(s), 1
+  Sandy(s)` in the ledger log) — a SCAR escort with no rescue helo — which suppressed the AI
+  helo even though a Sandy can't pick anyone up, leaving M1 with **zero rescue capability**
+  (capture race only). **DECIDED + IMPLEMENTED same day (squadron call, option 1):** the gate is
+  narrowed to **rescue-capable flights only** — a player CSAR *helo* suppresses the AI spawn; a
+  bare Sandy/King now **draws** the AI helo and escorts/tracks it (`luagenerator.py`
+  `player_rescue_helo`; tests `test_bare_sandy_does_not_suppress_autospawn` +
+  `test_bare_king_does_not_suppress_autospawn`). Lands before the Friday lock, so the
+  regenerated campaign carries it — G9 stays exercisable at Aug 1 even if someone frags a Sandy.
 - [ ] **§59 ground AI sleep — decide.** Default OFF, deliberately not preseeded. Options: leave
   OFF for Aug 1 (safe), or trial it in the mid-window private session (§5) and preseed only if
   clean. Do **not** first-fly it on the squadron.
-- [ ] **Server `RETRIBUTION_EXPORT_DIR`** — one system environment variable on the dedicated
-  host, pointed at a stable directory, then restart the DCS server. Without it the server writes
-  `state.json` to its TEMP fallback (`C:\Users\admin.dcs\AppData\Local\Temp\state.json`), which
-  is what blocked the L6 convoy-debrief leg and the L9 loss-accounting confirm, and which nearly
-  fed a stale June-20 export into turn processing once already. Needed before Aug 1's
-  post-mission turn processing (the 7/17 regen itself consumes the already-saved M1 JSON).
+- [ ] **Server `RETRIBUTION_EXPORT_DIR` — the runbook (mechanism confirmed in
+  `resources/plugins/base/dcs_retribution.lua` `discoverDebriefingFilePath`):** the export path
+  resolves (1) `RETRIBUTION_EXPORT_DIR` → (2) the miz-embedded builder install path (doesn't
+  exist on the server) → (3) `TEMP` → (4) cwd — which is why the server fell to
+  `C:\Users\admin.dcs\AppData\Local\Temp\state.json` (the L6/L9 blocker, and the near-miss with
+  a stale June-20 export). On the dedicated host, as admin:
+  ```powershell
+  New-Item -ItemType Directory -Force C:\Retribution-Exports
+  [Environment]::SetEnvironmentVariable("RETRIBUTION_EXPORT_DIR", "C:\Retribution-Exports", "Machine")
+  # optional but recommended -- per-mission stamped files (state-<unixtime>.json), no overwrites,
+  # kills the stale-file trap for good:
+  [Environment]::SetEnvironmentVariable("RETRIBUTION_EXPORT_STAMPED_STATE", "1", "Machine")
+  ```
+  then **restart the DCS server process** (machine-level env vars load at process start).
+  **Verify** in the server `dcs.log` at the next mission load:
+  `The state.json file will be created in RETRIBUTION_EXPORT_DIR : (C:\Retribution-Exports\state….json)`.
+  Turn processing then pulls from that folder (newest stamped file = the flown mission). Needed
+  before Aug 1's post-mission processing (the 7/17 regen itself consumes the saved M1 JSON).
 
 ---
 

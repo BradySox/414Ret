@@ -501,15 +501,19 @@ class LuaGenerator:
             bucket.append(flight)
 
         # With the standing orbit removed (§21 rework, 2026-07-06), any CSAR/SCAR
-        # flight here is PLAYER-planned. A player package suppresses the AI
-        # on-demand spawn (the user's scenarios A/B -- "we've got it covered, don't
-        # spawn more"); with no player package the runtime clones the cold rescue
-        # template on demand (scenario C). BLUE only.
-        player_package = bool(blue_rescue or blue_kings or blue_sandys)
+        # flight here is PLAYER-planned. Only a RESCUE-CAPABLE player flight -- a
+        # CSAR helo -- suppresses the AI on-demand spawn ("we've got it covered,
+        # don't spawn more"); a bare Sandy or King can't pick anyone up, so it
+        # draws the AI helo and escorts/tracks it instead (squadron call
+        # 2026-07-15, narrowing the original any-CSAR/SCAR-flight gate after the
+        # flown Red Tide M1: one player Sandy escort with no helo behind it had
+        # silently disabled ALL rescue for the mission). With no player rescue
+        # helo the runtime clones the cold rescue template on demand. BLUE only.
+        player_rescue_helo = bool(blue_rescue)
         templates = self.mission_data.combat_sar_templates
         auto_spawn = (
             self.game.settings.auto_combat_sar
-            and not player_package
+            and not player_rescue_helo
             and templates is not None
         )
         # The node is ALWAYS emitted (2026-07-10 squadron call), even with no rescue

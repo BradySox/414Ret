@@ -2080,8 +2080,11 @@ the squadron).
      blufor_aircraft` / fully-tasked wing). SPAWN-cloned; the clone is untracked.
 
   Both go straight into the OPSTRANSPORT pickup (the clone-into-mission path that works); a *parked*
-  start is the fix for the retired commandeer of an *airborne* helo. A player-fragged package ⟹
-  `autoSpawn=false`, no AI spawn (the package + ledger handle it). The helo needs no loadout (it does
+  start is the fix for the retired commandeer of an *airborne* helo. A player-fragged **rescue
+  helo** ⟹ `autoSpawn=false`, no AI spawn (the player's helo + ledger handle it) — **narrowed
+  2026-07-15** from the original any-CSAR/SCAR-flight gate after the flown Red Tide M1 showed one
+  bare player Sandy escort (no helo behind it) silently disabling ALL rescue; a bare Sandy/King now
+  **draws** the AI helo and escorts/tracks it. The helo needs no loadout (it does
   OPSTRANSPORT); on-demand **Sandy** (needs an armed payload — parked untasked + cold-template
   airframes are both `maintask=None`/clean-wing) + **King** (needs the TACAN-beacon setup) launches +
   multi-survivor chaining are the §21 **v2**. **The AI rescue runs in the plugin's own survivor ledger, not

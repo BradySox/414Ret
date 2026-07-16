@@ -3260,6 +3260,19 @@ class Settings:
                 behavior = AiRadioBehavior.FULL
             migrated["ai_radio_behavior"] = behavior
 
+        # A save from before the scatter band carried only the symmetric
+        # max_plane_altitude_offset. Mirror it into the new minimum so the
+        # legacy +/-max spread is preserved exactly: a flat -2 default would
+        # re-enable scatter on a save that had set max to 0, and shrink the
+        # downward half of a wider band.
+        if (
+            "min_plane_altitude_offset" not in migrated
+            and "max_plane_altitude_offset" in migrated
+        ):
+            migrated["min_plane_altitude_offset"] = -migrated[
+                "max_plane_altitude_offset"
+            ]
+
         for obsolete_key in (
             "limit_ai_radios",
             "silence_ai_radios",

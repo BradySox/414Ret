@@ -180,3 +180,47 @@ def test_no_front_falls_back_to_target_anchor() -> None:
 
     # Target is already clear; it should not be dragged into the threat.
     assert not threat.threatened(center)  # type: ignore[arg-type]
+    # And only the threat floor applies -- exactly buffer from the boundary,
+    # never the extra depth march (there is no FLOT to be "behind").
+    assert (
+        abs(threat.distance_to_threat(center).meters - buffer.meters) < 1  # type: ignore[arg-type]
+    )
+
+
+def test_no_front_ai_holds_at_anchor_instead_of_deep_march() -> None:
+    # The Scenic Route bug: a front-less naval map (blue = carriers only) sent
+    # the red A-50 2.5 x buffer AWAY from the fleet on top of an anchor already
+    # farthest from it. With no front there is no "behind the FLOT": an anchor
+    # already clear of the threat by the buffer must not move at all,
+    # regardless of the AI depth factor.
+    theater = SimpleNamespace(conflicts=lambda: iter([]))
+    # Enemy fleet threat far to the east; the red anchor field sits 200 km
+    # clear of it -- well beyond the 80 NM buffer.
+    threat = HalfPlaneThreat(threshold=+200_000)
+    buffer = nautical_miles(80)
+    target = SimpleNamespace(position=FakePoint(0.0, 0.0))
+
+    center, toward_enemy = support_orbit_anchor(
+        theater, SimpleNamespace(is_blue=False), threat, target, buffer  # type: ignore[arg-type]
+    )
+
+    assert center.distance_to_point(target.position) < 1
+    # The racetrack still faces the enemy threat.
+    assert abs(toward_enemy.degrees - 0.0) < 1
+
+
+def test_no_front_ai_still_pushed_clear_of_threat() -> None:
+    # No front + an anchor INSIDE the enemy fleet's threat ring: the threat
+    # floor still applies (get clear, then add the buffer) -- skipping the
+    # depth march must never leave the orbit inside the threat.
+    theater = SimpleNamespace(conflicts=lambda: iter([]))
+    threat = HalfPlaneThreat(threshold=-50_000)  # threatened when x > -50 km
+    buffer = nautical_miles(40)
+    target = SimpleNamespace(position=FakePoint(0.0, 0.0))  # inside the threat
+
+    center, _heading = support_orbit_anchor(
+        theater, SimpleNamespace(is_blue=False), threat, target, buffer  # type: ignore[arg-type]
+    )
+
+    assert not threat.threatened(center)  # type: ignore[arg-type]
+    assert threat.distance_to_threat(center).meters >= buffer.meters - 1  # type: ignore[arg-type]

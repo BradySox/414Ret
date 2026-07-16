@@ -118,3 +118,75 @@ def test_no_node_is_a_clean_noop() -> None:
     h.advance_to(600)
     assert _routes(h) == []
     h.assert_no_lua_errors()
+
+
+def test_fire_mission_group_holds_then_scoots_with_a_task_reset() -> None:
+    # Fire first, THEN scoot: a group with a forwarded fire-mission hold must not
+    # be routed while its launch window (+ margin) is open -- the route push would
+    # setTask-replace the pending Hold -> FireAtPoint (the 2026-07-16 flown
+    # clobber: 12 of 13 batteries silently lost their fire missions to the first
+    # relocation). Once the window passes it scoots, clearing the spent fire task
+    # first (a fired launcher otherwise pins on the dead task and never moves).
+    h = _harness_with_mist()
+    h.add_group(_ground_group("SHAHED-BAT"))
+    h.add_group(_ground_group("SCUD-FREE"))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {
+                "mobilemissiles": {
+                    "startGraceS": 5,
+                    "scootIntervalS": 60,
+                    "fireMarginS": 30,
+                }
+            },
+            "mobileMissiles": {
+                "sites": [
+                    {
+                        "groups": ["SHAHED-BAT", "SCUD-FREE"],
+                        "x": "1000.0",
+                        "y": "2000.0",
+                        # Parallel arrays; seconds arrive as strings from the emitter.
+                        "fireHoldGroups": ["SHAHED-BAT"],
+                        "fireHoldS": ["50"],
+                    }
+                ]
+            },
+        }
+    )
+    h.load_plugin_script(PLUGIN)
+
+    # First tick (t=5): the free group scoots; the fire-mission group sits still.
+    h.advance_to(6)
+    assert {r["group"] for r in _routes(h)} == {"SCUD-FREE"}
+
+    # Second tick (t=65) is still inside hold(50) + margin(30) = 80: still held.
+    h.advance_to(66)
+    assert {r["group"] for r in _routes(h)} == {"SCUD-FREE"}
+
+    # Third tick (t=125) is past the window: the battery scoots too, and the
+    # spent fire task was cleared before the route push.
+    h.advance_to(126)
+    assert "SHAHED-BAT" in {r["group"] for r in _routes(h)}
+    resets = h.records("controllerResets")
+    assert {r["group"] for r in resets} == {"SHAHED-BAT"}
+    h.assert_no_lua_errors()
+
+
+def test_group_without_fire_mission_never_gets_a_task_reset() -> None:
+    # A plain scooting group (no fire mission) must be routed WITHOUT resetTask --
+    # there is nothing to clear, and a reset would wipe whatever the group is doing.
+    h = _harness_with_mist()
+    h.add_group(_ground_group("SCUD-A"))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"mobilemissiles": {"startGraceS": 5}},
+            "mobileMissiles": {
+                "sites": [{"groups": ["SCUD-A"], "x": "0.0", "y": "0.0"}]
+            },
+        }
+    )
+    h.load_plugin_script(PLUGIN)
+    h.advance_to(6)
+    assert {r["group"] for r in _routes(h)} == {"SCUD-A"}
+    assert h.records("controllerResets") == []
+    h.assert_no_lua_errors()

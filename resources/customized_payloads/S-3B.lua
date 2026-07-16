@@ -35,23 +35,6 @@ local unitPayloads = {
 			},
 		},
 		[2] = {
-			["displayName"] = "Retribution DEAD",
-			["name"] = "Retribution DEAD",
-			["pylons"] = {
-				[1] = {
-					["CLSID"] = "{AF42E6DF-9A60-46D8-A9A0-1708B241AADB}",
-					["num"] = 6,
-				},
-				[2] = {
-					["CLSID"] = "{AF42E6DF-9A60-46D8-A9A0-1708B241AADB}",
-					["num"] = 1,
-				},
-			},
-			["tasks"] = {
-				[1] = 30,
-			},
-		},
-		[3] = {
 			["displayName"] = "Retribution Anti-ship",
 			["name"] = "Retribution Anti-ship",
 			["pylons"] = {
@@ -68,7 +51,7 @@ local unitPayloads = {
 				[1] = 30,
 			},
 		},
-		[4] = {
+		[3] = {
 			["name"] = "Retribution CAS",
 			["pylons"] = {
 				[1] = {
@@ -100,7 +83,7 @@ local unitPayloads = {
 				[1] = 30,
 			},
 		},
-		[5] = {
+		[4] = {
 			["displayName"] = "Retribution BAI",
 			["name"] = "Retribution BAI",
 			["pylons"] = {
@@ -133,7 +116,7 @@ local unitPayloads = {
 				[1] = 30,
 			},
 		},
-		[6] = {
+		[5] = {
 			["displayName"] = "Retribution Strike",
 			["name"] = "Retribution Strike",
 			["pylons"] = {

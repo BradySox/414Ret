@@ -1041,6 +1041,18 @@ deep. Verified by recomputing the broken save: red AWACS `+326/−175 NM → cen
 behind`, blue forward-but-centered. Tests: `tests/test_support_orbit.py`. Upstream-core
 flight-plan code, so an upstream-PR candidate. **Lua-free; in-game pass ☑ VERIFIED 2026-06-24 (C1/C2).**
 
+**No-front (naval-map) fix (2026-07-16, the flown Scenic Route finding).** The depth march is a
+depth *behind the FLOT*; on a theater with **no front line at all** (blue = carrier groups only,
+or fully disconnected islands) it marched the orbit `factor × buffer` **away from the only enemy
+on the map**, stacked on an anchor (`farthest_friendly_control_point`) already chosen to be the
+CP most distant from the enemy threat — the flown red A-50 orbited 233–322 NM from the fleet,
+behind its own base. `support_orbit_anchor` now skips the depth march when `front is None`
+(the carrier branch already did): the anchor holds and only the threat-clearance floor applies,
+which still guarantees ≥ buffer outside the enemy ring. Also fixed in the same branch: an anchor
+*inside* the threat zone had its `toward_enemy` inverted (heading-to-closest-boundary points OUT
+of the zone from inside), so the clearance push marched it deeper in — now flipped. New tests in
+`tests/test_support_orbit.py` (no-front AI hold, threat floor, inside-zone escape).
+
 **Carrier/fleet exception (2026-06-28).** Front-anchoring a support orbit makes sense for a
 land-based AWACS/tanker, but it flung *carrier* AEW&C (E-2C) up to the land FLOT — covering the
 fighting instead of the boat it launched from. The auto-planner already tasks one AEW&C per
@@ -1330,6 +1342,27 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   (carve candidates). Checklist **C8** — needs an in-game pass.
 - AWACS orbit stacking + direction: `game/ato/flightplans/aewc.py`.
 - Tanker orbit placement/deconfliction: `game/ato/flightplans/theaterrefueling.py`.
+- **Carrier-recovery stagger (the flown Scenic Route midair, fixed 2026-07-16).** Two AI
+  packages (an OX S-3B and a CATERPILLAR Hornet) recovering to CVN-71 in the same window
+  converged co-altitude at ~1,000 ft and collided 2.7 NM from the boat — blue's only losses
+  of the mission. Root cause is structural: Retribution authors **no approach leg at all**
+  (the last waypoint is a nav point at cruise altitude, then a `Land` task ON the boat), so
+  DCS's own carrier-pattern AI flies the whole descent and two flights sent into the same
+  window inevitably converge in the DCS overhead; the per-flight `plane_altitude_offset`
+  scatter never touches the pattern, and no recovery-time deconfliction existed. Arrival
+  TIME is therefore the only lever: `MissionScheduler._deconflict_carrier_recoveries`
+  (`game/commander/missionscheduler.py`, run after TOT assignment and BEFORE the
+  recovery-tanker ETA collection, so tankers time against the staggered landings) spaces
+  each boat's package landings ≥ `CARRIER_RECOVERY_INTERVAL` (5 min) apart by delaying
+  TOTs. Only "spread" AI packages are movable; CAP waves (coverage schedule wins), AEW&C
+  (handoff-chained), SCAR (on-station ASAP), ASAP taskings, and **any package with a player
+  flight** are FIXED entries — they claim their slot as-is and the movable packages space
+  around them, so a human's recovery is never rescheduled but AI traffic clears their
+  window. The slotting core is the pure `staggered_recovery_deltas` (single sorted pass;
+  delaying never breaks an earlier bound). Always-on — no setting, no plugin, no save
+  change (the §62 modex precedent). Helo and shore recoveries are ignored. Tests:
+  `tests/test_carrier_recovery_stagger.py`. Upstream-shared (carve candidate). Checklist
+  **C9** — needs an in-game pass.
 - Malformed mod payload Lua (CJS Super Hornet v2.4 uses local-var table indices that the
   pydcs Lua parser rejects with `ValueError`): patched loader in `qt_ui/main.py`
   (`_patch_pydcs_payload_loader()`), plus the offending files are skipped with a warning.
@@ -4364,7 +4397,19 @@ don't stop to fight) to a fresh `mist.getRandPointInCircle` point within the **s
 4 km) of the site's **campaign-map centre**, re-rolled every `scootIntervalS` (default 480 s). Anchoring
 the wander on the campaign position (not the last waypoint) means the site works its area but never
 migrates — threat rings and the turn-boundary model stay honest. A destroyed site stops being routed.
-Options: interval, radius, speed, grace.
+Options: interval, radius, speed, grace, fire-margin.
+
+**Fire first, THEN scoot (2026-07-16, the flown Scenic Route finding).** The upstream missile-site
+fire task (`MissileSiteGenerator`: a `Hold(random 60 s…mission) → FireAtPoint` on waypoint 0) and the
+scoot are one coin with two failure faces — `mist.goRoute` pushes routes via `Controller:setTask`,
+which **replaces** the whole mission task, so a battery that scooted before its Hold expired silently
+lost its fire mission (12 of 13 groups in the flown test), and the one battery whose Hold happened to
+beat the 120 s grace fired — then sat pinned on the spent task, ignoring every later route push. Fix:
+the generator records each fire-tasked group's hold deadline on
+`MissionData.missile_fire_missions`; the emitter forwards them per-site as the parallel arrays
+`fireHoldGroups`/`fireHoldS`; the plugin holds such a group still until its window + `fireMarginS`
+(default 300 s) has passed, then routes it with a `Controller:resetTask()` first (clearing the spent
+fire task that pinned it). Groups without a fire mission scoot exactly as before.
 
 **Movement only** (the Combat-SAR / COIN mover discipline): the routed DCS groups are the force model's
 own spawned units, so kills record natively; nothing changes at turn end; there is no Lua-owned scoring
@@ -4380,7 +4425,7 @@ same philosophy, different object class).
 | Runtime | `resources/plugins/mobilemissiles/` (`plugin.json` + `mobilemissiles-config.lua`) |
 | Setting | `game/settings/settings.py` (`mobile_missile_relocation`, Mission Generation → World & systems, default **ON** — the toggle is the kill switch) |
 | Coastal opt-in | `coastal_missile_relocation` (Mission Generation → Battlefield life, default **OFF**) — adds `category == "coastal"` (Silkworm) sites to the scoot; the naval-campaign lever, preseeded ON in the Tanker War (§Persian Gulf — The Tanker War) |
-| Tests | `tests/missiongenerator/test_mobilemissileluadata.py` (emit shape, category/dead/static gates, setting gate); `tests/lua/test_mobilemissiles_runtime.py` (grace, per-group scoot around the anchor, destroyed-site stop, no-node no-op) |
+| Tests | `tests/missiongenerator/test_mobilemissileluadata.py` (emit shape, category/dead/static gates, setting gate, fire-hold forwarding); `tests/lua/test_mobilemissiles_runtime.py` (grace, per-group scoot around the anchor, destroyed-site stop, no-node no-op, fire-then-scoot hold + resetTask) |
 
 ### Gotchas / deferred
 

@@ -54,6 +54,12 @@ def populate_mobile_missiles_lua(
     if not categories:
         return
 
+    # Fire-mission hold deadlines recorded by MissileSiteGenerator (guarded:
+    # tests call with mission_data=None).
+    fire_missions: dict[str, int] = (
+        getattr(mission_data, "missile_fire_missions", None) or {}
+    )
+
     sites: list[dict[str, Any]] = []
     for cp in game.theater.controlpoints:
         for tgo in cp.ground_objects:
@@ -63,7 +69,15 @@ def populate_mobile_missiles_lua(
             pos = getattr(tgo, "position", None)
             if not groups or pos is None or not hasattr(pos, "x"):
                 continue
-            sites.append({"groups": groups, "x": pos.x, "y": pos.y})
+            # §49 fire-then-scoot: a group carrying a scripted fire mission
+            # (MissileSiteGenerator's Hold -> FireAtPoint, recorded on the
+            # mission data) must not be routed until it has fired -- the scoot's
+            # setTask would replace the pending fire task (the 2026-07-16 flown
+            # clobber). Forward each such group's hold deadline to the plugin.
+            holds = {
+                name: fire_missions[name] for name in groups if name in fire_missions
+            }
+            sites.append({"groups": groups, "x": pos.x, "y": pos.y, "holds": holds})
     if not sites:
         return
 
@@ -77,6 +91,13 @@ def populate_mobile_missiles_lua(
         # pydcs Point: x = north, y = east (the emitter frame the coin plugin shares).
         rec.add_key_value("x", str(site["x"]))
         rec.add_key_value("y", str(site["y"]))
+        if site["holds"]:
+            # Parallel arrays (a LuaData record cannot mix key-values with
+            # nested items -- serialize drops the scalars): fireHoldGroups[i]
+            # holds its fire mission until fireHoldS[i] seconds.
+            names = list(site["holds"])
+            rec.add_data_array("fireHoldGroups", names)
+            rec.add_data_array("fireHoldS", [str(site["holds"][n]) for n in names])
 
 
 def _mobile_group_names(tgo: Any) -> list[str]:

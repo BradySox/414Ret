@@ -18,11 +18,14 @@ price: 10
 role: Carrier-based Attack
 variants:
   S-3B Viking: {}
+# No DEAD: the DCS S-3B carries no anti-radiation missile (its old "DEAD"
+# preset was an AGM-84E SLAM -- a standoff land-attack weapon, not an ARM), so
+# offering it for DEAD put Vikings on SAM sites they cannot suppress
+# (2026-07-16 Scenic Route flown finding).
 tasks:
   Anti-ship: 130
   BAI: 690
   CAS: 690
-  DEAD: 280
   OCA/Aircraft: 510
   Strike: 480
 

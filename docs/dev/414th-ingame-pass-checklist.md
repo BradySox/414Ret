@@ -522,6 +522,10 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the generated miz shows helo transit waypoints at the *cruise* AGL (500 ft default, not 100-200) with "TERRAIN" points every ≤5 NM on long legs, and air-start helo units carry `alt_type=RADIO`; in-game, the assault Mi-8s cross the Harz and deliver their troops (the H FRG 12-style clean run becomes the norm), no helo CFITs into ridge lines, racetrack orbits fly normally, human helo flights see no extra waypoints.
 - **Fail signature:** a helo still flies a straight low line into a ridge between anchors (DCS not honoring the RADIO re-anchoring — would need tighter spacing); formation escorts breaking at the inserted points; DCS rejecting the route at start (a locked-speed/time conflict from the inserted points — they are emitted unlocked, so this would be an engine surprise); an air-started helo spawning at 500 m MSL below terrain (the unit stamp not honored).
 
+### C9 — Carrier-recovery stagger (same-boat package landings spaced) · §8 · ☐ UNTESTED (built 2026-07-16 from the flown Scenic Route turn-3 midair — an OX S-3B and a CATERPILLAR Hornet from two different packages converged co-altitude at ~1,000 ft in the DCS overhead and collided 2.7 NM from CVN-71; the slotting math, the fixed-entry behavior for player/CAP/AEW&C/SCAR/ASAP packages, the recovery-tanker-ETA re-collection ordering, and the helo/shore exclusions are unit-tested in `tests/test_carrier_recovery_stagger.py` + `tests/test_missionscheduler.py` — whether 5-minute arrival spacing actually keeps DCS's pattern AI from converging is DCS-only)
+- **Pass:** on a carrier mission with several AI packages recovering to the same boat, arrivals reach the overhead one package at a time (Tacview: no two packages' flights co-altitude within ~1 NM in the pattern); the generated ATO shows same-boat landing times ≥5 min apart for AI packages; a player package's TOT is unchanged from what the plan would otherwise assign.
+- **Fail signature:** two AI packages still converging co-altitude in the overhead within a minute of each other (the DCS pattern ignores the spacing — consider widening `CARRIER_RECOVERY_INTERVAL`), or strike TOTs visibly piling up late in the mission window (over-aggressive delays on a crowded deck).
+
 ---
 
 ## D. Loss accounting (upstream-core)
@@ -3048,7 +3052,23 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   (idempotence broken). Knobs: `auto_range_fuel_tanks`, `fuel_tanks_over_jammers` (Mission Generation →
   Loadouts).
 
-### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ✓ VERIFIED (2026-07-10 flown Red Tide re-fly, session `gallant-panini-5485e7` — the 2-WP `driveTo` fix works in DCS)
+### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ◐ PARTIAL (scoot VERIFIED 2026-07-10/11/16; the 2026-07-16 fire-then-scoot fix needs a re-fly)
+- **2026-07-16 fire-vs-scoot clobber found + fixed (flown PG Scenic Route turn 3, Tacview
+  `Tacview-20260716-014958`; unflown fix):** the scoot itself re-verified on a third campaign —
+  12 of 13 missile groups (4 Scud + 9 Shahed batteries) relocated 1.9–4.0 km inside the anchor —
+  but the upstream missile-site **fire task and the scoot clobber each other**: `mist.goRoute`
+  pushes routes via `Controller:setTask`, which replaces the waypoint-0 `Hold → FireAtPoint`, so
+  every battery that scooted before its Hold expired silently lost its fire mission, and the ONE
+  battery that fired (BAT, hold ≈117 s — under the 120 s grace) then sat pinned on the spent task
+  and never scooted. Fixed (fire first, THEN scoot): fire-hold deadlines forwarded per-site
+  (`fireHoldGroups`/`fireHoldS` via `MissionData.missile_fire_missions`), the plugin holds such
+  groups until deadline + `fireMarginS` (300 s), then routes with a `resetTask()` first. Harness
+  tests pin the hold/release/reset; **the re-fly is the arbiter**.
+  - **Pass:** a fire-tasked battery launches at its hold time AND relocates afterward; the other
+    batteries scoot as before.
+  - **Fail signature:** a fired battery still frozen after deadline + margin (the resetTask didn't
+    un-pin it in DCS — acceptable, it's out of missiles, note and move on), or held batteries
+    never scooting at all (holds mis-forwarded).
 - **2026-07-11 re-confirm (Red Tide M1 "with Mags happy" `csar-snatch-toggle-question-dfdb7a`, Tacview
   `Tacview-20260711-171935`, ~125 min MP):** both batteries scooted again on the real event save —
   `0015 | CROW` launchers net 107–341 m, `0138 | TETRA` launchers net 1.1–1.2 km, escorts (Ural /

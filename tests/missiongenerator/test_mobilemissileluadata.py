@@ -53,9 +53,9 @@ def _game(tgos: list[Any], *, on: bool = True, coastal: bool = False) -> Any:
     )
 
 
-def _sites(game: Any) -> list[dict[str, Any]]:
+def _sites(game: Any, mission_data: Any = None) -> list[dict[str, Any]]:
     root = LuaData("dcsRetribution")
-    populate_mobile_missiles_lua(root, game, mission_data=None)  # type: ignore[arg-type]
+    populate_mobile_missiles_lua(root, game, mission_data=mission_data)
     node = root.get_item("mobileMissiles")
     if node is None:
         return []
@@ -100,6 +100,31 @@ def test_emits_coastal_sites_only_when_opted_in() -> None:
     sites = _sites(_game([silkworm], coastal=True))
     assert len(sites) == 1
     assert sites[0]["groups"] == ["0080 | Silkworm"]
+
+
+def test_forwards_fire_mission_holds_for_the_sites_own_groups() -> None:
+    # §49 fire-then-scoot: a group MissileSiteGenerator armed with a
+    # Hold -> FireAtPoint (recorded on mission_data.missile_fire_missions) is
+    # forwarded with its hold deadline so the plugin lets it fire before it
+    # scoots. Groups without a fire mission carry no hold; another site's
+    # entries never bleed in.
+    scud = _tgo("missile", "0070 | SCUD", [_unit()], _Point(1.0, 2.0))
+    shahed = _tgo("missile", "0071 | SHAHED", [_unit()], _Point(3.0, 4.0))
+    mission_data = SimpleNamespace(
+        missile_fire_missions={"0071 | SHAHED": 240, "0099 | ELSEWHERE": 60}
+    )
+    sites = _sites(_game([scud, shahed]), mission_data=mission_data)
+    by_group = {s["groups"][0]: s for s in sites}
+    assert "fireHoldGroups" not in by_group["0070 | SCUD"]
+    assert by_group["0071 | SHAHED"]["fireHoldGroups"] == ["0071 | SHAHED"]
+    assert by_group["0071 | SHAHED"]["fireHoldS"] == ["240"]
+
+
+def test_no_mission_data_emits_no_fire_holds() -> None:
+    scud = _tgo("missile", "0072 | SCUD", [_unit()], _Point(0.0, 0.0))
+    sites = _sites(_game([scud]), mission_data=None)
+    assert len(sites) == 1
+    assert "fireHoldGroups" not in sites[0]
 
 
 def test_coastal_opt_in_composes_with_the_missile_setting() -> None:

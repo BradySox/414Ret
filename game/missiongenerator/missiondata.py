@@ -200,3 +200,11 @@ class MissionData:
     # menu (§61). Populated by AircraftGenerator.spawn_red_scramble_templates
     # when host_red_scramble is on; the redscramble plugin clones them on demand.
     red_scramble_templates: list[RedScrambleTemplate] = field(default_factory=list)
+    # §49 fire-then-scoot: DCS group name -> the missile-site fire-mission hold
+    # deadline (seconds after mission start), recorded by MissileSiteGenerator
+    # when it attaches the Hold -> FireAtPoint task. The mobile-missile emitter
+    # forwards these so the scoot plugin keeps a site still until its fire
+    # mission has run -- a route push would setTask-replace the pending fire
+    # task (the 2026-07-16 flown fire-vs-scoot clobber: 12 of 13 batteries
+    # silently lost their fire missions to the first relocation).
+    missile_fire_missions: dict[str, int] = field(default_factory=dict)

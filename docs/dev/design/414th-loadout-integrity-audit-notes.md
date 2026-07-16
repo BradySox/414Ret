@@ -138,6 +138,13 @@ stock DCS *AI* aircraft).
   the DEAD *preset* is inert for tasking — `AircraftType.capable_of` reads the YAML
   `task_priorities`, never the payloads — so this changes what a DEAD-tasked jet *carries*
   (now falls back DEAD→BAI→CAS), never *whether* it gets tasked DEAD.
+- **S-3B addendum (2026-07-16, the flown Scenic Route finding — the one the sweep missed):**
+  the S-3B's `Retribution DEAD` preset was an **AGM-84E SLAM** (standoff land-attack, not an
+  ARM — the DCS S-3B has no anti-radiation missile), and unlike the 20 above the yaml ALSO
+  carried `DEAD: 280` in `task_priorities`, so the Viking was genuinely *offered and tasked*
+  for DEAD (a flown 4-ship flew a DEAD sortie it could never perform). Both removed:
+  the preset from `resources/customized_payloads/S-3B.lua` and the `DEAD` entry from
+  `resources/units/aircraft/S-3B.yaml`. Strike/CAS/BAI/OCA/Anti-ship keep their presets.
 
 ### Corrections — where "byte-for-byte upstream" would have gone backwards
 

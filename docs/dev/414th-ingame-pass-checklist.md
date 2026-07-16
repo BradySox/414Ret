@@ -2521,6 +2521,24 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   win/loss/precedence, crossing-edge banners) and the SITREP band in the sitrep tests. What CI *cannot*
   adjudicate is **pacing**: whether the design-§7 weights drive either side to zero on a satisfying arc
   (~15–30 turns of a normal Vietnam campaign), or collapse/stall the war absurdly fast/slow.
+- **Interim evidence (2026-07-15, session `gallant-panini-5485e7` — projector re-run + a real-engine
+  AI-vs-AI self-play probe; NOT the played pass, the row stays open):**
+  `tools/will_pacing_model.py` on the shipped weights still reproduces the documented full-feed pacing
+  exactly (elite folds Hanoi turn 8 / average → Linebacker II win turn 16 / flounder → withdrawal turn 11 —
+  no drift since the 07-04 redo). A 20-turn headless Yankee Station self-play (real GameGenerator + campaign
+  preseeds + the §26 abstract combat auto-resolving every mission, air-war feeds only — no POW/ROE/convoy
+  channels) verified the machinery live: the −0.4/turn war-weariness ratchet, per-feed ledger attribution,
+  the will-coupled `advance_when` acceleration (a collapsing blue raced Rolling Thunder → Linebacker II by
+  turn 2, charging both escalation taxes), and the M9 ceiling tracking will in BOTH directions. **Two
+  balance watch-items for the played pass:** (1) **an auto-resolved (unflown) turn is drastically bloodier
+  than a DCS-flown one** — the planner frags B-52s into the un-rolled-back IADS from turn 1
+  (`strike_through_air_defense_threat`) and the SEAD-less abstract SAM model killed 8 BUFFs + 40 jets on
+  turn 1 (−85 will in one turn); never adjudicate pacing off fast-forwarded turns, and expect a player who
+  skips/fast-forwards a turn to nuke their own meter. (2) **the claimed-MiG-kill restore can grind** — at
+  +0.3/claim, a blue side taking zero losses out-earns the −0.4 weariness by +3–6/turn (the probe climbed
+  will 0.4 → 63.9 over 16 turns while red bled −3/turn from its own airframe losses toward a turtle win
+  ~turn 30): a patient BARCAP-only squadron could fold Hanoi without ever striking. Consider a per-turn cap
+  or diminishing returns on the kill restore at this row's tuning pass.
 - **Setup:** a NEW Vietnam campaign (any of the four — `vietnam_political_will` preseeds on). Play several
   turns normally; read the per-turn "Political will" message + the SITREP will band. The 2026-07-02
   **attribution ledger** is the instrument for this pass: hover the ribbon WILL/RESOLVE meters (or read the
@@ -2738,6 +2756,11 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `vietnam_political_will` on, and messages on the cut. What CI *cannot* adjudicate: whether the budget cut
   feels like meaningful pressure without a death spiral (less budget → fewer replacements → more relative
   losses → less will), and whether the message reads clearly in a flown campaign.
+- **Interim evidence (2026-07-15, the M1 self-play probe — see the M1 row):** the ceiling tracked will
+  live in **both directions** (×1.00 → ×0.53 at will ~3, back to ×1.00 as will recovered past 60), and the
+  **loss-spiral this row worries about did not manifest even from will 0.4 at the ×0.5 budget floor** —
+  the probe's blue recovered fully. The floor is doing its "gentle by design" job in the degenerate worst
+  case; what's left for the fly is the *felt* pressure on a human-played losing line.
 - **Setup:** a NEW 1968 Yankee Station game (both toggles preseed on). Play a *losing* line (take losses,
   ignore the trail) so BLUE will drops below 60; watch the Finances dialog + the "War budget cut" message.
 - **Pass:** while BLUE will ≥ 60 the war budget is untouched; below 60 the per-turn income is visibly trimmed

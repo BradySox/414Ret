@@ -145,8 +145,13 @@ squadron event should host:
 **Vietnam night (1968 Yankee Station):** M1 will-pacing (the 2026-07-04 morale-ratchet redo has
 never been played) · M6 red tempo · M9 commitment ceiling · L9 Super Gaggle loss-accounting
 confirm (armed: 2 dead F-4Es await the debrief once the export path is fixed) · L11 AI
-snake-and-nape leg · G19 Vietnam recon-bird re-fly. *Partial de-risk without a fly:* a headless
-multi-turn will-meter run against the pacing model (offered 2026-07-15, not yet run).
+snake-and-nape leg · G19 Vietnam recon-bird re-fly. *The headless de-risk RAN 2026-07-15* (projector
+re-run + a 20-turn real-engine AI-vs-AI self-play): the shipped weights still hit the documented
+8/16/11 archetype pacing, the ratchet / escalation taxes / will-coupled phase acceleration / M9
+ceiling all fired live, and no death spiral manifested even from will 0.4 at the budget floor. Two
+balance watch-items flagged for the played pass — auto-resolved (unflown) turns are drastically
+bloodier than DCS-flown ones, and the claimed-MiG-kill restore can grind a no-loss turtle win.
+Full detail on the **M1 + M9 checklist rows**.
 
 **COIN night (Enduring Resolve, plus an Inherent Resolve hop):** P1 living insurgency · P3
 re-infiltration · **P4/P5 third-rework re-flies** (static IED emplacement + HVT convoy patrol) ·

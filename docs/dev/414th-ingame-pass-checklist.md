@@ -211,12 +211,30 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Setup:** **Germany — Red Tide** now **preseeds `red_intent` ON** (2026-07-08) — and `war_economy` too, so the supply→posture loop is live — so a NEW Red Tide game exercises this directly. Play several turns; deliberately swing the balance (win/lose ground, bomb/spare red's forces, **bomb red's SAM belt over consecutive turns**, and **bomb red's supply**) while watching the **"ENEMY &lt;posture&gt;" chip on the map ribbon** (which now reads e.g. "Surging (all-in)" / "Consolidating — IADS falling") + the "Enemy posture" SITREP line + red's ATO.
 - **Pass:** the SITREP names a posture that tracks the war (surge when red is ahead, consolidate after red loses a base / is pushed back) and it doesn't flip every turn (hysteresis holds); **the trend memory reads** — sustained IADS/resolve/base attrition digs a still-ground-dominant red in (the detail names the driver), and a collapse of your fighters lets red surge at rough parity; **intensity shows** — the further ahead red is the harder it presses (higher aggressiveness / sooner aggressive stances), the deeper the trouble the harder it husbands; when SURGE, red visibly prioritises taking ground; when CONSOLIDATE, red defends/husbands and its target picks are a little less repetitive; **reactive defense is unchanged** throughout (§17 boundary); an active authored `red_tempo` pulse (Vietnam arcs) still owns the stances (P3 yields). Turning the setting off restores stock red exactly.
 - **Fail signature:** red plays identically regardless of posture (a seam isn't reaching the planner — check `_offensive_order`'s red branch, `effective_aggressiveness`, `stance_commit_factor`); the posture flips every turn (hysteresis broke); the trend never bites (a ground-dominant red never digs in even as its whole SAM belt is bombed — the `red_intent_history`/`_trend_lookback` memory isn't wired, or the samples aren't banking); intensity looks flat (a 4:1 surge acts the same as a 1.5:1 one — `red_intent_intensity` isn't latching or the seams aren't reading it); consolidate forces red into RETREAT rather than DEFENSIVE (the attack-stance-only gate broke); any change with the setting off (the gate broke); the stance bias fights an authored `red_tempo` pulse (the yield broke).
+- **Interim evidence (2026-07-15, headless Red Tide self-play probe, session `gallant-panini-5485e7` — 15
+  AI-vs-AI turns through the real GameGenerator build with the campaign preseeds; NOT the played pass, the
+  row stays open):** the classifier + trend memory + opportunity window all **moved on real campaign
+  state** — turn 0 read "Attrition — ground 1.0x · air holding · front static", turn 1 picked up the real
+  ground imbalance ("Attrition — ground 3.0x · gaining ground"), and from turn 2 red latched **"Surging
+  (all-in)"** with the **"enemy air spent"** driver named in the detail — the blue-air-collapse opportunity
+  window firing after the abstract air war gutted blue's fighters on turn 1. The posture then held stable
+  for 13 straight turns (hysteresis: zero flapping). NOT exercised by the probe: CONSOLIDATE (nothing can
+  bomb red's IADS/supply headless — ground kills are DCS-only, so supply pegged 100 %), the four planner
+  seams' *played* effect, per-front divergence, and the tuning dials. **Caveat for readers:** the §26
+  abstract air war INVERTED the flown M1 result (DCS M1 was a 34:0 blue sweep; the abstract model bled
+  blue 36 jets on turn 1) — read the probe as "the classifier reacts correctly to the war it was shown",
+  never as Red Tide air-balance evidence, and never adjudicate balance off fast-forwarded turns.
 
 ### B8 — Strikeable motorpool depots: strike the reserve, force a repurchase · §56 · ☐ UNTESTED (adopted from upstream PR dcs-retribution#859, 2026-07-08; the reserve split (`reserve_armor_for` == `plan_groundwar`), the populator cap/round-robin/idempotence, the generator's parked/weapon-hold/no-datalink render + offset depot, the 1:1 `base.armor` decrement, and the motorpool-vs-front-line loss separation are unit-tested across `tests/**/test_motorpool_*.py` + `tests/ground_forces/test_reserve_armor.py`; **Red Tide now authors a depot near Haina** — headless-verified to bind to Haina/RED + materialise one `MotorpoolGroundObject` (`tests/fourteenth/test_red_tide_motorpool.py`), so the map/in-mission render is finally flyable)
 - **What CI cannot exercise:** whether the authored depot actually renders (the maintenance-facility icon on the map; the in-mission `Garage_A` building + the grid of parked reserve vehicles), whether killing a parked vehicle decrements the owner's `base.armor` and forces a repurchase next turn *without* shifting the front line, whether the spawn cap holds, and whether the debrief shows the motorpool losses.
 - **Setup:** fly **Germany — Red Tide** (authors the Haina depot; `motorpool_enabled` on by default). The depot renders at Haina from turn 1, but its parked vehicles only appear once red has procured armor (`base.armor` is the purchase stock, empty at turn 0), so **play a couple of turns** before expecting vehicles; then strike some and end the turn. (Or author a `Garage_A` in any other campaign's ME.)
 - **Pass:** the depot shows as a present maintenance-facility marker (never "destroyed"); in-mission it's a Garage A building + parked, non-firing, non-moving vehicles; each killed vehicle drops the owner's reserve by one (visible as a repurchase next turn) and appears on the debrief as "Motorpool units lost" / "`<type>` from motorpool"; the front line does **not** move from depot kills; the per-turn vehicle count respects `motorpool_spawn_cap`; a save with an authored depot loads with the motorpool injected.
 - **Fail signature:** the depot renders "destroyed"/absent when empty (the `sidc_status` PRESENT pin broke); parked vehicles move or return fire (the passivate/alarm-green broke); a depot kill shifts the front line (the loss leaked into the front-line category — check `commit_motorpool_losses` vs `commit_front_line_losses`); `base.armor` double-decrements on a multi-motorpool CP (the shared-reserve round-robin broke); the per-turn count ignores `motorpool_spawn_cap` (the populator trim broke).
+- **Interim evidence (2026-07-15, headless Red Tide self-play probe):** the reserve stock **actually
+  accumulates** — Haina's `base.armor` marched 0 → 20 by turn 1 → 59 by turn 14 as red procurement banked
+  undeployed armor — so the depot has vehicles to render within a couple of turns of a new game, exactly as
+  this row's setup assumes (and well past the `motorpool_spawn_cap` 10, so the cap is live from early on).
+  The render / kill / 1:1-decrement / debrief legs stay DCS-only.
 ### B9 — Air-droppable minefields: mine a road, kill a convoy, carry the field across the turn · §57 · ☐ UNTESTED (built 2026-07-11; **Phase 1 same-turn + Phase 2 persistence shipped**. The drop→track-to-impact→lay→proximity-detonate loop, one-trip-per-unit, charge depletion, the blue-only + non-dispenser reject, the startup grace, and the `minefields_state` write-back (laid `id` 0 / seeded id / charge depletion) are harness-tested in `tests/lua/test_minefields_runtime.py`; the reconcile (create/update/exhaust-remove/untouched/off) + the emitter shape are unit-tested in `tests/fourteenth/test_minefields.py` + `tests/missiongenerator/test_minefieldluadata.py`. The harness models no DCS weapon flight, so the CBU-99 detection + the convoy kill are DCS-only.)
 - **2026-07-11 flown Red Tide M1 (`csar-snatch-toggle-question-dfdb7a`): armed cleanly, nothing laid.**
   Load log `Minefields armed (dispenser 'CBU_99', radius 200m, 6 charges/field, power 100)`, zero Lua
@@ -227,7 +245,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Pass:** the drop lays a field (an F10 "Minefield (laid)" mark appears for your side); a RED convoy crossing it takes losses that show as convoy losses at debrief; with the setting on, an un-driven field is re-laid next mission at the same spot with the same charges, depletes as convoys hit it over turns, and vanishes once exhausted; the enemy never sees the field. **Auto-plan:** the ATO carries a Hornet BAI mining sortie targeting a red convoy, loaded with the "Aerial Minefield" CBU-99 loadout, and flying it (AI or player) drops the dispenser on the convoy's road and lays a field there.
 - **Fail signature:** nothing detonates (the `CBU_99` type string is wrong, or the drop wasn't tracked to impact); a non-CBU-99 drop or a red drop lays a field (the weapon/coalition gate broke); the field detonates at t=0 (the grace broke); a field is lost across the turn or never depletes/disappears (the `minefields_state` channel or `reconcile_minefields` broke); the enemy sees the field.
 
-### B10 — Mission-start briefing popup: the slot-in cards · §58 · ✗ REGRESSED → root-caused + rework applied same session, needs a re-fly (2026-07-11 flown Red Tide M1 `csar-snatch-toggle-question-dfdb7a`: **the fail signature occurred — NO card or beep was ever noticed by any pilot** (user eyewitness report, same session), despite `BRIEFING|: armed for 12 player flight(s)` at load and zero briefing-related Lua errors across ~125 min of MP with genuine slot-ins and re-slots. First-ever MP/dedicated-server fly of the feature. Built 2026-07-11, extended with the taxi card + raw-turn number; the emitter shape (shared header with the raw-turn mission number + one record per player-crewed flight, AI-only excluded, gated off) is unit-tested in `tests/missiongenerator/test_briefingluadata.py`, and the runtime (briefing card with every field + right group id/duration, the **taxi card flashing `DURATION` s later** with the callsign + ground freq, the `groundFreq` override, the mission-start sweep, AI/unknown/absent no-ops, the birth+sweep debounce) is harness-tested in `tests/lua/test_briefing_runtime.py`. The harness models no DCS UI, so whether the text actually renders on screen is DCS-only.)
+### B10 — Mission-start briefing popup: the slot-in cards · §58 · ☑ VERIFIED (2026-07-15, user pass — the reworked cards + beep work, "just fine, no issues"; by-design limitation confirmed in the same report: a DCS **dynamic-slot** pilot gets no briefing — dynamic-slot jets aren't player-crewed ATO flights, so the emitter carries no record for them) (was ✗ REGRESSED on the first MP fly — 2026-07-11 flown Red Tide M1 `csar-snatch-toggle-question-dfdb7a`: **the fail signature occurred — NO card or beep was ever noticed by any pilot** (user eyewitness report, same session), despite `BRIEFING|: armed for 12 player flight(s)` at load and zero briefing-related Lua errors across ~125 min of MP with genuine slot-ins and re-slots. First-ever MP/dedicated-server fly of the feature. Built 2026-07-11, extended with the taxi card + raw-turn number; the emitter shape (shared header with the raw-turn mission number + one record per player-crewed flight, AI-only excluded, gated off) is unit-tested in `tests/missiongenerator/test_briefingluadata.py`, and the runtime (briefing card with every field + right group id/duration, the **taxi card flashing `DURATION` s later** with the callsign + ground freq, the `groundFreq` override, the mission-start sweep, AI/unknown/absent no-ops, the birth+sweep debounce) is harness-tested in `tests/lua/test_briefing_runtime.py`. The harness models no DCS UI, so whether the text actually renders on screen is DCS-only.)
 - **Root cause (2026-07-11, adversarially cross-checked from dcs.log + the flown miz + the plugin source + DCS API
   research):** two compounding causes, no crash. **(1) Paused-server time compression** — the dedicated server sat
   PAUSED at frozen sim t=0 for ~33 min while all 8 pilots slotted in (wall 00:00–00:17); `timer.getTime()` is frozen
@@ -257,6 +275,11 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   line per pilot; a mid-mission re-slot gets its cards ~5 s after slotting. **If the log shows the `card ->` lines
   while a watching pilot still sees nothing, escalate to the delivery investigation** (DCS MT/dedicated-server
   message-rendering regressions — forum topics 321287/369258) with the log as proof.
+- **☑ VERIFIED (2026-07-15, user pass, session `gallant-panini-5485e7`):** the reworked popup was observed
+  working — "our changes make it work just fine, no issues." One accepted limitation from the same report,
+  **by design, not a bug:** a pilot who takes a DCS **dynamic slot** gets no briefing — dynamic-slot jets are
+  not player-crewed ATO flights, so the emitter has no record for them (consistent with the wider
+  dynamic-slots model gap: those airframes are invisible to the campaign layer).
 - **What CI cannot exercise:** whether `trigger.action.outTextForGroup` actually paints the card on the pilot's screen, that it reads correctly (campaign / Mission N / date / time / callsign / aircraft / task / field), that the **taxi card follows it** (`<callsign> — Get started up, Contact ground @ 249.50 when ready to taxi`) and each clears after its duration, and — the two paths — that it fires both at mission start in single-player (the sweep) and on a mid-mission slot-in / rejoin on a server (the birth handler), each exactly once.
 - **Setup:** leave **"Mission-start briefing popup"** on (default). Generate and fly any mission with a player flight; watch the screen the instant you take the slot, then ~12 s later for the taxi card. For the server path, join a running mission and slot in mid-flight.
 - **Pass:** ~5 s after slot-in (not instantly) the briefing card appears for ~12 s (campaign name, `Mission N` matching the kneeboard's turn number, date + time, your callsign / aircraft / task / departure field) with a **short beep**; ~12 s later the taxi card flashes with your callsign + `Contact ground @ 249.50` (and its own beep); each shows once (no double-print), and a re-slot after the debounce re-shows them. (The beep is `briefing-beep.wav`, played by `outSoundForGroup` — if it's silent, the sound resource didn't resolve by basename; try the `l10n/DEFAULT/` path.)
@@ -1493,7 +1516,7 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
 - **Fail signature:** the `AssertionError` recurs; the flight plans with no real ingress (routes
   straight through threat zones with no IP); the marker still overlaps the airfield icon.
 
-### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ✗ REGRESSED → rework applied 2026-07-02 (root-caused; needs a re-fly). **FROZEN, pass-or-delete (2026-07-03 CSAR rescope):** this re-fly is the divert's last chance — pass and it stays as-is (frozen, no further iteration); fail and the divert is deleted rather than reworked a third time (a player Sandy is untouched either way). **NOTE (2026-07-06 on-demand rework):** with the standing orbit retired, this divert now only applies to an **AI-crewed Sandy inside a PLAYER-fragged package** (there is no AI-spawned Sandy in v1 — that's the §21 v2). So it's only exercisable when the player frags a package with an AI Sandy seat.
+### G23 — Sandy AI dynamic retasking toward a live ejection · §15 · ✗ REGRESSED → rework applied 2026-07-02 (root-caused; needs a re-fly). **FROZEN, pass-or-delete (2026-07-03 CSAR rescope):** this re-fly is the divert's last chance — pass and it stays as-is (frozen, no further iteration); fail and the divert is deleted rather than reworked a third time (a player Sandy is untouched either way). **NOTE (2026-07-06 on-demand rework):** with the standing orbit retired, this divert now only applies to an **AI-crewed Sandy inside a PLAYER-fragged package** (there is no AI-spawned Sandy in v1 — that's the §21 v2). So it's only exercisable when the player frags a package with an AI Sandy seat. **SCOPE CLARIFIED (2026-07-15, squadron call): this is a SINGLE-PLAYER feature** — the AI-crewed-Sandy-in-a-player-package configuration is exactly how a solo player runs CSAR (they fly one seat, the AI flies the Sandy); the 414th's own events are MP DM-style (the user builds, the squadron crews the seats), so an MP event was never this row's natural arbiter. The pass-or-delete rule stands, but the arbiter is an **SP re-fly** whenever one happens — do NOT delete it for lack of MP-event exercise.
 - **Fail signature reproduced (2026-07-02 flown Trail 2 session `wonderful-chatterjee`, user-confirmed):**
   an F-4E ejection at t=1118 registered a survivor (2 snatch parties spawned 2 s later ~11 km from
   Gudauta), the **"SANDY … is diverting to hold over the downed pilot" message fired** (user saw it),
@@ -2516,6 +2539,24 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   win/loss/precedence, crossing-edge banners) and the SITREP band in the sitrep tests. What CI *cannot*
   adjudicate is **pacing**: whether the design-§7 weights drive either side to zero on a satisfying arc
   (~15–30 turns of a normal Vietnam campaign), or collapse/stall the war absurdly fast/slow.
+- **Interim evidence (2026-07-15, session `gallant-panini-5485e7` — projector re-run + a real-engine
+  AI-vs-AI self-play probe; NOT the played pass, the row stays open):**
+  `tools/will_pacing_model.py` on the shipped weights still reproduces the documented full-feed pacing
+  exactly (elite folds Hanoi turn 8 / average → Linebacker II win turn 16 / flounder → withdrawal turn 11 —
+  no drift since the 07-04 redo). A 20-turn headless Yankee Station self-play (real GameGenerator + campaign
+  preseeds + the §26 abstract combat auto-resolving every mission, air-war feeds only — no POW/ROE/convoy
+  channels) verified the machinery live: the −0.4/turn war-weariness ratchet, per-feed ledger attribution,
+  the will-coupled `advance_when` acceleration (a collapsing blue raced Rolling Thunder → Linebacker II by
+  turn 2, charging both escalation taxes), and the M9 ceiling tracking will in BOTH directions. **Two
+  balance watch-items for the played pass:** (1) **an auto-resolved (unflown) turn is drastically bloodier
+  than a DCS-flown one** — the planner frags B-52s into the un-rolled-back IADS from turn 1
+  (`strike_through_air_defense_threat`) and the SEAD-less abstract SAM model killed 8 BUFFs + 40 jets on
+  turn 1 (−85 will in one turn); never adjudicate pacing off fast-forwarded turns, and expect a player who
+  skips/fast-forwards a turn to nuke their own meter. (2) **the claimed-MiG-kill restore can grind** — at
+  +0.3/claim, a blue side taking zero losses out-earns the −0.4 weariness by +3–6/turn (the probe climbed
+  will 0.4 → 63.9 over 16 turns while red bled −3/turn from its own airframe losses toward a turtle win
+  ~turn 30): a patient BARCAP-only squadron could fold Hanoi without ever striking. Consider a per-turn cap
+  or diminishing returns on the kill restore at this row's tuning pass.
 - **Setup:** a NEW Vietnam campaign (any of the four — `vietnam_political_will` preseeds on). Play several
   turns normally; read the per-turn "Political will" message + the SITREP will band. The 2026-07-02
   **attribution ledger** is the instrument for this pass: hover the ribbon WILL/RESOLVE meters (or read the
@@ -2733,6 +2774,11 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   `vietnam_political_will` on, and messages on the cut. What CI *cannot* adjudicate: whether the budget cut
   feels like meaningful pressure without a death spiral (less budget → fewer replacements → more relative
   losses → less will), and whether the message reads clearly in a flown campaign.
+- **Interim evidence (2026-07-15, the M1 self-play probe — see the M1 row):** the ceiling tracked will
+  live in **both directions** (×1.00 → ×0.53 at will ~3, back to ×1.00 as will recovered past 60), and the
+  **loss-spiral this row worries about did not manifest even from will 0.4 at the ×0.5 budget floor** —
+  the probe's blue recovered fully. The floor is doing its "gentle by design" job in the degenerate worst
+  case; what's left for the fly is the *felt* pressure on a human-played losing line.
 - **Setup:** a NEW 1968 Yankee Station game (both toggles preseed on). Play a *losing* line (take losses,
   ignore the trail) so BLUE will drops below 60; watch the Finances dialog + the "War budget cut" message.
 - **Pass:** while BLUE will ≥ 60 the war budget is untouched; below 60 the per-turn income is visibly trimmed
@@ -3091,6 +3137,12 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   zero seasonal chance — all in `tests/weather/test_continuous_campaign_clock.py`. What CI *cannot* adjudicate:
   whether several turns in a row *read* as one continuous timeline (believable clock progression, weather that
   builds and clears rather than flickers) and whether the 3–7 h pacing feels right.
+- **Interim evidence (2026-07-15, headless Red Tide self-play probe — 15 turns):** the marched clock held
+  the contract on every advance — steps of 3–7 whole hours (07-13 10:00 → 16:00 → 19:00 → 07-14 02:00 → …
+  → 07-15 20:00; ~2.4 game-days over 14 turns), dates rolling only at midnight — and the weather **evolved
+  as systems, not draws**: ClearSkies → Cloudy (2 turns) → Raining (4 turns) → Cloudy (6 turns), adjacent-rung
+  moves with multi-turn persistence, zero clear↔storm teleports. What's left for the fly is only the *read*
+  (does it feel like one timeline from the cockpit/briefing).
 - **Setup:** any day-and-night campaign with `continuous_campaign_clock` ON (default). Note the mission
   start date/time on turn 1, then pass ~5–6 turns without flying, checking the mission clock + weather each turn.
 - **Pass:** the clock advances a few hours each turn and never jumps backward; the date increments only when the

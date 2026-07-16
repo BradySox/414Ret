@@ -59,6 +59,12 @@ file. This guide is the map; those are the territory.
   **in-game pass tracker**: every "needs an in-game pass" item with an observable pass
   criterion + the fail signature to watch for. Update status when you fly it; clear the tag
   in `414th-features.md` when it reaches VERIFIED.
+- [docs/dev/414th-feature-debt-register.md](docs/dev/414th-feature-debt-register.md) — the
+  **verification plan / debt register** (2026-07-15 look-back at ~600 commits): the triage of
+  every half-cooked item and exactly where it gets verified — the pre-regen action items, the
+  post-regen **app-side sweep**, the **Aug-1 M2 fly-card**, the mid-window private-session card,
+  the Vietnam/COIN/SP queues, the rework-invalidated ledger, and the deliberate-deferrals list.
+  Archive once the Aug-1 wave is processed.
 - [docs/dev/414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) — the
   **upstreaming queue**: which generic fixes to carve toward `bradyccox/dcs-retribution`
   (priority-ordered, with readiness marks) and which fork-specific bits must NEVER go upstream.

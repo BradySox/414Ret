@@ -22,11 +22,13 @@ from dcs.countries import (
     CombinedJointTaskForcesRed,
 )
 from dcs.mission import Mission
+from dcs.statics import Fortification
 from dcs.terrain.caucasus import Caucasus
 from dcs.vehicles import AirDefence
 
 from game import persistency
 from game.campaignloader.mizcampaignloader import MizCampaignLoader
+from game.theater.player import Player
 from game.theater.theaterloader import TheaterLoader
 
 
@@ -87,3 +89,102 @@ def test_marker_coalition_binding(tmp_path: Path) -> None:
     # The red-block marker still binds by proximity: blue field owns it.
     assert len(kutaisi.preset_locations.short_range_sams) == 1
     assert not senaki.preset_locations.short_range_sams
+
+
+def _build_scoping_miz(path: Path) -> None:
+    """Kutaisi (blue) far from two red fields, with blue-block objects on the
+    red fields: an economy object (factory) and a marker (EWR) beyond the
+    detour bound, plus a near-field marker that should still prefer blue."""
+    mission = Mission(terrain=Caucasus())
+    kutaisi = mission.terrain.airports["Kutaisi"]  # blue
+    senaki = mission.terrain.airports["Senaki-Kolkhi"]  # red, ~37 km from Kutaisi
+    min_vody = mission.terrain.airports["Mineralnye Vody"]  # red, ~235 km away
+    kutaisi.set_blue()
+    senaki.set_red()
+    min_vody.set_red()
+
+    blue_country = CombinedJointTaskForcesBlue()
+    red_country = CombinedJointTaskForcesRed()
+    mission.coalition["blue"].add_country(blue_country)
+    mission.coalition["red"].add_country(red_country)
+
+    # Blue-block FACTORY sitting on the distant red field. The blue block holds
+    # the economy objects by convention; #590's all-class preference re-owned
+    # them to distant blue fields. It must bind the red field it sits on.
+    mission.static_group(
+        blue_country,
+        "Blue block factory",
+        Fortification.Workshop_A,
+        min_vody.position.point_from_heading(0, 3000),
+    )
+
+    # Blue-block EWR on the distant red field: nearest blue field (Kutaisi) is
+    # ~235 km away, far past BLUE_BLOCK_MAX_DETOUR, so proximity decides.
+    mission.vehicle_group(
+        blue_country,
+        "Blue EWR far",
+        AirDefence.x_1L13_EWR,
+        min_vody.position.point_from_heading(45, 3000),
+    )
+
+    # Blue-block EWR next to the near red field (~37 km detour, within the
+    # bound): the #590 near-field preference still binds the blue field.
+    mission.vehicle_group(
+        blue_country,
+        "Blue EWR near",
+        AirDefence.x_1L13_EWR,
+        senaki.position.point_from_heading(45, 3000),
+    )
+
+    mission.save(str(path))
+
+
+def test_blue_block_preference_is_scoped_and_bounded(tmp_path: Path) -> None:
+    miz = tmp_path / "scoping.miz"
+    _build_scoping_miz(miz)
+
+    theater = TheaterLoader("caucasus").load()
+    MizCampaignLoader(miz, theater).populate_theater()
+
+    kutaisi = theater.control_point_named("Kutaisi")
+    senaki = theater.control_point_named("Senaki-Kolkhi")
+    min_vody = theater.control_point_named("Mineralnye Vody")
+
+    # Economy object is never preferred to a distant blue field -- binds the
+    # red field it sits on.
+    assert len(min_vody.preset_locations.factories) == 1
+    assert not kutaisi.preset_locations.factories
+
+    # Marker beyond the detour bound binds by proximity (the red field), not
+    # the 235 km-distant blue field.
+    assert len(min_vody.preset_locations.ewrs) == 1
+
+    # Marker within the detour bound still prefers the blue field.
+    assert len(kutaisi.preset_locations.ewrs) == 1
+    assert not senaki.preset_locations.ewrs
+
+
+def _build_dynamic_spawn_miz(path: Path) -> None:
+    mission = Mission(terrain=Caucasus())
+    blue_field = mission.terrain.airports["Kutaisi"]
+    red_field = mission.terrain.airports["Senaki-Kolkhi"]
+    blue_field.set_blue()
+    red_field.set_red()
+    # A dynamic-spawn RED field: upstream would infer NEUTRAL; the 414th keeps
+    # the .miz-declared coalition.
+    red_field.dynamic_spawn = True
+
+    mission.coalition["blue"].add_country(CombinedJointTaskForcesBlue())
+    mission.coalition["red"].add_country(CombinedJointTaskForcesRed())
+    mission.save(str(path))
+
+
+def test_dynamic_spawn_airfield_keeps_its_coalition(tmp_path: Path) -> None:
+    miz = tmp_path / "dynamic_spawn.miz"
+    _build_dynamic_spawn_miz(miz)
+
+    theater = TheaterLoader("caucasus").load()
+    MizCampaignLoader(miz, theater).populate_theater()
+
+    red_field = theater.control_point_named("Senaki-Kolkhi")
+    assert red_field.starting_coalition is Player.RED

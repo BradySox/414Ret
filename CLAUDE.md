@@ -145,7 +145,18 @@ file. This guide is the map; those are the territory.
     loader now walks the BLUE block for every marker class and binds blue-block markers to the nearest
     BLUE CP; red-block markers keep nearest-any proximity — the convention by which blue defenses are
     authored as red-block markers near blue fields. Tests `tests/test_miz_marker_binding.py`;
-    upstream-carve candidate)
+    upstream-carve candidate. **SCOPED + BOUNDED 2026-07-17** (found debugging Red Tide's "why blue"
+    save): #590's blue-CP preference was unbounded and applied to EVERY object class, but the blue
+    block also holds the **economy** objects (armor/factories/ammo/strike, authored blue-side by
+    convention) — so 782 red economy objects across the campaigns were re-owned to distant blue fields
+    (Sperenberg's factory → Frankfurt 408 km away; every red ammo depot → a blue base across the map).
+    The preference is now **scoped** to the marker classes it was written for (`objective_info`'s
+    `prefer_blue` param, passed only by the SAM/EWR/missile/coastal/ship/offshore callers) and
+    **bounded** by `MizCampaignLoader.BLUE_BLOCK_MAX_DETOUR` (50 km): a blue-block marker prefers the
+    nearest blue CP only when it isn't dramatically farther than the marker's nearest field (legit
+    near-field markers like Dynamo's evacuation flotilla ≈30 km stay; a marker sitting on an enemy
+    base 55–420 km from any blue field binds by proximity). Economy classes bind by pure proximity,
+    byte-identical to the pre-#590 baseline)
   - `414th-campaign-maker-notes.md` — blank-start campaign maker (policy core landed; glue/wizard in progress)
   - `414th-weapon-dates-proposal.md` — weapon-coverage completion plan + the modern-weapon date-gating rule
   - **MIST → MOOSE consolidation & IADS engine** (✅ COMPLETE 2026-06-25 — MIST retired; read before

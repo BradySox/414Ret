@@ -11,7 +11,13 @@ gotcha the lua-lint syntax gate cannot:
   its own group — the wide-area EWR half of QRA detection was empty (masked by
   the paren-free ``QRA_Backstop_*`` names);
 * the FULL merged detection list — IADS EWR network AND backstop names — is
-  escaped before it reaches ``FilterPrefixes``.
+  escaped before it reaches ``FilterPrefixes``;
+* the task-type reaction filter: QRA reacts only to air-to-ground taskings
+  parsed from the namegen group name (Strike/BAI/OCA-Runway/OCA-Aircraft/
+  Anti-ship/Armed Recon — no DEAD, no Air Assault), a cluster reacts as soon
+  as one member is a react type (escorted strikes still trigger), and the
+  per-instance ``EvaluateGCI``/``EvaluateENGAGE`` wrap skips react-free
+  clusters without touching Moose's originals.
 
 What the fake cannot model: Moose's real detection cycle and the scramble
 itself — that is the in-game pass (checklist A5).
@@ -146,6 +152,25 @@ end
 function InterceptTest.mooseMatches(name, prefix)
     return string.find(name, (prefix:gsub("%-", "%%-")), 1) ~= nil
 end
+
+-- A detected cluster the shape qra_cluster_has_react walks: a Set of units,
+-- each carrying its group name.
+function InterceptTest.fakeItem(groupNames)
+    local units = {}
+    for _, n in ipairs(groupNames) do
+        local group = { GetName = function() return n end }
+        units[#units + 1] = { GetGroup = function() return group end }
+    end
+    return {
+        Set = {
+            ForEachUnit = function(_, fn)
+                for _, u in ipairs(units) do
+                    fn(u)
+                end
+            end,
+        },
+    }
+end
 """
 
 
@@ -229,3 +254,77 @@ def test_escape_leaves_dash_for_moose() -> None:
     assert (
         module.pattern_escape("0114 | LORIKEET (S-300)") == "0114 | LORIKEET %(S-300%)"
     )
+
+
+def test_group_reacts_only_to_air_to_ground_taskings() -> None:
+    """React list: Strike/BAI/OCA-Runway/OCA-Aircraft/Anti-ship/Armed Recon.
+
+    NO DEAD, NO Air Assault (upstream f0bd1b63's final list); CAP/sweep/escort
+    and non-ATO names never react."""
+    harness = DcsPluginHarness()
+    module = _load(harness, ewr_names=list(PAREN_NAMES))
+    reacts = module.group_reacts
+
+    assert reacts("PKG Strike|USA|1|F-16C_50|")
+    assert reacts("Al Dhafra BAI|21|2|F-15E|")
+    assert reacts("Incirlik OCA/Runway|2|3|B-1B|")
+    assert reacts("Incirlik OCA/Aircraft|2|4|F-16C_50|")
+    assert reacts("CVN-71 Anti-ship|1|5|Su-24M|")
+    assert reacts("Haina Armed Recon|1|6|A-10C|")
+
+    assert not reacts("PKG BARCAP|USA|7|F-14B|")
+    assert not reacts("PKG DEAD|USA|8|F-16C_50|")
+    assert not reacts("LZ Air Assault|21|9|Mi-8MT|")
+    assert not reacts("PKG Fighter sweep|USA|10|F-15C|")
+    assert not reacts("PKG Escort|USA|11|F-16C_50|")
+    # Non-ATO group (no namegen "|" fields) is unclassifiable -> never reacts,
+    # even when coincidentally named like a task.
+    assert not reacts("Eagle Strike")
+    assert not reacts(None)
+
+
+def test_cluster_reacts_when_any_member_is_react_type() -> None:
+    """An escorted strike still triggers; a pure fighter cluster never does."""
+    harness = DcsPluginHarness()
+    module = _load(harness, ewr_names=list(PAREN_NAMES))
+    fake_item = harness.lua.globals().InterceptTest.fakeItem
+
+    escorted_strike = fake_item(
+        harness.to_lua(["PKG Escort|USA|1|F-16C_50|", "PKG Strike|USA|2|F-15E|"])
+    )
+    pure_fighters = fake_item(
+        harness.to_lua(["PKG Fighter sweep|USA|3|F-15C|", "PKG BARCAP|USA|4|F-14B|"])
+    )
+    assert module.cluster_has_react(escorted_strike)
+    assert not module.cluster_has_react(pure_fighters)
+    assert not module.cluster_has_react(harness.to_lua({}))
+
+
+def test_dispatcher_evaluation_skips_react_free_clusters() -> None:
+    """The per-instance EvaluateGCI/EvaluateENGAGE wrap: a cluster with no
+    react-type group returns nil (no scramble) without touching Moose's
+    original; a react cluster delegates."""
+    harness = DcsPluginHarness()
+    _load(harness, ewr_names=["0041 | LION (EWR)"])
+    harness.advance_to(BUILD_DELAY_S + 1)
+    harness.assert_no_lua_errors()
+
+    test_globals = harness.lua.globals().InterceptTest
+    dispatcher = test_globals.dispatchers[1]
+    fake_item = test_globals.fakeItem
+
+    # lupa surfaces Lua multi-returns as tuples: "nil, nil" -> (None, None).
+    sweep = fake_item(harness.to_lua(["PKG Fighter sweep|USA|1|F-15C|"]))
+    assert dispatcher.EvaluateGCI(dispatcher, sweep) == (None, None)
+    assert dispatcher.EvaluateENGAGE(dispatcher, sweep) is None
+    assert len(dispatcher.gciCalls) == 0
+    assert len(dispatcher.engageCalls) == 0
+
+    strike = fake_item(harness.to_lua(["PKG Strike|USA|2|F-15E|"]))
+    assert dispatcher.EvaluateGCI(dispatcher, strike) == (
+        "defenders-missing",
+        "friendlies",
+    )
+    assert dispatcher.EvaluateENGAGE(dispatcher, strike) == "friendlies"
+    assert len(dispatcher.gciCalls) == 1
+    assert len(dispatcher.engageCalls) == 1

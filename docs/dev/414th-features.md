@@ -4520,6 +4520,22 @@ the generator records each fire-tasked group's hold deadline on
 (default 300 s) has passed, then routes it with a `Controller:resetTask()` first (clearing the spent
 fire task that pinned it). Groups without a fire mission scoot exactly as before.
 
+**The fire task must end itself (2026-07-17, the flown turn-2 re-fly).** The re-fly proved the fire
+half — 9/10 fire-tasked batteries launched full volleys 12–15 s after their forwarded deadlines (18
+SCUD + 45 Shahed), holds released on schedule, and two batteries fired *then* scooted — but 7 of the
+9 fired batteries still never drove: a bare `FireAtPoint` has **no round limit and no stop
+condition**, so once the launchers run dry the task never completes, the units never leave their
+deployed fire state, and `resetTask()` un-pins only sometimes (2/9; every never-fired group drove
+fine; the sitters' escorts crept 20–80 m into formation and stalled against the pinned launchers —
+combat exposure ruled out in the Tacview). The generator therefore wraps the fire task too:
+`ControlledTask(FireAtPoint)` with `stop_after_time(hold + MISSILE_FIRE_WINDOW_S)` (240 s — flown
+volleys complete within ~40 s of the deadline), so the task ends through DCS's normal completion
+path and the group is ordinarily idle before the plugin's 300 s margin routes it. The
+window-inside-margin coupling is pinned by `test_fire_window_stays_inside_the_plugin_scoot_margin`;
+the plugin's `resetTask` stays as belt-and-braces for pre-window missions. If the re-fly shows the
+stop condition also fails to stow dry launchers, the next lever is an explicit `rounds=` expend
+count on the task.
+
 **Movement only** (the Combat-SAR / COIN mover discipline): the routed DCS groups are the force model's
 own spawned units, so kills record natively; nothing changes at turn end; there is no Lua-owned scoring
 or spawning. Composes with §3 concealment (the map shows "in here somewhere", and when you get there the

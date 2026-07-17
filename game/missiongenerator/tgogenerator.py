@@ -605,6 +605,13 @@ class GroundObjectGenerator:
         )
 
 
+#: How long (s past its hold deadline) a missile site's FireAtPoint stays alive
+#: before its stop condition ends it. Flown volleys complete within ~40 s of the
+#: deadline; the mobilemissiles plugin's fireMarginS default (300 s) must exceed
+#: this so the scoot route arrives only after the task has ended.
+MISSILE_FIRE_WINDOW_S = 240
+
+
 class MissileSiteGenerator(GroundObjectGenerator):
     def __init__(
         self,
@@ -677,7 +684,22 @@ class MissileSiteGenerator(GroundObjectGenerator):
                     hold = ControlledTask(Hold())
                     hold.stop_after_duration(hold_seconds)
                     vg.points[0].add_task(hold)
-                    vg.points[0].add_task(FireAtPoint(real_target))
+                    # The fire task must END on its own: a bare FireAtPoint has no
+                    # round limit and no stop condition, so once the launchers run
+                    # dry the task stays active forever, the units never leave
+                    # their deployed fire state, and the group refuses every later
+                    # route push -- resetTask() from the scoot plugin recovered
+                    # only 2 of 9 fired batteries on the 2026-07-17 Scenic Route
+                    # fly, while all 4 batteries whose fire task never ran drove
+                    # fine. A mission-clock stop condition ends the task through
+                    # the normal completion path (volleys finished within ~40 s of
+                    # the hold deadline in the flown data, so the window is ample),
+                    # after which the group is an ordinary idle group again. The
+                    # scoot plugin's fireMarginS (default 300) must stay above
+                    # MISSILE_FIRE_WINDOW_S so it routes only after the task ends.
+                    fire = ControlledTask(FireAtPoint(real_target))
+                    fire.stop_after_time(hold_seconds + MISSILE_FIRE_WINDOW_S)
+                    vg.points[0].add_task(fire)
                     if self.mission_data is not None:
                         # §49 fire-then-scoot: let the scoot plugin hold this
                         # group still until the fire mission has run (a route

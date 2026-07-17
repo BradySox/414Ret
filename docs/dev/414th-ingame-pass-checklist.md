@@ -3090,7 +3090,28 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   (idempotence broken). Knobs: `auto_range_fuel_tanks`, `fuel_tanks_over_jammers` (Mission Generation →
   Loadouts).
 
-### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ◐ PARTIAL (scoot VERIFIED 2026-07-10/11/16; the 2026-07-16 fire-then-scoot fix needs a re-fly)
+### S2 — Mobile missile sites relocate (the SCUD hunt) · §49 · ◐ PARTIAL (scoot VERIFIED 2026-07-10/11/16; fire half VERIFIED 2026-07-17; the fire-window fix needs a re-fly)
+- **2026-07-17 re-fly (flown PG Scenic Route turn 2, Tacview `Tacview-20260716-230024`,
+  session `dcs-mission-test-040ece`): the fire half of the 2026-07-16 fix is PROVEN, a residual
+  post-fire pin was found and fixed.** 9/10 fire-tasked batteries launched their full volleys
+  12–15 s after their forwarded hold deadlines (18 SCUD + 45 Shahed, launches attributed to
+  their batteries at 3–6 m; holds released on schedule; zero tick errors; PEREGRINE alone never
+  fired — its task likely aborted as unreachable, and it scooted normally). COUGAR and LAMPREY
+  **fired then scooted** (1.4–2.3 km) — the end-to-end sequence. **Residual:** the other 7 fired
+  batteries never drove afterward — a bare `FireAtPoint` has no round limit/stop condition, so a
+  dry battery's task never ends and the launchers stay pinned deployed; `resetTask()` recovered
+  only 2/9 while all 4 never-fired groups drove (sitters' escorts crept 20–80 m and stalled —
+  the fail signature the 2026-07-16 row predicted, now root-caused; combat exposure ruled out,
+  zero shells near any site). **Fix (unflown):** the generator wraps the fire task in a
+  `ControlledTask` stopped at hold + `MISSILE_FIRE_WINDOW_S` (240 s — flown volleys finish
+  within ~40 s), ending it through the normal completion path before the plugin's 300 s
+  `fireMarginS` routes the group; coupling pinned by
+  `test_fire_window_stays_inside_the_plugin_scoot_margin`.
+  - **Pass (the re-fly):** fired batteries (not just 2/9) relocate after their volley — watch a
+    KS-19/ZSU-57-escorted SCUD site specifically.
+  - **Fail signature:** fired batteries still frozen past deadline + 300 s (the stop condition
+    didn't stow the launchers either → next lever is an explicit `rounds=` expend count), or a
+    volley truncated mid-ripple (window too tight — didn't happen in the flown data, 40 s vs 240 s).
 - **2026-07-16 fire-vs-scoot clobber found + fixed (flown PG Scenic Route turn 3, Tacview
   `Tacview-20260716-014958`; unflown fix):** the scoot itself re-verified on a third campaign —
   12 of 13 missile groups (4 Scud + 9 Shahed batteries) relocated 1.9–4.0 km inside the anchor —

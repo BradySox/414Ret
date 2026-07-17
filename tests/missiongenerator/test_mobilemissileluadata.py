@@ -136,3 +136,37 @@ def test_coastal_opt_in_composes_with_the_missile_setting() -> None:
     # Only coastal on -> only the silkworm (the SCUD stays put).
     coastal_only = _sites(_game([scud, silkworm], on=False, coastal=True))
     assert [s["groups"][0] for s in coastal_only] == ["0082 | Silkworm"]
+
+
+def test_fire_window_stays_inside_the_plugin_scoot_margin() -> None:
+    """The generator's fire-task stop window must end before the plugin routes.
+
+    The 2026-07-17 Scenic Route fly showed a dry, never-ending FireAtPoint pins
+    its launchers in the deployed state (resetTask recovered only 2 of 9 fired
+    batteries), so the generator now ends the task with a stop condition at
+    hold + MISSILE_FIRE_WINDOW_S. The plugin's fireMarginS (Lua default and
+    plugin.json default) must stay ABOVE that window, or the first route push
+    lands while the fire task is still alive and the battery never scoots.
+    """
+    import json
+    import re
+    from pathlib import Path
+
+    from game.missiongenerator.tgogenerator import MISSILE_FIRE_WINDOW_S
+
+    plugin_dir = (
+        Path(__file__).parent.parent.parent / "resources" / "plugins" / "mobilemissiles"
+    )
+    lua = (plugin_dir / "mobilemissiles-config.lua").read_text()
+    match = re.search(r"^local FIRE_MARGIN = (\d+)", lua, re.M)
+    assert match is not None, "plugin lost its FIRE_MARGIN default"
+    assert MISSILE_FIRE_WINDOW_S < int(match.group(1))
+
+    plugin_json = json.loads((plugin_dir / "plugin.json").read_text())
+    margins = [
+        o["defaultValue"]
+        for o in plugin_json.get("specificOptions", [])
+        if o.get("mnemonic") == "fireMarginS"
+    ]
+    assert margins, "plugin.json lost the fireMarginS option"
+    assert MISSILE_FIRE_WINDOW_S < margins[0]

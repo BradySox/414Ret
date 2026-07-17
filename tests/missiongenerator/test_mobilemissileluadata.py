@@ -170,3 +170,29 @@ def test_fire_window_stays_inside_the_plugin_scoot_margin() -> None:
     ]
     assert margins, "plugin.json lost the fireMarginS option"
     assert MISSILE_FIRE_WINDOW_S < margins[0]
+
+
+def test_immobile_silkworm_hardware_is_never_routed() -> None:
+    """The vanilla Silkworm battery (hy_launcher + Silkworm_SR) is a fixed
+    emplacement: routing it produces no movement, only a per-frame ground-AI
+    leveling storm (the 2026-07-17 single-digit-FPS finding). A group carrying
+    any such unit is excluded; a genuinely mobile coastal group still scoots."""
+    from types import SimpleNamespace as NS
+
+    def typed_unit(type_id: str) -> Any:
+        return NS(alive=True, is_vehicle=True, is_static=False, type=NS(id=type_id))
+
+    silkworm = _tgo(
+        "coastal",
+        "0090 | Silkworm",
+        [typed_unit("hy_launcher"), typed_unit("Ural-375")],
+        _Point(1.0, 2.0),
+    )
+    radar_only = _tgo(
+        "coastal", "0091 | SW radar", [typed_unit("Silkworm_SR")], _Point(3.0, 4.0)
+    )
+    mobile = _tgo(
+        "coastal", "0092 | Mobile AShM", [typed_unit("Ural-375")], _Point(5.0, 6.0)
+    )
+    sites = _sites(_game([silkworm, radar_only, mobile], on=False, coastal=True))
+    assert [s["groups"][0] for s in sites] == ["0092 | Mobile AShM"]

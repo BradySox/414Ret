@@ -3112,6 +3112,21 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   - **Fail signature:** fired batteries still frozen past deadline + 300 s (the stop condition
     didn't stow the launchers either → next lever is an explicit `rounds=` expend count), or a
     volley truncated mid-ripple (window too tight — didn't happen in the flown data, 40 s vs 240 s).
+- **2026-07-17 FPS storm found + fixed (the first flown test on the fixed build — fresh 39-site
+  game, log-only report):** single-digit FPS with continuous DCS `ANTIFREEZE` from the FIRST scoot
+  tick (21:28, grace + 120 s) — before any Shahed launched, so the drones are exonerated. Causes:
+  all 39 sites' loops were synchronized (every route push in the same frame each interval, and at
+  30 km/h a 4 km scoot spans the whole interval so the fleet never stops driving), and the coastal
+  Silkworm hardware (`hy_launcher`/`Silkworm_SR`) has no drive physics — routing it made ~15k
+  per-frame `GT.maxDeviationRoll` ground-AI errors in one minute and zero movement (user
+  confirmation: Silkworms were never mobile). Fixed (unflown): emitter `IMMOBILE_UNIT_IDS` group
+  exclusion + per-site `(i-1)·interval/N` loop stagger in the plugin.
+  - **Pass:** a many-site campaign holds playable FPS with `mobile_missile_relocation` on; no
+    `woCar` leveling flood in the log; scoots still happen (spread over the interval, not at one
+    tick).
+  - **Fail signature:** `ANTIFREEZE ENABLED` recurring in dcs.log after the grace window, or
+    `has request to level` spam from any routed type (another immobile unit id to add to the
+    exclusion set).
 - **2026-07-16 fire-vs-scoot clobber found + fixed (flown PG Scenic Route turn 3, Tacview
   `Tacview-20260716-014958`; unflown fix):** the scoot itself re-verified on a third campaign —
   12 of 13 missile groups (4 Scud + 9 Shahed batteries) relocated 1.9–4.0 km inside the anchor —

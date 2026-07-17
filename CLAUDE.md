@@ -1542,6 +1542,18 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the deadline) so the task ends through the normal completion path before the plugin's 300 s
     margin routes the group; the window/margin coupling is pinned by
     `test_fire_window_stays_inside_the_plugin_scoot_margin`. Re-fly owed (S2 stays PARTIAL).
+    **Single-digit-FPS storm found + fixed 2026-07-17** (the first flown test on the fixed build,
+    a fresh 39-site game): every site armed at the same moment, so ALL sites routed **in the same
+    frame** every interval (continuous DCS ANTIFREEZE from the first scoot tick — before any drone
+    launched), and the coastal Silkworm hardware (`hy_launcher`/`Silkworm_SR`) is a **fixed
+    emplacement with no drive physics** — routing it produced zero movement and a per-frame
+    `GT.maxDeviationRoll` ground-AI storm (~15k log events in the first tick minute). Fixes: the
+    emitter's `IMMOBILE_UNIT_IDS` drops any group carrying such a unit (vanilla Silkworm batteries
+    are never routed — `coastal_missile_relocation` now only matters for mod sites with genuinely
+    mobile launchers), and the plugin **staggers each site's loop** by `(i-1)·interval/N` so route
+    pushes spread across the interval instead of landing together. Tests
+    `test_immobile_silkworm_hardware_is_never_routed` +
+    `test_site_loops_are_staggered_across_the_interval`.
     The same flown test drove the
     **no-front support-orbit fix** (a front-less naval map marched red's A-50 200 NM AWAY from the
     fleet — `support_orbit_anchor` now skips the AI depth march with no FLOT; features doc §8-adjacent

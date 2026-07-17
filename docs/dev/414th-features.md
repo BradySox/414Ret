@@ -4536,6 +4536,22 @@ the plugin's `resetTask` stays as belt-and-braces for pre-window missions. If th
 stop condition also fails to stow dry launchers, the next lever is an explicit `rounds=` expend
 count on the task.
 
+**The FPS storm (2026-07-17, the first flown test on the fixed build).** A fresh 39-site game hit
+single-digit FPS with DCS's `ANTIFREEZE` sim-overload protection firing continuously from the
+first scoot tick — before a single drone launched, exonerating the Shahed volleys. Two compounding
+causes, both fixed: **(1) synchronized route pushes** — every site armed at the same moment, so all
+39 routed in the same frame every interval (and with a 4 km scoot at 30 km/h taking ~8 min, the
+whole fleet was effectively always driving); the plugin now staggers each site's loop start by
+`(i-1) · interval/N`, spreading pushes across the interval. **(2) drive-broken coastal hardware** —
+the vanilla Silkworm battery (`hy_launcher` + `Silkworm_SR`) is a fixed emplacement with no ground
+physics (`GT.maxDeviationRoll` unset), so routing it produced zero movement and a per-frame
+leveling storm (~15k ground-AI log events in the first tick minute); the emitter's
+`IMMOBILE_UNIT_IDS` now drops any group carrying such a unit, so vanilla Silkworm sites are never
+routed and `coastal_missile_relocation` only matters for mod coastal sites whose launchers can
+actually drive (the setting copy says so). Tests
+`test_immobile_silkworm_hardware_is_never_routed` +
+`test_site_loops_are_staggered_across_the_interval`.
+
 **Movement only** (the Combat-SAR / COIN mover discipline): the routed DCS groups are the force model's
 own spawned units, so kills record natively; nothing changes at turn end; there is no Lua-owned scoring
 or spawning. Composes with §3 concealment (the map shows "in here somewhere", and when you get there the

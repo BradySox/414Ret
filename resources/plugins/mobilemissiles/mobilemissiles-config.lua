@@ -20,6 +20,13 @@
 -- lost their fire missions to the first relocation). Once the window is over, the spent fire
 -- task is cleared with resetTask before routing (a fired launcher otherwise pins on the dead
 -- task and never moves -- the BAT battery, same test).
+--
+-- The generator now also gives the FireAtPoint its own stop condition (hold deadline +
+-- MISSILE_FIRE_WINDOW_S = 240 s in tgogenerator.py), because a dry, never-ending fire task
+-- left the launchers pinned in their deployed state and resetTask alone recovered only 2 of
+-- 9 fired batteries (2026-07-17 Scenic Route fly). fireMarginS MUST stay above that 240 s
+-- window so the first route push arrives after the task has ended on its own; the resetTask
+-- here stays as a belt-and-braces for pre-window missions.
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.mobileMissiles and mist) then

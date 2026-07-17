@@ -26,6 +26,7 @@
         },
         {
             "nameInUI": "Fire-then-scoot margin past a site's launch window (s)",
+            "descriptionInUI": "Keep above 240: the generated fire task ends itself 240 s after its launch deadline, and routing a battery before that leaves it pinned on the live fire task.",
             "mnemonic": "fireMarginS",
             "defaultValue": 300
         }

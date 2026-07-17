@@ -1530,7 +1530,19 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     scoot**: `MissileSiteGenerator` records each fire-tasked group's hold deadline on
     `MissionData.missile_fire_missions`, the emitter forwards them (`fireHoldGroups`/`fireHoldS`), and
     the plugin holds those groups until deadline + `fireMarginS` (300 s), then routes with a
-    `resetTask()` first. Re-fly owed (checklist S2 back to PARTIAL). The same flown test drove the
+    `resetTask()` first. **The 2026-07-17 turn-2 re-fly proved the fire half** (9/10 fire-tasked
+    batteries launched full volleys ~12–15 s after their forwarded deadlines — 18 SCUD + 45 Shahed —
+    holds released on schedule, zero tick errors, and COUGAR/LAMPREY fired *then* scooted) **but
+    found the residual pin**: a bare `FireAtPoint` has no round limit and no stop condition, so a
+    dry battery's task never ends, the launchers never leave their deployed fire state, and
+    `resetTask()` recovered only 2 of 9 fired batteries (all 4 never-fired groups drove fine; the
+    sitters' escorts crept 20–80 m into formation and stalled against the pinned launchers).
+    **Fixed same day:** the generator wraps the fire task too — `ControlledTask(FireAtPoint)` with
+    `stop_after_time(hold + MISSILE_FIRE_WINDOW_S)` (240 s; flown volleys complete within ~40 s of
+    the deadline) so the task ends through the normal completion path before the plugin's 300 s
+    margin routes the group; the window/margin coupling is pinned by
+    `test_fire_window_stays_inside_the_plugin_scoot_margin`. Re-fly owed (S2 stays PARTIAL).
+    The same flown test drove the
     **no-front support-orbit fix** (a front-less naval map marched red's A-50 200 NM AWAY from the
     fleet — `support_orbit_anchor` now skips the AI depth march with no FLOT; features doc §8-adjacent
     support-orbit section) and the **S-3B DEAD cleanup** (no ARM on the airframe; the SLAM "DEAD"

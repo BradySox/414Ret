@@ -2658,11 +2658,13 @@ class Settings:
         default=False,
         detail=(
             "Extends the shoot-and-scoot behaviour above to coastal anti-ship "
-            "missile sites (e.g. Silkworm batteries), so a shore battery is never "
-            "quite where your last recon photographed it -- the coastal-missile "
-            "hunt. Off by default because most campaigns want their coastal guns "
-            "fixed where they cover the water; a naval campaign (the Tanker War) "
-            "turns it on. Movement only, both sides, same guarantees as above."
+            "missile sites with genuinely mobile hardware, so a shore battery is "
+            "never quite where your last recon photographed it -- the "
+            "coastal-missile hunt. The vanilla Silkworm battery is a fixed "
+            "emplacement and is never routed (driving it produces no movement, "
+            "only a ground-AI storm that tanks the frame rate), so this only "
+            "matters for mod coastal sites whose launchers can actually drive. "
+            "Off by default; movement only, both sides, same guarantees as above."
         ),
     )
     mission_briefing_popup: bool = boolean_option(

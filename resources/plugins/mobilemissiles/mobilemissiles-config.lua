@@ -122,7 +122,13 @@ end
 
 -- One site: on a cadence, scoot every alive group to a fresh point around the site's
 -- campaign-map centre (the anchor -- so the site wanders its area, it never migrates).
-local function startSite(site)
+-- startDelay staggers this site's loop relative to the others: with every site armed at
+-- the same moment, all of them used to route in the SAME frame every INTERVAL -- at 39
+-- sites (2026-07-17 Scenic Route fly) that synchronized pathing spike pegged the sim
+-- thread (continuous ANTIFREEZE, single-digit FPS). Spreading the first ticks across
+-- the interval keeps at most one site's route push per slice; each site still re-routes
+-- every INTERVAL thereafter.
+local function startSite(site, startDelay)
     local cx, cy = num(site.x), num(site.y)
     local holds = fireHoldsOf(site)
     local function tick()
@@ -156,14 +162,16 @@ local function startSite(site)
         end
         return result
     end
-    timer.scheduleFunction(guarded, {}, timer.getTime() + GRACE)
+    timer.scheduleFunction(guarded, {}, timer.getTime() + GRACE + (startDelay or 0))
 end
 
 local ok, err = pcall(function()
     local count = 0
+    local total = (type(data.sites) == "table") and #data.sites or 0
+    local stagger = total > 0 and (INTERVAL / total) or 0
     if type(data.sites) == "table" then
-        for _, site in ipairs(data.sites) do
-            startSite(site)
+        for i, site in ipairs(data.sites) do
+            startSite(site, (i - 1) * stagger)
             count = count + 1
         end
     end

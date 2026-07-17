@@ -41,6 +41,15 @@ MOBILE_MISSILE_CATEGORY = "missile"
 #: something that moves.
 COASTAL_DEFENSE_CATEGORY = "coastal"
 
+#: DCS unit types that physically cannot drive. The vanilla Silkworm battery
+#: (HY-2 launcher + its search radar) is a fixed emplacement -- routing it
+#: produces no movement, only a per-frame "has request to level but
+#: 'GT.maxDeviationRoll' are not set!" ground-AI storm (~15k log events in the
+#: first scoot-tick minute of the 2026-07-17 Scenic Route fly, ANTIFREEZE for
+#: the whole mission). A group containing any of these is never emitted;
+#: mod coastal sites with genuinely mobile launchers still scoot.
+IMMOBILE_UNIT_IDS = frozenset({"hy_launcher", "Silkworm_SR"})
+
 
 def populate_mobile_missiles_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
@@ -102,16 +111,27 @@ def populate_mobile_missiles_lua(
 
 def _mobile_group_names(tgo: Any) -> list[str]:
     """The TGO's groups that contain at least one *alive vehicle* -- the drivable metal.
-    A statics-only group (or a fully dead one) has nothing to route and is skipped."""
+    A statics-only group (or a fully dead one) has nothing to route and is skipped, and
+    so is any group carrying an IMMOBILE_UNIT_IDS unit -- mist.goRoute routes every
+    member of a group, so one undrivable emplacement in it turns the whole route push
+    into ground-AI leveling spam."""
     names: list[str] = []
     for group in getattr(tgo, "groups", []):
         name = getattr(group, "group_name", None)
         if not name:
             continue
         units = getattr(group, "units", [])
-        if any(
-            getattr(u, "is_vehicle", False) and getattr(u, "alive", False)
+        alive_vehicles = [
+            u
             for u in units
+            if getattr(u, "is_vehicle", False) and getattr(u, "alive", False)
+        ]
+        if not alive_vehicles:
+            continue
+        if any(
+            getattr(getattr(u, "type", None), "id", None) in IMMOBILE_UNIT_IDS
+            for u in alive_vehicles
         ):
-            names.append(name)
+            continue
+        names.append(name)
     return names

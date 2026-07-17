@@ -190,3 +190,34 @@ def test_group_without_fire_mission_never_gets_a_task_reset() -> None:
     assert {r["group"] for r in _routes(h)} == {"SCUD-A"}
     assert h.records("controllerResets") == []
     h.assert_no_lua_errors()
+
+
+def test_site_loops_are_staggered_across_the_interval() -> None:
+    """39 synchronized sites routing in the same frame pegged the sim thread
+    (2026-07-17 Scenic Route fly: continuous ANTIFREEZE, single-digit FPS).
+    Each site's loop now starts grace + (i-1) * interval/N in, so route pushes
+    spread across the interval instead of landing together."""
+    h = _harness_with_mist()
+    h.add_group(_ground_group("SITE-1"))
+    h.add_group(_ground_group("SITE-2"))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"mobilemissiles": {"startGraceS": 5, "scootIntervalS": 100}},
+            "mobileMissiles": {
+                "sites": [
+                    {"groups": ["SITE-1"], "x": "0.0", "y": "0.0"},
+                    {"groups": ["SITE-2"], "x": "0.0", "y": "0.0"},
+                ]
+            },
+        }
+    )
+    h.load_plugin_script(PLUGIN)
+
+    # First slice: only site 1 (grace 5); site 2 waits its 50 s stagger slot.
+    h.advance_to(6)
+    assert {r["group"] for r in _routes(h)} == {"SITE-1"}
+
+    # Site 2's slot (grace + interval/2 = 55).
+    h.advance_to(56)
+    assert {r["group"] for r in _routes(h)} == {"SITE-1", "SITE-2"}
+    h.assert_no_lua_errors()

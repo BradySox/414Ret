@@ -13,6 +13,7 @@ import datetime
 from types import SimpleNamespace
 from typing import Any, Optional
 
+from game.ato.flightwaypoint import GROUND_MARKED_WAYPOINTS
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.kneeboard import FlightPlanBuilder
 
@@ -46,6 +47,7 @@ def _wp(
         fuel_planned=plan,
         min_fuel=min_fuel,
         waypoint_type=wtype,
+        marks_ground_for_player=wtype in GROUND_MARKED_WAYPOINTS,
     )
 
 

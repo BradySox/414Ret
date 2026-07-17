@@ -89,10 +89,10 @@ class PydcsWaypointBuilder:
             # It seems we need to leave waypoint.type exactly as it is even
             # though it's set to "Turning Point". If I set this to "Fly Over
             # Point" and then save the mission in the ME DCS resets it.
-            if self.flight.client_count > 0:
-                # Set Altitute to 0 AGL for player flights so that they can slave target pods or weapons to the waypoint
-                waypoint.alt = 0
-                waypoint.alt_type = "RADIO"
+        if self.flight.client_count > 0 and self.waypoint.marks_ground_for_player:
+            # Set Altitute to 0 AGL for player flights so that they can slave target pods or weapons to the waypoint
+            waypoint.alt = 0
+            waypoint.alt_type = "RADIO"
 
         self._assign_waypoint_tot(waypoint)
         self.add_tasks(waypoint)

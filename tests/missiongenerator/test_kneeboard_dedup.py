@@ -30,6 +30,7 @@ def _waypoint() -> Any:
         fuel_planned=7500.0,
         min_fuel=5000.0,
         waypoint_type=FlightWaypointType.NAV,
+        marks_ground_for_player=False,
     )
 
 

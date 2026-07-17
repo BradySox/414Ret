@@ -1,0 +1,46 @@
+"""The CAS FLOT boundaries are planned at the flight's combat altitude because for the
+AI the waypoint *is* the track to fly. A client's steerpoint there has to sit on the deck
+instead, or the diamond floats at the combat altitude (20,000 ft + scatter, RADIO/AGL)
+over the target area and there is nothing under it to acquire or slave a pod to.
+"""
+
+from dcs import Point
+from dcs.terrain import Caucasus
+
+from game.ato.flightwaypoint import FlightWaypoint
+from game.ato.flightwaypointtype import FlightWaypointType
+from game.utils import feet
+
+
+def _wp(waypoint_type: FlightWaypointType, flyover: bool = False) -> FlightWaypoint:
+    wp = FlightWaypoint(
+        "WP",
+        waypoint_type,
+        Point(0, 0, Caucasus()),
+        feet(22000),
+        "RADIO",
+    )
+    wp.flyover = flyover
+    return wp
+
+
+def test_cas_waypoint_marks_ground_for_player() -> None:
+    assert _wp(FlightWaypointType.CAS).marks_ground_for_player
+
+
+def test_flyover_waypoint_still_marks_ground_for_player() -> None:
+    # Armed recon / TARPS already relied on this in the .miz; don't regress it.
+    assert _wp(
+        FlightWaypointType.TARGET_GROUP_LOC, flyover=True
+    ).marks_ground_for_player
+
+
+def test_ordinary_waypoint_does_not_mark_ground() -> None:
+    # A nav waypoint's altitude is a real instruction, not a ground mark.
+    assert not _wp(FlightWaypointType.NAV).marks_ground_for_player
+
+
+def test_cas_ingress_is_not_ground_marked() -> None:
+    # The CAS *ingress* carries the AI's EngageTargetsInZone task and is flown at
+    # altitude; only the FLOT boundaries themselves are ground marks.
+    assert not _wp(FlightWaypointType.INGRESS_CAS).marks_ground_for_player

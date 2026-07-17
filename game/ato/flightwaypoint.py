@@ -16,6 +16,13 @@ if TYPE_CHECKING:
 
 AltitudeReference = Literal["BARO", "RADIO"]
 
+# Waypoint types that mark a place on the ground for a human pilot rather than a height
+# to fly. The CAS track's FLOT boundaries are planned at the flight's combat altitude
+# because for the AI the waypoint *is* the track, but a client's steerpoint there wants
+# to sit on the deck so a TGP or weapon can be slaved to it -- at combat altitude the
+# diamond floats thousands of feet above anything worth looking at.
+GROUND_MARKED_WAYPOINTS = (FlightWaypointType.CAS,)
+
 
 @dataclass
 class FlightWaypoint:
@@ -68,6 +75,17 @@ class FlightWaypoint:
     @property
     def y(self) -> float:
         return self.position.y
+
+    @property
+    def marks_ground_for_player(self) -> bool:
+        """Whether a client flight should see this waypoint on the deck.
+
+        Only meaningful for a flight with clients in it; the AI always flies the planned
+        altitude. Flyover waypoints (armed recon, TARPS) already had this treatment in
+        the .miz; CAS FLOT boundaries did not, and reached the cockpit at the combat
+        altitude the AI's track needs.
+        """
+        return self.flyover or self.waypoint_type in GROUND_MARKED_WAYPOINTS
 
     @property
     def display_name(self) -> str:

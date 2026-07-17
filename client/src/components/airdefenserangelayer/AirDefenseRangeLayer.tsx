@@ -119,7 +119,14 @@ const RangeCircles = (props: RangeCirclesProps) => {
             fill={false}
             opacity={0}
             weight={18}
-            className="air-defense-ring-hit"
+            // TGO-backed rings are clickable, so they also carry the shared
+            // .map-interactive pointer cursor (the §28 discoverability
+            // convention for invisible click targets).
+            className={
+              tgoId !== undefined
+                ? "air-defense-ring-hit map-interactive"
+                : "air-defense-ring-hit"
+            }
             eventHandlers={handlers}
           >
             <Tooltip sticky className="tooltip-delayed">

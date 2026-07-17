@@ -296,8 +296,7 @@ class TheaterState(WorldState["TheaterState"]):
             if not bp.blocking_capture or cp.is_fleet
         ]
 
-        aewc_targets = [cp for cp in finder.friendly_control_points() if cp.is_carrier]
-        aewc_targets.append(finder.farthest_friendly_control_point())
+        aewc_targets = _aewc_targets(finder)
 
         # 414th Combat SAR is no longer an auto-fragged standing orbit (2026-07-06
         # rework -- the orbiting helo never reliably flew the pickup, checklist
@@ -416,3 +415,26 @@ class TheaterState(WorldState["TheaterState"]):
                 ordered_capturable_points[0] if ordered_capturable_points else None
             ),
         )
+
+
+def _aewc_targets(finder: ObjectiveFinder) -> list[MissionTarget]:
+    """One AEW&C target per friendly carrier, plus one land anchor.
+
+    With an active front the land anchor is the CP farthest from threats (the
+    stock rear-safe pick -- the support-orbit geometry then places the orbit
+    relative to the FLOT regardless of the target). With NO front the orbit
+    deliberately HOLDS at its target (there is no "behind the FLOT" to march
+    to), so the rear pick parks the AWACS out of the war entirely -- the flown
+    red A-50 orbited its rearmost home base 424 NM from the enemy fleet
+    (2026-07-17 Scenic Route Merged; third campaign showing it). On a
+    front-less theater the anchor is instead the friendly CP NEAREST the
+    enemy: where the fight actually is.
+    """
+    targets: list[MissionTarget] = [
+        cp for cp in finder.friendly_control_points() if cp.is_carrier
+    ]
+    if any(True for _ in finder.front_lines()):
+        targets.append(finder.farthest_friendly_control_point())
+    else:
+        targets.append(finder.closest_friendly_control_point())
+    return targets

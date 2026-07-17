@@ -891,7 +891,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the pilot in `record_pow_captures`). **Deliberately no death clock** — the roll is the clock.
     Surfaced on the SITREP band ("MIA: … — evading near … (N turns down)") + the squadron roster; the
     gate covers only *creation* of MIA entries so a mid-campaign toggle never strands an evader.
-    Checklist G29. **Pilot recovery surge LANDED 2026-07-17** (the flown Noisy Cricket finding —
+    Checklist G29. **Pilot recovery surge LANDED 2026-07-17** (the flown Scenic Route Merged finding —
     "after 1.4 h the rescue helos are just getting to the pilots": both on-demand paths fired live
     (3 parked Khasab UH-60s launched, the clone flew) but survivors sat 115–370 km from the rescue
     sources, so nothing arrived before mission end; same-mission rescue cannot beat helo transit):
@@ -1050,7 +1050,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`; features doc §29,
     checklist K2.)
 30. **Dedicated kneeboard cover page** — RETIRED (2026-07-13, the kneeboard back-to-upstream rework;
-    user markup pass on a flown Noisy Cricket deck struck the whole page). `CoverPage`,
+    user markup pass on a flown Scenic Route Merged deck struck the whole page). `CoverPage`,
     `_build_cover_page` and the CAMPAIGN PHASE/ROE band it carried are deleted; the deck opens straight
     on the stock Mission Info page. The SITREP (§29) moved back to the Mission Info page bottom; the
     flight index (§27) is a standalone conditional page again; the phase/ROE keep their non-kneeboard

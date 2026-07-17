@@ -316,7 +316,7 @@ No NEW game required (plugin/emitter/turn-model only; old saves get `downed_pilo
 
 ## Pilot recovery surge (2026-07-17 squadron call — "drop everything")
 
-**The finding (flown Noisy Cricket, Tacview `Tacview-20260717-172716`):** the on-demand
+**The finding (flown Scenic Route Merged, Tacview `Tacview-20260717-172716`):** the on-demand
 machinery works — 3 parked Khasab UH-60s started in place and flew toward the right
 survivors, the clone fallback launched too — and it still rescued nobody, because the
 survivors sat 115–370 km from every rescue source. The closest helo ended the mission

@@ -194,7 +194,7 @@ def test_group_without_fire_mission_never_gets_a_task_reset() -> None:
 
 def test_stuck_group_is_given_up_after_dry_pushes() -> None:
     """A group whose route pushes produce no movement (the fired CH_Shahed136
-    post-salvo pin, 2026-07-17 Noisy Cricket fly) is dropped from the loop after
+    post-salvo pin, 2026-07-17 Scenic Route Merged fly) is dropped from the loop after
     GIVE_UP_PUSHES consecutive dry pushes instead of being hammered forever."""
     h = _harness_with_mist()
     h.add_group(_ground_group("PINNED"))

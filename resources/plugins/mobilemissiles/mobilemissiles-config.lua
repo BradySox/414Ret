@@ -29,7 +29,7 @@
 -- here stays as a belt-and-braces for pre-window missions.
 --
 -- GIVE-UP: a group whose consecutive route pushes produce essentially no movement is
--- dropped from the loop (2026-07-17 Noisy Cricket fly: all 8 fired CH_Shahed136 sites
+-- dropped from the loop (2026-07-17 Scenic Route Merged fly: all 8 fired CH_Shahed136 sites
 -- stayed pinned post-salvo -- a mod launcher state DCS will not drive out of, while the
 -- never-fired ones drove fine -- and each drew 6 more futile pushes/hour). Two dry
 -- pushes and the group is left alone; real movement resets the count.

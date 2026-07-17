@@ -850,7 +850,7 @@ folding machinery (`compact_kneeboard`, `_compact_kneeboard_pages`, the `CombatI
 the fuel-ladder backfill) was the fork's biggest source of `kneeboard.py` churn against upstream and
 the most fragile part of the deck. It is **deleted**.
 
-**Back-to-upstream deck rework (2026-07-13).** A user markup pass on a flown Noisy Cricket deck went
+**Back-to-upstream deck rework (2026-07-13).** A user markup pass on a flown Scenic Route Merged deck went
 further: back to **upstream's page set**, with the 414th info the markup kept folded into those
 pages. The cover page (§30) and Brief Sheet + Comms & Brevity card (§31) are deleted; the per-flight
 deck is now upstream's **Mission Info → Support Info → Notes → task page** plus the setting-gated
@@ -1128,6 +1128,13 @@ which still guarantees ≥ buffer outside the enemy ring. Also fixed in the same
 *inside* the threat zone had its `toward_enemy` inverted (heading-to-closest-boundary points OUT
 of the zone from inside), so the clearance push marched it deeper in — now flipped. New tests in
 `tests/test_support_orbit.py` (no-front AI hold, threat floor, inside-zone escape).
+**Second half found 2026-07-17 (the flown Scenic Route Merged A-50, 424 NM out):** with the
+march gone the orbit correctly *holds at its anchor* — but the anchor is the AEWC package
+**target**, and `theaterstate.aewc_targets` picked `farthest_friendly_control_point()` (the
+rearmost field, sane only when a front exists for the geometry to work against). On a
+front-less theater the non-carrier AEWC target is now `closest_friendly_control_point()` —
+the friendly field nearest the enemy — so a land-based AWACS covers the actual fight;
+fronted campaigns are byte-identical (the farthest pick stands).
 
 **Carrier/fleet exception (2026-06-28).** Front-anchoring a support orbit makes sense for a
 land-based AWACS/tanker, but it flung *carrier* AEW&C (E-2C) up to the land FLOT — covering the
@@ -2342,7 +2349,7 @@ The whole point of a rescue is to save the pilot, so the loop closes in the camp
 | Airframes | rescuer **CH-47Fbl1** (+ AI `CH-47D` fallback) plus utility-helo rescuers **UH-60A/L, UH-1H, CH-53E, Mi-8** (so non-Chinook factions still field CSAR), and King **C-130J-30** (the only C-130) carry `Combat SAR` in `resources/units/aircraft/*.yaml`; door-gun loadout in `resources/customized_payloads/CH-47Fbl1.lua` (`Retribution Combat SAR`). EW de-conflict: `luagenerator._ew_excluded_c130j_groups` (per-group deny-list) |
 | Flight plan | `game/ato/flightplans/combatsar.py` (forward FLOT hold) — a **player-planned** COMBAT_SAR flight only; the auto-fragged orbit is retired. A **pilot-recovery-surge** package's plan anchors on its `PilotRecoveryZone` target instead of the front (same builder — the hold lands 10 NM friendly-side of the *evader*) |
 | Planning | **Player-plannable** off the FLOT (`game/theater/frontline.py` `mission_types` → COMBAT_SAR/SCAR). The standing-orbit auto-frag (`PlanCombatSar`/`PlanCombatSarSupport`/`combat_sar_targets`) was **deleted** in the 2026-07-06 on-demand rework |
-| Pilot recovery surge | `game/fourteenth/csar_surge.py` (`plan_pilot_recovery_surge`, hooked in `Coalition.plan_missions` BEFORE the commander — "drop everything"): the turn after a pilot goes MIA, ONE coordinated package is fragged at a `PilotRecoveryZone` (`game/theater/missiontarget.py`) centred on the evaders — required Jolly (1-ship, `preferred_type` the biggest CSAR helo squadron) + optional second Jolly (2+ evaders) / King C-130 / 2-ship Sandy (SCAR) / A2A escort — via the engine's own `PackageFulfiller` (ASAP, `ignore_range=True`, `purchase_multiplier=0`). AI COMBAT_SAR flights **air-start** (the existing `PackageBuilder` rule), so the op opens the mission on station; the package helo suppresses the on-demand clone as usual. **Gate (2026-07-17 squadron call, off the flown "1.4 h transit" Noisy Cricket finding):** once per downed pilot — `DownedPilot.surge_turn` is stamped when the op plans (same-turn re-plans re-plan it; a later turn never re-surges; a failed plan doesn't stamp, so a helo bought later still surges). Gated `combat_sar_surge` (default ON, `enabled_when=combat_sar_persistent_pilots`; the CSAR settings live in the new Campaign Management → "Combat search & rescue" section). Tests `tests/fourteenth/test_csar_surge.py`; checklist G31 |
+| Pilot recovery surge | `game/fourteenth/csar_surge.py` (`plan_pilot_recovery_surge`, hooked in `Coalition.plan_missions` BEFORE the commander — "drop everything"): the turn after a pilot goes MIA, ONE coordinated package is fragged at a `PilotRecoveryZone` (`game/theater/missiontarget.py`) centred on the evaders — required Jolly (1-ship, `preferred_type` the biggest CSAR helo squadron) + optional second Jolly (2+ evaders) / King C-130 / 2-ship Sandy (SCAR) / A2A escort — via the engine's own `PackageFulfiller` (ASAP, `ignore_range=True`, `purchase_multiplier=0`). AI COMBAT_SAR flights **air-start** (the existing `PackageBuilder` rule), so the op opens the mission on station; the package helo suppresses the on-demand clone as usual. **Gate (2026-07-17 squadron call, off the flown "1.4 h transit" Scenic Route Merged finding):** once per downed pilot — `DownedPilot.surge_turn` is stamped when the op plans (same-turn re-plans re-plan it; a later turn never re-surges; a failed plan doesn't stamp, so a helo bought later still surges). Gated `combat_sar_surge` (default ON, `enabled_when=combat_sar_persistent_pilots`; the CSAR settings live in the new Campaign Management → "Combat search & rescue" section). Tests `tests/fourteenth/test_csar_surge.py`; checklist G31 |
 | On-demand rescue | **Parked-first, clone-fallback.** `aircraftgenerator.py` — `_spawn_unused_for` collects BLUE CSAR-capable **parked untasked helos** (`mission_data.parked_rescue_helos`, real + in the `UnitMap` → tracked); `spawn_combat_sar_templates` folds them into `CombatSarTemplates` alongside a cold clone template (`create_combat_sar_template` in `flightgroupspawner.py`, the fallback). Plugin `commandeerParkedHelo` + `StartUncontrolled` launches a parked helo; falls back to SPAWN-cloning `heloTemplate`. Tests: `tests/missiongenerator/test_combat_sar_templates.py` |
 | Setting | `game/settings/settings.py` — `auto_combat_sar` (now drives the on-demand spawn, not an orbit) + `combat_sar_persistent_pilots` (MIA persistence, default ON) |
 | Persistent evaders | `game/fourteenth/downed_pilots.py` (`DownedPilot` ledger + `record_downed_pilots` + the depth-weighted `resolve_downed_pilots` + SITREP lines), `game/squadrons/pilot.py` (`PilotStatus.MIA`), `game/game.py` (`downed_pilots` + the `finish_turn` hook), `game/sitrep.py` (`pilots_mia`); plugin `syncSurvivorState` + `persistentSurvivors` respawn. Tests: `tests/fourteenth/test_downed_pilots.py`, `tests/lua/test_combatsar_ledger.py` |
@@ -2924,7 +2931,7 @@ consolidated onto the §30 cover page in June, and returned to the Mission Info 
 
 ## §30 — Dedicated kneeboard cover page — RETIRED (2026-07-13)
 
-**Retired in the back-to-upstream kneeboard rework** (user markup pass on a flown Noisy Cricket deck:
+**Retired in the back-to-upstream kneeboard rework** (user markup pass on a flown Scenic Route Merged deck:
 the whole cover page was struck). `CoverPage`, `_build_cover_page` and the campaign-phase/ROE band it
 carried are deleted; the deck opens straight on the stock Mission Info page like upstream. What the
 cover hosted went three ways:
@@ -2950,7 +2957,7 @@ stock page (the rework's rule: upstream's pages, our info folded in).
 
 ## §31 — One-page Brief Sheet + deck-wide colour scheme — RETIRED (2026-07-13)
 
-**Retired in the back-to-upstream kneeboard rework.** The user's markup pass on a flown Noisy Cricket
+**Retired in the back-to-upstream kneeboard rework.** The user's markup pass on a flown Scenic Route Merged
 deck struck the Brief Sheet's MISSION/ROUTE/GAME PLAN/BULLSEYE/FIELDS/WX/LASER rows (each duplicated a
 stock page) and the whole Comms & Brevity card except its code-words block; the page and the card are
 deleted (`BriefSheetPage`, `BriefSheetData`, `_build_brief_sheet_data`, `BrevityCard`, the route/
@@ -4553,7 +4560,7 @@ actually drive (the setting copy says so). Tests
 `test_immobile_silkworm_hardware_is_never_routed` +
 `test_site_loops_are_staggered_across_the_interval`.
 
-**The CH Shahed post-fire pin + the give-up rule (2026-07-17, the flown Noisy Cricket 39-site
+**The CH Shahed post-fire pin + the give-up rule (2026-07-17, the flown Scenic Route Merged 39-site
 Tacview).** The fire-window fix is **proven on vanilla hardware** — every Scud_B battery that fired
 then scooted (13/13, 546–3057 m, towed-AAA escorts included) — but all 8 fired `CH_Shahed136` sites
 stayed pinned post-salvo (23–172 m escort-creep) while the two never-fired Shahed sites drove

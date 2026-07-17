@@ -485,13 +485,22 @@ class FlightPlanBuilder:
         self.last_waypoint = self.target_points[-1].waypoint
 
     def add_waypoint_row(self, waypoint: NumberedWaypoint) -> None:
+        # Kneeboards are only generated for client flights (see
+        # client_flights_by_airframe), so a ground-marked waypoint is always zeroed in
+        # the .miz for this reader -- print what the cockpit will actually show rather
+        # than the AI track altitude the planner recorded.
+        alt = (
+            meters(0)
+            if waypoint.waypoint.marks_ground_for_player
+            else waypoint.waypoint.alt
+        )
         row = [
             str(waypoint.number),
             KneeboardPageWriter.wrap_line(
                 waypoint.waypoint.display_name,
                 FlightPlanBuilder.WAYPOINT_DESC_MAX_LEN,
             ),
-            self._format_alt(waypoint.waypoint.alt),
+            self._format_alt(alt),
             self._waypoint_distance(waypoint.waypoint),
             self._ground_speed(waypoint.waypoint),
             self._format_time(waypoint.waypoint.tot),

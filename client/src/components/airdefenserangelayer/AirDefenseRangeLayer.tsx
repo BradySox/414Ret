@@ -7,13 +7,20 @@ import {
   setHoveredEmitter,
 } from "../../api/mapSlice";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { LatLng } from "../../api/liberationApi";
+import {
+  LatLng,
+  useOpenNewTgoPackageDialogMutation,
+  useOpenTgoInfoDialogMutation,
+} from "../../api/liberationApi";
 import summarizeUnits from "../unitsummary/summarizeUnits";
 import { Fragment } from "react";
 import { Circle, CircleMarker, LayerGroup, Tooltip } from "react-leaflet";
 
 interface RangeCirclesProps {
   id: string;
+  // Set only for TGO-backed rings; carrier/LHA control-point rings have no TGO
+  // to open, so they omit it and keep hover-only behavior.
+  tgoId?: string;
   name: string;
   units: string[];
   position: LatLng;
@@ -61,10 +68,25 @@ const RangeCircles = (props: RangeCirclesProps) => {
     (state) => highlighted && selectHoveredEmitterSource(state) === "ring",
   );
 
-  const hover = {
+  const [openInfoDialog] = useOpenTgoInfoDialogMutation();
+  const [openNewPackageDialog] = useOpenNewTgoPackageDialogMutation();
+
+  // A TGO-backed ring mirrors the emitter icon's clicks, so you can reach a
+  // SAM site whose icon is buried under another marker: left-click opens its
+  // info dialog, right-click starts a new package against it (upstream PR
+  // #808). Carrier/LHA rings carry a control-point id, not a TGO id, so they
+  // stay hover-only.
+  const tgoId = props.tgoId;
+  const handlers = {
     mouseover: () =>
       dispatch(setHoveredEmitter({ id: props.id, source: "ring" })),
     mouseout: () => dispatch(setHoveredEmitter(null)),
+    ...(tgoId !== undefined
+      ? {
+          click: () => openInfoDialog({ tgoId: tgoId }),
+          contextmenu: () => openNewPackageDialog({ tgoId: tgoId }),
+        }
+      : {}),
   };
 
   return (
@@ -98,7 +120,7 @@ const RangeCircles = (props: RangeCirclesProps) => {
             opacity={0}
             weight={18}
             className="air-defense-ring-hit"
-            eventHandlers={hover}
+            eventHandlers={handlers}
           >
             <Tooltip sticky className="tooltip-delayed">
               <b>{props.name}</b>
@@ -150,6 +172,7 @@ export const AirDefenseRangeLayer = (props: AirDefenseRangeLayerProps) => {
         <RangeCircles
           key={tgo.id}
           id={tgo.id}
+          tgoId={tgo.id}
           name={tgo.name}
           units={tgo.units}
           position={tgo.position}

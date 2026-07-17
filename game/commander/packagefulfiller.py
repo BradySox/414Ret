@@ -155,6 +155,19 @@ class PackageFulfiller:
                 mission.location.name,
             )
             return
+        # §67 weather-aware planning: the auto-added recon bird stays home in
+        # rain/storm -- optical and IR alike photograph cloud deck, so the pass
+        # banks nothing. Same contract as a missing squadron: the optional
+        # flight is omitted, the package is never scrubbed. Player-planned
+        # recon flights are unaffected (this is only the automatic add-on).
+        from game.fourteenth.weather_planning import recon_suppressed
+
+        if recon_suppressed(self.coalition.game):
+            logging.debug(
+                "TARPS skipped for %s: rain/storm blinds the camera",
+                mission.location.name,
+            )
+            return
         primary = builder.package.primary_flight
         if primary is None or primary.flight_type not in (
             FlightType.STRIKE,

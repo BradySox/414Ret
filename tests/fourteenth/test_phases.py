@@ -283,13 +283,23 @@ def test_factories_and_phase_orderings_stay_in_sync() -> None:
 
 
 def _planner_state(coalition: Any) -> Any:
-    return SimpleNamespace(context=SimpleNamespace(coalition=coalition))
+    # The §52 A2 throttle gate reads context.settings/theater (and the
+    # coalition's ATO when a cap is active); mirror the real context shape.
+    game = coalition.game
+    return SimpleNamespace(
+        context=SimpleNamespace(
+            coalition=coalition,
+            settings=game.settings,
+            theater=game.theater,
+        )
+    )
 
 
 def _coalition(game: Any, blue: bool) -> Any:
     return SimpleNamespace(
         player=SimpleNamespace(is_blue=blue),
         game=game,
+        ato=SimpleNamespace(packages=[]),
     )
 
 

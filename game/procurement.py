@@ -8,6 +8,10 @@ from typing import Iterator, List, Optional, TYPE_CHECKING, Tuple
 from game.config import RUNWAY_REPAIR_COST
 from game.data.units import UnitClass
 from game.dcs.groundunittype import GroundUnitType
+from game.fourteenth.adaptive_procurement import (
+    adjusted_ground_share,
+    repair_air_defenses,
+)
 from game.theater import ControlPoint, MissionTarget, ParkingType, Player
 
 if TYPE_CHECKING:
@@ -89,14 +93,16 @@ class ProcurementAi:
         weighted_investment = aircraft_investment * air + armor_investment * ground
         if weighted_investment == 0:
             # Turn 0 or all units were destroyed.
-            return balance / 100.0
+            return adjusted_ground_share(self.game, self.is_player, balance / 100.0)
 
         # the more planes we have, the more ground units we want and vice versa
         ground_unit_share = aircraft_investment * air / weighted_investment
         if ground_unit_share > 1.0:
             raise ValueError
 
-        return ground_unit_share
+        # §68 adaptive procurement: the split reads the side's strategic
+        # posture/phase (no signal = unchanged).
+        return adjusted_ground_share(self.game, self.is_player, ground_unit_share)
 
     def spend_budget(self, budget: float) -> float:
         # Record how much each automated step spends so the Finances dialog can
@@ -107,6 +113,13 @@ class ProcurementAi:
             before = budget
             budget = self.repair_runways(budget)
             self.last_expenses["runways"] = before - budget
+            # §68: air-defense site repair rides the repairs automation (blue
+            # only auto-spends here when the player delegated repairs; red is
+            # always automated). Its own auto_repair_air_defenses gate decides
+            # whether anything actually happens.
+            before = budget
+            budget = repair_air_defenses(self.game, self.owned_points, budget)
+            self.last_expenses["air_defenses"] = before - budget
         if self.manage_front_line:
             armor_budget = budget * self.calculate_ground_unit_budget_share()
             budget -= armor_budget
@@ -152,6 +165,12 @@ class ProcurementAi:
         affordable_units = [u for u in of_class if u.price <= budget]
         if not affordable_units:
             return None
+        if getattr(self.game.settings, "adaptive_procurement", False):
+            # §68: weight the roll by price (the capability proxy the model
+            # has), so the commander fields its better hardware more often
+            # than its gun trucks while keeping variety.
+            weights = [max(u.price, 1) for u in affordable_units]
+            return random.choices(affordable_units, weights=weights, k=1)[0]
         return random.choice(affordable_units)
 
     def reinforce_front_line(self, budget: float) -> float:

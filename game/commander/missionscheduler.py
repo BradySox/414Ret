@@ -4,7 +4,7 @@ import logging
 import random
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Iterator, TYPE_CHECKING
+from typing import Iterator, Optional, TYPE_CHECKING
 
 from game.ato.flighttype import FlightType
 from game.ato.traveltime import TotEstimator
@@ -14,6 +14,41 @@ if TYPE_CHECKING:
     from game.coalition import Coalition
     from game.ato import Package
     from game.theater import ControlPoint
+
+
+def coordinated_strike_tot(
+    strike_tot: datetime,
+    earliest_tot: datetime,
+    provider_tots: list[datetime],
+    lead: timedelta,
+    duration: timedelta,
+) -> Optional[datetime]:
+    """The TOT placing a strike inside its SEAD window, or None to keep it.
+
+    The window opens ``lead`` after the LATEST covering SEAD/DEAD package's TOT
+    (every suppressor on station first) and lasts ``duration`` (push while the
+    suppression holds). A strike already inside the window keeps its TOT; one
+    outside is moved to the window opening -- delayed if it would have arrived
+    before its SEAD (the naked-strike case), pulled forward if the random
+    spread had left it long after the window closed. Never earlier than the
+    package can physically fly (``earliest_tot``); if even that is past the
+    window the TOT is kept unless keeping it would still put the strike ahead
+    of its SEAD.
+    """
+    if not provider_tots:
+        return None
+    window_start = max(provider_tots) + lead
+    window_end = window_start + duration
+    if window_start <= strike_tot <= window_end:
+        return None
+    desired = max(window_start, earliest_tot)
+    if desired > window_end and strike_tot >= window_start:
+        # Can't make the window, but at least the strike isn't ahead of its
+        # SEAD. Leave the spread schedule alone.
+        return None
+    if desired == strike_tot:
+        return None
+    return desired
 
 
 def staggered_recovery_deltas(
@@ -60,6 +95,25 @@ class MissionScheduler:
     #: boat). Five minutes keeps the pattern to roughly one package at a time
     #: without pushing TOTs far.
     CARRIER_RECOVERY_INTERVAL = timedelta(minutes=5)
+
+    #: §69 cross-package coordination: how long after the covering SEAD/DEAD
+    #: package's TOT the strike window opens (suppressors on station first) ...
+    SEAD_WINDOW_LEAD = timedelta(minutes=2)
+    #: ... and how long it stays open (push while the suppression holds; a
+    #: strike randomly spread far beyond this is pulled back into the window).
+    SEAD_WINDOW_DURATION = timedelta(minutes=8)
+
+    #: The strike-class package types that get timed into a SEAD window. Armed
+    #: Recon (a loitering sweep, not a push) and AIR ASSAULT (tied to the
+    #: ground war's timing) deliberately stay on the spread schedule.
+    COORDINATED_STRIKE_TYPES = frozenset(
+        {
+            FlightType.STRIKE,
+            FlightType.BAI,
+            FlightType.OCA_RUNWAY,
+            FlightType.OCA_AIRCRAFT,
+        }
+    )
 
     def __init__(self, coalition: Coalition, desired_mission_length: timedelta) -> None:
         self.coalition = coalition
@@ -179,6 +233,12 @@ class MissionScheduler:
                 # delayed until their takeoff time by AirConflictGenerator.
                 package.time_over_target = next(start_time) + tot
 
+        # §69: time strikes into their SEAD windows BEFORE the carrier stagger
+        # and the recovery-tanker ETAs, so both see the coordinated landings.
+        # (The stagger only ever delays, so it can nudge a strike deeper into
+        # -- never ahead of -- its window; best-effort by design.)
+        self._coordinate_sead_windows(now)
+
         # Space out same-boat recoveries BEFORE collecting the recovery-tanker
         # ETAs below, so the tankers are timed against the staggered landings.
         self._deconflict_carrier_recoveries(dca_types)
@@ -209,6 +269,71 @@ class MissionScheduler:
         ]:
             if carrier_etas[package.target]:
                 package.time_over_target = carrier_etas[package.target].pop(0)
+
+    def _coordinate_sead_windows(self, now: datetime) -> None:
+        """Cross-package SEAD-before-strike sequencing (§69).
+
+        Packages were timed independently: nothing stopped the random spread
+        from sending a strike into a defended target half an hour BEFORE the
+        SEAD package tasked against the SAM covering it. This pass finds, for
+        every movable strike-class package, the SEAD/DEAD packages whose TGO
+        target's threat ring covers the strike's target, and retimes the strike
+        into the window just behind the latest of them -- "SEAD window opens,
+        then the strikes push". Several strikes behind one SEAD mass into the
+        same window (the push), which is the point.
+
+        The §8 stagger discipline applies: only AI, non-ASAP packages move; a
+        package with a player flight is never rescheduled (but a player SEAD
+        still opens a window the AI strikes push behind -- providers are read-
+        only). Provider TOTs may themselves shift in the later carrier stagger;
+        that pass only delays, so a strike can land deeper into its window but
+        never back ahead of its SEAD.
+        """
+        if not getattr(self.coalition.game.settings, "sead_strike_coordination", False):
+            return
+        providers: list[tuple[Package, float]] = []
+        for package in self.coalition.ato.packages:
+            if package.primary_task not in (FlightType.SEAD, FlightType.DEAD):
+                continue
+            # SEAD/DEAD is planned against a SAM TGO; duck-typed so tests (and
+            # any future non-TGO tasking) degrade to "no window" not a crash.
+            threat_range = getattr(package.target, "max_threat_range", None)
+            if threat_range is None:
+                continue
+            ring_meters = threat_range().meters
+            if ring_meters <= 0:
+                continue
+            providers.append((package, ring_meters))
+        if not providers:
+            return
+        for package in self.coalition.ato.packages:
+            if package.primary_task not in self.COORDINATED_STRIKE_TYPES:
+                continue
+            if package.auto_asap or package.has_players:
+                continue
+            provider_tots = [
+                p.time_over_target
+                for p, ring in providers
+                if p.target.position.distance_to_point(package.target.position) <= ring
+            ]
+            if not provider_tots:
+                continue
+            new_tot = coordinated_strike_tot(
+                package.time_over_target,
+                TotEstimator(package).earliest_tot(now),
+                provider_tots,
+                self.SEAD_WINDOW_LEAD,
+                self.SEAD_WINDOW_DURATION,
+            )
+            if new_tot is not None:
+                logging.debug(
+                    "SEAD window: retimed %s vs %s from %s to %s",
+                    package.primary_task,
+                    getattr(package.target, "name", "target"),
+                    package.time_over_target,
+                    new_tot,
+                )
+                package.time_over_target = new_tot
 
     def _deconflict_carrier_recoveries(self, dca_types: set[FlightType]) -> None:
         """Stagger packages recovering to the same boat (the flown midair fix).

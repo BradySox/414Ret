@@ -494,6 +494,49 @@ FEATURES: tuple[Feature, ...] = (
         "Generated-mission archive",
         66,
     ),
+    Feature(
+        # §67 weather-aware planning: the theater commander reads game.conditions
+        # (game/fourteenth/weather_planning.py). Rain/storm suppresses the
+        # automatic TARPS/drone recon add-on (PackageFulfiller); a thunderstorm
+        # demotes the low-level visual-attack HTN methods (front-line CAS,
+        # battle-position BAI, convoy interdiction) to the offensive tail
+        # (PlanNextAction._offensive_order). Both coalitions -- same sky; clear
+        # weather is byte-identical. Night is deliberately out: no per-airframe
+        # night-capability data exists to gate on.
+        "weather_aware_planning",
+        "Weather-aware auto-planning",
+        67,
+        settings_fields=("weather_aware_planning",),
+    ),
+    Feature(
+        # §68 adaptive procurement (game/fourteenth/adaptive_procurement.py):
+        # the AI economy reads the war. The auto-spend ground share shifts with
+        # the side's strategic read (§55 red posture / §40 blue phase), ground
+        # buys are price-weighted instead of uniform random, and -- its own
+        # gate -- each side's commander repairs a couple of destroyed SAM/EWR
+        # units per turn at surviving sites (full price, degraded sites and
+        # radars first; C2/comms stay permanently dead), so a rolled-back IADS
+        # stops being a one-way ratchet.
+        "adaptive_procurement",
+        "Adaptive procurement (posture-coupled spending + SAM repair)",
+        68,
+        settings_fields=("adaptive_procurement", "auto_repair_air_defenses"),
+    ),
+    Feature(
+        # §69 cross-package coordination (MissionScheduler._coordinate_sead_windows):
+        # packages were timed independently, so a strike could arrive at a
+        # defended target long before the SEAD tasked against the SAM covering
+        # it. Movable AI strike/BAI/OCA packages whose target sits inside a
+        # threat ring a SEAD/DEAD package is servicing are retimed into the
+        # window just behind the latest covering suppressor -- SEAD opens, the
+        # strikes push, several packages massing behind one window. Player
+        # packages never move (a player SEAD still opens a window); the §8
+        # carrier stagger runs after and only delays.
+        "sead_strike_coordination",
+        "Cross-package SEAD-before-strike coordination",
+        69,
+        settings_fields=("sead_strike_coordination",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

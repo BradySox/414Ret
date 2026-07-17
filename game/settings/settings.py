@@ -289,6 +289,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "ownfor_planner_unpredictability",
                     "opfor_planner_unpredictability",
                     "c2_decapitation_effects",
+                    "weather_aware_planning",
+                    "sead_strike_coordination",
                     "red_intent",
                     "red_intent_per_front",
                     "red_intent_boldness",
@@ -410,6 +412,8 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
             (
                 "Commander economy",
                 [
+                    "adaptive_procurement",
+                    "auto_repair_air_defenses",
                     "auto_procurement_balance",
                     "frontline_reserves_factor",
                     "reserves_procurement_target",
@@ -1146,11 +1150,45 @@ class Settings:
             "sloppier: as the command network is decapitated, its offensive target "
             "selection gets progressively more unpredictable (the same lever as the "
             "unpredictability sliders above, scaled by how many command posts are "
-            "down), so bombing the enemy HQ is a strategic move, not just a strike "
+            "down), and its offensive tempo thins -- a decapitated HQ frags fewer "
+            "offensive packages per turn (never zero; the floor keeps some pressure "
+            "on). So bombing the enemy HQ is a strategic move, not just a strike "
             "checkbox. Reactive defensive tasking is never affected -- a headless "
             "enemy still defends itself, it just plans worse offense. Applies to "
             "whichever side loses its command posts; a campaign with no command "
             "centers is unaffected."
+        ),
+    )
+    weather_aware_planning: bool = boolean_option(
+        "Auto-planner reads the weather",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "The theater commander accounts for the sky when planning (both "
+            "sides). In rain or thunderstorms the automatic photo-recon add-on "
+            "stays home (cameras photograph cloud deck), and a thunderstorm "
+            "pushes low-level visual attack -- front-line CAS, battle-position "
+            "BAI, convoy interdiction -- to the back of the offensive plan so "
+            "weather-tolerant strikes claim the jets first. Clear skies change "
+            "nothing, and player-planned flights are never touched."
+        ),
+    )
+    sead_strike_coordination: bool = boolean_option(
+        "Strikes push behind their SEAD window",
+        page=CAMPAIGN_DOCTRINE_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Packages used to be timed independently, so a strike could arrive "
+            "at a defended target half an hour before the SEAD package tasked "
+            "against the SAM covering it. With this on, each side's AI "
+            "strike/BAI/OCA packages whose target sits inside a SAM threat ring "
+            "that a SEAD/DEAD package is servicing are retimed into the window "
+            "just behind it -- SEAD opens the corridor, then the strikes push, "
+            "several packages massing behind one suppressor. Player packages "
+            "are never rescheduled, but a player-flown SEAD still opens a "
+            "window the AI pushes behind."
         ),
     )
     red_intent: bool = boolean_option(
@@ -2079,6 +2117,39 @@ class Settings:
         default=10,
         detail=(
             "The number of units that will be bought as reserves for applicable control points."
+        ),
+    )
+    adaptive_procurement: bool = boolean_option(
+        "AI procurement reads the strategic picture",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        HQ_AUTOMATION_SECTION,
+        default=True,
+        detail=(
+            "The AI commander's auto-spend follows its side's strategic read "
+            "instead of a fixed split: a surging enemy shifts budget toward the "
+            "armor its offensive spends, a consolidating one husbands ground and "
+            "rebuilds its air arm, and your own commander leans air-first during "
+            "the rollback air war and ground-first in the offensive phase "
+            "(rides Red plays with intent / campaign phases -- without those "
+            "signals the split is unchanged). Also weights ground-unit buys "
+            "toward the side's more capable hardware instead of picking "
+            "uniformly at random."
+        ),
+    )
+    auto_repair_air_defenses: bool = boolean_option(
+        "AI repairs SAM & EWR sites",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        HQ_AUTOMATION_SECTION,
+        default=False,
+        detail=(
+            "Each side's AI commander spends budget repairing a couple of "
+            "destroyed SAM/EWR units per turn at surviving sites (full unit "
+            "price -- the same repair the base card offers you), degraded sites "
+            "and radars first. The enemy air-defense belt regenerates unless you "
+            "keep pressure on it, so a rolled-back IADS stops being a one-way "
+            "ratchet. Command centers and comms nodes are never repaired -- "
+            "decapitation stays permanent. For your own side this only runs "
+            "when runway repairs are automated."
         ),
     )
 

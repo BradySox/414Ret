@@ -33,6 +33,7 @@ from game.commander.packagefulfiller import PackageFulfiller
 from game.commander.tasks.primitive.armedrecon import PlanArmedRecon
 from game.theater.controlpoint import Fob
 from game.utils import Distance, meters, nautical_miles
+from game.weather.weather import Thunderstorm
 
 
 def test_armed_recon_proposes_a_four_ship_sweep_plus_escorts() -> None:
@@ -51,11 +52,24 @@ def test_armed_recon_proposes_a_four_ship_sweep_plus_escorts() -> None:
     assert FlightType.ESCORT in escort_tasks
 
 
-def _fulfiller(auto_add: bool, can_plan_tarps: bool) -> PackageFulfiller:
+def _fulfiller(
+    auto_add: bool, can_plan_tarps: bool, stormy: bool = False
+) -> PackageFulfiller:
     ff = PackageFulfiller.__new__(PackageFulfiller)
     ff.auto_add_tarps_recon = auto_add
     ff.air_wing_can_plan = lambda mission_type: (  # type: ignore[method-assign]
         can_plan_tarps and mission_type is FlightType.TARPS
+    )
+    # The §67 weather gate reads self.coalition.game; give the fake a sky.
+    weather = Thunderstorm.__new__(Thunderstorm) if stormy else None
+    ff.coalition = cast(
+        Any,
+        SimpleNamespace(
+            game=SimpleNamespace(
+                settings=SimpleNamespace(weather_aware_planning=True),
+                conditions=SimpleNamespace(weather=weather),
+            )
+        ),
     )
     return ff
 
@@ -112,6 +126,22 @@ def test_recon_drone_skipped_when_no_tarps_squadron() -> None:
     )
 
     assert planned == []  # no drone/TARPS bird available -> package flies as-is
+
+
+def test_recon_drone_stays_home_in_a_storm() -> None:
+    # §67 weather-aware planning: rain/storm suppresses the automatic recon
+    # add-on (the camera photographs cloud deck). Same non-scrubbing contract
+    # as a missing squadron.
+    planned: list[Any] = []
+    ff = _fulfiller(auto_add=True, can_plan_tarps=True, stormy=True)
+    builder = _armed_recon_builder(planned)
+    mission = SimpleNamespace(location=SimpleNamespace(name="Mosul"))
+
+    ff._maybe_plan_tarps_recon(
+        cast(Any, mission), cast(Any, builder), ignore_range=False
+    )
+
+    assert planned == []
 
 
 _TERRAIN = Caucasus()

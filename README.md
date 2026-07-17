@@ -76,6 +76,13 @@ Upstream hands you a map that already knows everything. Here you have to go look
   the turn before — fronts roll in and clear over several turns, instead of a thunderstorm
   one sortie and clear skies the next. (With day-and-night missions; a day-only campaign
   keeps the old rotation.)
+- **The planner reads that weather.** In rain or storms the automatic photo-recon add-ons
+  stay home (cameras photograph cloud deck), and a thunderstorm pushes low-level CAS and
+  BAI to the back of the plan so the all-weather strikes claim the jets first.
+- **SEAD opens the window, then the strikes push.** Strike packages headed into a defended
+  area are timed just behind the SEAD servicing that SAM — several packages massing behind
+  one suppressor — instead of wandering in half an hour early. Fly the SEAD yourself and
+  the AI push forms up behind *you*.
 - Plus: threat-weighted BARCAP waves, front-anchored support orbits, weighted (not
   coin-flip) off-mission combat, and per-side auto-planner unpredictability.
 
@@ -123,7 +130,13 @@ Upstream hands you a map that already knows everything. Here you have to go look
   **consolidating** under pressure. A winning enemy watching its SAM belt come apart digs in
   anyway; one that catches your fighters spent lunges through the gap.
 - **Bombing the enemy HQ matters** — knock out its command posts and its planner gets
-  measurably sloppier at picking targets. Its reactive defenses never suffer.
+  measurably sloppier at picking targets **and its offensive tempo thins** (a decapitated
+  HQ frags fewer strike packages — never zero). Its reactive defenses never suffer.
+- **The enemy economy follows its intent.** A surging enemy buys the armor its offensive
+  spends; one consolidating under pressure husbands ground and rebuilds its air arm — and
+  its buys favor its better hardware, not a coin flip over the catalog. Turn on **SAM site
+  repair** and the belt regenerates a couple of units a turn unless you keep pressure on
+  it — a rolled-back IADS stops being a one-way ratchet (command posts stay dead).
 - **Campaign phases** — every campaign knows what phase of the air war it's in (Air
   Superiority → Interdiction → Offensive), inferred from live IADS, enemy air and front
   movement. A map ribbon shows the phase *and why*, and the planner leans its tasking to match.

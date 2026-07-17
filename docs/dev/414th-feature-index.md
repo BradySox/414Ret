@@ -78,6 +78,9 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §64 | Carrier deck spawn policy (six-pack last resort + MP slot timing) | — | `carrier_deck_policy` |
 | §65 | Curated carrier comms (CV Operations Data cleanup) | — | — |
 | §66 | Generated-mission archive | — | — |
+| §67 | Weather-aware auto-planning | — | `weather_aware_planning` |
+| §68 | Adaptive procurement (posture-coupled spending + SAM repair) | — | `adaptive_procurement`, `auto_repair_air_defenses` |
+| §69 | Cross-package SEAD-before-strike coordination | — | `sead_strike_coordination` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

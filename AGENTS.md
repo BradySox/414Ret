@@ -1702,8 +1702,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     own C2 health) but only a side with an HTN auto-planner is affected. Gated `c2_decapitation_effects`
     (Air Doctrine, default **OFF**, **preseeded ON in Red Tide** 2026-07-07 — its advanced-IADS build has a
     real 9-node destroyable red command network for §52 to key on); intact network / C2-less campaign =
-    byte-identical no-op (the deterministic planner + its tests preserved). **Phase A2 (a floored red
-    offensive package-count throttle) is deferred.** Tests `tests/fourteenth/test_c2_decapitation.py` +
+    byte-identical no-op (the deterministic planner + its tests preserved). **Phase A2 LANDED
+    2026-07-17 — the floored offensive package-count throttle**: `offensive_package_cap` shrinks a
+    decapitated side's offensive package ceiling linearly with its dead-CC fraction
+    (`FULL_OFFENSIVE_PACKAGE_CAP` 12 → `MIN_OFFENSIVE_PACKAGES` floor 2, never zero), enforced by
+    `PlanNextAction._offensive_tempo_exhausted` — once the ATO holds that many unambiguous-offensive
+    packages (Strike/BAI/OCA/anti-ship/air assault/armed recon; CAS + SEAD/DEAD excluded, both planned
+    defensively too) the HTN root stops offering the offensive middle (trimming, not reordering; the
+    reactive prefix + recovery tail are never throttled). Tests `tests/fourteenth/test_c2_decapitation.py` +
     `tests/test_planner_unpredictability.py` + `tests/fourteenth/test_campaign_plugin_preseed.py`; features
     doc §52, checklist B6 — needs an in-game pass.
 53. **War economy** — a per-base **materiel supply** economy on top of the money budget, closing the
@@ -2145,6 +2151,56 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     never deleted). No setting — a bounded ring buffer, and a toggle you can forget defeats
     the point (§42/§43 precedent). Tests `tests/fourteenth/test_mission_archive.py`; features
     doc §66 — no in-game pass needed (a file copy, no DCS runtime).
+67. **Weather-aware auto-planning** — the theater commander reads the sky (§47 gave the
+    campaign an evolving weather system; the planner never consulted it — zero references to
+    weather/night anywhere in `game/commander/`). `game/fourteenth/weather_planning.py` +
+    two couplings, both coalitions (same sky): **rain/storm suppresses the automatic TARPS/
+    drone recon add-on** (`recon_suppressed` gates `PackageFulfiller._maybe_plan_tarps_recon`
+    — cameras photograph cloud deck; same never-scrubs contract as a missing squadron;
+    player-planned recon untouched), and **a thunderstorm demotes low-level visual attack**
+    (`demote_weather_hostile_methods` moves `PlanFrontLineCas`/`AttackBattlePositions`/
+    `InterdictReinforcements` to the offensive tail in `PlanNextAction._offensive_order`,
+    AFTER the §40/§55 emphasis — soft demotion, nothing removed; rain does not demote).
+    **Night is deliberately absent** — no per-airframe night-capability data exists, and
+    demoting night CAS would ground an A-10C II alongside an A-1. Gated
+    `weather_aware_planning` (Air Doctrine, default **ON** — clear skies are byte-identical).
+    Tests `tests/fourteenth/test_weather_planning.py` + the storm case in
+    `tests/test_armed_recon_planning.py`; features doc §67, checklist B19 — needs an
+    in-game pass.
+68. **Adaptive procurement (posture-coupled spending + SAM repair)** — the AI economy reads
+    the war (`game/fourteenth/adaptive_procurement.py`; `ProcurementAi` was a fixed slider +
+    doctrine ratios + `random.choice`, coupled to nothing built since). Three couplings:
+    **(1) posture/phase budget split** — a surging RED shifts auto-spend toward ground
+    (+0.15 at the §55 intensity midpoint, scaled 0.5+intensity), a consolidating RED
+    husbands ground and rebuilds air (−0.15); BLUE leans air-first under Tier-0 `rollback`
+    (−0.10), ground-first under `offensive` (+0.10); no signal = byte-identical split;
+    **(2) air-defense site repair** (own gate `auto_repair_air_defenses`, default **OFF**) —
+    nothing ever rebuilt a dead SAM, so Rollback was a one-way ratchet; each side's AI now
+    repairs ≤ `MAX_AIR_DEFENSE_REPAIRS_PER_TURN` (2) dead units/turn at surviving `aa`/`ewr`
+    TGOs at full unit price (the player's base-card repair), degraded sites + radars first,
+    with the threat-poly invalidation and wreck-marker cleanup the flip needs; **command
+    centers/comms are never repaired** (§51/§52 kills stay permanent); BLUE only auto-spends
+    when `automate_runway_repair` delegated repairs, RED always; shows as its own Finances
+    row; **(3) price-weighted ground-unit choice** (capability proxy — T-72s over gun trucks,
+    still a weighted roll). Gated `adaptive_procurement` (Campaign Management → Commander
+    economy, default **ON**); NOT preseeded (Red Tide feature-locked). Tests
+    `tests/fourteenth/test_adaptive_procurement.py`; features doc §68, checklist B20 — needs
+    an in-game pass.
+69. **Cross-package SEAD-before-strike coordination** — packages were timed independently,
+    so a strike could arrive at a defended target half an hour BEFORE the SEAD package
+    tasked against the SAM covering it. `MissionScheduler._coordinate_sead_windows` (after
+    TOT assignment, before the §8 carrier stagger) retimes every movable AI strike-class
+    package (`STRIKE`/`BAI`/`OCA_*` — Armed Recon/AIR ASSAULT deliberately stay spread)
+    whose target sits inside a threat ring a SEAD/DEAD package is servicing into the window
+    just behind the **latest** covering suppressor (`coordinated_strike_tot`:
+    `SEAD_WINDOW_LEAD` 2 min after the provider TOT, `SEAD_WINDOW_DURATION` 8 min; naked
+    strikes delay in, far-late strikes pull back, in-window TOTs keep, physics always win
+    via `TotEstimator.earliest_tot`). Several strikes mass behind one SEAD — the push is
+    the point. The §8 discipline holds: player/ASAP packages never move, but a
+    **player-flown SEAD still opens a window the AI pushes behind** (providers read-only);
+    symmetric per coalition. Gated `sead_strike_coordination` (Air Doctrine, default
+    **ON**). Tests `tests/test_sead_strike_coordination.py`; features doc §69, checklist
+    B21 — needs an in-game pass.
 
 ---
 

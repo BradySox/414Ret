@@ -118,12 +118,38 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   read of its GCI loop); *(e)* a `ZONE_RADIUS`/`SetBorderZone` Lua error in `dcs.log`.
 - **Vietnam regression check:** on 1968 Yankee Station, red MiGs must still scramble **late** (40 NM)
   and break off at 50 NM from home — the ambush leash must not have been widened.
+- **2026-07-16 detection-escape addendum (fold into this fly):** the PR #782 drift port escaped the
+  Lua-pattern magic chars in the EWR detection prefixes (`intercept-config.lua`
+  `lua_pattern_escape`) — before it, every parenthesized IADS group name ("0041 | LION (EWR)")
+  failed Moose's `FilterPrefixes` pattern match, so QRA detection rode the paren-free
+  `QRA_Backstop_*` base EWRs ONLY. All prior A1–A5 evidence was flown on backstop-only detection.
+  When flying A5, also confirm the wide-area net: kill a base's backstop-adjacent raid picture by
+  approaching from a direction only a *forward EWR site* covers and confirm the rear fields still
+  see it (scramble fires before the raid is within backstop range of any alert base). Fail
+  signature: detection behaves exactly base-local (scrambles only once a raid is nearly on top of
+  an alert field) despite an alive forward EWR network, or `dcs.log` shows an empty detection set
+  for a coalition with live `(EWR)` groups.
 
 ### A6 — Escort pre-join ROE: ReturnFire at spawn, OpenFire at JOIN · §8 · ☐ UNTESTED (built 2026-07-12 from the flown Red Tide M1 finding — the user-observed "locked until the package forms at join" behavior, code-confirmed: escorts spawned OptROE=OpenFire(2) = "engage ONLY designated targets" with their one designating task attaching at JOIN, so the whole hold/transit window had an EMPTY legal-target set — mechanically unable to return fire (TOAD Escort's MiG-29s died at t=2056/2078 with JOIN ETA 2055, merged at gun range, silent; SCARAB Escort fired post-join only). The spawn ROE for both escort types, the JOIN OptROE(OpenFire) escalation, and the non-escort no-op are unit-tested in `tests/missiongenerator/test_escort_prejoin_roe.py` — whether the DCS AI actually returns fire pre-join and escorts identically post-join is DCS-only)
 - **What CI cannot exercise:** whether a pre-join escort under attack now actually returns fire (vs the old evade-only death), whether ReturnFire keeps it on its hold/join timeline (never freelancing at detected contacts), and whether post-join escort behavior is genuinely unchanged (engages fighters threatening the escorted flight at the doctrine range).
 - **Setup:** any campaign with escorted packages on both sides (Red Tide M1 regenerated works). Watch (or Tacview) an enemy escort flight that gets engaged during its hold/transit-to-join phase, and another after join.
 - **Pass:** an escort attacked pre-join defends itself with weapons (returns fire at its attacker) instead of evading silently to death; it does NOT chase targets that haven't engaged it; after JOIN it escorts exactly as before (commits on fighters near the escorted flight); the miz shows ReturnFire at waypoint 0 and an OpenFire option at JOIN for ESCORT/SEAD_ESCORT.
 - **Fail signature:** a pre-join escort still dying without firing under direct gun/missile attack (ReturnFire not honored — would point back at the DCS-side employment issue, see the repro miz); an escort abandoning its hold to chase a detected contact pre-join (ReturnFire semantics drifted); post-join escorts NOT engaging (the JOIN OptROE order vs the ControlledTask broke); the same silent-death on an On-station BARCAP is NOT this row — that's the DCS R-27 employment issue (repro miz in `missions/red-tide/`).
+
+### A7 — QRA react-task filter (AI QRA ignores sweeps/BARCAP/DEAD/Air Assault) · §1 · ☐ UNTESTED (built 2026-07-16, the PR #782 drift port: each dispatcher's EvaluateGCI/EvaluateENGAGE is wrapped to skip any detection cluster with no air-to-ground member — react list Strike/BAI/OCA-Runway/OCA-Aircraft/Anti-ship/Armed Recon; the parse, the cluster logic, and the custom-name task suffix are pinned in `tests/lua/test_intercept_filter.py` + `tests/test_naming.py`, but Moose's live evaluation loop calling the wrap is DCS-only)
+- **What CI cannot exercise:** whether the wrapped evaluators are actually what Moose's GCI loop
+  calls at runtime (a Moose refactor renaming them would silently restore scramble-at-everything),
+  and that a cluster's Set membership at evaluation time reflects the raid composition.
+- **Setup:** any campaign with QRA reserves on both sides (Red Tide works). Fly (or watch) a pure
+  blue fighter sweep/BARCAP push toward a red alert base, then a strike package on the same axis.
+- **Pass:** the AI QRA sits through the pure fighter sweep (no scramble however close it presses),
+  scrambles when the strike/BAI/OCA package closes, and still scrambles against an ESCORTED strike
+  (any react-type member triggers the cluster). The player-manned scramble cue (A4) still fires for
+  the sweep — it is deliberately task-blind.
+- **Fail signature:** red QRA launching against a pure fighter sweep (the filter never engaged —
+  check the group-name parse against the namegen convention and that the Evaluate wrap survived a
+  Moose update); or QRA never launching against a clean strike package (over-filtering: the task
+  suffix match broke, e.g. a namegen format change).
 
 ---
 

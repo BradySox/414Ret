@@ -314,6 +314,17 @@ class AircraftGenerator:
         for control_point in self.game.theater.controlpoints:
             if not isinstance(control_point, Airfield):
                 continue
+            # A cratered runway cannot launch jets, so field no QRA there (this
+            # also suppresses the §1 PlayerAlertEntry scramble cue below — no
+            # alert flight spawned means nothing to cue); the reserve auto-resumes
+            # once the runway repairs. Mirrors the normal-flight runway guard in
+            # generate_flights. debug, not warning: a downed runway skipping QRA
+            # is expected and recurs every turn until repair.
+            if not control_point.runway_is_operational():
+                logging.debug(
+                    f"Runway not operational, skipping QRA at {control_point.name}"
+                )
+                continue
 
             base_is_blue = control_point.captured.is_blue
             # GCI-ambush posture (Vietnam W5): a gci_ambush doctrine shrinks this

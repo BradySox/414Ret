@@ -216,6 +216,16 @@ local function defense_zones_for(coalition_name)
     return zones
 end
 
+-- Escape Lua pattern magic characters so a literal string can be used where
+-- Moose treats it as a pattern (SET_GROUP:FilterPrefixes matches via string.find
+-- with pattern semantics). We escape everything EXCEPT "-": Moose's FilterPrefixes
+-- already gsubs "-" -> "%-" itself, so escaping it here would double-escape.
+-- Same fix as mantis-config.lua's escape_prefix (the proven MANTIS FilterPrefixes
+-- repair); the parenthesized capture makes "%1" valid in the replacement.
+local function lua_pattern_escape(s)
+    return (s:gsub("([%(%)%.%%%+%*%?%[%]%^%$])", "%%%1"))
+end
+
 -- Collect the EWR / SAM-as-EWR group names the IADS generator published for a
 -- coalition. SamAsEwr entries already carry the DCS GROUP name, but standalone
 -- Ewr entries carry the UNIT name (Skynet convention: dcs_name_for_group
@@ -294,6 +304,67 @@ local function spawn_backstop_ewr(group_name, vec2, ewr_type, country_id)
     return true
 end
 
+-- ---------------------------------------------------------------------------
+-- Task-type reaction filter (upstream PR #782)
+-- QRA only scrambles against air-to-ground raids. The enemy flight's Retribution
+-- task type is embedded in its DCS group name by namegen.next_aircraft_name as
+-- "{target} {flight_type}|{country}|{n}|{variant}|" (game/naming.py). We react
+-- only when a detected cluster contains a group whose type is in QRA_REACT_TASKS;
+-- CAP/sweep/escort/intercept/SEAD/CAS/DEAD/Air Assault/support are ignored.
+-- Non-ATO enemy air (not named by namegen) has no matching suffix and is never
+-- reacted to.
+-- ---------------------------------------------------------------------------
+local QRA_REACT_TASKS = {
+    ["Strike"] = true,
+    ["BAI"] = true,
+    ["OCA/Runway"] = true,
+    ["OCA/Aircraft"] = true,
+    ["Anti-ship"] = true,
+    ["Armed Recon"] = true,
+}
+
+local function ends_with(str, suffix)
+    return str:sub(-#suffix) == suffix
+end
+
+-- True if the group name's task-type suffix is a react-type. We require the
+-- namegen "{target} {flight_type}|..." format and match the first "|"-field:
+-- a name with no "|" is not a Retribution ATO flight, so we cannot classify it
+-- and never react (this enforces the documented non-ATO limitation and stops a
+-- mission-editor/Combined-Arms group coincidentally named e.g. "Eagle Strike"
+-- from false-matching). Within the field we suffix-match " " .. task so
+-- multi-word target names (e.g. "Al Dhafra Strike") and any multi-word react
+-- type both work; the leading space keeps a target name that merely ends in the
+-- task word (no separator) from matching.
+local function qra_group_reacts(group_name)
+    if type(group_name) ~= "string" then return false end
+    local field = group_name:match("^([^|]+)|")  -- "{target} {flight_type}" up to the first "|"
+    if not field then return false end
+    for task, _ in pairs(QRA_REACT_TASKS) do
+        if ends_with(field, " " .. task) then
+            return true
+        end
+    end
+    return false
+end
+
+-- True if any unit in the detected cluster belongs to a react-type group. A
+-- cluster reacts as soon as one react-type group is present (escorted strikes
+-- still trigger).
+local function qra_cluster_has_react(detected_item)
+    local set = detected_item and detected_item.Set
+    if not set then return false end
+    local found = false
+    set:ForEachUnit(function(unit)
+        if found then return end  -- short-circuit; ForEachUnit has no early break
+        local group = unit:GetGroup()
+        if group and qra_group_reacts(group:GetName()) then
+            found = true
+        end
+    end)
+    return found
+end
+
 local function build_dispatcher(coalition_name, records)
     if #records == 0 then return end
 
@@ -353,14 +424,46 @@ local function build_dispatcher(coalition_name, records)
             return
         end
 
+        -- Moose SET_GROUP:FilterPrefixes matches names with Lua-pattern semantics
+        -- (string.find, only "-" pre-escaped). Retribution IADS group names contain
+        -- "(" / ")" (e.g. "0041 | LION (EWR)", "0114 | LORIKEET (S-300)"), which
+        -- would be read as pattern captures and never match, leaving the wide-area
+        -- EWR half of detection empty (only the paren-free QRA_Backstop_* names
+        -- ever matched). Escape the full merged list — backstop names included —
+        -- so each prefix matches its literal group name.
+        local detection_patterns = {}
+        for i, name in ipairs(detection_prefixes) do
+            detection_patterns[i] = lua_pattern_escape(name)
+        end
+
         local det_set = SET_GROUP:New()
             :FilterCoalitions(string.lower(coalition_name))
-            :FilterPrefixes(detection_prefixes)
+            :FilterPrefixes(detection_patterns)
             :FilterStart()
 
         local detection = DETECTION_AREAS:New(det_set, DETECTION_GROUPING_M)
 
         local dispatcher = AI_A2A_DISPATCHER:New(detection)
+        -- Only scramble against air-to-ground raids (upstream PR #782). Wrap this
+        -- instance's per-cluster evaluation so a detected cluster with no
+        -- react-type group is skipped; otherwise delegate to Moose's original.
+        -- Per-instance (not class-level) so it applies to this coalition's
+        -- dispatcher only. EvaluateGCI returns (DefendersMissing, Friendlies);
+        -- nil,nil means "no scramble". EvaluateENGAGE returns Friendlies or nil.
+        local orig_evaluate_gci = dispatcher.EvaluateGCI
+        function dispatcher:EvaluateGCI(detected_item)
+            if not qra_cluster_has_react(detected_item) then
+                return nil, nil
+            end
+            return orig_evaluate_gci(self, detected_item)
+        end
+        local orig_evaluate_engage = dispatcher.EvaluateENGAGE
+        function dispatcher:EvaluateENGAGE(detected_item)
+            if not qra_cluster_has_react(detected_item) then
+                return nil
+            end
+            return orig_evaluate_engage(self, detected_item)
+        end
         -- Spawn interceptors already airborne near the base. See header for the
         -- full method history: every ground spawn (cold/hot/runway) leaves F-16s
         -- stuck on congested ramps like Tiyas; only in-air escapes it. In-air is
@@ -541,6 +644,8 @@ end
 
 -- Nearest alive enemy aircraft (fixed- or rotary-wing) within max_dist_m of the
 -- base, or nil. Uses the raw DCS coalition scan (cheap at QRA scale).
+-- Deliberately task-blind (no QRA_REACT_TASKS filter): the cue informs, the
+-- human judges whether a closing sweep is worth scrambling for.
 local function nearest_hostile(base_vec2, enemy_side, max_dist_m)
     local best_p, best_d
     for _, category in ipairs({ Group.Category.AIRPLANE, Group.Category.HELICOPTER }) do
@@ -628,3 +733,12 @@ if dcsRetribution.Intercept then
         mist.scheduleFunction(refresh_survivors, {}, timer.getTime() + 15)
     end
 end
+
+-- Test hook: expose the pure filter helpers for tests/lua/test_intercept_filter.py.
+-- The DCS plugin loader executes this chunk and discards its return value, so
+-- this is inert in-mission.
+return {
+    pattern_escape = lua_pattern_escape,
+    group_reacts = qra_group_reacts,
+    cluster_has_react = qra_cluster_has_react,
+}

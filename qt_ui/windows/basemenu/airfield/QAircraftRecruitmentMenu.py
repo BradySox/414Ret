@@ -17,6 +17,7 @@ from game.ato.flighttype import FlightType
 from game.dcs.aircrafttype import AircraftType
 from game.purchaseadapter import AircraftPurchaseAdapter
 from game.squadrons import Squadron
+from game.squadrons.intercept_reserve import max_intercept_reserve
 from game.theater import ControlPoint, ParkingType
 from qt_ui.models import GameModel, SquadronModel
 from qt_ui.uiconstants import ICONS
@@ -95,7 +96,15 @@ class QAircraftRecruitmentMenu(UnitTransactionFrame[Squadron]):
         spinner = QSpinBox()
         spinner.lineEdit().setEnabled(False)
         spinner.setMinimum(0)
-        spinner.setMaximum(squadron.max_size)
+        # Cap at unplanned airframes (owned - tasked = untasked + reserve); aircraft
+        # already tasked to flights this turn cannot be pulled onto QRA.
+        spinner.setMaximum(
+            max_intercept_reserve(
+                squadron.untasked_aircraft,
+                squadron.intercept_reserve,
+                squadron.max_size,
+            )
+        )
         spinner.setValue(squadron.intercept_reserve)
         spinner.setToolTip(
             "Aircraft held on quick-reaction alert; scramble airborne to intercept."
@@ -111,7 +120,9 @@ class QAircraftRecruitmentMenu(UnitTransactionFrame[Squadron]):
 
     @staticmethod
     def _set_reserve(squadron: Squadron, value: int) -> None:
-        squadron.intercept_reserve = value
+        # Route through set_intercept_reserve so untasked_aircraft (the planner's
+        # pool) updates immediately, instead of going stale until turn advance.
+        squadron.set_intercept_reserve(value)
 
     def sell_tooltip(self, is_enabled: bool) -> str:
         if is_enabled:

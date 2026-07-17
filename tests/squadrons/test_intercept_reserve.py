@@ -6,12 +6,14 @@ from game.squadrons.intercept_reserve import (
     QRA_SINGLE_SHIP_PROBABILITY,
     ai_qra_resource_count,
     clamp_intercept_reserve,
+    max_intercept_reserve,
     qra_player_client_slots,
     qra_player_manned_count,
     qra_resource_count,
     qra_scramble_grouping,
     repropagated_intercept_reserve,
     seeded_intercept_reserve,
+    untasked_after_reserve_change,
 )
 
 
@@ -108,6 +110,66 @@ def test_repropagate_new_value_is_clamped_to_max_size() -> None:
 
 def test_repropagate_no_op_when_old_equals_new() -> None:
     assert repropagated_intercept_reserve(True, 2, 2, 2, 12) == 2
+
+
+def test_untasked_grows_when_reserve_freed() -> None:
+    # Reserve 4 -> 0 mid-turn releases the 4 benched jets into the plannable pool.
+    # owned 10: 6 untasked + 4 reserve.
+    assert untasked_after_reserve_change(4, 0, 6, 10) == 10
+
+
+def test_untasked_shrinks_when_reserve_raised() -> None:
+    # Reserve 0 -> 4 benches 4 jets that were plannable. owned 10.
+    assert untasked_after_reserve_change(0, 4, 10, 10) == 6
+
+
+def test_untasked_unchanged_when_reserve_unchanged() -> None:
+    assert untasked_after_reserve_change(3, 3, 5, 8) == 5
+
+
+def test_untasked_floors_at_zero_when_reserve_exceeds_pool() -> None:
+    # Only still-untasked jets can be benched; already-tasked flights are never
+    # retroactively un-planned, so the pool floors at 0. owned 10, 8 tasked.
+    assert untasked_after_reserve_change(0, 5, 2, 10) == 0
+
+
+def test_untasked_capped_at_owned_after_attrition() -> None:
+    # Attrition left owned 2 below reserve 4; return_all floored untasked to 0.
+    # Lowering reserve to 1 must free only the 1 jet that exists beyond the new
+    # reserve (max 2-1), NOT the delta of 3.
+    assert untasked_after_reserve_change(4, 1, 0, 2) == 1
+
+
+def test_max_reserve_capped_by_unplanned_airframes() -> None:
+    # 12/14 tasked -> untasked 2, reserve 0: QRA can rise to 2 (the unplanned jets).
+    assert (
+        max_intercept_reserve(untasked_aircraft=2, intercept_reserve=0, max_size=14)
+        == 2
+    )
+
+
+def test_max_reserve_is_zero_when_everything_tasked() -> None:
+    # 14/14 tasked -> untasked 0, reserve 0: no jets free for QRA.
+    assert (
+        max_intercept_reserve(untasked_aircraft=0, intercept_reserve=0, max_size=14)
+        == 0
+    )
+
+
+def test_max_reserve_includes_already_reserved_jets() -> None:
+    # untasked+reserve = owned - tasked is the invariant ceiling; already-reserved
+    # jets stay reservable.
+    assert (
+        max_intercept_reserve(untasked_aircraft=1, intercept_reserve=3, max_size=14)
+        == 4
+    )
+
+
+def test_max_reserve_bounded_by_max_size() -> None:
+    assert (
+        max_intercept_reserve(untasked_aircraft=20, intercept_reserve=0, max_size=12)
+        == 12
+    )
 
 
 def test_player_manned_capped_by_reserve() -> None:

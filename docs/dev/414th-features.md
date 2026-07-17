@@ -205,6 +205,55 @@ era's GCI hit-and-run:
   passes the QRA settings through untouched (test-locked in `tests/test_vietnam_doctrine.py` +
   `tests/missiongenerator/test_interceptluadata.py`).
 
+### Upstream PR #782 drift port (2026-07-16)
+
+Four upstream fixes the fork's QRA had drifted behind, ported with the fork couplings intact:
+
+- **EWR detection-prefix escape** (upstream `861829b2`): Moose `SET_GROUP:FilterPrefixes`
+  matches names with Lua-pattern semantics (`string.find`, only `-` pre-escaped), and every
+  Retribution IADS group name carries parens (`"0041 | LION (EWR)"`) that read as pattern
+  captures — so the wide-area EWR half of QRA detection matched **zero** groups and the
+  dispatchers were detecting on the paren-free `QRA_Backstop_*` base EWRs **only**.
+  `intercept-config.lua` now escapes the FULL merged `detection_prefixes` list (backstop
+  names too) with the same `gsub` the fork already proved in `mantis-config.lua`'s
+  `escape_prefix` (everything except `-`, which Moose's own gsub handles). This expands
+  real detection from base-local backstops to the whole IADS EWR network — fold verifying
+  it into the A5 forward-defense fly. Pinned in `tests/lua/test_intercept_filter.py` (the
+  plugin's chunk-return test hook + a recording MOOSE fake).
+- **React-task filter** (upstream `5e565bb5` + `f0bd1b63`): the dispatcher no longer
+  scrambles against ANY airborne enemy — each per-coalition dispatcher's
+  `EvaluateGCI`/`EvaluateENGAGE` is wrapped to skip a detection cluster with no
+  air-to-ground member. React list (final): **Strike, BAI, OCA/Runway, OCA/Aircraft,
+  Anti-ship, Armed Recon** — NO DEAD, NO Air Assault; CAP/sweep/escort/SEAD/CAS/support
+  are ignored. The task is parsed from the namegen group name's first `|`-field
+  (suffix-match `" "..task`), so non-ATO enemy air never reacts. A cluster reacts if ANY
+  member is a react type (escorted strikes still trigger). `next_aircraft_name`
+  (`game/naming.py`) now appends the flight type for custom-named flights too, so they
+  stay classifiable (`tests/test_naming.py`). The §1 player-manned **PLAYER_ALERT cue
+  stays deliberately task-blind** — it informs; the human judges whether a closing sweep
+  is worth scrambling for.
+- **Live reserve accounting** (upstream `55b26078` + `fdd90469` + `0e1184df`): editing a
+  squadron's QRA reserve now updates `untasked_aircraft` immediately via
+  `Squadron.set_intercept_reserve` (delta-adjust, floored at 0, capped at
+  `owned - new_reserve` so attrition can't inflate the pool), routed through ALL FIVE
+  writers (SquadronDialog, QAircraftRecruitmentMenu, `AirWing.repropagate_qra_reserve`,
+  AirWingConfigurationDialog `update_max_size` + `apply`); the SquadronDialog and
+  base-menu QRA spinners cap at `max_intercept_reserve` (= untasked + reserve, the
+  unplanned airframes). Two fork couplings: the adjusted pool is also clamped to the §53
+  `fuel_readiness` ceiling (`return_all_pilots_and_aircraft` applies it after subtracting
+  the reserve; exact no-op with `fuel_air_readiness` off), and `set_intercept_reserve`
+  re-clamps `qra_player_manned` to the new reserve so lowering the reserve can't leave a
+  phantom manned alert flight. Tests merged into
+  `tests/squadrons/test_intercept_reserve.py` / `test_squadron_inventory.py` /
+  `test_airwing_qra_propagation.py`.
+- **Cratered-runway gate** (upstream `edb14d94`): `spawn_intercept_templates` skips a
+  control point whose `runway_is_operational()` is false (no QRA templates, no
+  `InterceptEntry`, and — correctly — no §1 `PlayerAlertEntry` cue); the base card's
+  "QRA alert" count reads 0 while the runway is down. Suppression lifts when the runway
+  repairs. Accepted limitation: `Coalition._plan_player_qra` is deliberately unguarded —
+  the `generate_flights` runway check already stops the alert flight spawning, so the
+  residual is a phantom package in the planning UI only.
+
 ---
 
 ## 2. JAMMING flight type — C-130J EW/ISR

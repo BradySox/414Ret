@@ -31,6 +31,7 @@ from game.purchaseadapter import AircraftPurchaseAdapter, TransactionError
 from game.server import EventStream
 from game.sim import GameUpdateEvents
 from game.squadrons import Pilot, Squadron
+from game.squadrons.intercept_reserve import max_intercept_reserve
 from game.theater import ConflictTheater, ControlPoint, ParkingType
 from qt_ui.delegates import TwoColumnRowDelegate
 from qt_ui.errorreporter import report_errors
@@ -349,10 +350,18 @@ class SquadronDialog(QDialog):
         self.qra_reserve_selector.lineEdit().setEnabled(False)
         self.qra_reserve_selector.setToolTip(
             "Aircraft held on quick-reaction alert; scramble airborne to intercept. "
-            "Bounded by the squadron's max size."
+            "Capped at the airframes not already tasked to flights this turn."
         )
         self.qra_reserve_selector.setMinimum(0)
-        self.qra_reserve_selector.setMaximum(self.squadron.max_size)
+        # Aircraft already tasked to flights cannot be pulled onto QRA, so cap the
+        # reserve at the unplanned airframes (owned - tasked = untasked + reserve).
+        self.qra_reserve_selector.setMaximum(
+            max_intercept_reserve(
+                self.squadron.untasked_aircraft,
+                self.squadron.intercept_reserve,
+                self.squadron.max_size,
+            )
+        )
         self.qra_reserve_selector.setValue(self.squadron.intercept_reserve)
         if not self.squadron.capable_of(FlightType.BARCAP):
             self.qra_reserve_selector.setEnabled(False)
@@ -530,7 +539,10 @@ class SquadronDialog(QDialog):
         return self.squadron_model.squadron
 
     def on_qra_reserve_changed(self, value: int) -> None:
-        self.squadron.intercept_reserve = value
+        # set_intercept_reserve also updates untasked_aircraft so the freed (or
+        # newly reserved) jets are immediately available to the planner this turn,
+        # rather than only after the next turn's return_all_pilots_and_aircraft.
+        self.squadron.set_intercept_reserve(value)
         # The player can never man more of the reserve than exists; keep the
         # dependent spinbox bounded (its valueChanged clamps the model in turn).
         self.qra_player_manned_selector.setMaximum(value)

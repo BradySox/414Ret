@@ -451,17 +451,24 @@ class QBaseMenu2(QDialog):
             deployable_unit_info = (
                 f" (Up to {ground_unit_limit} deployable, {unit_overage} reserve)"
             )
-        qra_alert = sum(
-            qra_resource_count(
-                squadron.intercept_reserve,
-                squadron.owned_aircraft,
-                (
-                    squadron.number_of_available_pilots
-                    if squadron.pilot_limits_enabled
-                    else None
-                ),
+        # A destroyed runway suppresses QRA entirely at mission generation
+        # (see AircraftGenerator.spawn_intercept_templates), so report 0 here
+        # rather than a phantom alert count the base can no longer scramble.
+        qra_alert = (
+            sum(
+                qra_resource_count(
+                    squadron.intercept_reserve,
+                    squadron.owned_aircraft,
+                    (
+                        squadron.number_of_available_pilots
+                        if squadron.pilot_limits_enabled
+                        else None
+                    ),
+                )
+                for squadron in self.cp.squadrons
             )
-            for squadron in self.cp.squadrons
+            if self.cp.runway_is_operational()
+            else 0
         )
 
         # Grouped into Air / Ground / Status sections for readability. Indentation

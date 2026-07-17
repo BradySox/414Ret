@@ -235,6 +235,10 @@ already-engaged defender when its target leaves the zone, and whether a 150 NM t
   undeployed armor — so the depot has vehicles to render within a couple of turns of a new game, exactly as
   this row's setup assumes (and well past the `motorpool_spawn_cap` 10, so the cap is live from early on).
   The render / kill / 1:1-decrement / debrief legs stay DCS-only.
+- **Upstream drift sync (2026-07-16):** the parking grid + depot now rotate with the authored garage
+  heading (upstream `401fbceda`) — when flying this row, also eyeball that the parked lot follows the
+  `Garage_A`'s facing instead of sitting in a world-axis N/E grid (Haina's garage is authored at
+  heading 0, where the rotation is a no-op — an ME-authored angled garage is what shows it plainly).
 ### B9 — Air-droppable minefields: mine a road, kill a convoy, carry the field across the turn · §57 · ☐ UNTESTED (built 2026-07-11; **Phase 1 same-turn + Phase 2 persistence shipped**. The drop→track-to-impact→lay→proximity-detonate loop, one-trip-per-unit, charge depletion, the blue-only + non-dispenser reject, the startup grace, and the `minefields_state` write-back (laid `id` 0 / seeded id / charge depletion) are harness-tested in `tests/lua/test_minefields_runtime.py`; the reconcile (create/update/exhaust-remove/untouched/off) + the emitter shape are unit-tested in `tests/fourteenth/test_minefields.py` + `tests/missiongenerator/test_minefieldluadata.py`. The harness models no DCS weapon flight, so the CBU-99 detection + the convoy kill are DCS-only.)
 - **2026-07-11 flown Red Tide M1 (`csar-snatch-toggle-question-dfdb7a`): armed cleanly, nothing laid.**
   Load log `Minefields armed (dispenser 'CBU_99', radius 200m, 6 charges/field, power 100)`, zero Lua

@@ -1390,6 +1390,33 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   change (the §62 modex precedent). Helo and shore recoveries are ignored. Tests:
   `tests/test_carrier_recovery_stagger.py`. Upstream-shared (carve candidate). Checklist
   **C9** — needs an in-game pass.
+- **Player CAS steerpoints floating at the combat altitude (user-reported, fixed 2026-07-16).**
+  A flown Hornet CAS deck read **22000** on both FLOT waypoints — "target waypoints generate in
+  the air and are unable to be found". The CAS FLOT boundaries are planned at
+  `builder.get_combat_altitude` (`cas.py`) and stamped **RADIO**, i.e. ~22,000 ft *AGL*: correct
+  for the AI, whose waypoint **is** the track to fly, but a human's steerpoint diamond then floats
+  22,000 ft over the terrain with nothing under it to acquire or slave a pod to. Every other target
+  waypoint already ships on the deck (`_target_point`/`_target_area` both use `meters(0)`); CAS was
+  the one type carrying an AI track altitude into a cockpit. Nothing caught it: the 22,000 is just
+  `COMBAT_ALTITUDE_BAND_KFT = (20, 20)` (a spreadless "band" every fixed-wing airframe collapses
+  onto) plus `plane_altitude_offset` scatter, `cas()`'s `meters(1000)` is a **floor** so it only
+  ever raises, and `FlightWaypointType.CAS` has no entry in the generator dispatch table.
+  `PydcsWaypointBuilder.build()` already zeroed waypoints for client flights with exactly this
+  stated intent ("so that they can slave target pods or weapons to the waypoint") but only inside
+  `if self.waypoint.flyover:`; that check is lifted out onto a shared
+  `FlightWaypoint.marks_ground_for_player` (`flyover or waypoint_type in
+  GROUND_MARKED_WAYPOINTS`), leaving the flyover `PointAction` assignment untouched. **AI flights
+  are unaffected** — `client_count == 0` never trips it, so no AI CAS track is pushed toward the
+  ground. The split lives at generation, not in the layout, because `QFlightSlotEditor` calls
+  `roster.set_pilot()` without recreating the flight plan, so `client_count` can change after the
+  layout is built. The **kneeboard derives from the same predicate**: it reads the planning model's
+  `alt` while the `.miz` zeroes the pydcs point, so a generation-only fix would print 22000 against
+  a grounded steerpoint (this also fixes the pre-existing same disagreement on flyover waypoints,
+  which the kneeboard has always printed at combat altitude). Whether 20,000 ft is a sensible *AI*
+  CAS track is a separate, untouched question. Tests:
+  `tests/ato/test_flightwaypoint_ground_marked.py` + `tests/missiongenerator/test_kneeboard_cas_altitude.py`.
+  Upstream-shared (carve candidate — upstream's own comment already asks for it). Checklist
+  **C10** — needs an in-game pass.
 - Malformed mod payload Lua (CJS Super Hornet v2.4 uses local-var table indices that the
   pydcs Lua parser rejects with `ValueError`): patched loader in `qt_ui/main.py`
   (`_patch_pydcs_payload_loader()`), plus the offending files are skipped with a warning.

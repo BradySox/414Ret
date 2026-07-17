@@ -41,6 +41,19 @@ C2_CATEGORY = "commandcenter"
 #: the sum is clamped to the 0-100 range the shuffler expects.
 MAX_DECAP_UNPREDICTABILITY = 60
 
+#: §52 Phase A2 (the package-count throttle): the offensive package ceiling a
+#: side's planner works under while its command network is degraded. At full C2
+#: health there is no ceiling; as command centers fall the cap shrinks linearly
+#: from this value toward MIN_OFFENSIVE_PACKAGES. 12 sits above what the HTN
+#: typically frags even on a large campaign, so a barely-scratched network (one
+#: of many CCs down) rarely bites, while a decapitated one visibly thins the
+#: air tasking order.
+FULL_OFFENSIVE_PACKAGE_CAP = 12
+
+#: The A2 floor: a decapitated enemy still plans *some* offense -- the goal is
+#: pressure, not a walkover (the design note's "never zero red out" guardrail).
+MIN_OFFENSIVE_PACKAGES = 2
+
 
 def _command_centers(
     coalition: "Coalition", theater: "ConflictTheater"
@@ -90,6 +103,27 @@ def unpredictability_bonus(
         return 0
     health = c2_health(coalition, theater)
     return round((1.0 - health) * MAX_DECAP_UNPREDICTABILITY)
+
+
+def offensive_package_cap(
+    coalition: "Coalition", theater: "ConflictTheater", settings: "Settings"
+) -> Optional[int]:
+    """The offensive package ceiling for this side, or None for no ceiling.
+
+    §52 Phase A2: a headless HQ generates fewer offensive taskings. The cap
+    shrinks linearly with the dead command-center fraction, floored at
+    MIN_OFFENSIVE_PACKAGES so red always plans some offense. None (no throttle)
+    when the feature is off, the network is intact, or the side fields no
+    command centers -- so the planner is byte-identical to today until a CC
+    actually falls. Reactive defensive tasking is never throttled (the §17
+    boundary); the consumer applies this only to the HTN's offensive middle.
+    """
+    if not getattr(settings, "c2_decapitation_effects", False):
+        return None
+    health = c2_health(coalition, theater)
+    if health >= 1.0:
+        return None
+    return max(MIN_OFFENSIVE_PACKAGES, round(FULL_OFFENSIVE_PACKAGE_CAP * health))
 
 
 def c2_status_line(game: "Game", player: "Player") -> Optional[str]:

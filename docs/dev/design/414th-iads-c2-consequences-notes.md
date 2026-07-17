@@ -1,9 +1,14 @@
 # 414th — IADS C2 family: felt consequences for command-center & power nodes (design notes)
 
-**Status: Feature A LANDED 2026-07-06 (§52); Feature B deferred.** Follow-on to §51 (enemy comms
-jamming). Feature A phase A1 (command-center → planner unpredictability + SITREP legibility) shipped
-as feature §52 — the shape below is what landed; the A2 package-count throttle and all of Feature B
-remain as scoped here. §51 gave the IADS
+**Status: Feature A COMPLETE (A1 LANDED 2026-07-06, A2 LANDED 2026-07-17); Feature B deferred.**
+Follow-on to §51 (enemy comms jamming). Feature A phase A1 (command-center → planner
+unpredictability + SITREP legibility) shipped as feature §52; phase A2 (the floored offensive
+package-count throttle) landed 2026-07-17 — `offensive_package_cap` in
+`game/fourteenth/c2_decapitation.py` (linear with dead-CC fraction, `FULL_OFFENSIVE_PACKAGE_CAP`
+12 → floor `MIN_OFFENSIVE_PACKAGES` 2) gates the HTN root's offensive middle via
+`PlanNextAction._offensive_tempo_exhausted`, counting only unambiguous offensive package types
+(CAS and SEAD/DEAD excluded — both are planned defensively too, so the reactive tiers stay
+unthrottled). Only Feature B remains as scoped here. §51 gave the IADS
 **comms** node a player-felt consequence; this note scopes the same treatment for its two
 data-model siblings — **command centers** and **power sources** — which today have gameplay only
 inside MANTIS's runtime SAM-autonomy graph and nothing the player can *see* or feel.

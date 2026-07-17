@@ -117,6 +117,7 @@ _EXPENSE_CATEGORIES = [
     ("front_line", "Front line reinforcement", "automate_front_line_reinforcements"),
     ("aircraft", "Aircraft purchases", "automate_aircraft_reinforcements"),
     ("ground_objects", "SAM / ground repairs", "automate_ground_object_repairs"),
+    ("air_defenses", "SAM / EWR site repairs", "auto_repair_air_defenses"),
     ("buildings", "Building repairs", "automate_building_repairs"),
     ("runways", "Runway repairs", "automate_runway_repair"),
 ]

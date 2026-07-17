@@ -2,6 +2,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import ClassVar
 
+from game.ato.flighttype import FlightType
 from game.commander.tasks.compound.attackairinfrastructure import (
     AttackAirInfrastructure,
 )
@@ -36,8 +37,13 @@ class PlanNextAction(CompoundTask[TheaterState]):
         # emphasis: the active phase reorders these methods, which shifts which
         # objectives get first claim on the limited offensive aircraft. No phase
         # (setting off, red coalition, or pre-phase save) yields the stock order.
-        for name in self._offensive_order(state):
-            yield [self._OFFENSIVE_FACTORIES[name](self)]
+        # §52 A2: a decapitated command network also THROTTLES the offensive
+        # middle -- once this side's offensive package count reaches its C2-health
+        # cap, the offensive methods stop being offered (trimming, not
+        # reordering). Reactive prefix and recovery tail are never throttled.
+        if not self._offensive_tempo_exhausted(state):
+            for name in self._offensive_order(state):
+                yield [self._OFFENSIVE_FACTORIES[name](self)]
         yield [RecoverySupport()]  # for recovery tankers
 
     # PlanNextAction's offensive methods by class name, in stock priority order.
@@ -63,6 +69,47 @@ class PlanNextAction(CompoundTask[TheaterState]):
         "DegradeIads": lambda self: DegradeIads(),
     }
 
+    # The package types the §52 A2 throttle counts against the C2-health cap.
+    # Deliberately only the unambiguous offensive taskings: CAS is excluded
+    # (planned defensively by FrontLineDefense), and SEAD/DEAD are excluded so a
+    # threat-reactive IADS response is never starved by the throttle (the §17
+    # boundary errs conservative in both directions).
+    _OFFENSIVE_PACKAGE_TYPES: ClassVar[frozenset[FlightType]] = frozenset(
+        {
+            FlightType.STRIKE,
+            FlightType.BAI,
+            FlightType.OCA_RUNWAY,
+            FlightType.OCA_AIRCRAFT,
+            FlightType.ANTISHIP,
+            FlightType.AIR_ASSAULT,
+            FlightType.ARMED_RECON,
+        }
+    )
+
+    def _offensive_tempo_exhausted(self, state: TheaterState) -> bool:
+        """True when the §52 A2 throttle says this side may plan no more offense.
+
+        The cap comes from the side's own command-network health (None = no
+        throttle: feature off, network intact, or no command centers -- the
+        byte-identical default). Counted against the packages already added to
+        this coalition's ATO this planning run, so the throttle closes the
+        offensive middle mid-run once the cap is reached.
+        """
+        from game.fourteenth.c2_decapitation import offensive_package_cap
+
+        coalition = state.context.coalition
+        cap = offensive_package_cap(
+            coalition, state.context.theater, state.context.settings
+        )
+        if cap is None:
+            return False
+        planned = sum(
+            1
+            for package in coalition.ato.packages
+            if package.primary_task in self._OFFENSIVE_PACKAGE_TYPES
+        )
+        return planned >= cap
+
     def _offensive_order(self, state: TheaterState) -> list[str]:
         """The offensive method order for this planning run.
 
@@ -73,6 +120,8 @@ class PlanNextAction(CompoundTask[TheaterState]):
         neutral default) the stock order stands, so the planner is byte-identical to
         pre-feature behaviour until a side's layer is active.
         """
+        from game.fourteenth.weather_planning import demote_weather_hostile_methods
+
         stock = list(self._OFFENSIVE_FACTORIES)
         coalition = state.context.coalition
         if coalition.player.is_blue:
@@ -85,10 +134,13 @@ class PlanNextAction(CompoundTask[TheaterState]):
 
             emphasis = offensive_emphasis(coalition.game)
         if not emphasis:
-            return stock
+            # §67: the weather has the last word for both sides -- a thunderstorm
+            # demotes the low-level visual-attack methods to the tail (soft, like
+            # the emphasis itself; any other sky is a no-op).
+            return demote_weather_hostile_methods(coalition.game, stock)
         # Guard against a stale/authored emphasis naming an unknown method, and
         # against one omitting a method: unknown names are dropped, missing ones
         # keep their stock relative order at the tail.
         order = [name for name in emphasis if name in self._OFFENSIVE_FACTORIES]
         order.extend(name for name in stock if name not in order)
-        return order
+        return demote_weather_hostile_methods(coalition.game, order)

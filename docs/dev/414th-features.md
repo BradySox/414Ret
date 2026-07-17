@@ -4975,11 +4975,11 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 
 | Area | Path |
 |---|---|
-| Core | `game/fourteenth/c2_decapitation.py` (`c2_health`, `unpredictability_bonus`, `c2_status_line`) |
-| Planner hook | `game/commander/tasks/targetorder.py` `_unpredictability_for` (adds the bonus, clamps to 100) |
+| Core | `game/fourteenth/c2_decapitation.py` (`c2_health`, `unpredictability_bonus`, `offensive_package_cap`, `c2_status_line`) |
+| Planner hooks | `game/commander/tasks/targetorder.py` `_unpredictability_for` (adds the bonus, clamps to 100); `game/commander/tasks/compound/nextaction.py` `_offensive_tempo_exhausted` (the A2 throttle gate on the offensive middle) |
 | Legibility | `game/sitrep.py` (`red_c2_status`), `game/sim/missionresultsprocessor.py` `record_sitrep` |
 | Setting | `game/settings/settings.py` (`c2_decapitation_effects`, Air Doctrine, default **OFF**) |
-| Tests | `tests/fourteenth/test_c2_decapitation.py` (health/bonus/status/gates); `tests/test_planner_unpredictability.py` (the shuffler coupling + intact/off determinism); `tests/test_sitrep.py` (the band line, rides-along) |
+| Tests | `tests/fourteenth/test_c2_decapitation.py` (health/bonus/status/gates + the A2 cap math and HTN gating); `tests/test_planner_unpredictability.py` (the shuffler coupling + intact/off determinism); `tests/test_sitrep.py` (the band line, rides-along) |
 
 ### Gotchas / deferred
 
@@ -4989,10 +4989,16 @@ The effect lands on the *enemy's* next turn, so the player is told the strike wo
 - **Symmetric in code, red in practice.** Each side reads its own C2 health, but only a side with an HTN
   auto-planner (red, in a normal player-vs-AI game) is affected by the player's strikes. Blue's own
   auto-planned (AI-filled) slots would loosen too if the player let blue HQs die — intended and fair.
-- **Phase A2 deferred — the offensive package-count throttle.** The design note's second lever (cap red's
-  *number* of offensive packages when decapitated, floored so red is never zeroed out) is not built; A1 is
-  the unpredictability coupling only. Unpredictability alone never reduces red's package count, so there is
-  no starvation risk in A1.
+- **Phase A2 LANDED (2026-07-17) — the offensive package-count throttle.** The design note's second lever
+  is in: `offensive_package_cap` shrinks a side's offensive package ceiling linearly with its dead
+  command-center fraction, from `FULL_OFFENSIVE_PACKAGE_CAP` (12 — above what the HTN typically frags, so a
+  barely-scratched network rarely bites) to the `MIN_OFFENSIVE_PACKAGES` floor (2 — the design's "never
+  zero red out" guardrail). `PlanNextAction._offensive_tempo_exhausted` counts the coalition's planned
+  packages whose primary task is in `_OFFENSIVE_PACKAGE_TYPES` (Strike/BAI/OCA/anti-ship/air
+  assault/armed recon — deliberately excluding CAS and SEAD/DEAD, which are planned defensively too) and
+  stops offering the offensive middle once the cap is reached: trimming, not reordering. The reactive
+  prefix (TheaterSupport/ProtectAirSpace/DefendBases) and the recovery tail are never throttled (the §17
+  boundary), and None (feature off / intact network / no CCs) is byte-identical to A1-only behaviour.
 - **Preseeded on Red Tide (2026-07-07).** Default OFF everywhere; **Germany — Red Tide** flips it ON
   (`c2_decapitation_effects: true`) because its advanced-IADS build is one of the very few laydowns with a
   real, per-base **destroyable command-center network** (9 red Command Center cells) for §52 to key on —
@@ -6122,6 +6128,130 @@ Tests: `tests/fourteenth/test_mission_archive.py` (naming/slugging, the copy, th
 no-clobber-on-regenerate property, the prune's keep-newest + never-touch-foreign-files
 safety, and both non-fatal failure paths). No in-game pass needed — there is no DCS runtime
 here, only a file copy.
+
+---
+
+## §67 — Weather-aware auto-planning
+
+**What it is.** The theater commander reads the sky. The §47 continuous clock gave the
+campaign an evolving weather system, but the planner never consulted it: it fragged TARPS
+photo recon into thunderstorms and led its offensive plan with low-level visual attack in
+weather that grounds it (`game/commander/` had literally zero references to weather or
+time-of-day). `game/fourteenth/weather_planning.py` is the read — two pure classifiers over
+`game.conditions.weather` plus two planner couplings, both applying to BOTH coalitions (it
+is the same sky):
+
+1. **Recon stays home in the weather.** `recon_suppressed` gates
+   `PackageFulfiller._maybe_plan_tarps_recon`: while it is raining or storming the optional
+   auto-added recon bird (the Strike/DEAD BDA pass, the Armed Recon overwatch drone) is
+   omitted — optical and IR alike photograph cloud deck, so the sortie banks nothing. Same
+   non-scrubbing contract as a missing TARPS squadron; player-planned recon flights are
+   never touched.
+2. **Storms demote low-level visual attack.** In a `Thunderstorm`,
+   `demote_weather_hostile_methods` moves the offensive HTN methods that live at low level
+   under the weather — `PlanFrontLineCas`, `AttackBattlePositions`,
+   `InterdictReinforcements` (the `VISUAL_ATTACK_METHODS` tuple, name-coupled to
+   `PlanNextAction._OFFENSIVE_FACTORIES` and lock-tested) — to the tail of the offensive
+   order, AFTER the §40 phase / §55 posture emphasis is applied
+   (`PlanNextAction._offensive_order` calls it on both the stock and emphasis paths). Soft
+   demotion in the §40/§55 discipline: nothing is removed, the planner still services them
+   if jets are left after the weather-tolerant strikes claim theirs. Rain does NOT demote
+   (only the recon gate fires in rain) — DCS AI flies fine in rain; the storm is the
+   grounding sky.
+
+**Deliberately absent: night.** The model carries no per-airframe night-capability data, so
+demoting night CAS would wrongly ground an A-10C II alongside an A-1. Night awareness is
+blocked on that data existing, not forgotten.
+
+Gated by `weather_aware_planning` (Air Doctrine → Auto-planner behavior, default **ON** —
+clear skies are a byte-identical no-op, so the toggle only matters while the weather is
+actually bad; every read is getattr-guarded so headless fakes and old saves degrade to
+"clear"). Tests: `tests/fourteenth/test_weather_planning.py` (classifiers, gates, the
+demotion's order-preservation + the factory-name lock, the HTN integration) + the storm
+case in `tests/test_armed_recon_planning.py`. Checklist B19 — needs an in-game pass (does a
+stormy turn's ATO visibly lead with strikes and drop the recon add-ons).
+
+---
+
+## §68 — Adaptive procurement (posture-coupled spending + SAM repair)
+
+**What it is.** The AI economy reads the war. `ProcurementAi` was the flattest brain in the
+engine — a fixed air/ground budget slider, doctrine-fixed class ratios, and
+`random.choice` over whatever was affordable — coupled to none of the intelligence layers
+built since (§40 phases, §55 red intent, §52 C2 health). `game/fourteenth/adaptive_procurement.py`
+adds three couplings:
+
+1. **Posture/phase-coupled budget split** (`adjusted_ground_share`, applied at the end of
+   `ProcurementAi.calculate_ground_unit_budget_share`): a surging RED shifts budget toward
+   the armor its offensive spends (`+MAX_POSTURE_GROUND_SHIFT` 0.15 at the §55 intensity
+   midpoint, scaled `0.5 + intensity` so an all-in surge presses to 1.5×), a consolidating
+   RED husbands ground and rebuilds its air arm (−0.15), ATTRITION is neutral; BLUE leans
+   air-first in the Tier-0 `rollback` phase (−0.10) and ground-first in `offensive`
+   (+0.10), `interdiction` and authored phase keys are neutral. No signal (features off,
+   no posture/phase) leaves the stock split byte-identical; the result is clamped [0, 1].
+2. **Air-defense site repair** (`repair_air_defenses`, its own gate): nothing ever rebuilt
+   a dead SAM — the enemy IADS only decayed, so Rollback was a one-way ratchet. Each turn
+   the AI commander repairs up to `MAX_AIR_DEFENSE_REPAIRS_PER_TURN` (2) destroyed units at
+   surviving `aa`/`ewr` TGOs, paying the **full unit price** (the same pay-and-flip-alive
+   repair the player's base card has always offered), prioritised degraded-but-alive sites
+   first (restoring a blinded site's radar buys the most capability per dollar), then
+   priciest unit first (radars over launchers). It mirrors `TheaterUnit.kill()`'s threat-poly
+   invalidation and the Qt repair's wreck-marker cleanup (without which the repaired unit
+   spawns next to its own burnt-out model). **Command centers and comms nodes are never
+   repaired** — §51/§52 decapitation stays a permanent strategic payoff. Wired into
+   `ProcurementAi.spend_budget` after runway repairs, inside the `manage_runways` block —
+   so BLUE only auto-spends here when the player has delegated repairs
+   (`automate_runway_repair`); RED is always automated. The spend shows in the Finances
+   dialog as its own "SAM / EWR site repairs" row (`last_expenses["air_defenses"]`).
+3. **Capability-weighted unit choice** (`ProcurementAi.affordable_ground_unit_of_class`):
+   the ground-unit buy weights the roll by price — the capability proxy the model actually
+   has — so the commander fields its better hardware more often than its gun trucks while
+   keeping variety (a weighting, not a max).
+
+Gating: split + weighting under `adaptive_procurement` (Campaign Management → Commander
+economy, default **ON** — both degrade to stock behaviour without an active posture/phase
+signal); the site repair under `auto_repair_air_defenses` (same section, default **OFF** —
+it materially changes campaign difficulty: the SAM belt regenerates unless the player keeps
+pressure on it). Not preseeded anywhere (Red Tide is feature-locked). Tests:
+`tests/fourteenth/test_adaptive_procurement.py` (the shift table, intensity scaling,
+clamps, the repair's gate/cap/priority/budget-skip/category-exclusions/wreck-cleanup, the
+weighted-choice gate). Checklist B20 — needs an in-game pass (red visibly rebuilds a
+struck SAM site over following turns with the toggle on).
+
+---
+
+## §69 — Cross-package SEAD-before-strike coordination
+
+**What it is.** Packages were timed independently — the generic scheduler branch spreads
+each package's TOT randomly across the mission window, so nothing stopped a strike from
+arriving at a defended target half an hour BEFORE the SEAD package tasked against the SAM
+covering it. `MissionScheduler._coordinate_sead_windows` (run inside `schedule_missions`
+after the main TOT assignment, BEFORE the §8 carrier-recovery stagger and the
+recovery-tanker ETA collection so both see the coordinated landings) finds, for every
+movable strike-class package, the SEAD/DEAD packages whose **TGO target's threat ring
+covers the strike's target** (`max_threat_range` distance test, duck-typed so a non-TGO
+tasking degrades to "no window"), and retimes the strike into the window just behind the
+**latest** covering suppressor: `coordinated_strike_tot` opens the window
+`SEAD_WINDOW_LEAD` (2 min) after the provider TOT and holds it `SEAD_WINDOW_DURATION`
+(8 min) — a naked strike ahead of its SEAD is delayed into the window, one the random
+spread had left long after it is pulled back, one already inside keeps its TOT, and
+physics always win (never earlier than `TotEstimator.earliest_tot`; an unreachable window
+keeps the spread schedule unless that would leave the strike ahead of its SEAD). Several
+strikes behind one SEAD mass into the same window — the push is the point.
+
+**The §8 stagger discipline applies.** Movable = `STRIKE`/`BAI`/`OCA_RUNWAY`/`OCA_AIRCRAFT`
+(`COORDINATED_STRIKE_TYPES` — Armed Recon is a loitering sweep, AIR ASSAULT is tied to the
+ground war's timing; both deliberately stay spread), AI-only, non-ASAP. A package with a
+player flight is never rescheduled — but a **player-flown SEAD still opens a window the AI
+strikes push behind** (providers are read-only). The carrier stagger runs after and only
+ever delays, so it can push a strike deeper into — never ahead of — its window;
+best-effort by design. Symmetric (each coalition's scheduler coordinates its own ATO).
+
+Gated by `sead_strike_coordination` (Air Doctrine → Auto-planner behavior, default **ON**).
+Tests: `tests/test_sead_strike_coordination.py` (the pure window math end-to-end + the
+wiring: ring matching, latest-provider windows, player/ASAP immunity, provider
+read-only, massing, the gate, a dead SAM's zero ring). Checklist B21 — needs an in-game
+pass (Tacview: AI strikes arrive after their SEAD is on station, not before).
 
 ---
 

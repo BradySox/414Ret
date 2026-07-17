@@ -27,6 +27,12 @@
 -- 9 fired batteries (2026-07-17 Scenic Route fly). fireMarginS MUST stay above that 240 s
 -- window so the first route push arrives after the task has ended on its own; the resetTask
 -- here stays as a belt-and-braces for pre-window missions.
+--
+-- GIVE-UP: a group whose consecutive route pushes produce essentially no movement is
+-- dropped from the loop (2026-07-17 Noisy Cricket fly: all 8 fired CH_Shahed136 sites
+-- stayed pinned post-salvo -- a mod launcher state DCS will not drive out of, while the
+-- never-fired ones drove fine -- and each drew 6 more futile pushes/hour). Two dry
+-- pushes and the group is left alone; real movement resets the count.
 ---------------------------------------------------------------------------------------------------
 
 if not (dcsRetribution and dcsRetribution.mobileMissiles and mist) then
@@ -41,6 +47,8 @@ local RADIUS = 4000 -- m the site scoots from its campaign position
 local SPEED = 30 -- km/h ground speed while relocating
 local GRACE = 120 -- s before the first relocation
 local FIRE_MARGIN = 300 -- s past a group's fire-mission window before it starts scooting
+local MIN_PROGRESS_M = 100 -- a push that moved the group less than this counts as dry
+local GIVE_UP_PUSHES = 2 -- consecutive dry pushes before a group stops being routed
 
 if dcsRetribution.plugins and dcsRetribution.plugins.mobilemissiles then
     local o = dcsRetribution.plugins.mobilemissiles
@@ -131,6 +139,17 @@ end
 local function startSite(site, startDelay)
     local cx, cy = num(site.x), num(site.y)
     local holds = fireHoldsOf(site)
+    -- Per-group push ledger for the give-up rule: group name ->
+    -- { x, z: lead position at the last route push, dry: consecutive dry pushes,
+    --   stuck: true once given up }.
+    local pushes = {}
+    local function leadPos(g)
+        local ok, p = pcall(function()
+            local lead = g:getUnit(1)
+            return lead and lead:isExist() and lead:getPoint() or nil
+        end)
+        return ok and p or nil
+    end
     local function tick()
         local groups = aliveGroups(site.groups)
         if #groups == 0 then
@@ -138,15 +157,45 @@ local function startSite(site, startDelay)
         end
         local now = timer.getTime()
         for _, g in ipairs(groups) do
-            local hold = holds[g:getName()]
-            if hold and now < hold + FIRE_MARGIN then
+            local name = g:getName()
+            local hold = holds[name]
+            local rec = pushes[name]
+            if rec and rec.stuck then
+                -- Given up: a launcher DCS will not drive (the fired CH_Shahed136
+                -- state) -- stop hammering it with routes it cannot fly.
+            elseif hold and now < hold + FIRE_MARGIN then
                 -- Fire first, THEN scoot: this group's Hold -> FireAtPoint rides its
                 -- mission task and a route push would setTask-replace it. Sit tight
                 -- until the launch window (+ margin) has passed.
-                env.info("MOBILEMISSILES|: holding " .. g:getName() .. " for its fire mission")
+                env.info("MOBILEMISSILES|: holding " .. name .. " for its fire mission")
             else
-                local dest = mist.getRandPointInCircle({ x = cx, y = cy }, RADIUS)
-                driveTo(g, dest.x, dest.y, SPEED, hold ~= nil)
+                local here = leadPos(g)
+                if rec and here then
+                    local dx = (here.x or 0) - rec.x
+                    local dz = (here.z or 0) - rec.z
+                    if math.sqrt(dx * dx + dz * dz) < MIN_PROGRESS_M then
+                        rec.dry = rec.dry + 1
+                    else
+                        rec.dry = 0
+                    end
+                    if rec.dry >= GIVE_UP_PUSHES then
+                        rec.stuck = true
+                        env.info("MOBILEMISSILES|: giving up on " .. name
+                            .. " (no movement across " .. rec.dry .. " route pushes)")
+                    end
+                end
+                if not (rec and rec.stuck) then
+                    local dest = mist.getRandPointInCircle({ x = cx, y = cy }, RADIUS)
+                    driveTo(g, dest.x, dest.y, SPEED, hold ~= nil)
+                    if here then
+                        pushes[name] = {
+                            x = here.x or 0,
+                            z = here.z or 0,
+                            dry = rec and rec.dry or 0,
+                            stuck = false,
+                        }
+                    end
+                end
             end
         end
         return timer.getTime() + INTERVAL

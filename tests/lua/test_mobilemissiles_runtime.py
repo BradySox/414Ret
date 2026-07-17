@@ -192,6 +192,53 @@ def test_group_without_fire_mission_never_gets_a_task_reset() -> None:
     h.assert_no_lua_errors()
 
 
+def test_stuck_group_is_given_up_after_dry_pushes() -> None:
+    """A group whose route pushes produce no movement (the fired CH_Shahed136
+    post-salvo pin, 2026-07-17 Noisy Cricket fly) is dropped from the loop after
+    GIVE_UP_PUSHES consecutive dry pushes instead of being hammered forever."""
+    h = _harness_with_mist()
+    h.add_group(_ground_group("PINNED"))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"mobilemissiles": {"startGraceS": 5, "scootIntervalS": 50}},
+            "mobileMissiles": {
+                "sites": [{"groups": ["PINNED"], "x": "0.0", "y": "0.0"}]
+            },
+        }
+    )
+    h.load_plugin_script(PLUGIN)
+
+    # Ticks at 5, 55, 105, 155... The harness never moves the fakes, so push 1
+    # routes, push 2 routes (first dry), tick 3 detects the second dry push and
+    # gives up; no further routes ever.
+    h.advance_to(500)
+    assert len([r for r in _routes(h) if r["group"] == "PINNED"]) == 2
+    h.assert_no_lua_errors()
+
+
+def test_moving_group_is_never_given_up() -> None:
+    """Real movement between pushes resets the dry count, so a healthy scooting
+    group keeps being routed for the whole mission."""
+    h = _harness_with_mist()
+    h.add_group(_ground_group("DRIVER"))
+    h.lua.globals().dcsRetribution = h.to_lua(
+        {
+            "plugins": {"mobilemissiles": {"startGraceS": 5, "scootIntervalS": 50}},
+            "mobileMissiles": {
+                "sites": [{"groups": ["DRIVER"], "x": "0.0", "y": "0.0"}]
+            },
+        }
+    )
+    h.load_plugin_script(PLUGIN)
+    # Advance tick by tick, teleporting the fake lead unit 500 m between ticks so
+    # every push sees real progress.
+    for i, t in enumerate([6, 56, 106, 156, 206]):
+        h.lua.execute(f"Group.getByName('DRIVER'):getUnit(1).x = {500 * (i + 1)}")
+        h.advance_to(t)
+    assert len([r for r in _routes(h) if r["group"] == "DRIVER"]) == 5
+    h.assert_no_lua_errors()
+
+
 def test_site_loops_are_staggered_across_the_interval() -> None:
     """39 synchronized sites routing in the same frame pegged the sim thread
     (2026-07-17 Scenic Route fly: continuous ANTIFREEZE, single-digit FPS).

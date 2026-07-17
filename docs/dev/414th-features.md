@@ -2046,6 +2046,12 @@ dark-themed control: `client/src/components/maplayers/MapLayersControl.tsx` (+ `
   their checkbox state, NOT by Leaflet `add`/`remove` — unmount does not reliably fire
   `remove`, which previously left the fog overview stuck on. The old `FogOfWarToggle` /
   `EmitterHighlightToggle` components were removed.
+- **Clickable air-defense rings** (upstream PR #808, adopted): a TGO-backed threat/detection
+  ring mirrors its emitter icon's clicks — left-click opens the TGO info dialog, right-click
+  starts a new package against it — so a SAM site whose icon is buried under another marker
+  stays reachable; carrier/LHA control-point rings (a CP id, no TGO behind them) stay
+  hover-only (`AirDefenseRangeLayer.tsx`; the §28 right-click-discoverability direction;
+  needs the CI client rebuild).
 - Client-only (TS/CSS); needs the rebuilt bundle (CI `npm run build`). `LiberationMap.tsx`
   now mounts just `MapLayersControl` (plus scale + ruler).
 - Cleanup done: the orphaned `CoalitionThreatZones` / `WaypointDebugZonesControls`

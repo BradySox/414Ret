@@ -636,6 +636,17 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    `defense_zone_entries` → `dcsRetribution.Intercept.ZONES`; empty ⇒ Lua skips `SetBorderZone` ⇒
    pre-feature behaviour. Checklist A5 — needs an in-game pass (the accept-zone release of an
    already-engaged defender, and whether the 150 NM transit really flies, are DCS-only unknowns).
+   **PR #782 drift port (2026-07-16)**: the Moose `FilterPrefixes` Lua-pattern escape lands in
+   `intercept-config.lua` — parenthesized IADS group names never matched, so QRA detection was
+   riding the paren-free backstop EWRs ONLY; the escape (the mantis `escape_prefix` fix) opens the
+   real EWR network (fold into the A5 fly). QRA now also scrambles **only against air-to-ground
+   taskings** (Strike/BAI/OCA-Runway/OCA-Aircraft/Anti-ship/Armed Recon — no DEAD/Air Assault;
+   parsed from the group name, whose first `|`-field now keeps the task even for custom-named
+   flights), the PLAYER_ALERT cue stays deliberately task-blind, reserve edits hit the planner
+   pool live (`Squadron.set_intercept_reserve` through all five writers, spinners capped at the
+   unplanned airframes, clamped by the §53 fuel-readiness ceiling + re-clamping
+   `qra_player_manned`), and a cratered runway fields no QRA (templates, cue, and the base-card
+   count all suppressed until repair).
 2. **JAMMING flight type** — C-130J as EC-130H/RC-130H EW+ISR platform (`c130j` plugin);
    the old generic `ewrj` fighter-pod jammer is retired and must not be restored.
 3. **TARPS recon + BDA fog-of-war** — player F-14 photo recon; viewer-aware fog (damage lag +

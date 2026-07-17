@@ -305,6 +305,21 @@ class QGroundObjectBuyMenu(QDialog):
             self.force_group_selector.currentIndex()
         )
 
+        # A coalition whose armed forces field no ForceGroup for this site's
+        # role leaves the selector empty and itemData returning None. Show why
+        # instead of crashing; the selectors stay unpopulated and no buy UI is
+        # built (the change signals below are never connected either).
+        if force_group is None or not force_group.layouts:
+            self.mainLayout.addWidget(
+                QLabel(
+                    f"The {coalition.faction.name} armed forces cannot field a "
+                    "unit group for this site, so there is nothing to buy here."
+                ),
+                0,
+                0,
+            )
+            return
+
         for layout in force_group.layouts:
             self.layout_selector.addItem(layout.name, userData=layout)
         self.layout_selector.adjustSize()

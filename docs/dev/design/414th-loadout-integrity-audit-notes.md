@@ -199,3 +199,33 @@ of dates and classify the resulting pylons by the `resources/weapons` folder tax
 (`a2a-missiles` = A2A; `bombs`/`rockets`/`standoff` = A2G; `type: ARM` = anti-radiation;
 `pods` = support). Note: iterating `AircraftType.iter_all()` misses some mod airframes whose
 payloads exist only as `.lua` files — the file-reading test guard above is the complete check.
+
+## 2026-07-17 addendum — the F-14 TARPS-only strip was the real breakage
+
+The one place the 2026-07-06 reset went too far: PR #457 stripped `F-14B.lua`,
+`F-14A-135-GR.lua`, and `F-14A-135-GR-Early.lua` to the single `Retribution TARPS`
+preset on the claim "non-recon tasking falls back to the pydcs default." **There is no
+such fallback** — pydcs ships no payload files, so `Loadout.default_for_task_and_aircraft`
+walks its name candidates, finds nothing, and returns `empty_loadout()`. Every
+BARCAP/TARCAP/Escort-auto-planned Tomcat on **both** coalitions flew with zero pylons.
+Never showed at home because the 414th's own campaigns fly the F-14 as TARPS-only; the
+Persian Gulf "Scenic Route" test campaign exposed it (2026-07-17 turn-2 fly: four blue
+F-14B BARCAP/Escort flights + red's two F-14A escort flights all launched clean; the four
+blue BARCAP jets died on their correctly-planned station without a shot in reply — the
+turn-3 "8 Tomcats fired zero A2A, SM-2s won every race" read was this same bug,
+mis-attributed).
+
+Fix: the three files are now **upstream/dev stock presets + the `Retribution TARPS`
+preset appended** (the #457 intent done right), plus a fork correction upstream still
+carries: **upstream's `F-14A-135-GR-Early.lua` declares `["unitType"] = "F-14A-135-GR"`**,
+and pydcs binds payload files by that field (`FlyingType.scan_payload_dir` regex), so the
+whole file never attaches to the Early jet — with it, the Early variant resolves nothing,
+not even a preset that IS in the file. Upstream-carve candidate (one-line fix + the
+observation that their Early Tomcat has no working presets at all).
+
+New guard: `tests/test_f14_loadouts.py` — every F-14 variant must resolve an **armed**
+loadout (an AIM on the rails, matched by weapon *name*, not CLSID — the AI F-14A's stores
+are GUID CLSIDs) for BARCAP/TARCAP/Escort/Sweep/Intercept, TARPS must resolve the recon
+preset, and the Early file's `unitType` field is pinned. Corollary to the reset policy
+above: **a preset file must cover every task the airframe can be auto-planned on** —
+"the engine will fall back" is never true; the fallback is an unarmed jet.

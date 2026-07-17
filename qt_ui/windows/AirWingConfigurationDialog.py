@@ -382,7 +382,12 @@ class SquadronConfigurationBox(QGroupBox):
     def update_max_size(self) -> None:
         self.squadron.max_size = self.max_size_selector.value()
         self.qra_reserve_selector.setMaximum(self.max_size_selector.value())
-        self.squadron.intercept_reserve = self.qra_reserve_selector.value()
+        # max_size is written to the model live (above); mirror the now-clamped
+        # reserve so the model never transiently holds intercept_reserve > max_size
+        # between here and apply(). setMaximum has already clamped the spinner value.
+        # Route through set_intercept_reserve so untasked_aircraft stays consistent
+        # even if the dialog is rejected (reject does not re-run initialize_turn).
+        self.squadron.set_intercept_reserve(self.qra_reserve_selector.value())
         self.parking_tracker.signal_change()
 
     def relocate_squadron(self) -> None:
@@ -459,7 +464,11 @@ class SquadronConfigurationBox(QGroupBox):
         self.squadron.name = self.name_edit.text()
         self.squadron.nickname = self.nickname_edit.text()
         self.squadron.max_size = self.max_size_selector.value()
-        self.squadron.intercept_reserve = self.qra_reserve_selector.value()
+        # Route through set_intercept_reserve (not a bare write) so untasked_aircraft
+        # stays in sync. accept() re-runs initialize_turn only at turn > 0; the turn-0
+        # setup path and save_config's apply() have no reinit, so a direct write would
+        # leave the planner pool stale.
+        self.squadron.set_intercept_reserve(self.qra_reserve_selector.value())
         if (primary_task := self.primary_task_selector.selected_task) is not None:
             self.squadron.primary_task = primary_task
         else:

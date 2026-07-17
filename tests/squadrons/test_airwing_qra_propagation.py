@@ -13,9 +13,18 @@ class _FakeSquadron:
         self.intercept_reserve = reserve
         self.max_size = max_size
         self._barcap = barcap
+        # Attributes read by the real Squadron.set_intercept_reserve, which
+        # repropagate_qra_reserve now routes through.
+        self.owned_aircraft = max_size
+        self.untasked_aircraft = max(0, max_size - reserve)
+        self.qra_player_manned = 0
 
     def capable_of(self, task: FlightType) -> bool:
         return self._barcap
+
+    def set_intercept_reserve(self, value: int) -> None:
+        # Exercise the real model logic (delta-adjust untasked + set reserve).
+        Squadron.set_intercept_reserve(cast(Squadron, self), value)
 
 
 def _airwing(squadrons: list[_FakeSquadron]) -> AirWing:
@@ -35,6 +44,9 @@ def test_repropagate_bumps_only_tracking_barcap_squadrons() -> None:
     assert tracking.intercept_reserve == 4
     assert user_set.intercept_reserve == 2
     assert non_barcap.intercept_reserve == 0
+    # The planner pool follows the reserve immediately (no initialize_turn runs
+    # after the settings-window edit that triggers repropagation).
+    assert tracking.untasked_aircraft == 8
 
 
 def test_repropagate_is_a_no_op_when_default_unchanged() -> None:

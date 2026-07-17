@@ -17,7 +17,10 @@ from game.ato import Flight, FlightType, Package
 from game.settings import AutoAtoBehavior, Settings
 from game.theater import ParkingType
 from game.theater.player import Player
-from .intercept_reserve import clamp_intercept_reserve
+from .intercept_reserve import (
+    clamp_intercept_reserve,
+    untasked_after_reserve_change,
+)
 from .pilot import Pilot, PilotStatus
 from .pilotnames import faker_for_country
 from ..db.database import Database
@@ -324,6 +327,38 @@ class Squadron:
 
         available = int(available * fuel_readiness(getattr(self, "location", None)))
         self.untasked_aircraft = max(0, available)
+
+    def set_intercept_reserve(self, value: int) -> None:
+        """Set the QRA reserve and reflect the change in the plannable pool now.
+
+        The planner reads ``untasked_aircraft``, which is otherwise only
+        recomputed at turn init. Editing the reserve between turns adjusts the
+        pool by the delta so freed jets are immediately available (and newly
+        reserved jets immediately benched) without a full
+        ``return_all_pilots_and_aircraft`` reset that would return already-tasked
+        flights.
+        """
+        adjusted = untasked_after_reserve_change(
+            self.intercept_reserve, value, self.untasked_aircraft, self.owned_aircraft
+        )
+        # §53 P3 coupling: return_all_pilots_and_aircraft scales the pool by the
+        # base's fuel readiness AFTER subtracting the reserve, so a mid-turn edit
+        # must respect the same ceiling -- freeing reserve at a fuel-starved base
+        # must not un-ground jets the depot damage grounded. fuel_readiness is
+        # 1.0 (an exact no-op ceiling) unless fuel_air_readiness is on.
+        from game.fourteenth.war_economy import fuel_readiness
+
+        ceiling = int(
+            max(0, self.owned_aircraft - value)
+            * fuel_readiness(getattr(self, "location", None))
+        )
+        self.untasked_aircraft = min(adjusted, ceiling)
+        self.intercept_reserve = value
+        # §1 player-manned coupling: the player can never man more of the reserve
+        # than exists. Lowering the reserve below the manned count would otherwise
+        # leave a phantom manned alert flight fragged against airframes no longer
+        # held on QRA.
+        self.qra_player_manned = min(self.qra_player_manned, value)
 
     @staticmethod
     def send_on_leave(pilot: Pilot) -> None:

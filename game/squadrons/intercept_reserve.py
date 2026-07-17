@@ -38,6 +38,45 @@ def qra_resource_count(
     return count
 
 
+def max_intercept_reserve(
+    untasked_aircraft: int, intercept_reserve: int, max_size: int
+) -> int:
+    """Highest QRA reserve settable given aircraft already tasked this turn.
+
+    Aircraft tasked to flights cannot be pulled onto QRA, so the reserve can only
+    rise to the unplanned airframes plus what is already reserved:
+    ``untasked_aircraft + intercept_reserve`` equals ``owned - tasked`` by the turn
+    invariant (``tasked + untasked + reserve == owned``). This sum is stable under
+    ``untasked_after_reserve_change`` (which trades untasked for reserve), so it is
+    a fixed ceiling while the reserve spinner is edited. Also bounded by
+    ``max_size``.
+    """
+    return min(max_size, untasked_aircraft + intercept_reserve)
+
+
+def untasked_after_reserve_change(
+    old_reserve: int, new_reserve: int, untasked_aircraft: int, owned_aircraft: int
+) -> int:
+    """Plannable-aircraft count after a mid-turn QRA reserve edit.
+
+    ``untasked_aircraft`` is only recomputed from ``owned - reserve`` at
+    ``return_all_pilots_and_aircraft`` (turn init). Editing the reserve spinner
+    between turns must reflect in the plannable pool immediately, but a full
+    reset would return airframes already tasked to flights this turn. Adjust by
+    the reserve delta instead: freeing reserve (``old > new``) releases jets into
+    the pool; raising it benches only jets that are still untasked.
+
+    Bounded on both ends: floored at 0 (already-tasked flights are never
+    retroactively un-planned) and capped at ``owned_aircraft - new_reserve`` (the
+    airframes that actually exist beyond the new reserve). The cap matters after
+    attrition leaves ``owned < reserve``: ``return_all_pilots_and_aircraft`` floors
+    that to untasked 0, discarding the negative, so the delta alone would inflate
+    the pool above the jets on hand.
+    """
+    adjusted = untasked_aircraft + (old_reserve - new_reserve)
+    return max(0, min(adjusted, owned_aircraft - new_reserve))
+
+
 def qra_player_manned_count(
     player_manned: int, intercept_reserve: int, owned_aircraft: int
 ) -> int:

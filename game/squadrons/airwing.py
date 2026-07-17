@@ -220,12 +220,17 @@ class AirWing:
         from .intercept_reserve import repropagated_intercept_reserve
 
         for squadron in self.iter_squadrons():
-            squadron.intercept_reserve = repropagated_intercept_reserve(
-                squadron.capable_of(FlightType.BARCAP),
-                squadron.intercept_reserve,
-                old_default,
-                new_default,
-                squadron.max_size,
+            # set_intercept_reserve (not a direct write) so untasked_aircraft stays
+            # in sync: this runs from the settings window mid-turn with no following
+            # initialize_turn, so a bare assignment would leave the planner pool stale.
+            squadron.set_intercept_reserve(
+                repropagated_intercept_reserve(
+                    squadron.capable_of(FlightType.BARCAP),
+                    squadron.intercept_reserve,
+                    old_default,
+                    new_default,
+                    squadron.max_size,
+                )
             )
 
     def squadron_at_index(self, index: int) -> Squadron:

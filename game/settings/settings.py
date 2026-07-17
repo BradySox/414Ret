@@ -1691,7 +1691,7 @@ class Settings:
         section=GENERAL_SECTION,
         default=10,
         min=0,
-        max=50,
+        max=25,
         detail=(
             "Caps how many reserve vehicles a control point renders across its "
             "motorpool(s) per turn. Lower this if motorpools hurt mission "

@@ -5289,7 +5289,7 @@ debrief (the "Motorpool units lost" faction row + per-type "`<type>` from motorp
 ### Settings & fork interactions
 
 - Gated `motorpool_enabled` (**Campaign Management → Campaign features**, default **ON**) +
-  `motorpool_spawn_cap` (default 10, 0–50 — a perf lever). Both registered in the §28 `FIELD_LAYOUT`.
+  `motorpool_spawn_cap` (default 10, 0–25 — a perf lever). Both registered in the §28 `FIELD_LAYOUT`.
 - **§3 recon fog** leaves a motorpool an **exact** marker — category `motorpool` isn't in the
   concealable set (`game/server/tgos/models.py` conceals only armor/missile/concealable-SAM), so the
   depot reads like an ammo depot/building, not a dashed "suspected activity" circle. Sensible: you see
@@ -5313,6 +5313,31 @@ checklist B8 — fly **Red Tide** (the depot renders at Haina immediately; its p
 once red has procured armor, a couple of turns in, since `base.armor` is empty at turn 0 by design)
 to exercise the map icon, in-mission depot + parked vehicles, the strike→decrement→repurchase grind,
 the no-front-shift guarantee, and the debrief rows.
+
+### Upstream drift sync (2026-07-16)
+
+The #859 branch kept moving after the fork's adoption; the drift was ported back:
+
+- **Rotation fix** (upstream `401fbceda`, cherry-picked) — the parking grid and the depot's
+  opposite-corner offset now rotate about the TGO origin by the authored `Garage_A` heading, so a
+  non-cardinal garage no longer produces angled vehicles in a world-axis grid. Heading 0 is a no-op.
+- **Capture-zone warnings** (upstream `b17e530e3` + `042d883de`, cherry-pick + hand-applied
+  `QLiberationWindow` half) — parked motorpool vehicles are live ground units that block DCS's
+  `AllOfCoalitionOutsideZone` capture trigger, so a depot inside the CP's 3 km capture zone makes the
+  base uncapturable by ground assault. `warn_if_motorpool_inside_capture_zone` logs at both
+  TGO-creation sites (`start_generator.generate_motorpools` + `migrator._ensure_motorpool_tgos`), and
+  `motorpools_inside_capture_zone`/`MotorpoolCaptureViolation` back a deferred modal `QMessageBox`
+  from `QLiberationWindow` on both activation paths (`onGameGenerated` + the load-game dialog), gated
+  on `motorpool_enabled`. Warn-only, never relocates. **Red Tide's Haina depot is at 4,250 m** —
+  outside the 3,000 m zone, so the campaign stays silent.
+- **Rename** (upstream `60aa41e2f`, cherry-picked) — `_passivate` → `_set_passive`.
+- **Spawn-cap ceiling ADAPTED, not verbatim** (from upstream `f09e03f86`) — upstream raised the
+  default 10 → 25 AND lowered the spinner max 50 → 25; the fork adopts **only the max 50 → 25** and
+  **deliberately keeps default=10** (the MP performance posture — the TIC dense-siege framerate
+  history; §59 exists for the same reason). The migrator backfill stays at 10.
+- **Deliberately deferred**: upstream `2697cd0f` (the autoplanner strikes enemy motorpool reserves)
+  is NOT ported here — it collides with the §40 phase / §55 red-intent offensive-emphasis machinery
+  and gets its own designed PR.
 
 ---
 

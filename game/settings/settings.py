@@ -147,6 +147,7 @@ CAMPAIGN_MANAGEMENT_PAGE = "Campaign Management"
 GENERAL_SECTION = "General"
 PILOTS_AND_SQUADRONS_SECTION = "Pilots and Squadrons"
 HQ_AUTOMATION_SECTION = "HQ Automation"
+COMBAT_SAR_SECTION = "Combat search & rescue"
 FLIGHT_PLANNER_AUTOMATION = "Flight Planner Automation"
 
 CAMPAIGN_DOCTRINE_PAGE = "Campaign Doctrine"
@@ -399,12 +400,18 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "auto_ato_behavior_awacs",
                     "auto_ato_behavior_tankers",
                     "auto_ato_player_missions_asap",
-                    "auto_combat_sar",
-                    "combat_sar_persistent_pilots",
-                    "combat_sar_test_force_capture",
-                    "combat_sar_test_easy_rescue",
                     "automate_front_line_stance",
                     "default_front_line_stance",
+                ],
+            ),
+            (
+                "Combat search & rescue",
+                [
+                    "auto_combat_sar",
+                    "combat_sar_persistent_pilots",
+                    "combat_sar_surge",
+                    "combat_sar_test_force_capture",
+                    "combat_sar_test_easy_rescue",
                 ],
             ),
             (
@@ -1924,7 +1931,7 @@ class Settings:
     auto_combat_sar: bool = boolean_option(
         "Automatic Combat SAR (pilot-rescue) standing alert",
         CAMPAIGN_MANAGEMENT_PAGE,
-        HQ_AUTOMATION_SECTION,
+        COMBAT_SAR_SECTION,
         default=True,
         detail=(
             "Auto-plan a Combat SAR package (King + rescue helo + Sandy) near each "
@@ -1938,7 +1945,7 @@ class Settings:
     combat_sar_persistent_pilots: bool = boolean_option(
         "Downed pilots persist until rescued or captured (MIA)",
         CAMPAIGN_MANAGEMENT_PAGE,
-        HQ_AUTOMATION_SECTION,
+        COMBAT_SAR_SECTION,
         default=True,
         detail=(
             "A pilot who ejects and is neither rescued nor captured by mission end "
@@ -1953,10 +1960,27 @@ class Settings:
             "old behaviour (an un-rescued pilot is lost at debrief)."
         ),
     )
+    combat_sar_surge: bool = boolean_option(
+        "Pilot recovery surge (next-turn coordinated rescue)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        COMBAT_SAR_SECTION,
+        default=True,
+        enabled_when="combat_sar_persistent_pilots",
+        detail=(
+            "The turn after a pilot goes MIA, open the mission with a coordinated "
+            "recovery package already airborne at the evader's last known position: "
+            "rescue helo(s), a C-130 'King' on-scene commander, a 'Sandy' escort, "
+            "and a fighter escort when threatened -- planned ahead of everything "
+            "else, so the rescue force is on station at mission start instead of "
+            "transiting for an hour. Fires ONCE per downed pilot (a failed surge "
+            "falls back to the normal rescue paths), so it is an event, not an "
+            "every-mission fixture. Requires persistent downed pilots (MIA)."
+        ),
+    )
     combat_sar_test_force_capture: bool = boolean_option(
         "[TEST] Combat SAR: force every downed pilot to be captured",
         CAMPAIGN_MANAGEMENT_PAGE,
-        HQ_AUTOMATION_SECTION,
+        COMBAT_SAR_SECTION,
         default=False,
         detail=(
             "Testing aid (thumb on the scale, default OFF). Rigs the Combat SAR "
@@ -1972,7 +1996,7 @@ class Settings:
     combat_sar_test_easy_rescue: bool = boolean_option(
         "[TEST] Combat SAR: make pilot pickup trivially easy",
         CAMPAIGN_MANAGEMENT_PAGE,
-        HQ_AUTOMATION_SECTION,
+        COMBAT_SAR_SECTION,
         default=False,
         detail=(
             "Testing aid (thumb on the scale, default OFF). Disables the enemy "

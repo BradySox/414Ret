@@ -32,7 +32,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §18 | Fog-of-war overview toggle | — | — |
 | §19 | Unified map layers panel | — | — |
 | §20 | Drop-spawn: map right-click unit placement | — | `enable_unit_placement`, `enable_free_unit_placement` |
-| §21 | Combat SAR | `combatsar` | `auto_combat_sar`, `combat_sar_persistent_pilots` |
+| §21 | Combat SAR | `combatsar` | `auto_combat_sar`, `combat_sar_persistent_pilots`, `combat_sar_surge` |
 | §22 | Kneeboard space-utilisation + custom import | — | — |
 | §23 | Per-squadron DCS country | — | — |
 | §24 | Date-gated aircraft properties | — | `restrict_props_by_date` |

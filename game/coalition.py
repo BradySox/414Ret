@@ -315,6 +315,15 @@ class Coalition:
                     from game.fourteenth.convoy_mining import plan_convoy_mining
 
                     plan_convoy_mining(self, now, tracer)
+                # 414th pilot recovery surge (§21): when a pilot went MIA last
+                # mission, frag ONE coordinated recovery package (Jolly + King +
+                # Sandy + escort) at the evader's position -- before the commander,
+                # so the surge claims its aircraft first ("drop everything").
+                # Once per downed pilot; no-op with no un-surged evader.
+                with tracer.trace(f"{color} pilot recovery surge"):
+                    from game.fourteenth.csar_surge import plan_pilot_recovery_surge
+
+                    plan_pilot_recovery_surge(self, now, tracer)
                 with tracer.trace(f"{color} mission identification"):
                     TheaterCommander(self.game, self.player).plan_missions(now, tracer)
                 with tracer.trace(f"{color} carrier buddy-tanker routing"):

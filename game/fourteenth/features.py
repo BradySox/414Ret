@@ -108,7 +108,11 @@ FEATURES: tuple[Feature, ...] = (
         "Combat SAR",
         21,
         plugin_id="combatsar",
-        settings_fields=("auto_combat_sar", "combat_sar_persistent_pilots"),
+        settings_fields=(
+            "auto_combat_sar",
+            "combat_sar_persistent_pilots",
+            "combat_sar_surge",
+        ),
     ),
     Feature(
         "kneeboard_custom_import", "Kneeboard space-utilisation + custom import", 22

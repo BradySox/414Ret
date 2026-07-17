@@ -1483,13 +1483,18 @@ class SeadTaskPage(KneeboardPage):
         writer.title(f"{self.flight.callsign} {task} Target Info{custom_name_title}")
 
         # Larger-than-default fonts: this page carries only a few rows, so bigger type
-        # fills the page and reads better in the cockpit. The exact-coords table keeps
-        # the default font (its long coordinate strings need the narrower glyphs).
+        # fills the page and reads better in the cockpit. The exact-coords table
+        # instead drops BELOW the default (and shortens "STPT" to "#"): at size 20
+        # the longest SAM names (e.g. S-300 Big Bird SR) pushed the DMS Location
+        # column off the right edge (upstream PR #766).
         body_font = ImageFont.truetype(
             "courbd.ttf", 20, layout_engine=ImageFont.Layout.BASIC
         )
         area_font = ImageFont.truetype(
             "courbd.ttf", 24, layout_engine=ImageFont.Layout.BASIC
+        )
+        exact_font = ImageFont.truetype(
+            "courbd.ttf", 18, layout_engine=ImageFont.Layout.BASIC
         )
 
         target = self.flight.package.target
@@ -1554,7 +1559,9 @@ class SeadTaskPage(KneeboardPage):
                     )
                     for i, t in enumerate(self.target_units)
                 ]
-            writer.table(rows, headers=["STPT", "Description", "ALIC", "Location"])
+            writer.table(
+                rows, headers=["#", "Description", "ALIC", "Location"], font=exact_font
+            )
 
     def target_info_row(self, unit: TheaterUnit, number: Optional[int]) -> List[str]:
         return [

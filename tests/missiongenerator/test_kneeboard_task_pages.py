@@ -149,3 +149,32 @@ def test_sead_task_page_keeps_exact_coords_with_exact_intel() -> None:
 
     assert row[0] == "3"
     assert row[3] == "N 35 00 00 E 36 00 00"
+
+
+def test_sead_exact_view_renames_stpt_header_to_keep_location_on_page() -> None:
+    # Upstream PR #766: long SAM names pushed the DMS Location column off the
+    # right edge of the exact view, so its table renders at a smaller font with
+    # the "STPT" header shortened to "#". Pin the header rename.
+    flight = _flight(FlightType.SEAD, TargetIntelPrecision.EXACT)
+    flight.friendly = object()
+    flight.callsign = "Pontiac 1"
+    flight.custom_name = None
+    flight.waypoints = []
+    target = MagicMock(spec=SamGroundObject)
+    target.known_for.return_value = True
+    target.position = _DummyPosition("center")
+    target.strike_targets = [
+        _unit(AirDefence.Kub_1S91_str.id, 'SAM SA-6 "Straight Flush" STR', "str"),
+    ]
+    flight.package.target = target
+    page = SeadTaskPage(flight, _bullseye(), False)
+    assert page._use_target_area_cues is False
+
+    writer = KneeboardPageWriter()
+    page.render_into(writer)
+    text = writer.get_text_string()
+
+    assert "STPT" not in text
+    assert "#" in text
+    assert "Straight Flush" in text
+    assert "loc" in text  # the DMS Location column still renders

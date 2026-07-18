@@ -111,7 +111,11 @@ produces. They differ only in *where the scenery enters the engine*:
   (e.g. `game/campaignloader/scenerycatalog.py`) that *both* the emitter and the
   runtime importer call. The emitter becomes a thin CLI over the shared core; the
   importer becomes a thin campaign-load adapter over the same core. One clustering
-  implementation, two front-ends.
+  implementation, two front-ends. *(Status 2026-07-18: the shared core is DONE —
+  `game/campaignloader/scenerycatalog.py` is committed + CI-tested in
+  `tests/test_scenerycatalog.py`, not gitignored tooling. Strategy B's runtime
+  importer — the `sceneryimport` module, its setting, and the campaign-load hook —
+  remains unbuilt; this stays a documented deferral.)*
 
 The rest of this note specs Strategy B.
 

@@ -2333,8 +2333,10 @@ class Settings:
         detail=(
             "Generate target/airfield reconnaissance pages for player flights with "
             "air-to-ground tasks, showing aimpoints, threat rings, and target area "
-            "context over satellite imagery. Off by default: the marker overlays do "
-            "not reliably line up with the underlying satellite tiles."
+            "context over satellite imagery. The historical marker/tile misalignment "
+            "was fixed 2026-07-18 (regional DCS-vs-real-world imagery offset applied "
+            "to every page + a subdivided warp on large extents); off by default "
+            "pending an in-game pass of the fix."
         ),
     )
     generate_all_packages_kneeboard: bool = boolean_option(

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import json
 import logging
+import math
+import statistics
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -109,6 +111,15 @@ class AirportImagery:
     runways: tuple[RunwayRecord, ...]
     elevation_m: Optional[float] = None
     elevation_source: Optional[str] = None
+    # DCS-claimed airport position (from the JSON's ``dcs_position``), used to
+    # find the calibrated airports nearest an arbitrary extent centre. None on
+    # records generated before the field existed.
+    dcs_lat: Optional[float] = None
+    dcs_lng: Optional[float] = None
+    # True only when the JSON carried a measured ``imagery_offset_deg`` block.
+    # Distinguishes "measured as aligned (0, 0)" from "never measured" — only
+    # measured entries may vote in :func:`offset_near`.
+    has_offset: bool = False
 
     def runway_for_heading(self, dcs_heading_deg: float) -> Optional[RunwayRecord]:
         """Pick the OSM runway whose heading matches `dcs_heading_deg`.
@@ -241,6 +252,15 @@ def _load_from_disk(terrain_name: str) -> Optional[TerrainImagery]:
                 elevation_m = float(ele_raw) if ele_raw is not None else None
             except (TypeError, ValueError):
                 elevation_m = None
+            pos = rec.get("dcs_position")
+            dcs_lat: Optional[float] = None
+            dcs_lng: Optional[float] = None
+            if isinstance(pos, dict):
+                try:
+                    dcs_lat = float(pos["lat"])
+                    dcs_lng = float(pos["lng"])
+                except (KeyError, TypeError, ValueError):
+                    dcs_lat = dcs_lng = None
             by_id[aid] = AirportImagery(
                 name=rec.get("name", "?"),
                 imagery_offset_lat=(offset or {}).get("lat", 0.0) or 0.0,
@@ -248,6 +268,9 @@ def _load_from_disk(terrain_name: str) -> Optional[TerrainImagery]:
                 runways=tuple(runways),
                 elevation_m=elevation_m,
                 elevation_source=rec.get("elevation_source"),
+                dcs_lat=dcs_lat,
+                dcs_lng=dcs_lng,
+                has_offset=isinstance(offset, dict),
             )
         except (KeyError, TypeError, ValueError) as exc:
             logger.warning(
@@ -257,6 +280,65 @@ def _load_from_disk(terrain_name: str) -> Optional[TerrainImagery]:
                 exc,
             )
     return TerrainImagery(terrain=raw.get("terrain", terrain_name), by_airport_id=by_id)
+
+
+# Robust regional-offset lookup (offset_near). The DCS-vs-real-world
+# georeference error is a smooth, regional property of the terrain mesh
+# (Caucasus/GermanyCW median ~350 m, Normandy ~740 m, modern maps tens of
+# metres), so the median of the few nearest measured airports transfers well
+# to target- and corridor-centred extents that have no airport anchor.
+_M_PER_DEG_LAT = 111_320.0
+# An offset this large is a mis-matched OSM airfield (a relocated/renamed
+# strip), not a real georeference error — the shipped datasets' honest
+# medians top out ~1.4 km (TheChannel) while the junk tail runs 3–6 km.
+_OFFSET_OUTLIER_M = 2_000.0
+# Beyond this, the nearest measurement says nothing about the extent.
+_OFFSET_MAX_NEAREST_M = 250_000.0
+_OFFSET_NEIGHBORS = 3
+
+
+def offset_near(
+    terrain_name: str, lat: float, lng: float
+) -> Optional[tuple[float, float]]:
+    """Robust ``(dlat, dlng)`` imagery offset near a point, or None.
+
+    Component-wise median of the ``_OFFSET_NEIGHBORS`` nearest *measured*
+    airports (``has_offset`` with a known ``dcs_position``), skipping
+    outlier entries whose offset exceeds ``_OFFSET_OUTLIER_M`` on the
+    ground. None when the terrain ships no dataset, every candidate is an
+    outlier, or the nearest survivor is farther than
+    ``_OFFSET_MAX_NEAREST_M``.
+    """
+    record = load(terrain_name)
+    if record is None:
+        return None
+    cos_lat = max(math.cos(math.radians(lat)), 1e-6)
+    candidates: list[tuple[float, float, float]] = []
+    for entry in record.by_airport_id.values():
+        if not entry.has_offset or entry.dcs_lat is None or entry.dcs_lng is None:
+            continue
+        off_north_m = entry.imagery_offset_lat * _M_PER_DEG_LAT
+        off_east_m = entry.imagery_offset_lng * _M_PER_DEG_LAT * cos_lat
+        if math.hypot(off_north_m, off_east_m) > _OFFSET_OUTLIER_M:
+            continue
+        d_north = (entry.dcs_lat - lat) * _M_PER_DEG_LAT
+        d_east = (entry.dcs_lng - lng) * _M_PER_DEG_LAT * cos_lat
+        candidates.append(
+            (
+                math.hypot(d_north, d_east),
+                entry.imagery_offset_lat,
+                entry.imagery_offset_lng,
+            )
+        )
+    if not candidates:
+        return None
+    candidates.sort(key=lambda c: c[0])
+    if candidates[0][0] > _OFFSET_MAX_NEAREST_M:
+        return None
+    nearest = candidates[:_OFFSET_NEIGHBORS]
+    dlat = statistics.median([c[1] for c in nearest])
+    dlng = statistics.median([c[2] for c in nearest])
+    return (dlat, dlng)
 
 
 def field_elevation_for_airport(

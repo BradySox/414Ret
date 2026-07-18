@@ -23,16 +23,33 @@ interface Row {
 }
 
 const ROWS: Row[] = [
-  { color: mapColors.friendly, kind: "line", label: "Friendly (forces, threat)" },
-  { color: mapColors.enemy, kind: "line", label: "Enemy (forces, threat)" },
+  { color: mapColors.friendly, kind: "line", label: "Friendly (forces, threat rings)" },
+  { color: mapColors.enemy, kind: "line", label: "Enemy (forces, threat rings)" },
+  {
+    color: mapColors.detectionFriendly,
+    kind: "line",
+    label: "Radar detection ring: friendly",
+  },
+  {
+    color: mapColors.detectionEnemy,
+    kind: "line",
+    label: "Radar detection ring: enemy",
+  },
   { color: mapColors.flot, kind: "line", label: "Front line (FLOT)" },
   { color: mapColors.suspected, kind: "dashed", label: "Suspected activity — scout it" },
   { color: mapColors.offLimits, kind: "dashed", label: "ROE off-limits — no strike" },
   { color: mapColors.weaponsFree, kind: "dashed", label: "Weapons-free pocket" },
+  { color: mapColors.pilotMia, kind: "fill", label: "Pilot down — evading, fly the rescue" },
+  { color: mapColors.pilotPow, kind: "dashed", label: "POW — held at an enemy field" },
+  { color: mapColors.mine, kind: "dashed", label: "Minefield (your own)" },
   { color: mapColors.supplyOk, kind: "fill", label: "Supply: healthy" },
   { color: mapColors.supplyMid, kind: "fill", label: "Supply: strained" },
   { color: mapColors.supplyLow, kind: "fill", label: "Supply: low" },
   { color: mapColors.supplyCritical, kind: "fill", label: "Supply: starved" },
+  { color: mapColors.supplyProducer, kind: "line", label: "Supply producer (factory/oil)" },
+  { color: mapColors.routeFriendly, kind: "line", label: "Convoy route: friendly" },
+  { color: mapColors.routeEnemy, kind: "line", label: "Convoy route: enemy — interdict" },
+  { color: mapColors.routeContested, kind: "line", label: "Convoy route: contested" },
 ];
 
 export default function MapLegend() {

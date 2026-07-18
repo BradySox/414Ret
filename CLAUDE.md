@@ -124,6 +124,15 @@ file. This guide is the map; those are the territory.
     `tools/build_iraq_inherent_resolve_miz.py` only ADDS the in-between `NEW_FOBS` to it. Headless-verified
     (16 CPs — RED 13 / BLUE 3 — furnishing + 14 routes all bind); CI-locked in
     `tests/fourteenth/test_inherent_resolve.py`; needs an in-game pass. NEW game required.
+  - `414th-tanker-war-campaign-notes.md` — **Persian Gulf "The Tanker War (1988)"** (the 1987–88
+    Gulf-shipping war built to an Operation Praying Mantis climax on the WRL Noisy Cricket Redux
+    geography: US Navy 1985 CVW vs Iran 1988 + an Iraqi Exocet flavor; ships-not-territory via
+    the warship will feed, an authored phase arc + shipping-lane ROE corridor, coastal Silkworm
+    sites (fire-window missions only — vanilla Silkworm hardware is §49-immobile, so it fires
+    but never scoots), and AAA gun forts on the 15 oil platforms. Phases 1–3 BUILT +
+    headless-verified 2026-07-07; laydown CI-locked in `tests/fourteenth/test_tanker_war.py`;
+    registered 2026-07-18 (the maintenance sweep found it shipped silent — no checklist row or
+    docs entries); in-game pass = checklist T2, the platform-AAA on-deck render the riskiest bit)
   - `414th-red-tide-supply-routes-notes.md` — YAML supply routes + Kastrup preset patch
   - `414th-comms-jam-notes.md` — enemy comms jamming off the IADS comms nodes (§51): why the
     in-game `radioTransmission` path beat SRS injection, the anti-grief guardrails, tuning levers
@@ -157,7 +166,15 @@ file. This guide is the map; those are the territory.
     near-field markers like Dynamo's evacuation flotilla ≈30 km stay; a marker sitting on an enemy
     base 55–420 km from any blue field binds by proximity). Economy classes bind by pure proximity,
     byte-identical to the pre-#590 baseline)
-  - `414th-campaign-maker-notes.md` — blank-start campaign maker (policy core landed; glue/wizard in progress)
+  - `414th-campaign-maker-notes.md` — blank-start campaign maker (**landed through Increment D**,
+    not "in progress": the wizard's "Build your own (blank canvas — experimental)" entry →
+    all-airfields-neutral map paint (left/right-click cycles gray→blue→red) → **Finalize**
+    (prunes unpainted bases, derives fronts, seeds air defenses + economy, staffs airwings) →
+    play → **Save as Campaign** (a `.miz`-less `blank_canvas` YAML that reloads from the New
+    Game list). Create/paint/finalize app-verified 2026-06-24 (checklist BC-A/B/C + the BC-D
+    build half); still owed = the fly-side rows (BC-D fly, BC-E/F/G/H) + the deferred D.4
+    polish (layout fidelity, FUEL/OIL round-trip, squadron presets, `base.armor` inventory
+    seeding))
   - `414th-weapon-dates-proposal.md` — weapon-coverage completion plan + the modern-weapon date-gating rule
   - **MIST → MOOSE consolidation & IADS engine** (✅ COMPLETE 2026-06-25 — MIST retired; read before
     touching IADS/plugins):
@@ -896,7 +913,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     lines he rolls a **depth-weighted capture** — 10% within 5 NM of the front, linearly to **90% at
     40 NM+** (the *don't-fly-deep* incentive; a hit is the normal POW chain, with the ledger resolving
     the pilot in `record_pow_captures`). **Deliberately no death clock** — the roll is the clock.
-    Surfaced on the SITREP band ("MIA: … — evading near … (N turns down)") + the squadron roster; the
+    Surfaced on the SITREP band ("MIA: … — evading near … (N turns down)") + the squadron roster +
+    **the campaign map (2026-07-18)**: a default-ON "Downed pilots" layer (`DownedPilotJs` →
+    `client/src/components/downedpilots/`) draws each MIA evader rescue-orange at his last known
+    position and each POW gray at the holding field, so the host plans the rescue from the map; the
     gate covers only *creation* of MIA entries so a mid-campaign toggle never strands an evader.
     Checklist G29. **Pilot recovery surge LANDED 2026-07-17** (the flown Scenic Route Merged finding —
     "after 1.4 h the rescue helos are just getting to the pilots": both on-demand paths fired live

@@ -18,6 +18,7 @@ import {
 import FlightPlansLayer from "../flightplanslayer";
 import FrontLinesLayer from "../frontlineslayer";
 import Iadsnetworklayer from "../iadsnetworklayer";
+import DownedPilotsLayer from "../downedpilots";
 import MinefieldsLayer from "../minefields";
 import NavMeshLayer from "../navmesh/NavMeshLayer";
 import RestrictedZonesLayer from "../restrictedzones";
@@ -46,6 +47,7 @@ type LayerId =
   | "supplyRoutes"
   | "supply"
   | "minefields"
+  | "downedPilots"
   | "frontLines"
   | "factories"
   | "ships"
@@ -101,13 +103,19 @@ const OVERLAYS: Record<LayerId, { label: string; node: ReactNode }> = {
   controlPoints: { label: "Control points", node: <ControlPointsLayer /> },
   aircraft: { label: "Aircraft", node: <AircraftLayer /> },
   combat: { label: "Active combat", node: <CombatLayer /> },
-  supplyRoutes: { label: "Supply routes", node: <SupplyRoutesLayer /> },
+  // "Convoy routes", not "Supply routes": the two supply layers were previously
+  // labelled near-identically ("Supply routes" / "Supply status") and were
+  // indistinguishable from the panel (2026-07-18 UI audit).
+  supplyRoutes: { label: "Convoy routes", node: <SupplyRoutesLayer /> },
   // War-economy supply-flow overlay (§53 P4b). Empty unless war_economy is on, so
   // the layer is a no-op everywhere else even while toggled on.
-  supply: { label: "Supply status", node: <SupplyLayer /> },
+  supply: { label: "Supply readiness", node: <SupplyLayer /> },
   // §57 air-dropped minefields (BLUE-only). Empty unless air_droppable_minefields is
   // on, so the layer is a no-op everywhere else even while toggled on.
   minefields: { label: "Minefields", node: <MinefieldsLayer /> },
+  // §21 downed aviators (BLUE-only): MIA evaders + POWs. Empty when nobody is
+  // down, so the layer is a no-op on a quiet campaign even while toggled on.
+  downedPilots: { label: "Downed pilots", node: <DownedPilotsLayer /> },
   frontLines: { label: "Front lines", node: <FrontLinesLayer /> },
   factories: { label: "Factories", node: <TgosLayer categories={["factory"]} /> },
   ships: { label: "Ships", node: <TgosLayer categories={["ship"]} /> },
@@ -218,14 +226,20 @@ const GROUPS: GroupDef[] = [
       { id: "controlPoints" },
       { id: "aircraft" },
       { id: "combat" },
-      { id: "supplyRoutes" },
-      { id: "supply" },
-      { id: "minefields" },
+      { id: "downedPilots" },
       { id: "frontLines" },
       { id: "factories" },
       { id: "ships" },
       { id: "otherGround" },
     ],
+  },
+  {
+    // Split out of "Friendly & shared" (2026-07-18 UI audit): the three
+    // logistics layers were buried in a 10-row grab-bag.
+    key: "logistics",
+    title: "Logistics",
+    defaultOpen: true,
+    rows: [{ id: "supplyRoutes" }, { id: "supply" }, { id: "minefields" }],
   },
   {
     key: "airdef",
@@ -248,8 +262,15 @@ const GROUPS: GroupDef[] = [
       { id: "enemySamThreat" },
       { id: "enemySamDetection" },
       { id: "enemyIads" },
-      { id: "restrictedZones" },
     ],
+  },
+  {
+    // ROE is a rule the player fights under, not enemy intel — it lived under
+    // "Enemy intel" only because that group existed first (2026-07-18 UI audit).
+    key: "roe",
+    title: "Rules of engagement",
+    defaultOpen: true,
+    rows: [{ id: "restrictedZones" }],
   },
   {
     key: "allied",
@@ -259,7 +280,6 @@ const GROUPS: GroupDef[] = [
       { id: "alliedSamThreat" },
       { id: "alliedSamDetection" },
       { id: "alliedIads" },
-      { id: "emitterHighlight" },
       { id: "flightSelected" },
       { id: "flightBlue" },
       { id: "flightRed" },
@@ -293,6 +313,14 @@ const GROUPS: GroupDef[] = [
       { id: "cullingZones" },
     ],
   },
+  {
+    // Hover/interaction behaviours, not map layers — emitterHighlight used to
+    // masquerade as a layer row under "Allied & flight plans" (2026-07-18 audit).
+    key: "display",
+    title: "Display options",
+    defaultOpen: false,
+    rows: [{ id: "emitterHighlight" }],
+  },
 ];
 
 const DEFAULT_ON: LayerId[] = [
@@ -307,6 +335,7 @@ const DEFAULT_ON: LayerId[] = [
   "supplyRoutes",
   "supply",
   "minefields",
+  "downedPilots",
   "frontLines",
   "enemySamThreat",
   "emitterHighlight",

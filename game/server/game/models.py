@@ -373,6 +373,68 @@ class MinefieldJs(BaseModel):
         ]
 
 
+class DownedPilotJs(BaseModel):
+    """§21 downed BLUE aviators on the map: MIA evaders at their last known
+    position, POWs at their holding enemy field.
+
+    The between-turns host plans next turn's rescue from here — this state was
+    previously readable only on the in-cockpit SITREP band (the 2026-07-18 UI
+    audit's top finding). Emitted whenever ledger entries exist (the systems
+    that create them carry their own gates); empty hides the layer. BLUE-only
+    by construction — both ledgers are blue aviators, so nothing is fogged.
+    """
+
+    name: str
+    position: LeafletPoint
+    #: "mia" (evading, at last known position) or "pow" (at the holding field).
+    status: str
+    #: Player-facing detail mirroring the SITREP wording: "evading (2 turns
+    #: down)" / "held at Mozdok (2 turns left)" / "held at Mozdok (held)".
+    detail: str
+
+    @staticmethod
+    def all_in_game(game: Game) -> list[DownedPilotJs]:
+        pilots: list[DownedPilotJs] = []
+        for downed in getattr(game, "downed_pilots", None) or []:
+            name = downed.pilot.name if downed.pilot is not None else "Downed aviator"
+            turns = max(int(game.turn) - int(getattr(downed, "turn_downed", 0)), 0)
+            plural = "s" if turns != 1 else ""
+            pilots.append(
+                DownedPilotJs(
+                    name=name,
+                    position=game.point_in_world(downed.x, downed.y).latlng(),
+                    status="mia",
+                    detail=f"evading ({turns} turn{plural} down)",
+                )
+            )
+        will_economy = bool(getattr(game.settings, "vietnam_political_will", False))
+        for entry in game.blue.pending_pow_recoveries:
+            name = entry.pilot.name if entry.pilot is not None else "Downed aviator"
+            where = "an unknown location"
+            position = game.point_in_world(entry.x, entry.y)
+            if entry.holding_cp_id is not None:
+                try:
+                    cp = game.theater.find_control_point_by_id(entry.holding_cp_id)
+                    where = cp.name
+                    position = cp.position
+                except KeyError:
+                    pass
+            if will_economy:
+                clock = "held"
+            else:
+                turns_left = max(entry.turns_remaining, 0)
+                clock = f"{turns_left} turn{'s' if turns_left != 1 else ''} left"
+            pilots.append(
+                DownedPilotJs(
+                    name=name,
+                    position=position.latlng(),
+                    status="pow",
+                    detail=f"held at {where} ({clock})",
+                )
+            )
+        return pilots
+
+
 class GameJs(BaseModel):
     control_points: list[ControlPointJs]
     tgos: list[TgoJs]
@@ -406,6 +468,9 @@ class GameJs(BaseModel):
     # §57 air-dropped minefields: BLUE-only live fields (dashed circles). Empty unless
     # air_droppable_minefields is on, which hides the layer; the enemy never sees them.
     minefields: list[MinefieldJs]
+    # §21 downed BLUE aviators: MIA evaders at their last known position + POWs at
+    # their holding field. Empty when nobody is down, which hides the layer.
+    downed_pilots: list[DownedPilotJs]
 
     class Config:
         title = "Game"
@@ -420,6 +485,7 @@ class GameJs(BaseModel):
             free_fire_zones=RestrictedZoneJs.free_fire_in_game(game),
             supply_nodes=SupplyNodeJs.all_in_game(game),
             minefields=MinefieldJs.all_in_game(game),
+            downed_pilots=DownedPilotJs.all_in_game(game),
             control_points=ControlPointJs.all_in_game(game),
             tgos=TgoJs.all_in_game(game),
             supply_routes=SupplyRouteJs.all_in_game(game),

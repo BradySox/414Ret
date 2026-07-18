@@ -20,6 +20,10 @@ export const mapColors = {
   enemy: "#c85050", // enemy forces: flight paths, threat rings
   flot: "#fe7d0a", // the front line (FLOT)
 
+  // --- sensor coverage (SAM/EWR range rings) ---
+  detectionFriendly: "#bb89ff", // violet: friendly radar detection range
+  detectionEnemy: "#eee17b", // pale yellow: enemy radar detection range
+
   // --- intel / ROE ---
   suspected: "#dd9a3a", // amber dashed: un-reconned "suspected activity"
   offLimits: "#d43a3a", // red dashed: ROE restricted (no-strike) zone
@@ -39,8 +43,42 @@ export const mapColors = {
   routeContested: "#c85050",
   routeActive: "#ffffff", // the live-transport highlight line
 
+  // --- personnel (§21 downed aviators) ---
+  pilotMia: "#ff8c2e", // rescue orange: an evader awaiting pickup (actionable)
+  pilotPow: "#9aa0a6", // gray: held at an enemy field (freed by recapture)
+
   // --- misc ---
   highlight: "#ffff00",
 } as const;
 
 export type MapColorKey = keyof typeof mapColors;
+
+/**
+ * Shared supply-readiness banding (input is the raw supply fraction in [0, 1]).
+ *
+ * The ribbon chips, the map's supply nodes, and the legend must agree on what
+ * each colour *means* — the ribbon used to band at 35/50 (the red-intent
+ * decision thresholds) while the map banded at 85/60/50, so the same hue on the
+ * two surfaces meant different numbers (2026-07-18 UI audit).
+ */
+export type SupplyBand = "ok" | "mid" | "low" | "critical";
+
+export function supplyBand(fraction: number): SupplyBand {
+  if (fraction >= 0.85) return "ok";
+  if (fraction >= 0.6) return "mid";
+  if (fraction >= 0.5) return "low";
+  return "critical";
+}
+
+export function supplyBandColor(fraction: number): string {
+  switch (supplyBand(fraction)) {
+    case "ok":
+      return mapColors.supplyOk;
+    case "mid":
+      return mapColors.supplyMid;
+    case "low":
+      return mapColors.supplyLow;
+    case "critical":
+      return mapColors.supplyCritical;
+  }
+}

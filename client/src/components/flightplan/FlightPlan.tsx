@@ -47,6 +47,10 @@ function FlightTooltip({ flight }: { flight: Flight }) {
           {flight.package_tot ? ` (TOT ${flight.package_tot})` : ""}
         </div>
       ) : null}
+      {/* The §28 advertise-the-interaction convention: TGOs and supply routes
+          state their click contract; blue flight paths were the one clickable
+          overlay that never said so (2026-07-18 UI audit). */}
+      {flight.blue ? <div>Left-click: select this flight</div> : null}
     </Tooltip>
   );
 }

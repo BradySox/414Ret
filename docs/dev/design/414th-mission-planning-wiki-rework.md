@@ -35,7 +35,7 @@ individual entries; collected here.
 | BAI | Weapons on target | 0 (package TOT) | Against a stationary armour group. |
 | Air Assault | Insert sequencing | n/a (helo plan) | Requires CTLD plugin. |
 | Airlift | Transfer sequencing | n/a | CTLD creates pickup/dropoff zones for player flights only. |
-| *SCAR (proposed)* | *On-station / search start* | *0 (patrol-start)* | *See §6 — not yet implemented.* |
+| *SCAR (retired proposal)* | — | — | *See the §8 banner — the armor-hunt SCAR was retired 2026-06-27; drop this row from any PR.* |
 
 **Hold:** every rendezvousing flight is planned with ~5 min of hold after the ascent point to
 absorb takeoff delays, baked in before the join, independent of the offsets above.
@@ -296,9 +296,17 @@ guard a flight. SEAD Sweep = guard the corridor.**
 
 ## 8. Proposed: SCAR (Strike Coordination and Reconnaissance)
 
-> **Not yet implemented.** Full design + integration work exists separately as
-> `SCAR-concept-v2.md` (SME-approved) and `SCAR-task-spec.md` (formal spec). This is the
-> wiki-facing summary; roll it into the live page only once the task ships.
+> **⚠️ SUPERSEDED — do not publish (bannered 2026-07-18).** The armor-hunt SCAR task this
+> section proposes was **retired 2026-06-27**: the hunt scenario and its auto-planner were
+> deleted, the `SCAR-concept-v2.md`/`SCAR-task-spec.md` docs it cites no longer exist in the
+> repo, and the fork's `FlightType.SCAR` now means the **Combat SAR "Sandy" rescue escort**
+> (features doc §15 / design note `414th-scar-rescue-rework-notes.md`) — a different feature
+> entirely. Kept below only as the historical record of the proposal; if this draft is ever
+> PR'd upstream, drop §8 and the §1 SCAR table row first.
+>
+> *(Original framing follows.)* **Not yet implemented.** Full design + integration work exists
+> separately as `SCAR-concept-v2.md` (SME-approved) and `SCAR-task-spec.md` (formal spec). This
+> is the wiki-facing summary; roll it into the live page only once the task ships.
 
 ### 8.1 What it is
 
@@ -336,7 +344,8 @@ not auto-fragged), and only at **Phase 3** does it appear in the ATO automatical
 ## 9. Notes for the PR
 
 - Decide the **airframe-list policy** (keep as "typical" vs. cut for airframe-agnostic).
-- The SCAR section (§8) should **not** ship to the live wiki until the task is implemented —
-  keep it in the PR description or a "proposed" branch of the page, not the task list proper.
+- The SCAR section (§8) is **superseded — never ship it** (the armor-hunt task was retired
+  2026-06-27; `FlightType.SCAR` now names the Combat SAR Sandy escort). Drop §8 and the §1
+  SCAR row from any PR.
 - The TOT table (§1) and standardized template (§2) are the highest-value changes and can ship
   independently of any SCAR work.

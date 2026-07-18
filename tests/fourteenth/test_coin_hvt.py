@@ -157,6 +157,22 @@ def test_kill_credits_a_momentum_blow(monkeypatch: Any) -> None:
     assert any("eliminated" in m[1].lower() for m in game.messages)
 
 
+def test_vanished_tgo_is_not_a_kill(monkeypatch: Any) -> None:
+    """A dangling record (the TGO removed by some other path while the host stays
+    red) clears the window silently -- never a credited decapitation."""
+    game = _theater(monkeypatch)
+    hvt.advance_hvt(game, events=None)  # surface at CP2
+    active = game.coin_state["hvt"]["active"]
+    host = next(cp for cp in game.theater.controlpoints if cp.id == 2)
+    host.connected_objectives.clear()  # the TGO vanishes; the stronghold stays red
+    game.db.remove(active["tgo_id"])
+    hvt.advance_hvt(game, events=None)
+    assert hvt.consume_hvt_kills(game) == 0  # no phantom momentum blow
+    assert game.coin_state["hvt"]["active"] is None
+    assert game.coin_state["hvt"]["cooldown"] == hvt.HVT_COOLDOWN_TURNS
+    assert not any("eliminated" in m[1].lower() for m in game.messages)
+
+
 def test_escapes_when_the_window_closes_without_a_kill(monkeypatch: Any) -> None:
     game = _theater(monkeypatch)
     hvt.advance_hvt(game, events=None)  # surface (turns 0)

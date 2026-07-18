@@ -477,3 +477,101 @@ def test_render_tiles_degrades_when_fetch_raises_unexpectedly(
 
     assert result is None
     assert tc.last_failure_reason() == tc.FAILURE_TILE_FETCH
+
+
+def test_mesh_cell_count_thresholds() -> None:
+    """One cell (plain QUAD) through 40 km; then span/40km, capped at 8."""
+    assert tile_compositor._mesh_cell_count(10_000.0) == 1
+    assert tile_compositor._mesh_cell_count(40_000.0) == 1
+    assert tile_compositor._mesh_cell_count(80_000.0) == 2
+    assert tile_compositor._mesh_cell_count(200_000.0) == 5
+    assert tile_compositor._mesh_cell_count(1_000_000.0) == 8
+
+
+def test_mesh_boxes_tile_the_page_exactly() -> None:
+    """Row-major boxes share edges and cover the full page, even for page
+    sizes that don't divide evenly by the cell count."""
+    boxes = tile_compositor._mesh_boxes(401, 997, 3)
+    assert len(boxes) == 9
+    xs = sorted({b[0] for b in boxes} | {b[2] for b in boxes})
+    ys = sorted({b[1] for b in boxes} | {b[3] for b in boxes})
+    assert xs[0] == 0 and xs[-1] == 401
+    assert ys[0] == 0 and ys[-1] == 997
+    for r in range(3):
+        for c in range(3):
+            box = boxes[r * 3 + c]
+            assert box[0] == xs[c] and box[2] == xs[c + 1]
+            assert box[1] == ys[r] and box[3] == ys[r + 1]
+
+
+def test_small_extent_keeps_the_single_quad_warp(tmp_path: Path) -> None:
+    """A detail-scale extent (<= 40 km) must warp exactly as before: one
+    whole-page QUAD, no mesh."""
+    terrain, _LL = _fake_terrain_with_latlng()
+    extent = _make_extent(terrain, half_extent_m=5_000.0)
+
+    from game.missiongenerator.kneeboard_recon import tile_compositor as tc
+
+    def fake_point(x: float, y: float, t: Any) -> MagicMock:
+        p = MagicMock()
+        p.latlng.return_value = _LL(42.0 + x * 1e-6, 41.0 + y * 1e-6)
+        return p
+
+    captured: dict[str, Any] = {}
+    real_transform = Image.Image.transform
+
+    def spy_transform(
+        self: Image.Image, size: Any, method: Any, *a: Any, **kw: Any
+    ) -> Image.Image:
+        captured["method"] = method
+        return real_transform(self, size, method, *a, **kw)
+
+    with patch.object(tc, "Point", side_effect=fake_point), patch.object(
+        tc, "fetch_tile", return_value=_solid_tile((90, 90, 90))
+    ), patch.object(Image.Image, "transform", spy_transform):
+        img = render_tiles(extent, 300, 300, tmp_path)
+
+    assert img is not None and img.size == (300, 300)
+    assert captured["method"] == Image.QUAD
+
+
+def test_large_extent_uses_mesh_warp(tmp_path: Path) -> None:
+    """A corridor/overview-scale extent warps through an n x n MESH whose
+    cell corners are each exact projections — the fix for the interior
+    bilinear residual that mis-set markers on big pages."""
+    terrain, _LL = _fake_terrain_with_latlng()
+    # 120 km span -> 3 cells per axis.
+    extent = _make_extent(terrain, half_extent_m=60_000.0)
+
+    from game.missiongenerator.kneeboard_recon import tile_compositor as tc
+
+    def fake_point(x: float, y: float, t: Any) -> MagicMock:
+        # Deliberately nonlinear in x so a whole-page bilinear QUAD could
+        # not reproduce the interior grid points the mesh pins exactly.
+        p = MagicMock()
+        p.latlng.return_value = _LL(
+            42.0 + x * 1e-6 + (x * 1e-5) ** 2 * 1e-3, 41.0 + y * 1e-6
+        )
+        return p
+
+    captured: dict[str, Any] = {}
+    real_transform = Image.Image.transform
+
+    def spy_transform(
+        self: Image.Image, size: Any, method: Any, *a: Any, **kw: Any
+    ) -> Image.Image:
+        captured["method"] = method
+        captured["data"] = a[0] if a else kw.get("data")
+        return real_transform(self, size, method, *a, **kw)
+
+    with patch.object(tc, "Point", side_effect=fake_point), patch.object(
+        tc, "fetch_tile", return_value=_solid_tile((90, 90, 90))
+    ), patch.object(Image.Image, "transform", spy_transform):
+        img = render_tiles(extent, 300, 300, tmp_path)
+
+    assert img is not None and img.size == (300, 300)
+    assert captured["method"] == Image.MESH
+    mesh = captured["data"]
+    assert len(mesh) == 9  # 3 x 3 cells
+    # The target boxes are exactly the page tiling.
+    assert [entry[0] for entry in mesh] == tile_compositor._mesh_boxes(300, 300, 3)

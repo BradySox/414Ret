@@ -654,8 +654,14 @@ small theaters see no extra pages. The Friendly Packages list + package-targets 
 by `generate_all_packages_kneeboard`, now **default OFF** (it adds pages and can paginate on
 busy theaters); the Airfield Directory still folds in whenever ATIS is present. Covered by
 `tests/test_airfield_directory_page.py::test_support_page_spills_long_airfield_directory_to_continuation`.
-The satellite-imagery recon pages remain gated OFF by `generate_target_recon_kneeboard`
-(marker overlays don't reliably line up with the tiles — a known, separate geometry bug).
+The satellite-imagery recon pages ship gated OFF by `generate_target_recon_kneeboard`; the
+marker/tile geometry bug that kept them off was root-caused and **fixed 2026-07-18** — the
+dominant error was the DCS-vs-real-world terrain georeference offset (~350 m median on
+Caucasus/GermanyCW), previously corrected only on airbase-anchored pages: every page now
+applies the robust regional offset of the nearest measured airports
+(`airport_imagery.offset_near`), and the secondary whole-page-QUAD interior curvature
+residual (~5 page px on a 300 km overview) is removed by a subdivided MESH warp
+(`tile_compositor`). Default stays OFF pending the in-game pass (checklist H13).
 
 **Recon pages are JPEG; everything else stays PNG (2026-07-16).** A kneeboard page is written
 by `KneeboardPage.write` and lands in the miz under its own filename (pydcs writes `page.name`
@@ -2205,7 +2211,14 @@ plugin mirrors its live ledger into the new state global `combat_sar_survivors`;
 `game.downed_pilots`; next mission the emitter hands the ledger back (`persistentSurvivors`) and
 the plugin re-spawns each evader at his last position — fresh red smoke, an "EVADER" cue, a fresh
 50 % snatch race, the normal rescue paths. Surfaced on the SITREP band ("MIA: Capt Mitchell —
-evading near Haina (2 turns down)") + the squadron roster; **(3) the depth-weighted turn roll**
+evading near Haina (2 turns down)") + the squadron roster, **and on the campaign map
+(2026-07-18, the UI-representation audit's top finding)**: `DownedPilotJs` on `GameJs`
+(`game/server/game/models.py`) emits every MIA evader at his last known position
+(rescue-orange marker) and every POW at the holding field (gray dashed marker, the SITREP
+clock in the tooltip), drawn by `client/src/components/downedpilots/` — a default-ON
+"Downed pilots" layer in the §18 panel with legend rows; empty when nobody is down. The
+between-turns host plans the rescue from the map instead of a kneeboard note (tests
+`tests/server/test_downed_pilots_model.py`); **(3) the depth-weighted turn roll**
 (`resolve_downed_pilots` from `finish_turn`) — an evader on friendly ground **walks home**;
 behind the lines the capture odds scale with depth (10 % within 5 NM of the front → 90 % at
 40 NM+; front-less laydowns measure to the nearest friendly CP), and a hit is the normal POW
@@ -2896,6 +2909,24 @@ circles read alike), and the map's core planning actions were invisible right-cl
   Right-click: plan a package") so the otherwise-hidden fragging actions are findable. Client-only;
   type-checked (`tsc`) + the `FrontLine` test mock extended; the full `react-scripts` build/test runs in
   CI. Deferred: a full right-click *context menu* and theming the light Leaflet tooltips.
+- **The 2026-07-18 map-coherence batch** (the UI-representation audit — "the systems aren't
+  represented well"): (1) the **campaign ribbon wraps instead of clipping** — the old
+  nowrap/hidden/ellipsis combo silently swallowed the strip's tail, which is the enemy
+  posture/supply/C2/resolve cluster, on a busy campaign (`CampaignStatusBar.css` flex-wrap; the
+  phase chip is now a real `<button>` for keyboard access); (2) **one supply banding** — the ribbon
+  chips banded at 35/50 (red-intent thresholds) while the map's supply nodes banded at 85/60/50, so
+  identical hues meant different numbers; both now ride the shared `supplyBand`/`supplyBandColor`
+  helpers in `mapColors.ts` (4 bands, `.supply-critical` added to the ribbon); (3) the **SAM
+  detection-ring colors joined `mapColors`** (`detectionFriendly`/`detectionEnemy` — they were
+  hardcoded one-offs in `AirDefenseRangeLayer.colorFor`) and the **legend caught up** with the map:
+  rows for detection-vs-threat rings, downed pilots, minefields, the three convoy-route states, and
+  the supply-producer ring (it documented roughly half the live layers); (4) the **layers panel
+  de-grab-bagged** — a new **Logistics** group (the near-identically-named "Supply routes"/"Supply
+  status" renamed to "Convoy routes"/"Supply readiness"), ROE zones moved out of "Enemy intel" into
+  their own **Rules of engagement** group, and `emitterHighlight` (a hover behavior, not a layer)
+  demoted to a **Display options** footer group; (5) **blue flight paths advertise their click**
+  ("Left-click: select this flight" in the tooltip — the one clickable overlay the §28 pass missed).
+  Validated with `tsc --noEmit` + the full client jest suite (scratchpad-copy workaround).
 
 ## §29 — Campaign SITREP kneeboard band
 

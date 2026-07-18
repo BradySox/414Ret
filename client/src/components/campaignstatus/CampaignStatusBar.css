@@ -16,6 +16,14 @@
 .campaign-status-bar {
   display: flex;
   align-items: center;
+  justify-content: center;
+  /* Wrap onto extra lines instead of clipping: with every system on (phase +
+     will + supply + the enemy cluster) the old nowrap/hidden/ellipsis combo
+     silently swallowed the TAIL of the strip — which is the enemy
+     posture/supply/C2/resolve cluster, the most decision-relevant intel
+     (2026-07-18 UI audit). Chips stay single-line via white-space. */
+  flex-wrap: wrap;
+  row-gap: 4px;
   gap: 14px;
   padding: 6px 14px;
   background: #161e2bee;
@@ -26,8 +34,6 @@
   white-space: nowrap;
   pointer-events: auto;
   max-width: 90vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .campaign-status-name {
@@ -45,6 +51,11 @@
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
+  /* Rendered as a <button> for keyboard access; strip the UA chrome so it
+     stays a chip. */
+  border: none;
+  font-family: inherit;
+  line-height: inherit;
 }
 
 .campaign-status-will {
@@ -98,8 +109,10 @@
   opacity: 0.85;
 }
 
-/* §53 war-economy supply chips, coloured by level (low red / mid amber / ok teal) so
-   the enemy's supply reads at a glance; §52 enemy-C2 chip in a distinct command slate. */
+/* §53 war-economy supply chips, coloured by level (ok teal / mid amber / low
+   orange / critical red) — the SAME four bands the map's supply nodes and the
+   legend use (mapColors.supplyBand), so a chip and a front node at the same
+   percentage read the same; §52 enemy-C2 chip in a distinct command slate. */
 .campaign-status-supply {
   font-size: 12px;
   font-weight: 600;
@@ -118,6 +131,11 @@
 }
 
 .campaign-status-supply.supply-low {
+  color: #f3ddc0;
+  background: #64430f;
+}
+
+.campaign-status-supply.supply-critical {
   color: #f3d0c8;
   background: #6b2417;
 }

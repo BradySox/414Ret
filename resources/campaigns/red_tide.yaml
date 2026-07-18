@@ -256,6 +256,13 @@ settings:
   # a deliberate pick: an unset helmet device still writes JHMCS into the .miz, so the
   # Block 50s and Lot 20s would spawn with a 2003 helmet in a July 1988 campaign.
   restrict_props_by_date: true
+  # §71 Expanded F-4E Weapons Pack (Mods-page checkbox, same settings namespace): give
+  # the Heatblur F-4E its AGM-88 stations so a Phantom squadron flies SEAD with HARMs --
+  # the closest DCS gets to the F-4G Weasels USAFE actually fielded in 1988 Germany. The
+  # fork dates the DCS AGM-88C at the family's 1984 IOC, so it clears the era gate above.
+  # Optional: uncheck on the Mods page if the group's DCS installs lack DSplayer's mod;
+  # F-4E SEAD then auto-falls back to the stock Shrike fit (the "(XW)" loadout gate).
+  f4e_expanded_weapons: true
   # §54 munitions scarcity: an airfield out of a scarce PGM/ARM/A2A store can't load it
   # (the loadout degrades to a stocked/dumb fallback). Pairs with war_economy below --
   # bomb a base's supply and its jets run dry. Default off and covered by no other

@@ -166,6 +166,15 @@ def test_red_tide_preseeds_the_era_property_gate() -> None:
     assert settings["restrict_props_by_date"] is True
 
 
+def test_red_tide_preseeds_the_f4e_expanded_weapons_mod() -> None:
+    settings = _campaign_settings()
+    # §71: the Mods-page checkboxes read the same campaign settings namespace
+    # (QGeneratorSettings.update_settings). Preseeded ON so the wing's Phantoms
+    # default to the AGM-88 "(XW)" SEAD fits; unchecking the box (or lacking the
+    # mod) falls back to the stock Shrike fits via the loadout pylon gate.
+    assert settings["f4e_expanded_weapons"] is True
+
+
 def test_red_tide_preseeds_munitions_scarcity() -> None:
     settings = _campaign_settings()
     # §54 is the air axis of the war economy (also preseeded): out-of-stock scarce

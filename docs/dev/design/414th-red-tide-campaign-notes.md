@@ -28,6 +28,15 @@
 > brand-new feature/plugin/setting to Red Tide, expanding the laydown, or re-opening the
 > balance pass. If in doubt, ask the user before touching it.
 >
+> **Lock-override record:**
+> - **2026-07-18 (explicit user go-ahead, post-lock):** §71 Expanded F-4E Weapons Pack
+>   restored as an optional mod and preseeded ON (`f4e_expanded_weapons: true` in the
+>   campaign settings block) — the Heatblur F-4E gains its AGM-88 stations and SEAD-tasked
+>   Phantoms auto-load the "(XW)" HARM fits (stock Shrike fit is the automatic fallback when
+>   the box is unchecked or the mod is ejected). Settings-namespace preseed only, no
+>   laydown/balance change; applies to NEW games only, so it ships with whatever
+>   regeneration follows it.
+>
 > **The "process turn 1 from the M1 session JSON" step is tooled** —
 > `tools/apply_state_json.py` (built + validated 2026-07-12) re-binds the flown 2026-07-11
 > `state.json` to ANY regenerated Red Tide save: it translates every kill event from the

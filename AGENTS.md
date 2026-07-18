@@ -2328,6 +2328,37 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     convention). Tests `tests/fourteenth/test_comint.py` +
     `tests/missiongenerator/test_rednetluadata.py` + `tests/lua/test_rednet_runtime.py`;
     features doc §70, checklist B22 (in-app) + B23 (in-game).
+71. **Expanded F-4E Weapons Pack (AGM-88 Weasel fits)** — the upstream #663/#733 mod
+    support (DSplayer's community weapons pack for the Heatblur F-4E), restored to the
+    curated wizard Mods page (the fork's scrub had dropped the checkbox + `ModSettings`
+    pass-through while the `pydcs_extensions` module and the faction inject/eject wiring
+    stayed — `eject_F4E()` ran on every game since, so the OFF path is battle-tested) and
+    actually **utilized**: of the pack's arsenal only the **AGM-88C** is wired into
+    loadouts (user call 2026-07-18 — the rest stay payload-editor-only). New
+    **expanded-weapons payload convention** in `Loadout`: fits named with
+    `EXPANDED_WEAPONS_SUFFIX` (`" (XW)"`) are tried FIRST for their task
+    (`default_loadout_names_for` prepends `"Retribution <task> (XW)"` — a no-op for
+    airframes shipping none) but picked only while `pylons_allow` verifies every store
+    against the **live pydcs pylon tables** that `inject_F4E`/`eject_F4E` mutate (via
+    `Faction.apply_mod_settings` at generation + load) — pylon legality IS the mod
+    signal — and the payload editor hides an (XW) fit whose stores don't currently mount
+    (without the gate, DCS silently strips un-mountable stores at spawn = a naked
+    Weasel). Fits: "Retribution SEAD/SEAD Escort/SEAD Sweep (XW)" in
+    `customized_payloads/F-4E-45MC.lua` — the Shrike fits' exact skeletons with the ARM
+    stations swapped to the stock AGM-88C (`...C93` clsid) on the pack's stations (4 on
+    1/3/11/13; the tanked Escort 2 on 3/11); the stock Shrike fits are untouched and are
+    the automatic fallback (Tanker War et al. byte-identical). Era + economy free: the
+    fork already dates AGM-88C at the family's 1984 IOC (test-tripwired) so Red Tide's
+    1988 weapon gate keeps it, and §54 scarcity already tracks it under `arm`. **Red Tide
+    preseeds the mod ON** (`f4e_expanded_weapons: true`; explicit post-lock user
+    go-ahead 2026-07-18, recorded in the campaign notes lock-override record) — optional
+    by construction, uncheck and the Phantom flies Shrikes. F-4E SEAD task priority
+    stays the deliberate 120 (host-frag/overflow Weasel, never out-competing the HTS
+    jets). NEW game required; no plugin/Lua/Settings field (`ModSettings`, the §10
+    pattern). Tests `tests/fourteenth/test_f4e_expanded_weapons.py` + the preseed pin;
+    features doc §71, checklist B24 — needs an in-game pass (does the installed mod
+    accept the generated stations; AI HARM employment; the mod-off stripped-stores
+    signature).
 
 ---
 

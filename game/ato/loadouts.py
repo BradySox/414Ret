@@ -27,6 +27,12 @@ class Loadout:
         "{AAQ-28_LEFT}",
         "{A111396E-D3E8-4b9c-8AC9-2432489304D5}",
     }
+    # Payload names ending in this suffix are expanded-weapons-mod fits (e.g. the
+    # F-4E's AGM-88 SEAD loadout from the Expanded F-4E Weapons Pack). They are
+    # tried first for their task, but only picked while the mod's pylon injection
+    # is active -- a store DCS's unmodded pylon tables can't mount is silently
+    # stripped at spawn, so an (XW) fit selected without the mod would fly naked.
+    EXPANDED_WEAPONS_SUFFIX = " (XW)"
 
     def __init__(
         self,
@@ -338,6 +344,18 @@ class Loadout:
                 msg = f'Incompatible loadout for {aircraft} skipped: {payload["name"]}'
                 logging.warning(msg)
                 continue
+            if cls.is_expanded_weapons_name(payload["name"]) and not cls.pylons_allow(
+                aircraft,
+                ((p["num"], p["CLSID"]) for p in payload["pylons"].values()),
+            ):
+                # Expanded-weapons fit with the mod off: hide it from the editor
+                # list so nobody picks a loadout DCS would strip at spawn.
+                logging.debug(
+                    "Hiding expanded-weapons loadout %s for %s: mod pylons absent",
+                    payload["name"],
+                    aircraft,
+                )
+                continue
             name = payload["name"]
             pylons = payload["pylons"]
             try:
@@ -352,6 +370,33 @@ class Loadout:
             except KeyError:
                 # invalid loadout
                 continue
+
+    @classmethod
+    def is_expanded_weapons_name(cls, name: str) -> bool:
+        return name.endswith(cls.EXPANDED_WEAPONS_SUFFIX)
+
+    @staticmethod
+    def pylons_allow(
+        aircraft: Optional[AircraftType], stations: Iterable[tuple[int, str]]
+    ) -> bool:
+        """Whether every store fits the aircraft's *current* pydcs pylon tables.
+
+        The tables are live state: a weapons mod's ``inject_*``/``eject_*`` (run by
+        ``Faction.apply_mod_settings``) adds or removes pylon options, so this is
+        the mod-awareness check for expanded-weapons fits. An unknown aircraft is
+        not gated.
+        """
+        if aircraft is None:
+            return True
+        for pylon_number, clsid in stations:
+            if clsid in ("", "<CLEAN>"):
+                continue
+            weapon = Weapon.with_clsid(clsid)
+            if weapon is None:
+                return False
+            if not Pylon.for_aircraft(aircraft, pylon_number).can_equip(weapon):
+                return False
+        return True
 
     @staticmethod
     def valid_payload(pylons: Dict[int, Dict[str, str]]) -> bool:
@@ -380,12 +425,18 @@ class Loadout:
         # names, so those have been included here too. The priority goes from first to
         # last - the first element in the tuple will be tried first, then the second,
         # etc.
+        # The expanded-weapons fit is always the first candidate; selection skips
+        # it whenever the backing mod's pylons aren't injected, so with the mod
+        # off the chain resolves exactly as it did before the (XW) name existed.
         loadout_names = {
-            t: (
-                [f"Liberation {t.value}", f"Retribution {t.value}"]
-                if prefer_liberation_payloads()
-                else [f"Retribution {t.value}", f"Liberation {t.value}"]
-            )
+            t: [
+                f"Retribution {t.value}{cls.EXPANDED_WEAPONS_SUFFIX}",
+                *(
+                    [f"Liberation {t.value}", f"Retribution {t.value}"]
+                    if prefer_liberation_payloads()
+                    else [f"Retribution {t.value}", f"Liberation {t.value}"]
+                ),
+            ]
             for t in FlightType
         }
         legacy_names = {
@@ -468,6 +519,13 @@ class Loadout:
             dcs_unit_type.load_payloads()
             payload = dcs_unit_type.loadout_by_name(name)
             if payload is not None:
+                if cls.is_expanded_weapons_name(name) and not cls.pylons_allow(
+                    next(AircraftType.for_dcs_type(dcs_unit_type), None),
+                    ((i, d["clsid"]) for i, d in payload),
+                ):
+                    # The mod backing this fit isn't enabled; fall through to the
+                    # regular loadout name for the task.
+                    continue
                 if target:
                     payload = cls.adjust_payload_for_target(payload, target)
                 pylons = {i: {"CLSID": d["clsid"]} for i, d in payload}

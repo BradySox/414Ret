@@ -251,8 +251,10 @@ def test_valid_payload_ignores_empty_stations() -> None:
 
 def test_antiship_falls_back_to_strike_loadout_names() -> None:
     names = list(Loadout.default_loadout_names_for(FlightType.ANTISHIP))
-    # The jet's own anti-ship presets are still preferred first...
-    assert names[0].endswith("Anti-ship")
+    # The jet's own anti-ship presets are still preferred first (the §71
+    # expanded-weapons candidate leads, then the regular names)...
+    assert names[0] == f"Retribution Anti-ship{Loadout.EXPANDED_WEAPONS_SUFFIX}"
+    assert names[1].endswith("Anti-ship")
     assert "ANTISHIP" in names
     # ...but Anti-ship now falls back to the Strike family, so a jet tasked Anti-ship
     # without a dedicated anti-ship preset carries iron bombs instead of an EMPTY

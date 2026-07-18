@@ -45,6 +45,16 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.registerField("f111c", self.f111c)
         self.ov10a_bronco = QtWidgets.QCheckBox()
         self.registerField("ov10a_bronco", self.ov10a_bronco)
+        self.f4e_expanded_weapons = QtWidgets.QCheckBox()
+        self.f4e_expanded_weapons.setToolTip(
+            "Requires DSplayer's “Expanded F-4E Weapons Pack” mod (DCS user "
+            "files) installed in the group's DCS.\n\n"
+            "Adds AGM-88C HARM stations to the Heatblur F-4E; with this on, the "
+            "Phantom's auto-selected SEAD loadouts carry HARMs instead of "
+            "Shrikes. Weapons pack only — the F-4E module itself is unaffected.\n\n"
+            "https://www.digitalcombatsimulator.com/en/files/3338686/"
+        )
+        self.registerField("f4e_expanded_weapons", self.f4e_expanded_weapons)
 
         aircraft_pairs = [
             ("A-4E-C Skyhawk (v2.3.0)", self.a4_skyhawk),
@@ -52,6 +62,10 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             (
                 "CJS FA-18E/F Super Hornet Tanker (v2.4.5.260501.RC1)",
                 self.fa18ef_tanker,
+            ),
+            (
+                "Expanded F-4E Weapons Pack (DSplayer v1.0.11+)",
+                self.f4e_expanded_weapons,
             ),
             ("F-22A Raptor (v2.0.0)", self.f22_raptor),
             ("F-111C Aardvark (Warpig Production v2.260208)", self.f111c),
@@ -187,6 +201,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         )
         self.f22_raptor.setChecked(s.get("f22_raptor", False))
         self.f111c.setChecked(s.get("f111c", False))
+        self.f4e_expanded_weapons.setChecked(s.get("f4e_expanded_weapons", False))
         self.high_digit_sams.setChecked(s.get("high_digit_sams", False))
         self.oh_6_vietnamassetpack.setChecked(s.get("oh_6_vietnamassetpack", False))
         self.ov10a_bronco.setChecked(s.get("ov10a_bronco", False))

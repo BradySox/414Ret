@@ -777,6 +777,194 @@ local unitPayloads = {
 			["tasks"] = {
 			},
 		},
+		[14] = {
+			["displayName"] = "Retribution SEAD (XW)",
+			["name"] = "Retribution SEAD (XW)",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{HB_ALE_40_30_60}",
+					["num"] = 14,
+				},
+				[2] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 13,
+				},
+				[3] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 11,
+				},
+				[4] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 12,
+				},
+				[5] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 10,
+				},
+				[6] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 9,
+				},
+				[7] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 8,
+				},
+				[8] = {
+					["CLSID"] = "{F4_SARGENT_TANK_600_GAL}",
+					["num"] = 7,
+				},
+				[9] = {
+					["CLSID"] = "{HB_ALQ-131_ON_ADAPTER_IN_AERO7}",
+					["num"] = 6,
+				},
+				[10] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 5,
+				},
+				[11] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 4,
+				},
+				[12] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 3,
+				},
+				[13] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 2,
+				},
+				[14] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 1,
+				},
+			},
+			["tasks"] = {
+			},
+		},
+		[15] = {
+			["displayName"] = "Retribution SEAD Escort (XW)",
+			["name"] = "Retribution SEAD Escort (XW)",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{HB_ALE_40_30_60}",
+					["num"] = 14,
+				},
+				[2] = {
+					["CLSID"] = "{F4_SARGENT_TANK_370_GAL_R}",
+					["num"] = 13,
+				},
+				[3] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 11,
+				},
+				[4] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 9,
+				},
+				[5] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 8,
+				},
+				[6] = {
+					["CLSID"] = "{HB_ALQ-131_ON_ADAPTER_IN_AERO7}",
+					["num"] = 6,
+				},
+				[7] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 5,
+				},
+				[8] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 3,
+				},
+				[9] = {
+					["CLSID"] = "{F4_SARGENT_TANK_370_GAL}",
+					["num"] = 1,
+				},
+				[10] = {
+					["CLSID"] = "<CLEAN>",
+					["num"] = 12,
+				},
+				[11] = {
+					["CLSID"] = "<CLEAN>",
+					["num"] = 10,
+				},
+				[12] = {
+					["CLSID"] = "<CLEAN>",
+					["num"] = 4,
+				},
+				[13] = {
+					["CLSID"] = "<CLEAN>",
+					["num"] = 2,
+				},
+			},
+			["tasks"] = {
+			},
+		},
+		[16] = {
+			["displayName"] = "Retribution SEAD Sweep (XW)",
+			["name"] = "Retribution SEAD Sweep (XW)",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{HB_ALE_40_30_60}",
+					["num"] = 14,
+				},
+				[2] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 13,
+				},
+				[3] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 11,
+				},
+				[4] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 12,
+				},
+				[5] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 10,
+				},
+				[6] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 9,
+				},
+				[7] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 8,
+				},
+				[8] = {
+					["CLSID"] = "{F4_SARGENT_TANK_600_GAL}",
+					["num"] = 7,
+				},
+				[9] = {
+					["CLSID"] = "{HB_ALQ-131_ON_ADAPTER_IN_AERO7}",
+					["num"] = 6,
+				},
+				[10] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 5,
+				},
+				[11] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 4,
+				},
+				[12] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 3,
+				},
+				[13] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 2,
+				},
+				[14] = {
+					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["num"] = 1,
+				},
+			},
+			["tasks"] = {
+			},
+		},
 	},
 	["unitType"] = "F-4E-45MC",
 }

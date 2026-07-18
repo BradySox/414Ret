@@ -363,6 +363,28 @@ if dcsRetribution and dcsRetribution.CombatSAR then
         return best
     end
 
+    -- Non-combatant discipline for the capture race. The 2026-07-17 night fly ran 12
+    -- snatch parties for ZERO captures: DCS infantry ballistics resolved every race
+    -- before the capture clock could -- the M249-armed survivor outgunned the closing
+    -- AK teams (three parties wiped mid-march), and the teams that did close SHOT the
+    -- survivor dead before the capture dwell completed. The race is meant to be decided
+    -- by the dwell + airpower (kill the party to save the pilot), never by small arms:
+    -- both the survivor and the snatch teams spawn weapons-hold + alarm-green. Enemy
+    -- garrison units near the ejection point can still kill an evader -- that stays.
+    local function setNonCombatant(groupName)
+        pcall(function()
+            local g = Group.getByName(groupName)
+            if not (g and g:isExist()) then return end
+            local con = g:getController()
+            if not con then return end
+            con:setOption(AI.Option.Ground.id.ROE, AI.Option.Ground.val.ROE.WEAPON_HOLD)
+            con:setOption(
+                AI.Option.Ground.id.ALARM_STATE,
+                AI.Option.Ground.val.ALARM_STATE.GREEN
+            )
+        end)
+    end
+
     -- Spawn a downed-pilot group cloned from the coalition's late-activation template.
     local function spawnSurvivorGroup(cfg, coord, label)
         spawnIndex = spawnIndex + 1
@@ -374,6 +396,12 @@ if dcsRetribution and dcsRetribution.CombatSAR then
                 :SpawnFromCoordinate(coord)
         end)
         if ok then grp = res else env.warning("combatsar: survivor spawn failed: " .. tostring(res)) end
+        if grp then
+            -- MOOSE names the spawned group "<alias>#001" -- resolve the REAL name, or
+            -- Group.getByName misses and the weapons-hold silently never applies.
+            local okn, real = pcall(function() return grp:GetName() end)
+            setNonCombatant((okn and real) or alias)
+        end
         return grp
     end
 
@@ -452,6 +480,8 @@ if dcsRetribution and dcsRetribution.CombatSAR then
             env.warning("combatsar: snatch-team spawn failed: " .. tostring(spawned))
             return nil
         end
+        -- Weapons-hold: the team wants the pilot ALIVE (see setNonCombatant above).
+        setNonCombatant(spawned.name or gname)
         pcall(trigger.action.smoke, { x = sp.x, y = 0, z = sp.y }, trigger.smokeColor.Red)
         return spawned.name or gname
     end

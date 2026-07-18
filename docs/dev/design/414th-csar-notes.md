@@ -254,6 +254,40 @@ window). Fixes:
   Both are test aids, not gameplay — leave OFF for normal play. Emitter test:
   `tests/missiongenerator/test_combat_sar_sandy_luadata.py`.
 
+## Non-combatant capture race (2026-07-17 night-fly fix)
+
+The first at-scale live run (fresh Scenic Route Merged turn 1: 10 survivors, 12 snatch
+parties across 4 races) produced **zero captures** — and the Tacview showed why: **DCS
+infantry ballistics resolve the race before the capture clock can.** Both directions:
+
+- The survivor stand-in resolved to a Soldier **M249** (the faction's first human-named
+  infantry), which **outranges and outguns the AK snatch teams** — three parties died
+  276–677 m into their 1.4 km march while their survivor stood untouched (blue air working
+  the same area may have helped; the survivor's SAW didn't need it).
+- The two parties that DID close **shot their survivor dead** instead of capturing him —
+  DCS ground AI engages an armed enemy soldier on sight, and the kill lands before the
+  plugin's capture dwell completes. (The `dead`-state reap handled both correctly — the
+  ledger stayed clean — but the POW chain never fired.)
+
+The race is designed to be decided by the **capture dwell** and by **airpower against the
+party** ("kill it to save him"), never by small arms. Fix: `setNonCombatant` in the plugin
+sets **ROE weapons-hold + alarm-state green** on both sides at spawn —
+
+- every **snatch team** right after `mist.dynAdd` (they want the pilot ALIVE; they march,
+  they don't fight — and a Sandy strafing them stays the intended counterplay, they just
+  don't shoot back),
+- the **survivor group** right after the MOOSE spawn — via the spawn's **real** group name
+  (`SPAWN:NewWithAlias` appends `#001`; `Group.getByName(alias)` silently misses, which
+  would have no-opped the whole fix on the survivor side).
+
+Enemy **garrison** units near the ejection point still kill evaders (one of tonight's two
+deaths was almost certainly the target complex's own garrison, not the snatch team) —
+ejecting over the target stays lethal, by design. Pinned in
+`tests/lua/test_combatsar_ledger.py::test_survivor_and_snatch_teams_spawn_weapons_hold`
+(the sandbox's `Group.getByName` records `setOption` calls per group). Re-fly criteria:
+a snatch team walks in under fire without stopping, the survivor never fires, and a
+completed dwell yields the "CAPTURED … now a POW" message + a `combat_sar_captures` entry.
+
 ## Persistent evaders + the always-run snatch (2026-07-10 squadron call)
 
 A flown jamming test (auto-CSAR **off**, force-capture **on**, a Sandy-only package) found the

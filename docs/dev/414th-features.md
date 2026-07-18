@@ -1834,6 +1834,20 @@ pilot; let any team dwell on the survivor un-rescued and the pilot is **CAPTURED
 `Debriefing.parse_combat_sar_captures`. Seven plugin tunables
 (`captureEnabled` / `Chance` / `SpawnDistance` / `Range` / `Dwell` / `PartySize` / `Teams`).
 
+**Non-combatant discipline (2026-07-17 night-fly fix).** The first at-scale live run (fresh
+Scenic Route Merged turn 1: 10 survivors, 12 snatch parties) produced **zero captures** —
+DCS infantry ballistics resolved every race before the capture dwell could. The faction's
+survivor stand-in was a Soldier **M249**, which outguns AK teams at range (three parties
+wiped mid-march while the survivor stood), and the teams that did close **shot the survivor
+dead** (the `dead`-state reap fired, correctly, instead of `recordCapture`). The race is
+meant to be decided by the capture clock and by *airpower against the party*, never by small
+arms — so `setNonCombatant` (in the plugin) now sets **ROE weapons-hold + alarm-state green
+on both the survivor group and every snatch team at spawn** (the survivor via the MOOSE
+spawn's REAL group name — `NewWithAlias` appends `#001`, so `Group.getByName(alias)` would
+silently miss). Enemy *garrison* units near the ejection point can still kill an evader —
+ejecting over the target complex stays lethal. Pinned in
+`tests/lua/test_combatsar_ledger.py::test_survivor_and_snatch_teams_spawn_weapons_hold`.
+
 **Safety cap + dead-reference cleanup (2026-07-09).** The snatch party is REAL infantry on
 DCS's single scripting/sim thread, so `capturePartySize` / `captureTeams` are **hard-clamped at
 load** (≤ `MAX_PARTY_SIZE` 12 infantry across ≤ `MAX_TEAMS` 4 teams, `env.warning` once when a
@@ -6085,6 +6099,24 @@ of the `NNNN | `-prefixed theater-unit name. The name is set before
 `_register_theater_unit` records it, so debrief kill-tracking keys off the same string; a
 second boat of the same class keeps the unique id-prefixed name (UnitMap collision guard).
 Escorts and every other ship keep the standard prefixed names.
+
+**CP naming follows the hull (2026-07-17 night-fly fix).** The flown Scenic Route Merged
+boat exposed the other half: the carrier **CP** is named at game start from the faction's
+`carrier_names` pool, and the **supercarrier upgrade is keyed by that CP name**
+(`NavalControlPoint.upgrade_to_supercarrier`, now table-driven by
+`STENNIS_SUPERCARRIER_UPGRADES` in `controlpoint.py`) — a pool name outside the map
+("CVN-74 John C. Stennis" has no Supercarrier model) fell through the else-branch and
+sailed a **CVN-71** wearing Roosevelt's flagship name and 71X TACAN while the ATO/briefing
+called it the Stennis. `hull_consistent_carrier_name` (`game/theater/start_generator.py`)
+closes it at naming time: with the supercarrier setting **on**, a Stennis-hull boat only
+draws names the upgrade maps (the chosen name then picks *which* supercarrier — a
+two-boat campaign gets two distinct, self-consistent hulls); with it **off** (or for any
+unmapped hull, e.g. the LHA), the pool name matching the hull's own display name is
+preferred (the free Stennis IS CVN-74, the Tarawa IS LHA-1). The pool stays the fallback,
+so flavored names ("Carrier Strike Group 8") keep working, and **unmapped names keep the
+legacy CVN-71 fallback in the upgrade itself** so existing saves keep the boat they've
+been sailing. New-game naming only — no save migration. Tests
+`tests/test_carrier_naming.py`.
 
 **Headless-verified end-to-end** (2026-07-16, Enduring Resolve through the real
 `GameGenerator` → `begin_turn_0` → `MissionGenerator` pipeline): the generated miz carries

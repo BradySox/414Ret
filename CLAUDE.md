@@ -195,6 +195,15 @@ file. This guide is the map; those are the territory.
   - Drafts / not-yet-landed (design only): `414th-mission-planning-wiki-rework.md`
     (upstream wiki rewrite), `414th-scenery-import-notes.md` (scenery strike targets),
     `turnless.md` (turnless-campaign exploration),
+    `414th-comint-notes.md` (**blue-side COMINT** — the §51 mirror: a tiered campaign-layer
+    intercept take off alive red comms/CC nodes (posture detail + a tasking leak + one
+    concealed-TGO reveal, collector = a surviving §2 JAMMING flight) + an in-cockpit red
+    net (`radioTransmission` off the same nodes, three DF-able bands, ADF-homeable
+    clandestine-transmitter hunts); same node set as §51/§52 so bomb-it-or-tap-it is
+    emergent; all 5 squadron calls RESOLVED 2026-07-18 (keep ambient tier · pin reveal ·
+    collectors = C-130 + drones · UHF-first band plan off the DF-module audit —
+    Hornet/Tomcat/Phantom/Tiger all home, F-16/A-10 listen-only · CW beeps v1);
+    delivery C0–C2),
     `414th-coin-HANDOFF.md` (**start here for the COIN line** — the next-session pickup:
     where C1–C3 stand (all merged), the P1 fly-script, the tuning levers, and the
     build-order for C1.5/C4) + `414th-coin-insurgent-replenishment-notes.md` (**the COIN campaign direction** —

@@ -150,11 +150,6 @@ def _concealed_radius(tgo: TheaterGroundObject) -> Optional[float]:
     return None
 
 
-#: A merged cluster circle never grows past this — a site reads as one blob of
-#: suspicion, not a district-wide unknown.
-_CLUSTER_RADIUS_CAP_M = 8_000.0
-
-
 def _radial_jitter_xy(tgo: TheaterGroundObject, radius: float) -> tuple[float, float]:
     """The TGO's deterministic radial jitter centre, as raw (x, y)."""
     rng = random.Random(_concealment_seed(tgo))
@@ -164,26 +159,33 @@ def _radial_jitter_xy(tgo: TheaterGroundObject, radius: float) -> tuple[float, f
     return pos.x + dist * math.cos(theta), pos.y + dist * math.sin(theta)
 
 
-def _cluster_members(
-    tgo: TheaterGroundObject,
-) -> list[tuple[float, tuple[float, float]]]:
-    """(radius, jittered centre) of every concealed RADIAL sibling at the TGO's
-    control point, the TGO itself included.
+def concealed_cluster_size(tgo: TheaterGroundObject) -> int:
+    """How many concealed RADIAL TGOs share this TGO's control point, itself
+    included — 1 for a lone site or a road-pinned circle.
 
-    Stateless and deterministic, so every member — and both the ``/game`` pull
-    and the per-TGO SSE update — computes the identical cluster."""
-    members: list[tuple[float, tuple[float, float]]] = []
+    The client renders clusters (size >= 2) as a stroke-less **density
+    cloud**: every member keeps its own circle over its own units and the
+    translucent fills stack, so the overlap darkens exactly where units
+    bunch and the union covers the real spread. (The first cut merged the
+    members onto one identical capped circle — the squadron's read of the
+    flown result: the stacked strokes rang like klaxons and the disc
+    covered one spot, not the area the units actually hold. Same-day
+    rework, 2026-07-18.) Stateless and deterministic, so the ``/game``
+    pull and the per-TGO SSE update always agree.
+    """
+    if _route_jitter(tgo) is not None:
+        return 1
+    count = 0
     siblings = getattr(tgo.control_point, "connected_objectives", None) or ()
     for sibling in siblings:
         if sibling.known_for(Player.BLUE):
             continue
-        radius = _concealed_radius(sibling)
-        if radius is None:
+        if _concealed_radius(sibling) is None:
             continue
         if _route_jitter(sibling) is not None:
             continue  # road-pinned IED circles stay individual (the highway domain)
-        members.append((radius, _radial_jitter_xy(sibling, radius)))
-    return members
+        count += 1
+    return max(count, 1)
 
 
 def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float]]:
@@ -194,15 +196,10 @@ def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float
     fog-overview reveal — all via ``known_for``, which also short-circuits
     friendly/neutral sites).
 
-    **Clustered per site (2026-07-18 audit):** every concealed radial TGO at a
-    control point shares ONE merged circle (centroid of the members' jitters,
-    radius covering every member's own circle, capped). Separately-drawn circles
-    amber-blanketed the COIN strongholds — Tarinkot alone drew 9 overlapping
-    3–4 km rings — and an un-scouted site should read as one blob of suspicion,
-    not a district of noise. Members return identical geometry, so the client's
-    N overlapping circles render as one; each keeps its own click contract, and
-    a member's discovery snaps only that marker to truth. Road-pinned IED
-    circles never join a cluster.
+    Every TGO keeps its OWN circle over its own jittered position; site-level
+    presentation (the density cloud) is a client styling decision driven by
+    :func:`concealed_cluster_size`, never a geometry merge — the union of the
+    members' circles is what covers the area the units actually hold.
     """
     if tgo.known_for(Player.BLUE):
         return None
@@ -214,14 +211,6 @@ def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float
     on_route = _route_jitter(tgo)
     if on_route is not None:
         return Point(on_route[0], on_route[1], pos._terrain), radius
-    members = _cluster_members(tgo)
-    if len(members) >= 2:
-        xs = [xy[0] for _, xy in members]
-        ys = [xy[1] for _, xy in members]
-        cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
-        reach = max(math.hypot(xy[0] - cx, xy[1] - cy) + r for r, xy in members)
-        # Build a PLAIN pydcs Point (see the singleton branch's comment).
-        return Point(cx, cy, pos._terrain), min(reach, _CLUSTER_RADIUS_CAP_M)
     jx, jy = _radial_jitter_xy(tgo, radius)
     # Build a PLAIN pydcs Point, never pos.__class__: a real TGO's position is a
     # PresetLocation (PointWithHeading), whose constructor signature differs —
@@ -258,6 +247,11 @@ class TgoJs(BaseModel):
     # COIN concealment: set while this TGO's map presence is an uncertainty area.
     # `position` is then the JITTERED circle centre, not the true location.
     uncertainty_radius_m: float | None = None
+    # How many concealed circles share this TGO's site (itself included). The
+    # client draws clusters (>= 2) as a stroke-less density cloud — stacked
+    # translucent fills darken where units bunch — and a 1 keeps the classic
+    # lone dashed ring. None whenever uncertainty_radius_m is.
+    concealed_cluster_size: int | None = None
 
     class Config:
         title = "Tgo"
@@ -323,6 +317,9 @@ class TgoJs(BaseModel):
             roe_restricted=roe_restricted,
             roe_reason=roe_reason,
             uncertainty_radius_m=uncertainty[1] if uncertainty else None,
+            concealed_cluster_size=(
+                concealed_cluster_size(tgo) if uncertainty else None
+            ),
         )
 
     @staticmethod

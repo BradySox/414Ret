@@ -22,6 +22,7 @@ from typing import Any, Iterable, Optional, TypeVar
 _VT = TypeVar("_VT")
 
 from PIL import Image, ImageDraw, ImageFont
+from dcs.mapping import Point
 from dcs.terrain.terrain import Terrain
 
 from . import airport_imagery
@@ -108,7 +109,7 @@ def render_basemap(
     Always returns an :class:`~PIL.Image.Image` of size
     ``(page_width, page_height)``.
     """
-    offset_deg = _imagery_offset_for(extent.terrain, imagery_anchor)
+    offset_deg = _imagery_offset_for(extent, imagery_anchor)
     tiled = render_tiles(
         extent,
         page_width,
@@ -199,23 +200,37 @@ def _banner_text_for_reason(reason: str) -> str:
 
 
 def _imagery_offset_for(
-    terrain: Terrain, airport: Optional[Any]
+    extent: MapExtent, airport: Optional[Any]
 ) -> Optional[tuple[float, float]]:
-    """Look up the OSM-derived `(dlat, dlng)` offset for an airport, or None.
+    """The `(dlat, dlng)` imagery shift to apply to this render, or None.
 
-    Returns None when no airport was supplied, no JSON file is shipped for
-    this terrain, or no entry exists for the airport's ID. The renderer
-    silently proceeds without offset correction in those cases.
+    Precedence: the anchor airport's own measured OSM offset (airbase
+    pages — exact prior behavior), else the robust regional offset of the
+    nearest measured airports around the *extent centre*
+    (:func:`airport_imagery.offset_near`). The fallback is what corrects
+    the target/corridor/overview pages, which used to render with no
+    correction at all and sat the full DCS-vs-real-world georeference
+    error off their markers (~350 m median on Caucasus/GermanyCW — tens
+    of page pixels at detail scale). Best-effort: any failure (no dataset,
+    un-projectable test terrain) degrades to None = no shift.
     """
-    if airport is None:
+    if airport is not None:
+        record = airport_imagery.load(extent.terrain.name)
+        if record is not None:
+            entry = record.for_airport(airport)
+            if entry is not None and entry.has_offset:
+                return (entry.imagery_offset_lat, entry.imagery_offset_lng)
+    try:
+        center = Point(
+            (extent.min_x + extent.max_x) / 2.0,
+            (extent.min_y + extent.max_y) / 2.0,
+            extent.terrain,
+        ).latlng()
+        return airport_imagery.offset_near(
+            extent.terrain.name, float(center.lat), float(center.lng)
+        )
+    except Exception:  # noqa: BLE001 -- enhancement only; never block the render
         return None
-    record = airport_imagery.load(terrain.name)
-    if record is None:
-        return None
-    entry = record.for_airport(airport)
-    if entry is None:
-        return None
-    return (entry.imagery_offset_lat, entry.imagery_offset_lng)
 
 
 def _stamp_offline_banner(img: Image.Image, text: str = _OFFLINE_TEXT_DEFAULT) -> None:

@@ -654,8 +654,14 @@ small theaters see no extra pages. The Friendly Packages list + package-targets 
 by `generate_all_packages_kneeboard`, now **default OFF** (it adds pages and can paginate on
 busy theaters); the Airfield Directory still folds in whenever ATIS is present. Covered by
 `tests/test_airfield_directory_page.py::test_support_page_spills_long_airfield_directory_to_continuation`.
-The satellite-imagery recon pages remain gated OFF by `generate_target_recon_kneeboard`
-(marker overlays don't reliably line up with the tiles — a known, separate geometry bug).
+The satellite-imagery recon pages ship gated OFF by `generate_target_recon_kneeboard`; the
+marker/tile geometry bug that kept them off was root-caused and **fixed 2026-07-18** — the
+dominant error was the DCS-vs-real-world terrain georeference offset (~350 m median on
+Caucasus/GermanyCW), previously corrected only on airbase-anchored pages: every page now
+applies the robust regional offset of the nearest measured airports
+(`airport_imagery.offset_near`), and the secondary whole-page-QUAD interior curvature
+residual (~5 page px on a 300 km overview) is removed by a subdivided MESH warp
+(`tile_compositor`). Default stays OFF pending the in-game pass (checklist H13).
 
 **Recon pages are JPEG; everything else stays PNG (2026-07-16).** A kneeboard page is written
 by `KneeboardPage.write` and lands in the miz under its own filename (pydcs writes `page.name`

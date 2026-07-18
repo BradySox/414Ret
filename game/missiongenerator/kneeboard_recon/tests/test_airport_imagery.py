@@ -319,3 +319,134 @@ def test_field_elevation_for_airport_returns_none_for_none_inputs() -> None:
     terrain = MagicMock()
     terrain.name = "Caucasus"
     assert airport_imagery.field_elevation_for_airport(terrain, None) is None
+
+
+# --- offset_near: the regional offset estimate for un-anchored extents ---
+
+
+def _measured(
+    name: str, lat: float, lng: float, dlat: float, dlng: float
+) -> AirportImagery:
+    return AirportImagery(
+        name=name,
+        imagery_offset_lat=dlat,
+        imagery_offset_lng=dlng,
+        runways=(),
+        dcs_lat=lat,
+        dcs_lng=lng,
+        has_offset=True,
+    )
+
+
+def _record_of(entries: dict[str, AirportImagery]) -> TerrainImagery:
+    return TerrainImagery(terrain="X", by_airport_id=entries)
+
+
+def test_offset_near_medians_the_nearest_measured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    record = _record_of(
+        {
+            "1": _measured("A", 42.00, 41.00, 0.0010, -0.0002),
+            "2": _measured("B", 42.05, 41.00, 0.0012, -0.0001),
+            "3": _measured("C", 42.10, 41.00, 0.0009, -0.0003),
+            # Farther than the three above — must not join the vote.
+            "4": _measured("D", 43.90, 41.00, 0.0300, 0.0100),
+        }
+    )
+    monkeypatch.setattr(airport_imagery, "load", lambda name: record)
+    assert airport_imagery.offset_near("X", 42.0, 41.0) == (0.0010, -0.0002)
+
+
+def test_offset_near_skips_outlier_entries(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An offset several km on the ground is a mis-matched OSM airfield, not
+    a georeference error — it must not poison the estimate."""
+    record = _record_of(
+        {
+            "1": _measured("A", 42.00, 41.00, 0.0500, 0.0),  # ~5.6 km: junk
+            "2": _measured("B", 42.02, 41.00, 0.0010, 0.0),
+            "3": _measured("C", 42.04, 41.00, 0.0010, 0.0),
+        }
+    )
+    monkeypatch.setattr(airport_imagery, "load", lambda name: record)
+    assert airport_imagery.offset_near("X", 42.0, 41.0) == (0.0010, 0.0)
+
+
+def test_offset_near_ignores_unmeasured_entries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Entries without a measured offset block or a known DCS position never
+    vote; with only those, there is no estimate."""
+    record = _record_of(
+        {
+            "1": AirportImagery(
+                name="NoOffset",
+                imagery_offset_lat=0.0,
+                imagery_offset_lng=0.0,
+                runways=(),
+                dcs_lat=42.0,
+                dcs_lng=41.0,
+                has_offset=False,
+            ),
+            "2": AirportImagery(
+                name="NoPosition",
+                imagery_offset_lat=0.001,
+                imagery_offset_lng=0.0,
+                runways=(),
+                has_offset=True,
+            ),
+        }
+    )
+    monkeypatch.setattr(airport_imagery, "load", lambda name: record)
+    assert airport_imagery.offset_near("X", 42.0, 41.0) is None
+
+
+def test_offset_near_none_when_nearest_is_too_far(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # ~334 km away — beyond the 250 km relevance limit.
+    record = _record_of({"1": _measured("A", 45.0, 41.0, 0.001, 0.0)})
+    monkeypatch.setattr(airport_imagery, "load", lambda name: record)
+    assert airport_imagery.offset_near("X", 42.0, 41.0) is None
+
+
+def test_offset_near_none_without_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(airport_imagery, "load", lambda name: None)
+    assert airport_imagery.offset_near("X", 42.0, 41.0) is None
+
+
+def test_load_parses_dcs_position_and_measured_flag(tmp_path: Path) -> None:
+    """The loader carries dcs_position + the has_offset distinction through,
+    so offset_near can tell 'measured as aligned' from 'never measured'."""
+    import game.missiongenerator.kneeboard_recon.airport_imagery as ai
+
+    _write_json(
+        tmp_path,
+        "Caucasus",
+        {
+            "12": {
+                "name": "Anapa",
+                "dcs_position": {"lat": 45.0, "lng": 37.3},
+                "imagery_offset_deg": {"lat": -0.0028, "lng": -0.0005},
+                "runways": [],
+            },
+            "13": {
+                "name": "NoOffsetField",
+                "dcs_position": {"lat": 45.1, "lng": 37.4},
+                "runways": [],
+            },
+        },
+    )
+    original = ai._IMAGERY_DIR
+    ai._IMAGERY_DIR = tmp_path
+    try:
+        record = load("Caucasus")
+    finally:
+        ai._IMAGERY_DIR = original
+    assert record is not None
+    anapa = record.by_airport_id["12"]
+    assert anapa.has_offset and anapa.dcs_lat == 45.0 and anapa.dcs_lng == 37.3
+    assert anapa.imagery_offset_lat == -0.0028
+    bare = record.by_airport_id["13"]
+    assert not bare.has_offset
+    assert bare.dcs_lat == 45.1

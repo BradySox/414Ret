@@ -217,3 +217,72 @@ def test_banner_text_for_reason_returns_distinct_strings() -> None:
     )
     assert _banner_text_for_reason("") == _OFFLINE_TEXT_DEFAULT
     assert _OFFLINE_TEXT_TILE_CAP != _OFFLINE_TEXT_DEFAULT
+
+
+# --- _imagery_offset_for: anchor precedence + the regional fallback ---
+
+
+def test_imagery_offset_anchor_airport_takes_precedence(caucasus: Caucasus) -> None:
+    """An airbase page with a measured entry keeps its exact per-airport
+    offset; the regional estimate is never consulted."""
+    from unittest.mock import MagicMock
+
+    from game.missiongenerator.kneeboard_recon.airport_imagery import (
+        AirportImagery,
+        TerrainImagery,
+    )
+
+    extent = MapExtent(
+        min_x=0.0, max_x=1_000.0, min_y=0.0, max_y=1_000.0, terrain=caucasus
+    )
+    airport = MagicMock()
+    airport.id = 23
+    record = TerrainImagery(
+        terrain="Caucasus",
+        by_airport_id={
+            "23": AirportImagery(
+                name="Senaki",
+                imagery_offset_lat=0.003,
+                imagery_offset_lng=-0.004,
+                runways=(),
+                has_offset=True,
+            )
+        },
+    )
+    with patch.object(
+        basemap.airport_imagery, "load", return_value=record
+    ), patch.object(
+        basemap.airport_imagery,
+        "offset_near",
+        side_effect=AssertionError("anchor path must not consult offset_near"),
+    ):
+        off = basemap._imagery_offset_for(extent, airport)
+    assert off == (0.003, -0.004)
+
+
+def test_imagery_offset_falls_back_to_regional_estimate(caucasus: Caucasus) -> None:
+    """Target/corridor pages (no airport anchor) get the nearest-calibrated
+    regional offset — previously they rendered with no correction at all."""
+    extent = MapExtent(
+        min_x=0.0, max_x=1_000.0, min_y=0.0, max_y=1_000.0, terrain=caucasus
+    )
+    with patch.object(
+        basemap.airport_imagery, "offset_near", return_value=(0.01, 0.02)
+    ) as offset_near:
+        off = basemap._imagery_offset_for(extent, None)
+    assert off == (0.01, 0.02)
+    name, lat, lng = offset_near.call_args[0]
+    assert name == caucasus.name
+    # The centre really was projected: a plausible Caucasus lat/lng.
+    assert 38.0 < lat < 48.0 and 30.0 < lng < 50.0
+
+
+def test_imagery_offset_survives_unprojectable_terrain() -> None:
+    """A terrain whose projection fails (fakes, exotic terrains) silently
+    yields no offset instead of blocking the render."""
+    from unittest.mock import MagicMock
+
+    extent = MapExtent(
+        min_x=0.0, max_x=1_000.0, min_y=0.0, max_y=1_000.0, terrain=MagicMock()
+    )
+    assert basemap._imagery_offset_for(extent, None) is None

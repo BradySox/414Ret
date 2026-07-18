@@ -115,9 +115,11 @@ layer choice the panel deliberately does **not** remember between sessions.
 
 ## Limitations and caveats
 
-- The TARPS→BDA bridge has been verified in-game; the satellite-imagery recon **kneeboard**
-  pages remain gated off because marker overlays do not reliably line up with the tiles (a
-  known, separate geometry bug).
+- The TARPS→BDA bridge has been verified in-game. The satellite-imagery recon **kneeboard**
+  pages ship default-off; the marker/tile misalignment that kept them gated was fixed
+  2026-07-18 (a regional DCS-vs-real-world imagery offset is now applied to every page, and
+  large extents use a subdivided warp), and the toggle stays off only until the fix gets an
+  in-game pass. Turn on `Generate target recon kneeboard pages` to try them.
 - Fog is BLUE-only on purpose; red always plays against the truth.
 
 ## See also

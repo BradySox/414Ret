@@ -2,23 +2,27 @@
 
 Pipeline:
 
-1. Project all four DCS-axis-aligned corners of the extent to WGS84 lat/lon
-   via the terrain's pre-built pyproj transformer (pydcs ``Point.latlng()``).
-   DCS theaters use Transverse Mercator centered on the theater; a
-   DCS-axis-aligned square is a *rotated quadrilateral* in lat/lon space,
-   so all four corners must be considered — using only the SW/NE diagonal
-   undersizes the bbox and offsets the basemap from the markers.
+1. Project an (n+1) x (n+1) grid of DCS-axis-aligned extent points to WGS84
+   lat/lon via the terrain's pre-built pyproj transformer (pydcs
+   ``Point.latlng()``). DCS theaters use Transverse Mercator centered on the
+   theater; a DCS-axis-aligned square is a *rotated quadrilateral* in
+   lat/lon space, so all corners must be considered — using only the SW/NE
+   diagonal undersizes the bbox and offsets the basemap from the markers.
+   ``n`` grows with the extent span (``_mesh_cell_count``): 1 for pages up
+   to ~40 km, more for corridor/overview extents.
 2. Auto-select a zoom level whose tile metres-per-pixel is no coarser than
    the page metres-per-pixel.
-3. Enumerate the integer (x, y) tile range covering the *four-corner*
+3. Enumerate the integer (x, y) tile range covering the whole grid's
    lat/lon bounding box, fetch each tile (cache-hit or network).
 4. Composite tiles into a single canvas at native tile resolution
    (Mercator-axis-aligned).
-5. Warp the canvas onto a ``(page_width, page_height)`` rectangle using
-   ``Image.transform(QUAD, ...)`` with the four DCS corners' canvas-pixel
-   positions as the source quadrilateral. This produces a DCS-axis-aligned
-   output that exactly matches the marker ``Projector`` used elsewhere in
-   the recon module.
+5. Warp the canvas onto a ``(page_width, page_height)`` rectangle. n == 1:
+   one ``Image.transform(QUAD, ...)`` from the four corners, as before.
+   n > 1: an ``Image.transform(MESH, ...)`` of n x n cells whose corners
+   are each projected exactly — a single whole-page QUAD only matches the
+   linear-in-DCS-meters marker ``Projector`` at the corners, and its
+   interior bilinear residual grows with the extent span squared (~5 page
+   px on a 300 km overview); the mesh keeps every cell corner exact.
 6. Desaturate (0.6) and dim (0.85) so map overlays drawn on top stay
    visually dominant on a printed kneeboard.
 7. Stamp the required Esri attribution in the bottom-right corner.
@@ -93,6 +97,32 @@ ATTRIBUTION_TEXT = (
 # allocate gigabytes for a single page.
 MAX_TILE_COUNT = 400
 
+# Mesh subdivision for the canvas -> page warp. A single whole-page QUAD
+# interpolates the DCS -> Web-Mercator mapping bilinearly between the four
+# extent corners; the corners land exactly but the interior disagrees with
+# the linear-in-DCS-meters marker Projector by the curvature of the
+# projection chain, and that residual grows with the square of the extent
+# span (measured on real terrains: sub-pixel below ~40 km, ~1.5 page px at
+# a 100 km span, ~5 page px / ~1.9 km ground at a 300 km overview). Cells
+# at or under _MESH_CELL_TARGET_M keep the residual below ~0.1 page px;
+# the cap bounds the projection count on degenerate huge extents.
+_MESH_CELL_TARGET_M = 40_000.0
+_MAX_MESH_CELLS = 8
+
+
+def _mesh_cell_count(span_max_m: float) -> int:
+    """Cells per axis for the warp mesh: 1 (plain QUAD) up to the cap."""
+    if span_max_m <= _MESH_CELL_TARGET_M:
+        return 1
+    return min(_MAX_MESH_CELLS, math.ceil(span_max_m / _MESH_CELL_TARGET_M))
+
+
+def _mesh_boxes(page_w: int, page_h: int, n: int) -> list[tuple[int, int, int, int]]:
+    """Row-major target boxes tiling the page exactly (edges shared)."""
+    xs = [round(c * page_w / n) for c in range(n + 1)]
+    ys = [round(r * page_h / n) for r in range(n + 1)]
+    return [(xs[c], ys[r], xs[c + 1], ys[r + 1]) for r in range(n) for c in range(n)]
+
 
 class _ShiftedLatLng:
     """Lightweight lat/lng holder used when an imagery offset is applied.
@@ -130,21 +160,25 @@ def render_tiles(
     """
     _set_failure(FAILURE_NONE)
 
-    # All four DCS-axis-aligned corners. DCS convention: x = north,
-    # y = east. So:
-    #   NW = (max_x, min_y)  — top-left of page (north + west)
-    #   NE = (max_x, max_y)  — top-right of page (north + east)
-    #   SW = (min_x, min_y)  — bottom-left of page (south + west)
-    #   SE = (min_x, max_y)  — bottom-right of page (south + east)
-    nw_ll: Union[LatLng, _ShiftedLatLng]
-    ne_ll: Union[LatLng, _ShiftedLatLng]
-    sw_ll: Union[LatLng, _ShiftedLatLng]
-    se_ll: Union[LatLng, _ShiftedLatLng]
+    # Project an (n+1) x (n+1) grid of DCS points. Row 0 is the page top
+    # (DCS north, max_x); column 0 is the page left (DCS west, min_y) — the
+    # same page-axis mapping as the marker Projector. DCS convention:
+    # x = north, y = east, so the outer corners are:
+    #   grid[0][0] = NW (max_x, min_y)   grid[0][n] = NE (max_x, max_y)
+    #   grid[n][0] = SW (min_x, min_y)   grid[n][n] = SE (min_x, max_y)
+    # n == 1 reproduces the previous four-corner-only geometry exactly.
+    span_x = extent.span_x_m
+    span_y = extent.span_y_m
+    n = _mesh_cell_count(max(span_x, span_y))
+    grid: list[list[Union[LatLng, _ShiftedLatLng]]] = []
     try:
-        nw_ll = Point(extent.max_x, extent.min_y, extent.terrain).latlng()
-        ne_ll = Point(extent.max_x, extent.max_y, extent.terrain).latlng()
-        sw_ll = Point(extent.min_x, extent.min_y, extent.terrain).latlng()
-        se_ll = Point(extent.min_x, extent.max_y, extent.terrain).latlng()
+        for r in range(n + 1):
+            row: list[Union[LatLng, _ShiftedLatLng]] = []
+            for c in range(n + 1):
+                gx = extent.max_x - (r / n) * span_x
+                gy = extent.min_y + (c / n) * span_y
+                row.append(Point(gx, gy, extent.terrain).latlng())
+            grid.append(row)
     except Exception as exc:
         logger.warning(
             "kneeboard_recon: lat/lon projection failed for extent (%s); falling back",
@@ -155,13 +189,12 @@ def render_tiles(
 
     if imagery_offset_deg is not None:
         dlat, dlng = imagery_offset_deg
-        nw_ll = _ShiftedLatLng(nw_ll.lat + dlat, nw_ll.lng + dlng)
-        ne_ll = _ShiftedLatLng(ne_ll.lat + dlat, ne_ll.lng + dlng)
-        sw_ll = _ShiftedLatLng(sw_ll.lat + dlat, sw_ll.lng + dlng)
-        se_ll = _ShiftedLatLng(se_ll.lat + dlat, se_ll.lng + dlng)
+        grid = [
+            [_ShiftedLatLng(ll.lat + dlat, ll.lng + dlng) for ll in row] for row in grid
+        ]
 
-    all_lats = (nw_ll.lat, ne_ll.lat, sw_ll.lat, se_ll.lat)
-    all_lngs = (nw_ll.lng, ne_ll.lng, sw_ll.lng, se_ll.lng)
+    all_lats = [ll.lat for row in grid for ll in row]
+    all_lngs = [ll.lng for row in grid for ll in row]
     lat_min, lat_max = min(all_lats), max(all_lats)
     lng_min, lng_max = min(all_lngs), max(all_lngs)
     center_lat = (lat_min + lat_max) / 2
@@ -245,16 +278,16 @@ def render_tiles(
             return None
         canvas.paste(tile, ((tx - tx0) * TILE_SIZE, (ty - ty0) * TILE_SIZE))
 
-    # Canvas-pixel positions of each DCS corner. The Image.QUAD warp will
-    # map this quadrilateral onto the (page_w, page_h) rectangle.
+    # Canvas-pixel positions of the grid points. Each warp maps source
+    # quadrilaterals onto page rectangles in PIL's (ul, ll, lr, ur) order.
     def _canvas_xy(latlng: Union[LatLng, _ShiftedLatLng]) -> tuple[float, float]:
         fx, fy = lat_lon_to_tile(latlng.lat, latlng.lng, z)
         return ((fx - tx0) * TILE_SIZE, (fy - ty0) * TILE_SIZE)
 
-    ul = _canvas_xy(nw_ll)  # source upper-left  -> page (0, 0)
-    ll = _canvas_xy(sw_ll)  # source lower-left  -> page (0, page_h)
-    lr = _canvas_xy(se_ll)  # source lower-right -> page (page_w, page_h)
-    ur = _canvas_xy(ne_ll)  # source upper-right -> page (page_w, 0)
+    ul = _canvas_xy(grid[0][0])  # source upper-left  -> page (0, 0)
+    ll = _canvas_xy(grid[n][0])  # source lower-left  -> page (0, page_h)
+    lr = _canvas_xy(grid[n][n])  # source lower-right -> page (page_w, page_h)
+    ur = _canvas_xy(grid[0][n])  # source upper-right -> page (page_w, 0)
     source_quad = (ul[0], ul[1], ll[0], ll[1], lr[0], lr[1], ur[0], ur[1])
 
     # Guard against degenerate extents collapsing the quad.
@@ -262,12 +295,49 @@ def render_tiles(
         _set_failure(FAILURE_DEGENERATE)
         return None
 
-    warped = canvas.transform(
-        (page_width, page_height),
-        Image.QUAD,
-        source_quad,
-        Image.BICUBIC,
-    )
+    if n == 1:
+        warped = canvas.transform(
+            (page_width, page_height),
+            Image.QUAD,
+            source_quad,
+            Image.BICUBIC,
+        )
+    else:
+        # Piecewise warp: one QUAD per mesh cell, each cell's corners
+        # projected exactly, so the interior curvature residual shrinks
+        # with the cell size instead of the whole extent.
+        boxes = _mesh_boxes(page_width, page_height, n)
+        mesh: list[tuple[tuple[int, int, int, int], tuple[float, ...]]] = []
+        box_index = 0
+        for r in range(n):
+            for c in range(n):
+                box = boxes[box_index]
+                box_index += 1
+                q_ul = _canvas_xy(grid[r][c])
+                q_ll = _canvas_xy(grid[r + 1][c])
+                q_lr = _canvas_xy(grid[r + 1][c + 1])
+                q_ur = _canvas_xy(grid[r][c + 1])
+                mesh.append(
+                    (
+                        box,
+                        (
+                            q_ul[0],
+                            q_ul[1],
+                            q_ll[0],
+                            q_ll[1],
+                            q_lr[0],
+                            q_lr[1],
+                            q_ur[0],
+                            q_ur[1],
+                        ),
+                    )
+                )
+        warped = canvas.transform(
+            (page_width, page_height),
+            Image.MESH,
+            mesh,
+            Image.BICUBIC,
+        )
 
     warped = ImageEnhance.Color(warped).enhance(SATURATION_FACTOR)
     warped = ImageEnhance.Brightness(warped).enhance(BRIGHTNESS_FACTOR)

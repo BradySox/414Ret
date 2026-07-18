@@ -246,9 +246,9 @@ One PR per testable phase (the house norm):
 
 ## Squadron calls (open)
 
-1. **Tier-1 ambient take with no collector** — keep (recommended: the national-collection
-   fiction makes A work on all 67 campaigns and the C-130 *upgrade* is still felt), or
-   gate everything on a collector flight?
+1. **Tier-1 ambient take with no collector** — **RESOLVED 2026-07-18 (squadron call):
+   keep.** The national-collection fiction stands: A works on all 67 campaigns and the
+   C-130 *upgrade* is still felt.
 2. **Tier-2 reveal strength** — full snap of one concealed circle (recommended: reuses
    shipped machinery) vs shrink-only (new per-TGO state, one extra turn of suspense)?
 3. **Collector eligibility** — JAMMING flights only (recommended), or drones too?

@@ -82,6 +82,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §68 | Adaptive procurement (posture-coupled spending + SAM repair) | — | `adaptive_procurement`, `auto_repair_air_defenses` |
 | §69 | Cross-package SEAD-before-strike coordination | — | `sead_strike_coordination` |
 | §70 | COMINT collection (blue-side communications intelligence) | `rednet` | `comint_collection`, `red_comms_net` |
+| §71 | Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits) | — | — |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

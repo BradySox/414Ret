@@ -28,6 +28,18 @@
 > brand-new feature/plugin/setting to Red Tide, expanding the laydown, or re-opening the
 > balance pass. If in doubt, ask the user before touching it.
 >
+> **Lock-override record:**
+> - **2026-07-18 — no override needed (the §71 F-4E pack does NOT touch Red Tide).** The
+>   Expanded F-4E Weapons Pack was restored fork-wide as an optional mod (wizard Mods-page
+>   checkbox + the "(XW)" ARM SEAD fits — AGM-78B preferred, an editor-only HARM fit,
+>   automatic Shrike fallback), and a same-day
+>   preseed of it here was **reversed by user call: it is the DM's PERSONAL option, not
+>   part of the real Red Tide build** — the campaign yaml carries no `f4e_expanded_weapons`
+>   key (pinned by test), the wizard default (off) applies, and the host checks the box by
+>   hand on a personal game when wanted. **Do NOT preseed it in a later session**, and do
+>   NOT author an F-4E squadron in the wing yaml either (same call — the air-wing dialog is
+>   the path when wanted; the blue faction already carries the F-4E-45MC).
+>
 > **The "process turn 1 from the M1 session JSON" step is tooled** —
 > `tools/apply_state_json.py` (built + validated 2026-07-12) re-binds the flown 2026-07-11
 > `state.json` to ANY regenerated Red Tide save: it translates every kill event from the

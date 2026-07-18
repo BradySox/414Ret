@@ -548,6 +548,13 @@ FEATURES: tuple[Feature, ...] = (
         plugin_id="rednet",
         settings_fields=("comint_collection", "red_comms_net"),
     ),
+    # §71 is gated by ModSettings.f4e_expanded_weapons (a Mods-page checkbox),
+    # not a Settings field, so like the §10 asset pack it carries no wiring refs.
+    Feature(
+        "f4e_expanded_weapons_pack",
+        "Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits)",
+        71,
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

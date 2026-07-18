@@ -251,8 +251,10 @@ def test_valid_payload_ignores_empty_stations() -> None:
 
 def test_antiship_falls_back_to_strike_loadout_names() -> None:
     names = list(Loadout.default_loadout_names_for(FlightType.ANTISHIP))
-    # The jet's own anti-ship presets are still preferred first...
-    assert names[0].endswith("Anti-ship")
+    # The jet's own anti-ship presets are still preferred first (the §71
+    # expanded-weapons candidate leads, then the regular names)...
+    assert names[0] == f"Retribution Anti-ship{Loadout.EXPANDED_WEAPONS_SUFFIX}"
+    assert names[1].endswith("Anti-ship")
     assert "ANTISHIP" in names
     # ...but Anti-ship now falls back to the Strike family, so a jet tasked Anti-ship
     # without a dedicated anti-ship preset carries iron bombs instead of an EMPTY
@@ -330,8 +332,12 @@ def test_customized_payload_clsids_resolve_or_are_known_stragglers() -> None:
 #   - "Retribution Strike - Toilet": the A-1 Skyraider's joke toilet-bomb loadout. The A-1
 #     already carries a real "Retribution Strike" preset, so this is an intentional cosmetic
 #     ME-only extra, not a silent-fallback primary (and the file is upstream-identical).
+#   - "Retribution SEAD HARM (XW)": the F-4E pack's supported-but-not-preferred 4x AGM-88
+#     fit (§71) -- deliberately absent from the task name chain (the auto fits prefer the
+#     AGM-78B Standards) but offered in the payload editor under the (XW) mod gate, so it
+#     is a documented pick, not dead weight.
 _KNOWN_ORPHAN_PRESET_NAMES = frozenset(
-    {"Retribution CEAD", "Retribution Strike - Toilet"}
+    {"Retribution CEAD", "Retribution Strike - Toilet", "Retribution SEAD HARM (XW)"}
 )
 
 

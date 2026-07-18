@@ -166,6 +166,15 @@ def test_red_tide_preseeds_the_era_property_gate() -> None:
     assert settings["restrict_props_by_date"] is True
 
 
+def test_red_tide_does_not_preseed_the_f4e_expanded_weapons_mod() -> None:
+    # Squadron call 2026-07-18 (reversing the same-day preseed): §71 is the DM's
+    # PERSONAL optional mod, not part of the real Red Tide build -- the campaign
+    # must NOT preseed the Mods-page checkbox at all (the wizard default, off,
+    # applies; the host checks the box by hand on a personal game).
+    settings = _campaign_settings()
+    assert "f4e_expanded_weapons" not in settings
+
+
 def test_red_tide_preseeds_munitions_scarcity() -> None:
     settings = _campaign_settings()
     # §54 is the air axis of the war economy (also preseeded): out-of-stock scarce

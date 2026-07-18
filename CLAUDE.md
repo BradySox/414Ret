@@ -2332,6 +2332,44 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     convention). Tests `tests/fourteenth/test_comint.py` +
     `tests/missiongenerator/test_rednetluadata.py` + `tests/lua/test_rednet_runtime.py`;
     features doc §70, checklist B22 (in-app) + B23 (in-game).
+71. **Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits)** — the upstream #663/#733 mod
+    support (DSplayer's community weapons pack for the Heatblur F-4E), restored to the
+    curated wizard Mods page (the fork's scrub had dropped the checkbox + `ModSettings`
+    pass-through while the `pydcs_extensions` module and the faction inject/eject wiring
+    stayed — `eject_F4E()` ran on every game since, so the OFF path is battle-tested) and
+    actually **utilized**: the pack's two big ARMs are wired into loadouts with the
+    **AGM-78B Standard preferred** (user calls 2026-07-18 — first HARM-only, then "make
+    [the AGM-78] the preferred one"; the rest of the arsenal stays payload-editor-only).
+    New **expanded-weapons payload convention** in `Loadout`: fits named with
+    `EXPANDED_WEAPONS_SUFFIX` (`" (XW)"`) are tried FIRST for their task
+    (`default_loadout_names_for` prepends `"Retribution <task> (XW)"` — a no-op for
+    airframes shipping none) but picked only while `pylons_allow` verifies every store
+    against the **live pydcs pylon tables** that `inject_F4E`/`eject_F4E` mutate (via
+    `Faction.apply_mod_settings` at generation + load) — pylon legality IS the mod
+    signal — and the payload editor hides an (XW) fit whose stores don't currently mount
+    (without the gate, DCS silently strips un-mountable stores at spawn = a naked
+    Weasel). Fits in `customized_payloads/F-4E-45MC.lua`: "Retribution SEAD/SEAD
+    Escort/SEAD Sweep (XW)" — the Shrike fits' exact skeletons with the ARM stations
+    swapped to the pack's **AGM-78B** (`{LAU_77_AGM_78B}`) on the injected stations (4 on
+    1/3/11/13; the tanked Escort 2 on 3/11) — plus the editor-only **"Retribution SEAD
+    HARM (XW)"** (4× stock AGM-88C, `...C93` clsid; same gate, never in a task name
+    chain); the stock Shrike fits are untouched and are the automatic fallback (Tanker
+    War et al. byte-identical). Era + economy free: the AGM-78A/B yamls were already
+    first-class (1968/1969 dates, Shrike fallback, per-target **seeker-band
+    `target_overrides`** from the upstream #733 seeker work), the AGM-88C is dated at
+    the family's 1984 IOC (test-tripwired), and §54 scarcity already tracks Standards +
+    Shrikes + HARMs under `arm`. **Preseeded
+    NOWHERE — the DM's personal option** (user call 2026-07-18, reversing a same-day Red
+    Tide preseed: the real Red Tide build stays mod-free; the no-preseed + the
+    no-authored-F-4E-squadron calls are pinned/recorded — the host checks the Mods-page
+    box by hand on a personal game, and the air-wing dialog is the squadron path). F-4E
+    SEAD task priority stays the deliberate 120 (host-frag/overflow Weasel, never
+    out-competing the HTS jets). NEW game required; no plugin/Lua/Settings field
+    (`ModSettings`, the §10 pattern). Tests
+    `tests/fourteenth/test_f4e_expanded_weapons.py` + the Red Tide no-preseed pin;
+    features doc §71, checklist B24 — needs an in-game pass (does the installed mod
+    accept the generated stations; AI ARM employment; the mod-off stripped-stores
+    signature).
 
 ---
 

@@ -59,6 +59,14 @@ file. This guide is the map; those are the territory.
   **in-game pass tracker**: every "needs an in-game pass" item with an observable pass
   criterion + the fail signature to watch for. Update status when you fly it; clear the tag
   in `414th-features.md` when it reaches VERIFIED.
+- [docs/dev/414th-early-systems-decision-ledger.md](docs/dev/414th-early-systems-decision-ledger.md) —
+  the **2026-07-18 deep-audit verdicts** on the early-systems core (bar: "changes decisions in
+  play"), with the empirical self-play evidence (`tools/system_probe.py` — the reusable probe
+  harness: ignore-cost vs engage-payoff per system, intervention scripts, gate step-throughs).
+  Headlines: cache throttle measured 4:1, re-infiltration flip verified end-to-end, IED
+  ignore-cost ~1.8 mandate/turn, §50 ambush a silent no-op on both COIN campaigns (blue
+  convoys never run), the ER trail an unbounded +20 armor/turn pump, concealment
+  amber-blankets strongholds (9 circles on Tarinkot). No kills recommended; 4 squadron calls open.
 - [docs/dev/414th-feature-debt-register.md](docs/dev/414th-feature-debt-register.md) — the
   **verification plan / debt register** (2026-07-15 look-back at ~600 commits): the triage of
   every half-cooked item and exactly where it gets verified — the pre-regen action items, the

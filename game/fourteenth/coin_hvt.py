@@ -164,7 +164,12 @@ def _surface_hvt(game: "Game", hvt: dict[str, Any], events: Any) -> None:
     )
     if tgo is None:
         return
-    name = HVT_NAMES[int(getattr(game, "turn", 0)) % len(HVT_NAMES)]
+    # Rotate by SURFACE COUNT, not by turn: the untouched cadence (window 4 +
+    # cooldown 3 + resurface = 8 turns) exactly aliases an 8-name table, so the
+    # turn-indexed pick resurfaced the same leader eternally when ignored —
+    # measured in the 2026-07-18 self-play probe (Qari Zakir at T1/T9/T17...).
+    hvt["surfaced"] = int(hvt.get("surfaced", 0)) + 1
+    name = HVT_NAMES[(hvt["surfaced"] - 1) % len(HVT_NAMES)]
     try:
         tgo.name = f"HVT {name}"
     except Exception:  # noqa: BLE001 -- name is cosmetic; never break the turn

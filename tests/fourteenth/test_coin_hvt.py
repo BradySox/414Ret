@@ -244,3 +244,20 @@ def test_active_hvt_status_reads_the_window(monkeypatch: Any) -> None:
     assert status[1] == hvt.HVT_WINDOW_TURNS - 1
     game.settings.coin_hvt = False
     assert hvt.active_hvt_status(game) is None
+
+
+def test_leaders_rotate_even_on_the_natural_cadence(monkeypatch: Any) -> None:
+    """The untouched cycle (window + cooldown + resurface = 8 turns) exactly
+    aliases the 8-name table, so a turn-indexed pick resurfaced the same
+    leader forever (the 2026-07-18 probe's eternal Qari Zakir). Names now
+    rotate by surface count."""
+    game = _theater(monkeypatch)
+    names = []
+    for _ in range(2 * (hvt.HVT_WINDOW_TURNS + hvt.HVT_COOLDOWN_TURNS + 1) + 2):
+        hvt.advance_hvt(game, events=None)
+        active = game.coin_state["hvt"].get("active")
+        if active and active["name"] not in names:
+            names.append(active["name"])
+    assert len(names) >= 2, f"leader never rotated: {names}"
+    assert names[0] == hvt.HVT_NAMES[0]
+    assert names[1] == hvt.HVT_NAMES[1]

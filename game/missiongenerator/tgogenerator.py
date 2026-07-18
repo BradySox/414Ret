@@ -60,6 +60,7 @@ from game.missiongenerator.groundforcepainter import (
 )
 from game.data.carrier_comms import CARRIER_COMMS_PLANS, CarrierCommsPlan
 from game.data.units import MOBILE_AIR_DEFENSE_UNIT_CLASSES
+from game.missiongenerator.carrierdeckdecor import generate_carrier_deck_decorations
 from game.missiongenerator.missiondata import CarrierInfo, MissionData
 from game.point_with_heading import PointWithHeading
 from game.radio.RadioFrequencyContainer import RadioFrequencyContainer
@@ -891,6 +892,15 @@ class GenericCarrierGenerator(GroundObjectGenerator):
                         ship_group=ship_group,
                     )
                 )
+                if self.game.settings.carrier_deck_decorations:
+                    generate_carrier_deck_decorations(
+                        self.m,
+                        self.country,
+                        ship_group,
+                        brc or Heading.from_degrees(0),
+                        self.game.turn,
+                        self.game.settings.carrier_deck_decorations_aircraft,
+                    )
 
     @property
     def carrier_type(self) -> Optional[Type[ShipType]]:

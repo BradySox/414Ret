@@ -6577,6 +6577,99 @@ the mod-off stripped-stores signature).
 
 ---
 
+## §72 — Carrier deck decorations (OCN 2 deck dressing)
+
+**What it is.** Every Nimitz-family carrier (free Stennis + supercarrier CVN-71/72/73/75)
+gets its deck dressed with ship-linked static deck equipment and crew — tow tractors
+(AS32-31A/-32A), a P-25 crash truck, a CV-59 Hyster forklift, deck hands along the
+island "street", and the four-figure LSO team on the port-aft platform — so the boat
+reads like a working flight deck instead of an empty parking lot. The placements are
+**verbatim Sedlo authoring**: extracted from the 13 missions of the OCN 2 (Operation
+Cerberus North 2) campaign (`E:\DCS World\Mods\campaigns\FA-18C Operation Cerberus
+North 2`, the user's install), which dresses the Truman's deck in every mission, and
+replayed at the same ship-frame offsets. The street arrangement rotates between four
+curated variants (mission 3 / 10 / 11 / 12 sets) deterministically on (carrier, turn) —
+crc32 seeding, the §70 pattern — so re-generating a turn is stable but consecutive
+turns vary. User request 2026-07-18 ("apply them to ALL retribution carriers for
+flavor — BUT we need all of the parking spots still usable").
+
+**The hard constraint — every parking spot stays usable.** DCS statics BLOCK deck
+parking locations (the allocator skips an obstructed spot — capacity loss, not an
+explosion), so the curation is an evidence-driven filter, not a copy. Two envelopes are
+provably parking-free and everything shipped lives inside them:
+
+- **LSO platform sponson** (x −134..−126, y −25..−18): off the deck surface; aircraft
+  physically cannot park there. OCN puts the LSO crew there in all 13 missions at
+  byte-identical offsets.
+- **Island street** (x −68..−40, y +12.5..+24.5): the strip between the landing-area
+  foul line and the island, flanked by the six-pack row (y = +34), the corral (forward
+  of the island face) and the junkyard (aft). The SC manual's 16-spot layout places no
+  spot there, none was ever observed there, and OCN dresses it in all 13 missions of a
+  flyable campaign.
+
+The keep-out evidence: parking spawn spots measured from **Tacview recordings of flown
+Retribution carrier missions** (t=0-frame ship-frame transform — parked aircraft only
+re-export positions on change, so only same-frame data is valid): six-pack outer row
+spots at (+1, +34) and (−11.5, +34) on a 12 m pitch (extrapolated to the row's four),
+port-quarter spots at (−84.5, −34) and (−96.5, −34) (the first F-14-capable spots — the
+manual's "large aircraft may not be able to use some parking spots" explains the
+six-pack skip), and the bow-port helo spot (+58.5, −31.4) where the §21 rescue helo
+parks. `KNOWN_PARKING_SPOTS` + a 9 m clearance floor are embedded in the data module
+and a guard test enforces them against every table entry, so a future layout edit
+cannot silently eat a spot. **Not in the default layout:** the fantail/bow static
+aircraft (E-2C, S-3B, SH-60B — they sit on real parking real estate; Sedlo could
+afford the spots, we can't), the junkyard cranes (AS32-36A, unproven zone), and the
+port-quarter one-offs. Cats are also untouched — the user allowed blocking one, but a
+static on a cat is a player-taxi collision hazard while the AI clips through it anyway
+(no functional block), so nothing is gained.
+
+**The aircraft tier (opt-in, spends spots — user call 2026-07-18).** A second toggle,
+`carrier_deck_decorations_aircraft` (default **OFF**, `enabled_when` the main toggle),
+appends OCN's aft static-aircraft look: two folded SH-60Bs in the starboard-aft
+junkyard (−134.3/−122.6, +27/+28) and an E-2C on the stern round-down (−152.1, +5.4) —
+verbatim OCN placements. Unlike everything else these **deliberately occupy parking
+real estate** (~3 of the 16 spots, 4 if the fantail Hawkeye spans two stern spots),
+which is why they're a separate tier; a dedicated guard test still keeps them ≥9 m
+from every MEASURED spot (six-pack / port quarter / the rescue-helo spot — the ones
+Retribution's own spawns demonstrably use) and out of the default layout. The
+S-3B/El-3 placement and the port-quarter E-2s stay excluded (they'd foul the measured
+port pair / the elevator spot).
+
+**Mechanism.** A ship-linked static serializes across three levels of the mission
+format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the static
+group's first route point, `linkOffset = true` at group level (pydcs-native), and
+`offsets = {x, y, angle}` on the unit. `game/missiongenerator/carrierdeckdecor.py`
+subclasses `Static`/`StaticPoint` to add the missing two and builds one single-static
+group per decoration (the OCN convention); DCS re-derives linked positions from the
+offsets every frame, so the statics ride the steaming boat. World x/y are still
+computed properly (ship position + rotated offset off the §65 BRC) so the miz reads
+sanely in the ME. Hooked in `GenericCarrierGenerator.generate()`'s flagship block
+after the §65 comms/naming pass; every static type is base-game content
+(`CoreMods/tech/USS_Nimitz` gear + personnel, `CoreMods/aircraft/F14` forklift — in
+every DCS install, no ownership gate). Not registered in the `UnitMap` (cosmetic, no
+campaign consequence); no plugin, no Lua, no save-format change — pure generation, so
+existing campaigns get it on their next mission without a new game.
+
+**Non-Nimitz decks are deliberately excluded** (`NIMITZ_DECK_HULLS` gate): Kuznetsov,
+Tarawa, Forrestal and Invincible have different deck plans with starboard-aft parking
+rows where these envelopes are NOT provably safe. Dressing them needs their own
+curated layouts against their own spot evidence — a follow-up, not a blind copy.
+
+**Wiring.** `carrier_deck_decorations` (Mission Generation → Carrier, default **ON** —
+the cosmetic-gen kill-switch pattern, §58/§49 precedent) +
+`carrier_deck_decorations_aircraft` (same section, default **OFF**, the spot-spending
+aft tier). Data: `game/data/carrier_deck_decor.py` (layout tables + spot anchors +
+envelopes + the `deck_layout_for` rotation). Generator:
+`game/missiongenerator/carrierdeckdecor.py`, called from
+`game/missiongenerator/tgogenerator.py`. Tests:
+`tests/missiongenerator/test_carrier_deck_decor.py` (the parking-spot guard over every
+variant, envelope integrity, hull gate + rotation determinism, the aircraft tier's
+opt-in/measured-spot guards, and the three-level link serialization against a real
+pydcs mission). Checklist B25 — needs an in-game pass (do the statics ride the deck
+through a full mission; does a max-density spawn still fill every spot; does AI
+recovery taxi behave around the street gear). **Non-Nimitz hull dressing was offered
+and DECLINED (user call 2026-07-18)** — Kuznetsov/Tarawa/Forrestal stay bare.
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

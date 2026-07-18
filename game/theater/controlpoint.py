@@ -109,6 +109,22 @@ FREE_FRONTLINE_UNIT_SUPPLY: int = 15
 AMMO_DEPOT_FRONTLINE_UNIT_CONTRIBUTION: int = 12
 TRIGGER_RADIUS_CAPTURE = 3000
 
+# The supercarrier upgrade is keyed by the carrier CP's NAME: a free Stennis hull
+# sails as the Super Carrier hull whose identity the boat carries. A name outside
+# this map has no supercarrier model of its own ("CVN-74 John C. Stennis" IS the
+# free hull) — upgrade_to_supercarrier's legacy fallback then sails a mislabeled
+# CVN-71 (the 2026-07-17 Scenic Route Merged boat: CP named John C. Stennis,
+# flagship + boat card reading CVN-71 Theodore Roosevelt/71X). New games avoid
+# that at naming time: hull_consistent_carrier_name (start_generator) only deals
+# a supercarrier game a name from this map.
+STENNIS_SUPERCARRIER_UPGRADES: dict[str, Type[ShipType]] = {
+    "CVN-71 Theodore Roosevelt": CVN_71,
+    "CVN-72 Abraham Lincoln": CVN_72,
+    "CVN-73 George Washington": CVN_73,
+    "CVN-75 Harry S. Truman": CVN_75,
+    "Carrier Strike Group 8": CVN_75,
+}
+
 
 def warn_if_motorpool_inside_capture_zone(
     name: str, location: Point, control_point: ControlPoint
@@ -903,18 +919,10 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
     @staticmethod
     def upgrade_to_supercarrier(unit: Type[ShipType], name: str) -> Type[ShipType]:
         if unit == Stennis:
-            if name == "CVN-71 Theodore Roosevelt":
-                return CVN_71
-            elif name == "CVN-72 Abraham Lincoln":
-                return CVN_72
-            elif name == "CVN-73 George Washington":
-                return CVN_73
-            elif name == "CVN-75 Harry S. Truman":
-                return CVN_75
-            elif name == "Carrier Strike Group 8":
-                return CVN_75
-            else:
-                return CVN_71
+            # An unmapped name keeps the legacy CVN-71 fallback so existing saves
+            # keep the boat they have been sailing; new games avoid the mismatch
+            # at naming time (hull_consistent_carrier_name in start_generator).
+            return STENNIS_SUPERCARRIER_UPGRADES.get(name, CVN_71)
         elif unit == KUZNECOW:
             return CV_1143_5
         else:

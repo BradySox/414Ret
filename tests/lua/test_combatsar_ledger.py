@@ -71,7 +71,36 @@ land = {
     getSurfaceType = function() return 1 end,  -- LAND
     SurfaceType = { WATER = 3, SHALLOW_WATER = 2 },
 }
-Group = { Category = { GROUND = 2 } }  -- the DCS class (distinct from MOOSE GROUP)
+-- The DCS class (distinct from MOOSE GROUP). getByName hands back a controller that
+-- records setOption calls into _roe so the non-combatant discipline (weapons-hold +
+-- alarm-green on the survivor and every snatch team) can be pinned.
+_roe = {}
+AI = {
+    Option = {
+        Ground = {
+            id = { ROE = 0, ALARM_STATE = 9 },
+            val = {
+                ROE = { OPEN_FIRE = 2, RETURN_FIRE = 3, WEAPON_HOLD = 4 },
+                ALARM_STATE = { AUTO = 0, GREEN = 1, RED = 2 },
+            },
+        },
+    },
+}
+Group = {
+    Category = { GROUND = 2 },
+    getByName = function(name)
+        local g = { name = name }
+        function g:isExist() return true end
+        function g:getController()
+            return {
+                setOption = function(_, id, value)
+                    table.insert(_roe, { name = name, id = id, value = value })
+                end,
+            }
+        end
+        return g
+    end,
+}
 -- Chainable no-op: every method returns the table itself (SET_GROUP:New()
 -- :FilterCoalitions():FilterCategoryHelicopter():FilterStart(), ForEachGroupAlive...).
 local chain = { __index = function(t, k) return function(...) return t end end }
@@ -193,6 +222,40 @@ def test_ejection_registers_survivor_syncs_state_and_spawns_the_snatch() -> None
     assert rt.eval("_snatches[1].country") == 82
     messages = _lua_list(rt, "_messages")
     assert any("moving to capture the downed pilot" in m for m in messages), messages
+
+
+def test_survivor_and_snatch_teams_spawn_weapons_hold() -> None:
+    # 2026-07-17 night fly: 12 snatch parties, ZERO captures -- DCS infantry
+    # ballistics resolved every race before the capture dwell could (the armed
+    # survivor wiped closing teams; teams that closed shot the survivor dead).
+    # Both sides must spawn weapons-hold + alarm-green so the capture CLOCK --
+    # and airpower against the party -- decides the race, not small arms.
+    rt = _run(
+        {"pilotTemplate": "Combat SAR Downed Pilot", "autoSpawn": "false"},
+        options={"captureChance": 100},
+    )
+    rt.execute(
+        "_ejectHandler:onEvent({ id = 6, "
+        'initiator = _mkUnit("Enfield 1-1 | F-14B", 2, 1000, 2000) })'
+    )
+    rt.execute("for _, s in ipairs(_scheduled) do s.fn(s.arg) end")
+
+    n = int(rt.eval("#_roe"))
+    calls: dict[str, set[tuple[int, int]]] = {}
+    for i in range(1, n + 1):
+        rec = rt.eval(f"_roe[{i}]")
+        calls.setdefault(str(rec["name"]), set()).add(
+            (int(rec["id"]), int(rec["value"]))
+        )
+    hold = {(0, 4), (9, 1)}  # ROE=WEAPON_HOLD, ALARM_STATE=GREEN
+    survivor_groups = [g for g in calls if "Survivor" in g]
+    team_groups = [g for g in calls if "Snatch Party" in g]
+    assert survivor_groups, calls
+    assert team_groups, calls
+    n_teams = int(rt.eval("#_snatches"))
+    assert len(team_groups) == n_teams, (calls, n_teams)
+    for group, opts in calls.items():
+        assert hold <= opts, (group, opts)
 
 
 def test_persistent_evaders_respawn_at_mission_start() -> None:

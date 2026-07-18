@@ -873,7 +873,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     **capture → POW**, unlocking the §51 capture-gated comms jam; the reliable way to exercise G28 + S4)
     and `combat_sar_test_easy_rescue` (`testEasyRescue`: capture off + forgiving pickup/delivery; exercises
     G10 King / G23 Sandy / the pickup loop). The plugin applies them after the normal options (force-capture
-    wins if both set); OFF ⇒ node unchanged. **Persistent evaders + the always-run snatch (2026-07-10,
+    wins if both set); OFF ⇒ node unchanged. **Non-combatant capture race (2026-07-17 night-fly fix):**
+    the first at-scale run (12 snatch parties) captured NOBODY — DCS infantry ballistics resolved every
+    race before the capture dwell could (the M249 survivor outguns AK teams; teams that closed shot the
+    survivor dead). Both the survivor group and every snatch team now spawn **ROE weapons-hold +
+    alarm-green** (`setNonCombatant`; the survivor via the MOOSE spawn's real `#001` group name), so the
+    capture clock + airpower against the party decide the race, never small arms; garrison units near the
+    ejection can still kill an evader. Pinned in `tests/lua/test_combatsar_ledger.py`.
+    **Persistent evaders + the always-run snatch (2026-07-10,
     squadron call — the flown jamming test found "no rescue asset ⇒ the plugin skips entirely", which
     silently killed the snatch race + the capture→POW→§51 chain + even the emitted force-capture flag):**
     the blue node is now **always emitted** (the player-package/auto-spawn early-return is gone) and the
@@ -2148,7 +2155,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     ICLS moved to a shared-pool `IclsAllocator`; **every value persists to the control point** so
     the card is stable across turns (ATC/Link4/ICLS used to re-roll). The flagship unit is named by
     its hull name (named before `_register_theater_unit` so kill-tracking keys the same string;
-    duplicate-class boats keep the unique prefixed name). Mod carriers keep the legacy path. Pure
+    duplicate-class boats keep the unique prefixed name). Mod carriers keep the legacy path.
+    **CP naming follows the hull (2026-07-17):** the carrier CP name (drawn at game start from the
+    faction pool) keys the supercarrier upgrade, and a name outside the map ("CVN-74 John C.
+    Stennis" has no Supercarrier model) sailed a mislabeled CVN-71 (the flown Scenic Merged boat) —
+    `hull_consistent_carrier_name` (`start_generator.py`) now deals a supercarrier game only names
+    the upgrade maps (`STENNIS_SUPERCARRIER_UPGRADES`, the name picks WHICH supercarrier) and
+    otherwise prefers the hull's own display name (free Stennis = CVN-74, Tarawa = LHA-1); pool
+    fallback preserved, unmapped names keep the legacy CVN-71 upgrade so existing saves keep their
+    boat. New games only; tests `tests/test_carrier_naming.py`. Pure
     generation behavior — no setting, no plugin, no save change; headless-verified end-to-end on
     Enduring Resolve. Tests `tests/test_carrier_comms.py`; features doc §65, checklist B18 — needs
     an in-game pass (the CV page renders the card; the beacons radiate for a recovery).

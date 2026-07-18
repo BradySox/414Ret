@@ -4,10 +4,12 @@ import logging
 import random
 from dataclasses import dataclass
 from datetime import datetime, time
-from typing import List, Optional
+from typing import List, Optional, Sequence, Type
 
 import dcs.statics
 from dcs.countries import country_dict
+from dcs.ships import Stennis
+from dcs.unittype import ShipType
 
 from game import Game
 from game.factions.faction import Faction
@@ -19,7 +21,10 @@ from game.theater import (
     NavalControlPoint,
     EssexCarrier,
 )
-from game.theater.controlpoint import warn_if_motorpool_inside_capture_zone
+from game.theater.controlpoint import (
+    STENNIS_SUPERCARRIER_UPGRADES,
+    warn_if_motorpool_inside_capture_zone,
+)
 from game.theater.theatergroundobject import (
     BuildingGroundObject,
     IadsBuildingGroundObject,
@@ -279,6 +284,33 @@ class NoOpGroundObjectGenerator(ControlPointGroundObjectGenerator):
         return True
 
 
+def hull_consistent_carrier_name(
+    names: Sequence[str], dcs_type: Type[ShipType], supercarrier: bool
+) -> str:
+    """Pick a boat name that matches the hull that will actually sail.
+
+    The CP name drives the supercarrier upgrade (a Stennis hull sails as the
+    Super Carrier hull named by ``STENNIS_SUPERCARRIER_UPGRADES``) and §65 names
+    the flagship + boat card by the HULL — so a name outside that map produced a
+    mislabeled boat (the flown "CVN-74 John C. Stennis" CP fell through the
+    upgrade's else-branch and sailed a CVN-71 wearing Roosevelt's name and 71X).
+    With the supercarrier setting on, restrict a Stennis pool to names the
+    upgrade maps (the chosen name then picks WHICH supercarrier); otherwise
+    prefer the pool name matching the hull's own display name (the free Stennis
+    IS CVN-74; the Tarawa IS LHA-1). The pool stays the fallback either way so
+    flavored faction pools ("Carrier Strike Group 8") keep working.
+    """
+    if supercarrier and dcs_type is Stennis:
+        upgradable = [n for n in names if n in STENNIS_SUPERCARRIER_UPGRADES]
+        if upgradable:
+            return random.choice(upgradable)
+    else:
+        hull_name = str(dcs_type.name)
+        if hull_name in names:
+            return hull_name
+    return random.choice(list(names))
+
+
 class GenericCarrierGroundObjectGenerator(ControlPointGroundObjectGenerator):
     def update_carrier_name(self, carrier_name: str) -> None:
         # Set Control Point name
@@ -311,10 +343,17 @@ class GenericCarrierGroundObjectGenerator(ControlPointGroundObjectGenerator):
         else:
             carrier_type = preferred_type if preferred_type else carrier_unit.unit_type
             assert isinstance(carrier_type, ShipUnitType)
-            # Otherwise pick randomly from the names specified for that particular carrier type
+            # Otherwise pick from the names specified for that particular carrier
+            # type — preferring a name consistent with the hull that will sail
+            # (§65 names the flagship/boat card by hull; see
+            # hull_consistent_carrier_name).
             carrier_names = self.faction.carriers.get(carrier_type)
             if carrier_names:
-                self.control_point.name = random.choice(list(carrier_names))
+                self.control_point.name = hull_consistent_carrier_name(
+                    list(carrier_names),
+                    carrier_type.dcs_unit_type,
+                    self.game.settings.supercarrier,
+                )
             else:
                 self.control_point.name = carrier_type.display_name
         carrier_unit.name = self.control_point.name

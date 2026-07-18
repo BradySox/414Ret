@@ -270,12 +270,15 @@ def test_jitter_seed_is_salted_and_not_recomputable_from_the_public_id() -> None
     assert (a1[0].x, a1[0].y) == (a2[0].x, a2[0].y)
 
 
-def test_clustered_site_shares_one_merged_circle() -> None:
-    """2026-07-18 audit: separately-drawn circles amber-blanketed the strongholds
-    (Tarinkot drew 9 overlapping rings). Concealed radial TGOs sharing a control
-    point must return IDENTICAL merged geometry — one blob of suspicion — with
-    the radius covering every member's own circle, and both members' true
-    positions inside it. A lone TGO keeps the classic per-TGO jitter."""
+def test_cluster_members_keep_their_own_circles_and_report_size() -> None:
+    """The density-cloud contract (the 2026-07-18 same-day rework of the merged
+    circle — squadron read of the flown result: the disc covered one spot, not
+    the area the units hold): each member keeps its OWN bounded circle over its
+    own position, so the union covers the real spread and the client's stacked
+    fills darken where they overlap; ``concealed_cluster_size`` drives the
+    styling and drops as members are found."""
+    from game.server.tgos.models import concealed_cluster_size
+
     a = _Tgo(concealed=True, known=False)
     b = _Tgo(concealed=True, known=False)
     b.id = uuid.UUID(int=0x415)
@@ -287,17 +290,19 @@ def test_clustered_site_shares_one_merged_circle() -> None:
     ra = concealed_uncertainty(a)  # type: ignore[arg-type]
     rb = concealed_uncertainty(b)  # type: ignore[arg-type]
     assert ra is not None and rb is not None
-    (ca, radius_a), (cb, radius_b) = ra, rb
-    assert (ca.x, ca.y, radius_a) == (cb.x, cb.y, radius_b)
-    for member in (a, b):
-        truth_dist = math.hypot(ca.x - member.position.x, ca.y - member.position.y)
-        assert truth_dist <= radius_a  # the truth stays inside the merged circle
+    for member, (centre, radius) in ((a, ra), (b, rb)):
+        offset = math.hypot(centre.x - member.position.x, centre.y - member.position.y)
+        assert offset <= _CONCEALED_MAX_OFFSET * radius  # truth inside OWN circle
+    assert (ra[0].x, ra[0].y) != (rb[0].x, rb[0].y)  # geometry is never merged
+    assert concealed_cluster_size(a) == 2  # type: ignore[arg-type]
+    assert concealed_cluster_size(b) == 2  # type: ignore[arg-type]
 
-    # A discovered member drops out of the cluster; the survivor still conceals.
+    # A discovered member snaps to truth and leaves the cluster; the survivor
+    # still conceals, now styled as a lone dashed ring again.
     a._known = True
     assert concealed_uncertainty(a) is None  # type: ignore[arg-type]
-    rb2 = concealed_uncertainty(b)  # type: ignore[arg-type]
-    assert rb2 is not None
+    assert concealed_uncertainty(b) is not None  # type: ignore[arg-type]
+    assert concealed_cluster_size(b) == 1  # type: ignore[arg-type]
 
 
 def test_road_pinned_circles_never_join_a_cluster() -> None:
@@ -318,3 +323,9 @@ def test_road_pinned_circles_never_join_a_cluster() -> None:
     # The IED slid along its road (same y), independent of the site's circle.
     assert r_ied[0].y == -60_000.0
     assert (r_site[0].x, r_site[0].y) != (r_ied[0].x, r_ied[0].y)
+    # Neither counts the other: the road-pin is always a lone ring, and the
+    # site's cluster census skips road-pinned siblings.
+    from game.server.tgos.models import concealed_cluster_size
+
+    assert concealed_cluster_size(ied) == 1  # type: ignore[arg-type]
+    assert concealed_cluster_size(site) == 1  # type: ignore[arg-type]

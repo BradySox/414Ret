@@ -149,7 +149,10 @@ Upstream hands you a map that already knows everything. Here you have to go look
   command posts transmit coded morse traffic in periodic windows on fixed UHF frequencies —
   off your comms plan, so you only hear it by hunting the dial. Phantom, Tomcat, Hornet and
   Tiger needles can home on an open transmission window; kill the node and its net goes
-  silent for good.
+  silent for good. Hidden insurgent cells carry radios too: your kneeboard briefs a
+  "suspected clandestine net" with a frequency and an area, the dashed circle on the map is
+  the search box, and a needle cut caught during one of its short transmission windows is
+  what turns the circle into a fix.
 - **The enemy economy follows its intent.** A surging enemy buys the armor its offensive
   spends; one consolidating under pressure husbands ground and rebuilds its air arm — and
   its buys favor its better hardware, not a coin flip over the catalog. Turn on **SAM site

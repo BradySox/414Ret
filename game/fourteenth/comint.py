@@ -98,6 +98,10 @@ def comint_sources(game: "Game") -> list[Any]:
     for tgo in _red_tgos(game):
         if not _tgo_alive(tgo):
             continue
+        # §50 ambush teams are map_hidden and must never be comms-active
+        # anywhere (no take, no transmission) -- nothing telegraphs them.
+        if getattr(tgo, "map_hidden", False):
+            continue
         if getattr(tgo, "category", None) in COMMS_CATEGORIES:
             sources.append(tgo)
         elif getattr(tgo, "coin_spawned", False) and getattr(tgo, "concealed", False):
@@ -295,13 +299,43 @@ def comint_leak_line(game: "Game") -> Optional[str]:
     return line + "."
 
 
-def comint_kneeboard_lines(game: "Game") -> list[str]:
+#: Cap on the kneeboard active-nets listing; the rest fold into a "+N more".
+MAX_LISTED_NETS = 5
+
+
+def _active_net_lines(red_net: Any) -> list[str]:
+    """The C2 findability tie: one briefed line per transmitting enemy net.
+
+    Fixed C2 stations are public map objects, so their name + frequency print
+    plainly. A **clandestine** station (a concealed spawn) is briefed as
+    exactly what the SIGINT shop would know — a net and a coarse area — never
+    the TGO's identity or position: the dashed circle plus this line IS the
+    hunt, and DF-ing an open window is how you close it.
+    """
+    nodes = list(getattr(red_net, "nodes", []) or [])
+    if not nodes:
+        return []
+    lines = ["Active nets (UHF AM):"]
+    for node in nodes[:MAX_LISTED_NETS]:
+        freq = f"{node.freq_mhz:.3f}"
+        area = f" — {node.area} area" if getattr(node, "area", "") else ""
+        if getattr(node, "clandestine", False):
+            lines.append(f"  suspected clandestine net @ {freq}{area}")
+        else:
+            lines.append(f"  {node.name} @ {freq}{area}")
+    if len(nodes) > MAX_LISTED_NETS:
+        lines.append(f"  …plus {len(nodes) - MAX_LISTED_NETS} more net(s) active.")
+    return lines
+
+
+def comint_kneeboard_lines(game: "Game", red_net: Any = None) -> list[str]:
     """The Mission Info COMINT block (empty when the feature is off).
 
-    Tier 0 reads as a consequence, not a bug; Tier 1 names the earn; Tier 2
-    carries the leak + the reveal. The §55 posture detail is NOT repeated here
-    -- the SITREP band directly above this block already shows it (gated by
-    ``gated_posture_detail``).
+    Tier 0 reads as a consequence, not a bug; Tier 1 names the earn and briefs
+    the active nets (when the §70 C1 red net is transmitting this mission);
+    Tier 2 carries the leak + the reveal. The §55 posture detail is NOT
+    repeated here -- the SITREP band directly above this block already shows
+    it (gated by ``gated_posture_detail``).
     """
     if not comint_enabled(game):
         return []
@@ -309,6 +343,7 @@ def comint_kneeboard_lines(game: "Game") -> list[str]:
     if not sources:
         return ["Enemy C2 net silent — no COMINT take."]
     lines = [f"Enemy net active: {len(sources)} emitter(s) up."]
+    lines.extend(_active_net_lines(red_net))
     if not collector_flew_last_turn(game):
         lines.append(
             "Ambient take only — no collection sortie (jamming bird or drone) "

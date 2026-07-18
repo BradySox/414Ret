@@ -43,6 +43,9 @@ def _tgo(
     *,
     alive: bool = True,
     name: str = "C2 node",
+    concealed: bool = False,
+    coin_spawned: bool = False,
+    map_hidden: bool = False,
 ) -> Any:
     units = [
         SimpleNamespace(unit_name=unit_name, alive=alive) for unit_name in unit_names
@@ -52,12 +55,17 @@ def _tgo(
         groups=[SimpleNamespace(units=units)],
         position=_Point(1000.0, 2000.0),
         obj_name=name,
+        concealed=concealed,
+        coin_spawned=coin_spawned,
+        map_hidden=map_hidden,
     )
 
 
 def _game(tgos: list[Any], *, on: bool = True, blue_owned: bool = False) -> Any:
     cp = SimpleNamespace(
-        captured=SimpleNamespace(is_blue=blue_owned), ground_objects=tgos
+        captured=SimpleNamespace(is_blue=blue_owned),
+        ground_objects=tgos,
+        name="Haina",
     )
     return SimpleNamespace(
         settings=SimpleNamespace(red_comms_net=on),
@@ -129,9 +137,45 @@ def test_a_reserved_candidate_is_probed_past() -> None:
     assert abs(probed - int(probed) - 0.5) < 1e-9
 
 
+def test_coin_cells_transmit_as_clandestine_stations() -> None:
+    cell = _tgo(
+        "armor",
+        ["0071 | Insurgent AK"],
+        name="cell 3",
+        concealed=True,
+        coin_spawned=True,
+    )
+    game = _game([_tgo("comms", ["u1"], name="Haina comms"), cell])
+    plan = plan_red_net(game, RadioRegistry())
+    assert plan is not None
+    by_name = {node.name: node for node in plan.nodes}
+    assert by_name["cell 3"].clandestine is True
+    assert by_name["Haina comms"].clandestine is False
+    assert by_name["cell 3"].area == "Haina"
+
+
+def test_concealed_comms_node_keys_the_clandestine_schedule() -> None:
+    game = _game([_tgo("comms", ["u1"], name="field TX", concealed=True)])
+    plan = plan_red_net(game, RadioRegistry())
+    assert plan is not None
+    assert plan.nodes[0].clandestine is True
+
+
+def test_map_hidden_is_never_emitted() -> None:
+    # §50 ambush teams (and any defensively map_hidden object) must never
+    # transmit -- nothing telegraphs them.
+    ambush = _tgo("armor", ["a1"], concealed=True, coin_spawned=True, map_hidden=True)
+    hidden_comms = _tgo("comms", ["c1"], map_hidden=True)
+    assert plan_red_net(_game([ambush, hidden_comms]), RadioRegistry()) is None
+
+
 def test_populate_emits_the_stored_plan() -> None:
     plan = RedNetInfo(
-        nodes=[RedNetNode("CC", ["0012 | Tower", "0013 | Mast"], 10.0, 20.0, 271.5)]
+        nodes=[
+            RedNetNode(
+                "CC", ["0012 | Tower", "0013 | Mast"], 10.0, 20.0, 271.5, False, "Haina"
+            )
+        ]
     )
     root = LuaData("dcsRetribution")
     populate_red_net_lua(root, SimpleNamespace(red_net=plan))  # type: ignore[arg-type]
@@ -144,6 +188,7 @@ def test_populate_emits_the_stored_plan() -> None:
     assert rec["units"] == ["0012 | Tower", "0013 | Mast"]
     assert rec["x"] == "10.0" and rec["y"] == "20.0"
     assert rec["mhz"] == "271.5"
+    assert rec["clandestine"] == "false"
 
 
 def test_populate_without_a_plan_emits_nothing() -> None:

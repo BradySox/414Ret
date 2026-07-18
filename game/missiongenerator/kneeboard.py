@@ -2731,11 +2731,17 @@ class KneeboardGenerator(MissionInfoGenerator):
         }
     )
 
-    def __init__(self, mission: Mission, game: "Game") -> None:
+    def __init__(
+        self, mission: Mission, game: "Game", red_net: Optional[Any] = None
+    ) -> None:
         super().__init__(mission, game)
         self.dark_kneeboard = self.game.settings.generate_dark_kneeboard and (
             self.mission.start_time.hour > 19 or self.mission.start_time.hour < 7
         )
+        # §70 C2: this mission's red-net plan (MissionData.red_net), so the
+        # COMINT block can brief the active nets. None when red_comms_net is
+        # off or nothing transmits.
+        self.red_net = red_net
 
     def generate(self) -> None:
         """Generates a kneeboard per client flight, grouped by airframe.
@@ -2862,11 +2868,12 @@ class KneeboardGenerator(MissionInfoGenerator):
 
         Built at generation time on purpose: red's ATO for THIS mission is fully
         planned by now, so the Tier-2 tasking leak warns of a package actually
-        flying today.
+        flying today — and the active-nets listing (C2) briefs the frequencies
+        the §70 C1 red net actually transmits on this mission.
         """
         from game.fourteenth.comint import comint_kneeboard_lines
 
-        return comint_kneeboard_lines(self.game)
+        return comint_kneeboard_lines(self.game, self.red_net)
 
     def generate_task_page(self, flight: FlightData) -> Optional[KneeboardPage]:
         if flight.flight_type in (FlightType.DEAD, FlightType.SEAD):

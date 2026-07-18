@@ -1,6 +1,6 @@
 {
     "nameInUI": "Red comms net (COMINT C1)",
-    "descriptionInUI": "Runtime for the audible enemy radio net (§70 COMINT, phase C1). Inert unless the mission generator emits dcsRetribution.redNet (the 'Enemy radio net (audible + DF-able)' setting is on and an enemy IADS comms/command-center node is alive). Each emitted C2 node transmits periodic coded CW traffic (trigger.action.radioTransmission, an original synthesized morse clip) on its own fixed UHF AM frequency -- deliberately off the briefed comms plan by construction (x.500 MHz, allocated in Python against the mission's RadioRegistry), so nothing steps on friendly channels. Tune the frequency and you HEAR the enemy net; airframes with UHF direction finding (F-4E, F-14 ARC-182 DF, F/A-18C UFC ADF, F-5E) can home on a transmission window -- the transmission is looped while a window is open, then stops, so the needle only points while they're on the air. Killing the node (an ordinary IADS strike, recorded natively) takes the net off the air mid-mission; the plugin owns no kills and changes no gameplay model -- audio and DF geometry only. Node frequencies are logged at arm ('REDNET|: armed ...') for mission-side reference.",
+    "descriptionInUI": "Runtime for the audible enemy radio net (§70 COMINT, phases C1+C2). Inert unless the mission generator emits dcsRetribution.redNet (the 'Enemy radio net (audible + DF-able)' setting is on and an enemy net station is alive). Each emitted station transmits periodic coded CW traffic (trigger.action.radioTransmission, an original synthesized morse clip) on its own fixed UHF AM frequency -- deliberately off the briefed comms plan by construction (x.500 MHz, allocated in Python against the mission's RadioRegistry), so nothing steps on friendly channels. Fixed C2 nodes (comms masts / command centers) keep a regular traffic cadence; CLANDESTINE stations -- concealed insurgent cells, IED teams, the HVT convoy, or an authored concealed comms site -- key short windows with long silence, so the hunt is catching one on the air. Tune the frequency and you HEAR the enemy net; airframes with UHF direction finding (F-4E, F-14 ARC-182 DF, F/A-18C UFC ADF, F-5E) can home on a transmission window -- the transmission is looped while a window is open, then stops, so the needle only points while they're on the air. Killing the station (an ordinary strike, recorded natively) takes its net off the air mid-mission; the plugin owns no kills and changes no gameplay model -- audio and DF geometry only. Station frequencies are logged at arm ('REDNET|: armed ...') for host-side reference; the players' brief is the COMINT kneeboard active-nets listing.",
     "defaultValue": true,
     "specificOptions": [
         {
@@ -13,6 +13,18 @@
             "nameInUI": "Mean silence between a net's windows (s, jittered)",
             "mnemonic": "gapSec",
             "defaultValue": 240,
+            "maximumValue": 3600
+        },
+        {
+            "nameInUI": "Clandestine station window: a hidden cell's transmission length (s) -- short by design, catch it or wait",
+            "mnemonic": "clandestineWindowSec",
+            "defaultValue": 20,
+            "maximumValue": 600
+        },
+        {
+            "nameInUI": "Clandestine station mean silence between windows (s, jittered)",
+            "mnemonic": "clandestineGapSec",
+            "defaultValue": 480,
             "maximumValue": 3600
         },
         {

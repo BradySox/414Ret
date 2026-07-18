@@ -324,11 +324,11 @@ def _batch2_stems() -> list[str]:
 
 
 def test_scenic_merge_keeps_its_red_rear_arteries(tmp_path: Any) -> None:
-    """Scenic Route Merged already carries a miz-native red FOB road belt, so it
-    was never batch-2 eligible -- but the 2026-07-17 cleanup added the two
-    geo-authored Iranian mainland arteries (the same corridors the Noisy Cricket
-    campaigns use) so red's rear logistics run Bandar Abbas -> Kerman / Shiraz.
-    A laydown edit must not silently drop them."""
+    """Scenic Route Merged's red logistics ride the miz-native FOB-ladder roads
+    (real winding highways). Direct BA <-> Shiraz/Kerman yaml corridors were
+    tried 2026-07-17 and REVERTED same day -- 4-5 waypoint straight lines over
+    the Zagros that also let a front bypass the FOB ladder; assert they stay
+    gone, and that the thinned ladder still binds end to end."""
     from pathlib import Path
 
     from game import persistency
@@ -344,8 +344,8 @@ def test_scenic_merge_keeps_its_red_rear_arteries(tmp_path: Any) -> None:
         for other in cp.convoy_routes.keys():
             if other.starting_coalition.is_red:
                 red_roads.add(tuple(sorted((cp.name, other.name))))
-    assert ("Bandar Abbas Intl", "Kerman") in red_roads
-    assert ("Bandar Abbas Intl", "Shiraz Intl") in red_roads
+    assert ("Bandar Abbas Intl", "Kerman") not in red_roads
+    assert ("Bandar Abbas Intl", "Shiraz Intl") not in red_roads
     # The 2026-07-17 FOB-belt thinning (23 -> 14 FOBs) spliced the removed
     # waystations' road segments into single groups along the SAME polylines --
     # the chains must still bind end to end, and the removed FOBs must stay gone.

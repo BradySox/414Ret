@@ -152,6 +152,7 @@ def test_kill_credits_a_momentum_blow(monkeypatch: Any) -> None:
     hvt.advance_hvt(game, events=None)  # detect the kill
     assert hvt.consume_hvt_kills(game) == 1
     assert hvt.consume_hvt_kills(game) == 0  # cleared
+    assert hvt.consume_hvt_escapes(game) == 0  # a kill is never an escape
     assert game.coin_state["hvt"]["active"] is None
     assert game.coin_state["hvt"]["cooldown"] == hvt.HVT_COOLDOWN_TURNS
     assert any("eliminated" in m[1].lower() for m in game.messages)
@@ -179,6 +180,10 @@ def test_escapes_when_the_window_closes_without_a_kill(monkeypatch: Any) -> None
     for _ in range(hvt.HVT_WINDOW_TURNS):
         hvt.advance_hvt(game, events=None)  # never killed -> ages out
     assert hvt.consume_hvt_kills(game) == 0  # no momentum blow for a miss
+    # ...but since the 2026-07-18 audit call the lapse banks a propaganda coup
+    # (consumed by the will layer where red_hvt_escaped is priced).
+    assert hvt.consume_hvt_escapes(game) == 1
+    assert hvt.consume_hvt_escapes(game) == 0  # cleared
     assert game.coin_state["hvt"]["active"] is None
     assert any("gone to ground" in m[1].lower() for m in game.messages)
 
@@ -244,3 +249,20 @@ def test_active_hvt_status_reads_the_window(monkeypatch: Any) -> None:
     assert status[1] == hvt.HVT_WINDOW_TURNS - 1
     game.settings.coin_hvt = False
     assert hvt.active_hvt_status(game) is None
+
+
+def test_leaders_rotate_even_on_the_natural_cadence(monkeypatch: Any) -> None:
+    """The untouched cycle (window + cooldown + resurface = 8 turns) exactly
+    aliases the 8-name table, so a turn-indexed pick resurfaced the same
+    leader forever (the 2026-07-18 probe's eternal Qari Zakir). Names now
+    rotate by surface count."""
+    game = _theater(monkeypatch)
+    names = []
+    for _ in range(2 * (hvt.HVT_WINDOW_TURNS + hvt.HVT_COOLDOWN_TURNS + 1) + 2):
+        hvt.advance_hvt(game, events=None)
+        active = game.coin_state["hvt"].get("active")
+        if active and active["name"] not in names:
+            names.append(active["name"])
+    assert len(names) >= 2, f"leader never rotated: {names}"
+    assert names[0] == hvt.HVT_NAMES[0]
+    assert names[1] == hvt.HVT_NAMES[1]

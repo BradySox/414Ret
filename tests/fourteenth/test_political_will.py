@@ -215,10 +215,11 @@ def test_unpriced_coin_counters_are_drained_not_banked() -> None:
     """The IED/HVT feeds are inert at the default 0.0 weights, but their coin_state
     counters must still drain each turn -- an unpriced campaign never banks them."""
     game = _game()
-    game.coin_state = {"ied_detonations": 3, "hvt_kills": 2}
+    game.coin_state = {"ied_detonations": 3, "hvt_kills": 2, "hvt_escapes": 1}
     update_political_will(game, _debrief())
     assert game.coin_state["ied_detonations"] == 0
     assert game.coin_state["hvt_kills"] == 0
+    assert game.coin_state["hvt_escapes"] == 0
     # Inert means inert: neither meter moved beyond the quiet-turn regen.
     assert game.blue.political_will == 100.0
     assert game.red.political_will == 100.0

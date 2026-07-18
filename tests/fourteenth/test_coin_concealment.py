@@ -268,3 +268,53 @@ def test_jitter_seed_is_salted_and_not_recomputable_from_the_public_id() -> None
     a2 = concealed_uncertainty(tgo)  # type: ignore[arg-type]
     assert a1 is not None and a2 is not None
     assert (a1[0].x, a1[0].y) == (a2[0].x, a2[0].y)
+
+
+def test_clustered_site_shares_one_merged_circle() -> None:
+    """2026-07-18 audit: separately-drawn circles amber-blanketed the strongholds
+    (Tarinkot drew 9 overlapping rings). Concealed radial TGOs sharing a control
+    point must return IDENTICAL merged geometry — one blob of suspicion — with
+    the radius covering every member's own circle, and both members' true
+    positions inside it. A lone TGO keeps the classic per-TGO jitter."""
+    a = _Tgo(concealed=True, known=False)
+    b = _Tgo(concealed=True, known=False)
+    b.id = uuid.UUID(int=0x415)
+    b.position = _Point(103_000.0, -52_000.0)
+    cp = a.control_point
+    b.control_point = cp
+    cp.connected_objectives = [a, b]
+
+    ra = concealed_uncertainty(a)  # type: ignore[arg-type]
+    rb = concealed_uncertainty(b)  # type: ignore[arg-type]
+    assert ra is not None and rb is not None
+    (ca, radius_a), (cb, radius_b) = ra, rb
+    assert (ca.x, ca.y, radius_a) == (cb.x, cb.y, radius_b)
+    for member in (a, b):
+        truth_dist = math.hypot(ca.x - member.position.x, ca.y - member.position.y)
+        assert truth_dist <= radius_a  # the truth stays inside the merged circle
+
+    # A discovered member drops out of the cluster; the survivor still conceals.
+    a._known = True
+    assert concealed_uncertainty(a) is None  # type: ignore[arg-type]
+    rb2 = concealed_uncertainty(b)  # type: ignore[arg-type]
+    assert rb2 is not None
+
+
+def test_road_pinned_circles_never_join_a_cluster() -> None:
+    """A roadside IED's circle is a highway search domain — merging it into the
+    stronghold blob would break the 'which street' read."""
+    site = _Tgo(concealed=True, known=False)
+    ied = _Tgo(concealed=True, known=False)
+    ied.id = uuid.UUID(int=0x416)
+    ied.concealed_route = [(90_000.0, -60_000.0), (140_000.0, -60_000.0)]
+    ied.position = _Point(110_000.0, -60_000.0)
+    cp = site.control_point
+    ied.control_point = cp
+    cp.connected_objectives = [site, ied]
+
+    r_site = concealed_uncertainty(site)  # type: ignore[arg-type]
+    r_ied = concealed_uncertainty(ied)  # type: ignore[arg-type]
+    assert r_site is not None and r_ied is not None
+    # The IED slid along its road (same y), independent of the site's circle.
+    assert r_ied[0].y == -60_000.0
+    assert (r_site[0].x, r_site[0].y) != (r_ied[0].x, r_ied[0].y)

@@ -114,6 +114,9 @@ will:
     # A decapitation: killing a named emir in his window is a real momentum blow, worth
     # the hunt (and the CDE risk).
     red_hvt_killed: 4.0
+    # A lapsed window is a small propaganda coup for the insurgency (2026-07-18
+    # audit call: ignoring the hunt must cost something).
+    red_hvt_escaped: 1.5
     red_passive_regen: 1.0
 
 # The three-phase Mosul arc, will-coupled. Mosul city sits inside a permanent no-strike

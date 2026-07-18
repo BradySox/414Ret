@@ -80,6 +80,14 @@ SURGE_MAX_CONVOYS = 3
 #: this now clamps a topped-up standing stock rather than the coalition's own thin economy.
 MAX_SOURCE_FRACTION = 0.5
 
+#: A destination already banking this much armour stops drawing new trail convoys.
+#: The 2026-07-18 audit measured the external-support seeding as an UNBOUNDED pump on
+#: front-less COIN maps — red ``Base.armor`` grew +20/turn linearly (0 -> 186 in 8
+#: self-played turns) because the source re-tops after every delivery and nothing
+#: consumes the sink. On fronted maps the front drains the stock so this rarely
+#: binds; on front-less maps it bounds each corridor's bank at ~3 convoy loads.
+TRAIL_DESTINATION_STOCK_CAP = 3 * MAX_CONVOY_UNITS
+
 
 def ensure_enemy_trail_convoy(game: "Game") -> None:
     """Top the opfor's concurrent trail convoys up to budget when interdiction is enabled.
@@ -146,6 +154,9 @@ def ensure_enemy_trail_convoy(game: "Game") -> None:
         tried_sources.add(
             source
         )  # never repick the same source this call, hit or miss.
+
+        if destination.base.total_armor >= TRAIL_DESTINATION_STOCK_CAP:
+            continue  # the sink is full -- externally-supplied convoys stop here.
 
         _seed_trail_source(game, coalition, source, load, coin=coin)
         units = _skim_units(source, load)

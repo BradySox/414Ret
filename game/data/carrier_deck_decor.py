@@ -64,7 +64,6 @@ STATIC_META: dict[str, tuple[str, str | None]] = {
     "Carrier LSO Personell 1": ("Personnel", "carrier_lso1_usa"),
     "Carrier LSO Personell 3": ("Personnel", "carrier_lso3_usa"),
     "Carrier LSO Personell 4": ("Personnel", "carrier_lso4_usa"),
-    "E-2C": ("Planes", None),  # static Hawkeye (aircraft tier)
     "SH-60B": ("Helicopters", None),  # static folded Seahawk (aircraft tier)
 }
 
@@ -97,6 +96,16 @@ MIN_SPOT_CLEARANCE_M = 9.0
 # The safe envelopes, as (x_min, x_max, y_min, y_max).
 LSO_PLATFORM_ENVELOPE = (-134.0, -126.0, -25.0, -18.0)
 ISLAND_STREET_ENVELOPE = (-68.0, -40.0, 12.5, 24.5)
+
+# The ramp-crossing / wires keep-out (x_min, x_max, y_min, y_max): the stern
+# threshold and touchdown zone that every recovering aircraft crosses a few
+# metres above the deck. NOTHING may ever be placed here, either tier -- the
+# lesson of the round-down E-2C (user-caught 2026-07-18): OCN mission 8 parks
+# one at (-152.1, +5.4), it cleared every parking spot, but it stands 5.6 m
+# tall a wingspan off the ramp crossing and the DCS static E-2C renders
+# wings-spread. A scripted campaign can stage-manage its recoveries around
+# that; a dynamic campaign recovers jets every mission.
+LANDING_AREA_KEEP_OUT = (-170.0, -120.0, -15.0, 12.0)
 
 # The LSO platform crew -- identical offsets in all 13 OCN missions.
 LSO_PLATFORM_CREW: list[DeckStatic] = [
@@ -175,18 +184,19 @@ STREET_VARIANTS: list[list[DeckStatic]] = [
 
 
 # Opt-in aft dressing (carrier_deck_decorations_aircraft, default OFF): OCN's
-# parked static aircraft. Unlike everything above, these DELIBERATELY sit on
-# aft parking real estate -- the starboard-aft junkyard pair plus the stern
-# round-down, roughly three of the deck's sixteen spawn spots (four if the
-# fantail Hawkeye spans two stern spots) -- which is why they are a separate
-# tier and never part of the default layout. They still keep the full
-# clearance from every MEASURED spot (the ones Retribution's own spawns
-# demonstrably use: six-pack, port quarter, the rescue-helo spot), guard-tested
-# like the rest.
+# parked static aircraft -- the starboard-aft junkyard Seahawk pair. Unlike
+# everything above, these DELIBERATELY sit on aft parking real estate
+# (roughly two of the deck's sixteen spawn spots), which is why they are a
+# separate tier and never part of the default layout. They still keep the
+# full clearance from every MEASURED spot (the ones Retribution's own spawns
+# demonstrably use: six-pack, port quarter, the rescue-helo spot) and from
+# the landing-area keep-out, guard-tested like the rest. OCN's E-2C statics
+# are all excluded: the round-down one menaces the ramp crossing (see
+# LANDING_AREA_KEEP_OUT), the others foul the El-3 zone or the measured
+# port-quarter spots.
 AIRCRAFT_DRESSING: list[DeckStatic] = [
     DeckStatic("SH-60B", -134.30, 27.00, 277.0),
     DeckStatic("SH-60B", -122.60, 28.20, 277.0),
-    DeckStatic("E-2C", -152.10, 5.40, 350.0),
 ]
 
 

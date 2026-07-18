@@ -6626,14 +6626,20 @@ static on a cat is a player-taxi collision hazard while the AI clips through it 
 **The aircraft tier (opt-in, spends spots — user call 2026-07-18).** A second toggle,
 `carrier_deck_decorations_aircraft` (default **OFF**, `enabled_when` the main toggle),
 appends OCN's aft static-aircraft look: two folded SH-60Bs in the starboard-aft
-junkyard (−134.3/−122.6, +27/+28) and an E-2C on the stern round-down (−152.1, +5.4) —
-verbatim OCN placements. Unlike everything else these **deliberately occupy parking
-real estate** (~3 of the 16 spots, 4 if the fantail Hawkeye spans two stern spots),
-which is why they're a separate tier; a dedicated guard test still keeps them ≥9 m
-from every MEASURED spot (six-pack / port quarter / the rescue-helo spot — the ones
-Retribution's own spawns demonstrably use) and out of the default layout. The
-S-3B/El-3 placement and the port-quarter E-2s stay excluded (they'd foul the measured
-port pair / the elevator spot).
+junkyard (−134.3/−122.6, +27/+28) — verbatim OCN placements. Unlike everything else
+these **deliberately occupy parking real estate** (~2 of the 16 spots), which is why
+they're a separate tier; a dedicated guard test still keeps them ≥9 m from every
+MEASURED spot (six-pack / port quarter / the rescue-helo spot — the ones Retribution's
+own spawns demonstrably use) and out of the default layout. **Every OCN E-2C static is
+excluded** — the first cut shipped OCN M8's round-down Hawkeye (−152.1, +5.4) and the
+user's screenshot caught it the same day: it cleared every parking spot but stands
+5.6 m tall a wingspan off the ramp crossing, and the DCS static E-2C renders
+**wings-spread** (a scripted campaign can stage-manage its recoveries around that; a
+dynamic campaign recovers jets every mission). That produced the
+`LANDING_AREA_KEEP_OUT` box (the stern threshold + wires zone) guard-tested against
+BOTH tiers, so nothing can ever be placed in the recovery corridor again. The
+S-3B/El-3 placement and the port-quarter E-2s stay excluded too (they'd foul the
+elevator spot / the measured port pair).
 
 **Mechanism.** A ship-linked static serializes across three levels of the mission
 format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the static

@@ -129,17 +129,28 @@ mission.
   each hull needs its own curated layout against its own spot evidence (a Tacview
   probe of a flown mission with deck spawns is the proven method; Tarawa already has
   two measured spots, above).
-- **Fantail static aircraft: BUILT as the opt-in tier.**
-  `carrier_deck_decorations_aircraft` (default OFF, `enabled_when` the main toggle)
-  appends `AIRCRAFT_DRESSING`: two folded SH-60Bs starboard-aft (−134.3/−122.6,
-  +27/+28.2 — the junkyard, likely spots 7/8) and the E-2C on the stern round-down
-  (−152.1, +5.4 — one stern spot, possibly two if the folded Hawkeye spans them).
-  Documented cost ≈3 of the 16 spots, worst case 4. A dedicated guard test keeps the
-  tier ≥9 m from every MEASURED spot (six-pack / port quarter / rescue-helo — the
-  spots Retribution's own spawns demonstrably use) and out of the default layout.
-  Deliberately still excluded even from the tier: the S-3B at (−98.7, +29.9) (would
-  foul the El-3 elevator spot) and the port-quarter E-2s at (−103..−109, −31) (their
-  span fouls the measured port pair the F-14s park on).
+- **Fantail static aircraft: BUILT as the opt-in tier — then trimmed by the user's
+  eyes the same day.** `carrier_deck_decorations_aircraft` (default OFF,
+  `enabled_when` the main toggle) appends `AIRCRAFT_DRESSING`: two folded SH-60Bs
+  starboard-aft (−134.3/−122.6, +27/+28.2 — the junkyard, likely spots 7/8).
+  Documented cost ≈2 of the 16 spots. A dedicated guard test keeps the tier ≥9 m from
+  every MEASURED spot (six-pack / port quarter / rescue-helo — the spots Retribution's
+  own spawns demonstrably use) and out of the default layout.
+
+  **The round-down E-2C lesson (2026-07-18, user screenshot):** the tier's first cut
+  also shipped OCN M8's E-2C at (−152.1, +5.4) — it passed the parking guard (clears
+  every spot) but the user's first in-game look asked the right question: "how can
+  planes land with the E2 there?" It stands 5.6 m tall essentially at the ramp
+  crossing, where every recovering aircraft passes a few metres above the deck — and
+  the DCS static E-2C renders **wings-spread**, not folded, so it looms over the
+  threshold. Sedlo can stage-manage recoveries in a scripted mission; a dynamic
+  campaign recovers jets every mission. Dropped, and codified as
+  `LANDING_AREA_KEEP_OUT` (a stern-threshold + wires box, x −170..−120 / y −15..+12)
+  guard-tested against BOTH tiers — the parking guard alone was demonstrably not
+  enough; anything new must clear spots AND the recovery corridor. Also still
+  excluded: the S-3B at (−98.7, +29.9) (would foul the El-3 elevator spot) and the
+  port-quarter E-2s at (−103..−109, −31) (their span fouls the measured port pair the
+  F-14s park on).
 - **Per-hull variety** (different variants on different boats in one theater) falls
   out free of the group-name seed; nothing to do.
 

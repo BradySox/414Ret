@@ -19,6 +19,7 @@ from game.data.carrier_deck_decor import (
     DeckStatic,
     ISLAND_STREET_ENVELOPE,
     KNOWN_PARKING_SPOTS,
+    LANDING_AREA_KEEP_OUT,
     LSO_PLATFORM_CREW,
     LSO_PLATFORM_ENVELOPE,
     MIN_SPOT_CLEARANCE_M,
@@ -89,6 +90,17 @@ def test_every_type_has_static_meta() -> None:
         assert item.type in STATIC_META, f"{source}: no meta for {item.type}"
     for item in AIRCRAFT_DRESSING:
         assert item.type in STATIC_META, f"aircraft tier: no meta for {item.type}"
+
+
+def test_nothing_in_the_ramp_crossing_keep_out() -> None:
+    """Both tiers stay out of the stern threshold / wires zone every
+    recovering aircraft crosses a few metres above the deck (the lesson of
+    the user-caught round-down E-2C, 2026-07-18)."""
+    everything = [item for _, item in all_placements()] + AIRCRAFT_DRESSING
+    for item in everything:
+        assert not in_box(
+            item.x, item.y, LANDING_AREA_KEEP_OUT
+        ), f"{item} is inside the landing-area keep-out"
 
 
 def test_aircraft_tier_is_opt_in_and_spares_the_measured_spots() -> None:

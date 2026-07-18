@@ -2330,11 +2330,12 @@ class Settings:
         enabled_when="carrier_deck_decorations",
         default=False,
         detail=(
-            "Also park static aircraft aft, as OCN 2 does: two folded SH-60s "
-            "in the starboard-aft junkyard and an E-2C on the stern "
-            "round-down. Unlike the gear these deliberately occupy parking "
-            "real estate -- roughly three of the deck's sixteen spawn spots "
-            "-- so leave this off when you need maximum deck capacity."
+            "Also park two folded SH-60 statics in the starboard-aft "
+            "junkyard, as OCN 2 does. Unlike the gear these deliberately "
+            "occupy parking real estate -- roughly two of the deck's sixteen "
+            "spawn spots -- so leave this off when you need maximum deck "
+            "capacity. The landing area and its stern threshold always stay "
+            "clear."
         ),
     )
     generate_portable_tacans: bool = boolean_option(

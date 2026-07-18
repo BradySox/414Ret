@@ -559,9 +559,10 @@ FEATURES: tuple[Feature, ...] = (
         # §72 deck dressing (game/data/carrier_deck_decor.py +
         # game/missiongenerator/carrierdeckdecor.py): ship-linked static deck
         # gear + LSO crew from the OCN 2 campaign replayed onto Nimitz-family
-        # carriers, curated so every parking spawn spot and catapult stays
-        # usable; the street arrangement rotates per turn. The default-OFF
-        # aircraft tier adds OCN's aft static aircraft at a ~3-spot cost.
+        # carriers, curated so every parking spawn spot, catapult and the
+        # landing area stay usable; the street arrangement rotates per turn.
+        # The default-OFF aircraft tier adds OCN's junkyard SH-60 pair at a
+        # ~2-spot cost.
         "carrier_deck_decorations",
         "Carrier deck decorations (OCN 2 deck dressing)",
         72,

@@ -2396,10 +2396,14 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     are base-game (`CoreMods`), no plugin/Lua/save change — existing campaigns pick it
     up next mission. Gated `carrier_deck_decorations` (Mission Generation → Carrier,
     default **ON**); the **aircraft tier** `carrier_deck_decorations_aircraft` (default
-    **OFF**, user call 2026-07-18) appends OCN's aft static aircraft — 2 folded SH-60Bs
-    in the junkyard + the stern E-2C — **deliberately spending ~3 of the 16 spots**
-    (still guard-tested ≥9 m from every MEASURED spot); non-Nimitz dressing offered and
-    DECLINED same day. Tests `tests/missiongenerator/test_carrier_deck_decor.py`; features
+    **OFF**, user call 2026-07-18) appends OCN's junkyard pair of folded SH-60B statics,
+    **deliberately spending ~2 of the 16 spots** (still guard-tested ≥9 m from every
+    MEASURED spot). **The tier's first cut shipped OCN M8's round-down E-2C — the user's
+    screenshot caught it same day** (clears every parking spot but stands 5.6 m tall a
+    wingspan off the ramp crossing, and the DCS static E-2C renders wings-spread):
+    dropped, and the lesson is codified as `LANDING_AREA_KEEP_OUT` (stern threshold +
+    wires box) guard-tested against BOTH tiers. Non-Nimitz dressing offered and DECLINED
+    same day. Tests `tests/missiongenerator/test_carrier_deck_decor.py`; features
     doc §72, checklist B25 — needs an in-game pass (statics ride the steaming deck; a
     max-density spawn still fills every spot; AI recovery taxi vs the street gear).
 

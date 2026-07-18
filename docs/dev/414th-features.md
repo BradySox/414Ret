@@ -6365,6 +6365,77 @@ pass (Tacview: AI strikes arrive after their SEAD is on station, not before).
 
 ---
 
+## §70 — COMINT collection (blue-side communications intelligence)
+
+**What it is.** The blue-side mirror of §51: red already exploits a captured aircrew's
+comms plan (the capture-gated comms jam); this gives blue its own collection against red.
+DCS cannot intercept real communications — AI traffic isn't RF and no transmission event
+exists (the §51 note's "not buildable" finding) — so COMINT is a **presentation-and-gating
+layer over ground truth the engine already knows**, the §3 recon-fog shape. Design note
+`docs/dev/design/414th-comint-notes.md`; this section is its **C0** (the campaign take —
+pure Python, no `.miz`/Lua/DCS). C1 (the audible UHF red net) and C2 (the
+clandestine-transmitter DF hunt) build on it.
+
+**Sources & tiers** (`game/fourteenth/comint.py`). The enemy's emitting net = alive red
+`comms`/`commandcenter` TGOs (the same objects §51 transmits from and §52 decapitates —
+killing one degrades red's planning AND dries up this take: bomb-it-or-tap-it, emergent,
+never special-cased) plus alive **concealed COIN spawns** (insurgents field no IADS comms
+but run on radios — so the take works on the front-less COIN laydowns). Tier 0 — no alive
+sources: no product ("Enemy C2 net silent"). Tier 1 — sources alive: the ambient
+national-collection take; the §55 posture *detail* becomes earned (`gated_posture_detail`
+wraps the `record_sitrep` feed — a silenced net returns None; the coarse posture chip is
+never gated; pass-through when the feature is off). Tier 2 — a **collector flew last
+mission and survived**: `record_comint_collection` (a `MissionResultsProcessor.commit`
+step before `record_sitrep`) stamps `game.comint_collected_turn` when a blue
+`FlightType.JAMMING` flight (§2 C-130J) **or any drone** (`UAV_DCS_IDS` — "a drone is
+always listening", the §3 always-filming rule; era self-limits since drone-less campaigns
+field none) has surviving members (`air_losses.surviving_flight_members` — the `airecon`
+one-shot precedent: a shot-down collector banks nothing). Tier 2 is
+`comint_collected_turn == game.turn - 1` (commit runs before the turn increments).
+
+**The Tier-2 products.** (1) **Tasking leak** (`comint_leak_line`, built at kneeboard
+generation when red's ATO for THIS mission is final): the most threatening red offensive
+package — class rank Strike > OCA/Runway > OCA/Aircraft > BAI > Anti-ship, then mass, then
+target name (a pure sort, no RNG, so mission re-generation never rerolls the leak) —
+coarsened to class + size band + objective name + TOT ± 30 min (the §5
+approximate-precision spirit: honest but coarse). (2) **Reveal** (`apply_comint_reveal`,
+an `initialize_turn` hook after `update_red_intent`): snaps ONE concealed enemy site to
+exact via the normal discovery flip (`discovered_by_player` → `known_for`, +
+`events.update_tgo`) — eligible = the dashed-circle population (flag-`concealed` COIN
+spawns, or the §3 category-concealable field forces when `concealed_enemy_forces` is on),
+not already known to blue, within `COMINT_REVEAL_RANGE_M` (60 km) of an alive source (the
+fiction: the site's own chatter gave it away, so a silent corner of the map stays dark);
+**`map_hidden` is never eligible** (the §50 ambush teams stay untelegraphed
+unconditionally); pick = nearest-to-a-source (deterministic); idempotent under
+initialize_turn's re-init cases via a per-turn stamp (`comint_reveal_turn`) — without it a
+cheat-capture re-init would find the first pick already discovered and snap a second
+site. Announced via `game.message` + the kneeboard line (`comint_reveal_note`).
+
+**Surface.** A **COMINT block on the Mission Info kneeboard page**, rendered right under
+the §29 SITREP band (the §30 rule — new kneeboard info folds into stock pages): the tier
+status ("Enemy C2 net silent — no COMINT take." / "Enemy net active: N emitter(s) up." +
+"Ambient take only…" / "Collection sortie banked a full take last mission:"), the leak
+line, and the localized-site line. `KneeboardGenerator._briefing_comint` →
+`BriefingPage(comint_lines=…)`. Python-only; no client rebuild (the §55 surfacing pattern
+— a web intel surface is deferred with the design note's later phases).
+
+**Zero planner coupling, zero force-model change.** The blue AI already plans on ground
+truth (§3 `viewer=None` discipline) — everything here informs the human only; kills stay
+native (§36/§49/§51 discipline). BLUE-only product (red's COMINT already exists as §51's
+capture gate). Gated `comint_collection` (Campaign Management → Campaign features, default
+**OFF**); OFF is an exact no-op. **No Red Tide preseed** (the feature lock, effective
+2026-07-17); post-M2 candidates: Red Tide (the 9-node destroyable C2 net §52 keys on) +
+both COIN campaigns. State on `Game` (`comint_collected_turn` / `comint_reveal_turn` /
+`comint_reveal_note`), all read getattr-guarded so pre-§70 saves load clean.
+
+Tests: `tests/fourteenth/test_comint.py` (tier gating incl. the dead-net-beats-collector
+rule, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism +
+ranking, the reveal's nearest-pick/range/already-known/`map_hidden` rules + re-init
+idempotence, the posture-detail earn). Checklist B22 — needs an in-app pass (the kneeboard
+block renders + the circle snap on the map).
+
+---
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

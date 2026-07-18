@@ -1,11 +1,13 @@
 # 414th — COMINT: blue-side communications intelligence (design)
 
-**Status: DESIGN ONLY (2026-07-18). No code exists.** Squadron ask (2026-07-18): *"Such a
-large part of real warfare is communications intercepts. Currently DCS has no way to do
-that — what options do we have?"* Scope call (same day, option 1 of the survey): build
-**Feature A (campaign-layer COMINT take)** and **Feature B (in-cockpit red net + DF
-hunts)** together. The in-mission "COMINT FLASH" cue layer (option 2) is deferred until A
-defines the gating; the survey's other options are recorded in **Deliberately out** below.
+**Status: C0 LANDED 2026-07-18 (feature §70 — Feature A, the campaign take; see
+`docs/dev/414th-features.md` §70 and checklist B22). C1/C2 (Feature B) not started.**
+Squadron ask (2026-07-18): *"Such a large part of real warfare is communications
+intercepts. Currently DCS has no way to do that — what options do we have?"* Scope call
+(same day, option 1 of the survey): build **Feature A (campaign-layer COMINT take)** and
+**Feature B (in-cockpit red net + DF hunts)** together. The in-mission "COMINT FLASH" cue
+layer (option 2) is deferred until A defines the gating; the survey's other options are
+recorded in **Deliberately out** below.
 
 This is the blue-side mirror of §51: the fork already models the enemy exploiting a
 captured aircrew's comms plan (`comms_jam_requires_capture` — red COMINT against blue).
@@ -253,8 +255,9 @@ site; kill the node and confirm silence.
 
 One PR per testable phase (the house norm):
 
-- **C0 — Feature A core**: `comint.py` + setting + kneeboard block + tests. Pure Python,
-  headless-verifiable end-to-end; no DCS runtime risk.
+- **C0 — Feature A core** (**LANDED 2026-07-18** as feature §70): `comint.py` + setting +
+  kneeboard block + tests. Pure Python, headless-verifiable end-to-end; no DCS runtime
+  risk. In-app pass = checklist B22.
 - **C1 — Feature B1 ambient net**: emitter + plugin + synthesized CW clips + harness
   tests. **UHF net first** (the fast-jet DF band per the call-#4 audit), LF/MF + FM
   after. In-game pass row (audibility + per-module needle behavior).

@@ -705,6 +705,7 @@ class BriefingPage(KneeboardPage):
         omit_weather: bool = False,
         bluf_lines: Optional[List[str]] = None,
         sitrep: Optional[Sitrep] = None,
+        comint_lines: Optional[List[str]] = None,
     ) -> None:
         self.flight = flight
         self.bullseye = bullseye
@@ -722,6 +723,10 @@ class BriefingPage(KneeboardPage):
         # Previous turn's campaign SITREP (§29), rendered as a short section at the
         # bottom of the page. None on turn 1 / a quiet turn / when the toggle is off.
         self.sitrep = sitrep
+        # §70 COMINT block (C0), rendered right under the SITREP: the tier status
+        # + (Tier 2) the tasking leak and the reveal note. None/empty when
+        # comint_collection is off.
+        self.comint_lines = comint_lines or []
         # De-duplication (design §4): drop the weather block when the recon Departure
         # page already carries it. The Friendly Packages list moved to its own page.
         self.omit_weather = omit_weather
@@ -907,6 +912,15 @@ class BriefingPage(KneeboardPage):
             writer.heading(f"SITREP — Turn {self.sitrep.turn}")
             writer.rule()
             for line in self.sitrep.kneeboard_lines():
+                writer.text(line, wrap=True)
+
+        # §70 COMINT (C0): the collection take, right under the SITREP. Empty
+        # unless comint_collection is on, so the stock deck is unchanged.
+        if self.comint_lines:
+            writer.vspace(8)
+            writer.heading("COMINT")
+            writer.rule()
+            for line in self.comint_lines:
                 writer.text(line, wrap=True)
 
     def _departure_elevation_m(self) -> Optional[float]:
@@ -2843,6 +2857,17 @@ class KneeboardGenerator(MissionInfoGenerator):
             self.game.settings.generate_sitrep_kneeboard,
         )
 
+    def _briefing_comint(self) -> List[str]:
+        """The §70 COMINT block for the briefing page ([] when the feature is off).
+
+        Built at generation time on purpose: red's ATO for THIS mission is fully
+        planned by now, so the Tier-2 tasking leak warns of a package actually
+        flying today.
+        """
+        from game.fourteenth.comint import comint_kneeboard_lines
+
+        return comint_kneeboard_lines(self.game)
+
     def generate_task_page(self, flight: FlightData) -> Optional[KneeboardPage]:
         if flight.flight_type in (FlightType.DEAD, FlightType.SEAD):
             return SeadTaskPage(
@@ -2916,6 +2941,7 @@ class KneeboardGenerator(MissionInfoGenerator):
                 omit_weather=omit_weather,
                 bluf_lines=bluf_lines,
                 sitrep=self._briefing_sitrep(),
+                comint_lines=self._briefing_comint(),
             ),
             SupportPage(
                 flight,

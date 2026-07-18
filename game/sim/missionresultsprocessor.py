@@ -83,6 +83,11 @@ class MissionResultsProcessor:
             # shows this turn's fresh values).
             with logged_duration("record_political_will"):
                 self.record_political_will(debriefing)
+            # §70 COMINT (C0): bank the collection BEFORE the SITREP so the
+            # posture-detail gate reads this turn's fresh state. Commit runs
+            # before the turn increments, so the stamp is the just-played turn.
+            with logged_duration("record_comint_collection"):
+                self.record_comint_collection(debriefing)
             with logged_duration("record_sitrep"):
                 self.record_sitrep(debriefing)
 
@@ -92,6 +97,15 @@ class MissionResultsProcessor:
         from game.fourteenth.political_will import update_political_will
 
         update_political_will(self.game, debriefing)
+
+    def record_comint_collection(self, debriefing: Debriefing) -> None:
+        # §70 COMINT (C0): stamp the turn when a surviving blue collector (a §2
+        # JAMMING flight or a drone) flew, unlocking Tier 2 (tasking leak +
+        # concealed-site reveal) for the NEXT turn. No-op unless comint_collection
+        # is on; a shot-down collector banks nothing.
+        from game.fourteenth.comint import record_comint_collection
+
+        record_comint_collection(self.game, debriefing)
 
     def commit_super_gaggle(self, debriefing: Debriefing) -> None:
         # Vietnam Ops §37: charge Super Gaggle airframe losses back to the real BLUE
@@ -149,6 +163,12 @@ class MissionResultsProcessor:
             sitrep_posture_line,
         )
 
+        # §70 COMINT (C0), the Tier-1 earn: with comint_collection on, the posture
+        # DETAIL is intel sourced from the enemy's emitting net -- a silenced net
+        # dries it up (the coarse posture chip is never gated). Pass-through when
+        # the feature is off.
+        from game.fourteenth.comint import gated_posture_detail
+
         self.game.last_sitrep = Sitrep.from_debriefing(
             debriefing,
             self.game.turn,
@@ -163,7 +183,9 @@ class MissionResultsProcessor:
             blue_supply=blue_supply,
             red_supply=red_supply,
             red_posture=sitrep_posture_line(self.game),
-            red_posture_detail=sitrep_posture_detail(self.game),
+            red_posture_detail=gated_posture_detail(
+                self.game, sitrep_posture_detail(self.game)
+            ),
         )
 
     def _pow_sitrep_lines(self) -> list[str]:

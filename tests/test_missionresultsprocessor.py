@@ -44,6 +44,7 @@ COMMIT_STEPS = [
     "commit_minefields",
     "commit_cruise_missiles",
     "record_political_will",
+    "record_comint_collection",
     "record_sitrep",
 ]
 

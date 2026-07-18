@@ -137,9 +137,18 @@ def _resolve_active_hvt(
         return
     active["turns"] = int(active.get("turns", 0)) + 1
     if active["turns"] >= HVT_WINDOW_TURNS:
-        # The window closed -- he has gone to ground. A missed chance, not a loss.
+        # The window closed -- he has gone to ground. Since the 2026-07-18 audit
+        # call this is no longer entirely free: the escape is a propaganda coup,
+        # banked here and priced by the campaign's red_hvt_escaped weight (the
+        # host-stronghold-fall path above deliberately never reaches this -- the
+        # base loss is already charged). Kills stay the far bigger lever.
+        state["hvt_escapes"] = int(state.get("hvt_escapes", 0)) + 1
         _despawn(game, tgo, events)
-        _announce(game, f"HVT {name} has gone to ground — the window has closed.")
+        _announce(
+            game,
+            f"HVT {name} has gone to ground — the window has closed, and the "
+            "escape plays as propaganda.",
+        )
         hvt["active"] = None
         hvt["cooldown"] = HVT_COOLDOWN_TURNS
 
@@ -264,6 +273,18 @@ def consume_hvt_kills(game: "Game") -> int:
         return 0
     count = int(state.get("hvt_kills", 0))
     state["hvt_kills"] = 0
+    return count
+
+
+def consume_hvt_escapes(game: "Game") -> int:
+    """Number of HVT windows that LAPSED since the last call, cleared to zero.
+    The will layer credits these to red resolve as a small propaganda gain
+    (``red_hvt_escaped``); the counter drains even on unpriced campaigns."""
+    state = getattr(game, "coin_state", None)
+    if not isinstance(state, dict):
+        return 0
+    count = int(state.get("hvt_escapes", 0))
+    state["hvt_escapes"] = 0
     return count
 
 

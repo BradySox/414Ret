@@ -93,6 +93,12 @@ RED_CACHE_LOST = 0.0
 #: detection, matched by the tracked HVT TGO, never a generic debrief line).
 RED_HVT_KILLED = 0.0
 
+#: ...and letting his strike window LAPSE is a propaganda coup for the insurgency
+#: (the 2026-07-18 audit's squadron call: a free-to-ignore window failed the
+#: "changes decisions" bar). A small POSITIVE resolve move per escaped leader.
+#: Inert by default; the COIN campaigns price it.
+RED_HVT_ESCAPED = 0.0
+
 WILL_MAX = 100.0
 WILL_MIN = 0.0
 
@@ -160,6 +166,7 @@ class WillWeights:
     red_ship_lost: float = RED_SHIP_LOST
     red_cache_lost: float = RED_CACHE_LOST
     red_hvt_killed: float = RED_HVT_KILLED
+    red_hvt_escaped: float = RED_HVT_ESCAPED
 
 
 @dataclass(frozen=True)
@@ -646,11 +653,23 @@ def _red_moves(
     # blow priced separately from the generic kill. A finish_turn detection (matched
     # by the tracked HVT TGO). Always drained -- an unpriced campaign must not bank
     # the counter forever -- but a move only where the campaign prices it.
-    from game.fourteenth.coin_hvt import consume_hvt_kills
+    from game.fourteenth.coin_hvt import consume_hvt_escapes, consume_hvt_kills
 
     hvts = consume_hvt_kills(game)
     if hvts and weights.red_hvt_killed:
         moves.append((f"HVT leaders x{hvts} killed", -hvts * weights.red_hvt_killed))
+
+    # ...and the mirror: a leader whose window LAPSED is a propaganda coup — a
+    # small POSITIVE resolve move (2026-07-18 audit call: ignoring the hunt must
+    # cost something). Always drained; a move only where the campaign prices it.
+    escapes = consume_hvt_escapes(game)
+    if escapes and weights.red_hvt_escaped:
+        moves.append(
+            (
+                f"HVT leaders x{escapes} escaped — propaganda coup",
+                escapes * weights.red_hvt_escaped,
+            )
+        )
 
     return moves
 

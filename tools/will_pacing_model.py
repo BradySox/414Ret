@@ -71,6 +71,7 @@ DEFAULT_WEIGHTS: dict[str, float] = {
     "red_ship_lost": 0.5,
     "red_cache_lost": 0.0,
     "red_hvt_killed": 0.0,
+    "red_hvt_escaped": 0.0,
 }
 
 # --- commitment ceiling shape (model 3) -----------------------------------------------

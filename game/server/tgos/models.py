@@ -150,6 +150,42 @@ def _concealed_radius(tgo: TheaterGroundObject) -> Optional[float]:
     return None
 
 
+#: A merged cluster circle never grows past this — a site reads as one blob of
+#: suspicion, not a district-wide unknown.
+_CLUSTER_RADIUS_CAP_M = 8_000.0
+
+
+def _radial_jitter_xy(tgo: TheaterGroundObject, radius: float) -> tuple[float, float]:
+    """The TGO's deterministic radial jitter centre, as raw (x, y)."""
+    rng = random.Random(_concealment_seed(tgo))
+    theta = rng.uniform(0.0, math.tau)
+    dist = rng.uniform(_CONCEALED_MIN_OFFSET, _CONCEALED_MAX_OFFSET) * radius
+    pos = tgo.position
+    return pos.x + dist * math.cos(theta), pos.y + dist * math.sin(theta)
+
+
+def _cluster_members(
+    tgo: TheaterGroundObject,
+) -> list[tuple[float, tuple[float, float]]]:
+    """(radius, jittered centre) of every concealed RADIAL sibling at the TGO's
+    control point, the TGO itself included.
+
+    Stateless and deterministic, so every member — and both the ``/game`` pull
+    and the per-TGO SSE update — computes the identical cluster."""
+    members: list[tuple[float, tuple[float, float]]] = []
+    siblings = getattr(tgo.control_point, "connected_objectives", None) or ()
+    for sibling in siblings:
+        if sibling.known_for(Player.BLUE):
+            continue
+        radius = _concealed_radius(sibling)
+        if radius is None:
+            continue
+        if _route_jitter(sibling) is not None:
+            continue  # road-pinned IED circles stay individual (the highway domain)
+        members.append((radius, _radial_jitter_xy(sibling, radius)))
+    return members
+
+
 def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float]]:
     """(jittered centre point, radius m) for a concealed, un-reconned enemy TGO.
 
@@ -157,6 +193,16 @@ def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float
     viewer already knows it (TARPS/attack discovery, recon fog off, or the
     fog-overview reveal — all via ``known_for``, which also short-circuits
     friendly/neutral sites).
+
+    **Clustered per site (2026-07-18 audit):** every concealed radial TGO at a
+    control point shares ONE merged circle (centroid of the members' jitters,
+    radius covering every member's own circle, capped). Separately-drawn circles
+    amber-blanketed the COIN strongholds — Tarinkot alone drew 9 overlapping
+    3–4 km rings — and an un-scouted site should read as one blob of suspicion,
+    not a district of noise. Members return identical geometry, so the client's
+    N overlapping circles render as one; each keeps its own click contract, and
+    a member's discovery snaps only that marker to truth. Road-pinned IED
+    circles never join a cluster.
     """
     if tgo.known_for(Player.BLUE):
         return None
@@ -168,18 +214,21 @@ def concealed_uncertainty(tgo: TheaterGroundObject) -> Optional[tuple[Any, float
     on_route = _route_jitter(tgo)
     if on_route is not None:
         return Point(on_route[0], on_route[1], pos._terrain), radius
-    rng = random.Random(_concealment_seed(tgo))
-    theta = rng.uniform(0.0, math.tau)
-    dist = rng.uniform(_CONCEALED_MIN_OFFSET, _CONCEALED_MAX_OFFSET) * radius
+    members = _cluster_members(tgo)
+    if len(members) >= 2:
+        xs = [xy[0] for _, xy in members]
+        ys = [xy[1] for _, xy in members]
+        cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
+        reach = max(math.hypot(xy[0] - cx, xy[1] - cy) + r for r, xy in members)
+        # Build a PLAIN pydcs Point (see the singleton branch's comment).
+        return Point(cx, cy, pos._terrain), min(reach, _CLUSTER_RADIUS_CAP_M)
+    jx, jy = _radial_jitter_xy(tgo, radius)
     # Build a PLAIN pydcs Point, never pos.__class__: a real TGO's position is a
     # PresetLocation (PointWithHeading), whose constructor signature differs —
     # reusing the subclass here mis-bound the arguments and 500'd the whole /game
     # payload (the 2026-07-05 "fog on = blank map" regression). pydcs keeps the
     # terrain private; PresetLocation reads it the same way.
-    jittered = Point(
-        pos.x + dist * math.cos(theta), pos.y + dist * math.sin(theta), pos._terrain
-    )
-    return jittered, radius
+    return Point(jx, jy, pos._terrain), radius
 
 
 class TgoJs(BaseModel):

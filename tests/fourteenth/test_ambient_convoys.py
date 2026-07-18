@@ -396,3 +396,88 @@ def test_batch2_campaign_keeps_its_red_road(stem: str, tmp_path: Any) -> None:
         "corridor (tools/supply_route_geo.py BATCH2_RED_REAR) or remove the "
         "campaign from that table."
     )
+
+
+# ---- the BLUE garrison-skim fallback (2026-07-18 audit call) -------------------------
+
+
+class _GarrisonUnit:
+    def __init__(self, mapped: bool = True) -> None:
+        self.alive = True
+        self.is_vehicle = True
+        self._mapped = mapped
+
+    @property
+    def unit_type(self) -> Any:
+        if not self._mapped:
+            raise StopIteration
+        return "garrison-truck"
+
+
+class _Group:
+    def __init__(self, count: int) -> None:
+        self.units = [_GarrisonUnit() for _ in range(count)]
+
+
+class _GarrisonTgo:
+    def __init__(self, *group_sizes: int, category: str = "armor") -> None:
+        self.category = category
+        self.groups = [_Group(n) for n in group_sizes]
+        self.coin_spawned = False
+        self.user_placed = False
+        self.map_hidden = False
+        self.invalidations = 0
+
+    def invalidate_threat_poly(self) -> None:
+        self.invalidations += 1
+
+
+def test_blue_garrison_skim_fallback_builds_the_coin_column(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """COIN blue holds its whole force as TGO garrisons (Base.armor = 0), which
+    silently killed ambient blue columns — and the §50 ambush with them — on
+    both COIN campaigns (measured: zero blue convoys in 33 self-played turns).
+    The fallback moves garrison vehicles into stock so the normal skim runs:
+    real units, floors held (CP keeps 6, every group keeps 2), red untouched."""
+    cps = _two_sided_map()
+    blue_rear = cps[0]
+    blue_rear.base.armor = {}  # the COIN laydown: no stock at all
+    garrison = _GarrisonTgo(6, 6)  # 12 vehicles in two groups
+    blue_rear.connected_objectives = [garrison]  # type: ignore[attr-defined]
+    game = _game(on=True, cps=cps)
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng([1, 1]))
+
+    ensure_ambient_convoys(game)
+
+    # Blue ran a real column from garrison-sourced stock.
+    assert len(game.blue.transfers.created) == 1
+    remaining_garrison = sum(len(group.units) for group in garrison.groups)
+    assert remaining_garrison == 6  # 12 - 6 moved: the CP floor left standing
+    assert all(len(group.units) >= 2 for group in garrison.groups)
+    assert garrison.invalidations > 0
+    # Red never garrison-skims (its rear holds stock, the normal path).
+    assert len(game.red.transfers.created) == 1
+
+
+def test_garrison_fallback_respects_the_floor_and_red_is_excluded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A garrison AT the floor yields nothing (no column rather than a stripped
+    base), and a thin RED source still yields no column (no red fallback)."""
+    cps = _two_sided_map()
+    blue_rear, red_rear = cps[0], cps[2]
+    blue_rear.base.armor = {}
+    blue_rear.connected_objectives = [_GarrisonTgo(3, 3)]  # type: ignore[attr-defined]
+    red_rear.base.armor = {"btr": 1}  # too thin to skim; must NOT garrison-skim
+    red_rear.connected_objectives = [_GarrisonTgo(6, 6)]  # type: ignore[attr-defined]
+    game = _game(on=True, cps=cps)
+    monkeypatch.setattr(ambient_module, "_RNG", _Rng([1, 1]))
+
+    ensure_ambient_convoys(game)
+
+    assert game.blue.transfers.created == []  # floor held: 6 total == floor
+    assert game.red.transfers.created == []  # red never touches its garrisons
+    assert all(
+        len(group.units) == 6 for group in red_rear.connected_objectives[0].groups  # type: ignore[attr-defined]
+    )

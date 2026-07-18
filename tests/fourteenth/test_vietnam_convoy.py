@@ -431,3 +431,25 @@ def test_no_seeding_without_a_unit_pool() -> None:
     ensure_enemy_trail_convoy(game)
     assert game.red.transfers.created == []
     assert rear.base.total_armor == 0
+
+
+def test_full_destination_stops_drawing_convoys() -> None:
+    """2026-07-18 audit: the externally-supplied trail must not pump a front-less
+    sink forever (+20 armor/turn measured on ER) — a destination at the stock cap
+    stops drawing new columns; below it, the corridor flows again."""
+    from game.fourteenth.vietnam_convoy import (
+        TRAIL_DESTINATION_STOCK_CAP,
+        ensure_enemy_trail_convoy as ensure,
+    )
+
+    rear = _CP("rear", "RED", 200.0, {"tank": 40})
+    front_cp = _CP("front", "RED", 10.0, {"tank": TRAIL_DESTINATION_STOCK_CAP})
+    rear.convoy_routes = {front_cp: ()}
+    front_cp.convoy_routes = {rear: ()}
+    game = _game(on=True, control_points=[rear, front_cp], fronts=[_front()])
+    ensure(game)
+    assert game.red.transfers.created == []
+
+    front_cp.base.armor = {"tank": TRAIL_DESTINATION_STOCK_CAP - 1}
+    ensure(game)
+    assert len(game.red.transfers.created) == 1

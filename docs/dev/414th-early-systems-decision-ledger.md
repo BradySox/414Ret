@@ -56,13 +56,28 @@ either passes with measured numbers or has a concrete, cheap fix; the two squadr
 - The probe harness itself (`tools/system_probe.py`) is committed as reusable audit
   tooling — samplers for every early system + the four intervention scripts.
 
-## Open squadron calls (decide, then the fixes are small)
+## Squadron calls — DECIDED (same day) and SHIPPED
 
-1. §50 on COIN: garrison-skim fallback / budgeted blue seed / un-preseed (descope).
-2. ER trail pump: destination cap / front-gate / accept-with-cap.
-3. HVT lapse: keep free-to-ignore, or price an escape.
-4. Concealment presentation: per-cluster circle merge (recommended) and/or COIN garrison
-   exemption.
+1. **§50 on COIN → garrison-skim fallback** (`ambient_convoys._garrison_to_stock`, BLUE
+   only): when the stock skim comes up empty, garrison vehicles move into `Base.armor`
+   so the normal skim runs — real units, conservation exact, the CP keeps ≥6 garrison
+   vehicles and every group keeps ≥2; red never garrison-skims (its militia is the
+   C1-anchored insurgency, and §35 already feeds its flow). Blue columns — and the §50
+   ambush — now exist on the COIN campaigns.
+2. **ER trail pump → destination stock cap** (`TRAIL_DESTINATION_STOCK_CAP` = 3 convoy
+   loads): a corridor whose destination already banks that much stops drawing convoys.
+   Bounds the front-less-map bank at ~30/corridor; fronted maps drain stock so it
+   rarely binds.
+3. **HVT lapse → priced as propaganda** (`red_hvt_escaped`, new `WillWeights` field,
+   default 0.0; ER/IR price it at 1.5 vs the kill's 4.0): a lapsed window banks a
+   small POSITIVE red-resolve move ("propaganda coup"). Counter drains even unpriced;
+   the stronghold-fall path never counts as an escape.
+4. **Concealment → per-cluster circle merge** (server-side, in `concealed_uncertainty`):
+   every concealed radial TGO at a control point shares ONE merged circle (centroid of
+   the members' jitters, radius covering every member, capped 8 km) — computed
+   statelessly from the CP's siblings so `/game` and SSE always agree, each member
+   keeps its own click contract, discovery snaps only that marker to truth, and
+   road-pinned IED circles never join. Tarinkot's 9 rings become one blob of suspicion.
 
 ## Probe runbook (repeatable)
 

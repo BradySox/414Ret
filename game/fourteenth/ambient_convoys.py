@@ -43,7 +43,7 @@ graphs) is a silent no-op, and the engine's organic convoys still serve.
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from game import Game
@@ -59,6 +59,18 @@ MAX_AMBIENT_CONVOYS = 3
 
 #: Real ground units per ambient column -- reads as a column on the road, never a parade.
 AMBIENT_CONVOY_UNITS = 8
+
+#: Garrison-skim fallback floors (BLUE only; the 2026-07-18 audit's §50 call).
+#: COIN blue laydowns hold their whole force as TGO garrisons (``Base.armor`` = 0),
+#: which silently disabled ambient blue columns — and with them the §50 ambush — on
+#: exactly the two campaigns that preseed it (measured: ZERO blue convoys in 33
+#: self-played turns on ER/IR). When the stock skim comes up empty, a few garrison
+#: vehicles move INTO the base's stock so the normal skim path can run: real units,
+#: conservation exact (a mapped unit leaves its group as a stock unit appears), and
+#: the base stays defensible — the CP keeps at least this many garrison vehicles...
+GARRISON_SKIM_FLOOR = 6
+#: ...and every group keeps at least this many alive (no group visually empties).
+GARRISON_SKIM_GROUP_KEEP = 2
 
 #: The dice. Module-level so tests can substitute a deterministic stand-in.
 _RNG = random.Random()
@@ -112,11 +124,66 @@ def _top_up_side(game: "Game", coalition: "Coalition") -> None:
         # turn. The generic ambient layer must not inflate both armies for free; the §35
         # Vietnam trail keeps its own documented external-supply seeding, not called here.
         units = _skim_units(source, AMBIENT_CONVOY_UNITS)
+        if not units and coalition is game.blue:
+            # BLUE garrison-skim fallback (2026-07-18 audit call): move a few
+            # garrison vehicles into the stock, then skim normally. Blue-only —
+            # red's militia is the C1-anchored insurgency (regen would just be
+            # asked to refill what this drained), and §35 already feeds red's
+            # flow. The 2x covers the skim's half-take (MAX_SOURCE_FRACTION).
+            if _garrison_to_stock(source, AMBIENT_CONVOY_UNITS * 2):
+                units = _skim_units(source, AMBIENT_CONVOY_UNITS)
         if not units:
             continue
         coalition.transfers.new_transfer(
             TransferOrder(source, destination, units), game.conditions.start_time
         )
+
+
+def _garrison_to_stock(cp: "ControlPoint", needed: int) -> int:
+    """Move up to ``needed`` alive garrison vehicles into ``Base.armor``; return
+    the count moved.
+
+    Real units only, conservation exact: each moved vehicle leaves its theater
+    group (despawned WITHOUT a kill — it drove off to form the column, it did
+    not die) as one stock unit of the same type appears. Guards keep the base
+    defensible: the CP keeps ≥ ``GARRISON_SKIM_FLOOR`` garrison vehicles in
+    total, every group keeps ≥ ``GARRISON_SKIM_GROUP_KEEP`` alive, and
+    ``coin_spawned`` / ``user_placed`` / ``map_hidden`` groups are never
+    touched. Unmapped unit types (no ``GroundUnitType``) are skipped."""
+    eligible: list[tuple[Any, Any, Any]] = []
+    total_alive = 0
+    for tgo in getattr(cp, "connected_objectives", None) or ():
+        if getattr(tgo, "category", None) != "armor":
+            continue
+        if getattr(tgo, "coin_spawned", False) or getattr(tgo, "user_placed", False):
+            continue
+        if getattr(tgo, "map_hidden", False):
+            continue
+        for group in getattr(tgo, "groups", []):
+            alive = [
+                unit
+                for unit in group.units
+                if getattr(unit, "alive", False) and getattr(unit, "is_vehicle", False)
+            ]
+            total_alive += len(alive)
+            for unit in alive[GARRISON_SKIM_GROUP_KEEP:]:
+                eligible.append((tgo, group, unit))
+    budget = min(needed, total_alive - GARRISON_SKIM_FLOOR)
+    if budget <= 0:
+        return 0
+    moved = 0
+    for tgo, group, unit in eligible:
+        if moved >= budget:
+            break
+        try:
+            unit_type = unit.unit_type
+        except StopIteration:
+            continue  # no registered GroundUnitType -- can't ride a transfer
+        group.units.remove(unit)
+        cp.base.commission_units({unit_type: 1})
+        tgo.invalidate_threat_poly()
+        moved += 1
+    return moved
 
 
 def _same_side_corridors(

@@ -81,7 +81,7 @@ pass checklist `§N` is unregistered, or this table drifts.
 | §67 | Weather-aware auto-planning | — | `weather_aware_planning` |
 | §68 | Adaptive procurement (posture-coupled spending + SAM repair) | — | `adaptive_procurement`, `auto_repair_air_defenses` |
 | §69 | Cross-package SEAD-before-strike coordination | — | `sead_strike_coordination` |
-| §70 | COMINT collection (blue-side communications intelligence) | — | `comint_collection` |
+| §70 | COMINT collection (blue-side communications intelligence) | `rednet` | `comint_collection`, `red_comms_net` |
 | — | MANTIS IADS engine | `mantisiads` | — |
 | — | Splash Damage (414th tuned) | `splashdamage3` | — |
 | — | AI recon BDA capture (§3 TARPS) | `airecon` | — |

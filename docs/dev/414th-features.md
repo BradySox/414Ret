@@ -6428,11 +6428,38 @@ capture gate). Gated `comint_collection` (Campaign Management → Campaign featu
 both COIN campaigns. State on `Game` (`comint_collected_turn` / `comint_reveal_turn` /
 `comint_reveal_note`), all read getattr-guarded so pre-§70 saves load clean.
 
+**C1 — the audible red net (LANDED 2026-07-18, same day).** The same C2 nodes now
+*transmit*. With `red_comms_net` on (Mission Generation → Battlefield life, default
+**OFF**), `plan_red_net` (`game/missiongenerator/rednetluadata.py`, run in the §51 plan
+slot with the mission `RadioRegistry`) assigns each alive enemy comms/CC node a
+**deterministic UHF AM net frequency**: seeded from the node name (crc32 — stable across
+missions, so the net lives at the same spot on the dial) at **x.500 MHz**, deliberately
+off the whole-MHz grid every briefed blue channel allocates on (collision-free by
+construction), GUARD's slot skipped, the frequency **reserved in the registry**, and
+collisions linearly probed in sorted-name order. The plan rides `MissionData.red_net`;
+`populate_red_net_lua` emits `dcsRetribution.redNet`. The `resources/plugins/rednet/`
+runtime (plugin `defaultValue` ON — the §36 saved-default-off lesson) keys each node's net
+in **windows**: a looped, original synthesized CW clip (`rednet-cw.wav`, "VVV 414 414 K"
+morse at 750 Hz — synthesized from scratch, zero copyright exposure; bundled via
+`otherResourceFiles` so it rides `l10n/DEFAULT/`, the §58 silent-fail lesson) via a named
+`radioTransmission` for `windowSec` (45 s), stopped, then silence for a jittered `gapSec`
+(240 s mean) — traffic patterns, not a beacon wall, and a DF needle only points while
+they're on the air. First windows are **staggered across one gap** (the §49 same-frame
+lesson); node death uses the vendored MANTIS `node_dead` convention, so a killed node goes
+off the air mid-mission. `powerW` (10 000) is range, not loudness (§51). Tune the freq and
+you hear the enemy; the call-#4 DF fleet (F-4E, F-14 ARC-182 DF, F/A-18C UFC ADF, F-5E)
+can home on an open window. Node freqs are logged at arm (`REDNET|: armed …`) — the
+tester's findability aid until C2's active-nets listing lands.
+
 Tests: `tests/fourteenth/test_comint.py` (tier gating incl. the dead-net-beats-collector
 rule, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism +
 ranking, the reveal's nearest-pick/range/already-known/`map_hidden` rules + re-init
-idempotence, the posture-detail earn). Checklist B22 — needs an in-app pass (the kneeboard
-block renders + the circle snap on the map).
+idempotence, the posture-detail earn) + `tests/missiongenerator/test_rednetluadata.py`
+(the freq plan: off-grid, GUARD skip, reservation, determinism, probing) +
+`tests/lua/test_rednet_runtime.py` (grace, stagger, loop+stop windows, `node_dead`,
+no-op). Checklist B22 — needs an in-app pass (the kneeboard block renders + the circle
+snap on the map); checklist B23 — needs an in-game pass (audibility, per-module DF needle
+behavior, death silence).
 
 ---
 

@@ -32,6 +32,7 @@ from .atisgenerator import AtisGenerator
 from .briefinggenerator import BriefingGenerator, MissionInfoGenerator
 from .cargoshipgenerator import CargoShipGenerator
 from .commsjamluadata import JAM_BACKUP_COMM_NAME, plan_comms_jam
+from .rednetluadata import plan_red_net
 from .convoygenerator import ConvoyGenerator
 from .drawingsgenerator import DrawingsGenerator
 from .environmentgenerator import EnvironmentGenerator
@@ -137,6 +138,11 @@ class MissionGenerator:
         self.mission_data.comms_jam = plan_comms_jam(
             self.game, self.mission_data, self.radio_registry
         )
+
+        # Red comms net (§70 C1): assign each alive enemy C2 node its fixed UHF
+        # net frequency (reserved in the registry, off the blue comms plan by
+        # construction) before the Lua pass emits it.
+        self.mission_data.red_net = plan_red_net(self.game, self.radio_registry)
 
         logging.info("MIZ generation: scripts, triggers, visuals, and drawings")
         RebellionGenerator(self.mission, self.game).generate()

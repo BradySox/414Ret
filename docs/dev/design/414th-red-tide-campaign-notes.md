@@ -31,7 +31,8 @@
 > **Lock-override record:**
 > - **2026-07-18 — no override needed (the §71 F-4E pack does NOT touch Red Tide).** The
 >   Expanded F-4E Weapons Pack was restored fork-wide as an optional mod (wizard Mods-page
->   checkbox + the "(XW)" AGM-88 SEAD fits with automatic Shrike fallback), and a same-day
+>   checkbox + the "(XW)" ARM SEAD fits — AGM-78B preferred, an editor-only HARM fit,
+>   automatic Shrike fallback), and a same-day
 >   preseed of it here was **reversed by user call: it is the DM's PERSONAL option, not
 >   part of the real Red Tide build** — the campaign yaml carries no `f4e_expanded_weapons`
 >   key (pinned by test), the wizard default (off) applies, and the host checks the box by

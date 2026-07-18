@@ -212,8 +212,9 @@ Upstream hands you a map that already knows everything. Here you have to go look
   the way Vietnam bleeds from downed B-52s.
 - Plus: **CurrentHill Iran** assets, **High Digit SAMs** (Ultimate Compilation — S-400, SAMP/T,
   Pantsir-SM, period EWRs), the optional **Expanded F-4E Weapons Pack** (check it on the Mods
-  page to arm the Heatblur Phantom with era AGM-88s for real Weasel SEAD; without the mod the
-  jet falls back to its stock Shrike fits automatically), a **rebuilt settings screen** with
+  page to arm the Heatblur Phantom for real Weasel SEAD — AGM-78 Standard ARMs by default,
+  a 4× HARM fit one click away; without the mod the jet falls back to its stock Shrike fits
+  automatically), a **rebuilt settings screen** with
   one-click difficulty presets, a **drop-spawn** sandbox, and an eight-mechanic **Vietnam
   Ops** page (Arc Light, flak gauntlet, naval gunfire, trail convoys, airbase harassment, the
   Super Gaggle, FAC(A) marking, snake and nape).

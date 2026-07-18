@@ -786,11 +786,11 @@ local unitPayloads = {
 					["num"] = 14,
 				},
 				[2] = {
-					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["CLSID"] = "{LAU_77_AGM_78B}",
 					["num"] = 13,
 				},
 				[3] = {
-					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["CLSID"] = "{LAU_77_AGM_78B}",
 					["num"] = 11,
 				},
 				[4] = {
@@ -826,7 +826,7 @@ local unitPayloads = {
 					["num"] = 4,
 				},
 				[12] = {
-					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["CLSID"] = "{LAU_77_AGM_78B}",
 					["num"] = 3,
 				},
 				[13] = {
@@ -834,7 +834,7 @@ local unitPayloads = {
 					["num"] = 2,
 				},
 				[14] = {
-					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["CLSID"] = "{LAU_77_AGM_78B}",
 					["num"] = 1,
 				},
 			},
@@ -854,7 +854,7 @@ local unitPayloads = {
 					["num"] = 13,
 				},
 				[3] = {
-					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["CLSID"] = "{LAU_77_AGM_78B}",
 					["num"] = 11,
 				},
 				[4] = {
@@ -874,7 +874,7 @@ local unitPayloads = {
 					["num"] = 5,
 				},
 				[8] = {
-					["CLSID"] = "{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}",
+					["CLSID"] = "{LAU_77_AGM_78B}",
 					["num"] = 3,
 				},
 				[9] = {
@@ -904,6 +904,70 @@ local unitPayloads = {
 		[16] = {
 			["displayName"] = "Retribution SEAD Sweep (XW)",
 			["name"] = "Retribution SEAD Sweep (XW)",
+			["pylons"] = {
+				[1] = {
+					["CLSID"] = "{HB_ALE_40_30_60}",
+					["num"] = 14,
+				},
+				[2] = {
+					["CLSID"] = "{LAU_77_AGM_78B}",
+					["num"] = 13,
+				},
+				[3] = {
+					["CLSID"] = "{LAU_77_AGM_78B}",
+					["num"] = 11,
+				},
+				[4] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 12,
+				},
+				[5] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 10,
+				},
+				[6] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 9,
+				},
+				[7] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 8,
+				},
+				[8] = {
+					["CLSID"] = "{F4_SARGENT_TANK_600_GAL}",
+					["num"] = 7,
+				},
+				[9] = {
+					["CLSID"] = "{HB_ALQ-131_ON_ADAPTER_IN_AERO7}",
+					["num"] = 6,
+				},
+				[10] = {
+					["CLSID"] = "{HB_F4E_AIM-7F}",
+					["num"] = 5,
+				},
+				[11] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 4,
+				},
+				[12] = {
+					["CLSID"] = "{LAU_77_AGM_78B}",
+					["num"] = 3,
+				},
+				[13] = {
+					["CLSID"] = "{AIM-9L}",
+					["num"] = 2,
+				},
+				[14] = {
+					["CLSID"] = "{LAU_77_AGM_78B}",
+					["num"] = 1,
+				},
+			},
+			["tasks"] = {
+			},
+		},
+		[17] = {
+			["displayName"] = "Retribution SEAD HARM (XW)",
+			["name"] = "Retribution SEAD HARM (XW)",
 			["pylons"] = {
 				[1] = {
 					["CLSID"] = "{HB_ALE_40_30_60}",

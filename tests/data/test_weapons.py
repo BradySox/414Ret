@@ -332,8 +332,12 @@ def test_customized_payload_clsids_resolve_or_are_known_stragglers() -> None:
 #   - "Retribution Strike - Toilet": the A-1 Skyraider's joke toilet-bomb loadout. The A-1
 #     already carries a real "Retribution Strike" preset, so this is an intentional cosmetic
 #     ME-only extra, not a silent-fallback primary (and the file is upstream-identical).
+#   - "Retribution SEAD HARM (XW)": the F-4E pack's supported-but-not-preferred 4x AGM-88
+#     fit (§71) -- deliberately absent from the task name chain (the auto fits prefer the
+#     AGM-78B Standards) but offered in the payload editor under the (XW) mod gate, so it
+#     is a documented pick, not dead weight.
 _KNOWN_ORPHAN_PRESET_NAMES = frozenset(
-    {"Retribution CEAD", "Retribution Strike - Toilet"}
+    {"Retribution CEAD", "Retribution Strike - Toilet", "Retribution SEAD HARM (XW)"}
 )
 
 

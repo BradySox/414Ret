@@ -28,10 +28,11 @@ class Loadout:
         "{A111396E-D3E8-4b9c-8AC9-2432489304D5}",
     }
     # Payload names ending in this suffix are expanded-weapons-mod fits (e.g. the
-    # F-4E's AGM-88 SEAD loadout from the Expanded F-4E Weapons Pack). They are
-    # tried first for their task, but only picked while the mod's pylon injection
-    # is active -- a store DCS's unmodded pylon tables can't mount is silently
-    # stripped at spawn, so an (XW) fit selected without the mod would fly naked.
+    # F-4E's Standard-ARM/HARM SEAD loadouts from the Expanded F-4E Weapons Pack).
+    # They are tried first for their task, but only picked while the mod's pylon
+    # injection is active -- a store DCS's unmodded pylon tables can't mount is
+    # silently stripped at spawn, so an (XW) fit selected without the mod would
+    # fly naked.
     EXPANDED_WEAPONS_SUFFIX = " (XW)"
 
     def __init__(

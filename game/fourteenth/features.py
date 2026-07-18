@@ -552,7 +552,7 @@ FEATURES: tuple[Feature, ...] = (
     # not a Settings field, so like the §10 asset pack it carries no wiring refs.
     Feature(
         "f4e_expanded_weapons_pack",
-        "Expanded F-4E Weapons Pack (AGM-88 Weasel fits)",
+        "Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits)",
         71,
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes

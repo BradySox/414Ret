@@ -49,9 +49,11 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.f4e_expanded_weapons.setToolTip(
             "Requires DSplayer's “Expanded F-4E Weapons Pack” mod (DCS user "
             "files) installed in the group's DCS.\n\n"
-            "Adds AGM-88C HARM stations to the Heatblur F-4E; with this on, the "
-            "Phantom's auto-selected SEAD loadouts carry HARMs instead of "
-            "Shrikes. Weapons pack only — the F-4E module itself is unaffected.\n\n"
+            "Adds AGM-78 Standard ARM and AGM-88C HARM stations to the Heatblur "
+            "F-4E; with this on, the Phantom's auto-selected SEAD loadouts carry "
+            "AGM-78B Standards instead of Shrikes, and a 4x HARM fit is one "
+            "click away in the payload editor. Weapons pack only — the F-4E "
+            "module itself is unaffected.\n\n"
             "https://www.digitalcombatsimulator.com/en/files/3338686/"
         )
         self.registerField("f4e_expanded_weapons", self.f4e_expanded_weapons)

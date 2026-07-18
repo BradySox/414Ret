@@ -6490,20 +6490,21 @@ needle behavior, death silence, the clandestine hunt).
 
 ---
 
-## §71 — Expanded F-4E Weapons Pack (AGM-88 Weasel fits)
+## §71 — Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits)
 
 **What it is.** The upstream Expanded-F-4E-Weapons mod support (dcs-retribution #663 +
 #733 — DSplayer's community weapons pack for the Heatblur F-4E,
 https://www.digitalcombatsimulator.com/en/files/3338686/), restored to the fork's curated
 wizard Mods page and — unlike upstream, which only injects the pylon options for
 hand-editing — actually **utilized** by the planner. Of the pack's arsenal (AGM-88C,
-AGM-45B, AGM-78A/B, AIM-4D/-9D/G/H, Zuni, Litening…) **only the AGM-88C is wired into
-loadouts** (user call 2026-07-18: "the only one I actually want is the AGM88"); the rest
-stay payload-editor-only, exactly as upstream left them. The point is the 1988 Weasel: a
-HARM-armed F-4E is the closest DCS gets to the F-4G USAFE actually fielded in Germany.
-**It is the DM's personal option, preseeded NOWHERE** (user call, same day — the real Red
-Tide build stays mod-free): the wizard default is off, and the host checks the Mods-page
-box by hand on a personal game.
+AGM-45B, AGM-78A/B, AIM-4D/-9D/G/H, Zuni, Litening…) **the two big ARMs are wired into
+loadouts, with the AGM-78B Standard preferred** (user calls 2026-07-18: first "the only
+one I actually want is the AGM88", then "include [the AGM-78] and make it the preferred
+one" on realizing the pack carries it); the rest stay payload-editor-only, exactly as
+upstream left them. The point is the era Weasel: an ARM-armed F-4E is the closest DCS
+gets to the F-4G USAFE actually fielded in Germany. **It is the DM's personal option,
+preseeded NOWHERE** (user call, same day — the real Red Tide build stays mod-free): the
+wizard default is off, and the host checks the Mods-page box by hand on a personal game.
 
 **Why it was gone.** The fork's Mods-page curation ("only mods the factions actually
 consume are listed") dropped the checkbox and the `ModSettings` pass-through when nothing
@@ -6530,18 +6531,26 @@ gate exists to prevent; `Pylon.equip` logs but does not refuse).
 **The fits.** `resources/customized_payloads/F-4E-45MC.lua` adds "Retribution SEAD (XW)"
 / "SEAD Escort (XW)" / "SEAD Sweep (XW)" — the existing Shrike fits' exact skeletons
 (AIM-7F wells, AIM-9L rails, 600-gal or 370-gal tanks, ALQ-131, ALE-40) with the ARM
-stations swapped to the **stock pydcs AGM-88C** (`{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}`
-— the `...C93` entry, not the Hornet-rack `...C9C` sibling) on the pack's injected
-stations: 4 HARMs on 1/3/11/13 for SEAD/Sweep, 2 on 3/11 for the tanked Escort fit. The
-stock Shrike fits are untouched and remain the automatic fallback, so Tanker War and any
-other Phantom campaign without the mod resolve exactly as before.
+stations swapped to the pack's **AGM-78B Standard ARM** (`{LAU_77_AGM_78B}`, the
+preferred ARM) on the injected stations: 4 Standards on 1/3/11/13 for SEAD/Sweep, 2 on
+3/11 for the tanked Escort fit. The **4× AGM-88C load stays supported** as the
+editor-only **"Retribution SEAD HARM (XW)"** fit (stock clsid
+`{B06DD79A-F21E-4EB9-BD9D-AB3844618C93}` — the `...C93` entry, not the Hornet-rack
+`...C9C` sibling): same mod gate, one click in the payload editor, but absent from every
+task's name chain so it is never auto-picked. The stock Shrike fits are untouched and
+remain the automatic fallback, so Tanker War and any other Phantom campaign without the
+mod resolve exactly as before.
 
-**Era + economy come free.** The fork already dates the DCS AGM-88C at the family's 1984
-IOC with an AGM-45 fallback (`resources/weapons/standoff/AGM-88C.yaml`), so a July-1988
-game with `restrict_weapons_by_date` on (the Red Tide setup this exists to be flown in)
-keeps the HARM (tripwired in the tests — a future re-date to the C-model's literal 1993
-would silently disarm the 1988 Weasel), and §54 munitions scarcity already tracks the
-clsid under the `arm` family, so Phantom HARMs debit the same base stock as Hornet HARMs.
+**Era + economy come free.** The AGM-78A/B were already first-class weapons-DB citizens
+(`resources/weapons/standoff/AGM-78{A,B}.yaml` from the upstream #663/#733 support: dated
+at the 1968/1969 service entries, Shrike fallback, the mod's LAU-77 clsids listed, and
+full per-target **seeker-band `target_overrides`** — the Standard fits get their RF
+seekers tuned to the target automatically), the fork already dates the DCS AGM-88C at
+the family's 1984 IOC with an AGM-45 fallback (`AGM-88C.yaml`), and §54 munitions
+scarcity already tracks Standards, Shrikes, AND HARMs under the `arm` family. So a
+July-1988 game with `restrict_weapons_by_date` on (the Red Tide setup this exists to be
+flown in) keeps both ARMs — tripwired in the tests, since a future AGM-88C re-date to
+the C-model's literal 1993 would silently disarm the HARM fit.
 
 **Wiring.** Wizard: the checkbox is back on the Mods page Aircraft-modules group
 (`QGeneratorSettings` — registered field, DSplayer tooltip with the user-files link,
@@ -6557,12 +6566,13 @@ auto-assignment. NEW game required (mods apply at generation). No plugin, no Lua
 Settings field (the checkbox is `ModSettings`, the §10 asset-pack pattern).
 
 **Tests.** `tests/fourteenth/test_f4e_expanded_weapons.py` (inject → every SEAD-family
-task selects its (XW) fit with the HARMs on the exact stations — which doubles as the
-pylon-legality pin for the payload file; eject → "Retribution SEAD" Shrike fallback;
-editor list tracks mod state; other airframes never see the (XW) chain; the 1988
-era-gate tripwire) + the Red Tide **no-preseed** pin in
+task selects its (XW) fit with the AGM-78Bs on the exact stations — which doubles as the
+pylon-legality pin for the payload file; the HARM fit is offered in the editor and
+carries the AGM-88Cs but is never auto-picked; eject → "Retribution SEAD" Shrike
+fallback; editor list tracks mod state; other airframes never see the (XW) chain; the
+1988 era-gate tripwires for both ARMs) + the Red Tide **no-preseed** pin in
 `tests/fourteenth/test_campaign_plugin_preseed.py`. Checklist B24 — needs an in-game
-pass (does the installed mod actually accept the generated stations; AI HARM employment;
+pass (does the installed mod actually accept the generated stations; AI ARM employment;
 the mod-off stripped-stores signature).
 
 ---

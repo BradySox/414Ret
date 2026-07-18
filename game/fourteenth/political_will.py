@@ -536,18 +536,18 @@ def _blue_moves(
         )
 
     # COIN roadside IEDs left un-swept detonate on the coalition (a finish_turn event,
-    # never in the debriefing). Priced only where the campaign weights it up.
-    if weights.blue_ied_detonation:
-        from game.fourteenth.coin_ied import consume_ied_detonations
+    # never in the debriefing). Always drained -- an unpriced campaign must not bank
+    # the counter forever -- but priced only where the campaign weights it up.
+    from game.fourteenth.coin_ied import consume_ied_detonations
 
-        ieds = consume_ied_detonations(game)
-        if ieds:
-            moves.append(
-                (
-                    f"IED detonations x{ieds}",
-                    -ieds * weights.blue_ied_detonation,
-                )
+    ieds = consume_ied_detonations(game)
+    if ieds and weights.blue_ied_detonation:
+        moves.append(
+            (
+                f"IED detonations x{ieds}",
+                -ieds * weights.blue_ied_detonation,
             )
+        )
 
     # ROE violations (W4): kills inside an active restricted zone draw a sharp
     # penalty -- the LBJ-era pilot could break the rules, but Washington answered
@@ -644,15 +644,13 @@ def _red_moves(
         )
     # COIN HVT: a named leader killed in his window is a decapitation -- a momentum
     # blow priced separately from the generic kill. A finish_turn detection (matched
-    # by the tracked HVT TGO), consumed here; inert unless the campaign prices it.
-    if weights.red_hvt_killed:
-        from game.fourteenth.coin_hvt import consume_hvt_kills
+    # by the tracked HVT TGO). Always drained -- an unpriced campaign must not bank
+    # the counter forever -- but a move only where the campaign prices it.
+    from game.fourteenth.coin_hvt import consume_hvt_kills
 
-        hvts = consume_hvt_kills(game)
-        if hvts:
-            moves.append(
-                (f"HVT leaders x{hvts} killed", -hvts * weights.red_hvt_killed)
-            )
+    hvts = consume_hvt_kills(game)
+    if hvts and weights.red_hvt_killed:
+        moves.append((f"HVT leaders x{hvts} killed", -hvts * weights.red_hvt_killed))
 
     return moves
 

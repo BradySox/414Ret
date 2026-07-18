@@ -120,11 +120,17 @@ def _resolve_active_hvt(
             hvt["active"] = None
             hvt["cooldown"] = HVT_COOLDOWN_TURNS
             return
-    if tgo is None or not _tgo_alive(tgo):
+    if tgo is None:
+        # The record dangles (the TGO was removed by some other path): not evidence
+        # of a strike. Clear the window without crediting a decapitation -- the
+        # IED/field-cell convention (a kill requires the TGO to have existed and died).
+        hvt["active"] = None
+        hvt["cooldown"] = HVT_COOLDOWN_TURNS
+        return
+    if not _tgo_alive(tgo):
         # Struck: a decapitation. Credit the momentum blow (consumed by the will layer).
         state["hvt_kills"] = int(state.get("hvt_kills", 0)) + 1
-        if tgo is not None:
-            _despawn(game, tgo, events)
+        _despawn(game, tgo, events)
         _announce(game, f"HVT {name} eliminated — a blow to the insurgent leadership.")
         hvt["active"] = None
         hvt["cooldown"] = HVT_COOLDOWN_TURNS

@@ -3,8 +3,14 @@
 **Status: Phases 1 + 2 + 3 BUILT & headless-VERIFIED (2026-07-07).** `resources/campaigns/tanker_war_1988.yaml`
 + `.miz` generate a full turn-0 game with the period air OOB, the will economy + authored phase
 arc + shipping-lane ROE zone, the coastal Silkworm shoot-and-scoot, and AAA gun forts on the oil
-rigs; parsers + generation clean, Black/mypy/tests green. Remaining: docs registration + a laydown
-test guard + the in-game pass (esp. the platform-AAA on-deck render). See the Build log (§8–§10).
+rigs; parsers + generation clean, Black/mypy/tests green. **Registered 2026-07-18** (the
+maintenance sweep found the campaign shipped silent — laydown guard
+`tests/fourteenth/test_tanker_war.py`, README + CLAUDE.md design-notes entries, checklist row
+T2 all in). Remaining: the in-game pass (esp. the platform-AAA on-deck render) +
+will-weight/ROE-corridor tuning. NOTE (§49 interaction, 2026-07-17): vanilla Silkworm hardware
+(`hy_launcher`/`Silkworm_SR`) is a fixed emplacement and is never routed (`IMMOBILE_UNIT_IDS`)
+— the batteries fire their fire-window missions but do not scoot; only genuinely mobile
+coastal launchers move. See the Build log (§8–§10).
 Decisions locked:
 
 - **Framing:** the broader **Tanker War (1987–88)** as a multi-turn attrition arc that
@@ -404,6 +410,6 @@ nudge `DECK_OFFSET` in the tool or place them by eye in the ME. (Technique confi
 campaigns — Cerberus North mounts a Silkworm+infantry on a gas platform; see
 [[units-on-oil-platforms]].)
 
-**Remaining for the campaign:** docs registration (README / features doc / feature index), a
-`tests/` laydown guard, the in-game pass, and will-weight/ROE-corridor tuning. Phase 3 content is
-in; the naval war is feature-complete headless.
+**Remaining for the campaign:** the in-game pass (checklist row T2) and will-weight/ROE-corridor
+tuning. Docs registration + the `tests/fourteenth/test_tanker_war.py` laydown guard landed
+2026-07-18. Phase 3 content is in; the naval war is feature-complete headless.

@@ -171,6 +171,16 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **Nevada — Red Flag 81-2** — the ultimate war game, played as the war it rehearses: Aggressor
   F-5Es, the Constant Peg MiGs out of Tonopah, an emulator SAM array, KS-19 flak belts. The
   **Groom Lake box never opens**.
+- **Iraq — Operation Inherent Resolve** — the second living COIN campaign: the Battle of Mosul,
+  2016–17. The insurgency holds Mosul, Erbil and Kirkuk and lives on ten furnished FOBs along
+  Highway 1 and the Nineveh ring; you grind north from Balad on one front against IEDs, HVT
+  convoys and a 14-route supply web, under a permanent Mosul positive-control box. Predators
+  and Reapers fly persistent ISR that banks real BDA.
+- **Persian Gulf — The Tanker War (1988)** — the 1987–88 war on Gulf shipping, building to an
+  Operation Praying Mantis climax in the Strait of Hormuz. The 1988 carrier air wing (F-14A,
+  A-6E, A-7E) against Iranian naval and coastal power; the currency is **ships, not territory**
+  — the will economy bleeds from sunk hulls, Silkworm batteries fire from the coast, and AAA
+  gun forts stand on the oil platforms. The one DCS matchup where the Tomcat flies both sides.
 - **The Vietnam campaign layer changes *why* you fly.** **Political will** — Washington's
   patience, drained by losses (a downed **B-52** is a national event), by aviators sitting as
   POWs, and by the war's sheer duration; a one-way ratchet whose restores are too small to

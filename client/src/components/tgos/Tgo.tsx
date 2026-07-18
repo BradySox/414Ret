@@ -30,6 +30,13 @@ interface TgoProps {
 function ConcealedTgo(props: TgoProps) {
   const [openNewPackageDialog] = useOpenNewTgoPackageDialogMutation();
   const [openInfoDialog] = useOpenTgoInfoDialogMutation();
+  // Clustered sites (2+ concealed circles at one control point) render as a
+  // DENSITY CLOUD: no per-circle stroke (nine stacked dashed rings rang like
+  // klaxons on the flown Red Tide map) and a low fill that STACKS where the
+  // circles overlap — darker exactly where more units hide, while the union
+  // of the members' own circles covers the area they actually hold. A lone
+  // circle keeps the classic dashed "suspected activity" ring.
+  const clustered = (props.tgo.concealed_cluster_size ?? 1) >= 2;
   return (
     <Circle
       center={props.tgo.position}
@@ -38,12 +45,14 @@ function ConcealedTgo(props: TgoProps) {
       // which is nearly identical in shape. Amber reads as "unknown — investigate".
       pathOptions={{
         color: mapColors.suspected,
+        stroke: !clustered,
         weight: 2,
         dashArray: "6 6",
         fillColor: mapColors.suspected,
-        // Deep enough to read as an area at a glance over satellite imagery
-        // (0.08 washed out); still translucent enough to read the terrain under it.
-        fillOpacity: 0.18,
+        // Lone ring: deep enough to read as an area at a glance over satellite
+        // imagery (0.08 washed out). Cluster member: low, because the fills
+        // stack — 3 overlapping ≈ 0.32, 6 ≈ 0.54, 9 ≈ 0.68 — the density ramp.
+        fillOpacity: clustered ? 0.12 : 0.18,
         className: "map-interactive",
       }}
       eventHandlers={{

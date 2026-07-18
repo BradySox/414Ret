@@ -542,6 +542,9 @@ export type Tgo = {
   /** COIN concealment: set while this TGO renders as an uncertainty circle;
       `position` is then the jittered circle centre, not the true location. */
   uncertainty_radius_m?: number | null;
+  /** Concealed circles sharing this TGO's site (itself included): >= 2 renders
+      as the stroke-less density cloud, 1 as the classic dashed ring. */
+  concealed_cluster_size?: number | null;
 };
 export type SupplyRoute = {
   id: string;

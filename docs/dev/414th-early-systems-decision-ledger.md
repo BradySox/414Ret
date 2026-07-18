@@ -72,12 +72,16 @@ either passes with measured numbers or has a concrete, cheap fix; the two squadr
    default 0.0; ER/IR price it at 1.5 vs the kill's 4.0): a lapsed window banks a
    small POSITIVE red-resolve move ("propaganda coup"). Counter drains even unpriced;
    the stronghold-fall path never counts as an escape.
-4. **Concealment → per-cluster circle merge** (server-side, in `concealed_uncertainty`):
-   every concealed radial TGO at a control point shares ONE merged circle (centroid of
-   the members' jitters, radius covering every member, capped 8 km) — computed
-   statelessly from the CP's siblings so `/game` and SSE always agree, each member
-   keeps its own click contract, discovery snaps only that marker to truth, and
-   road-pinned IED circles never join. Tarinkot's 9 rings become one blob of suspicion.
+4. **Concealment → the density cloud** (reworked same day off the squadron's read of the
+   flown merge: the identical-geometry circle stacked its strokes into klaxon rings and
+   its capped disc "covered one spot, not the area where all the units are"). Final
+   design: every member keeps its OWN circle over its own jittered position (the union
+   covers the real spread), and the client styles clusters (`TgoJs.concealed_cluster_size
+   >= 2`, from the stateless per-CP census in `concealed_cluster_size`) as **stroke-less
+   low-opacity fills that STACK** — 3 overlapping ≈ 0.32, 9 ≈ 0.68 — so the cloud darkens
+   exactly where units bunch, which the squadron liked about the accident and now gets on
+   purpose. A lone circle (or any road-pinned IED) keeps the classic dashed ring; click
+   contracts and per-member discovery unchanged.
 
 ## Probe runbook (repeatable)
 

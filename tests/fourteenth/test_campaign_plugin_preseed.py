@@ -166,13 +166,13 @@ def test_red_tide_preseeds_the_era_property_gate() -> None:
     assert settings["restrict_props_by_date"] is True
 
 
-def test_red_tide_preseeds_the_f4e_expanded_weapons_mod() -> None:
+def test_red_tide_does_not_preseed_the_f4e_expanded_weapons_mod() -> None:
+    # Squadron call 2026-07-18 (reversing the same-day preseed): §71 is the DM's
+    # PERSONAL optional mod, not part of the real Red Tide build -- the campaign
+    # must NOT preseed the Mods-page checkbox at all (the wizard default, off,
+    # applies; the host checks the box by hand on a personal game).
     settings = _campaign_settings()
-    # §71: the Mods-page checkboxes read the same campaign settings namespace
-    # (QGeneratorSettings.update_settings). Preseeded ON so the wing's Phantoms
-    # default to the AGM-88 "(XW)" SEAD fits; unchecking the box (or lacking the
-    # mod) falls back to the stock Shrike fits via the loadout pylon gate.
-    assert settings["f4e_expanded_weapons"] is True
+    assert "f4e_expanded_weapons" not in settings
 
 
 def test_red_tide_preseeds_munitions_scarcity() -> None:

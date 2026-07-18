@@ -6500,8 +6500,10 @@ hand-editing — actually **utilized** by the planner. Of the pack's arsenal (AG
 AGM-45B, AGM-78A/B, AIM-4D/-9D/G/H, Zuni, Litening…) **only the AGM-88C is wired into
 loadouts** (user call 2026-07-18: "the only one I actually want is the AGM88"); the rest
 stay payload-editor-only, exactly as upstream left them. The point is the 1988 Weasel: a
-HARM-armed F-4E is the closest DCS gets to the F-4G USAFE actually fielded in Germany,
-and Red Tide preseeds it.
+HARM-armed F-4E is the closest DCS gets to the F-4G USAFE actually fielded in Germany.
+**It is the DM's personal option, preseeded NOWHERE** (user call, same day — the real Red
+Tide build stays mod-free): the wizard default is off, and the host checks the Mods-page
+box by hand on a personal game.
 
 **Why it was gone.** The fork's Mods-page curation ("only mods the factions actually
 consume are listed") dropped the checkbox and the `ModSettings` pass-through when nothing
@@ -6535,30 +6537,30 @@ stock Shrike fits are untouched and remain the automatic fallback, so Tanker War
 other Phantom campaign without the mod resolve exactly as before.
 
 **Era + economy come free.** The fork already dates the DCS AGM-88C at the family's 1984
-IOC with an AGM-45 fallback (`resources/weapons/standoff/AGM-88C.yaml`), so Red Tide's
-July-1988 `restrict_weapons_by_date` gate keeps the HARM (tripwired in the tests — a
-future re-date to the C-model's literal 1993 would silently strip the campaign this
-feature exists for), and §54 munitions scarcity already tracks the clsid under the `arm`
-family, so Phantom HARMs debit the same base stock as Hornet HARMs.
+IOC with an AGM-45 fallback (`resources/weapons/standoff/AGM-88C.yaml`), so a July-1988
+game with `restrict_weapons_by_date` on (the Red Tide setup this exists to be flown in)
+keeps the HARM (tripwired in the tests — a future re-date to the C-model's literal 1993
+would silently disarm the 1988 Weasel), and §54 munitions scarcity already tracks the
+clsid under the `arm` family, so Phantom HARMs debit the same base stock as Hornet HARMs.
 
 **Wiring.** Wizard: the checkbox is back on the Mods page Aircraft-modules group
 (`QGeneratorSettings` — registered field, DSplayer tooltip with the user-files link,
-campaign-seeded via `update_settings` like every mod key) and `QNewGameWizard.accept()`
-passes it into `ModSettings` again. **Red Tide preseeds it ON**
-(`f4e_expanded_weapons: true` in the campaign `settings:` block — the high_digit_sams
-pattern; recorded as an explicit post-lock user go-ahead 2026-07-18 in the campaign
-notes' lock-override record). Optional by construction: uncheck the box (or lack the
-mod) and the Phantom flies Shrikes. The F-4E's SEAD task priority stays the deliberate
-120 — the Phantom flies Weasel when fragged by the host or as overflow, it does not
-out-compete the HTS Vipers/Hornets for auto-assignment. NEW game required (mods apply at
-generation). No plugin, no Lua, no Settings field (the checkbox is `ModSettings`, the
-§10 asset-pack pattern).
+campaign-seedable via `update_settings` like every mod key) and `QNewGameWizard.accept()`
+passes it into `ModSettings` again. **No campaign preseeds it** — the same-day Red Tide
+preseed was reversed by user call (it is the DM's personal option; the real Red Tide
+build stays mod-free — the no-preseed is pinned in
+`tests/fourteenth/test_campaign_plugin_preseed.py` and recorded in the Red Tide campaign
+notes; no authored F-4E squadron either, the air-wing dialog is the path). The F-4E's
+SEAD task priority stays the deliberate 120 — the Phantom flies Weasel when fragged by
+the host or as overflow, it does not out-compete the HTS Vipers/Hornets for
+auto-assignment. NEW game required (mods apply at generation). No plugin, no Lua, no
+Settings field (the checkbox is `ModSettings`, the §10 asset-pack pattern).
 
 **Tests.** `tests/fourteenth/test_f4e_expanded_weapons.py` (inject → every SEAD-family
 task selects its (XW) fit with the HARMs on the exact stations — which doubles as the
 pylon-legality pin for the payload file; eject → "Retribution SEAD" Shrike fallback;
 editor list tracks mod state; other airframes never see the (XW) chain; the 1988
-era-gate tripwire) + the Red Tide preseed pin in
+era-gate tripwire) + the Red Tide **no-preseed** pin in
 `tests/fourteenth/test_campaign_plugin_preseed.py`. Checklist B24 — needs an in-game
 pass (does the installed mod actually accept the generated stations; AI HARM employment;
 the mod-off stripped-stores signature).

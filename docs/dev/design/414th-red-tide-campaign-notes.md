@@ -29,15 +29,15 @@
 > balance pass. If in doubt, ask the user before touching it.
 >
 > **Lock-override record:**
-> - **2026-07-18 (explicit user go-ahead, post-lock):** §71 Expanded F-4E Weapons Pack
->   restored as an optional mod and preseeded ON (`f4e_expanded_weapons: true` in the
->   campaign settings block) — the Heatblur F-4E gains its AGM-88 stations and SEAD-tasked
->   Phantoms auto-load the "(XW)" HARM fits (stock Shrike fit is the automatic fallback when
->   the box is unchecked or the mod is ejected). Settings-namespace preseed only, no
->   laydown/balance change; applies to NEW games only, so it ships with whatever
->   regeneration follows it. **Squadron call (user, same day): NO authored F-4E squadron
->   in the wing yaml** — the host adds one via the air-wing dialog at new-game time when
->   wanted (the faction carries the F-4E-45MC). Don't author one in a later session.
+> - **2026-07-18 — no override needed (the §71 F-4E pack does NOT touch Red Tide).** The
+>   Expanded F-4E Weapons Pack was restored fork-wide as an optional mod (wizard Mods-page
+>   checkbox + the "(XW)" AGM-88 SEAD fits with automatic Shrike fallback), and a same-day
+>   preseed of it here was **reversed by user call: it is the DM's PERSONAL option, not
+>   part of the real Red Tide build** — the campaign yaml carries no `f4e_expanded_weapons`
+>   key (pinned by test), the wizard default (off) applies, and the host checks the box by
+>   hand on a personal game when wanted. **Do NOT preseed it in a later session**, and do
+>   NOT author an F-4E squadron in the wing yaml either (same call — the air-wing dialog is
+>   the path when wanted; the blue faction already carries the F-4E-45MC).
 >
 > **The "process turn 1 from the M1 session JSON" step is tooled** —
 > `tools/apply_state_json.py` (built + validated 2026-07-12) re-binds the flown 2026-07-11

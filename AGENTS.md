@@ -2348,14 +2348,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     stations swapped to the stock AGM-88C (`...C93` clsid) on the pack's stations (4 on
     1/3/11/13; the tanked Escort 2 on 3/11); the stock Shrike fits are untouched and are
     the automatic fallback (Tanker War et al. byte-identical). Era + economy free: the
-    fork already dates AGM-88C at the family's 1984 IOC (test-tripwired) so Red Tide's
-    1988 weapon gate keeps it, and §54 scarcity already tracks it under `arm`. **Red Tide
-    preseeds the mod ON** (`f4e_expanded_weapons: true`; explicit post-lock user
-    go-ahead 2026-07-18, recorded in the campaign notes lock-override record) — optional
-    by construction, uncheck and the Phantom flies Shrikes. F-4E SEAD task priority
-    stays the deliberate 120 (host-frag/overflow Weasel, never out-competing the HTS
-    jets). NEW game required; no plugin/Lua/Settings field (`ModSettings`, the §10
-    pattern). Tests `tests/fourteenth/test_f4e_expanded_weapons.py` + the preseed pin;
+    fork already dates AGM-88C at the family's 1984 IOC (test-tripwired) so a 1988 game's
+    weapon gate keeps it, and §54 scarcity already tracks it under `arm`. **Preseeded
+    NOWHERE — the DM's personal option** (user call 2026-07-18, reversing a same-day Red
+    Tide preseed: the real Red Tide build stays mod-free; the no-preseed + the
+    no-authored-F-4E-squadron calls are pinned/recorded — the host checks the Mods-page
+    box by hand on a personal game, and the air-wing dialog is the squadron path). F-4E
+    SEAD task priority stays the deliberate 120 (host-frag/overflow Weasel, never
+    out-competing the HTS jets). NEW game required; no plugin/Lua/Settings field
+    (`ModSettings`, the §10 pattern). Tests
+    `tests/fourteenth/test_f4e_expanded_weapons.py` + the Red Tide no-preseed pin;
     features doc §71, checklist B24 — needs an in-game pass (does the installed mod
     accept the generated stations; AI HARM employment; the mod-off stripped-stores
     signature).

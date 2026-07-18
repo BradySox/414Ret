@@ -403,7 +403,9 @@ class MissionGenerator:
         """Generates subscribed MissionInfoGenerator objects."""
         mission_data = self.mission_data
         gens: list[MissionInfoGenerator] = [
-            KneeboardGenerator(self.mission, self.game),
+            # §70 C2: the kneeboard's COMINT block briefs this mission's red-net
+            # frequencies, so the plan is threaded in.
+            KneeboardGenerator(self.mission, self.game, red_net=mission_data.red_net),
             BriefingGenerator(self.mission, self.game),
         ]
         for gen in gens:

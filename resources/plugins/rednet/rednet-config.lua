@@ -1,13 +1,18 @@
 ---------------------------------------------------------------------------------------------------
--- Red comms net runtime (§70 COMINT, phase C1): the enemy C2 net, audible on the dial.
+-- Red comms net runtime (§70 COMINT, phases C1+C2): the enemy net, audible on the dial.
 --
--- Each emitted enemy C2 node (comms mast / command center) transmits PERIODIC coded CW traffic on
--- its own fixed UHF AM frequency via trigger.action.radioTransmission from the node's map
--- position: real power/distance falloff, audible on any cockpit radio tuned there (and to SRS
--- users, whose radios tune off the cockpit). The transmission is looped only while a window is
--- open -- windows recur on a jittered cadence with silence between, so the net reads as traffic
+-- Each emitted enemy net station transmits PERIODIC coded CW traffic on its own fixed UHF AM
+-- frequency via trigger.action.radioTransmission from the node's map position: real
+-- power/distance falloff, audible on any cockpit radio tuned there (and to SRS users, whose
+-- radios tune off the cockpit). The transmission is looped only while a window is open --
+-- windows recur on a jittered cadence with silence between, so the net reads as traffic
 -- patterns, not a beacon wall, and a DF needle (F-4E / F-14 ARC-182 DF / F/A-18C UFC ADF / F-5E)
 -- only points while they are on the air.
+--
+-- Two schedules (C2): a fixed C2 node (comms mast / command center) keys the normal traffic
+-- cadence (windowSec/gapSec); a CLANDESTINE station (a concealed insurgent cell / IED team /
+-- HVT convoy, or an authored concealed comms site) keys short windows with long silence
+-- (clandestineWindowSec/clandestineGapSec) -- catch the window and DF it, or wait out the next.
 --
 -- The frequencies are allocated in Python (game/missiongenerator/rednetluadata.py) at x.500 MHz --
 -- off the whole-MHz grid every briefed blue channel allocates on -- so the net can NEVER land on a
@@ -36,8 +41,10 @@ end
 local data = dcsRetribution.redNet
 
 -- Defaults. Overridable via the plugin options (dcsRetribution.plugins.rednet).
-local WINDOW_SEC = 45 -- s: transmission length per window
+local WINDOW_SEC = 45 -- s: transmission length per window (fixed C2 stations)
 local GAP_SEC = 240 -- s: mean silence between a net's windows (jittered)
+local CLAND_WINDOW_SEC = 20 -- s: a clandestine station's window (short -- catch it or wait)
+local CLAND_GAP_SEC = 480 -- s: a clandestine station's mean silence (long -- the hunt)
 local POWER_W = 10000 -- transmitter power (DCS models the falloff; range, not loudness)
 local GRACE = 180 -- s before the first window
 
@@ -45,6 +52,8 @@ if dcsRetribution.plugins and dcsRetribution.plugins.rednet then
     local o = dcsRetribution.plugins.rednet
     WINDOW_SEC = tonumber(o.windowSec) or WINDOW_SEC
     GAP_SEC = tonumber(o.gapSec) or GAP_SEC
+    CLAND_WINDOW_SEC = tonumber(o.clandestineWindowSec) or CLAND_WINDOW_SEC
+    CLAND_GAP_SEC = tonumber(o.clandestineGapSec) or CLAND_GAP_SEC
     POWER_W = tonumber(o.powerW) or POWER_W
     GRACE = tonumber(o.startGraceS) or GRACE
 end
@@ -92,12 +101,16 @@ local function nodeAlive(node)
     return false
 end
 
--- Collect the emitted nodes (name, unit names, position, frequency).
+-- Collect the emitted nodes (name, unit names, position, frequency, schedule).
+-- A clandestine station (concealed COIN spawn / authored concealed comms TGO)
+-- keys the short-window/long-gap hunt schedule; fixed C2 stations key the
+-- normal traffic cadence.
 local nodes = {}
 if type(data.nodes) == "table" then
     for _, rec in ipairs(data.nodes) do
         local mhz = num(rec.mhz)
         if mhz > 0 and type(rec.units) == "table" then
+            local clandestine = (rec.clandestine == true or rec.clandestine == "true")
             nodes[#nodes + 1] = {
                 name = tostring(rec.name or "C2 net"),
                 units = rec.units,
@@ -105,6 +118,9 @@ if type(data.nodes) == "table" then
                 y = num(rec.y),
                 hz = mhz * 1000000,
                 mhz = mhz,
+                clandestine = clandestine,
+                window = clandestine and CLAND_WINDOW_SEC or WINDOW_SEC,
+                gap = clandestine and CLAND_GAP_SEC or GAP_SEC,
             }
         end
     end
@@ -150,11 +166,11 @@ local function windowCycle(node)
         timer.scheduleFunction(function()
             pcall(trigger.action.stopRadioTransmission, txName)
             return nil
-        end, {}, timer.getTime() + WINDOW_SEC)
+        end, {}, timer.getTime() + node.window)
     end
 
     -- Jittered cadence (0.6x - 1.4x the mean gap) so the net never feels metronomic.
-    return timer.getTime() + WINDOW_SEC + GAP_SEC * (0.6 + 0.8 * math.random())
+    return timer.getTime() + node.window + node.gap * (0.6 + 0.8 * math.random())
 end
 
 -- Arm one node's window loop to first fire at mission-time `startAt`.
@@ -177,7 +193,12 @@ local ok, err = pcall(function()
     local summary = {}
     for i, node in ipairs(nodes) do
         armNode(node, t0 + GRACE + (i - 1) * stagger)
-        summary[#summary + 1] = string.format("%s @ %.3f AM", node.name, node.mhz)
+        summary[#summary + 1] = string.format(
+            "%s @ %.3f AM%s",
+            node.name,
+            node.mhz,
+            node.clandestine and " (clandestine)" or ""
+        )
     end
     env.info(
         string.format(

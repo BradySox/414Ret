@@ -1,9 +1,11 @@
 # 414th — COMINT: blue-side communications intelligence (design)
 
-**Status: C0 + C1 LANDED 2026-07-18 (feature §70 — Feature A, the campaign take, checklist
-B22; and Feature B1, the audible UHF red net + `rednet` plugin, checklist B23; see
-`docs/dev/414th-features.md` §70). C2 (the clandestine transmitter + the active-nets
-listing) not started.**
+**Status: the full C0–C2 arc LANDED 2026-07-18 (feature §70; see
+`docs/dev/414th-features.md` §70): C0 the campaign take (checklist B22), C1 the audible
+UHF red net + `rednet` plugin (checklist B23), C2 the clandestine stations + the
+active-nets listing. C2's landed shape inverted the B2 sketch — see "Landed shape" in the
+B2 section: the COIN spawns transmit (zero authoring), the authored static field-site is
+the deferred half.**
 Squadron ask (2026-07-18): *"Such a large part of real warfare is communications
 intercepts. Currently DCS has no way to do that — what options do we have?"* Scope call
 (same day, option 1 of the survey): build **Feature A (campaign-layer COMINT take)** and
@@ -215,6 +217,18 @@ dynamic spawns — the cells/IED teams themselves transmit on the ground net dur
 fuse windows, making the §P4 IED hunt a genuine DF problem (rides
 `coin.spawn_red_ground_at`; movement/consequence stay in the turn model as always).
 
+**Landed shape (2026-07-18) — the priorities inverted, honestly:** what the sketch called
+"v2" shipped first, because it needs zero authoring and no new loader convention — every
+alive **concealed COIN spawn** (`coin_spawned` + `concealed`; `map_hidden` §50 teams
+hard-excluded everywhere) transmits as a clandestine station on the hunt schedule
+(`clandestineWindowSec` 20 s / `clandestineGapSec` 480 s), and any comms TGO carrying the
+`concealed` flag keys the same schedule, so the engine side of the *authored* field-site
+is already done. What remains deferred is only the authoring path itself: a loader
+convention for placing a concealed comms TGO from a campaign miz (trivial to add the day
+a campaign wants one — Red Tide post-M2 is the natural first customer). The UHF band
+carries everything for now; the LF/MF CW agent net and the VHF-FM ground net remain
+future band expansions.
+
 ### Settings
 
 `red_comms_net` — Mission Generation → Battlefield life, default **OFF** until flown.
@@ -266,8 +280,12 @@ One PR per testable phase (the house norm):
   `rednet-cw.wav` + harness tests. **UHF net first** (the fast-jet DF band per the
   call-#4 audit) — the LF/MF + FM nets remain future work with C2+. In-game pass =
   checklist B23 (audibility + per-module needle behavior).
-- **C2 — B2 clandestine TX** + the A↔B findability tie (active-nets listing names the
-  hunt) + first campaign authoring.
+- **C2 — B2 clandestine TX + the A↔B findability tie** (**LANDED 2026-07-18**, same day):
+  the clandestine stations (COIN spawns + concealed comms TGOs, the hunt schedule) and
+  the COMINT kneeboard active-nets listing (fixed stations by name + freq + area;
+  clandestine ones as a net + an area only). "First campaign authoring" resolved as the
+  COIN campaigns needing none; the authored static field-site awaits its loader
+  convention (see "Landed shape" above).
 - **Later**: COIN dynamic transmitters, voice-chatter asset expansion, client intel
   surface, the FLASH cue layer.
 

@@ -1,6 +1,6 @@
-"""Red comms net -> Lua config bridge (``dcsRetribution.redNet``, §70 C1).
+"""Red comms net -> Lua config bridge (``dcsRetribution.redNet``, §70 C1+C2).
 
-The enemy C2 net, audible on the dial: with ``red_comms_net`` on, every alive
+The enemy net, audible on the dial: with ``red_comms_net`` on, every alive
 enemy IADS communications / command-center node (the same objects §51 jams from,
 §52 decapitates, and the §70 COMINT take reads) becomes a **transmitting
 station** — the ``rednet`` plugin keys periodic coded CW traffic
@@ -8,6 +8,13 @@ station** — the ``rednet`` plugin keys periodic coded CW traffic
 the node's own fixed UHF AM frequency from its campaign-map position. Tune it
 and you hear the enemy; a UHF-DF airframe (F-4E, F-14 ARC-182 DF, F/A-18C UFC
 ADF, F-5E — the design note's call-#4 module audit) can home on an open window.
+
+C2 adds the **clandestine stations**: concealed COIN spawns (cells, IED teams,
+the HVT convoy — an insurgency runs on radios) and any authored *concealed*
+comms TGO transmit on the same net with a distinctive short-window/long-gap
+schedule — the §3 suspected-activity circle is the search area, and DF-ing an
+open window is how you turn the circle into a fix. ``map_hidden`` TGOs (the
+§50 ambush teams) are never emitted.
 
 Python owns the frequency plan. Each node's frequency is **deterministic**
 (seeded from the node name, so the net lives at the same spot on the dial every
@@ -56,16 +63,20 @@ GUARD_SLOT_MHZ = 243
 
 @dataclass
 class RedNetNode:
-    """One transmitting enemy C2 node: display name, the per-unit DCS names the
-    plugin watches for death (the MANTIS ``<name> object`` static convention +
-    the ``dead_events`` ledger), the campaign-map transmission origin, and the
-    assigned net frequency."""
+    """One transmitting enemy net station: display name, the per-unit DCS names
+    the plugin watches for death (the MANTIS ``<name> object`` static convention
+    + the ``dead_events`` ledger), the campaign-map transmission origin, the
+    assigned net frequency, whether it keys the **clandestine** schedule (short
+    windows, long gaps — the C2 hunt), and the coarse area name the COMINT
+    active-nets listing briefs (the parent CP — never exact coordinates)."""
 
     name: str
     unit_names: list[str]
     x: float
     y: float
     freq_mhz: float
+    clandestine: bool = False
+    area: str = ""
 
 
 @dataclass
@@ -87,11 +98,11 @@ def plan_red_net(game: "Game", radio_registry: RadioRegistry) -> Optional[RedNet
     raw.sort(key=lambda entry: entry[0])
     used_slots: set[int] = set()
     nodes: list[RedNetNode] = []
-    for name, unit_names, x, y in raw:
+    for name, unit_names, x, y, clandestine, area in raw:
         freq_mhz = _assign_frequency(name, used_slots, radio_registry)
         if freq_mhz is None:
             continue
-        nodes.append(RedNetNode(name, unit_names, x, y, freq_mhz))
+        nodes.append(RedNetNode(name, unit_names, x, y, freq_mhz, clandestine, area))
     if not nodes:
         return None
     return RedNetInfo(nodes)
@@ -144,28 +155,53 @@ def populate_red_net_lua(root: "LuaData", mission_data: "MissionData") -> None:
         rec.add_key_value("x", str(net.x))
         rec.add_key_value("y", str(net.y))
         rec.add_key_value("mhz", str(net.freq_mhz))
+        # Clandestine stations key the short-window/long-gap hunt schedule.
+        rec.add_key_value("clandestine", "true" if net.clandestine else "false")
 
 
-def _enemy_net_nodes(game: "Game") -> list[tuple[str, list[str], float, float]]:
-    """Alive enemy (non-blue-owned) comms / command-center TGOs.
+def _enemy_net_nodes(
+    game: "Game",
+) -> list[tuple[str, list[str], float, float, bool, str]]:
+    """Alive enemy net stations: (name, units, x, y, clandestine, area).
 
-    Emitted regardless of culling, the §51 stance: the transmission is
-    synthetic (a point on the map), and an un-spawned node simply can't be
-    killed *this* mission.
+    Two source sets, mirroring the §70 COMINT source definition
+    (``game/fourteenth/comint.py`` — feature A and feature B must agree on who
+    is comms-active):
+
+    * ``comms``/``commandcenter`` TGOs — the fixed C2 net (C1). An authored
+      *concealed* comms TGO keys the clandestine schedule (a field site whose
+      §3 circle is the search area).
+    * **Concealed COIN spawns** (``coin_spawned`` + ``concealed`` — cells, IED
+      teams, the HVT convoy): an insurgency runs on radios, so each live spawn
+      is a clandestine station on its own frequency — DF the net and the §3
+      suspected-activity circle becomes a huntable fix.
+
+    ``map_hidden`` TGOs (the §50 ambush teams) are NEVER emitted — nothing may
+    telegraph them (that feature's core rule). Emitted regardless of culling,
+    the §51 stance: the transmission is synthetic (a point on the map), and an
+    un-spawned node simply can't be killed *this* mission.
     """
-    out: list[tuple[str, list[str], float, float]] = []
+    out: list[tuple[str, list[str], float, float, bool, str]] = []
     for cp in game.theater.controlpoints:
         if cp.captured.is_blue:
             continue
         for tgo in cp.ground_objects:
-            if getattr(tgo, "category", None) not in RED_NET_CATEGORIES:
+            if getattr(tgo, "map_hidden", False):
+                continue
+            is_c2 = getattr(tgo, "category", None) in RED_NET_CATEGORIES
+            is_coin_cell = getattr(tgo, "coin_spawned", False) and getattr(
+                tgo, "concealed", False
+            )
+            if not is_c2 and not is_coin_cell:
                 continue
             unit_names = _alive_unit_names(tgo)
             pos = getattr(tgo, "position", None)
             if not unit_names or pos is None or not hasattr(pos, "x"):
                 continue
             name = getattr(tgo, "obj_name", None) or getattr(tgo, "name", "C2 net")
-            out.append((str(name), unit_names, pos.x, pos.y))
+            clandestine = is_coin_cell or bool(getattr(tgo, "concealed", False))
+            area = str(getattr(cp, "name", ""))
+            out.append((str(name), unit_names, pos.x, pos.y, clandestine, area))
     return out
 
 

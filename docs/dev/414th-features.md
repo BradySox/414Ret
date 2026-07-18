@@ -6451,15 +6451,42 @@ you hear the enemy; the call-#4 DF fleet (F-4E, F-14 ARC-182 DF, F/A-18C UFC ADF
 can home on an open window. Node freqs are logged at arm (`REDNET|: armed …`) — the
 tester's findability aid until C2's active-nets listing lands.
 
+**C2 — the clandestine-transmitter hunt + the findability tie (LANDED 2026-07-18, same
+day).** Two halves. **(1) Clandestine stations**: the emitter's node walk now carries the
+§70 source definition in full — alive **concealed COIN spawns** (`coin_spawned` +
+`concealed`: cells, IED teams, the HVT convoy — an insurgency runs on radios) transmit as
+**clandestine** stations, as does any authored *concealed* comms TGO; `map_hidden` (the
+§50 ambush teams) is hard-excluded from both the emitter AND `comint_sources` — nothing
+telegraphs them, anywhere. A clandestine station keys the **hunt schedule** (plugin
+options `clandestineWindowSec` 20 s / `clandestineGapSec` 480 s): short windows, long
+silence — catch one on the air and DF it or wait out the next; its §3 suspected-activity
+circle is the search area and the needle cut is how the circle becomes a fix. Because the
+stations are ordinary TGOs, everything composes free: killing one is a native kill that
+feeds §51/§52/the §70 take. The COIN campaigns field this with **zero authoring** (the
+spawns are the transmitters); an authored static field-site (comms truck + mast +
+security team) stays deferred until a campaign wants one — it only needs a loader
+convention for flagging a comms TGO `concealed`. **(2) The active-nets listing** (the A↔B
+findability tie, the §37/§38 bar): the COMINT kneeboard block (Tier ≥1) now **briefs each
+transmitting net** — fixed C2 stations by name + frequency + area; a clandestine station
+as exactly what the SIGINT shop would know ("suspected clandestine net @ 251.500 —
+Kandahar area" — never the TGO's identity or position), capped at `MAX_LISTED_NETS` (5)
+with a "+N more" tail. The plan threads `MissionData.red_net` →
+`KneeboardGenerator(red_net=…)` → `comint_kneeboard_lines(game, red_net)`; no listing
+when B is off (each feature degrades gracefully alone, designed to pair).
+
 Tests: `tests/fourteenth/test_comint.py` (tier gating incl. the dead-net-beats-collector
 rule, the OFF exact no-op, the survivor requirement, drone eligibility, leak determinism +
 ranking, the reveal's nearest-pick/range/already-known/`map_hidden` rules + re-init
-idempotence, the posture-detail earn) + `tests/missiongenerator/test_rednetluadata.py`
-(the freq plan: off-grid, GUARD skip, reservation, determinism, probing) +
+idempotence, the posture-detail earn, the active-nets listing's identity-hiding + cap +
+absence without a plan, the map_hidden source exclusion) +
+`tests/missiongenerator/test_rednetluadata.py` (the freq plan: off-grid, GUARD skip,
+reservation, determinism, probing; COIN cells emit clandestine, concealed comms =
+clandestine, `map_hidden` never emitted, the area field) +
 `tests/lua/test_rednet_runtime.py` (grace, stagger, loop+stop windows, `node_dead`,
-no-op). Checklist B22 — needs an in-app pass (the kneeboard block renders + the circle
-snap on the map); checklist B23 — needs an in-game pass (audibility, per-module DF needle
-behavior, death silence).
+no-op, the clandestine short-window/long-gap schedule alongside a fixed station).
+Checklist B22 — needs an in-app pass (the kneeboard block + nets listing render + the
+circle snap on the map); checklist B23 — needs an in-game pass (audibility, per-module DF
+needle behavior, death silence, the clandestine hunt).
 
 ---
 

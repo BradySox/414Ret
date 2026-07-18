@@ -145,6 +145,53 @@ def test_killing_the_node_takes_the_net_off_the_air() -> None:
     h.assert_no_lua_errors()
 
 
+def test_clandestine_station_keys_the_hunt_schedule() -> None:
+    # Options: normal window 5 / gap 20; clandestine window 3 / gap 200. Two
+    # nodes -> stagger = 20/2 = 10: the fixed C2 node keys at the grace (10),
+    # the clandestine cell at 20.
+    import copy
+
+    h = DcsPluginHarness()
+    cfg = _config(
+        [
+            _node("Haina comms", units=["0001 | Mast"], mhz="251.5"),
+            {
+                "name": "cell 3",
+                "units": ["0071 | Insurgent AK"],
+                "x": "3000.0",
+                "y": "4000.0",
+                "mhz": "305.5",
+                "clandestine": "true",
+            },
+        ]
+    )
+    cfg["plugins"] = copy.deepcopy(cfg["plugins"])
+    cfg["plugins"]["rednet"]["clandestineWindowSec"] = 3
+    cfg["plugins"]["rednet"]["clandestineGapSec"] = 200
+    h.lua.globals().dcsRetribution = h.to_lua(cfg)
+    h.load_plugin_script(PLUGIN)
+
+    h.advance_to(20)
+    tx = _tx(h)
+    assert [t["hz"] for t in tx] == [251.5e6, 305.5e6]
+
+    # The fixed node's window ran its full 5 s (stopped at 15); the clandestine
+    # window is the short one -- still up at 22, stopped by 23.
+    h.advance_to(22)
+    assert h.records("stoppedTransmissions") == [tx[0]["name"]]
+    h.advance_to(23)
+    assert sorted(h.records("stoppedTransmissions")) == sorted(t["name"] for t in tx)
+
+    # The clandestine gap is long: no second cell window before ~143 (23 +
+    # 0.6*200), while the fixed node has already cycled again by then.
+    h.advance_to(140)
+    cell_windows = [t for t in _tx(h) if t["hz"] == 305.5e6]
+    fixed_windows = [t for t in _tx(h) if t["hz"] == 251.5e6]
+    assert len(cell_windows) == 1
+    assert len(fixed_windows) >= 2
+    h.assert_no_lua_errors()
+
+
 def test_no_node_is_a_clean_noop() -> None:
     h = DcsPluginHarness()
     h.lua.globals().dcsRetribution = h.to_lua({"plugins": {}})

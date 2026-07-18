@@ -18,6 +18,7 @@ from typing import Any, cast
 from game.ato.flighttype import FlightType
 from game.fourteenth.comint import (
     COMINT_REVEAL_RANGE_M,
+    MAX_LISTED_NETS,
     apply_comint_reveal,
     collection_tier,
     comint_kneeboard_lines,
@@ -305,6 +306,55 @@ def test_kneeboard_block_at_tier_two_carries_leak_and_reveal() -> None:
     assert lines[1] == "Collection sortie banked a full take last mission:"
     assert any("Intercepted tasking traffic" in line for line in lines)
     assert any("Transmissions localized: near cell" in line for line in lines)
+
+
+def test_map_hidden_tgos_are_never_sources() -> None:
+    # A §50 ambush team (or any defensively map_hidden object) is never
+    # comms-active: no take, no transmission, nothing telegraphs it.
+    hidden_cell = _tgo("armor", concealed=True, coin_spawned=True, map_hidden=True)
+    hidden_comms = _tgo("comms", map_hidden=True)
+    game = _game([hidden_cell, hidden_comms], collected_turn=4)
+    assert comint_sources(cast(Any, game)) == []
+    assert collection_tier(cast(Any, game)) == 0
+
+
+def _net(
+    name: str, mhz: float, *, clandestine: bool = False, area: str = "Haina"
+) -> Any:
+    return SimpleNamespace(name=name, freq_mhz=mhz, clandestine=clandestine, area=area)
+
+
+def test_active_nets_listing_briefs_fixed_and_clandestine() -> None:
+    game = _game([_tgo("comms")])
+    red_net = SimpleNamespace(
+        nodes=[
+            _net("Kastrup CC", 305.5, area="Kastrup"),
+            _net("cell 3", 251.5, clandestine=True, area="Kandahar"),
+        ]
+    )
+    lines = comint_kneeboard_lines(cast(Any, game), red_net)
+    assert "Active nets (UHF AM):" in lines
+    assert "  Kastrup CC @ 305.500 — Kastrup area" in lines
+    # A clandestine station is briefed as a net + an area, never its identity.
+    assert "  suspected clandestine net @ 251.500 — Kandahar area" in lines
+    assert not any("cell 3" in line for line in lines)
+
+
+def test_active_nets_listing_caps_and_counts_the_rest() -> None:
+    game = _game([_tgo("comms")])
+    red_net = SimpleNamespace(
+        nodes=[_net(f"net {i}", 250.5 + i) for i in range(MAX_LISTED_NETS + 2)]
+    )
+    lines = comint_kneeboard_lines(cast(Any, game), red_net)
+    listed = [line for line in lines if "@" in line]
+    assert len(listed) == MAX_LISTED_NETS
+    assert "  …plus 2 more net(s) active." in lines
+
+
+def test_no_listing_without_a_red_net_plan() -> None:
+    game = _game([_tgo("comms")])
+    lines = comint_kneeboard_lines(cast(Any, game), None)
+    assert not any("Active nets" in line for line in lines)
 
 
 def test_posture_detail_is_earned_by_an_emitting_net() -> None:

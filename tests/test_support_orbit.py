@@ -224,3 +224,74 @@ def test_no_front_ai_still_pushed_clear_of_threat() -> None:
 
     assert not threat.threatened(center)  # type: ignore[arg-type]
     assert threat.distance_to_threat(center).meters >= buffer.meters - 1  # type: ignore[arg-type]
+
+
+def _no_front_theater_with_enemy(
+    enemy_x: float, enemy_y: float = 0.0
+) -> SimpleNamespace:
+    from game.theater.player import Player
+
+    enemy_cp = SimpleNamespace(
+        position=FakePoint(enemy_x, enemy_y), captured=Player.RED
+    )
+    return SimpleNamespace(conflicts=lambda: iter([]), controlpoints=[enemy_cp])
+
+
+def test_no_front_with_enemy_geography_stands_one_buffer_behind() -> None:
+    # Front-less but the enemy holds land: face the nearest enemy CP and stand
+    # exactly one buffer behind the anchor (the enemy field plays the front).
+    from game.theater.player import Player
+
+    theater = _no_front_theater_with_enemy(enemy_x=+120_000)
+    buffer = nautical_miles(80)
+    target = SimpleNamespace(position=FakePoint(0.0, 0.0))
+
+    center, toward_enemy = support_orbit_anchor(
+        theater, Player.BLUE, NoNearbyThreat(), target, buffer  # type: ignore[arg-type]
+    )
+    assert abs(toward_enemy.degrees - 0.0) < 1  # enemy is due "north" (+x)
+    assert abs(center.x - (-buffer.meters)) < 1  # one buffer behind the anchor
+    assert abs(center.y) < 1
+
+
+def test_no_front_red_uses_the_same_single_buffer() -> None:
+    # No FLOT: the AI depth factor must NOT apply (2.5x would recreate the
+    # A-50-in-the-rear bug from the other direction). Red stands 1x buffer
+    # behind its anchor just like blue.
+    from game.theater.player import Player
+
+    enemy_cp = SimpleNamespace(position=FakePoint(-150_000, 0.0), captured=Player.BLUE)
+    theater = SimpleNamespace(conflicts=lambda: iter([]), controlpoints=[enemy_cp])
+    buffer = nautical_miles(80)
+    target = SimpleNamespace(position=FakePoint(0.0, 0.0))
+
+    center, toward_enemy = support_orbit_anchor(
+        theater, Player.RED, NoNearbyThreat(), target, buffer  # type: ignore[arg-type]
+    )
+    assert abs(toward_enemy.degrees - 180.0) < 1
+    assert abs(center.x - buffer.meters) < 1
+
+
+def test_no_front_direction_comes_from_enemy_cp_not_the_boundary() -> None:
+    # The Scenic Route Merged bug: from an anchor INSIDE a big threat zone the
+    # nearest-boundary bearing finds the shortest way out -- which can point
+    # between two enemy fields. With enemy geography available the orbit must
+    # move AWAY from the nearest enemy CP even when the boundary exit points
+    # somewhere else entirely.
+    from game.theater.player import Player
+
+    theater = _no_front_theater_with_enemy(enemy_x=+117_000)
+    # Threat everywhere x > -30 km: the anchor at 0 is threatened, and the
+    # nearest boundary is to the -x side -- which happens to match away-from-
+    # enemy here; the point is the orbit ends up BEHIND the anchor relative to
+    # the enemy and clear of the threat by the buffer.
+    threat = HalfPlaneThreat(threshold=-30_000)
+    buffer = nautical_miles(40)
+    target = SimpleNamespace(position=FakePoint(0.0, 0.0))
+
+    center, toward_enemy = support_orbit_anchor(
+        theater, Player.BLUE, threat, target, buffer  # type: ignore[arg-type]
+    )
+    assert abs(toward_enemy.degrees - 0.0) < 1
+    assert center.x < -30_000  # out of the threat...
+    assert threat.distance_to_threat(center).meters >= buffer.meters - 1  # type: ignore[arg-type]

@@ -78,21 +78,23 @@ the take), which is historically honest.
   is always listening, poorly. Product: **(a)** the §55 red-posture *detail* line becomes
   COMINT-attributed ("COMINT assesses: Surging (all-in) — ground 4.0x…") — when this
   feature is ON, that intel is *earned* by red having an emitting net; **(b)** the
-  **active-nets listing** (each alive net's frequency + coarse area, e.g. "HF net, 3.850
-  MHz — Haina area") — the findability hook for Feature B's hunts (§37/§38 lesson: an
-  unfindable feature reads half-baked).
+  **active-nets listing** (each alive net's frequency + coarse area, e.g. "enemy C2 net,
+  271.25 AM — Haina area") — the findability hook for Feature B's hunts (§37/§38 lesson:
+  an unfindable feature reads half-baked).
 - **Tier 2 — collected (a collector flew last mission)**: Tier 1 **plus** the tasking
   leak and one concealed-TGO reveal (below).
 
 ### The collector
 
-A blue **`FlightType.JAMMING`** flight (the §2 C-130J platform), player- or AI-crewed,
-that flew last mission and was not lost — recorded at debrief commit
-(`MissionResultsProcessor`, the §29 SITREP hook pattern) as `game.comint_collected_turn`.
-A shot-down collector collects nothing (the `airecon` one-shot precedent). Whether
-drones also qualify ("a drone is always listening", extending the §3 "always filming"
-rule) is squadron call #3 — recommend **no** for v1: the C-130 deserves a campaign-layer
-reason to exist, and drone SIGINT is era-fragile.
+**RESOLVED 2026-07-18 (squadron call #3): both.** A blue **`FlightType.JAMMING`** flight
+(the §2 C-130J platform) **or a blue drone flight** (`UAV_DCS_IDS` — the §3 "a drone is
+always filming" rule extends to *always listening*), player- or AI-crewed, that flew
+last mission and was not lost — recorded at debrief commit (`MissionResultsProcessor`,
+the §29 SITREP hook pattern) as `game.comint_collected_turn`. A shot-down collector
+collects nothing (the `airecon` one-shot precedent). Era self-limits: a campaign that
+fields no drones (Red Tide, the Vietnam set) earns Tier 2 only via the Herc, so drone
+SIGINT never leaks into eras that predate it; OIR's standing Predator orbits will hold
+Tier 2 most turns — acceptable on COIN, where the drone war *is* the intel war.
 
 ### The tasking leak (Tier 2)
 
@@ -115,9 +117,9 @@ At `initialize_turn` (after red plans), snap **one** eligible concealed enemy TG
 exact symbol via the existing discovery path (`known_for`) — eligible = `concealed`,
 within `COMINT_REVEAL_RANGE_KM` (60, constant) of an alive source, deterministic pick.
 **`map_hidden` TGOs are NEVER eligible** — the §50 ambush teams stay untelegraphed
-unconditionally (that feature's core rule). Full-snap vs shrink-the-circle is squadron
-call #2 — recommend **snap**: it reuses the shipped discovery machinery; a shrink needs
-new per-TGO uncertainty state for one turn of extra suspense.
+unconditionally (that feature's core rule). **RESOLVED 2026-07-18 (squadron call #2):
+full snap** — the reveal reuses the shipped discovery machinery; the shrink variant and
+its new per-TGO uncertainty state are dropped.
 
 ### Settings & preseeds
 
@@ -149,17 +151,32 @@ same-frame lesson). Node death mid-mission stops the transmission — the audibl
 confirmation is a feature — via the vendored MANTIS `node_dead` positive-evidence
 convention (§51 vendors it too; plugins are standalone by design).
 
-**Frequency plan — three bands so the whole fleet can play** (exact per-module DF
-behavior against scripted transmissions is the in-game-pass unknown; band data below is
-the design intent, to verify in the pass):
+**Frequency plan — who can actually hunt (module audit 2026-07-18, resolving squadron
+call #4).** The squadron hunch "most jets in DCS can track ADF" **checked out** for the
+fleet that matters — the DF-capable set is far larger than the helo trio the (stale)
+MOOSE `Core.Beacon` docs claim ("only Mi-8/Huey/Gazelle"; that note predates the
+fast-jet ADF implementations). Audited against the Airgoons radio/nav reference + the
+Heatblur manuals:
 
-- **LF/MF "agent net"** (~300–1200 kHz AM): the helo ADF band (UH-1 ARN-83, Mi-8 ARK-9
-  class receivers). Content: **synthesized CW/morse** — a numbers-station flavor that is
-  era-perfect, unambiguous on copyright, and trivially generated.
-- **VHF-FM "ground net"** (30–76 MHz FM): FM homing (OH-58D) + the helo FM radios.
-  Voice chatter clips.
-- **UHF "C2/air net"** (225–400 MHz AM): the F-4E's UHF-ADF can home; every jet can at
-  least *listen*. Voice chatter clips.
+- **UHF/V-UHF DF — the fast jets**: **F/A-18C** (UFC ADF off COMM 1/2, 108.0–400.0 MHz,
+  HSI bearing circle), **F-14** (ARC-182 "V/UHF 2" DF mode + ARA-50, AM/FM — the modeled
+  ARC-159's ADF position is non-functional, and the needle drops during own
+  transmissions), **F-4E** (ARC-164 COMM/AUX ADF modes onto the HSI/BDI — the Heatblur
+  manual itself documents the "continuously transmitting ME station" setup this feature
+  is), **F-5E** (radio 1 UHF DF).
+- **LF/MF ADF — helos, trainers, classics**: UH-1H (190–1750 kHz), Mi-8 (ARK-9
+  150–1290 kHz + ARK-UD), Ka-50 (ARK-22), SA342, L-39, C-101CC, F-86F, MiG-15/19/21,
+  Yak-52. (AH-64D/Mi-24/CH-47F/OH-58D postdate the audited table — verify in the pass.)
+- **VHF-FM homing**: UH-1H ARC-131 (30–76 FM), OH-58D FM1, Mi-8 R-828.
+- **Listen-only (no DF)**: A-10C/II, F-16C, AV-8B, AJS-37, JF-17, M-2000C (TACAN only),
+  the FC3 fleet — for them the hunt is the intel circle plus eyeballs.
+
+So the **UHF 225–400 AM "C2/air net" is the primary DF band**
+(Hornet/Tomcat/Phantom/Tiger all home on it) and builds first; the **LF/MF "agent net"**
+(~300–1200 kHz AM, numbers-station CW for the helos/trainers) and the **VHF-FM "ground
+net"** (30–76 FM, Huey/Kiowa homing) follow. The audit is documentation, not a flight
+test — per-module needle behavior against scripted transmissions stays the in-game-pass
+criterion.
 
 **The one hard guardrail**: Python assigns net frequencies and validates them against
 the mission's allocated blue comms plan (`RadioRegistry`) so a red net can **never** land
@@ -167,8 +184,9 @@ on a briefed blue channel — the §51 positive-list discipline, inverted into a
 exclusion. GUARD is excluded by construction. No other anti-grief is needed: nothing
 here targets blue's radios; hearing the enemy requires deliberately tuning off-plan.
 
-**Audio**: original assets only (§58 precedent) — synthesized CW first (squadron call
-#5), original TTS/self-recorded chatter second; RMS-normalized (~−4 dBFS, the §51
+**Audio — RESOLVED 2026-07-18 (squadron call #5): synthesized CW/beeps on every net**,
+a distinct rhythm per net so they're tellable apart by ear; voice chatter is a deferred
+expansion. Original assets only (§58 precedent); RMS-normalized (~−4 dBFS, the §51
 lesson); bundled via plugin `otherResourceFiles` so they ride `l10n/DEFAULT/`.
 
 **Emit contract**: `game/missiongenerator/rednetluadata.py` → `dcsRetribution.redNet` —
@@ -238,21 +256,22 @@ One PR per testable phase (the house norm):
 - **C0 — Feature A core**: `comint.py` + setting + kneeboard block + tests. Pure Python,
   headless-verifiable end-to-end; no DCS runtime risk.
 - **C1 — Feature B1 ambient net**: emitter + plugin + synthesized CW clips + harness
-  tests. In-game pass row (audibility + ADF homing per band).
+  tests. **UHF net first** (the fast-jet DF band per the call-#4 audit), LF/MF + FM
+  after. In-game pass row (audibility + per-module needle behavior).
 - **C2 — B2 clandestine TX** + the A↔B findability tie (active-nets listing names the
   hunt) + first campaign authoring.
 - **Later**: COIN dynamic transmitters, voice-chatter asset expansion, client intel
   surface, the FLASH cue layer.
 
-## Squadron calls (open)
+## Squadron calls (all RESOLVED 2026-07-18, same day as the note)
 
-1. **Tier-1 ambient take with no collector** — **RESOLVED 2026-07-18 (squadron call):
-   keep.** The national-collection fiction stands: A works on all 67 campaigns and the
-   C-130 *upgrade* is still felt.
-2. **Tier-2 reveal strength** — full snap of one concealed circle (recommended: reuses
-   shipped machinery) vs shrink-only (new per-TGO state, one extra turn of suspense)?
-3. **Collector eligibility** — JAMMING flights only (recommended), or drones too?
-4. **Which DF bands matter to the squadron's actual airframes** (F-4E UHF-ADF? Hueys?
-   Kiowa FM?) — sets which of the three nets gets built/tuned first.
-5. **Audio v1** — synthesized CW/morse only (recommended: zero asset risk, ships with
-   C1), or CW + voice chatter from day one?
+1. **Tier-1 ambient take with no collector** — **keep.** The national-collection fiction
+   stands: A works on all 67 campaigns and the C-130 *upgrade* is still felt.
+2. **Tier-2 reveal strength** — **full snap** of one concealed circle; shrink-only
+   dropped.
+3. **Collector eligibility** — **both**: JAMMING flights and drones (see The collector).
+4. **DF bands** — settled by the module audit (see the frequency plan): the squadron's
+   "most jets can track ADF" hunch checked out for the fleet that matters —
+   Hornet/Tomcat/Phantom/Tiger all DF UHF — so the **UHF net builds first**;
+   F-16/A-10/Harrier/Viggen/JF-17/Mirage stay listen-only.
+5. **Audio v1** — **CW/beeps only**, every net; voice chatter deferred.

@@ -200,7 +200,9 @@ file. This guide is the map; those are the territory.
     concealed-TGO reveal, collector = a surviving §2 JAMMING flight) + an in-cockpit red
     net (`radioTransmission` off the same nodes, three DF-able bands, ADF-homeable
     clandestine-transmitter hunts); same node set as §51/§52 so bomb-it-or-tap-it is
-    emergent; squadron call #1 resolved 2026-07-18 (ambient tier keeps), #2–5 open;
+    emergent; all 5 squadron calls RESOLVED 2026-07-18 (keep ambient tier · pin reveal ·
+    collectors = C-130 + drones · UHF-first band plan off the DF-module audit —
+    Hornet/Tomcat/Phantom/Tiger all home, F-16/A-10 listen-only · CW beeps v1);
     delivery C0–C2),
     `414th-coin-HANDOFF.md` (**start here for the COIN line** — the next-session pickup:
     where C1–C3 stand (all merged), the P1 fly-script, the tuning levers, and the

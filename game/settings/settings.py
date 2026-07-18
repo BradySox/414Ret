@@ -369,6 +369,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "campaign_phases",
                     "continuous_campaign_clock",
+                    "comint_collection",
                     "long_range_carrier_ops",
                     "motorpool_enabled",
                     "motorpool_spawn_cap",
@@ -1570,6 +1571,25 @@ class Settings:
             "from the payload editor and clamped to a period-correct value at "
             "mission generation. Independent of the weapons restriction so either "
             "can be enforced alone. Data is curated per airframe and incomplete."
+        ),
+    )
+    comint_collection: bool = boolean_option(
+        "COMINT collection (signals intelligence)",
+        page=CAMPAIGN_MANAGEMENT_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Blue collects communications intelligence off the enemy's emitting "
+            "C2 net (comms/command-center sites; insurgent cells on COIN "
+            "campaigns). While the net is up you get an ambient take -- the enemy "
+            "posture detail on the SITREP is sourced from it -- and flying a "
+            "collection sortie (the C-130J jamming orbit or any drone) that "
+            "survives unlocks a full take next turn: an intercepted enemy tasking "
+            "(one package flying this mission, coarse time window) and one "
+            "suspected-activity circle snapped to an exact position. Killing "
+            "enemy C2 silences their planning AND your best intel source -- "
+            "bomb it or tap it. A COMINT block renders on the Mission Info "
+            "kneeboard page."
         ),
     )
     war_economy: bool = boolean_option(

@@ -217,6 +217,14 @@ class Game:
         # so the jittered "suspected activity" centre is deterministic but not
         # recomputable from the public TGO id. Lazily set on first use; persisted.
         self.concealment_salt: Optional[int] = None
+        # §70 COMINT (C0): the turn a surviving blue collector (JAMMING flight or
+        # drone) last flew (stamped at debrief commit -- Tier 2 next turn), the
+        # turn the once-per-turn reveal last ran (idempotence under re-init), and
+        # the human-readable note for the last revealed site (kneeboard line).
+        # All read getattr-guarded so pre-§70 saves load clean.
+        self.comint_collected_turn: Optional[int] = None
+        self.comint_reveal_turn: Optional[int] = None
+        self.comint_reveal_note: Optional[str] = None
         # Transient: True while this is an all-neutral blank-canvas setup game the
         # player is painting ownership onto (campaign maker). Never persisted.
         self.blank_canvas_setup = False
@@ -854,6 +862,16 @@ class Game:
         from game.fourteenth.red_intent import update_red_intent
 
         update_red_intent(self)
+
+        # §70 COMINT (C0): at Tier 2 (a collector survived last mission + the
+        # enemy net is emitting) snap ONE concealed enemy site to exact via the
+        # normal discovery flip. Player-facing only -- planning never reads it
+        # (the §3 viewer discipline) -- so ordering vs the coalitions is free;
+        # idempotent under the re-init cases via a per-turn stamp. No-op when
+        # comint_collection is off.
+        from game.fourteenth.comint import apply_comint_reveal
+
+        apply_comint_reveal(self, events)
 
         # Pin the COIN conservation anchors at the true campaign start (turn 0,
         # before any mission flies). The finish_turn regen hook runs after the

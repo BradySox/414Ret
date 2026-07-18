@@ -541,6 +541,12 @@ FEATURES: tuple[Feature, ...] = (
         69,
         settings_fields=("sead_strike_coordination",),
     ),
+    Feature(
+        "comint_collection",
+        "COMINT collection (blue-side communications intelligence)",
+        70,
+        settings_fields=("comint_collection",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

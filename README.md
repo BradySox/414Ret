@@ -139,6 +139,12 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **Bombing the enemy HQ matters** — knock out its command posts and its planner gets
   measurably sloppier at picking targets **and its offensive tempo thins** (a decapitated
   HQ frags fewer strike packages — never zero). Its reactive defenses never suffer.
+- **Listen before you bomb.** With **COMINT collection** on, that same enemy C2 net is also
+  your intel source: while it's emitting you read the enemy commander's posture, and a
+  collection sortie (the C-130J jamming orbit or any drone) that makes it home buys next
+  turn's full take — an intercepted enemy tasking (what's coming, roughly when) and one
+  "suspected activity" circle fixed to an exact position. Killing their command posts still
+  wrecks their planning — but it also puts out your wiretap. Bomb it or tap it.
 - **The enemy economy follows its intent.** A surging enemy buys the armor its offensive
   spends; one consolidating under pressure husbands ground and rebuilds its air arm — and
   its buys favor its better hardware, not a coin flip over the catalog. Turn on **SAM site

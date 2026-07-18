@@ -1,19 +1,21 @@
 ---
 name: Persian Gulf - Scenic Route Merged
 theater: Persian Gulf
-authors: Fuzzle, merged by tmz42
-description: <p>A merge of the two Scenic Route campaigns. <p><strong>Backstory:</strong> Iran has declared war on all US forces in the Gulf resulting in all local allies withdrawing their support for American troops. A carrier group, aided by USAF units stationed on the south bank must pacify Iran's coastal defences and push inland. Iran has assembled the full might of its air and ground divisions to defend their heartland.</p>
+authors: Fuzzle, merged by tmz42, 414th cleanup pass
+description: <p>A merge of the two Scenic Route campaigns. <p><strong>Backstory:</strong> Iran has declared war on all US forces in the Gulf resulting in all local allies withdrawing their support for American troops. A carrier group, aided by USAF units stationed on the south bank must pacify Iran's coastal defences and push inland. Iran has assembled the full might of its air and ground divisions to defend their heartland.</p><p>Tuned for the <strong>[CH] Iran 2020</strong> faction (Shahed-136 drone barrages, IRGCN fast attack craft, Tor point defense) &mdash; install the CurrentHill Iran asset pack and enable it on the New Game Mods page for the full experience; without it the faction gracefully loses the CH units.</p>
 version: "10.7"
 advanced_iads: true
 recommended_player_faction: USA 2005
-recommended_enemy_faction: Iran 2015
+recommended_enemy_faction: "[CH] Iran 2020"
 miz: scenic_merge.miz
 performance: 3
-recommended_start_date: 2005-06-29
+recommended_start_date: 2020-06-29
 recommended_player_money: 2000
 recommended_enemy_money: 1000
-recommended_player_income_multiplier: 1.5
-recommended_enemy_income_multiplier: 0.7
+# 414th cleanup 2026-07-17: red income 0.7 -> 0.9 and blue 1.5 -> 1.3 -- the flown
+# AI test ran ~25:4 blue in the air; nudge toward parity without repricing the start.
+recommended_player_income_multiplier: 1.3
+recommended_enemy_income_multiplier: 0.9
 settings:
   airbase_threat_range: 300
   # Set mission duration to 45 minutes
@@ -23,31 +25,32 @@ settings:
   squadron_start_full: true
 squadrons:
   #BLUFOR CVN
+  # 414th cleanup 2026-07-17: the deck was carrying two air wings' worth of jets
+  # (58 owned airframes on one CVN). The flown AI test showed the consequences --
+  # delayed SEAD/DEAD packages activated onto a gridlocked deck, never taxied,
+  # and were despawned by DCS's stuck-AI cleanup (the mission silently lost both
+  # packages), and recoveries crashed into the crowded deck. Squadrons trimmed
+  # 14/14/12 -> 10/10/10 and VMFA-251 moved ashore to Al Minhad (a normal Marine
+  # UDP land deployment), for ~36 owned airframes aboard.
   Naval-3:
     # The Swordsmen F-14
     - primary: BARCAP
       secondary: air-to-air
       aircraft:
         - VF-32
-      size: 14
+      size: 10
     - primary: Strike
       secondary: air-to-air
       aircraft:
         - VF-213
         - F-14B Tomcat
-      size: 14
+      size: 10
     # Golden Dragons F/A-18
     - primary: SEAD
       secondary: any
       aircraft:
         - VFA-192
-      size: 12
-    # Thunderbolts F/A-18C
-    - primary: DEAD
-      secondary: any
-      aircraft:
-        - VMFA-251
-      size: 12
+      size: 10
     # Hawkeye
     - primary: AEW&C
       aircraft:
@@ -108,11 +111,18 @@ squadrons:
       #USAF F-15C 
   # Al-Minhab AFB
   12:
+    # Thunderbolts F/A-18C -- moved ashore from the CVN (414th deck-capacity
+    # cleanup; see the Naval-3 note).
+    - primary: DEAD
+      secondary: any
+      aircraft:
+        - VMFA-251
+      size: 10
     - primary: SEAD
       secondary: any
       aircraft:
         - 480th FS
-        #USAF F-16C 
+        #USAF F-16C
     - primary: Strike
       secondary: air-to-ground
       aircraft:
@@ -148,16 +158,20 @@ squadrons:
         #US Army Apache AH-64D
       size: 4
 ### OPFOR
+  # 414th cleanup 2026-07-17: red support air consolidated -- the campaign
+  # fielded THREE A-50 squadrons (5 airframes) and two IL-78M tanker squadrons;
+  # one of each (at Shiraz) is plenty and the rest were dead weight. Iranian
+  # Tomcats swapped to the Block 95-GR Export -- the actual IRIAF variant, whose
+  # presets carry the AIM-54A Phoenix Iran really received (the 135-GR Late flew
+  # never-exported AIM-54Cs). MiG-29/Mirage fighter squadrons are secondary
+  # air-to-air so the auto-assigner keeps them on the defensive CAP wall
+  # (attackers attack, fighters defend).
   # Kish Intl
   24:
-    - primary: AEW&C
-      aircraft:
-        - A-50
-      size: 1
     - primary: BARCAP
       secondary: any
       aircraft:
-        - F-14A Tomcat (Block 135-GR Late)
+        - F-14A Tomcat (Block 95-GR Export)
       size: 12
     - primary: Strike
       secondary: air-to-ground
@@ -184,12 +198,12 @@ squadrons:
         - F-5E Tiger II
       size: 6
     - primary: BARCAP
-      secondary: air-to-ground
+      secondary: air-to-air
       aircraft:
         - MiG-29A Fulcrum-A
       size: 12
     - primary: BARCAP
-      secondary: air-to-ground
+      secondary: air-to-air
       aircraft:
         - Mirage-F1EQ
       size: 12
@@ -289,7 +303,7 @@ squadrons:
       aircraft:
         - Mi-28N Havoc
       size: 2
-  # Shiraz Intl
+  # Shiraz Intl -- red's ONE support-air base (A-50 + tanker; see the OPFOR note)
   19:
     - primary: AEW&C
       aircraft:
@@ -389,24 +403,17 @@ squadrons:
       aircraft:
         - Mi-24P Hind-F
       size: 2
-  # Kerman
+  # Kerman -- A-50 + tanker squadrons consolidated to Shiraz (see the OPFOR
+  # note); the "Transport: IL-78M" mislabel is now a real IL-76MD airlifter.
   18:
-    - primary: AEW&C
-      aircraft:
-        - A-50
-      size: 2
-    - primary: Refueling
-      aircraft:
-        - IL-78M
-      size: 2
     - primary: Transport
       aircraft:
-        - IL-78M
+        - IL-76MD
       size: 2
     - primary: BARCAP
       secondary: any
       aircraft:
-        - F-14A Tomcat (Block 135-GR Late)
+        - F-14A Tomcat (Block 95-GR Export)
       size: 12
     - primary: TARCAP
       secondary: air-to-air
@@ -433,3 +440,20 @@ supply_routes:
       - [-143805, -139457]
       - [-127534, -115980]
       - [-126014, -89133]
+  # 414th cleanup 2026-07-17: red rear corridors (the geo-authored Iranian
+  # mainland highways from the §50 batch-2 pass -- same map, same red fields as
+  # operation_noisy_cricket), so red ambient supply convoys exist and the player
+  # has road traffic to interdict.
+  # Bandar Abbas -> Kerman  (the truck route north: Hajiabad -> Sirjan -> the Kerman highway)
+  - waypoints:
+      - [115766, 14258]
+      - [237101, -32091]
+      - [363636, -52257]
+      - [412977, 8174]
+      - [454117, 71096]
+  # Bandar Abbas -> Shiraz  (Highway 86/96 west through Lar and Jahrom)
+  - waypoints:
+      - [115766, 14258]
+      - [169653, -186604]
+      - [262487, -261010]
+      - [381101, -351637]

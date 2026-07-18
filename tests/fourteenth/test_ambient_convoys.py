@@ -323,6 +323,31 @@ def _batch2_stems() -> list[str]:
     return sorted(BATCH2_RED_REAR)
 
 
+def test_scenic_merge_keeps_its_red_rear_arteries(tmp_path: Any) -> None:
+    """Scenic Route Merged already carries a miz-native red FOB road belt, so it
+    was never batch-2 eligible -- but the 2026-07-17 cleanup added the two
+    geo-authored Iranian mainland arteries (the same corridors the Noisy Cricket
+    campaigns use) so red's rear logistics run Bandar Abbas -> Kerman / Shiraz.
+    A laydown edit must not silently drop them."""
+    from pathlib import Path
+
+    from game import persistency
+    from game.campaignloader.campaign import Campaign
+
+    persistency.setup(str(tmp_path), False, 0)
+    campaign = Campaign.from_file(Path("resources/campaigns/scenic_merge.yaml"))
+    theater = campaign.load_theater(campaign.advanced_iads)
+    red_roads = set()
+    for cp in theater.controlpoints:
+        if not cp.starting_coalition.is_red:
+            continue
+        for other in cp.convoy_routes.keys():
+            if other.starting_coalition.is_red:
+                red_roads.add(tuple(sorted((cp.name, other.name))))
+    assert ("Bandar Abbas Intl", "Kerman") in red_roads
+    assert ("Bandar Abbas Intl", "Shiraz Intl") in red_roads
+
+
 @pytest.mark.parametrize("stem", _batch2_stems())
 def test_batch2_campaign_keeps_its_red_road(stem: str, tmp_path: Any) -> None:
     from pathlib import Path

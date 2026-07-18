@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 from dcs.payloads import PayloadDirectories
-from dcs.planes import F_14A, F_14A_135_GR, F_14A_135_GR_Early, F_14B
+from dcs.planes import F_14A, F_14A_135_GR, F_14A_135_GR_Early, F_14A_95_GR, F_14B
 from dcs.unittype import FlyingType
 
 from game.ato.flighttype import FlightType
@@ -25,7 +25,13 @@ from game.ato.loadouts import Loadout
 
 PAYLOADS_DIR = Path(__file__).parent.parent / "resources" / "customized_payloads"
 
-TOMCATS = [F_14B, F_14A_135_GR, F_14A_135_GR_Early, F_14A]
+# F-14A-95-GR is the Iranian "Block 95-GR Export" -- fielded by [CH] Iran 2020
+# (Scenic Route Merged) with A-model Phoenix presets, so it must resolve armed too.
+TOMCATS = [F_14B, F_14A_135_GR, F_14A_135_GR_Early, F_14A, F_14A_95_GR]
+
+# The Export declares no TARPS task (its yaml carries no TARPS entry, so it is
+# never tasked recon) -- only these variants need the "Retribution TARPS" preset.
+TARPS_TOMCATS = [F_14B, F_14A_135_GR, F_14A_135_GR_Early, F_14A]
 
 FIGHTER_TASKS = [
     FlightType.BARCAP,
@@ -61,7 +67,7 @@ def test_tomcat_fighter_tasks_resolve_armed(
     assert a2a, f"{aircraft.id} {task.value} loadout {loadout.name} has no A2A missile"
 
 
-@pytest.mark.parametrize("aircraft", TOMCATS, ids=lambda a: a.id)
+@pytest.mark.parametrize("aircraft", TARPS_TOMCATS, ids=lambda a: a.id)
 def test_tomcat_tarps_preset_resolves(aircraft: type[FlyingType]) -> None:
     loadout = Loadout.default_for_task_and_aircraft(FlightType.TARPS, aircraft)
     assert loadout.name == "Retribution TARPS"

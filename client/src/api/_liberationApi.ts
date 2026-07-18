@@ -645,6 +645,10 @@ export type CampaignStatus = {
   phases?: PhaseArcEntry[];
   will_history?: [number, number, number][];
   events?: CampaignEvent[];
+  sitrep_turn?: number | null;
+  sitrep_lines?: string[];
+  hvt_name?: string | null;
+  hvt_turns_left?: number | null;
 };
 export type SupplyNode = {
   name: string;

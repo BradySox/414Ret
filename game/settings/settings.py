@@ -513,6 +513,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "supercarrier",
                     "supercarrier_deck_crew",
                     "carrier_deck_decorations",
+                    "carrier_deck_decorations_aircraft",
                 ],
             ),
             (
@@ -2320,6 +2321,20 @@ class Settings:
             "platform crew aft. Layouts are curated from the Operation "
             "Cerberus North 2 campaign and keep every parking spawn spot and "
             "all four catapults usable; the arrangement rotates each turn."
+        ),
+    )
+    carrier_deck_decorations_aircraft: bool = boolean_option(
+        "Carrier deck aircraft statics (costs aft parking spots)",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        enabled_when="carrier_deck_decorations",
+        default=False,
+        detail=(
+            "Also park static aircraft aft, as OCN 2 does: two folded SH-60s "
+            "in the starboard-aft junkyard and an E-2C on the stern "
+            "round-down. Unlike the gear these deliberately occupy parking "
+            "real estate -- roughly three of the deck's sixteen spawn spots "
+            "-- so leave this off when you need maximum deck capacity."
         ),
     )
     generate_portable_tacans: bool = boolean_option(

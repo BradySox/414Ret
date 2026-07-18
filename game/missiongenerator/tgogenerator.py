@@ -899,6 +899,7 @@ class GenericCarrierGenerator(GroundObjectGenerator):
                         ship_group,
                         brc or Heading.from_degrees(0),
                         self.game.turn,
+                        self.game.settings.carrier_deck_decorations_aircraft,
                     )
 
     @property

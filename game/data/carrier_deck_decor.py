@@ -64,6 +64,8 @@ STATIC_META: dict[str, tuple[str, str | None]] = {
     "Carrier LSO Personell 1": ("Personnel", "carrier_lso1_usa"),
     "Carrier LSO Personell 3": ("Personnel", "carrier_lso3_usa"),
     "Carrier LSO Personell 4": ("Personnel", "carrier_lso4_usa"),
+    "E-2C": ("Planes", None),  # static Hawkeye (aircraft tier)
+    "SH-60B": ("Helicopters", None),  # static folded Seahawk (aircraft tier)
 }
 
 # Hulls sharing the Nimitz deck plan (same spot geography, same island/LSO
@@ -172,14 +174,36 @@ STREET_VARIANTS: list[list[DeckStatic]] = [
 ]
 
 
-def deck_layout_for(hull_id: str, seed_key: str, turn: int) -> list[DeckStatic]:
+# Opt-in aft dressing (carrier_deck_decorations_aircraft, default OFF): OCN's
+# parked static aircraft. Unlike everything above, these DELIBERATELY sit on
+# aft parking real estate -- the starboard-aft junkyard pair plus the stern
+# round-down, roughly three of the deck's sixteen spawn spots (four if the
+# fantail Hawkeye spans two stern spots) -- which is why they are a separate
+# tier and never part of the default layout. They still keep the full
+# clearance from every MEASURED spot (the ones Retribution's own spawns
+# demonstrably use: six-pack, port quarter, the rescue-helo spot), guard-tested
+# like the rest.
+AIRCRAFT_DRESSING: list[DeckStatic] = [
+    DeckStatic("SH-60B", -134.30, 27.00, 277.0),
+    DeckStatic("SH-60B", -122.60, 28.20, 277.0),
+    DeckStatic("E-2C", -152.10, 5.40, 350.0),
+]
+
+
+def deck_layout_for(
+    hull_id: str, seed_key: str, turn: int, include_aircraft: bool = False
+) -> list[DeckStatic]:
     """The decoration set for one carrier this turn.
 
     Empty for non-Nimitz decks. The street variant rotates deterministically
     on (carrier, turn) so a re-generated turn always dresses the deck the
-    same way, while consecutive turns vary.
+    same way, while consecutive turns vary. ``include_aircraft`` appends the
+    spot-costing aft aircraft tier.
     """
     if hull_id not in NIMITZ_DECK_HULLS:
         return []
     variant = (crc32(seed_key.encode()) + turn) % len(STREET_VARIANTS)
-    return LSO_PLATFORM_CREW + STREET_VARIANTS[variant]
+    layout = LSO_PLATFORM_CREW + STREET_VARIANTS[variant]
+    if include_aircraft:
+        layout = layout + AIRCRAFT_DRESSING
+    return layout

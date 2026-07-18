@@ -6616,12 +6616,24 @@ manual's "large aircraft may not be able to use some parking spots" explains the
 six-pack skip), and the bow-port helo spot (+58.5, −31.4) where the §21 rescue helo
 parks. `KNOWN_PARKING_SPOTS` + a 9 m clearance floor are embedded in the data module
 and a guard test enforces them against every table entry, so a future layout edit
-cannot silently eat a spot. **Deliberately NOT reproduced from OCN:** the fantail/bow
-static aircraft (E-2C, S-3B, SH-60B — they sit on real parking real estate; Sedlo could
+cannot silently eat a spot. **Not in the default layout:** the fantail/bow static
+aircraft (E-2C, S-3B, SH-60B — they sit on real parking real estate; Sedlo could
 afford the spots, we can't), the junkyard cranes (AS32-36A, unproven zone), and the
 port-quarter one-offs. Cats are also untouched — the user allowed blocking one, but a
 static on a cat is a player-taxi collision hazard while the AI clips through it anyway
 (no functional block), so nothing is gained.
+
+**The aircraft tier (opt-in, spends spots — user call 2026-07-18).** A second toggle,
+`carrier_deck_decorations_aircraft` (default **OFF**, `enabled_when` the main toggle),
+appends OCN's aft static-aircraft look: two folded SH-60Bs in the starboard-aft
+junkyard (−134.3/−122.6, +27/+28) and an E-2C on the stern round-down (−152.1, +5.4) —
+verbatim OCN placements. Unlike everything else these **deliberately occupy parking
+real estate** (~3 of the 16 spots, 4 if the fantail Hawkeye spans two stern spots),
+which is why they're a separate tier; a dedicated guard test still keeps them ≥9 m
+from every MEASURED spot (six-pack / port quarter / the rescue-helo spot — the ones
+Retribution's own spawns demonstrably use) and out of the default layout. The
+S-3B/El-3 placement and the port-quarter E-2s stay excluded (they'd foul the measured
+port pair / the elevator spot).
 
 **Mechanism.** A ship-linked static serializes across three levels of the mission
 format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the static
@@ -6644,15 +6656,19 @@ rows where these envelopes are NOT provably safe. Dressing them needs their own
 curated layouts against their own spot evidence — a follow-up, not a blind copy.
 
 **Wiring.** `carrier_deck_decorations` (Mission Generation → Carrier, default **ON** —
-the cosmetic-gen kill-switch pattern, §58/§49 precedent). Data:
-`game/data/carrier_deck_decor.py` (layout tables + spot anchors + envelopes + the
-`deck_layout_for` rotation). Generator: `game/missiongenerator/carrierdeckdecor.py`,
-called from `game/missiongenerator/tgogenerator.py`. Tests:
+the cosmetic-gen kill-switch pattern, §58/§49 precedent) +
+`carrier_deck_decorations_aircraft` (same section, default **OFF**, the spot-spending
+aft tier). Data: `game/data/carrier_deck_decor.py` (layout tables + spot anchors +
+envelopes + the `deck_layout_for` rotation). Generator:
+`game/missiongenerator/carrierdeckdecor.py`, called from
+`game/missiongenerator/tgogenerator.py`. Tests:
 `tests/missiongenerator/test_carrier_deck_decor.py` (the parking-spot guard over every
-variant, envelope integrity, hull gate + rotation determinism, and the three-level
-link serialization against a real pydcs mission). Checklist B25 — needs an in-game
-pass (do the statics ride the deck through a full mission; does a max-density spawn
-still fill every spot; does AI recovery taxi behave around the street gear).
+variant, envelope integrity, hull gate + rotation determinism, the aircraft tier's
+opt-in/measured-spot guards, and the three-level link serialization against a real
+pydcs mission). Checklist B25 — needs an in-game pass (do the statics ride the deck
+through a full mission; does a max-density spawn still fill every spot; does AI
+recovery taxi behave around the street gear). **Non-Nimitz hull dressing was offered
+and DECLINED (user call 2026-07-18)** — Kuznetsov/Tarawa/Forrestal stay bare.
 
 ## Code audit fixes — 2026-07-07
 

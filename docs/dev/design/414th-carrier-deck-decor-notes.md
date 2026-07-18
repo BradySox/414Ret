@@ -121,17 +121,25 @@ convention), world position = ship + rotated offset off the §65 BRC. Hooked in
 no plugin/Lua/save change — existing campaigns pick it up on their next generated
 mission.
 
-## Deferred
+## Follow-up calls (both resolved by user, 2026-07-18)
 
-- **Kuznetsov / Tarawa / Forrestal / Invincible dressing**: different deck plans; the
-  Hoggit spot notes put their parking on the starboard side/aft rows — i.e. exactly
-  where a blind Nimitz-street copy would land. Each needs its own curated layout
-  against its own spot evidence (a Tacview probe of a flown mission with deck spawns
-  is the proven method — `scratchpad` scripts are reusable; Tarawa already has two
-  measured spots, above).
-- **Fantail static aircraft as an OPT-IN**: a `carrier_deck_decorations_aircraft`
-  extra tier for hosts who accept losing 2–3 aft spots for the look. Not built —
-  contradicts the standing constraint.
+- **Kuznetsov / Tarawa / Forrestal / Invincible dressing: DECLINED.** Different deck
+  plans; the Hoggit spot notes put their parking on the starboard side/aft rows —
+  i.e. exactly where a blind Nimitz-street copy would land. If this is ever revisited,
+  each hull needs its own curated layout against its own spot evidence (a Tacview
+  probe of a flown mission with deck spawns is the proven method; Tarawa already has
+  two measured spots, above).
+- **Fantail static aircraft: BUILT as the opt-in tier.**
+  `carrier_deck_decorations_aircraft` (default OFF, `enabled_when` the main toggle)
+  appends `AIRCRAFT_DRESSING`: two folded SH-60Bs starboard-aft (−134.3/−122.6,
+  +27/+28.2 — the junkyard, likely spots 7/8) and the E-2C on the stern round-down
+  (−152.1, +5.4 — one stern spot, possibly two if the folded Hawkeye spans them).
+  Documented cost ≈3 of the 16 spots, worst case 4. A dedicated guard test keeps the
+  tier ≥9 m from every MEASURED spot (six-pack / port quarter / rescue-helo — the
+  spots Retribution's own spawns demonstrably use) and out of the default layout.
+  Deliberately still excluded even from the tier: the S-3B at (−98.7, +29.9) (would
+  foul the El-3 elevator spot) and the port-quarter E-2s at (−103..−109, −31) (their
+  span fouls the measured port pair the F-14s park on).
 - **Per-hull variety** (different variants on different boats in one theater) falls
   out free of the group-name seed; nothing to do.
 

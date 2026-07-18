@@ -70,10 +70,11 @@ def generate_carrier_deck_decorations(
     ship_group: ShipGroup,
     heading: Heading,
     turn: int,
+    include_aircraft: bool = False,
 ) -> int:
     """Dress the flagship's deck. Returns the number of statics placed."""
     carrier = ship_group.units[0]
-    layout = deck_layout_for(carrier.type, ship_group.name, turn)
+    layout = deck_layout_for(carrier.type, ship_group.name, turn, include_aircraft)
     if not layout:
         return 0
 

@@ -15,6 +15,7 @@ from dcs.mission import Mission
 from dcs.ships import CVN_71, KUZNECOW, LHA_Tarawa, Stennis
 
 from game.data.carrier_deck_decor import (
+    AIRCRAFT_DRESSING,
     DeckStatic,
     ISLAND_STREET_ENVELOPE,
     KNOWN_PARKING_SPOTS,
@@ -86,6 +87,28 @@ def test_envelopes_stay_off_catapults_and_landing_area() -> None:
 def test_every_type_has_static_meta() -> None:
     for source, item in all_placements():
         assert item.type in STATIC_META, f"{source}: no meta for {item.type}"
+    for item in AIRCRAFT_DRESSING:
+        assert item.type in STATIC_META, f"aircraft tier: no meta for {item.type}"
+
+
+def test_aircraft_tier_is_opt_in_and_spares_the_measured_spots() -> None:
+    """The aircraft tier deliberately spends UNMEASURED aft spots, but must
+    never foul a spot Retribution's own spawns demonstrably use (six-pack,
+    port quarter, the rescue-helo spot) -- and never ships by default."""
+    default_layout = deck_layout_for(CVN_71.id, "CSG 1", 3)
+    for item in default_layout:
+        assert STATIC_META[item.type][0] not in ("Planes", "Helicopters")
+    with_aircraft = deck_layout_for(CVN_71.id, "CSG 1", 3, include_aircraft=True)
+    assert with_aircraft == default_layout + AIRCRAFT_DRESSING
+    for item in AIRCRAFT_DRESSING:
+        for sx, sy in KNOWN_PARKING_SPOTS:
+            clearance = math.hypot(item.x - sx, item.y - sy)
+            assert clearance >= MIN_SPOT_CLEARANCE_M, (
+                f"aircraft tier: {item} is {clearance:.1f} m from the "
+                f"measured spot at ({sx}, {sy})"
+            )
+    # Non-Nimitz decks stay bare even with the tier requested.
+    assert deck_layout_for(LHA_Tarawa.id, "ESG 1", 3, include_aircraft=True) == []
 
 
 def test_layout_gating_and_rotation() -> None:
@@ -116,9 +139,11 @@ def test_linked_static_serialization() -> None:
     )
     carrier = ship_group.units[0]
 
-    count = generate_carrier_deck_decorations(mission, country, ship_group, heading, 3)
+    count = generate_carrier_deck_decorations(
+        mission, country, ship_group, heading, 3, include_aircraft=True
+    )
 
-    layout = deck_layout_for(CVN_71.id, "CSG 1", 3)
+    layout = deck_layout_for(CVN_71.id, "CSG 1", 3, include_aircraft=True)
     statics = list(country.static_group)
     assert count == len(layout) == len(statics)
 

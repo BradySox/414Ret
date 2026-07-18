@@ -512,6 +512,7 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "supercarrier",
                     "supercarrier_deck_crew",
+                    "carrier_deck_decorations",
                 ],
             ),
             (
@@ -2306,6 +2307,20 @@ class Settings:
         GAMEPLAY_SECTION,
         enabled_when="supercarrier",
         default=True,
+    )
+    carrier_deck_decorations: bool = boolean_option(
+        "Carrier deck decorations (parked gear & crew)",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        default=True,
+        detail=(
+            "Dress each Nimitz-class carrier deck with static deck equipment "
+            "and crew linked to the moving ship: tow tractors, a P-25 crash "
+            "truck, a forklift and deck hands along the island, plus the LSO "
+            "platform crew aft. Layouts are curated from the Operation "
+            "Cerberus North 2 campaign and keep every parking spawn spot and "
+            "all four catapults usable; the arrangement rotates each turn."
+        ),
     )
     generate_portable_tacans: bool = boolean_option(
         "Place portable TACAN beacons at blue airfields",

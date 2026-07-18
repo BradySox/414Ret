@@ -555,6 +555,17 @@ FEATURES: tuple[Feature, ...] = (
         "Expanded F-4E Weapons Pack (AGM-78/-88 Weasel fits)",
         71,
     ),
+    Feature(
+        # §72 deck dressing (game/data/carrier_deck_decor.py +
+        # game/missiongenerator/carrierdeckdecor.py): ship-linked static deck
+        # gear + LSO crew from the OCN 2 campaign replayed onto Nimitz-family
+        # carriers, curated so every parking spawn spot and catapult stays
+        # usable; the street arrangement rotates per turn.
+        "carrier_deck_decorations",
+        "Carrier deck decorations (OCN 2 deck dressing)",
+        72,
+        settings_fields=("carrier_deck_decorations",),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

@@ -1,0 +1,40 @@
+{
+    "nameInUI": "Red comms net (COMINT C1)",
+    "descriptionInUI": "Runtime for the audible enemy radio net (§70 COMINT, phase C1). Inert unless the mission generator emits dcsRetribution.redNet (the 'Enemy radio net (audible + DF-able)' setting is on and an enemy IADS comms/command-center node is alive). Each emitted C2 node transmits periodic coded CW traffic (trigger.action.radioTransmission, an original synthesized morse clip) on its own fixed UHF AM frequency -- deliberately off the briefed comms plan by construction (x.500 MHz, allocated in Python against the mission's RadioRegistry), so nothing steps on friendly channels. Tune the frequency and you HEAR the enemy net; airframes with UHF direction finding (F-4E, F-14 ARC-182 DF, F/A-18C UFC ADF, F-5E) can home on a transmission window -- the transmission is looped while a window is open, then stops, so the needle only points while they're on the air. Killing the node (an ordinary IADS strike, recorded natively) takes the net off the air mid-mission; the plugin owns no kills and changes no gameplay model -- audio and DF geometry only. Node frequencies are logged at arm ('REDNET|: armed ...') for mission-side reference.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Transmission window: how long each net transmits per cycle (s)",
+            "mnemonic": "windowSec",
+            "defaultValue": 45,
+            "maximumValue": 600
+        },
+        {
+            "nameInUI": "Mean silence between a net's windows (s, jittered)",
+            "mnemonic": "gapSec",
+            "defaultValue": 240,
+            "maximumValue": 3600
+        },
+        {
+            "nameInUI": "Transmitter power (W) -- RANGE only: how far away the net is receivable (DCS models the falloff). Loudness comes from the audio clip, not this.",
+            "mnemonic": "powerW",
+            "defaultValue": 10000,
+            "maximumValue": 100000
+        },
+        {
+            "nameInUI": "Startup grace before the first window (s)",
+            "mnemonic": "startGraceS",
+            "defaultValue": 180
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "rednet-config.lua",
+            "mnemonic": "rednet-config"
+        }
+    ],
+    "otherResourceFiles": [
+        "rednet-cw.wav"
+    ]
+}

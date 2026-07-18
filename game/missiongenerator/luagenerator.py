@@ -24,6 +24,7 @@ from .aisleepluadata import populate_ai_sleep_lua
 from .briefingluadata import populate_briefing_lua
 from .coinluadata import populate_coin_lua
 from .commsjamluadata import populate_comms_jam_lua
+from .rednetluadata import populate_red_net_lua
 from .convoyambushluadata import populate_convoy_ambush_lua
 from .minefieldluadata import populate_minefields_lua
 from .interceptluadata import (
@@ -446,6 +447,12 @@ class LuaGenerator:
         # briefed blue channels); the commsjam plugin transmits the barrage noise
         # (audio pressure only, kills record natively on the ordinary C2 TGO).
         populate_comms_jam_lua(lua_data, self.game, self.mission_data)
+
+        # Red comms net (§70 C1) -- emits dcsRetribution.redNet only when the plan
+        # computed before this pass exists (red_comms_net on + an alive enemy C2
+        # node); the rednet plugin transmits the periodic CW traffic (audio + DF
+        # geometry only, kills record natively on the ordinary C2 TGO).
+        populate_red_net_lua(lua_data, self.mission_data)
 
         # Mission-start briefing popup (§58) -- emits dcsRetribution.briefing only when
         # mission_briefing_popup is on and the mission has a player-crewed flight; the

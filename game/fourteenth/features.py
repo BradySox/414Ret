@@ -545,7 +545,8 @@ FEATURES: tuple[Feature, ...] = (
         "comint_collection",
         "COMINT collection (blue-side communications intelligence)",
         70,
-        settings_fields=("comint_collection",),
+        plugin_id="rednet",
+        settings_fields=("comint_collection", "red_comms_net"),
     ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.

@@ -145,6 +145,11 @@ Upstream hands you a map that already knows everything. Here you have to go look
   turn's full take — an intercepted enemy tasking (what's coming, roughly when) and one
   "suspected activity" circle fixed to an exact position. Killing their command posts still
   wrecks their planning — but it also puts out your wiretap. Bomb it or tap it.
+- **And the enemy net is really on the air.** Turn on the **enemy radio net** and their
+  command posts transmit coded morse traffic in periodic windows on fixed UHF frequencies —
+  off your comms plan, so you only hear it by hunting the dial. Phantom, Tomcat, Hornet and
+  Tiger needles can home on an open transmission window; kill the node and its net goes
+  silent for good.
 - **The enemy economy follows its intent.** A surging enemy buys the armor its offensive
   spends; one consolidating under pressure husbands ground and rebuilds its air arm — and
   its buys favor its better hardware, not a coin flip over the catalog. Turn on **SAM site

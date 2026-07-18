@@ -536,9 +536,19 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                     "convoy_ambush",
                     "air_droppable_minefields",
                     "auto_plan_minefields",
+                    "mission_briefing_popup",
+                ],
+            ),
+            (
+                # The comms war (§51 + §70 C1): red jamming your radios, and
+                # red's own net on the air for you to intercept. Split out of
+                # the (full) Battlefield life section -- presentation only,
+                # field names unchanged, so campaign preseeds are untouched.
+                "Comms war",
+                [
                     "enemy_comms_jamming",
                     "comms_jam_requires_capture",
-                    "mission_briefing_popup",
+                    "red_comms_net",
                 ],
             ),
             (
@@ -2971,6 +2981,26 @@ class Settings:
             "plan is then rotated). Rescuing your people keeps the net clean. "
             "Turn this off for ambient jamming whenever an enemy C2 node is "
             "alive. No effect unless 'Enemy comms jamming' is on."
+        ),
+    )
+    red_comms_net: bool = boolean_option(
+        "Enemy radio net (audible + DF-able)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=False,
+        detail=(
+            "Every alive enemy IADS communications and command-center node "
+            "transmits periodic coded CW traffic on its own fixed UHF AM "
+            "frequency (x.500 MHz -- deliberately off your briefed comms plan, "
+            "which sits on the whole-MHz grid). Tune it and you hear the enemy "
+            "net; aircraft with UHF direction finding (F-4E, F-14, F/A-18C, "
+            "F-5E) can home a needle on an open transmission window. Windows "
+            "recur with silence between, so the net reads as traffic, not a "
+            "beacon. Killing the node takes the net off the air. Audio and DF "
+            "geometry only -- no force-model change. Pairs with COMINT "
+            "collection (the same nodes are its intel source). Runs via the "
+            "'Red comms net' LUA plugin -- keep that plugin enabled or this "
+            "setting does nothing."
         ),
     )
 

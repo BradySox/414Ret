@@ -1,7 +1,9 @@
 # 414th — COMINT: blue-side communications intelligence (design)
 
-**Status: C0 LANDED 2026-07-18 (feature §70 — Feature A, the campaign take; see
-`docs/dev/414th-features.md` §70 and checklist B22). C1/C2 (Feature B) not started.**
+**Status: C0 + C1 LANDED 2026-07-18 (feature §70 — Feature A, the campaign take, checklist
+B22; and Feature B1, the audible UHF red net + `rednet` plugin, checklist B23; see
+`docs/dev/414th-features.md` §70). C2 (the clandestine transmitter + the active-nets
+listing) not started.**
 Squadron ask (2026-07-18): *"Such a large part of real warfare is communications
 intercepts. Currently DCS has no way to do that — what options do we have?"* Scope call
 (same day, option 1 of the survey): build **Feature A (campaign-layer COMINT take)** and
@@ -258,9 +260,12 @@ One PR per testable phase (the house norm):
 - **C0 — Feature A core** (**LANDED 2026-07-18** as feature §70): `comint.py` + setting +
   kneeboard block + tests. Pure Python, headless-verifiable end-to-end; no DCS runtime
   risk. In-app pass = checklist B22.
-- **C1 — Feature B1 ambient net**: emitter + plugin + synthesized CW clips + harness
-  tests. **UHF net first** (the fast-jet DF band per the call-#4 audit), LF/MF + FM
-  after. In-game pass row (audibility + per-module needle behavior).
+- **C1 — Feature B1 ambient net** (**LANDED 2026-07-18**, same day as C0): emitter
+  (`rednetluadata.py` — deterministic x.500 MHz off-grid freqs, registry-reserved) +
+  `rednet` plugin (windowed/staggered looped CW, `node_dead`) + the synthesized
+  `rednet-cw.wav` + harness tests. **UHF net first** (the fast-jet DF band per the
+  call-#4 audit) — the LF/MF + FM nets remain future work with C2+. In-game pass =
+  checklist B23 (audibility + per-module needle behavior).
 - **C2 — B2 clandestine TX** + the A↔B findability tie (active-nets listing names the
   hunt) + first campaign authoring.
 - **Later**: COIN dynamic transmitters, voice-chatter asset expansion, client intel

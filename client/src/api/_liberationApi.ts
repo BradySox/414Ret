@@ -658,6 +658,12 @@ export type Minefield = {
   radius_m: number;
   charges: number;
 };
+export type DownedPilot = {
+  name: string;
+  position: LatLng;
+  status: string;
+  detail: string;
+};
 export type Game = {
   control_points: ControlPoint[];
   tgos: Tgo[];
@@ -677,6 +683,7 @@ export type Game = {
   free_fire_zones?: RestrictedZone[];
   supply_nodes?: SupplyNode[];
   minefields?: Minefield[];
+  downed_pilots?: DownedPilot[];
 };
 export type MapZones = {
   inclusion: LatLng[][][];

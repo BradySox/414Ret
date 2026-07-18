@@ -53,7 +53,10 @@ Upstream hands you a map that already knows everything. Here you have to go look
   a normal campaign, indefinitely on a political-will one, where a negotiated victory brings
   them home. A pilot neither rescued nor captured goes **MIA and keeps evading**, still
   rescuable next mission — but deep behind the lines they're almost certainly caught. Think
-  twice before pressing deep with no rescue plan.
+  twice before pressing deep with no rescue plan. **Every downed aviator shows on the
+  campaign map**: an MIA evader as a rescue-orange marker at their last known position, a
+  POW as a gray marker at the holding field — so you plan the rescue from the map, not
+  from a kneeboard note.
 - **A downed pilot triggers a recovery surge.** The very next turn opens with a coordinated
   "drop everything" rescue package **already airborne at the evader's position** — rescue
   helo, King, Sandys, fighter cover — because a helo spooling up at a rear field never gets

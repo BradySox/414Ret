@@ -1,5 +1,6 @@
 import { selectCampaignStatus } from "../../api/campaignStatusSlice";
 import { useAppSelector } from "../../app/hooks";
+import { supplyBand } from "../../theme/mapColors";
 import "./CampaignStatusBar.css";
 import { useState } from "react";
 
@@ -41,13 +42,13 @@ function WillSparkline(props: { history: [number, number, number][] }) {
   );
 }
 
-// Supply chips colour by level, not side: low (red) / mid (amber) / ok (teal). The
-// thresholds track red intent's STARVED (35) and SURGE_MIN (50), so a low red-supply
-// chip visibly explains a consolidating enemy.
+// Supply chips colour by level, not side, through the SAME banding the map's
+// supply nodes and the legend use (mapColors.supplyBand) — the chip and a front
+// node at the same percentage must read the same colour. (The old 35/50 bands
+// tracked red intent's decision thresholds, which made identical hues mean
+// different numbers on the two surfaces — 2026-07-18 UI audit.)
 function supplyLevel(pct: number): string {
-  if (pct < 35) return "supply-low";
-  if (pct < 50) return "supply-mid";
-  return "supply-ok";
+  return "supply-" + supplyBand(pct / 100.0);
 }
 
 export default function CampaignStatusBar() {
@@ -80,11 +81,13 @@ export default function CampaignStatusBar() {
         <span className="campaign-status-item">Turn {status.turn}</span>
         <span className="campaign-status-item">{dateText}</span>
         {status.phase_status != null && (
-          <span
+          <button
+            type="button"
             className={
               "campaign-status-phase" + (expandable ? " expandable" : "")
             }
             onClick={() => expandable && setExpanded(!expanded)}
+            aria-expanded={expandable ? expanded : undefined}
             title={
               expandable
                 ? "Click for the campaign's phase arc"
@@ -97,7 +100,7 @@ export default function CampaignStatusBar() {
                 {expanded ? " ▴" : " ▾"}
               </span>
             )}
-          </span>
+          </button>
         )}
         {status.blue_supply != null && (
           <span

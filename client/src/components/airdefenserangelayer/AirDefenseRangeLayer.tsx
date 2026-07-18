@@ -13,6 +13,7 @@ import {
   useOpenTgoInfoDialogMutation,
 } from "../../api/liberationApi";
 import summarizeUnits from "../unitsummary/summarizeUnits";
+import { mapColors } from "../../theme/mapColors";
 import { Fragment } from "react";
 import { Circle, CircleMarker, LayerGroup, Tooltip } from "react-leaflet";
 
@@ -31,14 +32,16 @@ interface RangeCirclesProps {
 }
 
 export function colorFor(blue: boolean, detection: boolean) {
+  // Values ride the shared mapColors tokens so the legend can decode them;
+  // they are unchanged from the historical hexes (no visual shift).
   if (blue) {
-    return detection ? "#bb89ff" : "#0084ff";
+    return detection ? mapColors.detectionFriendly : mapColors.friendly;
   }
-  return detection ? "#eee17b" : "#c85050";
+  return detection ? mapColors.detectionEnemy : mapColors.enemy;
 }
 
 // Bright colour used to mark the hovered ring and its emitter.
-const HIGHLIGHT_COLOR = "#ffff00";
+const HIGHLIGHT_COLOR = mapColors.highlight;
 // The ring tooltip's unit list rides the shared summarizeUnits condenser, which
 // also strips the "0007 | " id prefixes that used to defeat the duplicate
 // collapse here (every unit's name was unique, so nothing ever counted up).

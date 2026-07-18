@@ -913,7 +913,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     lines he rolls a **depth-weighted capture** — 10% within 5 NM of the front, linearly to **90% at
     40 NM+** (the *don't-fly-deep* incentive; a hit is the normal POW chain, with the ledger resolving
     the pilot in `record_pow_captures`). **Deliberately no death clock** — the roll is the clock.
-    Surfaced on the SITREP band ("MIA: … — evading near … (N turns down)") + the squadron roster; the
+    Surfaced on the SITREP band ("MIA: … — evading near … (N turns down)") + the squadron roster +
+    **the campaign map (2026-07-18)**: a default-ON "Downed pilots" layer (`DownedPilotJs` →
+    `client/src/components/downedpilots/`) draws each MIA evader rescue-orange at his last known
+    position and each POW gray at the holding field, so the host plans the rescue from the map; the
     gate covers only *creation* of MIA entries so a mid-campaign toggle never strands an evader.
     Checklist G29. **Pilot recovery surge LANDED 2026-07-17** (the flown Scenic Route Merged finding —
     "after 1.4 h the rescue helos are just getting to the pilots": both on-demand paths fired live

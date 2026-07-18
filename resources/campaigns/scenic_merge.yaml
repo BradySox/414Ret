@@ -261,13 +261,6 @@ squadrons:
       aircraft:
         - Mi-24P Hind-F
       size: 2
-  # OPFOR L1F2 split
-  FOB Bikuyeh:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-28N Havoc
-      size: 2
   # Lar 
   11:
     - primary: BARCAP
@@ -275,33 +268,12 @@ squadrons:
       aircraft:
         - MiG-21bis Fishbed-N
       size: 4
-  # OPFOR L2F1
-  FOB Mansurabad:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-24P Hind-F
-      size: 2
   # OPFOR L2F2
   FOB Jahrom:
     - primary: CAS
       secondary: air-to-ground
       aircraft:
         - Mi-24P Hind-F
-      size: 2
-  # OPFOR L2F3
-  FOB Tower:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-24P Hind-F
-      size: 2
-  # OPFOR L2F3 split
-  FOB Nouderan:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-28N Havoc
       size: 2
   # Shiraz Intl -- red's ONE support-air base (A-50 + tanker; see the OPFOR note)
   19:
@@ -340,13 +312,6 @@ squadrons:
       aircraft:
         - Mi-24P Hind-F
       size: 2
-  # OPFOR L3F2
-  FOB Tashk:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-24P Hind-F
-      size: 2
   # OPFOR L3F3
   FOB Chahak:
     - primary: CAS
@@ -361,13 +326,6 @@ squadrons:
       aircraft:
         - Mi-24P Hind-F
       size: 2
-  # OPFOR L3F4 split
-  FOB Robat:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-24P Hind-F
-      size: 2
   # OPFOR L3F5
   FOB Plainguard:
     - primary: CAS
@@ -375,29 +333,8 @@ squadrons:
       aircraft:
         - Mi-24P Hind-F
       size: 2
-  # OPFOR L3F6
-  FOB Hasanabad:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-24P Hind-F
-      size: 2
-  # OPFOR L3F6 split
-  FOB Najafabad:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-28N Havoc
-      size: 2
   # OPFOR L3F7
   FOB Kabutarkhan:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Mi-24P Hind-F
-      size: 2
-  # OPFOR L3F8
-  FOB Sa'di:
     - primary: CAS
       secondary: air-to-ground
       aircraft:

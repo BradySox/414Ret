@@ -35,7 +35,9 @@
 >   Phantoms auto-load the "(XW)" HARM fits (stock Shrike fit is the automatic fallback when
 >   the box is unchecked or the mod is ejected). Settings-namespace preseed only, no
 >   laydown/balance change; applies to NEW games only, so it ships with whatever
->   regeneration follows it.
+>   regeneration follows it. **Squadron call (user, same day): NO authored F-4E squadron
+>   in the wing yaml** — the host adds one via the air-wing dialog at new-game time when
+>   wanted (the faction carries the F-4E-45MC). Don't author one in a later session.
 >
 > **The "process turn 1 from the M1 session JSON" step is tooled** —
 > `tools/apply_state_json.py` (built + validated 2026-07-12) re-binds the flown 2026-07-11

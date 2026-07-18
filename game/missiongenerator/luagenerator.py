@@ -500,8 +500,9 @@ class LuaGenerator:
             bucket = blue_rescue if flight.aircraft_type.helicopter else blue_kings
             bucket.append(flight)
 
-        # With the standing orbit removed (§21 rework, 2026-07-06), any CSAR/SCAR
-        # flight here is PLAYER-planned. Only a RESCUE-CAPABLE player flight -- a
+        # With the standing orbit removed (§21 rework, 2026-07-06), a CSAR/SCAR
+        # flight here is PLAYER-planned or the auto-fragged pilot-recovery surge
+        # (csar_surge.py). Only a RESCUE-CAPABLE flight -- a
         # CSAR helo -- suppresses the AI on-demand spawn ("we've got it covered,
         # don't spawn more"); a bare Sandy or King can't pick anyone up, so it
         # draws the AI helo and escorts/tracks it instead (squadron call

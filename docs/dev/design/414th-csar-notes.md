@@ -314,6 +314,52 @@ config runs, eject → sync → snatch, evader respawn), `tests/test_combat_sar_
 `tests/missiongenerator/test_combat_sar_sandy_luadata.py`. In-game pass: checklist **G29**.
 No NEW game required (plugin/emitter/turn-model only; old saves get `downed_pilots` on load).
 
+## Pilot recovery surge (2026-07-17 squadron call — "drop everything")
+
+**The finding (flown Scenic Route Merged, Tacview `Tacview-20260717-172716`):** the on-demand
+machinery works — 3 parked Khasab UH-60s started in place and flew toward the right
+survivors, the clone fallback launched too — and it still rescued nobody, because the
+survivors sat 115–370 km from every rescue source. The closest helo ended the mission
+3.0 km short after a 37-minute transit; the user's words: "after 1.4 hr the rescue helos
+are just getting to the pilots." **Same-mission rescue cannot beat helo transit time on a
+big map.** The campaign-scale answer is the next turn, not a faster helo.
+
+**The design:** the turn after a pilot goes MIA, BLUE opens the mission with the recovery
+op **already airborne at the evader's position**:
+
+- `plan_pilot_recovery_surge` (`game/fourteenth/csar_surge.py`) runs from
+  `Coalition.plan_missions` **before** `TheaterCommander` — the surge claims its helos,
+  Sandys, and escorts first. That ordering *is* the "drop everything".
+- The package targets a **`PilotRecoveryZone`** (`game/theater/missiontarget.py`) at the
+  evaders' centroid, so `CombatSarFlightPlan`'s hold lands 10 NM friendly-side of the
+  *survivor*, not the front centre. The zone offers COMBAT_SAR/SCAR/ESCORT/TARCAP so the
+  player can reinforce the package from the ATO dialog.
+- Composition: **required Jolly** (1-ship, `preferred_type` = the biggest CSAR-capable helo
+  squadron) + optional second Jolly (2+ evaders, capped `SURGE_MAX_HELO_FLIGHTS` 2) +
+  optional King (fixed-wing CSAR C-130) + optional 2-ship Sandy (SCAR) + optional A2A
+  escort. Optional flights drop silently on a thin wing (the Alpha-Strike `optional`
+  mechanism); only the Jolly can scrub the package.
+- Built by the engine's own `PackageFulfiller` (ASAP TOT, `ignore_range=True`,
+  `purchase_multiplier=0` — never buys airframes), and the **existing `PackageBuilder`
+  rule air-starts AI COMBAT_SAR flights**, which is what actually kills the transit time.
+  The runtime is unchanged: the combatsar ledger re-spawns the evader
+  (`persistentSurvivors`) and dispatches the package helo; the fragged helo suppresses the
+  on-demand clone (`autoSpawn`) exactly like a player package.
+
+**The gate (the user's "so it's not every mission"):** once per downed pilot.
+`DownedPilot.surge_turn` is stamped when the op plans; a stamped evader never draws
+another surge (same-turn re-plans re-plan it — the stamp allows `== game.turn`). A surge
+that *couldn't* plan (no helo squadron, fulfiller scrub) does **not** stamp, so the
+attempt renews when the wing recovers. A surge that planned and failed to rescue falls
+back to the normal paths — player package, auto-CSAR, the walk-home/capture rolls.
+
+Setting: `combat_sar_surge` (default ON, `enabled_when=combat_sar_persistent_pilots` — no
+ledger, no evaders, nothing to surge for). The five CSAR settings moved to their own
+Campaign Management → **"Combat search & rescue"** section (the HQ-automation section had
+hit the 13-field grab-bag cap). Tests: `tests/fourteenth/test_csar_surge.py` (guards,
+gate/stamp semantics incl. pre-field saves, package composition, zone centroid).
+In-game pass: checklist **G31**.
+
 ## What is deliberately NOT here
 
 - **No POW recovery raid** (2026-07-03, above). If a future squadron call wants it back, it
@@ -327,11 +373,12 @@ No NEW game required (plugin/emitter/turn-model only; old saves get `downed_pilo
 
 ## Checklist map (docs/dev/414th-ingame-pass-checklist.md)
 
-Verified: G8 (rescue), G9 (standing alert), G11 (scoring), G13 (airframes), G20 (snatch
-party). Open: G10 (King TACAN radiating + LARS use — partial), G21 (commandeer preference —
-partial), G23 (Sandy divert — the ONE re-fly, pass-or-delete), G29 (persistent evaders +
-always-run snatch). G22 (POW raid) is RETIRED with the raid. Default-ON behavior rides G9's
-verified verdict.
+Verified: G8 (rescue), G11 (scoring), G13 (airframes), G20 (snatch party). Open: G9
+(on-demand rescue — PARTIAL 2026-07-17: both spawn paths flew, zero pickups completed, the
+pickup/delivery loop still unexercised), G10 (King TACAN radiating + LARS use — partial),
+G21 (commandeer preference — partial), G23 (Sandy divert — the ONE re-fly, pass-or-delete),
+G29 (persistent evaders + always-run snatch), **G31 (pilot recovery surge — untested)**.
+G22 (POW raid) is RETIRED with the raid.
 
 ## Superseded documents (historical record only)
 

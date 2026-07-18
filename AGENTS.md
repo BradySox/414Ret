@@ -891,7 +891,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     the pilot in `record_pow_captures`). **Deliberately no death clock** — the roll is the clock.
     Surfaced on the SITREP band ("MIA: … — evading near … (N turns down)") + the squadron roster; the
     gate covers only *creation* of MIA entries so a mid-campaign toggle never strands an evader.
-    Checklist G29. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field
+    Checklist G29. **Pilot recovery surge LANDED 2026-07-17** (the flown Scenic Route Merged finding —
+    "after 1.4 h the rescue helos are just getting to the pilots": both on-demand paths fired live
+    (3 parked Khasab UH-60s launched, the clone flew) but survivors sat 115–370 km from the rescue
+    sources, so nothing arrived before mission end; same-mission rescue cannot beat helo transit):
+    the **next turn opens with the recovery op already airborne**. `plan_pilot_recovery_surge`
+    (`game/fourteenth/csar_surge.py`, hooked in `Coalition.plan_missions` BEFORE the commander —
+    "drop everything") frags ONE coordinated package at a `PilotRecoveryZone` centred on the MIA
+    evaders — required Jolly + optional second Jolly/King/2-ship Sandy/A2A escort — via the engine's
+    own `PackageFulfiller` (ASAP, `ignore_range`), and the existing `PackageBuilder` rule
+    **air-starts** AI COMBAT_SAR flights, so the op is on station at mission start and the package
+    helo suppresses the on-demand clone. **Gate: once per downed pilot** (`DownedPilot.surge_turn`
+    stamp — a failed surge falls back to the normal paths, never re-surges on later turns), so it is
+    an event, not a fixture. Gated `combat_sar_surge` (default ON,
+    `enabled_when=combat_sar_persistent_pilots`; the five CSAR settings moved to their own Campaign
+    Management → "Combat search & rescue" section). Tests `tests/fourteenth/test_csar_surge.py`;
+    checklist G31. **Rescue scoring closes the loop:** delivering a downed pilot to a friendly field
     spares the aviator at debrief (airframe still lost) — the plugin's `OnAfterBoarded`/`OnAfterRescued`
     hooks append the ejected unit name to `combat_sar_rescues`, and `commit_air_losses` skips that
     pilot's kill (fail-safe: empty list = pre-scoring behaviour). **v2 (deferred):** on-demand Sandy +
@@ -1035,7 +1050,7 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`; features doc §29,
     checklist K2.)
 30. **Dedicated kneeboard cover page** — RETIRED (2026-07-13, the kneeboard back-to-upstream rework;
-    user markup pass on a flown Noisy Cricket deck struck the whole page). `CoverPage`,
+    user markup pass on a flown Scenic Route Merged deck struck the whole page). `CoverPage`,
     `_build_cover_page` and the CAMPAIGN PHASE/ROE band it carried are deleted; the deck opens straight
     on the stock Mission Info page. The SITREP (§29) moved back to the Mission Info page bottom; the
     flight index (§27) is a standalone conditional page again; the phase/ROE keep their non-kneeboard
@@ -1553,7 +1568,15 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     mobile launchers), and the plugin **staggers each site's loop** by `(i-1)·interval/N` so route
     pushes spread across the interval instead of landing together. Tests
     `test_immobile_silkworm_hardware_is_never_routed` +
-    `test_site_loops_are_staggered_across_the_interval`.
+    `test_site_loops_are_staggered_across_the_interval`. **The flown 39-site Tacview (same day)
+    proved the fire-window fix on vanilla hardware** — 13/13 fired Scud_B batteries scooted after
+    their volleys (S2's SCUD half closed) — **and found the residual: all 8 fired `CH_Shahed136`
+    sites stay pinned post-salvo** (the never-fired ones drive fine; a mod-side post-fire state
+    DCS won't drive out of — `resetTask`/alarm-green don't clear it). Mitigation: the plugin
+    **gives up** on a group after 2 consecutive dry route pushes (<100 m progress; movement resets
+    the count) — a spent battery is left alone (its magazine is empty; the scoot protects *loaded*
+    launchers) instead of drawing futile pushes all mission. Tests
+    `test_stuck_group_is_given_up_after_dry_pushes` + `test_moving_group_is_never_given_up`.
     The same flown test drove the
     **no-front support-orbit fix** (a front-less naval map marched red's A-50 200 NM AWAY from the
     fleet — `support_orbit_anchor` now skips the AI depth march with no FLOT; features doc §8-adjacent

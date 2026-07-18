@@ -111,3 +111,38 @@ class HomeBaseDefenseZone(MissionTarget):
     @property
     def coalition(self) -> Coalition:
         return self._coalition
+
+
+class PilotRecoveryZone(MissionTarget):
+    """The recovery objective of a pilot-recovery surge package (§21 extension,
+    game/fourteenth/csar_surge.py): the last known position of one or more MIA
+    evaders. Targeting the package here makes ``CombatSarFlightPlan`` hold its
+    racetrack a short distance friendly-side of the *survivor* -- not the front
+    centre -- so the rescue package stages where the pickup actually is.
+
+    Friendly-owned (it is our aviator); ``mission_types`` offers the rescue
+    package's own roles so the player can reinforce the fragged package from the
+    ATO dialog.
+    """
+
+    def __init__(self, name: str, position: Point, coalition: Coalition) -> None:
+        super().__init__(name, position)
+        self._coalition = coalition
+
+    def is_friendly(self, to_player: Player) -> bool:
+        return self._coalition.player == to_player
+
+    def mission_types(self, for_player: Player) -> Iterator[FlightType]:
+        from game.ato import FlightType
+
+        if self.is_friendly(for_player):
+            yield from [
+                FlightType.COMBAT_SAR,
+                FlightType.SCAR,
+                FlightType.ESCORT,
+                FlightType.TARCAP,
+            ]
+
+    @property
+    def coalition(self) -> Coalition:
+        return self._coalition

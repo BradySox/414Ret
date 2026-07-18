@@ -54,6 +54,10 @@ Upstream hands you a map that already knows everything. Here you have to go look
   them home. A pilot neither rescued nor captured goes **MIA and keeps evading**, still
   rescuable next mission — but deep behind the lines they're almost certainly caught. Think
   twice before pressing deep with no rescue plan.
+- **A downed pilot triggers a recovery surge.** The very next turn opens with a coordinated
+  "drop everything" rescue package **already airborne at the evader's position** — rescue
+  helo, King, Sandys, fighter cover — because a helo spooling up at a rear field never gets
+  there in time. One surge per downed pilot; if it fails, the normal rescue paths carry on.
 - **SCAR is the RESCAP "Sandy"** of that package — hold near the FLOT with the King and the
   rescue helo, suppress the threats, walk the helo in.
 - **JAMMING** turns the C-130J into an EC-130H/RC-130H-style EW and ISR platform.

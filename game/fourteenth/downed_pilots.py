@@ -76,6 +76,10 @@ class DownedPilot:
     pilot: Optional[Pilot] = None
     aircraft: str = ""
     turn_downed: int = 0
+    #: Turn the pilot-recovery surge (csar_surge.py) fragged this evader's op; 0 =
+    #: never surged. The surge fires once per pilot -- read with getattr (pre-field
+    #: saves lack it) and never reset.
+    surge_turn: int = 0
 
 
 def persistence_enabled(game: Game) -> bool:

@@ -377,20 +377,9 @@ supply_routes:
       - [-143805, -139457]
       - [-127534, -115980]
       - [-126014, -89133]
-  # 414th cleanup 2026-07-17: red rear corridors (the geo-authored Iranian
-  # mainland highways from the §50 batch-2 pass -- same map, same red fields as
-  # operation_noisy_cricket), so red ambient supply convoys exist and the player
-  # has road traffic to interdict.
-  # Bandar Abbas -> Kerman  (the truck route north: Hajiabad -> Sirjan -> the Kerman highway)
-  - waypoints:
-      - [115766, 14258]
-      - [237101, -32091]
-      - [363636, -52257]
-      - [412977, 8174]
-      - [454117, 71096]
-  # Bandar Abbas -> Shiraz  (Highway 86/96 west through Lar and Jahrom)
-  - waypoints:
-      - [115766, 14258]
-      - [169653, -186604]
-      - [262487, -261010]
-      - [381101, -351637]
+  # NOTE (414th, 2026-07-17): do NOT add direct Bandar Abbas <-> Shiraz/Kerman
+  # yaml corridors here. The miz's own FOB-ladder roads already carry that
+  # traffic on the real winding highways; the Noisy Cricket corridor traces are
+  # only 4-5 waypoints (straight lines across the Zagros on the map), and a
+  # direct link would let a front form straight over the mountains, bypassing
+  # the FOB ladder the campaign is built around. (Tried and reverted same day.)

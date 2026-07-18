@@ -1135,6 +1135,21 @@ rearmost field, sane only when a front exists for the geometry to work against).
 front-less theater the non-carrier AEWC target is now `closest_friendly_control_point()` —
 the friendly field nearest the enemy — so a land-based AWACS covers the actual fight;
 fronted campaigns are byte-identical (the farthest pick stands).
+**Third half, same day (the user's first look at the resulting map):** the forward anchor
+exposed the no-front *placement* bug — `support_orbit_anchor`'s nearest-threat-boundary
+bearing finds the shortest way OUT of the threat union, which from an anchor deep inside a
+big fighter zone threads the gap BETWEEN enemy fields (the blue E-2/tanker stack anchored on
+Khasab was placed **27–45 NM from Bandar-e-Jask's Tomcat ramp** — clear of every ring,
+parked in the enemy's lap; the flown KC-135 died to an Iranian AIM-54 in exactly that
+pocket). On a front-less theater with enemy land CPs the orbit now **faces the nearest
+enemy control point and stands ONE buffer behind its anchor for both sides** (the enemy
+field plays the front; the 2.5× AI depth factor stays FLOT-only or it would recreate the
+deep-A-50 bug from the other direction), with the threat-clearance floor unchanged. The
+boundary bearing remains only for carrier orbits (hold with the boat) and theaters with no
+enemy land at all. Save-verified: blue support moves to the southwest gulf (206/183 NM from
+Bandar Abbas), the red A-50 holds 78 NM behind its own front field. Tests
+`tests/test_support_orbit.py` (3 new no-front-geography cases; the old no-front tests keep
+passing via the no-enemy-CP fallback).
 
 **Carrier/fleet exception (2026-06-28).** Front-anchoring a support orbit makes sense for a
 land-based AWACS/tanker, but it flung *carrier* AEW&C (E-2C) up to the land FLOT — covering the

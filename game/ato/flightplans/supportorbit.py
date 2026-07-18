@@ -22,12 +22,17 @@ threat zone) instead of marching up to the land FLOT, so a carrier E-2C/tanker
 covers the boat rather than flying ~200 NM forward to cover the front.
 
 With **no front line at all** (a pure naval map, or fully disconnected
-theaters) the orbit likewise holds at its anchor and is only nudged clear of
-the threat zone. The depth march exists to hold support *behind the FLOT*;
-with no FLOT there is no "behind", and marching away from the nearest threat
-boundary just flees the map (observed: a red A-50 on a carriers-only enemy
-anchored on the friendly field farthest from the fleet, then marched another
-2.5 x 80 NM = 200 NM straight away from it — 233-322 NM from the fight).
+theaters) the orbit faces the **nearest enemy control point** and stands one
+buffer behind its anchor -- the nearest enemy field plays the front. The
+earlier nearest-threat-boundary bearing found the shortest way OUT of the
+threat union, which from an anchor inside a big fighter zone can thread the
+gap BETWEEN two enemy fields (observed, Scenic Route Merged: the blue E-2 and
+tankers anchored on Khasab were placed 27-45 NM from Bandar-e-Jask's Tomcat
+ramp -- "clear" of every ring, parked in the enemy's lap); and marching away
+from that bearing just flees the map (observed earlier: a red A-50 on a
+carriers-only enemy marched 2.5 x 80 NM away -- 233-322 NM from the fight).
+The boundary logic remains only for carrier orbits (hold with the boat) and
+theaters with no enemy land CPs at all.
 """
 
 from __future__ import annotations
@@ -38,7 +43,7 @@ from game.utils import Distance, Heading, meters
 
 if TYPE_CHECKING:
     from dcs.mapping import Point
-    from game.theater import ConflictTheater, MissionTarget, Player
+    from game.theater import ConflictTheater, ControlPoint, MissionTarget, Player
     from game.theater.frontline import FrontLine
     from game.threatzones import ThreatZones
 
@@ -60,6 +65,28 @@ def _relevant_front(
     if not fronts:
         return None
     return min(fronts, key=lambda fl: fl.position.distance_to_point(target.position))
+
+
+def _nearest_enemy_cp(
+    theater: ConflictTheater, player: Player, position: Point
+) -> Optional["ControlPoint"]:
+    """The enemy-held land control point nearest ``position``, or None.
+
+    Off-map spawns are skipped (they are bookkeeping, not geography). Tolerates
+    minimal fake theaters (no ``controlpoints``) for the unit tests."""
+    from game.theater.controlpoint import OffMapSpawn
+
+    best: Optional["ControlPoint"] = None
+    best_distance = 0.0
+    for cp in getattr(theater, "controlpoints", []):
+        if isinstance(cp, OffMapSpawn):
+            continue
+        if cp.captured is not player.opponent:
+            continue
+        distance = position.distance_to_point(cp.position)
+        if best is None or distance < best_distance:
+            best, best_distance = cp, distance
+    return best
 
 
 def support_orbit_anchor(
@@ -89,18 +116,38 @@ def support_orbit_anchor(
     )
 
     front = None if carrier_target else _relevant_front(theater, target)
+    no_front_march = False
     if front is None:
         # Either a carrier/fleet orbit (hold with the task force) or no active
-        # front (e.g. opening turn): anchor on the target and stand off from the
-        # nearest threat boundary.
+        # front (e.g. opening turn / a front-less naval map).
         anchor = target.position
-        boundary = threat_zones.closest_boundary(anchor)
-        toward_enemy = Heading.from_degrees(anchor.heading_between_point(boundary))
-        if threat_zones.threatened(anchor):
-            # From INSIDE the zone the closest boundary is the way OUT, not
-            # the way toward the enemy -- flip, or the clearance push below
-            # would march the orbit deeper into the threat.
-            toward_enemy = toward_enemy.opposite
+        enemy_cp = (
+            None if carrier_target else _nearest_enemy_cp(theater, player, anchor)
+        )
+        if enemy_cp is not None:
+            # No FLOT, but the enemy still has geography: face the nearest
+            # enemy field and stand a full buffer behind the anchor, exactly
+            # like the fronted case with the nearest enemy CP playing the
+            # front. The old nearest-threat-boundary bearing found the
+            # shortest way OUT of the threat union, which from an anchor deep
+            # inside a big fighter zone can thread the gap BETWEEN two enemy
+            # fields -- the flown Scenic Route Merged E-2/tanker stack ended
+            # up 27-45 NM from Bandar-e-Jask's Tomcat ramp, "clear" of every
+            # ring and parked in the enemy's lap.
+            toward_enemy = Heading.from_degrees(
+                anchor.heading_between_point(enemy_cp.position)
+            )
+            no_front_march = True
+        else:
+            # Carrier orbit, or a theater with no enemy land CPs: stand off
+            # from the nearest threat boundary (the task-force hold).
+            boundary = threat_zones.closest_boundary(anchor)
+            toward_enemy = Heading.from_degrees(anchor.heading_between_point(boundary))
+            if threat_zones.threatened(anchor):
+                # From INSIDE the zone the closest boundary is the way OUT,
+                # not the way toward the enemy -- flip, or the clearance push
+                # below would march the orbit deeper into the threat.
+                toward_enemy = toward_enemy.opposite
         center = anchor
     else:
         anchor = front.position
@@ -129,6 +176,15 @@ def support_orbit_anchor(
             center = center.point_from_heading(
                 away_from_enemy.degrees, base_push.meters
             )
+    elif no_front_march:
+        # Front-less land anchor with real enemy geography: one buffer behind
+        # the anchor for BOTH sides. The AI depth factor exists to keep red
+        # support behind a FLOT; with no FLOT the forward anchor already sets
+        # the depth, and 2.5x buffer would recreate the A-50-in-the-rear bug
+        # from the other direction.
+        center = center.point_from_heading(
+            away_from_enemy.degrees, threat_buffer.meters
+        )
 
     # Then guarantee it is at least threat_buffer clear of the enemy threat zone,
     # pushing further into friendly airspace if the base standoff left it exposed.

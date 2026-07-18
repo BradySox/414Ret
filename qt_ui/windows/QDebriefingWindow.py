@@ -168,6 +168,22 @@ class QDebriefingWindow(QDialog):
         impact = MissionImpactContainer(debriefing)
         layout.addWidget(impact)
 
+        # Campaign consequences -- the per-turn Sitrep (POW captures, MIA
+        # evaders, rescues, will movers, front supply, enemy posture). The
+        # engine has computed this digest every turn since §29, but it rendered
+        # only on the in-cockpit kneeboard SITREP band; the debrief showed none
+        # of it (2026-07-18 UI audit, the top Qt finding).
+        sitrep = getattr(debriefing.game, "last_sitrep", None)
+        if sitrep is not None and sitrep.has_news:
+            consequences = QGroupBox("Campaign consequences")
+            consequences_layout = QVBoxLayout()
+            for line in sitrep.kneeboard_lines():
+                line_label = QLabel(line)
+                line_label.setWordWrap(True)
+                consequences_layout.addWidget(line_label)
+            consequences.setLayout(consequences_layout)
+            layout.addWidget(consequences)
+
         player_lost_units = ScrollingCasualtyReportContainer(
             debriefing, player=Player.BLUE
         )

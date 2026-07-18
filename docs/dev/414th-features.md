@@ -2909,6 +2909,17 @@ circles read alike), and the map's core planning actions were invisible right-cl
   Right-click: plan a package") so the otherwise-hidden fragging actions are findable. Client-only;
   type-checked (`tsc`) + the `FrontLine` test mock extended; the full `react-scripts` build/test runs in
   CI. Deferred: a full right-click *context menu* and theming the light Leaflet tooltips.
+- **The 2026-07-18 SITREP-parity wave (audit wave 2)**: (1) the ribbon gains a **"LAST TURN"
+  chip** expanding an app-side SITREP panel — `CampaignStatusJs.sitrep_turn`/`sitrep_lines`
+  carry `game.last_sitrep.kneeboard_lines()` verbatim (the SAME renderer as the cockpit band,
+  so the two surfaces cannot drift), putting losses/POWs/MIA/rescues/will-movers in front of
+  the between-turns host for the first time; (2) an amber **HVT window chip** ("HVT Mullah
+  Nasir · 3 turns", `coin_hvt.active_hvt_status`) — the 4-turn strike window was an invisible
+  clock on every surface; existence + name are already-announced intel so nothing positional
+  leaks; (3) Qt: the **debrief renders `game.last_sitrep`** as a "Campaign consequences" box
+  (`QDebriefingWindow` — the audit found NO qt_ui file imported the Sitrep the engine computes
+  every turn), and (4) the Qt **info panel drops the wall-clock prefix** for a `[T<turn>]`
+  stamp + full-text tooltips (`QInfoItem`; the dead never-imported `QInfoWidget` deleted).
 - **The 2026-07-18 map-coherence batch** (the UI-representation audit — "the systems aren't
   represented well"): (1) the **campaign ribbon wraps instead of clipping** — the old
   nowrap/hidden/ellipsis combo silently swallowed the strip's tail, which is the enemy

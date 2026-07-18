@@ -137,6 +137,16 @@ class CampaignStatusJs(BaseModel):
     #: (turn, blue, red) per flown turn, most recent last; capped for payload size.
     will_history: list[tuple[int, float, float]]
     events: list[CampaignEventJs]
+    #: §29 SITREP parity (2026-07-18 UI audit): the per-turn Sitrep digest the
+    #: kneeboard band renders (losses, POWs, MIA, rescues, will movers, posture),
+    #: previously readable only in the cockpit. None/empty on a quiet turn.
+    sitrep_turn: int | None
+    sitrep_lines: list[str]
+    #: COIN HVT window countdown (the "invisible clock" audit finding): the live
+    #: leader's name + turns left to strike. None when no HVT is up. The name is
+    #: already-announced intel; the concealed map position stays fogged.
+    hvt_name: str | None
+    hvt_turns_left: int | None
 
     @staticmethod
     def from_game(game: Game) -> CampaignStatusJs:
@@ -217,6 +227,21 @@ class CampaignStatusJs(BaseModel):
             for info in reversed(game.informations)
             if info.turn >= game.turn - 1
         ][:25]
+        # SITREP parity: the same digest the kneeboard band renders, via the
+        # same renderer, so the app surface can never drift from the cockpit's.
+        sitrep_turn: int | None = None
+        sitrep_lines: list[str] = []
+        sitrep = getattr(game, "last_sitrep", None)
+        if sitrep is not None and sitrep.has_news:
+            sitrep_turn = sitrep.turn
+            sitrep_lines = sitrep.kneeboard_lines()
+        from game.fourteenth.coin_hvt import active_hvt_status
+
+        hvt_name: str | None = None
+        hvt_turns_left: int | None = None
+        hvt_status = active_hvt_status(game)
+        if hvt_status is not None:
+            hvt_name, hvt_turns_left = hvt_status
         return CampaignStatusJs(
             campaign_name=game.campaign_name,
             turn=game.turn,
@@ -240,6 +265,10 @@ class CampaignStatusJs(BaseModel):
             phases=[PhaseArcEntryJs(**entry) for entry in arc_overview(game)],
             will_history=history,
             events=events,
+            sitrep_turn=sitrep_turn,
+            sitrep_lines=sitrep_lines,
+            hvt_name=hvt_name,
+            hvt_turns_left=hvt_turns_left,
         )
 
 

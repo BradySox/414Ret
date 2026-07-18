@@ -149,6 +149,39 @@
   border-radius: 4px;
 }
 
+/* COIN HVT window countdown: amber = a live, expiring opportunity. */
+.campaign-status-hvt {
+  color: #f0dcae;
+  background: #5a4413;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* The app-side SITREP panel ("LAST TURN" chip): the kneeboard band's digest,
+   rendered under the ribbon so the between-turns host reads losses / POWs /
+   MIA / rescues without opening a cockpit kneeboard. */
+.campaign-status-sitrep-title {
+  font-weight: 600;
+  color: #e8f0fb;
+}
+
+.campaign-status-sitrep-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.campaign-status-sitrep-lines li {
+  color: #c3ccd8;
+  border-left: 3px solid #23344a;
+  padding-left: 8px;
+}
+
 /* Group the enemy-state chips (posture / supply / C2 / resolve) behind a thin divider
    so "yours" and "the enemy's" read as two clusters, not a flat wall of chips. */
 .campaign-status-group {

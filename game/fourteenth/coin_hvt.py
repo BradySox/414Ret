@@ -226,6 +226,30 @@ def _tgo_alive(tgo: Any) -> bool:
     return any(getattr(unit, "alive", False) for unit in getattr(tgo, "units", []))
 
 
+def active_hvt_status(game: "Game") -> Optional[tuple[str, int]]:
+    """``(name, turns left in the strike window)`` for the live HVT, or None.
+
+    Read by the campaign-status ribbon: the window used to be an invisible
+    clock -- announced once in the events feed, then untimed on every surface
+    (2026-07-18 UI audit). Existence + name are already-announced intel; the
+    concealed map position stays fogged, so surfacing the countdown leaks
+    nothing positional.
+    """
+    if not getattr(game.settings, "coin_hvt", False):
+        return None
+    state = getattr(game, "coin_state", None)
+    if not isinstance(state, dict):
+        return None
+    hvt = state.get("hvt")
+    if not isinstance(hvt, dict):
+        return None
+    active = hvt.get("active")
+    if not isinstance(active, dict):
+        return None
+    turns_left = max(HVT_WINDOW_TURNS - int(active.get("turns", 0)), 0)
+    return (str(active.get("name", "the HVT")), turns_left)
+
+
 def consume_hvt_kills(game: "Game") -> int:
     """Number of HVT kills since the last call, cleared to zero. The will layer charges
     these as a red-momentum drop (a finish_turn detection, never a generic debrief line).

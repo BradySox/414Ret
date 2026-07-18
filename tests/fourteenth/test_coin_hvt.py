@@ -226,3 +226,21 @@ def test_toggle_off_despawns_the_active_hvt(monkeypatch: Any) -> None:
     # Despawned, not stranded: no CP still carries the convoy TGO.
     host = next(cp for cp in game.theater.controlpoints if cp.id == 2)
     assert all(t.id != active["tgo_id"] for t in host.connected_objectives)
+
+
+def test_active_hvt_status_reads_the_window(monkeypatch: Any) -> None:
+    """The ribbon countdown: None with nobody up, the full window at surface,
+    counting down as turns pass, None when the toggle is off."""
+    game = _theater(monkeypatch)
+    assert hvt.active_hvt_status(game) is None
+    hvt.advance_hvt(game, events=None)  # surface
+    status = hvt.active_hvt_status(game)
+    assert status is not None
+    name, left = status
+    assert name and left == hvt.HVT_WINDOW_TURNS
+    hvt.advance_hvt(game, events=None)  # ages one turn
+    status = hvt.active_hvt_status(game)
+    assert status is not None
+    assert status[1] == hvt.HVT_WINDOW_TURNS - 1
+    game.settings.coin_hvt = False
+    assert hvt.active_hvt_status(game) is None

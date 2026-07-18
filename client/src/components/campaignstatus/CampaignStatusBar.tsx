@@ -54,6 +54,7 @@ function supplyLevel(pct: number): string {
 export default function CampaignStatusBar() {
   const status = useAppSelector(selectCampaignStatus);
   const [expanded, setExpanded] = useState(false);
+  const [sitrepOpen, setSitrepOpen] = useState(false);
   if (status == null) {
     return null;
   }
@@ -72,6 +73,7 @@ export default function CampaignStatusBar() {
   const phases = status.phases ?? [];
   const history = status.will_history ?? [];
   const expandable = phases.length > 0;
+  const sitrepLines = status.sitrep_lines ?? [];
   return (
     <div className="campaign-status-wrap">
       <div className="campaign-status-bar" title={status.phase_narrative ?? ""}>
@@ -121,6 +123,35 @@ export default function CampaignStatusBar() {
           >
             WILL {Math.round(status.blue_will)}
           </span>
+        )}
+        {status.hvt_name != null && status.hvt_turns_left != null && (
+          <span
+            className="campaign-status-hvt"
+            title={
+              "A named insurgent leader is exposed — kill his convoy before " +
+              "the window closes and the insurgency loses momentum. Letting " +
+              "it lapse is a free miss."
+            }
+          >
+            HVT {status.hvt_name} ·{" "}
+            {`${status.hvt_turns_left} turn${
+              status.hvt_turns_left === 1 ? "" : "s"
+            }`}
+          </span>
+        )}
+        {sitrepLines.length > 0 && (
+          <button
+            type="button"
+            className="campaign-status-phase expandable"
+            onClick={() => setSitrepOpen(!sitrepOpen)}
+            aria-expanded={sitrepOpen}
+            title="What happened last turn — the kneeboard SITREP, app-side"
+          >
+            LAST TURN
+            <span className="campaign-status-caret">
+              {sitrepOpen ? " ▴" : " ▾"}
+            </span>
+          </button>
         )}
         {(status.red_posture != null ||
           status.red_supply != null ||
@@ -305,6 +336,18 @@ export default function CampaignStatusBar() {
               )}
             </div>
           )}
+        </div>
+      )}
+      {sitrepOpen && sitrepLines.length > 0 && (
+        <div className="campaign-status-panel">
+          <div className="campaign-status-sitrep-title">
+            SITREP — Turn {status.sitrep_turn ?? status.turn}
+          </div>
+          <ul className="campaign-status-sitrep-lines">
+            {sitrepLines.map((line, idx) => (
+              <li key={idx}>{line}</li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

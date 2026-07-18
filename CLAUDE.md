@@ -1073,7 +1073,10 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     shipped — the §30 cover page that hosted it 2026-06→07 is retired), gated by `sitrep_for_kneeboard`;
     hidden on turn 1 / a quiet turn / when the `generate_sitrep_kneeboard` toggle (Kneeboards page,
     default ON) is off. v1 covers losses/captures/rescues; front movement + SCAR commander capture are
-    deferred. (`game/sitrep.py`, `game/sim/missionresultsprocessor.py`, `game/game.py`,
+    deferred. **App-side parity 2026-07-18** (UI audit — the band had quietly become the fork's only
+    status screen, trapped in the cockpit): the same `kneeboard_lines()` digest now also renders on
+    the web ribbon's **LAST TURN** panel (`CampaignStatusJs.sitrep_lines`) and the Qt debrief's
+    **Campaign consequences** box. (`game/sitrep.py`, `game/sim/missionresultsprocessor.py`, `game/game.py`,
     `game/missiongenerator/kneeboard.py`, `game/settings/settings.py`; features doc §29,
     checklist K2.)
 30. **Dedicated kneeboard cover page** — RETIRED (2026-07-13, the kneeboard back-to-upstream rework;

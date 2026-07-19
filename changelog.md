@@ -19,6 +19,7 @@
 * **[Options]** Add new option to fast forward until player is at the IP.
 * **[Modding]** Update to CJS Super Hornet Mod to v2.4.5.260501.RC1
 * **[Modding]** Update Community A4EC Mod to 2.3.0 (May 2025)
+* **[Mission Generator]** Squadrons now spawn using the proper country instead of CTJF, enabling various DCS AI voiceovers
 * **[Options]** New option to restrict helmet devices by date
 * **[Flight Plans]** Renaming a waypoint in the flight-plan list now propagates to the aircraft CDU/HUD and the kneeboard, not just the list — one name in all three places (#695).
 

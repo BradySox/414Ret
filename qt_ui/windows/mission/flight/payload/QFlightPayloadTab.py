@@ -23,6 +23,8 @@ from game.ato.flight import Flight
 from game.ato.flightmember import FlightMember
 from game.ato.loadouts import Loadout
 from game.fourteenth.fuel_brief import fuel_brief_for, fuel_brief_text
+from game.utils import KG_TO_LBS
+from qt_ui.blocksignals import block_signals
 from qt_ui.widgets.QLabeledWidget import QLabeledWidget
 from qt_ui.widgets.combos.QSquadronLiverySelector import SquadronLiverySelector
 from qt_ui.widgets.dropdownwidth import bound_dropdown_width
@@ -58,8 +60,6 @@ class FlightMemberSelector(QSpinBox):
 
 
 class DcsFuelSelector(QHBoxLayout):
-    LBS2KGS_FACTOR = 0.45359237
-
     def __init__(self, flight: Flight) -> None:
         super().__init__()
         self.flight = flight
@@ -108,17 +108,31 @@ class DcsFuelSelector(QHBoxLayout):
         self.unit_changing = True
         if index == 0:
             self.fuel_spinner.setMaximum(self.max_fuel)
-            self.fuel_spinner.setValue(self.fuel.value())
+            self.fuel_spinner.setValue(round(self.model_fuel_kg()))
         elif index == 1:
             self.fuel_spinner.setMaximum(self.kg2lbs(self.max_fuel))
-            self.fuel_spinner.setValue(self.kg2lbs(self.fuel.value()))
+            self.fuel_spinner.setValue(self.kg2lbs(self.model_fuel_kg()))
         self.unit_changing = False
 
-    def kg2lbs(self, value: int) -> int:
-        return round(value / self.LBS2KGS_FACTOR)
+    def model_fuel_kg(self) -> float:
+        """The flight's fuel, which is what every other readout converts from.
 
-    def lbs2kg(self, value: int) -> int:
-        return round(value * self.LBS2KGS_FACTOR)
+        Deliberately *not* ``self.fuel.value()``: the slider is integer kg, so
+        reading the display off it rounds a second time from a different source and
+        the spinner ends up disagreeing with the §46 fuel-plan line beside it (a
+        flight sitting on 5510.4 kg showed "12147 lbs" next to "12,149 internal").
+        Both now convert the same float with the same constant.
+        """
+        fuel = getattr(self.flight, "fuel", None)
+        if fuel is None:
+            return float(self.max_fuel)
+        return min(float(fuel), float(self.max_fuel))
+
+    def kg2lbs(self, value: float) -> int:
+        return round(value * KG_TO_LBS)
+
+    def lbs2kg(self, value: float) -> int:
+        return round(value / KG_TO_LBS)
 
 
 def _wrap_without_widening(label: QLabel) -> None:
@@ -235,10 +249,19 @@ class QFlightPayloadTab(QFrame):
         self.aircraft_scroll = scroll
         aircraft_layout.addWidget(scroll)
 
+        # Both laser rows live in one container so they can be hidden together when
+        # the loadout has no use for a code -- the same judgment the kneeboard
+        # already makes via Loadout.uses_laser_code(). An F-4E on Snakeyes and
+        # Rockeyes was being shown an "Assigned TGP laser code" for a pod it does
+        # not carry, costing two rows of a cramped list to say nothing.
+        self.laser_code_box = QWidget()
+        laser_code_layout = QVBoxLayout(self.laser_code_box)
+        laser_code_layout.setContentsMargins(0, 0, 0, 0)
+
         self.own_laser_code_info = OwnLaserCodeInfo(
             game, self.member_selector.selected_member
         )
-        scrolling_layout.addLayout(self.own_laser_code_info)
+        laser_code_layout.addLayout(self.own_laser_code_info)
 
         self.weapon_laser_code_selector = WeaponLaserCodeSelector(
             game, self.member_selector.selected_member, self
@@ -247,7 +270,7 @@ class QFlightPayloadTab(QFrame):
             self.weapon_laser_code_selector.rebuild
         )
         bound_dropdown_width(self.weapon_laser_code_selector, self.DROPDOWN_HINT_CHARS)
-        scrolling_layout.addLayout(
+        laser_code_layout.addLayout(
             QLabeledWidget(
                 "Preset laser code for weapons:",
                 self.weapon_laser_code_selector,
@@ -257,6 +280,7 @@ class QFlightPayloadTab(QFrame):
                 ),
             )
         )
+        scrolling_layout.addWidget(self.laser_code_box)
 
         self.property_editor = PropertyEditor(
             self.flight, self.member_selector.selected_member, game
@@ -296,6 +320,20 @@ class QFlightPayloadTab(QFrame):
         self.loadout_selector.currentIndexChanged.connect(self.on_new_loadout)
         bound_dropdown_width(self.loadout_selector, self.DROPDOWN_HINT_CHARS)
         loadout_row.addWidget(self.loadout_selector, stretch=1)
+        # A custom loadout is named "Custom" and is not one of the selectable
+        # presets, so the (disabled) box keeps showing a preset name -- reading as
+        # though the stock fit were loaded while the pylons beside it say otherwise.
+        # The selection is load-bearing (unticking "Use custom loadout" adopts it),
+        # so flag the state rather than change what is selected.
+        self.custom_loadout_note = QLabel("(customised)")
+        self.custom_loadout_note.setToolTip(
+            "The stations below are a custom loadout. The preset named here is what "
+            'unticking "Use custom loadout" would load.'
+        )
+        loadout_row.addWidget(self.custom_loadout_note)
+        self.custom_loadout_note.setVisible(
+            self.member_selector.selected_member.loadout.is_custom
+        )
         right_column.addLayout(loadout_row)
         right_column.addWidget(self.payload_editor, stretch=1)
 
@@ -312,8 +350,42 @@ class QFlightPayloadTab(QFrame):
         # in on_new_loadout/on_custom_toggled), and every pylon edit.
         self.fuel_selector.fuel.valueChanged.connect(self.refresh_fuel_brief)
         for pylon_editor in self.payload_editor.iter_pylon_editors():
-            pylon_editor.pylon_changed.connect(self.refresh_fuel_brief)
+            pylon_editor.pylon_changed.connect(self.refresh_loadout_readouts)
+        self.refresh_loadout_readouts()
+
+    def refresh_loadout_readouts(self) -> None:
+        """Refresh everything derived from the selected member's loadout."""
         self.refresh_fuel_brief()
+        self.refresh_laser_code_visibility()
+
+    def refresh_laser_code_visibility(self) -> None:
+        """Hide the laser-code rows when this loadout has no use for a code.
+
+        Reuses the predicate the kneeboard gates its Laser Code page on, so the
+        editor and the printed brief agree on when a code is meaningful: a
+        laser-guided weapon to drop, or a pod to designate with.
+        """
+        member = self.member_selector.selected_member
+        self.laser_code_box.setVisible(member.loadout.uses_laser_code())
+
+    def sync_loadout_selector(self) -> None:
+        """Point the selector at a real preset and flag a custom loadout as custom.
+
+        Signals are blocked because selecting an item fires ``on_new_loadout``,
+        which would overwrite the member's custom loadout with the preset.
+        """
+        member = self.member_selector.selected_member
+        is_custom = member.loadout.is_custom
+        with block_signals(self.loadout_selector):
+            if is_custom:
+                # The custom loadout itself is not in the list; show what unticking
+                # "Use custom loadout" would adopt, which is what that path reads.
+                self.loadout_selector.setCurrentText(
+                    Loadout.default_for(self.flight).name
+                )
+            else:
+                self.loadout_selector.setCurrentText(member.loadout.name)
+        self.custom_loadout_note.setVisible(is_custom)
 
     def refresh_fuel_brief(self) -> None:
         brief = fuel_brief_for(
@@ -328,21 +400,19 @@ class QFlightPayloadTab(QFrame):
     def showEvent(self, event: QShowEvent) -> None:
         # Waypoint edits happen on other tabs; recompute whenever this tab shows.
         super().showEvent(event)
-        self.refresh_fuel_brief()
+        self.refresh_loadout_readouts()
 
     def resize_for_flight(self) -> None:
         self.member_selector.setMaximum(self.flight.count - 1)
 
     def reload_from_flight(self) -> None:
-        self.loadout_selector.setCurrentText(
-            self.member_selector.selected_member.loadout.name
-        )
-        self.refresh_fuel_brief()
+        self.sync_loadout_selector()
+        self.refresh_loadout_readouts()
 
     def rebind_to_selected_member(self) -> None:
         member = self.member_selector.selected_member
         self.property_editor.set_flight_member(member)
-        self.loadout_selector.setCurrentText(member.loadout.name)
+        self.sync_loadout_selector()
         self.loadout_selector.setDisabled(member.loadout.is_custom)
         self.livery_selector.setCurrentIndex(
             self.livery_selector.findData(member.livery)
@@ -350,7 +420,7 @@ class QFlightPayloadTab(QFrame):
         self.payload_editor.set_flight_member(member)
         self.weapon_laser_code_selector.set_flight_member(member)
         self.own_laser_code_info.set_flight_member(member)
-        self.refresh_fuel_brief()
+        self.refresh_loadout_readouts()
         if self.member_selector.value() != 1:
             self.loadout_selector.setDisabled(
                 self.flight.use_same_loadout_for_all_members
@@ -384,7 +454,7 @@ class QFlightPayloadTab(QFrame):
         if self.flight.use_same_loadout_for_all_members:
             self.flight.roster.use_same_loadout_for_all_members()
         self.payload_editor.reset_pylons()
-        self.refresh_fuel_brief()
+        self.refresh_loadout_readouts()
 
     def on_custom_toggled(self, use_custom: bool) -> None:
         self.loadout_selector.setDisabled(use_custom)
@@ -397,12 +467,20 @@ class QFlightPayloadTab(QFrame):
             self.payload_editor.reset_pylons()
         if self.flight.use_same_loadout_for_all_members:
             self.flight.roster.use_same_loadout_for_all_members()
-        self.refresh_fuel_brief()
+        self.sync_loadout_selector()
+        self.refresh_loadout_readouts()
 
     def on_saved_payload(self, payload_name: str) -> None:
+        # Saving over an existing name (which is the whole point of setting a task
+        # default) must not stack a second identical entry in the list.
         loadout = self.member_selector.selected_member.loadout
-        self.loadout_selector.addItem(payload_name, loadout)
-        self.loadout_selector.setCurrentIndex(self.loadout_selector.count() - 1)
+        index = self.loadout_selector.findText(payload_name)
+        if index < 0:
+            self.loadout_selector.addItem(payload_name, loadout)
+            index = self.loadout_selector.count() - 1
+        else:
+            self.loadout_selector.setItemData(index, loadout)
+        self.loadout_selector.setCurrentIndex(index)
 
     def on_same_loadout_toggled(self, checked: bool) -> None:
         self.flight.use_same_loadout_for_all_members = checked

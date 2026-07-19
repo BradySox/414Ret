@@ -30,7 +30,12 @@ class QEditFlightDialog(QDialog):
         self.package_model = package_model
         self.events = GameUpdateEvents()
 
-        self.setWindowTitle("Edit flight")
+        # Name the flight in the title. Several of these can be open at once (and
+        # sit alongside the package dialog, which does identify itself), and a stack
+        # of windows all captioned "Edit flight" is unnavigable. Flight.__str__ is
+        # contractually non-raising and already carries any custom name, the task,
+        # the airframe and the start type.
+        self.setWindowTitle(f"Edit flight — {flight}")
         self.setWindowIcon(EVENT_ICONS["strike"])
         self.setModal(True)
 

@@ -76,6 +76,7 @@ class QPylonEditor(QWidget):
                 self.weapon_combo.setCurrentIndex(i + 1)
 
         bound_dropdown_width(self.weapon_combo, self.STORE_NAME_HINT_CHARS)
+        self._update_store_tooltip()
 
         self.weapon_combo.currentIndexChanged.connect(self.on_pylon_change)
         layout.addWidget(self.weapon_combo, 1)
@@ -91,6 +92,17 @@ class QPylonEditor(QWidget):
         layout.addWidget(self.settings_button)
 
         self.update_settings_button_visibility()
+
+    def _update_store_tooltip(self) -> None:
+        """Show the selected store's full name on hover.
+
+        Store names run well past the dropdown's width cap (see
+        :attr:`STORE_NAME_HINT_CHARS`), so the *closed* combo elides them --
+        "(Special Weapons Adapter) 2x Mk-20 Rockeye -" with no way to read the rest.
+        The open popup keeps its natural width, so this only has to cover the
+        closed state.
+        """
+        self.weapon_combo.setToolTip(self.weapon_combo.currentText())
 
     def update_settings_button_visibility(self) -> None:
         """Show/hide settings button based on whether current weapon has settings."""
@@ -128,6 +140,7 @@ class QPylonEditor(QWidget):
             del self.flight_member.loadout.pylon_settings[self.pylon.number]
 
         self.update_settings_button_visibility()
+        self._update_store_tooltip()
 
         if selected is None:
             logging.debug(f"Pylon {self.pylon.number} emptied")
@@ -181,3 +194,4 @@ class QPylonEditor(QWidget):
     def set_from(self, loadout: Loadout) -> None:
         self.weapon_combo.setCurrentText(self.matching_weapon_name(loadout))
         self.update_settings_button_visibility()
+        self._update_store_tooltip()

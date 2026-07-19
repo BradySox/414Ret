@@ -129,8 +129,13 @@ Upstream hands you a map that already knows everything. Here you have to go look
   unidentified sites show only their threat tier until you fly the overflight.
 - **Mission code words** (Red Flag style), visible to planners *before* generation and on your
   kneeboard in the cockpit.
-- Plus: target intel panels, per-airframe payload defaults, impact-first debriefs, custom
-  kneeboard import, and era-gated cockpit options (no JHMCS in 1968).
+- **Set a loadout once and every future flight gets it.** Build the fit you want in the
+  payload editor and hit **Set as default for &lt;task&gt;** — from then on every flight of that
+  airframe planned for that task is generated carrying it, in this campaign and the next,
+  until you clear it. The same box already remembers your fuel and cockpit settings per
+  airframe.
+- Plus: target intel panels, impact-first debriefs, custom kneeboard import, and era-gated
+  cockpit options (no JHMCS in 1968).
 
 ### Systems that make the war strategic
 

@@ -19,12 +19,11 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QWidget,
 )
-from dcs import lua
-
 from game import Game
 from game.ato.flight import Flight
 from game.ato.flightmember import FlightMember
 from game.data.weapons import Pylon
+from game.fourteenth import loadout_defaults
 from game.persistency import payloads_dir
 from qt_ui.blocksignals import block_signals
 from qt_ui.windows.mission.flight.payload.QPylonEditor import QPylonEditor
@@ -93,6 +92,12 @@ class QLoadoutEditor(QGroupBox):
         buttons.addWidget(purge_btn)
         vbox.addLayout(buttons)
 
+        # 414th (§73): make this loadout the one every future flight of this
+        # airframe+task is planned with, by writing it into the payload name the
+        # planner resolves. Mirrors the "Save as default" pair on the aircraft
+        # settings box, which covers fuel + cockpit properties.
+        vbox.addLayout(self._build_default_loadout_row())
+
         self.setLayout(vbox)
 
         for pylon_editor in self.iter_pylon_editors():
@@ -108,6 +113,115 @@ class QLoadoutEditor(QGroupBox):
         for pylon_editor in self.iter_pylon_editors():
             pylon_editor.set_flight_member(flight_member)
 
+    def _build_default_loadout_row(self) -> QHBoxLayout:
+        task = self.flight.flight_type
+        aircraft = self.flight.unit_type
+
+        row = QHBoxLayout()
+        row.addWidget(QLabel(f"Default {task.value} loadout:"))
+        row.addStretch(1)
+
+        self.set_default_btn = QPushButton(f"Set as default for {task.value}")
+        self.set_default_btn.setToolTip(
+            f"Plan every future {aircraft.display_name} {task.value} flight with "
+            f"this loadout, by saving it as the payload the planner resolves for "
+            f"that task. Applies to both coalitions and every campaign."
+        )
+        self.set_default_btn.clicked.connect(self._on_set_default_loadout)
+        row.addWidget(self.set_default_btn)
+
+        self.clear_default_btn = QPushButton("Clear default")
+        self.clear_default_btn.setToolTip(
+            f"Drop your saved {task.value} loadout for the "
+            f"{aircraft.display_name} and go back to Retribution's built-in fit."
+        )
+        self.clear_default_btn.clicked.connect(self._on_clear_default_loadout)
+        self.clear_default_btn.setEnabled(self._has_default_loadout_override())
+        row.addWidget(self.clear_default_btn)
+        return row
+
+    def _default_loadout_name(self) -> str:
+        return loadout_defaults.override_name_for(
+            self.flight.flight_type, self.flight.unit_type.dcs_unit_type
+        )
+
+    def _has_default_loadout_override(self) -> bool:
+        return loadout_defaults.has_override_for(
+            self.flight.unit_type.dcs_unit_type, self._default_loadout_name()
+        )
+
+    def _on_set_default_loadout(self) -> None:
+        task = self.flight.flight_type
+        aircraft = self.flight.unit_type
+        name = self._default_loadout_name()
+        if (
+            QMessageBox.question(
+                self,
+                f"Set the default {task.value} loadout?",
+                f"Every {aircraft.display_name} planned as {task.value} will be "
+                f"given this loadout from now on.\n\n"
+                f'It is saved to your DCS user payloads as "{name}", which takes '
+                f"precedence over Retribution's built-in fit. So it applies:\n\n"
+                f"• to both coalitions — enemy {aircraft.display_name} "
+                f"{task.value} flights get it too\n"
+                f"• in every campaign, until you clear it\n"
+                f"• to newly planned flights only — flights already in "
+                f"the ATO keep the loadout they have",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Cancel,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
+            return
+        if not self._write_payload(name):
+            return
+        self.clear_default_btn.setEnabled(True)
+        QMessageBox.information(
+            self,
+            "Default loadout set",
+            f"New {aircraft.display_name} {task.value} flights will now be planned "
+            f'with this loadout (saved as "{name}").',
+        )
+
+    def _on_clear_default_loadout(self) -> None:
+        task = self.flight.flight_type
+        aircraft = self.flight.unit_type
+        name = self._default_loadout_name()
+        if (
+            QMessageBox.question(
+                self,
+                f"Clear the default {task.value} loadout?",
+                f'This removes your saved "{name}" payload for the '
+                f"{aircraft.display_name}. New {task.value} flights will go back to "
+                f"Retribution's built-in fit.\n\n"
+                f"A backup of the payload file is kept in "
+                f'"{payloads_dir(backup=True)}".',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Cancel,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
+            return
+        removed = loadout_defaults.remove_payload_entry(
+            self.flight.unit_type.dcs_unit_type, name
+        )
+        self.clear_default_btn.setEnabled(self._has_default_loadout_override())
+        QMessageBox.information(
+            self,
+            "Default loadout cleared" if removed else "No saved default",
+            (
+                (
+                    f"New {aircraft.display_name} {task.value} flights will use "
+                    f"Retribution's built-in loadout again."
+                )
+                if removed
+                else (
+                    f'No saved "{name}" payload was found for the '
+                    f"{aircraft.display_name}; nothing was changed."
+                )
+            ),
+        )
+
     def _backup_payloads(self) -> None:
         ac_id = self.flight.unit_type.dcs_unit_type.id
         payload_file = payloads_dir() / f"{ac_id}.lua"
@@ -117,11 +231,30 @@ class QLoadoutEditor(QGroupBox):
         backup_file = backup_folder / f"{ac_id}.lua"
         copyfile(payload_file, backup_file)
         QMessageBox.information(
-            QWidget(),
+            self,
             "Backup Payload",
-            f"Payload file for {self.flight.unit_type.dcs_unit_type.id} was backed up successfully.\n"
+            f"Payload file for {ac_id} was backed up successfully.\n"
             f"Location: {backup_file}",
         )
+
+    def _write_payload(self, payload_name: str) -> bool:
+        """Persist the current loadout under ``payload_name``. False if it wasn't."""
+        ac_type = self.flight.unit_type.dcs_unit_type
+        payload = DcsPayload.from_flight_member(
+            self.flight_member, payload_name
+        ).to_dict()
+        if not loadout_defaults.write_payload_entry(ac_type, payload_name, payload):
+            QMessageBox.warning(
+                self,
+                "Payload not saved",
+                f"The existing payload file for {ac_type.id} could not be read, so "
+                f"it was left untouched rather than risk losing the payloads "
+                f"already saved in it.\n\n"
+                f"Location: {loadout_defaults.user_payload_file(ac_type.id)}",
+            )
+            return False
+        self.saved.emit(payload_name)
+        return True
 
     def _save_payload(self) -> None:
         payload_name_input = self._create_input_dialog()
@@ -129,56 +262,15 @@ class QLoadoutEditor(QGroupBox):
             return
         payload_name = payload_name_input.textValue()
         ac_type = self.flight.unit_type.dcs_unit_type
-        ac_id = ac_type.id
-        payloads_folder = payloads_dir()
-        payload_file = payloads_folder / f"{ac_id}.lua"
-        ac_type.payloads[payload_name] = DcsPayload.from_flight_member(
-            self.flight_member, payload_name
-        ).to_dict()
-        if payload_file.exists():
-            self._create_backup_if_needed(ac_id)
-            with payload_file.open("r", encoding="utf-8") as f:
-                payloads = lua.loads(f.read())
-            if payloads:
-                pdict = payloads["unitPayloads"]["payloads"]
-                next_key = len(pdict) + 1
-                for p in pdict:
-                    if pdict[p]["name"] == payload_name:
-                        next_key = p
-                pdict[next_key] = DcsPayload.from_flight_member(
-                    self.flight_member, payload_name
-                ).to_dict()
-                with payload_file.open("w", encoding="utf-8") as f:
-                    f.write("local unitPayloads = ")
-                    f.write(lua.dumps(payloads["unitPayloads"], indent=1))
-                    f.write("\nreturn unitPayloads")
-        else:
-            with payload_file.open("w", encoding="utf-8") as f:
-                payloads = {
-                    "name": f"{self.flight.unit_type.dcs_unit_type.id}",
-                    "payloads": {
-                        1: DcsPayload.from_flight_member(
-                            self.flight_member, payload_name
-                        ).to_dict(),
-                    },
-                    "unitType": f"{self.flight.unit_type.dcs_unit_type.id}",
-                }
-                f.write("local unitPayloads = ")
-                f.write(lua.dumps(payloads, indent=1))
-                f.write("\nreturn unitPayloads")
-            self.flight.unit_type.dcs_unit_type.add_to_payload_cache(payload_file)
-        self.saved.emit(payload_name)
+        if not self._write_payload(payload_name):
+            return
+        self.clear_default_btn.setEnabled(self._has_default_loadout_override())
         QMessageBox.information(
-            QWidget(),
+            self,
             "Payload Saved",
-            f"Payload for {self.flight.unit_type.dcs_unit_type.id} was successfully saved.\n"
-            f"Location: {payload_file}",
+            f"Payload for {ac_type.id} was successfully saved.\n"
+            f"Location: {loadout_defaults.user_payload_file(ac_type.id)}",
         )
-
-    def _create_backup_if_needed(self, ac_id):
-        backup_file = payloads_dir(backup=True) / f"{ac_id}.lua"
-        if not backup_file.exists():
-            self._backup_payloads()
 
     def _create_input_dialog(self):
         payload_name_input = QInputDialog()

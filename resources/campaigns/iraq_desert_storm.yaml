@@ -9,21 +9,24 @@ description:
   Storm -- denser than Hanoi at the height of Rolling Thunder. The French-built KARI
   network ties every SA-2, SA-3 and Roland ring back through sector operations centers
   to one air defense operations center in Baghdad, and the Iraqi Air Force sits on
-  GCI alert behind it.</p>
-  <p>Tonight that claim gets tested. Coalition air power strikes east out of Al-Asad
-  and the western H-3 desert strip -- put out KARI's eyes, collapse the SAM rings,
-  hunt the Scud launchers that threaten the coalition itself, and grind the army's
-  supply lines until the ground offensive can end it. Saddam has promised his people
+  GCI alert behind it -- the Foxbats of Qadessiya at Al-Asad closest of all.</p>
+  <p>Tonight that claim gets tested. In the war's opening hours the coalition seized
+  the three H-3 desert strips on the western border; the tanker bridge and the AWACS
+  orbits run from the Saudi rear behind them. Strike east up the old pipeline road --
+  put out KARI's eyes, collapse the SAM rings, hunt the Scud launchers in the western
+  baskets, and climb the ladder -- H-2, then Qadessiya, then the Habbaniyah line --
+  until the ground offensive can end it at Baghdad's gates. Saddam has promised his people
   <em>Umm al-Ma'arik</em> -- the Mother of all Battles. Give it to him.</p>
 miz: iraq_desert_storm.miz
 performance: 2
 # Advanced (networked) IADS -- the KARI network: red SAM hubs carry co-located Command
 # Center + Comms tower M + GeneratorF statics (in the .miz; the ADOC at Baghdad, sector
-# operations centers at Al-Taquddum / Kirkuk / Al-Kut) plus a P-37/1L13 EWR chain. With
-# no iads_config, MANTIS wires each base's SAMs to its nearby comms (<15nm) / power
-# (<35nm) / command center by range -> destroyable per-base C2 cells, the Red Tide
-# pattern. Decapitating the C2 (the F-117's war) degrades the whole net -- and feeds
-# the s52 planning-degradation preseed below.
+# operations centers at Al-Taquddum / Kirkuk / Al-Kut, comms/power relays at every
+# other red base incl. Qadessiya/H-2/Balad/Mosul) plus a P-37/1L13 EWR chain with a
+# forward station at Qadessiya facing the H-3 front. With no iads_config, MANTIS wires
+# each base's SAMs to its nearby comms (<15nm) / power (<35nm) / command center by
+# range -> destroyable per-base C2 cells, the Red Tide pattern. Decapitating the C2
+# (the F-117's war) degrades the whole net -- and feeds the s52 preseed below.
 advanced_iads: true
 # The air campaign opened at 0300 local on 17 January 1991. The datetime form seeds
 # the clock too, so a new campaign starts on the night-one strikes.
@@ -61,8 +64,8 @@ settings:
   # gear. Bomb-it-or-tap-it.
   comint_collection: true
   red_comms_net: true
-  # s50: real supply convoys run the highway graph below on both sides; red ambush
-  # teams may dig in along the blue western MSR.
+  # s50: real supply convoys run the highway graph below; the pipeline-road ladder
+  # legs live in the .miz and light up as blue captures the rungs.
   convoy_ambush: true
   # s61 host tools for the DM (gated to the host's tag via the plugin option below).
   host_red_scramble: true
@@ -70,8 +73,9 @@ settings:
   # host's saved defaults would otherwise silently kill its preseeded feature.
   plugins:
     convoyambush: true
-    # s49 shoot-and-scoot for the authored Scud batteries -- the Great Scud Hunt
-    # needs the launchers to never be where the last recon photo froze them.
+    # s49 shoot-and-scoot for the authored Scud batteries (incl. the two western
+    # baskets on the H-3 front) -- the Great Scud Hunt needs the launchers to never
+    # be where the last recon photo froze them.
     mobilemissiles: true
     # s70 C1: the audible KARI UHF net (CW traffic from every alive C2 node).
     rednet: true
@@ -112,7 +116,7 @@ phases:
       the sector operations centers at Al-Taquddum, Kirkuk and Al-Kut are the
       network's brain; the EWR chain is its eyes; the SA-2 and SA-3 rings around
       Baghdad are its teeth. Decapitate the C2, roll back the belt, and win the air
-      war the Iraqi Air Force comes up to fight.
+      war the Foxbats of Qadessiya come up to fight.
     emphasis: rollback
     objectives:
       - Decapitate KARI -- the ADOC and sector operations centers are strikeable C2
@@ -132,15 +136,18 @@ phases:
     red_tempo:
       trail_surge: 1.5
     narrative: >-
-      The Scuds are flying, and every launch is aimed at the coalition itself. Find
-      the launchers before they shoot -- they relocate between every recon pass --
-      and strangle the highway net that feeds them and the army: Highway 1 north out
-      of Baghdad, the Kirkuk roads, the Habbaniyah line to the front. Baghdad surges
-      its convoys to compensate. Good. More targets.
+      The Scuds are flying, and every launch is aimed at the coalition itself. The
+      western baskets sit right on your doorstep -- find the launchers before they
+      shoot, they relocate between every recon pass -- and strangle the highway net
+      that feeds them and the army. Take H-2 to open the pipeline road; Baghdad
+      surges its convoys to compensate. Good. More targets.
     emphasis: interdiction
     objectives:
       - Hunt the Scud batteries -- TARPS the suspected sites, then kill the launchers
       - Interdict the highway convoys -- the army lives on the roads
+      - text: Seize H-2 -- the first rung of the ladder
+        done_when:
+          capture_cp: H-2 Airbase
       - Keep the pressure on KARI -- the rings repair themselves if you let them
     restricted_zones: *baghdad_cde
     advance_when:
@@ -149,15 +156,15 @@ phases:
     name: Umm al-Ma'arik -- the ground offensive
     min_turn: 9
     narrative: >-
-      The air war is won; now end the whole thing. Take Al-Taquddum and the
-      Habbaniyah line, break the army in the field before it can dig in around the
-      capital, and force the regime to the table. The Mother of all Battles ends at
-      Safwan, one way or the other.
+      The air war is won; now end the whole thing. Take Qadessiya -- Al-Asad, the
+      Foxbats' own fortress -- break the army in the field before it can dig in
+      around the capital, and force the regime to the table. The Mother of all
+      Battles ends at Safwan, one way or the other.
     emphasis: offensive
     objectives:
-      - text: Take Al-Taquddum -- the western gate to Baghdad
+      - text: Take Al-Asad -- Qadessiya, the western fortress
         done_when:
-          capture_cp: Al-Taquddum Airport
+          capture_cp: Al-Asad Airbase
       - text: Break the regime's resolve
         done_when:
           red_resolve_below: 25
@@ -167,11 +174,12 @@ phases:
 # The 1991 highway graph, traced from the real road network per the driveable-corridor
 # standard (tools/supply_route_geo.py, mode `iraq_desert_storm` -- regenerate there,
 # never hand-edit the numbers). RED holds nearly the whole map, so its interior net IS
-# the interdiction target set: Highway 1 (Baghdad-Taji-Samarra-Tikrit-Bayji-Qayyarah),
-# Highway 10 west to the Habbaniyah front, Highway 6 southeast to Kut, the Jabal
-# Hamrin crossing to Kirkuk, and the Kurdish arcs (Altun Kupri, Chamchamal, Makhmur).
-# BLUE's one MSR is the old IPC pipeline-station road H-3 -> H-2 -> H-1 -> Al-Baghdadi
-# that the H airfields are literally named for -- and the s50 ambush alley.
+# the interdiction target set: Highway 1 (Baghdad-Taji-Balad-Samarra-Tikrit-Bayji-
+# Qayyarah-Mosul), Highway 10 west to the Habbaniyah front, Highway 6 southeast to
+# Kut, the Jabal Hamrin crossing to Kirkuk, and the Kurdish arcs (Altun Kupri,
+# Chamchamal, Bartella, Makhmur). BLUE's pipeline-station ladder H-3 -> H-2 ->
+# Al-Asad is authored as M-113 path groups in the .miz (they carry the front line up
+# the ladder and double as the convoy roads once each rung is captured).
 supply_routes:
   # Baghdad International -> Al-Salam  (RED city hop: the airport expressway -> the
   # Dora expressway east to the Rasheed side)
@@ -196,12 +204,19 @@ supply_routes:
       - [-38745, 64809]
       - [-70858, 99496]
       - [-85732, 143282]
-  # Baghdad International -> Al-Sahra (Tikrit)  (RED Highway 1 north through Taji ->
-  # the Balad junction -> Samarra -> al-Alam)
+  # Baghdad International -> Balad (al-Bakr)  (RED Highway 1 north through Taji and
+  # the Dujayl junction)
   - waypoints:
       - [-142, 160]
       - [29131, 2641]
+      - [51241, 3944]
       - [66809, 5690]
+      - [75938, 13806]
+  # Balad (al-Bakr) -> Al-Sahra (Tikrit)  (RED Highway 1 north through Samarra ->
+  # al-Alam)
+  - waypoints:
+      - [75938, 13806]
+      - [84636, -2733]
       - [104842, -30899]
       - [149397, -46915]
       - [157133, -61805]
@@ -240,75 +255,27 @@ supply_routes:
       - [279311, -56066]
       - [304614, -40372]
       - [330838, -22360]
-  # H-3 Main -> Al-Asad  (the BLUE western MSR: the IPC pipeline-station road
-  # H-3 -> H-2 -> H-1 -> the Haditha junction -> Al-Baghdadi)
+  # Qayyarah West -> Mosul (Firnas)  (RED Highway 1 north through Hammam al-Alil)
   - waypoints:
-      - [-23566, -419185]
-      - [19255, -324183]
-      - [64579, -259209]
-      - [91181, -186171]
-      - [70431, -156183]
-      - [60819, -165901]
+      - [279544, -97450]
+      - [299843, -90050]
+      - [314166, -84381]
+      - [327576, -89537]
+      - [339469, -94071]
+  # Mosul (Firnas) -> Erbil  (RED: Highway 2 east through Bartella and the Kalak
+  # crossing)
+  - waypoints:
+      - [339469, -94071]
+      - [343931, -73075]
+      - [338012, -48923]
+      - [334507, -35496]
+      - [330838, -22360]
 
 squadrons:
-  # ---- BLUE: Al-Asad Airbase -- the coalition's forward strike wing ----
-  1:
-    - primary: Strike
-      secondary: air-to-ground
-      aircraft:
-        - F-14B Tomcat
-      size: 8
-    # The F-15C wall: the MiG sweep that owned the Desert Storm sky. BARCAP primary
-    # so blue actually stands defensive orbits; the air-to-air secondary feeds every
-    # escort the strike packages need (the escort-starvation fix).
-    - primary: BARCAP
-      secondary: air-to-air
-      aircraft:
-        - F-15C Eagle
-      size: 16
-    - primary: SEAD
-      secondary: any
-      aircraft:
-        - F/A-18C Hornet (Lot 20)
-      size: 8
-    - primary: DEAD
-      secondary: any
-      aircraft:
-        - F-16CM Fighting Falcon (Block 50)
-      size: 8
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - A-10C Thunderbolt II (Suite 7)
-      size: 8
-    - primary: SEAD Sweep
-      secondary: air-to-ground
-      aircraft:
-        - F-4E-45MC Phantom II
-      size: 16
-    - primary: OCA/Runway
-      secondary: any
-      aircraft:
-        - F-15E Strike Eagle (Suite 4+)
-      size: 8
-    - primary: Air Assault
-      secondary: any
-      aircraft:
-        - CH-47F Block I
-      size: 4
-    - primary: Escort
-      secondary: any
-      aircraft:
-        - AH-64A Apache
-      size: 4
-    # The Kiowa scouts: armed recon along the Euphrates front.
-    - primary: Armed Recon
-      secondary: any
-      aircraft:
-        - OH-58D(R) Kiowa Warrior
-      size: 4
-  # ---- BLUE: H-3 Main Airbase -- the western desert support strip ----
-  16:
+  # ---- BLUE: the off-map Saudi rear -- the tanker bridge and the AWACS orbits.
+  # The Iraq map has no 60x60 heavy stands west of Baghdad, and historically the
+  # big wings never based in Iraq at all: they fly from over the border.
+  Coalition Rear (Saudi Arabia):
     - primary: AEW&C
       aircraft:
         - E-3A
@@ -321,7 +288,95 @@ squadrons:
       aircraft:
         - KC-135 Stratotanker MPRS
       size: 1
+  # ---- BLUE: H-3 Main -- the fighter/strike wing + the helo det ----
+  16:
+    # The F-15C wall: BARCAP primary so blue stands defensive orbits; the
+    # air-to-air secondary feeds every escort the strike packages need.
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - F-15C Eagle
+      size: 12
+    - primary: SEAD Sweep
+      secondary: air-to-ground
+      aircraft:
+        - F-4E-45MC Phantom II
+      size: 12
+    - primary: Strike
+      secondary: air-to-ground
+      aircraft:
+        - F-14B Tomcat
+      size: 8
+  # ---- BLUE: H-3 Northwest -- the SEAD/precision/attack strip. The A-10 flies
+  # from here, not the Southwest strip: the Hog's 17.5 m span outsizes all but two
+  # of SW's stands (the parking-fit test guards this). ----
+  18:
+    - primary: DEAD
+      secondary: any
+      aircraft:
+        - F-16CM Fighting Falcon (Block 50)
+      size: 8
+    - primary: SEAD
+      secondary: any
+      aircraft:
+        - F/A-18C Hornet (Lot 20)
+      size: 8
+    - primary: OCA/Runway
+      secondary: any
+      aircraft:
+        - F-15E Strike Eagle (Suite 4+)
+      size: 8
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - A-10C Thunderbolt II (Suite 7)
+      size: 8
+  # ---- BLUE: H-3 Southwest -- the army-aviation strip (helo pads fit the whole
+  # det, Chinook included) ----
+  17:
+    - primary: Air Assault
+      secondary: any
+      aircraft:
+        - CH-47F Block I
+      size: 4
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - AH-64A Apache
+      size: 4
+    # The Kiowa scouts: armed recon up the pipeline road.
+    - primary: Armed Recon
+      secondary: any
+      aircraft:
+        - OH-58D(R) Kiowa Warrior
+      size: 4
 
+  # ---- RED: Al-Asad (Qadessiya AB) -- the western fortress. The Foxbat wing flies
+  # from its real home, with the frontline Frogfoot/F-6 wing forward beside it. ----
+  1:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-25PD Foxbat-E
+      size: 16
+    - primary: CAS
+      secondary: air-to-ground
+      aircraft:
+        - Su-25 Frogfoot
+      size: 16
+    # Iraq's Chinese F-6s (MiG-19 pattern) fly the close escort for the Frogfoots.
+    - primary: Escort
+      secondary: any
+      aircraft:
+        - MiG-19P Farmer-B
+      size: 16
+  # ---- RED: H-2 -- the forward picket on the pipeline road ----
+  15:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-21bis Fishbed-N
+      size: 8
   # ---- RED: Baghdad International -- the capital's air wing ----
   2:
     # "Adnan-1": Iraq's real Il-76-conversion AWACS, flown here by its stand-in.
@@ -334,40 +389,36 @@ squadrons:
       aircraft:
         - Su-22M4 Fitter-K
       size: 12
-    # The Foxbat alert force -- GCI-vectored interceptors, defensively roled so the
-    # QRA reserve actually staffs them (the Red Tide red-posture lesson).
-    - primary: BARCAP
-      secondary: air-to-air
-      aircraft:
-        - MiG-25PD Foxbat-E
-      size: 16
     - primary: BARCAP
       secondary: air-to-air
       aircraft:
         - MiG-23ML Flogger-G
       size: 16
-  # ---- RED: Al-Salam Airbase -- the Rasheed-side strike wing ----
+  # ---- RED: Balad (al-Bakr AB) -- the Flogger/Fencer/Backfire heavyweight on the
+  # Highway 1 corridor (its six 60x60 stands size the Backfire wing). ----
+  8:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-23ML Flogger-G
+      size: 16
+    - primary: DEAD
+      secondary: any
+      aircraft:
+        - Su-24M Fencer-D
+      size: 16
+    - primary: OCA/Runway
+      secondary: any
+      aircraft:
+        - Tu-22M3 Backfire-C
+      size: 6
+  # ---- RED: Al-Salam Airbase -- the Rasheed-side support wing ----
   14:
     - primary: CAS
       secondary: air-to-ground
       aircraft:
         - Su-25 Frogfoot
       size: 8
-    - primary: BARCAP
-      secondary: air-to-air
-      aircraft:
-        - MiG-23ML Flogger-G
-      size: 16
-    - primary: OCA/Runway
-      secondary: any
-      aircraft:
-        - Tu-22M3 Backfire-C
-      size: 8
-    - primary: DEAD
-      secondary: any
-      aircraft:
-        - Su-24M Fencer-D
-      size: 16
     - primary: Air Assault
       secondary: any
       aircraft:
@@ -383,21 +434,11 @@ squadrons:
       aircraft:
         - Mi-8MTV2 Hip
       size: 4
-  # ---- RED: Al-Taquddum -- the western front's ground-attack base ----
-  13:
-    - primary: CAS
-      secondary: air-to-ground
-      aircraft:
-        - Su-25 Frogfoot
-      size: 16
-    # Iraq's Chinese F-6s (MiG-19 pattern) fly the close escort for the Frogfoots.
-    - primary: Escort
-      secondary: any
-      aircraft:
-        - MiG-19P Farmer-B
-      size: 16
-  # ---- RED: Al-Kut -- the Fulcrum reserve ----
-  19:
+  # ---- RED: Al-Sahra (Tikrit) -- the Fulcrum strategic reserve at the regime's
+  # hometown. (Not Al-Kut: that field is 58 helipads + six plane stands -- the
+  # original DS91 had the reserve mis-based there, caught by the parking-fit test.
+  # Al-Kut keeps its SOC East and defenses as a rear depth field.) ----
+  12:
     - primary: TARCAP
       secondary: any
       aircraft:
@@ -452,6 +493,13 @@ squadrons:
       aircraft:
         - IL-76MD
       size: 2
+  # ---- RED: Mosul (Firnas AB) -- the northern Fishbed wing at its type home ----
+  3:
+    - primary: BARCAP
+      secondary: air-to-air
+      aircraft:
+        - MiG-21bis Fishbed-N
+      size: 8
   # ---- RED: Sulaymaniyah International -- the Fitter interdiction wing ----
   7:
     - primary: BAI
@@ -459,15 +507,11 @@ squadrons:
       aircraft:
         - Su-22M4 Fitter-K
       size: 16
-  # ---- RED: Erbil International -- the northern bomber base ----
+  # ---- RED: Erbil International -- the northern bomber base (17 heavy stands
+  # size the Backfire wing) ----
   4:
     - primary: Strike
       secondary: air-to-ground
       aircraft:
         - Tu-22M3 Backfire-C
       size: 12
-    - primary: BARCAP
-      secondary: any
-      aircraft:
-        - MiG-21bis Fishbed-N
-      size: 8

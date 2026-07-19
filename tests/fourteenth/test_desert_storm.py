@@ -2,9 +2,17 @@
 
 The will profile / phase arc degrade silently at runtime (by design), the squadron
 airframes substitute silently if a faction unit goes missing, the supply routes bind by
-closest-CP so a laydown edit can silently re-pair them, and the KARI IADS is authored as
-.miz statics -- so the shipped campaign + the faction adds it depends on are asserted
-here. Sibling of tests/fourteenth/test_tanker_war.py.
+closest-CP so a laydown edit can silently re-pair them, the KARI IADS is authored as
+.miz statics, and DCS parking is dimension-resolved so an over-wide airframe at a
+small-stand field silently fails to ground-spawn -- so the shipped campaign + the
+faction adds it depends on are asserted here. Sibling of
+tests/fourteenth/test_tanker_war.py.
+
+Laydown v2 (the western desert war): BLUE holds only the seized H-3 complex + the
+off-map Saudi rear (the Iraq map has no 60x60 heavy stands west of Baghdad, so the
+E-3/KC-135 wing flies from over the border -- historically where it always was);
+Al-Asad reverts to Iraq as Qadessiya AB and the campaign climbs the pipeline-road
+ladder H-3 -> H-2 -> Al-Asad.
 """
 
 import json
@@ -12,13 +20,41 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
+from game import persistency
 from game.fourteenth.phases import parse_phases
 from game.fourteenth.political_will import parse_will_profile
 
 CAMPAIGN = Path("resources/campaigns/iraq_desert_storm.yaml")
 FACTIONS = CAMPAIGN.parent.parent / "factions"
+
+OFFMAP_KEY = "Coalition Rear (Saudi Arabia)"
+
+#: yaml squadron key -> Iraq terrain airport name (int keys are airport ids).
+AIRPORT_NAMES = {
+    1: "Al-Asad Airbase",
+    2: "Baghdad International Airport",
+    3: "Mosul International Airport",
+    4: "Erbil International Airport",
+    6: "Qayyarah Airfield West",
+    7: "Sulaimaniyah International Airport",
+    8: "Balad Airbase",
+    10: "Kirkuk International Airport",
+    12: "Al-Sahra Airport",
+    14: "Al-Salam Airbase",
+    15: "H-2 Airbase",
+    16: "H-3 Main Airbase",
+    17: "H-3 Southwest Airbase",
+    18: "H-3 Northwest Airbase",
+}
+
+
+@pytest.fixture(autouse=True)
+def _persistency(tmp_path: Path) -> None:
+    """AircraftType.named lazily loads unit data, which needs a save-dir root."""
+    persistency.setup(str(tmp_path), prefer_liberation_payloads=False, port=16884)
 
 
 def _campaign() -> dict[str, Any]:
@@ -57,25 +93,40 @@ def test_desert_storm_campaign_definition() -> None:
     assert plugins["redscramble.hostPlayers"] == "Flash"
 
 
-def test_desert_storm_blue_flies_the_modern_modules() -> None:
-    """The A-10C II + CH-47F squadron authoring depends on the NATO Desert Storm
-    faction carrying both (added for this campaign; date-gating era-clamps them)."""
+def test_desert_storm_blue_holds_only_the_h3_complex() -> None:
+    """The v2 historical laydown: blue's flying wing lives on the three seized H-3
+    strips; the heavies fly from the off-map Saudi rear; Al-Asad (key 1) is RED."""
+    squadrons = _campaign()["squadrons"]
+    blue_keys = {OFFMAP_KEY, 16, 17, 18}
+    assert blue_keys <= set(squadrons)
+
+    # The off-map rear is exactly the big-wing support set (no 60x60 stands exist
+    # west of Baghdad for them to park on).
+    rear = {cfg["aircraft"][0] for cfg in squadrons[OFFMAP_KEY]}
+    assert rear == {"E-3A", "KC-135 Stratotanker", "KC-135 Stratotanker MPRS"}
+
+    # The escort-starvation fix survives the move: the F-15C wall stands BARCAP at
+    # H-3 Main with the air-to-air secondary that feeds every package escort.
+    eagles = [c for c in squadrons[16] if c["aircraft"] == ["F-15C Eagle"]]
+    assert eagles and eagles[0]["primary"] == "BARCAP"
+    assert eagles[0]["secondary"] == "air-to-air"
+    assert eagles[0]["size"] == 12  # trimmed to fit the complex
+
+    # The flyable modules the faction was extended for.
     faction = json.loads(
         (FACTIONS / "NATO_Desert_Storm.json").read_text(encoding="utf-8")
     )
     for airframe in ("A-10C Thunderbolt II (Suite 7)", "CH-47F Block I"):
         assert airframe in faction["aircrafts"], airframe
+    # The Hog flies from the Northwest strip (Southwest has only two stands wide
+    # enough); the helo det owns the Southwest strip.
+    assert any(
+        c["aircraft"] == ["A-10C Thunderbolt II (Suite 7)"] for c in squadrons[18]
+    )
+    assert any(c["aircraft"] == ["CH-47F Block I"] for c in squadrons[17])
 
-    squadrons = _campaign()["squadrons"]
-    al_asad = squadrons[1]
-    authored = {cfg["aircraft"][0] for cfg in al_asad}
-    assert "A-10C Thunderbolt II (Suite 7)" in authored
-    assert "CH-47F Block I" in authored
-    # The escort-starvation fix: blue's fighter squadron stands BARCAP with the
-    # air-to-air secondary that feeds every package escort.
-    eagles = [cfg for cfg in al_asad if cfg["aircraft"] == ["F-15C Eagle"]]
-    assert eagles and eagles[0]["primary"] == "BARCAP"
-    assert eagles[0]["secondary"] == "air-to-air"
+    # Qadessiya flies its real tenants: the Foxbat wing at RED Al-Asad.
+    assert any(c["aircraft"] == ["MiG-25PD Foxbat-E"] for c in squadrons[1])
 
 
 def test_desert_storm_red_fighters_are_defensively_tasked() -> None:
@@ -99,6 +150,51 @@ def test_desert_storm_red_fighters_are_defensively_tasked() -> None:
                 assert cfg["primary"] in ("BARCAP", "TARCAP"), (base_id, aircraft)
 
 
+def test_desert_storm_every_squadron_fits_its_parking() -> None:
+    """DCS Iraq resolves parking by slot dimensions (slot_version 2), and the map
+    has NO oversized stands at most fields -- the original DS91 had the E-3/KC-135
+    wing at H-3 Main (zero fitting stands) and the 24-Fulcrum reserve at Al-Kut
+    (six plane stands + 58 helipads). Assert every based squadron's airframe has at
+    least as many dimensionally-fitting slots as airframes, so a re-basing can
+    never silently strand a wing again. The off-map rear is exempt (air-spawn)."""
+    from dcs.terrain.iraq import Iraq
+
+    from game.dcs.aircrafttype import AircraftType
+
+    terrain = Iraq()
+    airports = {a.name: a for a in terrain.airports.values()}
+    for base_id, configs in _campaign()["squadrons"].items():
+        if base_id == OFFMAP_KEY:
+            continue
+        airport = airports[AIRPORT_NAMES[base_id]]
+        for cfg in configs:
+            unit_type = AircraftType.named(cfg["aircraft"][0]).dcs_unit_type
+            if unit_type.helicopter:
+                fitting = [
+                    s
+                    for s in airport.parking_slots
+                    if s.helicopter
+                    and unit_type.width < s.width
+                    and unit_type.length < s.length
+                    and unit_type.height < (s.height or 1000)
+                ]
+            else:
+                fitting = [
+                    s
+                    for s in airport.parking_slots
+                    if (s.airplanes or s.large)
+                    and unit_type.width < s.width
+                    and unit_type.length < s.length
+                    and unit_type.height < (s.height or 1000)
+                ]
+            assert len(fitting) >= cfg["size"], (
+                base_id,
+                airport.name,
+                cfg["aircraft"][0],
+                f"{len(fitting)} fitting slots < {cfg['size']} airframes",
+            )
+
+
 def test_desert_storm_will_profile_is_the_coalition_story() -> None:
     profile = parse_will_profile(_campaign()["will"])
     assert profile.blue.label == "Coalition cohesion"
@@ -116,36 +212,53 @@ def test_desert_storm_phase_arc() -> None:
     # Instant Thunder advances on IADS attrition -- the rollback coupling.
     assert arc[0].advance_when is not None
     assert arc[0].advance_when.enemy_iads_below == 0.55
-    # The Scud hunt surges the red convoys it hunts.
+    # The Scud hunt surges the red convoys it hunts, and seizes the first rung;
+    # the ground offensive takes Qadessiya.
     assert arc[1].trail_surge == 1.5
+    capture_objectives = {
+        objective.done_when.capture_cp
+        for phase in arc
+        for objective in phase.objectives
+        if objective.done_when is not None
+        and objective.done_when.capture_cp is not None
+    }
+    assert capture_objectives == {"H-2 Airbase", "Al-Asad Airbase"}
 
 
-def test_desert_storm_supply_graph_covers_both_sides() -> None:
-    """10 authored routes: 9 red interior corridors + the blue H-3 -> Al-Asad MSR.
-    Endpoints are exact CP XY (closest-CP binding reads first/last waypoint only), so
-    pin them: a laydown edit that moves a base silently re-pairs the route."""
+def test_desert_storm_supply_graph_is_the_red_interior() -> None:
+    """12 authored routes -- the red highway net (the interdiction target set).
+    Endpoints are exact CP XY (closest-CP binding reads first/last waypoint only),
+    so pin the corridor spine: a laydown edit that moves a base silently re-pairs
+    the route. The blue H-3 -> H-2 -> Al-Asad ladder legs are .miz path groups
+    (they carry the front line up the ladder), not yaml routes."""
     routes = _campaign()["supply_routes"]
-    assert len(routes) == 10
+    assert len(routes) == 12
     endpoints = {(tuple(r["waypoints"][0]), tuple(r["waypoints"][-1])) for r in routes}
-    # The blue western MSR (H-3 -> Al-Asad, the pipeline-station road).
-    assert ((-23566, -419185), (60819, -165901)) in endpoints
-    # Highway 1 north: Baghdad -> Tikrit -> Qayyarah.
-    assert ((-142, 160), (157133, -61805)) in endpoints
+    # Highway 1 north: Baghdad -> Balad (al-Bakr) -> Tikrit -> Qayyarah -> Mosul.
+    assert ((-142, 160), (75938, 13806)) in endpoints
+    assert ((75938, 13806), (157133, -61805)) in endpoints
     assert ((157133, -61805), (279544, -97450)) in endpoints
+    assert ((279544, -97450), (339469, -94071)) in endpoints
+    # The Mosul-Erbil arc ties the north together.
+    assert ((339469, -94071), (330838, -22360)) in endpoints
 
 
 def test_desert_storm_miz_authors_the_kari_network() -> None:
     """The KARI C2: an ADOC + 3 sector operations centers, comms/power relays at
-    every red base, and a 4-station EWR chain -- authored as red-block groups the
-    loader binds by proximity."""
+    every red base (the four v2 fields included), a 5-station EWR chain with the
+    forward Qadessiya set, and the front-ladder path groups."""
     miz = CAMPAIGN.parent / "iraq_desert_storm.miz"
     mission_lua = zipfile.ZipFile(miz).read("mission").decode("utf-8", "replace")
     assert mission_lua.count('".Command Center"') >= 4
-    assert mission_lua.count('"Comms tower M"') >= 9
-    assert mission_lua.count('"GeneratorF"') >= 9
-    assert mission_lua.count('"1L13 EWR"') >= 4
-    # The Scud batteries the s49 hunt needs.
-    assert mission_lua.count('"Scud_B"') >= 7
+    assert mission_lua.count('"Comms tower M"') >= 13
+    assert mission_lua.count('"GeneratorF"') >= 13
+    assert mission_lua.count('"1L13 EWR"') >= 5
+    # The Scud batteries the s49 hunt needs -- incl. the two western baskets.
+    assert mission_lua.count('"Scud_B"') >= 9
+    # The v2 laydown structures: the off-map rear and the pipeline-road ladder.
+    assert OFFMAP_KEY in mission_lua
+    assert "Front H-3 to H-2" in mission_lua
+    assert "Corridor H-2 to Al-Asad" in mission_lua
     # The Dictator-universe inheritance is gone (zones renamed to the 1991 target set).
     for legacy in ("Wadiya", "Aladeen", "Tamir Mafraad", "Allison Burgers"):
         assert legacy not in mission_lua, legacy

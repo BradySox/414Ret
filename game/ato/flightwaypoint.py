@@ -17,11 +17,18 @@ if TYPE_CHECKING:
 AltitudeReference = Literal["BARO", "RADIO"]
 
 # Waypoint types that mark a place on the ground for a human pilot rather than a height
-# to fly. The CAS track's FLOT boundaries are planned at the flight's combat altitude
-# because for the AI the waypoint *is* the track, but a client's steerpoint there wants
-# to sit on the deck so a TGP or weapon can be slaved to it -- at combat altitude the
-# diamond floats thousands of feet above anything worth looking at.
-GROUND_MARKED_WAYPOINTS = (FlightWaypointType.CAS,)
+# to fly. The CAS track's FLOT boundaries and the escort's target area are planned at
+# the flight's combat altitude because for the AI the waypoint *is* the track, but a
+# client's steerpoint there wants to sit on the deck so a TGP or weapon can be slaved
+# to it -- at combat altitude the diamond floats thousands of feet above anything worth
+# looking at. Strike/recon target waypoints are already planned at 0 AGL, so listing
+# the target types here only moves the ones planned at track altitude (escort TARGET).
+GROUND_MARKED_WAYPOINTS = (
+    FlightWaypointType.CAS,
+    FlightWaypointType.TARGET_GROUP_LOC,
+    FlightWaypointType.TARGET_POINT,
+    FlightWaypointType.TARGET_SHIP,
+)
 
 
 @dataclass

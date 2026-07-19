@@ -1524,7 +1524,20 @@ behavior, so it's an upstream-PR candidate. Tests: `tests/test_dead_planning.py`
   CAS track is a separate, untouched question. Tests:
   `tests/ato/test_flightwaypoint_ground_marked.py` + `tests/missiongenerator/test_kneeboard_cas_altitude.py`.
   Upstream-shared (carve candidate — upstream's own comment already asks for it). Checklist
-  **C10** — needs an in-game pass.
+  **C10** — needs an in-game pass. **Extended 2026-07-19 (the flown DS91 escort deck — "5 Target
+  and 8 Landing should be radio alt 0"):** the escort's TARGET area was the *other* waypoint type
+  carrying an AI track altitude into the cockpit (`WaypointBuilder.escort()` plans it at
+  `get_combat_altitude`, BARO — the deck read "Target area 22000" beside a Land row of 0), so
+  `GROUND_MARKED_WAYPOINTS` now lists the three target types
+  (`TARGET_GROUP_LOC`/`TARGET_POINT`/`TARGET_SHIP`; strike/recon targets are already planned at
+  0 AGL, so only the escort row visibly moves), and the **§74 DTC cartridge honors the same
+  predicate** (`client_altitude` in `dtc/common.py`, both builders): it previously emitted the raw
+  planning altitude, so an AutoLoad would have floated a zeroed steerpoint back up to the track
+  altitude — the escort target, and the same latent disagreement on every CAS/flyover steerpoint
+  since the original fix. The Land row was already 0 AGL at every layer (`land()` plans
+  `meters(0)`/RADIO — verified, no change). Planned altitudes are untouched: the AI escort still
+  transits at its track altitude, and the pure-AI route is byte-identical. Extra coverage in
+  `tests/missiongenerator/test_dtc.py` (`test_cartridges_ground_marked_waypoints_like_the_miz`).
 - Malformed mod payload Lua (CJS Super Hornet v2.4 uses local-var table indices that the
   pydcs Lua parser rejects with `ValueError`): patched loader in `qt_ui/main.py`
   (`_patch_pydcs_payload_loader()`), plus the offending files are skipped with a warning.

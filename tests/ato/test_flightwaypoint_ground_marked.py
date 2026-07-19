@@ -28,6 +28,16 @@ def test_cas_waypoint_marks_ground_for_player() -> None:
     assert _wp(FlightWaypointType.CAS).marks_ground_for_player
 
 
+def test_target_waypoints_mark_ground_for_player() -> None:
+    # The escort's TARGET area is planned at the flight's combat altitude (for the
+    # AI it is the track), but the pilot's row/steerpoint there is a place on the
+    # ground -- the flown DS91 escort kneeboard read "Target area 22000". Strike
+    # and recon targets are already planned at 0 AGL, so for them this is a no-op.
+    assert _wp(FlightWaypointType.TARGET_GROUP_LOC).marks_ground_for_player
+    assert _wp(FlightWaypointType.TARGET_POINT).marks_ground_for_player
+    assert _wp(FlightWaypointType.TARGET_SHIP).marks_ground_for_player
+
+
 def test_flyover_waypoint_still_marks_ground_for_player() -> None:
     # Armed recon / TARPS already relied on this in the .miz; don't regress it.
     assert _wp(

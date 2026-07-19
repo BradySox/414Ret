@@ -121,7 +121,10 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **The kneeboard is the classic deck**, with the 414th's additions folded into it rather than
   bolted on. **Mission Info opens on a BLUF**: task, target, TOT, code words, a compact air +
   SAM threat picture, your loadout in one line, and the SAR if-down drill. The **fuel ladder
-  rides in the flight plan**, with the RTB margin called out.
+  rides in the flight plan**, with the RTB margin called out — and it charges the whole
+  sortie, including the on-station orbit: a CAP's racetrack row shows the patrol speed to
+  fly, and an endurance call-out says how long the gas actually holds the station ("On
+  station 45 min planned; fuel supports ~50 min before bingo").
 - **A "last turn" SITREP** — both sides' losses (the enemy's as *claimed*), bases taken or
   lost, pilots recovered.
 - **A Threat Intel Brief** page is the enemy air-defense dossier: one card per system with

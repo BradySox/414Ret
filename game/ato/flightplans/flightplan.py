@@ -153,6 +153,18 @@ class FlightPlan(ABC, Generic[LayoutT]):
     def combat_speed_waypoints(self) -> set[FlightWaypoint]:
         return set()
 
+    def fuel_burn_distance_between_points(
+        self, a: FlightWaypoint, b: FlightWaypoint
+    ) -> Distance:
+        """Ground track flown between a and b for fuel purposes.
+
+        The straight leg for ordinary waypoints. Plans that spend *time* between
+        two points (a racetrack orbiting between its ends for the patrol
+        duration) override this with the distance actually flown, so the fuel
+        model charges the laps and not just one crossing of the track.
+        """
+        return meters(a.position.distance_to_point(b.position))
+
     def fuel_consumption_between_points(
         self,
         a: FlightWaypoint,
@@ -162,8 +174,7 @@ class FlightPlan(ABC, Generic[LayoutT]):
         ppm = self.fuel_rate_to_between_points(a, b, consumption)
         if ppm is None:
             return None
-        distance = meters(a.position.distance_to_point(b.position))
-        return distance.nautical_miles * ppm
+        return self.fuel_burn_distance_between_points(a, b).nautical_miles * ppm
 
     def fuel_rate_to_between_points(
         self,

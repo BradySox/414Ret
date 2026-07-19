@@ -8,7 +8,7 @@ from typing import Any, TYPE_CHECKING, TypeGuard, TypeVar
 
 from game.ato.flightplans.standard import StandardFlightPlan, StandardLayout
 from game.typeguard import self_type_guard
-from game.utils import Distance, Speed
+from game.utils import Distance, Speed, nautical_miles
 from .uizonedisplay import UiZone, UiZoneDisplay
 
 if TYPE_CHECKING:
@@ -91,6 +91,20 @@ class PatrollingFlightPlan(StandardFlightPlan[LayoutT], UiZoneDisplay, ABC):
         if a is self.layout.patrol_start and b is self.layout.patrol_end:
             return self.patrol_duration
         return super().total_time_between_waypoints(a, b)
+
+    def fuel_burn_distance_between_points(
+        self, a: FlightWaypoint, b: FlightWaypoint
+    ) -> Distance:
+        # The patrol_start -> patrol_end leg is flown as laps of the racetrack for
+        # patrol_duration, not one straight transit, so the fuel model charges the
+        # distance actually covered on station (never less than the track itself).
+        # Without this the whole on-station burn -- most of a CAP's gas -- was
+        # missing from every fuel consumer (kneeboard ladder, RTB margin, sim).
+        if a is self.layout.patrol_start and b is self.layout.patrol_end:
+            hours = self.patrol_duration.total_seconds() / 3600.0
+            laps = nautical_miles(self.patrol_speed.knots * hours)
+            return max(laps, super().fuel_burn_distance_between_points(a, b))
+        return super().fuel_burn_distance_between_points(a, b)
 
     def takeoff_time(self) -> datetime:
         return self.patrol_start_time - self._travel_time_to_waypoint(self.tot_waypoint)

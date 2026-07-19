@@ -6074,16 +6074,37 @@ flights keep late activation entirely (deck crowding). One latent AI fix rode al
 a `WaitingForStart(0)` AI carrier flight previously got a `TimeAfter(0)` activation
 (joining the mission-start fill wave); the placement delay now floors it at 1 s.
 
+**Single player ignores the "spawn immediately" setting (2026-07-18, user call):**
+`never_delay_player_flights` ("Spawn player flights immediately (keep planned TOT)",
+default ON) is a **multiplayer** setting — it exists to keep every player slot
+selectable from mission start — but it also applied to single-player missions, parking
+the lone player on the ramp at the mission start time for a takeoff 40+ minutes out.
+The delay decision now receives `AircraftGenerator.use_client` (two or more client
+slots across both ATOs — the same mission-wide predicate that assigns Client rather
+than Player skill): **with fewer than two player slots the setting is ignored** and the
+lone player flight is delayed to its planned start time like the AI. Cold starts
+additionally **late-activate** — materializing at their planned engine-start time —
+instead of taking the uncontrolled-at-t=0 path, which exists purely for MP slot
+availability and would still leave the lone player idling in the pit from mission
+start; WARM/RUNWAY/air starts take the existing full-delay late activation (taxi /
+takeoff / push time). The ten-minute rule survives (a short hold still spawns at
+mission start), and AI flights and true MP missions are byte-identical.
+
 **Wiring**: `waypointgenerator.set_takeoff_time` split into the hold delay (the
 WaitingForStart remaining) and `needs_deck_placement_delay()` (carrier COLD/WARM ground
 starts; AI always, clients per policy); `should_activate_late` exempts client carrier
-COLD flights. No plugin, no Lua, no miz-format change; `game/settings/settings.py`
-carries the enum + `_migrate_legacy_settings` migration.
+COLD flights. `FlightGroupConfigurator` threads its `use_client` flag into
+`WaypointGenerator` (the `multiplayer` param), consumed by `should_delay_flight` /
+`should_activate_late` for the single-player bypass. No plugin, no Lua, no miz-format
+change; `game/settings/settings.py` carries the enum + `_migrate_legacy_settings`
+migration.
 
 **Tests**: `tests/missiongenerator/test_carrier_deck_policy.py` (the trigger matrix:
 AI placement/push-time activation + the zero-hold floor, client placement under both
 policies, the delayed-client uncontrolled+StartCommand+placement combo, warm
-late-activation parity, airfield/runway no-ops) and
+late-activation parity, airfield/runway no-ops, and the single-player matrix —
+cold/warm/runway late activation at the planned start time, the ten-minute rule, the
+MP + AI no-changes) and
 `tests/settings/test_carrier_deck_policy.py` (default, boolean→enum migration both
 ways, never-stomp, UI visibility).
 
@@ -6094,7 +6115,9 @@ generation, the deck count is known), deck behavior with several client flights 
 uncontrolled from mission start, and the payoff itself — AI reaching the cats without
 jamming on the player. What no mission-level change can fix: same-group AI wingmen
 taxiing on the player's tail (engine formation taxi), and AI recovery taxi after
-landing.
+landing. The single-player bypass is **checklist B26**: how DCS seats the SP pilot in
+a late-activated Player-skill group (and where they wait until it materializes) is
+DCS-only.
 
 ---
 

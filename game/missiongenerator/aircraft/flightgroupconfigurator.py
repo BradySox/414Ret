@@ -144,6 +144,7 @@ class FlightGroupConfigurator:
             self.time,
             self.game.settings,
             self.mission_data,
+            self.use_client,
         ).create_waypoints()
 
         # Special handling for landing waypoints when:

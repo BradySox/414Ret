@@ -2176,15 +2176,25 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     it now spawns **uncontrolled** like its airfield counterpart (slots live from ~mission
     start, `StartCommand` holds only the AI members to the push, + the 1 s placement activation
     under last-resort). WARM/RUNWAY delayed clients keep full-delay late activation (a hot jet
-    can't wait), AI keep late activation (deck crowding). Taxi *routing* itself is engine AI —
+    can't wait), AI keep late activation (deck crowding). **Single player ignores the
+    immediate-spawn setting (2026-07-18, user call):** `never_delay_player_flights` ("Spawn
+    player flights immediately") is an MP option — it keeps every slot selectable from mission
+    start — so a mission with **fewer than two player slots** (the `AircraftGenerator.use_client`
+    predicate, now threaded into the delay decision as `WaypointGenerator`'s `multiplayer`)
+    ignores it: the lone player flight is delayed to its planned start time like the AI, with
+    cold starts **late-activating at their planned engine-start time** (the uncontrolled-at-t=0
+    path exists only for MP slot availability and would leave the lone player idling in the pit
+    anyway); warm/runway keep the existing full-delay late activation, the ten-minute short-hold
+    rule survives, MP + AI byte-identical. Taxi *routing* itself is engine AI —
     no mission-level control (the AI F-14A's forced cat starts are the precedent) — and
     same-group wingmen tailgating the player is unfixable at mission level. No plugin/Lua.
     Tests `tests/missiongenerator/test_carrier_deck_policy.py` +
     `tests/settings/test_carrier_deck_policy.py`.
     (`game/missiongenerator/aircraft/waypoints/waypointgenerator.py`,
-    `game/settings/settings.py`; features doc §64, checklist B17 — needs an in-game pass:
-    does DCS overflow delayed spawns INTO the six-pack once the deck is full, and deck
-    behavior with several client flights parked uncontrolled from mission start.)
+    `game/settings/settings.py`; features doc §64, checklist B17 + B26 — needs an in-game pass:
+    does DCS overflow delayed spawns INTO the six-pack once the deck is full, deck
+    behavior with several client flights parked uncontrolled from mission start, and where
+    DCS puts the SP pilot while a late-activated Player-skill flight waits to materialize.)
 65. **Curated carrier comms (CV Operations Data cleanup)** — DCS auto-renders the yellow "CV
     Operations Data" kneeboard page straight from the miz (it cannot be restyled, only fed better
     data), and the generator fed it allocator junk: the boat "named" `0796 | CVN-71 …` on the

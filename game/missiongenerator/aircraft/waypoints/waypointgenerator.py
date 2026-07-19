@@ -68,6 +68,7 @@ class WaypointGenerator:
         time: datetime,
         settings: Settings,
         mission_data: MissionData,
+        multiplayer: bool,
     ) -> None:
         self.flight = flight
         self.group = group
@@ -75,6 +76,10 @@ class WaypointGenerator:
         self.time = time
         self.settings = settings
         self.mission_data = mission_data
+        # AircraftGenerator.use_client: the mission carries two or more player
+        # slots. A single-player mission spawns its lone player flight at the
+        # planned start time regardless of never_delay_player_flights.
+        self.multiplayer = multiplayer
 
     def create_waypoints(self) -> tuple[timedelta, list[FlightWaypoint]]:
         for waypoint in self.flight.points:
@@ -506,6 +511,13 @@ class WaypointGenerator:
             # something fuel limited like a Harrier).
             return False
 
+        if not self.multiplayer:
+            # "Spawn player flights immediately" exists to keep MP slots
+            # selectable from mission start. With fewer than two player slots
+            # there is no slot list to protect, so the lone player flight is
+            # delayed to its planned start time instead of idling from t=0.
+            return True
+
         return not self.settings.never_delay_player_flights
 
     def should_activate_late(self) -> bool:
@@ -513,6 +525,13 @@ class WaypointGenerator:
             # Avoid spawning aircraft in the air or on the runway until it's
             # time for their mission. Also avoid burning through gas spawning
             # hot aircraft hours before their takeoff time.
+            return True
+
+        if self.flight.client_count and not self.multiplayer:
+            # A delayed single-player cold start materializes at its planned
+            # startup time instead of spawning uncontrolled at mission start:
+            # there is no MP slot list to keep populated, and an uncontrolled
+            # spawn would leave the lone player idling in the pit from t=0.
             return True
 
         if self.flight.departure.is_fleet and not self.flight.client_count:

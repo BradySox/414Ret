@@ -129,17 +129,127 @@ mission.
   each hull needs its own curated layout against its own spot evidence (a Tacview
   probe of a flown mission with deck spawns is the proven method; Tarawa already has
   two measured spots, above).
-- **Fantail static aircraft: BUILT as the opt-in tier.**
-  `carrier_deck_decorations_aircraft` (default OFF, `enabled_when` the main toggle)
-  appends `AIRCRAFT_DRESSING`: two folded SH-60Bs starboard-aft (−134.3/−122.6,
-  +27/+28.2 — the junkyard, likely spots 7/8) and the E-2C on the stern round-down
-  (−152.1, +5.4 — one stern spot, possibly two if the folded Hawkeye spans them).
-  Documented cost ≈3 of the 16 spots, worst case 4. A dedicated guard test keeps the
-  tier ≥9 m from every MEASURED spot (six-pack / port quarter / rescue-helo — the
-  spots Retribution's own spawns demonstrably use) and out of the default layout.
-  Deliberately still excluded even from the tier: the S-3B at (−98.7, +29.9) (would
-  foul the El-3 elevator spot) and the port-quarter E-2s at (−103..−109, −31) (their
-  span fouls the measured port pair the F-14s park on).
+- **Fantail static aircraft: BUILT as the opt-in tier — then trimmed by the user's
+  eyes the same day.** `carrier_deck_decorations_aircraft` (default OFF,
+  `enabled_when` the main toggle) appends `AIRCRAFT_DRESSING`: two folded SH-60Bs
+  starboard-aft (−134.3/−122.6, +27/+28.2 — the junkyard, likely spots 7/8).
+  Documented cost ≈2 of the 16 spots. A dedicated guard test keeps the tier ≥9 m from
+  every MEASURED spot (six-pack / port quarter / rescue-helo — the spots Retribution's
+  own spawns demonstrably use) and out of the default layout.
+
+  **The round-down E-2C lesson (2026-07-18, user screenshot):** the tier's first cut
+  also shipped OCN M8's E-2C at (−152.1, +5.4) — it passed the parking guard (clears
+  every spot) but the user's first in-game look asked the right question: "how can
+  planes land with the E2 there?" It stands 5.6 m tall and 17.6 m long essentially at
+  the ramp crossing, where every recovering aircraft passes a few metres above the
+  deck. (Correction, same day: the static E-2C renders **folded** — the user's closer
+  screenshot disproved my wings-spread read; the ramp argument stands on height +
+  length, but the footprint math shrank, which is what re-opened the port-quarter
+  E-2 question below.) Sedlo can stage-manage recoveries in a scripted mission; a
+  dynamic campaign recovers jets every mission. Cut, and codified as
+  `LANDING_AREA_KEEP_OUT` (a stern-threshold + wires box, x −170..−120 / y −15..+12):
+  **permanent** placements must clear spots AND the recovery corridor — the parking
+  guard alone was demonstrably not enough. Still excluded even after the folded
+  correction: the port-quarter E-2s at (−103..−109, −31) — center-to-center 7–13 m
+  from the measured patio pair the F-14s park on, inside a folded Hawkeye's
+  17.6 m-long footprint envelope.
+
+## The dynamic respot (2026-07-18, the user's next question)
+
+"Why can't we move the planes after we take off? like move the E-2 after the launch
+is over." The honest answer: statics can't drive — a DCS static has no AI controller,
+no route, no `goRoute`. But they CAN be **struck below**: `StaticObject:destroy()`
+removes a static silently (no explosion, no wreck), which reads exactly as the
+elevator ride a real deck crew gives the alert Hawkeye between cycles. So the E-2 is
+back, as a distinct class:
+
+- `LAUNCH_PHASE_DRESSING` (data): placements allowed INSIDE `LANDING_AREA_KEEP_OUT`
+  because they are runtime-cleared. Rules differ from the permanent tiers and are
+  guard-tested separately: must still spare every MEASURED spot (the initial spawn
+  wave uses those while the statics stand), placed only with the aircraft tier on a
+  Nimitz deck, and every launch-phase static MUST reach the plugin's clear list (the
+  generator returns the names; `tgogenerator` records them on
+  `MissionData.deck_decor`; the emitter refuses nothing).
+- The **`deckdecor` plugin** (single-file config script, the §58 pattern) clears each
+  boat's list when EITHER fires first, after a 60 s grace:
+  - **the astern cone** — any friendly fixed-wing airborne within 4.5 NM / below
+    3 000 ft / ±50° of dead astern. Astern = the reciprocal of the **emitted BRC**
+    (the boat steams into wind on one course all mission — §65/§8 — so no runtime
+    orientation API is needed; the boat's live position comes from
+    `Group.getByName`). The CASE I initial runs up the wake at ~800 ft from ~3 NM and
+    the CASE III straight-in comes from further out — both enter the cone long
+    before the groove. Helos, deck-parked jets, high overhead traffic and departures
+    ahead never trip it (harness-pinned).
+  - **the fallback timer** (35 min default) — launches are long over; clear the deck
+    regardless so a hazard never waits on detection. Clearing early is harmless
+    (the E-2's absence hinders nothing); clearing late is the failure mode, so the
+    bias is early.
+  One-shot per boat, a `DECKDECOR|:` log line + an optional "deck respotted for
+  recovery" coalition message. Despawn ONLY — no runtime spawns (a runtime-spawned
+  ship-LINKED static is an unverified DCS behavior; the day someone wants the E-2 to
+  visibly reappear at a bow spot, MOOSE `SPAWNSTATIC:InitLinkToUnit` is the path to
+  evaluate, in-game first).
+
+### The Airboss tie-in (2026-07-18, "should our work tie into MOOSE airboss?")
+
+The fork's `airboss` plugin (default ON — LSO/Marshal comms, grading, the scheduled
+recovery window) intersects this feature twice:
+
+- **It steers the boat.** `AddRecoveryWindow(…, turnIntoWind=true, …, uturn=true)` —
+  during the window the carrier's real heading drifts off the emitted BRC (≈10°
+  angled-deck offset; 180° transients on the U-turn legs). The ±50° cone absorbs the
+  offset; the transients are neutralized by clearing BEFORE the window (below).
+- **Its window start is known at init** — and with the defaults it opens at +30 min,
+  FIVE MINUTES BEFORE the plain 35-min fallback: a gap where Marshal could recover
+  onto a still-dressed corridor if nothing had tripped the cone. deckdecor therefore
+  reads the sibling options table (`dcsRetribution.plugins.airboss.windowStartOption`
+  — same mission, zero coupling) and pulls its clear deadline forward to window start
+  − `airbossMarginS` (300 s), floored at grace + one poll. The armed log line says
+  which deadline source won ("airboss recovery window" vs "fallback timer").
+
+**Deliberately NOT done:** querying the `AIRBOSS` MOOSE object (the airboss plugin
+stores it in a last-boat-wins global — a pre-existing multi-carrier quirk — and MOOSE
+internals churn), clearing on Airboss FSM events (the plugin can be unticked; the
+cone+timer must stand alone), or letting Airboss own deck objects (it has no deck
+model). Bonus attribution fix from this look: the measured bow-port helo spot
+(+58.5, −31.4) is **Airboss's rescue helo** spawn (`RescueHeloGroup`,
+`enableRescueHelo` default ON), not the §21 CSAR helo as first noted.
+- **What DCS must still prove (checklist B25):** destroy() removes the linked static
+  cleanly on a moving deck, and whether the freed stern real estate becomes usable
+  for recovery parking (bonus observation — nothing depends on it).
+
+## Filling the deck (2026-07-18, "go back and look at layouts again")
+
+With the respot mechanism in hand the user asked for a re-mine: "we could fill the
+round down within reason if we figure out reliably getting the landing area cleaned
+up when needed." Curation v2 reclassified every dropped OCN placement with per-type
+**footprint-aware** spot clearances (`required = 9 m + FOOTPRINT_EXTRA_M[type]`; the
+folded E-2 carries 8 m extra off its 17.6 m length, the S-3B keeps a spread-margin
+10.5 m — its fold state is unverified — the Seahawk 6.5 m). Results, all verbatim
+per-mission placements:
+
+- **Street: 6 variants** (M3/M6/M9/M10/M11/M12). The envelope extends aft to −74 and
+  up the island wall to +26, bringing in the M6/M9 **AS32-36A crane** accents at the
+  island's aft corner (the junkyard's own spots sit x ≤ −80 per the SC diagrams; the
+  M3/M10 cranes at −80/−92 stay excluded for exactly that reason). Sets are never
+  mixed across missions inside a zone — M11's tractor and M9's crane sit 2 m apart.
+- **Aircraft tier: two independently-rotating starboard-aft sub-zones** (25+ m apart,
+  so cross-mission combination can't clip): the folded-Seahawk pair (M6/7/9 outer row
+  / M2 inner row / M4 forward row) + a fixed-wing accent behind the island (M2 E-2C /
+  M11 E-2C / M5 S-3B). Documented cost ≈3 unmeasured aft spots.
+- **Launch-phase: two corridor sub-zones**, likewise independent: the round-down
+  E-2C (M8 −152.1 / M1 −138.0) + the **port junk row** between the LSO platform and
+  the wires (M4's 5-piece set — P-25, three deck hands, the fifth LSO figure — or
+  M5's tractor+hand pair). OCN shipped the port row as PERMANENT statics in flyable
+  missions, but it sits where a plausible aft continuation of the patio spot row
+  would be — launch-phase classification spends that real estate only while the deck
+  is a launch deck, and the pre-recovery clear also de-clutters the LSO's line of
+  sight. `LAUNCH_PHASE_MAX_X = −100` pins the whole class aft: M4's bow set stays
+  excluded forever because forward statics would stand in the bow-cat taxi flow
+  exactly during the launch cycle.
+- **Still excluded, with reasons:** the port-quarter E-2s (measured-spot fouls, see
+  above); M4's bow-shoulder set (taxi flow); the handful of forward strays outside
+  every envelope; anything whose only home would mix missions within a zone.
 - **Per-hull variety** (different variants on different boats in one theater) falls
   out free of the group-name seed; nothing to do.
 

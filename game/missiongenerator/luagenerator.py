@@ -23,6 +23,7 @@ from .aireconluadata import populate_ai_recon_lua
 from .aisleepluadata import populate_ai_sleep_lua
 from .briefingluadata import populate_briefing_lua
 from .coinluadata import populate_coin_lua
+from .deckdecorluadata import populate_deck_decor_lua
 from .commsjamluadata import populate_comms_jam_lua
 from .rednetluadata import populate_red_net_lua
 from .convoyambushluadata import populate_convoy_ambush_lua
@@ -459,6 +460,13 @@ class LuaGenerator:
         # briefing plugin shows each pilot a short campaign/mission/callsign/field card
         # when they slot in. Display only, no gameplay-model change.
         populate_briefing_lua(lua_data, self.game, self.mission_data)
+
+        # Launch-phase carrier deck dressing (§72) -- emits dcsRetribution.deckDecor
+        # only when the aircraft tier placed launch-phase statics (the round-down
+        # E-2C); the deckdecor plugin strikes them below before recovery (fallback
+        # timer or fixed-wing traffic low astern). Display only -- despawn, no
+        # spawns, no gameplay-model change.
+        populate_deck_decor_lua(lua_data, self.game, self.mission_data)
 
         # Host red-interceptor scramble (§61) -- emits dcsRetribution.redScramble only
         # when host_red_scramble is on and red fighter templates + red airfields exist;

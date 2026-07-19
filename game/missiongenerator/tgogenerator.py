@@ -38,6 +38,7 @@ from dcs.task import (
     ControlledTask,
     Hold,
     EPLRS,
+    EWR,
     FireAtPoint,
     OptAlarmState,
     OptROE,
@@ -82,6 +83,7 @@ from game.theater import (
 )
 from game.theater.theatergroundobject import (
     CarrierGroundObject,
+    EwrGroundObject,
     GenericCarrierGroundObject,
     LhaGroundObject,
     MissileSiteGroundObject,
@@ -341,6 +343,7 @@ class GroundObjectGenerator:
                 )
                 vehicle_group.units[0].player_can_drive = True
                 self.enable_eplrs(vehicle_group, unit.type)
+                self.enable_ewr(vehicle_group)
                 vehicle_group.units[0].name = unit.unit_name
                 self.set_alarm_state(vehicle_group)
                 GroundForcePainter(faction, vehicle_group.units[0]).apply_livery()
@@ -424,10 +427,25 @@ class GroundObjectGenerator:
         if eplrs_enabled and unit_type.eplrs:
             group.points[0].tasks.append(EPLRS(group.id))
 
+    def enable_ewr(self, group: VehicleGroup) -> None:
+        # EWR radars need the DCS "EWR" enroute task to actively scan and report
+        # contacts to their coalition. Without it they sit inert. Applied only to
+        # dedicated EWR sites (not SAM-as-EWR groups, which Skynet controls by group
+        # name), so it complements the Skynet IADS plugin rather than fighting it:
+        # Skynet reads EWR detections by unit name and does not manage the task list.
+        # (The matching RED alarm state is forced in set_alarm_state.)
+        if isinstance(self.ground_object, EwrGroundObject):
+            group.points[0].tasks.append(EWR())
+
     def set_alarm_state(self, group: MovingGroup[Any], force_red: bool = False) -> None:
         # Ships pass force_red so they always defend; the perf toggle only exists
         # to let ground SAMs start "dark" for Skynet IADS, not to disarm fleets.
-        if force_red or self.game.settings.perf_red_alert_state:
+        # EWR sites must likewise never start dark: a GREEN alarm state leaves the
+        # radar passive (no emission), which would defeat the EWR() enroute task, so
+        # they always come up RED regardless of the perf toggle. Skynet drives EWRs
+        # live anyway, so this stays consistent with IADS control.
+        ewr = isinstance(self.ground_object, EwrGroundObject)
+        if force_red or ewr or self.game.settings.perf_red_alert_state:
             group.points[0].tasks.append(OptAlarmState(2))
         else:
             group.points[0].tasks.append(OptAlarmState(1))

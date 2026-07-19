@@ -9,10 +9,10 @@ from faker import Faker
 # Map a DCS country (by its pydcs ``Country.name``) to a Faker locale so a
 # squadron's pilots are named in their own nation's convention rather than the
 # single shared faction locale. This completes the per-squadron DCS country
-# feature (§23): the squadron's country is already correct on the generated
-# ``.miz`` group (and drives the per-nation voiceovers), so the roster should
-# match — a Greek squadron under the Greek flag should not be full of "John
-# Smith"s.
+# feature (issue #627): the squadron's country is already correct on the
+# generated ``.miz`` group (and drives the per-nation voiceovers), so the roster
+# should match — a Greek squadron under the Greek flag should not be full of
+# "John Smith"s.
 #
 # Only locales shipped with Faker are listed. Any unmapped country — including
 # the multinational / irregular "countries" (the CJTFs, Insurgents, UN

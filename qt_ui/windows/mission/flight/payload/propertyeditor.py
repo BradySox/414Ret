@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import itertools
 import logging
-from typing import Callable, Optional
+from typing import Callable, Optional, TYPE_CHECKING
 
 from PySide6.QtCore import QRect
 from PySide6.QtWidgets import QGridLayout, QLabel, QWidget
@@ -14,6 +16,9 @@ from .propertycheckbox import PropertyCheckBox
 from .propertycombobox import PropertyComboBox
 from .propertyeditbox import PropertyEditBox
 from .propertyspinbox import PropertySpinBox
+
+if TYPE_CHECKING:
+    from game import Game
 
 
 class UnhandledControlTypeError(RuntimeError):

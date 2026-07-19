@@ -24,9 +24,10 @@ TARGET_WAYPOINTS = (
 )
 
 # Waypoints whose generated .miz name is matched as a structural identifier downstream --
-# CTLD air-assault split (landingzone.py: name == "DROPOFFZONE") and formation join/split
-# logic depend on these canonical names. A player rename must NOT reach the .miz for these
-# or that logic silently breaks, so they keep their canonical name regardless of custom_name.
+# CTLD air-assault split (landingzone.py: name == "DROPOFFZONE"), EW jamming placement and
+# formation join/split (aircraftgenerator.py / missiongenerator.py: name in {"JOIN", "SPLIT",
+# "RACETRACK START", "RACETRACK END"}). A player rename must NOT reach the .miz for these or
+# that logic silently breaks, so they keep their canonical name regardless of custom_name.
 STRUCTURAL_WAYPOINT_NAMES = frozenset(
     {"JOIN", "SPLIT", "RACETRACK START", "RACETRACK END", "DROPOFFZONE"}
 )

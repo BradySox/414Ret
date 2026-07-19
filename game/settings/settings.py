@@ -1582,7 +1582,7 @@ class Settings:
         ),
     )
     restrict_props_by_date: bool = boolean_option(
-        "Restrict aircraft options by campaign date (incomplete data)",
+        "Restrict aircraft options by date (WIP)",
         page=CAMPAIGN_MANAGEMENT_PAGE,
         section=GENERAL_SECTION,
         default=False,

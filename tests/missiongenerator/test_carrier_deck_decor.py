@@ -18,8 +18,6 @@ from dcs.ships import CVN_71, KUZNECOW, LHA_Tarawa, Stennis
 
 from game.data.carrier_deck_decor import (
     DeckStatic,
-    FIXED_WING_ACCENTS,
-    HELO_ARRANGEMENTS,
     ISLAND_STREET_ENVELOPE,
     KNOWN_PARKING_SPOTS,
     LANDING_AREA_KEEP_OUT,
@@ -46,15 +44,6 @@ def permanent_gear() -> Iterator[tuple[str, DeckStatic]]:
             yield f"street variant {i}", item
 
 
-def aircraft_tier() -> Iterator[tuple[str, DeckStatic]]:
-    for i, arrangement in enumerate(HELO_ARRANGEMENTS):
-        for item in arrangement:
-            yield f"helo arrangement {i}", item
-    for i, accent in enumerate(FIXED_WING_ACCENTS):
-        for item in accent:
-            yield f"fixed-wing accent {i}", item
-
-
 def launch_phase() -> Iterator[tuple[str, DeckStatic]]:
     for i, variant in enumerate(ROUND_DOWN_VARIANTS):
         for item in variant:
@@ -66,7 +55,6 @@ def launch_phase() -> Iterator[tuple[str, DeckStatic]]:
 
 def everything() -> Iterator[tuple[str, DeckStatic]]:
     yield from permanent_gear()
-    yield from aircraft_tier()
     yield from launch_phase()
 
 
@@ -83,19 +71,29 @@ def test_permanent_gear_is_inside_a_safe_envelope() -> None:
         ), f"{source}: {item} escapes the safe envelopes"
 
 
-def test_every_placement_clears_every_measured_spot() -> None:
-    """EVERY class -- permanent, aircraft tier, launch-phase -- must clear the
-    MEASURED spots (the ones Retribution's own spawns demonstrably use) by the
-    footprint-aware margin. The tier's documented spot cost is UNMEASURED aft
-    spots only."""
+def test_every_placement_clears_every_known_spot() -> None:
+    """EVERY placement -- permanent and launch-phase -- must clear every known
+    spot by the footprint-aware margin. Late-activated groups spawn INTO
+    statics standing on spots (the flown CVN-73 A-6-in-the-Seahawks clip,
+    2026-07-18), so no static may stand on any spot, ever."""
     for source, item in everything():
         required = required_spot_clearance_m(item.type)
         for sx, sy in KNOWN_PARKING_SPOTS:
             clearance = math.hypot(item.x - sx, item.y - sy)
             assert clearance >= required, (
-                f"{source}: {item} is {clearance:.1f} m from the measured "
+                f"{source}: {item} is {clearance:.1f} m from the known "
                 f"spot at ({sx}, {sy}); needs {required:.1f}"
             )
+
+
+def test_no_permanent_static_aircraft_exist() -> None:
+    """The permanent layout is gear/crew ONLY: parked static aircraft on real
+    spots are a proven late-activation spawn-clip hazard; the parked-aircraft
+    look comes from Retribution's real deck population."""
+    for hull in (Stennis.id, CVN_71.id):
+        for turn in range(12):
+            for item in deck_layout_for(hull, "CSG 1", turn):
+                assert STATIC_META[item.type][0] not in ("Planes", "Helicopters")
 
 
 def test_envelopes_stay_off_catapults_and_landing_area() -> None:
@@ -123,15 +121,11 @@ def test_every_type_has_static_meta() -> None:
 
 
 def test_only_launch_phase_may_stand_in_the_ramp_crossing_keep_out() -> None:
-    """Permanent placements (gear AND the aircraft tier) stay out of the stern
-    threshold / wires zone every recovering aircraft crosses a few metres
-    above the deck. Launch-phase items may stand there -- the deckdecor
-    plugin strikes them below before recovery."""
+    """Permanent placements stay out of the stern threshold / wires zone
+    every recovering aircraft crosses a few metres above the deck.
+    Launch-phase items may stand there -- the deckdecor plugin strikes them
+    below before recovery."""
     for source, item in permanent_gear():
-        assert not in_box(
-            item.x, item.y, LANDING_AREA_KEEP_OUT
-        ), f"{source}: {item} is inside the landing-area keep-out"
-    for source, item in aircraft_tier():
         assert not in_box(
             item.x, item.y, LANDING_AREA_KEEP_OUT
         ), f"{source}: {item} is inside the landing-area keep-out"
@@ -143,21 +137,6 @@ def test_launch_phase_is_aft_dressing_only() -> None:
     launch cycle (why M4's bow set stays excluded)."""
     for source, item in launch_phase():
         assert item.x <= LAUNCH_PHASE_MAX_X, f"{source}: {item} is not aft"
-
-
-def test_aircraft_tier_composition_and_gating() -> None:
-    """The tier appends exactly one helo arrangement + one fixed-wing accent;
-    the default layout carries no aircraft statics at all; non-Nimitz decks
-    stay bare."""
-    default_layout = deck_layout_for(CVN_71.id, "CSG 1", 3)
-    for item in default_layout:
-        assert STATIC_META[item.type][0] not in ("Planes", "Helicopters")
-    with_aircraft = deck_layout_for(CVN_71.id, "CSG 1", 3, include_aircraft=True)
-    added = with_aircraft[len(default_layout) :]
-    assert with_aircraft[: len(default_layout)] == default_layout
-    assert added[:2] in HELO_ARRANGEMENTS
-    assert added[2:] in FIXED_WING_ACCENTS
-    assert deck_layout_for(LHA_Tarawa.id, "ESG 1", 3, include_aircraft=True) == []
 
 
 def test_launch_phase_composition_and_gating() -> None:
@@ -213,9 +192,9 @@ def test_linked_static_serialization() -> None:
         mission, country, ship_group, heading, 3, include_aircraft=True
     )
 
-    layout = deck_layout_for(
-        CVN_71.id, "CSG 1", 3, include_aircraft=True
-    ) + launch_phase_dressing_for(CVN_71.id, "CSG 1", 3, True)
+    layout = deck_layout_for(CVN_71.id, "CSG 1", 3) + launch_phase_dressing_for(
+        CVN_71.id, "CSG 1", 3, True
+    )
     launch_count = len(launch_phase_dressing_for(CVN_71.id, "CSG 1", 3, True))
     statics = list(country.static_group)
     assert len(layout) == len(statics)

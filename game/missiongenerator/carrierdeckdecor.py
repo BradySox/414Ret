@@ -82,7 +82,7 @@ def generate_carrier_deck_decorations(
     none) -- the ``deckdecor`` plugin strikes those below before recovery.
     """
     carrier = ship_group.units[0]
-    layout = deck_layout_for(carrier.type, ship_group.name, turn, include_aircraft)
+    layout = deck_layout_for(carrier.type, ship_group.name, turn)
     if not layout:
         return []
     launch_phase = launch_phase_dressing_for(

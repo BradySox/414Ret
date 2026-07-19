@@ -5,10 +5,9 @@ the OCN 2 (Operation Cerberus North 2) campaign missions -- Sedlo's deck
 dressing language, replayed onto Retribution's carriers: LSO platform crew on
 the port-aft sponson, a "street" of deck equipment (tow tractors, P-25
 firefighting vehicle, Hyster forklift, crane, deck crew) alongside the island,
-an opt-in aft aircraft tier (folded Seahawks + a Hawkeye or Viking behind the
-island), and an opt-in LAUNCH-PHASE set in the recovery corridor (the
-round-down E-2 + the port junk-row gear) that the ``deckdecor`` plugin strikes
-below before recovery traffic arrives.
+and an opt-in LAUNCH-PHASE set in the recovery corridor (the round-down E-2 +
+the port junk-row gear) that the ``deckdecor`` plugin strikes below before
+recovery traffic arrives.
 
 Every static type here is base-game content: the AS32 gear and carrier
 personnel ship in ``CoreMods/tech/USS_Nimitz`` and the CV-59 Hyster forklift in
@@ -24,16 +23,21 @@ Placement classes and their rules:
   row, the corral forward and the junkyard aft; extended to the island's aft
   corner for the crane accents -- the junkyard's own spots sit further aft,
   x <= -80 by the SC manual's diagrams). Never inside the recovery corridor.
-- AIRCRAFT tier (opt-in, default OFF): the starboard-aft arrangements
-  DELIBERATELY spend a few of the deck's unmeasured aft parking spots
-  (documented cost); they must still clear every MEASURED spot -- the ones
-  Retribution's own spawns demonstrably use -- with per-type footprint
-  margins.
-- LAUNCH-PHASE (with the aircraft tier): may stand in the recovery corridor
-  because the deckdecor plugin strikes them below before recovery (fallback
-  timer, or fixed-wing traffic low astern). Must still clear every measured
-  spot (the t=0 spawn wave runs while they stand), and must always reach the
-  plugin's clear list.
+- LAUNCH-PHASE (the opt-in aircraft tier, default OFF): may stand in the
+  recovery corridor because the deckdecor plugin strikes them below before
+  recovery (fallback timer / the Airboss window / fixed-wing traffic low
+  astern). Must still clear every known spot (spawns run while they stand),
+  and must always reach the plugin's clear list.
+
+There is deliberately NO permanent static-aircraft class. The first cut
+parked OCN's Seahawk pair + a fixed-wing accent on the starboard-aft spots
+under the manual's "a blocked spot is skipped" claim -- and the first flown
+mission FALSIFIED that for Retribution's dominant spawn path: LATE-ACTIVATED
+groups (the §64 TOT-delay pattern) do NOT skip statics-obstructed spots (a
+flown CVN-73 late-activated A-6E pair straight INTO the Seahawk statics,
+2026-07-18). No static may stand on ANY spawn spot, so the parked-aircraft
+look comes from Retribution's real deck population instead; those positions
+are kept below as LEARNED spot anchors.
 
 The known spot anchors below were measured from flown-mission Tacview
 recordings (t=0 frame, ship-frame transform) plus a 12 m row-pitch
@@ -76,9 +80,7 @@ STATIC_META: dict[str, tuple[str, str | None]] = {
     "Carrier LSO Personell 3": ("Personnel", "carrier_lso3_usa"),
     "Carrier LSO Personell 4": ("Personnel", "carrier_lso4_usa"),
     "Carrier LSO Personell 5": ("Personnel", "carrier_lso5_usa"),
-    "SH-60B": ("Helicopters", None),  # static folded Seahawk
     "E-2C": ("Planes", None),  # static Hawkeye (renders FOLDED -- user-confirmed)
-    "S-3B Tanker": ("Planes", None),  # static Viking
 }
 
 # Hulls sharing the Nimitz deck plan (same spot geography, same island/LSO
@@ -100,6 +102,13 @@ KNOWN_PARKING_SPOTS: tuple[tuple[float, float], ...] = (
     (-84.5, -34.0),  # port quarter (measured; first F-14-capable spot)
     (-96.5, -34.0),  # port quarter (measured)
     (58.5, -31.4),  # bow-port helo spot (measured; Airboss's rescue helo spawns here)
+    # LEARNED the hard way (flown CVN-73, 2026-07-18): late-activated A-6s
+    # spawned INTO statics standing at these former aircraft-tier positions --
+    # the starboard-aft junkyard pair + the El-3 shoulder are real spawn
+    # spots, and late activations do not skip obstructed spots.
+    (-134.3, 27.0),  # junkyard spot (~spot 7; OCN parks a Seahawk here)
+    (-122.6, 28.2),  # junkyard spot (~spot 8; OCN parks a Seahawk here)
+    (-98.7, 29.9),  # El-3 shoulder spot (OCN parks an S-3/E-2 here)
 )
 
 # Minimum centre distance a SMALL static (deck gear / a crew figure) must keep
@@ -114,8 +123,6 @@ MIN_SPOT_CLEARANCE_M = 9.0
 # fuselage length, not the 24.6 m span.
 FOOTPRINT_EXTRA_M: dict[str, float] = {
     "E-2C": 8.0,
-    "S-3B Tanker": 10.5,  # fold state unverified -- keep the spread margin
-    "SH-60B": 6.5,
 }
 
 
@@ -242,39 +249,6 @@ STREET_VARIANTS: list[list[DeckStatic]] = [
     ],
 ]
 
-# --- The aircraft tier (carrier_deck_decorations_aircraft, default OFF) -----
-#
-# Starboard-aft PERMANENT arrangements. These deliberately spend a few of the
-# deck's unmeasured aft spots (the junkyard pair + roughly one more under the
-# fixed-wing accent) -- the documented tier cost. Helo pairs and fixed-wing
-# accents live in separate sub-zones (25+ m apart), so rotating them
-# independently can never clip; each entry is one mission's verbatim
-# arrangement.
-HELO_ARRANGEMENTS: list[list[DeckStatic]] = [
-    # OCN 2 missions 6/7/9 pair (outer row)
-    [
-        DeckStatic("SH-60B", -134.29, 27.02, 277.0),
-        DeckStatic("SH-60B", -122.57, 28.24, 277.0),
-    ],
-    # OCN 2 mission 2 pair (inner row)
-    [
-        DeckStatic("SH-60B", -130.21, 23.91, 275.3),
-        DeckStatic("SH-60B", -121.76, 23.70, 275.3),
-    ],
-    # OCN 2 mission 4 pair (forward inner row)
-    [
-        DeckStatic("SH-60B", -121.86, 23.84, 277.0),
-        DeckStatic("SH-60B", -115.89, 23.54, 265.2),
-    ],
-]
-
-# One fixed-wing parked behind the island (the El-3/junkyard shoulder).
-FIXED_WING_ACCENTS: list[list[DeckStatic]] = [
-    [DeckStatic("E-2C", -97.80, 28.80, 272.3)],  # OCN 2 mission 2
-    [DeckStatic("E-2C", -97.00, 31.40, 285.7)],  # OCN 2 mission 11
-    [DeckStatic("S-3B Tanker", -98.70, 29.90, 265.8)],  # OCN 2 mission 5
-]
-
 # --- Launch-phase dressing (aircraft tier; runtime-cleared) -----------------
 #
 # Statics that stand in/near the recovery corridor during the launch cycle and
@@ -311,23 +285,18 @@ def _pick(
     return variants[(crc32(f"{seed_key}|{salt}".encode()) + turn) % len(variants)]
 
 
-def deck_layout_for(
-    hull_id: str, seed_key: str, turn: int, include_aircraft: bool = False
-) -> list[DeckStatic]:
+def deck_layout_for(hull_id: str, seed_key: str, turn: int) -> list[DeckStatic]:
     """The PERMANENT decoration set for one carrier this turn.
 
-    Empty for non-Nimitz decks. Every slot rotates deterministically on
-    (carrier, turn) so a re-generated turn always dresses the deck the same
-    way, while consecutive turns vary. ``include_aircraft`` appends the
-    spot-costing starboard-aft aircraft arrangements.
+    Empty for non-Nimitz decks. The street variant rotates deterministically
+    on (carrier, turn) so a re-generated turn always dresses the deck the
+    same way, while consecutive turns vary. Deliberately gear-only: permanent
+    static aircraft were removed after the flown late-activation spawn-clip
+    (see the module docstring).
     """
     if hull_id not in NIMITZ_DECK_HULLS:
         return []
-    layout = LSO_PLATFORM_CREW + _pick(STREET_VARIANTS, seed_key, "street", turn)
-    if include_aircraft:
-        layout = layout + _pick(HELO_ARRANGEMENTS, seed_key, "helos", turn)
-        layout = layout + _pick(FIXED_WING_ACCENTS, seed_key, "accent", turn)
-    return layout
+    return LSO_PLATFORM_CREW + _pick(STREET_VARIANTS, seed_key, "street", turn)
 
 
 def launch_phase_dressing_for(

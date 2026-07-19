@@ -218,7 +218,47 @@ model). Bonus attribution fix from this look: the measured bow-port helo spot
   cleanly on a moving deck, and whether the freed stern real estate becomes usable
   for recovery parking (bonus observation — nothing depends on it).
 
+## The late-activation falsification (2026-07-18, the flown CVN-73 mission)
+
+The deck-fill round briefly shipped OCN's starboard-aft look as PERMANENT statics
+(the Seahawk pair on the junkyard spots + an E-2C/S-3B accent on the El-3 shoulder),
+priced as "~3 unmeasured aft spots" under the SC manual's claim that a blocked
+parking location is skipped. **The first flown mission falsified the claim**: a
+CVN-73 running 30 TOT-delayed deck starts (the §64 late-activation pattern —
+Retribution's dominant path) late-activated an A-6E pair **inside the Seahawk
+statics** ("some how the A-6s are spawning inside the Helos"). Late activations do
+not skip statics-obstructed spots; they interpenetrate.
+
+Consequences, same day:
+
+- **No permanent static-aircraft class exists.** HELO_ARRANGEMENTS +
+  FIXED_WING_ACCENTS deleted; a guard test asserts the permanent layout never
+  contains a Planes/Helicopters static. The parked-aircraft look comes from
+  Retribution's real deck population (the flown decks are already full of real
+  jets).
+- **Their positions became evidence**: the junkyard pair (−134.3/−122.6, +27/+28.2 ≈
+  spots 7/8) and the El-3 shoulder (−98.7, +29.9) joined `KNOWN_PARKING_SPOTS` as
+  clip-learned anchors — OCN parks aircraft exactly on them, which is how the lesson
+  was bought.
+- **"On a spot" is a hard never for every class**, launch-phase included (spawns run
+  while corridor dressing stands). The stern round-down + port junk row survived the
+  same 30-aircraft mission untouched — evidence they are outside the spawn set —
+  which is why the launch-phase corridor set stays.
+
+The same flight caught the **cone false trip**: the E-2 was struck below at ~5 min
+("the E-2 gets respoted within the first 5mins") — freshly-launched jets turning
+back past the boat are low, astern, and genuinely closing as they overfly. Hardened
+same day: ceiling 3 000 → **1 000 ft** (turnbacks are through it within a minute of
+the cat; the CASE I initial at 800 ft and CASE III finals stay below it), a
+**closing ≥30 kt** gate (crossing/outbound traffic never closes), and a **two-poll
+debounce** (a transient closing moment never clears). Harness-pinned in both
+directions.
+
 ## Filling the deck (2026-07-18, "go back and look at layouts again")
+
+**⚠️ Partially REVERSED the same day** — the permanent aircraft sub-zones described
+below (Seahawk arrangements + fixed-wing accents) were removed by the
+late-activation falsification above; the street/launch-phase halves stand.
 
 With the respot mechanism in hand the user asked for a re-mine: "we could fill the
 round down within reason if we figure out reliably getting the landing area cleaned

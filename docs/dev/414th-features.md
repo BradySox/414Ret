@@ -6595,10 +6595,13 @@ pattern — so re-generating a turn is stable but consecutive turns vary. User r
 2026-07-18 ("apply them to ALL retribution carriers for flavor — BUT we need all of
 the parking spots still usable").
 
-**The hard constraint — every parking spot stays usable.** DCS statics BLOCK deck
-parking locations (the allocator skips an obstructed spot — capacity loss, not an
-explosion), so the curation is an evidence-driven filter, not a copy. Two envelopes are
-provably parking-free and everything shipped lives inside them:
+**The hard constraint — every parking spot stays usable, and no static may stand on
+one.** The SC manual claims a blocked parking location is skipped (capacity loss);
+**flown evidence says worse**: for late-activated groups (Retribution's dominant §64
+spawn path) DCS does NOT skip — it spawns the aircraft INTO the static (the CVN-73
+A-6-in-the-Seahawks clip, 2026-07-18). So the curation is an evidence-driven filter,
+not a copy, and "on a spot" is a hard never. Two envelopes are provably parking-free
+and every permanent placement lives inside them:
 
 - **LSO platform sponson** (x −134..−126, y −25..−18): off the deck surface; aircraft
   physically cannot park there. OCN puts the LSO crew there in all 13 missions at
@@ -6625,20 +6628,20 @@ port-quarter one-offs. Cats are also untouched — the user allowed blocking one
 static on a cat is a player-taxi collision hazard while the AI clips through it anyway
 (no functional block), so nothing is gained.
 
-**The aircraft tier (opt-in, spends spots — user call 2026-07-18; enriched same day
-on "go back and look at layouts again").** A second toggle,
-`carrier_deck_decorations_aircraft` (default **OFF**, `enabled_when` the main toggle),
-appends OCN's starboard-aft static-aircraft look from two independently-rotating
-sub-zones (25+ m apart, so cross-mission combination can't clip): a **folded-Seahawk
-pair** (three verbatim arrangements — the M6/7/9 outer row, M2's inner row, M4's
-forward inner row) and a **fixed-wing accent** parked behind the island on the
-El-3/junkyard shoulder (M2's E-2C, M11's E-2C, or M5's S-3B Viking). Unlike
-everything else these **deliberately occupy parking real estate** (~3 of the 16
-spots: the junkyard pair + roughly one under the accent), which is why they're a
-separate tier; the guard tests keep every aircraft static clear of every MEASURED
-spot (six-pack / port quarter / the rescue-helo spot — the ones Retribution's own
-spawns demonstrably use) by **footprint-aware margins** and out of the default
-layout.
+**No permanent static aircraft — the late-activation falsification (flown
+2026-07-18).** The tier briefly shipped OCN's starboard-aft look as *permanent*
+statics (a folded-Seahawk pair on the junkyard spots + an E-2C/S-3B accent on the
+El-3 shoulder) under the SC manual's "a blocked parking location is skipped" claim —
+and the first flown mission **falsified that claim for Retribution's dominant spawn
+path**: on a CVN-73 with 30 TOT-delayed (§64 late-activated) deck starts, DCS
+spawned an A-6E pair **straight into the Seahawk statics**. Late activations do not
+skip statics-obstructed spots. The permanent aircraft class was removed the same
+day; their positions are kept as **learned spot anchors** in `KNOWN_PARKING_SPOTS`
+(the junkyard pair ≈ spots 7/8 + the El-3 shoulder — OCN parks aircraft exactly on
+them, which is how the lesson was bought), and a guard test asserts the permanent
+layout never contains a Planes/Helicopters category static. The parked-aircraft
+look comes from Retribution's own real deck population — which the flown decks show
+is already rich.
 
 **The launch-phase corridor + the dynamic respot (the `deckdecor` plugin, same day).**
 The tier's first cut shipped OCN M8's round-down Hawkeye (−152.1, +5.4) statically and
@@ -6655,10 +6658,13 @@ the **round-down E-2C** (M8's or M1's position) and the **port junk row** betwee
 LSO platform and the wires (M4's 5-piece set: P-25, three deck hands, the fifth LSO
 figure up-deck; or M5's tractor pair) — and the `deckdecor` plugin despawns them all
 (`StaticObject:destroy`, silent — the elevator ride, narratively) when EITHER fires
-first: friendly **fixed-wing traffic low astern** of the boat (a cone off the
-reciprocal of the emitted BRC — 4.5 NM / 3 000 ft / ±50°, catching the CASE I initial
-up the wake and the CASE III straight-in long before the groove) or a **fallback
-timer** (35 min), plus a one-line "deck respotted for recovery" cue. **The Airboss
+first: friendly **fixed-wing traffic genuinely running in low astern** (a cone off
+the reciprocal of the emitted BRC — 4.5 NM / **1 000 ft** / ±50° / **closing ≥30 kt**
+/ **two consecutive polls**; the CASE I initial at 800 ft and the CASE III final both
+qualify, while a freshly-launched jet turning back past the boat — the flown ~5-min
+false trip, 2026-07-18 — is through 1 000 ft within a minute of the cat, isn't
+closing, and never holds the cone for two polls) or a **fallback timer** (35 min),
+plus a one-line "deck respotted for recovery" cue. **The Airboss
 tie-in**: the sibling `airboss` plugin (default ON) schedules its recovery window
 `windowStartOption` minutes in (default 30 — i.e. BEFORE the plain fallback) and
 steers the boat into wind with U-turns while it is open (the one thing that violates

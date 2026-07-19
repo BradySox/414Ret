@@ -7239,7 +7239,13 @@ duplicated here.
   (strength vs the campaign-start baseline; an empty baseline never fires),
   `enemy_air_denied` (no red CP with `runway_is_operational()` — cratered fields and
   sunk carriers are denied, FOB helipads count as air power, a red off-map spawn makes
-  the condition unreachable by construction), `min_turn` (guard), `label` (display
+  the condition unreachable by construction), the **meter fields** (the same-day
+  adaptation pass — will/supply feed the framework): `blue_will_below`/
+  `red_resolve_below` (0–100 meter scale like `PhaseCondition`, strict `<`, live only
+  while `vietnam_political_will` is on — else never fires and the prose says
+  "(will tracking off)") and `enemy_supply_below`/`friendly_supply_below` (0–100 %
+  via §53 `coalition_supply_health`, live only while `war_economy` is on — the
+  blockade/starvation ending), `min_turn` (guard), `label` (display
   prefix). Parsed by `parse_victory` on the phases-S5 **rederive-never-pickle** rule
   (`_PROFILE_CACHE` keyed by campaign name; any lookup/parse failure degrades to "no
   profile" with a log). Parse fails loudly (unknown keys, empty entries, bad
@@ -7256,15 +7262,23 @@ an escalation *trigger* (ANY satisfied field advances); a victory entry is a
 the `win_when`/`lose_when` lists are OR (any fully-met entry ends the war). That is
 what makes `min_turn` a guard instead of nonsense.
 
-**Evaluation:** `victory_verdict` runs in `Game.check_win_loss` **between** the W2
-negotiation branch (which outranks it) and the stock territory defaults (which remain
-for every campaign with nothing configured — alternate conditions ADD to the stock
-endings, never replace them). Loss precedence within the module (the W2 rule: a
+**Evaluation:** `victory_verdict` is the **single alternate-endings branch** in
+`Game.check_win_loss`, ahead of the stock territory defaults (which remain for every
+campaign with nothing configured — alternate conditions ADD to the stock endings,
+never replace them). **The W2 negotiation ending is absorbed inside it** (the
+2026-07-19 "adapt the meters or drop them" pass; audit verdict: adapt, drop nothing
+— will is the ending mechanism for 7 hand-built campaigns and every piece is
+consumed): will/resolve exhaustion is consulted first at exactly the precedence it
+had as its own branch (negotiation loss > negotiation win > authored/knob loss >
+win), `political_will` stays the owner of the exhaustion semantics, and the
+negotiation path carries no victory announce (the profile's era exhaustion banner
+already fires on the crossing edge). Loss precedence throughout (the W2 rule: a
 simultaneous collapse is never a cheap win). Ground truth (`viewer=None`), turn
 boundary only, zero planner coupling (the §17 boundary — an author who wants the AI
-to *pursue* the objectives adds a `phases:` emphasis; the blocks compose). The met
-condition is announced once (`game.message`, latched on `game.victory_announced`) so
-the generic Victory!/Defeat! dialog always has a "why" beside it in the events feed.
+to *pursue* the objectives adds a `phases:` emphasis; the blocks compose). A met
+authored/knob condition is announced once (`game.message`, latched on
+`game.victory_announced`) so the generic Victory!/Defeat! dialog always has a "why"
+beside it in the events feed.
 
 **The baseline:** `VictoryBaseline` (red/blue air, red ground, red per-category TGO
 counts) latched unconditionally in `initialize_turn` (turn 0 for a new game; first
@@ -7279,6 +7293,11 @@ whenever any conditions are configured; its own expander toggle, so it works wit
 ("Enemy air force below 10% of start (now 62%)", "Capture Sukhumi, Gudauta (1/2
 held)") in the phase-objectives tick styling (`CampaignStatusJs.victory` /
 `victory_description` → `VictoryConditionJs`; `client/src/components/campaignstatus/`).
+On a will campaign the checklist **leads with the negotiation ending's rows**, built
+from the campaign's own will profile with zero authoring — "Break Hanoi's resolve
+(now 87 of 100)" / defeat: "Washington's patience runs out (now 62 of 100)" — so the
+chip lights on all 7 will campaigns (both Vietnam, both COIN, Desert Storm, Tanker
+War, Red Flag 81-2) and the meters finally point at their consequence.
 The same prose rides the SITREP band (`Sitrep.victory_lines`, capped at 4 + a "+N
 more" line, recorded by `record_sitrep`) — so the kneeboard band, the web LAST TURN
 panel, and the Qt debrief box show victory progress for free (§29 parity).

@@ -191,7 +191,11 @@ Upstream hands you a map that already knows everything. Here you have to go look
   limited war ends when its objective is met instead of demanding total conquest. A green
   VICTORY chip on the map ribbon shows the live checklist ("Enemy air force below 10% of
   start (now 62%)"); defeat conditions ("lose Kutaisi and Washington pulls the plug") show
-  as risks. The classic capture-everything ending always remains.
+  as risks. On a political-will campaign the checklist opens with the real negotiation
+  endings — "Break Hanoi's resolve (now 87 of 100)" — so the meters finally point at their
+  consequence, and authors can couple the meters into custom endings ("resolve below 30
+  *and* Hue captured", "enemy front supply starved below 25%"). The classic
+  capture-everything ending always remains.
 - **Warships fire real cruise missile raids** — mark a target, call the strike, and the nearest
   ship ripples a salvo. Magazines are finite and never rearm, so a salvo spent on a truck park
   is one you don't have for the command bunker. A launch puts the defender's SAMs around the

@@ -436,12 +436,14 @@ file. This guide is the map; those are the territory.
     each (W5 = the thin QRA→GCI ambush adaptation). **W1 + W2 landed** — W1 = the observe-only
     will (`Coalition.political_will` + the `vietnam_political_will` toggle + the
     `record_political_will` debrief feed in `game/fourteenth/political_will.py` + the SITREP
-    will band); W2 = the **negotiation ending** (`negotiation_verdict` backing a gated
-    `check_win_loss` branch ahead of the territory checks — RED resolve exhausted → WIN "Hanoi
-    agrees to terms", BLUE will exhausted → LOSS "Washington orders withdrawal", BLUE-loss
-    precedence on a simultaneous collapse; territory victory untouched — plus once-only
-    era-framed exhaustion banners and the 4 Vietnam campaigns preseeding the toggle; weight
-    balance = checklist M1); **W2b landed** = the **static front** (`vietnam_static_front`,
+    will band); W2 = the **negotiation ending** (`negotiation_verdict` — RED resolve
+    exhausted → WIN "Hanoi agrees to terms", BLUE will exhausted → LOSS "Washington orders
+    withdrawal", BLUE-loss precedence on a simultaneous collapse; territory victory untouched
+    — plus once-only era-framed exhaustion banners and the 4 Vietnam campaigns preseeding the
+    toggle; weight balance = checklist M1; **since 2026-07-19 consumed via the §75 victory
+    evaluator** — `victory_verdict` consults it first at the same precedence, `check_win_loss`
+    keeps ONE alternate-endings branch, and the will endings render as live rows on the
+    VICTORY checklist); **W2b landed** = the **static front** (`vietnam_static_front`,
     preseeded ×4 — `game/fourteenth/static_front.py` clamps each front's position to a ±10 %
     band around its campaign-start anchor via a `FrontLine._blue_route_progress` clamp hook,
     so the strength battle bends the line + feeds will but never sweep-captures a base; Air
@@ -2714,26 +2716,39 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `friendly_air_below` (strength vs the campaign-start `VictoryBaseline`, latched
     unconditionally in `initialize_turn`; empty baseline never fires) /
     `enemy_air_denied` (no red CP with an operational runway — red off-map spawns make it
-    unreachable by construction) / `min_turn` guard / `label` — and two **generic opt-in
-    knobs** usable on any campaign (Campaign Management → Victory conditions, both
-    default 0=off): `alternate_victory_domination` + `alternate_victory_attrition`,
-    synthesized into the same conditions and stacked with an authored block.
+    unreachable by construction) / the **meter fields** (the same-day "adapt the meters
+    or drop them" pass — audit verdict: adapt, drop nothing): `blue_will_below` /
+    `red_resolve_below` (0–100 meter scale, live only while `vietnam_political_will` is
+    on — else never fires + "(will tracking off)") and `enemy_supply_below` /
+    `friendly_supply_below` (0–100 % via §53 `coalition_supply_health`, live only while
+    `war_economy` is on — the blockade ending) / `min_turn` guard / `label` — and two
+    **generic opt-in knobs** usable on any campaign (Campaign Management → Victory
+    conditions, both default 0=off): `alternate_victory_domination` +
+    `alternate_victory_attrition`, synthesized into the same conditions and stacked with
+    an authored block.
     **Semantics deliberately diverge from `PhaseCondition`**: a victory entry is a
     requirement — EVERY set field must hold (AND within the entry), the lists are OR (any
-    fully-met entry ends the war) — which is what makes `min_turn` a guard. Evaluated by
-    `victory_verdict` in `Game.check_win_loss` BETWEEN the W2 negotiation branch (which
-    outranks it) and the stock territory defaults (which remain — alternate endings ADD,
-    never replace; loss precedence on a simultaneous met pair; the met condition
-    announced once via a `game.victory_announced` latch). Ground truth, turn-boundary
-    only, zero planner coupling (§17 boundary — compose a `phases:` emphasis if the AI
-    should pursue the objectives). Surfaced as a green **VICTORY ribbon chip** + a
-    live-value expander checklist ("Any one of these ends the war:" / "Defeat if:",
-    `CampaignStatusJs.victory` → `client/src/components/campaignstatus/`) and a capped
-    SITREP digest (`Sitrep.victory_lines` — kneeboard band, web LAST TURN, Qt debrief,
-    §29 parity). No preseeds; no shipped campaign changes behavior. **Prime upstream-carve
-    candidate** (Starfire has an upstream FR; the core has zero fork couplings). Tests
-    `tests/fourteenth/test_victory.py` (30, incl. the real `check_win_loss` branch order
-    driven duck-typed); features doc §75, checklist B29 — needs an in-app pass + the CI
+    fully-met entry ends the war) — which is what makes `min_turn` a guard.
+    `victory_verdict` is the **single alternate-endings branch** in `Game.check_win_loss`
+    ahead of the stock territory defaults (which remain — alternate endings ADD, never
+    replace): it consults **the absorbed W2 negotiation verdict first** (same precedence
+    it had as its own branch — negotiation loss > win > authored/knob loss > win;
+    `political_will` keeps the exhaustion semantics; no double announce, the profile's
+    era banner covers it), then the authored/knob conditions (loss precedence; a met
+    condition announced once via a `game.victory_announced` latch). Ground truth,
+    turn-boundary only, zero planner coupling (§17 boundary — compose a `phases:`
+    emphasis if the AI should pursue the objectives). Surfaced as a green **VICTORY
+    ribbon chip** + a live-value expander checklist ("Any one of these ends the war:" /
+    "Defeat if:", `CampaignStatusJs.victory` → `client/src/components/campaignstatus/`)
+    — which on a will campaign **leads with the negotiation ending's rows** from the
+    campaign's own profile ("Break Hanoi's resolve (now 87 of 100)"), so the chip lights
+    on all 7 will campaigns with zero authoring — and a capped SITREP digest
+    (`Sitrep.victory_lines` — kneeboard band, web LAST TURN, Qt debrief, §29 parity).
+    No preseeds; no shipped campaign changes behavior. **Prime upstream-carve
+    candidate** (Starfire has an upstream FR; the core has zero fork couplings — carve
+    minus the will/supply meter fields). Tests `tests/fourteenth/test_victory.py` (37,
+    incl. the real `check_win_loss` branch order + negotiation precedence driven
+    duck-typed); features doc §75, checklist B29 — needs an in-app pass + the CI
     client rebuild.
 
 ---

@@ -1,7 +1,48 @@
 # Custom Victory Conditions (§75)
 
-**Status: LANDED (V1 authored block + V2 generic knobs + ribbon/SITREP surfacing).**
+**Status: LANDED (V1 authored block + V2 generic knobs + ribbon/SITREP surfacing;
+same-day adaptation pass — the will/supply meters feed the one ending evaluator).**
 In-app pass = checklist B29.
+
+## 2026-07-19 adaptation — "adapt the meters or drop them"
+
+The DM's follow-up call after §75 landed: look at political will, supply "and all
+that junk" and either adapt them to the new system or drop them. The audit verdict
+was **adapt, drop nothing**: will is the ending mechanism for 7 hand-built
+campaigns (both Vietnam, both COIN, Desert Storm, Tanker War, Red Flag 81-2 — 5
+with authored `will:` profiles) and every piece of it is consumed; the war economy
+is Red Tide-preseeded (feature-locked) and its bite is orthogonal to endings. The
+*junk feeling* was a surfacing problem — meters on the ribbon with their actual
+endgame invisible in the new victory UI — so the adaptation makes every meter's
+endgame a victory condition:
+
+1. **One ending evaluator.** `negotiation_verdict` (W2) is consumed *inside*
+   `victory_verdict` at highest precedence (negotiation loss > negotiation win >
+   authored/knob loss > win > territory), and `Game.check_win_loss` keeps a single
+   alternate-endings branch. `political_will` stays the owner of the exhaustion
+   semantics (`<= WILL_MIN`); the negotiation path carries no victory announce
+   (the profile's era-framed exhaustion banner already fires on the crossing
+   edge). Behavior is byte-identical; the W2 function tests are untouched.
+2. **The will endings render on the VICTORY checklist.** On any will campaign the
+   overview leads with two rows built from the campaign's own profile — "Break
+   Hanoi's resolve (now 87 of 100)" / defeat: "Washington's patience runs out
+   (now 62 of 100)" — so the chip lights on all 7 will campaigns with zero
+   authoring and the meters finally point at their consequence.
+3. **Meters join the authored vocabulary.** Four new condition fields, all on the
+   meters' own 0–100 scale (the `PhaseCondition` authoring precedent):
+   `blue_will_below` / `red_resolve_below` (live only while
+   `vietnam_political_will` is on) and `enemy_supply_below` /
+   `friendly_supply_below` (live only while `war_economy` is on, via
+   `coalition_supply_health` — the blockade/starvation ending). A field whose
+   meter is off can never fire, and the live prose says why ("(will tracking
+   off)" / "(war economy off)") — the same honesty rule as the empty strength
+   baselines. This lets an author write compound endings the hardcoded
+   negotiation never could: `win_when: [{red_resolve_below: 30, capture_cps:
+   [Hue]}]`.
+
+Scale rule: **ratio fields are 0–1 fractions of a campaign-start baseline; meter
+fields are the meter's native 0–100.** Enforced by separate validators, both
+exclusive of the trivial ends.
 
 ## Where this came from
 
@@ -43,12 +84,14 @@ siblings:
   turn-0 strength → win). Both default 0 = off. They synthesize the same
   condition objects the authored tier uses and stack with an authored block
   (any win path ends the war).
-- **Evaluation site:** `victory_verdict(game)` called from
-  `Game.check_win_loss` **between** the W2 negotiation branch and the stock
-  territory checks. Loss precedence within the module (the W2 rule: a
-  simultaneous collapse is never a cheap win); the negotiation ending still
-  outranks both; the capture-everything default is untouched and remains the
-  fallback for every campaign with nothing configured.
+- **Evaluation site:** `victory_verdict(game)` — the **single alternate-endings
+  branch** in `Game.check_win_loss`, ahead of the stock territory checks. It
+  consults the W2 negotiation verdict first (absorbed 2026-07-19 — see the
+  adaptation section above; same precedence it had as its own branch), then the
+  authored/knob conditions, loss before win throughout (the W2 rule: a
+  simultaneous collapse is never a cheap win). The capture-everything default
+  is untouched and remains the fallback for every campaign with nothing
+  configured.
 
 ### The YAML block
 
@@ -86,6 +129,8 @@ regardless"). The divergence is documented on both dataclasses.
 | `enemy_ground_below: 0.15` | red front-line ground < this fraction of turn-0 | `Base.total_armor` summed over red CPs (the force `plan_groundwar` fields) |
 | `friendly_air_below: 0.3` | blue air < this fraction of turn-0 | the `lose_when` mirror of the above (Ramius's losses threshold, expressed as strength — not a raw kill counter) |
 | `enemy_air_denied: true` | NO red CP can currently field aircraft | `runway_is_operational()` over red CPs: airfields (cratered = denied until repaired), carriers (sunk = denied), FOBs (helipads count — red helos are still air power) |
+| `blue_will_below: 40` / `red_resolve_below: 30` | a will meter under an authored threshold (0–100, strict `<`) | `Coalition.political_will`; live only while `vietnam_political_will` is on (else never fires + "(will tracking off)"). The exhaustion-at-0 ending needs no authoring — the negotiation verdict is absorbed by `victory_verdict` |
+| `enemy_supply_below: 25` / `friendly_supply_below: 20` | front supply health under a % (0–100) | §53 `coalition_supply_health` × 100; live only while `war_economy` is on (else "(war economy off)") — the blockade/starvation ending |
 | `min_turn: N` | guard: no earlier than turn N | plain turn check (ANDed like everything else in the entry) |
 
 **Honesty rules baked in:**

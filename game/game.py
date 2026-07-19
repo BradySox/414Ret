@@ -767,22 +767,13 @@ class Game:
         if self.blank_canvas_setup:
             return TurnState.CONTINUE
 
-        # Vietnam campaign layer (W2): the negotiation ending, ahead of the territory
-        # checks -- break Hanoi's resolve before Washington's patience breaks. Gated on
-        # vietnam_political_will (returns None when off); territory victory stays.
-        from game.fourteenth.political_will import negotiation_verdict
-
-        verdict = negotiation_verdict(self)
-        if verdict == "loss":
-            return TurnState.LOSS
-        if verdict == "win":
-            return TurnState.WIN
-
-        # Custom victory conditions (§75): authored `victory:` blocks + the
-        # generic domination/attrition knobs, between the negotiation ending
-        # (which outranks them) and the stock capture-everything defaults
-        # (which remain for every campaign with nothing configured). Returns
-        # None when nothing is configured, so this path costs nothing.
+        # Alternate endings (§75 custom victory conditions) -- ONE evaluator
+        # ahead of the stock capture-everything defaults. The W2 negotiation
+        # ending (will/resolve exhaustion, gated on vietnam_political_will) is
+        # absorbed inside victory_verdict at highest precedence, followed by
+        # authored `victory:` blocks + the domination/attrition knobs. Returns
+        # None when nothing is configured, so this path costs nothing and the
+        # territory checks below remain the universal fallback.
         from game.fourteenth.victory import victory_verdict
 
         alternate = victory_verdict(self)

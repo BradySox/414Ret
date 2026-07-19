@@ -370,9 +370,15 @@ printing a negative speed (residual structural-vs-chained drift is now sub-minut
 by the hold dwell, but custom/manually-timed plans can still degenerate). On the flown save
 the DEAD package re-plans at 422 kt (the AV-8B — the slowest *real* member), the hold dwell
 returns positive (~4:35), every row is monotonic, and the Hornets land 21 minutes earlier
-with the package TOT untouched. (`game/ato/package.py`, `game/ato/flightplans/formation.py`,
+with the package TOT untouched. Follow-up same day ("why are we giving times for bullseye"):
+the kneeboard's **divert/bullseye reference rows drop Time/Departure/GSPD entirely**
+(`FlightPlanBuilder.REFERENCE_WAYPOINT_TYPES`) — they ride the jet's route as steerpoints,
+but the chained ETA past the landing point is by construction "when you'd get there if you
+kept flying after landing", and the Fuel column already blanked exactly these rows.
+(`game/ato/package.py`, `game/ato/flightplans/formation.py`,
 `game/ato/flightplans/formationattack.py`, `game/missiongenerator/kneeboard.py`; tests
-`tests/ato/flightplans/test_formationattack.py`.)
+`tests/ato/flightplans/test_formationattack.py` +
+`tests/missiongenerator/test_flightplan_fuel_column.py`.)
 
 **That drone is a lasing JTAC (2026-07-05, 414th call).** The 414th ripped out the old FLOT
 auto-JTAC (a `jtac_unit` MQ-9 glued to the front line); `JtacInfo` went unproduced and

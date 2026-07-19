@@ -2379,38 +2379,40 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     island "street" + the 4-figure LSO platform team — placements **verbatim from the
     OCN 2 campaign's 13 missions** (Sedlo's deck dressing, extracted from the linked
     statics in the miz files), rotating between 4 curated street variants per
-    (carrier, turn) crc32 seed. **The hard constraint is parking**: statics BLOCK deck
-    spawn spots (allocator skips them — capacity loss), so only two provably
-    parking-free envelopes ship — the LSO sponson (off-deck) and the island street
-    (x −68..−40, y +12.5..+24.5, no documented/observed spot) — validated against
-    **Tacview-measured spawn spots from the flown Scenic Route missions** (six-pack row
-    +1/−11.5 @ y+34 on a 12 m pitch, port-quarter −84.5/−96.5 @ y−34, the §21 rescue-helo
-    spot +58.5/−31.4; `KNOWN_PARKING_SPOTS` + a 9 m clearance floor are guard-tested
-    against every table entry). OCN's fantail/bow **static aircraft are deliberately NOT
-    reproduced** (they eat real spots; Retribution's own parked airframes fill that
-    niche), cats stay clear (a cat static is a player collision hazard the AI clips
-    through anyway), and **non-Nimitz decks (Kuz/Tarawa/Forrestal) are excluded** until
-    their own spot evidence exists. Three-level link serialization (`linkUnit` on the
+    (carrier, turn) crc32 seed. **The hard constraint is parking — and no static may
+    stand ON a spot, ever**: the SC manual's "blocked spot is skipped" claim was
+    FALSIFIED in the first flown mission for late-activated groups (Retribution's
+    dominant §64 spawn path) — a CVN-73 late-activated A-6E pair spawned **INTO** the
+    briefly-shipped permanent Seahawk statics (2026-07-18), so the permanent
+    aircraft class was removed same day and only two provably parking-free envelopes
+    ship — the LSO sponson (off-deck) and the island street (no documented/observed
+    spot) — validated against **Tacview-measured spawn spots** (six-pack row
+    +1/−11.5 @ y+34 on a 12 m pitch, port-quarter −84.5/−96.5 @ y−34, the Airboss
+    rescue-helo spot +58.5/−31.4) plus the **clip-learned aft spots** (junkyard
+    ≈ −134/−123 @ y+27/+28, the El-3 shoulder ≈ −99 @ +30 — exactly where OCN parks
+    aircraft; `KNOWN_PARKING_SPOTS` + footprint-aware clearance floors are
+    guard-tested against every table entry, and a guard asserts the permanent layout
+    contains no Planes/Helicopters static). Cats stay clear (a cat static is a player
+    collision hazard the AI clips through anyway), and **non-Nimitz decks
+    (Kuz/Tarawa/Forrestal) are excluded** until their own spot evidence exists. Three-level link serialization (`linkUnit` on the
     route point / `linkOffset` on the group / `offsets` on the unit — pydcs subclasses),
     hooked in `GenericCarrierGenerator.generate()` after the §65 pass; all static types
     are base-game (`CoreMods`), no plugin/Lua/save change — existing campaigns pick it
     up next mission. Six street variants (M3/6/9/10/11/12, incl. the M6/M9 crane
     accents). Gated `carrier_deck_decorations` (Mission Generation → Carrier,
-    default **ON**); the **aircraft tier** `carrier_deck_decorations_aircraft` (default
-    **OFF**, user call 2026-07-18; enriched same day on "go back and look at layouts
-    again") appends two independently-rotating starboard-aft sub-zones — a
-    **folded-Seahawk pair** (3 verbatim arrangements) + a **fixed-wing accent** behind
-    the island (M2/M11 E-2C or M5 S-3B) — **deliberately spending ~3 of the 16 spots**,
-    plus the **LAUNCH-PHASE corridor dressing**: the round-down E-2C (M8/M1 positions)
-    + the port junk row (M4's 5-piece set or M5's pair) standing ONLY during the launch
-    cycle (the arc: shipped static → the user's screenshot caught it menacing the ramp
-    crossing same day ("how can planes land with the E2 there?" — 5.6 m tall, 17.6 m
-    long at the ramp; the static E-2C renders FOLDED, user-corrected) → cut → restored
-    per "move the E-2 after the launch is over" / "we could fill the round down within
-    reason": statics can't drive, so the new **`deckdecor` plugin strikes them below**
-    (`StaticObject:destroy` = the elevator ride) when friendly fixed-wing traffic shows
-    up low astern (4.5 NM/3000 ft/±50° cone off the emitted BRC — catches the CASE I
-    initial + CASE III straight-in) or a 35-min fallback timer, whichever first —
+    default **ON**); the second toggle `carrier_deck_decorations_aircraft` (default
+    **OFF**, user call 2026-07-18) adds the **LAUNCH-PHASE corridor dressing**: the
+    round-down E-2C (M8/M1 positions) + the port junk row (M4's 5-piece set or M5's
+    pair) standing ONLY during the launch cycle (the arc: shipped static → the user's
+    screenshot caught it menacing the ramp crossing same day ("how can planes land
+    with the E2 there?" — 5.6 m tall, 17.6 m long at the ramp; the static E-2C renders
+    FOLDED, user-corrected) → cut → restored per "move the E-2 after the launch is
+    over" / "we could fill the round down within reason": statics can't drive, so the
+    new **`deckdecor` plugin strikes them below** (`StaticObject:destroy` = the
+    elevator ride) when friendly fixed-wing traffic **genuinely runs in** low astern
+    (4.5 NM/**1000 ft**/±50° cone off the emitted BRC + **closing ≥30 kt** + a
+    **2-poll debounce** — the flown ~5-min false trip was launch traffic turning back
+    past the boat, hardened same day) or a 35-min fallback timer, whichever first —
     **and the Airboss tie-in**: the sibling `airboss` plugin (default ON) opens its
     recovery window at +30 min AND steers the boat into wind while it's open, so when
     its options are present deckdecor pulls the deadline to window start −

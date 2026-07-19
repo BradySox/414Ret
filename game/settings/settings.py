@@ -2324,22 +2324,22 @@ class Settings:
         ),
     )
     carrier_deck_decorations_aircraft: bool = boolean_option(
-        "Carrier deck aircraft statics (costs aft parking spots)",
+        "Carrier launch-cycle deck dressing (struck below for recovery)",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
         enabled_when="carrier_deck_decorations",
         default=False,
         detail=(
-            "Also park static aircraft and extra aft dressing, as OCN 2 "
-            "does: a folded SH-60 pair plus an E-2C or S-3B behind the "
-            "island, and -- DURING THE LAUNCH CYCLE ONLY -- an E-2C on the "
-            "stern round-down with gear and hands on the port junk row by "
-            "the LSO platform. The deck-dressing runtime strikes the "
-            "launch-cycle set below before recovery (on a timer, or the "
-            "moment traffic shows up low astern), so the landing area is "
-            "always clear when jets come home. The permanent aircraft "
-            "deliberately occupy roughly three of the deck's sixteen spawn "
-            "spots; leave this off when you need maximum deck capacity."
+            "Extra dressing that stands ONLY during the launch cycle, as "
+            "OCN 2 spots it: an E-2C on the stern round-down plus gear and "
+            "hands on the port junk row by the LSO platform. The "
+            "deck-dressing runtime strikes it all below before recovery "
+            "(ahead of the Airboss recovery window, on a fallback timer, or "
+            "the moment traffic genuinely runs in low astern), so the "
+            "landing area is always clear when jets come home. No permanent "
+            "static ever stands on a parking spot -- aircraft spawning into "
+            "deck statics is a real DCS failure mode this feature learned "
+            "the hard way."
         ),
     )
     generate_portable_tacans: bool = boolean_option(

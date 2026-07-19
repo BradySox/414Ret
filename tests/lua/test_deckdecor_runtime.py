@@ -40,6 +40,7 @@ def _aircraft(
     airborne: bool = True,
     category: int = 0,
     side: int = 2,
+    velocity: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     return {
         "name": name,
@@ -53,6 +54,7 @@ def _aircraft(
                 "z": z,
                 "alt": alt,
                 "airborne": airborne,
+                "velocity": velocity or {"x": 0.0, "y": 0.0, "z": 0.0},
             }
         ],
     }
@@ -69,8 +71,9 @@ def _harness(
             "fallbackMin": fallback_min,
             "airbossMarginS": 300,
             "coneDistNm": 4.5,
-            "coneAltFt": 3000,
+            "coneAltFt": 1000,
             "coneHalfDeg": 50,
+            "coneClosingKts": 30,
         }
     }
     if airboss is not None:
@@ -112,25 +115,80 @@ def test_clears_on_the_fallback_timer() -> None:
     h.assert_no_lua_errors()
 
 
-def test_clears_when_fixed_wing_traffic_is_low_astern() -> None:
+def test_clears_when_recovery_traffic_runs_in_low_astern() -> None:
     h = _harness()
-    # 3 NM dead astern (west of the east-steaming boat), 800 ft.
-    h.add_group(_aircraft("Marshal", x=0.0, z=-3 * NM, alt=250.0))
+    # 3 NM dead astern (west of the east-steaming boat), ~800 ft, CLOSING on
+    # the boat at ~250 kt (flying east toward it) -- a CASE I/III run-in.
+    h.add_group(
+        _aircraft(
+            "Marshal",
+            x=0.0,
+            z=-3 * NM,
+            alt=250.0,
+            velocity={"x": 0.0, "y": 0.0, "z": 130.0},
+        )
+    )
     h.load_plugin_script(PLUGIN)
 
+    # First qualifying poll at the grace (30 s) arms the debounce; the second
+    # (40 s) clears -- a single transient poll never does.
+    h.advance_to(35)
+    assert h.records("destroyedStatics") == []
     h.advance_to(45)
     assert h.records("destroyedStatics") == [STATIC]
     h.assert_no_lua_errors()
 
 
+def test_launch_traffic_crossing_astern_never_clears() -> None:
+    """The flown false trip (2026-07-18): freshly-launched jets turning back
+    past the boat are low and astern but NOT closing -- and climbing traffic
+    above 1000 ft is out of the cone entirely."""
+    h = _harness()
+    # Low astern but flying AWAY from the boat (departing on course).
+    h.add_group(
+        _aircraft(
+            "Outbound",
+            x=0.0,
+            z=-2 * NM,
+            alt=250.0,
+            velocity={"x": 0.0, "y": 0.0, "z": -160.0},
+        )
+    )
+    # Astern and closing, but already through 1000 ft (a climbing turnback).
+    h.add_group(
+        _aircraft(
+            "Turnback",
+            x=0.0,
+            z=-3 * NM,
+            alt=500.0,
+            velocity={"x": 0.0, "y": 0.0, "z": 150.0},
+        )
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.advance_to(600)
+    assert h.records("destroyedStatics") == []
+    h.assert_no_lua_errors()
+
+
 def test_high_ahead_helo_or_deck_traffic_never_clears() -> None:
     h = _harness()
-    # High astern (above the cone ceiling).
-    h.add_group(_aircraft("HighCap", x=0.0, z=-3 * NM, alt=2500.0))
-    # Low but ahead of the boat.
-    h.add_group(_aircraft("Departure", x=0.0, z=3 * NM, alt=250.0))
-    # A helo low astern (rotary never trips the fixed-wing cone).
-    h.add_group(_aircraft("Angel", x=0.0, z=-2 * NM, alt=100.0, category=1))
+    closing_east = {"x": 0.0, "y": 0.0, "z": 130.0}
+    closing_west = {"x": 0.0, "y": 0.0, "z": -130.0}
+    # Closing from astern but far above the cone ceiling.
+    h.add_group(
+        _aircraft("HighCap", x=0.0, z=-3 * NM, alt=2500.0, velocity=closing_east)
+    )
+    # Low and closing, but from AHEAD of the boat.
+    h.add_group(
+        _aircraft("Departure", x=0.0, z=3 * NM, alt=250.0, velocity=closing_west)
+    )
+    # A helo low astern and closing (rotary never trips the fixed-wing cone).
+    h.add_group(
+        _aircraft(
+            "Angel", x=0.0, z=-2 * NM, alt=100.0, category=1, velocity=closing_east
+        )
+    )
     # A jet parked on deck (not airborne).
     h.add_group(_aircraft("ColdStart", x=50.0, z=-30.0, alt=20.0, airborne=False))
     h.load_plugin_script(PLUGIN)

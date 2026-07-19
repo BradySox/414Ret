@@ -32,12 +32,17 @@
         {
             "nameInUI": "Astern detection max altitude (ft MSL)",
             "mnemonic": "coneAltFt",
-            "defaultValue": 3000
+            "defaultValue": 1000
         },
         {
             "nameInUI": "Astern detection cone half-angle (deg)",
             "mnemonic": "coneHalfDeg",
             "defaultValue": 50
+        },
+        {
+            "nameInUI": "Astern detection min closing speed (kts)",
+            "mnemonic": "coneClosingKts",
+            "defaultValue": 30
         },
         {
             "nameInUI": "Show the 'deck respotted' message",

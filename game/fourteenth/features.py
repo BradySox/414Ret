@@ -561,10 +561,10 @@ FEATURES: tuple[Feature, ...] = (
         # gear + LSO crew from the OCN 2 campaign replayed onto Nimitz-family
         # carriers, curated so every parking spawn spot, catapult and the
         # landing area stay usable; six street variants rotate per turn. The
-        # default-OFF aircraft tier adds the starboard-aft Seahawk pair + a
-        # fixed-wing accent (~3 spots) plus the LAUNCH-PHASE corridor set
+        # default-OFF second toggle adds the LAUNCH-PHASE corridor set
         # (round-down E-2C + the port junk row), which the deckdecor plugin
-        # strikes below before recovery.
+        # strikes below before recovery. No permanent static aircraft --
+        # late activations spawn INTO statics on spots (flown 2026-07-18).
         "carrier_deck_decorations",
         "Carrier deck decorations (OCN 2 deck dressing)",
         72,

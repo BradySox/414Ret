@@ -34,8 +34,14 @@ local POLL_S = 10 -- s between astern-cone checks
 local GRACE_S = 60 -- s before the watch starts (startup storm protection)
 local FALLBACK_MIN = 35 -- minutes after mission start: clear regardless
 local CONE_DIST_NM = 4.5 -- cone range astern
-local CONE_ALT_FT = 3000 -- only traffic below this trips the cone
+-- 1000 ft, not the recovery-pattern 3000: the flown false trip (2026-07-18)
+-- was freshly-launched jets turning back past the boat low astern -- they are
+-- through 1000 ft within a minute of the cat, while a CASE I initial (800 ft)
+-- and a CASE III final both fly below it.
+local CONE_ALT_FT = 1000 -- only traffic below this trips the cone
 local CONE_HALF_DEG = 50 -- half-angle either side of dead astern
+local CONE_CLOSING_KTS = 30 -- must be closing on the boat at least this fast
+local CONE_POLLS = 2 -- consecutive qualifying polls before the clear fires
 local SHOW_CUE = true -- one-line "deck respotted" message on clear
 
 if dcsRetribution.plugins and dcsRetribution.plugins.deckdecor then
@@ -46,6 +52,7 @@ if dcsRetribution.plugins and dcsRetribution.plugins.deckdecor then
     CONE_DIST_NM = tonumber(o.coneDistNm) or CONE_DIST_NM
     CONE_ALT_FT = tonumber(o.coneAltFt) or CONE_ALT_FT
     CONE_HALF_DEG = tonumber(o.coneHalfDeg) or CONE_HALF_DEG
+    CONE_CLOSING_KTS = tonumber(o.coneClosingKts) or CONE_CLOSING_KTS
     if o.showCue ~= nil then
         SHOW_CUE = o.showCue == true or o.showCue == "true"
     end
@@ -59,6 +66,7 @@ end
 local CONE_DIST_M = CONE_DIST_NM * 1852.0
 local CONE_ALT_M = CONE_ALT_FT * 0.3048
 local CONE_COS = math.cos(math.rad(CONE_HALF_DEG))
+local CONE_CLOSING_MS = CONE_CLOSING_KTS * 0.51444
 
 -- The Airboss tie-in: the sibling airboss plugin (default ON) schedules its
 -- recovery window windowStartOption minutes into the mission and STEERS the
@@ -142,12 +150,12 @@ local function clearBoat(boat, why)
     end
 end
 
-local function approachDetected(boat)
-    local bp = boatPosition(boat)
-    if bp == nil then
-        -- Boat gone (sunk/despawned): nothing to protect, count as done.
-        return true
-    end
+local function approachDetected(boat, bp)
+    -- True only for traffic that LOOKS like a recovery: low, astern, and
+    -- CLOSING on the boat -- a freshly-launched jet turning back past the
+    -- boat is low and astern but crossing, not running in (the 2026-07-18
+    -- flown false trip). The caller additionally debounces over CONE_POLLS
+    -- consecutive polls so a transient crossing never clears the deck.
     local groups = coalition.getGroups(boat.side, Group.Category.AIRPLANE)
     for i = 1, #groups do
         local units = groups[i]:getUnits()
@@ -162,7 +170,12 @@ local function approachDetected(boat)
                     if dist > 100 and dist < CONE_DIST_M then
                         local cosang = (dx * boat.sternX + dz * boat.sternZ) / dist
                         if cosang > CONE_COS then
-                            return true
+                            local v = u:getVelocity()
+                            local closing = -((v.x or 0) * dx + (v.z or 0) * dz)
+                                / dist
+                            if closing > CONE_CLOSING_MS then
+                                return true
+                            end
                         end
                     end
                 end
@@ -180,9 +193,20 @@ local function tick()
             if timer.getTime() >= CLEAR_DEADLINE_S then
                 clearBoat(boat, DEADLINE_WHY)
             else
-                local ok, tripped = pcall(approachDetected, boat)
-                if ok and tripped then
-                    clearBoat(boat, "recovery traffic astern")
+                local bp = boatPosition(boat)
+                if bp == nil then
+                    -- Boat gone (sunk/despawned): nothing left to protect.
+                    boat.cleared = true
+                else
+                    local ok, tripped = pcall(approachDetected, boat, bp)
+                    if ok and tripped then
+                        boat.approachPolls = (boat.approachPolls or 0) + 1
+                        if boat.approachPolls >= CONE_POLLS then
+                            clearBoat(boat, "recovery traffic astern")
+                        end
+                    else
+                        boat.approachPolls = 0
+                    end
                 end
             end
         end

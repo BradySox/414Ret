@@ -14,6 +14,12 @@ that lever:
   it spawns uncontrolled like its airfield counterpart, with only the
   one-second placement activation, and the StartCommand holds the AI members
   to the planned push.
+* Single player ignores "Spawn player flights immediately": with fewer than
+  two player slots in the mission (the same predicate that assigns Player
+  rather than Client skill) there is no slot list to keep selectable, so the
+  lone player flight is delayed to its planned start time — and a delayed
+  cold player flight late-activates (materializing at its planned startup
+  time) instead of sitting uncontrolled in the pit from mission start.
 """
 
 from __future__ import annotations
@@ -85,7 +91,9 @@ def make_flight(
     )
 
 
-def run_set_takeoff_time(flight: Any, settings: Settings) -> tuple[FakeGroup, Any]:
+def run_set_takeoff_time(
+    flight: Any, settings: Settings, multiplayer: bool = True
+) -> tuple[FakeGroup, Any]:
     group = FakeGroup()
     mission = SimpleNamespace(triggerrules=SimpleNamespace(triggers=[]))
     generator = WaypointGenerator(
@@ -95,6 +103,7 @@ def run_set_takeoff_time(flight: Any, settings: Settings) -> tuple[FakeGroup, An
         datetime(2026, 7, 16, 12, 0),
         settings,
         None,  # type: ignore[arg-type]
+        multiplayer,
     )
     generator.set_takeoff_time(SimpleNamespace(tot=None))  # type: ignore[arg-type]
     return group, mission
@@ -252,3 +261,104 @@ def test_runway_start_never_takes_the_placement_delay() -> None:
     )
     assert not group.late_activation
     assert mission.triggerrules.triggers == []
+
+
+def test_multiplayer_client_flight_spawns_immediately_with_the_setting_on() -> None:
+    # The MP behavior the setting exists for: two or more player slots in the
+    # mission keep every slot selectable from mission start.
+    flight = make_flight(
+        client_count=2, is_fleet=False, state=FakeWaiting(timedelta(minutes=45))
+    )
+    group, mission = run_set_takeoff_time(
+        flight, settings_with(CarrierDeckPolicy.LAST_RESORT), multiplayer=True
+    )
+    assert not group.late_activation
+    assert not group.uncontrolled
+    assert mission.triggerrules.triggers == []
+
+
+def test_single_player_cold_flight_activates_at_its_planned_startup_time() -> None:
+    # Fewer than two player slots: never_delay_player_flights is ignored and
+    # the lone cold flight late-activates at its planned startup time rather
+    # than idling in the pit from mission start.
+    flight = make_flight(
+        client_count=1, is_fleet=False, state=FakeWaiting(timedelta(minutes=45))
+    )
+    group, mission = run_set_takeoff_time(
+        flight, settings_with(CarrierDeckPolicy.LAST_RESORT), multiplayer=False
+    )
+    assert group.late_activation
+    assert not group.uncontrolled
+    assert activation_delays(mission) == [2700]
+    assert startup_delays(mission) == []
+
+
+def test_single_player_warm_flight_activates_at_its_planned_taxi_time() -> None:
+    flight = make_flight(
+        client_count=1,
+        is_fleet=False,
+        state=FakeWaiting(timedelta(minutes=45), spawn=StartType.WARM),
+        start_type=StartType.WARM,
+    )
+    group, mission = run_set_takeoff_time(
+        flight, settings_with(CarrierDeckPolicy.LAST_RESORT), multiplayer=False
+    )
+    assert group.late_activation
+    assert not group.uncontrolled
+    assert activation_delays(mission) == [2700]
+
+
+def test_single_player_runway_flight_activates_at_its_takeoff_time() -> None:
+    flight = make_flight(
+        client_count=1,
+        is_fleet=False,
+        state=FakeWaiting(timedelta(minutes=20), spawn=StartType.RUNWAY),
+        start_type=StartType.RUNWAY,
+    )
+    group, mission = run_set_takeoff_time(
+        flight, settings_with(CarrierDeckPolicy.LAST_RESORT), multiplayer=False
+    )
+    assert group.late_activation
+    assert activation_delays(mission) == [1200]
+
+
+def test_single_player_short_delay_still_spawns_at_mission_start() -> None:
+    # The ten-minute rule survives the single-player bypass: a short hold is
+    # not worth a delayed spawn.
+    flight = make_flight(
+        client_count=1, is_fleet=False, state=FakeWaiting(timedelta(minutes=5))
+    )
+    group, mission = run_set_takeoff_time(
+        flight, settings_with(CarrierDeckPolicy.LAST_RESORT), multiplayer=False
+    )
+    assert not group.late_activation
+    assert not group.uncontrolled
+    assert mission.triggerrules.triggers == []
+
+
+def test_single_player_cold_carrier_flight_activates_late_and_off_sixpack() -> None:
+    # Late activation subsumes the one-second placement delay: the flight
+    # materializes at its planned startup time, clear of the six-pack.
+    flight = make_flight(
+        client_count=1, is_fleet=True, state=FakeWaiting(timedelta(minutes=45))
+    )
+    group, mission = run_set_takeoff_time(
+        flight, settings_with(CarrierDeckPolicy.LAST_RESORT), multiplayer=False
+    )
+    assert group.late_activation
+    assert not group.uncontrolled
+    assert activation_delays(mission) == [2700]
+
+
+def test_single_player_ai_flights_keep_the_normal_delay_paths() -> None:
+    # AI flights are unaffected by the single-player bypass: a delayed cold
+    # AI airfield flight still spawns uncontrolled with a StartCommand hold.
+    flight = make_flight(
+        client_count=0, is_fleet=False, state=FakeWaiting(timedelta(minutes=45))
+    )
+    group, mission = run_set_takeoff_time(
+        flight, settings_with(CarrierDeckPolicy.LAST_RESORT), multiplayer=False
+    )
+    assert group.uncontrolled
+    assert not group.late_activation
+    assert startup_delays(mission) == [2700]

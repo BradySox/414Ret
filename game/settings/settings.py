@@ -2476,13 +2476,19 @@ class Settings:
         default=True,
         detail=(
             "Does not adjust package waypoint times. Should not be used if players "
-            "have runway or in-air starts."
+            "have runway or in-air starts. Ignored when the mission has fewer than "
+            "two player slots: a lone player flight spawns at its planned start "
+            "time instead."
         ),
         tooltip=(
             "Always spawns player aircraft immediately, even if their start time is "
             "more than 10 minutes after the start of the mission. <strong>This does "
             "not alter the timing of your mission. Your TOT will not change. This "
-            "option only allows the player to wait on the ground.</strong>"
+            "option only allows the player to wait on the ground.</strong> This is "
+            "a multiplayer option (it keeps every player slot selectable from "
+            "mission start): a mission with fewer than two player slots ignores it, "
+            "spawning the flight at its planned start time — cold starts appear at "
+            "engine-start time, hot starts at their taxi or takeoff time."
         ),
     )
     untasked_opfor_client_slots: bool = boolean_option(

@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import random
 from collections import defaultdict
-from typing import Dict, List, Optional, TYPE_CHECKING, Type, Tuple
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Type, Tuple
 
 import dcs.vehicles
 from dcs import Mission, Point, unitgroup
@@ -38,7 +38,10 @@ from dcs.task import (
     ControlledTask,
     Hold,
     EPLRS,
+    EWR,
     FireAtPoint,
+    OptAlarmState,
+    OptROE,
 )
 from dcs.terrain import Airport
 from dcs.translation import String
@@ -50,7 +53,7 @@ from dcs.triggers import (
     TriggerZoneQuadPoint,
 )
 from dcs.unit import Unit, InvisibleFARP, BaseFARP, SingleHeliPad, FARP
-from dcs.unitgroup import ShipGroup, StaticGroup, VehicleGroup
+from dcs.unitgroup import MovingGroup, ShipGroup, StaticGroup, VehicleGroup
 from dcs.unittype import ShipType, VehicleType
 from dcs.vehicles import vehicle_map, Unarmed, Fortification as VehicleFortification
 
@@ -83,6 +86,7 @@ from game.theater import (
 )
 from game.theater.theatergroundobject import (
     CarrierGroundObject,
+    EwrGroundObject,
     GenericCarrierGroundObject,
     LhaGroundObject,
     MissileSiteGroundObject,
@@ -439,7 +443,9 @@ class GroundObjectGenerator:
                 )
                 vehicle_group.units[0].player_can_drive = True
                 self.enable_eplrs(vehicle_group, unit.type)
+                self.enable_ewr(vehicle_group)
                 vehicle_group.units[0].name = unit.unit_name
+                self.set_alarm_state(vehicle_group)
                 GroundForcePainter(faction, vehicle_group.units[0]).apply_livery()
             else:
                 vehicle_unit = self.m.vehicle(unit.unit_name, unit.type)
@@ -480,6 +486,8 @@ class GroundObjectGenerator:
                 # The name must be set before _register_theater_unit records it,
                 # or debrief kill-tracking would key off a different string.
                 ship_group.units[0].name = flagship_name or unit.unit_name
+                self.set_alarm_state(ship_group, force_red=True)
+                self.set_ship_engagement(ship_group)
                 NavalForcePainter(faction, ship_group.units[0]).apply_livery()
             else:
                 ship_unit = self.m.ship(unit.unit_name, unit.type)
@@ -525,6 +533,38 @@ class GroundObjectGenerator:
         eplrs_enabled = self.game.settings.eplrs_enabled
         if eplrs_enabled and unit_type.eplrs:
             group.points[0].tasks.append(EPLRS(group.id))
+
+    def enable_ewr(self, group: VehicleGroup) -> None:
+        # EWR radars need the DCS "EWR" enroute task to actively scan and report
+        # contacts to their coalition. Without it they sit inert (upstream #879).
+        # Applied only to dedicated EWR sites (not SAM-as-EWR groups, whose alarm
+        # state MANTIS manages by role), so it complements the IADS engine rather
+        # than fighting it: MANTIS reads EWR detections and does not manage the
+        # task list. (The matching RED alarm state is forced in set_alarm_state.)
+        if isinstance(self.ground_object, EwrGroundObject):
+            group.points[0].tasks.append(EWR())
+
+    def set_alarm_state(self, group: MovingGroup[Any], force_red: bool = False) -> None:
+        # The fork removed the legacy perf_red_alert_state toggle (#231): networked
+        # SAM alarm state is owned by the IADS engine (MANTIS EMCON) at runtime and
+        # every other group stays on DCS AUTO. Only two cases force RED at
+        # generation: ships (force_red — fleets always defend rather than sit
+        # passive, upstream #868) and dedicated EWR sites (a passive radar would
+        # defeat the EWR() enroute task, upstream #879 — MANTIS reads EWR
+        # detections and never re-states them). Everything else: no option written.
+        if force_red or isinstance(self.ground_object, EwrGroundObject):
+            group.points[0].tasks.append(OptAlarmState(2))
+
+    def set_ship_engagement(self, group: ShipGroup) -> None:
+        # Make fleets fight rather than sit passive. Ship weapons engagement in DCS is
+        # OPTION-driven, not task-driven: weapon-free ROE plus the RED alarm state set in
+        # set_alarm_state make a ship fire autonomously on any target that enters weapon
+        # range — SAMs on aircraft, anti-ship missiles/guns/torpedoes on enemy ships.
+        # Do NOT add an EngageTargets task here: it is an air-only enroute task, invalid
+        # for a ship controller (DCS me_action_db offers ships only NoTask), and feeding
+        # it to the naval AI crashed DCS (ACCESS_VIOLATION in AI::ControllerStack::start).
+        # Upstream ships likewise engage on ROE/alarm alone.
+        group.points[0].tasks.append(OptROE(OptROE.Values.WeaponFree))
 
     def _register_theater_unit(
         self,
@@ -2015,6 +2055,10 @@ class TgoGenerator:
                         self.m,
                         self.unit_map,
                         self.mission_data,
+                    )
+                elif isinstance(ground_object, MotorpoolGroundObject):
+                    generator = MotorpoolGenerator(
+                        ground_object, country, self.game, self.m, self.unit_map
                     )
                 elif isinstance(ground_object, MotorpoolGroundObject):
                     generator = MotorpoolGenerator(

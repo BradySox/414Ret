@@ -119,8 +119,12 @@
 * **[Options]** Add new option to fast forward until player is at the IP.
 * **[Modding]** Update to CJS Super Hornet Mod to v2.4.5.260501.RC1
 * **[Modding]** Update Community A4EC Mod to 2.3.0 (May 2025)
+* **[Mission Generator]** Squadrons now spawn using the proper country instead of CTJF, enabling various DCS AI voiceovers
+* **[Campaigns]** Ability to define motor pool objects which spawn reserve armor
 
 ## Fixes
+* **[Mission Generator]** EWR sites now get the DCS "EWR" enroute task and come up on RED alarm, so their radars actually scan and report contacts (previously they could sit inert). Complements the MANTIS IADS engine, which reads EWR detections but never managed the task list.
+* **[Naval]** Fleets actively defend: warship groups spawn on RED alarm with weapons-free ROE instead of sitting passive (upstream #868).
 * **[Plugins]** CTLD now treats a landed helicopter as on-ground using terrain AGL, so unload/extract works on sloped terrain.
 * **[Plugins]** Fix the escort leash never running (DCS has no `Group.getByID`; look the group up by name via mist), so escorts are actually held to their engagement range.
 * **[Kneeboard]** Fixed waypoint numbering for in-air-start flights.

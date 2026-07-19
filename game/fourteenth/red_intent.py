@@ -177,6 +177,7 @@ _POSTURE_EMPHASIS: dict[RedPosture, tuple[str, ...]] = {
         "DegradeIads",
         "AttackAirInfrastructure",
         "AttackBuildings",
+        "AttackMotorpools",
         "AttackShips",
         "CaptureBases",
         "PlanFrontLineCas",
@@ -190,6 +191,7 @@ _POSTURE_EMPHASIS: dict[RedPosture, tuple[str, ...]] = {
         "AttackShips",
         "DegradeIads",
         "AttackBuildings",
+        "AttackMotorpools",
     ),
 }
 

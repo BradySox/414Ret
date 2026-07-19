@@ -374,7 +374,7 @@ class Squadron:
     @property
     def faker(self) -> Faker:
         # Name the squadron's pilots in their own nation's convention (the
-        # squadron flies under its own DCS country, §23), falling back to a
+        # squadron flies under its own DCS country, #627), falling back to a
         # faker built from the faction's locale list for unmapped /
         # multinational countries. See game/squadrons/pilotnames.py.
         return faker_for_country(self.country, self.coalition.faction.locales)

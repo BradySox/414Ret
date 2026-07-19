@@ -255,6 +255,7 @@ OFFENSIVE_METHODS = (
     "PlanFrontLineCas",
     "AttackAirInfrastructure",
     "AttackBuildings",
+    "AttackMotorpools",
     "AttackShips",
     "DegradeIads",
 )
@@ -279,6 +280,7 @@ ROLLBACK = CampaignPhase(
         "PlanFrontLineCas",
         "AttackShips",
         "AttackBuildings",
+        "AttackMotorpools",
     ),
 )
 
@@ -295,6 +297,9 @@ INTERDICTION = CampaignPhase(
     ),
     emphasis=(
         "InterdictReinforcements",
+        # The motorpool IS the rear-area armor depot this phase's objective names --
+        # choke the reserve before it deploys.
+        "AttackMotorpools",
         "AttackAirInfrastructure",
         "AttackBattlePositions",
         "AttackShips",
@@ -323,6 +328,9 @@ OFFENSIVE = CampaignPhase(
         "AttackAirInfrastructure",
         "AttackShips",
         "DegradeIads",
+        # Reserve armor feeds the enemy front line, so the depot outranks
+        # generic economy strikes in the ground-offensive phase.
+        "AttackMotorpools",
         "AttackBuildings",
     ),
 )

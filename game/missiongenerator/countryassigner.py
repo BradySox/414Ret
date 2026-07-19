@@ -148,9 +148,19 @@ class CountryAssigner:
         return list(self._red.values())
 
     @property
+    def blue_country_ids(self) -> set[int]:
+        """Country ids registered on the blue coalition."""
+        return set(self._blue)
+
+    @property
+    def red_country_ids(self) -> set[int]:
+        """Country ids registered on the red coalition."""
+        return set(self._red)
+
+    @property
     def belligerent_ids(self) -> set[int]:
         """Country ids belonging to either side (excluded from neutrals)."""
-        return set(self._blue) | set(self._red)
+        return self.blue_country_ids | self.red_country_ids
 
     def for_squadron(self, squadron: Squadron) -> Country:
         """Canonical Country a squadron's units should spawn under."""

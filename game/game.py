@@ -417,7 +417,7 @@ class Game:
         """Return the best fitting country to use for the neutral coalition.
 
         Returns the first candidate whose id is not already claimed by a
-        belligerent. The in-use set spans every squadron's own country (§627
+        belligerent. The in-use set spans every squadron's own country (#627
         per-squadron countries), not just the two faction primaries, so a CJTF
         side that fields e.g. a Swiss or UN squadron does not also hand that
         nation to the neutral coalition -- which would place one country on two

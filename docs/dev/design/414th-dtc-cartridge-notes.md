@@ -117,6 +117,13 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
   exist in this squadron's use.
 - **Best-effort everywhere**: per-flight failures skip the flight; pass-level
   failures leave the pre-feature miz. The feature must never block Take off.
+- **Planner controls are per-flight, not more settings** (the "planners need
+  more control" ask): `Flight.dtc_options` (`game/ato/dtcoptions.py`, pickled,
+  setstate-defaulted) carries a tri-state enable + six section switches, edited
+  on the Edit Flight **DTC tab** and threaded `Flight → FlightData →
+  DtcGenerator`. An off section is **omitted** (never emitted empty) so the
+  jet's own defaults stand — comms off must leave a pilot's hand-set presets
+  alone, which emitting a defaults table would clobber.
 - **TCN stations list deferred**: needs TACAN channel→paired-frequency data; the
   boat already auto-tunes via NAV_SETTINGS, which is the payoff.
 - **Hornet ALR-67 CMDS/RWR + Viper CMDS/ELINT deferred**: the jets' own defaults

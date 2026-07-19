@@ -7196,6 +7196,25 @@ AutoLoad on our §64 spawn paths (uncontrolled carrier clients, late-activated
 delayed flights) is the genuine unknown; the reference mission's jets were ordinary
 ramp starts.
 
+**Planner controls (the Edit Flight → DTC tab, landed same day):** each DTC-capable
+client flight carries `Flight.dtc_options` (`game/ato/dtcoptions.py` — pickled with
+the save, `__setstate__`-defaulted so old saves behave pre-feature): a **tri-state
+master** (follow the campaign setting / always / never for this flight — the
+per-flight override beats the global toggle in both directions) plus **six section
+switches** — comm presets, route steerpoints + push times, recovery aids
+(TACAN/ICLS/ACLS + FPAS home), FLOT + no-strike zones, friendly CAP/tanker/AWACS
+orbits, and the enemy SAM rings. A section that is off is **omitted from the
+cartridge entirely** (the jet's own defaults stand — e.g. comms off leaves a pilot's
+hand-set presets alone); all sections off builds no cartridge at all. The Edit
+Flight dialog grows a **DTC tab** (`qt_ui/windows/mission/flight/QFlightDtcTab.py`,
+added in `QFlightPlanner` only for airframes in `CARTRIDGE_BUILDERS`) whose combo +
+checkboxes write the options live; the contents group greys whenever the resolved
+state is off. Threaded `Flight → FlightData.dtc_options → DtcGenerator` (per-flight
+resolve replaces the generator's global gate) and honored inside both builders.
+Tests: the override/omission/pickle cases in `tests/missiongenerator/test_dtc.py` +
+the offscreen widget behavior in `tests/test_dtc_tab.py`. The tab itself needs an
+in-app eyeball (B28's app-side bullet).
+
 ## Code audit fixes — 2026-07-07
 
 A full read-only audit of the 414th surface (campaign layer, mission-generator emitters,

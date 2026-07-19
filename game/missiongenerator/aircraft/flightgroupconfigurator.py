@@ -204,6 +204,7 @@ class FlightGroupConfigurator:
             laser_codes=laser_codes,
             start_type=self.flight.start_type,
             patrol_speed=patrol_speed,
+            dtc_options=self.flight.dtc_options,
         )
 
         self.register_escort_leash()

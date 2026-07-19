@@ -2662,11 +2662,22 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     DTC descriptors — add builders when a campaign fields them blue-client. Gated
     `dtc_data_cartridges` (Mission Generation → Cockpit data, default **ON**; OFF is
     byte-identical). Tests `tests/missiongenerator/test_dtc.py` (shapes, fog, mirroring,
-    the seams, a real miz round-trip through pydcs load).
-    (`game/missiongenerator/dtc/`, `game/missiongenerator/missiongenerator.py`,
+    the seams, a real miz round-trip through pydcs load). **Planner controls (same day,
+    user ask "planners need more control"):** the Edit Flight dialog grows a **DTC tab**
+    (supported airframes only) writing `Flight.dtc_options` (`game/ato/dtcoptions.py`,
+    pickled + `__setstate__`-defaulted) — a tri-state master (follow campaign / always /
+    never, the per-flight override beating the global toggle both ways) + six section
+    switches (comms, route, recovery aids, FLOT+zones, friendly orbits, threat rings); an
+    off section is omitted from the cartridge entirely so the jet's own defaults stand,
+    all-off builds no cartridge, and the choices thread `Flight → FlightData →
+    DtcGenerator` (per-flight resolve replaces the global gate). Offscreen widget tests
+    `tests/test_dtc_tab.py`.
+    (`game/missiongenerator/dtc/`, `game/ato/dtcoptions.py`, `game/ato/flight.py`,
+    `qt_ui/windows/mission/flight/QFlightDtcTab.py`, `game/missiongenerator/missiongenerator.py`,
     `game/settings/settings.py`; features doc §74, checklist B28 — needs an in-game pass:
     AutoLoad on the §64 spawn paths (uncontrolled carrier clients, late-activated delayed
-    flights) is the genuine unknown — the reference mission's jets were plain ramp starts.)
+    flights) is the genuine unknown — the reference mission's jets were plain ramp starts —
+    plus an in-app eyeball of the DTC tab.)
 
 ---
 

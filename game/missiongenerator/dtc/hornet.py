@@ -129,15 +129,29 @@ def _oa_defaults(index: int) -> dict[str, Any]:
     }
 
 
+def _nav_settings_defaults(home_wypt: int) -> dict[str, Any]:
+    """The module's stock (everything off) NAV settings, for a cartridge whose
+    planner turned the recovery-aids section off."""
+    return {
+        "TACAN": {"Mode": 1, "Channel": 1, "ChannelMode": 1, "OnOff": False},
+        "ICLS": {"Channel": 1, "OnOff": False},
+        "ACLS": {"Frequency": 225.0, "OnOff": False},
+        "AA_Waypoint": {"AA_WP_Number": 59, "AA_WP_Enabled": False},
+        "Home_Waypoint": {"FPAS_HOME_WP": home_wypt},
+        "Altitude_Warning": {"Warn_Alt_Rdr": 500, "Warn_Alt_Baro": 2000},
+    }
+
+
 def _build_wypt(
     flight: FlightData, game: Game, carrier: Optional[CarrierInfo]
 ) -> dict[str, Any]:
+    options = flight.dtc_options
     nav_pts: list[dict[str, Any]] = []
     route_one: dict[str, Any] = {}
     home_wypt = 1
     route_order = 0
     prev_route_wp = None
-    waypoints = flight.waypoints[:MAX_WAYPOINTS]
+    waypoints = flight.waypoints[:MAX_WAYPOINTS] if options.route else []
     for number, waypoint in enumerate(waypoints, start=1):
         on_route = is_route_waypoint(waypoint)
         entry: dict[str, Any] = {
@@ -172,10 +186,14 @@ def _build_wypt(
         nav_pts.append(entry)
         if "LANDING" in waypoint.waypoint_type.name:
             home_wypt = number
+    if options.nav_aids:
+        nav_settings = _build_nav_settings(flight, carrier, home_wypt)
+    else:
+        nav_settings = _nav_settings_defaults(home_wypt)
     return {
         "NAV_PTS": nav_pts,
         "NAV_ROUTE": [route_one, [], []],
-        "NAV_SETTINGS": _build_nav_settings(flight, carrier, home_wypt),
+        "NAV_SETTINGS": nav_settings,
         "terrain": game.theater.terrain.name,
         "mirror_NAV_PTS": False,
     }
@@ -260,53 +278,56 @@ def _line_points(
 def _build_sa(
     flight: FlightData, mission_data: MissionData, game: Game
 ) -> dict[str, Any]:
+    options = flight.dtc_options
     caps: list[dict[str, Any]] = []
-    for track in (cap_tracks(mission_data) + support_tracks(mission_data))[
-        :MAX_CAP_POINTS
-    ]:
-        caps.append(_cap_point(track, len(caps) + 1))
+    if options.friendly_orbits:
+        for track in (cap_tracks(mission_data) + support_tracks(mission_data))[
+            :MAX_CAP_POINTS
+        ]:
+            caps.append(_cap_point(track, len(caps) + 1))
 
     flot_lines: list[dict[str, Any]] = []
-    for name, points in flot_segments(game)[:MAX_FLOT_LINES]:
-        line_num = len(flot_lines) + 1
-        flot_lines.append(
-            {
-                "id": f"FLOT_{line_num}",
-                "num": line_num,
-                "note": name,
-                "points": _line_points("FLOT", line_num, points),
-            }
-        )
-
     faor_lines: list[dict[str, Any]] = []
-    for name, outline in restricted_zone_outlines(game, MAX_LINE_POINTS)[
-        :MAX_FAOR_LINES
-    ]:
-        line_num = len(faor_lines) + 1
-        faor_lines.append(
-            {
-                "id": f"FAOR_{line_num}",
-                "num": line_num,
-                "note": name,
-                "points": _line_points("FAOR", line_num, outline),
-            }
-        )
+    if options.flot_and_zones:
+        for name, points in flot_segments(game)[:MAX_FLOT_LINES]:
+            line_num = len(flot_lines) + 1
+            flot_lines.append(
+                {
+                    "id": f"FLOT_{line_num}",
+                    "num": line_num,
+                    "note": name,
+                    "points": _line_points("FLOT", line_num, points),
+                }
+            )
+        for name, outline in restricted_zone_outlines(game, MAX_LINE_POINTS)[
+            :MAX_FAOR_LINES
+        ]:
+            line_num = len(faor_lines) + 1
+            faor_lines.append(
+                {
+                    "id": f"FAOR_{line_num}",
+                    "num": line_num,
+                    "note": name,
+                    "points": _line_points("FAOR", line_num, outline),
+                }
+            )
 
     threats: list[dict[str, Any]] = []
-    for site in known_enemy_threat_sites(game, flight.friendly)[:MAX_MEZ_THREATS]:
-        number = len(threats) + 1
-        threats.append(
-            {
-                "id": f"MEZ_THRTS_{number}",
-                "num": number,
-                "x": site.x,
-                "y": site.y,
-                "text": site.label,
-                "threat_type": "Custom",
-                "threat_ring_radius": round(site.range_m / 1852.0, 1),
-                "threat_level": 1,
-            }
-        )
+    if options.threat_rings:
+        for site in known_enemy_threat_sites(game, flight.friendly)[:MAX_MEZ_THREATS]:
+            number = len(threats) + 1
+            threats.append(
+                {
+                    "id": f"MEZ_THRTS_{number}",
+                    "num": number,
+                    "x": site.x,
+                    "y": site.y,
+                    "text": site.label,
+                    "threat_type": "Custom",
+                    "threat_ring_radius": round(site.range_m / 1852.0, 1),
+                    "threat_level": 1,
+                }
+            )
 
     return {
         "CAP_PTS": caps,
@@ -356,16 +377,22 @@ def build_hornet_cartridge(
     flight: FlightData, mission_data: MissionData, game: Game, name: str
 ) -> DtcCartridge:
     terrain = game.theater.terrain.name
-    carrier = _find_carrier(flight, mission_data)
+    options = flight.dtc_options
     data: dict[str, Any] = {
-        "COMM": _build_comm(flight, mission_data),
-        "WYPT": _build_wypt(flight, game, carrier),
-        "SA": _build_sa(flight, mission_data, game),
         "TCN": [],
         "type": HORNET_UNIT_TYPE,
         "name": name,
         "terrain": terrain,
     }
+    # A section the planner turned off is omitted entirely so the jet's own
+    # defaults stand (the §74 Edit Flight DTC tab).
+    if options.comms:
+        data["COMM"] = _build_comm(flight, mission_data)
+    if options.route or options.nav_aids:
+        carrier = _find_carrier(flight, mission_data)
+        data["WYPT"] = _build_wypt(flight, game, carrier)
+    if options.flot_and_zones or options.friendly_orbits or options.threat_rings:
+        data["SA"] = _build_sa(flight, mission_data, game)
     return DtcCartridge(
         name=name, unit_type=HORNET_UNIT_TYPE, terrain=terrain, data=data
     )

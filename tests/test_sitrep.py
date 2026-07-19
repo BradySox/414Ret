@@ -64,6 +64,22 @@ def test_quiet_turn_is_empty() -> None:
     assert sitrep.is_empty
 
 
+def test_has_news_is_the_app_surface_gate() -> None:
+    # The web LAST TURN panel and the Qt debrief box gate on `has_news`; the
+    # 2026-07-18 flown turn crashed the debrief window because the SITREP-parity
+    # commit referenced it without defining it. Pin it as the inverse of the
+    # kneeboard band's quiet-turn gate so every §29 surface agrees.
+    quiet = Sitrep.from_debriefing(
+        _debrief(_loss(0, 0, 0), _loss(0, 0, 0)), turn=3, day=date(2000, 1, 1)
+    )
+    assert not quiet.has_news
+    newsy = Sitrep.from_debriefing(
+        _debrief(_loss(1, 0, 0), _loss(0, 0, 0)), turn=3, day=date(2000, 1, 1)
+    )
+    assert newsy.has_news
+    assert newsy.has_news == (not newsy.is_empty)
+
+
 def test_kneeboard_lines_formatting_and_plurals() -> None:
     sitrep = Sitrep(
         turn=7,

@@ -308,17 +308,17 @@ IRAQ_IR_ROUTES = [
 
 
 # --- Iraq - Umm al-Ma'arik (Desert Storm 1991): the RED interior road net (Iraq holds
-# --- nearly the whole map, so its logistics graph is the interdiction target set) plus
-# --- the one BLUE western MSR. Corridors follow the real 1991 highway system: Highway 1
-# --- (Baghdad-Taji-Samarra-Tikrit-Bayji-Qayyarah), Highway 10 west (Abu Ghraib-
-# --- Fallujah-Habbaniyah), Highway 6 southeast (Salman Pak-Aziziyah-Numaniyah-Kut),
-# --- the Tikrit-Kirkuk road over the Jabal Hamrin, the Kirkuk-Altun Kupri-Erbil and
-# --- Kirkuk-Chamchamal-Sulaymaniyah roads, the Qayyarah-Makhmur-Erbil crossing, and
-# --- (BLUE) the old IPC pipeline-station road H-3 -> H-2 -> H-1 -> Haditha/Al-Baghdadi
-# --- that the H airfields are literally named for. Endpoints are exact CP XY from a
-# --- headless theater load of iraq_desert_storm.yaml.
-DS_AL_ASAD = (60819.0, -165901.0)  # Al-Asad Airbase (BLUE)
-DS_H3 = (-23566.0, -419185.0)  # H-3 Main Airbase (BLUE)
+# --- nearly the whole map, so its logistics graph is the interdiction target set).
+# --- Corridors follow the real 1991 highway system: Highway 1 (Baghdad-Taji-Balad-
+# --- Samarra-Tikrit-Bayji-Qayyarah-Mosul), Highway 10 west (Abu Ghraib-Fallujah-
+# --- Habbaniyah), Highway 6 southeast (Salman Pak-Aziziyah-Numaniyah-Kut), the
+# --- Tikrit-Kirkuk road over the Jabal Hamrin, the Kirkuk-Altun Kupri-Erbil,
+# --- Kirkuk-Chamchamal-Sulaymaniyah and Mosul-Bartella-Erbil roads, and the
+# --- Qayyarah-Makhmur-Erbil crossing. Endpoints are exact CP XY from a headless
+# --- theater load. The BLUE H-3 -> H-2 -> Al-Asad pipeline-station ladder is NOT
+# --- here: those legs are authored as M-113 path groups in the .miz (they carry the
+# --- front line as blue climbs the ladder), which double as the convoy routes.
+DS_AL_ASAD = (60819.0, -165901.0)  # Al-Asad Airbase (RED -- Qadessiya AB)
 DS_BAGHDAD = (-142.0, 160.0)  # Baghdad International (RED)
 DS_SALAM = (2263.0, 25199.0)  # Al-Salam Airbase (RED)
 DS_TAQADDUM = (9717.0, -58133.0)  # Al-Taquddum (RED)
@@ -328,6 +328,8 @@ DS_QAYYARAH = (279544.0, -97450.0)  # Qayyarah West (RED)
 DS_KIRKUK = (245434.0, 12825.0)  # Kirkuk International (RED)
 DS_ERBIL = (330838.0, -22360.0)  # Erbil International (RED)
 DS_SULAY = (255226.0, 100814.0)  # Sulaymaniyah International (RED)
+DS_BALAD = (75938.0, 13806.0)  # Balad Airbase (RED -- al-Bakr AB)
+DS_MOSUL = (339469.0, -94071.0)  # Mosul International (RED -- Firnas AB)
 
 IRAQ_DS91_ROUTES = [
     Route(
@@ -352,10 +354,17 @@ IRAQ_DS91_ROUTES = [
         DS_KUT,
     ),
     Route(
-        "Baghdad International -> Al-Sahra (Tikrit)  (RED Highway 1 north through "
-        "Taji -> the Balad junction -> Samarra -> al-Alam)",
+        "Baghdad International -> Balad (al-Bakr)  (RED Highway 1 north through "
+        "Taji and the Dujayl junction)",
         DS_BAGHDAD,
-        [(33.52, 44.25), (33.86, 44.28), (34.20, 43.88), (34.60, 43.70)],
+        [(33.52, 44.25), (33.72, 44.26), (33.86, 44.28)],
+        DS_BALAD,
+    ),
+    Route(
+        "Balad (al-Bakr) -> Al-Sahra (Tikrit)  (RED Highway 1 north through "
+        "Samarra -> al-Alam)",
+        DS_BALAD,
+        [(34.02, 44.20), (34.20, 43.88), (34.60, 43.70)],
         DS_SAHRA,
     ),
     Route(
@@ -392,12 +401,18 @@ IRAQ_DS91_ROUTES = [
         DS_ERBIL,
     ),
     Route(
-        "H-3 Main -> Al-Asad  (the BLUE western MSR: the IPC pipeline-station road "
-        "H-3 -> H-2 -> H-1 -> the Haditha junction -> Al-Baghdadi; feeds the #50 "
-        "escort convoys)",
-        DS_H3,
-        [(33.36, 40.74), (33.79, 41.42), (34.05, 42.20), (33.87, 42.53)],
-        DS_AL_ASAD,
+        "Qayyarah West -> Mosul (Firnas)  (RED Highway 1 north through Hammam "
+        "al-Alil)",
+        DS_QAYYARAH,
+        [(35.95, 43.20), (36.08, 43.26), (36.20, 43.20)],
+        DS_MOSUL,
+    ),
+    Route(
+        "Mosul (Firnas) -> Erbil  (RED: Highway 2 east through Bartella and the "
+        "Kalak crossing)",
+        DS_MOSUL,
+        [(36.35, 43.38), (36.30, 43.65), (36.27, 43.80)],
+        DS_ERBIL,
     ),
 ]
 

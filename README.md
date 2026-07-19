@@ -213,11 +213,15 @@ Upstream hands you a map that already knows everything. Here you have to go look
   — the will economy bleeds from sunk hulls, Silkworm batteries fire from the coast, and AAA
   gun forts stand on the oil platforms. The one DCS matchup where the Tomcat flies both sides.
 - **Iraq — Umm al-Ma'arik (Desert Storm 1991)** — the air war against "the most well defended
-  city in the world." The French-built **KARI** network ties Baghdad's SA-2/SA-3 rings back
-  through sector operations centers to one destroyable ADOC — decapitate it and the net goes
-  autonomous; leave it and it repairs. Night-one start (17 Jan 1991, 0300), a Great Scud Hunt
+  city in the world," fought the way it really was fought: **from outside**. Blue holds only
+  the three H-3 desert strips seized on the border in the war's opening hours — the tanker
+  bridge and AWACS fly from the Saudi rear — and climbs the pipeline-road ladder: **H-2, then
+  Qadessiya (Al-Asad), where the Foxbats live**, then the Habbaniyah line toward Baghdad. The
+  French-built **KARI** network ties the SA-2/SA-3 rings back through sector operations
+  centers to one destroyable ADOC — decapitate it and the net goes autonomous; leave it and
+  it repairs. Night-one start (17 Jan 1991, 0300), a Great Scud Hunt in the western baskets
   against launchers that relocate between recon passes, real-highway convoy interdiction from
-  Tikrit to Kirkuk, a GCI-alert Iraqi Air Force on hot-pad QRA, and a no-strike circle over
+  Baghdad to Mosul, a GCI-alert Iraqi Air Force on hot-pad QRA, and a no-strike circle over
   Baghdad's river bend that prices collateral into **Coalition cohesion** — one Al-Firdos is
   survivable, a habit is not. Ends where it must: break the regime's resolve at Safwan.
 - **The Vietnam campaign layer changes *why* you fly.** **Political will** — Washington's

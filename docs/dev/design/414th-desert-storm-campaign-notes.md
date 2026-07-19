@@ -1,7 +1,66 @@
 # Iraq — Umm al-Ma'arik (Desert Storm 1991): campaign notes
 
-**Status: BUILT + headless-verified 2026-07-19; in-game pass = checklist T3. NEW game
-required (it's a new campaign).**
+**Status: BUILT + headless-verified 2026-07-19; laydown v2 (the western desert war)
+same day; in-game pass = checklist T3. NEW game required (it's a new campaign).**
+
+## Laydown v2 — the western desert war (2026-07-19, the DM's call)
+
+The v1 laydown shipped blue holding Al-Asad — always its biggest fiction (in January
+1991 the coalition held **zero** Iraqi airfields, and Al-Asad was *Qadessiya AB*, home
+of the real MiG-25PD wing). The DM's parking question ("confirm big parking spots")
+exposed the deeper problem and drove the rework:
+
+**The Iraq map has NO oversized parking west of Baghdad.** The map is `slot_version 2`
+(pydcs resolves parking by real slot *dimensions*, not the legacy `large` flag — the
+flag is zero map-wide), and the 60×60 heavy stands live only at Baghdad (15), Erbil
+(17), Balad (6), Sulaymaniyah (6), Al-Salam (5), Taquddum (3), Qayyarah (2), Al-Asad
+(2). The v1 E-3/KC-135 wing at H-3 Main had **zero** fitting stands; the original DS91
+also mis-based the 24-Fulcrum reserve at Al-Kut (58 helipads + six plane stands) and
+v1 briefly re-based the A-10s at H-3 SW (two Hog-wide stands). All caught and now
+guarded by `test_desert_storm_every_squadron_fits_its_parking`, which asserts every
+based squadron has **at least as many dimensionally-fitting slots as airframes**.
+
+The v2 shape:
+
+- **BLUE = the H-3 complex + the off-map Saudi rear.** The fiction inverts to a much
+  smaller lie: the coalition seized the three border strips in the opening hours
+  (real planners drafted exactly this; SOF owned that desert). H-3 Main = the
+  fighter/strike wing (F-15C ×12 BARCAP · F-4E ×12 · F-14B ×8; trimmed 16→12s to fit
+  36 fighter stands), H-3 Northwest = the SEAD/precision/attack strip (F-16CM ·
+  F/A-18C · F-15E · **A-10C** ×8 each — the Hog lives here, not SW), H-3 Southwest =
+  the army-aviation strip (CH-47F + AH-64A + OH-58D, 8 Chinook-fit pads). The
+  **E-3 + KC-135 + MPRS fly from "Coalition Rear (Saudi Arabia)"**, an `OffMapSpawn`
+  marker group — no parking dependency, no OCA exposure, historically exactly where
+  they were.
+- **The capture ladder is the campaign**: H-3 → **H-2** (red forward picket,
+  MiG-21bis ×8; P2 objective) → **Al-Asad/Qadessiya** (the Foxbat wing home from
+  Baghdad + the Frogfoot/F-6 wing forward from Taquddum; P3 objective) → Taquddum
+  (emptied to a SOC-West depth fortress) → Baghdad. Authored as three M-113 path
+  groups in the miz ("Front H-3 to H-2", "Corridor H-2 to Al-Asad", + the original
+  Asad↔Taquddum group): the front line advances rung by rung as ownership flips, and
+  each leg doubles as the convoy road once captured.
+- **Red gains its historical anchors**: **Balad (al-Bakr AB)** — the Al-Salam
+  MiG-23ML + Su-24M wings move to their real home, plus the Backfire wing resized
+  ×8→×6 to its six heavy stands; **Mosul (Firnas AB)** — the MiG-21bis wing up from
+  Erbil (which keeps the 12-Backfire wing on the map's largest heavy ramp); the
+  **Fulcrum reserve moves Al-Kut → Al-Sahra (Tikrit)**, the regime's hometown, 51
+  fitting stands. Al-Kut keeps SOC East + defenses as a depth field.
+- **KARI extended**: comms/power relays at Qadessiya/H-2/Balad/Mosul (13 comms + 13
+  power total), a fifth EWR forward at Qadessiya facing the H-3 front, and **two
+  western-basket Scud batteries** (9 missile TGOs total — the Israel-shot geography
+  now sits on the front's doorstep, which is the whole Scud-hunt phase).
+- Blue AA/armor markers for the strips (Hawk + Vulcan + M-1 garrisons, authored in
+  the red block per the coalition-agnostic marker convention); Qadessiya/H-2/Balad/
+  Mosul get era AA rings. The old blue Hawk markers at Al-Asad now correctly
+  re-resolve as red MERAD from Iraq's roster — the marker convention working as
+  designed.
+- Supply yaml re-cut to **12 red interior routes** (Highway 1 now splits at the
+  Balad junction and extends Qayyarah→Mosul; Mosul→Erbil added). 17 total pairs
+  bind with the miz-native corridors.
+
+Headless-verified end-to-end (17 CPs — 3 blue + off-map + 13 red; front exactly
+H-3 Main ↔ H-2; 40 squadrons resolve exactly; every squadron fits its parking; KARI
+at 104 IADS nodes).
 
 The DM's homemade "DS91" campaign (`DS91.yaml` + `DS91.miz`, authored ~Jan 2026 against
 the same 10.8 campaign format the fork still speaks), audited, fixed, modernized onto the

@@ -542,7 +542,9 @@ class FlightPlanBuilder:
         else:
             return "-"
 
-        if (waypoint.tot - last_time).total_seconds() == 0.0:
+        if (waypoint.tot - last_time).total_seconds() <= 0.0:
+            # A zero or negative leg time (drifted structural vs chained clocks,
+            # degenerate manual timing) has no meaningful ground speed.
             return "-"
 
         speed = mps(

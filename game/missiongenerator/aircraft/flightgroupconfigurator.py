@@ -170,6 +170,14 @@ class FlightGroupConfigurator:
             self.flight.flight_plan.waypoints,
         )
 
+        # Racetrack plans carry their on-station speed to the kneeboard: the
+        # racetrack row's schedule time is dwell, not transit, so the flight
+        # plan table shows the planned patrol speed there instead of dist/time.
+        flight_plan = self.flight.flight_plan
+        patrol_speed = (
+            flight_plan.patrol_speed if flight_plan.is_patrol(flight_plan) else None
+        )
+
         flight_data = FlightData(
             package=self.flight.package,
             aircraft_type=self.flight.unit_type,
@@ -195,6 +203,7 @@ class FlightGroupConfigurator:
             custom_name=self.flight.custom_name,
             laser_codes=laser_codes,
             start_type=self.flight.start_type,
+            patrol_speed=patrol_speed,
         )
 
         self.register_escort_leash()

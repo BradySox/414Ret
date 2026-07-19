@@ -55,7 +55,7 @@ from game.theater import FrontLine, TheaterGroundObject, TheaterUnit
 from game.theater.bullseye import Bullseye
 from game.theater.controlpoint import Airfield, ControlPoint
 from game.theater.theatergroundobject import EwrGroundObject, SamGroundObject
-from game.utils import Distance, UnitSystem, inches_hg, meters, mps, pounds
+from game.utils import Distance, Speed, UnitSystem, inches_hg, meters, mps, pounds
 from game.weather.weather import Weather
 from .aircraft.flightdata import CombatSarKingBeacon, FlightData
 from .briefinggenerator import CommInfo, JtacInfo, MissionInfoGenerator
@@ -448,15 +448,25 @@ class FlightPlanBuilder:
         self,
         start_time: datetime.datetime,
         units: UnitSystem,
+        patrol_speed: Optional[Speed] = None,
     ) -> None:
         self.start_time = start_time
         self.rows: List[List[str]] = []
         self.target_points: List[NumberedWaypoint] = []
         self.last_waypoint: Optional[FlightWaypoint] = None
         self.units = units
+        # The plan's on-station speed for a racetrack flight; the racetrack-end
+        # row shows it in the GSPD cell, where distance / schedule-time would
+        # divide the track length by the whole on-station dwell.
+        self.patrol_speed = patrol_speed
         # Per-waypoint (planned - min) fuel margins; constant across the route by
         # construction, so the page reports min() once as the RTB margin call-out.
         self.fuel_margins: List[float] = []
+        # On-station planned minutes and fuel burn, captured from the racetrack
+        # rows for the endurance call-out ("fuel supports ~N min on station").
+        self.patrol_dwell: Optional[datetime.timedelta] = None
+        self.patrol_burn: Optional[float] = None
+        self.patrol_push_margin: Optional[float] = None
 
     def add_waypoint(self, waypoint_num: int, waypoint: FlightWaypoint) -> None:
         if waypoint.waypoint_type == FlightWaypointType.TARGET_POINT:
@@ -495,6 +505,12 @@ class FlightPlanBuilder:
         self.last_waypoint = self.target_points[-1].waypoint
 
     def add_waypoint_row(self, waypoint: NumberedWaypoint) -> None:
+        if (
+            waypoint.waypoint.waypoint_type is FlightWaypointType.PATROL
+            and self.last_waypoint is not None
+            and self.last_waypoint.waypoint_type is FlightWaypointType.PATROL_TRACK
+        ):
+            self._record_patrol(self.last_waypoint, waypoint.waypoint)
         # Kneeboards are only generated for client flights (see
         # client_flights_by_airframe), so a ground-marked waypoint is always zeroed in
         # the .miz for this reader -- print what the cockpit will actually show rather
@@ -543,6 +559,15 @@ class FlightPlanBuilder:
         return f"{self.units.distance_long(distance):.1f}"
 
     def _ground_speed(self, waypoint: FlightWaypoint) -> str:
+        if waypoint.waypoint_type is FlightWaypointType.PATROL:
+            # The racetrack-end row: its schedule time is the on-station dwell
+            # (the flight laps the track until push), so distance / time would
+            # print the track length over the whole patrol -- a nonsense figure
+            # like 19 kt. Show the speed actually flown on station instead.
+            if self.patrol_speed is None:
+                return "-"
+            return f"{self.units.speed(self.patrol_speed):.0f}"
+
         if self.last_waypoint is None:
             return "-"
 
@@ -584,6 +609,25 @@ class FlightPlanBuilder:
         self.fuel_margins.append(waypoint.fuel_planned - waypoint.min_fuel)
         return f"{self.units.mass(pounds(waypoint.fuel_planned)):.0f}"
 
+    def _record_patrol(self, start: FlightWaypoint, end: FlightWaypoint) -> None:
+        """Capture the racetrack leg's dwell, burn, and push-time fuel margin.
+
+        Feeds the on-station endurance call-out. The dwell is the schedule gap
+        between the track's ends (arrival on station to push), the burn is the
+        planned-fuel drop across it, and the margin at push is how much longer
+        the gas holds the station beyond the planned departure.
+        """
+        if start.tot is not None and end.tot is not None:
+            dwell = end.tot - start.tot
+            if dwell.total_seconds() > 0:
+                self.patrol_dwell = dwell
+        if start.fuel_planned is not None and end.fuel_planned is not None:
+            burn = start.fuel_planned - end.fuel_planned
+            if burn > 0:
+                self.patrol_burn = burn
+        if end.fuel_planned is not None and end.min_fuel is not None:
+            self.patrol_push_margin = end.fuel_planned - end.min_fuel
+
     def fuel_margin_line(self) -> Optional[str]:
         """The one-line RTB margin call-out for the flight plan, or None.
 
@@ -605,6 +649,36 @@ class FlightPlanBuilder:
             f"RTB margin -{amount} {uom} — short of getting home as planned; "
             "tank or divert."
         )
+
+    def patrol_endurance_line(self) -> Optional[str]:
+        """For a racetrack flight: how long the gas actually holds the station.
+
+        The planner's on-station time is doctrine (the desired BARCAP duration
+        and the wave relief schedule), not a fuel computation, so this line
+        answers the pilot's real question -- "can I stay past the planned push,
+        and how long?" -- from the same ladder the Fuel column shows: planned
+        dwell plus the push-time margin divided by the on-station burn rate.
+        """
+        if self.patrol_dwell is None or self.patrol_burn is None:
+            return None
+        if self.patrol_push_margin is None:
+            return None
+        dwell_minutes = self.patrol_dwell.total_seconds() / 60.0
+        burn_per_min = self.patrol_burn / dwell_minutes
+        if burn_per_min <= 0:
+            return None
+        supported = dwell_minutes + self.patrol_push_margin / burn_per_min
+        if supported < 0:
+            supported = 0
+        return (
+            f"On station {dwell_minutes:.0f} min planned; fuel supports "
+            f"~{supported:.0f} min before bingo (RTB minimum)."
+        )
+
+    @property
+    def patrol_endurance_is_short(self) -> bool:
+        """True when the gas does not cover the planned on-station time."""
+        return self.patrol_push_margin is not None and self.patrol_push_margin < 0
 
     def build(self) -> List[List[str]]:
         if self.target_points:
@@ -808,7 +882,9 @@ class BriefingPage(KneeboardPage):
 
         units = self.flight.aircraft_type.kneeboard_units
 
-        flight_plan_builder = FlightPlanBuilder(self.start_time, units)
+        flight_plan_builder = FlightPlanBuilder(
+            self.start_time, units, patrol_speed=self.flight.patrol_speed
+        )
         for num, waypoint in enumerate(self.flight.waypoints):
             flight_plan_builder.add_waypoint(num, waypoint)
 
@@ -841,6 +917,18 @@ class BriefingPage(KneeboardPage):
                 margin_line,
                 wrap=True,
                 fill=None if surplus else writer.col_caution,
+            )
+
+        endurance_line = flight_plan_builder.patrol_endurance_line()
+        if endurance_line is not None:
+            writer.text(
+                endurance_line,
+                wrap=True,
+                fill=(
+                    writer.col_caution
+                    if flight_plan_builder.patrol_endurance_is_short
+                    else None
+                ),
             )
 
         writer.text(f"Bullseye: {self.bullseye.position.latlng().format_dms()}")

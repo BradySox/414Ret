@@ -1578,10 +1578,26 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     (internal + N tanks) · N tanker passes · RTB margin ±Z", amber + "short of getting home" when negative,
     "(estimated)" on the synthesised model), refreshed on fuel-slider/loadout/custom/member changes + every
     pylon edit (new `QPylonEditor.pylon_changed` signal) + tab `showEvent`; tests
-    `tests/fourteenth/test_fuel_brief.py`. (`game/fourteenth/range_fuel.py`, `game/fourteenth/fuel_brief.py`,
-    `game/ato/flightplans/formationattack.py`,
+    `tests/fourteenth/test_fuel_brief.py`. **The racetrack burn (2026-07-19, the flown "19 GSPD is
+    impossible" BARCAP kneeboard):** the patrol leg's schedule time is on-station dwell, but the fuel walk
+    charged only its straight-line length — so a 45-min BARCAP's whole orbit burn (~8,000 lb on the flown
+    Hornet) was missing from the ladder (RTB margin read +8,488; honestly ~+830) and the kneeboard's derived
+    GSPD divided track length by dwell (19 kt). New `FlightPlan.fuel_burn_distance_between_points` hook,
+    overridden by `PatrollingFlightPlan` to charge `patrol_speed × patrol_duration` (floored at the track
+    length) — every consumer inherits (ladder, margin, fuel brief, sim estimates); formation-attack holds
+    deliberately untouched so the ladder can't drift from the `sortie_fuel_split` tanker decision. The
+    racetrack-end kneeboard row now shows the **planned patrol speed** (`FlightData.patrol_speed`) instead of
+    dist/dwell, and a patrol flight's plan prints the **on-station endurance call-out** ("On station 45 min
+    planned; fuel supports ~50 min before bingo") — the planned dwell stays doctrine
+    (`desired_barcap_mission_duration` + the §6 wave relief), the line answers "stay until bingo" for the
+    pilot; amber when the gas cuts the planned station short. Deliberately deferred: fuel-capped patrol
+    durations and dwell-aware tank fitting (fleet-wide loadout shift). Tests
+    `tests/ato/flightplans/test_patrol_timing.py` +
+    `tests/missiongenerator/test_flightplan_fuel_column.py`. (`game/fourteenth/range_fuel.py`,
+    `game/fourteenth/fuel_brief.py`, `game/ato/flightplans/formationattack.py`,
+    `game/ato/flightplans/flightplan.py`, `game/ato/flightplans/patrolling.py`,
     `game/missiongenerator/aircraft/waypoints/waypointgenerator.py`,
-    `game/missiongenerator/aircraft/flightgroupconfigurator.py`,
+    `game/missiongenerator/aircraft/flightgroupconfigurator.py`, `game/missiongenerator/kneeboard.py`,
     `qt_ui/windows/mission/flight/payload/QFlightPayloadTab.py`, `game/settings/settings.py`; features doc §46,
     checklist S1 — needs an in-game pass + an in-app pass for the readout.)
 47. **Continuous campaign clock & weather** — a stock turn re-rolled time and weather from scratch: the

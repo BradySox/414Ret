@@ -4540,6 +4540,42 @@ flight actually carries. No campaign preseed is needed.
 - **Estimate, not a measurement.** The synthesised fuel model is a planning approximation; the trigger is
   intentionally generous so it errs toward carrying a tank rather than launching short.
 
+### The racetrack burn (2026-07-19 — "19 GSPD is impossible" / "should be on station until bingo")
+
+A flown BARCAP kneeboard showed the racetrack-end row at **19 kt GSPD** and an RTB margin of **+8,488 lb** —
+both artifacts of the same modeling hole. A patrol plan's `patrol_start -> patrol_end` leg carries the
+**on-station dwell** in the schedule (`total_time_between_waypoints` returns `patrol_duration`; the flight
+laps the track until push), but `fuel_consumption_between_points` charged the leg as its **straight-line
+length** — 13.9 nm at cruise = ~300 lb for a 45-minute station — so the ladder never paid for the orbit, and
+the kneeboard's derived GSPD divided the track length by the whole dwell.
+
+- **The fuel model charges the laps.** `FlightPlan.fuel_burn_distance_between_points(a, b)` (new hook,
+  straight leg by default) is overridden by `PatrollingFlightPlan` for the patrol leg: `patrol_speed ×
+  patrol_duration`, floored at the track length. Every consumer inherits it — the kneeboard ladder (both the
+  min-fuel and planned walks), the RTB margin, `fuel_brief`, and the sim's per-waypoint fuel estimates. The
+  flown Hornet case re-runs honestly as ~8,000 lb on station and an RTB margin of **~+830 lb**: the 45-minute
+  doctrine dwell was already near the fuel limit — the ladder was just lying about it. Applies to every
+  patrolling family (BARCAP/TARCAP at their patrol speeds, CAS at combat rate over its track, AEW&C/tanker
+  orbits). Formation-attack holds are deliberately untouched: `sortie_fuel_split` (the §46 tanker decision)
+  keeps its own straight-leg walk, and charging hold dwell in one but not the other would split the ladder
+  from the decision it must agree with.
+- **The racetrack-end GSPD cell shows the patrol speed.** `FlightData.patrol_speed` (from
+  `flight_plan.patrol_speed` when `is_patrol`) rides to the kneeboard; the `PATROL`-type row prints it (the
+  Hornet reads 481) instead of distance-over-dwell, and dashes when no patrol speed exists (custom plans).
+- **The on-station endurance call-out answers "until bingo".** The planner's dwell is doctrine
+  (`desired_barcap_mission_duration` + the §6 wave relief schedule), not a fuel computation, so the flight
+  plan now prints `On station 45 min planned; fuel supports ~50 min before bingo (RTB minimum).` under the
+  RTB margin — amber when the gas cuts the planned station short. Computed from the ladder itself
+  (dwell from the racetrack rows' ToTs, burn from their fuel drop, the push-time margin over `min_fuel`).
+- **Deliberately NOT done:** fuel-capped patrol durations (shortening/stretching the planned dwell to the
+  jet's gas) — the §6 BARCAP wave count and relief cadence key off the doctrine duration, so a per-flight
+  fuel-derived dwell needs the wave scheduler to consume it; and dwell-aware `add_range_fuel_tanks` (bags
+  for station time, not just route length) — a fleet-wide loadout shift that should be its own decision.
+- Tests: `tests/ato/flightplans/test_patrol_timing.py` (laps burn, the track-length floor, transits
+  unchanged) · `tests/missiongenerator/test_flightplan_fuel_column.py` (the PATROL row's patrol-speed GSPD +
+  dash fallback, the endurance line + its short-station warning). The next S1 fly should eyeball a BARCAP
+  ladder: racetrack GSPD ≈ patrol speed, push-time fuel visibly down, the endurance line rendering.
+
 ---
 
 ## §47 — Continuous campaign clock & weather

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from game.radio.tacan import TacanChannel
     from game.runways import RunwayData
     from game.theater.player import Player
+    from game.utils import Speed
 
 
 @dataclass(frozen=True)
@@ -111,6 +112,12 @@ class FlightData:
 
     #: Nav beacons when this is a C-130 "King" Combat SAR flight; None otherwise.
     combat_sar_king: Optional[CombatSarKingBeacon] = None
+
+    #: Planned on-station speed when this flight flies a racetrack (BARCAP,
+    #: TARCAP, AEW&C, tanker...); None for point-to-point plans. The kneeboard
+    #: shows it on the racetrack row, where the schedule time is dwell rather
+    #: than transit and distance/time would be nonsense.
+    patrol_speed: Optional[Speed] = None
 
     def __post_init__(self) -> None:
         self.callsign = create_group_callsign_from_unit(self.units[0])

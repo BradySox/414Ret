@@ -121,6 +121,19 @@ def is_target_waypoint(waypoint: FlightWaypoint) -> bool:
     return "TARGET" in waypoint.waypoint_type.name
 
 
+def client_altitude(waypoint: FlightWaypoint) -> tuple[float, int]:
+    """Steerpoint altitude in metres + DTC altitudeType (1 = BARO, 2 = RADIO).
+
+    Cartridges are built only for client flights, and the generated .miz zeroes a
+    ground-marked waypoint (target areas, CAS FLOT boundaries, flyovers) to 0 AGL
+    for clients (``PydcsWaypointBuilder.build``); the cartridge must agree or the
+    AutoLoad would float the steerpoint back up to the AI's track altitude.
+    """
+    if waypoint.marks_ground_for_player:
+        return 0.0, 2
+    return waypoint.alt.meters, 2 if waypoint.alt_type == "RADIO" else 1
+
+
 @dataclass(frozen=True)
 class SupportTrack:
     """One friendly racetrack: a CAP station or a tanker/AEW&C orbit."""

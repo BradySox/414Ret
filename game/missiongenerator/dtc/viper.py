@@ -23,6 +23,7 @@ from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
     cap_tracks,
+    client_altitude,
     flot_segments,
     is_route_waypoint,
     is_target_waypoint,
@@ -160,14 +161,15 @@ def _build_nav_pts(
             return points
         number = len(points) + 1
         on_route = is_route_waypoint(waypoint)
+        alt_m, altitude_type = client_altitude(waypoint)
         points.append(
             _steerpoint(
                 number,
                 waypoint_display_name(waypoint.display_name or waypoint.name),
                 waypoint.position.x,
                 waypoint.position.y,
-                waypoint.alt.meters,
-                2 if waypoint.alt_type == "RADIO" else 1,
+                alt_m,
+                altitude_type,
                 on_route,
                 leg_speed_kmh(prev_route_wp if on_route else None, waypoint),
                 seconds_of_day(game, waypoint.tot),

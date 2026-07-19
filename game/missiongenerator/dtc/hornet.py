@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
+    client_altitude,
     dedupe_stations,
     flot_segments,
     frequency_labels,
@@ -155,6 +156,7 @@ def _build_wypt(
     waypoints = flight.waypoints[:MAX_WAYPOINTS] if options.route else []
     for number, waypoint in enumerate(waypoints, start=1):
         on_route = is_route_waypoint(waypoint)
+        alt_m, altitude_type = client_altitude(waypoint)
         entry: dict[str, Any] = {
             "wypt_num": number,
             "id": f"STPT{number}",
@@ -162,8 +164,8 @@ def _build_wypt(
             "note": "",
             "x": waypoint.position.x,
             "y": waypoint.position.y,
-            "alt": waypoint.alt.meters,
-            "altitudeType": 2 if waypoint.alt_type == "RADIO" else 1,
+            "alt": alt_m,
+            "altitudeType": altitude_type,
             "velocityType": 3,
             "R1": on_route,
             "R2": False,
@@ -176,7 +178,7 @@ def _build_wypt(
             route_one[f"STPT{number}"] = {
                 "route_num": 1,
                 "wypt_num": number,
-                "alt": waypoint.alt.meters,
+                "alt": alt_m,
                 "altitudeType": entry["altitudeType"],
                 "speed": leg_speed_kmh(prev_route_wp, waypoint),
                 "ETA": seconds_of_day(game, waypoint.tot),

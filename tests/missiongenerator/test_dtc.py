@@ -24,6 +24,7 @@ from dcs.terrain import Caucasus
 
 from game.ato.dtcoptions import DtcOptions
 from game.ato.flighttype import FlightType
+from game.ato.flightwaypoint import GROUND_MARKED_WAYPOINTS
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.dtc import DtcGenerator
 from game.missiongenerator.dtc.cartridge import (
@@ -73,6 +74,8 @@ def _waypoint(
         tot=tot,
         departure_time=None,
         targets=targets or [],
+        # Mirror the real FlightWaypoint property (none of these fakes fly over).
+        marks_ground_for_player=waypoint_type in GROUND_MARKED_WAYPOINTS,
     )
 
 
@@ -374,6 +377,37 @@ def test_viper_cartridge_shape() -> None:
     comm1 = data["COMM"]["COMM1"]
     assert comm1["Channel_2"] == {"freq": 251.0, "modulation": 1}
     assert "name" not in comm1["Channel_1"]
+
+
+def test_cartridges_ground_marked_waypoints_like_the_miz() -> None:
+    """The .miz zeroes a ground-marked steerpoint (target areas, CAS FLOT
+    boundaries) to 0 AGL for client flights; the cartridge must agree or the
+    AutoLoad floats the target diamond back up to the AI's track altitude (the
+    flown DS91 escort kneeboard's 22,000 ft "Target area")."""
+    nav = _waypoint("NAV", FlightWaypointType.NAV, 10000, 0, 6705, None)
+    target = _waypoint(
+        "TARGET", FlightWaypointType.TARGET_GROUP_LOC, 60000, 80000, 6705, None
+    )
+    flight = _flight(waypoints=[nav, target])
+    mission_data = _mission_data([flight])
+    game = _game()
+
+    hornet = json.loads(
+        build_hornet_cartridge(flight, mission_data, game, "Test FA-18C").to_json()
+    )["data"]
+    nav_pts = hornet["WYPT"]["NAV_PTS"]
+    assert nav_pts[0]["alt"] == 6705 and nav_pts[0]["altitudeType"] == 1
+    assert nav_pts[1]["alt"] == 0 and nav_pts[1]["altitudeType"] == 2
+    # The route sequence carries the same zeroed leg.
+    assert hornet["WYPT"]["NAV_ROUTE"][0]["STPT2"]["alt"] == 0
+
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    viper = json.loads(
+        build_viper_cartridge(flight, mission_data, game, "Test F-16C").to_json()
+    )["data"]
+    steerpoints = viper["MPD"]["NAV_PTS"]
+    assert steerpoints[0]["alt"] == 6705 and steerpoints[0]["altitudeType"] == 1
+    assert steerpoints[1]["alt"] == 0 and steerpoints[1]["altitudeType"] == 2
 
 
 def test_unit_dict_and_miz_round_trip(tmp_path: Path) -> None:

@@ -1,0 +1,18 @@
+---
+# RAF Tornado GR1 det of Operation Granby (the GR4 airframe stands in for the
+# GR1). Dhahran-based in the real war; the Desert Storm campaign flies it from
+# the off-map Saudi rear on the OCA missions the type is famous for. No livery
+# authored: livery strings must match the installed DCS set.
+name: No. 31 Squadron
+nickname: Goldstars
+female_pilot_percentage: 0
+country: UK
+role: Strike Fighter
+aircraft: Tornado GR4
+mission_types:
+  - OCA/Runway
+  - Strike
+  - BAI
+  - DEAD
+  - SEAD
+  - SEAD Escort

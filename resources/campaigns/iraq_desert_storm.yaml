@@ -306,6 +306,27 @@ squadrons:
       aircraft:
         - KC-135 Stratotanker MPRS
       size: 1
+    # The coalition allies fly from the rear too, exactly where they really were
+    # (RAF Dhahran/Muharraq, French Al Ahsa). Both reference nation-countried
+    # squadron presets, so the s23 layer gives them their own comms identity and
+    # national pilot names. The RAF flies the war's famous low-level runway
+    # attacks; Daguet's Mirage 2000s stand DCA over the rear.
+    - primary: OCA/Runway
+      secondary: [Strike, BAI]
+      name: No. 31 Squadron
+      nickname: Goldstars
+      female_pilot_percentage: 0
+      aircraft:
+        - No. 31 Squadron
+      size: 8
+    - primary: BARCAP
+      secondary: air-to-air
+      name: Escadron de chasse 2/5
+      nickname: Île-de-France
+      female_pilot_percentage: 0
+      aircraft:
+        - Escadron de chasse 2/5
+      size: 8
   # ---- BLUE: H-3 Main -- the fighter/strike wing + the Bombcats ----
   16:
     # The F-15C wall: BARCAP primary so blue stands defensive orbits; the

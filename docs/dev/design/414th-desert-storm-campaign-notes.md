@@ -81,6 +81,8 @@ ACIG/Osprey IrAF orders of battle for Iraq:
 | AH-64A | **1-101st Aviation "Expect No Mercy"** | Task Force Normandy — the war's first shots, against the EWR chain this campaign models |
 | OH-58D | **2-17th Cavalry "Out Front"** | The Screaming Eagles' scouts |
 | E-3/KC-135s | **963rd AWACS / 1701st + 1702nd AREFW(P)** | The Saudi-rear support wings |
+| Tornado GR4 OCA | **No. 31 Squadron RAF "Goldstars"** | Operation Granby's low-level runway attackers (GR4 stands in for the GR1); UK-countried via a new preset — §23 gives British comms identity + pilot names. Faction gained `Tornado GR4`; its yaml gained an honest `max_range: 600` (the unset 150 NM default grounded rear-based Tornados) |
+| Mirage 2000C CAP | **Escadron de chasse 2/5 "Île-de-France"** | Opération Daguet's actual DCA unit — the existing France-countried preset bound by name; French pilot names via `fr_FR` |
 | Red fixed-wing | **Nos. 84 (MiG-25, the night-one kill), 6 + 39 (MiG-29), 63 + 93 (MiG-23), 11 + 47 (MiG-21), 79 (Mirage F1), 8 (all the Fencers, split into flights), 69 + 44 + 109 + 114 (Fitters/Frogfoots), 7 (Tu-22), 10 (bombers), 33 (Il-76), Adnan-1 AEW Flight** | Published IrAF numbers where documented |
 | Red helos | Nos. 2/4/30/55/66 Sqn, IqAAC | **Representative** — IqAAC helo numbers are poorly documented |
 

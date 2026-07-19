@@ -100,10 +100,18 @@ def test_desert_storm_blue_holds_only_the_h3_complex() -> None:
     blue_keys = {OFFMAP_KEY, 16, 17, 18}
     assert blue_keys <= set(squadrons)
 
-    # The off-map rear is exactly the big-wing support set (no 60x60 stands exist
-    # west of Baghdad for them to park on).
+    # The off-map rear: the big-wing support set (no 60x60 stands exist west of
+    # Baghdad for them to park on) plus the coalition allies flying from where
+    # they really flew -- the RAF and Daguet entries reference nation-countried
+    # squadron PRESETS by name (the s23 layer), not airframe strings.
     rear = {cfg["aircraft"][0] for cfg in squadrons[OFFMAP_KEY]}
-    assert rear == {"E-3A", "KC-135 Stratotanker", "KC-135 Stratotanker MPRS"}
+    assert rear == {
+        "E-3A",
+        "KC-135 Stratotanker",
+        "KC-135 Stratotanker MPRS",
+        "No. 31 Squadron",
+        "Escadron de chasse 2/5",
+    }
 
     # The escort-starvation fix survives the move: the F-15C wall stands BARCAP at
     # H-3 Main with the air-to-air secondary that feeds every package escort.
@@ -224,6 +232,40 @@ def test_desert_storm_squadrons_carry_historical_identities() -> None:
     # and Iraqi squadrons carry no nickname.
     assert by_name["No. 84 Squadron"]["aircraft"] == ["MiG-25PD Foxbat-E"]
     assert by_name["No. 84 Squadron"]["nickname"] == ""
+
+
+def test_desert_storm_allied_squadrons_carry_their_nations() -> None:
+    """The RAF and Daguet entries bind nation-countried squadron presets (the s23
+    per-squadron-country layer: national comms identity + pilot names). Pin the
+    preset files' countries and the faction's Tornado add so a preset rename or
+    faction scrub can't silently anglicize them back to the CJTF default."""
+    raf = yaml.safe_load(
+        Path("resources/squadrons/Tornado/No 31 Squadron RAF.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert raf["name"] == "No. 31 Squadron"
+    assert raf["country"] == "UK"
+    assert raf["aircraft"] == "Tornado GR4"
+
+    ada = yaml.safe_load(
+        Path(
+            "resources/squadrons/m2000c/ADA_EscadronDeChasse_2-5_IleDeFrance.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert ada["name"] == "Escadron de chasse 2/5"
+    assert ada["country"] == "France"
+
+    faction = json.loads(
+        (FACTIONS / "NATO_Desert_Storm.json").read_text(encoding="utf-8")
+    )
+    assert "Tornado GR4" in faction["aircrafts"]
+    # The off-map basing depends on the honest strike radius (the unset default
+    # of 150 NM grounds a rear-based Tornado).
+    gr4 = yaml.safe_load(
+        Path("resources/units/aircraft/Tornado GR4.yaml").read_text(encoding="utf-8")
+    )
+    assert gr4["max_range"] >= 400
 
 
 def test_desert_storm_will_profile_is_the_coalition_story() -> None:

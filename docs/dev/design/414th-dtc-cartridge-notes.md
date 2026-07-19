@@ -112,7 +112,13 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
 - **Recon-fog discipline**: threat rings filter through
   `tgo.known_for(flight.friendly)` (the threat-intel kneeboard's own leaf) +
   never `map_hidden`. Verified: Red Tide turn 1 → 0 rings; the flown turn-2 save
-  → exactly the 5 TARPS-confirmed sites of 34.
+  → exactly the 5 TARPS-confirmed sites of 34. Generation runs inside
+  `fogofwar.fog_intact()` (flown 2026-07-19 leak: the §18 reveal overview shorts
+  `known_for` to truth for ANY viewer, and a DM generating with it ticked baked
+  40 exact rings into a cartridge on an unscouted turn — the same latent leak
+  existed for the threat-intel kneeboard). Any future generation-time consumer
+  of fog-gated intel is covered by that wrapper; never read the fog leaves for
+  a shared artifact outside it.
 - **Blue client flights only** — AI don't read cartridges; red clients don't
   exist in this squadron's use.
 - **Best-effort everywhere**: per-flight failures skip the flight; pass-level

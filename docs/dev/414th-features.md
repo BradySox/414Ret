@@ -7171,7 +7171,14 @@ package-mates share the comm plan and SA picture):
   player's map doesn't show exactly; `map_hidden` (§50 ambush teams) is never
   emitted. Headless-verified on the flown Red Tide saves: turn 1 (nothing scouted)
   emits 0 rings; the flown turn-2 save emits exactly the 5 TARPS-confirmed sites of
-  34.
+  34. **The §18 reveal can no longer leak into generation** (flown 2026-07-19: a
+  cartridge carried 40 exact rings on a turn with 0 of 87 sites scouted — the DM had
+  the transient "Reveal fog of war" overview ticked, and `known_for` shorts to truth
+  for any viewer while it is on): `MissionGenerator.generate_miz` now runs inside
+  `fogofwar.fog_intact()`, so every generated artifact — DTC rings *and* the
+  pre-existing threat-intel kneeboard, which had the same latent leak — sees the
+  real fog whatever the display toggle says, and the toggle itself is restored
+  after generation (`tests/test_fog_reveal_generation_leak.py`).
 
 **Editor-mined limits honored:** 59 Hornet waypoints / 25 Viper steerpoints, 9 CAP
 points, 3+3 FAOR/FLOT lines × 7 points, 40 MEZ / 15 THREAT_PTS, 4 GEO line sets.

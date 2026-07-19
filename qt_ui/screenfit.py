@@ -128,9 +128,18 @@ def fit_to_available_screen(
 class ScreenFitFilter(QObject):
     """Application event filter that fits every dialog to its screen on show."""
 
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.Show and isinstance(watched, QDialog):
+    def eventFilter(self, watched: object, event: QEvent) -> bool:
+        if isinstance(watched, QDialog) and event.type() == QEvent.Type.Show:
             # Fit after Qt has applied the dialog's own sizing, but before it is
             # painted, so there is no visible resize.
             fit_to_available_screen(watched)
-        return super().eventFilter(watched, event)
+        # Deliberately NOT `super().eventFilter(watched, event)`. An application-wide
+        # filter sees every event in the process, and PySide6 does not guarantee the
+        # wrapper it hands back is a QObject -- a QWidgetItem (a QLayoutItem, which
+        # is not a QObject at all) has been observed here, and forwarding that to the
+        # C++ base signature raises TypeError on every such event. QObject's base
+        # implementation does nothing but report "not handled", so say that directly:
+        # same behaviour, no round trip through a signature we cannot satisfy.
+        # `watched` is typed `object` for the same reason -- the annotation would
+        # otherwise be a lie.
+        return False

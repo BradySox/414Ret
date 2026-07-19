@@ -112,6 +112,13 @@ def test_desert_storm_blue_holds_only_the_h3_complex() -> None:
     assert eagles[0]["secondary"] == "air-to-air"
     assert eagles[0]["size"] == 12  # trimmed to fit the complex
 
+    # The Bombcat strikes but never hunts SAMs: an air-to-GROUND secondary expands
+    # to DEAD/SEAD, and KARI's SAM demand had the planner fragging Tomcats at SA-2
+    # rings (first flown new-game finding). Era truth: DS Tomcats flew escort/CAP.
+    tomcats = [c for c in squadrons[16] if c["aircraft"] == ["F-14B Tomcat"]]
+    assert tomcats and tomcats[0]["primary"] == "Strike"
+    assert tomcats[0]["secondary"] == "air-to-air"
+
     # The flyable modules the faction was extended for.
     faction = json.loads(
         (FACTIONS / "NATO_Desert_Storm.json").read_text(encoding="utf-8")

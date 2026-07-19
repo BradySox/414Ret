@@ -302,8 +302,12 @@ squadrons:
       aircraft:
         - F-4E-45MC Phantom II
       size: 12
+    # Strike primary keeps the Bombcat flyable; the secondary is air-to-AIR, not
+    # air-to-ground -- the A2G alias includes DEAD/SEAD, and with KARI's 95 SAM
+    # sites the planner was fragging Tomcats at SA-2 rings (the airframe data even
+    # carries DEAD: 390). Real DS Tomcats flew escort/CAP/TARPS; now so do these.
     - primary: Strike
-      secondary: air-to-ground
+      secondary: air-to-air
       aircraft:
         - F-14B Tomcat
       size: 8

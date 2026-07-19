@@ -2330,14 +2330,16 @@ class Settings:
         enabled_when="carrier_deck_decorations",
         default=False,
         detail=(
-            "Also park static aircraft, as OCN 2 does: two folded SH-60s in "
-            "the starboard-aft junkyard, plus an E-2C on the stern round-down "
-            "DURING THE LAUNCH CYCLE ONLY -- the deck-dressing runtime "
-            "strikes the Hawkeye below before recovery (on a timer, or the "
+            "Also park static aircraft and extra aft dressing, as OCN 2 "
+            "does: a folded SH-60 pair plus an E-2C or S-3B behind the "
+            "island, and -- DURING THE LAUNCH CYCLE ONLY -- an E-2C on the "
+            "stern round-down with gear and hands on the port junk row by "
+            "the LSO platform. The deck-dressing runtime strikes the "
+            "launch-cycle set below before recovery (on a timer, or the "
             "moment traffic shows up low astern), so the landing area is "
-            "always clear when jets come home. The Seahawks deliberately "
-            "occupy roughly two of the deck's sixteen spawn spots; leave "
-            "this off when you need maximum deck capacity."
+            "always clear when jets come home. The permanent aircraft "
+            "deliberately occupy roughly three of the deck's sixteen spawn "
+            "spots; leave this off when you need maximum deck capacity."
         ),
     )
     generate_portable_tacans: bool = boolean_option(

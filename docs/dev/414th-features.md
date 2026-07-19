@@ -6587,11 +6587,13 @@ reads like a working flight deck instead of an empty parking lot. The placements
 **verbatim Sedlo authoring**: extracted from the 13 missions of the OCN 2 (Operation
 Cerberus North 2) campaign (`E:\DCS World\Mods\campaigns\FA-18C Operation Cerberus
 North 2`, the user's install), which dresses the Truman's deck in every mission, and
-replayed at the same ship-frame offsets. The street arrangement rotates between four
-curated variants (mission 3 / 10 / 11 / 12 sets) deterministically on (carrier, turn) —
-crc32 seeding, the §70 pattern — so re-generating a turn is stable but consecutive
-turns vary. User request 2026-07-18 ("apply them to ALL retribution carriers for
-flavor — BUT we need all of the parking spots still usable").
+replayed at the same ship-frame offsets. The street arrangement rotates between six
+curated variants (mission 3 / 6 / 9 / 10 / 11 / 12 sets — the M6/M9 sets bring the
+AS32-36A crane accents at the island's aft corner, for which the street envelope
+extends to −74/+26) deterministically on (carrier, turn) — crc32 seeding, the §70
+pattern — so re-generating a turn is stable but consecutive turns vary. User request
+2026-07-18 ("apply them to ALL retribution carriers for flavor — BUT we need all of
+the parking spots still usable").
 
 **The hard constraint — every parking spot stays usable.** DCS statics BLOCK deck
 parking locations (the allocator skips an obstructed spot — capacity loss, not an
@@ -6623,39 +6625,52 @@ port-quarter one-offs. Cats are also untouched — the user allowed blocking one
 static on a cat is a player-taxi collision hazard while the AI clips through it anyway
 (no functional block), so nothing is gained.
 
-**The aircraft tier (opt-in, spends spots — user call 2026-07-18).** A second toggle,
+**The aircraft tier (opt-in, spends spots — user call 2026-07-18; enriched same day
+on "go back and look at layouts again").** A second toggle,
 `carrier_deck_decorations_aircraft` (default **OFF**, `enabled_when` the main toggle),
-appends OCN's aft static-aircraft look: two folded SH-60Bs in the starboard-aft
-junkyard (−134.3/−122.6, +27/+28) — verbatim OCN placements. Unlike everything else
-these **deliberately occupy parking real estate** (~2 of the 16 spots), which is why
-they're a separate tier; a dedicated guard test still keeps them ≥9 m from every
-MEASURED spot (six-pack / port quarter / the rescue-helo spot — the ones Retribution's
-own spawns demonstrably use) and out of the default layout.
+appends OCN's starboard-aft static-aircraft look from two independently-rotating
+sub-zones (25+ m apart, so cross-mission combination can't clip): a **folded-Seahawk
+pair** (three verbatim arrangements — the M6/7/9 outer row, M2's inner row, M4's
+forward inner row) and a **fixed-wing accent** parked behind the island on the
+El-3/junkyard shoulder (M2's E-2C, M11's E-2C, or M5's S-3B Viking). Unlike
+everything else these **deliberately occupy parking real estate** (~3 of the 16
+spots: the junkyard pair + roughly one under the accent), which is why they're a
+separate tier; the guard tests keep every aircraft static clear of every MEASURED
+spot (six-pack / port quarter / the rescue-helo spot — the ones Retribution's own
+spawns demonstrably use) by **footprint-aware margins** and out of the default
+layout.
 
-**The launch-phase E-2C + the dynamic respot (the `deckdecor` plugin, same day).**
+**The launch-phase corridor + the dynamic respot (the `deckdecor` plugin, same day).**
 The tier's first cut shipped OCN M8's round-down Hawkeye (−152.1, +5.4) statically and
 the user's screenshot caught it within the hour ("how can planes land with the E2
-there?"): it cleared every parking spot but stands 5.6 m tall a wingspan off the ramp
-crossing, and the DCS static E-2C renders **wings-spread**. A scripted campaign can
-stage-manage its recoveries around that; a dynamic campaign recovers jets every
-mission. The user's follow-up ("move the E-2 after the launch is over") is the shipped
-answer: statics can't drive (no AI controller), but they can be **struck below** —
-the E-2 is back as **launch-phase dressing** (`LAUNCH_PHASE_DRESSING`, placed with the
-tier), and the new `deckdecor` plugin despawns it (`StaticObject:destroy`, silent —
-the elevator ride, narratively) when EITHER fires first: friendly **fixed-wing traffic
-low astern** of the boat (a cone off the reciprocal of the emitted BRC — 4.5 NM /
-3 000 ft / ±50°, catching the CASE I initial up the wake and the CASE III straight-in
-long before the groove) or a **fallback timer** (35 min), plus a one-line "deck
-respotted for recovery" cue. Emitter `deckdecorluadata.py` →
-`dcsRetribution.deckDecor` (ship group name to find the moving boat, side, BRC, clear
-names), populated from `MissionData.deck_decor` by the tgogenerator hook; emits
-nothing (plugin no-ops) when no launch-phase static was placed. Despawn only — no
-runtime spawns, no gameplay-model change. The permanent-placement rule became the
-`LANDING_AREA_KEEP_OUT` box (stern threshold + wires), guard-tested: only
-launch-phase items may stand there, and every launch-phase item must still spare the
-measured spots. The S-3B/El-3 placement and the port-quarter E-2s stay excluded
-entirely (they'd foul the elevator spot / the measured port pair — and they're
-permanent-zone positions, not launch-phase candidates).
+there?"): it cleared every parking spot but stands 5.6 m tall and 17.6 m long
+essentially at the ramp crossing (the static E-2C renders **folded** — user-corrected
+from a closer screenshot; the first wings-spread read was wrong, but the ramp argument
+stands on height + length). A scripted campaign can stage-manage its recoveries around
+that; a dynamic campaign recovers jets every mission. The user's follow-up ("move the
+E-2 after the launch is over… we could fill the round down within reason") is the
+shipped answer: statics can't drive (no AI controller), but they can be **struck
+below**. The launch-phase set (with the tier) rotates two independent aft sub-zones —
+the **round-down E-2C** (M8's or M1's position) and the **port junk row** between the
+LSO platform and the wires (M4's 5-piece set: P-25, three deck hands, the fifth LSO
+figure up-deck; or M5's tractor pair) — and the `deckdecor` plugin despawns them all
+(`StaticObject:destroy`, silent — the elevator ride, narratively) when EITHER fires
+first: friendly **fixed-wing traffic low astern** of the boat (a cone off the
+reciprocal of the emitted BRC — 4.5 NM / 3 000 ft / ±50°, catching the CASE I initial
+up the wake and the CASE III straight-in long before the groove) or a **fallback
+timer** (35 min), plus a one-line "deck respotted for recovery" cue. Emitter
+`deckdecorluadata.py` → `dcsRetribution.deckDecor` (ship group name to find the moving
+boat, side, BRC, clear names), populated from `MissionData.deck_decor` by the
+tgogenerator hook; emits nothing (plugin no-ops) when no launch-phase static was
+placed. Despawn only — no runtime spawns, no gameplay-model change. The
+placement-class rules are guard-tested: **permanent** items (gear AND the aircraft
+tier) never stand in the `LANDING_AREA_KEEP_OUT` box (stern threshold + wires); only
+launch-phase may, every launch-phase item is **aft-only** (x ≤ −100 — a forward
+static would stand in the bow-cat taxi flow exactly during launches, why M4's bow set
+stays excluded), and EVERY class clears every measured spot with **per-type footprint
+margins** (an aircraft static needs more clearance than a tractor). Still excluded
+outright: both port-quarter E-2s (foul the measured patio spots the F-14 pairs park
+on, even folded).
 
 **Mechanism.** A ship-linked static serializes across three levels of the mission
 format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the static

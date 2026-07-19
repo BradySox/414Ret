@@ -140,16 +140,19 @@ mission.
   **The round-down E-2C lesson (2026-07-18, user screenshot):** the tier's first cut
   also shipped OCN M8's E-2C at (−152.1, +5.4) — it passed the parking guard (clears
   every spot) but the user's first in-game look asked the right question: "how can
-  planes land with the E2 there?" It stands 5.6 m tall essentially at the ramp
-  crossing, where every recovering aircraft passes a few metres above the deck — and
-  the DCS static E-2C renders **wings-spread**, not folded, so it looms over the
-  threshold. Sedlo can stage-manage recoveries in a scripted mission; a dynamic
-  campaign recovers jets every mission. Cut, and codified as
+  planes land with the E2 there?" It stands 5.6 m tall and 17.6 m long essentially at
+  the ramp crossing, where every recovering aircraft passes a few metres above the
+  deck. (Correction, same day: the static E-2C renders **folded** — the user's closer
+  screenshot disproved my wings-spread read; the ramp argument stands on height +
+  length, but the footprint math shrank, which is what re-opened the port-quarter
+  E-2 question below.) Sedlo can stage-manage recoveries in a scripted mission; a
+  dynamic campaign recovers jets every mission. Cut, and codified as
   `LANDING_AREA_KEEP_OUT` (a stern-threshold + wires box, x −170..−120 / y −15..+12):
   **permanent** placements must clear spots AND the recovery corridor — the parking
-  guard alone was demonstrably not enough. Also still excluded entirely: the S-3B at
-  (−98.7, +29.9) (would foul the El-3 elevator spot) and the port-quarter E-2s at
-  (−103..−109, −31) (their span fouls the measured port pair the F-14s park on).
+  guard alone was demonstrably not enough. Still excluded even after the folded
+  correction: the port-quarter E-2s at (−103..−109, −31) — center-to-center 7–13 m
+  from the measured patio pair the F-14s park on, inside a folded Hawkeye's
+  17.6 m-long footprint envelope.
 
 ## The dynamic respot (2026-07-18, the user's next question)
 
@@ -189,6 +192,39 @@ back, as a distinct class:
 - **What DCS must still prove (checklist B25):** destroy() removes the linked static
   cleanly on a moving deck, and whether the freed stern real estate becomes usable
   for recovery parking (bonus observation — nothing depends on it).
+
+## Filling the deck (2026-07-18, "go back and look at layouts again")
+
+With the respot mechanism in hand the user asked for a re-mine: "we could fill the
+round down within reason if we figure out reliably getting the landing area cleaned
+up when needed." Curation v2 reclassified every dropped OCN placement with per-type
+**footprint-aware** spot clearances (`required = 9 m + FOOTPRINT_EXTRA_M[type]`; the
+folded E-2 carries 8 m extra off its 17.6 m length, the S-3B keeps a spread-margin
+10.5 m — its fold state is unverified — the Seahawk 6.5 m). Results, all verbatim
+per-mission placements:
+
+- **Street: 6 variants** (M3/M6/M9/M10/M11/M12). The envelope extends aft to −74 and
+  up the island wall to +26, bringing in the M6/M9 **AS32-36A crane** accents at the
+  island's aft corner (the junkyard's own spots sit x ≤ −80 per the SC diagrams; the
+  M3/M10 cranes at −80/−92 stay excluded for exactly that reason). Sets are never
+  mixed across missions inside a zone — M11's tractor and M9's crane sit 2 m apart.
+- **Aircraft tier: two independently-rotating starboard-aft sub-zones** (25+ m apart,
+  so cross-mission combination can't clip): the folded-Seahawk pair (M6/7/9 outer row
+  / M2 inner row / M4 forward row) + a fixed-wing accent behind the island (M2 E-2C /
+  M11 E-2C / M5 S-3B). Documented cost ≈3 unmeasured aft spots.
+- **Launch-phase: two corridor sub-zones**, likewise independent: the round-down
+  E-2C (M8 −152.1 / M1 −138.0) + the **port junk row** between the LSO platform and
+  the wires (M4's 5-piece set — P-25, three deck hands, the fifth LSO figure — or
+  M5's tractor+hand pair). OCN shipped the port row as PERMANENT statics in flyable
+  missions, but it sits where a plausible aft continuation of the patio spot row
+  would be — launch-phase classification spends that real estate only while the deck
+  is a launch deck, and the pre-recovery clear also de-clutters the LSO's line of
+  sight. `LAUNCH_PHASE_MAX_X = −100` pins the whole class aft: M4's bow set stays
+  excluded forever because forward statics would stand in the bow-cat taxi flow
+  exactly during the launch cycle.
+- **Still excluded, with reasons:** the port-quarter E-2s (measured-spot fouls, see
+  above); M4's bow-shoulder set (taxi flow); the handful of forward strays outside
+  every envelope; anything whose only home would mix missions within a zone.
 - **Per-hull variety** (different variants on different boats in one theater) falls
   out free of the group-name seed; nothing to do.
 

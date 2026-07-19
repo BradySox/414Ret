@@ -2394,29 +2394,35 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     route point / `linkOffset` on the group / `offsets` on the unit — pydcs subclasses),
     hooked in `GenericCarrierGenerator.generate()` after the §65 pass; all static types
     are base-game (`CoreMods`), no plugin/Lua/save change — existing campaigns pick it
-    up next mission. Gated `carrier_deck_decorations` (Mission Generation → Carrier,
+    up next mission. Six street variants (M3/6/9/10/11/12, incl. the M6/M9 crane
+    accents). Gated `carrier_deck_decorations` (Mission Generation → Carrier,
     default **ON**); the **aircraft tier** `carrier_deck_decorations_aircraft` (default
-    **OFF**, user call 2026-07-18) appends OCN's junkyard pair of folded SH-60B statics,
-    **deliberately spending ~2 of the 16 spots** (still guard-tested ≥9 m from every
-    MEASURED spot). **The round-down E-2C is LAUNCH-PHASE dressing** (the arc: shipped
-    static → the user's screenshot caught it menacing the ramp crossing same day
-    ("how can planes land with the E2 there?" — 5.6 m tall a wingspan off the ramp,
-    and the DCS static E-2C renders wings-spread) → cut → restored per the user's
-    "move the E-2 after the launch is over": statics can't drive, so the new
-    **`deckdecor` plugin strikes it below** (`StaticObject:destroy` = the elevator
-    ride) when friendly fixed-wing traffic shows up low astern (4.5 NM/3000 ft/±50°
-    cone off the emitted BRC — catches the CASE I initial + CASE III straight-in) or
-    a 35-min fallback timer, whichever first, with a "deck respotted" cue; emitter
-    `deckdecorluadata.py` → `dcsRetribution.deckDecor` off `MissionData.deck_decor`;
-    despawn only, no spawns). `LANDING_AREA_KEEP_OUT` (stern threshold + wires box) is
-    guard-tested: permanent placements never stand there, ONLY launch-phase may.
-    Non-Nimitz dressing offered and DECLINED same day. Tests
+    **OFF**, user call 2026-07-18; enriched same day on "go back and look at layouts
+    again") appends two independently-rotating starboard-aft sub-zones — a
+    **folded-Seahawk pair** (3 verbatim arrangements) + a **fixed-wing accent** behind
+    the island (M2/M11 E-2C or M5 S-3B) — **deliberately spending ~3 of the 16 spots**,
+    plus the **LAUNCH-PHASE corridor dressing**: the round-down E-2C (M8/M1 positions)
+    + the port junk row (M4's 5-piece set or M5's pair) standing ONLY during the launch
+    cycle (the arc: shipped static → the user's screenshot caught it menacing the ramp
+    crossing same day ("how can planes land with the E2 there?" — 5.6 m tall, 17.6 m
+    long at the ramp; the static E-2C renders FOLDED, user-corrected) → cut → restored
+    per "move the E-2 after the launch is over" / "we could fill the round down within
+    reason": statics can't drive, so the new **`deckdecor` plugin strikes them below**
+    (`StaticObject:destroy` = the elevator ride) when friendly fixed-wing traffic shows
+    up low astern (4.5 NM/3000 ft/±50° cone off the emitted BRC — catches the CASE I
+    initial + CASE III straight-in) or a 35-min fallback timer, whichever first, with a
+    "deck respotted" cue; emitter `deckdecorluadata.py` → `dcsRetribution.deckDecor`
+    off `MissionData.deck_decor`; despawn only, no spawns). Guard-tested class rules:
+    permanent placements never stand in `LANDING_AREA_KEEP_OUT` (stern threshold +
+    wires), ONLY launch-phase may; launch-phase is aft-only (x ≤ −100 — never in the
+    bow-cat taxi flow); EVERY class clears every MEASURED spot with per-type
+    **footprint margins**. Non-Nimitz dressing offered and DECLINED same day. Tests
     `tests/missiongenerator/test_carrier_deck_decor.py` +
     `tests/missiongenerator/test_deckdecorluadata.py` +
     `tests/lua/test_deckdecor_runtime.py`; features
     doc §72, checklist B25 — needs an in-game pass (statics ride the steaming deck; a
     max-density spawn still fills every spot; AI recovery taxi vs the street gear;
-    the E-2 vanishes cleanly before recovery).
+    the corridor set vanishes cleanly before recovery).
 
 ---
 

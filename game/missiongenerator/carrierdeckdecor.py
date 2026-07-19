@@ -85,7 +85,9 @@ def generate_carrier_deck_decorations(
     layout = deck_layout_for(carrier.type, ship_group.name, turn, include_aircraft)
     if not layout:
         return []
-    launch_phase = launch_phase_dressing_for(carrier.type, include_aircraft)
+    launch_phase = launch_phase_dressing_for(
+        carrier.type, ship_group.name, turn, include_aircraft
+    )
 
     h = radians(heading.degrees)
     clear_names: list[str] = []

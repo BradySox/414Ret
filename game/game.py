@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     )
     from .fourteenth.political_will import WillLedgerEntry
     from .fourteenth.super_gaggle import SuperGaggleCommitment
+    from .fourteenth.victory import VictoryBaseline
     from .navmesh import NavMesh
     from .sim import GameUpdateEvents
     from .squadrons import AirWing
@@ -146,6 +147,12 @@ class Game:
         self.phase_entered_on_turn: Optional[int] = None
         self.phase_status_line: Optional[str] = None
         self.phase_baseline: Optional["PhaseBaseline"] = None
+        # Custom victory conditions (§75): only the campaign-start strength
+        # baseline + the announcement latch persist; condition definitions live
+        # in the campaign YAML (+ the Settings knobs) and are re-derived, never
+        # pickled. Evaluated at the turn boundary by check_win_loss.
+        self.victory_baseline: Optional["VictoryBaseline"] = None
+        self.victory_announced: set[str] = set()
         # War economy (§53): latched once the per-base supply stockpiles have been
         # seeded to capacity, so the seed happens exactly once. Re-derived state
         # (production, supply factors) is never pickled -- only this flag + the
@@ -771,6 +778,19 @@ class Game:
         if verdict == "win":
             return TurnState.WIN
 
+        # Custom victory conditions (§75): authored `victory:` blocks + the
+        # generic domination/attrition knobs, between the negotiation ending
+        # (which outranks them) and the stock capture-everything defaults
+        # (which remain for every campaign with nothing configured). Returns
+        # None when nothing is configured, so this path costs nothing.
+        from game.fourteenth.victory import victory_verdict
+
+        alternate = victory_verdict(self)
+        if alternate == "loss":
+            return TurnState.LOSS
+        if alternate == "win":
+            return TurnState.WIN
+
         if not self.theater.player_points(state_check=True):
             return TurnState.LOSS
 
@@ -854,6 +874,14 @@ class Game:
         from game.fourteenth.phases import update_campaign_phase
 
         update_campaign_phase(self)
+
+        # Custom victory conditions (§75): latch the campaign-start strength
+        # baseline the ratio conditions measure against. Unconditional and
+        # cheap, so a knob flipped on at turn 20 still measures against the
+        # earliest state this build saw (turn 0 for a new game).
+        from game.fourteenth.victory import ensure_victory_baseline
+
+        ensure_victory_baseline(self)
 
         # Red Intent (§55): resolve RED's posture for the turn (observe-only in P0 --
         # latches + surfaces it; no planner seam reads it yet). After the phase so a

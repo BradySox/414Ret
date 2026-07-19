@@ -65,6 +65,20 @@ class PhaseArcEntryJs(BaseModel):
     objectives: list[PhaseObjectiveJs]
 
 
+class VictoryConditionJs(BaseModel):
+    """One §75 victory/defeat condition for the ribbon's expander block.
+
+    ``text`` is prose with live values ("Enemy air force below 10% of start
+    (now 62%)"); ``defeat`` rows render as risks. ``met`` in practice only
+    shows once the war is ending (a met condition ends the game at the next
+    turn boundary), so the live parentheticals are the working display.
+    """
+
+    text: str
+    met: bool
+    defeat: bool
+
+
 class CampaignEventJs(BaseModel):
     """One Information message for the map's turn-events feed."""
 
@@ -134,6 +148,12 @@ class CampaignStatusJs(BaseModel):
     blue_will_note: str | None
     red_will_note: str | None
     phases: list[PhaseArcEntryJs]
+    #: §75 custom victory conditions: one row per configured win/lose entry with
+    #: live-value prose, empty (block + chip hidden) unless the campaign authors
+    #: a `victory:` block or a domination/attrition knob is on. The optional
+    #: description is the authored header ("Liberate Abkhazia").
+    victory: list[VictoryConditionJs]
+    victory_description: str | None
     #: (turn, blue, red) per flown turn, most recent last; capped for payload size.
     will_history: list[tuple[int, float, float]]
     events: list[CampaignEventJs]
@@ -158,7 +178,15 @@ class CampaignStatusJs(BaseModel):
             intensity_word,
         )
 
+        from game.fourteenth.victory import victory_description, victory_overview
+
         phase = active_phase(game)
+        victory_rows = [
+            VictoryConditionJs(
+                text=str(row["text"]), met=bool(row["met"]), defeat=bool(row["defeat"])
+            )
+            for row in victory_overview(game)
+        ]
         posture = active_red_intent(game)
         red_posture = posture.display if posture is not None else None
         red_posture_detail = (
@@ -263,6 +291,8 @@ class CampaignStatusJs(BaseModel):
             blue_will_note=blue_will_note,
             red_will_note=red_will_note,
             phases=[PhaseArcEntryJs(**entry) for entry in arc_overview(game)],
+            victory=victory_rows,
+            victory_description=victory_description(game),
             will_history=history,
             events=events,
             sitrep_turn=sitrep_turn,

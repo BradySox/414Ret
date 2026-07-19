@@ -92,6 +92,11 @@ class Sitrep:
     #: -- so the smart trend/intensity read is surfaced on the kneeboard, not only as a
     #: web-ribbon hover tooltip. None falls back to the bare posture word.
     red_posture_detail: Optional[str] = None
+    #: §75 custom victory conditions: the live progress digest ("Victory: Enemy air
+    #: force below 10% of start (now 62%)"), capped by the recorder. Empty when no
+    #: alternate conditions are configured; rides along with real news like the
+    #: will band. Absent on pre-feature pickled sitreps (read via getattr).
+    victory_lines: List[str] = field(default_factory=list)
 
     @property
     def is_empty(self) -> bool:
@@ -134,6 +139,7 @@ class Sitrep:
         red_supply: Optional[float] = None,
         red_posture: Optional[str] = None,
         red_posture_detail: Optional[str] = None,
+        victory_lines: Optional[List[str]] = None,
     ) -> "Sitrep":
         blue = debriefing.loss_counts(Player.BLUE)
         red = debriefing.loss_counts(Player.RED)
@@ -171,6 +177,7 @@ class Sitrep:
             red_supply=red_supply,
             red_posture=red_posture,
             red_posture_detail=red_posture_detail,
+            victory_lines=list(victory_lines or []),
         )
 
     def kneeboard_lines(self) -> List[str]:
@@ -216,6 +223,11 @@ class Sitrep:
             lines.append(f"Enemy posture: {red_posture_detail}")
         elif red_posture:
             lines.append(f"Enemy posture: {red_posture}")
+        # §75: the alternate-ending progress digest (getattr for pre-feature
+        # pickled sitreps). Already prefixed ("Victory: …" / "Defeat if: …") and
+        # capped by the recorder; rides along with real news.
+        for victory_line in getattr(self, "victory_lines", None) or []:
+            lines.append(victory_line)
         # getattr: pre-W1 pickled sitreps lack the will fields entirely.
         blue_will = getattr(self, "blue_will", None)
         red_will = getattr(self, "red_will", None)

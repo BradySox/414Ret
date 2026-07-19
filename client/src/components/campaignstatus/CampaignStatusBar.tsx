@@ -72,7 +72,12 @@ export default function CampaignStatusBar() {
       : status.date;
   const phases = status.phases ?? [];
   const history = status.will_history ?? [];
-  const expandable = phases.length > 0;
+  // §75 custom victory conditions: win rows + defeat risks for the expander
+  // block; the VICTORY chip renders whenever any are configured.
+  const victory = status.victory ?? [];
+  const victoryWins = victory.filter((row) => !row.defeat);
+  const victoryRisks = victory.filter((row) => row.defeat);
+  const expandable = phases.length > 0 || victory.length > 0;
   const sitrepLines = status.sitrep_lines ?? [];
   return (
     <div className="campaign-status-wrap">
@@ -102,6 +107,23 @@ export default function CampaignStatusBar() {
                 {expanded ? " ▴" : " ▾"}
               </span>
             )}
+          </button>
+        )}
+        {victory.length > 0 && (
+          <button
+            type="button"
+            className="campaign-status-victory expandable"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+            title={
+              status.victory_description ??
+              "Alternate victory conditions — click for the live checklist"
+            }
+          >
+            VICTORY
+            <span className="campaign-status-caret">
+              {expanded ? " ▴" : " ▾"}
+            </span>
           </button>
         )}
         {status.blue_supply != null && (
@@ -283,6 +305,59 @@ export default function CampaignStatusBar() {
               </div>
             </div>
           ))}
+          {victory.length > 0 && (
+            <div className="campaign-victory-block">
+              <div className="campaign-victory-title">
+                Victory conditions
+                {status.victory_description != null && (
+                  <span className="campaign-victory-desc">
+                    {" — "}
+                    {status.victory_description}
+                  </span>
+                )}
+              </div>
+              {victoryWins.length > 0 && (
+                <div className="campaign-victory-group">
+                  <div className="campaign-victory-caption">
+                    Any one of these ends the war:
+                  </div>
+                  <ul className="campaign-phase-objectives">
+                    {victoryWins.map((row, idx) => (
+                      <li
+                        key={idx}
+                        className={row.met ? "objective-done" : "objective-open"}
+                      >
+                        <span className="objective-tick">
+                          {row.met ? "✓" : "○"}
+                        </span>
+                        {row.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {victoryRisks.length > 0 && (
+                <div className="campaign-victory-group">
+                  <div className="campaign-victory-caption">Defeat if:</div>
+                  <ul className="campaign-phase-objectives campaign-victory-defeat">
+                    {victoryRisks.map((row, idx) => (
+                      <li
+                        key={idx}
+                        className={
+                          row.met ? "objective-defeat-met" : "objective-open"
+                        }
+                      >
+                        <span className="objective-tick">
+                          {row.met ? "✗" : "○"}
+                        </span>
+                        {row.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           {status.red_posture_detail != null && (
             <div
               className={

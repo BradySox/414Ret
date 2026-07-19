@@ -203,6 +203,26 @@
   background: #2d445f;
 }
 
+/* §75 custom victory conditions: the VICTORY chip -- a quiet green "the war has
+   an authored/alternate ending" affordance opening the same expander panel.
+   A <button> like the phase chip, stripped of UA chrome. */
+.campaign-status-victory {
+  color: #c8ece0;
+  background: #12463a;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.campaign-status-victory:hover {
+  background: #1a5c4c;
+}
+
 .campaign-status-caret {
   color: #9aa6b6;
 }
@@ -307,6 +327,46 @@
 
 .campaign-phase-objectives .objective-done .objective-tick {
   color: #7dbd8a;
+}
+
+/* §75: the victory-conditions block in the expander -- the live checklist of
+   alternate endings ("any one of these ends the war") + the defeat risks.
+   Reuses the phase-objectives tick styling; a defeat row that has actually
+   been met flags red (in practice the war is ending when that shows). */
+.campaign-victory-block {
+  border-top: 1px solid #23344a;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campaign-victory-title {
+  font-weight: 600;
+  color: #e8f0fb;
+}
+
+.campaign-victory-desc {
+  font-weight: 400;
+  color: #aeb9c8;
+}
+
+.campaign-victory-caption {
+  color: #9aa6b6;
+  font-size: 11px;
+}
+
+.campaign-victory-block .campaign-phase-objectives {
+  margin: 0 0 0 8px;
+}
+
+.campaign-victory-defeat li {
+  color: #c9a8a8;
+}
+
+.campaign-victory-defeat .objective-defeat-met,
+.campaign-victory-defeat .objective-defeat-met .objective-tick {
+  color: #e79a86;
 }
 
 .campaign-status-panel-will {

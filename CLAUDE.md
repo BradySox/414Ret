@@ -2700,6 +2700,41 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     AutoLoad on the §64 spawn paths (uncontrolled carrier clients, late-activated delayed
     flights) is the genuine unknown — the reference mission's jets were plain ramp starts —
     plus an in-app eyeball of the DTC tab.)
+75. **Custom victory conditions** — alternate, legible ends to the war (the 2026-07-19
+    Discord ask: Ramius007's victory CPs/domination + Starfire's destroy-the-HVTs /
+    strength-below-% / air-denial conditions — the community wants the *shallow* layer,
+    not another will economy; design note `414th-victory-conditions-notes.md`). Two tiers
+    over one engine (`game/fourteenth/victory.py`): an **authored campaign `victory:`
+    block** (sibling of `will:`/`phases:`, the S5 rederive-never-pickle rule +
+    `_PROFILE_CACHE`; parse fails loudly) with `win_when`/`lose_when` condition lists —
+    `capture_cps` (all named CPs blue) / `lose_cps` (any named CP red) /
+    `territory_above|below` / `destroy_targets` (all named TGOs dead) /
+    `destroy_categories` (no red TGO of the class alive + a turn-0 baseline count > 0, so
+    an absent class can't vacuous-win) / `enemy_air_below` / `enemy_ground_below` /
+    `friendly_air_below` (strength vs the campaign-start `VictoryBaseline`, latched
+    unconditionally in `initialize_turn`; empty baseline never fires) /
+    `enemy_air_denied` (no red CP with an operational runway — red off-map spawns make it
+    unreachable by construction) / `min_turn` guard / `label` — and two **generic opt-in
+    knobs** usable on any campaign (Campaign Management → Victory conditions, both
+    default 0=off): `alternate_victory_domination` + `alternate_victory_attrition`,
+    synthesized into the same conditions and stacked with an authored block.
+    **Semantics deliberately diverge from `PhaseCondition`**: a victory entry is a
+    requirement — EVERY set field must hold (AND within the entry), the lists are OR (any
+    fully-met entry ends the war) — which is what makes `min_turn` a guard. Evaluated by
+    `victory_verdict` in `Game.check_win_loss` BETWEEN the W2 negotiation branch (which
+    outranks it) and the stock territory defaults (which remain — alternate endings ADD,
+    never replace; loss precedence on a simultaneous met pair; the met condition
+    announced once via a `game.victory_announced` latch). Ground truth, turn-boundary
+    only, zero planner coupling (§17 boundary — compose a `phases:` emphasis if the AI
+    should pursue the objectives). Surfaced as a green **VICTORY ribbon chip** + a
+    live-value expander checklist ("Any one of these ends the war:" / "Defeat if:",
+    `CampaignStatusJs.victory` → `client/src/components/campaignstatus/`) and a capped
+    SITREP digest (`Sitrep.victory_lines` — kneeboard band, web LAST TURN, Qt debrief,
+    §29 parity). No preseeds; no shipped campaign changes behavior. **Prime upstream-carve
+    candidate** (Starfire has an upstream FR; the core has zero fork couplings). Tests
+    `tests/fourteenth/test_victory.py` (30, incl. the real `check_win_loss` branch order
+    driven duck-typed); features doc §75, checklist B29 — needs an in-app pass + the CI
+    client rebuild.
 
 ---
 

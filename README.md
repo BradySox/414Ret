@@ -183,6 +183,15 @@ Upstream hands you a map that already knows everything. Here you have to go look
 - **Campaign phases** — every campaign knows what phase of the air war it's in (Air
   Superiority → Interdiction → Offensive), inferred from live IADS, enemy air and front
   movement. A map ribbon shows the phase *and why*, and the planner leans its tasking to match.
+- **Wars can end without conquering every base.** A campaign can author real **victory
+  conditions** — hold the objective bases, destroy the named high-value targets, knock out
+  every enemy command post, grind the enemy air force below a threshold, or deny them any
+  operating airfield — and any campaign can turn on a **domination** ("hold 80% of the
+  bases") or **attrition** ("enemy air below 25% of start") ending from settings, so a
+  limited war ends when its objective is met instead of demanding total conquest. A green
+  VICTORY chip on the map ribbon shows the live checklist ("Enemy air force below 10% of
+  start (now 62%)"); defeat conditions ("lose Kutaisi and Washington pulls the plug") show
+  as risks. The classic capture-everything ending always remains.
 - **Warships fire real cruise missile raids** — mark a target, call the strike, and the nearest
   ship ripples a salvo. Magazines are finite and never rearm, so a salvo spent on a truck park
   is one you don't have for the command bunker. A launch puts the defender's SAMs around the

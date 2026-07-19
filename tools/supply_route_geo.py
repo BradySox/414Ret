@@ -307,8 +307,104 @@ IRAQ_IR_ROUTES = [
 ]
 
 
+# --- Iraq - Umm al-Ma'arik (Desert Storm 1991): the RED interior road net (Iraq holds
+# --- nearly the whole map, so its logistics graph is the interdiction target set) plus
+# --- the one BLUE western MSR. Corridors follow the real 1991 highway system: Highway 1
+# --- (Baghdad-Taji-Samarra-Tikrit-Bayji-Qayyarah), Highway 10 west (Abu Ghraib-
+# --- Fallujah-Habbaniyah), Highway 6 southeast (Salman Pak-Aziziyah-Numaniyah-Kut),
+# --- the Tikrit-Kirkuk road over the Jabal Hamrin, the Kirkuk-Altun Kupri-Erbil and
+# --- Kirkuk-Chamchamal-Sulaymaniyah roads, the Qayyarah-Makhmur-Erbil crossing, and
+# --- (BLUE) the old IPC pipeline-station road H-3 -> H-2 -> H-1 -> Haditha/Al-Baghdadi
+# --- that the H airfields are literally named for. Endpoints are exact CP XY from a
+# --- headless theater load of iraq_desert_storm.yaml.
+DS_AL_ASAD = (60819.0, -165901.0)  # Al-Asad Airbase (BLUE)
+DS_H3 = (-23566.0, -419185.0)  # H-3 Main Airbase (BLUE)
+DS_BAGHDAD = (-142.0, 160.0)  # Baghdad International (RED)
+DS_SALAM = (2263.0, 25199.0)  # Al-Salam Airbase (RED)
+DS_TAQADDUM = (9717.0, -58133.0)  # Al-Taquddum (RED)
+DS_KUT = (-85732.0, 143282.0)  # Al-Kut (RED)
+DS_SAHRA = (157133.0, -61805.0)  # Al-Sahra / Tikrit (RED)
+DS_QAYYARAH = (279544.0, -97450.0)  # Qayyarah West (RED)
+DS_KIRKUK = (245434.0, 12825.0)  # Kirkuk International (RED)
+DS_ERBIL = (330838.0, -22360.0)  # Erbil International (RED)
+DS_SULAY = (255226.0, 100814.0)  # Sulaymaniyah International (RED)
+
+IRAQ_DS91_ROUTES = [
+    Route(
+        "Baghdad International -> Al-Salam  (RED city hop: the airport expressway "
+        "-> the Dora expressway east to the Rasheed side)",
+        DS_BAGHDAD,
+        [(33.245, 44.31), (33.26, 44.42)],
+        DS_SALAM,
+    ),
+    Route(
+        "Baghdad International -> Al-Taquddum  (RED Highway 10 west through Abu "
+        "Ghraib -> Fallujah -> Habbaniyah; the western front's supply line)",
+        DS_BAGHDAD,
+        [(33.30, 44.05), (33.35, 43.79), (33.37, 43.67)],
+        DS_TAQADDUM,
+    ),
+    Route(
+        "Baghdad International -> Al-Kut  (RED Highway 6 southeast through Salman "
+        "Pak -> Aziziyah -> Numaniyah)",
+        DS_BAGHDAD,
+        [(33.10, 44.58), (32.91, 44.92), (32.62, 45.29)],
+        DS_KUT,
+    ),
+    Route(
+        "Baghdad International -> Al-Sahra (Tikrit)  (RED Highway 1 north through "
+        "Taji -> the Balad junction -> Samarra -> al-Alam)",
+        DS_BAGHDAD,
+        [(33.52, 44.25), (33.86, 44.28), (34.20, 43.88), (34.60, 43.70)],
+        DS_SAHRA,
+    ),
+    Route(
+        "Al-Sahra (Tikrit) -> Qayyarah West  (RED Highway 1 north through Bayji -> "
+        "Shirqat; the corridor the Inherent Resolve campaign grinds up, 25 years early)",
+        DS_SAHRA,
+        [(34.93, 43.49), (35.52, 43.27)],
+        DS_QAYYARAH,
+    ),
+    Route(
+        "Al-Sahra (Tikrit) -> Kirkuk  (RED: the Tikrit-Kirkuk road over the Jabal "
+        "Hamrin ridge)",
+        DS_SAHRA,
+        [(34.75, 43.80), (34.95, 44.05), (35.20, 44.20)],
+        DS_KIRKUK,
+    ),
+    Route(
+        "Kirkuk -> Erbil  (RED: the Kirkuk-Erbil highway through Altun Kupri)",
+        DS_KIRKUK,
+        [(35.75, 44.13), (35.95, 44.05), (36.10, 43.99)],
+        DS_ERBIL,
+    ),
+    Route(
+        "Kirkuk -> Sulaymaniyah  (RED: the Chamchamal road over the Tasluja pass)",
+        DS_KIRKUK,
+        [(35.50, 44.60), (35.53, 44.83), (35.58, 45.15)],
+        DS_SULAY,
+    ),
+    Route(
+        "Qayyarah West -> Erbil  (RED: the Tigris crossing at Qayyarah -> Makhmur "
+        "-> the Erbil plain)",
+        DS_QAYYARAH,
+        [(35.78, 43.30), (35.77, 43.58), (36.00, 43.75)],
+        DS_ERBIL,
+    ),
+    Route(
+        "H-3 Main -> Al-Asad  (the BLUE western MSR: the IPC pipeline-station road "
+        "H-3 -> H-2 -> H-1 -> the Haditha junction -> Al-Baghdadi; feeds the #50 "
+        "escort convoys)",
+        DS_H3,
+        [(33.36, 40.74), (33.79, 41.42), (34.05, 42.20), (33.87, 42.53)],
+        DS_AL_ASAD,
+    ),
+]
+
+
 # =====================================================================================
 # --- The §50 standardization BATCH 1 (2026-07-06): blue rear corridors for the
+# --- road-less campaigns, so the ambient supply convoys + convoy ambushes reach them.
 # --- road-less campaigns, so the ambient supply convoys + convoy ambushes reach them.
 # --- One mode per campaign stem below (campaigns sharing a laydown share the routes).
 # --- Endpoints are the exact blue CP XY from a headless theater load; corridors are
@@ -806,6 +902,7 @@ CAMPAIGNS = {
     "red_flag_81_2": (Nevada, RED_FLAG_ROUTES),
     "caucasus_trail_fixes": (Caucasus, CAUCASUS_TRAIL_FIXES),
     "iraq_inherent_resolve": (Iraq, IRAQ_IR_ROUTES),
+    "iraq_desert_storm": (Iraq, IRAQ_DS91_ROUTES),
 }
 # Every batch-1/batch-2 campaign is directly addressable too (spaces -> underscores;
 # a campaign in both batches resolves to its batch-2 red routes -- regenerate batch-1

@@ -3011,11 +3011,44 @@ dialog is clamped fully on-screen through the real filter. Tests `tests/test_scr
 geometry incl. the negative-origin second monitor and the title-bar-off-the-top case, plus offscreen
 Qt for the minimum-size relaxation and the already-fits no-op).
 
-**Deliberately not done:** retro-wrapping dialog content in scroll areas. Every dialog's layout
-*minimum* fits the reported display once clamped, so the wrap would have been dormant, untested
-code; the log warning marks the spot if a smaller display ever needs it. The stylesheet's 139
-`px`-valued rules (10 distinct `font-size: Npx`) were also left alone — Qt scales them by the device
-pixel ratio, so they are a font-preference wart rather than the clipping cause.
+**Deliberately not done:** retro-wrapping *every* dialog's content in scroll areas — the log warning
+marks the spot if a display ever needs it (and the payload tab immediately did; see below). The
+stylesheet's 139 `px`-valued rules (10 distinct `font-size: Npx`) were also left alone — Qt scales
+them by the device pixel ratio, so they are a font-preference wart rather than the clipping cause.
+
+### The payload tab goes wide (2026-07-19, the same report re-flown: "you prefer tall over wide")
+
+The clamp above got the window back on screen but exposed what it was clamping: the assumption that
+"every dialog's layout minimum fits once clamped" was **wrong for the Payload tab**. Measured
+offscreen against the reporter's save, the F-15E's payload tab asked for **962 px with a 901 px
+layout minimum** against 880 px usable — and `fit_to_available_screen` *relaxes* a minimum to get a
+window on screen, so the shortfall was taken out of the pylon rows, which is why the store names in
+the screenshot were clipped top and bottom.
+
+The tab was one tall column — flight members, aircraft settings, fuel, loadout, then every pylon —
+stacked in a dialog that was already **1508 px wide**, so it demanded height it did not have while
+leaving ~600 px of width empty. Three changes, all in the tab:
+
+- **Two columns** (`QFlightPayloadTab`): the aircraft knobs on the left, the loadout on the right.
+  They are independent, so the tab is now as tall as the taller column instead of as tall as both.
+- **The pylon list scrolls** (`QLoadoutEditor`) instead of being squeezed, so the clamp can never
+  crush a row again. The catch — and the reason an earlier attempt at this was reverted for "opening
+  showing only a few rows" — is that **`QScrollArea::sizeHint` is hard-capped at 24 font-heights**
+  (~360 px): a scroll can never *ask* for a tall list whatever its size-adjust policy, it can only
+  grow into space something else claimed. `AdjustToContents` keeps the hint tracking content up to
+  that cap and the column's stretch does the rest, so a full loadout is still visible at a glance.
+- **Dropdowns stop demanding the width of their longest entry** (`qt_ui/widgets/dropdownwidth.py`).
+  Store names run to "BRU-42 with 3 x Mk-82 SNAKEYE - 500lb GP Bomb HD", and with two columns a full
+  pylon list pushed the dialog past **2269 px** — wider than the panel. `bound_dropdown_width` caps
+  the *hint* while pinning the popup to the width its entries actually need, so nothing is harder to
+  read. Same treatment for the loadout, livery and laser-code boxes; the two wrapping labels get
+  `Ignored` horizontal policy with height-for-width so they wrap rather than widen.
+
+Result across every airframe in the save: the payload tab went from **up to 2269x962 (min 901)** to
+a uniform **1553 px wide, 332–552 px tall, min 346–360** — no crush anywhere, ~300 px of headroom on
+the reported display, and the dialog's own width unchanged. Tests
+`tests/test_payload_tab_layout.py` drive the real `QLoadoutEditor` against real pydcs pylon data
+(picking the longest pylon list by measurement, so a new module is covered the day it lands).
 
 ## §29 — Campaign SITREP kneeboard band
 

@@ -3,12 +3,15 @@ from dataclasses import dataclass
 from shutil import copyfile
 from typing import Dict, Union, Any
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
+    QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QPushButton,
@@ -40,10 +43,6 @@ class QLoadoutEditor(QGroupBox):
 
         vbox = QVBoxLayout(self)
 
-        # The pylon list is laid out at its natural full height (no inner scroll):
-        # its size hint drives the Edit-flight dialog's height, so the dialog opens
-        # tall enough to show every pylon at once. (An inner scroll here collapsed
-        # that size hint and crushed the loadout into a few visible rows.)
         pylon_grid = QGridLayout()
         for i, pylon in enumerate(Pylon.iter_pylons(self.flight.unit_type)):
             label = QLabel(f"<b>{pylon.number}</b>")
@@ -52,7 +51,33 @@ class QLoadoutEditor(QGroupBox):
             )
             pylon_grid.addWidget(label, i, 0)
             pylon_grid.addWidget(QPylonEditor(game, flight, flight_member, pylon), i, 1)
-        vbox.addLayout(pylon_grid)
+
+        # The pylon list scrolls rather than shrinking its rows when the window
+        # cannot be tall enough for every station. Without the scroll the list's
+        # full height was also its *minimum*, so the screen-fit clamp (which
+        # relaxes a minimum to get a window on screen) squeezed the rows until
+        # their text clipped: 19 pylons on an F-15E ask for more height than a
+        # 1440p panel at 150% scaling has.
+        #
+        # It still *shows* every station, because the payload tab gives this
+        # widget its whole column to stretch into. That is load-bearing, and the
+        # reason an earlier attempt at a scroll here was reverted for "opening
+        # showing only a few rows": QScrollArea::sizeHint is hard-capped at 24
+        # font-heights (~360 px), so a scroll can never ask for a tall list no
+        # matter its size-adjust policy -- it can only grow into space something
+        # else has claimed. AdjustToContents keeps the hint tracking the content
+        # up to that cap; the column stretch does the rest.
+        pylon_content = QWidget()
+        pylon_content.setLayout(pylon_grid)
+        pylon_scroll = QScrollArea()
+        pylon_scroll.setWidget(pylon_content)
+        pylon_scroll.setWidgetResizable(True)
+        pylon_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        pylon_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        pylon_scroll.setSizeAdjustPolicy(
+            QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+        )
+        vbox.addWidget(pylon_scroll, stretch=1)
 
         buttons = QHBoxLayout()
         save_btn = QPushButton("Save Payload")

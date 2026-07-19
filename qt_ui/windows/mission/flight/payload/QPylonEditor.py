@@ -11,6 +11,7 @@ from game.ato.flight import Flight
 from game.ato.flightmember import FlightMember
 from game.ato.loadouts import Loadout
 from game.data.weapons import Pylon, Weapon
+from qt_ui.widgets.dropdownwidth import bound_dropdown_width
 from .QWeaponSettingsDialog import QWeaponSettingsDialog
 
 
@@ -18,6 +19,11 @@ class QPylonEditor(QWidget):
     #: Emitted after this pylon's store changed (the loadout is already updated).
     #: Lets the payload tab refresh derived readouts (the §46 fuel-plan line).
     pylon_changed = Signal()
+
+    #: Width, in characters, a pylon's store dropdown asks for. See
+    #: :func:`bound_dropdown_width` -- a full pylon list of un-bounded store names
+    #: dragged the Edit Flight dialog past 2000 px wide.
+    STORE_NAME_HINT_CHARS = 32
 
     def __init__(
         self, game: Game, flight: Flight, flight_member: FlightMember, pylon: Pylon
@@ -68,6 +74,8 @@ class QPylonEditor(QWidget):
                     item.setEnabled(False)
             if current == weapon:
                 self.weapon_combo.setCurrentIndex(i + 1)
+
+        bound_dropdown_width(self.weapon_combo, self.STORE_NAME_HINT_CHARS)
 
         self.weapon_combo.currentIndexChanged.connect(self.on_pylon_change)
         layout.addWidget(self.weapon_combo, 1)

@@ -25,6 +25,7 @@ from game.ato.loadouts import Loadout
 from game.fourteenth.fuel_brief import fuel_brief_for, fuel_brief_text
 from qt_ui.widgets.QLabeledWidget import QLabeledWidget
 from qt_ui.widgets.combos.QSquadronLiverySelector import SquadronLiverySelector
+from qt_ui.widgets.dropdownwidth import bound_dropdown_width
 from .QLoadoutEditor import QLoadoutEditor
 from .ownlasercodeinfo import OwnLaserCodeInfo
 from .propertyeditor import PropertyEditor
@@ -120,7 +121,32 @@ class DcsFuelSelector(QHBoxLayout):
         return round(value * self.LBS2KGS_FACTOR)
 
 
+def _wrap_without_widening(label: QLabel) -> None:
+    """Let ``label`` wrap into its column instead of demanding one long line.
+
+    A wrapping ``QLabel`` still hints at its full unwrapped width. Ignoring the
+    hint horizontally is only half of it: the layout must also be told to ask the
+    label how tall it is *at the width it got*, or the wrapped lines below the
+    first are clipped.
+    """
+    label.setWordWrap(True)
+    policy = QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Minimum)
+    policy.setHeightForWidth(True)
+    label.setSizePolicy(policy)
+
+
 class QFlightPayloadTab(QFrame):
+    #: Width, in characters, the tab's long-named dropdowns ask for. See
+    #: :func:`bound_dropdown_width`: loadout names, liveries and laser-code
+    #: descriptions all run long enough to widen the dialog on their own.
+    DROPDOWN_HINT_CHARS = 34
+
+    #: Ceiling on the aircraft-property list before it scrolls. The properties
+    #: share a column with nothing else now, so this is only a backstop against a
+    #: future airframe with a very long property list making the column the tall
+    #: one again -- the busiest today (the F-4E, 23 properties) fits inside it.
+    PROPERTY_LIST_MAX_HEIGHT = 560
+
     def __init__(self, flight: Flight, game: Game):
         super(QFlightPayloadTab, self).__init__()
         self.flight = flight
@@ -130,7 +156,17 @@ class QFlightPayloadTab(QFrame):
         self.payload_editor.toggled.connect(self.on_custom_toggled)
         self.payload_editor.saved.connect(self.on_saved_payload)
 
-        layout = QVBoxLayout()
+        # Two columns, not one tall stack. Stacked, this tab asked for more height
+        # than a 1440p panel at 150% scaling has (the screen-fit clamp then had to
+        # squeeze it until the pylon rows clipped) while leaving ~600 px of the
+        # dialog's width empty. The aircraft knobs and the loadout are independent,
+        # so they sit side by side: the tab is now as tall as the taller column
+        # instead of as tall as both.
+        layout = QHBoxLayout()
+        left_column = QVBoxLayout()
+        right_column = QVBoxLayout()
+        layout.addLayout(left_column, 1)
+        layout.addLayout(right_column, 1)
 
         members_box = QGroupBox("Flight members")
         members_layout = QVBoxLayout(members_box)
@@ -150,6 +186,7 @@ class QFlightPayloadTab(QFrame):
             "<strong>Warning: AI flights should use the same loadout for all "
             "members.</strong>"
         )
+        _wrap_without_widening(self.ai_loadout_warning)
         self.ai_loadout_warning.setVisible(
             not self.flight.use_same_loadout_for_all_members
         )
@@ -168,10 +205,11 @@ class QFlightPayloadTab(QFrame):
             self.flight.squadron, update_squadron=False
         )
         self.livery_selector.currentIndexChanged.connect(self.on_livery_change)
+        bound_dropdown_width(self.livery_selector, self.DROPDOWN_HINT_CHARS)
         hbox.addWidget(self.livery_selector, stretch=1)
         members_layout.addLayout(hbox)
 
-        layout.addWidget(members_box)
+        left_column.addWidget(members_box)
 
         aircraft_box = QGroupBox("Aircraft settings")
         aircraft_layout = QVBoxLayout(aircraft_box)
@@ -187,13 +225,13 @@ class QFlightPayloadTab(QFrame):
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         # Size the settings area to its content -- so an AI flight (all F-4-style
         # properties are player-only, so the editor is empty) stays compact instead
-        # of leaving a big gap -- but cap it so a full player property list scrolls
-        # rather than shoving the loadout off the bottom.
+        # of leaving a big gap -- but cap it so a very long property list scrolls
+        # rather than making this the column that sets the tab's height.
         scroll.setSizeAdjustPolicy(
             QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
         )
         scroll.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-        scroll.setMaximumHeight(400)
+        scroll.setMaximumHeight(self.PROPERTY_LIST_MAX_HEIGHT)
         self.aircraft_scroll = scroll
         aircraft_layout.addWidget(scroll)
 
@@ -208,6 +246,7 @@ class QFlightPayloadTab(QFrame):
         self.own_laser_code_info.assigned_laser_code_changed.connect(
             self.weapon_laser_code_selector.rebuild
         )
+        bound_dropdown_width(self.weapon_laser_code_selector, self.DROPDOWN_HINT_CHARS)
         scrolling_layout.addLayout(
             QLabeledWidget(
                 "Preset laser code for weapons:",
@@ -235,7 +274,7 @@ class QFlightPayloadTab(QFrame):
         # fuel slider, loadout, or pylons change, so the payload screen shows why
         # the jet carries its bags and whether the sortie gets home.
         self.fuel_brief_label = QLabel()
-        self.fuel_brief_label.setWordWrap(True)
+        _wrap_without_widening(self.fuel_brief_label)
         aircraft_layout.addWidget(self.fuel_brief_label)
 
         # 414th (§43): remember the fuel + aircraft properties above as this
@@ -243,9 +282,11 @@ class QFlightPayloadTab(QFrame):
         # (Loadout has its own "Save Payload"; laser code has a global setting.)
         aircraft_layout.addLayout(self._build_flight_defaults_row())
 
-        # No stretch: the box sizes to its (content-bounded, capped) height, so the
-        # pylon editor below gets the rest of the tab.
-        layout.addWidget(aircraft_box)
+        # No stretch on the box itself: it sizes to its (content-bounded, capped)
+        # height. The trailing stretch keeps the column packed at the top so the
+        # boxes do not spread out when the loadout column is the taller one.
+        left_column.addWidget(aircraft_box)
+        left_column.addStretch(1)
 
         loadout_row = QHBoxLayout()
         loadout_row.addWidget(QLabel("Loadout:"))
@@ -253,16 +294,17 @@ class QFlightPayloadTab(QFrame):
             flight, self.member_selector.selected_member
         )
         self.loadout_selector.currentIndexChanged.connect(self.on_new_loadout)
+        bound_dropdown_width(self.loadout_selector, self.DROPDOWN_HINT_CHARS)
         loadout_row.addWidget(self.loadout_selector, stretch=1)
-        layout.addLayout(loadout_row)
-        layout.addWidget(self.payload_editor, stretch=3)
+        right_column.addLayout(loadout_row)
+        right_column.addWidget(self.payload_editor, stretch=1)
 
         docsText = QLabel(
             '<a href="https://github.com/dcs-retribution/dcs-retribution/wiki/Custom-Loadouts"><span style="color:#FFFFFF;">How to create your own default loadout</span></a>'
         )
         docsText.setAlignment(Qt.AlignmentFlag.AlignCenter)
         docsText.setOpenExternalLinks(True)
-        layout.addWidget(docsText)
+        right_column.addWidget(docsText)
 
         self.setLayout(layout)
 

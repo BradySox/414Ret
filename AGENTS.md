@@ -1118,9 +1118,23 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     that fits every dialog on show (no per-dialog wiring; no-op when it already fits). Verified
     end-to-end offscreen: every flight's dialog lands at 835–893 px inside 1706x928, and a 3000 px
     test dialog is clamped fully on-screen. Tests `tests/test_screenfit.py`. Deliberately NOT done:
-    retro-wrapping dialogs in scroll areas (every layout minimum fits once clamped, so it would be
-    dormant untested code — the log warning marks the spot) and the stylesheet's 139 `px` rules (Qt
-    scales them by DPR; a font-preference wart, not the clipping cause). `qt_ui` is not CI
+    the stylesheet's 139 `px` rules (Qt scales them by DPR; a font-preference wart, not the clipping
+    cause). **The Payload tab goes wide (same day, the re-flown report "you prefer tall over
+    wide")**: the clamp fired but bit **below** that tab's layout minimum — the assumption that every
+    layout minimum fits once clamped was wrong (F-15E: 962 wanted, **901 minimum**, 880 available),
+    and since `fit_to_available_screen` *relaxes* a minimum, the shortfall came out of the pylon
+    rows, clipping the store names. The tab was one tall column inside an already-1508-px-wide
+    dialog, so it is now **two columns** (aircraft knobs left, loadout right — as tall as the taller
+    column, not both), the **pylon list scrolls** rather than being squeezed (the gotcha, and why an
+    earlier attempt was reverted for "showing only a few rows": **`QScrollArea::sizeHint` is
+    hard-capped at 24 font-heights** ≈360 px, so a scroll can only grow into space something else
+    claimed — `AdjustToContents` + the column's stretch is what shows a full loadout), and
+    **dropdowns stop demanding the width of their longest entry** (`qt_ui/widgets/dropdownwidth.py`
+    `bound_dropdown_width` caps the hint but pins the popup to its natural width; two columns of
+    un-bounded store names pushed the dialog to 2269 px). Result across every airframe in the
+    reporter's save: **up to 2269x962 (min 901) → a uniform 1553 wide × 332–552 tall (min 346–360)**,
+    dialog width unchanged. Tests `tests/test_payload_tab_layout.py` (drives the real
+    `QLoadoutEditor` on real pydcs pylon data, worst case picked by measurement). `qt_ui` is not CI
     type-checked — needs an app-side eyeball, checklist B27.
 29. **Campaign SITREP kneeboard band** — a "what happened last turn" digest on the next mission's
     kneeboard (a cockpit intel brief). `MissionResultsProcessor.commit()` gets a final

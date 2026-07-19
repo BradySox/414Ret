@@ -1,0 +1,100 @@
+"""DTC cartridge generation pass (§74).
+
+Builds one cartridge **per blue client flight** of a DTC-capable airframe
+(FA-18C, F-16C -- the two modules with native DCS DTC support today), binds it
+to the flight's client units with ``AutoLoad``, and appends the JSON files to
+the saved miz. Per-flight rather than per-type because each flight flies its
+own route -- a package's four Hornet flights get four cartridges, each loading
+its own steerpoints while sharing the mission comm plan and SA picture.
+
+Best-effort by design: a failure building one flight's cartridge skips that
+flight, and a failure anywhere never blocks the mission save (the caller wraps
+the pass; the miz without cartridges is exactly the pre-feature miz).
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING, Callable
+
+from dcs.mission import Mission
+
+from game.missiongenerator.dtc.cartridge import (
+    DtcCartridge,
+    append_cartridges_to_miz,
+    attach_cartridge_to_unit,
+)
+from game.missiongenerator.dtc.hornet import HORNET_UNIT_TYPE, build_hornet_cartridge
+from game.missiongenerator.dtc.viper import VIPER_UNIT_TYPE, build_viper_cartridge
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from game import Game
+    from game.missiongenerator.aircraft.flightdata import FlightData
+    from game.missiongenerator.missiondata import MissionData
+
+CartridgeBuilder = Callable[..., DtcCartridge]
+
+#: DCS unit type id -> cartridge builder. Only modules with native DTC support
+#: belong here (the ME ships a ``CoreMods/aircraft/<type>/DTC`` descriptor for
+#: each). CH-47F and the MiG-29 Fulcrum also have descriptors; add them when a
+#: campaign fields them as blue client airframes.
+CARTRIDGE_BUILDERS: dict[str, CartridgeBuilder] = {
+    HORNET_UNIT_TYPE: build_hornet_cartridge,
+    VIPER_UNIT_TYPE: build_viper_cartridge,
+}
+
+
+class DtcGenerator:
+    """Builds + binds native DTC cartridges for blue client flights."""
+
+    def __init__(self, mission: Mission, game: Game, mission_data: MissionData) -> None:
+        self.mission = mission
+        self.game = game
+        self.mission_data = mission_data
+        self.cartridges: list[DtcCartridge] = []
+
+    def generate(self) -> None:
+        if not self.game.settings.dtc_data_cartridges:
+            return
+        used_names: set[str] = set()
+        for flight in self.mission_data.flights:
+            try:
+                self._generate_for_flight(flight, used_names)
+            except Exception:
+                logging.exception(
+                    "DTC: failed to build cartridge for %s; flight left bare",
+                    flight.group_name,
+                )
+
+    def _generate_for_flight(self, flight: FlightData, used_names: set[str]) -> None:
+        if not flight.friendly.is_blue:
+            return
+        clients = flight.client_units
+        if not clients:
+            return
+        builder = CARTRIDGE_BUILDERS.get(flight.aircraft_type.dcs_unit_type.id)
+        if builder is None:
+            return
+        name = self._unique_name(flight, used_names)
+        cartridge = builder(flight, self.mission_data, self.game, name)
+        for unit in clients:
+            attach_cartridge_to_unit(unit, cartridge.name)
+        self.cartridges.append(cartridge)
+        used_names.add(cartridge.name)
+
+    def _unique_name(self, flight: FlightData, used_names: set[str]) -> str:
+        # The name doubles as the in-miz file name; callsigns are already
+        # filesystem-safe. Keep it recognizable on the jet's DTC page.
+        base = f"Retribution {flight.callsign} {flight.aircraft_type.dcs_unit_type.id}"
+        name = base
+        suffix = 2
+        while name in used_names:
+            name = f"{base} {suffix}"
+            suffix += 1
+        return name
+
+    def append_to_miz(self, miz_path: Path) -> None:
+        """Append the built cartridges to the saved miz (call after save)."""
+        append_cartridges_to_miz(miz_path, self.cartridges)

@@ -1,0 +1,371 @@
+"""FA-18C DTC cartridge builder (§74).
+
+Sections emitted (schema mined from ``CoreMods/aircraft/FA-18C/DTC``):
+
+* ``COMM`` -- COMM1/COMM2 preset tables **mirroring the channel numbers the
+  radio allocator already wrote into the unit** (so the kneeboard, the Radio
+  table, and the DTC agree), each with a <=5-char name; unassigned channels
+  keep the module's stock defaults.
+* ``WYPT`` -- the flight's waypoints as named steerpoints + the Route 1
+  sequence with per-leg altitude/speed/ETA, and ``NAV_SETTINGS`` that auto-tune
+  the recovery TACAN / ICLS / ACLS (the §65 boat card, closing the loop) and
+  the FPAS home waypoint.
+* ``SA`` -- FLOT line(s) from the live front, §40 no-strike zones as FAOR
+  areas, friendly CAP stations + tanker/AEW&C orbits as CAP_PTS racetracks,
+  and viewer-fogged enemy SAM rings as MEZ threats ("Custom" type; radius NM).
+* ``TCN`` -- deliberately empty in v1 (the boat's TACAN already auto-tunes via
+  NAV_SETTINGS; a stations list needs channel->frequency pairing, deferred).
+
+Limits honored from the ME editor: 59 waypoints, 9 CAP points, 3 FAOR + 3
+FLOT lines of 7 points, 40 MEZ threats.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Optional
+
+from game.missiongenerator.dtc.cartridge import DtcCartridge
+from game.missiongenerator.dtc.common import (
+    SupportTrack,
+    cap_tracks,
+    flot_segments,
+    frequency_labels,
+    is_route_waypoint,
+    is_target_waypoint,
+    known_enemy_threat_sites,
+    leg_speed_kmh,
+    restricted_zone_outlines,
+    seconds_of_day,
+    support_tracks,
+    waypoint_display_name,
+)
+
+if TYPE_CHECKING:
+    from game import Game
+    from game.missiongenerator.aircraft.flightdata import FlightData
+    from game.missiongenerator.missiondata import MissionData
+    from game.missiongenerator.missiondata import CarrierInfo
+
+HORNET_UNIT_TYPE = "FA-18C_hornet"
+
+MAX_WAYPOINTS = 59
+MAX_CAP_POINTS = 9
+MAX_LINE_POINTS = 7
+MAX_FAOR_LINES = 3
+MAX_FLOT_LINES = 3
+MAX_MEZ_THREATS = 40
+
+#: Stock preset frequencies (MHz) for channels 1-20 of both AN/ARC-210s, from
+#: the module's COMM1/COMM2 defaults -- kept for channels we don't assign.
+_DEFAULT_CHANNEL_FREQS = [
+    305.0, 264.0, 265.0, 256.0, 254.0, 250.0, 270.0, 257.0, 255.0, 262.0,
+    259.0, 268.0, 269.0, 260.0, 263.0, 261.0, 267.0, 251.0, 253.0, 266.0,
+]  # fmt: skip
+
+#: CAP racetrack orbit diameter (the ME default, 5 NM).
+_CAP_ORBIT_DIAMETER_M = 5 * 1852.0
+
+
+def _default_comm_table(radio_index: int) -> dict[str, Any]:
+    """The module's stock channel table for COMM1/COMM2 (identical freqs)."""
+    del radio_index  # both ARC-210s ship the same defaults
+    table: dict[str, Any] = {"Guard": False}
+    for i, freq in enumerate(_DEFAULT_CHANNEL_FREQS, start=1):
+        table[f"Channel_{i}"] = {
+            "frequency": freq,
+            "modulation": 0,
+            "name": f"CH {i}",
+        }
+    table["Channel_G"] = {"frequency": 243.0, "modulation": 0, "name": "GUARD"}
+    table["Channel_M"] = {"frequency": 305.0, "modulation": 0, "name": "MAN"}
+    table["Channel_C"] = {"frequency": 30.0, "modulation": 1, "name": "CUE"}
+    table["Channel_S"] = {"frequency": 156.05, "modulation": 1, "name": "MAR"}
+    return table
+
+
+def _build_comm(flight: FlightData, mission_data: MissionData) -> dict[str, Any]:
+    comm1 = _default_comm_table(1)
+    comm2 = _default_comm_table(2)
+    tables = {1: comm1, 2: comm2}
+    labels = frequency_labels(flight, mission_data)
+    for frequency, assignments in flight.frequency_to_channel_map.items():
+        label = labels.get(frequency, "")
+        for assignment in assignments:
+            table = tables.get(assignment.radio_id)
+            if table is None or not 1 <= assignment.channel <= 20:
+                continue
+            entry: dict[str, Any] = {
+                "frequency": frequency.mhz,
+                # VHF-FM band frequencies are FM; everything Retribution
+                # assigns above 88 MHz is AM.
+                "modulation": 1 if frequency.mhz < 88.0 else 0,
+                "name": label or f"CH {assignment.channel}",
+            }
+            table[f"Channel_{assignment.channel}"] = entry
+    return {
+        "COMM1": comm1,
+        "COMM2": comm2,
+        "mirror_COMM1": False,
+        "mirror_COMM2": False,
+    }
+
+
+def _oa_defaults(index: int) -> dict[str, Any]:
+    """The offset-aimpoint boilerplate every ME-authored waypoint carries."""
+    return {
+        "isOA": False,
+        "idOA": f"OA{index}",
+        "idOA_Line": f"OA{index}Line",
+        "OA_X": 0,
+        "OA_Y": 0,
+        "OA_Alt": 0,
+        "OA_Bearing": 0,
+        "OA_Bearing_Units": 1,
+        "OA_Range": 0,
+        "OA_Range_Units": 1,
+        "OA_DeltaX": 0,
+        "OA_DeltaY": 0,
+        "OA_Elevation_Units": 1,
+    }
+
+
+def _build_wypt(
+    flight: FlightData, game: Game, carrier: Optional[CarrierInfo]
+) -> dict[str, Any]:
+    nav_pts: list[dict[str, Any]] = []
+    route_one: dict[str, Any] = {}
+    home_wypt = 1
+    route_order = 0
+    prev_route_wp = None
+    waypoints = flight.waypoints[:MAX_WAYPOINTS]
+    for number, waypoint in enumerate(waypoints, start=1):
+        on_route = is_route_waypoint(waypoint)
+        entry: dict[str, Any] = {
+            "wypt_num": number,
+            "id": f"STPT{number}",
+            "text_note": waypoint_display_name(waypoint.display_name or waypoint.name),
+            "note": "",
+            "x": waypoint.position.x,
+            "y": waypoint.position.y,
+            "alt": waypoint.alt.meters,
+            "altitudeType": 2 if waypoint.alt_type == "RADIO" else 1,
+            "velocityType": 3,
+            "R1": on_route,
+            "R2": False,
+            "R3": False,
+        }
+        entry.update(_oa_defaults(number))
+        if on_route:
+            route_order += 1
+            entry["R1_order"] = route_order
+            route_one[f"STPT{number}"] = {
+                "route_num": 1,
+                "wypt_num": number,
+                "alt": waypoint.alt.meters,
+                "altitudeType": entry["altitudeType"],
+                "speed": leg_speed_kmh(prev_route_wp, waypoint),
+                "ETA": seconds_of_day(game, waypoint.tot),
+                "FIX_Time": waypoint.tot is not None,
+                "TGT": is_target_waypoint(waypoint),
+            }
+            prev_route_wp = waypoint
+        nav_pts.append(entry)
+        if "LANDING" in waypoint.waypoint_type.name:
+            home_wypt = number
+    return {
+        "NAV_PTS": nav_pts,
+        "NAV_ROUTE": [route_one, [], []],
+        "NAV_SETTINGS": _build_nav_settings(flight, carrier, home_wypt),
+        "terrain": game.theater.terrain.name,
+        "mirror_NAV_PTS": False,
+    }
+
+
+def _find_carrier(
+    flight: FlightData, mission_data: MissionData
+) -> Optional[CarrierInfo]:
+    """The carrier this flight recovers on, if its arrival is a boat."""
+    arrival_name = flight.arrival.airfield_name
+    for carrier in mission_data.carriers:
+        if carrier.unit_name in arrival_name or arrival_name in carrier.unit_name:
+            return carrier
+        if carrier.callsign and carrier.callsign in arrival_name:
+            return carrier
+    return None
+
+
+def _build_nav_settings(
+    flight: FlightData, carrier: Optional[CarrierInfo], home_wypt: int
+) -> dict[str, Any]:
+    tacan = carrier.tacan if carrier is not None else flight.arrival.tacan
+    icls = carrier.icls_channel if carrier is not None else flight.arrival.icls
+    acls_freq = (
+        carrier.link4_freq.mhz
+        if carrier is not None and carrier.link4_freq is not None
+        else None
+    )
+    tacan_settings: dict[str, Any] = {
+        "Mode": 1,  # T/R
+        "Channel": 1,
+        "ChannelMode": 1,  # X
+        "OnOff": False,
+    }
+    if tacan is not None:
+        tacan_settings = {
+            "Mode": 1,
+            "Channel": tacan.number,
+            "ChannelMode": 2 if getattr(tacan.band, "value", "X") == "Y" else 1,
+            "OnOff": True,
+        }
+    return {
+        "TACAN": tacan_settings,
+        "ICLS": {
+            "Channel": icls if icls is not None else 1,
+            "OnOff": icls is not None,
+        },
+        "ACLS": {
+            "Frequency": acls_freq if acls_freq is not None else 225.0,
+            "OnOff": acls_freq is not None,
+        },
+        "AA_Waypoint": {"AA_WP_Number": 59, "AA_WP_Enabled": False},
+        "Home_Waypoint": {"FPAS_HOME_WP": home_wypt},
+        "Altitude_Warning": {"Warn_Alt_Rdr": 500, "Warn_Alt_Baro": 2000},
+    }
+
+
+def _cap_point(track: SupportTrack, number: int) -> dict[str, Any]:
+    x, y = track.center
+    return {
+        "id": f"CAP_PTS_{number}",
+        "num": number,
+        "x": x,
+        "y": y,
+        "course": track.course,
+        "length": track.length_m,
+        "diameter": _CAP_ORBIT_DIAMETER_M,
+        "turn_direction": "Left",
+        "note": track.callsign,
+    }
+
+
+def _line_points(
+    prefix: str, line_num: int, points: list[tuple[float, float]]
+) -> list[dict[str, Any]]:
+    return [
+        {"id": f"{prefix}_{line_num}_PT_{i}", "x": x, "y": y}
+        for i, (x, y) in enumerate(points[:MAX_LINE_POINTS], start=1)
+    ]
+
+
+def _build_sa(
+    flight: FlightData, mission_data: MissionData, game: Game
+) -> dict[str, Any]:
+    caps: list[dict[str, Any]] = []
+    for track in (cap_tracks(mission_data) + support_tracks(mission_data))[
+        :MAX_CAP_POINTS
+    ]:
+        caps.append(_cap_point(track, len(caps) + 1))
+
+    flot_lines: list[dict[str, Any]] = []
+    for name, points in flot_segments(game)[:MAX_FLOT_LINES]:
+        line_num = len(flot_lines) + 1
+        flot_lines.append(
+            {
+                "id": f"FLOT_{line_num}",
+                "num": line_num,
+                "note": name,
+                "points": _line_points("FLOT", line_num, points),
+            }
+        )
+
+    faor_lines: list[dict[str, Any]] = []
+    for name, outline in restricted_zone_outlines(game, MAX_LINE_POINTS)[
+        :MAX_FAOR_LINES
+    ]:
+        line_num = len(faor_lines) + 1
+        faor_lines.append(
+            {
+                "id": f"FAOR_{line_num}",
+                "num": line_num,
+                "note": name,
+                "points": _line_points("FAOR", line_num, outline),
+            }
+        )
+
+    threats: list[dict[str, Any]] = []
+    for site in known_enemy_threat_sites(game, flight.friendly)[:MAX_MEZ_THREATS]:
+        number = len(threats) + 1
+        threats.append(
+            {
+                "id": f"MEZ_THRTS_{number}",
+                "num": number,
+                "x": site.x,
+                "y": site.y,
+                "text": site.label,
+                "threat_type": "Custom",
+                "threat_ring_radius": round(site.range_m / 1852.0, 1),
+                "threat_level": 1,
+            }
+        )
+
+    return {
+        "CAP_PTS": caps,
+        "CORRIDORS": [],
+        "FAOR_FLOT": {"FAOR": faor_lines, "FLOT": flot_lines},
+        "MEZ_THRTS": threats,
+        "SETTINGS": _sa_settings(),
+        "Default_CAP_Point": 1,
+        "Default_CORRIDORS_Point": 1,
+        "Default_FAOR_Line": 1,
+        "Default_FLOT_Line": 1,
+        "Default_MEZ_THRTS_Level": 1,
+        "mirror_MEZ_THRTS": False,
+    }
+
+
+def _sa_settings() -> dict[str, Any]:
+    """The module's stock SA sensor/declutter settings (everything shown)."""
+    dcltr = {
+        "Bullseye_TDC_Info": True,
+        "Waypoint_Info": True,
+        "Compase_Rose": True,
+        "Ground_Speed": True,
+        "Countermeasure_Inventory": True,
+        "SEQ": True,
+        "CAP": True,
+        "CORR": True,
+        "FAOR": True,
+        "FLOT": True,
+        "MEZ_Names": True,
+        "MEZ_Rings": True,
+    }
+    return {
+        "SENSORS_SETTINGS": {
+            "RWR_Symbols": 1,
+            "FRIEND_Symbols": 3,
+            "PPLI_tracks": True,
+            "FF_tracks": True,
+            "SURV_tracks": True,
+            "UNK_tracks": True,
+        },
+        "DCLTR_SETTINGS": {"MREJ1": dict(dcltr), "MREJ2": dict(dcltr)},
+    }
+
+
+def build_hornet_cartridge(
+    flight: FlightData, mission_data: MissionData, game: Game, name: str
+) -> DtcCartridge:
+    terrain = game.theater.terrain.name
+    carrier = _find_carrier(flight, mission_data)
+    data: dict[str, Any] = {
+        "COMM": _build_comm(flight, mission_data),
+        "WYPT": _build_wypt(flight, game, carrier),
+        "SA": _build_sa(flight, mission_data, game),
+        "TCN": [],
+        "type": HORNET_UNIT_TYPE,
+        "name": name,
+        "terrain": terrain,
+    }
+    return DtcCartridge(
+        name=name, unit_type=HORNET_UNIT_TYPE, terrain=terrain, data=data
+    )

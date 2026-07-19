@@ -835,7 +835,9 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
    414th ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
 11. **Native DCS DTC cartridge export** — RETIRED (2026-06-26): half-baked; never
-    pre-loaded reliably and ED is shipping native DTC. Do not restore. (§11)
+    pre-loaded reliably and ED is shipping native DTC. Do not restore the OLD
+    implementation — **superseded by §74** (ED's native cartridge shipped; the
+    rebuilt-from-scratch export shares nothing with this one). (§11)
 12. **TARS recon engine** — MOOSE Ops.TARS runtime for TARPS, feeds confirmed BDA (default ON).
 13. **Flight Control ATC** — RETIRED (2026-06-26): half-baked MOOSE FLIGHTCONTROL tower
     comms plugin; removed. Do not restore. (§13)
@@ -2628,6 +2630,43 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     `qt_ui/windows/mission/flight/payload/weaponlasercodeselector.py`,
     `qt_ui/windows/mission/QEditFlightDialog.py`; features doc §73, checklist Q2 — needs an
     in-app pass.)
+74. **Native DTC data pre-population (F/A-18C + F-16C)** — the jet starts with the mission
+    already in the avionics, via **DCS's native Data Transfer Cartridge** (the mechanism
+    reverse-confirmed from a hand-built MP mission flown 2026-07-18 that pre-loaded the DM's
+    Hornet with zero pilot action; supersedes the retired §11, whose revisit condition —
+    "ED's native cartridge ships" — this is). Each **blue client** Hornet/Viper flight gets
+    one JSON cartridge at `DTC/<name>.dtc` in the miz + the per-unit
+    `DTC = {Cartridges={{default,name}}, AutoLoad=true}` block, so it loads at spawn and
+    distributes to MP clients with the mission download. Contents (per flight): COMM1/COMM2
+    presets **mirroring the radio allocator's channel numbers** (kneeboard/Radio-table/DTC
+    always agree) with ≤5-char names (callsign, MAGIC/ARCO, DEP/ARR/PKG); the flight's
+    steerpoints with ASCII-folded names + the route sequence (per-leg alt/speed, ETA as
+    seconds-since-midnight, target flagged); Hornet NAV settings **pre-tuning the §65 boat
+    TACAN/ICLS/ACLS** (land arrivals get the field TACAN) + FPAS home waypoint; and the
+    SA/HSD picture — FLOT (the F10 drawing's own geometry), §40 no-strike zones as FAOR/GEO
+    lines, **friendly CAP stations + tanker/AEW&C orbits as CAP_PTS racetracks** (Viper:
+    named extra steerpoints), and **enemy SAM rings as MEZ/THREAT_PTS** ("Custom" type,
+    NATO short labels from DCS unit ids) — **recon-fogged via `known_for(flight.friendly)`**
+    (the threat-intel kneeboard's leaf; `map_hidden` never emitted): headless-verified 0
+    rings on un-scouted Red Tide turn 1 vs exactly the 5 TARPS-confirmed sites on the flown
+    turn-2 save. Schemas + limits mined from the ME's own DTC editor
+    (`CoreMods/aircraft/<type>/DTC` + `me_managerDTC.lua`; design note
+    `414th-dtc-cartridge-notes.md` is the format reference): 59/25 waypoints, 9 CAP pts,
+    3+3 FAOR/FLOT ×7 pts, 40/15 threat rings, and the load-bearing `Default_*` style
+    indices (must be 1, the editor inits them to NONE). pydcs knows neither piece (neither
+    org nor root repo, checked): two fork-side seams in `dtc/cartridge.py` — an idempotent
+    `FlyingUnit.dict` wrap emitting the unit `DTC` key + a post-save zip append (before the
+    §66 archive copy, so archives carry cartridges) — with the clean first-class version
+    PR'd to `dcs-retribution/pydcs` (delete the seams when the pin moves). Both hooks
+    best-effort: any failure logs and leaves the pre-feature miz. CH-47F + MiG-29 also ship
+    DTC descriptors — add builders when a campaign fields them blue-client. Gated
+    `dtc_data_cartridges` (Mission Generation → Cockpit data, default **ON**; OFF is
+    byte-identical). Tests `tests/missiongenerator/test_dtc.py` (shapes, fog, mirroring,
+    the seams, a real miz round-trip through pydcs load).
+    (`game/missiongenerator/dtc/`, `game/missiongenerator/missiongenerator.py`,
+    `game/settings/settings.py`; features doc §74, checklist B28 — needs an in-game pass:
+    AutoLoad on the §64 spawn paths (uncontrolled carrier clients, late-activated delayed
+    flights) is the genuine unknown — the reference mission's jets were plain ramp starts.)
 
 ---
 

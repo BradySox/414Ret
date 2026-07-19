@@ -554,6 +554,14 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
+                # Native DCS data cartridges (§74): the jet starts with the
+                # mission already in the avionics.
+                "Cockpit data",
+                [
+                    "dtc_data_cartridges",
+                ],
+            ),
+            (
                 # Ship-launched land-attack fires (§63) -- the finite-magazine
                 # cruise missile game, kept out of the (full) Battlefield life
                 # grab of in-mission texture toggles.
@@ -2834,6 +2842,23 @@ class Settings:
             "only a ground-AI storm that tanks the frame rate), so this only "
             "matters for mod coastal sites whose launchers can actually drive. "
             "Off by default; movement only, both sides, same guarantees as above."
+        ),
+    )
+    dtc_data_cartridges: bool = boolean_option(
+        "Pre-load DTC data cartridges (F/A-18C, F-16C)",
+        page=MISSION_GENERATION_PAGE,
+        section=GENERAL_SECTION,
+        default=True,
+        detail=(
+            "Embed a native DCS Data Transfer Cartridge for every blue client "
+            "Hornet and Viper flight and auto-load it at spawn: named COMM "
+            "presets matching the kneeboard comm plan, the flight's steerpoints "
+            "with names and push times, recovery TACAN/ICLS/ACLS pre-tuned, and "
+            "the SA/HSD picture -- FLOT, no-strike zones, friendly CAP and "
+            "tanker/AWACS orbits, and the known enemy SAM rings (recon fog "
+            "respected: only sites your map shows exactly). The cartridge "
+            "travels inside the .miz, so multiplayer clients get it with the "
+            "mission download and need to do nothing in the jet."
         ),
     )
     mission_briefing_popup: bool = boolean_option(

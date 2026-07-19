@@ -1727,6 +1727,11 @@ fork's reverse-engineered export was dead weight and has been deleted. Do **not*
 it; revisit only if ED's native cartridge ships and a thin, reliable export is worth
 rebuilding from scratch.
 
+**That condition was met 2026-07-19** — ED's in-miz cartridge + `AutoLoad` shipped and
+was proven in MP (a hand-built mission pre-loaded the user's Hornet with zero pilot
+action). The rebuilt-from-scratch export is **§74** (`game/missiongenerator/dtc/`),
+which shares nothing with this retired implementation.
+
 (The F-15E CDU data-cartridge slot labels on the strike-task kneeboard — the
 `DTC M1.1` references in `kneeboard.py` — are an unrelated upstream feature and remain.)
 
@@ -7118,6 +7123,78 @@ teeth:
 
 **Deliberately not touched:** the `TACAN Channel Presel` typo is pydcs mirroring the
 DCS module data (`planes.py`, alongside `ILS Channel Presel`) — not ours to patch.
+
+## §74 — Native DTC data pre-population (F/A-18C + F-16C)
+
+Design note: [`docs/dev/design/414th-dtc-cartridge-notes.md`](design/414th-dtc-cartridge-notes.md)
+(the mined format reference — read before touching the JSON shapes). Supersedes the
+retired §11: ED's native cartridge shipped, and the revisit condition in that section
+("a thin, reliable export") is exactly what this is. Proven working before a line was
+written: a hand-built MP mission (Operation Broken Chain, flown 2026-07-18) pre-loaded
+every client Hornet/Viper with zero pilot action, and this feature replicates its
+mechanism byte-for-byte.
+
+**The mechanism (all native DCS, no Lua, no plugin):** two pieces inside the miz —
+
+1. One pretty-printed JSON cartridge per flight at `DTC/<name>.dtc` in the zip root:
+   `{"data": {…sections…}, "name": …, "type": "FA-18C_hornet"|"F-16C_50"}`.
+2. A per-unit mission block: `["DTC"] = { ["Cartridges"] = {{default=true, name=…}},
+   ["AutoLoad"] = true }`. `AutoLoad` makes the jet ingest the cartridge at spawn —
+   nothing to do on the MUMI/DED — and because the cartridge travels inside the miz,
+   MP clients get it with the mission download.
+
+**What's in a cartridge** (per **blue client flight** — each flight gets its own route;
+package-mates share the comm plan and SA picture):
+
+- **COMM** — COMM1/COMM2 (Viper COM1 UHF / COM2 VHF) preset tables that **mirror the
+  channel numbers the radio allocator already wrote** into the unit `Radio` table
+  (`FlightData.frequency_to_channel_map`), so the kneeboard, the ME radio page, and
+  the DTC agree — the DTC adds ≤5-char **names** (flight callsign, `MAGIC`, `ARCO`,
+  `DEP`/`ARR`/`DVT`, `PKG`, `JTAC`). Unassigned channels keep the module defaults.
+  The Viper's channel schema carries no name field (`{freq, modulation}`).
+- **WYPT / MPD.NAV_PTS** — the flight's waypoints as named steerpoints (ASCII-folded
+  display names), the Hornet Route-1 sequence with per-leg altitude/speed (km/h) and
+  **ETA in absolute seconds-since-midnight** (the Viper carries TOS inline), the
+  target waypoint flagged, DIVERT/BULLSEYE numbered but off-route.
+- **NAV_SETTINGS** (Hornet) — recovery **TACAN / ICLS / ACLS pre-tuned from the §65
+  boat card** (`CarrierInfo.tacan/icls_channel/link4_freq`; a land arrival uses the
+  field's `RunwayData.tacan`), FPAS home waypoint = the landing steerpoint.
+- **SA / MPD (the situational-awareness picture)** — the FLOT (same
+  `frontline_bounds` geometry as the F10 drawing), §40 no-strike zones as FAOR
+  polygons (Viper: GEO_LINES sets, FLOT first), **friendly CAP stations (BARCAP/
+  TARCAP) + tanker/AEW&C orbits as CAP_PTS racetracks** (Viper: named extra
+  steerpoints — the jet has no orbit element), and **enemy SAM threat rings as MEZ
+  threats / THREAT_PTS** ("Custom" type; radius NM on the Hornet, meters on the
+  Viper; ≤3-char NATO labels derived from DCS unit ids — `Kub`→6, `S-300PS`→10).
+- **Recon-fog discipline:** threat rings pass `tgo.known_for(flight.friendly)` — the
+  same leaf the threat-intel kneeboard uses — so the cartridge never leaks a site the
+  player's map doesn't show exactly; `map_hidden` (§50 ambush teams) is never
+  emitted. Headless-verified on the flown Red Tide saves: turn 1 (nothing scouted)
+  emits 0 rings; the flown turn-2 save emits exactly the 5 TARPS-confirmed sites of
+  34.
+
+**Editor-mined limits honored:** 59 Hornet waypoints / 25 Viper steerpoints, 9 CAP
+points, 3+3 FAOR/FLOT lines × 7 points, 40 MEZ / 15 THREAT_PTS, 4 GEO line sets.
+Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter.
+
+**Implementation:** `game/missiongenerator/dtc/` — `cartridge.py` (the model + the
+two pydcs seams: an idempotent `FlyingUnit.dict` wrap emitting the `DTC` key for
+units carrying `retribution_dtc`, and a post-save zip append for the `DTC/` files),
+`common.py` (extraction helpers), `hornet.py` / `viper.py` (per-jet builders),
+`generator.py` (`DtcGenerator`, wired in `missiongenerator.py` after the drawings
+pass + after `mission.save`). Both hooks are best-effort — a failure logs and leaves
+the pre-feature miz. CH-47F and the MiG-29 Fulcrum also ship DTC descriptors; add
+builders in `CARTRIDGE_BUILDERS` when a campaign fields them as blue client
+airframes. The clean first-class seams are PR'd to `dcs-retribution/pydcs`; when the
+pin moves, `cartridge.py` shrinks to the model + builders.
+
+Gated `dtc_data_cartridges` (Mission Generation → Cockpit data, default **ON** — the
+kill switch; OFF is byte-identical output). Tests
+`tests/missiongenerator/test_dtc.py` (shapes, fog, mirroring, the pydcs seams, a
+real miz round-trip through pydcs load). Checklist **B28** — needs an in-game pass:
+AutoLoad on our §64 spawn paths (uncontrolled carrier clients, late-activated
+delayed flights) is the genuine unknown; the reference mission's jets were ordinary
+ramp starts.
 
 ## Code audit fixes — 2026-07-07
 

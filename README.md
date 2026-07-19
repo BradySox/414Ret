@@ -71,8 +71,14 @@ Upstream hands you a map that already knows everything. Here you have to go look
 
 - **QRA intercept reserve** holds fighters for base defense — and you can **man part of it**,
   scrambling from cold alert when the *"raid inbound"* call comes.
+- **The jet starts with the mission already in it.** Every player Hornet and Viper carries a
+  native DCS **data cartridge** that auto-loads at spawn — comm presets *named* to match the
+  kneeboard (MAGIC, ARCO, your flight), the route with push times, the boat's TACAN/ICLS/ACLS
+  pre-tuned, and the SA/HSD picture: FLOT, no-strike zones, friendly CAP and tanker/AWACS
+  orbits, and the enemy SAM rings your recon has actually confirmed. Nothing to load, nothing
+  to type — and in multiplayer it arrives with the mission download.
 - **Support orbits are painted on the F10 map** — a cyan racetrack and label for every tanker
-  and AWACS, so you can find your gas in flight. No DTC, no cartridge.
+  and AWACS, so you can find your gas in flight, cartridge or not.
 - **Fuel first: tanks are fitted for the sortie, then the tanker passes are decided.** A jet
   short of gas gets drop tanks; the tanker decision counts the fuel in them, so jets stop
   double-tanking sorties their real load covers. The Payload tab shows burn, passes and RTB

@@ -10,7 +10,8 @@ import {
   setHoveredEmitter,
 } from "../../api/mapSlice";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { mapColors } from "../../theme/mapColors";
+import { mapColors, mapStrokes } from "../../theme/mapColors";
+import { CasedCircle } from "../map/CasedShapes";
 import MobileTgo from "./MobileTgo";
 import { TgoTooltip, iconForTgo } from "./shared";
 import { Circle, Marker, Tooltip } from "react-leaflet";
@@ -35,65 +36,61 @@ function ConcealedTgo(props: TgoProps) {
   // klaxons on the flown Red Tide map) and a low fill that STACKS where the
   // circles overlap — darker exactly where more units hide, while the union
   // of the members' own circles covers the area they actually hold. A lone
-  // circle keeps the classic dashed "suspected activity" ring.
+  // circle keeps the classic dashed "suspected activity" ring — cased, so it
+  // reads on desert imagery (the flown Iraq map washed bare amber out).
   const clustered = (props.tgo.concealed_cluster_size ?? 1) >= 2;
-  return (
-    <>
-      {/* Contrast casing: a wider dark dash drawn under the amber ring. Amber
-          alone disappeared into desert satellite imagery (the flown Iraq map);
-          the dark edge makes the ring read on light terrain, the amber core on
-          dark. Same geometry + dashArray, so the dashes align. Non-interactive
-          — the amber ring on top owns the click/tooltip contract. */}
-      {!clustered && (
-        <Circle
-          center={props.tgo.position}
-          radius={props.tgo.uncertainty_radius_m!}
-          pathOptions={{
-            color: mapColors.strokeCasing,
-            weight: 6,
-            opacity: 0.75,
-            dashArray: "6 6",
-            fill: false,
-            interactive: false,
-          }}
-        />
-      )}
+  const eventHandlers = {
+    click: () => {
+      openInfoDialog({ tgoId: props.tgo.id });
+    },
+    contextmenu: () => {
+      openNewPackageDialog({ tgoId: props.tgo.id });
+    },
+  };
+  // Amber "suspected", not red: red is reserved for the ROE off-limits zone,
+  // which is nearly identical in shape. Amber reads as "unknown — investigate".
+  const tooltip = (
+    <Tooltip>
+      Suspected enemy activity ({props.tgo.control_point_name})
+      <br />
+      Somewhere in this area — fly recon to localize
+      <br />
+      <i>Left-click: intel · Right-click: plan a package</i>
+    </Tooltip>
+  );
+  if (clustered) {
+    return (
       <Circle
         center={props.tgo.position}
         radius={props.tgo.uncertainty_radius_m!}
-        // Amber "suspected", not red: red is reserved for the ROE off-limits circle,
-        // which is nearly identical in shape. Amber reads as "unknown — investigate".
         pathOptions={{
-          color: mapColors.suspected,
-          stroke: !clustered,
-          weight: 2.5,
-          dashArray: "6 6",
+          stroke: false,
           fillColor: mapColors.suspected,
-          // Lone ring: deep enough to read as an area at a glance over satellite
-          // imagery (0.18 still washed out on desert tan). Cluster member: low,
-          // because the fills stack — 3 overlapping ≈ 0.41, 6 ≈ 0.65, 9 ≈ 0.79
-          // — the density ramp.
-          fillOpacity: clustered ? 0.16 : 0.25,
+          // Low, because the members' fills stack — 3 overlapping ≈ 0.41,
+          // 6 ≈ 0.65, 9 ≈ 0.79 — the density ramp.
+          fillOpacity: 0.16,
           className: "map-interactive",
         }}
-        eventHandlers={{
-          click: () => {
-            openInfoDialog({ tgoId: props.tgo.id });
-          },
-          contextmenu: () => {
-            openNewPackageDialog({ tgoId: props.tgo.id });
-          },
-        }}
+        eventHandlers={eventHandlers}
       >
-        <Tooltip>
-          Suspected enemy activity ({props.tgo.control_point_name})
-          <br />
-          Somewhere in this area — fly recon to localize
-          <br />
-          <i>Left-click: intel · Right-click: plan a package</i>
-        </Tooltip>
+        {tooltip}
       </Circle>
-    </>
+    );
+  }
+  return (
+    <CasedCircle
+      center={props.tgo.position}
+      radius={props.tgo.uncertainty_radius_m!}
+      color={mapColors.suspected}
+      signature={mapStrokes.suspectedArea}
+      // Deep enough to read as an area at a glance over satellite imagery
+      // (0.18 still washed out on desert tan).
+      fillOpacity={0.25}
+      className="map-interactive"
+      eventHandlers={eventHandlers}
+    >
+      {tooltip}
+    </CasedCircle>
   );
 }
 

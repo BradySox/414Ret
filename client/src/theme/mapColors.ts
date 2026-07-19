@@ -58,6 +58,48 @@ export const mapColors = {
 export type MapColorKey = keyof typeof mapColors;
 
 /**
+ * A stroke signature: the dash pattern + weights that give one overlay category
+ * its unique look. Colour is deliberately NOT the only channel — on desert
+ * imagery (or for a colour-blind pilot) two hues can collapse into each other,
+ * so every dashed-family category also differs by pattern:
+ *
+ *   suspected AREA   - medium dash        (something is in here, go look)
+ *   ROE zone         - long dash          (an authored border: firm, legal)
+ *   weapons-free     - long dash-dot      (same border family, opposite meaning)
+ *   minefield        - tick marks         (a hazard field, your own)
+ *   pilot POW        - short dash         (held; freed by recapture)
+ *   pilot MIA        - solid              (a live man, exact position)
+ *
+ * `casingWeight` is the dark under-stroke (strokeCasing) drawn beneath the
+ * coloured dash by the CasedShapes components, so every one of these reads on
+ * light and dark terrain alike.
+ */
+export interface StrokeSignature {
+  /** SVG dash pattern; omit for a solid stroke. */
+  dashArray?: string;
+  weight: number;
+  casingWeight: number;
+  lineCap?: "round" | "butt";
+}
+
+export const mapStrokes: Record<
+  | "suspectedArea"
+  | "roeRestricted"
+  | "weaponsFree"
+  | "minefield"
+  | "pilotMia"
+  | "pilotPow",
+  StrokeSignature
+> = {
+  suspectedArea: { dashArray: "6 6", weight: 2.5, casingWeight: 6 },
+  roeRestricted: { dashArray: "16 10", weight: 3, casingWeight: 7 },
+  weaponsFree: { dashArray: "16 8 3 8", weight: 3, casingWeight: 7 },
+  minefield: { dashArray: "2 8", weight: 2.5, casingWeight: 6 },
+  pilotMia: { weight: 2.5, casingWeight: 6 },
+  pilotPow: { dashArray: "3 5", weight: 2.5, casingWeight: 6 },
+};
+
+/**
  * Shared supply-readiness banding (input is the raw supply fraction in [0, 1]).
  *
  * The ribbon chips, the map's supply nodes, and the legend must agree on what

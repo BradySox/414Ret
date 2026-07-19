@@ -2980,10 +2980,29 @@ circles read alike), and the map's core planning actions were invisible right-cl
   contract; (2) **fills raised**: lone 0.18 → 0.25, cluster member 0.12 → 0.16 (density ramp now
   3 ≈ 0.41, 6 ≈ 0.65, 9 ≈ 0.79). The **cluster cloud stays stroke-less** — that was a flown
   squadron decision (the nine-ring klaxon) and is not re-litigated here; the amber hue also stays
-  (`#dd9a3a` — pushing it toward orange would collide with the FLOT's `#fe7d0a`). Client-only
-  (`Tgo.tsx`, `mapColors.ts`); `tsc` + jest green; rides the existing P3 concealment checklist
-  bullet + the CI client rebuild. Candidate follow-up if still faint when flown: apply the same
-  casing to the other dashed circles (ROE off-limits, weapons-free, minefields, POW).
+  (`#dd9a3a` — pushing it toward orange would collide with the FLOT's `#fe7d0a`).
+- **The family-wide stroke-signature system (same day, the "unique looks for each … area, zone
+  and exact target" call):** the casing generalized to the whole dashed-overlay family, and each
+  category now carries a **unique dash pattern + weight** so hue is never the only channel (desert
+  imagery and colour-blindness both collapse hues): `StrokeSignature`/`mapStrokes` in
+  `mapColors.ts` — suspected **area** = medium dash "6 6" w2.5 · ROE **restricted zone** = long
+  dash "16 10" w3 (an authored border reads firm) · **weapons-free zone** = long dash-dot
+  "16 8 3 8" w3 (same border family, opposite meaning) · **minefield** = tick marks "2 8" ·
+  **pilot MIA** = solid · **POW** = short dash "3 5" — every one drawn by the shared
+  `CasedCircle`/`CasedPolygon`/`CasedCircleMarker` components (`components/map/CasedShapes.tsx`;
+  casing never interactive, the top shape keeps the tooltip/click contract). Consumers refactored:
+  `Tgo.tsx` (lone ring), `RestrictedZonesLayer` (circle AND box/corridor polygons, both ROE
+  polarities), `MinefieldsLayer`, `DownedPilotsLayer`. The **legend renders the real signatures**
+  — `StrokeSwatch` draws each row's actual cased dash as a mini SVG (true `dashArray` + casing),
+  replacing the generic CSS "dashed" swatch, with the labels renamed to the taxonomy ("Suspected
+  area", "ROE off-limits zone", "Weapons-free zone (ROE)"). **Exact targets and buildings need no
+  new look** — they already carry unique APP-6/SIDC icons per type (the §3 marker system); the map
+  grammar is now: icon = exact object, cased medium-dash amber = suspected area, cased long-dash =
+  authored zone, ticks = hazard, solid/short-dash pixel marker = a person. Threat/detection rings
+  (solid, numerous) deliberately uncased — doubling a hundred rings is noise, and they were
+  legible already. Client-only (`mapColors.ts`, `components/map/CasedShapes.tsx`, `Tgo.tsx`,
+  `RestrictedZonesLayer.tsx`, `MinefieldsLayer.tsx`, `DownedPilotsLayer.tsx`, `MapLegend.tsx/.css`);
+  `tsc` + jest green; rides the existing P3 concealment checklist bullet + the CI client rebuild.
 
 ### Dialogs are clamped to the screen (2026-07-19, the "windows are clipping" report)
 

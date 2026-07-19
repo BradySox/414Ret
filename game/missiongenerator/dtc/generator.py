@@ -19,17 +19,11 @@ from typing import TYPE_CHECKING, Callable
 
 from dcs.mission import Mission
 
-from game.missiongenerator.dtc.cartridge import (
-    DtcCartridge,
-    append_cartridges_to_miz,
-    attach_cartridge_to_unit,
-)
+from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.hornet import HORNET_UNIT_TYPE, build_hornet_cartridge
 from game.missiongenerator.dtc.viper import VIPER_UNIT_TYPE, build_viper_cartridge
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from game import Game
     from game.missiongenerator.aircraft.flightdata import FlightData
     from game.missiongenerator.missiondata import MissionData
@@ -84,8 +78,11 @@ class DtcGenerator:
             return
         name = self._unique_name(flight, used_names)
         cartridge = builder(flight, self.mission_data, self.game, name)
+        # First-class pydcs seams: the mission writes DTC/<name>.dtc at save
+        # and each unit's dict() emits the Cartridges/AutoLoad block.
+        self.mission.add_dtc_cartridge(cartridge.name, cartridge.to_json())
         for unit in clients:
-            attach_cartridge_to_unit(unit, cartridge.name)
+            unit.add_dtc_cartridge(cartridge.name)
         self.cartridges.append(cartridge)
         used_names.add(cartridge.name)
 
@@ -99,7 +96,3 @@ class DtcGenerator:
             name = f"{base} {suffix}"
             suffix += 1
         return name
-
-    def append_to_miz(self, miz_path: Path) -> None:
-        """Append the built cartridges to the saved miz (call after save)."""
-        append_cartridges_to_miz(miz_path, self.cartridges)

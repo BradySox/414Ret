@@ -1,7 +1,9 @@
 # Native DCS DTC cartridges (§74) — format reference + design
 
-**Status:** LANDED 2026-07-19. This note is the source of truth for the cartridge
-JSON shapes; read it before touching `game/missiongenerator/dtc/`.
+**Status:** LANDED 2026-07-19 (PR #665; planner controls #666; first-class
+pydcs seams via the dcs-retribution/pydcs#34 pin bump). This note is the source
+of truth for the cartridge JSON shapes; read it before touching
+`game/missiongenerator/dtc/`.
 
 ## Where the format came from
 
@@ -129,22 +131,25 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
 - **Hornet ALR-67 CMDS/RWR + Viper CMDS/ELINT deferred**: the jets' own defaults
   are sane; a curated per-era program table is v2 material.
 
-## pydcs seams (fork-side until upstream lands)
+## pydcs seams — first-class since the pin bump
 
-pydcs (pin `dcs-retribution/pydcs@b0fc06a`) knows neither piece; neither does
-root pydcs (checked 2026-07-19). Fork-side seams in
-`game/missiongenerator/dtc/cartridge.py`:
+The serialization seams are **native pydcs** (dcs-retribution/pydcs#34, written
+alongside this feature): `FlyingUnit.add_dtc_cartridge(name)` emits the unit
+`DTC` block from `dict()` (and `load_from_dict` parses it — fixing a real pydcs
+round-trip bug where a loaded mission's unit DTC blocks were silently dropped
+on re-save), and `Mission.add_dtc_cartridge(name, content)` writes
+`DTC/<name>.dtc` at save + reads it back at load (reserved so the
+binary-resource pass never duplicates the entry). The fork's
+`requirements.txt` pins the #34 commit (`e6e7a57`, on the BradySox/pydcs fork
+until upstream merges — merge-commit style preserves the sha, so the URL can
+be re-pointed at dcs-retribution/pydcs afterward; the pin also carries the 3
+upstream pydcs commits between the old `b0fc06a` pin and head: the
+DCS-version data update + the A-6E TACAN flag).
 
-1. `install_flying_unit_dtc_serialization()` — one idempotent wrap of
-   `FlyingUnit.dict` emitting `d["DTC"]` for units carrying the
-   `retribution_dtc` attribute. Byte-identical for every other unit.
-2. `append_cartridges_to_miz()` — plain zip append of the `DTC/*.dtc` entries
-   after `Mission.save` (runs before the §66 archive copy, so archives carry the
-   cartridges).
-
-The clean first-class version (unit attrs + `load_from_dict` round-trip + a
-`Mission`-level cartridge dict written/read in save/load) is PR'd to
-`dcs-retribution/pydcs`; when merged and the pin moves, delete the seams here.
+History: the feature first shipped (PR #665) with two fork-side seams in
+`cartridge.py` — an idempotent `FlyingUnit.dict` monkeypatch + a post-save zip
+append — because the pinned pydcs knew neither piece. Both were deleted when
+the pin moved; `cartridge.py` is now just the `DtcCartridge` model.
 
 ## Open items
 

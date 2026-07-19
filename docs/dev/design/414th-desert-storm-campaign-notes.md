@@ -62,6 +62,37 @@ Headless-verified end-to-end (17 CPs — 3 blue + off-map + 13 red; front exactl
 H-3 Main ↔ H-2; 40 squadrons resolve exactly; every squadron fits its parking; KARI
 at 104 IADS nodes).
 
+## Historical squadron identities (2026-07-19, the DM's call)
+
+Every squadron is named for the real unit that flew (or best matches) its airframe
+and role in January 1991 — Gulf War Air Power Survey for the coalition, the
+ACIG/Osprey IrAF orders of battle for Iraq:
+
+| Wing | Unit | The story |
+|---|---|---|
+| F-14B Strike | **VF-103 "Sluggers"** | The actual F-14A+/B DS unit (Saratoga, CVW-17) |
+| F-15C BARCAP | **58th TFS "Gorillas"** | 16 kills — the most of any squadron in the war |
+| F-4E SEAD Sweep | **561st TFS "Black Knights"** | The Wild Weasels (F-4E stands in for the F-4G) |
+| F/A-18C SEAD | **VFA-81 "Sunliners"** | Killed two MiG-21s mid-strike, bombs still aboard |
+| F-16CM DEAD | **23rd TFS "Fighting Hawks"** | The 52nd TFW Weasel hunter-killer Vipers |
+| F-15E OCA | **336th TFS "Rocketeers"** | The 4th TFW Scud hunters |
+| A-10C CAS | **355th TFS "Falcons"** | Myrtle Beach Hogs out of King Fahd |
+| CH-47F | **7-101st Aviation "Eagle Lift"** | The G-Day air assault into FOB Cobra |
+| AH-64A | **1-101st Aviation "Expect No Mercy"** | Task Force Normandy — the war's first shots, against the EWR chain this campaign models |
+| OH-58D | **2-17th Cavalry "Out Front"** | The Screaming Eagles' scouts |
+| E-3/KC-135s | **963rd AWACS / 1701st + 1702nd AREFW(P)** | The Saudi-rear support wings |
+| Red fixed-wing | **Nos. 84 (MiG-25, the night-one kill), 6 + 39 (MiG-29), 63 + 93 (MiG-23), 11 + 47 (MiG-21), 79 (Mirage F1), 8 (all the Fencers, split into flights), 69 + 44 + 109 + 114 (Fitters/Frogfoots), 7 (Tu-22), 10 (bombers), 33 (Il-76), Adnan-1 AEW Flight** | Published IrAF numbers where documented |
+| Red helos | Nos. 2/4/30/55/66 Sqn, IqAAC | **Representative** — IqAAC helo numbers are poorly documented |
+
+Era discipline: `female_pilot_percentage: 0` everywhere (US combat squadrons were
+closed until 1993). Iraqi squadrons author an **explicit empty nickname** — which
+now *clears* the field (a one-line `override_squadron_defaults` change:
+`config.nickname or None`), suppressing the def generator's random "Apoplectic
+Porcupine"-style roll that otherwise lands on every generated def. **Liveries are
+deliberately NOT authored** — preset livery strings must match the installed DCS
+livery set (the squadron-livery-audit lesson); identity first, paint later if the
+DM wants a livery pass against the real install.
+
 The DM's homemade "DS91" campaign (`DS91.yaml` + `DS91.miz`, authored ~Jan 2026 against
 the same 10.8 campaign format the fork still speaks), audited, fixed, modernized onto the
 current 414th feature stack, and promoted into the repo as

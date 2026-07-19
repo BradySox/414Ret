@@ -187,7 +187,11 @@ class DefaultSquadronAssigner:
         if config.name is not None:
             squadron_def.name = config.name
         if config.nickname is not None:
-            squadron_def.nickname = config.nickname
+            # An authored empty string clears the nickname outright (falling back to
+            # None, which renders as no nickname at all) -- a campaign's way of
+            # suppressing the def generator's random nickname for forces that don't
+            # use them (e.g. the Desert Storm campaign's Iraqi squadrons).
+            squadron_def.nickname = config.nickname or None
         if config.female_pilot_percentage is not None:
             squadron_def.female_pilot_percentage = config.female_pilot_percentage
         if config.callsign is not None:

@@ -202,6 +202,30 @@ def test_desert_storm_every_squadron_fits_its_parking() -> None:
             )
 
 
+def test_desert_storm_squadrons_carry_historical_identities() -> None:
+    """Every squadron is named for its real (or best-match) January 1991 unit, per
+    the published orbats. Era discipline rides along: female_pilot_percentage is 0
+    everywhere (US combat squadrons were closed to women until 1993), and the Iraqi
+    squadrons carry an explicit EMPTY nickname -- the campaign-authored way of
+    suppressing the def generator's random nickname roll (IrAF units used none)."""
+    squadrons = _campaign()["squadrons"]
+    for base_id, configs in squadrons.items():
+        for cfg in configs:
+            assert cfg.get("name"), (base_id, cfg["aircraft"])
+            assert cfg.get("female_pilot_percentage") == 0, (base_id, cfg["name"])
+            assert "nickname" in cfg, (base_id, cfg["name"])
+
+    by_name = {cfg["name"]: cfg for cfgs in squadrons.values() for cfg in cfgs}
+    # The marquee identities.
+    assert by_name["VF-103"]["nickname"] == "Sluggers"  # the real DS F-14B unit
+    assert by_name["58th TFS"]["nickname"] == "Gorillas"  # 16 kills, most of the war
+    assert by_name["1-101st Aviation"]["nickname"] == "Expect No Mercy"  # TF Normandy
+    # Night one's only Iraqi air-to-air kill came from the Qadessiya Foxbats --
+    # and Iraqi squadrons carry no nickname.
+    assert by_name["No. 84 Squadron"]["aircraft"] == ["MiG-25PD Foxbat-E"]
+    assert by_name["No. 84 Squadron"]["nickname"] == ""
+
+
 def test_desert_storm_will_profile_is_the_coalition_story() -> None:
     profile = parse_will_profile(_campaign()["will"])
     assert profile.blue.label == "Coalition cohesion"

@@ -166,9 +166,17 @@ file. This guide is the map; those are the territory.
     **Al-Sahra (Tikrit)**, and the campaign climbs the M-113-authored pipeline-road **capture
     ladder H-3 → H-2 → Al-Asad** whose legs advance the front and become blue convoy roads as
     each rung falls. A standing **parking-fit test** asserts every based squadron has at least
-    as many dimensionally-fitting slots as airframes. CI-locked in
-    `tests/fourteenth/test_desert_storm.py` (8 tests); in-game pass = checklist T3. NEW game
-    required)
+    as many dimensionally-fitting slots as airframes. **First-fly fix + historical identities
+    (same day):** the Bombcat's `air-to-ground` secondary had the planner fragging Tomcats at
+    the SA-2 rings (the alias includes DEAD/SEAD; the airframe data carries `DEAD: 390`) →
+    `secondary: air-to-air`; and **every squadron is named for its real 1991 unit** (VF-103 /
+    58th TFS Gorillas / TF Normandy's 1-101st / the published IrAF squadron numbers — No. 84
+    Sqn's Foxbats at Qadessiya), `female_pilot_percentage: 0` era-wide, and Iraqi squadrons
+    author an **explicit empty nickname**, which now CLEARS the field (the
+    `override_squadron_defaults` `config.nickname or None` one-liner) instead of leaving the
+    def generator's random "Apoplectic Porcupine" roll; liveries deliberately un-authored (the
+    installed-DCS livery-audit lesson). CI-locked in `tests/fourteenth/test_desert_storm.py`
+    (9 tests); in-game pass = checklist T3. NEW game required)
   - `414th-red-tide-supply-routes-notes.md` — YAML supply routes + Kastrup preset patch
   - `414th-comms-jam-notes.md` — enemy comms jamming off the IADS comms nodes (§51): why the
     in-game `radioTransmission` path beat SRS injection, the anti-grief guardrails, tuning levers

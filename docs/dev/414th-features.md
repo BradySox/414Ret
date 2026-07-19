@@ -7182,7 +7182,17 @@ package-mates share the comm plan and SA picture):
 
 **Editor-mined limits honored:** 59 Hornet waypoints / 25 Viper steerpoints, 9 CAP
 points, 3+3 FAOR/FLOT lines × 7 points, 40 MEZ / 15 THREAT_PTS, 4 GEO line sets.
-Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter.
+Comm names pre-clamped to the ME's 5-uppercase-alphanumeric filter. **The Hornet's
+nine CAP_PTS slots are spent priority-then-completeness** (two flown 2026-07-19
+findings): the §6 BARCAP wave relief flies each station as several jittered
+flights, and one-racetrack-per-*flight* filled all nine slots with duplicates and
+squeezed out every tanker/AWACS orbit — so support orbits go first (the gas can
+never be truncated out), then one racetrack per *station*
+(`dedupe_stations`: centers within 15 km on near-parallel/reciprocal courses are
+one station), then the remaining wave tracks fill whatever slots are left — the
+jet draws all nine racetracks it is physically capable of whenever the ATO
+overflows, and every wave when it fits (DS91 verified: 13 waves + 3 support →
+9/9 slots — 2 tankers, AWACS, 4 stations, 2 extra waves).
 
 **Implementation:** `game/missiongenerator/dtc/` — `cartridge.py` (the model + the
 two pydcs seams: an idempotent `FlyingUnit.dict` wrap emitting the `DTC` key for

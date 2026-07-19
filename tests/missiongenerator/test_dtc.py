@@ -616,7 +616,7 @@ def test_distinct_stations_survive_dedupe() -> None:
     assert len(dedupe_stations(far_apart)) == 3
 
 
-def test_hornet_sa_page_keeps_support_and_dedupes_waves() -> None:
+def test_hornet_sa_page_prioritizes_coverage_then_fills_free_slots() -> None:
     flight, mission_data, game = _hornet_fixture()
     # A second wave of the COLT station: jittered a few km, same course.
     mission_data.flights.append(
@@ -626,7 +626,44 @@ def test_hornet_sa_page_keeps_support_and_dedupes_waves() -> None:
     )
     cartridge = build_hornet_cartridge(flight, mission_data, game, "Waves")
     caps = json.loads(cartridge.to_json())["data"]["SA"]["CAP_PTS"]
-    assert [c["note"] for c in caps] == ["ARCO", "COLT"]
+    # Support first, one per station next -- and with slots to spare, the
+    # second wave draws too ("all the racetracks" whenever they fit).
+    assert [c["note"] for c in caps] == ["ARCO", "COLT", "COLT"]
+
+
+def _wave_flight(
+    callsign: str, cx: float, cy: float, course: float, length: float
+) -> Any:
+    half = length / 2.0
+    dx = math.cos(math.radians(course)) * half
+    dy = math.sin(math.radians(course)) * half
+    return _support_flight(
+        FlightType.BARCAP, callsign, Pt(cx - dx, cy - dy), Pt(cx + dx, cy + dy)
+    )
+
+
+def test_hornet_sa_page_fills_all_nine_slots_when_the_ato_overflows() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    # The nine flown wave tracks (three stations, three waves each) on top of
+    # the fixture's own COLT station + ARCO tanker: 10 raw CAP waves, 1 support.
+    for args in [
+        ("Ford 1", -24468, -404462, 56, 43244),
+        ("Ford 2", -4741, -383779, 62, 60018),
+        ("Jedi 1", 40, -406873, 74, 60759),
+        ("Uzi 1", -25732, -406336, 56, 59938),
+        ("Uzi 2", -2637, -379822, 62, 35138),
+        ("Dodge 1", 5270, -388631, 74, 44069),
+        ("Ponti 1", -20464, -398527, 56, 59184),
+        ("Uzi 3", -1618, -377906, 62, 34482),
+        ("Colt 9", 1501, -401777, 74, 62656),
+    ]:
+        mission_data.flights.append(_wave_flight(*args))
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Full Page")
+    caps = json.loads(cartridge.to_json())["data"]["SA"]["CAP_PTS"]
+    # Every one of the jet's nine slots is used: the tanker, one racetrack per
+    # station (fixture COLT + the three flown stations), then leftover waves.
+    assert len(caps) == 9
+    assert [c["note"] for c in caps][:5] == ["ARCO", "COLT", "FORD", "FORD", "JEDI"]
 
 
 def test_old_saves_default_the_flight_options() -> None:

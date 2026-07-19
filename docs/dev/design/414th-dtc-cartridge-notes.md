@@ -119,6 +119,12 @@ point), 15 THREAT_PTS, 20+20 COMM channels.
   existed for the threat-intel kneeboard). Any future generation-time consumer
   of fog-gated intel is covered by that wrapper; never read the fog leaves for
   a shared artifact outside it.
+- **The Hornet SA budget is priority-then-completeness**: support orbits →
+  one racetrack per station (`dedupe_stations`) → leftover §6 wave tracks fill
+  the remaining slots up to the hard nine. Never leave slots empty while real
+  orbits were dropped — and never let wave duplicates squeeze the tankers out.
+  (The Viper has no orbit element; its anchors stay one steerpoint per
+  station.)
 - **Blue client flights only** — AI don't read cartridges; red clients don't
   exist in this squadron's use.
 - **Best-effort everywhere**: per-flight failures skip the flight; pass-level

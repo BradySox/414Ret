@@ -144,13 +144,51 @@ mission.
   crossing, where every recovering aircraft passes a few metres above the deck — and
   the DCS static E-2C renders **wings-spread**, not folded, so it looms over the
   threshold. Sedlo can stage-manage recoveries in a scripted mission; a dynamic
-  campaign recovers jets every mission. Dropped, and codified as
-  `LANDING_AREA_KEEP_OUT` (a stern-threshold + wires box, x −170..−120 / y −15..+12)
-  guard-tested against BOTH tiers — the parking guard alone was demonstrably not
-  enough; anything new must clear spots AND the recovery corridor. Also still
-  excluded: the S-3B at (−98.7, +29.9) (would foul the El-3 elevator spot) and the
-  port-quarter E-2s at (−103..−109, −31) (their span fouls the measured port pair the
-  F-14s park on).
+  campaign recovers jets every mission. Cut, and codified as
+  `LANDING_AREA_KEEP_OUT` (a stern-threshold + wires box, x −170..−120 / y −15..+12):
+  **permanent** placements must clear spots AND the recovery corridor — the parking
+  guard alone was demonstrably not enough. Also still excluded entirely: the S-3B at
+  (−98.7, +29.9) (would foul the El-3 elevator spot) and the port-quarter E-2s at
+  (−103..−109, −31) (their span fouls the measured port pair the F-14s park on).
+
+## The dynamic respot (2026-07-18, the user's next question)
+
+"Why can't we move the planes after we take off? like move the E-2 after the launch
+is over." The honest answer: statics can't drive — a DCS static has no AI controller,
+no route, no `goRoute`. But they CAN be **struck below**: `StaticObject:destroy()`
+removes a static silently (no explosion, no wreck), which reads exactly as the
+elevator ride a real deck crew gives the alert Hawkeye between cycles. So the E-2 is
+back, as a distinct class:
+
+- `LAUNCH_PHASE_DRESSING` (data): placements allowed INSIDE `LANDING_AREA_KEEP_OUT`
+  because they are runtime-cleared. Rules differ from the permanent tiers and are
+  guard-tested separately: must still spare every MEASURED spot (the initial spawn
+  wave uses those while the statics stand), placed only with the aircraft tier on a
+  Nimitz deck, and every launch-phase static MUST reach the plugin's clear list (the
+  generator returns the names; `tgogenerator` records them on
+  `MissionData.deck_decor`; the emitter refuses nothing).
+- The **`deckdecor` plugin** (single-file config script, the §58 pattern) clears each
+  boat's list when EITHER fires first, after a 60 s grace:
+  - **the astern cone** — any friendly fixed-wing airborne within 4.5 NM / below
+    3 000 ft / ±50° of dead astern. Astern = the reciprocal of the **emitted BRC**
+    (the boat steams into wind on one course all mission — §65/§8 — so no runtime
+    orientation API is needed; the boat's live position comes from
+    `Group.getByName`). The CASE I initial runs up the wake at ~800 ft from ~3 NM and
+    the CASE III straight-in comes from further out — both enter the cone long
+    before the groove. Helos, deck-parked jets, high overhead traffic and departures
+    ahead never trip it (harness-pinned).
+  - **the fallback timer** (35 min default) — launches are long over; clear the deck
+    regardless so a hazard never waits on detection. Clearing early is harmless
+    (the E-2's absence hinders nothing); clearing late is the failure mode, so the
+    bias is early.
+  One-shot per boat, a `DECKDECOR|:` log line + an optional "deck respotted for
+  recovery" coalition message. Despawn ONLY — no runtime spawns (a runtime-spawned
+  ship-LINKED static is an unverified DCS behavior; the day someone wants the E-2 to
+  visibly reappear at a bow spot, MOOSE `SPAWNSTATIC:InitLinkToUnit` is the path to
+  evaluate, in-game first).
+- **What DCS must still prove (checklist B25):** destroy() removes the linked static
+  cleanly on a moving deck, and whether the freed stern real estate becomes usable
+  for recovery parking (bonus observation — nothing depends on it).
 - **Per-hull variety** (different variants on different boats in one theater) falls
   out free of the group-name seed; nothing to do.
 

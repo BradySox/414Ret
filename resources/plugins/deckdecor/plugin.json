@@ -1,0 +1,50 @@
+{
+    "nameInUI": "Carrier deck dressing (dynamic respot)",
+    "descriptionInUI": "Runtime half of the carrier deck decorations (feature 72): strikes each boat's LAUNCH-PHASE deck statics below (silent despawn -- the elevator ride) before recovery, so dressing like the round-down E-2C can stand in the recovery corridor during the launch cycle without ever meeting a jet in the wires. Clears on a fallback timer or the moment friendly fixed-wing traffic appears low astern of the boat, whichever comes first. Inert unless the mission generator emits dcsRetribution.deckDecor (the 'Carrier deck aircraft statics' setting placed launch-phase dressing). Despawn only -- no spawns, no gameplay-model change.",
+    "defaultValue": true,
+    "specificOptions": [
+        {
+            "nameInUI": "Poll cadence (s)",
+            "mnemonic": "pollS",
+            "defaultValue": 10,
+            "maximumValue": 60
+        },
+        {
+            "nameInUI": "Startup grace before watching (s)",
+            "mnemonic": "graceS",
+            "defaultValue": 60
+        },
+        {
+            "nameInUI": "Fallback clear time (minutes after mission start)",
+            "mnemonic": "fallbackMin",
+            "defaultValue": 35
+        },
+        {
+            "nameInUI": "Astern detection cone range (NM)",
+            "mnemonic": "coneDistNm",
+            "defaultValue": 4.5
+        },
+        {
+            "nameInUI": "Astern detection max altitude (ft MSL)",
+            "mnemonic": "coneAltFt",
+            "defaultValue": 3000
+        },
+        {
+            "nameInUI": "Astern detection cone half-angle (deg)",
+            "mnemonic": "coneHalfDeg",
+            "defaultValue": 50
+        },
+        {
+            "nameInUI": "Show the 'deck respotted' message",
+            "mnemonic": "showCue",
+            "defaultValue": true
+        }
+    ],
+    "scriptsWorkOrders": [],
+    "configurationWorkOrders": [
+        {
+            "file": "deckdecor-config.lua",
+            "mnemonic": "deckdecor-config"
+        }
+    ]
+}

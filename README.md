@@ -111,7 +111,9 @@ Upstream hands you a map that already knows everything. Here you have to go look
   tow tractors, a crash truck, deck hands along the island and the LSO team on the platform
   (deck dressing from the Operation Cerberus North 2 campaign, rotating each turn), placed
   so every parking spot and catapult stays usable. An optional extra parks static aircraft
-  aft for the full carrier look, at the documented cost of a few aft spots.
+  aft for the full carrier look — including an alert E-2 on the stern round-down that the
+  deck crew strikes below before recovery, so the wires are always clear when you come home
+  — at the documented cost of a couple aft spots.
 - Plus: mixed frontline combat clusters, civilian traffic, and the 414th-tuned Splash Damage 3.
 
 ### Planning and debriefing expose the information crews need

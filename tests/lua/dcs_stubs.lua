@@ -38,6 +38,7 @@ local Harness = {
         radioTransmissions = {}, -- { file, x, y, z, mod, loop, hz, power, name, t }
         stoppedTransmissions = {}, -- transmission names
         sounds = {}, -- { groupId, file, t } from outSound*
+        destroyedStatics = {}, -- static unit names removed via StaticObject:destroy
 
         infos = {},
         warnings = {},
@@ -602,8 +603,13 @@ StaticObject = {
 
 function Harness.addStatic(spec)
     staticsByName[spec.name] = {
-        isExist = function(_)
-            return spec.exists ~= false
+        isExist = function(self)
+            return not self.destroyed and spec.exists ~= false
+        end,
+        destroy = function(self)
+            self.destroyed = true
+            staticsByName[spec.name] = nil
+            table.insert(Harness.records.destroyedStatics, spec.name)
         end,
     }
 end

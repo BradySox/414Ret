@@ -20,12 +20,14 @@ from game.data.carrier_deck_decor import (
     ISLAND_STREET_ENVELOPE,
     KNOWN_PARKING_SPOTS,
     LANDING_AREA_KEEP_OUT,
+    LAUNCH_PHASE_DRESSING,
     LSO_PLATFORM_CREW,
     LSO_PLATFORM_ENVELOPE,
     MIN_SPOT_CLEARANCE_M,
     STATIC_META,
     STREET_VARIANTS,
     deck_layout_for,
+    launch_phase_dressing_for,
 )
 from game.missiongenerator.carrierdeckdecor import generate_carrier_deck_decorations
 from game.utils import Heading
@@ -88,19 +90,37 @@ def test_envelopes_stay_off_catapults_and_landing_area() -> None:
 def test_every_type_has_static_meta() -> None:
     for source, item in all_placements():
         assert item.type in STATIC_META, f"{source}: no meta for {item.type}"
-    for item in AIRCRAFT_DRESSING:
+    for item in AIRCRAFT_DRESSING + LAUNCH_PHASE_DRESSING:
         assert item.type in STATIC_META, f"aircraft tier: no meta for {item.type}"
 
 
-def test_nothing_in_the_ramp_crossing_keep_out() -> None:
-    """Both tiers stay out of the stern threshold / wires zone every
+def test_nothing_permanent_in_the_ramp_crossing_keep_out() -> None:
+    """Permanent placements stay out of the stern threshold / wires zone every
     recovering aircraft crosses a few metres above the deck (the lesson of
-    the user-caught round-down E-2C, 2026-07-18)."""
+    the user-caught round-down E-2C, 2026-07-18). Only LAUNCH_PHASE_DRESSING
+    may stand there -- the deckdecor plugin strikes it below before recovery."""
     everything = [item for _, item in all_placements()] + AIRCRAFT_DRESSING
     for item in everything:
         assert not in_box(
             item.x, item.y, LANDING_AREA_KEEP_OUT
         ), f"{item} is inside the landing-area keep-out"
+
+
+def test_launch_phase_dressing_rules() -> None:
+    """The launch-phase set is runtime-cleared, so it may stand in the
+    recovery corridor -- but it must still spare every MEASURED spot (the
+    initial spawn wave uses those while the statics stand), and it only
+    exists with the aircraft tier on a Nimitz deck."""
+    for item in LAUNCH_PHASE_DRESSING:
+        for sx, sy in KNOWN_PARKING_SPOTS:
+            clearance = math.hypot(item.x - sx, item.y - sy)
+            assert clearance >= MIN_SPOT_CLEARANCE_M, (
+                f"launch-phase: {item} is {clearance:.1f} m from the "
+                f"measured spot at ({sx}, {sy})"
+            )
+    assert launch_phase_dressing_for(CVN_71.id, True) == LAUNCH_PHASE_DRESSING
+    assert launch_phase_dressing_for(CVN_71.id, False) == []
+    assert launch_phase_dressing_for(LHA_Tarawa.id, True) == []
 
 
 def test_aircraft_tier_is_opt_in_and_spares_the_measured_spots() -> None:
@@ -151,13 +171,21 @@ def test_linked_static_serialization() -> None:
     )
     carrier = ship_group.units[0]
 
-    count = generate_carrier_deck_decorations(
+    clear_names = generate_carrier_deck_decorations(
         mission, country, ship_group, heading, 3, include_aircraft=True
     )
 
-    layout = deck_layout_for(CVN_71.id, "CSG 1", 3, include_aircraft=True)
+    layout = deck_layout_for(
+        CVN_71.id, "CSG 1", 3, include_aircraft=True
+    ) + launch_phase_dressing_for(CVN_71.id, True)
     statics = list(country.static_group)
-    assert count == len(layout) == len(statics)
+    assert len(layout) == len(statics)
+    # The launch-phase statics (placed last) are exactly the clear list the
+    # deckdecor plugin receives.
+    assert clear_names == [
+        str(g.units[0].name) for g in statics[-len(LAUNCH_PHASE_DRESSING) :]
+    ]
+    assert all("deck decor" in n and n.endswith("object") for n in clear_names)
 
     names = set()
     h = math.radians(80)

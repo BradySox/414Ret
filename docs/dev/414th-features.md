@@ -6630,16 +6630,32 @@ junkyard (−134.3/−122.6, +27/+28) — verbatim OCN placements. Unlike everyt
 these **deliberately occupy parking real estate** (~2 of the 16 spots), which is why
 they're a separate tier; a dedicated guard test still keeps them ≥9 m from every
 MEASURED spot (six-pack / port quarter / the rescue-helo spot — the ones Retribution's
-own spawns demonstrably use) and out of the default layout. **Every OCN E-2C static is
-excluded** — the first cut shipped OCN M8's round-down Hawkeye (−152.1, +5.4) and the
-user's screenshot caught it the same day: it cleared every parking spot but stands
-5.6 m tall a wingspan off the ramp crossing, and the DCS static E-2C renders
-**wings-spread** (a scripted campaign can stage-manage its recoveries around that; a
-dynamic campaign recovers jets every mission). That produced the
-`LANDING_AREA_KEEP_OUT` box (the stern threshold + wires zone) guard-tested against
-BOTH tiers, so nothing can ever be placed in the recovery corridor again. The
-S-3B/El-3 placement and the port-quarter E-2s stay excluded too (they'd foul the
-elevator spot / the measured port pair).
+own spawns demonstrably use) and out of the default layout.
+
+**The launch-phase E-2C + the dynamic respot (the `deckdecor` plugin, same day).**
+The tier's first cut shipped OCN M8's round-down Hawkeye (−152.1, +5.4) statically and
+the user's screenshot caught it within the hour ("how can planes land with the E2
+there?"): it cleared every parking spot but stands 5.6 m tall a wingspan off the ramp
+crossing, and the DCS static E-2C renders **wings-spread**. A scripted campaign can
+stage-manage its recoveries around that; a dynamic campaign recovers jets every
+mission. The user's follow-up ("move the E-2 after the launch is over") is the shipped
+answer: statics can't drive (no AI controller), but they can be **struck below** —
+the E-2 is back as **launch-phase dressing** (`LAUNCH_PHASE_DRESSING`, placed with the
+tier), and the new `deckdecor` plugin despawns it (`StaticObject:destroy`, silent —
+the elevator ride, narratively) when EITHER fires first: friendly **fixed-wing traffic
+low astern** of the boat (a cone off the reciprocal of the emitted BRC — 4.5 NM /
+3 000 ft / ±50°, catching the CASE I initial up the wake and the CASE III straight-in
+long before the groove) or a **fallback timer** (35 min), plus a one-line "deck
+respotted for recovery" cue. Emitter `deckdecorluadata.py` →
+`dcsRetribution.deckDecor` (ship group name to find the moving boat, side, BRC, clear
+names), populated from `MissionData.deck_decor` by the tgogenerator hook; emits
+nothing (plugin no-ops) when no launch-phase static was placed. Despawn only — no
+runtime spawns, no gameplay-model change. The permanent-placement rule became the
+`LANDING_AREA_KEEP_OUT` box (stern threshold + wires), guard-tested: only
+launch-phase items may stand there, and every launch-phase item must still spare the
+measured spots. The S-3B/El-3 placement and the port-quarter E-2s stay excluded
+entirely (they'd foul the elevator spot / the measured port pair — and they're
+permanent-zone positions, not launch-phase candidates).
 
 **Mechanism.** A ship-linked static serializes across three levels of the mission
 format, none fully covered by stock pydcs: `linkUnit` (carrier unit id) on the static
@@ -6664,17 +6680,23 @@ curated layouts against their own spot evidence — a follow-up, not a blind cop
 **Wiring.** `carrier_deck_decorations` (Mission Generation → Carrier, default **ON** —
 the cosmetic-gen kill-switch pattern, §58/§49 precedent) +
 `carrier_deck_decorations_aircraft` (same section, default **OFF**, the spot-spending
-aft tier). Data: `game/data/carrier_deck_decor.py` (layout tables + spot anchors +
-envelopes + the `deck_layout_for` rotation). Generator:
-`game/missiongenerator/carrierdeckdecor.py`, called from
-`game/missiongenerator/tgogenerator.py`. Tests:
-`tests/missiongenerator/test_carrier_deck_decor.py` (the parking-spot guard over every
-variant, envelope integrity, hull gate + rotation determinism, the aircraft tier's
-opt-in/measured-spot guards, and the three-level link serialization against a real
-pydcs mission). Checklist B25 — needs an in-game pass (do the statics ride the deck
-through a full mission; does a max-density spawn still fill every spot; does AI
-recovery taxi behave around the street gear). **Non-Nimitz hull dressing was offered
-and DECLINED (user call 2026-07-18)** — Kuznetsov/Tarawa/Forrestal stay bare.
+aft tier incl. the launch-phase E-2C). Data: `game/data/carrier_deck_decor.py` (layout
+tables + spot anchors + envelopes + keep-out + the `deck_layout_for` rotation).
+Generator: `game/missiongenerator/carrierdeckdecor.py`, called from
+`game/missiongenerator/tgogenerator.py` (which records `MissionData.deck_decor`).
+Runtime: emitter `game/missiongenerator/deckdecorluadata.py` + the
+`resources/plugins/deckdecor/` plugin (plugin `defaultValue` ON — the setting is the
+gate, the §36 lesson). Tests: `tests/missiongenerator/test_carrier_deck_decor.py`
+(parking-spot guard over every variant, envelope + keep-out integrity, hull gate +
+rotation determinism, launch-phase rules, three-level link serialization + the clear
+list against a real pydcs mission), `tests/missiongenerator/test_deckdecorluadata.py`
+(the emit contract) and `tests/lua/test_deckdecor_runtime.py` (the harness: fallback
+clear, astern-cone clear, high/ahead/helo/deck traffic never clears, once-only,
+no-node no-op). Checklist B25 — needs an in-game pass (statics ride the deck through
+a full mission; a max-density spawn still fills every spot; AI recovery taxi around
+the street gear; the E-2 vanishes cleanly before recovery). **Non-Nimitz hull
+dressing was offered and DECLINED (user call 2026-07-18)** — Kuznetsov/Tarawa/
+Forrestal stay bare.
 
 ## Code audit fixes — 2026-07-07
 

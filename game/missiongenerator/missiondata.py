@@ -160,6 +160,25 @@ class AtisInfo:
 
 
 @dataclass
+class DeckDecorInfo:
+    """One carrier's launch-phase deck dressing (§72) for the deckdecor plugin.
+
+    ``clear_names`` are static UNIT names the plugin strikes below
+    (``StaticObject:destroy``) before recovery — on the fallback timer or the
+    moment fixed-wing traffic shows up low astern. ``ship_group_name`` finds
+    the moving boat at runtime (``Group.getByName``); ``brc_degrees`` is the
+    generation-time base recovery course (the boat steams that course all
+    mission), so the plugin needs no runtime orientation API for the astern
+    cone."""
+
+    ship_group_name: str
+    carrier_unit_name: str
+    blue: bool
+    brc_degrees: float
+    clear_names: list[str]
+
+
+@dataclass
 class MissionData:
     awacs: list[AwacsInfo] = field(default_factory=list)
     runways: list[RunwayData] = field(default_factory=list)
@@ -201,6 +220,10 @@ class MissionData:
     # (§21). Collected during flight generation; folded into
     # ``combat_sar_templates`` by ``spawn_combat_sar_templates``.
     parked_rescue_helos: list[str] = field(default_factory=list)
+    # Carriers with launch-phase deck dressing to strike below before recovery
+    # (§72, the deckdecor plugin). Empty unless the aircraft tier placed
+    # launch-phase statics this mission.
+    deck_decor: list[DeckDecorInfo] = field(default_factory=list)
     # Cold late-activation red interceptor templates for the host F10 scramble
     # menu (§61). Populated by AircraftGenerator.spawn_red_scramble_templates
     # when host_red_scramble is on; the redscramble plugin clones them on demand.

@@ -2398,14 +2398,25 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     default **ON**); the **aircraft tier** `carrier_deck_decorations_aircraft` (default
     **OFF**, user call 2026-07-18) appends OCN's junkyard pair of folded SH-60B statics,
     **deliberately spending ~2 of the 16 spots** (still guard-tested ≥9 m from every
-    MEASURED spot). **The tier's first cut shipped OCN M8's round-down E-2C — the user's
-    screenshot caught it same day** (clears every parking spot but stands 5.6 m tall a
-    wingspan off the ramp crossing, and the DCS static E-2C renders wings-spread):
-    dropped, and the lesson is codified as `LANDING_AREA_KEEP_OUT` (stern threshold +
-    wires box) guard-tested against BOTH tiers. Non-Nimitz dressing offered and DECLINED
-    same day. Tests `tests/missiongenerator/test_carrier_deck_decor.py`; features
+    MEASURED spot). **The round-down E-2C is LAUNCH-PHASE dressing** (the arc: shipped
+    static → the user's screenshot caught it menacing the ramp crossing same day
+    ("how can planes land with the E2 there?" — 5.6 m tall a wingspan off the ramp,
+    and the DCS static E-2C renders wings-spread) → cut → restored per the user's
+    "move the E-2 after the launch is over": statics can't drive, so the new
+    **`deckdecor` plugin strikes it below** (`StaticObject:destroy` = the elevator
+    ride) when friendly fixed-wing traffic shows up low astern (4.5 NM/3000 ft/±50°
+    cone off the emitted BRC — catches the CASE I initial + CASE III straight-in) or
+    a 35-min fallback timer, whichever first, with a "deck respotted" cue; emitter
+    `deckdecorluadata.py` → `dcsRetribution.deckDecor` off `MissionData.deck_decor`;
+    despawn only, no spawns). `LANDING_AREA_KEEP_OUT` (stern threshold + wires box) is
+    guard-tested: permanent placements never stand there, ONLY launch-phase may.
+    Non-Nimitz dressing offered and DECLINED same day. Tests
+    `tests/missiongenerator/test_carrier_deck_decor.py` +
+    `tests/missiongenerator/test_deckdecorluadata.py` +
+    `tests/lua/test_deckdecor_runtime.py`; features
     doc §72, checklist B25 — needs an in-game pass (statics ride the steaming deck; a
-    max-density spawn still fills every spot; AI recovery taxi vs the street gear).
+    max-density spawn still fills every spot; AI recovery taxi vs the street gear;
+    the E-2 vanishes cleanly before recovery).
 
 ---
 

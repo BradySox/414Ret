@@ -28,7 +28,11 @@ from dcs.point import StaticPoint
 from dcs.unit import Static
 from dcs.unitgroup import ShipGroup, StaticGroup
 
-from game.data.carrier_deck_decor import STATIC_META, deck_layout_for
+from game.data.carrier_deck_decor import (
+    STATIC_META,
+    deck_layout_for,
+    launch_phase_dressing_for,
+)
 from game.utils import Heading
 
 
@@ -71,15 +75,21 @@ def generate_carrier_deck_decorations(
     heading: Heading,
     turn: int,
     include_aircraft: bool = False,
-) -> int:
-    """Dress the flagship's deck. Returns the number of statics placed."""
+) -> list[str]:
+    """Dress the flagship's deck.
+
+    Returns the static unit names of the LAUNCH-PHASE placements (empty when
+    none) -- the ``deckdecor`` plugin strikes those below before recovery.
+    """
     carrier = ship_group.units[0]
     layout = deck_layout_for(carrier.type, ship_group.name, turn, include_aircraft)
     if not layout:
-        return 0
+        return []
+    launch_phase = launch_phase_dressing_for(carrier.type, include_aircraft)
 
     h = radians(heading.degrees)
-    for i, item in enumerate(layout):
+    clear_names: list[str] = []
+    for i, item in enumerate(layout + launch_phase):
         # Ship frame -> world: DCS map x is north, y is east; ship forward is
         # (cos h, sin h), starboard is (-sin h, cos h).
         world = Point(
@@ -88,8 +98,9 @@ def generate_carrier_deck_decorations(
             mission.terrain,
         )
         name = f"{ship_group.name} deck decor {i + 1:02d}"
+        unit_name = f"{name} object"
         static = DeckDecorStatic(
-            mission.next_unit_id(), f"{name} object", item.type, mission.terrain
+            mission.next_unit_id(), unit_name, item.type, mission.terrain
         )
         category, shape_name = STATIC_META[item.type]
         static.category = category
@@ -106,9 +117,11 @@ def generate_carrier_deck_decorations(
         group.link_offset = True
         group.add_point(DeckDecorPoint(static.position, carrier.id))
         country.add_static_group(group)
+        if i >= len(layout):
+            clear_names.append(unit_name)
 
     logging.debug(
-        f"Placed {len(layout)} deck decorations on {ship_group.name} "
-        f"({carrier.type})"
+        f"Placed {len(layout) + len(launch_phase)} deck decorations on "
+        f"{ship_group.name} ({carrier.type}), {len(clear_names)} launch-phase"
     )
-    return len(layout)
+    return clear_names

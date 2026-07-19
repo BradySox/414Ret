@@ -65,6 +65,7 @@ STATIC_META: dict[str, tuple[str, str | None]] = {
     "Carrier LSO Personell 3": ("Personnel", "carrier_lso3_usa"),
     "Carrier LSO Personell 4": ("Personnel", "carrier_lso4_usa"),
     "SH-60B": ("Helicopters", None),  # static folded Seahawk (aircraft tier)
+    "E-2C": ("Planes", None),  # static Hawkeye (launch-phase dressing)
 }
 
 # Hulls sharing the Nimitz deck plan (same spot geography, same island/LSO
@@ -198,6 +199,26 @@ AIRCRAFT_DRESSING: list[DeckStatic] = [
     DeckStatic("SH-60B", -134.30, 27.00, 277.0),
     DeckStatic("SH-60B", -122.60, 28.20, 277.0),
 ]
+
+# Launch-phase dressing (same toggle as the aircraft tier): statics that may
+# stand INSIDE the recovery corridor because the deckdecor plugin strikes them
+# below (StaticObject:destroy -- the elevator ride, narratively) before
+# recovery traffic arrives: on a scheduled fallback timer or the moment
+# fixed-wing traffic appears low astern, whichever comes first. OCN M8's
+# round-down E-2C lives here -- the placement the user's screenshot flagged
+# ("how can planes land with the E2 there?"): great during the launch cycle,
+# lethal at the ramp crossing, so it exists only while the deck is a launch
+# deck. Statics cannot drive (no AI), so "moving" the Hawkeye = despawning it.
+LAUNCH_PHASE_DRESSING: list[DeckStatic] = [
+    DeckStatic("E-2C", -152.10, 5.40, 350.0),
+]
+
+
+def launch_phase_dressing_for(hull_id: str, include_aircraft: bool) -> list[DeckStatic]:
+    """The launch-phase (runtime-cleared) set for one carrier."""
+    if not include_aircraft or hull_id not in NIMITZ_DECK_HULLS:
+        return []
+    return LAUNCH_PHASE_DRESSING
 
 
 def deck_layout_for(

@@ -932,7 +932,12 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     map layers panel (#19, "Enemy intel" group) that short-circuits the three recon-fog
     leaves to ground truth, un-fogging the whole map + intel dialogs (enemy composition, threat
     rings, hidden command posts) with no server-model changes. `PUT /fog-of-war/reveal` flips the
-    flag, then the client re-pulls `/game`. Never persisted; defaults off
+    flag, then the client re-pulls `/game`. Never persisted; defaults off. **Display-only by
+    contract, now enforced at generation** (2026-07-19 flown finding: a §74 DTC cartridge baked
+    40 exact SAM rings on an unscouted turn because the DM generated with the reveal ticked —
+    the same latent leak existed for the threat-intel kneeboard): `MissionGenerator.generate_miz`
+    runs inside `fogofwar.fog_intact()`, so generated artifacts always see the real fog and the
+    toggle is restored after; `tests/test_fog_reveal_generation_leak.py`
     (`game/theater/fogofwar.py`, `game/server/fogofwar/`; features doc §3).
 19. **Unified map layers panel** — one custom, dark-themed Leaflet control
     (`client/src/components/maplayers/MapLayersControl.tsx`) replacing both stock layer controls:

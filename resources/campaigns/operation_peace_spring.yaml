@@ -41,7 +41,7 @@ squadrons:
       size: 4
     - primary: Refueling
       aircraft:
-        - S-3B Tanker
+        - A-6E Tanker
       size: 4
     - primary: Air Assault
       secondary: any

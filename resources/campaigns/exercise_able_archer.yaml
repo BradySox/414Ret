@@ -155,7 +155,7 @@ squadrons:
     - primary: BAI
       secondary: air-to-ground
       aircraft:
-        - S-3B Viking
+        - A-6E Intruder
       size: 12
     - primary: Air Assault
       secondary: any

@@ -35,7 +35,7 @@ squadrons:
         #E2C
     - primary: Refueling
       aircraft:
-        - S-3B Tanker
+        - A-6E Tanker
   # Ben-Gurion
   24:
     - primary: BARCAP

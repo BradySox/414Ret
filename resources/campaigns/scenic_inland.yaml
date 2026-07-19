@@ -68,7 +68,7 @@ squadrons:
       size: 2
     - primary: Refueling
       aircraft:
-        - VS-35 (Tanker)
+        - A-6E Tanker
       size: 4
   # BLUFOR LHA
   BLUFOR LHA:

@@ -18,16 +18,24 @@ price: 10
 role: Carrier-based Attack
 variants:
   S-3B Viking: {}
+# Sea control only. The Viking is the carrier air wing's dedicated anti-ship
+# shooter (Harpoon) and nothing else -- the land-attack tasks it used to carry
+# (BAI/CAS/OCA/Strike/Armed Recon) all outranked the A-6E Intruder's own numbers
+# (BAI 690 vs 675, Strike 480 vs 440, OCA/Aircraft 510 vs 480), so any air wing
+# fielding both sent the Viking on the Intruder's missions. Strike work belongs to
+# the A-6 (or the Hornets in the post-1997 factions); the Viking keeps the surface
+# war, which is what the S-3B actually did once its mission shifted in the 1990s.
+#
 # No DEAD: the DCS S-3B carries no anti-radiation missile (its old "DEAD"
 # preset was an AGM-84E SLAM -- a standoff land-attack weapon, not an ARM), so
 # offering it for DEAD put Vikings on SAM sites they cannot suppress
 # (2026-07-16 Scenic Route flown finding).
+#
+# Anti-ship 320 puts the Viking decisively ahead of every carrier fast jet
+# (A-6E 140, F/A-18C 150) so the planner picks the dedicated platform, while
+# staying below the true maritime-patrol bombers (P-3C/Tu-142 525).
 tasks:
-  Anti-ship: 130
-  BAI: 690
-  CAS: 690
-  OCA/Aircraft: 510
-  Strike: 480
+  Anti-ship: 320
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

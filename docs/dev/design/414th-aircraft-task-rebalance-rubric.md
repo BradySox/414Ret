@@ -148,3 +148,40 @@ This list had been near-empty (only `DEAD`, on 20 jets), so two "wrong role" pat
 Tu-22D/Tu-22KD/Tu-16/H-6J; B-21 also off `SCAR`); fighters off their auto-A2G. Verified with a
 role audit: questionable ARMED_RECON 22→11 (rest are attack helos / Bombcat F-14s / weight-0
 drones), A2A-on-mud 13→7 (rest are the kept multiroles). `pytest` green.
+
+## S-3B Viking → sea control, A-6 takes strike + carrier tanking (2026-07-19)
+
+Squadron call off a faction audit. The Viking's weights **out-ranked the A-6E Intruder on
+every land-attack task** — BAI 690 vs 675, CAS 690 vs 675, Strike 480 vs 440, OCA/Aircraft
+510 vs 480, Armed Recon 690 vs 675 — so any carrier air wing fielding both sent the *S-3* on
+the *Intruder's* missions. This is the §2 "wrong role" pattern again, but caused by raw
+magnitude rather than a derived lane.
+
+**The airframe.** `S-3B.yaml` drops to `Anti-ship: 320` and nothing else. Sea control is what
+the S-3B actually did once its mission shifted in the 1990s; 320 puts it decisively ahead of
+every carrier fast jet (A-6E 140, F/A-18C 150) so the planner picks the dedicated platform,
+while staying below the true maritime-patrol bombers (P-3C / Tu-142 525). It keeps no
+`DEAD` (removed 2026-07-16 — no ARM on the airframe).
+
+**The roles moved, not deleted.** Strike work went to the A-6E Intruder, and carrier tanking
+to the `A-6E Tanker` variant (the KA-6D buddy store, `D_704_Refuelling_Pod`). 23 factions and
+39 campaigns updated; 11 campaign squadrons that named the Viking on a strike primary were
+converted to the Intruder — **mandatory, not cosmetic**, because
+`Squadron.set_auto_assignable_mission_types` filters by capability, so an airframe that
+can't fly its primary yields an *empty* task set and a silently dead squadron. (The sweep
+also fixed a pre-existing instance: `grabthars_hammer` had 16 Vikings sitting on `DEAD`.)
+Five new A-6E squadron presets (VA-34/VA-65 tanker, VA-35/VA-36/VA-85 attack) keep them
+named rather than auto-generated.
+
+**The trap worth remembering: `F/A-18E Tanker` is mod-gated** (`ModSettings.fa18ef_tanker`,
+default False). Six factions carry it, so they *looked* covered when the S-3B tanker was
+dropped — but `GameGenerator` applies ModSettings, and in a default game they ended up with
+**no carrier tanker at all**. Caught only by building real games, not by reading the faction
+JSON. All 20 carrier factions now roster the vanilla A-6E Tanker.
+
+Verified by building 39 real games (`GameGenerator` → `begin_turn_0`): 36 of 39 confirm an
+A-6E carrier tanker, the S-3B dets field 4–6 airframes, and the 3 non-conforming are
+pre-existing (`exercise_able_archer` never authored a carrier tanker;
+`battle_of_abu_dhabi`'s blue faction is Iran). CI-locked in
+`tests/fourteenth/test_s3b_viking_sea_control.py`, including the mod-off carrier-tanker
+guard. NEW game required for the roster changes.

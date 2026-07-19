@@ -168,7 +168,7 @@ squadrons:
           size: 2
         - primary: Refueling
           aircraft:
-            - VS-28 (Tanker) #Gamblers - S-3B Viking
+            - A-6E Tanker
           size: 2
         - primary: BARCAP
           secondary: air-to-air
@@ -197,7 +197,7 @@ squadrons:
           size: 2
         - primary: Refueling
           aircraft:
-            - VS-24 (Tanker) #Scouts - S-3B Viking
+            - A-6E Tanker
           size: 2
         - primary: BARCAP
           secondary: air-to-air

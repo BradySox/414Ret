@@ -8,6 +8,7 @@
   ],
   "aircrafts": [
     "A-10A Thunderbolt II",
+    "A-6E Intruder",
     "AH-64A Apache",
     "AV-8B Harrier II Night Attack",
     "B-1B Lancer",
@@ -44,7 +45,7 @@
   "tankers": [
     "KC-130",
     "KC-135 Stratotanker",
-    "S-3B Tanker"
+    "A-6E Tanker"
   ],
   "frontline_units": [
     "LAV-25",

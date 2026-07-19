@@ -60,17 +60,17 @@ squadrons:
       aircraft:
         - VAW-125
       size: 2
-    # S-3 Tanker
+    # A-6 buddy tankers
     - primary: Refueling
       aircraft:
-        - VS-35 (Tanker)
+        - A-6E Tanker
       size: 4
-    # S-3 
+    # S-3 anti-ship det
     - primary: Anti-ship
       secondary: air-to-ground
       aircraft:
         - VS-35
-      size: 8
+      size: 4
   # BLUFOR LHA
   Naval-2:
     # Harrier FAA

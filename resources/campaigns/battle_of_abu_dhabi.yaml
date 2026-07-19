@@ -101,7 +101,7 @@ squadrons:
     - primary: Refueling
       size: 2
       aircraft:
-        - S-3B Tanker
+        - A-6E Tanker
 
   Blue LHA:
     - primary: BAI

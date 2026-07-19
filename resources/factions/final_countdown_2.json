@@ -8,6 +8,7 @@
   ],
   "aircrafts": [
     "Boston Mk.III",
+    "A-6E Intruder",
     "Fortress Mk.III",
     "Mustang Mk.IV (Late)",
     "Spitfire LF Mk IX",
@@ -27,7 +28,7 @@
     "E-2C Hawkeye"
   ],
   "tankers": [
-    "S-3B Tanker"
+    "A-6E Tanker"
   ],
   "frontline_units": [
     "A17 Light Tank Mk VII Tetrarch",

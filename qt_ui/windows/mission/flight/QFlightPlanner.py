@@ -2,7 +2,9 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtWidgets import QTabWidget
 
 from game.ato.flight import Flight
+from game.missiongenerator.dtc import CARTRIDGE_BUILDERS
 from qt_ui.models import PackageModel, GameModel
+from qt_ui.windows.mission.flight.QFlightDtcTab import QFlightDtcTab
 from qt_ui.windows.mission.flight.payload.QFlightPayloadTab import QFlightPayloadTab
 from qt_ui.windows.mission.flight.settings.QGeneralFlightSettingsTab import (
     QGeneralFlightSettingsTab,
@@ -35,6 +37,11 @@ class QFlightPlanner(QTabWidget):
         self.addTab(self.general_settings_tab, "General Flight settings")
         self.addTab(self.payload_tab, "Payload")
         self.addTab(self.waypoint_tab, "Waypoints")
+        # Native DTC cartridge controls (§74) -- only for airframes with DCS
+        # DTC support, where the generator can actually build a cartridge.
+        if flight.unit_type.dcs_unit_type.id in CARTRIDGE_BUILDERS:
+            self.dtc_tab = QFlightDtcTab(flight, gm.game)
+            self.addTab(self.dtc_tab, "DTC")
         self.setCurrentIndex(0)
 
     def sizeHint(self) -> QSize:

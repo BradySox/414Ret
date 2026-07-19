@@ -22,6 +22,7 @@ from dcs.mission import Mission
 from dcs.planes import FA_18C_hornet
 from dcs.terrain import Caucasus
 
+from game.ato.dtcoptions import DtcOptions
 from game.ato.flighttype import FlightType
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.missiongenerator.dtc import DtcGenerator
@@ -105,6 +106,7 @@ def _flight(
     waypoints: Optional[list[Any]] = None,
     channel_map: Optional[dict[Any, list[Any]]] = None,
     arrival: Optional[Any] = None,
+    dtc_options: Optional[DtcOptions] = None,
 ) -> Any:
     intra = _freq(258.5)
     return SimpleNamespace(
@@ -121,6 +123,7 @@ def _flight(
         departure=_runway("Kutaisi", 259.0),
         arrival=arrival if arrival is not None else _runway("Kutaisi", 259.0),
         divert=None,
+        dtc_options=dtc_options if dtc_options is not None else DtcOptions(),
     )
 
 
@@ -472,3 +475,110 @@ def test_generator_survives_a_builder_failure(
     generator = _generator(_game(), [_flight()])
     generator.generate()
     assert generator.cartridges == []
+
+
+def test_per_flight_override_beats_the_campaign_setting(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_builder(f: Any, md: Any, g: Any, name: str) -> DtcCartridge:
+        return DtcCartridge(name, "FA-18C_hornet", "Caucasus", {})
+
+    monkeypatch.setitem(CARTRIDGE_BUILDERS, "FA-18C_hornet", fake_builder)
+    # Campaign OFF, flight forced ON -> builds.
+    generator = _generator(
+        _game(dtc_on=False),
+        [_flight(callsign="Force On", dtc_options=DtcOptions(enabled=True))],
+    )
+    generator.generate()
+    assert len(generator.cartridges) == 1
+    # Campaign ON, flight forced OFF -> skipped.
+    generator = _generator(
+        _game(),
+        [_flight(callsign="Force Off", dtc_options=DtcOptions(enabled=False))],
+    )
+    generator.generate()
+    assert generator.cartridges == []
+
+
+def test_all_sections_off_builds_no_cartridge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(
+        CARTRIDGE_BUILDERS,
+        "FA-18C_hornet",
+        lambda *args: pytest.fail("an empty cartridge must not be built"),
+    )
+    bare = DtcOptions(
+        comms=False,
+        route=False,
+        nav_aids=False,
+        flot_and_zones=False,
+        friendly_orbits=False,
+        threat_rings=False,
+    )
+    generator = _generator(_game(), [_flight(dtc_options=bare)])
+    generator.generate()
+    assert generator.cartridges == []
+
+
+def test_hornet_sections_are_omitted_when_off() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    flight.dtc_options = DtcOptions(
+        comms=False, route=False, friendly_orbits=False, threat_rings=False
+    )
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Trimmed")
+    data = json.loads(cartridge.to_json())["data"]
+    assert "COMM" not in data
+    # nav_aids stays on: WYPT present with the boat tuned but no steerpoints.
+    assert data["WYPT"]["NAV_PTS"] == []
+    assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["OnOff"] is True
+    # flot_and_zones stays on: SA present, but no CAP orbits and no MEZ rings.
+    assert data["SA"]["CAP_PTS"] == []
+    assert data["SA"]["MEZ_THRTS"] == []
+    assert len(data["SA"]["FAOR_FLOT"]["FLOT"]) == 0  # fake game has no fronts
+
+    flight.dtc_options = DtcOptions(
+        nav_aids=False, flot_and_zones=False, friendly_orbits=False, threat_rings=False
+    )
+    cartridge = build_hornet_cartridge(flight, mission_data, game, "Route Only")
+    data = json.loads(cartridge.to_json())["data"]
+    assert "SA" not in data
+    assert len(data["WYPT"]["NAV_PTS"]) == 3
+    assert data["WYPT"]["NAV_SETTINGS"]["TACAN"]["OnOff"] is False
+
+
+def test_viper_sections_are_omitted_when_off() -> None:
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = SimpleNamespace(dcs_unit_type=SimpleNamespace(id="F-16C_50"))
+    flight.dtc_options = DtcOptions(comms=False, route=False)
+    cartridge = build_viper_cartridge(flight, mission_data, game, "Anchors Only")
+    data = json.loads(cartridge.to_json())["data"]
+    assert "COMM" not in data
+    # Route off, friendly orbits on: only the support anchors load.
+    assert [p["note"] for p in data["MPD"]["NAV_PTS"]] == ["TKR ARCO", "CAP COLT"]
+
+    flight.dtc_options = DtcOptions(
+        comms=False,
+        route=False,
+        nav_aids=False,
+        flot_and_zones=False,
+        friendly_orbits=False,
+        threat_rings=True,
+    )
+    cartridge = build_viper_cartridge(flight, mission_data, game, "Threats Only")
+    data = json.loads(cartridge.to_json())["data"]
+    assert data["MPD"]["NAV_PTS"] == []
+    assert data["MPD"]["GEO_LINES"] == []
+    assert len(data["MPD"]["THREAT_PTS"]) == 1
+
+
+def test_old_saves_default_the_flight_options() -> None:
+    from game.ato.flight import Flight
+    from game.settings import Settings
+
+    flight = object.__new__(Flight)
+    state = {"squadron": SimpleNamespace(settings=Settings()), "roster": None}
+    flight.__setstate__(state)
+    assert isinstance(flight.dtc_options, DtcOptions)
+    assert flight.dtc_options.enabled is None
+    assert flight.dtc_options.any_content

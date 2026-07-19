@@ -56,8 +56,6 @@ class DtcGenerator:
         self.cartridges: list[DtcCartridge] = []
 
     def generate(self) -> None:
-        if not self.game.settings.dtc_data_cartridges:
-            return
         used_names: set[str] = set()
         for flight in self.mission_data.flights:
             try:
@@ -76,6 +74,13 @@ class DtcGenerator:
             return
         builder = CARTRIDGE_BUILDERS.get(flight.aircraft_type.dcs_unit_type.id)
         if builder is None:
+            return
+        # The planner's per-flight choice wins over the campaign setting
+        # (§74 Edit Flight DTC tab); an all-sections-off cartridge is pointless.
+        options = flight.dtc_options
+        if not options.resolve_enabled(self.game.settings.dtc_data_cartridges):
+            return
+        if not options.any_content:
             return
         name = self._unique_name(flight, used_names)
         cartridge = builder(flight, self.mission_data, self.game, name)

@@ -151,9 +151,11 @@ def _anchor_name(track: SupportTrack) -> str:
 def _build_nav_pts(
     flight: FlightData, mission_data: MissionData, game: Game
 ) -> list[dict[str, Any]]:
+    options = flight.dtc_options
     points: list[dict[str, Any]] = []
     prev_route_wp = None
-    for waypoint in flight.waypoints:
+    waypoints = flight.waypoints if options.route else []
+    for waypoint in waypoints:
         if len(points) >= MAX_STEERPOINTS:
             return points
         number = len(points) + 1
@@ -175,27 +177,29 @@ def _build_nav_pts(
         )
         if on_route:
             prev_route_wp = waypoint
-    # Support anchors after the route: tanker/AEW&C orbits, then CAP stations.
-    for track in support_tracks(mission_data) + cap_tracks(mission_data):
-        if len(points) >= MAX_STEERPOINTS:
-            break
-        number = len(points) + 1
-        x, y = track.center
-        points.append(
-            _steerpoint(
-                number,
-                _anchor_name(track),
-                x,
-                y,
-                0.0,
-                1,
-                False,
-                463.0,
-                0,
-                False,
-                False,
+    # Support anchors after the route: tanker/AEW&C orbits, then CAP stations
+    # (the Viper's stand-in for the Hornet's SA racetracks).
+    if options.friendly_orbits:
+        for track in support_tracks(mission_data) + cap_tracks(mission_data):
+            if len(points) >= MAX_STEERPOINTS:
+                break
+            number = len(points) + 1
+            x, y = track.center
+            points.append(
+                _steerpoint(
+                    number,
+                    _anchor_name(track),
+                    x,
+                    y,
+                    0.0,
+                    1,
+                    False,
+                    463.0,
+                    0,
+                    False,
+                    False,
+                )
             )
-        )
     return points
 
 
@@ -248,21 +252,33 @@ def build_viper_cartridge(
     flight: FlightData, mission_data: MissionData, game: Game, name: str
 ) -> DtcCartridge:
     terrain = game.theater.terrain.name
+    options = flight.dtc_options
     data: dict[str, Any] = {
-        "COMM": _build_comm(flight),
-        "MPD": {
-            "terrain": terrain,
-            "mirror_NAV_PTS": False,
-            "NAV_PTS": _build_nav_pts(flight, mission_data, game),
-            "mirror_GEO_LINES": False,
-            "GEO_LINES": _build_geo_lines(game),
-            "mirror_THREAT_PTS": False,
-            "THREAT_PTS": _build_threat_pts(flight, game),
-        },
         "type": VIPER_UNIT_TYPE,
         "name": name,
         "terrain": terrain,
     }
+    # A section the planner turned off is omitted entirely so the jet's own
+    # defaults stand (the §74 Edit Flight DTC tab).
+    if options.comms:
+        data["COMM"] = _build_comm(flight)
+    if (
+        options.route
+        or options.friendly_orbits
+        or options.flot_and_zones
+        or options.threat_rings
+    ):
+        data["MPD"] = {
+            "terrain": terrain,
+            "mirror_NAV_PTS": False,
+            "NAV_PTS": _build_nav_pts(flight, mission_data, game),
+            "mirror_GEO_LINES": False,
+            "GEO_LINES": _build_geo_lines(game) if options.flot_and_zones else [],
+            "mirror_THREAT_PTS": False,
+            "THREAT_PTS": (
+                _build_threat_pts(flight, game) if options.threat_rings else []
+            ),
+        }
     return DtcCartridge(
         name=name, unit_type=VIPER_UNIT_TYPE, terrain=terrain, data=data
     )

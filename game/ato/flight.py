@@ -16,6 +16,7 @@ from .flightroster import FlightRoster
 from .flightstate import FlightState, Navigating, Uninitialized
 from .flightstate.killed import Killed
 from .flighttype import FlightType
+from .dtcoptions import DtcOptions
 from .loadouts import Weapon
 from ..radio.CallsignContainer import Callsign, CallsignContainer
 from ..radio.RadioFrequencyContainer import RadioFrequencyContainer
@@ -188,6 +189,11 @@ class Flight(
         # options when players switch loadouts.
         self.props: dict[str, Any] = {}
 
+        # Planner controls for the native DTC cartridge (§74): per-flight
+        # on/off override + which sections the cartridge carries. Only
+        # meaningful for DTC-capable client airframes; harmless elsewhere.
+        self.dtc_options = DtcOptions()
+
         # Manual-timing state for player flights. When manually_timed is True the flight's
         # waypoint times are user-owned: they form a forward chain from manual_takeoff_time
         # plus each waypoint's manual_tot_offset, fully decoupled from the package TOT.
@@ -293,6 +299,8 @@ class Flight(
             state["manually_timed"] = False
         if "manual_takeoff_time" not in state:
             state["manual_takeoff_time"] = None
+        if "dtc_options" not in state:
+            state["dtc_options"] = DtcOptions()
         self.__dict__.update(state)
         if isinstance(self.roster, FlightRoster):
             self.roster = FlightMembers.from_roster(self, self.roster)

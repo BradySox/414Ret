@@ -6,6 +6,7 @@ from typing import Optional, TYPE_CHECKING
 
 from dcs.flyingunit import FlyingUnit
 
+from game.ato.dtcoptions import DtcOptions
 from game.ato.flighttype import FlightType
 from game.ato.starttype import StartType
 from game.callsigns import create_group_callsign_from_unit
@@ -118,6 +119,10 @@ class FlightData:
     #: shows it on the racetrack row, where the schedule time is dwell rather
     #: than transit and distance/time would be nonsense.
     patrol_speed: Optional[Speed] = None
+
+    #: The planner's per-flight DTC cartridge controls (§74), carried over from
+    #: the Flight so the DtcGenerator honors the Edit Flight dialog's choices.
+    dtc_options: DtcOptions = field(default_factory=DtcOptions)
 
     def __post_init__(self) -> None:
         self.callsign = create_group_callsign_from_unit(self.units[0])

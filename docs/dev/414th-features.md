@@ -2873,7 +2873,7 @@ we are overlooking") landed a second IA pass on both surfaces:
   index 21; the dead `SettingNames.py` (zero imports) is deleted; the OH-6 pack checkbox is
   relabeled "ground objects" (the OH-6A helicopter left every faction 2026-06-30 — the toggle now
   gates only the pack's `vap_*` ground objects); the Theater page's docs links lead with the 414th
-  wiki. The mod list stays the curated 16-of-~50 `ModSettings` (the hidden rest are deliberately
+  wiki. The mod list stays the curated 15-of-~49 `ModSettings` (the hidden rest are deliberately
   retired/scrubbed content) — now stated in the Mods page docstring so the subset is a decision,
   not an accident.
 - **Section regroup** (FIELD_LAYOUT-only, no field moved, no save impact): Campaign Management's

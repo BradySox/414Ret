@@ -453,7 +453,6 @@ def create_game(
             f104_starfighter=False,
             f105_thunderchief=False,
             oh_6=False,
-            oh_6_vietnamassetpack=False,
             uh_60l=False,
             jas39_gripen=False,
             sk_60=False,

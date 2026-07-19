@@ -89,14 +89,12 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.registerField("ukmilitaryassetspack", self.ukmilitaryassetspack)
         self.ukrainemilitaryassetspack = QtWidgets.QCheckBox()
         self.registerField("ukrainemilitaryassetspack", self.ukrainemilitaryassetspack)
-        self.oh_6_vietnamassetpack = QtWidgets.QCheckBox()
-        self.oh_6_vietnamassetpack.setToolTip(
-            "Ground objects only (hooches, watchtowers, VC bunkers, bicycle "
-            "logistics, gun trucks). The OH-6A helicopter itself is no longer "
-            "carried by any faction."
-        )
-        self.registerField("oh_6_vietnamassetpack", self.oh_6_vietnamassetpack)
         self.vietnamwarvessels = QtWidgets.QCheckBox()
+        self.vietnamwarvessels.setToolTip(
+            "Includes the Vietnam Asset Pack ground objects (hooches, "
+            "watchtowers, VC bunkers, bicycle logistics, gun trucks) -- the "
+            "pack is maintained inside VWV these days."
+        )
         self.registerField("vietnamwarvessels", self.vietnamwarvessels)
 
         pack_pairs = [
@@ -119,10 +117,6 @@ class GeneratorOptions(QtWidgets.QWizardPage):
                 self.ukrainemilitaryassetspack,
             ),
             ("CurrentHill USA Military Assets (1.5.0)", self.usamilitaryassetspack),
-            (
-                "OH-6 Vietnam Asset Pack — ground objects (v1.2)",
-                self.oh_6_vietnamassetpack,
-            ),
             ("Vietnam War Vessels (v3.2.0 by TeTeT)", self.vietnamwarvessels),
         ]
 
@@ -205,7 +199,6 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.f111c.setChecked(s.get("f111c", False))
         self.f4e_expanded_weapons.setChecked(s.get("f4e_expanded_weapons", False))
         self.high_digit_sams.setChecked(s.get("high_digit_sams", False))
-        self.oh_6_vietnamassetpack.setChecked(s.get("oh_6_vietnamassetpack", False))
         self.ov10a_bronco.setChecked(s.get("ov10a_bronco", False))
         self.vietnamwarvessels.setChecked(s.get("vietnamwarvessels", False))
         self.fa_18efg.setChecked(s.get("fa_18efg", False))

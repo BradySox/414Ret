@@ -94,7 +94,6 @@ class NewGameWizard(QtWidgets.QWizard):
             f22_raptor=self.field("f22_raptor"),
             f111c=self.field("f111c"),
             high_digit_sams=self.field("high_digit_sams"),
-            oh_6_vietnamassetpack=self.field("oh_6_vietnamassetpack"),
             ov10a_bronco=self.field("ov10a_bronco"),
             vietnamwarvessels=self.field("vietnamwarvessels"),
             chinesemilitaryassetspack=self.field("chinesemilitaryassetspack"),

@@ -597,6 +597,21 @@ FEATURES: tuple[Feature, ...] = (
         74,
         settings_fields=("dtc_data_cartridges",),
     ),
+    Feature(
+        # §75 custom victory conditions: authored campaign `victory:` blocks
+        # (victory CPs, domination, HVT destruction, category decapitation,
+        # strength attrition, air denial) + two generic opt-in knobs, evaluated
+        # in check_win_loss between the negotiation ending and the stock
+        # capture-everything defaults. The knobs are the Settings wiring; the
+        # authored tier needs none.
+        "victory_conditions",
+        "Custom victory conditions",
+        75,
+        settings_fields=(
+            "alternate_victory_domination",
+            "alternate_victory_attrition",
+        ),
+    ),
     # Always-on engine plugins — major 414th machinery documented in design notes
     # rather than a numbered "Features at a Glance" entry.
     Feature("mantis_iads", "MANTIS IADS engine", plugin_id="mantisiads"),

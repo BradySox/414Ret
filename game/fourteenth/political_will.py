@@ -8,13 +8,17 @@ from the ``Debriefing`` the mission-results processor already has -- no new Lua,
 debrief-schema change (the §29 SITREP / §37 reconcile precedent).
 
 W1 landed the observe-only economy (numbers move + SITREP band). W2 attaches the
-consequence: ``negotiation_verdict`` backs a branch in ``Game.check_win_loss`` ahead
-of the territory checks -- **RED resolve exhausted = WIN** (Hanoi agrees to terms;
-you never had to take a base), **BLUE will exhausted = LOSS** (Washington orders
-withdrawal, whatever the map says), with BLUE-loss precedence if both break on the
-same turn (your patience broke first -- no cheap simultaneous win). Territory victory
-stays untouched. Everything is behind the ``vietnam_political_will`` setting -- off
-means this module never runs and the branch never fires.
+consequence: ``negotiation_verdict`` -- **RED resolve exhausted = WIN** (Hanoi agrees
+to terms; you never had to take a base), **BLUE will exhausted = LOSS** (Washington
+orders withdrawal, whatever the map says), with BLUE-loss precedence if both break on
+the same turn (your patience broke first -- no cheap simultaneous win). Since
+2026-07-19 the verdict is consumed by the §75 victory evaluator
+(``game.fourteenth.victory.victory_verdict``, the single alternate-endings branch in
+``Game.check_win_loss``) at highest precedence -- same ordering as when it was its
+own branch -- and the will endings render as rows on the VICTORY checklist.
+Territory victory stays untouched. Everything is behind the
+``vietnam_political_will`` setting -- off means this module never runs and the
+ending never fires.
 
 The two sides drain differently (historically honest -- Hanoi absorbed catastrophic
 loss ratios; Washington bled from every news cycle):
@@ -323,8 +327,10 @@ def ledger_notes(game: "Game") -> tuple[Optional[str], Optional[str]]:
 def negotiation_verdict(game: "Game") -> Optional[Literal["win", "loss"]]:
     """The W2 negotiation ending, or None while the war goes on.
 
-    Backs the ``vietnam_political_will``-gated branch in ``Game.check_win_loss``
-    (decoupled from ``TurnState`` so this module never imports the game core):
+    Consumed by ``game.fourteenth.victory.victory_verdict`` (the single
+    alternate-endings branch in ``Game.check_win_loss``) at highest precedence
+    -- this module stays the owner of the exhaustion semantics (``<= WILL_MIN``)
+    and is decoupled from ``TurnState`` so it never imports the game core:
 
     * BLUE will exhausted -> ``"loss"`` -- Washington orders withdrawal, even with
       the front intact.

@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     )
     from .fourteenth.political_will import WillLedgerEntry
     from .fourteenth.super_gaggle import SuperGaggleCommitment
+    from .fourteenth.victory import VictoryBaseline
     from .navmesh import NavMesh
     from .sim import GameUpdateEvents
     from .squadrons import AirWing
@@ -146,6 +147,12 @@ class Game:
         self.phase_entered_on_turn: Optional[int] = None
         self.phase_status_line: Optional[str] = None
         self.phase_baseline: Optional["PhaseBaseline"] = None
+        # Custom victory conditions (§75): only the campaign-start strength
+        # baseline + the announcement latch persist; condition definitions live
+        # in the campaign YAML (+ the Settings knobs) and are re-derived, never
+        # pickled. Evaluated at the turn boundary by check_win_loss.
+        self.victory_baseline: Optional["VictoryBaseline"] = None
+        self.victory_announced: set[str] = set()
         # War economy (§53): latched once the per-base supply stockpiles have been
         # seeded to capacity, so the seed happens exactly once. Re-derived state
         # (production, supply factors) is never pickled -- only this flag + the
@@ -760,15 +767,19 @@ class Game:
         if self.blank_canvas_setup:
             return TurnState.CONTINUE
 
-        # Vietnam campaign layer (W2): the negotiation ending, ahead of the territory
-        # checks -- break Hanoi's resolve before Washington's patience breaks. Gated on
-        # vietnam_political_will (returns None when off); territory victory stays.
-        from game.fourteenth.political_will import negotiation_verdict
+        # Alternate endings (§75 custom victory conditions) -- ONE evaluator
+        # ahead of the stock capture-everything defaults. The W2 negotiation
+        # ending (will/resolve exhaustion, gated on vietnam_political_will) is
+        # absorbed inside victory_verdict at highest precedence, followed by
+        # authored `victory:` blocks + the domination/attrition knobs. Returns
+        # None when nothing is configured, so this path costs nothing and the
+        # territory checks below remain the universal fallback.
+        from game.fourteenth.victory import victory_verdict
 
-        verdict = negotiation_verdict(self)
-        if verdict == "loss":
+        alternate = victory_verdict(self)
+        if alternate == "loss":
             return TurnState.LOSS
-        if verdict == "win":
+        if alternate == "win":
             return TurnState.WIN
 
         if not self.theater.player_points(state_check=True):
@@ -854,6 +865,14 @@ class Game:
         from game.fourteenth.phases import update_campaign_phase
 
         update_campaign_phase(self)
+
+        # Custom victory conditions (§75): latch the campaign-start strength
+        # baseline the ratio conditions measure against. Unconditional and
+        # cheap, so a knob flipped on at turn 20 still measures against the
+        # earliest state this build saw (turn 0 for a new game).
+        from game.fourteenth.victory import ensure_victory_baseline
+
+        ensure_victory_baseline(self)
 
         # Red Intent (§55): resolve RED's posture for the turn (observe-only in P0 --
         # latches + surfaces it; no planner seam reads it yet). After the phase so a

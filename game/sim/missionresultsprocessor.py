@@ -169,6 +169,10 @@ class MissionResultsProcessor:
         # the feature is off.
         from game.fourteenth.comint import gated_posture_detail
 
+        # §75: the alternate-ending progress digest -- empty (and hidden) unless
+        # the campaign authors a `victory:` block or a knob is on.
+        from game.fourteenth.victory import victory_sitrep_lines
+
         self.game.last_sitrep = Sitrep.from_debriefing(
             debriefing,
             self.game.turn,
@@ -186,6 +190,7 @@ class MissionResultsProcessor:
             red_posture_detail=gated_posture_detail(
                 self.game, sitrep_posture_detail(self.game)
             ),
+            victory_lines=victory_sitrep_lines(self.game),
         )
 
     def _pow_sitrep_lines(self) -> list[str]:

@@ -620,6 +620,11 @@ export type CampaignEvent = {
   title: string;
   text: string;
 };
+export type VictoryCondition = {
+  text: string;
+  met: boolean;
+  defeat: boolean;
+};
 export type FrontPosture = {
   name: string;
   posture: string;
@@ -646,6 +651,8 @@ export type CampaignStatus = {
   blue_will_note?: string | null;
   red_will_note?: string | null;
   phases?: PhaseArcEntry[];
+  victory?: VictoryCondition[];
+  victory_description?: string | null;
   will_history?: [number, number, number][];
   events?: CampaignEvent[];
   sitrep_turn?: number | null;

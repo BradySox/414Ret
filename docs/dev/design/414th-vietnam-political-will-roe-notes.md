@@ -3,12 +3,17 @@
 **Status:** **W1 + W2 LANDED.** W1 = the observe-only political-will model
 (`Coalition.political_will`, the `vietnam_political_will` setting, the debrief feed
 `game/fourteenth/political_will.py` via `missionresultsprocessor.record_political_will`, the
-SITREP band line). W2 = the **negotiation ending**: `negotiation_verdict` backs a gated branch
-in `Game.check_win_loss` ahead of the territory checks (RED resolve exhausted → WIN "Hanoi
-agrees to terms"; BLUE will exhausted → LOSS "Washington orders withdrawal"; BLUE-loss
-precedence on a simultaneous collapse; territory victory untouched), era-framed exhaustion
-banners fire once on the crossing edge, and the 4 Vietnam campaigns preseed
-`vietnam_political_will: true` (guarded in `_ERA_PRESEED`). The design-§7 feed weights shipped
+SITREP band line). W2 = the **negotiation ending**: `negotiation_verdict` (RED resolve
+exhausted → WIN "Hanoi agrees to terms"; BLUE will exhausted → LOSS "Washington orders
+withdrawal"; BLUE-loss precedence on a simultaneous collapse; territory victory untouched),
+era-framed exhaustion banners fire once on the crossing edge, and the 4 Vietnam campaigns
+preseed `vietnam_political_will: true` (guarded in `_ERA_PRESEED`). **2026-07-19: the verdict
+is consumed via the §75 victory evaluator** (`game.fourteenth.victory.victory_verdict`, the
+single alternate-endings branch in `check_win_loss`) at the same highest precedence — this
+module keeps the exhaustion semantics, the will endings now render as live rows on the
+VICTORY checklist ("Break Hanoi's resolve (now 87 of 100)"), and `blue_will_below` /
+`red_resolve_below` are authorable §75 victory-condition fields for custom-threshold endings
+(see `414th-victory-conditions-notes.md`, the adaptation section). The design-§7 feed weights shipped
 as-is — the balance pass moved to the first played campaign (checklist M1). **W2b (the static
 front) LANDED**: `vietnam_static_front` clamps each front's position to a ±10 % band around its
 campaign-start anchor (§2b below; checklist M2). **W3 LANDED**: campaign-phases P0+P1 per the

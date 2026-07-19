@@ -166,9 +166,26 @@ file. This guide is the map; those are the territory.
     **Al-Sahra (Tikrit)**, and the campaign climbs the M-113-authored pipeline-road **capture
     ladder H-3 → H-2 → Al-Asad** whose legs advance the front and become blue convoy roads as
     each rung falls. A standing **parking-fit test** asserts every based squadron has at least
-    as many dimensionally-fitting slots as airframes. CI-locked in
-    `tests/fourteenth/test_desert_storm.py` (8 tests); in-game pass = checklist T3. NEW game
-    required)
+    as many dimensionally-fitting slots as airframes. **First-fly fix + historical identities
+    (same day):** the Bombcat's `air-to-ground` secondary had the planner fragging Tomcats at
+    the SA-2 rings (the alias includes DEAD/SEAD; the airframe data carries `DEAD: 390`) →
+    `secondary: air-to-air`; and **every squadron is named for its real 1991 unit** (VF-103 /
+    58th TFS Gorillas / TF Normandy's 1-101st / the published IrAF squadron numbers — No. 84
+    Sqn's Foxbats at Qadessiya), `female_pilot_percentage: 0` era-wide, and Iraqi squadrons
+    author an **explicit empty nickname**, which now CLEARS the field (the
+    `override_squadron_defaults` `config.nickname or None` one-liner) instead of leaving the
+    def generator's random "Apoplectic Porcupine" roll; liveries deliberately un-authored (the
+    installed-DCS livery-audit lesson). **Allied AI squadrons at the Saudi rear (same day):**
+    RAF **No. 31 Squadron "Goldstars"** (Tornado GR4 standing in for the Granby GR1s; new
+    UK-countried preset in `resources/squadrons/Tornado/`; the GR4 yaml gained an honest
+    `max_range: 600` — the unset 150 NM default grounds any rear-based Tornado) + Daguet's
+    **EC 2/5 "Île-de-France"** Mirage 2000Cs (the existing France preset bound by name) —
+    the §23 layer gives all three national comms identity + pilot names (en_GB / fr_FR),
+    probe-verified — plus **ER 1/33 "Belfort"**, Daguet's F1CR recon det on primary TARPS
+    (the F1CT stands in, camera nose intact; its yaml gained `TARPS: 700` + honest
+    `max_range: 450`; the same-silhouette-as-red's-F1EQ grounding story is baked into the
+    campaign comment). CI-locked in `tests/fourteenth/test_desert_storm.py` (10 tests);
+    in-game pass = checklist T3. NEW game required)
   - `414th-red-tide-supply-routes-notes.md` — YAML supply routes + Kastrup preset patch
   - `414th-comms-jam-notes.md` — enemy comms jamming off the IADS comms nodes (§51): why the
     in-game `radioTransmission` path beat SRS injection, the anti-grief guardrails, tuning levers

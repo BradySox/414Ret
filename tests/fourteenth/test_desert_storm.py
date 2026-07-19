@@ -100,10 +100,22 @@ def test_desert_storm_blue_holds_only_the_h3_complex() -> None:
     blue_keys = {OFFMAP_KEY, 16, 17, 18}
     assert blue_keys <= set(squadrons)
 
-    # The off-map rear is exactly the big-wing support set (no 60x60 stands exist
-    # west of Baghdad for them to park on).
+    # The off-map rear: the big-wing support set (no 60x60 stands exist west of
+    # Baghdad for them to park on) plus the coalition allies flying from where
+    # they really flew -- the RAF and Daguet entries reference nation-countried
+    # squadron PRESETS by name (the s23 layer), not airframe strings.
     rear = {cfg["aircraft"][0] for cfg in squadrons[OFFMAP_KEY]}
-    assert rear == {"E-3A", "KC-135 Stratotanker", "KC-135 Stratotanker MPRS"}
+    assert rear == {
+        "E-3A",
+        "KC-135 Stratotanker",
+        "KC-135 Stratotanker MPRS",
+        "No. 31 Squadron",
+        "Escadron de chasse 2/5",
+        "Escadron de Chasse 3/33 Lorraine",
+    }
+    # Daguet's recon det flies the photo war: TARPS primary on the F1CR stand-in.
+    belfort = [c for c in squadrons[OFFMAP_KEY] if c["name"] == "ER 1/33 Belfort"]
+    assert belfort and belfort[0]["primary"] == "TARPS"
 
     # The escort-starvation fix survives the move: the F-15C wall stands BARCAP at
     # H-3 Main with the air-to-air secondary that feeds every package escort.
@@ -111,6 +123,13 @@ def test_desert_storm_blue_holds_only_the_h3_complex() -> None:
     assert eagles and eagles[0]["primary"] == "BARCAP"
     assert eagles[0]["secondary"] == "air-to-air"
     assert eagles[0]["size"] == 12  # trimmed to fit the complex
+
+    # The Bombcat strikes but never hunts SAMs: an air-to-GROUND secondary expands
+    # to DEAD/SEAD, and KARI's SAM demand had the planner fragging Tomcats at SA-2
+    # rings (first flown new-game finding). Era truth: DS Tomcats flew escort/CAP.
+    tomcats = [c for c in squadrons[16] if c["aircraft"] == ["F-14B Tomcat"]]
+    assert tomcats and tomcats[0]["primary"] == "Strike"
+    assert tomcats[0]["secondary"] == "air-to-air"
 
     # The flyable modules the faction was extended for.
     faction = json.loads(
@@ -193,6 +212,81 @@ def test_desert_storm_every_squadron_fits_its_parking() -> None:
                 cfg["aircraft"][0],
                 f"{len(fitting)} fitting slots < {cfg['size']} airframes",
             )
+
+
+def test_desert_storm_squadrons_carry_historical_identities() -> None:
+    """Every squadron is named for its real (or best-match) January 1991 unit, per
+    the published orbats. Era discipline rides along: female_pilot_percentage is 0
+    everywhere (US combat squadrons were closed to women until 1993), and the Iraqi
+    squadrons carry an explicit EMPTY nickname -- the campaign-authored way of
+    suppressing the def generator's random nickname roll (IrAF units used none)."""
+    squadrons = _campaign()["squadrons"]
+    for base_id, configs in squadrons.items():
+        for cfg in configs:
+            assert cfg.get("name"), (base_id, cfg["aircraft"])
+            assert cfg.get("female_pilot_percentage") == 0, (base_id, cfg["name"])
+            assert "nickname" in cfg, (base_id, cfg["name"])
+
+    by_name = {cfg["name"]: cfg for cfgs in squadrons.values() for cfg in cfgs}
+    # The marquee identities.
+    assert by_name["VF-103"]["nickname"] == "Sluggers"  # the real DS F-14B unit
+    assert by_name["58th TFS"]["nickname"] == "Gorillas"  # 16 kills, most of the war
+    assert by_name["1-101st Aviation"]["nickname"] == "Expect No Mercy"  # TF Normandy
+    # Night one's only Iraqi air-to-air kill came from the Qadessiya Foxbats --
+    # and Iraqi squadrons carry no nickname.
+    assert by_name["No. 84 Squadron"]["aircraft"] == ["MiG-25PD Foxbat-E"]
+    assert by_name["No. 84 Squadron"]["nickname"] == ""
+
+
+def test_desert_storm_allied_squadrons_carry_their_nations() -> None:
+    """The RAF and Daguet entries bind nation-countried squadron presets (the s23
+    per-squadron-country layer: national comms identity + pilot names). Pin the
+    preset files' countries and the faction's Tornado add so a preset rename or
+    faction scrub can't silently anglicize them back to the CJTF default."""
+    raf = yaml.safe_load(
+        Path("resources/squadrons/Tornado/No 31 Squadron RAF.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert raf["name"] == "No. 31 Squadron"
+    assert raf["country"] == "UK"
+    assert raf["aircraft"] == "Tornado GR4"
+
+    ada = yaml.safe_load(
+        Path(
+            "resources/squadrons/m2000c/ADA_EscadronDeChasse_2-5_IleDeFrance.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert ada["name"] == "Escadron de chasse 2/5"
+    assert ada["country"] == "France"
+
+    # Daguet's recon det: the F1CT (standing in for the F1CR, whose camera nose it
+    # kept) must be recon-capable and long-legged enough to fly from the rear.
+    lorraine = yaml.safe_load(
+        Path("resources/squadrons/Mirage-F1/AAE Squadron 3-33 Lorraine.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert lorraine["name"] == "Escadron de Chasse 3/33 Lorraine"
+    assert lorraine["country"] == "France"
+    assert lorraine["aircraft"] == "Mirage-F1CT"
+
+    faction = json.loads(
+        (FACTIONS / "NATO_Desert_Storm.json").read_text(encoding="utf-8")
+    )
+    assert "Tornado GR4" in faction["aircrafts"]
+    assert "Mirage-F1CT" in faction["aircrafts"]
+    # The off-map basing depends on honest strike radii (the unset default of
+    # 150 NM -- or the F1's old 200 -- grounds a rear-based jet).
+    gr4 = yaml.safe_load(
+        Path("resources/units/aircraft/Tornado GR4.yaml").read_text(encoding="utf-8")
+    )
+    assert gr4["max_range"] >= 400
+    f1ct = yaml.safe_load(
+        Path("resources/units/aircraft/Mirage-F1CT.yaml").read_text(encoding="utf-8")
+    )
+    assert f1ct["max_range"] >= 400
+    assert f1ct["tasks"]["TARPS"] == 700
 
 
 def test_desert_storm_will_profile_is_the_coalition_story() -> None:

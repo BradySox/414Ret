@@ -18,7 +18,9 @@ manufacturer: Dassault
 origin: France
 price: 15
 role: Multirole Fighter
-max_range: 200
+# Honest F1 legs (200 NM undersold every mission profile; hi-lo-hi with tanks and
+# the -200 fixed probe runs well past 400).
+max_range: 450
 variants:
   Mirage-F1CT: {}
 tasks:
@@ -31,6 +33,10 @@ tasks:
   OCA/Runway: 475
   Strike: 480
   TARCAP: 470
+  # The CT conversion kept the F1CR's internal panoramic camera nose, so the type
+  # is genuinely recon-capable -- and stands in for the F1CR proper (photo recon,
+  # e.g. the Desert Storm campaign's Daguet det).
+  TARPS: 700
 
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

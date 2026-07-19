@@ -229,7 +229,10 @@ Upstream hands you a map that already knows everything. Here you have to go look
   against launchers that relocate between recon passes, real-highway convoy interdiction from
   Baghdad to Mosul, a GCI-alert Iraqi Air Force on hot-pad QRA, and a no-strike circle over
   Baghdad's river bend that prices collateral into **Coalition cohesion** — one Al-Firdos is
-  survivable, a habit is not. Ends where it must: break the regime's resolve at Safwan.
+  survivable, a habit is not. Every squadron is its real 1991 unit — VF-103 Sluggers
+  Bombcats, the 58th TFS Gorillas, Task Force Normandy's Apaches, and the Qadessiya
+  Foxbat squadron that drew first blood on night one. Ends where it must: break the
+  regime's resolve at Safwan.
 - **The Vietnam campaign layer changes *why* you fly.** **Political will** — Washington's
   patience, drained by losses (a downed **B-52** is a national event), by aviators sitting as
   POWs, and by the war's sheer duration; a one-way ratchet whose restores are too small to

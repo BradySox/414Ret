@@ -19,5 +19,11 @@ tasks:
   SEAD Escort: 140
   Strike: 595
 
+# Honest strike radius (the unset default is 150 NM, which grounded any Tornado
+# based more than one map-corner from its target -- e.g. an off-map rear base).
+# Hi-lo-hi with heavy stores runs ~390 NM; with tanks and a medium profile the
+# type reaches well past that, so 600 keeps deep targets plannable.
+max_range: 600
+
 # Air-to-air refueling method (receiver).
 air_refuel_type: probe

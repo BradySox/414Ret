@@ -224,16 +224,19 @@ def _tracks_of_types(
     return tracks
 
 
+def raw_cap_tracks(mission_data: MissionData) -> list[SupportTrack]:
+    """Every blue CAP orbit *flight* (each §6 wave separately)."""
+    return _tracks_of_types(
+        mission_data,
+        _CAP_FLIGHT_TYPES,
+        {FlightType.BARCAP: "CAP", FlightType.TARCAP: "CAP"},
+    )
+
+
 def cap_tracks(mission_data: MissionData) -> list[SupportTrack]:
     """Every blue CAP *station* flying this mission (BARCAP + TARCAP), with
     the §6 wave-relief duplicates collapsed to one racetrack per station."""
-    return dedupe_stations(
-        _tracks_of_types(
-            mission_data,
-            _CAP_FLIGHT_TYPES,
-            {FlightType.BARCAP: "CAP", FlightType.TARCAP: "CAP"},
-        )
-    )
+    return dedupe_stations(raw_cap_tracks(mission_data))
 
 
 def support_tracks(mission_data: MissionData) -> list[SupportTrack]:

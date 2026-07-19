@@ -27,13 +27,14 @@ from typing import TYPE_CHECKING, Any, Optional
 from game.missiongenerator.dtc.cartridge import DtcCartridge
 from game.missiongenerator.dtc.common import (
     SupportTrack,
-    cap_tracks,
+    dedupe_stations,
     flot_segments,
     frequency_labels,
     is_route_waypoint,
     is_target_waypoint,
     known_enemy_threat_sites,
     leg_speed_kmh,
+    raw_cap_tracks,
     restricted_zone_outlines,
     seconds_of_day,
     support_tracks,
@@ -281,12 +282,18 @@ def _build_sa(
     options = flight.dtc_options
     caps: list[dict[str, Any]] = []
     if options.friendly_orbits:
-        # Support orbits first: there are few tankers/AWACS and "where's my
-        # gas" is the page's biggest answer, so the CAP stations absorb any
-        # truncation at the nine-slot SA limit, never the support.
-        for track in (support_tracks(mission_data) + cap_tracks(mission_data))[
-            :MAX_CAP_POINTS
-        ]:
+        # Priority, then completeness, inside the hard nine-slot SA limit:
+        # support orbits first (few, and "where's my gas" is the page's
+        # biggest answer), then one racetrack per CAP station (coverage can't
+        # be squeezed out by wave duplicates), then the remaining §6 wave
+        # tracks fill whatever slots are left -- the jet draws every racetrack
+        # it is physically capable of showing.
+        raw_waves = raw_cap_tracks(mission_data)
+        stations = dedupe_stations(raw_waves)
+        kept = {id(track) for track in stations}
+        extra_waves = [track for track in raw_waves if id(track) not in kept]
+        ordered = support_tracks(mission_data) + stations + extra_waves
+        for track in ordered[:MAX_CAP_POINTS]:
             caps.append(_cap_point(track, len(caps) + 1))
 
     flot_lines: list[dict[str, Any]] = []

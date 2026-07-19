@@ -38,6 +38,19 @@ def test_target_waypoints_mark_ground_for_player() -> None:
     assert _wp(FlightWaypointType.TARGET_SHIP).marks_ground_for_player
 
 
+def test_landing_waypoints_mark_ground_for_player() -> None:
+    # A landing (or a cargo stopover) is a field on the ground for every flight
+    # type. land()/cargo_stop() already plan 0 AGL; the listing makes the cockpit
+    # read structural instead of relying on each producer remembering it.
+    assert _wp(FlightWaypointType.LANDING_POINT).marks_ground_for_player
+    assert _wp(FlightWaypointType.CARGO_STOP).marks_ground_for_player
+
+
+def test_divert_is_not_ground_marked() -> None:
+    # An off-map divert is an exit vector planned at cruise altitude, not a field.
+    assert not _wp(FlightWaypointType.DIVERT).marks_ground_for_player
+
+
 def test_flyover_waypoint_still_marks_ground_for_player() -> None:
     # Armed recon / TARPS already relied on this in the .miz; don't regress it.
     assert _wp(

@@ -58,6 +58,14 @@ def test_escort_target_area_alt_column_reads_zero() -> None:
     assert builder.rows[0][ALT_COLUMN] == "0"
 
 
+def test_landing_alt_column_reads_zero_whatever_the_plan_carried() -> None:
+    # land() already plans 0 AGL; the column must not depend on that -- a landing
+    # is a ground mark for every flight type, whatever altitude reached the model.
+    builder = _builder()
+    builder.add_waypoint(1, _wp(FlightWaypointType.LANDING_POINT))
+    assert builder.rows[0][ALT_COLUMN] == "0"
+
+
 def test_ordinary_waypoint_keeps_its_planned_altitude() -> None:
     builder = _builder()
     builder.add_waypoint(1, _wp(FlightWaypointType.NAV))

@@ -17,17 +17,20 @@ if TYPE_CHECKING:
 AltitudeReference = Literal["BARO", "RADIO"]
 
 # Waypoint types that mark a place on the ground for a human pilot rather than a height
-# to fly. The CAS track's FLOT boundaries and the escort's target area are planned at
-# the flight's combat altitude because for the AI the waypoint *is* the track, but a
-# client's steerpoint there wants to sit on the deck so a TGP or weapon can be slaved
-# to it -- at combat altitude the diamond floats thousands of feet above anything worth
-# looking at. Strike/recon target waypoints are already planned at 0 AGL, so listing
-# the target types here only moves the ones planned at track altitude (escort TARGET).
+# to fly -- keyed on what the waypoint IS, never on its route position or the owning
+# flight type. Targets and landings read 0 AGL in the cockpit even where the plan
+# carries an AI track altitude (the CAS FLOT boundaries, the escort's target area);
+# most producers already plan these at 0 AGL, so for them the listing pins the
+# invariant structurally instead of relying on each producer remembering it. DIVERT
+# stays out (an off-map divert is an exit vector flown at cruise altitude, not a
+# field); pickup/dropoff zones keep the helo approach altitudes planned for CTLD.
 GROUND_MARKED_WAYPOINTS = (
     FlightWaypointType.CAS,
     FlightWaypointType.TARGET_GROUP_LOC,
     FlightWaypointType.TARGET_POINT,
     FlightWaypointType.TARGET_SHIP,
+    FlightWaypointType.LANDING_POINT,
+    FlightWaypointType.CARGO_STOP,
 )
 
 

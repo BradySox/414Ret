@@ -5840,6 +5840,58 @@ in Red Tide** (feature-locked); flip the setting for the next MP event. **Needs 
 (checklist B11): that a slept garrison actually costs less (server frame/CPU on a dense mission),
 wakes seamlessly on approach, and that MANTIS/TIC/convoys/movers are visibly untouched.
 
+### AAA gun sites (`perf_aaa_site_sleep`, added 2026-07-19)
+
+The `armor`-only rule left the sleep **missing the actual sink on an AAA-doctrine campaign**. Off a
+"10 fps on the ground" report, the flown 1968 Yankee Station turn-1 miz was measured against the §66
+archive of every other campaign the squadron flies:
+
+| campaign | ground vehicles | AAA | statics | groups |
+|---|---|---|---|---|
+| **1968 Yankee Station** | **738** | **367** | **1085** | **1328** |
+| Scenic Route merged t3 | 448 | 65 | 429 | 604 |
+| Sinai Bright Star | 446 | 95 | 93 | 366 |
+| Red Tide | 185 | 29 | 133 | 433 |
+
+2–4× every other campaign, with AAA at 4–12× — and the emitter was managing **16 of 121** vehicle
+groups, because the mass is `aa`-category. (The density is deliberate: Vietnam doctrine is
+"the real threat is AAA", and `VIETNAM_GROUND_PROCUREMENT` is AAA-heavy. Nobody had measured its
+cost.) The diagnosis that ruled out everything else: the player spawn had **13 objects within
+25 km**, and `ModelTimeQuantizer: ANTIFREEZE ENABLED` began ~1 min in while cold-starting on that
+empty ramp — so neither local scenery density nor the GPU, but global sim load.
+
+`perf_aaa_site_sleep` (Mission Generation → Performance, default **OFF**,
+`enabled_when=perf_ground_ai_sleep`) adds `aa`-category gun sites to the positive list, behind
+**two independent guards** in `_air_defense_group_may_sleep`:
+
+* **Sensor reach.** Every alive unit's DCS `detection_range` must be ≤ `AAA_SLEEP_MAX_DETECTION`
+  (10 km) — comfortably inside the plugin's 10 NM (18 520 m) wake-radius *floor*, which is the
+  minimum the option allows. So an eligible site is always switched back on **before anything
+  reaches the edge of its own sensor envelope**: what it contributes to the IADS picture, and the
+  moment it opens fire, are unchanged; only the frame time moves. Vietnam-era guns report 5 km
+  (KS-19 reports 0); a Gepard (15 km), a Tor (25 km) and every search/track radar (35–300 km) sit
+  above the line and keep thinking. An unmeasurable unit fails safe — assumed to see, kept awake.
+* **Engine ownership.** MANTIS *writes* to `MANTIS_MANAGED_ROLES` (`SAM`, `SAM_AS_EWR`,
+  `POINT_DEFENSE` — alarm state, EMCON hold, the SHORAD link), so a switched-off controller would
+  fight the IADS engine; those never sleep however short-sighted their guns. It only *reads*
+  detection from the rest, which is why an **EWR-role** gun site is eligible — and that is the case
+  carrying the win, since `GroupTask.AAA` maps to `IadsRole.EWR`.
+
+Dedicated `ewr` sites stay ineligible outright (the long-range search radar *is* the site), and the
+category gate still excludes the §49 `missile`/`coastal` scoot movers — which matters, because their
+launchers report a detection range of 0 and would otherwise pass the sensor guard. Measured effect on
+the Yankee Station laydown: every one of the 74 AAA-bearing groups clears the sensor guard, so the
+sleep set grows from 26 groups to the ~54 that also clear the role guard (the `(PD)` point defenses
+and the SAM sites stay awake) — roughly 400 units that stop thinking. On Red Tide the same rule
+correctly keeps the Tor and Gepard groups awake and sleeps the short-range guns.
+
+Tests: the `TestAaaSiteSleep` class in `tests/missiongenerator/test_aisleepluadata.py` (threshold
+boundary either side, one far-seeing member vetoing its group, unknown range failing safe, `ewr`
+never eligible, each MANTIS-driven role refused, EWR-role sites accepted, concealed still skipped,
+both toggles, and the §49 category regression guard). **Needs an in-game pass** (checklist B11, AAA
+bullet): that a Vietnam mission's frame time actually recovers, and that the flak belts still open
+up on the same pass they always did.
+
 ---
 
 ## §60 — SAM guidance-radar redundancy (two track radars per site)

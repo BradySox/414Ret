@@ -2092,9 +2092,33 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     until flown; NOT preseeded in Red Tide (feature-locked) — flip it for the next MP event. Tests
     `tests/missiongenerator/test_aisleepluadata.py` + `tests/lua/test_aisleep_runtime.py` (the
     harness gained a `ControllerFake` + `aiOnOff` records + `fire_hit`).
+    **AAA gun sites added 2026-07-19** (`perf_aaa_site_sleep`, default **OFF**,
+    `enabled_when=perf_ground_ai_sleep`) — off a "10 fps on the ground" report, the flown 1968
+    Yankee Station miz measured **2–4× every other campaign** (738 ground vehicles / **367 AAA** /
+    1085 statics / 1328 groups vs Red Tide's 185/29/133/433), with AAA at **4–12×**, while the
+    emitter managed **16 of 121** vehicle groups — because the mass is `aa`-category. (Diagnosis
+    that ruled out the rest: **13 objects within 25 km** of the player spawn, and ANTIFREEZE from
+    ~1 min in while cold-starting on that empty ramp ⇒ global sim load, not scenery or GPU. The
+    density itself is deliberate Vietnam doctrine; nobody had measured its cost.) `aa` sites now
+    join the list behind **two independent guards** (`_air_defense_group_may_sleep`): every alive
+    unit's DCS `detection_range` ≤ `AAA_SLEEP_MAX_DETECTION` (10 km) — comfortably inside the
+    plugin's 10 NM (18 520 m) wake **floor**, so a site is always awake before anything reaches the
+    edge of its own sensor envelope and both its IADS contribution and its trigger moment are
+    unchanged (era guns report 5 km, KS-19 0; **Gepard 15 km / Tor 25 km / every search-track radar
+    35–300 km stay awake**; an unmeasurable unit fails safe) — **and** the group's `IadsRole` must
+    not be in `MANTIS_MANAGED_ROLES` (`SAM`/`SAM_AS_EWR`/`POINT_DEFENSE`), the roles MANTIS *writes*
+    alarm state/EMCON to. It only *reads* the rest, which is why an **EWR-role** gun site is
+    eligible — and since `GroupTask.AAA` → `IadsRole.EWR`, that is the case carrying the whole win.
+    Dedicated `ewr` sites stay ineligible outright, and the category gate still excludes the §49
+    `missile`/`coastal` movers — load-bearing, since their launchers report detection 0 and would
+    pass the sensor guard. Measured: Yankee Station's sleep set 26 → ~54 groups (~400 units); Red
+    Tide correctly keeps its Tor/Gepard groups thinking. Same-day sibling fix: the §33 flak
+    gauntlet's tick was calling `getPoint()` per (aircraft × gun) — ~1,100 DCS API calls per
+    aircraft per 2.5 s tick at 367 guns — now positions are cached at the 30 s AAA refresh and the
+    arithmetic range test gates the liveness calls (~6), behavior identical.
     (`game/missiongenerator/aisleepluadata.py`, `game/missiongenerator/luagenerator.py`,
-    `resources/plugins/aisleep/`, `game/settings/settings.py`; features doc §59, checklist B11 —
-    needs an in-game pass.)
+    `resources/plugins/aisleep/`, `resources/plugins/vietnamops/`, `game/settings/settings.py`;
+    features doc §59, checklist B11 — needs an in-game pass.)
 60. **SAM guidance-radar redundancy (two track radars per site)** — the 2026-07-12 Red Tide
     finding: every SAM layout fielded exactly ONE engagement radar, so a single HARM on it was a
     functional site kill (launchers alive but blind). Every SAM layout now fields **two** guidance

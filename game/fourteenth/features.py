@@ -390,7 +390,7 @@ FEATURES: tuple[Feature, ...] = (
         "Ground AI sleep (graduated culling)",
         59,
         plugin_id="aisleep",
-        settings_fields=("perf_ground_ai_sleep",),
+        settings_fields=("perf_ground_ai_sleep", "perf_aaa_site_sleep"),
     ),
     Feature(
         # §60 SAM guidance-radar redundancy -- every SAM site layout fields TWO

@@ -1,160 +1,209 @@
 # 414th — Community Contribution Roadmap (the long view)
 
-The [upstreaming inventory](414th-upstreaming-inventory.md) carves out the generic
-**bug-fixes** so they stop conflicting on every `dev` pull. This doc takes the longer
-view the squadron asked for: **almost every 414th *feature* is a generic capability
-the whole Retribution community would want.** "Fork-specific" in the inventory was
-mostly a verdict on *carve difficulty*, dressed up as "the community doesn't want
-this." Those are not the same thing, and conflating them undersells what we built.
+> **POLICY (2026-07-19, squadron directive): everything is upstreamable.** There is no
+> permanent "fork-only" category — a thing either goes back clean and correct, or it
+> waits in the queue until it can. "Can't half-ass it" is the bar: every carve ships
+> with its rationale, its tests, and its in-game evidence. Carve *difficulty* is a
+> sequencing input, never an exclusion. The old "⛔ NEVER" list is retired; its
+> survivors are re-filed under **the last-mile queue** below with what each one needs.
 
-The cure is to score every feature on **two independent axes** and stop letting a high
-carve cost masquerade as low community value.
+The [upstreaming inventory](414th-upstreaming-inventory.md) is the tactical carve
+queue (per-PR mechanics). This doc is the strategy: what goes back, in what order,
+and what each item still owes.
+
+**Where this stands (2026-07-19):** the door is open. **8 fork PRs are merged
+upstream** — three of them (#805 bulk waypoint altitude, #843 JHMCS era gating, #854
+per-squadron country) in a single day — and the maintainers merged geofffranks' #859
+motorpool, which the fork had pre-adopted as §56. The fork is a recognized
+contributor. The `sync/upstream-dev-2026-07-19` merge is the reference
+implementation of **reconcile-on-merge** (see Workstream 1).
 
 ## The two axes
 
 - **Community value** — would a stock-Retribution player, on any theater, want this?
-  For nearly everything here the answer is *yes*. A new mission type, a living
-  frontline, photo-recon that feeds BDA, ATC, a blank-canvas campaign builder — none of
-  that is squadron-specific.
-- **Carve difficulty** — how hard is it to extract cleanly and get an upstream
-  maintainer to take it:
-  - **Pure-Python / data** — easy. Lua-free, CI-checkable, often already tested.
-  - **Client (React)** — easy-ish, but needs the CI client rebuild and lands in
-    upstream's own map control, not our custom panel.
-  - **Vendored Lua** — hard. Upstream gates Lua with a syntax lint only; a vendored
-    MOOSE-adjacent plugin means *they now own and maintain that script*. Needs a Lua
-    champion on their side, a default-OFF gate, and an in-game pass first.
-  - **Content** — N/A. Campaigns, factions, and the buddy-tuned ballistics are
-    identity, not capability.
+  For nearly everything here the answer is *yes*.
+- **Carve difficulty** — how hard to extract cleanly and get a maintainer to take it:
+  - **Pure-Python / data** — easy. Lua-free, CI-checkable, usually already tested.
+  - **Client (React)** — easy-ish; must land in upstream's own UI surfaces.
+  - **Vendored Lua** — hard. Upstream takes on script ownership; needs a default-OFF
+    gate, an in-game pass, and a sympathetic Lua maintainer.
+  - **Content / defaults** — needs *packaging*: an identity-strip pass for campaigns,
+    a written rationale for tuned values. Work, not exclusion.
 
-Recon fog already made the journey this doc is arguing for: it sat under "⛔ fork
-feature" until it was split from the SCAR command-post gate, and is now a carved,
-verified upstream PR (inventory item 8). **Most of the stack can make the same trip.**
+## The three workstreams
+
+1. **Reconcile-on-merge (standing discipline).** Every time a fork PR (or a feature
+   the fork pre-adopted) merges upstream, the fork **deletes or aligns its variant to
+   upstream's exact merged shape** in the next sync — prefer-upstream on conflicts,
+   documented divergences only where the fork's design genuinely differs (e.g. the
+   #879 alarm-state adaptation to the fork's MANTIS-owned EMCON). This is how the
+   fork's delta shrinks: not by rebasing, by draining.
+2. **Drain the queue.** Keep the open-PR set healthy (rebase what goes stale,
+   graduate drafts) and keep feeding the inventory's 🟢 READY items. Sequencing:
+   lowest difficulty first, crowded zones coordinated (review others' PRs instead of
+   opening rivals), runtime features only after their in-game pass.
+3. **Package the last mile.** The former "never" items each get their upstream story
+   (below) and enter the queue when packaged.
 
 ---
 
-## What is *genuinely* 414th — the thin layer
+## The last-mile queue (formerly "genuinely 414th — the thin layer")
 
-This is the part that should never leave `main`. It is small, and it is **content +
-identity + the multi-turn economy**, not the feature mechanisms:
+Nothing here is fork-only by nature. Each row states what the clean-and-correct
+upstream PR looks like.
 
-| Thing | Why it stays | Files |
+| Item | Upstream story | Status |
 |---|---|---|
-| **Red Tide campaign** | A hand-authored story campaign (blue-offensive reframe of Crossing the Rubicon), not generic content | `resources/campaigns/red_tide.{yaml,miz}` |
-| **Operation Shattered Dagger campaign** | Iran + Caucasus scenario; depends on the Iran faction | `resources/campaigns/operation_shattered_dagger.{yaml,miz}` |
-| **[CH] Iran 2020 faction** | Requires the CurrentHill Iran assets mod (Shahed-136, IRGCN FAC) — a hard external dependency | `resources/factions/CH_iran_2020.json`, `pydcs_extensions/` (carved separately as upstream PR #784) |
-| **Splash Damage 3.4.2 (414th build)** | Intentionally divergent buddy-tuned ballistics; settings LOCKED by design | `resources/plugins/splashdamage3/Splash_Damage_3.4.2_414th.lua` (PINNED) |
-| **Doctrine *default values*** | The *mechanisms* are generic; the tuned numbers are ours. Upstream ships its own defaults | `qra_gci_max_radius_nm=60`, `qra_engagement_range_nm=38` (`settings.py:294,306`), `QRA_SINGLE_SHIP_PROBABILITY=0.75` (`intercept_reserve.py:10`) |
-| **SCAR commander-capture / SOF / CSAR economy loop** | The multi-turn "capture a commander → reveal the command net → SOF insert → CSAR a downed team" chain is the campaign-engine differentiator | `game/scar_rescue.py`, `game/scar_objectives.py`, `coalition.captured_commander`, the `scar_command_post_intel` gate |
-| **C-130J EW *physics constants*** | The missile-spoof probability curve and burn-through model are design choices, not generic rules | `resources/plugins/c130j/c130j_mission_systems.lua` (the baked constants, not the `FlightType.JAMMING` framework) |
-| **TIC stance → waypoint tuning** | The specific stance profiles (standoff distances, press depths, cadence) are our doctrine read; the movement engine underneath is generic | `_tic_stance_profile()` in `game/missiongenerator/flotgenerator.py` |
+| **Splash Damage tuned build** | **A fix to shipping defaults, not identity.** Upstream still ships stock values that damage buildings ~a mile from the impact; the 414th build (`overall_scaling=0.6`, `rocket_multiplier=0.8`, `static_damage_boost=1`, shaped-charge rocket flags, `game_messages=true`) was tuned against that and works. Ship the **values as upstream's new defaults in `sd3-config.lua`** with the what/why writeup (upstream keeps its config surface; the fork's settings-locked single-file build stays a fork packaging choice, not a divergence in behavior we hide). | Inventory item 21 — carve when a session picks it up |
+| **[CH] Iran 2020 faction + pack** | Mod-dependent factions are normal upstream (HDS, CurrentHill assets elsewhere). #784 was **self-withdrawn, never rejected** — re-carve behind the existing mod toggle. | Re-carve candidate |
+| **Doctrine default *values*** (QRA radii, engagement ranges, `QRA_SINGLE_SHIP_PROBABILITY`) | The mechanisms are largely upstream (#782 et al.). Propose the tuned numbers as defaults **with the flown rationale**; if upstream prefers different defaults, fine — defaults are their call, the proposal costs one PR. | Rides the QRA-family carves |
+| **C-130J EW physics constants** (spoof curve, burn-through) | Ship **with** the C-130J framework carve as its tested tuning, constants documented (the HANDOFF doc's rationale travels with the PR). Not separable from the framework — sequenced behind it. | Rides the Tier-3 C-130 carve |
+| **TIC stance tuning** | Same shape: the stance profiles are the tested tuning of the TIC engine; they travel with the TIC carve as defaults-with-rationale. | Rides the Tier-3 TIC carve |
+| **Campaign content** (Red Tide, the COIN pair, Tanker War, Desert Storm 91, Yankee Station, Red Flag 81-2, Velvet Thunder edits) | Content PRs after an **identity-strip pass** (the Red Tide payload in `docs/dev/upstreaming/red-tide/` is the worked template — 414th naming/preseeds stripped, validated headless on upstream dev). One campaign per PR; each needs its feature dependencies upstream first (a COIN campaign without the COIN engine is a shell — sequence content behind capability). | Red Tide: **payload READY** (inventory item 14). Others: after their features land upstream |
+| **Campaign preseeds** | Preseeds of fork-only settings ride each campaign's PR trimmed to the settings upstream actually has at that point. | Mechanical, per-campaign |
 
-Everything below this line is **community capability** that could go back.
+**Standing fork divergences that are *merge discipline*, not upstreamability calls**
+(preserve on every dev-pull; they don't belong to this queue): the #823 frontline
+merge divergences (TIC movement-ownership guard, `total_frontline_units`
+denominator), the AGM-65A → Rockeye fallback (upstream **rejected** the change on
+#847 — respect the verdict, keep the fork's value locally), and the #879 alarm-state
+adaptation (the fork's #231 IADS-owned EMCON design).
 
 ---
 
 ## The feature ledger
 
-Readiness marks reuse the inventory legend (🟢 READY · 🟡 NEAR · 🟠 CARE · 🔵 DONE).
-"414th slice to strip" is the *only* part that has to come out for a clean PR — the
-rest is the community capability.
+Readiness marks reuse the inventory legend (🟢 READY · 🟡 NEAR · 🟠 CARE · 🔵 DONE/IN
+REVIEW). "Strip" = the 414th slice to remove for a clean PR.
+
+### Already upstream (reconcile-on-merge applies)
+
+| Feature | Upstream PR |
+|---|---|
+| Plugin `descriptionInUI` (§14) | #841 merged |
+| Building-card placeholder (§4 slice) | #793 merged |
+| Weapons coverage/repairs | #826 merged |
+| OPFOR aggressiveness fix | #789 merged |
+| Targeting-pod era data | #871 merged |
+| Bulk waypoint altitude UI | #805 merged 2026-07-19 |
+| JHMCS / props era gating (§24) | #843 merged 2026-07-19 |
+| Per-squadron country + pilot names (§23) | #854 merged 2026-07-19 |
+| Motorpool depots (§56) | #859 (geofffranks) merged 2026-07-19 — fork pre-adoption reconciled |
+
+### In review (keep healthy)
+
+| Feature | PR | Owes |
+|---|---|---|
+| Recon fog-of-war (§3 PR #1) | #828 (draft) | **Rebase — CONFLICTING since ~2026-07-16**; then un-draft |
+| Cruise missile strikes (§63 core) | #872 (draft) | Un-draft once the defender-wake re-fly (B16) is flown |
+| Curated carrier comms (§65) | #874 (draft) | Un-draft after B18 in-game pass |
+| Culled-region kill tracking | #873 (draft) | Un-draft when validated |
+| Cruise/patrol altitude | #806 | Review response |
+| MFD SAM hiding (§7) | #794 | Review response |
+| Wind override UI | #792 | Review response |
+| Final-waypoint crash (§8 slice) | #788 | Review response |
 
 ### Tier 1 — pure-Python / data (easy carve)
 
-| Feature | Community value | 414th slice to strip | Tests | Readiness |
-|---|---|---|---|---|
-| Landmap terrain-query perf | High (≈7 min off ground-gen) | none | gen-covered | 🔵 **PR #842** (inv #1) |
-| Plugin `descriptionInUI` field (§14) | High (discoverability) | splashdamage3 desc (414th) | — | 🔵 **PR #841** (inv #10) |
-| Era-gate payload options: JHMCS property gating (§24) + AAQ-33 redo | High (era realism) | none | `test_aircraftproperties.py`, `test_weapons.py` | 🔵 **PR #843** (inv #11) |
-| DEAD reachability gate on follow-on strikes | High (planner correctness) | none | `test_dead_planning.py` | 🟢 (inv #2, B2 ☑) |
-| Support-orbit depth + front-anchor | High (red AWACS/tanker placement) | none | `test_support_orbit.py` | 🟢 (inv #3, C1/C2 ☑) |
-| Negative-start-packages takeoff check | Low/Med (UI false-warn) | none | `test_negative_start_packages.py` | 🟢 (inv #6) |
-| SOF C-130 runway-start fallback | Medium (general spawner) | the `c130j` EW de-conflict that ships beside it | — | 🟢 (inv #5, E ☑) — ship *only* the fallback |
-| Player-despawn loss accounting | High (false losses) | the Lua hook lives in the bundled runtime — split Python from `dcs_retribution.lua` | `test_debriefing.py`, `test_player_spawn_halt.py` | 🟠 (inv #4, D1 ☑) |
-| Air-defense planning rework (BARCAP waves, forward CAP, threat-weighted orbits, FLOT hazard) | High (every campaign) | none | `test_barcap_threat_weighting.py`, `test_front_line_threat_zone.py`, `test_objectivefinder_barcap.py` | 🟡 — B4 ☑, B3 ◐, B1 ☐ (needs the multi-sector + coastal passes) |
-| Auto-planner target unpredictability | Med/High (red stops scripting) | none | `test_planner_unpredictability.py` | 🟢 — default OFF, opt-in |
-| Auto-hide mobile SAMs on MFD | Medium | none | `test_mobile_air_defense_hiding.py` | 🟢 |
-| Player target location precision (Approximate) | High | none | — (confirm before carve) | 🟢 — EXACT stays default |
-| Kneeboard overflow pagination | Medium | none | `test_airfield_directory_page.py`, `test_kneeboard_task_pages.py` | 🟡 — H1 ☐ (busy-theater pass) |
-| Weapon date-gating | High (era consistency) | none (data is map-agnostic) | data-only (YAML) | 🟢 — see weapon-dates note for the 5 known stale CLSIDs |
-| Settings QOL audit (dead-field cleanup, AiRadioBehavior enum + migration) | Medium | none | — (settings-migration tests exist; confirm the AiRadioBehavior case before carve) | 🟢 |
-| Drop-spawn unit placement (Python core: `place_unit_group`, TGO + SSE) | High | none | **no dedicated unit test — readiness gap; only server-route tests exist** | 🟡 — §20 in-game pass + add coverage first |
-| Campaign maker / blank canvas (Python core) | High (the "major release") | none | `test_blanktheater.py`, `test_campaignairwingconfig_empty.py` | 🟡 — Increment C (support buildings) deferred; in-game BC-rows pending |
-| Recon fog-of-war core (viewer-aware visibility) | Medium (player-facing) | `hidden_on_player_map` / SCAR command-post gate → drop; TARPS damage-lag → PR #2 | `test_recon_intel_fog.py`, `test_recon_intel_api_fog.py`, `test_merad_reveal.py` | 🔵 (inv #8) — **pushed as PR #828, in review**; PR #2 (TARPS damage-lag) still to carve |
+Everything from the original Tier-1 table still applies (planner unpredictability
+§17, target precision §5, weapon dates, settings QOL §16, drop-spawn §20, campaign
+maker, DEAD gate, support orbit, despawn accounting, kneeboard pagination). New
+since the last revision (§29–§73):
 
-### Tier 2 — client (React, needs the CI rebuild)
+| Feature | Value | Strip | Readiness |
+|---|---|---|---|
+| §29 SITREP digest (`game/sitrep.py` + surfaces) | High | none | 🟢 |
+| §35 convoy interdiction (engine side — real-convoy top-up) | High | Vietnam framing → generic "trail logistics" | 🟢 |
+| §40 campaign phases (Tier-0 inference + planner emphasis + authored arcs) | **Very high** | 414th campaign arcs stay per-campaign | 🟡 (client ribbon = Tier 2 half) |
+| §43 per-aircraft flight defaults | High | none | 🟢 (Q1 pass owed) |
+| §44 long-range carrier ops | Medium | campaign preseeds | 🟡 P2 |
+| §45 F10 support-orbit markers | High | none | 🟡 R1 |
+| §46 route-aware fuel planning + fuel brief | **Very high** | none | 🟡 S1 |
+| §47 continuous clock & weather | High | none | 🟡 T1 |
+| §48 commitment ceiling | Medium | sequenced behind the will economy | 🟡 |
+| §52 C2 decapitation → planner degradation | High | none | 🟡 B6 |
+| §53 war economy | **Very high** | Red Tide preseeds | 🟡 (multi-turn pass owed) |
+| §54 munitions availability | High | scarce-list is curated data — travels | 🟡 |
+| §55 red intent (adaptive posture) | **Very high** | none | 🟡 B7 |
+| §60 SAM radar redundancy | Medium — **balance opinion, needs the realism-notes rationale attached** | none | 🟡 B12 |
+| §62 squadron-sequenced modex | High | none (note: parked per-pilot branch is the *upstream* #862/#863 answer) | 🟢 B15 ☑ |
+| §64 carrier deck spawn policy | High | none | 🟡 B17/B26 |
+| §66 generated-mission archive | Medium | none | 🟢 |
+| §67 weather-aware planning | High | none | 🟡 B19 |
+| §68 adaptive procurement | High | none | 🟡 B20 |
+| §69 SEAD-before-strike coordination | **Very high** | none | 🟡 B21 |
+| §70 COMINT (campaign take, C0) | Medium/High | C1/C2 Lua halves → Tier 3 | 🟡 B22 |
+| §71 F-4E expanded weapons (XW convention) | Medium | none (mod-gated by design) | 🟡 B24 |
+| §73 loadout default-for-task | High | none | 🟡 Q2 |
+| Will economy + profiles (Vietnam layer W1–W6, generalized `will:`) | High | Vietnam campaign arcs stay per-campaign | 🟡 M-rows |
+| COIN engine family (C1–C4: regen, re-infiltration, IED, HVT, dispersed, concealment) | High (a whole COIN mode) | campaign content + preseeds | 🟡 P-rows — carve as a family once flown |
 
-| Feature | Community value | Note |
-|---|---|---|
-| Unified map layers panel | High (UI polish) | Client-only; must land in upstream's own layer control, not our custom dark panel |
-| Recon fog overview toggle (client half) | Medium | `PUT /fog-of-war/reveal` + re-pull; server side `test_fogofwar_route.py` |
-| Drop-spawn map dialog (React `MapContextMenu` + Qt `QPlaceUnitGroupDialog`) | High | Ships with the drop-spawn Python core |
+### Tier 2 — client (React)
+
+Unified map layers panel (§19), fog overview toggle client half, drop-spawn dialog,
+campaign-status ribbon (§40), supply overlay (§53), minefields overlay (§57), downed
+pilots layer (§21), stroke-signature system (§28) — all must land in upstream's own
+map-control surfaces, shipped alongside their Python halves.
 
 ### Tier 3 — vendored-Lua features (high value, hard carve)
 
-These are the ones the inventory wrongly stamped "⛔ NEVER." They are **high community
-value**; the cost is a vendored script + a default-OFF gate + an in-game pass + an
-upstream Lua maintainer willing to own it. That is *work*, not *exclusion*.
+The original five (SCAR/TARS/TIC/QRA/C-130J) plus, from §29–§73:
 
-| Feature | Community value | Realistic upstream shape | Tests |
-|---|---|---|---|
-| **SCAR base task** | High — a discrimination hunt that fills the gap between AI BAI and human CAS; zero content deps (vanilla units, any theater) | Phase-1 carve: `FlightType.SCAR` + builder + the scenario Lua, **stripping** the commander-capture/SOF/CSAR loop and the command-post fog gate | `test_scar.py`, `test_scar_bridge.py`, `test_scar_autoplan.py` |
-| **TARS recon + BDA bridge** | High — TARPS film menu + confirmed-BDA feedback fixes a real upstream blind spot | Vendor `TARS.lua` (MOOSE Ops.TARS) + the small Python BDA bridge; the `allowedAmmo`/name-filter overrides are targeted fixes, not doctrine | `test_tarps_recon.py`, `test_tars_bda_bridge.py`, `test_bda_tarps_reveal.py` |
-| **TIC dynamic fronts** | High — a living FLOT instead of two static walls | Vendor `TIC_v1.1.lua`; the stance→waypoint compiler is our doctrine read (upstream takes it or writes their own) | `test_tic_dynamic_fronts.py`, `test_tic_clone_mapping.py` |
-| **QRA intercept reserve** | High — distributed base-defense beats ramp-scramble everywhere | Python reserve model is generic and largely upstream already (feeds PR #782 `AI_A2A_DISPATCHER`); **the tuned radii/probability are doctrine defaults, not the mechanism** | `test_qra_reserve_settings.py`, `test_game_qra_propagation.py`, `test_interceptattrition.py` |
-| **C-130J EW/ISR framework** | Medium — generic EC-130H/RC-130H role | Upstream the `FlightType.JAMMING` enum + behavior (AWACS-track + WEAPON_HOLD ROE); **leave the ~2,200-line EW physics script fork-vendored** — it's a whole subsystem upstream would have to own | — (Lua runtime; not CI-testable) |
-| **Plugin Options UI (`descriptionInUI`)** | High — per-plugin description line, pure discoverability | Trivial: one optional JSON field + ~10 lines of Qt. Backward-compatible. **Carve this first — it's the cheapest community win in the repo.** | — |
+| Feature | Value | Note |
+|---|---|---|
+| Vietnam Ops suite (§32–§39: Arc Light, flak, NGFS, harassment, gaggle, FAC, snake-nape) | High | One plugin, per-feature toggles already default-OFF |
+| §49 mobile missile relocation (SCUD hunt) | High | S2 flown ✓; fire-window + stagger hardened |
+| §50 convoy ambush + ambient convoys | High | engine side Tier 1; plugin side here |
+| §51 comms jamming / §70 C1–C2 red net | Medium/High | pair them — one comms-war story |
+| §57 air-droppable minefields | High | B9 pass owed |
+| §58 briefing popup | High | B10 ☑ VERIFIED |
+| §59 ground-AI sleep | **Very high** (MP perf) | B11 pass owed |
+| §61 host red scramble | Medium | host/event tool |
+| §72 carrier deck decorations | Medium/High | B25 pass owed |
+| §21 Combat SAR family (+ §15 Sandy, MIA/POW) | High | the biggest single loop; carve after the G-row queue drains |
+| MANTIS IADS engine + bridge | **Very high** | the fork's flagship runtime; needs an upstream Lua champion — propose after a track record of smaller Lua carves lands |
 
 ---
 
-## Recommended contribution program
+## The wave program (updated 2026-07-19)
 
-Each wave is gated by its [in-game-pass](414th-ingame-pass-checklist.md) rows — the
-project's own freeze policy ("no new feature work until the queue drains") *is* the
-upstreaming gate, because a cluster of ☑ VERIFIED Lua-free rows is exactly an
-upstream-PR batch.
+Waves 0–2 of the original program are **done** (#841, #842*, #828 pushed; *#842
+closed unmerged — re-carve candidate). The standing crowded-zone rule holds: check
+`gh pr list` for the surface first; when someone else owns it, contribute by
+reviewing their PR.
 
-> **⚠️ Crowded-zone reality (2026-06-27).** Upstream `dev` is now actively worked by
-> **prokop7** (#676 BARCAP, #674 SEAD/DEAD, #678 BAI, #677 attack-infra, #679/#680 ground)
-> and **geofffranks** (#782 QRA, #772 SEAD, #823 frontline, #754 kneeboard, #765 waypoints,
-> #821 ATIS). Several waves below now **collide** with those PRs (flagged inline). The rule the
-> squadron set — *don't step on others* — means: check `gh pr list` for the surface first, and
-> when someone else owns it, **contribute by reviewing their PR**, not by opening a rival one.
+- **Wave R (standing): reconcile-on-merge.** Runs forever. The 2026-07-19 sync is
+  the template (reconciled §23/§24/§56/#805 to upstream's merged shapes same-day).
+- **Wave 3 (now): finish the open set + the ready fixes.** Rebase #828. Fly B16/B18
+  and un-draft #872/#874. Push the 🟢 READY inventory items with no crowd collision:
+  blue-block miz markers (item 17), helo CFIT trio (item 16, C8), F-14A payload
+  `unitType` fix (item 20), empty-`aircraft:` crash (item 12), landmap perf re-carve
+  (item 1 / #842 closed). **Red Tide campaign publication (item 14)** — the payload
+  is built; push it.
+- **Wave 4: the big pure-Python systems.** §40 phases → §55 red intent → §53/§54
+  economy → §46 fuel → §69 SEAD coordination → §67/§68 → §47 clock → the rest of
+  Tier 1. Each its own default-preserving PR, flown first where a checklist row
+  exists.
+- **Wave 5: the Lua features.** Cheapest, best-evidenced first (§58 briefing ✓,
+  §49 SCUD ✓, §59 sleep after B11) → the Vietnam Ops suite → §50/§57 → the
+  CSAR family → MANTIS last, with the track record behind it.
+- **Wave 6: content + last-mile.** Campaign publications (Red Tide first), the
+  Splash Damage defaults PR, the Iran pack re-carve, doctrine-defaults proposals.
 
-1. **Wave 0 — trivia.** ✅ **DONE — `descriptionInUI` plugin-description UI pushed as PR #841**
-   (2026-06-27). One field, backward-compatible, + 8 bundled-plugin descriptions populated.
-2. **Wave 1 — the verified pure-Python fixes.** Inventory items 1–6: landmap
-   perf, DEAD gate, support orbit, negative-start, runway fallback, despawn accounting
-   (Python half). ✅ **Landmap perf pushed as PR #842** (2026-06-27). **⚠️ DEAD gate
-   (inv #2) now collides with prokop7 #674 + geofffranks #772, and support orbit (inv #3)
-   overlaps prokop7 #676 — HOLD those two; negative-start and runway fallback are still clear.**
-3. **Wave 2 — recon fog.** **Done for PR #1 — pushed as [#828](https://github.com/dcs-retribution/dcs-retribution/pull/828), in review.**
-   Remaining: carve **PR #2** (TARPS recon platform + `alive_for` BDA damage-lag) once #828 lands.
-4. **Wave 3 — the bigger pure-Python features.** Planner unpredictability, MFD SAM hiding
-   (already pushed: #794), target precision, weapon dates, settings QOL, drop-spawn (after
-   adding a unit test), campaign maker (after Increment C + the BC in-game pass). **⚠️ Air-defense
-   planning is REMOVED from this wave — prokop7 #676 owns BARCAP; kneeboard pagination waits for
-   geofffranks #754 to land first.** Each remaining item its own default-preserving PR.
-5. **Wave 4 — the vendored-Lua features.** SCAR base task, TARS, TIC,
-   QRA, C-130J framework. Each needs: split from the 414th doctrine/economy layer,
-   default-OFF gate, an in-game pass, and ideally a sympathetic upstream Lua maintainer.
-   **⚠️ QRA feeds geofffranks #782 — support that PR, don't resubmit; TIC/frontline overlaps
-   #823 (already adopted) + Druss99 #681.** Highest value, highest effort — pursue once Waves
-   1–3 establish a track record.
-
-**The honest read:** "ship it back to the hub" makes sense for *most of the fork* — just
-not as one monolithic push, and not the content/identity layer. The seam between
-generic capability and 414th identity is sharp and already mostly factored in the code;
-the work is carving along it patiently, lowest-difficulty first.
+**The honest read stands, minus the old carve-out:** ship it back — *all* of it —
+just not as one monolithic push. The seam between capability and identity is
+sharp in the code; the identity layer is small and it, too, travels as content
+and defaults-with-rationale. The work is carving patiently, lowest-difficulty
+first, with the in-game-pass checklist as the gate.
 
 ---
 
 ## Cross-references
 
-- [414th-upstreaming-inventory.md](414th-upstreaming-inventory.md) — the tactical carve
-  queue + per-PR mechanics for the Wave-1 bug-fixes.
+- [414th-upstreaming-inventory.md](414th-upstreaming-inventory.md) — the tactical
+  carve queue + per-PR mechanics (now including the last-mile items).
 - [414th-ingame-pass-checklist.md](414th-ingame-pass-checklist.md) — the gate; a row
-  reaching ☑ VERIFIED is what clears a feature for its wave.
+  reaching ☑ VERIFIED is what clears a runtime feature for its wave.
 - [414th-features.md](414th-features.md) — per-feature engineering internals.
-- `docs/dev/upstreaming/fog-of-war/` — the worked example: a carve manifest + PR kit +
-  portable patch. The template every Wave-3/4 carve should follow.
+- `docs/dev/upstreaming/fog-of-war/` + `docs/dev/upstreaming/red-tide/` — the worked
+  carve-kit examples (capability and content respectively).

@@ -9,12 +9,14 @@ queue**: what's genuinely generic, how ready it is, and — just as important �
 what is fork-specific and must **never** go upstream.
 
 > **Scope note.** This file is the *tactical carve queue* for the generic **bug-fixes**.
-> For the longer view — that almost every 414th *feature* (SCAR, TIC, TARS, Flight
-> Control, QRA, the campaign maker) is also community-upstreamable once split from the
-> 414th content/identity layer — see
+> For the longer view — that every 414th *feature* is community-upstreamable once
+> packaged — see
 > [414th-community-contribution-roadmap.md](414th-community-contribution-roadmap.md).
-> The ⛔ list below is **genuinely fork-specific** (content, identity, doctrine
-> *defaults*); it is *not* the list of "things the community wouldn't want."
+> **Policy 2026-07-19: everything is upstreamable** ("clean and correct" is the bar;
+> squadron directive). The old ⛔ NEVER category is retired — its section below now
+> distinguishes **last-mile items** (need packaging/rationale, queue when ready) from
+> **merge-discipline divergences** (fork resolutions to preserve on dev-pulls, e.g.
+> where upstream already rejected a change).
 
 Working clones live at `..\retribution-pr` (and `..\pydcs-pr` for pydcs); see
 the [upstreaming-prs memory] / `docs/` runbook for the carve-out mechanics.
@@ -31,7 +33,7 @@ unvalidated "fix" is not something to ask upstream to take.
 | 🟠 CARE | Touches Lua / a vendored script — split the upstreamable Python from the fork glue |
 | 🔵 DONE / IN REVIEW | Already a merged or open upstream PR |
 | ⚪ WITHDRAWN | Was pushed, then self-closed — NOT upstream; re-carve if wanted |
-| ⛔ NEVER | Fork-specific — keep on `main`, do not upstream |
+| 🕐 LAST-MILE | Needs packaging (identity strip / defaults-with-rationale) before it can queue — nothing is permanently fork-only (2026-07-19 policy) |
 
 > **⚠️ Crowded-zone check before any carve (added 2026-06-27).** Upstream `dev` is now
 > actively worked by **prokop7** (a full planning-revamp suite: #676 BARCAP, #674 SEAD/DEAD,
@@ -49,7 +51,7 @@ unvalidated "fix" is not something to ask upstream to take.
 
 | # | Fix | Readiness | Value | Checklist |
 |---|---|---|---|---|
-| 1 | Landmap terrain-query perf | 🔵 IN REVIEW | High (broad: ~7 min off ground-gen) — **pushed as PR #842** | n/a (perf, gen-covered) |
+| 1 | Landmap terrain-query perf | ⚪ WITHDRAWN → re-carve | High (broad: ~7 min off ground-gen) — PR #842 **closed unmerged** (2026-07 refresh); ⚠️ overlaps juanjux's open #876 `shapely.contains_xy` PR — review theirs first, re-carve only the non-overlapping half (pickle re-prepare) | n/a (perf, gen-covered) |
 | 2 | DEAD reachability gate on follow-on strikes | 🟢 READY | High (planner correctness) | B2 ☑ |
 | 3 | Support-orbit depth + front-anchor | 🟢 READY | High (red AWACS/tanker placement) | C1, C2 ☑ |
 | 4 | Player-despawn loss accounting | 🟠 CARE | High (false combat losses) | D1 ☑ |
@@ -59,16 +61,17 @@ unvalidated "fix" is not something to ask upstream to take.
 | 8 | Recon fog-of-war (PR #1: intel-fog + overview toggle) | 🔵 IN REVIEW | Medium (player-facing) — **pushed as PR #828**, awaiting review | — |
 | 9 | Combat SAR — pilot rescue flight type + scoring | 🟠 CARE / 🟡 NEAR | High (whole new playable loop) | G8–G11, H2 ☐ |
 | 10 | Plugin `descriptionInUI` field (Plugin Options UI, §14) | 🔵 IN REVIEW | High (discoverability) — **pushed as PR #841** | — |
-| 11 | Era-gate payload-editor options (JHMCS property gating §24 **+** AAQ-33 redo) | 🔵 IN REVIEW | High (era realism, opt-in) — **pushed as PR #843** | I3 ☐ |
+| 11 | Era-gate payload-editor options (JHMCS property gating §24 **+** AAQ-33 redo) | 🔵 **MERGED 2026-07-19** (PR #843; upstream took the fork's final `date_gated_properties` shape — reconciled in the 2026-07-19 sync. ⚠️ upstream's aircraft-yaml copies froze a stale fork task-priority snapshot — owe a data-cleanup PR) | High (era realism, opt-in) | I3 ☐ |
 | 12 | Empty `aircraft:` key crashes New Game (`SquadronConfig.from_data` None guard; upstream's own *Northern Guardian* + *WRL Noisy Cricket Redux* ship the pattern) | 🟢 READY | Medium (two shipped campaigns unplayable) | n/a (unit-tested, generation-covered) |
-| 13 | High Digit SAMs **Ultimate Compilation** support (§41 generic core: retarget the toggle, renamed radars, 42 new units/7 presets/SAMP-T layout, `remove_vehicle` id-vs-name strip fix; no 414th faction enrichment) | 🔵 IN REVIEW | High (the original mod is dead; unlocks S-400/V4/SAMP-T for everyone) — **pushed as PR #851**, opened 2026-07-01 | N1 ☐ |
+| 13 | High Digit SAMs **Ultimate Compilation** support (§41 generic core: retarget the toggle, renamed radars, 42 new units/7 presets/SAMP-T layout, `remove_vehicle` id-vs-name strip fix; no 414th faction enrichment) | ⚪ WITHDRAWN → re-carve | High (the original mod is dead; unlocks S-400/V4/SAMP-T for everyone) — PR #851 **closed unmerged** (reason uninvestigated — check the PR thread before re-carving) | N1 ☐ |
 | 14 | **Germany - Red Tide campaign publication** (content-only: campaign yaml + miz with routes re-baked as M-113/HandyWind groups, new `Russia 1988` faction, 1-line blufor MPRS add, 44 historical squadron defs; 414th identity stripped from the upstream copy) | 🟡 NEAR | High (a full authored GermanyCW scenario campaign for everyone) — **payload READY** in `docs/dev/upstreaming/red-tide/` (`build_payload.py` regenerates; validated vs dev @ `dce851ea`); needs the current-dev headless validation + PR push from the Windows box (this sandbox can't reach the PR fork) | n/a (content; validated at carve) |
-| 15 | Per-squadron DCS country for nation-specific voiceovers + nation-aware pilot names (§23, generic core: `CountryAssigner` + `pilotnames.py`; no 414th faction content) | 🔵 IN REVIEW | Medium/High (mixed-nation CJTF sides get per-nation voices/comms/rosters) — resolves upstream issue #627; **pushed as PR #854**, opened 2026-07-03 | I1 ☑, I5 ☑ |
+| 15 | Per-squadron DCS country for nation-specific voiceovers + nation-aware pilot names (§23, generic core: `CountryAssigner` + `pilotnames.py`; no 414th faction content) | 🔵 **MERGED 2026-07-19** (PR #854, resolves upstream issue #627; upstream's copy adds `blue/red_country_ids` — adopted fork-side in the 2026-07-19 sync) | Medium/High (mixed-nation CJTF sides get per-nation voices/comms/rosters) | I1 ☑, I5 ☑ |
 | 16 | **AI helicopter terrain CFIT trio** (helo cruise waypoints at the dead `heli_cruise_alt_agl` setting; ≤5 NM RADIO terrain-anchor subdivision of long AI helo legs; air-start unit records mirroring the point `alt_type` — all three verified verbatim in upstream `dev`) | 🟡 NEAR | High (AI helos CFIT on every hilly map; the flown Red Tide M1 lost 3 Mi-8 + 1 Mi-24 to it) | C8 ☐ |
 | 17 | **Blue-block miz markers load + bind blue** (`MizCampaignLoader`: every marker class also walks the BLUE country block — blue-block ships/SAM/EWR/missile/coastal/offshore markers were silently dropped, 22 authored markers across 7 upstream campaigns never generated (Dynamo's evacuation flotilla, Allied Sword's oil platforms, Falklands task-force ships…) — and a blue-block marker binds the nearest BLUE CP instead of nearest-any; red-block markers keep the coalition-agnostic proximity convention, plus an actionable `generate_ewrs` no-ForceGroup error naming the stranded marker/CP) | 🟢 READY | High (restores authored content in 7 shipped campaigns; kills a silent authoring foot-gun) | n/a (tests/test_miz_marker_binding.py + the 7 campaigns headless-verified) |
 | 18 | **Ship-launched cruise missile strikes** (generic core of fork [414Ret#599](https://github.com/bradyccox/414Ret/pull/599): `game/cruisemissiles.py` LACM hull set + persisted no-rearm magazine + auto-raid planner, `cruisemissileluadata` emitter, `cruisemissiles` plugin — F10 call-for-fire with marker-text salvo sizing + magazine status — and the `cruise_missiles_state` debrief channel; fork couplings stripped: no ROE-zone gate, no `map_hidden`, no `enabled_when`) | 🔵 IN REVIEW | High (naval land-attack for every campaign; both settings default off) — **pushed as draft PR #872**, opened 2026-07-15 | n/a (unit-tested both sides; validated on dev @ `ef576acc`: pytest/Black/mypy clean) |
 | 19 | **Curated carrier comms** (§65 verbatim: `game/data/carrier_comms.py` per-hull boat cards, `TacanRegistry.alloc_near` nearest-neighbor degrade + `alloc_for_band` marking, `IclsAllocator`, the four `_resolve_*` precedence helpers + flagship hull-naming; NO fork couplings — the port only adds the Pretense allocator-type adaptation the fork doesn't need) | 🔵 IN REVIEW | High (every carrier campaign's CV Ops Data page reads real, stable boat data) — **pushed as draft PR #874**, opened 2026-07-16 | B18 ☐ |
 | 20 | **F-14A-135-GR-Early payload `unitType` fix** (upstream's `resources/customized_payloads/F-14A-135-GR-Early.lua` declares `["unitType"] = "F-14A-135-GR"`; pydcs binds payload files by that field, so the whole file never attaches to the Early jet — upstream's Early Tomcat resolves NO presets for any task and auto-plans with an empty loadout. One-line fix; found 2026-07-17 root-causing the fork's own F-14 empty-payload regression, see `414th-loadout-integrity-audit-notes.md` addendum) | 🟢 READY | Medium (upstream's Early Tomcat flies every tasking unarmed) | n/a (guarded by `tests/test_f14_loadouts.py`) |
+| 21 | **Splash Damage tuned values as upstream's new defaults** (2026-07-19 policy: a *fix to shipping defaults*, not identity — upstream's stock `sd3-config.lua` values damage buildings ~a mile from the impact point; the 414th build was tuned against that and has flown clean for months: `overall_scaling=0.6`, `rocket_multiplier=0.8`, `static_damage_boost=1`, shaped-charge rocket flags, `game_messages=true`. Carve = a PR editing **upstream's own** `sd3-config.lua` defaults (their `Splash_Damage_3.4.2_Standard_Retribution.lua` + config layout stays; the fork's settings-locked single-file packaging does NOT travel) with the what/why writeup and before/after ranges) | 🕐 LAST-MILE → 🟢 once the writeup is drafted | High (every campaign's ground strikes stop over-killing scenery) | n/a (values flown across the fork's campaigns since the buddy-tune) |
 
 ---
 
@@ -303,35 +306,39 @@ unvalidated "fix" is not something to ask upstream to take.
 
 ---
 
-## ⛔ Fork-specific — do NOT upstream
+## 🕐 Last-mile queue + merge-discipline divergences
+
+> **2026-07-19 policy: nothing is permanently fork-only.** The old ⛔ section split
+> into two different things. **Last-mile items** are upstreamable once packaged —
+> each carries its upstream story in the
+> [roadmap's last-mile queue](414th-community-contribution-roadmap.md) (Splash
+> Damage defaults = queue item 21 above; Iran pack re-carve; doctrine
+> defaults-with-rationale; the C-130J physics constants and TIC tuning riding their
+> Tier-3 feature carves; campaign content after identity-strip passes).
+> **Merge-discipline divergences** (below) are fork resolutions to *preserve on
+> dev-pulls* — either upstream already ruled on them, or they exist because the two
+> codebases' architectures differ. They are not upstream candidates, but for
+> concrete recorded reasons, not by category.
 
 - **C-130J EW (`c130j`) plugin de-conflict on SOF inserts**
-  (`game/missiongenerator/luagenerator.py` `_sof_c130_present`): skips the 414th
-  EW/ISR plugin when a `FlightType.SOF` flight is a C-130J-30. Depends entirely
-  on the fork's `c130j` plugin and `FlightType.SOF` — meaningless upstream.
-- **The 414th content + identity + multi-turn-economy layer** — the Red Tide and
-  Operation Shattered Dagger campaigns, the [CH] Iran 2020 faction (CurrentHill mod
-  dependency), the doctrine *default values* (QRA radii/probability), the SCAR
-  commander-capture / SOF / CSAR economy loop, the C-130J EW *physics constants*, and
-  the TIC stance tuning. These stay on `main`.
-  > **Re-scoped:** the *feature mechanisms* underneath — the SCAR base task, TIC, TARS,
-  > the QRA reserve model, the `FlightType.JAMMING` framework — are
-  > **high community value, hard carve**, not "never want." They moved out of this ⛔
-  > list into the
-  > [community contribution roadmap](414th-community-contribution-roadmap.md) (Tier 3),
-  > the same way recon fog moved from ⛔ to queue item 8. Only the doctrine/economy
-  > slivers above stay here.
-- **Splash Damage 3.4.2 414th buddy-tuned build** — pinned, intentionally
-  divergent from upstream/source. Never push upstream or overwrite from it.
+  (`game/missiongenerator/luagenerator.py` `_sof_c130_present`): fork glue between
+  two fork features — travels with the C-130J framework carve, never alone.
+- **Splash Damage 414th build packaging** — the *values* are queue item 21 (ship
+  upstream as new defaults with the mile-away-building-damage rationale). The
+  fork-side *packaging* (single pinned file, settings locked, no `sd3-config.lua`)
+  stays a fork choice: do not overwrite the pinned file from upstream, and do not
+  reintroduce the config layer locally, even after the values land upstream.
 - **AGM-65 Maverick date-fallback → Mk-20 Rockeye** (`resources/weapons/standoff/AGM-65A.yaml`,
-  `fallback: Mk-20 Rockeye`). The whole AGM-65 family chains its pre-1972 degrade through this
-  node; the fork degrades Mavericks to an anti-armor cluster (Rockeye) rather than the
-  ~1100 lb TV-guided AGM-62 Walleye, because a Maverick is a CAS/anti-armor PGM. **Upstream
-  rejected this** on PR #847 (Druss99: loadout/fallback choices target AI mission performance,
-  not historical accuracy, and the Walleye is the preferred standoff-class fallback), so #847's
-  AGM-65A was reverted to the upstream `AGM-62 Walleye II`. **Keep the Rockeye reroute on the
-  fork** — do NOT let a future carve or dev-pull "fix" it back to Walleye. (The expanded AGM-65A
-  CLSID coverage is shared with upstream and is fine to keep in sync.)
+  `fallback: Mk-20 Rockeye`). **Upstream ruled on this** (PR #847, Druss99: fallbacks
+  target AI mission performance; Walleye preferred), so #847's AGM-65A was reverted
+  upstream. Keep the Rockeye reroute on the fork — do NOT let a future carve or
+  dev-pull "fix" it back to Walleye, and do not re-propose without new evidence.
+- **#879 alarm-state adaptation** (2026-07-19 sync): upstream forces GREEN/RED on
+  every TGO group via `perf_red_alert_state`; the fork removed that toggle (#231 —
+  MANTIS owns networked SAM alarm state at runtime), so the fork's
+  `set_alarm_state` writes RED only for ships (`force_red`) and dedicated EWR
+  sites, and nothing otherwise (DCS AUTO). Preserve on every dev-pull;
+  `tests/missiongenerator/test_ewr_enroute_task.py` pins the fork contract.
 - **PR #823 frontline merge divergences** (adopted 2026-06-26, not a carve-out —
   the inverse: we pulled upstream PR #823's composition/stance *into* the fork).
   Two fork-specific divergences to **preserve when #823 (or its descendants) lands

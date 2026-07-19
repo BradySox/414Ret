@@ -79,12 +79,17 @@ file. This guide is the map; those are the territory.
   Archive once the Aug-1 wave is processed.
 - [docs/dev/414th-upstreaming-inventory.md](docs/dev/414th-upstreaming-inventory.md) — the
   **upstreaming queue**: which generic fixes to carve toward `bradyccox/dcs-retribution`
-  (priority-ordered, with readiness marks) and which fork-specific bits must NEVER go upstream.
+  (priority-ordered, with readiness marks), plus the **last-mile items** (need
+  packaging/rationale) and the **merge-discipline divergences** to preserve on dev-pulls.
+  **Policy 2026-07-19: everything is upstreamable — "clean and correct" is the bar; there
+  is no permanent fork-only category.**
 - [docs/dev/414th-community-contribution-roadmap.md](docs/dev/414th-community-contribution-roadmap.md) —
-  the **long view**: a two-axis (community-value × carve-difficulty) re-classification of
-  *every* feature, separating the thin genuinely-414th content/identity/economy layer from the
-  large generic-capability set, with a strip-list per feature and the ordered contribution waves
-  for giving the rest back upstream.
+  the **long view** (rewritten 2026-07-19 for the everything-upstreamable policy + contributor
+  status): the two-axis (community-value × carve-difficulty) classification of *every* feature
+  through §73, the **last-mile queue** (Splash Damage defaults, Iran pack, doctrine defaults,
+  campaign content — each with its upstream story), the three workstreams
+  (**reconcile-on-merge** · drain the queue · package the last mile), and the updated wave
+  program.
 - [docs/dev/design/](docs/dev/design/) — per-feature design notes (read before touching the
   matching code):
   - `414th-air-defense-planning-notes.md` — CAP/BARCAP/QRA planning intent
@@ -2770,7 +2775,11 @@ Cleanup scripts and agents must never recursively delete `tmp/` without this che
 buddy-tuned Splash Damage build (`overall_scaling=0.6`, `rocket_multiplier=0.8`,
 `static_damage_boost=1`, shaped-charge rocket flags, `game_messages=true`). Do NOT overwrite
 it from upstream. Settings are LOCKED by design: `plugin.json` has no `specificOptions` and
-`sd3-config.lua` was removed. Don't reintroduce the config layer.
+`sd3-config.lua` was removed. Don't reintroduce the config layer. (The *values* are an
+upstream candidate — inventory item 21, 2026-07-19 policy: upstream's stock defaults damage
+buildings ~a mile out, so ship ours back as their new defaults with the rationale. That PR
+edits upstream's own config; this pinned file and its locked packaging stay fork-side either
+way.)
 
 ---
 

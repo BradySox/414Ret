@@ -2970,6 +2970,53 @@ circles read alike), and the map's core planning actions were invisible right-cl
   ("Left-click: select this flight" in the tooltip — the one clickable overlay the §28 pass missed).
   Validated with `tsc --noEmit` + the full client jest suite (scratchpad-copy workaround).
 
+### Dialogs are clamped to the screen (2026-07-19, the "windows are clipping" report)
+
+The Edit Flight dialog opened with its **title bar above the top of the display** (screenshot: the
+tab bar flush against y=0, no window chrome) and carried a ~260 px band of dead space under the
+form. Both symptoms came from Qt sizing dialogs purely from their content, measured offscreen
+against the reporter's save on a 1440p panel at 150 % scaling (**928 logical px** usable):
+
+| Tab | Height demanded |
+|---|---|
+| General Flight settings (visible) | 856 px |
+| **Payload** (hidden) | **1080 px** |
+| Waypoints (hidden) | 878 px |
+| **Dialog opened at** | **1115 px** |
+
+Two independent causes, two fixes:
+
+- **`QTabWidget.sizeHint()` expands over *every* page**, so the dialog was sized for its tallest
+  *hidden* tab — the General tab rendered 856 px of form inside a 1115 px window, hence the dead
+  space. `QFlightPlanner.sizeHint()` now substitutes the **current** page's height, keeping the base
+  width and the tab-bar/frame chrome. Setting the hidden pages' size policy to `Ignored` is the
+  usual recipe and **does not work** — verified with a standalone Qt probe: `QTabWidget::sizeHint`
+  expands over the pages regardless of policy (only `minimumSizeHint` honours it). Only the hint
+  changes; nothing forces a resize, so switching tabs never yanks a window the user has sized.
+  Worst case across every flight in the save: **1119 px → 899 px**.
+- **Nothing in the app was screen-aware.** Of 34 `QDialog` subclasses exactly two consulted
+  `availableGeometry` (the main window, and `QSettingsWindow`, which had grown its own ad-hoc clamp
+  for this same complaint); the rest could open at any size, and several declare minimums that
+  cannot fit a small display at all (`AirWingConfigurationDialog` asks for **1024x768** — impossible
+  on 1080p at 150 %, which leaves 672 px). New `qt_ui/screenfit.py`: `fitted_geometry` (a pure
+  shrink-then-move, unit-tested without a display) + `fit_to_available_screen` (relaxes an
+  over-tall **minimum size** first, or Qt silently ignores the resize; accounts for window chrome;
+  logs a warning when even the layout minimum cannot fit, so the residual case is diagnosable rather
+  than mysterious) + `ScreenFitFilter`, an application event filter installed once in `main.py` that
+  fits every dialog on show. No per-dialog wiring, and a no-op for the dialogs that already fit.
+
+End-to-end verified offscreen against the reported display: every flight's Edit Flight dialog now
+lands at 835–893 px fully inside 1706x928 (was 1115–1119, overflowing), and a deliberately 3000 px
+dialog is clamped fully on-screen through the real filter. Tests `tests/test_screenfit.py` (pure
+geometry incl. the negative-origin second monitor and the title-bar-off-the-top case, plus offscreen
+Qt for the minimum-size relaxation and the already-fits no-op).
+
+**Deliberately not done:** retro-wrapping dialog content in scroll areas. Every dialog's layout
+*minimum* fits the reported display once clamped, so the wrap would have been dormant, untested
+code; the log warning marks the spot if a smaller display ever needs it. The stylesheet's 139
+`px`-valued rules (10 distinct `font-size: Npx`) were also left alone — Qt scales them by the device
+pixel ratio, so they are a font-preference wart rather than the clipping cause.
+
 ## §29 — Campaign SITREP kneeboard band
 
 A "what happened last turn" digest on the player's next kneeboard — a morning intel brief in the

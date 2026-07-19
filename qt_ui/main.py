@@ -36,6 +36,7 @@ from qt_ui import (
     liberation_theme,
     uiconstants,
 )
+from qt_ui.screenfit import ScreenFitFilter
 from qt_ui.uiflags import UiFlags
 from qt_ui.windows.GameUpdateSignal import GameUpdateSignal
 from qt_ui.windows.QLiberationWindow import QLiberationWindow
@@ -181,6 +182,13 @@ def run_ui(game: Optional[Game], ui_flags: UiFlags) -> None:
     )
 
     app = QApplication(sys.argv)
+
+    # Nothing else in the app is screen-aware: a dialog sizes to its content with
+    # no upper bound, so a tall one (the Edit Flight dialog wants ~1115 logical px)
+    # opens with its title bar above the top of a smaller or scaled display. Fit
+    # every dialog to its screen as it is shown; a no-op for those that fit.
+    screen_fit_filter = ScreenFitFilter(app)
+    app.installEventFilter(screen_fit_filter)
 
     # init the theme and load the stylesheet based on the theme index
     liberation_theme.init()

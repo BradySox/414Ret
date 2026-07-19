@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtWidgets import QTabWidget
 
 from game.ato.flight import Flight
@@ -36,3 +36,26 @@ class QFlightPlanner(QTabWidget):
         self.addTab(self.payload_tab, "Payload")
         self.addTab(self.waypoint_tab, "Waypoints")
         self.setCurrentIndex(0)
+
+    def sizeHint(self) -> QSize:
+        """Size to the page on screen, not to the tallest page.
+
+        QTabWidget's own hint expands over *every* page, so the dialog opened
+        sized for its tallest hidden page: the General tab (~856 px) rendered in
+        a window sized for the hidden Payload tab (~1080 px), leaving a ~260 px
+        band of dead space under the form. Setting the hidden pages'
+        size policy to Ignored does not help -- QTabWidget::sizeHint expands
+        over the pages regardless of policy -- so substitute the current page's
+        height, keeping the base width and the tab bar/frame chrome.
+
+        Only the hint changes. Nothing forces a resize, so switching tabs leaves
+        a window the user (or the screen-fit clamp) has already sized alone; a
+        taller page simply uses the space it has.
+        """
+        base = super().sizeHint()
+        current = self.currentWidget()
+        if current is None or not self.count():
+            return base
+        tallest = max(self.widget(i).sizeHint().height() for i in range(self.count()))
+        chrome = base.height() - tallest
+        return QSize(base.width(), current.sizeHint().height() + chrome)

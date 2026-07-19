@@ -1101,6 +1101,27 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     type-checked; validated via `tsc` + the `FrontLine` test mock). The four tracks came off the
     56-finding UI audit; deferred: a full right-click context menu + Leaflet-tooltip theming + the deeper
     flow reworks.
+    **Dialogs are clamped to the screen (2026-07-19, the "windows are clipping / UI scaled screwed
+    up" report):** the Edit Flight dialog opened with its **title bar above the top of the display**
+    and carried ~260 px of dead space under the form. Measured offscreen on the reported 1440p @150 %
+    panel (**928 logical px** usable): the dialog wanted **1115 px**, because (a) `QTabWidget.sizeHint`
+    expands over EVERY page, so it was sized for the tallest *hidden* tab (Payload 1080) while showing
+    the General tab (856) — `QFlightPlanner.sizeHint()` now substitutes the **current** page's height
+    (the usual `Ignored` size-policy recipe does NOT work — probe-verified, `QTabWidget::sizeHint`
+    ignores policy; only `minimumSizeHint` honours it), worst case **1119 → 899 px**; and (b) of 34
+    `QDialog` subclasses only two ever consulted `availableGeometry` (the main window + the settings
+    dialog's ad-hoc clamp), and several declare minimums that cannot fit a small display at all
+    (`AirWingConfigurationDialog` 1024x768 vs 672 px on 1080p @150 %). New **`qt_ui/screenfit.py`** —
+    `fitted_geometry` (pure shrink-then-move) + `fit_to_available_screen` (relaxes an over-tall
+    **minimum size** first, or Qt silently ignores the resize; chrome-aware; logs a warning when even
+    the layout minimum can't fit) + `ScreenFitFilter`, an app event filter installed once in `main.py`
+    that fits every dialog on show (no per-dialog wiring; no-op when it already fits). Verified
+    end-to-end offscreen: every flight's dialog lands at 835–893 px inside 1706x928, and a 3000 px
+    test dialog is clamped fully on-screen. Tests `tests/test_screenfit.py`. Deliberately NOT done:
+    retro-wrapping dialogs in scroll areas (every layout minimum fits once clamped, so it would be
+    dormant untested code — the log warning marks the spot) and the stylesheet's 139 `px` rules (Qt
+    scales them by DPR; a font-preference wart, not the clipping cause). `qt_ui` is not CI
+    type-checked — needs an app-side eyeball, checklist B27.
 29. **Campaign SITREP kneeboard band** — a "what happened last turn" digest on the next mission's
     kneeboard (a cockpit intel brief). `MissionResultsProcessor.commit()` gets a final
     `record_sitrep` step that reads the debriefing it already has — per-side losses (`loss_counts`),

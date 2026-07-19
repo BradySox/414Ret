@@ -1,10 +1,13 @@
 """Headless runtime check for the dynamic deck respot (deckdecor-config.lua).
 
 Pins the §72 launch-phase contract: the launch statics are struck below the
-moment friendly fixed-wing traffic appears low astern of the boat (the CASE I
-initial / CASE III straight-in profile), or at the fallback time regardless --
-never before the grace, never for high traffic, traffic ahead, helicopters, or
-a jet still on deck; a mission without the deckDecor node is a clean no-op.
+moment friendly fixed-wing traffic genuinely runs in low astern of the boat
+(the CASE I initial / CASE III straight-in profile), or at the fallback time
+regardless -- never before the grace, never for high traffic, traffic ahead,
+helicopters, a jet still on deck, deck riders on a steaming boat (the
+moving-deck inAir quirk), a jet this deck just launched (the outbound
+roster), or traffic whose SHIP-RELATIVE closing speed is below the gate; a
+mission without the deckDecor node is a clean no-op.
 Whether DCS renders the despawn cleanly on a moving deck is the in-game pass
 (checklist B25).
 """
@@ -21,13 +24,21 @@ STATIC = "CSG 1 deck decor 17 object"
 NM = 1852.0
 
 
-def _boat(x: float = 0.0, z: float = 0.0) -> dict[str, Any]:
+def _boat(
+    x: float = 0.0, z: float = 0.0, velocity: dict[str, float] | None = None
+) -> dict[str, Any]:
     return {
         "name": "CSG 1",
         "side": 2,
         "category": 3,  # SHIP
         "units": [
-            {"name": "CVN-71 Theodore Roosevelt", "type": "CVN_71", "x": x, "z": z}
+            {
+                "name": "CVN-71 Theodore Roosevelt",
+                "type": "CVN_71",
+                "x": x,
+                "z": z,
+                "velocity": velocity or {"x": 0.0, "y": 0.0, "z": 0.0},
+            }
         ],
     }
 
@@ -61,7 +72,9 @@ def _aircraft(
 
 
 def _harness(
-    fallback_min: float = 30.0, airboss: dict[str, Any] | None = None
+    fallback_min: float = 30.0,
+    airboss: dict[str, Any] | None = None,
+    boat_velocity: dict[str, float] | None = None,
 ) -> DcsPluginHarness:
     h = DcsPluginHarness()
     plugins: dict[str, Any] = {
@@ -95,7 +108,7 @@ def _harness(
             },
         }
     )
-    h.add_group(_boat())
+    h.add_group(_boat(velocity=boat_velocity))
     h.add_static({"name": STATIC})
     return h
 
@@ -168,6 +181,106 @@ def test_launch_traffic_crossing_astern_never_clears() -> None:
 
     h.advance_to(600)
     assert h.records("destroyedStatics") == []
+    h.assert_no_lua_errors()
+
+
+def test_deck_riders_on_a_fast_boat_never_clear() -> None:
+    """The 2026-07-18 night-fly falsification (GW t+74s, TR t+171s): jets
+    parked on the AFT rows ride the steaming boat 130-170 m astern of the
+    ship's pivot, DCS reports units on a moving deck as inAir(), and with
+    world-frame closing they read as "low astern, closing at boat speed".
+    The deck-footprint floor + ship-relative closing keep them from ever
+    clearing the deck, however fast the boat steams."""
+    fast = {"x": 0.0, "y": 0.0, "z": 18.0}  # boat making 35 kt east
+    h = _harness(boat_velocity=fast)
+    # Aft parking row: astern of the pivot, "airborne" per the moving-deck
+    # quirk, riding at exactly the boat's velocity.
+    h.add_group(
+        _aircraft("Rider1", x=10.0, z=-140.0, alt=22.0, airborne=True, velocity=fast)
+    )
+    h.add_group(
+        _aircraft("Rider2", x=-8.0, z=-165.0, alt=22.0, airborne=True, velocity=fast)
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.advance_to(600)
+    assert h.records("destroyedStatics") == []
+    h.assert_no_lua_errors()
+
+
+def test_closing_is_measured_relative_to_the_boat() -> None:
+    """A jet astern moving at 33 kt world-frame "closes" past the 30 kt gate
+    only if the boat is ignored -- against a 35 kt boat it is actually
+    falling behind, and must never clear the deck."""
+    fast = {"x": 0.0, "y": 0.0, "z": 18.0}
+    h = _harness(boat_velocity=fast)
+    h.add_group(
+        _aircraft(
+            "Trailer",
+            x=0.0,
+            z=-2.5 * NM,
+            alt=200.0,
+            velocity={"x": 0.0, "y": 0.0, "z": 17.0},
+        )
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.advance_to(600)
+    assert h.records("destroyedStatics") == []
+    h.assert_no_lua_errors()
+
+
+def test_recovery_on_a_moving_boat_still_clears() -> None:
+    """The positive half of ship-relative closing: a genuine run-in on a
+    35 kt boat still closes 130+ kt relative and clears after the debounce."""
+    fast = {"x": 0.0, "y": 0.0, "z": 18.0}
+    h = _harness(boat_velocity=fast)
+    h.add_group(
+        _aircraft(
+            "Marshal",
+            x=0.0,
+            z=-3.5 * NM,
+            alt=250.0,
+            velocity={"x": 0.0, "y": 0.0, "z": 85.0},
+        )
+    )
+    h.load_plugin_script(PLUGIN)
+
+    h.advance_to(35)
+    assert h.records("destroyedStatics") == []
+    h.advance_to(45)
+    assert h.records("destroyedStatics") == [STATIC]
+    h.assert_no_lua_errors()
+
+
+def test_freshly_launched_jet_is_suppressed_by_the_outbound_roster() -> None:
+    """A jet the polls saw ON this deck is launch traffic: however low,
+    astern, and genuinely closing its turnback looks, it cannot clear the
+    deck until the suppress window lapses -- then a real pattern entry can."""
+    h = _harness()
+    h.add_group(_aircraft("Cat1", x=50.0, z=-120.0, alt=20.0, airborne=False))
+    h.load_plugin_script(PLUGIN)
+
+    # First poll (grace 30) stamps it on deck.
+    h.advance_to(35)
+    assert h.records("destroyedStatics") == []
+    # It launches and turns back past the boat: 2 NM astern, low, closing
+    # fast -- exactly what a recovery looks like, except we saw it launch.
+    h.update_unit(
+        "Cat1",
+        {
+            "z": -2 * NM,
+            "alt": 200.0,
+            "airborne": True,
+            "velocity": {"x": 0.0, "y": 0.0, "z": 140.0},
+        },
+    )
+    h.advance_to(500)
+    assert h.records("destroyedStatics") == []
+    # Past the suppress window (stamped ~30s + 600s) the same geometry is a
+    # genuine recovery again and clears after the two-poll debounce.
+    h.advance_to(700)
+    assert h.records("destroyedStatics") == [STATIC]
     h.assert_no_lua_errors()
 
 

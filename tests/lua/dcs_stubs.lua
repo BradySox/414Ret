@@ -313,6 +313,24 @@ function Harness.addGroup(spec)
     return grp
 end
 
+-- Mutate a live unit's fields mid-test (teleport, airborne flip, velocity...):
+-- the harness has no physics, so mover tests reposition units by hand.
+function Harness.updateUnit(groupName, unitIndex, fields)
+    local g = Harness.groupsByName[groupName]
+    if not g then
+        error("updateUnit: no such group " .. tostring(groupName))
+    end
+    local u = g.units[unitIndex]
+    if not u then
+        error(
+            "updateUnit: no unit " .. tostring(unitIndex) .. " in " .. tostring(groupName)
+        )
+    end
+    for k, v in pairs(fields) do
+        u[k] = v
+    end
+end
+
 coalition.getGroups = function(side, category)
     local byCat = Harness.groupsBySideCat[side]
     if not byCat then

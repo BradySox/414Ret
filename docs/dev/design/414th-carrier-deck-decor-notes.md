@@ -254,6 +254,57 @@ the cat; the CASE I initial at 800 ft and CASE III finals stay below it), a
 debounce** (a transient closing moment never clears). Harness-pinned in both
 directions.
 
+## The second falsification: the deck itself was the "recovery traffic" (2026-07-18 night)
+
+The night re-fly false-tripped the cone **twice more**, bracketing the hardening:
+the 21:58 Scenic Route turn-3 flight (generated 32 min before #650 merged, so it
+flew the pre-hardening cone) struck GW's corridor set at **t+74 s** — the first
+poll after grace — and the 22:42 Dust-to-Dust flight, on the **hardened** build
+(armed line confirms 1 000 ft), struck TR's at **t+171 s**. Nothing recovers three
+minutes into a fresh mission.
+
+The Tacview forensics on the GW flight found the real qualifier class: **the aft
+parking rows themselves**. Parked jets ride the steaming boat 130–170 m astern of
+the ship's *pivot point* (inside the cone's ±50° and beyond its old 100 m floor),
+DCS reports units on a moving deck as `inAir()`, and with the world-frame
+`getVelocity()` the whole row "closes" at exactly boat speed — GW made 22 kt, under
+the 30 kt gate by 8 kt of luck; TR evidently didn't get the luck (faster boat
+and/or a genuine sub-1 000 ft launch turnback, indistinguishable without its
+Tacview — both modes are covered below). The airborne traffic that early (the
+air-spawned E-2/A-6 support flights, which materialize 0.3–0.9 NM astern at
+500–900 ft) *opens* astern at 200+ kt and never qualifies.
+
+Hardening v2 (same night), three rules that kill the family rather than the
+instance:
+
+- **Ship-relative closing** — `closing = -((v_unit - v_boat) · d̂)`: a deck rider
+  closes at ~0 however fast the boat steams; a genuine recovery closes 120+ kt
+  regardless of boat speed. (The ship unit's `getVelocity()` is the reference.)
+- **Deck-footprint stamp radius** — anything within **400 m** of the boat is deck
+  traffic, never a trip source (replaces the 100 m floor, which the aft rows
+  out-ranged).
+- **The outbound roster** — every unit seen inside the stamp radius (parked,
+  taxiing, cat stroke, bolter) is stamped per boat, and a stamped unit cannot read
+  as recovery traffic for **600 s** after it was last seen there: a jet fresh off
+  this deck is its own launch traffic however low and inbound its turnback looks.
+  A genuine recovery starts miles out, is never stamped, and still clears through
+  the debounce; a returning own-launch jet becomes eligible again once the window
+  lapses (by which point the airboss deadline has usually cleared the deck anyway).
+
+Harness-pinned in `tests/lua/test_deckdecor_runtime.py`: deck riders on a 35 kt
+boat never clear, sub-boat-speed world-frame closers never clear, the roster
+suppresses a fresh launcher's low closing turnback then lapses, and a genuine
+run-in on a moving boat still clears. Known residual (accepted): polls only start
+at the 60 s grace, so a jet that launched inside the first minute would miss its
+stamp — no AI airframe launches that fast from a cold deck.
+
+One stale-options footnote from the same night: plugin option values bake into a
+campaign save when the save first runs under a build that has the plugin, so the
+Scenic Route save (loaded under the pre-#650 plugin.json) still carries
+`coneAltFt: 3000` and will keep feeding it — reset it in the plugin options UI or
+accept the wider ceiling (the v2 gates above don't depend on it). Campaigns first
+loaded post-#650 pick up 1 000 ft normally.
+
 ## Filling the deck (2026-07-18, "go back and look at layouts again")
 
 **⚠️ Partially REVERSED the same day** — the permanent aircraft sub-zones described

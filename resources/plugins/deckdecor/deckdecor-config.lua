@@ -12,6 +12,11 @@
 --   * the fallback timer -- launches are long over, clear the deck regardless, so a hazard
 --     never waits on detection.
 --
+-- The cone counts ONLY genuine run-ins: closing speed is SHIP-RELATIVE, nothing within the
+-- deck footprint can trip, and any unit recently seen on/over this deck (the outbound
+-- roster) is its own launch traffic, not a recovery -- see the gate comments below for the
+-- two flown falsifications (2026-07-18) that forced each rule.
+--
 -- Reads dcsRetribution.deckDecor (emitted by game/missiongenerator/deckdecorluadata.py: one
 -- record per boat -- ship group name, flagship unit name, side, generation-time BRC, and the
 -- static unit names to clear); inert when that node is absent. The BRC comes from generation
@@ -112,10 +117,31 @@ for i = 1, #boatsData do
         sternZ = -math.sin(math.rad(brc)),
         clearNames = b.clearNames or {},
         cleared = false,
+        -- unit name -> last time it was seen within DECK_STAMP_M of the boat;
+        -- bounded by the airframes that ever touch the deck.
+        outboundRoster = {},
     })
 end
 
-local function boatPosition(boat)
+-- The 2026-07-18 night fly falsified the world-frame closing gate twice (GW at
+-- t+74s pre-hardening, TR at t+171s post-hardening): deck-parked jets RIDE the
+-- steaming boat, DCS reports units on a moving deck as inAir(), and the aft
+-- parking rows sit 130-170 m astern of the ship's pivot point -- so the parked
+-- row itself read as "low astern, closing at boat speed", and a jet fresh off
+-- the cat is low astern and genuinely closing as it turns back. Three rules
+-- kill the family for good:
+--   * closing is SHIP-RELATIVE (a deck rider closes at ~0 however fast the
+--     boat steams; a real recovery closes at 120+ kt regardless),
+--   * nothing within DECK_STAMP_M of the boat can trip -- that is the deck
+--     footprint and the launch bubble, not approach airspace,
+--   * the outbound roster: a unit seen inside DECK_STAMP_M -- parked, taxiing,
+--     or on the cat stroke -- is stamped as this boat's own traffic and cannot
+--     read as recovery traffic for OUTBOUND_SUPPRESS_S after it was last seen
+--     there. A genuine recovery starts miles out and is never stamped.
+local DECK_STAMP_M = 400
+local OUTBOUND_SUPPRESS_S = 600
+
+local function boatUnit(boat)
     local grp = Group.getByName(boat.group)
     if not grp or not grp:isExist() then
         return nil
@@ -124,7 +150,7 @@ local function boatPosition(boat)
     for i = 1, #units do
         local u = units[i]
         if u and u:isExist() then
-            return u:getPoint()
+            return u
         end
     end
     return nil
@@ -150,31 +176,44 @@ local function clearBoat(boat, why)
     end
 end
 
-local function approachDetected(boat, bp)
-    -- True only for traffic that LOOKS like a recovery: low, astern, and
-    -- CLOSING on the boat -- a freshly-launched jet turning back past the
-    -- boat is low and astern but crossing, not running in (the 2026-07-18
-    -- flown false trip). The caller additionally debounces over CONE_POLLS
-    -- consecutive polls so a transient crossing never clears the deck.
+local function approachDetected(boat, bp, bv, now)
+    -- True only for traffic that LOOKS like a recovery: low, astern, CLOSING
+    -- on the boat in the boat's own frame, and not something this deck just
+    -- launched (the outbound roster). The caller additionally debounces over
+    -- CONE_POLLS consecutive polls so a transient closing moment never clears
+    -- the deck. Keeps walking after a trip so every deck unit still gets its
+    -- roster stamp for this poll.
+    local roster = boat.outboundRoster
+    local tripped = false
     local groups = coalition.getGroups(boat.side, Group.Category.AIRPLANE)
     for i = 1, #groups do
         local units = groups[i]:getUnits()
         for j = 1, #units do
             local u = units[j]
-            if u and u:isExist() and u:inAir() then
+            if u and u:isExist() then
                 local p = u:getPoint()
-                if p.y - bp.y < CONE_ALT_M then
-                    local dx = p.x - bp.x
-                    local dz = p.z - bp.z
-                    local dist = math.sqrt(dx * dx + dz * dz)
-                    if dist > 100 and dist < CONE_DIST_M then
+                local dx = p.x - bp.x
+                local dz = p.z - bp.z
+                local dist = math.sqrt(dx * dx + dz * dz)
+                if dist < DECK_STAMP_M then
+                    -- On or over the deck (parked, taxiing, cat stroke,
+                    -- bolter): this boat's own traffic, never a trip source.
+                    roster[u:getName()] = now
+                elseif not tripped and u:inAir() and dist < CONE_DIST_M then
+                    local stamped = roster[u:getName()]
+                    if
+                        (stamped == nil or now - stamped > OUTBOUND_SUPPRESS_S)
+                        and p.y - bp.y < CONE_ALT_M
+                    then
                         local cosang = (dx * boat.sternX + dz * boat.sternZ) / dist
                         if cosang > CONE_COS then
                             local v = u:getVelocity()
-                            local closing = -((v.x or 0) * dx + (v.z or 0) * dz)
-                                / dist
+                            local closing = -(
+                                ((v.x or 0) - (bv.x or 0)) * dx
+                                + ((v.z or 0) - (bv.z or 0)) * dz
+                            ) / dist
                             if closing > CONE_CLOSING_MS then
-                                return true
+                                tripped = true
                             end
                         end
                     end
@@ -182,7 +221,7 @@ local function approachDetected(boat, bp)
             end
         end
     end
-    return false
+    return tripped
 end
 
 local function tick()
@@ -193,12 +232,15 @@ local function tick()
             if timer.getTime() >= CLEAR_DEADLINE_S then
                 clearBoat(boat, DEADLINE_WHY)
             else
-                local bp = boatPosition(boat)
-                if bp == nil then
+                local bu = boatUnit(boat)
+                if bu == nil then
                     -- Boat gone (sunk/despawned): nothing left to protect.
                     boat.cleared = true
                 else
-                    local ok, tripped = pcall(approachDetected, boat, bp)
+                    local bp = bu:getPoint()
+                    local bv = bu:getVelocity()
+                    local ok, tripped =
+                        pcall(approachDetected, boat, bp, bv, timer.getTime())
                     if ok and tripped then
                         boat.approachPolls = (boat.approachPolls or 0) + 1
                         if boat.approachPolls >= CONE_POLLS then

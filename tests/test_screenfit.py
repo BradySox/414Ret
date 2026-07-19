@@ -114,3 +114,49 @@ def test_dialog_that_already_fits_is_left_alone(qapp: Any) -> None:
     fit_to_available_screen(dialog, margin=24, available=QRect(0, 0, 1706, 928))
 
     assert dialog.geometry() == before
+
+
+def test_filter_survives_a_non_qobject_watched(qapp: Any) -> None:
+    """PySide6 does not guarantee the ``watched`` wrapper is a QObject.
+
+    An application-wide filter sees every event in the process, and a QWidgetItem
+    (a QLayoutItem -- not a QObject) was observed reaching this filter in the field.
+    Forwarding that to ``QObject.eventFilter``'s C++ signature raised TypeError on
+    every such event. The filter must absorb it and report "not handled".
+    """
+    from PySide6.QtCore import QEvent
+    from PySide6.QtWidgets import QWidget, QWidgetItem
+
+    from qt_ui.screenfit import ScreenFitFilter
+
+    watched = QWidgetItem(QWidget())  # exactly the type from the reported traceback
+    assert ScreenFitFilter().eventFilter(watched, QEvent(QEvent.Type.Show)) is False
+
+
+def test_filter_fits_a_dialog_on_show(qapp: Any) -> None:
+    from PySide6.QtCore import QEvent
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtWidgets import QDialog
+
+    from qt_ui.screenfit import ScreenFitFilter
+
+    dialog = QDialog()
+    dialog.resize(4000, 3000)  # far larger than any real screen
+    assert ScreenFitFilter().eventFilter(dialog, QEvent(QEvent.Type.Show)) is False
+
+    available = QGuiApplication.primaryScreen().availableGeometry()
+    assert dialog.width() <= available.width()
+    assert dialog.height() <= available.height()
+
+
+def test_filter_ignores_events_that_are_not_show(qapp: Any) -> None:
+    from PySide6.QtCore import QEvent
+    from PySide6.QtWidgets import QDialog
+
+    from qt_ui.screenfit import ScreenFitFilter
+
+    dialog = QDialog()
+    dialog.resize(4000, 3000)
+    ScreenFitFilter().eventFilter(dialog, QEvent(QEvent.Type.Hide))
+
+    assert dialog.width() == 4000  # untouched -- only Show triggers a fit

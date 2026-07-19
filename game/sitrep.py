@@ -108,6 +108,15 @@ class Sitrep:
             or getattr(self, "pilots_mia", None)
         )
 
+    @property
+    def has_news(self) -> bool:
+        """Whether the app surfaces (web LAST TURN panel, Qt debrief box) show it.
+
+        The same quiet-turn gate the kneeboard band uses (`sitrep_for_kneeboard`),
+        so all §29 surfaces agree on what counts as news.
+        """
+        return not self.is_empty
+
     @classmethod
     def from_debriefing(
         cls,

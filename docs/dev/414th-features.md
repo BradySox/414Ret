@@ -6659,12 +6659,26 @@ LSO platform and the wires (M4's 5-piece set: P-25, three deck hands, the fifth 
 figure up-deck; or M5's tractor pair) — and the `deckdecor` plugin despawns them all
 (`StaticObject:destroy`, silent — the elevator ride, narratively) when EITHER fires
 first: friendly **fixed-wing traffic genuinely running in low astern** (a cone off
-the reciprocal of the emitted BRC — 4.5 NM / **1 000 ft** / ±50° / **closing ≥30 kt**
-/ **two consecutive polls**; the CASE I initial at 800 ft and the CASE III final both
-qualify, while a freshly-launched jet turning back past the boat — the flown ~5-min
-false trip, 2026-07-18 — is through 1 000 ft within a minute of the cat, isn't
-closing, and never holds the cone for two polls) or a **fallback timer** (35 min),
-plus a one-line "deck respotted for recovery" cue. **The Airboss
+the reciprocal of the emitted BRC — 4.5 NM / **1 000 ft** / ±50° / **closing ≥30 kt
+ship-relative** / **two consecutive polls**; the CASE I initial at 800 ft and the
+CASE III final both qualify) or a **fallback timer** (35 min), plus a one-line "deck
+respotted for recovery" cue. The cone was falsified twice on 2026-07-18 and hardened
+twice: the first flown trip (~5 min) was blamed on launch turnbacks and drew the
+1 000 ft ceiling + closing gate + debounce, but the **night re-fly false-tripped
+again on both boats** (GW at t+74 s pre-fix, TR at t+171 s on the hardened build) —
+the Tacview showed the **aft parking rows themselves** were the qualifiers: parked
+jets ride the steaming boat 130–170 m astern of the ship's pivot, DCS reports units
+on a moving deck as `inAir()`, and with world-frame velocity they "close" at exactly
+boat speed (22 kt GW — under the 30 kt gate by luck; a faster boat defeats it). The
+cone now measures closing **relative to the boat's own velocity** (a deck rider
+closes at ~0 however fast the boat steams), treats everything within **400 m** as
+deck footprint (stamp radius, replaces the old 100 m floor), and keeps an **outbound
+roster** — any unit seen inside that radius (parked, taxiing, cat stroke) cannot
+read as recovery traffic for **600 s** after it was last seen there, so a jet fresh
+off this deck is its own launch traffic however low and inbound its turnback looks;
+a genuine recovery starts miles out and is never stamped. All four modes are
+harness-pinned (deck riders on a 35 kt boat, sub-boat-speed closers, the roster
+suppress + lapse, and the moving-boat genuine run-in). **The Airboss
 tie-in**: the sibling `airboss` plugin (default ON) schedules its recovery window
 `windowStartOption` minutes in (default 30 — i.e. BEFORE the plain fallback) and
 steers the boat into wind with U-turns while it is open (the one thing that violates

@@ -2410,9 +2410,16 @@ Full internals for each are in [docs/dev/414th-features.md](docs/dev/414th-featu
     over" / "we could fill the round down within reason": statics can't drive, so the
     new **`deckdecor` plugin strikes them below** (`StaticObject:destroy` = the
     elevator ride) when friendly fixed-wing traffic **genuinely runs in** low astern
-    (4.5 NM/**1000 ft**/±50° cone off the emitted BRC + **closing ≥30 kt** + a
-    **2-poll debounce** — the flown ~5-min false trip was launch traffic turning back
-    past the boat, hardened same day) or a 35-min fallback timer, whichever first —
+    (4.5 NM/**1000 ft**/±50° cone off the emitted BRC + **ship-relative closing
+    ≥30 kt** + a **400 m deck-stamp floor** + a **600 s outbound roster** (a unit
+    seen on/over this deck is its own launch traffic, never a "recovery") + a
+    **2-poll debounce** — the cone was falsified twice flown 2026-07-18: first the
+    ~5-min launch-turnback trip, then the night re-fly struck BOTH boats early
+    (GW t+74 s pre-fix / TR t+171 s on the hardened build) and the Tacview showed
+    the **aft parking rows themselves** qualifying — parked jets ride the steaming
+    boat 130–170 m astern of the pivot, DCS reports moving-deck units as `inAir()`,
+    world-frame closing = boat speed; hardened twice, 4 harness pins) or a 35-min
+    fallback timer, whichever first —
     **and the Airboss tie-in**: the sibling `airboss` plugin (default ON) opens its
     recovery window at +30 min AND steers the boat into wind while it's open, so when
     its options are present deckdecor pulls the deadline to window start −

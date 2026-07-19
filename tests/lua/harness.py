@@ -82,6 +82,14 @@ class DcsPluginHarness:
         static; anything unregistered returns nil (culled / scenery)."""
         self.harness.addStatic(self.to_lua(spec))
 
+    def update_unit(
+        self, group_name: str, fields: dict[str, Any], unit_index: int = 1
+    ) -> None:
+        """Mutate a live unit's fields mid-test (teleport, airborne, velocity).
+
+        The harness models no physics, so mover tests reposition by hand."""
+        self.harness.updateUnit(group_name, unit_index, self.to_lua(fields))
+
     def fire_event(self, event: dict[str, Any]) -> None:
         self.harness.fireEvent(self.to_lua(event))
 
